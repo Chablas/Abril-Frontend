@@ -28,9 +28,16 @@ interface PendienteRow {
 })
 export class SolicitudSalidaCapturasModal implements OnInit, OnDestroy {
   @Input({ required: true }) solicitudId!: number;
-  @Output() close = new EventEmitter<void>();
+  /** Emite al cerrar: `true` si se subió al menos una captura (el padre debe recargar el listado). */
+  @Output() close = new EventEmitter<boolean>();
 
   detalle: SolicitudSalidaDetalleDto | null = null;
+
+  /**
+   * True cuando se subió al menos una captura en esta sesión del modal. Sirve para que el padre
+   * recargue el listado (y con ello `puedeRendirse`) solo si algo cambió, sin pedir datos de más.
+   */
+  private algoSubido = false;
 
   /** Map trayectoId → filas pendientes (cada trayecto tiene su propio set de filas en edición). */
   pendientesByTrayecto = new Map<number, PendienteRow[]>();
@@ -67,7 +74,7 @@ export class SolicitudSalidaCapturasModal implements OnInit, OnDestroy {
       error: (err: HttpErrorResponse) => {
         this.loader.hide();
         this.errorService.handleError(err);
-        this.close.emit();
+        this.close.emit(this.algoSubido);
       },
     });
   }
@@ -77,7 +84,7 @@ export class SolicitudSalidaCapturasModal implements OnInit, OnDestroy {
       rows.forEach((r) => { if (r.preview) URL.revokeObjectURL(r.preview); }),
     );
     this.pendientesByTrayecto.clear();
-    this.close.emit();
+    this.close.emit(this.algoSubido);
   }
 
   pendientesDe(trayectoId: number): PendienteRow[] {
@@ -137,6 +144,7 @@ export class SolicitudSalidaCapturasModal implements OnInit, OnDestroy {
     this.loader.show();
     this.service.uploadCapturasToTrayecto(trayectoId, items).subscribe({
       next: (creadas) => {
+        this.algoSubido = true;
         // Push creadas al trayecto correspondiente
         if (this.detalle) {
           const t = this.detalle.trayectos.find((tr) => tr.id === trayectoId);

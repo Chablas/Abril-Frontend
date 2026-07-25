@@ -469,7 +469,8 @@ export class Trabajadores implements OnInit, OnDestroy {
     return (
       this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA) ||
       this.authService.hasRole(Roles.ADMINISTRADOR_UDP) ||
-      this.authService.hasRole(Roles.ADMINISTRADOR_ADMINISTRACION)
+      this.authService.hasRole(Roles.ADMINISTRADOR_ADMINISTRACION) ||
+      this.authService.hasRole(Roles.USUARIO_GTH)
     );
   }
 

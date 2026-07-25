@@ -2,6 +2,7 @@ export interface WorkerSearchItemDto {
   id: number;
   apellidoNombre: string;
   dni: string;
+  emailCorporativo?: string;
   cargo?: string;
   categoria?: string;
   ocupacion?: string;

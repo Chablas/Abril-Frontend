@@ -223,6 +223,20 @@ export class AuthService {
     return this.getRoles().includes(role);
   }
 
+  /**
+   * Acceso dinámico por featureKey (espejo de `roleGuard`): revisa `allowed_features`
+   * (lista que el backend arma desde role_feature de los roles del usuario). Sirve para
+   * mostrar/ocultar controles de una feature sin hardcodear roles. Nota: `allowed_features`
+   * se refresca al iniciar sesión o al renovar el token, así que un rol recién asignado a
+   * la feature aplica tras re-loguear/refrescar.
+   */
+  hasFeature(featureKey: string): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    const raw = localStorage.getItem('allowed_features');
+    const features: string[] = raw ? JSON.parse(raw) : [];
+    return features.includes(featureKey);
+  }
+
   isContratista(): boolean {
     if (typeof localStorage === 'undefined') return false;
     try {

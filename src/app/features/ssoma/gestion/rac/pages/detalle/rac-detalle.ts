@@ -6,6 +6,7 @@ import { RacService } from '../../services/rac.service';
 import { RacDetalleDto } from '../../dtos/rac.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { AuthService } from '../../../../../../core/services/auth.service';
 import { DraggableImage } from '../../../../../../shared/components/draggable-image/draggable-image';
 import Swal from 'sweetalert2';
 
@@ -29,10 +30,24 @@ export class RacDetalle implements OnInit {
     private racService: RacService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
+
+  /**
+   * Cerrar/levantar un RAC es solo de la empresa observada (reportada). Los usuarios
+   * internos de Abril cierran cualquiera; un contratista solo si su empresa es la
+   * reportada — no cuando solo es la reportante (que reportó el RAC contra otra).
+   * El backend aplica la misma regla; esto evita ofrecerle el botón y que llegue a
+   * subir la evidencia para luego ser rechazado.
+   */
+  get puedeCerrar(): boolean {
+    if (!this.rac || this.rac.estado !== 'Abierto') return false;
+    if (!this.authService.isContratista()) return true;
+    return this.authService.getEmpresaId() === this.rac.empresaReportadaId;
+  }
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));

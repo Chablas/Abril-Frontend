@@ -27,6 +27,11 @@ export interface GestionSalidaListItemDto {
    * salida y no es Gerente (nadie aprueba lo suyo salvo gerentes). No afecta la rendición.
    */
   puedeDecidir: boolean;
+  /**
+   * True si la salida es del propio usuario logueado. Habilita "Cancelar": un trabajador solo
+   * puede cancelar SUS propias solicitudes Pendientes.
+   */
+  esPropia: boolean;
 }
 
 /** Respuesta paginada genérica del backend (PagedResult<T>). */

@@ -498,7 +498,19 @@
 
         <div class="abril-field">
           <label class="abril-field-label">Email</label>
-          <input type="email" class="abril-field-input" [(ngModel)]="form.elaboradoPorEmail" name="elaboradoEmail" />
+          @if (!usarOtroCorreo && emailTrabajadorLogueado) {
+            <input type="email" class="abril-field-input" [value]="emailTrabajadorLogueado" disabled />
+          } @else {
+            <input type="email" class="abril-field-input" [(ngModel)]="form.elaboradoPorEmail"
+                   name="elaboradoEmail" placeholder="usuario@abril.pe" />
+          }
+          @if (errores['elaboradoPorEmail']) { <span class="campo-error">{{ errores['elaboradoPorEmail'] }}</span> }
+          @if (emailTrabajadorLogueado) {
+            <label class="checkbox-label otro-correo">
+              <input type="checkbox" [(ngModel)]="usarOtroCorreo" name="usarOtroCorreo" (change)="onToggleOtroCorreo()" />
+              Usar otro correo
+            </label>
+          }
         </div>
 
         <div class="abril-field">

@@ -170,6 +170,22 @@ export class NavigationService {
       ],
     },
     {
+      key: 'gestion-gth',
+      label: 'Gestión GTH',
+      iconKey: 'users-group',
+      baseRoute: '/gestion-gth',
+      behavior: 'expand',
+      landing: '/gestion-gth/reclutamiento',
+      items: [
+        // Vista de GTH (procesa las solicitudes de toda la organización).
+        { label: 'Reclutamiento', route: '/gestion-gth/reclutamiento', featureKey: 'gestion-gth.reclutamiento' },
+        // Vista del solicitante (jefatura/gerencia que pide personal).
+        { label: 'Solicitud de Personal', route: '/gestion-gth/solicitud-personal', featureKey: 'gestion-gth.solicitud-personal' },
+        // Onboarding y Base maestra se agregarán con sus respectivas funcionalidades.
+      ],
+      groups: [],
+    },
+    {
       key: 'habilitacion',
       label: 'Gestión de Ingresos',
       iconKey: 'users-group',

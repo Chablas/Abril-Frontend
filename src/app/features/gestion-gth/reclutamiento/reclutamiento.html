@@ -1,0 +1,165 @@
+<app-abril-page-header
+  [badge]="'GESTIÓN DE TALENTO · ' + anioActual"
+  titulo="Reclutamiento"
+  subtitulo="Gestiona los procesos de contratación y los procesos de selección de forma ágil."
+  [botonSecundario]="botonConfiguracion"
+  (secondaryClick)="showConfig = true"
+  [hasExtra]="true">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[16px] bg-white flex-1 min-h-0 overflow-auto pb-[64px]">
+
+  <!-- ── Tarjetas resumen (por ahora solo "En proceso") ─────────────────── -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-[16px] max-w-[660px]">
+
+    <!-- En proceso -->
+    <div class="flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DBEAFE">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a3 3 0 10-2.5-4.66" />
+        </svg>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[26px] font-bold leading-none text-gray-800">{{ enProceso }}</span>
+        <span class="text-[13px] font-semibold text-gray-700 mt-[6px]">En proceso</span>
+        <span class="text-[11px] text-gray-400">Activos actualmente</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Tabla: Solicitudes de contratación ─────────────────────────────── -->
+  <div class="flex items-center justify-between">
+    <h2 class="text-[15px] font-semibold text-gray-700">Solicitudes de contratación</h2>
+    <span class="text-[12px] text-gray-400">{{ filteredSolicitudes.length }} registro{{ filteredSolicitudes.length === 1 ? '' : 's' }}</span>
+  </div>
+
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>N° requerimiento</th>
+          <th>Área</th>
+          <th>Fecha llegada</th>
+          <th>Puesto</th>
+          <th>Proyecto / Obra</th>
+          <th>Fecha requerida</th>
+          <th>Prioridad</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="filteredSolicitudes.length === 0">
+          <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ searchText.trim()
+              ? 'Sin resultados para la búsqueda.'
+              : 'Aún no hay solicitudes de contratación registradas.' }}
+          </td>
+        </tr>
+
+        <tr *ngFor="let s of pagedSolicitudes"
+            class="border-b hover:bg-gray-50"
+            style="border-color:var(--color-abril-border)">
+
+          <td class="font-medium text-gray-700 whitespace-nowrap">{{ s.codigo }}</td>
+
+          <td class="text-gray-500">{{ (s.area | titleCase) || '—' }}</td>
+
+          <td class="text-gray-500 whitespace-nowrap">{{ s.fechaLlegada | date:'dd/MM/yyyy' }}</td>
+
+          <td class="text-gray-700 font-medium">{{ s.puesto | titleCase }}</td>
+
+          <td class="text-gray-500">{{ (s.proyectoObra | titleCase) || '—' }}</td>
+
+          <td class="text-gray-500 whitespace-nowrap">{{ s.fechaRequeridaIngreso | date:'dd/MM/yyyy' }}</td>
+
+          <td class="text-center">
+            <div class="w-[104px] mx-auto">
+              <app-search-select
+                [options]="prioridades"
+                valueField="id"
+                displayField="nombre"
+                [value]="s.prioridadId"
+                (valueChange)="onPrioridadChange(s, $event)"
+                [showLabel]="false"
+                [allowClear]="false"
+                [compact]="true"
+                [sortAlpha]="false"
+                placeholder="Prioridad">
+              </app-search-select>
+            </div>
+          </td>
+
+          <td class="text-center">
+            <app-status-badge
+              [text]="s.estadoNombre"
+              [bgColor]="estadoColors(s.estadoCodigo).bg"
+              [textColor]="estadoColors(s.estadoCodigo).text" />
+          </td>
+
+          <!-- Acciones: el ojo abre el modal de detalle; el resto por ahora es visual. -->
+          <td class="text-center whitespace-nowrap">
+            <div class="inline-flex items-center gap-[10px] text-gray-400">
+              <button type="button" class="hover:text-gray-600 cursor-pointer" title="Ver detalle"
+                      (click)="abrirDetalle(s)">
+                <i class="ti ti-eye text-[17px]"></i>
+              </button>
+              <button type="button" class="hover:text-gray-600 cursor-pointer" title="Editar">
+                <i class="ti ti-pencil text-[17px]"></i>
+              </button>
+              <button type="button" class="hover:text-gray-600 cursor-pointer" title="Más opciones">
+                <i class="ti ti-dots text-[17px]"></i>
+              </button>
+            </div>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredSolicitudes.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modal de detalle del requerimiento (ojo de la tabla) ─────────────── -->
+<app-gth-detalle-requerimiento
+  *ngIf="detalleId !== null"
+  [requerimientoId]="detalleId"
+  (closeModal)="onDetalleCerrado($event)" />
+
+<!-- ── Configuración del correo de long list (feature gestion-gth.reclutamiento.configuracion) ─ -->
+<app-gth-configuracion-correos
+  *ngIf="showConfig && puedeConfigurar"
+  tipo="long-list"
+  titulo="CONFIGURACIÓN DEL CORREO DE LONG LIST"
+  [principalOpcional]="true"
+  intro="Cuando GTH envía la long list de CVs, el destinatario principal (Para) es SIEMPRE el solicitante que registró la solicitud. Aquí solo defines destinatarios principales adicionales y las copias (CC). Cámbialos para pruebas y en producción sin necesidad de volver a desplegar."
+  (closeModal)="showConfig = false">
+</app-gth-configuracion-correos>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por código, puesto, área o proyecto..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+</app-filter-modal>

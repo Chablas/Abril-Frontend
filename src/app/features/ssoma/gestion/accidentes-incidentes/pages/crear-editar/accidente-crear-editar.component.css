@@ -47,6 +47,7 @@
 /* ── Checkbox ────────────────────────────────────────── */
 .checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; font-weight: 600; color: #1a1a18; }
 .checkbox-label input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--color-abril-logo-blue); cursor: pointer; }
+.otro-correo { margin-top: 8px; font-weight: 500; }
 
 /* ── Info hint ───────────────────────────────────────── */
 .info-hint { font-size: 11px; color: var(--color-abril-logo-blue); background: var(--color-abril-logo-blue-light); border-radius: 6px; padding: 4px 8px; margin: 0 0 4px; display: flex; align-items: center; gap: 4px; }

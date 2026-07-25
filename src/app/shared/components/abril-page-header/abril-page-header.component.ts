@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { LayoutService } from '../../../core/services/layout.service';
 import { NavigationService } from '../../../core/navigation/navigation.service';
+import { NotificacionesBell } from '../notificaciones/notificaciones-bell';
 
 export interface SsomaHeaderPill {
   icono: string;
@@ -40,7 +41,7 @@ export interface AbrilPageTabGroup {
 @Component({
   selector: 'app-abril-page-header',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, NotificacionesBell],
   templateUrl: './abril-page-header.component.html',
   styleUrl: './abril-page-header.component.css',
 })
