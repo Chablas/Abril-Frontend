@@ -4735,3 +4735,56 @@ Aparecieron sin commitear dos skills nuevas (`.claude/skills/actualizar-master/S
 ### Estado final
 - `ng build` limpio (0 errores, mismos warnings preexistentes de terceros).
 - Commit `feat: muestra fecha de registro en informes de report-response-control`.
+
+## Sesión 2026-07-26 (2) — Refinamiento visual/UX de report-response-control
+
+Segunda sesión del día sobre la misma pantalla: refinamiento dentro de la arquitectura ya existente (no se tocó la separación smart/presentacional entre `report-response-control`, `report-cards` y `list`, ni los filtros server-side, ni `app-base-modal` como marco de los 3 modales).
+
+### Qué se hizo
+
+**1. Cálculo único de "tiempo transcurrido" (`shared/elapsed-time.ts`, nuevo)**
+Fuente única para las tres vistas. Expone `tiempoTranscurrido(item)` → `{ dias, texto, color, porcentaje, vencido, levantado }`, más `esLevantado()`, `diasTranscurridos()` y `textoTranscurrido()`.
+- Umbrales: ≤7 d verde `#1B6B3A` · ≤30 d naranja `#D97706` · >30 d rojo `#C0392B`. **Solo aplican a NO LEVANTADO**; una incidencia levantada devuelve barra vacía y texto muted `#94A3B8`.
+- Escala de la barra: `min(días/60, 1)` con piso de 4% para que una incidencia de hoy muestre color. Los umbrales y el 60 son las constantes a tocar si el negocio define un SLA real.
+- `esLevantado()` acepta tanto `stateDescription === 'LEVANTADO'` como `stateId === 5` (5 = LEVANTADO, 6 = NO LEVANTADO).
+
+**2. Tarjetas (`report-cards`)**
+- Barra de urgencia de 6px al tope de la tarjeta (riel `#E2E8F0`, relleno coloreado). Va dentro del `overflow:hidden` de `.report-card`, así el radio de 10px la recorta sola.
+- Texto "Hace X días/semanas/meses" en el color de urgencia, reemplazando la fecha cruda que se había agregado en la sesión anterior; la fecha quedó al lado en 11px `#94A3B8` y como tooltip.
+- Pill con ícono + cantidad de imágenes adjuntas sobre la esquina inferior derecha de la miniatura (evidencia fotográfica visible sin abrir el modal).
+
+**3. Tabla (`list`)**
+Se mantiene **neutra y densa a propósito** — no replica el color de las tarjetas. La columna de fecha pasó a dos líneas: fecha cruda + tiempo transcurrido en `#94A3B8`, teñido a `#C0392B` únicamente si es NO LEVANTADO con más de 30 días. Sin barra, sin badge.
+
+**4. Filtros**
+- **Estado salió de `app-filter-modal`** y pasó a pestañas siempre visibles sobre la lista (Todos / No levantado / Levantado), con subrayado navy en la activa — deliberadamente distinto del toggle Tabla/Tarjetas, que es una pastilla, para que no compitan. Cada click hace `load(1)`.
+- **Proyecto** sigue dentro del modal, pero ahora muestra un chip removible sobre la lista (`Proyecto: X ✕`) que limpia el filtro sin reabrir el modal. Se guarda `filtroProyectoLabel` al elegir la opción porque `projectOptions` se carga perezosamente.
+- `filtrosActivos` ahora cuenta solo Proyecto, y `limpiarFiltros()` (botón del modal) limpia solo lo que vive en el modal — no resetea la pestaña de estado.
+
+**5. Modal "Ver informe"**
+- **Se eliminaron las pestañas** "Datos generales"/"Imágenes adjuntas": todo en una sola vista con scroll. Ancho 1000px → 680px (DESIGN §6.8 pide 640–720 para formularios).
+- Proyecto, Estado, Descripción y Respuesta pasaron de cajas tipo input a texto plano con jerarquía (`.campo__label` 11px uppercase `#64748B` sobre `.campo__valor` 14px `#1E3A5F`; Estado en verde/rojo según levantado).
+- Nueva fila de dos columnas Fecha de registro + Tiempo transcurrido, con separador antes de la descripción.
+- Imágenes como miniaturas de 80x80 entre descripción y respuesta, con el conteo en el label ("Imágenes adjuntas (2)") y **lightbox** propio (`z-60`, sobre el backdrop `z-50` de `app-base-modal`, cierre por click fuera o ✕, contador `n / total`). Reemplaza a `app-draggable-image`.
+- **`report-view-active-tab/` eliminado** (componente + spec): quedó sin consumidores al sacar las tabs y no se usaba en ninguna otra pantalla.
+
+**6. Modal "Agregar incidencia"**
+- El dropzone (`app-file-selector`) sigue siendo el elemento principal — el uso real es mayormente desde escritorio.
+- "Abrir cámara" pasó de botón con borde/fondo teal a link subrayado 13px `#64748B` debajo del dropzone.
+- Vista previa local de 80x80 con ✕, entre el dropzone y el campo Descripción. Se dejó de usar `app-image-preview` acá (era 120x120) pero **el componente compartido no se tocó** — sigue igual para `contractor-registration`, `lessons-learned` y `respond-report-modal`.
+
+### Archivos clave
+- `features/projects/report-response-control/shared/elapsed-time.ts` (nuevo)
+- `report-response-control.ts`/`.html`/`.css` (pestañas de estado + chip de proyecto)
+- `report-cards/report-cards.ts`/`.html`/`.css` (barra + texto + contador de imágenes)
+- `list/list.ts`/`.html` (columna de fecha con tiempo transcurrido)
+- `list/report-view-modal/**` (modal sin tabs; `report-view-detail` reestructurado, `report-view-images` reescrito como miniaturas + lightbox, `report-view-active-tab` eliminado)
+- `report-response-control-create/**` (cámara secundaria + miniatura de preview)
+
+### Notas de implementación
+- Tarjetas y tabla **memoizan** el resultado de `tiempoTranscurrido()` en un `Map` por `residentReportIncidenceId`, limpiado en `ngOnChanges`, para no recalcular fechas en cada ciclo de detección de cambios (la plantilla lo consulta varias veces por fila).
+- `report-view-images` usa un getter `imagenes` (`images ?? []`) para blindar la plantilla ante un `images` ausente en la respuesta del backend.
+
+### Estado final
+- `ng build` limpio: **0 errores**, mismos warnings preexistentes de terceros (CommonJS/ESM de `canvg`, `flatpickr`).
+- No verificado en navegador (sin acceso a sesión autenticada en este entorno) — pendiente de revisión visual del usuario.
