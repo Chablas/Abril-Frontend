@@ -4717,3 +4717,21 @@ Sesión de sincronización, sin desarrollo de feature propio: se trajeron a `vic
 
 ### Addendum — segundo `guardar-rama` en la misma sesión
 Aparecieron sin commitear dos skills nuevas (`.claude/skills/actualizar-master/SKILL.md`, `.claude/skills/actualizar-rama/SKILL.md`) — complementan a `guardar-rama`/`guardar-master` para traer `origin/master` hacia la rama o hacia master local. Commiteadas (`chore: agrega skills actualizar-master y actualizar-rama`), `ng build` limpio de nuevo, y subidas a `origin/victor-frontend`.
+
+## Sesión 2026-07-26 — Fecha de registro en informes de report-response-control
+
+### Qué se hizo
+- Se agregó el campo `createdDateTime` al DTO `ResidentReportIncidenceDTO` (`core/dtos/reportResponseControl/residentReportIncidence.model.ts`).
+- Nueva columna **"Fecha de registro"** en la vista tabla (`list/list.html`), formateada con `date:'dd/MM/yyyy'`, incluyendo su celda skeleton y el ajuste del `colspan` del estado vacío (5 → 6).
+- Nueva línea de fecha (mismo formato) en la vista tarjetas (`report-cards/report-cards.html`), debajo del estado y antes de la descripción.
+- Los tres componentes del modal de detalle (`report-view-modal.ts`, `report-view-detail.ts`, `report-view-images.ts`) actualizaron su objeto inicial vacío para incluir `createdDateTime: ''`, manteniendo el DTO consistente en todos los puntos donde se instancia.
+
+### Archivos clave
+- `core/dtos/reportResponseControl/residentReportIncidence.model.ts`
+- `features/projects/report-response-control/list/list.html`
+- `features/projects/report-response-control/report-cards/report-cards.html`
+- `features/projects/report-response-control/list/report-view-modal/**` (report-view-modal.ts, report-view-detail.ts, report-view-images.ts)
+
+### Estado final
+- `ng build` limpio (0 errores, mismos warnings preexistentes de terceros).
+- Commit `feat: muestra fecha de registro en informes de report-response-control`.
