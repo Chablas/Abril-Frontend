@@ -4714,3 +4714,6 @@ Sesión de sincronización, sin desarrollo de feature propio: se trajeron a `vic
 ### Estado final
 - `git status --porcelain` limpio antes y después del merge — no hubo cambios propios de la rama para commitear en esta sesión.
 - Rama `victor-frontend` actualizada y sincronizada con `origin/master` al momento del merge.
+
+### Addendum — segundo `guardar-rama` en la misma sesión
+Aparecieron sin commitear dos skills nuevas (`.claude/skills/actualizar-master/SKILL.md`, `.claude/skills/actualizar-rama/SKILL.md`) — complementan a `guardar-rama`/`guardar-master` para traer `origin/master` hacia la rama o hacia master local. Commiteadas (`chore: agrega skills actualizar-master y actualizar-rama`), `ng build` limpio de nuevo, y subidas a `origin/victor-frontend`.
