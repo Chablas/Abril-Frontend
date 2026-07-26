@@ -5,6 +5,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
       @for (card of skeletonCards; track $index) {
         <div class="report-card">
+          <div class="report-card__timebar" [style.background]="rielBarra"></div>
           <div class="skeleton-line h-[150px] w-full rounded-[8px]"></div>
           <div class="p-[14px] flex flex-col gap-[10px]">
             <div class="skeleton-line h-[12px] w-[60%]"></div>
@@ -27,15 +28,33 @@
       @for (item of data; track item.residentReportIncidenceId) {
         <div class="report-card cursor-pointer" (click)="openView.emit(item)">
 
-          <!-- Imagen / placeholder -->
-          @if (item.images?.length) {
-            <img [src]="item.images[0].imageUrl" class="report-card__img" />
-          } @else {
-            <div class="report-card__img flex items-center justify-center"
-              style="background:var(--color-abril-bg-alt);color:#94A3B8">
-              <i class="ti ti-photo text-[32px]"></i>
-            </div>
-          }
+          <!-- Barra de tiempo transcurrido: solo se rellena si está NO LEVANTADO.
+               Levantado = riel gris completo, sin color de urgencia. -->
+          <div class="report-card__timebar" [style.background]="rielBarra"
+            [title]="tiempo(item).levantado ? 'Incidencia levantada' : tiempo(item).texto">
+            <div class="report-card__timebar-fill"
+              [style.width.%]="tiempo(item).porcentaje"
+              [style.background]="tiempo(item).color"></div>
+          </div>
+
+          <!-- Imagen / placeholder + contador de adjuntos -->
+          <div class="report-card__media">
+            @if (item.images?.length) {
+              <img [src]="item.images[0].imageUrl" class="report-card__img" />
+            } @else {
+              <div class="report-card__img flex items-center justify-center"
+                style="background:var(--color-abril-bg-alt);color:#94A3B8">
+                <i class="ti ti-photo text-[32px]"></i>
+              </div>
+            }
+
+            <!-- Evidencia fotográfica visible sin abrir el modal -->
+            <span class="report-card__count"
+              [title]="(item.images?.length || 0) + ' imagen(es) adjunta(s)'">
+              <i class="ti ti-photo text-[13px]"></i>
+              {{ item.images?.length || 0 }}
+            </span>
+          </div>
 
           <div class="p-[14px] flex flex-col gap-[10px] flex-1 min-h-0">
             <!-- Proyecto + estado -->
@@ -51,10 +70,16 @@
               </span>
             </div>
 
-            <!-- Fecha de registro -->
-            <span class="text-[11px]" style="color:#64748B">
-              {{ item.createdDateTime | date:'dd/MM/yyyy' }}
-            </span>
+            <!-- Tiempo transcurrido (mismo color que la barra) + fecha cruda discreta -->
+            <div class="flex items-baseline gap-[6px]">
+              <span class="text-[12px] font-semibold" [style.color]="tiempo(item).color"
+                [title]="'Registrado el ' + (item.createdDateTime | date:'dd/MM/yyyy')">
+                {{ tiempo(item).texto }}
+              </span>
+              <span class="text-[11px]" style="color:#94A3B8">
+                · {{ item.createdDateTime | date:'dd/MM/yyyy' }}
+              </span>
+            </div>
 
             <!-- Descripción -->
             <p class="text-[13px] line-clamp-3" style="color:#64748B"

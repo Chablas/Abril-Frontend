@@ -72,9 +72,15 @@
                 </span>
               </td>
 
+              <!-- Fecha + tiempo transcurrido. Sin barra ni badge: la tabla se mantiene
+                   neutra y densa; solo el caso crítico (>30 días sin levantar) va en rojo. -->
               <td class="text-center">
-                <span class="text-[13px]" style="color:#64748B">
+                <span class="block text-[13px]" style="color:#64748B">
                   {{ item.createdDateTime | date:'dd/MM/yyyy' }}
+                </span>
+                <span class="block text-[12px]"
+                  [style.color]="tiempo(item).vencido ? '#C0392B' : '#94A3B8'">
+                  {{ tiempo(item).texto }}
                 </span>
               </td>
 

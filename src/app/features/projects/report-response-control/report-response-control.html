@@ -10,8 +10,19 @@
 
 <div class="page-container flex flex-col gap-[16px] bg-white flex-1 min-h-0 overflow-hidden p-[20px] pb-[64px]">
 
-  <!-- ── Barra de herramientas: toggle de vista ─────────────────────────── -->
+  <!-- ── Barra de herramientas: pestañas de estado + toggle de vista ────── -->
   <div class="flex items-center gap-3">
+
+    <!-- Estado como pestañas siempre visibles (salió del modal de filtros). -->
+    <div class="estado-tabs flex items-center gap-1">
+      @for (tab of estadoTabs; track tab.value) {
+        <button type="button" (click)="setEstado(tab.value)"
+          [class]="'estado-tab' + (filtros.stateId === tab.value ? ' active' : '')">
+          {{ tab.label }}
+        </button>
+      }
+    </div>
+
     <span class="text-[12px] text-stone-500">{{ totalRecords }} registro{{ totalRecords === 1 ? '' : 's' }}</span>
 
     <div class="flex-1"></div>
@@ -37,6 +48,17 @@
       </button>
     </div>
   </div>
+
+  <!-- ── Chip del filtro de proyecto (se quita sin reabrir el modal) ────── -->
+  @if (filtros.projectId != null) {
+    <div class="flex items-center gap-2">
+      <span class="filtro-chip">
+        Proyecto: <strong class="font-semibold">{{ filtroProyectoLabel | titleCase }}</strong>
+        <button type="button" class="filtro-chip__x" (click)="quitarFiltroProyecto()"
+          aria-label="Quitar filtro de proyecto">✕</button>
+      </span>
+    </div>
+  }
 
   <!-- ── Vista tabla ────────────────────────────────────────────────────── -->
   @if (currentView === 'table') {
@@ -81,18 +103,7 @@
     valueField="projectId"
     displayField="projectDescription"
     [value]="filtros.projectId"
-    (valueChange)="filtros.projectId = $event; onSearch()">
-  </app-search-select>
-
-  <app-search-select
-    label="Estado"
-    placeholder="Selecciona estado"
-    [options]="estadoOptions"
-    valueField="value"
-    displayField="label"
-    [sortAlpha]="false"
-    [value]="filtros.stateId"
-    (valueChange)="filtros.stateId = $event; onSearch()">
+    (valueChange)="onProyectoChange($event)">
   </app-search-select>
 </app-filter-modal>
 

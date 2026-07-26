@@ -20,6 +20,7 @@ import { ResidentReportIncidenceService } from '../../../core/services/residentR
 import { ProjectResidentService } from '../../../core/services/projectResident.service';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
+import { TitleCasePipe } from '../../../shared/pipes/title-case.pipe';
 
 import { PROJECTS_TABS } from '../shared/projects-tabs';
 
@@ -40,6 +41,7 @@ type ViewMode = 'cards' | 'table';
     SearchSelect,
     RespondReportModal,
     ReportViewModal,
+    TitleCasePipe,
   ],
   templateUrl: './report-response-control.html',
   styleUrl: './report-response-control.css',
@@ -74,11 +76,22 @@ export class ReportResponseControl implements OnInit {
   projectOptions: ProjectSimpleDTO[] = [];
   private projectsLoaded = false;
 
-  /** Estado: LEVANTADO → stateId 5, NO LEVANTADO → stateId 6 (confirmado por backend). */
-  readonly estadoOptions = [
-    { value: null, label: 'Todos los estados' },
-    { value: 5, label: 'Levantado' },
+  /**
+   * Descripción del proyecto filtrado, para el chip que se muestra sobre la lista.
+   * Se guarda al elegir la opción (y no se deriva de projectOptions en cada render)
+   * porque las opciones se cargan perezosamente.
+   */
+  filtroProyectoLabel: string | null = null;
+
+  /**
+   * Estado: LEVANTADO → stateId 5, NO LEVANTADO → stateId 6 (confirmado por backend).
+   * Ya no vive en el modal de filtros: es una pestaña siempre visible sobre la lista,
+   * porque es el corte que el usuario cambia todo el tiempo.
+   */
+  readonly estadoTabs: { value: number | null; label: string }[] = [
+    { value: null, label: 'Todos' },
     { value: 6, label: 'No levantado' },
+    { value: 5, label: 'Levantado' },
   ];
 
   // ── Modales ──────────────────────────────────────────────────────────
@@ -134,16 +147,35 @@ export class ReportResponseControl implements OnInit {
     this.load(page);
   }
 
-  limpiarFiltros(): void {
-    this.filtros = { projectId: null, stateId: null };
+  /** Pestañas de estado: mismo patrón que cualquier filtro, vuelve a la página 1. */
+  setEstado(stateId: number | null): void {
+    if (this.filtros.stateId === stateId) return;
+    this.filtros.stateId = stateId;
     this.load(1);
   }
 
+  /** Cambio de proyecto desde el modal: guarda también la etiqueta para el chip. */
+  onProyectoChange(projectId: number | null): void {
+    this.filtros.projectId = projectId;
+    this.filtroProyectoLabel =
+      projectId == null
+        ? null
+        : (this.projectOptions.find((p) => p.projectId === projectId)?.projectDescription ?? null);
+    this.onSearch();
+  }
+
+  /** Quitar el filtro de proyecto desde el chip, sin reabrir el modal. */
+  quitarFiltroProyecto(): void {
+    this.onProyectoChange(null);
+  }
+
+  /** "Limpiar filtros" del modal solo afecta a lo que vive dentro del modal (proyecto). */
+  limpiarFiltros(): void {
+    this.onProyectoChange(null);
+  }
+
   get filtrosActivos(): number {
-    let n = 0;
-    if (this.filtros.projectId != null) n++;
-    if (this.filtros.stateId != null) n++;
-    return n;
+    return this.filtros.projectId != null ? 1 : 0;
   }
 
   abrirFiltros(): void {
