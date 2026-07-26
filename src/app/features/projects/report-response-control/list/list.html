@@ -6,6 +6,7 @@
         <th class="w-[160px]">Proyecto</th>
         <th>Descripción incidencia</th>
         <th class="w-[150px]">Estado</th>
+        <th class="w-[120px]">Fecha de registro</th>
         <th class="w-[220px]">Respuesta</th>
       </tr>
     </thead>
@@ -19,6 +20,7 @@
             <td><div class="skeleton-line h-[12px] w-[70%] mx-auto"></div></td>
             <td><div class="skeleton-line h-[12px] w-[85%] mx-auto"></div></td>
             <td><div class="skeleton-line h-[22px] w-[90px] mx-auto rounded-[4px]"></div></td>
+            <td><div class="skeleton-line h-[12px] w-[70%] mx-auto"></div></td>
             <td><div class="skeleton-line h-[12px] w-[80%] mx-auto"></div></td>
           </tr>
         }
@@ -26,7 +28,7 @@
         <!-- Estado vacío (DESIGN §6.10) -->
         @if (data.length === 0) {
           <tr>
-            <td colspan="5">
+            <td colspan="6">
               <div class="flex flex-col items-center justify-center gap-2 py-[56px] text-center">
                 <i class="ti ti-file-off text-[48px]" style="color:#94A3B8"></i>
                 <p class="text-[14px]" style="color:#64748B">No hay informes para mostrar</p>
@@ -67,6 +69,12 @@
                   [style.background]="item.stateDescription === 'LEVANTADO' ? '#dcfce7' : '#fee2e2'"
                   [style.color]="item.stateDescription === 'LEVANTADO' ? '#166534' : '#991b1b'">
                   {{ item.stateDescription }}
+                </span>
+              </td>
+
+              <td class="text-center">
+                <span class="text-[13px]" style="color:#64748B">
+                  {{ item.createdDateTime | date:'dd/MM/yyyy' }}
                 </span>
               </td>
 

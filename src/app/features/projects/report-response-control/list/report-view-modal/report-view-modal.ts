@@ -21,6 +21,7 @@ export class ReportViewModal {
     projectDescription: '',
     stateId: 0,
     stateDescription: '',
+    createdDateTime: '',
     images: [],
     residentReportResponseDescriptions: []
   };

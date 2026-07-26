@@ -51,6 +51,11 @@
               </span>
             </div>
 
+            <!-- Fecha de registro -->
+            <span class="text-[11px]" style="color:#64748B">
+              {{ item.createdDateTime | date:'dd/MM/yyyy' }}
+            </span>
+
             <!-- Descripción -->
             <p class="text-[13px] line-clamp-3" style="color:#64748B"
               [title]="item.residentReportIncidenceDescription">
