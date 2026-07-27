@@ -8,4 +8,5 @@ export const CONFIGURACION_TABS: AbrilPageTab[] = [
   { label: 'Razones Sociales',                icono: 'ti-building', route: '/configuracion/companies', featureKey: 'configuracion.companies' },
   { label: 'Trabajadores',                    icono: 'ti-users',    route: '/configuracion/workers',   featureKey: 'configuracion.workers' },
   { label: 'Feriados y Días no Laborables',   icono: 'ti-calendar', route: '/configuracion/feriados',  featureKey: 'configuracion.feriados' },
+  { label: 'Centro de aprendizaje',           icono: 'ti-player-play', route: '/configuracion/aprendizaje', featureKey: 'configuracion.aprendizaje' },
 ];

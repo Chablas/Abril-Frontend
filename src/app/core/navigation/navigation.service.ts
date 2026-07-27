@@ -285,6 +285,7 @@ export class NavigationService {
       baseRoute: '/configuracion',
       items: [
         { label: 'Proyectos', route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },
+        { label: 'Centro de aprendizaje', route: '/configuracion/aprendizaje', featureKey: 'configuracion.aprendizaje' },
       ],
     },
   ];

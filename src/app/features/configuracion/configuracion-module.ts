@@ -6,6 +6,7 @@ import { Area } from './features/area/components/area';
 import { Companies } from './pages/companies/companies';
 import { Workers } from './pages/workers/workers';
 import { Feriados } from './features/feriados/components/feriados';
+import { Aprendizaje } from './features/aprendizaje/components/aprendizaje';
 import { roleGuard } from '../../core/guards/role.guard';
 
 const routes: Routes = [
@@ -42,6 +43,12 @@ const routes: Routes = [
         component: Feriados,
         canActivate: [roleGuard],
         data: { titulo: 'CONFIGURACIÓN - FERIADOS Y DÍAS NO LABORABLES', featureKey: 'configuracion.feriados' },
+      },
+      {
+        path: 'aprendizaje',
+        component: Aprendizaje,
+        canActivate: [roleGuard],
+        data: { titulo: 'CONFIGURACIÓN - CENTRO DE APRENDIZAJE', featureKey: 'configuracion.aprendizaje' },
       },
     ],
   },

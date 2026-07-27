@@ -15,7 +15,7 @@
         <div class="text-gray-800">{{ detalle.createdAt | date:'dd/MM/yyyy HH:mm' }}</div>
       </div>
       <div>
-        <div class="text-xs text-gray-500 uppercase">Aprobación</div>
+        <div class="text-xs text-gray-500 uppercase">Estado</div>
         <app-status-badge
           [text]="detalle.estadoAprobacion"
           [bgColor]="aprobacionColors(detalle.estadoAprobacion).bg"

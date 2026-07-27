@@ -1,11 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
-import { Roles } from '../../../core/constants/roles';
-import { GUIA_LECCIONES_APRENDIDAS } from '../../../shared/constants/mejora-continua-guia';
+import { LearningService } from '../../../core/learning/learning.service';
+import { LearningCategoryDto } from '../../../core/learning/learning.model';
 import { HomeGreeting } from '../../../shared/components/home-greeting/home-greeting';
-import { LearningGuides } from '../../../shared/components/learning-guides/learning-guides';
+import { LearningCenter } from '../../../shared/components/learning-center/learning-center';
 import { HighlightCard } from '../../../shared/components/highlight-card/highlight-card';
 
 interface Highlight {
@@ -37,15 +36,20 @@ const NOVEDADES: Highlight[] = [
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, HomeGreeting, LearningGuides, HighlightCard],
+  imports: [CommonModule, HomeGreeting, LearningCenter, HighlightCard],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
 export class Dashboard implements OnInit {
-  /** Guías en video de Mejora Continua (por ahora solo Lecciones Aprendidas). */
-  readonly guiasMejoraContinua = [GUIA_LECCIONES_APRENDIDAS];
-
   readonly novedades = NOVEDADES;
+
+  /**
+   * Grupos del Centro de aprendizaje, ya filtrados por rol en el backend (una
+   * categoría es visible si es "pública interna" o si el usuario tiene alguno de
+   * sus roles). Si el usuario no puede ver ningún grupo, la lista queda vacía y el
+   * panel no se muestra.
+   */
+  categorias: LearningCategoryDto[] = [];
 
   /** Nombre de pila (primera palabra del displayName guardado en el login). */
   firstName = '';
@@ -59,15 +63,31 @@ export class Dashboard implements OnInit {
   });
 
   constructor(
-    private authService: AuthService,
+    private learningService: LearningService,
     private router: Router,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    if (typeof localStorage === 'undefined') return;
-    const user = JSON.parse(localStorage.getItem('user') ?? '{}');
-    this.firstName = (user?.displayName ?? '').split(' ')[0] || '';
-    this.jobTitle = user?.jobTitle ?? '';
+    if (typeof localStorage !== 'undefined') {
+      const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+      this.firstName = (user?.displayName ?? '').split(' ')[0] || '';
+      this.jobTitle = user?.jobTitle ?? '';
+    }
+
+    // Carga silenciosa: es contenido complementario de la portada, no debe tapar
+    // la pantalla con el spinner global. Si falla, simplemente no se muestra el panel.
+    // App zoneless: forzamos el refresco para que el panel aparezca sin un click extra.
+    this.learningService.getInicio().subscribe({
+      next: (data) => {
+        this.categorias = data ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.categorias = [];
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   irAlBoletin(): void {
@@ -76,16 +96,5 @@ export class Dashboard implements OnInit {
 
   get todayCapitalized(): string {
     return this.today.charAt(0).toUpperCase() + this.today.slice(1);
-  }
-
-  /**
-   * La sección de guías de Mejora Continua solo es visible para los roles
-   * 'ADMINISTRADOR DE MEJORA CONTINUA' y 'USUARIO DE ABRIL'.
-   */
-  get puedeVerGuiasMejoraContinua(): boolean {
-    return (
-      this.authService.hasRole(Roles.ADMINISTRADOR_MEJORA_CONTINUA) ||
-      this.authService.hasRole(Roles.USUARIO_DE_ABRIL)
-    );
   }
 }
