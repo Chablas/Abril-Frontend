@@ -72,9 +72,19 @@ export class ReportResponseControl implements OnInit {
 
   filtrosAbiertos = false;
 
-  /** Opciones de proyecto para el filtro (carga perezosa al abrir filtros). */
+  /** Opciones de proyecto para el filtro (carga perezosa al abrir filtros; para RESIDENTE
+   *  se resuelven antes, ver initResidente()). */
   projectOptions: ProjectSimpleDTO[] = [];
   private projectsLoaded = false;
+
+  /** RESIDENTE con 0 proyectos asignados: no se llama GetPaged, se muestra un estado
+   *  vacío específico ("sin proyectos"), distinto del "sin resultados" genérico. */
+  sinProyectosAsignados = false;
+
+  /** Oculta el filtro de Proyecto (trigger + chip) cuando no tiene sentido mostrarlo:
+   *  RESIDENTE con exactamente 1 proyecto asignado (nada para elegir, el backend ya
+   *  filtra el GetPaged por ese único proyecto) o con 0 (no hay nada que filtrar). */
+  mostrarFiltroProyecto = true;
 
   /**
    * Descripción del proyecto filtrado, para el chip que se muestra sobre la lista.
@@ -112,7 +122,53 @@ export class ReportResponseControl implements OnInit {
   ngOnInit(): void {
     // 1 acción = 1 HTTP: en el init solo se carga la lista. Los proyectos del filtro
     // se piden recién cuando el usuario abre el panel de filtros (ver abrirFiltros()).
-    this.load();
+    // Excepción documentada para RESIDENTE: ver initResidente().
+    if (this.authService.hasRole(Roles.RESIDENTE)) {
+      this.initResidente();
+    } else {
+      this.load();
+    }
+  }
+
+  /**
+   * Para RESIDENTE, los proyectos asignados (assigned-projects) determinan tanto si
+   * corresponde mostrar el filtro de Proyecto como si corresponde llamar al GetPaged
+   * (0 proyectos → ni se llama). Es una excepción documentada a "1 acción = 1 HTTP"
+   * (memoria arch-1-accion-1-http), en la misma categoría que ProjectsDashboard.ngOnInit:
+   * la vista inicial necesita dos recursos que hoy no vienen combinados en un único
+   * endpoint backend.
+   */
+  private initResidente(): void {
+    // loading=true cubre las DOS llamadas encadenadas (assigned-projects + load): si solo
+    // se seteara dentro de load(), el skeleton no aparecería durante la espera de
+    // assigned-projects y se vería el empty-state genérico ("sin resultados") antes que el
+    // skeleton real — un parpadeo visual incorrecto.
+    this.loading = true;
+    this.loaderService.show();
+    this.reportService.getAssignedProjects().subscribe({
+      next: (projects) => {
+        this.loaderService.hide();
+        this.projectOptions = projects;
+        this.projectsLoaded = true;
+
+        if (projects.length === 0) {
+          this.loading = false;
+          this.sinProyectosAsignados = true;
+          this.mostrarFiltroProyecto = false;
+          return;
+        }
+
+        // 1 proyecto: el backend ya filtra el GetPaged por ese único proyecto sin
+        // necesidad de enviar projectId, así que el filtro no tiene sentido mostrarlo.
+        this.mostrarFiltroProyecto = projects.length >= 2;
+        this.load();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loading = false;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   // ── Carga de datos ───────────────────────────────────────────────────

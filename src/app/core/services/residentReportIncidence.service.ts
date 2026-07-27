@@ -4,9 +4,10 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiMessageDTO } from '../dtos/api/ApiMessage.model';
 import { PagedResponseDTO } from '../dtos/api/pagedResponse.model';
-import { ResidentReportIncidenceDTO } from '../dtos/reportResponseControl/residentReportIncidence.model'; 
+import { ResidentReportIncidenceDTO } from '../dtos/reportResponseControl/residentReportIncidence.model';
 import { ResidentReportResponseCreateDto } from '../dtos/reportResponseControl/responseCreateDto.model';
 import { UpdateIncidenceDTO } from '../dtos/reportResponseControl/updateIncidence.model';
+import { ProjectSimpleDTO } from '../dtos/project/projectSimple.model';
 
 @Injectable({
   providedIn: 'root',
@@ -31,6 +32,14 @@ export class ResidentReportIncidenceService {
     return this.http.get<PagedResponseDTO<ResidentReportIncidenceDTO>>(`${this.apiUrl}/paged`, {
       headers: { Authorization: `Bearer ${token}` },
       params,
+    });
+  }
+
+  /** Proyectos asignados al RESIDENTE logueado (backend resuelve el rol vía JWT). */
+  getAssignedProjects(): Observable<ProjectSimpleDTO[]> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ProjectSimpleDTO[]>(`${this.apiUrl}/assigned-projects`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
   }
 
