@@ -21,10 +21,11 @@ interface MesCalendario {
 /**
  * "THE BIRTHDAY CLUB": calendario de cumpleaños del boletín, navegable por trimestre.
  *
- * Al abrir carga el trimestre actual (datos + fotos en una sola petición) y permite avanzar/
- * retroceder trimestre a trimestre. Cada cumpleañero se pinta como un "rectangulito" bajo el
- * día (intercalando azul/verde); al pasar el mouse aparece un popover con su foto, nombre y
- * puesto. Los trimestres visitados quedan cacheados en el servicio.
+ * Al abrir carga el trimestre actual (solo datos, sin fotos) y permite avanzar/retroceder
+ * trimestre a trimestre. Cada cumpleañero se pinta como un "rectangulito" bajo el día
+ * (intercalando azul/verde); al pasar el mouse aparece un popover con su nombre, puesto y su
+ * foto, que se pide a demanda en ese momento (para no traerlas todas de golpe y que la carga
+ * del trimestre sea liviana). Trimestres y fotos ya vistos quedan cacheados en el servicio.
  */
 @Component({
   selector: 'app-birthday-club',
@@ -139,6 +140,20 @@ export class BirthdayClub implements OnInit {
     this.hoverX = rect.left + rect.width / 2;
     this.hoverY = rect.top;
     this.hoverPersona = persona;
+    this.cargarFoto(persona);
+  }
+
+  /**
+   * Trae la foto de la persona la primera vez que se hace hover y la deja guardada en su DTO.
+   * `fotoBase64 === undefined` = aún no pedida; una vez resuelta (string o null) no se vuelve a
+   * pedir. El servicio además cachea por correo, así que un hover repetido no pega al backend.
+   */
+  private cargarFoto(persona: CumpleaneroDto): void {
+    if (persona.fotoBase64 !== undefined) return;
+    this.service.getFoto(persona.email).subscribe({
+      next: (foto) => (persona.fotoBase64 = foto),
+      error: () => (persona.fotoBase64 = null),
+    });
   }
 
   ocultarPopover(): void {
