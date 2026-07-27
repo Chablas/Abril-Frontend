@@ -4810,3 +4810,12 @@ Consumido el endpoint nuevo de backend `GET /api/v1/ResidentReportIncidence/assi
 ### Estado final
 - `ng build` limpio: 0 errores, mismos warnings preexistentes de terceros.
 - No verificado en navegador — pendiente de revisión visual del usuario, en particular los 3 casos (0/1/2+ proyectos) con un usuario RESIDENTE real.
+
+## Sesión 2026-07-26 (4) — Investigación (sin cambios de código): dashboard de Arquitectura Comercial
+
+Sesión puramente de research, sin tocar código, a pedido del usuario para entender `features/arquitectura-comercial/dashboard/dashboard.ts` (ruta `/arquitectura-comercial/dashboard`). Queda documentado acá porque no es evidente leyendo el código superficialmente y puede ahorrar tiempo en la próxima sesión que toque este dashboard:
+
+- **Iconografía:** Tabler Icons vía **webfont** (`@tabler/icons-webfont`, import global en `src/styles.css:4`), clases `class="ti ti-nombre"` — no es una librería de componentes Angular (no hay `lucide-angular` ni Material Icons acá). Conviven algunos SVG inline hechos a mano para botones puntuales.
+- **Gráficos:** todos con **Chart.js** (`chart.js` + `chartjs-plugin-datalabels`), registrado una sola vez con `Chart.register(...registerables, ChartDataLabels)` en el propio `dashboard.ts`. Cuatro charts en este componente: `renderAvanceChart()` (curva Programado/Real), `renderEficienciaChart()` (tendencia SPI Esperado/Logrado), `renderTiposChart()` (doughnut de distribución de estados) y `renderHistoricoChart()` (línea de tasa de cierre, dentro del modal de histórico de supervisor).
+- **Curva de avance y tendencia SPI comparten el mismo endpoint:** ambos (`avanceSemanal` y `eficienciaSpi`) vienen del único payload de `service.getDashboardV2(f)` (`ArquitecturaComercialService`) — no hay una llamada HTTP separada para el SPI. El único chart con endpoint propio es el histórico de supervisor (`getSupervisorHistorico(userId)`, se llama al abrir ese modal específico).
+- **No hay archivo de tema/config compartido para Chart.js.** Confirmado buscando en `shared/`: no existe. Cada dashboard del sistema (arquitectura-comercial, contabilidad, costs/adjudicaciones, mejora-continua/lessons, projects-dashboard, varios de ssoma, vecinos) hace su propio `Chart.register(...)` y hardcodea sus propios colores/opciones inline — es duplicación real entre ~10 dashboards, no una convención documentada. Si en algún momento se decide unificar (paleta, tooltips, fuente de labels), no hay un punto único para tocar: hay que ir dashboard por dashboard.
