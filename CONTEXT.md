@@ -4788,3 +4788,25 @@ Se mantiene **neutra y densa a propósito** — no replica el color de las tarje
 ### Estado final
 - `ng build` limpio: **0 errores**, mismos warnings preexistentes de terceros (CommonJS/ESM de `canvg`, `flatpickr`).
 - No verificado en navegador (sin acceso a sesión autenticada en este entorno) — pendiente de revisión visual del usuario.
+
+## Sesión 2026-07-26 (3) — Filtro de Proyecto adaptado a RESIDENTE en report-response-control
+
+Consumido el endpoint nuevo de backend `GET /api/v1/ResidentReportIncidence/assigned-projects` para que el filtro de Proyecto se adapte según cuántos proyectos tiene asignados el usuario RESIDENTE logueado (para otros roles, sin cambios: filtro visible con todos los proyectos, como antes).
+
+**Comportamiento por cantidad de proyectos asignados (solo aplica a `Roles.RESIDENTE`):**
+- **0 proyectos:** no se llama al `GetPaged` en absoluto. Se muestra un estado vacío específico ("No tenés proyectos asignados todavía. Contactá a un administrador."), distinto del "sin resultados" genérico de la tabla/tarjetas — reemplaza toolbar + tabla/tarjetas + paginador dentro del `page-container`.
+- **1 proyecto:** se oculta el filtro de Proyecto (trigger + chip) — no tiene sentido elegir entre una sola opción. El `GetPaged` se llama igual, sin `projectId` (el backend ya lo filtra solo).
+- **2+ proyectos:** el filtro se muestra normal, pero `app-search-select` lista solo esos proyectos (no los ~11 totales) — se reutiliza directamente la respuesta de `assigned-projects` como `projectOptions`, marcando `projectsLoaded = true` para que `abrirFiltros()` no pise esa lista con el catálogo completo.
+
+**Archivos clave:**
+- `core/services/residentReportIncidence.service.ts` — nuevo método `getAssignedProjects()` en el service existente del feature (no se creó un service nuevo).
+- `report-response-control.ts` — `ngOnInit` ramifica por rol; nuevo método privado `initResidente()`; nuevos campos `sinProyectosAsignados` y `mostrarFiltroProyecto`.
+- `report-response-control.html` — filter-trigger y chip condicionados a `mostrarFiltroProyecto`; nuevo bloque `@if (sinProyectosAsignados)` con el empty-state específico.
+
+**Excepción documentada a "1 acción = 1 HTTP":** `initResidente()` llama a `getAssignedProjects()` y, condicionalmente (solo si hay ≥1 proyecto), a `load()` (`GetPaged`) dentro del mismo `next()` — es inevitable porque el conteo de proyectos decide si corresponde llamar al segundo endpoint. Ambas llamadas tienen manejo de error independiente (no queda ningún subscribe sin `error:`). Aceptado explícitamente por el usuario en esta sesión; queda anotado en la memoria `arch-1-accion-1-http` como excepción conocida, pendiente de que backend combine ambos endpoints si se quiere eliminar.
+
+**Bug detectado y corregido en la misma sesión:** la primera versión no seteaba `loading = true` hasta que se disparaba el segundo HTTP (`load()`), así que durante la espera de `getAssignedProjects()` el usuario veía el empty-state genérico ("No hay informes para mostrar") en vez del skeleton, y recién después aparecía el skeleton real — un parpadeo visual incorrecto. Se corrigió seteando `loading = true` al principio de `initResidente()` y apagándolo también en el early-return de 0 proyectos y en el `error:` de `getAssignedProjects()` (antes quedaba colgado en `true` si esa llamada fallaba).
+
+### Estado final
+- `ng build` limpio: 0 errores, mismos warnings preexistentes de terceros.
+- No verificado en navegador — pendiente de revisión visual del usuario, en particular los 3 casos (0/1/2+ proyectos) con un usuario RESIDENTE real.
