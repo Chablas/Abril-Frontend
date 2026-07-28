@@ -22,24 +22,24 @@
       type="button"
       abrilBulkAction="default"
       (click)="aprobarBulk()"
-      [disabled]="!puedeDecidirSeleccion"
-      [title]="seleccionIncluyePropia ? 'No puedes aprobar tus propias salidas — deselecciona las tuyas' : null">
+      [disabled]="!puedeAprobarSeleccion"
+      [title]="aprobacionIncluyePropia ? 'No puedes aprobar tus propias salidas — deselecciona las tuyas' : null">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
       </svg>
-      Aprobar<span *ngIf="puedeDecidirSeleccion"> ({{ selectedPendientes.length }})</span>
+      Aprobar<span *ngIf="puedeAprobarSeleccion"> ({{ selectedPendientes.length }})</span>
     </button>
 
     <button
       type="button"
       abrilBulkAction="danger"
       (click)="rechazarBulk()"
-      [disabled]="!puedeDecidirSeleccion"
-      [title]="seleccionIncluyePropia ? 'No puedes rechazar tus propias salidas — deselecciona las tuyas' : null">
+      [disabled]="!puedeRechazarSeleccion"
+      [title]="rechazoIncluyePropia ? 'No puedes rechazar tus propias salidas — deselecciona las tuyas' : null">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>
       </svg>
-      Rechazar<span *ngIf="puedeDecidirSeleccion"> ({{ selectedPendientes.length }})</span>
+      Rechazar<span *ngIf="puedeRechazarSeleccion"> ({{ selectedRechazables.length }})</span>
     </button>
 
     <button
@@ -121,8 +121,8 @@
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('lugarDestino')">{{ sortDirOf('lugarDestino') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
-          <th class="cursor-pointer select-none" (click)="toggleSort('estadoAprobacion')" title="Ordenar por aprobación">
-            <span class="inline-flex items-center gap-1">Aprobación
+          <th class="cursor-pointer select-none" (click)="toggleSort('estadoAprobacion')" title="Ordenar por estado">
+            <span class="inline-flex items-center gap-1">Estado
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('estadoAprobacion')">{{ sortDirOf('estadoAprobacion') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
@@ -364,7 +364,7 @@
   <div class="flex gap-3">
     <div class="flex-1">
       <app-search-select
-        label="Aprobación"
+        label="Estado"
         [options]="estadoAprobacionOptions"
         valueField="value"
         displayField="label"

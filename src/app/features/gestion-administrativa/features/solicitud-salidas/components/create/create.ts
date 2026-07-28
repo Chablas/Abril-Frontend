@@ -215,13 +215,13 @@ export class SolicitudSalidaCreate implements OnInit {
   }
 
   /**
-   * El recordatorio de recuperación de horas solo aplica a motivos de hora exacta:
-   * aparece cuando al menos un trayecto tiene motivo ya elegido y de hora exacta
-   * (el motivo libre cuenta como exacta). Sin ningún motivo elegido no se muestra.
-   * El backend replica la regla multi-trayecto para omitirlo en los correos.
+   * El recordatorio de recuperación de horas solo aplica a motivos del catálogo de
+   * hora exacta: aparece cuando al menos un trayecto tiene un motivo del catálogo que
+   * NO es de hora estimada. El motivo libre (personalizado) queda excluido a propósito
+   * y nunca dispara el recordatorio. El backend replica la regla para omitirlo en los correos.
    */
   get mostrarRecordatorioRecuperacion(): boolean {
-    return this.trayectos.some((t) => this.motivoElegido(t) && !this.motivoEsHoraEstimada(t));
+    return this.trayectos.some((t) => t.motivoId != null && !this.motivoEsHoraEstimada(t));
   }
 
   /** Etiqueta de la hora de retorno según el motivo: estimada / exacta (neutra sin motivo aún). */

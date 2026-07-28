@@ -4,7 +4,7 @@
   <app-home-greeting [firstName]="firstName" [subtitle]="jobTitle ? jobTitle + ' · ' + todayCapitalized : todayCapitalized" />
 
   <!-- Novedades y comunicados (copia exacta de las tarjetas SOMOS ABRIL del boletín) + Centro de aprendizaje -->
-  <div class="grid gap-5 flex-1" [style.grid-template-columns]="puedeVerGuiasMejoraContinua ? '1.3fr 1fr' : '1fr'">
+  <div class="grid gap-5 flex-1" [style.grid-template-columns]="categorias.length ? '1.3fr 1fr' : '1fr'">
 
     <div class="rounded-2xl border p-5 pt-14" style="border-color:#ececec">
       <div class="flex items-center gap-2 mb-8" style="color:#16a34a">
@@ -22,10 +22,9 @@
       </div>
     </div>
 
-    <app-learning-guides
-      *ngIf="puedeVerGuiasMejoraContinua"
-      accentColor="#0F6E56"
-      [guias]="guiasMejoraContinua"
+    <app-learning-center
+      *ngIf="categorias.length"
+      [categorias]="categorias"
     />
   </div>
 

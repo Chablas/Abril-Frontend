@@ -1,0 +1,27 @@
+<div class="guides-panel">
+  <div class="guides-heading" [style.color]="defaultAccent">
+    <svg width="14" height="14" viewBox="0 0 24 24" [attr.fill]="defaultAccent"><path d="M8 5v14l11-7z"/></svg>
+    <span>{{ titulo }}</span>
+  </div>
+
+  <div class="guides-scroll">
+    <div class="guides-group" *ngFor="let cat of categorias">
+      <div class="group-name">{{ cat.nombre }}</div>
+
+      <div class="guides-grid">
+        <a *ngFor="let v of cat.videos" [href]="v.url" target="_blank" rel="noopener noreferrer" class="guide-card">
+          <div class="guide-thumb" [style.background]="v.img ? null : accent(cat) + '14'">
+            <img *ngIf="v.img" [src]="v.img" [alt]="v.titulo" loading="lazy" />
+            <span class="guide-play" [style.background]="accent(cat)">
+              <svg width="12" height="12" fill="#ffffff" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </span>
+          </div>
+          <div class="guide-info">
+            <span class="guide-title">{{ v.titulo }}</span>
+            <span class="guide-link" [style.color]="accent(cat)">Ver guía →</span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

@@ -358,7 +358,7 @@ export class GestionSalidas implements OnInit {
   // ── Acciones bulk: aprobar / rechazar ────────────────────────────────
   /** Aprueba en bloque las solicitudes seleccionadas que estén en estado Pendiente. */
   async aprobarBulk(): Promise<void> {
-    if (!this.puedeDecidirSeleccion) return;
+    if (!this.puedeAprobarSeleccion) return;
     const items = this.selectedPendientes;
     if (items.length === 0) return;
 
@@ -387,16 +387,19 @@ export class GestionSalidas implements OnInit {
     });
   }
 
-  /** Rechaza en bloque las solicitudes seleccionadas que estén en estado Pendiente. */
+  /**
+   * Rechaza en bloque las solicitudes seleccionadas que sean rechazables: pendientes, o aprobadas
+   * que aún no fueron rendidas. Nunca las propias (salvo Gerente) ni las ya rendidas.
+   */
   async rechazarBulk(): Promise<void> {
-    if (!this.puedeDecidirSeleccion) return;
-    const items = this.selectedPendientes;
+    if (!this.puedeRechazarSeleccion) return;
+    const items = this.selectedRechazables;
     if (items.length === 0) return;
 
     const result = await Swal.fire({
       icon: 'warning',
       title: `¿Rechazar ${items.length} solicitud(es)?`,
-      text: 'Se rechazarán todas las solicitudes pendientes seleccionadas.',
+      text: 'Se rechazarán las solicitudes seleccionadas que estén pendientes o aprobadas aún no rendidas.',
       showCancelButton: true,
       confirmButtonText: 'Rechazar',
       cancelButtonText: 'Cancelar',
@@ -482,23 +485,47 @@ export class GestionSalidas implements OnInit {
     return this.salidas.filter((s) => this.selectedIds.has(s.id));
   }
 
-  /** Seleccionadas en estado Pendiente (objetivo de Aprobar / Rechazar). */
+  /** Seleccionadas en estado Pendiente (objetivo de Aprobar). Solo lo pendiente se aprueba. */
   get selectedPendientes(): GestionSalidaListItemDto[] {
     return this.selectedSalidas.filter((s) => s.estadoAprobacion === 'Pendiente');
   }
 
   /**
-   * True si alguna pendiente seleccionada es propia y no decidible. Nadie aprueba/rechaza lo suyo
-   * (salvo Gerente), y si se mezcla una propia con otras, se bloquea toda la acción — hay que
+   * True si una salida puede rechazarse: está Pendiente, o ya fue Aprobada pero AÚN NO se rindió.
+   * El revisor puede revertir una aprobación mientras no exista la rendición; una vez rendida
+   * (Rendido) la aprobación queda firme. El backend re-valida esta misma regla.
+   */
+  private esRechazable(s: GestionSalidaListItemDto): boolean {
+    return s.estadoAprobacion === 'Pendiente'
+      || (s.estadoAprobacion === 'Aprobado' && s.estadoRendicion === 'No rendido');
+  }
+
+  /** Seleccionadas candidatas a rechazo (pendientes o aprobadas aún no rendidas). */
+  get selectedRechazables(): GestionSalidaListItemDto[] {
+    return this.selectedSalidas.filter((s) => this.esRechazable(s));
+  }
+
+  /**
+   * True si alguna candidata (a aprobar o rechazar) es propia y no decidible. Nadie decide lo suyo
+   * (salvo Gerente), y si se mezcla una propia con otras se bloquea toda la acción — hay que
    * deseleccionar la propia primero. El backend lo determina por fila (`puedeDecidir`) y lo re-valida.
    */
-  get seleccionIncluyePropia(): boolean {
+  get aprobacionIncluyePropia(): boolean {
     return this.selectedPendientes.some((s) => !s.puedeDecidir);
   }
 
-  /** True si se puede aprobar/rechazar la selección: hay pendientes y NINGUNA es propia. */
-  get puedeDecidirSeleccion(): boolean {
-    return this.selectedPendientes.length > 0 && !this.seleccionIncluyePropia;
+  get rechazoIncluyePropia(): boolean {
+    return this.selectedRechazables.some((s) => !s.puedeDecidir);
+  }
+
+  /** True si se puede aprobar la selección: hay pendientes y NINGUNA es propia. */
+  get puedeAprobarSeleccion(): boolean {
+    return this.selectedPendientes.length > 0 && !this.aprobacionIncluyePropia;
+  }
+
+  /** True si se puede rechazar la selección: hay rechazables y NINGUNA es propia. */
+  get puedeRechazarSeleccion(): boolean {
+    return this.selectedRechazables.length > 0 && !this.rechazoIncluyePropia;
   }
 
   /** Seleccionadas que pueden rendirse (aplican a Marcar como rendidas). */

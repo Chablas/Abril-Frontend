@@ -7,6 +7,8 @@ import Swal from 'sweetalert2';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { LoaderService } from '../../../../core/services/loader.service';
+import { LearningService } from '../../../../core/learning/learning.service';
+import { LearningVideoDto } from '../../../../core/learning/learning.model';
 
 type LoginTab = 'abril' | 'contratistas' | 'clinica';
 
@@ -17,15 +19,10 @@ type LoginTab = 'abril' | 'contratistas' | 'clinica';
   styleUrl: './login.css',
 })
 export class Login implements OnInit {
-  readonly tutorialVideos = [
-    { titulo: 'Activación de cuentas para contratistas', url: 'https://www.loom.com/share/aac2201e68a54a7bb5fb15deeb91f174' },
-    { titulo: 'Gestión de trabajadores, bajas y reingresos', url: 'https://www.loom.com/share/a9993b1550f7411f8895988900decccf' },
-    { titulo: 'Gestión de empresas', url: 'https://www.loom.com/share/d9a285cd5c0f4466988ebecc089f6b4c' },
-    { titulo: 'Activar nuevos proyectos', url: 'https://www.loom.com/share/e3f1e631086d41bca2ce8290b122e04d' },
-    { titulo: 'Ingreso de nuevos equipos y máquinas', url: 'https://www.loom.com/share/7a48bd8a143a4f90816aa98efbf1f05a' },
-    { titulo: 'Subir póliza SCTR y Vida Ley', url: 'https://www.loom.com/share/3513c6a50d2c4c86b92de2c26d780348' },
-    { titulo: 'Programar inducción y validar asistencia', url: 'https://www.loom.com/share/68e3ae6cccb147c988d2056accad707c' },
-  ];
+  /** Videos de contratistas del modal (se cargan del backend, superficie LOGIN). */
+  tutorialVideos: LearningVideoDto[] = [];
+  /** Evita volver a pedir los videos al backend cada vez que se reabre el modal. */
+  private tutorialesCargados = false;
 
   token!: string;
   form!: FormGroup;
@@ -46,10 +43,12 @@ export class Login implements OnInit {
     private microsoftAuthService: MicrosoftAuthService,
     private cdr: ChangeDetectorRef,
     private loaderService: LoaderService,
+    private learningService: LearningService,
   ) {}
 
   ngOnInit(): void {
     this.token = this.route.snapshot.queryParamMap.get('token') ?? '';
+
     this.form = this.fb.group({
       email: ['', Validators.required],
       password: ['', Validators.required],
@@ -66,6 +65,32 @@ export class Login implements OnInit {
 
   toggleTutoriales(): void {
     this.mostrarTutoriales = !this.mostrarTutoriales;
+    // App zoneless: forzamos el refresco para que el modal abra/cierre sin un click extra.
+    this.cdr.detectChanges();
+    // Los videos se traen recién al abrir el modal (no bloquea el login), y solo una vez.
+    if (this.mostrarTutoriales && !this.tutorialesCargados) {
+      this.cargarTutoriales();
+    }
+  }
+
+  /** Carga los videos tutoriales bajo demanda al abrir el modal, con spinner global. */
+  private cargarTutoriales(): void {
+    this.loaderService.show();
+    // Se aplanan los grupos: en el login solo existe la categoría de contratistas.
+    this.learningService.getLogin().subscribe({
+      next: (cats) => {
+        this.tutorialVideos = cats.flatMap((c) => c.videos);
+        this.tutorialesCargados = true;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.tutorialVideos = [];
+        this.tutorialesCargados = true;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   toggleContratistaPassword(): void {

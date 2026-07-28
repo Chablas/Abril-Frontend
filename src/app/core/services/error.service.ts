@@ -47,11 +47,16 @@ export class ErrorService {
       return;
     }
 
+    // 4xx — el backend rechazó la acción a propósito (validación, permisos, conflicto…). No es una
+    // falla del sistema: el mensaje ya viene explicado desde el backend (AbrilException) y el usuario
+    // puede corregirlo. Se muestra como advertencia (ícono naranja + botón verde) para que no lo
+    // confunda con un error grave. El ícono rojo de "Error" se reserva para fallas reales (5xx).
     if (err.status >= 400 && err.status < 500) {
       Swal.fire({
-        icon: 'error',
-        title: 'Error',
-        text: err.error?.message ?? 'Ocurrió un error.',
+        icon: 'warning',
+        title: 'Atención',
+        text: err.error?.message ?? 'No se pudo completar la acción.',
+        confirmButtonColor: '#64BC04',
       });
       return;
     }

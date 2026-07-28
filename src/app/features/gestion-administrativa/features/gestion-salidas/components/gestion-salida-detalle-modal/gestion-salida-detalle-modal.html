@@ -16,7 +16,7 @@
         <div class="text-gray-800">{{ detalle.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</div>
       </div>
       <div>
-        <div class="text-xs text-gray-500 uppercase">Aprobación</div>
+        <div class="text-xs text-gray-500 uppercase">Estado</div>
         <app-status-badge
           [text]="detalle.estadoAprobacion"
           [bgColor]="aprobacionColors(detalle.estadoAprobacion).bg"

@@ -116,7 +116,8 @@
             </button>
         </div>
 
-        <!-- Videos tutoriales: enlace compacto que abre un modal (no empuja el layout) -->
+        <!-- Videos tutoriales: enlace compacto que abre un modal (no empuja el layout).
+             Siempre visible; los videos se traen recién al abrir el modal. -->
         <div class="mt-3 pt-2.5 border-t border-[#eef3f8] text-center">
             <button type="button" class="tutoriales-toggle" (click)="toggleTutoriales()">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#8bc53f" viewBox="0 0 24 24">
@@ -173,6 +174,10 @@
                     <span class="tutorial-link">Ver tutorial →</span>
                 </div>
             </a>
+            <!-- Ya se cargaron los videos y no hay ninguno configurado. -->
+            <p *ngIf="!tutorialVideos.length" class="text-sm text-[#7d93a8] text-center m-0 py-4">
+                No hay videos tutoriales disponibles por ahora.
+            </p>
         </div>
     </div>
 </div>
