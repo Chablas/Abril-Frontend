@@ -1,8 +1,6 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { LearningService } from '../../../core/learning/learning.service';
-import { LearningCategoryDto } from '../../../core/learning/learning.model';
 import { HomeGreeting } from '../../../shared/components/home-greeting/home-greeting';
 import { HighlightCard } from '../../../shared/components/highlight-card/highlight-card';
 
@@ -43,23 +41,15 @@ export class Dashboard implements OnInit {
   readonly novedades = NOVEDADES;
 
   /**
-   * Cuarta tarjeta de novedades: acceso al Centro de aprendizaje. Solo se muestra
-   * si el usuario tiene al menos un grupo visible (misma condición que antes usaba
-   * el panel de la derecha), para no llevar a una página vacía.
+   * Cuarta tarjeta de novedades: acceso al Centro de aprendizaje. Se muestra siempre;
+   * la propia página /centro-aprendizaje resuelve qué grupos ve el usuario (incluidos
+   * los grupos sin videos) o muestra su estado vacío si no ve ninguno.
    */
   readonly centroAprendizaje: Highlight = {
     titulo: 'CENTRO DE APRENDIZAJE',
     descripcion: '<strong>Videos y guías</strong> para dominar cada módulo a tu ritmo.',
     img: '/images/inicio/perro-centro-de-aprendizaje.png',
   };
-
-  /**
-   * Grupos del Centro de aprendizaje, ya filtrados por rol en el backend (una
-   * categoría es visible si es "pública interna" o si el usuario tiene alguno de
-   * sus roles). Si el usuario no puede ver ningún grupo, la lista queda vacía y el
-   * panel no se muestra.
-   */
-  categorias: LearningCategoryDto[] = [];
 
   /** Nombre de pila (primera palabra del displayName guardado en el login). */
   firstName = '';
@@ -72,11 +62,7 @@ export class Dashboard implements OnInit {
     month: 'long',
   });
 
-  constructor(
-    private learningService: LearningService,
-    private router: Router,
-    private cdr: ChangeDetectorRef,
-  ) {}
+  constructor(private router: Router) {}
 
   ngOnInit(): void {
     if (typeof localStorage !== 'undefined') {
@@ -84,20 +70,6 @@ export class Dashboard implements OnInit {
       this.firstName = (user?.displayName ?? '').split(' ')[0] || '';
       this.jobTitle = user?.jobTitle ?? '';
     }
-
-    // Carga silenciosa: es contenido complementario de la portada, no debe tapar
-    // la pantalla con el spinner global. Si falla, simplemente no se muestra el panel.
-    // App zoneless: forzamos el refresco para que el panel aparezca sin un click extra.
-    this.learningService.getInicio().subscribe({
-      next: (data) => {
-        this.categorias = data ?? [];
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.categorias = [];
-        this.cdr.detectChanges();
-      },
-    });
   }
 
   irAlBoletin(): void {

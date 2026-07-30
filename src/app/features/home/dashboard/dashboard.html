@@ -11,12 +11,7 @@
       <svg width="14" height="14" viewBox="0 0 24 24" fill="#16a34a"><path d="M8 5v14l11-7z"/></svg>
       <span class="text-[11px] font-bold uppercase tracking-[0.06em]">Novedades y comunicados</span>
     </div>
-    <div
-      class="grid gap-6 pb-4"
-      [ngClass]="categorias.length
-        ? 'grid-cols-4 max-[1200px]:grid-cols-2 max-[640px]:grid-cols-1'
-        : 'grid-cols-3 max-[900px]:grid-cols-1'"
-    >
+    <div class="grid gap-6 pb-4 grid-cols-4 max-[1200px]:grid-cols-2 max-[640px]:grid-cols-1">
       <app-highlight-card
         *ngFor="let h of novedades"
         [titulo]="h.titulo"
@@ -25,7 +20,6 @@
         (cta)="irAlBoletin()"
       />
       <app-highlight-card
-        *ngIf="categorias.length"
         [titulo]="centroAprendizaje.titulo"
         [descripcion]="centroAprendizaje.descripcion"
         [img]="centroAprendizaje.img"
