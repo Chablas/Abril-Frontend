@@ -14,7 +14,7 @@ import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { GthNuevaSolicitud } from './components/nueva-solicitud/nueva-solicitud';
-import { GthConfiguracionCorreos } from '../shared/configuracion-correos/configuracion-correos';
+import { ConfigCorreoOpcion, GthConfiguracionCorreos } from '../shared/configuracion-correos/configuracion-correos';
 import { GthSeguimiento } from './components/seguimiento/seguimiento';
 import { GthRevisionLongList } from './components/revision-long-list/revision-long-list';
 import { SolicitudPersonalService } from './services/solicitud-personal.service';
@@ -39,12 +39,44 @@ import { GestionCandidatoCard, SolicitudVacanteListItem } from './dtos/solicitud
     GthRevisionLongList,
   ],
   templateUrl: './solicitud-personal.html',
-  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
+  styles: [`
+    :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    /* La tabla no scrollea internamente: crece a su altura natural y el scroll
+       queda en .page-container (toda la página actual), como en Lecciones
+       Aprendidas. Override local (solo este componente por encapsulación) — la
+       clase global .abril-table-wrap sigue con scroll interno para las demás
+       páginas. */
+    .abril-table-wrap { flex: 0 0 auto; overflow: visible; }
+  `],
 })
 export class GthSolicitudPersonal implements OnInit {
   anioActual = new Date().getFullYear();
   showModal = false;
   showConfig = false;
+
+  /**
+   * Correos configurables desde la vista del solicitante (independientes entre sí):
+   *   - `solicitud`           → correo que se envía a GTH al registrar una nueva solicitud.
+   *   - `decision-long-list`  → correo que se envía a GTH al enviar la decisión de la long list.
+   */
+  readonly configCorreoOpciones: ConfigCorreoOpcion[] = [
+    {
+      tipo: 'solicitud',
+      label: 'Nueva solicitud',
+      intro:
+        'Define a quién se le envía el correo cuando registras una nueva solicitud de personal ' +
+        '(va a GTH). Los principales van en «Para» y las copias en «CC». Cámbialos aquí para ' +
+        'pruebas y en producción sin necesidad de volver a desplegar.',
+    },
+    {
+      tipo: 'decision-long-list',
+      label: 'Decisión de long list',
+      intro:
+        'Define a quién de GTH se le notifica cuando envías tu decisión sobre la long list ' +
+        '(candidatos aprobados/rechazados). Los principales van en «Para» y las copias en «CC». ' +
+        'Es independiente del correo de nueva solicitud.',
+    },
+  ];
 
   /** Requerimiento cuyo seguimiento se está viendo (null = modal cerrado). */
   seguimientoId: number | null = null;

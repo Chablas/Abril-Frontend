@@ -9,6 +9,16 @@
   @if (revision) {
     <div class="flex flex-col gap-[14px]">
 
+      <!-- ── Cabecera: puesto + contadores de decisión ─────────────────── -->
+      <div class="flex items-center justify-between gap-[10px] flex-wrap">
+        <span class="text-[13.5px] font-bold" style="color:var(--color-abril-logo-blue)">
+          Long list / CVs · {{ revision.puesto | titleCase }}
+        </span>
+        <span class="text-[12.5px] font-medium text-gray-500">
+          {{ aprobados }} aprobados · {{ rechazados }} rechazados
+        </span>
+      </div>
+
       <!-- ── Instrucción ──────────────────────────────────────────────── -->
       <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[11px]"
            style="background:var(--color-abril-logo-blue-light);border:1px solid #a9c9e6">
@@ -63,21 +73,31 @@
                       </div>
                     </div>
                     <app-status-badge
-                      [text]="c.estadoNombre"
-                      [bgColor]="estadoColors(c.estadoCodigo).bg"
-                      [textColor]="estadoColors(c.estadoCodigo).text" />
+                      [text]="estadoEfectivo(c).nombre"
+                      [bgColor]="estadoColors(estadoEfectivo(c).codigo).bg"
+                      [textColor]="estadoColors(estadoEfectivo(c).codigo).text" />
                   </div>
 
-                  <!-- Aprobar / Rechazar (aún sin funcionalidad) -->
+                  <!-- Aprobar / Rechazar: funcionan como toggle (checkbox) por candidato -->
                   <div class="grid grid-cols-2 gap-[10px] mt-[11px]">
-                    <button type="button" (click)="$event.stopPropagation()"
-                      class="h-[34px] rounded-[7px] border text-[12.5px] font-semibold text-emerald-700 bg-white hover:bg-emerald-50 cursor-pointer transition-colors"
-                      style="border-color:#a7f3d0">
+                    <button type="button" (click)="$event.stopPropagation(); aprobar(c)"
+                      class="h-[34px] rounded-[7px] border text-[12.5px] font-semibold cursor-pointer transition-colors flex items-center justify-center gap-[6px]"
+                      [ngClass]="esAprobado(c)
+                        ? 'text-white border-transparent'
+                        : 'text-emerald-700 bg-white hover:bg-emerald-50'"
+                      [style.background]="esAprobado(c) ? '#16A34A' : ''"
+                      [style.border-color]="esAprobado(c) ? '#16A34A' : '#a7f3d0'">
+                      @if (esAprobado(c)) { <i class="ti ti-check text-[15px]"></i> }
                       Aprobar
                     </button>
-                    <button type="button" (click)="$event.stopPropagation()"
-                      class="h-[34px] rounded-[7px] border text-[12.5px] font-semibold text-red-600 bg-white hover:bg-red-50 cursor-pointer transition-colors"
-                      style="border-color:#fecaca">
+                    <button type="button" (click)="$event.stopPropagation(); rechazar(c)"
+                      class="h-[34px] rounded-[7px] border text-[12.5px] font-semibold cursor-pointer transition-colors flex items-center justify-center gap-[6px]"
+                      [ngClass]="esRechazado(c)
+                        ? 'text-white border-transparent'
+                        : 'text-red-600 bg-white hover:bg-red-50'"
+                      [style.background]="esRechazado(c) ? '#DC2626' : ''"
+                      [style.border-color]="esRechazado(c) ? '#DC2626' : '#fecaca'">
+                      @if (esRechazado(c)) { <i class="ti ti-x text-[15px]"></i> }
                       Rechazar
                     </button>
                   </div>
@@ -139,7 +159,10 @@
                 </div>
                 <div class="rounded-[8px] border px-[12px] py-[10px]" style="border-color:var(--color-abril-border)">
                   <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Estado</p>
-                  <p class="text-[14px] font-bold text-gray-800 mt-[4px]">{{ seleccionado.estadoNombre }}</p>
+                  <p class="text-[14px] font-bold mt-[4px]"
+                     [style.color]="estadoColors(estadoEfectivo(seleccionado).codigo).text">
+                    {{ estadoEfectivo(seleccionado).nombre }}
+                  </p>
                 </div>
               </div>
 
@@ -159,17 +182,20 @@
     </div>
   }
 
-  <!-- Footer: Cerrar + Enviar decisión (aún sin funcionalidad). -->
+  <!-- Footer: Cerrar + Enviar decisión (habilitado cuando todos están decididos). -->
   <div modalFooter class="w-full flex justify-between items-center gap-[12px]">
     <button type="button" (click)="closeModal.emit()"
       class="h-[36px] px-[22px] rounded-[7px] text-[13px] font-medium text-gray-600 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
       Cerrar
     </button>
-    <button type="button" disabled
-      class="h-[38px] px-[20px] rounded-[7px] text-[13px] font-semibold text-white opacity-50 cursor-not-allowed"
+    <button type="button"
+      class="h-[38px] px-[20px] rounded-[7px] text-[13px] font-semibold text-white transition-opacity"
+      [ngClass]="puedeEnviar ? 'cursor-pointer hover:opacity-90' : 'opacity-50 cursor-not-allowed'"
       style="background:var(--color-abril-logo-blue)"
-      title="El envío de la decisión de la long list se habilitará más adelante.">
-      Enviar decisión de long list a GTH
+      [disabled]="!puedeEnviar"
+      [title]="todosDecididos ? 'Enviar tu decisión a GTH' : 'Aprueba o rechaza a todos los candidatos para habilitar el envío.'"
+      (click)="enviarDecision()">
+      {{ enviando ? 'Enviando…' : 'Enviar decisión de long list a GTH' }}
     </button>
   </div>
 

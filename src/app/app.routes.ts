@@ -4,6 +4,7 @@ import { Boletin } from './features/home/boletin/boletin';
 import { Layout } from './shared/components/layout/layout';
 import { authGuard } from './core/guards/auth.guard';
 import { boletinGuard } from './core/guards/boletin.guard';
+import { rootRedirect } from './core/guards/root-redirect';
 
 export const routes: Routes = [
   {
@@ -19,7 +20,7 @@ export const routes: Routes = [
     canActivate: [boletinGuard],
   },
 
-  { path: '', pathMatch: 'full', redirectTo: 'boletin' },
+  { path: '', pathMatch: 'full', redirectTo: rootRedirect },
 
   {
     path: '',

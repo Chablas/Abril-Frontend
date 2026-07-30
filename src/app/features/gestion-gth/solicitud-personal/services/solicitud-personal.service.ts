@@ -3,6 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
+  CandidatoDecision,
+  LongListDecisionResult,
   ReclutamientoFormDataDto,
   RevisionLongList,
   Seguimiento,
@@ -43,6 +45,21 @@ export class SolicitudPersonalService {
   getRevisionLongList(requerimientoId: number): Observable<RevisionLongList> {
     return this.http.get<RevisionLongList>(
       `${this.apiUrl}/requerimiento/${requerimientoId}/long-list/revision`,
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Registra la decisión del solicitante sobre la long list (aprobar/rechazar por candidato).
+   * El backend avanza el requerimiento y notifica a GTH por correo.
+   */
+  enviarDecisionLongList(
+    requerimientoId: number,
+    decisiones: CandidatoDecision[],
+  ): Observable<LongListDecisionResult> {
+    return this.http.post<LongListDecisionResult>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/long-list/decision`,
+      { decisiones },
       { headers: this.headers },
     );
   }

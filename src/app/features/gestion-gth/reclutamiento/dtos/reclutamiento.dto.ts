@@ -110,4 +110,16 @@ export interface DetalleRequerimientoGth {
   prioridades: Opcion[];
   razonesSociales: RazonSocialOpcion[];
   canales: CanalPublicacion[];
+  /**
+   * Candidatos aprobados por el solicitante (solo relevante en la fase LONG_LIST_APROBADA).
+   * Alimentan la vista "Long list aprobada" de GTH. Vacío en fases anteriores.
+   */
+  candidatosAprobados: CandidatoAprobado[];
+}
+
+/** Candidato aprobado por el solicitante, como lo ve GTH en la fase "Long list aprobada". */
+export interface CandidatoAprobado {
+  candidatoId: number;
+  nombre: string;
+  puesto: string | null;
 }

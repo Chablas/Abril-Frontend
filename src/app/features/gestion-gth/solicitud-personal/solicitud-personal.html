@@ -190,9 +190,8 @@
 <!-- Configuración de destinatarios del correo de nueva solicitud (feature gestion-gth.reclutamiento.configuracion) -->
 <app-gth-configuracion-correos
   *ngIf="showConfig && puedeConfigurar"
-  tipo="solicitud"
-  titulo="CONFIGURACIÓN DEL CORREO DE SOLICITUDES"
-  intro="Define a quién se le envía el correo cuando se registra una nueva solicitud de personal. Los principales van en «Para» y las copias en «CC». Cámbialos aquí para pruebas y en producción sin necesidad de volver a desplegar."
+  [opciones]="configCorreoOpciones"
+  titulo="CONFIGURACIÓN DE CORREOS DE RECLUTAMIENTO"
   (closeModal)="showConfig = false">
 </app-gth-configuracion-correos>
 
@@ -207,6 +206,7 @@
 <app-gth-revision-long-list
   *ngIf="revisionId !== null"
   [requerimientoId]="revisionId"
+  (decided)="load()"
   (closeModal)="cerrarRevision()">
 </app-gth-revision-long-list>
 
