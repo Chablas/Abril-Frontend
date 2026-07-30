@@ -4,7 +4,6 @@ import { Router } from '@angular/router';
 import { LearningService } from '../../../core/learning/learning.service';
 import { LearningCategoryDto } from '../../../core/learning/learning.model';
 import { HomeGreeting } from '../../../shared/components/home-greeting/home-greeting';
-import { LearningCenter } from '../../../shared/components/learning-center/learning-center';
 import { HighlightCard } from '../../../shared/components/highlight-card/highlight-card';
 
 interface Highlight {
@@ -36,12 +35,23 @@ const NOVEDADES: Highlight[] = [
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, HomeGreeting, LearningCenter, HighlightCard],
+  imports: [CommonModule, HomeGreeting, HighlightCard],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.css',
 })
 export class Dashboard implements OnInit {
   readonly novedades = NOVEDADES;
+
+  /**
+   * Cuarta tarjeta de novedades: acceso al Centro de aprendizaje. Solo se muestra
+   * si el usuario tiene al menos un grupo visible (misma condición que antes usaba
+   * el panel de la derecha), para no llevar a una página vacía.
+   */
+  readonly centroAprendizaje: Highlight = {
+    titulo: 'CENTRO DE APRENDIZAJE',
+    descripcion: '<strong>Videos y guías</strong> para dominar cada módulo a tu ritmo.',
+    img: '/images/inicio/perro-centro-de-aprendizaje.png',
+  };
 
   /**
    * Grupos del Centro de aprendizaje, ya filtrados por rol en el backend (una
@@ -92,6 +102,10 @@ export class Dashboard implements OnInit {
 
   irAlBoletin(): void {
     this.router.navigate(['/boletin']);
+  }
+
+  irAlCentroAprendizaje(): void {
+    this.router.navigate(['/centro-aprendizaje']);
   }
 
   get todayCapitalized(): string {

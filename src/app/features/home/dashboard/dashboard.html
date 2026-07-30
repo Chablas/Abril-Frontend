@@ -3,29 +3,35 @@
   <!-- Saludo -->
   <app-home-greeting [firstName]="firstName" [subtitle]="jobTitle ? jobTitle + ' · ' + todayCapitalized : todayCapitalized" />
 
-  <!-- Novedades y comunicados (copia exacta de las tarjetas SOMOS ABRIL del boletín) + Centro de aprendizaje -->
-  <div class="grid gap-5 flex-1" [style.grid-template-columns]="categorias.length ? '1.3fr 1fr' : '1fr'">
-
-    <div class="rounded-2xl border p-5 pt-14" style="border-color:#ececec">
-      <div class="flex items-center gap-2 mb-8" style="color:#16a34a">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="#16a34a"><path d="M8 5v14l11-7z"/></svg>
-        <span class="text-[11px] font-bold uppercase tracking-[0.06em]">Novedades y comunicados</span>
-      </div>
-      <div class="grid grid-cols-3 gap-6 pb-4 max-[900px]:grid-cols-1">
-        <app-highlight-card
-          *ngFor="let h of novedades"
-          [titulo]="h.titulo"
-          [descripcion]="h.descripcion"
-          [img]="h.img"
-          (cta)="irAlBoletin()"
-        />
-      </div>
+  <!-- Novedades y comunicados (copia exacta de las tarjetas SOMOS ABRIL del boletín).
+       El Centro de aprendizaje ahora es la 4ta tarjeta (antes iba en una columna a la
+       derecha) y lleva a su propia página /centro-aprendizaje. -->
+  <div class="rounded-2xl border p-5 pt-14 flex-1" style="border-color:#ececec">
+    <div class="flex items-center gap-2 mb-8" style="color:#16a34a">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="#16a34a"><path d="M8 5v14l11-7z"/></svg>
+      <span class="text-[11px] font-bold uppercase tracking-[0.06em]">Novedades y comunicados</span>
     </div>
-
-    <app-learning-center
-      *ngIf="categorias.length"
-      [categorias]="categorias"
-    />
+    <div
+      class="grid gap-6 pb-4"
+      [ngClass]="categorias.length
+        ? 'grid-cols-4 max-[1200px]:grid-cols-2 max-[640px]:grid-cols-1'
+        : 'grid-cols-3 max-[900px]:grid-cols-1'"
+    >
+      <app-highlight-card
+        *ngFor="let h of novedades"
+        [titulo]="h.titulo"
+        [descripcion]="h.descripcion"
+        [img]="h.img"
+        (cta)="irAlBoletin()"
+      />
+      <app-highlight-card
+        *ngIf="categorias.length"
+        [titulo]="centroAprendizaje.titulo"
+        [descripcion]="centroAprendizaje.descripcion"
+        [img]="centroAprendizaje.img"
+        (cta)="irAlCentroAprendizaje()"
+      />
+    </div>
   </div>
 
 </div>

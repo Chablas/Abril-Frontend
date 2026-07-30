@@ -29,6 +29,13 @@ export const routes: Routes = [
       { path: 'inicio', component: Dashboard },
 
       {
+        path: 'centro-aprendizaje',
+        loadComponent: () =>
+          import('./features/home/centro-aprendizaje/centro-aprendizaje')
+          .then(m => m.CentroAprendizaje)
+      },
+
+      {
         path: 'security',
         loadChildren: () =>
           import('./features/security/seguridad-module')
