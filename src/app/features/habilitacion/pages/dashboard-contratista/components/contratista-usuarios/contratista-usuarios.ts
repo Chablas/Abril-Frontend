@@ -312,6 +312,27 @@ export class ContratistaUsuarios implements OnInit {
   }
 
   toggleActivar(u: ContratistaUsuarioDto): void {
+    // Un usuario con scope "Por proyecto" no se puede activar si no tiene ningún
+    // proyecto asignado a nivel de login: el backend lo rechaza con el mensaje
+    // "Debe seleccionar al menos un proyecto", que no le dice al usuario qué hacer.
+    // Detectamos el caso aquí y lo guiamos a usar "Editar" (columna Acciones) para
+    // asignarle al menos un proyecto antes de poder activarlo.
+    if (!u.activo && u.scope === 'POR_PROYECTO' && (u.proyectoIds?.length ?? 0) === 0) {
+      Swal.fire({
+        icon: 'info',
+        title: 'Primero asígnale un proyecto',
+        html:
+          `Este usuario tiene acceso <strong>“Por proyecto”</strong> pero todavía no tiene ` +
+          `ningún proyecto asignado, por eso no se puede activar.<br><br>` +
+          `Presiona el botón <strong>“Editar”</strong> de la columna <strong>Acciones</strong> ` +
+          `(en la fila de este usuario), asígnale al menos un proyecto y guarda. ` +
+          `Luego podrás activarlo.`,
+        confirmButtonText: 'Entendido',
+        confirmButtonColor: '#64bc04',
+      });
+      return;
+    }
+
     const accion = u.activo ? 'desactivar' : 'activar';
     Swal.fire({
       icon: 'question',
