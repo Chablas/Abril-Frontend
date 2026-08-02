@@ -34,15 +34,24 @@
           <option value="CON_RETRASO">Con retraso</option>
           <option value="SIN_ACTIVIDADES">Sin actividades</option>
         </select>
-        <button class="btn-primary" (click)="buscar()">Buscar</button>
-        <button class="btn-ghost" (click)="limpiar()">Limpiar</button>
+        <button class="btn-primary" (click)="buscar()">
+          <i class="ti ti-search mr-1"></i> Buscar
+        </button>
+        <button class="btn-ghost" (click)="limpiar()">
+          <i class="ti ti-rotate-2 mr-1"></i> Limpiar
+        </button>
       </div>
     </div>
-    <span class="fecha-actual">{{ fechaActual | date:"EEEE, d 'de' MMMM 'de' yyyy" }}</span>
+    <div class="fecha-badge">
+      <i class="ti ti-calendar-event mr-1.5 opacity-70"></i>
+      <span>{{ fechaActual | date:"EEEE, d 'de' MMMM 'de' yyyy" }}</span>
+    </div>
   </div>
 
   <!-- ERROR -->
-  <div *ngIf="errorMsg" class="error-banner">{{ errorMsg }}</div>
+  <div *ngIf="errorMsg" class="error-banner">
+    <i class="ti ti-alert-triangle mr-2"></i> {{ errorMsg }}
+  </div>
 
   <!-- KPI SKELETON -->
   <div class="kpi-grid" *ngIf="loading">
@@ -54,40 +63,102 @@
 
   <!-- KPI DATA -->
   <div class="kpi-grid" *ngIf="!loading && kpis">
+    <!-- TOTAL PROYECTOS -->
     <div class="kpi-card" style="border-top-color: #1E3A5F">
-      <span class="kpi-label">TOTAL PROYECTOS</span>
+      <div class="kpi-header">
+        <span class="kpi-label">TOTAL PROYECTOS</span>
+        <div class="kpi-icon-box" style="background: rgba(30, 58, 95, 0.08); color: #1E3A5F">
+          <i class="ti ti-building-community"></i>
+        </div>
+      </div>
       <span class="kpi-value" style="color: #1E3A5F">{{ kpis.totalProyectos }}</span>
     </div>
+
+    <!-- AVANCE PROMEDIO -->
     <div class="kpi-card" style="border-top-color: #2E6DB4">
-      <span class="kpi-label">AVANCE PROMEDIO</span>
+      <div class="kpi-header">
+        <span class="kpi-label">AVANCE PROMEDIO</span>
+        <div class="kpi-icon-box" style="background: rgba(46, 109, 180, 0.08); color: #2E6DB4">
+          <i class="ti ti-chart-line"></i>
+        </div>
+      </div>
       <span class="kpi-value" style="color: #2E6DB4">{{ kpis.porcentajeAvancePromedio }}%</span>
     </div>
+
+    <!-- PROYECTOS AL DÍA -->
     <div class="kpi-card" style="border-top-color: #1B6B3A">
-      <span class="kpi-label">PROYECTOS AL DÍA</span>
+      <div class="kpi-header">
+        <span class="kpi-label">PROYECTOS AL DÍA</span>
+        <div class="kpi-icon-box" style="background: rgba(27, 107, 58, 0.08); color: #1B6B3A">
+          <i class="ti ti-circle-check"></i>
+        </div>
+      </div>
       <span class="kpi-value" style="color: #1B6B3A">{{ kpis.proyectosAlDia }}</span>
     </div>
+
+    <!-- CON RETRASO -->
     <div class="kpi-card" style="border-top-color: #C0392B">
-      <span class="kpi-label">CON RETRASO</span>
+      <div class="kpi-header">
+        <span class="kpi-label">CON RETRASO</span>
+        <div class="kpi-icon-box" style="background: rgba(192, 57, 43, 0.08); color: #C0392B">
+          <i class="ti ti-alert-triangle"></i>
+        </div>
+      </div>
       <span class="kpi-value" style="color: #C0392B">{{ kpis.proyectosConRetraso }}</span>
     </div>
+
+    <!-- SIN ACTIVIDADES -->
     <div class="kpi-card" style="border-top-color: #D97706">
-      <span class="kpi-label">SIN ACTIVIDADES</span>
+      <div class="kpi-header">
+        <span class="kpi-label">SIN ACTIVIDADES</span>
+        <div class="kpi-icon-box" style="background: rgba(217, 119, 6, 0.08); color: #D97706">
+          <i class="ti ti-folder-off"></i>
+        </div>
+      </div>
       <span class="kpi-value" style="color: #D97706">{{ kpis.proyectosSinActividades }}</span>
     </div>
+
+    <!-- ACTIVIDADES VENCIDAS -->
     <div class="kpi-card" style="border-top-color: #C0392B">
-      <span class="kpi-label">ACTIVIDADES VENCIDAS</span>
+      <div class="kpi-header">
+        <span class="kpi-label">ACTIVIDADES VENCIDAS</span>
+        <div class="kpi-icon-box" style="background: rgba(192, 57, 43, 0.08); color: #C0392B">
+          <i class="ti ti-clock-exclamation"></i>
+        </div>
+      </div>
       <span class="kpi-value" style="color: #C0392B">{{ kpis.actividadesVencidas }}</span>
     </div>
+
+    <!-- CULMINADAS ESTA SEMANA -->
     <div class="kpi-card" style="border-top-color: #1B6B3A">
-      <span class="kpi-label">CULMINADAS ESTA SEMANA</span>
+      <div class="kpi-header">
+        <span class="kpi-label">CULMINADAS ESTA SEMANA</span>
+        <div class="kpi-icon-box" style="background: rgba(27, 107, 58, 0.08); color: #1B6B3A">
+          <i class="ti ti-calendar-check"></i>
+        </div>
+      </div>
       <span class="kpi-value" style="color: #1B6B3A">{{ kpis.actividadesCulminadasEstaSemana }}</span>
     </div>
+
+    <!-- CULMINADAS ESTE MES -->
     <div class="kpi-card" style="border-top-color: #2E6DB4">
-      <span class="kpi-label">CULMINADAS ESTE MES</span>
+      <div class="kpi-header">
+        <span class="kpi-label">CULMINADAS ESTE MES</span>
+        <div class="kpi-icon-box" style="background: rgba(46, 109, 180, 0.08); color: #2E6DB4">
+          <i class="ti ti-calendar-stats"></i>
+        </div>
+      </div>
       <span class="kpi-value" style="color: #2E6DB4">{{ kpis.actividadesCulminadasEsteMes }}</span>
     </div>
+
+    <!-- SPI PROMEDIO -->
     <div class="kpi-card" [style.border-top-color]="spiColor(spiPromedio, '')">
-      <span class="kpi-label">SPI PROMEDIO</span>
+      <div class="kpi-header">
+        <span class="kpi-label">SPI PROMEDIO</span>
+        <div class="kpi-icon-box" [style.background]="spiColor(spiPromedio, '') + '14'" [style.color]="spiColor(spiPromedio, '')">
+          <i class="ti ti-chart-dots"></i>
+        </div>
+      </div>
       <span class="kpi-value" [style.color]="spiColor(spiPromedio, '')">{{ spiPromedio | number:'1.2-2' }}</span>
     </div>
   </div>
@@ -108,8 +179,8 @@
       <span class="table-header-legend">ACTIVIDADES: TOTAL / CULMINADAS / VENCIDAS</span>
     </div>
 
-    <div class="table-wrapper">
-      <table class="proyectos-table">
+    <div class="abril-table-wrap">
+      <table class="abril-table proyectos-table">
         <thead>
           <tr>
             <th>#</th>
@@ -120,12 +191,13 @@
             <th>SPI</th>
             <th>ESTADO</th>
             <th>SEMÁFORO</th>
+            <th class="w-10"></th>
           </tr>
         </thead>
         <tbody>
           <tr
             *ngFor="let p of proyectos; let i = index"
-            class="table-row"
+            class="table-row group"
             [class.row-retraso]="p.estado === 'CON_RETRASO'"
             (click)="irAProyecto(p.projectId)"
           >
@@ -184,9 +256,15 @@
                 "
               ></span>
             </td>
+            <td class="col-nav-arrow">
+              <i class="ti ti-chevron-right row-arrow"></i>
+            </td>
           </tr>
           <tr *ngIf="proyectos.length === 0">
-            <td colspan="8" class="empty-row">No hay proyectos para los filtros seleccionados.</td>
+            <td colspan="9" class="empty-row">
+              <i class="ti ti-search-off text-xl block mb-1"></i>
+              No hay proyectos para los filtros seleccionados.
+            </td>
           </tr>
         </tbody>
       </table>
@@ -194,3 +272,4 @@
   </div>
 
 </div>
+

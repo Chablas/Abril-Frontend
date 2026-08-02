@@ -49,6 +49,12 @@ export class CronogramaActividades implements OnInit, OnDestroy {
   actividades: ActividadDto[] = [];
   selectedProyectoId: number | null = null;
 
+  get porcentajeAvanceGlobal(): number {
+    if (!this.actividades.length) return 0;
+    const sum = this.actividades.reduce((acc, a) => acc + (a.progressPercentage || 0), 0);
+    return Math.round(sum / this.actividades.length);
+  }
+
   // Cargas
   loadingActividades = false;
   guardando = false;
