@@ -12,7 +12,10 @@ export class PhotoGridPicker {
   @Input() previews: string[] = [];
   @Input() max = 10;
   @Input() accept = 'image/*';
-  @Input() capture: string | null = 'environment';
+  // Sin `capture` el móvil muestra el menú nativo (Cámara / Galería / Archivos)
+  // en vez de abrir la cámara directamente. Un consumidor que quiera forzar
+  // foto en vivo puede pasar [capture]="'environment'" explícitamente.
+  @Input() capture: string | null = null;
   @Input() multiple = true;
   @Input() addLabel = 'Agregar foto';
   @Input() addIcon = 'ti-camera-plus';

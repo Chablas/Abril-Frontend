@@ -254,7 +254,7 @@
           @if (!cierreFotoPreview) {
             <label class="btn-foto-add">
               <i class="ti ti-camera"></i> Agregar foto
-              <input type="file" accept="image/*" capture="environment" (change)="onCierreFoto($event)" style="display:none" />
+              <input type="file" accept="image/*" (change)="onCierreFoto($event)" style="display:none" />
             </label>
           } @else {
             <div class="cierre-foto-preview">

@@ -382,6 +382,150 @@
         </div>
       }
 
+      <!-- ── Long list aprobada por el solicitante (imágenes 4/5) ───────────
+           Vista de solo presentación: los botones aún NO tienen funcionalidad
+           (envío de plantilla, ver formulario, continuar y el check del Multitest
+           se implementarán después). Los nombres de candidatos son reales; el
+           formulario del postulante es una feature futura (placeholders). -->
+      @if (longListAprobada) {
+
+        <!-- Aviso: long list aprobada -->
+        <div class="rounded-[10px] border px-[16px] py-[13px]" style="border-color:#a7f3d0;background:#F0FDF4">
+          <h3 class="text-[14px] font-bold text-emerald-800">Long list aprobada por el solicitante</h3>
+          <p class="text-[12.5px] text-emerald-700 mt-[3px] leading-snug">
+            El solicitante aprobó {{ detalle.candidatosAprobados.length }} candidato(s). Continúa con el
+            envío del proceso y pruebas psicotécnicas.
+          </p>
+        </div>
+
+        <!-- Acción requerida de GTH -->
+        <div class="rounded-[10px] border px-[16px] py-[13px]" style="border-color:#a7f3d0;background:#F0FDF4">
+          <h3 class="text-[14px] font-bold text-emerald-800">Acción requerida de GTH</h3>
+          <p class="text-[12.5px] text-emerald-700 mt-[3px] leading-snug">
+            Enviar la plantilla del proceso únicamente a los candidatos aprobados por el solicitante.
+            La plantilla incluye el enlace al formulario de información del postulante. Luego registrar
+            el estado del Multitest por candidato.
+          </p>
+        </div>
+
+        <!-- Formulario de información del postulante (feature futura → placeholders honestos) -->
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+          <h3 class="text-[14px] font-bold text-gray-800">Formulario de información del postulante</h3>
+          <p class="text-[12.5px] text-gray-500 mt-[2px] leading-snug">
+            El enlace se incluye en la plantilla enviada a cada candidato aprobado. En esta pantalla solo
+            se muestra el estado; los datos completados por el postulante se consultan en una ventana
+            emergente de solo lectura.
+          </p>
+
+          @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
+            <div class="rounded-[10px] border px-[14px] py-[12px] mt-[12px]" style="border-color:var(--color-abril-border)">
+              <div class="flex items-start justify-between gap-[10px]">
+                <p class="text-[14px] font-bold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
+                <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                      style="background:#F3F4F6;color:#6B7280">Pendiente</span>
+              </div>
+              <p class="text-[12px] text-gray-500 mt-[2px]">Formulario del postulante — disponible próximamente.</p>
+
+              <div class="flex items-center justify-between gap-[10px] mt-[10px]">
+                <input type="text" disabled
+                  class="flex-1 h-[38px] rounded-[7px] border px-[12px] text-[13px] bg-gray-50 text-gray-400"
+                  style="border-color:var(--color-abril-border)"
+                  placeholder="Correo del postulante (próximamente)" />
+                <button type="button" disabled title="Disponible próximamente"
+                  class="inline-flex items-center gap-[6px] h-[38px] px-[14px] rounded-[7px] text-[13px] font-semibold opacity-50 cursor-not-allowed border shrink-0"
+                  style="border-color:#a7f3d0;color:#15803D">
+                  <i class="ti ti-eye text-[15px]"></i>
+                  Ver formulario aprobado
+                </button>
+              </div>
+              <p class="text-[11.5px] text-gray-400 mt-[6px] leading-snug">
+                Los campos del formulario no se editan desde la bandeja de GTH.
+              </p>
+            </div>
+          }
+
+          @if (detalle.candidatosAprobados.length === 0) {
+            <p class="text-[12.5px] text-gray-400 italic mt-[10px]">No hay candidatos aprobados registrados.</p>
+          }
+        </div>
+
+        <!-- Plantilla de comunicación -->
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+          <div class="flex items-center justify-between">
+            <h3 class="text-[14px] font-bold text-gray-800">Plantilla de comunicación</h3>
+            <button type="button" (click)="mostrarPlantilla = !mostrarPlantilla"
+              class="text-[12.5px] font-semibold cursor-pointer hover:underline"
+              style="color:var(--color-abril-logo-blue)">
+              {{ mostrarPlantilla ? 'Ocultar plantilla' : 'Ver plantilla' }}
+            </button>
+          </div>
+
+          <select disabled title="Disponible próximamente"
+            class="w-full h-[40px] mt-[10px] rounded-[7px] border px-[12px] text-[13px] bg-gray-50 text-gray-600 cursor-not-allowed"
+            style="border-color:var(--color-abril-border)">
+            <option>Plantilla proceso de reclutamiento - estándar</option>
+          </select>
+
+          @if (mostrarPlantilla) {
+            <div class="rounded-[8px] border px-[14px] py-[12px] mt-[10px]"
+                 style="border-color:var(--color-abril-border);background:#F8FAFC">
+              <p class="text-[12.5px] font-bold text-gray-700">Vista previa de plantilla</p>
+              <p class="text-[12.5px] text-gray-600 mt-[6px] leading-snug">
+                Hola, te compartimos la información del proceso de reclutamiento para la posición
+                <b>{{ detalle.puesto | titleCase }}</b>. En esta etapa recibirás las indicaciones generales,
+                fechas estimadas, responsables y próximos pasos para continuar con las evaluaciones
+                correspondientes.
+              </p>
+              <p class="text-[12.5px] font-bold text-gray-700 mt-[8px]">
+                Completa tu información de postulante en el siguiente enlace:
+              </p>
+              <p class="text-[12.5px] mt-[2px]" style="color:var(--color-abril-logo-blue)">https://abril.one/postulante</p>
+              <p class="text-[12.5px] text-gray-600 mt-[6px] leading-snug">
+                Usuario: tu número de DNI. Revisa, corrige y completa la información precargada desde tu CV.
+              </p>
+              <p class="text-[12.5px] text-gray-600 mt-[6px] leading-snug">
+                Por favor confirma la recepción de este correo y mantente atento a la programación de la entrevista.
+              </p>
+            </div>
+          }
+
+          <button type="button" disabled title="Disponible próximamente"
+            class="w-full h-[42px] mt-[12px] rounded-[7px] text-[13.5px] font-semibold text-white opacity-50 cursor-not-allowed"
+            style="background:var(--color-abril-logo-blue)">
+            Enviar plantilla del proceso
+          </button>
+        </div>
+
+        <!-- Control informativo del Multitest -->
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+          <h3 class="text-[14px] font-bold text-gray-800">Control informativo del Multitest</h3>
+          <p class="text-[12.5px] text-gray-500 mt-[2px] leading-snug">
+            El Multitest se gestiona fuera de esta plataforma. El check solo sirve para visualizar si cada
+            candidato ya realizó la evaluación; no bloquea ni cambia automáticamente el flujo.
+          </p>
+
+          @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
+            <div class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[11px] mt-[10px]"
+                 style="border-color:var(--color-abril-border)">
+              <div>
+                <p class="text-[13.5px] font-semibold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
+                <p class="text-[12px] text-gray-500">Pendiente de realizar</p>
+              </div>
+              <input type="checkbox" disabled title="Disponible próximamente"
+                class="w-[16px] h-[16px] shrink-0 cursor-not-allowed"
+                style="accent-color:var(--color-abril-logo-blue)" />
+            </div>
+          }
+        </div>
+
+        <!-- Continuar a programación de entrevistas (aún sin funcionalidad) -->
+        <button type="button" disabled title="Disponible próximamente"
+          class="w-full h-[44px] rounded-[7px] text-[13.5px] font-semibold text-white opacity-50 cursor-not-allowed"
+          style="background:var(--color-abril-logo-blue)">
+          Continuar a programación de entrevistas
+        </button>
+      }
+
       <!-- ── Siguiente paso ─────────────────────────────────────────────── -->
       <div>
         <p class="text-[13px] font-semibold text-gray-700 mb-[6px]">Siguiente paso</p>

@@ -19,8 +19,29 @@ export class LearningCenter {
   @Input() categorias: LearningCategoryDto[] = [];
   /** Acento por defecto cuando un grupo no define color propio (teal Abril). */
   @Input() defaultAccent = '#0F6E56';
+  /** Encabezado interno del panel. Se oculta cuando la página ya pone su propio título. */
+  @Input() showHeading = true;
+  /** Modo ampliado (página dedicada): tarjetas y miniaturas más grandes. */
+  @Input() large = false;
+  /** Cada grupo/módulo se puede colapsar haciendo clic en su encabezado. */
+  @Input() collapsible = false;
+
+  /** Ids de los grupos colapsados. Por defecto todos arrancan desplegados. */
+  private readonly colapsados = new Set<number>();
 
   accent(cat: LearningCategoryDto): string {
     return cat.accentColor?.trim() || this.defaultAccent;
+  }
+
+  isCollapsed(cat: LearningCategoryDto): boolean {
+    return this.colapsados.has(cat.id);
+  }
+
+  toggle(cat: LearningCategoryDto): void {
+    if (this.colapsados.has(cat.id)) {
+      this.colapsados.delete(cat.id);
+    } else {
+      this.colapsados.add(cat.id);
+    }
   }
 }

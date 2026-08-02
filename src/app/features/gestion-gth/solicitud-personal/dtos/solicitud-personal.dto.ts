@@ -124,6 +124,23 @@ export interface CandidatoRevision {
   estadoNombre: string;
 }
 
+/** Decisión del solicitante por candidato (aprobar/rechazar) que se envía a GTH. */
+export interface CandidatoDecision {
+  candidatoId: number;
+  aprobado: boolean;
+}
+
+/** Resultado de registrar la decisión de la long list. */
+export interface LongListDecisionResult {
+  message: string;
+  estadoCodigo: string;
+  estadoNombre: string;
+  aprobados: number;
+  rechazados: number;
+  /** true si el solicitante rechazó a todos los candidatos (0 aprobados). */
+  todosRechazados: boolean;
+}
+
 /** Revisión de la long list de un requerimiento: cabecera + candidatos. */
 export interface RevisionLongList {
   requerimientoId: number;

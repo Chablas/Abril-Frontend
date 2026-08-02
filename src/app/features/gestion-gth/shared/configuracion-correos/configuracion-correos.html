@@ -2,14 +2,25 @@
 
   <div class="flex flex-col gap-[20px] mt-[16px]">
 
-    <p class="text-[12px] text-gray-500 leading-snug">{{ intro }}</p>
+    <!-- Selector de correo (solo cuando el modal configura varios correos independientes). -->
+    <div *ngIf="modoMultiple" class="flex gap-[6px] p-[4px] rounded-[10px] bg-gray-100">
+      <button *ngFor="let op of opciones" type="button"
+        (click)="cambiarTipo(op)"
+        class="flex-1 h-[36px] px-[10px] rounded-[8px] text-[12.5px] font-semibold cursor-pointer transition-colors"
+        [ngClass]="activa?.tipo === op.tipo ? 'text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'"
+        [style.background]="activa?.tipo === op.tipo ? 'var(--color-abril-standard)' : 'transparent'">
+        {{ op.label }}
+      </button>
+    </div>
+
+    <p class="text-[12px] text-gray-500 leading-snug">{{ introActivo }}</p>
 
     <!-- ── Destinatarios principales (Para) ─────────────────────────────── -->
     <div class="flex flex-col gap-[8px]">
       <label class="text-sm font-semibold text-gray-700">
-        {{ principalOpcional ? 'Destinatarios principales adicionales (Para)' : 'Destinatarios principales (Para)' }}
+        {{ principalOpcionalActivo ? 'Destinatarios principales adicionales (Para)' : 'Destinatarios principales (Para)' }}
       </label>
-      <p *ngIf="principalOpcional" class="text-[12px] text-gray-500 leading-snug -mt-[2px]">
+      <p *ngIf="principalOpcionalActivo" class="text-[12px] text-gray-500 leading-snug -mt-[2px]">
         El solicitante que registró la solicitud siempre va como destinatario principal (Para)
         de forma automática. Aquí solo agregas correos principales adicionales si los necesitas.
       </p>
@@ -32,7 +43,7 @@
 
       <div class="flex flex-wrap gap-[8px]">
         <span *ngIf="principales.length === 0" class="text-[12px] text-gray-400 italic">
-          {{ principalOpcional
+          {{ principalOpcionalActivo
               ? 'Sin principales adicionales. El correo se enviará solo al solicitante.'
               : 'Sin destinatarios principales. Sin al menos uno, el correo no se enviará.' }}
         </span>

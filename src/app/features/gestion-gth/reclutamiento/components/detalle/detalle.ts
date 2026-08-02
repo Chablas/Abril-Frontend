@@ -79,6 +79,9 @@ export class GthDetalleRequerimiento implements OnInit {
   seccionRevisionCv = true;
   seccionLongList = true;
 
+  /** Muestra/oculta la vista previa de la plantilla de comunicación (fase "Long list aprobada"). */
+  mostrarPlantilla = true;
+
   /** true mientras se envía la long list (deshabilita el botón para evitar doble envío). */
   enviando = false;
 
@@ -102,6 +105,9 @@ export class GthDetalleRequerimiento implements OnInit {
         this.canalesSeleccionados = new Set(
           data.canales.filter((c) => c.publicado).map((c) => c.id),
         );
+        // En la fase "Long list aprobada" la asignación va colapsada (como en el diseño):
+        // el foco pasa al envío del proceso y el Multitest.
+        if (this.longListAprobada) this.seccionAsignacion = false;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -134,8 +140,15 @@ export class GthDetalleRequerimiento implements OnInit {
     return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'LONG_LIST_ENVIADA');
   }
 
+  /** true si el solicitante ya aprobó la long list (fase LONG_LIST_APROBADA o posterior). */
+  get longListAprobada(): boolean {
+    return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'LONG_LIST_APROBADA');
+  }
+
   /** Texto del recuadro "Siguiente paso" según la fase actual. */
   get siguientePasoTexto(): string {
+    if (this.longListAprobada)
+      return `Continuar proceso con ${this.detalle?.area ? new TitleCasePipe().transform(this.detalle.area) : 'el área solicitante'}.`;
     if (this.longListEnviada)
       return 'Esperar revisión del solicitante para continuar con evaluación.';
     if (this.enLongList)

@@ -267,7 +267,7 @@
               @if (nuevoHallazgo.fotosBase64.length < 5) {
                 <label class="btn-foto-add">
                   <i class="ti ti-camera"></i> Agregar foto
-                  <input #fotoInput type="file" accept="image/*" capture="environment" (change)="onFotoChange($event)" style="display:none" />
+                  <input #fotoInput type="file" accept="image/*" (change)="onFotoChange($event)" style="display:none" />
                 </label>
               }
               @if (nuevoHallazgo.fotosPreview.length) {
