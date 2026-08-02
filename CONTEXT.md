@@ -4819,3 +4819,29 @@ Sesión puramente de research, sin tocar código, a pedido del usuario para ente
 - **Gráficos:** todos con **Chart.js** (`chart.js` + `chartjs-plugin-datalabels`), registrado una sola vez con `Chart.register(...registerables, ChartDataLabels)` en el propio `dashboard.ts`. Cuatro charts en este componente: `renderAvanceChart()` (curva Programado/Real), `renderEficienciaChart()` (tendencia SPI Esperado/Logrado), `renderTiposChart()` (doughnut de distribución de estados) y `renderHistoricoChart()` (línea de tasa de cierre, dentro del modal de histórico de supervisor).
 - **Curva de avance y tendencia SPI comparten el mismo endpoint:** ambos (`avanceSemanal` y `eficienciaSpi`) vienen del único payload de `service.getDashboardV2(f)` (`ArquitecturaComercialService`) — no hay una llamada HTTP separada para el SPI. El único chart con endpoint propio es el histórico de supervisor (`getSupervisorHistorico(userId)`, se llama al abrir ese modal específico).
 - **No hay archivo de tema/config compartido para Chart.js.** Confirmado buscando en `shared/`: no existe. Cada dashboard del sistema (arquitectura-comercial, contabilidad, costs/adjudicaciones, mejora-continua/lessons, projects-dashboard, varios de ssoma, vecinos) hace su propio `Chart.register(...)` y hardcodea sus propios colores/opciones inline — es duplicación real entre ~10 dashboards, no una convención documentada. Si en algún momento se decide unificar (paleta, tooltips, fuente de labels), no hay un punto único para tocar: hay que ir dashboard por dashboard.
+
+## Sesión 2026-08-02 — Rediseño Ejecutivo de Módulo de Proyectos (Dashboard UDP, Lista y Detalle de Cronograma)
+
+Estandarización visual y optimización de usabilidad del módulo de Proyectos (`/projects/cronograma-dashboard`, `/projects/cronograma-actividades` y `/projects/cronograma-actividades/:id`).
+
+### Cambios realizados:
+- **Dashboard UDP (`/projects/cronograma-dashboard`)**:
+  - Rediseño de 9 KPIs ejecutivos con Tabler Icons y sombras hover.
+  - Tabla de proyectos estandarizada a la guía visual `.abril-table` con barra de avance y flecha de navegación en hover.
+- **Lista de Proyectos (`/projects/cronograma-actividades`)**:
+  - Filtro de búsqueda dinámico en tiempo real (`filtroTexto`, `proyectosFiltrados`).
+  - Rediseño a **Grid de Tarjetas Ejecutivas de 3 columnas** (`repeat(auto-fill, minmax(320px, 1fr))`) para optimizar espacio.
+- **Detalle de Cronograma (`/projects/cronograma-actividades/:id`)**:
+  - Cabecera ejecutiva con mini píldoras de resumen del proyecto (recuento de actividades y `% de avance global` con getter `porcentajeAvanceGlobal`).
+  - **Selector Dinámico de Etapas (Pipeline)** con íconos vectoriales (`ti-file-text`, `ti-building`, `ti-refresh`) para *Anteproyecto* ➔ *Proyecto* ➔ *Actualización*.
+  - **Columna Congelada (`Sticky Left Column`)**: Columnas `#` y `ACTIVIDAD` fijadas a la izquierda (`position: sticky; left: 0` y `left: 114px`) con sombra divisoria.
+  - **Arrastrar y Soltar (Drag & Drop)**: Manubrio `ti-grip-vertical` exclusivo en la primera celda e indicador visual de inserción azul de 3px (`.drop-above`, `.drop-below`).
+  - **Corrección de Scrollbar Horizontal Fijo**: Ajuste del layout Flex (`:host`, `.page-wrapper`, `.table-card`, `.table-wrapper`) para encajar en la altura exacta del viewport del navegador, haciendo que la barra de desplazamiento horizontal permanezca **SIEMPRE VISIBLE en pantalla** en proyectos de 81+ actividades.
+
+### Archivos clave tocados:
+- `src/app/features/projects/cronograma-dashboard/cronograma-dashboard.html` / `.css`
+- `src/app/features/projects/cronograma-actividades/proyectos-cronograma-list.ts` / `.html` / `.css`
+- `src/app/features/projects/cronograma-actividades/cronograma-actividades.ts` / `.html` / `.css`
+
+### Estado final:
+- `npm run build` limpio: **0 errores**, mismos warnings preexistentes de paquetes de terceros.
