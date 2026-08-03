@@ -3,13 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import { ProyectoService } from '../../services/proyecto.service';
 import { ProjectDto } from '../../dtos/project.dto';
 import { ProjectEditDto } from '../../dtos/project-edit.dto';
 import { ContributorLookupDto } from '../../dtos/company-lookup.dto';
+import { ResponsableLookupDto } from '../../dtos/responsable-lookup.dto';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 
 interface ProjectFormModel {
@@ -30,6 +33,8 @@ interface ProjectFormModel {
 
   responsableArqCom: string;
   responsableArqComId: number | null;
+  responsableUdp: string;
+  responsableUdpId: number | null;
 
   fechaInicio: string | null;
   fechaFin: string | null;
@@ -52,8 +57,9 @@ interface ProjectFormModel {
 @Component({
   selector: 'app-proyecto-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, DatePicker],
+  imports: [CommonModule, FormsModule, BaseModal, DatePicker, SearchSelect],
   templateUrl: './proyecto-edit.html',
+  styleUrl: './proyecto-edit.css',
 })
 export class ProyectoEdit implements OnInit {
   @Input() project!: ProjectDto;
@@ -64,6 +70,11 @@ export class ProyectoEdit implements OnInit {
   rucLookupLoading = false;
   saving = false;
 
+  responsablesArqCom: ResponsableLookupDto[] = [];
+  responsablesUdp: ResponsableLookupDto[] = [];
+  loadingResponsables = true;
+  responsablesError = false;
+
   constructor(
     private proyectoService: ProyectoService,
     private router: Router,
@@ -72,6 +83,7 @@ export class ProyectoEdit implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.loadResponsables();
     this.form = {
       projectDescription: this.project.projectDescription,
       codigo:        this.project.codigo        ?? '',
@@ -102,6 +114,8 @@ export class ProyectoEdit implements OnInit {
 
       responsableArqCom:   this.project.responsableArqCom   ?? '',
       responsableArqComId: this.project.responsableArqComId ?? null,
+      responsableUdp:      this.project.responsableUdp      ?? '',
+      responsableUdpId:    this.project.responsableUdpId    ?? null,
 
       fechaInicio: this.project.fechaInicio ? this.project.fechaInicio.substring(0, 10) : '',
       fechaFin:    this.project.fechaFin    ? this.project.fechaFin.substring(0, 10)    : '',
@@ -156,6 +170,40 @@ export class ProyectoEdit implements OnInit {
     this.form.legalEntityRegistryNumber = '';
   }
 
+  loadResponsables(): void {
+    this.loadingResponsables = true;
+    this.responsablesError = false;
+    forkJoin({
+      arqCom: this.proyectoService.getResponsables('ARQ_COMERCIAL'),
+      udp: this.proyectoService.getResponsables('UDP'),
+    }).subscribe({
+      next: ({ arqCom, udp }) => {
+        this.responsablesArqCom = [...arqCom].sort((a, b) => a.apellidoNombre.localeCompare(b.apellidoNombre));
+        this.responsablesUdp = [...udp].sort((a, b) => a.apellidoNombre.localeCompare(b.apellidoNombre));
+        this.loadingResponsables = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingResponsables = false;
+        this.responsablesError = true;
+        this.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  onResponsableArqComChange(id: number | null): void {
+    this.form.responsableArqComId = id;
+    const found = this.responsablesArqCom.find((r) => r.id === id);
+    this.form.responsableArqCom = found ? found.apellidoNombre : '';
+  }
+
+  onResponsableUdpChange(id: number | null): void {
+    this.form.responsableUdpId = id;
+    const found = this.responsablesUdp.find((r) => r.id === id);
+    this.form.responsableUdp = found ? found.apellidoNombre : '';
+  }
+
   save(): void {
     if (!this.form.projectDescription.trim() || this.saving) return;
     this.saving = true;
@@ -180,6 +228,8 @@ export class ProyectoEdit implements OnInit {
 
       responsableArqCom:   this.form.responsableArqCom.trim() || undefined,
       responsableArqComId: this.form.responsableArqComId ?? undefined,
+      responsableUdp:      this.form.responsableUdp.trim() || undefined,
+      responsableUdpId:    this.form.responsableUdpId ?? undefined,
 
       fechaInicio: this.form.fechaInicio || undefined,
       fechaFin:    this.form.fechaFin    || undefined,
@@ -231,6 +281,8 @@ export class ProyectoEdit implements OnInit {
 
       responsableArqCom: '',
       responsableArqComId: null,
+      responsableUdp: '',
+      responsableUdpId: null,
 
       fechaInicio: '',
       fechaFin: '',
