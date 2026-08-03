@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -51,6 +51,7 @@ export class PostulanteFormulario implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private service: PostulanteFormularioService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -66,17 +67,20 @@ export class PostulanteFormulario implements OnInit {
 
   private cargar(): void {
     this.cargando = true;
+    // App zoneless: forzamos el refresco para que el formulario aparezca sin un click extra.
     this.service.getPublico(this.token).subscribe({
       next: (data) => {
         this.data = data;
         this.model = { ...respuestasVacias(), ...data.respuestas };
         this.cargando = false;
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.cargando = false;
         this.errorCarga = true;
         this.mensajeError =
           err.error?.message ?? 'No se pudo cargar el formulario. Verifica el enlace e inténtalo de nuevo.';
+        this.cdr.detectChanges();
       },
     });
   }
@@ -193,14 +197,17 @@ export class PostulanteFormulario implements OnInit {
     }
 
     this.enviando = true;
+    // App zoneless: forzamos el refresco para reflejar el estado de envío y la pantalla final.
     this.service.guardarPublico(this.token, this.model).subscribe({
       next: () => {
         this.enviando = false;
         this.enviado = true;
+        this.cdr.detectChanges();
         this.scrollTop();
       },
       error: (err: HttpErrorResponse) => {
         this.enviando = false;
+        this.cdr.detectChanges();
         Swal.fire({
           icon: 'error',
           title: 'No se pudo enviar',
