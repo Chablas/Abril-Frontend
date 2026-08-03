@@ -4845,3 +4845,28 @@ Estandarización visual y optimización de usabilidad del módulo de Proyectos (
 
 ### Estado final:
 - `npm run build` limpio: **0 errores**, mismos warnings preexistentes de paquetes de terceros.
+
+## Sesión 2026-08-02 (cont.) — Responsable UDP en modal editar proyecto (`/configuracion/proyectos`)
+
+Investigación + implementación del selector de "Responsables UDP" en el modal de edición de proyecto de Configuración, aprovechando el trabajo para además resolver el ID de responsable Arq. Comercial que quedaba sin usar.
+
+### Contexto previo (investigación)
+- El modal vive en `features/configuracion/features/proyectos/components/edit/proyecto-edit.ts` (+ `.html`), patrón smart/presentacional: `proyectos.ts` (smart) pasa el `ProjectDto` completo por `@Input` a `proyecto-edit.ts` (presentacional). No hace falta un GET aparte — `ProyectoService.getPaged()` ya trae `responsableArqCom`/`responsableArqComId` resueltos (R1/R6 OK).
+- Antes de este cambio, "Responsable Arq. Comercial" era un `<input type="text">` de texto libre; el campo `responsableArqComId` existía en el modelo pero nunca se seteaba desde ningún control de UI del modal (quedaba huérfano).
+- Se identificó un patrón ID-driven ya existente pero en **otro feature**: `arquitectura-comercial/actividades/actividades.ts` usa `app-search-select` contra `SupervisorAcDTO[]` (`{ id, apellidoNombre }`) vía `getSupervisoresAc()` + `patchProyecto()` — sirvió de referencia de shape de DTO, pero es un flujo de PATCH aparte, no tocado.
+- Se investigó también un tercer "responsable" (Residente) para una futura iteración: existe un modelo de datos **separado y ya vigente**, `core/services/projectResident.service.ts` (`api/v1/projectResident`) + `ProjectGetDTO.residentFullNames: string[]` (en `core/dtos/project/project.model.ts`, el DTO "legacy" usado por `ivt-control`/`report-response-control`/etc., **no** el `ProjectDto` local de este feature). Al ser `string[]` (no un ID único), sugiere que `project_resident` podría modelar una relación 1-a-muchos, a diferencia de Arq. Comercial/UDP que son FK únicas en `project` — pendiente de que backend confirme si "Responsable Residente" sale de un campo nuevo en `project` (mismo patrón) o de esa tabla (patrón distinto, posible multi-select). No implementado, solo investigado.
+
+### Cambios implementados
+- **`proyecto-edit.ts`**: `ProjectFormModel` con `responsableUdp`/`responsableUdpId`; `loadResponsables()` hace `forkJoin` de `proyectoService.getResponsables('ARQ_COMERCIAL')` y `getResponsables('UDP')` en `ngOnInit`, listas ordenadas alfabéticamente en el componente (no vía `sortAlpha` interno, siguiendo la convención de CLAUDE.md — mismo criterio que `[sortAlpha]="false"` en `actividades.html`). `onResponsableArqComChange`/`onResponsableUdpChange` resuelven nombre+ID juntos al elegir opción en el `app-search-select`.
+- **`proyecto-edit.html`**: reemplazado el `<input>` de Arq. Comercial y agregado el de UDP, ambos `app-search-select` lado a lado (`valueField="id"`, `displayField="apellidoNombre"`, `placeholder="Buscar por nombre o DNI..."`). Skeleton (F8, `.skeleton-line`/`@keyframes skeleton-shimmer`, mismo estilo que `milestone-schedule.css`) mientras carga el catálogo; mensaje de error + botón "Reintentar" si falla (F9). El checkbox `tieneArquitecturaComercial` se mantiene solo, sin equivalente `tieneUdp` — decisión confirmada con el usuario: campo vacío = no aplica.
+- **`proyecto.service.ts`**: nuevo `getResponsables(tipo: 'ARQ_COMERCIAL' | 'UDP')` → `GET /api/v1/project/responsables?tipo=...` (contrato confirmado con el usuario, backend lo está agregando en `ProjectController`).
+- **`project.dto.ts` / `project-edit.dto.ts`** (DTOs locales del feature, no los de `core/dtos/project/`): agregados `responsableUdp?`/`responsableUdpId?`. También se sumaron a `ProjectDto` (lectura), no solo a `ProjectEditDto`, porque `ngOnInit` necesita leer `this.project.responsableUdp` con tipado correcto.
+- Nuevo `dtos/responsable-lookup.dto.ts` (`ResponsableLookupDto { id, apellidoNombre }`, `ResponsableTipo`).
+- **No tocado**: `proyecto-create.ts/html` (alta de proyecto) — quedó fuera de alcance, sigue con el input de texto libre viejo.
+
+### Pendiente / próximos pasos
+- El endpoint `GET /api/v1/project/responsables?tipo=` todavía no existe en backend al momento de este commit — no se pudo probar en browser. Cuando esté levantado, verificar que el catálogo cargue y que el guardado (`PUT /api/v1/project`) persista ambos IDs correctamente.
+- "Responsable Residente" queda pendiente de una futura sesión, condicionado a que backend confirme el modelo de datos (ver investigación arriba).
+
+### Estado final:
+- `ng build` limpio: **0 errores**, mismos warnings preexistentes de terceros (`canvg`, `flatpickr`).
