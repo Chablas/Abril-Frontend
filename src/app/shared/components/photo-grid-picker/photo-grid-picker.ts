@@ -20,6 +20,11 @@ export class PhotoGridPicker {
   @Input() addLabel = 'Agregar foto';
   @Input() addIcon = 'ti-camera-plus';
   @Input() color = 'var(--color-abril-standard)';
+  // Botón aparte con `capture` + sin `multiple`: en móviles (sobre todo iOS Safari) un
+  // input con `multiple` oculta la opción "Cámara" del menú nativo y solo deja Galería/
+  // Archivos, porque no se puede tomar varias fotos en una sola sesión de cámara. Este
+  // segundo input garantiza que la cámara siempre esté disponible como acción explícita.
+  @Input() showCameraButton = true;
 
   @Output() filesSelected = new EventEmitter<FileList>();
   @Output() remove = new EventEmitter<number>();

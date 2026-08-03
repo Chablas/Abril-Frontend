@@ -40,7 +40,7 @@ import {
   DashboardFiltroDTO,
   EnviarAlertaRequestDTO,
 } from '../../../core/dtos/arquitectura-comercial/arquitectura-comercial-alert.model';
-
+
 import { AC_TABS } from '../shared/arquitectura-comercial-tabs';
 Chart.register(...registerables, ChartDataLabels);
 
@@ -136,8 +136,13 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     { value: 'EN_PROCESO', label: 'En proceso' },
     { value: 'EN_RIESGO', label: 'En riesgo' },
     { value: 'VENCIDO', label: 'Vencido' },
+    { value: 'PENDIENTE', label: 'Pendiente' },
     { value: 'CULMINADO', label: 'Culminado' },
   ];
+
+  toggleModalCargaFiltroEstado(estado: string): void {
+    this.modalCargaFiltroEstado = this.modalCargaFiltroEstado === estado ? '' : estado;
+  }
 
   private hoy(): Date { const d = new Date(); d.setHours(0,0,0,0); return d; }
   private pd(iso: string): Date { const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); }
@@ -163,7 +168,9 @@ export class Dashboard implements AfterViewInit, OnDestroy {
 
   get modalCargaFiltradas(): ActividadListItemDTO[] {
     return this.modalCargaActividades.filter(a => {
-      if (this.estadoGantt(a) === 'PENDIENTE') return false;
+      // PENDIENTE se oculta por defecto (trabajo futuro que aún no toca) salvo que
+      // el usuario lo pida explícitamente con el filtro de estado.
+      if (this.estadoGantt(a) === 'PENDIENTE' && this.modalCargaFiltroEstado !== 'PENDIENTE') return false;
       if (this.modalCargaExcluirCulminadas && a.finEfectivo) return false;
       if (this.modalCargaFiltroEstado && this.estadoGantt(a) !== this.modalCargaFiltroEstado) return false;
       return true;
@@ -221,6 +228,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   cargandoHistorico       = false;
   historicoSupervisor     : SupervisorHistoricoDTO | null = null;
   historicoSupervisorNombre = '';
+  historicoSupervisorUserId : number | null = null;
 
   distribucionTipos: ChartItemDTO[] = [];
 
@@ -651,6 +659,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   abrirHistoricoSupervisor(sup: SupervisorProgresoDTO): void {
     this.modalHistoricoVisible   = true;
     this.historicoSupervisorNombre = sup.nombre;
+    this.historicoSupervisorUserId = sup.userId;
     this.historicoSupervisor     = null;
     this.cargandoHistorico       = true;
     this.service.getSupervisorHistorico(sup.userId).subscribe({
@@ -672,6 +681,20 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     this.historicoChart?.destroy();
     this.historicoChart = undefined;
     this.historicoSupervisor = null;
+  }
+
+  /** Abre el modal de actividades (mismo que el ranking de carga) ya filtrado
+   * por estado, para ver el detalle de "vencidas"/"pendientes" del histórico. */
+  verActividadesHistorico(estado: 'VENCIDO' | 'PENDIENTE'): void {
+    if (this.historicoSupervisorUserId == null) return;
+    const sup: TareasPorArquitectoDTO = {
+      userId: this.historicoSupervisorUserId,
+      nombre: this.historicoSupervisorNombre,
+      hitos: 0, entregables: 0, consultas: 0, total: 0, avancePct: 0,
+    };
+    this.cerrarModalHistorico();
+    this.abrirModalCarga(sup);
+    this.modalCargaFiltroEstado = estado;
   }
 
   private renderHistoricoChart(): void {

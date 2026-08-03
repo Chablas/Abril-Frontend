@@ -4652,3 +4652,38 @@ La página (heredada, no de esta sesión) usaba los tokens `--color-abril-primar
 1. Los 4 dropdowns de filtro "Proyecto" que no respetan `Active` (sección 3) — requiere cambio de backend, coordinar con la otra terminal.
 2. SQL de `role_feature` para "Actas de Reunión" — aplicado solo en local, falta aplicar en producción (túnel SSH) y avisar al usuario de prueba que cierre sesión después (regla D4).
 3. Backend de "Actas de Reunión" no localizado en el checkout de `Abril_Backend` — puede estar en una rama sin mergear, sin confirmar.
+
+## Sesión 2026-08-03 — Dashboard Arquitectura Comercial + fix cámara en fotos
+
+### 1. Ranking Eficiencia (IES) — modales de detalle clickeables
+En `features/arquitectura-comercial/dashboard/dashboard.ts` / `.html`:
+- Modal de carga (`modalCarga`, se abre desde las barras del ranking): los chips "✓ culminadas" / "⚠ vencidas" ahora tienen `(click)="toggleModalCargaFiltroEstado(...)"` — antes eran solo texto estático, no filtraban nada pese a parecer clickeables.
+- `modalCargaFiltradas` ya no oculta PENDIENTE de forma incondicional — solo si el filtro activo no es explícitamente `'PENDIENTE'` (se agregó esa opción al dropdown de estados).
+- Modal histórico de supervisor (`modalHistorico`): los tiles "Pendientes"/"Vencidas" ahora llaman `verActividadesHistorico('PENDIENTE'|'VENCIDO')`, que cierra el histórico y abre el modal de carga para ese mismo supervisor con el filtro preseleccionado (reusa `abrirModalCarga` + `getActividades`, no hubo que tocar backend). Se agregó `historicoSupervisorUserId` para poder pasarlo.
+
+### 2. Backend — IES sin castigo por mora (10%)
+`Infrastructure/Repositories/ArquitecturaComercialRepository.cs`, método `GetDashboardDataFiltrado`: se quitó el componente "Penalización mora (10%)" del cálculo del IES (confundía a los supervisores — ver ejemplo Holguín 1/1 culminada mostrando 90% en vez de 100%, que en realidad era el SPI el que bajaba el número, no la mora). Fórmula anterior:
+```
+IES = SPI*0.35 + Cierre*0.35 + Puntualidad*0.20 + Mora*0.10
+```
+Fórmula nueva (renormalizada a 100% entre los 3 componentes restantes):
+```
+IES = (SPI*0.35 + Cierre*0.35 + Puntualidad*0.20) / 0.90
+```
+Confirmado que el histórico de supervisor (`GetSupervisorHistorico`) usa una métrica distinta (tasa de cierre simple por semana), no el IES compuesto — no había datos "congelados" con la fórmula vieja que arrastrar.
+
+### 3. Fix cámara no disponible en fotos (móvil) — Observaciones y Revisiones
+Reportado: en Gestión de Observaciones/Revisiones (nueva-observación, levantar-observación, y sus equivalentes de revisiones), al adjuntar foto en celular solo aparecía la galería, no la opción de cámara. Comparado contra `features/ssoma/gestion/inspeccion/` (donde sí funciona) para encontrar la diferencia real:
+- Los 4 componentes ya pasaban `[multiple]="false"` al `app-photo-grid-picker` compartido (`shared/components/photo-grid-picker/`) — esa NO era la causa.
+- La diferencia real: el input de `photo-grid-picker` usaba el atributo HTML `hidden`, mientras que el patrón que funciona en inspección usa `style="display:none"`. Corregido en `photo-grid-picker.html` (ambos inputs).
+- Adicionalmente se agregó un botón explícito "Tomar foto" (`capture="environment"`, sin `multiple`) junto al de "Agregar foto" (galería), como respaldo — controlado por nuevo `@Input() showCameraButton = true` en `photo-grid-picker.ts`. Se oculta si el consumidor ya pasa `[capture]` explícito.
+- Como es el componente compartido, el fix beneficia automáticamente a los 4 consumidores sin tocarlos individualmente.
+
+**Build**: `ng build` limpio (0 errores nuevos). No se probó visualmente — pendiente que el usuario confirme en celular real que la cámara ya aparece.
+
+### Nota técnica — diff grande y ruidoso en dashboard.ts
+El archivo original tenía finales de línea mixtos (CRLF/CR/LF según `file`). Al editarlo, el archivo quedó completo en CRLF consistente, generando un diff de ~1900 líneas en vez de las ~30 líneas realmente cambiadas. No afecta funcionalidad, pero conviene tenerlo en cuenta al revisar el historial/blame de ese archivo.
+
+### Pendiente / fuera de alcance de esta sesión
+1. Confirmar en dispositivo real que la cámara ya aparece en Observaciones/Revisiones tras el fix de `photo-grid-picker`.
+2. Backend: recompilar/reiniciar el servicio con el cambio del IES (quitar mora) para que el ranking en producción refleje la fórmula nueva.
