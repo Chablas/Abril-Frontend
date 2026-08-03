@@ -1,3 +1,5 @@
+import { CandidatoFormularioResumen } from './formulario-postulante.dto';
+
 /** Opción genérica {id, nombre} para desplegables (p.ej. el catálogo de prioridades). */
 export interface Opcion {
   id: number;
@@ -122,4 +124,6 @@ export interface CandidatoAprobado {
   candidatoId: number;
   nombre: string;
   puesto: string | null;
+  /** Estado del formulario de información del postulante (null si GTH aún no lo envió). */
+  formulario?: CandidatoFormularioResumen | null;
 }

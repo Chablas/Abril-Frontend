@@ -389,32 +389,26 @@
            formulario del postulante es una feature futura (placeholders). -->
       @if (longListAprobada) {
 
-        <!-- Aviso: long list aprobada -->
+        <!-- Banner: long list aprobada + acción requerida (unificado) -->
         <div class="rounded-[10px] border px-[16px] py-[13px]" style="border-color:#a7f3d0;background:#F0FDF4">
-          <h3 class="text-[14px] font-bold text-emerald-800">Long list aprobada por el solicitante</h3>
-          <p class="text-[12.5px] text-emerald-700 mt-[3px] leading-snug">
-            El solicitante aprobó {{ detalle.candidatosAprobados.length }} candidato(s). Continúa con el
-            envío del proceso y pruebas psicotécnicas.
-          </p>
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-circle-check text-[20px] shrink-0" style="color:#15803D"></i>
+            <div>
+              <h3 class="text-[14px] font-bold text-emerald-800">Long list aprobada por el solicitante</h3>
+              <p class="text-[12.5px] text-emerald-700 mt-[2px] leading-snug">
+                El solicitante aprobó {{ detalle.candidatosAprobados.length }} candidato(s). Envía a cada uno el
+                formulario de información del postulante; cuando lo completen, revísalo y apruébalo o recházalo.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <!-- Acción requerida de GTH -->
-        <div class="rounded-[10px] border px-[16px] py-[13px]" style="border-color:#a7f3d0;background:#F0FDF4">
-          <h3 class="text-[14px] font-bold text-emerald-800">Acción requerida de GTH</h3>
-          <p class="text-[12.5px] text-emerald-700 mt-[3px] leading-snug">
-            Enviar la plantilla del proceso únicamente a los candidatos aprobados por el solicitante.
-            La plantilla incluye el enlace al formulario de información del postulante. Luego registrar
-            el estado del Multitest por candidato.
-          </p>
-        </div>
-
-        <!-- Formulario de información del postulante (feature futura → placeholders honestos) -->
+        <!-- Formulario de información del postulante (funcional) -->
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
           <h3 class="text-[14px] font-bold text-gray-800">Formulario de información del postulante</h3>
           <p class="text-[12.5px] text-gray-500 mt-[2px] leading-snug">
-            El enlace se incluye en la plantilla enviada a cada candidato aprobado. En esta pantalla solo
-            se muestra el estado; los datos completados por el postulante se consultan en una ventana
-            emergente de solo lectura.
+            Envía el enlace del formulario al correo de cada candidato aprobado. El postulante lo completa en una
+            página externa; con «Ver formulario» consultas los datos que declaró y los apruebas o rechazas.
           </p>
 
           @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
@@ -422,29 +416,43 @@
               <div class="flex items-start justify-between gap-[10px]">
                 <p class="text-[14px] font-bold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
                 <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
-                      style="background:#F3F4F6;color:#6B7280">Pendiente</span>
+                      [style.background]="estadoFormularioBadge(c).bg" [style.color]="estadoFormularioBadge(c).color">
+                  {{ estadoFormularioBadge(c).text }}
+                </span>
               </div>
-              <p class="text-[12px] text-gray-500 mt-[2px]">Formulario del postulante — disponible próximamente.</p>
 
-              <div class="flex items-center justify-between gap-[10px] mt-[10px]">
-                <input type="text" disabled
-                  class="flex-1 h-[38px] rounded-[7px] border px-[12px] text-[13px] bg-gray-50 text-gray-400"
+              <!-- Correo del postulante + enviar/reenviar -->
+              <div class="flex items-center gap-[10px] mt-[10px]">
+                <input type="email" [(ngModel)]="correoFormulario[c.candidatoId]"
+                  [disabled]="formularioBloqueado(c)"
+                  class="flex-1 h-[38px] rounded-[7px] border px-[12px] text-[13px] disabled:bg-gray-50 disabled:text-gray-400"
                   style="border-color:var(--color-abril-border)"
-                  placeholder="Correo del postulante (próximamente)" />
-                <button type="button" disabled title="Disponible próximamente"
-                  class="inline-flex items-center gap-[6px] h-[38px] px-[14px] rounded-[7px] text-[13px] font-semibold opacity-50 cursor-not-allowed border shrink-0"
-                  style="border-color:#a7f3d0;color:#15803D">
-                  <i class="ti ti-eye text-[15px]"></i>
-                  Ver formulario aprobado
+                  placeholder="Correo del postulante" />
+                <button type="button"
+                  [disabled]="enviandoFormulario[c.candidatoId] || formularioBloqueado(c)"
+                  (click)="enviarFormulario(c)"
+                  class="inline-flex items-center gap-[6px] h-[38px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white shrink-0 transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style="background:var(--color-abril-logo-blue)">
+                  <i class="ti ti-send text-[15px]"></i>
+                  {{ enviandoFormulario[c.candidatoId] ? 'Enviando…' : (c.formulario ? 'Reenviar' : 'Enviar formulario') }}
                 </button>
               </div>
-              <p class="text-[11.5px] text-gray-400 mt-[6px] leading-snug">
-                Los campos del formulario no se editan desde la bandeja de GTH.
-              </p>
-            </div>
-          }
+              @if (c.formulario?.correoEnvio && c.formulario?.enviadoEn) {
+                <p class="text-[11.5px] text-gray-400 mt-[6px]">
+                  Último envío a {{ c.formulario?.correoEnvio }} · {{ c.formulario?.enviadoEn | date:'dd/MM/yyyy HH:mm' }}
+                </p>
+              }
 
-          @if (detalle.candidatosAprobados.length === 0) {
+              <!-- Ver formulario (abre el modal de revisión) -->
+              <button type="button" (click)="abrirFormulario(c)"
+                class="inline-flex items-center gap-[6px] h-[36px] px-[14px] mt-[10px] rounded-[7px] text-[13px] font-semibold border cursor-pointer transition-colors hover:bg-gray-50"
+                [style.border-color]="c.formulario?.estadoCodigo === 'APROBADO' ? '#a7f3d0' : (c.formulario?.estadoCodigo === 'RECHAZADO' ? '#fecaca' : 'var(--color-abril-border)')"
+                [style.color]="c.formulario?.estadoCodigo === 'APROBADO' ? '#15803D' : (c.formulario?.estadoCodigo === 'RECHAZADO' ? '#B91C1C' : 'var(--color-abril-logo-blue)')">
+                <i class="ti ti-eye text-[15px]"></i>
+                {{ botonFormularioLabel(c) }}
+              </button>
+            </div>
+          } @empty {
             <p class="text-[12.5px] text-gray-400 italic mt-[10px]">No hay candidatos aprobados registrados.</p>
           }
         </div>
@@ -548,3 +556,12 @@
   </div>
 
 </app-abril-modal-panel>
+
+<!-- Modal "Ver formulario" del postulante (se abre sobre el detalle). -->
+@if (formularioCandidatoId) {
+  <app-gth-formulario-postulante-modal
+    [candidatoId]="formularioCandidatoId"
+    (cambios)="onFormularioCambios($event)"
+    (closeModal)="cerrarFormulario()">
+  </app-gth-formulario-postulante-modal>
+}

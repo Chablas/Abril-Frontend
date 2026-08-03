@@ -1,0 +1,278 @@
+:host {
+  display: block;
+}
+
+.pf-page {
+  min-height: 100vh;
+  background: #eef2f6;
+  padding: 28px 16px 60px;
+}
+
+.pf-shell {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pf-card {
+  background: #ffffff;
+  border: 1px solid var(--color-abril-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 24px 28px;
+}
+
+/* ── Encabezado ───────────────────────────────────────────────────────── */
+.pf-header {
+  border-top: 5px solid var(--color-abril-logo-blue, #005d9d);
+}
+
+.pf-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0;
+}
+
+.pf-brand {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--color-abril-logo-blue, #005d9d);
+  margin: 2px 0 0;
+}
+
+.pf-intro {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.55;
+  margin: 12px 0 0;
+}
+
+/* ── Indicador de pasos ───────────────────────────────────────────────── */
+.pf-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #eef2f6;
+}
+
+.pf-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.55;
+}
+
+.pf-step--active,
+.pf-step--done {
+  opacity: 1;
+}
+
+.pf-step-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.pf-step--active .pf-step-circle {
+  background: var(--color-abril-logo-blue, #005d9d);
+  color: #fff;
+}
+
+.pf-step--done .pf-step-circle {
+  background: #15803d;
+  color: #fff;
+}
+
+.pf-step-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* ── Cuerpo / secciones ───────────────────────────────────────────────── */
+.pf-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-abril-logo-blue, #005d9d);
+  margin: 0 0 4px;
+}
+
+.pf-section-hint {
+  font-size: 12.5px;
+  color: #6b7280;
+  margin: 0 0 14px;
+}
+
+.pf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 20px;
+  margin-top: 8px;
+}
+
+.pf-col-2 {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 640px) {
+  .pf-grid {
+    grid-template-columns: 1fr;
+  }
+  .pf-card {
+    padding: 20px 18px;
+  }
+}
+
+.pf-req {
+  color: #b91c1c;
+}
+
+/* ── Toggles Sí/No ────────────────────────────────────────────────────── */
+.pf-toggle-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+.pf-toggle-row {
+  display: flex;
+  gap: 10px;
+}
+
+.pf-toggle {
+  min-width: 84px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--color-abril-border, #e2e8f0);
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pf-toggle:hover {
+  background: #f8fafc;
+}
+
+.pf-toggle--on {
+  background: var(--color-abril-logo-blue, #005d9d);
+  border-color: var(--color-abril-logo-blue, #005d9d);
+  color: #fff;
+}
+
+.pf-consent {
+  padding: 16px 0;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.pf-consent:last-of-type {
+  border-bottom: none;
+}
+
+/* ── Navegación ───────────────────────────────────────────────────────── */
+.pf-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid #eef2f6;
+}
+
+.pf-btn {
+  height: 42px;
+  padding: 0 22px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.pf-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pf-btn--ghost {
+  background: #fff;
+  border-color: var(--color-abril-border, #e2e8f0);
+  color: #4b5563;
+}
+
+.pf-btn--ghost:not(:disabled):hover {
+  background: #f8fafc;
+}
+
+.pf-btn--primary {
+  background: var(--color-abril-logo-blue, #005d9d);
+  color: #fff;
+}
+
+.pf-btn--primary:not(:disabled):hover {
+  opacity: 0.92;
+}
+
+/* ── Estados (cargando / error / enviado) ─────────────────────────────── */
+.pf-state {
+  text-align: center;
+  padding: 56px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.pf-state-icon {
+  font-size: 56px;
+}
+
+.pf-state-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 4px 0 0;
+}
+
+.pf-state-text {
+  font-size: 13.5px;
+  color: #4b5563;
+  line-height: 1.6;
+  max-width: 520px;
+  margin: 0;
+}
+
+.pf-spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 4px solid #dbeafe;
+  border-top-color: var(--color-abril-logo-blue, #005d9d);
+  animation: pf-spin 0.9s linear infinite;
+}
+
+@keyframes pf-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
