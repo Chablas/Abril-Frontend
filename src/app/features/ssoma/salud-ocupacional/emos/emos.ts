@@ -33,11 +33,15 @@ import { FilterModal } from '../../../../shared/components/filter-modal/filter-m
 import { SearchInput } from '../../../../shared/components/search-input/search-input';
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
+import { NavigationService } from '../../../../core/navigation/navigation.service';
 
 interface FilterOption {
   id: string;
   nombre: string;
 }
+
+/** Feature que habilita el botón "Configuración" de EMOs (rol ADMINISTRADOR DEL SISTEMA). */
+const FEATURE_CONFIGURACION = 'ssoma.salud-ocupacional.emos.configuracion';
 
 @Component({
   selector: 'app-salud-emos',
@@ -109,6 +113,9 @@ export class Emos implements OnInit, OnDestroy {
 
   filtrosAbiertos = false;
 
+  /** El botón "Configuración" del header se muestra solo con esta feature. */
+  puedeConfigurar = false;
+
   items: EmoPorTrabajadorDto[] = [];
   totalRecords = 0;
   totalPages = 1;
@@ -133,9 +140,12 @@ export class Emos implements OnInit, OnDestroy {
     private errorService: ErrorService,
     private router: Router,
     private cdr: ChangeDetectorRef,
+    private navigationService: NavigationService,
   ) {}
 
   ngOnInit(): void {
+    this.puedeConfigurar = this.navigationService.isFeatureAllowed(FEATURE_CONFIGURACION);
+
     this.searchChange$
       .pipe(debounceTime(350), takeUntil(this.destroy$))
       .subscribe(() => this.load(1));
@@ -271,6 +281,11 @@ export class Emos implements OnInit, OnDestroy {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  irAConfiguracion(): void {
+    if (!this.puedeConfigurar) return;
+    this.router.navigate(['/ssoma/salud-ocupacional/emos/configuracion']);
   }
 
   clearFilters(): void {

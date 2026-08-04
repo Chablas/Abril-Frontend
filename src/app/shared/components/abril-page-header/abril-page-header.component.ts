@@ -68,8 +68,19 @@ export class AbrilPageHeaderComponent implements OnInit, OnDestroy {
   @Input() botonSecundario?: SsomaHeaderBtn;
   @Input() botonSecundarioDeshabilitado = false;
   @Input() botonSecundarioTooltip?: string;
+  /**
+   * Segundo botón ghost del encabezado, a la DERECHA del secundario. Existe para
+   * las páginas que necesitan dos acciones de header a la vez (ej. EMOs:
+   * "Descargar Excel" + "Configuración"); sin esto había que colgar el segundo
+   * botón como markup a mano en la página, saltándose el estándar visual.
+   * Se declara igual que el secundario y se omite cuando no aplica.
+   */
+  @Input() botonTerciario?: SsomaHeaderBtn;
+  @Input() botonTerciarioDeshabilitado = false;
+  @Input() botonTerciarioTooltip?: string;
   @Output() primaryClick = new EventEmitter<void>();
   @Output() secondaryClick = new EventEmitter<void>();
+  @Output() tertiaryClick = new EventEmitter<void>();
   @Output() menuClick = new EventEmitter<void>();
   @Output() tabClick = new EventEmitter<AbrilPageTab>();
 

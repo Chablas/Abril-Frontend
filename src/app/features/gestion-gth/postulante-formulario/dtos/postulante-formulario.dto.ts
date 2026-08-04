@@ -4,6 +4,15 @@ export interface OpcionFormulario {
   nombre: string;
 }
 
+/**
+ * Tipo de documento para el desplegable. Trae el `codigo` estable (DNI / CE) para aplicar las
+ * reglas del campo "Número de documento" (el DNI son 8 dígitos) sin comparar contra el texto visible.
+ */
+export interface TipoDocumentoOpcion extends OpcionFormulario {
+  /** DNI o CE. */
+  codigo: string;
+}
+
 /** Distrito para el desplegable (incluye la provincia para agrupar/mostrar). */
 export interface DistritoOpcion {
   id: number;
@@ -63,7 +72,7 @@ export interface PostulanteFormularioPublico {
   /** true si GTH ya revisó (aprobado/rechazado) → solo lectura. */
   soloLectura: boolean;
   estadosCiviles: OpcionFormulario[];
-  tiposDocumento: OpcionFormulario[];
+  tiposDocumento: TipoDocumentoOpcion[];
   distritos: DistritoOpcion[];
   universidades: OpcionFormulario[];
   gradosAcademicos: OpcionFormulario[];

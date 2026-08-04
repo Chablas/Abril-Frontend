@@ -1,0 +1,313 @@
+/* Mismo lenguaje visual que la Configuración de Mi Salud
+   (mi-salud/configuracion/correos), extendido con las acciones del CRUD.
+   .abril-field / .abril-field-label / .abril-field-input son globales
+   (src/styles.css) — no reimplementar el label flotante aquí. */
+:host {
+  display: block;
+  width: 100%;
+}
+
+.config-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.config-card {
+  background: #fff;
+  border: 1px solid var(--color-abril-border, #e5e7eb);
+  border-radius: var(--radius-standard, 7px);
+  padding: 20px 22px;
+  max-width: 860px;
+}
+
+.config-card__head {
+  margin-bottom: 16px;
+}
+
+.config-card__head--row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.config-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 6px;
+}
+.config-card__title i {
+  color: var(--color-abril-standard, #0f6e56);
+  font-size: 1.05rem;
+}
+
+.config-card__sub {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.config-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-standard, 7px);
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+.config-warn i {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Botón "Agregar" ── */
+.btn-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 7px 12px;
+  border-radius: var(--radius-standard, 7px);
+  border: 1px solid var(--color-abril-border, #e5e7eb);
+  background: #fff;
+  color: var(--color-abril-standard, #0f6e56);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.btn-add:hover {
+  background: #f9fafb;
+  border-color: var(--color-abril-standard, #0f6e56);
+}
+
+/* ── Lista de destinatarios ── */
+.correo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.correo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-abril-border, #e5e7eb);
+  border-radius: var(--radius-standard, 7px);
+  background: #fafafa;
+}
+
+.correo-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.correo-item__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1f2937;
+  word-break: break-word;
+}
+.correo-item__tag {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #475569;
+  background: #e2e8f0;
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+.correo-item__desc {
+  font-size: 0.78rem;
+  color: #6b7280;
+  word-break: break-word;
+}
+
+.correo-item__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.correo-item__state {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #94a3b8;
+  min-width: 66px;
+  text-align: right;
+}
+.correo-item__state--on {
+  color: var(--color-abril-standard, #0f6e56);
+}
+
+/* Ancho reservado para que las filas fijas (sin acciones) no descuadren
+   la columna del switch respecto a las editables. */
+.correo-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 64px;
+  justify-content: flex-end;
+}
+
+.btn-icon {
+  padding: 5px 6px;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 0.95rem;
+  line-height: 1;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.btn-icon:hover:not(:disabled) {
+  color: var(--color-abril-standard, #0f6e56);
+  background: #f1f5f9;
+}
+.btn-icon--danger:hover:not(:disabled) {
+  color: #ef4444;
+  background: #fee2e2;
+}
+.btn-icon:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Switch ── */
+.switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  border: none;
+  background: #cbd5e1;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.18s ease;
+  flex-shrink: 0;
+}
+.switch--on {
+  background: var(--color-abril-standard, #0f6e56);
+}
+.switch:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.switch__knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.18s ease;
+}
+.switch--on .switch__knob {
+  transform: translateX(20px);
+}
+
+.correo-empty {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0;
+  padding: 12px 0;
+}
+
+/* ── Modal de alta/edición ── */
+.abril-field {
+  margin-bottom: 14px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
+.modal-footer-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 9px;
+  border: none;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-abril-logo-blue-hover);
+}
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  padding: 9px 14px;
+  border-radius: 9px;
+  border: 0.5px solid #d4d0c8;
+  background: transparent;
+  color: #8a8880;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn-ghost:hover {
+  color: #111827;
+  background: #f9fafb;
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

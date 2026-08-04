@@ -91,13 +91,16 @@
               placeholder="Selecciona estado civil" [color]="accent" [sortAlpha]="false"></app-search-select>
 
             <app-search-select label="Tipo de documento *" [options]="tiposDocumento" valueField="id" displayField="nombre"
-              [value]="model.tipoDocumentoId" (valueChange)="model.tipoDocumentoId = $event"
+              [value]="model.tipoDocumentoId" (valueChange)="onTipoDocumentoChange($event)"
               placeholder="Selecciona tipo de documento" [color]="accent" [sortAlpha]="false"></app-search-select>
 
             <div class="abril-field">
               <label class="abril-field-label">Número de documento (DNI o CE) <span class="pf-req">*</span></label>
-              <input type="text" class="abril-field-input" [(ngModel)]="model.numeroDocumento"
-                     placeholder="Escribe tu número de documento" />
+              <input type="text" class="abril-field-input" [ngModel]="model.numeroDocumento"
+                     (input)="onNumeroDocumentoInput($event)"
+                     [attr.maxlength]="esDni ? dniLargo : null"
+                     [attr.inputmode]="esDni ? 'numeric' : 'text'"
+                     [placeholder]="esDni ? 'Escribe tu DNI (8 dígitos)' : 'Escribe tu número de documento'" />
             </div>
 
             <app-search-select label="Distrito de residencia *" [options]="distritos" valueField="id" displayField="nombre"
@@ -112,8 +115,10 @@
 
             <div class="abril-field">
               <label class="abril-field-label">Número de celular <span class="pf-req">*</span></label>
-              <input type="text" class="abril-field-input" [(ngModel)]="model.numeroCelular"
-                     placeholder="Ej. 987 654 321" />
+              <input type="text" class="abril-field-input" [ngModel]="model.numeroCelular"
+                     (input)="onCelularInput($event)"
+                     [attr.maxlength]="celularLargo" inputmode="numeric"
+                     placeholder="Ej. 987654321" />
             </div>
 
             <app-search-select label="Convocatoria de tu interés *" [options]="convocatorias" valueField="id" displayField="nombre"
@@ -131,9 +136,9 @@
             </div>
 
             <div class="abril-field">
-              <label class="abril-field-label">Perfil de LinkedIn <span class="pf-req">*</span></label>
+              <label class="abril-field-label">Perfil de LinkedIn</label>
               <input type="text" class="abril-field-input" [(ngModel)]="model.linkedin"
-                     placeholder="linkedin.com/in/tu-perfil" />
+                     placeholder="linkedin.com/in/tu-perfil (opcional)" />
             </div>
 
             <div class="abril-field">
@@ -154,9 +159,10 @@
                      placeholder="Ej. Ingeniería Civil" />
             </div>
 
+            <!-- Orden propio (alfabético con "Otras" al final) → sortAlpha en false. -->
             <app-search-select label="Universidad o instituto *" [options]="universidades" valueField="id" displayField="nombre"
               [value]="model.universidadId" (valueChange)="model.universidadId = $event"
-              placeholder="Busca tu universidad" [color]="accent"></app-search-select>
+              placeholder="Busca tu universidad" [color]="accent" [sortAlpha]="false"></app-search-select>
 
             <app-search-select label="Grado académico *" [options]="gradosAcademicos" valueField="id" displayField="nombre"
               [value]="model.gradoAcademicoId" (valueChange)="model.gradoAcademicoId = $event"

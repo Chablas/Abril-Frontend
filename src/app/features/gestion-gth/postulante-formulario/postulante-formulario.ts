@@ -12,6 +12,7 @@ import {
   OpcionFormulario,
   PostulanteFormularioPublico,
   PostulanteFormularioRespuestas,
+  TipoDocumentoOpcion,
   respuestasVacias,
 } from './dtos/postulante-formulario.dto';
 
@@ -44,6 +45,14 @@ export class PostulanteFormulario implements OnInit {
   data: PostulanteFormularioPublico | null = null;
   model: PostulanteFormularioRespuestas = respuestasVacias();
 
+  /** Universidades ya ordenadas (alfabéticas y "Otras" al final). Se calcula una sola vez al cargar. */
+  universidades: OpcionFormulario[] = [];
+
+  /** Largo exacto del número de documento cuando el tipo es DNI (8 dígitos). */
+  readonly dniLargo = 8;
+  /** Largo máximo del número de celular (9 dígitos). */
+  readonly celularLargo = 9;
+
   paso = 1;
   readonly totalPasos = 4;
   readonly pasosNombres = ['Datos personales', 'Estudios', 'Experiencia laboral', 'Consentimiento'];
@@ -71,6 +80,7 @@ export class PostulanteFormulario implements OnInit {
     this.service.getPublico(this.token).subscribe({
       next: (data) => {
         this.data = data;
+        this.universidades = this.ordenarUniversidades(data.universidades ?? []);
         this.model = { ...respuestasVacias(), ...data.respuestas };
         this.cargando = false;
         this.cdr.detectChanges();
@@ -87,13 +97,69 @@ export class PostulanteFormulario implements OnInit {
 
   // ── Catálogos (atajos para el template) ─────────────────────────────────
   get estadosCiviles(): OpcionFormulario[] { return this.data?.estadosCiviles ?? []; }
-  get tiposDocumento(): OpcionFormulario[] { return this.data?.tiposDocumento ?? []; }
+  get tiposDocumento(): TipoDocumentoOpcion[] { return this.data?.tiposDocumento ?? []; }
   get distritos(): DistritoOpcion[] { return this.data?.distritos ?? []; }
-  get universidades(): OpcionFormulario[] { return this.data?.universidades ?? []; }
   get gradosAcademicos(): OpcionFormulario[] { return this.data?.gradosAcademicos ?? []; }
   get disponibilidades(): OpcionFormulario[] { return this.data?.disponibilidades ?? []; }
   get motivosCese(): OpcionFormulario[] { return this.data?.motivosCese ?? []; }
   get convocatorias(): OpcionFormulario[] { return this.data?.convocatorias ?? []; }
+
+  /**
+   * Universidades en orden alfabético con "Otras" siempre al final: es la opción de escape del
+   * catálogo, no una universidad más, así que no debe competir por su letra inicial.
+   */
+  private ordenarUniversidades(lista: OpcionFormulario[]): OpcionFormulario[] {
+    const esOtras = (o: OpcionFormulario) => /^otr[ao]s?$/i.test((o.nombre ?? '').trim());
+    const otras = lista.filter(esOtras);
+    const resto = lista
+      .filter((o) => !esOtras(o))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    return [...resto, ...otras];
+  }
+
+  // ── Número de documento / celular (solo dígitos) ─────────────────────────
+  /** true si el tipo de documento elegido es DNI (que son exactamente 8 dígitos numéricos). */
+  get esDni(): boolean {
+    return this.tiposDocumento.find((t) => t.id === this.model.tipoDocumentoId)?.codigo === 'DNI';
+  }
+
+  /** El DNI exige 8 dígitos exactos; para el carné de extranjería basta que esté lleno. */
+  get documentoValido(): boolean {
+    const valor = (this.model.numeroDocumento ?? '').trim();
+    return this.esDni ? /^\d{8}$/.test(valor) : valor.length > 0;
+  }
+
+  /**
+   * Al cambiar el tipo de documento re-aplica la regla al valor ya escrito (ej. si venía un carné
+   * alfanumérico y se pasa a DNI, se queda solo con los primeros 8 dígitos).
+   */
+  onTipoDocumentoChange(id: number | null): void {
+    this.model.tipoDocumentoId = id;
+    if (this.esDni) {
+      this.model.numeroDocumento = this.soloDigitos(this.model.numeroDocumento, this.dniLargo);
+    }
+  }
+
+  /** Filtra lo tecleado en el número de documento: si es DNI, solo dígitos y máximo 8. */
+  onNumeroDocumentoInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const limpio = this.esDni ? this.soloDigitos(input.value, this.dniLargo) : input.value;
+    if (input.value !== limpio) input.value = limpio;
+    this.model.numeroDocumento = limpio;
+  }
+
+  /** Filtra lo tecleado en el celular: solo dígitos y máximo 9. */
+  onCelularInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const limpio = this.soloDigitos(input.value, this.celularLargo);
+    if (input.value !== limpio) input.value = limpio;
+    this.model.numeroCelular = limpio;
+  }
+
+  /** Deja solo dígitos y recorta al largo indicado. */
+  private soloDigitos(valor: string | null, largo: number): string {
+    return (valor ?? '').replace(/\D/g, '').slice(0, largo);
+  }
 
   // ── Validación por paso ──────────────────────────────────────────────────
   private lleno(v: string | null): boolean {
@@ -107,14 +173,13 @@ export class PostulanteFormulario implements OnInit {
       !!m.fechaNacimiento &&
       !!m.estadoCivilId &&
       !!m.tipoDocumentoId &&
-      this.lleno(m.numeroDocumento) &&
+      this.documentoValido &&
       !!m.distritoId &&
       this.lleno(m.correoElectronico) &&
       this.lleno(m.numeroCelular) &&
       !!m.convocatoriaId &&
       this.lleno(m.pretensionesSalariales) &&
-      !!m.disponibilidadId &&
-      this.lleno(m.linkedin)
+      !!m.disponibilidadId
     );
   }
 
