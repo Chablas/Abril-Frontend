@@ -200,6 +200,14 @@ export const routes: Routes = [
   },
 
   {
+    // Formulario público del postulante (acceso por token enviado al correo, sin login).
+    path: 'postulante/formulario',
+    loadComponent: () =>
+      import('./features/gestion-gth/postulante-formulario/postulante-formulario')
+      .then(m => m.PostulanteFormulario)
+  },
+
+  {
     path: 'registros-modelo',
     loadComponent: () =>
       import('./features/habilitacion/pages/registros-modelo/registros-modelo')

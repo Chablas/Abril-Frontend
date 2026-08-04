@@ -8,6 +8,7 @@ import {
   DetalleRequerimientoGth,
   EstadoTransicionResult,
 } from '../dtos/reclutamiento.dto';
+import { FormularioAccionResult, FormularioRevision } from '../dtos/formulario-postulante.dto';
 
 interface MessageResult {
   message: string;
@@ -111,6 +112,40 @@ export class ReclutamientoService {
     return this.http.post<EstadoTransicionResult>(
       `${this.apiUrl}/requerimiento/${requerimientoId}/long-list/enviar`,
       formData,
+      { headers: this.headers },
+    );
+  }
+
+  // ── Formulario de información del postulante (fase "Long list aprobada") ──
+  // Comparte dominio con reclutamiento pero vive en su propio controller.
+  private readonly formApiUrl = `${environment.apiUrl}api/v1/gestion-gth/postulante-formulario`;
+
+  /** Envía (o reenvía) el formulario al correo del postulante de un candidato aprobado. */
+  enviarFormulario(candidatoId: number, correo: string): Observable<FormularioAccionResult> {
+    return this.http.post<FormularioAccionResult>(
+      `${this.formApiUrl}/candidato/${candidatoId}/enviar`,
+      { correo },
+      { headers: this.headers },
+    );
+  }
+
+  /** Trae el formulario del candidato para revisarlo (modal "Ver formulario"). */
+  getFormularioRevision(candidatoId: number): Observable<FormularioRevision> {
+    return this.http.get<FormularioRevision>(
+      `${this.formApiUrl}/candidato/${candidatoId}`,
+      { headers: this.headers },
+    );
+  }
+
+  /** Registra la decisión de GTH sobre el formulario completado (aprobar/rechazar). */
+  decisionFormulario(
+    candidatoId: number,
+    aprobado: boolean,
+    motivo?: string | null,
+  ): Observable<FormularioAccionResult> {
+    return this.http.post<FormularioAccionResult>(
+      `${this.formApiUrl}/candidato/${candidatoId}/decision`,
+      { aprobado, motivo: motivo ?? null },
       { headers: this.headers },
     );
   }

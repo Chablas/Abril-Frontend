@@ -11,7 +11,14 @@
     <label class="pgp-add" [style.--pgp-accent]="color">
       <i class="ti" [ngClass]="addIcon"></i>
       <span>{{ addLabel }}</span>
-      <input type="file" [accept]="accept" [attr.capture]="capture" [multiple]="multiple" hidden (change)="onFilesSelected($event)" />
+      <input type="file" [accept]="accept" [attr.capture]="capture" [multiple]="multiple" style="display:none" (change)="onFilesSelected($event)" />
     </label>
+    @if (showCameraButton && !capture) {
+      <label class="pgp-add" [style.--pgp-accent]="color">
+        <i class="ti ti-camera"></i>
+        <span>Tomar foto</span>
+        <input type="file" [accept]="accept" capture="environment" style="display:none" (change)="onFilesSelected($event)" />
+      </label>
+    }
   }
 </div>

@@ -519,7 +519,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
 
   private verificarExistenciaEnBd(dni: string): void {
     this.trabajadorHabService
-      .getTrabajadores({ search: dni, pageSize: 1, page: 1, soloVerificacion: true })
+      .getTrabajadores({ search: dni, pageSize: 50, page: 1, soloVerificacion: true })
       .subscribe({
         next: (res) => {
           const data = res.data ?? [];
@@ -530,43 +530,43 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
             return;
           }
 
-          const worker = data[0];
-          const estaActivo = worker.estadoWorker === 'ACTIVO';
-          const mismaEmpresa =
-            worker.empresaId != null && worker.empresaId === this.authService.getEmpresaId();
+          // El DNI puede tener una ficha por cada empresa donde estuvo/está vinculado.
+          // Solo se bloquea el alta si ese DNI está ACTIVO en alguna de ellas; si todas
+          // están retiradas, se permite registrarlo como trabajador nuevo (otra empresa).
+          const empresaActual = this.esContratista
+            ? this.authService.getEmpresaId()
+            : this.model.empresaId;
+
+          const activos = data.filter((w) => w.estadoWorker === 'ACTIVO');
+          const activoMismaEmpresa = activos.find(
+            (w) => empresaActual != null && w.empresaId === empresaActual,
+          );
+          const retiradoMismaEmpresa = data.find(
+            (w) => w.estadoWorker !== 'ACTIVO' && empresaActual != null && w.empresaId === empresaActual,
+          );
 
           let debeBloquear = false;
           let puedeIrABuscar = false;
           let mensajeHtml = '';
+          let worker = activos[0] ?? data[0];
 
-          if (this.esContratista) {
-            if (estaActivo) {
-              debeBloquear = true;
-              if (mismaEmpresa) {
-                puedeIrABuscar = true;
-                mensajeHtml = `<b>${worker.apellidoNombre}</b> ya está activo en el sistema.<br><br>Búscalo en la lista para gestionarlo.`;
-              } else {
-                mensajeHtml = `<b>${worker.apellidoNombre}</b> ya está activo en otra empresa y no puede ser registrado.`;
-              }
-            } else if (mismaEmpresa) {
-              debeBloquear = true;
-              puedeIrABuscar = true;
-              mensajeHtml = `<b>${worker.apellidoNombre}</b> ya estuvo registrado en tu empresa.<br><br>Búscalo en la lista para reingresarlo.`;
-            } else {
-              // RETIRADO + otra empresa: solo bloquear si es admin (worker Casa)
-              if (!this.esContratista) {
-                debeBloquear = true;
-                mensajeHtml = `<b>${worker.apellidoNombre}</b> ya existe como trabajador retirado.<br><br>Usa la opción Reingreso para reactivarlo.`;
-              }
-              // Contratista: no bloquear, puede registrarlo libremente en su empresa
-            }
-          } else {
+          if (activoMismaEmpresa) {
             debeBloquear = true;
             puedeIrABuscar = true;
-            mensajeHtml = estaActivo
-              ? `<b>${worker.apellidoNombre}</b> ya está registrado y activo.<br><br>Búscalo en la lista para gestionarlo.`
-              : `<b>${worker.apellidoNombre}</b> ya existe en el sistema como trabajador retirado.<br><br>Búscalo en la lista para reingresarlo.`;
+            worker = activoMismaEmpresa;
+            mensajeHtml = `<b>${worker.apellidoNombre}</b> ya está activo en el sistema.<br><br>Búscalo en la lista para gestionarlo.`;
+          } else if (activos.length > 0) {
+            debeBloquear = true;
+            worker = activos[0];
+            mensajeHtml = `<b>${worker.apellidoNombre}</b> ya está activo en otra empresa y no puede ser registrado.<br><br>Esa empresa debe darlo de baja primero.`;
+          } else if (retiradoMismaEmpresa) {
+            debeBloquear = true;
+            puedeIrABuscar = true;
+            worker = retiradoMismaEmpresa;
+            mensajeHtml = `<b>${worker.apellidoNombre}</b> ya estuvo registrado en tu empresa.<br><br>Búscalo en la lista para reingresarlo.`;
           }
+          // Si solo hay fichas retiradas en otras empresas (ninguna activa), no se bloquea:
+          // se permite registrarlo como trabajador nuevo.
 
           if (debeBloquear) {
             this.model.dni = '';

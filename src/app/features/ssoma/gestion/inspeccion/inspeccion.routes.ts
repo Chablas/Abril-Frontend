@@ -23,6 +23,22 @@ export const INSPECCION_ROUTES: Routes = [
     data: { titulo: 'NUEVA INSPECCIÓN' },
   },
   {
+    path: 'abiertas',
+    loadComponent: () =>
+      import('./pages/abiertas/inspeccion-abiertas.component').then(
+        (m) => m.InspeccionAbiertasComponent,
+      ),
+    data: { titulo: 'INSPECCIONES ABIERTAS' },
+  },
+  {
+    path: ':id/agregar-hallazgo',
+    loadComponent: () =>
+      import('./pages/agregar-hallazgo/inspeccion-agregar-hallazgo.component').then(
+        (m) => m.InspeccionAgregarHallazgoComponent,
+      ),
+    data: { titulo: 'AGREGAR HALLAZGO' },
+  },
+  {
     path: ':id',
     loadComponent: () =>
       import('./pages/detalle/inspeccion-detalle.component').then(

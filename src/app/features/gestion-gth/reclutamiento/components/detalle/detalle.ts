@@ -10,7 +10,9 @@ import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { LongListCandidatoEnvio, ReclutamientoService } from '../../services/reclutamiento.service';
-import { AsignacionGth, DetalleRequerimientoGth, Opcion } from '../../dtos/reclutamiento.dto';
+import { AsignacionGth, CandidatoAprobado, DetalleRequerimientoGth, Opcion } from '../../dtos/reclutamiento.dto';
+import { CandidatoFormularioResumen } from '../../dtos/formulario-postulante.dto';
+import { GthFormularioPostulanteModal } from '../formulario-postulante/formulario-postulante-modal';
 import { estadoColors, faseAlcanzada } from '../../estado-colors';
 
 /**
@@ -50,7 +52,15 @@ interface CandidatoLongList {
 @Component({
   standalone: true,
   selector: 'app-gth-detalle-requerimiento',
-  imports: [CommonModule, FormsModule, AbrilModalPanel, StatusBadge, SearchSelect, TitleCasePipe],
+  imports: [
+    CommonModule,
+    FormsModule,
+    AbrilModalPanel,
+    StatusBadge,
+    SearchSelect,
+    TitleCasePipe,
+    GthFormularioPostulanteModal,
+  ],
   templateUrl: './detalle.html',
 })
 export class GthDetalleRequerimiento implements OnInit {
@@ -85,6 +95,14 @@ export class GthDetalleRequerimiento implements OnInit {
   /** true mientras se envía la long list (deshabilita el botón para evitar doble envío). */
   enviando = false;
 
+  // ── Formulario de información del postulante (fase "Long list aprobada") ──
+  /** Correo escrito por candidato para enviar el formulario (key = candidatoId). */
+  correoFormulario: Record<number, string> = {};
+  /** true mientras se envía el formulario de un candidato (key = candidatoId). */
+  enviandoFormulario: Record<number, boolean> = {};
+  /** Candidato cuyo modal "Ver formulario" está abierto (null = cerrado). */
+  formularioCandidatoId: number | null = null;
+
   private huboCambios = false;
 
   constructor(
@@ -106,8 +124,14 @@ export class GthDetalleRequerimiento implements OnInit {
           data.canales.filter((c) => c.publicado).map((c) => c.id),
         );
         // En la fase "Long list aprobada" la asignación va colapsada (como en el diseño):
-        // el foco pasa al envío del proceso y el Multitest.
-        if (this.longListAprobada) this.seccionAsignacion = false;
+        // el foco pasa al envío del formulario del postulante.
+        if (this.longListAprobada) {
+          this.seccionAsignacion = false;
+          // Prellena el correo de cada candidato con el último usado (si ya se envió).
+          for (const c of data.candidatosAprobados) {
+            if (c.formulario?.correoEnvio) this.correoFormulario[c.candidatoId] = c.formulario.correoEnvio;
+          }
+        }
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -346,6 +370,76 @@ export class GthDetalleRequerimiento implements OnInit {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  // ── Formulario de información del postulante ────────────────────────────
+  /** Etiqueta del botón "Ver formulario" según el estado del formulario del candidato. */
+  botonFormularioLabel(c: CandidatoAprobado): string {
+    switch (c.formulario?.estadoCodigo) {
+      case 'APROBADO':  return 'Ver formulario aprobado';
+      case 'RECHAZADO': return 'Ver formulario rechazado';
+      default:          return 'Ver formulario';
+    }
+  }
+
+  /** Badge de estado del formulario del candidato (texto + colores). */
+  estadoFormularioBadge(c: CandidatoAprobado): { text: string; bg: string; color: string } {
+    switch (c.formulario?.estadoCodigo) {
+      case 'ENVIADO':    return { text: 'Enviado',            bg: '#E0F2FE', color: '#0284C7' };
+      case 'COMPLETADO': return { text: 'Por revisar',        bg: '#FEF3C7', color: '#B45309' };
+      case 'APROBADO':   return { text: 'Aprobado',           bg: '#DCFCE7', color: '#15803D' };
+      case 'RECHAZADO':  return { text: 'Rechazado',          bg: '#FEE2E2', color: '#B91C1C' };
+      default:           return { text: 'Pendiente de envío', bg: '#F3F4F6', color: '#6B7280' };
+    }
+  }
+
+  /** El formulario ya aprobado no se puede reenviar. */
+  formularioBloqueado(c: CandidatoAprobado): boolean {
+    return c.formulario?.estadoCodigo === 'APROBADO';
+  }
+
+  /** Envía (o reenvía) el formulario al correo escrito para el candidato. */
+  enviarFormulario(c: CandidatoAprobado): void {
+    const correo = (this.correoFormulario[c.candidatoId] ?? '').trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Correo no válido',
+        text: 'Ingresa un correo electrónico válido para enviar el formulario al postulante.',
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    this.enviandoFormulario[c.candidatoId] = true;
+    this.service.enviarFormulario(c.candidatoId, correo).subscribe({
+      next: (res) => {
+        c.formulario = res.formulario;
+        this.enviandoFormulario[c.candidatoId] = false;
+        this.huboCambios = true;
+        Swal.fire({ icon: 'success', title: 'Formulario enviado', text: res.message, confirmButtonColor: '#005D9D' });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviandoFormulario[c.candidatoId] = false;
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /** Abre el modal "Ver formulario" del candidato. */
+  abrirFormulario(c: CandidatoAprobado): void {
+    this.formularioCandidatoId = c.candidatoId;
+  }
+
+  cerrarFormulario(): void {
+    this.formularioCandidatoId = null;
+  }
+
+  /** Al aprobar/rechazar desde el modal, refresca el estado del formulario del candidato. */
+  onFormularioCambios(resumen: CandidatoFormularioResumen): void {
+    const c = this.detalle?.candidatosAprobados.find((x) => x.candidatoId === this.formularioCandidatoId);
+    if (c) c.formulario = resumen;
+    this.huboCambios = true;
   }
 
   /**

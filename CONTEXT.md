@@ -4870,3 +4870,61 @@ Investigación + implementación del selector de "Responsables UDP" en el modal 
 
 ### Estado final:
 - `ng build` limpio: **0 errores**, mismos warnings preexistentes de terceros (`canvg`, `flatpickr`).
+
+## Sesión 2026-08-03 — Dashboard Arquitectura Comercial + fix cámara en fotos
+
+### 1. Ranking Eficiencia (IES) — modales de detalle clickeables
+En `features/arquitectura-comercial/dashboard/dashboard.ts` / `.html`:
+- Modal de carga (`modalCarga`, se abre desde las barras del ranking): los chips "✓ culminadas" / "⚠ vencidas" ahora tienen `(click)="toggleModalCargaFiltroEstado(...)"` — antes eran solo texto estático, no filtraban nada pese a parecer clickeables.
+- `modalCargaFiltradas` ya no oculta PENDIENTE de forma incondicional — solo si el filtro activo no es explícitamente `'PENDIENTE'` (se agregó esa opción al dropdown de estados).
+- Modal histórico de supervisor (`modalHistorico`): los tiles "Pendientes"/"Vencidas" ahora llaman `verActividadesHistorico('PENDIENTE'|'VENCIDO')`, que cierra el histórico y abre el modal de carga para ese mismo supervisor con el filtro preseleccionado (reusa `abrirModalCarga` + `getActividades`, no hubo que tocar backend). Se agregó `historicoSupervisorUserId` para poder pasarlo.
+
+### 2. Backend — IES sin castigo por mora (10%)
+`Infrastructure/Repositories/ArquitecturaComercialRepository.cs`, método `GetDashboardDataFiltrado`: se quitó el componente "Penalización mora (10%)" del cálculo del IES (confundía a los supervisores — ver ejemplo Holguín 1/1 culminada mostrando 90% en vez de 100%, que en realidad era el SPI el que bajaba el número, no la mora). Fórmula anterior:
+```
+IES = SPI*0.35 + Cierre*0.35 + Puntualidad*0.20 + Mora*0.10
+```
+Fórmula nueva (renormalizada a 100% entre los 3 componentes restantes):
+```
+IES = (SPI*0.35 + Cierre*0.35 + Puntualidad*0.20) / 0.90
+```
+Confirmado que el histórico de supervisor (`GetSupervisorHistorico`) usa una métrica distinta (tasa de cierre simple por semana), no el IES compuesto — no había datos "congelados" con la fórmula vieja que arrastrar.
+
+### 3. Fix cámara no disponible en fotos (móvil) — Observaciones y Revisiones
+Reportado: en Gestión de Observaciones/Revisiones (nueva-observación, levantar-observación, y sus equivalentes de revisiones), al adjuntar foto en celular solo aparecía la galería, no la opción de cámara. Comparado contra `features/ssoma/gestion/inspeccion/` (donde sí funciona) para encontrar la diferencia real:
+- Los 4 componentes ya pasaban `[multiple]="false"` al `app-photo-grid-picker` compartido (`shared/components/photo-grid-picker/`) — esa NO era la causa.
+- La diferencia real: el input de `photo-grid-picker` usaba el atributo HTML `hidden`, mientras que el patrón que funciona en inspección usa `style="display:none"`. Corregido en `photo-grid-picker.html` (ambos inputs).
+- Adicionalmente se agregó un botón explícito "Tomar foto" (`capture="environment"`, sin `multiple`) junto al de "Agregar foto" (galería), como respaldo — controlado por nuevo `@Input() showCameraButton = true` en `photo-grid-picker.ts`. Se oculta si el consumidor ya pasa `[capture]` explícito.
+- Como es el componente compartido, el fix beneficia automáticamente a los 4 consumidores sin tocarlos individualmente.
+
+**Build**: `ng build` limpio (0 errores nuevos). No se probó visualmente — pendiente que el usuario confirme en celular real que la cámara ya aparece.
+
+### Nota técnica — diff grande y ruidoso en dashboard.ts
+El archivo original tenía finales de línea mixtos (CRLF/CR/LF según `file`). Al editarlo, el archivo quedó completo en CRLF consistente, generando un diff de ~1900 líneas en vez de las ~30 líneas realmente cambiadas. No afecta funcionalidad, pero conviene tenerlo en cuenta al revisar el historial/blame de ese archivo.
+
+### Pendiente / fuera de alcance de esta sesión
+1. Confirmar en dispositivo real que la cámara ya aparece en Observaciones/Revisiones tras el fix de `photo-grid-picker`.
+2. Backend: recompilar/reiniciar el servicio con el cambio del IES (quitar mora) para que el ranking en producción refleje la fórmula nueva.
+
+## Sesión 2026-08-04 — Fotos de Inspección rotas + Inspecciones colaborativas
+
+Rama: `master`. Ver detalle completo en el CONTEXT.md del backend (misma sesión, mismos cambios de dominio) — acá solo la parte frontend.
+
+### Fix de fotos rotas
+- `spUrl()` en `inspeccion-detalle.component.ts` ya no arma la URL apuntando directo a SharePoint (exigía sesión Microsoft, por eso nunca cargaban). Ahora `precargarFotos()` descarga cada foto/firma/evidencia como blob autenticado contra el nuevo endpoint backend `.../media` (mismo patrón que ya usaba `descargarPdf`, header `Authorization` manual) y arma `object URL`s locales para los `<img src>`.
+- Registros antiguos (creados antes del fix) siguen rotos — no se puede recuperar la ruta relativa desde el `webUrl` guardado.
+
+### Inspecciones colaborativas (gerencial/cruzada/coordinadores SSOMA)
+- `InspeccionTipoDto.esColaborativa`: el wizard de "Nueva inspección" (`pages/nueva/`) detecta el flag y salta el paso de checklist (paso 1 → paso 3 directo) cuando el tipo es colaborativo.
+- Página nueva `pages/abiertas/` — lista inspecciones colaborativas en estado "Abierta", botón "Unirme y agregar hallazgo".
+- Página nueva `pages/agregar-hallazgo/` — form liviano (sin checklist) para sumar un hallazgo suelto a una inspección ya abierta: descripción, foto(s) (máx. 5), criticidad Crítico/Mayor/Menor, fecha propuesta de levantamiento, responsable, recomendación.
+- Detalle (`pages/detalle/`): sección de participantes + botones "Cerrar inspección"/"Reabrir inspección" (visibles solo cuando `data.esColaborativa`).
+- Ruta nueva `abiertas` y `:id/agregar-hallazgo` en `inspeccion.routes.ts`; tab nueva en `inspeccion-tabs.ts`.
+- PDF de inspecciones colaborativas ahora sale horizontal tipo Excel (una fila por hallazgo) — cambio 100% backend (`InspeccionPdfService`), sin tocar el botón "Descargar PDF" del frontend.
+
+### Archivos clave
+`features/ssoma/gestion/inspeccion/{inspeccion.dtos.ts, inspeccion.service.ts, inspeccion.routes.ts, inspeccion-tabs.ts, pages/detalle/, pages/nueva/inspeccion-nueva.component.ts, pages/abiertas/, pages/agregar-hallazgo/}`.
+
+### Pendiente
+- Confirmar visualmente en dispositivo real que "Abiertas" → "Unirme" → "Agregar hallazgo" funciona bien desde 2 sesiones/dispositivos distintos simultáneos (se probó desde el mismo usuario, faltó probar con un segundo coordinador real).
+- RAC tiene el mismo bug de fotos rotas en pantalla — no se tocó en esta sesión (flag como pendiente por separado).
