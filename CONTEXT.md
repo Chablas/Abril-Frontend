@@ -4687,3 +4687,26 @@ El archivo original tenía finales de línea mixtos (CRLF/CR/LF según `file`). 
 ### Pendiente / fuera de alcance de esta sesión
 1. Confirmar en dispositivo real que la cámara ya aparece en Observaciones/Revisiones tras el fix de `photo-grid-picker`.
 2. Backend: recompilar/reiniciar el servicio con el cambio del IES (quitar mora) para que el ranking en producción refleje la fórmula nueva.
+
+## Sesión 2026-08-04 — Fotos de Inspección rotas + Inspecciones colaborativas
+
+Rama: `master`. Ver detalle completo en el CONTEXT.md del backend (misma sesión, mismos cambios de dominio) — acá solo la parte frontend.
+
+### Fix de fotos rotas
+- `spUrl()` en `inspeccion-detalle.component.ts` ya no arma la URL apuntando directo a SharePoint (exigía sesión Microsoft, por eso nunca cargaban). Ahora `precargarFotos()` descarga cada foto/firma/evidencia como blob autenticado contra el nuevo endpoint backend `.../media` (mismo patrón que ya usaba `descargarPdf`, header `Authorization` manual) y arma `object URL`s locales para los `<img src>`.
+- Registros antiguos (creados antes del fix) siguen rotos — no se puede recuperar la ruta relativa desde el `webUrl` guardado.
+
+### Inspecciones colaborativas (gerencial/cruzada/coordinadores SSOMA)
+- `InspeccionTipoDto.esColaborativa`: el wizard de "Nueva inspección" (`pages/nueva/`) detecta el flag y salta el paso de checklist (paso 1 → paso 3 directo) cuando el tipo es colaborativo.
+- Página nueva `pages/abiertas/` — lista inspecciones colaborativas en estado "Abierta", botón "Unirme y agregar hallazgo".
+- Página nueva `pages/agregar-hallazgo/` — form liviano (sin checklist) para sumar un hallazgo suelto a una inspección ya abierta: descripción, foto(s) (máx. 5), criticidad Crítico/Mayor/Menor, fecha propuesta de levantamiento, responsable, recomendación.
+- Detalle (`pages/detalle/`): sección de participantes + botones "Cerrar inspección"/"Reabrir inspección" (visibles solo cuando `data.esColaborativa`).
+- Ruta nueva `abiertas` y `:id/agregar-hallazgo` en `inspeccion.routes.ts`; tab nueva en `inspeccion-tabs.ts`.
+- PDF de inspecciones colaborativas ahora sale horizontal tipo Excel (una fila por hallazgo) — cambio 100% backend (`InspeccionPdfService`), sin tocar el botón "Descargar PDF" del frontend.
+
+### Archivos clave
+`features/ssoma/gestion/inspeccion/{inspeccion.dtos.ts, inspeccion.service.ts, inspeccion.routes.ts, inspeccion-tabs.ts, pages/detalle/, pages/nueva/inspeccion-nueva.component.ts, pages/abiertas/, pages/agregar-hallazgo/}`.
+
+### Pendiente
+- Confirmar visualmente en dispositivo real que "Abiertas" → "Unirme" → "Agregar hallazgo" funciona bien desde 2 sesiones/dispositivos distintos simultáneos (se probó desde el mismo usuario, faltó probar con un segundo coordinador real).
+- RAC tiene el mismo bug de fotos rotas en pantalla — no se tocó en esta sesión (flag como pendiente por separado).
