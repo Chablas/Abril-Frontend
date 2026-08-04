@@ -4928,3 +4928,24 @@ Rama: `master`. Ver detalle completo en el CONTEXT.md del backend (misma sesión
 ### Pendiente
 - Confirmar visualmente en dispositivo real que "Abiertas" → "Unirme" → "Agregar hallazgo" funciona bien desde 2 sesiones/dispositivos distintos simultáneos (se probó desde el mismo usuario, faltó probar con un segundo coordinador real).
 - RAC tiene el mismo bug de fotos rotas en pantalla — no se tocó en esta sesión (flag como pendiente por separado).
+
+## Sesión 2026-08-04 (2) — Merge de `origin/master` a `victor-frontend`
+
+Sesión de sincronización, sin desarrollo de feature propio: se trajeron a `victor-frontend` los cambios que avanzaron en `master`/`origin/master` (sesiones 2026-08-03 y 2026-08-04 arriba) mientras esta rama estaba en curso.
+
+### Qué se hizo
+1. `git fetch --prune` + `git pull origin victor-frontend`: fast-forward `e2ad6a6d..5692413a` (commits de otra sesión/PC, no de esta sesión).
+2. `git merge origin/master`: un solo conflicto, en `CONTEXT.md` (log de sesiones) — ambos lados agregaban secciones cronológicas distintas al final del archivo, sin pisar contenido. Resuelto concatenando ambos bloques en orden cronológico (HEAD hasta 2026-08-02, luego master 2026-08-03/2026-08-04).
+3. `ng build` tras el merge: **0 errores**, mismos warnings preexistentes de terceros (`canvg`, `flatpickr`).
+4. `git fetch origin master:master`: master local actualizado a `ef06a718` (igual a `origin/master`).
+
+### Contenido traído por el merge (no escrito en esta sesión, viene de `master`)
+- Feature nuevo **`postulante-formulario`** (`gestion-gth`): formulario + service + dtos, más el modal `formulario-postulante` en `reclutamiento/components/`.
+- Cambios en `reclutamiento` (detalle, dtos, service).
+- Ajustes en `arquitectura-comercial/dashboard` (`.ts`/`.html`) y `app.routes.ts`.
+- Cambios en `ssoma/gestion/inspeccion` (dtos, service, routes, tabs, páginas `detalle`/`nueva`) y en `shared/components/photo-grid-picker`.
+- Ajuste en `habilitacion/.../worker-create-edit`.
+
+### Estado final
+- `git status --porcelain` limpio antes y después del merge — no hubo cambios propios de la rama para commitear en esta sesión (aparte del merge commit).
+- Rama `victor-frontend` actualizada y sincronizada con `origin/master` al momento del merge.
