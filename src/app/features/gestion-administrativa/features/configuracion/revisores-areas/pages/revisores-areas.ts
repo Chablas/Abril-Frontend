@@ -48,6 +48,9 @@ import { RevisoresAreasEditar } from '../components/editar/editar';
 export class RevisoresAreas implements OnInit {
   readonly tabs = CONFIGURACION_TABS;
 
+  /** area_type.area_type_name de las filas que son gerencia (raíz de su rama). */
+  private readonly TIPO_GERENCIA = 'Área de Gerencia';
+
   rows: AreaRevisorItemDTO[] = [];
   options: AreaRevisorOptionDTO[] = [];
   /** Todos los proyectos activos (para armar las subfilas de las áreas filtradas por proyecto). */
@@ -179,6 +182,14 @@ export class RevisoresAreas implements OnInit {
       (p) =>
         asignados.get(p.projectId) ?? { projectId: p.projectId, projectName: p.projectName, revisores: [] },
     );
+  }
+
+  /**
+   * true si la fila es un "Área de Gerencia": no tiene área padre y sus revisores son
+   * el respaldo de todas las áreas estándar que cuelgan de ella.
+   */
+  esGerencia(item: AreaRevisorItemDTO): boolean {
+    return item.areaTypeName === this.TIPO_GERENCIA;
   }
 
   // ── Celda "Revisores" ─────────────────────────────────────────────────

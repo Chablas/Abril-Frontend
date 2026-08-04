@@ -20,14 +20,16 @@ export interface AreaProyectoRevisoresDTO {
 }
 
 /**
- * Una fila por área de tipo "Área Estándar" (solo el primer nodo estándar de cada
- * rama del árbol de áreas), junto a sus n revisores ordenados por prioridad.
- * Estos revisores aplican a los trabajadores del área que no tienen revisores
- * propios en Revisores de Trabajadores.
+ * Una fila por área de tipo "Área de Gerencia" o "Área Estándar" que sea el primer
+ * nodo de su mismo tipo en su rama del árbol de áreas, junto a sus n revisores
+ * ordenados por prioridad. Estos revisores aplican a los trabajadores del área que
+ * no tienen revisores propios en Revisores de Trabajadores.
  */
 export interface AreaRevisorItemDTO {
   areaScopeId: number;
   areaName: string;
+  /** Tipo del nodo: "Área de Gerencia" o "Área Estándar". */
+  areaTypeName: string;
   /** Nombre del área padre (normalmente la gerencia). null = nodo raíz. */
   parentName?: string | null;
   /** Revisores a nivel de área (project_id NULL). */
@@ -50,7 +52,7 @@ export interface ProyectoOptionDTO {
   projectName: string;
 }
 
-/** Carga inicial de la página: áreas estándar con sus revisores + opciones del selector. */
+/** Carga inicial de la página: áreas configurables con sus revisores + opciones del selector. */
 export interface AreaRevisorInicialDTO {
   areas: AreaRevisorItemDTO[];
   options: AreaRevisorOptionDTO[];
