@@ -19,6 +19,9 @@ import { Paginator } from '../../../../../../shared/components/paginator/paginat
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
 import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { CONFIGURACION_TABS } from '../../../../../configuracion/shared/configuracion-tabs';
 import { DEFAULT_PAGE_SIZE } from '../../../../../../shared/constants/pagination';
 import { RevisoresAreasDetalle } from '../components/detalle/detalle';
 import { RevisoresAreasEditar } from '../components/editar/editar';
@@ -34,6 +37,8 @@ import { RevisoresAreasEditar } from '../components/editar/editar';
     TitleCasePipe,
     AbrilBulkActionDirective,
     FilterModal,
+    FilterTriggerButton,
+    AbrilPageHeaderComponent,
     RevisoresAreasDetalle,
     RevisoresAreasEditar,
   ],
@@ -41,6 +46,8 @@ import { RevisoresAreasEditar } from '../components/editar/editar';
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class RevisoresAreas implements OnInit {
+  readonly tabs = CONFIGURACION_TABS;
+
   rows: AreaRevisorItemDTO[] = [];
   options: AreaRevisorOptionDTO[] = [];
   /** Todos los proyectos activos (para armar las subfilas de las áreas filtradas por proyecto). */

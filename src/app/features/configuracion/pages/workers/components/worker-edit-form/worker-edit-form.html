@@ -35,10 +35,35 @@
         <input
           type="email"
           class="field-input"
+          [class.field-invalid]="!!emailError || faltaCorreo"
           [(ngModel)]="model.emailCorporativo"
+          (ngModelChange)="onEmailCorporativoInput()"
+          (blur)="onEmailCorporativoBlur()"
           placeholder="usuario@abril.pe"
         />
+        <span *ngIf="verificandoEmail" class="field-status checking">
+          Verificando en el directorio de Abril…
+        </span>
+        <span *ngIf="!verificandoEmail && emailVerificadoNombre" class="field-status verified">
+          ✓ {{ emailVerificadoNombre }}
+        </span>
+        <span *ngIf="!verificandoEmail && emailError" class="field-error">{{ emailError }}</span>
       </div>
+
+      <div>
+        <label class="field-label">Correo personal</label>
+        <input
+          type="email"
+          class="field-input"
+          [class.field-invalid]="faltaCorreo"
+          [(ngModel)]="model.emailPersonal"
+          placeholder="usuario@gmail.com"
+        />
+      </div>
+
+      <p class="field-error col-span-2" *ngIf="faltaCorreo">
+        El trabajador debe conservar al menos un correo: el corporativo o el personal.
+      </p>
 
       <div>
         <label class="field-label">Categoría</label>

@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { SALUD_OCUPACIONAL_BASE, buildAuthHeaders } from './http-base';
 import {
   DocumentTypeDto,
+  EmailCorporativoValidacionDto,
   WorkerCategoryDto,
   WorkerDatosBasicosDto,
   WorkerUpsertDto,
@@ -34,6 +35,30 @@ export class WorkerService {
   getWorkerCategories(): Observable<WorkerCategoryDto[]> {
     return this.http.get<WorkerCategoryDto[]>(`${this.apiUrl}/worker-categories`, {
       headers: buildAuthHeaders(),
+    });
+  }
+
+  /**
+   * Verifica un correo corporativo antes de guardar: formato, existencia en el directorio de
+   * Abril (tenant de Microsoft) y que no esté ya asignado a otro trabajador. Resuelve las dos
+   * comprobaciones en una sola petición.
+   *
+   * @param workerId Trabajador que se está editando (se excluye del chequeo de duplicados).
+   * @param corporativo Lo envía el alta (Staff/Oficina Central = true) cuando aún no hay
+   *   workerId; si se omite, el backend usa la clasificación guardada del trabajador.
+   */
+  validarEmailCorporativo(
+    email: string,
+    workerId?: number | null,
+    corporativo?: boolean,
+  ): Observable<EmailCorporativoValidacionDto> {
+    let params = new HttpParams().set('email', email);
+    if (workerId != null) params = params.set('workerId', workerId);
+    if (corporativo != null) params = params.set('corporativo', corporativo);
+
+    return this.http.get<EmailCorporativoValidacionDto>(`${this.apiUrl}/validar-email-corporativo`, {
+      headers: buildAuthHeaders(),
+      params,
     });
   }
 

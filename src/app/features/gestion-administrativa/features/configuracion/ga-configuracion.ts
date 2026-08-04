@@ -8,8 +8,6 @@ import { NavigationService } from '../../../../core/navigation/navigation.servic
 import { GaLugares } from './lugares/pages/lugares';
 import { GaMotivos } from './motivos/pages/motivos';
 import { GaTrayectos } from '../trayectos/pages/trayectos';
-import { RevisorSalidas } from './revisor-salidas/pages/revisor-salidas';
-import { RevisoresAreas } from './revisores-areas/pages/revisores-areas';
 import { VisibilidadSalidas } from './visibilidad-salidas/pages/visibilidad-salidas';
 import { GaCarpetaAdjuntos } from './carpeta-adjuntos/pages/carpeta-adjuntos';
 import { GaCorreos } from './correos/pages/correos';
@@ -30,9 +28,15 @@ interface ConfigSectionDef {
  * Contenedor de configuración de Gestión Administrativa.
  *
  * Agrupa bajo `/gestion-administrativa/configuracion` las pantallas de
- * configuración (lugares, motivos, trayectos, revisor y visibilidad de
- * salidas) conmutándolas con el componente `app-section-tabs`, siguiendo el
- * mismo patrón que `costs-configuration` de Costos y Presupuestos.
+ * configuración propias de salidas (lugares, motivos, trayectos, visibilidad,
+ * carpeta de adjuntos y correos) conmutándolas con el componente
+ * `app-section-tabs`, siguiendo el mismo patrón que `costs-configuration` de
+ * Costos y Presupuestos.
+ *
+ * Los revisores de trabajadores/áreas ya NO viven aquí: definen los jefes de
+ * cada trabajador/área para toda la organización, así que se movieron al módulo
+ * de configuración global (`/configuracion/revisor-salidas` y
+ * `/configuracion/revisores-areas`).
  *
  * Cada sección sigue teniendo su propia ruta
  * (`/gestion-administrativa/configuracion/<seccion>`) con su `featureKey` +
@@ -52,8 +56,6 @@ interface ConfigSectionDef {
     GaLugares,
     GaMotivos,
     GaTrayectos,
-    RevisorSalidas,
-    RevisoresAreas,
     VisibilidadSalidas,
     GaCarpetaAdjuntos,
     GaCorreos,
@@ -90,22 +92,6 @@ export class GaConfiguracion implements OnInit {
       createLabel: 'Nuevo trayecto',
     },
     {
-      id: 'revisor-salidas',
-      label: 'Revisores de Trabajadores',
-      route: '/gestion-administrativa/configuracion/revisor-salidas',
-      featureKey: 'gestion-administrativa.config.revisor-salidas',
-      subtitulo:
-        'Asigna los revisores que aprueban/rechazan las solicitudes de salida de cada trabajador, en orden de prioridad. Sin revisores propios, se usan los revisores del área del trabajador; sin estos, la solicitud se envía al área de GTH.',
-    },
-    {
-      id: 'revisores-areas',
-      label: 'Revisores de Áreas',
-      route: '/gestion-administrativa/configuracion/revisores-areas',
-      featureKey: 'gestion-administrativa.config.revisores-areas',
-      subtitulo:
-        'Asigna los revisores de cada área estándar, en orden de prioridad. Aplican a los trabajadores del área que no tienen revisores propios; sin revisores activos, la solicitud se envía al área de GTH.',
-    },
-    {
       id: 'visibilidad-salidas',
       label: 'Visibilidad',
       route: '/gestion-administrativa/configuracion/visibilidad-salidas',
@@ -140,8 +126,6 @@ export class GaConfiguracion implements OnInit {
   @ViewChild(GaLugares) private lugaresCmp?: GaLugares;
   @ViewChild(GaMotivos) private motivosCmp?: GaMotivos;
   @ViewChild(GaTrayectos) private trayectosCmp?: GaTrayectos;
-  @ViewChild(RevisorSalidas) private revisorCmp?: RevisorSalidas;
-  @ViewChild(RevisoresAreas) private revisoresAreasCmp?: RevisoresAreas;
   @ViewChild(VisibilidadSalidas) private visibilidadCmp?: VisibilidadSalidas;
   @ViewChild(GaCarpetaAdjuntos) private carpetaAdjuntosCmp?: GaCarpetaAdjuntos;
   @ViewChild(GaCorreos) private correosCmp?: GaCorreos;
@@ -194,8 +178,6 @@ export class GaConfiguracion implements OnInit {
     | GaLugares
     | GaMotivos
     | GaTrayectos
-    | RevisorSalidas
-    | RevisoresAreas
     | VisibilidadSalidas
     | GaCarpetaAdjuntos
     | GaCorreos
@@ -204,8 +186,6 @@ export class GaConfiguracion implements OnInit {
       case 'lugares': return this.lugaresCmp;
       case 'motivos': return this.motivosCmp;
       case 'trayectos': return this.trayectosCmp;
-      case 'revisor-salidas': return this.revisorCmp;
-      case 'revisores-areas': return this.revisoresAreasCmp;
       case 'visibilidad-salidas': return this.visibilidadCmp;
       case 'carpeta-adjuntos': return this.carpetaAdjuntosCmp;
       case 'correos': return this.correosCmp;

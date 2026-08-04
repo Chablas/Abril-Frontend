@@ -85,27 +85,18 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       seccion: 'trayectos',
     },
   },
+  // Revisores de trabajadores/áreas se movieron al módulo de configuración
+  // global (definen los jefes de cada trabajador/área, no solo para salidas).
+  // Se mantienen las rutas antiguas como redirección para no romper enlaces.
   {
     path: 'configuracion/revisor-salidas',
-    loadComponent: () =>
-      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
-    canActivate: [authGuard, roleGuard],
-    data: {
-      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
-      featureKey: 'gestion-administrativa.config.revisor-salidas',
-      seccion: 'revisor-salidas',
-    },
+    redirectTo: '/configuracion/revisor-salidas',
+    pathMatch: 'full',
   },
   {
     path: 'configuracion/revisores-areas',
-    loadComponent: () =>
-      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
-    canActivate: [authGuard, roleGuard],
-    data: {
-      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
-      featureKey: 'gestion-administrativa.config.revisores-areas',
-      seccion: 'revisores-areas',
-    },
+    redirectTo: '/configuracion/revisores-areas',
+    pathMatch: 'full',
   },
   {
     path: 'configuracion/visibilidad-salidas',

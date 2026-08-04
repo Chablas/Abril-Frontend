@@ -68,13 +68,50 @@
           </select>
         </div>
         <div class="col-span-2" *ngIf="esObrero">
-          <label class="field-label">Email personal</label>
-          <input type="email" class="field-input" [(ngModel)]="model.emailCorporativo" />
+          <label class="field-label">Email personal *</label>
+          <input
+            type="email"
+            class="field-input"
+            [class.field-invalid]="faltaCorreo"
+            [(ngModel)]="model.emailPersonal"
+            placeholder="nombre@gmail.com"
+          />
         </div>
         <div *ngIf="esStaffOOficina">
-          <label class="field-label">Email corporativo *</label>
-          <input type="email" class="field-input" [(ngModel)]="model.emailCorporativo" />
+          <label class="field-label">Email corporativo</label>
+          <input
+            type="email"
+            class="field-input"
+            [class.field-invalid]="!!emailError || faltaCorreo"
+            [(ngModel)]="model.emailCorporativo"
+            (ngModelChange)="onEmailCorporativoInput()"
+            (blur)="onEmailCorporativoBlur()"
+            placeholder="nombre.apellido@abril.pe"
+          />
+          <span *ngIf="verificandoEmail" class="dni-status checking">Verificando en el directorio de Abril…</span>
+          <span *ngIf="!verificandoEmail && emailVerificadoNombre" class="dni-status verified">
+            ✓ {{ emailVerificadoNombre }}
+          </span>
+          <span *ngIf="!verificandoEmail && emailError" class="field-error">{{ emailError }}</span>
         </div>
+        <div *ngIf="esStaffOOficina">
+          <label class="field-label">Email personal</label>
+          <input
+            type="email"
+            class="field-input"
+            [class.field-invalid]="faltaCorreo"
+            [(ngModel)]="model.emailPersonal"
+            placeholder="nombre@gmail.com"
+          />
+        </div>
+        <p
+          class="col-span-2"
+          *ngIf="esStaffOOficina"
+          [class.field-hint]="!faltaCorreo"
+          [class.field-error]="faltaCorreo"
+        >
+          Registra al menos un correo: el corporativo o el personal.
+        </p>
         <div *ngIf="esStaffOOficina">
           <label class="field-label">Celular corporativo</label>
           <input type="text" class="field-input" [(ngModel)]="model.celular" placeholder="999 999 999" />
@@ -108,8 +145,14 @@
             <input type="text" class="field-input" [(ngModel)]="model.celular" placeholder="999 999 999" />
           </div>
           <div>
-            <label class="field-label">Email personal</label>
-            <input type="email" class="field-input" [(ngModel)]="model.emailCorporativo" />
+            <label class="field-label">Email personal *</label>
+            <input
+              type="email"
+              class="field-input"
+              [class.field-invalid]="faltaCorreo"
+              [(ngModel)]="model.emailPersonal"
+              placeholder="nombre@gmail.com"
+            />
           </div>
           <div>
             <label class="field-label">Categoría *</label>

@@ -1,6 +1,14 @@
-<!-- Sección embebida en GaConfiguracion: el header y el disparador de filtros
-     viven en el contenedor (`ga-configuracion`). -->
-<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+<app-abril-page-header
+  badge="CONFIGURACIÓN"
+  titulo="Revisores de Áreas"
+  subtitulo="Asigna los revisores (jefes/superiores directos) de cada área estándar, en orden de prioridad. Aplican a los trabajadores del área que no tienen revisores propios; sin revisores activos, la solicitud se envía al área de GTH."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
   <div class="w-full flex-1 min-h-0 overflow-auto">

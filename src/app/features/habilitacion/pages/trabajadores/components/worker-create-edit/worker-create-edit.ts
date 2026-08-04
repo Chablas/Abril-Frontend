@@ -51,6 +51,7 @@ interface WorkerFormModel {
   empresaId: number | null;
   proyectoId: number | null;
   emailCorporativo: string;
+  emailPersonal: string;
   fechaIngreso: string;
   condicionMedica: string;
   fechaNacimiento: string;
@@ -79,6 +80,25 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   verificandoDni = false;
   dniRestringido = false;
   dniVerificado = false;
+
+  /** Verificación del correo corporativo contra el directorio de Abril (ver onEmailCorporativoBlur). */
+  verificandoEmail = false;
+  emailError = '';
+  emailVerificadoNombre = '';
+  /**
+   * Correo con el que se abrió la edición. Se acepta sin verificar, igual que hace el backend:
+   * hay fichas antiguas con correos que hoy no pasarían la validación y no deben bloquear la
+   * corrección de otros campos.
+   */
+  private emailOriginal = '';
+  /** Último correo verificado con éxito, para no repetir la consulta en cada blur. */
+  private emailVerificado = '';
+  /**
+   * Si la ficha ya traía algún correo al abrirla. Solo se exige "al menos un correo" cuando lo
+   * tenía: hay miles de fichas legadas sin ninguno y no deben quedar imposibles de editar, pero
+   * tampoco se puede borrar el último correo de las que sí lo tienen (misma regla que el backend).
+   */
+  private teniaAlgunCorreo = false;
 
   empresas: EmpresaContratistaListDto[] = [];
   proyectos: ProjectGetDTO[] = [];
@@ -129,11 +149,25 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     return this.mode === 'edit';
   }
 
+  /** Todo trabajador debe quedar con al menos un correo: el corporativo o el personal. */
+  get tieneAlgunCorreo(): boolean {
+    return !!this.model.emailCorporativo.trim() || !!this.model.emailPersonal.trim();
+  }
+
+  /** True cuando falta el correo y en este contexto sí es exigible (ver teniaAlgunCorreo). */
+  get faltaCorreo(): boolean {
+    if (this.tieneAlgunCorreo) return false;
+    return this.mode === 'create' || this.teniaAlgunCorreo;
+  }
+
   get canSubmit(): boolean {
     const base =
       !this.saving &&
       !this.verificandoDni &&
       !this.dniRestringido &&
+      !this.verificandoEmail &&
+      !this.emailError &&
+      !this.faltaCorreo &&
       !!this.model.apellidoNombre.trim() &&
       (this.mode === 'edit' || !!this.model.dni.trim());
 
@@ -167,8 +201,10 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       this.model.aniosExperiencia !== null &&
       this.model.aniosExperiencia !== undefined;
 
+    // El corporativo ya no es obligatorio por sí solo: basta con que haya alguno de los dos
+    // correos (lo cubre `faltaCorreo` dentro de `base`).
     if (this.esStaffOOficina) {
-      return baseCasa && !!this.model.emailCorporativo.trim() && !!this.model.celular.trim() && !!this.model.subarea.trim();
+      return baseCasa && !!this.model.celular.trim() && !!this.model.subarea.trim();
     }
 
     return baseCasa;
@@ -219,6 +255,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       empresaId: null,
       proyectoId: null,
       emailCorporativo: '',
+      emailPersonal: '',
       fechaIngreso: '',
       condicionMedica: '',
       fechaNacimiento: '',
@@ -233,6 +270,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     this.verificandoDni = false;
     this.dniRestringido = false;
     this.dniVerificado = false;
+    this.resetEstadoEmail();
+    this.emailOriginal = '';
+    this.teniaAlgunCorreo = false;
     this.empresaContratistaNombre = '';
     this.areas = [];
     this.subareas = [];
@@ -266,6 +306,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           this.model.subarea = det.subarea ?? '';
           this.model.jefatura = det.jefatura ?? '';
           this.model.emailCorporativo = det.emailCorporativo ?? '';
+          this.model.emailPersonal = det.emailPersonal ?? '';
+          this.emailOriginal = this.model.emailCorporativo.trim().toLowerCase();
+          this.teniaAlgunCorreo = this.tieneAlgunCorreo;
           this.model.fechaIngreso = det.fechaIngreso ?? '';
           this.model.condicionMedica = det.condicionMedica ?? '';
           this.model.fechaNacimiento = det.fechaNacimiento ? det.fechaNacimiento.substring(0, 10) : '';
@@ -434,6 +477,59 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     this.model.subarea = '';
     this.model.jefatura = '';
     this.subareas = [];
+    // El mismo campo pasa de correo personal (Obra) a corporativo (Staff/Oficina Central),
+    // así que la verificación anterior deja de ser válida.
+    this.resetEstadoEmail();
+    if (this.esStaffOOficina) this.onEmailCorporativoBlur();
+  }
+
+  private resetEstadoEmail(): void {
+    this.verificandoEmail = false;
+    this.emailError = '';
+    this.emailVerificadoNombre = '';
+    this.emailVerificado = '';
+  }
+
+  /**
+   * Verifica el correo corporativo contra el directorio de Abril (tenant de Microsoft) y contra
+   * los correos ya asignados a otros trabajadores. Solo aplica a Staff/Oficina Central: en Obra
+   * y en contratistas el mismo campo guarda el correo personal, que no vive en el tenant y sí
+   * puede repetirse (varias fichas comparten el correo de RR.HH. de su empresa).
+   */
+  onEmailCorporativoBlur(): void {
+    if (!this.esStaffOOficina) {
+      this.resetEstadoEmail();
+      return;
+    }
+
+    const email = this.model.emailCorporativo.trim().toLowerCase();
+    if (!email || email === this.emailVerificado || email === this.emailOriginal) return;
+
+    this.emailError = '';
+    this.emailVerificadoNombre = '';
+    this.verificandoEmail = true;
+
+    this.workerService
+      .validarEmailCorporativo(email, this.mode === 'edit' ? this.worker?.workerId : null, true)
+      .subscribe({
+        next: (res) => {
+          this.verificandoEmail = false;
+          if (res.valido) {
+            // Se guarda el correo canónico del directorio (así coincide con el del login SSO).
+            if (res.email) this.model.emailCorporativo = res.email;
+            this.emailVerificado = this.model.emailCorporativo.trim().toLowerCase();
+            this.emailVerificadoNombre = res.nombreEnTenant ?? '';
+          } else {
+            this.emailError = res.mensaje ?? 'El correo corporativo no es válido.';
+          }
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          // Sin verificación no se bloquea el formulario: el backend vuelve a validar al guardar.
+          this.verificandoEmail = false;
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   onTipoDocumentoChange(): void {
@@ -601,12 +697,40 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       });
   }
 
+  /** Al reescribir el correo se limpia el resultado de la verificación anterior. */
+  onEmailCorporativoInput(): void {
+    this.emailError = '';
+    this.emailVerificadoNombre = '';
+  }
+
   submit(): void {
     if (!this.model.apellidoNombre.trim()) {
       Swal.fire({
         icon: 'warning',
         title: 'Campo obligatorio',
         text: 'El nombre es obligatorio.',
+        confirmButtonColor: '#64BC04',
+      });
+      return;
+    }
+
+    if (this.emailError) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Correo corporativo no válido',
+        text: this.emailError,
+        confirmButtonColor: '#64BC04',
+      });
+      return;
+    }
+
+    if (this.faltaCorreo) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta el correo',
+        text: this.esStaffOOficina
+          ? 'Registra al menos un correo: el corporativo o el personal.'
+          : 'El correo personal es obligatorio.',
         confirmButtonColor: '#64BC04',
       });
       return;
@@ -629,6 +753,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       tipoDocumento: this.model.tipoDocumento,
       celular: n(this.model.celular),
       emailCorporativo: n(this.model.emailCorporativo),
+      emailPersonal: n(this.model.emailPersonal),
       fechaIngreso: n(this.model.fechaIngreso) || undefined,
       condicionMedica: n(this.model.condicionMedica),
       categoria: n(this.model.categoria),

@@ -178,6 +178,8 @@ export interface EmoPorTrabajadorDto {
   // PUT /workers/{id} aún no existe en backend; los valores se muestran si vienen.
   celular?: string;
   emailCorporativo?: string;
+  /** Correo personal / de contacto (person.email). */
+  emailPersonal?: string;
   categoria?: string;
   ocupacion?: string;
   ocupacionId?: number;
@@ -228,6 +230,34 @@ export interface WorkerDatosBasicosDto {
   workerCategoryId?: number | null;
   /** Correo corporativo (workers.email_corporativo). Null/vacío = sin correo. */
   emailCorporativo?: string | null;
+  /** Correo personal / de contacto (person.email). Puede repetirse entre trabajadores. */
+  emailPersonal?: string | null;
+}
+
+/** Motivo por el que un correo corporativo no puede usarse (coincide con el backend). */
+export type EmailCorporativoMotivo =
+  | 'OBLIGATORIO'
+  | 'FORMATO'
+  | 'NO_EXISTE_EN_TENANT'
+  | 'YA_TOMADO';
+
+/**
+ * Resultado de verificar un correo corporativo contra el directorio de Abril (tenant de
+ * Microsoft) y contra los correos ya asignados en workers.
+ */
+export interface EmailCorporativoValidacionDto {
+  valido: boolean;
+  motivo?: EmailCorporativoMotivo | null;
+  /** Mensaje listo para mostrar al usuario. Null cuando el correo es válido. */
+  mensaje?: string | null;
+  /** Correo canónico a guardar (el del directorio si se verificó en el tenant). */
+  email?: string | null;
+  /** Nombre para mostrar del buzón en el directorio de Abril. */
+  nombreEnTenant?: string | null;
+  /** True si el correo se contrastó contra el tenant (solo aplica a correos corporativos). */
+  verificadoEnTenant: boolean;
+  ocupadoPorWorkerId?: number | null;
+  ocupadoPorNombre?: string | null;
 }
 
 export interface WorkerUpsertDto {
@@ -235,6 +265,8 @@ export interface WorkerUpsertDto {
   dni?: string;
   celular?: string | null;
   emailCorporativo?: string | null;
+  /** Correo personal / de contacto (person.email). Puede repetirse entre trabajadores. */
+  emailPersonal?: string | null;
   fechaIngreso?: string | null;
   condicionMedica?: string | null;
   categoria?: string | null;

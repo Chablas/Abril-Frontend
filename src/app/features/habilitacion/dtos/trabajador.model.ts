@@ -80,6 +80,8 @@ export interface WorkerDetalleDto {
   dni?: string;
   celular?: string;
   emailCorporativo?: string;
+  /** Correo personal / de contacto (person.email). */
+  emailPersonal?: string;
   fechaIngreso?: string;
   condicionMedica?: string;
   fechaNacimiento?: string;

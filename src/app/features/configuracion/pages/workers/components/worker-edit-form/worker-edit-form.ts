@@ -33,6 +33,7 @@ interface EditModel {
   numeroDocumento: string;
   cumpleanos: string; // 'YYYY-MM-DD'
   emailCorporativo: string;
+  emailPersonal: string;
   categoria: string;
   ocupacion: string;
   ocupacionId: number | null;
@@ -71,6 +72,15 @@ export class WorkerEditForm implements OnChanges {
   model: EditModel = this.empty();
   saving = false;
 
+  /** Verificación del correo corporativo contra el directorio de Abril (ver onEmailCorporativoBlur). */
+  verificandoEmail = false;
+  emailError = '';
+  emailVerificadoNombre = '';
+  /** Correo ya aceptado (el guardado al abrir, o el último verificado): no se vuelve a consultar. */
+  private emailVerificado = '';
+  /** Si la ficha ya traía algún correo al abrirla (ver reset). */
+  private teniaAlgunCorreo = false;
+
   categorias: { id: number; nombre: string }[] = [];
   ocupaciones: { id: number; nombre: string }[] = [];
 
@@ -108,6 +118,7 @@ export class WorkerEditForm implements OnChanges {
       numeroDocumento: '',
       cumpleanos: '',
       emailCorporativo: '',
+      emailPersonal: '',
       categoria: '',
       ocupacion: '',
       ocupacionId: null,
@@ -117,6 +128,19 @@ export class WorkerEditForm implements OnChanges {
   }
 
   private reset(): void {
+    this.verificandoEmail = false;
+    this.emailError = '';
+    this.emailVerificadoNombre = '';
+    // El correo ya guardado se da por bueno (igual que el backend, que no revalida si no cambió):
+    // hay fichas antiguas con correos que hoy no pasarían la validación y no deben bloquear la
+    // edición de otros campos.
+    this.emailVerificado = (this.worker?.emailCorporativo ?? '').trim().toLowerCase();
+    // Solo se exige "al menos un correo" si la ficha ya tenía alguno: hay miles de fichas legadas
+    // sin ninguno y no deben quedar imposibles de editar, pero tampoco se puede borrar el último
+    // correo de las que sí lo tienen (misma regla que el backend).
+    this.teniaAlgunCorreo =
+      !!(this.worker?.emailCorporativo ?? '').trim() || !!(this.worker?.emailPersonal ?? '').trim();
+
     if (!this.worker) {
       this.model = this.empty();
       return;
@@ -127,6 +151,7 @@ export class WorkerEditForm implements OnChanges {
       numeroDocumento: this.worker.dni ?? '',
       cumpleanos: (this.worker.cumpleanos ?? '').slice(0, 10),
       emailCorporativo: this.worker.emailCorporativo ?? '',
+      emailPersonal: this.worker.emailPersonal ?? '',
       categoria: this.worker.categoria ?? '',
       ocupacion: this.worker.ocupacion ?? '',
       ocupacionId: this.worker.ocupacionId ?? null,
@@ -283,11 +308,82 @@ export class WorkerEditForm implements OnChanges {
       .join(' ');
   }
 
+  /** Al reescribir el correo se limpia el resultado de la verificación anterior. */
+  onEmailCorporativoInput(): void {
+    this.emailError = '';
+    this.emailVerificadoNombre = '';
+  }
+
+  /**
+   * Verifica el correo contra el directorio de Abril (tenant de Microsoft) y contra los correos
+   * ya asignados a otros trabajadores. El backend decide si aplica según la clasificación
+   * guardada del trabajador: en Obra y en contratistas este campo es el correo personal, que no
+   * vive en el tenant y sí puede repetirse, así que ahí solo se valida el formato.
+   */
+  onEmailCorporativoBlur(): void {
+    const email = (this.model.emailCorporativo ?? '').trim().toLowerCase();
+    if (!email || email === this.emailVerificado || !this.worker) return;
+
+    this.emailError = '';
+    this.emailVerificadoNombre = '';
+    this.verificandoEmail = true;
+
+    this.workerService.validarEmailCorporativo(email, this.worker.workerId).subscribe({
+      next: (res) => {
+        this.verificandoEmail = false;
+        if (res.valido) {
+          // Se guarda el correo canónico del directorio (así coincide con el del login SSO).
+          if (res.email) this.model.emailCorporativo = res.email;
+          this.emailVerificado = (this.model.emailCorporativo ?? '').trim().toLowerCase();
+          this.emailVerificadoNombre = res.nombreEnTenant ?? '';
+        } else {
+          this.emailError = res.mensaje ?? 'El correo corporativo no es válido.';
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Sin verificación no se bloquea el formulario: el backend vuelve a validar al guardar.
+        this.verificandoEmail = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** Todo trabajador debe quedar con al menos un correo: el corporativo o el personal. */
+  get tieneAlgunCorreo(): boolean {
+    return !!this.model.emailCorporativo?.trim() || !!this.model.emailPersonal?.trim();
+  }
+
+  /** True cuando falta el correo y en este contexto sí es exigible (ver teniaAlgunCorreo). */
+  get faltaCorreo(): boolean {
+    return !this.tieneAlgunCorreo && this.teniaAlgunCorreo;
+  }
+
   get canSubmit(): boolean {
-    return !this.saving && !!this.model.nombreCompleto?.trim();
+    return (
+      !this.saving &&
+      !this.verificandoEmail &&
+      !this.emailError &&
+      !this.faltaCorreo &&
+      !!this.model.nombreCompleto?.trim()
+    );
   }
 
   submit(): void {
+    if (this.emailError) {
+      Swal.fire({ icon: 'error', title: 'Correo corporativo no válido', text: this.emailError });
+      return;
+    }
+
+    if (this.faltaCorreo) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta el correo',
+        text: 'El trabajador debe conservar al menos un correo: el corporativo o el personal.',
+      });
+      return;
+    }
+
     if (!this.canSubmit || !this.worker) {
       Swal.fire({ icon: 'warning', title: 'Datos incompletos', text: 'El nombre completo es obligatorio.' });
       return;
@@ -299,6 +395,7 @@ export class WorkerEditForm implements OnChanges {
       numeroDocumento: this.model.numeroDocumento?.trim() || null,
       cumpleanos: this.model.cumpleanos || null,
       emailCorporativo: this.model.emailCorporativo?.trim() || null,
+      emailPersonal: this.model.emailPersonal?.trim() || null,
       categoria: this.model.categoria?.trim() || null,
       ocupacion: this.model.ocupacion?.trim() || null,
       ocupacionId: this.model.ocupacionId ?? null,
