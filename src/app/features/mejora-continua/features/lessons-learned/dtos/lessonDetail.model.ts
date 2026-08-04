@@ -23,6 +23,10 @@ export interface LessonDetailDTO {
   /** Segmentos de clasificación caminando scope_item (raíz → hoja). */
   classificationSegments?: LessonClassificationSegment[];
 
+  /** Obra / Staff / Oficina Central (workers_obra_oficina_staff). */
+  obraOficinaStaffId?: number | null;
+  obraOficinaStaffName?: string | null;
+
   stateId: number;
   stateDescription: string;
 

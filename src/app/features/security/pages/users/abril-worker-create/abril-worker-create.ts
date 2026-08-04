@@ -84,7 +84,8 @@ export class AbrilWorkerCreate implements OnInit {
   onWorkerSelected(personId: number | null): void {
     this.selectedPersonId = personId;
     const worker = this.workers.find((w) => w.personId === personId);
-    if (worker?.obraOficina === 'Staff') {
+    // 2 = Staff en workers_obra_oficina_staff.
+    if (worker?.obraOficinaStaffId === 2) {
       const evaluador = this.roles.find((r) => r.roleDescription === Roles.EVALUADOR);
       if (evaluador && !this.selectedRoleIds.includes(evaluador.roleId)) {
         this.selectedRoleIds = [...this.selectedRoleIds, evaluador.roleId];

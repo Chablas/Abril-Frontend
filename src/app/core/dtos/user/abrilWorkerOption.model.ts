@@ -3,5 +3,6 @@ export interface AbrilWorkerOptionDto {
   fullName: string;
   documentIdentityCode?: string | null;
   emailCorporativo: string;
-  obraOficina?: string | null;
+  /** FK a workers_obra_oficina_staff (ver ObraOficinaStaffIds en el backend). 2 = Staff. */
+  obraOficinaStaffId?: number | null;
 }

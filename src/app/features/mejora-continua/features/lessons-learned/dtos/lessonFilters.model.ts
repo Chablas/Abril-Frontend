@@ -15,6 +15,26 @@ export interface LessonFiltersDTO {
    * que tenga al menos un catalog_item activo en scope_item.
    */
   categories: CatalogFilterGroupDTO[];
+  /**
+   * Catálogo Obra / Staff / Oficina Central (workers_obra_oficina_staff). Sustituye
+   * al antiguo nivel "subárea" de la cascada de áreas, que salía de los nodos de
+   * tipo "Área Obra_Oficina" (ya eliminados).
+   */
+  obraOficinaStaff: ObraOficinaStaffOptionDTO[];
+  /** Valor sugerido en el formulario: el del trabajador que registra. */
+  defaultObraOficinaStaffId?: number | null;
+  /**
+   * Área sugerida en el formulario, resuelta en el backend desde el nodo del árbol
+   * asignado al trabajador (workers.area_scope_id). Con esto la cascada de área llega
+   * preseleccionada y al usuario solo le queda elegir el proyecto.
+   */
+  defaultLessonAreaId?: number | null;
+}
+
+/** Opción del catálogo workers_obra_oficina_staff. */
+export interface ObraOficinaStaffOptionDTO {
+  obraOficinaStaffId: number;
+  name: string;
 }
 
 /** Opción del filtro "Revisor": workerId del revisor y su nombre. */

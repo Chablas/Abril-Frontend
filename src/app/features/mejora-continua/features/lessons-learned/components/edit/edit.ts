@@ -45,6 +45,8 @@ export class EditLesson implements OnInit {
   // Ubicación
   projectId = 0;
   lessonAreaId = 0;
+  /** Obra / Staff / Oficina Central (workers_obra_oficina_staff). */
+  obraOficinaStaffId: number | null = null;
 
   // Árbol de áreas (cascade)
   private areaTreeRoots: AreaTreeNode[] = [];
@@ -100,6 +102,7 @@ export class EditLesson implements OnInit {
     this.lessonService.getById(this.lessonId).subscribe({
       next: (lesson) => {
         this.projectId = lesson.projectId ?? 0;
+        this.obraOficinaStaffId = lesson.obraOficinaStaffId ?? null;
         this.problemDescription = lesson.problemDescription ?? '';
         this.reasonDescription = lesson.reasonDescription ?? '';
         this.lessonDescription = lesson.lessonDescription ?? '';

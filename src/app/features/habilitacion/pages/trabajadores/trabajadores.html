@@ -205,17 +205,12 @@
       <div class="filter-bar">
         <div class="filter-row">
           <div class="fb-search">
-            <svg class="fb-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.35-4.35"/>
-            </svg>
-            <input
-              type="text"
-              class="fb-search-input"
-              placeholder="Buscar nombre o DNI…"
-              [(ngModel)]="search"
-              (input)="onSearch()"
-            />
+            <app-search-input
+              placeholder="Buscar por nombre o DNI..."
+              [(value)]="search"
+              (valueChange)="onSearch()"
+              width="100%"
+            ></app-search-input>
           </div>
           <ng-container *ngIf="isAdmin() || isContratista()">
             <div class="fb-pills" *ngIf="!isContratista()">

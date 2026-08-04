@@ -274,10 +274,17 @@ export interface WorkerUpsertDto {
   ocupacionId?: number | null;
   /** Nombre del puesto final (autocompletado de categoría + ocupación, editable). */
   puesto?: string | null;
+  /**
+   * Nodo del árbol de áreas elegido (workers.area_scope_id). Cuando se manda, es la fuente de
+   * verdad del área: el backend deriva de él `area`/`subarea`/`jefatura` e ignora lo que llegue
+   * en esos tres campos.
+   */
+  areaScopeId?: number | null;
   area?: string | null;
   subarea?: string | null;
   contrataCasa?: string | null;
-  obraOficina?: string | null;
+  /** FK a workers_obra_oficina_staff (Obra / Staff / Oficina Central). */
+  obraOficinaStaffId?: number | null;
   jefatura?: string | null;
   sctr?: boolean;
   habilitadoObra?: boolean;

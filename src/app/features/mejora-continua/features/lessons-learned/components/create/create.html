@@ -24,10 +24,17 @@
         </div>
       </div>
 
-      <!-- Proyecto: debajo de Área -->
-      <div class="w-full sm:w-[220px] mt-4">
-        <app-search-select label="Proyecto" [options]="filtersData.projects" valueField="projectId"
-          displayField="projectDescription" [fullText]="true" [(value)]="projectId" />
+      <!-- Obra / Oficina + Proyecto: debajo de Área -->
+      <div class="flex flex-wrap gap-4 mt-4">
+        <div class="w-full sm:w-[220px]">
+          <app-search-select label="Obra / Oficina" [options]="filtersData.obraOficinaStaff"
+            valueField="obraOficinaStaffId" displayField="name" [fullText]="true" [sortAlpha]="false"
+            placeholder="Selecciona" [(value)]="obraOficinaStaffId" />
+        </div>
+        <div class="w-full sm:w-[220px]">
+          <app-search-select label="Proyecto" [options]="filtersData.projects" valueField="projectId"
+            displayField="projectDescription" [fullText]="true" [(value)]="projectId" />
+        </div>
       </div>
     </div>
 

@@ -119,8 +119,8 @@ export class AreaScopeBranch implements OnInit, OnDestroy {
 
   get typeNames(): string[] {
     const all = [...new Set(this.items.map((i) => i.areaTypeName))];
-    // Orden explícito: Gerencia → Estándar → Obra_Oficina. Otros tipos van al final.
-    const customOrder = ['Área de Gerencia', 'Área Estándar', 'Área Obra_Oficina'];
+    // Orden explícito: Gerencia → Estándar. Otros tipos van al final.
+    const customOrder = ['Área de Gerencia', 'Área Estándar'];
     const ordered = customOrder.filter((n) => all.includes(n));
     const rest = all.filter((n) => !customOrder.includes(n)).sort();
     return [...ordered, ...rest];

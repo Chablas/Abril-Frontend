@@ -25,6 +25,8 @@ export class LessonsDashboardService {
     if (filters.periodDate) params = params.set('periodDate', filters.periodDate);
     if (filters.userId) params = params.set('userId', String(filters.userId));
     if (filters.approvalStatus) params = params.set('approvalStatus', filters.approvalStatus);
+    if (filters.obraOficinaStaffId)
+      params = params.set('obraOficinaStaffId', String(filters.obraOficinaStaffId));
     (filters.lessonAreaIds ?? []).forEach((id) => {
       params = params.append('lessonAreaIds', String(id));
     });

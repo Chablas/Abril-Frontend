@@ -10,7 +10,9 @@ export interface InterconsultaListDto {
   proyectoNombre?: string;
   contributorId?: number;
   razonSocial?: string;
-  /** Staff | Oficina Central | Obra | Contratista (workers.obra_oficina) */
+  /** FK a workers_obra_oficina_staff (1=Obra, 2=Staff, 3=Oficina Central). */
+  obraOficinaStaffId?: number;
+  /** Nombre del catálogo (solo lectura). */
   obraOficina?: string;
   contrataCasa?: string;
   /** workers.categoria (texto libre, ej. "Operario", "Residente"). */
@@ -71,7 +73,8 @@ export interface InterconsultaQueryParams {
   workerId?: number;
   proyectoId?: number;
   contributorId?: number;
-  obraOficina?: string;
+  /** FK a workers_obra_oficina_staff (1=Obra, 2=Staff, 3=Oficina Central). */
+  obraOficinaStaffId?: number;
   page?: number;
   pageSize?: number;
 }

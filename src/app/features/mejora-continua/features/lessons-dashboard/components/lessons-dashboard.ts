@@ -80,10 +80,16 @@ export class LessonsDashboard implements AfterViewInit {
   }
 
   data?: LessonsDashboardDataDTO;
-  filters: LessonsDashboardFiltersDTO = { periods: [], users: [], areas: [], projects: [] };
+  filters: LessonsDashboardFiltersDTO = { periods: [], users: [], areas: [], projects: [], obraOficinaStaff: [] };
   // approvalStatus arranca en 'APROBADA': al cargar el dashboard solo se muestran
   // las lecciones aprobadas (el usuario puede cambiarlo a otro estado o a todos).
-  selected: SelectedDashboardFilters = { periodDate: null, userId: 0, lessonAreaIds: [], projectIds: [], approvalStatus: 'APROBADA' };
+  selected: SelectedDashboardFilters = { periodDate: null, userId: 0, lessonAreaIds: [], obraOficinaStaffId: null, projectIds: [], approvalStatus: 'APROBADA' };
+
+  /**
+   * Opciones del filtro Obra / Oficina (con el "Todos" inicial). Reemplaza al nivel
+   * "Subárea" de la cascada de áreas, que salía de los nodos de tipo "Área Obra_Oficina".
+   */
+  obraOficinaOptions: { obraOficinaStaffId: number | null; name: string }[] = [];
 
   /** Filtros avanzados (Usuario, Proyectos) colapsados tras "Búsqueda avanzada". */
   showFilters = false;
@@ -276,6 +282,10 @@ export class LessonsDashboard implements AfterViewInit {
     }).subscribe({
       next: ({ data, filters }) => {
         this.filters = filters;
+        this.obraOficinaOptions = [
+          { obraOficinaStaffId: null, name: 'Todos' },
+          ...(filters.obraOficinaStaff ?? []),
+        ];
         this.periodOptions = (filters.periods ?? [])
           .filter((p) => p.periodDate)
           .map((p) => ({

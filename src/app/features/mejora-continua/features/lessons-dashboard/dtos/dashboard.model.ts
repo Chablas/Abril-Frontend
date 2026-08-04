@@ -34,6 +34,8 @@ export interface LessonsDashboardDataDTO {
   lessonsByPhase: ChartItemDTO[];
   lessonsByPhaseAndStage: PhaseStageChartDTO[];
   lessonsBySubStage: ChartItemDTO[];
+  /** Lecciones por Obra / Staff / Oficina Central (workers_obra_oficina_staff). */
+  lessonsByObraOficina: ChartItemDTO[];
   pendingPeriodLabel: string;
   pendingUsers: PendingUserDTO[];
 }
@@ -57,11 +59,21 @@ export interface DashboardProjectDTO {
   projectDescription: string;
 }
 
+export interface DashboardObraOficinaStaffDTO {
+  obraOficinaStaffId: number;
+  name: string;
+}
+
 export interface LessonsDashboardFiltersDTO {
   periods: DashboardPeriodDTO[];
   users: DashboardUserDTO[];
   areas: DashboardAreaDTO[];
   projects: DashboardProjectDTO[];
+  /**
+   * Opciones del filtro Obra / Staff / Oficina Central. Sustituye al nivel "Subárea"
+   * de la cascada de áreas, que salía de los nodos de tipo "Área Obra_Oficina".
+   */
+  obraOficinaStaff: DashboardObraOficinaStaffDTO[];
 }
 
 export interface SelectedDashboardFilters {
@@ -69,6 +81,8 @@ export interface SelectedDashboardFilters {
   userId: number;
   /** lesson_area_ids efectivos (subárbol del nodo de área donde se detuvo el usuario). */
   lessonAreaIds: number[];
+  /** Filtro Obra / Staff / Oficina Central (null = todos). */
+  obraOficinaStaffId: number | null;
   projectIds: number[];
   /** Estado de aprobación: null=Todos | PENDIENTE | APROBADA | RECHAZADA. Default 'APROBADA'. */
   approvalStatus: string | null;
