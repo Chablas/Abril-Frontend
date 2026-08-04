@@ -10,6 +10,8 @@ import {
   InspeccionChecklistItemDto,
   CrearInspeccionRequest,
   CerrarHallazgoRequest,
+  InspeccionHallazgoRequest,
+  InspeccionAbiertaListItemDto,
 } from './inspeccion.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -74,6 +76,39 @@ export class InspeccionService {
     const token =
       typeof localStorage !== 'undefined' ? (localStorage.getItem('access_token') ?? '') : '';
     return this.http.get(`${this.base}/${id}/pdf`, {
+      responseType: 'blob',
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  getAbiertas(proyectoId?: number): Observable<InspeccionAbiertaListItemDto[]> {
+    let p = new HttpParams();
+    if (proyectoId) p = p.set('proyectoId', proyectoId);
+    return this.http.get<InspeccionAbiertaListItemDto[]>(`${this.base}/abiertas`, { params: p });
+  }
+
+  unirse(id: number): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/${id}/unirse`, {});
+  }
+
+  agregarHallazgo(id: number, request: InspeccionHallazgoRequest): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/${id}/hallazgos`, request);
+  }
+
+  cerrarColaborativa(id: number): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.base}/${id}/cerrar-colaborativa`, {});
+  }
+
+  reabrirColaborativa(id: number): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.base}/${id}/reabrir-colaborativa`, {});
+  }
+
+  descargarFoto(path: string, tipo: 'fotos' | 'firmas' = 'fotos'): Observable<Blob> {
+    const token =
+      typeof localStorage !== 'undefined' ? (localStorage.getItem('access_token') ?? '') : '';
+    let p = new HttpParams().set('path', path).set('tipo', tipo);
+    return this.http.get(`${this.base}/media`, {
+      params: p,
       responseType: 'blob',
       headers: { Authorization: `Bearer ${token}` },
     });

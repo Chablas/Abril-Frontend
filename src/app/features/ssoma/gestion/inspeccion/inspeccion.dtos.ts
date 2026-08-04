@@ -2,6 +2,7 @@ export interface InspeccionTipoDto {
   id: number;
   nombre: string;
   ambito: 'Seguridad' | 'Salud' | 'Ambiente';
+  esColaborativa: boolean;
 }
 
 export interface InspeccionChecklistItemDto {
@@ -55,9 +56,28 @@ export interface CrearInspeccionRequest {
   firmaRepresentanteBase64?: string;
   descripcionCausas?: string;
   conclusiones?: string;
+  esColaborativa?: boolean;
   respuestas: InspeccionRespuestaRequest[];
   hallazgos: InspeccionHallazgoRequest[];
   fotosAreaBase64?: string[];
+}
+
+export interface ParticipanteDto {
+  id: number;
+  nombre: string;
+  cargo: string | null;
+  empresa: string | null;
+  fechaUnion: string;
+}
+
+export interface InspeccionAbiertaListItemDto {
+  id: number;
+  proyectoNombre: string;
+  tipoNombre: string;
+  fecha: string;
+  totalHallazgos: number;
+  totalParticipantes: number;
+  createdAt: string;
 }
 
 export interface CerrarHallazgoRequest {
@@ -86,6 +106,7 @@ export interface InspeccionHallazgoDto {
   fechaCierre: string | null;
   latitud: number | null;
   longitud: number | null;
+  creadoPorNombre: string | null;
   fotos: InspeccionHallazgoFotoDto[];
 }
 
@@ -128,10 +149,12 @@ export interface InspeccionDetalleDto {
   totalNa: number;
   tasaCumplimiento: number | null;
   estado: string;
+  esColaborativa: boolean;
   createdAt: string;
   respuestas: InspeccionRespuestaDto[];
   hallazgos: InspeccionHallazgoDto[];
   fotosArea: InspeccionHallazgoFotoDto[];
+  participantes: ParticipanteDto[];
 }
 
 export interface InspeccionListItemDto {

@@ -46,13 +46,39 @@ export class InspeccionDetalleComponent implements OnInit {
   lightboxUrl = '';
   lightboxOpen = false;
   descargandoPdf = false;
+  cerrandoColaborativa = false;
+  reabriendoColaborativa = false;
 
   readonly circumference = 2 * Math.PI * 44;
 
+  /** path SharePoint -> object URL de blob ya descargado (evita <img> apuntando directo a SharePoint, que exige sesión Microsoft y nunca carga). */
+  private fotoUrls = new Map<string, string>();
+
   spUrl(url: string | null | undefined): string {
     if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return `https://abrilinmob.sharepoint.com/sites/SSOMA-Powerapps/InspeccionesAbril2026/${url.startsWith('/') ? url.slice(1) : url}`;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url; // registros antiguos con webUrl guardado — ya no se pueden proxear
+    return this.fotoUrls.get(url) ?? '';
+  }
+
+  private precargarFotos(d: InspeccionDetalleDto): void {
+    const pendientes: { path: string; tipo: 'fotos' | 'firmas' }[] = [];
+    for (const h of d.hallazgos) {
+      for (const f of h.fotos) pendientes.push({ path: f.url, tipo: 'fotos' });
+      if (h.evidenciaCierreUrl) pendientes.push({ path: h.evidenciaCierreUrl, tipo: 'fotos' });
+    }
+    if (d.firmaInspectorUrl) pendientes.push({ path: d.firmaInspectorUrl, tipo: 'firmas' });
+    if (d.firmaRepresentanteUrl) pendientes.push({ path: d.firmaRepresentanteUrl, tipo: 'firmas' });
+
+    for (const { path, tipo } of pendientes) {
+      if (path.startsWith('http://') || path.startsWith('https://') || this.fotoUrls.has(path)) continue;
+      this.inspeccionService.descargarFoto(path, tipo).subscribe({
+        next: (blob) => {
+          this.fotoUrls.set(path, URL.createObjectURL(blob));
+          this.cdr.markForCheck();
+        },
+        error: () => {},
+      });
+    }
   }
 
   constructor(
@@ -78,6 +104,7 @@ export class InspeccionDetalleComponent implements OnInit {
         this.grupos = this.buildGrupos(d.respuestas);
         this.loading = false;
         this.loaderService.hide();
+        this.precargarFotos(d);
         this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
@@ -217,6 +244,67 @@ export class InspeccionDetalleComponent implements OnInit {
   closeLightbox(): void {
     this.lightboxOpen = false;
     this.cdr.markForCheck();
+  }
+
+  irAAgregarHallazgo(): void {
+    this.inspeccionService.unirse(this.id).subscribe({
+      next: () => this.router.navigate(['/ssoma/gestion/inspeccion', this.id, 'agregar-hallazgo']),
+      error: () => this.router.navigate(['/ssoma/gestion/inspeccion', this.id, 'agregar-hallazgo']),
+    });
+  }
+
+  cerrarColaborativa(): void {
+    if (this.cerrandoColaborativa) return;
+    Swal.fire({
+      icon: 'question',
+      title: '¿Cerrar esta inspección?',
+      text: 'Ya no se podrán agregar más hallazgos de otros participantes.',
+      showCancelButton: true,
+      confirmButtonText: 'Cerrar inspección',
+      cancelButtonText: 'Cancelar',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.cerrandoColaborativa = true;
+      this.cdr.markForCheck();
+      this.inspeccionService.cerrarColaborativa(this.id).subscribe({
+        next: () => {
+          this.cerrandoColaborativa = false;
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.cerrandoColaborativa = false;
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+    });
+  }
+
+  reabrirColaborativa(): void {
+    if (this.reabriendoColaborativa) return;
+    Swal.fire({
+      icon: 'question',
+      title: '¿Reabrir esta inspección?',
+      text: 'Se podrán volver a agregar hallazgos de otros participantes.',
+      showCancelButton: true,
+      confirmButtonText: 'Reabrir',
+      cancelButtonText: 'Cancelar',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.reabriendoColaborativa = true;
+      this.cdr.markForCheck();
+      this.inspeccionService.reabrirColaborativa(this.id).subscribe({
+        next: () => {
+          this.reabriendoColaborativa = false;
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.reabriendoColaborativa = false;
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+    });
   }
 
   descargarPdf(): void {

@@ -103,6 +103,34 @@
 
       </div>
 
+      <!-- ── COLABORATIVA: participantes + cierre ── -->
+      @if (data.esColaborativa) {
+        <div class="det-card">
+          <div class="det-card__header">
+            <h2 class="det-card__title"><i class="ti ti-users"></i> Participantes</h2>
+            @if (data.estado === 'Abierta') {
+              <button type="button" class="btn-toggle-na" [disabled]="cerrandoColaborativa" (click)="cerrarColaborativa()">
+                @if (cerrandoColaborativa) { <i class="ti ti-loader-2 spin"></i> } @else { Cerrar inspección }
+              </button>
+            } @else {
+              <button type="button" class="btn-toggle-na" [disabled]="reabriendoColaborativa" (click)="reabrirColaborativa()">
+                @if (reabriendoColaborativa) { <i class="ti ti-loader-2 spin"></i> } @else { Reabrir inspección }
+              </button>
+            }
+          </div>
+          <div class="hallazgo-meta">
+            @for (p of data.participantes; track p.id) {
+              <span><i class="ti ti-user"></i> {{ p.nombre }}{{ p.cargo ? ' — ' + p.cargo : '' }}</span>
+            }
+          </div>
+          @if (data.estado === 'Abierta') {
+            <button type="button" class="btn-cerrar-hallazgo" (click)="irAAgregarHallazgo()" style="margin-top: 8px;">
+              Agregar hallazgo
+            </button>
+          }
+        </div>
+      }
+
       <!-- ── CHECKLIST ACORDEÓN ── -->
       @if (grupos.length) {
         <div class="det-card">
