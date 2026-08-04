@@ -88,6 +88,11 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
     return this.tipos.map((t) => ({ id: t.id, label: `${t.nombre} (${t.ambito})` }));
   }
 
+  /** Gerencial/cruzada: sin checklist, varios coordinadores agregan hallazgos sueltos al mismo registro. */
+  get esColaborativa(): boolean {
+    return this.tipos.find((t) => t.id === this.tipoId)?.esColaborativa ?? false;
+  }
+
   // Paso 1
   proyectoId = 0;
   tipoId = 0;
@@ -567,10 +572,15 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
 
   siguiente(): void {
     if (!this.validarPaso()) return;
-    if (this.paso === 1) {
-      this.cargarChecklist();
+    if (this.paso === 1 && this.esColaborativa) {
+      // Gerencial/cruzada: sin checklist, se salta directo a Hallazgos.
+      this.respuestas = [];
+      this.grupos = [];
+      this.paso = 3;
+    } else {
+      if (this.paso === 1) this.cargarChecklist();
+      this.paso++;
     }
-    this.paso++;
     if (this.paso === 4) {
       setTimeout(() => {
         this.initCanvasInspector();
@@ -582,7 +592,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   }
 
   anterior(): void {
-    this.paso--;
+    this.paso = this.paso === 3 && this.esColaborativa ? 1 : this.paso - 1;
     this.cdr.markForCheck();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -655,6 +665,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
       firmaRepresentanteBase64: this.firmaRepresentanteBase64 || undefined,
       descripcionCausas: this.descripcionCausas || undefined,
       conclusiones: this.conclusiones || undefined,
+      esColaborativa: this.esColaborativa,
       respuestas: respuestasReq,
       hallazgos: hallazgosReq,
       fotosAreaBase64: this.fotosAreaBase64,
