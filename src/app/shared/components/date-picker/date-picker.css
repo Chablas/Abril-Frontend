@@ -42,7 +42,7 @@
   transition: background-color 0.15s;
 }
 
-.dp-cell:hover:not(.dp-selected) {
+.dp-cell:hover:not(.dp-selected):not(:disabled) {
   background: #f3f4f6;
 }
 
@@ -56,7 +56,7 @@
   transition: background-color 0.15s;
 }
 
-.dp-day:hover:not(.dp-selected) {
+.dp-day:hover:not(.dp-selected):not(:disabled) {
   background: #f3f4f6;
 }
 
@@ -87,6 +87,16 @@
   transition: background-color 0.15s;
 }
 
-.dp-footer-btn:hover {
+.dp-footer-btn:hover:not(:disabled) {
   background: #f3f4f6;
+}
+
+/* Fuera del rango [min, max]: se ven apagados y no responden al hover.
+   El `:not(:disabled)` de los hover de arriba evita el resaltado al pasar el mouse. */
+.dp-day:disabled,
+.dp-cell:disabled,
+.dp-footer-btn:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+  box-shadow: none;
 }

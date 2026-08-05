@@ -136,6 +136,7 @@
             *ngFor="let celda of semana"
             type="button"
             (click)="seleccionar(celda)"
+            [disabled]="esDeshabilitado(celda)"
             class="dp-day"
             [class.dp-out]="!celda.delMes"
             [class.dp-selected]="esSeleccionado(celda)"
@@ -152,6 +153,7 @@
           *ngFor="let m of mesesCortos; let i = index"
           type="button"
           (click)="seleccionarMes(i)"
+          [disabled]="mesDeshabilitado(i)"
           class="dp-cell"
           [class.dp-selected]="i === vistaMes"
           [class.dp-today]="esMesActual(i)"
@@ -166,6 +168,7 @@
           *ngFor="let a of aniosGrid"
           type="button"
           (click)="seleccionarAnio(a)"
+          [disabled]="anioDeshabilitado(a)"
           class="dp-cell"
           [class.dp-selected]="a === vistaAnio"
           [class.dp-today]="esAnioActual(a)"
@@ -179,7 +182,12 @@
         class="flex items-center justify-between mt-2 pt-2 border-t"
         style="border-color: var(--color-abril-border)"
       >
-        <button type="button" (click)="hoy()" class="dp-footer-btn text-[var(--dp-accent)]">
+        <button
+          type="button"
+          (click)="hoy()"
+          [disabled]="hoyDeshabilitado"
+          class="dp-footer-btn text-[var(--dp-accent)]"
+        >
           Hoy
         </button>
         <button

@@ -52,7 +52,12 @@
     <div class="grid-2">
       <div>
         <label class="field-label">Fecha programada *</label>
-        <input type="date" class="field-input" [(ngModel)]="fechaProgramada" [min]="hoy" />
+        <app-date-picker
+          [value]="fechaProgramada"
+          [showLabel]="false"
+          [min]="hoy"
+          (valueChange)="fechaProgramada = $event"
+        />
       </div>
       <div>
         <label class="field-label">¿Trabajos en altura?</label>

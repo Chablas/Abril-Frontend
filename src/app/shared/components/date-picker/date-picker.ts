@@ -44,6 +44,14 @@ export class DatePicker implements OnChanges, OnDestroy {
   /** Deshabilita el campo: no se puede escribir, ni abrir el calendario, ni limpiar. */
   @Input() disabled: boolean = false;
   /**
+   * Fecha mínima seleccionable en formato `YYYY-MM-DD` (inclusive), igual que el `min` del input
+   * nativo. null/'' = sin límite inferior. Los días/meses/años fuera de rango se deshabilitan y
+   * una fecha escrita a mano fuera de rango se rechaza.
+   */
+  @Input() min: string | null = null;
+  /** Fecha máxima seleccionable en formato `YYYY-MM-DD` (inclusive). null/'' = sin límite superior. */
+  @Input() max: string | null = null;
+  /**
    * Color de acento del componente (label, borde/anillo al enfocar y día seleccionado).
    * Acepta cualquier valor CSS de color o variable de la paleta (ej. 'var(--color-abril-primary)').
    * Por defecto usa el verde lima de la marca.
@@ -187,12 +195,14 @@ export class DatePicker implements OnChanges, OnDestroy {
   }
 
   seleccionarMes(mes: number) {
+    if (this.mesDeshabilitado(mes)) return;
     this.vistaMes = mes;
     this.vista = 'dias';
     this.construirGrid();
   }
 
   seleccionarAnio(anio: number) {
+    if (this.anioDeshabilitado(anio)) return;
     this.vistaAnio = anio;
     this.vista = 'dias';
     this.construirGrid();
@@ -219,6 +229,33 @@ export class DatePicker implements OnChanges, OnDestroy {
 
   esAnioActual(anio: number): boolean {
     return new Date().getFullYear() === anio;
+  }
+
+  // ── Rango permitido (min / max) ───────────────────────────────────────
+
+  /** true si el día cae fuera de [min, max] y por lo tanto no se puede elegir. */
+  esDeshabilitado(celda: DiaCelda): boolean {
+    return this.fueraDeRango(celda.anio, celda.mes, celda.dia);
+  }
+
+  /** true si el mes completo (del año en vista) queda fuera de [min, max]. */
+  mesDeshabilitado(mes: number): boolean {
+    const ultimoDia = new Date(this.vistaAnio, mes + 1, 0).getDate();
+    return this.rangoSinInterseccion(
+      this.clave(this.vistaAnio, mes, 1),
+      this.clave(this.vistaAnio, mes, ultimoDia),
+    );
+  }
+
+  /** true si el año completo queda fuera de [min, max]. */
+  anioDeshabilitado(anio: number): boolean {
+    return this.rangoSinInterseccion(this.clave(anio, 0, 1), this.clave(anio, 11, 31));
+  }
+
+  /** El botón "Hoy" se apaga si la fecha de hoy no está dentro del rango permitido. */
+  get hoyDeshabilitado(): boolean {
+    const t = new Date();
+    return this.fueraDeRango(t.getFullYear(), t.getMonth(), t.getDate());
   }
 
   /**
@@ -260,7 +297,8 @@ export class DatePicker implements OnChanges, OnDestroy {
       const mes = +m[2] - 1;
       const anio = m[3].length === 2 ? 2000 + +m[3] : +m[3];
       const diasEnMes = new Date(anio, mes + 1, 0).getDate();
-      if (mes >= 0 && mes <= 11 && dia >= 1 && dia <= diasEnMes) {
+      const enRango = !this.fueraDeRango(anio, mes, dia);
+      if (mes >= 0 && mes <= 11 && dia >= 1 && dia <= diasEnMes && enRango) {
         const nuevo = this.format(anio, mes, dia);
         if (nuevo !== this.value) this.emitir(nuevo);
         else this.texto = this.formatoLegible(this.value);
@@ -268,7 +306,7 @@ export class DatePicker implements OnChanges, OnDestroy {
       }
     }
 
-    // Texto inválido: se revierte a la última fecha válida (o vacío).
+    // Texto inválido o fuera de [min, max]: se revierte a la última fecha válida (o vacío).
     this.texto = this.formatoLegible(this.value);
   }
 
@@ -283,12 +321,14 @@ export class DatePicker implements OnChanges, OnDestroy {
   }
 
   hoy() {
+    if (this.hoyDeshabilitado) return;
     const t = new Date();
     this.emitir(this.format(t.getFullYear(), t.getMonth(), t.getDate()));
     this.close();
   }
 
   seleccionar(celda: DiaCelda) {
+    if (this.esDeshabilitado(celda)) return;
     this.emitir(this.format(celda.anio, celda.mes, celda.dia));
     this.close();
   }
@@ -375,6 +415,36 @@ export class DatePicker implements OnChanges, OnDestroy {
     for (let i = 0; i < celdas.length; i += 7) {
       this.semanas.push(celdas.slice(i, i + 7));
     }
+  }
+
+  /** Fecha comparable como entero `aaaammdd`, para no crear `Date` en cada celda de la grilla. */
+  private clave(anio: number, mes: number, dia: number): number {
+    return anio * 10000 + (mes + 1) * 100 + dia;
+  }
+
+  /** `YYYY-MM-DD` → entero `aaaammdd`, o null si el valor no es una fecha. */
+  private claveDe(v: string | null | undefined): number | null {
+    const p = this.parse(v);
+    return p ? this.clave(p.anio, p.mes, p.dia) : null;
+  }
+
+  /** true si la fecha cae fuera de [min, max]. Sin min ni max nunca está fuera de rango. */
+  private fueraDeRango(anio: number, mes: number, dia: number): boolean {
+    const n = this.clave(anio, mes, dia);
+    const min = this.claveDe(this.min);
+    const max = this.claveDe(this.max);
+    return (min !== null && n < min) || (max !== null && n > max);
+  }
+
+  /**
+   * true si el intervalo [desde, hasta] (un mes o un año completo) no comparte ningún día con
+   * [min, max]. Se compara el intervalo entero y no sus extremos por separado, porque con min y
+   * max dentro del mismo mes ambos extremos quedan fuera y el mes sí tiene días válidos.
+   */
+  private rangoSinInterseccion(desde: number, hasta: number): boolean {
+    const min = this.claveDe(this.min);
+    const max = this.claveDe(this.max);
+    return (min !== null && hasta < min) || (max !== null && desde > max);
   }
 
   private format(anio: number, mes: number, dia: number): string {
