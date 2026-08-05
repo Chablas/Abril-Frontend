@@ -77,17 +77,14 @@ export class RevisoresAreas implements OnInit {
   scopeRevisores: AreaRevisorAsignadoDTO[] | undefined;
 
   /**
-   * Solo el ADMINISTRADOR DE SOLICITUD DE SALIDAS puede editar revisores
-   * (activar/desactivar "filtrar por proyecto" incluido).
+   * Quién configura esta pantalla: el ADMINISTRADOR DE SOLICITUD DE SALIDAS y el
+   * USUARIO DE GTH. Ambos ven todas las áreas y pueden editarlas (revisores y el
+   * flag "filtrar por proyecto") — ver y editar van juntos, igual que en el
+   * backend. Los Jefe/Coordinador/Gerente solo ven su área, de lectura (el
+   * backend filtra y no les manda las opciones del selector), y el resto no ve
+   * ninguna.
    */
-  readonly esAdminSalidas: boolean;
-
-  /**
-   * Quién ve todas las áreas: el ADMINISTRADOR DE SOLICITUD DE SALIDAS y el
-   * USUARIO DE GTH (este último solo de lectura). Los Jefe/Coordinador/Gerente
-   * solo ven su área (el backend filtra) y el resto no ve ninguna.
-   */
-  readonly puedeVerTodas: boolean;
+  readonly puedeGestionar: boolean;
 
   constructor(
     private service: RevisoresAreasService,
@@ -95,8 +92,9 @@ export class RevisoresAreas implements OnInit {
     private errorService: ErrorService,
     authService: AuthService,
   ) {
-    this.esAdminSalidas = authService.hasRole(Roles.ADMINISTRADOR_SOLICITUD_SALIDAS);
-    this.puedeVerTodas = this.esAdminSalidas || authService.hasRole(Roles.USUARIO_GTH);
+    this.puedeGestionar =
+      authService.hasRole(Roles.ADMINISTRADOR_SOLICITUD_SALIDAS) ||
+      authService.hasRole(Roles.USUARIO_GTH);
   }
 
   ngOnInit(): void {

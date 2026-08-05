@@ -36,9 +36,9 @@
             <td class="text-gray-700">{{ r.parentName || '—' }}</td>
             <td class="text-center">
               <input type="checkbox" class="w-4 h-4 accent-[#64BC04]"
-                     [class.cursor-pointer]="esAdminSalidas"
+                     [class.cursor-pointer]="puedeGestionar"
                      [checked]="r.filtraPorProyecto"
-                     [disabled]="!esAdminSalidas"
+                     [disabled]="!puedeGestionar"
                      (change)="toggleFiltroProyecto(r)"
                      title="Si se activa, el área se subdivide por proyecto" />
             </td>
@@ -66,7 +66,7 @@
             <td class="text-center">
               <div class="flex items-center justify-center gap-2">
                 <button (click)="openDetalle(r)" abrilBulkAction="default">Ver</button>
-                <button *ngIf="esAdminSalidas" (click)="openEdit(r)" abrilBulkAction="default">Editar</button>
+                <button *ngIf="puedeGestionar" (click)="openEdit(r)" abrilBulkAction="default">Editar</button>
               </div>
             </td>
           </tr>
@@ -102,7 +102,7 @@
               <td class="text-center">
                 <div class="flex items-center justify-center gap-2">
                   <button (click)="openDetalleProyecto(r, proj)" abrilBulkAction="default">Ver</button>
-                  <button *ngIf="esAdminSalidas" (click)="openEditProyecto(r, proj)" abrilBulkAction="default">Editar</button>
+                  <button *ngIf="puedeGestionar" (click)="openEditProyecto(r, proj)" abrilBulkAction="default">Editar</button>
                 </div>
               </td>
             </tr>
@@ -114,7 +114,7 @@
             {{
               filtrosActivos > 0
                 ? 'Sin resultados.'
-                : puedeVerTodas
+                : puedeGestionar
                   ? 'No hay áreas configurables.'
                   : 'No tienes áreas visibles. Solo los jefes, coordinadores y gerentes ven los revisores de su área.'
             }}
