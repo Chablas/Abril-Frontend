@@ -656,6 +656,9 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
       horaFin: this.horaFin || undefined,
       area: this.area || undefined,
       responsableArea: this.responsableArea || undefined,
+      // El worker del inspector, no solo su nombre: es lo que permite atribuir la inspección
+      // en Desempeño Supervisor aunque después le corrijan el nombre en la ficha.
+      inspectorWorkerId: this.inspectorId ?? undefined,
       inspectorNombre: this.inspectorNombre || undefined,
       inspectorCargo: this.inspectorCargo || undefined,
       inspectorEmpresa: this.inspectorEmpresa || undefined,
