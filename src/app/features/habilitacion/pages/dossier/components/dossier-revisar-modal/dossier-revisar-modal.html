@@ -35,6 +35,17 @@
       </div>
     }
 
+    @if (!semanaEnRevision) {
+      <div class="aviso-espera">
+        <i class="ti ti-info-circle"></i>
+        <span>
+          Esta semana está en <strong>{{ labelEstado(detalle.estado) }}</strong>: el contratista todavía no la envía
+          para revisión. Puedes ver los documentos que ya subió, pero recién podrás aprobarlos u observarlos
+          cuando le dé <strong>Enviar</strong>.
+        </span>
+      </div>
+    }
+
     <div class="modal-body">
 
       <div class="docs-list">

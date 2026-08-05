@@ -176,11 +176,17 @@ export class DossierUploadModal implements OnInit {
     });
   }
 
+  /**
+   * "Aprobado" también cuenta como resuelto: si no, una semana cuyos documentos ya
+   * fueron aprobados deja de poder enviarse (el botón queda deshabilitado para siempre)
+   * aunque el backend sí la acepte — EnviarAsync solo rechaza los "Pendiente".
+   * "Observado" no cuenta: ese sí lo tiene que volver a subir el contratista.
+   */
   get todoResuelto(): boolean {
     if (!this.detalle) return false;
     return this.tipos.every((t) => {
       const doc = this.getDoc(t);
-      return doc?.estado === 'Subido' || doc?.estado === 'NA';
+      return doc?.estado === 'Subido' || doc?.estado === 'NA' || doc?.estado === 'Aprobado';
     });
   }
 

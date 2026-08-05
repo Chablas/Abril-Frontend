@@ -62,6 +62,17 @@
   flex-shrink: 0;
 }
 
+/* Aviso informativo (no error): la semana aún no llega a revisión. */
+.aviso-espera {
+  margin: 10px 20px 0;
+  padding: 10px 14px;
+  background: #eff6ff; color: #1e40af;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px; font-size: 13px;
+  display: flex; gap: 8px; align-items: flex-start;
+  flex-shrink: 0;
+}
+
 .modal-loading {
   flex: 1; display: flex; align-items: center; justify-content: center;
   color: var(--color-text-secondary, #6b7280); font-size: 14px; gap: 8px;
