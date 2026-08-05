@@ -66,11 +66,14 @@
 
     <!-- Calendario desplegable: `fixed` respecto al viewport (no `absolute`) para que un campo
          angosto dentro de un contenedor con scroll (ej. tabla del cronograma) no se estire ni
-         genere scroll horizontal al mostrar el panel, que es más ancho que el campo. -->
+         genere scroll horizontal al mostrar el panel, que es más ancho que el campo.
+         La posición se recalcula en cada scroll para que acompañe al campo (ver date-picker.ts). -->
     <div
+      #panel
       *ngIf="isOpen"
       class="fixed z-50 w-[272px] max-w-[calc(100vw-24px)] bg-white border border-[#D6DEE5] rounded-lg shadow-lg p-3 select-none"
       [style.top.px]="panelTop"
+      [style.bottom.px]="panelBottom"
       [style.left.px]="panelLeft"
     >
       <!-- Cabecera: navegación (según vista) + mes/año clickeables -->
