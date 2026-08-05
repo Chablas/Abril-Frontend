@@ -1,4 +1,11 @@
-import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  Input,
+  OnChanges,
+  OnInit,
+  SimpleChanges,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
@@ -23,7 +30,7 @@ import { Roles } from '../../../../../../core/constants/roles';
   templateUrl: './contratista-usuarios.html',
   styleUrl: './contratista-usuarios.css',
 })
-export class ContratistaUsuarios implements OnInit {
+export class ContratistaUsuarios implements OnInit, OnChanges {
   @Input() contractorId!: number;
   @Input() currentUserId: number | null = null;
   @Input() forceAdminMode: boolean = false;
@@ -87,7 +94,25 @@ export class ContratistaUsuarios implements OnInit {
         } catch { }
       }
     }
-    console.log('currentUserId resuelto:', this.currentUserId);
+    this.loadUsuarios();
+    this.loadProyectos();
+  }
+
+  /**
+   * En la pantalla de admin (`admin-contratista-usuarios`) el componente se
+   * mantiene vivo al cambiar de empresa en el desplegable: el `*ngIf` del padre
+   * solo compara contra null, así que Angular no lo vuelve a crear y `ngOnInit`
+   * no se repite. Sin esto el panel se quedaba mostrando los usuarios de la
+   * PRIMERA empresa seleccionada aunque se eligiera otra.
+   */
+  ngOnChanges(changes: SimpleChanges): void {
+    const cambio = changes['contractorId'];
+    if (!cambio || cambio.firstChange) return;
+    if (cambio.previousValue === cambio.currentValue) return;
+    if (!this.contractorId) return;
+
+    this.usuarios = [];
+    this.proyectos = [];
     this.loadUsuarios();
     this.loadProyectos();
   }
