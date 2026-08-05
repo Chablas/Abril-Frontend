@@ -282,7 +282,8 @@ export class ContratistaUsuarios implements OnInit {
     Swal.fire({
       title: u.nombreCompleto || u.email,
       html: this.buildFormHtml({
-        email: false,
+        email: true,
+        emailValue: u.email,
         rolNombre: u.rolNombre,
         scope: u.scope,
         proyectosHtml,
@@ -379,6 +380,7 @@ export class ContratistaUsuarios implements OnInit {
 
   private buildFormHtml(opts: {
     email: boolean;
+    emailValue?: string;
     rolNombre: string;
     scope: string;
     proyectosHtml: string;
@@ -391,6 +393,7 @@ export class ContratistaUsuarios implements OnInit {
       ? `<div style="margin-bottom:14px;">
           <label style="${this.labelCss}">Email *</label>
           <input id="swal-email" type="email" placeholder="usuario@empresa.com"
+            value="${opts.emailValue ?? ''}"
             style="${this.inputCss}">
         </div>`
       : '';
@@ -494,11 +497,20 @@ export class ContratistaUsuarios implements OnInit {
     return { email, rolNombre, scope, proyectoIds, systemRoleId, modulos };
   }
 
-  private preConfirmEditar(): ActualizarUsuarioDto {
+  private preConfirmEditar(): ActualizarUsuarioDto | false {
+    const email = (document.getElementById('swal-email') as HTMLInputElement | null)?.value.trim() ?? '';
+    if (!email) {
+      Swal.showValidationMessage('El email es requerido');
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      Swal.showValidationMessage('Ingresa un email válido');
+      return false;
+    }
     const rolNombre = (document.getElementById('swal-rol') as HTMLSelectElement).value;
     const scope = (document.getElementById('swal-scope') as HTMLSelectElement).value;
     const proyectoIds = scope === 'POR_PROYECTO' ? this.getSelectedProyectoIds() : [];
     const modulos = (document.getElementById('swal-modulos') as HTMLSelectElement).value;
-    return { rolNombre, scope, proyectoIds, modulos };
+    return { email, rolNombre, scope, proyectoIds, modulos };
   }
 }
