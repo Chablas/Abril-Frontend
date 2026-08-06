@@ -94,6 +94,10 @@ export class DossierRevisarModal implements OnInit, OnDestroy {
     return 'chip-blue';
   }
 
+  labelEstado(estado: string): string {
+    return estado === 'NoAplica' ? 'No aplica' : estado;
+  }
+
   chipSemana(estado: string): string {
     if (estado === 'Aprobado') return 'chip-green';
     if (estado === 'Rechazado' || estado === 'Enviado' || estado === 'Observado') return 'chip-orange';
@@ -146,8 +150,19 @@ export class DossierRevisarModal implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Los documentos solo se revisan cuando el contratista ya envió la semana.
+   * Aprobarlos en Borrador dejaba la semana congelada en "Enviado" sin que el
+   * contratista pudiera reenviarla ni nosotros terminar de aprobarla, así que el
+   * backend ahora lo rechaza y acá se ocultan los botones para que no salte el error.
+   */
+  get semanaEnRevision(): boolean {
+    const estado = this.detalle?.estado;
+    return estado === 'Enviado' || estado === 'Observado' || estado === 'Aprobado';
+  }
+
   puedeRevisarDoc(doc: DossierDocumentoDto | undefined): boolean {
-    return !!doc && doc.estado === 'Subido';
+    return !!doc && doc.estado === 'Subido' && this.semanaEnRevision;
   }
 
   aprobarDoc(doc: DossierDocumentoDto): void {

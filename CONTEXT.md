@@ -4949,3 +4949,17 @@ Sesión de sincronización, sin desarrollo de feature propio: se trajeron a `vic
 ### Estado final
 - `git status --porcelain` limpio antes y después del merge — no hubo cambios propios de la rama para commitear en esta sesión (aparte del merge commit).
 - Rama `victor-frontend` actualizada y sincronizada con `origin/master` al momento del merge.
+
+## Sesión 2026-08-05 — Editar email de usuario contratista
+
+Rama: `master`. Ver detalle completo en el CONTEXT.md del backend (misma sesión) — acá solo la parte frontend.
+
+### Cambio
+El modal "Editar" de `contratista-usuarios.ts` (usado en `admin-contratista-usuarios` y en `dashboard-contratista`) ahora muestra el campo Email precargado con el valor actual y lo envía en el PUT — antes se armaba el formulario sin ese campo y no había forma de corregir un email mal escrito o inaccesible desde la UI.
+
+### Archivos clave
+- `src/app/features/habilitacion/services/contratista-usuario.service.ts` (`ActualizarUsuarioDto.email`)
+- `src/app/features/habilitacion/pages/dashboard-contratista/components/contratista-usuarios/contratista-usuarios.ts` (`buildFormHtml`, `abrirModalEditar`, `preConfirmEditar`)
+
+### Pendiente (investigado, sin cambios de código todavía)
+Personal de Oficina Central / Post Venta / Arquitectura Comercial no aparece en "Programar Inducción" porque el campo Proyecto no es obligatorio al crear trabajadores `Casa` Staff/Oficina (`worker-create-edit.ts`, getter `canSubmit`). Ver CONTEXT.md del backend para el plan completo (backfill SQL + hacer el campo obligatorio).

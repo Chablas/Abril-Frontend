@@ -47,6 +47,8 @@ export interface CrearInspeccionRequest {
   horaFin?: string;
   area?: string;
   responsableArea?: string;
+  /** Worker del inspector. Fuente de verdad para Desempeño Supervisor (el nombre es solo texto). */
+  inspectorWorkerId?: number;
   inspectorNombre?: string;
   inspectorCargo?: string;
   inspectorEmpresa?: string;

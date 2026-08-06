@@ -1,4 +1,4 @@
-<app-base-modal *ngIf="open" title="Programar Inducción" width="w-[700px]" (closeModal)="close()">
+<app-base-modal *ngIf="open" [title]="'Programar Inducción'" width="w-[700px]" (closeModal)="close()">
 
   <!-- Step indicator -->
   <div class="pi-steps">
@@ -18,19 +18,23 @@
       <div class="pi-col-full">
         <label class="pi-label">Proyecto *</label>
         <app-search-select
-          [options]="proyectos"
+          [options]="proyectosCombo"
           valueField="projectId"
           displayField="projectDescription"
           [value]="proyectoId"
           [showLabel]="false"
-          placeholder="Seleccionar proyecto"
+          [placeholder]="loadingProyectos ? 'Cargando proyectos…' : 'Buscar proyecto...'"
           (valueChange)="proyectoId = $event"
         />
       </div>
 
       <div>
         <label class="pi-label">Fecha programada *</label>
-        <input type="date" class="pi-input" [(ngModel)]="fechaProgramada" />
+        <app-date-picker
+          [value]="fechaProgramada"
+          [showLabel]="false"
+          (valueChange)="fechaProgramada = $event"
+        />
       </div>
 
       <div class="pi-checkboxes">

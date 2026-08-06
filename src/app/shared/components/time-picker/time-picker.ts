@@ -1,4 +1,5 @@
 import {
+  ChangeDetectorRef,
   Component,
   ElementRef,
   EventEmitter,
@@ -8,6 +9,7 @@ import {
   OnDestroy,
   Output,
   SimpleChanges,
+  ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -50,28 +52,50 @@ export class TimePicker implements OnChanges, OnDestroy {
 
   /** Ancho del panel; se usa para decidir a qué lado anclarlo respecto del viewport. */
   private readonly anchoPanel = 176;
+  /**
+   * Alto aproximado del panel. Solo se usa para decidir si abre hacia abajo o hacia arriba en el
+   * primer cálculo, cuando el panel todavía no está en el DOM y no se puede medir de verdad.
+   */
+  private readonly altoPanelEstimado = 245;
+
+  /** Panel desplegable; se mide para decidir de qué lado del campo abrirlo. */
+  @ViewChild('panel') private panelRef?: ElementRef<HTMLElement>;
 
   isOpen = false;
   /** Texto editable del input, en formato `HH:mm`. */
   texto = '';
-  /** Posición del panel (`position: fixed`, respecto al viewport) — mismo motivo que en date-picker. */
-  panelTop = 0;
+  /**
+   * Posición del panel (`position: fixed`, respecto al viewport) — mismo motivo que en
+   * date-picker, y también como allí se recalcula en cada scroll (ver `reposicionar`) para que
+   * acompañe al campo. El anclaje vertical es por `top` (panel debajo) o por `bottom` (panel
+   * encima, cuando abajo no entra); el que no se usa queda en null.
+   */
+  panelTop: number | null = 0;
+  panelBottom: number | null = null;
   panelLeft = 0;
+
+  /** Ancestros que pueden recortar el campo (scroll u `overflow: hidden`), cacheados al abrir. */
+  private contenedoresRecorte: HTMLElement[] = [];
+
+  private destruido = false;
 
   readonly horas: string[] = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   minutos: string[] = [];
 
   /**
-   * Handler de scroll (capturing) usado para cerrar el panel si algún ancestro hace scroll.
-   * Los scrolls que se originan dentro del propio componente (las columnas de hora/minuto
-   * son scrolleables) no deben cerrarlo — solo los de ancestros reales.
+   * Handler de scroll/resize (capturing): recoloca el panel para que siga al campo. Los scrolls
+   * que se originan dentro del propio componente (las columnas de hora/minuto son scrolleables)
+   * no mueven el campo, así que se ignoran — solo cuentan los de ancestros reales.
    */
   private readonly onAncestorScroll = (event?: Event) => {
     if (event?.target instanceof Node && this.el.nativeElement.contains(event.target)) return;
-    this.close();
+    this.reposicionar();
   };
 
-  constructor(private el: ElementRef) {
+  constructor(
+    private el: ElementRef,
+    private cdr: ChangeDetectorRef,
+  ) {
     this.recalcMinutos();
   }
 
@@ -81,6 +105,7 @@ export class TimePicker implements OnChanges, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destruido = true;
     if (typeof document !== 'undefined') {
       document.removeEventListener('scroll', this.onAncestorScroll, true);
       window.removeEventListener('resize', this.onAncestorScroll);
@@ -123,13 +148,18 @@ export class TimePicker implements OnChanges, OnDestroy {
   abrir() {
     if (this.disabled || this.isOpen) return;
     this.isOpen = true;
+    this.contenedoresRecorte = this.calcularContenedoresRecorte();
     this.posicionarPanel();
     if (typeof document !== 'undefined') {
       document.addEventListener('scroll', this.onAncestorScroll, true);
       window.addEventListener('resize', this.onAncestorScroll);
     }
-    // Deja que el panel se pinte antes de centrar las opciones seleccionadas.
-    setTimeout(() => this.scrollSeleccionadoAlCentro());
+    // Deja que el panel se pinte antes de centrar las opciones seleccionadas y de recolocarlo
+    // con su alto real (al abrir todavía no existe en el DOM y no se puede medir).
+    setTimeout(() => {
+      this.scrollSeleccionadoAlCentro();
+      this.reposicionar();
+    });
   }
 
   togglePanel(event: MouseEvent) {
@@ -141,20 +171,71 @@ export class TimePicker implements OnChanges, OnDestroy {
 
   close() {
     this.isOpen = false;
+    this.contenedoresRecorte = [];
     if (typeof document !== 'undefined') {
       document.removeEventListener('scroll', this.onAncestorScroll, true);
       window.removeEventListener('resize', this.onAncestorScroll);
     }
   }
 
-  /** Calcula la posición del panel (`fixed`), pegado al campo y ajustado para no salirse del viewport. */
-  private posicionarPanel() {
-    if (typeof window === 'undefined') return;
+  /**
+   * Recalcula la posición del panel tras un scroll/resize para que siga al campo. Si el campo
+   * dejó de verse (salió del viewport o lo recortó un contenedor con scroll) se cierra.
+   *
+   * El `detectChanges` es indispensable: el listener se registra con `addEventListener` (no con
+   * un binding de Angular) y la app corre zoneless, así que sin él el cambio de posición no se
+   * pintaría y el panel se quedaría clavado donde estaba.
+   */
+  private reposicionar() {
+    if (this.destruido || !this.isOpen || typeof window === 'undefined') return;
     const rect = this.el.nativeElement.getBoundingClientRect();
+    if (this.anclaVisible(rect)) this.posicionarPanel(rect);
+    else this.close();
+    this.cdr.detectChanges();
+  }
+
+  /** Calcula la posición del panel (`fixed`), pegado al campo y ajustado para no salirse del viewport. */
+  private posicionarPanel(rect?: DOMRect) {
+    if (typeof window === 'undefined') return;
+    const r = rect ?? (this.el.nativeElement.getBoundingClientRect() as DOMRect);
     const margen = 12;
-    const left = Math.min(rect.left, window.innerWidth - this.anchoPanel - margen);
+    const left = Math.min(r.left, window.innerWidth - this.anchoPanel - margen);
     this.panelLeft = Math.max(left, margen);
-    this.panelTop = rect.bottom + 4;
+
+    // Abre hacia arriba solo si debajo del campo no entra y encima hay más espacio; en ese caso
+    // se ancla por `bottom` para quedar pegado al campo sin depender del alto del panel.
+    const alto = this.panelRef?.nativeElement.offsetHeight || this.altoPanelEstimado;
+    const espacioAbajo = window.innerHeight - r.bottom - margen;
+    const espacioArriba = r.top - margen;
+    if (espacioAbajo < alto && espacioArriba > espacioAbajo) {
+      this.panelTop = null;
+      this.panelBottom = Math.round(window.innerHeight - r.top + 4);
+    } else {
+      this.panelBottom = null;
+      this.panelTop = Math.round(r.bottom + 4);
+    }
+  }
+
+  /** Ancestros con scroll/`overflow: hidden` que pueden recortar el campo. */
+  private calcularContenedoresRecorte(): HTMLElement[] {
+    if (typeof window === 'undefined') return [];
+    const out: HTMLElement[] = [];
+    let padre = this.el.nativeElement.parentElement as HTMLElement | null;
+    while (padre && padre !== document.body && padre !== document.documentElement) {
+      const estilo = getComputedStyle(padre);
+      if (/auto|scroll|hidden/.test(`${estilo.overflowY} ${estilo.overflowX}`)) out.push(padre);
+      padre = padre.parentElement;
+    }
+    return out;
+  }
+
+  /** true si el campo sigue a la vista: dentro del viewport y sin que lo recorte ningún ancestro. */
+  private anclaVisible(rect: DOMRect): boolean {
+    if (rect.bottom <= 0 || rect.top >= window.innerHeight) return false;
+    return this.contenedoresRecorte.every((c) => {
+      const r = c.getBoundingClientRect();
+      return rect.bottom > r.top && rect.top < r.bottom && rect.right > r.left && rect.left < r.right;
+    });
   }
 
   /**

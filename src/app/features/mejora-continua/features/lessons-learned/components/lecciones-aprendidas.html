@@ -56,6 +56,22 @@
             </app-search-select>
           </div>
         </ng-container>
+
+        <!-- Obra / Oficina: ya no es un nivel más del árbol de áreas sino un
+             desplegable propio alimentado por workers_obra_oficina_staff. -->
+        <div class="w-full sm:w-[200px]">
+          <app-search-select
+            label="Obra / Oficina"
+            [options]="obraOficinaOptions"
+            valueField="obraOficinaStaffId"
+            displayField="name"
+            [value]="filtersTable.obraOficinaStaffId"
+            [fullText]="true"
+            [sortAlpha]="false"
+            (valueChange)="filtersTable.obraOficinaStaffId = $event"
+            placeholder="Todos">
+          </app-search-select>
+        </div>
       </div>
 
       <div class="w-full sm:w-[220px]">

@@ -30,6 +30,21 @@
           </app-search-select>
         </div>
       </ng-container>
+
+      <!-- Obra / Oficina: desplegable propio (workers_obra_oficina_staff), ya no un
+           nivel más del árbol de áreas. -->
+      <div class="w-[200px]">
+        <app-search-select
+          label="Obra / Oficina"
+          [options]="obraOficinaOptions"
+          valueField="obraOficinaStaffId"
+          displayField="name"
+          [sortAlpha]="false"
+          [value]="selected.obraOficinaStaffId"
+          (valueChange)="selected.obraOficinaStaffId = $event"
+          placeholder="Todos">
+        </app-search-select>
+      </div>
     </div>
 
     <!-- Período -->

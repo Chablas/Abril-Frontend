@@ -25,6 +25,7 @@ import { SharepointUploadService } from '../../services/sharepoint-upload.servic
 import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
 import { EmpresaContratistaListDto } from '../../dtos/empresa.model';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { SearchInput } from '../../../../shared/components/search-input/search-input';
 import {
   ArchivoStagingDto,
   WorkerEntregableDto,
@@ -50,7 +51,7 @@ import { SctrVidaLeyDto } from '../../dtos/sctr.model';
 @Component({
   selector: 'app-hab-trabajadores',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, WorkerCreateEdit, ProgramacionCreate, EmosProgramados, CatalogosModal, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, SearchInput, WorkerCreateEdit, ProgramacionCreate, EmosProgramados, CatalogosModal, AbrilPageHeaderComponent],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
 })

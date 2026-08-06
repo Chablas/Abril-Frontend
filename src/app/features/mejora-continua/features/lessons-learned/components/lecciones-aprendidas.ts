@@ -70,6 +70,7 @@ export class LeccionesAprendidas implements OnInit {
   // Filters raw
   filtersData: LessonFiltersDTO = {
     projects: [], areas: [], periods: [], users: [], reviewers: [], categories: [],
+    obraOficinaStaff: [], defaultObraOficinaStaffId: null,
   };
 
   // Computed SearchSelect options (with null "Todos" prepended)
@@ -77,6 +78,12 @@ export class LeccionesAprendidas implements OnInit {
   userOptions: any[] = [];
   reviewerOptions: any[] = [];
   periodOptions: any[] = [];
+  /**
+   * Opciones del filtro Obra / Oficina. Reemplaza al segundo nivel ("Subárea") de la
+   * cascada de áreas: ese nivel salía de los nodos de tipo "Área Obra_Oficina", que
+   * ya no existen — ahora el dato vive en workers.obra_oficina_staff_id.
+   */
+  obraOficinaOptions: any[] = [];
   /**
    * Por cada catalog_type, las opciones del dropdown (con el "Todos" inicial).
    * Indexado por `catalogTypeId` para conservar el orden de catalog_type.
@@ -91,6 +98,8 @@ export class LeccionesAprendidas implements OnInit {
     reviewerWorkerId: null as number | null,
     /** Selección por catalog_type_id → catalog_item_id (o null para "Todos"). */
     catalogSelections: {} as Record<number, number | null>,
+    /** Obra / Staff / Oficina Central (workers_obra_oficina_staff) o null = todos. */
+    obraOficinaStaffId: null as number | null,
     /** Estado de aprobación: null=Todos | PENDIENTE | APROBADA | RECHAZADA. */
     approvalStatus: null as string | null,
     /** Solo lecciones pendientes de mi revisión (subordinados). */
@@ -296,6 +305,10 @@ export class LeccionesAprendidas implements OnInit {
     this.projectOptions = [{ projectId: null, projectDescription: 'Todos los proyectos' }, ...fd.projects];
     this.userOptions = [{ userId: null, fullName: 'Todos los usuarios' }, ...fd.users];
     this.reviewerOptions = [{ workerId: null, fullName: 'Todos los revisores' }, ...(fd.reviewers ?? [])];
+    this.obraOficinaOptions = [
+      { obraOficinaStaffId: null, name: 'Todos' },
+      ...(fd.obraOficinaStaff ?? []),
+    ];
     this.periodOptions = [
       { periodDate: null, periodLabel: 'Todos los periodos' },
       ...fd.periods.map(p => ({
@@ -337,6 +350,7 @@ export class LeccionesAprendidas implements OnInit {
     return {
       projectId: this.filtersTable.projectId,
       lessonAreaIds: this.selectedAreaIds.length ? this.selectedAreaIds.join(',') : null,
+      obraOficinaStaffId: this.filtersTable.obraOficinaStaffId,
       periodDate: this.filtersTable.periodDate,
       userId: this.filtersTable.userId,
       reviewerWorkerId: this.filtersTable.reviewerWorkerId,

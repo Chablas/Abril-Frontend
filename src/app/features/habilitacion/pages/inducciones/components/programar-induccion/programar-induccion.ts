@@ -26,6 +26,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
@@ -39,7 +40,7 @@ import { InduccionBatchCreateDto } from '../../../../dtos/induccion.model';
 @Component({
   selector: 'app-programar-induccion',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, DatePicker],
   templateUrl: './programar-induccion.html',
   styleUrl: './programar-induccion.css',
 })
@@ -57,7 +58,8 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
   selectedWorker: WorkerHabilitacionListDto | null = null;
 
   proyectoId: number | null = null;
-  fechaProgramada = '';
+  /** Fecha en formato `YYYY-MM-DD` (el que emite `app-date-picker`), o null si no hay selección. */
+  fechaProgramada: string | null = null;
   trabajoAltura = false;
   equipoElectrico = false;
 
@@ -187,7 +189,7 @@ export class ProgramarInduccion implements OnChanges, OnDestroy {
   }
 
   submit(): void {
-    if (!this.canSubmit || !this.selectedWorker || !this.proyectoId) return;
+    if (!this.canSubmit || !this.selectedWorker || !this.proyectoId || !this.fechaProgramada) return;
 
     if (!this.selectedWorker.empresaId) {
       Swal.fire({

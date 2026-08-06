@@ -144,9 +144,13 @@ export class AccidenteCrearEditarComponent implements OnInit {
           this.resolverElaboradoPorActual();
         }
       },
-      error: () => {
+      // Si falla la inicialización hay que apagar también resolviendoObservador: si no, el
+      // formulario se queda con el esqueleto de carga puesto para siempre y sin mostrar error.
+      error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         this.cargando = false;
+        this.resolviendoObservador = false;
+        this.errorService.handleError(err);
         this.cdr.detectChanges();
       },
     });

@@ -1,0 +1,206 @@
+<div class="config-stack">
+
+  <!-- Contexto: qué correos gobierna esta pantalla -->
+  <div class="config-card">
+    <div class="config-card__head">
+      <h3 class="config-card__title">
+        <i class="ti ti-mail"></i>
+        Correos al programar un EMO
+      </h3>
+      <p class="config-card__sub">
+        Controla quién recibe el correo cuando se programa un Examen Médico Ocupacional:
+        tanto la <strong>programación manual</strong> como el <strong>resumen diario de la
+        programación automática</strong> por vencimiento. Los destinatarios principales van
+        en <strong>Para</strong> y las copias en <strong>CC</strong>. Desactiva un destinatario
+        para que no reciba el correo, sin perder el registro. Útil para hacer pruebas en
+        desarrollo y en producción.
+      </p>
+    </div>
+
+    <p class="config-warn" *ngIf="sinPrincipalesActivos">
+      <i class="ti ti-alert-triangle"></i>
+      Sin ningún destinatario principal activo el correo <strong>no se envía</strong> (tampoco
+      a las copias).
+    </p>
+  </div>
+
+  <!-- ── Destinatarios principales (Para) ── -->
+  <div class="config-card">
+    <div class="config-card__head config-card__head--row">
+      <div>
+        <h3 class="config-card__title">
+          <i class="ti ti-user-check"></i>
+          Destinatarios principales (Para)
+        </h3>
+        <p class="config-card__sub">Reciben el correo como destinatarios directos.</p>
+      </div>
+      <button type="button" class="btn-add" (click)="abrirAlta('PRINCIPAL')">
+        <i class="ti ti-plus"></i> Agregar correo
+      </button>
+    </div>
+
+    <ul class="correo-list" *ngIf="principales.length; else vacioPrincipales">
+      <li class="correo-item" *ngFor="let c of principales">
+        <div class="correo-item__info">
+          <span class="correo-item__name">
+            {{ c.editable ? (c.email || '—') : (c.nombre || '—') }}
+            <span class="correo-item__tag" *ngIf="!c.editable">Fijo</span>
+          </span>
+          <span class="correo-item__desc" *ngIf="c.editable ? c.nombre : c.descripcion">
+            {{ c.editable ? c.nombre : c.descripcion }}
+          </span>
+        </div>
+        <div class="correo-item__right">
+          <span class="correo-item__state" [class.correo-item__state--on]="c.active">
+            {{ c.active ? 'Se envía' : 'No se envía' }}
+          </span>
+          <button
+            type="button"
+            class="switch"
+            role="switch"
+            [attr.aria-checked]="c.active"
+            [attr.aria-label]="'Activar o desactivar correo a ' + (c.email || c.nombre)"
+            [class.switch--on]="c.active"
+            [disabled]="savingId === c.id"
+            (click)="toggle(c)">
+            <span class="switch__knob"></span>
+          </button>
+          <div class="correo-item__actions">
+            <button
+              type="button"
+              class="btn-icon"
+              *ngIf="c.editable"
+              [disabled]="savingId === c.id"
+              title="Editar"
+              (click)="abrirEdicion(c)">
+              <i class="ti ti-pencil"></i>
+            </button>
+            <button
+              type="button"
+              class="btn-icon btn-icon--danger"
+              *ngIf="c.editable"
+              [disabled]="savingId === c.id"
+              title="Eliminar"
+              (click)="eliminar(c)">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>
+      </li>
+    </ul>
+
+    <ng-template #vacioPrincipales>
+      <p class="correo-empty" *ngIf="!loading">No hay destinatarios principales configurados.</p>
+    </ng-template>
+  </div>
+
+  <!-- ── Copias (CC) ── -->
+  <div class="config-card">
+    <div class="config-card__head config-card__head--row">
+      <div>
+        <h3 class="config-card__title">
+          <i class="ti ti-copy"></i>
+          Copias (CC)
+        </h3>
+        <p class="config-card__sub">Reciben una copia visible del correo. No hay copias ocultas.</p>
+      </div>
+      <button type="button" class="btn-add" (click)="abrirAlta('COPIA')">
+        <i class="ti ti-plus"></i> Agregar copia
+      </button>
+    </div>
+
+    <ul class="correo-list" *ngIf="copias.length; else vacioCopias">
+      <li class="correo-item" *ngFor="let c of copias">
+        <div class="correo-item__info">
+          <span class="correo-item__name">{{ c.email || '—' }}</span>
+          <span class="correo-item__desc" *ngIf="c.nombre">{{ c.nombre }}</span>
+        </div>
+        <div class="correo-item__right">
+          <span class="correo-item__state" [class.correo-item__state--on]="c.active">
+            {{ c.active ? 'Se envía' : 'No se envía' }}
+          </span>
+          <button
+            type="button"
+            class="switch"
+            role="switch"
+            [attr.aria-checked]="c.active"
+            [attr.aria-label]="'Activar o desactivar copia a ' + (c.email || c.nombre)"
+            [class.switch--on]="c.active"
+            [disabled]="savingId === c.id"
+            (click)="toggle(c)">
+            <span class="switch__knob"></span>
+          </button>
+          <div class="correo-item__actions">
+            <button
+              type="button"
+              class="btn-icon"
+              [disabled]="savingId === c.id"
+              title="Editar"
+              (click)="abrirEdicion(c)">
+              <i class="ti ti-pencil"></i>
+            </button>
+            <button
+              type="button"
+              class="btn-icon btn-icon--danger"
+              [disabled]="savingId === c.id"
+              title="Eliminar"
+              (click)="eliminar(c)">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>
+      </li>
+    </ul>
+
+    <ng-template #vacioCopias>
+      <p class="correo-empty" *ngIf="!loading">No hay copias configuradas.</p>
+    </ng-template>
+  </div>
+</div>
+
+<!-- ── Modal de alta/edición ── -->
+<app-abril-modal-panel
+  *ngIf="formOpen"
+  [titulo]="formTitulo"
+  icono="ti-mail-plus"
+  variant="blue"
+  width="520px"
+  (closeModal)="cerrarForm()">
+
+  <div class="form-row">
+    <div class="abril-field">
+      <label class="abril-field-label">Correo *</label>
+      <input
+        type="email"
+        class="abril-field-input"
+        name="email"
+        placeholder="correo@ejemplo.com"
+        [(ngModel)]="formEmail" />
+    </div>
+  </div>
+
+  <div class="form-row">
+    <div class="abril-field">
+      <label class="abril-field-label">Nombre o referencia</label>
+      <input
+        type="text"
+        class="abril-field-input"
+        name="nombre"
+        placeholder="Opcional (ej. Médico ocupacional)"
+        [(ngModel)]="formNombre" />
+    </div>
+  </div>
+
+  <p class="form-error" *ngIf="formError">
+    <i class="ti ti-alert-circle"></i> {{ formError }}
+  </p>
+
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-ghost" (click)="cerrarForm()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="!formValido || saving" (click)="guardarForm()">
+      <i class="ti ti-loader-2 spin" *ngIf="saving"></i>
+      <i class="ti ti-check" *ngIf="!saving"></i>
+      {{ saving ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</app-abril-modal-panel>

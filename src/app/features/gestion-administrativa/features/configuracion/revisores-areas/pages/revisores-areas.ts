@@ -19,6 +19,9 @@ import { Paginator } from '../../../../../../shared/components/paginator/paginat
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
 import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { CONFIGURACION_TABS } from '../../../../../configuracion/shared/configuracion-tabs';
 import { DEFAULT_PAGE_SIZE } from '../../../../../../shared/constants/pagination';
 import { RevisoresAreasDetalle } from '../components/detalle/detalle';
 import { RevisoresAreasEditar } from '../components/editar/editar';
@@ -34,6 +37,8 @@ import { RevisoresAreasEditar } from '../components/editar/editar';
     TitleCasePipe,
     AbrilBulkActionDirective,
     FilterModal,
+    FilterTriggerButton,
+    AbrilPageHeaderComponent,
     RevisoresAreasDetalle,
     RevisoresAreasEditar,
   ],
@@ -41,6 +46,11 @@ import { RevisoresAreasEditar } from '../components/editar/editar';
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class RevisoresAreas implements OnInit {
+  readonly tabs = CONFIGURACION_TABS;
+
+  /** area_type.area_type_name de las filas que son gerencia (raíz de su rama). */
+  private readonly TIPO_GERENCIA = 'Área de Gerencia';
+
   rows: AreaRevisorItemDTO[] = [];
   options: AreaRevisorOptionDTO[] = [];
   /** Todos los proyectos activos (para armar las subfilas de las áreas filtradas por proyecto). */
@@ -67,11 +77,14 @@ export class RevisoresAreas implements OnInit {
   scopeRevisores: AreaRevisorAsignadoDTO[] | undefined;
 
   /**
-   * Solo el ADMINISTRADOR DE SOLICITUD DE SALIDAS ve todas las áreas y puede
-   * editar revisores. Los Jefe/Coordinador/Gerente solo ven su área (el
-   * backend filtra) y el resto no ve ninguna.
+   * Quién configura esta pantalla: el ADMINISTRADOR DE SOLICITUD DE SALIDAS y el
+   * USUARIO DE GTH. Ambos ven todas las áreas y pueden editarlas (revisores y el
+   * flag "filtrar por proyecto") — ver y editar van juntos, igual que en el
+   * backend. Los Jefe/Coordinador/Gerente solo ven su área, de lectura (el
+   * backend filtra y no les manda las opciones del selector), y el resto no ve
+   * ninguna.
    */
-  readonly esAdminSalidas: boolean;
+  readonly puedeGestionar: boolean;
 
   constructor(
     private service: RevisoresAreasService,
@@ -79,7 +92,9 @@ export class RevisoresAreas implements OnInit {
     private errorService: ErrorService,
     authService: AuthService,
   ) {
-    this.esAdminSalidas = authService.hasRole(Roles.ADMINISTRADOR_SOLICITUD_SALIDAS);
+    this.puedeGestionar =
+      authService.hasRole(Roles.ADMINISTRADOR_SOLICITUD_SALIDAS) ||
+      authService.hasRole(Roles.USUARIO_GTH);
   }
 
   ngOnInit(): void {
@@ -172,6 +187,14 @@ export class RevisoresAreas implements OnInit {
       (p) =>
         asignados.get(p.projectId) ?? { projectId: p.projectId, projectName: p.projectName, revisores: [] },
     );
+  }
+
+  /**
+   * true si la fila es un "Área de Gerencia": no tiene área padre y sus revisores son
+   * el respaldo de todas las áreas estándar que cuelgan de ella.
+   */
+  esGerencia(item: AreaRevisorItemDTO): boolean {
+    return item.areaTypeName === this.TIPO_GERENCIA;
   }
 
   // ── Celda "Revisores" ─────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import {
+  ChangeDetectorRef,
   Component,
   ElementRef,
   EventEmitter,
@@ -8,6 +9,7 @@ import {
   OnDestroy,
   Output,
   SimpleChanges,
+  ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -44,6 +46,14 @@ export class DatePicker implements OnChanges, OnDestroy {
   /** Deshabilita el campo: no se puede escribir, ni abrir el calendario, ni limpiar. */
   @Input() disabled: boolean = false;
   /**
+   * Fecha mínima seleccionable en formato `YYYY-MM-DD` (inclusive), igual que el `min` del input
+   * nativo. null/'' = sin límite inferior. Los días/meses/años fuera de rango se deshabilitan y
+   * una fecha escrita a mano fuera de rango se rechaza.
+   */
+  @Input() min: string | null = null;
+  /** Fecha máxima seleccionable en formato `YYYY-MM-DD` (inclusive). null/'' = sin límite superior. */
+  @Input() max: string | null = null;
+  /**
    * Color de acento del componente (label, borde/anillo al enfocar y día seleccionado).
    * Acepta cualquier valor CSS de color o variable de la paleta (ej. 'var(--color-abril-primary)').
    * Por defecto usa el verde lima de la marca.
@@ -62,6 +72,14 @@ export class DatePicker implements OnChanges, OnDestroy {
 
   /** Ancho del panel del calendario; se usa para decidir a qué lado anclarlo. */
   private readonly anchoPanel = 272;
+  /**
+   * Alto aproximado del panel. Solo se usa para decidir si abre hacia abajo o hacia arriba en el
+   * primer cálculo, cuando el panel todavía no está en el DOM y no se puede medir de verdad.
+   */
+  private readonly altoPanelEstimado = 310;
+
+  /** Panel desplegable; se mide para decidir de qué lado del campo abrirlo. */
+  @ViewChild('panel') private panelRef?: ElementRef<HTMLElement>;
 
   isOpen = false;
   /** Texto editable del input, en formato `dd/mm/aaaa`. */
@@ -72,12 +90,29 @@ export class DatePicker implements OnChanges, OnDestroy {
    * está dentro de un elemento con scroll (ej. la tabla del cronograma): con `absolute` el panel
    * formaba parte del ancho scrolleable del contenedor, ocultando días y cerrándose al tocar
    * la barra de scroll horizontal que aparecía.
+   *
+   * Como `fixed` no acompaña al scroll por sí solo, la posición se recalcula en cada scroll
+   * (ver `reposicionar`) para que el panel siga pegado al campo. El anclaje vertical es por
+   * `top` (panel debajo del campo) o por `bottom` (panel encima, cuando abajo no entra);
+   * el que no se usa queda en null para que Angular no escriba esa propiedad.
    */
-  panelTop = 0;
+  panelTop: number | null = 0;
+  panelBottom: number | null = null;
   panelLeft = 0;
 
-  /** Handler de scroll (capturing) usado para cerrar el panel si algún ancestro hace scroll. */
-  private readonly onAncestorScroll = () => this.close();
+  /**
+   * Handler de scroll/resize (capturing): recoloca el panel para que siga al campo. Los scrolls
+   * originados dentro del propio componente se ignoran (no mueven el campo).
+   */
+  private readonly onAncestorScroll = (event?: Event) => {
+    if (event?.target instanceof Node && this.el.nativeElement.contains(event.target)) return;
+    this.reposicionar();
+  };
+
+  /** Ancestros que pueden recortar el campo (scroll u `overflow: hidden`), cacheados al abrir. */
+  private contenedoresRecorte: HTMLElement[] = [];
+
+  private destruido = false;
 
   /** Mes (0-11) y año visibles en el calendario. */
   vistaMes = 0;
@@ -89,13 +124,17 @@ export class DatePicker implements OnChanges, OnDestroy {
   /** Primer año del bloque de 12 visible en el selector de año. */
   anioBase = 0;
 
-  constructor(private el: ElementRef) {}
+  constructor(
+    private el: ElementRef,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['value']) this.texto = this.formatoLegible(this.value);
   }
 
   ngOnDestroy(): void {
+    this.destruido = true;
     if (typeof document !== 'undefined') {
       document.removeEventListener('scroll', this.onAncestorScroll, true);
       window.removeEventListener('resize', this.onAncestorScroll);
@@ -135,12 +174,15 @@ export class DatePicker implements OnChanges, OnDestroy {
     if (this.disabled || this.isOpen) return;
     this.isOpen = true;
     this.vista = 'dias';
+    this.contenedoresRecorte = this.calcularContenedoresRecorte();
     this.posicionarPanel();
     if (typeof document !== 'undefined') {
       // Captura: los contenedores internos con scroll (ej. la tabla del cronograma) no
       // burbujean su evento 'scroll', por lo que hay que escucharlo en fase de captura.
       document.addEventListener('scroll', this.onAncestorScroll, true);
       window.addEventListener('resize', this.onAncestorScroll);
+      // Recolocar ya con el alto real: al abrir, el panel todavía no existe en el DOM.
+      setTimeout(() => this.reposicionar());
     }
     this.initVista();
   }
@@ -155,20 +197,73 @@ export class DatePicker implements OnChanges, OnDestroy {
   close() {
     this.isOpen = false;
     this.vista = 'dias';
+    this.contenedoresRecorte = [];
     if (typeof document !== 'undefined') {
       document.removeEventListener('scroll', this.onAncestorScroll, true);
       window.removeEventListener('resize', this.onAncestorScroll);
     }
   }
 
-  /** Calcula la posición del panel (`fixed`), pegado al campo y ajustado para no salirse del viewport. */
-  private posicionarPanel() {
-    if (typeof window === 'undefined') return;
+  /**
+   * Recalcula la posición del panel tras un scroll/resize para que siga al campo. Si el campo
+   * dejó de verse (salió del viewport o lo recortó un contenedor con scroll) se cierra, para que
+   * el panel no quede flotando sobre contenido que no le corresponde.
+   *
+   * El `detectChanges` es indispensable: el listener se registra con `addEventListener` (no con
+   * un binding de Angular) y la app corre zoneless, así que sin él el cambio de posición no se
+   * pintaría y el panel se quedaría clavado donde estaba.
+   */
+  private reposicionar() {
+    if (this.destruido || !this.isOpen || typeof window === 'undefined') return;
     const rect = this.el.nativeElement.getBoundingClientRect();
+    if (this.anclaVisible(rect)) this.posicionarPanel(rect);
+    else this.close();
+    this.cdr.detectChanges();
+  }
+
+  /** Calcula la posición del panel (`fixed`), pegado al campo y ajustado para no salirse del viewport. */
+  private posicionarPanel(rect?: DOMRect) {
+    if (typeof window === 'undefined') return;
+    const r = rect ?? (this.el.nativeElement.getBoundingClientRect() as DOMRect);
     const margen = 12;
-    const left = Math.min(rect.left, window.innerWidth - this.anchoPanel - margen);
+    const left = Math.min(r.left, window.innerWidth - this.anchoPanel - margen);
     this.panelLeft = Math.max(left, margen);
-    this.panelTop = rect.bottom + 4;
+
+    // Abre hacia arriba solo si debajo del campo no entra y encima hay más espacio. En ese caso
+    // se ancla por `bottom` para que siga pegado al campo aunque cambie de alto (las grillas de
+    // días, meses y años no miden lo mismo).
+    const alto = this.panelRef?.nativeElement.offsetHeight || this.altoPanelEstimado;
+    const espacioAbajo = window.innerHeight - r.bottom - margen;
+    const espacioArriba = r.top - margen;
+    if (espacioAbajo < alto && espacioArriba > espacioAbajo) {
+      this.panelTop = null;
+      this.panelBottom = Math.round(window.innerHeight - r.top + 4);
+    } else {
+      this.panelBottom = null;
+      this.panelTop = Math.round(r.bottom + 4);
+    }
+  }
+
+  /** Ancestros con scroll/`overflow: hidden` que pueden recortar el campo. */
+  private calcularContenedoresRecorte(): HTMLElement[] {
+    if (typeof window === 'undefined') return [];
+    const out: HTMLElement[] = [];
+    let padre = this.el.nativeElement.parentElement as HTMLElement | null;
+    while (padre && padre !== document.body && padre !== document.documentElement) {
+      const estilo = getComputedStyle(padre);
+      if (/auto|scroll|hidden/.test(`${estilo.overflowY} ${estilo.overflowX}`)) out.push(padre);
+      padre = padre.parentElement;
+    }
+    return out;
+  }
+
+  /** true si el campo sigue a la vista: dentro del viewport y sin que lo recorte ningún ancestro. */
+  private anclaVisible(rect: DOMRect): boolean {
+    if (rect.bottom <= 0 || rect.top >= window.innerHeight) return false;
+    return this.contenedoresRecorte.every((c) => {
+      const r = c.getBoundingClientRect();
+      return rect.bottom > r.top && rect.top < r.bottom && rect.right > r.left && rect.left < r.right;
+    });
   }
 
   /** Alterna entre la grilla de días y el selector de mes (click en el mes de la cabecera). */
@@ -187,12 +282,14 @@ export class DatePicker implements OnChanges, OnDestroy {
   }
 
   seleccionarMes(mes: number) {
+    if (this.mesDeshabilitado(mes)) return;
     this.vistaMes = mes;
     this.vista = 'dias';
     this.construirGrid();
   }
 
   seleccionarAnio(anio: number) {
+    if (this.anioDeshabilitado(anio)) return;
     this.vistaAnio = anio;
     this.vista = 'dias';
     this.construirGrid();
@@ -219,6 +316,33 @@ export class DatePicker implements OnChanges, OnDestroy {
 
   esAnioActual(anio: number): boolean {
     return new Date().getFullYear() === anio;
+  }
+
+  // ── Rango permitido (min / max) ───────────────────────────────────────
+
+  /** true si el día cae fuera de [min, max] y por lo tanto no se puede elegir. */
+  esDeshabilitado(celda: DiaCelda): boolean {
+    return this.fueraDeRango(celda.anio, celda.mes, celda.dia);
+  }
+
+  /** true si el mes completo (del año en vista) queda fuera de [min, max]. */
+  mesDeshabilitado(mes: number): boolean {
+    const ultimoDia = new Date(this.vistaAnio, mes + 1, 0).getDate();
+    return this.rangoSinInterseccion(
+      this.clave(this.vistaAnio, mes, 1),
+      this.clave(this.vistaAnio, mes, ultimoDia),
+    );
+  }
+
+  /** true si el año completo queda fuera de [min, max]. */
+  anioDeshabilitado(anio: number): boolean {
+    return this.rangoSinInterseccion(this.clave(anio, 0, 1), this.clave(anio, 11, 31));
+  }
+
+  /** El botón "Hoy" se apaga si la fecha de hoy no está dentro del rango permitido. */
+  get hoyDeshabilitado(): boolean {
+    const t = new Date();
+    return this.fueraDeRango(t.getFullYear(), t.getMonth(), t.getDate());
   }
 
   /**
@@ -260,7 +384,8 @@ export class DatePicker implements OnChanges, OnDestroy {
       const mes = +m[2] - 1;
       const anio = m[3].length === 2 ? 2000 + +m[3] : +m[3];
       const diasEnMes = new Date(anio, mes + 1, 0).getDate();
-      if (mes >= 0 && mes <= 11 && dia >= 1 && dia <= diasEnMes) {
+      const enRango = !this.fueraDeRango(anio, mes, dia);
+      if (mes >= 0 && mes <= 11 && dia >= 1 && dia <= diasEnMes && enRango) {
         const nuevo = this.format(anio, mes, dia);
         if (nuevo !== this.value) this.emitir(nuevo);
         else this.texto = this.formatoLegible(this.value);
@@ -268,7 +393,7 @@ export class DatePicker implements OnChanges, OnDestroy {
       }
     }
 
-    // Texto inválido: se revierte a la última fecha válida (o vacío).
+    // Texto inválido o fuera de [min, max]: se revierte a la última fecha válida (o vacío).
     this.texto = this.formatoLegible(this.value);
   }
 
@@ -283,12 +408,14 @@ export class DatePicker implements OnChanges, OnDestroy {
   }
 
   hoy() {
+    if (this.hoyDeshabilitado) return;
     const t = new Date();
     this.emitir(this.format(t.getFullYear(), t.getMonth(), t.getDate()));
     this.close();
   }
 
   seleccionar(celda: DiaCelda) {
+    if (this.esDeshabilitado(celda)) return;
     this.emitir(this.format(celda.anio, celda.mes, celda.dia));
     this.close();
   }
@@ -375,6 +502,36 @@ export class DatePicker implements OnChanges, OnDestroy {
     for (let i = 0; i < celdas.length; i += 7) {
       this.semanas.push(celdas.slice(i, i + 7));
     }
+  }
+
+  /** Fecha comparable como entero `aaaammdd`, para no crear `Date` en cada celda de la grilla. */
+  private clave(anio: number, mes: number, dia: number): number {
+    return anio * 10000 + (mes + 1) * 100 + dia;
+  }
+
+  /** `YYYY-MM-DD` → entero `aaaammdd`, o null si el valor no es una fecha. */
+  private claveDe(v: string | null | undefined): number | null {
+    const p = this.parse(v);
+    return p ? this.clave(p.anio, p.mes, p.dia) : null;
+  }
+
+  /** true si la fecha cae fuera de [min, max]. Sin min ni max nunca está fuera de rango. */
+  private fueraDeRango(anio: number, mes: number, dia: number): boolean {
+    const n = this.clave(anio, mes, dia);
+    const min = this.claveDe(this.min);
+    const max = this.claveDe(this.max);
+    return (min !== null && n < min) || (max !== null && n > max);
+  }
+
+  /**
+   * true si el intervalo [desde, hasta] (un mes o un año completo) no comparte ningún día con
+   * [min, max]. Se compara el intervalo entero y no sus extremos por separado, porque con min y
+   * max dentro del mismo mes ambos extremos quedan fuera y el mes sí tiene días válidos.
+   */
+  private rangoSinInterseccion(desde: number, hasta: number): boolean {
+    const min = this.claveDe(this.min);
+    const max = this.claveDe(this.max);
+    return (min !== null && hasta < min) || (max !== null && desde > max);
   }
 
   private format(anio: number, mes: number, dia: number): string {

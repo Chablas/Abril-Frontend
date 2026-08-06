@@ -161,6 +161,23 @@ textarea.field-input {
   margin-top: 0.2rem;
 }
 
+.field-invalid {
+  border-color: #ef4444;
+}
+
+.field-invalid:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+
+.field-error {
+  display: block;
+  font-size: 0.72rem;
+  color: #dc2626;
+  margin-top: 0.25rem;
+  line-height: 1.35;
+}
+
 .check-row-disabled {
   opacity: 0.5;
   cursor: not-allowed;

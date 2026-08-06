@@ -135,5 +135,5 @@ Se debe de priorizar el uso óptimo de conexiones que brinda la base de datos. P
 Cada acción de la página que traiga datos debe de traer los datos justos y necesarios. Por ejemplo al cargar un componente/página se deben de traer en una sola petición HTTP todos los datos (como los datos de filtros y los datos de una tabla), pero si el usuario va a usar los filtros pues se debe de llamar a otro endpoint que solo llame los datos de la tabla filtrados (puesto que ya no es necesario traer los datos de los filtros de nuevo).
 
 ## Consideraciones para pruebas
-Cuando termines de hacer/escribir código buildea el proyecto para buscar posibles errores y corrígelos. No hagas previews, yo testearé para verificar si está bien o no.
+Cuando termines de hacer/escribir código buildea el proyecto para buscar posibles errores y corrígelos. No hagas previews, ni insertes datos/registros de prueba, ni trates de testear, yo testearé para verificar si está bien o no.
 ```

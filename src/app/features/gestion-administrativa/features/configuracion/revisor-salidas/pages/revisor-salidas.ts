@@ -16,6 +16,9 @@ import { Paginator } from '../../../../../../shared/components/paginator/paginat
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
 import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { CONFIGURACION_TABS } from '../../../../../configuracion/shared/configuracion-tabs';
 import { DEFAULT_PAGE_SIZE } from '../../../../../../shared/constants/pagination';
 import { RevisorSalidaDetalle } from '../components/detalle/detalle';
 import { RevisorSalidaEditar } from '../components/editar/editar';
@@ -38,6 +41,8 @@ interface AreaCascadeNode {
     TitleCasePipe,
     AbrilBulkActionDirective,
     FilterModal,
+    FilterTriggerButton,
+    AbrilPageHeaderComponent,
     RevisorSalidaDetalle,
     RevisorSalidaEditar,
   ],
@@ -45,6 +50,8 @@ interface AreaCascadeNode {
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class RevisorSalidas implements OnInit {
+  readonly tabs = CONFIGURACION_TABS;
+
   rows: WorkerRevisorSalidaItemDTO[] = [];
   options: WorkerRevisorSalidaOptionDTO[] = [];
 

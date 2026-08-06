@@ -19,7 +19,7 @@ export class RevisoresAreasService {
     return { Authorization: `Bearer ${token}` };
   }
 
-  /** Carga inicial: áreas estándar con sus revisores + opciones del selector (1 petición). */
+  /** Carga inicial: gerencias y áreas estándar con sus revisores + opciones del selector (1 petición). */
   getInitialData(): Observable<AreaRevisorInicialDTO> {
     return this.http.get<AreaRevisorInicialDTO>(this.apiUrl, { headers: this.headers });
   }

@@ -30,6 +30,7 @@
           <p class="text-sm"><span class="text-[var(--color-abril-lime)] font-medium">Periodo: </span> <span class="text-gray-800">{{ lesson.period | periodLabel }}</span></p>
           <p class="text-sm"><span class="text-[var(--color-abril-lime)] font-medium">Proyecto: </span> <span class="text-gray-800">{{ lesson.projectDescription }}</span></p>
           <p class="text-sm"><span class="text-[var(--color-abril-lime)] font-medium">Area: </span> <span class="text-gray-800">{{ lesson.areaDescription }}</span></p>
+          <p class="text-sm" *ngIf="lesson.obraOficinaStaffName"><span class="text-[var(--color-abril-lime)] font-medium">Obra / Oficina: </span> <span class="text-gray-800">{{ lesson.obraOficinaStaffName }}</span></p>
           <p class="text-sm"><span class="text-[var(--color-abril-lime)] font-medium">Fecha subida: </span> <span class="text-gray-800">{{ lesson.createdDateTime ? (lesson.createdDateTime | date:'dd-MM-yyyy') : '-' }}</span></p>
           <p class="text-sm"><span class="text-[#64BC04] font-medium">Creado por: </span> <span class="text-gray-800">{{ lesson.createdUserFullName }}</span></p>
           <p class="text-sm flex items-center gap-2">

@@ -57,11 +57,14 @@
       </button>
     </div>
 
-    <!-- Desplegable: `fixed` respecto al viewport (mismo motivo que en date-picker). -->
+    <!-- Desplegable: `fixed` respecto al viewport (mismo motivo que en date-picker); la posición
+         se recalcula en cada scroll para que acompañe al campo (ver time-picker.ts). -->
     <div
+      #panel
       *ngIf="isOpen"
       class="fixed z-50 w-[176px] bg-white border border-[#D6DEE5] rounded-lg shadow-lg p-2 select-none"
       [style.top.px]="panelTop"
+      [style.bottom.px]="panelBottom"
       [style.left.px]="panelLeft"
     >
       <div class="flex gap-1">

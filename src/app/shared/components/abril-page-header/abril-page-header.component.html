@@ -29,6 +29,15 @@
       <i class="ti {{ botonSecundario.icono }}" aria-hidden="true"></i>
       <span>{{ botonSecundario.label }}</span>
     </button>
+    <button *ngIf="botonTerciario"
+            type="button"
+            class="ssoma-hero__btn ssoma-hero__btn--ghost"
+            [disabled]="botonTerciarioDeshabilitado"
+            [title]="botonTerciarioTooltip || botonTerciario.label"
+            (click)="tertiaryClick.emit()">
+      <i class="ti {{ botonTerciario.icono }}" aria-hidden="true"></i>
+      <span>{{ botonTerciario.label }}</span>
+    </button>
     <!-- Campanita de notificaciones (global: aparece en todas las páginas con este header) -->
     <app-notificaciones-bell />
     <div class="ssoma-hero__avatar-gap"></div>

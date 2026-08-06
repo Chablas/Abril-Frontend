@@ -92,6 +92,8 @@ export interface IndicadorProactivoProyectoDto {
   metaInspeccionesTotal: number;
 
   actualRacsTotal: number;
+  /** RACs atribuidos al proyecto — base contra la que se mide el cierre (distinto de los reportados). */
+  actualRacsAtribuidosTotal: number;
   actualRacsCerradosTotal: number;
   actualOptTotal: number;
   actualAtsTotal: number;

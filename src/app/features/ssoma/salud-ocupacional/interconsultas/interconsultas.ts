@@ -33,16 +33,27 @@ interface FilterOption {
   nombre: string;
 }
 
-/** Clasificación simplificada de workers.obra_oficina para el filtro "Tipo".
- * Se excluye "Contratista": esta pantalla es solo para personal de Abril. */
-const TIPO_OPTIONS: FilterOption[] = [
+/** Opción del filtro "Tipo": el id es el de workers_obra_oficina_staff. */
+interface TipoOption {
+  id: number | '';
+  nombre: string;
+}
+
+/** Ids fijos del catálogo workers_obra_oficina_staff (ver ObraOficinaStaffIds en el backend). */
+const OBRA_OFICINA_STAFF_IDS = { obra: 1, staff: 2, oficinaCentral: 3 } as const;
+
+/** Opciones del filtro "Tipo" (workers_obra_oficina_staff). */
+const TIPO_OPTIONS: TipoOption[] = [
   { id: '', nombre: 'Todos los tipos' },
-  { id: 'Staff', nombre: 'Staff' },
-  { id: 'Oficina Central', nombre: 'Oficina Central' },
-  { id: 'Obra', nombre: 'Obrero (Obra)' },
+  { id: OBRA_OFICINA_STAFF_IDS.staff, nombre: 'Staff' },
+  { id: OBRA_OFICINA_STAFF_IDS.oficinaCentral, nombre: 'Oficina Central' },
+  { id: OBRA_OFICINA_STAFF_IDS.obra, nombre: 'Obrero (Obra)' },
 ];
 
-const OBRA_OFICINA_CON_CORREO_PROPIO = new Set(['Staff', 'Oficina Central']);
+const OBRA_OFICINA_CON_CORREO_PROPIO = new Set<number>([
+  OBRA_OFICINA_STAFF_IDS.staff,
+  OBRA_OFICINA_STAFF_IDS.oficinaCentral,
+]);
 
 @Component({
   selector: 'app-salud-interconsultas',
@@ -73,7 +84,7 @@ export class Interconsultas implements OnInit, OnDestroy {
     estado: 'Pendiente',
     proyectoId: '',
     contributorId: '',
-    obraOficina: '',
+    obraOficinaStaffId: '' as number | '',
   };
 
   estadoOptions: FilterOption[] = [
@@ -83,7 +94,7 @@ export class Interconsultas implements OnInit, OnDestroy {
     { id: 'Cancelada', nombre: 'Cancelada' },
   ];
 
-  tipoOptions: FilterOption[] = TIPO_OPTIONS;
+  tipoOptions: TipoOption[] = TIPO_OPTIONS;
   proyectoOptions: FilterOption[] = [{ id: '', nombre: 'Todos los proyectos' }];
   razonSocialOptions: FilterOption[] = [{ id: '', nombre: 'Todas las razones sociales' }];
 
@@ -164,7 +175,7 @@ export class Interconsultas implements OnInit, OnDestroy {
       estado: this.filters.estado || undefined,
       proyectoId: this.filters.proyectoId ? Number(this.filters.proyectoId) : undefined,
       contributorId: this.filters.contributorId ? Number(this.filters.contributorId) : undefined,
-      obraOficina: this.filters.obraOficina || undefined,
+      obraOficinaStaffId: this.filters.obraOficinaStaffId || undefined,
     };
     this.service.getInterconsultas(query).subscribe({
       next: (res) => {
@@ -195,7 +206,7 @@ export class Interconsultas implements OnInit, OnDestroy {
   }
 
   clearFilters(): void {
-    this.filters = { search: '', estado: 'Pendiente', proyectoId: '', contributorId: '', obraOficina: '' };
+    this.filters = { search: '', estado: 'Pendiente', proyectoId: '', contributorId: '', obraOficinaStaffId: '' };
     this.load(1);
   }
 
@@ -241,7 +252,7 @@ export class Interconsultas implements OnInit, OnDestroy {
 
   /** Trabajador con correo propio (Staff/Oficina Central con email corporativo). */
   tieneCorreoPropio(item: InterconsultaListDto): boolean {
-    return !!item.workerEmail && OBRA_OFICINA_CON_CORREO_PROPIO.has(item.obraOficina ?? '');
+    return !!item.workerEmail && OBRA_OFICINA_CON_CORREO_PROPIO.has(item.obraOficinaStaffId ?? 0);
   }
 
   /** Si obra_oficina viene vacío se asume "Obra": solo Staff/Oficina Central se marcan explícitamente. */
@@ -260,7 +271,7 @@ export class Interconsultas implements OnInit, OnDestroy {
       this.filters.estado !== 'Pendiente' ||
       this.filters.proyectoId ||
       this.filters.contributorId ||
-      this.filters.obraOficina
+      this.filters.obraOficinaStaffId
     );
   }
 
@@ -270,7 +281,7 @@ export class Interconsultas implements OnInit, OnDestroy {
     if (this.filters.estado !== 'Pendiente') n++;
     if (this.filters.proyectoId) n++;
     if (this.filters.contributorId) n++;
-    if (this.filters.obraOficina) n++;
+    if (this.filters.obraOficinaStaffId) n++;
     return n;
   }
 

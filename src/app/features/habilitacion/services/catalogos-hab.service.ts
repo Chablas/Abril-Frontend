@@ -2,10 +2,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, of, shareReplay } from 'rxjs';
 import {
+  AreaArbolNodoDto,
   AreaCatDto,
   SsItemEmpresaDto,
   SsItemTrabajadorDto,
   SubareaCatDto,
+  ObraOficinaStaffDto,
 } from '../dtos/catalogos.model';
 import { HABILITACION_BASE, buildHabHeaders, buildHabParams } from './http-base';
 
@@ -15,8 +17,10 @@ export class CatalogosHabService {
   private itemsTrabajador$?: Observable<SsItemTrabajadorDto[]>;
   private itemsEmpresa$?: Observable<SsItemEmpresaDto[]>;
   private areas$?: Observable<AreaCatDto[]>;
+  private areaArbol$?: Observable<AreaArbolNodoDto[]>;
   private categorias$?: Observable<{ id: number; nombre: string }[]>;
   private ocupaciones$?: Observable<{ id: number; nombre: string }[]>;
+  private obraOficinaStaff$?: Observable<ObraOficinaStaffDto[]>;
 
   constructor(private http: HttpClient) {}
 
@@ -51,6 +55,20 @@ export class CatalogosHabService {
     return this.areas$;
   }
 
+  /**
+   * Árbol de áreas para los desplegables de área del formulario de trabajadores, con la
+   * equivalencia legacy y el revisor ya resueltos por nodo. Una sola petición cubre toda la
+   * cascada y el campo de revisor (reemplaza a getAreas + getSubareas en ese formulario).
+   */
+  getAreaArbol(): Observable<AreaArbolNodoDto[]> {
+    if (!this.areaArbol$) {
+      this.areaArbol$ = this.http
+        .get<AreaArbolNodoDto[]>(`${this.base}/areas-arbol`, { headers: buildHabHeaders() })
+        .pipe(shareReplay(1), catchError(() => of([])));
+    }
+    return this.areaArbol$;
+  }
+
   getCategorias(): Observable<{ id: number; nombre: string }[]> {
     if (!this.categorias$) {
       this.categorias$ = this.http
@@ -73,6 +91,21 @@ export class CatalogosHabService {
     return this.ocupaciones$;
   }
 
+  /**
+   * Catálogo Obra / Staff / Oficina Central (workers_obra_oficina_staff). Es lo que define
+   * la ubicación del trabajador; antes se deducía del último nodo del árbol de áreas.
+   */
+  getObraOficinaStaff(): Observable<ObraOficinaStaffDto[]> {
+    if (!this.obraOficinaStaff$) {
+      this.obraOficinaStaff$ = this.http
+        .get<ObraOficinaStaffDto[]>(`${this.base}/obra-oficina-staff`, {
+          headers: buildHabHeaders(),
+        })
+        .pipe(shareReplay(1), catchError(() => of([])));
+    }
+    return this.obraOficinaStaff$;
+  }
+
   getSubareas(area: string): Observable<SubareaCatDto[]> {
     return this.http.get<SubareaCatDto[]>(`${this.base}/subareas`, {
       headers: buildHabHeaders(),
@@ -84,5 +117,7 @@ export class CatalogosHabService {
     this.itemsTrabajador$ = undefined;
     this.itemsEmpresa$ = undefined;
     this.areas$ = undefined;
+    this.areaArbol$ = undefined;
+    this.obraOficinaStaff$ = undefined;
   }
 }

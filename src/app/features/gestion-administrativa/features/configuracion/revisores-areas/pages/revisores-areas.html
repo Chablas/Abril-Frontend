@@ -1,6 +1,14 @@
-<!-- Sección embebida en GaConfiguracion: el header y el disparador de filtros
-     viven en el contenedor (`ga-configuracion`). -->
-<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+<app-abril-page-header
+  badge="CONFIGURACIÓN"
+  titulo="Revisores de Áreas"
+  subtitulo="Asigna los revisores (jefes/superiores directos) de cada gerencia y área estándar, en orden de prioridad. Aplican a los trabajadores del área que no tienen revisores propios; si el área no tiene revisores activos se usa la de su gerencia y, en última instancia, el área de GTH."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
   <div class="w-full flex-1 min-h-0 overflow-auto">
@@ -18,13 +26,19 @@
         <ng-container *ngFor="let r of pagedRows">
           <!-- Fila del área (revisores a nivel de área) -->
           <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
-            <td class="text-gray-700">{{ r.areaName }}</td>
+            <td class="text-gray-700">
+              {{ r.areaName }}
+              <span *ngIf="esGerencia(r)"
+                    class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-[#E8F1FB] text-[var(--color-abril-logo-blue)] font-medium whitespace-nowrap">
+                Gerencia
+              </span>
+            </td>
             <td class="text-gray-700">{{ r.parentName || '—' }}</td>
             <td class="text-center">
               <input type="checkbox" class="w-4 h-4 accent-[#64BC04]"
-                     [class.cursor-pointer]="esAdminSalidas"
+                     [class.cursor-pointer]="puedeGestionar"
                      [checked]="r.filtraPorProyecto"
-                     [disabled]="!esAdminSalidas"
+                     [disabled]="!puedeGestionar"
                      (change)="toggleFiltroProyecto(r)"
                      title="Si se activa, el área se subdivide por proyecto" />
             </td>
@@ -52,7 +66,7 @@
             <td class="text-center">
               <div class="flex items-center justify-center gap-2">
                 <button (click)="openDetalle(r)" abrilBulkAction="default">Ver</button>
-                <button *ngIf="esAdminSalidas" (click)="openEdit(r)" abrilBulkAction="default">Editar</button>
+                <button *ngIf="puedeGestionar" (click)="openEdit(r)" abrilBulkAction="default">Editar</button>
               </div>
             </td>
           </tr>
@@ -88,7 +102,7 @@
               <td class="text-center">
                 <div class="flex items-center justify-center gap-2">
                   <button (click)="openDetalleProyecto(r, proj)" abrilBulkAction="default">Ver</button>
-                  <button *ngIf="esAdminSalidas" (click)="openEditProyecto(r, proj)" abrilBulkAction="default">Editar</button>
+                  <button *ngIf="puedeGestionar" (click)="openEditProyecto(r, proj)" abrilBulkAction="default">Editar</button>
                 </div>
               </td>
             </tr>
@@ -100,8 +114,8 @@
             {{
               filtrosActivos > 0
                 ? 'Sin resultados.'
-                : esAdminSalidas
-                  ? 'No hay áreas de tipo Área Estándar.'
+                : puedeGestionar
+                  ? 'No hay áreas configurables.'
                   : 'No tienes áreas visibles. Solo los jefes, coordinadores y gerentes ven los revisores de su área.'
             }}
           </td>

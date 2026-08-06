@@ -35,6 +35,7 @@ export interface InvitarUsuarioDto {
 }
 
 export interface ActualizarUsuarioDto {
+  email?: string;
   rolNombre?: string;
   scope?: string;
   activo?: boolean;

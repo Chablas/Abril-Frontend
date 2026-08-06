@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { roleGuard } from '../../../core/guards/role.guard';
 import { Dashboard } from './dashboard/dashboard';
 import { Emos } from './emos/emos';
+import { EmosConfiguracionComponent } from './emos/configuracion/emos-configuracion.component';
 import { EmoHistorial } from './emos/components/emo-historial/emo-historial';
 import { Programaciones } from './programaciones/programaciones';
 import { Interconsultas } from './interconsultas/interconsultas';
@@ -30,6 +31,15 @@ export const SALUD_OCUPACIONAL_ROUTES: Routes = [
     component: Emos,
     canActivate: [roleGuard],
     data: { titulo: 'SALUD OCUPACIONAL - EMOs', featureKey: 'ssoma.salud-ocupacional.emos' },
+  },
+  {
+    path: 'emos/configuracion',
+    component: EmosConfiguracionComponent,
+    canActivate: [roleGuard],
+    data: {
+      titulo: 'EMOs - CONFIGURACIÓN',
+      featureKey: 'ssoma.salud-ocupacional.emos.configuracion',
+    },
   },
   {
     path: 'emos/:workerId/historial',

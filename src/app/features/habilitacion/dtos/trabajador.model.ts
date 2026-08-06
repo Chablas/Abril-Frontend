@@ -11,6 +11,9 @@ export interface WorkerHabilitacionListDto {
   ocupacion?: string;
   estadoWorker: string;
   contrataCasa?: string;
+  /** FK a workers_obra_oficina_staff. */
+  obraOficinaStaffId?: number | null;
+  /** Nombre del catálogo (solo lectura). */
   obraOficina?: string;
   tieneEmo?: boolean;
   diasRestantesEmo?: number | null;
@@ -80,15 +83,25 @@ export interface WorkerDetalleDto {
   dni?: string;
   celular?: string;
   emailCorporativo?: string;
+  /** Correo personal / de contacto (person.email). */
+  emailPersonal?: string;
   fechaIngreso?: string;
   condicionMedica?: string;
   fechaNacimiento?: string;
   sexo?: string;
   fechaRetiro?: string;
   sctr?: boolean;
+  /**
+   * Nodo del árbol de áreas asignado (workers.area_scope_id). Es lo que el formulario usa para
+   * precargar los desplegables de área; `area`/`subarea` son su equivalencia legacy.
+   */
+  areaScopeId?: number | null;
   area?: string;
   subarea?: string;
   jefatura?: string;
+  /** FK a workers_obra_oficina_staff. */
+  obraOficinaStaffId?: number | null;
+  /** Nombre del catálogo (solo lectura). */
   obraOficina?: string;
   aniosExperiencia?: number;
   ocupacionId?: number;

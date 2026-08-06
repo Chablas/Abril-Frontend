@@ -138,4 +138,17 @@ export class TrabajadorHabService {
       headers: buildHabHeaders(),
     });
   }
+
+  /**
+   * Proyectos del desplegable de "Programar Inducción". Tiene su propio filtro
+   * (`HABILITACION_INDUCCION`) aparte del de Habilitación general de `getProyectosActivos`,
+   * porque hay proyectos inducibles que no deben salir en el filtro de la lista de
+   * trabajadores, en EMOs programados ni en la asignación de proyectos por empresa.
+   */
+  getProyectosInduccion(): Observable<{ id: number; nombre: string }[]> {
+    return this.http.get<{ id: number; nombre: string }[]>(
+      `${HABILITACION_BASE}/proyectos/induccion`,
+      { headers: buildHabHeaders() },
+    );
+  }
 }

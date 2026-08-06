@@ -169,9 +169,10 @@
       [options]="tipoOptions"
       valueField="id"
       displayField="nombre"
-      [value]="filters.obraOficina"
+      [value]="filters.obraOficinaStaffId"
+      [sortAlpha]="false"
       placeholder="Todos"
-      (valueChange)="filters.obraOficina = $event; onFilterChange()">
+      (valueChange)="filters.obraOficinaStaffId = $event ?? ''; onFilterChange()">
     </app-search-select>
   </div>
 </app-filter-modal>

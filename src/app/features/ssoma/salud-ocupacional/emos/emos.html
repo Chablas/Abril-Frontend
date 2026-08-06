@@ -4,7 +4,10 @@
   subtitulo="Exámenes Médico Ocupacionales por trabajador."
   [tabs]="tabs"
   [botonSecundario]="{ label: 'Descargar Excel', icono: 'ti-file-spreadsheet' }"
-  (secondaryClick)="descargarExcel()">
+  (secondaryClick)="descargarExcel()"
+  [botonTerciario]="puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined"
+  botonTerciarioTooltip="Configuración de EMOs"
+  (tertiaryClick)="irAConfiguracion()">
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
   <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
