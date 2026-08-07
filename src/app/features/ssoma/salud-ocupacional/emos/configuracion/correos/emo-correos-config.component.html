@@ -164,12 +164,19 @@
   </div>
 
   <div class="form-row" *ngIf="!formEsBuzonArea">
-    <div class="abril-field">
-      <label class="abril-field-label">Recibe como</label>
-      <select class="abril-field-input" name="tipo" [(ngModel)]="formTipo">
-        <option value="PRINCIPAL">Destinatario (Para)</option>
-        <option value="COPIA">Copia (CC)</option>
-      </select>
+    <div>
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Recibe como"
+        [options]="tipoOptions"
+        valueField="id"
+        displayField="label"
+        [value]="formTipo"
+        [allowClear]="false"
+        [sortAlpha]="false"
+        placeholder="Selecciona tipo"
+        (valueChange)="formTipo = $event"
+      ></app-search-select>
     </div>
   </div>
 

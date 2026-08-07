@@ -8,6 +8,7 @@ import {
   SectionTabs,
   SectionTab,
 } from '../../../../../../shared/components/section-tabs/section-tabs';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { EmoConfiguracionService } from '../../../services/emo-configuracion.service';
 import {
   EmoCorreoCeldaDto,
@@ -39,7 +40,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 @Component({
   selector: 'app-emo-correos-config',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilModalPanel, SectionTabs],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SectionTabs, SearchSelect],
   templateUrl: './emo-correos-config.component.html',
   styleUrl: './emo-correos-config.component.css',
 })
@@ -65,6 +66,11 @@ export class EmoCorreosConfigComponent implements OnInit {
   formEmail = '';
   formNombre = '';
   formTipo: EmoCorreoTipo = 'PRINCIPAL';
+  /** Opciones de "Recibe como". Orden deliberado (Para antes que CC) → `sortAlpha` en false. */
+  readonly tipoOptions: { id: EmoCorreoTipo; label: string }[] = [
+    { id: 'PRINCIPAL', label: 'Destinatario (Para)' },
+    { id: 'COPIA', label: 'Copia (CC)' },
+  ];
   formError: string | null = null;
   saving = false;
 
