@@ -6,7 +6,7 @@ import {
   ClinicaAccionDto,
   CreateProgramacionDto,
   ProgramacionClinicaDto,
-  ProgramacionDestinatariosDto,
+  ProgramacionDestinatariosPreviewDto,
 } from '../dtos/clinica.model';
 
 function buildClinicaHeaders(): Record<string, string> {
@@ -63,10 +63,13 @@ export class ClinicaProgramacionService {
    * A quién le llegará el correo si se programa el EMO ahora. Depende de la clínica elegida
    * (sus correos de contacto), por eso se vuelve a pedir cuando el usuario la cambia.
    */
-  getDestinatarios(workerId: number, clinicaId: number | null): Observable<ProgramacionDestinatariosDto> {
+  getDestinatarios(
+    workerId: number,
+    clinicaId: number | null,
+  ): Observable<ProgramacionDestinatariosPreviewDto> {
     let params = new HttpParams().set('workerId', workerId);
     if (clinicaId) params = params.set('clinicaId', clinicaId);
-    return this.http.get<ProgramacionDestinatariosDto>(`${PROGRAMACIONES_BASE}/destinatarios`, {
+    return this.http.get<ProgramacionDestinatariosPreviewDto>(`${PROGRAMACIONES_BASE}/destinatarios`, {
       headers: buildClinicaHeaders(),
       params,
     });

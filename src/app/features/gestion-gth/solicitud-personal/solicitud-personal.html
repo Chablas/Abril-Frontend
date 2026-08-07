@@ -48,9 +48,9 @@
   </div>
 
   <!-- ── Gestión de candidatos ─────────────────────────────────────────── -->
-  <!-- Long lists que GTH ya envió para que el solicitante revise los CVs. Por ahora
-       solo se implementa "Long list enviada por GTH"; "Finalistas enviados por GTH"
-       es un paso posterior que aún no existe. -->
+  <!-- Lo que GTH le dejó por revisar al solicitante. Dos tipos de tarjeta según `tipo`:
+       "Long list enviada por GTH" (decide qué CVs pasan) y "Finalistas enviados por GTH"
+       (informe de las entrevistas, solo lectura). -->
   <div *ngIf="gestionCandidatos.length > 0"
        class="rounded-[12px] border p-[16px]"
        style="border-color:#bfdbfe;background:var(--color-abril-logo-blue-light)">
@@ -58,7 +58,7 @@
     <div class="flex items-center justify-between mb-[12px]">
       <h2 class="text-[15px] font-bold" style="color:var(--color-abril-logo-blue)">Gestión de candidatos</h2>
       <span class="text-[12px] font-medium" style="color:var(--color-abril-logo-blue)">
-        {{ gestionCandidatos.length }} pendiente{{ gestionCandidatos.length === 1 ? '' : 's' }}
+        {{ gestionCandidatos.length }} por revisar
       </span>
     </div>
 
@@ -70,28 +70,41 @@
         <div class="flex items-start gap-[12px] min-w-0">
           <div class="flex items-center justify-center w-[38px] h-[38px] rounded-[9px] shrink-0"
                style="background:var(--color-abril-logo-blue-light)">
-            <i class="ti ti-users text-[19px]" style="color:var(--color-abril-logo-blue)"></i>
+            <i class="ti text-[19px]" style="color:var(--color-abril-logo-blue)"
+               [ngClass]="c.tipo === 'FINALISTAS' ? 'ti-user-check' : 'ti-users'"></i>
           </div>
           <div class="min-w-0">
             <div class="flex items-center gap-[8px] flex-wrap">
-              <span class="text-[14px] font-bold text-gray-800">Long list enviada por GTH</span>
-              <span class="text-[10.5px] font-semibold px-[8px] py-[2px] rounded-full"
+              <span class="text-[14px] font-bold text-gray-800">
+                {{ c.tipo === 'FINALISTAS' ? 'Finalistas enviados por GTH' : 'Long list enviada por GTH' }}
+              </span>
+              <span *ngIf="c.tipo === 'FINALISTAS'"
+                    class="text-[10.5px] font-semibold px-[8px] py-[2px] rounded-full"
+                    style="background:#DCFCE7;color:#15803D">Informe listo</span>
+              <span *ngIf="c.tipo !== 'FINALISTAS'"
+                    class="text-[10.5px] font-semibold px-[8px] py-[2px] rounded-full"
                     style="background:#FEF3C7;color:#B45309">Pendiente</span>
             </div>
             <p class="text-[12.5px] text-gray-500 mt-[2px] truncate">
               {{ c.codigo }} · {{ c.puesto | titleCase }}<span *ngIf="c.proyectoObra"> · {{ c.proyectoObra | titleCase }}</span>
             </p>
             <p class="text-[12px] text-gray-500 mt-[3px] leading-snug">
-              GTH envió {{ c.totalCandidatos }} candidato{{ c.totalCandidatos === 1 ? '' : 's' }} para que revises los CVs y decidas quiénes pasan a evaluación.
+              <ng-container *ngIf="c.tipo === 'FINALISTAS'; else textoLongList">
+                GTH compartió {{ c.totalCandidatos }} finalista{{ c.totalCandidatos === 1 ? '' : 's' }}
+                con su resultado de entrevista, evaluación técnica e informe psicotécnico.
+              </ng-container>
+              <ng-template #textoLongList>
+                GTH envió {{ c.totalCandidatos }} candidato{{ c.totalCandidatos === 1 ? '' : 's' }} para que revises los CVs y decidas quiénes pasan a evaluación.
+              </ng-template>
             </p>
           </div>
         </div>
 
-        <button type="button" (click)="abrirRevision(c)"
+        <button type="button" (click)="abrirGestionCandidatos(c)"
           class="inline-flex items-center gap-[7px] h-[38px] px-[16px] rounded-[8px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 shrink-0"
           style="background:var(--color-abril-logo-blue)">
           <i class="ti ti-eye text-[16px]"></i>
-          Revisar long list y CVs
+          {{ c.tipo === 'FINALISTAS' ? 'Revisar finalistas' : 'Revisar long list y CVs' }}
         </button>
       </div>
     </div>
@@ -209,6 +222,14 @@
   (decided)="load()"
   (closeModal)="cerrarRevision()">
 </app-gth-revision-long-list>
+
+<!-- Modal del informe de finalistas ("Revisar finalistas") -->
+<app-gth-revision-finalistas
+  *ngIf="finalistasId !== null"
+  [requerimientoId]="finalistasId"
+  (decided)="load()"
+  (closeModal)="cerrarFinalistas()">
+</app-gth-revision-finalistas>
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">

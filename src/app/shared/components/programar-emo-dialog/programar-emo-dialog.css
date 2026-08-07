@@ -87,6 +87,12 @@
   flex-shrink: 0;
 }
 
+/* Los dos avisos (programación manual y aceptada por la clínica) van seguidos: se separan
+   entre sí un poco más que del campo de arriba para que se lean como dos bloques distintos. */
+.aviso + .aviso {
+  margin-top: 8px;
+}
+
 .aviso__texto {
   margin: 0;
 }
@@ -95,6 +101,22 @@
   color: var(--color-abril-logo-blue);
   font-weight: 600;
   word-break: break-all;
+}
+
+/* Clínica todavía sin elegir: se nombra en la frase como un destinatario más, pero en
+   cursiva y sin el azul de los correos porque aún no es una dirección concreta. */
+.aviso__pendiente {
+  font-style: italic;
+  font-weight: 600;
+}
+
+/* Destinatario activo al que no se le puede escribir: el aviso sigue siendo azul (el correo
+   sí sale, solo que sin esa clínica), pero la parte que falla se lee en ámbar. */
+.aviso__alerta {
+  display: block;
+  margin-top: 6px;
+  color: #92400e;
+  font-weight: 600;
 }
 
 /* Sin destinatarios activos el correo no sale: se avisa en ámbar, no en azul informativo. */

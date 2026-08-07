@@ -82,8 +82,9 @@ export interface SolicitudVacanteListItem {
 }
 
 /**
- * Tarjeta de "Gestión de candidatos": un requerimiento cuya long list ya fue enviada por
- * GTH (estado LONG_LIST_ENVIADA) y está pendiente de la revisión del solicitante.
+ * Tarjeta de "Gestión de candidatos": un requerimiento sobre el que GTH le dejó algo por
+ * revisar al solicitante. Hay dos tipos, distinguidos por `tipo`: la long list enviada
+ * (con decisión de aprobar/rechazar) y el informe de finalistas (solo lectura).
  */
 export interface GestionCandidatoCard {
   requerimientoId: number;
@@ -91,10 +92,12 @@ export interface GestionCandidatoCard {
   puesto: string;
   area: string | null;
   proyectoObra: string | null;
-  /** Cantidad de candidatos que GTH cargó en la long list. */
+  /** Cantidad de candidatos de la tarjeta (long list cargada o finalistas evaluados). */
   totalCandidatos: number;
   estadoCodigo: string;
   estadoNombre: string;
+  /** 'LONG_LIST' = CVs por decidir; 'FINALISTAS' = informe de entrevistas de GTH. */
+  tipo: 'LONG_LIST' | 'FINALISTAS';
 }
 
 /** Panel de la vista del solicitante: tarjetas de gestión de candidatos + tabla de solicitudes. */
@@ -148,4 +151,73 @@ export interface RevisionLongList {
   estadoCodigo: string;
   estadoNombre: string;
   candidatos: CandidatoRevision[];
+}
+
+/** Evaluación que GTH registró tras la entrevista de un finalista. */
+export interface EvaluacionFinalista {
+  /** Puntajes en porcentaje (0-100). null = GTH aún no lo registró. */
+  puntajeEntrevista: number | null;
+  puntajePsicotecnico: number | null;
+  puntajeTecnica: number | null;
+  puntajeResultado: number | null;
+  /** Resultado de la entrevista (qué se observó). */
+  comentarioEntrevista: string | null;
+  /** Informe psicotécnico del candidato. */
+  comentarioPsicotecnico: string | null;
+  /** Recomendación de GTH al área solicitante. */
+  comentarioRecomendacion: string | null;
+  /**
+   * Resultado del candidato en el proceso: 'PENDIENTE' | 'PASO' (finalista en carrera) |
+   * 'NO_PASO' (descartado por GTH) | 'SELECCIONADO' | 'RECHAZADO' (decisión del solicitante).
+   */
+  resultadoCodigo: string;
+  resultadoNombre: string;
+  agradecimientoCorreo: string | null;
+  agradecimientoEnviadoEn: string | null;
+  /** Momento de la decisión final del solicitante (ISO, hora Perú). Null si aún no decidió. */
+  decididoEn: string | null;
+}
+
+/** Un finalista con el informe que GTH registró tras su entrevista. */
+export interface Finalista {
+  candidatoId: number;
+  nombre: string;
+  /** Puesto del requerimiento (el que registró el solicitante), no un dato por candidato. */
+  puesto: string | null;
+  /** Nombre y link del CV en SharePoint (para "Ver CV completo"). */
+  cvNombre: string | null;
+  cvUrl: string | null;
+  evaluacion: EvaluacionFinalista;
+}
+
+/** Informe de finalistas de un requerimiento (modal "Finalistas enviados por GTH"). */
+export interface RevisionFinalistas {
+  requerimientoId: number;
+  codigo: string;
+  puesto: string;
+  area: string | null;
+  proyectoObra: string | null;
+  estadoCodigo: string;
+  estadoNombre: string;
+  /** Finalistas ordenados por puntaje de resultado (mejor primero). */
+  finalistas: Finalista[];
+}
+
+/** Decisión final del solicitante sobre un finalista. */
+export interface FinalistaDecision {
+  candidatoId: number;
+  /** true = aprobar y cerrar el proceso; false = rechazar al finalista. */
+  aprobado: boolean;
+}
+
+/** Resultado de registrar la decisión final sobre un finalista. */
+export interface FinalistaDecisionResult {
+  message: string;
+  /** Estado en el que quedó el requerimiento tras la decisión. */
+  estadoCodigo: string;
+  estadoNombre: string;
+  aprobado: boolean;
+  /** true si ya no queda ningún finalista: el requerimiento vuelve a Long list / CVs. */
+  todosRechazados: boolean;
+  candidatoNombre: string;
 }

@@ -8,6 +8,8 @@ import {
   DetalleRequerimientoGth,
   EntrevistaAccionResult,
   EstadoTransicionResult,
+  EvaluacionAccionResult,
+  EvaluacionGuardar,
 } from '../dtos/reclutamiento.dto';
 import { FormularioAccionResult, FormularioRevision } from '../dtos/formulario-postulante.dto';
 
@@ -143,6 +145,30 @@ export class ReclutamientoService {
     return this.http.post<EntrevistaAccionResult>(
       `${this.apiUrl}/candidato/${candidatoId}/entrevista`,
       { fecha, hora, lugarId },
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Guarda la evaluación de la entrevista de un candidato: los cuatro puntajes y los tres
+   * comentarios del informe que verá el área solicitante.
+   */
+  guardarEvaluacion(candidatoId: number, dto: EvaluacionGuardar): Observable<EvaluacionAccionResult> {
+    return this.http.put<EvaluacionAccionResult>(
+      `${this.apiUrl}/candidato/${candidatoId}/evaluacion`,
+      dto,
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Envía al candidato el correo de agradecimiento por no continuar en el proceso y deja su
+   * resultado en "No pasó". El correo destino lo resuelve el backend (el de su entrevista).
+   */
+  enviarAgradecimiento(candidatoId: number): Observable<EvaluacionAccionResult> {
+    return this.http.post<EvaluacionAccionResult>(
+      `${this.apiUrl}/candidato/${candidatoId}/agradecimiento`,
+      {},
       { headers: this.headers },
     );
   }

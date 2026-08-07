@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 
 /** Tipo de correo de reclutamiento configurable (slug de la URL del backend). */
-export type CorreoTipo = 'solicitud' | 'long-list' | 'decision-long-list';
+export type CorreoTipo = 'solicitud' | 'long-list' | 'decision-long-list' | 'decision-finalista';
 
 /** Destinatarios de un correo de reclutamiento (principales = Para; copias = CC). */
 export interface CorreoDestinatarios {

@@ -508,16 +508,27 @@
                     <p class="text-[11.5px] text-gray-500 mt-[1px]">{{ c.correoContacto }}</p>
                   }
                 </div>
-                <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full shrink-0"
-                      [style.background]="c.entrevista ? '#DCFCE7' : '#F3F4F6'"
-                      [style.color]="c.entrevista ? '#15803D' : '#6B7280'">
-                  {{ c.entrevista ? 'Programada' : 'Sin programar' }}
-                </span>
+                @if (noContinua(c)) {
+                  <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full shrink-0"
+                        style="background:#FEE2E2;color:#B91C1C">
+                    No continúa
+                  </span>
+                } @else {
+                  <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full shrink-0"
+                        [style.background]="c.entrevista ? '#DCFCE7' : '#F3F4F6'"
+                        [style.color]="c.entrevista ? '#15803D' : '#6B7280'">
+                    {{ c.entrevista ? 'Programada' : 'Sin programar' }}
+                  </span>
+                }
               </div>
 
+              <!-- dense + floatingLabel en fecha y hora: mismas medidas y mismo label flotante que
+                   app-search-select, para que los tres campos de la fila queden alineados. -->
               <div class="grid grid-cols-1 md:grid-cols-3 gap-x-[14px] gap-y-[12px] mt-[10px]">
                 <app-date-picker
                   label="Fecha de la entrevista"
+                  [dense]="true"
+                  [floatingLabel]="true"
                   [value]="entrevistaForm[c.candidatoId].fecha"
                   (valueChange)="entrevistaForm[c.candidatoId].fecha = $event"
                   [min]="hoyIso"
@@ -526,6 +537,8 @@
 
                 <app-time-picker
                   label="Hora"
+                  [dense]="true"
+                  [floatingLabel]="true"
                   [value]="entrevistaForm[c.candidatoId].hora"
                   (valueChange)="entrevistaForm[c.candidatoId].hora = $event"
                   [minuteStep]="5"
@@ -561,6 +574,105 @@
                   cita el {{ c.entrevista?.fecha | date:'dd/MM/yyyy' }} a las {{ c.entrevista?.hora }}
                   en {{ c.entrevista?.lugarNombre }}
                 </p>
+
+                <!-- ── Resultado de la entrevista ─────────────────────────────
+                     Solo aparece cuando ya se le envió la invitación: son los puntajes y
+                     comentarios que arman el informe de finalista que ve el solicitante. -->
+                <div class="mt-[12px] pt-[12px] border-t" style="border-color:var(--color-abril-border)">
+                  <h4 class="text-[13px] font-bold text-gray-700">Resultado de la entrevista</h4>
+                  <p class="text-[12px] text-gray-500 mt-[2px] leading-snug">
+                    Registra los puntajes y los comentarios del candidato. Al continuar, su informe
+                    se envía al área solicitante para que decida con quién sigue el proceso.
+                  </p>
+
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-x-[14px] gap-y-[12px] mt-[12px]">
+                    <div class="abril-field">
+                      <label class="abril-field-label" [for]="'ev-entrevista-' + c.candidatoId">Entrevista (%)</label>
+                      <input [id]="'ev-entrevista-' + c.candidatoId" type="number" min="0" max="100"
+                        class="abril-field-input" [disabled]="!puedeEvaluar(c)"
+                        [(ngModel)]="evaluacionForm[c.candidatoId].puntajeEntrevista" placeholder="0 - 100" />
+                    </div>
+                    <div class="abril-field">
+                      <label class="abril-field-label" [for]="'ev-psico-' + c.candidatoId">Psicotécnico (%)</label>
+                      <input [id]="'ev-psico-' + c.candidatoId" type="number" min="0" max="100"
+                        class="abril-field-input" [disabled]="!puedeEvaluar(c)"
+                        [(ngModel)]="evaluacionForm[c.candidatoId].puntajePsicotecnico" placeholder="0 - 100" />
+                    </div>
+                    <div class="abril-field">
+                      <label class="abril-field-label" [for]="'ev-tecnica-' + c.candidatoId">Técnica (%)</label>
+                      <input [id]="'ev-tecnica-' + c.candidatoId" type="number" min="0" max="100"
+                        class="abril-field-input" [disabled]="!puedeEvaluar(c)"
+                        [(ngModel)]="evaluacionForm[c.candidatoId].puntajeTecnica" placeholder="0 - 100" />
+                    </div>
+                    <div class="abril-field">
+                      <label class="abril-field-label" [for]="'ev-resultado-' + c.candidatoId">Resultado (%)</label>
+                      <input [id]="'ev-resultado-' + c.candidatoId" type="number" min="0" max="100"
+                        class="abril-field-input" [disabled]="!puedeEvaluar(c)"
+                        [(ngModel)]="evaluacionForm[c.candidatoId].puntajeResultado" placeholder="0 - 100" />
+                    </div>
+                  </div>
+
+                  <div class="abril-field mt-[12px]">
+                    <label class="abril-field-label" [for]="'ev-com-entrevista-' + c.candidatoId">
+                      Resultado de entrevista
+                    </label>
+                    <textarea [id]="'ev-com-entrevista-' + c.candidatoId" class="abril-field-input" rows="2"
+                      [disabled]="!puedeEvaluar(c)"
+                      [(ngModel)]="evaluacionForm[c.candidatoId].comentarioEntrevista"
+                      placeholder="Qué se observó en la entrevista del candidato..."></textarea>
+                  </div>
+
+                  <div class="abril-field mt-[10px]">
+                    <label class="abril-field-label" [for]="'ev-com-psico-' + c.candidatoId">
+                      Informe psicotécnico
+                    </label>
+                    <textarea [id]="'ev-com-psico-' + c.candidatoId" class="abril-field-input" rows="2"
+                      [disabled]="!puedeEvaluar(c)"
+                      [(ngModel)]="evaluacionForm[c.candidatoId].comentarioPsicotecnico"
+                      placeholder="Conclusiones del informe psicotécnico..."></textarea>
+                  </div>
+
+                  <div class="abril-field mt-[10px]">
+                    <label class="abril-field-label" [for]="'ev-com-recom-' + c.candidatoId">
+                      Recomendación GTH
+                    </label>
+                    <textarea [id]="'ev-com-recom-' + c.candidatoId" class="abril-field-input" rows="2"
+                      [disabled]="!puedeEvaluar(c)"
+                      [(ngModel)]="evaluacionForm[c.candidatoId].comentarioRecomendacion"
+                      placeholder="Recomendación de GTH al área solicitante..."></textarea>
+                  </div>
+
+                  <div class="flex flex-wrap items-center gap-[10px] mt-[12px]">
+                    <button type="button"
+                      [disabled]="!puedeEvaluar(c) || guardandoEvaluacion[c.candidatoId]"
+                      (click)="guardarEvaluacion(c)"
+                      class="inline-flex items-center gap-[6px] h-[36px] px-[16px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style="background:var(--color-abril-logo-blue)">
+                      <i class="ti ti-send text-[15px]"></i>
+                      {{ guardandoEvaluacion[c.candidatoId] ? 'Enviando…' : 'Continuar y enviar como finalista' }}
+                    </button>
+
+                    <!-- Correo de agradecimiento: cierra al candidato como "No continúa" (RG-12). -->
+                    <button type="button"
+                      [disabled]="enviandoAgradecimiento[c.candidatoId]"
+                      (click)="enviarAgradecimiento(c)"
+                      class="inline-flex items-center gap-[6px] h-[36px] px-[16px] rounded-[7px] border text-[13px] font-semibold cursor-pointer transition-colors hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style="border-color:#fecaca;color:#DC2626">
+                      <i class="ti ti-mail-x text-[15px]"></i>
+                      {{ enviandoAgradecimiento[c.candidatoId]
+                          ? 'Enviando…'
+                          : (noContinua(c) ? 'Reenviar correo de agradecimiento' : 'No continúa · enviar agradecimiento') }}
+                    </button>
+                  </div>
+
+                  @if (c.evaluacion?.agradecimientoEnviadoEn) {
+                    <p class="text-[11.5px] mt-[8px]" style="color:#B91C1C">
+                      Correo de agradecimiento enviado a {{ c.evaluacion?.agradecimientoCorreo }} ·
+                      {{ c.evaluacion?.agradecimientoEnviadoEn | date:'dd/MM/yyyy HH:mm' }}.
+                      El candidato ya no continúa en el proceso.
+                    </p>
+                  }
+                </div>
               }
             </div>
           } @empty {
@@ -568,45 +680,6 @@
               No hay candidatos con el formulario del postulante aprobado.
             </p>
           }
-        </div>
-
-        <!-- Selección del candidato que continúa el proceso -->
-        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
-          <h3 class="text-[14px] font-bold text-gray-800">Candidato que continúa el proceso</h3>
-          <p class="text-[12.5px] text-gray-500 mt-[2px] leading-snug">
-            Una vez realizadas las entrevistas, selecciona al candidato con el que se continúa a la
-            siguiente etapa.
-          </p>
-
-          @for (c of candidatosParaEntrevista; track c.candidatoId) {
-            <label class="flex items-center gap-[10px] rounded-[8px] border px-[14px] py-[11px] mt-[10px] transition-colors"
-                   [class.cursor-pointer]="!!c.entrevista"
-                   [class.opacity-50]="!c.entrevista"
-                   style="border-color:var(--color-abril-border)">
-              <input type="radio" name="candidatoSeleccionado"
-                [value]="c.candidatoId"
-                [disabled]="!c.entrevista"
-                [(ngModel)]="candidatoSeleccionadoId"
-                class="w-[15px] h-[15px] shrink-0"
-                [class.cursor-pointer]="!!c.entrevista"
-                style="accent-color:var(--color-abril-logo-blue)" />
-              <div>
-                <p class="text-[13.5px] font-semibold text-gray-800">{{ c.nombre | titleCase }}</p>
-                <p class="text-[12px] text-gray-500">
-                  {{ c.entrevista
-                      ? 'Entrevista programada'
-                      : 'Programa su entrevista para poder seleccionarlo' }}
-                </p>
-              </div>
-            </label>
-          }
-
-          <!-- Sin funcionalidad todavía: la etapa siguiente (evaluación de finalistas) aún no existe. -->
-          <button type="button" disabled title="Disponible próximamente"
-            class="w-full h-[44px] mt-[14px] rounded-[7px] text-[13.5px] font-semibold text-white opacity-50 cursor-not-allowed"
-            style="background:var(--color-abril-logo-blue)">
-            Continuar con el candidato seleccionado
-          </button>
         </div>
       }
 

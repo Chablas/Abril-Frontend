@@ -136,6 +136,11 @@ export interface CandidatoAprobado {
   correoContacto: string | null;
   /** Entrevista programada del candidato (null si aún no se programó). */
   entrevista?: EntrevistaResumen | null;
+  /**
+   * Evaluación de la entrevista (puntajes, comentarios del informe y resultado). Null mientras
+   * GTH no registre nada ni envíe el correo de agradecimiento.
+   */
+  evaluacion?: EvaluacionResumen | null;
 }
 
 /** Entrevista programada de un candidato (fecha, hora y lugar de la cita). */
@@ -156,4 +161,46 @@ export interface EntrevistaResumen {
 export interface EntrevistaAccionResult {
   message: string;
   entrevista: EntrevistaResumen;
+}
+
+/**
+ * Evaluación de la entrevista de un candidato: los cuatro puntajes que registra GTH y los tres
+ * comentarios del informe que ve el área solicitante, más el resultado alcanzado.
+ */
+export interface EvaluacionResumen {
+  /** Puntajes en porcentaje (0-100). null = aún sin registrar. */
+  puntajeEntrevista: number | null;
+  puntajePsicotecnico: number | null;
+  puntajeTecnica: number | null;
+  puntajeResultado: number | null;
+  /** Resultado de la entrevista (qué se observó). */
+  comentarioEntrevista: string | null;
+  /** Informe psicotécnico del candidato. */
+  comentarioPsicotecnico: string | null;
+  /** Recomendación de GTH al área solicitante. */
+  comentarioRecomendacion: string | null;
+  /** Resultado alcanzado: 'PENDIENTE' | 'PASO' | 'NO_PASO'. */
+  resultadoCodigo: string;
+  resultadoNombre: string;
+  /** Correo al que se envió el agradecimiento (null si no se envió). */
+  agradecimientoCorreo: string | null;
+  /** Momento del envío del agradecimiento (ISO, ya en hora Perú). Null si no se envió. */
+  agradecimientoEnviadoEn: string | null;
+}
+
+/** Body del guardado de la evaluación (solo puntajes y comentarios; el resultado no se edita aquí). */
+export interface EvaluacionGuardar {
+  puntajeEntrevista: number | null;
+  puntajePsicotecnico: number | null;
+  puntajeTecnica: number | null;
+  puntajeResultado: number | null;
+  comentarioEntrevista: string | null;
+  comentarioPsicotecnico: string | null;
+  comentarioRecomendacion: string | null;
+}
+
+/** Resultado de guardar la evaluación o de enviar el correo de agradecimiento. */
+export interface EvaluacionAccionResult {
+  message: string;
+  evaluacion: EvaluacionResumen;
 }

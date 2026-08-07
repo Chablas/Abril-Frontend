@@ -43,6 +43,21 @@ interface EntrevistaFormState {
 }
 
 /**
+ * Datos editables de la evaluación de la entrevista de un candidato: los cuatro puntajes
+ * (porcentajes 0-100) y los tres comentarios que arman el informe de finalista que ve el
+ * área solicitante.
+ */
+interface EvaluacionFormState {
+  puntajeEntrevista: number | null;
+  puntajePsicotecnico: number | null;
+  puntajeTecnica: number | null;
+  puntajeResultado: number | null;
+  comentarioEntrevista: string;
+  comentarioPsicotecnico: string;
+  comentarioRecomendacion: string;
+}
+
+/**
  * Modal de detalle del requerimiento (vista de GTH, se abre con el ojo de la bandeja):
  * cabecera con código/estado/puesto + sección "Asignación interna de GTH" (responsable,
  * tipo de proceso y SLA, prioridad interna y razón social activa con sus cupos) + secciones
@@ -115,11 +130,12 @@ export class GthDetalleRequerimiento implements OnInit {
   entrevistaForm: Record<number, EntrevistaFormState> = {};
   /** true mientras se envía/reenvía la invitación de un candidato (key = candidatoId). */
   enviandoEntrevista: Record<number, boolean> = {};
-  /**
-   * Candidato marcado por GTH para continuar al siguiente paso. Es solo selección local: el
-   * botón "Continuar con el candidato seleccionado" todavía no tiene funcionalidad.
-   */
-  candidatoSeleccionadoId: number | null = null;
+  /** Evaluación editable de la entrevista por candidato (key = candidatoId). */
+  evaluacionForm: Record<number, EvaluacionFormState> = {};
+  /** true mientras se guarda la evaluación de un candidato (key = candidatoId). */
+  guardandoEvaluacion: Record<number, boolean> = {};
+  /** true mientras se envía el correo de agradecimiento de un candidato (key = candidatoId). */
+  enviandoAgradecimiento: Record<number, boolean> = {};
 
   private huboCambios = false;
 
@@ -200,7 +216,8 @@ export class GthDetalleRequerimiento implements OnInit {
     if (this.enEntrevistas)
       return (
         'Programar la entrevista de cada candidato con formulario aprobado y enviarle la ' +
-        'invitación; luego seleccionar al candidato que continúa el proceso.'
+        'invitación; luego registrar su resultado y enviarlo como finalista al área solicitante, ' +
+        'o el correo de agradecimiento a quienes no continúan.'
       );
     if (this.longListAprobada)
       return `Continuar proceso con ${this.detalle?.area ? new TitleCasePipe().transform(this.detalle.area) : 'el área solicitante'}.`;
@@ -628,15 +645,123 @@ export class GthDetalleRequerimiento implements OnInit {
     });
   }
 
-  /** true si ya se envió la invitación a todos los candidatos a entrevistar. */
-  get entrevistasEnviadas(): boolean {
-    const candidatos = this.candidatosParaEntrevista;
-    return candidatos.length > 0 && candidatos.every((c) => !!c.entrevista);
+  // ── Evaluación de la entrevista (puntajes + informe de finalista) ────────
+  /** true si el candidato ya no continúa: se le envió el correo de agradecimiento. */
+  noContinua(c: CandidatoAprobado): boolean {
+    return c.evaluacion?.resultadoCodigo === 'NO_PASO';
   }
 
   /**
-   * Prellena la cita de cada candidato: con lo ya programado si existe, y si no con el primer
-   * lugar del catálogo (la oficina principal) como valor por defecto.
+   * true si se puede registrar la evaluación del candidato: ya se le envió la invitación a la
+   * entrevista y sigue en carrera (al enviar el agradecimiento su informe queda cerrado).
+   */
+  puedeEvaluar(c: CandidatoAprobado): boolean {
+    return !!c.entrevista?.enviadoEn && !this.noContinua(c);
+  }
+
+  /**
+   * Guarda los cuatro puntajes y los tres comentarios del candidato y, con eso, lo envía como
+   * finalista: el informe queda disponible en la vista del área solicitante.
+   */
+  guardarEvaluacion(c: CandidatoAprobado): void {
+    const form = this.evaluacionForm[c.candidatoId];
+    if (!form || this.guardandoEvaluacion[c.candidatoId]) return;
+
+    const fueraDeRango = [
+      form.puntajeEntrevista,
+      form.puntajePsicotecnico,
+      form.puntajeTecnica,
+      form.puntajeResultado,
+    ].some((p) => p !== null && (p < 0 || p > 100));
+    if (fueraDeRango) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Puntaje no válido',
+        text: 'Los puntajes se registran como porcentaje: deben estar entre 0 y 100.',
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    this.guardandoEvaluacion[c.candidatoId] = true;
+    this.service
+      .guardarEvaluacion(c.candidatoId, {
+        puntajeEntrevista: form.puntajeEntrevista,
+        puntajePsicotecnico: form.puntajePsicotecnico,
+        puntajeTecnica: form.puntajeTecnica,
+        puntajeResultado: form.puntajeResultado,
+        comentarioEntrevista: form.comentarioEntrevista.trim() || null,
+        comentarioPsicotecnico: form.comentarioPsicotecnico.trim() || null,
+        comentarioRecomendacion: form.comentarioRecomendacion.trim() || null,
+      })
+      .subscribe({
+        next: (res) => {
+          c.evaluacion = res.evaluacion;
+          this.guardandoEvaluacion[c.candidatoId] = false;
+          this.huboCambios = true;
+          this.cdr.detectChanges();
+          Swal.fire({
+            icon: 'success',
+            title: 'Finalista enviado',
+            text: 'El informe del candidato ya está disponible para el área solicitante.',
+            confirmButtonColor: '#005D9D',
+          });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.guardandoEvaluacion[c.candidatoId] = false;
+          this.cdr.detectChanges();
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  /**
+   * Envía al candidato el correo de agradecimiento por no continuar en el proceso: deja su
+   * resultado en "No pasó" y lo saca del informe de finalistas del solicitante.
+   */
+  async enviarAgradecimiento(c: CandidatoAprobado): Promise<void> {
+    if (this.enviandoAgradecimiento[c.candidatoId]) return;
+
+    const yaEnviado = !!c.evaluacion?.agradecimientoEnviadoEn;
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: yaEnviado ? '¿Reenviar el correo de agradecimiento?' : '¿Enviar el correo de agradecimiento?',
+      html:
+        `Se le enviará a <b>${c.correoContacto ?? 'su correo registrado'}</b> el correo de ` +
+        'agradecimiento por participar. El candidato quedará registrado como <b>No continúa</b> ' +
+        'y dejará de aparecer entre los finalistas del área solicitante.',
+      showCancelButton: true,
+      confirmButtonText: yaEnviado ? 'Sí, reenviar' : 'Sí, enviar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#DC2626',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.enviandoAgradecimiento[c.candidatoId] = true;
+    this.service.enviarAgradecimiento(c.candidatoId).subscribe({
+      next: (res) => {
+        c.evaluacion = res.evaluacion;
+        this.enviandoAgradecimiento[c.candidatoId] = false;
+        this.huboCambios = true;
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: 'success',
+          title: 'Correo enviado',
+          text: res.message,
+          confirmButtonColor: '#005D9D',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviandoAgradecimiento[c.candidatoId] = false;
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /**
+   * Prellena, por candidato, la cita (con lo ya programado o el primer lugar del catálogo —la
+   * oficina principal— por defecto) y la evaluación de su entrevista.
    */
   private prepararFormulariosEntrevista(): void {
     if (!this.detalle) return;
@@ -647,6 +772,15 @@ export class GthDetalleRequerimiento implements OnInit {
         fecha: c.entrevista?.fecha ?? null,
         hora: c.entrevista?.hora ?? null,
         lugarId: c.entrevista?.lugarId ?? lugarPorDefecto,
+      };
+      this.evaluacionForm[c.candidatoId] = {
+        puntajeEntrevista: c.evaluacion?.puntajeEntrevista ?? null,
+        puntajePsicotecnico: c.evaluacion?.puntajePsicotecnico ?? null,
+        puntajeTecnica: c.evaluacion?.puntajeTecnica ?? null,
+        puntajeResultado: c.evaluacion?.puntajeResultado ?? null,
+        comentarioEntrevista: c.evaluacion?.comentarioEntrevista ?? '',
+        comentarioPsicotecnico: c.evaluacion?.comentarioPsicotecnico ?? '',
+        comentarioRecomendacion: c.evaluacion?.comentarioRecomendacion ?? '',
       };
     }
   }
