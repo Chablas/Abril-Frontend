@@ -244,14 +244,30 @@ export class DatePicker implements OnChanges, OnDestroy {
     }
   }
 
-  /** Ancestros con scroll/`overflow: hidden` que pueden recortar el campo. */
+  /**
+   * Ancestros con scroll/`overflow: hidden` que pueden recortar el campo.
+   *
+   * El recorrido se corta al llegar a un ancestro `position: fixed`: ese subárbol se posiciona
+   * respecto al viewport, así que el overflow de lo que está por encima ya no lo recorta. Sin
+   * ese corte, un campo dentro de un modal a pantalla completa (`app-base-modal [fullScreen]`)
+   * arrastraba como "recortadores" al `main` y al `page-content` del layout, que empiezan
+   * después del sidebar (240px): el campo cae a la izquierda de ellos, `anclaVisible` lo daba
+   * por oculto y `reposicionar` cerraba el calendario apenas se abría.
+   */
   private calcularContenedoresRecorte(): HTMLElement[] {
     if (typeof window === 'undefined') return [];
     const out: HTMLElement[] = [];
-    let padre = this.el.nativeElement.parentElement as HTMLElement | null;
+    let nodo = this.el.nativeElement as HTMLElement;
+    let estiloNodo = getComputedStyle(nodo);
+    let padre = nodo.parentElement;
     while (padre && padre !== document.body && padre !== document.documentElement) {
-      const estilo = getComputedStyle(padre);
-      if (/auto|scroll|hidden/.test(`${estilo.overflowY} ${estilo.overflowX}`)) out.push(padre);
+      if (estiloNodo.position === 'fixed') break;
+      const estiloPadre = getComputedStyle(padre);
+      if (/auto|scroll|hidden/.test(`${estiloPadre.overflowY} ${estiloPadre.overflowX}`)) {
+        out.push(padre);
+      }
+      nodo = padre;
+      estiloNodo = estiloPadre;
       padre = padre.parentElement;
     }
     return out;
