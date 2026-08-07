@@ -176,7 +176,7 @@
               <button
                 *ngIf="isAdmin() && w.estadoWorker !== 'RETIRADO' && w.contrataCasa === 'Casa'"
                 class="icon-btn icon-btn--emo"
-                [title]="w.tieneEmo ? 'Programar nuevo EMO' : 'Programar EMO'"
+                [title]="w.tieneEmo ? 'Programar nuevo EMO con clínica' : 'Programar EMO con clínica'"
                 (click)="$event.stopPropagation(); abrirProgramarEmo(w)"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">

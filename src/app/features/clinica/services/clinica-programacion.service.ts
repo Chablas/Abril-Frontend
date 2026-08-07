@@ -2,7 +2,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
-import { ClinicaAccionDto, CreateProgramacionDto, ProgramacionClinicaDto } from '../dtos/clinica.model';
+import {
+  ClinicaAccionDto,
+  CreateProgramacionDto,
+  ProgramacionClinicaDto,
+  ProgramacionDestinatariosDto,
+} from '../dtos/clinica.model';
 
 function buildClinicaHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -52,6 +57,19 @@ export class ClinicaProgramacionService {
         params: httpParams,
       })
       .pipe(map((res) => res?.data ?? []));
+  }
+
+  /**
+   * A quién le llegará el correo si se programa el EMO ahora. Depende de la clínica elegida
+   * (sus correos de contacto), por eso se vuelve a pedir cuando el usuario la cambia.
+   */
+  getDestinatarios(workerId: number, clinicaId: number | null): Observable<ProgramacionDestinatariosDto> {
+    let params = new HttpParams().set('workerId', workerId);
+    if (clinicaId) params = params.set('clinicaId', clinicaId);
+    return this.http.get<ProgramacionDestinatariosDto>(`${PROGRAMACIONES_BASE}/destinatarios`, {
+      headers: buildClinicaHeaders(),
+      params,
+    });
   }
 
   programarEmo(dto: CreateProgramacionDto): Observable<ProgramacionClinicaDto> {

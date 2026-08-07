@@ -4,49 +4,67 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import {
+  SectionTabs,
+  SectionTab,
+} from '../../../../../../shared/components/section-tabs/section-tabs';
 import { EmoConfiguracionService } from '../../../services/emo-configuracion.service';
 import {
-  EmoCorreoDestinatarioDto,
+  EmoCorreoCeldaDto,
+  EmoCorreoEventoDto,
+  EmoCorreoFilaDto,
+  EmoCorreoPerfilDto,
   EmoCorreoTipo,
 } from '../../../dtos/emo-configuracion.model';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 
 /**
- * Sección "Correos de programación de EMO" de la Configuración de EMOs.
+ * Configuración de EMOs → destinatarios de los correos de EMO.
  *
- * CRUD de los destinatarios de los correos que se envían al programar un EMO:
- * tanto la programación manual (desde /emos y desde Programaciones) como el
- * resumen del cron diario de programación automática. Dos listas: principales
- * ("Para") y copias ("CC") — no hay copias ocultas. Cada destinatario se puede
- * activar/desactivar sin borrarlo, igual que en la Configuración de Mi Salud.
+ * Una sección (`app-section-tabs`) por cada uno de los 4 correos: programación
+ * automática, programación manual, aceptada por la clínica y rechazada por la
+ * clínica. Dentro de cada sección, una matriz destinatario × perfil del
+ * trabajador (Oficina Central / Staff / Obra / Contratista) con un interruptor
+ * por celda, porque a un trabajador de Oficina Central no le escribe la misma
+ * gente que a uno de obra.
  *
- * La fila "Clínica asignada" es fija (viene con `editable: false`): sus correos
- * se resuelven al enviar desde Catálogos → Clínicas, así que solo se puede
- * prender/apagar.
+ * Hay tres clases de destinatario:
+ *  • Dinámicos (clínica, jefe, trabajador, residente, coordinadores, admin de la
+ *    razón social, GTH): su correo se resuelve al enviar, solo se prenden/apagan.
+ *  • Buzones de área (medicina ocupacional, ArqCom, Post Venta): el correo se
+ *    edita acá; ya no vive en el appsettings del servidor.
+ *  • Correos adicionales: alta/edición/baja completa desde la pantalla.
  */
 @Component({
   selector: 'app-emo-correos-config',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilModalPanel],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SectionTabs],
   templateUrl: './emo-correos-config.component.html',
   styleUrl: './emo-correos-config.component.css',
 })
 export class EmoCorreosConfigComponent implements OnInit {
-  principales: EmoCorreoDestinatarioDto[] = [];
-  copias: EmoCorreoDestinatarioDto[] = [];
+  perfiles: EmoCorreoPerfilDto[] = [];
+  eventos: EmoCorreoEventoDto[] = [];
   loading = false;
 
-  /** id del destinatario que se está guardando (para bloquear su switch/acciones). */
-  savingId: number | null = null;
+  /** Código del correo cuya sección se está viendo. */
+  eventoActivoCodigo: string | null = null;
+
+  /** id de la regla que se está guardando, para bloquear su switch. */
+  savingReglaId: number | null = null;
+  /** id del destinatario que se está editando/eliminando. */
+  savingDestinatarioId: number | null = null;
 
   // ── Modal de alta/edición ──
   formOpen = false;
-  formTipo: EmoCorreoTipo = 'PRINCIPAL';
-  /** null = alta; distinto de null = edición de ese destinatario. */
+  /** null = alta de un correo adicional; distinto de null = edición. */
   formId: number | null = null;
+  /** true = la fila es un buzón de área: se edita el correo pero no el tipo. */
+  formEsBuzonArea = false;
   formEmail = '';
   formNombre = '';
+  formTipo: EmoCorreoTipo = 'PRINCIPAL';
   formError: string | null = null;
   saving = false;
 
@@ -66,8 +84,10 @@ export class EmoCorreosConfigComponent implements OnInit {
     this.loaderService.show();
     this.svc.getCorreos().subscribe({
       next: (res) => {
-        this.principales = res.principales ?? [];
-        this.copias = res.copias ?? [];
+        this.perfiles = res.perfiles ?? [];
+        this.eventos = res.eventos ?? [];
+        if (!this.eventos.some((e) => e.codigo === this.eventoActivoCodigo))
+          this.eventoActivoCodigo = this.eventos[0]?.codigo ?? null;
         this.loading = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
@@ -81,19 +101,68 @@ export class EmoCorreosConfigComponent implements OnInit {
     });
   }
 
-  // ── Activar / desactivar ──
-  toggle(c: EmoCorreoDestinatarioDto): void {
-    if (this.savingId !== null) return;
-    const nuevo = !c.active;
-    this.savingId = c.id;
-    this.svc.setCorreoActive(c.id, nuevo).subscribe({
+  // ── Secciones ──
+  get sectionTabs(): SectionTab[] {
+    return this.eventos.map((e) => ({
+      id: e.codigo,
+      label: e.nombre,
+      badge: this.destinatariosActivos(e),
+    }));
+  }
+
+  get eventoActivo(): EmoCorreoEventoDto | null {
+    return this.eventos.find((e) => e.codigo === this.eventoActivoCodigo) ?? null;
+  }
+
+  onSectionChange(codigo: string): void {
+    this.eventoActivoCodigo = codigo;
+    this.cdr.detectChanges();
+  }
+
+  /** Cuántos destinatarios distintos reciben ese correo en al menos un perfil. */
+  private destinatariosActivos(evento: EmoCorreoEventoDto): number {
+    return evento.destinatarios.filter((f) => f.celdas.some((c) => c.active)).length;
+  }
+
+  /**
+   * Celda de una fila para un perfil. Se busca por id en vez de confiar en el
+   * orden del array para que un dato incompleto no termine prendiendo la columna
+   * equivocada sin que se note.
+   */
+  celdaDe(fila: EmoCorreoFilaDto, perfil: EmoCorreoPerfilDto): EmoCorreoCeldaDto | null {
+    return fila.celdas.find((c) => c.perfilId === perfil.id) ?? null;
+  }
+
+  /** Sin ningún destinatario activo, ese correo directamente no se envía. */
+  get sinDestinatariosActivos(): boolean {
+    const evento = this.eventoActivo;
+    return !this.loading && !!evento && this.destinatariosActivos(evento) === 0;
+  }
+
+  /** Filas activas en algún perfil pero sin correo cargado: no le llegan a nadie. */
+  get filasSinCorreo(): EmoCorreoFilaDto[] {
+    const evento = this.eventoActivo;
+    if (!evento) return [];
+    return evento.destinatarios.filter((f) => f.sinCorreo && f.celdas.some((c) => c.active));
+  }
+
+  // ── Toggle de una celda ──
+  toggle(celda: EmoCorreoCeldaDto): void {
+    if (this.savingReglaId !== null) return;
+
+    const nuevo = !celda.active;
+    this.savingReglaId = celda.reglaId;
+    // Optimista: se pinta al toque y se revierte si el guardado falla.
+    celda.active = nuevo;
+
+    this.svc.setReglaActive(celda.reglaId, nuevo).subscribe({
       next: () => {
-        c.active = nuevo;
-        this.savingId = null;
+        this.savingReglaId = null;
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        this.savingId = null;
+        celda.active = !nuevo;
+        this.savingReglaId = null;
         this.errorService.handleError(err);
         this.cdr.detectChanges();
       },
@@ -101,22 +170,24 @@ export class EmoCorreosConfigComponent implements OnInit {
   }
 
   // ── Alta / edición ──
-  abrirAlta(tipo: EmoCorreoTipo): void {
-    this.formTipo = tipo;
+  abrirAlta(): void {
     this.formId = null;
+    this.formEsBuzonArea = false;
     this.formEmail = '';
     this.formNombre = '';
+    this.formTipo = 'PRINCIPAL';
     this.formError = null;
     this.formOpen = true;
     this.cdr.detectChanges();
   }
 
-  abrirEdicion(c: EmoCorreoDestinatarioDto): void {
-    if (!c.editable) return;
-    this.formTipo = c.tipo;
-    this.formId = c.id;
-    this.formEmail = c.email ?? '';
-    this.formNombre = c.nombre ?? '';
+  abrirEdicion(fila: EmoCorreoFilaDto): void {
+    if (!fila.editable) return;
+    this.formId = fila.destinatarioId;
+    this.formEsBuzonArea = fila.codigo !== null;
+    this.formEmail = fila.email ?? '';
+    this.formNombre = fila.nombre ?? '';
+    this.formTipo = fila.tipo;
     this.formError = null;
     this.formOpen = true;
     this.cdr.detectChanges();
@@ -129,13 +200,12 @@ export class EmoCorreosConfigComponent implements OnInit {
   }
 
   get formTitulo(): string {
-    const lista = this.formTipo === 'COPIA' ? 'copia' : 'destinatario principal';
-    return this.formId === null ? `Agregar ${lista}` : `Editar ${lista}`;
+    if (this.formId === null) return 'Agregar correo adicional';
+    return this.formEsBuzonArea ? 'Editar correo del área' : 'Editar correo adicional';
   }
 
   get formValido(): boolean {
-    const email = this.formEmail.trim();
-    return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+    return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(this.formEmail.trim());
   }
 
   guardarForm(): void {
@@ -148,8 +218,17 @@ export class EmoCorreosConfigComponent implements OnInit {
 
     const request$ =
       this.formId === null
-        ? this.svc.crearCorreo({ tipo: this.formTipo, email, nombre })
-        : this.svc.actualizarCorreo(this.formId, { email, nombre });
+        ? this.svc.crearAdicional({
+            eventoCodigo: this.eventoActivoCodigo ?? '',
+            email,
+            nombre,
+            tipo: this.formTipo,
+          })
+        : this.svc.actualizarDestinatario(this.formId, {
+            email,
+            nombre,
+            tipo: this.formEsBuzonArea ? undefined : this.formTipo,
+          });
 
     request$.subscribe({
       next: () => {
@@ -172,13 +251,13 @@ export class EmoCorreosConfigComponent implements OnInit {
   }
 
   // ── Eliminar ──
-  async eliminar(c: EmoCorreoDestinatarioDto): Promise<void> {
-    if (!c.editable || this.savingId !== null) return;
+  async eliminar(fila: EmoCorreoFilaDto): Promise<void> {
+    if (!fila.eliminable || this.savingDestinatarioId !== null) return;
 
     const confirm = await Swal.fire({
       icon: 'question',
       title: '¿Eliminar destinatario?',
-      text: `${c.email} dejará de recibir los correos de programación de EMO.`,
+      text: `${fila.email} dejará de recibir los correos de EMO en los que esté activo.`,
       showCancelButton: true,
       confirmButtonText: 'Eliminar',
       cancelButtonText: 'Cancelar',
@@ -186,22 +265,25 @@ export class EmoCorreosConfigComponent implements OnInit {
     });
     if (!confirm.isConfirmed) return;
 
-    this.savingId = c.id;
-    this.svc.eliminarCorreo(c.id).subscribe({
+    this.savingDestinatarioId = fila.destinatarioId;
+    this.svc.eliminarAdicional(fila.destinatarioId).subscribe({
       next: () => {
-        this.savingId = null;
+        this.savingDestinatarioId = null;
         this.load();
       },
       error: (err: HttpErrorResponse) => {
-        this.savingId = null;
+        this.savingDestinatarioId = null;
         this.errorService.handleError(err);
         this.cdr.detectChanges();
       },
     });
   }
 
-  /** Aviso: sin ningún principal activo no se envía el correo (tampoco las copias). */
-  get sinPrincipalesActivos(): boolean {
-    return !this.loading && !this.principales.some((c) => c.active);
+  trackFila(_: number, f: EmoCorreoFilaDto): number {
+    return f.destinatarioId;
+  }
+
+  trackPerfil(_: number, p: EmoCorreoPerfilDto): number {
+    return p.id;
   }
 }
