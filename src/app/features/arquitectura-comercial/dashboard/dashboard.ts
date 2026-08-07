@@ -131,6 +131,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   modalCargaActividades        : ActividadListItemDTO[] = [];
   modalCargaExcluirCulminadas  = true;
   modalCargaFiltroEstado       = '';
+  modalCargaSoloSemanaControl  = false;
   modalCargaStats              = { hitos: 0, entregables: 0, consultas: 0, culminadas: 0, vencidas: 0 };
   readonly modalCargaEstadoOptions = [
     { value: 'EN_PROCESO', label: 'En proceso' },
@@ -146,12 +147,30 @@ export class Dashboard implements AfterViewInit, OnDestroy {
 
   private hoy(): Date { const d = new Date(); d.setHours(0,0,0,0); return d; }
   private pd(iso: string): Date { const [y,m,d] = iso.split('-').map(Number); return new Date(y, m-1, d); }
+  /** Parsea "dd/MM/yyyy" (formato de SemanaDashboardDTO.inicio/fin) a Date local. */
+  private pdSlash(ddmmyyyy: string): Date {
+    const [d, m, y] = ddmmyyyy.split('/').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  /** Rango [lunes, domingo] de la semana en control que usa el IES del ranking
+   * (misma semana que el backend usa en GetDashboardDataFiltrado). */
+  private semanaControlBounds(): { inicio: Date; fin: Date } | null {
+    if (!this.semanaActual) return null;
+    return { inicio: this.pdSlash(this.semanaActual.inicio), fin: this.pdSlash(this.semanaActual.fin) };
+  }
 
   estadoGantt(a: ActividadListItemDTO): 'CULMINADO'|'EN_PROCESO'|'VENCIDO'|'EN_RIESGO'|'PENDIENTE' {
     const hoy = this.hoy();
     if (a.finEfectivo)  return 'CULMINADO';
-    if (a.inicioEfectivo) return 'EN_PROCESO';
+    // VENCIDO se evalúa antes que EN_PROCESO: una actividad que ya arrancó pero se pasó
+    // de su fecha fin programada sigue estando vencida, no "en proceso" (así la clasifica
+    // el backend en ComputeEstado — mismo orden, para que el conteo de "vencidas" cuadre
+    // entre KPIs, alertas y este filtro. El orden inverso hacía que el chip dijera
+    // "N vencidas" pero el filtro por VENCIDO mostrara 0, porque las que ya habían
+    // arrancado se clasificaban como EN_PROCESO antes de llegar a este check).
     if (a.finProgramado && this.pd(a.finProgramado) < hoy) return 'VENCIDO';
+    if (a.inicioEfectivo) return 'EN_PROCESO';
     if (a.inicioProgramado && this.pd(a.inicioProgramado) <= hoy) return 'EN_RIESGO';
     return 'PENDIENTE';
   }
@@ -167,7 +186,18 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   }
 
   get modalCargaFiltradas(): ActividadListItemDTO[] {
+    const bounds = this.modalCargaSoloSemanaControl ? this.semanaControlBounds() : null;
     return this.modalCargaActividades.filter(a => {
+      // Vista "vencenEstaSemana" (mismo criterio que usa el IES): solo las que su fin
+      // programado cae dentro de la semana en control, sin importar su estado —
+      // aquí SÍ se quiere ver PENDIENTE/EN_PROCESO junto a CULMINADO, para poder
+      // comparar "cuáles de las N asignadas ya se cerraron".
+      if (bounds) {
+        if (!a.finProgramado) return false;
+        const f = this.pd(a.finProgramado);
+        if (f < bounds.inicio || f > bounds.fin) return false;
+        return true;
+      }
       // PENDIENTE se oculta por defecto (trabajo futuro que aún no toca) salvo que
       // el usuario lo pida explícitamente con el filtro de estado.
       if (this.estadoGantt(a) === 'PENDIENTE' && this.modalCargaFiltroEstado !== 'PENDIENTE') return false;
@@ -184,6 +214,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     this.modalCargaActividades       = [];
     this.modalCargaExcluirCulminadas = true;
     this.modalCargaFiltroEstado      = '';
+    this.modalCargaSoloSemanaControl = false;
     this.service.getActividades({ filtroUserId: sup.userId, soloActivas: true, porPagina: 500 }).subscribe({
       next: res => {
         this.modalCargaActividades = res.items ?? [];
@@ -654,6 +685,19 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   // ─── modal hitos ────────────────────────────────────────────
   abrirModalHitos() { this.modalHitosVisible = true; }
   cerrarModalHitos() { this.modalHitosVisible = false; }
+
+  /** Abre el modal de carga mostrando solo las actividades cuyo fin programado cae
+   * dentro de la semana en control (el mismo conjunto "N asignadas" que cuenta el
+   * IES del ranking), para poder ver cuáles de esas N ya se culminaron y cuáles no. */
+  verDetalleSemanaSupervisor(sup: SupervisorProgresoDTO): void {
+    const dto: TareasPorArquitectoDTO = {
+      userId: sup.userId, nombre: sup.nombre,
+      hitos: 0, entregables: 0, consultas: 0, total: 0, avancePct: 0,
+    };
+    this.abrirModalCarga(dto);
+    this.modalCargaExcluirCulminadas = false;
+    this.modalCargaSoloSemanaControl = true;
+  }
 
   // ─── modal histórico de supervisor ──────────────────────────
   abrirHistoricoSupervisor(sup: SupervisorProgresoDTO): void {
