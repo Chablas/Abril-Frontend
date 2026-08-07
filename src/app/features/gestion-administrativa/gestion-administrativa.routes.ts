@@ -85,14 +85,10 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       seccion: 'trayectos',
     },
   },
-  // Revisores de trabajadores/áreas se movieron al módulo de configuración
-  // global (definen los jefes de cada trabajador/área, no solo para salidas).
-  // Se mantienen las rutas antiguas como redirección para no romper enlaces.
-  {
-    path: 'configuracion/revisor-salidas',
-    redirectTo: '/configuracion/revisor-salidas',
-    pathMatch: 'full',
-  },
+  // Revisores de áreas se movió al módulo de configuración global (define el jefe de
+  // cada área, no solo para salidas). Se mantiene la ruta antigua como redirección para
+  // no romper enlaces. La de revisores por trabajador se retiró junto con su pantalla:
+  // ese jefe se asigna ahora en el formulario de trabajadores (Gestión de Ingresos).
   {
     path: 'configuracion/revisores-areas',
     redirectTo: '/configuracion/revisores-areas',

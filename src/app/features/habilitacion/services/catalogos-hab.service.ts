@@ -4,6 +4,7 @@ import { Observable, catchError, of, shareReplay } from 'rxjs';
 import {
   AreaArbolNodoDto,
   AreaCatDto,
+  JefeCandidatoDto,
   SsItemEmpresaDto,
   SsItemTrabajadorDto,
   SubareaCatDto,
@@ -21,6 +22,7 @@ export class CatalogosHabService {
   private categorias$?: Observable<{ id: number; nombre: string }[]>;
   private ocupaciones$?: Observable<{ id: number; nombre: string }[]>;
   private obraOficinaStaff$?: Observable<ObraOficinaStaffDto[]>;
+  private jefes$?: Observable<JefeCandidatoDto[]>;
 
   constructor(private http: HttpClient) {}
 
@@ -106,6 +108,20 @@ export class CatalogosHabService {
     return this.obraOficinaStaff$;
   }
 
+  /**
+   * Trabajadores que pueden ser jefe (correo corporativo @abril.pe), para el desplegable del
+   * checkbox "Jefe personalizado". Se cachea porque el catálogo no cambia mientras el usuario
+   * edita y el formulario se abre una vez por trabajador.
+   */
+  getJefes(): Observable<JefeCandidatoDto[]> {
+    if (!this.jefes$) {
+      this.jefes$ = this.http
+        .get<JefeCandidatoDto[]>(`${this.base}/jefes`, { headers: buildHabHeaders() })
+        .pipe(shareReplay(1), catchError(() => of([])));
+    }
+    return this.jefes$;
+  }
+
   getSubareas(area: string): Observable<SubareaCatDto[]> {
     return this.http.get<SubareaCatDto[]>(`${this.base}/subareas`, {
       headers: buildHabHeaders(),
@@ -119,5 +135,6 @@ export class CatalogosHabService {
     this.areas$ = undefined;
     this.areaArbol$ = undefined;
     this.obraOficinaStaff$ = undefined;
+    this.jefes$ = undefined;
   }
 }
