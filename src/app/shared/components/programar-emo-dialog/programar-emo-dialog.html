@@ -1,59 +1,127 @@
-<app-base-modal title="Programar EMO" width="w-[520px]" (closeModal)="close()">
-  <div class="worker-header">
-    <p class="wh-name">{{ worker.nombreCompleto }}</p>
-    <p class="wh-meta">DNI {{ worker.dni }}<ng-container *ngIf="worker.empresa"> · {{ worker.empresa }}</ng-container></p>
+<app-abril-modal-panel
+  titulo="Programar EMO con clínica"
+  icono="ti-calendar-plus"
+  variant="blue"
+  width="620px"
+  [preventCloseWhenDirty]="true"
+  (closeModal)="close()">
+
+  <div class="paso-body">
+    <!-- Trabajador: solo lectura, viene de la fila desde la que se abrió el modal -->
+    <h2 class="paso-title"><i class="ti ti-user"></i> Trabajador</h2>
+    <div class="worker-card">
+      <span class="worker-card__name">{{ worker.nombreCompleto | titleCase }}</span>
+      <span class="worker-card__meta">
+        DNI {{ worker.dni }}<ng-container *ngIf="worker.empresa"> · {{ worker.empresa }}</ng-container>
+      </span>
+    </div>
+
+    <h2 class="paso-title mt-6"><i class="ti ti-calendar-event"></i> Datos de la cita</h2>
+
+    <div class="form-row">
+      <div class="abril-field">
+        <!-- dense + floatingLabel: mismas medidas y mismo label que app-search-select, para que la
+             fecha no se vea más grande que los desplegables de al lado. -->
+        <app-date-picker
+          label="Fecha programada *"
+          [dense]="true"
+          [floatingLabel]="true"
+          [color]="accentColor"
+          [value]="form.fechaProgramada || null"
+          (valueChange)="form.fechaProgramada = $event ?? ''">
+        </app-date-picker>
+      </div>
+
+      <div class="abril-field">
+        <app-search-select
+          label="Tipo EMO *"
+          [color]="accentColor"
+          [options]="tiposEmo"
+          valueField="id"
+          displayField="nombre"
+          [value]="form.tipoEmoId"
+          placeholder="Selecciona tipo"
+          (valueChange)="form.tipoEmoId = $event">
+        </app-search-select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="abril-field">
+        <app-search-select
+          label="Clínica *"
+          [color]="accentColor"
+          [options]="clinicas"
+          valueField="id"
+          displayField="nombre"
+          [value]="form.clinicaId"
+          placeholder="Selecciona clínica"
+          (valueChange)="onClinicaChange($event)">
+        </app-search-select>
+      </div>
+
+      <div class="abril-field">
+        <app-search-select
+          label="Médico"
+          [color]="accentColor"
+          [options]="medicosFiltrados"
+          valueField="id"
+          displayField="apellidoNombre"
+          [value]="form.medicoId"
+          placeholder="Selecciona médico"
+          (valueChange)="form.medicoId = $event">
+        </app-search-select>
+      </div>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Notas</label>
+      <textarea
+        class="abril-field-input notas"
+        rows="3"
+        placeholder="Observaciones para la clínica…"
+        [(ngModel)]="form.notas"></textarea>
+    </div>
+
+    <!-- A quién le va a llegar el correo: se resuelve en el backend con la misma lógica del envío
+         real, así el usuario no tiene que ir a Configuración de EMOs a adivinarlo. -->
+    <div class="aviso" *ngIf="destinatarios.length; else avisoVacio">
+      <i class="ti ti-mail"></i>
+      <p class="aviso__texto">
+        Al programar, la cita será notificada a
+        <ng-container *ngFor="let d of destinatarios; let i = index; let last = last"
+          ><span *ngIf="i > 0">{{ last ? ' y ' : ', ' }}</span
+          ><span class="aviso__email" [title]="etiquetaDestinatario(d)">{{ d.email }}</span></ng-container
+        >.
+        <ng-container *ngIf="copias.length">
+          Con copia a
+          <ng-container *ngFor="let c of copias; let i = index; let last = last"
+            ><span *ngIf="i > 0">{{ last ? ' y ' : ', ' }}</span
+            ><span class="aviso__email">{{ c.email }}</span></ng-container
+          >.
+        </ng-container>
+      </p>
+    </div>
+
+    <ng-template #avisoVacio>
+      <div class="aviso aviso--warn" *ngIf="!cargandoDestinatarios">
+        <i class="ti ti-mail-off"></i>
+        <p class="aviso__texto">
+          No hay destinatarios activos, así que al programar <strong>no se enviará</strong> ningún
+          correo. Actívalos en Configuración de EMOs.
+        </p>
+      </div>
+    </ng-template>
   </div>
 
-  <form class="form-body" (ngSubmit)="submit()">
-    <div class="grid-2">
-      <div>
-        <label class="field-label">Fecha Programada *</label>
-        <input type="date" class="field-input" [(ngModel)]="form.fechaProgramada" name="fechaProgramada" required />
-      </div>
-
-      <div>
-        <label class="field-label">Tipo EMO *</label>
-        <select class="field-input" [(ngModel)]="form.tipoEmoId" name="tipoEmoId" required>
-          <option [value]="0" disabled>Seleccionar…</option>
-          <option *ngFor="let t of tiposEmo" [value]="t.id">{{ t.nombre }}</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="field-label">Clínica *</label>
-        <select class="field-input" [(ngModel)]="form.clinicaId" name="clinicaId" required>
-          <option [value]="0" disabled>Seleccionar…</option>
-          <option *ngFor="let c of clinicas" [value]="c.id">{{ c.nombre }}</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="field-label">Médico <span class="optional">(opcional)</span></label>
-        <select class="field-input" [(ngModel)]="form.medicoId" name="medicoId">
-          <option [value]="0">Sin especificar</option>
-          <option *ngFor="let m of medicos" [value]="m.id">{{ m.apellidoNombre }}</option>
-        </select>
-      </div>
-
-      <div class="col-span-2">
-        <label class="field-label">Notas <span class="optional">(opcional)</span></label>
-        <textarea
-          class="field-input field-textarea"
-          [(ngModel)]="form.notas"
-          name="notas"
-          rows="3"
-          placeholder="Observaciones…"
-        ></textarea>
-      </div>
-    </div>
-
-    <div class="form-footer">
-      <button type="button" class="btn-secondary" (click)="close()" [disabled]="submitting">
-        Cancelar
-      </button>
-      <button type="submit" class="btn-primary" [disabled]="!canSubmit || submitting">
-        {{ submitting ? 'Guardando…' : 'Programar EMO' }}
-      </button>
-    </div>
-  </form>
-</app-base-modal>
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-ghost" (click)="close()" [disabled]="submitting">
+      Cancelar
+    </button>
+    <button type="button" class="btn-primary" [disabled]="!canSubmit || submitting" (click)="submit()">
+      <i class="ti ti-loader-2 spin" *ngIf="submitting"></i>
+      <i class="ti ti-calendar-check" *ngIf="!submitting"></i>
+      {{ submitting ? 'Programando…' : 'Programar EMO con clínica' }}
+    </button>
+  </div>
+</app-abril-modal-panel>

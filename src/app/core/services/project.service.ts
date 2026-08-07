@@ -6,7 +6,10 @@ import { ApiMessageDTO } from '../dtos/api/ApiMessage.model';
 import { ProjectPagedDTO } from '../dtos/project/projectPaged.model';
 import { ProjectCreateDTO } from '../dtos/project/projectCreate.model';
 import { ProjectEditDTO } from '../dtos/project/projectEdit.model';
-import { ProjectEmailsDTO } from '../dtos/project/projectEmails.model';
+import {
+  ProjectEmailsDTO,
+  ProjectEmailsResponseDTO,
+} from '../dtos/project/projectEmails.model';
 import { ProjectQueryParams } from '../dtos/project/projectQuery.model';
 import { ProjectScheduleSimpleDTO } from '../dtos/project/projectScheduleSimple.model';
 
@@ -67,9 +70,10 @@ export class ProjectService {
     });
   }
 
-  getProjectEmails(projectId: number): Observable<ProjectEmailsDTO> {
+  /** Valores actuales + los trabajadores elegibles como residente, en una sola petición. */
+  getProjectEmails(projectId: number): Observable<ProjectEmailsResponseDTO> {
     const token = localStorage.getItem('access_token');
-    return this.http.get<ProjectEmailsDTO>(`${this.apiUrl}/${projectId}/emails`, {
+    return this.http.get<ProjectEmailsResponseDTO>(`${this.apiUrl}/${projectId}/emails`, {
       headers: { Authorization: `Bearer ${token}` },
     });
   }

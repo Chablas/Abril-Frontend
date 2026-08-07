@@ -59,6 +59,37 @@ export class DatePicker implements OnChanges, OnDestroy {
    * Por defecto usa el verde lima de la marca.
    */
   @Input() color: string = 'var(--color-abril-lime)';
+  /**
+   * Opcional. true = el campo adopta exactamente las medidas del trigger de `app-search-select`
+   * (34px de alto, 12px de texto, radio 7px, mismo borde). Sirve para que en una fila donde el
+   * date-picker convive con comboboxes no se vea más grande que ellos — que era el caso en el
+   * modal de Programar EMO con clínica.
+   *
+   * Por defecto false: el tamaño histórico (más alto, texto 14px) se mantiene intacto para los
+   * ~26 consumidores que ya existen.
+   */
+  @Input() dense: boolean = false;
+  /**
+   * Opcional. true = el label flota cortando el borde superior del campo, igual que hace
+   * `app-search-select` y que las clases globales `.abril-field-label`. Incluye el mismo
+   * `margin-top` de 9px que usa el combobox, para que ambos queden a la misma altura al
+   * compartir una fila.
+   *
+   * Por defecto false: el label sigue yendo encima del campo, en el color de acento.
+   */
+  @Input() floatingLabel: boolean = false;
+
+  /** Clases del trigger según `dense`. Único origen de verdad del tamaño del campo. */
+  get triggerSizeClasses(): string {
+    return this.dense
+      ? 'h-[34px] text-[12px] pl-[10px] pr-[8px] rounded-[7px]'
+      : 'py-[10px] pl-[12px] pr-[10px] text-sm rounded-lg';
+  }
+
+  /** Borde en reposo: el mismo gris del combobox en modo `dense`. */
+  get triggerBorderClass(): string {
+    return this.dense ? 'border-[#e2e8f0]' : 'border-[#D6DEE5]';
+  }
 
   readonly diasSemana = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
