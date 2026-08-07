@@ -6,10 +6,30 @@ export interface Opcion {
   nombre: string;
 }
 
-/** Contadores de las tarjetas de resumen de la vista de GTH (por ahora solo "En proceso"). */
+/** Contadores de las tarjetas de resumen de la vista de GTH. */
 export interface ResumenReclutamiento {
-  /** Requerimientos activos actualmente (en curso dentro del pipeline). */
+  /** "En proceso · Activos actualmente": requerimientos vigentes que aún no se cierran. */
   enProceso: number;
+  /** "Vacantes abiertas · Publicadas": ya publicadas en canales y todavía sin cerrar. */
+  vacantesAbiertas: number;
+  /** "Evaluaciones · Programadas": entrevistas agendadas cuyo resultado GTH aún no cierra. */
+  evaluacionesProgramadas: number;
+  /** "Procesos cerrados · Este período": requerimientos cerrados en el año en curso. */
+  procesosCerrados: number;
+  /** Solicitudes recién llegadas de jefatura (alimenta el aviso sobre el pipeline). */
+  solicitudesNuevas: number;
+}
+
+/**
+ * Una etapa del embudo "Pipeline de reclutamiento". El backend agrupa las 12 fases del catálogo
+ * en estas etapas, así que la suma de los totales es el total de requerimientos vigentes.
+ */
+export interface PipelineEtapa {
+  codigo: string;
+  /** Nombre corto mostrado bajo el círculo (Solicitud, Publicado, …). */
+  nombre: string;
+  /** Requerimientos vigentes parados en esta etapa. */
+  total: number;
 }
 
 /** Fila de la tabla "Solicitudes de contratación" (un requerimiento de cualquier área). */
@@ -35,9 +55,11 @@ export interface RequerimientoGthListItem {
   estadoNombre: string;
 }
 
-/** Respuesta de la bandeja de GTH: tarjetas + tabla + catálogos en una sola petición. */
+/** Respuesta de la bandeja de GTH: tarjetas + pipeline + tabla + catálogos en una sola petición. */
 export interface BandejaReclutamiento {
   resumen: ResumenReclutamiento;
+  /** Etapas del embudo "Pipeline de reclutamiento", en orden. */
+  pipeline: PipelineEtapa[];
   solicitudes: RequerimientoGthListItem[];
   /** Catálogo de prioridades (Alta/Media/Baja) para el desplegable de la columna. */
   prioridades: Opcion[];

@@ -19,7 +19,11 @@ import { GthSeguimiento } from './components/seguimiento/seguimiento';
 import { GthRevisionLongList } from './components/revision-long-list/revision-long-list';
 import { GthRevisionFinalistas } from './components/revision-finalistas/revision-finalistas';
 import { SolicitudPersonalService } from './services/solicitud-personal.service';
-import { GestionCandidatoCard, SolicitudVacanteListItem } from './dtos/solicitud-personal.dto';
+import {
+  GestionCandidatoCard,
+  ResumenSolicitantePanel,
+  SolicitudVacanteListItem,
+} from './dtos/solicitud-personal.dto';
 
 @Component({
   standalone: true,
@@ -96,6 +100,14 @@ export class GthSolicitudPersonal implements OnInit {
   /** Requerimiento cuyo informe de finalistas se está viendo (null = modal cerrado). */
   finalistasId: number | null = null;
 
+  /** Contadores de las tarjetas resumen (los calcula el backend junto con el panel). */
+  resumen: ResumenSolicitantePanel = {
+    totalRegistradas: 0,
+    pendientes: 0,
+    enRevisionGth: 0,
+    aprobadas: 0,
+  };
+
   /**
    * Tarjetas "Gestión de candidatos": long lists que GTH envió para revisar (tipo LONG_LIST)
    * e informes de finalistas ya evaluados (tipo FINALISTAS).
@@ -138,6 +150,7 @@ export class GthSolicitudPersonal implements OnInit {
     this.loaderService.show();
     this.service.getPanel().subscribe({
       next: (data) => {
+        this.resumen = data.resumen;
         this.gestionCandidatos = data.gestionCandidatos;
         this.solicitudes = data.misSolicitudes;
         this.pager.reset();
@@ -179,16 +192,6 @@ export class GthSolicitudPersonal implements OnInit {
 
   cerrarFinalistas(): void {
     this.finalistasId = null;
-  }
-
-  // ── Tarjetas resumen (solo las dos que ya funcionan) ───────────────────
-  get totalRegistradas(): number {
-    return this.solicitudes.length;
-  }
-
-  /** "Pendientes sin respuesta": aún en estado inicial (GTH no ha respondido). */
-  get pendientes(): number {
-    return this.solicitudes.filter((s) => s.estadoCodigo === 'NUEVO').length;
   }
 
   // ── Filtro de texto ────────────────────────────────────────────────────

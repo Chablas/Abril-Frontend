@@ -12,8 +12,11 @@
 
 <div class="page-container flex flex-col gap-[16px] bg-white flex-1 min-h-0 overflow-auto pb-[64px]">
 
-  <!-- ── Tarjetas resumen (por ahora solo las dos que ya funcionan) ─────── -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-[16px] max-w-[660px]">
+  <!-- ── Tarjetas resumen: el embudo del solicitante ────────────────────── -->
+  <!-- Total registradas → pendientes de que GTH las tome → GTH trabajándolas → cerradas.
+       Los contadores vienen calculados del backend (`resumen`) porque saber qué fase le
+       toca a quién es regla del pipeline de reclutamiento, no de esta vista. -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-[16px]">
 
     <!-- Total de solicitudes -->
     <div class="flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
@@ -24,7 +27,7 @@
         </svg>
       </div>
       <div class="flex flex-col">
-        <span class="text-[26px] font-bold leading-none text-gray-800">{{ totalRegistradas }}</span>
+        <span class="text-[26px] font-bold leading-none text-gray-800">{{ resumen.totalRegistradas }}</span>
         <span class="text-[13px] font-semibold text-gray-700 mt-[6px]">Mis solicitudes</span>
         <span class="text-[11px] text-gray-400">Total registradas</span>
       </div>
@@ -39,9 +42,39 @@
         </svg>
       </div>
       <div class="flex flex-col">
-        <span class="text-[26px] font-bold leading-none text-gray-800">{{ pendientes }}</span>
+        <span class="text-[26px] font-bold leading-none text-gray-800">{{ resumen.pendientes }}</span>
         <span class="text-[13px] font-semibold text-gray-700 mt-[6px]">Pendientes</span>
         <span class="text-[11px] text-gray-400">Sin respuesta</span>
+      </div>
+    </div>
+
+    <!-- En revisión: el siguiente paso del proceso le toca a GTH -->
+    <div class="flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#EDE9FE">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6D28D9" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2.5m0 3.5h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[26px] font-bold leading-none text-gray-800">{{ resumen.enRevisionGth }}</span>
+        <span class="text-[13px] font-semibold text-gray-700 mt-[6px]">En revisión</span>
+        <span class="text-[11px] text-gray-400">GTH evaluando</span>
+      </div>
+    </div>
+
+    <!-- Aprobadas: procesos cerrados del año en curso -->
+    <div class="flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+         style="border-color:var(--color-abril-border)">
+      <div class="flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DCFCE7">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[26px] font-bold leading-none text-gray-800">{{ resumen.aprobadas }}</span>
+        <span class="text-[13px] font-semibold text-gray-700 mt-[6px]">Aprobadas</span>
+        <span class="text-[11px] text-gray-400">Este período</span>
       </div>
     </div>
 

@@ -14,17 +14,21 @@ import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ReclutamientoService } from './services/reclutamiento.service';
-import { Opcion, RequerimientoGthListItem } from './dtos/reclutamiento.dto';
+import {
+  Opcion,
+  PipelineEtapa,
+  RequerimientoGthListItem,
+  ResumenReclutamiento,
+} from './dtos/reclutamiento.dto';
 import { GthDetalleRequerimiento } from './components/detalle/detalle';
 import { GthConfiguracionCorreos } from '../shared/configuracion-correos/configuracion-correos';
 import { estadoColors } from './estado-colors';
 
 /**
- * Vista de GTH del módulo Reclutamiento: bandeja con la tarjeta "En proceso" y la tabla de
- * "Solicitudes de contratación" de toda la organización. Es la contraparte de la vista del
- * solicitante (Solicitud de Personal); aquí GTH ve y gestiona lo que piden las jefaturas.
- * Por ahora solo muestra la tarjeta y la tabla; el resto de tarjetas, el pipeline y las
- * acciones se irán agregando.
+ * Vista de GTH del módulo Reclutamiento: bandeja con las tarjetas de resumen, el aviso de
+ * solicitudes nuevas, el embudo "Pipeline de reclutamiento" y la tabla de "Solicitudes de
+ * contratación" de toda la organización. Es la contraparte de la vista del solicitante
+ * (Solicitud de Personal); aquí GTH ve y gestiona lo que piden las jefaturas.
  */
 @Component({
   standalone: true,
@@ -54,7 +58,18 @@ import { estadoColors } from './estado-colors';
 export class GthReclutamiento implements OnInit {
   anioActual = new Date().getFullYear();
 
-  enProceso = 0;
+  /** Contadores de las tarjetas de resumen (los calcula el backend junto con la bandeja). */
+  resumen: ResumenReclutamiento = {
+    enProceso: 0,
+    vacantesAbiertas: 0,
+    evaluacionesProgramadas: 0,
+    procesosCerrados: 0,
+    solicitudesNuevas: 0,
+  };
+
+  /** Etapas del embudo "Pipeline de reclutamiento", en orden (vienen del backend). */
+  pipeline: PipelineEtapa[] = [];
+
   solicitudes: RequerimientoGthListItem[] = [];
   /** Catálogo de prioridades (Alta/Media/Baja) para el desplegable de la columna. */
   prioridades: Opcion[] = [];
@@ -62,6 +77,13 @@ export class GthReclutamiento implements OnInit {
   // ── Filtros ───────────────────────────────────────────────────────────
   searchText = '';
   filtrosAbiertos = false;
+
+  /**
+   * Filtro del aviso "N solicitudes de vacante nuevas de jefatura": al hacer clic, la tabla queda
+   * acotada a las que GTH todavía no ha tomado. Cuenta como filtro activo y se limpia con
+   * "Limpiar filtros" como cualquier otro.
+   */
+  soloNuevas = false;
 
   /** Requerimiento abierto en el modal de detalle (null = modal cerrado). */
   detalleId: number | null = null;
@@ -99,7 +121,8 @@ export class GthReclutamiento implements OnInit {
     this.loaderService.show();
     this.service.getBandeja().subscribe({
       next: (data) => {
-        this.enProceso = data.resumen.enProceso;
+        this.resumen = data.resumen;
+        this.pipeline = data.pipeline;
         this.solicitudes = data.solicitudes;
         this.prioridades = data.prioridades;
         this.pager.reset();
@@ -134,13 +157,21 @@ export class GthReclutamiento implements OnInit {
     });
   }
 
-  // ── Filtro de texto ────────────────────────────────────────────────────
+  // ── Aviso de solicitudes nuevas ────────────────────────────────────────
+  /** Alterna el filtro del aviso: deja la tabla solo con las solicitudes nuevas (o la restaura). */
+  toggleSoloNuevas(): void {
+    this.soloNuevas = !this.soloNuevas;
+    this.onFilterChange();
+  }
+
+  // ── Filtros ────────────────────────────────────────────────────────────
   get filtrosActivos(): number {
-    return this.searchText.trim() ? 1 : 0;
+    return (this.searchText.trim() ? 1 : 0) + (this.soloNuevas ? 1 : 0);
   }
 
   limpiarFiltros(): void {
     this.searchText = '';
+    this.soloNuevas = false;
     this.onFilterChange();
   }
 
@@ -150,8 +181,12 @@ export class GthReclutamiento implements OnInit {
 
   get filteredSolicitudes(): RequerimientoGthListItem[] {
     const q = this.searchText.trim();
-    if (!q) return this.solicitudes;
-    return this.solicitudes.filter((s) =>
+    let filtradas = this.solicitudes;
+
+    if (this.soloNuevas) filtradas = filtradas.filter((s) => s.estadoCodigo === 'NUEVO');
+
+    if (!q) return filtradas;
+    return filtradas.filter((s) =>
       SearchInput.matches(
         [s.codigo, s.puesto, s.area, s.proyectoObra, s.estadoNombre].filter(Boolean).join(' '),
         q,

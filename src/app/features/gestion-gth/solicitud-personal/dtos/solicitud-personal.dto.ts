@@ -100,8 +100,24 @@ export interface GestionCandidatoCard {
   tipo: 'LONG_LIST' | 'FINALISTAS';
 }
 
-/** Panel de la vista del solicitante: tarjetas de gestión de candidatos + tabla de solicitudes. */
+/**
+ * Contadores de las tarjetas resumen de la cabecera (el embudo del solicitante). Los calcula el
+ * backend: qué fase le toca a quién es regla de negocio del pipeline, no del componente.
+ */
+export interface ResumenSolicitantePanel {
+  /** "Mis solicitudes · Total registradas". */
+  totalRegistradas: number;
+  /** "Pendientes · Sin respuesta": siguen en la fase inicial, GTH todavía no los tomó. */
+  pendientes: number;
+  /** "En revisión · GTH evaluando": el siguiente paso le toca a GTH (sin contar el inicial). */
+  enRevisionGth: number;
+  /** "Aprobadas · Este período": procesos cerrados (finalista aprobado) del año en curso. */
+  aprobadas: number;
+}
+
+/** Panel de la vista del solicitante: resumen + tarjetas de gestión de candidatos + tabla. */
 export interface SolicitantePanel {
+  resumen: ResumenSolicitantePanel;
   gestionCandidatos: GestionCandidatoCard[];
   misSolicitudes: SolicitudVacanteListItem[];
 }
