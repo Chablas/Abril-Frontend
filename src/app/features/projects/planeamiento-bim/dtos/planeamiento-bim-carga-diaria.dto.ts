@@ -1,0 +1,59 @@
+import { ZonaConfigDTO } from './planeamiento-bim-config.dto';
+import { BloqueoDto } from './planeamiento-bim-bloqueo.dto';
+
+export interface ActividadCatalogoDto {
+  id: number;
+  macroActividadId: number;
+  macroActividadNombre: string;
+  nombre: string;
+  tipo: string;
+  orden: number;
+}
+
+export interface CausaCatalogoDto {
+  id: number;
+  nombre: string;
+  orden: number;
+}
+
+export interface CeldaDto {
+  zonaId: number;
+  nivelId: number;
+  sectorId: number;
+  actividadId: number;
+  cumplida: boolean;
+  causaId: number | null;
+  causaNombre: string | null;
+  causaDetalle: string | null;
+}
+
+export interface EvidenciaFotoDto {
+  id: number;
+  url: string;
+  createdDateTime: string;
+}
+
+export interface CargaDiariaDto {
+  fecha: string;
+  esEditable: boolean;
+  zonas: ZonaConfigDTO[];
+  actividades: ActividadCatalogoDto[];
+  causas: CausaCatalogoDto[];
+  celdas: CeldaDto[];
+  evidencias: EvidenciaFotoDto[];
+  bloqueosActivos: BloqueoDto[];
+}
+
+export interface CeldaUpdateDto {
+  zonaId: number;
+  nivelId: number;
+  sectorId: number;
+  actividadId: number;
+  cumplida: boolean;
+  causaId: number | null;
+  causaDetalle: string | null;
+}
+
+export interface CargaDiariaUpdateDto {
+  celdas: CeldaUpdateDto[];
+}
