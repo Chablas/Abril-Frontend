@@ -49,6 +49,37 @@ export class TimePicker implements OnChanges, OnDestroy {
   @Input() color = 'var(--color-abril-standard)';
   /** Paso en minutos de la columna de minutos (1 = todos los minutos, 5 = 00,05,10...). */
   @Input() minuteStep = 1;
+  /**
+   * Opcional. true = el campo adopta exactamente las medidas del trigger de `app-search-select`
+   * (34px de alto, 12px de texto, radio 7px, mismo borde), igual que el `dense` de
+   * `app-date-picker`. Sirve para que en una fila donde la hora convive con comboboxes no se vea
+   * más grande que ellos.
+   *
+   * Por defecto false: el tamaño histórico (más alto, texto 14px) se mantiene intacto para los
+   * consumidores que ya existen.
+   */
+  @Input() dense = false;
+  /**
+   * Opcional. true = el label flota cortando el borde superior del campo, igual que hace
+   * `app-search-select` y que las clases globales `.abril-field-label`. Incluye el mismo
+   * `margin-top` de 9px que usa el combobox, para que ambos queden a la misma altura al
+   * compartir una fila.
+   *
+   * Por defecto false: el label sigue yendo encima del campo, en el color de acento.
+   */
+  @Input() floatingLabel = false;
+
+  /** Clases del trigger según `dense`. Único origen de verdad del tamaño del campo. */
+  get triggerSizeClasses(): string {
+    return this.dense
+      ? 'h-[34px] text-[12px] pl-[10px] pr-[8px] rounded-[7px]'
+      : 'py-[10px] pl-[12px] pr-[10px] text-sm rounded-lg';
+  }
+
+  /** Borde en reposo: el mismo gris del combobox en modo `dense`. */
+  get triggerBorderClass(): string {
+    return this.dense ? 'border-[#e2e8f0]' : 'border-[#D6DEE5]';
+  }
 
   /** Ancho del panel; se usa para decidir a qué lado anclarlo respecto del viewport. */
   private readonly anchoPanel = 176;
@@ -216,14 +247,30 @@ export class TimePicker implements OnChanges, OnDestroy {
     }
   }
 
-  /** Ancestros con scroll/`overflow: hidden` que pueden recortar el campo. */
+  /**
+   * Ancestros con scroll/`overflow: hidden` que pueden recortar el campo.
+   *
+   * El recorrido se corta al llegar a un ancestro `position: fixed`: ese subárbol se posiciona
+   * respecto al viewport, así que el overflow de lo que está por encima ya no lo recorta. Sin
+   * ese corte, un campo dentro de un modal a pantalla completa (`app-base-modal [fullScreen]`)
+   * arrastraba como "recortadores" al `main` y al `page-content` del layout, que empiezan
+   * después del sidebar (240px): el campo cae a la izquierda de ellos, `anclaVisible` lo daba
+   * por oculto y `reposicionar` cerraba el desplegable apenas se abría.
+   */
   private calcularContenedoresRecorte(): HTMLElement[] {
     if (typeof window === 'undefined') return [];
     const out: HTMLElement[] = [];
-    let padre = this.el.nativeElement.parentElement as HTMLElement | null;
+    let nodo = this.el.nativeElement as HTMLElement;
+    let estiloNodo = getComputedStyle(nodo);
+    let padre = nodo.parentElement;
     while (padre && padre !== document.body && padre !== document.documentElement) {
-      const estilo = getComputedStyle(padre);
-      if (/auto|scroll|hidden/.test(`${estilo.overflowY} ${estilo.overflowX}`)) out.push(padre);
+      if (estiloNodo.position === 'fixed') break;
+      const estiloPadre = getComputedStyle(padre);
+      if (/auto|scroll|hidden/.test(`${estiloPadre.overflowY} ${estiloPadre.overflowX}`)) {
+        out.push(padre);
+      }
+      nodo = padre;
+      estiloNodo = estiloPadre;
       padre = padre.parentElement;
     }
     return out;

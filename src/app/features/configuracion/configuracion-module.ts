@@ -7,11 +7,12 @@ import { Companies } from './pages/companies/companies';
 import { Workers } from './pages/workers/workers';
 import { Feriados } from './features/feriados/components/feriados';
 import { Aprendizaje } from './features/aprendizaje/components/aprendizaje';
-// Revisores de trabajadores/áreas: definen los jefes de cada trabajador y de cada
-// área, por lo que son configuración global (antes vivían bajo Gestión
-// Administrativa, solo para salidas). Los archivos siguen físicamente en
-// `gestion-administrativa/features/configuracion/` hasta que se refactoricen.
-import { RevisorSalidas } from '../gestion-administrativa/features/configuracion/revisor-salidas/pages/revisor-salidas';
+// Revisores de áreas: define el jefe de cada área para toda la organización, por lo que
+// es configuración global (antes vivía bajo Gestión Administrativa, solo para salidas).
+// Los archivos siguen físicamente en `gestion-administrativa/features/configuracion/`
+// hasta que se refactoricen.
+// El jefe por trabajador ya no se configura acá: se asigna con el checkbox
+// "Jefe personalizado" del formulario de Gestión de Ingresos → Trabajadores.
 import { RevisoresAreas } from '../gestion-administrativa/features/configuracion/revisores-areas/pages/revisores-areas';
 import { roleGuard } from '../../core/guards/role.guard';
 
@@ -44,15 +45,10 @@ const routes: Routes = [
         canActivate: [roleGuard],
         data: { titulo: 'CONFIGURACIÓN - LISTA DE TRABAJADORES', featureKey: 'configuracion.workers' },
       },
-      {
-        path: 'revisor-salidas',
-        component: RevisorSalidas,
-        canActivate: [roleGuard],
-        data: {
-          titulo: 'CONFIGURACIÓN - REVISORES DE TRABAJADORES',
-          featureKey: 'configuracion.revisor-salidas',
-        },
-      },
+      // La antigua "Revisores de Trabajadores" (revisor-salidas) se retiró: el jefe
+      // personalizado se asigna ahora en el formulario de trabajadores. La ruta redirige a
+      // Revisores de Áreas para no dejar enlaces rotos.
+      { path: 'revisor-salidas', redirectTo: 'revisores-areas', pathMatch: 'full' },
       {
         path: 'revisores-areas',
         component: RevisoresAreas,

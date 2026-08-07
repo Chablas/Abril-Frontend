@@ -12,14 +12,18 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
-import { ProjectEmailsDTO } from '../../../../../../core/dtos/project/projectEmails.model';
+import {
+  ProjectEmailsDTO,
+  ResidenteOptionDTO,
+} from '../../../../../../core/dtos/project/projectEmails.model';
 
 @Component({
   selector: 'app-proyecto-emails',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './proyecto-emails.html',
   styleUrl: './proyecto-emails.css',
 })
@@ -31,6 +35,8 @@ export class ProyectoEmails implements OnChanges {
   @Output() saved = new EventEmitter<void>();
 
   model: ProjectEmailsDTO = this.empty();
+  /** Trabajadores elegibles como residente; vienen en la misma respuesta del GET. */
+  residentes: ResidenteOptionDTO[] = [];
   loadingInitial = false;
   saving = false;
 
@@ -43,13 +49,14 @@ export class ProyectoEmails implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open && this.projectId) {
       this.model = this.empty();
+      this.residentes = [];
       this.loadCurrent();
     }
   }
 
   private empty(): ProjectEmailsDTO {
     return {
-      emailResidente: '',
+      residenteWorkersId: null,
       emailResponsable: '',
       emailRrhh: '',
       emailCoordSsoma: '',
@@ -62,12 +69,13 @@ export class ProyectoEmails implements OnChanges {
     this.projectService.getProjectEmails(this.projectId).subscribe({
       next: (res) => {
         this.model = {
-          emailResidente:   res?.emailResidente   ?? '',
-          emailResponsable: res?.emailResponsable ?? '',
-          emailRrhh:        res?.emailRrhh        ?? '',
-          emailCoordSsoma:  res?.emailCoordSsoma  ?? '',
-          emailCoordAdmin:  res?.emailCoordAdmin  ?? '',
+          residenteWorkersId: res?.residenteWorkersId ?? null,
+          emailResponsable:   res?.emailResponsable   ?? '',
+          emailRrhh:          res?.emailRrhh          ?? '',
+          emailCoordSsoma:    res?.emailCoordSsoma    ?? '',
+          emailCoordAdmin:    res?.emailCoordAdmin    ?? '',
         };
+        this.residentes = res?.residentes ?? [];
         this.loadingInitial = false;
         this.cdr.detectChanges();
       },
@@ -78,15 +86,22 @@ export class ProyectoEmails implements OnChanges {
     });
   }
 
+  /** Correo que realmente se va a usar, para mostrarlo bajo el desplegable. */
+  get residenteEmail(): string | null {
+    const id = this.model.residenteWorkersId;
+    if (!id) return null;
+    return this.residentes.find((r) => r.workerId === id)?.email ?? null;
+  }
+
   submit(): void {
     if (this.saving) return;
 
     const payload: ProjectEmailsDTO = {
-      emailResidente:   this.normalize(this.model.emailResidente),
-      emailResponsable: this.normalize(this.model.emailResponsable),
-      emailRrhh:        this.normalize(this.model.emailRrhh),
-      emailCoordSsoma:  this.normalize(this.model.emailCoordSsoma),
-      emailCoordAdmin:  this.normalize(this.model.emailCoordAdmin),
+      residenteWorkersId: this.model.residenteWorkersId ?? null,
+      emailResponsable:   this.normalize(this.model.emailResponsable),
+      emailRrhh:          this.normalize(this.model.emailRrhh),
+      emailCoordSsoma:    this.normalize(this.model.emailCoordSsoma),
+      emailCoordAdmin:    this.normalize(this.model.emailCoordAdmin),
     };
 
     this.saving = true;

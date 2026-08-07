@@ -295,6 +295,15 @@ export interface WorkerUpsertDto {
   fechaNacimiento?: string | null;
   sexo?: string | null;
   aniosExperiencia?: number | null;
+  /**
+   * true = el formulario gestiona el jefe del trabajador y `jefePersonalizadoWorkerId` manda
+   * (se guarda ese jefe o, con null, se quita el que tuviera y vuelve a mandar el revisor de
+   * su área). false = el formulario no muestra el campo (obreros y contratistas) y el backend
+   * no toca lo que ya estuviera guardado.
+   */
+  gestionaJefe?: boolean;
+  /** Jefe elegido a mano (workers.id), que se sobrepone al revisor del área. */
+  jefePersonalizadoWorkerId?: number | null;
 }
 
 export interface InterconsultaInlineCreateDto {

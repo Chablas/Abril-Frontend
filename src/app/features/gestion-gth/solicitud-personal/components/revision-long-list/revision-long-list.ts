@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
@@ -12,8 +12,8 @@ import { CandidatoDecision, CandidatoRevision, RevisionLongList } from '../../dt
 
 /**
  * Modal "Revisar long list y CVs" (vista del solicitante): lista los candidatos que GTH cargó
- * en la long list de un requerimiento, con su CV, experiencia, disponibilidad y fuente. El
- * solicitante los revisa para aprobar/rechazar y enviar su decisión a GTH.
+ * en la long list de un requerimiento, con su CV y el comentario de GTH. El solicitante los
+ * revisa para aprobar/rechazar y enviar su decisión a GTH.
  *
  * Los botones Aprobar/Rechazar funcionan como un toggle (checkbox): cada candidato queda
  * Aprobado, Rechazado o Pendiente. Solo cuando TODOS los candidatos tienen una decisión se
@@ -49,6 +49,7 @@ export class GthRevisionLongList implements OnInit {
     private service: SolicitudPersonalService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private el: ElementRef<HTMLElement>,
   ) {}
 
   ngOnInit(): void {
@@ -122,11 +123,22 @@ export class GthRevisionLongList implements OnInit {
     // Toggle: si ya estaba aprobado, vuelve a pendiente; si no, queda aprobado.
     if (this.esAprobado(c)) this.decisiones.delete(c.candidatoId);
     else this.decisiones.set(c.candidatoId, true);
+    this.marcarModalModificado();
   }
 
   rechazar(c: CandidatoRevision): void {
     if (this.esRechazado(c)) this.decisiones.delete(c.candidatoId);
     else this.decisiones.set(c.candidatoId, false);
+    this.marcarModalModificado();
+  }
+
+  /**
+   * Avisa al modal contenedor (`preventCloseWhenDirty`) que ya hay decisiones tomadas, para que
+   * un clic fuera no las descarte. Aprobar/Rechazar son botones y no disparan `input`/`change`,
+   * así que se emite el mismo evento que usan search-select y compañía.
+   */
+  private marcarModalModificado(): void {
+    this.el.nativeElement.dispatchEvent(new Event('modalfieldchange', { bubbles: true }));
   }
 
   /** Estado efectivo (con la decisión local aplicada) para el badge y el tile de estado. */
@@ -145,12 +157,6 @@ export class GthRevisionLongList implements OnInit {
     const first = parts[0][0] ?? '';
     const second = parts.length > 1 ? parts[parts.length - 1][0] ?? '' : '';
     return (first + second).toUpperCase();
-  }
-
-  /** Experiencia formateada ("8 años" / "1 año" / "—"). */
-  experienciaTexto(c: CandidatoRevision | null): string {
-    if (!c || c.experienciaAnios == null) return '—';
-    return `${c.experienciaAnios} ${c.experienciaAnios === 1 ? 'año' : 'años'}`;
   }
 
   /** Colores del badge del estado de revisión del candidato. */

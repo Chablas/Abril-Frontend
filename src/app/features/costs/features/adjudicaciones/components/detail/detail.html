@@ -734,12 +734,12 @@
                 <path stroke-linecap="round" stroke-linejoin="round"
                   d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
               </svg>
-              Suelta aquí para {{ getDocFile(doc.key) ? 'reemplazar' : 'subir' }}
+              Suelta aquí para {{ hasDocFile(doc.key) ? 'reemplazar' : 'subir' }}
             </span>
           </div>
 
-          <!-- Variable local: archivo actual del documento -->
-          <ng-container *ngIf="{ file: getDocFile(doc.key), generable: canGenerate(doc.key) } as ctx">
+          <!-- Variables locales: registro del documento, si tiene archivo real, y si es generable -->
+          <ng-container *ngIf="{ file: getDocFile(doc.key), hasFile: hasDocFile(doc.key), generable: canGenerate(doc.key) } as ctx">
 
             <!-- Encabezado: ícono + etiqueta -->
             <div class="flex items-center gap-[8px]">
@@ -764,14 +764,14 @@
                 Se usa documento estándar de Abril
               </span>
               <ng-template #fileStatus>
-                <a *ngIf="ctx.file; else noFile"
-                  [href]="ctx.file.fileUrl" target="_blank"
+                <a *ngIf="ctx.hasFile; else noFile"
+                  [href]="ctx.file!.fileUrl" target="_blank"
                   class="hover:underline flex items-center gap-1 break-all" style="color:var(--color-abril-primary)">
                   <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round"
                       d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                   </svg>
-                  {{ ctx.file.originalFileName ?? 'Ver archivo' }}
+                  {{ ctx.file!.originalFileName ?? 'Ver archivo' }}
                 </a>
                 <ng-template #noFile>
                   <span class="italic text-gray-300">Sin archivo</span>
@@ -802,9 +802,9 @@
               </svg>
             </div>
 
-            <!-- Observación (solo cuando estado = Con observaciones y hay archivo) -->
+            <!-- Observación (cuando estado = Con observaciones, tenga o no archivo) -->
             <!-- OF Técnica: lectura; OF Central: edición -->
-            <ng-container *ngIf="ctx.file && docForms[doc.key].statusId === 3">
+            <ng-container *ngIf="docForms[doc.key].statusId === 3">
 
               <textarea
                 [(ngModel)]="docForms[doc.key].observation"
@@ -844,7 +844,7 @@
                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                 </svg>
 
-                <span>{{ uploadingDoc === doc.key ? 'Subiendo…' : (ctx.file ? 'Reemplazar' : 'Subir') }}</span>
+                <span>{{ uploadingDoc === doc.key ? 'Subiendo…' : (ctx.hasFile ? 'Reemplazar' : 'Subir') }}</span>
               </button>
 
               <!-- Generar -->

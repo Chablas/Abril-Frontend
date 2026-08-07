@@ -1,0 +1,200 @@
+<app-abril-modal-panel
+  variant="blue"
+  icono="ti-user-check"
+  titulo="Revisión del solicitante · Finalistas enviados por GTH"
+  [subtitulo]="subtitulo"
+  width="980px"
+  (closeModal)="closeModal.emit()">
+
+  @if (revision) {
+    <div class="flex flex-col gap-[14px]">
+
+      <!-- ── Cabecera: puesto + contador de finalistas ─────────────────── -->
+      <div class="flex items-center justify-between gap-[10px] flex-wrap">
+        <span class="text-[13.5px] font-bold" style="color:var(--color-abril-logo-blue)">
+          Finalistas evaluados por GTH · {{ revision.puesto | titleCase }}
+        </span>
+        <div class="flex items-center gap-[10px]">
+          <span class="text-[12.5px] font-medium text-gray-500">Escoge al mejor candidato</span>
+          <span class="text-[11px] font-semibold px-[9px] py-[3px] rounded-full"
+                style="background:var(--color-abril-logo-blue-light);color:var(--color-abril-logo-blue)">
+            {{ total }} finalista{{ total === 1 ? '' : 's' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- ── Instrucción ──────────────────────────────────────────────── -->
+      <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[11px]"
+           style="background:#ECFDF5;border:1px solid #A7F3D0">
+        <i class="ti ti-circle-check text-[18px] shrink-0 mt-[1px]" style="color:#15803D"></i>
+        <p class="text-[13px] text-gray-700">
+          GTH envió a los finalistas con su resultado de entrevista, evaluación técnica e informe
+          psicotécnico. Selecciona al mejor candidato para cerrar la decisión del área solicitante.
+        </p>
+      </div>
+
+      @if (revision.finalistas.length === 0) {
+        <div class="rounded-[10px] border border-dashed py-[40px] text-center text-gray-400 text-[13px]"
+             style="border-color:var(--color-abril-border)">
+          GTH aún no registró la evaluación de los candidatos entrevistados.
+        </div>
+      } @else {
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-[16px]">
+
+          <!-- ── Columna izquierda: finalistas ──────────────────────────── -->
+          <div class="flex flex-col gap-[10px]">
+            @for (f of revision.finalistas; track f.candidatoId) {
+              <div (click)="seleccionar(f)"
+                   class="rounded-[10px] border px-[14px] py-[12px] cursor-pointer transition-colors"
+                   [style.border-color]="seleccionado?.candidatoId === f.candidatoId ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-border)'"
+                   [style.background]="seleccionado?.candidatoId === f.candidatoId ? 'var(--color-abril-logo-blue-light)' : '#fff'">
+
+                <div class="flex items-start justify-between gap-[10px]">
+                  <div class="flex items-start gap-[10px] min-w-0">
+                    <div class="flex items-center justify-center w-[36px] h-[36px] rounded-full text-[12px] font-bold text-white shrink-0"
+                         style="background:var(--color-abril-logo-blue)">
+                      {{ iniciales(f.nombre) }}
+                    </div>
+                    <div class="min-w-0">
+                      <p class="text-[13.5px] font-bold text-gray-800 truncate">{{ f.nombre | titleCase }}</p>
+                      <p class="text-[12px] text-gray-500 truncate">{{ (f.puesto | titleCase) || '—' }}</p>
+                      <div class="flex items-center gap-[6px] flex-wrap mt-[6px]">
+                        <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                              style="background:#DCFCE7;color:#15803D">
+                          Resultado {{ puntaje(f.evaluacion.puntajeResultado) }}
+                        </span>
+                        @if (esSeleccionado(f)) {
+                          <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                                style="background:#DBEAFE;color:#1D4ED8">Seleccionado</span>
+                        } @else if (esRechazado(f)) {
+                          <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                                style="background:#FEE2E2;color:#B91C1C">Rechazado</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                  @if (seleccionado?.candidatoId === f.candidatoId) {
+                    <i class="ti ti-circle-check text-[18px] shrink-0" style="color:#15803D"></i>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- ── Columna derecha: informe del finalista ─────────────────── -->
+          <div class="rounded-[10px] border p-[16px] h-fit" style="border-color:var(--color-abril-border)">
+            @if (seleccionado) {
+              <div class="flex items-center justify-between gap-[10px]">
+                <span class="text-[10.5px] font-semibold tracking-wide text-gray-400 uppercase">Informe de finalista</span>
+                @if (seleccionado.cvUrl) {
+                  <a [href]="seleccionado.cvUrl" target="_blank" rel="noopener"
+                     class="inline-flex items-center gap-[6px] h-[32px] px-[13px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                     style="background:var(--color-abril-logo-blue)">
+                    <i class="ti ti-external-link text-[15px]"></i>
+                    Ver CV completo
+                  </a>
+                } @else {
+                  <span class="text-[12px] text-gray-400">CV no disponible</span>
+                }
+              </div>
+
+              <h4 class="text-[18px] font-bold text-gray-800 mt-[8px] leading-tight">{{ seleccionado.nombre | titleCase }}</h4>
+              <p class="text-[13px] text-gray-500 mt-[2px]">
+                {{ (seleccionado.puesto | titleCase) || '—' }} · {{ nombreCv(seleccionado) }}
+              </p>
+
+              <!-- Puntajes registrados por GTH -->
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-[10px] mt-[14px]">
+                <div class="rounded-[8px] border px-[12px] py-[10px]"
+                     style="border-color:var(--color-abril-border);background:#F8FAFC">
+                  <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Entrevista</p>
+                  <p class="text-[17px] font-bold text-gray-800 mt-[2px]">{{ puntaje(seleccionado.evaluacion.puntajeEntrevista) }}</p>
+                </div>
+                <div class="rounded-[8px] border px-[12px] py-[10px]"
+                     style="border-color:var(--color-abril-border);background:#F8FAFC">
+                  <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Psicotécnico</p>
+                  <p class="text-[17px] font-bold text-gray-800 mt-[2px]">{{ puntaje(seleccionado.evaluacion.puntajePsicotecnico) }}</p>
+                </div>
+                <div class="rounded-[8px] border px-[12px] py-[10px]"
+                     style="border-color:var(--color-abril-border);background:#F8FAFC">
+                  <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Técnica</p>
+                  <p class="text-[17px] font-bold text-gray-800 mt-[2px]">{{ puntaje(seleccionado.evaluacion.puntajeTecnica) }}</p>
+                </div>
+                <div class="rounded-[8px] border px-[12px] py-[10px]"
+                     style="border-color:var(--color-abril-border);background:#F8FAFC">
+                  <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Resultado</p>
+                  <p class="text-[17px] font-bold text-gray-800 mt-[2px]">{{ puntaje(seleccionado.evaluacion.puntajeResultado) }}</p>
+                </div>
+              </div>
+
+              <!-- Resultado de la entrevista -->
+              <div class="rounded-[8px] border px-[13px] py-[11px] mt-[12px]" style="border-color:var(--color-abril-border)">
+                <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Resultado de entrevista</p>
+                <p class="text-[13px] text-gray-700 mt-[4px] leading-snug">
+                  {{ seleccionado.evaluacion.comentarioEntrevista || 'GTH aún no registró este comentario.' }}
+                </p>
+              </div>
+
+              <!-- Informe psicotécnico -->
+              <div class="rounded-[8px] border px-[13px] py-[11px] mt-[10px]" style="border-color:var(--color-abril-border)">
+                <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Informe psicotécnico</p>
+                <p class="text-[13px] text-gray-700 mt-[4px] leading-snug">
+                  {{ seleccionado.evaluacion.comentarioPsicotecnico || 'GTH aún no registró este comentario.' }}
+                </p>
+              </div>
+
+              <!-- Recomendación de GTH -->
+              <div class="rounded-[8px] px-[13px] py-[11px] mt-[10px]"
+                   style="background:#ECFDF5;border:1px solid #A7F3D0">
+                <p class="text-[13px] leading-snug text-gray-700">
+                  <b style="color:#15803D">Recomendación GTH:</b>
+                  {{ seleccionado.evaluacion.comentarioRecomendacion || 'GTH aún no registró una recomendación.' }}
+                </p>
+              </div>
+            } @else {
+              <p class="text-[13px] text-gray-400 text-center py-[40px]">Selecciona un finalista para ver su informe.</p>
+            }
+          </div>
+
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Footer: la decisión final aplica sobre el finalista mostrado a la derecha. -->
+  <div modalFooter class="w-full flex justify-between items-center gap-[12px] flex-wrap">
+    <span class="text-[12.5px] text-gray-500">
+      @if (seleccionado && estaDecidido(seleccionado)) {
+        Ya registraste tu decisión sobre {{ seleccionado.nombre | titleCase }}.
+      } @else if (seleccionado) {
+        Decidiendo sobre <b>{{ seleccionado.nombre | titleCase }}</b>.
+      }
+    </span>
+
+    <div class="flex items-center gap-[10px]">
+      <button type="button" (click)="closeModal.emit()"
+        class="h-[36px] px-[22px] rounded-[7px] text-[13px] font-medium text-gray-600 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+        Cerrar
+      </button>
+
+      <button type="button"
+        [disabled]="!puedeDecidir"
+        (click)="rechazar()"
+        class="h-[38px] px-[20px] rounded-[7px] border text-[13px] font-semibold cursor-pointer transition-colors hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        style="border-color:#fecaca;color:#DC2626"
+        title="Se le envía el correo de agradecimiento y queda fuera del proceso">
+        Rechazar finalista
+      </button>
+
+      <button type="button"
+        [disabled]="!puedeDecidir"
+        (click)="aprobar()"
+        class="h-[38px] px-[20px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+        style="background:var(--color-abril-logo-blue)"
+        title="Cierra el proceso de reclutamiento y el seleccionado pasa a onboarding">
+        Aprobar finalista y enviar a GTH
+      </button>
+    </div>
+  </div>
+
+</app-abril-modal-panel>

@@ -106,6 +106,13 @@ export interface WorkerDetalleDto {
   aniosExperiencia?: number;
   ocupacionId?: number;
   puesto?: string;
+  /**
+   * Jefe elegido a mano para este trabajador, que se sobrepone al revisor de su área.
+   * Null/ausente = no tiene, así que su jefe es el que sugiere el sistema por el área.
+   */
+  jefePersonalizadoWorkerId?: number | null;
+  jefePersonalizadoNombre?: string | null;
+  jefePersonalizadoEmail?: string | null;
 }
 
 export interface WorkerEditDto {

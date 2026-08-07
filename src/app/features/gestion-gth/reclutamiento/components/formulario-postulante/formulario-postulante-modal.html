@@ -4,6 +4,7 @@
   [titulo]="(revision?.candidatoNombre | titleCase) || 'Formulario del postulante'"
   subtitulo="Información declarada por el candidato · vista de solo lectura"
   width="940px"
+  [preventCloseWhenDirty]="true"
   (closeModal)="cerrar()">
 
   @if (revision) {

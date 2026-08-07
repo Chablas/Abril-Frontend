@@ -1,3 +1,45 @@
+/**
+ * De dónde sale un destinatario del correo de la cita: es el código del destinatario en
+ * la Configuración de EMOs (CLINICA, JEFE, TRABAJADOR, RESIDENTE, COORD_ADMIN,
+ * COORD_SSOMA, ADMIN_RAZON_SOCIAL, GTH, MEDICINA_OCUPACIONAL, ARQCOM_*, POSTVENTA_*)
+ * o 'ADICIONAL' si es un correo agregado a mano.
+ */
+export type ProgramacionDestinatarioOrigen = string;
+
+export interface ProgramacionDestinatarioDto {
+  email: string;
+  /** Nombre de la clínica, del jefe o etiqueta del destinatario. Puede venir vacío. */
+  nombre?: string | null;
+  origen: ProgramacionDestinatarioOrigen;
+}
+
+/** Destinatarios ya resueltos de UNO de los correos de EMO. */
+export interface ProgramacionDestinatariosDto {
+  para: ProgramacionDestinatarioDto[];
+  copias: ProgramacionDestinatarioDto[];
+  /**
+   * La clínica recibe este correo, pero en el formulario todavía no se eligió cuál, así que
+   * sus correos de contacto aún no están en `para`. Se nombra igual en el aviso: programar
+   * exige clínica, o sea que al guardar siempre le va a llegar.
+   */
+  clinicaPendiente?: boolean;
+  /** La clínica elegida recibe este correo pero no tiene ningún correo de contacto cargado. */
+  clinicaSinCorreos?: boolean;
+}
+
+/**
+ * Vista previa de a quién le llegan los correos del flujo de programación. La resuelve el
+ * backend con el mismo resolver del envío real, aplicando la matriz de la Configuración de
+ * EMOs al perfil del trabajador. Son dos correos distintos, en momentos distintos y con
+ * destinatarios distintos, así que se muestran por separado en el modal.
+ */
+export interface ProgramacionDestinatariosPreviewDto {
+  /** Correo que sale al guardar la cita (sección "Programación manual"). */
+  manual: ProgramacionDestinatariosDto;
+  /** Correo que sale después, si la clínica acepta (sección "Programación aceptada"). */
+  aceptada: ProgramacionDestinatariosDto;
+}
+
 export interface CreateProgramacionDto {
   workerId: number;
   tipoEmoId: number;

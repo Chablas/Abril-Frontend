@@ -2,7 +2,13 @@
 // 1. <select> nativo en vez de app-search-select.
 // 2. ::ng-deep fuera de shared/ para hackear el estilo de un componente compartido
 //    (en vez de extender el input real, ej. badgeStyle).
-const { execSync } = require('child_process');
+//
+// Va con `fs` y no con `grep` a propósito: en Windows `grep` no existe, el execSync
+// tiraba error, el catch lo tomaba como "sin matches" y el script imprimía "OK" igual.
+// Resultado: las violaciones recién aparecían en el runner Linux de CI y rompían el
+// deploy después de pushear. Las rutas además se normalizan a "/" para que los
+// allowlist de abajo comparen bien en Windows y en Linux.
+const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..', 'src', 'app');
@@ -13,22 +19,33 @@ const SELECT_ALLOWLIST = [
 
 const NG_DEEP_ALLOWLIST_PREFIX = 'shared/';
 
-function grepFiles(pattern, globs) {
-  const globArgs = globs.map((g) => `--include="${g}"`).join(' ');
-  try {
-    const out = execSync(`grep -rl "${pattern}" ${globArgs} .`, { cwd: ROOT, encoding: 'utf8' });
-    return out.split('\n').filter(Boolean).map((f) => f.replace(/^\.\//, ''));
-  } catch (err) {
-    if (err.status === 1) return []; // grep: sin matches
-    throw err;
+/** Rutas de todos los archivos bajo ROOT, relativas a ROOT y siempre con "/". */
+function walk(dir) {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...walk(full));
+    else if (entry.isFile()) out.push(path.relative(ROOT, full).split(path.sep).join('/'));
   }
+  return out;
 }
 
-const selectViolations = grepFiles('<select', ['*.component.html']).filter(
+const ALL_FILES = walk(ROOT);
+
+/** Archivos que terminan en alguno de `suffixes` y contienen `pattern` (texto literal). */
+function findFiles(pattern, suffixes) {
+  return ALL_FILES.filter(
+    (f) =>
+      suffixes.some((s) => f.endsWith(s)) &&
+      fs.readFileSync(path.join(ROOT, f), 'utf8').includes(pattern),
+  );
+}
+
+const selectViolations = findFiles('<select', ['.component.html']).filter(
   (f) => !SELECT_ALLOWLIST.includes(f),
 );
 
-const ngDeepViolations = grepFiles('::ng-deep', ['*.component.css', '*.component.scss']).filter(
+const ngDeepViolations = findFiles('::ng-deep', ['.component.css', '.component.scss']).filter(
   (f) => !f.startsWith(NG_DEEP_ALLOWLIST_PREFIX),
 );
 

@@ -29,7 +29,11 @@ import { PersonService } from '../../../../../../core/services/person.service';
 import { WorkerUpsertDto } from '../../../../../ssoma/salud-ocupacional/dtos/emo.model';
 import { WorkerHabilitacionListDto } from '../../../../dtos/trabajador.model';
 import { EmpresaContratistaListDto } from '../../../../dtos/empresa.model';
-import { AreaArbolNodoDto, ObraOficinaStaffDto } from '../../../../dtos/catalogos.model';
+import {
+  AreaArbolNodoDto,
+  JefeCandidatoDto,
+  ObraOficinaStaffDto,
+} from '../../../../dtos/catalogos.model';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
 
 /** Un nivel de la cascada de áreas: los hermanos disponibles y el nodo elegido en ese nivel. */
@@ -66,6 +70,14 @@ interface WorkerFormModel {
   /** Nombre del catálogo; solo lo usa el propio formulario para decidir qué campos mostrar. */
   obraOficina: string;
   jefatura: string;
+  /**
+   * true = el trabajador tiene un jefe elegido a mano, que se sobrepone al revisor de su área.
+   * Es lo que prende el checkbox "Jefe personalizado" y convierte el campo de solo lectura en
+   * un desplegable.
+   */
+  jefePersonalizado: boolean;
+  /** Jefe elegido a mano (workers.id). Solo cuenta cuando `jefePersonalizado` es true. */
+  jefePersonalizadoWorkerId: number | null;
   sctr: boolean;
   habilitadoObra: boolean;
   notas: string;
@@ -159,6 +171,21 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
    */
   obraOficinaOpciones: ObraOficinaStaffDto[] = [];
 
+  /**
+   * Trabajadores con correo corporativo @abril.pe: las opciones del desplegable que reemplaza al
+   * campo de solo lectura cuando se marca "Jefe personalizado". Reemplaza a la pantalla
+   * Configuración → Revisores de Trabajadores, retirada.
+   */
+  jefes: JefeCandidatoDto[] = [];
+
+  /**
+   * Nombre y correo del jefe personalizado tal como vinieron en el detalle. Se guardan aparte
+   * porque el catálogo puede no incluirlo (trabajador retirado) y llega en cualquier orden
+   * respecto del detalle: sin esto el desplegable se vería vacío en ese caso.
+   */
+  private jefeGuardadoNombre: string | null = null;
+  private jefeGuardadoEmail: string | null = null;
+
   readonly tipoDocumentoOpciones = [
     { value: 'DNI', label: 'DNI — Documento de identidad' },
     { value: 'CE', label: 'CE — Carné de Extranjería' },
@@ -240,6 +267,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       !this.verificandoEmail &&
       !this.emailError &&
       !this.faltaCorreo &&
+      !this.faltaJefePersonalizado &&
       !!this.model.apellidoNombre.trim() &&
       (this.mode === 'edit' || !!this.model.dni.trim());
 
@@ -332,6 +360,8 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       obraOficinaStaffId: null,
       obraOficina: '',
       jefatura: '',
+      jefePersonalizado: false,
+      jefePersonalizadoWorkerId: null,
       sctr: true,
       habilitadoObra: false,
       notas: '',
@@ -357,6 +387,8 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     this.emailOriginal = '';
     this.teniaAlgunCorreo = false;
     this.empresaContratistaNombre = '';
+    this.jefeGuardadoNombre = null;
+    this.jefeGuardadoEmail = null;
 
     // Token de carga: si el usuario cambia de trabajador antes de que responda
     // esta petición, la respuesta llega "vieja" y no debe pisar el formulario
@@ -398,6 +430,15 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           this.model.ocupacionId = det.ocupacionId ?? null;
           this.model.puesto = det.puesto ?? '';
           this.model.aniosExperiencia = det.aniosExperiencia ?? null;
+          // Si ya tiene un jefe elegido a mano, el checkbox abre marcado con ese jefe: es el
+          // que manda de verdad, no el revisor del área que muestra el campo por defecto.
+          this.model.jefePersonalizadoWorkerId = det.jefePersonalizadoWorkerId ?? null;
+          this.model.jefePersonalizado = this.model.jefePersonalizadoWorkerId != null;
+          this.jefeGuardadoNombre = det.jefePersonalizadoNombre ?? null;
+          this.jefeGuardadoEmail = det.jefePersonalizadoEmail ?? null;
+          // El jefe puede no estar en el catálogo (p. ej. retirado): se agrega para que el
+          // desplegable muestre su nombre en vez de quedarse vacío.
+          this.asegurarJefeGuardadoEnOpciones();
           this.loadingDetalle = false;
           // El árbol puede haber llegado antes que el detalle: en ese caso hay que rearmar la
           // cascada ahora que ya se sabe en qué nodo está el trabajador.
@@ -474,6 +515,31 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       next: (data) => { this.ocupaciones = data; this.cdr.detectChanges(); },
       error: () => {},
     });
+    this.catalogosHabService.getJefes().subscribe({
+      next: (data) => {
+        // El orden lo pone `app-search-select` (sortAlpha por defecto); acá basta con la lista.
+        this.jefes = data;
+        // El detalle pudo llegar antes que el catálogo y traer un jefe que no está en él.
+        this.asegurarJefeGuardadoEnOpciones();
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
+  }
+
+  /**
+   * Garantiza que el jefe guardado aparezca entre las opciones aunque el catálogo no lo traiga
+   * (trabajador retirado, persona dada de baja): sin esto el desplegable se vería vacío y
+   * parecería que el trabajador nunca tuvo jefe personalizado.
+   */
+  private asegurarJefeGuardadoEnOpciones(): void {
+    const workerId = this.model.jefePersonalizadoWorkerId;
+    if (workerId == null) return;
+    if (this.jefes.some((j) => j.workerId === workerId)) return;
+    this.jefes = [
+      ...this.jefes,
+      { workerId, fullName: this.jefeGuardadoNombre, email: this.jefeGuardadoEmail },
+    ];
   }
 
   private loadCatalogos(): void {
@@ -646,6 +712,61 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       ? nodo.revisoresPorProyecto?.find((r) => r.proyectoId === this.model.proyectoId)
       : undefined;
     return porProyecto ?? nodo;
+  }
+
+  // ── Jefe personalizado ───────────────────────────────────────────────
+  //
+  // Reemplaza a la pantalla Configuración → Revisores de Trabajadores. El campo muestra por
+  // defecto el revisor que sugiere el área; al marcar el checkbox se convierte en un
+  // desplegable y lo que se elija ahí se sobrepone a ese revisor en todo el sistema (correos
+  // de EMO, aprobación de salidas, recordatorios).
+
+  /** Opciones del desplegable, sin el propio trabajador: nadie puede ser su propio jefe. */
+  get jefesDisponibles(): JefeCandidatoDto[] {
+    const propioId = this.mode === 'edit' ? this.worker?.workerId : null;
+    return propioId != null ? this.jefes.filter((j) => j.workerId !== propioId) : this.jefes;
+  }
+
+  /** Checkbox marcado pero sin elegir a nadie: no se puede guardar en ese estado a medias. */
+  get faltaJefePersonalizado(): boolean {
+    return (
+      this.gestionaArea &&
+      this.model.jefePersonalizado &&
+      this.model.jefePersonalizadoWorkerId == null
+    );
+  }
+
+  private get jefeSeleccionado(): JefeCandidatoDto | null {
+    const id = this.model.jefePersonalizadoWorkerId;
+    return id != null ? this.jefes.find((j) => j.workerId === id) ?? null : null;
+  }
+
+  get jefeSeleccionadoNombre(): string {
+    return this.jefeSeleccionado?.fullName ?? '';
+  }
+
+  get jefeSeleccionadoEmail(): string {
+    return this.jefeSeleccionado?.email ?? '';
+  }
+
+  /** Nombre a mostrar bajo el campo: el jefe elegido a mano o, si no hay, el del área. */
+  get jefeEfectivoNombre(): string {
+    return this.model.jefePersonalizado ? this.jefeSeleccionadoNombre : this.revisorNombre;
+  }
+
+  get jefeEfectivoEmail(): string {
+    return this.model.jefePersonalizado ? this.jefeSeleccionadoEmail : this.revisorEmail;
+  }
+
+  onJefePersonalizadoToggle(activo: boolean): void {
+    this.model.jefePersonalizado = activo;
+    // Al desmarcar se limpia la elección: el trabajador vuelve a depender del revisor de su
+    // área y guardar en ese estado da de baja el jefe personalizado que tuviera.
+    if (!activo) this.model.jefePersonalizadoWorkerId = null;
+  }
+
+  onJefePersonalizadoChange(workerId: number | null): void {
+    this.model.jefePersonalizadoWorkerId = workerId;
   }
 
   // Los desplegables emiten `null` al limpiarse; los campos del modelo son strings, así que
@@ -955,6 +1076,16 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       return;
     }
 
+    if (this.faltaJefePersonalizado) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta el jefe personalizado',
+        text: 'Elige al jefe o desmarca la casilla para usar el revisor del área.',
+        confirmButtonColor: '#64BC04',
+      });
+      return;
+    }
+
     if (!this.canSubmit) {
       Swal.fire({
         icon: 'warning',
@@ -989,6 +1120,12 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       contrataCasa: this.esContratista ? 'Contratista' : n(this.model.contrataCasa),
       obraOficinaStaffId: this.model.obraOficinaStaffId,
       jefatura: this.gestionaArea ? null : n(this.model.jefatura),
+      // El jefe solo se manda cuando el formulario muestra el campo (Staff/Oficina Central);
+      // en obreros y contratistas el backend no toca lo que ya estuviera guardado.
+      gestionaJefe: this.gestionaArea,
+      jefePersonalizadoWorkerId: this.model.jefePersonalizado
+        ? this.model.jefePersonalizadoWorkerId
+        : null,
       sctr: !!this.model.sctr,
       habilitadoObra: false,
       notas: n(this.model.notas),

@@ -33,10 +33,10 @@ interface ConfigSectionDef {
  * `app-section-tabs`, siguiendo el mismo patrón que `costs-configuration` de
  * Costos y Presupuestos.
  *
- * Los revisores de trabajadores/áreas ya NO viven aquí: definen los jefes de
- * cada trabajador/área para toda la organización, así que se movieron al módulo
- * de configuración global (`/configuracion/revisor-salidas` y
- * `/configuracion/revisores-areas`).
+ * Los revisores de áreas ya NO viven aquí: definen el jefe de cada área para toda
+ * la organización, así que se movieron al módulo de configuración global
+ * (`/configuracion/revisores-areas`). El jefe por trabajador se asigna en el
+ * formulario de Gestión de Ingresos → Trabajadores ("Jefe personalizado").
  *
  * Cada sección sigue teniendo su propia ruta
  * (`/gestion-administrativa/configuracion/<seccion>`) con su `featureKey` +

@@ -3,14 +3,15 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { SALUD_OCUPACIONAL_BASE, buildAuthHeaders } from './http-base';
 import {
-  EmoCorreoDestinatarioCreateDto,
+  EmoCorreoAdicionalCreateDto,
   EmoCorreoDestinatarioUpdateDto,
   EmoCorreosConfigDto,
 } from '../dtos/emo-configuracion.model';
 
 /**
- * Configuración de EMOs → destinatarios de los correos de programación
- * (programación manual desde /emos y resumen del cron de programación automática).
+ * Configuración de EMOs → matriz de destinatarios de los 4 correos de EMO
+ * (programación automática, programación manual, aceptada y rechazada por la
+ * clínica), donde cada destinatario se prende/apaga por perfil de trabajador.
  */
 @Injectable({ providedIn: 'root' })
 export class EmoConfiguracionService {
@@ -18,39 +19,45 @@ export class EmoConfiguracionService {
 
   constructor(private http: HttpClient) {}
 
-  /** Principales y copias en una sola petición. */
+  /** Perfiles y los 4 correos con su matriz completa, en una sola petición. */
   getCorreos(): Observable<EmoCorreosConfigDto> {
     return this.http.get<EmoCorreosConfigDto>(`${this.base}/correos`, {
       headers: buildAuthHeaders(),
     });
   }
 
-  crearCorreo(dto: EmoCorreoDestinatarioCreateDto): Observable<{ id: number; message: string }> {
-    return this.http.post<{ id: number; message: string }>(`${this.base}/correos`, dto, {
-      headers: buildAuthHeaders(),
-    });
+  crearAdicional(dto: EmoCorreoAdicionalCreateDto): Observable<{ id: number; message: string }> {
+    return this.http.post<{ id: number; message: string }>(
+      `${this.base}/correos/destinatarios`,
+      dto,
+      { headers: buildAuthHeaders() },
+    );
   }
 
-  actualizarCorreo(
+  actualizarDestinatario(
     id: number,
     dto: EmoCorreoDestinatarioUpdateDto,
   ): Observable<{ message: string }> {
-    return this.http.put<{ message: string }>(`${this.base}/correos/${id}`, dto, {
-      headers: buildAuthHeaders(),
-    });
+    return this.http.put<{ message: string }>(
+      `${this.base}/correos/destinatarios/${id}`,
+      dto,
+      { headers: buildAuthHeaders() },
+    );
   }
 
-  setCorreoActive(id: number, active: boolean): Observable<{ message: string }> {
+  /** Prende o apaga una celda de la matriz (correo × perfil × destinatario). */
+  setReglaActive(reglaId: number, active: boolean): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(
-      `${this.base}/correos/${id}/active`,
+      `${this.base}/correos/reglas/${reglaId}`,
       { active },
       { headers: buildAuthHeaders() },
     );
   }
 
-  eliminarCorreo(id: number): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(`${this.base}/correos/${id}`, {
-      headers: buildAuthHeaders(),
-    });
+  eliminarAdicional(id: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(
+      `${this.base}/correos/destinatarios/${id}`,
+      { headers: buildAuthHeaders() },
+    );
   }
 }
