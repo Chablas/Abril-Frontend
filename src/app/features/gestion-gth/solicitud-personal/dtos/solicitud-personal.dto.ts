@@ -107,11 +107,8 @@ export interface SolicitantePanel {
 export interface CandidatoRevision {
   candidatoId: number;
   nombre: string;
+  /** Puesto del requerimiento (el que registró el solicitante), no un dato por candidato. */
   puesto: string | null;
-  experienciaAnios: number | null;
-  disponibilidad: string | null;
-  /** Fuente de reclutamiento (nombre del canal). */
-  fuenteNombre: string | null;
   comentario: string | null;
   /** Nombre y link del CV en SharePoint (para "Ver CV completo"). */
   cvNombre: string | null;

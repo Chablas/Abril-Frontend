@@ -3,6 +3,7 @@
   icono="ti-arrow-left"
   titulo="Volver a la lista"
   width="940px"
+  [preventCloseWhenDirty]="true"
   (closeModal)="cerrar()">
 
   @if (detalle) {
@@ -165,15 +166,7 @@
                 <label
                   class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[10px] cursor-pointer hover:bg-gray-50 transition-colors"
                   style="border-color:var(--color-abril-border)">
-                  <div>
-                    <p class="text-[13.5px] font-semibold text-gray-800">{{ canal.nombre }}</p>
-                    <p class="text-[12px] mt-[1px]"
-                       [ngClass]="canal.apiDisponible ? 'text-emerald-600' : 'text-red-600'">
-                      {{ canal.apiDisponible
-                        ? 'API disponible · publicación automática'
-                        : 'API no disponible · registrar publicación manual' }}
-                    </p>
-                  </div>
+                  <p class="text-[13.5px] font-semibold text-gray-800">{{ canal.nombre }}</p>
                   <input type="checkbox"
                     class="w-[16px] h-[16px] shrink-0 cursor-pointer"
                     style="accent-color:var(--color-abril-logo-blue)"
@@ -236,8 +229,9 @@
                 Carga de candidatos para long list
               </p>
               <p class="text-[12.5px] text-gray-600 mt-[2px] leading-snug">
-                Sube los CVs previamente filtrados por GTH para la long list. Registra el nombre,
-                la fuente de reclutamiento y adjunta el CV que revisará el solicitante.
+                Sube los CVs previamente filtrados por GTH para la long list. Registra el nombre del
+                candidato y adjunta el CV que revisará el solicitante. El puesto se toma
+                automáticamente de la solicitud: <b>{{ detalle.puesto | titleCase }}</b>.
               </p>
             </div>
 
@@ -282,50 +276,6 @@
                   El sistema toma el nombre del CV. Si no lo identifica correctamente, puedes
                   escribirlo o corregirlo manualmente.
                 </p>
-
-                <!-- Puesto -->
-                <div class="abril-field mt-[12px]">
-                  <label class="abril-field-label" [for]="'candidato-puesto-' + i">Puesto</label>
-                  <input [id]="'candidato-puesto-' + i" type="text" class="abril-field-input"
-                    [(ngModel)]="c.puesto"
-                    placeholder="Puesto al que postula (ej. Supervisor de Obra)" />
-                </div>
-
-                <!-- Tiempo de experiencia (años) y disponibilidad -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-[10px] mt-[10px]">
-                  <div class="abril-field">
-                    <label class="abril-field-label" [for]="'candidato-experiencia-' + i">Tiempo de experiencia (años)</label>
-                    <input [id]="'candidato-experiencia-' + i" type="number" min="0" max="60" class="abril-field-input"
-                      [(ngModel)]="c.experienciaAnios"
-                      placeholder="Ej. 8" />
-                  </div>
-                  <div class="abril-field">
-                    <label class="abril-field-label" [for]="'candidato-disponibilidad-' + i">Disponibilidad</label>
-                    <input [id]="'candidato-disponibilidad-' + i" type="text" class="abril-field-input"
-                      [(ngModel)]="c.disponibilidad"
-                      placeholder="Ej. 15 días / Inmediata" />
-                  </div>
-                </div>
-
-                <p class="text-[11.5px] text-gray-500 mt-[6px] leading-snug">
-                  A futuro estos datos se completarán automáticamente desde el CV; por ahora se
-                  registran a mano.
-                </p>
-
-                <!-- Fuente de reclutamiento -->
-                <div class="mt-[10px]">
-                  <app-search-select
-                    label="Fuente de reclutamiento"
-                    [options]="detalle.canales"
-                    valueField="id"
-                    displayField="nombre"
-                    [value]="c.fuenteCanalId"
-                    (valueChange)="c.fuenteCanalId = $event"
-                    placeholder="Selecciona fuente"
-                    [sortAlpha]="false"
-                    color="var(--color-abril-logo-blue)">
-                  </app-search-select>
-                </div>
 
                 <!-- Comentario de GTH -->
                 <div class="abril-field mt-[10px]">
@@ -457,7 +407,16 @@
           }
         </div>
 
-        <!-- Plantilla de comunicación -->
+        <!-- ── Plantilla de comunicación — OCULTA A PROPÓSITO ─────────────────
+             Era una maqueta (select y botón deshabilitados, texto quemado) y además
+             duplicaba el envío: según RF-REC-16 del requerimiento funcional, la
+             "plantilla del proceso" ES el correo que lleva el enlace del formulario,
+             que ya se manda desde "Enviar formulario" de cada candidato (hoy con el
+             cuerpo quemado en PostulanteFormularioService.ConstruirCuerpoEnvio).
+             Al implementarlo de verdad no vuelve como bloque aparte: el desplegable
+             de plantillas debe alimentar el cuerpo de ESE envío (RF-GEN-12 / RNF-10:
+             las plantillas se parametrizan, no se codifican).
+
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
           <div class="flex items-center justify-between">
             <h3 class="text-[14px] font-bold text-gray-800">Plantilla de comunicación</h3>
@@ -474,64 +433,181 @@
             <option>Plantilla proceso de reclutamiento - estándar</option>
           </select>
 
-          @if (mostrarPlantilla) {
-            <div class="rounded-[8px] border px-[14px] py-[12px] mt-[10px]"
-                 style="border-color:var(--color-abril-border);background:#F8FAFC">
-              <p class="text-[12.5px] font-bold text-gray-700">Vista previa de plantilla</p>
-              <p class="text-[12.5px] text-gray-600 mt-[6px] leading-snug">
-                Hola, te compartimos la información del proceso de reclutamiento para la posición
-                <b>{{ detalle.puesto | titleCase }}</b>. En esta etapa recibirás las indicaciones generales,
-                fechas estimadas, responsables y próximos pasos para continuar con las evaluaciones
-                correspondientes.
-              </p>
-              <p class="text-[12.5px] font-bold text-gray-700 mt-[8px]">
-                Completa tu información de postulante en el siguiente enlace:
-              </p>
-              <p class="text-[12.5px] mt-[2px]" style="color:var(--color-abril-logo-blue)">https://abril.one/postulante</p>
-              <p class="text-[12.5px] text-gray-600 mt-[6px] leading-snug">
-                Usuario: tu número de DNI. Revisa, corrige y completa la información precargada desde tu CV.
-              </p>
-              <p class="text-[12.5px] text-gray-600 mt-[6px] leading-snug">
-                Por favor confirma la recepción de este correo y mantente atento a la programación de la entrevista.
-              </p>
-            </div>
-          }
-
           <button type="button" disabled title="Disponible próximamente"
             class="w-full h-[42px] mt-[12px] rounded-[7px] text-[13.5px] font-semibold text-white opacity-50 cursor-not-allowed"
             style="background:var(--color-abril-logo-blue)">
             Enviar plantilla del proceso
           </button>
         </div>
+        ───────────────────────────────────────────────────────────────────── -->
 
         <!-- Control informativo del Multitest -->
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
           <h3 class="text-[14px] font-bold text-gray-800">Control informativo del Multitest</h3>
           <p class="text-[12.5px] text-gray-500 mt-[2px] leading-snug">
-            El Multitest se gestiona fuera de esta plataforma. El check solo sirve para visualizar si cada
-            candidato ya realizó la evaluación; no bloquea ni cambia automáticamente el flujo.
+            El Multitest se gestiona fuera de esta plataforma: el check solo registra si cada candidato
+            ya rindió la evaluación y no cambia el flujo por sí solo. Debe estar marcado en todos para
+            poder continuar a la programación de entrevistas.
           </p>
 
           @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
-            <div class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[11px] mt-[10px]"
-                 style="border-color:var(--color-abril-border)">
+            <label class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[11px] mt-[10px] cursor-pointer transition-colors hover:bg-gray-50"
+                   style="border-color:var(--color-abril-border)">
               <div>
                 <p class="text-[13.5px] font-semibold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
-                <p class="text-[12px] text-gray-500">Pendiente de realizar</p>
+                <p class="text-[12px]" [style.color]="c.multitestRealizado ? '#15803D' : '#6B7280'">
+                  {{ c.multitestRealizado ? 'Realizado' : 'Pendiente de realizar' }}
+                </p>
               </div>
-              <input type="checkbox" disabled title="Disponible próximamente"
-                class="w-[16px] h-[16px] shrink-0 cursor-not-allowed"
+              <input type="checkbox" [checked]="c.multitestRealizado"
+                (change)="toggleMultitest(c, $any($event.target).checked)"
+                class="w-[16px] h-[16px] shrink-0 cursor-pointer"
                 style="accent-color:var(--color-abril-logo-blue)" />
-            </div>
+            </label>
           }
         </div>
 
-        <!-- Continuar a programación de entrevistas (aún sin funcionalidad) -->
-        <button type="button" disabled title="Disponible próximamente"
-          class="w-full h-[44px] rounded-[7px] text-[13.5px] font-semibold text-white opacity-50 cursor-not-allowed"
-          style="background:var(--color-abril-logo-blue)">
-          Continuar a programación de entrevistas
-        </button>
+        <!-- Continuar a programación de entrevistas: solo mientras el requerimiento no haya
+             pasado ya a esa fase (después el bloque de abajo toma el relevo). -->
+        @if (!enEntrevistas) {
+          <div>
+            <button type="button"
+              [disabled]="!puedeContinuarAEntrevistas"
+              (click)="continuarAEntrevistas()"
+              class="w-full h-[44px] rounded-[7px] text-[13.5px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              [class.cursor-pointer]="puedeContinuarAEntrevistas"
+              style="background:var(--color-abril-logo-blue)">
+              {{ continuando ? 'Continuando…' : 'Continuar a programación de entrevistas' }}
+            </button>
+            @if (requisitosContinuarTexto) {
+              <p class="text-[11.5px] text-gray-500 mt-[6px] text-center">{{ requisitosContinuarTexto }}</p>
+            }
+          </div>
+        }
+      }
+
+      <!-- ── Programación de entrevistas ──────────────────────────────────
+           Por candidato con formulario aprobado: fecha, hora y lugar de la cita +
+           envío de la invitación por correo (reprogramar actualiza y reenvía). -->
+      @if (enEntrevistas) {
+
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+          <h3 class="text-[14px] font-bold text-gray-800">Programación de entrevistas</h3>
+          <p class="text-[12.5px] text-gray-500 mt-[2px] leading-snug">
+            Registra la fecha, hora y lugar de cada candidato y envíale la invitación. La
+            invitación se envía al correo que el postulante declaró en su formulario.
+          </p>
+
+          @for (c of candidatosParaEntrevista; track c.candidatoId; let i = $index) {
+            <div class="rounded-[10px] border px-[14px] py-[12px] mt-[12px]" style="border-color:var(--color-abril-border)">
+
+              <div class="flex items-start justify-between gap-[10px]">
+                <div>
+                  <p class="text-[14px] font-bold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
+                  @if (c.correoContacto) {
+                    <p class="text-[11.5px] text-gray-500 mt-[1px]">{{ c.correoContacto }}</p>
+                  }
+                </div>
+                <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full shrink-0"
+                      [style.background]="c.entrevista ? '#DCFCE7' : '#F3F4F6'"
+                      [style.color]="c.entrevista ? '#15803D' : '#6B7280'">
+                  {{ c.entrevista ? 'Programada' : 'Sin programar' }}
+                </span>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-x-[14px] gap-y-[12px] mt-[10px]">
+                <app-date-picker
+                  label="Fecha de la entrevista"
+                  [value]="entrevistaForm[c.candidatoId].fecha"
+                  (valueChange)="entrevistaForm[c.candidatoId].fecha = $event"
+                  [min]="hoyIso"
+                  color="var(--color-abril-logo-blue)">
+                </app-date-picker>
+
+                <app-time-picker
+                  label="Hora"
+                  [value]="entrevistaForm[c.candidatoId].hora"
+                  (valueChange)="entrevistaForm[c.candidatoId].hora = $event"
+                  [minuteStep]="5"
+                  color="var(--color-abril-logo-blue)">
+                </app-time-picker>
+
+                <app-search-select
+                  label="Lugar"
+                  [options]="detalle.lugaresEntrevista"
+                  valueField="id"
+                  displayField="nombre"
+                  [value]="entrevistaForm[c.candidatoId].lugarId"
+                  (valueChange)="entrevistaForm[c.candidatoId].lugarId = $event"
+                  placeholder="Selecciona lugar"
+                  [sortAlpha]="false"
+                  color="var(--color-abril-logo-blue)">
+                </app-search-select>
+              </div>
+
+              <button type="button"
+                [disabled]="!puedeEnviarEntrevista(c)"
+                (click)="guardarEntrevista(c)"
+                class="inline-flex items-center gap-[6px] h-[38px] px-[16px] mt-[12px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                style="background:var(--color-abril-logo-blue)">
+                <i class="ti ti-send text-[15px]"></i>
+                {{ botonEntrevistaLabel(c) }}
+              </button>
+
+              @if (c.entrevista?.enviadoEn) {
+                <p class="text-[11.5px] text-gray-400 mt-[6px]">
+                  Invitación enviada a {{ c.entrevista?.correoEnvio }} ·
+                  {{ c.entrevista?.enviadoEn | date:'dd/MM/yyyy HH:mm' }} ·
+                  cita el {{ c.entrevista?.fecha | date:'dd/MM/yyyy' }} a las {{ c.entrevista?.hora }}
+                  en {{ c.entrevista?.lugarNombre }}
+                </p>
+              }
+            </div>
+          } @empty {
+            <p class="text-[12.5px] text-gray-400 italic mt-[10px]">
+              No hay candidatos con el formulario del postulante aprobado.
+            </p>
+          }
+        </div>
+
+        <!-- Selección del candidato que continúa el proceso -->
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+          <h3 class="text-[14px] font-bold text-gray-800">Candidato que continúa el proceso</h3>
+          <p class="text-[12.5px] text-gray-500 mt-[2px] leading-snug">
+            Una vez realizadas las entrevistas, selecciona al candidato con el que se continúa a la
+            siguiente etapa.
+          </p>
+
+          @for (c of candidatosParaEntrevista; track c.candidatoId) {
+            <label class="flex items-center gap-[10px] rounded-[8px] border px-[14px] py-[11px] mt-[10px] transition-colors"
+                   [class.cursor-pointer]="!!c.entrevista"
+                   [class.opacity-50]="!c.entrevista"
+                   style="border-color:var(--color-abril-border)">
+              <input type="radio" name="candidatoSeleccionado"
+                [value]="c.candidatoId"
+                [disabled]="!c.entrevista"
+                [(ngModel)]="candidatoSeleccionadoId"
+                class="w-[15px] h-[15px] shrink-0"
+                [class.cursor-pointer]="!!c.entrevista"
+                style="accent-color:var(--color-abril-logo-blue)" />
+              <div>
+                <p class="text-[13.5px] font-semibold text-gray-800">{{ c.nombre | titleCase }}</p>
+                <p class="text-[12px] text-gray-500">
+                  {{ c.entrevista
+                      ? 'Entrevista programada'
+                      : 'Programa su entrevista para poder seleccionarlo' }}
+                </p>
+              </div>
+            </label>
+          }
+
+          <!-- Sin funcionalidad todavía: la etapa siguiente (evaluación de finalistas) aún no existe. -->
+          <button type="button" disabled title="Disponible próximamente"
+            class="w-full h-[44px] mt-[14px] rounded-[7px] text-[13.5px] font-semibold text-white opacity-50 cursor-not-allowed"
+            style="background:var(--color-abril-logo-blue)">
+            Continuar con el candidato seleccionado
+          </button>
+        </div>
       }
 
       <!-- ── Siguiente paso ─────────────────────────────────────────────── -->

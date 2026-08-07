@@ -4,6 +4,7 @@
   titulo="Revisar long list y CVs"
   [subtitulo]="subtitulo"
   width="980px"
+  [preventCloseWhenDirty]="true"
   (closeModal)="closeModal.emit()">
 
   @if (revision) {
@@ -65,11 +66,6 @@
                       <div class="min-w-0">
                         <p class="text-[13.5px] font-bold text-gray-800 truncate">{{ c.nombre | titleCase }}</p>
                         <p class="text-[12px] text-gray-500 truncate">{{ (c.puesto | titleCase) || '—' }}</p>
-                        @if (c.fuenteNombre) {
-                          <span class="inline-block mt-[4px] text-[11px] px-[8px] py-[1.5px] rounded-full bg-gray-100 text-gray-600">
-                            {{ c.fuenteNombre }}
-                          </span>
-                        }
                       </div>
                     </div>
                     <app-status-badge
@@ -124,9 +120,7 @@
               </div>
 
               <h4 class="text-[18px] font-bold text-gray-800 mt-[8px] leading-tight">{{ seleccionado.nombre | titleCase }}</h4>
-              <p class="text-[13px] text-gray-500 mt-[2px]">
-                {{ (seleccionado.puesto | titleCase) || '—' }}<span *ngIf="seleccionado.fuenteNombre"> · {{ seleccionado.fuenteNombre }}</span>
-              </p>
+              <p class="text-[13px] text-gray-500 mt-[2px]">{{ (seleccionado.puesto | titleCase) || '—' }}</p>
 
               <!-- Tarjeta del archivo del CV -->
               <div class="flex items-center justify-between gap-[12px] mt-[12px] rounded-[8px] border px-[14px] py-[12px]"
@@ -147,23 +141,13 @@
                 </p>
               </div>
 
-              <!-- Tiles: experiencia · disponibilidad · estado -->
-              <div class="grid grid-cols-3 gap-[10px] mt-[12px]">
-                <div class="rounded-[8px] border px-[12px] py-[10px]" style="border-color:var(--color-abril-border)">
-                  <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Experiencia</p>
-                  <p class="text-[14px] font-bold text-gray-800 mt-[4px]">{{ experienciaTexto(seleccionado) }}</p>
-                </div>
-                <div class="rounded-[8px] border px-[12px] py-[10px]" style="border-color:var(--color-abril-border)">
-                  <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Disponibilidad</p>
-                  <p class="text-[14px] font-bold text-gray-800 mt-[4px]">{{ seleccionado.disponibilidad || '—' }}</p>
-                </div>
-                <div class="rounded-[8px] border px-[12px] py-[10px]" style="border-color:var(--color-abril-border)">
-                  <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Estado</p>
-                  <p class="text-[14px] font-bold mt-[4px]"
-                     [style.color]="estadoColors(estadoEfectivo(seleccionado).codigo).text">
-                    {{ estadoEfectivo(seleccionado).nombre }}
-                  </p>
-                </div>
+              <!-- Estado de la decisión del solicitante sobre este candidato. -->
+              <div class="rounded-[8px] border px-[12px] py-[10px] mt-[12px]" style="border-color:var(--color-abril-border)">
+                <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Estado</p>
+                <p class="text-[14px] font-bold mt-[4px]"
+                   [style.color]="estadoColors(estadoEfectivo(seleccionado).codigo).text">
+                  {{ estadoEfectivo(seleccionado).nombre }}
+                </p>
               </div>
 
               @if (seleccionado.comentario) {

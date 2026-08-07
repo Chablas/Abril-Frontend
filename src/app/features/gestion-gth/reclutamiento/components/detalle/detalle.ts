@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -6,6 +6,8 @@ import Swal from 'sweetalert2';
 import { AbrilModalPanel } from '../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { DatePicker } from '../../../../../shared/components/date-picker/date-picker';
+import { TimePicker } from '../../../../../shared/components/time-picker/time-picker';
 import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
@@ -24,21 +26,20 @@ interface CandidatoLongList {
   cv: File;
   /** Nombre y apellido (prellenado desde el nombre del archivo; el usuario lo corrige). */
   nombre: string;
-  /**
-   * Puesto detectado en el CV. Hoy se escribe a mano; a futuro lo prellenará una IA a partir
-   * del CV (con corrección manual como respaldo).
-   */
-  puesto: string;
-  /** Tiempo de experiencia en años (a futuro lo prellenará la IA). Null si no se indicó. */
-  experienciaAnios: number | null;
-  /** Disponibilidad del candidato ("15 días", "Inmediata"…; a futuro la prellenará la IA). */
-  disponibilidad: string;
-  /** Canal de publicación usado como fuente de reclutamiento. */
-  fuenteCanalId: number | null;
   /** Observaciones internas de GTH sobre el candidato. */
   comentario: string;
   /** Informe del candidato adjunto (opcional). */
   informe: File | null;
+}
+
+/** Datos editables de la cita de un candidato en la sección de programación de entrevistas. */
+interface EntrevistaFormState {
+  /** Fecha en formato `YYYY-MM-DD` (el que maneja `app-date-picker`). */
+  fecha: string | null;
+  /** Hora en formato `HH:mm` 24h (el que maneja `app-time-picker`). */
+  hora: string | null;
+  /** Id del lugar elegido del catálogo `lugaresEntrevista`. */
+  lugarId: number | null;
 }
 
 /**
@@ -58,6 +59,8 @@ interface CandidatoLongList {
     AbrilModalPanel,
     StatusBadge,
     SearchSelect,
+    DatePicker,
+    TimePicker,
     TitleCasePipe,
     GthFormularioPostulanteModal,
   ],
@@ -89,8 +92,9 @@ export class GthDetalleRequerimiento implements OnInit {
   seccionRevisionCv = true;
   seccionLongList = true;
 
-  /** Muestra/oculta la vista previa de la plantilla de comunicación (fase "Long list aprobada"). */
-  mostrarPlantilla = true;
+  // La sección "Plantilla de comunicación" está comentada en el HTML: era una maqueta y su
+  // envío es el mismo correo que ya manda "Enviar formulario". Su estado local
+  // (`mostrarPlantilla`) se retira junto con ella para no dejar código muerto.
 
   /** true mientras se envía la long list (deshabilita el botón para evitar doble envío). */
   enviando = false;
@@ -103,12 +107,27 @@ export class GthDetalleRequerimiento implements OnInit {
   /** Candidato cuyo modal "Ver formulario" está abierto (null = cerrado). */
   formularioCandidatoId: number | null = null;
 
+  /** true mientras se avanza a la fase de entrevistas (evita doble clic). */
+  continuando = false;
+
+  // ── Programación de entrevistas (fase "Entrevistas") ─────────────────────
+  /** Datos editables de la cita por candidato (key = candidatoId). */
+  entrevistaForm: Record<number, EntrevistaFormState> = {};
+  /** true mientras se envía/reenvía la invitación de un candidato (key = candidatoId). */
+  enviandoEntrevista: Record<number, boolean> = {};
+  /**
+   * Candidato marcado por GTH para continuar al siguiente paso. Es solo selección local: el
+   * botón "Continuar con el candidato seleccionado" todavía no tiene funcionalidad.
+   */
+  candidatoSeleccionadoId: number | null = null;
+
   private huboCambios = false;
 
   constructor(
     private service: ReclutamientoService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -132,7 +151,9 @@ export class GthDetalleRequerimiento implements OnInit {
             if (c.formulario?.correoEnvio) this.correoFormulario[c.candidatoId] = c.formulario.correoEnvio;
           }
         }
+        this.prepararFormulariosEntrevista();
         this.loaderService.hide();
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -169,8 +190,18 @@ export class GthDetalleRequerimiento implements OnInit {
     return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'LONG_LIST_APROBADA');
   }
 
+  /** true si el requerimiento ya pasó a la programación de entrevistas (fase ENTREVISTAS o posterior). */
+  get enEntrevistas(): boolean {
+    return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'ENTREVISTAS');
+  }
+
   /** Texto del recuadro "Siguiente paso" según la fase actual. */
   get siguientePasoTexto(): string {
+    if (this.enEntrevistas)
+      return (
+        'Programar la entrevista de cada candidato con formulario aprobado y enviarle la ' +
+        'invitación; luego seleccionar al candidato que continúa el proceso.'
+      );
     if (this.longListAprobada)
       return `Continuar proceso con ${this.detalle?.area ? new TitleCasePipe().transform(this.detalle.area) : 'el área solicitante'}.`;
     if (this.longListEnviada)
@@ -284,10 +315,6 @@ export class GthDetalleRequerimiento implements OnInit {
       this.candidatos.push({
         cv: file,
         nombre: this.derivarNombre(file.name),
-        puesto: '',
-        experienciaAnios: null,
-        disponibilidad: '',
-        fuenteCanalId: null,
         comentario: '',
         informe: null,
       });
@@ -334,14 +361,9 @@ export class GthDetalleRequerimiento implements OnInit {
       return;
     }
 
-    const canales = this.detalle.canales;
+    // El puesto no viaja: el backend lo toma del requerimiento (es el que pidió el solicitante).
     const candidatos: LongListCandidatoEnvio[] = this.candidatos.map((c) => ({
       nombre: c.nombre.trim(),
-      puesto: c.puesto.trim() || null,
-      experienciaAnios: c.experienciaAnios,
-      disponibilidad: c.disponibilidad.trim() || null,
-      fuenteCanalId: c.fuenteCanalId,
-      fuenteNombre: canales.find((canal) => canal.id === c.fuenteCanalId)?.nombre ?? null,
       comentario: c.comentario.trim(),
       cv: c.cv,
       informe: c.informe,
@@ -440,6 +462,193 @@ export class GthDetalleRequerimiento implements OnInit {
     const c = this.detalle?.candidatosAprobados.find((x) => x.candidatoId === this.formularioCandidatoId);
     if (c) c.formulario = resumen;
     this.huboCambios = true;
+  }
+
+  // ── Control informativo del Multitest ───────────────────────────────────
+  /**
+   * Marca/desmarca el Multitest de un candidato (optimista: pinta el check al instante y lo
+   * revierte si el guardado falla). El check es informativo —la prueba se rinde fuera de la
+   * plataforma— pero sí es requisito para habilitar el paso a entrevistas.
+   */
+  toggleMultitest(c: CandidatoAprobado, realizado: boolean): void {
+    const previo = c.multitestRealizado;
+    c.multitestRealizado = realizado;
+
+    this.service.setMultitest(c.candidatoId, realizado).subscribe({
+      next: () => {
+        this.huboCambios = true;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        c.multitestRealizado = previo;
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /** true si todos los candidatos aprobados tienen el Multitest marcado. */
+  get multitestCompleto(): boolean {
+    const candidatos = this.detalle?.candidatosAprobados ?? [];
+    return candidatos.length > 0 && candidatos.every((c) => c.multitestRealizado);
+  }
+
+  /** true si ningún candidato quedó con el formulario pendiente (todos aprobados o rechazados). */
+  get formulariosDecididos(): boolean {
+    const candidatos = this.detalle?.candidatosAprobados ?? [];
+    return (
+      candidatos.length > 0 &&
+      candidatos.every(
+        (c) => c.formulario?.estadoCodigo === 'APROBADO' || c.formulario?.estadoCodigo === 'RECHAZADO',
+      )
+    );
+  }
+
+  /** true si al menos un formulario del postulante quedó aprobado (habría a quién entrevistar). */
+  get hayFormularioAprobado(): boolean {
+    return (this.detalle?.candidatosAprobados ?? []).some(
+      (c) => c.formulario?.estadoCodigo === 'APROBADO',
+    );
+  }
+
+  /**
+   * Requisitos para pasar a entrevistas: Multitest marcado en todos los candidatos, todos los
+   * formularios ya revisados (aprobados o rechazados, ninguno pendiente de completar) y al menos
+   * uno aprobado. El backend revalida lo mismo.
+   */
+  get puedeContinuarAEntrevistas(): boolean {
+    return (
+      this.multitestCompleto && this.formulariosDecididos && this.hayFormularioAprobado && !this.continuando
+    );
+  }
+
+  /** Qué falta para habilitar el paso a entrevistas (hint bajo el botón). Vacío si ya se puede. */
+  get requisitosContinuarTexto(): string {
+    if (this.puedeContinuarAEntrevistas) return '';
+    if (!this.formulariosDecididos)
+      return 'Revisa el formulario de todos los candidatos (aprobar o rechazar) para continuar.';
+    if (!this.hayFormularioAprobado)
+      return 'Ningún formulario quedó aprobado: no hay candidatos a quienes entrevistar.';
+    if (!this.multitestCompleto)
+      return 'Marca el Multitest de todos los candidatos para continuar.';
+    return '';
+  }
+
+  /** Avanza el requerimiento a la fase ENTREVISTAS y muestra la sección de programación. */
+  continuarAEntrevistas(): void {
+    if (!this.detalle || !this.puedeContinuarAEntrevistas) return;
+
+    this.continuando = true;
+    this.loaderService.show();
+    this.service.continuarAEntrevistas(this.requerimientoId).subscribe({
+      next: (res) => {
+        this.huboCambios = true;
+        this.detalle!.estadoCodigo = res.estadoCodigo;
+        this.detalle!.estadoNombre = res.estadoNombre;
+        this.prepararFormulariosEntrevista();
+        this.continuando = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: 'success',
+          title: 'Listo',
+          text: res.message,
+          confirmButtonColor: '#005D9D',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.continuando = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  // ── Programación de entrevistas ─────────────────────────────────────────
+  /** Candidatos a entrevistar: los que tienen el formulario del postulante aprobado. */
+  get candidatosParaEntrevista(): CandidatoAprobado[] {
+    return (this.detalle?.candidatosAprobados ?? []).filter(
+      (c) => c.formulario?.estadoCodigo === 'APROBADO',
+    );
+  }
+
+  /** Fecha de hoy en `YYYY-MM-DD`: no se cita a un candidato en una fecha pasada. */
+  get hoyIso(): string {
+    const hoy = new Date();
+    const mes = `${hoy.getMonth() + 1}`.padStart(2, '0');
+    const dia = `${hoy.getDate()}`.padStart(2, '0');
+    return `${hoy.getFullYear()}-${mes}-${dia}`;
+  }
+
+  /** true si la cita del candidato está completa y no se está enviando ya. */
+  puedeEnviarEntrevista(c: CandidatoAprobado): boolean {
+    const form = this.entrevistaForm[c.candidatoId];
+    return !!form?.fecha && !!form?.hora && !!form?.lugarId && !this.enviandoEntrevista[c.candidatoId];
+  }
+
+  /** Etiqueta del botón según si la entrevista ya se había programado (reprogramación). */
+  botonEntrevistaLabel(c: CandidatoAprobado): string {
+    if (this.enviandoEntrevista[c.candidatoId]) return 'Enviando…';
+    return c.entrevista ? 'Reprogramar y reenviar' : 'Enviar invitación';
+  }
+
+  /** Programa (o reprograma) la entrevista del candidato y le envía la invitación por correo. */
+  guardarEntrevista(c: CandidatoAprobado): void {
+    const form = this.entrevistaForm[c.candidatoId];
+    if (!form?.fecha || !form?.hora || !form?.lugarId) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Faltan datos de la entrevista',
+        text: 'Registra la fecha, la hora y el lugar antes de enviar la invitación.',
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    this.enviandoEntrevista[c.candidatoId] = true;
+    this.service.guardarEntrevista(c.candidatoId, form.fecha, form.hora, form.lugarId).subscribe({
+      next: (res) => {
+        c.entrevista = res.entrevista;
+        this.enviandoEntrevista[c.candidatoId] = false;
+        this.huboCambios = true;
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: 'success',
+          title: 'Entrevista programada',
+          text: res.message,
+          confirmButtonColor: '#005D9D',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviandoEntrevista[c.candidatoId] = false;
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /** true si ya se envió la invitación a todos los candidatos a entrevistar. */
+  get entrevistasEnviadas(): boolean {
+    const candidatos = this.candidatosParaEntrevista;
+    return candidatos.length > 0 && candidatos.every((c) => !!c.entrevista);
+  }
+
+  /**
+   * Prellena la cita de cada candidato: con lo ya programado si existe, y si no con el primer
+   * lugar del catálogo (la oficina principal) como valor por defecto.
+   */
+  private prepararFormulariosEntrevista(): void {
+    if (!this.detalle) return;
+    const lugarPorDefecto = this.detalle.lugaresEntrevista[0]?.id ?? null;
+
+    for (const c of this.detalle.candidatosAprobados) {
+      this.entrevistaForm[c.candidatoId] = {
+        fecha: c.entrevista?.fecha ?? null,
+        hora: c.entrevista?.hora ?? null,
+        lugarId: c.entrevista?.lugarId ?? lugarPorDefecto,
+      };
+    }
   }
 
   /**

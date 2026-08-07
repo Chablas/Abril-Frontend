@@ -73,12 +73,14 @@ export interface RazonSocialOpcion {
   cuposDisponibles: number;
 }
 
-/** Canal de publicación de vacantes y su estado para el requerimiento consultado. */
+/**
+ * Canal de publicación de vacantes y su estado para el requerimiento consultado. No hay
+ * integración con las APIs de los portales: el canal solo se marca para dejar registro de dónde
+ * se publicó, la publicación siempre la hace GTH manualmente.
+ */
 export interface CanalPublicacion {
   id: number;
   nombre: string;
-  /** true = API disponible · publicación automática; false = registrar publicación manual. */
-  apiDisponible: boolean;
   /** true = la vacante ya está registrada como publicada en este canal. */
   publicado: boolean;
 }
@@ -112,6 +114,8 @@ export interface DetalleRequerimientoGth {
   prioridades: Opcion[];
   razonesSociales: RazonSocialOpcion[];
   canales: CanalPublicacion[];
+  /** Lugares donde se puede citar al candidato (desplegable de programación de entrevistas). */
+  lugaresEntrevista: Opcion[];
   /**
    * Candidatos aprobados por el solicitante (solo relevante en la fase LONG_LIST_APROBADA).
    * Alimentan la vista "Long list aprobada" de GTH. Vacío en fases anteriores.
@@ -126,4 +130,30 @@ export interface CandidatoAprobado {
   puesto: string | null;
   /** Estado del formulario de información del postulante (null si GTH aún no lo envió). */
   formulario?: CandidatoFormularioResumen | null;
+  /** true si GTH ya marcó el check informativo del Multitest de este candidato. */
+  multitestRealizado: boolean;
+  /** Correo del postulante al que se envía la invitación a la entrevista (null si aún no hay formulario). */
+  correoContacto: string | null;
+  /** Entrevista programada del candidato (null si aún no se programó). */
+  entrevista?: EntrevistaResumen | null;
+}
+
+/** Entrevista programada de un candidato (fecha, hora y lugar de la cita). */
+export interface EntrevistaResumen {
+  /** Fecha de la cita en formato `YYYY-MM-DD` (el que usa `app-date-picker`). */
+  fecha: string;
+  /** Hora de la cita en formato `HH:mm` 24h (el que usa `app-time-picker`). */
+  hora: string;
+  lugarId: number;
+  lugarNombre: string;
+  /** Correo al que se envió la invitación. */
+  correoEnvio: string;
+  /** Momento del último envío de la invitación (ISO, ya en hora Perú). Null si aún no se envió. */
+  enviadoEn: string | null;
+}
+
+/** Resultado de programar/reprogramar una entrevista. */
+export interface EntrevistaAccionResult {
+  message: string;
+  entrevista: EntrevistaResumen;
 }
