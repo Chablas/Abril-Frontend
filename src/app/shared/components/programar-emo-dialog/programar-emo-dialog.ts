@@ -10,7 +10,10 @@ import { TitleCasePipe } from '../../pipes/title-case.pipe';
 import { ClinicaProgramacionService } from '../../../features/clinica/services/clinica-programacion.service';
 import { CatalogosSaludService } from '../../../features/ssoma/salud-ocupacional/services/catalogos-salud.service';
 import { EmoPorTrabajadorDto } from '../../../features/ssoma/salud-ocupacional/dtos/emo.model';
-import { ProgramacionDestinatarioDto } from '../../../features/clinica/dtos/clinica.model';
+import {
+  ProgramacionDestinatarioDto,
+  ProgramacionDestinatariosDto,
+} from '../../../features/clinica/dtos/clinica.model';
 import {
   ClinicaSimpleDto,
   EmoTipoDto,
@@ -64,11 +67,16 @@ export class ProgramarEmoDialogComponent implements OnInit {
   submitting = false;
 
   /**
-   * A quién le va a llegar el correo de la cita, resuelto por el backend con la misma lógica del
-   * envío real. Se recarga al cambiar de clínica porque sus correos de contacto forman parte.
+   * A quién le va a llegar cada correo del flujo, resuelto por el backend con la misma lógica
+   * del envío real. Son DOS correos con destinatarios propios (los configura por separado
+   * Configuración de EMOs), así que el modal los muestra por separado en vez de dar a entender
+   * que es uno solo:
+   *   • `manual`   — sale al guardar la cita.
+   *   • `aceptada` — sale después, cuando la clínica acepta.
+   * Se recargan al cambiar de clínica porque sus correos de contacto forman parte.
    */
-  destinatarios: ProgramacionDestinatarioDto[] = [];
-  copias: ProgramacionDestinatarioDto[] = [];
+  manual: ProgramacionDestinatariosDto = this.vacio();
+  aceptada: ProgramacionDestinatariosDto = this.vacio();
   cargandoDestinatarios = false;
 
   constructor(
@@ -106,19 +114,32 @@ export class ProgramarEmoDialogComponent implements OnInit {
       .getDestinatarios(this.worker.workerId, this.form.clinicaId)
       .subscribe({
         next: (res) => {
-          this.destinatarios = res?.para ?? [];
-          this.copias = res?.copias ?? [];
+          this.manual = this.normalizar(res?.manual);
+          this.aceptada = this.normalizar(res?.aceptada);
           this.cargandoDestinatarios = false;
           this.cdr.detectChanges();
         },
-        // Es solo informativo: si falla, el formulario sigue siendo usable sin el aviso.
+        // Es solo informativo: si falla, el formulario sigue siendo usable sin los avisos.
         error: () => {
-          this.destinatarios = [];
-          this.copias = [];
+          this.manual = this.vacio();
+          this.aceptada = this.vacio();
           this.cargandoDestinatarios = false;
           this.cdr.detectChanges();
         },
       });
+  }
+
+  private vacio(): ProgramacionDestinatariosDto {
+    return { para: [], copias: [], clinicaPendiente: false, clinicaSinCorreos: false };
+  }
+
+  private normalizar(d?: ProgramacionDestinatariosDto): ProgramacionDestinatariosDto {
+    return {
+      para: d?.para ?? [],
+      copias: d?.copias ?? [],
+      clinicaPendiente: d?.clinicaPendiente ?? false,
+      clinicaSinCorreos: d?.clinicaSinCorreos ?? false,
+    };
   }
 
   /** Etiqueta del destinatario: "Clínica ServiSalud", "Jefe Juan Pérez" o el correo a secas. */

@@ -6,10 +6,30 @@ export interface Opcion {
   nombre: string;
 }
 
-/** Contadores de las tarjetas de resumen de la vista de GTH (por ahora solo "En proceso"). */
+/** Contadores de las tarjetas de resumen de la vista de GTH. */
 export interface ResumenReclutamiento {
-  /** Requerimientos activos actualmente (en curso dentro del pipeline). */
+  /** "En proceso · Activos actualmente": requerimientos vigentes que aún no se cierran. */
   enProceso: number;
+  /** "Vacantes abiertas · Publicadas": ya publicadas en canales y todavía sin cerrar. */
+  vacantesAbiertas: number;
+  /** "Evaluaciones · Programadas": entrevistas agendadas cuyo resultado GTH aún no cierra. */
+  evaluacionesProgramadas: number;
+  /** "Procesos cerrados · Este período": requerimientos cerrados en el año en curso. */
+  procesosCerrados: number;
+  /** Solicitudes recién llegadas de jefatura (alimenta el aviso sobre el pipeline). */
+  solicitudesNuevas: number;
+}
+
+/**
+ * Una etapa del embudo "Pipeline de reclutamiento". El backend agrupa las 12 fases del catálogo
+ * en estas etapas, así que la suma de los totales es el total de requerimientos vigentes.
+ */
+export interface PipelineEtapa {
+  codigo: string;
+  /** Nombre corto mostrado bajo el círculo (Solicitud, Publicado, …). */
+  nombre: string;
+  /** Requerimientos vigentes parados en esta etapa. */
+  total: number;
 }
 
 /** Fila de la tabla "Solicitudes de contratación" (un requerimiento de cualquier área). */
@@ -35,9 +55,11 @@ export interface RequerimientoGthListItem {
   estadoNombre: string;
 }
 
-/** Respuesta de la bandeja de GTH: tarjetas + tabla + catálogos en una sola petición. */
+/** Respuesta de la bandeja de GTH: tarjetas + pipeline + tabla + catálogos en una sola petición. */
 export interface BandejaReclutamiento {
   resumen: ResumenReclutamiento;
+  /** Etapas del embudo "Pipeline de reclutamiento", en orden. */
+  pipeline: PipelineEtapa[];
   solicitudes: RequerimientoGthListItem[];
   /** Catálogo de prioridades (Alta/Media/Baja) para el desplegable de la columna. */
   prioridades: Opcion[];
@@ -136,6 +158,11 @@ export interface CandidatoAprobado {
   correoContacto: string | null;
   /** Entrevista programada del candidato (null si aún no se programó). */
   entrevista?: EntrevistaResumen | null;
+  /**
+   * Evaluación de la entrevista (puntajes, comentarios del informe y resultado). Null mientras
+   * GTH no registre nada ni envíe el correo de agradecimiento.
+   */
+  evaluacion?: EvaluacionResumen | null;
 }
 
 /** Entrevista programada de un candidato (fecha, hora y lugar de la cita). */
@@ -156,4 +183,46 @@ export interface EntrevistaResumen {
 export interface EntrevistaAccionResult {
   message: string;
   entrevista: EntrevistaResumen;
+}
+
+/**
+ * Evaluación de la entrevista de un candidato: los cuatro puntajes que registra GTH y los tres
+ * comentarios del informe que ve el área solicitante, más el resultado alcanzado.
+ */
+export interface EvaluacionResumen {
+  /** Puntajes en porcentaje (0-100). null = aún sin registrar. */
+  puntajeEntrevista: number | null;
+  puntajePsicotecnico: number | null;
+  puntajeTecnica: number | null;
+  puntajeResultado: number | null;
+  /** Resultado de la entrevista (qué se observó). */
+  comentarioEntrevista: string | null;
+  /** Informe psicotécnico del candidato. */
+  comentarioPsicotecnico: string | null;
+  /** Recomendación de GTH al área solicitante. */
+  comentarioRecomendacion: string | null;
+  /** Resultado alcanzado: 'PENDIENTE' | 'PASO' | 'NO_PASO'. */
+  resultadoCodigo: string;
+  resultadoNombre: string;
+  /** Correo al que se envió el agradecimiento (null si no se envió). */
+  agradecimientoCorreo: string | null;
+  /** Momento del envío del agradecimiento (ISO, ya en hora Perú). Null si no se envió. */
+  agradecimientoEnviadoEn: string | null;
+}
+
+/** Body del guardado de la evaluación (solo puntajes y comentarios; el resultado no se edita aquí). */
+export interface EvaluacionGuardar {
+  puntajeEntrevista: number | null;
+  puntajePsicotecnico: number | null;
+  puntajeTecnica: number | null;
+  puntajeResultado: number | null;
+  comentarioEntrevista: string | null;
+  comentarioPsicotecnico: string | null;
+  comentarioRecomendacion: string | null;
+}
+
+/** Resultado de guardar la evaluación o de enviar el correo de agradecimiento. */
+export interface EvaluacionAccionResult {
+  message: string;
+  evaluacion: EvaluacionResumen;
 }

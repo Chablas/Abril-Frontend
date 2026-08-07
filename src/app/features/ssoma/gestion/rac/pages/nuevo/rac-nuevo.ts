@@ -200,6 +200,14 @@ export class RacNuevo implements OnInit {
 
   // ── Submit ────────────────────────────────────────────────────────
 
+  /**
+   * Solo se exigen campos que el usuario puede ver y llenar en el formulario.
+   * `empresaReportanteId` NO entra acá aunque se envíe: se resuelve solo desde la
+   * vinculación vigente del observador y no tiene control en la UI, así que un
+   * usuario sin vinculación vigente se quedaba con el botón deshabilitado para
+   * siempre y sin ninguna pista de por qué (era el caso reportado). El backend la
+   * acepta nula.
+   */
   get canSubmit(): boolean {
     return !!(
       !this.sinWorkerVinculado &&
@@ -213,7 +221,6 @@ export class RacNuevo implements OnInit {
       this.planAccion.trim() &&
       this.plazoLevantamiento &&
       this.empresaReportadaId &&
-      this.empresaReportanteId &&
       this.fotosSeleccionadas.length > 0 &&
       !this.saving
     );

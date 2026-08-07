@@ -83,34 +83,78 @@
         [(ngModel)]="form.notas"></textarea>
     </div>
 
-    <!-- A quién le va a llegar el correo: se resuelve en el backend con la misma lógica del envío
-         real, así el usuario no tiene que ir a Configuración de EMOs a adivinarlo. -->
-    <div class="aviso" *ngIf="destinatarios.length; else avisoVacio">
-      <i class="ti ti-mail"></i>
-      <p class="aviso__texto">
-        Al programar, la cita será notificada a
-        <ng-container *ngFor="let d of destinatarios; let i = index; let last = last"
-          ><span *ngIf="i > 0">{{ last ? ' y ' : ', ' }}</span
-          ><span class="aviso__email" [title]="etiquetaDestinatario(d)">{{ d.email }}</span></ng-container
-        >.
-        <ng-container *ngIf="copias.length">
-          Con copia a
-          <ng-container *ngFor="let c of copias; let i = index; let last = last"
-            ><span *ngIf="i > 0">{{ last ? ' y ' : ', ' }}</span
-            ><span class="aviso__email">{{ c.email }}</span></ng-container
-          >.
-        </ng-container>
-      </p>
-    </div>
-
-    <ng-template #avisoVacio>
-      <div class="aviso aviso--warn" *ngIf="!cargandoDestinatarios">
-        <i class="ti ti-mail-off"></i>
+    <!-- A quién le va a llegar cada correo: se resuelve en el backend con la misma lógica del
+         envío real, así el usuario no tiene que ir a Configuración de EMOs a adivinarlo.
+         Son DOS correos, en momentos distintos y con destinatarios propios, así que se
+         muestran por separado: el de ahora (programación manual) y el que sale después,
+         cuando la clínica acepte la cita. -->
+    <ng-container *ngIf="!cargandoDestinatarios">
+      <div class="aviso" *ngIf="manual.para.length || manual.clinicaPendiente; else manualVacio">
+        <i class="ti ti-mail"></i>
         <p class="aviso__texto">
-          No hay destinatarios activos, así que al programar <strong>no se enviará</strong> ningún
-          correo. Actívalos en Configuración de EMOs.
+          <strong>Programación manual:</strong> al guardar, la cita será notificada a
+          <ng-container
+            *ngTemplateOutlet="listaCorreos; context: { $implicit: manual }"></ng-container>
         </p>
       </div>
+      <ng-template #manualVacio>
+        <div class="aviso aviso--warn">
+          <i class="ti ti-mail-off"></i>
+          <p class="aviso__texto">
+            <strong>Programación manual:</strong> no hay destinatarios activos, así que al guardar
+            <strong>no se enviará</strong> ningún correo. Actívalos en Configuración de EMOs.
+          </p>
+        </div>
+      </ng-template>
+
+      <div
+        class="aviso"
+        *ngIf="aceptada.para.length || aceptada.clinicaPendiente; else aceptadaVacio">
+        <i class="ti ti-mail-check"></i>
+        <p class="aviso__texto">
+          <strong>Programación aceptada por la clínica:</strong> cuando la clínica acepte la cita,
+          se notificará a
+          <ng-container
+            *ngTemplateOutlet="listaCorreos; context: { $implicit: aceptada }"></ng-container>
+        </p>
+      </div>
+      <ng-template #aceptadaVacio>
+        <div class="aviso aviso--warn">
+          <i class="ti ti-mail-off"></i>
+          <p class="aviso__texto">
+            <strong>Programación aceptada por la clínica:</strong> no hay destinatarios activos, así
+            que cuando la clínica acepte <strong>no se enviará</strong> ningún correo. Actívalos en
+            Configuración de EMOs.
+          </p>
+        </div>
+      </ng-template>
+    </ng-container>
+
+    <!-- Lista de correos de un aviso: "a@x, b@x y c@x. Con copia a d@x."
+         Si la clínica es destinataria pero todavía no se elige cuál, se la nombra como una
+         entrada más de la frase en vez de omitirla: programar exige clínica, así que al
+         guardar siempre le llega, y callarla hacía leer el aviso como si el correo fuera
+         solo para el jefe. El " y a " solo va si hay otros destinatarios delante; si la
+         clínica es el único, la "a" ya la puso la frase del aviso. -->
+    <ng-template #listaCorreos let-dest>
+      <ng-container *ngFor="let d of dest.para; let i = index; let last = last"
+        ><span *ngIf="i > 0">{{ last && !dest.clinicaPendiente ? ' y ' : ', ' }}</span
+        ><span class="aviso__email" [title]="etiquetaDestinatario(d)">{{ d.email }}</span></ng-container
+      ><ng-container *ngIf="dest.clinicaPendiente"
+        ><span *ngIf="dest.para.length"> y a </span
+        ><span class="aviso__pendiente">los correos de contacto de la clínica que elijas</span></ng-container
+      >.
+      <ng-container *ngIf="dest.copias.length">
+        Con copia a
+        <ng-container *ngFor="let c of dest.copias; let i = index; let last = last"
+          ><span *ngIf="i > 0">{{ last ? ' y ' : ', ' }}</span
+          ><span class="aviso__email" [title]="etiquetaDestinatario(c)">{{ c.email }}</span></ng-container
+        >.
+      </ng-container>
+      <span class="aviso__alerta" *ngIf="dest.clinicaSinCorreos">
+        La clínica elegida está activa como destinataria pero no tiene ningún correo de contacto
+        cargado, así que a ella no le llegará.
+      </span>
     </ng-template>
   </div>
 
