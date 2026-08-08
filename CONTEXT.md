@@ -4984,3 +4984,24 @@ Se planteó cambiarlo a "viernes a jueves" porque actividades que vencen el mism
 ### Pendiente
 1. Confirmar/pushear el cambio de SPI 1.5→1.0 en el repo `Abril_Backend` (commit separado, otra terminal).
 2. Verificar en el celular que el filtro "Vencido" del modal de carga ya no da 0 resultados con chip >0.
+
+## Sesión 2026-08-07 (2) — Diagnóstico: feature de Planeamiento BIM no aparecía en el sidebar
+
+Sin cambios de código en este repo (working tree limpio todo el rato). El feature de Planeamiento BIM (Configuración Inicial, Carga Diaria, Bloqueos) ya estaba completo en frontend y backend desde antes (`victor-frontend`, commits `71dfe1cb`/`a0e92443`/`750e02e0`), pero el usuario no lo veía en el sidebar tras loguearse.
+
+### Causa raíz encontrada (no fue lo que se sospechaba al inicio)
+El sistema de permisos es dinámico vía `allowed_features` (tabla `feature`/`role_feature` en BD, consultada en `RoleFeatureRepository.GetAllFeatures()`), y la feature `planeamiento-bim.configuracion-inicial` nunca se había sembrado ahí — ninguna feature nueva se registra sola, hace falta un INSERT manual (convención del equipo: `Abril_Backend/Migrations/Manual/*.sql`).
+
+Se creó y el usuario ejecutó `Abril_Backend/Migrations/Manual/20260807_PlaneamientoBimFeatureSeed.sql` (idempotente): registra el `feature_key` bajo el módulo `'Proyectos'` y lo asigna a los roles 1/2/3 (mismos que exige `[Authorize]` en `PlaneamientoBimConfiguracionController`). Verificado con `SELECT` que quedaron las 3 filas en `role_feature`.
+
+Aun así el ítem seguía sin aparecer. Se verificó con evidencia directa en el navegador (Claude in Chrome, `window.ng.getComponent` sobre `app-sidebar`):
+- Los 4 `featureKey` (`proyectos.routes.ts` ×3 + `navigation.service.ts`) son byte-idénticos (comparación de charcodes, no visual).
+- `localStorage.getItem('allowed_features')` en sesión real **sí** incluye `planeamiento-bim.configuracion-inicial` (104 features, token no vencido) — o sea el seed + re-login ya habían surtido efecto.
+- Pero el array `config` en memoria del `NavigationService` que corría en el navegador (`comp.navService['config']`, leído directo de la instancia real) **no tenía la entrada del todo** — 8 items en vez de 9 bajo "Proyectos".
+- Conclusión: el `ng serve` (PID detectado vía `Get-NetTCPConnection -LocalPort 4200`) había arrancado a las 18:09:50, y el `git merge origin/master` de "actualizar rama" (que trajo/tocó `navigation.service.ts`) se aplicó a las 18:12:48 — 3 minutos después. El dev server seguía sirviendo el bundle compilado antes del merge; un hard-reload (`Ctrl+Shift+R`) no lo resolvió porque el problema no era cache del navegador sino que el servidor nunca recompiló.
+
+### Pendiente / acción del usuario
+El usuario paró el proceso node y va a correr `npm start` de nuevo — falta confirmar visualmente que tras el reinicio "Configuración Planeamiento BIM" aparece en el sidebar de Proyectos.
+
+### Nota para la próxima vez
+Cuando "actualizar rama" trae un merge grande mientras `ng serve` ya está corriendo, no asumir que el watch mode lo recoge solo — si algo agregado/tocado por el merge no aparece en la UI aunque el código en disco esté bien, sospechar primero del dev server desactualizado (chequear PID/hora de arranque vs hora del merge) antes de asumir un bug de datos o de permisos.
