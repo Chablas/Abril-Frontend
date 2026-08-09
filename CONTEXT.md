@@ -5005,3 +5005,35 @@ El usuario paró el proceso node y va a correr `npm start` de nuevo — falta co
 
 ### Nota para la próxima vez
 Cuando "actualizar rama" trae un merge grande mientras `ng serve` ya está corriendo, no asumir que el watch mode lo recoge solo — si algo agregado/tocado por el merge no aparece en la UI aunque el código en disco esté bien, sospechar primero del dev server desactualizado (chequear PID/hora de arranque vs hora del merge) antes de asumir un bug de datos o de permisos.
+
+## Sesión 2026-08-08 — Skills de diseño (ui-ux-pro-max/design-system) + mejoras de UX en Dashboard UDP
+
+### 1. Instalación y curaduría de skills de diseño
+Se clonó `ui-ux-pro-max-skill` directo por `git clone` en `.claude/skills/ui-ux-pro-max` (mal ubicado, con `.git` propio anidado y una segunda copia interna del skill). Se corrigió instalando con el CLI oficial (`npx ui-ux-pro-max-cli init --ai claude`), que además trajo 6 skills relacionadas (`banner-design`, `brand`, `design`, `design-system`, `slides`, `ui-styling`).
+
+Tras usarlas en la práctica durante la sesión (ver punto 2) se evaluó cuáles tenían caso de uso real en este proyecto (Angular, sin generación de imágenes con IA, sin React/shadcn):
+- **Se mantienen**: `ui-ux-pro-max` (consultas puntuales de accesibilidad, `--domain ux`) y `design-system` (plantilla de referencia para specs de estado de componente Default/Hover/Active/Disabled/Focus).
+- **Se eliminaron** (`rm -rf`): `banner-design`, `brand`, `design`, `slides` (orientadas a generación de assets con IA/Gemini, fuera de alcance) y `ui-styling` (shadcn/ui + React, stack incompatible con Angular).
+- `DESIGN-VICTOR.md` ahora documenta esto en una sección nueva "Skills de diseño disponibles" (después de "1. Principios generales"), dejando explícito que ninguna skill reemplaza la paleta/tokens ya definidos en el documento — son solo herramientas de consulta puntual.
+- `.gitignore`: agregado `**/__pycache__/`, `*.pyc` y la ruta específica de un `coverage-ui.json` generado por los tests de `ui-styling` (quedó de antes de eliminarla, ya no aplica pero no hace daño dejarlo).
+
+### 2. Mejoras en Dashboard UDP (`cronograma-dashboard`)
+Usando `ui-ux-pro-max --design-system` y `--domain ux` como input (no como fuente de verdad — la paleta UDP/BCS de `DESIGN-VICTOR.md` se mantuvo intacta):
+
+- **Filtros y paginación** (regla dura de CLAUDE.md, sin excepciones): los `<select>` nativos de Responsable/Estado se migraron a `app-search-select` dentro de `app-filter-modal`, disparado por `app-filter-trigger` en `tabsExtra`; se agregó paginación client-side con `ClientPager` sobre `proyectos` (la llamada HTTP sigue siendo una sola, R1 intacto).
+- **Accesibilidad del semáforo**: el punto de color (`.semaforo-dot`) no transmitía nada por texto — se agregó `role="img"` + `aria-label`/`title` vía `semaforoLabel()`.
+- **Foco visible por teclado** (`:focus-visible`, no `:focus`) en los componentes compartidos usados por el dashboard y por el resto de la app: `app-search-select`, `app-filter-trigger`, `app-filter-modal`, y la directiva `[abrilBulkAction]` — cada uno usando su propio acento ya establecido (`--ss-accent`/`--color-abril-standard`), sin introducir el azul UDP (`#2E6DB4`) en componentes globales para no desentonar en pantallas no-UDP. Confirmado visualmente por el usuario en `app-filter-trigger`; el resto solo verificado por código/build.
+- **DESIGN-VICTOR.md §6.1 (Cards)**: cambiado de "sin box-shadow" a sombra sutil + hover-elevación como estándar general del sistema (no excepción de un solo feature) — `cronograma-dashboard` ya lo implementaba así y se decidió generalizarlo.
+- **Segunda pasada de detalle visual**: radius de badges a `4px`, colores de badge AL DÍA/CON RETRASO ajustados a los hex exactos de la spec, fila CON_RETRASO a `#FFF5F5`, barra de avance a `height:6px/radius:3px`, estado vacío con ícono más grande (`48px`) y más padding, grid de KPIs de `4` a `3` columnas (9 KPIs no dividían parejo en 4).
+- **Iconografía**: 2 íconos KPI genéricos reemplazados por unos más específicos y consistentes con otros dashboards del proyecto — `ti-calendar-stats` → `ti-calendar-month` (Culminadas Este Mes) y `ti-chart-dots` → `ti-gauge` (SPI Promedio, mismo ícono que usa `arquitectura-comercial/dashboard` para métricas de índice). Verificado que ambas clases existen como glifos reales en `tabler-icons.min.css` instalado.
+
+### Archivos clave
+- `src/app/features/projects/cronograma-dashboard/cronograma-dashboard.{ts,html,css}`
+- `src/app/shared/components/{search-select,filter-trigger,filter-modal}/*`
+- `src/app/shared/directives/abril-bulk-action.directive.ts`
+- `DESIGN-VICTOR.md`, `.gitignore`
+- `.claude/skills/` (solo quedan `ui-ux-pro-max`, `design-system` + las 4 skills de git internas del proyecto)
+
+### Pendiente
+- Verificar visualmente con Tab los 2 `app-search-select` del modal de filtros, los botones "Limpiar filtros"/"Listo"/✕, y algún botón `[abrilBulkAction]` en otra pantalla (solo se confirmó `app-filter-trigger`).
+- Evaluar si conviene agregar `color="#2E6DB4"` explícito a los `app-search-select` de este dashboard para que calcen con la paleta UDP (hoy usan el teal por defecto del componente).
