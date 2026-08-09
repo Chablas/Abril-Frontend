@@ -7,7 +7,7 @@
 
 ## 1. Principios generales
 
-- Estilo **flat** — sin sombras pesadas, sin gradientes.
+- Estilo con **profundidad sutil** — sombras suaves permitidas en cards e interacción hover, sin gradientes, sin sombras pesadas.
 - Inspiración **Power BI** para dashboards ejecutivos.
 - Idioma de la UI: **español (es-PE)**.
 - Títulos de página en **MAYÚSCULAS** (`route.data.titulo`).
@@ -207,9 +207,15 @@ con el estilo flat sin competir visualmente con la paleta UDP.
 - `background: #ffffff`
 - `border: 0.5px solid #E2E8F0`
 - `border-radius: 10px`
-- Sin `box-shadow`.
+- **Estándar general del sistema (no excepción de un solo feature):** box-shadow
+  sutil permitido en reposo — `box-shadow: 0 1px 3px rgba(0,0,0,0.08)` — y
+  hover-elevación permitida — `box-shadow: 0 4px 12px rgba(0,0,0,0.12)` — con
+  transición suave (ej. `transition: box-shadow 0.2s ease`).
 - Para dashboards ejecutivos: `border-top: 4px solid <color-acento>` en lugar de 
-  fondo de color.
+  fondo de color. La sombra convive con ese `border-top` de acento — no lo
+  reemplaza — y aplica igual a las KPI cards de estos dashboards.
+- `cronograma-dashboard` (Dashboard UDP) ya implementa este estándar en sus
+  `.kpi-card` y `.table-card`.
 
 ### 6.2 Botones
 

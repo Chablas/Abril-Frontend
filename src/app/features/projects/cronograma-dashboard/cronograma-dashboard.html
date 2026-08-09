@@ -15,33 +15,13 @@
   ]"
   [botonSecundario]="{ label: 'Ir al Cronograma', icono: 'ti-calendar' }"
   (secondaryClick)="irAlCronograma()">
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
 <div class="page-wrapper flex-1 overflow-y-auto">
 
-  <!-- FILTROS -->
-  <div class="filter-card">
-    <div class="filter-controls-wrap">
-      <span class="filter-label">FILTROS</span>
-      <div class="filter-controls">
-        <select class="filter-select" [(ngModel)]="selectedResponsableId">
-          <option [ngValue]="null">Responsable: Todos</option>
-          <option *ngFor="let r of responsables" [ngValue]="r.userId">{{ r.nombreCompleto }}</option>
-        </select>
-        <select class="filter-select" [(ngModel)]="selectedEstado">
-          <option value="">Estado: Todos</option>
-          <option value="AL_DIA">Al día</option>
-          <option value="CON_RETRASO">Con retraso</option>
-          <option value="SIN_ACTIVIDADES">Sin actividades</option>
-        </select>
-        <button class="btn-primary" (click)="buscar()">
-          <i class="ti ti-search mr-1"></i> Buscar
-        </button>
-        <button class="btn-ghost" (click)="limpiar()">
-          <i class="ti ti-rotate-2 mr-1"></i> Limpiar
-        </button>
-      </div>
-    </div>
+  <!-- TOOLBAR (fecha) -->
+  <div class="toolbar-row">
     <div class="fecha-badge">
       <i class="ti ti-calendar-event mr-1.5 opacity-70"></i>
       <span>{{ fechaActual | date:"EEEE, d 'de' MMMM 'de' yyyy" }}</span>
@@ -145,7 +125,7 @@
       <div class="kpi-header">
         <span class="kpi-label">CULMINADAS ESTE MES</span>
         <div class="kpi-icon-box" style="background: rgba(46, 109, 180, 0.08); color: #2E6DB4">
-          <i class="ti ti-calendar-stats"></i>
+          <i class="ti ti-calendar-month"></i>
         </div>
       </div>
       <span class="kpi-value" style="color: #2E6DB4">{{ kpis.actividadesCulminadasEsteMes }}</span>
@@ -156,7 +136,7 @@
       <div class="kpi-header">
         <span class="kpi-label">SPI PROMEDIO</span>
         <div class="kpi-icon-box" [style.background]="spiColor(spiPromedio, '') + '14'" [style.color]="spiColor(spiPromedio, '')">
-          <i class="ti ti-chart-dots"></i>
+          <i class="ti ti-gauge"></i>
         </div>
       </div>
       <span class="kpi-value" [style.color]="spiColor(spiPromedio, '')">{{ spiPromedio | number:'1.2-2' }}</span>
@@ -196,12 +176,12 @@
         </thead>
         <tbody>
           <tr
-            *ngFor="let p of proyectos; let i = index"
+            *ngFor="let p of pagedProyectos; let i = index"
             class="table-row group"
             [class.row-retraso]="p.estado === 'CON_RETRASO'"
             (click)="irAProyecto(p.projectId)"
           >
-            <td class="col-num">{{ i + 1 }}</td>
+            <td class="col-num">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
             <td class="col-proyecto">{{ p.projectDescription }}</td>
             <td class="col-responsable">{{ p.responsableUdp }}</td>
             <td class="col-actividades">
@@ -249,6 +229,9 @@
             <td class="col-semaforo">
               <span
                 class="semaforo-dot"
+                role="img"
+                [attr.aria-label]="semaforoLabel(p.semaforo, p.estado)"
+                [title]="semaforoLabel(p.semaforo, p.estado)"
                 [style.background-color]="
                   p.semaforo === 'VERDE' ? '#1B6B3A' :
                   p.semaforo === 'AMARILLO' ? '#D97706' :
@@ -262,14 +245,50 @@
           </tr>
           <tr *ngIf="proyectos.length === 0">
             <td colspan="9" class="empty-row">
-              <i class="ti ti-search-off text-xl block mb-1"></i>
+              <i class="ti ti-search-off empty-icon"></i>
               No hay proyectos para los filtros seleccionados.
             </td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <div class="paginator-row" *ngIf="proyectos.length > 0">
+      <app-paginator
+        [totalRecords]="proyectos.length"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="changePage($event)">
+      </app-paginator>
+    </div>
   </div>
 
 </div>
+
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Responsable"
+      [options]="responsableOptions"
+      valueField="userId"
+      displayField="nombreCompleto"
+      placeholder="Buscar por nombre o DNI..."
+      [value]="selectedResponsableId"
+      (valueChange)="selectedResponsableId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      placeholder="Selecciona estado"
+      [value]="selectedEstado"
+      (valueChange)="selectedEstado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>
 

@@ -1,12 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CronogramaDashboardService } from './services/cronograma-dashboard.service';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
+import { FilterTriggerButton } from '../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../shared/components/filter-modal/filter-modal';
+import { SearchSelect } from '../../../shared/components/search-select/search-select';
+import { Paginator } from '../../../shared/components/paginator/paginator';
+import { ClientPager } from '../../../shared/utils/client-pager';
 import {
   CronogramaDashboardKpisDto,
   CronogramaDashboardProyectoDto,
@@ -16,7 +20,14 @@ import {
 @Component({
   selector: 'app-cronograma-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [
+    CommonModule,
+    AbrilPageHeaderComponent,
+    FilterTriggerButton,
+    FilterModal,
+    SearchSelect,
+    Paginator,
+  ],
   templateUrl: './cronograma-dashboard.html',
   styleUrl: './cronograma-dashboard.css',
 })
@@ -31,6 +42,9 @@ export class CronogramaDashboard implements OnInit {
   selectedResponsableId: number | null = null;
   selectedEstado = '';
   spiPromedio = 1.0;
+  filtrosAbiertos = false;
+
+  private readonly pager = new ClientPager<CronogramaDashboardProyectoDto>();
 
   anioActual = new Date().getFullYear();
   readonly fechaActual = new Date();
@@ -46,14 +60,61 @@ export class CronogramaDashboard implements OnInit {
     this.loadDashboard();
   }
 
-  buscar(): void {
+  get responsableOptions(): { userId: number | null; nombreCompleto: string }[] {
+    return [{ userId: null, nombreCompleto: 'Todos' }, ...this.responsables];
+  }
+
+  readonly estadoOptions: { value: string; label: string }[] = [
+    { value: '', label: 'Todos' },
+    { value: 'AL_DIA', label: 'Al día' },
+    { value: 'CON_RETRASO', label: 'Con retraso' },
+    { value: 'SIN_ACTIVIDADES', label: 'Sin actividades' },
+  ];
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.selectedResponsableId !== null) n++;
+    if (this.selectedEstado) n++;
+    return n;
+  }
+
+  onFilterChange(): void {
+    this.pager.reset();
     this.loadDashboard();
   }
 
-  limpiar(): void {
+  limpiarFiltros(): void {
     this.selectedResponsableId = null;
     this.selectedEstado = '';
-    this.loadDashboard();
+    this.onFilterChange();
+  }
+
+  get currentPage(): number {
+    return this.pager.currentPage;
+  }
+
+  get totalPages(): number {
+    return this.pager.totalPages(this.proyectos);
+  }
+
+  get pageSize(): number {
+    return this.pager.pageSize;
+  }
+
+  get pagedProyectos(): CronogramaDashboardProyectoDto[] {
+    return this.pager.page(this.proyectos);
+  }
+
+  changePage(page: number): void {
+    this.pager.goTo(page);
+  }
+
+  semaforoLabel(semaforo: string, estado: string): string {
+    if (estado === 'SIN_ACTIVIDADES') return 'Sin actividades registradas';
+    if (semaforo === 'VERDE') return 'Semáforo verde: cronograma al día';
+    if (semaforo === 'AMARILLO') return 'Semáforo amarillo: alerta de retraso';
+    if (semaforo === 'ROJO') return 'Semáforo rojo: retraso crítico';
+    return 'Sin información de semáforo';
   }
 
   irAlCronograma(): void {
@@ -101,6 +162,7 @@ export class CronogramaDashboard implements OnInit {
           ? Math.round((conActs.reduce((sum, p) => sum + p.spi, 0) / conActs.length) * 100) / 100
           : 1.0;
         this.responsables = res.responsables;
+        this.pager.reset();
         this.loading = false;
         this.loaderService.hide();
       },

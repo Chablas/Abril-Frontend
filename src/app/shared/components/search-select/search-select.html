@@ -15,7 +15,7 @@
       type="button"
       (click)="toggle($event)"
       [disabled]="disabled"
-      class="w-full flex items-center justify-between focus:outline-none transition-colors"
+      class="ss-trigger w-full flex items-center justify-between focus:outline-none transition-colors"
       [class.cursor-pointer]="!disabled"
       [class.cursor-not-allowed]="disabled"
       [class.opacity-60]="disabled"
@@ -48,7 +48,7 @@
           role="button"
           aria-label="Limpiar selección"
           title="Limpiar"
-          class="flex items-center justify-center w-[18px] h-[18px] rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors"
+          class="ss-clear flex items-center justify-center w-[18px] h-[18px] rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 cursor-pointer transition-colors"
         >
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>

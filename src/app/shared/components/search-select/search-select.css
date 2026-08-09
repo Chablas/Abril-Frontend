@@ -1,3 +1,17 @@
+/* Foco visible por teclado (Tab), no al hacer clic con mouse. Usa el mismo
+   acento que ya inyecta el Input `color` (--ss-accent) en vez de un color
+   fijo, para que el aro calce con el acento que la página haya elegido
+   (teal por defecto, azul en formularios SSOMA/UDP, etc.). */
+.ss-trigger:focus-visible {
+  outline: 2px solid var(--ss-accent, var(--color-abril-primary));
+  outline-offset: 2px;
+}
+
+.ss-clear:focus-visible {
+  outline: 2px solid var(--ss-accent, var(--color-abril-primary));
+  outline-offset: 1px;
+}
+
 .ss-trigger-label {
   font-size: 12px;
   white-space: nowrap;

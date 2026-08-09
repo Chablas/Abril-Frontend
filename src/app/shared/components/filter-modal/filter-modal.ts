@@ -45,7 +45,7 @@ import { CommonModule } from '@angular/common';
         </div>
         <h3 class="text-[14px] font-semibold flex-1" style="color: var(--color-abril-ink);">Filtros</h3>
         <button type="button" (click)="closeAnimated()" aria-label="Cerrar"
-          class="flex items-center justify-center w-[26px] h-[26px] rounded-[6px] cursor-pointer transition-colors"
+          class="fm-btn flex items-center justify-center w-[26px] h-[26px] rounded-[6px] cursor-pointer transition-colors"
           style="color: var(--color-abril-placeholder);"
           onmouseover="this.style.background='var(--color-abril-bg-alt)'; this.style.color='var(--color-abril-muted)'"
           onmouseout="this.style.background=''; this.style.color='var(--color-abril-placeholder)'">
@@ -60,12 +60,12 @@ import { CommonModule } from '@angular/common';
       <div class="flex items-center justify-between px-[20px] py-[14px] shrink-0"
         style="border-top: 1px solid var(--color-abril-border); background: var(--color-abril-bg-alt);">
         <button type="button" (click)="clear.emit()"
-          class="text-[12px] font-medium cursor-pointer transition-colors"
+          class="fm-btn text-[12px] font-medium cursor-pointer transition-colors"
           style="color: var(--color-abril-muted);">
           Limpiar filtros
         </button>
         <button type="button" (click)="closeAnimated()"
-          class="h-[32px] px-[18px] rounded-[7px] text-white text-[12px] font-semibold cursor-pointer transition-colors"
+          class="fm-btn h-[32px] px-[18px] rounded-[7px] text-white text-[12px] font-semibold cursor-pointer transition-colors"
           style="background: var(--color-abril-standard);"
           onmouseover="this.style.background='var(--color-abril-standard-hover)'"
           onmouseout="this.style.background='var(--color-abril-standard)'">
@@ -74,6 +74,14 @@ import { CommonModule } from '@angular/common';
       </div>
     </div>
   `,
+  styles: [`
+    /* Foco visible por teclado (Tab), no al hacer clic con mouse. Mismo teal
+       que ya usa el botón "Listo" y el ícono del panel — sin acento nuevo. */
+    .fm-btn:focus-visible {
+      outline: 2px solid var(--color-abril-standard);
+      outline-offset: 2px;
+    }
+  `],
 })
 export class FilterModal {
   @Output() closeModal = new EventEmitter<void>();
