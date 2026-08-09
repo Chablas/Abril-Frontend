@@ -5037,3 +5037,7 @@ Usando `ui-ux-pro-max --design-system` y `--domain ux` como input (no como fuent
 ### Pendiente
 - Verificar visualmente con Tab los 2 `app-search-select` del modal de filtros, los botones "Limpiar filtros"/"Listo"/✕, y algún botón `[abrilBulkAction]` en otra pantalla (solo se confirmó `app-filter-trigger`).
 - Evaluar si conviene agregar `color="#2E6DB4"` explícito a los `app-search-select` de este dashboard para que calcen con la paleta UDP (hoy usan el teal por defecto del componente).
+
+## Sesión 2026-08-08 (2) — Merge de `victor-frontend` a `master` (producción)
+
+`master` estaba 13 commits atrás de `origin/master` (sin cambios propios pendientes) — se sincronizó con `git merge --ff-only origin/master` y luego se trajo todo `victor-frontend` con `git merge victor-frontend` (fast-forward limpio, sin conflictos). Esto sube a producción, además del trabajo de la sesión de hoy (documentado arriba), el trabajo de sesiones previas de `victor-frontend` que todavía no había llegado a `master`: feature completo de **Planeamiento BIM** (Configuración Inicial, Carga Diaria, Bloqueos), y cambios en `report-response-control` (nuevo `report-cards`, `elapsed-time.ts`, reestructuración del modal de detalle). `ng build` tras el merge: 0 errores, mismos warnings preexistentes de terceros.
