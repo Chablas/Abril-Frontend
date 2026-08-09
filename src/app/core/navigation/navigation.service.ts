@@ -284,7 +284,6 @@ export class NavigationService {
       baseRoute: '/configuracion',
       items: [
         { label: 'Proyectos', route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },
-        { label: 'Revisores de Trabajadores', route: '/configuracion/revisor-salidas', featureKey: 'configuracion.revisor-salidas' },
         { label: 'Revisores de Áreas', route: '/configuracion/revisores-areas', featureKey: 'configuracion.revisores-areas' },
         { label: 'Centro de aprendizaje', route: '/configuracion/aprendizaje', featureKey: 'configuracion.aprendizaje' },
       ],

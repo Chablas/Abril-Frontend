@@ -327,7 +327,7 @@ export class Detail implements OnInit {
 
   /** True cuando al menos un documento escaneado ha sido subido. */
   get hasAnyScannedDoc(): boolean {
-    return this.scannedDocuments.some(doc => !!this.getDocFile(doc.key));
+    return this.scannedDocuments.some(doc => this.hasDocFile(doc.key));
   }
 
   /**
@@ -343,14 +343,13 @@ export class Detail implements OnInit {
       if (this.isTemplateDoc(doc.key)) {
         return statusId === 1 || statusId === 4;
       }
-      const hasFile = !!this.getDocFile(doc.key);
-      return statusId === 1 || (statusId === 4 && hasFile);
+      return statusId === 1 || (statusId === 4 && this.hasDocFile(doc.key));
     });
   }
 
   /** El contrato (obligatorio) debe estar Aprobado (estado 4) y tener archivo subido. */
   get contractApproved(): boolean {
-    return this.docForms['Contract']?.statusId === 4 && !!this.getDocFile('Contract');
+    return this.docForms['Contract']?.statusId === 4 && this.hasDocFile('Contract');
   }
 
   get forwardLabel(): string {
@@ -451,7 +450,11 @@ export class Detail implements OnInit {
     }
   }
 
-  /** Devuelve el archivo subido para un tipo de documento dado (o undefined si no hay). */
+  /**
+   * Devuelve el registro del documento (o undefined si no existe). ⚠️ Puede existir sin
+   * archivo: el estado/observación se puede guardar antes de subirlo, y en ese caso el
+   * registro llega con `fileUrl` vacío. Para saber si HAY archivo usar `hasDocFile()`.
+   */
   getDocFile(key: string): ProjectSubContractorFileDTO | undefined {
     switch (key) {
       case 'Contract':          return this.item.contract          ?? undefined;
@@ -468,6 +471,30 @@ export class Detail implements OnInit {
       case 'Anexo':                return this.item.anexo                ?? undefined;
       case 'ScannedDoc1':          return this.item.scannedDoc1          ?? undefined;
       default: return undefined;
+    }
+  }
+
+  /** True solo cuando el documento tiene un archivo real subido/generado. */
+  hasDocFile(key: string): boolean {
+    return !!this.getDocFile(key)?.fileUrl;
+  }
+
+  /** Escribe el registro de un documento en el item local (mantiene la vista coherente). */
+  private setDocFile(key: string, file: ProjectSubContractorFileDTO): void {
+    switch (key) {
+      case 'Contract':             this.item.contract             = file; break;
+      case 'SummarySheet':         this.item.summarySheet         = file; break;
+      case 'Schedule':             this.item.schedule             = file; break;
+      case 'AttachedQuotation':    this.item.attachedQuotation    = file; break;
+      case 'ServiceOrder':         this.item.serviceOrder         = file; break;
+      case 'PromissoryNote':       this.item.promissoryNote       = file; break;
+      case 'Instructivo':          this.item.instructivo          = file; break;
+      case 'NonConformingOutput':  this.item.nonConformingOutput  = file; break;
+      case 'ToleranceChart':       this.item.toleranceChart       = file; break;
+      case 'FinishProtection':     this.item.finishProtection     = file; break;
+      case 'FichaTecnica':         this.item.fichaTecnica         = file; break;
+      case 'Anexo':                this.item.anexo                = file; break;
+      case 'ScannedDoc1':          this.item.scannedDoc1          = file; break;
     }
   }
 
@@ -646,16 +673,12 @@ export class Detail implements OnInit {
     });
   }
 
+  /**
+   * El estado se persiste SIEMPRE, tenga o no archivo subido: el backend hace upsert del
+   * registro del documento (lo crea sin archivo si hace falta). Antes se abandonaba el
+   * guardado cuando no había archivo y el estado se perdía al reabrir el detalle.
+   */
   onStatusChange(docKey: string): void {
-    // Los documentos de plantilla (Causales / Cuadro) no tienen archivo: el estado ES el dato,
-    // por lo que SIEMPRE se persiste (el backend hace upsert del registro de estado).
-    if (this.isTemplateDoc(docKey)) {
-      this.saveDocStatus(docKey);
-      return;
-    }
-    // Si no hay archivo subido no existe ningún registro en BD que actualizar;
-    // el estado queda guardado solo localmente para el propósito de desbloquear el avance.
-    if (!this.getDocFile(docKey)) return;
     this.saveDocStatus(docKey);
   }
 
@@ -706,17 +729,19 @@ export class Detail implements OnInit {
       next: () => {
         this.loaderService.hide();
         this.updatingStatusDoc = null;
-        // Actualizar el item local para mantener coherencia
+        // Actualizar el item local para mantener coherencia. Si el documento todavía no
+        // tiene registro (sin archivo subido) se crea uno con `fileUrl` vacío para que el
+        // estado sobreviva al cerrar y reabrir el modal sin recargar la lista.
         const file = this.getDocFile(docKey);
         if (file) {
           file.statusId    = form.statusId;
           file.observation = form.observation || null;
-        } else if (this.isTemplateDoc(docKey)) {
-          // Documentos de plantilla: no hay archivo; reflejar el estado en el item local.
-          const stub = { fileUrl: '', statusId: form.statusId, observation: form.observation || null };
-          if (docKey === 'NonConformingOutput') this.item.nonConformingOutput = stub;
-          else if (docKey === 'ToleranceChart') this.item.toleranceChart = stub;
-          else if (docKey === 'FinishProtection') this.item.finishProtection = stub;
+        } else {
+          this.setDocFile(docKey, {
+            fileUrl:     '',
+            statusId:    form.statusId,
+            observation: form.observation || null,
+          });
         }
       },
       error: (err) => {

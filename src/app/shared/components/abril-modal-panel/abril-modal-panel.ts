@@ -32,9 +32,41 @@ export class AbrilModalPanel {
   @Input() icono = 'ti-edit';
   @Input() variant: 'teal' | 'blue' = 'teal';
   @Input() width = '620px';
+  /**
+   * Si es true, una vez que el usuario MODIFICA el modal (llena un campo, elige una opción de un
+   * desplegable, suelta un archivo, etc.) el modal ya NO se cierra al hacer clic fuera: solo se
+   * cierra con la X o con su botón de cerrar. Esto evita perder por accidente la información en
+   * proceso. Mientras el modal siga igual que cuando se abrió, el clic fuera lo cierra normalmente.
+   * Mismo comportamiento (y mismo nombre de input) que `app-base-modal`.
+   */
+  @Input() preventCloseWhenDirty = false;
   @Output() closeModal = new EventEmitter<void>();
 
+  /** El contenido del modal fue modificado respecto a su estado inicial. */
+  dirty = false;
+
+  /** true si el mousedown empezó en el backdrop (y no arrastrando texto desde dentro del panel). */
+  private mousedownOnBackdrop = false;
+
+  /**
+   * Marca el modal como modificado. Lo disparan los eventos que burbujean desde el contenido
+   * proyectado: `input`/`change` nativos y el evento `modalfieldchange` que emiten los componentes
+   * custom (search-select, file-selector, date-picker, time-picker) al cambiar su valor.
+   */
+  markDirty(): void {
+    if (this.preventCloseWhenDirty) this.dirty = true;
+  }
+
+  onBackdropMousedown(): void {
+    this.mousedownOnBackdrop = true;
+  }
+
   onBackdropClick(): void {
+    const empezoEnBackdrop = this.mousedownOnBackdrop;
+    this.mousedownOnBackdrop = false;
+    if (!empezoEnBackdrop) return;
+    // Con el bloqueo activo y el modal ya modificado, el clic fuera se ignora.
+    if (this.preventCloseWhenDirty && this.dirty) return;
     this.closeModal.emit();
   }
 }

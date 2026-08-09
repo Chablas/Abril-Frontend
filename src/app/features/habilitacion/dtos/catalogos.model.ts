@@ -70,6 +70,17 @@ export interface AreaArbolRevisorProyectoDto {
 }
 
 /**
+ * Opción del desplegable que aparece al marcar "Jefe personalizado" en el formulario de
+ * trabajadores: cualquier trabajador con correo corporativo @abril.pe, tenga o no usuario
+ * del sistema.
+ */
+export interface JefeCandidatoDto {
+  workerId: number;
+  fullName?: string | null;
+  email?: string | null;
+}
+
+/**
  * Opción del catálogo workers_obra_oficina_staff: Obra / Staff / Oficina Central.
  * Sustituye a la lista hardcodeada del formulario de trabajadores y al antiguo
  * tipo de área "Área Obra_Oficina".

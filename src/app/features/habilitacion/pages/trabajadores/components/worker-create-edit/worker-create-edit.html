@@ -410,18 +410,49 @@
               <ng-container *ngIf="areaLegacyLabel"> · equivale a {{ areaLegacyLabel }}</ng-container>
             </p>
 
+            <!-- Jefe del trabajador: por defecto el revisor que sugiere su área (solo lectura);
+                 con el checkbox se pasa a elegir uno a mano, que se sobrepone a ese. -->
             <div class="col-span-2">
-              <label class="field-label">Revisor del área</label>
+              <label class="field-label">{{ model.jefePersonalizado ? 'Jefe personalizado' : 'Revisor del área' }}</label>
+
               <input
+                *ngIf="!model.jefePersonalizado"
                 type="text"
                 class="field-input field-readonly"
                 readonly
                 [value]="revisorNombre || ''"
                 [placeholder]="areaScopeIdElegido ? 'Sin revisor configurado para esta área' : 'Selecciona un área'"
               />
-              <span class="field-hint" *ngIf="revisorEmail">{{ revisorEmail }}</span>
-              <span class="field-hint" *ngIf="areaScopeIdElegido && !revisorNombre">
+
+              <app-search-select
+                *ngIf="model.jefePersonalizado"
+                [options]="jefesDisponibles"
+                valueField="workerId"
+                displayField="fullName"
+                [value]="model.jefePersonalizadoWorkerId"
+                [showLabel]="false"
+                placeholder="Buscar por nombre o DNI..."
+                [allowClear]="true"
+                (valueChange)="onJefePersonalizadoChange($event)"
+              />
+
+              <span class="field-hint" *ngIf="jefeEfectivoEmail">{{ jefeEfectivoEmail }}</span>
+              <span class="field-hint" *ngIf="!model.jefePersonalizado && areaScopeIdElegido && !revisorNombre">
                 Configúralo en Configuración → Revisores de Áreas.
+              </span>
+
+              <label class="check-row">
+                <input
+                  type="checkbox"
+                  [ngModel]="model.jefePersonalizado"
+                  (ngModelChange)="onJefePersonalizadoToggle($event)"
+                />
+                <span>Jefe personalizado</span>
+              </label>
+              <span class="field-hint">
+                {{ model.jefePersonalizado
+                  ? 'Este jefe se sobrepone al revisor del área en los correos y aprobaciones.'
+                  : 'Márcalo para asignarle un jefe distinto al revisor de su área.' }}
               </span>
             </div>
             <div>

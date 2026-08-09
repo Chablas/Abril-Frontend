@@ -1,5 +1,5 @@
 /* Mismo lenguaje visual que la Configuración de Mi Salud
-   (mi-salud/configuracion/correos), extendido con las acciones del CRUD.
+   (mi-salud/configuracion/correos), extendido con la matriz destinatario × perfil.
    .abril-field / .abril-field-label / .abril-field-input son globales
    (src/styles.css) — no reimplementar el label flotante aquí. */
 :host {
@@ -18,7 +18,6 @@
   border: 1px solid var(--color-abril-border, #e5e7eb);
   border-radius: var(--radius-standard, 7px);
   padding: 20px 22px;
-  max-width: 860px;
 }
 
 .config-card__head {
@@ -51,13 +50,18 @@
   color: #64748b;
   margin: 0;
   line-height: 1.45;
+  max-width: 760px;
+}
+
+.matriz-hint {
+  margin: 14px 0 10px;
 }
 
 .config-warn {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  margin: 0;
+  margin: 0 0 8px;
   padding: 10px 12px;
   border: 1px solid #fde68a;
   border-radius: var(--radius-standard, 7px);
@@ -94,44 +98,79 @@
   border-color: var(--color-abril-standard, #0f6e56);
 }
 
-/* ── Lista de destinatarios ── */
-.correo-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+/* ── Matriz destinatario × perfil ── */
+.matriz-wrap {
+  width: 100%;
+  overflow-x: auto;
 }
 
-.correo-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 14px;
-  border: 1px solid var(--color-abril-border, #e5e7eb);
-  border-radius: var(--radius-standard, 7px);
+.matriz {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+}
+
+.matriz thead th {
+  padding: 10px 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #475569;
+  background: #f8fafc;
+  border-bottom: 1px solid var(--color-abril-border, #e5e7eb);
+  white-space: nowrap;
+}
+
+.matriz tbody td {
+  padding: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.matriz tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.matriz tbody tr:hover td {
   background: #fafafa;
 }
 
-.correo-item__info {
+.matriz__dest {
+  text-align: left;
+  min-width: 260px;
+}
+
+.matriz__perfil {
+  text-align: center;
+  width: 130px;
+}
+
+.matriz__acciones {
+  text-align: right;
+  width: 74px;
+  white-space: nowrap;
+}
+
+/* ── Celda del destinatario ── */
+.dest {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
-.correo-item__name {
+.dest__name {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
+  flex-wrap: wrap;
+  gap: 7px;
+  font-size: 0.88rem;
   font-weight: 600;
   color: #1f2937;
   word-break: break-word;
 }
-.correo-item__tag {
-  font-size: 0.62rem;
+.dest__tag {
+  font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -140,37 +179,37 @@
   border-radius: 999px;
   padding: 2px 7px;
 }
-.correo-item__desc {
+.dest__tag--cc {
+  color: #1e40af;
+  background: #dbeafe;
+}
+.dest__email {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 0.78rem;
-  color: #6b7280;
-  word-break: break-word;
+  color: #334155;
+  word-break: break-all;
 }
-
-.correo-item__right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-}
-.correo-item__state {
-  font-size: 0.72rem;
-  font-weight: 600;
+.dest__email--auto {
   color: #94a3b8;
-  min-width: 66px;
-  text-align: right;
+  font-style: italic;
 }
-.correo-item__state--on {
-  color: var(--color-abril-standard, #0f6e56);
+.dest__email--warn {
+  color: #b45309;
+  font-weight: 600;
 }
-
-/* Ancho reservado para que las filas fijas (sin acciones) no descuadren
-   la columna del switch respecto a las editables. */
-.correo-item__actions {
+.dest__desc {
+  font-size: 0.74rem;
+  color: #94a3b8;
+  line-height: 1.4;
+}
+.dest__cond {
   display: flex;
   align-items: center;
-  gap: 2px;
-  min-width: 64px;
-  justify-content: flex-end;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: #7c3aed;
 }
 
 .btn-icon {
@@ -250,6 +289,20 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+}
+
+.form-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  color: #64748b;
+  line-height: 1.45;
+}
+.form-hint i {
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .form-error {

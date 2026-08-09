@@ -17,8 +17,13 @@ import { GthNuevaSolicitud } from './components/nueva-solicitud/nueva-solicitud'
 import { ConfigCorreoOpcion, GthConfiguracionCorreos } from '../shared/configuracion-correos/configuracion-correos';
 import { GthSeguimiento } from './components/seguimiento/seguimiento';
 import { GthRevisionLongList } from './components/revision-long-list/revision-long-list';
+import { GthRevisionFinalistas } from './components/revision-finalistas/revision-finalistas';
 import { SolicitudPersonalService } from './services/solicitud-personal.service';
-import { GestionCandidatoCard, SolicitudVacanteListItem } from './dtos/solicitud-personal.dto';
+import {
+  GestionCandidatoCard,
+  ResumenSolicitantePanel,
+  SolicitudVacanteListItem,
+} from './dtos/solicitud-personal.dto';
 
 @Component({
   standalone: true,
@@ -37,6 +42,7 @@ import { GestionCandidatoCard, SolicitudVacanteListItem } from './dtos/solicitud
     GthConfiguracionCorreos,
     GthSeguimiento,
     GthRevisionLongList,
+    GthRevisionFinalistas,
   ],
   templateUrl: './solicitud-personal.html',
   styles: [`
@@ -76,6 +82,13 @@ export class GthSolicitudPersonal implements OnInit {
         '(candidatos aprobados/rechazados). Los principales van en «Para» y las copias en «CC». ' +
         'Es independiente del correo de nueva solicitud.',
     },
+    {
+      tipo: 'decision-finalista',
+      label: 'Decisión de finalista',
+      intro:
+        'Define a quién de GTH se le notifica cuando apruebas o rechazas a un finalista. Los ' +
+        'principales van en «Para» y las copias en «CC». Es independiente de los otros dos correos.',
+    },
   ];
 
   /** Requerimiento cuyo seguimiento se está viendo (null = modal cerrado). */
@@ -84,7 +97,21 @@ export class GthSolicitudPersonal implements OnInit {
   /** Requerimiento cuya long list se está revisando (null = modal cerrado). */
   revisionId: number | null = null;
 
-  /** Tarjetas "Gestión de candidatos" (long lists que GTH ya envió para revisar). */
+  /** Requerimiento cuyo informe de finalistas se está viendo (null = modal cerrado). */
+  finalistasId: number | null = null;
+
+  /** Contadores de las tarjetas resumen (los calcula el backend junto con el panel). */
+  resumen: ResumenSolicitantePanel = {
+    totalRegistradas: 0,
+    pendientes: 0,
+    enRevisionGth: 0,
+    aprobadas: 0,
+  };
+
+  /**
+   * Tarjetas "Gestión de candidatos": long lists que GTH envió para revisar (tipo LONG_LIST)
+   * e informes de finalistas ya evaluados (tipo FINALISTAS).
+   */
   gestionCandidatos: GestionCandidatoCard[] = [];
 
   solicitudes: SolicitudVacanteListItem[] = [];
@@ -123,6 +150,7 @@ export class GthSolicitudPersonal implements OnInit {
     this.loaderService.show();
     this.service.getPanel().subscribe({
       next: (data) => {
+        this.resumen = data.resumen;
         this.gestionCandidatos = data.gestionCandidatos;
         this.solicitudes = data.misSolicitudes;
         this.pager.reset();
@@ -151,23 +179,19 @@ export class GthSolicitudPersonal implements OnInit {
     this.seguimientoId = null;
   }
 
-  // ── Revisión de la long list ("Revisar long list y CVs") ───────────────
-  abrirRevision(c: GestionCandidatoCard): void {
-    this.revisionId = c.requerimientoId;
+  // ── Tarjetas de "Gestión de candidatos" ────────────────────────────────
+  /** Abre el modal que corresponde a la tarjeta: long list por decidir o informe de finalistas. */
+  abrirGestionCandidatos(c: GestionCandidatoCard): void {
+    if (c.tipo === 'FINALISTAS') this.finalistasId = c.requerimientoId;
+    else this.revisionId = c.requerimientoId;
   }
 
   cerrarRevision(): void {
     this.revisionId = null;
   }
 
-  // ── Tarjetas resumen (solo las dos que ya funcionan) ───────────────────
-  get totalRegistradas(): number {
-    return this.solicitudes.length;
-  }
-
-  /** "Pendientes sin respuesta": aún en estado inicial (GTH no ha respondido). */
-  get pendientes(): number {
-    return this.solicitudes.filter((s) => s.estadoCodigo === 'NUEVO').length;
+  cerrarFinalistas(): void {
+    this.finalistasId = null;
   }
 
   // ── Filtro de texto ────────────────────────────────────────────────────
@@ -216,6 +240,7 @@ export class GthSolicitudPersonal implements OnInit {
   estadoColors(codigo: string): { bg: string; text: string } {
     switch (codigo) {
       case 'NUEVO':      return { bg: '#DBEAFE', text: '#1D4ED8' };
+      case 'CERRADO':    return { bg: '#E0E7FF', text: '#3730A3' };
       default:           return { bg: '#F3F4F6', text: '#374151' };
     }
   }

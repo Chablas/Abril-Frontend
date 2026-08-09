@@ -1,16 +1,29 @@
-<div class="flex flex-col gap-[6px]" [style.--dp-accent]="color">
-  <!-- Label opcional -->
-  <label *ngIf="showLabel && label" class="text-sm text-[var(--dp-accent)] font-medium">
+<div class="flex flex-col" [ngClass]="floatingLabel ? 'gap-0' : 'gap-[6px]'" [style.--dp-accent]="color">
+  <!-- Label encima del campo (por defecto) -->
+  <label
+    *ngIf="showLabel && label && !floatingLabel"
+    class="text-sm text-[var(--dp-accent)] font-medium"
+  >
     {{ label }}
   </label>
 
-  <!-- Contenedor relativo para el calendario -->
-  <div class="relative overflow-visible">
+  <!-- Contenedor relativo para el label flotante y el calendario. El `mt-[9px]` es el mismo que
+       usa app-search-select: sin él, un combo y una fecha en la misma fila no quedan alineados. -->
+  <div class="relative overflow-visible" [ngClass]="floatingLabel ? 'mt-[9px]' : ''">
+    <!-- Label que corta el borde superior, igual que app-search-select (opt-in) -->
+    <label
+      *ngIf="showLabel && label && floatingLabel"
+      class="absolute -top-[8px] left-[9px] z-[1] px-[4px] text-[11px] font-semibold text-gray-600 pointer-events-none leading-none bg-white"
+    >
+      {{ label }}
+    </label>
+
     <!-- Trigger: input editable (dd/mm/aaaa) + limpiar + botón de calendario -->
     <div
-      class="w-full flex items-center gap-[8px] rounded-lg pl-[12px] pr-[10px] py-[10px] text-sm border transition-colors"
+      class="w-full flex items-center gap-[8px] border transition-colors"
       [ngClass]="[
-        isOpen ? 'border-[var(--dp-accent)] ring-2 ring-[var(--dp-accent)]/30' : 'border-[#D6DEE5]',
+        triggerSizeClasses,
+        isOpen ? 'border-[var(--dp-accent)] ring-2 ring-[var(--dp-accent)]/30' : triggerBorderClass,
         disabled ? 'bg-gray-50' : 'bg-white'
       ]"
     >

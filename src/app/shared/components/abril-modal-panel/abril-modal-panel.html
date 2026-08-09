@@ -1,6 +1,7 @@
-<div class="amp-overlay" (click)="onBackdropClick()">
+<div class="amp-overlay" (mousedown)="onBackdropMousedown()" (click)="onBackdropClick()">
   <div class="amp-container" [class.amp-container--blue]="variant === 'blue'"
-       [style.width]="width" (click)="$event.stopPropagation()">
+       [style.width]="width"
+       (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
 
     <div class="amp-header">
       <div class="amp-title">
@@ -13,7 +14,8 @@
       <button type="button" class="amp-close" (click)="closeModal.emit()" title="Cerrar">✕</button>
     </div>
 
-    <div class="amp-body">
+    <div class="amp-body"
+         (input)="markDirty()" (change)="markDirty()" (modalfieldchange)="markDirty()">
       <ng-content></ng-content>
     </div>
 

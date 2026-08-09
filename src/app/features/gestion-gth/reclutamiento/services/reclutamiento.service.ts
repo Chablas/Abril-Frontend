@@ -6,7 +6,10 @@ import {
   AsignacionGth,
   BandejaReclutamiento,
   DetalleRequerimientoGth,
+  EntrevistaAccionResult,
   EstadoTransicionResult,
+  EvaluacionAccionResult,
+  EvaluacionGuardar,
 } from '../dtos/reclutamiento.dto';
 import { FormularioAccionResult, FormularioRevision } from '../dtos/formulario-postulante.dto';
 
@@ -97,11 +100,6 @@ export class ReclutamientoService {
       if (c.informe) formData.append(`informe_${i}`, c.informe, c.informe.name);
       return {
         nombre: c.nombre,
-        puesto: c.puesto,
-        experienciaAnios: c.experienciaAnios,
-        disponibilidad: c.disponibilidad,
-        fuenteCanalId: c.fuenteCanalId,
-        fuenteNombre: c.fuenteNombre,
         comentario: c.comentario,
         cvKey: `cv_${i}`,
         informeKey,
@@ -112,6 +110,65 @@ export class ReclutamientoService {
     return this.http.post<EstadoTransicionResult>(
       `${this.apiUrl}/requerimiento/${requerimientoId}/long-list/enviar`,
       formData,
+      { headers: this.headers },
+    );
+  }
+
+  /** Marca/desmarca el check informativo del Multitest de un candidato aprobado. */
+  setMultitest(candidatoId: number, realizado: boolean): Observable<MessageResult> {
+    return this.http.patch<MessageResult>(
+      `${this.apiUrl}/candidato/${candidatoId}/multitest`,
+      { realizado },
+      { headers: this.headers },
+    );
+  }
+
+  /** Continúa a la programación de entrevistas: avanza el requerimiento de LONG_LIST_APROBADA a ENTREVISTAS. */
+  continuarAEntrevistas(requerimientoId: number): Observable<EstadoTransicionResult> {
+    return this.http.patch<EstadoTransicionResult>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/continuar-entrevistas`,
+      {},
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Programa (o reprograma) la entrevista de un candidato y envía la invitación al correo que
+   * declaró en su formulario. El correo destino lo resuelve el backend, no viaja en el body.
+   */
+  guardarEntrevista(
+    candidatoId: number,
+    fecha: string,
+    hora: string,
+    lugarId: number,
+  ): Observable<EntrevistaAccionResult> {
+    return this.http.post<EntrevistaAccionResult>(
+      `${this.apiUrl}/candidato/${candidatoId}/entrevista`,
+      { fecha, hora, lugarId },
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Guarda la evaluación de la entrevista de un candidato: los cuatro puntajes y los tres
+   * comentarios del informe que verá el área solicitante.
+   */
+  guardarEvaluacion(candidatoId: number, dto: EvaluacionGuardar): Observable<EvaluacionAccionResult> {
+    return this.http.put<EvaluacionAccionResult>(
+      `${this.apiUrl}/candidato/${candidatoId}/evaluacion`,
+      dto,
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Envía al candidato el correo de agradecimiento por no continuar en el proceso y deja su
+   * resultado en "No pasó". El correo destino lo resuelve el backend (el de su entrevista).
+   */
+  enviarAgradecimiento(candidatoId: number): Observable<EvaluacionAccionResult> {
+    return this.http.post<EvaluacionAccionResult>(
+      `${this.apiUrl}/candidato/${candidatoId}/agradecimiento`,
+      {},
       { headers: this.headers },
     );
   }
@@ -151,19 +208,12 @@ export class ReclutamientoService {
   }
 }
 
-/** Candidato de la long list a enviar (CV obligatorio, informe opcional). */
+/**
+ * Candidato de la long list a enviar (CV obligatorio, informe opcional). El puesto no se manda:
+ * lo toma el backend del requerimiento, que es el que registró el solicitante.
+ */
 export interface LongListCandidatoEnvio {
   nombre: string;
-  /** Puesto detectado en el CV (texto libre). Null si no se determinó. */
-  puesto: string | null;
-  /** Tiempo de experiencia en años. Null si no se determinó. */
-  experienciaAnios: number | null;
-  /** Disponibilidad del candidato (texto libre). Null si no se determinó. */
-  disponibilidad: string | null;
-  /** Id del canal de publicación usado como fuente de reclutamiento. */
-  fuenteCanalId: number | null;
-  /** Nombre de la fuente de reclutamiento (canal), para mostrar en el correo. */
-  fuenteNombre: string | null;
   comentario: string;
   cv: File;
   informe: File | null;

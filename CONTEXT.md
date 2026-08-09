@@ -4963,3 +4963,45 @@ El modal "Editar" de `contratista-usuarios.ts` (usado en `admin-contratista-usua
 
 ### Pendiente (investigado, sin cambios de código todavía)
 Personal de Oficina Central / Post Venta / Arquitectura Comercial no aparece en "Programar Inducción" porque el campo Proyecto no es obligatorio al crear trabajadores `Casa` Staff/Oficina (`worker-create-edit.ts`, getter `canSubmit`). Ver CONTEXT.md del backend para el plan completo (backfill SQL + hacer el campo obligatorio).
+
+## Sesión 2026-08-07 — Fixes de consistencia en ranking IES y dashboard AC
+
+### 1. `estadoGantt()` reordenado (fix real, no solo cosmético)
+`dashboard.ts`: el filtro "Vencido" del modal de carga usaba `estadoGantt()`, que chequeaba `EN_PROCESO` antes que `VENCIDO` — una actividad ya arrancada pero vencida se clasificaba como "en proceso" y desaparecía del filtro, aunque el chip "N vencidas" (calculado aparte, sin ese bug) sí la contara. Reordenado para igualar `ComputeEstado` del backend (vencido se evalúa primero). Confirmado con capturas del usuario: chip decía "2 vencidas", filtro mostraba "0 mostrando" — ya no debería pasar.
+
+### 2. Detalle semanal del ranking — botón "ver cuáles"
+Pregunta real del usuario: "Carbajal tiene 3/5 culminadas, ¿cuáles 2 le faltan?" — no había forma de verlo. Se agregó:
+- `verDetalleSemanaSupervisor(sup)` en `dashboard.ts`: abre el modal de carga (mismo componente que ya existía) pero filtrado a `modalCargaSoloSemanaControl = true`, que restringe `modalCargaActividades` a las que su `finProgramado` cae dentro de `semanaActual.inicio`–`fin` (mismo rango exacto que usa el backend para calcular el IES en `GetDashboardDataFiltrado`).
+- Botón visible "ver cuáles" (no solo ícono, se hizo texto explícito tras feedback de que un ícono gris de 12px pasaba desapercibido) junto a "X/Y culminadas/asignadas" en cada fila del ranking, con `$event.stopPropagation()` para no disparar el click del row (que abre el histórico all-time, cosa distinta).
+- Modal de carga ensanchado de `820px` a `1180px/95vw` — las columnas Actividad/Proyecto se truncaban antes de eso.
+
+### 3. IES — umbral de SPI bajado de 1.5 a 1.0
+`Abril_Backend/Infrastructure/Repositories/ArquitecturaComercialRepository.cs:1513`: `compSpi = Math.Min(spiPromedio / 1.0, 1.0) * 100` (antes `/1.5`). Motivo: dos supervisores con 100% de cierre (12/12 y 4/4) no llegaban a 100% de IES porque el componente SPI exigía un ritmo de 1.5x (50% adelantado) para el máximo — un umbral irreal. Con SPI=1.0 (a tiempo) ya se obtiene el máximo de ese componente. **Este cambio vive en el otro repo (`Abril_Backend`), no aquí** — hay que confirmarlo/pushearlo ahí también.
+
+### Sobre el corte semanal (lunes-domingo)
+Se planteó cambiarlo a "viernes a jueves" porque actividades que vencen el mismo día de la consulta (viernes) generaban confusión en el ranking. El usuario pidió explícitamente **no tocarlo** ("no cambies, déjalo así") — queda lunes-domingo tal cual estaba. No se tocó ningún código de rango de semana.
+
+### Pendiente
+1. Confirmar/pushear el cambio de SPI 1.5→1.0 en el repo `Abril_Backend` (commit separado, otra terminal).
+2. Verificar en el celular que el filtro "Vencido" del modal de carga ya no da 0 resultados con chip >0.
+
+## Sesión 2026-08-07 (2) — Diagnóstico: feature de Planeamiento BIM no aparecía en el sidebar
+
+Sin cambios de código en este repo (working tree limpio todo el rato). El feature de Planeamiento BIM (Configuración Inicial, Carga Diaria, Bloqueos) ya estaba completo en frontend y backend desde antes (`victor-frontend`, commits `71dfe1cb`/`a0e92443`/`750e02e0`), pero el usuario no lo veía en el sidebar tras loguearse.
+
+### Causa raíz encontrada (no fue lo que se sospechaba al inicio)
+El sistema de permisos es dinámico vía `allowed_features` (tabla `feature`/`role_feature` en BD, consultada en `RoleFeatureRepository.GetAllFeatures()`), y la feature `planeamiento-bim.configuracion-inicial` nunca se había sembrado ahí — ninguna feature nueva se registra sola, hace falta un INSERT manual (convención del equipo: `Abril_Backend/Migrations/Manual/*.sql`).
+
+Se creó y el usuario ejecutó `Abril_Backend/Migrations/Manual/20260807_PlaneamientoBimFeatureSeed.sql` (idempotente): registra el `feature_key` bajo el módulo `'Proyectos'` y lo asigna a los roles 1/2/3 (mismos que exige `[Authorize]` en `PlaneamientoBimConfiguracionController`). Verificado con `SELECT` que quedaron las 3 filas en `role_feature`.
+
+Aun así el ítem seguía sin aparecer. Se verificó con evidencia directa en el navegador (Claude in Chrome, `window.ng.getComponent` sobre `app-sidebar`):
+- Los 4 `featureKey` (`proyectos.routes.ts` ×3 + `navigation.service.ts`) son byte-idénticos (comparación de charcodes, no visual).
+- `localStorage.getItem('allowed_features')` en sesión real **sí** incluye `planeamiento-bim.configuracion-inicial` (104 features, token no vencido) — o sea el seed + re-login ya habían surtido efecto.
+- Pero el array `config` en memoria del `NavigationService` que corría en el navegador (`comp.navService['config']`, leído directo de la instancia real) **no tenía la entrada del todo** — 8 items en vez de 9 bajo "Proyectos".
+- Conclusión: el `ng serve` (PID detectado vía `Get-NetTCPConnection -LocalPort 4200`) había arrancado a las 18:09:50, y el `git merge origin/master` de "actualizar rama" (que trajo/tocó `navigation.service.ts`) se aplicó a las 18:12:48 — 3 minutos después. El dev server seguía sirviendo el bundle compilado antes del merge; un hard-reload (`Ctrl+Shift+R`) no lo resolvió porque el problema no era cache del navegador sino que el servidor nunca recompiló.
+
+### Pendiente / acción del usuario
+El usuario paró el proceso node y va a correr `npm start` de nuevo — falta confirmar visualmente que tras el reinicio "Configuración Planeamiento BIM" aparece en el sidebar de Proyectos.
+
+### Nota para la próxima vez
+Cuando "actualizar rama" trae un merge grande mientras `ng serve` ya está corriendo, no asumir que el watch mode lo recoge solo — si algo agregado/tocado por el merge no aparece en la UI aunque el código en disco esté bien, sospechar primero del dev server desactualizado (chequear PID/hora de arranque vs hora del merge) antes de asumir un bug de datos o de permisos.

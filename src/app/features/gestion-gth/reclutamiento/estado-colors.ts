@@ -16,10 +16,11 @@ const PIPELINE: string[] = [
   'LONG_LIST',
   'LONG_LIST_ENVIADA',
   'LONG_LIST_APROBADA',
-  'SELECCION_JEFATURA',
-  'EVALUACION',
   'ENTREVISTAS',
+  'EVALUACION',
+  'SELECCION_JEFATURA',
   'OFERTA_CIERRE',
+  'CERRADO',
 ];
 
 /** true si el estado actual ya alcanzó (o superó) la fase indicada del pipeline. */
@@ -42,6 +43,7 @@ export function estadoColors(codigo: string): { bg: string; text: string } {
     case 'EVALUACION':         return { bg: '#FFEDD5', text: '#C2410C' };
     case 'ENTREVISTAS':        return { bg: '#FCE7F3', text: '#BE185D' };
     case 'OFERTA_CIERRE':      return { bg: '#DCFCE7', text: '#15803D' };
+    case 'CERRADO':            return { bg: '#E0E7FF', text: '#3730A3' };
     default:                   return { bg: '#F3F4F6', text: '#374151' };
   }
 }

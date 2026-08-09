@@ -4,8 +4,10 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
   CandidatoDecision,
+  FinalistaDecisionResult,
   LongListDecisionResult,
   ReclutamientoFormDataDto,
+  RevisionFinalistas,
   RevisionLongList,
   Seguimiento,
   SolicitantePanel,
@@ -60,6 +62,34 @@ export class SolicitudPersonalService {
     return this.http.post<LongListDecisionResult>(
       `${this.apiUrl}/requerimiento/${requerimientoId}/long-list/decision`,
       { decisiones },
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Informe de finalistas de un requerimiento: cabecera + candidatos entrevistados con sus
+   * puntajes, comentarios y CV (lo que GTH registró tras las entrevistas).
+   */
+  getRevisionFinalistas(requerimientoId: number): Observable<RevisionFinalistas> {
+    return this.http.get<RevisionFinalistas>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/finalistas/revision`,
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Registra la decisión final del solicitante sobre un finalista. El backend mueve el
+   * requerimiento (cerrado al aprobar; de vuelta a long list si se rechazó a todos), le envía el
+   * correo de agradecimiento al rechazado y notifica a GTH.
+   */
+  decidirFinalista(
+    requerimientoId: number,
+    candidatoId: number,
+    aprobado: boolean,
+  ): Observable<FinalistaDecisionResult> {
+    return this.http.post<FinalistaDecisionResult>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/finalistas/decision`,
+      { candidatoId, aprobado },
       { headers: this.headers },
     );
   }

@@ -98,7 +98,7 @@
                   type="button"
                   class="row-action"
                   (click)="abrirProgramarEmo(item, $event)"
-                  title="Programar EMO"
+                  title="Programar EMO con clínica"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
@@ -146,7 +146,7 @@
                   type="button"
                   class="row-action"
                   (click)="registrarEmoPara(item, $event)"
-                  title="Registrar EMO"
+                  title="Registrar resultados de EMO"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                     <path d="M12 5v14M5 12h14"/>
@@ -175,7 +175,7 @@
   </div>
 </section>
 
-<app-fab label="Nuevo EMO" (clicked)="openCreate()"></app-fab>
+<app-fab label="Registrar resultados de EMO" (clicked)="openCreate()"></app-fab>
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
