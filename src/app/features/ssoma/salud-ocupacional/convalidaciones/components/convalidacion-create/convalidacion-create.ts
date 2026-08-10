@@ -13,6 +13,7 @@ import Swal from 'sweetalert2';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { WorkerSearchInput } from '../../../shared/worker-search-input/worker-search-input';
+import { ProgramacionCreate } from '../../../programaciones/components/programacion-create/programacion-create';
 import { ConvalidacionService } from '../../../services/convalidacion.service';
 import { CatalogosSaludService } from '../../../services/catalogos-salud.service';
 import { EmoService } from '../../../services/emo.service';
@@ -29,11 +30,12 @@ import {
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { aptitudBadgeClass } from '../../../shared/aptitud.utils';
+import { FirmaElectronicaService } from '../../../shared/firma-electronica.service';
 
 @Component({
   selector: 'app-convalidacion-create',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilModalPanel, SearchSelect, WorkerSearchInput],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SearchSelect, WorkerSearchInput, ProgramacionCreate],
   templateUrl: './convalidacion-create.html',
   styleUrl: './convalidacion-create.css',
 })
@@ -57,6 +59,8 @@ export class ConvalidacionCreate implements OnInit {
   empresas: EmpresaSimpleDto[] = [];
   medicos: MedicoSimpleDto[] = [];
 
+  showProgramarEmo = false;
+
   readonly resultadoOptions = [
     { id: 'Aprobada', nombre: 'Aprobada' },
     { id: 'Rechazada', nombre: 'Rechazada' },
@@ -70,6 +74,7 @@ export class ConvalidacionCreate implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
+    private firmaElectronica: FirmaElectronicaService,
   ) {}
 
   ngOnInit(): void {
@@ -90,6 +95,37 @@ export class ConvalidacionCreate implements OnInit {
     this.emoOrigenId = 0;
     this.emosDisponibles = [];
     if (w) this.loadEmosWorker(w.id);
+  }
+
+  /** Puesto/clasificación destino: el registro VIGENTE del trabajador (ya gestionado en
+   * Habilitación → Cambiar obra / puesto de trabajo). El origen (qué tenía al momento del
+   * EMO elegido) solo se puede resolver server-side, así que no hay vista previa acá — el
+   * backend lo calcula al guardar y bloquea con un mensaje claro si el cambio de puesto no
+   * es convalidable. */
+  get puestoDestinoPreview(): string {
+    return this.worker?.cargo || this.worker?.ocupacion || '—';
+  }
+
+  get clasificacionDestinoPreview(): string {
+    return this.worker?.obraOficinaStaffNombre || 'Sin clasificar';
+  }
+
+  abrirProgramarEmo(): void {
+    this.showProgramarEmo = true;
+  }
+
+  onProgramacionSaved(): void {
+    this.showProgramarEmo = false;
+    Swal.fire({
+      icon: 'success',
+      title: 'EMO programado',
+      timer: 1500,
+      showConfirmButton: false,
+    });
+  }
+
+  onProgramacionClosed(): void {
+    this.showProgramarEmo = false;
   }
 
   private loadEmosWorker(workerId: number): void {
@@ -137,7 +173,7 @@ export class ConvalidacionCreate implements OnInit {
     ) && !this.saving;
   }
 
-  submit(): void {
+  async submit(): Promise<void> {
     if (!this.canSubmit) {
       Swal.fire({
         icon: 'warning',
@@ -155,7 +191,19 @@ export class ConvalidacionCreate implements OnInit {
       medicoId: this.medicoId || undefined,
       resultado: this.resultado,
       notas: this.notas || undefined,
+      // Puesto/clasificación origen y destino ya no se digitan acá: el backend los resuelve
+      // solos a partir del historial de vinculación del trabajador.
     };
+
+    // Toda decisión final (no "Pendiente") exige firma: PIN del médico + reautenticación
+    // fresca de Microsoft. El backend vuelve a validar ambos de todas formas.
+    if (this.resultado !== 'Pendiente') {
+      const medicoNombre = this.medicos.find((m) => m.id === this.medicoId)?.apellidoNombre ?? 'el médico';
+      const firma = await this.firmaElectronica.solicitarFirma(medicoNombre);
+      if (!firma) return;
+      payload.pinFirma = firma.pinFirma;
+      payload.microsoftAccessToken = firma.microsoftAccessToken;
+    }
 
     this.saving = true;
     this.loaderService.show();
@@ -174,6 +222,23 @@ export class ConvalidacionCreate implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.saving = false;
         this.loaderService.hide();
+        // El backend bloquea con 400/423 cuando el cambio de puesto sube de riesgo — en ese
+        // caso se ofrece el atajo de programar el EMO nuevo en el momento, en vez de un error
+        // genérico sin salida.
+        const mensaje: string = err?.error?.message ?? '';
+        if (mensaje.includes('EMO nuevo')) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'No se puede convalidar',
+            text: mensaje,
+            showCancelButton: true,
+            confirmButtonText: 'Programar EMO ahora',
+            cancelButtonText: 'Cerrar',
+          }).then((res) => {
+            if (res.isConfirmed) this.abrirProgramarEmo();
+          });
+          return;
+        }
         this.errorService.handleError(err);
       },
     });

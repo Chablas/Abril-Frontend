@@ -17,6 +17,7 @@ import { SearchInput } from '../../../../../../shared/components/search-input/se
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
+import { FirmaDigitalPad } from '../firma-digital-pad/firma-digital-pad';
 
 interface FilterOption {
   id: string | number;
@@ -38,6 +39,7 @@ interface FilterOption {
     StatusBadge,
     TitleCasePipe,
     AbrilBulkActionDirective,
+    FirmaDigitalPad,
   ],
   templateUrl: './catalogo-medicos.html',
   styleUrl: './catalogo-medicos.css',
@@ -206,6 +208,7 @@ export class CatalogoMedicos implements OnInit, OnDestroy {
       this.service
         .updateMedico(item.id, {
           apellidoNombre: item.apellidoNombre,
+          dni: item.dni ?? null,
           cmp: item.cmp ?? null,
           especialidad: item.especialidad ?? null,
           clinicaId: item.clinicaId ?? null,
@@ -223,6 +226,99 @@ export class CatalogoMedicos implements OnInit, OnDestroy {
             this.errorService.handleError(err);
           },
         });
+    });
+  }
+
+  firmaPadOpen = false;
+  medicoFirmaPadId: number | null = null;
+
+  /** Paso 1 del flujo de firma: dibujar la firma digital, la que se imprime en el
+   * SSO-FO-149 junto al recuadro de comparación manuscrita. */
+  abrirFirmaDigital(item: MedicoSimpleDto): void {
+    this.medicoFirmaPadId = item.id;
+    this.firmaPadOpen = true;
+  }
+
+  onFirmaDigitalSaved(): void {
+    this.firmaPadOpen = false;
+  }
+
+  onFirmaDigitalClosed(): void {
+    this.firmaPadOpen = false;
+  }
+
+  /** Paso 3: subir el SSO-FO-149 ya impreso (con la firma digital), firmado a mano al
+   * costado, y escaneado — requisito junto con la firma digital para poder definir el PIN. */
+  subirAutorizacionEscaneada(item: MedicoSimpleDto, input: HTMLInputElement): void {
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    this.loaderService.show();
+    this.service.subirAutorizacionFirmada(item.id, file).subscribe({
+      next: () => {
+        this.loaderService.hide();
+        Swal.fire({ icon: 'success', title: 'Autorización escaneada subida', timer: 1500, showConfirmButton: false });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /** El propio médico define su PIN de firma (distinto de su password de Microsoft),
+   * exigido junto con la reautenticación de Microsoft al autorizar convalidaciones. */
+  configurarPinFirma(item: MedicoSimpleDto): void {
+    Swal.fire({
+      icon: 'question',
+      title: 'Configurar PIN de firma',
+      html: `Define el PIN de firma de <b>${item.apellidoNombre}</b>. Debe conocerlo únicamente él/ella.`,
+      input: 'password',
+      inputPlaceholder: 'Nuevo PIN (mínimo 4 dígitos)',
+      inputAttributes: { maxlength: '10', autocapitalize: 'off', autocorrect: 'off' },
+      showCancelButton: true,
+      confirmButtonText: 'Confirmar',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (value) => {
+        if (!value) return 'Ingresa el PIN.';
+        if (value.length < 4) return 'El PIN debe tener al menos 4 dígitos.';
+        return undefined;
+      },
+    }).then((res) => {
+      if (!res.isConfirmed || !res.value) return;
+      this.loaderService.show();
+      this.service.setPinFirma(item.id, res.value).subscribe({
+        next: () => {
+          this.loaderService.hide();
+          Swal.fire({ icon: 'success', title: 'PIN configurado', timer: 1500, showConfirmButton: false });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  /** SSO-FO-149 — autorización de firma electrónica para imprimir, firmar a mano y
+   * volver a subir escaneada. */
+  descargarAutorizacionFirma(item: MedicoSimpleDto): void {
+    this.loaderService.show();
+    this.service.descargarAutorizacionFirmaPdf(item.id).subscribe({
+      next: (blob) => {
+        this.loaderService.hide();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Autorizacion_Firma_${item.apellidoNombre.replace(/\s+/g, '_')}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
     });
   }
 

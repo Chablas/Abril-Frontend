@@ -22,10 +22,28 @@ import { CatalogosSaludService } from '../../../../../ssoma/salud-ocupacional/se
 import { EmpresaSimpleDto } from '../../../../../ssoma/salud-ocupacional/dtos/catalogos.model';
 import { WorkerHabilitacionListDto } from '../../../../dtos/trabajador.model';
 
+/**
+ * Cada dimensión (obra, razón social, puesto, clasificación) se marca por separado con su
+ * propio checkbox. Los campos SIEMPRE viajan prellenados con el valor actual del trabajador;
+ * el checkbox solo controla si el admin puede editarlos. Así, si un checkbox queda sin marcar,
+ * el valor que se envía es idéntico al actual — el backend lo compara contra lo que ya tenía
+ * y no dispara ningún efecto (reset de aptitud, notificación, etc.) para esa dimensión. Esto
+ * es lo que hace posible combinar libremente "solo puesto", "solo razón social", "obra +
+ * puesto", etc., sin arrastrar cambios no marcados explícitamente.
+ */
 interface CambiarObraForm {
+  cambiaObra: boolean;
   proyectoId: number | null;
+
+  cambiaEmpresa: boolean;
   empresaId: number | null;
-  staffOficina: string;
+
+  cambiaPuesto: boolean;
+  puesto: string;
+
+  cambiaStaffOficina: boolean;
+  staffOficina: number | null;
+
   fechaCambio: string;
 }
 
@@ -49,10 +67,12 @@ export class CambiarObra implements OnChanges {
   saving = false;
   loadingCatalogos = false;
 
+  // IDs fijos del catálogo workers_obra_oficina_staff (ver ObraOficinaStaffIds en el backend).
+  readonly OFICINA_CENTRAL_ID = 3;
   staffOficinaOptions = [
-    { id: 'Obra', nombre: 'Obra' },
-    { id: 'Staff', nombre: 'Staff' },
-    { id: 'Oficina Central', nombre: 'Oficina Central' },
+    { id: 1, nombre: 'Obra' },
+    { id: 2, nombre: 'Staff' },
+    { id: 3, nombre: 'Oficina Central' },
   ];
 
   constructor(
@@ -67,18 +87,39 @@ export class CambiarObra implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open) {
       this.model = this.empty();
-      this.model.staffOficina = this.worker?.obraOficina ?? 'Obra';
+      // Prellenados con lo actual del trabajador — cada campo queda bloqueado (readonly) hasta
+      // que se marque su checkbox, así nunca viaja un valor "inventado" por defecto.
+      this.model.proyectoId = this.worker?.proyectoActualId ?? null;
+      this.model.empresaId = this.worker?.empresaId ?? null;
+      this.model.staffOficina = this.worker?.obraOficinaStaffId ?? 1;
+      this.model.puesto = this.worker?.ocupacion ?? '';
       this.loadCatalogos();
     }
   }
 
   private empty(): CambiarObraForm {
     return {
+      cambiaObra: false,
       proyectoId: null,
+      cambiaEmpresa: false,
       empresaId: null,
-      staffOficina: 'Obra',
+      cambiaPuesto: false,
+      puesto: '',
+      cambiaStaffOficina: false,
+      staffOficina: 1,
       fechaCambio: new Date().toISOString().substring(0, 10),
     };
+  }
+
+  /** La razón social solo se gestiona acá para trabajadores "Casa" (propios de Abril) — para
+   * contratistas, la empresa es la del contrato y se gestiona por otro flujo. Se mantiene la
+   * misma regla que ya regía el formulario anterior. */
+  get puedeEditarEmpresa(): boolean {
+    return this.worker?.contrataCasa === 'Casa';
+  }
+
+  get puedeEditarStaffOficina(): boolean {
+    return this.worker?.contrataCasa === 'Casa';
   }
 
   private loadCatalogos(): void {
@@ -108,24 +149,49 @@ export class CambiarObra implements OnChanges {
   }
 
   get title(): string {
-    return 'Cambiar obra';
+    return 'Cambiar obra / razón social / puesto de trabajo';
+  }
+
+  /** Sube de riesgo (Oficina Central → Staff/Obra): el certificado de aptitud actual no
+   * cubre el nuevo puesto, se exigirá un EMO nuevo — no basta con convalidar. Solo aplica si
+   * el checkbox de clasificación está marcado (si no, staffOficina viaja igual al actual). */
+  get esCambioRiesgoCritico(): boolean {
+    if (!this.model.cambiaStaffOficina) return false;
+    const actual = this.worker?.obraOficinaStaffId ?? null;
+    return actual === this.OFICINA_CENTRAL_ID
+      && this.model.staffOficina !== this.OFICINA_CENTRAL_ID
+      && this.model.staffOficina !== null;
+  }
+
+  /** Al menos una dimensión debe estar marcada — de lo contrario no hay nada que cambiar. */
+  get algunCambioMarcado(): boolean {
+    return this.model.cambiaObra || this.model.cambiaEmpresa
+      || this.model.cambiaPuesto || this.model.cambiaStaffOficina;
   }
 
   get canSubmit(): boolean {
-    return !this.saving && !!this.model.proyectoId && !!this.model.fechaCambio;
+    if (this.saving || !this.algunCambioMarcado || !this.model.fechaCambio) return false;
+    if (this.model.cambiaObra && !this.model.proyectoId) return false;
+    if (this.model.cambiaEmpresa && !this.model.empresaId) return false;
+    if (this.model.cambiaPuesto && !this.model.puesto.trim()) return false;
+    if (this.model.cambiaStaffOficina && !this.model.staffOficina) return false;
+    return true;
   }
 
   submit(): void {
     if (!this.canSubmit || !this.worker) return;
 
-    if (this.worker?.contrataCasa !== 'Casa') {
-      this.model.empresaId = null;
-    }
+    const empresaId = this.puedeEditarEmpresa ? this.model.empresaId : null;
 
     const payload = {
+      // proyectoId siempre viaja: si "cambiaObra" no está marcado, es el mismo valor actual
+      // (precargado en ngOnChanges), así que el backend no detecta cambio de obra.
       nuevoProyectoId: this.model.proyectoId,
-      nuevaEmpresaId: this.model.empresaId ?? undefined,
-      staffOficina: this.model.staffOficina,
+      nuevaEmpresaId: empresaId ?? undefined,
+      // puesto y staffOficina solo viajan si su checkbox está marcado — evita que el
+      // backend calcule un "cambio" contra un valor que el admin nunca tocó a propósito.
+      puesto: this.model.cambiaPuesto ? this.model.puesto.trim() : undefined,
+      obraOficinaStaffId: this.model.cambiaStaffOficina ? this.model.staffOficina ?? undefined : undefined,
       fechaCambio: this.model.fechaCambio,
     };
 
@@ -138,7 +204,7 @@ export class CambiarObra implements OnChanges {
         this.loaderService.hide();
         Swal.fire({
           icon: 'success',
-          title: 'Cambio de obra registrado',
+          title: 'Cambio registrado',
           timer: 1500,
           showConfirmButton: false,
         });

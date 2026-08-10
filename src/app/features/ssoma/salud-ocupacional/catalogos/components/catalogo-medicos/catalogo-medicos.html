@@ -48,6 +48,25 @@
               <button type="button" abrilBulkAction="default" (click)="openEdit(item)">
                 Editar
               </button>
+              <button type="button" abrilBulkAction="default" (click)="abrirFirmaDigital(item)">
+                Firma digital
+              </button>
+              <button type="button" abrilBulkAction="default" (click)="descargarAutorizacionFirma(item)">
+                Autorización de firma
+              </button>
+              <button type="button" abrilBulkAction="default" (click)="escaneadoInput.click()">
+                Subir escaneado
+              </button>
+              <input
+                #escaneadoInput
+                type="file"
+                accept="application/pdf,image/*"
+                class="hidden-file-input"
+                (change)="subirAutorizacionEscaneada(item, escaneadoInput)"
+              />
+              <button type="button" abrilBulkAction="default" (click)="configurarPinFirma(item)">
+                PIN de firma
+              </button>
               <button
                 type="button"
                 [abrilBulkAction]="item.activo ? 'danger' : 'default'"
@@ -120,3 +139,10 @@
     </app-search-select>
   </div>
 </app-filter-modal>
+
+<app-firma-digital-pad
+  [open]="firmaPadOpen"
+  [medicoId]="medicoFirmaPadId"
+  (closed)="onFirmaDigitalClosed()"
+  (saved)="onFirmaDigitalSaved()"
+></app-firma-digital-pad>

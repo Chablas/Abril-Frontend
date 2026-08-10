@@ -117,6 +117,35 @@ export class MicrosoftAuthService {
     }
   }
 
+  /**
+   * Fuerza un desafío de login interactivo de Microsoft (prompt=login, ignora la sesión
+   * silenciosa/caché) y devuelve el access token resultante. A diferencia de
+   * getGraphToken(), este NUNCA reutiliza una sesión ya abierta — existe específicamente
+   * para el paso de "firma" de convalidaciones, donde se necesita probar que el médico
+   * reautenticó su cuenta de Microsoft en ese acto exacto, no que solo tenía sesión activa.
+   */
+  async getFreshSignatureToken(): Promise<string> {
+    const msal = await this.getMsalInstance();
+    const accounts = msal.getAllAccounts();
+    try {
+      const result = await msal.acquireTokenPopup({
+        scopes: ['User.Read'],
+        prompt: 'login',
+        account: accounts[0],
+      });
+      return result.accessToken;
+    } catch (err: any) {
+      const isCancelled = err?.errorCode === 'user_cancelled'
+        || err?.errorCode === 'popup_window_error'
+        || err?.message?.includes('user_cancelled');
+      throw new Error(
+        isCancelled
+          ? 'Reautenticación cancelada. La firma requiere confirmar tu cuenta de Microsoft.'
+          : (err?.message ?? 'No se pudo reautenticar con Microsoft para firmar.')
+      );
+    }
+  }
+
   async logout(): Promise<void> {
     // Limpiar cache de MSAL del localStorage (claves propias de la librería)
     Object.keys(localStorage)

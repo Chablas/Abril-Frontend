@@ -8,7 +8,9 @@
       <h4 class="section-title">Datos personales</h4>
       <div class="grid-2">
         <div class="col-span-2" *ngIf="!esContratista">
-          <label class="field-label">Obra / Oficina</label>
+          <label class="field-label">
+            Clasificación (Obra / Staff / Oficina Central) {{ mode === 'edit' ? '(solo lectura)' : '' }}
+          </label>
           <app-search-select
             [options]="obraOficinaOpciones"
             valueField="obraOficinaStaffId"
@@ -16,10 +18,14 @@
             [value]="model.obraOficinaStaffId"
             [showLabel]="false"
             [sortAlpha]="false"
+            [disabled]="mode === 'edit'"
             placeholder="Selecciona obra u oficina"
             [allowClear]="true"
             (valueChange)="onObraOficinaSelect($event)"
           />
+          <p class="field-hint" *ngIf="mode === 'edit'">
+            Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+          </p>
         </div>
         <div>
           <label class="field-label">Tipo de Documento *</label>
@@ -149,17 +155,21 @@
             <input type="text" class="field-input field-readonly" [value]="empresaContratistaNombre" readonly placeholder="Cargando…" />
           </div>
           <div class="col-span-2">
-            <label class="field-label">Proyecto *</label>
+            <label class="field-label">Proyecto * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
             <app-search-select
               [options]="proyectos"
               valueField="proyectoId"
               displayField="proyectoNombre"
               [value]="model.proyectoId"
               [showLabel]="false"
+              [disabled]="mode === 'edit'"
               placeholder="Buscar proyecto..."
               [allowClear]="true"
               (valueChange)="model.proyectoId = $event"
             />
+            <p class="field-hint" *ngIf="mode === 'edit'">
+              Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+            </p>
           </div>
           <div>
             <label class="field-label">Celular</label>
@@ -176,39 +186,46 @@
             />
           </div>
           <div>
-            <label class="field-label">Categoría *</label>
+            <label class="field-label">Categoría * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
             <app-search-select
               [options]="categorias"
               valueField="nombre"
               displayField="nombre"
               [value]="model.categoria || null"
               [showLabel]="false"
+              [disabled]="mode === 'edit'"
               placeholder="Selecciona categoría"
               [allowClear]="true"
               (valueChange)="onCategoriaChange($event)"
             />
           </div>
           <div>
-            <label class="field-label">Ocupación *</label>
+            <label class="field-label">Ocupación * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
             <app-search-select
               [options]="ocupaciones"
               valueField="nombre"
               displayField="nombre"
               [value]="model.ocupacion || null"
               [showLabel]="false"
+              [disabled]="mode === 'edit'"
               placeholder="Selecciona ocupación"
               [allowClear]="true"
               (valueChange)="onOcupacionChange($event)"
             />
           </div>
           <div class="col-span-2">
-            <label class="field-label">Puesto</label>
+            <label class="field-label">Puesto {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
             <input
               type="text"
               class="field-input"
+              [class.field-readonly]="mode === 'edit'"
+              [readonly]="mode === 'edit'"
               [(ngModel)]="model.puesto"
               placeholder="Se autocompleta con Categoría + Ocupación"
             />
+            <p class="field-hint" *ngIf="mode === 'edit'">
+              Para cambiar categoría, ocupación o puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+            </p>
           </div>
           <div>
             <label class="field-label">Condición médica *</label>
@@ -245,30 +262,38 @@
           <!-- OBRERO -->
           <ng-container *ngIf="esObrero">
             <div class="col-span-2">
-              <label class="field-label">Proyecto</label>
+              <label class="field-label">Proyecto {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <app-search-select
                 [options]="proyectos"
                 valueField="projectId"
                 displayField="projectDescription"
                 [value]="model.proyectoId"
                 [showLabel]="false"
+                [disabled]="mode === 'edit'"
                 placeholder="Buscar proyecto..."
                 [allowClear]="true"
                 (valueChange)="model.proyectoId = $event"
               />
+              <p class="field-hint" *ngIf="mode === 'edit'">
+                Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              </p>
             </div>
             <div class="col-span-2">
-              <label class="field-label">Razón social</label>
+              <label class="field-label">Razón social {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <app-search-select
                 [options]="empresas"
                 valueField="id"
                 displayField="razonSocial"
                 [value]="model.empresaId"
                 [showLabel]="false"
+                [disabled]="mode === 'edit'"
                 placeholder="Buscar empresa..."
                 [allowClear]="true"
                 (valueChange)="model.empresaId = $event"
               />
+              <p class="field-hint" *ngIf="mode === 'edit'">
+                Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              </p>
             </div>
             <div>
               <label class="field-label">Celular</label>
@@ -276,39 +301,46 @@
             </div>
             <div></div>
             <div>
-              <label class="field-label">Categoría</label>
+              <label class="field-label">Categoría {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <app-search-select
                 [options]="categorias"
                 valueField="nombre"
                 displayField="nombre"
                 [value]="model.categoria || null"
                 [showLabel]="false"
+                [disabled]="mode === 'edit'"
                 placeholder="Selecciona categoría"
                 [allowClear]="true"
                 (valueChange)="onCategoriaChange($event)"
               />
             </div>
             <div>
-              <label class="field-label">Ocupación</label>
+              <label class="field-label">Ocupación {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <app-search-select
                 [options]="ocupaciones"
                 valueField="nombre"
                 displayField="nombre"
                 [value]="model.ocupacion || null"
                 [showLabel]="false"
+                [disabled]="mode === 'edit'"
                 placeholder="Selecciona ocupación"
                 [allowClear]="true"
                 (valueChange)="onOcupacionChange($event)"
               />
             </div>
             <div class="col-span-2">
-              <label class="field-label">Puesto</label>
+              <label class="field-label">Puesto {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <input
                 type="text"
                 class="field-input"
+                [class.field-readonly]="mode === 'edit'"
+                [readonly]="mode === 'edit'"
                 [(ngModel)]="model.puesto"
                 placeholder="Se autocompleta con Categoría + Ocupación"
               />
+              <p class="field-hint" *ngIf="mode === 'edit'">
+                Para cambiar categoría, ocupación o puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              </p>
             </div>
             <div>
               <label class="field-label">Fecha de ingreso</label>
@@ -328,65 +360,80 @@
           <!-- STAFF / OFICINA CENTRAL -->
           <ng-container *ngIf="esStaffOOficina">
             <div class="col-span-2">
-              <label class="field-label">Proyecto</label>
+              <label class="field-label">Proyecto {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <app-search-select
                 [options]="proyectos"
                 valueField="projectId"
                 displayField="projectDescription"
                 [value]="model.proyectoId"
                 [showLabel]="false"
+                [disabled]="mode === 'edit'"
                 placeholder="Buscar proyecto..."
                 [allowClear]="true"
                 (valueChange)="model.proyectoId = $event"
               />
+              <p class="field-hint" *ngIf="mode === 'edit'">
+                Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              </p>
             </div>
             <div class="col-span-2">
-              <label class="field-label">Razón social</label>
+              <label class="field-label">Razón social {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <app-search-select
                 [options]="empresas"
                 valueField="id"
                 displayField="razonSocial"
                 [value]="model.empresaId"
                 [showLabel]="false"
+                [disabled]="mode === 'edit'"
                 placeholder="Buscar empresa..."
                 [allowClear]="true"
                 (valueChange)="model.empresaId = $event"
               />
+              <p class="field-hint" *ngIf="mode === 'edit'">
+                Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              </p>
             </div>
             <div>
-              <label class="field-label">Categoría</label>
+              <label class="field-label">Categoría {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <app-search-select
                 [options]="categorias"
                 valueField="nombre"
                 displayField="nombre"
                 [value]="model.categoria || null"
                 [showLabel]="false"
+                [disabled]="mode === 'edit'"
                 placeholder="Selecciona categoría"
                 [allowClear]="true"
                 (valueChange)="onCategoriaChange($event)"
               />
             </div>
             <div>
-              <label class="field-label">Ocupación</label>
+              <label class="field-label">Ocupación {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <app-search-select
                 [options]="ocupaciones"
                 valueField="nombre"
                 displayField="nombre"
                 [value]="model.ocupacion || null"
                 [showLabel]="false"
+                [disabled]="mode === 'edit'"
                 placeholder="Selecciona ocupación"
                 [allowClear]="true"
                 (valueChange)="onOcupacionChange($event)"
               />
             </div>
             <div class="col-span-2">
-              <label class="field-label">Puesto</label>
+              <label class="field-label">Puesto {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <input
                 type="text"
                 class="field-input"
+                [class.field-readonly]="mode === 'edit'"
+                [readonly]="mode === 'edit'"
                 [(ngModel)]="model.puesto"
                 placeholder="Se autocompleta con Categoría + Ocupación"
               />
+              <p class="field-hint" *ngIf="mode === 'edit'">
+                Para cambiar categoría, ocupación o puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              </p>
             </div>
             <!-- Área: desplegables en cascada sobre el árbol de áreas (workers.area_scope_id).
                  Se guarda el nodo elegido y el backend deriva de ahí la área/subárea legacy. -->

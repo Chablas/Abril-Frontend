@@ -20,6 +20,7 @@ export interface ClinicaUpsertDto {
 export interface MedicoSimpleDto {
   id: number;
   apellidoNombre: string;
+  dni?: string;
   cmp?: string;
   especialidad?: string;
   clinicaId?: number;
@@ -31,6 +32,7 @@ export interface MedicoSimpleDto {
 
 export interface MedicoUpsertDto {
   apellidoNombre: string;
+  dni?: string | null;
   cmp?: string | null;
   especialidad?: string | null;
   clinicaId?: number | null;
