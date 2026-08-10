@@ -131,8 +131,9 @@
                 @if (razonSocialSeleccionada) {
                   Cupos disponibles: <b>{{ razonSocialSeleccionada.cuposDisponibles }}</b>.
                 }
-                El cálculo se actualiza desde la base maestra; los practicantes no consumen
-                el tope de 20.
+                El cálculo se actualiza desde la base maestra sobre el tope de 20; cuenta personal
+                de Staff, Oficina Central y Personal Externo (el de Obra y los practicantes no
+                consumen cupo).
               </p>
               @if (sinCupos) {
                 <p class="text-[11.5px] font-semibold text-red-600 mt-[6px] leading-snug">
