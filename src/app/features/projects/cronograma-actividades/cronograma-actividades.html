@@ -5,18 +5,24 @@
     <div class="header-content">
       <div class="header-info-row">
         <button class="btn-volver" (click)="volver()" title="Volver a proyectos">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round" stroke-linejoin="round">
-            <line x1="19" y1="12" x2="5" y2="12"/>
-            <polyline points="12 19 5 12 12 5"/>
-          </svg>
+          <i class="ti ti-arrow-left text-base mr-1"></i>
           Volver
         </button>
         <div class="header-info">
           <span class="page-title">{{ proyectoHeader?.projectDescription || 'Cronograma de Actividades' }}</span>
-          <span class="page-sub" *ngIf="proyectoHeader?.responsableUdp">
-            Responsable UDP: {{ proyectoHeader!.responsableUdp }}
-          </span>
+          <div class="header-sub-row">
+            <span class="page-sub" *ngIf="proyectoHeader?.responsableUdp">
+              <i class="ti ti-user opacity-70 mr-1"></i>Responsable UDP: {{ proyectoHeader!.responsableUdp }}
+            </span>
+            <div class="header-metrics-summary" *ngIf="actividades.length">
+              <span class="metric-pill">
+                <i class="ti ti-list-check opacity-70 mr-1"></i>{{ actividades.length }} actividades
+              </span>
+              <span class="metric-pill pill-avance">
+                <i class="ti ti-chart-line opacity-70 mr-1"></i>{{ porcentajeAvanceGlobal }}% avance global
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -25,24 +31,73 @@
   <!-- ── Tabla de actividades ── -->
   <div class="card table-card" *ngIf="selectedProyectoId">
 
-    <!-- Pestañas tipo cronograma -->
-    <div class="cron-tabs-wrapper">
-      <app-section-tabs
-        [tabs]="cronogramaTabs"
-        [value]="tipoCronogramaActivo"
-        (valueChange)="onTabChange($event)">
-      </app-section-tabs>
+    <!-- Selector Dinámico de Etapas del Proyecto (Pipeline) -->
+    <div class="stage-pipeline-container">
+      <div class="stage-pipeline-bar">
+        
+        <!-- Etapa 1: Anteproyecto -->
+        <button
+          type="button"
+          class="stage-pipeline-step"
+          [class.active]="tipoCronogramaActivo === 'ANTEPROYECTO'"
+          (click)="onTabChange('ANTEPROYECTO')"
+        >
+          <div class="step-icon-wrap">
+            <i class="ti ti-file-text step-icon"></i>
+          </div>
+          <div class="step-info">
+            <span class="step-number">ETAPA 01</span>
+            <span class="step-label">Anteproyecto</span>
+          </div>
+        </button>
+
+        <div class="pipeline-connector">
+          <i class="ti ti-chevron-right connector-arrow"></i>
+        </div>
+
+        <!-- Etapa 2: Proyecto -->
+        <button
+          type="button"
+          class="stage-pipeline-step"
+          [class.active]="tipoCronogramaActivo === 'PROYECTO'"
+          (click)="onTabChange('PROYECTO')"
+        >
+          <div class="step-icon-wrap">
+            <i class="ti ti-building step-icon"></i>
+          </div>
+          <div class="step-info">
+            <span class="step-number">ETAPA 02</span>
+            <span class="step-label">Proyecto</span>
+          </div>
+        </button>
+
+        <div class="pipeline-connector">
+          <i class="ti ti-chevron-right connector-arrow"></i>
+        </div>
+
+        <!-- Etapa 3: Proyecto de Actualización -->
+        <button
+          type="button"
+          class="stage-pipeline-step"
+          [class.active]="tipoCronogramaActivo === 'PROYECTO_ACTUALIZACION'"
+          (click)="onTabChange('PROYECTO_ACTUALIZACION')"
+        >
+          <div class="step-icon-wrap">
+            <i class="ti ti-refresh step-icon"></i>
+          </div>
+          <div class="step-info">
+            <span class="step-number">ETAPA 03</span>
+            <span class="step-label">Actualización</span>
+          </div>
+        </button>
+
+      </div>
     </div>
 
     <!-- Placeholder: ninguna pestaña seleccionada -->
     <div class="table-empty-state" *ngIf="!tipoCronogramaActivo && !loadingActividades">
       <div class="empty-icon">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
+        <i class="ti ti-calendar-off text-3xl opacity-50"></i>
       </div>
       <p class="empty-title">Selecciona un cronograma para comenzar</p>
     </div>
@@ -100,51 +155,30 @@
         </span>
         <div class="toolbar-actions">
           <button class="btn-secondary" [class.btn-lb-on]="!lineaBaseVisible" (click)="toggleLineaBase()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              style="margin-right:0.35rem;flex-shrink:0">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
+            <i class="ti ti-chart-arcs text-sm mr-1.5"></i>
             Línea Base
           </button>
           <button *ngIf="esAdmin" class="btn-secondary" (click)="abrirModalMpp()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              style="margin-right:0.35rem;flex-shrink:0">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
+            <i class="ti ti-file-import text-sm mr-1.5"></i>
             Importar desde MS Project
           </button>
           <button class="btn-secondary" (click)="exportarPdf()" title="Exportar como PDF">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              style="margin-right:0.35rem;flex-shrink:0">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="12" y1="18" x2="12" y2="12"/>
-              <line x1="9" y1="15" x2="15" y2="15"/>
-            </svg>
+            <i class="ti ti-file-type-pdf text-sm mr-1.5"></i>
             Exportar PDF
           </button>
           <button class="btn-secondary" [class.btn-lb-on]="vistaGantt"
             (click)="toggleVistaGantt()" [disabled]="!actividades.length"
             [title]="vistaGantt ? 'Ver tabla' : 'Ver Gantt'">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              style="margin-right:0.35rem;flex-shrink:0">
-              <rect x="3" y="4" width="18" height="4" rx="1"/>
-              <rect x="3" y="10" width="11" height="4" rx="1"/>
-              <rect x="3" y="16" width="15" height="4" rx="1"/>
-            </svg>
+            <i class="ti ti-chart-gantt text-sm mr-1.5"></i>
             {{ vistaGantt ? 'Ver Tabla' : 'Ver Gantt' }}
           </button>
           <button class="btn-primary" (click)="abrirModalCrear()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              style="margin-right:0.3rem;flex-shrink:0">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
+            <i class="ti ti-plus text-sm mr-1"></i>
             Nueva Actividad
           </button>
         </div>
       </div>
+
 
       <!-- Contenedor dhtmlx-Gantt -->
       <div *ngIf="vistaGantt && actividades.length" class="gantt-full-container" #ganttContainer></div>
@@ -233,6 +267,9 @@
                 (click)="$event.stopPropagation()"
               >
                 <div class="order-cell">
+                  <span class="drag-grip-handle" title="Arrastrar para reordenar">
+                    <i class="ti ti-grip-vertical text-sm text-slate-400 hover:text-slate-700"></i>
+                  </span>
                   <button
                     class="btn-nivel btn-nivel-move"
                     [disabled]="!canMoveUp(act)"

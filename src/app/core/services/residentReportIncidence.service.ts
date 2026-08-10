@@ -4,9 +4,10 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiMessageDTO } from '../dtos/api/ApiMessage.model';
 import { PagedResponseDTO } from '../dtos/api/pagedResponse.model';
-import { ResidentReportIncidenceDTO } from '../dtos/reportResponseControl/residentReportIncidence.model'; 
+import { ResidentReportIncidenceDTO } from '../dtos/reportResponseControl/residentReportIncidence.model';
 import { ResidentReportResponseCreateDto } from '../dtos/reportResponseControl/responseCreateDto.model';
 import { UpdateIncidenceDTO } from '../dtos/reportResponseControl/updateIncidence.model';
+import { ProjectSimpleDTO } from '../dtos/project/projectSimple.model';
 
 @Injectable({
   providedIn: 'root',
@@ -16,9 +17,28 @@ export class ResidentReportIncidenceService {
 
   constructor(private http: HttpClient) {}
 
-  getReportsPaged(page: number): Observable<PagedResponseDTO<ResidentReportIncidenceDTO>> {
+  getReportsPaged(
+    page: number,
+    projectId?: number | null,
+    stateId?: number | null,
+  ): Observable<PagedResponseDTO<ResidentReportIncidenceDTO>> {
     const token = localStorage.getItem('access_token');
-    return this.http.get<PagedResponseDTO<ResidentReportIncidenceDTO>>(`${this.apiUrl}/paged?page=${page}`, {
+
+    let params = new HttpParams().set('page', String(page));
+    // Solo se envían los filtros que tienen valor: si son null/undefined, no se agrega el param.
+    if (projectId != null) params = params.set('projectId', String(projectId));
+    if (stateId != null) params = params.set('stateId', String(stateId));
+
+    return this.http.get<PagedResponseDTO<ResidentReportIncidenceDTO>>(`${this.apiUrl}/paged`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params,
+    });
+  }
+
+  /** Proyectos asignados al RESIDENTE logueado (backend resuelve el rol vía JWT). */
+  getAssignedProjects(): Observable<ProjectSimpleDTO[]> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ProjectSimpleDTO[]>(`${this.apiUrl}/assigned-projects`, {
       headers: { Authorization: `Bearer ${token}` },
     });
   }

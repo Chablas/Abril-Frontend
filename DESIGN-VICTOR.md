@@ -7,7 +7,7 @@
 
 ## 1. Principios generales
 
-- Estilo **flat** — sin sombras pesadas, sin gradientes.
+- Estilo con **profundidad sutil** — sombras suaves permitidas en cards e interacción hover, sin gradientes, sin sombras pesadas.
 - Inspiración **Power BI** para dashboards ejecutivos.
 - Idioma de la UI: **español (es-PE)**.
 - Títulos de página en **MAYÚSCULAS** (`route.data.titulo`).
@@ -20,6 +20,30 @@
   arriba es sobre librerías de *componentes* prearmados, no sobre el framework de 
   utilidades. Se usa de forma extendida (~62% de los `.html` del proyecto) 
   combinado con CSS plano por componente.
+
+---
+
+## Skills de diseño disponibles
+
+El proyecto tiene 2 skills validadas para consulta durante el desarrollo frontend:
+
+### ui-ux-pro-max
+Base de datos consultable de estilos, paletas, tipografía y guías de UX/accesibilidad.
+Uso validado: solo para consultas puntuales de accesibilidad (--domain ux), NO para 
+paleta/estilo general — la paleta que sugiere no reemplaza los tokens UDP/BCS ya 
+definidos en este documento.
+Comando: python .claude/skills/ui-ux-pro-max/scripts/search.py "<query>" --domain ux
+
+### design-system
+Arquitectura de tokens en 3 capas y tabla de specs por estado de componente 
+(Default/Hover/Active/Disabled/Focus).
+Uso validado: como plantilla de referencia para documentar estados de interacción 
+de componentes (ver ejemplo aplicado: focus-visible en app-search-select, 
+app-filter-trigger, app-filter-modal, abrilBulkAction).
+
+Nota: ninguna skill reemplaza la paleta de colores, tipografía o tokens ya 
+definidos en este documento — son herramientas de consulta puntual, no fuente 
+de verdad de diseño para este proyecto.
 
 ---
 
@@ -207,9 +231,15 @@ con el estilo flat sin competir visualmente con la paleta UDP.
 - `background: #ffffff`
 - `border: 0.5px solid #E2E8F0`
 - `border-radius: 10px`
-- Sin `box-shadow`.
+- **Estándar general del sistema (no excepción de un solo feature):** box-shadow
+  sutil permitido en reposo — `box-shadow: 0 1px 3px rgba(0,0,0,0.08)` — y
+  hover-elevación permitida — `box-shadow: 0 4px 12px rgba(0,0,0,0.12)` — con
+  transición suave (ej. `transition: box-shadow 0.2s ease`).
 - Para dashboards ejecutivos: `border-top: 4px solid <color-acento>` en lugar de 
-  fondo de color.
+  fondo de color. La sombra convive con ese `border-top` de acento — no lo
+  reemplaza — y aplica igual a las KPI cards de estos dashboards.
+- `cronograma-dashboard` (Dashboard UDP) ya implementa este estándar en sus
+  `.kpi-card` y `.table-card`.
 
 ### 6.2 Botones
 

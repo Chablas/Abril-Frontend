@@ -1,96 +1,58 @@
-import { Component, Output, EventEmitter, OnInit } from '@angular/core';
-import { ResidentReportIncidenceService } from '../../../../core/services/residentReportIncidence.service';
-import { ResidentReportIncidenceDTO } from '../../../../core/dtos/reportResponseControl/residentReportIncidence.model';
+import { Component, Input, Output, EventEmitter, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
-import { LoaderService } from '../../../../core/services/loader.service';
-import { ErrorService } from '../../../../core/services/error.service';
-import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
+import { ResidentReportIncidenceDTO } from '../../../../core/dtos/reportResponseControl/residentReportIncidence.model';
 import { AuthService } from '../../../../core/services/auth.service';
 import { Roles } from '../../../../core/constants/roles';
-import { RespondReportModal } from './respond-report-modal/respond-report-modal';
-import { ReportViewModal } from './report-view-modal/report-view-modal';
+import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
+import { ElapsedInfo, tiempoTranscurrido } from '../shared/elapsed-time';
 
+/**
+ * Vista tabla (presentacional) del control de respuesta de informes. No hace HTTP:
+ * recibe los datos ya paginados del padre y emite las acciones de fila
+ * (ver detalle / responder), que el padre resuelve abriendo el modal correspondiente.
+ *
+ * A propósito NO replica el tratamiento de color de las tarjetas: la tabla es para
+ * escaneo rápido, así que el tiempo transcurrido va como texto secundario neutro y
+ * solo se tiñe de rojo en el caso crítico (NO LEVANTADO con más de 30 días).
+ */
 @Component({
   selector: 'app-list',
-  imports: [CommonModule, FormsModule, RespondReportModal, ReportViewModal],
+  imports: [CommonModule, TitleCasePipe],
   templateUrl: './list.html',
   styleUrl: './list.css',
 })
-export class List implements OnInit {
+export class List implements OnChanges {
   readonly Roles = Roles;
-  showResponseModal = false;
-  showReportViewModal = false;
-  selectedIncidence: ResidentReportIncidenceDTO = {
-    residentReportIncidenceId: 0,
-    residentReportIncidenceDescription: '',
-    projectId: 0,
-    projectDescription: '',
-    stateId: 0,
-    stateDescription: '',
-    images: [],
-    residentReportResponseDescriptions: []
-  };
 
-  selectedReportIncidenceId: number = 0;
+  @Input() data: ResidentReportIncidenceDTO[] = [];
+  @Input() loading = false;
 
-  tableData: PagedResponseDTO<ResidentReportIncidenceDTO> = {
-    page: 0,
-    pageSize: 0,
-    totalRecords: 0,
-    totalPages: 0,
-    data: [],
-  };
+  @Output() respond = new EventEmitter<ResidentReportIncidenceDTO>();
+  @Output() openView = new EventEmitter<ResidentReportIncidenceDTO>();
 
-  @Output() pagedData = new EventEmitter<PagedResponseDTO<ResidentReportIncidenceDTO>>();
+  /** Filas fantasma para el skeleton de carga inicial (F8). */
+  readonly skeletonRows = Array.from({ length: 6 });
 
-  constructor(
-    private residentReportIncidenceService: ResidentReportIncidenceService,
-    private loaderService: LoaderService,
-    private errorService: ErrorService,
-    public authService: AuthService,
-  ) {}
+  /** Memo por incidencia: evita recalcular fechas en cada ciclo de detección de cambios. */
+  private readonly cacheTiempo = new Map<number, ElapsedInfo>();
 
-  ngOnInit(): void {
-    setTimeout(() => this.loadResidentReports());
+  constructor(public authService: AuthService) {}
+
+  ngOnChanges(): void {
+    this.cacheTiempo.clear();
   }
-  loadResidentReports(page: number = 1) {
-    this.loaderService.show();
-    this.residentReportIncidenceService.getReportsPaged(page).subscribe({
-      next: (response) => {
-        this.tableData = response;
-        this.pagedData.emit(response);
-        this.loaderService.hide();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.errorService.handleError(err);
-      },
-    });
+
+  tiempo(item: ResidentReportIncidenceDTO): ElapsedInfo {
+    let info = this.cacheTiempo.get(item.residentReportIncidenceId);
+    if (!info) {
+      info = tiempoTranscurrido(item);
+      this.cacheTiempo.set(item.residentReportIncidenceId, info);
+    }
+    return info;
   }
-  openResponseModal(item: ResidentReportIncidenceDTO, event: MouseEvent) {
+
+  onRespond(item: ResidentReportIncidenceDTO, event: MouseEvent): void {
     event.stopPropagation();
-    this.showResponseModal = true;
-    this.selectedReportIncidenceId = item.residentReportIncidenceId;
-  }
-  openReportViewModal(item: ResidentReportIncidenceDTO) {
-    this.selectedIncidence = item;
-    this.showReportViewModal = true;
-  }
-
-  loadListData(page: number = 1) {
-    this.loaderService.show();
-
-    this.residentReportIncidenceService.getReportsPaged(page).subscribe({
-      next: (response) => {
-        this.tableData = response;
-        this.pagedData.emit(response);
-
-        this.loaderService.hide();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.errorService.handleError(err);
-      },
-    });
+    this.respond.emit(item);
   }
 }

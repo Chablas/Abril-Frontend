@@ -46,6 +46,12 @@ Thumbs.db
 .claude/*
 !.claude/skills/
 
+# Artefactos generados por scripts de skills instaladas (Python bytecode,
+# reportes de coverage) — no son fuente, no se commitean.
+**/__pycache__/
+*.pyc
+.claude/skills/ui-styling/scripts/tests/coverage-ui.json
+
 # wrangler files
 .wrangler
 .dev.vars*

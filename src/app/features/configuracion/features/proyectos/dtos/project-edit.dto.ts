@@ -16,9 +16,13 @@ export interface ProjectEditDto {
   projectDepartment?: string;
   projectLocation?: string;
 
-  // Responsable
+  // Responsable Arq. Comercial
   responsableArqCom?: string;
   responsableArqComId?: number;
+
+  // Responsable UDP
+  responsableUdp?: string;
+  responsableUdpId?: number;
 
   // Fechas (formato YYYY-MM-DD)
   fechaInicio?: string;

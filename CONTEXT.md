@@ -4653,6 +4653,224 @@ La página (heredada, no de esta sesión) usaba los tokens `--color-abril-primar
 2. SQL de `role_feature` para "Actas de Reunión" — aplicado solo en local, falta aplicar en producción (túnel SSH) y avisar al usuario de prueba que cierre sesión después (regla D4).
 3. Backend de "Actas de Reunión" no localizado en el checkout de `Abril_Backend` — puede estar en una rama sin mergear, sin confirmar.
 
+## Sesión 2026-07-21 — Rediseño completo de Respuesta de Informes (report-response-control)
+
+Rediseño integral de `features/projects/report-response-control` siguiendo el estándar UI 2026 + DESIGN-VICTOR.md. El backend ya soportaba `projectId`/`stateId` como query params opcionales en `GET /api/v1/residentReportIncidence/paged` (nada de backend en esta sesión).
+
+### 1. Inversión de la propiedad de datos (padre = smart)
+Antes el fetch HTTP vivía en `list.ts` y la paginación en el padre, acoplados por `@ViewChild(List)`. Se invirtió: `report-response-control.ts` pasa a ser el componente smart (fetch + filtros + toggle + paginación + dueño de los 3 modales). `list` y el nuevo `report-cards` quedaron **presentacionales** (`@Input() data/loading`, `@Output() respond/openView`), para que ambas vistas compartan los mismos modales.
+
+### 2. Filtros + paginado server-side
+- `filtros = { projectId, stateId }` en el padre. `load(page)` pasa `{...filtros, page}`.
+- Regla respetada: **cambio de filtro → `load(1)`**; **solo `onPageChange(p)` → `load(p)`** conservando filtros; `limpiarFiltros()` → reset + `load(1)`.
+- `ResidentReportIncidenceService.getReportsPaged(page, projectId?, stateId?)` arma la URL con `HttpParams`, agregando cada filtro **solo si `!= null`**.
+- `app-filter-trigger` (proyectado en `tabsExtra`) + `app-filter-modal` con dos `app-search-select`: **Proyecto** (selector, catálogo vía `ProjectResidentService.getProjectsDescription()`) y **Estado** (Levantado→stateId 5 / No levantado→stateId 6, confirmado por backend). Sin filtro de especialidad (descartado).
+- Cumpliendo la regla R1 (ngOnInit máx 1 GET): los proyectos del filtro se cargan **perezosamente al abrir el panel de filtros** (`abrirFiltros()`), dejando `ngOnInit` con un solo GET (la lista).
+
+### 3. Toggle tabla/tarjetas
+- `type ViewMode = 'cards' | 'table'`, default `'table'`, `setView()`.
+- Estado `.active` del toggle **diseñado explícito** con paleta DESIGN-VICTOR (pastilla blanca + texto navy `#1E3A5F`, inactivo `#64748B`) — el precedente `resident-monitoring-measurement` no tenía `.active` resuelto visualmente, así que no se copió.
+- **Nueva vista tarjetas** `report-cards/` a 3 columnas (`xl:grid-cols-3`, igual que resident-card): imagen o placeholder, proyecto, descripción, badge de estado, y el mismo botón/texto de respuesta con **idéntico gating de rol** (RESIDENTE ve botón, ADMINISTRADOR_RESIDENTES ve "Sin respuesta").
+- Badges LEVANTADO/NO LEVANTADO con colores exactos §6.3 (`#dcfce7`/`#166534` y `#fee2e2`/`#991b1b`) en ambas vistas.
+- Tabla migrada a `abril-table` + `abril-table-wrap`.
+
+### 4. Modales
+- Create modal migrado a `app-base-modal`; `app-file-selector` con `[color]="var(--color-abril-standard)"` (antes verde viejo `#64BC04`). Se removió un `console.log` residual.
+- `respond-report-modal` (ya usaba `app-base-modal`): sin firma digital, solo estilo/tokens actualizados.
+- FAB "Nuevo registro" vía `app-fab`, gated a ADMINISTRADOR_RESIDENTES, `*ngIf="!showCreateModal"`.
+
+### 5. Migración de tokens
+Barrido completo de `--color-abril-primary`/`#64BC04` → `--color-abril-standard` en toda la página, incluido el modal de detalle (`report-view-modal` + `report-view-detail`/`report-view-images`/`report-view-active-tab`). **0 tokens viejos restantes** (verificado por grep).
+
+### Archivos clave
+- `core/services/residentReportIncidence.service.ts` (firma de `getReportsPaged`)
+- `report-response-control.ts`/`.html`/`.css` (smart component + toggle + filtros)
+- `report-cards/` (nuevo, vista tarjetas)
+- `list/list.ts`/`.html`/`.css` (presentacional + skeleton)
+- `report-response-control-create/` y `list/respond-report-modal/` (modales)
+- `list/report-view-modal/**` (barrido de tokens)
+
+**Reglas**: F1/F4 (`ng build` limpio, 0 errores nuevos; mismos warnings preexistentes de terceros), F8 (skeleton shimmer en tabla y tarjetas), F9 (error visible vía `ErrorService`), F11 (títulos de modal en MAYÚSCULAS). No probado visualmente en navegador (sin acceso a browser en este entorno).
+
+### Pendiente / notas
+- Los `.spec.ts` del feature son smoke tests (`should create`) y no referencian la API removida — compilan sin cambios.
+
+## Sesión 2026-07-25 — Merge de `origin/master` a `victor-frontend`
+
+Sesión de sincronización, sin desarrollo de feature propio: se trajeron a `victor-frontend` los cambios que avanzaron en `master`/`origin/master` mientras esta rama estaba en curso.
+
+### Qué se hizo
+1. `git merge master` (local) → `Already up to date` (no había commits nuevos en el `master` local que no estuvieran ya en la rama).
+2. `git fetch origin master` + `git merge origin/master` → merge limpio por estrategia `ort`, **sin conflictos** (commit `6b913131`). Nada relacionado a `report-response-control` apareció en la lista de cambios.
+3. `ng build` (vía `npm run build`) tras el merge: **0 errores**, mismos warnings preexistentes de terceros (CommonJS/ESM de `canvg`, `flatpickr`).
+4. Push a `origin/victor-frontend` vía skill `guardar-rama`.
+
+### Contenido traído por el merge (no escrito en esta sesión, viene de `master`)
+- Feature nuevo **`gestion-gth`** completo: rutas (`gestion-gth.routes.ts`), `reclutamiento` (lista + detalle + service + dto + colores de estado) y `solicitud-personal` (lista, nueva-solicitud, revision-long-list, seguimiento, service + dto), más `configuracion-correos` compartido (destinatarios de correo).
+- **`notificaciones-bell`** nuevo en `shared/components/notificaciones/` (bell + service + dto).
+- Reescritura grande de `gestion-salidas` y `solicitud-salidas` (gestión-administrativa): cambios sustanciales en `.ts`/`.html` de ambos, servicios y DTOs.
+- Ajustes menores en `auth.service.ts`, `navigation.service.ts`, `roles.ts`, `app.routes.ts`, `contractor-registration`, `abril-modal-panel`, `abril-page-header`, `worker-search.model.ts`, y en SSOMA (`accidente-crear-editar`, `rac-cerrar`, `rac-detalle`).
+
+### Estado final
+- `git status --porcelain` limpio antes y después del merge — no hubo cambios propios de la rama para commitear en esta sesión.
+- Rama `victor-frontend` actualizada y sincronizada con `origin/master` al momento del merge.
+
+### Addendum — segundo `guardar-rama` en la misma sesión
+Aparecieron sin commitear dos skills nuevas (`.claude/skills/actualizar-master/SKILL.md`, `.claude/skills/actualizar-rama/SKILL.md`) — complementan a `guardar-rama`/`guardar-master` para traer `origin/master` hacia la rama o hacia master local. Commiteadas (`chore: agrega skills actualizar-master y actualizar-rama`), `ng build` limpio de nuevo, y subidas a `origin/victor-frontend`.
+
+## Sesión 2026-07-26 — Fecha de registro en informes de report-response-control
+
+### Qué se hizo
+- Se agregó el campo `createdDateTime` al DTO `ResidentReportIncidenceDTO` (`core/dtos/reportResponseControl/residentReportIncidence.model.ts`).
+- Nueva columna **"Fecha de registro"** en la vista tabla (`list/list.html`), formateada con `date:'dd/MM/yyyy'`, incluyendo su celda skeleton y el ajuste del `colspan` del estado vacío (5 → 6).
+- Nueva línea de fecha (mismo formato) en la vista tarjetas (`report-cards/report-cards.html`), debajo del estado y antes de la descripción.
+- Los tres componentes del modal de detalle (`report-view-modal.ts`, `report-view-detail.ts`, `report-view-images.ts`) actualizaron su objeto inicial vacío para incluir `createdDateTime: ''`, manteniendo el DTO consistente en todos los puntos donde se instancia.
+
+### Archivos clave
+- `core/dtos/reportResponseControl/residentReportIncidence.model.ts`
+- `features/projects/report-response-control/list/list.html`
+- `features/projects/report-response-control/report-cards/report-cards.html`
+- `features/projects/report-response-control/list/report-view-modal/**` (report-view-modal.ts, report-view-detail.ts, report-view-images.ts)
+
+### Estado final
+- `ng build` limpio (0 errores, mismos warnings preexistentes de terceros).
+- Commit `feat: muestra fecha de registro en informes de report-response-control`.
+
+## Sesión 2026-07-26 (2) — Refinamiento visual/UX de report-response-control
+
+Segunda sesión del día sobre la misma pantalla: refinamiento dentro de la arquitectura ya existente (no se tocó la separación smart/presentacional entre `report-response-control`, `report-cards` y `list`, ni los filtros server-side, ni `app-base-modal` como marco de los 3 modales).
+
+### Qué se hizo
+
+**1. Cálculo único de "tiempo transcurrido" (`shared/elapsed-time.ts`, nuevo)**
+Fuente única para las tres vistas. Expone `tiempoTranscurrido(item)` → `{ dias, texto, color, porcentaje, vencido, levantado }`, más `esLevantado()`, `diasTranscurridos()` y `textoTranscurrido()`.
+- Umbrales: ≤7 d verde `#1B6B3A` · ≤30 d naranja `#D97706` · >30 d rojo `#C0392B`. **Solo aplican a NO LEVANTADO**; una incidencia levantada devuelve barra vacía y texto muted `#94A3B8`.
+- Escala de la barra: `min(días/60, 1)` con piso de 4% para que una incidencia de hoy muestre color. Los umbrales y el 60 son las constantes a tocar si el negocio define un SLA real.
+- `esLevantado()` acepta tanto `stateDescription === 'LEVANTADO'` como `stateId === 5` (5 = LEVANTADO, 6 = NO LEVANTADO).
+
+**2. Tarjetas (`report-cards`)**
+- Barra de urgencia de 6px al tope de la tarjeta (riel `#E2E8F0`, relleno coloreado). Va dentro del `overflow:hidden` de `.report-card`, así el radio de 10px la recorta sola.
+- Texto "Hace X días/semanas/meses" en el color de urgencia, reemplazando la fecha cruda que se había agregado en la sesión anterior; la fecha quedó al lado en 11px `#94A3B8` y como tooltip.
+- Pill con ícono + cantidad de imágenes adjuntas sobre la esquina inferior derecha de la miniatura (evidencia fotográfica visible sin abrir el modal).
+
+**3. Tabla (`list`)**
+Se mantiene **neutra y densa a propósito** — no replica el color de las tarjetas. La columna de fecha pasó a dos líneas: fecha cruda + tiempo transcurrido en `#94A3B8`, teñido a `#C0392B` únicamente si es NO LEVANTADO con más de 30 días. Sin barra, sin badge.
+
+**4. Filtros**
+- **Estado salió de `app-filter-modal`** y pasó a pestañas siempre visibles sobre la lista (Todos / No levantado / Levantado), con subrayado navy en la activa — deliberadamente distinto del toggle Tabla/Tarjetas, que es una pastilla, para que no compitan. Cada click hace `load(1)`.
+- **Proyecto** sigue dentro del modal, pero ahora muestra un chip removible sobre la lista (`Proyecto: X ✕`) que limpia el filtro sin reabrir el modal. Se guarda `filtroProyectoLabel` al elegir la opción porque `projectOptions` se carga perezosamente.
+- `filtrosActivos` ahora cuenta solo Proyecto, y `limpiarFiltros()` (botón del modal) limpia solo lo que vive en el modal — no resetea la pestaña de estado.
+
+**5. Modal "Ver informe"**
+- **Se eliminaron las pestañas** "Datos generales"/"Imágenes adjuntas": todo en una sola vista con scroll. Ancho 1000px → 680px (DESIGN §6.8 pide 640–720 para formularios).
+- Proyecto, Estado, Descripción y Respuesta pasaron de cajas tipo input a texto plano con jerarquía (`.campo__label` 11px uppercase `#64748B` sobre `.campo__valor` 14px `#1E3A5F`; Estado en verde/rojo según levantado).
+- Nueva fila de dos columnas Fecha de registro + Tiempo transcurrido, con separador antes de la descripción.
+- Imágenes como miniaturas de 80x80 entre descripción y respuesta, con el conteo en el label ("Imágenes adjuntas (2)") y **lightbox** propio (`z-60`, sobre el backdrop `z-50` de `app-base-modal`, cierre por click fuera o ✕, contador `n / total`). Reemplaza a `app-draggable-image`.
+- **`report-view-active-tab/` eliminado** (componente + spec): quedó sin consumidores al sacar las tabs y no se usaba en ninguna otra pantalla.
+
+**6. Modal "Agregar incidencia"**
+- El dropzone (`app-file-selector`) sigue siendo el elemento principal — el uso real es mayormente desde escritorio.
+- "Abrir cámara" pasó de botón con borde/fondo teal a link subrayado 13px `#64748B` debajo del dropzone.
+- Vista previa local de 80x80 con ✕, entre el dropzone y el campo Descripción. Se dejó de usar `app-image-preview` acá (era 120x120) pero **el componente compartido no se tocó** — sigue igual para `contractor-registration`, `lessons-learned` y `respond-report-modal`.
+
+### Archivos clave
+- `features/projects/report-response-control/shared/elapsed-time.ts` (nuevo)
+- `report-response-control.ts`/`.html`/`.css` (pestañas de estado + chip de proyecto)
+- `report-cards/report-cards.ts`/`.html`/`.css` (barra + texto + contador de imágenes)
+- `list/list.ts`/`.html` (columna de fecha con tiempo transcurrido)
+- `list/report-view-modal/**` (modal sin tabs; `report-view-detail` reestructurado, `report-view-images` reescrito como miniaturas + lightbox, `report-view-active-tab` eliminado)
+- `report-response-control-create/**` (cámara secundaria + miniatura de preview)
+
+### Notas de implementación
+- Tarjetas y tabla **memoizan** el resultado de `tiempoTranscurrido()` en un `Map` por `residentReportIncidenceId`, limpiado en `ngOnChanges`, para no recalcular fechas en cada ciclo de detección de cambios (la plantilla lo consulta varias veces por fila).
+- `report-view-images` usa un getter `imagenes` (`images ?? []`) para blindar la plantilla ante un `images` ausente en la respuesta del backend.
+
+### Estado final
+- `ng build` limpio: **0 errores**, mismos warnings preexistentes de terceros (CommonJS/ESM de `canvg`, `flatpickr`).
+- No verificado en navegador (sin acceso a sesión autenticada en este entorno) — pendiente de revisión visual del usuario.
+
+## Sesión 2026-07-26 (3) — Filtro de Proyecto adaptado a RESIDENTE en report-response-control
+
+Consumido el endpoint nuevo de backend `GET /api/v1/ResidentReportIncidence/assigned-projects` para que el filtro de Proyecto se adapte según cuántos proyectos tiene asignados el usuario RESIDENTE logueado (para otros roles, sin cambios: filtro visible con todos los proyectos, como antes).
+
+**Comportamiento por cantidad de proyectos asignados (solo aplica a `Roles.RESIDENTE`):**
+- **0 proyectos:** no se llama al `GetPaged` en absoluto. Se muestra un estado vacío específico ("No tenés proyectos asignados todavía. Contactá a un administrador."), distinto del "sin resultados" genérico de la tabla/tarjetas — reemplaza toolbar + tabla/tarjetas + paginador dentro del `page-container`.
+- **1 proyecto:** se oculta el filtro de Proyecto (trigger + chip) — no tiene sentido elegir entre una sola opción. El `GetPaged` se llama igual, sin `projectId` (el backend ya lo filtra solo).
+- **2+ proyectos:** el filtro se muestra normal, pero `app-search-select` lista solo esos proyectos (no los ~11 totales) — se reutiliza directamente la respuesta de `assigned-projects` como `projectOptions`, marcando `projectsLoaded = true` para que `abrirFiltros()` no pise esa lista con el catálogo completo.
+
+**Archivos clave:**
+- `core/services/residentReportIncidence.service.ts` — nuevo método `getAssignedProjects()` en el service existente del feature (no se creó un service nuevo).
+- `report-response-control.ts` — `ngOnInit` ramifica por rol; nuevo método privado `initResidente()`; nuevos campos `sinProyectosAsignados` y `mostrarFiltroProyecto`.
+- `report-response-control.html` — filter-trigger y chip condicionados a `mostrarFiltroProyecto`; nuevo bloque `@if (sinProyectosAsignados)` con el empty-state específico.
+
+**Excepción documentada a "1 acción = 1 HTTP":** `initResidente()` llama a `getAssignedProjects()` y, condicionalmente (solo si hay ≥1 proyecto), a `load()` (`GetPaged`) dentro del mismo `next()` — es inevitable porque el conteo de proyectos decide si corresponde llamar al segundo endpoint. Ambas llamadas tienen manejo de error independiente (no queda ningún subscribe sin `error:`). Aceptado explícitamente por el usuario en esta sesión; queda anotado en la memoria `arch-1-accion-1-http` como excepción conocida, pendiente de que backend combine ambos endpoints si se quiere eliminar.
+
+**Bug detectado y corregido en la misma sesión:** la primera versión no seteaba `loading = true` hasta que se disparaba el segundo HTTP (`load()`), así que durante la espera de `getAssignedProjects()` el usuario veía el empty-state genérico ("No hay informes para mostrar") en vez del skeleton, y recién después aparecía el skeleton real — un parpadeo visual incorrecto. Se corrigió seteando `loading = true` al principio de `initResidente()` y apagándolo también en el early-return de 0 proyectos y en el `error:` de `getAssignedProjects()` (antes quedaba colgado en `true` si esa llamada fallaba).
+
+### Estado final
+- `ng build` limpio: 0 errores, mismos warnings preexistentes de terceros.
+- No verificado en navegador — pendiente de revisión visual del usuario, en particular los 3 casos (0/1/2+ proyectos) con un usuario RESIDENTE real.
+
+## Sesión 2026-07-26 (4) — Investigación (sin cambios de código): dashboard de Arquitectura Comercial
+
+Sesión puramente de research, sin tocar código, a pedido del usuario para entender `features/arquitectura-comercial/dashboard/dashboard.ts` (ruta `/arquitectura-comercial/dashboard`). Queda documentado acá porque no es evidente leyendo el código superficialmente y puede ahorrar tiempo en la próxima sesión que toque este dashboard:
+
+- **Iconografía:** Tabler Icons vía **webfont** (`@tabler/icons-webfont`, import global en `src/styles.css:4`), clases `class="ti ti-nombre"` — no es una librería de componentes Angular (no hay `lucide-angular` ni Material Icons acá). Conviven algunos SVG inline hechos a mano para botones puntuales.
+- **Gráficos:** todos con **Chart.js** (`chart.js` + `chartjs-plugin-datalabels`), registrado una sola vez con `Chart.register(...registerables, ChartDataLabels)` en el propio `dashboard.ts`. Cuatro charts en este componente: `renderAvanceChart()` (curva Programado/Real), `renderEficienciaChart()` (tendencia SPI Esperado/Logrado), `renderTiposChart()` (doughnut de distribución de estados) y `renderHistoricoChart()` (línea de tasa de cierre, dentro del modal de histórico de supervisor).
+- **Curva de avance y tendencia SPI comparten el mismo endpoint:** ambos (`avanceSemanal` y `eficienciaSpi`) vienen del único payload de `service.getDashboardV2(f)` (`ArquitecturaComercialService`) — no hay una llamada HTTP separada para el SPI. El único chart con endpoint propio es el histórico de supervisor (`getSupervisorHistorico(userId)`, se llama al abrir ese modal específico).
+- **No hay archivo de tema/config compartido para Chart.js.** Confirmado buscando en `shared/`: no existe. Cada dashboard del sistema (arquitectura-comercial, contabilidad, costs/adjudicaciones, mejora-continua/lessons, projects-dashboard, varios de ssoma, vecinos) hace su propio `Chart.register(...)` y hardcodea sus propios colores/opciones inline — es duplicación real entre ~10 dashboards, no una convención documentada. Si en algún momento se decide unificar (paleta, tooltips, fuente de labels), no hay un punto único para tocar: hay que ir dashboard por dashboard.
+
+## Sesión 2026-08-02 — Rediseño Ejecutivo de Módulo de Proyectos (Dashboard UDP, Lista y Detalle de Cronograma)
+
+Estandarización visual y optimización de usabilidad del módulo de Proyectos (`/projects/cronograma-dashboard`, `/projects/cronograma-actividades` y `/projects/cronograma-actividades/:id`).
+
+### Cambios realizados:
+- **Dashboard UDP (`/projects/cronograma-dashboard`)**:
+  - Rediseño de 9 KPIs ejecutivos con Tabler Icons y sombras hover.
+  - Tabla de proyectos estandarizada a la guía visual `.abril-table` con barra de avance y flecha de navegación en hover.
+- **Lista de Proyectos (`/projects/cronograma-actividades`)**:
+  - Filtro de búsqueda dinámico en tiempo real (`filtroTexto`, `proyectosFiltrados`).
+  - Rediseño a **Grid de Tarjetas Ejecutivas de 3 columnas** (`repeat(auto-fill, minmax(320px, 1fr))`) para optimizar espacio.
+- **Detalle de Cronograma (`/projects/cronograma-actividades/:id`)**:
+  - Cabecera ejecutiva con mini píldoras de resumen del proyecto (recuento de actividades y `% de avance global` con getter `porcentajeAvanceGlobal`).
+  - **Selector Dinámico de Etapas (Pipeline)** con íconos vectoriales (`ti-file-text`, `ti-building`, `ti-refresh`) para *Anteproyecto* ➔ *Proyecto* ➔ *Actualización*.
+  - **Columna Congelada (`Sticky Left Column`)**: Columnas `#` y `ACTIVIDAD` fijadas a la izquierda (`position: sticky; left: 0` y `left: 114px`) con sombra divisoria.
+  - **Arrastrar y Soltar (Drag & Drop)**: Manubrio `ti-grip-vertical` exclusivo en la primera celda e indicador visual de inserción azul de 3px (`.drop-above`, `.drop-below`).
+  - **Corrección de Scrollbar Horizontal Fijo**: Ajuste del layout Flex (`:host`, `.page-wrapper`, `.table-card`, `.table-wrapper`) para encajar en la altura exacta del viewport del navegador, haciendo que la barra de desplazamiento horizontal permanezca **SIEMPRE VISIBLE en pantalla** en proyectos de 81+ actividades.
+
+### Archivos clave tocados:
+- `src/app/features/projects/cronograma-dashboard/cronograma-dashboard.html` / `.css`
+- `src/app/features/projects/cronograma-actividades/proyectos-cronograma-list.ts` / `.html` / `.css`
+- `src/app/features/projects/cronograma-actividades/cronograma-actividades.ts` / `.html` / `.css`
+
+### Estado final:
+- `npm run build` limpio: **0 errores**, mismos warnings preexistentes de paquetes de terceros.
+
+## Sesión 2026-08-02 (cont.) — Responsable UDP en modal editar proyecto (`/configuracion/proyectos`)
+
+Investigación + implementación del selector de "Responsables UDP" en el modal de edición de proyecto de Configuración, aprovechando el trabajo para además resolver el ID de responsable Arq. Comercial que quedaba sin usar.
+
+### Contexto previo (investigación)
+- El modal vive en `features/configuracion/features/proyectos/components/edit/proyecto-edit.ts` (+ `.html`), patrón smart/presentacional: `proyectos.ts` (smart) pasa el `ProjectDto` completo por `@Input` a `proyecto-edit.ts` (presentacional). No hace falta un GET aparte — `ProyectoService.getPaged()` ya trae `responsableArqCom`/`responsableArqComId` resueltos (R1/R6 OK).
+- Antes de este cambio, "Responsable Arq. Comercial" era un `<input type="text">` de texto libre; el campo `responsableArqComId` existía en el modelo pero nunca se seteaba desde ningún control de UI del modal (quedaba huérfano).
+- Se identificó un patrón ID-driven ya existente pero en **otro feature**: `arquitectura-comercial/actividades/actividades.ts` usa `app-search-select` contra `SupervisorAcDTO[]` (`{ id, apellidoNombre }`) vía `getSupervisoresAc()` + `patchProyecto()` — sirvió de referencia de shape de DTO, pero es un flujo de PATCH aparte, no tocado.
+- Se investigó también un tercer "responsable" (Residente) para una futura iteración: existe un modelo de datos **separado y ya vigente**, `core/services/projectResident.service.ts` (`api/v1/projectResident`) + `ProjectGetDTO.residentFullNames: string[]` (en `core/dtos/project/project.model.ts`, el DTO "legacy" usado por `ivt-control`/`report-response-control`/etc., **no** el `ProjectDto` local de este feature). Al ser `string[]` (no un ID único), sugiere que `project_resident` podría modelar una relación 1-a-muchos, a diferencia de Arq. Comercial/UDP que son FK únicas en `project` — pendiente de que backend confirme si "Responsable Residente" sale de un campo nuevo en `project` (mismo patrón) o de esa tabla (patrón distinto, posible multi-select). No implementado, solo investigado.
+
+### Cambios implementados
+- **`proyecto-edit.ts`**: `ProjectFormModel` con `responsableUdp`/`responsableUdpId`; `loadResponsables()` hace `forkJoin` de `proyectoService.getResponsables('ARQ_COMERCIAL')` y `getResponsables('UDP')` en `ngOnInit`, listas ordenadas alfabéticamente en el componente (no vía `sortAlpha` interno, siguiendo la convención de CLAUDE.md — mismo criterio que `[sortAlpha]="false"` en `actividades.html`). `onResponsableArqComChange`/`onResponsableUdpChange` resuelven nombre+ID juntos al elegir opción en el `app-search-select`.
+- **`proyecto-edit.html`**: reemplazado el `<input>` de Arq. Comercial y agregado el de UDP, ambos `app-search-select` lado a lado (`valueField="id"`, `displayField="apellidoNombre"`, `placeholder="Buscar por nombre o DNI..."`). Skeleton (F8, `.skeleton-line`/`@keyframes skeleton-shimmer`, mismo estilo que `milestone-schedule.css`) mientras carga el catálogo; mensaje de error + botón "Reintentar" si falla (F9). El checkbox `tieneArquitecturaComercial` se mantiene solo, sin equivalente `tieneUdp` — decisión confirmada con el usuario: campo vacío = no aplica.
+- **`proyecto.service.ts`**: nuevo `getResponsables(tipo: 'ARQ_COMERCIAL' | 'UDP')` → `GET /api/v1/project/responsables?tipo=...` (contrato confirmado con el usuario, backend lo está agregando en `ProjectController`).
+- **`project.dto.ts` / `project-edit.dto.ts`** (DTOs locales del feature, no los de `core/dtos/project/`): agregados `responsableUdp?`/`responsableUdpId?`. También se sumaron a `ProjectDto` (lectura), no solo a `ProjectEditDto`, porque `ngOnInit` necesita leer `this.project.responsableUdp` con tipado correcto.
+- Nuevo `dtos/responsable-lookup.dto.ts` (`ResponsableLookupDto { id, apellidoNombre }`, `ResponsableTipo`).
+- **No tocado**: `proyecto-create.ts/html` (alta de proyecto) — quedó fuera de alcance, sigue con el input de texto libre viejo.
+
+### Pendiente / próximos pasos
+- El endpoint `GET /api/v1/project/responsables?tipo=` todavía no existe en backend al momento de este commit — no se pudo probar en browser. Cuando esté levantado, verificar que el catálogo cargue y que el guardado (`PUT /api/v1/project`) persista ambos IDs correctamente.
+- "Responsable Residente" queda pendiente de una futura sesión, condicionado a que backend confirme el modelo de datos (ver investigación arriba).
+
+### Estado final:
+- `ng build` limpio: **0 errores**, mismos warnings preexistentes de terceros (`canvg`, `flatpickr`).
+
 ## Sesión 2026-08-03 — Dashboard Arquitectura Comercial + fix cámara en fotos
 
 ### 1. Ranking Eficiencia (IES) — modales de detalle clickeables
@@ -4711,6 +4929,27 @@ Rama: `master`. Ver detalle completo en el CONTEXT.md del backend (misma sesión
 - Confirmar visualmente en dispositivo real que "Abiertas" → "Unirme" → "Agregar hallazgo" funciona bien desde 2 sesiones/dispositivos distintos simultáneos (se probó desde el mismo usuario, faltó probar con un segundo coordinador real).
 - RAC tiene el mismo bug de fotos rotas en pantalla — no se tocó en esta sesión (flag como pendiente por separado).
 
+## Sesión 2026-08-04 (2) — Merge de `origin/master` a `victor-frontend`
+
+Sesión de sincronización, sin desarrollo de feature propio: se trajeron a `victor-frontend` los cambios que avanzaron en `master`/`origin/master` (sesiones 2026-08-03 y 2026-08-04 arriba) mientras esta rama estaba en curso.
+
+### Qué se hizo
+1. `git fetch --prune` + `git pull origin victor-frontend`: fast-forward `e2ad6a6d..5692413a` (commits de otra sesión/PC, no de esta sesión).
+2. `git merge origin/master`: un solo conflicto, en `CONTEXT.md` (log de sesiones) — ambos lados agregaban secciones cronológicas distintas al final del archivo, sin pisar contenido. Resuelto concatenando ambos bloques en orden cronológico (HEAD hasta 2026-08-02, luego master 2026-08-03/2026-08-04).
+3. `ng build` tras el merge: **0 errores**, mismos warnings preexistentes de terceros (`canvg`, `flatpickr`).
+4. `git fetch origin master:master`: master local actualizado a `ef06a718` (igual a `origin/master`).
+
+### Contenido traído por el merge (no escrito en esta sesión, viene de `master`)
+- Feature nuevo **`postulante-formulario`** (`gestion-gth`): formulario + service + dtos, más el modal `formulario-postulante` en `reclutamiento/components/`.
+- Cambios en `reclutamiento` (detalle, dtos, service).
+- Ajustes en `arquitectura-comercial/dashboard` (`.ts`/`.html`) y `app.routes.ts`.
+- Cambios en `ssoma/gestion/inspeccion` (dtos, service, routes, tabs, páginas `detalle`/`nueva`) y en `shared/components/photo-grid-picker`.
+- Ajuste en `habilitacion/.../worker-create-edit`.
+
+### Estado final
+- `git status --porcelain` limpio antes y después del merge — no hubo cambios propios de la rama para commitear en esta sesión (aparte del merge commit).
+- Rama `victor-frontend` actualizada y sincronizada con `origin/master` al momento del merge.
+
 ## Sesión 2026-08-05 — Editar email de usuario contratista
 
 Rama: `master`. Ver detalle completo en el CONTEXT.md del backend (misma sesión) — acá solo la parte frontend.
@@ -4745,3 +4984,60 @@ Se planteó cambiarlo a "viernes a jueves" porque actividades que vencen el mism
 ### Pendiente
 1. Confirmar/pushear el cambio de SPI 1.5→1.0 en el repo `Abril_Backend` (commit separado, otra terminal).
 2. Verificar en el celular que el filtro "Vencido" del modal de carga ya no da 0 resultados con chip >0.
+
+## Sesión 2026-08-07 (2) — Diagnóstico: feature de Planeamiento BIM no aparecía en el sidebar
+
+Sin cambios de código en este repo (working tree limpio todo el rato). El feature de Planeamiento BIM (Configuración Inicial, Carga Diaria, Bloqueos) ya estaba completo en frontend y backend desde antes (`victor-frontend`, commits `71dfe1cb`/`a0e92443`/`750e02e0`), pero el usuario no lo veía en el sidebar tras loguearse.
+
+### Causa raíz encontrada (no fue lo que se sospechaba al inicio)
+El sistema de permisos es dinámico vía `allowed_features` (tabla `feature`/`role_feature` en BD, consultada en `RoleFeatureRepository.GetAllFeatures()`), y la feature `planeamiento-bim.configuracion-inicial` nunca se había sembrado ahí — ninguna feature nueva se registra sola, hace falta un INSERT manual (convención del equipo: `Abril_Backend/Migrations/Manual/*.sql`).
+
+Se creó y el usuario ejecutó `Abril_Backend/Migrations/Manual/20260807_PlaneamientoBimFeatureSeed.sql` (idempotente): registra el `feature_key` bajo el módulo `'Proyectos'` y lo asigna a los roles 1/2/3 (mismos que exige `[Authorize]` en `PlaneamientoBimConfiguracionController`). Verificado con `SELECT` que quedaron las 3 filas en `role_feature`.
+
+Aun así el ítem seguía sin aparecer. Se verificó con evidencia directa en el navegador (Claude in Chrome, `window.ng.getComponent` sobre `app-sidebar`):
+- Los 4 `featureKey` (`proyectos.routes.ts` ×3 + `navigation.service.ts`) son byte-idénticos (comparación de charcodes, no visual).
+- `localStorage.getItem('allowed_features')` en sesión real **sí** incluye `planeamiento-bim.configuracion-inicial` (104 features, token no vencido) — o sea el seed + re-login ya habían surtido efecto.
+- Pero el array `config` en memoria del `NavigationService` que corría en el navegador (`comp.navService['config']`, leído directo de la instancia real) **no tenía la entrada del todo** — 8 items en vez de 9 bajo "Proyectos".
+- Conclusión: el `ng serve` (PID detectado vía `Get-NetTCPConnection -LocalPort 4200`) había arrancado a las 18:09:50, y el `git merge origin/master` de "actualizar rama" (que trajo/tocó `navigation.service.ts`) se aplicó a las 18:12:48 — 3 minutos después. El dev server seguía sirviendo el bundle compilado antes del merge; un hard-reload (`Ctrl+Shift+R`) no lo resolvió porque el problema no era cache del navegador sino que el servidor nunca recompiló.
+
+### Pendiente / acción del usuario
+El usuario paró el proceso node y va a correr `npm start` de nuevo — falta confirmar visualmente que tras el reinicio "Configuración Planeamiento BIM" aparece en el sidebar de Proyectos.
+
+### Nota para la próxima vez
+Cuando "actualizar rama" trae un merge grande mientras `ng serve` ya está corriendo, no asumir que el watch mode lo recoge solo — si algo agregado/tocado por el merge no aparece en la UI aunque el código en disco esté bien, sospechar primero del dev server desactualizado (chequear PID/hora de arranque vs hora del merge) antes de asumir un bug de datos o de permisos.
+
+## Sesión 2026-08-08 — Skills de diseño (ui-ux-pro-max/design-system) + mejoras de UX en Dashboard UDP
+
+### 1. Instalación y curaduría de skills de diseño
+Se clonó `ui-ux-pro-max-skill` directo por `git clone` en `.claude/skills/ui-ux-pro-max` (mal ubicado, con `.git` propio anidado y una segunda copia interna del skill). Se corrigió instalando con el CLI oficial (`npx ui-ux-pro-max-cli init --ai claude`), que además trajo 6 skills relacionadas (`banner-design`, `brand`, `design`, `design-system`, `slides`, `ui-styling`).
+
+Tras usarlas en la práctica durante la sesión (ver punto 2) se evaluó cuáles tenían caso de uso real en este proyecto (Angular, sin generación de imágenes con IA, sin React/shadcn):
+- **Se mantienen**: `ui-ux-pro-max` (consultas puntuales de accesibilidad, `--domain ux`) y `design-system` (plantilla de referencia para specs de estado de componente Default/Hover/Active/Disabled/Focus).
+- **Se eliminaron** (`rm -rf`): `banner-design`, `brand`, `design`, `slides` (orientadas a generación de assets con IA/Gemini, fuera de alcance) y `ui-styling` (shadcn/ui + React, stack incompatible con Angular).
+- `DESIGN-VICTOR.md` ahora documenta esto en una sección nueva "Skills de diseño disponibles" (después de "1. Principios generales"), dejando explícito que ninguna skill reemplaza la paleta/tokens ya definidos en el documento — son solo herramientas de consulta puntual.
+- `.gitignore`: agregado `**/__pycache__/`, `*.pyc` y la ruta específica de un `coverage-ui.json` generado por los tests de `ui-styling` (quedó de antes de eliminarla, ya no aplica pero no hace daño dejarlo).
+
+### 2. Mejoras en Dashboard UDP (`cronograma-dashboard`)
+Usando `ui-ux-pro-max --design-system` y `--domain ux` como input (no como fuente de verdad — la paleta UDP/BCS de `DESIGN-VICTOR.md` se mantuvo intacta):
+
+- **Filtros y paginación** (regla dura de CLAUDE.md, sin excepciones): los `<select>` nativos de Responsable/Estado se migraron a `app-search-select` dentro de `app-filter-modal`, disparado por `app-filter-trigger` en `tabsExtra`; se agregó paginación client-side con `ClientPager` sobre `proyectos` (la llamada HTTP sigue siendo una sola, R1 intacto).
+- **Accesibilidad del semáforo**: el punto de color (`.semaforo-dot`) no transmitía nada por texto — se agregó `role="img"` + `aria-label`/`title` vía `semaforoLabel()`.
+- **Foco visible por teclado** (`:focus-visible`, no `:focus`) en los componentes compartidos usados por el dashboard y por el resto de la app: `app-search-select`, `app-filter-trigger`, `app-filter-modal`, y la directiva `[abrilBulkAction]` — cada uno usando su propio acento ya establecido (`--ss-accent`/`--color-abril-standard`), sin introducir el azul UDP (`#2E6DB4`) en componentes globales para no desentonar en pantallas no-UDP. Confirmado visualmente por el usuario en `app-filter-trigger`; el resto solo verificado por código/build.
+- **DESIGN-VICTOR.md §6.1 (Cards)**: cambiado de "sin box-shadow" a sombra sutil + hover-elevación como estándar general del sistema (no excepción de un solo feature) — `cronograma-dashboard` ya lo implementaba así y se decidió generalizarlo.
+- **Segunda pasada de detalle visual**: radius de badges a `4px`, colores de badge AL DÍA/CON RETRASO ajustados a los hex exactos de la spec, fila CON_RETRASO a `#FFF5F5`, barra de avance a `height:6px/radius:3px`, estado vacío con ícono más grande (`48px`) y más padding, grid de KPIs de `4` a `3` columnas (9 KPIs no dividían parejo en 4).
+- **Iconografía**: 2 íconos KPI genéricos reemplazados por unos más específicos y consistentes con otros dashboards del proyecto — `ti-calendar-stats` → `ti-calendar-month` (Culminadas Este Mes) y `ti-chart-dots` → `ti-gauge` (SPI Promedio, mismo ícono que usa `arquitectura-comercial/dashboard` para métricas de índice). Verificado que ambas clases existen como glifos reales en `tabler-icons.min.css` instalado.
+
+### Archivos clave
+- `src/app/features/projects/cronograma-dashboard/cronograma-dashboard.{ts,html,css}`
+- `src/app/shared/components/{search-select,filter-trigger,filter-modal}/*`
+- `src/app/shared/directives/abril-bulk-action.directive.ts`
+- `DESIGN-VICTOR.md`, `.gitignore`
+- `.claude/skills/` (solo quedan `ui-ux-pro-max`, `design-system` + las 4 skills de git internas del proyecto)
+
+### Pendiente
+- Verificar visualmente con Tab los 2 `app-search-select` del modal de filtros, los botones "Limpiar filtros"/"Listo"/✕, y algún botón `[abrilBulkAction]` en otra pantalla (solo se confirmó `app-filter-trigger`).
+- Evaluar si conviene agregar `color="#2E6DB4"` explícito a los `app-search-select` de este dashboard para que calcen con la paleta UDP (hoy usan el teal por defecto del componente).
+
+## Sesión 2026-08-08 (2) — Merge de `victor-frontend` a `master` (producción)
+
+`master` estaba 13 commits atrás de `origin/master` (sin cambios propios pendientes) — se sincronizó con `git merge --ff-only origin/master` y luego se trajo todo `victor-frontend` con `git merge victor-frontend` (fast-forward limpio, sin conflictos). Esto sube a producción, además del trabajo de la sesión de hoy (documentado arriba), el trabajo de sesiones previas de `victor-frontend` que todavía no había llegado a `master`: feature completo de **Planeamiento BIM** (Configuración Inicial, Carga Diaria, Bloqueos), y cambios en `report-response-control` (nuevo `report-cards`, `elapsed-time.ts`, reestructuración del modal de detalle). `ng build` tras el merge: 0 errores, mismos warnings preexistentes de terceros.

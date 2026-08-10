@@ -9,6 +9,7 @@ import { ProjectCreateDto } from '../dtos/project-create.dto';
 import { ProjectEditDto } from '../dtos/project-edit.dto';
 import { ProjectFilterDto } from '../dtos/project-filter.dto';
 import { ContributorLookupDto } from '../dtos/company-lookup.dto';
+import { ResponsableLookupDto, ResponsableTipo } from '../dtos/responsable-lookup.dto';
 
 @Injectable({ providedIn: 'root' })
 export class ProyectoService {
@@ -49,6 +50,13 @@ export class ProyectoService {
   getCompanyByRuc(ruc: string): Observable<ContributorLookupDto> {
     return this.http.get<ContributorLookupDto>(`${this.apiUrl}/company-lookup/${ruc}`, {
       headers: this.headers,
+    });
+  }
+
+  getResponsables(tipo: ResponsableTipo): Observable<ResponsableLookupDto[]> {
+    return this.http.get<ResponsableLookupDto[]>(`${this.apiUrl}/responsables`, {
+      headers: this.headers,
+      params: { tipo },
     });
   }
 }

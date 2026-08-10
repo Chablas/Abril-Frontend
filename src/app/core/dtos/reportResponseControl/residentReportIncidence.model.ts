@@ -5,6 +5,7 @@ export interface ResidentReportIncidenceDTO {
     projectDescription: string;
     stateId: number;
     stateDescription: string;
+    createdDateTime: string;
     images: ResidentReportIncidenceImageDTO[];
     residentReportResponseDescriptions: ResidentReportResponseDTO[];
 }

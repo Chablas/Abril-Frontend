@@ -1,5 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CronogramaActividadesService } from './services/cronograma-actividades.service';
@@ -23,7 +24,7 @@ const PROJECT_COLORS = [
 @Component({
   selector: 'app-proyectos-cronograma-list',
   standalone: true,
-  imports: [CommonModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './proyectos-cronograma-list.html',
   styleUrl: './proyectos-cronograma-list.css',
 })
@@ -31,6 +32,7 @@ export class ProyectosCronogramaList implements OnInit {
   readonly tabs = PROJECTS_TABS;
   anioActual = new Date().getFullYear();
   proyectos: ProyectoSimpleDto[] = [];
+  filtroTexto = '';
   loading = false;
 
   constructor(
@@ -43,6 +45,20 @@ export class ProyectosCronogramaList implements OnInit {
 
   ngOnInit(): void {
     this.load();
+  }
+
+  get proyectosFiltrados(): ProyectoSimpleDto[] {
+    if (!this.filtroTexto.trim()) return this.proyectos;
+    const term = this.filtroTexto.toLowerCase().trim();
+    return this.proyectos.filter(
+      (p) =>
+        (p.projectDescription && p.projectDescription.toLowerCase().includes(term)) ||
+        (p.responsableUdp && p.responsableUdp.toLowerCase().includes(term)),
+    );
+  }
+
+  limpiarFiltro(): void {
+    this.filtroTexto = '';
   }
 
   private load(): void {

@@ -7,8 +7,8 @@ import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { CameraWeb } from '../../../../shared/components/camera-web/camera-web';
 import { CameraPhoto } from "../../../../shared/components/camera-web/camera-web";
-import { ImagePreview } from "../../../../shared/components/image-preview/image-preview";
 import { FileSelector, SelectedFile } from "../../../../shared/components/file-selector/file-selector";
+import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
 import { ProjectResidentService } from '../../../../core/services/projectResident.service';
 import { ProjectSimpleDTO } from '../../../../core/dtos/project/projectSimple.model';
 import { ResidentReportIncidenceService } from '../../../../core/services/residentReportIncidence.service';
@@ -17,7 +17,7 @@ import Swal from 'sweetalert2';
 @Component({
   standalone: true,
   selector: 'app-report-response-control-create',
-  imports: [FormsModule, CommonModule, CameraWeb, ImagePreview, FileSelector],
+  imports: [FormsModule, CommonModule, CameraWeb, FileSelector, BaseModal],
   templateUrl: './report-response-control-create.html',
   styleUrl: './report-response-control-create.css',
 })
@@ -61,23 +61,13 @@ export class ReportResponseControlCreate implements OnInit {
     });
   }
 
-  closeModal(event: MouseEvent, number: number) {
-    if (number == 1) {
-      this.previews = [];
-      this.createDto.images = [];
-      this.closeCreateModal.emit();
-      return;
-    }
-    if (event.target === event.currentTarget) {
-      this.previews = [];
-      this.createDto.images = [];
-      this.closeCreateModal.emit();
-      return;
-    }
+  onClose() {
+    this.previews = [];
+    this.createDto.images = [];
+    this.closeCreateModal.emit();
   }
 
   saveResidentReportIncidence() {
-    console.log(this.createDto);
     if (!this.createDto.residentReportIncidenceDescription.trim()) {
       return;
     }

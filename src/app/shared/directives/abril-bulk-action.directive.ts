@@ -20,8 +20,11 @@ export type AbrilBulkActionVariant = 'default' | 'danger' | 'primary';
 export class AbrilBulkActionDirective {
   @Input('abrilBulkAction') variant: AbrilBulkActionVariant = 'default';
 
+  // focus-visible: aro de foco solo por teclado (Tab), no al hacer clic con
+  // mouse; usa el mismo teal (--color-abril-standard) que ya trae el hover
+  // de 'default'/'primary', sin introducir un acento nuevo.
   private static readonly BASE =
-    'h-[26px] px-[10px] rounded-[6px] text-[11px] font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors disabled:cursor-not-allowed';
+    'h-[26px] px-[10px] rounded-[6px] text-[11px] font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-abril-standard)]';
 
   @HostBinding('class')
   get hostClass(): string {

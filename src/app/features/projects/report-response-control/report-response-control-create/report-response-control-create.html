@@ -1,62 +1,65 @@
-<div class="p-[20px] fixed inset-0 bg-black/40 z-50 overflow-y-auto">
-    <div class="absolute inset-0" (click)="closeModal($event, 0)">
+<app-base-modal [title]="'AGREGAR INCIDENCIA'" [width]="'w-[500px]'" (closeModal)="onClose()">
+
+  <div class="flex flex-col items-center gap-[20px] mt-[10px]">
+
+    <div class="w-full">
+      <p class="text-[14px] mb-[4px]" style="color:var(--color-abril-standard)">Proyecto</p>
+      <select [(ngModel)]="createDto.projectId"
+        class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-[7px] cursor-pointer text-[14px]"
+        style="border-color:var(--color-abril-border)">
+        <option [ngValue]="0">Todos los proyectos</option>
+        <option *ngFor="let item of projects" [ngValue]="item.projectId">{{ item.projectDescription }}</option>
+      </select>
     </div>
-    <div class="min-h-screen flex items-center justify-center py-10">
-        <div class="bg-white w-[500px] rounded-lg shadow-xl animate-modal-in relative"
-            (click)="$event.stopPropagation()">
-            <div class="p-[20px] flex flex-col gap-[20px] items-center">
-                <h1 class="text-2xl text-center">AGREGAR INCIDENCIA</h1>
 
-                <div class="w-full">
-                    <p class="text-lg" style="color:var(--color-abril-primary)">Proyecto</p>
-                    <select [(ngModel)]="createDto.projectId"
-                        class="w-full pl-[15px] pr-[25px] py-[6px] border rounded-lg select-wrapper cursor-pointer" style="border-color:var(--color-abril-border)">
-                        <option [ngValue]="0">Todos los proyectos</option>
-                        <option *ngFor="let item of projects" [ngValue]="item.projectId">{{item.projectDescription}}</option>
-                    </select>
-                </div>
+    <!-- Dropzone como elemento principal: el uso real es mayormente desde escritorio. -->
+    <div *ngIf="previews.length < maxImages" class="w-full flex flex-col items-center gap-[8px]">
+      <app-file-selector class="w-full"
+        [color]="'var(--color-abril-standard)'"
+        (fileSelected)="onImageSelected($event)">
+      </app-file-selector>
 
-                <app-file-selector *ngIf="previews.length < maxImages" class="w-full" (fileSelected)="onImageSelected($event)">
-                </app-file-selector>
+      <!-- Cámara: acción secundaria, no compite visualmente con el dropzone. -->
+      <button type="button" (click)="openCamera()" class="camara-link">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M12 16C13.6569 16 15 14.6569 15 13C15 11.3431 13.6569 10 12 10C10.3431 10 9 11.3431 9 13C9 14.6569 10.3431 16 12 16Z"
+            stroke="currentColor" stroke-width="1.5" />
+          <path
+            d="M9.778 21H14.222C17.343 21 18.904 21 20.025 20.265C20.5088 19.9482 20.9254 19.5391 21.251 19.061C22 17.961 22 16.428 22 13.364C22 10.3 22 8.76705 21.251 7.66705C20.9254 7.18904 20.5088 6.77991 20.025 6.46305C19.305 5.99005 18.403 5.82105 17.022 5.76105C16.363 5.76105 15.796 5.27105 15.667 4.63605C15.5684 4.17092 15.3123 3.75408 14.9418 3.456C14.5714 3.15791 14.1095 2.99686 13.634 3.00005H10.366C9.378 3.00005 8.527 3.68505 8.333 4.63605C8.204 5.27105 7.637 5.76105 6.978 5.76105C5.598 5.82105 4.696 5.99105 3.975 6.46305C3.49154 6.78001 3.07527 7.18914 2.75 7.66705C2 8.76705 2 10.299 2 13.364C2 16.429 2 17.96 2.749 19.061C3.073 19.537 3.489 19.946 3.975 20.265C5.096 21 6.657 21 9.778 21Z"
+            stroke="currentColor" stroke-width="1.5" />
+          <path d="M19 10H18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+        Abrir cámara
+      </button>
+    </div>
 
-                <p *ngIf="previews.length < maxImages">o</p>
-
-                <button *ngIf="previews.length < maxImages" (click)="openCamera()" class="flex items-center gap-[10px] py-[5px] px-[20px] rounded-lg border cursor-pointer" style="background:var(--color-abril-primary-light);border-color:var(--color-abril-primary);color:var(--color-abril-primary)">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--color-abril-primary)">
-                        <path
-                            d="M12 16C13.6569 16 15 14.6569 15 13C15 11.3431 13.6569 10 12 10C10.3431 10 9 11.3431 9 13C9 14.6569 10.3431 16 12 16Z"
-                            stroke="currentColor" stroke-width="1.5" />
-                        <path
-                            d="M9.778 21H14.222C17.343 21 18.904 21 20.025 20.265C20.5088 19.9482 20.9254 19.5391 21.251 19.061C22 17.961 22 16.428 22 13.364C22 10.3 22 8.76705 21.251 7.66705C20.9254 7.18904 20.5088 6.77991 20.025 6.46305C19.305 5.99005 18.403 5.82105 17.022 5.76105C16.363 5.76105 15.796 5.27105 15.667 4.63605C15.5684 4.17092 15.3123 3.75408 14.9418 3.456C14.5714 3.15791 14.1095 2.99686 13.634 3.00005H10.366C9.378 3.00005 8.527 3.68505 8.333 4.63605C8.204 5.27105 7.637 5.76105 6.978 5.76105C5.598 5.82105 4.696 5.99105 3.975 6.46305C3.49154 6.78001 3.07527 7.18914 2.75 7.66705C2 8.76705 2 10.299 2 13.364C2 16.429 2 17.96 2.749 19.061C3.073 19.537 3.489 19.946 3.975 20.265C5.096 21 6.657 21 9.778 21Z"
-                            stroke="currentColor" stroke-width="1.5" />
-                        <path d="M19 10H18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-                    </svg>
-
-                    <p class="text-lg">Abre la cámara</p>
-                </button>
-
-                <app-image-preview *ngIf="previews.length > 0" [previews]="previews" (remove)="removeImage($event)">
-                </app-image-preview>
-
-                <app-camera-web *ngIf="showCamera" (close)="showCamera = false" (photoTaken)="onPhotoTaken($event)">
-                </app-camera-web>
-
-                <div class="flex justify-between w-full">
-                    <div class="flex flex-col w-full">
-                        <p style="color:var(--color-abril-primary)">Descripción</p>
-                        <textarea [(ngModel)]="createDto.residentReportIncidenceDescription"
-                            class="border border-[#E2E2E2] rounded-lg p-[10px]" ></textarea>
-                    </div>
-                </div>
-                <button (click)="saveResidentReportIncidence()" class="w-[120px] py-[5px] rounded-[10px] cursor-pointer" style="background:var(--color-abril-primary)">
-                    <p class="text-[#ffffff] text-lg">Guardar</p>
-                </button>
-            </div>
-            <button class="absolute top-6 right-6 cursor-pointer" (click)="closeModal($event, 1)">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:var(--color-abril-primary)">
-                    <path d="M20 20L4 4M20 4L4 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-                </svg>
-            </button>
+    <!-- Vista previa de lo ya subido, con X para sacarlo y volver a intentar. -->
+    <div *ngIf="previews.length > 0" class="w-full flex flex-col gap-[8px]">
+      <p class="text-[14px]" style="color:var(--color-abril-standard)">Imagen adjunta</p>
+      <div class="flex flex-wrap gap-[8px]">
+        <div *ngFor="let preview of previews; let i = index" class="preview-thumb">
+          <img [src]="preview" alt="Vista previa" />
+          <button type="button" class="preview-thumb__x" (click)="removeImage(i)"
+            aria-label="Quitar imagen">✕</button>
         </div>
+      </div>
     </div>
-</div>
+
+    <app-camera-web *ngIf="showCamera" (close)="showCamera = false" (photoTaken)="onPhotoTaken($event)">
+    </app-camera-web>
+
+    <div class="flex flex-col w-full">
+      <p class="text-[14px] mb-[4px]" style="color:var(--color-abril-standard)">Descripción</p>
+      <textarea [(ngModel)]="createDto.residentReportIncidenceDescription"
+        class="border rounded-[7px] p-[10px] text-[14px]" style="border-color:var(--color-abril-border)"></textarea>
+    </div>
+
+    <button (click)="saveResidentReportIncidence()"
+      class="w-[120px] py-[6px] rounded-[7px] cursor-pointer transition-colors"
+      style="background:var(--color-abril-standard)">
+      <p class="text-white text-[15px]">Guardar</p>
+    </button>
+
+  </div>
+</app-base-modal>

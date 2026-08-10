@@ -12,8 +12,30 @@ import { ActasReunion } from './actas-reunion/actas-reunion';
 import { ReunionDetail } from './actas-reunion/reunion-detail/reunion-detail';
 import { ActasReunionConfiguracion } from './actas-reunion/configuracion/actas-reunion-configuracion';
 
+import { ConfiguracionInicial } from './planeamiento-bim/configuracion-inicial/configuracion-inicial';
+import { CargaDiaria } from './planeamiento-bim/carga-diaria/carga-diaria';
+import { Bloqueos } from './planeamiento-bim/bloqueos/bloqueos';
+
 export const PROJECTS_ROUTES: Routes = [
   { path: '', redirectTo: 'projects-dashboard', pathMatch: 'full' },
+  {
+    path: 'planeamiento-bim/configuracion-inicial',
+    component: ConfiguracionInicial,
+    canActivate: [roleGuard],
+    data: { titulo: 'CONFIGURACIÓN INICIAL DE PLANEAMIENTO BIM', featureKey: 'planeamiento-bim.configuracion-inicial' },
+  },
+  {
+    path: 'planeamiento-bim/carga-diaria',
+    component: CargaDiaria,
+    canActivate: [roleGuard],
+    data: { titulo: 'CARGA DIARIA DE PLANEAMIENTO BIM', featureKey: 'planeamiento-bim.configuracion-inicial' },
+  },
+  {
+    path: 'planeamiento-bim/bloqueos',
+    component: Bloqueos,
+    canActivate: [roleGuard],
+    data: { titulo: 'GESTIÓN DE BLOQUEOS DE PLANEAMIENTO BIM', featureKey: 'planeamiento-bim.configuracion-inicial' },
+  },
   {
     path: 'projects-dashboard',
     component: ProjectsDashboard,
