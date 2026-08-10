@@ -139,8 +139,34 @@ export class NavigationService {
       label: 'Salud',
       iconKey: 'heart-rate-monitor',
       baseRoute: '/ssoma',
+      landing: '/ssoma/salud-ocupacional/dashboard',
+      // Módulo de navegación directa (sin `behavior: 'expand'`): sus items NO se
+      // pintan en el sidebar — dentro de Salud Ocupacional la navegación la
+      // resuelven las pestañas del header (SSOMA_TABS en
+      // features/ssoma/salud-ocupacional/shared/salud-ocupacional-tabs.ts).
+      // Aun así hay que declararlos TODOS con su featureKey, uno por pestaña,
+      // igual que hace 'costos' con sus funcionalidades, porque los items son los
+      // que deciden: (1) si el módulo se muestra — getModules() oculta el módulo
+      // cuando ningún item es accesible — y (2) a dónde navega el clic, vía
+      // resolveLanding. Declarar solo el dashboard escondía "Salud" a todo
+      // usuario sin rol SSOMA, incluido el que llega desde el boletín a
+      // Mi Salud (feature del rol USUARIO DE ABRIL) y sí puede entrar.
+      // Mantener el MISMO orden que SSOMA_TABS: define el fallback de landing
+      // (Mi Salud va al final, así un usuario con rol SSOMA cae en su pestaña de
+      // trabajo y el usuario común, que solo tiene Mi Salud, cae en Mi Salud).
       items: [
-        { label: 'Salud Ocupacional', route: '/ssoma/salud-ocupacional/dashboard', featureKey: 'ssoma.salud-ocupacional.dashboard' },
+        { label: 'Dashboard',          route: '/ssoma/salud-ocupacional/dashboard',          featureKey: 'ssoma.salud-ocupacional.dashboard' },
+        { label: 'EMOs',               route: '/ssoma/salud-ocupacional/emos',               featureKey: 'ssoma.salud-ocupacional.emos' },
+        { label: 'Programaciones',     route: '/ssoma/salud-ocupacional/programaciones',     featureKey: 'ssoma.salud-ocupacional.programaciones' },
+        { label: 'Interconsultas',     route: '/ssoma/salud-ocupacional/interconsultas',     featureKey: 'ssoma.salud-ocupacional.interconsultas' },
+        { label: 'Convalidaciones',    route: '/ssoma/salud-ocupacional/convalidaciones',    featureKey: 'ssoma.salud-ocupacional.convalidaciones' },
+        { label: 'Tópico Médico',      route: '/ssoma/salud-ocupacional/topico',             featureKey: 'ssoma.salud-ocupacional.topico' },
+        { label: 'Accidentes',         route: '/ssoma/salud-ocupacional/accidentes',         featureKey: 'ssoma.salud-ocupacional.accidentes' },
+        { label: 'Descansos',          route: '/ssoma/salud-ocupacional/descansos',          featureKey: 'ssoma.salud-ocupacional.descansos' },
+        { label: 'Revisión Descansos', route: '/ssoma/salud-ocupacional/revision-descansos', featureKey: 'ssoma.salud-ocupacional.revision-descansos' },
+        { label: 'Asistente Social',   route: '/ssoma/salud-ocupacional/asistente-social',   featureKey: 'ssoma.salud-ocupacional.asistente-social' },
+        { label: 'PASO',               route: '/ssoma/salud-ocupacional/paso',               featureKey: 'ssoma.salud-ocupacional.paso' },
+        { label: 'Mi Salud',           route: '/ssoma/salud-ocupacional/mi-salud',           featureKey: 'ssoma.salud-ocupacional.mi-salud' },
       ],
       groups: [],
     },

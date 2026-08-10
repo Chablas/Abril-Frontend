@@ -88,6 +88,11 @@ export interface WorkerDetalleDto {
   fechaIngreso?: string;
   condicionMedica?: string;
   fechaNacimiento?: string;
+  /**
+   * person.mostrar_en_boletin: true = su cumpleaños aparece en el calendario del boletín.
+   * Precarga el checkbox "Mostrar en el boletín" del formulario.
+   */
+  mostrarEnBoletin?: boolean;
   sexo?: string;
   fechaRetiro?: string;
   sctr?: boolean;

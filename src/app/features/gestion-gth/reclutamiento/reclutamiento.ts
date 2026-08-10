@@ -51,8 +51,18 @@ import { estadoColors } from './estado-colors';
     :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
     /* El desplegable de Prioridad (position:absolute, z-50) debe sobreponerse en vez
        de quedar recortado por el overflow del wrap: al no recortar, no aparece scroll
-       ni se empuja el contenido. Scoped a este componente (no afecta otras tablas). */
-    .abril-table-wrap { overflow: visible; }
+       ni se empuja el contenido. Scoped a este componente (no afecta otras tablas).
+
+       flex:0 0 auto es obligatorio junto con overflow:visible. El global
+       (.abril-table-wrap en styles.css) trae flex:0 1 auto + min-height:0, que permite
+       que el flex encoja la caja del wrap por debajo del alto real de la tabla cuando
+       el contenido de arriba (tarjetas + aviso + pipeline) deja poco espacio. Con el
+       overflow:auto global eso solo genera scroll interno, pero acá — al no recortar —
+       la tabla se seguía pintando fuera de su caja y tapaba el paginador, que queda
+       anclado al borde inferior del wrap encogido (bug visual real: se comía filas).
+       Sin encogimiento el wrap abraza su contenido, el paginador cae justo debajo de
+       la última fila y el scroll lo hace .page-container, que ya es overflow-auto. */
+    .abril-table-wrap { overflow: visible; flex: 0 0 auto; }
   `],
 })
 export class GthReclutamiento implements OnInit {

@@ -79,6 +79,12 @@
             [color]="accentColor"
             (valueChange)="model.fechaNacimiento = $event ?? ''"
           />
+          <!-- Publica (o no) el cumpleaños en el calendario del boletín. La fecha se guarda
+               igual: desmarcarlo solo lo saca del boletín. -->
+          <label class="check-row">
+            <input type="checkbox" [(ngModel)]="model.mostrarEnBoletin" />
+            <span>Mostrar cumpleaños en el boletín</span>
+          </label>
         </div>
         <div>
           <label class="field-label">Sexo</label>
@@ -452,15 +458,10 @@
               />
             </div>
 
-            <p class="col-span-2 field-hint" *ngIf="areaPathLabel">
-              Se guardará en: <b>{{ areaPathLabel }}</b>
-              <ng-container *ngIf="areaLegacyLabel"> · equivale a {{ areaLegacyLabel }}</ng-container>
-            </p>
-
             <!-- Jefe del trabajador: por defecto el revisor que sugiere su área (solo lectura);
                  con el checkbox se pasa a elegir uno a mano, que se sobrepone a ese. -->
             <div class="col-span-2">
-              <label class="field-label">{{ model.jefePersonalizado ? 'Jefe personalizado' : 'Revisor del área' }}</label>
+              <label class="field-label">{{ model.jefePersonalizado ? 'Jefe personalizado' : 'Jefe / Revisor del área' }}</label>
 
               <input
                 *ngIf="!model.jefePersonalizado"

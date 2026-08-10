@@ -1,6 +1,8 @@
 import { WorkItemValorizationFormSimpleDTO } from "./workItemSimple.model";
 
 export interface ProjectSubContractorFileDTO {
+  /** Solo viene en cotizaciones y cuadros comparativos (colecciones editables del paso 1). */
+  fileId?: number;
   fileUrl: string;
   originalFileName?: string;
   statusId?: number | null;

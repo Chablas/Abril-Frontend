@@ -5,14 +5,23 @@
   (closeModal)="closed.emit()">
 
     <div class="form-row">
-      <div class="abril-field">
-        <label class="abril-field-label">Fecha inicio *</label>
-        <input type="date" class="abril-field-input" [(ngModel)]="fechaInicio" />
-      </div>
-      <div class="abril-field">
-        <label class="abril-field-label">Fecha fin *</label>
-        <input type="date" class="abril-field-input" [(ngModel)]="fechaFin" />
-      </div>
+      <app-date-picker
+        label="Fecha inicio *"
+        color="var(--color-abril-logo-blue)"
+        [floatingLabel]="true"
+        [allowClear]="false"
+        [value]="fechaInicio"
+        (valueChange)="onFechaInicioChange($event)">
+      </app-date-picker>
+      <app-date-picker
+        label="Fecha fin *"
+        color="var(--color-abril-logo-blue)"
+        [floatingLabel]="true"
+        [allowClear]="false"
+        [min]="fechaInicio"
+        [value]="fechaFin"
+        (valueChange)="onFechaFinChange($event)">
+      </app-date-picker>
     </div>
 
     <div class="dias-badge" *ngIf="diasCalculados > 0">
@@ -22,13 +31,15 @@
     <div class="abril-field">
       <app-search-select
         color="var(--color-abril-logo-blue)"
-        label="Motivo"
-        [options]="motivos"
+        label="Tipo *"
+        [options]="tipos"
         valueField="id"
-        displayField="nombre"
-        [value]="motivoId"
-        placeholder="Selecciona motivo"
-        (valueChange)="motivoId = $event">
+        displayField="nombreCorto"
+        [sortAlpha]="false"
+        [value]="tipoId"
+        placeholder="Selecciona tipo"
+        [allowClear]="false"
+        (valueChange)="tipoId = $event">
       </app-search-select>
     </div>
 
@@ -37,19 +48,11 @@
       <input type="text" class="abril-field-input" [(ngModel)]="diagnostico" placeholder="Diagnóstico médico" />
     </div>
 
-    <div class="abril-field">
-      <label class="abril-field-label">Certificado médico</label>
-      <app-file-selector
-        accept=".pdf,.jpg,.jpeg,.png"
-        label="Adjunta uno o varios archivos o"
-        hint="PDF, JPG, PNG"
-        (fileSelected)="onFileSelected($event)">
-      </app-file-selector>
-      <div *ngFor="let doc of documentos; let i = index" class="file-chip">
-        <span class="file-chip__name">{{ doc.name }}</span>
-        <button type="button" class="file-chip__remove" (click)="quitarDocumento(i)">✕</button>
-      </div>
-    </div>
+    <app-descanso-adjuntos
+      color="var(--color-abril-logo-blue)"
+      [archivos]="documentos"
+      (archivosChange)="onDocumentosChange($event)">
+    </app-descanso-adjuntos>
 
   <div modalFooter>
     <button type="button" class="btn-ghost" (click)="closed.emit()">Cancelar</button>

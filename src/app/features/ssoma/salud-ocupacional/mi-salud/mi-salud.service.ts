@@ -35,7 +35,7 @@ export class MiSaludService {
     fd.append('fechaInicio', dto.fechaInicio);
     fd.append('fechaFin', dto.fechaFin);
     if (dto.dias != null)          fd.append('dias', dto.dias.toString());
-    if (dto.motivoId != null)      fd.append('motivoId', dto.motivoId.toString());
+    fd.append('tipoId', dto.tipoId.toString());
     if (dto.diagnostico)           fd.append('diagnostico', dto.diagnostico);
     for (const doc of documentos)  fd.append('documentos', doc, doc.name);
 

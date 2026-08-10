@@ -293,6 +293,12 @@ export interface WorkerUpsertDto {
   empresaId?: number | null;
   proyectoId?: number | null;
   fechaNacimiento?: string | null;
+  /**
+   * Checkbox "Mostrar en el boletín" (person.mostrar_en_boletin): true = su cumpleaños sale en el
+   * calendario del boletín. Se omite cuando el formulario no gestiona el campo (contratistas, que
+   * tampoco capturan fecha de nacimiento) y ahí el backend deja intacto lo guardado.
+   */
+  mostrarEnBoletin?: boolean;
   sexo?: string | null;
   aniosExperiencia?: number | null;
   /**

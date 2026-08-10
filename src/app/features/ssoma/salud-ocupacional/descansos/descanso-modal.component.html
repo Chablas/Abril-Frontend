@@ -29,65 +29,53 @@
       <div class="section">
         <h2 class="paso-title">Datos del descanso</h2>
         <div class="grid-3">
+          <app-date-picker
+            label="Fecha inicio *"
+            color="var(--color-abril-logo-blue)"
+            [floatingLabel]="true"
+            [allowClear]="false"
+            [value]="cFechaInicio"
+            (valueChange)="onFechaInicioChange($event)">
+          </app-date-picker>
+          <app-date-picker
+            label="Fecha fin *"
+            color="var(--color-abril-logo-blue)"
+            [floatingLabel]="true"
+            [allowClear]="false"
+            [min]="cFechaInicio"
+            [value]="cFechaFin"
+            (valueChange)="onFechaFinChange($event)">
+          </app-date-picker>
           <div class="abril-field">
             <app-search-select
               color="var(--color-abril-logo-blue)"
               label="Tipo *"
-              [options]="tiposDescansoOpts"
+              [options]="tipos"
               valueField="id"
-              displayField="label"
-              [value]="cTipo"
+              displayField="nombre"
+              [sortAlpha]="false"
+              [value]="cTipoId"
               placeholder="Selecciona tipo"
               [allowClear]="false"
-              (valueChange)="cTipo = $event">
+              (valueChange)="cTipoId = $event">
             </app-search-select>
           </div>
-          <div class="abril-field">
-            <label class="abril-field-label">Fecha inicio *</label>
-            <input type="date" class="abril-field-input" [(ngModel)]="cFechaInicio" />
-          </div>
-          <div class="abril-field">
-            <label class="abril-field-label">Fecha fin *</label>
-            <input type="date" class="abril-field-input" [(ngModel)]="cFechaFin" />
-          </div>
         </div>
-        <div class="grid-2 mt-2">
-          <div class="abril-field">
-            <label class="abril-field-label">Diagnóstico</label>
-            <input type="text" class="abril-field-input" [(ngModel)]="cDiagnostico" />
-          </div>
-          <div class="abril-field">
-            <label class="abril-field-label">Motivo</label>
-            <input type="text" class="abril-field-input" [(ngModel)]="cMotivo" />
-          </div>
+
+        <div class="dias-badge mt-2" *ngIf="diasCalculados > 0">
+          <span>{{ diasCalculados }} día{{ diasCalculados !== 1 ? 's' : '' }} de descanso</span>
         </div>
-        <div class="grid-2 mt-2">
-          <div class="abril-field">
-            <label class="abril-field-label">Médico que certifica</label>
-            <input type="text" class="abril-field-input" [(ngModel)]="cMedicoCertifica" placeholder="Dr. Apellidos Nombres" />
-          </div>
-          <div class="abril-field">
-            <label class="abril-field-label">Establecimiento de salud</label>
-            <input type="text" class="abril-field-input" [(ngModel)]="cEstablecimiento" placeholder="Hospital, clínica..." />
-          </div>
+
+        <div class="abril-field mt-2">
+          <label class="abril-field-label">Diagnóstico</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="cDiagnostico" placeholder="Diagnóstico médico" />
         </div>
-        <div class="grid-2 mt-2">
-          <div class="abril-field">
-            <label class="abril-field-label">Observaciones</label>
-            <textarea class="abril-field-input" rows="2" [(ngModel)]="cObservaciones"></textarea>
-          </div>
-          <div>
-            <label class="abril-field-label">Certificado médico (PDF/imagen)</label>
-            <input type="file" accept=".pdf,.jpg,.jpeg,.png" class="file-input" (change)="onCertificado($event)" />
-            <p *ngIf="cArchivoCertificado" class="hint mt-1">{{ cArchivoCertificado.name }}</p>
-          </div>
-        </div>
-        <div class="mt-2">
-          <label class="check-card" [class.check-card--active]="cReportadoPorTrabajador">
-            <input type="checkbox" [(ngModel)]="cReportadoPorTrabajador" />
-            <span>Reportado por el trabajador (módulo Mi Salud)</span>
-          </label>
-        </div>
+
+        <app-descanso-adjuntos
+          color="var(--color-abril-logo-blue)"
+          [archivos]="cDocumentos"
+          (archivosChange)="onDocumentosChange($event)">
+        </app-descanso-adjuntos>
       </div>
 
       <div modalFooter>
@@ -137,10 +125,9 @@
         <div class="section">
           <h2 class="paso-title">Información médica</h2>
           <div class="info-grid">
+            <div class="info-row"><span class="info-label">Tipo</span><span>{{ detalle.tipo }}</span></div>
             <div class="info-row"><span class="info-label">Diagnóstico</span><span>{{ detalle.diagnostico ?? '—' }}</span></div>
             <div class="info-row"><span class="info-label">CIE-10</span><span>{{ detalle.diagnosticoCie10 ?? '—' }}</span></div>
-            <div class="info-row"><span class="info-label">Médico que certifica</span><span>{{ detalle.medicoCertifica ?? '—' }}</span></div>
-            <div class="info-row"><span class="info-label">Establecimiento</span><span>{{ detalle.establecimiento ?? '—' }}</span></div>
             <div class="info-row" *ngIf="detalle.topicoOrigenId">
               <span class="info-label">Tópico de origen</span>
               <span class="link-value">#{{ detalle.topicoOrigenId }}</span>
@@ -153,12 +140,14 @@
           <div *ngIf="detalle.observaciones" class="info-obs mt-2">
             <span class="info-label">Observaciones:</span> {{ detalle.observaciones }}
           </div>
-          <div *ngIf="detalle.urlCertificado" class="mt-2">
-            <a [href]="detalle.urlCertificado" target="_blank" class="doc-link">
+
+          <!-- Certificados: los adjuntos nuevos; si no hay, el único archivo de los descansos antiguos. -->
+          <div *ngIf="certificados.length > 0" class="doc-list mt-2">
+            <a *ngFor="let doc of certificados" [href]="doc.url" target="_blank" class="doc-link">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/>
               </svg>
-              Ver certificado médico
+              {{ doc.nombre ?? 'Ver certificado médico' }}
             </a>
           </div>
         </div>
@@ -234,18 +223,23 @@
           <h2 class="paso-title">Nueva prórroga de descanso</h2>
           <p class="action-card-hint">Se creará un nuevo descanso vinculado a este (#{{ descansoId }}).</p>
           <div class="grid-2 mt-1">
-            <div class="abril-field">
-              <label class="abril-field-label">Fecha inicio *</label>
-              <input type="date" class="abril-field-input" [(ngModel)]="pFechaInicio" />
-            </div>
-            <div class="abril-field">
-              <label class="abril-field-label">Fecha fin *</label>
-              <input type="date" class="abril-field-input" [(ngModel)]="pFechaFin" />
-            </div>
-          </div>
-          <div class="abril-field mt-2">
-            <label class="abril-field-label">Motivo</label>
-            <input type="text" class="abril-field-input" [(ngModel)]="pMotivo" placeholder="Motivo de la prórroga" />
+            <app-date-picker
+              label="Fecha inicio *"
+              color="var(--color-abril-logo-blue)"
+              [floatingLabel]="true"
+              [allowClear]="false"
+              [value]="pFechaInicio"
+              (valueChange)="onProrrogaInicioChange($event)">
+            </app-date-picker>
+            <app-date-picker
+              label="Fecha fin *"
+              color="var(--color-abril-logo-blue)"
+              [floatingLabel]="true"
+              [allowClear]="false"
+              [min]="pFechaInicio"
+              [value]="pFechaFin"
+              (valueChange)="onProrrogaFinChange($event)">
+            </app-date-picker>
           </div>
           <div class="mt-2" style="display:flex;gap:.75rem;justify-content:flex-end">
             <button type="button" class="btn-ghost" (click)="cancelarProrroga()">Cancelar</button>
@@ -277,10 +271,13 @@
                 (valueChange)="segTipo = $event">
               </app-search-select>
             </div>
-            <div class="abril-field">
-              <label class="abril-field-label">Próxima cita</label>
-              <input type="date" class="abril-field-input" [(ngModel)]="segProximaCita" />
-            </div>
+            <app-date-picker
+              label="Próxima cita"
+              color="var(--color-abril-logo-blue)"
+              [floatingLabel]="true"
+              [value]="segProximaCita"
+              (valueChange)="onProximaCitaChange($event)">
+            </app-date-picker>
           </div>
           <div class="abril-field mt-2">
             <label class="abril-field-label">Nota *</label>

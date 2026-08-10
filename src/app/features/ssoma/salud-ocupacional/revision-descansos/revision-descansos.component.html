@@ -76,7 +76,7 @@
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('dias')">{{ sortDirOf('dias') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
-          <th>Motivo</th>
+          <th>Tipo</th>
           <th class="text-center">Adjuntos</th>
           <th class="cursor-pointer select-none text-center" (click)="toggleSort('estado')" title="Ordenar por estado">
             <span class="inline-flex items-center gap-1">Estado
@@ -132,7 +132,7 @@
 
           <td class="text-center">{{ s.dias }}</td>
 
-          <td class="text-gray-700">{{ (s.motivo | titleCase) || '—' }}</td>
+          <td class="text-gray-700">{{ s.tipo || '—' }}</td>
 
           <td class="text-center">
             <span *ngIf="s.adjuntosCount > 0"
