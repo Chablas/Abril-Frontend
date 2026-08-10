@@ -88,6 +88,11 @@ interface WorkerFormModel {
   fechaIngreso: string;
   condicionMedica: string;
   fechaNacimiento: string;
+  /**
+   * Checkbox "Mostrar en el boletín" (person.mostrar_en_boletin): si su cumpleaños sale en el
+   * calendario del boletín. Arranca en true — quien no quiera figurar se desmarca a mano.
+   */
+  mostrarEnBoletin: boolean;
   sexo: string;
   aniosExperiencia: number | null;
 }
@@ -372,6 +377,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       fechaIngreso: '',
       condicionMedica: '',
       fechaNacimiento: '',
+      mostrarEnBoletin: true,
       sexo: '',
       aniosExperiencia: null,
     };
@@ -426,6 +432,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           this.model.fechaIngreso = det.fechaIngreso ?? '';
           this.model.condicionMedica = det.condicionMedica ?? '';
           this.model.fechaNacimiento = det.fechaNacimiento ? det.fechaNacimiento.substring(0, 10) : '';
+          // Ausente (ficha vieja, respuesta sin el campo) se trata como marcado: es el default
+          // de la columna y lo que hacía el boletín antes de que el checkbox existiera.
+          this.model.mostrarEnBoletin = det.mostrarEnBoletin ?? true;
           this.model.sexo = det.sexo ?? '';
           this.model.ocupacionId = det.ocupacionId ?? null;
           this.model.puesto = det.puesto ?? '';
@@ -1132,6 +1141,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       empresaId: this.esContratista ? this.authService.getEmpresaId() : (this.model.empresaId ?? null),
       proyectoId: this.model.proyectoId ?? null,
       fechaNacimiento: this.esContratista ? undefined : (n(this.model.fechaNacimiento) || undefined),
+      // Va junto con la fecha de nacimiento: el checkbox solo se muestra donde se captura la
+      // fecha, así que en contratistas se omite y el backend no toca lo guardado.
+      mostrarEnBoletin: this.esContratista ? undefined : this.model.mostrarEnBoletin,
       sexo: n(this.model.sexo),
       aniosExperiencia: this.model.aniosExperiencia ?? undefined,
     };
