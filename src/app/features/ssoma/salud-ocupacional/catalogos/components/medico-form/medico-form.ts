@@ -61,6 +61,7 @@ export class MedicoForm implements OnChanges {
   private empty(): MedicoUpsertDto {
     return {
       apellidoNombre: '',
+      dni: '',
       cmp: '',
       especialidad: '',
       clinicaId: null,
@@ -74,6 +75,7 @@ export class MedicoForm implements OnChanges {
     if (this.mode === 'edit' && this.initial) {
       this.model = {
         apellidoNombre: this.initial.apellidoNombre,
+        dni: this.initial.dni ?? '',
         cmp: this.initial.cmp ?? '',
         especialidad: this.initial.especialidad ?? '',
         clinicaId: this.initial.clinicaId ?? null,
@@ -101,6 +103,7 @@ export class MedicoForm implements OnChanges {
     }
     const payload: MedicoUpsertDto = {
       apellidoNombre: this.model.apellidoNombre.trim(),
+      dni: this.model.dni?.toString().trim() || null,
       cmp: this.model.cmp?.toString().trim() || null,
       especialidad: this.model.especialidad?.toString().trim() || null,
       clinicaId: this.model.clinicaId || null,

@@ -1,8 +1,17 @@
 <app-base-modal *ngIf="open" [title]="title" width="w-[640px]" (closeModal)="close()">
   <div class="form-wrapper">
+    <p class="section-hint">Marca solo lo que realmente cambia. Lo que no marques queda tal cual está.</p>
+
     <div class="grid-2">
+      <!-- ── Obra ─────────────────────────────────────────── -->
+      <div class="col-span-2 check-row">
+        <label class="check-label">
+          <input type="checkbox" [(ngModel)]="model.cambiaObra" />
+          Cambia de obra
+        </label>
+      </div>
       <div class="col-span-2">
-        <label class="field-label">Obra antigua</label>
+        <label class="field-label">Obra actual</label>
         <input
           type="text"
           class="field-input field-readonly"
@@ -10,7 +19,7 @@
           readonly
         />
       </div>
-      <div class="col-span-2">
+      <div class="col-span-2" *ngIf="model.cambiaObra">
         <label class="field-label">Nueva obra *</label>
         <app-search-select
           [options]="proyectos"
@@ -22,29 +31,78 @@
           (valueChange)="model.proyectoId = $event"
         />
       </div>
-      <ng-container *ngIf="worker?.contrataCasa === 'Casa'">
-        <div class="col-span-2">
-          <label class="field-label">Razón social / Empresa</label>
+
+      <!-- ── Razón social ─────────────────────────────────── -->
+      <ng-container *ngIf="puedeEditarEmpresa">
+        <div class="col-span-2 check-row">
+          <label class="check-label">
+            <input type="checkbox" [(ngModel)]="model.cambiaEmpresa" />
+            Cambia de razón social / empresa
+          </label>
+        </div>
+        <div class="col-span-2" *ngIf="model.cambiaEmpresa">
+          <label class="field-label">Nueva razón social *</label>
           <app-search-select
             [options]="empresas"
             valueField="id"
             displayField="nombre"
             [value]="model.empresaId"
             [showLabel]="false"
-            placeholder="Mantener actual"
+            placeholder="Seleccionar empresa"
             (valueChange)="model.empresaId = $event"
           />
         </div>
       </ng-container>
-      <ng-container *ngIf="worker?.contrataCasa === 'Casa'">
-        <div>
-          <label class="field-label">Staff / Oficina</label>
+
+      <!-- ── Puesto de trabajo ────────────────────────────── -->
+      <div class="col-span-2 check-row">
+        <label class="check-label">
+          <input type="checkbox" [(ngModel)]="model.cambiaPuesto" />
+          Cambia de puesto de trabajo
+        </label>
+      </div>
+      <div class="col-span-2" *ngIf="model.cambiaPuesto">
+        <label class="field-label">Puesto actual</label>
+        <input type="text" class="field-input field-readonly" [value]="worker?.ocupacion ?? '—'" readonly />
+      </div>
+      <div class="col-span-2" *ngIf="model.cambiaPuesto">
+        <label class="field-label">Puesto nuevo *</label>
+        <input type="text" class="field-input" placeholder="Puesto al que pasa" [(ngModel)]="model.puesto" />
+      </div>
+
+      <!-- ── Clasificación Staff / Oficina ────────────────── -->
+      <ng-container *ngIf="puedeEditarStaffOficina">
+        <div class="col-span-2 check-row">
+          <label class="check-label">
+            <input type="checkbox" [(ngModel)]="model.cambiaStaffOficina" />
+            Cambia de clasificación (Obra / Staff / Oficina Central)
+          </label>
+        </div>
+        <div class="col-span-2" *ngIf="model.cambiaStaffOficina">
+          <label class="field-label">Clasificación actual</label>
+          <input
+            type="text"
+            class="field-input field-readonly"
+            [value]="worker?.obraOficina ?? '—'"
+            readonly
+          />
+        </div>
+        <div class="col-span-2" *ngIf="model.cambiaStaffOficina">
+          <label class="field-label">Clasificación nueva *</label>
           <select class="field-input" [(ngModel)]="model.staffOficina">
-            <option *ngFor="let o of staffOficinaOptions" [value]="o.id">{{ o.nombre }}</option>
+            <option *ngFor="let o of staffOficinaOptions" [ngValue]="o.id">{{ o.nombre }}</option>
           </select>
         </div>
       </ng-container>
-      <div>
+
+      <div class="col-span-2" *ngIf="esCambioRiesgoCritico">
+        <p class="field-warning">
+          ⚠ Sube de riesgo (Oficina Central → Staff/Obra): el certificado de aptitud vigente
+          quedará marcado como "Falta" y se exigirá un EMO nuevo — no será convalidable.
+        </p>
+      </div>
+
+      <div class="col-span-2">
         <label class="field-label">Fecha de cambio *</label>
         <input type="date" class="field-input" [(ngModel)]="model.fechaCambio" />
       </div>

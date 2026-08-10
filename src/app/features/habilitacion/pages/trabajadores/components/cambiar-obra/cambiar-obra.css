@@ -47,6 +47,50 @@
   cursor: not-allowed;
 }
 
+.section-hint {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin: 0 0 0.25rem;
+}
+
+.check-row {
+  padding-top: 0.4rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.check-row:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.check-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+}
+
+.check-label input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: #64bc04;
+  cursor: pointer;
+}
+
+.field-warning {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.75rem;
+  margin: 0;
+}
+
 .form-footer {
   display: flex;
   justify-content: flex-end;

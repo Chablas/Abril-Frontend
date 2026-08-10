@@ -6,6 +6,10 @@ export interface WorkerSearchItemDto {
   cargo?: string;
   categoria?: string;
   ocupacion?: string;
+  /** FK a workers_obra_oficina_staff — clasificación de riesgo actual del trabajador,
+   * gestionada desde Habilitación (Cambiar obra / puesto de trabajo). */
+  obraOficinaStaffId?: number | null;
+  obraOficinaStaffNombre?: string | null;
   empresaActual?: string;
   empresaActualId?: number;
   activo: boolean;

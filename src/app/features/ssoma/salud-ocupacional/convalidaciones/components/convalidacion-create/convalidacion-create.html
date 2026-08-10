@@ -65,6 +65,20 @@
     </div>
   </div>
 
+  <ng-container *ngIf="worker">
+    <h2 class="paso-title mt-6"><i class="ti ti-briefcase"></i> Cambio de puesto</h2>
+    <div class="puesto-preview">
+      <span class="puesto-preview-label">Puesto / clasificación destino (registro vigente del trabajador)</span>
+      <span class="puesto-preview-value">{{ puestoDestinoPreview }} · {{ clasificacionDestinoPreview }}</span>
+    </div>
+    <p class="hint">
+      El puesto de origen (al momento del EMO elegido) y la validación de riesgo se calculan
+      automáticamente al guardar. Si el destino de arriba no es correcto, corrígelo en
+      Habilitación → Gestión de Trabajadores → "Cambiar obra / puesto de trabajo" antes de
+      convalidar.
+    </p>
+  </ng-container>
+
   <div class="form-row">
     <div class="abril-field">
       <label class="abril-field-label">Fecha convalidación *</label>
@@ -117,3 +131,14 @@
   </div>
 
 </app-abril-modal-panel>
+
+<app-programacion-create
+  *ngIf="worker"
+  [open]="showProgramarEmo"
+  [preselectedWorkerId]="worker.id"
+  [preselectedWorkerNombre]="worker.apellidoNombre"
+  [preselectedWorkerDni]="worker.dni"
+  [preselectedEmpresaId]="empresaDestinoId || null"
+  (closed)="onProgramacionClosed()"
+  (saved)="onProgramacionSaved()">
+</app-programacion-create>

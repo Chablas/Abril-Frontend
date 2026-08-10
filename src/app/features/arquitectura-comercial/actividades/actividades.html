@@ -134,6 +134,16 @@
             (valueChange)="onEncargadoChange($event)">
           </app-search-select>
         </div>
+
+        <button
+          type="button"
+          (click)="reasignarEncargado($event)"
+          title="Asigna el Responsable 1 del proyecto a las actividades que no tengan uno"
+          class="px-3.5 py-1.5 text-sm rounded-lg border font-medium transition-colors whitespace-nowrap"
+          style="border-color: var(--color-abril-standard); color: var(--color-abril-standard);"
+        >
+          Reasignar encargado
+        </button>
       </div>
 
       <!-- Tabla -->

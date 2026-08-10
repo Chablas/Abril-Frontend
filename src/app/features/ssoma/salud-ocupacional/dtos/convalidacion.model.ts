@@ -1,5 +1,7 @@
 export type ConvalidacionResultado = 'Aprobada' | 'Rechazada' | 'Pendiente' | string;
 
+export type RiesgoEmo = 'Bajo' | 'Alto' | string;
+
 export interface ConvalidacionListDto {
   id: number;
   emoOrigenId: number;
@@ -27,6 +29,17 @@ export interface ConvalidacionListDto {
   interconsultaEstado?: string | null;
   interconsultaEspecialidad?: string | null;
   interconsultaUrlInforme?: string | null;
+
+  // Cambio de puesto: datos y evaluación de riesgo.
+  puestoOrigen?: string | null;
+  puestoDestino?: string | null;
+  obraOficinaStaffOrigenId?: number | null;
+  obraOficinaStaffOrigenNombre?: string | null;
+  obraOficinaStaffDestinoId?: number | null;
+  obraOficinaStaffDestinoNombre?: string | null;
+  riesgoOrigen?: RiesgoEmo | null;
+  riesgoDestino?: RiesgoEmo | null;
+  cambioRiesgo?: boolean;
 }
 
 export interface ConvalidacionCreateDto {
@@ -37,4 +50,10 @@ export interface ConvalidacionCreateDto {
   medicoId?: number;
   resultado: ConvalidacionResultado;
   notas?: string;
+  puestoOrigen?: string;
+  puestoDestino?: string;
+  obraOficinaStaffOrigenId?: number;
+  obraOficinaStaffDestinoId?: number;
+  pinFirma?: string;
+  microsoftAccessToken?: string;
 }

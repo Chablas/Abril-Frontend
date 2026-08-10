@@ -166,6 +166,49 @@ export class CatalogosSaludService {
       .pipe(tap(() => (this.medicos$ = undefined)));
   }
 
+  /** El propio médico define su PIN de firma (nunca se transmite ni se guarda en texto
+   * plano fuera de esta llamada). */
+  setPinFirma(medicoId: number, pin: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/medicos/${medicoId}/pin-firma`,
+      { pin },
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  /** SSO-FO-149 — Autorización de firma electrónica del médico, para imprimir, firmar
+   * a mano y volver a subir escaneada como evidencia. */
+  descargarAutorizacionFirmaPdf(medicoId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/medicos/${medicoId}/autorizacion-firma/pdf`, {
+      headers: buildAuthHeaders(),
+      responseType: 'blob',
+    });
+  }
+
+  /** Sube la firma digital (imagen, idealmente PNG sin fondo) que se imprime en el
+   * SSO-FO-149 junto al recuadro de firma manuscrita para comparar. */
+  subirFirmaDigital(medicoId: number, file: Blob, fileName: string): Observable<{ url: string }> {
+    const form = new FormData();
+    form.append('file', file, fileName);
+    return this.http.post<{ url: string }>(
+      `${this.apiUrl}/medicos/${medicoId}/firma-digital`,
+      form,
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  /** Sube el SSO-FO-149 ya firmado a mano y escaneado — requisito previo (junto con la
+   * firma digital) para poder configurar el PIN de firma. */
+  subirAutorizacionFirmada(medicoId: number, file: File): Observable<{ url: string }> {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    return this.http.post<{ url: string }>(
+      `${this.apiUrl}/medicos/${medicoId}/autorizacion-firma/documento`,
+      form,
+      { headers: buildAuthHeaders() },
+    );
+  }
+
   listEmoTipos(): Observable<EmoTipoDto[]> {
     return this.http.get<EmoTipoDto[]>(`${this.apiUrl}/emo-tipos`, {
       headers: buildAuthHeaders(),
