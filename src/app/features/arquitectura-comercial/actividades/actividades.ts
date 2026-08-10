@@ -19,7 +19,7 @@ import { NuevaConsulta } from './components/nueva-consulta/nueva-consulta';
 import { EditarActividad } from './components/editar-actividad/editar-actividad';
 import { NuevoHito } from './components/nuevo-hito/nuevo-hito';
 import { NuevoEntregable } from './components/nuevo-entregable/nuevo-entregable';
-
+
 import { AC_TABS } from '../shared/arquitectura-comercial-tabs';
 type TipoFiltro = '' | 'ENTREGABLE' | 'HITO' | 'CONSULTA';
 
@@ -363,18 +363,67 @@ export class Actividades implements OnInit {
       if (!result.isConfirmed) return;
       this.service.generarActividades(proyecto.id).subscribe({
         next: res => {
+          const terminar = () => {
+            Swal.fire({
+              icon: 'success',
+              title: 'Listo',
+              text: `${res.generadas} actividades generadas.`,
+              timer: 2000,
+            });
+            this.loadProyectos();
+            if (this.selectedProyectoId === proyecto.id) this.loadActividades();
+            this.cdr.detectChanges();
+          };
+
+          if (proyecto.responsableArqComId) {
+            this.service.reasignarEncargado(proyecto.id).subscribe({
+              next: terminar,
+              error: terminar,
+            });
+          } else {
+            terminar();
+          }
+        },
+        error: err => {
+          const msg = err?.error?.message ?? 'No se pudieron generar las actividades';
+          this.showError(msg);
+        },
+      });
+    });
+  }
+
+  reasignarEncargado(event?: Event): void {
+    event?.stopPropagation();
+    const proyecto = this.selectedProyecto;
+    if (!proyecto || !this.selectedProyectoId) return;
+
+    if (!proyecto.responsableArqComId) {
+      this.showError('Primero asigna un Responsable 1 al proyecto.');
+      return;
+    }
+
+    Swal.fire({
+      title: '¿Reasignar encargado?',
+      text: `Se asignará a ${proyecto.responsableArqCom ?? 'el responsable del proyecto'} como Responsable 1 en todas las actividades de ${proyecto.nombre} que aún no tengan uno.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, reasignar',
+      cancelButtonText: 'Cancelar',
+    }).then(result => {
+      if (!result.isConfirmed) return;
+      this.service.reasignarEncargado(proyecto.id).subscribe({
+        next: res => {
           Swal.fire({
             icon: 'success',
             title: 'Listo',
-            text: `${res.generadas} actividades generadas.`,
+            text: `${res.actualizadas} actividades actualizadas.`,
             timer: 2000,
           });
-          this.loadProyectos();
           if (this.selectedProyectoId === proyecto.id) this.loadActividades();
           this.cdr.detectChanges();
         },
         error: err => {
-          const msg = err?.error?.message ?? 'No se pudieron generar las actividades';
+          const msg = err?.error?.message ?? 'No se pudo reasignar el encargado';
           this.showError(msg);
         },
       });
