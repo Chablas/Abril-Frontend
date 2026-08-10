@@ -5041,3 +5041,32 @@ Usando `ui-ux-pro-max --design-system` y `--domain ux` como input (no como fuent
 ## Sesión 2026-08-08 (2) — Merge de `victor-frontend` a `master` (producción)
 
 `master` estaba 13 commits atrás de `origin/master` (sin cambios propios pendientes) — se sincronizó con `git merge --ff-only origin/master` y luego se trajo todo `victor-frontend` con `git merge victor-frontend` (fast-forward limpio, sin conflictos). Esto sube a producción, además del trabajo de la sesión de hoy (documentado arriba), el trabajo de sesiones previas de `victor-frontend` que todavía no había llegado a `master`: feature completo de **Planeamiento BIM** (Configuración Inicial, Carga Diaria, Bloqueos), y cambios en `report-response-control` (nuevo `report-cards`, `elapsed-time.ts`, reestructuración del modal de detalle). `ng build` tras el merge: 0 errores, mismos warnings preexistentes de terceros.
+
+## Sesión 2026-08-10 — Convalidación de EMO, firma electrónica y control de cambio de puesto
+
+Contraparte frontend de la sesión del backend (ver `Abril_Backend/CONTEXT.md`, mismo día).
+
+- **Convalidaciones** (`create`/`review`): puesto/clasificación origen-destino ya no se
+  digitan a mano — se muestran de solo lectura (el backend los resuelve del historial de
+  vinculación). Antes de guardar Aprobada/Aprobada con Observaciones/Rechazada, pide PIN
+  del médico + fuerza reautenticación de Microsoft (`FirmaElectronicaService`,
+  `MicrosoftAuthService.getFreshSignatureToken()` con `prompt: 'login'`). Acceso directo a
+  "Programar EMO" embebido en la revisión.
+- **Catálogo de médicos**: nuevo `firma-digital-pad` (canvas para dibujar la firma, exporta
+  PNG transparente), botón "Subir escaneado" (SSO-FO-149 firmado a mano), botón "PIN de
+  firma", botón "Autorización de firma" (descarga el PDF).
+- **Habilitación → Cambiar obra** (`cambiar-obra.*`): reestructurado con 4 checkboxes
+  independientes (obra / razón social / puesto / clasificación) — cada campo queda
+  bloqueado hasta marcar su checkbox, para no arrastrar cambios no marcados a propósito.
+- **Editar trabajador** (`worker-create-edit.html`): obra, razón social, categoría,
+  ocupación, puesto y clasificación pasaron a solo lectura en modo edición — ese cambio
+  ahora va exclusivamente por "Cambiar obra" (el backend ya lo exige también).
+
+### Verificado
+`ng build` sin errores (solo warnings preexistentes de dependencias de terceros —
+`canvg`/`rgbcolor`, `flatpickr` no-ESM). Probado en vivo con trabajador real (Justiniani
+Aranda) — ver detalle en `Abril_Backend/CONTEXT.md`.
+
+### Pendiente
+Igual que el backend: subir documentos del EMO directo desde "Revisar convalidación" (hoy
+solo se visualizan, no se cargan ahí).
