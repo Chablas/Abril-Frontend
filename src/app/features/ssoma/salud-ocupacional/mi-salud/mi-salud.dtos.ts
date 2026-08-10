@@ -1,6 +1,12 @@
-export interface DescansoMotivoDto {
+/**
+ * Tipo de descanso (ss_descanso_tipo). En Mi Salud solo llegan los que el trabajador puede
+ * elegir y se le muestran con `nombreCorto` ("Accidente" / "Enfermedad"); lo que se guarda
+ * y se reporta es siempre el `nombre` largo ("Accidente común" / "Enfermedad común").
+ */
+export interface DescansoTipoDto {
   id: number;
   nombre: string;
+  nombreCorto: string;
 }
 
 export interface MiSaludResumenDto {
@@ -16,7 +22,7 @@ export interface MiSaludResumenDto {
   restriccionesVigentes: string[];
   ultimoDescansoEstado: string | null;
   ultimoDescansoFechaFin: string | null;
-  motivosDescanso: DescansoMotivoDto[];
+  tiposDescanso: DescansoTipoDto[];
 }
 
 export interface MiDescansoAdjuntoDto {
@@ -26,11 +32,11 @@ export interface MiDescansoAdjuntoDto {
 
 export interface MiDescansoDto {
   id: number;
+  /** Nombre largo del tipo, resuelto en el backend desde el catálogo. */
   tipo: string;
   fechaInicio: string;
   fechaFin: string;
   dias: number | null;
-  motivo: string | null;
   diagnostico: string | null;
   estado: string | null;
   motivoRechazo: string | null;
@@ -44,7 +50,7 @@ export interface CrearMiDescansoDto {
   fechaInicio: string;
   fechaFin: string;
   dias?: number | null;
-  motivoId?: number | null;
+  tipoId: number;
   diagnostico?: string | null;
 }
 

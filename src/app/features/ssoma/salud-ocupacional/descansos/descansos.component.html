@@ -16,7 +16,7 @@
         <colgroup>
           <col style="width:50px"/>
           <col/>
-          <col style="width:90px"/>
+          <col style="width:160px"/>
           <col style="width:100px"/>
           <col style="width:100px"/>
           <col style="width:44px"/>
@@ -92,6 +92,7 @@
 <app-descanso-modal
   *ngIf="modalVisible"
   [descansoId]="descansoSeleccionadoId"
+  [tipos]="tipos"
   (closed)="cerrarModal()"
   (saved)="onGuardado()">
 </app-descanso-modal>
@@ -99,14 +100,21 @@
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
   <div class="flex gap-3">
-    <div class="flex-1 abril-field">
-      <label class="abril-field-label">Desde</label>
-      <input type="date" class="abril-field-input" [(ngModel)]="filtros.fechaDesde" (change)="onFilterChange()" />
-    </div>
-    <div class="flex-1 abril-field">
-      <label class="abril-field-label">Hasta</label>
-      <input type="date" class="abril-field-input" [(ngModel)]="filtros.fechaHasta" (change)="onFilterChange()" />
-    </div>
+    <app-date-picker
+      class="flex-1"
+      label="Desde"
+      [floatingLabel]="true"
+      [value]="filtros.fechaDesde"
+      (valueChange)="filtros.fechaDesde = $event ?? undefined; onFilterChange()">
+    </app-date-picker>
+    <app-date-picker
+      class="flex-1"
+      label="Hasta"
+      [floatingLabel]="true"
+      [min]="filtros.fechaDesde ?? null"
+      [value]="filtros.fechaHasta"
+      (valueChange)="filtros.fechaHasta = $event ?? undefined; onFilterChange()">
+    </app-date-picker>
   </div>
 
   <div class="w-full">
@@ -128,8 +136,8 @@
       valueField="id"
       displayField="nombre"
       [sortAlpha]="false"
-      [value]="filtros.tipo"
-      (valueChange)="filtros.tipo = $event; onFilterChange()">
+      [value]="filtros.tipoId"
+      (valueChange)="filtros.tipoId = $event; onFilterChange()">
     </app-search-select>
   </div>
 

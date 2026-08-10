@@ -7,18 +7,22 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { AbrilModalPanel } from '../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { DatePicker } from '../../../../shared/components/date-picker/date-picker';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { WorkerSearchInput } from '../shared/worker-search-input/worker-search-input';
+import { DescansoAdjuntos } from '../shared/descanso-adjuntos/descanso-adjuntos';
 import { WorkerSearchItemDto } from '../dtos/worker-search.model';
 import { DescansosService } from './descansos.service';
 import {
   DescansoMedicoDetalleDto,
   DescansoMedicoCreateDto,
+  DescansoAdjuntoDto,
   DescansoAprobarDto,
   DescansoRechazarDto,
   DarAltaDto,
   DescansoSeguimientoDto,
   DescansoSeguimientoCreateDto,
+  DescansoTipoDto,
 } from './descansos.dtos';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
@@ -29,13 +33,18 @@ type TabKey = 'detalle' | 'seguimientos';
   selector: 'app-descanso-modal',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilModalPanel, SearchSelect, WorkerSearchInput],
+  imports: [
+    CommonModule, FormsModule, AbrilModalPanel, DatePicker, SearchSelect,
+    WorkerSearchInput, DescansoAdjuntos,
+  ],
   templateUrl: './descanso-modal.component.html',
   styleUrl: './descanso-modal.component.css',
 })
 export class DescansoModalComponent implements OnInit {
   /** null = modo creación, objeto = modo detalle/gestión */
   @Input() descansoId: number | null = null;
+  /** Catálogo completo de tipos (los 4). Lo trae la página en su carga inicial. */
+  @Input() tipos: DescansoTipoDto[] = [];
   /** Preselecciona el trabajador (p. ej. al crear desde el detalle de un accidente) y oculta el buscador. */
   @Input() presetWorker: WorkerSearchItemDto | null = null;
   /** Vincula el descanso creado a un accidente de trabajo existente. */
@@ -56,16 +65,11 @@ export class DescansoModalComponent implements OnInit {
   workerSelected : WorkerSearchItemDto | null = null;
 
   // ── Formulario creación ───────────────────────────────────────────────────
-  cTipo        = 'Particular';
+  cTipoId      : number | null = null;
   cFechaInicio = '';
   cFechaFin    = '';
-  cMotivo      = '';
   cDiagnostico = '';
-  cMedicoCertifica = '';
-  cEstablecimiento = '';
-  cObservaciones = '';
-  cReportadoPorTrabajador = false;
-  cArchivoCertificado: File | null = null;
+  cDocumentos  : File[] = [];
 
   // ── Aprobar / Rechazar ────────────────────────────────────────────────────
   aprobarObs  = '';
@@ -80,9 +84,7 @@ export class DescansoModalComponent implements OnInit {
   segProximaCita  = '';
   segGuardando    = false;
 
-  readonly tiposDescanso = ['Particular', 'Ocupacional'];
   readonly tiposSeguimiento = ['Médico', 'Asistenta Social', 'Seguimiento', 'Alta'];
-  readonly tiposDescansoOpts = this.tiposDescanso.map(t => ({ id: t, label: t }));
   readonly tiposSeguimientoOpts = this.tiposSeguimiento.map(t => ({ id: t, label: t }));
 
   constructor(
@@ -99,9 +101,16 @@ export class DescansoModalComponent implements OnInit {
     } else {
       this.isNuevo = true;
       this.loading = false;
+      // Mismo arranque que Mi Salud: fechas prellenadas con hoy.
+      const hoy = new Date().toISOString().slice(0, 10);
+      this.cFechaInicio = hoy;
+      this.cFechaFin    = hoy;
       if (this.presetWorker) {
         this.workerSelected = this.presetWorker;
       }
+      // La pantalla de Descansos ya trae el catálogo en su carga inicial; si el modal se abre
+      // desde otra (p. ej. el detalle de un accidente) se pide aquí para no dejar el combo vacío.
+      if (this.tipos.length === 0) this.loadTipos();
     }
   }
 
@@ -119,6 +128,13 @@ export class DescansoModalComponent implements OnInit {
         this.errorService.handleError(err);
         this.close();
       },
+    });
+  }
+
+  private loadTipos(): void {
+    this.svc.getTipos().subscribe({
+      next: t => { this.tipos = t; this.cdr.detectChanges(); },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
   }
 
@@ -144,11 +160,17 @@ export class DescansoModalComponent implements OnInit {
   get canAlta(): boolean     { return this.isAprobado; }
   get canProrroga(): boolean { return this.isAprobado || this.isCompletado; }
 
+  /** Certificados a mostrar en el detalle: los adjuntos nuevos o, si no hay, el archivo antiguo. */
+  get certificados(): DescansoAdjuntoDto[] {
+    if (this.detalle?.adjuntos?.length) return this.detalle.adjuntos;
+    const legado = this.detalle?.urlCertificado ?? this.detalle?.urlDocumento;
+    return legado ? [{ url: legado, nombre: 'Ver certificado médico' }] : [];
+  }
+
   // ── Prórroga ──────────────────────────────────────────────────────────────
   prorrogaMode    = false;
   pFechaInicio    = '';
   pFechaFin       = '';
-  pMotivo         = '';
 
   iniciarProrroga(): void {
     // Pre-llenar con el día siguiente a la fecha fin del descanso actual
@@ -173,13 +195,12 @@ export class DescansoModalComponent implements OnInit {
       return;
     }
     const dto: DescansoMedicoCreateDto = {
-      workerId              : this.detalle!.workerId,
-      tipo                  : this.detalle!.tipo,
-      fechaInicio           : this.pFechaInicio,
-      fechaFin              : this.pFechaFin,
-      motivo                : this.pMotivo || undefined,
-      reportadoPorTrabajador: false,
-      prorrogaDelId         : this.descansoId!,
+      workerId      : this.detalle!.workerId,
+      // La prórroga hereda el tipo del descanso que prorroga.
+      tipoId        : this.detalle!.tipoId,
+      fechaInicio   : this.pFechaInicio,
+      fechaFin      : this.pFechaFin,
+      prorrogaDelId : this.descansoId!,
     };
     this.saving = true;
     this.loaderService.show();
@@ -210,13 +231,51 @@ export class DescansoModalComponent implements OnInit {
     this.workerSelected = w;
   }
 
-  onCertificado(ev: Event): void {
-    const f = (ev.target as HTMLInputElement).files?.[0];
-    this.cArchivoCertificado = f ?? null;
+  // La app corre zoneless: tras cambiar estado desde un evento hay que pedir el repintado.
+  onFechaInicioChange(v: string | null): void {
+    this.cFechaInicio = v ?? '';
+    // Si la fecha fin quedó antes del nuevo inicio, se arrastra para no dejar un rango inválido.
+    if (this.cFechaFin && this.cFechaInicio && this.cFechaFin < this.cFechaInicio) this.cFechaFin = this.cFechaInicio;
+    this.cdr.detectChanges();
+  }
+
+  onFechaFinChange(v: string | null): void {
+    this.cFechaFin = v ?? '';
+    this.cdr.detectChanges();
+  }
+
+  onDocumentosChange(archivos: File[]): void {
+    this.cDocumentos = archivos;
+    this.cdr.detectChanges();
+  }
+
+  onProrrogaInicioChange(v: string | null): void {
+    this.pFechaInicio = v ?? '';
+    if (this.pFechaFin && this.pFechaInicio && this.pFechaFin < this.pFechaInicio) this.pFechaFin = this.pFechaInicio;
+    this.cdr.detectChanges();
+  }
+
+  onProrrogaFinChange(v: string | null): void {
+    this.pFechaFin = v ?? '';
+    this.cdr.detectChanges();
+  }
+
+  onProximaCitaChange(v: string | null): void {
+    this.segProximaCita = v ?? '';
+    this.cdr.detectChanges();
+  }
+
+  /** Días de descanso del rango elegido (ambos extremos incluidos). */
+  get diasCalculados(): number {
+    if (!this.cFechaInicio || !this.cFechaFin) return 0;
+    const dias = Math.round(
+      (new Date(this.cFechaFin).getTime() - new Date(this.cFechaInicio).getTime()) / 86400000,
+    ) + 1;
+    return dias > 0 ? dias : 0;
   }
 
   get canCreate(): boolean {
-    return !!(this.workerSelected && this.cTipo && this.cFechaInicio && this.cFechaFin) && !this.saving;
+    return !!(this.workerSelected && this.cTipoId && this.cFechaInicio && this.cFechaFin) && !this.saving;
   }
 
   crear(): void {
@@ -226,21 +285,16 @@ export class DescansoModalComponent implements OnInit {
       return;
     }
     const dto: DescansoMedicoCreateDto = {
-      workerId              : this.workerSelected.id,
-      tipo                  : this.cTipo,
-      fechaInicio           : this.cFechaInicio,
-      fechaFin              : this.cFechaFin,
-      motivo                : this.cMotivo            || undefined,
-      diagnostico           : this.cDiagnostico       || undefined,
-      medicoCertifica       : this.cMedicoCertifica   || undefined,
-      establecimiento       : this.cEstablecimiento   || undefined,
-      observaciones         : this.cObservaciones     || undefined,
-      reportadoPorTrabajador: this.cReportadoPorTrabajador,
-      accidenteId           : this.presetAccidenteId  ?? undefined,
+      workerId    : this.workerSelected.id,
+      tipoId      : this.cTipoId!,
+      fechaInicio : this.cFechaInicio,
+      fechaFin    : this.cFechaFin,
+      diagnostico : this.cDiagnostico      || undefined,
+      accidenteId : this.presetAccidenteId ?? undefined,
     };
     this.saving = true;
     this.loaderService.show();
-    this.svc.create(dto, this.cArchivoCertificado ?? undefined).subscribe({
+    this.svc.create(dto, this.cDocumentos).subscribe({
       next: () => {
         this.saving = false;
         this.loaderService.hide();

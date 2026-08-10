@@ -92,7 +92,7 @@
     <div class="abril-table-wrap">
       <table class="abril-table">
         <colgroup>
-          <col style="width:80px"/>
+          <col style="width:150px"/>
           <col style="width:100px"/>
           <col style="width:105px"/>
           <col style="width:40px"/>
@@ -106,7 +106,7 @@
             <th>Desde</th>
             <th>Hasta</th>
             <th class="text-center">Días</th>
-            <th>Motivo</th>
+            <th>Diagnóstico</th>
             <th class="text-center">Estado</th>
             <th></th>
           </tr>
@@ -117,7 +117,7 @@
             <td class="text-gray-500">{{ d.fechaInicio | date:'dd/MM/yyyy' }}</td>
             <td class="text-gray-500">{{ d.fechaFin   | date:'dd/MM/yyyy' }}</td>
             <td class="col-mono text-center">{{ d.dias ?? '—' }}</td>
-            <td class="col-truncate text-gray-500">{{ d.motivo ?? '—' }}</td>
+            <td class="col-truncate text-gray-500">{{ d.diagnostico ?? '—' }}</td>
             <td class="text-center">
               <span class="badge" [ngClass]="estadoClass(d.estado)">{{ d.estado ?? '—' }}</span>
             </td>
@@ -164,7 +164,7 @@
 
 <app-mi-salud-modal
   *ngIf="modalVisible"
-  [motivos]="resumen?.motivosDescanso ?? []"
+  [tipos]="resumen?.tiposDescanso ?? []"
   (closed)="cerrarModal()"
   (saved)="onGuardado()">
 </app-mi-salud-modal>

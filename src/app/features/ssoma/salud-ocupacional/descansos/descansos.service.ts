@@ -14,6 +14,8 @@ import {
   DescansoSeguimientoDto,
   DescansoSeguimientoCreateDto,
   DescansoFilterDto,
+  DescansosInicioDto,
+  DescansoTipoDto,
 } from './descansos.dtos';
 
 function authHeaders(): Record<string, string> {
@@ -35,6 +37,22 @@ export class DescansosService {
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * Carga inicial de la pantalla: catálogo de tipos (filtro + formulario) y primera página en
+   * una sola petición. Los cambios de filtro/página después usan getList, que solo trae la tabla.
+   */
+  getInicio(filtros: DescansoFilterDto = {}): Observable<DescansosInicioDto> {
+    return this.http.get<DescansosInicioDto>(`${this.base}/inicio`, {
+      params: toParams(filtros as Record<string, unknown>),
+      headers: authHeaders(),
+    });
+  }
+
+  /** Catálogo suelto, para abrir el formulario desde una pantalla que no lo trae cargado. */
+  getTipos(): Observable<DescansoTipoDto[]> {
+    return this.http.get<DescansoTipoDto[]>(`${this.base}/tipos`, { headers: authHeaders() });
+  }
+
   getList(filtros: DescansoFilterDto = {}): Observable<PagedResponseDTO<DescansoMedicoListItemDto>> {
     return this.http.get<PagedResponseDTO<DescansoMedicoListItemDto>>(this.base, {
       params: toParams(filtros as Record<string, unknown>),
@@ -50,13 +68,13 @@ export class DescansosService {
 
   create(
     dto: DescansoMedicoCreateDto,
-    archivoCertificado?: File | null,
+    documentos: File[] = [],
   ): Observable<{ id: number; message: string }> {
     const fd = new FormData();
     for (const [k, v] of Object.entries(dto)) {
       if (v !== null && v !== undefined) fd.append(k, String(v));
     }
-    if (archivoCertificado) fd.append('archivoCertificado', archivoCertificado, archivoCertificado.name);
+    for (const doc of documentos) fd.append('documentos', doc, doc.name);
     return this.http.post<{ id: number; message: string }>(this.base, fd, { headers: authHeaders() });
   }
 

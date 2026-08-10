@@ -9,7 +9,8 @@ export interface RevisionDescansoListItemDto {
   fechaInicio: string;
   fechaFin: string;
   dias: number;
-  motivo: string | null;
+  /** Nombre del tipo resuelto en el backend desde el catálogo (ss_descanso_tipo). */
+  tipo: string;
   estado: string;
   adjuntosCount: number;
   createdAt: string;
@@ -31,7 +32,6 @@ export interface RevisionDescansoDetalleDto {
   fechaInicio: string;
   fechaFin: string;
   dias: number;
-  motivo: string | null;
   diagnostico: string | null;
   estado: string;
   motivoRechazo: string | null;

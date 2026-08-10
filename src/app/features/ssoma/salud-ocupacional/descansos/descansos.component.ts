@@ -12,13 +12,14 @@ import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 import { DescansosService } from './descansos.service';
 import { DescansoModalComponent } from './descanso-modal.component';
-import { DescansoMedicoListItemDto, DescansoFilterDto } from './descansos.dtos';
+import { DescansoMedicoListItemDto, DescansoFilterDto, DescansoTipoDto } from './descansos.dtos';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { DatePicker } from '../../../../shared/components/date-picker/date-picker';
 import { StatusBadge } from '../../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 
@@ -36,6 +37,7 @@ import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
     FilterTriggerButton,
     FilterModal,
     SearchSelect,
+    DatePicker,
     StatusBadge,
     TitleCasePipe,
   ],
@@ -48,6 +50,8 @@ export class DescansosComponent implements OnInit, OnDestroy {
   readonly pageSize = 20;
 
   descansos: DescansoMedicoListItemDto[] = [];
+  /** Catálogo de tipos (ss_descanso_tipo): alimenta el filtro y el formulario del modal. */
+  tipos: DescansoTipoDto[] = [];
   loading = false;
   totalPages = 1;
   totalRecords = 0;
@@ -67,11 +71,13 @@ export class DescansosComponent implements OnInit, OnDestroy {
     { id: 'Completado', nombre: 'Completado' },
   ];
 
-  readonly tipoOpts = [
-    { id: '',            nombre: 'Todos' },
-    { id: 'Particular',  nombre: 'Particular' },
-    { id: 'Ocupacional', nombre: 'Ocupacional' },
-  ];
+  /** Opciones del filtro de tipo: "Todos" + el catálogo, en el orden que define el backend. */
+  get tipoOpts(): { id: number | null; nombre: string }[] {
+    return [
+      { id: null, nombre: 'Todos' },
+      ...this.tipos.map((t) => ({ id: t.id, nombre: t.nombre })),
+    ];
+  }
 
   private workerChange$ = new Subject<void>();
   private destroy$ = new Subject<void>();
@@ -85,10 +91,34 @@ export class DescansosComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.workerChange$.pipe(debounceTime(400), takeUntil(this.destroy$)).subscribe(() => this.load(1));
-    this.load(1);
+    this.loadInicial();
   }
 
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+
+  /** Carga inicial: catálogo de tipos + primera página en una sola petición. */
+  private loadInicial(): void {
+    this.loading = true;
+    this.loaderService.show();
+    this.svc.getInicio({ page: 1 }).subscribe({
+      next: (res) => {
+        this.tipos        = res.tipos;
+        this.descansos    = res.descansos.data;
+        this.currentPage  = res.descansos.page;
+        this.totalPages   = Math.max(res.descansos.totalPages, 1);
+        this.totalRecords = res.descansos.totalRecords;
+        this.loading      = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loading = false;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
 
   load(page: number): void {
     this.loading = true;
@@ -154,7 +184,7 @@ export class DescansosComponent implements OnInit, OnDestroy {
 
   get hasFilters(): boolean {
     return !!(this.filtros.fechaDesde || this.filtros.fechaHasta
-           || this.filtros.workerId   || this.filtros.estado || this.filtros.tipo);
+           || this.filtros.workerId   || this.filtros.estado || this.filtros.tipoId);
   }
 
   get filtrosActivos(): number {
@@ -163,7 +193,7 @@ export class DescansosComponent implements OnInit, OnDestroy {
     if (this.filtros.fechaHasta) n++;
     if (this.filtros.workerId) n++;
     if (this.filtros.estado) n++;
-    if (this.filtros.tipo) n++;
+    if (this.filtros.tipoId) n++;
     return n;
   }
 

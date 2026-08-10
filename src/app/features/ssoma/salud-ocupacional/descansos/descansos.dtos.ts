@@ -1,9 +1,28 @@
+import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
+
+/**
+ * Tipo de descanso (ss_descanso_tipo) — único clasificador. En Descansos se muestran los 4
+ * (`nombre`); en Mi Salud solo los "común" y con `nombreCorto`.
+ */
+export interface DescansoTipoDto {
+  id: number;
+  nombre: string;
+  nombreCorto: string;
+}
+
+export interface DescansoAdjuntoDto {
+  url: string;
+  nombre?: string;
+}
+
 export interface DescansoMedicoListItemDto {
   id: number;
   workerId: number;
   workerNombre?: string;
   workerDni?: string;
   empresaNombre?: string;
+  tipoId: number;
+  /** Nombre del tipo resuelto en el backend desde el catálogo. */
   tipo: string;
   fechaInicio: string;
   fechaFin: string;
@@ -23,17 +42,17 @@ export interface DescansoMedicoDetalleDto {
   proyectoId?: number;
   empresaId?: number;
   empresaNombre?: string;
+  tipoId: number;
+  /** Nombre del tipo resuelto en el backend desde el catálogo. */
   tipo: string;
   fechaInicio: string;
   fechaFin: string;
   dias: number;
-  motivo?: string;
   diagnostico?: string;
   diagnosticoCie10?: string;
-  medicoCertifica?: string;
-  establecimiento?: string;
   urlCertificado?: string;
   urlDocumento?: string;
+  adjuntos: DescansoAdjuntoDto[];
   estado: string;
   motivoRechazo?: string;
   aprobadoPorId?: number;
@@ -56,33 +75,25 @@ export interface DescansoMedicoDetalleDto {
 
 export interface DescansoMedicoCreateDto {
   workerId: number;
-  tipo: string;
+  tipoId: number;
   fechaInicio: string;
   fechaFin: string;
-  motivo?: string;
   diagnostico?: string;
   diagnosticoCie10?: string;
-  medicoCertifica?: string;
-  establecimiento?: string;
   accidenteId?: number;
   esRecaida?: boolean;
   topicoOrigenId?: number;
   prorrogaDelId?: number;
   proyectoId?: number;
   empresaId?: number;
-  observaciones?: string;
-  reportadoPorTrabajador?: boolean;
 }
 
 export interface DescansoMedicoUpdateDto {
+  tipoId: number;
   fechaInicio: string;
   fechaFin: string;
-  motivo?: string;
   diagnostico?: string;
   diagnosticoCie10?: string;
-  medicoCertifica?: string;
-  establecimiento?: string;
-  observaciones?: string;
 }
 
 export interface DescansoAprobarDto {
@@ -120,9 +131,16 @@ export interface DescansoSeguimientoCreateDto {
 export interface DescansoFilterDto {
   workerId?: number;
   estado?: string;
-  tipo?: string;
+  /** null = "Todos" (lo que emite el combobox al limpiar); toParams lo omite de la query. */
+  tipoId?: number | null;
   empresaId?: number;
   fechaDesde?: string;
   fechaHasta?: string;
   page?: number;
+}
+
+/** Respuesta de la carga inicial: catálogo de tipos + primera página, en una sola petición. */
+export interface DescansosInicioDto {
+  tipos: DescansoTipoDto[];
+  descansos: PagedResponseDTO<DescansoMedicoListItemDto>;
 }

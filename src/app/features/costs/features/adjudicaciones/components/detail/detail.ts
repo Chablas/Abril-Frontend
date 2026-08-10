@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
+import { FileSelector, SelectedFile } from '../../../../../../shared/components/file-selector/file-selector';
+import { FilePreview, FilePreviewItem } from '../../../../../../shared/components/file-preview/file-preview';
 import { CronogramaModal } from './cronograma/cronograma-modal';
 import { ProjectSubContractorDTO, ProjectSubContractorFileDTO } from '../../dtos/projectSubContractorDto.model';
 import { ProjectSubContractorFormDataDTO } from '../../dtos/projectSubContractorFormDataDTO.model';
@@ -21,7 +23,7 @@ import Swal from 'sweetalert2';
 @Component({
   selector: 'app-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, DatePicker, CronogramaModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, DatePicker, CronogramaModal, FileSelector, FilePreview],
   templateUrl: './detail.html',
   styleUrl: './detail.css',
 })
@@ -103,6 +105,22 @@ export class Detail implements OnInit {
   step1NameManuallyEdited = false;
   step1ContractorEmails: string[] = [];
   step1AdvanceAmount: number | undefined = undefined;
+
+  // ── Archivos del paso 1 en modo edición ─────────────────────────────────
+  // Mismos topes que en el alta: 3 cotizaciones y 1 cuadro comparativo.
+  readonly maxQuotationFiles = 3;
+  readonly maxComparativeFiles = 1;
+  /** Archivos ya guardados que siguen en pantalla (los quitados salen de esta lista). */
+  step1ExistingQuotationFiles: ProjectSubContractorFileDTO[] = [];
+  step1ExistingComparativeFiles: ProjectSubContractorFileDTO[] = [];
+  /** Ids de los archivos guardados que el usuario quitó; se envían para su soft delete. */
+  step1RemovedQuotationFileIds: number[] = [];
+  step1RemovedComparativeFileIds: number[] = [];
+  /** Archivos nuevos por subir + su vista previa. */
+  step1NewQuotationFiles: File[] = [];
+  step1NewComparativeFiles: File[] = [];
+  step1NewQuotationItems: FilePreviewItem[] = [];
+  step1NewComparativeItems: FilePreviewItem[] = [];
 
   /** Opciones No/Sí para el search-select de carta de fianza. */
   readonly cartaFianzaOptions = [
@@ -368,9 +386,16 @@ export class Detail implements OnInit {
     return this.viewStep > 1;
   }
 
+  /** True si la adjudicación tiene al menos una cotización guardada (requisito para notificar). */
+  get hasQuotationFile(): boolean {
+    return !!this.item.quotationFiles?.length;
+  }
+
   canGoForward(): boolean {
     // Solo Oficina Central (o Administrador) puede llenar y avanzar los pasos 1 y 2.
-    if (this.actualStatus === 1) return this.hasOfCentral;
+    // La cotización es el adjunto del correo de notificación, así que sin ella no se puede avanzar
+    // (al crear la adjudicación sí es opcional). El cuadro comparativo nunca es obligatorio.
+    if (this.actualStatus === 1) return this.hasOfCentral && this.hasQuotationFile;
     if (this.actualStatus === 2 && this.viewStep === 2) {
       if (!this.hasOfTecnica) return false;
       const baseOk = !!(
@@ -1662,12 +1687,73 @@ export class Detail implements OnInit {
       this.step1AdvanceAmount = (this.step1Form.advancePercentage != null && this.step1Form.amount)
         ? Math.round((this.step1Form.advancePercentage / 100) * this.step1Form.amount * 1_000_000) / 1_000_000
         : undefined;
+      this.resetStep1Files();
       this.step1EditMode = true;
     });
   }
 
   cancelStep1Edit(): void {
     this.step1EditMode = false;
+    this.resetStep1Files();
+  }
+
+  // ── Archivos del paso 1 en modo edición ─────────────────────────────────
+  /** Vuelve al estado guardado: descarta los archivos nuevos y las eliminaciones pendientes. */
+  private resetStep1Files(): void {
+    this.step1ExistingQuotationFiles   = [...(this.item.quotationFiles ?? [])];
+    this.step1ExistingComparativeFiles = [...(this.item.comparativeFiles ?? [])];
+    this.step1RemovedQuotationFileIds   = [];
+    this.step1RemovedComparativeFileIds = [];
+    this.step1NewQuotationFiles     = [];
+    this.step1NewComparativeFiles   = [];
+    this.step1NewQuotationItems     = [];
+    this.step1NewComparativeItems   = [];
+  }
+
+  /** Cotizaciones que quedarían guardadas: las que sobreviven + las nuevas. */
+  get step1QuotationCount(): number {
+    return this.step1ExistingQuotationFiles.length + this.step1NewQuotationFiles.length;
+  }
+
+  get step1ComparativeCount(): number {
+    return this.step1ExistingComparativeFiles.length + this.step1NewComparativeFiles.length;
+  }
+
+  onStep1QuotationSelected(file: SelectedFile): void {
+    this.step1NewQuotationItems.push({ name: file.file.name, size: this.formatFileSize(file.file.size) });
+    this.step1NewQuotationFiles.push(file.file);
+  }
+
+  onStep1ComparativeSelected(file: SelectedFile): void {
+    this.step1NewComparativeItems.push({ name: file.file.name, size: this.formatFileSize(file.file.size) });
+    this.step1NewComparativeFiles.push(file.file);
+  }
+
+  removeStep1NewQuotationFile(index: number): void {
+    this.step1NewQuotationItems.splice(index, 1);
+    this.step1NewQuotationFiles.splice(index, 1);
+  }
+
+  removeStep1NewComparativeFile(index: number): void {
+    this.step1NewComparativeItems.splice(index, 1);
+    this.step1NewComparativeFiles.splice(index, 1);
+  }
+
+  /** Quita un archivo ya guardado: sale de la lista y su id se manda para el soft delete. */
+  removeStep1ExistingQuotationFile(index: number): void {
+    const [removed] = this.step1ExistingQuotationFiles.splice(index, 1);
+    if (removed?.fileId != null) this.step1RemovedQuotationFileIds.push(removed.fileId);
+  }
+
+  removeStep1ExistingComparativeFile(index: number): void {
+    const [removed] = this.step1ExistingComparativeFiles.splice(index, 1);
+    if (removed?.fileId != null) this.step1RemovedComparativeFileIds.push(removed.fileId);
+  }
+
+  private formatFileSize(bytes: number): string {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   }
 
   get step1SelectedCurrencyCode(): string {
@@ -1803,6 +1889,11 @@ export class Detail implements OnInit {
     if (!f.paymentMethodId)    missing.push('Modalidad de pago');
     if (!f.paymentFormId)      missing.push('Forma de pago');
     if (f.paymentMethodId === 2 && !f.advancePercentage) missing.push('Porcentaje de adelanto');
+    // La cotización es opcional aquí (solo se exige al notificar), pero los topes sí se respetan.
+    if (this.step1QuotationCount > this.maxQuotationFiles)
+      missing.push(`Máximo ${this.maxQuotationFiles} archivos de cotización`);
+    if (this.step1ComparativeCount > this.maxComparativeFiles)
+      missing.push(`Máximo ${this.maxComparativeFiles} archivo comparativo`);
 
     if (missing.length > 0) {
       Swal.fire({
@@ -1819,27 +1910,35 @@ export class Detail implements OnInit {
     const usesPagareAmount = f.paymentMethodId === 2 || f.paymentMethodId === 4;
     // Carta de fianza solo aplica en Suministro (modalidad 2) + contrato con adelanto (pago 2)
     const includesCartaFianza = f.contractModalityId === 2 && f.paymentMethodId === 2 && !!f.includesCartaFianza;
+    const form = new FormData();
+    form.append('projectId', f.projectId.toString());
+    form.append('contractorId', f.contractorId.toString());
+    form.append('contractTypeId', f.contractTypeId.toString());
+    if (f.contractModalityId != null) form.append('contractModalityId', f.contractModalityId.toString());
+    form.append('paymentMethodId', f.paymentMethodId.toString());
+    if (f.paymentFormId != null) form.append('paymentFormId', f.paymentFormId.toString());
+    form.append('includesCartaFianza', includesCartaFianza.toString());
+    form.append('advancePercentage', (usesPagareAmount ? (f.advancePercentage ?? 0) : 0).toString());
+    if (usesPagareAmount && this.step1AdvanceAmount != null) {
+      form.append('advanceAmount', this.step1AdvanceAmount.toString());
+    }
+    form.append('amount', f.amount.toString());
+    form.append('currencyId', f.currencyId.toString());
+    form.append('hasIgv', f.hasIgv.toString());
+    form.append('workItemId', f.workItemId.toString());
+    form.append('workItemCategoryId', f.workItemCategoryId.toString());
+    if (f.workSpecialtyId != null) form.append('workSpecialtyId', f.workSpecialtyId.toString());
+    form.append('isSubcontract', f.isSubcontract.toString());
+    form.append('isLabor', f.isLabor.toString());
+    form.append('contractWorkItemName', (f.contractWorkItemName ?? '').trim());
+    // Archivos del paso 1: los nuevos se suben y los quitados se dan de baja en el mismo guardado.
+    this.step1NewQuotationFiles.forEach(file => form.append('newQuotationFiles', file));
+    this.step1NewComparativeFiles.forEach(file => form.append('newComparativeFiles', file));
+    this.step1RemovedQuotationFileIds.forEach(id => form.append('removedQuotationFileIds', id.toString()));
+    this.step1RemovedComparativeFileIds.forEach(id => form.append('removedComparativeFileIds', id.toString()));
+
     this.loaderService.show();
-    this.adjudicacionesService.updateInfo(this.item.projectSubContractorId, {
-      projectId:          f.projectId,
-      contractorId:       f.contractorId,
-      contractTypeId:     f.contractTypeId,
-      contractModalityId: f.contractModalityId,
-      paymentMethodId:    f.paymentMethodId,
-      paymentFormId:      f.paymentFormId,
-      includesCartaFianza,
-      advancePercentage:  usesPagareAmount ? (f.advancePercentage ?? 0) : 0,
-      advanceAmount:      usesPagareAmount ? (this.step1AdvanceAmount ?? null) : null,
-      amount:             f.amount,
-      currencyId:         f.currencyId,
-      hasIgv:             f.hasIgv,
-      workItemId:         f.workItemId,
-      workItemCategoryId: f.workItemCategoryId,
-      workSpecialtyId:    f.workSpecialtyId,
-      isSubcontract:      f.isSubcontract,
-      isLabor:            f.isLabor,
-      contractWorkItemName: (f.contractWorkItemName ?? '').trim(),
-    }).subscribe({
+    this.adjudicacionesService.updateInfo(this.item.projectSubContractorId, form).subscribe({
       next: (res) => {
         this.loaderService.hide();
         this.step1EditMode = false;
@@ -1854,6 +1953,9 @@ export class Detail implements OnInit {
         this.item.advanceAmount      = usesPagareAmount ? (this.step1AdvanceAmount ?? null) : null;
         this.documents = this.buildDocuments();
         this.initDocForms();
+        // Los archivos los vuelve a traer el padre al refrescar el item; acá solo se limpia el
+        // borrador para que una siguiente edición no arrastre subidas ni bajas ya aplicadas.
+        this.resetStep1Files();
 
         this.statusChanged.emit(); // el padre recarga y refresca el item con los datos nuevos
         Swal.fire({ icon: 'success', title: res.message ?? 'Información actualizada exitosamente', draggable: true });
