@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MiSaludService } from '../../mi-salud.service';
@@ -28,6 +28,7 @@ export class CorreosNotificacionComponent implements OnInit {
     private svc: MiSaludService,
     private errorService: ErrorService,
     private loaderService: LoaderService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -42,11 +43,13 @@ export class CorreosNotificacionComponent implements OnInit {
         this.correos = rows;
         this.loading = false;
         this.loaderService.hide();
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.loading = false;
         this.loaderService.hide();
         this.errorService.handleError(err);
+        this.cdr.detectChanges();
       },
     });
   }
@@ -59,10 +62,12 @@ export class CorreosNotificacionComponent implements OnInit {
       next: () => {
         c.active = nuevo;
         this.savingId = null;
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.savingId = null;
         this.errorService.handleError(err);
+        this.cdr.detectChanges();
       },
     });
   }

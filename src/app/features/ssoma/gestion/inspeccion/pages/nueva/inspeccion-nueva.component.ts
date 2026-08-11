@@ -125,7 +125,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
       const w = this.workers.find(x => x.workerId === id);
       if (w) {
         this.nuevoHallazgo.responsableNombre = w.apellidoNombre;
-        const partes = [w.categoria, w.ocupacion].filter(Boolean);
+        const partes = [w.puesto].filter(Boolean);
         this.nuevoHallazgo.responsableCargo = partes.join(' / ');
       }
     }
@@ -214,7 +214,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
         this.resolviendoObservador = false;
         this.inspectorId = me.id;
         this.inspectorNombre = me.apellidoNombre;
-        this.inspectorCargo = me.cargo || [me.categoria, me.ocupacion].filter(Boolean).join(' / ');
+        this.inspectorCargo = me.cargo || me.puesto || '';
         this.inspectorEmpresa = me.empresaActual || '';
         this.inspectorEmpresaId = me.empresaActualId ?? null;
         this.cdr.markForCheck();
@@ -417,7 +417,7 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
       const w = this.workers.find(x => x.workerId === id);
       if (w) {
         this.representanteNombre = w.apellidoNombre;
-        const partes = [w.categoria, w.ocupacion].filter(Boolean);
+        const partes = [w.puesto].filter(Boolean);
         this.representanteCargo = partes.join(' / ');
       }
     }

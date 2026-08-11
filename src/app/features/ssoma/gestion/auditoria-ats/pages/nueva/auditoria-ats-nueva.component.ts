@@ -141,7 +141,7 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
         this.resolviendoObservador = false;
         this.auditorId = me.id;
         this.auditorNombre = me.apellidoNombre;
-        this.auditorCargo = me.cargo || [me.categoria, me.ocupacion].filter(Boolean).join(' · ');
+        this.auditorCargo = me.cargo || me.puesto || '';
         this.cdr.markForCheck();
       },
       error: () => {

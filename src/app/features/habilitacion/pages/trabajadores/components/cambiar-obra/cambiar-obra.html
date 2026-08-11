@@ -63,11 +63,20 @@
       </div>
       <div class="col-span-2" *ngIf="model.cambiaPuesto">
         <label class="field-label">Puesto actual</label>
-        <input type="text" class="field-input field-readonly" [value]="worker?.ocupacion ?? '—'" readonly />
+        <input type="text" class="field-input field-readonly" [value]="worker?.puesto ?? '—'" readonly />
       </div>
       <div class="col-span-2" *ngIf="model.cambiaPuesto">
         <label class="field-label">Puesto nuevo *</label>
-        <input type="text" class="field-input" placeholder="Puesto al que pasa" [(ngModel)]="model.puesto" />
+        <app-search-select
+          [options]="puestos"
+          valueField="id"
+          displayField="nombre"
+          [value]="model.puestoId"
+          [showLabel]="false"
+          placeholder="Selecciona puesto"
+          [allowClear]="true"
+          (valueChange)="model.puestoId = $event"
+        />
       </div>
 
       <!-- ── Clasificación Staff / Oficina ────────────────── -->

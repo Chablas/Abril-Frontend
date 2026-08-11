@@ -141,14 +141,16 @@
             <span class="info-label">Observaciones:</span> {{ detalle.observaciones }}
           </div>
 
-          <!-- Certificados: los adjuntos nuevos; si no hay, el único archivo de los descansos antiguos. -->
+          <!-- Certificados médicos. Los sirve el backend desde la carpeta de SharePoint
+               configurada: el webUrl directo solo abre para quien tiene sesión de M365. -->
           <div *ngIf="certificados.length > 0" class="doc-list mt-2">
-            <a *ngFor="let doc of certificados" [href]="doc.url" target="_blank" class="doc-link">
+            <button *ngFor="let doc of certificados" type="button" class="doc-link"
+                    [disabled]="descargandoId !== null" (click)="verCertificado(doc)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/>
               </svg>
               {{ doc.nombre ?? 'Ver certificado médico' }}
-            </a>
+            </button>
           </div>
         </div>
 

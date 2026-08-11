@@ -7,8 +7,10 @@ export interface WorkerHabilitacionListDto {
   proyectoActual?: string;
   proyectoActualId?: number;
   estadoHabilitacion: string;
+  /** Nombre de la categoría (campo de lógica). */
   categoria?: string;
-  ocupacion?: string;
+  /** Nombre del puesto (campo de presentación). */
+  puesto?: string;
   estadoWorker: string;
   contrataCasa?: string;
   /** FK a workers_obra_oficina_staff. */
@@ -109,7 +111,11 @@ export interface WorkerDetalleDto {
   /** Nombre del catálogo (solo lectura). */
   obraOficina?: string;
   aniosExperiencia?: number;
-  ocupacionId?: number;
+  /** FK a `categoria`: el campo de lógica. */
+  categoriaId?: number | null;
+  /** FK a `puesto`: el campo de presentación. */
+  puestoId?: number | null;
+  /** Nombre del puesto, ya resuelto por el backend. */
   puesto?: string;
   /**
    * Jefe elegido a mano para este trabajador, que se sobrepone al revisor de su área.

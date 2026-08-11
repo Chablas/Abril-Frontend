@@ -11,6 +11,8 @@ export interface DescansoTipoDto {
 }
 
 export interface DescansoAdjuntoDto {
+  /** Id del adjunto: el archivo se pide al backend por este id, no por su url de SharePoint. */
+  id: number;
   url: string;
   nombre?: string;
 }

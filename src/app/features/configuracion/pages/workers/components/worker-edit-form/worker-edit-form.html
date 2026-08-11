@@ -69,52 +69,30 @@
         <label class="field-label">Categoría</label>
         <app-search-select
           [options]="categorias"
-          valueField="nombre"
-          displayField="nombre"
-          [value]="model.categoria"
-          [showLabel]="false"
-          placeholder="Seleccionar categoría"
-          [allowClear]="true"
-          (valueChange)="onCategoriaChange($event)"
-        />
-      </div>
-
-      <div>
-        <label class="field-label">Ocupación</label>
-        <app-search-select
-          [options]="ocupaciones"
-          valueField="nombre"
-          displayField="nombre"
-          [value]="model.ocupacion"
-          [showLabel]="false"
-          placeholder="Seleccionar ocupación"
-          [allowClear]="true"
-          (valueChange)="onOcupacionChange($event)"
-        />
-      </div>
-
-      <div class="col-span-2">
-        <label class="field-label">Puesto</label>
-        <input
-          type="text"
-          class="field-input"
-          [(ngModel)]="model.puesto"
-          placeholder="Se autocompleta con Categoría + Ocupación"
-        />
-      </div>
-
-      <div class="col-span-2">
-        <label class="field-label">Categoría (Salidas/Lecciones)</label>
-        <app-search-select
-          [options]="workerCategories"
           valueField="id"
           displayField="nombre"
-          [value]="model.workerCategoryId"
+          [value]="model.categoriaId"
           [showLabel]="false"
           placeholder="Selecciona categoría"
           [allowClear]="true"
-          (valueChange)="model.workerCategoryId = $event"
+          (valueChange)="onCategoriaChange($event)"
         />
+        <span class="field-hint">Define entregables, permisos y filtros internos.</span>
+      </div>
+
+      <div>
+        <label class="field-label">Puesto</label>
+        <app-search-select
+          [options]="puestosFiltrados"
+          valueField="id"
+          displayField="nombre"
+          [value]="model.puestoId"
+          [showLabel]="false"
+          placeholder="Selecciona puesto"
+          [allowClear]="true"
+          (valueChange)="onPuestoChange($event)"
+        />
+        <span class="field-hint">Es el cargo que se muestra en el sistema.</span>
       </div>
 
       <div class="col-span-2" *ngFor="let level of areaLevels; let i = index">

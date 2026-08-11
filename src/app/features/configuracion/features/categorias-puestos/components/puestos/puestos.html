@@ -1,0 +1,107 @@
+<!-- Sección embebida en CategoriasPuestos: el header, el botón de crear y el
+     disparador de filtros viven en el contenedor. -->
+<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Puesto</th>
+          <th>Categoría</th>
+          <th class="text-center w-[140px]">Estado</th>
+          <th class="text-center w-[220px]">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="filteredPuestos.length === 0">
+          <td colspan="4" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ filtrosActivos > 0 ? 'Sin resultados.' : 'No hay puestos registrados.' }}
+          </td>
+        </tr>
+
+        <tr *ngFor="let p of pagedPuestos" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+
+          <td class="text-gray-700">{{ p.nombre | titleCase }}</td>
+
+          <td class="text-gray-700">
+            <span *ngIf="p.categoriaNombre">{{ p.categoriaNombre | titleCase }}</span>
+            <span *ngIf="!p.categoriaNombre" class="text-gray-400 italic">Sin categoría</span>
+          </td>
+
+          <td class="text-center">
+            <app-status-badge
+              [text]="p.activo ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="p.activo ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="p.activo ? '#009C87' : '#D30000'" />
+          </td>
+
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[8px]">
+              <button (click)="openEdit(p)" abrilBulkAction="default">Editar</button>
+              <button (click)="toggle(p)" [abrilBulkAction]="p.activo ? 'danger' : 'default'">
+                {{ p.activo ? 'Desactivar' : 'Activar' }}
+              </button>
+            </div>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredPuestos.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modal crear/editar ────────────────────────────────────────────── -->
+<app-puesto-create-edit
+  *ngIf="showModal"
+  [puesto]="puestoToEdit"
+  [categorias]="categorias"
+  (closeModal)="closeModales()"
+  (saved)="onSaved()" />
+
+<!-- ── Modal de filtros estándar ─────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por puesto o categoría..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Categoría"
+      [options]="categorias"
+      valueField="id"
+      displayField="nombre"
+      [value]="categoriaFilter"
+      (valueChange)="categoriaFilter = $event; onFilterChange()"
+      placeholder="Todas las categorías">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="estadoFilter"
+      (valueChange)="estadoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

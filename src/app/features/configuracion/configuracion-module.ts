@@ -7,6 +7,10 @@ import { Companies } from './pages/companies/companies';
 import { Workers } from './pages/workers/workers';
 import { Feriados } from './features/feriados/components/feriados';
 import { Aprendizaje } from './features/aprendizaje/components/aprendizaje';
+// Categorías y puestos del catálogo de trabajadores: antes se gestionaban desde un
+// modal ("Catálogos") en Gestión de Ingresos → Trabajadores. Son datos maestros de
+// toda la organización, así que ahora son una sección más de configuración global.
+import { CategoriasPuestos } from './features/categorias-puestos/pages/categorias-puestos';
 // Revisores de áreas: define el jefe de cada área para toda la organización, por lo que
 // es configuración global (antes vivía bajo Gestión Administrativa, solo para salidas).
 // Los archivos siguen físicamente en `gestion-administrativa/features/configuracion/`
@@ -44,6 +48,15 @@ const routes: Routes = [
         component: Workers,
         canActivate: [roleGuard],
         data: { titulo: 'CONFIGURACIÓN - LISTA DE TRABAJADORES', featureKey: 'configuracion.workers' },
+      },
+      {
+        path: 'categorias-puestos',
+        component: CategoriasPuestos,
+        canActivate: [roleGuard],
+        data: {
+          titulo: 'CONFIGURACIÓN - CATEGORÍAS Y PUESTOS',
+          featureKey: 'configuracion.categorias-puestos',
+        },
       },
       // La antigua "Revisores de Trabajadores" (revisor-salidas) se retiró: el jefe
       // personalizado se asigna ahora en el formulario de trabajadores. La ruta redirige a

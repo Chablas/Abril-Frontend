@@ -26,6 +26,7 @@ import {
 } from './descansos.dtos';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
+import { abrirCertificado } from '../shared/certificado-descanso.utils';
 
 type TabKey = 'detalle' | 'seguimientos';
 
@@ -70,6 +71,10 @@ export class DescansoModalComponent implements OnInit {
   cFechaFin    = '';
   cDiagnostico = '';
   cDocumentos  : File[] = [];
+
+  // ── Certificados ──────────────────────────────────────────────────────────
+  /** Adjunto que se está trayendo del backend (para bloquear su botón mientras descarga). */
+  descargandoId: number | null = null;
 
   // ── Aprobar / Rechazar ────────────────────────────────────────────────────
   aprobarObs  = '';
@@ -160,11 +165,39 @@ export class DescansoModalComponent implements OnInit {
   get canAlta(): boolean     { return this.isAprobado; }
   get canProrroga(): boolean { return this.isAprobado || this.isCompletado; }
 
-  /** Certificados a mostrar en el detalle: los adjuntos nuevos o, si no hay, el archivo antiguo. */
+  /**
+   * Certificados del descanso. Todos son filas de ss_descanso_medico_adjunto — los descansos
+   * históricos, que guardaban su único archivo en url_certificado, ya tienen su adjunto creado.
+   */
   get certificados(): DescansoAdjuntoDto[] {
-    if (this.detalle?.adjuntos?.length) return this.detalle.adjuntos;
-    const legado = this.detalle?.urlCertificado ?? this.detalle?.urlDocumento;
-    return legado ? [{ url: legado, nombre: 'Ver certificado médico' }] : [];
+    return this.detalle?.adjuntos ?? [];
+  }
+
+  /**
+   * Abre el certificado médico. El archivo vive en la carpeta de SharePoint configurada en BD y
+   * lo sirve el backend con su token de app, así se ve sin depender de que el navegador tenga
+   * sesión de Microsoft 365.
+   */
+  verCertificado(doc: DescansoAdjuntoDto): void {
+    if (this.descargandoId !== null) return;
+    this.descargandoId = doc.id;
+    this.loaderService.show();
+    this.cdr.detectChanges();
+
+    this.svc.getCertificado(doc.id).subscribe({
+      next: (blob) => {
+        this.descargandoId = null;
+        this.loaderService.hide();
+        abrirCertificado(blob, doc.nombre);
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.descargandoId = null;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   // ── Prórroga ──────────────────────────────────────────────────────────────

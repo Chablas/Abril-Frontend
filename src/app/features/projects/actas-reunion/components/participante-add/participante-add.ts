@@ -17,7 +17,7 @@ export interface ParticipanteSeleccionado {
 /**
  * Modal para agregar un participante a la reunión eligiéndolo del desplegable de
  * trabajadores de Abril (workers con correo @abril.pe). El cargo se autocompleta con
- * workers.puesto (fallback a ocupacion); si el trabajador no tiene ninguno, el texto
+ * el puesto del trabajador; si no tiene, el texto
  * ingresado a mano se guarda luego en workers.puesto al guardar el acta.
  */
 @Component({
@@ -41,7 +41,7 @@ export class ParticipanteAdd {
   cargo = '';
   iniciales = '';
   private inicialesEditadas = false;
-  /** True cuando el trabajador elegido no tiene puesto ni ocupacion registrados. */
+  /** True cuando el trabajador elegido no tiene puesto registrado. */
   cargoManual = false;
 
   get trabajadorSeleccionado(): TrabajadorAbrilDTO | null {

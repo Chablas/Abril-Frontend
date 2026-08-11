@@ -21,8 +21,8 @@
         <div class="wc-name">{{ data.workerNombre }}</div>
         <div class="wc-meta">
           <span>DNI {{ data.workerDni }}</span>
-          <span *ngIf="data.ocupacion" class="sep">·</span>
-          <span *ngIf="data.ocupacion">{{ data.ocupacion }}</span>
+          <span *ngIf="data.puesto" class="sep">·</span>
+          <span *ngIf="data.puesto">{{ data.puesto }}</span>
           <span *ngIf="data.empresa" class="sep">·</span>
           <span *ngIf="data.empresa">Empresa actual: <b>{{ data.empresa }}</b></span>
         </div>

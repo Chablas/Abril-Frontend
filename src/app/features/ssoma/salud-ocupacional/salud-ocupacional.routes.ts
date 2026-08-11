@@ -15,7 +15,6 @@ import { DescansosComponent } from './descansos/descansos.component';
 import { AsistenteSocialComponent } from './asistente-social/asistente-social.component';
 import { MiSaludComponent } from './mi-salud/mi-salud.component';
 import { MiSaludConfiguracionComponent } from './mi-salud/configuracion/mi-salud-configuracion.component';
-import { RevisionDescansosComponent } from './revision-descansos/revision-descansos.component';
 import { PasoSaludListaComponent } from './paso/pages/lista-salud/paso-salud-lista.component';
 
 export const SALUD_OCUPACIONAL_ROUTES: Routes = [
@@ -120,11 +119,5 @@ export const SALUD_OCUPACIONAL_ROUTES: Routes = [
       titulo: 'MI SALUD - CONFIGURACIÓN',
       featureKey: 'ssoma.salud-ocupacional.mi-salud.configuracion',
     },
-  },
-  {
-    path: 'revision-descansos',
-    component: RevisionDescansosComponent,
-    canActivate: [roleGuard],
-    data: { titulo: 'SALUD OCUPACIONAL - REVISIÓN DE DESCANSOS', featureKey: 'ssoma.salud-ocupacional.revision-descansos' },
   },
 ];

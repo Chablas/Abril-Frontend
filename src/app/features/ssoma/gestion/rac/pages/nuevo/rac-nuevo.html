@@ -166,7 +166,7 @@
           <div *ngFor="let w of observadosSeleccionados" class="trab-chip">
             <div class="trab-chip__info">
               <div class="trab-chip__name">{{ w.apellidoNombre }}</div>
-              <div class="trab-chip__meta">DNI {{ w.dni }}<span *ngIf="w.ocupacion"> · {{ w.ocupacion }}</span></div>
+              <div class="trab-chip__meta">DNI {{ w.dni }}<span *ngIf="w.puesto"> · {{ w.puesto }}</span></div>
             </div>
             <button type="button" class="btn-chip-remove" (click)="removeObservado(w.workerId)" title="Quitar">
               <i class="ti ti-x"></i>

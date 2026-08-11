@@ -26,6 +26,8 @@ export interface MiSaludResumenDto {
 }
 
 export interface MiDescansoAdjuntoDto {
+  /** Id del adjunto: el archivo se pide al backend por este id, no por su url de SharePoint. */
+  id: number;
   url: string;
   nombre: string | null;
 }

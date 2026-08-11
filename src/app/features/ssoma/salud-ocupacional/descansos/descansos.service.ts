@@ -78,6 +78,18 @@ export class DescansosService {
     return this.http.post<{ id: number; message: string }>(this.base, fd, { headers: authHeaders() });
   }
 
+  /**
+   * Contenido de un certificado médico. El archivo está en la carpeta de SharePoint configurada
+   * (ss_descanso_carpeta) y lo sirve el backend con su token de app, así se ve sin depender de
+   * la sesión de Microsoft 365 del navegador.
+   */
+  getCertificado(adjuntoId: number): Observable<Blob> {
+    return this.http.get(`${this.base}/adjuntos/${adjuntoId}`, {
+      headers: authHeaders(),
+      responseType: 'blob',
+    });
+  }
+
   update(id: number, dto: DescansoMedicoUpdateDto): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${this.base}/${id}`, dto, { headers: authHeaders() });
   }

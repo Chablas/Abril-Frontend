@@ -119,7 +119,8 @@ export interface WorkerEmoHistorialDto {
   workerId: number;
   workerNombre: string;
   workerDni: string;
-  ocupacion?: string;
+  /** Nombre del puesto (campo de presentación). */
+  puesto?: string;
   empresa?: string;
   vinculaciones?: VinculacionConEmosDto[];
 }
@@ -180,15 +181,16 @@ export interface EmoPorTrabajadorDto {
   emailCorporativo?: string;
   /** Correo personal / de contacto (person.email). */
   emailPersonal?: string;
+  /** Nombre de la categoría (campo de lógica). */
   categoria?: string;
-  ocupacion?: string;
-  ocupacionId?: number;
-  /** Nombre del puesto final (autocompletado de categoría + ocupación, editable). */
+  /** Nombre del puesto (campo de presentación). */
   puesto?: string;
+  /** FK a `categoria`, para prellenar el desplegable. */
+  categoriaId?: number | null;
+  /** FK a `puesto`, para prellenar el desplegable. */
+  puestoId?: number | null;
   /** Nodo del árbol de áreas asignado al trabajador (workers.area_scope_id). */
   areaScopeId?: number | null;
-  /** Categoría normalizada (workers.worker_category_id, catálogo workers_category). */
-  workerCategoryId?: number | null;
   area?: string;
   subarea?: string;
   contrataCasa?: string;
@@ -219,15 +221,16 @@ export interface WorkerDatosBasicosDto {
   numeroDocumento?: string | null;
   /** Formato 'YYYY-MM-DD'. */
   cumpleanos?: string | null;
+  /** Nombre de la categoría (campo de lógica). */
   categoria?: string | null;
-  ocupacion?: string | null;
-  ocupacionId?: number | null;
-  /** Nombre del puesto final (autocompletado de categoría + ocupación, editable). */
+  /** Nombre del puesto (campo de presentación). */
   puesto?: string | null;
   /** Nodo del árbol de áreas asignado al trabajador (workers.area_scope_id). */
   areaScopeId?: number | null;
-  /** Categoría normalizada (workers.worker_category_id, catálogo workers_category). */
-  workerCategoryId?: number | null;
+  /** FK a `categoria` (workers.categoria_id). */
+  categoriaId?: number | null;
+  /** FK a `puesto` (workers.puesto_id). */
+  puestoId?: number | null;
   /** Correo corporativo (workers.email_corporativo). Null/vacío = sin correo. */
   emailCorporativo?: string | null;
   /** Correo personal / de contacto (person.email). Puede repetirse entre trabajadores. */
@@ -269,11 +272,10 @@ export interface WorkerUpsertDto {
   emailPersonal?: string | null;
   fechaIngreso?: string | null;
   condicionMedica?: string | null;
-  categoria?: string | null;
-  ocupacion?: string | null;
-  ocupacionId?: number | null;
-  /** Nombre del puesto final (autocompletado de categoría + ocupación, editable). */
-  puesto?: string | null;
+  /** FK a `categoria`: el campo de lógica. */
+  categoriaId?: number | null;
+  /** FK a `puesto`: el campo de presentación. */
+  puestoId?: number | null;
   /**
    * Nodo del árbol de áreas elegido (workers.area_scope_id). Cuando se manda, es la fuente de
    * verdad del área: el backend deriva de él `area`/`subarea`/`jefatura` e ignora lo que llegue

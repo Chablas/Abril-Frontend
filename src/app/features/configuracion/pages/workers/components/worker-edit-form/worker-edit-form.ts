@@ -34,11 +34,10 @@ interface EditModel {
   cumpleanos: string; // 'YYYY-MM-DD'
   emailCorporativo: string;
   emailPersonal: string;
-  categoria: string;
-  ocupacion: string;
-  ocupacionId: number | null;
-  puesto: string;
-  workerCategoryId: number | null;
+  /** FK a `categoria`: el campo de lógica. */
+  categoriaId: number | null;
+  /** FK a `puesto`: el campo de presentación. */
+  puestoId: number | null;
 }
 
 /** Un nivel del árbol de áreas: opciones (hermanos) y el nodo elegido en ese nivel. */
@@ -82,11 +81,9 @@ export class WorkerEditForm implements OnChanges {
   private teniaAlgunCorreo = false;
 
   categorias: { id: number; nombre: string }[] = [];
-  ocupaciones: { id: number; nombre: string }[] = [];
+  puestos: { id: number; nombre: string; categoriaId: number | null }[] = [];
 
   /** Catálogo workers_category (categoría normalizada usada por Salidas y Lecciones). */
-  workerCategories: WorkerCategoryDto[] = [];
-  private workerCategoriesLoaded = false;
 
   /** Desplegables en cascada del árbol de áreas (uno por nivel de la Jerarquía). */
   areaLevels: AreaLevel[] = [];
@@ -106,7 +103,6 @@ export class WorkerEditForm implements OnChanges {
     if (changes['open'] && this.open) {
       this.reset();
       this.loadCatalogos();
-      this.loadWorkerCategories();
       this.loadAreaTree();
     }
   }
@@ -119,11 +115,8 @@ export class WorkerEditForm implements OnChanges {
       cumpleanos: '',
       emailCorporativo: '',
       emailPersonal: '',
-      categoria: '',
-      ocupacion: '',
-      ocupacionId: null,
-      puesto: '',
-      workerCategoryId: null,
+      categoriaId: null,
+      puestoId: null,
     };
   }
 
@@ -152,11 +145,8 @@ export class WorkerEditForm implements OnChanges {
       cumpleanos: (this.worker.cumpleanos ?? '').slice(0, 10),
       emailCorporativo: this.worker.emailCorporativo ?? '',
       emailPersonal: this.worker.emailPersonal ?? '',
-      categoria: this.worker.categoria ?? '',
-      ocupacion: this.worker.ocupacion ?? '',
-      ocupacionId: this.worker.ocupacionId ?? null,
-      puesto: this.worker.puesto ?? '',
-      workerCategoryId: this.worker.workerCategoryId ?? null,
+      categoriaId: this.worker.categoriaId ?? null,
+      puestoId: this.worker.puestoId ?? null,
     };
   }
 
@@ -168,22 +158,9 @@ export class WorkerEditForm implements OnChanges {
       },
       error: () => {},
     });
-    this.catalogosHabService.getOcupaciones().subscribe({
+    this.catalogosHabService.getPuestos().subscribe({
       next: (data) => {
-        this.ocupaciones = data;
-        this.cdr.detectChanges();
-      },
-      error: () => {},
-    });
-  }
-
-  /** Carga el catálogo workers_category una sola vez (igual que los tipos de documento). */
-  private loadWorkerCategories(): void {
-    if (this.workerCategoriesLoaded) return;
-    this.workerService.getWorkerCategories().subscribe({
-      next: (data) => {
-        this.workerCategories = data ?? [];
-        this.workerCategoriesLoaded = true;
+        this.puestos = data;
         this.cdr.detectChanges();
       },
       error: () => {},
@@ -285,28 +262,34 @@ export class WorkerEditForm implements OnChanges {
     return names.join(' › ');
   }
 
-  onCategoriaChange(nombre: string): void {
-    this.model.categoria = nombre;
-    this.syncPuesto();
+  /** Al cambiar la categoría se descarta el puesto si ya no pertenece a ella. */
+  onCategoriaChange(categoriaId: number | null): void {
+    this.model.categoriaId = categoriaId;
+    const puesto = this.puestos.find((p) => p.id === this.model.puestoId);
+    if (puesto && puesto.categoriaId !== categoriaId) this.model.puestoId = null;
   }
 
-  onOcupacionChange(nombre: string): void {
-    this.model.ocupacion = nombre;
-    this.model.ocupacionId = this.ocupaciones.find((o) => o.nombre === nombre)?.id ?? null;
-    this.syncPuesto();
+  /** Elegir un puesto rellena la categoría si aún está vacía. */
+  onPuestoChange(puestoId: number | null): void {
+    this.model.puestoId = puestoId;
+    if (this.model.categoriaId != null) return;
+    const puesto = this.puestos.find((p) => p.id === puestoId);
+    if (puesto?.categoriaId != null) this.model.categoriaId = puesto.categoriaId;
   }
 
-  /**
-   * Autocompleta el puesto final concatenando categoría y ocupación
-   * (ej. "Operario" + "Abogado" → "Operario Abogado"). El campo sigue siendo
-   * editable: cualquier cambio posterior en un desplegable lo vuelve a calcular.
-   */
-  private syncPuesto(): void {
-    this.model.puesto = [this.model.categoria, this.model.ocupacion]
-      .map((v) => (v ?? '').trim())
-      .filter(Boolean)
-      .join(' ');
+  /** Puestos ofrecidos: los de la categoría elegida, más los que aún no tienen categoría. */
+  get puestosFiltrados(): { id: number; nombre: string; categoriaId: number | null }[] {
+    if (this.model.categoriaId == null) return this.puestos;
+    return this.puestos.filter(
+      (p) =>
+        p.categoriaId === this.model.categoriaId ||
+        p.categoriaId == null ||
+        // El puesto ya guardado siempre se ofrece, aunque pertenezca a otra categoría:
+        // si no, el desplegable se vería vacío en fichas donde ambos no coinciden.
+        p.id === this.model.puestoId,
+    );
   }
+
 
   /** Al reescribir el correo se limpia el resultado de la verificación anterior. */
   onEmailCorporativoInput(): void {
@@ -396,12 +379,9 @@ export class WorkerEditForm implements OnChanges {
       cumpleanos: this.model.cumpleanos || null,
       emailCorporativo: this.model.emailCorporativo?.trim() || null,
       emailPersonal: this.model.emailPersonal?.trim() || null,
-      categoria: this.model.categoria?.trim() || null,
-      ocupacion: this.model.ocupacion?.trim() || null,
-      ocupacionId: this.model.ocupacionId ?? null,
-      puesto: this.model.puesto?.trim() || null,
+      categoriaId: this.model.categoriaId ?? null,
+      puestoId: this.model.puestoId ?? null,
       areaScopeId: this.selectedAreaScopeId,
-      workerCategoryId: this.model.workerCategoryId ?? null,
     };
 
     this.saving = true;

@@ -5,7 +5,8 @@ export interface WorkerSearchItemDto {
   emailCorporativo?: string;
   cargo?: string;
   categoria?: string;
-  ocupacion?: string;
+  /** Nombre del puesto (campo de presentación). */
+  puesto?: string;
   /** FK a workers_obra_oficina_staff — clasificación de riesgo actual del trabajador,
    * gestionada desde Habilitación (Cambiar obra / puesto de trabajo). */
   obraOficinaStaffId?: number | null;

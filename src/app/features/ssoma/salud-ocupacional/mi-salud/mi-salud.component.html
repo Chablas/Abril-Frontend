@@ -122,24 +122,17 @@
               <span class="badge" [ngClass]="estadoClass(d.estado)">{{ d.estado ?? '—' }}</span>
             </td>
             <td>
-              <ng-container *ngIf="d.adjuntos.length > 0; else certificadoLegado">
-                <a *ngFor="let adj of d.adjuntos"
-                   [href]="adj.url"
-                   target="_blank"
-                   class="row-action btn-link-icon"
-                   [title]="adj.nombre ?? 'Ver certificado'">
-                  <i class="ti ti-file-download"></i>
-                </a>
-              </ng-container>
-              <ng-template #certificadoLegado>
-                <a *ngIf="d.urlCertificado || d.urlDocumento"
-                   [href]="d.urlCertificado ?? d.urlDocumento"
-                   target="_blank"
-                   class="row-action btn-link-icon"
-                   title="Ver certificado">
-                  <i class="ti ti-file-download"></i>
-                </a>
-              </ng-template>
+              <!-- El certificado lo sirve el backend desde SharePoint: no se enlaza el webUrl
+                   directo porque solo abre para quien tiene sesión de Microsoft 365. -->
+              <button *ngFor="let adj of d.adjuntos"
+                      type="button"
+                      class="row-action btn-link-icon"
+                      [disabled]="descargandoId !== null"
+                      [title]="adj.nombre ?? 'Ver certificado'"
+                      (click)="verCertificado(adj)">
+                <i class="ti ti-file-download"></i>
+              </button>
+              <span *ngIf="d.adjuntos.length === 0" class="text-gray-300">—</span>
             </td>
           </tr>
           <tr *ngIf="!loadingDescansos && descansos.length === 0">

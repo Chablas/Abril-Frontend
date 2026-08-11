@@ -44,14 +44,13 @@ import { AgregarProyecto } from './components/agregar-proyecto/agregar-proyecto'
 import { ProgramarInduccion } from './components/programar-induccion/programar-induccion';
 import { ProgramacionCreate } from '../../../ssoma/salud-ocupacional/programaciones/components/programacion-create/programacion-create';
 import { EmosProgramados } from './components/emos-programados/emos-programados';
-import { CatalogosModal } from './components/catalogos-modal/catalogos-modal';
 import { SctrVidaLeyService } from '../../services/sctr-vidaley.service';
 import { SctrVidaLeyDto } from '../../dtos/sctr.model';
 
 @Component({
   selector: 'app-hab-trabajadores',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, SearchInput, WorkerCreateEdit, ProgramacionCreate, EmosProgramados, CatalogosModal, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, SearchInput, WorkerCreateEdit, ProgramacionCreate, EmosProgramados, AbrilPageHeaderComponent],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
 })
@@ -102,13 +101,6 @@ export class Trabajadores implements OnInit, OnDestroy {
     return this.requiereVigenciaAnteUpload && !this.panelVigencia;
   }
 
-  get puedeGestionarCatalogos(): boolean {
-    return (
-      this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA) ||
-      this.authService.hasRole(Roles.ADMINISTRADOR_UDP)
-    );
-  }
-
   get puedeAprobarEntregableActual(): boolean {
     if (!this.selectedEntregable) return false;
     const resp = this.selectedEntregable.responsable?.toUpperCase() ?? '';
@@ -143,7 +135,6 @@ export class Trabajadores implements OnInit, OnDestroy {
   mostrarProgramarEmo = false;
   workerParaProgramarEmo: WorkerHabilitacionListDto | null = null;
   mostrarEmosProgramados = false;
-  mostrarCatalogos = false;
   preselectedEmpresaId: number | null = null;
   workerParaAccion: WorkerHabilitacionListDto | null = null;
   workerParaReingreso: WorkerHabilitacionListDto | null = null;

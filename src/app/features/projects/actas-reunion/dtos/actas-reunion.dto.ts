@@ -12,7 +12,7 @@ export interface ProyectoFiltroDTO {
 export interface TrabajadorAbrilDTO {
   workerId: number;
   fullName: string;
-  /** workers.puesto; si está vacío el backend hace fallback a workers.ocupacion. */
+  /** Nombre del puesto del trabajador (catálogo `puesto`). */
   cargo: string | null;
 }
 
@@ -128,7 +128,7 @@ export interface ReunionParticipanteInput {
   reunionParticipanteId: number | null;
   /**
    * workers.id cuando el participante se eligió del desplegable de trabajadores de Abril.
-   * Si el worker no tiene puesto ni ocupacion, el cargo ingresado a mano se guarda en workers.puesto.
+   * Si el worker no tiene puesto, el cargo ingresado a mano se da de alta en el catálogo `puesto`.
    */
   workerId?: number | null;
   nombre: string;

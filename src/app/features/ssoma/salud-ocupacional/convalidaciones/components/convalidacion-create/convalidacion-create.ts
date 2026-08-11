@@ -103,7 +103,7 @@ export class ConvalidacionCreate implements OnInit {
    * backend lo calcula al guardar y bloquea con un mensaje claro si el cambio de puesto no
    * es convalidable. */
   get puestoDestinoPreview(): string {
-    return this.worker?.cargo || this.worker?.ocupacion || '—';
+    return this.worker?.cargo || this.worker?.puesto || '—';
   }
 
   get clasificacionDestinoPreview(): string {

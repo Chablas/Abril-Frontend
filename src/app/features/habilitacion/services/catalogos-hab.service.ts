@@ -20,7 +20,7 @@ export class CatalogosHabService {
   private areas$?: Observable<AreaCatDto[]>;
   private areaArbol$?: Observable<AreaArbolNodoDto[]>;
   private categorias$?: Observable<{ id: number; nombre: string }[]>;
-  private ocupaciones$?: Observable<{ id: number; nombre: string }[]>;
+  private puestos$?: Observable<{ id: number; nombre: string; categoriaId: number | null }[]>;
   private obraOficinaStaff$?: Observable<ObraOficinaStaffDto[]>;
   private jefes$?: Observable<JefeCandidatoDto[]>;
 
@@ -82,15 +82,20 @@ export class CatalogosHabService {
     return this.categorias$;
   }
 
-  getOcupaciones(): Observable<{ id: number; nombre: string }[]> {
-    if (!this.ocupaciones$) {
-      this.ocupaciones$ = this.http
-        .get<{ id: number; nombre: string }[]>(`${this.base}/ocupaciones`, {
+  /**
+   * Catálogo único de puestos. Reemplaza a getOcupaciones(): la ocupación dejó de
+   * existir como campo aparte y su data se fusionó acá. Cada puesto trae su
+   * `categoriaId` para poder filtrar el desplegable sin volver al servidor.
+   */
+  getPuestos(): Observable<{ id: number; nombre: string; categoriaId: number | null }[]> {
+    if (!this.puestos$) {
+      this.puestos$ = this.http
+        .get<{ id: number; nombre: string; categoriaId: number | null }[]>(`${this.base}/puestos`, {
           headers: buildHabHeaders(),
         })
         .pipe(shareReplay(1), catchError(() => of([])));
     }
-    return this.ocupaciones$;
+    return this.puestos$;
   }
 
   /**
