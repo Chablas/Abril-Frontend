@@ -4,13 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
+import Swal from 'sweetalert2';
 import {
   ConvalidacionQueryParams,
   ConvalidacionService,
 } from '../services/convalidacion.service';
 import { CatalogosSaludService } from '../services/catalogos-salud.service';
 import { ProyectoHabilitadoService } from '../../shared/services/proyecto-habilitado.service';
-import { ConvalidacionListDto } from '../dtos/convalidacion.model';
+import { ConvalidacionCreateDto, ConvalidacionListDto } from '../dtos/convalidacion.model';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
@@ -60,9 +61,13 @@ export class Convalidaciones implements OnInit, OnDestroy {
   anioActual = new Date().getFullYear();
   readonly pageSize = 15;
 
+  // Esta pantalla es la bandeja de pendientes: siempre debe abrir mostrando solo
+  // "Pendiente" — al descartar/resolver una fila, desaparece de la lista sin que haya
+  // que tocar ningún filtro. "Todos los resultados" sigue disponible en Filtros para
+  // quien quiera auditar el historial completo.
   filters = {
     search: '',
-    resultado: '',
+    resultado: 'Pendiente',
     proyectoId: '',
     empresaDestinoId: '',
     tipoEmoId: '',
@@ -88,6 +93,7 @@ export class Convalidaciones implements OnInit, OnDestroy {
   reviewOpen = false;
   selectedItem: ConvalidacionListDto | null = null;
   descargandoPdfId: number | null = null;
+  descartandoId: number | null = null;
   filtrosAbiertos = false;
 
   private searchChange$ = new Subject<string>();
@@ -196,8 +202,18 @@ export class Convalidaciones implements OnInit, OnDestroy {
   }
 
   clearFilters(): void {
-    this.filters = { search: '', resultado: '', proyectoId: '', empresaDestinoId: '', tipoEmoId: '' };
+    this.filters = { search: '', resultado: 'Pendiente', proyectoId: '', empresaDestinoId: '', tipoEmoId: '' };
     this.load(1);
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filters.search) n++;
+    if (this.filters.resultado && this.filters.resultado !== 'Pendiente') n++;
+    if (this.filters.proyectoId) n++;
+    if (this.filters.empresaDestinoId) n++;
+    if (this.filters.tipoEmoId) n++;
+    return n;
   }
 
   onPageChange(page: number): void {
@@ -237,21 +253,52 @@ export class Convalidaciones implements OnInit, OnDestroy {
   get hasActiveFilters(): boolean {
     return !!(
       this.filters.search ||
-      this.filters.resultado ||
+      (this.filters.resultado && this.filters.resultado !== 'Pendiente') ||
       this.filters.proyectoId ||
       this.filters.empresaDestinoId ||
       this.filters.tipoEmoId
     );
   }
 
-  get filtrosActivos(): number {
-    let n = 0;
-    if (this.filters.search) n++;
-    if (this.filters.resultado) n++;
-    if (this.filters.proyectoId) n++;
-    if (this.filters.empresaDestinoId) n++;
-    if (this.filters.tipoEmoId) n++;
-    return n;
+  /** Acceso rápido sin abrir el modal completo: para cuando el registro pendiente no
+   * corresponde (p.ej. el trabajador ya estaba convalidado hacia ese mismo destino). No
+   * requiere firma médica — cualquier usuario con acceso a esta pantalla puede usarlo. */
+  descartar(item: ConvalidacionListDto, event: Event): void {
+    event.stopPropagation();
+    if (this.descartandoId) return;
+
+    Swal.fire({
+      icon: 'question',
+      title: '¿Descartar esta convalidación?',
+      text: 'Se usa cuando el registro no corresponde (p.ej. el trabajador ya estaba convalidado hacia el mismo destino). No es una decisión médica de aptitud.',
+      showCancelButton: true,
+      confirmButtonText: 'Descartar',
+      cancelButtonText: 'Cancelar',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+
+      this.descartandoId = item.id;
+      this.loaderService.show();
+      this.service
+        .updateConvalidacion(item.id, {
+          fechaConvalidacion: item.fechaConvalidacion,
+          empresaDestinoId: item.empresaDestinoId ?? undefined,
+          resultado: 'Descartada',
+        } as Partial<ConvalidacionCreateDto>)
+        .subscribe({
+          next: () => {
+            this.descartandoId = null;
+            this.loaderService.hide();
+            Swal.fire({ icon: 'success', title: 'Descartada', timer: 1200, showConfirmButton: false });
+            this.load(this.currentPage);
+          },
+          error: (err: HttpErrorResponse) => {
+            this.descartandoId = null;
+            this.loaderService.hide();
+            this.errorService.handleError(err);
+          },
+        });
+    });
   }
 
   descargarPdf(item: ConvalidacionListDto, event: Event): void {

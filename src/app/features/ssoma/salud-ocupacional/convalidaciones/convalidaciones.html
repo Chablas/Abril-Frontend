@@ -23,6 +23,7 @@
             <th>Vencimiento</th>
             <th class="text-right">Días</th>
             <th class="text-right">PDF</th>
+            <th class="text-right">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -64,10 +65,22 @@
                 {{ descargandoPdfId === item.id ? '...' : 'Descargar' }}
               </button>
             </td>
+            <td class="text-right">
+              <button
+                *ngIf="item.resultado === 'Pendiente'"
+                type="button"
+                abrilBulkAction="danger"
+                [disabled]="descartandoId === item.id"
+                (click)="descartar(item, $event)"
+                title="Descartar: el registro no corresponde (no requiere firma médica)"
+              >
+                {{ descartandoId === item.id ? '...' : 'Descartar' }}
+              </button>
+            </td>
           </tr>
 
           <tr *ngIf="!loading && items.length === 0">
-            <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
+            <td colspan="10" class="text-center py-[40px] text-gray-400 text-sm">
               {{ hasActiveFilters ? 'Sin resultados.' : 'Sin convalidaciones.' }}
             </td>
           </tr>
