@@ -55,6 +55,7 @@ export class SctrVidaLeyService {
     tipoPoliza?: string;
     estadoSctr?: string;
     estadoVidaLey?: string;
+    areaScopeId?: number;
   }): Observable<SctrTrabajadorEstadoDto[]> {
     return this.http.get<SctrTrabajadorEstadoDto[]>(`${this.base}/trabajadores-por-empresa`, {
       headers: buildHabHeaders(),

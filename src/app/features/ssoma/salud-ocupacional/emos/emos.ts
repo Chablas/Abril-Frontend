@@ -34,6 +34,9 @@ import { SearchInput } from '../../../../shared/components/search-input/search-i
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 import { NavigationService } from '../../../../core/navigation/navigation.service';
+import { CatalogosHabService } from '../../../habilitacion/services/catalogos-hab.service';
+import { AreaArbolNodoDto } from '../../../habilitacion/dtos/catalogos.model';
+import { getGerencias, getHijos } from '../../../../shared/utils/area-arbol.util';
 
 interface FilterOption {
   id: string;
@@ -110,6 +113,15 @@ export class Emos implements OnInit, OnDestroy {
   ];
 
   empresaOptions: Array<EmpresaSimpleDto & { idAsString?: string }> = [];
+  areaArbolNodos: AreaArbolNodoDto[] = [];
+  gerenciaOptions: AreaArbolNodoDto[] = [];
+  areaScopeOptions: AreaArbolNodoDto[] = [];
+  filtroGerenciaId: number | null = null;
+  filtroAreaScopeId: number | null = null;
+
+  get filtroAreaEfectivo(): number | null {
+    return this.filtroAreaScopeId ?? this.filtroGerenciaId;
+  }
 
   filtrosAbiertos = false;
 
@@ -141,6 +153,7 @@ export class Emos implements OnInit, OnDestroy {
     private router: Router,
     private cdr: ChangeDetectorRef,
     private navigationService: NavigationService,
+    private catalogosHabService: CatalogosHabService,
   ) {}
 
   ngOnInit(): void {
@@ -152,6 +165,7 @@ export class Emos implements OnInit, OnDestroy {
 
     this.loadEmpresas();
     this.loadProyectos();
+    this.loadAreas();
     this.load(1);
   }
 
@@ -163,6 +177,24 @@ export class Emos implements OnInit, OnDestroy {
       },
       error: () => { this.proyectoOptions = []; },
     });
+  }
+
+  private loadAreas(): void {
+    this.catalogosHabService.getAreaArbol().subscribe({
+      next: (list) => {
+        this.areaArbolNodos = list ?? [];
+        this.gerenciaOptions = getGerencias(this.areaArbolNodos);
+        this.cdr.detectChanges();
+      },
+      error: () => { this.areaArbolNodos = []; this.gerenciaOptions = []; },
+    });
+  }
+
+  onGerenciaChange(id: number | null): void {
+    this.filtroGerenciaId = id;
+    this.filtroAreaScopeId = null;
+    this.areaScopeOptions = id ? getHijos(this.areaArbolNodos, id) : [];
+    this.onFilterChange();
   }
 
   ngOnDestroy(): void {
@@ -196,6 +228,7 @@ export class Emos implements OnInit, OnDestroy {
       estado: this.filters.estado || undefined,
       empresaId: this.filters.empresaId || undefined,
       proyectoId: this.filters.proyectoId || undefined,
+      areaScopeId: this.filtroAreaEfectivo ?? undefined,
       fechaEmoDesde: this.filters.fechaEmoDesde || undefined,
       fechaEmoHasta: this.filters.fechaEmoHasta || undefined,
       sinLectura: this.filters.sinLectura || undefined,
@@ -258,6 +291,7 @@ export class Emos implements OnInit, OnDestroy {
       estado: this.filters.estado || undefined,
       empresaId: this.filters.empresaId || undefined,
       proyectoId: this.filters.proyectoId || undefined,
+      areaScopeId: this.filtroAreaEfectivo ?? undefined,
       fechaEmoDesde: this.filters.fechaEmoDesde || undefined,
       fechaEmoHasta: this.filters.fechaEmoHasta || undefined,
       sinLectura: this.filters.sinLectura || undefined,
@@ -295,6 +329,9 @@ export class Emos implements OnInit, OnDestroy {
       sinLectura: false, sinCertificado: false, sinEmoCompleto: false,
       sortBy: '', sortDesc: false,
     };
+    this.filtroGerenciaId = null;
+    this.filtroAreaScopeId = null;
+    this.areaScopeOptions = [];
     this.load(1);
   }
 
@@ -411,6 +448,7 @@ export class Emos implements OnInit, OnDestroy {
       this.filters.estado ||
       this.filters.empresaId ||
       this.filters.proyectoId ||
+      this.filtroAreaEfectivo ||
       this.filters.fechaEmoDesde ||
       this.filters.fechaEmoHasta ||
       this.filters.sinLectura ||
@@ -427,6 +465,7 @@ export class Emos implements OnInit, OnDestroy {
     if (this.filters.estado) n++;
     if (this.filters.empresaId) n++;
     if (this.filters.proyectoId) n++;
+    if (this.filtroAreaEfectivo) n++;
     if (this.filters.fechaEmoDesde) n++;
     if (this.filters.fechaEmoHasta) n++;
     if (this.filters.sinLectura) n++;
