@@ -174,6 +174,8 @@ export interface EmoPorTrabajadorDto {
   interconsultaEspecialidad?: string;
   interconsultaEstado?: string;
   interconsultaUrlInforme?: string;
+  /** Estado de la programación de EMO más reciente (Programado, Aceptado por Clínica, etc.). */
+  estadoProgramacionEmo?: string;
   // Campos editables (modal Configuración → Trabajadores). Todos opcionales: el endpoint
   // PUT /workers/{id} aún no existe en backend; los valores se muestran si vienen.
   celular?: string;

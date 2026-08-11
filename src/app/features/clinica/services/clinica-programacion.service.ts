@@ -75,6 +75,26 @@ export class ClinicaProgramacionService {
     });
   }
 
+  /** Correo de inasistencias del día — a los administradores, con copia a médico ocupacional
+   *  y a Administrador de Administración. Solo Clínica puede dispararlo (lo exige el backend). */
+  enviarInasistencias(fecha: string): Observable<{
+    totalSeleccionadas: number;
+    totalEnviados: number;
+    totalErrores: number;
+    detalles: string[];
+  }> {
+    const params = new HttpParams().set('fecha', fecha);
+    return this.http.post<{
+      totalSeleccionadas: number;
+      totalEnviados: number;
+      totalErrores: number;
+      detalles: string[];
+    }>(`${PROGRAMACIONES_BASE}/inasistencias/enviar-correos`, null, {
+      headers: buildClinicaHeaders(),
+      params,
+    });
+  }
+
   programarEmo(dto: CreateProgramacionDto): Observable<ProgramacionClinicaDto> {
     return this.http.post<ProgramacionClinicaDto>(PROGRAMACIONES_BASE, dto, {
       headers: buildClinicaHeaders(),

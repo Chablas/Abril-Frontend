@@ -342,10 +342,15 @@ export class Interconsultas implements OnInit, OnDestroy {
         next: (res) => {
           this.sendingEmails = false;
           this.loaderService.hide();
+          const detalleHtml = res.detalles?.length
+            ? `<ul style="text-align:left; font-size:12px; margin-top:8px; max-height:200px; overflow:auto;">
+                ${res.detalles.map((d) => `<li>${d}</li>`).join('')}
+              </ul>`
+            : '';
           Swal.fire({
             icon: res.totalErrores > 0 ? 'warning' : 'success',
             title: 'Correos procesados',
-            html: `Enviados: <strong>${res.totalEnviados}</strong> · Errores: <strong>${res.totalErrores}</strong> de ${res.totalSeleccionadas} seleccionada(s).`,
+            html: `Enviados: <strong>${res.totalEnviados}</strong> · Errores: <strong>${res.totalErrores}</strong> de ${res.totalSeleccionadas} seleccionada(s).${detalleHtml}`,
           });
           this.selectedIds.clear();
           this.cdr.detectChanges();
