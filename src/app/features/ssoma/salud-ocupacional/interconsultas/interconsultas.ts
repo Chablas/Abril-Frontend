@@ -14,6 +14,8 @@ import {
 } from '../dtos/interconsulta.model';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { Roles } from '../../../../core/constants/roles';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import {
@@ -119,7 +121,16 @@ export class Interconsultas implements OnInit, OnDestroy {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
+    private authService: AuthService,
   ) {}
+
+  /**
+   * Solo la clínica (el médico) puede enviar estos correos en producción — el backend también
+   * lo exige. Se incluye Jefe SSOMA (id 9) para que pueda probar el flujo.
+   */
+  get puedeEnviarCorreos(): boolean {
+    return this.authService.isClinica() || this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA);
+  }
 
   ngOnInit(): void {
     this.searchChange$

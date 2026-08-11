@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from '../../core/guards/auth.guard';
 import { roleGuard } from '../../core/guards/role.guard';
 import { GestionHabComponent } from './gestion/gestion-hab.component';
+import { Roles } from '../../core/constants/roles';
 
 export const HABILITACION_ROUTES: Routes = [
   // Redirect raíz: contratistas van a su panel, admins al shell de gestión
@@ -68,6 +69,16 @@ export const HABILITACION_ROUTES: Routes = [
           import('./pages/dossier/dossier').then((m) => m.Dossier),
         canActivate: [authGuard],
         data: { titulo: 'HABILITACIÓN - DOSSIER SEMANAL' },
+      },
+      {
+        path: 'responsables',
+        loadComponent: () =>
+          import('./pages/responsables/responsables').then((m) => m.Responsables),
+        canActivate: [authGuard, roleGuard],
+        data: {
+          titulo: 'HABILITACIÓN - GESTIÓN DE RESPONSABLES',
+          roles: [Roles.ADMINISTRADOR_SSOMA, Roles.ADMINISTRADOR_ADMINISTRACION],
+        },
       },
       {
         path: 'usuarios',
