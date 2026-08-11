@@ -20,6 +20,9 @@ export interface WorkerHabilitacionListDto {
   estadoProgramacionEmo?: string | null;
   fechaIngreso?: string;
   aniosExperiencia?: number;
+  /** "Pendiente" si el trabajador tiene una interconsulta sin levantar. */
+  interconsultaEstado?: string | null;
+  interconsultaEspecialidad?: string | null;
 }
 
 export interface WorkerEntregableDto {

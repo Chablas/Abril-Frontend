@@ -17,6 +17,9 @@ import { BandejaAprobarDto, BandejaItemDto } from '../../dtos/bandeja.model';
 import { environment } from '../../../../../environments/environment';
 import { InduccionListDto } from '../../dtos/induccion.model';
 import { buildHabHeaders } from '../../services/http-base';
+import { CatalogosHabService } from '../../services/catalogos-hab.service';
+import { AreaArbolNodoDto } from '../../dtos/catalogos.model';
+import { getGerencias, getHijos } from '../../../../shared/utils/area-arbol.util';
 
 interface InduccionGrupo {
   key: string;
@@ -53,6 +56,15 @@ export class Bandeja implements OnInit, OnDestroy {
   filtroEmpresa = '';
   filtroProyectoId: number | null = null;
   filtroEntregable = '';
+  areaArbolNodos: AreaArbolNodoDto[] = [];
+  gerenciaOptions: AreaArbolNodoDto[] = [];
+  areaScopeOptions: AreaArbolNodoDto[] = [];
+  filtroGerenciaId: number | null = null;
+  filtroAreaScopeId: number | null = null;
+
+  get filtroAreaEfectivo(): number | null {
+    return this.filtroAreaScopeId ?? this.filtroGerenciaId;
+  }
 
   // ── Selección masiva ──────────────────────────────────────
   selectedIds = new Set<number>();
@@ -134,6 +146,7 @@ export class Bandeja implements OnInit, OnDestroy {
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
     private http: HttpClient,
+    private catalogosHabService: CatalogosHabService,
   ) {}
 
   ngOnInit(): void {
@@ -156,6 +169,21 @@ export class Bandeja implements OnInit, OnDestroy {
       next: (res) => { this.catalogoProyectos = res; this.cdr.detectChanges(); },
       error: (err) => console.error('error proyectos bandeja:', err),
     });
+    this.catalogosHabService.getAreaArbol().subscribe({
+      next: (list) => {
+        this.areaArbolNodos = list ?? [];
+        this.gerenciaOptions = getGerencias(this.areaArbolNodos);
+        this.cdr.detectChanges();
+      },
+      error: () => { this.areaArbolNodos = []; this.gerenciaOptions = []; },
+    });
+  }
+
+  onGerenciaChange(id: number | null): void {
+    this.filtroGerenciaId = id;
+    this.filtroAreaScopeId = null;
+    this.areaScopeOptions = id ? getHijos(this.areaArbolNodos, id) : [];
+    this.loadItems(1);
   }
 
   ngOnDestroy(): void {
@@ -179,6 +207,7 @@ export class Bandeja implements OnInit, OnDestroy {
       responsable: this.filtroResponsable || undefined,
       search: this.filtroTexto.trim() || undefined,
       proyectoId: this.filtroProyectoId ?? undefined,
+      areaScopeId: this.filtroAreaEfectivo ?? undefined,
     };
     this.bandejaService.getPendientes(params).subscribe({
       next: (res) => {

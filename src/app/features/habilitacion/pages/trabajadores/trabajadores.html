@@ -269,6 +269,30 @@
               (valueChange)="filtroEmpresaId = $event; onFilterChange()"
             />
           </div>
+          <div class="fb-ss-wrap" *ngIf="!isContratista()">
+            <app-search-select
+              [options]="gerenciaOptions"
+              valueField="areaScopeId"
+              displayField="areaItemName"
+              [value]="filtroGerenciaId"
+              [showLabel]="false"
+              placeholder="Todas las gerencias"
+              [allowClear]="true"
+              (valueChange)="onGerenciaChange($event)"
+            />
+          </div>
+          <div class="fb-ss-wrap" *ngIf="!isContratista() && filtroGerenciaId">
+            <app-search-select
+              [options]="areaScopeOptions"
+              valueField="areaScopeId"
+              displayField="areaItemName"
+              [value]="filtroAreaScopeId"
+              [showLabel]="false"
+              placeholder="Todas las áreas"
+              [allowClear]="true"
+              (valueChange)="filtroAreaScopeId = $event; onFilterChange()"
+            />
+          </div>
         </div>
       </div>
 
@@ -762,16 +786,11 @@
   (closed)="mostrarProgramarInduccion = false"
   (saved)="mostrarProgramarInduccion = false"
 />
-<app-programacion-create
-  *ngIf="mostrarProgramarEmo"
-  [open]="mostrarProgramarEmo"
-  [preselectedWorkerId]="workerParaProgramarEmo?.workerId ?? null"
-  [preselectedWorkerNombre]="workerParaProgramarEmo?.apellidoNombre ?? null"
-  [preselectedWorkerDni]="workerParaProgramarEmo?.dni ?? null"
-  [preselectedEmpresaId]="workerParaProgramarEmo?.empresaId ?? null"
-  (closed)="mostrarProgramarEmo = false; workerParaProgramarEmo = null"
-  (saved)="onProgramarEmoSaved()"
-></app-programacion-create>
+<app-programar-emo-dialog
+  *ngIf="mostrarProgramarEmo && workerParaProgramarEmoDto as workerEmoDto"
+  [worker]="workerEmoDto"
+  (closed)="onProgramarEmoClosed($event)"
+></app-programar-emo-dialog>
 <app-emos-programados
   *ngIf="mostrarEmosProgramados"
   [proyectos]="catalogoProyectos"

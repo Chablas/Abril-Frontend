@@ -42,16 +42,20 @@ import { WorkerCreateEdit } from './components/worker-create-edit/worker-create-
 import { HistorialEventos } from './components/historial-eventos/historial-eventos';
 import { AgregarProyecto } from './components/agregar-proyecto/agregar-proyecto';
 import { ProgramarInduccion } from './components/programar-induccion/programar-induccion';
-import { ProgramacionCreate } from '../../../ssoma/salud-ocupacional/programaciones/components/programacion-create/programacion-create';
+import { ProgramarEmoDialogComponent } from '../../../../shared/components/programar-emo-dialog/programar-emo-dialog';
+import { EmoPorTrabajadorDto } from '../../../ssoma/salud-ocupacional/dtos/emo.model';
 import { EmosProgramados } from './components/emos-programados/emos-programados';
 import { CatalogosModal } from './components/catalogos-modal/catalogos-modal';
 import { SctrVidaLeyService } from '../../services/sctr-vidaley.service';
 import { SctrVidaLeyDto } from '../../dtos/sctr.model';
+import { CatalogosHabService } from '../../services/catalogos-hab.service';
+import { AreaArbolNodoDto } from '../../dtos/catalogos.model';
+import { getGerencias, getHijos } from '../../../../shared/utils/area-arbol.util';
 
 @Component({
   selector: 'app-hab-trabajadores',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, SearchInput, WorkerCreateEdit, ProgramacionCreate, EmosProgramados, CatalogosModal, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, SearchInput, WorkerCreateEdit, ProgramarEmoDialogComponent, EmosProgramados, CatalogosModal, AbrilPageHeaderComponent],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
 })
@@ -76,6 +80,8 @@ export class Trabajadores implements OnInit, OnDestroy {
   filtroContratistaCasa = '';
   filtroEmpresaId: number | null = null;
   filtroProyectoId: number | null = null;
+  filtroGerenciaId: number | null = null;
+  filtroAreaScopeId: number | null = null;
   soloRetirados = false;
   soloSinEmo = false;
   soloEmoVencido = false;
@@ -83,6 +89,14 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   catalogoProyectos: ProjectGetDTO[] = [];
   catalogoEmpresas: EmpresaContratistaListDto[] = [];
+  areaArbolNodos: AreaArbolNodoDto[] = [];
+  gerenciaOptions: AreaArbolNodoDto[] = [];
+  areaScopeOptions: AreaArbolNodoDto[] = [];
+
+  /** El id efectivo que se manda al backend: el área elegida, o si no hay, la gerencia. */
+  get filtroAreaEfectivo(): number | null {
+    return this.filtroAreaScopeId ?? this.filtroGerenciaId;
+  }
 
   archivosPendientes: ArchivoStagingDto[] = [];
   panelVigencia = '';
@@ -161,6 +175,7 @@ export class Trabajadores implements OnInit, OnDestroy {
     private errorService: ErrorService,
     private empresaContratistaService: EmpresaContratistaService,
     private sctrVidaLeyService: SctrVidaLeyService,
+    private catalogosHabService: CatalogosHabService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -224,6 +239,24 @@ export class Trabajadores implements OnInit, OnDestroy {
         this.catalogoEmpresas = [];
       },
     });
+    this.catalogosHabService.getAreaArbol().subscribe({
+      next: (res) => {
+        this.areaArbolNodos = res ?? [];
+        this.gerenciaOptions = getGerencias(this.areaArbolNodos);
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.areaArbolNodos = [];
+        this.gerenciaOptions = [];
+      },
+    });
+  }
+
+  onGerenciaChange(id: number | null): void {
+    this.filtroGerenciaId = id;
+    this.filtroAreaScopeId = null;
+    this.areaScopeOptions = id ? getHijos(this.areaArbolNodos, id) : [];
+    this.onFilterChange();
   }
 
   ngOnDestroy(): void {
@@ -243,6 +276,7 @@ export class Trabajadores implements OnInit, OnDestroy {
       contratistaCasa: this.filtroContratistaCasa || undefined,
       empresaId: this.filtroEmpresaId ?? undefined,
       proyectoId: this.filtroProyectoId ?? undefined,
+      areaScopeId: this.filtroAreaEfectivo ?? undefined,
       soloRetirados: this.soloRetirados || undefined,
       soloSinEmo: this.soloSinEmo || undefined,
       soloEmoVencido: this.soloEmoVencido || undefined,
@@ -1093,9 +1127,28 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.mostrarProgramarEmo = true;
   }
 
-  onProgramarEmoSaved(): void {
+  /** Adapta el worker de la tabla de Habilitación al DTO que espera el diálogo compartido. */
+  get workerParaProgramarEmoDto(): EmoPorTrabajadorDto | null {
+    const w = this.workerParaProgramarEmo;
+    if (!w) return null;
+    return {
+      workerId: w.workerId,
+      nombreCompleto: w.apellidoNombre,
+      dni: w.dni,
+      empresaId: w.empresaId,
+      empresa: w.empresaNombre,
+      proyectoId: w.proyectoActualId,
+      proyecto: w.proyectoActual,
+      tieneEmo: !!w.tieneEmo,
+      interconsultaEstado: w.interconsultaEstado,
+      interconsultaEspecialidad: w.interconsultaEspecialidad,
+    };
+  }
+
+  onProgramarEmoClosed(guardado: boolean): void {
     this.mostrarProgramarEmo = false;
     this.workerParaProgramarEmo = null;
+    if (guardado) this.loadWorkers(this.currentPage);
   }
 
   abrirEmosProgramados(): void {

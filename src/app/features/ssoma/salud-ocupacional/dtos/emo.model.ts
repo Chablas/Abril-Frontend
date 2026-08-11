@@ -327,6 +327,7 @@ export interface EmoPorTrabajadorQuery {
   estado?: string;
   empresaId?: number;
   proyectoId?: number;
+  areaScopeId?: number;
   fechaEmoDesde?: string;
   fechaEmoHasta?: string;
   sinLectura?: boolean;

@@ -176,6 +176,25 @@ export class ProgramarEmoDialogComponent implements OnInit {
   submit(): void {
     if (!this.canSubmit || this.submitting) return;
 
+    if (this.worker.interconsultaEstado === 'Pendiente') {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Interconsulta pendiente',
+        html: `<strong>${this.worker.nombreCompleto}</strong> tiene una interconsulta pendiente${this.worker.interconsultaEspecialidad ? ' de ' + this.worker.interconsultaEspecialidad : ''}.<br/>¿Igual quieres programarle este EMO?`,
+        showCancelButton: true,
+        confirmButtonText: 'Sí, programar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#005D9D',
+      }).then((res) => {
+        if (res.isConfirmed) this.enviar();
+      });
+      return;
+    }
+
+    this.enviar();
+  }
+
+  private enviar(): void {
     this.submitting = true;
     this.programacionService
       .programarEmo({
