@@ -31,6 +31,9 @@ import { environment } from '../../../../../environments/environment';
 import { SctrSubir } from './components/sctr-subir/sctr-subir';
 import { SctrAprobar } from './components/sctr-aprobar/sctr-aprobar';
 import { VersionesDoc } from '../trabajadores/components/versiones-doc/versiones-doc';
+import { CatalogosHabService } from '../../services/catalogos-hab.service';
+import { AreaArbolNodoDto } from '../../dtos/catalogos.model';
+import { getGerencias, getHijos } from '../../../../shared/utils/area-arbol.util';
 
 type ActiveTab = 'polizas' | 'trabajadores';
 
@@ -105,6 +108,15 @@ export class SctrVidaley implements OnInit, OnDestroy {
   wFiltroNombre = '';
   wFiltroEmpresaTexto = '';
   modoOficinaStaff = false;
+  areaArbolNodos: AreaArbolNodoDto[] = [];
+  gerenciaOptions: AreaArbolNodoDto[] = [];
+  areaScopeOptions: AreaArbolNodoDto[] = [];
+  wFiltroGerenciaId: number | null = null;
+  wFiltroAreaScopeId: number | null = null;
+
+  get wFiltroAreaEfectivo(): number | null {
+    return this.wFiltroAreaScopeId ?? this.wFiltroGerenciaId;
+  }
 
   // ── Tab Trabajadores — panel derecho ──────────────────────
   selectedPoliza: SctrVidaLeyDto | null = null;
@@ -131,6 +143,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
     private authService: AuthService,
     private projectService: ProjectService,
     private catalogosService: CatalogosSaludService,
+    private catalogosHabService: CatalogosHabService,
     private sanitizer: DomSanitizer,
     private loaderService: LoaderService,
     private errorService: ErrorService,
@@ -218,6 +231,21 @@ export class SctrVidaley implements OnInit, OnDestroy {
       const id = this.readEmpresaIdFromJwt();
       if (id) this.wFiltroEmpresaId = id;
     }
+    this.catalogosHabService.getAreaArbol().subscribe({
+      next: (list) => {
+        this.areaArbolNodos = list ?? [];
+        this.gerenciaOptions = getGerencias(this.areaArbolNodos);
+        this.cdr.detectChanges();
+      },
+      error: () => { this.areaArbolNodos = []; this.gerenciaOptions = []; },
+    });
+    this.loadTrabajadores();
+  }
+
+  onWorkerGerenciaChange(id: number | null): void {
+    this.wFiltroGerenciaId = id;
+    this.wFiltroAreaScopeId = null;
+    this.areaScopeOptions = id ? getHijos(this.areaArbolNodos, id) : [];
     this.loadTrabajadores();
   }
 
@@ -406,6 +434,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
         tipo: this.wFiltroTipo,
         ...estadoParam,
         ...(this.modoOficinaStaff ? { obraOficina: 'OficinaStaff' } : {}),
+        areaScopeId: this.wFiltroAreaEfectivo ?? undefined,
       })
       .pipe(takeUntil(this.destroy$))
       .subscribe({

@@ -243,4 +243,28 @@
       (valueChange)="filtroClinicaId = $event; onFilterChange()">
     </app-search-select>
   </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Gerencia"
+      [options]="gerenciaOptions"
+      valueField="areaScopeId"
+      displayField="areaItemName"
+      [value]="filtroGerenciaId"
+      placeholder="Todas"
+      (valueChange)="onGerenciaChange($event)">
+    </app-search-select>
+  </div>
+
+  <div class="w-full" *ngIf="filtroGerenciaId">
+    <app-search-select
+      label="Área"
+      [options]="areaScopeOptions"
+      valueField="areaScopeId"
+      displayField="areaItemName"
+      [value]="filtroAreaScopeId"
+      placeholder="Todas"
+      (valueChange)="filtroAreaScopeId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
 </app-filter-modal>

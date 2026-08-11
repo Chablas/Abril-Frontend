@@ -32,6 +32,9 @@ import { SearchInput } from '../../../../shared/components/search-input/search-i
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 import { AbrilBulkActionDirective } from '../../../../shared/directives/abril-bulk-action.directive';
 import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
+import { CatalogosHabService } from '../../../habilitacion/services/catalogos-hab.service';
+import { AreaArbolNodoDto } from '../../../habilitacion/dtos/catalogos.model';
+import { getGerencias, getHijos } from '../../../../shared/utils/area-arbol.util';
 
 interface DiaCalendario {
   fecha: Date;
@@ -131,6 +134,15 @@ export class Programaciones implements OnInit, OnDestroy {
   motivoRechazo = '';
   filtroClinicaId: number | null = null;
   clinicas: ClinicaSimpleDto[] = [];
+  areaArbolNodos: AreaArbolNodoDto[] = [];
+  gerenciaOptions: AreaArbolNodoDto[] = [];
+  areaScopeOptions: AreaArbolNodoDto[] = [];
+  filtroGerenciaId: number | null = null;
+  filtroAreaScopeId: number | null = null;
+
+  get filtroAreaEfectivo(): number | null {
+    return this.filtroAreaScopeId ?? this.filtroGerenciaId;
+  }
 
   // Calendario
   semanaInicio: Date = this.startOfWeek(new Date());
@@ -146,6 +158,7 @@ export class Programaciones implements OnInit, OnDestroy {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
+    private catalogosHabService: CatalogosHabService,
   ) {}
 
   ngOnInit(): void {
@@ -156,8 +169,23 @@ export class Programaciones implements OnInit, OnDestroy {
         this.loadResumen();
       });
     this.catalogosSvc.getClinicas().subscribe((data) => (this.clinicas = data));
+    this.catalogosHabService.getAreaArbol().subscribe({
+      next: (list) => {
+        this.areaArbolNodos = list ?? [];
+        this.gerenciaOptions = getGerencias(this.areaArbolNodos);
+        this.cdr.detectChanges();
+      },
+      error: () => { this.areaArbolNodos = []; this.gerenciaOptions = []; },
+    });
     this.load(1);
     this.loadResumen();
+  }
+
+  onGerenciaChange(id: number | null): void {
+    this.filtroGerenciaId = id;
+    this.filtroAreaScopeId = null;
+    this.areaScopeOptions = id ? getHijos(this.areaArbolNodos, id) : [];
+    this.onFilterChange();
   }
 
   loadResumen(): void {
@@ -167,6 +195,7 @@ export class Programaciones implements OnInit, OnDestroy {
         desde: this.filters.desde || undefined,
         hasta: this.filters.hasta || undefined,
         clinicaId: this.filtroClinicaId ?? undefined,
+        areaScopeId: this.filtroAreaEfectivo ?? undefined,
       })
       .subscribe({
         next: (res) => {
@@ -193,6 +222,7 @@ export class Programaciones implements OnInit, OnDestroy {
       desde: this.filters.desde || undefined,
       hasta: this.filters.hasta || undefined,
       clinicaId: this.filtroClinicaId ?? undefined,
+      areaScopeId: this.filtroAreaScopeId ?? undefined,
     };
     this.service.getProgramaciones(query).subscribe({
       next: (res) => {
@@ -293,6 +323,9 @@ export class Programaciones implements OnInit, OnDestroy {
   clearFilters(): void {
     this.filters = { search: '', estado: '', desde: '', hasta: '' };
     this.filtroClinicaId = null;
+    this.filtroGerenciaId = null;
+    this.filtroAreaScopeId = null;
+    this.areaScopeOptions = [];
     this.load(1);
     this.loadResumen();
   }
@@ -422,7 +455,8 @@ export class Programaciones implements OnInit, OnDestroy {
       this.filters.estado ||
       this.filters.desde ||
       this.filters.hasta ||
-      this.filtroClinicaId
+      this.filtroClinicaId ||
+      this.filtroAreaEfectivo
     );
   }
 
@@ -433,6 +467,7 @@ export class Programaciones implements OnInit, OnDestroy {
     if (this.filters.desde) n++;
     if (this.filters.hasta) n++;
     if (this.filtroClinicaId) n++;
+    if (this.filtroAreaEfectivo) n++;
     return n;
   }
 

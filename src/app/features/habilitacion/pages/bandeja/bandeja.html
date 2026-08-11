@@ -30,6 +30,14 @@
       <option value="SSOMA">SSOMA</option>
       <option value="ADMINISTRACION">Administración</option>
     </select>
+    <select class="filter-input" [ngModel]="filtroGerenciaId" (ngModelChange)="onGerenciaChange($event)">
+      <option [ngValue]="null">Todas las gerencias</option>
+      <option *ngFor="let g of gerenciaOptions" [ngValue]="g.areaScopeId">{{ g.areaItemName }}</option>
+    </select>
+    <select class="filter-input" *ngIf="filtroGerenciaId" [ngModel]="filtroAreaScopeId" (ngModelChange)="filtroAreaScopeId = $event; loadItems(1)">
+      <option [ngValue]="null">Todas las áreas</option>
+      <option *ngFor="let a of areaScopeOptions" [ngValue]="a.areaScopeId">{{ a.areaItemName }}</option>
+    </select>
   </div>
 
   <!-- ── Columnas estándar (Todos / Trabajadores / Empresas / Equipos) ── -->

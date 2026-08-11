@@ -122,6 +122,28 @@
         </select>
         <input type="text" class="field-input filter-sel" [(ngModel)]="wFiltroNombre" placeholder="Buscar nombre…" (input)="onWorkerFilter()" />
         <input type="text" class="field-input filter-sel" *ngIf="isAdmin()" [(ngModel)]="wFiltroEmpresaTexto" placeholder="Buscar empresa…" (input)="onWorkerFilter()" />
+        <div class="filter-ss-wrap" *ngIf="isAdmin()">
+          <app-search-select
+            [options]="gerenciaOptions"
+            valueField="areaScopeId"
+            displayField="areaItemName"
+            [value]="wFiltroGerenciaId"
+            (valueChange)="onWorkerGerenciaChange($event)"
+            placeholder="Todas las gerencias"
+            [allowClear]="true"
+          />
+        </div>
+        <div class="filter-ss-wrap" *ngIf="isAdmin() && wFiltroGerenciaId">
+          <app-search-select
+            [options]="areaScopeOptions"
+            valueField="areaScopeId"
+            displayField="areaItemName"
+            [value]="wFiltroAreaScopeId"
+            (valueChange)="wFiltroAreaScopeId = $event; onWorkerFilter()"
+            placeholder="Todas las áreas"
+            [allowClear]="true"
+          />
+        </div>
         <button type="button" class="btn-primary btn-action-sm" (click)="loadTrabajadores()">Buscar</button>
       </div>
     </div>
