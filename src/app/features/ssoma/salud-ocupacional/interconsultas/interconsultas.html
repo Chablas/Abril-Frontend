@@ -4,8 +4,8 @@
   subtitulo="Derivaciones a especialistas a raíz de EMOs observados."
   [tabs]="tabs">
 
-  <!-- Acciones a la altura de las pestañas: bulk (Enviar correos) + Filtros estándar. -->
-  <div tabsExtra class="flex items-center gap-2">
+  <!-- Acciones a la altura de las pestañas: bulk (Enviar correos, solo Clínica) + Filtros estándar. -->
+  <div *ngIf="puedeEnviarCorreos" tabsExtra class="flex items-center gap-2">
     <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500">{{ selectedIds.size }} seleccionada{{ selectedIds.size === 1 ? '' : 's' }}</span>
     <button
       type="button"
@@ -26,7 +26,7 @@
       <table class="abril-table">
         <thead class="sticky top-0 z-10">
           <tr>
-            <th class="checkbox-col">
+            <th *ngIf="puedeEnviarCorreos" class="checkbox-col">
               <input type="checkbox" [checked]="allVisibleSelected" (click)="toggleSelectAll()" (change)="$event.stopPropagation()" style="accent-color:var(--color-abril-accent)" />
             </th>
             <th>Trabajador</th>
@@ -49,7 +49,7 @@
             [class.row-selected]="isSelected(item.id)"
             (click)="openDetail(item)"
           >
-            <td class="checkbox-col" (click)="$event.stopPropagation()">
+            <td *ngIf="puedeEnviarCorreos" class="checkbox-col" (click)="$event.stopPropagation()">
               <input type="checkbox" [checked]="isSelected(item.id)" (change)="toggleSelection(item.id)" style="accent-color:var(--color-abril-accent)" />
             </td>
             <td>

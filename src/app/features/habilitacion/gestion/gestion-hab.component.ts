@@ -16,6 +16,7 @@ import { DashboardHabService } from '../../../core/services/dashboard-hab.servic
 import { DashboardAdminDto } from '../../../core/dtos/habilitacion/dashboard-hab.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { NavigationService } from '../../../core/navigation/navigation.service';
+import { Roles } from '../../../core/constants/roles';
 
 @Component({
   selector: 'app-gestion-hab',
@@ -51,7 +52,7 @@ export class GestionHabComponent implements OnInit, OnDestroy {
   // El featureKey de cada tab coincide con el del roleGuard de su ruta hija
   // (habilitacion.routes.ts). Las que solo tienen authGuard (Dashboard, Usuarios,
   // Dossier) no llevan featureKey y por eso se muestran siempre.
-  readonly tabs: { label: string; path: string; icon: string; featureKey?: string }[] = [
+  readonly tabs: { label: string; path: string; icon: string; featureKey?: string; roles?: string[] }[] = [
     { label: 'Dashboard',       path: 'dashboard',    icon: 'tab-icon-dashboard' },
     { label: 'Trabajadores',    path: 'trabajadores', icon: 'tab-icon-workers',   featureKey: 'habilitacion.trabajadores' },
     { label: 'Empresa',         path: 'empresa',      icon: 'tab-icon-empresa',   featureKey: 'habilitacion.empresa' },
@@ -61,6 +62,9 @@ export class GestionHabComponent implements OnInit, OnDestroy {
     { label: 'Inducciones',     path: 'inducciones',  icon: 'tab-icon-induccion', featureKey: 'habilitacion.inducciones' },
     { label: 'Usuarios',        path: 'admin-usuarios', icon: 'tab-icon-users'   },
     { label: 'Dossier',         path: 'dossier',      icon: 'tab-icon-dossier'   },
+    // Solo Jefe SSOMA / Administrador de Administración: correos de EMOs/interconsultas.
+    { label: 'Responsables',    path: 'responsables', icon: 'tab-icon-dossier',
+      roles: [Roles.ADMINISTRADOR_SSOMA, Roles.ADMINISTRADOR_ADMINISTRACION] },
   ];
 
   /** Tabs de staff visibles: oculta las secciones cuya feature el usuario no tiene
