@@ -75,9 +75,13 @@
         </div>
 
         <div class="flex flex-col gap-[4px]">
+          <!-- dense + floatingLabel: mismas medidas y label flotante que app-search-select, para que
+               los cuatro campos de la fila queden a la misma altura. -->
           <app-date-picker
             label="Fecha requerida de ingreso"
             color="var(--color-abril-standard)"
+            [dense]="true"
+            [floatingLabel]="true"
             [(value)]="v.fecha" />
           <p *ngIf="submitted && !v.fecha" class="text-xs text-red-500">Campo requerido</p>
         </div>
