@@ -52,11 +52,23 @@ import { getGerencias, getHijos } from '../../../../shared/utils/area-arbol.util
 @Component({
   selector: 'app-hab-trabajadores',
   standalone: true,
-<<<<<<< HEAD
-  imports: [CommonModule, FormsModule, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, SearchInput, WorkerCreateEdit, ProgramacionCreate, EmosProgramados],
-=======
-  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, SearchInput, WorkerCreateEdit, ProgramarEmoDialogComponent, EmosProgramados, CatalogosModal, AbrilPageHeaderComponent],
->>>>>>> a11b27acddecb28f8cee66fff102d6c7399ac03d
+  imports: [
+    CommonModule,
+    FormsModule,
+    Paginator,
+    DocumentViewer,
+    CambiarObra,
+    VersionesDoc,
+    ReingresoForm,
+    HistorialEventos,
+    AgregarProyecto,
+    ProgramarInduccion,
+    SearchSelect,
+    SearchInput,
+    WorkerCreateEdit,
+    ProgramarEmoDialogComponent,
+    EmosProgramados,
+  ],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
 })
@@ -1133,8 +1145,8 @@ export class Trabajadores implements OnInit, OnDestroy {
       proyectoId: w.proyectoActualId,
       proyecto: w.proyectoActual,
       tieneEmo: !!w.tieneEmo,
-      interconsultaEstado: w.interconsultaEstado,
-      interconsultaEspecialidad: w.interconsultaEspecialidad,
+      interconsultaEstado: w.interconsultaEstado ?? undefined,
+      interconsultaEspecialidad: w.interconsultaEspecialidad ?? undefined,
     };
   }
 
