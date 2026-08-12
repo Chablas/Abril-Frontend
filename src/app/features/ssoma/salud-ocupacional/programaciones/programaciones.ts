@@ -28,6 +28,7 @@ import { ProgramacionCreate } from './components/programacion-create/programacio
 import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
+import { parseFechaLocal, toIsoLocal } from '../../../../shared/utils/fecha-local.util';
 import { SearchInput } from '../../../../shared/components/search-input/search-input';
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 import { AbrilBulkActionDirective } from '../../../../shared/directives/abril-bulk-action.directive';
@@ -381,8 +382,8 @@ export class Programaciones implements OnInit, OnDestroy {
   }
 
   formatFecha(fecha: string): string {
-    const d = new Date(fecha);
-    return isNaN(d.getTime())
+    const d = parseFechaLocal(fecha);
+    return d === null
       ? fecha
       : d.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
@@ -443,10 +444,7 @@ export class Programaciones implements OnInit, OnDestroy {
   }
 
   private toIsoDate(d: Date): string {
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
+    return toIsoLocal(d);
   }
 
   get hasActiveFilters(): boolean {

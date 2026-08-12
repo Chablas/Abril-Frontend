@@ -26,4 +26,18 @@ export const GESTION_GTH_ROUTES: Routes = [
       featureKey: 'gestion-gth.solicitud-personal',
     },
   },
+  {
+    // Configuración de los correos del flujo: qué correos se envían y a quién.
+    // Misma feature que ya habilitaba el botón «Configuración» de la pantalla anterior.
+    path: 'solicitud-personal/configuracion',
+    loadComponent: () =>
+      import('./solicitud-personal/configuracion/solicitud-personal-configuracion').then(
+        (m) => m.GthSolicitudPersonalConfiguracion,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'SOLICITUD DE PERSONAL - CONFIGURACIÓN',
+      featureKey: 'gestion-gth.reclutamiento.configuracion',
+    },
+  },
 ];

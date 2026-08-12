@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { FabButton } from '../../../shared/components/fab-button/fab-button';
@@ -15,7 +16,6 @@ import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { GthNuevaSolicitud } from './components/nueva-solicitud/nueva-solicitud';
-import { ConfigCorreoOpcion, GthConfiguracionCorreos } from '../shared/configuracion-correos/configuracion-correos';
 import { GthSeguimiento } from './components/seguimiento/seguimiento';
 import { GthRevisionLongList } from './components/revision-long-list/revision-long-list';
 import { GthRevisionFinalistas } from './components/revision-finalistas/revision-finalistas';
@@ -42,7 +42,6 @@ import {
     FilterModal,
     SearchInput,
     GthNuevaSolicitud,
-    GthConfiguracionCorreos,
     GthSeguimiento,
     GthRevisionLongList,
     GthRevisionFinalistas,
@@ -107,48 +106,6 @@ import {
 export class GthSolicitudPersonal implements OnInit {
   anioActual = new Date().getFullYear();
   showModal = false;
-  showConfig = false;
-
-  /**
-   * Correos configurables desde la vista del solicitante (independientes entre sí):
-   *   - `aprobacion-gg`       → correo que se envía al Gerente General al registrar la solicitud.
-   *   - `solicitud`           → correo que se envía a GTH con las vacantes que el GG aprobó.
-   *   - `decision-long-list`  → correo que se envía a GTH al enviar la decisión de la long list.
-   */
-  readonly configCorreoOpciones: ConfigCorreoOpcion[] = [
-    {
-      tipo: 'aprobacion-gg',
-      label: 'Aprobación GG',
-      intro:
-        'Define a quién se le envía el correo de aprobación cuando registras una solicitud de ' +
-        'personal (normalmente el Gerente General). Es el primer paso: hasta que no apruebe, GTH ' +
-        'no recibe nada. Los principales van en «Para» y las copias en «CC». Sin un destinatario ' +
-        'principal la solicitud queda esperando y hay que reenviar el correo desde la tabla.',
-    },
-    {
-      tipo: 'solicitud',
-      label: 'Nueva solicitud',
-      intro:
-        'Define a quién de GTH se le envía el correo con las vacantes que Gerencia General ' +
-        'aprobó. Los principales van en «Para» y las copias en «CC». Cámbialos aquí para ' +
-        'pruebas y en producción sin necesidad de volver a desplegar.',
-    },
-    {
-      tipo: 'decision-long-list',
-      label: 'Decisión de long list',
-      intro:
-        'Define a quién de GTH se le notifica cuando envías tu decisión sobre la long list ' +
-        '(candidatos aprobados/rechazados). Los principales van en «Para» y las copias en «CC». ' +
-        'Es independiente del correo de nueva solicitud.',
-    },
-    {
-      tipo: 'decision-finalista',
-      label: 'Decisión de finalista',
-      intro:
-        'Define a quién de GTH se le notifica cuando apruebas o rechazas a un finalista. Los ' +
-        'principales van en «Para» y las copias en «CC». Es independiente de los otros dos correos.',
-    },
-  ];
 
   /** Requerimiento cuyo seguimiento se está viendo (null = modal cerrado). */
   seguimientoId: number | null = null;
@@ -187,6 +144,7 @@ export class GthSolicitudPersonal implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private authService: AuthService,
+    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -201,6 +159,12 @@ export class GthSolicitudPersonal implements OnInit {
   /** Botón "Configuración" del header: solo si el rol del usuario tiene la feature. */
   get botonConfiguracion() {
     return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
+  }
+
+  /** Lleva a la pantalla de configuración de correos (ya no es un modal). */
+  abrirConfiguracion(): void {
+    if (!this.puedeConfigurar) return;
+    this.router.navigate(['/gestion-gth/solicitud-personal/configuracion']);
   }
 
   ngOnInit(): void {

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { hoyIsoLocal } from '../../shared/utils/fecha-local.util';
 
 @Injectable({ providedIn: 'root' })
 export class ProgramacionAlertasService {
@@ -28,7 +29,7 @@ export class ProgramacionAlertasService {
     const token =
       typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
     if (!token || !this.tienePermiso()) return;
-    const hoy = new Date().toISOString().split('T')[0];
+    const hoy = hoyIsoLocal();
     this.http
       .get<any>(
         `${environment.apiUrl}api/v1/ssoma/salud-ocupacional/programaciones`,

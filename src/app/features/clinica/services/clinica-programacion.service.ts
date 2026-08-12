@@ -8,6 +8,7 @@ import {
   ProgramacionClinicaDto,
   ProgramacionDestinatariosPreviewDto,
 } from '../dtos/clinica.model';
+import { hoyIsoLocal } from '../../../shared/utils/fecha-local.util';
 
 function buildClinicaHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -29,7 +30,7 @@ export class ClinicaProgramacionService {
   constructor(private http: HttpClient) {}
 
   getProgramacionesHoy(clinicaId?: number): Observable<ProgramacionClinicaDto[]> {
-    const fecha = new Date().toISOString().split('T')[0];
+    const fecha = hoyIsoLocal();
     const params: Record<string, string | number> = { desde: fecha, hasta: fecha, pageSize: 500 };
     if (clinicaId) params['clinicaId'] = clinicaId;
     return this.http

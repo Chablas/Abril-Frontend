@@ -11,6 +11,7 @@ import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { SolicitudPersonalService } from '../../services/solicitud-personal.service';
 import {
+  DestinatarioSolicitud,
   ReclutamientoFormDataDto,
   SolicitudPersonalCreateDto,
   VacanteCreateDto,
@@ -41,7 +42,11 @@ export class GthNuevaSolicitud implements OnInit {
     puestos: [],
     tiposRequerimiento: [],
     proyectos: [],
+    destinatarios: { para: [], copias: [] },
   };
+
+  /** El aviso de destinatarios solo se muestra cuando ya se sabe a quién le llega (o a nadie). */
+  destinatariosCargados = false;
 
   /** Opciones del desplegable "Cantidad total de vacantes" (1..maxVacantes). */
   cantidadOptions: { id: number; nombre: string }[] = [];
@@ -68,7 +73,8 @@ export class GthNuevaSolicitud implements OnInit {
     this.loaderService.show();
     this.service.getFormData().subscribe({
       next: (data) => {
-        this.formData = data;
+        this.formData = { ...data, destinatarios: data.destinatarios ?? { para: [], copias: [] } };
+        this.destinatariosCargados = true;
         const max = data.maxVacantes || 10;
         this.cantidadOptions = Array.from({ length: max }, (_, i) => ({
           id: i + 1,
@@ -78,6 +84,20 @@ export class GthNuevaSolicitud implements OnInit {
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  // ── Aviso "a quién le llega esta solicitud" ────────────────────────
+  get destinatariosPara(): DestinatarioSolicitud[] {
+    return this.formData.destinatarios?.para ?? [];
+  }
+
+  get destinatariosCopias(): DestinatarioSolicitud[] {
+    return this.formData.destinatarios?.copias ?? [];
+  }
+
+  /** Tooltip del correo: el nombre de la persona cuando se conoce, más por qué lo recibe. */
+  etiquetaDestinatario(d: DestinatarioSolicitud): string {
+    return d.nombre ? `${d.nombre} — ${d.origen}` : d.origen;
   }
 
   private nuevaVacante(): VacanteForm {

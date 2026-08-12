@@ -84,6 +84,12 @@ export interface ArchivoStagingDto {
 
 export interface WorkerDetalleDto {
   workerId: number;
+  /**
+   * Persona de la ficha (`workers.person_id`). El formulario la usa para descartar al propio
+   * trabajador de los candidatos a jefe: una persona puede tener varias fichas en `workers`
+   * (reingreso), así que comparar solo por ficha dejaría pasar el caso.
+   */
+  personId?: number | null;
   apellidoNombre: string;
   dni?: string;
   celular?: string;

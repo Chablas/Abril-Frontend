@@ -31,6 +31,7 @@ import { WorkerHabilitacionListDto } from '../../../../dtos/trabajador.model';
 import { EmpresaContratistaListDto } from '../../../../dtos/empresa.model';
 import {
   AreaArbolNodoDto,
+  AreaArbolRevisorDto,
   JefeCandidatoDto,
   ObraOficinaStaffDto,
 } from '../../../../dtos/catalogos.model';
@@ -191,6 +192,13 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
    */
   private jefeGuardadoNombre: string | null = null;
   private jefeGuardadoEmail: string | null = null;
+
+  /**
+   * Persona de la ficha que se está editando (`workers.person_id`), del detalle. Con ella se
+   * descarta al propio trabajador de los candidatos a jefe: la misma persona puede tener varias
+   * fichas en `workers` (reingreso), así que comparar solo `workerId` dejaría pasar el caso.
+   */
+  private workerPersonId: number | null = null;
 
   readonly tipoDocumentoOpciones = [
     { value: 'DNI', label: 'DNI — Documento de identidad' },
@@ -394,6 +402,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     this.empresaContratistaNombre = '';
     this.jefeGuardadoNombre = null;
     this.jefeGuardadoEmail = null;
+    this.workerPersonId = null;
 
     // Token de carga: si el usuario cambia de trabajador antes de que responda
     // esta petición, la respuesta llega "vieja" y no debe pisar el formulario
@@ -416,6 +425,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       this.trabajadorHabService.getWorker(this.worker.workerId).subscribe({
         next: (det) => {
           if (loadToken !== this.loadToken) return;
+          this.workerPersonId = det.personId ?? null;
           this.model.celular = det.celular ?? '';
           this.model.sctr = det.sctr ?? true;
           this.model.areaScopeId = det.areaScopeId ?? null;
@@ -698,26 +708,64 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
 
   /**
    * Revisor que le tocaría al trabajador por su área, según Configuración → Revisores de Áreas.
-   * Si el área está configurada para filtrar por proyecto, manda el revisor del proyecto elegido
-   * en el formulario. Ambas cosas las resuelve el backend; acá solo se elige entre las dos.
+   * Si el área está configurada para filtrar por proyecto, mandan los revisores del proyecto
+   * elegido en el formulario.
+   *
+   * El backend manda los candidatos ya ordenados (los del nodo, después los de sus áreas
+   * superiores y al final el área de GTH); acá solo se descarta al propio trabajador. Eso importa
+   * porque los jefes de área son el revisor de su propia área: sin descartarlo, abrir la ficha del
+   * jefe de SSOMA lo mostraba como su propio jefe. Al descartarlo queda el siguiente candidato,
+   * normalmente el revisor de la gerencia de la que cuelga su área.
    */
   get revisorNombre(): string {
-    const r = this.revisorDelArea;
-    return r?.revisorNombre ?? '';
+    return this.revisorDelArea?.nombre ?? '';
   }
 
   get revisorEmail(): string {
-    const r = this.revisorDelArea;
-    return r?.revisorEmail ?? '';
+    return this.revisorDelArea?.email ?? '';
   }
 
-  private get revisorDelArea(): { revisorNombre?: string | null; revisorEmail?: string | null } | null {
+  private get revisorDelArea(): AreaArbolRevisorDto | null {
+    return this.candidatosDelArea.find((r) => !this.esElPropioTrabajador(r)) ?? null;
+  }
+
+  /** Candidatos del nodo elegido: los del proyecto si el área filtra por proyecto, o los del área. */
+  private get candidatosDelArea(): AreaArbolRevisorDto[] {
     const nodo = this.areaNodoElegido;
-    if (!nodo) return null;
-    const porProyecto = this.model.proyectoId != null
-      ? nodo.revisoresPorProyecto?.find((r) => r.proyectoId === this.model.proyectoId)
-      : undefined;
-    return porProyecto ?? nodo;
+    if (!nodo) return [];
+    const porProyecto =
+      this.model.proyectoId != null
+        ? nodo.revisoresPorProyecto?.find((r) => r.proyectoId === this.model.proyectoId)
+        : undefined;
+    return porProyecto?.revisores ?? nodo.revisores ?? [];
+  }
+
+  /**
+   * true cuando el trabajador es el revisor configurado de su propia área y por eso el campo
+   * muestra al siguiente. Se avisa en el formulario para que no se lea como un error de
+   * configuración de Revisores de Áreas.
+   */
+  get esRevisorDeSuPropiaArea(): boolean {
+    const candidatos = this.candidatosDelArea;
+    return candidatos.length > 0 && this.esElPropioTrabajador(candidatos[0]);
+  }
+
+  /**
+   * Nadie puede ser su propio jefe. Se compara por persona además de por ficha porque un
+   * reingreso deja varias filas en `workers` para la misma persona y el revisor puede estar
+   * configurado en cualquiera de ellas (misma regla que aplica el backend al notificar).
+   */
+  private esElPropioTrabajador(candidato: {
+    workerId?: number | null;
+    personId?: number | null;
+  }): boolean {
+    if (this.mode !== 'edit' || !this.worker) return false;
+    if (candidato.workerId != null && candidato.workerId === this.worker.workerId) return true;
+    return (
+      candidato.personId != null &&
+      this.workerPersonId != null &&
+      candidato.personId === this.workerPersonId
+    );
   }
 
   // ── Jefe personalizado ───────────────────────────────────────────────
@@ -729,8 +777,8 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
 
   /** Opciones del desplegable, sin el propio trabajador: nadie puede ser su propio jefe. */
   get jefesDisponibles(): JefeCandidatoDto[] {
-    const propioId = this.mode === 'edit' ? this.worker?.workerId : null;
-    return propioId != null ? this.jefes.filter((j) => j.workerId !== propioId) : this.jefes;
+    if (this.mode !== 'edit' || !this.worker) return this.jefes;
+    return this.jefes.filter((j) => !this.esElPropioTrabajador(j));
   }
 
   /** Checkbox marcado pero sin elegir a nadie: no se puede guardar en ese estado a medias. */

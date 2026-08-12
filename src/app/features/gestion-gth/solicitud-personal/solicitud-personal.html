@@ -3,7 +3,7 @@
   titulo="Solicitud de Personal"
   subtitulo="Solicita nuevas vacantes y da seguimiento a tus requerimientos."
   [botonSecundario]="botonConfiguracion"
-  (secondaryClick)="showConfig = true"
+  (secondaryClick)="abrirConfiguracion()"
   [hasExtra]="true">
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
@@ -311,13 +311,9 @@
   (saved)="onSaved()">
 </app-gth-nueva-solicitud>
 
-<!-- Configuración de destinatarios del correo de nueva solicitud (feature gestion-gth.reclutamiento.configuracion) -->
-<app-gth-configuracion-correos
-  *ngIf="showConfig && puedeConfigurar"
-  [opciones]="configCorreoOpciones"
-  titulo="CONFIGURACIÓN DE CORREOS DE RECLUTAMIENTO"
-  (closeModal)="showConfig = false">
-</app-gth-configuracion-correos>
+<!-- La configuración de correos ya no es un modal: vive en su propia pantalla
+     (/gestion-gth/solicitud-personal/configuracion), a la que lleva el botón «Configuración»
+     del header. Feature: gestion-gth.reclutamiento.configuracion. -->
 
 <!-- Modal de seguimiento del requerimiento ("Hacer seguimiento") -->
 <app-gth-seguimiento

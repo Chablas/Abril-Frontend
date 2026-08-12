@@ -44,8 +44,8 @@ export interface SubareaCatDto {
 /**
  * Un nodo del árbol de áreas (`area_scope`) para los desplegables en cascada del formulario de
  * trabajadores. El backend ya resuelve por nodo la equivalencia legacy (`area`/`subarea`/`jefatura`,
- * lo que quedará guardado si se elige el nodo) y el revisor que le tocaría al trabajador, así que
- * el formulario no replica ninguna regla ni pide nada más al cambiar de área.
+ * lo que quedará guardado si se elige el nodo) y los revisores que le tocarían al trabajador, así
+ * que el formulario no replica ninguna regla ni pide nada más al cambiar de área.
  */
 export interface AreaArbolNodoDto {
   areaScopeId: number;
@@ -57,16 +57,32 @@ export interface AreaArbolNodoDto {
   area?: string | null;
   subarea?: string | null;
   jefatura?: string | null;
-  revisorNombre?: string | null;
-  revisorEmail?: string | null;
-  /** Revisor por proyecto, solo en áreas configuradas como "filtrar por proyecto". */
+  /**
+   * Candidatos a revisor en orden de resolución: los de este nodo, después los de sus áreas
+   * superiores y al final el área de GTH. El formulario muestra el primero que no sea el propio
+   * trabajador — los jefes de área son el revisor de su área, así que sin descartarlo se verían
+   * como su propio jefe.
+   */
+  revisores: AreaArbolRevisorDto[];
+  /** Revisores por proyecto, solo en áreas configuradas como "filtrar por proyecto". */
   revisoresPorProyecto: AreaArbolRevisorProyectoDto[];
+}
+
+/**
+ * Un candidato a revisor. `workerId`/`personId` son con lo que el formulario reconoce al propio
+ * trabajador (por persona, porque un reingreso deja varias fichas para la misma persona); ambos
+ * vienen en null cuando el candidato es el área de GTH.
+ */
+export interface AreaArbolRevisorDto {
+  workerId?: number | null;
+  personId?: number | null;
+  nombre?: string | null;
+  email?: string | null;
 }
 
 export interface AreaArbolRevisorProyectoDto {
   proyectoId: number;
-  revisorNombre?: string | null;
-  revisorEmail?: string | null;
+  revisores: AreaArbolRevisorDto[];
 }
 
 /**
@@ -76,6 +92,8 @@ export interface AreaArbolRevisorProyectoDto {
  */
 export interface JefeCandidatoDto {
   workerId: number;
+  /** Persona del candidato, para descartar al propio trabajador aunque su ficha sea otra. */
+  personId?: number | null;
   fullName?: string | null;
   email?: string | null;
 }

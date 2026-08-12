@@ -466,6 +466,9 @@
               />
 
               <span class="field-hint" *ngIf="jefeEfectivoEmail">{{ jefeEfectivoEmail }}</span>
+              <span class="field-hint" *ngIf="!model.jefePersonalizado && esRevisorDeSuPropiaArea">
+                Es el revisor de su propia área, así que le corresponde el siguiente revisor válido.
+              </span>
               <span class="field-hint" *ngIf="!model.jefePersonalizado && areaScopeIdElegido && !revisorNombre">
                 Configúralo en Configuración → Revisores de Áreas.
               </span>
