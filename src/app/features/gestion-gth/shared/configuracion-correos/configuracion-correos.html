@@ -3,11 +3,13 @@
 
   <div class="flex flex-col gap-[20px] mt-[16px]">
 
-    <!-- Selector de correo (solo cuando el modal configura varios correos independientes). -->
-    <div *ngIf="modoMultiple" class="flex gap-[6px] p-[4px] rounded-[10px] bg-gray-100">
+    <!-- Selector de correo (solo cuando el modal configura varios correos independientes).
+         Grilla de 2 columnas y no una sola fila: con 4 correos las etiquetas no entran a lo
+         ancho del modal y quedaban cortadas. -->
+    <div *ngIf="modoMultiple" class="grid grid-cols-2 gap-[6px] p-[4px] rounded-[10px] bg-gray-100">
       <button *ngFor="let op of opciones" type="button"
         (click)="cambiarTipo(op)"
-        class="flex-1 h-[36px] px-[10px] rounded-[8px] text-[12.5px] font-semibold cursor-pointer transition-colors"
+        class="h-[36px] px-[10px] rounded-[8px] text-[12.5px] font-semibold cursor-pointer transition-colors"
         [ngClass]="activa?.tipo === op.tipo ? 'text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'"
         [style.background]="activa?.tipo === op.tipo ? 'var(--color-abril-standard)' : 'transparent'">
         {{ op.label }}

@@ -273,7 +273,16 @@
   .ssoma-hero__sub { display: none; }
   .ssoma-hero__center { display: none; }
   .ssoma-hero__right { padding-right: 0; }
-  .ssoma-hero__btn--ghost { display: none; }
+
+  /* Los botones ghost (Configuración, Catálogos, Exportar…) quedan SOLO con el
+     ícono, no ocultos: antes desaparecían enteros y su acción era inalcanzable
+     en móvil — en páginas donde son el único botón del header simplemente no
+     había manera de abrir eso desde el teléfono (bug real: "Configuración" de
+     Reclutamiento GTH). Lo que estorbaba era el texto, que empujaba el título
+     fuera de la vista; eso sí se sigue ocultando, igual que en el FAB primario
+     y en los botones proyectados en tabsExtra. */
+  .ssoma-hero__btn--ghost { padding: 6px 9px; }
+  .ssoma-hero__btn--ghost span { display: none; }
   .ssoma-hero__btn--primary span { display: none; }
 
   .abril-tabs__nav {

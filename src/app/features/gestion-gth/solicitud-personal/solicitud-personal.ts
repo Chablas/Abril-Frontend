@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { FabButton } from '../../../shared/components/fab-button/fab-button';
 import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
@@ -19,6 +20,8 @@ import { GthSeguimiento } from './components/seguimiento/seguimiento';
 import { GthRevisionLongList } from './components/revision-long-list/revision-long-list';
 import { GthRevisionFinalistas } from './components/revision-finalistas/revision-finalistas';
 import { SolicitudPersonalService } from './services/solicitud-personal.service';
+import { AprobacionGerenciaService } from '../shared/services/aprobacion-gerencia.service';
+import { estadoColors } from '../shared/estado-colors';
 import {
   GestionCandidatoCard,
   ResumenSolicitantePanel,
@@ -53,6 +56,52 @@ import {
        clase global .abril-table-wrap sigue con scroll interno para las demás
        páginas. */
     .abril-table-wrap { flex: 0 0 auto; overflow: visible; }
+
+    /* ── Responsive ───────────────────────────────────────────────────────
+       Las 7 columnas de la tabla no entran por debajo de ~1024px y, como acá
+       .abril-table-wrap no recorta (overflow:visible, ver arriba), ese
+       desborde lo terminaba scrolleando .page-container: al desplazarse para
+       ver la tabla se arrastraba de lado TODA la vista — tarjetas de resumen
+       y gestión de candidatos incluidas. Debajo de ese ancho la tabla se
+       cambia por tarjetas, mismo patrón que Reclutamiento GTH y que
+       Revisiones/Observaciones de Arquitectura Comercial. La lista es la
+       misma: comparten filtro, paginación y acción. */
+    .sp-cards { display: none; }
+
+    @media (max-width: 1023.98px) {
+      .abril-table-wrap { display: none; }
+      .sp-cards { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    }
+
+    /* Tablet: una sola columna de tarjetas queda enorme y vacía; con auto-fill
+       entran dos por fila sin cambiar nada del layout del teléfono. */
+    @media (min-width: 640px) and (max-width: 1023.98px) {
+      .sp-cards { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+    }
+
+    /* Teléfono. Todo acotado a este @media para no alterar el desktop. */
+    @media (max-width: 639.98px) {
+      .page-container { gap: 12px; }
+
+      /* Las 4 tarjetas de resumen apiladas ocupaban ~400px de alto, casi una
+         pantalla completa antes de ver la lista. */
+      .sp-kpis { gap: 10px; }
+      .sp-kpi { padding: 10px 11px; gap: 10px; }
+      .sp-kpi-icon { width: 34px; height: 34px; border-radius: 8px; }
+      .sp-kpi-svg { width: 18px; height: 18px; }
+      .sp-kpi-value { font-size: 20px; }
+      .sp-kpi-label { font-size: 11.5px; margin-top: 3px; line-height: 1.2; }
+      .sp-kpi-sub { font-size: 10px; line-height: 1.2; }
+
+      /* "Gestión de candidatos": el botón es largo ("Revisar long list y CVs")
+         y era shrink-0, así que en fila se quedaba con casi todo el ancho y
+         dejaba el texto de la izquierda reducido a unos pocos píxeles. En
+         columna, el bloque de texto usa el ancho completo y el botón queda
+         debajo como acción de la tarjeta. */
+      .sp-cand-box { padding: 12px; }
+      .sp-cand-row { flex-direction: column; align-items: stretch; gap: 12px; padding: 12px; }
+      .sp-cand-btn { width: 100%; }
+    }
   `],
 })
 export class GthSolicitudPersonal implements OnInit {
@@ -62,16 +111,26 @@ export class GthSolicitudPersonal implements OnInit {
 
   /**
    * Correos configurables desde la vista del solicitante (independientes entre sí):
-   *   - `solicitud`           → correo que se envía a GTH al registrar una nueva solicitud.
+   *   - `aprobacion-gg`       → correo que se envía al Gerente General al registrar la solicitud.
+   *   - `solicitud`           → correo que se envía a GTH con las vacantes que el GG aprobó.
    *   - `decision-long-list`  → correo que se envía a GTH al enviar la decisión de la long list.
    */
   readonly configCorreoOpciones: ConfigCorreoOpcion[] = [
     {
+      tipo: 'aprobacion-gg',
+      label: 'Aprobación GG',
+      intro:
+        'Define a quién se le envía el correo de aprobación cuando registras una solicitud de ' +
+        'personal (normalmente el Gerente General). Es el primer paso: hasta que no apruebe, GTH ' +
+        'no recibe nada. Los principales van en «Para» y las copias en «CC». Sin un destinatario ' +
+        'principal la solicitud queda esperando y hay que reenviar el correo desde la tabla.',
+    },
+    {
       tipo: 'solicitud',
       label: 'Nueva solicitud',
       intro:
-        'Define a quién se le envía el correo cuando registras una nueva solicitud de personal ' +
-        '(va a GTH). Los principales van en «Para» y las copias en «CC». Cámbialos aquí para ' +
+        'Define a quién de GTH se le envía el correo con las vacantes que Gerencia General ' +
+        'aprobó. Los principales van en «Para» y las copias en «CC». Cámbialos aquí para ' +
         'pruebas y en producción sin necesidad de volver a desplegar.',
     },
     {
@@ -124,9 +183,11 @@ export class GthSolicitudPersonal implements OnInit {
 
   constructor(
     private service: SolicitudPersonalService,
+    private aprobacionGg: AprobacionGerenciaService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private authService: AuthService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   /** feature_key que habilita la configuración (dinámico vía role_feature en BD). */
@@ -219,6 +280,13 @@ export class GthSolicitudPersonal implements OnInit {
     );
   }
 
+  /** Mensaje de lista vacía, compartido por la tabla (desktop) y las tarjetas (móvil). */
+  get mensajeVacio(): string {
+    return this.searchText.trim()
+      ? 'Sin resultados para la búsqueda.'
+      : 'Aún no has registrado solicitudes de vacante. Usa el botón «Nueva solicitud».';
+  }
+
   // ── Paginación (cliente) ───────────────────────────────────────────────
   get currentPage(): number {
     return this.pager.currentPage;
@@ -237,11 +305,47 @@ export class GthSolicitudPersonal implements OnInit {
   }
 
   // ── Colores del badge de estado ────────────────────────────────────────
-  estadoColors(codigo: string): { bg: string; text: string } {
-    switch (codigo) {
-      case 'NUEVO':      return { bg: '#DBEAFE', text: '#1D4ED8' };
-      case 'CERRADO':    return { bg: '#E0E7FF', text: '#3730A3' };
-      default:           return { bg: '#F3F4F6', text: '#374151' };
-    }
+  /** Mismo mapa que usa la bandeja de GTH: un estado se pinta igual en todo el módulo. */
+  readonly estadoColors = estadoColors;
+
+  // ── Reenvío del correo a Gerencia General ──────────────────────────────
+  /**
+   * El requerimiento está esperando la decisión de Gerencia General: se puede reenviar el correo
+   * (sirve cuando el envío automático falló o hubo que corregir los destinatarios).
+   */
+  esperandoGerencia(s: SolicitudVacanteListItem): boolean {
+    return s.estadoCodigo === 'APROBACION_GG';
+  }
+
+  async reenviarAGerencia(s: SolicitudVacanteListItem): Promise<void> {
+    const confirm = await Swal.fire({
+      title: '¿Reenviar a Gerencia General?',
+      text: `Se volverá a enviar el correo de aprobación de ${s.codigo} con el mismo enlace.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, reenviar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: 'var(--color-abril-standard)',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.loaderService.show();
+    this.aprobacionGg.reenviar(s.requerimientoId).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        Swal.fire({
+          title: 'Correo reenviado',
+          text: res.message,
+          icon: 'success',
+          confirmButtonColor: 'var(--color-abril-standard)',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
   }
 }

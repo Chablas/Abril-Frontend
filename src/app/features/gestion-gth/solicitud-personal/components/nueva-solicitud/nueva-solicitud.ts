@@ -145,7 +145,14 @@ export class GthNuevaSolicitud implements OnInit {
     this.service.create(payload, this.sustento?.file ?? null).subscribe({
       next: (res) => {
         this.loaderService.hide();
-        Swal.fire({ title: res.message, icon: 'success', draggable: true });
+        // El correo al Gerente General es el que arranca el flujo: si no salió hay que avisarlo
+        // como advertencia (la solicitud sí quedó registrada y se puede reenviar desde la tabla).
+        Swal.fire({
+          title: res.correoGerenciaEnviado ? 'Solicitud registrada' : 'Solicitud registrada sin correo',
+          text: res.message,
+          icon: res.correoGerenciaEnviado ? 'success' : 'warning',
+          draggable: true,
+        });
         this.saved.emit();
         this.closeModal.emit();
       },

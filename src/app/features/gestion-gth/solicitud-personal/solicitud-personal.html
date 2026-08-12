@@ -16,65 +16,68 @@
   <!-- Total registradas → pendientes de que GTH las tome → GTH trabajándolas → cerradas.
        Los contadores vienen calculados del backend (`resumen`) porque saber qué fase le
        toca a quién es regla del pipeline de reclutamiento, no de esta vista. -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-[16px]">
+  <!-- 2 columnas ya en teléfono (antes 1): apiladas ocupaban casi una pantalla completa
+       antes de llegar a la lista. Las medidas compactas de móvil van en el CSS del
+       componente (.sp-kpi*), no acá, para no tocar el desktop. -->
+  <div class="sp-kpis grid grid-cols-2 xl:grid-cols-4 gap-[16px]">
 
     <!-- Total de solicitudes -->
-    <div class="flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+    <div class="sp-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
          style="border-color:var(--color-abril-border)">
-      <div class="flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DBEAFE">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.8">
+      <div class="sp-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DBEAFE">
+        <svg class="sp-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.8">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6M9 8h6M5 21h14a2 2 0 002-2V7l-5-5H5a2 2 0 00-2 2v15a2 2 0 002 2z" />
         </svg>
       </div>
-      <div class="flex flex-col">
-        <span class="text-[26px] font-bold leading-none text-gray-800">{{ resumen.totalRegistradas }}</span>
-        <span class="text-[13px] font-semibold text-gray-700 mt-[6px]">Mis solicitudes</span>
-        <span class="text-[11px] text-gray-400">Total registradas</span>
+      <div class="flex flex-col min-w-0">
+        <span class="sp-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.totalRegistradas }}</span>
+        <span class="sp-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Mis solicitudes</span>
+        <span class="sp-kpi-sub text-[11px] text-gray-400">Total registradas</span>
       </div>
     </div>
 
     <!-- Pendientes sin respuesta -->
-    <div class="flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+    <div class="sp-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
          style="border-color:var(--color-abril-border)">
-      <div class="flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#FEF3C7">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.8">
+      <div class="sp-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#FEF3C7">
+        <svg class="sp-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.8">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </div>
-      <div class="flex flex-col">
-        <span class="text-[26px] font-bold leading-none text-gray-800">{{ resumen.pendientes }}</span>
-        <span class="text-[13px] font-semibold text-gray-700 mt-[6px]">Pendientes</span>
-        <span class="text-[11px] text-gray-400">Sin respuesta</span>
+      <div class="flex flex-col min-w-0">
+        <span class="sp-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.pendientes }}</span>
+        <span class="sp-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Pendientes</span>
+        <span class="sp-kpi-sub text-[11px] text-gray-400">Sin respuesta</span>
       </div>
     </div>
 
     <!-- En revisión: el siguiente paso del proceso le toca a GTH -->
-    <div class="flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+    <div class="sp-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
          style="border-color:var(--color-abril-border)">
-      <div class="flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#EDE9FE">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6D28D9" stroke-width="1.8">
+      <div class="sp-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#EDE9FE">
+        <svg class="sp-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6D28D9" stroke-width="1.8">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2.5m0 3.5h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </div>
-      <div class="flex flex-col">
-        <span class="text-[26px] font-bold leading-none text-gray-800">{{ resumen.enRevisionGth }}</span>
-        <span class="text-[13px] font-semibold text-gray-700 mt-[6px]">En revisión</span>
-        <span class="text-[11px] text-gray-400">GTH evaluando</span>
+      <div class="flex flex-col min-w-0">
+        <span class="sp-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.enRevisionGth }}</span>
+        <span class="sp-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">En revisión</span>
+        <span class="sp-kpi-sub text-[11px] text-gray-400">GTH evaluando</span>
       </div>
     </div>
 
     <!-- Aprobadas: procesos cerrados del año en curso -->
-    <div class="flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+    <div class="sp-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
          style="border-color:var(--color-abril-border)">
-      <div class="flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DCFCE7">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="1.8">
+      <div class="sp-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DCFCE7">
+        <svg class="sp-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="1.8">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       </div>
-      <div class="flex flex-col">
-        <span class="text-[26px] font-bold leading-none text-gray-800">{{ resumen.aprobadas }}</span>
-        <span class="text-[13px] font-semibold text-gray-700 mt-[6px]">Aprobadas</span>
-        <span class="text-[11px] text-gray-400">Este período</span>
+      <div class="flex flex-col min-w-0">
+        <span class="sp-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.aprobadas }}</span>
+        <span class="sp-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Aprobadas</span>
+        <span class="sp-kpi-sub text-[11px] text-gray-400">Este período</span>
       </div>
     </div>
 
@@ -85,19 +88,22 @@
        "Long list enviada por GTH" (decide qué CVs pasan) y "Finalistas enviados por GTH"
        (informe de las entrevistas, solo lectura). -->
   <div *ngIf="gestionCandidatos.length > 0"
-       class="rounded-[12px] border p-[16px]"
+       class="sp-cand-box rounded-[12px] border p-[16px]"
        style="border-color:#bfdbfe;background:var(--color-abril-logo-blue-light)">
 
-    <div class="flex items-center justify-between mb-[12px]">
+    <div class="flex items-center justify-between gap-[10px] mb-[12px]">
       <h2 class="text-[15px] font-bold" style="color:var(--color-abril-logo-blue)">Gestión de candidatos</h2>
-      <span class="text-[12px] font-medium" style="color:var(--color-abril-logo-blue)">
+      <span class="text-[12px] font-medium shrink-0" style="color:var(--color-abril-logo-blue)">
         {{ gestionCandidatos.length }} por revisar
       </span>
     </div>
 
     <div class="flex flex-col gap-[10px]">
+      <!-- En móvil la fila pasa a columna y el botón ocupa el ancho completo (.sp-cand-row
+           en el CSS del componente): el texto del botón no se parte y el bloque de la
+           izquierda deja de quedar espachurrado a unos pocos píxeles. -->
       <div *ngFor="let c of gestionCandidatos"
-           class="flex items-center justify-between gap-[16px] rounded-[10px] bg-white border px-[16px] py-[13px]"
+           class="sp-cand-row flex items-center justify-between gap-[16px] rounded-[10px] bg-white border px-[16px] py-[13px]"
            style="border-color:var(--color-abril-border)">
 
         <div class="flex items-start gap-[12px] min-w-0">
@@ -134,7 +140,7 @@
         </div>
 
         <button type="button" (click)="abrirGestionCandidatos(c)"
-          class="inline-flex items-center gap-[7px] h-[38px] px-[16px] rounded-[8px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 shrink-0"
+          class="sp-cand-btn inline-flex items-center justify-center gap-[7px] h-[38px] px-[16px] rounded-[8px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 shrink-0"
           style="background:var(--color-abril-logo-blue)">
           <i class="ti ti-eye text-[16px]"></i>
           {{ c.tipo === 'FINALISTAS' ? 'Revisar finalistas' : 'Revisar long list y CVs' }}
@@ -144,9 +150,9 @@
   </div>
 
   <!-- ── Tabla: Mis solicitudes de vacante ─────────────────────────────── -->
-  <div class="flex items-center justify-between">
+  <div class="flex items-center justify-between gap-[10px]">
     <h2 class="text-[15px] font-semibold text-gray-700">Mis solicitudes de vacante</h2>
-    <span class="text-[12px] text-gray-400">{{ filteredSolicitudes.length }} registro{{ filteredSolicitudes.length === 1 ? '' : 's' }}</span>
+    <span class="text-[12px] text-gray-400 shrink-0">{{ filteredSolicitudes.length }} registro{{ filteredSolicitudes.length === 1 ? '' : 's' }}</span>
   </div>
 
   <div class="abril-table-wrap">
@@ -165,11 +171,7 @@
       <tbody>
 
         <tr *ngIf="filteredSolicitudes.length === 0">
-          <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">
-            {{ searchText.trim()
-              ? 'Sin resultados para la búsqueda.'
-              : 'Aún no has registrado solicitudes de vacante. Usa el botón «Nueva solicitud».' }}
-          </td>
+          <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
         </tr>
 
         <tr *ngFor="let s of pagedSolicitudes"
@@ -199,18 +201,94 @@
           </td>
 
           <td class="text-center whitespace-nowrap">
-            <button type="button" (click)="abrirSeguimiento(s)"
-              class="inline-flex items-center gap-[6px] h-[30px] px-[12px] rounded-[7px] text-[12px] font-medium cursor-pointer transition-colors"
-              style="background:var(--color-abril-logo-blue-light);color:var(--color-abril-logo-blue);border:0.5px solid #a9c9e6"
-              title="Ver el estado y las fases del requerimiento">
-              <i class="ti ti-eye text-[15px]"></i>
-              Hacer seguimiento
-            </button>
+            <div class="inline-flex items-center gap-[6px]">
+              <button type="button" (click)="abrirSeguimiento(s)"
+                class="inline-flex items-center gap-[6px] h-[30px] px-[12px] rounded-[7px] text-[12px] font-medium cursor-pointer transition-colors"
+                style="background:var(--color-abril-logo-blue-light);color:var(--color-abril-logo-blue);border:0.5px solid #a9c9e6"
+                title="Ver el estado y las fases del requerimiento">
+                <i class="ti ti-eye text-[15px]"></i>
+                Hacer seguimiento
+              </button>
+
+              <!-- Solo mientras espera la decisión del GG: cubre el caso de que el correo
+                   automático no haya podido salir. -->
+              <button *ngIf="esperandoGerencia(s)" type="button" (click)="reenviarAGerencia(s)"
+                class="inline-flex items-center justify-center w-[30px] h-[30px] rounded-[7px] cursor-pointer transition-colors hover:opacity-80"
+                style="background:#FEF3C7;color:#B45309;border:0.5px solid #FCD34D"
+                title="Reenviar el correo de aprobación a Gerencia General">
+                <i class="ti ti-mail-forward text-[15px]"></i>
+              </button>
+            </div>
           </td>
 
         </tr>
       </tbody>
     </table>
+  </div>
+
+  <!-- ── Las mismas solicitudes, en tarjetas (móvil y tablet) ─────────────
+       Reemplazan a la tabla por debajo de 1024px (ver el CSS del componente):
+       las 7 columnas no entran en ese ancho y el desborde arrastraba de lado
+       toda la página. Comparten filtro, paginación y acción con la tabla: es
+       la misma lista, solo cambia cómo se dibuja. -->
+  <div class="sp-cards">
+
+    <div *ngIf="filteredSolicitudes.length === 0" class="text-center py-[32px] text-gray-400 text-sm">
+      {{ mensajeVacio }}
+    </div>
+
+    <div *ngFor="let s of pagedSolicitudes"
+         class="rounded-[10px] border bg-white px-[12px] py-[11px]"
+         style="border-color:var(--color-abril-border)">
+
+      <!-- Código + estado -->
+      <div class="flex items-start justify-between gap-[8px]">
+        <span class="text-[12px] font-bold text-gray-700 whitespace-nowrap">{{ s.codigo }}</span>
+        <app-status-badge
+          [text]="s.estadoNombre"
+          [bgColor]="estadoColors(s.estadoCodigo).bg"
+          [textColor]="estadoColors(s.estadoCodigo).text" />
+      </div>
+
+      <!-- Posición + justificación -->
+      <p class="text-[13.5px] font-semibold text-gray-800 mt-[5px] leading-snug">{{ s.puesto | titleCase }}</p>
+      <p *ngIf="s.justificacion" class="text-[11.5px] text-gray-400 mt-[1px] truncate" [title]="s.justificacion">
+        {{ s.justificacion }}
+      </p>
+
+      <!-- Área / proyecto / envío -->
+      <div class="grid grid-cols-2 gap-x-[10px] gap-y-[7px] mt-[9px]">
+        <div class="min-w-0">
+          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Área</div>
+          <div class="text-[12px] text-gray-600 truncate">{{ (s.area | titleCase) || '—' }}</div>
+        </div>
+        <div class="min-w-0">
+          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Proyecto / Obra</div>
+          <div class="text-[12px] text-gray-600 truncate">{{ (s.proyectoObra | titleCase) || '—' }}</div>
+        </div>
+        <div>
+          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Enviado</div>
+          <div class="text-[12px] text-gray-600">{{ s.enviado | date:'dd/MM/yyyy' }}</div>
+        </div>
+      </div>
+
+      <button type="button" (click)="abrirSeguimiento(s)"
+        class="w-full inline-flex items-center justify-center gap-[6px] h-[36px] mt-[11px] rounded-[7px] text-[12.5px] font-medium cursor-pointer transition-colors"
+        style="background:var(--color-abril-logo-blue-light);color:var(--color-abril-logo-blue);border:0.5px solid #a9c9e6"
+        title="Ver el estado y las fases del requerimiento">
+        <i class="ti ti-eye text-[15px]"></i>
+        Hacer seguimiento
+      </button>
+
+      <button *ngIf="esperandoGerencia(s)" type="button" (click)="reenviarAGerencia(s)"
+        class="w-full inline-flex items-center justify-center gap-[6px] h-[36px] mt-[7px] rounded-[7px] text-[12.5px] font-medium cursor-pointer transition-colors"
+        style="background:#FEF3C7;color:#B45309;border:0.5px solid #FCD34D"
+        title="Reenviar el correo de aprobación a Gerencia General">
+        <i class="ti ti-mail-forward text-[15px]"></i>
+        Reenviar a Gerencia General
+      </button>
+
+    </div>
   </div>
 
   <div class="shrink-0 max-w-[440px]">
