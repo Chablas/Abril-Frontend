@@ -38,7 +38,9 @@
   background: color-mix(in srgb, var(--ss-accent, var(--color-abril-primary)) 26%, white);
 }
 
-/* fullText=true → muestra el texto completo (sin "…"), permitiendo que se ajuste en varias líneas. */
+/* fullText=true → muestra el texto completo (sin "…"), permitiendo que se ajuste en varias líneas.
+   El crecimiento es solo vertical: el ancho sigue siendo el del combobox (el desplegable es
+   `left-0 right-0` sobre el trigger), así que un texto largo nunca empuja a los campos vecinos. */
 .ss-trigger-label.ss-full,
 .ss-option.ss-full {
   white-space: normal;
@@ -46,4 +48,13 @@
   text-overflow: clip;
   max-width: none;
   word-break: break-word;
+  line-height: 1.35;
+}
+
+/* El label del trigger es un flex item: sin `min-width: 0` su mínimo automático es la palabra
+   más larga y un texto sin espacios terminaría empujando la flecha/✕ fuera del botón. */
+.ss-trigger-label.ss-full {
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: left;
 }

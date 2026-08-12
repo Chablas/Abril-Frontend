@@ -18,6 +18,22 @@ export interface PuestoAdminDto {
   categoriaNombre: string | null;
   orden: number;
   activo: boolean;
+  /**
+   * Fichas de trabajadores que usan este puesto. Es lo que decide si se puede
+   * eliminar: un puesto en uso solo se puede desactivar.
+   */
+  cantidadTrabajadores: number;
+}
+
+/**
+ * Fila del detalle "trabajadores de este puesto". Es una ficha de workers, no una persona:
+ * quien reingresó tiene más de una y puede salir dos veces si ambas apuntan al mismo
+ * puesto — a propósito, para que la lista cuadre con `cantidadTrabajadores`.
+ */
+export interface PuestoTrabajadorDto {
+  workerId: number;
+  nombreCompleto: string;
+  emailCorporativo: string | null;
 }
 
 /** Carga inicial de la pantalla: las dos listas en una sola respuesta. */
@@ -30,4 +46,14 @@ export interface CatalogosAdminDto {
 export interface PuestoUpsertRequest {
   nombre: string;
   categoriaId: number | null;
+}
+
+/**
+ * Resultado de eliminar en bloque. `omitidos` son los seleccionados que quedaron con
+ * trabajadores usándolos entre la carga de la pantalla y el envío: se saltan en vez de
+ * hacer fallar todo el lote.
+ */
+export interface PuestosEliminarResultDto {
+  eliminados: number;
+  omitidos: number;
 }

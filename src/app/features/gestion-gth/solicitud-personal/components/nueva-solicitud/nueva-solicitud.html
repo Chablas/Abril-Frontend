@@ -23,6 +23,7 @@
         placeholder="Selecciona la cantidad"
         [options]="cantidadOptions"
         valueField="id" displayField="nombre"
+        [fullText]="true"
         [value]="cantidad"
         (valueChange)="onCantidadChange($event)" />
       <p class="text-[11px] text-gray-400">Se generará un bloque para completar los datos de cada vacante.</p>
@@ -56,6 +57,7 @@
         <div class="flex flex-col gap-[4px]">
           <app-search-select label="Puesto" placeholder="Selecciona puesto"
             [options]="formData.puestos" valueField="id" displayField="nombre"
+            [fullText]="true"
             [(value)]="v.puestoId" />
           <p *ngIf="submitted && !v.puestoId" class="text-xs text-red-500">Campo requerido</p>
         </div>
@@ -63,6 +65,7 @@
         <div class="flex flex-col gap-[4px]">
           <app-search-select label="Tipo de requerimiento" placeholder="Selecciona tipo"
             [options]="formData.tiposRequerimiento" valueField="id" displayField="nombre"
+            [fullText]="true"
             [(value)]="v.tipoRequerimientoId" />
           <p *ngIf="submitted && !v.tipoRequerimientoId" class="text-xs text-red-500">Campo requerido</p>
         </div>
@@ -70,6 +73,7 @@
         <div class="flex flex-col gap-[4px]">
           <app-search-select label="Proyecto / Obra" placeholder="Buscar proyecto..."
             [options]="formData.proyectos" valueField="id" displayField="nombre"
+            [fullText]="true"
             [(value)]="v.projectId" />
           <p *ngIf="submitted && !v.projectId" class="text-xs text-red-500">Campo requerido</p>
         </div>
