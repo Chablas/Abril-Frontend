@@ -1,0 +1,173 @@
+<app-abril-modal-panel
+  [titulo]="soloLectura ? 'Decisión registrada' : 'Aprobación de solicitud de personal'"
+  [subtitulo]="data ? ((data.area | titleCase) || '') : ''"
+  icono="ti-gavel"
+  variant="blue"
+  width="860px"
+  (closeModal)="closeModal.emit()">
+
+  @if (!cargando && data) {
+
+    <!-- ── Aviso de estado ─────────────────────────────────────────────── -->
+    @if (soloLectura) {
+      <div class="ad-note ad-note--done">
+        <i class="ti ti-lock"></i>
+        <span>
+          Esta solicitud ya fue decidida el {{ data.decididoEn | date:'dd/MM/yyyy HH:mm' }}
+          @if (data.decididoPor) { por <b>{{ data.decididoPor | titleCase }}</b> }.
+          Se muestra tal como quedó registrada; no admite más cambios.
+        </span>
+      </div>
+    } @else {
+      <div class="ad-note">
+        <i class="ti ti-info-circle"></i>
+        <span>
+          Marca <b>Aprobar</b> o <b>Rechazar</b> en cada vacante. Solo las aprobadas se envían a
+          Gestión de Talento Humano.
+        </span>
+      </div>
+    }
+
+    <!-- ── Datos de la solicitud ───────────────────────────────────────── -->
+    <h3 class="ad-section-title">Datos de la solicitud</h3>
+
+    <div class="ad-meta">
+      <div>
+        <div class="ad-meta-label">Área solicitante</div>
+        <div class="ad-meta-value">{{ (data.area | titleCase) || '—' }}</div>
+      </div>
+      <div>
+        <div class="ad-meta-label">Solicitante</div>
+        <div class="ad-meta-value">{{ (data.solicitanteNombre | titleCase) || '—' }}</div>
+      </div>
+      <div>
+        <div class="ad-meta-label">Fecha de registro</div>
+        <div class="ad-meta-value">{{ data.enviado | date:'dd/MM/yyyy' }}</div>
+      </div>
+      <div>
+        <div class="ad-meta-label">Vacantes solicitadas</div>
+        <div class="ad-meta-value">{{ vacantes.length }}</div>
+      </div>
+    </div>
+
+    @if (data.justificacion) {
+      <div class="ad-block">
+        <div class="ad-meta-label">Justificación</div>
+        <p class="ad-block-text">{{ data.justificacion }}</p>
+      </div>
+    }
+
+    @if (data.sustentoUrl) {
+      <div class="ad-block">
+        <div class="ad-meta-label">Sustento adjunto</div>
+        <a class="ad-link" [href]="data.sustentoUrl" target="_blank" rel="noopener">
+          <i class="ti ti-paperclip"></i>
+          {{ data.sustentoNombre || 'Ver documento' }}
+        </a>
+      </div>
+    }
+
+    <!-- ── Vacantes ────────────────────────────────────────────────────── -->
+    <div class="ad-vac-head">
+      <h3 class="ad-section-title ad-section-title--flush">
+        {{ soloLectura ? 'Vacantes de la solicitud' : 'Vacantes por decidir' }}
+      </h3>
+
+      @if (!soloLectura && vacantes.length > 1) {
+        <div class="ad-bulk">
+          <button type="button" class="ad-bulk-btn ad-bulk-btn--ok" (click)="marcarTodas(true)">
+            <i class="ti ti-checks"></i> Aprobar todas
+          </button>
+          <button type="button" class="ad-bulk-btn ad-bulk-btn--no" (click)="marcarTodas(false)">
+            <i class="ti ti-x"></i> Rechazar todas
+          </button>
+        </div>
+      }
+    </div>
+
+    <div class="ad-vac-list">
+      @for (v of vacantes; track v.requerimientoId) {
+        <div class="ad-vac"
+             [class.ad-vac--ok]="decision(v) === true"
+             [class.ad-vac--no]="decision(v) === false">
+
+          <div class="ad-vac-info">
+            <div class="ad-vac-top">
+              <span class="ad-vac-code">{{ v.codigo }}</span>
+              <span class="ad-vac-tag">{{ v.tipoRequerimiento | titleCase }}</span>
+            </div>
+            <p class="ad-vac-puesto">{{ v.puesto | titleCase }}</p>
+            <div class="ad-vac-detail">
+              <span><i class="ti ti-building-community"></i> {{ (v.proyectoObra | titleCase) || '—' }}</span>
+              <span><i class="ti ti-calendar-event"></i> Ingreso: {{ v.fechaRequeridaIngreso | date:'dd/MM/yyyy' }}</span>
+              @if (v.trabajadorReemplazado) {
+                <span><i class="ti ti-arrows-exchange"></i> Reemplaza a {{ v.trabajadorReemplazado | titleCase }}</span>
+              }
+            </div>
+          </div>
+
+          @if (soloLectura) {
+            <div class="ad-vac-result" [style.color]="v.aprobado ? '#15803D' : '#B91C1C'">
+              <i class="ti" [ngClass]="v.aprobado ? 'ti-circle-check' : 'ti-circle-x'"></i>
+              {{ v.aprobado ? 'Aprobada' : 'Rechazada' }}
+            </div>
+          } @else {
+            <div class="ad-toggle-row">
+              <button type="button" class="ad-toggle ad-toggle--ok"
+                      [class.ad-toggle--on]="decision(v) === true"
+                      (click)="marcar(v, true)">
+                <i class="ti ti-check"></i> Aprobar
+              </button>
+              <button type="button" class="ad-toggle ad-toggle--no"
+                      [class.ad-toggle--on]="decision(v) === false"
+                      (click)="marcar(v, false)">
+                <i class="ti ti-x"></i> Rechazar
+              </button>
+            </div>
+          }
+
+        </div>
+      }
+    </div>
+
+    <!-- ── Comentario ──────────────────────────────────────────────────── -->
+    @if (soloLectura) {
+      @if (data.comentario) {
+        <div class="ad-block">
+          <div class="ad-meta-label">Comentario de Gerencia</div>
+          <p class="ad-block-text">{{ data.comentario }}</p>
+        </div>
+      }
+    } @else {
+      <div class="abril-field ad-field">
+        <label class="abril-field-label" for="ad-comentario">Comentario (opcional)</label>
+        <textarea id="ad-comentario" class="abril-field-input ad-textarea" rows="3"
+                  [(ngModel)]="comentario"
+                  placeholder="Ej. Aprobado con la condición de cubrir primero la vacante de obra."></textarea>
+      </div>
+      <p class="ad-hint">Lo verá Gestión de Talento Humano junto con tu decisión.</p>
+    }
+
+  }
+
+  <!-- ── Footer ────────────────────────────────────────────────────────── -->
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="ad-btn ad-btn--ghost" (click)="closeModal.emit()">
+      {{ soloLectura ? 'Cerrar' : 'Cancelar' }}
+    </button>
+
+    @if (!cargando && data && !soloLectura) {
+      <div class="ad-footer-right">
+        <span class="ad-footer-text" [class.ad-footer-text--warn]="pendientes > 0">
+          {{ resumenDecision }}
+        </span>
+        <button type="button" class="ad-btn ad-btn--primary"
+                [disabled]="!puedeConfirmar" (click)="confirmar()">
+          <i class="ti ti-send"></i>
+          {{ enviando ? 'Registrando…' : 'Confirmar decisión' }}
+        </button>
+      </div>
+    }
+  </div>
+
+</app-abril-modal-panel>

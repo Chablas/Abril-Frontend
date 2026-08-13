@@ -41,6 +41,29 @@ export const GESTION_GTH_ROUTES: Routes = [
     },
   },
   {
+    // Vista de Gerencia: aprueba o rechaza las solicitudes de personal y deja el
+    // historial de decisiones. Reemplaza a la antigua página pública por token.
+    path: 'aprobaciones',
+    loadComponent: () => import('./aprobaciones/aprobaciones').then((m) => m.GthAprobaciones),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'APROBACIONES',
+      featureKey: 'gestion-gth.aprobaciones',
+    },
+  },
+  {
+    // Misma pantalla, con una solicitud abierta: es la URL del enlace del correo a
+    // Gerencia. Si no hay sesión, el authGuard manda al login con esta URL como
+    // returnUrl y el login devuelve al usuario justo acá.
+    path: 'aprobaciones/:id',
+    loadComponent: () => import('./aprobaciones/aprobaciones').then((m) => m.GthAprobaciones),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'APROBACIONES',
+      featureKey: 'gestion-gth.aprobaciones',
+    },
+  },
+  {
     // Configuración de los correos del flujo: qué correos se envían y a quién.
     // Misma feature que ya habilitaba el botón «Configuración» de la pantalla anterior.
     path: 'solicitud-personal/configuracion',

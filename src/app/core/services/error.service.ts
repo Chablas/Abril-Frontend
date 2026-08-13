@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { Router } from '@angular/router';
 import { LoaderService } from './loader.service';
+import { ReturnUrlService } from '../auth/return-url.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,8 @@ export class ErrorService {
 
   constructor(
     private router: Router,
-    private loaderService: LoaderService
+    private loaderService: LoaderService,
+    private returnUrlService: ReturnUrlService,
   ) {}
 
   handleError(err: HttpErrorResponse) {
@@ -31,7 +33,9 @@ export class ErrorService {
       localStorage.removeItem('contratista_scope');
       localStorage.removeItem('contratista_proyectos');
       localStorage.removeItem('session_token');
-      this.router.navigate(['/auth/login']);
+      // Se lleva a dónde estaba: al volver a iniciar sesión regresa a esa misma
+      // pantalla en vez de aterrizar en el landing por defecto.
+      this.returnUrlService.goToLogin(this.router.url);
       return;
     }
 

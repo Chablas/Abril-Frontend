@@ -208,15 +208,6 @@ export const routes: Routes = [
   },
 
   {
-    // Aprobación pública de Gerencia General de una solicitud de personal (acceso por token
-    // enviado al correo, sin login). Acepta ?accion=aprobar-todo|revisar|rechazar-todo.
-    path: 'aprobacion-gerencia/solicitud',
-    loadComponent: () =>
-      import('./features/gestion-gth/aprobacion-gerencia/aprobacion-gerencia')
-      .then(m => m.AprobacionGerencia)
-  },
-
-  {
     path: 'registros-modelo',
     loadComponent: () =>
       import('./features/habilitacion/pages/registros-modelo/registros-modelo')

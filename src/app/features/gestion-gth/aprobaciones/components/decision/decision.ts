@@ -1,45 +1,49 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { TitleCasePipe } from '../../../shared/pipes/title-case.pipe';
-import { AprobacionGerenciaService } from '../shared/services/aprobacion-gerencia.service';
-import { AprobacionGgPublico, AprobacionGgVacante } from '../shared/dtos/aprobacion-gerencia.dto';
+import { AbrilModalPanel } from '../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
+import { LoaderService } from '../../../../../core/services/loader.service';
+import { ErrorService } from '../../../../../core/services/error.service';
+import { AprobacionesService } from '../../services/aprobaciones.service';
+import { AprobacionDetalle, AprobacionVacante } from '../../dtos/aprobaciones.dto';
 
 /**
- * Página PÚBLICA de aprobación de Gerencia General (acceso por token, sin login). Es a donde
- * llegan los tres botones del correo que recibe el Gerente General:
+ * Modal de decisión de Gerencia sobre una solicitud de personal: la solicitud completa con sus
+ * vacantes y, en cada una, Aprobar o Rechazar. Solo las aprobadas pasan a Gestión de Talento
+ * Humano; las rechazadas quedan cerradas.
  *
- *   • `accion=aprobar-todo`   → entra con todas las vacantes marcadas como aprobadas.
- *   • `accion=revisar`        → entra sin marcar nada, para elegir vacante por vacante.
- *   • `accion=rechazar-todo`  → entra con todas marcadas como rechazadas.
- *
- * En los tres casos la decisión se confirma con un click acá: el correo no la ejecuta solo. Es a
- * propósito, porque los clientes de correo precargan los enlaces y una aprobación por GET se
- * dispararía sin que nadie la haya decidido.
+ * Reemplaza a la antigua página pública por token: acá el usuario ya está autenticado, así que la
+ * decisión queda con nombre y fecha. Una solicitud ya decidida abre en modo lectura — el mismo
+ * modal es la ficha del historial.
  */
 @Component({
   standalone: true,
-  selector: 'app-gth-aprobacion-gerencia',
-  imports: [CommonModule, FormsModule, TitleCasePipe],
-  templateUrl: './aprobacion-gerencia.html',
-  styleUrl: './aprobacion-gerencia.css',
+  selector: 'app-gth-aprobacion-decision',
+  imports: [CommonModule, FormsModule, AbrilModalPanel, TitleCasePipe],
+  templateUrl: './decision.html',
+  styleUrl: './decision.css',
 })
-export class AprobacionGerencia implements OnInit {
-  token = '';
+export class GthAprobacionDecision implements OnInit {
+  /** Aprobación a decidir (o a consultar, si ya fue decidida). */
+  @Input({ required: true }) aprobacionId!: number;
+
+  @Output() closeModal = new EventEmitter<void>();
+  /** Se emite tras registrar la decisión, para que la lista se recargue. */
+  @Output() decided = new EventEmitter<void>();
+
+  data: AprobacionDetalle | null = null;
   cargando = true;
   enviando = false;
-  /** true cuando la carga falla o el token no es válido. */
-  errorCarga = false;
-  mensajeError = '';
-
-  /** true cuando el GG acaba de registrar su decisión (pantalla de confirmación). */
-  enviado = false;
-  mensajeExito = '';
-
-  data: AprobacionGgPublico | null = null;
 
   /** Decisión en curso por requerimiento: true = aprobar, false = rechazar, undefined = sin elegir. */
   decisiones = new Map<number, boolean>();
@@ -47,62 +51,41 @@ export class AprobacionGerencia implements OnInit {
   comentario = '';
 
   constructor(
-    private route: ActivatedRoute,
-    private service: AprobacionGerenciaService,
+    private service: AprobacionesService,
+    private loaderService: LoaderService,
+    private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    const params = this.route.snapshot.queryParamMap;
-    this.token = params.get('token') ?? '';
-    if (!this.token) {
-      this.errorCarga = true;
-      this.mensajeError = 'El enlace de aprobación no es válido.';
-      this.cargando = false;
-      return;
-    }
-    this.cargar(params.get('accion'));
-  }
-
-  private cargar(accion: string | null): void {
-    this.cargando = true;
+    this.loaderService.show();
     // App zoneless: hay que forzar el refresco tras el subscribe o la vista no se actualiza.
-    this.service.getPublico(this.token).subscribe({
+    this.service.getDetalle(this.aprobacionId).subscribe({
       next: (data) => {
         this.data = data;
         this.comentario = data.comentario ?? '';
-        this.preseleccionar(accion, data.vacantes);
+        // Una solicitud ya decidida se muestra en lectura con lo que quedó registrado.
+        if (data.decidida) {
+          for (const v of data.vacantes) {
+            if (v.aprobado !== null) this.decisiones.set(v.requerimientoId, v.aprobado);
+          }
+        }
         this.cargando = false;
+        this.loaderService.hide();
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.cargando = false;
-        this.errorCarga = true;
-        this.mensajeError =
-          err.error?.message ??
-          'No se pudo abrir la solicitud. Verifica el enlace del correo e inténtalo de nuevo.';
+        this.loaderService.hide();
         this.cdr.detectChanges();
+        this.errorService.handleError(err);
+        this.closeModal.emit();
       },
     });
   }
 
-  /**
-   * Aplica la acción con la que el GG entró desde el correo. "revisar" (o cualquier otro valor)
-   * no marca nada a propósito: obliga a elegir explícitamente qué vacante se aprueba.
-   */
-  private preseleccionar(accion: string | null, vacantes: AprobacionGgVacante[]): void {
-    if (accion === 'aprobar-todo') this.marcarTodas(true);
-    else if (accion === 'rechazar-todo') this.marcarTodas(false);
-    else this.decisiones.clear();
-    // Una solicitud ya decidida se muestra en modo lectura con lo que quedó registrado.
-    if (this.data?.decidida) {
-      this.decisiones.clear();
-      for (const v of vacantes) if (v.aprobado !== null) this.decisiones.set(v.requerimientoId, v.aprobado);
-    }
-  }
-
   // ── Decisión por vacante ────────────────────────────────────────────────
-  get vacantes(): AprobacionGgVacante[] {
+  get vacantes(): AprobacionVacante[] {
     return this.data?.vacantes ?? [];
   }
 
@@ -110,11 +93,11 @@ export class AprobacionGerencia implements OnInit {
     return !!this.data?.decidida;
   }
 
-  decision(v: AprobacionGgVacante): boolean | undefined {
+  decision(v: AprobacionVacante): boolean | undefined {
     return this.decisiones.get(v.requerimientoId);
   }
 
-  marcar(v: AprobacionGgVacante, aprobado: boolean): void {
+  marcar(v: AprobacionVacante, aprobado: boolean): void {
     if (this.soloLectura) return;
     this.decisiones.set(v.requerimientoId, aprobado);
   }
@@ -176,8 +159,9 @@ export class AprobacionGerencia implements OnInit {
     if (!confirm.isConfirmed) return;
 
     this.enviando = true;
+    this.loaderService.show();
     this.service
-      .decidir(this.token, {
+      .decidir(this.aprobacionId, {
         decisiones: this.vacantes.map((v) => ({
           requerimientoId: v.requerimientoId,
           aprobado: this.decisiones.get(v.requerimientoId) === true,
@@ -187,19 +171,22 @@ export class AprobacionGerencia implements OnInit {
       .subscribe({
         next: (res) => {
           this.enviando = false;
-          this.enviado = true;
-          this.mensajeExito = res.message;
+          this.loaderService.hide();
           this.cdr.detectChanges();
+          Swal.fire({
+            title: 'Decisión registrada',
+            text: res.message,
+            icon: 'success',
+            confirmButtonColor: 'var(--color-abril-logo-blue)',
+          });
+          this.decided.emit();
+          this.closeModal.emit();
         },
         error: (err: HttpErrorResponse) => {
           this.enviando = false;
+          this.loaderService.hide();
           this.cdr.detectChanges();
-          Swal.fire({
-            title: 'No se pudo registrar la decisión',
-            text: err.error?.message ?? 'Vuelve a intentarlo en unos minutos.',
-            icon: 'error',
-            confirmButtonColor: 'var(--color-abril-logo-blue)',
-          });
+          this.errorService.handleError(err);
         },
       });
   }

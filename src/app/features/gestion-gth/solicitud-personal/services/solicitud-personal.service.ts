@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
+  AprobacionGgReenvioResult,
   CandidatoDecision,
   FinalistaDecisionResult,
   LongListDecisionResult,
@@ -19,6 +20,9 @@ import {
 export class SolicitudPersonalService {
   // API de dominio de reclutamiento (compartida): sirve los endpoints del solicitante.
   private readonly apiUrl = `${environment.apiUrl}api/v1/gestion-gth/reclutamiento`;
+
+  /** El reenvío del correo a Gerencia vive en la API de la aprobación, no en la de reclutamiento. */
+  private readonly aprobacionUrl = `${environment.apiUrl}api/v1/gestion-gth/aprobacion-gerencia`;
 
   constructor(private http: HttpClient) {}
 
@@ -116,5 +120,17 @@ export class SolicitudPersonalService {
     return this.http.post<SolicitudPersonalCreateResult>(this.apiUrl, formData, {
       headers: this.headers,
     });
+  }
+
+  /**
+   * Reenvía el correo de aprobación a Gerencia General (para cuando el envío automático falló o
+   * hubo que corregir los destinatarios). El enlace que recibe Gerencia no cambia.
+   */
+  reenviarAGerencia(requerimientoId: number): Observable<AprobacionGgReenvioResult> {
+    return this.http.post<AprobacionGgReenvioResult>(
+      `${this.aprobacionUrl}/requerimiento/${requerimientoId}/reenviar`,
+      {},
+      { headers: this.headers },
+    );
   }
 }

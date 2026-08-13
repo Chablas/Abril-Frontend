@@ -96,6 +96,13 @@ export interface SolicitudPersonalCreateResult {
   message: string;
 }
 
+/** Resultado de reenviar el correo de aprobación a Gerencia General. */
+export interface AprobacionGgReenvioResult {
+  message: string;
+  /** Destinatarios principales a los que se envió (para mostrarlos en el mensaje). */
+  destinatarios: string[];
+}
+
 /** Una fase del pipeline dentro del seguimiento vertical del requerimiento. */
 export interface FaseSeguimiento {
   codigo: string;
