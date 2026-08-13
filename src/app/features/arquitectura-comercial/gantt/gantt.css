@@ -66,6 +66,43 @@
   padding: 5px 10px; background: #F9FAFB; color: #374151; outline: none; cursor: pointer;
 }
 
+.gp-multiselect-trigger {
+  border: none; background: transparent; outline: none; cursor: pointer;
+  flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  font-size: .855rem; font-weight: 600; color: #111827;
+}
+.gp-multiselect-trigger i { font-size: 13px; color: #9CA3AF; flex-shrink: 0; }
+.gp-multiselect-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.gp-multiselect-backdrop { position: fixed; inset: 0; z-index: 199; }
+
+.gp-multiselect-panel {
+  position: absolute; top: calc(100% + 4px); left: 0; width: 280px; z-index: 200;
+  background: #fff; border: 1px solid #E5E7EB; border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12); padding: 8px; display: flex; flex-direction: column; gap: 6px;
+}
+.gp-multiselect-search {
+  font-size: .8rem; border: 1px solid #E5E7EB; border-radius: 6px;
+  padding: 6px 9px; outline: none; width: 100%;
+}
+.gp-multiselect-actions { display: flex; gap: 6px; }
+.gp-multiselect-actions button {
+  font-size: .72rem; font-weight: 600; color: #1a4731; background: #F0FDF4;
+  border: none; border-radius: 5px; padding: 3px 9px; cursor: pointer;
+}
+.gp-multiselect-list { max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; }
+.gp-multiselect-item {
+  display: flex; align-items: center; gap: 8px; padding: 6px 4px;
+  font-size: .8rem; color: #374151; cursor: pointer; border-radius: 5px;
+}
+.gp-multiselect-item:hover { background: #F9FAFB; }
+.gp-multiselect-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gp-multiselect-empty { font-size: .78rem; color: #9CA3AF; text-align: center; padding: 8px; }
+.gp-multiselect-apply {
+  font-size: .8rem; font-weight: 700; color: #fff; background: #1a4731;
+  border: none; border-radius: 6px; padding: 7px; cursor: pointer;
+}
+
 .gp-toggle {
   display: flex; align-items: center; gap: 5px;
   font-size: .78rem; color: #374151; cursor: pointer; white-space: nowrap;

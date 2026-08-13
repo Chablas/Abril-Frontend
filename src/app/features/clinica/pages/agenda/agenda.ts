@@ -137,6 +137,57 @@ export class Agenda implements OnInit {
     this.loadAgenda(this.selectedDate);
   }
 
+  enviandoInasistencias = false;
+
+  /** Fecha efectiva para el correo de inasistencias: la elegida en el filtro, o hoy si no hay ninguna. */
+  private fechaParaInasistencias(): string {
+    return this.selectedDate || new Date().toISOString().split('T')[0];
+  }
+
+  enviarInasistencias(): void {
+    if (this.enviandoInasistencias) return;
+    const fecha = this.fechaParaInasistencias();
+    const noShow = this.items.filter((i) => i.estado === 'No se presentó').length;
+
+    Swal.fire({
+      icon: 'question',
+      title: '¿Enviar correo de inasistencias?',
+      html: `Se notificará a los administradores (con copia a Medicina Ocupacional y Administración) de
+        <strong>${noShow}</strong> trabajador(es) que no se presentaron el <strong>${fecha}</strong>.`,
+      showCancelButton: true,
+      confirmButtonText: 'Enviar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64bc04',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+
+      this.enviandoInasistencias = true;
+      this.loaderService.show();
+      this.svc.enviarInasistencias(fecha).subscribe({
+        next: (res) => {
+          this.enviandoInasistencias = false;
+          this.loaderService.hide();
+          const detalleHtml = res.detalles?.length
+            ? `<ul style="text-align:left; font-size:12px; margin-top:8px; max-height:200px; overflow:auto;">
+                ${res.detalles.map((d) => `<li>${d}</li>`).join('')}
+              </ul>`
+            : '';
+          Swal.fire({
+            icon: res.totalErrores > 0 ? 'warning' : 'success',
+            title: 'Correos procesados',
+            html: `Enviados: <strong>${res.totalEnviados}</strong> · Errores: <strong>${res.totalErrores}</strong> de ${res.totalSeleccionadas} seleccionada(s).${detalleHtml}`,
+          });
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.enviandoInasistencias = false;
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
   limpiarFecha(): void {
     this.selectedDate = '';
     this.loadAgenda(this.selectedDate);

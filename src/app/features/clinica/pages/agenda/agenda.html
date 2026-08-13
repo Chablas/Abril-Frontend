@@ -18,6 +18,14 @@
         </div>
         <button class="btn-refresh" *ngIf="selectedDate" (click)="limpiarFecha()" title="Ver todas las fechas">Ver todos</button>
         <button class="btn-refresh" (click)="loadAgenda(selectedDate)" [disabled]="loading">↺</button>
+        <button
+          class="btn-refresh"
+          [disabled]="enviandoInasistencias"
+          (click)="enviarInasistencias()"
+          title="Enviar correo a los administradores de quienes no se presentaron"
+        >
+          {{ enviandoInasistencias ? 'Enviando…' : '✉ Inasistencias' }}
+        </button>
       </div>
     </div>
   </div>

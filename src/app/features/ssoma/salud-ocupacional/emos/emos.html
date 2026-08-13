@@ -29,6 +29,7 @@
           <col style="width: 90px" />
           <col style="width: 90px" />
           <col style="width: 90px" />
+          <col style="width: 110px" />
           <col style="width: 60px" />
           <col style="width: 160px" />
         </colgroup>
@@ -44,6 +45,7 @@
             <th class="th-sortable" (click)="toggleSort('fechaVencimiento')">Vence <span class="sort-icon">{{ sortIcon('fechaVencimiento') }}</span></th>
             <th>Aptitud</th>
             <th>Estado</th>
+            <th>Prog. EMO</th>
             <th class="text-right">Días</th>
             <th class="text-right col-actions"></th>
           </tr>
@@ -81,6 +83,12 @@
               <span class="badge border" [ngClass]="estadoClass(item.estado, item.tieneEmo)">
                 {{ estadoLabel(item) }}
               </span>
+            </td>
+            <td>
+              <span *ngIf="item.estadoProgramacionEmo; else dashProg" class="text-gray-600 text-[12px]">
+                {{ item.estadoProgramacionEmo }}
+              </span>
+              <ng-template #dashProg><span class="text-gray-400">—</span></ng-template>
             </td>
             <td class="text-right">
               <span
@@ -157,7 +165,7 @@
           </tr>
 
           <tr *ngIf="!loading && items.length === 0">
-            <td colspan="12" class="empty-row">
+            <td colspan="13" class="empty-row">
               Sin resultados para los filtros actuales.
             </td>
           </tr>

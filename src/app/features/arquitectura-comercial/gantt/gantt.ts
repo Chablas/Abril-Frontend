@@ -6,6 +6,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { SearchSelect } from '../../../shared/components/search-select/search-select';
 import { ArquitecturaComercialService } from '../../../core/services/arquitectura-comercial.service';
@@ -14,7 +15,7 @@ import {
   ProyectoConActividadesDTO,
   SupervisorAcDTO,
 } from '../../../core/dtos/arquitectura-comercial/actividades.model';
-
+
 import { AC_TABS } from '../shared/arquitectura-comercial-tabs';
 type TipoFiltro = '' | 'HITO' | 'ENTREGABLE' | 'CONSULTA';
 type ZoomLevel  = 'day' | 'week' | 'month' | 'quarter';
@@ -98,9 +99,23 @@ export class Gantt implements OnInit {
   supervisores: SupervisorAcDTO[] = [];
   get proyectosConActividades() { return this.proyectos.filter(p => !p.sinActividades); }
 
-  selectedProyectoId: number | null = null;
+  selectedProyectoIds: number[] = [];
   filtroSupervisorId: number | null = null;
-  get selectedProyecto() { return this.proyectos.find(p => p.id === this.selectedProyectoId) ?? null; }
+  proyectoPanelOpen = false;
+  proyectoSearch = '';
+
+  get proyectosFiltrados(): ProyectoConActividadesDTO[] {
+    const q = this.proyectoSearch.trim().toLowerCase();
+    return q ? this.proyectosConActividades.filter(p => p.nombre.toLowerCase().includes(q)) : this.proyectosConActividades;
+  }
+
+  get selectedProyectosLabel(): string {
+    if (this.selectedProyectoIds.length === 0) return 'Todos los proyectos';
+    if (this.selectedProyectoIds.length === 1) {
+      return this.proyectos.find(p => p.id === this.selectedProyectoIds[0])?.nombre ?? '1 proyecto';
+    }
+    return `${this.selectedProyectoIds.length} proyectos seleccionados`;
+  }
 
   tipoFiltro: TipoFiltro = '';
   etapaNombreFiltro: string | null = null;
@@ -141,7 +156,7 @@ export class Gantt implements OnInit {
           a.totalActividades === 0 && b.totalActividades > 0 ? 1 :
           a.nombre.localeCompare(b.nombre));
         if (this.proyectosConActividades.length > 0) {
-          this.selectedProyectoId = this.proyectosConActividades[0].id;
+          this.selectedProyectoIds = [this.proyectosConActividades[0].id];
           this.loadGantt();
         }
         this.cdr.detectChanges();
@@ -155,8 +170,19 @@ export class Gantt implements OnInit {
     });
   }
 
-  onProyectoChange(id: number | null): void { this.selectedProyectoId = id; this.filtroSupervisorId = null; this.tipoFiltro = ''; this.etapaNombreFiltro = null; this.loadGantt(); }
-  onSupervisorChange(id: number | null): void { this.filtroSupervisorId = id; this.selectedProyectoId = null; this.tipoFiltro = ''; this.etapaNombreFiltro = null; this.loadGantt(); }
+  toggleProyecto(id: number): void {
+    this.selectedProyectoIds = this.selectedProyectoIds.includes(id)
+      ? this.selectedProyectoIds.filter(x => x !== id)
+      : [...this.selectedProyectoIds, id];
+  }
+  seleccionarTodosProyectos(): void { this.selectedProyectoIds = this.proyectosConActividades.map(p => p.id); }
+  limpiarProyectos(): void { this.selectedProyectoIds = []; }
+  aplicarProyectos(): void {
+    this.proyectoPanelOpen = false;
+    this.filtroSupervisorId = null; this.tipoFiltro = ''; this.etapaNombreFiltro = null;
+    this.loadGantt();
+  }
+  onSupervisorChange(id: number | null): void { this.filtroSupervisorId = id; this.selectedProyectoIds = []; this.tipoFiltro = ''; this.etapaNombreFiltro = null; this.loadGantt(); }
   setTipo(t: TipoFiltro): void { this.tipoFiltro = t; this.loadGantt(); }
   onFiltroChange(): void { this.loadGantt(); }
 
@@ -170,7 +196,7 @@ export class Gantt implements OnInit {
   private _rawData: GanttActividadDTO[] = [];
 
   loadGantt(): void {
-    if (!this.selectedProyectoId && !this.filtroSupervisorId) return;
+    if (this.selectedProyectoIds.length === 0 && !this.filtroSupervisorId) return;
     this.loading = true;
     this.cdr.detectChanges();
 
@@ -206,17 +232,20 @@ export class Gantt implements OnInit {
         error: () => { this.loading = false; this.cdr.detectChanges(); },
       });
     } else {
-      this.service.getGantt({ proyectoId: this.selectedProyectoId, tipo: this.tipoFiltro || null,
-                              etapa: this.etapaNombreFiltro, soloActivas: null })
-        .subscribe({
-          next: data => {
-            this._rawData = data;
-            this.loading  = false;
-            this.rebuildTimeline(data);
-            this.cdr.detectChanges();
-          },
-          error: () => { this.loading = false; this.cdr.detectChanges(); },
-        });
+      // Un pedido por proyecto seleccionado, mergeados en un solo Gantt (cada fila conserva su
+      // projectNombre para diferenciarlos visualmente cuando hay más de uno seleccionado).
+      const requests = this.selectedProyectoIds.map(id =>
+        this.service.getGantt({ proyectoId: id, tipo: this.tipoFiltro || null,
+                                etapa: this.etapaNombreFiltro, soloActivas: null }));
+      forkJoin(requests).subscribe({
+        next: results => {
+          this._rawData = results.flat();
+          this.loading  = false;
+          this.rebuildTimeline(this._rawData);
+          this.cdr.detectChanges();
+        },
+        error: () => { this.loading = false; this.cdr.detectChanges(); },
+      });
     }
   }
 
@@ -438,4 +467,6 @@ export class Gantt implements OnInit {
 
   trackByRow(_: number, r: GanttRow): number { return r.id; }
   trackByProyecto(_: number, p: ProyectoConActividadesDTO): number { return p.id; }
+
+  isProyectoSelected(id: number): boolean { return this.selectedProyectoIds.includes(id); }
 }

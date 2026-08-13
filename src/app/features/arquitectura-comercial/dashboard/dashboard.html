@@ -208,7 +208,8 @@
                     <i class="ti ti-list-details" style="font-size:11px"></i> ver cuáles
                   </button>
                   <span class="rank-stat-sep">·</span>
-                  <span class="rank-stat-ies-lbl" title="Índice de Eficiencia del Supervisor">IES</span>
+                  <span class="rank-stat-ies-lbl"
+                        [title]="'SPI ' + sup.compSpi + '% · Cierre ' + sup.compCierre + '% · Puntualidad inicio ' + sup.compInicio + '%'">IES</span>
                   <span class="rank-stat-ies" [style.color]="getAvatarColor(sup.progreso)">{{ sup.progreso | number:'1.0-0' }}%</span>
                 </div>
                 <div class="rank-bar-row">
@@ -222,6 +223,9 @@
                     </div>
                   </div>
                 </div>
+                <p *ngIf="sup.progreso < 100 && sup.motivos.length" class="rank-motivo" [title]="sup.motivos.join(' · ')">
+                  <i class="ti ti-info-circle"></i> {{ sup.motivos[0] }}
+                </p>
               </ng-container>
               <ng-template #sinCompromisosRow>
                 <div class="rank-stats-row" style="color:#94A3B8;font-size:11px">
@@ -241,7 +245,7 @@
       <div class="dash-col-charts">
         <div class="dash-card dash-chart-card">
           <div class="card-header">
-            <span class="card-title">CURVA DE AVANCE</span>
+            <span class="card-title" title="Curva S acumulada sobre el alcance activo actual: converge a 100% en la fecha de hoy">CURVA DE AVANCE</span>
             <div class="chart-legend-inline">
               <span class="cli-item"><span class="cli-line cli-line-dash"></span>Programado</span>
               <span class="cli-item"><span class="cli-line cli-line-solid"></span>Real</span>

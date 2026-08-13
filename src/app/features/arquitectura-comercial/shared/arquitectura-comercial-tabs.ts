@@ -8,6 +8,7 @@ export const AC_TABS: AbrilPageTab[] = [
   { label: 'Actividades', icono: 'ti-list-check',       route: '/arquitectura-comercial/actividades', featureKey: 'arquitectura-comercial.actividades' },
   { label: 'Gantt',       icono: 'ti-chart-bar',        route: '/arquitectura-comercial/gantt',       featureKey: 'arquitectura-comercial.gantt' },
   { label: 'Plantilla',   icono: 'ti-template',         route: '/arquitectura-comercial/plantilla',   featureKey: 'arquitectura-comercial.plantilla' },
+  { label: 'Tareo',       icono: 'ti-clock-play',       route: '/arquitectura-comercial/tareo/marcar', featureKey: 'arquitectura-comercial.tareo.marcar' },
 ];
 
 export const AC_OBSERVACIONES_TABS: AbrilPageTab[] = [
@@ -18,4 +19,11 @@ export const AC_OBSERVACIONES_TABS: AbrilPageTab[] = [
 export const AC_REVISIONES_TABS: AbrilPageTab[] = [
   { label: 'Dashboard', icono: 'ti-layout-dashboard', route: '/arquitectura-comercial/revisiones/dashboard', featureKey: 'arquitectura-comercial.revisiones.dashboard' },
   { label: 'Lista',     icono: 'ti-list',             route: '/arquitectura-comercial/revisiones/lista',     featureKey: 'arquitectura-comercial.revisiones.lista' },
+];
+
+export const AC_TAREO_TABS: AbrilPageTab[] = [
+  { label: 'Marcar',       icono: 'ti-clock-play',   route: '/arquitectura-comercial/tareo/marcar',        featureKey: 'arquitectura-comercial.tareo.marcar' },
+  { label: 'Enrolamiento', icono: 'ti-face-id',      route: '/arquitectura-comercial/tareo/enrolamiento',  featureKey: 'arquitectura-comercial.tareo.enrolamiento' },
+  { label: 'Revisión',     icono: 'ti-list-check',   route: '/arquitectura-comercial/tareo/revision',      featureKey: 'arquitectura-comercial.tareo.revision' },
+  { label: 'Reporte',      icono: 'ti-table',        route: '/arquitectura-comercial/tareo/reporte',       featureKey: 'arquitectura-comercial.tareo.reporte' },
 ];
