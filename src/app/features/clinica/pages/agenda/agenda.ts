@@ -12,6 +12,9 @@ import { LoaderService } from '../../../../core/services/loader.service';
 import { CompletarEmo } from './components/completar-emo/completar-emo';
 import { environment } from '../../../../../environments/environment';
 import { hoyIsoLocal } from '../../../../shared/utils/fecha-local.util';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { CatalogosSaludService } from '../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
+import { EmoTipoDto } from '../../../ssoma/salud-ocupacional/dtos/catalogos.model';
 
 import { CLINICA_TABS } from '../../shared/clinica-tabs';
 type FiltroEstado = '' | 'Programado' | 'Aceptado por Clínica' | 'En Atención' | 'Completado' | 'Rechazado' | 'No se presentó';
@@ -19,7 +22,7 @@ type FiltroEstado = '' | 'Programado' | 'Aceptado por Clínica' | 'En Atención'
 @Component({
   selector: 'app-clinica-agenda',
   standalone: true,
-  imports: [CommonModule, FormsModule, CompletarEmo, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, CompletarEmo, AbrilPageHeaderComponent, SearchSelect],
   templateUrl: './agenda.html',
   styleUrls: ['./agenda.css'],
 })
@@ -35,11 +38,14 @@ export class Agenda implements OnInit {
   filtroEstado: FiltroEstado = '';
   busqueda = '';
 
+  tipoEmoOptions: EmoTipoDto[] = [];
+
   modalAceptar: {
     open: boolean;
     item: ProgramacionClinicaDto | null;
     nuevaFecha: string;
     horaAceptar: string;
+    tipoEmoId: number | null;
     fechaError: string;
     horaError: string;
   } = {
@@ -47,6 +53,7 @@ export class Agenda implements OnInit {
     item: null,
     nuevaFecha: '',
     horaAceptar: '',
+    tipoEmoId: null,
     fechaError: '',
     horaError: '',
   };
@@ -56,6 +63,7 @@ export class Agenda implements OnInit {
     item: ProgramacionClinicaDto | null;
     nuevaFecha: string;
     nuevaHora: string;
+    tipoEmoId: number | null;
     horaError: string;
     fechaError: string;
   } = {
@@ -63,6 +71,7 @@ export class Agenda implements OnInit {
     item: null,
     nuevaFecha: '',
     nuevaHora: '',
+    tipoEmoId: null,
     horaError: '',
     fechaError: '',
   };
@@ -109,10 +118,15 @@ export class Agenda implements OnInit {
     private loaderService: LoaderService,
     private http: HttpClient,
     private cdr: ChangeDetectorRef,
+    private catalogosSalud: CatalogosSaludService,
   ) {}
 
   ngOnInit(): void {
     this.loadAgenda(this.selectedDate);
+    this.catalogosSalud.getEmoTipos().subscribe({
+      next: (tipos) => (this.tipoEmoOptions = [...tipos].sort((a, b) => a.nombre.localeCompare(b.nombre))),
+      error: (err) => this.errorService.handleError(err),
+    });
   }
 
   loadAgenda(fecha: string): void {
@@ -141,13 +155,20 @@ export class Agenda implements OnInit {
 
   /** Fecha efectiva para el correo de inasistencias: la elegida en el filtro, o hoy si no hay ninguna. */
   private fechaParaInasistencias(): string {
-    return this.selectedDate || new Date().toISOString().split('T')[0];
+    return this.selectedDate || hoyIsoLocal();
+  }
+
+  /** El correo de inasistencias solo tiene sentido a partir del mediodía (recién ahí se sabe quién no se presentó). */
+  get puedeEnviarInasistencias(): boolean {
+    return new Date().getHours() >= 12;
   }
 
   enviarInasistencias(): void {
-    if (this.enviandoInasistencias) return;
+    if (this.enviandoInasistencias || !this.puedeEnviarInasistencias) return;
     const fecha = this.fechaParaInasistencias();
-    const noShow = this.items.filter((i) => i.estado === 'No se presentó').length;
+    const noShow = this.items.filter(
+      (i) => i.estado === 'No se presentó' && (i.fechaProgramada || '').substring(0, 10) === fecha,
+    ).length;
 
     Swal.fire({
       icon: 'question',
@@ -244,13 +265,14 @@ export class Agenda implements OnInit {
       item,
       nuevaFecha: item.fechaProgramada ? item.fechaProgramada.substring(0, 10) : '',
       horaAceptar: item.horaProgramada ?? '',
+      tipoEmoId: item.tipoEmoId ?? null,
       fechaError: '',
       horaError: '',
     };
   }
 
   cancelarAceptar(): void {
-    this.modalAceptar = { open: false, item: null, nuevaFecha: '', horaAceptar: '', fechaError: '', horaError: '' };
+    this.modalAceptar = { open: false, item: null, nuevaFecha: '', horaAceptar: '', tipoEmoId: null, fechaError: '', horaError: '' };
   }
 
   confirmarAceptar(): void {
@@ -271,6 +293,7 @@ export class Agenda implements OnInit {
       accion: 'Aceptar',
       nuevaFecha: this.modalAceptar.nuevaFecha,
       horaNueva: this.modalAceptar.horaAceptar,
+      tipoEmoId: this.modalAceptar.tipoEmoId ?? undefined,
     };
     this.cancelarAceptar();
     this.ejecutarAccion(item.id, body);
@@ -284,6 +307,7 @@ export class Agenda implements OnInit {
       item,
       nuevaFecha: item.fechaProgramada ? item.fechaProgramada.substring(0, 10) : '',
       nuevaHora: item.horaProgramada ?? '',
+      tipoEmoId: item.tipoEmoId ?? null,
       horaError: '',
       fechaError: '',
     };
@@ -291,7 +315,7 @@ export class Agenda implements OnInit {
   }
 
   cancelarReprogramar(): void {
-    this.modalReprogramar = { open: false, item: null, nuevaFecha: '', nuevaHora: '', horaError: '', fechaError: '' };
+    this.modalReprogramar = { open: false, item: null, nuevaFecha: '', nuevaHora: '', tipoEmoId: null, horaError: '', fechaError: '' };
   }
 
   confirmarReprogramar(): void {
@@ -300,14 +324,16 @@ export class Agenda implements OnInit {
     this.modalReprogramar.fechaError = '';
     this.modalReprogramar.horaError = '';
     let valid = true;
+    const tipoEmoCambio = this.modalReprogramar.tipoEmoId != null && this.modalReprogramar.tipoEmoId !== (item.tipoEmoId ?? null);
     if (!this.modalReprogramar.nuevaFecha) {
       this.modalReprogramar.fechaError = 'La fecha es obligatoria';
       valid = false;
     } else if (
+      !tipoEmoCambio &&
       this.modalReprogramar.nuevaFecha === (item.fechaProgramada ?? '').substring(0, 10) &&
       this.modalReprogramar.nuevaHora === (item.horaProgramada ?? '')
     ) {
-      this.modalReprogramar.fechaError = 'Debes cambiar la fecha o la hora';
+      this.modalReprogramar.fechaError = 'Debes cambiar la fecha, la hora o el tipo de EMO';
       valid = false;
     }
     if (!this.modalReprogramar.nuevaHora || this.modalReprogramar.nuevaHora === '--:--') {
@@ -320,6 +346,7 @@ export class Agenda implements OnInit {
       accion: 'Aceptar',
       nuevaFecha: this.modalReprogramar.nuevaFecha,
       horaNueva: this.modalReprogramar.nuevaHora,
+      tipoEmoId: this.modalReprogramar.tipoEmoId ?? undefined,
     };
     console.log('[Reprogramar] payload:', body);
     this.modalConfirmarReprogramar = {

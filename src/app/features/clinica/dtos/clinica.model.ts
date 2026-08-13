@@ -98,6 +98,8 @@ export interface ClinicaAccionDto {
   emoResultadoId?: number;
   nuevaFecha?: string;
   horaNueva?: string;
+  /** Solo con accion 'Aceptar' (incluye Reprogramar): corrige el tipo de EMO si la clínica se equivocó al programar. */
+  tipoEmoId?: number;
 }
 
 export type EstadoProgramacionClinica =
