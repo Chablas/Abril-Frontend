@@ -20,9 +20,9 @@
         <button class="btn-refresh" (click)="loadAgenda(selectedDate)" [disabled]="loading">↺</button>
         <button
           class="btn-refresh"
-          [disabled]="enviandoInasistencias"
+          [disabled]="enviandoInasistencias || !puedeEnviarInasistencias"
           (click)="enviarInasistencias()"
-          title="Enviar correo a los administradores de quienes no se presentaron"
+          [title]="puedeEnviarInasistencias ? 'Enviar correo a los administradores de quienes no se presentaron hoy' : 'Disponible a partir del mediodía'"
         >
           {{ enviandoInasistencias ? 'Enviando…' : '✉ Inasistencias' }}
         </button>
@@ -269,6 +269,20 @@
           {{ modalAceptar.horaError }}
         </p>
       </div>
+      <div class="dm-field" style="grid-column:1/-1">
+        <label class="dm-label">Tipo de EMO</label>
+        <app-search-select
+          [options]="tipoEmoOptions"
+          valueField="id"
+          displayField="nombre"
+          placeholder="Selecciona tipo de EMO"
+          [value]="modalAceptar.tipoEmoId"
+          (valueChange)="modalAceptar.tipoEmoId = $event">
+        </app-search-select>
+        <p class="dm-warn" *ngIf="modalAceptar.tipoEmoId && modalAceptar.tipoEmoId !== modalAceptar.item?.tipoEmoId">
+          Se corregirá el tipo de EMO al aceptar (original: {{ modalAceptar.item?.tipoEmo }}).
+        </p>
+      </div>
     </div>
   </div>
 
@@ -316,6 +330,20 @@
           (ngModelChange)="modalReprogramar.horaError = ''" />
         <p class="dm-error-inline" *ngIf="modalReprogramar.horaError">
           {{ modalReprogramar.horaError }}
+        </p>
+      </div>
+      <div class="dm-field" style="grid-column:1/-1">
+        <label class="dm-label">Tipo de EMO</label>
+        <app-search-select
+          [options]="tipoEmoOptions"
+          valueField="id"
+          displayField="nombre"
+          placeholder="Selecciona tipo de EMO"
+          [value]="modalReprogramar.tipoEmoId"
+          (valueChange)="modalReprogramar.tipoEmoId = $event">
+        </app-search-select>
+        <p class="dm-warn" *ngIf="modalReprogramar.tipoEmoId && modalReprogramar.tipoEmoId !== modalReprogramar.item?.tipoEmoId">
+          Se corregirá el tipo de EMO al reprogramar (original: {{ modalReprogramar.item?.tipoEmo }}).
         </p>
       </div>
     </div>
