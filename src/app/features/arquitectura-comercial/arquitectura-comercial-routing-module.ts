@@ -6,6 +6,10 @@ import { Actividades } from './actividades/actividades';
 import { Entregables } from './entregables/entregables';
 import { Gantt } from './gantt/gantt';
 import { Plantilla } from './plantilla/plantilla';
+import { TareoMarcar } from './tareo/marcar/marcar';
+import { TareoEnrolamiento } from './tareo/enrolamiento/enrolamiento';
+import { TareoRevision } from './tareo/revision/revision';
+import { TareoReporteSemanal } from './tareo/reporte-semanal/reporte-semanal';
 
 const routes: Routes = [
   {
@@ -41,6 +45,31 @@ const routes: Routes = [
         component: Plantilla,
         canActivate: [roleGuard],
         data: { titulo: 'ARQUITECTURA COMERCIAL - PLANTILLA', featureKey: 'arquitectura-comercial.plantilla' },
+      },
+      { path: 'tareo', redirectTo: 'tareo/marcar', pathMatch: 'full' },
+      {
+        path: 'tareo/marcar',
+        component: TareoMarcar,
+        canActivate: [roleGuard],
+        data: { titulo: 'ARQUITECTURA COMERCIAL - TAREO', featureKey: 'arquitectura-comercial.tareo.marcar' },
+      },
+      {
+        path: 'tareo/enrolamiento',
+        component: TareoEnrolamiento,
+        canActivate: [roleGuard],
+        data: { titulo: 'ARQUITECTURA COMERCIAL - ENROLAMIENTO', featureKey: 'arquitectura-comercial.tareo.enrolamiento' },
+      },
+      {
+        path: 'tareo/revision',
+        component: TareoRevision,
+        canActivate: [roleGuard],
+        data: { titulo: 'ARQUITECTURA COMERCIAL - REVISIÓN DE TAREO', featureKey: 'arquitectura-comercial.tareo.revision' },
+      },
+      {
+        path: 'tareo/reporte',
+        component: TareoReporteSemanal,
+        canActivate: [roleGuard],
+        data: { titulo: 'ARQUITECTURA COMERCIAL - REPORTE DE TAREO', featureKey: 'arquitectura-comercial.tareo.reporte' },
       },
       {
         path: 'observaciones',

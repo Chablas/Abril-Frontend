@@ -47,6 +47,7 @@
     "chartjs-plugin-datalabels": "^2.2.0",
     "dhtmlx-gantt": "^9.1.1",
     "express": "^5.1.0",
+    "face-api.js": "^0.22.2",
     "flatpickr": "^4.6.13",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.1.0",

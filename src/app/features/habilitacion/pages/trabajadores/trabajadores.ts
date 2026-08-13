@@ -1140,8 +1140,8 @@ export class Trabajadores implements OnInit, OnDestroy {
       proyectoId: w.proyectoActualId,
       proyecto: w.proyectoActual,
       tieneEmo: !!w.tieneEmo,
-      interconsultaEstado: w.interconsultaEstado,
-      interconsultaEspecialidad: w.interconsultaEspecialidad,
+      interconsultaEstado: w.interconsultaEstado ?? undefined,
+      interconsultaEspecialidad: w.interconsultaEspecialidad ?? undefined,
     };
   }
 

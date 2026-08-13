@@ -42,6 +42,14 @@ export interface SupervisorProgresoDTO {
   deudaAnterior: number;
   /** true si no tenía nada que vencer ni arrancar esta semana — no entra al IES ni al promedio. */
   sinCompromisos: boolean;
+  /** Componente SPI del IES (35%): ritmo real vs. planificado de lo que debía cerrar. */
+  compSpi: number;
+  /** Componente tasa de cierre del IES (35%): % de lo que debía cerrar esta semana y cerró. */
+  compCierre: number;
+  /** Componente puntualidad de inicio del IES (20%): % de lo que debía arrancar y arrancó a tiempo. */
+  compInicio: number;
+  /** Motivos concretos por los que el IES no llegó a 100%. */
+  motivos: string[];
 }
 
 export interface SupervisorHistoricoDTO {
