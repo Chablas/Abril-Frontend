@@ -77,7 +77,7 @@
   <!-- ═══ Proyectos ═══ -->
   <div class="flex flex-col gap-[10px]">
     <div class="flex items-center justify-between">
-      <h2 class="text-[14px] font-semibold text-gray-700">Proyectos — coordinador de administración</h2>
+      <h2 class="text-[14px] font-semibold text-gray-700">Proyectos — correos de aviso (EMOs e interconsultas)</h2>
       <app-search-input
         placeholder="Buscar proyecto..."
         [value]="proyectosSearch"
@@ -90,28 +90,28 @@
         <thead>
           <tr>
             <th>Proyecto</th>
-            <th>Coordinador de administración</th>
+            <th *ngFor="let c of camposProyecto">{{ c.label }}</th>
             <th class="text-right">Acción</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let row of pagedProyectos">
             <td class="font-medium">{{ row.projectDescription | titleCase }}</td>
-            <td>
-              <div class="flex flex-col gap-[4px] max-w-[360px]">
+            <td *ngFor="let c of camposProyecto">
+              <div class="flex flex-col gap-[4px] min-w-[220px]">
                 <app-search-select
                   [options]="trabajadorOptions()"
                   valueField="workerId"
                   displayField="nombreCompleto"
-                  [value]="pendingProyectoWorker[row.projectId] ?? null"
+                  [value]="pendingProyectoWorkerFor(row.projectId, c.campo)"
                   placeholder="Buscar por nombre o DNI..."
-                  (valueChange)="pendingProyectoWorker[row.projectId] = $event">
+                  (valueChange)="setPendingProyectoWorker(row.projectId, c.campo, $event)">
                 </app-search-select>
-                <span class="text-[11px] text-gray-500" *ngIf="emailProyecto(row); else sinAdminProy">
-                  {{ emailProyecto(row) }}
+                <span class="text-[11px] text-gray-500" *ngIf="emailProyecto(row, c.campo); else sinCorreoProy">
+                  {{ emailProyecto(row, c.campo) }}
                 </span>
-                <ng-template #sinAdminProy>
-                  <span class="text-[11px] text-amber-600">Sin coordinador asignado.</span>
+                <ng-template #sinCorreoProy>
+                  <span class="text-[11px] text-amber-600">Sin correo asignado.</span>
                 </ng-template>
               </div>
             </td>
@@ -119,14 +119,14 @@
               <button
                 type="button"
                 [abrilBulkAction]="'primary'"
-                [disabled]="pendingProyectoWorker[row.projectId] == null || savingProyecto[row.projectId]"
+                [disabled]="!proyectoTienePendientes(row.projectId) || savingProyecto[row.projectId]"
                 (click)="guardarProyecto(row)">
                 {{ savingProyecto[row.projectId] ? 'Guardando…' : 'Guardar' }}
               </button>
             </td>
           </tr>
           <tr *ngIf="!loading && filteredProyectos.length === 0">
-            <td colspan="3" class="text-center py-[24px] text-gray-400 text-sm">Sin proyectos.</td>
+            <td [attr.colspan]="camposProyecto.length + 2" class="text-center py-[24px] text-gray-400 text-sm">Sin proyectos.</td>
           </tr>
         </tbody>
       </table>

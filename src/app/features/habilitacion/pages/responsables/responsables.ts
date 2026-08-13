@@ -20,6 +20,15 @@ import {
   ResponsablesDTO,
 } from '../../../../core/dtos/habilitacion/responsables.model';
 
+/** Los 4 correos de proyecto que alimentan los avisos de EMOs (EmoAlertaService.BuildDestinatarios). */
+export type CampoProyecto = 'emailResponsable' | 'emailRrhh' | 'emailCoordSsoma' | 'emailCoordAdmin';
+export const CAMPOS_PROYECTO: { campo: CampoProyecto; label: string }[] = [
+  { campo: 'emailResponsable', label: 'Responsable' },
+  { campo: 'emailRrhh', label: 'RR.HH.' },
+  { campo: 'emailCoordSsoma', label: 'Coord. SSOMA' },
+  { campo: 'emailCoordAdmin', label: 'Coord. Administración' },
+];
+
 @Component({
   selector: 'app-responsables',
   standalone: true,
@@ -45,9 +54,12 @@ export class Responsables implements OnInit {
   razonesSocialesPager = new ClientPager<ResponsableRazonSocialDTO>();
   proyectosPager = new ClientPager<ResponsableProyectoDTO>();
 
-  /** workerId elegido en el picker por fila, antes de guardar (contributorId/projectId -> workerId). */
+  readonly camposProyecto = CAMPOS_PROYECTO;
+
+  /** workerId elegido en el picker por fila, antes de guardar (contributorId -> workerId). */
   pendingRazonSocialWorker: Record<number, number | null> = {};
-  pendingProyectoWorker: Record<number, number | null> = {};
+  /** Igual, pero por proyecto Y por campo: projectId -> campo -> workerId. */
+  pendingProyectoWorker: Record<number, Partial<Record<CampoProyecto, number | null>>> = {};
   savingRazonSocial: Record<number, boolean> = {};
   savingProyecto: Record<number, boolean> = {};
 
@@ -134,12 +146,27 @@ export class Responsables implements OnInit {
     return this.esCorreoVigente(row.emailAdministrador) ? row.emailAdministrador : null;
   }
 
-  emailProyecto(row: ResponsableProyectoDTO): string | null {
-    const pendingId = this.pendingProyectoWorker[row.projectId];
+  pendingProyectoWorkerFor(projectId: number, campo: CampoProyecto): number | null {
+    return this.pendingProyectoWorker[projectId]?.[campo] ?? null;
+  }
+
+  setPendingProyectoWorker(projectId: number, campo: CampoProyecto, workerId: number | null): void {
+    this.pendingProyectoWorker[projectId] ??= {};
+    this.pendingProyectoWorker[projectId][campo] = workerId;
+  }
+
+  emailProyecto(row: ResponsableProyectoDTO, campo: CampoProyecto): string | null {
+    const pendingId = this.pendingProyectoWorkerFor(row.projectId, campo);
     if (pendingId != null) {
       return this.data.trabajadores.find((w) => w.workerId === pendingId)?.email ?? null;
     }
-    return this.esCorreoVigente(row.emailCoordAdmin) ? row.emailCoordAdmin : null;
+    return this.esCorreoVigente(row[campo]) ? row[campo] : null;
+  }
+
+  /** Hay algo sin guardar en cualquiera de los 4 campos de este proyecto. */
+  proyectoTienePendientes(projectId: number): boolean {
+    const pend = this.pendingProyectoWorker[projectId];
+    return !!pend && Object.values(pend).some((v) => v != null);
   }
 
   guardarRazonSocial(row: ResponsableRazonSocialDTO): void {
@@ -164,17 +191,21 @@ export class Responsables implements OnInit {
   }
 
   guardarProyecto(row: ResponsableProyectoDTO): void {
-    const workerId = this.pendingProyectoWorker[row.projectId];
-    if (workerId == null) return;
-    const email = this.data.trabajadores.find((w) => w.workerId === workerId)?.email ?? null;
+    if (!this.proyectoTienePendientes(row.projectId)) return;
+
+    // Cada campo se resuelve al valor recién elegido (si lo hay) o se mantiene el que ya
+    // tenía guardado — el PUT reemplaza los 4 a la vez, así que hay que enviarlos completos.
+    const valores = Object.fromEntries(
+      this.camposProyecto.map(({ campo }) => [campo, this.emailProyecto(row, campo)]),
+    ) as Record<CampoProyecto, string | null>;
 
     this.savingProyecto[row.projectId] = true;
-    this.service.updateProyecto(row.projectId, email).subscribe({
+    this.service.updateProyecto(row.projectId, valores).subscribe({
       next: () => {
-        row.emailCoordAdmin = email;
+        this.camposProyecto.forEach(({ campo }) => (row[campo] = valores[campo]));
         delete this.pendingProyectoWorker[row.projectId];
         this.savingProyecto[row.projectId] = false;
-        Swal.fire({ icon: 'success', title: 'Coordinador actualizado', timer: 1200, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Responsables actualizados', timer: 1200, showConfirmButton: false });
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {

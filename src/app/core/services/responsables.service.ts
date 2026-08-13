@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ApiMessageDTO } from '../dtos/api/ApiMessage.model';
-import { ResponsablesDTO } from '../dtos/habilitacion/responsables.model';
+import { ResponsablesDTO, ResponsableProyectoUpdateDTO } from '../dtos/habilitacion/responsables.model';
 
 @Injectable({
   providedIn: 'root',
@@ -30,10 +30,10 @@ export class ResponsablesService {
     );
   }
 
-  updateProyecto(projectId: number, emailCoordAdmin: string | null): Observable<ApiMessageDTO> {
+  updateProyecto(projectId: number, dto: ResponsableProyectoUpdateDTO): Observable<ApiMessageDTO> {
     return this.http.put<ApiMessageDTO>(
       `${this.apiUrl}/proyectos/${projectId}`,
-      { emailCoordAdmin },
+      dto,
       this.authHeaders(),
     );
   }
