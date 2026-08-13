@@ -73,15 +73,11 @@
 }
 
 .docs-list {
-  flex: 0 0 auto;
-  width: 400px;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
   overflow-y: auto;
   padding: 8px 16px;
-}
-
-/* Sin preview ocupa todo */
-.modal-panel:not(:has(.preview-panel)) .docs-list {
-  width: 100%;
 }
 
 /* ── FILAS DE DOC ────────────────────────────────────────── */
