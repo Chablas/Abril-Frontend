@@ -26,7 +26,6 @@ export interface FormularioDatos {
   distrito: string | null;
   correoElectronico: string | null;
   numeroCelular: string | null;
-  convocatoria: string | null;
   pretensionesSalariales: string | null;
   disponibilidad: string | null;
   linkedin: string | null;

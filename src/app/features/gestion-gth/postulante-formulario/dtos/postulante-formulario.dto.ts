@@ -35,7 +35,6 @@ export interface PostulanteFormularioRespuestas {
   distritoId: number | null;
   correoElectronico: string | null;
   numeroCelular: string | null;
-  convocatoriaId: number | null;
   pretensionesSalariales: string | null;
   disponibilidadId: number | null;
   linkedin: string | null;
@@ -69,8 +68,13 @@ export interface PostulanteFormularioPublico {
   candidatoNombre: string;
   estadoCodigo: string;
   estadoNombre: string;
-  /** true si GTH ya revisó (aprobado/rechazado) → solo lectura. */
+  /** true si GTH ya aprobó el formulario → solo lectura. */
   soloLectura: boolean;
+  /**
+   * Observaciones de GTH cuando el formulario fue RECHAZADO: se muestran en cada página para que el
+   * postulante corrija lo indicado sobre sus propias respuestas. null en cualquier otro estado.
+   */
+  observaciones: string | null;
   estadosCiviles: OpcionFormulario[];
   tiposDocumento: TipoDocumentoOpcion[];
   distritos: DistritoOpcion[];
@@ -78,7 +82,6 @@ export interface PostulanteFormularioPublico {
   gradosAcademicos: OpcionFormulario[];
   disponibilidades: OpcionFormulario[];
   motivosCese: OpcionFormulario[];
-  convocatorias: OpcionFormulario[];
   respuestas: PostulanteFormularioRespuestas;
 }
 
@@ -87,7 +90,7 @@ export function respuestasVacias(): PostulanteFormularioRespuestas {
   return {
     nombresCompletos: null, fechaNacimiento: null, estadoCivilId: null, tipoDocumentoId: null,
     numeroDocumento: null, distritoId: null, correoElectronico: null, numeroCelular: null,
-    convocatoriaId: null, pretensionesSalariales: null, disponibilidadId: null, linkedin: null,
+    pretensionesSalariales: null, disponibilidadId: null, linkedin: null,
     portafolioLink: null, profesion: null, universidadId: null, gradoAcademicoId: null,
     numeroColegiatura: null, empresa: null, areaTrabajo: null, cargo: null, fechaInicio: null,
     fechaTermino: null, motivoCeseId: null, funcionesPrincipales: null, logros: null,

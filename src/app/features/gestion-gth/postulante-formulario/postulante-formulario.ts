@@ -95,6 +95,21 @@ export class PostulanteFormulario implements OnInit {
     });
   }
 
+  // ── Corrección tras un rechazo de GTH ───────────────────────────────────
+  /**
+   * Observaciones que dejó GTH al rechazar el formulario. Vienen solo cuando el formulario está
+   * RECHAZADO: se muestran en las 4 páginas para que el postulante corrija sobre lo que ya llenó
+   * (sus respuestas llegan precargadas) en vez de empezar de cero.
+   */
+  get observaciones(): string | null {
+    return this.data?.observaciones ?? null;
+  }
+
+  /** true si el postulante está corrigiendo un formulario observado por GTH. */
+  get esCorreccion(): boolean {
+    return !!this.observaciones || this.data?.estadoCodigo === 'RECHAZADO';
+  }
+
   // ── Catálogos (atajos para el template) ─────────────────────────────────
   get estadosCiviles(): OpcionFormulario[] { return this.data?.estadosCiviles ?? []; }
   get tiposDocumento(): TipoDocumentoOpcion[] { return this.data?.tiposDocumento ?? []; }
@@ -102,7 +117,6 @@ export class PostulanteFormulario implements OnInit {
   get gradosAcademicos(): OpcionFormulario[] { return this.data?.gradosAcademicos ?? []; }
   get disponibilidades(): OpcionFormulario[] { return this.data?.disponibilidades ?? []; }
   get motivosCese(): OpcionFormulario[] { return this.data?.motivosCese ?? []; }
-  get convocatorias(): OpcionFormulario[] { return this.data?.convocatorias ?? []; }
 
   /**
    * Universidades en orden alfabético con "Otras" siempre al final: es la opción de escape del
@@ -177,7 +191,6 @@ export class PostulanteFormulario implements OnInit {
       !!m.distritoId &&
       this.lleno(m.correoElectronico) &&
       this.lleno(m.numeroCelular) &&
-      !!m.convocatoriaId &&
       this.lleno(m.pretensionesSalariales) &&
       !!m.disponibilidadId
     );

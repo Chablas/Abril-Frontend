@@ -12,6 +12,10 @@ import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { LongListCandidatoEnvio, ReclutamientoService } from '../../services/reclutamiento.service';
+import {
+  DecisionFormularioAplicada,
+  FormularioDecisionService,
+} from '../../services/formulario-decision.service';
 import { AsignacionGth, CandidatoAprobado, DetalleRequerimientoGth, Opcion } from '../../dtos/reclutamiento.dto';
 import { CandidatoFormularioResumen } from '../../dtos/formulario-postulante.dto';
 import { GthFormularioPostulanteModal } from '../formulario-postulante/formulario-postulante-modal';
@@ -119,6 +123,8 @@ export class GthDetalleRequerimiento implements OnInit {
   correoFormulario: Record<number, string> = {};
   /** true mientras se envía el formulario de un candidato (key = candidatoId). */
   enviandoFormulario: Record<number, boolean> = {};
+  /** true mientras se aprueba/rechaza el formulario de un candidato (key = candidatoId). */
+  decidiendoFormulario: Record<number, boolean> = {};
   /** Candidato cuyo modal "Ver formulario" está abierto (null = cerrado). */
   formularioCandidatoId: number | null = null;
 
@@ -141,6 +147,7 @@ export class GthDetalleRequerimiento implements OnInit {
 
   constructor(
     private service: ReclutamientoService,
+    private decisiones: FormularioDecisionService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -432,13 +439,8 @@ export class GthDetalleRequerimiento implements OnInit {
     }
   }
 
-  /** El formulario ya aprobado no se puede reenviar. */
-  formularioBloqueado(c: CandidatoAprobado): boolean {
-    return c.formulario?.estadoCodigo === 'APROBADO';
-  }
-
   /** Envía (o reenvía) el formulario al correo escrito para el candidato. */
-  enviarFormulario(c: CandidatoAprobado): void {
+  async enviarFormulario(c: CandidatoAprobado): Promise<void> {
     const correo = (this.correoFormulario[c.candidatoId] ?? '').trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
       Swal.fire({
@@ -450,19 +452,93 @@ export class GthDetalleRequerimiento implements OnInit {
       return;
     }
 
+    // Reenviar uno ya aprobado lo reabre: es útil si el postulante se equivocó en un dato, pero
+    // deshace la aprobación, así que se confirma antes.
+    if (c.formulario?.estadoCodigo === 'APROBADO') {
+      const confirm = await Swal.fire({
+        icon: 'warning',
+        title: 'Este formulario ya fue aprobado',
+        html:
+          '¿Seguro que quieres volver a enviárselo? Se le reabre con la información que ya declaró ' +
+          'para que la corrija, y su formulario vuelve a quedar <b>Enviado</b> —deja de contar como ' +
+          'aprobado— hasta que lo complete y lo apruebes de nuevo.',
+        showCancelButton: true,
+        confirmButtonText: 'Reenviar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#B91C1C',
+      });
+      if (!confirm.isConfirmed) return;
+    }
+
     this.enviandoFormulario[c.candidatoId] = true;
     this.service.enviarFormulario(c.candidatoId, correo).subscribe({
       next: (res) => {
         c.formulario = res.formulario;
         this.enviandoFormulario[c.candidatoId] = false;
         this.huboCambios = true;
-        Swal.fire({ icon: 'success', title: 'Formulario enviado', text: res.message, confirmButtonColor: '#005D9D' });
+        // App zoneless: sin esto el badge del candidato se queda con el estado anterior.
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: 'success',
+          // Reenviar un formulario rechazado repite el correo de observaciones, no la invitación.
+          title: res.formulario.estadoCodigo === 'RECHAZADO' ? 'Observaciones reenviadas' : 'Formulario enviado',
+          text: res.message,
+          confirmButtonColor: '#005D9D',
+        });
       },
       error: (err: HttpErrorResponse) => {
         this.enviandoFormulario[c.candidatoId] = false;
+        this.cdr.detectChanges();
         this.errorService.handleError(err);
       },
     });
+  }
+
+  /** true si el postulante ya completó el formulario y falta que GTH lo apruebe o rechace. */
+  formularioPorRevisar(c: CandidatoAprobado): boolean {
+    return c.formulario?.estadoCodigo === 'COMPLETADO';
+  }
+
+  /**
+   * true si el formulario se puede rechazar. Además del completado entra el que se envió y el
+   * postulante nunca llenó: rechazarlo es lo que destraba el paso a la programación de entrevistas
+   * cuando alguien no responde. El enlace no se toca — si lo completa después vuelve a aparecer
+   * como «Por revisar».
+   */
+  formularioRechazable(c: CandidatoAprobado): boolean {
+    const estado = c.formulario?.estadoCodigo;
+    return estado === 'COMPLETADO' || estado === 'ENVIADO';
+  }
+
+  /**
+   * Aprueba/rechaza el formulario desde la ficha del candidato, sin abrir el modal de revisión.
+   * Son los mismos botones del modal (mismo flujo y mismas observaciones): acá están a la mano
+   * para el caso en que GTH ya revisó los datos y solo quiere decidir.
+   */
+  aprobarFormulario(c: CandidatoAprobado): Promise<void> {
+    return this.decidirFormulario(c, () => this.decisiones.aprobar(c.candidatoId));
+  }
+
+  rechazarFormulario(c: CandidatoAprobado): Promise<void> {
+    return this.decidirFormulario(c, () =>
+      this.decisiones.rechazar(c.candidatoId, this.formularioPorRevisar(c)),
+    );
+  }
+
+  private async decidirFormulario(
+    c: CandidatoAprobado,
+    accion: () => Promise<DecisionFormularioAplicada | null>,
+  ): Promise<void> {
+    if (this.decidiendoFormulario[c.candidatoId]) return;
+    this.decidiendoFormulario[c.candidatoId] = true;
+    const res = await accion();
+    this.decidiendoFormulario[c.candidatoId] = false;
+    if (res) {
+      c.formulario = res.resumen;
+      this.huboCambios = true;
+    }
+    // App zoneless: el cambio ocurre después de un await, así que hay que pintar a mano.
+    this.cdr.detectChanges();
   }
 
   /** Abre el modal "Ver formulario" del candidato. */
@@ -543,7 +619,7 @@ export class GthDetalleRequerimiento implements OnInit {
   get requisitosContinuarTexto(): string {
     if (this.puedeContinuarAEntrevistas) return '';
     if (!this.formulariosDecididos)
-      return 'Revisa el formulario de todos los candidatos (aprobar o rechazar) para continuar.';
+      return 'Revisa el formulario de todos los candidatos para continuar: apruébalo, o recházalo si el postulante nunca lo completó.';
     if (!this.hayFormularioAprobado)
       return 'Ningún formulario quedó aprobado: no hay candidatos a quienes entrevistar.';
     if (!this.multitestCompleto)

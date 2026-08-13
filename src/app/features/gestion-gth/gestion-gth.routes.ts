@@ -16,6 +16,20 @@ export const GESTION_GTH_ROUTES: Routes = [
     },
   },
   {
+    // Configuración de los correos que salen desde la bandeja de GTH (long list enviada y aviso
+    // de formulario del postulante completado). Misma feature que el botón «Configuración».
+    path: 'reclutamiento/configuracion',
+    loadComponent: () =>
+      import('./reclutamiento/configuracion/reclutamiento-configuracion').then(
+        (m) => m.GthReclutamientoConfiguracion,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'RECLUTAMIENTO - CONFIGURACIÓN',
+      featureKey: 'gestion-gth.reclutamiento.configuracion',
+    },
+  },
+  {
     // Vista del solicitante (jefatura/gerencia): registra y hace seguimiento a sus vacantes.
     path: 'solicitud-personal',
     loadComponent: () =>

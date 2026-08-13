@@ -1,12 +1,15 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import Swal from 'sweetalert2';
 import { AbrilModalPanel } from '../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { ReclutamientoService } from '../../services/reclutamiento.service';
+import {
+  DecisionFormularioAplicada,
+  FormularioDecisionService,
+} from '../../services/formulario-decision.service';
 import { CandidatoFormularioResumen, FormularioRevision } from '../../dtos/formulario-postulante.dto';
 
 /**
@@ -56,8 +59,10 @@ export class GthFormularioPostulanteModal implements OnInit {
 
   constructor(
     private service: ReclutamientoService,
+    private decisiones: FormularioDecisionService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -66,6 +71,7 @@ export class GthFormularioPostulanteModal implements OnInit {
       next: (data) => {
         this.revision = data;
         this.loaderService.hide();
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -96,62 +102,43 @@ export class GthFormularioPostulanteModal implements OnInit {
     return this.estado === 'RECHAZADO';
   }
 
+  /** Enviado al postulante pero todavía sin completar. */
+  get enviado(): boolean {
+    return this.estado === 'ENVIADO';
+  }
+
+  /**
+   * Se puede rechazar tanto lo completado como lo que se envió y el postulante nunca llenó:
+   * rechazar ese último es lo que destraba el paso a la programación de entrevistas.
+   */
+  get puedeRechazar(): boolean {
+    return this.completado || this.enviado;
+  }
+
   /** Hay datos que mostrar (el postulante ya llenó el formulario). */
   get tieneDatos(): boolean {
     return !!this.revision?.datos;
   }
 
   // ── Acciones ────────────────────────────────────────────────────────────
-  aprobar(): void {
-    if (this.procesando) return;
-    this.procesando = true;
-    this.loaderService.show();
-    this.service.decisionFormulario(this.candidatoId, true).subscribe({
-      next: (res) => {
-        this.aplicarDecision(res.formulario);
-        this.loaderService.hide();
-        this.procesando = false;
-        Swal.fire({ icon: 'success', title: 'Formulario aprobado', text: res.message, confirmButtonColor: '#005D9D' });
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
-        this.procesando = false;
-        this.errorService.handleError(err);
-      },
-    });
+  // El flujo (confirmación, llamada y avisos) vive en FormularioDecisionService porque los mismos
+  // botones existen en la ficha del candidato, dentro del detalle del requerimiento.
+  aprobar(): Promise<void> {
+    return this.decidir(() => this.decisiones.aprobar(this.candidatoId));
   }
 
-  async rechazar(): Promise<void> {
+  rechazar(): Promise<void> {
+    return this.decidir(() => this.decisiones.rechazar(this.candidatoId, this.completado));
+  }
+
+  private async decidir(accion: () => Promise<DecisionFormularioAplicada | null>): Promise<void> {
     if (this.procesando) return;
-
-    const { value: motivo, isConfirmed } = await Swal.fire({
-      icon: 'warning',
-      title: 'Rechazar formulario',
-      input: 'textarea',
-      inputLabel: 'Motivo del rechazo (opcional)',
-      inputPlaceholder: 'Indica por qué se rechaza el formulario…',
-      showCancelButton: true,
-      confirmButtonText: 'Rechazar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#B91C1C',
-    });
-    if (!isConfirmed) return;
-
     this.procesando = true;
-    this.loaderService.show();
-    this.service.decisionFormulario(this.candidatoId, false, motivo || null).subscribe({
-      next: (res) => {
-        this.aplicarDecision(res.formulario, motivo || null);
-        this.loaderService.hide();
-        this.procesando = false;
-        Swal.fire({ icon: 'success', title: 'Formulario rechazado', text: res.message, confirmButtonColor: '#005D9D' });
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
-        this.procesando = false;
-        this.errorService.handleError(err);
-      },
-    });
+    const res = await accion();
+    this.procesando = false;
+    if (res) this.aplicarDecision(res.resumen, res.motivo);
+    // App zoneless: el cambio ocurre después de un await, así que hay que pintar a mano.
+    this.cdr.detectChanges();
   }
 
   private aplicarDecision(resumen: CandidatoFormularioResumen, motivo: string | null = null): void {

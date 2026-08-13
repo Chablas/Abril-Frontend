@@ -40,16 +40,30 @@
         </div>
       </div>
 
-      <p class="config-warn config-warn--off" *ngIf="!evento.active">
+      <p class="config-warn config-warn--off" *ngIf="!evento.active && !evento.principalAutomatico">
         <i class="ti ti-mail-off"></i>
         Este correo <strong>no se envía</strong> mientras esté desactivado. Los destinatarios de
         abajo se conservan tal cual para cuando lo vuelvas a prender.
+      </p>
+
+      <!-- Con principal automático apagarlo no detiene el correo: el principal lo pone el sistema
+           al enviar y lo sigue recibiendo. Decir "no se envía" sería mentira. -->
+      <p class="config-warn config-warn--off" *ngIf="!evento.active && evento.principalAutomatico">
+        <i class="ti ti-mail-off"></i>
+        Mientras esté desactivado <strong>no se envía a los destinatarios de abajo</strong>. El
+        principal lo pone el sistema al enviarlo, así que ese lo sigue recibiendo igual.
       </p>
 
       <p class="config-warn" *ngIf="sinPrincipales">
         <i class="ti ti-alert-triangle"></i>
         No hay ningún destinatario <strong>principal (Para)</strong> activo, así que este correo
         no le llega a nadie. Prende uno o agrega un correo adicional.
+      </p>
+
+      <p class="config-warn config-warn--info" *ngIf="evento.principalAutomatico && evento.active">
+        <i class="ti ti-info-circle"></i>
+        El destinatario principal de este correo lo pone el sistema al enviarlo, así que abajo solo
+        se agregan <strong>principales adicionales</strong> y copias.
       </p>
 
       <p class="config-warn" *ngFor="let f of filasSinCorreo">

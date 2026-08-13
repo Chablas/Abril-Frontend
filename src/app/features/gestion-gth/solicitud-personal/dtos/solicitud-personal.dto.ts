@@ -3,6 +3,19 @@ export interface OpcionDto {
   nombre: string;
 }
 
+/**
+ * Opción del desplegable "Tipo de requerimiento". Trae además el código estable del catálogo
+ * porque el formulario cambia de forma según el tipo: al elegir Reemplazo aparece el desplegable
+ * del trabajador reemplazado. Se compara por `codigo` y nunca por `nombre`, que es presentación.
+ */
+export interface TipoRequerimientoOpcion extends OpcionDto {
+  /** `NUEVO` | `REEMPLAZO`. */
+  codigo: string;
+}
+
+/** Código del tipo de requerimiento que obliga a decir a quién se reemplaza. */
+export const TIPO_REQUERIMIENTO_REEMPLAZO = 'REEMPLAZO';
+
 /** Un destinatario del correo de la solicitud, con la razón por la que lo recibe. */
 export interface DestinatarioSolicitud {
   email: string;
@@ -29,8 +42,15 @@ export interface ReclutamientoFormDataDto {
   puestos: OpcionDto[];
   /** Categorías para el modo "Puesto personalizado" (ver `VacanteCreateDto.categoriaId`). */
   categorias: OpcionDto[];
-  tiposRequerimiento: OpcionDto[];
+  tiposRequerimiento: TipoRequerimientoOpcion[];
   proyectos: OpcionDto[];
+  /**
+   * Trabajadores entre los que se elige al reemplazado: los del área del solicitante y los de
+   * cualquier área hija, incluido él mismo (pedir el reemplazo propio por renuncia o promoción es
+   * un caso real). Vacía cuando el solicitante no tiene área registrada: en ese caso no hay de
+   * dónde elegir y el campo deja de ser obligatorio.
+   */
+  trabajadoresArea: OpcionDto[];
   destinatarios: SolicitudDestinatarios;
 }
 
@@ -50,6 +70,11 @@ export interface VacanteCreateDto {
    */
   categoriaId: number | null;
   tipoRequerimientoId: number | null;
+  /**
+   * Trabajador al que reemplaza la vacante. Solo se envía en las de tipo Reemplazo (en las demás
+   * va null); el backend revalida que pertenezca al área del solicitante o a un área hija.
+   */
+  reemplazaWorkerId: number | null;
   projectId: number | null;
   /** Fecha requerida de ingreso en formato nativo "YYYY-MM-DD". */
   fechaRequeridaIngreso: string;

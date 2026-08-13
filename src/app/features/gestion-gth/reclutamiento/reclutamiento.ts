@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
@@ -21,7 +22,6 @@ import {
   ResumenReclutamiento,
 } from './dtos/reclutamiento.dto';
 import { GthDetalleRequerimiento } from './components/detalle/detalle';
-import { GthConfiguracionCorreos } from '../shared/configuracion-correos/configuracion-correos';
 import { estadoColors } from '../shared/estado-colors';
 
 /**
@@ -44,7 +44,6 @@ import { estadoColors } from '../shared/estado-colors';
     SearchInput,
     SearchSelect,
     GthDetalleRequerimiento,
-    GthConfiguracionCorreos,
   ],
   templateUrl: './reclutamiento.html',
   styles: [`
@@ -157,9 +156,6 @@ export class GthReclutamiento implements OnInit {
   /** Requerimiento abierto en el modal de detalle (null = modal cerrado). */
   detalleId: number | null = null;
 
-  /** Modal de configuración del correo de long list (solo con la feature). */
-  showConfig = false;
-
   private readonly pager = new ClientPager<RequerimientoGthListItem>();
 
   constructor(
@@ -167,6 +163,7 @@ export class GthReclutamiento implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private authService: AuthService,
+    private router: Router,
   ) {}
 
   /** feature_key que habilita la configuración (dinámico vía role_feature en BD). */
@@ -180,6 +177,12 @@ export class GthReclutamiento implements OnInit {
   /** Botón "Configuración" del header: solo si el rol del usuario tiene la feature. */
   get botonConfiguracion() {
     return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
+  }
+
+  /** Lleva a la pantalla de configuración de correos de reclutamiento (ya no es un modal). */
+  abrirConfiguracion(): void {
+    if (!this.puedeConfigurar) return;
+    this.router.navigate(['/gestion-gth/reclutamiento/configuracion']);
   }
 
   ngOnInit(): void {

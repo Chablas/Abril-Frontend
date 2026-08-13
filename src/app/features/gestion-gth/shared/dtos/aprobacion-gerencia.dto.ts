@@ -5,6 +5,11 @@ export interface AprobacionGgVacante {
   puesto: string;
   /** Tipo de requerimiento (Nuevo / Reemplazo). */
   tipoRequerimiento: string;
+  /**
+   * Trabajador al que reemplaza la vacante: es lo que le da sentido a un Reemplazo a la hora de
+   * aprobarlo. Null en las vacantes nuevas y en las anteriores a este dato.
+   */
+  trabajadorReemplazado: string | null;
   proyectoObra: string | null;
   /** Fecha requerida de ingreso ("YYYY-MM-DD"). */
   fechaRequeridaIngreso: string;
