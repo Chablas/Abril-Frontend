@@ -252,11 +252,6 @@ export interface RevisionLongList {
 
 /** Evaluación que GTH registró tras la entrevista de un finalista. */
 export interface EvaluacionFinalista {
-  /** Puntajes en porcentaje (0-100). null = GTH aún no lo registró. */
-  puntajeEntrevista: number | null;
-  puntajePsicotecnico: number | null;
-  puntajeTecnica: number | null;
-  puntajeResultado: number | null;
   /** Resultado de la entrevista (qué se observó). */
   comentarioEntrevista: string | null;
   /** Informe psicotécnico del candidato. */
@@ -296,7 +291,7 @@ export interface RevisionFinalistas {
   proyectoObra: string | null;
   estadoCodigo: string;
   estadoNombre: string;
-  /** Finalistas ordenados por puntaje de resultado (mejor primero). */
+  /** Finalistas ordenados alfabéticamente por nombre. */
   finalistas: Finalista[];
 }
 

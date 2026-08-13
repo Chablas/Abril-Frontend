@@ -164,8 +164,8 @@ export interface CandidatoAprobado {
   /** Entrevista programada del candidato (null si aún no se programó). */
   entrevista?: EntrevistaResumen | null;
   /**
-   * Evaluación de la entrevista (puntajes, comentarios del informe y resultado). Null mientras
-   * GTH no registre nada ni envíe el correo de agradecimiento.
+   * Evaluación de la entrevista (comentarios del informe y resultado). Null mientras GTH no
+   * registre nada ni envíe el correo de agradecimiento.
    */
   evaluacion?: EvaluacionResumen | null;
 }
@@ -191,15 +191,10 @@ export interface EntrevistaAccionResult {
 }
 
 /**
- * Evaluación de la entrevista de un candidato: los cuatro puntajes que registra GTH y los tres
- * comentarios del informe que ve el área solicitante, más el resultado alcanzado.
+ * Evaluación de la entrevista de un candidato: los tres comentarios del informe que ve el área
+ * solicitante, más el resultado alcanzado.
  */
 export interface EvaluacionResumen {
-  /** Puntajes en porcentaje (0-100). null = aún sin registrar. */
-  puntajeEntrevista: number | null;
-  puntajePsicotecnico: number | null;
-  puntajeTecnica: number | null;
-  puntajeResultado: number | null;
   /** Resultado de la entrevista (qué se observó). */
   comentarioEntrevista: string | null;
   /** Informe psicotécnico del candidato. */
@@ -215,12 +210,8 @@ export interface EvaluacionResumen {
   agradecimientoEnviadoEn: string | null;
 }
 
-/** Body del guardado de la evaluación (solo puntajes y comentarios; el resultado no se edita aquí). */
+/** Body del guardado de la evaluación (solo comentarios; el resultado no se edita aquí). */
 export interface EvaluacionGuardar {
-  puntajeEntrevista: number | null;
-  puntajePsicotecnico: number | null;
-  puntajeTecnica: number | null;
-  puntajeResultado: number | null;
   comentarioEntrevista: string | null;
   comentarioPsicotecnico: string | null;
   comentarioRecomendacion: string | null;

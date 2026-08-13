@@ -68,7 +68,7 @@ export class SolicitudPersonalService {
 
   /**
    * Informe de finalistas de un requerimiento: cabecera + candidatos entrevistados con sus
-   * puntajes, comentarios y CV (lo que GTH registró tras las entrevistas).
+   * comentarios y CV (lo que GTH registró tras las entrevistas).
    */
   getRevisionFinalistas(requerimientoId: number): Observable<RevisionFinalistas> {
     return this.http.get<RevisionFinalistas>(

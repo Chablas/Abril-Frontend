@@ -130,7 +130,7 @@
             <p class="text-[12px] text-gray-500 mt-[3px] leading-snug">
               <ng-container *ngIf="c.tipo === 'FINALISTAS'; else textoLongList">
                 GTH compartió {{ c.totalCandidatos }} finalista{{ c.totalCandidatos === 1 ? '' : 's' }}
-                con su resultado de entrevista, evaluación técnica e informe psicotécnico.
+                con su resultado de entrevista, informe psicotécnico y recomendación de GTH.
               </ng-container>
               <ng-template #textoLongList>
                 GTH envió {{ c.totalCandidatos }} candidato{{ c.totalCandidatos === 1 ? '' : 's' }} para que revises los CVs y decidas quiénes pasan a evaluación.

@@ -150,8 +150,8 @@ export class ReclutamientoService {
   }
 
   /**
-   * Guarda la evaluación de la entrevista de un candidato: los cuatro puntajes y los tres
-   * comentarios del informe que verá el área solicitante.
+   * Guarda la evaluación de la entrevista de un candidato: los tres comentarios del informe
+   * que verá el área solicitante.
    */
   guardarEvaluacion(candidatoId: number, dto: EvaluacionGuardar): Observable<EvaluacionAccionResult> {
     return this.http.put<EvaluacionAccionResult>(

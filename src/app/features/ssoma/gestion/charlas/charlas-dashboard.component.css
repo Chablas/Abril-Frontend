@@ -931,10 +931,17 @@
 }
 .btn-edit-asist:hover { background: #f0ebe2; color: #1a1a18; }
 
-.edit-charla-title {
-  font-size: 13px; font-weight: 600; color: #1a1a18;
-  padding: 4px 0 8px; border-bottom: 0.5px solid #e8e5df;
-  margin: 0;
+/* Cabecera editable (título/tipo/fecha) del modal de edición: el .form-group trae
+   flex:1 para las filas horizontales del resto del componente, acá se apilan. */
+.edit-charla-form {
+  display: flex; flex-direction: column; gap: 12px;
+  padding-bottom: 12px; border-bottom: 0.5px solid #e8e5df;
+  flex-shrink: 0;
+}
+.edit-charla-form .form-group { flex: 0 0 auto; }
+
+.edit-charla-subtitulo {
+  font-size: 12px; font-weight: 600; color: #5a5850;
 }
 
 /* ── RESPONSIVE ──────────────────────────────────── */

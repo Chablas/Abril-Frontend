@@ -28,8 +28,8 @@
            style="background:#ECFDF5;border:1px solid #A7F3D0">
         <i class="ti ti-circle-check text-[18px] shrink-0 mt-[1px]" style="color:#15803D"></i>
         <p class="text-[13px] text-gray-700">
-          GTH envió a los finalistas con su resultado de entrevista, evaluación técnica e informe
-          psicotécnico. Selecciona al mejor candidato para cerrar la decisión del área solicitante.
+          GTH envió a los finalistas con su resultado de entrevista, informe psicotécnico y
+          recomendación. Selecciona al mejor candidato para cerrar la decisión del área solicitante.
         </p>
       </div>
 
@@ -58,19 +58,17 @@
                     <div class="min-w-0">
                       <p class="text-[13.5px] font-bold text-gray-800 truncate">{{ f.nombre | titleCase }}</p>
                       <p class="text-[12px] text-gray-500 truncate">{{ (f.puesto | titleCase) || '—' }}</p>
-                      <div class="flex items-center gap-[6px] flex-wrap mt-[6px]">
-                        <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
-                              style="background:#DCFCE7;color:#15803D">
-                          Resultado {{ puntaje(f.evaluacion.puntajeResultado) }}
-                        </span>
-                        @if (esSeleccionado(f)) {
-                          <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
-                                style="background:#DBEAFE;color:#1D4ED8">Seleccionado</span>
-                        } @else if (esRechazado(f)) {
-                          <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
-                                style="background:#FEE2E2;color:#B91C1C">Rechazado</span>
-                        }
-                      </div>
+                      @if (estaDecidido(f)) {
+                        <div class="flex items-center gap-[6px] flex-wrap mt-[6px]">
+                          @if (esSeleccionado(f)) {
+                            <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                                  style="background:#DBEAFE;color:#1D4ED8">Seleccionado</span>
+                          } @else {
+                            <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                                  style="background:#FEE2E2;color:#B91C1C">Rechazado</span>
+                          }
+                        </div>
+                      }
                     </div>
                   </div>
                   @if (seleccionado?.candidatoId === f.candidatoId) {
@@ -103,32 +101,8 @@
                 {{ (seleccionado.puesto | titleCase) || '—' }} · {{ nombreCv(seleccionado) }}
               </p>
 
-              <!-- Puntajes registrados por GTH -->
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-[10px] mt-[14px]">
-                <div class="rounded-[8px] border px-[12px] py-[10px]"
-                     style="border-color:var(--color-abril-border);background:#F8FAFC">
-                  <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Entrevista</p>
-                  <p class="text-[17px] font-bold text-gray-800 mt-[2px]">{{ puntaje(seleccionado.evaluacion.puntajeEntrevista) }}</p>
-                </div>
-                <div class="rounded-[8px] border px-[12px] py-[10px]"
-                     style="border-color:var(--color-abril-border);background:#F8FAFC">
-                  <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Psicotécnico</p>
-                  <p class="text-[17px] font-bold text-gray-800 mt-[2px]">{{ puntaje(seleccionado.evaluacion.puntajePsicotecnico) }}</p>
-                </div>
-                <div class="rounded-[8px] border px-[12px] py-[10px]"
-                     style="border-color:var(--color-abril-border);background:#F8FAFC">
-                  <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Técnica</p>
-                  <p class="text-[17px] font-bold text-gray-800 mt-[2px]">{{ puntaje(seleccionado.evaluacion.puntajeTecnica) }}</p>
-                </div>
-                <div class="rounded-[8px] border px-[12px] py-[10px]"
-                     style="border-color:var(--color-abril-border);background:#F8FAFC">
-                  <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Resultado</p>
-                  <p class="text-[17px] font-bold text-gray-800 mt-[2px]">{{ puntaje(seleccionado.evaluacion.puntajeResultado) }}</p>
-                </div>
-              </div>
-
               <!-- Resultado de la entrevista -->
-              <div class="rounded-[8px] border px-[13px] py-[11px] mt-[12px]" style="border-color:var(--color-abril-border)">
+              <div class="rounded-[8px] border px-[13px] py-[11px] mt-[14px]" style="border-color:var(--color-abril-border)">
                 <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Resultado de entrevista</p>
                 <p class="text-[13px] text-gray-700 mt-[4px] leading-snug">
                   {{ seleccionado.evaluacion.comentarioEntrevista || 'GTH aún no registró este comentario.' }}

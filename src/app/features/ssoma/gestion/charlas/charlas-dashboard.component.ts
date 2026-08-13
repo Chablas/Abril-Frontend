@@ -18,7 +18,7 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { FindDiaPipe } from './pipes/find-dia.pipe';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { SharedFiltersService } from '../../../../shared/services/shared-filters.service';
-import { hoyIsoLocal, parseFechaLocal } from '../../../../shared/utils/fecha-local.util';
+import { hoyIsoLocal, parseFechaLocal, toIsoLocal } from '../../../../shared/utils/fecha-local.util';
 import { SecureImgDirective } from '../../../../shared/directives/secure-img.directive';
 import {
   DashSupervisoresRow, Capacitacion, NuevaCharlaCreateDto,
@@ -72,9 +72,9 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   dashPersonalResult: DashPersonalResult = { dias: [], staff: [] };
   loadingDash = false;
 
-  // Editar asistencia (Tab 3)
+  // Editar charla (Tab 3): cabecera + asistencia
   editCharlaId: number | null = null;
-  editCharlaTitle = '';
+  editForm = { titulo: '', tipo: '' as string, fecha: hoyIsoLocal() };
   editStaffChecks: Record<number, boolean> = {};
   savingEdit = false;
 
@@ -101,6 +101,7 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   charlaGaleria: CharlaGaleriaItem[] = [];
   loadingTab3 = false;
   showNuevaCharlaModal = false;
+  readonly tiposCharla = ['Seguridad', 'Salud Ocupacional', 'Medio Ambiente'] as const;
   form = {
     titulo: '',
     tipo: 'Seguridad' as 'Seguridad' | 'Salud Ocupacional' | 'Medio Ambiente',
@@ -275,9 +276,14 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
     });
   }
 
-  abrirEditAsistencia(charla: CharlaGaleriaItem): void {
+  abrirEditCharla(charla: CharlaGaleriaItem): void {
     this.editCharlaId = charla.id;
-    this.editCharlaTitle = charla.titulo;
+    const fecha = parseFechaLocal(charla.fecha);
+    this.editForm = {
+      titulo: charla.titulo,
+      tipo: charla.tipo,
+      fecha: fecha ? toIsoLocal(fecha) : hoyIsoLocal(),
+    };
     this.editStaffChecks = {};
     this.savingEdit = false;
     // Pre-cargar asistencia actual
@@ -290,7 +296,7 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
     this.cdr.markForCheck();
   }
 
-  cerrarEditAsistencia(): void {
+  cerrarEditCharla(): void {
     this.editCharlaId = null;
     this.cdr.markForCheck();
   }
@@ -310,17 +316,35 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
     this.cdr.markForCheck();
   }
 
-  guardarEditAsistencia(): void {
-    if (!this.editCharlaId) return;
+  guardarEditCharla(): void {
+    if (!this.editCharlaId || !this.editForm.titulo.trim() || !this.editForm.fecha) return;
     const workerIds = Object.entries(this.editStaffChecks).filter(([, v]) => v).map(([k]) => Number(k));
+    const fecha = this.editForm.fecha;
     this.savingEdit = true;
     this.cdr.markForCheck();
-    this.svc.editarAsistencia(this.editCharlaId, workerIds).subscribe({
+    this.svc.editarCharla(this.editCharlaId, {
+      titulo: this.editForm.titulo.trim(),
+      tema: this.editForm.tipo,
+      fecha,
+      workerIds,
+    }).subscribe({
       next: () => {
         this.savingEdit = false;
-        this.cerrarEditAsistencia();
+        this.cerrarEditCharla();
         this.loadTab3();
-        Swal.fire({ icon: 'success', title: 'Asistencia actualizada', timer: 1500, showConfirmButton: false });
+        // La galería solo trae el mes filtrado: si la fecha se movió fuera de él, la charla
+        // desaparece de la lista y conviene decirlo en vez de dejar que parezca un error.
+        const d = parseFechaLocal(fecha);
+        const fueraDelFiltro = !!d && (d.getMonth() + 1 !== this.mes || d.getFullYear() !== this.anio);
+        Swal.fire({
+          icon: 'success',
+          title: 'Charla actualizada',
+          text: fueraDelFiltro
+            ? `La nueva fecha está fuera de ${this.mesLabel()} ${this.anio}, así que la charla ya no aparece en esta lista.`
+            : undefined,
+          timer: fueraDelFiltro ? undefined : 1500,
+          showConfirmButton: fueraDelFiltro,
+        });
       },
       error: (err: HttpErrorResponse) => { this.savingEdit = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
     });

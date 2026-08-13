@@ -47,15 +47,10 @@ interface EntrevistaFormState {
 }
 
 /**
- * Datos editables de la evaluación de la entrevista de un candidato: los cuatro puntajes
- * (porcentajes 0-100) y los tres comentarios que arman el informe de finalista que ve el
- * área solicitante.
+ * Datos editables de la evaluación de la entrevista de un candidato: los tres comentarios que
+ * arman el informe de finalista que ve el área solicitante.
  */
 interface EvaluacionFormState {
-  puntajeEntrevista: number | null;
-  puntajePsicotecnico: number | null;
-  puntajeTecnica: number | null;
-  puntajeResultado: number | null;
   comentarioEntrevista: string;
   comentarioPsicotecnico: string;
   comentarioRecomendacion: string;
@@ -721,7 +716,7 @@ export class GthDetalleRequerimiento implements OnInit {
     });
   }
 
-  // ── Evaluación de la entrevista (puntajes + informe de finalista) ────────
+  // ── Evaluación de la entrevista (informe de finalista) ───────────────────
   /** true si el candidato ya no continúa: se le envió el correo de agradecimiento. */
   noContinua(c: CandidatoAprobado): boolean {
     return c.evaluacion?.resultadoCodigo === 'NO_PASO';
@@ -736,36 +731,16 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
-   * Guarda los cuatro puntajes y los tres comentarios del candidato y, con eso, lo envía como
-   * finalista: el informe queda disponible en la vista del área solicitante.
+   * Guarda los tres comentarios del candidato y, con eso, lo envía como finalista: el informe
+   * queda disponible en la vista del área solicitante.
    */
   guardarEvaluacion(c: CandidatoAprobado): void {
     const form = this.evaluacionForm[c.candidatoId];
     if (!form || this.guardandoEvaluacion[c.candidatoId]) return;
 
-    const fueraDeRango = [
-      form.puntajeEntrevista,
-      form.puntajePsicotecnico,
-      form.puntajeTecnica,
-      form.puntajeResultado,
-    ].some((p) => p !== null && (p < 0 || p > 100));
-    if (fueraDeRango) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Puntaje no válido',
-        text: 'Los puntajes se registran como porcentaje: deben estar entre 0 y 100.',
-        confirmButtonColor: '#005D9D',
-      });
-      return;
-    }
-
     this.guardandoEvaluacion[c.candidatoId] = true;
     this.service
       .guardarEvaluacion(c.candidatoId, {
-        puntajeEntrevista: form.puntajeEntrevista,
-        puntajePsicotecnico: form.puntajePsicotecnico,
-        puntajeTecnica: form.puntajeTecnica,
-        puntajeResultado: form.puntajeResultado,
         comentarioEntrevista: form.comentarioEntrevista.trim() || null,
         comentarioPsicotecnico: form.comentarioPsicotecnico.trim() || null,
         comentarioRecomendacion: form.comentarioRecomendacion.trim() || null,
@@ -850,10 +825,6 @@ export class GthDetalleRequerimiento implements OnInit {
         lugarId: c.entrevista?.lugarId ?? lugarPorDefecto,
       };
       this.evaluacionForm[c.candidatoId] = {
-        puntajeEntrevista: c.evaluacion?.puntajeEntrevista ?? null,
-        puntajePsicotecnico: c.evaluacion?.puntajePsicotecnico ?? null,
-        puntajeTecnica: c.evaluacion?.puntajeTecnica ?? null,
-        puntajeResultado: c.evaluacion?.puntajeResultado ?? null,
         comentarioEntrevista: c.evaluacion?.comentarioEntrevista ?? '',
         comentarioPsicotecnico: c.evaluacion?.comentarioPsicotecnico ?? '',
         comentarioRecomendacion: c.evaluacion?.comentarioRecomendacion ?? '',
