@@ -1,12 +1,15 @@
 /**
- * Colores del badge de estado del pipeline de reclutamiento (una entrada por fase).
- * Compartido entre la bandeja y el modal de detalle para que el mismo estado se
- * pinte igual en toda la feature.
+ * Colores del badge de estado del pipeline de reclutamiento (una entrada por fase) y utilidades
+ * de orden del pipeline. Compartido por las features del módulo que muestran el estado de un
+ * requerimiento: la bandeja de GTH, su modal de detalle y la vista del solicitante (Solicitud de
+ * Personal), para que el mismo estado se pinte igual en todas.
  */
 /**
- * Orden del pipeline de reclutamiento (espejo de gth_estado_requerimiento.orden).
- * Permite saber en el frontend si un requerimiento ya alcanzó una fase sin traer
- * el orden numérico del backend.
+ * Orden del pipeline de reclutamiento (espejo de gth_estado_requerimiento.orden). Permite saber en
+ * el frontend si un requerimiento ya alcanzó una fase sin traer el orden numérico del backend.
+ *
+ * RECHAZADO_GG queda FUERA a propósito: no es una fase del pipeline sino la salida terminal de una
+ * vacante que Gerencia General no aprobó (nunca llega a GTH), así que no "alcanza" ninguna fase.
  */
 const PIPELINE: string[] = [
   'NUEVO',
@@ -34,6 +37,7 @@ export function estadoColors(codigo: string): { bg: string; text: string } {
   switch (codigo) {
     case 'NUEVO':              return { bg: '#DBEAFE', text: '#1D4ED8' };
     case 'APROBACION_GG':      return { bg: '#FEF3C7', text: '#B45309' };
+    case 'RECHAZADO_GG':       return { bg: '#FEE2E2', text: '#B91C1C' };
     case 'VALIDACION_GTH':     return { bg: '#E0E7FF', text: '#4338CA' };
     case 'PUBLICACION':        return { bg: '#CCFBF1', text: '#0F766E' };
     case 'LONG_LIST':          return { bg: '#F3E8FF', text: '#7E22CE' };

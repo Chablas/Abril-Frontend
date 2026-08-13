@@ -44,6 +44,17 @@ export class MiSaludService {
     });
   }
 
+  /**
+   * Contenido de un certificado propio. El archivo está en la carpeta de SharePoint configurada
+   * y lo sirve el backend, así el trabajador lo ve sin tener sesión de Microsoft 365.
+   */
+  getCertificado(adjuntoId: number): Observable<Blob> {
+    return this.http.get(`${this.base}/descansos/adjuntos/${adjuntoId}`, {
+      headers: buildAuthHeaders(),
+      responseType: 'blob',
+    });
+  }
+
   // ── Configuración: correos del descanso médico ──
   getCorreoConfigs(): Observable<MiDescansoCorreoConfigDto[]> {
     return this.http.get<MiDescansoCorreoConfigDto[]>(`${this.base}/configuracion/correos`, {

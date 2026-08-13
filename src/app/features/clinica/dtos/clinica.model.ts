@@ -57,7 +57,8 @@ export interface ProgramacionClinicaDto {
   workerId: number;
   workerNombre: string;
   workerDni: string;
-  ocupacion?: string | null;
+  /** Nombre del puesto del trabajador (campo de presentación). */
+  puesto?: string | null;
   tipoEmo: string;
   tipoEmoId?: number;
   empresa: string;

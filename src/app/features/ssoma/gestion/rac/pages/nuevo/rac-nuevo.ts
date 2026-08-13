@@ -159,7 +159,7 @@ export class RacNuevo implements OnInit {
         this.sinWorkerVinculado = false;
         this.resolviendoObservador = false;
         this.reportanteId = me.id;
-        this.reportanteCargo = me.cargo || [me.categoria, me.ocupacion].filter(Boolean).join(' · ');
+        this.reportanteCargo = me.cargo || me.puesto || '';
         if (me.empresaActualId) {
           this.empresaReportanteId = me.empresaActualId;
           this.empresaReportanteNombre = me.empresaActual || '';

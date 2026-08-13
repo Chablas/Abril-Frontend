@@ -34,7 +34,7 @@
     <div class="ws-sel-name">{{ selected.apellidoNombre }}</div>
     <div class="ws-sel-meta">
       DNI {{ selected.dni }}
-      <span *ngIf="selected.ocupacion"> · {{ selected.ocupacion }}</span>
+      <span *ngIf="selected.puesto"> · {{ selected.puesto }}</span>
     </div>
     <div *ngIf="selected.empresaActual" class="ws-sel-meta">
       Empresa actual: <b>{{ selected.empresaActual }}</b>

@@ -7,8 +7,10 @@ export interface WorkerHabilitacionListDto {
   proyectoActual?: string;
   proyectoActualId?: number;
   estadoHabilitacion: string;
+  /** Nombre de la categoría (campo de lógica). */
   categoria?: string;
-  ocupacion?: string;
+  /** Nombre del puesto (campo de presentación). */
+  puesto?: string;
   estadoWorker: string;
   contrataCasa?: string;
   /** FK a workers_obra_oficina_staff. */
@@ -82,6 +84,12 @@ export interface ArchivoStagingDto {
 
 export interface WorkerDetalleDto {
   workerId: number;
+  /**
+   * Persona de la ficha (`workers.person_id`). El formulario la usa para descartar al propio
+   * trabajador de los candidatos a jefe: una persona puede tener varias fichas en `workers`
+   * (reingreso), así que comparar solo por ficha dejaría pasar el caso.
+   */
+  personId?: number | null;
   apellidoNombre: string;
   dni?: string;
   celular?: string;
@@ -112,7 +120,11 @@ export interface WorkerDetalleDto {
   /** Nombre del catálogo (solo lectura). */
   obraOficina?: string;
   aniosExperiencia?: number;
-  ocupacionId?: number;
+  /** FK a `categoria`: el campo de lógica. */
+  categoriaId?: number | null;
+  /** FK a `puesto`: el campo de presentación. */
+  puestoId?: number | null;
+  /** Nombre del puesto, ya resuelto por el backend. */
   puesto?: string;
   /**
    * Jefe elegido a mano para este trabajador, que se sobrepone al revisor de su área.

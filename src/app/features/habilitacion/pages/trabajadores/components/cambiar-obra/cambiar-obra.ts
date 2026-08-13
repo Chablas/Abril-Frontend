@@ -13,6 +13,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { CatalogosHabService } from '../../../../services/catalogos-hab.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
@@ -39,7 +40,8 @@ interface CambiarObraForm {
   empresaId: number | null;
 
   cambiaPuesto: boolean;
-  puesto: string;
+  /** FK a `puesto`: el puesto al que pasa. */
+  puestoId: number | null;
 
   cambiaStaffOficina: boolean;
   staffOficina: number | null;
@@ -62,6 +64,7 @@ export class CambiarObra implements OnChanges {
 
   proyectos: ProjectGetDTO[] = [];
   empresas: EmpresaSimpleDto[] = [];
+  puestos: { id: number; nombre: string; categoriaId: number | null }[] = [];
 
   model: CambiarObraForm = this.empty();
   saving = false;
@@ -79,6 +82,7 @@ export class CambiarObra implements OnChanges {
     private trabajadorHabService: TrabajadorHabService,
     private projectService: ProjectService,
     private catalogosService: CatalogosSaludService,
+    private catalogosHabService: CatalogosHabService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -92,7 +96,6 @@ export class CambiarObra implements OnChanges {
       this.model.proyectoId = this.worker?.proyectoActualId ?? null;
       this.model.empresaId = this.worker?.empresaId ?? null;
       this.model.staffOficina = this.worker?.obraOficinaStaffId ?? 1;
-      this.model.puesto = this.worker?.ocupacion ?? '';
       this.loadCatalogos();
     }
   }
@@ -104,7 +107,7 @@ export class CambiarObra implements OnChanges {
       cambiaEmpresa: false,
       empresaId: null,
       cambiaPuesto: false,
-      puesto: '',
+      puestoId: null,
       cambiaStaffOficina: false,
       staffOficina: 1,
       fechaCambio: new Date().toISOString().substring(0, 10),
@@ -124,6 +127,13 @@ export class CambiarObra implements OnChanges {
 
   private loadCatalogos(): void {
     this.loadingCatalogos = true;
+    this.catalogosHabService.getPuestos().subscribe({
+      next: (res) => {
+        this.puestos = res ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => (this.puestos = []),
+    });
     this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
       next: (res) => {
         this.proyectos = res.data ?? [];
@@ -173,7 +183,7 @@ export class CambiarObra implements OnChanges {
     if (this.saving || !this.algunCambioMarcado || !this.model.fechaCambio) return false;
     if (this.model.cambiaObra && !this.model.proyectoId) return false;
     if (this.model.cambiaEmpresa && !this.model.empresaId) return false;
-    if (this.model.cambiaPuesto && !this.model.puesto.trim()) return false;
+    if (this.model.cambiaPuesto && this.model.puestoId == null) return false;
     if (this.model.cambiaStaffOficina && !this.model.staffOficina) return false;
     return true;
   }
@@ -190,7 +200,7 @@ export class CambiarObra implements OnChanges {
       nuevaEmpresaId: empresaId ?? undefined,
       // puesto y staffOficina solo viajan si su checkbox está marcado — evita que el
       // backend calcule un "cambio" contra un valor que el admin nunca tocó a propósito.
-      puesto: this.model.cambiaPuesto ? this.model.puesto.trim() : undefined,
+      puestoId: this.model.cambiaPuesto ? this.model.puestoId ?? undefined : undefined,
       obraOficinaStaffId: this.model.cambiaStaffOficina ? this.model.staffOficina ?? undefined : undefined,
       fechaCambio: this.model.fechaCambio,
     };

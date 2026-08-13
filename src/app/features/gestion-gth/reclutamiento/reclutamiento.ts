@@ -22,7 +22,7 @@ import {
 } from './dtos/reclutamiento.dto';
 import { GthDetalleRequerimiento } from './components/detalle/detalle';
 import { GthConfiguracionCorreos } from '../shared/configuracion-correos/configuracion-correos';
-import { estadoColors } from './estado-colors';
+import { estadoColors } from '../shared/estado-colors';
 
 /**
  * Vista de GTH del módulo Reclutamiento: bandeja con las tarjetas de resumen, el aviso de
@@ -63,6 +63,65 @@ import { estadoColors } from './estado-colors';
        Sin encogimiento el wrap abraza su contenido, el paginador cae justo debajo de
        la última fila y el scroll lo hace .page-container, que ya es overflow-auto. */
     .abril-table-wrap { overflow: visible; flex: 0 0 auto; }
+
+    /* ── Responsive ───────────────────────────────────────────────────────
+       Las 9 columnas de la tabla no entran por debajo de ~1024px y, como acá
+       .abril-table-wrap no recorta (overflow:visible, ver arriba), ese
+       desborde lo terminaba scrolleando .page-container: al desplazarse para
+       ver la tabla se arrastraba de lado TODA la vista — tarjetas, aviso y
+       pipeline incluidos — y la página quedaba ilegible en móvil (bug real,
+       se veía el contenido cortado por la izquierda). Debajo de ese ancho la
+       tabla se cambia por tarjetas, mismo patrón que Revisiones y
+       Observaciones de Arquitectura Comercial. La lista es la misma: comparten
+       filtros, paginación y acciones, solo cambia cómo se dibuja. */
+    .rec-cards { display: none; }
+
+    @media (max-width: 1023.98px) {
+      .abril-table-wrap { display: none; }
+      .rec-cards { display: grid; grid-template-columns: 1fr; gap: 10px; }
+      /* Objetivo táctil: 28px del estándar es cómodo con mouse, corto con el dedo. */
+      .rec-cards .abril-action-btn { width: 32px; height: 32px; font-size: 15px; }
+    }
+
+    /* Tablet: una sola columna de tarjetas queda enorme y vacía; con auto-fill
+       entran dos por fila sin cambiar nada del layout del teléfono. */
+    @media (min-width: 640px) and (max-width: 1023.98px) {
+      .rec-cards { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+    }
+
+    /* Teléfono: las 4 tarjetas de resumen apiladas ocupaban ~400px de alto, casi
+       una pantalla completa antes de ver el pipeline y la lista. A dos columnas
+       y con medidas compactas entran de una sola vista. Todo va acotado a este
+       @media para no alterar el desktop. */
+    @media (max-width: 639.98px) {
+      .page-container { gap: 12px; }
+
+      .rec-kpis { gap: 10px; }
+      .rec-kpi { padding: 10px 11px; gap: 10px; }
+      .rec-kpi-icon { width: 34px; height: 34px; border-radius: 8px; }
+      .rec-kpi-svg { width: 18px; height: 18px; }
+      .rec-kpi-value { font-size: 20px; }
+      .rec-kpi-label { font-size: 11.5px; margin-top: 3px; line-height: 1.2; }
+      .rec-kpi-sub { font-size: 10px; line-height: 1.2; }
+
+      .rec-aviso { padding: 10px 12px; gap: 10px; }
+      .rec-aviso-icon { width: 30px; height: 30px; }
+      .rec-aviso-text { font-size: 12.5px; line-height: 1.35; }
+
+      .rec-pipeline-card { padding: 12px; }
+      .rec-pipeline-title { font-size: 13.5px; margin-bottom: 10px; }
+      .rec-pipeline-dot { width: 36px; height: 36px; font-size: 13px; }
+      .rec-pipeline-name { font-size: 10.5px; }
+      /* min-width del conector: cuánto se puede comprimir el embudo antes de
+         necesitar scroll. margin-top = radio del círculo, para que la línea
+         quede a su altura media (18px con círculos de 36px). */
+      .rec-pipeline-link { min-width: 10px; margin-top: 18px; }
+      /* El embudo se arrastra con el dedo: la barra de scroll ocupaba alto y
+         se leía como un corte. Mismo criterio que las pestañas del header
+         (.abril-tabs__nav en abril-page-header.component.css). */
+      .rec-pipeline { scrollbar-width: none; }
+      .rec-pipeline::-webkit-scrollbar { display: none; }
+    }
   `],
 })
 export class GthReclutamiento implements OnInit {
@@ -193,7 +252,13 @@ export class GthReclutamiento implements OnInit {
     const q = this.searchText.trim();
     let filtradas = this.solicitudes;
 
-    if (this.soloNuevas) filtradas = filtradas.filter((s) => s.estadoCodigo === 'NUEVO');
+    // "Solicitudes nuevas" = las que acaban de llegar a GTH. Con el paso previo de Gerencia
+    // General eso es VALIDACION_GTH; se sigue incluyendo NUEVO por los requerimientos anteriores
+    // a ese cambio (mismo criterio que el contador que calcula el backend).
+    if (this.soloNuevas)
+      filtradas = filtradas.filter(
+        (s) => s.estadoCodigo === 'NUEVO' || s.estadoCodigo === 'VALIDACION_GTH',
+      );
 
     if (!q) return filtradas;
     return filtradas.filter((s) =>
@@ -202,6 +267,13 @@ export class GthReclutamiento implements OnInit {
         q,
       ),
     );
+  }
+
+  /** Mensaje de lista vacía, compartido por la tabla (desktop) y las tarjetas (móvil). */
+  get mensajeVacio(): string {
+    return this.searchText.trim() || this.soloNuevas
+      ? 'Sin resultados para los filtros aplicados.'
+      : 'Aún no hay solicitudes de contratación registradas.';
   }
 
   // ── Paginación (cliente) ───────────────────────────────────────────────

@@ -193,7 +193,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
         this.resolviendoObservador = false;
         this.observadorId = me.id;
         this.observadorNombre = me.apellidoNombre;
-        this.observadorCargo = me.cargo || [me.categoria, me.ocupacion].filter(Boolean).join(' · ');
+        this.observadorCargo = me.cargo || me.puesto || '';
         this.cdr.markForCheck();
       },
       error: () => {
@@ -243,7 +243,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
       id: w.workerId,
       apellidoNombre: w.apellidoNombre,
       dni: w.dni,
-      ocupacion: w.ocupacion,
+      puesto: w.puesto,
       categoria: w.categoria,
       fechaIngreso: w.fechaIngreso,
       empresaActual: w.empresaNombre,

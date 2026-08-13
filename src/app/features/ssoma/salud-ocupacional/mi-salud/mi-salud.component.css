@@ -52,5 +52,7 @@
 .paginator-wrapper { padding:.75rem 1rem; border-top:1px solid #f3f4f6; }
 
 /* Row actions */
-.row-action      { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:5px; color:#6b7280; transition:background .12s, color .12s; }
+/* Es un <button> (el certificado lo pide al backend, no es un enlace) sin chrome nativo. */
+.row-action      { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:5px; color:#6b7280; background:none; border:0; padding:0; cursor:pointer; transition:background .12s, color .12s; }
 .btn-link-icon:hover { background:#eff6ff; color:#2563eb; }
+.row-action:disabled { opacity:.5; cursor:default; background:none; }

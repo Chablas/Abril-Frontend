@@ -345,7 +345,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
         this.resolviendoObservador = false;
         this.elaboradoPorWorkerId = me.id;
         this.form.elaboradoPorNombre = me.apellidoNombre;
-        this.form.elaboradoPorCargo = me.cargo || [me.categoria, me.ocupacion].filter(Boolean).join(' · ');
+        this.form.elaboradoPorCargo = me.cargo || me.puesto || '';
 
         // Correo por defecto: el corporativo del trabajador logueado. Si su ficha no
         // tiene un @abril.pe válido, forzamos el modo manual para que lo escriba.

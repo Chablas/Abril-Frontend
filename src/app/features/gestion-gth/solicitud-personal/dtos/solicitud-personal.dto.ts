@@ -3,6 +3,24 @@ export interface OpcionDto {
   nombre: string;
 }
 
+/** Un destinatario del correo de la solicitud, con la razón por la que lo recibe. */
+export interface DestinatarioSolicitud {
+  email: string;
+  /** Nombre de la persona cuando se conoce (los buzones configurados no lo tienen). */
+  nombre: string | null;
+  /** "Gerencia General" o "Gerente de {área}". Se muestra como tooltip del correo. */
+  origen: string;
+}
+
+/**
+ * A quién le llegará la solicitud si se envía en este momento. Lo resuelve el backend con la
+ * misma lógica del envío real, así que el aviso del modal no puede divergir del correo que sale.
+ */
+export interface SolicitudDestinatarios {
+  para: DestinatarioSolicitud[];
+  copias: DestinatarioSolicitud[];
+}
+
 /** Datos del formulario "Nueva solicitud de personal" en una sola petición. */
 export interface ReclutamientoFormDataDto {
   areaNombre: string | null;
@@ -11,6 +29,7 @@ export interface ReclutamientoFormDataDto {
   puestos: OpcionDto[];
   tiposRequerimiento: OpcionDto[];
   proyectos: OpcionDto[];
+  destinatarios: SolicitudDestinatarios;
 }
 
 export interface VacanteCreateDto {
@@ -29,6 +48,11 @@ export interface SolicitudPersonalCreateDto {
 export interface SolicitudPersonalCreateResult {
   id: number;
   codigos: string[];
+  /**
+   * ¿Salió el correo de aprobación al Gerente General? false cuando no hay destinatarios
+   * configurados o el envío falló: la solicitud queda esperando un reenvío.
+   */
+  correoGerenciaEnviado: boolean;
   message: string;
 }
 
@@ -40,6 +64,23 @@ export interface FaseSeguimiento {
   orden: number;
   /** Estado visual respecto a la fase actual: 'done' | 'current' | 'pending'. */
   estado: 'done' | 'current' | 'pending';
+}
+
+/**
+ * Aprobación de Gerencia General de la solicitud (primer paso del flujo). Null en los
+ * requerimientos anteriores a esa funcionalidad, que no pasaron por ese paso.
+ */
+export interface AprobacionGgResumen {
+  /** PENDIENTE / APROBADA / APROBADA_PARCIAL / RECHAZADA (estado de la solicitud completa). */
+  estadoCodigo: string;
+  estadoNombre: string;
+  /** Decisión sobre ESTA vacante: true = aprobada, false = rechazada, null = sin decidir. */
+  aprobado: boolean | null;
+  /** Envío del correo al GG (ISO, hora Perú). Null si nunca se pudo enviar. */
+  enviadoEn: string | null;
+  /** Momento de la decisión (ISO, hora Perú). Null si sigue pendiente. */
+  decididoEn: string | null;
+  comentario: string | null;
 }
 
 /** Detalle de seguimiento de un requerimiento (modal "Estado del reclutamiento"). */
@@ -58,8 +99,8 @@ export interface Seguimiento {
   estadoCodigo: string;
   estadoNombre: string;
   estadoOrden: number;
-  /** ¿Requiere aprobación de Gerencia General? (solo puestos nuevos). */
-  aprobacionGgRequerida: boolean;
+  /** Aprobación de Gerencia General de la solicitud (null en requerimientos previos a ese paso). */
+  aprobacionGg: AprobacionGgResumen | null;
   sustentoNombre: string | null;
   sustentoUrl: string | null;
   fases: FaseSeguimiento[];

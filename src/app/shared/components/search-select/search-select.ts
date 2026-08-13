@@ -127,10 +127,21 @@ export class SearchSelect {
   /**
    * Alto/tipografía del trigger, según `compact`/`dark`. Único origen de verdad para el tamaño —
    * una página no puede cambiarlo con CSS local, solo forzando estos dos Inputs.
+   *
+   * Con `fullText` el alto fijo pasa a ser un **mínimo** más padding vertical: el texto
+   * seleccionado puede ocupar varias líneas y el trigger crece hacia abajo en vez de que el
+   * texto se salga de su propio borde (con `h-[...]` fijo se desbordaba, porque `.ss-full`
+   * quita el truncado). El padding está calculado para que, cuando el texto entra en una sola
+   * línea, el alto resultante quede por debajo del mínimo y el trigger mida exactamente lo
+   * mismo que sin `fullText` — así una fila con comboboxes y date-pickers sigue alineada.
    */
   get triggerSizeClasses(): string {
-    if (this.compact) return this.dark ? 'h-[22px] text-[10px] pl-[8px] pr-[6px]' : 'h-[26px] text-[11px] pl-[8px] pr-[6px]';
-    return this.dark ? 'h-[30px] text-[11px] pl-[10px] pr-[8px]' : 'h-[34px] text-[12px] pl-[10px] pr-[8px]';
+    if (this.compact) {
+      if (this.dark) return this.fullText ? 'min-h-[22px] py-[1px] text-[10px] pl-[8px] pr-[6px]' : 'h-[22px] text-[10px] pl-[8px] pr-[6px]';
+      return this.fullText ? 'min-h-[26px] py-[3px] text-[11px] pl-[8px] pr-[6px]' : 'h-[26px] text-[11px] pl-[8px] pr-[6px]';
+    }
+    if (this.dark) return this.fullText ? 'min-h-[30px] py-[5px] text-[11px] pl-[10px] pr-[8px]' : 'h-[30px] text-[11px] pl-[10px] pr-[8px]';
+    return this.fullText ? 'min-h-[34px] py-[7px] text-[12px] pl-[10px] pr-[8px]' : 'h-[34px] text-[12px] pl-[10px] pr-[8px]';
   }
 
   get hasValue(): boolean {

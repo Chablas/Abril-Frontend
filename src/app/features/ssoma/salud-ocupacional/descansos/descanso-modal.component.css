@@ -70,11 +70,14 @@ app-date-picker { display: block; }
 .rejection-note { font-size: .88rem; color: #dc2626; background: #fef2f2; border-left: 3px solid #dc2626; padding: .6rem .85rem; border-radius: 0 6px 6px 0; }
 
 .doc-list { display: flex; flex-direction: column; gap: .3rem; align-items: flex-start; }
+/* Es un <button> (el archivo lo pide al backend, no es un enlace) pero se ve como link. */
 .doc-link {
   display: inline-flex; align-items: center; gap: .35rem;
   font-size: .85rem; font-weight: 600; color: #2563eb; text-decoration: none;
+  background: none; border: 0; padding: 0; cursor: pointer; text-align: left;
 }
 .doc-link:hover { text-decoration: underline; }
+.doc-link:disabled { opacity: .55; cursor: default; text-decoration: none; }
 
 /* Mismo badge de días que el formulario de Mi Salud. */
 .dias-badge {

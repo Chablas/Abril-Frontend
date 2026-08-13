@@ -15,7 +15,7 @@ import { LongListCandidatoEnvio, ReclutamientoService } from '../../services/rec
 import { AsignacionGth, CandidatoAprobado, DetalleRequerimientoGth, Opcion } from '../../dtos/reclutamiento.dto';
 import { CandidatoFormularioResumen } from '../../dtos/formulario-postulante.dto';
 import { GthFormularioPostulanteModal } from '../formulario-postulante/formulario-postulante-modal';
-import { estadoColors, faseAlcanzada } from '../../estado-colors';
+import { estadoColors, faseAlcanzada } from '../../../shared/estado-colors';
 
 /**
  * Candidato cargado para la long list (estado local del modal). El guardado (SharePoint +

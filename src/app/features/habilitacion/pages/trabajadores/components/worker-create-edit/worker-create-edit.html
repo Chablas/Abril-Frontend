@@ -195,42 +195,35 @@
             <label class="field-label">Categoría * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
             <app-search-select
               [options]="categorias"
-              valueField="nombre"
+              valueField="id"
               displayField="nombre"
-              [value]="model.categoria || null"
+              [value]="model.categoriaId"
               [showLabel]="false"
               [disabled]="mode === 'edit'"
               placeholder="Selecciona categoría"
               [allowClear]="true"
               (valueChange)="onCategoriaChange($event)"
             />
+            <span class="field-hint">Define entregables, permisos y filtros internos.</span>
           </div>
           <div>
-            <label class="field-label">Ocupación * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+            <label class="field-label">Puesto * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
             <app-search-select
-              [options]="ocupaciones"
-              valueField="nombre"
+              [options]="puestosFiltrados"
+              valueField="id"
               displayField="nombre"
-              [value]="model.ocupacion || null"
+              [value]="model.puestoId"
               [showLabel]="false"
               [disabled]="mode === 'edit'"
-              placeholder="Selecciona ocupación"
+              placeholder="Selecciona puesto"
               [allowClear]="true"
-              (valueChange)="onOcupacionChange($event)"
+              (valueChange)="onPuestoChange($event)"
             />
+            <span class="field-hint">Es el cargo que se muestra en el sistema.</span>
           </div>
-          <div class="col-span-2">
-            <label class="field-label">Puesto {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
-            <input
-              type="text"
-              class="field-input"
-              [class.field-readonly]="mode === 'edit'"
-              [readonly]="mode === 'edit'"
-              [(ngModel)]="model.puesto"
-              placeholder="Se autocompleta con Categoría + Ocupación"
-            />
-            <p class="field-hint" *ngIf="mode === 'edit'">
-              Para cambiar categoría, ocupación o puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+          <div class="col-span-2" *ngIf="mode === 'edit'">
+            <p class="field-hint">
+              Para cambiar la categoría o el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
             </p>
           </div>
           <div>
@@ -307,45 +300,38 @@
             </div>
             <div></div>
             <div>
-              <label class="field-label">Categoría {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <label class="field-label">Categoría * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <app-search-select
                 [options]="categorias"
-                valueField="nombre"
+                valueField="id"
                 displayField="nombre"
-                [value]="model.categoria || null"
+                [value]="model.categoriaId"
                 [showLabel]="false"
                 [disabled]="mode === 'edit'"
                 placeholder="Selecciona categoría"
                 [allowClear]="true"
                 (valueChange)="onCategoriaChange($event)"
               />
+              <span class="field-hint">Define entregables, permisos y filtros internos.</span>
             </div>
             <div>
-              <label class="field-label">Ocupación {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <label class="field-label">Puesto * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <app-search-select
-                [options]="ocupaciones"
-                valueField="nombre"
+                [options]="puestosFiltrados"
+                valueField="id"
                 displayField="nombre"
-                [value]="model.ocupacion || null"
+                [value]="model.puestoId"
                 [showLabel]="false"
                 [disabled]="mode === 'edit'"
-                placeholder="Selecciona ocupación"
+                placeholder="Selecciona puesto"
                 [allowClear]="true"
-                (valueChange)="onOcupacionChange($event)"
+                (valueChange)="onPuestoChange($event)"
               />
+              <span class="field-hint">Es el cargo que se muestra en el sistema.</span>
             </div>
-            <div class="col-span-2">
-              <label class="field-label">Puesto {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
-              <input
-                type="text"
-                class="field-input"
-                [class.field-readonly]="mode === 'edit'"
-                [readonly]="mode === 'edit'"
-                [(ngModel)]="model.puesto"
-                placeholder="Se autocompleta con Categoría + Ocupación"
-              />
-              <p class="field-hint" *ngIf="mode === 'edit'">
-                Para cambiar categoría, ocupación o puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+            <div class="col-span-2" *ngIf="mode === 'edit'">
+              <p class="field-hint">
+                Para cambiar la categoría o el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
               </p>
             </div>
             <div>
@@ -400,51 +386,44 @@
               </p>
             </div>
             <div>
-              <label class="field-label">Categoría {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <label class="field-label">Categoría * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <app-search-select
                 [options]="categorias"
-                valueField="nombre"
+                valueField="id"
                 displayField="nombre"
-                [value]="model.categoria || null"
+                [value]="model.categoriaId"
                 [showLabel]="false"
                 [disabled]="mode === 'edit'"
                 placeholder="Selecciona categoría"
                 [allowClear]="true"
                 (valueChange)="onCategoriaChange($event)"
               />
+              <span class="field-hint">Define entregables, permisos y filtros internos.</span>
             </div>
             <div>
-              <label class="field-label">Ocupación {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <label class="field-label">Puesto * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <app-search-select
-                [options]="ocupaciones"
-                valueField="nombre"
+                [options]="puestosFiltrados"
+                valueField="id"
                 displayField="nombre"
-                [value]="model.ocupacion || null"
+                [value]="model.puestoId"
                 [showLabel]="false"
                 [disabled]="mode === 'edit'"
-                placeholder="Selecciona ocupación"
+                placeholder="Selecciona puesto"
                 [allowClear]="true"
-                (valueChange)="onOcupacionChange($event)"
+                (valueChange)="onPuestoChange($event)"
               />
+              <span class="field-hint">Es el cargo que se muestra en el sistema.</span>
             </div>
-            <div class="col-span-2">
-              <label class="field-label">Puesto {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
-              <input
-                type="text"
-                class="field-input"
-                [class.field-readonly]="mode === 'edit'"
-                [readonly]="mode === 'edit'"
-                [(ngModel)]="model.puesto"
-                placeholder="Se autocompleta con Categoría + Ocupación"
-              />
-              <p class="field-hint" *ngIf="mode === 'edit'">
-                Para cambiar categoría, ocupación o puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+            <div class="col-span-2" *ngIf="mode === 'edit'">
+              <p class="field-hint">
+                Para cambiar la categoría o el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
               </p>
             </div>
             <!-- Área: desplegables en cascada sobre el árbol de áreas (workers.area_scope_id).
                  Se guarda el nodo elegido y el backend deriva de ahí la área/subárea legacy. -->
             <div class="col-span-2" *ngFor="let level of areaLevels; let i = index">
-              <label class="field-label">{{ i === 0 ? 'Área *' : 'Área (nivel ' + (i + 1) + ')' }}</label>
+              <label class="field-label">{{ i === 0 ? 'Área *' : 'Subárea' }}</label>
               <app-search-select
                 [options]="level.options"
                 valueField="areaScopeId"
@@ -452,7 +431,9 @@
                 [value]="level.selected"
                 [showLabel]="false"
                 [sortAlpha]="false"
-                [placeholder]="cargandoAreas ? 'Cargando…' : 'Selecciona área'"
+                [placeholder]="
+                  cargandoAreas ? 'Cargando…' : i === 0 ? 'Selecciona área' : 'Selecciona subárea'
+                "
                 [allowClear]="true"
                 (valueChange)="onAreaLevelChange(i, $event)"
               />
@@ -485,6 +466,9 @@
               />
 
               <span class="field-hint" *ngIf="jefeEfectivoEmail">{{ jefeEfectivoEmail }}</span>
+              <span class="field-hint" *ngIf="!model.jefePersonalizado && esRevisorDeSuPropiaArea">
+                Es el revisor de su propia área, así que le corresponde el siguiente revisor válido.
+              </span>
               <span class="field-hint" *ngIf="!model.jefePersonalizado && areaScopeIdElegido && !revisorNombre">
                 Configúralo en Configuración → Revisores de Áreas.
               </span>

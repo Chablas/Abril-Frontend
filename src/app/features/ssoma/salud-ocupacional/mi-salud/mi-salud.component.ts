@@ -13,11 +13,12 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { MiSaludService } from './mi-salud.service';
 import { MiSaludModalComponent } from './mi-salud-modal.component';
-import { MiSaludResumenDto, MiDescansoDto } from './mi-salud.dtos';
+import { MiSaludResumenDto, MiDescansoDto, MiDescansoAdjuntoDto } from './mi-salud.dtos';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
+import { abrirCertificado } from '../shared/certificado-descanso.utils';
 import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 import { NavigationService } from '../../../../core/navigation/navigation.service';
 
@@ -46,6 +47,9 @@ export class MiSaludComponent implements OnInit, OnDestroy {
   currentPage  = 1;
 
   modalVisible = false;
+
+  /** Adjunto que se está trayendo del backend (para bloquear su botón mientras descarga). */
+  descargandoId: number | null = null;
 
   /** El botón "Configuración" del header se habilita solo con esta feature. */
   puedeConfigurar = false;
@@ -113,6 +117,33 @@ export class MiSaludComponent implements OnInit, OnDestroy {
   }
 
   onPageChange(p: number): void { this.loadDescansos(p); }
+
+  /**
+   * Abre el certificado médico. El archivo vive en la carpeta de SharePoint configurada y lo
+   * sirve el backend, que lo baja con su token de app: así el trabajador lo ve aunque no tenga
+   * sesión de Microsoft 365 en el navegador.
+   */
+  verCertificado(adj: MiDescansoAdjuntoDto): void {
+    if (this.descargandoId !== null) return;
+    this.descargandoId = adj.id;
+    this.loaderService.show();
+    this.cdr.detectChanges();
+
+    this.svc.getCertificado(adj.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (blob) => {
+        this.descargandoId = null;
+        this.loaderService.hide();
+        abrirCertificado(blob, adj.nombre);
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.descargandoId = null;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
 
   irAConfiguracion(): void {
     if (!this.puedeConfigurar) return;

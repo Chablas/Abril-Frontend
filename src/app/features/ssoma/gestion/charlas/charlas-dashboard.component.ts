@@ -18,6 +18,7 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { FindDiaPipe } from './pipes/find-dia.pipe';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { SharedFiltersService } from '../../../../shared/services/shared-filters.service';
+import { hoyIsoLocal, parseFechaLocal } from '../../../../shared/utils/fecha-local.util';
 import { SecureImgDirective } from '../../../../shared/directives/secure-img.directive';
 import {
   DashSupervisoresRow, Capacitacion, NuevaCharlaCreateDto,
@@ -103,7 +104,7 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   form = {
     titulo: '',
     tipo: 'Seguridad' as 'Seguridad' | 'Salud Ocupacional' | 'Medio Ambiente',
-    fecha: new Date().toISOString().split('T')[0],
+    fecha: hoyIsoLocal(),
     workerIds: [] as number[],
   };
   staffChecks: Record<number, boolean> = {};
@@ -467,7 +468,7 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   abrirNuevaCharlaModal(): void {
-    this.form = { titulo: '', tipo: 'Seguridad', fecha: new Date().toISOString().split('T')[0], workerIds: [] };
+    this.form = { titulo: '', tipo: 'Seguridad', fecha: hoyIsoLocal(), workerIds: [] };
     this.staffChecks = {};
     this.showNuevaCharlaModal = true;
     this.cdr.markForCheck();
@@ -594,8 +595,9 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   }
 
   formatFecha(f: string | null | undefined): string {
-    if (!f) return '—';
-    return new Date(f).toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const d = parseFechaLocal(f);
+    if (d === null) return '—';
+    return d.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 
   isPdf(url: string | null | undefined): boolean { return !!url && url.toLowerCase().includes('.pdf'); }

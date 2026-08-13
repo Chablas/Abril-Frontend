@@ -163,7 +163,6 @@ export class NavigationService {
         { label: 'Tópico Médico',      route: '/ssoma/salud-ocupacional/topico',             featureKey: 'ssoma.salud-ocupacional.topico' },
         { label: 'Accidentes',         route: '/ssoma/salud-ocupacional/accidentes',         featureKey: 'ssoma.salud-ocupacional.accidentes' },
         { label: 'Descansos',          route: '/ssoma/salud-ocupacional/descansos',          featureKey: 'ssoma.salud-ocupacional.descansos' },
-        { label: 'Revisión Descansos', route: '/ssoma/salud-ocupacional/revision-descansos', featureKey: 'ssoma.salud-ocupacional.revision-descansos' },
         { label: 'Asistente Social',   route: '/ssoma/salud-ocupacional/asistente-social',   featureKey: 'ssoma.salud-ocupacional.asistente-social' },
         { label: 'PASO',               route: '/ssoma/salud-ocupacional/paso',               featureKey: 'ssoma.salud-ocupacional.paso' },
         { label: 'Mi Salud',           route: '/ssoma/salud-ocupacional/mi-salud',           featureKey: 'ssoma.salud-ocupacional.mi-salud' },
@@ -310,6 +309,7 @@ export class NavigationService {
       baseRoute: '/configuracion',
       items: [
         { label: 'Proyectos', route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },
+        { label: 'Categorías y Puestos', route: '/configuracion/categorias-puestos', featureKey: 'configuracion.categorias-puestos' },
         { label: 'Revisores de Áreas', route: '/configuracion/revisores-areas', featureKey: 'configuracion.revisores-areas' },
         { label: 'Centro de aprendizaje', route: '/configuracion/aprendizaje', featureKey: 'configuracion.aprendizaje' },
       ],

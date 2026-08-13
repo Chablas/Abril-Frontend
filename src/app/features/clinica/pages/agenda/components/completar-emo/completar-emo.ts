@@ -11,6 +11,7 @@ import { ClinicaProgramacionService } from '../../../../services/clinica-program
 import { ProgramacionClinicaDto } from '../../../../dtos/clinica.model';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
+import { hoyIsoLocal } from '../../../../../../shared/utils/fecha-local.util';
 
 @Component({
   selector: 'app-completar-emo',
@@ -33,7 +34,7 @@ export class CompletarEmo implements OnChanges {
   fechaLectura = '';
   saving = false;
 
-  get hoy(): string { return new Date().toISOString().split('T')[0]; }
+  get hoy(): string { return hoyIsoLocal(); }
 
   archivoAptitud: File | null = null;
   archivoEmo: File | null = null;
@@ -101,7 +102,7 @@ export class CompletarEmo implements OnChanges {
 
   onLecturaChange(): void {
     if (this.lecturaRealizada && !this.fechaLectura) {
-      this.fechaLectura = new Date().toISOString().split('T')[0];
+      this.fechaLectura = hoyIsoLocal();
     }
   }
 

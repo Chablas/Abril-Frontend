@@ -11,6 +11,7 @@ import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { CompletarEmo } from './components/completar-emo/completar-emo';
 import { environment } from '../../../../../environments/environment';
+import { hoyIsoLocal } from '../../../../shared/utils/fecha-local.util';
 
 import { CLINICA_TABS } from '../../shared/clinica-tabs';
 type FiltroEstado = '' | 'Programado' | 'Aceptado por Clínica' | 'En Atención' | 'Completado' | 'Rechazado' | 'No se presentó';
@@ -566,7 +567,7 @@ export class Agenda implements OnInit {
   }
 
   fechaClass(fecha: string): string {
-    const hoy = new Date().toISOString().split('T')[0];
+    const hoy = hoyIsoLocal();
     if (fecha === hoy) return 'fecha-hoy';
     if (fecha < hoy) return 'fecha-pasada';
     return 'fecha-futura';

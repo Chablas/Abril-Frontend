@@ -9,8 +9,6 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
-import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -45,7 +43,6 @@ import { ProgramarInduccion } from './components/programar-induccion/programar-i
 import { ProgramarEmoDialogComponent } from '../../../../shared/components/programar-emo-dialog/programar-emo-dialog';
 import { EmoPorTrabajadorDto } from '../../../ssoma/salud-ocupacional/dtos/emo.model';
 import { EmosProgramados } from './components/emos-programados/emos-programados';
-import { CatalogosModal } from './components/catalogos-modal/catalogos-modal';
 import { SctrVidaLeyService } from '../../services/sctr-vidaley.service';
 import { SctrVidaLeyDto } from '../../dtos/sctr.model';
 import { CatalogosHabService } from '../../services/catalogos-hab.service';
@@ -55,7 +52,23 @@ import { getGerencias, getHijos } from '../../../../shared/utils/area-arbol.util
 @Component({
   selector: 'app-hab-trabajadores',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, Paginator, DocumentViewer, CambiarObra, VersionesDoc, ReingresoForm, HistorialEventos, AgregarProyecto, ProgramarInduccion, SearchSelect, SearchInput, WorkerCreateEdit, ProgramarEmoDialogComponent, EmosProgramados, CatalogosModal, AbrilPageHeaderComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    Paginator,
+    DocumentViewer,
+    CambiarObra,
+    VersionesDoc,
+    ReingresoForm,
+    HistorialEventos,
+    AgregarProyecto,
+    ProgramarInduccion,
+    SearchSelect,
+    SearchInput,
+    WorkerCreateEdit,
+    ProgramarEmoDialogComponent,
+    EmosProgramados,
+  ],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
 })
@@ -116,13 +129,6 @@ export class Trabajadores implements OnInit, OnDestroy {
     return this.requiereVigenciaAnteUpload && !this.panelVigencia;
   }
 
-  get puedeGestionarCatalogos(): boolean {
-    return (
-      this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA) ||
-      this.authService.hasRole(Roles.ADMINISTRADOR_UDP)
-    );
-  }
-
   get puedeAprobarEntregableActual(): boolean {
     if (!this.selectedEntregable) return false;
     const resp = this.selectedEntregable.responsable?.toUpperCase() ?? '';
@@ -157,7 +163,6 @@ export class Trabajadores implements OnInit, OnDestroy {
   mostrarProgramarEmo = false;
   workerParaProgramarEmo: WorkerHabilitacionListDto | null = null;
   mostrarEmosProgramados = false;
-  mostrarCatalogos = false;
   preselectedEmpresaId: number | null = null;
   workerParaAccion: WorkerHabilitacionListDto | null = null;
   workerParaReingreso: WorkerHabilitacionListDto | null = null;

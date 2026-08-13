@@ -26,12 +26,6 @@
       <button class="btn-ghost-sm btn-induccion" (click)="abrirEmosProgramados()">
         EMOs Programados
       </button>
-      @if (puedeGestionarCatalogos) {
-        <button class="btn-catalogos" (click)="mostrarCatalogos = true" title="Gestionar catálogos">
-          <i class="ti ti-adjustments-horizontal"></i>
-          Catálogos
-        </button>
-      }
       <button *ngIf="isAdmin() || isContratista()" class="btn-topbar-nuevo" (click)="abrirCrear()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M12 5v14M5 12h14"/>
@@ -91,10 +85,10 @@
             <span class="wc-dni">{{ w.dni }}</span>
             <span *ngIf="w.empresaNombre">· {{ w.empresaNombre }}</span>
           </div>
-          <!-- Fila 3 (opcional): categoría · ocupación -->
-          <div class="wc-puesto" *ngIf="w.categoria || w.ocupacion">
+          <!-- Fila 3 (opcional): categoría · puesto -->
+          <div class="wc-puesto" *ngIf="w.categoria || w.puesto">
             <span class="wc-tag" *ngIf="w.categoria">{{ w.categoria }}</span>
-            <span class="wc-tag" *ngIf="w.ocupacion">{{ w.ocupacion }}</span>
+            <span class="wc-tag" *ngIf="w.puesto">{{ w.puesto }}</span>
           </div>
           <!-- Fila 4 (opcional): badge EMO programación -->
           @if (w.estadoProgramacionEmo) {
@@ -338,8 +332,8 @@
             </h2>
             <span
               class="worker-hdr-sub"
-              *ngIf="selectedWorker.categoria || selectedWorker.ocupacion"
-            >{{ selectedWorker.categoria }}{{ selectedWorker.categoria && selectedWorker.ocupacion ? ' - ' : '' }}{{ selectedWorker.ocupacion }}</span>
+              *ngIf="selectedWorker.categoria || selectedWorker.puesto"
+            >{{ selectedWorker.categoria }}{{ selectedWorker.categoria && selectedWorker.puesto ? ' - ' : '' }}{{ selectedWorker.puesto }}</span>
             <span [class]="getEstadoClass(selectedWorker.estadoHabilitacion)">
               {{ selectedWorker.estadoHabilitacion }}
             </span>
@@ -796,6 +790,3 @@
   [proyectos]="catalogoProyectos"
   (closed)="mostrarEmosProgramados = false">
 </app-emos-programados>
-@if (mostrarCatalogos) {
-  <app-catalogos-modal (cerrar)="mostrarCatalogos = false" />
-}

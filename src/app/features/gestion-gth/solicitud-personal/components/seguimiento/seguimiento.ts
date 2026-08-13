@@ -59,9 +59,45 @@ export class GthSeguimiento implements OnInit {
     return puesto ? `${this.seguimiento.codigo} · ${puesto}` : this.seguimiento.codigo;
   }
 
-  /** Etiqueta de la tarjeta "Aprobación GG". */
+  /**
+   * Etiqueta de la tarjeta "Aprobación GG": la decisión sobre ESTA vacante si ya la hay, o el
+   * estado de la solicitud completa mientras siga pendiente.
+   */
   get aprobacionGgLabel(): string {
-    return this.seguimiento?.aprobacionGgRequerida ? 'Requerido' : 'No requerido';
+    const ap = this.seguimiento?.aprobacionGg;
+    if (!ap) return 'No requerida';
+    if (ap.aprobado === true) return 'Aprobada';
+    if (ap.aprobado === false) return 'Rechazada';
+    return ap.enviadoEn ? 'Pendiente' : 'Correo sin enviar';
+  }
+
+  /** Color de la etiqueta de "Aprobación GG" (verde aprobada, rojo rechazada, ámbar pendiente). */
+  get aprobacionGgColor(): string {
+    const ap = this.seguimiento?.aprobacionGg;
+    if (!ap) return '#6B7280';
+    if (ap.aprobado === true) return '#15803D';
+    if (ap.aprobado === false) return '#B91C1C';
+    return '#B45309';
+  }
+
+  /** Detalle bajo la etiqueta: cuándo se decidió, o a qué está esperando. */
+  get aprobacionGgDetalle(): string {
+    const ap = this.seguimiento?.aprobacionGg;
+    if (!ap) return 'Registrada antes de este paso del flujo';
+    if (ap.decididoEn) return `Gerencia General · ${this.fecha(ap.decididoEn)}`;
+    return ap.enviadoEn
+      ? `Enviada a Gerencia General el ${this.fecha(ap.enviadoEn)}`
+      : 'No se pudo enviar el correo; usa «Reenviar a Gerencia General»';
+  }
+
+  /** Comentario que dejó Gerencia General al decidir (si hay). */
+  get aprobacionGgComentario(): string | null {
+    return this.seguimiento?.aprobacionGg?.comentario ?? null;
+  }
+
+  private fecha(iso: string): string {
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? '' : d.toLocaleDateString('es-PE');
   }
 
   private titleCase(value: string | null | undefined): string {

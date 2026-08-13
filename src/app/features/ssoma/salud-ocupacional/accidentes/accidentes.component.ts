@@ -519,7 +519,7 @@ export class AccidentesComponent implements OnInit, OnDestroy {
       id: this.detalle.workerId,
       apellidoNombre: this.detalle.workerNombre ?? `Worker #${this.detalle.workerId}`,
       dni: this.detalle.workerDni ?? '',
-      ocupacion: '',
+      puesto: '',
       activo: true,
       empresaActualId: undefined,
       empresaActual: this.detalle.empresaNombre,

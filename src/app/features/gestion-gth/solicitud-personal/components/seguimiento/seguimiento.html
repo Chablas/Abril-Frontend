@@ -24,7 +24,8 @@
 
         <div class="rounded-[10px] border px-[14px] py-[12px] bg-white" style="border-color:var(--color-abril-border)">
           <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Aprobación GG</p>
-          <p class="mt-[6px] text-[14px] font-semibold text-gray-700">{{ aprobacionGgLabel }}</p>
+          <p class="mt-[6px] text-[14px] font-semibold" [style.color]="aprobacionGgColor">{{ aprobacionGgLabel }}</p>
+          <p class="text-[10.5px] text-gray-400 mt-[2px] leading-tight">{{ aprobacionGgDetalle }}</p>
         </div>
 
         <div class="rounded-[10px] border px-[14px] py-[12px] bg-white" style="border-color:var(--color-abril-border)">
@@ -107,6 +108,17 @@
           }
         </div>
       </div>
+
+      <!-- ── Comentario de Gerencia General ───────────────────────────── -->
+      @if (aprobacionGgComentario) {
+        <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[11px]"
+             style="background:#FFFBEB;border:1px solid #FCD34D">
+          <i class="ti ti-message-2 text-[18px] shrink-0 mt-[1px]" style="color:#B45309"></i>
+          <p class="text-[13px] text-gray-700">
+            <b style="color:#B45309">Comentario de Gerencia General:</b> {{ aprobacionGgComentario }}
+          </p>
+        </div>
+      }
 
       <!-- ── Siguiente paso ───────────────────────────────────────────── -->
       @if (seguimiento.siguientePaso) {

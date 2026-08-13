@@ -31,6 +31,7 @@ import { WorkerHabilitacionListDto } from '../../../../dtos/trabajador.model';
 import { EmpresaContratistaListDto } from '../../../../dtos/empresa.model';
 import {
   AreaArbolNodoDto,
+  AreaArbolRevisorDto,
   JefeCandidatoDto,
   ObraOficinaStaffDto,
 } from '../../../../dtos/catalogos.model';
@@ -48,10 +49,10 @@ interface WorkerFormModel {
   apellidoNombre: string;
   dni: string;
   celular: string;
-  categoria: string;
-  ocupacion: string;
-  ocupacionId: number | null;
-  puesto: string;
+  /** FK a `categoria`: el campo de lógica (filtros, bloqueos, restricciones). */
+  categoriaId: number | null;
+  /** FK a `puesto`: el campo de presentación. Un puesto pertenece a una categoría. */
+  puestoId: number | null;
   /**
    * Nodo del árbol de áreas (workers.area_scope_id): el único dato de área que captura el
    * formulario. Los campos legacy area/subarea/jefatura los deriva el backend a partir de él.
@@ -141,7 +142,8 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   empresas: EmpresaContratistaListDto[] = [];
   proyectos: ProjectGetDTO[] = [];
   categorias: { id: number; nombre: string }[] = [];
-  ocupaciones: { id: number; nombre: string }[] = [];
+  /** Catálogo completo de puestos; el desplegable muestra `puestosFiltrados`. */
+  puestos: { id: number; nombre: string; categoriaId: number | null }[] = [];
   empresaContratistaNombre = '';
 
   /**
@@ -190,6 +192,13 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
    */
   private jefeGuardadoNombre: string | null = null;
   private jefeGuardadoEmail: string | null = null;
+
+  /**
+   * Persona de la ficha que se está editando (`workers.person_id`), del detalle. Con ella se
+   * descarta al propio trabajador de los candidatos a jefe: la misma persona puede tener varias
+   * fichas en `workers` (reingreso), así que comparar solo `workerId` dejaría pasar el caso.
+   */
+  private workerPersonId: number | null = null;
 
   readonly tipoDocumentoOpciones = [
     { value: 'DNI', label: 'DNI — Documento de identidad' },
@@ -288,8 +297,8 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       return (
         base &&
         !!this.model.proyectoId &&
-        !!this.model.categoria.trim() &&
-        !!this.model.ocupacion.trim() &&
+        this.model.categoriaId != null &&
+        this.model.puestoId != null &&
         !!this.model.condicionMedica.trim() &&
         !!this.model.fechaIngreso.trim() &&
         this.model.aniosExperiencia !== null &&
@@ -354,10 +363,8 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       apellidoNombre: '',
       dni: '',
       celular: '',
-      categoria: '',
-      ocupacion: '',
-      ocupacionId: null,
-      puesto: '',
+      categoriaId: null,
+      puestoId: null,
       areaScopeId: null,
       area: '',
       subarea: '',
@@ -395,6 +402,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     this.empresaContratistaNombre = '';
     this.jefeGuardadoNombre = null;
     this.jefeGuardadoEmail = null;
+    this.workerPersonId = null;
 
     // Token de carga: si el usuario cambia de trabajador antes de que responda
     // esta petición, la respuesta llega "vieja" y no debe pisar el formulario
@@ -407,8 +415,6 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
         tipoDocumento: /^\d{8}$/.test(this.worker.dni ?? '') ? 'DNI' : 'CE',
         apellidoNombre: this.worker.apellidoNombre ?? '',
         dni: this.worker.dni ?? '',
-        categoria: this.worker.categoria ?? '',
-        ocupacion: this.worker.ocupacion ?? '',
         contrataCasa: this.worker.contrataCasa ?? '',
         obraOficinaStaffId: this.worker.obraOficinaStaffId ?? null,
         obraOficina: this.worker.obraOficina ?? '',
@@ -419,6 +425,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       this.trabajadorHabService.getWorker(this.worker.workerId).subscribe({
         next: (det) => {
           if (loadToken !== this.loadToken) return;
+          this.workerPersonId = det.personId ?? null;
           this.model.celular = det.celular ?? '';
           this.model.sctr = det.sctr ?? true;
           this.model.areaScopeId = det.areaScopeId ?? null;
@@ -436,8 +443,8 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           // de la columna y lo que hacía el boletín antes de que el checkbox existiera.
           this.model.mostrarEnBoletin = det.mostrarEnBoletin ?? true;
           this.model.sexo = det.sexo ?? '';
-          this.model.ocupacionId = det.ocupacionId ?? null;
-          this.model.puesto = det.puesto ?? '';
+          this.model.categoriaId = det.categoriaId ?? null;
+          this.model.puestoId = det.puestoId ?? null;
           this.model.aniosExperiencia = det.aniosExperiencia ?? null;
           // Si ya tiene un jefe elegido a mano, el checkbox abre marcado con ese jefe: es el
           // que manda de verdad, no el revisor del área que muestra el campo por defecto.
@@ -520,8 +527,8 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       next: (data) => { this.categorias = data; this.cdr.detectChanges(); },
       error: () => {},
     });
-    this.catalogosHabService.getOcupaciones().subscribe({
-      next: (data) => { this.ocupaciones = data; this.cdr.detectChanges(); },
+    this.catalogosHabService.getPuestos().subscribe({
+      next: (data) => { this.puestos = data; this.cdr.detectChanges(); },
       error: () => {},
     });
     this.catalogosHabService.getJefes().subscribe({
@@ -701,26 +708,64 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
 
   /**
    * Revisor que le tocaría al trabajador por su área, según Configuración → Revisores de Áreas.
-   * Si el área está configurada para filtrar por proyecto, manda el revisor del proyecto elegido
-   * en el formulario. Ambas cosas las resuelve el backend; acá solo se elige entre las dos.
+   * Si el área está configurada para filtrar por proyecto, mandan los revisores del proyecto
+   * elegido en el formulario.
+   *
+   * El backend manda los candidatos ya ordenados (los del nodo, después los de sus áreas
+   * superiores y al final el área de GTH); acá solo se descarta al propio trabajador. Eso importa
+   * porque los jefes de área son el revisor de su propia área: sin descartarlo, abrir la ficha del
+   * jefe de SSOMA lo mostraba como su propio jefe. Al descartarlo queda el siguiente candidato,
+   * normalmente el revisor de la gerencia de la que cuelga su área.
    */
   get revisorNombre(): string {
-    const r = this.revisorDelArea;
-    return r?.revisorNombre ?? '';
+    return this.revisorDelArea?.nombre ?? '';
   }
 
   get revisorEmail(): string {
-    const r = this.revisorDelArea;
-    return r?.revisorEmail ?? '';
+    return this.revisorDelArea?.email ?? '';
   }
 
-  private get revisorDelArea(): { revisorNombre?: string | null; revisorEmail?: string | null } | null {
+  private get revisorDelArea(): AreaArbolRevisorDto | null {
+    return this.candidatosDelArea.find((r) => !this.esElPropioTrabajador(r)) ?? null;
+  }
+
+  /** Candidatos del nodo elegido: los del proyecto si el área filtra por proyecto, o los del área. */
+  private get candidatosDelArea(): AreaArbolRevisorDto[] {
     const nodo = this.areaNodoElegido;
-    if (!nodo) return null;
-    const porProyecto = this.model.proyectoId != null
-      ? nodo.revisoresPorProyecto?.find((r) => r.proyectoId === this.model.proyectoId)
-      : undefined;
-    return porProyecto ?? nodo;
+    if (!nodo) return [];
+    const porProyecto =
+      this.model.proyectoId != null
+        ? nodo.revisoresPorProyecto?.find((r) => r.proyectoId === this.model.proyectoId)
+        : undefined;
+    return porProyecto?.revisores ?? nodo.revisores ?? [];
+  }
+
+  /**
+   * true cuando el trabajador es el revisor configurado de su propia área y por eso el campo
+   * muestra al siguiente. Se avisa en el formulario para que no se lea como un error de
+   * configuración de Revisores de Áreas.
+   */
+  get esRevisorDeSuPropiaArea(): boolean {
+    const candidatos = this.candidatosDelArea;
+    return candidatos.length > 0 && this.esElPropioTrabajador(candidatos[0]);
+  }
+
+  /**
+   * Nadie puede ser su propio jefe. Se compara por persona además de por ficha porque un
+   * reingreso deja varias filas en `workers` para la misma persona y el revisor puede estar
+   * configurado en cualquiera de ellas (misma regla que aplica el backend al notificar).
+   */
+  private esElPropioTrabajador(candidato: {
+    workerId?: number | null;
+    personId?: number | null;
+  }): boolean {
+    if (this.mode !== 'edit' || !this.worker) return false;
+    if (candidato.workerId != null && candidato.workerId === this.worker.workerId) return true;
+    return (
+      candidato.personId != null &&
+      this.workerPersonId != null &&
+      candidato.personId === this.workerPersonId
+    );
   }
 
   // ── Jefe personalizado ───────────────────────────────────────────────
@@ -732,8 +777,8 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
 
   /** Opciones del desplegable, sin el propio trabajador: nadie puede ser su propio jefe. */
   get jefesDisponibles(): JefeCandidatoDto[] {
-    const propioId = this.mode === 'edit' ? this.worker?.workerId : null;
-    return propioId != null ? this.jefes.filter((j) => j.workerId !== propioId) : this.jefes;
+    if (this.mode !== 'edit' || !this.worker) return this.jefes;
+    return this.jefes.filter((j) => !this.esElPropioTrabajador(j));
   }
 
   /** Checkbox marcado pero sin elegir a nadie: no se puede guardar en ese estado a medias. */
@@ -781,15 +826,42 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   // Los desplegables emiten `null` al limpiarse; los campos del modelo son strings, así que
   // todos los handlers normalizan a '' antes de asignar (varios getters hacen .trim() encima).
 
-  onCategoriaChange(nombre: string | null): void {
-    this.model.categoria = nombre ?? '';
-    this.syncPuesto();
+  /**
+   * Al cambiar la categoría se descarta el puesto elegido si ya no pertenece a ella,
+   * porque el desplegable de puestos se filtra por categoría.
+   */
+  onCategoriaChange(categoriaId: number | null): void {
+    this.model.categoriaId = categoriaId;
+    const puesto = this.puestos.find((p) => p.id === this.model.puestoId);
+    if (puesto && puesto.categoriaId !== categoriaId) this.model.puestoId = null;
   }
 
-  onOcupacionChange(nombre: string | null): void {
-    this.model.ocupacion = nombre ?? '';
-    this.model.ocupacionId = this.ocupaciones.find((o) => o.nombre === nombre)?.id ?? null;
-    this.syncPuesto();
+  /**
+   * Elegir un puesto rellena la categoría si aún está vacía: el puesto ya sabe a qué
+   * categoría pertenece, así se evita tener que elegir dos veces lo mismo.
+   */
+  onPuestoChange(puestoId: number | null): void {
+    this.model.puestoId = puestoId;
+    if (this.model.categoriaId != null) return;
+    const puesto = this.puestos.find((p) => p.id === puestoId);
+    if (puesto?.categoriaId != null) this.model.categoriaId = puesto.categoriaId;
+  }
+
+  /**
+   * Puestos que se ofrecen: los de la categoría elegida. Sin categoría se muestran todos.
+   * Los puestos sin categoría asignada siempre aparecen (quedaron así al unificar los
+   * catálogos porque no había datos para deducirla).
+   */
+  get puestosFiltrados(): { id: number; nombre: string; categoriaId: number | null }[] {
+    if (this.model.categoriaId == null) return this.puestos;
+    return this.puestos.filter(
+      (p) =>
+        p.categoriaId === this.model.categoriaId ||
+        p.categoriaId == null ||
+        // El puesto ya guardado siempre se ofrece, aunque pertenezca a otra categoría:
+        // si no, el desplegable se vería vacío en fichas donde ambos no coinciden.
+        p.id === this.model.puestoId,
+    );
   }
 
   onObraOficinaSelect(valor: number | null): void {
@@ -804,18 +876,6 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   onTipoDocumentoSelect(valor: string | null): void {
     this.model.tipoDocumento = valor === 'CE' ? 'CE' : 'DNI';
     this.onTipoDocumentoChange();
-  }
-
-  /**
-   * Autocompleta el puesto final concatenando categoría y ocupación
-   * (ej. "Operario" + "Abogado" → "Operario Abogado"). El campo sigue siendo
-   * editable: cualquier cambio posterior en un desplegable lo vuelve a calcular.
-   */
-  private syncPuesto(): void {
-    this.model.puesto = [this.model.categoria, this.model.ocupacion]
-      .map((v) => (v ?? '').trim())
-      .filter(Boolean)
-      .join(' ');
   }
 
   onObraOficinaChange(): void {
@@ -1115,10 +1175,8 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       emailPersonal: n(this.model.emailPersonal),
       fechaIngreso: n(this.model.fechaIngreso) || undefined,
       condicionMedica: n(this.model.condicionMedica),
-      categoria: n(this.model.categoria),
-      ocupacion: n(this.model.ocupacion),
-      ocupacionId: this.model.ocupacionId ?? undefined,
-      puesto: n(this.model.puesto),
+      categoriaId: this.model.categoriaId ?? undefined,
+      puestoId: this.model.puestoId ?? undefined,
       // El área se manda como nodo del árbol y el backend deriva de ahí area/subarea/jefatura.
       // Cuando el formulario sí gestiona el área se mandan los tres en null para que manden los
       // derivados (y para que limpiar el desplegable realmente limpie el área); cuando no la

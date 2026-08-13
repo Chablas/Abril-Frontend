@@ -6,32 +6,17 @@ import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
-import {
-  CorreoDestinatarios,
-  CorreoDestinatariosService,
-  CorreoTipo,
-} from '../services/correo-destinatarios.service';
-
-/** Una opción del selector cuando el modal configura varios correos independientes. */
-export interface ConfigCorreoOpcion {
-  tipo: CorreoTipo;
-  /** Texto del botón del selector segmentado. */
-  label: string;
-  /** Texto introductorio que explica a quién se envía ese correo. */
-  intro: string;
-  /** Si los destinatarios principales son opcionales (el backend ya pone uno automáticamente). */
-  principalOpcional?: boolean;
-}
+import { CorreoDestinatariosService, CorreoTipo } from '../services/correo-destinatarios.service';
 
 /**
- * Configuración de los destinatarios de correos de Reclutamiento. Dos listas por correo:
- * principales (Para) y copias (CC). Cada correo es INDEPENDIENTE (no comparte destinatarios).
+ * Configuración de los destinatarios de UN correo de Reclutamiento: dos listas de correos
+ * escritos a mano, principales (Para) y copias (CC).
  *
- * Dos modos de uso:
- *   - Un solo correo: pasar `tipo` (+ `titulo`/`intro`). Usado por Reclutamiento (long-list).
- *   - Varios correos: pasar `opciones` (array). Muestra un selector segmentado para alternar
- *     entre correos; cada uno mantiene y guarda sus propios destinatarios. Usado por Solicitud
- *     de Personal (correo de nueva solicitud + correo de decisión de long list).
+ * Lo usa la bandeja de GTH para el correo de long list. Los correos del flujo del solicitante
+ * (aprobación de Gerencia General, nueva solicitud, decisiones) ya no pasan por acá: se
+ * administran en /gestion-gth/solicitud-personal/configuracion, que además maneja los
+ * destinatarios dinámicos (Gerente General, gerente del área, área de GTH) y los interruptores
+ * por correo y por destinatario.
  */
 @Component({
   standalone: true,
@@ -40,31 +25,23 @@ export interface ConfigCorreoOpcion {
   templateUrl: './configuracion-correos.html',
 })
 export class GthConfiguracionCorreos implements OnInit {
-  /** Modo un solo correo: qué correo se configura. Ignorado si se pasa `opciones`. */
-  @Input() tipo?: CorreoTipo;
-  /** Modo varios correos: lista de correos independientes a configurar. */
-  @Input() opciones?: ConfigCorreoOpcion[];
+  /** Qué correo se configura. */
+  @Input() tipo!: CorreoTipo;
 
   /** Título del modal. */
   @Input() titulo = 'CONFIGURACIÓN DEL CORREO';
-  /** Texto introductorio (modo un solo correo). En modo varios, cada opción trae el suyo. */
+  /** Texto introductorio que explica a quién se envía ese correo. */
   @Input() intro = '';
-  /** Principales opcionales (modo un solo correo). En modo varios, cada opción lo define. */
+  /** Si los destinatarios principales son opcionales (el backend ya pone uno automáticamente). */
   @Input() principalOpcional = false;
 
   @Output() closeModal = new EventEmitter<void>();
-
-  /** Opción activa (modo varios correos). */
-  activa: ConfigCorreoOpcion | null = null;
 
   principales: string[] = [];
   copias: string[] = [];
 
   nuevoPrincipal = '';
   nuevoCopia = '';
-
-  /** Caché de destinatarios por tipo, para no re-pedir al alternar entre correos. */
-  private cache = new Map<CorreoTipo, CorreoDestinatarios>();
 
   private static readonly EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -74,60 +51,12 @@ export class GthConfiguracionCorreos implements OnInit {
     private errorService: ErrorService,
   ) {}
 
-  get modoMultiple(): boolean {
-    return !!this.opciones && this.opciones.length > 0;
-  }
-
-  /** Tipo del correo que se está configurando ahora. */
-  get tipoActivo(): CorreoTipo {
-    return this.modoMultiple ? this.activa!.tipo : this.tipo!;
-  }
-
-  /** Texto introductorio del correo activo. */
-  get introActivo(): string {
-    return this.modoMultiple ? this.activa!.intro : this.intro;
-  }
-
-  /** ¿El principal es opcional para el correo activo? */
-  get principalOpcionalActivo(): boolean {
-    return this.modoMultiple ? !!this.activa!.principalOpcional : this.principalOpcional;
-  }
-
   ngOnInit(): void {
-    if (this.modoMultiple) {
-      this.activa = this.opciones![0];
-      this.cargar(this.activa.tipo);
-    } else {
-      this.cargar(this.tipo!);
-    }
-  }
-
-  /** Cambia el correo que se está configurando (modo varios correos). */
-  cambiarTipo(op: ConfigCorreoOpcion): void {
-    if (this.activa?.tipo === op.tipo) return;
-    // Preserva lo editado del correo actual en la caché antes de cambiar.
-    if (this.activa)
-      this.cache.set(this.activa.tipo, { principales: this.principales, copias: this.copias });
-    this.activa = op;
-
-    const cached = this.cache.get(op.tipo);
-    if (cached) {
-      this.principales = cached.principales;
-      this.copias = cached.copias;
-    } else {
-      this.cargar(op.tipo);
-    }
-    this.nuevoPrincipal = '';
-    this.nuevoCopia = '';
-  }
-
-  private cargar(tipo: CorreoTipo): void {
     this.loaderService.show();
-    this.service.get(tipo).subscribe({
+    this.service.get(this.tipo).subscribe({
       next: (data) => {
         this.principales = data.principales ?? [];
         this.copias = data.copias ?? [];
-        this.cache.set(tipo, { principales: this.principales, copias: this.copias });
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -191,7 +120,7 @@ export class GthConfiguracionCorreos implements OnInit {
 
   // ── Guardar ─────────────────────────────────────────────────────────────
   guardar(): void {
-    if (!this.principalOpcionalActivo && this.principales.length === 0) {
+    if (!this.principalOpcional && this.principales.length === 0) {
       Swal.fire({
         title: 'Falta un destinatario principal',
         text: 'Agrega al menos un correo principal (Para) para que se envíe la notificación.',
@@ -201,26 +130,19 @@ export class GthConfiguracionCorreos implements OnInit {
       return;
     }
 
-    const tipo = this.tipoActivo;
     this.loaderService.show();
-    this.service.save(tipo, { principales: this.principales, copias: this.copias }).subscribe({
-      next: (res) => {
-        this.loaderService.hide();
-        // Refresca la caché del tipo guardado con lo persistido.
-        this.cache.set(tipo, { principales: this.principales, copias: this.copias });
-
-        if (this.modoMultiple) {
-          // No cerramos: permite guardar también el otro correo desde el mismo modal.
-          Swal.fire({ title: res.message, icon: 'success', timer: 1500, showConfirmButton: false });
-        } else {
+    this.service
+      .save(this.tipo, { principales: this.principales, copias: this.copias })
+      .subscribe({
+        next: (res) => {
+          this.loaderService.hide();
           Swal.fire({ title: res.message, icon: 'success', timer: 1500, showConfirmButton: false });
           this.closeModal.emit();
-        }
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
-        this.errorService.handleError(err);
-      },
-    });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
   }
 }
