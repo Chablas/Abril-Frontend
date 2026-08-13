@@ -125,7 +125,6 @@ export class TopicoModalComponent implements OnInit {
         id: a.workerId,
         apellidoNombre: a.workerNombre ?? `Worker #${a.workerId}`,
         dni: a.workerDni ?? '',
-        ocupacion: '',
         activo: true,
         empresaActualId: undefined,
         empresaActual: undefined,

@@ -18,15 +18,22 @@ import { JefeReminderConfigItemDTO } from '../../dtos/jefeReminder.model';
 export class JefeList implements OnInit {
   rows: JefeReminderConfigItemDTO[] = [];
   searchText = '';
-  /** Filtro por categoría: null = todas | 'Jefe' | 'Coordinador' | 'Residente'. */
+  /** Filtro por categoría: null = todas. El valor es el nombre tal cual lo manda el backend. */
   categoryFilter: string | null = null;
 
-  /** Opciones del desplegable de categoría (search-select). */
-  readonly categoryOptions = [
-    { value: 'Jefe', label: 'Jefe' },
-    { value: 'Coordinador', label: 'Coordinador' },
-    { value: 'Residente', label: 'Residente' },
-  ];
+  /**
+   * Opciones del desplegable de categoría: se derivan de las filas en vez de estar escritas
+   * a mano. Antes eran fijas ('Jefe'/'Coordinador'/'Residente') y no coincidían nunca con lo
+   * que manda el backend, que devuelve el nombre del catálogo en MAYÚSCULAS: el filtro no
+   * devolvía ninguna fila. Derivándolas también sobreviven a un rename desde
+   * Configuración → Categorías y Puestos.
+   * `app-search-select` ya muestra los ALL-CAPS en Title Case.
+   */
+  get categoryOptions(): { value: string; label: string }[] {
+    return [...new Set(this.rows.map((r) => r.categoria).filter((c): c is string => !!c))]
+      .sort((a, b) => a.localeCompare(b))
+      .map((c) => ({ value: c, label: c }));
+  }
 
   constructor(
     private service: LessonReminderService,

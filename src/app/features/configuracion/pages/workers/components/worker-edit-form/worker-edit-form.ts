@@ -23,7 +23,6 @@ import { AreaScopeTreeDto } from '../../../../shared/dtos/areaScope.model';
 import {
   DocumentTypeDto,
   EmoPorTrabajadorDto,
-  WorkerCategoryDto,
   WorkerDatosBasicosDto,
 } from '../../../../../ssoma/salud-ocupacional/dtos/emo.model';
 
@@ -82,8 +81,6 @@ export class WorkerEditForm implements OnChanges {
 
   categorias: { id: number; nombre: string }[] = [];
   puestos: { id: number; nombre: string; categoriaId: number | null }[] = [];
-
-  /** Catálogo workers_category (categoría normalizada usada por Salidas y Lecciones). */
 
   /** Desplegables en cascada del árbol de áreas (uno por nivel de la Jerarquía). */
   areaLevels: AreaLevel[] = [];

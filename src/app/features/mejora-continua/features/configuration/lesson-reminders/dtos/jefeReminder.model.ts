@@ -3,7 +3,8 @@ export interface JefeReminderConfigItemDTO {
   workerId: number;
   fullName?: string;
   email?: string;
-  categoria?: string; // Jefe | Coordinador | Residente
+  /** Nombre de la categoría tal cual el catálogo (MAYÚSCULAS): JEFE | COORDINADOR | RESIDENTE. */
+  categoria?: string;
   active: boolean;
 }
 

@@ -27,13 +27,28 @@ export interface ReclutamientoFormDataDto {
   areaScopeId: number | null;
   maxVacantes: number;
   puestos: OpcionDto[];
+  /** Categorías para el modo "Puesto personalizado" (ver `VacanteCreateDto.categoriaId`). */
+  categorias: OpcionDto[];
   tiposRequerimiento: OpcionDto[];
   proyectos: OpcionDto[];
   destinatarios: SolicitudDestinatarios;
 }
 
 export interface VacanteCreateDto {
+  /** Puesto del catálogo. Null cuando `puestoPersonalizado` es true. */
   puestoId: number | null;
+  /**
+   * true = el puesto no estaba en el desplegable: va escrito en `puestoNombre` con la categoría
+   * de `categoriaId`, y el backend lo da de alta en el catálogo de puestos.
+   */
+  puestoPersonalizado: boolean;
+  puestoNombre: string | null;
+  /**
+   * Categoría real de la vacante, obligatoria con `puestoPersonalizado`. Es el par
+   * (puesto, categoría) que queda guardado en el requerimiento para cuando el seleccionado
+   * entre como trabajador; no tiene por qué ser la categoría que trae el puesto del catálogo.
+   */
+  categoriaId: number | null;
   tipoRequerimientoId: number | null;
   projectId: number | null;
   /** Fecha requerida de ingreso en formato nativo "YYYY-MM-DD". */

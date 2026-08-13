@@ -20,6 +20,13 @@ import {
 /** Estado en memoria de una vacante del formulario. */
 interface VacanteForm {
   puestoId: number | null;
+  /**
+   * Checkbox "Puesto personalizado": oculta el desplegable de puesto y en su lugar pide
+   * categoría + nombre escrito a mano. El backend da de alta ese puesto en el catálogo.
+   */
+  personalizado: boolean;
+  puestoNombre: string;
+  categoriaId: number | null;
   tipoRequerimientoId: number | null;
   projectId: number | null;
   fecha: string; // "YYYY-MM-DD"
@@ -35,11 +42,15 @@ export class GthNuevaSolicitud implements OnInit {
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
+  /** Tope del puesto escrito a mano; el backend rechaza cualquier cosa más larga. */
+  readonly maxPuestoNombre = 120;
+
   formData: ReclutamientoFormDataDto = {
     areaNombre: null,
     areaScopeId: null,
     maxVacantes: 10,
     puestos: [],
+    categorias: [],
     tiposRequerimiento: [],
     proyectos: [],
     destinatarios: { para: [], copias: [] },
@@ -73,7 +84,11 @@ export class GthNuevaSolicitud implements OnInit {
     this.loaderService.show();
     this.service.getFormData().subscribe({
       next: (data) => {
-        this.formData = { ...data, destinatarios: data.destinatarios ?? { para: [], copias: [] } };
+        this.formData = {
+          ...data,
+          categorias: data.categorias ?? [],
+          destinatarios: data.destinatarios ?? { para: [], copias: [] },
+        };
         this.destinatariosCargados = true;
         const max = data.maxVacantes || 10;
         this.cantidadOptions = Array.from({ length: max }, (_, i) => ({
@@ -101,7 +116,30 @@ export class GthNuevaSolicitud implements OnInit {
   }
 
   private nuevaVacante(): VacanteForm {
-    return { puestoId: null, tipoRequerimientoId: null, projectId: null, fecha: '' };
+    return {
+      puestoId: null,
+      personalizado: false,
+      puestoNombre: '',
+      categoriaId: null,
+      tipoRequerimientoId: null,
+      projectId: null,
+      fecha: '',
+    };
+  }
+
+  /**
+   * Cambia de modo el puesto de la vacante. Limpia lo del modo que se abandona para no enviar
+   * datos de los dos (el backend ignora el puesto del desplegable cuando es personalizado, pero
+   * dejarlos vivos haría que al desmarcar reapareciera una selección que el usuario ya no ve).
+   */
+  togglePersonalizado(v: VacanteForm, personalizado: boolean): void {
+    v.personalizado = personalizado;
+    if (personalizado) {
+      v.puestoId = null;
+    } else {
+      v.puestoNombre = '';
+      v.categoriaId = null;
+    }
   }
 
   /** Ajusta la cantidad de bloques de vacante conservando los ya completados. */
@@ -135,7 +173,12 @@ export class GthNuevaSolicitud implements OnInit {
     const errors: string[] = [];
     this.vacantes.forEach((v, i) => {
       const pref = `Vacante ${i + 1}`;
-      if (!v.puestoId) errors.push(`${pref}: puesto`);
+      if (v.personalizado) {
+        if (!v.categoriaId) errors.push(`${pref}: categoría del puesto personalizado`);
+        if (!v.puestoNombre.trim()) errors.push(`${pref}: nombre del puesto personalizado`);
+      } else if (!v.puestoId) {
+        errors.push(`${pref}: puesto`);
+      }
       if (!v.tipoRequerimientoId) errors.push(`${pref}: tipo de requerimiento`);
       if (!v.projectId) errors.push(`${pref}: proyecto/obra`);
       if (!v.fecha) errors.push(`${pref}: fecha requerida de ingreso`);
@@ -154,7 +197,10 @@ export class GthNuevaSolicitud implements OnInit {
     const payload: SolicitudPersonalCreateDto = {
       justificacion: this.justificacion?.trim() || null,
       vacantes: this.vacantes.map<VacanteCreateDto>((v) => ({
-        puestoId: v.puestoId,
+        puestoId: v.personalizado ? null : v.puestoId,
+        puestoPersonalizado: v.personalizado,
+        puestoNombre: v.personalizado ? v.puestoNombre.trim() : null,
+        categoriaId: v.personalizado ? v.categoriaId : null,
         tipoRequerimientoId: v.tipoRequerimientoId,
         projectId: v.projectId,
         fechaRequeridaIngreso: v.fecha,

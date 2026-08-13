@@ -271,9 +271,9 @@ export class Interconsultas implements OnInit, OnDestroy {
     return item.obraOficina?.trim() || 'Obra';
   }
 
-  /** Categoría + ocupación combinados en un solo texto compacto ("Operario · Albañil"). */
+  /** Categoría + puesto combinados en un solo texto compacto ("OPERARIO · ALBAÑIL"). */
   puestoDisplay(item: InterconsultaListDto): string {
-    return [item.categoria, item.ocupacion].filter((v) => !!v?.trim()).join(' · ');
+    return [item.categoria, item.puesto].filter((v) => !!v?.trim()).join(' · ');
   }
 
   get hasActiveFilters(): boolean {

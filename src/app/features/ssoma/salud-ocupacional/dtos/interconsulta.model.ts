@@ -15,10 +15,10 @@ export interface InterconsultaListDto {
   /** Nombre del catálogo (solo lectura). */
   obraOficina?: string;
   contrataCasa?: string;
-  /** workers.categoria (texto libre, ej. "Operario", "Residente"). */
+  /** Nombre de la categoría del trabajador (campo de lógica), ej. "OPERARIO", "RESIDENTE". */
   categoria?: string;
-  /** workers.ocupacion (puesto de trabajo). */
-  ocupacion?: string;
+  /** Nombre del puesto del trabajador (campo de presentación). */
+  puesto?: string;
   workerEmail?: string;
   administradorEmail?: string;
   /** Nombre de la jefatura/área (workers.jefatura), aplica sobre todo a Staff/Oficina Central. */

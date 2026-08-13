@@ -37,7 +37,9 @@ export interface ProgramacionListDto {
   emoResultadoId?: number;
   fechaNotificacion?: string;
   fechaVencimientoEmo?: string | null;
-  ocupacion?: string | null;
+  /** Nombre del puesto del trabajador (campo de presentación). */
+  puesto?: string | null;
+  /** Nombre de la categoría del trabajador (campo de lógica). */
   categoria?: string | null;
   tipoTrabajador?: string | null;
   interconsultaEstado?: string | null;
