@@ -101,6 +101,51 @@
   color: #374151;
 }
 
+/* ── Observaciones de GTH (formulario devuelto para corregir) ─────────── */
+.pf-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #b91c1c;
+  background: #fef2f2;
+  border-radius: 0 10px 10px 0;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.pf-alert-icon {
+  font-size: 20px;
+  color: #b91c1c;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+
+.pf-alert-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #991b1b;
+  margin: 0;
+}
+
+.pf-alert-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #b91c1c;
+  margin: 8px 0 2px;
+}
+
+.pf-alert-text {
+  font-size: 13px;
+  color: #7f1d1d;
+  line-height: 1.55;
+  margin: 4px 0 0;
+  /* El motivo se escribe en un textarea: se respetan los saltos de línea de GTH. */
+  white-space: pre-wrap;
+}
+
 /* ── Cuerpo / secciones ───────────────────────────────────────────────── */
 .pf-section-title {
   font-size: 16px;

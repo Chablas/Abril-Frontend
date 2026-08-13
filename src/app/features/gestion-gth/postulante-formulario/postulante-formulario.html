@@ -22,7 +22,7 @@
     @else if (enviado) {
       <div class="pf-card pf-state">
         <i class="ti ti-circle-check pf-state-icon" style="color:#15803D"></i>
-        <h2 class="pf-state-title">¡Formulario enviado!</h2>
+        <h2 class="pf-state-title">{{ esCorreccion ? '¡Correcciones enviadas!' : '¡Formulario enviado!' }}</h2>
         <p class="pf-state-text">
           Gracias por completar tu información. El equipo de Gestión del Talento Humano de Abril Grupo
           Inmobiliario revisará tus datos y se pondrá en contacto contigo para los siguientes pasos.
@@ -30,14 +30,14 @@
       </div>
     }
 
-    <!-- ── Solo lectura (ya revisado) ───────────────────────────────────── -->
+    <!-- ── Solo lectura (ya aprobado por GTH) ───────────────────────────── -->
     @else if (data?.soloLectura) {
       <div class="pf-card pf-state">
         <i class="ti ti-lock pf-state-icon" style="color:#005D9D"></i>
         <h2 class="pf-state-title">Formulario ya procesado</h2>
         <p class="pf-state-text">
-          Este formulario ya fue revisado por el equipo de selección y no admite más cambios. Si necesitas
-          actualizar tu información, comunícate con tu contacto en Abril Grupo Inmobiliario.
+          Este formulario ya fue revisado y aprobado por el equipo de selección, por lo que no admite más
+          cambios. Si necesitas actualizar tu información, comunícate con tu contacto en Abril Grupo Inmobiliario.
         </p>
       </div>
     }
@@ -48,12 +48,21 @@
       <div class="pf-card pf-header">
         <h1 class="pf-title">Formulario del postulante</h1>
         <p class="pf-brand">ABRIL GRUPO INMOBILIARIO</p>
-        <p class="pf-intro">
-          Estimado(a) postulante, gracias por participar de este proceso de selección para la posición
-          <b>{{ data.puesto }}</b>. A continuación, te pediremos que completes tus datos para tener tu
-          información lo más clara posible. Los campos marcados con <span style="color:#B91C1C">*</span> son
-          obligatorios.
-        </p>
+        @if (esCorreccion) {
+          <p class="pf-intro">
+            Estimado(a) postulante, revisamos el formulario que enviaste para la posición
+            <b>{{ data.puesto }}</b> y necesitamos que corrijas algunos puntos. Tus respuestas ya están
+            cargadas: solo actualiza lo observado y vuelve a enviarlo. Los campos marcados con
+            <span style="color:#B91C1C">*</span> son obligatorios.
+          </p>
+        } @else {
+          <p class="pf-intro">
+            Estimado(a) postulante, gracias por participar de este proceso de selección para la posición
+            <b>{{ data.puesto }}</b>. A continuación, te pediremos que completes tus datos para tener tu
+            información lo más clara posible. Los campos marcados con <span style="color:#B91C1C">*</span> son
+            obligatorios.
+          </p>
+        }
 
         <!-- Indicador de pasos -->
         <div class="pf-steps">
@@ -73,13 +82,37 @@
       <!-- Cuerpo del paso -->
       <div class="pf-card pf-body">
 
+        <!-- Observaciones de GTH: van fuera del @if de cada paso a propósito, para que el postulante
+             las tenga a la vista en las 4 páginas mientras corrige. -->
+        @if (esCorreccion) {
+          <div class="pf-alert">
+            <i class="ti ti-alert-triangle pf-alert-icon"></i>
+            <div>
+              <p class="pf-alert-title">Tu formulario necesita correcciones</p>
+              @if (observaciones) {
+                <p class="pf-alert-label">Observaciones del equipo de selección:</p>
+                <p class="pf-alert-text">{{ observaciones }}</p>
+              } @else {
+                <p class="pf-alert-text">
+                  El equipo de selección revisó tu formulario y necesita que lo corrijas. Verifica que toda
+                  la información esté completa y sea correcta antes de volver a enviarlo.
+                </p>
+              }
+            </div>
+          </div>
+        }
+
         <!-- ── Paso 1 · Datos personales ─────────────────────────────────── -->
         @if (paso === 1) {
           <h2 class="pf-section-title">Datos personales</h2>
           <div class="pf-grid">
+            <!-- Los `autocomplete` no son cosmética: sin ellos Chrome adivina el tipo de cada campo por
+                 el texto de la etiqueta y termina clasificando el formulario como uno de pago, con lo
+                 que ofrece autocompletar métodos de pago. Declarar el tipo real (o `off`) lo evita. -->
             <div class="abril-field pf-col-2">
               <label class="abril-field-label">Nombres y apellidos completos <span class="pf-req">*</span></label>
               <input type="text" class="abril-field-input" [(ngModel)]="model.nombresCompletos"
+                     name="nombresCompletos" autocomplete="name"
                      placeholder="Escribe tus nombres y apellidos" />
             </div>
 
@@ -98,6 +131,7 @@
               <label class="abril-field-label">Número de documento (DNI o CE) <span class="pf-req">*</span></label>
               <input type="text" class="abril-field-input" [ngModel]="model.numeroDocumento"
                      (input)="onNumeroDocumentoInput($event)"
+                     name="numeroDocumento" autocomplete="off"
                      [attr.maxlength]="esDni ? dniLargo : null"
                      [attr.inputmode]="esDni ? 'numeric' : 'text'"
                      [placeholder]="esDni ? 'Escribe tu DNI (8 dígitos)' : 'Escribe tu número de documento'" />
@@ -110,6 +144,7 @@
             <div class="abril-field">
               <label class="abril-field-label">Correo electrónico <span class="pf-req">*</span></label>
               <input type="email" class="abril-field-input" [(ngModel)]="model.correoElectronico"
+                     name="correoElectronico" autocomplete="email"
                      placeholder="tucorreo@ejemplo.com" />
             </div>
 
@@ -117,14 +152,13 @@
               <label class="abril-field-label">Número de celular <span class="pf-req">*</span></label>
               <input type="text" class="abril-field-input" [ngModel]="model.numeroCelular"
                      (input)="onCelularInput($event)"
+                     name="numeroCelular" autocomplete="tel-national"
                      [attr.maxlength]="celularLargo" inputmode="numeric"
                      placeholder="Ej. 987654321" />
             </div>
 
-            <app-search-select label="Convocatoria de tu interés *" [options]="convocatorias" valueField="id" displayField="nombre"
-              [value]="model.convocatoriaId" (valueChange)="model.convocatoriaId = $event"
-              placeholder="Selecciona la convocatoria" [color]="accent"></app-search-select>
-
+            <!-- La convocatoria no se pregunta: es la del proceso al que ya fue invitado y sale
+                 en el encabezado del formulario. -->
             <app-search-select label="Disponibilidad *" [options]="disponibilidades" valueField="id" displayField="nombre"
               [value]="model.disponibilidadId" (valueChange)="model.disponibilidadId = $event"
               placeholder="Selecciona tu disponibilidad" [color]="accent" [sortAlpha]="false"></app-search-select>
@@ -132,18 +166,21 @@
             <div class="abril-field pf-col-2">
               <label class="abril-field-label">Pretensiones salariales (mínimo y máximo, remuneración bruta) <span class="pf-req">*</span></label>
               <input type="text" class="abril-field-input" [(ngModel)]="model.pretensionesSalariales"
+                     name="pretensionesSalariales" autocomplete="off"
                      placeholder="Ej. S/ 4,000 a S/ 5,000" />
             </div>
 
             <div class="abril-field">
               <label class="abril-field-label">Perfil de LinkedIn</label>
               <input type="text" class="abril-field-input" [(ngModel)]="model.linkedin"
+                     name="linkedin" autocomplete="off"
                      placeholder="linkedin.com/in/tu-perfil (opcional)" />
             </div>
 
             <div class="abril-field">
               <label class="abril-field-label">Portafolio de trabajos (link)</label>
               <input type="text" class="abril-field-input" [(ngModel)]="model.portafolioLink"
+                     name="portafolioLink" autocomplete="off"
                      placeholder="Enlace a tu portafolio (opcional)" />
             </div>
           </div>
@@ -156,6 +193,7 @@
             <div class="abril-field pf-col-2">
               <label class="abril-field-label">¿Cuál es tu profesión? <span class="pf-req">*</span></label>
               <input type="text" class="abril-field-input" [(ngModel)]="model.profesion"
+                     name="profesion" autocomplete="off"
                      placeholder="Ej. Ingeniería Civil" />
             </div>
 
@@ -171,6 +209,7 @@
             <div class="abril-field pf-col-2">
               <label class="abril-field-label">Número de colegiatura (si aplica)</label>
               <input type="text" class="abril-field-input" [(ngModel)]="model.numeroColegiatura"
+                     name="numeroColegiatura" autocomplete="off"
                      placeholder="Número de colegiatura (opcional)" />
             </div>
           </div>
@@ -184,18 +223,21 @@
             <div class="abril-field">
               <label class="abril-field-label">Empresa donde laboraste (más reciente) <span class="pf-req">*</span></label>
               <input type="text" class="abril-field-input" [(ngModel)]="model.empresa"
+                     name="empresa" autocomplete="off"
                      placeholder="Nombre de la empresa" />
             </div>
 
             <div class="abril-field">
               <label class="abril-field-label">Área de trabajo <span class="pf-req">*</span></label>
               <input type="text" class="abril-field-input" [(ngModel)]="model.areaTrabajo"
+                     name="areaTrabajo" autocomplete="off"
                      placeholder="Ej. Operaciones de obra" />
             </div>
 
             <div class="abril-field">
               <label class="abril-field-label">Cargo desempeñado <span class="pf-req">*</span></label>
               <input type="text" class="abril-field-input" [(ngModel)]="model.cargo"
+                     name="cargo" autocomplete="off"
                      placeholder="Ej. Supervisor de Obra" />
             </div>
 
@@ -212,30 +254,35 @@
             <div class="abril-field pf-col-2">
               <label class="abril-field-label">Funciones principales (mínimo 4) <span class="pf-req">*</span></label>
               <textarea class="abril-field-input" rows="3" [(ngModel)]="model.funcionesPrincipales"
+                        name="funcionesPrincipales" autocomplete="off"
                         placeholder="Describe tus funciones principales"></textarea>
             </div>
 
             <div class="abril-field pf-col-2">
               <label class="abril-field-label">Menciona 2 logros obtenidos en esta posición <span class="pf-req">*</span></label>
               <textarea class="abril-field-input" rows="3" [(ngModel)]="model.logros"
+                        name="logros" autocomplete="off"
                         placeholder="Describe tus logros"></textarea>
             </div>
 
             <div class="abril-field">
               <label class="abril-field-label">Ingreso bruto mensual <span class="pf-req">*</span></label>
               <input type="text" class="abril-field-input" [(ngModel)]="model.ingresoBrutoMensual"
+                     name="ingresoBrutoMensual" autocomplete="off"
                      placeholder="Ej. S/ 5,500" />
             </div>
 
             <div class="abril-field">
               <label class="abril-field-label">Número de personas a cargo</label>
               <input type="number" min="0" class="abril-field-input" [(ngModel)]="model.personasACargo"
+                     name="personasACargo" autocomplete="off"
                      placeholder="Ej. 12 (opcional)" />
             </div>
 
             <div class="abril-field pf-col-2">
               <label class="abril-field-label">Nombre, cargo y número de contacto del jefe inmediato <span class="pf-req">*</span></label>
               <input type="text" class="abril-field-input" [(ngModel)]="model.jefeInmediato"
+                     name="jefeInmediato" autocomplete="off"
                      placeholder="Ej. Juan Pérez, Gerente de Obra, 999 888 777" />
             </div>
 

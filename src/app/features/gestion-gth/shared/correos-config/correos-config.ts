@@ -1,29 +1,30 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { AbrilModalPanel } from '../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { AbrilModalPanel } from '../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import {
   SectionTab,
   SectionTabs,
-} from '../../../../../shared/components/section-tabs/section-tabs';
-import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
-import { ErrorService } from '../../../../../core/services/error.service';
-import { LoaderService } from '../../../../../core/services/loader.service';
-import { CorreoConfigService } from '../services/correo-config.service';
+} from '../../../../shared/components/section-tabs/section-tabs';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { ErrorService } from '../../../../core/services/error.service';
+import { LoaderService } from '../../../../core/services/loader.service';
+import { CorreoConfigService } from './services/correo-config.service';
 import {
   CorreoConfigEvento,
+  CorreoConfigModulo,
   CorreoDestinatarioFila,
-} from '../dtos/correo-config.dto';
+} from './dtos/correo-config.dto';
 
 /**
- * Configuración de los correos de Solicitud de Personal.
+ * Configuración de los correos de Gestión GTH. Lo comparten las dos pantallas de configuración
+ * (Solicitud de Personal y Reclutamiento): el `modulo` decide qué correos administra cada una,
+ * las pestañas salen de lo que devuelve el backend y no de una lista escrita acá.
  *
- * Una sección (`app-section-tabs`) por cada correo del flujo: aprobación de Gerencia General,
- * nueva solicitud a GTH, decisión de long list y decisión de finalista. Cada sección tiene un
- * interruptor maestro (apagado = ese correo no se envía) y la lista de sus destinatarios, cada
- * uno con su propio interruptor.
+ * Una sección (`app-section-tabs`) por cada correo, con un interruptor maestro (apagado = ese
+ * correo no se envía) y la lista de sus destinatarios, cada uno con su propio interruptor.
  *
  * Hay dos clases de destinatario:
  *  • Dinámicos (Gerente General, gerente del área del solicitante, área de GTH): su correo NO se
@@ -38,6 +39,9 @@ import {
   styleUrl: './correos-config.css',
 })
 export class GthCorreosConfig implements OnInit {
+  /** Pantalla que lo usa: define qué correos trae y sobre cuáles puede escribir. */
+  @Input({ required: true }) modulo!: CorreoConfigModulo;
+
   eventos: CorreoConfigEvento[] = [];
   loading = false;
 
@@ -81,7 +85,7 @@ export class GthCorreosConfig implements OnInit {
   load(): void {
     this.loading = true;
     this.loaderService.show();
-    this.svc.getCorreos().subscribe({
+    this.svc.getCorreos(this.modulo).subscribe({
       next: (res) => {
         this.eventos = res.eventos ?? [];
         if (!this.eventos.some((e) => e.codigo === this.eventoActivoCodigo))
@@ -127,10 +131,16 @@ export class GthCorreosConfig implements OnInit {
     return evento.destinatarios.filter((d) => d.active && !d.esCopia).length;
   }
 
-  /** El correo está prendido pero no tiene a quién mandárselo. */
+  /**
+   * El correo está prendido pero no tiene a quién mandárselo. Los correos con principal
+   * automático (la long list siempre va al solicitante) nunca caen acá: sí le llega a alguien
+   * aunque la pantalla no tenga ningún principal propio.
+   */
   get sinPrincipales(): boolean {
     const e = this.eventoActivo;
-    return !this.loading && !!e && e.active && this.principalesActivos(e) === 0;
+    return (
+      !this.loading && !!e && e.active && !e.principalAutomatico && this.principalesActivos(e) === 0
+    );
   }
 
   /** Filas activas que hoy no resuelven a ningún correo: no le llega nada a nadie por ellas. */
@@ -147,7 +157,7 @@ export class GthCorreosConfig implements OnInit {
     // Optimista: se pinta al toque y se revierte si el guardado falla.
     evento.active = nuevo;
 
-    this.svc.setCorreoActive(evento.codigo, nuevo).subscribe({
+    this.svc.setCorreoActive(this.modulo, evento.codigo, nuevo).subscribe({
       next: () => {
         this.savingEventoCodigo = null;
         this.cdr.detectChanges();
@@ -169,7 +179,7 @@ export class GthCorreosConfig implements OnInit {
     this.savingDestinatarioId = fila.destinatarioId;
     fila.active = nuevo;
 
-    this.svc.setDestinatarioActive(fila.destinatarioId, nuevo).subscribe({
+    this.svc.setDestinatarioActive(this.modulo, fila.destinatarioId, nuevo).subscribe({
       next: () => {
         this.savingDestinatarioId = null;
         this.cdr.detectChanges();
@@ -237,13 +247,13 @@ export class GthCorreosConfig implements OnInit {
 
     const request$ =
       this.formId === null
-        ? this.svc.crearAdicional({
+        ? this.svc.crearAdicional(this.modulo, {
             eventoCodigo: this.eventoActivoCodigo ?? '',
             email,
             nombre,
             esCopia: this.formEsCopia,
           })
-        : this.svc.actualizarAdicional(this.formId, {
+        : this.svc.actualizarAdicional(this.modulo, this.formId, {
             email,
             nombre,
             esCopia: this.formEsCopia,
@@ -285,7 +295,7 @@ export class GthCorreosConfig implements OnInit {
     if (!confirm.isConfirmed) return;
 
     this.savingDestinatarioId = fila.destinatarioId;
-    this.svc.eliminarAdicional(fila.destinatarioId).subscribe({
+    this.svc.eliminarAdicional(this.modulo, fila.destinatarioId).subscribe({
       next: () => {
         this.savingDestinatarioId = null;
         this.load();

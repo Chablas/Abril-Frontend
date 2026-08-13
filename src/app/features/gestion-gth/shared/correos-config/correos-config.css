@@ -108,6 +108,13 @@
   color: #475569;
 }
 
+/* Aviso informativo (no es un problema que haya que resolver): mismo formato, tono azul. */
+.config-warn--info {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
 /* ── Encabezado de la lista + botón "Agregar" ── */
 .destinatarios__head {
   display: flex;

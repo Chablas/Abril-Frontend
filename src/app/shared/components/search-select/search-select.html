@@ -78,11 +78,14 @@
           <svg class="flex-shrink-0 text-gray-400" width="12" height="12" viewBox="0 0 24 24" fill="none">
             <path d="M19.6 21L13.3 14.7a7 7 0 1 1 1.4-1.4L21 19.6 19.6 21ZM9.5 15A5.5 5.5 0 1 0 9.5 4a5.5 5.5 0 0 0 0 11Z" fill="currentColor"/>
           </svg>
+          <!-- autocomplete="off": es un buscador interno del desplegable, no un campo del formulario;
+               sin esto el navegador lo toma como un campo más y ofrece autocompletarlo. -->
           <input
             #searchInput
             type="text"
             [(ngModel)]="searchText"
             placeholder="Buscar..."
+            autocomplete="off"
             class="w-full bg-transparent text-[11px] focus:outline-none text-gray-700 placeholder-gray-400"
             (click)="$event.stopPropagation()"
           />

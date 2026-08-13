@@ -3,7 +3,7 @@
   titulo="Reclutamiento"
   subtitulo="Gestiona los procesos de contratación y los procesos de selección de forma ágil."
   [botonSecundario]="botonConfiguracion"
-  (secondaryClick)="showConfig = true"
+  (secondaryClick)="abrirConfiguracion()"
   [hasExtra]="true">
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
@@ -122,7 +122,7 @@
   <div class="rec-pipeline-card rounded-[12px] border bg-white px-[20px] py-[16px]"
        style="border-color:var(--color-abril-border)">
 
-    <h2 class="rec-pipeline-title text-[15px] font-semibold text-gray-700 mb-[14px]">Pipeline de reclutamiento</h2>
+    <h2 class="rec-pipeline-title text-[15px] font-semibold text-gray-700 mb-[14px]">Fases de reclutamiento</h2>
 
     <!-- El scroll horizontal es propio de esta fila (no de la página): con muchas etapas
          el embudo se arrastra con el dedo sin mover el resto de la vista. -->
@@ -333,16 +333,6 @@
   *ngIf="detalleId !== null"
   [requerimientoId]="detalleId"
   (closeModal)="onDetalleCerrado($event)" />
-
-<!-- ── Configuración del correo de long list (feature gestion-gth.reclutamiento.configuracion) ─ -->
-<app-gth-configuracion-correos
-  *ngIf="showConfig && puedeConfigurar"
-  tipo="long-list"
-  titulo="CONFIGURACIÓN DEL CORREO DE LONG LIST"
-  [principalOpcional]="true"
-  intro="Cuando GTH envía la long list de CVs, el destinatario principal (Para) es SIEMPRE el solicitante que registró la solicitud. Aquí solo defines destinatarios principales adicionales y las copias (CC). Cámbialos para pruebas y en producción sin necesidad de volver a desplegar."
-  (closeModal)="showConfig = false">
-</app-gth-configuracion-correos>
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">

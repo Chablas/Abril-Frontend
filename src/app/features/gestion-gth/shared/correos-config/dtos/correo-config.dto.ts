@@ -1,12 +1,20 @@
 /**
- * Configuración de los correos de Solicitud de Personal: una sección por correo del flujo,
- * cada una con su interruptor maestro y sus destinatarios.
+ * Configuración de los correos de Gestión GTH: una sección por correo del flujo, cada una con su
+ * interruptor maestro y sus destinatarios.
  *
  * Hay dos clases de destinatario:
  *  • Dinámicos (`codigo` no nulo): el correo no está guardado, se resuelve al enviar
  *    (Gerente General, gerente del área del solicitante, área de GTH). Solo se prenden y apagan.
  *  • Correos adicionales (`codigo` nulo): se escriben a mano y se pueden editar y eliminar.
  */
+
+/**
+ * Qué pantalla de configuración se está usando. Es el segmento del backend
+ * (`api/v1/gestion-gth/{modulo}/configuracion`) y define qué correos administra cada una:
+ *  • `solicitud-personal` → el flujo del solicitante (aprobación de GG, nueva solicitud, decisiones).
+ *  • `reclutamiento`      → los que salen desde la bandeja de GTH (long list, formulario completado).
+ */
+export type CorreoConfigModulo = 'solicitud-personal' | 'reclutamiento';
 
 /** Una fila de la sección de un correo. */
 export interface CorreoDestinatarioFila {
@@ -40,6 +48,11 @@ export interface CorreoConfigEvento {
   descripcion: string | null;
   /** Interruptor maestro: false = el correo no se envía. */
   active: boolean;
+  /**
+   * true = el destinatario principal lo pone el backend solo (la long list va siempre al
+   * solicitante), así que acá solo se agregan principales extra y copias.
+   */
+  principalAutomatico: boolean;
   orden: number;
   destinatarios: CorreoDestinatarioFila[];
 }

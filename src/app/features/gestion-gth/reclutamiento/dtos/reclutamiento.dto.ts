@@ -125,6 +125,11 @@ export interface DetalleRequerimientoGth {
   area: string | null;
   proyectoObra: string | null;
   tipoRequerimiento: string;
+  /**
+   * Trabajador al que reemplaza la vacante. Solo lo traen los requerimientos de tipo Reemplazo
+   * registrados desde que se pide ese dato; null en el resto.
+   */
+  trabajadorReemplazado: string | null;
   /** Vacantes de este requerimiento (cada vacante genera su propio requerimiento → 1). */
   vacantes: number;
   fechaRequeridaIngreso: string;

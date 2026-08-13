@@ -14,6 +14,7 @@ import {
   DestinatarioSolicitud,
   ReclutamientoFormDataDto,
   SolicitudPersonalCreateDto,
+  TIPO_REQUERIMIENTO_REEMPLAZO,
   VacanteCreateDto,
 } from '../../dtos/solicitud-personal.dto';
 
@@ -28,6 +29,11 @@ interface VacanteForm {
   puestoNombre: string;
   categoriaId: number | null;
   tipoRequerimientoId: number | null;
+  /**
+   * Trabajador al que reemplaza la vacante. Solo se pide (y solo se envía) cuando el tipo de
+   * requerimiento elegido es Reemplazo; al cambiar a otro tipo se limpia.
+   */
+  reemplazaWorkerId: number | null;
   projectId: number | null;
   fecha: string; // "YYYY-MM-DD"
 }
@@ -53,6 +59,7 @@ export class GthNuevaSolicitud implements OnInit {
     categorias: [],
     tiposRequerimiento: [],
     proyectos: [],
+    trabajadoresArea: [],
     destinatarios: { para: [], copias: [] },
   };
 
@@ -87,6 +94,7 @@ export class GthNuevaSolicitud implements OnInit {
         this.formData = {
           ...data,
           categorias: data.categorias ?? [],
+          trabajadoresArea: data.trabajadoresArea ?? [],
           destinatarios: data.destinatarios ?? { para: [], copias: [] },
         };
         this.destinatariosCargados = true;
@@ -122,9 +130,34 @@ export class GthNuevaSolicitud implements OnInit {
       puestoNombre: '',
       categoriaId: null,
       tipoRequerimientoId: null,
+      reemplazaWorkerId: null,
       projectId: null,
       fecha: '',
     };
+  }
+
+  // ── Reemplazo: a quién se reemplaza ────────────────────────────────
+  /** ¿La vacante es un reemplazo? Se decide por el código del catálogo, no por su nombre. */
+  esReemplazo(v: VacanteForm): boolean {
+    const tipo = this.formData.tiposRequerimiento.find((t) => t.id === v.tipoRequerimientoId);
+    return tipo?.codigo === TIPO_REQUERIMIENTO_REEMPLAZO;
+  }
+
+  /**
+   * Al dejar de ser un reemplazo se limpia el trabajador elegido: si no, quedaría enviándose un
+   * dato que el usuario ya no ve (y que el backend descartaría igual).
+   */
+  onTipoRequerimientoChange(v: VacanteForm, tipoId: number | null): void {
+    v.tipoRequerimientoId = tipoId;
+    if (!this.esReemplazo(v)) v.reemplazaWorkerId = null;
+  }
+
+  /**
+   * true cuando el área del solicitante no tiene trabajadores registrados: no hay de dónde elegir,
+   * así que el campo se muestra vacío con su aviso y deja de exigirse (el backend hace lo mismo).
+   */
+  get sinTrabajadoresArea(): boolean {
+    return this.formData.trabajadoresArea.length === 0;
   }
 
   /**
@@ -180,6 +213,8 @@ export class GthNuevaSolicitud implements OnInit {
         errors.push(`${pref}: puesto`);
       }
       if (!v.tipoRequerimientoId) errors.push(`${pref}: tipo de requerimiento`);
+      if (this.esReemplazo(v) && !this.sinTrabajadoresArea && !v.reemplazaWorkerId)
+        errors.push(`${pref}: trabajador al que reemplaza`);
       if (!v.projectId) errors.push(`${pref}: proyecto/obra`);
       if (!v.fecha) errors.push(`${pref}: fecha requerida de ingreso`);
     });
@@ -202,6 +237,7 @@ export class GthNuevaSolicitud implements OnInit {
         puestoNombre: v.personalizado ? v.puestoNombre.trim() : null,
         categoriaId: v.personalizado ? v.categoriaId : null,
         tipoRequerimientoId: v.tipoRequerimientoId,
+        reemplazaWorkerId: this.esReemplazo(v) ? v.reemplazaWorkerId : null,
         projectId: v.projectId,
         fechaRequeridaIngreso: v.fecha,
       })),

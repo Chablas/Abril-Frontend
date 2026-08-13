@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
-import { GthCorreosConfig } from './correos/correos-config';
+import { GthCorreosConfig } from '../../shared/correos-config/correos-config';
 
 /**
  * Contenedor de la Configuración de correos de Solicitud de Personal.

@@ -54,10 +54,12 @@
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[12px]">
-        <!-- ── Puesto: del catálogo, o personalizado (categoría + nombre a mano) ──────
-             En modo personalizado la celda ocupa dos columnas porque pasa a tener dos
-             campos, y el checkbox queda siempre justo debajo del control de puesto. -->
-        <div class="flex flex-col gap-[4px]" [ngClass]="v.personalizado ? 'lg:col-span-2' : ''">
+        <!-- ── Puesto: del catálogo, o personalizado (nombre a mano + categoría) ──────
+             En modo personalizado la celda ocupa tres columnas porque pasa a tener dos
+             campos y el label "Nombre del puesto personalizado" es largo: con dos columnas
+             se partía en dos líneas y la segunda tapaba el propio campo. El checkbox queda
+             siempre justo debajo del control de puesto. -->
+        <div class="flex flex-col gap-[4px]" [ngClass]="v.personalizado ? 'sm:col-span-2 lg:col-span-3' : ''">
           <ng-container *ngIf="!v.personalizado">
             <app-search-select label="Puesto" placeholder="Selecciona puesto"
               [options]="formData.puestos" valueField="id" displayField="nombre"
@@ -68,21 +70,21 @@
 
           <div *ngIf="v.personalizado" class="grid grid-cols-1 lg:grid-cols-2 gap-[12px]">
             <div class="flex flex-col gap-[4px]">
-              <app-search-select label="Categoría" placeholder="Selecciona categoría"
-                [options]="formData.categorias" valueField="id" displayField="nombre"
-                [fullText]="true"
-                [(value)]="v.categoriaId" />
-              <p *ngIf="submitted && !v.categoriaId" class="text-xs text-red-500">Campo requerido</p>
-            </div>
-
-            <div class="flex flex-col gap-[4px]">
               <div class="relative mt-[9px]">
-                <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Nombre del puesto</label>
+                <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none whitespace-nowrap">Nombre del puesto personalizado</label>
                 <input type="text" [(ngModel)]="v.puestoNombre" [maxlength]="maxPuestoNombre"
                   placeholder="Escribe el puesto"
                   class="w-full border border-[#e2e8f0] rounded-[7px] h-[36px] px-[10px] text-[13px] text-gray-700 focus:outline-none" />
               </div>
               <p *ngIf="submitted && !v.puestoNombre.trim()" class="text-xs text-red-500">Campo requerido</p>
+            </div>
+
+            <div class="flex flex-col gap-[4px]">
+              <app-search-select label="Categoría" placeholder="Selecciona categoría"
+                [options]="formData.categorias" valueField="id" displayField="nombre"
+                [fullText]="true"
+                [(value)]="v.categoriaId" />
+              <p *ngIf="submitted && !v.categoriaId" class="text-xs text-red-500">Campo requerido</p>
             </div>
           </div>
 
@@ -103,8 +105,27 @@
           <app-search-select label="Tipo de requerimiento" placeholder="Selecciona tipo"
             [options]="formData.tiposRequerimiento" valueField="id" displayField="nombre"
             [fullText]="true"
-            [(value)]="v.tipoRequerimientoId" />
+            [value]="v.tipoRequerimientoId"
+            (valueChange)="onTipoRequerimientoChange(v, $event)" />
           <p *ngIf="submitted && !v.tipoRequerimientoId" class="text-xs text-red-500">Campo requerido</p>
+        </div>
+
+        <!-- ── A quién reemplaza (solo si el tipo es Reemplazo) ──────────────────────
+             La lista son los trabajadores del área del solicitante y de cualquier área
+             hija (incluido él mismo: pedir el reemplazo propio por renuncia o promoción
+             es un caso real). Va pegado al tipo porque solo existe por él. -->
+        <div *ngIf="esReemplazo(v)" class="flex flex-col gap-[4px]">
+          <app-search-select label="Trabajador reemplazado" placeholder="Buscar por nombre o DNI..."
+            [options]="formData.trabajadoresArea" valueField="id" displayField="nombre"
+            [fullText]="true"
+            [disabled]="sinTrabajadoresArea"
+            [(value)]="v.reemplazaWorkerId" />
+          <p *ngIf="sinTrabajadoresArea" class="text-[11px] text-gray-400">
+            No hay trabajadores registrados en tu área, así que la vacante se enviará sin este dato.
+          </p>
+          <p *ngIf="submitted && !sinTrabajadoresArea && !v.reemplazaWorkerId" class="text-xs text-red-500">
+            Campo requerido
+          </p>
         </div>
 
         <div class="flex flex-col gap-[4px]">
