@@ -104,7 +104,19 @@
       </span>
     </div>
 
+    <div class="gp-legend" *ngIf="mostrarColorProyecto">
+      <span *ngFor="let nombre of proyectosDistintos" class="gp-leg-item">
+        <span class="gp-leg-dot" [style.background]="proyectoColor(nombre)" [title]="nombre"></span>{{ nombre }}
+      </span>
+    </div>
+
     <div *ngIf="loading" class="gp-loading"><span class="gp-spinner"></span>Cargando…</div>
+
+    <button type="button" class="gp-export-btn" [disabled]="exportandoPdf || ganttRows.length === 0"
+            (click)="exportarPdf()" title="Exportar el Gantt a PDF (A2 horizontal)">
+      <i class="ti" [class.ti-loader-2]="exportandoPdf" [class.spin]="exportandoPdf" [class.ti-file-type-pdf]="!exportandoPdf"></i>
+      {{ exportandoPdf ? 'Generando…' : 'Exportar PDF' }}
+    </button>
   </div>
 
   <!-- ══ EMPTY STATE ══ -->
@@ -123,7 +135,7 @@
   <!-- ══ GANTT ══ -->
   <div *ngIf="(selectedProyectoIds.length || filtroSupervisorId) && ganttRows.length > 0"
        style="flex:1;min-height:0;overflow:auto;background:#fff">
-    <div class="gp-inner" [style.width.px]="leftWidth + timelineWidth">
+    <div class="gp-inner" #ganttContent [style.width.px]="leftWidth + timelineWidth">
 
       <!-- HEADER — sticky top:0 dentro del scroll container -->
       <div class="gp-head" style="position:sticky;top:0;z-index:30;display:flex;flex-shrink:0">
@@ -131,11 +143,11 @@
         <div class="gp-left gp-left-head" [style.width.px]="leftWidth">
           <div class="gp-lh-cell" style="width:220px">Actividad</div>
           <div class="gp-lh-cell" style="width:120px">Proyecto</div>
-          <div class="gp-lh-cell" style="width:90px">Tipo</div>
-          <div class="gp-lh-cell" style="width:80px">Etapa</div>
-          <div class="gp-lh-cell" style="width:90px">Estado</div>
-          <div class="gp-lh-cell" style="width:80px">Inicio</div>
-          <div class="gp-lh-cell" style="width:80px">Fin Prog.</div>
+          <div class="gp-lh-cell" style="width:90px;justify-content:center;text-align:center">Tipo</div>
+          <div class="gp-lh-cell" style="width:80px;justify-content:center;text-align:center">Etapa</div>
+          <div class="gp-lh-cell" style="width:90px;justify-content:center;text-align:center">Estado</div>
+          <div class="gp-lh-cell" style="width:80px;justify-content:center;text-align:center">Inicio</div>
+          <div class="gp-lh-cell" style="width:80px;justify-content:center;text-align:center">Fin Prog.</div>
         </div>
         <!-- Timeline header -->
         <div class="gp-tl-head" [style.width.px]="timelineWidth" style="position:relative">
@@ -157,21 +169,25 @@
       <!-- ROWS -->
       <div class="gp-rows">
         <div *ngFor="let row of ganttRows; trackBy: trackByRow; let odd = odd"
-             class="gp-row" [class.gp-row-odd]="odd">
+             class="gp-row" [class.gp-row-odd]="odd"
+             [style.borderLeft]="mostrarColorProyecto ? '4px solid ' + proyectoColor(row.proyecto) : ''">
 
           <!-- Left data -->
           <div class="gp-left gp-left-data" [style.width.px]="leftWidth">
             <div class="gp-ld-cell" style="width:220px;white-space:normal;line-height:1.3;font-size:11px" [title]="row.nombre">{{ row.nombre }}</div>
-            <div class="gp-ld-cell" style="width:120px;font-size:10px;color:#64748B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="row.proyecto ?? ''">{{ row.proyecto ?? '—' }}</div>
-            <div class="gp-ld-cell" style="width:90px">
+            <div class="gp-ld-cell" style="width:120px;font-size:10px;color:#64748B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;gap:5px" [title]="row.proyecto ?? ''">
+              <span *ngIf="mostrarColorProyecto" [style.background]="proyectoColor(row.proyecto)" style="width:8px;height:8px;border-radius:2px;flex-shrink:0;display:inline-block"></span>
+              {{ row.proyecto ?? '—' }}
+            </div>
+            <div class="gp-ld-cell" style="width:90px;justify-content:center">
               <span *ngIf="row.tipo" [class]="tipoClass(row.tipo)">{{ row.tipo }}</span>
               <span *ngIf="!row.tipo">—</span>
             </div>
-            <div class="gp-ld-cell" style="width:80px">
+            <div class="gp-ld-cell" style="width:80px;justify-content:center">
               <span *ngIf="row.etapa" [class]="etapaClass(row.etapa)">{{ row.etapa | slice:0:10 }}</span>
               <span *ngIf="!row.etapa">—</span>
             </div>
-            <div class="gp-ld-cell" style="width:90px">
+            <div class="gp-ld-cell" style="width:90px;justify-content:center">
               <span class="gp-status" [style.color]="statusColor(row.status)">{{ statusLabel(row.status) }}</span>
             </div>
             <!-- Inicio: prog + efectivo -->

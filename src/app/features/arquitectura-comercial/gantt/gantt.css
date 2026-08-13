@@ -120,6 +120,16 @@
 .gp-leg-item { display: flex; align-items: center; gap: 5px; font-size: .7rem; color: #6B7280; font-weight: 500; white-space: nowrap; }
 .gp-leg-dot  { width: 12px; height: 8px; border-radius: 3px; flex-shrink: 0; }
 
+.gp-export-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 13px; border-radius: 7px; font-size: .78rem; font-weight: 600;
+  border: 1px solid #1a4731; background: #1a4731; color: #fff; cursor: pointer;
+  transition: background .12s; white-space: nowrap;
+}
+.gp-export-btn:hover:not(:disabled) { background: #155228; }
+.gp-export-btn:disabled { opacity: .5; cursor: not-allowed; }
+.gp-export-btn .spin { animation: spin .6s linear infinite; }
+
 .gp-loading { display: flex; align-items: center; gap: 6px; font-size: .75rem; color: #6B7280; }
 .gp-spinner {
   width: 13px; height: 13px; border: 2px solid #E5E7EB; border-top-color: #3B82F6;
@@ -387,7 +397,7 @@
 
 /* Barra real — más delgada, debajo */
 .gp-bar-real {
-  top: 32px;
+  top: 34px;
   height: 8px;
   border-radius: 3px;
   z-index: 2;

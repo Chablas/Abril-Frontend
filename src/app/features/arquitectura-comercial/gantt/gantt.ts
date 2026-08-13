@@ -1,12 +1,16 @@
 import {
   ChangeDetectorRef,
   Component,
+  ElementRef,
   HostBinding,
   OnInit,
+  ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { SearchSelect } from '../../../shared/components/search-select/search-select';
 import { ArquitecturaComercialService } from '../../../core/services/arquitectura-comercial.service';
@@ -52,6 +56,11 @@ const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
 const MONTHS_S = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 const DAYS_S   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
+const PROJECT_PALETTE = [
+  '#2563EB', '#DC2626', '#059669', '#D97706', '#7C3AED',
+  '#DB2777', '#0891B2', '#65A30D', '#9333EA', '#EA580C',
+];
+
 export interface GanttRow {
   id: number;
   nombre: string;
@@ -88,6 +97,9 @@ export class Gantt implements OnInit {
   @HostBinding('style.flexDirection') readonly _fd = 'column';
   @HostBinding('style.flex')          readonly _f  = '1';
   @HostBinding('style.minHeight')     readonly _mh = '0';
+
+  @ViewChild('ganttContent') ganttContentRef?: ElementRef<HTMLDivElement>;
+  exportandoPdf = false;
 
   anioActual = new Date().getFullYear();
   readonly etapasFijas = ['PREVENTA','OBRA','EDIFICIO ENTREGADO','POST VENTA Y EXPERIENCIA','ALMACEN'];
@@ -469,4 +481,103 @@ export class Gantt implements OnInit {
   trackByProyecto(_: number, p: ProyectoConActividadesDTO): number { return p.id; }
 
   isProyectoSelected(id: number): boolean { return this.selectedProyectoIds.includes(id); }
+
+  /** Nombres de proyecto distintos presentes en las filas actuales, en orden de aparición. */
+  get proyectosDistintos(): string[] {
+    const vistos = new Set<string>();
+    const out: string[] = [];
+    for (const r of this.ganttRows) {
+      if (r.proyecto && !vistos.has(r.proyecto)) { vistos.add(r.proyecto); out.push(r.proyecto); }
+    }
+    return out;
+  }
+
+  /** Solo diferenciamos por color cuando hay más de un proyecto en pantalla. */
+  get mostrarColorProyecto(): boolean { return this.proyectosDistintos.length > 1; }
+
+  proyectoColor(nombre: string | null): string {
+    if (!nombre) return 'transparent';
+    const idx = this.proyectosDistintos.indexOf(nombre);
+    return idx === -1 ? 'transparent' : PROJECT_PALETTE[idx % PROJECT_PALETTE.length];
+  }
+
+  async exportarPdf(): Promise<void> {
+    const el = this.ganttContentRef?.nativeElement;
+    if (!el || this.exportandoPdf) return;
+    this.exportandoPdf = true;
+    this.cdr.detectChanges();
+
+    const tituloProyectos = this.selectedProyectosLabel;
+    const fecha = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' });
+    const proyectosLeyenda = this.proyectosDistintos;
+    const proyectoColorFn = (nombre: string) => this.proyectoColor(nombre);
+
+    try {
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        onclone: (doc, cloned) => {
+          // El header y la columna izquierda usan position:sticky para quedar fijos mientras
+          // se hace scroll en pantalla. Al capturar el elemento completo (no solo el viewport),
+          // html2canvas los renderiza en el offset "pegado" que tenían en el momento del scroll
+          // real, desalineándolos de las barras del timeline. Para el export los volvemos
+          // estáticos, así cada fila queda en su posición natural del documento.
+          doc.querySelectorAll('.gp-head, .gp-left, .gp-left-head, .gp-left-data').forEach((node) => {
+            const h = node as HTMLElement;
+            h.style.position = 'static';
+            h.style.top = 'auto';
+            h.style.left = 'auto';
+          });
+
+          const header = doc.createElement('div');
+          header.style.cssText =
+            'padding:14px 20px;background:#fff;border-bottom:2px solid #1a4731;' +
+            'display:flex;flex-direction:column;gap:8px;font-family:Arial,Helvetica,sans-serif';
+
+          const titleRow = doc.createElement('div');
+          titleRow.style.cssText = 'display:flex;align-items:baseline;justify-content:space-between;gap:16px';
+          titleRow.innerHTML =
+            '<span style="font-size:20px;font-weight:700;color:#1a4731">Cronograma Gantt — Arquitectura Comercial</span>' +
+            `<span style="font-size:12px;color:#6B7280">${tituloProyectos} · Generado el ${fecha}</span>`;
+          header.appendChild(titleRow);
+
+          if (proyectosLeyenda.length > 1) {
+            const legendRow = doc.createElement('div');
+            legendRow.style.cssText = 'display:flex;flex-wrap:wrap;gap:8px 18px';
+            legendRow.innerHTML = proyectosLeyenda
+              .map(
+                (nombre) =>
+                  '<span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#374151;font-weight:600">' +
+                  `<span style="width:12px;height:12px;border-radius:3px;background:${proyectoColorFn(nombre)};display:inline-block"></span>${nombre}` +
+                  '</span>',
+              )
+              .join('');
+            header.appendChild(legendRow);
+          }
+
+          cloned.insertBefore(header, cloned.firstChild);
+        },
+      });
+
+      const img = canvas.toDataURL('image/png');
+      // A2 horizontal: todo el timeline en una sola hoja, escalado a lo ancho.
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a2' });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const ratio = canvas.height / canvas.width;
+      let imgW = pageW - 20;
+      let imgH = imgW * ratio;
+      if (imgH > pageH - 20) {
+        imgH = pageH - 20;
+        imgW = imgH / ratio;
+      }
+      const x = (pageW - imgW) / 2;
+      pdf.addImage(img, 'PNG', x, 10, imgW, imgH);
+      pdf.save(`gantt-${new Date().toISOString().slice(0, 10)}.pdf`);
+    } finally {
+      this.exportandoPdf = false;
+      this.cdr.detectChanges();
+    }
+  }
 }
