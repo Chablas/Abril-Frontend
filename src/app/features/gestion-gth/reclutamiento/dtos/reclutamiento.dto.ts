@@ -1,4 +1,6 @@
 import { CandidatoFormularioResumen } from './formulario-postulante.dto';
+import { CandidatoRechazado } from '../../shared/dtos/candidato-rechazado.dto';
+import { Seleccionado } from '../../shared/dtos/seleccionado.dto';
 
 /** Opción genérica {id, nombre} para desplegables (p.ej. el catálogo de prioridades). */
 export interface Opcion {
@@ -148,6 +150,16 @@ export interface DetalleRequerimientoGth {
    * Alimentan la vista "Long list aprobada" de GTH. Vacío en fases anteriores.
    */
   candidatosAprobados: CandidatoAprobado[];
+  /**
+   * Candidatos rechazados en cualquier etapa del proceso, incluidos los de long lists anteriores.
+   * Alimentan la sección "Historial de candidatos rechazados".
+   */
+  candidatosRechazados: CandidatoRechazado[];
+  /**
+   * Quién obtuvo el puesto (decisión final del solicitante). Null mientras el proceso no cierre:
+   * el frontend lo usa como bandera para mostrar el bloque "Puesto cubierto".
+   */
+  seleccionado: Seleccionado | null;
 }
 
 /** Candidato aprobado por el solicitante, como lo ve GTH en la fase "Long list aprobada". */
@@ -210,15 +222,27 @@ export interface EvaluacionResumen {
   agradecimientoEnviadoEn: string | null;
 }
 
-/** Body del guardado de la evaluación (solo comentarios; el resultado no se edita aquí). */
+/**
+ * Body del guardado de la evaluación (solo comentarios; el resultado no se edita aquí).
+ * Los tres comentarios son obligatorios: el informe completo es lo que el área solicitante
+ * usa para decidir al finalista.
+ */
 export interface EvaluacionGuardar {
-  comentarioEntrevista: string | null;
-  comentarioPsicotecnico: string | null;
-  comentarioRecomendacion: string | null;
+  comentarioEntrevista: string;
+  comentarioPsicotecnico: string;
+  comentarioRecomendacion: string;
 }
 
 /** Resultado de guardar la evaluación o de enviar el correo de agradecimiento. */
 export interface EvaluacionAccionResult {
   message: string;
   evaluacion: EvaluacionResumen;
+
+  /**
+   * Fase nueva del requerimiento cuando la acción la movió: guardar la evaluación es enviar al
+   * finalista, y eso lo pasa de Entrevistas a Selección jefatura. Null/ausente si la fase quedó
+   * igual — el correo de agradecimiento nunca la mueve.
+   */
+  estadoCodigo?: string | null;
+  estadoNombre?: string | null;
 }

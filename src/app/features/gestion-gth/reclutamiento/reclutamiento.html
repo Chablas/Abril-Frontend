@@ -217,18 +217,12 @@
               [textColor]="estadoColors(s.estadoCodigo).text" />
           </td>
 
-          <!-- Acciones: el ojo abre el modal de detalle; el resto por ahora es visual. -->
+          <!-- Acciones: solo el ojo, que abre el modal de detalle. -->
           <td class="text-center whitespace-nowrap">
             <div class="inline-flex items-center gap-[10px] text-gray-400">
               <button type="button" class="hover:text-gray-600 cursor-pointer" title="Ver detalle"
                       (click)="abrirDetalle(s)">
                 <i class="ti ti-eye text-[17px]"></i>
-              </button>
-              <button type="button" class="hover:text-gray-600 cursor-pointer" title="Editar">
-                <i class="ti ti-pencil text-[17px]"></i>
-              </button>
-              <button type="button" class="hover:text-gray-600 cursor-pointer" title="Más opciones">
-                <i class="ti ti-dots text-[17px]"></i>
               </button>
             </div>
           </td>
@@ -305,12 +299,6 @@
                   (click)="abrirDetalle(s)">
             <i class="ti ti-eye"></i>
           </button>
-          <button type="button" class="abril-action-btn cursor-pointer" title="Editar">
-            <i class="ti ti-pencil"></i>
-          </button>
-          <button type="button" class="abril-action-btn cursor-pointer" title="Más opciones">
-            <i class="ti ti-dots"></i>
-          </button>
         </div>
       </div>
 
@@ -332,6 +320,7 @@
 <app-gth-detalle-requerimiento
   *ngIf="detalleId !== null"
   [requerimientoId]="detalleId"
+  [abrirFormularioCandidatoId]="detalleFormularioCandidatoId"
   (closeModal)="onDetalleCerrado($event)" />
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────────── -->

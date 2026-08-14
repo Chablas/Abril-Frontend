@@ -20,9 +20,7 @@ const PIPELINE: string[] = [
   'LONG_LIST_ENVIADA',
   'LONG_LIST_APROBADA',
   'ENTREVISTAS',
-  'EVALUACION',
   'SELECCION_JEFATURA',
-  'OFERTA_CIERRE',
   'CERRADO',
 ];
 
@@ -43,10 +41,8 @@ export function estadoColors(codigo: string): { bg: string; text: string } {
     case 'LONG_LIST':          return { bg: '#F3E8FF', text: '#7E22CE' };
     case 'LONG_LIST_ENVIADA':  return { bg: '#E0F2FE', text: '#0284C7' };
     case 'LONG_LIST_APROBADA': return { bg: '#DCFCE7', text: '#15803D' };
-    case 'SELECCION_JEFATURA': return { bg: '#CFFAFE', text: '#0E7490' };
-    case 'EVALUACION':         return { bg: '#FFEDD5', text: '#C2410C' };
     case 'ENTREVISTAS':        return { bg: '#FCE7F3', text: '#BE185D' };
-    case 'OFERTA_CIERRE':      return { bg: '#DCFCE7', text: '#15803D' };
+    case 'SELECCION_JEFATURA': return { bg: '#CFFAFE', text: '#0E7490' };
     case 'CERRADO':            return { bg: '#E0E7FF', text: '#3730A3' };
     default:                   return { bg: '#F3F4F6', text: '#374151' };
   }

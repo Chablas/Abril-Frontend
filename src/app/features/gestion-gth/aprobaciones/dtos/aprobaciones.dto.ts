@@ -1,6 +1,37 @@
 import { SolicitudDestinatarios } from '../../shared/dtos/destinatarios.dto';
 
-/** Una vacante de la solicitud como la ve (y decide) Gerencia. */
+/**
+ * Nivel con el que el usuario entra a «Aprobaciones». Lo resuelve el backend desde la CATEGORÍA de
+ * su ficha de trabajador, no desde su rol: el rol solo abre la pantalla.
+ *
+ * - `GERENTE_GENERAL`: ve todas las solicitudes. Su decisión es la obligatoria — manda las vacantes
+ *   aprobadas a Gestión de Talento Humano.
+ * - `GERENTE_AREA`: ve y decide solo las de su área hacia abajo. Su decisión es un visto bueno que
+ *   queda registrado, pero no hace avanzar la solicitud.
+ * - `NINGUNO`: entra a la pantalla, pero no hay solicitudes bajo su alcance.
+ */
+export type AprobacionNivel = 'GERENTE_GENERAL' | 'GERENTE_AREA' | 'NINGUNO';
+
+/**
+ * Una de las dos casillas de decisión de la solicitud (gerente del área o Gerencia General). Las
+ * dos tienen la misma forma para poder pintarlas con el mismo bloque de plantilla.
+ */
+export interface AprobacionNivelResumen {
+  /** PENDIENTE / APROBADA / APROBADA_PARCIAL / RECHAZADA. */
+  estadoCodigo: string;
+  estadoNombre: string;
+  /** true cuando ese nivel ya decidió. */
+  decidida: boolean;
+  /** Momento de la decisión (ISO, hora Perú). */
+  decididoEn: string | null;
+  /** Quién decidió (null si sigue pendiente o si es anterior a esta pantalla). */
+  decididoPor: string | null;
+  comentario: string | null;
+  vacantesAprobadas: number;
+  vacantesRechazadas: number;
+}
+
+/** Una vacante de la solicitud, con la decisión de cada nivel. */
 export interface AprobacionVacante {
   requerimientoId: number;
   codigo: string;
@@ -15,11 +46,13 @@ export interface AprobacionVacante {
   proyectoObra: string | null;
   /** Fecha requerida de ingreso ("YYYY-MM-DD"). */
   fechaRequeridaIngreso: string;
-  /** Decisión registrada: true = aprobada, false = rechazada, null = sin decidir. */
-  aprobado: boolean | null;
+  /** Visto bueno del gerente del área: true / false / null = no opinó. */
+  aprobadoGerenteArea: boolean | null;
+  /** Decisión de Gerencia General: true = aprobada, false = rechazada, null = sin decidir. */
+  aprobadoGerenteGeneral: boolean | null;
 }
 
-/** Detalle de una aprobación: cabecera de la solicitud + todas sus vacantes. */
+/** Detalle de una aprobación: cabecera de la solicitud, sus vacantes y las dos casillas. */
 export interface AprobacionDetalle {
   aprobacionId: number;
   area: string | null;
@@ -29,21 +62,20 @@ export interface AprobacionDetalle {
   sustentoUrl: string | null;
   /** Fecha de registro de la solicitud (ISO, ya en hora Perú). */
   enviado: string;
-  /** PENDIENTE / APROBADA / APROBADA_PARCIAL / RECHAZADA. */
-  estadoCodigo: string;
-  estadoNombre: string;
-  /** true cuando ya se decidió: el modal se muestra en modo lectura (historial). */
-  decidida: boolean;
-  /** Momento de la decisión (ISO, hora Perú). */
-  decididoEn: string | null;
-  /** Quién registró la decisión (null en las decididas antes de esta pantalla). */
-  decididoPor: string | null;
-  comentario: string | null;
+  /** Visto bueno del gerente del área (no condiciona el avance de la solicitud). */
+  gerenteArea: AprobacionNivelResumen;
+  /** Decisión de Gerencia General (la que manda las vacantes a GTH). */
+  gerenteGeneral: AprobacionNivelResumen;
+  /** Con qué poder entra el usuario que abrió el modal. */
+  nivel: AprobacionNivel;
+  /** true si todavía puede registrar SU decisión; false ⇒ el modal abre en lectura. */
+  puedeDecidir: boolean;
   vacantes: AprobacionVacante[];
   /**
-   * A quién le llegará el correo a Gestión de Talento Humano al confirmar la decisión. Lo resuelve
-   * el backend con la misma lógica del envío, así que el aviso del modal no puede divergir del
-   * correo que sale. Null en una solicitud ya decidida (no queda nada por enviar).
+   * A quién le llegará el correo a Gestión de Talento Humano al confirmar. Lo resuelve el backend
+   * con la misma lógica del envío, así que el aviso del modal no puede divergir del correo que
+   * sale. Null salvo cuando quien abre es el Gerente General y aún no ha decidido: es el único
+   * caso en que ese correo va a salir.
    */
   destinatarios: SolicitudDestinatarios | null;
 }
@@ -58,17 +90,17 @@ export interface AprobacionListItem {
   justificacion: string | null;
   /** Fecha de registro de la solicitud (ISO, hora Perú). */
   enviado: string;
-  estadoCodigo: string;
-  estadoNombre: string;
-  decidida: boolean;
-  decididoEn: string | null;
-  decididoPor: string | null;
   totalVacantes: number;
-  vacantesAprobadas: number;
-  vacantesRechazadas: number;
+  gerenteArea: AprobacionNivelResumen;
+  gerenteGeneral: AprobacionNivelResumen;
+  /** true si esta fila espera la decisión del usuario que consulta. */
+  esperaMiDecision: boolean;
 }
 
-/** Contadores de las tarjetas de la pantalla. */
+/**
+ * Contadores de las tarjetas. El backend los calcula SIEMPRE contra la casilla del usuario que
+ * consulta: "por aprobar" es lo que espera SU firma, no la del otro nivel.
+ */
 export interface AprobacionesResumen {
   pendientes: number;
   vacantesPendientes: number;
@@ -78,17 +110,23 @@ export interface AprobacionesResumen {
 
 /** Pantalla completa en una sola petición. */
 export interface AprobacionesPanel {
+  nivel: AprobacionNivel;
+  /** Área de la que el usuario es gerente (solo con nivel GERENTE_AREA). */
+  areaAlcance: string | null;
   resumen: AprobacionesResumen;
   aprobaciones: AprobacionListItem[];
 }
 
-/** Decisión de Gerencia sobre una vacante concreta. */
+/** Decisión sobre una vacante concreta. */
 export interface VacanteDecision {
   requerimientoId: number;
   aprobado: boolean;
 }
 
-/** Payload de la decisión. */
+/**
+ * Payload de la decisión. El nivel NO viaja acá: lo resuelve el backend desde la categoría del
+ * usuario, para que nadie pueda pedir que su firma cuente como la del Gerente General.
+ */
 export interface AprobacionDecision {
   decisiones: VacanteDecision[];
   comentario: string | null;
@@ -97,6 +135,8 @@ export interface AprobacionDecision {
 /** Resultado de registrar la decisión. */
 export interface AprobacionDecisionResult {
   message: string;
+  /** Nivel con el que se registró (GERENTE_GENERAL / GERENTE_AREA). */
+  nivel: AprobacionNivel;
   estadoCodigo: string;
   estadoNombre: string;
   aprobados: number;
