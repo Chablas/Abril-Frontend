@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
 import { DraggableImage } from '../../../../../../shared/components/draggable-image/draggable-image';
+import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import {
   GestionSalidaDetalleDto,
   GestionSalidaTrayectoDto,
@@ -11,7 +12,7 @@ import {
 @Component({
   standalone: true,
   selector: 'app-gestion-salida-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, DraggableImage],
+  imports: [CommonModule, BaseModal, StatusBadge, DraggableImage, TitleCasePipe],
   templateUrl: './gestion-salida-detalle-modal.html',
 })
 export class GestionSalidaDetalleModal {

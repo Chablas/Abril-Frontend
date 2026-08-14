@@ -1,8 +1,9 @@
 <div class="config-stack">
 
-  <!-- Una pestaña por cada correo del flujo -->
+  <!-- Una pestaña por cada correo del flujo. Con un solo correo (Aprobaciones) no se dibuja la
+       barra: una pestaña única no elige nada y repite el título de la tarjeta de abajo. -->
   <app-section-tabs
-    *ngIf="eventos.length"
+    *ngIf="eventos.length > 1"
     [tabs]="sectionTabs"
     [value]="eventoActivoCodigo"
     color="var(--color-abril-standard)"
@@ -40,36 +41,49 @@
         </div>
       </div>
 
+      <!-- El texto de cada aviso va envuelto en un <span>: el <p> es flex (ícono + texto) y sin
+           el span cada trozo suelto y cada <strong> se volvían ítems flex propios, que en pantallas
+           angostas se acomodaban en columnas de una palabra en vez de leerse como un párrafo. -->
       <p class="config-warn config-warn--off" *ngIf="!evento.active && !evento.principalAutomatico">
         <i class="ti ti-mail-off"></i>
-        Este correo <strong>no se envía</strong> mientras esté desactivado. Los destinatarios de
-        abajo se conservan tal cual para cuando lo vuelvas a prender.
+        <span>
+          Este correo <strong>no se envía</strong> mientras esté desactivado. Los destinatarios de
+          abajo se conservan tal cual para cuando lo vuelvas a prender.
+        </span>
       </p>
 
       <!-- Con principal automático apagarlo no detiene el correo: el principal lo pone el sistema
            al enviar y lo sigue recibiendo. Decir "no se envía" sería mentira. -->
       <p class="config-warn config-warn--off" *ngIf="!evento.active && evento.principalAutomatico">
         <i class="ti ti-mail-off"></i>
-        Mientras esté desactivado <strong>no se envía a los destinatarios de abajo</strong>. El
-        principal lo pone el sistema al enviarlo, así que ese lo sigue recibiendo igual.
+        <span>
+          Mientras esté desactivado <strong>no se envía a los destinatarios de abajo</strong>. El
+          principal lo pone el sistema al enviarlo, así que ese lo sigue recibiendo igual.
+        </span>
       </p>
 
       <p class="config-warn" *ngIf="sinPrincipales">
         <i class="ti ti-alert-triangle"></i>
-        No hay ningún destinatario <strong>principal (Para)</strong> activo, así que este correo
-        no le llega a nadie. Prende uno o agrega un correo adicional.
+        <span>
+          No hay ningún destinatario <strong>principal (Para)</strong> activo, así que este correo
+          no le llega a nadie. Prende uno o agrega un correo adicional.
+        </span>
       </p>
 
       <p class="config-warn config-warn--info" *ngIf="evento.principalAutomatico && evento.active">
         <i class="ti ti-info-circle"></i>
-        El destinatario principal de este correo lo pone el sistema al enviarlo, así que abajo solo
-        se agregan <strong>principales adicionales</strong> y copias.
+        <span>
+          El destinatario principal de este correo lo pone el sistema al enviarlo, así que abajo
+          solo se agregan <strong>principales adicionales</strong> y copias.
+        </span>
       </p>
 
       <p class="config-warn" *ngFor="let f of filasSinCorreo">
         <i class="ti ti-alert-triangle"></i>
-        <strong>{{ f.nombre || f.codigo }}</strong> está activo pero hoy no resuelve a ningún
-        correo, así que no le llega nada.
+        <span>
+          <strong>{{ f.nombre || f.codigo }}</strong> está activo pero hoy no resuelve a ningún
+          correo, así que no le llega nada.
+        </span>
       </p>
 
       <div class="destinatarios__head">
@@ -190,55 +204,63 @@
   width="520px"
   (closeModal)="cerrarForm()">
 
-  <div class="form-row">
-    <div class="abril-field">
-      <label class="abril-field-label">Correo *</label>
-      <input
-        type="email"
-        class="abril-field-input"
-        name="email"
-        placeholder="correo@abril.pe"
-        [(ngModel)]="formEmail" />
+  <!-- El desplegable de "Recibe como" se dibuja en absoluto dentro del cuerpo del modal, que tiene
+       overflow-y auto: sin alto suficiente sobresale y aparece una barra de scroll aunque la
+       pantalla esté casi vacía. El alto se reserva FIJO en .correo-form (ver el CSS): el modal
+       mide siempre lo mismo, abra o no el desplegable. -->
+  <div class="correo-form">
+    <div class="form-row">
+      <div class="abril-field">
+        <label class="abril-field-label">Correo *</label>
+        <input
+          type="email"
+          class="abril-field-input"
+          name="email"
+          placeholder="correo@abril.pe"
+          [(ngModel)]="formEmail" />
+      </div>
     </div>
-  </div>
 
-  <div class="form-row">
-    <div class="abril-field">
-      <label class="abril-field-label">Nombre o referencia</label>
-      <input
-        type="text"
-        class="abril-field-input"
-        name="nombre"
-        placeholder="Opcional (ej. Jefatura de obra)"
-        [(ngModel)]="formNombre" />
+    <div class="form-row">
+      <div class="abril-field">
+        <label class="abril-field-label">Nombre o referencia</label>
+        <input
+          type="text"
+          class="abril-field-input"
+          name="nombre"
+          placeholder="Opcional (ej. Jefatura de obra)"
+          [(ngModel)]="formNombre" />
+      </div>
     </div>
-  </div>
 
-  <div class="form-row">
-    <div>
-      <app-search-select
-        label="Recibe como"
-        [options]="tipoOptions"
-        valueField="id"
-        displayField="label"
-        [value]="formTipo"
-        [allowClear]="false"
-        [sortAlpha]="false"
-        placeholder="Selecciona tipo"
-        (valueChange)="onFormTipoChange($event)"
-      ></app-search-select>
+    <div class="form-row">
+      <div>
+        <app-search-select
+          label="Recibe como"
+          [options]="tipoOptions"
+          valueField="id"
+          displayField="label"
+          [value]="formTipo"
+          [allowClear]="false"
+          [sortAlpha]="false"
+          placeholder="Selecciona tipo"
+          (valueChange)="onFormTipoChange($event)"
+        ></app-search-select>
+      </div>
     </div>
+
+    <p class="form-hint" *ngIf="formId === null">
+      <i class="ti ti-info-circle"></i>
+      <span>
+        Se agrega activo solo en <strong>{{ eventoActivo?.nombre }}</strong>. Los otros correos no
+        se tocan.
+      </span>
+    </p>
+
+    <p class="form-error" *ngIf="formError">
+      <i class="ti ti-alert-circle"></i> <span>{{ formError }}</span>
+    </p>
   </div>
-
-  <p class="form-hint" *ngIf="formId === null">
-    <i class="ti ti-info-circle"></i>
-    Se agrega activo solo en <strong>{{ eventoActivo?.nombre }}</strong>. Los otros correos no se
-    tocan.
-  </p>
-
-  <p class="form-error" *ngIf="formError">
-    <i class="ti ti-alert-circle"></i> {{ formError }}
-  </p>
 
   <div modalFooter class="modal-footer-row">
     <button type="button" class="btn-ghost" (click)="cerrarForm()">Cancelar</button>

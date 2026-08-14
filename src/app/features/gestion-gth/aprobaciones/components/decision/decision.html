@@ -146,6 +146,48 @@
                   placeholder="Ej. Aprobado con la condición de cubrir primero la vacante de obra."></textarea>
       </div>
       <p class="ad-hint">Lo verá Gestión de Talento Humano junto con tu decisión.</p>
+
+      <!-- ── A quién le llega la decisión ───────────────────────────────────
+           Los correos los resuelve el backend con la misma lógica del envío real (lo que esté
+           activo en la sección del correo a GTH de la Configuración), así que el aviso no puede
+           prometer algo distinto de lo que sale. Y como el correo solo se envía si queda alguna
+           vacante aprobada, al rechazarlas todas el aviso lo dice en vez de callarlo. -->
+      @if (destinatariosCargados) {
+        @if (sinEnvio) {
+          <div class="ad-note ad-note--mail ad-note--done">
+            <i class="ti ti-mail-off"></i>
+            <span>
+              Vas a rechazar todas las vacantes, así que <b>no se enviará ningún correo</b>: la
+              decisión queda registrada y la solicitud no continúa.
+            </span>
+          </div>
+        } @else if (destinatariosPara.length) {
+          <div class="ad-note ad-note--mail">
+            <i class="ti ti-mail"></i>
+            <span>
+              Al confirmar, las vacantes aprobadas se enviarán por correo a
+              @for (d of destinatariosPara; track d.email) {<span class="ad-mail"
+                [title]="etiquetaDestinatario(d)">{{ d.email }}</span>{{ separadorCorreo($index, destinatariosPara.length) }}}
+              @if (destinatariosCopias.length) {
+                <span class="ad-note-sub">
+                  Con copia a
+                  @for (c of destinatariosCopias; track c.email) {<span class="ad-mail"
+                    [title]="etiquetaDestinatario(c)">{{ c.email }}</span>{{ separadorCorreo($index, destinatariosCopias.length) }}}
+                </span>
+              }
+            </span>
+          </div>
+        } @else {
+          <div class="ad-note ad-note--mail ad-note--warn">
+            <i class="ti ti-alert-triangle"></i>
+            <span>
+              No hay destinatarios activos para el correo a Gestión de Talento Humano: tu decisión
+              quedará registrada, pero <b>no se les enviará el aviso</b> con las vacantes aprobadas.
+              Revísalos en «Configuración».
+            </span>
+          </div>
+        }
+      }
     }
 
   }

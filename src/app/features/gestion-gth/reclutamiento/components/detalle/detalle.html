@@ -358,12 +358,49 @@
           <p class="text-[12.5px] text-gray-500 mt-[2px] leading-snug">
             Envía el enlace del formulario al correo de cada candidato aprobado. El postulante lo completa en una
             página externa; con «Ver formulario» consultas los datos que declaró y los apruebas o rechazas.
+            Puedes marcar varios y enviarles el formulario de una sola vez.
           </p>
 
+          <!-- Selección para el envío masivo. El botón repite el estilo del "Enviar formulario" de cada
+               candidato (azul, 38px) en vez del directive abrilBulkAction: ese es teal y está pensado
+               para la selección de filas de una tabla; acá desentonaría al lado de los botones de la
+               propia ficha, que son los que este reemplaza cuando hay varios candidatos. -->
+          @if (detalle.candidatosAprobados.length > 0) {
+            <div class="flex flex-wrap items-center justify-between gap-[10px] rounded-[8px] border px-[13px] py-[10px] mt-[12px]"
+                 style="border-color:var(--color-abril-border);background:#F8FAFC">
+              <label class="flex items-center gap-[9px] cursor-pointer">
+                <input type="checkbox" [checked]="todosSeleccionados" [indeterminate]="seleccionParcial"
+                  (change)="toggleSeleccionTodos($any($event.target).checked)"
+                  class="w-[15px] h-[15px] shrink-0 cursor-pointer"
+                  style="accent-color:var(--color-abril-logo-blue)" />
+                <span class="text-[13px] font-semibold text-gray-700">Seleccionar todos</span>
+                <span class="text-[12px] text-gray-500">
+                  ({{ seleccionadosCount }} de {{ detalle.candidatosAprobados.length }} seleccionado(s))
+                </span>
+              </label>
+
+              <button type="button"
+                [disabled]="!puedeEnviarSeleccionados"
+                (click)="enviarFormulariosSeleccionados()"
+                class="inline-flex items-center gap-[6px] h-[38px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white shrink-0 cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                style="background:var(--color-abril-logo-blue)">
+                <i class="ti ti-mail-forward text-[15px]"></i>
+                {{ enviandoMasivo ? 'Enviando…' : 'Enviar a los seleccionados (' + seleccionadosCount + ')' }}
+              </button>
+            </div>
+          }
+
           @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
-            <div class="rounded-[10px] border px-[14px] py-[12px] mt-[12px]" style="border-color:var(--color-abril-border)">
+            <div class="rounded-[10px] border px-[14px] py-[12px] mt-[12px]"
+                 [style.border-color]="seleccionFormulario.has(c.candidatoId) ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-border)'">
               <div class="flex items-start justify-between gap-[10px]">
-                <p class="text-[14px] font-bold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
+                <label class="flex items-center gap-[9px] cursor-pointer">
+                  <input type="checkbox" [checked]="seleccionFormulario.has(c.candidatoId)"
+                    (change)="toggleSeleccionFormulario(c.candidatoId)"
+                    class="w-[15px] h-[15px] shrink-0 cursor-pointer"
+                    style="accent-color:var(--color-abril-logo-blue)" />
+                  <span class="text-[14px] font-bold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</span>
+                </label>
                 <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
                       [style.background]="estadoFormularioBadge(c).bg" [style.color]="estadoFormularioBadge(c).color">
                   {{ estadoFormularioBadge(c).text }}

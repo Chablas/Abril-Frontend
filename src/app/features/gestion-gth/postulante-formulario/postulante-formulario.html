@@ -116,7 +116,10 @@
                      placeholder="Escribe tus nombres y apellidos" />
             </div>
 
+            <!-- dense + floatingLabel: mismas medidas (34px) y mismo label flotante que
+                 app-search-select, para que la fecha no quede más alta que el combo de al lado. -->
             <app-date-picker label="Fecha de nacimiento *" [color]="accent"
+              [dense]="true" [floatingLabel]="true"
               [value]="model.fechaNacimiento" (valueChange)="model.fechaNacimiento = $event"></app-date-picker>
 
             <app-search-select label="Estado civil *" [options]="estadosCiviles" valueField="id" displayField="nombre"
@@ -163,11 +166,15 @@
               [value]="model.disponibilidadId" (valueChange)="model.disponibilidadId = $event"
               placeholder="Selecciona tu disponibilidad" [color]="accent" [sortAlpha]="false"></app-search-select>
 
+            <!-- El detalle del campo va en el .pf-hint y no en el label: el label flotante es
+                 `nowrap` y `absolute`, así que un texto largo se sale del campo y agrega scroll
+                 horizontal a toda la página en el celular (que es donde se llena el formulario). -->
             <div class="abril-field pf-col-2">
-              <label class="abril-field-label">Pretensiones salariales (mínimo y máximo, remuneración bruta) <span class="pf-req">*</span></label>
+              <label class="abril-field-label">Pretensiones salariales <span class="pf-req">*</span></label>
               <input type="text" class="abril-field-input" [(ngModel)]="model.pretensionesSalariales"
                      name="pretensionesSalariales" autocomplete="off"
                      placeholder="Ej. S/ 4,000 a S/ 5,000" />
+              <p class="pf-hint">Indica un monto mínimo y uno máximo, en remuneración bruta.</p>
             </div>
 
             <div class="abril-field">
@@ -245,10 +252,14 @@
               [value]="model.motivoCeseId" (valueChange)="model.motivoCeseId = $event"
               placeholder="Selecciona el motivo de cese" [color]="accent" [sortAlpha]="false"></app-search-select>
 
+            <!-- dense + floatingLabel: mismas medidas (34px) y mismo label flotante que
+                 app-search-select, para que las fechas queden alineadas con los demás campos. -->
             <app-date-picker label="Fecha de inicio *" [color]="accent"
+              [dense]="true" [floatingLabel]="true"
               [value]="model.fechaInicio" (valueChange)="model.fechaInicio = $event"></app-date-picker>
 
             <app-date-picker label="Fecha de término" [color]="accent"
+              [dense]="true" [floatingLabel]="true"
               [value]="model.fechaTermino" (valueChange)="model.fechaTermino = $event"></app-date-picker>
 
             <div class="abril-field pf-col-2">
@@ -259,10 +270,11 @@
             </div>
 
             <div class="abril-field pf-col-2">
-              <label class="abril-field-label">Menciona 2 logros obtenidos en esta posición <span class="pf-req">*</span></label>
+              <label class="abril-field-label">Logros obtenidos en esta posición <span class="pf-req">*</span></label>
               <textarea class="abril-field-input" rows="3" [(ngModel)]="model.logros"
                         name="logros" autocomplete="off"
                         placeholder="Describe tus logros"></textarea>
+              <p class="pf-hint">Menciona al menos 2 logros.</p>
             </div>
 
             <div class="abril-field">
@@ -280,13 +292,14 @@
             </div>
 
             <div class="abril-field pf-col-2">
-              <label class="abril-field-label">Nombre, cargo y número de contacto del jefe inmediato <span class="pf-req">*</span></label>
+              <label class="abril-field-label">Jefe inmediato <span class="pf-req">*</span></label>
               <input type="text" class="abril-field-input" [(ngModel)]="model.jefeInmediato"
                      name="jefeInmediato" autocomplete="off"
                      placeholder="Ej. Juan Pérez, Gerente de Obra, 999 888 777" />
+              <p class="pf-hint">Escribe su nombre, cargo y número de contacto.</p>
             </div>
 
-            <div class="pf-col-2">
+            <div class="pf-col-2 pf-toggle-group">
               <p class="pf-toggle-label">Autorizo la verificación de referencias en este trabajo <span class="pf-req">*</span></p>
               <div class="pf-toggle-row">
                 <button type="button" class="pf-toggle" [class.pf-toggle--on]="model.autorizaVerificacionReferencias === true"

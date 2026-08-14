@@ -11,7 +11,17 @@ import {
   EvaluacionAccionResult,
   EvaluacionGuardar,
 } from '../dtos/reclutamiento.dto';
-import { FormularioAccionResult, FormularioRevision } from '../dtos/formulario-postulante.dto';
+import {
+  FormularioAccionResult,
+  FormularioEnvioMasivoResult,
+  FormularioRevision,
+} from '../dtos/formulario-postulante.dto';
+
+/** Un candidato del envío masivo del formulario: a quién y a qué correo. */
+export interface FormularioEnvioMasivoItem {
+  candidatoId: number;
+  correo: string;
+}
 
 interface MessageResult {
   message: string;
@@ -182,6 +192,20 @@ export class ReclutamientoService {
     return this.http.post<FormularioAccionResult>(
       `${this.formApiUrl}/candidato/${candidatoId}/enviar`,
       { correo },
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Envía (o reenvía) el formulario a varios candidatos de una sola vez. Responde 200 aunque alguno
+   * falle: el resultado trae el detalle por candidato para actualizar los que sí salieron.
+   */
+  enviarFormularioMasivo(
+    candidatos: FormularioEnvioMasivoItem[],
+  ): Observable<FormularioEnvioMasivoResult> {
+    return this.http.post<FormularioEnvioMasivoResult>(
+      `${this.formApiUrl}/enviar-masivo`,
+      { candidatos },
       { headers: this.headers },
     );
   }

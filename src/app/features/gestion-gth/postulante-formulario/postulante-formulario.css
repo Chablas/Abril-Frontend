@@ -171,20 +171,40 @@
   grid-column: 1 / -1;
 }
 
-@media (max-width: 640px) {
-  .pf-grid {
-    grid-template-columns: 1fr;
-  }
-  .pf-card {
-    padding: 20px 18px;
-  }
-}
-
 .pf-req {
   color: #b91c1c;
 }
 
+/* ── Alineación de los campos de una misma fila ───────────────────────────
+   El formulario mezcla tres primitivas: el campo nativo (.abril-field-input,
+   global en styles.css), app-search-select y app-date-picker. Los dos
+   componentes miden 34px exactos, mientras que el input nativo llega a ~36px
+   por su padding vertical, así que los bordes inferiores de una fila
+   (ej. "Distrito de residencia" / "Correo electrónico") no calzaban.
+   Acá solo se fija el alto —lo único que la clase global no cubre—; nada de
+   position/top/left/padding/background, eso vive una sola vez en styles.css.
+   El <textarea> queda fuera a propósito: su alto lo define `rows`. */
+input.abril-field-input {
+  height: 34px;
+}
+
+/* Detalle de un campo (lo que antes alargaba el label). Va debajo del input
+   porque el label flotante es `nowrap`: un texto largo ahí se sale del campo. */
+.pf-hint {
+  font-size: 11.5px;
+  color: #6b7280;
+  line-height: 1.45;
+  margin: 5px 0 0;
+}
+
 /* ── Toggles Sí/No ────────────────────────────────────────────────────── */
+/* Los campos de la grilla traen el `margin-top: 9px` de .abril-field (el hueco
+   del label flotante); el bloque de toggles no, así que sin esto quedaba 9px
+   más pegado a la fila anterior que el resto. */
+.pf-toggle-group {
+  margin-top: 9px;
+}
+
 .pf-toggle-label {
   font-size: 13px;
   font-weight: 600;
@@ -208,17 +228,55 @@
   font-weight: 600;
   color: #374151;
   cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.pf-toggle:hover {
-  background: #f8fafc;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  /* Android pinta encima su propio flash gris al tocar; el :active de abajo ya
+     da el feedback y con los dos juntos se ve sucio. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .pf-toggle--on {
   background: var(--color-abril-logo-blue, #005d9d);
   border-color: var(--color-abril-logo-blue, #005d9d);
   color: #fff;
+}
+
+/* El hover, solo donde hay un puntero de verdad. Dos motivos, que eran los dos
+   bugs del botón Sí/No:
+   1. En táctil el navegador deja el :hover pegado después del tap (hasta que
+      tocas otra cosa), así que el botón recién marcado se quedaba "blanqueado".
+   2. `.pf-toggle:hover` (clase + pseudo-clase) le ganaba en especificidad al
+      fondo azul de `.pf-toggle--on`, pero no a su `color: #fff` → texto blanco
+      sobre fondo casi blanco, ilegible. Por eso el hover claro va con
+      :not(.pf-toggle--on) y el seleccionado tiene el suyo, en azul oscuro. */
+@media (hover: hover) and (pointer: fine) {
+  .pf-toggle:not(.pf-toggle--on):hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  .pf-toggle--on:hover {
+    background: var(--color-abril-logo-blue-hover, #004a7d);
+    border-color: var(--color-abril-logo-blue-hover, #004a7d);
+  }
+}
+
+/* Feedback mientras el dedo/clic está encima: a diferencia del hover, :active sí
+   se suelta solo en táctil. */
+.pf-toggle:not(.pf-toggle--on):active {
+  background: #eef2f6;
+  border-color: #cbd5e1;
+}
+
+.pf-toggle--on:active {
+  background: var(--color-abril-logo-blue-hover, #004a7d);
+  border-color: var(--color-abril-logo-blue-hover, #004a7d);
+}
+
+/* Anillo de foco solo por teclado (mismo tratamiento que app-search-select),
+   para que el tap no deje ningún resalte pegado. */
+.pf-toggle:focus-visible {
+  outline: 2px solid var(--color-abril-logo-blue, #005d9d);
+  outline-offset: 2px;
 }
 
 .pf-consent {
@@ -252,6 +310,7 @@
   gap: 8px;
   transition: opacity 0.15s ease, background 0.15s ease;
   border: 1px solid transparent;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .pf-btn:disabled {
@@ -265,17 +324,35 @@
   color: #4b5563;
 }
 
-.pf-btn--ghost:not(:disabled):hover {
-  background: #f8fafc;
-}
-
 .pf-btn--primary {
   background: var(--color-abril-logo-blue, #005d9d);
   color: #fff;
 }
 
-.pf-btn--primary:not(:disabled):hover {
-  opacity: 0.92;
+/* Mismo criterio que los toggles: el hover solo con puntero real, porque en el
+   celular se quedaba pegado después de tocar "Siguiente". El feedback táctil lo
+   da :active. */
+@media (hover: hover) and (pointer: fine) {
+  .pf-btn--ghost:not(:disabled):hover {
+    background: #f8fafc;
+  }
+
+  .pf-btn--primary:not(:disabled):hover {
+    background: var(--color-abril-logo-blue-hover, #004a7d);
+  }
+}
+
+.pf-btn--ghost:not(:disabled):active {
+  background: #eef2f6;
+}
+
+.pf-btn--primary:not(:disabled):active {
+  background: var(--color-abril-logo-blue-hover, #004a7d);
+}
+
+.pf-btn:focus-visible {
+  outline: 2px solid var(--color-abril-logo-blue, #005d9d);
+  outline-offset: 2px;
 }
 
 /* ── Estados (cargando / error / enviado) ─────────────────────────────── */
@@ -319,5 +396,89 @@
 @keyframes pf-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────
+   El postulante llena esto casi siempre desde el celular (le llega por correo),
+   así que el móvil no es un caso borde: es el caso principal. Se recupera ancho
+   bajando el padding de la página y de la tarjeta, y se compacta la cabecera de
+   pasos, que con las 4 etiquetas visibles se comía media pantalla en 360px. */
+@media (max-width: 640px) {
+  .pf-page {
+    padding: 16px 10px 44px;
+  }
+
+  .pf-card {
+    padding: 18px 14px;
+  }
+
+  .pf-title {
+    font-size: 19px;
+  }
+
+  .pf-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Solo los círculos + el nombre del paso actual: el resto se sobreentiende
+     por el número y el título de la sección que ya está debajo. */
+  .pf-steps {
+    gap: 8px 12px;
+    margin-top: 14px;
+    padding-top: 14px;
+  }
+
+  .pf-step-label {
+    display: none;
+  }
+
+  .pf-step--active .pf-step-label {
+    display: inline;
+  }
+
+  /* Botones al mismo ancho: objetivo de toque más grande y sin que
+     "Enviar formulario" desborde la fila en pantallas angostas. */
+  .pf-nav {
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .pf-btn {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 0 12px;
+  }
+
+  .pf-toggle {
+    flex: 1 1 0;
+    height: 42px;
+  }
+
+  .pf-alert {
+    padding: 12px 12px 12px 14px;
+  }
+
+  .pf-state {
+    padding: 40px 18px;
+  }
+
+  .pf-state-icon {
+    font-size: 46px;
+  }
+
+  .pf-state-title {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 380px) {
+  .pf-page {
+    padding: 12px 8px 40px;
+  }
+
+  .pf-card {
+    padding: 16px 12px;
   }
 }

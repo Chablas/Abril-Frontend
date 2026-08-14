@@ -1,3 +1,5 @@
+import { SolicitudDestinatarios } from '../../shared/dtos/destinatarios.dto';
+
 export interface OpcionDto {
   id: number;
   nombre: string;
@@ -15,24 +17,6 @@ export interface TipoRequerimientoOpcion extends OpcionDto {
 
 /** Código del tipo de requerimiento que obliga a decir a quién se reemplaza. */
 export const TIPO_REQUERIMIENTO_REEMPLAZO = 'REEMPLAZO';
-
-/** Un destinatario del correo de la solicitud, con la razón por la que lo recibe. */
-export interface DestinatarioSolicitud {
-  email: string;
-  /** Nombre de la persona cuando se conoce (los buzones configurados no lo tienen). */
-  nombre: string | null;
-  /** "Gerencia General" o "Gerente de {área}". Se muestra como tooltip del correo. */
-  origen: string;
-}
-
-/**
- * A quién le llegará la solicitud si se envía en este momento. Lo resuelve el backend con la
- * misma lógica del envío real, así que el aviso del modal no puede divergir del correo que sale.
- */
-export interface SolicitudDestinatarios {
-  para: DestinatarioSolicitud[];
-  copias: DestinatarioSolicitud[];
-}
 
 /** Datos del formulario "Nueva solicitud de personal" en una sola petición. */
 export interface ReclutamientoFormDataDto {

@@ -9,7 +9,7 @@
     <div class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
       <div>
         <div class="text-xs text-gray-500 uppercase">Trabajador</div>
-        <div class="text-gray-800">{{ detalle.trabajador }}</div>
+        <div class="text-gray-800">{{ detalle.trabajador | titleCase }}</div>
       </div>
       <div>
         <div class="text-xs text-gray-500 uppercase">Fecha</div>
@@ -33,6 +33,35 @@
           <span class="text-gray-300">—</span>
         </ng-template>
       </div>
+      <!-- Área: aquí sí va el árbol completo (la tabla muestra solo la más baja). -->
+      <div class="col-span-2">
+        <div class="text-xs text-gray-500 uppercase">Área</div>
+        <div *ngIf="detalle.areaRuta.length > 0" class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+          <ng-container *ngFor="let nodo of detalle.areaRuta; let last = last">
+            <!-- Sin titleCase: area_item_name ya trae su capitalización (y el pipe rompería "SSOMA"). -->
+            <span [class]="last ? 'text-gray-800 font-medium' : 'text-gray-500'">{{ nodo }}</span>
+            <svg *ngIf="!last" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.5" class="flex-shrink-0">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </ng-container>
+        </div>
+        <span *ngIf="detalle.areaRuta.length === 0" class="text-gray-300">—</span>
+      </div>
+
+      <!-- Jefe/revisor al que se le notificó la solicitud. -->
+      <div class="col-span-2">
+        <div class="text-xs text-gray-500 uppercase">Revisor</div>
+        <div *ngIf="detalle.revisorNombre || detalle.revisorEmail; else sinRevisor">
+          <div class="text-gray-800">{{ (detalle.revisorNombre | titleCase) || '—' }}</div>
+          <div *ngIf="detalle.revisorEmail" class="text-xs" style="color:var(--color-abril-standard)">
+            {{ detalle.revisorEmail }}
+          </div>
+        </div>
+        <ng-template #sinRevisor>
+          <span class="text-gray-300">—</span>
+        </ng-template>
+      </div>
+
       <div class="col-span-2">
         <div class="text-xs text-gray-500 uppercase">Registrada</div>
         <div class="text-gray-800">{{ detalle.createdAt | date:'dd/MM/yyyy HH:mm' }}</div>

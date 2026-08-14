@@ -16,6 +16,7 @@ import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { AprobacionesService } from '../../services/aprobaciones.service';
 import { AprobacionDetalle, AprobacionVacante } from '../../dtos/aprobaciones.dto';
+import { DestinatarioSolicitud } from '../../../shared/dtos/destinatarios.dto';
 
 /**
  * Modal de decisión de Gerencia sobre una solicitud de personal: la solicitud completa con sus
@@ -136,6 +137,44 @@ export class GthAprobacionDecision implements OnInit {
     return `Aprobarás ${this.aprobadas} y rechazarás ${this.rechazadas}.`;
   }
 
+  // ── Aviso "a quién le llega esta decisión" ──────────────────────────────
+  // El correo a GTH solo sale si queda al menos una vacante aprobada (así lo hace el backend),
+  // así que el aviso se apaga en cuanto la decisión en curso las rechaza todas: prometer un
+  // envío que no va a ocurrir es peor que no avisar nada.
+
+  /** true cuando ya se sabe a quién le llegaría el correo (null = decidida o no se pudo resolver). */
+  get destinatariosCargados(): boolean {
+    return !this.soloLectura && !!this.data?.destinatarios;
+  }
+
+  get destinatariosPara(): DestinatarioSolicitud[] {
+    return this.data?.destinatarios?.para ?? [];
+  }
+
+  get destinatariosCopias(): DestinatarioSolicitud[] {
+    return this.data?.destinatarios?.copias ?? [];
+  }
+
+  /** Se rechazaron todas las vacantes ya decididas: no habrá correo que enviar. */
+  get sinEnvio(): boolean {
+    return this.vacantes.length > 0 && this.pendientes === 0 && this.aprobadas === 0;
+  }
+
+  /** Tooltip del correo: el nombre de la persona cuando se conoce, más por qué lo recibe. */
+  etiquetaDestinatario(d: DestinatarioSolicitud): string {
+    return d.nombre ? `${d.nombre} — ${d.origen}` : d.origen;
+  }
+
+  /**
+   * Lo que va después de cada correo de la lista: ", " entre los primeros, " y " antes del último
+   * y el punto final al cerrar. Va acá y no en la plantilla porque los separadores escritos entre
+   * etiquetas se pierden al compilar (el template quita los nodos de solo espacios).
+   */
+  separadorCorreo(i: number, total: number): string {
+    if (i === total - 1) return '.';
+    return i === total - 2 ? ' y ' : ', ';
+  }
+
   // ── Confirmación ────────────────────────────────────────────────────────
   async confirmar(): Promise<void> {
     if (!this.puedeConfirmar) return;
@@ -149,7 +188,7 @@ export class GthAprobacionDecision implements OnInit {
 
     const confirm = await Swal.fire({
       title: '¿Confirmas tu decisión?',
-      html: `${detalle}<br><br><b>Esta decisión no se puede cambiar después.</b>`,
+      html: `${detalle}`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Sí, confirmar',

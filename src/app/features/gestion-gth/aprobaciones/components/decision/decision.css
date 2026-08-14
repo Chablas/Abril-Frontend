@@ -30,6 +30,34 @@
   color: #6b7280;
 }
 
+/* Aviso de destinatarios: mismo aviso, pero al final del formulario (bajo el comentario). */
+.ad-note--mail {
+  margin-top: 14px;
+}
+
+.ad-note--warn {
+  border-color: #fde68a;
+  background: #fef9c3;
+  color: #92400e;
+}
+
+.ad-note--warn i {
+  color: #92400e;
+}
+
+.ad-mail {
+  font-weight: 600;
+  color: var(--color-abril-logo-blue, #005d9d);
+  word-break: break-all;
+}
+
+/* "Con copia a …" baja a su propia línea: es contexto del destinatario principal, no un dato aparte. */
+.ad-note-sub {
+  display: block;
+  margin-top: 3px;
+  color: #6b7280;
+}
+
 /* ── Secciones ────────────────────────────────────────────────────────── */
 .ad-section-title {
   font-size: 14px;

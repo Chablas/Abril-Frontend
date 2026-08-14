@@ -11,7 +11,11 @@ import { TimePicker } from '../../../../../shared/components/time-picker/time-pi
 import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
-import { LongListCandidatoEnvio, ReclutamientoService } from '../../services/reclutamiento.service';
+import {
+  FormularioEnvioMasivoItem,
+  LongListCandidatoEnvio,
+  ReclutamientoService,
+} from '../../services/reclutamiento.service';
 import {
   DecisionFormularioAplicada,
   FormularioDecisionService,
@@ -35,6 +39,12 @@ interface CandidatoLongList {
   /** Informe del candidato adjunto (opcional). */
   informe: File | null;
 }
+
+/**
+ * Correo válido para enviarle el formulario al postulante. Misma expresión que valida el backend
+ * (`PostulanteFormularioService.EmailRegex`): la usan tanto el envío individual como el masivo.
+ */
+const CORREO_VALIDO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /** Datos editables de la cita de un candidato en la sección de programación de entrevistas. */
 interface EntrevistaFormState {
@@ -120,6 +130,10 @@ export class GthDetalleRequerimiento implements OnInit {
   enviandoFormulario: Record<number, boolean> = {};
   /** true mientras se aprueba/rechaza el formulario de un candidato (key = candidatoId). */
   decidiendoFormulario: Record<number, boolean> = {};
+  /** Candidatos marcados para el envío masivo del formulario (ids). */
+  seleccionFormulario = new Set<number>();
+  /** true mientras corre el envío masivo (deshabilita el botón para evitar doble envío). */
+  enviandoMasivo = false;
   /** Candidato cuyo modal "Ver formulario" está abierto (null = cerrado). */
   formularioCandidatoId: number | null = null;
 
@@ -437,7 +451,7 @@ export class GthDetalleRequerimiento implements OnInit {
   /** Envía (o reenvía) el formulario al correo escrito para el candidato. */
   async enviarFormulario(c: CandidatoAprobado): Promise<void> {
     const correo = (this.correoFormulario[c.candidatoId] ?? '').trim();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
+    if (!CORREO_VALIDO.test(correo)) {
       Swal.fire({
         icon: 'warning',
         title: 'Correo no válido',
@@ -483,6 +497,151 @@ export class GthDetalleRequerimiento implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.enviandoFormulario[c.candidatoId] = false;
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  // ── Envío masivo del formulario (selección de candidatos) ────────────────
+  /** Marca/desmarca un candidato para el envío masivo. */
+  toggleSeleccionFormulario(candidatoId: number): void {
+    if (this.seleccionFormulario.has(candidatoId)) this.seleccionFormulario.delete(candidatoId);
+    else this.seleccionFormulario.add(candidatoId);
+  }
+
+  /** Candidatos marcados, en el mismo orden en que se listan en la pantalla. */
+  get candidatosSeleccionados(): CandidatoAprobado[] {
+    return (this.detalle?.candidatosAprobados ?? []).filter((c) =>
+      this.seleccionFormulario.has(c.candidatoId),
+    );
+  }
+
+  get seleccionadosCount(): number {
+    return this.candidatosSeleccionados.length;
+  }
+
+  /** true si están marcados todos los candidatos (estado del check maestro). */
+  get todosSeleccionados(): boolean {
+    const candidatos = this.detalle?.candidatosAprobados ?? [];
+    return candidatos.length > 0 && this.seleccionadosCount === candidatos.length;
+  }
+
+  /** true si hay algunos marcados pero no todos (estado indeterminado del check maestro). */
+  get seleccionParcial(): boolean {
+    const marcados = this.seleccionadosCount;
+    return marcados > 0 && marcados < (this.detalle?.candidatosAprobados ?? []).length;
+  }
+
+  /** Marca o desmarca a todos los candidatos de una vez. */
+  toggleSeleccionTodos(marcar: boolean): void {
+    if (!marcar) {
+      this.seleccionFormulario.clear();
+      return;
+    }
+    this.seleccionFormulario = new Set(
+      (this.detalle?.candidatosAprobados ?? []).map((c) => c.candidatoId),
+    );
+  }
+
+  get puedeEnviarSeleccionados(): boolean {
+    return this.seleccionadosCount > 0 && !this.enviandoMasivo;
+  }
+
+  /**
+   * Envía el formulario a todos los candidatos marcados en una sola petición, con las mismas reglas
+   * del envío individual (correo válido y confirmación si alguno ya estaba aprobado). El backend
+   * responde el detalle por candidato: los que salieron se desmarcan y los que fallaron quedan
+   * marcados para reintentarlos sin volver a seleccionarlos.
+   */
+  async enviarFormulariosSeleccionados(): Promise<void> {
+    const seleccionados = this.candidatosSeleccionados;
+    if (seleccionados.length === 0 || this.enviandoMasivo) return;
+
+    const nombre = (c: CandidatoAprobado) => new TitleCasePipe().transform(c.nombre);
+
+    // Se exige el correo de todos antes de mandar el lote: es preferible que GTH corrija en la misma
+    // pantalla a que el envío salga a medias y haya que rastrear a quién le llegó.
+    const sinCorreo = seleccionados.filter(
+      (c) => !CORREO_VALIDO.test((this.correoFormulario[c.candidatoId] ?? '').trim()),
+    );
+    if (sinCorreo.length > 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Faltan correos válidos',
+        html:
+          'Registra un correo electrónico válido para continuar:<br><b>' +
+          sinCorreo.map(nombre).join('</b><br><b>') +
+          '</b>',
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    // Reenviar un formulario ya aprobado lo reabre y deshace su aprobación: misma advertencia que en
+    // el envío individual, acá con la lista de a quiénes les pasaría.
+    const yaAprobados = seleccionados.filter((c) => c.formulario?.estadoCodigo === 'APROBADO');
+    const confirm = await Swal.fire({
+      icon: yaAprobados.length > 0 ? 'warning' : 'question',
+      title: `¿Enviar el formulario a ${seleccionados.length} postulante(s)?`,
+      html:
+        `Se le enviará el enlace del formulario a los ${seleccionados.length} candidato(s) ` +
+        'seleccionado(s), cada uno al correo registrado en su ficha.' +
+        (yaAprobados.length > 0
+          ? '<br><br>Ojo: <b>' +
+            yaAprobados.map(nombre).join('</b>, <b>') +
+            '</b> ya tenía(n) el formulario <b>aprobado</b>. Se le(s) reabre con la información que ' +
+            'ya declaró y vuelve a quedar <b>Enviado</b> —deja de contar como aprobado— hasta que lo ' +
+            'complete y lo apruebes de nuevo.'
+          : ''),
+      showCancelButton: true,
+      confirmButtonText: 'Enviar a todos',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: yaAprobados.length > 0 ? '#B91C1C' : '#005D9D',
+    });
+    if (!confirm.isConfirmed) return;
+
+    const candidatos: FormularioEnvioMasivoItem[] = seleccionados.map((c) => ({
+      candidatoId: c.candidatoId,
+      correo: (this.correoFormulario[c.candidatoId] ?? '').trim(),
+    }));
+
+    this.enviandoMasivo = true;
+    this.loaderService.show();
+    this.service.enviarFormularioMasivo(candidatos).subscribe({
+      next: (res) => {
+        const porCandidato = new Map(seleccionados.map((c) => [c.candidatoId, c]));
+        const fallidos: string[] = [];
+
+        for (const r of res.resultados) {
+          const c = porCandidato.get(r.candidatoId);
+          // El resumen llega incluso cuando el correo falló (el formulario ya quedó registrado):
+          // la ficha tiene que reflejar el estado real de la base de datos.
+          if (c && r.formulario) c.formulario = r.formulario;
+          if (r.enviado) this.seleccionFormulario.delete(r.candidatoId);
+          else if (c) fallidos.push(`${nombre(c)}: ${r.error ?? 'No se pudo enviar.'}`);
+        }
+
+        this.huboCambios = true;
+        this.enviandoMasivo = false;
+        this.loaderService.hide();
+        // App zoneless: sin esto los badges de los candidatos se quedan con el estado anterior.
+        this.cdr.detectChanges();
+
+        Swal.fire({
+          icon: res.fallidos === 0 ? 'success' : res.enviados === 0 ? 'error' : 'warning',
+          title: res.fallidos === 0 ? 'Formularios enviados' : 'Envío incompleto',
+          html:
+            res.message +
+            (fallidos.length > 0
+              ? '<br><br>No se pudo enviar a:<br>' + fallidos.join('<br>')
+              : ''),
+          confirmButtonColor: '#005D9D',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviandoMasivo = false;
+        this.loaderService.hide();
         this.cdr.detectChanges();
         this.errorService.handleError(err);
       },

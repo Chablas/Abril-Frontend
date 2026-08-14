@@ -1,3 +1,5 @@
+import { SolicitudDestinatarios } from '../../shared/dtos/destinatarios.dto';
+
 /** Una vacante de la solicitud como la ve (y decide) Gerencia. */
 export interface AprobacionVacante {
   requerimientoId: number;
@@ -38,6 +40,12 @@ export interface AprobacionDetalle {
   decididoPor: string | null;
   comentario: string | null;
   vacantes: AprobacionVacante[];
+  /**
+   * A quién le llegará el correo a Gestión de Talento Humano al confirmar la decisión. Lo resuelve
+   * el backend con la misma lógica del envío, así que el aviso del modal no puede divergir del
+   * correo que sale. Null en una solicitud ya decidida (no queda nada por enviar).
+   */
+  destinatarios: SolicitudDestinatarios | null;
 }
 
 /** Una solicitud en la lista de «Aprobaciones» (una fila = una solicitud de personal). */

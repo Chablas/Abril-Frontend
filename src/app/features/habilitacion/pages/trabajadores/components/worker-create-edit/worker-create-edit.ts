@@ -138,6 +138,11 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
    * tampoco se puede borrar el último correo de las que sí lo tienen (misma regla que el backend).
    */
   private teniaAlgunCorreo = false;
+  /**
+   * Lo mismo que `teniaAlgunCorreo` pero solo del personal, que es el correo que Obra sigue
+   * exigiendo aunque ahora también capture el corporativo (ver `faltaCorreo`).
+   */
+  private teniaEmailPersonal = false;
 
   empresas: EmpresaContratistaListDto[] = [];
   proyectos: ProjectGetDTO[] = [];
@@ -262,13 +267,42 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     return this.mode === 'edit';
   }
 
+  /**
+   * Si el desplegable de clasificación (Obra / Staff / Oficina Central) se puede tocar.
+   *
+   * En edición solo se puede ASIGNAR la que falta, no cambiar una ya asignada: cambiarla es
+   * exclusivo de "Cambiar obra / puesto de trabajo", el único camino que resetea el certificado
+   * de aptitud, deja auditoría y bloquea la subida de riesgo Oficina Central → Staff/Obra (el
+   * backend aplica la misma regla, ver WorkerSearchRepository.Update). Sin esto, las fichas con
+   * la clasificación vacía quedaban sin salida: el formulario decide qué campos mostrar a partir
+   * de ella, así que sin clasificación no ofrecía ni área ni jefe.
+   *
+   * Se mira el trabajador que abrió el modal, no el modelo: así la respuesta no cambia según el
+   * orden en que lleguen el detalle y el catálogo, ni cuando el usuario limpia el desplegable.
+   */
+  get clasificacionEditable(): boolean {
+    if (this.mode === 'create') return true;
+    return !this.worker?.obraOficinaStaffId && !this.worker?.obraOficina;
+  }
+
   /** Todo trabajador debe quedar con al menos un correo: el corporativo o el personal. */
   get tieneAlgunCorreo(): boolean {
     return !!this.model.emailCorporativo.trim() || !!this.model.emailPersonal.trim();
   }
 
-  /** True cuando falta el correo y en este contexto sí es exigible (ver teniaAlgunCorreo). */
+  /**
+   * True cuando falta el correo y en este contexto sí es exigible (ver teniaAlgunCorreo).
+   *
+   * En Obra la regla es más estricta: el corporativo es un dato opcional que se suma, no un
+   * reemplazo del personal, que sigue siendo el obligatorio. Igual que con `teniaAlgunCorreo`,
+   * al editar solo se exige si la ficha ya lo traía: hay fichas legadas sin correo personal que
+   * no deben quedar imposibles de editar.
+   */
   get faltaCorreo(): boolean {
+    if (this.esObrero) {
+      if (this.model.emailPersonal.trim()) return false;
+      return this.mode === 'create' || this.teniaEmailPersonal;
+    }
     if (this.tieneAlgunCorreo) return false;
     return this.mode === 'create' || this.teniaAlgunCorreo;
   }
@@ -357,6 +391,27 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     return this.esStaffOOficina;
   }
 
+  /**
+   * True cuando el formulario muestra (y por tanto es dueño de) el jefe del trabajador. Lo
+   * gestionan las tres clasificaciones de personal de casa, con dos presentaciones distintas:
+   * Staff/Oficina Central detrás del checkbox "Jefe personalizado" (el campo muestra por defecto
+   * el revisor que sugiere su área), y Obra como un desplegable opcional suelto — un obrero no
+   * tiene área en el árbol, así que no hay revisor de área que sugerirle y sin jefe elegido cae
+   * al fallback de GTH. En contratistas no se captura y el backend deja intacto lo guardado.
+   */
+  get gestionaJefe(): boolean {
+    return this.esStaffOOficina || this.esObrero;
+  }
+
+  /**
+   * True cuando el formulario muestra el campo "Email corporativo". En Staff/Oficina Central es
+   * el correo principal del trabajador; en Obra es un dato opcional que se suma al personal (hay
+   * obreros con cuenta del tenant: capataces, maestros de obra). En contratistas no se captura.
+   */
+  get gestionaEmailCorporativo(): boolean {
+    return this.esStaffOOficina || this.esObrero;
+  }
+
   private emptyModel(): WorkerFormModel {
     return {
       tipoDocumento: 'DNI' as const,
@@ -399,6 +454,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     this.resetEstadoEmail();
     this.emailOriginal = '';
     this.teniaAlgunCorreo = false;
+    this.teniaEmailPersonal = false;
     this.empresaContratistaNombre = '';
     this.jefeGuardadoNombre = null;
     this.jefeGuardadoEmail = null;
@@ -436,6 +492,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           this.model.emailPersonal = det.emailPersonal ?? '';
           this.emailOriginal = this.model.emailCorporativo.trim().toLowerCase();
           this.teniaAlgunCorreo = this.tieneAlgunCorreo;
+          this.teniaEmailPersonal = !!this.model.emailPersonal.trim();
           this.model.fechaIngreso = det.fechaIngreso ?? '';
           this.model.condicionMedica = det.condicionMedica ?? '';
           this.model.fechaNacimiento = det.fechaNacimiento ? det.fechaNacimiento.substring(0, 10) : '';
@@ -781,13 +838,28 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     return this.jefes.filter((j) => !this.esElPropioTrabajador(j));
   }
 
-  /** Checkbox marcado pero sin elegir a nadie: no se puede guardar en ese estado a medias. */
+  /**
+   * Checkbox marcado pero sin elegir a nadie: no se puede guardar en ese estado a medias. Solo
+   * aplica a Staff/Oficina Central, que son las que tienen checkbox; en Obra el desplegable es
+   * opcional y dejarlo vacío es una respuesta válida (el trabajador cae al fallback).
+   */
   get faltaJefePersonalizado(): boolean {
     return (
       this.gestionaArea &&
       this.model.jefePersonalizado &&
       this.model.jefePersonalizadoWorkerId == null
     );
+  }
+
+  /**
+   * Jefe que se manda al backend. En Staff/Oficina Central manda el checkbox: desmarcado se
+   * manda null y el trabajador vuelve a depender del revisor de su área. En Obra el desplegable
+   * ES el campo, así que se manda tal cual y vacío significa lo mismo. Fuera de esas
+   * clasificaciones no se manda nada porque `gestionaJefe` es false.
+   */
+  private get jefePersonalizadoAEnviar(): number | null {
+    if (this.esObrero) return this.model.jefePersonalizadoWorkerId;
+    return this.model.jefePersonalizado ? this.model.jefePersonalizadoWorkerId : null;
   }
 
   private get jefeSeleccionado(): JefeCandidatoDto | null {
@@ -886,10 +958,15 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     // selección anterior se descarta y la cascada vuelve a empezar.
     this.model.areaScopeId = null;
     this.initAreaLevels();
-    // El mismo campo pasa de correo personal (Obra) a corporativo (Staff/Oficina Central),
-    // así que la verificación anterior deja de ser válida.
+    // El jefe elegido se conserva, pero cada clasificación lo muestra distinto (checkbox en
+    // Staff/Oficina, desplegable suelto en Obra): se sincroniza el checkbox con lo que haya
+    // elegido para que al pasar a Staff/Oficina el jefe no quede guardado pero invisible.
+    this.model.jefePersonalizado = this.model.jefePersonalizadoWorkerId != null;
+    // Cambiar de clasificación cambia con qué reglas se valida el corporativo (en Obra solo se
+    // exige tenant/unicidad si es del dominio de Abril), así que la verificación anterior deja
+    // de ser válida y se rehace.
     this.resetEstadoEmail();
-    if (this.esStaffOOficina) this.onEmailCorporativoBlur();
+    if (this.gestionaEmailCorporativo) this.onEmailCorporativoBlur();
   }
 
   private resetEstadoEmail(): void {
@@ -901,12 +978,16 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
 
   /**
    * Verifica el correo corporativo contra el directorio de Abril (tenant de Microsoft) y contra
-   * los correos ya asignados a otros trabajadores. Solo aplica a Staff/Oficina Central: en Obra
-   * y en contratistas el mismo campo guarda el correo personal, que no vive en el tenant y sí
-   * puede repetirse (varias fichas comparten el correo de RR.HH. de su empresa).
+   * los correos ya asignados a otros trabajadores. No aplica a contratistas, que no capturan
+   * corporativo.
+   *
+   * El flag `corporativo` que se manda es la clasificación real (true solo en Staff/Oficina
+   * Central), la misma que usa el backend al guardar: así en Obra un correo @abril.pe se sigue
+   * verificando contra el tenant y por unicidad, pero uno de otro dominio se acepta igual que al
+   * guardar, en vez de marcarlo en rojo por algo que el backend sí dejaría pasar.
    */
   onEmailCorporativoBlur(): void {
-    if (!this.esStaffOOficina) {
+    if (!this.gestionaEmailCorporativo) {
       this.resetEstadoEmail();
       return;
     }
@@ -919,7 +1000,11 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     this.verificandoEmail = true;
 
     this.workerService
-      .validarEmailCorporativo(email, this.mode === 'edit' ? this.worker?.workerId : null, true)
+      .validarEmailCorporativo(
+        email,
+        this.mode === 'edit' ? this.worker?.workerId : null,
+        this.esStaffOOficina,
+      )
       .subscribe({
         next: (res) => {
           this.verificandoEmail = false;
@@ -1187,12 +1272,10 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       contrataCasa: this.esContratista ? 'Contratista' : n(this.model.contrataCasa),
       obraOficinaStaffId: this.model.obraOficinaStaffId,
       jefatura: this.gestionaArea ? null : n(this.model.jefatura),
-      // El jefe solo se manda cuando el formulario muestra el campo (Staff/Oficina Central);
-      // en obreros y contratistas el backend no toca lo que ya estuviera guardado.
-      gestionaJefe: this.gestionaArea,
-      jefePersonalizadoWorkerId: this.model.jefePersonalizado
-        ? this.model.jefePersonalizadoWorkerId
-        : null,
+      // El jefe solo se manda cuando el formulario muestra el campo (las tres clasificaciones de
+      // personal de casa); en contratistas el backend no toca lo que ya estuviera guardado.
+      gestionaJefe: this.gestionaJefe,
+      jefePersonalizadoWorkerId: this.jefePersonalizadoAEnviar,
       sctr: !!this.model.sctr,
       habilitadoObra: false,
       notas: n(this.model.notas),

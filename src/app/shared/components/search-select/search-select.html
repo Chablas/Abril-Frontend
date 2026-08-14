@@ -13,7 +13,8 @@
     <!-- Trigger -->
     <button
       type="button"
-      (click)="toggle($event)"
+      (pointerdown)="onTriggerPointerDown($event)"
+      (click)="onTriggerClick($event)"
       [disabled]="disabled"
       class="ss-trigger w-full flex items-center justify-between focus:outline-none transition-colors"
       [class.cursor-pointer]="!disabled"

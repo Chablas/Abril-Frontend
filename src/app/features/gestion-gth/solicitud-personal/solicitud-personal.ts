@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { FabButton } from '../../../shared/components/fab-button/fab-button';
@@ -142,6 +142,7 @@ export class GthSolicitudPersonal implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private authService: AuthService,
+    private route: ActivatedRoute,
     private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -166,6 +167,11 @@ export class GthSolicitudPersonal implements OnInit {
   }
 
   ngOnInit(): void {
+    // `/gestion-gth/solicitud-personal/long-list/:id` es la URL del botón del correo de long
+    // list: abre esa revisión directamente. Sin id, la pantalla es solo el panel.
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    if (Number.isInteger(id) && id > 0) this.revisionId = id;
+
     this.load();
   }
 
@@ -211,6 +217,13 @@ export class GthSolicitudPersonal implements OnInit {
 
   cerrarRevision(): void {
     this.revisionId = null;
+    // Si se llegó por el enlace del correo (`/solicitud-personal/long-list/:id`), se limpia la
+    // URL para que un refresco no vuelva a abrir el modal.
+    if (this.route.snapshot.paramMap.get('id')) {
+      this.router.navigate(['/gestion-gth/solicitud-personal']);
+      return;
+    }
+    this.cdr.detectChanges();
   }
 
   cerrarFinalistas(): void {

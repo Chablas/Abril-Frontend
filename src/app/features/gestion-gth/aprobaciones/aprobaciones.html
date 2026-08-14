@@ -2,6 +2,8 @@
   [badge]="'GESTIÓN DE TALENTO · ' + anioActual"
   titulo="Aprobaciones"
   subtitulo="Aprueba o rechaza las solicitudes de personal y consulta el historial de decisiones."
+  [botonSecundario]="botonConfiguracion"
+  (secondaryClick)="abrirConfiguracion()"
   [hasExtra]="true">
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->

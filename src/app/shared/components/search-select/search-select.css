@@ -1,3 +1,14 @@
+/* touch-action: manipulation le dice al navegador que acá no hay doble-tap-zoom
+   que desambiguar, así que puede entregar el gesto de una en vez de esperar por
+   un segundo toque. Es la otra mitad de por qué en móvil el desplegable parecía
+   tardar en responder (la primera es abrir en pointerdown y no en click, ver
+   search-select.ts). Aplica al trigger, a las opciones y a la ✕ de limpiar. */
+.ss-trigger,
+.ss-option,
+.ss-clear {
+  touch-action: manipulation;
+}
+
 /* Foco visible por teclado (Tab), no al hacer clic con mouse. Usa el mismo
    acento que ya inyecta el Input `color` (--ss-accent) en vez de un color
    fijo, para que el aro calce con el acento que la página haya elegido

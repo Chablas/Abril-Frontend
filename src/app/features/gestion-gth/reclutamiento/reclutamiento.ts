@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
@@ -163,6 +163,7 @@ export class GthReclutamiento implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private authService: AuthService,
+    private route: ActivatedRoute,
     private router: Router,
   ) {}
 
@@ -186,6 +187,11 @@ export class GthReclutamiento implements OnInit {
   }
 
   ngOnInit(): void {
+    // `/gestion-gth/reclutamiento/requerimiento/:id` es la URL del botón del correo de decisión
+    // de long list: abre ese requerimiento directamente. Sin id, la pantalla es solo la bandeja.
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    if (Number.isInteger(id) && id > 0) this.detalleId = id;
+
     this.load();
   }
 
@@ -304,6 +310,13 @@ export class GthReclutamiento implements OnInit {
   /** Cierra el modal de detalle; si hubo cambios guardados, refresca la bandeja. */
   onDetalleCerrado(huboCambios: boolean): void {
     this.detalleId = null;
+    // Si se llegó por el enlace del correo (`/reclutamiento/requerimiento/:id`), se limpia la URL
+    // para que un refresco no vuelva a abrir el modal. La navegación remonta el componente, así
+    // que ya trae la bandeja recargada y no hace falta el load() de abajo.
+    if (this.route.snapshot.paramMap.get('id')) {
+      this.router.navigate(['/gestion-gth/reclutamiento']);
+      return;
+    }
     if (huboCambios) this.load();
   }
 

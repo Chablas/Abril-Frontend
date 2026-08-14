@@ -14,7 +14,11 @@
   gap: 16px;
 }
 
+/* container-type: el paso de tabla a tarjetas se decide por el ancho real de esta
+   tarjeta y no por el de la ventana (ver el bloque Responsive del final). */
 .config-card {
+  container-type: inline-size;
+  container-name: correo;
   background: #fff;
   border: 1px solid var(--color-abril-border, #e5e7eb);
   border-radius: var(--radius-standard, 7px);
@@ -102,6 +106,11 @@
   flex-shrink: 0;
   margin-top: 1px;
 }
+/* El texto va en un único <span> (ver el HTML): como ítem flex necesita min-width 0
+   para poder encogerse por debajo de su palabra más larga en pantallas angostas. */
+.config-warn span {
+  min-width: 0;
+}
 .config-warn--off {
   border-color: #e2e8f0;
   background: #f1f5f9;
@@ -154,7 +163,7 @@
 
 .matriz {
   width: 100%;
-  min-width: 620px;
+  min-width: 520px;
   border-collapse: collapse;
 }
 
@@ -186,22 +195,22 @@
 
 .matriz__dest {
   text-align: left;
-  min-width: 300px;
+  min-width: 200px;
 }
 
 .matriz__tipo {
   text-align: center;
-  width: 120px;
+  width: 104px;
 }
 
 .matriz__switch {
   text-align: center;
-  width: 90px;
+  width: 80px;
 }
 
 .matriz__acciones {
   text-align: right;
-  width: 74px;
+  width: 70px;
   white-space: nowrap;
 }
 
@@ -357,6 +366,26 @@
   gap: 0;
 }
 
+/* Alto mínimo del formulario, calculado para que el desplegable de "Recibe como"
+   quepa entero sin desbordar el cuerpo del modal (overflow-y: auto) y sin que salte
+   una barra de scroll teniendo pantalla de sobra.
+   El borde inferior del trigger cae a 169px del inicio del formulario (2 campos de
+   63px + los 9px de margen y los 34px de alto del combo), y el desplegable ocupa
+   68px por debajo (4px de separación + dos opciones de 31px + bordes): 169 + 68 = 237,
+   redondeado a 240.
+
+   Tiene que ser FIJO, no reservado solo al abrir. Antes se agregaba un padding-bottom
+   mientras el desplegable estaba abierto y el modal crecía en ese momento: como el
+   overlay lo centra en vertical, esos 76px se repartían mitad arriba y mitad abajo y
+   el trigger se desplazaba ~38px hacia arriba con el botón del mouse todavía apretado.
+   El puntero quedaba fuera del trigger antes de soltar, así que el click terminaba en
+   otro elemento y el desplegable se cerraba solo — solo se lograba abrir empezando el
+   click en el borde superior. Con el alto fijo el modal mide siempre lo mismo, abra o
+   no el desplegable, y nada se mueve bajo el cursor. */
+.correo-form {
+  min-height: 240px;
+}
+
 .form-hint {
   display: flex;
   align-items: flex-start;
@@ -373,11 +402,23 @@
 
 .form-error {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   margin: 0 0 6px;
   font-size: 0.8rem;
+  line-height: 1.45;
   color: #b91c1c;
+}
+.form-error i {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Mismo motivo que en .config-warn: el texto es un solo ítem flex y tiene que poder
+   encogerse, si no se parte en columnas en pantallas angostas. */
+.form-hint span,
+.form-error span {
+  min-width: 0;
 }
 
 .modal-footer-row {
@@ -432,19 +473,24 @@
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────
-   Debajo de ~640px la tabla no entra ni con scroll horizontal cómodo: cada
-   destinatario pasa a ser una tarjeta apilada (mismo patrón que la lista de
-   Solicitud de Personal). */
-@media (max-width: 639.98px) {
-  .config-card {
-    padding: 14px 14px;
-  }
-
+   El corte tabla ↔ tarjetas se mide contra el ancho de la propia tarjeta
+   (@container), no contra el de la ventana: con el sidebar fijo ocupando su
+   espacio, una ventana de 900px deja bastante menos ancho útil que una tablet
+   de 800px sin sidebar, así que una media query de viewport acertaba en unos
+   casos y en otros dejaba la tabla con scroll horizontal dentro de la tarjeta.
+   Por debajo del ancho que necesita la tabla, cada destinatario pasa a ser una
+   tarjeta apilada (mismo patrón que la lista de Solicitud de Personal). */
+@container correo (max-width: 540px) {
   .config-card__head--row,
   .destinatarios__head {
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
+  }
+
+  /* Etiqueta a la izquierda, interruptor pegado al borde derecho. */
+  .master {
+    justify-content: space-between;
   }
 
   .btn-add {
@@ -468,16 +514,26 @@
     display: none;
   }
 
+  /* Fila = tarjeta: el destinatario ocupa su propia línea y debajo quedan la
+     etiqueta Para/CC y el interruptor a la izquierda, con las acciones
+     empujadas al borde derecho. */
   .matriz tbody tr {
-    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
     border: 1px solid var(--color-abril-border, #e5e7eb);
     border-radius: var(--radius-standard, 7px);
     padding: 10px 12px;
     margin-bottom: 10px;
   }
 
+  .matriz tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
   .matriz tbody td {
-    padding: 4px 0;
+    padding: 0;
     border-bottom: none;
   }
 
@@ -485,14 +541,30 @@
     background: transparent;
   }
 
-  /* El switch y las acciones se van a la misma fila, alineados a la izquierda. */
+  .matriz__dest {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
   .matriz__tipo,
-  .matriz__switch,
-  .matriz__acciones {
-    display: inline-block;
+  .matriz__switch {
+    flex: 0 0 auto;
     width: auto;
     text-align: left;
-    vertical-align: middle;
-    margin-right: 12px;
+  }
+
+  .matriz__acciones {
+    flex: 1 1 auto;
+    width: auto;
+    text-align: right;
+  }
+}
+
+/* Aire de la tarjeta: esto sí depende de la ventana (en un celular se recorta el
+   padding), y además .config-card es el contenedor, así que no puede consultarse
+   a sí mismo con @container. */
+@media (max-width: 639.98px) {
+  .config-card {
+    padding: 14px;
   }
 }

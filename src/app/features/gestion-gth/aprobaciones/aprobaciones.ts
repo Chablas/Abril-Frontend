@@ -11,6 +11,7 @@ import { FilterModal } from '../../../shared/components/filter-modal/filter-moda
 import { SearchInput } from '../../../shared/components/search-input/search-input';
 import { SearchSelect } from '../../../shared/components/search-select/search-select';
 import { ClientPager } from '../../../shared/utils/client-pager';
+import { AuthService } from '../../../core/services/auth.service';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
 import { GthAprobacionDecision } from './components/decision/decision';
@@ -113,10 +114,30 @@ export class GthAprobaciones implements OnInit {
     private service: AprobacionesService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
+
+  /** feature_key que habilita la configuración (dinámico vía role_feature en BD). */
+  private static readonly FEATURE_CONFIG = 'gestion-gth.reclutamiento.configuracion';
+
+  /** ¿El usuario tiene acceso a la configuración? (según los roles asignados a la feature). */
+  get puedeConfigurar(): boolean {
+    return this.authService.hasFeature(GthAprobaciones.FEATURE_CONFIG);
+  }
+
+  /** Botón "Configuración" del header: solo si el rol del usuario tiene la feature. */
+  get botonConfiguracion() {
+    return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
+  }
+
+  /** Lleva a la pantalla de configuración del correo que sale al decidir. */
+  abrirConfiguracion(): void {
+    if (!this.puedeConfigurar) return;
+    this.router.navigate(['/gestion-gth/aprobaciones/configuracion']);
+  }
 
   ngOnInit(): void {
     // `/gestion-gth/aprobaciones/:id` es la URL del enlace del correo: abre esa

@@ -19,9 +19,9 @@ import {
 } from './dtos/correo-config.dto';
 
 /**
- * Configuración de los correos de Gestión GTH. Lo comparten las dos pantallas de configuración
- * (Solicitud de Personal y Reclutamiento): el `modulo` decide qué correos administra cada una,
- * las pestañas salen de lo que devuelve el backend y no de una lista escrita acá.
+ * Configuración de los correos de Gestión GTH. Lo comparten las tres pantallas de configuración
+ * (Solicitud de Personal, Aprobaciones y Reclutamiento): el `modulo` decide qué correos administra
+ * cada una, las pestañas salen de lo que devuelve el backend y no de una lista escrita acá.
  *
  * Una sección (`app-section-tabs`) por cada correo, con un interruptor maestro (apagado = ese
  * correo no se envía) y la lista de sus destinatarios, cada uno con su propio interruptor.
