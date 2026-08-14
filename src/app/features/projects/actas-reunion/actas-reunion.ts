@@ -42,6 +42,7 @@ export class ActasReunion implements OnInit {
 
   filtro: ReunionFiltro = {
     projectId: null,
+    areaScopeId: null,
     reunionEstadoId: null,
     desde: null,
     hasta: null,

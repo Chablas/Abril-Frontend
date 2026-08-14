@@ -9,7 +9,7 @@
       </button>
       <div>
         <h2 class="text-lg font-semibold text-[var(--color-abril-primary)]">
-          {{ detalle.projectDescription }} — Reunión N°{{ detalle.numero }}
+          {{ detalle.projectDescription || detalle.areaScopeDescripcion || 'Organización' }} — Reunión N°{{ detalle.numero }}
         </h2>
         <p class="text-xs text-gray-400">
           {{ detalle.fecha | date:'dd/MM/yyyy' }}
@@ -120,10 +120,16 @@
   <div class="bg-white rounded-lg p-5 flex flex-col gap-3">
     <div class="flex items-center justify-between">
       <h3 class="text-sm font-semibold text-[var(--color-abril-primary)] uppercase">Participantes</h3>
-      <button type="button" (click)="addParticipante()"
-        class="text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
-        <span class="ti ti-plus"></span> Agregar participante
-      </button>
+      <div class="flex items-center gap-3">
+        <button type="button" (click)="abrirConvocatoriaMasiva()"
+          class="text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
+          <span class="ti ti-users"></span> Agregar por área/puesto
+        </button>
+        <button type="button" (click)="addParticipante()"
+          class="text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
+          <span class="ti ti-plus"></span> Agregar participante
+        </button>
+      </div>
     </div>
     <div class="overflow-auto border border-[#E5EAF0] rounded-lg">
       <table class="w-full text-sm">
@@ -330,7 +336,7 @@
 <app-acuerdo-form
   *ngIf="showAcuerdoModal && detalle"
   [reunionId]="detalle.reunionId"
-  [participantes]="detalle.participantes"
+  [trabajadores]="detalle.trabajadores"
   [estados]="detalle.acuerdoEstados"
   [acuerdo]="acuerdoEnEdicion"
   (closeModal)="showAcuerdoModal = false; acuerdoEnEdicion = null"
@@ -345,9 +351,15 @@
   (add)="onParticipanteAgregado($event)">
 </app-participante-add>
 
+<app-convocatoria-masiva
+  *ngIf="showConvocatoriaMasivaModal"
+  (closeModal)="showConvocatoriaMasivaModal = false"
+  (agregarTrabajadores)="onTrabajadoresAgregadosMasivamente($event)">
+</app-convocatoria-masiva>
+
 <app-reunion-add
   *ngIf="showSiguienteModal && detalle"
-  [proyectos]="[{ projectId: detalle.projectId, projectDescription: detalle.projectDescription }]"
+  [proyectos]="proyectoSiguienteOptions"
   [trabajadores]="detalle.trabajadores"
   [temas]="detalle.temas"
   [projectIdFijo]="detalle.projectId"

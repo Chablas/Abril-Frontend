@@ -16,6 +16,9 @@ import {
   TrabajadorAbrilDTO,
 } from '../../dtos/actas-reunion.dto';
 import { ParticipanteAdd, ParticipanteSeleccionado } from '../participante-add/participante-add';
+import { ConvocatoriaMasiva } from '../convocatoria-masiva/convocatoria-masiva';
+import { AreaScopeService } from '../../../../configuracion/shared/services/area-scope.service';
+import { AreaScopeTreeDto } from '../../../../configuracion/shared/dtos/areaScope.model';
 
 interface ParticipanteRow {
   workerId: number | null;
@@ -28,7 +31,7 @@ interface ParticipanteRow {
 @Component({
   selector: 'app-reunion-add',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, DatePicker, SearchSelect, ParticipanteAdd],
+  imports: [CommonModule, FormsModule, BaseModal, DatePicker, SearchSelect, ParticipanteAdd, ConvocatoriaMasiva],
   templateUrl: './reunion-add.html',
 })
 export class ReunionAdd implements OnInit {
@@ -58,30 +61,80 @@ export class ReunionAdd implements OnInit {
   @Output() closeModal = new EventEmitter<void>();
   @Output() created = new EventEmitter<number>();
 
+  /** Alcance de la reunión: un proyecto puntual, un nodo del árbol de áreas/gerencias, o toda la organización. */
+  tipoAmbito: 'PROYECTO' | 'AREA' | 'ORGANIZACION' = 'PROYECTO';
+
   projectId: number | null = null;
+
+  /** Árbol completo (gerencias en la raíz, cada una con sus áreas/subáreas anidadas). */
+  arbolAreaScope: AreaScopeTreeDto[] = [];
+  /** Nodo elegido en cada nivel de la cascada (gerencia, luego área, luego subárea si existe). */
+  areaScopePath: AreaScopeTreeDto[] = [];
+
   tema = '';
   /**
    * Con el checkbox activo el desplegable de temas se convierte en un campo de texto libre.
    * El tema escrito a mano solo se guarda en la reunión, no en el catálogo de temas.
    */
   temaPersonalizado = false;
+  /** Si está activo, al agendar se agrega el tema personalizado al catálogo como tema recurrente. */
+  guardarTemaComoRecurrente = false;
   convocadoPor = '';
   lugar = '';
+  /** Con el checkbox activo, "Lugar" se convierte en texto libre en vez de elegir un proyecto. */
+  lugarPersonalizado = false;
   fecha: string | null = null;
   horaInicio = '';
   horaFin = '';
 
   participantes: ParticipanteRow[] = [];
   showParticipanteModal = false;
+  showConvocatoriaMasivaModal = false;
 
   constructor(
     private service: ActasReunionService,
+    private areaScopeService: AreaScopeService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}
 
   ngOnInit(): void {
     if (this.projectIdFijo != null) this.projectId = this.projectIdFijo;
+    this.areaScopeService.getTree().subscribe({
+      next: (data) => (this.arbolAreaScope = data),
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  onTipoAmbitoChange(): void {
+    this.projectId = null;
+    this.areaScopePath = [];
+  }
+
+  /** Un select por nivel: raíz (gerencias) y luego los hijos del nodo elegido en el nivel anterior. */
+  get nivelesAreaScope(): AreaScopeTreeDto[][] {
+    const niveles: AreaScopeTreeDto[][] = [this.arbolAreaScope];
+    let actual = this.areaScopePath[0];
+    let i = 0;
+    while (actual && actual.children.length > 0) {
+      niveles.push(actual.children);
+      i++;
+      actual = this.areaScopePath[i];
+    }
+    return niveles;
+  }
+
+  onNivelAreaScopeChange(nivel: number, areaScopeId: number | null): void {
+    const opciones = this.nivelesAreaScope[nivel] ?? [];
+    const nodo = opciones.find((n) => n.areaScopeId === areaScopeId) ?? null;
+    this.areaScopePath = this.areaScopePath.slice(0, nivel);
+    if (nodo) this.areaScopePath.push(nodo);
+  }
+
+  get areaScopeIdSeleccionado(): number | null {
+    return this.areaScopePath.length > 0
+      ? this.areaScopePath[this.areaScopePath.length - 1].areaScopeId
+      : null;
   }
 
   /**
@@ -101,6 +154,33 @@ export class ReunionAdd implements OnInit {
   /** Al alternar entre desplegable y texto libre se limpia el tema para no mezclar valores. */
   onTemaPersonalizadoChange(): void {
     this.tema = '';
+    this.guardarTemaComoRecurrente = false;
+  }
+
+  /**
+   * Al elegir un tema del catálogo, si tiene una convocatoria recurrente configurada
+   * (área/puestos habituales), se agregan automáticamente esos trabajadores como
+   * participantes sugeridos — sin pisar a los que ya se hayan agregado a mano.
+   */
+  onTemaSeleccionado(valor: string | null): void {
+    this.tema = valor ?? '';
+    const temaElegido = this.temas.find((t) => t.descripcion === this.tema);
+    if (!temaElegido) return;
+
+    this.service.getConvocatoriaTema(temaElegido.id).subscribe({
+      next: (convocatoria) => {
+        if (convocatoria.areaScopeId == null && convocatoria.puestoIds.length === 0) return;
+        this.service.buscarTrabajadoresPorFiltro(convocatoria.areaScopeId, convocatoria.puestoIds).subscribe({
+          next: (trabajadores) => this.onTrabajadoresAgregadosMasivamente(trabajadores),
+          error: () => {},
+        });
+      },
+      error: () => {},
+    });
+  }
+
+  onLugarPersonalizadoChange(): void {
+    this.lugar = '';
   }
 
   addParticipante(): void {
@@ -120,6 +200,28 @@ export class ReunionAdd implements OnInit {
 
   removeParticipante(index: number): void {
     this.participantes.splice(index, 1);
+  }
+
+  abrirConvocatoriaMasiva(): void {
+    this.showConvocatoriaMasivaModal = true;
+  }
+
+  onTrabajadoresAgregadosMasivamente(trabajadores: TrabajadorAbrilDTO[]): void {
+    const yaAgregados = new Set(
+      this.participantes.filter((p) => p.workerId != null).map((p) => p.workerId),
+    );
+    for (const t of trabajadores) {
+      if (yaAgregados.has(t.workerId)) continue;
+      this.participantes.push({
+        workerId: t.workerId,
+        nombre: t.fullName,
+        cargo: t.cargo ?? '',
+        iniciales: this.generarIniciales(t.fullName),
+        inicialesEditadas: false,
+      });
+      yaAgregados.add(t.workerId);
+    }
+    this.showConvocatoriaMasivaModal = false;
   }
 
   /** Autogenera iniciales a partir del nombre mientras el usuario no las haya editado. */
@@ -150,7 +252,8 @@ export class ReunionAdd implements OnInit {
 
   private getValidationErrors(): string[] {
     const errors: string[] = [];
-    if (this.projectId == null) errors.push('Proyecto');
+    if (this.tipoAmbito === 'PROYECTO' && this.projectId == null) errors.push('Proyecto');
+    if (this.tipoAmbito === 'AREA' && this.areaScopeIdSeleccionado == null) errors.push('Área/gerencia');
     if (!this.tema.trim()) errors.push('Tema de la reunión');
     if (!this.fecha) errors.push('Fecha de la reunión');
     if (this.horaInicio && this.horaFin && this.horaFin <= this.horaInicio)
@@ -182,10 +285,15 @@ export class ReunionAdd implements OnInit {
         asistio: false,
       }));
 
+    if (this.temaPersonalizado && this.guardarTemaComoRecurrente) {
+      this.service.agregarTema(this.tema.trim()).subscribe({ error: () => {} });
+    }
+
     this.loaderService.show();
     this.service
       .create({
-        projectId: this.projectId!,
+        projectId: this.tipoAmbito === 'PROYECTO' ? this.projectId! : null,
+        areaScopeId: this.tipoAmbito === 'AREA' ? this.areaScopeIdSeleccionado : null,
         tema: this.tema.trim(),
         convocadoPor: this.convocadoPor.trim() || null,
         lugar: this.lugar.trim() || null,

@@ -74,7 +74,7 @@
       <tbody>
         <tr *ngFor="let r of reuniones.data" (click)="openDetail(r)"
           class="border-t border-[#E5EAF0] hover:bg-gray-50 cursor-pointer">
-          <td class="px-4 py-3 text-gray-700">{{ r.projectDescription }}</td>
+          <td class="px-4 py-3 text-gray-700">{{ r.projectDescription || r.areaScopeDescripcion || 'Organización' }}</td>
           <td class="px-4 py-3 text-center text-gray-700 font-medium">{{ r.numero }}</td>
           <td class="px-4 py-3 text-gray-700">{{ r.tema }}</td>
           <td class="px-4 py-3 text-gray-700 whitespace-nowrap">{{ r.fecha | date:'dd/MM/yyyy' }}</td>

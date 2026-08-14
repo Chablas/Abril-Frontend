@@ -68,4 +68,74 @@
     </div>
 
   </div>
+
+  <!-- ── Convocatoria recurrente por tema ─────────────────────────────────── -->
+  <div class="flex flex-col gap-4 max-w-[760px] border-t border-[#E5EAF0] pt-5">
+    <div>
+      <h3 class="text-sm font-semibold text-[var(--color-abril-primary)] uppercase">Convocatoria recurrente por tema</h3>
+      <p class="text-xs text-gray-400 mt-1">
+        Vincula un tema del catálogo (ej. "Reunión de Jefaturas de Proyectos") con el área/gerencia y
+        los puestos que habitualmente participan. La próxima vez que se agende una reunión con ese
+        tema, esas personas se agregarán automáticamente como participantes sugeridos.
+      </p>
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Tema</label>
+      <select [(ngModel)]="temaSeleccionadoId" (ngModelChange)="onTemaSeleccionadoChange()"
+        class="w-full h-[42px] px-3 border rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+        style="border-color:var(--color-abril-border)">
+        <option [ngValue]="null">Selecciona un tema</option>
+        <option *ngFor="let t of temas" [ngValue]="t.id">{{ t.descripcion }}</option>
+      </select>
+    </div>
+
+    <ng-container *ngIf="temaSeleccionadoId != null">
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Área/gerencia (opcional)</label>
+        <select *ngFor="let opciones of nivelesAreaScope; let i = index"
+          [ngModel]="areaScopePath[i]?.areaScopeId ?? null"
+          (ngModelChange)="onNivelAreaScopeChange(i, $event)"
+          class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]">
+          <option [ngValue]="null">{{ i === 0 ? 'Todas las gerencias' : 'Todas (opcional)' }}</option>
+          <option *ngFor="let n of opciones" [ngValue]="n.areaScopeId">{{ n.areaItemName }}</option>
+        </select>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Puestos (opcional, marca uno o varios)</label>
+          <label *ngIf="puestos.length > 0" class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+            <input type="checkbox" [ngModel]="todosPuestosMarcados" (ngModelChange)="toggleTodosPuestos($event)"
+              class="accent-[var(--color-abril-primary)] cursor-pointer" />
+            Marcar todos
+          </label>
+        </div>
+        <p *ngIf="puestos.length === 0" class="text-xs text-gray-400">
+          No hay puestos registrados en esta área todavía.
+        </p>
+        <ng-container *ngIf="puestos.length > 0">
+          <input type="text" [(ngModel)]="filtroPuesto" maxlength="100"
+            class="w-full h-[36px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+            placeholder="Filtrar, ej. jefe" />
+          <div class="border border-[#E5EAF0] rounded-lg max-h-52 overflow-y-auto flex flex-col">
+            <label *ngFor="let p of puestosFiltrados"
+              class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 cursor-pointer select-none hover:bg-gray-50 border-b border-[#E5EAF0] last:border-b-0">
+              <input type="checkbox" [(ngModel)]="p.marcado" class="accent-[var(--color-abril-primary)] cursor-pointer" />
+              {{ p.descripcion }}
+            </label>
+            <p *ngIf="puestosFiltrados.length === 0" class="px-3 py-2 text-xs text-gray-400">
+              Ningún puesto coincide con "{{ filtroPuesto }}".
+            </p>
+          </div>
+        </ng-container>
+      </div>
+
+      <button type="button" (click)="guardarConvocatoriaTema()"
+        class="self-start h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
+        <span class="ti ti-device-floppy text-base"></span>
+        Guardar convocatoria de este tema
+      </button>
+    </ng-container>
+  </div>
 </div>

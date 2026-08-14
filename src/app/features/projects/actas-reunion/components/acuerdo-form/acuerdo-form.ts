@@ -12,8 +12,13 @@ import { ActasReunionService } from '../../services/actas-reunion.service';
 import {
   CatalogoDTO,
   ReunionAcuerdoDTO,
-  ReunionParticipanteDTO,
+  TrabajadorAbrilDTO,
 } from '../../dtos/actas-reunion.dto';
+
+interface ResponsableRow {
+  workerId: number;
+  nombre: string;
+}
 
 @Component({
   selector: 'app-acuerdo-form',
@@ -23,7 +28,8 @@ import {
 })
 export class AcuerdoForm implements OnInit {
   @Input({ required: true }) reunionId!: number;
-  @Input() participantes: ReunionParticipanteDTO[] = [];
+  /** Trabajadores de toda la organización: un responsable no necesita haber asistido a la reunión. */
+  @Input() trabajadores: TrabajadorAbrilDTO[] = [];
   @Input() estados: CatalogoDTO[] = [];
   /** Null = crear un acuerdo nuevo; con valor = editar. */
   @Input() acuerdo: ReunionAcuerdoDTO | null = null;
@@ -37,7 +43,11 @@ export class AcuerdoForm implements OnInit {
   fechaReprogramacion: string | null = null;
   fechaCumplimiento: string | null = null;
   estadoId: number | null = null;
-  responsableIds = new Set<number>();
+  requiereAceptacion = false;
+  requiereEvidencia = false;
+  evidenciaUrl: string | null = null;
+  responsables: ResponsableRow[] = [];
+  nuevoResponsableId: number | null = null;
 
   constructor(
     private service: ActasReunionService,
@@ -57,13 +67,32 @@ export class AcuerdoForm implements OnInit {
       this.fechaReprogramacion = this.acuerdo.fechaReprogramacion;
       this.fechaCumplimiento = this.acuerdo.fechaCumplimiento;
       this.estadoId = this.acuerdo.reunionAcuerdoEstadoId;
-      this.responsableIds = new Set(this.acuerdo.responsableIds);
+      this.requiereAceptacion = this.acuerdo.requiereAceptacion;
+      this.requiereEvidencia = this.acuerdo.requiereEvidencia;
+      this.evidenciaUrl = this.acuerdo.evidenciaUrl;
+      this.responsables = this.acuerdo.responsables.map((r) => ({
+        workerId: r.workerId,
+        nombre: r.workerNombre,
+      }));
     }
   }
 
-  toggleResponsable(participanteId: number): void {
-    if (this.responsableIds.has(participanteId)) this.responsableIds.delete(participanteId);
-    else this.responsableIds.add(participanteId);
+  /** Trabajadores que aún no están agregados como responsables. */
+  get opcionesResponsable(): TrabajadorAbrilDTO[] {
+    const yaAgregados = new Set(this.responsables.map((r) => r.workerId));
+    return this.trabajadores.filter((t) => !yaAgregados.has(t.workerId));
+  }
+
+  agregarResponsable(): void {
+    if (this.nuevoResponsableId == null) return;
+    const trabajador = this.trabajadores.find((t) => t.workerId === this.nuevoResponsableId);
+    if (!trabajador) return;
+    this.responsables.push({ workerId: trabajador.workerId, nombre: trabajador.fullName });
+    this.nuevoResponsableId = null;
+  }
+
+  removerResponsable(workerId: number): void {
+    this.responsables = this.responsables.filter((r) => r.workerId !== workerId);
   }
 
   submit(): void {
@@ -84,7 +113,10 @@ export class AcuerdoForm implements OnInit {
       fechaReprogramacion: this.fechaReprogramacion,
       fechaCumplimiento: this.fechaCumplimiento,
       reunionAcuerdoEstadoId: this.estadoId,
-      responsableIds: [...this.responsableIds],
+      requiereAceptacion: this.requiereAceptacion,
+      requiereEvidencia: this.requiereEvidencia,
+      evidenciaUrl: this.evidenciaUrl,
+      responsableWorkerIds: this.responsables.map((r) => r.workerId),
     };
 
     this.loaderService.show();

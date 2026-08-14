@@ -18,7 +18,9 @@ import {
   ParticipanteAdd,
   ParticipanteSeleccionado,
 } from '../components/participante-add/participante-add';
+import { ConvocatoriaMasiva } from '../components/convocatoria-masiva/convocatoria-masiva';
 import {
+  ProyectoFiltroDTO,
   ReunionAcuerdoDTO,
   ReunionDetalleDTO,
   ReunionParticipanteInput,
@@ -37,7 +39,7 @@ interface ParticipanteRow {
 @Component({
   selector: 'app-reunion-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, FileSelector, FilePreview, SearchSelect, ReunionAdd, ReunionReprogramar, AcuerdoForm, ParticipanteAdd],
+  imports: [CommonModule, FormsModule, FileSelector, FilePreview, SearchSelect, ReunionAdd, ReunionReprogramar, AcuerdoForm, ParticipanteAdd, ConvocatoriaMasiva],
   templateUrl: './reunion-detail.html',
 })
 export class ReunionDetail implements OnInit {
@@ -61,6 +63,7 @@ export class ReunionDetail implements OnInit {
   acuerdoEnEdicion: ReunionAcuerdoDTO | null = null;
   showSiguienteModal = false;
   showParticipanteModal = false;
+  showConvocatoriaMasivaModal = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -149,6 +152,29 @@ export class ReunionDetail implements OnInit {
 
   removeParticipante(index: number): void {
     this.participantes.splice(index, 1);
+  }
+
+  abrirConvocatoriaMasiva(): void {
+    this.showConvocatoriaMasivaModal = true;
+  }
+
+  onTrabajadoresAgregadosMasivamente(trabajadores: TrabajadorAbrilDTO[]): void {
+    const yaAgregados = new Set(
+      this.participantes.filter((p) => p.workerId != null).map((p) => p.workerId),
+    );
+    for (const t of trabajadores) {
+      if (yaAgregados.has(t.workerId)) continue;
+      this.participantes.push({
+        reunionParticipanteId: null,
+        workerId: t.workerId,
+        nombre: t.fullName,
+        cargo: t.cargo ?? '',
+        iniciales: '',
+        asistio: false,
+      });
+      yaAgregados.add(t.workerId);
+    }
+    this.showConvocatoriaMasivaModal = false;
   }
 
   guardar(): void {
@@ -281,6 +307,15 @@ export class ReunionDetail implements OnInit {
   marcarCumplido(acuerdo: ReunionAcuerdoDTO): void {
     const cumplidoId = this.detalle?.acuerdoEstados.find((e) => e.descripcion === 'CUMPLIDO')?.id;
     if (!cumplidoId) return;
+    if (acuerdo.requiereEvidencia && !acuerdo.evidenciaUrl) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta evidencia',
+        text: 'Este acuerdo requiere adjuntar evidencia antes de poder marcarse como cumplido.',
+        confirmButtonColor: 'var(--color-abril-primary)',
+      });
+      return;
+    }
     Swal.fire({
       icon: 'question',
       title: '¿Marcar acuerdo como cumplido?',
@@ -302,7 +337,10 @@ export class ReunionDetail implements OnInit {
           fechaReprogramacion: acuerdo.fechaReprogramacion,
           fechaCumplimiento: fechaHoy,
           reunionAcuerdoEstadoId: cumplidoId,
-          responsableIds: acuerdo.responsableIds,
+          requiereAceptacion: acuerdo.requiereAceptacion,
+          requiereEvidencia: acuerdo.requiereEvidencia,
+          evidenciaUrl: acuerdo.evidenciaUrl,
+          responsableWorkerIds: acuerdo.responsables.map((r) => r.workerId),
         })
         .subscribe({
           next: () => {
@@ -342,12 +380,7 @@ export class ReunionDetail implements OnInit {
   }
 
   responsablesLabel(acuerdo: ReunionAcuerdoDTO): string {
-    if (!this.detalle) return '';
-    const labels = acuerdo.responsableIds
-      .map((id) => this.detalle!.participantes.find((p) => p.reunionParticipanteId === id))
-      .filter(Boolean)
-      .map((p) => p!.iniciales || p!.nombre);
-    return labels.join(' / ');
+    return acuerdo.responsables.map((r) => r.workerNombre).join(' / ');
   }
 
   acuerdoEstadoClass(estado: string): string {
@@ -470,5 +503,15 @@ export class ReunionDetail implements OnInit {
 
   hora(value: string | null): string {
     return value ? value.slice(0, 5) : '—';
+  }
+
+  /**
+   * Preselección de proyecto para "agendar siguiente reunión": solo aplica si esta acta
+   * es de un proyecto. Si es de un área/gerencia o de toda la organización, la reunión
+   * siguiente arranca sin proyecto fijo (mismo ámbito no se copia automáticamente aún).
+   */
+  get proyectoSiguienteOptions(): ProyectoFiltroDTO[] {
+    if (!this.detalle?.projectId || !this.detalle.projectDescription) return [];
+    return [{ projectId: this.detalle.projectId, projectDescription: this.detalle.projectDescription }];
   }
 }

@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
+  CatalogoDTO,
   PagedResultDTO,
   ReunionAcuerdoRequest,
   ReunionArchivoDTO,
@@ -14,6 +15,9 @@ import {
   ReunionPaginaInicialDTO,
   ReunionReprogramarRequest,
   ReunionUpdateRequest,
+  TemaConvocatoriaDTO,
+  TemaConvocatoriaSaveRequest,
+  TrabajadorAbrilDTO,
 } from '../dtos/actas-reunion.dto';
 
 @Injectable({ providedIn: 'root' })
@@ -30,6 +34,7 @@ export class ActasReunionService {
   private filtroParams(filtro: ReunionFiltro): HttpParams {
     let params = new HttpParams().set('page', filtro.page).set('pageSize', filtro.pageSize);
     if (filtro.projectId != null) params = params.set('projectId', filtro.projectId);
+    if (filtro.areaScopeId != null) params = params.set('areaScopeId', filtro.areaScopeId);
     if (filtro.reunionEstadoId != null) params = params.set('reunionEstadoId', filtro.reunionEstadoId);
     if (filtro.desde) params = params.set('desde', filtro.desde);
     if (filtro.hasta) params = params.set('hasta', filtro.hasta);
@@ -129,6 +134,67 @@ export class ActasReunionService {
   eliminarArchivo(reunionArchivoId: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/archivos/${reunionArchivoId}`, {
       headers: this.authHeaders(),
+    });
+  }
+
+  /** Catálogo de temas predefinidos, para la pantalla de configuración de convocatoria por tema. */
+  getTemasCatalogo(): Observable<CatalogoDTO[]> {
+    return this.http.get<CatalogoDTO[]>(`${this.apiUrl}/temas`, { headers: this.authHeaders() });
+  }
+
+  /** Da de alta un tema personalizado en el catálogo, para reutilizarlo como tema recurrente. */
+  agregarTema(descripcion: string): Observable<CatalogoDTO> {
+    return this.http.post<CatalogoDTO>(
+      `${this.apiUrl}/temas`,
+      { descripcion },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Convocatoria recurrente configurada para un tema (área + puestos habituales). */
+  getConvocatoriaTema(reunionTemaId: number): Observable<TemaConvocatoriaDTO> {
+    return this.http.get<TemaConvocatoriaDTO>(`${this.apiUrl}/temas/${reunionTemaId}/convocatoria`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  guardarConvocatoriaTema(reunionTemaId: number, request: TemaConvocatoriaSaveRequest): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.apiUrl}/temas/${reunionTemaId}/convocatoria`,
+      request,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Catálogo de puestos, para el filtro de convocatoria masiva. */
+  getPuestos(): Observable<CatalogoDTO[]> {
+    return this.http.get<CatalogoDTO[]>(`${this.apiUrl}/puestos`, { headers: this.authHeaders() });
+  }
+
+  /** Puestos que realmente existen dentro de un área/gerencia (con descendencia); null = todos. */
+  getPuestosPorArea(areaScopeId: number | null): Observable<CatalogoDTO[]> {
+    let params = new HttpParams();
+    if (areaScopeId != null) params = params.set('areaScopeId', areaScopeId);
+    return this.http.get<CatalogoDTO[]>(`${this.apiUrl}/puestos-por-area`, {
+      headers: this.authHeaders(),
+      params,
+    });
+  }
+
+  /**
+   * Trabajadores que calzan con un área/gerencia (incluye descendencia en el árbol area_scope)
+   * y/o una lista de puestos marcados en un checklist. Ambos filtros son opcionales; null/vacío
+   * = cualquiera. Para convocatoria masiva.
+   */
+  buscarTrabajadoresPorFiltro(areaScopeId: number | null, puestoIds: number[] | null): Observable<TrabajadorAbrilDTO[]> {
+    let params = new HttpParams();
+    if (areaScopeId != null) params = params.set('areaScopeId', areaScopeId);
+    if (puestoIds && puestoIds.length > 0) {
+      for (const id of puestoIds) params = params.append('puestoIds', id);
+    }
+    return this.http.get<TrabajadorAbrilDTO[]>(`${this.apiUrl}/trabajadores-por-filtro`, {
+      headers: this.authHeaders(),
+      params,
     });
   }
 

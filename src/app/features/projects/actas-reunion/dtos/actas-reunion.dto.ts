@@ -26,8 +26,11 @@ export interface PagedResultDTO<T> {
 
 export interface ReunionListItemDTO {
   reunionId: number;
-  projectId: number;
-  projectDescription: string;
+  projectId: number | null;
+  projectDescription: string | null;
+  /** Nodo del árbol area_scope (gerencia/área/subárea); null si la reunión es de proyecto o de toda la organización. */
+  areaScopeId: number | null;
+  areaScopeDescripcion: string | null;
   numero: number;
   tema: string;
   lugar: string | null;
@@ -53,11 +56,22 @@ export interface ReunionPaginaInicialDTO {
 
 export interface ReunionParticipanteDTO {
   reunionParticipanteId: number;
+  workerId: number | null;
   nombre: string;
   cargo: string | null;
   iniciales: string | null;
   asistio: boolean;
   orden: number;
+}
+
+/** Responsable de un acuerdo, con su estado de aceptación individual. */
+export interface ReunionAcuerdoResponsableDTO {
+  reunionAcuerdoResponsableId: number;
+  workerId: number;
+  workerNombre: string;
+  /** PENDIENTE | ACEPTADO | RECHAZADO. */
+  estadoAceptacion: string;
+  motivoRechazo: string | null;
 }
 
 export interface ReunionAcuerdoDTO {
@@ -70,7 +84,10 @@ export interface ReunionAcuerdoDTO {
   reunionAcuerdoEstadoId: number;
   reunionAcuerdoEstado: string;
   orden: number;
-  responsableIds: number[];
+  requiereAceptacion: boolean;
+  requiereEvidencia: boolean;
+  evidenciaUrl: string | null;
+  responsables: ReunionAcuerdoResponsableDTO[];
 }
 
 export interface ReunionArchivoDTO {
@@ -95,8 +112,10 @@ export interface ReunionReprogramacionDTO {
 
 export interface ReunionDetalleDTO {
   reunionId: number;
-  projectId: number;
-  projectDescription: string;
+  projectId: number | null;
+  projectDescription: string | null;
+  areaScopeId: number | null;
+  areaScopeDescripcion: string | null;
   numero: number;
   tema: string;
   convocadoPor: string | null;
@@ -138,7 +157,10 @@ export interface ReunionParticipanteInput {
 }
 
 export interface ReunionCreateRequest {
-  projectId: number;
+  /** Reunión de proyecto. Exactamente uno de projectId/areaScopeId, o ninguno (reunión de toda la organización). */
+  projectId: number | null;
+  /** Reunión de un nodo del árbol area_scope (gerencia/área/subárea). */
+  areaScopeId: number | null;
   tema: string;
   convocadoPor: string | null;
   lugar: string | null;
@@ -173,7 +195,13 @@ export interface ReunionAcuerdoRequest {
   fechaReprogramacion: string | null;
   fechaCumplimiento: string | null;
   reunionAcuerdoEstadoId: number | null;
-  responsableIds: number[];
+  /** Si true, cada responsable debe aceptar el acuerdo antes de quedar activo. */
+  requiereAceptacion: boolean;
+  /** Si true, no se puede marcar CUMPLIDO sin adjuntar evidencia. */
+  requiereEvidencia: boolean;
+  evidenciaUrl: string | null;
+  /** Ids de workers (cualquier trabajador de la organización, haya asistido o no). */
+  responsableWorkerIds: number[];
 }
 
 // ── Carpeta de SharePoint para adjuntos ─────────────────────────────────────
@@ -191,8 +219,22 @@ export interface ReunionFolderDTO {
   createdUserId: number;
 }
 
+/** Convocatoria recurrente asociada a un tema (ej. "Reunión de Jefaturas de Proyectos"). */
+export interface TemaConvocatoriaDTO {
+  areaScopeId: number | null;
+  areaScopeDescripcion: string | null;
+  puestoIds: number[];
+}
+
+export interface TemaConvocatoriaSaveRequest {
+  areaScopeId: number | null;
+  puestoIds: number[];
+}
+
 export interface ReunionFiltro {
   projectId: number | null;
+  /** Nodo del árbol area_scope; incluye descendientes. */
+  areaScopeId: number | null;
   reunionEstadoId: number | null;
   desde: string | null;
   hasta: string | null;

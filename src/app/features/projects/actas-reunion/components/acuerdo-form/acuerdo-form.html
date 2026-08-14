@@ -17,20 +17,48 @@
 
     <!-- ── Responsables ───────────────────────────────────────────────────── -->
     <div>
-      <label class="block text-sm text-gray-600 mb-2">Responsables (participantes de la reunión)</label>
-      <div *ngIf="participantes.length === 0" class="text-xs text-gray-400">
-        La reunión aún no tiene participantes registrados.
+      <label class="block text-sm text-gray-600 mb-2">Responsables</label>
+      <p class="text-xs text-gray-400 mb-2">
+        No tienen que haber asistido a la reunión: puedes elegir a cualquier trabajador de la organización.
+      </p>
+      <div class="flex flex-wrap gap-2 mb-2" *ngIf="responsables.length > 0">
+        <span *ngFor="let r of responsables"
+          class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-[var(--color-abril-primary)] text-white">
+          {{ r.nombre }}
+          <button type="button" (click)="removerResponsable(r.workerId)" class="cursor-pointer hover:opacity-70">
+            <span class="ti ti-x text-xs"></span>
+          </button>
+        </span>
       </div>
-      <div class="flex flex-wrap gap-2">
-        <button *ngFor="let p of participantes" type="button" (click)="toggleResponsable(p.reunionParticipanteId)"
-          class="px-3 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer"
-          [ngClass]="responsableIds.has(p.reunionParticipanteId)
-            ? 'bg-[var(--color-abril-primary)] text-white border-[var(--color-abril-primary)]'
-            : 'bg-white text-gray-600 border-[#E5EAF0] hover:border-[var(--color-abril-primary)]'"
-          [title]="p.nombre + (p.cargo ? ' — ' + p.cargo : '')">
-          {{ p.iniciales || p.nombre }}
+      <div class="flex gap-2">
+        <div class="flex-1">
+          <app-search-select
+            [showLabel]="false"
+            [options]="opcionesResponsable"
+            valueField="workerId"
+            displayField="fullName"
+            [value]="nuevoResponsableId"
+            (valueChange)="nuevoResponsableId = $event"
+            placeholder="Buscar por nombre o DNI...">
+          </app-search-select>
+        </div>
+        <button type="button" (click)="agregarResponsable()"
+          class="h-[42px] px-4 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors">
+          Agregar
         </button>
       </div>
+    </div>
+
+    <!-- ── Aceptación / evidencia ───────────────────────────────────────────── -->
+    <div class="flex flex-col gap-2">
+      <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+        <input type="checkbox" [(ngModel)]="requiereAceptacion" class="accent-[var(--color-abril-primary)]" />
+        Requiere que cada responsable acepte el acuerdo
+      </label>
+      <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+        <input type="checkbox" [(ngModel)]="requiereEvidencia" class="accent-[var(--color-abril-primary)]" />
+        Requiere evidencia para poder marcarse como cumplido
+      </label>
     </div>
 
     <div class="grid grid-cols-3 gap-3">
