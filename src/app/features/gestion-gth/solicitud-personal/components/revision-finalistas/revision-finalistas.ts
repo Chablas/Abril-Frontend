@@ -11,9 +11,8 @@ import { Finalista, RevisionFinalistas } from '../../dtos/solicitud-personal.dto
 
 /**
  * Modal "Finalistas enviados por GTH" (vista del solicitante): lista los candidatos que GTH ya
- * entrevistó y evaluó, con sus cuatro puntajes (entrevista, psicotécnico, técnica y resultado),
- * los comentarios del informe (resultado de la entrevista, informe psicotécnico y recomendación
- * de GTH) y el link a su CV.
+ * entrevistó y evaluó, con los comentarios del informe (resultado de la entrevista, informe
+ * psicotécnico y recomendación de GTH) y el link a su CV.
  *
  * Sobre el finalista seleccionado se toma la decisión final (RF-REC-24):
  *  - Aprobarlo cierra el proceso de reclutamiento; el seleccionado pasa al proceso de onboarding.
@@ -101,11 +100,6 @@ export class GthRevisionFinalistas implements OnInit {
     const first = parts[0][0] ?? '';
     const second = parts.length > 1 ? parts[parts.length - 1][0] ?? '' : '';
     return (first + second).toUpperCase();
-  }
-
-  /** Puntaje formateado como porcentaje; guion cuando GTH aún no lo registró. */
-  puntaje(valor: number | null): string {
-    return valor === null || valor === undefined ? '—' : `${valor}%`;
   }
 
   /** Nombre del archivo del CV (o uno derivado del nombre si GTH no lo cargó con nombre). */

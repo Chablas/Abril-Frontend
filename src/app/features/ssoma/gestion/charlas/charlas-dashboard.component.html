@@ -292,7 +292,7 @@
                     <span class="asist-stat__sep">/{{ staff.length }}</span>
                   </div>
                   <span class="asist-label">asistieron</span>
-                  <button class="btn-edit-asist" title="Editar asistencia" (click)="abrirEditAsistencia(c)">
+                  <button class="btn-edit-asist" title="Editar charla" (click)="abrirEditCharla(c)">
                     <i class="ti ti-pencil"></i>
                   </button>
                 </div>
@@ -301,18 +301,42 @@
           </div>
         }
 
-        <!-- Modal Editar Asistencia -->
+        <!-- Modal Editar Charla -->
         @if (editCharlaId !== null) {
-          <div class="modal-backdrop" (click)="cerrarEditAsistencia()"></div>
+          <div class="modal-backdrop" (click)="cerrarEditCharla()"></div>
           <div class="modal-panel modal-panel--sm">
             <div class="modal-header">
-              <span class="modal-titulo">Editar Asistencia</span>
-              <button class="modal-close" type="button" (click)="cerrarEditAsistencia()">
+              <span class="modal-titulo">Editar Charla</span>
+              <button class="modal-close" type="button" (click)="cerrarEditCharla()">
                 <i class="ti ti-x"></i>
               </button>
             </div>
             <div class="modal-body" style="flex-direction: column; padding: 16px 20px; gap: 10px; overflow-y: auto;">
-              <p class="edit-charla-title">{{ editCharlaTitle }}</p>
+              <div class="edit-charla-form">
+                <div class="form-group">
+                  <label>Título <span class="req">*</span></label>
+                  <input type="text" class="form-input" [(ngModel)]="editForm.titulo"
+                    placeholder="Ej: Uso correcto de EPP..." />
+                </div>
+                <div class="form-group">
+                  <label>Tipo <span class="req">*</span></label>
+                  <div class="tipo-toggle">
+                    @for (t of tiposCharla; track t) {
+                      <button type="button" class="tipo-btn"
+                        [class.tipo-btn--seg]="t === 'Seguridad' && editForm.tipo === t"
+                        [class.tipo-btn--sal]="t === 'Salud Ocupacional' && editForm.tipo === t"
+                        [class.tipo-btn--amb]="t === 'Medio Ambiente' && editForm.tipo === t"
+                        [class.tipo-btn--active]="editForm.tipo === t"
+                        (click)="editForm.tipo = t">{{ t }}</button>
+                    }
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label>Fecha <span class="req">*</span></label>
+                  <input type="date" class="form-input" [(ngModel)]="editForm.fecha" />
+                </div>
+              </div>
+              <span class="edit-charla-subtitulo">Asistentes</span>
               @if (!staff.length) {
                 <p class="form-hint">Sin staff cargado.</p>
               } @else {
@@ -339,8 +363,9 @@
               }
             </div>
             <div class="form-actions" style="padding: 12px 20px; border-top: 0.5px solid #e8e5df;">
-              <button class="btn-secondary" type="button" (click)="cerrarEditAsistencia()">Cancelar</button>
-              <button class="btn-primary" type="button" (click)="guardarEditAsistencia()" [disabled]="savingEdit">
+              <button class="btn-secondary" type="button" (click)="cerrarEditCharla()">Cancelar</button>
+              <button class="btn-primary" type="button" (click)="guardarEditCharla()"
+                [disabled]="savingEdit || !editForm.titulo.trim() || !editForm.fecha">
                 @if (savingEdit) { <i class="ti ti-loader-2 spin"></i> } @else { <i class="ti ti-device-floppy"></i> }
                 Guardar
               </button>
@@ -369,13 +394,13 @@
                 <div class="form-group">
                   <label>Tipo <span class="req">*</span></label>
                   <div class="tipo-toggle">
-                    @for (t of ['Seguridad','Salud Ocupacional','Medio Ambiente']; track t) {
+                    @for (t of tiposCharla; track t) {
                       <button type="button" class="tipo-btn"
                         [class.tipo-btn--seg]="t === 'Seguridad' && form.tipo === t"
                         [class.tipo-btn--sal]="t === 'Salud Ocupacional' && form.tipo === t"
                         [class.tipo-btn--amb]="t === 'Medio Ambiente' && form.tipo === t"
                         [class.tipo-btn--active]="form.tipo === t"
-                        (click)="form.tipo = $any(t)">{{ t }}</button>
+                        (click)="form.tipo = t">{{ t }}</button>
                     }
                   </div>
                 </div>

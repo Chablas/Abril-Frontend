@@ -601,41 +601,14 @@
                 </p>
 
                 <!-- ── Resultado de la entrevista ─────────────────────────────
-                     Solo aparece cuando ya se le envió la invitación: son los puntajes y
-                     comentarios que arman el informe de finalista que ve el solicitante. -->
+                     Solo aparece cuando ya se le envió la invitación: son los comentarios
+                     que arman el informe de finalista que ve el solicitante. -->
                 <div class="mt-[12px] pt-[12px] border-t" style="border-color:var(--color-abril-border)">
                   <h4 class="text-[13px] font-bold text-gray-700">Resultado de la entrevista</h4>
                   <p class="text-[12px] text-gray-500 mt-[2px] leading-snug">
-                    Registra los puntajes y los comentarios del candidato. Al continuar, su informe
+                    Registra los comentarios del candidato. Al continuar, su informe
                     se envía al área solicitante para que decida con quién sigue el proceso.
                   </p>
-
-                  <div class="grid grid-cols-2 md:grid-cols-4 gap-x-[14px] gap-y-[12px] mt-[12px]">
-                    <div class="abril-field">
-                      <label class="abril-field-label" [for]="'ev-entrevista-' + c.candidatoId">Entrevista (%)</label>
-                      <input [id]="'ev-entrevista-' + c.candidatoId" type="number" min="0" max="100"
-                        class="abril-field-input" [disabled]="!puedeEvaluar(c)"
-                        [(ngModel)]="evaluacionForm[c.candidatoId].puntajeEntrevista" placeholder="0 - 100" />
-                    </div>
-                    <div class="abril-field">
-                      <label class="abril-field-label" [for]="'ev-psico-' + c.candidatoId">Psicotécnico (%)</label>
-                      <input [id]="'ev-psico-' + c.candidatoId" type="number" min="0" max="100"
-                        class="abril-field-input" [disabled]="!puedeEvaluar(c)"
-                        [(ngModel)]="evaluacionForm[c.candidatoId].puntajePsicotecnico" placeholder="0 - 100" />
-                    </div>
-                    <div class="abril-field">
-                      <label class="abril-field-label" [for]="'ev-tecnica-' + c.candidatoId">Técnica (%)</label>
-                      <input [id]="'ev-tecnica-' + c.candidatoId" type="number" min="0" max="100"
-                        class="abril-field-input" [disabled]="!puedeEvaluar(c)"
-                        [(ngModel)]="evaluacionForm[c.candidatoId].puntajeTecnica" placeholder="0 - 100" />
-                    </div>
-                    <div class="abril-field">
-                      <label class="abril-field-label" [for]="'ev-resultado-' + c.candidatoId">Resultado (%)</label>
-                      <input [id]="'ev-resultado-' + c.candidatoId" type="number" min="0" max="100"
-                        class="abril-field-input" [disabled]="!puedeEvaluar(c)"
-                        [(ngModel)]="evaluacionForm[c.candidatoId].puntajeResultado" placeholder="0 - 100" />
-                    </div>
-                  </div>
 
                   <div class="abril-field mt-[12px]">
                     <label class="abril-field-label" [for]="'ev-com-entrevista-' + c.candidatoId">

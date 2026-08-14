@@ -1,5 +1,5 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { FormBuilder, Validators, FormGroup, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { AuthService } from '../../../../core/services/auth.service';
 import { MicrosoftAuthService } from './services/microsoft-auth.service';
@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { LearningService } from '../../../../core/learning/learning.service';
 import { LearningVideoDto } from '../../../../core/learning/learning.model';
+import { RETURN_URL_PARAM, ReturnUrlService } from '../../../../core/auth/return-url.service';
 
 type LoginTab = 'abril' | 'contratistas' | 'clinica';
 
@@ -28,6 +29,13 @@ export class Login implements OnInit {
   form!: FormGroup;
   contratistaForm!: FormGroup;
 
+  /**
+   * URL a la que el usuario intentaba llegar antes de que lo mandáramos al login
+   * (la adjunta el `authGuard` como `?returnUrl=`). Si viene, manda sobre el
+   * landing por defecto de cada tipo de sesión.
+   */
+  private returnUrl: string | null = null;
+
   activeTab: LoginTab = 'abril';
   mostrarTutoriales = false;
   showContratistaPassword = false;
@@ -37,17 +45,18 @@ export class Login implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
     private fb: FormBuilder,
     private authService: AuthService,
     private microsoftAuthService: MicrosoftAuthService,
     private cdr: ChangeDetectorRef,
     private loaderService: LoaderService,
     private learningService: LearningService,
+    private returnUrlService: ReturnUrlService,
   ) {}
 
   ngOnInit(): void {
     this.token = this.route.snapshot.queryParamMap.get('token') ?? '';
+    this.returnUrl = this.route.snapshot.queryParamMap.get(RETURN_URL_PARAM);
 
     this.form = this.fb.group({
       email: ['', Validators.required],
@@ -103,7 +112,7 @@ export class Login implements OnInit {
     this.authService.loginClinica(this.clinicaForm.email, this.clinicaForm.password).subscribe({
       next: (data) => {
         this.authService.persistClinicaToken(data);
-        this.router.navigate(['/clinica/agenda']);
+        this.returnUrlService.navigateAfterLogin(this.returnUrl, '/clinica/agenda');
       },
       error: () => {
         this.clinicaLoading = false;
@@ -122,7 +131,7 @@ export class Login implements OnInit {
       next: () => {
         this.loaderService.hide();
         this.cdr.detectChanges();
-        this.router.navigate(['/']);
+        this.returnUrlService.navigateAfterLogin(this.returnUrl, '/');
       },
       error: (err: HttpErrorResponse) => {
         this.error(err);
@@ -144,7 +153,7 @@ export class Login implements OnInit {
         // panel de Gestión de Ingresos (que no le corresponde ver).
         const modulos = this.authService.getContratistaModulos();
         const landing = modulos === 'SSOMA' ? '/ssoma/gestion/rac/dashboard' : '/habilitacion';
-        this.router.navigate([landing]);
+        this.returnUrlService.navigateAfterLogin(this.returnUrl, landing);
       },
       error: (err: HttpErrorResponse) => {
         this.error(err);
@@ -160,8 +169,13 @@ export class Login implements OnInit {
       this.loaderService.hide();
       this.cdr.detectChanges();
       // Los trabajadores de Abril (USUARIO DE ABRIL) aterrizan en el boletín;
-      // el resto en el inicio real (panel de accesos).
-      this.router.navigate([this.authService.esUsuarioAbrilBoletin() ? '/boletin' : '/']);
+      // el resto en el inicio real (panel de accesos). Salvo que venga un
+      // returnUrl: ahí manda a dónde iba (p. ej. el correo de aprobación de
+      // Gerencia, que apunta a una solicitud concreta).
+      this.returnUrlService.navigateAfterLogin(
+        this.returnUrl,
+        this.authService.esUsuarioAbrilBoletin() ? '/boletin' : '/',
+      );
     } catch (err: any) {
       this.loaderService.hide();
       this.cdr.detectChanges();

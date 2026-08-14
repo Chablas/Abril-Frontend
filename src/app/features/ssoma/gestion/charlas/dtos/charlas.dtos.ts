@@ -99,6 +99,14 @@ export interface NuevaCharlaCreateDto {
   workerIds: number[];
 }
 
+// ── NEW: Tab 3 — Editar charla (cabecera + asistencia) ───────────────────────
+export interface EditarCharlaDto {
+  titulo: string;
+  tema?: string;
+  fecha: string;
+  workerIds: number[];
+}
+
 // ── NEW: Tab 3 — Galería charlas proyecto ────────────────────────────────────
 export interface CharlaGaleriaItem {
   id: number;

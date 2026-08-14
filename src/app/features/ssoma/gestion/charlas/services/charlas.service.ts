@@ -5,7 +5,7 @@ import { environment } from '../../../../../../environments/environment';
 import { AuthService } from '../../../../../core/services/auth.service';
 import {
   ProyectoInfo, Staff, CharlaResumen, AsistenciaDetail, Capacitacion, Resumen,
-  CrearCharlaDto, GuardarAsistenciaDto,
+  CrearCharlaDto, GuardarAsistenciaDto, EditarCharlaDto,
   DashSupervisoresRow, ComparativoMes, NuevaCharlaCreateDto,
   CharlaListResult, CharlaDetalle, UsuarioDto, CharlaGaleriaItem,
   DashPersonalResult, DashProyectoItem,
@@ -156,6 +156,13 @@ export class CharlasService {
     });
   }
 
+  /** Guarda de una sola vez la cabecera (título, tipo y fecha) y la asistencia de la charla. */
+  editarCharla(charlaId: number, dto: EditarCharlaDto): Observable<void> {
+    return this.http.put<void>(`${this.base}/charlas/${charlaId}?userId=${this.getUserId()}`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
   getCharlasProyecto(proyectoId: number, mes: number, anio: number): Observable<CharlaGaleriaItem[]> {
     const params = new HttpParams().set('proyectoId', proyectoId).set('mes', mes).set('anio', anio);
     return this.http.get<CharlaGaleriaItem[]>(`${this.base}/charlas-proyecto`, {
@@ -199,14 +206,6 @@ export class CharlasService {
       params,
       headers: this.authHeaders(),
     });
-  }
-
-  editarAsistencia(charlaId: number, workerIds: number[]): Observable<void> {
-    return this.http.put<void>(
-      `${this.base}/charlas/${charlaId}/asistencia?userId=${this.getUserId()}`,
-      { workerIds },
-      { headers: this.authHeaders() },
-    );
   }
 
   getDashProyectos(mes: number, anio: number): Observable<DashProyectoItem[]> {

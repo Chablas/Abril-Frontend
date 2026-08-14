@@ -20,7 +20,6 @@ import { GthSeguimiento } from './components/seguimiento/seguimiento';
 import { GthRevisionLongList } from './components/revision-long-list/revision-long-list';
 import { GthRevisionFinalistas } from './components/revision-finalistas/revision-finalistas';
 import { SolicitudPersonalService } from './services/solicitud-personal.service';
-import { AprobacionGerenciaService } from '../shared/services/aprobacion-gerencia.service';
 import { estadoColors } from '../shared/estado-colors';
 import {
   GestionCandidatoCard,
@@ -140,7 +139,6 @@ export class GthSolicitudPersonal implements OnInit {
 
   constructor(
     private service: SolicitudPersonalService,
-    private aprobacionGg: AprobacionGerenciaService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private authService: AuthService,
@@ -294,7 +292,7 @@ export class GthSolicitudPersonal implements OnInit {
     if (!confirm.isConfirmed) return;
 
     this.loaderService.show();
-    this.aprobacionGg.reenviar(s.requerimientoId).subscribe({
+    this.service.reenviarAGerencia(s.requerimientoId).subscribe({
       next: (res) => {
         this.loaderService.hide();
         this.cdr.detectChanges();
