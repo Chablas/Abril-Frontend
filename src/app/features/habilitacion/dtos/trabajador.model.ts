@@ -9,8 +9,12 @@ export interface WorkerHabilitacionListDto {
   estadoHabilitacion: string;
   /** Nombre de la categoría (campo de lógica). */
   categoria?: string;
+  /** FK a `categoria` — necesaria para filtrar el catálogo de puestos por categoría en "Cambiar obra". */
+  categoriaId?: number | null;
   /** Nombre del puesto (campo de presentación). */
   puesto?: string;
+  /** FK a `puesto` — necesaria para prellenar el selector de "Cambiar obra". */
+  puestoId?: number | null;
   estadoWorker: string;
   contrataCasa?: string;
   /** FK a workers_obra_oficina_staff. */

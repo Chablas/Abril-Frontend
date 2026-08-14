@@ -39,9 +39,16 @@ interface CambiarObraForm {
   cambiaEmpresa: boolean;
   empresaId: number | null;
 
+  /** Un solo checkbox cubre "puesto" — que en este catálogo en la práctica es la ocupación
+   * (ver Ocupación nueva) — y su categoría: son dos ejes del mismo cambio, cualquiera de los
+   * dos puede tocarse solo o junto con el otro, y cualquiera dispara la revisión de EMO. */
   cambiaPuesto: boolean;
-  /** FK a `puesto`: el puesto al que pasa. */
+  /** FK a `puesto` — el catálogo se llama así en la base, pero es la "ocupación" real del
+   * trabajador (ver label "Ocupación nueva" en el HTML). */
   puestoId: number | null;
+  /** FK a `categoria` — puede cambiar sola (reclasificación de riesgo sin cambiar de
+   * ocupación) o junto con la ocupación. */
+  categoriaId: number | null;
 
   cambiaStaffOficina: boolean;
   staffOficina: number | null;
@@ -65,6 +72,7 @@ export class CambiarObra implements OnChanges {
   proyectos: ProjectGetDTO[] = [];
   empresas: EmpresaSimpleDto[] = [];
   puestos: { id: number; nombre: string; categoriaId: number | null }[] = [];
+  categorias: { id: number; nombre: string }[] = [];
 
   model: CambiarObraForm = this.empty();
   saving = false;
@@ -95,6 +103,8 @@ export class CambiarObra implements OnChanges {
       // que se marque su checkbox, así nunca viaja un valor "inventado" por defecto.
       this.model.proyectoId = this.worker?.proyectoActualId ?? null;
       this.model.empresaId = this.worker?.empresaId ?? null;
+      this.model.puestoId = this.worker?.puestoId ?? null;
+      this.model.categoriaId = this.worker?.categoriaId ?? null;
       this.model.staffOficina = this.worker?.obraOficinaStaffId ?? 1;
       this.loadCatalogos();
     }
@@ -108,6 +118,7 @@ export class CambiarObra implements OnChanges {
       empresaId: null,
       cambiaPuesto: false,
       puestoId: null,
+      categoriaId: null,
       cambiaStaffOficina: false,
       staffOficina: 1,
       fechaCambio: new Date().toISOString().substring(0, 10),
@@ -125,6 +136,42 @@ export class CambiarObra implements OnChanges {
     return this.worker?.contrataCasa === 'Casa';
   }
 
+  private static esNombreOficinaCentral(nombre: string | null | undefined): boolean {
+    return (nombre ?? '').trim().toLowerCase() === 'oficina central';
+  }
+
+  /** El proyecto "Oficina Central" implica esa clasificación sin ambigüedad — el backend la
+   * fuerza automáticamente al guardar (ver CambiarObraAsync), esto solo lo anticipa en pantalla. */
+  get destinoEsOficinaCentral(): boolean {
+    if (!this.model.cambiaObra || this.model.proyectoId == null) return false;
+    const proyecto = this.proyectos.find((p) => p.projectId === this.model.proyectoId);
+    return CambiarObra.esNombreOficinaCentral(proyecto?.projectDescription);
+  }
+
+  /** Salir de Oficina Central hacia un proyecto real SÍ es ambiguo (¿pasa a Staff o a Obra?) —
+   * no se puede automatizar, así que se exige marcar "Cambia de clasificación" a mano. Sin esto,
+   * el trabajador se queda con la clasificación vieja y el EMO sigue calculando la vigencia de
+   * Oficina Central (24 meses) aunque ya no le corresponda — el caso real que motivó este aviso. */
+  get saleDeOficinaCentralSinClasificacion(): boolean {
+    // Si el trabajador no tiene el checkbox de clasificación disponible (contratistas), no hay
+    // nada que pedirle a mano — no bloqueamos algo que no puede resolver desde este modal.
+    if (!this.puedeEditarStaffOficina) return false;
+    if (!this.model.cambiaObra) return false;
+    if (!CambiarObra.esNombreOficinaCentral(this.worker?.proyectoActual)) return false;
+    if (this.destinoEsOficinaCentral) return false;
+    return !this.model.cambiaStaffOficina;
+  }
+
+  /** Ocupación y categoría son dos ejes independientes del mismo cambio: cualquiera de los
+   * dos que se toque (o ambos) dispara la revisión del Certificado de Aptitud (EMO) en el
+   * backend — ver esCambioPuesto / esCambioCategoriaExplicito en CambiarObraAsync. */
+  get huboCambioDeOcupacionOCategoria(): boolean {
+    if (!this.model.cambiaPuesto) return false;
+    const cambioOcupacion = this.model.puestoId != null && this.model.puestoId !== this.worker?.puestoId;
+    const cambioCategoria = this.model.categoriaId != null && this.model.categoriaId !== this.worker?.categoriaId;
+    return cambioOcupacion || cambioCategoria;
+  }
+
   private loadCatalogos(): void {
     this.loadingCatalogos = true;
     this.catalogosHabService.getPuestos().subscribe({
@@ -133,6 +180,13 @@ export class CambiarObra implements OnChanges {
         this.cdr.detectChanges();
       },
       error: () => (this.puestos = []),
+    });
+    this.catalogosHabService.getCategorias().subscribe({
+      next: (res) => {
+        this.categorias = res ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => (this.categorias = []),
     });
     this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
       next: (res) => {
@@ -182,8 +236,11 @@ export class CambiarObra implements OnChanges {
   get canSubmit(): boolean {
     if (this.saving || !this.algunCambioMarcado || !this.model.fechaCambio) return false;
     if (this.model.cambiaObra && !this.model.proyectoId) return false;
+    if (this.saleDeOficinaCentralSinClasificacion) return false;
     if (this.model.cambiaEmpresa && !this.model.empresaId) return false;
-    if (this.model.cambiaPuesto && this.model.puestoId == null) return false;
+    // Al menos una de las dos (ocupación / categoría) debe quedar seleccionada — pueden
+    // cambiar ambas, o solo una, pero no dejarlas vacías.
+    if (this.model.cambiaPuesto && this.model.puestoId == null && this.model.categoriaId == null) return false;
     if (this.model.cambiaStaffOficina && !this.model.staffOficina) return false;
     return true;
   }
@@ -198,9 +255,12 @@ export class CambiarObra implements OnChanges {
       // (precargado en ngOnChanges), así que el backend no detecta cambio de obra.
       nuevoProyectoId: this.model.proyectoId,
       nuevaEmpresaId: empresaId ?? undefined,
-      // puesto y staffOficina solo viajan si su checkbox está marcado — evita que el
-      // backend calcule un "cambio" contra un valor que el admin nunca tocó a propósito.
+      // puesto, categoría y staffOficina solo viajan si su checkbox está marcado — evita que
+      // el backend calcule un "cambio" contra un valor que el admin nunca tocó a propósito.
+      // Ocupación y categoría viajan juntas bajo el mismo checkbox pero son independientes:
+      // el backend solo trata como "cambio" la que realmente sea distinta a la actual.
       puestoId: this.model.cambiaPuesto ? this.model.puestoId ?? undefined : undefined,
+      categoriaId: this.model.cambiaPuesto ? this.model.categoriaId ?? undefined : undefined,
       obraOficinaStaffId: this.model.cambiaStaffOficina ? this.model.staffOficina ?? undefined : undefined,
       fechaCambio: this.model.fechaCambio,
     };

@@ -31,6 +31,19 @@
           (valueChange)="model.proyectoId = $event"
         />
       </div>
+      <div class="col-span-2" *ngIf="destinoEsOficinaCentral">
+        <p class="field-info">
+          ℹ Este proyecto es Oficina Central — la clasificación se actualizará automáticamente
+          a "Oficina Central" al guardar.
+        </p>
+      </div>
+      <div class="col-span-2" *ngIf="saleDeOficinaCentralSinClasificacion">
+        <p class="field-warning">
+          ⚠ Este trabajador sale de Oficina Central. Marca también "Cambia de clasificación"
+          más abajo y elige Staff u Obra — si no, el EMO seguirá calculando la vigencia de
+          Oficina Central (24 meses) aunque ya no le corresponda.
+        </p>
+      </div>
 
       <!-- ── Razón social ─────────────────────────────────── -->
       <ng-container *ngIf="puedeEditarEmpresa">
@@ -54,29 +67,55 @@
         </div>
       </ng-container>
 
-      <!-- ── Puesto de trabajo ────────────────────────────── -->
+      <!-- ── Puesto de trabajo (categoría + ocupación) ────── -->
       <div class="col-span-2 check-row">
         <label class="check-label">
           <input type="checkbox" [(ngModel)]="model.cambiaPuesto" />
           Cambia de puesto de trabajo
         </label>
+        <p class="check-hint">
+          Categoría y ocupación son las dos partes del puesto — cambia una, la otra, o ambas.
+        </p>
       </div>
       <div class="col-span-2" *ngIf="model.cambiaPuesto">
-        <label class="field-label">Puesto actual</label>
+        <label class="field-label">Categoría actual</label>
+        <input type="text" class="field-input field-readonly" [value]="worker?.categoria ?? '—'" readonly />
+      </div>
+      <div class="col-span-2" *ngIf="model.cambiaPuesto">
+        <label class="field-label">Categoría nueva</label>
+        <app-search-select
+          [options]="categorias"
+          valueField="id"
+          displayField="nombre"
+          [value]="model.categoriaId"
+          [showLabel]="false"
+          placeholder="Selecciona categoría"
+          [allowClear]="true"
+          (valueChange)="model.categoriaId = $event"
+        />
+      </div>
+      <div class="col-span-2" *ngIf="model.cambiaPuesto">
+        <label class="field-label">Ocupación actual</label>
         <input type="text" class="field-input field-readonly" [value]="worker?.puesto ?? '—'" readonly />
       </div>
       <div class="col-span-2" *ngIf="model.cambiaPuesto">
-        <label class="field-label">Puesto nuevo *</label>
+        <label class="field-label">Ocupación nueva</label>
         <app-search-select
           [options]="puestos"
           valueField="id"
           displayField="nombre"
           [value]="model.puestoId"
           [showLabel]="false"
-          placeholder="Selecciona puesto"
+          placeholder="Selecciona ocupación"
           [allowClear]="true"
           (valueChange)="model.puestoId = $event"
         />
+      </div>
+      <div class="col-span-2" *ngIf="huboCambioDeOcupacionOCategoria">
+        <p class="field-warning">
+          ⚠ Este cambio exige revisar el Certificado de Aptitud (EMO) — se generará
+          convalidación si hay un EMO activo, o se pedirá uno nuevo si no lo hay.
+        </p>
       </div>
 
       <!-- ── Clasificación Staff / Oficina ────────────────── -->

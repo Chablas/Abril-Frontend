@@ -9,6 +9,7 @@ import Swal from 'sweetalert2';
 import { AbrilModalPanel } from '../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { DatePicker } from '../../../../shared/components/date-picker/date-picker';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { Cie10Select } from '../../../../shared/components/cie10-select/cie10-select';
 import { WorkerSearchInput } from '../shared/worker-search-input/worker-search-input';
 import { DescansoAdjuntos } from '../shared/descanso-adjuntos/descanso-adjuntos';
 import { WorkerSearchItemDto } from '../dtos/worker-search.model';
@@ -20,6 +21,9 @@ import {
   DescansoAprobarDto,
   DescansoRechazarDto,
   DarAltaDto,
+  ReabrirCasoDto,
+  CasoDetalleDto,
+  CasoCandidatoDto,
   DescansoSeguimientoDto,
   DescansoSeguimientoCreateDto,
   DescansoTipoDto,
@@ -35,7 +39,7 @@ type TabKey = 'detalle' | 'seguimientos';
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule, FormsModule, AbrilModalPanel, DatePicker, SearchSelect,
+    CommonModule, FormsModule, AbrilModalPanel, DatePicker, SearchSelect, Cie10Select,
     WorkerSearchInput, DescansoAdjuntos,
   ],
   templateUrl: './descanso-modal.component.html',
@@ -60,7 +64,17 @@ export class DescansoModalComponent implements OnInit {
   isNuevo   = false;
 
   detalle: DescansoMedicoDetalleDto | null = null;
+  /** El caso (timeline completo: todos los descansos del problema + seguimientos + alta). */
+  caso: CasoDetalleDto | null = null;
   seguimientos: DescansoSeguimientoDto[] = [];
+  /** Otros casos abiertos del mismo trabajador — solo tiene sentido ofrecerlo cuando este
+   * descanso llegó "suelto" (subido desde Mi Salud, caso propio de un solo descanso). */
+  casosCandidatos: CasoCandidatoDto[] = [];
+  casoDestinoId: number | null = null;
+  vinculando = false;
+
+  // ── Diagnóstico CIE-10 (solo lo asigna el médico al revisar, nunca el trabajador) ──
+  dCie10Codigo: string | null = null;
 
   // ── Worker search (solo modo creación) ───────────────────────────────────
   workerSelected : WorkerSearchItemDto | null = null;
@@ -83,14 +97,15 @@ export class DescansoModalComponent implements OnInit {
   // ── Alta ─────────────────────────────────────────────────────────────────
   altaObs = '';
 
-  // ── Nuevo seguimiento ─────────────────────────────────────────────────────
-  segTipo         = 'Médico';
+  // ── Nuevo seguimiento (solo lo registra el médico, no necesita "tipo") ────
   segNota         = '';
   segProximaCita  = '';
+  segCie10Codigo  : string | null = null;
+  segConfidencial = true;
   segGuardando    = false;
 
-  readonly tiposSeguimiento = ['Médico', 'Asistenta Social', 'Seguimiento', 'Alta'];
-  readonly tiposSeguimientoOpts = this.tiposSeguimiento.map(t => ({ id: t, label: t }));
+  // ── Reabrir caso ──────────────────────────────────────────────────────────
+  reabriendo = false;
 
   constructor(
     private svc          : DescansosService,
@@ -125,7 +140,9 @@ export class DescansoModalComponent implements OnInit {
     this.svc.getById(this.descansoId!).subscribe({
       next: d => {
         this.detalle = d;
+        this.dCie10Codigo = d.diagnosticoCie10Codigo ?? null;
         this.loading = false;
+        this.loadCaso(d.casoId);
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
@@ -133,6 +150,73 @@ export class DescansoModalComponent implements OnInit {
         this.errorService.handleError(err);
         this.close();
       },
+    });
+  }
+
+  /** El timeline completo del caso: todos sus descansos ("más descanso" incluido) + estado del alta. */
+  private loadCaso(casoId: number): void {
+    this.svc.getCasoDetalle(casoId).subscribe({
+      next: c => {
+        this.caso = c;
+        // Solo tiene sentido ofrecer "vincular" cuando este caso es un descanso suelto (nació
+        // solo con este) — si ya tiene más de uno, no está "perdido", ya es un caso real.
+        if (c.descansos.length === 1) this.loadCandidatos();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  private loadCandidatos(): void {
+    this.svc.getCasosCandidatos(this.descansoId!).subscribe({
+      next: c => { this.casosCandidatos = c; this.cdr.detectChanges(); },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  get esCasoSuelto(): boolean {
+    return !!this.caso && this.caso.descansos.length === 1 && this.casosCandidatos.length > 0;
+  }
+
+  /** Con una etiqueta legible (fechas + tipo) para el combobox — el componente solo muestra
+   * un campo plano, no arma texto compuesto por sí mismo. */
+  get casosCandidatosOpts(): Array<CasoCandidatoDto & { label: string }> {
+    return this.casosCandidatos.map(c => ({
+      ...c,
+      label: `Caso #${c.id} — ${c.primerDescansoTipo} (${this.fmtFecha(c.primerDescansoInicio)} → ${this.fmtFecha(c.primerDescansoFin)})`,
+    }));
+  }
+
+  private fmtFecha(iso: string): string {
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+
+  vincularCaso(): void {
+    if (!this.casoDestinoId) return;
+    Swal.fire({
+      icon: 'question',
+      title: '¿Vincular a ese caso?',
+      text: 'Este descanso pasará a formar parte del caso seleccionado, junto con sus seguimientos.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, vincular',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#2563eb',
+    }).then(r => {
+      if (!r.isConfirmed) return;
+      this.vinculando = true;
+      this.svc.vincularCaso(this.descansoId!, this.casoDestinoId!).subscribe({
+        next: () => {
+          this.vinculando = false;
+          Swal.fire({ icon: 'success', title: 'Vinculado', timer: 1500, showConfirmButton: false });
+          this.saved.emit();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.vinculando = false;
+          this.errorService.handleError(err);
+          this.cdr.detectChanges();
+        },
+      });
     });
   }
 
@@ -144,8 +228,8 @@ export class DescansoModalComponent implements OnInit {
   }
 
   loadSeguimientos(): void {
-    if (!this.descansoId) return;
-    this.svc.getSeguimientos(this.descansoId).subscribe({
+    if (!this.detalle) return;
+    this.svc.getSeguimientos(this.detalle.casoId).subscribe({
       next: s => { this.seguimientos = s; this.cdr.detectChanges(); },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
@@ -162,8 +246,16 @@ export class DescansoModalComponent implements OnInit {
   get isPendiente(): boolean { return this.estado === 'Pendiente'; }
   get isAprobado(): boolean  { return this.estado === 'Aprobado'; }
   get isCompletado(): boolean { return this.estado === 'Completado'; }
-  get canAlta(): boolean     { return this.isAprobado; }
-  get canProrroga(): boolean { return this.isAprobado || this.isCompletado; }
+  get casoAbierto(): boolean { return this.caso?.estado !== 'Cerrado'; }
+  get casoReabierto(): boolean { return !!this.caso?.fechaReapertura; }
+  /** Si el caso ya fue reabierto una vez, exige un descanso nuevo (fecha_inicio posterior a la
+   * reapertura) antes de poder dar el alta otra vez — mismo criterio que valida el backend. */
+  get faltaDescansoTrasReapertura(): boolean {
+    if (!this.caso?.fechaReapertura) return false;
+    return !this.caso.descansos.some(d => d.fechaInicio >= this.caso!.fechaReapertura!);
+  }
+  get canAlta(): boolean { return this.casoAbierto && this.isAprobado && !this.faltaDescansoTrasReapertura; }
+  get canProrroga(): boolean { return this.casoAbierto && (this.isAprobado || this.isCompletado); }
 
   /**
    * Certificados del descanso. Todos son filas de ss_descanso_medico_adjunto — los descansos
@@ -224,16 +316,21 @@ export class DescansoModalComponent implements OnInit {
 
   guardarProrroga(): void {
     if (!this.pFechaInicio || !this.pFechaFin) {
-      Swal.fire({ icon: 'warning', title: 'Requerido', text: 'Ingresa las fechas de la prórroga.' });
+      Swal.fire({ icon: 'warning', title: 'Requerido', text: 'Ingresa las fechas del nuevo descanso.' });
       return;
     }
+    // Si el caso ya fue reabierto y todavía no tiene un descanso posterior a esa reapertura,
+    // este nuevo descanso va directo sobre el caso (no como "prórroga" de un descanso puntual
+    // que ya se cerró con su propia alta histórica).
+    const esNuevoTrasReapertura = this.faltaDescansoTrasReapertura;
     const dto: DescansoMedicoCreateDto = {
       workerId      : this.detalle!.workerId,
-      // La prórroga hereda el tipo del descanso que prorroga.
+      // Hereda el tipo del descanso que extiende.
       tipoId        : this.detalle!.tipoId,
       fechaInicio   : this.pFechaInicio,
       fechaFin      : this.pFechaFin,
-      prorrogaDelId : this.descansoId!,
+      prorrogaDelId : esNuevoTrasReapertura ? undefined : this.descansoId!,
+      casoId        : esNuevoTrasReapertura ? this.detalle!.casoId : undefined,
     };
     this.saving = true;
     this.loaderService.show();
@@ -242,7 +339,7 @@ export class DescansoModalComponent implements OnInit {
         this.saving = false;
         this.loaderService.hide();
         this.prorrogaMode = false;
-        Swal.fire({ icon: 'success', title: 'Prórroga creada', text: 'Se creó un nuevo descanso vinculado a este.', timer: 2000, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: 'Descanso agregado', text: 'Se creó un nuevo descanso dentro del mismo caso.', timer: 2000, showConfirmButton: false });
         this.saved.emit();
       },
       error: (err: HttpErrorResponse) => {
@@ -400,12 +497,12 @@ export class DescansoModalComponent implements OnInit {
     });
   }
 
-  // ── Alta ─────────────────────────────────────────────────────────────────
+  // ── Alta (cierra el CASO, no un descanso individual) ─────────────────────
   darAlta(): void {
     Swal.fire({
       icon: 'question',
       title: '¿Dar de alta al trabajador?',
-      text: 'El descanso se marcará como Completado y el trabajador será desbloqueado.',
+      text: 'El caso se cerrará, todos sus descansos aprobados pasan a Completado, y el trabajador será desbloqueado.',
       showCancelButton: true,
       confirmButtonText: 'Sí, dar alta',
       cancelButtonText: 'Cancelar',
@@ -415,7 +512,7 @@ export class DescansoModalComponent implements OnInit {
       const dto: DarAltaDto = { observaciones: this.altaObs || undefined };
       this.saving = true;
       this.loaderService.show();
-      this.svc.darAlta(this.descansoId!, dto).subscribe({
+      this.svc.darAlta(this.detalle!.casoId, dto).subscribe({
         next: () => {
           this.saving = false;
           this.loaderService.hide();
@@ -432,23 +529,72 @@ export class DescansoModalComponent implements OnInit {
     });
   }
 
+  // ── Reabrir caso ──────────────────────────────────────────────────────────
+  reabrirCaso(): void {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Reabrir este caso?',
+      text: 'Vas a poder registrar un nuevo descanso médico sobre el mismo caso. El alta anterior queda en el historial.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, reabrir',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d97706',
+    }).then(r => {
+      if (!r.isConfirmed) return;
+      const dto: ReabrirCasoDto = {};
+      this.reabriendo = true;
+      this.svc.reabrirCaso(this.detalle!.casoId, dto).subscribe({
+        next: () => {
+          this.reabriendo = false;
+          Swal.fire({ icon: 'success', title: 'Caso reabierto', timer: 1500, showConfirmButton: false });
+          this.saved.emit();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.reabriendo = false;
+          this.errorService.handleError(err);
+          this.cdr.detectChanges();
+        },
+      });
+    });
+  }
+
+  // ── Diagnóstico CIE-10 (solo el médico, al revisar — en cualquier estado) ─
+  guardarCie10(): void {
+    if (!this.detalle) return;
+    this.saving = true;
+    this.svc.asignarDiagnosticoCie10(this.descansoId!, this.dCie10Codigo).subscribe({
+      next: () => {
+        this.saving = false;
+        Swal.fire({ icon: 'success', title: 'Diagnóstico guardado', timer: 1200, showConfirmButton: false });
+        this.loadDetalle();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.saving = false;
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   // ── Seguimiento ───────────────────────────────────────────────────────────
   guardarSeguimiento(): void {
-    if (!this.segTipo.trim() || !this.segNota.trim()) {
-      Swal.fire({ icon: 'warning', title: 'Requerido', text: 'El tipo y la nota son obligatorios.' });
+    if (!this.segNota.trim()) {
+      Swal.fire({ icon: 'warning', title: 'Requerido', text: 'La nota es obligatoria.' });
       return;
     }
     const dto: DescansoSeguimientoCreateDto = {
-      tipo        : this.segTipo,
-      nota        : this.segNota        || undefined,
-      proximaCita : this.segProximaCita || undefined,
+      nota                : this.segNota        || undefined,
+      proximaCita         : this.segProximaCita || undefined,
+      diagnosticoCie10Codigo: this.segCie10Codigo ?? undefined,
+      confidencial        : this.segConfidencial,
     };
     this.segGuardando = true;
-    this.svc.createSeguimiento(this.descansoId!, dto).subscribe({
+    this.svc.createSeguimiento(this.detalle!.casoId, dto).subscribe({
       next: () => {
         this.segGuardando = false;
         this.segNota = '';
         this.segProximaCita = '';
+        this.segCie10Codigo = null;
         Swal.fire({ icon: 'success', title: 'Seguimiento registrado', timer: 1200, showConfirmButton: false });
         this.loadSeguimientos();
         this.cdr.detectChanges();

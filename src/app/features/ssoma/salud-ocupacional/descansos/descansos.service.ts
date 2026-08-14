@@ -11,11 +11,16 @@ import {
   DescansoAprobarDto,
   DescansoRechazarDto,
   DarAltaDto,
+  ReabrirCasoDto,
+  CasoDetalleDto,
+  CasoCandidatoDto,
   DescansoSeguimientoDto,
   DescansoSeguimientoCreateDto,
   DescansoFilterDto,
   DescansosInicioDto,
   DescansoTipoDto,
+  SeguimientoTipoDto,
+  Cie10Dto,
 } from './descansos.dtos';
 
 function authHeaders(): Record<string, string> {
@@ -94,6 +99,16 @@ export class DescansosService {
     return this.http.put<{ message: string }>(`${this.base}/${id}`, dto, { headers: authHeaders() });
   }
 
+  /** A diferencia de update() (exige estado Pendiente), esto lo puede hacer el médico en
+   * cualquier estado — es la vía normal para asignar el diagnóstico al revisar el caso. */
+  asignarDiagnosticoCie10(id: number, codigo: string | null): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(
+      `${this.base}/${id}/diagnostico-cie10`,
+      { codigo },
+      { headers: authHeaders() },
+    );
+  }
+
   aprobar(id: number, dto: DescansoAprobarDto): Observable<{ message: string }> {
     return this.http.patch<{ message: string }>(`${this.base}/${id}/aprobar`, dto, {
       headers: authHeaders(),
@@ -106,27 +121,69 @@ export class DescansosService {
     });
   }
 
-  darAlta(id: number, dto: DarAltaDto): Observable<{ message: string }> {
-    return this.http.patch<{ message: string }>(`${this.base}/${id}/alta`, dto, {
+  /** Otros casos abiertos del mismo trabajador, para vincular este descanso (que llegó suelto,
+   * subido desde Mi Salud) a un caso ya en curso. */
+  getCasosCandidatos(descansoId: number): Observable<CasoCandidatoDto[]> {
+    return this.http.get<CasoCandidatoDto[]>(`${this.base}/${descansoId}/casos-candidatos`, {
       headers: authHeaders(),
     });
   }
 
-  getSeguimientos(descansoId: number): Observable<DescansoSeguimientoDto[]> {
-    return this.http.get<DescansoSeguimientoDto[]>(`${this.base}/${descansoId}/seguimientos`, {
+  vincularCaso(descansoId: number, casoDestinoId: number): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(
+      `${this.base}/${descansoId}/vincular-caso`,
+      { casoDestinoId },
+      { headers: authHeaders() },
+    );
+  }
+
+  /** Timeline completo del caso: descansos, seguimientos, estado del alta. */
+  getCasoDetalle(casoId: number): Observable<CasoDetalleDto> {
+    return this.http.get<CasoDetalleDto>(`${this.base}/casos/${casoId}`, { headers: authHeaders() });
+  }
+
+  /** Da de alta el CASO (cierra todos sus descansos), no un descanso individual. */
+  darAlta(casoId: number, dto: DarAltaDto): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.base}/casos/${casoId}/alta`, dto, {
+      headers: authHeaders(),
+    });
+  }
+
+  reabrirCaso(casoId: number, dto: ReabrirCasoDto): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.base}/casos/${casoId}/reabrir`, dto, {
+      headers: authHeaders(),
+    });
+  }
+
+  getSeguimientos(casoId: number): Observable<DescansoSeguimientoDto[]> {
+    return this.http.get<DescansoSeguimientoDto[]>(`${this.base}/casos/${casoId}/seguimientos`, {
       headers: authHeaders(),
     });
   }
 
   createSeguimiento(
-    descansoId: number,
+    casoId: number,
     dto: DescansoSeguimientoCreateDto,
   ): Observable<{ id: number; message: string }> {
     return this.http.post<{ id: number; message: string }>(
-      `${this.base}/${descansoId}/seguimientos`,
+      `${this.base}/casos/${casoId}/seguimientos`,
       dto,
       { headers: authHeaders() },
     );
+  }
+
+  getSeguimientoTipos(): Observable<SeguimientoTipoDto[]> {
+    return this.http.get<SeguimientoTipoDto[]>(`${this.base}/seguimientos/tipos`, {
+      headers: authHeaders(),
+    });
+  }
+
+  /** Búsqueda del catálogo CIE-10 (server-side: tiene miles de códigos). */
+  buscarCie10(search: string): Observable<Cie10Dto[]> {
+    return this.http.get<Cie10Dto[]>(`${this.base}/cie10`, {
+      params: toParams({ search }),
+      headers: authHeaders(),
+    });
   }
 
   delete(id: number): Observable<{ message: string }> {

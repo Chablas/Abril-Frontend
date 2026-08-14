@@ -19,6 +19,7 @@ export interface DescansoAdjuntoDto {
 
 export interface DescansoMedicoListItemDto {
   id: number;
+  casoId: number;
   workerId: number;
   workerNombre?: string;
   workerDni?: string;
@@ -38,6 +39,7 @@ export interface DescansoMedicoListItemDto {
 
 export interface DescansoMedicoDetalleDto {
   id: number;
+  casoId: number;
   workerId: number;
   workerNombre?: string;
   workerDni?: string;
@@ -51,7 +53,11 @@ export interface DescansoMedicoDetalleDto {
   fechaFin: string;
   dias: number;
   diagnostico?: string;
+  /** LEGACY, ver diagnosticoCie10Codigo. */
   diagnosticoCie10?: string;
+  /** FK a cie10_catalogo. Solo el médico lo asigna al revisar el caso. */
+  diagnosticoCie10Codigo?: string;
+  diagnosticoCie10Descripcion?: string;
   urlCertificado?: string;
   urlDocumento?: string;
   adjuntos: DescansoAdjuntoDto[];
@@ -63,6 +69,7 @@ export interface DescansoMedicoDetalleDto {
   esRecaida: boolean;
   topicoOrigenId?: number;
   prorrogaDelId?: number;
+  /** LEGACY — el alta ahora vive en el Caso (ver CasoDetalleDto), no en el descanso. */
   fechaAlta?: string;
   altaPorId?: number;
   altaObservaciones?: string;
@@ -81,11 +88,14 @@ export interface DescansoMedicoCreateDto {
   fechaInicio: string;
   fechaFin: string;
   diagnostico?: string;
-  diagnosticoCie10?: string;
+  diagnosticoCie10Codigo?: string;
   accidenteId?: number;
   esRecaida?: boolean;
   topicoOrigenId?: number;
+  /** "Añadir más descanso" sobre un caso abierto: id del descanso que se extiende. */
   prorrogaDelId?: number;
+  /** Solo para el flujo de reapertura: nuevo descanso directo sobre un caso reabierto. */
+  casoId?: number;
   proyectoId?: number;
   empresaId?: number;
 }
@@ -95,7 +105,7 @@ export interface DescansoMedicoUpdateDto {
   fechaInicio: string;
   fechaFin: string;
   diagnostico?: string;
-  diagnosticoCie10?: string;
+  diagnosticoCie10Codigo?: string;
 }
 
 export interface DescansoAprobarDto {
@@ -113,21 +123,76 @@ export interface DarAltaDto {
 export interface DescansoSeguimientoDto {
   id: number;
   descansoId: number;
+  casoId: number;
   fechaSeguimiento: string;
+  /** LEGACY, ver tipoId/tipoNombre. */
   tipo: string;
+  tipoId?: number;
+  tipoNombre?: string;
   realizadoPorRol?: string;
   realizadoPorId?: number;
+  /** null si es confidencial y quien pide no tiene permiso de ver detalle clínico. */
   nota?: string;
   proximaCita?: string;
   urlEvidencia?: string;
+  diagnosticoCie10Codigo?: string;
+  diagnosticoCie10Descripcion?: string;
+  puestoTrabajoSnapshot?: string;
+  confidencial: boolean;
   createdAt: string;
 }
 
 export interface DescansoSeguimientoCreateDto {
-  tipo: string;
+  /** Sobre cuál descanso puntual — si no se envía, se asume el más reciente del caso. */
+  descansoId?: number;
+  /** Sin uso — solo el médico registra seguimiento, no hace falta clasificar "quién" lo hizo. */
+  tipoId?: number;
   nota?: string;
   proximaCita?: string;
   urlEvidencia?: string;
+  diagnosticoCie10Codigo?: string;
+  confidencial?: boolean;
+}
+
+export interface SeguimientoTipoDto {
+  id: number;
+  nombre: string;
+}
+
+export interface Cie10Dto {
+  codigo: string;
+  descripcion: string;
+}
+
+/** Timeline completo de un caso: descansos + seguimientos + estado del alta. */
+export interface CasoDetalleDto {
+  id: number;
+  workerId: number;
+  workerNombre?: string;
+  workerDni?: string;
+  fechaApertura: string;
+  /** "Abierto" | "Cerrado". */
+  estado: string;
+  fechaCierre?: string;
+  altaPorId?: number;
+  altaObservaciones?: string;
+  fechaReapertura?: string;
+  descansos: DescansoMedicoListItemDto[];
+  seguimientos: DescansoSeguimientoDto[];
+}
+
+export interface ReabrirCasoDto {
+  observaciones?: string;
+}
+
+/** Un caso candidato para vincular un descanso suelto (el que crea el trabajador al subir
+ * desde Mi Salud, que nace como caso propio de un solo descanso). */
+export interface CasoCandidatoDto {
+  id: number;
+  fechaApertura: string;
+  primerDescansoInicio: string;
+  primerDescansoFin: string;
+  primerDescansoTipo: string;
 }
 
 export interface DescansoFilterDto {

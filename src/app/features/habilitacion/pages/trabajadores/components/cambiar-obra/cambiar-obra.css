@@ -80,12 +80,29 @@
   cursor: pointer;
 }
 
+.check-hint {
+  font-size: 0.76rem;
+  color: #9ca3af;
+  margin: 0.2rem 0 0 1.5rem;
+}
+
 .field-warning {
   font-size: 0.82rem;
   font-weight: 600;
   color: #b91c1c;
   background: #fef2f2;
   border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.75rem;
+  margin: 0;
+}
+
+.field-info {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #1e3a8a;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   border-radius: var(--radius-md);
   padding: 0.6rem 0.75rem;
   margin: 0;
