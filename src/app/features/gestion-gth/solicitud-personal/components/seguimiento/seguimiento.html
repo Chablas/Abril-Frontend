@@ -22,10 +22,18 @@
           </div>
         </div>
 
+        <!-- La solicitud pasa por dos aprobaciones. La de Gerencia General es la que la hace
+             avanzar, así que ocupa el lugar destacado; el visto bueno del gerente del área va
+             debajo como constancia. -->
         <div class="rounded-[10px] border px-[14px] py-[12px] bg-white" style="border-color:var(--color-abril-border)">
-          <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Aprobación GG</p>
+          <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Aprobaciones</p>
           <p class="mt-[6px] text-[14px] font-semibold" [style.color]="aprobacionGgColor">{{ aprobacionGgLabel }}</p>
           <p class="text-[10.5px] text-gray-400 mt-[2px] leading-tight">{{ aprobacionGgDetalle }}</p>
+          @if (aprobacionAreaLabel) {
+            <p class="text-[10.5px] font-medium mt-[5px] leading-tight" [style.color]="aprobacionAreaColor">
+              {{ aprobacionAreaLabel }}
+            </p>
+          }
         </div>
 
         <div class="rounded-[10px] border px-[14px] py-[12px] bg-white" style="border-color:var(--color-abril-border)">
@@ -51,6 +59,59 @@
         </div>
 
       </div>
+
+      <!-- ── Puesto cubierto: quién obtuvo el puesto ───────────────────
+           El resultado del proceso queda registrado acá; antes solo existía en el
+           momento de decidir y en el correo. -->
+      @if (seguimiento.seleccionado; as sel) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             style="border-color:#a7f3d0;background:#F0FDF4">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-user-check text-[20px] shrink-0 mt-[1px]" style="color:#15803D"></i>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#15803D">
+                Puesto cubierto
+              </p>
+              <h3 class="text-[17px] font-bold text-emerald-900 mt-[2px] leading-tight">
+                {{ sel.nombre | titleCase }}
+              </h3>
+              <p class="text-[12.5px] text-emerald-800 mt-[1px]">
+                {{ (sel.puesto | titleCase) || (seguimiento.puesto | titleCase) }}
+              </p>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-[16px] gap-y-[8px] mt-[12px]">
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Seleccionado el</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                    {{ (sel.seleccionadoEn | date:'dd/MM/yyyy HH:mm') || '—' }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Decidido por</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                    {{ (sel.seleccionadoPor | titleCase) || 'Área solicitante' }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Responsable GTH</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                    {{ (sel.responsableGth | titleCase) || 'Sin asignar' }}
+                  </p>
+                </div>
+              </div>
+
+              @if (sel.cvUrl) {
+                <a [href]="sel.cvUrl" target="_blank" rel="noopener"
+                   class="inline-flex items-center gap-[6px] h-[34px] px-[14px] mt-[12px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                   style="background:#15803D">
+                  <i class="ti ti-external-link text-[15px]"></i>
+                  Ver CV del seleccionado
+                </a>
+              }
+            </div>
+          </div>
+        </div>
+      }
 
       <!-- ── Fase del reclutamiento (timeline vertical) ───────────────── -->
       <div class="rounded-[10px] border p-[18px]" style="border-color:var(--color-abril-border)">
@@ -109,13 +170,115 @@
         </div>
       </div>
 
-      <!-- ── Comentario de Gerencia General ───────────────────────────── -->
+      <!-- ── Historial de candidatos rechazados ───────────────────────────
+           Rechazar a todos devuelve el requerimiento a Long list, así que sin este
+           bloque la vuelta anterior desaparecía de la pantalla del solicitante. -->
+      @if (seguimiento.candidatosRechazados.length > 0) {
+        <div class="rounded-[10px] border p-[18px]" style="border-color:var(--color-abril-border)">
+
+          <div class="flex items-center justify-between mb-[4px]">
+            <h3 class="text-[14px] font-bold text-gray-800">Historial de candidatos rechazados</h3>
+            <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                  style="background:#FEE2E2;color:#B91C1C">
+              {{ seguimiento.candidatosRechazados.length }}
+            </span>
+          </div>
+          <p class="text-[12px] text-gray-500 leading-snug">
+            Candidatos que quedaron fuera del proceso, con la etapa en la que se los rechazó.
+            Incluye las long lists anteriores de este requerimiento.
+          </p>
+
+          <!-- Búsqueda inline (no app-filter-modal): es un solo campo dentro de un modal,
+               abrir otro modal de filtros encima sería peor de usar. -->
+          <div class="w-full mt-[12px]">
+            <app-search-input
+              placeholder="Buscar por nombre o etapa..."
+              [(value)]="busquedaRechazados"
+              (valueChange)="onBuscarRechazados()"
+              width="100%">
+            </app-search-input>
+          </div>
+
+          <div class="abril-table-wrap mt-[10px] max-h-[46vh]">
+            <table class="abril-table">
+              <thead class="sticky top-0 z-10">
+                <tr>
+                  <th>Candidato</th>
+                  <th>Etapa del rechazo</th>
+                  <th>Rechazado por</th>
+                  <th>Fecha</th>
+                  <th>CV</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (c of rechazadosPagina; track c.candidatoId) {
+                  <tr>
+                    <td class="font-semibold text-gray-800">{{ c.nombre | titleCase }}</td>
+                    <td>
+                      <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full whitespace-nowrap"
+                            [style.background]="etapaColors(c.etapaCodigo).bg"
+                            [style.color]="etapaColors(c.etapaCodigo).text">
+                        {{ c.etapaNombre }}
+                      </span>
+                      <p class="text-[11px] text-gray-400 mt-[3px] whitespace-nowrap">
+                        {{ c.numeroLongList }}ª long list
+                      </p>
+                    </td>
+                    <td class="whitespace-nowrap">{{ c.rechazadoPorNombre }}</td>
+                    <td class="whitespace-nowrap">{{ c.rechazadoEn | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>
+                      @if (c.cvUrl) {
+                        <a [href]="c.cvUrl" target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-[5px] font-semibold hover:underline"
+                           style="color:var(--color-abril-logo-blue)">
+                          <i class="ti ti-file-text text-[15px]"></i>
+                          Ver CV
+                        </a>
+                      } @else {
+                        <span class="text-gray-400">—</span>
+                      }
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="text-center py-[28px] text-gray-400">Sin resultados.</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          @if (rechazadosTotalPaginas > 1) {
+            <div class="max-w-[440px] mt-[10px]">
+              <app-paginator
+                [totalRecords]="rechazadosFiltrados.length"
+                [currentPage]="rechazadosPaginaActual"
+                [totalPages]="rechazadosTotalPaginas"
+                (pageChange)="cambiarPaginaRechazados($event)">
+              </app-paginator>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ── Comentarios de las dos aprobaciones ──────────────────────── -->
       @if (aprobacionGgComentario) {
         <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[11px]"
              style="background:#FFFBEB;border:1px solid #FCD34D">
           <i class="ti ti-message-2 text-[18px] shrink-0 mt-[1px]" style="color:#B45309"></i>
           <p class="text-[13px] text-gray-700">
             <b style="color:#B45309">Comentario de Gerencia General:</b> {{ aprobacionGgComentario }}
+          </p>
+        </div>
+      }
+
+      @if (aprobacionAreaComentario) {
+        <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[11px]"
+             style="background:var(--color-abril-logo-blue-light);border:1px solid #a9c9e6">
+          <i class="ti ti-message-2 text-[18px] shrink-0 mt-[1px]" style="color:var(--color-abril-logo-blue)"></i>
+          <p class="text-[13px] text-gray-700">
+            <b style="color:var(--color-abril-logo-blue)">Comentario del gerente del área:</b>
+            {{ aprobacionAreaComentario }}
           </p>
         </div>
       }

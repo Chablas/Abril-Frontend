@@ -63,6 +63,24 @@ import { estadoColors } from '../shared/estado-colors';
        la última fila y el scroll lo hace .page-container, que ya es overflow-auto. */
     .abril-table-wrap { overflow: visible; flex: 0 0 auto; }
 
+    /* El encabezado de la tabla es sticky (<thead class="sticky top-0">) y, como el wrap
+       no recorta (ver arriba), su contenedor de scroll es .page-container. Chrome ancla
+       los sticky al *content box* del contenedor de scroll — o sea por debajo de su
+       padding-top — pero recorta en el borde exterior: esos 20px de padding quedaban
+       como una banda visible POR ENCIMA del encabezado y ahí se seguían pintando las
+       filas al scrollear (bug real: se veían registros arriba de la fila de encabezado).
+       Con padding-top:0 el tope donde se ancla el encabezado y el borde donde se recorta
+       coinciden, así que las filas desaparecen exactamente detrás de él. El aire de
+       arriba lo aporta ahora el margin-top del primer bloque (las tarjetas de resumen),
+       que scrollea con el contenido como cualquier otra cosa, en vez del padding del
+       contenedor; los valores replican el padding-top global de .page-container (16px en
+       teléfono, 20px desde 640px) para no cambiar nada visualmente. */
+    .page-container { padding-top: 0; }
+    .page-container > *:first-child { margin-top: 16px; }
+    @media (min-width: 640px) {
+      .page-container > *:first-child { margin-top: 20px; }
+    }
+
     /* ── Responsive ───────────────────────────────────────────────────────
        Las 9 columnas de la tabla no entran por debajo de ~1024px y, como acá
        .abril-table-wrap no recorta (overflow:visible, ver arriba), ese
@@ -156,6 +174,13 @@ export class GthReclutamiento implements OnInit {
   /** Requerimiento abierto en el modal de detalle (null = modal cerrado). */
   detalleId: number | null = null;
 
+  /**
+   * Candidato cuyo modal «Ver formulario» se abre encima del detalle al entrar. Solo lo llena el
+   * enlace del correo de formulario completado (`?formulario=<candidatoId>`); en la navegación
+   * normal queda en null y el detalle abre sin nada encima.
+   */
+  detalleFormularioCandidatoId: number | null = null;
+
   private readonly pager = new ClientPager<RequerimientoGthListItem>();
 
   constructor(
@@ -191,6 +216,13 @@ export class GthReclutamiento implements OnInit {
     // de long list: abre ese requerimiento directamente. Sin id, la pantalla es solo la bandeja.
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (Number.isInteger(id) && id > 0) this.detalleId = id;
+
+    // `?formulario=<candidatoId>` lo agrega el correo de «formulario completado»: además del
+    // requerimiento, abre el modal «Ver formulario» de ese postulante, que es donde GTH lo aprueba
+    // o lo rechaza. El detalle valida que el candidato sea realmente de ese requerimiento.
+    const candidatoId = Number(this.route.snapshot.queryParamMap.get('formulario'));
+    if (this.detalleId && Number.isInteger(candidatoId) && candidatoId > 0)
+      this.detalleFormularioCandidatoId = candidatoId;
 
     this.load();
   }
