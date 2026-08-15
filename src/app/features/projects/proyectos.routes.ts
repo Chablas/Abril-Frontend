@@ -15,6 +15,7 @@ import { ActasReunionConfiguracion } from './actas-reunion/configuracion/actas-r
 import { ConfiguracionInicial } from './planeamiento-bim/configuracion-inicial/configuracion-inicial';
 import { CargaDiaria } from './planeamiento-bim/carga-diaria/carga-diaria';
 import { Bloqueos } from './planeamiento-bim/bloqueos/bloqueos';
+import { PlaneamientoBimDashboard } from './planeamiento-bim/dashboard/dashboard';
 
 export const PROJECTS_ROUTES: Routes = [
   { path: '', redirectTo: 'projects-dashboard', pathMatch: 'full' },
@@ -35,6 +36,12 @@ export const PROJECTS_ROUTES: Routes = [
     component: Bloqueos,
     canActivate: [roleGuard],
     data: { titulo: 'GESTIÓN DE BLOQUEOS DE PLANEAMIENTO BIM', featureKey: 'planeamiento-bim.configuracion-inicial' },
+  },
+  {
+    path: 'planeamiento-bim/dashboard',
+    component: PlaneamientoBimDashboard,
+    canActivate: [roleGuard],
+    data: { titulo: 'DASHBOARD DE PLANEAMIENTO BIM', featureKey: 'planeamiento-bim.configuracion-inicial' },
   },
   {
     path: 'projects-dashboard',
