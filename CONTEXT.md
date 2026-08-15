@@ -5070,3 +5070,72 @@ Aranda) — ver detalle en `Abril_Backend/CONTEXT.md`.
 ### Pendiente
 Igual que el backend: subir documentos del EMO directo desde "Revisar convalidación" (hoy
 solo se visualizan, no se cargan ahí).
+
+## Sesión 2026-08-14 — Dashboard de Planeamiento BIM (Fase 2a)
+
+Vista de detalle por proyecto dentro de Planeamiento BIM. Backend ya implementado y
+confirmado (5 endpoints en `PlaneamientoBimDashboardController`: avance, ppc,
+metas-semanales GET/PUT, plan-maestro, causas-pareto), esta sesión solo consume.
+
+### Qué se hizo
+- **4ta pestaña "Dashboard"** en la subnav (`planeamiento-bim-subnav.ts`), ruta
+  `/projects/planeamiento-bim/dashboard`, mismo `featureKey` que las otras 3 pestañas.
+- **DTOs** nuevos en `dtos/planeamiento-bim-dashboard.dto.ts`, mapeados 1:1 con los DTOs
+  C# del backend (`AvanceProyectoDto`, `PpcHistoricoDto`, `MetaSemanalDto`/`UpdateDto`,
+  `PlanMaestroSemanaDto`, `CausasParetoDto`).
+- **`planeamiento-bim.service.ts`**: 6 métodos nuevos bajo `baseUrl + /dashboard/...`.
+- **`dashboard/dashboard.ts`/`.html`/`.css`** — componente único (sin subcomponentes,
+  mismo patrón que `projects-dashboard.ts`), con 6 secciones independientes, cada una con
+  su propio loading/error y llamada HTTP:
+  1. **Control de Avance**: grid zona×(nivel×sector), semáforo por **% de avance**
+     (verde ≥90%, amarillo 70-89%, rojo <70%, gris = sin registros) — decisión tomada con
+     el usuario porque el backend no expone fecha meta por celda (`BimRegistroDiario` solo
+     tiene `Fecha`/`Cumplida`, sin plan/target date), así que "días de atraso" tal como se
+     pidió originalmente no era calculable con los datos existentes.
+  2. **Plan Maestro**: tabla meta vs. real acumulado por semana/macro-actividad, con
+     edición inline de metas. La edición reutiliza los datos ya cargados por
+     `GET plan-maestro` (que ya trae `metaAvance`+`avanceReal`) en vez de pegarle también a
+     `GET metas-semanales` — evita una llamada redundante.
+  3. **PPC diario/histórico**: line chart Chart.js con línea de meta fija (`MetaPpc`).
+  4. **Pareto de causas**: combo bar+line Chart.js (barras + % acumulado + referencia 80%).
+  5. **Evidencia fotográfica del día**: selector de fecha propio, reutiliza
+     `getCargaDiaria(projectId, fecha)` ya existente y extrae solo `.evidencias`.
+  6. **Bloqueos abiertos**: reutiliza `getBloqueos(projectId, true)` ya existente.
+- Proyecto + rango de fechas (desde/hasta) dispara 3 llamadas independientes (avance/ppc/
+  pareto — cada endpoint las acepta por separado); Plan Maestro no lleva filtro de fecha.
+  Seleccionar proyecto dispara las 6 llamadas de las 6 secciones en paralelo.
+- Paleta UDP exacta (`#1E3A5F`/`#2E6DB4`/`#1B6B3A`/`#C0392B`/`#D97706`), cards con sombra
+  sutil + hover, radius 10px, badges ícono+texto, semáforo con `role="img"` +
+  `aria-label`/`title` (mismo criterio que el semáforo de `cronograma-dashboard`), foco
+  visible `outline: 2px solid #2E6DB4` en inputs/botones.
+
+### Decisiones de diseño explícitas
+- **Errores de las 6 secciones son inline** (banner + botón "Reintentar"), no
+  SweetAlert2 — para no apilar 6 modales si falla algo transversal (ej. sesión expirada).
+  Swal se reservó para la acción de escritura (guardar metas) y la carga de la lista de
+  proyectos, igual que `carga-diaria.ts`/`bloqueos.ts`.
+- Se rompe R1 ("1 acción = 1 HTTP") **a nivel de página completa** porque el backend
+  expone 5 endpoints separados por diseño para 6 widgets independientes — cada sección
+  individual sí cumple R1 a su propio nivel (1 fetch, sin llamadas anidadas).
+- **Permiso de escritura de metas-semanales**: verificado en backend que NO hay
+  restricción de rol distinta a la de lectura — mismos 3 roles
+  (`AdministradorSistema`/`AdministradorUdp`/`UsuarioUdp`) para GET y PUT, igual que los
+  otros 3 controllers del módulo BIM (`ConfiguracionInicial`, `CargaDiaria`, `Bloqueos`).
+  Se confirmó con el usuario que esto **no es el mismo gap** cerrado en
+  `ResidentReportIncidenceController` (commit backend `e2d59239`, donde el problema era
+  `[Authorize]` genérico sin rol específico) — acá sí hay rol específico gateado a nivel
+  de clase, consistente en todo el módulo. Se decidió explícitamente dejarlo igual, sin
+  tocar backend ni frontend.
+
+### Verificado
+`ng build --configuration production`: 0 errores, sin warnings nuevos (solo los
+preexistentes de terceros — `canvg`/`core-js`/`flatpickr`/`node-fetch` no-ESM). No se
+probó visualmente en navegador en esta sesión.
+
+### Pendiente
+- Verificación visual en navegador (Chrome) de la pestaña Dashboard en intranet.abril.pe,
+  no llegó a hacerse en esta sesión.
+- El trabajo se hizo por error directo sobre `master` local (arrastre de la sesión
+  anterior que había dejado el checkout ahí tras el merge) y se trasladó a `victor-frontend`
+  recién al cerrar sesión con "guardar rama" — para la próxima sesión, verificar rama antes
+  de empezar a codear.
