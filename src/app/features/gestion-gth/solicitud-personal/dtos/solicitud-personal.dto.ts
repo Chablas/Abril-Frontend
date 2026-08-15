@@ -1,3 +1,7 @@
+import { SolicitudDestinatarios } from '../../shared/dtos/destinatarios.dto';
+import { CandidatoRechazado } from '../../shared/dtos/candidato-rechazado.dto';
+import { Seleccionado } from '../../shared/dtos/seleccionado.dto';
+
 export interface OpcionDto {
   id: number;
   nombre: string;
@@ -15,24 +19,6 @@ export interface TipoRequerimientoOpcion extends OpcionDto {
 
 /** Código del tipo de requerimiento que obliga a decir a quién se reemplaza. */
 export const TIPO_REQUERIMIENTO_REEMPLAZO = 'REEMPLAZO';
-
-/** Un destinatario del correo de la solicitud, con la razón por la que lo recibe. */
-export interface DestinatarioSolicitud {
-  email: string;
-  /** Nombre de la persona cuando se conoce (los buzones configurados no lo tienen). */
-  nombre: string | null;
-  /** "Gerencia General" o "Gerente de {área}". Se muestra como tooltip del correo. */
-  origen: string;
-}
-
-/**
- * A quién le llegará la solicitud si se envía en este momento. Lo resuelve el backend con la
- * misma lógica del envío real, así que el aviso del modal no puede divergir del correo que sale.
- */
-export interface SolicitudDestinatarios {
-  para: DestinatarioSolicitud[];
-  copias: DestinatarioSolicitud[];
-}
 
 /** Datos del formulario "Nueva solicitud de personal" en una sola petición. */
 export interface ReclutamientoFormDataDto {
@@ -114,20 +100,32 @@ export interface FaseSeguimiento {
 }
 
 /**
- * Aprobación de Gerencia General de la solicitud (primer paso del flujo). Null en los
- * requerimientos anteriores a esa funcionalidad, que no pasaron por ese paso.
+ * Aprobación de la solicitud (primer paso del flujo), en sus dos niveles: el visto bueno del
+ * gerente del área y la aprobación de Gerencia General, que es la obligatoria y la que manda las
+ * vacantes a GTH. Null en los requerimientos anteriores a esa funcionalidad, que no pasaron por
+ * ese paso.
  */
 export interface AprobacionGgResumen {
-  /** PENDIENTE / APROBADA / APROBADA_PARCIAL / RECHAZADA (estado de la solicitud completa). */
+  /** PENDIENTE / APROBADA / APROBADA_PARCIAL / RECHAZADA (decisión del GG sobre la solicitud). */
   estadoCodigo: string;
   estadoNombre: string;
-  /** Decisión sobre ESTA vacante: true = aprobada, false = rechazada, null = sin decidir. */
+  /** Decisión del GG sobre ESTA vacante: true = aprobada, false = rechazada, null = sin decidir. */
   aprobado: boolean | null;
-  /** Envío del correo al GG (ISO, hora Perú). Null si nunca se pudo enviar. */
+  /** Estado del visto bueno del gerente del área sobre la solicitud completa. */
+  gerenteAreaEstadoCodigo: string;
+  gerenteAreaEstadoNombre: string;
+  /** Visto bueno del gerente del área sobre ESTA vacante: true / false / null = no opinó. */
+  aprobadoGerenteArea: boolean | null;
+  /** Envío del correo a los gerentes (ISO, hora Perú). Null si nunca se pudo enviar. */
   enviadoEn: string | null;
-  /** Momento de la decisión (ISO, hora Perú). Null si sigue pendiente. */
+  /** Momento de la decisión del GG (ISO, hora Perú). Null si sigue pendiente. */
   decididoEn: string | null;
+  /** Momento del visto bueno del gerente del área (ISO, hora Perú). */
+  gerenteAreaDecididoEn: string | null;
+  /** Comentario del Gerente General. */
   comentario: string | null;
+  /** Comentario del gerente del área. */
+  gerenteAreaComentario: string | null;
 }
 
 /** Detalle de seguimiento de un requerimiento (modal "Estado del reclutamiento"). */
@@ -151,6 +149,16 @@ export interface Seguimiento {
   sustentoNombre: string | null;
   sustentoUrl: string | null;
   fases: FaseSeguimiento[];
+  /**
+   * Candidatos rechazados a lo largo del proceso (los que rechazó el solicitante y los que
+   * descartó GTH), con la etapa del rechazo. Incluye las long lists anteriores.
+   */
+  candidatosRechazados: CandidatoRechazado[];
+  /**
+   * Quién obtuvo el puesto (la decisión final que tomó el propio solicitante). Null mientras el
+   * proceso no se haya cerrado con un seleccionado.
+   */
+  seleccionado: Seleccionado | null;
   /** Descripción de la fase actual (siguiente acción pendiente). */
   siguientePaso: string | null;
 }

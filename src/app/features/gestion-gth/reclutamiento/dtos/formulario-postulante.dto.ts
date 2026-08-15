@@ -75,3 +75,25 @@ export interface FormularioAccionResult {
   message: string;
   formulario: CandidatoFormularioResumen;
 }
+
+/** Resultado del envío del formulario de un candidato dentro de un envío masivo. */
+export interface FormularioEnvioMasivoResultado {
+  candidatoId: number;
+  /** false si el candidato no pasó las validaciones o si su correo no llegó a salir. */
+  enviado: boolean;
+  /** Motivo del fallo, para mostrarlo junto al candidato. null si se envió bien. */
+  error: string | null;
+  /**
+   * Estado del formulario tras el envío. Viene incluso cuando el correo falló —el formulario ya
+   * quedó registrado en ese punto— y solo es null cuando no se llegó a tocar la base de datos.
+   */
+  formulario: CandidatoFormularioResumen | null;
+}
+
+/** Resultado del envío masivo: resumen del lote + el detalle de cada candidato. */
+export interface FormularioEnvioMasivoResult {
+  message: string;
+  enviados: number;
+  fallidos: number;
+  resultados: FormularioEnvioMasivoResultado[];
+}

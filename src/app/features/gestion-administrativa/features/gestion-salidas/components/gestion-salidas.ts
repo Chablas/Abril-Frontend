@@ -82,8 +82,16 @@ export class GestionSalidas implements OnInit {
   totalRecords = 0;
 
   // ── Ordenamiento (server-side) ──────────────────────────────────────
-  sortBy: string | null = null;
-  sortDir: 'asc' | 'desc' | null = null;
+  /**
+   * Orden por defecto de la tabla: por fecha de salida, de la más futura a la más antigua.
+   * El backend ya devuelve ese mismo orden cuando no se le manda columna, así que el estado
+   * inicial de la cabecera refleja lo que realmente se está viendo.
+   */
+  private readonly defaultSortBy: string = 'fechaSalida';
+  private readonly defaultSortDir: 'asc' | 'desc' = 'desc';
+
+  sortBy: string | null = this.defaultSortBy;
+  sortDir: 'asc' | 'desc' | null = this.defaultSortDir;
 
   /** IDs seleccionados para acción bulk. */
   selectedIds = new Set<number>();
@@ -309,7 +317,9 @@ export class GestionSalidas implements OnInit {
 
   // ── Ordenamiento de columnas (server-side) ──────────────────────────
   /**
-   * Cicla el orden de una columna: sin orden → ascendente → descendente → orden original.
+   * Cicla el orden de una columna: ascendente → descendente → vuelve al orden por defecto
+   * (fecha de salida, de la más futura a la más antigua). La propia columna de fecha solo
+   * alterna desc ⇄ asc, porque "volver al defecto" ya es su estado descendente.
    * El orden se aplica en el servidor sobre todos los registros (no solo la página visible).
    */
   toggleSort(column: string): void {
@@ -318,9 +328,11 @@ export class GestionSalidas implements OnInit {
       this.sortDir = 'asc';
     } else if (this.sortDir === 'asc') {
       this.sortDir = 'desc';
+    } else if (column === this.defaultSortBy) {
+      this.sortDir = 'asc';
     } else {
-      this.sortBy = null;
-      this.sortDir = null;
+      this.sortBy = this.defaultSortBy;
+      this.sortDir = this.defaultSortDir;
     }
     this.load(1);
   }

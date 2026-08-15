@@ -10,8 +10,8 @@ import { FileSelector, SelectedFile } from '../../../../../shared/components/fil
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { SolicitudPersonalService } from '../../services/solicitud-personal.service';
+import { DestinatarioSolicitud } from '../../../shared/dtos/destinatarios.dto';
 import {
-  DestinatarioSolicitud,
   ReclutamientoFormDataDto,
   SolicitudPersonalCreateDto,
   TIPO_REQUERIMIENTO_REEMPLAZO,
@@ -253,6 +253,7 @@ export class GthNuevaSolicitud implements OnInit {
           title: res.correoGerenciaEnviado ? 'Solicitud registrada' : 'Solicitud registrada sin correo',
           text: res.message,
           icon: res.correoGerenciaEnviado ? 'success' : 'warning',
+          confirmButtonColor: 'var(--color-abril-standard)',
           draggable: true,
         });
         this.saved.emit();

@@ -148,9 +148,46 @@ export class SearchSelect {
     return this.value !== null && this.value !== undefined && this.value !== 0;
   }
 
-  toggle(event: MouseEvent) {
+  /**
+   * El desplegable abre/cierra en `pointerdown`, no en `click`.
+   *
+   * Con mouse la diferencia casi no se nota (la pulsación dura unas decenas de ms), pero
+   * en touch el navegador NO puede disparar `click` hasta el `touchend`: hasta que no se
+   * levanta el dedo, el gesto todavía podría convertirse en un scroll. Eso hacía que en
+   * móvil el desplegable pareciera tardar en abrirse — no era lentitud de render, era el
+   * navegador esperando a saber si el toque era un tap o un arrastre. Respondiendo al
+   * contacto en vez de a la soltada, se abre al instante en ambos.
+   *
+   * Contrapartida asumida: si alguien empieza un scroll con el dedo justo encima del
+   * combo, el desplegable se abre igual. Es un blanco chico y el desplegable sale por
+   * debajo del trigger (no bajo el dedo), así que no se selecciona nada por accidente.
+   *
+   * OJO: acá no se corta la propagación a propósito — el `document:pointerdown` de los
+   * demás desplegables abiertos necesita ver este evento para poder cerrarse.
+   */
+  onTriggerPointerDown(event: PointerEvent) {
+    if (this.disabled) return;
+    // Solo el contacto/botón primario: con el secundario se abre el menú del navegador.
+    if (event.button !== 0) return;
+    this.togglePanel();
+  }
+
+  /**
+   * El click ya no abre nada (lo hizo `pointerdown`), pero se sigue frenando para que un
+   * contenedor con su propio `(click)` — una fila de tabla, por ejemplo — no se dispare
+   * al usar el combo.
+   *
+   * `detail === 0` identifica el click que sintetiza el teclado con Enter/Espacio, que no
+   * emite `pointerdown`: ese caso sí tiene que abrir acá, si no el combobox dejaría de
+   * poder operarse sin mouse.
+   */
+  onTriggerClick(event: MouseEvent) {
     event.stopPropagation();
     if (this.disabled) return;
+    if (event.detail === 0) this.togglePanel();
+  }
+
+  private togglePanel() {
     this.isOpen = !this.isOpen;
     if (this.isOpen) {
       this.searchText = '';

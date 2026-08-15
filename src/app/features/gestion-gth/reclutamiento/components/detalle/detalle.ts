@@ -6,12 +6,19 @@ import Swal from 'sweetalert2';
 import { AbrilModalPanel } from '../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { SearchInput } from '../../../../../shared/components/search-input/search-input';
+import { Paginator } from '../../../../../shared/components/paginator/paginator';
 import { DatePicker } from '../../../../../shared/components/date-picker/date-picker';
 import { TimePicker } from '../../../../../shared/components/time-picker/time-picker';
 import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
+import { ClientPager } from '../../../../../shared/utils/client-pager';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
-import { LongListCandidatoEnvio, ReclutamientoService } from '../../services/reclutamiento.service';
+import {
+  FormularioEnvioMasivoItem,
+  LongListCandidatoEnvio,
+  ReclutamientoService,
+} from '../../services/reclutamiento.service';
 import {
   DecisionFormularioAplicada,
   FormularioDecisionService,
@@ -20,6 +27,7 @@ import { AsignacionGth, CandidatoAprobado, DetalleRequerimientoGth, Opcion } fro
 import { CandidatoFormularioResumen } from '../../dtos/formulario-postulante.dto';
 import { GthFormularioPostulanteModal } from '../formulario-postulante/formulario-postulante-modal';
 import { estadoColors, faseAlcanzada } from '../../../shared/estado-colors';
+import { CandidatoRechazado, etapaRechazoColors } from '../../../shared/dtos/candidato-rechazado.dto';
 
 /**
  * Candidato cargado para la long list (estado local del modal). El guardado (SharePoint +
@@ -35,6 +43,12 @@ interface CandidatoLongList {
   /** Informe del candidato adjunto (opcional). */
   informe: File | null;
 }
+
+/**
+ * Correo válido para enviarle el formulario al postulante. Misma expresión que valida el backend
+ * (`PostulanteFormularioService.EmailRegex`): la usan tanto el envío individual como el masivo.
+ */
+const CORREO_VALIDO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 /** Datos editables de la cita de un candidato en la sección de programación de entrevistas. */
 interface EntrevistaFormState {
@@ -73,6 +87,8 @@ interface EvaluacionFormState {
     AbrilModalPanel,
     StatusBadge,
     SearchSelect,
+    SearchInput,
+    Paginator,
     DatePicker,
     TimePicker,
     TitleCasePipe,
@@ -83,6 +99,12 @@ interface EvaluacionFormState {
 export class GthDetalleRequerimiento implements OnInit {
   /** Id del requerimiento a mostrar. */
   @Input({ required: true }) requerimientoId!: number;
+  /**
+   * Candidato cuyo modal «Ver formulario» se abre solo al terminar de cargar el detalle. Lo usa el
+   * enlace del correo de «formulario completado» para dejar a GTH directamente en la pantalla donde
+   * aprueba o rechaza. null (lo normal) = el detalle abre sin nada encima.
+   */
+  @Input() abrirFormularioCandidatoId: number | null = null;
   /** Emite al cerrar; true si hubo cambios guardados (para refrescar la bandeja). */
   @Output() closeModal = new EventEmitter<boolean>();
 
@@ -105,6 +127,12 @@ export class GthDetalleRequerimiento implements OnInit {
   seccionPublicacion = true;
   seccionRevisionCv = true;
   seccionLongList = true;
+  /**
+   * "Historial de candidatos rechazados": arranca colapsada, al revés que el resto. Es una
+   * consulta de respaldo (a quién ya se descartó), no un paso del proceso: abierta empujaría
+   * hacia abajo la sección de la fase actual, que es lo que GTH viene a hacer.
+   */
+  seccionRechazados = false;
 
   // La sección "Plantilla de comunicación" está comentada en el HTML: era una maqueta y su
   // envío es el mismo correo que ya manda "Enviar formulario". Su estado local
@@ -120,6 +148,10 @@ export class GthDetalleRequerimiento implements OnInit {
   enviandoFormulario: Record<number, boolean> = {};
   /** true mientras se aprueba/rechaza el formulario de un candidato (key = candidatoId). */
   decidiendoFormulario: Record<number, boolean> = {};
+  /** Candidatos marcados para el envío masivo del formulario (ids). */
+  seleccionFormulario = new Set<number>();
+  /** true mientras corre el envío masivo (deshabilita el botón para evitar doble envío). */
+  enviandoMasivo = false;
   /** Candidato cuyo modal "Ver formulario" está abierto (null = cerrado). */
   formularioCandidatoId: number | null = null;
 
@@ -170,6 +202,7 @@ export class GthDetalleRequerimiento implements OnInit {
           }
         }
         this.prepararFormulariosEntrevista();
+        this.abrirFormularioSolicitado();
         this.loaderService.hide();
         this.cdr.detectChanges();
       },
@@ -181,11 +214,67 @@ export class GthDetalleRequerimiento implements OnInit {
     });
   }
 
+  /**
+   * Abre el modal «Ver formulario» del candidato que pidió el enlace del correo. Se hace recién con
+   * el detalle cargado y solo si ese candidato es de este requerimiento: un id de otro proceso (o
+   * de un candidato que ya no está) deja el detalle abierto sin nada encima, en vez de un modal que
+   * cargaría el formulario de alguien que no corresponde.
+   */
+  private abrirFormularioSolicitado(): void {
+    const candidatoId = this.abrirFormularioCandidatoId;
+    if (!candidatoId) return;
+
+    const esDelRequerimiento = (this.detalle?.candidatosAprobados ?? []).some(
+      (c) => c.candidatoId === candidatoId,
+    );
+    if (esDelRequerimiento) this.formularioCandidatoId = candidatoId;
+  }
+
   cerrar(): void {
     this.closeModal.emit(this.huboCambios);
   }
 
   estadoColors = estadoColors;
+
+  // ── Historial de candidatos rechazados ──────────────────────────────────
+  /** Colores del badge de la etapa en la que se rechazó a un candidato del historial. */
+  etapaColors = etapaRechazoColors;
+
+  /** Búsqueda del historial de rechazados (nombre del candidato o etapa del rechazo). */
+  busquedaRechazados = '';
+
+  private readonly pagerRechazados = new ClientPager<CandidatoRechazado>();
+
+  /** Volver a la primera página al cambiar la búsqueda (si no, se quedaría en una vacía). */
+  onBuscarRechazados(): void {
+    this.pagerRechazados.reset();
+  }
+
+  get rechazadosFiltrados(): CandidatoRechazado[] {
+    const rechazados = this.detalle?.candidatosRechazados ?? [];
+    if (!this.busquedaRechazados.trim()) return rechazados;
+    return rechazados.filter(
+      (c) =>
+        SearchInput.matches(c.nombre, this.busquedaRechazados) ||
+        SearchInput.matches(c.etapaNombre, this.busquedaRechazados),
+    );
+  }
+
+  get rechazadosPagina(): CandidatoRechazado[] {
+    return this.pagerRechazados.page(this.rechazadosFiltrados);
+  }
+
+  get rechazadosPaginaActual(): number {
+    return this.pagerRechazados.currentPage;
+  }
+
+  get rechazadosTotalPaginas(): number {
+    return this.pagerRechazados.totalPages(this.rechazadosFiltrados);
+  }
+
+  cambiarPaginaRechazados(page: number): void {
+    this.pagerRechazados.goTo(page);
+  }
 
   // ── Fases del pipeline (controlan qué secciones se muestran) ────────────
   /** true si la vacante ya fue publicada (fase PUBLICACION o posterior). */
@@ -213,8 +302,37 @@ export class GthDetalleRequerimiento implements OnInit {
     return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'ENTREVISTAS');
   }
 
+  /** true si el proceso ya cerró (el solicitante aprobó a un finalista). */
+  get procesoCerrado(): boolean {
+    return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'CERRADO');
+  }
+
+  /**
+   * true si GTH ya envió a algún finalista y el área solicitante todavía no decide. Compara el
+   * código exacto (no `faseAlcanzada`) porque es una espera puntual: en cuanto el solicitante
+   * decide, el requerimiento sale de esta fase (a Cerrado o de vuelta a Long list).
+   */
+  get esperandoDecisionSolicitante(): boolean {
+    return this.detalle?.estadoCodigo === 'SELECCION_JEFATURA';
+  }
+
   /** Texto del recuadro "Siguiente paso" según la fase actual. */
   get siguientePasoTexto(): string {
+    // Va antes que `enEntrevistas`: un requerimiento cerrado también la tiene alcanzada, y decir
+    // "programar la entrevista" contradiría el bloque "Puesto cubierto" de arriba.
+    if (this.procesoCerrado) {
+      const nombre = this.detalle?.seleccionado?.nombre;
+      return nombre
+        ? `Proceso cerrado: ${new TitleCasePipe().transform(nombre)} obtuvo el puesto. Continúa con su onboarding.`
+        : 'Proceso cerrado. No quedan acciones de reclutamiento pendientes.';
+    }
+    // Va antes que `enEntrevistas` por lo mismo: la fase de selección de jefatura también la tiene
+    // alcanzada, y el siguiente paso ya no es de GTH sino del área solicitante.
+    if (this.esperandoDecisionSolicitante)
+      return (
+        `Finalistas enviados: esperar la decisión de ${this.detalle?.area ? new TitleCasePipe().transform(this.detalle.area) : 'el área solicitante'}. ` +
+        'Mientras tanto se puede seguir entrevistando a los demás candidatos y enviar más finalistas.'
+      );
     if (this.enEntrevistas)
       return (
         'Programar la entrevista de cada candidato con formulario aprobado y enviarle la ' +
@@ -437,7 +555,7 @@ export class GthDetalleRequerimiento implements OnInit {
   /** Envía (o reenvía) el formulario al correo escrito para el candidato. */
   async enviarFormulario(c: CandidatoAprobado): Promise<void> {
     const correo = (this.correoFormulario[c.candidatoId] ?? '').trim();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)) {
+    if (!CORREO_VALIDO.test(correo)) {
       Swal.fire({
         icon: 'warning',
         title: 'Correo no válido',
@@ -483,6 +601,151 @@ export class GthDetalleRequerimiento implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.enviandoFormulario[c.candidatoId] = false;
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  // ── Envío masivo del formulario (selección de candidatos) ────────────────
+  /** Marca/desmarca un candidato para el envío masivo. */
+  toggleSeleccionFormulario(candidatoId: number): void {
+    if (this.seleccionFormulario.has(candidatoId)) this.seleccionFormulario.delete(candidatoId);
+    else this.seleccionFormulario.add(candidatoId);
+  }
+
+  /** Candidatos marcados, en el mismo orden en que se listan en la pantalla. */
+  get candidatosSeleccionados(): CandidatoAprobado[] {
+    return (this.detalle?.candidatosAprobados ?? []).filter((c) =>
+      this.seleccionFormulario.has(c.candidatoId),
+    );
+  }
+
+  get seleccionadosCount(): number {
+    return this.candidatosSeleccionados.length;
+  }
+
+  /** true si están marcados todos los candidatos (estado del check maestro). */
+  get todosSeleccionados(): boolean {
+    const candidatos = this.detalle?.candidatosAprobados ?? [];
+    return candidatos.length > 0 && this.seleccionadosCount === candidatos.length;
+  }
+
+  /** true si hay algunos marcados pero no todos (estado indeterminado del check maestro). */
+  get seleccionParcial(): boolean {
+    const marcados = this.seleccionadosCount;
+    return marcados > 0 && marcados < (this.detalle?.candidatosAprobados ?? []).length;
+  }
+
+  /** Marca o desmarca a todos los candidatos de una vez. */
+  toggleSeleccionTodos(marcar: boolean): void {
+    if (!marcar) {
+      this.seleccionFormulario.clear();
+      return;
+    }
+    this.seleccionFormulario = new Set(
+      (this.detalle?.candidatosAprobados ?? []).map((c) => c.candidatoId),
+    );
+  }
+
+  get puedeEnviarSeleccionados(): boolean {
+    return this.seleccionadosCount > 0 && !this.enviandoMasivo;
+  }
+
+  /**
+   * Envía el formulario a todos los candidatos marcados en una sola petición, con las mismas reglas
+   * del envío individual (correo válido y confirmación si alguno ya estaba aprobado). El backend
+   * responde el detalle por candidato: los que salieron se desmarcan y los que fallaron quedan
+   * marcados para reintentarlos sin volver a seleccionarlos.
+   */
+  async enviarFormulariosSeleccionados(): Promise<void> {
+    const seleccionados = this.candidatosSeleccionados;
+    if (seleccionados.length === 0 || this.enviandoMasivo) return;
+
+    const nombre = (c: CandidatoAprobado) => new TitleCasePipe().transform(c.nombre);
+
+    // Se exige el correo de todos antes de mandar el lote: es preferible que GTH corrija en la misma
+    // pantalla a que el envío salga a medias y haya que rastrear a quién le llegó.
+    const sinCorreo = seleccionados.filter(
+      (c) => !CORREO_VALIDO.test((this.correoFormulario[c.candidatoId] ?? '').trim()),
+    );
+    if (sinCorreo.length > 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Faltan correos válidos',
+        html:
+          'Registra un correo electrónico válido para continuar:<br><b>' +
+          sinCorreo.map(nombre).join('</b><br><b>') +
+          '</b>',
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    // Reenviar un formulario ya aprobado lo reabre y deshace su aprobación: misma advertencia que en
+    // el envío individual, acá con la lista de a quiénes les pasaría.
+    const yaAprobados = seleccionados.filter((c) => c.formulario?.estadoCodigo === 'APROBADO');
+    const confirm = await Swal.fire({
+      icon: yaAprobados.length > 0 ? 'warning' : 'question',
+      title: `¿Enviar el formulario a ${seleccionados.length} postulante(s)?`,
+      html:
+        `Se le enviará el enlace del formulario a los ${seleccionados.length} candidato(s) ` +
+        'seleccionado(s), cada uno al correo registrado en su ficha.' +
+        (yaAprobados.length > 0
+          ? '<br><br>Ojo: <b>' +
+            yaAprobados.map(nombre).join('</b>, <b>') +
+            '</b> ya tenía(n) el formulario <b>aprobado</b>. Se le(s) reabre con la información que ' +
+            'ya declaró y vuelve a quedar <b>Enviado</b> —deja de contar como aprobado— hasta que lo ' +
+            'complete y lo apruebes de nuevo.'
+          : ''),
+      showCancelButton: true,
+      confirmButtonText: 'Enviar a todos',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: yaAprobados.length > 0 ? '#B91C1C' : '#005D9D',
+    });
+    if (!confirm.isConfirmed) return;
+
+    const candidatos: FormularioEnvioMasivoItem[] = seleccionados.map((c) => ({
+      candidatoId: c.candidatoId,
+      correo: (this.correoFormulario[c.candidatoId] ?? '').trim(),
+    }));
+
+    this.enviandoMasivo = true;
+    this.loaderService.show();
+    this.service.enviarFormularioMasivo(candidatos).subscribe({
+      next: (res) => {
+        const porCandidato = new Map(seleccionados.map((c) => [c.candidatoId, c]));
+        const fallidos: string[] = [];
+
+        for (const r of res.resultados) {
+          const c = porCandidato.get(r.candidatoId);
+          // El resumen llega incluso cuando el correo falló (el formulario ya quedó registrado):
+          // la ficha tiene que reflejar el estado real de la base de datos.
+          if (c && r.formulario) c.formulario = r.formulario;
+          if (r.enviado) this.seleccionFormulario.delete(r.candidatoId);
+          else if (c) fallidos.push(`${nombre(c)}: ${r.error ?? 'No se pudo enviar.'}`);
+        }
+
+        this.huboCambios = true;
+        this.enviandoMasivo = false;
+        this.loaderService.hide();
+        // App zoneless: sin esto los badges de los candidatos se quedan con el estado anterior.
+        this.cdr.detectChanges();
+
+        Swal.fire({
+          icon: res.fallidos === 0 ? 'success' : res.enviados === 0 ? 'error' : 'warning',
+          title: res.fallidos === 0 ? 'Formularios enviados' : 'Envío incompleto',
+          html:
+            res.message +
+            (fallidos.length > 0
+              ? '<br><br>No se pudo enviar a:<br>' + fallidos.join('<br>')
+              : ''),
+          confirmButtonColor: '#005D9D',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.enviandoMasivo = false;
+        this.loaderService.hide();
         this.cdr.detectChanges();
         this.errorService.handleError(err);
       },
@@ -731,6 +994,32 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
+   * true si los tres comentarios del informe están registrados: los tres son obligatorios
+   * porque el informe completo es lo que el área solicitante usa para decidir al finalista.
+   */
+  evaluacionCompleta(c: CandidatoAprobado): boolean {
+    const form = this.evaluacionForm[c.candidatoId];
+    return (
+      !!form?.comentarioEntrevista.trim() &&
+      !!form?.comentarioPsicotecnico.trim() &&
+      !!form?.comentarioRecomendacion.trim()
+    );
+  }
+
+  /** true si se puede enviar al candidato como finalista y no se está enviando ya. */
+  puedeGuardarEvaluacion(c: CandidatoAprobado): boolean {
+    return (
+      this.puedeEvaluar(c) && this.evaluacionCompleta(c) && !this.guardandoEvaluacion[c.candidatoId]
+    );
+  }
+
+  /** Aviso bajo el botón cuando aún faltan comentarios por registrar. Vacío si ya está completo. */
+  requisitosEvaluacionTexto(c: CandidatoAprobado): string {
+    if (!this.puedeEvaluar(c) || this.evaluacionCompleta(c)) return '';
+    return 'Registra el resultado de entrevista, el informe psicotécnico y la recomendación GTH para enviarlo como finalista.';
+  }
+
+  /**
    * Guarda los tres comentarios del candidato y, con eso, lo envía como finalista: el informe
    * queda disponible en la vista del área solicitante.
    */
@@ -738,16 +1027,32 @@ export class GthDetalleRequerimiento implements OnInit {
     const form = this.evaluacionForm[c.candidatoId];
     if (!form || this.guardandoEvaluacion[c.candidatoId]) return;
 
+    if (!this.evaluacionCompleta(c)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Faltan datos del informe',
+        text: 'Registra el resultado de entrevista, el informe psicotécnico y la recomendación GTH antes de enviarlo como finalista.',
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
     this.guardandoEvaluacion[c.candidatoId] = true;
     this.service
       .guardarEvaluacion(c.candidatoId, {
-        comentarioEntrevista: form.comentarioEntrevista.trim() || null,
-        comentarioPsicotecnico: form.comentarioPsicotecnico.trim() || null,
-        comentarioRecomendacion: form.comentarioRecomendacion.trim() || null,
+        comentarioEntrevista: form.comentarioEntrevista.trim(),
+        comentarioPsicotecnico: form.comentarioPsicotecnico.trim(),
+        comentarioRecomendacion: form.comentarioRecomendacion.trim(),
       })
       .subscribe({
         next: (res) => {
           c.evaluacion = res.evaluacion;
+          // Enviar al primer finalista mueve el requerimiento a "Selección jefatura": el badge de
+          // la cabecera se refresca con la fase que devuelve el backend (viene solo si cambió).
+          if (res.estadoCodigo && this.detalle) {
+            this.detalle.estadoCodigo = res.estadoCodigo;
+            this.detalle.estadoNombre = res.estadoNombre ?? this.detalle.estadoNombre;
+          }
           this.guardandoEvaluacion[c.candidatoId] = false;
           this.huboCambios = true;
           this.cdr.detectChanges();

@@ -1,227 +1,268 @@
 <app-abril-page-header
   [badge]="'GESTIÓN DE TALENTO · ' + anioActual"
   titulo="Aprobaciones"
-  subtitulo="Aprueba o rechaza las solicitudes de personal y consulta el historial de decisiones."
+  [subtitulo]="subtitulo"
+  [botonSecundario]="botonConfiguracion"
+  (secondaryClick)="abrirConfiguracion()"
   [hasExtra]="true">
 
-  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
-  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas.
+       Sin alcance no hay nada que filtrar, así que ni se muestra. -->
+  <app-filter-trigger *ngIf="!sinAlcance" tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
 <div class="page-container flex flex-col gap-[16px] bg-white flex-1 min-h-0 overflow-auto pb-[64px]">
 
-  <!-- ── Tarjetas resumen ───────────────────────────────────────────────── -->
-  <!-- Lo que le toca decidir a Gerencia y en qué terminó lo ya decidido. Los
-       contadores los calcula el backend junto con la lista. -->
-  <div class="ap-kpis grid grid-cols-2 xl:grid-cols-4 gap-[16px]">
-
-    <!-- Pendientes de decisión -->
-    <div class="ap-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
-         style="border-color:var(--color-abril-border)">
-      <div class="ap-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#FEF3C7">
-        <svg class="ap-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.8">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </div>
-      <div class="flex flex-col min-w-0">
-        <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.pendientes }}</span>
-        <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Por aprobar</span>
-        <span class="ap-kpi-sub text-[11px] text-gray-400">Esperan tu decisión</span>
-      </div>
-    </div>
-
-    <!-- Vacantes que suman esas solicitudes -->
-    <div class="ap-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
-         style="border-color:var(--color-abril-border)">
-      <div class="ap-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DBEAFE">
-        <svg class="ap-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.8">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-      </div>
-      <div class="flex flex-col min-w-0">
-        <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.vacantesPendientes }}</span>
-        <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Vacantes en cola</span>
-        <span class="ap-kpi-sub text-[11px] text-gray-400">Dentro de lo pendiente</span>
-      </div>
-    </div>
-
-    <!-- Aprobadas (incluye las parciales) -->
-    <div class="ap-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
-         style="border-color:var(--color-abril-border)">
-      <div class="ap-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DCFCE7">
-        <svg class="ap-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="1.8">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </div>
-      <div class="flex flex-col min-w-0">
-        <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.aprobadas }}</span>
-        <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Aprobadas</span>
-        <span class="ap-kpi-sub text-[11px] text-gray-400">Total o parcialmente</span>
-      </div>
-    </div>
-
-    <!-- Rechazadas por completo -->
-    <div class="ap-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
-         style="border-color:var(--color-abril-border)">
-      <div class="ap-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#FEE2E2">
-        <svg class="ap-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="1.8">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10 14l4-4m0 4l-4-4m11 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </div>
-      <div class="flex flex-col min-w-0">
-        <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.rechazadas }}</span>
-        <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Rechazadas</span>
-        <span class="ap-kpi-sub text-[11px] text-gray-400">Ninguna vacante continuó</span>
-      </div>
-    </div>
-
+  <!-- ── Aviso de alcance ───────────────────────────────────────────────── -->
+  <!-- De dónde sale lo que se ve. Sin esto, un gerente que ve 2 de 20 solicitudes
+       no puede distinguir un filtro de alcance de un error de la pantalla. -->
+  <div class="ap-scope" [class.ap-scope--empty]="sinAlcance">
+    <i class="ti" [ngClass]="sinAlcance ? 'ti-alert-triangle' : 'ti-eye-check'"></i>
+    <span>{{ textoAlcance }}</span>
   </div>
 
-  <!-- ── Tabla ──────────────────────────────────────────────────────────── -->
-  <div class="flex items-center justify-between gap-[10px]">
-    <h2 class="text-[15px] font-semibold text-gray-700">Solicitudes de personal</h2>
-    <span class="text-[12px] text-gray-400 shrink-0">
-      {{ filteredAprobaciones.length }} registro{{ filteredAprobaciones.length === 1 ? '' : 's' }}
-    </span>
-  </div>
+  <ng-container *ngIf="!sinAlcance">
 
-  <div class="abril-table-wrap">
-    <table class="abril-table abril-table--th-center">
-      <thead class="sticky top-0 z-10">
-        <tr>
-          <th>Solicitud</th>
-          <th>Área</th>
-          <th>Solicitante</th>
-          <th>Enviado</th>
-          <th>Vacantes</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
+    <!-- ── Tarjetas resumen ───────────────────────────────────────────────── -->
+    <!-- Siempre contra la casilla del usuario: "por aprobar" es lo que espera SU
+         firma, no la del otro nivel. Los contadores los calcula el backend. -->
+    <div class="ap-kpis grid grid-cols-2 xl:grid-cols-4 gap-[16px]">
 
-        <tr *ngIf="filteredAprobaciones.length === 0">
-          <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
-        </tr>
+      <!-- Pendientes de mi decisión -->
+      <div class="ap-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+           style="border-color:var(--color-abril-border)">
+        <div class="ap-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#FEF3C7">
+          <svg class="ap-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.pendientes }}</span>
+          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiPendientes.label }}</span>
+          <span class="ap-kpi-sub text-[11px] text-gray-400">{{ kpiPendientes.sub }}</span>
+        </div>
+      </div>
 
-        <tr *ngFor="let a of pagedAprobaciones"
-            class="border-b hover:bg-gray-50"
-            style="border-color:var(--color-abril-border)">
+      <!-- Vacantes que suman esas solicitudes -->
+      <div class="ap-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+           style="border-color:var(--color-abril-border)">
+        <div class="ap-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DBEAFE">
+          <svg class="ap-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.vacantesPendientes }}</span>
+          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Vacantes en cola</span>
+          <span class="ap-kpi-sub text-[11px] text-gray-400">Dentro de lo pendiente</span>
+        </div>
+      </div>
 
-          <td class="text-gray-700">
-            <div class="font-medium">{{ a.codigos || '—' }}</div>
-            <div *ngIf="a.justificacion" class="text-[11px] text-gray-400 max-w-[280px] truncate" [title]="a.justificacion">
-              {{ a.justificacion }}
-            </div>
-          </td>
+      <!-- Aprobadas por mí (incluye las parciales) -->
+      <div class="ap-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+           style="border-color:var(--color-abril-border)">
+        <div class="ap-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#DCFCE7">
+          <svg class="ap-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.aprobadas }}</span>
+          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiAprobadas.label }}</span>
+          <span class="ap-kpi-sub text-[11px] text-gray-400">{{ kpiAprobadas.sub }}</span>
+        </div>
+      </div>
 
-          <td class="text-gray-500">{{ (a.area | titleCase) || '—' }}</td>
+      <!-- Rechazadas por mí por completo -->
+      <div class="ap-kpi flex items-center gap-4 rounded-[10px] border bg-white px-5 py-4"
+           style="border-color:var(--color-abril-border)">
+        <div class="ap-kpi-icon flex items-center justify-center w-12 h-12 rounded-[10px] shrink-0" style="background:#FEE2E2">
+          <svg class="ap-kpi-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B91C1C" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 14l4-4m0 4l-4-4m11 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.rechazadas }}</span>
+          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiRechazadas.label }}</span>
+          <span class="ap-kpi-sub text-[11px] text-gray-400">{{ kpiRechazadas.sub }}</span>
+        </div>
+      </div>
 
-          <td class="text-gray-500">{{ (a.solicitanteNombre | titleCase) || '—' }}</td>
+    </div>
 
-          <td class="text-gray-500 whitespace-nowrap">{{ a.enviado | date:'dd/MM/yyyy' }}</td>
+    <!-- ── Tabla ──────────────────────────────────────────────────────────── -->
+    <div class="flex items-center justify-between gap-[10px]">
+      <h2 class="text-[15px] font-semibold text-gray-700">Solicitudes de personal</h2>
+      <span class="text-[12px] text-gray-400 shrink-0">
+        {{ filteredAprobaciones.length }} registro{{ filteredAprobaciones.length === 1 ? '' : 's' }}
+      </span>
+    </div>
 
-          <td class="text-center text-gray-500 whitespace-nowrap">
-            <div class="font-medium text-gray-700">{{ a.totalVacantes }}</div>
-            <div class="text-[11px] text-gray-400">{{ detalleVacantes(a) }}</div>
-          </td>
+    <div class="abril-table-wrap">
+      <table class="abril-table abril-table--th-center">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Solicitud</th>
+            <th>Área</th>
+            <th>Solicitante</th>
+            <th>Enviado</th>
+            <th>Vacantes</th>
+            <!-- Las dos casillas, siempre visibles: cada gerente necesita ver también
+                 la postura del otro nivel para entender en qué quedó la solicitud. -->
+            <th>Gerente del área</th>
+            <th>Gerencia General</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
 
-          <td class="text-center">
+          <tr *ngIf="filteredAprobaciones.length === 0">
+            <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
+          </tr>
+
+          <tr *ngFor="let a of pagedAprobaciones"
+              class="border-b hover:bg-gray-50"
+              style="border-color:var(--color-abril-border)">
+
+            <td class="text-gray-700">
+              <div class="font-medium">{{ a.codigos || '—' }}</div>
+              <div *ngIf="a.justificacion" class="text-[11px] text-gray-400 max-w-[240px] truncate" [title]="a.justificacion">
+                {{ a.justificacion }}
+              </div>
+            </td>
+
+            <td class="text-gray-500">{{ (a.area | titleCase) || '—' }}</td>
+
+            <td class="text-gray-500">{{ (a.solicitanteNombre | titleCase) || '—' }}</td>
+
+            <td class="text-gray-500 whitespace-nowrap">{{ a.enviado | date:'dd/MM/yyyy' }}</td>
+
+            <td class="text-center text-gray-500 whitespace-nowrap">
+              <div class="font-medium text-gray-700">{{ a.totalVacantes }}</div>
+              <div class="text-[11px] text-gray-400">{{ detalleVacantes(a) }}</div>
+            </td>
+
+            <td class="text-center">
+              <app-status-badge
+                [text]="a.gerenteArea.estadoNombre"
+                [bgColor]="estadoColors(a.gerenteArea.estadoCodigo).bg"
+                [textColor]="estadoColors(a.gerenteArea.estadoCodigo).text" />
+              <div *ngIf="a.gerenteArea.decididoPor" class="text-[10.5px] text-gray-400 mt-[3px]">
+                {{ a.gerenteArea.decididoPor | titleCase }}
+              </div>
+            </td>
+
+            <td class="text-center">
+              <app-status-badge
+                [text]="a.gerenteGeneral.estadoNombre"
+                [bgColor]="estadoColors(a.gerenteGeneral.estadoCodigo).bg"
+                [textColor]="estadoColors(a.gerenteGeneral.estadoCodigo).text" />
+              <div *ngIf="a.gerenteGeneral.decididoPor" class="text-[10.5px] text-gray-400 mt-[3px]">
+                {{ a.gerenteGeneral.decididoPor | titleCase }}
+              </div>
+            </td>
+
+            <td class="text-center whitespace-nowrap">
+              <button type="button" (click)="abrir(a)"
+                class="inline-flex items-center gap-[6px] h-[30px] px-[12px] rounded-[7px] text-[12px] font-medium cursor-pointer transition-colors"
+                [style.background]="a.esperaMiDecision ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-logo-blue-light)'"
+                [style.color]="a.esperaMiDecision ? '#fff' : 'var(--color-abril-logo-blue)'"
+                [style.border]="a.esperaMiDecision ? '0.5px solid var(--color-abril-logo-blue)' : '0.5px solid #a9c9e6'"
+                [title]="a.esperaMiDecision ? 'Revisar las vacantes y decidir' : 'Ver lo que quedó registrado'">
+                <i class="ti text-[15px]" [ngClass]="a.esperaMiDecision ? 'ti-gavel' : 'ti-eye'"></i>
+                {{ textoAccion(a) }}
+              </button>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Las mismas solicitudes, en tarjetas (móvil y tablet) ───────────── -->
+    <div class="ap-cards">
+
+      <div *ngIf="filteredAprobaciones.length === 0" class="text-center py-[32px] text-gray-400 text-sm">
+        {{ mensajeVacio }}
+      </div>
+
+      <div *ngFor="let a of pagedAprobaciones"
+           class="rounded-[10px] border bg-white px-[12px] py-[11px]"
+           style="border-color:var(--color-abril-border)">
+
+        <div class="flex items-start justify-between gap-[8px]">
+          <span class="text-[12px] font-bold text-gray-700">{{ a.codigos || '—' }}</span>
+          <span class="text-[11px] text-gray-400 shrink-0">{{ a.enviado | date:'dd/MM/yyyy' }}</span>
+        </div>
+
+        <p class="text-[13.5px] font-semibold text-gray-800 mt-[5px] leading-snug">
+          {{ a.totalVacantes }} vacante{{ a.totalVacantes === 1 ? '' : 's' }} · {{ detalleVacantes(a) }}
+        </p>
+        <p *ngIf="a.justificacion" class="text-[11.5px] text-gray-400 mt-[1px] truncate" [title]="a.justificacion">
+          {{ a.justificacion }}
+        </p>
+
+        <div class="grid grid-cols-2 gap-x-[10px] gap-y-[7px] mt-[9px]">
+          <div class="min-w-0">
+            <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Área</div>
+            <div class="text-[12px] text-gray-600 truncate">{{ (a.area | titleCase) || '—' }}</div>
+          </div>
+          <div class="min-w-0">
+            <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Solicitante</div>
+            <div class="text-[12px] text-gray-600 truncate">{{ (a.solicitanteNombre | titleCase) || '—' }}</div>
+          </div>
+        </div>
+
+        <!-- Las dos casillas, igual que las dos columnas de la tabla. -->
+        <div class="ap-card-niveles">
+          <div class="ap-card-nivel">
+            <div class="ap-nivel-label">Gerente del área</div>
             <app-status-badge
-              [text]="a.estadoNombre"
-              [bgColor]="estadoColors(a.estadoCodigo).bg"
-              [textColor]="estadoColors(a.estadoCodigo).text" />
-            <div *ngIf="a.decidida && a.decididoPor" class="text-[10.5px] text-gray-400 mt-[3px]">
-              {{ a.decididoPor | titleCase }}
+              [text]="a.gerenteArea.estadoNombre"
+              [bgColor]="estadoColors(a.gerenteArea.estadoCodigo).bg"
+              [textColor]="estadoColors(a.gerenteArea.estadoCodigo).text" />
+            <div *ngIf="a.gerenteArea.decididoPor" class="ap-nivel-quien truncate">
+              {{ a.gerenteArea.decididoPor | titleCase }}
             </div>
-          </td>
+          </div>
+          <div class="ap-card-nivel">
+            <div class="ap-nivel-label">Gerencia General</div>
+            <app-status-badge
+              [text]="a.gerenteGeneral.estadoNombre"
+              [bgColor]="estadoColors(a.gerenteGeneral.estadoCodigo).bg"
+              [textColor]="estadoColors(a.gerenteGeneral.estadoCodigo).text" />
+            <div *ngIf="a.gerenteGeneral.decididoPor" class="ap-nivel-quien truncate">
+              {{ a.gerenteGeneral.decididoPor | titleCase }}
+            </div>
+          </div>
+        </div>
 
-          <td class="text-center whitespace-nowrap">
-            <button type="button" (click)="abrir(a)"
-              class="inline-flex items-center gap-[6px] h-[30px] px-[12px] rounded-[7px] text-[12px] font-medium cursor-pointer transition-colors"
-              [style.background]="a.decidida ? 'var(--color-abril-logo-blue-light)' : 'var(--color-abril-logo-blue)'"
-              [style.color]="a.decidida ? 'var(--color-abril-logo-blue)' : '#fff'"
-              [style.border]="a.decidida ? '0.5px solid #a9c9e6' : '0.5px solid var(--color-abril-logo-blue)'"
-              [title]="a.decidida ? 'Ver la decisión registrada' : 'Revisar las vacantes y decidir'">
-              <i class="ti text-[15px]" [ngClass]="a.decidida ? 'ti-eye' : 'ti-gavel'"></i>
-              {{ a.decidida ? 'Ver decisión' : 'Revisar y aprobar' }}
-            </button>
-          </td>
+        <button type="button" (click)="abrir(a)"
+          class="w-full inline-flex items-center justify-center gap-[6px] h-[36px] mt-[11px] rounded-[7px] text-[12.5px] font-medium cursor-pointer transition-colors"
+          [style.background]="a.esperaMiDecision ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-logo-blue-light)'"
+          [style.color]="a.esperaMiDecision ? '#fff' : 'var(--color-abril-logo-blue)'"
+          [style.border]="a.esperaMiDecision ? '0.5px solid var(--color-abril-logo-blue)' : '0.5px solid #a9c9e6'">
+          <i class="ti text-[15px]" [ngClass]="a.esperaMiDecision ? 'ti-gavel' : 'ti-eye'"></i>
+          {{ textoAccion(a) }}
+        </button>
 
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- ── Las mismas solicitudes, en tarjetas (móvil y tablet) ───────────── -->
-  <div class="ap-cards">
-
-    <div *ngIf="filteredAprobaciones.length === 0" class="text-center py-[32px] text-gray-400 text-sm">
-      {{ mensajeVacio }}
+      </div>
     </div>
 
-    <div *ngFor="let a of pagedAprobaciones"
-         class="rounded-[10px] border bg-white px-[12px] py-[11px]"
-         style="border-color:var(--color-abril-border)">
-
-      <div class="flex items-start justify-between gap-[8px]">
-        <span class="text-[12px] font-bold text-gray-700">{{ a.codigos || '—' }}</span>
-        <app-status-badge
-          [text]="a.estadoNombre"
-          [bgColor]="estadoColors(a.estadoCodigo).bg"
-          [textColor]="estadoColors(a.estadoCodigo).text" />
-      </div>
-
-      <p class="text-[13.5px] font-semibold text-gray-800 mt-[5px] leading-snug">
-        {{ a.totalVacantes }} vacante{{ a.totalVacantes === 1 ? '' : 's' }} · {{ detalleVacantes(a) }}
-      </p>
-      <p *ngIf="a.justificacion" class="text-[11.5px] text-gray-400 mt-[1px] truncate" [title]="a.justificacion">
-        {{ a.justificacion }}
-      </p>
-
-      <div class="grid grid-cols-2 gap-x-[10px] gap-y-[7px] mt-[9px]">
-        <div class="min-w-0">
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Área</div>
-          <div class="text-[12px] text-gray-600 truncate">{{ (a.area | titleCase) || '—' }}</div>
-        </div>
-        <div class="min-w-0">
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Solicitante</div>
-          <div class="text-[12px] text-gray-600 truncate">{{ (a.solicitanteNombre | titleCase) || '—' }}</div>
-        </div>
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Enviado</div>
-          <div class="text-[12px] text-gray-600">{{ a.enviado | date:'dd/MM/yyyy' }}</div>
-        </div>
-        <div *ngIf="a.decidida" class="min-w-0">
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Decidió</div>
-          <div class="text-[12px] text-gray-600 truncate">{{ (a.decididoPor | titleCase) || '—' }}</div>
-        </div>
-      </div>
-
-      <button type="button" (click)="abrir(a)"
-        class="w-full inline-flex items-center justify-center gap-[6px] h-[36px] mt-[11px] rounded-[7px] text-[12.5px] font-medium cursor-pointer transition-colors"
-        [style.background]="a.decidida ? 'var(--color-abril-logo-blue-light)' : 'var(--color-abril-logo-blue)'"
-        [style.color]="a.decidida ? 'var(--color-abril-logo-blue)' : '#fff'"
-        [style.border]="a.decidida ? '0.5px solid #a9c9e6' : '0.5px solid var(--color-abril-logo-blue)'">
-        <i class="ti text-[15px]" [ngClass]="a.decidida ? 'ti-eye' : 'ti-gavel'"></i>
-        {{ a.decidida ? 'Ver decisión' : 'Revisar y aprobar' }}
-      </button>
-
+    <div class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="filteredAprobaciones.length"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="changePage($event)">
+      </app-paginator>
     </div>
-  </div>
 
-  <div class="shrink-0 max-w-[440px]">
-    <app-paginator
-      [totalRecords]="filteredAprobaciones.length"
-      [currentPage]="currentPage"
-      [totalPages]="totalPages"
-      (pageChange)="changePage($event)">
-    </app-paginator>
-  </div>
+  </ng-container>
 
 </div>
 
-<!-- Modal de decisión (o de consulta, si ya se decidió) -->
+<!-- Modal de decisión (o de consulta, si el nivel del usuario ya decidió) -->
 <app-gth-aprobacion-decision
   *ngIf="detalleId !== null"
   [aprobacionId]="detalleId"
@@ -239,9 +280,10 @@
       width="100%">
     </app-search-input>
 
-    <!-- Orden semántico (pendiente → cerrada), por eso sortAlpha=false. -->
+    <!-- Filtra por MI casilla, no por la del otro nivel: es mi decisión la que rastreo.
+         Orden semántico (pendiente → cerrada), por eso sortAlpha=false. -->
     <app-search-select
-      label="Estado"
+      [label]="esGerenteGeneral ? 'Mi decisión' : 'Mi visto bueno'"
       placeholder="Selecciona estado"
       [options]="estados"
       valueField="codigo"

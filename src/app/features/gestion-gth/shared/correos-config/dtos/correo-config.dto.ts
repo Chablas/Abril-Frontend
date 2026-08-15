@@ -11,10 +11,11 @@
 /**
  * Qué pantalla de configuración se está usando. Es el segmento del backend
  * (`api/v1/gestion-gth/{modulo}/configuracion`) y define qué correos administra cada una:
- *  • `solicitud-personal` → el flujo del solicitante (aprobación de GG, nueva solicitud, decisiones).
+ *  • `solicitud-personal` → el flujo del solicitante (aprobación de GG, decisiones de candidatos).
+ *  • `aprobaciones`       → el aviso a GTH que dispara la decisión de Gerencia.
  *  • `reclutamiento`      → los que salen desde la bandeja de GTH (long list, formulario completado).
  */
-export type CorreoConfigModulo = 'solicitud-personal' | 'reclutamiento';
+export type CorreoConfigModulo = 'solicitud-personal' | 'aprobaciones' | 'reclutamiento';
 
 /** Una fila de la sección de un correo. */
 export interface CorreoDestinatarioFila {

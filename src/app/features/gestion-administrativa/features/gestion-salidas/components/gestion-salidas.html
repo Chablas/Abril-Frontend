@@ -91,6 +91,16 @@
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('trabajador')">{{ sortDirOf('trabajador') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('area')" title="Ordenar por área">
+            <span class="inline-flex items-center gap-1">Área
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('area')">{{ sortDirOf('area') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('revisorNombre')" title="Ordenar por revisor">
+            <span class="inline-flex items-center gap-1">Revisor
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('revisorNombre')">{{ sortDirOf('revisorNombre') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
           <th class="cursor-pointer select-none" (click)="toggleSort('fechaSalida')" title="Ordenar por fecha">
             <span class="inline-flex items-center gap-1">Fecha
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('fechaSalida')">{{ sortDirOf('fechaSalida') === 'desc' ? '▼' : '▲' }}</span>
@@ -149,7 +159,7 @@
       <tbody>
 
         <tr *ngIf="salidas.length === 0">
-          <td [attr.colspan]="esRecepcion ? 14 : 12" class="text-center py-[40px] text-gray-400 text-sm">
+          <td [attr.colspan]="esRecepcion ? 16 : 14" class="text-center py-[40px] text-gray-400 text-sm">
             No hay solicitudes registradas.
           </td>
         </tr>
@@ -174,6 +184,14 @@
           <td class="text-gray-500">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
 
           <td class="text-gray-700 whitespace-nowrap">{{ s.trabajador | titleCase }}</td>
+
+          <!-- Área más baja del trabajador. El detalle muestra el árbol completo.
+               Sin titleCase: area_item_name ya viene con su capitalización correcta y el
+               pipe rompería siglas como "SSOMA". -->
+          <td class="text-gray-500 whitespace-nowrap">{{ s.area || '—' }}</td>
+
+          <!-- Jefe/revisor al que se le notificó la solicitud (nombre, no correo). -->
+          <td class="text-gray-500 whitespace-nowrap">{{ (s.revisorNombre | titleCase) || '—' }}</td>
 
           <td class="text-gray-700 whitespace-nowrap">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
 

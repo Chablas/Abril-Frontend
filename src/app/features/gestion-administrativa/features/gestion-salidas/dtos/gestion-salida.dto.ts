@@ -2,6 +2,16 @@ export interface GestionSalidaListItemDto {
   id: number;
   workerId: number;
   trabajador: string;
+  /**
+   * Área del trabajador: solo el área más baja a la que pertenece (el nodo de
+   * workers.area_scope_id). La ruta completa va en el detalle (`areaRuta`).
+   */
+  area: string | null;
+  /**
+   * Nombre completo del jefe/revisor del solicitante — el mismo al que se le notificó la
+   * solicitud. Cuando la resolución cae al fallback de GTH es el nombre del área.
+   */
+  revisorNombre: string | null;
   fechaSalida: string;
   horaSalida: string;
   horaRetorno: string | null;
@@ -112,6 +122,17 @@ export interface GestionSalidaDetalleDto {
   id: number;
   workerId: number;
   trabajador: string;
+  /** Área más baja del trabajador (último nodo de `areaRuta`). */
+  area: string | null;
+  /**
+   * Ruta completa del área, de la raíz al nodo del trabajador
+   * (ej. ['Gerencia de Proyectos', 'Unidad de Proyectos', 'Unidad de Proyectos']).
+   */
+  areaRuta: string[];
+  /** Nombre completo del jefe/revisor (o el área en el fallback de GTH). */
+  revisorNombre: string | null;
+  /** Correo corporativo al que se le notificó la solicitud. */
+  revisorEmail: string | null;
   fechaSalida: string;
   estadoAprobacion: string;
   estadoRendicion: string;

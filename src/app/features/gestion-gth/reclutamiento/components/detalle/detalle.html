@@ -46,6 +46,59 @@
         }
       </div>
 
+      <!-- ── Puesto cubierto: quién obtuvo el puesto ──────────────────────
+           Va arriba de todo porque es el resultado del proceso: al abrir un
+           requerimiento cerrado, lo primero es saber con quién se cerró. -->
+      @if (detalle.seleccionado; as sel) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             style="border-color:#a7f3d0;background:#F0FDF4">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-user-check text-[20px] shrink-0 mt-[1px]" style="color:#15803D"></i>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#15803D">
+                Puesto cubierto
+              </p>
+              <h3 class="text-[17px] font-bold text-emerald-900 mt-[2px] leading-tight">
+                {{ sel.nombre | titleCase }}
+              </h3>
+              <p class="text-[12.5px] text-emerald-800 mt-[1px]">
+                {{ (sel.puesto | titleCase) || (detalle.puesto | titleCase) }}
+              </p>
+
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-[16px] gap-y-[8px] mt-[12px]">
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Seleccionado el</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                    {{ (sel.seleccionadoEn | date:'dd/MM/yyyy HH:mm') || '—' }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Decidido por</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                    {{ (sel.seleccionadoPor | titleCase) || 'Área solicitante' }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Responsable GTH</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                    {{ (sel.responsableGth | titleCase) || 'Sin asignar' }}
+                  </p>
+                </div>
+              </div>
+
+              @if (sel.cvUrl) {
+                <a [href]="sel.cvUrl" target="_blank" rel="noopener"
+                   class="inline-flex items-center gap-[6px] h-[34px] px-[14px] mt-[12px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                   style="background:#15803D">
+                  <i class="ti ti-external-link text-[15px]"></i>
+                  Ver CV del seleccionado
+                </a>
+              }
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- ── Asignación interna de GTH ──────────────────────────────────── -->
       <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
 
@@ -358,12 +411,49 @@
           <p class="text-[12.5px] text-gray-500 mt-[2px] leading-snug">
             Envía el enlace del formulario al correo de cada candidato aprobado. El postulante lo completa en una
             página externa; con «Ver formulario» consultas los datos que declaró y los apruebas o rechazas.
+            Puedes marcar varios y enviarles el formulario de una sola vez.
           </p>
 
+          <!-- Selección para el envío masivo. El botón repite el estilo del "Enviar formulario" de cada
+               candidato (azul, 38px) en vez del directive abrilBulkAction: ese es teal y está pensado
+               para la selección de filas de una tabla; acá desentonaría al lado de los botones de la
+               propia ficha, que son los que este reemplaza cuando hay varios candidatos. -->
+          @if (detalle.candidatosAprobados.length > 0) {
+            <div class="flex flex-wrap items-center justify-between gap-[10px] rounded-[8px] border px-[13px] py-[10px] mt-[12px]"
+                 style="border-color:var(--color-abril-border);background:#F8FAFC">
+              <label class="flex items-center gap-[9px] cursor-pointer">
+                <input type="checkbox" [checked]="todosSeleccionados" [indeterminate]="seleccionParcial"
+                  (change)="toggleSeleccionTodos($any($event.target).checked)"
+                  class="w-[15px] h-[15px] shrink-0 cursor-pointer"
+                  style="accent-color:var(--color-abril-logo-blue)" />
+                <span class="text-[13px] font-semibold text-gray-700">Seleccionar todos</span>
+                <span class="text-[12px] text-gray-500">
+                  ({{ seleccionadosCount }} de {{ detalle.candidatosAprobados.length }} seleccionado(s))
+                </span>
+              </label>
+
+              <button type="button"
+                [disabled]="!puedeEnviarSeleccionados"
+                (click)="enviarFormulariosSeleccionados()"
+                class="inline-flex items-center gap-[6px] h-[38px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white shrink-0 cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                style="background:var(--color-abril-logo-blue)">
+                <i class="ti ti-mail-forward text-[15px]"></i>
+                {{ enviandoMasivo ? 'Enviando…' : 'Enviar a los seleccionados (' + seleccionadosCount + ')' }}
+              </button>
+            </div>
+          }
+
           @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
-            <div class="rounded-[10px] border px-[14px] py-[12px] mt-[12px]" style="border-color:var(--color-abril-border)">
+            <div class="rounded-[10px] border px-[14px] py-[12px] mt-[12px]"
+                 [style.border-color]="seleccionFormulario.has(c.candidatoId) ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-border)'">
               <div class="flex items-start justify-between gap-[10px]">
-                <p class="text-[14px] font-bold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
+                <label class="flex items-center gap-[9px] cursor-pointer">
+                  <input type="checkbox" [checked]="seleccionFormulario.has(c.candidatoId)"
+                    (change)="toggleSeleccionFormulario(c.candidatoId)"
+                    class="w-[15px] h-[15px] shrink-0 cursor-pointer"
+                    style="accent-color:var(--color-abril-logo-blue)" />
+                  <span class="text-[14px] font-bold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</span>
+                </label>
                 <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
                       [style.background]="estadoFormularioBadge(c).bg" [style.color]="estadoFormularioBadge(c).color">
                   {{ estadoFormularioBadge(c).text }}
@@ -608,11 +698,12 @@
                   <p class="text-[12px] text-gray-500 mt-[2px] leading-snug">
                     Registra los comentarios del candidato. Al continuar, su informe
                     se envía al área solicitante para que decida con quién sigue el proceso.
+                    Los tres campos son obligatorios.
                   </p>
 
                   <div class="abril-field mt-[12px]">
                     <label class="abril-field-label" [for]="'ev-com-entrevista-' + c.candidatoId">
-                      Resultado de entrevista
+                      Resultado de entrevista <span style="color:#B91C1C">*</span>
                     </label>
                     <textarea [id]="'ev-com-entrevista-' + c.candidatoId" class="abril-field-input" rows="2"
                       [disabled]="!puedeEvaluar(c)"
@@ -622,7 +713,7 @@
 
                   <div class="abril-field mt-[10px]">
                     <label class="abril-field-label" [for]="'ev-com-psico-' + c.candidatoId">
-                      Informe psicotécnico
+                      Informe psicotécnico <span style="color:#B91C1C">*</span>
                     </label>
                     <textarea [id]="'ev-com-psico-' + c.candidatoId" class="abril-field-input" rows="2"
                       [disabled]="!puedeEvaluar(c)"
@@ -632,7 +723,7 @@
 
                   <div class="abril-field mt-[10px]">
                     <label class="abril-field-label" [for]="'ev-com-recom-' + c.candidatoId">
-                      Recomendación GTH
+                      Recomendación GTH <span style="color:#B91C1C">*</span>
                     </label>
                     <textarea [id]="'ev-com-recom-' + c.candidatoId" class="abril-field-input" rows="2"
                       [disabled]="!puedeEvaluar(c)"
@@ -642,7 +733,7 @@
 
                   <div class="flex flex-wrap items-center gap-[10px] mt-[12px]">
                     <button type="button"
-                      [disabled]="!puedeEvaluar(c) || guardandoEvaluacion[c.candidatoId]"
+                      [disabled]="!puedeGuardarEvaluacion(c)"
                       (click)="guardarEvaluacion(c)"
                       class="inline-flex items-center gap-[6px] h-[36px] px-[16px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                       style="background:var(--color-abril-logo-blue)">
@@ -663,6 +754,10 @@
                     </button>
                   </div>
 
+                  @if (requisitosEvaluacionTexto(c); as requisitos) {
+                    <p class="text-[11.5px] text-gray-500 mt-[6px]">{{ requisitos }}</p>
+                  }
+
                   @if (c.evaluacion?.agradecimientoEnviadoEn) {
                     <p class="text-[11.5px] mt-[8px]" style="color:#B91C1C">
                       Correo de agradecimiento enviado a {{ c.evaluacion?.agradecimientoCorreo }} ·
@@ -677,6 +772,110 @@
             <p class="text-[12.5px] text-gray-400 italic mt-[10px]">
               No hay candidatos con el formulario del postulante aprobado.
             </p>
+          }
+        </div>
+      }
+
+      <!-- ── Historial de candidatos rechazados ───────────────────────────
+           Arrastra las vueltas anteriores del proceso: cuando el solicitante rechaza
+           a todos, el requerimiento vuelve a Long list y esta es la lista que GTH
+           mira para no volver a presentar a los mismos candidatos. -->
+      @if (detalle.candidatosRechazados.length > 0) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionRechazados = !seccionRechazados">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionRechazados ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Historial de candidatos rechazados</h3>
+            <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                  style="background:#FEE2E2;color:#B91C1C">
+              {{ detalle.candidatosRechazados.length }}
+            </span>
+          </button>
+
+          @if (seccionRechazados) {
+            <p class="text-[12.5px] text-gray-500 mt-[8px] leading-snug">
+              Candidatos que quedaron fuera del proceso, con la etapa en la que se los rechazó.
+              Incluye las long lists anteriores de este mismo requerimiento.
+            </p>
+
+            <!-- Búsqueda inline (no app-filter-modal): es un solo campo dentro de un modal,
+                 abrir otro modal de filtros encima sería peor de usar. -->
+            <div class="w-full mt-[10px]">
+              <app-search-input
+                placeholder="Buscar por nombre o etapa..."
+                [(value)]="busquedaRechazados"
+                (valueChange)="onBuscarRechazados()"
+                width="100%">
+              </app-search-input>
+            </div>
+
+            <div class="abril-table-wrap mt-[10px] max-h-[46vh]">
+              <table class="abril-table">
+                <thead class="sticky top-0 z-10">
+                  <tr>
+                    <th>Candidato</th>
+                    <th>Etapa del rechazo</th>
+                    <th>Rechazado por</th>
+                    <th>Fecha</th>
+                    <th>CV</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (c of rechazadosPagina; track c.candidatoId) {
+                    <tr>
+                      <td>
+                        <p class="font-semibold text-gray-800">{{ c.nombre | titleCase }}</p>
+                        @if (c.comentario) {
+                          <p class="text-[11.5px] text-gray-500 mt-[2px] leading-snug">{{ c.comentario }}</p>
+                        }
+                      </td>
+                      <td>
+                        <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full whitespace-nowrap"
+                              [style.background]="etapaColors(c.etapaCodigo).bg"
+                              [style.color]="etapaColors(c.etapaCodigo).text">
+                          {{ c.etapaNombre }}
+                        </span>
+                        <p class="text-[11px] text-gray-400 mt-[3px] whitespace-nowrap">
+                          {{ c.numeroLongList }}ª long list
+                        </p>
+                      </td>
+                      <td class="whitespace-nowrap">{{ c.rechazadoPorNombre }}</td>
+                      <td class="whitespace-nowrap">{{ c.rechazadoEn | date:'dd/MM/yyyy HH:mm' }}</td>
+                      <td>
+                        @if (c.cvUrl) {
+                          <a [href]="c.cvUrl" target="_blank" rel="noopener"
+                             class="inline-flex items-center gap-[5px] font-semibold hover:underline"
+                             style="color:var(--color-abril-logo-blue)">
+                            <i class="ti ti-file-text text-[15px]"></i>
+                            Ver CV
+                          </a>
+                        } @else {
+                          <span class="text-gray-400">—</span>
+                        }
+                      </td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="5" class="text-center py-[28px] text-gray-400">Sin resultados.</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+
+            @if (rechazadosTotalPaginas > 1) {
+              <div class="max-w-[440px] mt-[10px]">
+                <app-paginator
+                  [totalRecords]="rechazadosFiltrados.length"
+                  [currentPage]="rechazadosPaginaActual"
+                  [totalPages]="rechazadosTotalPaginas"
+                  (pageChange)="cambiarPaginaRechazados($event)">
+                </app-paginator>
+              </div>
+            }
           }
         </div>
       }
