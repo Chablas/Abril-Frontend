@@ -1,16 +1,17 @@
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { ActasReunionService } from '../../services/actas-reunion.service';
 import { AreaScopeService } from '../../../../configuracion/shared/services/area-scope.service';
 import { AreaScopeTreeDto } from '../../../../configuracion/shared/dtos/areaScope.model';
-import { TrabajadorAbrilDTO } from '../../dtos/actas-reunion.dto';
+import { ProyectoFiltroDTO, TrabajadorAbrilDTO } from '../../dtos/actas-reunion.dto';
 
 interface PuestoRow {
   id: number;
@@ -25,6 +26,8 @@ interface ReglaConvocatoria {
   puestos: PuestoRow[];
   /** Filtra el checklist de puestos en vivo (ej. "jefe" deja ver solo los que contienen esa palabra). */
   filtroPuesto: string;
+  /** Staff asignado a este proyecto (ss_contratista_usuario con scope POR_PROYECTO). Se combina con área/puestos. */
+  projectId: number | null;
 }
 
 interface ResultadoRow {
@@ -35,16 +38,19 @@ interface ResultadoRow {
 @Component({
   selector: 'app-convocatoria-masiva',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './convocatoria-masiva.html',
 })
 export class ConvocatoriaMasiva implements OnInit {
+  /** Proyectos disponibles para el filtro "Staff de un proyecto" de cada regla. */
+  @Input() proyectos: ProyectoFiltroDTO[] = [];
+
   @Output() closeModal = new EventEmitter<void>();
   /** Trabajadores resueltos (ya deduplicados); el padre decide cuáles agregar como participantes. */
   @Output() agregarTrabajadores = new EventEmitter<TrabajadorAbrilDTO[]>();
 
   arbol: AreaScopeTreeDto[] = [];
-  reglas: ReglaConvocatoria[] = [{ areaScopePath: [], puestos: [], filtroPuesto: '' }];
+  reglas: ReglaConvocatoria[] = [{ areaScopePath: [], puestos: [], filtroPuesto: '', projectId: null }];
 
   /** Una vez buscado, se muestra el resultado para que el usuario marque a todos o solo a algunos. */
   mostrandoResultados = false;
@@ -66,7 +72,7 @@ export class ConvocatoriaMasiva implements OnInit {
   }
 
   agregarRegla(): void {
-    const regla: ReglaConvocatoria = { areaScopePath: [], puestos: [], filtroPuesto: '' };
+    const regla: ReglaConvocatoria = { areaScopePath: [], puestos: [], filtroPuesto: '', projectId: null };
     this.reglas.push(regla);
     this.cargarPuestos(regla);
   }
@@ -134,9 +140,13 @@ export class ConvocatoriaMasiva implements OnInit {
     return regla.puestos.filter((p) => p.marcado).map((p) => p.id);
   }
 
-  /** Una regla vacía (sin área ni puestos marcados) traería a toda la organización: se exige al menos un filtro. */
+  /** Una regla vacía (sin área, puestos ni proyecto) traería a toda la organización: se exige al menos un filtro. */
   reglaValida(regla: ReglaConvocatoria): boolean {
-    return this.areaScopeIdDeRegla(regla) != null || this.puestoIdsDeRegla(regla).length > 0;
+    return (
+      this.areaScopeIdDeRegla(regla) != null ||
+      this.puestoIdsDeRegla(regla).length > 0 ||
+      regla.projectId != null
+    );
   }
 
   buscar(): void {
@@ -145,7 +155,7 @@ export class ConvocatoriaMasiva implements OnInit {
       Swal.fire({
         icon: 'warning',
         title: 'Sin filtros',
-        text: 'Define al menos un área/gerencia o marca algún puesto en alguna regla.',
+        text: 'Define al menos un área/gerencia, marca algún puesto o elige un proyecto en alguna regla.',
         confirmButtonColor: 'var(--color-abril-primary)',
       });
       return;
@@ -154,7 +164,7 @@ export class ConvocatoriaMasiva implements OnInit {
     this.loaderService.show();
     forkJoin(
       reglasValidas.map((r) =>
-        this.service.buscarTrabajadoresPorFiltro(this.areaScopeIdDeRegla(r), this.puestoIdsDeRegla(r)),
+        this.service.buscarTrabajadoresPorFiltro(this.areaScopeIdDeRegla(r), this.puestoIdsDeRegla(r), r.projectId),
       ),
     ).subscribe({
       next: (resultados) => {

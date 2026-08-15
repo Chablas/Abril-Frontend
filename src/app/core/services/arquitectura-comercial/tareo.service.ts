@@ -12,6 +12,10 @@ import {
   TareoFiltroParams,
   TareoRevisarRequestDTO,
   TareoReporteSemanalDTO,
+  TareoTrabajadorEnrolamientoDTO,
+  TareoIdentificacionDTO,
+  TareoProyectoGeoDTO,
+  TareoProyectoGeoUpdateDTO,
 } from '../../dtos/arquitectura-comercial/tareo.model';
 
 @Injectable({ providedIn: 'root' })
@@ -47,8 +51,71 @@ export class TareoService {
     });
   }
 
-  getMiTareoHoy(): Observable<TareoMiTareoHoyDTO> {
+  /** workerId sale SIEMPRE del resultado de `identificar()` — el login es una cuenta corporativa
+   * compartida entre varios trabajadores, nunca identifica a la persona por sí sola. */
+  getMiTareoHoy(workerId: number): Observable<TareoMiTareoHoyDTO> {
+    const params = new HttpParams().set('workerId', workerId);
     return this.http.get<TareoMiTareoHoyDTO>(`${this.apiUrl}/mi-tareo/hoy`, {
+      params,
+      headers: this.authHeaders(),
+    });
+  }
+
+  /** Identificación 1:N: dado el embedding recién calculado sobre el video en vivo, busca entre
+   * los enrolados de Arquitectura Comercial quién es. `identificado: false` si no hay match
+   * confiable (nunca lanza error — es la respuesta normal cuando aún no se reconoce a nadie). */
+  identificar(embedding: number[]): Observable<TareoIdentificacionDTO> {
+    return this.http.post<TareoIdentificacionDTO>(`${this.apiUrl}/identificar`, { embedding }, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  /** Lista de los ~40 trabajadores de Arquitectura Comercial con su estado de enrolamiento,
+   * para la pantalla de Gestión de permisos del coordinador (rol Gestor AC). */
+  getTrabajadoresParaEnrolar(): Observable<TareoTrabajadorEnrolamientoDTO[]> {
+    return this.http.get<TareoTrabajadorEnrolamientoDTO[]>(`${this.apiUrl}/enrolamiento/trabajadores`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  /** Proyectos de Arquitectura Comercial con su geolocalización — para configurar el geofencing
+   * de Marcar Tareo directo desde Gestión de Permisos, sin ir a Configuración > Proyectos. */
+  getProyectosGeo(): Observable<TareoProyectoGeoDTO[]> {
+    return this.http.get<TareoProyectoGeoDTO[]>(`${this.apiUrl}/proyectos-geo`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  setProyectoGeo(projectId: number, body: TareoProyectoGeoUpdateDTO): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/proyectos-geo/${projectId}`, body, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  /** Descarga el SSO-FO-150 (autorización de datos biométricos) con nombre/DNI del trabajador
+   * ya precargados, para imprimir y firmar en físico. */
+  descargarAutorizacionPdf(workerId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/autorizacion/${workerId}/pdf`, {
+      headers: this.authHeaders(),
+      responseType: 'blob',
+    });
+  }
+
+  /** Sube el escaneo del SSO-FO-150 ya firmado por el trabajador — habilita su enrolamiento. */
+  subirAutorizacion(workerId: number, file: File): Observable<{ url: string; message: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{ url: string; message: string }>(
+      `${this.apiUrl}/autorizacion/${workerId}/documento`,
+      formData,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** El coordinador enrola a un trabajador puntual (no autoservicio: el correo corporativo de
+   * obra se comparte entre varios trabajadores). */
+  enrolarTrabajador(workerId: number, body: TareoEnrolamientoRequestDTO): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/enrolamiento/trabajadores/${workerId}`, body, {
       headers: this.authHeaders(),
     });
   }

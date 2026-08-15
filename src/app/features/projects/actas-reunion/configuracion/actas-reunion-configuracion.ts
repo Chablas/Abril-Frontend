@@ -41,6 +41,12 @@ export class ActasReunionConfiguracion implements OnInit {
   puestos: PuestoRow[] = [];
   filtroPuesto = '';
 
+  // ── Agenda + recordatorio ──────────────────────────────────────────────────
+  requiereAgenda = false;
+  agendaFija = false;
+  agendaTexto = '';
+  recordatorioHorasAntes: number | null = null;
+
   constructor(
     private service: ActasReunionService,
     private areaScopeService: AreaScopeService,
@@ -94,6 +100,10 @@ export class ActasReunionConfiguracion implements OnInit {
     this.areaScopePath = [];
     this.puestos = [];
     this.filtroPuesto = '';
+    this.requiereAgenda = false;
+    this.agendaFija = false;
+    this.agendaTexto = '';
+    this.recordatorioHorasAntes = null;
     if (this.temaSeleccionadoId == null) return;
 
     this.loaderService.show();
@@ -104,12 +114,32 @@ export class ActasReunionConfiguracion implements OnInit {
           this.areaScopePath = this.buscarRuta(this.arbol, data.areaScopeId) ?? [];
         }
         this.cargarPuestos(data.puestoIds);
+        this.requiereAgenda = data.requiereAgenda;
+        this.agendaFija = data.agendaFija;
+        this.agendaTexto = data.agendaTexto ?? '';
+        this.recordatorioHorasAntes = data.recordatorioHorasAntes;
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         this.errorService.handleError(err);
       },
     });
+  }
+
+  onRequiereAgendaChange(): void {
+    if (!this.requiereAgenda) {
+      this.agendaFija = false;
+      this.agendaTexto = '';
+      this.recordatorioHorasAntes = null;
+    }
+  }
+
+  onAgendaFijaChange(): void {
+    if (this.agendaFija) {
+      this.recordatorioHorasAntes = null;
+    } else {
+      this.agendaTexto = '';
+    }
   }
 
   /** Un select por nivel: raíz (gerencias) y luego los hijos elegidos en cascada. */
@@ -156,6 +186,10 @@ export class ActasReunionConfiguracion implements OnInit {
       .guardarConvocatoriaTema(this.temaSeleccionadoId, {
         areaScopeId: this.areaScopeId(),
         puestoIds: this.puestos.filter((p) => p.marcado).map((p) => p.id),
+        requiereAgenda: this.requiereAgenda,
+        agendaFija: this.agendaFija,
+        agendaTexto: this.agendaFija ? this.agendaTexto.trim() || null : null,
+        recordatorioHorasAntes: this.requiereAgenda && !this.agendaFija ? this.recordatorioHorasAntes : null,
       })
       .subscribe({
         next: () => {

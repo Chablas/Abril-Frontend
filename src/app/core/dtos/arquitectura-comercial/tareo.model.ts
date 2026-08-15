@@ -11,6 +11,39 @@ export interface TareoEnrolamientoRequestDTO {
   embedding: number[];
 }
 
+/** Fila de la pantalla de "Gestión de permisos" del coordinador. */
+export interface TareoTrabajadorEnrolamientoDTO {
+  workerId: number;
+  nombre: string;
+  enrolado: boolean;
+  fechaEnrolamiento: string | null;
+  /** SSO-FO-150 firmado y subido — sin esto el enrolamiento queda bloqueado. */
+  autorizacionSubida: boolean;
+  autorizacionSubidaEn: string | null;
+}
+
+/** Resultado de la identificación 1:N contra los enrolados de Arquitectura Comercial. */
+export interface TareoIdentificacionDTO {
+  identificado: boolean;
+  workerId: number | null;
+  nombre: string | null;
+}
+
+/** Geolocalización de un proyecto para el geofencing de Marcar Tareo. */
+export interface TareoProyectoGeoDTO {
+  projectId: number;
+  projectDescription: string;
+  lat: number | null;
+  lng: number | null;
+  radioGeofenceMetros: number;
+}
+
+export interface TareoProyectoGeoUpdateDTO {
+  lat: number | null;
+  lng: number | null;
+  radioGeofenceMetros: number | null;
+}
+
 export interface TareoMarcarRequestDTO {
   tipo: TareoTipo;
   fotoBase64: string;

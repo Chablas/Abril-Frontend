@@ -20,6 +20,12 @@ import { ConvocatoriaMasiva } from '../convocatoria-masiva/convocatoria-masiva';
 import { AreaScopeService } from '../../../../configuracion/shared/services/area-scope.service';
 import { AreaScopeTreeDto } from '../../../../configuracion/shared/dtos/areaScope.model';
 
+interface PuestoRowRecurrente {
+  id: number;
+  descripcion: string;
+  marcado: boolean;
+}
+
 interface ParticipanteRow {
   workerId: number | null;
   nombre: string;
@@ -77,8 +83,13 @@ export class ReunionAdd implements OnInit {
    * El tema escrito a mano solo se guarda en la reunión, no en el catálogo de temas.
    */
   temaPersonalizado = false;
+  /** Id del tema del catálogo elegido en el desplegable (null si es personalizado o aún no elige). */
+  reunionTemaIdSeleccionado: number | null = null;
   /** Si está activo, al agendar se agrega el tema personalizado al catálogo como tema recurrente. */
   guardarTemaComoRecurrente = false;
+  /** Convocatoria recurrente del tema personalizado: área/puestos que se guardarán junto con el tema. */
+  areaScopePathRecurrente: AreaScopeTreeDto[] = [];
+  puestosRecurrente: PuestoRowRecurrente[] = [];
   convocadoPor = '';
   lugar = '';
   /** Con el checkbox activo, "Lugar" se convierte en texto libre en vez de elegir un proyecto. */
@@ -137,6 +148,120 @@ export class ReunionAdd implements OnInit {
       : null;
   }
 
+  /** Proyecto para el atajo "Todo el staff de este proyecto": el fijo, o el elegido en el ámbito. */
+  get projectIdParaStaff(): number | null {
+    return this.projectIdFijo ?? (this.tipoAmbito === 'PROYECTO' ? this.projectId : null);
+  }
+
+  agregarStaffDelProyecto(): void {
+    const projectId = this.projectIdParaStaff;
+    if (projectId == null) return;
+    this.loaderService.show();
+    this.service.buscarTrabajadoresPorFiltro(null, null, projectId).subscribe({
+      next: (trabajadores) => {
+        this.loaderService.hide();
+        if (trabajadores.length === 0) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Sin resultados',
+            text: 'No se encontró staff asignado a este proyecto.',
+            confirmButtonColor: 'var(--color-abril-primary)',
+          });
+          return;
+        }
+        this.onTrabajadoresAgregadosMasivamente(trabajadores);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  // ── Convocatoria recurrente del tema personalizado ───────────────────────
+  /** Un select por nivel: raíz (gerencias) y luego los hijos del nodo elegido en el nivel anterior. */
+  get nivelesAreaRecurrente(): AreaScopeTreeDto[][] {
+    const niveles: AreaScopeTreeDto[][] = [this.arbolAreaScope];
+    let actual = this.areaScopePathRecurrente[0];
+    let i = 0;
+    while (actual && actual.children.length > 0) {
+      niveles.push(actual.children);
+      i++;
+      actual = this.areaScopePathRecurrente[i];
+    }
+    return niveles;
+  }
+
+  onNivelAreaRecurrenteChange(nivel: number, areaScopeId: number | null): void {
+    const opciones = this.nivelesAreaRecurrente[nivel] ?? [];
+    const nodo = opciones.find((n) => n.areaScopeId === areaScopeId) ?? null;
+    this.areaScopePathRecurrente = this.areaScopePathRecurrente.slice(0, nivel);
+    if (nodo) this.areaScopePathRecurrente.push(nodo);
+    this.cargarPuestosRecurrente();
+    this.agregarConvocadosRecurrente();
+  }
+
+  get areaScopeIdRecurrente(): number | null {
+    return this.areaScopePathRecurrente.length > 0
+      ? this.areaScopePathRecurrente[this.areaScopePathRecurrente.length - 1].areaScopeId
+      : null;
+  }
+
+  /**
+   * WorkerIds sumados automáticamente por ESTE filtro (área/puestos de la convocatoria
+   * recurrente). Al volver a filtrar se reemplaza este conjunto por completo (se quitan los que
+   * ya no calzan, se agregan los nuevos) — así, ir acotando el filtro reduce a la gente en vez de
+   * solo ir sumando. No toca participantes agregados a mano o vía "Agregar por área/puesto".
+   */
+  private workerIdsAutoRecurrente = new Set<number>();
+
+  /** Agrega/actualiza como participantes de ESTA reunión a quienes calzan con el área/puestos elegidos para la convocatoria recurrente. */
+  agregarConvocadosRecurrente(): void {
+    const areaScopeId = this.areaScopeIdRecurrente;
+    const puestoIds = this.puestosRecurrente.filter((p) => p.marcado).map((p) => p.id);
+    if (areaScopeId == null && puestoIds.length === 0) {
+      this.quitarParticipantesAutoRecurrente(new Set());
+      return;
+    }
+
+    this.loaderService.show();
+    this.service.buscarTrabajadoresPorFiltro(areaScopeId, puestoIds, null).subscribe({
+      next: (trabajadores) => {
+        this.loaderService.hide();
+        const nuevosIds = new Set(trabajadores.map((t) => t.workerId));
+        this.quitarParticipantesAutoRecurrente(nuevosIds);
+        this.onTrabajadoresAgregadosMasivamente(trabajadores);
+        this.workerIdsAutoRecurrente = nuevosIds;
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /** Quita los participantes sumados por el filtro recurrente anterior que ya no estén en `siguenCalzando`. */
+  private quitarParticipantesAutoRecurrente(siguenCalzando: Set<number>): void {
+    this.participantes = this.participantes.filter(
+      (p) => p.workerId == null || !this.workerIdsAutoRecurrente.has(p.workerId) || siguenCalzando.has(p.workerId),
+    );
+  }
+
+  /** Carga el checklist de puestos que realmente existen en el nivel de área elegido (igual que "Agregar por área/puesto"). */
+  private cargarPuestosRecurrente(): void {
+    const marcadosPrevios = new Set(this.puestosRecurrente.filter((p) => p.marcado).map((p) => p.id));
+    this.service.getPuestosPorArea(this.areaScopeIdRecurrente).subscribe({
+      next: (data) => {
+        this.puestosRecurrente = data.map((p) => ({
+          id: p.id,
+          descripcion: p.descripcion,
+          marcado: marcadosPrevios.has(p.id),
+        }));
+      },
+      error: () => {},
+    });
+  }
+
   /**
    * Opciones del desplegable "Convocado por": los trabajadores de Abril más, si hace
    * falta, el valor actual (por si viene precargado y no está en la lista).
@@ -154,7 +279,16 @@ export class ReunionAdd implements OnInit {
   /** Al alternar entre desplegable y texto libre se limpia el tema para no mezclar valores. */
   onTemaPersonalizadoChange(): void {
     this.tema = '';
+    this.reunionTemaIdSeleccionado = null;
     this.guardarTemaComoRecurrente = false;
+    this.areaScopePathRecurrente = [];
+    this.puestosRecurrente = [];
+  }
+
+  onGuardarTemaComoRecurrenteChange(): void {
+    if (this.guardarTemaComoRecurrente && this.puestosRecurrente.length === 0) {
+      this.cargarPuestosRecurrente();
+    }
   }
 
   /**
@@ -165,12 +299,13 @@ export class ReunionAdd implements OnInit {
   onTemaSeleccionado(valor: string | null): void {
     this.tema = valor ?? '';
     const temaElegido = this.temas.find((t) => t.descripcion === this.tema);
+    this.reunionTemaIdSeleccionado = temaElegido?.id ?? null;
     if (!temaElegido) return;
 
     this.service.getConvocatoriaTema(temaElegido.id).subscribe({
       next: (convocatoria) => {
         if (convocatoria.areaScopeId == null && convocatoria.puestoIds.length === 0) return;
-        this.service.buscarTrabajadoresPorFiltro(convocatoria.areaScopeId, convocatoria.puestoIds).subscribe({
+        this.service.buscarTrabajadoresPorFiltro(convocatoria.areaScopeId, convocatoria.puestoIds, null).subscribe({
           next: (trabajadores) => this.onTrabajadoresAgregadosMasivamente(trabajadores),
           error: () => {},
         });
@@ -286,7 +421,23 @@ export class ReunionAdd implements OnInit {
       }));
 
     if (this.temaPersonalizado && this.guardarTemaComoRecurrente) {
-      this.service.agregarTema(this.tema.trim()).subscribe({ error: () => {} });
+      const areaScopeId = this.areaScopeIdRecurrente;
+      const puestoIds = this.puestosRecurrente.filter((p) => p.marcado).map((p) => p.id);
+      this.service.agregarTema(this.tema.trim()).subscribe({
+        next: (tema) => {
+          this.service
+            .guardarConvocatoriaTema(tema.id, {
+              areaScopeId,
+              puestoIds,
+              requiereAgenda: false,
+              agendaFija: false,
+              agendaTexto: null,
+              recordatorioHorasAntes: null,
+            })
+            .subscribe({ error: () => {} });
+        },
+        error: () => {},
+      });
     }
 
     this.loaderService.show();
@@ -295,6 +446,7 @@ export class ReunionAdd implements OnInit {
         projectId: this.tipoAmbito === 'PROYECTO' ? this.projectId! : null,
         areaScopeId: this.tipoAmbito === 'AREA' ? this.areaScopeIdSeleccionado : null,
         tema: this.tema.trim(),
+        reunionTemaId: this.temaPersonalizado ? null : this.reunionTemaIdSeleccionado,
         convocadoPor: this.convocadoPor.trim() || null,
         lugar: this.lugar.trim() || null,
         fecha: this.fecha!,

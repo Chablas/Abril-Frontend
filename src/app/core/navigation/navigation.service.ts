@@ -71,12 +71,22 @@ export class NavigationService {
         { label: 'Cronograma de Actividades',               route: '/projects/cronograma-actividades',       featureKey: 'projects.cronograma-actividades' },
         { label: 'Dashboard UDP',                           route: '/projects/cronograma-dashboard',         featureKey: 'projects.cronograma-dashboard' },
         // 'Dashboard Lecciones' movido a Mejora Continua (/mejora-continua/dashboard)
-        { label: 'Actas de Reunión',                        route: '/projects/actas-reunion',                featureKey: 'projects.actas-reunion' },
+        // 'Actas de Reunión' ya NO pertenece a Proyectos: es su propio módulo independiente en el sidebar (key 'actas-reunion').
         { label: 'Control de IVTs',                         route: '/projects/technical-inspection-visit',   featureKey: 'projects.ivt-control' },
         { label: 'Control de cuaderno de obra',             route: '/projects/construction-logbook',         featureKey: 'projects.construction-logbook' },
         { label: 'Control de respuesta de informes',        route: '/projects/report-response-control',      featureKey: 'projects.report-response-control' },
         { label: 'Seguimiento y medición de residentes',    route: '/projects/resident-monitoring-measurement', featureKey: 'projects.resident-monitoring-measurement' },
         { label: 'Configuración Planeamiento BIM',          route: '/projects/planeamiento-bim/configuracion-inicial', featureKey: 'planeamiento-bim.configuracion-inicial' },
+      ],
+      groups: [],
+    },
+    {
+      key: 'actas-reunion',
+      label: 'Actas de Reunión',
+      iconKey: 'file-description',
+      baseRoute: '/projects/actas-reunion',
+      items: [
+        { label: 'Actas de Reunión', route: '/projects/actas-reunion', featureKey: 'projects.actas-reunion' },
       ],
       groups: [],
     },
@@ -131,6 +141,16 @@ export class NavigationService {
         { label: 'Gestión de Actividades',   route: '/arquitectura-comercial/dashboard', featureKey: 'arquitectura-comercial.dashboard' },
         { label: 'Gestión de Observaciones', route: '/arquitectura-comercial/observaciones/dashboard', featureKey: 'arquitectura-comercial.observaciones.dashboard' },
         { label: 'Gestión de Revisiones',    route: '/arquitectura-comercial/revisiones/dashboard', featureKey: 'arquitectura-comercial.revisiones.dashboard' },
+        {
+          label: 'Tareo',
+          route: '/arquitectura-comercial/tareo/marcar',
+          featureKeys: [
+            'arquitectura-comercial.tareo.marcar',
+            'arquitectura-comercial.tareo.gestion-permisos',
+            'arquitectura-comercial.tareo.revision',
+            'arquitectura-comercial.tareo.reporte',
+          ],
+        },
       ],
       groups: [],
     },

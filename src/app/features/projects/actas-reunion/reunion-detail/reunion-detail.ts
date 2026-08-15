@@ -22,6 +22,7 @@ import { ConvocatoriaMasiva } from '../components/convocatoria-masiva/convocator
 import {
   ProyectoFiltroDTO,
   ReunionAcuerdoDTO,
+  ReunionAgendaDTO,
   ReunionDetalleDTO,
   ReunionParticipanteInput,
   TrabajadorAbrilDTO,
@@ -45,6 +46,7 @@ interface ParticipanteRow {
 export class ReunionDetail implements OnInit {
   reunionId!: number;
   detalle: ReunionDetalleDTO | null = null;
+  agenda: ReunionAgendaDTO | null = null;
 
   // Formulario editable de cabecera
   tema = '';
@@ -105,6 +107,10 @@ export class ReunionDetail implements OnInit {
         this.loaderService.hide();
         this.errorService.handleError(err);
       },
+    });
+    this.service.getAgenda(this.reunionId).subscribe({
+      next: (data) => (this.agenda = data),
+      error: () => {},
     });
   }
 

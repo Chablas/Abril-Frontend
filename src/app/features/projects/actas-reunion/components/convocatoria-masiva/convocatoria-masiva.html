@@ -4,9 +4,9 @@
     <!-- ── Paso 1: filtros ──────────────────────────────────────────────────── -->
     <ng-container *ngIf="!mostrandoResultados">
       <p class="text-xs text-gray-500">
-        Cada regla filtra por área/gerencia y/o puesto (ambos opcionales, se combinan). Agrega varias
-        reglas para mezclar grupos distintos, por ejemplo "todo el área de Arquitectura Comercial" +
-        "todas las jefaturas de Proyectos".
+        Cada regla filtra por área/gerencia, puesto y/o staff de un proyecto (todos opcionales, se
+        combinan). Agrega varias reglas para mezclar grupos distintos, por ejemplo "todo el staff
+        del proyecto X" + "todas las jefaturas de Proyectos".
       </p>
 
       <div *ngFor="let regla of reglas; let ri = index"
@@ -53,6 +53,21 @@
             </p>
           </div>
         </ng-container>
+
+        <div class="mt-1">
+          <app-search-select
+            label="Staff de un proyecto (opcional)"
+            [options]="proyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="regla.projectId"
+            (valueChange)="regla.projectId = $event"
+            placeholder="Buscar proyecto...">
+          </app-search-select>
+          <p class="text-[11px] text-gray-400 mt-1">
+            Trae a todo el staff asignado a ese proyecto (residente, ingenieros, jefaturas de obra, etc.).
+          </p>
+        </div>
       </div>
 
       <button type="button" (click)="agregarRegla()"

@@ -162,6 +162,8 @@ export interface ReunionCreateRequest {
   /** Reunión de un nodo del árbol area_scope (gerencia/área/subárea). */
   areaScopeId: number | null;
   tema: string;
+  /** Tema del catálogo elegido (null si es personalizado), para heredar su configuración de agenda/recordatorio. */
+  reunionTemaId: number | null;
   convocadoPor: string | null;
   lugar: string | null;
   fecha: string;
@@ -224,11 +226,45 @@ export interface TemaConvocatoriaDTO {
   areaScopeId: number | null;
   areaScopeDescripcion: string | null;
   puestoIds: number[];
+  requiereAgenda: boolean;
+  agendaFija: boolean;
+  agendaTexto: string | null;
+  recordatorioHorasAntes: number | null;
 }
 
 export interface TemaConvocatoriaSaveRequest {
   areaScopeId: number | null;
   puestoIds: number[];
+  requiereAgenda: boolean;
+  agendaFija: boolean;
+  agendaTexto: string | null;
+  recordatorioHorasAntes: number | null;
+}
+
+// ── Agenda de reunión ────────────────────────────────────────────────────────
+export interface ReunionAgendaItemDTO {
+  reunionAgendaItemId: number;
+  workerId: number;
+  workerNombre: string;
+  descripcion: string;
+  orden: number;
+}
+
+export interface ReunionAgendaDTO {
+  requiereAgenda: boolean;
+  agendaFija: boolean;
+  agendaTexto: string | null;
+  items: ReunionAgendaItemDTO[];
+  participantesPendientes: string[];
+  workerIdActual: number | null;
+}
+
+export interface ReunionAgendaItemInput {
+  descripcion: string;
+}
+
+export interface GuardarMisTemasRequest {
+  temas: ReunionAgendaItemInput[];
 }
 
 export interface ReunionFiltro {

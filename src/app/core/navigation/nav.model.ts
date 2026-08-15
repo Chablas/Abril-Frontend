@@ -2,6 +2,10 @@ export interface NavItem {
   label: string;
   route: string;
   featureKey?: string;
+  /** Basta con tener acceso a UNA de estas — para un ítem "contenedor" que agrupa varias
+   * sub-páginas con distinto featureKey cada una (ver Tareo: Marcar/Gestión de permisos/
+   * Revisión/Reporte comparten un solo ítem de sidebar y navegan por tabs dentro de la página). */
+  featureKeys?: string[];
   roles?: string[];
 }
 

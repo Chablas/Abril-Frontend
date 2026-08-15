@@ -1,6 +1,5 @@
-import { Component, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, ChangeDetectorRef, OnDestroy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { CameraCapture } from '../../../../shared/components/camera-capture/camera-capture';
@@ -27,6 +26,8 @@ const PASOS: PasoTareo[] = [
   { tipo: 'FIN_JORNADA', label: 'Fin de jornada', icono: 'ti-moon' },
 ];
 
+const INTERVALO_IDENTIFICACION_MS = 1500;
+
 @Component({
   selector: 'app-tareo-marcar',
   standalone: true,
@@ -34,44 +35,103 @@ const PASOS: PasoTareo[] = [
   templateUrl: './marcar.html',
   styleUrl: './marcar.css',
 })
-export class TareoMarcar {
+export class TareoMarcar implements OnDestroy {
   readonly tabs = AC_TAREO_TABS;
   readonly pasos = PASOS;
   readonly TAREO_TIPO_LABEL = TAREO_TIPO_LABEL;
 
-  cargando = true;
-  hoy: TareoMiTareoHoyDTO | null = null;
-  enrolado: boolean | null = null;
+  // La identidad de quien marca sale SIEMPRE del reconocimiento facial (1:N contra los enrolados
+  // de Arquitectura Comercial) — el correo corporativo con el que se loguea es compartido entre
+  // varios trabajadores, así que el login nunca identifica a la persona.
+  camaraLista = false;
+  identificando = false;
+  workerId: number | null = null;
+  nombreTrabajador: string | null = null;
+  noReconocido = false;
 
-  capturaAbierta = false;
-  pasoActivo: PasoTareo | null = null;
+  hoy: TareoMiTareoHoyDTO | null = null;
+  cargandoHoy = false;
+
   procesando = false;
   gpsEstado: 'buscando' | 'ok' | 'error' = 'buscando';
   gpsCoords: GeolocationCoordinates | null = null;
 
   @ViewChild(CameraCapture) camara?: CameraCapture;
 
+  private timerIdentificacion: ReturnType<typeof setInterval> | null = null;
+
   constructor(
     private tareoService: TareoService,
     private faceService: FaceRecognitionService,
-    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
     this.faceService.cargarModelos();
-    this.cargar();
+    this.pedirUbicacion();
   }
 
-  private cargar(): void {
-    this.cargando = true;
-    this.tareoService.getMiTareoHoy().subscribe({
-      next: (r) => { this.hoy = r; this.cargando = false; this.cdr.detectChanges(); },
-      error: () => { this.cargando = false; this.cdr.detectChanges(); },
+  ngOnDestroy(): void {
+    this.detenerIdentificacionPeriodica();
+  }
+
+  onCamaraLista(): void {
+    this.camaraLista = true;
+    this.cdr.detectChanges();
+    this.iniciarIdentificacionPeriodica();
+  }
+
+  private iniciarIdentificacionPeriodica(): void {
+    this.detenerIdentificacionPeriodica();
+    this.timerIdentificacion = setInterval(() => this.intentarIdentificar(), INTERVALO_IDENTIFICACION_MS);
+  }
+
+  private detenerIdentificacionPeriodica(): void {
+    if (this.timerIdentificacion) {
+      clearInterval(this.timerIdentificacion);
+      this.timerIdentificacion = null;
+    }
+  }
+
+  private async intentarIdentificar(): Promise<void> {
+    if (this.identificando || this.workerId || !this.camara || !this.faceService.disponible()) return;
+
+    this.identificando = true;
+    const embedding = await this.faceService.calcularEmbedding(this.camara.videoElement);
+    if (!embedding) {
+      this.identificando = false;
+      return;
+    }
+
+    this.tareoService.identificar(embedding).subscribe({
+      next: (r) => {
+        this.identificando = false;
+        if (r.identificado && r.workerId) {
+          this.detenerIdentificacionPeriodica();
+          this.workerId = r.workerId;
+          this.nombreTrabajador = r.nombre;
+          this.noReconocido = false;
+          this.cargarMiTareoHoy(r.workerId);
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => { this.identificando = false; },
     });
-    this.tareoService.getEnrolamientoEstado().subscribe({
-      next: (r) => { this.enrolado = r.enrolado; this.cdr.detectChanges(); },
-      error: () => { this.enrolado = null; },
+  }
+
+  reintentarIdentificacion(): void {
+    this.workerId = null;
+    this.nombreTrabajador = null;
+    this.noReconocido = false;
+    this.hoy = null;
+    this.iniciarIdentificacionPeriodica();
+  }
+
+  private cargarMiTareoHoy(workerId: number): void {
+    this.cargandoHoy = true;
+    this.tareoService.getMiTareoHoy(workerId).subscribe({
+      next: (r) => { this.hoy = r; this.cargandoHoy = false; this.cdr.detectChanges(); },
+      error: () => { this.cargandoHoy = false; this.cdr.detectChanges(); },
     });
   }
 
@@ -94,21 +154,6 @@ export class TareoMarcar {
     return !this.registroDe(tipo);
   }
 
-  abrirCaptura(paso: PasoTareo): void {
-    if (!this.esSiguientePendiente(paso.tipo)) return;
-    this.pasoActivo = paso;
-    this.capturaAbierta = true;
-    this.gpsEstado = 'buscando';
-    this.gpsCoords = null;
-    this.pedirUbicacion();
-  }
-
-  cerrarCaptura(): void {
-    this.camara?.detener();
-    this.capturaAbierta = false;
-    this.pasoActivo = null;
-  }
-
   private pedirUbicacion(): void {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       this.gpsEstado = 'error';
@@ -122,8 +167,8 @@ export class TareoMarcar {
     );
   }
 
-  async confirmarMarcado(): Promise<void> {
-    if (!this.pasoActivo || !this.camara || this.procesando) return;
+  async marcarPaso(paso: PasoTareo): Promise<void> {
+    if (!this.esSiguientePendiente(paso.tipo) || !this.camara || this.procesando || !this.workerId) return;
     this.procesando = true;
     this.cdr.detectChanges();
 
@@ -135,14 +180,13 @@ export class TareoMarcar {
       return;
     }
 
-    // El embedding es "mejor esfuerzo": si no se calcula (modelos no cargaron, sin cara clara), el
-    // marcado se guarda igual — el backend lo deja en REVISAR, nunca bloquea al trabajador.
-    const embedding = this.faceService.disponible()
-      ? await this.faceService.calcularEmbedding(this.camara.videoElement)
-      : null;
+    // El embedding se vuelve a calcular fresco en este instante — nunca se reusa el de la
+    // identificación previa — porque el backend SIEMPRE re-identifica contra este embedding
+    // (nunca confía en el workerId como tal, solo lo usa para mostrar nombre/pasos en pantalla).
+    const embedding = await this.faceService.calcularEmbedding(this.camara.videoElement);
 
     const idempotencyKey = crypto.randomUUID();
-    const tipo = this.pasoActivo.tipo;
+    const tipo = paso.tipo;
 
     this.tareoService
       .marcar(
@@ -160,8 +204,8 @@ export class TareoMarcar {
       .subscribe({
         next: (registro) => {
           this.procesando = false;
-          this.cerrarCaptura();
-          this.cargar();
+          this.cdr.detectChanges();
+          if (this.workerId) this.cargarMiTareoHoy(this.workerId);
           const ok = registro.estado === 'VERIFICADO';
           Swal.fire({
             icon: ok ? 'success' : 'info',
@@ -176,12 +220,14 @@ export class TareoMarcar {
         error: (err) => {
           this.procesando = false;
           this.cdr.detectChanges();
+          if (err?.status === 422) {
+            // El backend no pudo re-identificar el rostro al momento de guardar (cambió la luz,
+            // se movió, etc.) — se reintenta la identificación desde cero, no se insiste con el
+            // mismo workerId ya obtenido antes.
+            this.reintentarIdentificacion();
+          }
           Swal.fire({ icon: 'error', title: 'No se pudo registrar', text: err?.error?.message ?? 'Intenta de nuevo.' });
         },
       });
-  }
-
-  irAEnrolar(): void {
-    this.router.navigateByUrl('/arquitectura-comercial/tareo/enrolamiento');
   }
 }

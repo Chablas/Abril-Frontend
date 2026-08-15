@@ -49,5 +49,10 @@ export interface ProjectDto {
   // Flags
   tieneArquitecturaComercial?: boolean;
 
+  // Geolocalización (geofencing de Tareo — Arquitectura Comercial)
+  lat?: number | null;
+  lng?: number | null;
+  radioGeofenceMetros?: number;
+
   active: boolean;
 }

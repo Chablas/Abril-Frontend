@@ -13,6 +13,9 @@ export interface ResponsableRazonSocialDTO {
 export interface ResponsableProyectoDTO {
   projectId: number;
   projectDescription: string;
+  residenteWorkersId: number | null;
+  residenteNombre: string | null;
+  residenteEmail: string | null;
   emailResponsable: string | null;
   emailRrhh: string | null;
   emailCoordSsoma: string | null;
@@ -20,6 +23,7 @@ export interface ResponsableProyectoDTO {
 }
 
 export interface ResponsableProyectoUpdateDTO {
+  residenteWorkersId: number | null;
   emailResponsable: string | null;
   emailRrhh: string | null;
   emailCoordSsoma: string | null;

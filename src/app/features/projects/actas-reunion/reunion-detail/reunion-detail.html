@@ -116,6 +116,29 @@
     </div>
   </div>
 
+  <!-- ── Agenda ─────────────────────────────────────────────────────────── -->
+  <div *ngIf="agenda?.requiereAgenda" class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <h3 class="text-sm font-semibold text-[var(--color-abril-primary)] uppercase">Agenda</h3>
+
+    <p *ngIf="agenda!.agendaFija" class="text-sm text-gray-700 whitespace-pre-line border border-[#E5EAF0] rounded-lg p-4 bg-[#F5F8FA]">
+      {{ agenda!.agendaTexto }}
+    </p>
+
+    <ng-container *ngIf="!agenda!.agendaFija">
+      <div *ngIf="agenda!.items.length === 0" class="text-sm text-gray-400">
+        Nadie cargó todavía sus temas a tratar.
+      </div>
+      <ul *ngIf="agenda!.items.length > 0" class="text-sm text-gray-700 flex flex-col gap-1.5">
+        <li *ngFor="let item of agenda!.items">
+          <span class="font-medium text-gray-800">{{ item.workerNombre }}:</span> {{ item.descripcion }}
+        </li>
+      </ul>
+      <p *ngIf="agenda!.participantesPendientes.length > 0" class="text-xs text-gray-400 border-t border-[#E5EAF0] pt-2">
+        Aún no cargan sus temas: {{ agenda!.participantesPendientes.join(', ') }}
+      </p>
+    </ng-container>
+  </div>
+
   <!-- ── Participantes ──────────────────────────────────────────────────── -->
   <div class="bg-white rounded-lg p-5 flex flex-col gap-3">
     <div class="flex items-center justify-between">

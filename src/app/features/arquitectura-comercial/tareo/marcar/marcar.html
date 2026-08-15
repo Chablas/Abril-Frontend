@@ -1,21 +1,35 @@
 <app-abril-page-header
   badge="ARQ. COMERCIAL · TAREO"
   titulo="Marcar tareo"
-  subtitulo="Registra tu hora con foto — inicio de jornada, almuerzo, retorno y fin de jornada."
+  subtitulo="Párate frente a la cámara — te reconocemos automáticamente y registramos tu hora."
   [tabs]="tabs">
 </app-abril-page-header>
 
 <div class="mrc-root">
 
-  <div *ngIf="enrolado === false" class="mrc-banner">
-    <i class="ti ti-face-id" style="font-size:20px"></i>
-    <span>Aún no te has enrolado para reconocimiento facial. Tus marcaciones se guardarán, pero quedarán pendientes de revisión hasta que te enroles.</span>
-    <button type="button" class="mrc-banner-btn" (click)="irAEnrolar()">Enrolarme ahora</button>
+  <div class="mrc-camara-wrap">
+    <app-camera-capture (listo)="onCamaraLista()"></app-camera-capture>
+
+    <div class="mrc-identif-overlay" *ngIf="camaraLista && !workerId">
+      <span class="mrc-spinner"></span>
+      <span>Buscándote entre los enrolados…</span>
+    </div>
   </div>
 
-  <div *ngIf="cargando" class="mrc-loading"><span class="mrc-spinner"></span> Cargando…</div>
+  <div *ngIf="!workerId" class="mrc-sin-identificar">
+    <i class="ti ti-face-id" style="font-size:22px"></i>
+    <span>Aún no te reconocemos. Asegúrate de tener buena luz y mirar directo a la cámara.</span>
+  </div>
 
-  <div *ngIf="!cargando" class="mrc-pasos">
+  <div *ngIf="workerId" class="mrc-identificado">
+    <i class="ti ti-circle-check" style="font-size:20px;color:#16A34A"></i>
+    <span>Hola, <strong>{{ nombreTrabajador }}</strong></span>
+    <button type="button" class="mrc-no-soy-btn" (click)="reintentarIdentificacion()">¿No eres tú?</button>
+  </div>
+
+  <div *ngIf="cargandoHoy" class="mrc-loading"><span class="mrc-spinner"></span> Cargando…</div>
+
+  <div *ngIf="workerId && !cargandoHoy" class="mrc-pasos">
     <div *ngFor="let paso of pasos" class="mrc-paso"
          [class.mrc-paso-hecho]="registroDe(paso.tipo)"
          [class.mrc-paso-activo]="esSiguientePendiente(paso.tipo)"
@@ -32,9 +46,10 @@
         <span *ngIf="!registroDe(paso.tipo) && !esSiguientePendiente(paso.tipo)" class="mrc-paso-hint">Pendiente de los pasos anteriores</span>
       </div>
       <button type="button" class="mrc-paso-btn"
-              [disabled]="!esSiguientePendiente(paso.tipo)"
-              (click)="abrirCaptura(paso)">
-        <i class="ti ti-camera"></i> Marcar
+              [disabled]="!esSiguientePendiente(paso.tipo) || procesando"
+              (click)="marcarPaso(paso)">
+        <span *ngIf="!procesando"><i class="ti ti-camera"></i> Marcar</span>
+        <span *ngIf="procesando"><span class="mrc-spinner mrc-spinner-sm"></span></span>
       </button>
     </div>
 
@@ -42,28 +57,11 @@
       <i class="ti ti-confetti" style="font-size:22px"></i> Jornada de hoy completa.
     </div>
   </div>
-</div>
 
-<!-- ══ Modal de captura ══ -->
-<div class="mrc-modal-backdrop" *ngIf="capturaAbierta" (click)="cerrarCaptura()">
-  <div class="mrc-modal" (click)="$event.stopPropagation()">
-    <div class="mrc-modal-header">
-      <span>{{ pasoActivo?.label }}</span>
-      <button type="button" class="mrc-modal-close" (click)="cerrarCaptura()"><i class="ti ti-x"></i></button>
-    </div>
-
-    <app-camera-capture></app-camera-capture>
-
-    <div class="mrc-gps-row">
-      <i class="ti" [class]="gpsEstado === 'ok' ? 'ti-map-pin-check' : gpsEstado === 'error' ? 'ti-map-pin-off' : 'ti-map-pin-search'"></i>
-      <span *ngIf="gpsEstado === 'buscando'">Obteniendo ubicación…</span>
-      <span *ngIf="gpsEstado === 'ok'">Ubicación obtenida ({{ gpsCoords?.accuracy | number: '1.0-0' }}m de precisión)</span>
-      <span *ngIf="gpsEstado === 'error'">Sin ubicación disponible — se guardará igual, quedará para revisión</span>
-    </div>
-
-    <button type="button" class="mrc-confirmar-btn" [disabled]="procesando" (click)="confirmarMarcado()">
-      <span *ngIf="!procesando"><i class="ti ti-camera"></i> Capturar y marcar {{ pasoActivo?.label | lowercase }}</span>
-      <span *ngIf="procesando"><span class="mrc-spinner mrc-spinner-sm"></span> Procesando…</span>
-    </button>
+  <div class="mrc-gps-row">
+    <i class="ti" [class]="gpsEstado === 'ok' ? 'ti-map-pin-check' : gpsEstado === 'error' ? 'ti-map-pin-off' : 'ti-map-pin-search'"></i>
+    <span *ngIf="gpsEstado === 'buscando'">Obteniendo ubicación…</span>
+    <span *ngIf="gpsEstado === 'ok'">Ubicación obtenida ({{ gpsCoords?.accuracy | number: '1.0-0' }}m de precisión)</span>
+    <span *ngIf="gpsEstado === 'error'">Sin ubicación disponible — se guardará igual, quedará para revisión</span>
   </div>
 </div>

@@ -51,6 +51,11 @@ interface ProjectFormModel {
   cantTrabajadoresCasa: string;
 
   tieneArquitecturaComercial: boolean;
+
+  lat: number | null;
+  lng: number | null;
+  radioGeofenceMetros: number | null;
+
   active: boolean;
 }
 
@@ -132,6 +137,11 @@ export class ProyectoEdit implements OnInit {
       cantTrabajadoresCasa: this.project.cantTrabajadoresCasa ?? '',
 
       tieneArquitecturaComercial: this.project.tieneArquitecturaComercial ?? false,
+
+      lat: this.project.lat ?? null,
+      lng: this.project.lng ?? null,
+      radioGeofenceMetros: this.project.radioGeofenceMetros ?? null,
+
       active: this.project.active,
     };
   }
@@ -246,6 +256,11 @@ export class ProyectoEdit implements OnInit {
       cantTrabajadoresCasa: this.form.cantTrabajadoresCasa.trim() || undefined,
 
       tieneArquitecturaComercial: this.form.tieneArquitecturaComercial,
+
+      lat: this.form.lat ?? undefined,
+      lng: this.form.lng ?? undefined,
+      radioGeofenceMetros: this.form.radioGeofenceMetros ?? undefined,
+
       active: this.form.active,
     };
 
@@ -299,6 +314,11 @@ export class ProyectoEdit implements OnInit {
       cantTrabajadoresCasa: '',
 
       tieneArquitecturaComercial: false,
+
+      lat: null,
+      lng: null,
+      radioGeofenceMetros: null,
+
       active: true,
     };
   }

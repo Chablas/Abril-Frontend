@@ -19,7 +19,6 @@ import {
   TrabajadorAbrilDTO,
 } from './dtos/actas-reunion.dto';
 
-import { PROJECTS_TABS } from '../shared/projects-tabs';
 @Component({
   selector: 'app-actas-reunion',
   standalone: true,
@@ -27,7 +26,6 @@ import { PROJECTS_TABS } from '../shared/projects-tabs';
   templateUrl: './actas-reunion.html',
 })
 export class ActasReunion implements OnInit {
-  readonly tabs = PROJECTS_TABS;
   proyectos: ProyectoFiltroDTO[] = [];
   estados: CatalogoDTO[] = [];
   trabajadores: TrabajadorAbrilDTO[] = [];

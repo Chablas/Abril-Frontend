@@ -118,6 +118,12 @@ export class Sidebar implements OnInit, OnDestroy {
       return (url === '/ssoma' || url.startsWith('/ssoma/')) &&
              !url.startsWith('/ssoma/gestion');
     }
+    // 'Actas de Reunión' es su propio módulo aunque su ruta siga bajo /projects
+    // (no se movieron archivos): sin esto, "Proyectos" quedaba marcado activo a la vez.
+    if (baseRoute === '/projects') {
+      return (url === '/projects' || url.startsWith('/projects/')) &&
+             !url.startsWith('/projects/actas-reunion');
+    }
     return url === baseRoute || url.startsWith(baseRoute + '/');
   }
 
