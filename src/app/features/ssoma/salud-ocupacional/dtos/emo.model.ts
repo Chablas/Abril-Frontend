@@ -337,6 +337,7 @@ export interface EmoPorTrabajadorQuery {
   sinLectura?: boolean;
   sinCertificado?: boolean;
   sinEmoCompleto?: boolean;
+  sinInterconsulta?: boolean;
   /** 'fechaEmo' | 'fechaVencimiento' */
   sortBy?: string;
   sortDesc?: boolean;

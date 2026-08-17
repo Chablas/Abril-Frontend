@@ -24,6 +24,8 @@ import { EmpresaContratistaService } from '../../services/empresa-contratista.se
 import { EmpresaContratistaListDto } from '../../dtos/empresa.model';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { SearchInput } from '../../../../shared/components/search-input/search-input';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
 import {
   ArchivoStagingDto,
   WorkerEntregableDto,
@@ -65,6 +67,8 @@ import { getGerencias, getHijos } from '../../../../shared/utils/area-arbol.util
     ProgramarInduccion,
     SearchSelect,
     SearchInput,
+    FilterTriggerButton,
+    FilterModal,
     WorkerCreateEdit,
     ProgramarEmoDialogComponent,
     EmosProgramados,
@@ -99,6 +103,46 @@ export class Trabajadores implements OnInit, OnDestroy {
   soloSinEmo = false;
   soloEmoVencido = false;
   soloSinVidaLey = false;
+  /** Filtros de evidencia (SSOMA/Salud confidencial): solo filtran, no exponen datos clínicos en la tabla. */
+  soloSinLectura = false;
+  soloSinCertificado = false;
+  soloSinInterconsulta = false;
+  soloSinEmoCompleto = false;
+
+  filtrosAbiertos = false;
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filtroEstado) n++;
+    if (this.filtroEmpresaId) n++;
+    if (this.filtroProyectoId) n++;
+    if (this.filtroAreaEfectivo) n++;
+    if (this.soloSinEmo) n++;
+    if (this.soloEmoVencido) n++;
+    if (this.soloSinVidaLey) n++;
+    if (this.soloSinLectura) n++;
+    if (this.soloSinCertificado) n++;
+    if (this.soloSinInterconsulta) n++;
+    if (this.soloSinEmoCompleto) n++;
+    return n;
+  }
+
+  limpiarFiltros(): void {
+    this.filtroEstado = '';
+    this.filtroEmpresaId = null;
+    this.filtroProyectoId = null;
+    this.filtroGerenciaId = null;
+    this.filtroAreaScopeId = null;
+    this.areaScopeOptions = [];
+    this.soloSinEmo = false;
+    this.soloEmoVencido = false;
+    this.soloSinVidaLey = false;
+    this.soloSinLectura = false;
+    this.soloSinCertificado = false;
+    this.soloSinInterconsulta = false;
+    this.soloSinEmoCompleto = false;
+    this.loadWorkers(1);
+  }
 
   catalogoProyectos: ProjectGetDTO[] = [];
   catalogoEmpresas: EmpresaContratistaListDto[] = [];
@@ -286,6 +330,10 @@ export class Trabajadores implements OnInit, OnDestroy {
       soloSinEmo: this.soloSinEmo || undefined,
       soloEmoVencido: this.soloEmoVencido || undefined,
       soloSinVidaLey: this.soloSinVidaLey || undefined,
+      soloSinLectura: this.soloSinLectura || undefined,
+      soloSinCertificado: this.soloSinCertificado || undefined,
+      soloSinInterconsulta: this.soloSinInterconsulta || undefined,
+      soloSinEmoCompleto: this.soloSinEmoCompleto || undefined,
     };
     console.log('[trabajadores] params:', JSON.stringify(params));
     this.trabajadorHabService.getTrabajadores(params).subscribe({

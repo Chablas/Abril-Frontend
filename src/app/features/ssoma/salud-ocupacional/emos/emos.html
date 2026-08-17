@@ -308,6 +308,10 @@
     <input type="checkbox" [(ngModel)]="filters.sinEmoCompleto" (ngModelChange)="onFilterChange()" />
     Sin EMO Completo (evidencia)
   </label>
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinInterconsulta" (ngModelChange)="onFilterChange()" />
+    Sin levantamiento de Interconsulta (evidencia)
+  </label>
 </app-filter-modal>
 
 <app-emo-create
