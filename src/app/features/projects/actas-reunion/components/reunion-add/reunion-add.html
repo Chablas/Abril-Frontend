@@ -38,7 +38,7 @@
           valueField="projectId"
           displayField="projectDescription"
           [value]="projectId"
-          (valueChange)="projectId = $event"
+          (valueChange)="onProjectIdChange($event)"
           [disabled]="projectIdFijo != null"
           placeholder="Selecciona un proyecto">
         </app-search-select>
@@ -50,7 +50,7 @@
             [ngModel]="areaScopePath[i]?.areaScopeId ?? null"
             (ngModelChange)="onNivelAreaScopeChange(i, $event)"
             class="w-full h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]">
-            <option [ngValue]="null">{{ i === 0 ? 'Selecciona una gerencia' : 'Selecciona (opcional)' }}</option>
+            <option [ngValue]="null">{{ placeholderNivel(opciones, i) }}</option>
             <option *ngFor="let n of opciones" [ngValue]="n.areaScopeId">{{ n.areaItemName }}</option>
           </select>
         </div>
@@ -65,7 +65,7 @@
           </label>
         </div>
         <app-search-select *ngIf="!temaPersonalizado"
-          [options]="temas"
+          [options]="temasFiltrados"
           valueField="descripcion"
           displayField="descripcion"
           [showLabel]="false"
@@ -82,35 +82,17 @@
           Guardar como tema recurrente (quedará disponible en el desplegable la próxima vez)
         </label>
 
-        <div *ngIf="temaPersonalizado && guardarTemaComoRecurrente"
-          class="mt-2 border border-[#E5EAF0] rounded-lg p-3 flex flex-col gap-2 bg-[#F5F8FA]">
+        <div *ngIf="temaPersonalizado && guardarTemaComoRecurrente && convocatoriaTemaConfig"
+          class="mt-2 flex items-center justify-between gap-2 bg-[#F5F8FA] border border-[#E5EAF0] rounded-lg px-3 py-2">
           <p class="text-[11px] text-gray-500">
-            Define a quién convocar automáticamente cada vez que se elija este tema (ej. "Reunión de
-            Jefaturas de Proyectos" siempre convoca al área de Proyectos).
+            <span class="ti ti-check text-[var(--color-abril-primary)]"></span>
+            Convocatoria configurada
+            <span *ngIf="convocatoriaTemaConfig.requiereAgenda"> · con agenda {{ convocatoriaTemaConfig.agendaFija ? 'fija' : 'dinámica' }}</span>
           </p>
-          <label class="text-xs font-medium text-gray-500">Área/gerencia (opcional)</label>
-          <select *ngFor="let opciones of nivelesAreaRecurrente; let i = index"
-            [ngModel]="areaScopePathRecurrente[i]?.areaScopeId ?? null"
-            (ngModelChange)="onNivelAreaRecurrenteChange(i, $event)"
-            class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm bg-white focus:outline-none focus:border-[var(--color-abril-primary)]">
-            <option [ngValue]="null">{{ i === 0 ? 'Todas las gerencias' : 'Todas (opcional)' }}</option>
-            <option *ngFor="let n of opciones" [ngValue]="n.areaScopeId">{{ n.areaItemName }}</option>
-          </select>
-
-          <label class="text-xs font-medium text-gray-500 mt-1">Puestos (opcional, marca uno o varios)</label>
-          <p *ngIf="puestosRecurrente.length === 0" class="text-[11px] text-gray-400">
-            No hay puestos registrados en esta área todavía.
-          </p>
-          <div *ngIf="puestosRecurrente.length > 0" class="border border-[#E5EAF0] rounded-lg max-h-32 overflow-y-auto flex flex-col bg-white">
-            <label *ngFor="let p of puestosRecurrente"
-              class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 cursor-pointer select-none hover:bg-gray-50 border-b border-[#E5EAF0] last:border-b-0">
-              <input type="checkbox" [(ngModel)]="p.marcado" (ngModelChange)="agregarConvocadosRecurrente()" class="accent-[var(--color-abril-primary)] cursor-pointer" />
-              {{ p.descripcion }}
-            </label>
-          </div>
-          <p class="text-[11px] text-gray-400">
-            Estas personas se agregan automáticamente como participantes de esta reunión.
-          </p>
+          <button type="button" (click)="showConvocatoriaTemaModal = true"
+            class="text-[11px] text-[var(--color-abril-primary)] hover:underline cursor-pointer whitespace-nowrap">
+            Editar
+          </button>
         </div>
       </div>
       <div>
@@ -257,3 +239,11 @@
   (closeModal)="showConvocatoriaMasivaModal = false"
   (agregarTrabajadores)="onTrabajadoresAgregadosMasivamente($event)">
 </app-convocatoria-masiva>
+
+<app-convocatoria-tema
+  *ngIf="showConvocatoriaTemaModal"
+  [arbol]="arbolAreaScope"
+  [inicial]="convocatoriaTemaConfig"
+  (closeModal)="onConvocatoriaTemaCancelada()"
+  (guardar)="onConvocatoriaTemaGuardada($event)">
+</app-convocatoria-tema>

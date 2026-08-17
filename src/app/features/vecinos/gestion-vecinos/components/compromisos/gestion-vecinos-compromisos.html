@@ -232,7 +232,7 @@
           </label>
         </div>
 
-        <div *ngIf="c.normativas?.length; else sinNormativas" class="flex flex-col gap-1.5">
+        <div *ngIf="c.normativas.length; else sinNormativas" class="flex flex-col gap-1.5">
           <div *ngFor="let n of c.normativas"
             class="flex items-center justify-between gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5">
             <a [href]="entregableFileUrl(n.archivoUrl)" target="_blank" rel="noopener" download

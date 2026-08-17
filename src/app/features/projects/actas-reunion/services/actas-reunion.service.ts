@@ -16,6 +16,7 @@ import {
   ReunionListItemDTO,
   ReunionPaginaInicialDTO,
   ReunionReprogramarRequest,
+  ReunionTemaOpcionDTO,
   ReunionUpdateRequest,
   TemaConvocatoriaDTO,
   TemaConvocatoriaSaveRequest,
@@ -140,8 +141,8 @@ export class ActasReunionService {
   }
 
   /** Catálogo de temas predefinidos, para la pantalla de configuración de convocatoria por tema. */
-  getTemasCatalogo(): Observable<CatalogoDTO[]> {
-    return this.http.get<CatalogoDTO[]>(`${this.apiUrl}/temas`, { headers: this.authHeaders() });
+  getTemasCatalogo(): Observable<ReunionTemaOpcionDTO[]> {
+    return this.http.get<ReunionTemaOpcionDTO[]>(`${this.apiUrl}/temas`, { headers: this.authHeaders() });
   }
 
   /** Da de alta un tema personalizado en el catálogo, para reutilizarlo como tema recurrente. */
@@ -149,6 +150,15 @@ export class ActasReunionService {
     return this.http.post<CatalogoDTO>(
       `${this.apiUrl}/temas`,
       { descripcion },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Elimina un tema del catálogo (borrado real, no soft-delete). Las reuniones que ya lo usaban conservan
+   * su tema (texto propio) y solo pierden el vínculo al catálogo. */
+  eliminarTema(reunionTemaId: number): Observable<{ message: string; reunionesDesvinculadas: number }> {
+    return this.http.delete<{ message: string; reunionesDesvinculadas: number }>(
+      `${this.apiUrl}/temas/${reunionTemaId}`,
       { headers: this.authHeaders() },
     );
   }

@@ -16,6 +16,7 @@ import {
   ProyectoFiltroDTO,
   ReunionFiltro,
   ReunionListItemDTO,
+  ReunionTemaOpcionDTO,
   TrabajadorAbrilDTO,
 } from './dtos/actas-reunion.dto';
 
@@ -29,7 +30,7 @@ export class ActasReunion implements OnInit {
   proyectos: ProyectoFiltroDTO[] = [];
   estados: CatalogoDTO[] = [];
   trabajadores: TrabajadorAbrilDTO[] = [];
-  temas: CatalogoDTO[] = [];
+  temas: ReunionTemaOpcionDTO[] = [];
   reuniones: PagedResultDTO<ReunionListItemDTO> = {
     page: 1,
     pageSize: 10,

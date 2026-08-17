@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -9,7 +9,7 @@ import { ErrorService } from '../../../../core/services/error.service';
 import { ActasReunionService } from '../services/actas-reunion.service';
 import { AreaScopeService } from '../../../configuracion/shared/services/area-scope.service';
 import { AreaScopeTreeDto } from '../../../configuracion/shared/dtos/areaScope.model';
-import { CatalogoDTO, ReunionFolderDTO } from '../dtos/actas-reunion.dto';
+import { ReunionFolderDTO, ReunionTemaOpcionDTO } from '../dtos/actas-reunion.dto';
 
 interface PuestoRow {
   id: number;
@@ -34,7 +34,7 @@ export class ActasReunionConfiguracion implements OnInit {
   linkUrl = '';
 
   // ── Convocatoria recurrente por tema ──────────────────────────────────────
-  temas: CatalogoDTO[] = [];
+  temas: ReunionTemaOpcionDTO[] = [];
   temaSeleccionadoId: number | null = null;
   arbol: AreaScopeTreeDto[] = [];
   areaScopePath: AreaScopeTreeDto[] = [];
@@ -53,16 +53,23 @@ export class ActasReunionConfiguracion implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private router: Router,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
     this.load();
     this.service.getTemasCatalogo().subscribe({
-      next: (data) => (this.temas = data),
+      next: (data) => {
+        this.temas = data;
+        this.cdr.detectChanges();
+      },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
     this.areaScopeService.getTree().subscribe({
-      next: (data) => (this.arbol = data),
+      next: (data) => {
+        this.arbol = data;
+        this.cdr.detectChanges();
+      },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
   }
@@ -81,6 +88,7 @@ export class ActasReunionConfiguracion implements OnInit {
           descripcion: p.descripcion,
           marcado: puestoIdsMarcados.includes(p.id),
         }));
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
@@ -118,6 +126,7 @@ export class ActasReunionConfiguracion implements OnInit {
         this.agendaFija = data.agendaFija;
         this.agendaTexto = data.agendaTexto ?? '';
         this.recordatorioHorasAntes = data.recordatorioHorasAntes;
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -206,6 +215,48 @@ export class ActasReunionConfiguracion implements OnInit {
           this.errorService.handleError(err);
         },
       });
+  }
+
+  /** Borrado real del catálogo (no soft-delete): falla si ya hay reuniones agendadas con este tema. */
+  eliminarTema(): void {
+    if (this.temaSeleccionadoId == null) return;
+    const temaId = this.temaSeleccionadoId;
+    const nombre = this.temas.find((t) => t.id === temaId)?.descripcion ?? 'este tema';
+
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar tema?',
+      html: `<b>${nombre}</b> se eliminará por completo del catálogo y ya no se podrá elegir en reuniones nuevas.
+        Las reuniones que ya lo usan conservan su tema tal cual (solo se quitó el vínculo al catálogo); si alguna
+        estaba programada con agenda dinámica pendiente, dejará de recibir el recordatorio automático.`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loaderService.show();
+      this.service.eliminarTema(temaId).subscribe({
+        next: (res) => {
+          this.loaderService.hide();
+          this.temas = this.temas.filter((t) => t.id !== temaId);
+          this.temaSeleccionadoId = null;
+          this.onTemaSeleccionadoChange();
+          Swal.fire({
+            icon: 'success',
+            title: 'Tema eliminado',
+            text: res.reunionesDesvinculadas > 0
+              ? `${res.reunionesDesvinculadas} reunión(es) que lo usaban conservan su tema tal cual.`
+              : undefined,
+            confirmButtonColor: 'var(--color-abril-primary)',
+          });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+    });
   }
 
   volver(): void {

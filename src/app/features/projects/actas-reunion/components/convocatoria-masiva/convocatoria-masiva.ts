@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -6,7 +6,6 @@ import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
-import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { ActasReunionService } from '../../services/actas-reunion.service';
 import { AreaScopeService } from '../../../../configuracion/shared/services/area-scope.service';
@@ -52,20 +51,24 @@ export class ConvocatoriaMasiva implements OnInit {
   arbol: AreaScopeTreeDto[] = [];
   reglas: ReglaConvocatoria[] = [{ areaScopePath: [], puestos: [], filtroPuesto: '', projectId: null }];
 
-  /** Una vez buscado, se muestra el resultado para que el usuario marque a todos o solo a algunos. */
-  mostrandoResultados = false;
+  /** Resultado en vivo: se recalcula solo (sin botón "Buscar") cada vez que cambia algún filtro. */
   resultados: ResultadoRow[] = [];
+  buscando = false;
+  private buscarTimer?: ReturnType<typeof setTimeout>;
 
   constructor(
     private service: ActasReunionService,
     private areaScopeService: AreaScopeService,
-    private loaderService: LoaderService,
     private errorService: ErrorService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
     this.areaScopeService.getTree().subscribe({
-      next: (data) => (this.arbol = data),
+      next: (data) => {
+        this.arbol = data;
+        this.cdr.detectChanges();
+      },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
     this.cargarPuestos(this.reglas[0]);
@@ -82,6 +85,7 @@ export class ConvocatoriaMasiva implements OnInit {
     this.service.getPuestosPorArea(this.areaScopeIdDeRegla(regla)).subscribe({
       next: (data) => {
         regla.puestos = data.map((p) => ({ id: p.id, descripcion: p.descripcion, marcado: false }));
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
@@ -89,6 +93,7 @@ export class ConvocatoriaMasiva implements OnInit {
 
   removerRegla(index: number): void {
     this.reglas.splice(index, 1);
+    this.dispararBusqueda();
   }
 
   /** Un select por nivel para esta regla: raíz (gerencias) y luego los hijos elegidos en cascada. */
@@ -111,6 +116,12 @@ export class ConvocatoriaMasiva implements OnInit {
     if (nodo) regla.areaScopePath.push(nodo);
     // El área cambió: los puestos marcados antes pueden ya no aplicar, se recarga el checklist.
     this.cargarPuestos(regla);
+    this.dispararBusqueda();
+  }
+
+  onProjectIdReglaChange(regla: ReglaConvocatoria, projectId: number | null): void {
+    regla.projectId = projectId;
+    this.dispararBusqueda();
   }
 
   private areaScopeIdDeRegla(regla: ReglaConvocatoria): number | null {
@@ -134,6 +145,7 @@ export class ConvocatoriaMasiva implements OnInit {
 
   toggleTodosPuestos(regla: ReglaConvocatoria, valor: boolean): void {
     this.puestosFiltrados(regla).forEach((p) => (p.marcado = valor));
+    this.dispararBusqueda();
   }
 
   private puestoIdsDeRegla(regla: ReglaConvocatoria): number[] {
@@ -149,26 +161,30 @@ export class ConvocatoriaMasiva implements OnInit {
     );
   }
 
-  buscar(): void {
+  /** Se llama en cada cambio de filtro (área, puesto, proyecto). Debounced: espera a que el usuario
+   * termine de marcar/desmarcar en vez de disparar una búsqueda por cada click individual. */
+  dispararBusqueda(): void {
+    clearTimeout(this.buscarTimer);
+    this.buscarTimer = setTimeout(() => this.ejecutarBusqueda(), 300);
+  }
+
+  private ejecutarBusqueda(): void {
     const reglasValidas = this.reglas.filter((r) => this.reglaValida(r));
     if (reglasValidas.length === 0) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Sin filtros',
-        text: 'Define al menos un área/gerencia, marca algún puesto o elige un proyecto en alguna regla.',
-        confirmButtonColor: 'var(--color-abril-primary)',
-      });
+      this.resultados = [];
+      this.cdr.detectChanges();
       return;
     }
 
-    this.loaderService.show();
+    this.buscando = true;
+    this.cdr.detectChanges();
     forkJoin(
       reglasValidas.map((r) =>
         this.service.buscarTrabajadoresPorFiltro(this.areaScopeIdDeRegla(r), this.puestoIdsDeRegla(r), r.projectId),
       ),
     ).subscribe({
       next: (resultados) => {
-        this.loaderService.hide();
+        this.buscando = false;
         const vistos = new Set<number>();
         const trabajadores: TrabajadorAbrilDTO[] = [];
         for (const lista of resultados) {
@@ -178,22 +194,19 @@ export class ConvocatoriaMasiva implements OnInit {
             trabajadores.push(t);
           }
         }
-        if (trabajadores.length === 0) {
-          Swal.fire({
-            icon: 'info',
-            title: 'Sin resultados',
-            text: 'No se encontró ningún trabajador con esos filtros.',
-            confirmButtonColor: 'var(--color-abril-primary)',
-          });
-          return;
-        }
-        // Todos vienen marcados por defecto; el usuario puede destildar los que no quiere.
-        this.resultados = trabajadores.map((t) => ({ trabajador: t, seleccionado: true }));
-        this.mostrandoResultados = true;
+        // Conserva la selección de quienes ya estaban marcados/desmarcados de una búsqueda anterior;
+        // los nuevos que aparecen por el filtro vienen marcados por defecto.
+        const seleccionPrevia = new Map(this.resultados.map((r) => [r.trabajador.workerId, r.seleccionado]));
+        this.resultados = trabajadores.map((t) => ({
+          trabajador: t,
+          seleccionado: seleccionPrevia.get(t.workerId) ?? true,
+        }));
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
+        this.buscando = false;
         this.errorService.handleError(err);
+        this.cdr.detectChanges();
       },
     });
   }
@@ -210,9 +223,9 @@ export class ConvocatoriaMasiva implements OnInit {
     return this.resultados.filter((r) => r.seleccionado).length;
   }
 
-  volverAFiltros(): void {
-    this.mostrandoResultados = false;
-    this.resultados = [];
+  /** Si ninguna regla tiene filtro, no hay búsqueda corriendo (distingue "sin filtros" de "sin resultados"). */
+  get tieneFiltro(): boolean {
+    return this.reglas.some((r) => this.reglaValida(r));
   }
 
   confirmar(): void {

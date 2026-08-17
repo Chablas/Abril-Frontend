@@ -1,9 +1,8 @@
 <app-base-modal [title]="'Agregar por área/puesto'" width="w-[680px]" (closeModal)="closeModal.emit()">
   <div class="flex flex-col gap-4 p-1">
 
-    <!-- ── Paso 1: filtros ──────────────────────────────────────────────────── -->
-    <ng-container *ngIf="!mostrandoResultados">
-      <p class="text-xs text-gray-500">
+    <!-- ── Filtros (el resultado se recalcula solo, no hay botón "Buscar") ────── -->
+    <p class="text-xs text-gray-500">
         Cada regla filtra por área/gerencia, puesto y/o staff de un proyecto (todos opcionales, se
         combinan). Agrega varias reglas para mezclar grupos distintos, por ejemplo "todo el staff
         del proyecto X" + "todas las jefaturas de Proyectos".
@@ -45,7 +44,7 @@
           <div class="border border-[#E5EAF0] rounded-lg max-h-40 overflow-y-auto flex flex-col">
             <label *ngFor="let p of puestosFiltrados(regla)"
               class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 cursor-pointer select-none hover:bg-gray-50 border-b border-[#E5EAF0] last:border-b-0">
-              <input type="checkbox" [(ngModel)]="p.marcado" class="accent-[var(--color-abril-primary)] cursor-pointer" />
+              <input type="checkbox" [(ngModel)]="p.marcado" (ngModelChange)="dispararBusqueda()" class="accent-[var(--color-abril-primary)] cursor-pointer" />
               {{ p.descripcion }}
             </label>
             <p *ngIf="puestosFiltrados(regla).length === 0" class="px-3 py-2 text-xs text-gray-400">
@@ -61,7 +60,7 @@
             valueField="projectId"
             displayField="projectDescription"
             [value]="regla.projectId"
-            (valueChange)="regla.projectId = $event"
+            (valueChange)="onProjectIdReglaChange(regla, $event)"
             placeholder="Buscar proyecto...">
           </app-search-select>
           <p class="text-[11px] text-gray-400 mt-1">
@@ -75,34 +74,24 @@
         <span class="ti ti-plus"></span> Agregar otra regla
       </button>
 
-      <div class="flex justify-end gap-3 pt-2">
-        <button type="button" (click)="closeModal.emit()"
-          class="h-[42px] px-5 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors">
-          Cancelar
-        </button>
-        <button type="button" (click)="buscar()"
-          class="h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
-          <span class="ti ti-search text-base"></span>
-          Buscar
-        </button>
-      </div>
-    </ng-container>
-
-    <!-- ── Paso 2: resultado, elegir todos o algunos ───────────────────────────── -->
-    <ng-container *ngIf="mostrandoResultados">
+    <!-- ── Resultado en vivo: se recalcula solo al cambiar cualquier filtro de arriba ─── -->
+    <div class="border-t border-[#E5EAF0] pt-3 flex flex-col gap-2">
       <div class="flex items-center justify-between">
         <p class="text-sm text-gray-600">
-          Se encontraron <span class="font-semibold">{{ resultados.length }}</span> trabajadores.
-          Desmarca los que no quieras agregar.
+          <ng-container *ngIf="tieneFiltro; else sinFiltro">
+            <span class="font-semibold">{{ resultados.length }}</span> trabajador{{ resultados.length === 1 ? '' : 'es' }} encontrado{{ resultados.length === 1 ? '' : 's' }}.
+            Desmarca los que no quieras agregar.
+          </ng-container>
+          <ng-template #sinFiltro>Define un filtro arriba para ver trabajadores.</ng-template>
         </p>
-        <label class="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer select-none">
+        <label *ngIf="resultados.length > 0" class="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer select-none">
           <input type="checkbox" [ngModel]="todosSeleccionados" (ngModelChange)="toggleTodos($event)"
             class="accent-[var(--color-abril-primary)] cursor-pointer" />
           Seleccionar todos
         </label>
       </div>
 
-      <div class="border border-[#E5EAF0] rounded-lg overflow-hidden max-h-72 overflow-y-auto">
+      <div *ngIf="resultados.length > 0" class="border border-[#E5EAF0] rounded-lg overflow-hidden max-h-56 overflow-y-auto">
         <table class="w-full text-sm">
           <tbody>
             <tr *ngFor="let r of resultados" class="border-t border-[#E5EAF0] first:border-t-0">
@@ -115,19 +104,21 @@
           </tbody>
         </table>
       </div>
+      <p *ngIf="tieneFiltro && !buscando && resultados.length === 0" class="text-xs text-gray-400">
+        Ningún trabajador coincide con estos filtros.
+      </p>
+    </div>
 
-      <div class="flex justify-between gap-3 pt-2">
-        <button type="button" (click)="volverAFiltros()"
-          class="h-[42px] px-5 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-2">
-          <span class="ti ti-arrow-left text-base"></span>
-          Cambiar filtros
-        </button>
-        <button type="button" (click)="confirmar()"
-          class="h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
-          <span class="ti ti-users text-base"></span>
-          Agregar {{ totalSeleccionados }} participante{{ totalSeleccionados === 1 ? '' : 's' }}
-        </button>
-      </div>
-    </ng-container>
+    <div class="flex justify-end gap-3 pt-2">
+      <button type="button" (click)="closeModal.emit()"
+        class="h-[42px] px-5 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors">
+        Cancelar
+      </button>
+      <button type="button" (click)="confirmar()" [disabled]="totalSeleccionados === 0"
+        class="h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+        <span class="ti ti-users text-base"></span>
+        Agregar {{ totalSeleccionados }} participante{{ totalSeleccionados === 1 ? '' : 's' }}
+      </button>
+    </div>
   </div>
 </app-base-modal>

@@ -8,6 +8,18 @@ export interface ProyectoFiltroDTO {
   projectDescription: string;
 }
 
+/**
+ * Tema del desplegable "Tema de la reunión", con el área/gerencia de su convocatoria recurrente
+ * (si tiene) para poder ocultarlo cuando no aplica al ámbito elegido — ej. "Reunión de Jefaturas
+ * de Proyectos" (areaScopeId = Gerencia de Proyectos) no debe salir al agendar una reunión de un
+ * proyecto puntual. areaScopeId null = sin área asociada, aplica a cualquier ámbito.
+ */
+export interface ReunionTemaOpcionDTO {
+  id: number;
+  descripcion: string;
+  areaScopeId: number | null;
+}
+
 /** Trabajador de Abril (workers con email_corporativo @abril.pe) para los desplegables. */
 export interface TrabajadorAbrilDTO {
   workerId: number;
@@ -50,7 +62,7 @@ export interface ReunionPaginaInicialDTO {
   reunionEstados: CatalogoDTO[];
   trabajadores: TrabajadorAbrilDTO[];
   /** Temas predefinidos para el desplegable de "Tema de la reunión" al agendar. */
-  temas: CatalogoDTO[];
+  temas: ReunionTemaOpcionDTO[];
   reuniones: PagedResultDTO<ReunionListItemDTO>;
 }
 
@@ -139,7 +151,7 @@ export interface ReunionDetalleDTO {
   acuerdoEstados: CatalogoDTO[];
   trabajadores: TrabajadorAbrilDTO[];
   /** Temas predefinidos para el desplegable al "Agendar siguiente reunión". */
-  temas: CatalogoDTO[];
+  temas: ReunionTemaOpcionDTO[];
 }
 
 // ── Requests ───────────────────────────────────────────────────────────────
