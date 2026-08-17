@@ -87,12 +87,25 @@
           <p class="text-[11px] text-gray-500">
             <span class="ti ti-check text-[var(--color-abril-primary)]"></span>
             Convocatoria configurada
-            <span *ngIf="convocatoriaTemaConfig.requiereAgenda"> · con agenda {{ convocatoriaTemaConfig.agendaFija ? 'fija' : 'dinámica' }}</span>
+            <span> · con agenda {{ convocatoriaTemaConfig.agendaFija ? 'fija' : 'dinámica' }}</span>
           </p>
           <button type="button" (click)="showConvocatoriaTemaModal = true"
             class="text-[11px] text-[var(--color-abril-primary)] hover:underline cursor-pointer whitespace-nowrap">
             Editar
           </button>
+        </div>
+
+        <!-- Reunión puntual: no queda vinculada a ningún tema del catálogo, así que su agenda
+             se define aquí mismo (mínimo 1 punto), en vez de depender de un recordatorio posterior. -->
+        <div *ngIf="temaPersonalizado && !guardarTemaComoRecurrente" class="mt-2 flex flex-col gap-1">
+          <label class="text-xs font-medium text-gray-500">Agenda de la reunión * (mínimo 1 punto)</label>
+          <textarea [(ngModel)]="agendaTexto" rows="3" maxlength="2000"
+            class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+            placeholder="Ej.&#10;1. Revisión de avance&#10;2. Riesgos y bloqueos"></textarea>
+          <p class="text-[11px] text-gray-400">
+            Al ser puntual (no queda guardada como tema recurrente), define aquí los puntos a
+            tratar; no se pedirá a los participantes que carguen los suyos.
+          </p>
         </div>
       </div>
       <div>
@@ -243,6 +256,7 @@
 <app-convocatoria-tema
   *ngIf="showConvocatoriaTemaModal"
   [arbol]="arbolAreaScope"
+  [proyectos]="proyectos"
   [inicial]="convocatoriaTemaConfig"
   (closeModal)="onConvocatoriaTemaCancelada()"
   (guardar)="onConvocatoriaTemaGuardada($event)">

@@ -2,17 +2,32 @@ import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angu
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { ActasReunionService } from '../../services/actas-reunion.service';
 import { AreaScopeTreeDto } from '../../../../configuracion/shared/dtos/areaScope.model';
-import { TemaConvocatoriaSaveRequest, TrabajadorAbrilDTO } from '../../dtos/actas-reunion.dto';
+import {
+  ProyectoFiltroDTO,
+  TemaConvocatoriaReglaInput,
+  TemaConvocatoriaSaveRequest,
+  TrabajadorAbrilDTO,
+} from '../../dtos/actas-reunion.dto';
 
 interface PuestoRow {
   id: number;
   descripcion: string;
   marcado: boolean;
+}
+
+/** Una regla de convocatoria en edición: a quién convoca (área/gerencia y/o proyecto + puestos). */
+interface ReglaConvocatoria {
+  areaScopePath: AreaScopeTreeDto[];
+  puestos: PuestoRow[];
+  filtroPuesto: string;
+  projectId: number | null;
 }
 
 export interface ConvocatoriaTemaResultado {
@@ -21,45 +36,48 @@ export interface ConvocatoriaTemaResultado {
 }
 
 /**
- * Modal para configurar la convocatoria recurrente de un tema nuevo (área/puestos que se
- * convocan siempre + si requiere agenda fija o dinámica), en vez de amontonar todos estos campos
- * dentro del formulario de "Agendar reunión". Se abre al marcar "Guardar como tema recurrente".
+ * Modal para configurar la convocatoria recurrente de un tema (varias reglas independientes de
+ * área/proyecto + puestos que se convocan siempre, y si requiere agenda fija o dinámica), en vez
+ * de amontonar todos estos campos dentro del formulario de "Agendar reunión". Se abre al marcar
+ * "Guardar como tema recurrente". Ej.: "Reunión de Jefaturas de Proyectos" puede convocar a la vez
+ * a los Jefes de Proyectos de su gerencia Y al Gerente Inmobiliario de otra — dos reglas, no una.
  */
 @Component({
   selector: 'app-convocatoria-tema',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './convocatoria-tema.html',
 })
 export class ConvocatoriaTema {
   /** Árbol completo de áreas/gerencias, ya cargado por el padre. */
   @Input() arbol: AreaScopeTreeDto[] = [];
+  /** Proyectos disponibles para el filtro "Staff de un proyecto" de cada regla. */
+  @Input() proyectos: ProyectoFiltroDTO[] = [];
 
   /** Configuración previa, al reabrir el modal para editar (null = arranca en blanco). */
   @Input() set inicial(value: TemaConvocatoriaSaveRequest | null) {
     if (!value) return;
-    this.areaScopePath = value.areaScopeId != null ? this.buscarRuta(this.arbol, value.areaScopeId) ?? [] : [];
-    this.requiereAgenda = value.requiereAgenda;
     this.agendaFija = value.agendaFija;
     this.agendaTexto = value.agendaTexto ?? '';
     this.recordatorioHorasAntes = value.recordatorioHorasAntes;
-    this.cargarPuestos(value.puestoIds);
+    this.reglas =
+      value.reglas.length > 0
+        ? value.reglas.map((r) => this.reglaDesde(r.areaScopeId, r.projectId, r.puestoIds))
+        : [this.reglaVacia()];
+    this.reglas.forEach((r) => this.cargarPuestos(r));
     this.previsualizar();
   }
 
   @Output() closeModal = new EventEmitter<void>();
   @Output() guardar = new EventEmitter<ConvocatoriaTemaResultado>();
 
-  areaScopePath: AreaScopeTreeDto[] = [];
-  puestos: PuestoRow[] = [];
-  filtroPuesto = '';
+  reglas: ReglaConvocatoria[] = [this.reglaVacia()];
 
-  requiereAgenda = false;
   agendaFija = false;
   agendaTexto = '';
   recordatorioHorasAntes: number | null = null;
 
-  /** Previsualización en vivo de a quién se agregaría como participante con el área/puestos elegidos. */
+  /** Previsualización en vivo de a quién se agregaría como participante con las reglas elegidas. */
   trabajadoresPreview: TrabajadorAbrilDTO[] = [];
   buscando = false;
   private previewTimer?: ReturnType<typeof setTimeout>;
@@ -69,6 +87,19 @@ export class ConvocatoriaTema {
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
   ) {}
+
+  private reglaVacia(): ReglaConvocatoria {
+    return { areaScopePath: [], puestos: [], filtroPuesto: '', projectId: null };
+  }
+
+  private reglaDesde(areaScopeId: number | null, projectId: number | null, puestoIds: number[]): ReglaConvocatoria {
+    return {
+      areaScopePath: areaScopeId != null ? this.buscarRuta(this.arbol, areaScopeId) ?? [] : [],
+      puestos: puestoIds.map((id) => ({ id, descripcion: '', marcado: true })), // se completa en cargarPuestos
+      filtroPuesto: '',
+      projectId,
+    };
+  }
 
   /** Busca la cadena de nodos (raíz → hoja) que llega al area_scope_id dado, para preseleccionar la cascada al editar. */
   private buscarRuta(nodos: AreaScopeTreeDto[], areaScopeId: number): AreaScopeTreeDto[] | null {
@@ -80,21 +111,32 @@ export class ConvocatoriaTema {
     return null;
   }
 
-  get areaScopeId(): number | null {
-    return this.areaScopePath.length > 0
-      ? this.areaScopePath[this.areaScopePath.length - 1].areaScopeId
+  agregarRegla(): void {
+    const regla = this.reglaVacia();
+    this.reglas.push(regla);
+    this.cargarPuestos(regla);
+  }
+
+  removerRegla(index: number): void {
+    this.reglas.splice(index, 1);
+    this.previsualizar();
+  }
+
+  private areaScopeIdDeRegla(regla: ReglaConvocatoria): number | null {
+    return regla.areaScopePath.length > 0
+      ? regla.areaScopePath[regla.areaScopePath.length - 1].areaScopeId
       : null;
   }
 
-  /** Un select por nivel: raíz (gerencias) y luego los hijos del nodo elegido en el nivel anterior. */
-  get nivelesAreaScope(): AreaScopeTreeDto[][] {
+  /** Un select por nivel para esta regla: raíz (gerencias) y luego los hijos elegidos en cascada. */
+  nivelesRegla(regla: ReglaConvocatoria): AreaScopeTreeDto[][] {
     const niveles: AreaScopeTreeDto[][] = [this.arbol];
-    let actual = this.areaScopePath[0];
+    let actual = regla.areaScopePath[0];
     let i = 0;
     while (actual && actual.children.length > 0) {
       niveles.push(actual.children);
       i++;
-      actual = this.areaScopePath[i];
+      actual = regla.areaScopePath[i];
     }
     return niveles;
   }
@@ -106,22 +148,25 @@ export class ConvocatoriaTema {
     return nivel === 0 ? `Todas las ${tipo}` : `Todas (opcional)`;
   }
 
-  onNivelAreaScopeChange(nivel: number, areaScopeId: number | null): void {
-    const opciones = this.nivelesAreaScope[nivel] ?? [];
+  onNivelReglaChange(regla: ReglaConvocatoria, nivel: number, areaScopeId: number | null): void {
+    const opciones = this.nivelesRegla(regla)[nivel] ?? [];
     const nodo = opciones.find((n) => n.areaScopeId === areaScopeId) ?? null;
-    this.areaScopePath = this.areaScopePath.slice(0, nivel);
-    if (nodo) this.areaScopePath.push(nodo);
-    this.cargarPuestos();
+    regla.areaScopePath = regla.areaScopePath.slice(0, nivel);
+    if (nodo) regla.areaScopePath.push(nodo);
+    this.cargarPuestos(regla);
     this.previsualizar();
   }
 
-  private cargarPuestos(puestoIdsMarcados?: number[]): void {
-    const marcadosPrevios = puestoIdsMarcados
-      ? new Set(puestoIdsMarcados)
-      : new Set(this.puestos.filter((p) => p.marcado).map((p) => p.id));
-    this.service.getPuestosPorArea(this.areaScopeId).subscribe({
+  onProjectIdReglaChange(regla: ReglaConvocatoria, projectId: number | null): void {
+    regla.projectId = projectId;
+    this.previsualizar();
+  }
+
+  private cargarPuestos(regla: ReglaConvocatoria): void {
+    const marcadosPrevios = new Set(regla.puestos.filter((p) => p.marcado).map((p) => p.id));
+    this.service.getPuestosPorArea(this.areaScopeIdDeRegla(regla)).subscribe({
       next: (data) => {
-        this.puestos = data.map((p) => ({
+        regla.puestos = data.map((p) => ({
           id: p.id,
           descripcion: p.descripcion,
           marcado: marcadosPrevios.has(p.id),
@@ -132,32 +177,24 @@ export class ConvocatoriaTema {
     });
   }
 
-  get puestosFiltrados(): PuestoRow[] {
-    const texto = this.filtroPuesto.trim().toLowerCase();
-    if (!texto) return this.puestos;
-    return this.puestos.filter((p) => p.descripcion.toLowerCase().includes(texto));
+  puestosFiltrados(regla: ReglaConvocatoria): PuestoRow[] {
+    const texto = regla.filtroPuesto.trim().toLowerCase();
+    if (!texto) return regla.puestos;
+    return regla.puestos.filter((p) => p.descripcion.toLowerCase().includes(texto));
   }
 
-  get todosPuestosMarcados(): boolean {
-    const visibles = this.puestosFiltrados;
+  todosPuestosMarcados(regla: ReglaConvocatoria): boolean {
+    const visibles = this.puestosFiltrados(regla);
     return visibles.length > 0 && visibles.every((p) => p.marcado);
   }
 
-  toggleTodosPuestos(valor: boolean): void {
-    this.puestosFiltrados.forEach((p) => (p.marcado = valor));
+  toggleTodosPuestos(regla: ReglaConvocatoria, valor: boolean): void {
+    this.puestosFiltrados(regla).forEach((p) => (p.marcado = valor));
     this.previsualizar();
   }
 
   onPuestoToggle(): void {
     this.previsualizar();
-  }
-
-  onRequiereAgendaChange(): void {
-    if (!this.requiereAgenda) {
-      this.agendaFija = false;
-      this.agendaTexto = '';
-      this.recordatorioHorasAntes = null;
-    }
   }
 
   onAgendaFijaChange(): void {
@@ -168,12 +205,24 @@ export class ConvocatoriaTema {
     }
   }
 
-  /** Debounced: recalcula quién calzaría como participante con el área/puestos elegidos. */
+  private puestoIdsDeRegla(regla: ReglaConvocatoria): number[] {
+    return regla.puestos.filter((p) => p.marcado).map((p) => p.id);
+  }
+
+  /** Una regla vacía (sin área, puestos ni proyecto) no aportaría a nadie: se ignora al guardar/previsualizar. */
+  private reglaValida(regla: ReglaConvocatoria): boolean {
+    return (
+      this.areaScopeIdDeRegla(regla) != null ||
+      this.puestoIdsDeRegla(regla).length > 0 ||
+      regla.projectId != null
+    );
+  }
+
+  /** Debounced: recalcula quién calzaría como participante con las reglas elegidas (unión, sin duplicar). */
   private previsualizar(): void {
     clearTimeout(this.previewTimer);
-    const areaScopeId = this.areaScopeId;
-    const puestoIds = this.puestos.filter((p) => p.marcado).map((p) => p.id);
-    if (areaScopeId == null && puestoIds.length === 0) {
+    const reglasValidas = this.reglas.filter((r) => this.reglaValida(r));
+    if (reglasValidas.length === 0) {
       this.trabajadoresPreview = [];
       this.cdr.detectChanges();
       return;
@@ -181,9 +230,22 @@ export class ConvocatoriaTema {
     this.previewTimer = setTimeout(() => {
       this.buscando = true;
       this.cdr.detectChanges();
-      this.service.buscarTrabajadoresPorFiltro(areaScopeId, puestoIds, null).subscribe({
-        next: (trabajadores) => {
+      forkJoin(
+        reglasValidas.map((r) =>
+          this.service.buscarTrabajadoresPorFiltro(this.areaScopeIdDeRegla(r), this.puestoIdsDeRegla(r), r.projectId),
+        ),
+      ).subscribe({
+        next: (resultados) => {
           this.buscando = false;
+          const vistos = new Set<number>();
+          const trabajadores: TrabajadorAbrilDTO[] = [];
+          for (const lista of resultados) {
+            for (const t of lista) {
+              if (vistos.has(t.workerId)) continue;
+              vistos.add(t.workerId);
+              trabajadores.push(t);
+            }
+          }
           this.trabajadoresPreview = trabajadores;
           this.cdr.detectChanges();
         },
@@ -198,11 +260,8 @@ export class ConvocatoriaTema {
 
   private getValidationErrors(): string[] {
     const errors: string[] = [];
-    if (this.requiereAgenda && this.agendaFija && !this.agendaTexto.trim()) {
+    if (this.agendaFija && !this.agendaTexto.trim()) {
       errors.push('El texto de la agenda fija');
-    }
-    if (this.requiereAgenda && !this.agendaFija && !this.recordatorioHorasAntes) {
-      errors.push('Las horas de anticipación del recordatorio');
     }
     return errors;
   }
@@ -220,14 +279,20 @@ export class ConvocatoriaTema {
       return;
     }
 
+    const reglas: TemaConvocatoriaReglaInput[] = this.reglas
+      .filter((r) => this.reglaValida(r))
+      .map((r) => ({
+        areaScopeId: this.areaScopeIdDeRegla(r),
+        projectId: r.projectId,
+        puestoIds: this.puestoIdsDeRegla(r),
+      }));
+
     this.guardar.emit({
       config: {
-        areaScopeId: this.areaScopeId,
-        puestoIds: this.puestos.filter((p) => p.marcado).map((p) => p.id),
-        requiereAgenda: this.requiereAgenda,
+        reglas,
         agendaFija: this.agendaFija,
         agendaTexto: this.agendaFija ? this.agendaTexto.trim() || null : null,
-        recordatorioHorasAntes: this.requiereAgenda && !this.agendaFija ? this.recordatorioHorasAntes : null,
+        recordatorioHorasAntes: !this.agendaFija ? this.recordatorioHorasAntes : null,
       },
       trabajadores: this.trabajadoresPreview,
     });

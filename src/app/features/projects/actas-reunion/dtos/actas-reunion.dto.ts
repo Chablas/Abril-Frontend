@@ -182,6 +182,8 @@ export interface ReunionCreateRequest {
   horaInicio: string | null;
   horaFin: string | null;
   reunionAnteriorId: number | null;
+  /** Agenda fija ad-hoc, obligatoria cuando la reunión es puntual (tema personalizado, no recurrente). */
+  agendaTexto: string | null;
   participantes: ReunionParticipanteInput[];
 }
 
@@ -233,21 +235,33 @@ export interface ReunionFolderDTO {
   createdUserId: number;
 }
 
-/** Convocatoria recurrente asociada a un tema (ej. "Reunión de Jefaturas de Proyectos"). */
-export interface TemaConvocatoriaDTO {
+/** Una regla de convocatoria de un tema: a quién convocar (área/gerencia y/o proyecto + puestos).
+ * Un tema puede tener varias reglas independientes (ej. jefaturas de una gerencia + un gerente
+ * puntual de otra). */
+export interface TemaConvocatoriaReglaDTO {
   areaScopeId: number | null;
   areaScopeDescripcion: string | null;
+  projectId: number | null;
+  projectDescription: string | null;
   puestoIds: number[];
-  requiereAgenda: boolean;
+}
+
+export interface TemaConvocatoriaReglaInput {
+  areaScopeId: number | null;
+  projectId: number | null;
+  puestoIds: number[];
+}
+
+/** Convocatoria recurrente asociada a un tema (ej. "Reunión de Jefaturas de Proyectos"). */
+export interface TemaConvocatoriaDTO {
+  reglas: TemaConvocatoriaReglaDTO[];
   agendaFija: boolean;
   agendaTexto: string | null;
   recordatorioHorasAntes: number | null;
 }
 
 export interface TemaConvocatoriaSaveRequest {
-  areaScopeId: number | null;
-  puestoIds: number[];
-  requiereAgenda: boolean;
+  reglas: TemaConvocatoriaReglaInput[];
   agendaFija: boolean;
   agendaTexto: string | null;
   recordatorioHorasAntes: number | null;

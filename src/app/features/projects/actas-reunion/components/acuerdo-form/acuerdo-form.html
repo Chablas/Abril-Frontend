@@ -17,9 +17,16 @@
 
     <!-- ── Responsables ───────────────────────────────────────────────────── -->
     <div>
-      <label class="block text-sm text-gray-600 mb-2">Responsables</label>
+      <div class="flex items-center justify-between mb-2">
+        <label class="text-sm text-gray-600">Responsables</label>
+        <button type="button" (click)="showConvocatoriaMasivaModal = true"
+          class="text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
+          <span class="ti ti-users"></span> Agregar por área/puesto
+        </button>
+      </div>
       <p class="text-xs text-gray-400 mb-2">
-        No tienen que haber asistido a la reunión: puedes elegir a cualquier trabajador de la organización.
+        No tienen que haber asistido a la reunión: puedes elegir a cualquier trabajador de la organización,
+        uno por uno o en bloque (ej. todas las jefaturas de proyectos, todo el staff de un proyecto).
       </p>
       <div class="flex flex-wrap gap-2 mb-2" *ngIf="responsables.length > 0">
         <span *ngFor="let r of responsables"
@@ -94,3 +101,10 @@
     </div>
   </div>
 </app-base-modal>
+
+<app-convocatoria-masiva
+  *ngIf="showConvocatoriaMasivaModal"
+  [proyectos]="proyectos"
+  (closeModal)="showConvocatoriaMasivaModal = false"
+  (agregarTrabajadores)="onTrabajadoresAgregadosMasivamente($event)">
+</app-convocatoria-masiva>

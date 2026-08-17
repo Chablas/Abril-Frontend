@@ -1,92 +1,124 @@
-<app-base-modal [title]="'Convocatoria recurrente del tema'" width="w-[560px]" (closeModal)="closeModal.emit()">
+<app-base-modal [title]="'Convocatoria recurrente del tema'" width="w-[680px]" (closeModal)="closeModal.emit()">
   <div class="flex flex-col gap-4 p-1">
     <p class="text-xs text-gray-500">
-      Define a quién convocar automáticamente cada vez que se elija este tema, y si requiere que
-      los participantes carguen una agenda antes de la reunión.
+      Cada regla filtra por área/gerencia, puesto y/o staff de un proyecto (todos opcionales, se
+      combinan). Agrega varias reglas para mezclar grupos distintos — ej. "todas las jefaturas de
+      Proyectos" + "el Gerente Inmobiliario de otra gerencia" — y define si requiere agenda fija o
+      dinámica.
     </p>
 
-    <div class="flex flex-col gap-2">
-      <label class="text-sm font-medium text-gray-600">Área/gerencia (opcional)</label>
-      <select *ngFor="let opciones of nivelesAreaScope; let i = index"
-        [ngModel]="areaScopePath[i]?.areaScopeId ?? null"
-        (ngModelChange)="onNivelAreaScopeChange(i, $event)"
-        class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]">
-        <option [ngValue]="null">{{ placeholderNivel(opciones, i) }}</option>
-        <option *ngFor="let n of opciones" [ngValue]="n.areaScopeId">{{ n.areaItemName }}</option>
-      </select>
-    </div>
+    <div *ngFor="let regla of reglas; let ri = index"
+      class="border border-[#E5EAF0] rounded-lg p-3 flex flex-col gap-2 relative">
+      <button *ngIf="reglas.length > 1" type="button" (click)="removerRegla(ri)"
+        class="absolute top-2 right-2 text-red-400 hover:text-red-600 cursor-pointer">
+        <span class="ti ti-x text-base"></span>
+      </button>
 
-    <div class="flex flex-col gap-2">
-      <div class="flex items-center justify-between">
-        <label class="text-sm font-medium text-gray-600">Puestos (opcional, marca uno o varios)</label>
-        <label *ngIf="puestos.length > 0" class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
-          <input type="checkbox" [ngModel]="todosPuestosMarcados" (ngModelChange)="toggleTodosPuestos($event)"
+      <label class="text-xs font-medium text-gray-500">Área/gerencia (opcional)</label>
+      <div class="flex flex-col gap-2">
+        <select *ngFor="let opciones of nivelesRegla(regla); let i = index"
+          [ngModel]="regla.areaScopePath[i]?.areaScopeId ?? null"
+          (ngModelChange)="onNivelReglaChange(regla, i, $event)"
+          class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]">
+          <option [ngValue]="null">{{ placeholderNivel(opciones, i) }}</option>
+          <option *ngFor="let n of opciones" [ngValue]="n.areaScopeId">{{ n.areaItemName }}</option>
+        </select>
+      </div>
+
+      <div class="flex items-center justify-between mt-1">
+        <label class="text-xs font-medium text-gray-500">Puestos (opcional, marca uno o varios)</label>
+        <label *ngIf="regla.puestos.length > 0" class="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer select-none">
+          <input type="checkbox" [ngModel]="todosPuestosMarcados(regla)" (ngModelChange)="toggleTodosPuestos(regla, $event)"
             class="accent-[var(--color-abril-primary)] cursor-pointer" />
           Marcar todos
         </label>
       </div>
-      <p *ngIf="puestos.length === 0" class="text-xs text-gray-400">
+      <p *ngIf="regla.puestos.length === 0" class="text-[11px] text-gray-400">
         No hay puestos registrados en esta área todavía.
       </p>
-      <ng-container *ngIf="puestos.length > 0">
-        <input type="text" [(ngModel)]="filtroPuesto" maxlength="100"
+      <ng-container *ngIf="regla.puestos.length > 0">
+        <input type="text" [(ngModel)]="regla.filtroPuesto" maxlength="100"
           class="w-full h-[36px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
           placeholder="Filtrar, ej. jefe" />
         <div class="border border-[#E5EAF0] rounded-lg max-h-40 overflow-y-auto flex flex-col">
-          <label *ngFor="let p of puestosFiltrados"
+          <label *ngFor="let p of puestosFiltrados(regla)"
             class="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 cursor-pointer select-none hover:bg-gray-50 border-b border-[#E5EAF0] last:border-b-0">
             <input type="checkbox" [(ngModel)]="p.marcado" (ngModelChange)="onPuestoToggle()" class="accent-[var(--color-abril-primary)] cursor-pointer" />
             {{ p.descripcion }}
           </label>
-          <p *ngIf="puestosFiltrados.length === 0" class="px-3 py-2 text-xs text-gray-400">
-            Ningún puesto coincide con "{{ filtroPuesto }}".
+          <p *ngIf="puestosFiltrados(regla).length === 0" class="px-3 py-2 text-xs text-gray-400">
+            Ningún puesto coincide con "{{ regla.filtroPuesto }}".
           </p>
         </div>
       </ng-container>
-      <p *ngIf="trabajadoresPreview.length > 0" class="text-[11px] text-gray-500">
-        Se agregarán <span class="font-semibold">{{ trabajadoresPreview.length }}</span> participante{{ trabajadoresPreview.length === 1 ? '' : 's' }} a esta reunión.
-      </p>
+
+      <div class="mt-1">
+        <app-search-select
+          label="Staff de un proyecto (opcional)"
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="regla.projectId"
+          (valueChange)="onProjectIdReglaChange(regla, $event)"
+          placeholder="Buscar proyecto...">
+        </app-search-select>
+        <p class="text-[11px] text-gray-400 mt-1">
+          Trae a todo el staff asignado a ese proyecto (residente, ingenieros, jefaturas de obra, etc.).
+        </p>
+      </div>
     </div>
 
+    <button type="button" (click)="agregarRegla()"
+      class="self-start text-xs text-[var(--color-abril-primary)] hover:underline flex items-center gap-1 cursor-pointer">
+      <span class="ti ti-plus"></span> Agregar otra regla
+    </button>
+
+    <p *ngIf="trabajadoresPreview.length > 0" class="text-[11px] text-gray-500 border-t border-[#E5EAF0] pt-3">
+      Se agregarán <span class="font-semibold">{{ trabajadoresPreview.length }}</span> participante{{ trabajadoresPreview.length === 1 ? '' : 's' }} a esta reunión.
+    </p>
+
     <div class="flex flex-col gap-2 border-t border-[#E5EAF0] pt-4">
-      <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer select-none">
-        <input type="checkbox" [(ngModel)]="requiereAgenda" (ngModelChange)="onRequiereAgendaChange()"
-          class="accent-[var(--color-abril-primary)] cursor-pointer" />
-        Este tema requiere agenda (temas a tratar)
-      </label>
+      <p class="text-sm font-medium text-gray-700">
+        Agenda de este tema
+        <span class="text-xs text-gray-400 font-normal">(toda reunión requiere agenda; elige cómo se define)</span>
+      </p>
 
-      <ng-container *ngIf="requiereAgenda">
-        <div class="flex gap-4 pl-1">
-          <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer select-none">
-            <input type="radio" name="agendaTipo" [value]="true" [ngModel]="agendaFija" (ngModelChange)="agendaFija = $event; onAgendaFijaChange()"
-              class="accent-[var(--color-abril-primary)]" />
-            Fija (siempre los mismos puntos)
-          </label>
-          <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer select-none">
-            <input type="radio" name="agendaTipo" [value]="false" [ngModel]="agendaFija" (ngModelChange)="agendaFija = $event; onAgendaFijaChange()"
-              class="accent-[var(--color-abril-primary)]" />
-            Dinámica (cada participante propone sus temas)
-          </label>
-        </div>
+      <div class="flex gap-4 pl-1">
+        <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer select-none">
+          <input type="radio" name="agendaTipo" [value]="true" [ngModel]="agendaFija" (ngModelChange)="agendaFija = $event; onAgendaFijaChange()"
+            class="accent-[var(--color-abril-primary)]" />
+          Fija (siempre los mismos puntos)
+        </label>
+        <label class="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer select-none">
+          <input type="radio" name="agendaTipo" [value]="false" [ngModel]="agendaFija" (ngModelChange)="agendaFija = $event; onAgendaFijaChange()"
+            class="accent-[var(--color-abril-primary)]" />
+          Dinámica (cada participante propone sus temas)
+        </label>
+      </div>
+      <p class="text-[11px] text-gray-400 pl-1">
+        <b>Fija:</b> escribes una sola vez los puntos y se repiten igual en cada reunión con este tema.
+        <b>Dinámica:</b> antes de cada reunión, cada convocado recibe un correo con un link para cargar
+        sus propios temas a tratar.
+      </p>
 
-        <div *ngIf="agendaFija" class="flex flex-col gap-1.5 pl-1">
-          <label class="text-xs font-medium text-gray-500">Agenda estándar</label>
-          <textarea [(ngModel)]="agendaTexto" rows="4" maxlength="2000"
-            class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
-            placeholder="Ej.&#10;1. Revisión de avance&#10;2. Riesgos y bloqueos&#10;3. Acuerdos de la semana anterior"></textarea>
-        </div>
+      <div *ngIf="agendaFija" class="flex flex-col gap-1.5 pl-1">
+        <label class="text-xs font-medium text-gray-500">Agenda estándar</label>
+        <textarea [(ngModel)]="agendaTexto" rows="4" maxlength="2000"
+          class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+          placeholder="Ej.&#10;1. Revisión de avance&#10;2. Riesgos y bloqueos&#10;3. Acuerdos de la semana anterior"></textarea>
+      </div>
 
-        <div *ngIf="!agendaFija" class="flex flex-col gap-1.5 pl-1">
-          <label class="text-xs font-medium text-gray-500">Recordar con cuántas horas de anticipación</label>
-          <input type="number" [(ngModel)]="recordatorioHorasAntes" min="0" max="72" step="0.5"
-            class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
-            placeholder="Ej. 15.5" />
-          <p class="text-[11px] text-gray-400">
-            Se calcula desde la hora de inicio y se ajusta a horario laboral (07:00–19:00, días
-            hábiles). A cada participante le llega un correo con el link para cargar sus temas.
-          </p>
-        </div>
-      </ng-container>
+      <div *ngIf="!agendaFija" class="flex flex-col gap-1.5 pl-1">
+        <label class="text-xs font-medium text-gray-500">Recordar con cuántas horas de anticipación</label>
+        <input type="number" [(ngModel)]="recordatorioHorasAntes" min="0" max="72" step="0.5"
+          class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+          placeholder="Ej. 15.5" />
+        <p class="text-[11px] text-gray-400">
+          Se calcula desde la hora de inicio y se ajusta a horario laboral (07:00–19:00, días
+          hábiles). A cada participante le llega un correo con el link para cargar sus temas.
+          Si se deja vacío, se recuerda 24h antes por defecto.
+        </p>
+      </div>
     </div>
 
     <div class="flex justify-end gap-3 pt-2">
