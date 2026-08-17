@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { roleGuard } from '../../core/guards/role.guard';
+import { Roles } from '../../core/constants/roles';
 import { IvtControl } from './ivt-control/ivt-control';
 import { ConstructionLogbookControl } from './construction-logbook-control/construction-logbook-control';
 import { ReportResponseControl } from './report-response-control/report-response-control';
@@ -17,9 +18,26 @@ import { ConfiguracionInicial } from './planeamiento-bim/configuracion-inicial/c
 import { CargaDiaria } from './planeamiento-bim/carga-diaria/carga-diaria';
 import { Bloqueos } from './planeamiento-bim/bloqueos/bloqueos';
 import { PlaneamientoBimDashboard } from './planeamiento-bim/dashboard/dashboard';
+import { PlaneamientoBimPortafolio } from './planeamiento-bim/portafolio/portafolio';
 
 export const PROJECTS_ROUTES: Routes = [
   { path: '', redirectTo: 'projects-dashboard', pathMatch: 'full' },
+  {
+    // Landing del feature (antes de elegir proyecto) — restringido a
+    // AdministradorSistema/AdministradorUdp, sin UsuarioUdp (mismo rol que exige
+    // [Authorize] en PlaneamientoBimPortafolioController). No comparte el
+    // featureKey del resto del módulo a propósito: ese featureKey ya está
+    // sembrado para USUARIO_UDP, y roleGuard es un OR (featureKey O roles) —
+    // compartirlo dejaría entrar a UsuarioUdp aunque el backend luego le tire 403.
+    path: 'planeamiento-bim/portafolio',
+    component: PlaneamientoBimPortafolio,
+    canActivate: [roleGuard],
+    data: {
+      titulo: 'PORTAFOLIO DE PLANEAMIENTO BIM',
+      featureKey: 'planeamiento-bim.portafolio',
+      roles: [Roles.ADMINISTRADOR_SISTEMA, Roles.ADMINISTRADOR_UDP],
+    },
+  },
   {
     path: 'planeamiento-bim/configuracion-inicial',
     component: ConfiguracionInicial,
