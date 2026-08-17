@@ -44,6 +44,17 @@ export const GESTION_GTH_ROUTES: Routes = [
     },
   },
   {
+    // Onboarding: la fase que sigue a Reclutamiento. Solo entran los candidatos que el área
+    // solicitante seleccionó y cuyo requerimiento quedó cerrado.
+    path: 'onboarding',
+    loadComponent: () => import('./onboarding/onboarding').then((m) => m.GthOnboarding),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'ONBOARDING',
+      featureKey: 'gestion-gth.onboarding',
+    },
+  },
+  {
     // Vista del solicitante (jefatura/gerencia): registra y hace seguimiento a sus vacantes.
     path: 'solicitud-personal',
     loadComponent: () =>

@@ -1,0 +1,54 @@
+:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+/* ── Responsive ─────────────────────────────────────────────────────────
+   Las 10 columnas de la tabla no entran por debajo de ~1024px: debajo de
+   ese ancho se cambia por tarjetas, mismo patrón que la bandeja de
+   Reclutamiento. La lista es la misma (comparten filtros, paginación y
+   acciones), solo cambia cómo se dibuja. */
+.onb-cards { display: none; }
+
+@media (max-width: 1023.98px) {
+  .abril-table-wrap { display: none; }
+  .onb-cards { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  /* Objetivo táctil: 28px es cómodo con mouse, corto con el dedo. */
+  .onb-cards .abril-action-btn { width: 32px; height: 32px; font-size: 15px; }
+}
+
+/* Tablet: una sola columna de tarjetas queda enorme y vacía; con auto-fill
+   entran dos por fila sin cambiar nada del layout del teléfono. */
+@media (min-width: 640px) and (max-width: 1023.98px) {
+  .onb-cards { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+}
+
+/* Teléfono: las 4 tarjetas de resumen apiladas ocupaban casi una pantalla
+   completa antes de llegar al embudo y a la lista. A dos columnas y con
+   medidas compactas entran de una sola vista. Todo acotado a este @media
+   para no alterar el desktop. */
+@media (max-width: 639.98px) {
+  .page-container { gap: 12px; }
+
+  .onb-kpis { gap: 10px; }
+  .onb-kpi { padding: 10px 11px; gap: 10px; }
+  .onb-kpi-icon { width: 34px; height: 34px; border-radius: 8px; }
+  .onb-kpi-svg { width: 18px; height: 18px; }
+  .onb-kpi-value { font-size: 20px; }
+  .onb-kpi-label { font-size: 11.5px; margin-top: 3px; line-height: 1.2; }
+  .onb-kpi-sub { font-size: 10px; line-height: 1.2; }
+
+  .onb-aviso { padding: 10px 12px; gap: 10px; }
+  .onb-aviso-icon { width: 30px; height: 30px; }
+  .onb-aviso-text { font-size: 12.5px; line-height: 1.35; }
+
+  .onb-fases-card { padding: 12px; }
+  .onb-fases-title { font-size: 13.5px; }
+  .onb-fases-dot { width: 36px; height: 36px; font-size: 13px; }
+  .onb-fases-name { font-size: 10.5px; }
+  /* min-width del conector: cuánto se puede comprimir el embudo antes de
+     necesitar scroll. margin-top = radio del círculo, para que la línea
+     quede a su altura media (18px con círculos de 36px). */
+  .onb-fases-link { min-width: 10px; margin-top: 18px; }
+  /* El embudo se arrastra con el dedo: la barra de scroll ocupaba alto y se
+     leía como un corte. Mismo criterio que las pestañas del header. */
+  .onb-fases { scrollbar-width: none; }
+  .onb-fases::-webkit-scrollbar { display: none; }
+}

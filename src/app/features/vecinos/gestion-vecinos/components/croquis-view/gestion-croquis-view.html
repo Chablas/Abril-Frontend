@@ -72,21 +72,26 @@
             stroke-width="2"
             vector-effect="non-scaling-stroke"
             class="cursor-pointer"
+            (mouseenter)="hoverLoteId = lote.projectCroquisLoteId"
+            (mouseleave)="hoverLoteId = null"
             (click)="$event.stopPropagation(); selectLote(lote)" />
         </svg>
 
-        <!-- Etiquetas -->
-        <div *ngFor="let lote of selected.lotes"
-          (click)="$event.stopPropagation(); selectLote(lote)"
-          class="absolute -translate-x-1/2 -translate-y-1/2 text-[11px] font-bold px-1.5 py-0.5 rounded bg-white/85 border cursor-pointer"
-          [style.left.%]="centroid(lote.puntos).x"
-          [style.top.%]="centroid(lote.puntos).y"
-          [style.borderColor]="loteStroke(lote)"
-          [style.color]="loteStroke(lote)">
-          {{ lote.numeroLote }}
-        </div>
+        <!-- Etiquetas: solo la del lote bajo el cursor (o el seleccionado), para que
+             los nombres no se solapen. `pointer-events-none` evita que la etiqueta
+             tape al polígono y corte su propio hover. -->
+        <ng-container *ngFor="let lote of selected.lotes">
+          <div *ngIf="labelVisible(lote)"
+            class="absolute z-10 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap text-[11px] font-bold px-1.5 py-0.5 rounded bg-white/90 border shadow-sm pointer-events-none"
+            [style.left.%]="centroid(lote.puntos).x"
+            [style.top.%]="centroid(lote.puntos).y"
+            [style.borderColor]="loteStroke(lote)"
+            [style.color]="loteStroke(lote)">
+            {{ lote.numeroLote }}
+          </div>
+        </ng-container>
       </div>
-      <p class="text-xs text-gray-400 mt-2">Haz clic en un lote para ver sus vecinos.</p>
+      <p class="text-xs text-gray-400 mt-2">Pasa el mouse por un lote para ver su nombre y haz clic para ver sus vecinos.</p>
     </div>
 
     <!-- Panel lateral (solo consulta) -->

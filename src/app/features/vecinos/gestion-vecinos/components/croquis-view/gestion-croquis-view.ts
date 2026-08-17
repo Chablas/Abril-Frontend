@@ -59,6 +59,11 @@ export class GestionCroquisView implements OnChanges {
 
   selected: CroquisGestionDTO | null = null;
   selectedLote: CroquisGestionLoteDTO | null = null;
+  /**
+   * Lote bajo el cursor. Solo se dibuja la etiqueta de este lote (y la del
+   * seleccionado) para que los nombres no se solapen entre sí en el croquis.
+   */
+  hoverLoteId: number | null = null;
 
   imageSrc(url: string): string {
     return url.startsWith('http') ? url : environment.apiUrl.replace(/\/$/, '') + url;
@@ -119,12 +124,14 @@ export class GestionCroquisView implements OnChanges {
   open(c: CroquisGestionDTO): void {
     this.selected = c;
     this.selectedLote = null;
+    this.hoverLoteId = null;
     this.activeSection = 'resumen';
   }
 
   close(): void {
     this.selected = null;
     this.selectedLote = null;
+    this.hoverLoteId = null;
     this.activeSection = 'resumen';
   }
 
@@ -148,6 +155,14 @@ export class GestionCroquisView implements OnChanges {
       x: (puntos.reduce((a, p) => a + p[0], 0) / n) * 100,
       y: (puntos.reduce((a, p) => a + p[1], 0) / n) * 100,
     };
+  }
+
+  /** La etiqueta solo se muestra al pasar el mouse por el lote o si está seleccionado. */
+  labelVisible(lote: CroquisGestionLoteDTO): boolean {
+    return (
+      this.hoverLoteId === lote.projectCroquisLoteId ||
+      this.selectedLote?.projectCroquisLoteId === lote.projectCroquisLoteId
+    );
   }
 
   loteFill(lote: CroquisGestionLoteDTO): string {

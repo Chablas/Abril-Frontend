@@ -80,8 +80,8 @@ Contiene componentes Angular standalone reutilizables por cualquier feature:
 |---|---|---|
 | `base-modal` | `app-base-modal` | Contenedor de modal con título y botón de cierre |
 | `search-select` | `app-search-select` | Select con búsqueda, acepta cualquier lista de objetos |
-| `file-selector` | `app-file-selector` | Input de archivo estilizado con hint y evento de selección |
-| `file-preview` | `app-file-preview` | Lista de archivos seleccionados con botón de eliminar |
+| `file-selector` | `app-file-selector` | Input de archivo estilizado con hint y evento de selección; color de acento y fondo configurables (default verde `--color-abril-lime`) |
+| `file-preview` | `app-file-preview` | Lista de archivos seleccionados con botón de eliminar; color de borde, fondo e ícono configurables (default verde `--color-abril-lime`) |
 | `view-toggle` | `app-view-toggle` | Toggle de modos de vista (tabla/tarjetas) con íconos SVG |
 | `paginator` | `app-paginator` | Paginador genérico con eventos de cambio de página |
 | `date-picker` | `app-date-picker` | Selector de fecha con calendario desplegable; valor `YYYY-MM-DD` como el input nativo y color de acento configurable (default `--color-abril-lime`) |

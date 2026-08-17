@@ -223,11 +223,13 @@ export class NavigationService {
       items: [
         // Vista de GTH (procesa las solicitudes de toda la organización).
         { label: 'Reclutamiento', route: '/gestion-gth/reclutamiento', featureKey: 'gestion-gth.reclutamiento' },
+        // Continuación de Reclutamiento: el ingreso del colaborador seleccionado.
+        { label: 'Onboarding', route: '/gestion-gth/onboarding', featureKey: 'gestion-gth.onboarding' },
         // Vista del solicitante (jefatura/gerencia que pide personal).
         { label: 'Solicitud de Personal', route: '/gestion-gth/solicitud-personal', featureKey: 'gestion-gth.solicitud-personal' },
         // Vista de Gerencia: aprueba/rechaza las solicitudes y deja el historial.
         { label: 'Aprobaciones', route: '/gestion-gth/aprobaciones', featureKey: 'gestion-gth.aprobaciones' },
-        // Onboarding y Base maestra se agregarán con sus respectivas funcionalidades.
+        // Base maestra se agregará con su propia funcionalidad.
       ],
       groups: [],
     },
