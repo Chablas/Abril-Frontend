@@ -81,7 +81,7 @@ import {
     }
 
     /* ── Aviso de alcance ─────────────────────────────────────────────────
-       Explica de dónde sale lo que el usuario ve (o por qué no ve nada). No es
+       Una línea con de dónde sale lo que el usuario ve (o por qué no ve nada). No es
        decorativo: sin él, un gerente que solo ve 2 de las 20 solicitudes de la
        empresa no tiene forma de saber si es un filtro o un error. */
     .ap-scope {
@@ -130,7 +130,6 @@ import {
       .ap-kpi-svg { width: 18px; height: 18px; }
       .ap-kpi-value { font-size: 20px; }
       .ap-kpi-label { font-size: 11.5px; margin-top: 3px; line-height: 1.2; }
-      .ap-kpi-sub { font-size: 10px; line-height: 1.2; }
     }
   `],
 })
@@ -247,54 +246,46 @@ export class GthAprobaciones implements OnInit {
   }
 
   get subtitulo(): string {
-    if (this.esGerenteGeneral) {
-      return 'Aprueba o rechaza las solicitudes de personal de toda la organización.';
-    }
-    if (this.nivel === 'GERENTE_AREA') {
-      return 'Da tu visto bueno a las solicitudes de personal de tu gerencia.';
-    }
+    if (this.esGerenteGeneral) return 'Solicitudes de personal de toda la organización.';
+    if (this.nivel === 'GERENTE_AREA') return 'Solicitudes de personal de tu gerencia.';
     return 'Solicitudes de personal por aprobar.';
   }
 
-  /** Aviso que explica de dónde sale lo que el usuario ve. */
+  /**
+   * Aviso de alcance: SOLO de dónde sale lo que el usuario ve. Lo que explicaba el flujo
+   * ("tu aprobación es la obligatoria", "avanza recién con la de Gerencia General") se quitó
+   * de acá: el modal de decisión ya lo marca con el chip «Obligatoria» y lo repite en la
+   * confirmación al enviar, que es donde recién importa.
+   *
+   * El caso sin alcance sí conserva el porqué y qué hacer: la pantalla queda vacía a
+   * propósito y sin ese texto se lee como un error.
+   */
   get textoAlcance(): string {
-    if (this.esGerenteGeneral) {
-      return (
-        'Ves todas las solicitudes de la organización. Tu aprobación es la obligatoria: ' +
-        'al confirmarla, las vacantes aprobadas pasan a Gestión de Talento Humano.'
-      );
-    }
+    if (this.esGerenteGeneral) return 'Ves todas las solicitudes de la organización.';
     if (this.nivel === 'GERENTE_AREA') {
-      const area = this.areaAlcance ? `de ${this.areaAlcance}` : 'de tu gerencia';
-      return (
-        `Ves solo las solicitudes ${area} y de las áreas que dependen de ella. Tu visto bueno ` +
-        'queda registrado, pero la solicitud avanza recién con la aprobación de Gerencia General.'
-      );
+      const area = this.areaAlcance ? this.areaAlcance : 'tu gerencia';
+      return `Ves las solicitudes de ${area} y de las áreas que dependen de ella.`;
     }
     return (
-      'Tu ficha de trabajador no es de Gerencia General ni de gerente de área, así que no hay ' +
-      'solicitudes de personal bajo tu alcance. Si crees que debería haberlas, pide a Gestión ' +
-      'del Talento Humano que revise la categoría de tu ficha.'
+      'No hay solicitudes bajo tu alcance: tu ficha no es de Gerencia General ni de gerente de ' +
+      'área. Pide a Gestión del Talento Humano que revise la categoría de tu ficha.'
     );
   }
 
   // ── Textos de las tarjetas (dependen del nivel) ────────────────────────
-  get kpiPendientes(): { label: string; sub: string } {
-    return this.esGerenteGeneral
-      ? { label: 'Por aprobar', sub: 'Esperan tu decisión' }
-      : { label: 'Por revisar', sub: 'Esperan tu visto bueno' };
+  // Solo la etiqueta: la línea de apoyo que llevaban debajo ("Esperan tu decisión",
+  // "Dentro de lo pendiente", "Ninguna vacante continuó") no agregaba nada al número y
+  // dejaba las cuatro tarjetas con tres renglones de texto cada una.
+  get kpiPendientes(): string {
+    return this.esGerenteGeneral ? 'Por aprobar' : 'Por revisar';
   }
 
-  get kpiAprobadas(): { label: string; sub: string } {
-    return this.esGerenteGeneral
-      ? { label: 'Aprobadas', sub: 'Total o parcialmente' }
-      : { label: 'Con tu visto bueno', sub: 'Total o parcialmente' };
+  get kpiAprobadas(): string {
+    return this.esGerenteGeneral ? 'Aprobadas' : 'Con tu visto bueno';
   }
 
-  get kpiRechazadas(): { label: string; sub: string } {
-    return this.esGerenteGeneral
-      ? { label: 'Rechazadas', sub: 'Ninguna vacante continuó' }
-      : { label: 'Observadas', sub: 'Las rechazaste todas' };
+  get kpiRechazadas(): string {
+    return this.esGerenteGeneral ? 'Rechazadas' : 'Observadas';
   }
 
   // ── Modal de decisión ──────────────────────────────────────────────────

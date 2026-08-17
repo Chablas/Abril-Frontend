@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
   BandejaOnboarding,
+  OnboardingAccionResult,
   OnboardingCreate,
   OnboardingCreateResult,
 } from '../dtos/onboarding.dto';
@@ -38,5 +39,39 @@ export class OnboardingService {
     formData.append('cartaOferta', cartaOferta, cartaOferta.name);
 
     return this.http.post<OnboardingCreateResult>(this.apiUrl, formData, { headers: this.headers });
+  }
+
+  /**
+   * Adjunta la carta oferta que el colaborador devolvió firmada. El backend la guarda en el file
+   * digital del onboarding — la misma carpeta de SharePoint donde quedó la carta oferta enviada — y
+   * la deja pendiente de aprobación.
+   */
+  subirCartaFirmada(onboardingId: number, archivo: File): Observable<OnboardingAccionResult> {
+    const formData = new FormData();
+    formData.append('archivo', archivo, archivo.name);
+
+    return this.http.post<OnboardingAccionResult>(
+      `${this.apiUrl}/${onboardingId}/carta-firmada`,
+      formData,
+      { headers: this.headers },
+    );
+  }
+
+  /** Aprueba la carta oferta firmada adjunta (primera actividad del checklist). */
+  aprobarCartaFirmada(onboardingId: number): Observable<OnboardingAccionResult> {
+    return this.http.post<OnboardingAccionResult>(
+      `${this.apiUrl}/${onboardingId}/carta-firmada/aprobar`,
+      {},
+      { headers: this.headers },
+    );
+  }
+
+  /** Avanza el onboarding a la fase siguiente del checklist. */
+  avanzarFase(onboardingId: number): Observable<OnboardingAccionResult> {
+    return this.http.post<OnboardingAccionResult>(
+      `${this.apiUrl}/${onboardingId}/avanzar`,
+      {},
+      { headers: this.headers },
+    );
   }
 }

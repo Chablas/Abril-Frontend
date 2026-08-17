@@ -14,8 +14,9 @@
 <div class="page-container flex flex-col gap-[16px] bg-white flex-1 min-h-0 overflow-auto pb-[64px]">
 
   <!-- ── Aviso de alcance ───────────────────────────────────────────────── -->
-  <!-- De dónde sale lo que se ve. Sin esto, un gerente que ve 2 de 20 solicitudes
-       no puede distinguir un filtro de alcance de un error de la pantalla. -->
+  <!-- De dónde sale lo que se ve, en una línea. Sin esto, un gerente que ve 2 de 20
+       solicitudes no puede distinguir un filtro de alcance de un error de la pantalla.
+       Lo que explicaba el flujo de aprobación se sacó de acá (ver `textoAlcance`). -->
   <div class="ap-scope" [class.ap-scope--empty]="sinAlcance">
     <i class="ti" [ngClass]="sinAlcance ? 'ti-alert-triangle' : 'ti-eye-check'"></i>
     <span>{{ textoAlcance }}</span>
@@ -38,8 +39,7 @@
         </div>
         <div class="flex flex-col min-w-0">
           <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.pendientes }}</span>
-          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiPendientes.label }}</span>
-          <span class="ap-kpi-sub text-[11px] text-gray-400">{{ kpiPendientes.sub }}</span>
+          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiPendientes }}</span>
         </div>
       </div>
 
@@ -54,7 +54,6 @@
         <div class="flex flex-col min-w-0">
           <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.vacantesPendientes }}</span>
           <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Vacantes en cola</span>
-          <span class="ap-kpi-sub text-[11px] text-gray-400">Dentro de lo pendiente</span>
         </div>
       </div>
 
@@ -68,8 +67,7 @@
         </div>
         <div class="flex flex-col min-w-0">
           <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.aprobadas }}</span>
-          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiAprobadas.label }}</span>
-          <span class="ap-kpi-sub text-[11px] text-gray-400">{{ kpiAprobadas.sub }}</span>
+          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiAprobadas }}</span>
         </div>
       </div>
 
@@ -83,8 +81,7 @@
         </div>
         <div class="flex flex-col min-w-0">
           <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.rechazadas }}</span>
-          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiRechazadas.label }}</span>
-          <span class="ap-kpi-sub text-[11px] text-gray-400">{{ kpiRechazadas.sub }}</span>
+          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiRechazadas }}</span>
         </div>
       </div>
 

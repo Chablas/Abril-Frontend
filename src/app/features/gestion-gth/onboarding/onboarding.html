@@ -178,8 +178,11 @@
           </tr>
         }
 
+        <!-- La fila entera abre el detalle del onboarding (el enlace de la carta
+             se excluye: es una acción propia, no una forma de entrar al detalle). -->
         @for (c of pagedColaboradores; track c.onboardingId) {
-          <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+          <tr class="border-b hover:bg-gray-50 cursor-pointer" style="border-color:var(--color-abril-border)"
+              (click)="abrirDetalle(c)" title="Ver el detalle del onboarding">
 
             <td class="font-medium text-gray-700 whitespace-nowrap">{{ c.codigo }}</td>
 
@@ -208,10 +211,11 @@
                 [textColor]="estadoColors(c.estadoCodigo).text" />
             </td>
 
-            <!-- Avance: la fase actual sobre el total de fases del catálogo. -->
+            <!-- Avance: actividades cumplidas del checklist sobre el total (RF-ONB-27).
+                 El tooltip dice además en qué fase está parado el colaborador. -->
             <td>
               <div class="flex items-center gap-[8px] min-w-[120px]"
-                   [title]="c.faseNombre + ' (' + c.faseOrden + ' de ' + fases.length + ')'">
+                   [title]="c.faseNombre + ' — fase ' + c.faseOrden + ' de ' + fases.length">
                 <div class="flex-1 h-[6px] rounded-full overflow-hidden" style="background:#E5E7EB">
                   <div class="h-full rounded-full transition-all"
                        [style.width.%]="c.avancePorcentaje"
@@ -223,7 +227,7 @@
 
             <td class="text-center whitespace-nowrap">
               @if (c.cartaOfertaUrl) {
-                <a [href]="c.cartaOfertaUrl" target="_blank" rel="noopener"
+                <a [href]="c.cartaOfertaUrl" target="_blank" rel="noopener" (click)="$event.stopPropagation()"
                    class="abril-action-btn abril-action-btn--primary"
                    [title]="'Ver ' + (c.cartaOfertaNombre || 'carta oferta')">
                   <i class="ti ti-file-text"></i>
@@ -249,8 +253,9 @@
     }
 
     @for (c of pagedColaboradores; track c.onboardingId) {
-      <div class="rounded-[10px] border bg-white px-[12px] py-[11px]"
-           style="border-color:var(--color-abril-border)">
+      <div class="rounded-[10px] border bg-white px-[12px] py-[11px] cursor-pointer"
+           style="border-color:var(--color-abril-border)"
+           (click)="abrirDetalle(c)">
 
         <div class="flex items-start justify-between gap-[8px]">
           <span class="text-[12px] font-bold text-gray-700 whitespace-nowrap">{{ c.codigo }}</span>
@@ -293,7 +298,7 @@
           </div>
 
           @if (c.cartaOfertaUrl) {
-            <a [href]="c.cartaOfertaUrl" target="_blank" rel="noopener"
+            <a [href]="c.cartaOfertaUrl" target="_blank" rel="noopener" (click)="$event.stopPropagation()"
                class="abril-action-btn abril-action-btn--primary shrink-0" title="Ver carta oferta">
               <i class="ti ti-file-text"></i>
             </a>
@@ -327,6 +332,15 @@
     [candidatos]="candidatosAptos"
     (creado)="onCreado($event)"
     (closeModal)="modalAbierto = false" />
+}
+
+<!-- ── Modal de detalle del onboarding (clic en una fila) ───────────────── -->
+@if (detalle) {
+  <app-gth-onboarding-detalle-modal
+    [colaborador]="detalle"
+    [fases]="fases"
+    (actualizado)="onDetalleActualizado($event)"
+    (closeModal)="detalle = null" />
 }
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────────── -->

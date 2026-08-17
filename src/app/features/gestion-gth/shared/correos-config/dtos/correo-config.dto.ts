@@ -4,7 +4,8 @@
  *
  * Hay dos clases de destinatario:
  *  • Dinámicos (`codigo` no nulo): el correo no está guardado, se resuelve al enviar
- *    (Gerente General, gerente del área del solicitante, área de GTH). Solo se prenden y apagan.
+ *    (Gerente General, gerente del área del solicitante, área de GTH, área de TI). Solo se
+ *    prenden y apagan.
  *  • Correos adicionales (`codigo` nulo): se escriben a mano y se pueden editar y eliminar.
  */
 
@@ -12,7 +13,7 @@
  * Qué pantalla de configuración se está usando. Es el segmento del backend
  * (`api/v1/gestion-gth/{modulo}/configuracion`) y define qué correos administra cada una:
  *  • `solicitud-personal` → el flujo del solicitante (aprobación de GG, decisiones de candidatos).
- *  • `aprobaciones`       → el aviso a GTH que dispara la decisión de Gerencia.
+ *  • `aprobaciones`       → los avisos a GTH y a TI que dispara la decisión de Gerencia.
  *  • `reclutamiento`      → los que salen desde la bandeja de GTH (long list, formulario completado).
  */
 export type CorreoConfigModulo = 'solicitud-personal' | 'aprobaciones' | 'reclutamiento';

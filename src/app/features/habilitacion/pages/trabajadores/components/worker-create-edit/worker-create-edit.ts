@@ -920,18 +920,22 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   }
 
   /**
-   * Puestos que se ofrecen: los de la categoría elegida. Sin categoría se muestran todos.
-   * Los puestos sin categoría asignada siempre aparecen (quedaron así al unificar los
-   * catálogos porque no había datos para deducirla).
+   * Puestos que se ofrecen: solo los de la categoría elegida. Sin categoría elegida se
+   * muestran todos (no hay con qué filtrar todavía).
+   *
+   * Un puesto sin categoría asignada NO entra en el filtro: si no pertenece a la categoría
+   * elegida, no tiene por qué ofrecerse ahí. Antes se incluían siempre (quedaron así al
+   * unificar los catálogos, sin datos para deducir su categoría) y eso ensuciaba el
+   * desplegable con puestos ajenos a la categoría.
    */
   get puestosFiltrados(): { id: number; nombre: string; categoriaId: number | null }[] {
     if (this.model.categoriaId == null) return this.puestos;
     return this.puestos.filter(
       (p) =>
         p.categoriaId === this.model.categoriaId ||
-        p.categoriaId == null ||
-        // El puesto ya guardado siempre se ofrece, aunque pertenezca a otra categoría:
-        // si no, el desplegable se vería vacío en fichas donde ambos no coinciden.
+        // El puesto ya guardado siempre se ofrece, aunque pertenezca a otra categoría o a
+        // ninguna: si no, el desplegable (bloqueado en edición) mostraría el placeholder
+        // en vez del puesto real de la ficha.
         p.id === this.model.puestoId,
     );
   }

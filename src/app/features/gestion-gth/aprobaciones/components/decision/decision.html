@@ -8,49 +8,33 @@
 
   @if (!cargando && data) {
 
-    <!-- ── Aviso de estado ─────────────────────────────────────────────── -->
-    @if (soloLectura) {
-      <div class="ad-note ad-note--done">
-        <i class="ti ti-lock"></i>
-        <span>
-          Ya registraste tu decisión como <b>{{ miNivelLabel }}</b>
-          @if (miCasilla?.decididoEn) { el {{ miCasilla?.decididoEn | date:'dd/MM/yyyy HH:mm' }} }.
-          Se muestra tal como quedó; no admite más cambios.
-        </span>
-      </div>
-    } @else {
-      <div class="ad-note">
-        <i class="ti ti-info-circle"></i>
-        <span>
-          Estás decidiendo como <b>{{ miNivelLabel }}</b>. {{ avisoInstruccion }}
-        </span>
-      </div>
-    }
-
     <!-- ── Las dos casillas ────────────────────────────────────────────── -->
     <!-- Siempre visibles, decida quien decida: cada gerente necesita ver la postura
-         del otro nivel para entender en qué quedó la solicitud. -->
-    <h3 class="ad-section-title">Estado de las aprobaciones</h3>
-
+         del otro nivel para entender en qué quedó la solicitud.
+         Acá antes iba un aviso de instrucciones ("estás decidiendo como X, marca
+         Aprobar o Rechazar en cada vacante…"): se quitó por redundante. El chip
+         «Tu casilla» ya dice quién firma, los botones dicen qué hacer y la
+         consecuencia se repite en la confirmación al enviar, que es donde importa.
+         Los estados van en la misma línea del título y el detalle (quién y cuándo)
+         solo aparece si esa casilla ya decidió — el badge basta cuando está
+         pendiente. -->
     <div class="ad-niveles">
       <div class="ad-nivel" [class.ad-nivel--mio]="!esGerenteGeneral">
         <div class="ad-nivel-head">
           <span class="ad-nivel-titulo">Gerente del área</span>
           @if (!esGerenteGeneral) { <span class="ad-nivel-chip">Tu casilla</span> }
+          <span class="ad-nivel-badge"
+                [style.background]="estadoColors(data.gerenteArea.estadoCodigo).bg"
+                [style.color]="estadoColors(data.gerenteArea.estadoCodigo).text">
+            {{ data.gerenteArea.estadoNombre }}
+          </span>
         </div>
-        <span class="ad-nivel-badge"
-              [style.background]="estadoColors(data.gerenteArea.estadoCodigo).bg"
-              [style.color]="estadoColors(data.gerenteArea.estadoCodigo).text">
-          {{ data.gerenteArea.estadoNombre }}
-        </span>
-        <p class="ad-nivel-meta">
-          @if (data.gerenteArea.decidida) {
+        @if (data.gerenteArea.decidida) {
+          <p class="ad-nivel-meta">
             {{ (data.gerenteArea.decididoPor | titleCase) || 'Sin registro de quién decidió' }}
             @if (data.gerenteArea.decididoEn) { · {{ data.gerenteArea.decididoEn | date:'dd/MM/yyyy HH:mm' }} }
-          } @else {
-            Todavía no registra su visto bueno. No bloquea la solicitud.
-          }
-        </p>
+          </p>
+        }
         @if (data.gerenteArea.comentario) {
           <p class="ad-nivel-comentario">“{{ data.gerenteArea.comentario }}”</p>
         }
@@ -61,20 +45,18 @@
           <span class="ad-nivel-titulo">Gerencia General</span>
           @if (esGerenteGeneral) { <span class="ad-nivel-chip">Tu casilla</span> }
           <span class="ad-nivel-chip ad-nivel-chip--req">Obligatoria</span>
+          <span class="ad-nivel-badge"
+                [style.background]="estadoColors(data.gerenteGeneral.estadoCodigo).bg"
+                [style.color]="estadoColors(data.gerenteGeneral.estadoCodigo).text">
+            {{ data.gerenteGeneral.estadoNombre }}
+          </span>
         </div>
-        <span class="ad-nivel-badge"
-              [style.background]="estadoColors(data.gerenteGeneral.estadoCodigo).bg"
-              [style.color]="estadoColors(data.gerenteGeneral.estadoCodigo).text">
-          {{ data.gerenteGeneral.estadoNombre }}
-        </span>
-        <p class="ad-nivel-meta">
-          @if (data.gerenteGeneral.decidida) {
+        @if (data.gerenteGeneral.decidida) {
+          <p class="ad-nivel-meta">
             {{ (data.gerenteGeneral.decididoPor | titleCase) || 'Sin registro de quién decidió' }}
             @if (data.gerenteGeneral.decididoEn) { · {{ data.gerenteGeneral.decididoEn | date:'dd/MM/yyyy HH:mm' }} }
-          } @else {
-            Pendiente. Las vacantes pasan a Gestión de Talento Humano recién con esta aprobación.
-          }
-        </p>
+          </p>
+        }
         @if (data.gerenteGeneral.comentario) {
           <p class="ad-nivel-comentario">“{{ data.gerenteGeneral.comentario }}”</p>
         }
@@ -82,13 +64,10 @@
     </div>
 
     <!-- ── Datos de la solicitud ───────────────────────────────────────── -->
+    <!-- El área solicitante no va acá: es el subtítulo del header del modal. -->
     <h3 class="ad-section-title">Datos de la solicitud</h3>
 
     <div class="ad-meta">
-      <div>
-        <div class="ad-meta-label">Área solicitante</div>
-        <div class="ad-meta-value">{{ (data.area | titleCase) || '—' }}</div>
-      </div>
       <div>
         <div class="ad-meta-label">Solicitante</div>
         <div class="ad-meta-value">{{ (data.solicitanteNombre | titleCase) || '—' }}</div>
@@ -152,19 +131,22 @@
             <p class="ad-vac-puesto">{{ v.puesto | titleCase }}</p>
             <div class="ad-vac-detail">
               <span><i class="ti ti-building-community"></i> {{ (v.proyectoObra | titleCase) || '—' }}</span>
-              <span><i class="ti ti-calendar-event"></i> Ingreso: {{ v.fechaRequeridaIngreso | date:'dd/MM/yyyy' }}</span>
+              <span><i class="ti ti-calendar-event"></i> {{ v.fechaRequeridaIngreso | date:'dd/MM/yyyy' }}</span>
               @if (v.trabajadorReemplazado) {
                 <span><i class="ti ti-arrows-exchange"></i> Reemplaza a {{ v.trabajadorReemplazado | titleCase }}</span>
               }
               <!-- Postura del otro nivel sobre ESTA vacante: es el contexto que le falta a
-                   quien decide (p. ej. el GG viendo que su gerente ya observó la vacante). -->
-              <span class="ad-vac-otro"
-                    [class.ad-vac-otro--ok]="decisionOtroNivel(v) === true"
-                    [class.ad-vac-otro--no]="decisionOtroNivel(v) === false">
-                <i class="ti" [ngClass]="decisionOtroNivel(v) === null ? 'ti-user-question'
-                                       : decisionOtroNivel(v) ? 'ti-user-check' : 'ti-user-x'"></i>
-                {{ textoOtroNivel(v) }}
-              </span>
+                   quien decide (p. ej. el GG viendo que su gerente ya observó la vacante).
+                   Solo si ese nivel realmente decidió: un "sin decidir" repetido en cada
+                   fila no aporta nada — su casilla de arriba ya lo dice una vez. -->
+              @if (decisionOtroNivel(v) !== null) {
+                <span class="ad-vac-otro"
+                      [class.ad-vac-otro--ok]="decisionOtroNivel(v) === true"
+                      [class.ad-vac-otro--no]="decisionOtroNivel(v) === false">
+                  <i class="ti" [ngClass]="decisionOtroNivel(v) ? 'ti-user-check' : 'ti-user-x'"></i>
+                  {{ textoOtroNivel(v) }}
+                </span>
+              }
             </div>
           </div>
 
@@ -198,40 +180,34 @@
       <div class="abril-field ad-field">
         <label class="abril-field-label" for="ad-comentario">Comentario (opcional)</label>
         <textarea id="ad-comentario" class="abril-field-input ad-textarea" rows="3"
-                  [(ngModel)]="comentario"
-                  placeholder="Ej. Aprobado con la condición de cubrir primero la vacante de obra."></textarea>
+                  [(ngModel)]="comentario"></textarea>
       </div>
-      <p class="ad-hint">
-        {{ esGerenteGeneral
-            ? 'Lo verá Gestión de Talento Humano junto con tu decisión.'
-            : 'Lo verá Gerencia General al decidir, y también Gestión de Talento Humano.' }}
-      </p>
 
       <!-- ── A quién le llega la decisión ───────────────────────────────────
-           Solo aparece para Gerencia General: es la única decisión que dispara un correo.
-           Los destinatarios los resuelve el backend con la misma lógica del envío real (lo que
-           esté activo en la sección del correo a GTH de la Configuración), así que el aviso no
-           puede prometer algo distinto de lo que sale. Y como el correo solo se envía si queda
-           alguna vacante aprobada, al rechazarlas todas el aviso lo dice en vez de callarlo. -->
+           Solo aparece para Gerencia General: es la única decisión que dispara correos (el aviso
+           a GTH y el de vacantes aprobadas a TI). Los destinatarios los resuelve el backend con la
+           misma lógica del envío real —lo que esté activo en esas dos secciones de la
+           Configuración, fusionado en una sola lista—, así que el aviso no puede prometer algo
+           distinto de lo que sale. Y como los correos solo se envían si queda alguna vacante
+           aprobada, al rechazarlas todas el aviso lo dice en vez de callarlo.
+           Los textos son a propósito telegráficos: lo único que hace falta saber acá es a qué
+           correo llega (o que no llega a ninguno), no el detalle del flujo. -->
       @if (destinatariosCargados) {
         @if (sinEnvio) {
           <div class="ad-note ad-note--mail ad-note--done">
             <i class="ti ti-mail-off"></i>
-            <span>
-              Vas a rechazar todas las vacantes, así que <b>no se enviará ningún correo</b>: la
-              decisión queda registrada y la solicitud no continúa.
-            </span>
+            <span>Rechazas todas las vacantes: no se enviará ningún correo.</span>
           </div>
         } @else if (destinatariosPara.length) {
           <div class="ad-note ad-note--mail">
             <i class="ti ti-mail"></i>
             <span>
-              Al confirmar, las vacantes aprobadas se enviarán por correo a
+              Aviso a
               @for (d of destinatariosPara; track d.email) {<span class="ad-mail"
                 [title]="etiquetaDestinatario(d)">{{ d.email }}</span>{{ separadorCorreo($index, destinatariosPara.length) }}}
               @if (destinatariosCopias.length) {
                 <span class="ad-note-sub">
-                  Con copia a
+                  Copia a
                   @for (c of destinatariosCopias; track c.email) {<span class="ad-mail"
                     [title]="etiquetaDestinatario(c)">{{ c.email }}</span>{{ separadorCorreo($index, destinatariosCopias.length) }}}
                 </span>
@@ -241,20 +217,13 @@
         } @else {
           <div class="ad-note ad-note--mail ad-note--warn">
             <i class="ti ti-alert-triangle"></i>
-            <span>
-              No hay destinatarios activos para el correo a Gestión de Talento Humano: tu decisión
-              quedará registrada, pero <b>no se les enviará el aviso</b> con las vacantes aprobadas.
-              Revísalos en «Configuración».
-            </span>
+            <span>Sin destinatarios activos: no se enviará el aviso. Revísalos en «Configuración».</span>
           </div>
         }
       } @else if (!esGerenteGeneral) {
         <div class="ad-note ad-note--mail ad-note--done">
           <i class="ti ti-mail-off"></i>
-          <span>
-            Tu visto bueno <b>no envía ningún correo</b>: queda registrado en la solicitud y lo verá
-            Gerencia General al aprobarla.
-          </span>
+          <span>Tu visto bueno no envía correos.</span>
         </div>
       }
     }

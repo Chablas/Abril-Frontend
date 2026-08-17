@@ -274,15 +274,18 @@ export class WorkerEditForm implements OnChanges {
     if (puesto?.categoriaId != null) this.model.categoriaId = puesto.categoriaId;
   }
 
-  /** Puestos ofrecidos: los de la categoría elegida, más los que aún no tienen categoría. */
+  /**
+   * Puestos ofrecidos: solo los de la categoría elegida. Un puesto sin categoría no entra en
+   * el filtro — si no pertenece a la categoría elegida, no se ofrece. Sin categoría elegida
+   * se muestran todos, porque no hay con qué filtrar.
+   */
   get puestosFiltrados(): { id: number; nombre: string; categoriaId: number | null }[] {
     if (this.model.categoriaId == null) return this.puestos;
     return this.puestos.filter(
       (p) =>
         p.categoriaId === this.model.categoriaId ||
-        p.categoriaId == null ||
-        // El puesto ya guardado siempre se ofrece, aunque pertenezca a otra categoría:
-        // si no, el desplegable se vería vacío en fichas donde ambos no coinciden.
+        // El puesto ya guardado siempre se ofrece, aunque pertenezca a otra categoría o a
+        // ninguna: si no, el desplegable mostraría el placeholder en vez del puesto real.
         p.id === this.model.puestoId,
     );
   }
