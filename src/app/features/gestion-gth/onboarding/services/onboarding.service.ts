@@ -1,0 +1,42 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { environment } from '../../../../../environments/environment';
+import {
+  BandejaOnboarding,
+  OnboardingCreate,
+  OnboardingCreateResult,
+} from '../dtos/onboarding.dto';
+
+@Injectable({ providedIn: 'root' })
+export class OnboardingService {
+  private readonly apiUrl = `${environment.apiUrl}api/v1/gestion-gth/onboarding`;
+
+  constructor(private http: HttpClient) {}
+
+  private get headers() {
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
+    return { Authorization: `Bearer ${token}` };
+  }
+
+  /**
+   * Bandeja de Onboarding: resumen, fases, colaboradores ingresados y los candidatos aptos del
+   * modal «Nuevo ingreso», todo en una sola petición.
+   */
+  getBandeja(): Observable<BandejaOnboarding> {
+    return this.http.get<BandejaOnboarding>(`${this.apiUrl}/bandeja`, { headers: this.headers });
+  }
+
+  /**
+   * Inicia el onboarding de un colaborador (multipart): los datos en `data` y la carta oferta como
+   * archivo. El backend le envía la carta al correo personal del colaborador, la guarda en su file
+   * de SharePoint y registra el proceso en la fase «Carta oferta firmada».
+   */
+  iniciar(datos: OnboardingCreate, cartaOferta: File): Observable<OnboardingCreateResult> {
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(datos));
+    formData.append('cartaOferta', cartaOferta, cartaOferta.name);
+
+    return this.http.post<OnboardingCreateResult>(this.apiUrl, formData, { headers: this.headers });
+  }
+}

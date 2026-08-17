@@ -293,9 +293,11 @@ export class Create implements OnInit {
     if (!this.createDto.contractorId)      missing.push('Empresa / Subcontratista');
     else if (this.contractorEmails.length === 0)
       missing.push('La empresa seleccionada no tiene correos registrados — agrégalos antes de continuar');
+    if (!this.createDto.workSpecialtyId)   missing.push('Especialidad');
     if (!this.createDto.workItemCategoryId) missing.push('Partida de control');
     if (!this.createDto.workItemId)        missing.push('Partida');
     if (!this.createDto.contractWorkItemName?.trim()) missing.push('Nombre de la partida en el contrato');
+    if (!this.createDto.contractModalityId) missing.push('Modalidad de contrato');
     if (!this.createDto.contractTypeId)    missing.push('Tipo de contrato');
     if (!this.createDto.amount)            missing.push('Monto');
     if (!this.createDto.currencyId)        missing.push('Moneda');

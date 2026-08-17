@@ -1880,9 +1880,11 @@ export class Detail implements OnInit {
     if (!f.contractorId)       missing.push('Empresa / Subcontratista');
     else if (this.step1ContractorEmails.length === 0)
       missing.push('La empresa seleccionada no tiene correos registrados');
+    if (!f.workSpecialtyId)    missing.push('Especialidad');
     if (!f.workItemCategoryId) missing.push('Partida de control');
     if (!f.workItemId)         missing.push('Partida');
     if (!f.contractWorkItemName?.trim()) missing.push('Nombre de la partida en el contrato');
+    if (!f.contractModalityId) missing.push('Modalidad de contrato');
     if (!f.contractTypeId)     missing.push('Tipo de contrato');
     if (!f.amount)             missing.push('Monto');
     if (!f.currencyId)         missing.push('Moneda');

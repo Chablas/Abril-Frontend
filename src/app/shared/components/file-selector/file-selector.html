@@ -1,5 +1,7 @@
-<div class="relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg bg-[#F7FBF3] cursor-pointer transition-all duration-200 hover:bg-[#EEF7E6] hover:scale-[1.01]"
+<div class="fs-drop relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed rounded-lg cursor-pointer transition-all duration-200 hover:scale-[1.01]"
     [style.borderColor]="color"
+    [style.--fs-bg]="bg"
+    [style.--fs-bg-hover]="bgHover"
     (click)="opFile.click()" (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
 
     <input #opFile type="file" multiple [accept]="accept" class="hidden" (change)="onFilesSelected($event)" />

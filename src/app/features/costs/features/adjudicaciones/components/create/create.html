@@ -60,6 +60,8 @@
           <app-search-select *ngIf="searchByWorkItem" [fullText]="true" label="Partida" [options]="searchableWorkItems"
             valueField="workItemId" displayField="workItemDescription"
             [value]="createDto.workItemId" (valueChange)="onSearchWorkItemSelected($event)" />
+          <!-- Solo en modo normal: en modo búsqueda elegir la partida rellena la especialidad sola. -->
+          <p *ngIf="submitted && !searchByWorkItem && !createDto.workSpecialtyId" class="text-xs text-red-500">Campo requerido</p>
           <label class="inline-flex items-center gap-[8px] cursor-pointer select-none mt-[2px]">
             <input type="checkbox" [checked]="searchByWorkItem" (change)="toggleSearchByWorkItem()"
               class="w-[14px] h-[14px] accent-[var(--color-abril-primary)] cursor-pointer" />
@@ -141,6 +143,7 @@
           <app-search-select [fullText]="true" label="Modalidad de contrato" [options]="createFormData.contractModalities"
             valueField="contractModalityId" displayField="contractModalityDescription"
             [value]="createDto.contractModalityId" (valueChange)="onContractModalityChange($event)" />
+          <p *ngIf="submitted && !createDto.contractModalityId" class="text-xs text-red-500">Campo requerido</p>
         </div>
 
         <div class="flex flex-col gap-[4px]">
