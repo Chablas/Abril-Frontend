@@ -5139,3 +5139,79 @@ probó visualmente en navegador en esta sesión.
   anterior que había dejado el checkout ahí tras el merge) y se trasladó a `victor-frontend`
   recién al cerrar sesión con "guardar rama" — para la próxima sesión, verificar rama antes
   de empezar a codear.
+
+## Sesión 2026-08-17 — Fase 3: Dashboard de Portafolio + Evidencia de Procura
+
+Contraparte frontend de Fase 3 backend (Dashboard de Portafolio + Export PDF, Procura
+simplificado), ya cerrada y probada en vivo según el usuario. Contratos leídos directo del
+código C# local (`Abril_Backend/Features/PlaneamientoBimFeature/`), no adivinados.
+
+### 1. Evidencia de Procura (Carga Diaria)
+- Componente nuevo reutilizable `PlaneamientoBimEvidenciaGaleria`
+  (`planeamiento-bim/shared/evidencia-galeria/`) — presentacional puro (sin HTTP propio),
+  usado 2 veces en `carga-diaria.html`: "Evidencias Fotográficas del Día" (categoria=GENERAL,
+  igual que antes) y la nueva "Evidencia de Procura" (categoria=PROCURA), cada una con su
+  propio loading/error/upload independiente.
+- `carga-diaria.ts`: `cargarEvidenciasProcura()` (GET `carga-diaria/{id}?categoria=PROCURA`,
+  dispara junto con la carga normal al cambiar proyecto/fecha — rompe R1 a nivel de acción,
+  mismo criterio ya aceptado en el dashboard de Fase 2a porque el backend no expone un
+  endpoint solo-evidencias) y `onFilesSelectedProcura()`. Misma ventana de 5 días: el
+  `esEditable` de la respuesta con categoria=PROCURA ya viene resuelto por backend,
+  transparente para el frontend.
+- `planeamiento-bim.service.ts` y `CargaDiariaDto`: `categoria` agregado como parámetro
+  opcional (default `'GENERAL'`), no rompe llamadas existentes.
+
+### 2. Dashboard de Portafolio (landing de Planeamiento BIM)
+- DTOs nuevos `planeamiento-bim-portafolio.dto.ts` (`PortafolioKpisDto`,
+  `ProyectoPortafolioDto`), copiados 1:1 de `PortafolioDtos.cs`.
+- 3 métodos nuevos en el service: `getPortafolioKpis()`, `getPortafolioProyectos()`,
+  `exportarPdfProyecto()` (blob + descarga vía `<a download>` programático).
+- Página nueva `planeamiento-bim/portafolio/`: 4 KPI cards (PPC promedio, proyectos por
+  fase, bloqueos vencidos, top causa del mes), tabla con semáforo (`role="img"` +
+  `aria-label`/`title`), filtro (búsqueda + semáforo) y paginación vía `ClientPager` (regla
+  dura de CLAUDE.md, sin excepciones), botón exportar PDF por fila (fecha = hoy, sin
+  selector de fecha en la tabla), link a detalle.
+- `dashboard.ts` (Fase 2a) ahora lee `?projectId=` de query params para preseleccionar el
+  proyecto — hace funcionar el link de la tabla de Portafolio sin tocar el flujo manual
+  existente.
+
+### 3. Navegación — decisión de arquitectura (confirmada con el usuario antes de implementar)
+`roleGuard`/`isNavEntryAllowed` son un OR (featureKey O roles): si el featureKey ya está en
+`allowed_features` del usuario, entra sin mirar `roles`. El featureKey compartido del resto
+del módulo (`planeamiento-bim.configuracion-inicial`) ya está sembrado para USUARIO_UDP, así
+que compartirlo con la ruta de Portafolio (restringida a Administrador Sistema/UDP por el
+propio backend) dejaría entrar a UsuarioUdp aunque el backend le tire 403 después. Por eso:
+- **Entrada nueva y separada**, no reapunte de la existente: "Portafolio BIM"/"Portafolio
+  Planeamiento BIM" en `proyectos.routes.ts`, `projects-tabs.ts` y `navigation.service.ts`,
+  featureKey propio `planeamiento-bim.portafolio` + `roles: [ADMINISTRADOR_SISTEMA,
+  ADMINISTRADOR_UDP]` explícito en los 3 lugares (mismo rol que exige
+  `[Authorize(Roles = "1,2")]` en `PlaneamientoBimPortafolioController`).
+- La entrada existente "Planeamiento BIM" sigue apuntando a `configuracion-inicial` sin
+  cambios — cero impacto para UsuarioUdp.
+- Backend: `Abril_Backend/Migrations/Manual/20260817_PlaneamientoBimPortafolioFeatureSeed.sql`
+  creado (mismo formato que el seed del 2026-08-07, pero solo roles 1 y 2) — **no se
+  ejecutó** contra ninguna BD en esta sesión, queda pendiente que el usuario lo aplique.
+
+### Archivos clave
+- `planeamiento-bim/portafolio/{portafolio.ts,html,css}` (nuevo)
+- `planeamiento-bim/shared/evidencia-galeria/{evidencia-galeria.ts,html,css}` (nuevo)
+- `planeamiento-bim/dtos/planeamiento-bim-portafolio.dto.ts` (nuevo)
+- `planeamiento-bim/carga-diaria/{carga-diaria.ts,html,css}`,
+  `planeamiento-bim/dashboard/dashboard.ts`, `planeamiento-bim/services/planeamiento-bim.service.ts`,
+  `planeamiento-bim/dtos/planeamiento-bim-carga-diaria.dto.ts`
+- `proyectos.routes.ts`, `shared/projects-tabs.ts`, `core/navigation/navigation.service.ts`
+- `Abril_Backend/Migrations/Manual/20260817_PlaneamientoBimPortafolioFeatureSeed.sql`
+
+### Verificado
+`ng build`: 0 errores, mismos warnings preexistentes de terceros (canvg/core-js/flatpickr/
+node-fetch no-ESM, presupuesto de bundle).
+
+### Pendiente
+- Ejecutar la migración SQL del featureKey `planeamiento-bim.portafolio` en BD (dev y prod).
+- Verificación visual en navegador: no se probó ni el flujo de Procura en Carga Diaria ni el
+  Dashboard de Portafolio en esta sesión.
+- Íconos Tabler nuevos (`ti-chart-donut-3`, `ti-truck-delivery`, `ti-file-download`,
+  `ti-loader-2`) no se verificaron uno por uno contra el set instalado — si alguno no existe
+  se vería un hueco visual, no rompe build ni funcionalidad.
+- Selector de fecha para exportar PDF: hoy exporta siempre la fecha actual; si se necesita
+  exportar otra fecha desde la tabla de Portafolio, falta agregar el control.
