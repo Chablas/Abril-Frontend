@@ -66,7 +66,7 @@
           (click)="selectEquipo(eq)"
         >
           <div class="eq-card-top">
-            <span class="eq-card-tipo">{{ eq.tipo }}</span>
+            <span class="eq-card-tipo">{{ eq.tipoNombre }}</span>
             <span class="btn-chip" [class]="getEstadoHabClass(eq.estadoHabilitacion)">
               {{ eq.estadoHabilitacion }}
             </span>
@@ -106,7 +106,7 @@
 
         <div class="eq-hdr">
           <div class="eq-hdr-left">
-            <h2 class="eq-hdr-name">{{ selectedEquipo.tipo }}</h2>
+            <h2 class="eq-hdr-name">{{ selectedEquipo.tipoNombre }}</h2>
             <span class="eq-hdr-sub" *ngIf="selectedEquipo.marca || selectedEquipo.modelo">
               {{ selectedEquipo.marca ?? '' }} {{ selectedEquipo.modelo ?? '' }}
             </span>
