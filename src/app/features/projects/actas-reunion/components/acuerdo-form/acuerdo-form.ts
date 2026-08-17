@@ -9,8 +9,10 @@ import { SearchSelect } from '../../../../../shared/components/search-select/sea
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { ActasReunionService } from '../../services/actas-reunion.service';
+import { ConvocatoriaMasiva } from '../convocatoria-masiva/convocatoria-masiva';
 import {
   CatalogoDTO,
+  ProyectoFiltroDTO,
   ReunionAcuerdoDTO,
   TrabajadorAbrilDTO,
 } from '../../dtos/actas-reunion.dto';
@@ -23,7 +25,7 @@ interface ResponsableRow {
 @Component({
   selector: 'app-acuerdo-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, DatePicker, SearchSelect],
+  imports: [CommonModule, FormsModule, BaseModal, DatePicker, SearchSelect, ConvocatoriaMasiva],
   templateUrl: './acuerdo-form.html',
 })
 export class AcuerdoForm implements OnInit {
@@ -31,6 +33,8 @@ export class AcuerdoForm implements OnInit {
   /** Trabajadores de toda la organización: un responsable no necesita haber asistido a la reunión. */
   @Input() trabajadores: TrabajadorAbrilDTO[] = [];
   @Input() estados: CatalogoDTO[] = [];
+  /** Para el filtro "Staff de un proyecto" del modal de agregar responsables por área/puesto. */
+  @Input() proyectos: ProyectoFiltroDTO[] = [];
   /** Null = crear un acuerdo nuevo; con valor = editar. */
   @Input() acuerdo: ReunionAcuerdoDTO | null = null;
 
@@ -48,6 +52,7 @@ export class AcuerdoForm implements OnInit {
   evidenciaUrl: string | null = null;
   responsables: ResponsableRow[] = [];
   nuevoResponsableId: number | null = null;
+  showConvocatoriaMasivaModal = false;
 
   constructor(
     private service: ActasReunionService,
@@ -93,6 +98,18 @@ export class AcuerdoForm implements OnInit {
 
   removerResponsable(workerId: number): void {
     this.responsables = this.responsables.filter((r) => r.workerId !== workerId);
+  }
+
+  /** Agrega en bloque los trabajadores elegidos por área/puesto/proyecto (ej. "todas las jefaturas
+   * de proyectos" o "todo el staff de un proyecto"), sin duplicar a quienes ya están agregados. */
+  onTrabajadoresAgregadosMasivamente(trabajadores: TrabajadorAbrilDTO[]): void {
+    const yaAgregados = new Set(this.responsables.map((r) => r.workerId));
+    for (const t of trabajadores) {
+      if (yaAgregados.has(t.workerId)) continue;
+      yaAgregados.add(t.workerId);
+      this.responsables.push({ workerId: t.workerId, nombre: t.fullName });
+    }
+    this.showConvocatoriaMasivaModal = false;
   }
 
   submit(): void {

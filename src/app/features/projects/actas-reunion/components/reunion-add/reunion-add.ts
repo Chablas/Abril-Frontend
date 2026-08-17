@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import { DatePicker } from '../../../../../shared/components/date-picker/date-picker';
@@ -13,10 +14,13 @@ import {
   CatalogoDTO,
   ProyectoFiltroDTO,
   ReunionParticipanteInput,
+  ReunionTemaOpcionDTO,
+  TemaConvocatoriaSaveRequest,
   TrabajadorAbrilDTO,
 } from '../../dtos/actas-reunion.dto';
 import { ParticipanteAdd, ParticipanteSeleccionado } from '../participante-add/participante-add';
 import { ConvocatoriaMasiva } from '../convocatoria-masiva/convocatoria-masiva';
+import { ConvocatoriaTema, ConvocatoriaTemaResultado } from '../convocatoria-tema/convocatoria-tema';
 import { AreaScopeService } from '../../../../configuracion/shared/services/area-scope.service';
 import { AreaScopeTreeDto } from '../../../../configuracion/shared/dtos/areaScope.model';
 
@@ -31,7 +35,7 @@ interface ParticipanteRow {
 @Component({
   selector: 'app-reunion-add',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, DatePicker, SearchSelect, ParticipanteAdd, ConvocatoriaMasiva],
+  imports: [CommonModule, FormsModule, BaseModal, DatePicker, SearchSelect, ParticipanteAdd, ConvocatoriaMasiva, ConvocatoriaTema],
   templateUrl: './reunion-add.html',
 })
 export class ReunionAdd implements OnInit {
@@ -39,7 +43,7 @@ export class ReunionAdd implements OnInit {
   /** Trabajadores de Abril para los desplegables de "Convocado por" y participantes. */
   @Input() trabajadores: TrabajadorAbrilDTO[] = [];
   /** Temas predefinidos (catálogo reunion_tema) para el desplegable de "Tema de la reunión". */
-  @Input() temas: CatalogoDTO[] = [];
+  @Input() temas: ReunionTemaOpcionDTO[] = [];
   /** Preselecciona el proyecto (al agendar desde el detalle de otra reunión). */
   @Input() projectIdFijo: number | null = null;
   /** Reunión desde la que se promueve el tema de esta nueva reunión. */
@@ -77,8 +81,15 @@ export class ReunionAdd implements OnInit {
    * El tema escrito a mano solo se guarda en la reunión, no en el catálogo de temas.
    */
   temaPersonalizado = false;
+  /** Id del tema del catálogo elegido en el desplegable (null si es personalizado o aún no elige). */
+  reunionTemaIdSeleccionado: number | null = null;
   /** Si está activo, al agendar se agrega el tema personalizado al catálogo como tema recurrente. */
   guardarTemaComoRecurrente = false;
+  /** Agenda ad-hoc obligatoria cuando la reunión es puntual (temaPersonalizado && !guardarTemaComoRecurrente). */
+  agendaTexto = '';
+  /** Convocatoria recurrente configurada en el modal (área/puestos/agenda) para el tema nuevo. */
+  convocatoriaTemaConfig: TemaConvocatoriaSaveRequest | null = null;
+  showConvocatoriaTemaModal = false;
   convocadoPor = '';
   lugar = '';
   /** Con el checkbox activo, "Lugar" se convierte en texto libre en vez de elegir un proyecto. */
@@ -104,11 +115,41 @@ export class ReunionAdd implements OnInit {
       next: (data) => (this.arbolAreaScope = data),
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+    if (this.tipoAmbito === 'PROYECTO') this.lugar = this.projectDescriptionOf(this.projectId);
   }
 
+  /** Cambiar el ámbito resetea el lugar a su valor por defecto (misma idea que resetear proyecto/área). */
   onTipoAmbitoChange(): void {
     this.projectId = null;
     this.areaScopePath = [];
+    this.lugarPersonalizado = this.tipoAmbito !== 'PROYECTO';
+    this.lugar = this.lugarPersonalizado ? 'Oficina Central' : '';
+
+    // El tema elegido puede dejar de ser válido para el nuevo ámbito (ej. un tema de área al
+    // pasar a "Un proyecto"): si ya no está en la lista filtrada, se limpia.
+    if (!this.temaPersonalizado && this.tema && !this.temasFiltrados.some((t) => t.descripcion === this.tema)) {
+      this.tema = '';
+      this.reunionTemaIdSeleccionado = null;
+    }
+  }
+
+  /** El proyecto elegido en "Proyecto *" prellena "Lugar" — salvo que ya esté en modo personalizado. */
+  onProjectIdChange(projectId: number | null): void {
+    this.projectId = projectId;
+    if (this.lugarPersonalizado) return;
+    this.lugar = this.projectDescriptionOf(projectId);
+  }
+
+  onLugarPersonalizadoChange(): void {
+    if (this.lugarPersonalizado) {
+      this.lugar = '';
+      return;
+    }
+    this.lugar = this.tipoAmbito === 'PROYECTO' ? this.projectDescriptionOf(this.projectId) : 'Oficina Central';
+  }
+
+  private projectDescriptionOf(projectId: number | null): string {
+    return this.proyectos.find((p) => p.projectId === projectId)?.projectDescription ?? '';
   }
 
   /** Un select por nivel: raíz (gerencias) y luego los hijos del nodo elegido en el nivel anterior. */
@@ -131,10 +172,47 @@ export class ReunionAdd implements OnInit {
     if (nodo) this.areaScopePath.push(nodo);
   }
 
+  /** Placeholder del select de un nivel de la cascada, con el nombre real del tipo de nodo (Gerencia, Área, Subárea...). */
+  placeholderNivel(opciones: AreaScopeTreeDto[], nivel: number, opcional = false): string {
+    const tipo = opciones[0]?.areaTypeName?.toLowerCase();
+    if (!tipo) return nivel === 0 && !opcional ? 'Selecciona una gerencia' : 'Selecciona (opcional)';
+    return nivel === 0 && !opcional ? `Selecciona ${tipo}` : `Selecciona ${tipo} (opcional)`;
+  }
+
   get areaScopeIdSeleccionado(): number | null {
     return this.areaScopePath.length > 0
       ? this.areaScopePath[this.areaScopePath.length - 1].areaScopeId
       : null;
+  }
+
+  /** Proyecto para el atajo "Todo el staff de este proyecto": el fijo, o el elegido en el ámbito. */
+  get projectIdParaStaff(): number | null {
+    return this.projectIdFijo ?? (this.tipoAmbito === 'PROYECTO' ? this.projectId : null);
+  }
+
+  agregarStaffDelProyecto(): void {
+    const projectId = this.projectIdParaStaff;
+    if (projectId == null) return;
+    this.loaderService.show();
+    this.service.buscarTrabajadoresPorFiltro(null, null, projectId).subscribe({
+      next: (trabajadores) => {
+        this.loaderService.hide();
+        if (trabajadores.length === 0) {
+          Swal.fire({
+            icon: 'info',
+            title: 'Sin resultados',
+            text: 'No se encontró staff asignado a este proyecto.',
+            confirmButtonColor: 'var(--color-abril-primary)',
+          });
+          return;
+        }
+        this.onTrabajadoresAgregadosMasivamente(trabajadores);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   /**
@@ -151,10 +229,44 @@ export class ReunionAdd implements OnInit {
     return this.participantes.map((p) => p.iniciales).filter(Boolean);
   }
 
+  /**
+   * Temas visibles en el desplegable según el ámbito elegido: un tema con convocatoria recurrente
+   * atada a un área/gerencia (ej. "Reunión de Jefaturas de Proyectos") no tiene sentido al agendar
+   * una reunión de un proyecto puntual, así que se oculta en ese caso. Para ámbito Área/Organización
+   * se muestran todos (no hay, hoy, un tema exclusivo de un proyecto para filtrar al revés).
+   */
+  get temasFiltrados(): ReunionTemaOpcionDTO[] {
+    if (this.tipoAmbito !== 'PROYECTO') return this.temas;
+    return this.temas.filter((t) => t.areaScopeId == null);
+  }
+
   /** Al alternar entre desplegable y texto libre se limpia el tema para no mezclar valores. */
   onTemaPersonalizadoChange(): void {
     this.tema = '';
+    this.reunionTemaIdSeleccionado = null;
     this.guardarTemaComoRecurrente = false;
+    this.convocatoriaTemaConfig = null;
+  }
+
+  /** Al marcar el checkbox se abre el modal de configuración; si se desmarca, se olvida lo configurado. */
+  onGuardarTemaComoRecurrenteChange(): void {
+    if (this.guardarTemaComoRecurrente) {
+      this.showConvocatoriaTemaModal = true;
+    } else {
+      this.convocatoriaTemaConfig = null;
+    }
+  }
+
+  onConvocatoriaTemaGuardada(resultado: ConvocatoriaTemaResultado): void {
+    this.convocatoriaTemaConfig = resultado.config;
+    this.onTrabajadoresAgregadosMasivamente(resultado.trabajadores);
+    this.showConvocatoriaTemaModal = false;
+  }
+
+  onConvocatoriaTemaCancelada(): void {
+    this.showConvocatoriaTemaModal = false;
+    // Si nunca se llegó a guardar una configuración, cancelar destilda el checkbox.
+    if (!this.convocatoriaTemaConfig) this.guardarTemaComoRecurrente = false;
   }
 
   /**
@@ -165,13 +277,41 @@ export class ReunionAdd implements OnInit {
   onTemaSeleccionado(valor: string | null): void {
     this.tema = valor ?? '';
     const temaElegido = this.temas.find((t) => t.descripcion === this.tema);
+    this.reunionTemaIdSeleccionado = temaElegido?.id ?? null;
     if (!temaElegido) return;
 
     this.service.getConvocatoriaTema(temaElegido.id).subscribe({
       next: (convocatoria) => {
-        if (convocatoria.areaScopeId == null && convocatoria.puestoIds.length === 0) return;
-        this.service.buscarTrabajadoresPorFiltro(convocatoria.areaScopeId, convocatoria.puestoIds).subscribe({
-          next: (trabajadores) => this.onTrabajadoresAgregadosMasivamente(trabajadores),
+        // El tema recurrente ya trae su propio ámbito (a quién convoca): pedirle al usuario que
+        // además elija Proyecto/Área/Organización a mano es redundante, así que se autocompleta
+        // (queda editable, no se fuerza si el proyecto ya viene fijo desde afuera). Solo tiene
+        // sentido cuando hay UNA sola regla — con varias (áreas/proyectos distintos combinados)
+        // ningún ámbito único las representaría bien, así que se deja en Organización por defecto.
+        if (this.projectIdFijo == null) {
+          const unicaRegla = convocatoria.reglas.length === 1 ? convocatoria.reglas[0] : null;
+          if (unicaRegla?.areaScopeId != null) {
+            this.tipoAmbito = 'AREA';
+            this.areaScopePath = this.buscarRuta(this.arbolAreaScope, unicaRegla.areaScopeId) ?? [];
+            this.projectId = null;
+          } else if (unicaRegla?.projectId != null) {
+            this.tipoAmbito = 'PROYECTO';
+            this.projectId = unicaRegla.projectId;
+            this.areaScopePath = [];
+          } else {
+            this.tipoAmbito = 'ORGANIZACION';
+            this.areaScopePath = [];
+            this.projectId = null;
+          }
+        }
+
+        const reglasValidas = convocatoria.reglas.filter(
+          (r) => r.areaScopeId != null || r.projectId != null || r.puestoIds.length > 0,
+        );
+        if (reglasValidas.length === 0) return;
+        forkJoin(
+          reglasValidas.map((r) => this.service.buscarTrabajadoresPorFiltro(r.areaScopeId, r.puestoIds, r.projectId)),
+        ).subscribe({
+          next: (resultados) => this.onTrabajadoresAgregadosMasivamente(resultados.flat()),
           error: () => {},
         });
       },
@@ -179,8 +319,14 @@ export class ReunionAdd implements OnInit {
     });
   }
 
-  onLugarPersonalizadoChange(): void {
-    this.lugar = '';
+  /** Busca la cadena de nodos (raíz → hoja) que llega al area_scope_id dado, para preseleccionar la cascada. */
+  private buscarRuta(nodos: AreaScopeTreeDto[], areaScopeId: number): AreaScopeTreeDto[] | null {
+    for (const nodo of nodos) {
+      if (nodo.areaScopeId === areaScopeId) return [nodo];
+      const ruta = this.buscarRuta(nodo.children, areaScopeId);
+      if (ruta) return [nodo, ...ruta];
+    }
+    return null;
   }
 
   addParticipante(): void {
@@ -258,6 +404,8 @@ export class ReunionAdd implements OnInit {
     if (!this.fecha) errors.push('Fecha de la reunión');
     if (this.horaInicio && this.horaFin && this.horaFin <= this.horaInicio)
       errors.push('La hora de término debe ser mayor a la hora de inicio');
+    if (this.temaPersonalizado && !this.guardarTemaComoRecurrente && !this.agendaTexto.trim())
+      errors.push('Agenda de la reunión (mínimo 1 punto)');
     return errors;
   }
 
@@ -285,22 +433,50 @@ export class ReunionAdd implements OnInit {
         asistio: false,
       }));
 
-    if (this.temaPersonalizado && this.guardarTemaComoRecurrente) {
-      this.service.agregarTema(this.tema.trim()).subscribe({ error: () => {} });
+    this.loaderService.show();
+
+    // Si se guarda como tema recurrente, el tema del catálogo (y su agenda fija/dinámica) debe
+    // quedar creado ANTES de agendar la reunión, para que esta se vincule con su reunionTemaId
+    // real en vez de quedar con tema personalizado suelto (sin agenda garantizada).
+    if (this.temaPersonalizado && this.guardarTemaComoRecurrente && this.convocatoriaTemaConfig) {
+      const config = this.convocatoriaTemaConfig;
+      this.service.agregarTema(this.tema.trim()).subscribe({
+        next: (nuevoTema) => {
+          this.service.guardarConvocatoriaTema(nuevoTema.id, config).subscribe({
+            next: () => this.crearReunion(nuevoTema.id, participantes),
+            error: (err: HttpErrorResponse) => {
+              // La convocatoria no se pudo guardar, pero el tema sí existe: se sigue agendando
+              // con ese tema para no perder el trabajo del usuario, solo se avisa del detalle.
+              this.errorService.handleError(err);
+              this.crearReunion(nuevoTema.id, participantes);
+            },
+          });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+      return;
     }
 
-    this.loaderService.show();
+    this.crearReunion(this.temaPersonalizado ? null : this.reunionTemaIdSeleccionado, participantes);
+  }
+
+  private crearReunion(reunionTemaId: number | null, participantes: ReunionParticipanteInput[]): void {
     this.service
       .create({
         projectId: this.tipoAmbito === 'PROYECTO' ? this.projectId! : null,
         areaScopeId: this.tipoAmbito === 'AREA' ? this.areaScopeIdSeleccionado : null,
         tema: this.tema.trim(),
+        reunionTemaId,
         convocadoPor: this.convocadoPor.trim() || null,
         lugar: this.lugar.trim() || null,
         fecha: this.fecha!,
         horaInicio: this.horaInicio ? `${this.horaInicio}:00` : null,
         horaFin: this.horaFin ? `${this.horaFin}:00` : null,
         reunionAnteriorId: this.reunionAnteriorId,
+        agendaTexto: reunionTemaId == null ? this.agendaTexto.trim() || null : null,
         participantes,
       })
       .subscribe({

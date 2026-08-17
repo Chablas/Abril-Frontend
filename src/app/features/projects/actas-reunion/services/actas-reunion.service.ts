@@ -4,8 +4,10 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
   CatalogoDTO,
+  GuardarMisTemasRequest,
   PagedResultDTO,
   ReunionAcuerdoRequest,
+  ReunionAgendaDTO,
   ReunionArchivoDTO,
   ReunionCreateRequest,
   ReunionDetalleDTO,
@@ -14,6 +16,7 @@ import {
   ReunionListItemDTO,
   ReunionPaginaInicialDTO,
   ReunionReprogramarRequest,
+  ReunionTemaOpcionDTO,
   ReunionUpdateRequest,
   TemaConvocatoriaDTO,
   TemaConvocatoriaSaveRequest,
@@ -138,8 +141,8 @@ export class ActasReunionService {
   }
 
   /** Catálogo de temas predefinidos, para la pantalla de configuración de convocatoria por tema. */
-  getTemasCatalogo(): Observable<CatalogoDTO[]> {
-    return this.http.get<CatalogoDTO[]>(`${this.apiUrl}/temas`, { headers: this.authHeaders() });
+  getTemasCatalogo(): Observable<ReunionTemaOpcionDTO[]> {
+    return this.http.get<ReunionTemaOpcionDTO[]>(`${this.apiUrl}/temas`, { headers: this.authHeaders() });
   }
 
   /** Da de alta un tema personalizado en el catálogo, para reutilizarlo como tema recurrente. */
@@ -147,6 +150,15 @@ export class ActasReunionService {
     return this.http.post<CatalogoDTO>(
       `${this.apiUrl}/temas`,
       { descripcion },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Elimina un tema del catálogo (borrado real, no soft-delete). Las reuniones que ya lo usaban conservan
+   * su tema (texto propio) y solo pierden el vínculo al catálogo. */
+  eliminarTema(reunionTemaId: number): Observable<{ message: string; reunionesDesvinculadas: number }> {
+    return this.http.delete<{ message: string; reunionesDesvinculadas: number }>(
+      `${this.apiUrl}/temas/${reunionTemaId}`,
       { headers: this.authHeaders() },
     );
   }
@@ -182,19 +194,38 @@ export class ActasReunionService {
   }
 
   /**
-   * Trabajadores que calzan con un área/gerencia (incluye descendencia en el árbol area_scope)
-   * y/o una lista de puestos marcados en un checklist. Ambos filtros son opcionales; null/vacío
+   * Trabajadores que calzan con un área/gerencia (incluye descendencia en el árbol area_scope),
+   * una lista de puestos marcados en un checklist, y/o el staff asignado a un proyecto (ss_contratista_usuario
+   * con scope POR_PROYECTO). Los tres filtros son opcionales y se combinan con AND; null/vacío
    * = cualquiera. Para convocatoria masiva.
    */
-  buscarTrabajadoresPorFiltro(areaScopeId: number | null, puestoIds: number[] | null): Observable<TrabajadorAbrilDTO[]> {
+  buscarTrabajadoresPorFiltro(
+    areaScopeId: number | null,
+    puestoIds: number[] | null,
+    projectId: number | null = null,
+  ): Observable<TrabajadorAbrilDTO[]> {
     let params = new HttpParams();
     if (areaScopeId != null) params = params.set('areaScopeId', areaScopeId);
     if (puestoIds && puestoIds.length > 0) {
       for (const id of puestoIds) params = params.append('puestoIds', id);
     }
+    if (projectId != null) params = params.set('projectId', projectId);
     return this.http.get<TrabajadorAbrilDTO[]>(`${this.apiUrl}/trabajadores-por-filtro`, {
       headers: this.authHeaders(),
       params,
+    });
+  }
+
+  // ── Agenda de reunión ───────────────────────────────────────────────────────
+  getAgenda(reunionId: number): Observable<ReunionAgendaDTO> {
+    return this.http.get<ReunionAgendaDTO>(`${this.apiUrl}/${reunionId}/agenda`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  guardarMisTemas(reunionId: number, request: GuardarMisTemasRequest): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.apiUrl}/${reunionId}/agenda/mis-temas`, request, {
+      headers: this.authHeaders(),
     });
   }
 

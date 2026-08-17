@@ -90,6 +90,7 @@
         <thead>
           <tr>
             <th>Proyecto</th>
+            <th>Residente</th>
             <th *ngFor="let c of camposProyecto">{{ c.label }}</th>
             <th class="text-right">Acción</th>
           </tr>
@@ -97,6 +98,33 @@
         <tbody>
           <tr *ngFor="let row of pagedProyectos">
             <td class="font-medium">{{ row.projectDescription | titleCase }}</td>
+            <td>
+              <div class="flex flex-col gap-[4px] min-w-[220px]">
+                <app-search-select
+                  [options]="trabajadorOptions()"
+                  valueField="workerId"
+                  displayField="nombreCompleto"
+                  [value]="pendingProyectoResidenteFor(row.projectId)"
+                  placeholder="Buscar por nombre o DNI..."
+                  (valueChange)="setPendingProyectoResidente(row.projectId, $event)">
+                </app-search-select>
+                <div class="flex items-center justify-between gap-[8px]">
+                  <span class="text-[11px] text-gray-500" *ngIf="residenteEmailProyecto(row); else sinResidenteProy">
+                    {{ residenteEmailProyecto(row) }}
+                  </span>
+                  <ng-template #sinResidenteProy>
+                    <span class="text-[11px] text-amber-600">Sin residente asignado.</span>
+                  </ng-template>
+                  <button
+                    type="button"
+                    class="text-[11px] text-gray-400 hover:text-gray-600 underline shrink-0"
+                    *ngIf="pendingProyectoResidenteFor(row.projectId) !== campoLimpiar"
+                    (click)="limpiarPendingProyectoResidente(row.projectId)">
+                    Quitar
+                  </button>
+                </div>
+              </div>
+            </td>
             <td *ngFor="let c of camposProyecto">
               <div class="flex flex-col gap-[4px] min-w-[220px]">
                 <app-search-select
@@ -107,12 +135,21 @@
                   placeholder="Buscar por nombre o DNI..."
                   (valueChange)="setPendingProyectoWorker(row.projectId, c.campo, $event)">
                 </app-search-select>
-                <span class="text-[11px] text-gray-500" *ngIf="emailProyecto(row, c.campo); else sinCorreoProy">
-                  {{ emailProyecto(row, c.campo) }}
-                </span>
-                <ng-template #sinCorreoProy>
-                  <span class="text-[11px] text-amber-600">Sin correo asignado.</span>
-                </ng-template>
+                <div class="flex items-center justify-between gap-[8px]">
+                  <span class="text-[11px] text-gray-500" *ngIf="emailProyecto(row, c.campo); else sinCorreoProy">
+                    {{ emailProyecto(row, c.campo) }}
+                  </span>
+                  <ng-template #sinCorreoProy>
+                    <span class="text-[11px] text-amber-600">Sin correo asignado.</span>
+                  </ng-template>
+                  <button
+                    type="button"
+                    class="text-[11px] text-gray-400 hover:text-gray-600 underline shrink-0"
+                    *ngIf="pendingProyectoWorkerFor(row.projectId, c.campo) !== campoLimpiar"
+                    (click)="limpiarPendingProyectoWorker(row.projectId, c.campo)">
+                    Quitar
+                  </button>
+                </div>
               </div>
             </td>
             <td class="text-right">
@@ -126,7 +163,7 @@
             </td>
           </tr>
           <tr *ngIf="!loading && filteredProyectos.length === 0">
-            <td [attr.colspan]="camposProyecto.length + 2" class="text-center py-[24px] text-gray-400 text-sm">Sin proyectos.</td>
+            <td [attr.colspan]="camposProyecto.length + 3" class="text-center py-[24px] text-gray-400 text-sm">Sin proyectos.</td>
           </tr>
         </tbody>
       </table>

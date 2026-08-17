@@ -161,6 +161,31 @@
       </label>
     </div>
 
+    <!-- =============== Geolocalización (geofencing de Tareo) =============== -->
+    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-2">
+      Geolocalización <span class="normal-case text-gray-400">(para el geofencing de Marcar Tareo)</span>
+    </p>
+
+    <div class="grid grid-cols-3 gap-[12px]">
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Latitud <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="number" step="0.0000001" [(ngModel)]="form.lat" placeholder="Ej: -12.0621965"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Longitud <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="number" step="0.0000001" [(ngModel)]="form.lng" placeholder="Ej: -77.0365256"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+
+      <div class="flex flex-col">
+        <p class="text-[#64BC04]">Radio geofence (m) <span class="text-gray-400 text-sm">(opcional)</span></p>
+        <input type="number" step="1" [(ngModel)]="form.radioGeofenceMetros" placeholder="300"
+          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      </div>
+    </div>
+
     <!-- =============== Fechas =============== -->
     <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-2">Fechas</p>
 

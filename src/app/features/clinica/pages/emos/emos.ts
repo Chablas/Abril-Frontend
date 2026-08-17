@@ -19,6 +19,9 @@ import { ProgramarEmoDialogComponent } from '../../../../shared/components/progr
 import { EditarEmoModal } from '../../../../shared/components/editar-emo-modal/editar-emo-modal';
 import { DocumentosEmoModal } from '../../../../shared/components/documentos-emo-modal/documentos-emo-modal';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../../shared/components/search-input/search-input';
 
 import { CLINICA_TABS } from '../../shared/clinica-tabs';
 interface FilterOption {
@@ -29,7 +32,7 @@ interface FilterOption {
 @Component({
   selector: 'app-clinica-emos',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, SearchSelect, EmoDetail, ProgramarEmoDialogComponent, EditarEmoModal, DocumentosEmoModal, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, Paginator, SearchSelect, EmoDetail, ProgramarEmoDialogComponent, EditarEmoModal, DocumentosEmoModal, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, SearchInput],
   templateUrl: './emos.html',
   styleUrl: './emos.css',
 })
@@ -42,7 +45,13 @@ export class ClinicaEmos implements OnInit, OnDestroy {
     aptitud: '',
     estado: '',
     empresaId: 0,
+    sinLectura: false,
+    sinCertificado: false,
+    sinEmoCompleto: false,
+    sinInterconsulta: false,
   };
+
+  filtrosAbiertos = false;
 
   aptitudOptions: FilterOption[] = [
     { id: '', nombre: 'Todas las aptitudes' },
@@ -123,6 +132,10 @@ export class ClinicaEmos implements OnInit, OnDestroy {
       aptitud: this.filters.aptitud || undefined,
       estado: this.filters.estado || undefined,
       empresaId: this.filters.empresaId || undefined,
+      sinLectura: this.filters.sinLectura || undefined,
+      sinCertificado: this.filters.sinCertificado || undefined,
+      sinEmoCompleto: this.filters.sinEmoCompleto || undefined,
+      sinInterconsulta: this.filters.sinInterconsulta || undefined,
     };
     this.service.getEmosPorTrabajador(query).subscribe({
       next: (res) => {
@@ -152,7 +165,10 @@ export class ClinicaEmos implements OnInit, OnDestroy {
   }
 
   clearFilters(): void {
-    this.filters = { search: '', aptitud: '', estado: '', empresaId: 0 };
+    this.filters = {
+      search: '', aptitud: '', estado: '', empresaId: 0,
+      sinLectura: false, sinCertificado: false, sinEmoCompleto: false, sinInterconsulta: false,
+    };
     this.load(1);
   }
 
@@ -243,7 +259,24 @@ export class ClinicaEmos implements OnInit, OnDestroy {
       this.filters.search ||
       this.filters.aptitud ||
       this.filters.estado ||
-      this.filters.empresaId
+      this.filters.empresaId ||
+      this.filters.sinLectura ||
+      this.filters.sinCertificado ||
+      this.filters.sinEmoCompleto ||
+      this.filters.sinInterconsulta
     );
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filters.search) n++;
+    if (this.filters.aptitud) n++;
+    if (this.filters.estado) n++;
+    if (this.filters.empresaId) n++;
+    if (this.filters.sinLectura) n++;
+    if (this.filters.sinCertificado) n++;
+    if (this.filters.sinEmoCompleto) n++;
+    if (this.filters.sinInterconsulta) n++;
+    return n;
   }
 }

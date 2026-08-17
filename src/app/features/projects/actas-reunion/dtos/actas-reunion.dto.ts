@@ -8,6 +8,18 @@ export interface ProyectoFiltroDTO {
   projectDescription: string;
 }
 
+/**
+ * Tema del desplegable "Tema de la reunión", con el área/gerencia de su convocatoria recurrente
+ * (si tiene) para poder ocultarlo cuando no aplica al ámbito elegido — ej. "Reunión de Jefaturas
+ * de Proyectos" (areaScopeId = Gerencia de Proyectos) no debe salir al agendar una reunión de un
+ * proyecto puntual. areaScopeId null = sin área asociada, aplica a cualquier ámbito.
+ */
+export interface ReunionTemaOpcionDTO {
+  id: number;
+  descripcion: string;
+  areaScopeId: number | null;
+}
+
 /** Trabajador de Abril (workers con email_corporativo @abril.pe) para los desplegables. */
 export interface TrabajadorAbrilDTO {
   workerId: number;
@@ -50,7 +62,7 @@ export interface ReunionPaginaInicialDTO {
   reunionEstados: CatalogoDTO[];
   trabajadores: TrabajadorAbrilDTO[];
   /** Temas predefinidos para el desplegable de "Tema de la reunión" al agendar. */
-  temas: CatalogoDTO[];
+  temas: ReunionTemaOpcionDTO[];
   reuniones: PagedResultDTO<ReunionListItemDTO>;
 }
 
@@ -139,7 +151,7 @@ export interface ReunionDetalleDTO {
   acuerdoEstados: CatalogoDTO[];
   trabajadores: TrabajadorAbrilDTO[];
   /** Temas predefinidos para el desplegable al "Agendar siguiente reunión". */
-  temas: CatalogoDTO[];
+  temas: ReunionTemaOpcionDTO[];
 }
 
 // ── Requests ───────────────────────────────────────────────────────────────
@@ -162,12 +174,16 @@ export interface ReunionCreateRequest {
   /** Reunión de un nodo del árbol area_scope (gerencia/área/subárea). */
   areaScopeId: number | null;
   tema: string;
+  /** Tema del catálogo elegido (null si es personalizado), para heredar su configuración de agenda/recordatorio. */
+  reunionTemaId: number | null;
   convocadoPor: string | null;
   lugar: string | null;
   fecha: string;
   horaInicio: string | null;
   horaFin: string | null;
   reunionAnteriorId: number | null;
+  /** Agenda fija ad-hoc, obligatoria cuando la reunión es puntual (tema personalizado, no recurrente). */
+  agendaTexto: string | null;
   participantes: ReunionParticipanteInput[];
 }
 
@@ -219,16 +235,62 @@ export interface ReunionFolderDTO {
   createdUserId: number;
 }
 
-/** Convocatoria recurrente asociada a un tema (ej. "Reunión de Jefaturas de Proyectos"). */
-export interface TemaConvocatoriaDTO {
+/** Una regla de convocatoria de un tema: a quién convocar (área/gerencia y/o proyecto + puestos).
+ * Un tema puede tener varias reglas independientes (ej. jefaturas de una gerencia + un gerente
+ * puntual de otra). */
+export interface TemaConvocatoriaReglaDTO {
   areaScopeId: number | null;
   areaScopeDescripcion: string | null;
+  projectId: number | null;
+  projectDescription: string | null;
   puestoIds: number[];
 }
 
-export interface TemaConvocatoriaSaveRequest {
+export interface TemaConvocatoriaReglaInput {
   areaScopeId: number | null;
+  projectId: number | null;
   puestoIds: number[];
+}
+
+/** Convocatoria recurrente asociada a un tema (ej. "Reunión de Jefaturas de Proyectos"). */
+export interface TemaConvocatoriaDTO {
+  reglas: TemaConvocatoriaReglaDTO[];
+  agendaFija: boolean;
+  agendaTexto: string | null;
+  recordatorioHorasAntes: number | null;
+}
+
+export interface TemaConvocatoriaSaveRequest {
+  reglas: TemaConvocatoriaReglaInput[];
+  agendaFija: boolean;
+  agendaTexto: string | null;
+  recordatorioHorasAntes: number | null;
+}
+
+// ── Agenda de reunión ────────────────────────────────────────────────────────
+export interface ReunionAgendaItemDTO {
+  reunionAgendaItemId: number;
+  workerId: number;
+  workerNombre: string;
+  descripcion: string;
+  orden: number;
+}
+
+export interface ReunionAgendaDTO {
+  requiereAgenda: boolean;
+  agendaFija: boolean;
+  agendaTexto: string | null;
+  items: ReunionAgendaItemDTO[];
+  participantesPendientes: string[];
+  workerIdActual: number | null;
+}
+
+export interface ReunionAgendaItemInput {
+  descripcion: string;
+}
+
+export interface GuardarMisTemasRequest {
+  temas: ReunionAgendaItemInput[];
 }
 
 export interface ReunionFiltro {

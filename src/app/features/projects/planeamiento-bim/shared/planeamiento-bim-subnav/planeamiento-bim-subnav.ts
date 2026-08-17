@@ -32,5 +32,10 @@ export class PlaneamientoBimSubnavComponent {
       icon: 'ti ti-barrier-block',
       route: '/projects/planeamiento-bim/bloqueos',
     },
+    {
+      label: 'Dashboard',
+      icon: 'ti ti-chart-infographic',
+      route: '/projects/planeamiento-bim/dashboard',
+    },
   ];
 }

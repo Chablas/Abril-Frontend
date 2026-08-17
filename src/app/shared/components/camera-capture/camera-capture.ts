@@ -1,4 +1,5 @@
 import {
+  ChangeDetectorRef,
   Component,
   ElementRef,
   EventEmitter,
@@ -40,6 +41,8 @@ export class CameraCapture implements OnInit, OnDestroy {
     return this.videoRef.nativeElement;
   }
 
+  constructor(private cdr: ChangeDetectorRef) {}
+
   ngOnInit(): void {
     this.iniciar();
   }
@@ -55,6 +58,7 @@ export class CameraCapture implements OnInit, OnDestroy {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       this.mensajeError = 'Este navegador no permite acceder a la cámara. Usa Chrome o Safari actualizado.';
       this.cargando = false;
+      this.cdr.detectChanges();
       this.errorCamara.emit(this.mensajeError);
       return;
     }
@@ -68,6 +72,7 @@ export class CameraCapture implements OnInit, OnDestroy {
       video.srcObject = this.stream;
       await video.play();
       this.cargando = false;
+      this.cdr.detectChanges();
       this.listo.emit();
     } catch (err: any) {
       this.cargando = false;
@@ -77,6 +82,7 @@ export class CameraCapture implements OnInit, OnDestroy {
           : err?.name === 'NotFoundError'
             ? 'No se encontró ninguna cámara en este dispositivo.'
             : 'No se pudo abrir la cámara. Intenta de nuevo.';
+      this.cdr.detectChanges();
       this.errorCamara.emit(this.mensajeError);
     }
   }

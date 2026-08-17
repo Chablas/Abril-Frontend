@@ -116,6 +116,45 @@
     </div>
   </div>
 
+  <!-- ── Agenda ─────────────────────────────────────────────────────────── -->
+  <div *ngIf="agenda?.requiereAgenda" class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <h3 class="text-sm font-semibold text-[var(--color-abril-primary)] uppercase">Agenda</h3>
+
+    <p *ngIf="agenda!.agendaFija" class="text-sm text-gray-700 whitespace-pre-line border border-[#E5EAF0] rounded-lg p-4 bg-[#F5F8FA]">
+      {{ agenda!.agendaTexto }}
+    </p>
+
+    <ng-container *ngIf="!agenda!.agendaFija">
+      <div *ngIf="otrosTemasAgenda.length === 0 && agenda!.items.length === 0" class="text-sm text-gray-400">
+        Nadie cargó todavía sus temas a tratar.
+      </div>
+      <ul *ngIf="otrosTemasAgenda.length > 0" class="text-sm text-gray-700 flex flex-col gap-1.5">
+        <li *ngFor="let item of otrosTemasAgenda">
+          <span class="font-medium text-gray-800">{{ item.workerNombre }}:</span> {{ item.descripcion }}
+        </li>
+      </ul>
+      <p *ngIf="agenda!.participantesPendientes.length > 0" class="text-xs text-gray-400 border-t border-[#E5EAF0] pt-2">
+        Aún no cargan sus temas: {{ agenda!.participantesPendientes.join(', ') }}
+      </p>
+
+      <!-- Cargar/editar mis propios temas directo desde el acta, sin depender del link del correo. -->
+      <div *ngIf="agenda!.workerIdActual != null" class="border-t border-[#E5EAF0] pt-3 flex flex-col gap-2">
+        <label class="text-sm font-medium text-gray-700">Mis temas a tratar</label>
+        <textarea [(ngModel)]="misTemas" rows="4" maxlength="2000"
+          class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+          placeholder="Un tema por línea. Ej.&#10;Avance de la semana&#10;Riesgo con proveedor X"></textarea>
+        <button type="button" (click)="guardarMisTemas()"
+          class="self-start h-[38px] px-4 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
+          <span class="ti ti-device-floppy text-base"></span>
+          Guardar mis temas
+        </button>
+        <p *ngIf="guardadoAgenda" class="text-sm text-[var(--color-abril-primary)] flex items-center gap-1.5">
+          <span class="ti ti-circle-check text-base"></span> Guardado.
+        </p>
+      </div>
+    </ng-container>
+  </div>
+
   <!-- ── Participantes ──────────────────────────────────────────────────── -->
   <div class="bg-white rounded-lg p-5 flex flex-col gap-3">
     <div class="flex items-center justify-between">

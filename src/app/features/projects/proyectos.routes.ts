@@ -10,11 +10,13 @@ import { ProyectosCronogramaList } from './cronograma-actividades/proyectos-cron
 import { CronogramaDashboard } from './cronograma-dashboard/cronograma-dashboard';
 import { ActasReunion } from './actas-reunion/actas-reunion';
 import { ReunionDetail } from './actas-reunion/reunion-detail/reunion-detail';
+import { ReunionAgenda } from './actas-reunion/reunion-agenda/reunion-agenda';
 import { ActasReunionConfiguracion } from './actas-reunion/configuracion/actas-reunion-configuracion';
 
 import { ConfiguracionInicial } from './planeamiento-bim/configuracion-inicial/configuracion-inicial';
 import { CargaDiaria } from './planeamiento-bim/carga-diaria/carga-diaria';
 import { Bloqueos } from './planeamiento-bim/bloqueos/bloqueos';
+import { PlaneamientoBimDashboard } from './planeamiento-bim/dashboard/dashboard';
 
 export const PROJECTS_ROUTES: Routes = [
   { path: '', redirectTo: 'projects-dashboard', pathMatch: 'full' },
@@ -35,6 +37,12 @@ export const PROJECTS_ROUTES: Routes = [
     component: Bloqueos,
     canActivate: [roleGuard],
     data: { titulo: 'GESTIÓN DE BLOQUEOS DE PLANEAMIENTO BIM', featureKey: 'planeamiento-bim.configuracion-inicial' },
+  },
+  {
+    path: 'planeamiento-bim/dashboard',
+    component: PlaneamientoBimDashboard,
+    canActivate: [roleGuard],
+    data: { titulo: 'DASHBOARD DE PLANEAMIENTO BIM', featureKey: 'planeamiento-bim.configuracion-inicial' },
   },
   {
     path: 'projects-dashboard',
@@ -72,6 +80,13 @@ export const PROJECTS_ROUTES: Routes = [
     component: ActasReunionConfiguracion,
     canActivate: [roleGuard],
     data: { titulo: 'CONFIGURACIÓN DE ACTAS DE REUNIÓN', featureKey: 'projects.actas-reunion' },
+  },
+  {
+    // Antes de `actas-reunion/:reunionId` por especificidad (mismo motivo que "configuracion").
+    path: 'actas-reunion/:reunionId/agenda',
+    component: ReunionAgenda,
+    canActivate: [roleGuard],
+    data: { titulo: 'AGENDA DE REUNIÓN', featureKey: 'projects.actas-reunion' },
   },
   {
     path: 'actas-reunion/:reunionId',

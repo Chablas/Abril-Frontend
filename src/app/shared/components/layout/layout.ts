@@ -2,12 +2,13 @@ import { Component, OnDestroy, inject } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { Sidebar } from '../sidebar/sidebar';
 import { SidebarMobile } from '../sidebar-mobile/sidebar-mobile';
-import { RouterOutlet } from '@angular/router';
+import { NavigationEnd, RouterOutlet } from '@angular/router';
 import { Router } from '@angular/router';
 import { LayoutService } from '../../../core/services/layout.service';
 import { SessionRefreshService } from '../../../core/services/session-refresh.service';
 import { RealtimeService } from '../../../core/services/realtime.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter, map, startWith } from 'rxjs';
 
 @Component({
   selector: 'app-layout',
@@ -26,6 +27,8 @@ export class Layout implements OnDestroy {
   private sessionRefresh = inject(SessionRefreshService);
   private realtime = inject(RealtimeService);
 
+  isFullPage = false;
+
   constructor(private router: Router) {
     this.layoutService.openMobileMenu$
       .pipe(takeUntilDestroyed())
@@ -34,6 +37,19 @@ export class Layout implements OnDestroy {
     this.layoutService.hasPageHeader$
       .pipe(takeUntilDestroyed())
       .subscribe((has) => (this.hasPageHeader = has));
+
+    // isFullPage se calcula una sola vez por navegación (no en cada ciclo de detección de
+    // cambios): evaluar this.router.url directamente como método en el template causaba
+    // NG0100 (ExpressionChangedAfterItHasBeenCheckedError) cuando la URL cambiaba a mitad de
+    // un ciclo de CD.
+    this.router.events
+      .pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        map((e) => this.calcIsFullPage(e.urlAfterRedirects)),
+        startWith(this.calcIsFullPage(this.router.url)),
+        takeUntilDestroyed(),
+      )
+      .subscribe((v) => (this.isFullPage = v));
 
     // Mientras el usuario está en la zona autenticada:
     // - refresco periódico del token (red de seguridad),
@@ -47,42 +63,42 @@ export class Layout implements OnDestroy {
     this.realtime.stop();
   }
 
-  isFullPage(): boolean {
+  private calcIsFullPage(url: string): boolean {
     return (
-      this.router.url.includes('/habilitacion/trabajadores') ||
-      this.router.url.includes('/arquitectura-comercial/dashboard') ||
-      this.router.url.includes('/arquitectura-comercial/actividades') ||
-      this.router.url.includes('/arquitectura-comercial/observaciones') ||
-      this.router.url.includes('/arquitectura-comercial/revisiones') ||
-      this.router.url.includes('/arquitectura-comercial/gantt') ||
-      this.router.url.includes('/arquitectura-comercial/plantilla') ||
-      this.router.url.includes('/clinica/dashboard') ||
-      this.router.url.includes('/clinica/agenda') ||
-      this.router.url.includes('/clinica/interconsultas') ||
-      this.router.url.includes('/clinica/programaciones') ||
-      this.router.url.includes('/habilitacion/dashboard-contratista') ||
-      this.router.url.includes('/evaluaciones/dashboard') ||
-      this.router.url.includes('/evaluaciones/evaluar') ||
-      this.router.url.includes('/evaluaciones/historial') ||
-      this.router.url.includes('/evaluaciones/configuracion') ||
-      this.router.url.includes('/mejora-continua') ||
-      this.router.url.includes('/ssoma/salud-ocupacional') ||
-      this.router.url.includes('/ssoma/gestion/paso') ||
-      this.router.url.includes('/ssoma/gestion/rac') ||
-      this.router.url.includes('/ssoma/gestion/opt') ||
-      this.router.url.includes('/ssoma/gestion/inspeccion') ||
-      this.router.url.includes('/ssoma/gestion/amonestaciones') ||
-      this.router.url.includes('/habilitacion/gestion') ||
-      this.router.url.includes('/gestion-administrativa') ||
-      this.router.url.includes('/projects') ||
-      this.router.url.includes('/contractors/management') ||
-      this.router.url.includes('/costs/dashboard') ||
-      this.router.url.includes('/costs/adjudicaciones') ||
-      this.router.url.includes('/costs/configuration') ||
-      this.router.url.includes('/vecinos') ||
-      this.router.url.includes('/habilitacion/control-acceso') ||
-      this.router.url.includes('/security') ||
-      this.router.url.includes('/configuracion')
+      url.includes('/habilitacion/trabajadores') ||
+      url.includes('/arquitectura-comercial/dashboard') ||
+      url.includes('/arquitectura-comercial/actividades') ||
+      url.includes('/arquitectura-comercial/observaciones') ||
+      url.includes('/arquitectura-comercial/revisiones') ||
+      url.includes('/arquitectura-comercial/gantt') ||
+      url.includes('/arquitectura-comercial/plantilla') ||
+      url.includes('/clinica/dashboard') ||
+      url.includes('/clinica/agenda') ||
+      url.includes('/clinica/interconsultas') ||
+      url.includes('/clinica/programaciones') ||
+      url.includes('/habilitacion/dashboard-contratista') ||
+      url.includes('/evaluaciones/dashboard') ||
+      url.includes('/evaluaciones/evaluar') ||
+      url.includes('/evaluaciones/historial') ||
+      url.includes('/evaluaciones/configuracion') ||
+      url.includes('/mejora-continua') ||
+      url.includes('/ssoma/salud-ocupacional') ||
+      url.includes('/ssoma/gestion/paso') ||
+      url.includes('/ssoma/gestion/rac') ||
+      url.includes('/ssoma/gestion/opt') ||
+      url.includes('/ssoma/gestion/inspeccion') ||
+      url.includes('/ssoma/gestion/amonestaciones') ||
+      url.includes('/habilitacion/gestion') ||
+      url.includes('/gestion-administrativa') ||
+      url.includes('/projects') ||
+      url.includes('/contractors/management') ||
+      url.includes('/costs/dashboard') ||
+      url.includes('/costs/adjudicaciones') ||
+      url.includes('/costs/configuration') ||
+      url.includes('/vecinos') ||
+      url.includes('/habilitacion/control-acceso') ||
+      url.includes('/security') ||
+      url.includes('/configuracion')
     );
   }
 }

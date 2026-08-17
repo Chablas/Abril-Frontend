@@ -220,75 +220,101 @@
               <span>Ver retirados</span>
             </label>
           </ng-container>
+          <app-filter-trigger *ngIf="isAdmin()" [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
         </div>
-        <div class="filter-row" *ngIf="isAdmin()">
-          <label class="fb-toggle">
-            <input type="checkbox" [(ngModel)]="soloSinEmo" (change)="loadWorkers(1)" />
-            <span>Sin EMO</span>
-          </label>
-          <label class="fb-toggle">
-            <input type="checkbox" [(ngModel)]="soloEmoVencido" (change)="loadWorkers(1)" />
-            <span>EMO Vencido</span>
-          </label>
-          <label class="fb-toggle">
-            <input type="checkbox" [(ngModel)]="soloSinVidaLey" (change)="loadWorkers(1)" />
-            <span>Sin Vida Ley</span>
-          </label>
+      </div>
+
+      <!-- ── Modal de filtros (solo admin) ─────────────────────────────── -->
+      <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+        <div class="w-full">
           <select class="wf-select" [(ngModel)]="filtroEstado" (change)="onFilterChange()">
             <option value="">Todos los estados</option>
             <option value="Habilitado">Habilitado</option>
             <option value="No Autorizado">No Autorizado</option>
           </select>
-          <div class="fb-ss-wrap">
-            <app-search-select
-              [options]="catalogoProyectos"
-              valueField="projectId"
-              displayField="projectDescription"
-              [value]="filtroProyectoId"
-              [showLabel]="false"
-              placeholder="Todos los proyectos"
-              [allowClear]="true"
-              (valueChange)="filtroProyectoId = $event; onFilterChange()"
-            />
-          </div>
-          <div class="fb-ss-wrap" *ngIf="!isContratista()">
-            <app-search-select
-              [options]="catalogoEmpresas"
-              valueField="id"
-              displayField="razonSocial"
-              [value]="filtroEmpresaId"
-              [showLabel]="false"
-              placeholder="Todas las razones sociales"
-              [allowClear]="true"
-              (valueChange)="filtroEmpresaId = $event; onFilterChange()"
-            />
-          </div>
-          <div class="fb-ss-wrap" *ngIf="!isContratista()">
-            <app-search-select
-              [options]="gerenciaOptions"
-              valueField="areaScopeId"
-              displayField="areaItemName"
-              [value]="filtroGerenciaId"
-              [showLabel]="false"
-              placeholder="Todas las gerencias"
-              [allowClear]="true"
-              (valueChange)="onGerenciaChange($event)"
-            />
-          </div>
-          <div class="fb-ss-wrap" *ngIf="!isContratista() && filtroGerenciaId">
-            <app-search-select
-              [options]="areaScopeOptions"
-              valueField="areaScopeId"
-              displayField="areaItemName"
-              [value]="filtroAreaScopeId"
-              [showLabel]="false"
-              placeholder="Todas las áreas"
-              [allowClear]="true"
-              (valueChange)="filtroAreaScopeId = $event; onFilterChange()"
-            />
-          </div>
         </div>
-      </div>
+
+        <div class="w-full">
+          <app-search-select
+            label="Proyecto"
+            [options]="catalogoProyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="filtroProyectoId"
+            placeholder="Todos los proyectos"
+            [allowClear]="true"
+            (valueChange)="filtroProyectoId = $event; onFilterChange()"
+          />
+        </div>
+
+        <div class="w-full" *ngIf="!isContratista()">
+          <app-search-select
+            label="Empresa"
+            [options]="catalogoEmpresas"
+            valueField="id"
+            displayField="razonSocial"
+            [value]="filtroEmpresaId"
+            placeholder="Todas las razones sociales"
+            [allowClear]="true"
+            (valueChange)="filtroEmpresaId = $event; onFilterChange()"
+          />
+        </div>
+
+        <div class="w-full" *ngIf="!isContratista()">
+          <app-search-select
+            label="Gerencia"
+            [options]="gerenciaOptions"
+            valueField="areaScopeId"
+            displayField="areaItemName"
+            [value]="filtroGerenciaId"
+            placeholder="Todas las gerencias"
+            [allowClear]="true"
+            (valueChange)="onGerenciaChange($event)"
+          />
+        </div>
+
+        <div class="w-full" *ngIf="!isContratista() && filtroGerenciaId">
+          <app-search-select
+            label="Área"
+            [options]="areaScopeOptions"
+            valueField="areaScopeId"
+            displayField="areaItemName"
+            [value]="filtroAreaScopeId"
+            placeholder="Todas las áreas"
+            [allowClear]="true"
+            (valueChange)="filtroAreaScopeId = $event; onFilterChange()"
+          />
+        </div>
+
+        <label class="flex items-center gap-2 text-[12px] text-gray-700">
+          <input type="checkbox" [(ngModel)]="soloSinEmo" (change)="loadWorkers(1)" />
+          Sin EMO
+        </label>
+        <label class="flex items-center gap-2 text-[12px] text-gray-700">
+          <input type="checkbox" [(ngModel)]="soloEmoVencido" (change)="loadWorkers(1)" />
+          EMO Vencido
+        </label>
+        <label class="flex items-center gap-2 text-[12px] text-gray-700">
+          <input type="checkbox" [(ngModel)]="soloSinVidaLey" (change)="loadWorkers(1)" />
+          Sin Vida Ley
+        </label>
+        <label class="flex items-center gap-2 text-[12px] text-gray-700">
+          <input type="checkbox" [(ngModel)]="soloSinLectura" (change)="loadWorkers(1)" />
+          Sin Lectura EMO (evidencia)
+        </label>
+        <label class="flex items-center gap-2 text-[12px] text-gray-700">
+          <input type="checkbox" [(ngModel)]="soloSinCertificado" (change)="loadWorkers(1)" />
+          Sin Certificado de Aptitud (evidencia)
+        </label>
+        <label class="flex items-center gap-2 text-[12px] text-gray-700">
+          <input type="checkbox" [(ngModel)]="soloSinInterconsulta" (change)="loadWorkers(1)" />
+          Sin levantamiento de Interconsulta (evidencia)
+        </label>
+        <label class="flex items-center gap-2 text-[12px] text-gray-700">
+          <input type="checkbox" [(ngModel)]="soloSinEmoCompleto" (change)="loadWorkers(1)" />
+          Sin EMO Completo (evidencia)
+        </label>
+      </app-filter-modal>
 
       <!-- Selección masiva -->
       <div class="selection-bar" *ngIf="(isAdmin() || isContratista()) && haySeleccionados && !soloRetirados">

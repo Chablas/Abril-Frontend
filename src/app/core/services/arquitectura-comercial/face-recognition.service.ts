@@ -57,8 +57,11 @@ export class FaceRecognitionService {
     }
     try {
       const faceapi = await import('face-api.js');
+      // inputSize chico (default de la librería es 416) — para un reconocimiento en vivo, cada
+      // punto de tamaño extra es tiempo de cómputo que no aporta nada; con la persona a menos de
+      // ~1m de la cámara 224 detecta igual de bien y es notablemente más rápido.
       const deteccion = await faceapi
-        .detectSingleFace(fuente, new faceapi.TinyFaceDetectorOptions())
+        .detectSingleFace(fuente, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
         .withFaceLandmarks()
         .withFaceDescriptor();
       if (!deteccion) return null;

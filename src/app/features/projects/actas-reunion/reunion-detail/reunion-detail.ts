@@ -22,6 +22,7 @@ import { ConvocatoriaMasiva } from '../components/convocatoria-masiva/convocator
 import {
   ProyectoFiltroDTO,
   ReunionAcuerdoDTO,
+  ReunionAgendaDTO,
   ReunionDetalleDTO,
   ReunionParticipanteInput,
   TrabajadorAbrilDTO,
@@ -45,6 +46,10 @@ interface ParticipanteRow {
 export class ReunionDetail implements OnInit {
   reunionId!: number;
   detalle: ReunionDetalleDTO | null = null;
+  agenda: ReunionAgendaDTO | null = null;
+  /** Mis temas a tratar (agenda dinámica), editable directo desde el acta, sin depender del link del correo. */
+  misTemas = '';
+  guardadoAgenda = false;
 
   // Formulario editable de cabecera
   tema = '';
@@ -100,6 +105,58 @@ export class ReunionDetail implements OnInit {
           asistio: p.asistio,
         }));
         this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+    this.cargarAgenda();
+  }
+
+  private cargarAgenda(): void {
+    this.service.getAgenda(this.reunionId).subscribe({
+      next: (data) => {
+        this.agenda = data;
+        this.misTemas = data.items
+          .filter((i) => i.workerId === data.workerIdActual)
+          .map((i) => i.descripcion)
+          .join('\n');
+      },
+      error: () => {},
+    });
+  }
+
+  get otrosTemasAgenda() {
+    if (!this.agenda) return [];
+    return this.agenda.items.filter((i) => i.workerId !== this.agenda!.workerIdActual);
+  }
+
+  /** Permite cargar/editar los propios temas a tratar directo desde el acta, sin depender del
+   * link del correo de recordatorio (que puede tardar en llegar o no haberse enviado aún). */
+  guardarMisTemas(): void {
+    const temas = this.misTemas
+      .split('\n')
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .map((descripcion) => ({ descripcion }));
+
+    if (temas.length === 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Sin temas',
+        text: 'Escribe al menos un tema a tratar.',
+        confirmButtonColor: 'var(--color-abril-primary)',
+      });
+      return;
+    }
+
+    this.loaderService.show();
+    this.service.guardarMisTemas(this.reunionId, { temas }).subscribe({
+      next: () => {
+        this.loaderService.hide();
+        this.guardadoAgenda = true;
+        this.cargarAgenda();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();

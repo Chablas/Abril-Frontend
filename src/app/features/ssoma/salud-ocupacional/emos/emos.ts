@@ -85,6 +85,7 @@ export class Emos implements OnInit, OnDestroy {
     sinLectura: false,
     sinCertificado: false,
     sinEmoCompleto: false,
+    sinInterconsulta: false,
     sortBy: '',
     sortDesc: false,
   };
@@ -234,6 +235,7 @@ export class Emos implements OnInit, OnDestroy {
       sinLectura: this.filters.sinLectura || undefined,
       sinCertificado: this.filters.sinCertificado || undefined,
       sinEmoCompleto: this.filters.sinEmoCompleto || undefined,
+      sinInterconsulta: this.filters.sinInterconsulta || undefined,
       sortBy: this.filters.sortBy || undefined,
       sortDesc: this.filters.sortDesc || undefined,
     };
@@ -297,6 +299,7 @@ export class Emos implements OnInit, OnDestroy {
       sinLectura: this.filters.sinLectura || undefined,
       sinCertificado: this.filters.sinCertificado || undefined,
       sinEmoCompleto: this.filters.sinEmoCompleto || undefined,
+      sinInterconsulta: this.filters.sinInterconsulta || undefined,
       sortBy: this.filters.sortBy || undefined,
       sortDesc: this.filters.sortDesc || undefined,
     };
@@ -326,7 +329,7 @@ export class Emos implements OnInit, OnDestroy {
     this.filters = {
       search: '', aptitud: '', estado: '', empresaId: 0, proyectoId: 0,
       fechaEmoDesde: '', fechaEmoHasta: '',
-      sinLectura: false, sinCertificado: false, sinEmoCompleto: false,
+      sinLectura: false, sinCertificado: false, sinEmoCompleto: false, sinInterconsulta: false,
       sortBy: '', sortDesc: false,
     };
     this.filtroGerenciaId = null;
@@ -454,6 +457,7 @@ export class Emos implements OnInit, OnDestroy {
       this.filters.sinLectura ||
       this.filters.sinCertificado ||
       this.filters.sinEmoCompleto ||
+      this.filters.sinInterconsulta ||
       this.filters.sortBy
     );
   }
@@ -471,6 +475,7 @@ export class Emos implements OnInit, OnDestroy {
     if (this.filters.sinLectura) n++;
     if (this.filters.sinCertificado) n++;
     if (this.filters.sinEmoCompleto) n++;
+    if (this.filters.sinInterconsulta) n++;
     return n;
   }
 }

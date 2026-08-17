@@ -3,6 +3,7 @@
   titulo="Control de EMOs"
   subtitulo="Estado y aptitud de los EMOs de trabajadores."
   [tabs]="tabs">
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
 <div class="emos-root">
@@ -203,6 +204,26 @@
   </div>
 
 </div>
+
+<!-- ── Modal de filtros de evidencia ────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinLectura" (ngModelChange)="onFilterChange()" />
+    Sin Lectura EMO (evidencia)
+  </label>
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinCertificado" (ngModelChange)="onFilterChange()" />
+    Sin Certificado de Aptitud (evidencia)
+  </label>
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinEmoCompleto" (ngModelChange)="onFilterChange()" />
+    Sin EMO Completo (evidencia)
+  </label>
+  <label class="flex items-center gap-2 text-[12px] text-gray-700">
+    <input type="checkbox" [(ngModel)]="filters.sinInterconsulta" (ngModelChange)="onFilterChange()" />
+    Sin levantamiento de Interconsulta (evidencia)
+  </label>
+</app-filter-modal>
 
 <!-- Modales -->
 <app-emo-detail

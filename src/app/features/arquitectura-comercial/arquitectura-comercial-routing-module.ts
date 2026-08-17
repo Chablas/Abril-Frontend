@@ -10,6 +10,7 @@ import { TareoMarcar } from './tareo/marcar/marcar';
 import { TareoEnrolamiento } from './tareo/enrolamiento/enrolamiento';
 import { TareoRevision } from './tareo/revision/revision';
 import { TareoReporteSemanal } from './tareo/reporte-semanal/reporte-semanal';
+import { TareoGestionPermisos } from './tareo/gestion-permisos/gestion-permisos';
 
 const routes: Routes = [
   {
@@ -70,6 +71,12 @@ const routes: Routes = [
         component: TareoReporteSemanal,
         canActivate: [roleGuard],
         data: { titulo: 'ARQUITECTURA COMERCIAL - REPORTE DE TAREO', featureKey: 'arquitectura-comercial.tareo.reporte' },
+      },
+      {
+        path: 'tareo/gestion-permisos',
+        component: TareoGestionPermisos,
+        canActivate: [roleGuard],
+        data: { titulo: 'ARQUITECTURA COMERCIAL - GESTIÓN DE PERMISOS', featureKey: 'arquitectura-comercial.tareo.gestion-permisos' },
       },
       {
         path: 'observaciones',

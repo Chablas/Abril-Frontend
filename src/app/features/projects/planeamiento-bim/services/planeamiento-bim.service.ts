@@ -16,6 +16,14 @@ import {
   BloqueoDto,
   BloqueoUpdateDto,
 } from '../dtos/planeamiento-bim-bloqueo.dto';
+import {
+  AvanceProyectoDto,
+  CausasParetoDto,
+  MetaSemanalDto,
+  MetaSemanalUpdateDto,
+  PlanMaestroSemanaDto,
+  PpcHistoricoDto,
+} from '../dtos/planeamiento-bim-dashboard.dto';
 
 @Injectable({
   providedIn: 'root',
@@ -104,6 +112,55 @@ export class PlaneamientoBimService {
   cerrarBloqueo(id: number): Observable<BloqueoDto> {
     return this.http.put<BloqueoDto>(`${this.baseUrl}/bloqueos/${id}/cerrar`, {}, {
       headers: this.headers,
+    });
+  }
+
+  // ── Dashboard de Proyecto ───────────────────────────────────
+  getAvance(projectId: number, desde?: string | null, hasta?: string | null): Observable<AvanceProyectoDto> {
+    let params = new HttpParams();
+    if (desde) params = params.set('desde', desde);
+    if (hasta) params = params.set('hasta', hasta);
+    return this.http.get<AvanceProyectoDto>(`${this.baseUrl}/dashboard/${projectId}/avance`, {
+      headers: this.headers,
+      params,
+    });
+  }
+
+  getPpcHistorico(projectId: number, desde?: string | null, hasta?: string | null): Observable<PpcHistoricoDto> {
+    let params = new HttpParams();
+    if (desde) params = params.set('desde', desde);
+    if (hasta) params = params.set('hasta', hasta);
+    return this.http.get<PpcHistoricoDto>(`${this.baseUrl}/dashboard/${projectId}/ppc`, {
+      headers: this.headers,
+      params,
+    });
+  }
+
+  getMetasSemanales(projectId: number): Observable<MetaSemanalDto[]> {
+    return this.http.get<MetaSemanalDto[]>(`${this.baseUrl}/dashboard/${projectId}/metas-semanales`, {
+      headers: this.headers,
+    });
+  }
+
+  guardarMetasSemanales(projectId: number, payload: MetaSemanalUpdateDto): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/dashboard/${projectId}/metas-semanales`, payload, {
+      headers: this.headers,
+    });
+  }
+
+  getPlanMaestro(projectId: number): Observable<PlanMaestroSemanaDto[]> {
+    return this.http.get<PlanMaestroSemanaDto[]>(`${this.baseUrl}/dashboard/${projectId}/plan-maestro`, {
+      headers: this.headers,
+    });
+  }
+
+  getCausasPareto(projectId: number, desde?: string | null, hasta?: string | null): Observable<CausasParetoDto> {
+    let params = new HttpParams();
+    if (desde) params = params.set('desde', desde);
+    if (hasta) params = params.set('hasta', hasta);
+    return this.http.get<CausasParetoDto>(`${this.baseUrl}/dashboard/${projectId}/causas-pareto`, {
+      headers: this.headers,
+      params,
     });
   }
 }
