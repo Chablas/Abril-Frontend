@@ -30,7 +30,24 @@ export interface FaseOnboarding {
   nombre: string;
   descripcion: string | null;
   orden: number;
+  /** Colaboradores parados en esta fase (es el conteo del embudo de la pantalla). */
   total: number;
+  /**
+   * Checklist operativo de la fase (catálogo, igual para todos los colaboradores). Viene con la
+   * bandeja: es lo que dibuja el modal de detalle y de donde salen sus contadores de avance.
+   */
+  actividades: ActividadOnboarding[];
+}
+
+/** Una actividad obligatoria del checklist. El avance se mide en actividades, no en fases. */
+export interface ActividadOnboarding {
+  actividadId: number;
+  codigo: string;
+  nombre: string;
+  descripcion: string | null;
+  orden: number;
+  /** true = la cumple el sistema solo, sin acción de GTH (avisos preventivos de la solicitud). */
+  automatica: boolean;
 }
 
 /** Una fila de la tabla «Colaboradores ingresados». */
@@ -53,11 +70,28 @@ export interface OnboardingListItem {
   faseOrden: number;
   estadoCodigo: string;
   estadoNombre: string;
-  /** Avance en % (fase actual sobre el total de fases del catálogo). */
+  /** Avance en % medido en actividades del checklist (no en fases). Lo calcula el backend. */
   avancePorcentaje: number;
+  /**
+   * Códigos de las actividades del checklist ya cumplidas por este colaborador. Es el único origen
+   * de los checks del detalle: la pantalla no deduce nada por su cuenta.
+   */
+  actividadesHechas: string[];
   cartaOfertaNombre: string | null;
   cartaOfertaUrl: string | null;
   cartaOfertaEnviadaEn: string | null;
+
+  // ── Carta oferta firmada (la que devuelve el colaborador) ────────────────
+  cartaFirmadaNombre: string | null;
+  cartaFirmadaUrl: string | null;
+  cartaFirmadaSubidaEn: string | null;
+  /** Null = adjunta pero todavía sin revisar: es lo que bloquea el avance de la primera fase. */
+  cartaFirmadaAprobadaEn: string | null;
+
+  /** Carpeta de SharePoint donde vive el file digital del colaborador. */
+  fileDigitalCarpeta: string | null;
+
+  observacion: string | null;
   iniciadoEn: string | null;
 }
 
@@ -93,6 +127,12 @@ export interface OnboardingCreate {
 
 export interface OnboardingCreateResult {
   onboardingId: number;
+  message: string;
+  colaborador: OnboardingListItem | null;
+}
+
+/** Resultado de subir/aprobar la carta firmada o de avanzar de fase: la fila ya actualizada. */
+export interface OnboardingAccionResult {
   message: string;
   colaborador: OnboardingListItem | null;
 }

@@ -22,6 +22,7 @@ import {
   ResumenOnboarding,
 } from './dtos/onboarding.dto';
 import { GthNuevoIngresoModal } from './components/nuevo-ingreso/nuevo-ingreso-modal';
+import { GthOnboardingDetalleModal } from './components/detalle/onboarding-detalle-modal';
 import { avanceColor, estadoOnboardingColors } from './onboarding-estado-colors';
 
 /**
@@ -47,6 +48,7 @@ import { avanceColor, estadoOnboardingColors } from './onboarding-estado-colors'
     SearchSelect,
     FabButton,
     GthNuevoIngresoModal,
+    GthOnboardingDetalleModal,
   ],
   templateUrl: './onboarding.html',
   styleUrl: './onboarding.css',
@@ -78,6 +80,9 @@ export class GthOnboarding implements OnInit {
   faseCodigo: string | null = null;
 
   modalAbierto = false;
+
+  /** Colaborador cuyo detalle está abierto (se abre al hacer clic en su fila). */
+  detalle: OnboardingListItem | null = null;
 
   private readonly pager = new ClientPager<OnboardingListItem>(DEFAULT_PAGE_SIZE);
 
@@ -122,7 +127,30 @@ export class GthOnboarding implements OnInit {
     this.colaboradores = [colaborador, ...this.colaboradores];
     this.candidatosAptos = this.candidatosAptos.filter((c) => c.candidatoId !== colaborador.candidatoId);
     this.recalcularContadores();
+    // «Colaboradores nuevos» son los onboardings de los últimos 7 días: el que se acaba de abrir
+    // entra sí o sí, y es el único contador que no se puede derivar de la lista (no viaja la fecha
+    // de inicio de los anteriores como para recontarlos acá).
+    this.resumen = { ...this.resumen, colaboradoresNuevos: this.resumen.colaboradoresNuevos + 1 };
     this.pager.reset();
+    this.cdr.detectChanges();
+  }
+
+  // ── Modal de detalle ────────────────────────────────────────────────────
+  abrirDetalle(colaborador: OnboardingListItem): void {
+    this.detalle = colaborador;
+  }
+
+  /**
+   * El detalle devuelve la fila ya actualizada (subió la carta firmada, la aprobó o avanzó de
+   * fase). Se reemplaza en la lista en vez de recargar la bandeja; el embudo y las tarjetas se
+   * recalculan porque dependen del conjunto entero.
+   */
+  onDetalleActualizado(colaborador: OnboardingListItem): void {
+    this.colaboradores = this.colaboradores.map((c) =>
+      c.onboardingId === colaborador.onboardingId ? colaborador : c,
+    );
+    this.detalle = colaborador;
+    this.recalcularContadores();
     this.cdr.detectChanges();
   }
 
@@ -142,7 +170,6 @@ export class GthOnboarding implements OnInit {
       }).length,
       enProceso: this.colaboradores.filter((c) => c.estadoCodigo !== 'COMPLETO').length,
       completos: this.colaboradores.filter((c) => c.estadoCodigo === 'COMPLETO').length,
-      colaboradoresNuevos: this.resumen.colaboradoresNuevos + 1,
       candidatosPorIngresar: this.candidatosAptos.length,
     };
   }

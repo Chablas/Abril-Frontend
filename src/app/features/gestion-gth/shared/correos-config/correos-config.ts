@@ -27,8 +27,9 @@ import {
  * correo no se envía) y la lista de sus destinatarios, cada uno con su propio interruptor.
  *
  * Hay dos clases de destinatario:
- *  • Dinámicos (Gerente General, gerente del área del solicitante, área de GTH): su correo NO se
- *    escribe acá, sale del dato maestro al momento de enviar. Solo se prenden y apagan.
+ *  • Dinámicos (Gerente General, gerente del área del solicitante, área de GTH, área de TI): su
+ *    correo NO se escribe acá, sale del dato maestro al momento de enviar. Solo se prenden y
+ *    apagan.
  *  • Correos adicionales: alta, edición y baja completa desde la pantalla.
  */
 @Component({

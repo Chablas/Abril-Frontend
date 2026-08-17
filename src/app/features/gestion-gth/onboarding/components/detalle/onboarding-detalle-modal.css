@@ -1,0 +1,226 @@
+/* El overlay/panel/header/footer viven en el shell app-abril-modal-panel — no
+   reimplementarlos acá. Lo de este archivo es solo el checklist: la tarjeta de
+   cada actividad y sus cajas de detalle. */
+
+/* Los nombres de fase son cortos pero no caben en una línea en pantallas chicas:
+   se dejan envolver en dos líneas con un ancho tope, como el embudo de la lista. */
+.onb-fases-name {
+  max-width: 78px;
+}
+
+/* ── Una actividad del checklist ──────────────────────────────────────────
+   Pendiente = borde neutro; hecha = verde tenue, que es como se lee de un
+   vistazo cuánto queda de la fase. */
+.act {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  border: 1px solid var(--color-abril-border);
+  border-radius: 10px;
+  padding: 13px 15px;
+  background: #fff;
+}
+.act--hecha {
+  border-color: #a7f3d0;
+  background: #f6fefa;
+}
+
+.act-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border: 2px solid var(--color-abril-border-strong);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.act-check i {
+  font-size: 20px;
+  line-height: 1;
+  color: var(--color-abril-logo-blue);
+}
+/* Con el check dentro, el círculo propio sobra: el ícono ya es el círculo. */
+.act-check--hecha {
+  border-color: transparent;
+}
+
+/* ── Cajas de detalle dentro de una actividad ──────────────────────────── */
+.act-box {
+  border-radius: 8px;
+  padding: 10px 13px;
+  margin-top: 9px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.act-box--ok {
+  background: #f0fdf4;
+  border: 1px solid #a7f3d0;
+  color: #166534;
+}
+.act-box--aviso {
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  color: #92400e;
+}
+.act-box input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  accent-color: var(--color-abril-logo-blue);
+}
+
+.act-lista {
+  list-style: disc;
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+.act-lista li {
+  margin: 2px 0;
+}
+.act-lista b {
+  font-weight: 600;
+}
+
+/* Pie de la actividad: la frase de estado que va debajo de todo. */
+.act-pie {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+/* Marca de "todavía no implementado". No es un estado del proceso: es una
+   advertencia de la aplicación, por eso es gris y no de color de estado. */
+.act-chip {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Fila del archivo adjunto (carta oferta firmada) ───────────────────── */
+.act-archivo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 9px;
+  padding: 9px 12px;
+  border: 1px solid var(--color-abril-border);
+  border-radius: 8px;
+  background: #fafafa;
+}
+.act-archivo-nombre {
+  flex: 1 1 220px;
+  min-width: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #374151;
+  word-break: break-all;
+}
+
+.act-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.act-badge--ok {
+  background: #dcfce7;
+  color: #15803d;
+}
+.act-badge--pend {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.act-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 31px;
+  padding: 0 13px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.act-btn i {
+  font-size: 14px;
+}
+.act-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.act-btn--primary {
+  background: var(--color-abril-logo-blue);
+  border: 1px solid var(--color-abril-logo-blue);
+  color: #fff;
+}
+.act-btn--primary:hover:not(:disabled) {
+  background: var(--color-abril-logo-blue-hover);
+}
+.act-btn--ghost {
+  background: #fff;
+  border: 1px solid var(--color-abril-logo-blue);
+  color: var(--color-abril-logo-blue);
+}
+.act-btn--ghost:hover:not(:disabled) {
+  background: var(--color-abril-logo-blue-light);
+}
+
+/* El selector de archivo ocupa su propia línea dentro de la actividad. */
+app-file-selector {
+  display: block;
+  margin-top: 9px;
+}
+
+/* ── Botones de navegación entre fases (pie del modal) ─────────────────── */
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.nav-btn i {
+  font-size: 16px;
+}
+.nav-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.nav-btn--secundario {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  color: #4b5563;
+}
+.nav-btn--secundario:hover:not(:disabled) {
+  background: #f9fafb;
+}
+.nav-btn--primario {
+  background: var(--color-abril-logo-blue);
+  border: 1px solid var(--color-abril-logo-blue);
+  color: #fff;
+}
+.nav-btn--primario:hover:not(:disabled) {
+  background: var(--color-abril-logo-blue-hover);
+}

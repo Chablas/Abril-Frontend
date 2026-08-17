@@ -113,10 +113,6 @@ export class GthAprobacionDecision implements OnInit {
     return this.esGerenteGeneral ? this.data.gerenteArea : this.data.gerenteGeneral;
   }
 
-  get miNivelLabel(): string {
-    return this.esGerenteGeneral ? 'Gerencia General' : 'Gerente del área';
-  }
-
   get otroNivelLabel(): string {
     return this.esGerenteGeneral ? 'Gerente del área' : 'Gerencia General';
   }
@@ -126,13 +122,6 @@ export class GthAprobacionDecision implements OnInit {
     return this.esGerenteGeneral
       ? 'Aprobación de solicitud de personal'
       : 'Visto bueno de la solicitud de personal';
-  }
-
-  /** Aviso de arriba: qué se espera del usuario, o por qué ya no puede tocar nada. */
-  get avisoInstruccion(): string {
-    return this.esGerenteGeneral
-      ? 'Marca Aprobar o Rechazar en cada vacante. Solo las aprobadas se envían a Gestión de Talento Humano.'
-      : 'Marca Aprobar o Rechazar en cada vacante. Tu visto bueno queda registrado; la solicitud avanza recién con la aprobación de Gerencia General.';
   }
 
   // ── Decisión por vacante ────────────────────────────────────────────────
@@ -154,10 +143,14 @@ export class GthAprobacionDecision implements OnInit {
     return this.esGerenteGeneral ? v.aprobadoGerenteArea : v.aprobadoGerenteGeneral;
   }
 
-  /** Etiqueta de la postura del otro nivel dentro de la fila de la vacante. */
+  /**
+   * Etiqueta de la postura del otro nivel dentro de la fila de la vacante. La plantilla solo la
+   * pinta cuando ese nivel ya decidió: repetir "sin decidir" en cada fila no aporta nada, porque
+   * su casilla de arriba ya lo dice una vez.
+   */
   textoOtroNivel(v: AprobacionVacante): string {
     const otro = this.decisionOtroNivel(v);
-    if (otro === null) return `${this.otroNivelLabel}: sin decidir`;
+    if (otro === null) return '';
     return `${this.otroNivelLabel}: ${otro ? 'aprobada' : 'rechazada'}`;
   }
 
@@ -205,12 +198,14 @@ export class GthAprobacionDecision implements OnInit {
   }
 
   // ── Aviso "a quién le llega esta decisión" ──────────────────────────────
-  // El correo a GTH solo sale cuando decide Gerencia General y queda al menos una vacante
-  // aprobada (así lo hace el backend), así que el aviso se apaga en cuanto la decisión en curso
-  // las rechaza todas: prometer un envío que no va a ocurrir es peor que no avisar nada. Al
-  // gerente del área ni se le muestra — su visto bueno no dispara ningún correo.
+  // La decisión de Gerencia General dispara dos correos —el aviso a GTH y el de vacantes
+  // aprobadas a TI—, y los dos solo salen si queda al menos una vacante aprobada (así lo hace el
+  // backend), así que el aviso se apaga en cuanto la decisión en curso las rechaza todas:
+  // prometer un envío que no va a ocurrir es peor que no avisar nada. Los destinatarios llegan
+  // ya fusionados en una sola lista: lo que importa es a quién le llega la decisión, no cuántos
+  // correos salen. Al gerente del área ni se le muestra — su visto bueno no dispara ninguno.
 
-  /** true cuando ya se sabe a quién le llegaría el correo (null = no aplica o no se pudo resolver). */
+  /** true cuando ya se sabe a quién le llegarían los correos (null = no aplica o no se pudo resolver). */
   get destinatariosCargados(): boolean {
     return !this.soloLectura && !!this.data?.destinatarios;
   }
