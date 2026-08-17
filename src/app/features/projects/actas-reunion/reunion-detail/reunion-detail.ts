@@ -48,7 +48,8 @@ export class ReunionDetail implements OnInit {
   detalle: ReunionDetalleDTO | null = null;
   agenda: ReunionAgendaDTO | null = null;
   /** Mis temas a tratar (agenda dinámica), editable directo desde el acta, sin depender del link del correo. */
-  misTemas = '';
+  misTemasLista: string[] = [];
+  nuevoTemaAgenda = '';
   guardadoAgenda = false;
 
   // Formulario editable de cabecera
@@ -98,7 +99,7 @@ export class ReunionDetail implements OnInit {
         this.observaciones = data.observaciones ?? '';
         this.participantes = data.participantes.map((p) => ({
           reunionParticipanteId: p.reunionParticipanteId,
-          workerId: null,
+          workerId: p.workerId,
           nombre: p.nombre,
           cargo: p.cargo ?? '',
           iniciales: p.iniciales ?? '',
@@ -118,10 +119,9 @@ export class ReunionDetail implements OnInit {
     this.service.getAgenda(this.reunionId).subscribe({
       next: (data) => {
         this.agenda = data;
-        this.misTemas = data.items
+        this.misTemasLista = data.items
           .filter((i) => i.workerId === data.workerIdActual)
-          .map((i) => i.descripcion)
-          .join('\n');
+          .map((i) => i.descripcion);
       },
       error: () => {},
     });
@@ -132,25 +132,31 @@ export class ReunionDetail implements OnInit {
     return this.agenda.items.filter((i) => i.workerId !== this.agenda!.workerIdActual);
   }
 
+  agregarTemaAgenda(): void {
+    const texto = this.nuevoTemaAgenda.trim();
+    if (!texto) return;
+    this.misTemasLista.push(texto);
+    this.nuevoTemaAgenda = '';
+  }
+
+  removerTemaAgenda(index: number): void {
+    this.misTemasLista.splice(index, 1);
+  }
+
   /** Permite cargar/editar los propios temas a tratar directo desde el acta, sin depender del
    * link del correo de recordatorio (que puede tardar en llegar o no haberse enviado aún). */
   guardarMisTemas(): void {
-    const temas = this.misTemas
-      .split('\n')
-      .map((t) => t.trim())
-      .filter(Boolean)
-      .map((descripcion) => ({ descripcion }));
-
-    if (temas.length === 0) {
+    if (this.misTemasLista.length === 0) {
       Swal.fire({
         icon: 'warning',
         title: 'Sin temas',
-        text: 'Escribe al menos un tema a tratar.',
+        text: 'Agrega al menos un tema a tratar.',
         confirmButtonColor: 'var(--color-abril-primary)',
       });
       return;
     }
 
+    const temas = this.misTemasLista.map((descripcion) => ({ descripcion }));
     this.loaderService.show();
     this.service.guardarMisTemas(this.reunionId, { temas }).subscribe({
       next: () => {

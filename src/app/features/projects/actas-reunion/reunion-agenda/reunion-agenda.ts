@@ -23,8 +23,8 @@ import { ReunionAgendaDTO } from '../dtos/actas-reunion.dto';
 export class ReunionAgenda implements OnInit {
   reunionId!: number;
   agenda: ReunionAgendaDTO | null = null;
-  /** Un tema por línea; se parte en items al guardar. */
-  misTemas = '';
+  misTemasLista: string[] = [];
+  nuevoTema = '';
   guardado = false;
 
   constructor(
@@ -41,10 +41,9 @@ export class ReunionAgenda implements OnInit {
     this.service.getAgenda(this.reunionId).subscribe({
       next: (data) => {
         this.agenda = data;
-        this.misTemas = data.items
+        this.misTemasLista = data.items
           .filter((i) => i.workerId === data.workerIdActual)
-          .map((i) => i.descripcion)
-          .join('\n');
+          .map((i) => i.descripcion);
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -59,22 +58,28 @@ export class ReunionAgenda implements OnInit {
     return this.agenda.items.filter((i) => i.workerId !== this.agenda!.workerIdActual);
   }
 
-  guardar(): void {
-    const temas = this.misTemas
-      .split('\n')
-      .map((t) => t.trim())
-      .filter(Boolean)
-      .map((descripcion) => ({ descripcion }));
+  agregarTema(): void {
+    const texto = this.nuevoTema.trim();
+    if (!texto) return;
+    this.misTemasLista.push(texto);
+    this.nuevoTema = '';
+  }
 
-    if (temas.length === 0) {
+  removerTema(index: number): void {
+    this.misTemasLista.splice(index, 1);
+  }
+
+  guardar(): void {
+    if (this.misTemasLista.length === 0) {
       Swal.fire({
         icon: 'warning',
         title: 'Sin temas',
-        text: 'Escribe al menos un tema a tratar.',
+        text: 'Agrega al menos un tema a tratar.',
         confirmButtonColor: 'var(--color-abril-primary)',
       });
       return;
     }
+    const temas = this.misTemasLista.map((descripcion) => ({ descripcion }));
 
     this.loaderService.show();
     this.service.guardarMisTemas(this.reunionId, { temas }).subscribe({

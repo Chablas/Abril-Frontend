@@ -140,9 +140,27 @@
       <!-- Cargar/editar mis propios temas directo desde el acta, sin depender del link del correo. -->
       <div *ngIf="agenda!.workerIdActual != null" class="border-t border-[#E5EAF0] pt-3 flex flex-col gap-2">
         <label class="text-sm font-medium text-gray-700">Mis temas a tratar</label>
-        <textarea [(ngModel)]="misTemas" rows="4" maxlength="2000"
-          class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
-          placeholder="Un tema por línea. Ej.&#10;Avance de la semana&#10;Riesgo con proveedor X"></textarea>
+
+        <ul *ngIf="misTemasLista.length > 0" class="flex flex-col gap-1.5">
+          <li *ngFor="let tema of misTemasLista; let i = index"
+            class="flex items-center justify-between gap-2 px-3 py-1.5 border border-[#E5EAF0] rounded-lg text-sm text-gray-700 bg-[#F5F8FA]">
+            {{ tema }}
+            <button type="button" (click)="removerTemaAgenda(i)" class="text-red-400 hover:text-red-600 cursor-pointer">
+              <span class="ti ti-x text-sm"></span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="flex gap-2">
+          <input type="text" [(ngModel)]="nuevoTemaAgenda" maxlength="300" (keydown.enter)="agregarTemaAgenda()"
+            class="flex-1 h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+            placeholder="Ej. Avance de la semana" />
+          <button type="button" (click)="agregarTemaAgenda()"
+            class="h-[38px] px-4 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-1">
+            <span class="ti ti-plus text-base"></span> Agregar
+          </button>
+        </div>
+
         <button type="button" (click)="guardarMisTemas()"
           class="self-start h-[38px] px-4 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
           <span class="ti ti-device-floppy text-base"></span>
