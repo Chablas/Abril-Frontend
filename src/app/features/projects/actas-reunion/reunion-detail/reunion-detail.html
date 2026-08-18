@@ -116,6 +116,8 @@
     </div>
   </div>
 
+  <app-acuerdos-pendientes-anteriores [reunionId]="reunionId"></app-acuerdos-pendientes-anteriores>
+
   <!-- ── Agenda ─────────────────────────────────────────────────────────── -->
   <div *ngIf="agenda?.requiereAgenda" class="bg-white rounded-lg p-5 flex flex-col gap-3">
     <h3 class="text-sm font-semibold text-[var(--color-abril-primary)] uppercase">Agenda</h3>
@@ -124,53 +126,9 @@
       {{ agenda!.agendaTexto }}
     </p>
 
-    <ng-container *ngIf="!agenda!.agendaFija">
-      <div *ngIf="otrosTemasAgenda.length === 0 && agenda!.items.length === 0" class="text-sm text-gray-400">
-        Nadie cargó todavía sus temas a tratar.
-      </div>
-      <ul *ngIf="otrosTemasAgenda.length > 0" class="text-sm text-gray-700 flex flex-col gap-1.5">
-        <li *ngFor="let item of otrosTemasAgenda">
-          <span class="font-medium text-gray-800">{{ item.workerNombre }}:</span> {{ item.descripcion }}
-        </li>
-      </ul>
-      <p *ngIf="agenda!.participantesPendientes.length > 0" class="text-xs text-gray-400 border-t border-[#E5EAF0] pt-2">
-        Aún no cargan sus temas: {{ agenda!.participantesPendientes.join(', ') }}
-      </p>
-
-      <!-- Cargar/editar mis propios temas directo desde el acta, sin depender del link del correo. -->
-      <div *ngIf="agenda!.workerIdActual != null" class="border-t border-[#E5EAF0] pt-3 flex flex-col gap-2">
-        <label class="text-sm font-medium text-gray-700">Mis temas a tratar</label>
-
-        <ul *ngIf="misTemasLista.length > 0" class="flex flex-col gap-1.5">
-          <li *ngFor="let tema of misTemasLista; let i = index"
-            class="flex items-center justify-between gap-2 px-3 py-1.5 border border-[#E5EAF0] rounded-lg text-sm text-gray-700 bg-[#F5F8FA]">
-            {{ tema }}
-            <button type="button" (click)="removerTemaAgenda(i)" class="text-red-400 hover:text-red-600 cursor-pointer">
-              <span class="ti ti-x text-sm"></span>
-            </button>
-          </li>
-        </ul>
-
-        <div class="flex gap-2">
-          <input type="text" [(ngModel)]="nuevoTemaAgenda" maxlength="300" (keydown.enter)="agregarTemaAgenda()"
-            class="flex-1 h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
-            placeholder="Ej. Avance de la semana" />
-          <button type="button" (click)="agregarTemaAgenda()"
-            class="h-[38px] px-4 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-1">
-            <span class="ti ti-plus text-base"></span> Agregar
-          </button>
-        </div>
-
-        <button type="button" (click)="guardarMisTemas()"
-          class="self-start h-[38px] px-4 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
-          <span class="ti ti-device-floppy text-base"></span>
-          Guardar mis temas
-        </button>
-        <p *ngIf="guardadoAgenda" class="text-sm text-[var(--color-abril-primary)] flex items-center gap-1.5">
-          <span class="ti ti-circle-check text-base"></span> Guardado.
-        </p>
-      </div>
-    </ng-container>
+    <app-mis-temas-agenda *ngIf="!agenda!.agendaFija"
+      [reunionId]="reunionId" [agenda]="agenda!" (saved)="cargarAgenda()">
+    </app-mis-temas-agenda>
   </div>
 
   <!-- ── Participantes ──────────────────────────────────────────────────── -->
@@ -257,6 +215,7 @@
           <tr class="text-left">
             <th class="px-3 py-2 font-medium w-10 text-center">N°</th>
             <th class="px-3 py-2 font-medium">Descripción</th>
+            <th class="px-3 py-2 font-medium w-24 text-center">Criticidad</th>
             <th class="px-3 py-2 font-medium w-32">Responsables</th>
             <th class="px-3 py-2 font-medium w-28 whitespace-nowrap">F. Programada</th>
             <th class="px-3 py-2 font-medium w-28 whitespace-nowrap">F. Reprogram.</th>
@@ -271,6 +230,11 @@
             <td class="px-3 py-2 text-gray-700">
               {{ a.descripcion }}
               <p *ngIf="a.acciones" class="text-xs text-gray-400 mt-0.5">{{ a.acciones }}</p>
+            </td>
+            <td class="px-3 py-2 text-center">
+              <span class="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap" [ngClass]="criticidadClass(a.criticidad)">
+                {{ criticidadLabel(a.criticidad) }}
+              </span>
             </td>
             <td class="px-3 py-2 text-gray-700 text-xs">{{ responsablesLabel(a) || '—' }}</td>
             <td class="px-3 py-2 text-gray-700 whitespace-nowrap">{{ a.fechaProgramada ? (a.fechaProgramada | date:'dd/MM/yyyy') : '—' }}</td>

@@ -20,6 +20,10 @@ export interface TareoTrabajadorEnrolamientoDTO {
   /** SSO-FO-150 firmado y subido — sin esto el enrolamiento queda bloqueado. */
   autorizacionSubida: boolean;
   autorizacionSubidaEn: string | null;
+  /** URL del escaneo firmado, para verlo/descargarlo a solicitud. Solo viene poblada en el
+   * listado del coordinador (getTrabajadoresParaEnrolar) — el de autoservicio
+   * (getTrabajadoresDisponiblesParaEnrolar) siempre la manda null. */
+  autorizacionUrl: string | null;
 }
 
 /** Resultado de la identificación 1:N contra los enrolados de Arquitectura Comercial. */

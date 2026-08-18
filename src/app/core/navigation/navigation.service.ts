@@ -146,6 +146,7 @@ export class NavigationService {
           route: '/arquitectura-comercial/tareo/marcar',
           featureKeys: [
             'arquitectura-comercial.tareo.marcar',
+            'arquitectura-comercial.tareo.enrolamiento',
             'arquitectura-comercial.tareo.gestion-permisos',
             'arquitectura-comercial.tareo.revision',
             'arquitectura-comercial.tareo.reporte',
@@ -205,6 +206,7 @@ export class NavigationService {
         { label: 'Accidentes e Incidentes', route: '/ssoma/gestion/accidentes-incidentes/lista', featureKey: 'ssoma.gestion.accidentes-incidentes' },
         { label: 'Auditoría de ATS', route: '/ssoma/gestion/auditoria-ats/lista', featureKey: 'ssoma.gestion.auditoria-ats' },
         { label: 'Amonestaciones y Suspensiones', route: '/ssoma/gestion/amonestaciones', featureKey: 'ssoma.gestion.amonestaciones' },
+        { label: 'Programación de Inducciones', route: '/ssoma/gestion/programacion-inducciones', featureKey: 'ssoma.gestion.programacion-inducciones' },
         { label: 'Dossier', route: '/habilitacion/gestion/dossier', featureKey: 'habilitacion.dossier' },
         { label: 'Indicadores SSOMA', route: '/ssoma/gestion/indicadores-proactivos/indicadores-ssoma', featureKey: 'ssoma.gestion.indicadores-proactivos' },
         { label: 'Checklists SSOMA', route: '/ssoma/gestion/checklist', featureKey: 'ssoma.gestion.checklist' },
