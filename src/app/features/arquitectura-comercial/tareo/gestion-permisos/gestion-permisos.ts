@@ -130,6 +130,10 @@ export class TareoGestionPermisos {
     this.pager.reset();
   }
 
+  fotoUrlConToken(url: string): string {
+    return this.tareoService.fotoUrlConToken(url);
+  }
+
   onPageChange(p: number): void {
     this.pager.goTo(p);
   }

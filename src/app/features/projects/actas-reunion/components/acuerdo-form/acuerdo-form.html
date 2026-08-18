@@ -8,6 +8,20 @@
         placeholder="¿Qué se acordó en la reunión?"></textarea>
     </div>
 
+    <div class="w-48">
+      <label class="block text-sm text-gray-600 mb-1">Criticidad</label>
+      <app-search-select
+        [showLabel]="false"
+        [options]="criticidades"
+        valueField="id"
+        displayField="descripcion"
+        [value]="criticidad"
+        (valueChange)="criticidad = $event"
+        [allowClear]="false"
+        placeholder="Selecciona criticidad">
+      </app-search-select>
+    </div>
+
     <div>
       <label class="block text-sm text-gray-600 mb-1">Acciones</label>
       <textarea [(ngModel)]="acciones" rows="2"
@@ -36,6 +50,14 @@
             <span class="ti ti-x text-xs"></span>
           </button>
         </span>
+      </div>
+      <div *ngIf="responsables.length > 1" class="flex flex-col gap-1 mb-2 p-2 border border-[#E5EAF0] rounded-lg bg-[#F5F8FA]">
+        <p class="text-xs text-gray-500">Hay varios responsables: marca quién queda a cargo de que el acuerdo se cumpla, para que no quede en el aire.</p>
+        <label *ngFor="let r of responsables" class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+          <input type="radio" name="responsablePrincipal" [value]="r.workerId" [(ngModel)]="responsablePrincipalWorkerId"
+            class="accent-[var(--color-abril-primary)]" />
+          {{ r.nombre }}
+        </label>
       </div>
       <div class="flex gap-2">
         <div class="flex-1">

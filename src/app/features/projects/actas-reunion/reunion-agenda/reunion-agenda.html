@@ -17,51 +17,10 @@
       <ng-container *ngIf="!agenda.agendaFija">
         <div>
           <h2 class="text-base font-semibold text-[var(--color-abril-primary)]">Carga tus temas a tratar</h2>
-          <p class="text-xs text-gray-400 mt-1">Agrégalos uno por uno. Puedes editarlos y guardar de nuevo hasta antes de la reunión.</p>
+          <p class="text-xs text-gray-400 mt-1">Agrégalos uno por uno. Se guardan solos al salir del campo; puedes editarlos o borrarlos hasta antes de la reunión.</p>
         </div>
 
-        <ul *ngIf="misTemasLista.length > 0" class="flex flex-col gap-1.5">
-          <li *ngFor="let tema of misTemasLista; let i = index"
-            class="flex items-center justify-between gap-2 px-3 py-1.5 border border-[#E5EAF0] rounded-lg text-sm text-gray-700 bg-[#F5F8FA]">
-            {{ tema }}
-            <button type="button" (click)="removerTema(i)" class="text-red-400 hover:text-red-600 cursor-pointer">
-              <span class="ti ti-x text-sm"></span>
-            </button>
-          </li>
-        </ul>
-
-        <div class="flex gap-2">
-          <input type="text" [(ngModel)]="nuevoTema" maxlength="300" (keydown.enter)="agregarTema()"
-            class="flex-1 h-[42px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
-            placeholder="Ej. Avance de la semana" />
-          <button type="button" (click)="agregarTema()"
-            class="h-[42px] px-4 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-1">
-            <span class="ti ti-plus text-base"></span> Agregar
-          </button>
-        </div>
-
-        <button type="button" (click)="guardar()"
-          class="h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center justify-center gap-2">
-          <span class="ti ti-device-floppy text-base"></span>
-          Guardar mis temas
-        </button>
-
-        <p *ngIf="guardado" class="text-sm text-[var(--color-abril-primary)] flex items-center gap-1.5">
-          <span class="ti ti-circle-check text-base"></span> Guardado.
-        </p>
-
-        <div *ngIf="otrosTemas.length > 0" class="border-t border-[#E5EAF0] pt-3 flex flex-col gap-2">
-          <p class="text-xs font-medium text-gray-500">Temas ya cargados por otros participantes</p>
-          <ul class="text-sm text-gray-600 flex flex-col gap-1">
-            <li *ngFor="let item of otrosTemas">
-              <span class="font-medium text-gray-700">{{ item.workerNombre }}:</span> {{ item.descripcion }}
-            </li>
-          </ul>
-        </div>
-
-        <p *ngIf="agenda.participantesPendientes.length > 0" class="text-xs text-gray-400 border-t border-[#E5EAF0] pt-3">
-          Aún no cargan sus temas: {{ agenda.participantesPendientes.join(', ') }}
-        </p>
+        <app-mis-temas-agenda [reunionId]="reunionId" [agenda]="agenda"></app-mis-temas-agenda>
 
         <button type="button" (click)="irAReunion()"
           class="self-start text-sm text-[var(--color-abril-primary)] hover:underline">

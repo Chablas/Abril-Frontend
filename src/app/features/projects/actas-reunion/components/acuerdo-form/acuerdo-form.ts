@@ -22,6 +22,12 @@ interface ResponsableRow {
   nombre: string;
 }
 
+export const CRITICIDADES = [
+  { id: 'NORMAL', descripcion: 'Normal' },
+  { id: 'MEDIO', descripcion: 'Medio' },
+  { id: 'CRITICO', descripcion: 'Crítico' },
+];
+
 @Component({
   selector: 'app-acuerdo-form',
   standalone: true,
@@ -47,10 +53,13 @@ export class AcuerdoForm implements OnInit {
   fechaReprogramacion: string | null = null;
   fechaCumplimiento: string | null = null;
   estadoId: number | null = null;
+  criticidad = 'NORMAL';
+  criticidades = CRITICIDADES;
   requiereAceptacion = false;
   requiereEvidencia = false;
   evidenciaUrl: string | null = null;
   responsables: ResponsableRow[] = [];
+  responsablePrincipalWorkerId: number | null = null;
   nuevoResponsableId: number | null = null;
   showConvocatoriaMasivaModal = false;
 
@@ -72,6 +81,7 @@ export class AcuerdoForm implements OnInit {
       this.fechaReprogramacion = this.acuerdo.fechaReprogramacion;
       this.fechaCumplimiento = this.acuerdo.fechaCumplimiento;
       this.estadoId = this.acuerdo.reunionAcuerdoEstadoId;
+      this.criticidad = this.acuerdo.criticidad;
       this.requiereAceptacion = this.acuerdo.requiereAceptacion;
       this.requiereEvidencia = this.acuerdo.requiereEvidencia;
       this.evidenciaUrl = this.acuerdo.evidenciaUrl;
@@ -79,6 +89,7 @@ export class AcuerdoForm implements OnInit {
         workerId: r.workerId,
         nombre: r.workerNombre,
       }));
+      this.responsablePrincipalWorkerId = this.acuerdo.responsables.find((r) => r.esPrincipal)?.workerId ?? null;
     }
   }
 
@@ -98,6 +109,7 @@ export class AcuerdoForm implements OnInit {
 
   removerResponsable(workerId: number): void {
     this.responsables = this.responsables.filter((r) => r.workerId !== workerId);
+    if (this.responsablePrincipalWorkerId === workerId) this.responsablePrincipalWorkerId = null;
   }
 
   /** Agrega en bloque los trabajadores elegidos por área/puesto/proyecto (ej. "todas las jefaturas
@@ -130,10 +142,12 @@ export class AcuerdoForm implements OnInit {
       fechaReprogramacion: this.fechaReprogramacion,
       fechaCumplimiento: this.fechaCumplimiento,
       reunionAcuerdoEstadoId: this.estadoId,
+      criticidad: this.criticidad,
       requiereAceptacion: this.requiereAceptacion,
       requiereEvidencia: this.requiereEvidencia,
       evidenciaUrl: this.evidenciaUrl,
       responsableWorkerIds: this.responsables.map((r) => r.workerId),
+      responsablePrincipalWorkerId: this.responsables.length > 1 ? this.responsablePrincipalWorkerId : null,
     };
 
     this.loaderService.show();

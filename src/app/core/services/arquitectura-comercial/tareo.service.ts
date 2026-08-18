@@ -120,6 +120,21 @@ export class TareoService {
     });
   }
 
+  /** Enrolamiento asistido: el trabajador (desde la cuenta corporativa compartida) elige su
+   * nombre de esta lista — solo trae a quienes ya tienen el SSO-FO-150 subido — y se toma su
+   * propia foto. Autorizado por featureKey, no requiere el rol Gestor AC. */
+  getTrabajadoresDisponiblesParaEnrolar(): Observable<TareoTrabajadorEnrolamientoDTO[]> {
+    return this.http.get<TareoTrabajadorEnrolamientoDTO[]>(`${this.apiUrl}/enrolamiento/disponibles`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  enrolarDisponible(workerId: number, body: TareoEnrolamientoRequestDTO): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/enrolamiento/disponibles/${workerId}`, body, {
+      headers: this.authHeaders(),
+    });
+  }
+
   getRegistros(filtro: TareoFiltroParams): Observable<TareoRegistroListResponseDTO> {
     let params = new HttpParams().set('pagina', filtro.pagina).set('porPagina', filtro.porPagina);
     if (filtro.workerId) params = params.set('workerId', filtro.workerId);

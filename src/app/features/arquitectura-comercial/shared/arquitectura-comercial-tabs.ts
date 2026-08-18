@@ -23,6 +23,7 @@ export const AC_REVISIONES_TABS: AbrilPageTab[] = [
 
 export const AC_TAREO_TABS: AbrilPageTab[] = [
   { label: 'Marcar',            icono: 'ti-clock-play',   route: '/arquitectura-comercial/tareo/marcar',            featureKey: 'arquitectura-comercial.tareo.marcar' },
+  { label: 'Enrolamiento',      icono: 'ti-camera',       route: '/arquitectura-comercial/tareo/enrolamiento-asistido', featureKey: 'arquitectura-comercial.tareo.enrolamiento' },
   { label: 'Gestión de permisos', icono: 'ti-face-id',    route: '/arquitectura-comercial/tareo/gestion-permisos',  featureKey: 'arquitectura-comercial.tareo.gestion-permisos' },
   { label: 'Revisión',          icono: 'ti-list-check',   route: '/arquitectura-comercial/tareo/revision',          featureKey: 'arquitectura-comercial.tareo.revision' },
   { label: 'Reporte',           icono: 'ti-table',        route: '/arquitectura-comercial/tareo/reporte',           featureKey: 'arquitectura-comercial.tareo.reporte' },

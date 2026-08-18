@@ -19,6 +19,8 @@ import {
   ParticipanteSeleccionado,
 } from '../components/participante-add/participante-add';
 import { ConvocatoriaMasiva } from '../components/convocatoria-masiva/convocatoria-masiva';
+import { MisTemasAgenda } from '../components/mis-temas-agenda/mis-temas-agenda';
+import { AcuerdosPendientesAnteriores } from '../components/acuerdos-pendientes-anteriores/acuerdos-pendientes-anteriores';
 import {
   ProyectoFiltroDTO,
   ReunionAcuerdoDTO,
@@ -40,17 +42,13 @@ interface ParticipanteRow {
 @Component({
   selector: 'app-reunion-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, FileSelector, FilePreview, SearchSelect, ReunionAdd, ReunionReprogramar, AcuerdoForm, ParticipanteAdd, ConvocatoriaMasiva],
+  imports: [CommonModule, FormsModule, FileSelector, FilePreview, SearchSelect, ReunionAdd, ReunionReprogramar, AcuerdoForm, ParticipanteAdd, ConvocatoriaMasiva, MisTemasAgenda, AcuerdosPendientesAnteriores],
   templateUrl: './reunion-detail.html',
 })
 export class ReunionDetail implements OnInit {
   reunionId!: number;
   detalle: ReunionDetalleDTO | null = null;
   agenda: ReunionAgendaDTO | null = null;
-  /** Mis temas a tratar (agenda dinámica), editable directo desde el acta, sin depender del link del correo. */
-  misTemasLista: string[] = [];
-  nuevoTemaAgenda = '';
-  guardadoAgenda = false;
 
   // Formulario editable de cabecera
   tema = '';
@@ -115,64 +113,17 @@ export class ReunionDetail implements OnInit {
     this.cargarAgenda();
   }
 
-  private cargarAgenda(): void {
+  cargarAgenda(): void {
     this.service.getAgenda(this.reunionId).subscribe({
       next: (data) => {
         this.agenda = data;
-        this.misTemasLista = data.items
-          .filter((i) => i.workerId === data.workerIdActual)
-          .map((i) => i.descripcion);
       },
       error: () => {},
     });
   }
 
-  get otrosTemasAgenda() {
-    if (!this.agenda) return [];
-    return this.agenda.items.filter((i) => i.workerId !== this.agenda!.workerIdActual);
-  }
-
-  agregarTemaAgenda(): void {
-    const texto = this.nuevoTemaAgenda.trim();
-    if (!texto) return;
-    this.misTemasLista.push(texto);
-    this.nuevoTemaAgenda = '';
-  }
-
-  removerTemaAgenda(index: number): void {
-    this.misTemasLista.splice(index, 1);
-  }
-
-  /** Permite cargar/editar los propios temas a tratar directo desde el acta, sin depender del
-   * link del correo de recordatorio (que puede tardar en llegar o no haberse enviado aún). */
-  guardarMisTemas(): void {
-    if (this.misTemasLista.length === 0) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Sin temas',
-        text: 'Agrega al menos un tema a tratar.',
-        confirmButtonColor: 'var(--color-abril-primary)',
-      });
-      return;
-    }
-
-    const temas = this.misTemasLista.map((descripcion) => ({ descripcion }));
-    this.loaderService.show();
-    this.service.guardarMisTemas(this.reunionId, { temas }).subscribe({
-      next: () => {
-        this.loaderService.hide();
-        this.guardadoAgenda = true;
-        this.cargarAgenda();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
-        this.errorService.handleError(err);
-      },
-    });
-  }
-
   volver(): void {
-    this.router.navigate(['/projects/actas-reunion']);
+    this.router.navigate(['/projects/actas-reunion/lista']);
   }
 
   irAReunion(id: number | null): void {
@@ -400,10 +351,12 @@ export class ReunionDetail implements OnInit {
           fechaReprogramacion: acuerdo.fechaReprogramacion,
           fechaCumplimiento: fechaHoy,
           reunionAcuerdoEstadoId: cumplidoId,
+          criticidad: acuerdo.criticidad,
           requiereAceptacion: acuerdo.requiereAceptacion,
           requiereEvidencia: acuerdo.requiereEvidencia,
           evidenciaUrl: acuerdo.evidenciaUrl,
           responsableWorkerIds: acuerdo.responsables.map((r) => r.workerId),
+          responsablePrincipalWorkerId: acuerdo.responsables.find((r) => r.esPrincipal)?.workerId ?? null,
         })
         .subscribe({
           next: () => {
@@ -443,7 +396,31 @@ export class ReunionDetail implements OnInit {
   }
 
   responsablesLabel(acuerdo: ReunionAcuerdoDTO): string {
-    return acuerdo.responsables.map((r) => r.workerNombre).join(' / ');
+    return acuerdo.responsables
+      .map((r) => (r.esPrincipal ? `★ ${r.workerNombre}` : r.workerNombre))
+      .join(' / ');
+  }
+
+  criticidadClass(criticidad: string): string {
+    switch (criticidad) {
+      case 'CRITICO':
+        return 'bg-red-50 text-red-700 border border-red-200';
+      case 'MEDIO':
+        return 'bg-amber-50 text-amber-700 border border-amber-200';
+      default:
+        return 'bg-gray-50 text-gray-500 border border-gray-200';
+    }
+  }
+
+  criticidadLabel(criticidad: string): string {
+    switch (criticidad) {
+      case 'CRITICO':
+        return 'Crítico';
+      case 'MEDIO':
+        return 'Medio';
+      default:
+        return 'Normal';
+    }
   }
 
   acuerdoEstadoClass(estado: string): string {

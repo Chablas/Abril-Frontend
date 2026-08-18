@@ -215,6 +215,87 @@
         <span class="ti ti-device-floppy text-base"></span>
         Guardar convocatoria de este tema
       </button>
+
+      <!-- ── Recurrencia (generación automática de la siguiente reunión) ──── -->
+      <div class="flex flex-col gap-3 border-t border-[#E5EAF0] pt-4">
+        <div>
+          <p class="text-sm font-medium text-gray-700">Reunión recurrente</p>
+          <p class="text-[11px] text-gray-400 mt-0.5">
+            Genera automáticamente la siguiente reunión cada cierto número de días, desde una fecha
+            ancla fija. Reprogramar o cancelar una ocurrencia individual no mueve el ancla de la
+            serie: la siguiente siempre se genera en su fecha teórica.
+          </p>
+        </div>
+
+        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+          <input type="checkbox" [(ngModel)]="esRecurrente" class="accent-[var(--color-abril-primary)]" />
+          Generar automáticamente la siguiente reunión de este tema
+        </label>
+
+        <ng-container *ngIf="esRecurrente">
+          <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none pl-1">
+            <input type="checkbox" [(ngModel)]="recurrenciaActiva" class="accent-[var(--color-abril-primary)]" />
+            Serie activa (desmarca para pausarla sin perder la configuración)
+          </label>
+
+          <div class="pl-1 flex flex-col gap-1.5">
+            <label class="text-xs font-medium text-gray-500">Área/gerencia de las reuniones generadas</label>
+            <select *ngFor="let opciones of nivelesRecurrencia(); let i = index"
+              [ngModel]="recurrenciaAreaScopePath[i]?.areaScopeId ?? null"
+              (ngModelChange)="onNivelRecurrenciaChange(i, $event)"
+              class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]">
+              <option [ngValue]="null">{{ placeholderNivel(opciones, i) }}</option>
+              <option *ngFor="let n of opciones" [ngValue]="n.areaScopeId">{{ n.areaItemName }}</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pl-1">
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-gray-500">Cada cuántos días</label>
+              <input type="number" [(ngModel)]="intervaloDias" min="1" step="1"
+                class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+                placeholder="Ej. 14" />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-gray-500">Fecha de la primera ocurrencia (ancla)</label>
+              <input type="date" [(ngModel)]="fechaAncla"
+                class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]" />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-gray-500">Hora de inicio</label>
+              <input type="time" [(ngModel)]="horaInicioRecurrencia"
+                class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]" />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-gray-500">Hora de término</label>
+              <input type="time" [(ngModel)]="horaFinRecurrencia"
+                class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]" />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-gray-500">Lugar</label>
+              <input type="text" [(ngModel)]="lugarRecurrencia" maxlength="300"
+                class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]"
+                placeholder="Ej. Oficina Central" />
+            </div>
+            <div class="flex flex-col gap-1.5">
+              <label class="text-xs font-medium text-gray-500">Días de anticipación para generarla</label>
+              <input type="number" [(ngModel)]="diasAnticipacion" min="1" step="1"
+                class="w-full h-[38px] px-3 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)]" />
+            </div>
+          </div>
+
+          <p *ngIf="proximaFechaEstimada" class="text-xs text-gray-500 pl-1">
+            Próxima generación estimada: <b>{{ proximaFechaEstimada | date:'dd/MM/yyyy' }}</b>
+            <span *ngIf="ultimaFechaGenerada"> · última generada: {{ ultimaFechaGenerada | date:'dd/MM/yyyy' }}</span>
+          </p>
+        </ng-container>
+
+        <button type="button" (click)="guardarRecurrencia()"
+          class="self-start h-[42px] px-5 bg-[var(--color-abril-primary)] rounded-lg text-white text-sm font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] transition-colors flex items-center gap-2">
+          <span class="ti ti-device-floppy text-base"></span>
+          Guardar recurrencia
+        </button>
+      </div>
     </ng-container>
   </div>
 </div>

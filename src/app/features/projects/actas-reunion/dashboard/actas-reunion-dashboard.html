@@ -1,0 +1,121 @@
+<app-abril-page-header
+  badge="ACTAS DE REUNIÓN"
+  titulo="Mis Acuerdos"
+  subtitulo="Seguimiento personal de los acuerdos de los que eres responsable, en cualquier reunión."
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="flex-1 min-h-0 overflow-y-auto flex flex-col gap-5">
+
+  <!-- ── Stat cards ─────────────────────────────────────────────────────── -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white rounded-lg p-4 border-t-4 border-[var(--color-abril-primary)] flex flex-col gap-1">
+      <span class="text-xs font-medium text-gray-500 uppercase">Pendientes</span>
+      <span class="text-2xl font-semibold text-[var(--color-abril-primary)]">{{ totalPendientes }}</span>
+    </div>
+    <div class="bg-white rounded-lg p-4 border-t-4 border-red-500 flex flex-col gap-1">
+      <span class="text-xs font-medium text-gray-500 uppercase">Vencidos</span>
+      <span class="text-2xl font-semibold text-red-600">{{ totalVencidos }}</span>
+    </div>
+    <div class="bg-white rounded-lg p-4 border-t-4 border-amber-500 flex flex-col gap-1">
+      <span class="text-xs font-medium text-gray-500 uppercase">Críticos</span>
+      <span class="text-2xl font-semibold text-amber-600">{{ totalCriticos }}</span>
+    </div>
+    <div class="bg-white rounded-lg p-4 border-t-4 border-gray-300 flex flex-col gap-1">
+      <span class="text-xs font-medium text-gray-500 uppercase">Cumplidos (últimos 30 días)</span>
+      <span class="text-2xl font-semibold text-gray-600">{{ totalCumplidosRecientes }}</span>
+    </div>
+  </div>
+
+  <p *ngIf="acuerdos.length === 0" class="bg-white rounded-lg p-8 text-center text-gray-400">
+    No tienes acuerdos asignados como responsable.
+  </p>
+
+  <!-- ── Vencidos ───────────────────────────────────────────────────────── -->
+  <div *ngIf="vencidos.length > 0" class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <h3 class="text-sm font-semibold text-red-600 uppercase flex items-center gap-1.5">
+      <span class="ti ti-alert-triangle"></span> Vencidos
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      <div *ngFor="let a of vencidos" (click)="irAReunion(a)"
+        class="border border-red-200 bg-red-50/40 rounded-lg p-3 flex flex-col gap-2 cursor-pointer hover:shadow-sm transition-shadow">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap" [ngClass]="criticidadClass(a.criticidad)">
+            {{ criticidadLabel(a.criticidad) }}
+          </span>
+          <span class="text-[11px] text-red-600 font-medium whitespace-nowrap">
+            Programado: {{ a.fechaProgramada | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+        <p class="text-sm text-gray-700">{{ a.descripcion }}</p>
+        <p class="text-xs text-gray-400">Acta N° {{ a.reunionNumero }} · {{ a.reunionTema }} · {{ a.ambito }}</p>
+        <p *ngIf="a.otrosResponsables.length > 0" class="text-xs text-gray-400">
+          {{ a.esPrincipal ? '★ Tú eres el principal · ' : '' }}Con: {{ a.otrosResponsables.join(', ') }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Críticos ───────────────────────────────────────────────────────── -->
+  <div *ngIf="criticos.length > 0" class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <h3 class="text-sm font-semibold text-amber-600 uppercase flex items-center gap-1.5">
+      <span class="ti ti-flame"></span> Críticos
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      <div *ngFor="let a of criticos" (click)="irAReunion(a)"
+        class="border border-amber-200 bg-amber-50/40 rounded-lg p-3 flex flex-col gap-2 cursor-pointer hover:shadow-sm transition-shadow">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap" [ngClass]="criticidadClass(a.criticidad)">
+            {{ criticidadLabel(a.criticidad) }}
+          </span>
+          <span *ngIf="a.fechaProgramada" class="text-[11px] text-gray-500 whitespace-nowrap">
+            {{ a.fechaProgramada | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+        <p class="text-sm text-gray-700">{{ a.descripcion }}</p>
+        <p class="text-xs text-gray-400">Acta N° {{ a.reunionNumero }} · {{ a.reunionTema }} · {{ a.ambito }}</p>
+        <p *ngIf="a.otrosResponsables.length > 0" class="text-xs text-gray-400">
+          {{ a.esPrincipal ? '★ Tú eres el principal · ' : '' }}Con: {{ a.otrosResponsables.join(', ') }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Otros pendientes ───────────────────────────────────────────────── -->
+  <div *ngIf="otrosPendientes.length > 0" class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <h3 class="text-sm font-semibold text-[var(--color-abril-primary)] uppercase">Otros pendientes</h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      <div *ngFor="let a of otrosPendientes" (click)="irAReunion(a)"
+        class="border border-[#E5EAF0] bg-[#F5F8FA] rounded-lg p-3 flex flex-col gap-2 cursor-pointer hover:shadow-sm transition-shadow">
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-[11px] font-medium px-2 py-0.5 rounded-full whitespace-nowrap" [ngClass]="criticidadClass(a.criticidad)">
+            {{ criticidadLabel(a.criticidad) }}
+          </span>
+          <span *ngIf="a.fechaProgramada" class="text-[11px] text-gray-500 whitespace-nowrap">
+            {{ a.fechaProgramada | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+        <p class="text-sm text-gray-700">{{ a.descripcion }}</p>
+        <p class="text-xs text-gray-400">Acta N° {{ a.reunionNumero }} · {{ a.reunionTema }} · {{ a.ambito }}</p>
+        <p *ngIf="a.otrosResponsables.length > 0" class="text-xs text-gray-400">
+          {{ a.esPrincipal ? '★ Tú eres el principal · ' : '' }}Con: {{ a.otrosResponsables.join(', ') }}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Cumplidos recientes ────────────────────────────────────────────── -->
+  <div *ngIf="cumplidosRecientes.length > 0" class="bg-white rounded-lg p-5 flex flex-col gap-3">
+    <h3 class="text-sm font-semibold text-gray-500 uppercase flex items-center gap-1.5">
+      <span class="ti ti-circle-check"></span> Cumplidos recientemente
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      <div *ngFor="let a of cumplidosRecientes" (click)="irAReunion(a)"
+        class="border border-[#E5EAF0] rounded-lg p-3 flex flex-col gap-2 cursor-pointer hover:shadow-sm transition-shadow opacity-70">
+        <p class="text-sm text-gray-700 line-through decoration-gray-300">{{ a.descripcion }}</p>
+        <p class="text-xs text-gray-400">Acta N° {{ a.reunionNumero }} · {{ a.reunionTema }} · {{ a.ambito }}</p>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -15,6 +15,7 @@ import {
   ReunionFolderDTO,
   ReunionTemaOpcionDTO,
   TemaConvocatoriaReglaInput,
+  TemaRecurrenciaDTO,
 } from '../dtos/actas-reunion.dto';
 
 interface PuestoRow {
@@ -59,6 +60,19 @@ export class ActasReunionConfiguracion implements OnInit {
   agendaFija = false;
   agendaTexto = '';
   recordatorioHorasAntes: number | null = null;
+
+  // ── Recurrencia (generación automática de la siguiente reunión) ───────────
+  esRecurrente = false;
+  recurrenciaActiva = true;
+  recurrenciaAreaScopePath: AreaScopeTreeDto[] = [];
+  intervaloDias: number | null = 14;
+  fechaAncla: string | null = null;
+  horaInicioRecurrencia: string | null = null;
+  horaFinRecurrencia: string | null = null;
+  lugarRecurrencia = '';
+  diasAnticipacion = 5;
+  ultimaFechaGenerada: string | null = null;
+  proximaFechaEstimada: string | null = null;
 
   constructor(
     private service: ActasReunionService,
@@ -138,7 +152,36 @@ export class ActasReunionConfiguracion implements OnInit {
     this.agendaFija = false;
     this.agendaTexto = '';
     this.recordatorioHorasAntes = null;
+    this.esRecurrente = false;
+    this.recurrenciaActiva = true;
+    this.recurrenciaAreaScopePath = [];
+    this.intervaloDias = 14;
+    this.fechaAncla = null;
+    this.horaInicioRecurrencia = null;
+    this.horaFinRecurrencia = null;
+    this.lugarRecurrencia = '';
+    this.diasAnticipacion = 5;
+    this.ultimaFechaGenerada = null;
+    this.proximaFechaEstimada = null;
     if (this.temaSeleccionadoId == null) return;
+
+    this.service.getRecurrenciaTema(this.temaSeleccionadoId).subscribe({
+      next: (data) => {
+        this.esRecurrente = data.esRecurrente;
+        this.recurrenciaActiva = data.recurrenciaActiva;
+        this.recurrenciaAreaScopePath = data.areaScopeId != null ? this.buscarRuta(this.arbol, data.areaScopeId) ?? [] : [];
+        this.intervaloDias = data.intervaloDias ?? 14;
+        this.fechaAncla = data.fechaAncla;
+        this.horaInicioRecurrencia = data.horaInicio;
+        this.horaFinRecurrencia = data.horaFin;
+        this.lugarRecurrencia = data.lugar ?? '';
+        this.diasAnticipacion = data.diasAnticipacion || 5;
+        this.ultimaFechaGenerada = data.ultimaFechaGenerada;
+        this.proximaFechaEstimada = data.proximaFechaEstimada;
+        this.cdr.detectChanges();
+      },
+      error: () => {},
+    });
 
     this.loaderService.show();
     this.service.getConvocatoriaTema(this.temaSeleccionadoId).subscribe({
@@ -275,6 +318,87 @@ export class ActasReunionConfiguracion implements OnInit {
       });
   }
 
+  // ── Recurrencia ────────────────────────────────────────────────────────────
+
+  /** Un select por nivel para el área/gerencia de la serie (misma cascada que las reglas de convocatoria). */
+  nivelesRecurrencia(): AreaScopeTreeDto[][] {
+    const niveles: AreaScopeTreeDto[][] = [this.arbol];
+    let actual = this.recurrenciaAreaScopePath[0];
+    let i = 0;
+    while (actual && actual.children.length > 0) {
+      niveles.push(actual.children);
+      i++;
+      actual = this.recurrenciaAreaScopePath[i];
+    }
+    return niveles;
+  }
+
+  onNivelRecurrenciaChange(nivel: number, areaScopeId: number | null): void {
+    const opciones = this.nivelesRecurrencia()[nivel] ?? [];
+    const nodo = opciones.find((n) => n.areaScopeId === areaScopeId) ?? null;
+    this.recurrenciaAreaScopePath = this.recurrenciaAreaScopePath.slice(0, nivel);
+    if (nodo) this.recurrenciaAreaScopePath.push(nodo);
+  }
+
+  private get recurrenciaAreaScopeId(): number | null {
+    return this.recurrenciaAreaScopePath.length > 0
+      ? this.recurrenciaAreaScopePath[this.recurrenciaAreaScopePath.length - 1].areaScopeId
+      : null;
+  }
+
+  guardarRecurrencia(): void {
+    if (this.temaSeleccionadoId == null) return;
+
+    if (this.esRecurrente) {
+      if (this.recurrenciaAreaScopeId == null) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Falta el área/gerencia',
+          text: 'Indica a qué área/gerencia pertenecerán las reuniones generadas.',
+          confirmButtonColor: 'var(--color-abril-primary)',
+        });
+        return;
+      }
+      if (!this.intervaloDias || this.intervaloDias <= 0 || !this.fechaAncla) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Datos incompletos',
+          text: 'Indica el intervalo en días y la fecha de la primera ocurrencia de la serie.',
+          confirmButtonColor: 'var(--color-abril-primary)',
+        });
+        return;
+      }
+    }
+
+    this.loaderService.show();
+    this.service
+      .guardarRecurrenciaTema(this.temaSeleccionadoId, {
+        esRecurrente: this.esRecurrente,
+        recurrenciaActiva: this.recurrenciaActiva,
+        areaScopeId: this.recurrenciaAreaScopeId,
+        intervaloDias: this.intervaloDias,
+        fechaAncla: this.fechaAncla,
+        horaInicio: this.horaInicioRecurrencia,
+        horaFin: this.horaFinRecurrencia,
+        lugar: this.lugarRecurrencia.trim() || null,
+        diasAnticipacion: this.diasAnticipacion || 5,
+      })
+      .subscribe({
+        next: () => {
+          this.loaderService.hide();
+          Swal.fire({
+            icon: 'success',
+            title: 'Recurrencia guardada',
+            confirmButtonColor: 'var(--color-abril-primary)',
+          });
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
   /** Borrado real del catálogo (no soft-delete): falla si ya hay reuniones agendadas con este tema. */
   eliminarTema(): void {
     if (this.temaSeleccionadoId == null) return;
@@ -318,7 +442,7 @@ export class ActasReunionConfiguracion implements OnInit {
   }
 
   volver(): void {
-    this.router.navigate(['/projects/actas-reunion']);
+    this.router.navigate(['/projects/actas-reunion/lista']);
   }
 
   load(): void {

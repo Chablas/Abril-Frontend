@@ -3,10 +3,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
+  AcuerdoPendienteAnteriorDTO,
+  AcuerdoReprogramarRequest,
   AcuerdoResponsableDecisionRequest,
   AcuerdoResponsableInfoDTO,
   CatalogoDTO,
   GuardarMisTemasRequest,
+  MisAcuerdoDTO,
   PagedResultDTO,
   ReunionAcuerdoRequest,
   ReunionAgendaDTO,
@@ -22,6 +25,8 @@ import {
   ReunionUpdateRequest,
   TemaConvocatoriaDTO,
   TemaConvocatoriaSaveRequest,
+  TemaRecurrenciaDTO,
+  TemaRecurrenciaSaveRequest,
   TrabajadorAbrilDTO,
 } from '../dtos/actas-reunion.dto';
 
@@ -123,6 +128,30 @@ export class ActasReunionService {
     });
   }
 
+  /** Acuerdos pendientes de ediciones anteriores de la misma convocatoria recurrente. */
+  getAcuerdosPendientesAnteriores(reunionId: number): Observable<AcuerdoPendienteAnteriorDTO[]> {
+    return this.http.get<AcuerdoPendienteAnteriorDTO[]>(
+      `${this.apiUrl}/${reunionId}/acuerdos-pendientes-anteriores`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  reprogramarAcuerdo(reunionAcuerdoId: number, request: AcuerdoReprogramarRequest): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(
+      `${this.apiUrl}/acuerdos/${reunionAcuerdoId}/reprogramar`,
+      request,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  marcarAcuerdoCumplido(reunionAcuerdoId: number): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(
+      `${this.apiUrl}/acuerdos/${reunionAcuerdoId}/marcar-cumplido`,
+      {},
+      { headers: this.authHeaders() },
+    );
+  }
+
   subirArchivos(
     reunionId: number,
     files: File[],
@@ -180,6 +209,21 @@ export class ActasReunionService {
     );
   }
 
+  /** Configuración de recurrencia de un tema (generación automática de la siguiente reunión). */
+  getRecurrenciaTema(reunionTemaId: number): Observable<TemaRecurrenciaDTO> {
+    return this.http.get<TemaRecurrenciaDTO>(`${this.apiUrl}/temas/${reunionTemaId}/recurrencia`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  guardarRecurrenciaTema(reunionTemaId: number, request: TemaRecurrenciaSaveRequest): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.apiUrl}/temas/${reunionTemaId}/recurrencia`,
+      request,
+      { headers: this.authHeaders() },
+    );
+  }
+
   /** Catálogo de puestos, para el filtro de convocatoria masiva. */
   getPuestos(): Observable<CatalogoDTO[]> {
     return this.http.get<CatalogoDTO[]>(`${this.apiUrl}/puestos`, { headers: this.authHeaders() });
@@ -227,6 +271,13 @@ export class ActasReunionService {
 
   guardarMisTemas(reunionId: number, request: GuardarMisTemasRequest): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${this.apiUrl}/${reunionId}/agenda/mis-temas`, request, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  // ── Dashboard "Mis acuerdos" ────────────────────────────────────────────────
+  getMisAcuerdos(): Observable<MisAcuerdoDTO[]> {
+    return this.http.get<MisAcuerdoDTO[]>(`${this.apiUrl}/mis-acuerdos`, {
       headers: this.authHeaders(),
     });
   }
