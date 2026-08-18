@@ -192,7 +192,7 @@ export class GthNuevoIngresoModal {
         next: (res) => {
           this.guardando = false;
           this.loaderService.hide();
-          Swal.fire({ icon: 'success', title: 'Onboarding iniciado', text: res.message });
+          Swal.fire({ icon: 'success', title: 'Onboarding iniciado', text: res.message, confirmButtonColor: '#64BC04' });
           if (res.colaborador) this.creado.emit(res.colaborador);
           this.closeModal.emit();
           this.cdr.detectChanges();
