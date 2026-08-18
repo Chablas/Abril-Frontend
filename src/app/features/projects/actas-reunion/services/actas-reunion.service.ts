@@ -3,6 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
+  AcuerdoResponsableDecisionRequest,
+  AcuerdoResponsableInfoDTO,
   CatalogoDTO,
   GuardarMisTemasRequest,
   PagedResultDTO,
@@ -227,6 +229,24 @@ export class ActasReunionService {
     return this.http.put<{ message: string }>(`${this.apiUrl}/${reunionId}/agenda/mis-temas`, request, {
       headers: this.authHeaders(),
     });
+  }
+
+  getAcuerdoResponsableInfo(reunionAcuerdoResponsableId: number): Observable<AcuerdoResponsableInfoDTO> {
+    return this.http.get<AcuerdoResponsableInfoDTO>(
+      `${this.apiUrl}/acuerdos-responsables/${reunionAcuerdoResponsableId}`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  responderAcuerdo(
+    reunionAcuerdoResponsableId: number,
+    request: AcuerdoResponsableDecisionRequest,
+  ): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/acuerdos-responsables/${reunionAcuerdoResponsableId}/decision`,
+      request,
+      { headers: this.authHeaders() },
+    );
   }
 
   // ── Carpeta de SharePoint para adjuntos (singleton) ────────────────────────

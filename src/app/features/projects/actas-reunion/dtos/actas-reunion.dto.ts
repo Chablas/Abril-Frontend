@@ -260,6 +260,25 @@ export interface TemaConvocatoriaDTO {
   recordatorioHorasAntes: number | null;
 }
 
+/** Info del acuerdo/responsable para la página de aceptar/rechazar (link del correo del acta). */
+export interface AcuerdoResponsableInfoDTO {
+  reunionAcuerdoResponsableId: number;
+  reunionId: number;
+  reunionNumero: number;
+  reunionTema: string;
+  acuerdoDescripcion: string;
+  acuerdoAcciones: string | null;
+  fechaProgramada: string | null;
+  /** PENDIENTE | ACEPTADO | RECHAZADO */
+  estadoAceptacion: string;
+  motivoRechazo: string | null;
+}
+
+export interface AcuerdoResponsableDecisionRequest {
+  aceptado: boolean;
+  motivoRechazo: string | null;
+}
+
 export interface TemaConvocatoriaSaveRequest {
   reglas: TemaConvocatoriaReglaInput[];
   agendaFija: boolean;

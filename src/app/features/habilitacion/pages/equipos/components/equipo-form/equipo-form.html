@@ -3,12 +3,21 @@
     <div class="grid-2">
       <div class="col-span-2">
         <label class="field-label">Tipo *</label>
-        <input
-          type="text"
-          class="field-input"
-          [(ngModel)]="model.tipo"
-          placeholder="Excavadora, Grúa Torre, …"
-        />
+        <div class="tipo-equipo-row">
+          <app-search-select
+            [showLabel]="false"
+            [options]="tiposEquipo"
+            valueField="id"
+            displayField="nombre"
+            placeholder="Selecciona el tipo de equipo"
+            [allowClear]="false"
+            [value]="model.tipoEquipoId"
+            (valueChange)="model.tipoEquipoId = $event"
+          ></app-search-select>
+          <button type="button" class="btn-agregar-tipo" (click)="agregarTipoEquipo()" title="Agregar nuevo tipo de equipo">
+            + Nuevo tipo
+          </button>
+        </div>
       </div>
 
       <div>

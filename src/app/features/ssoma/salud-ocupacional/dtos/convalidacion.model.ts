@@ -33,6 +33,8 @@ export interface ConvalidacionListDto {
   // Cambio de puesto: datos y evaluación de riesgo.
   puestoOrigen?: string | null;
   puestoDestino?: string | null;
+  categoriaOrigen?: string | null;
+  categoriaDestino?: string | null;
   obraOficinaStaffOrigenId?: number | null;
   obraOficinaStaffOrigenNombre?: string | null;
   obraOficinaStaffDestinoId?: number | null;

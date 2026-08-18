@@ -1,6 +1,7 @@
 export interface EquipoListDto {
   id: number;
-  tipo: string;
+  tipoEquipoId: number;
+  tipoNombre: string;
   marca?: string;
   modelo?: string;
   nSerie?: string;
@@ -25,7 +26,7 @@ export interface EquipoEntregableDto {
 }
 
 export interface EquipoUpsertDto {
-  tipo: string;
+  tipoEquipoId: number;
   marca?: string;
   modelo?: string;
   nSerie?: string;

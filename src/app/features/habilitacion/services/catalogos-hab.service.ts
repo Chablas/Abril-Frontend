@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, of, shareReplay } from 'rxjs';
+import { Observable, catchError, of, shareReplay, tap } from 'rxjs';
 import {
   AreaArbolNodoDto,
   AreaCatDto,
@@ -9,6 +9,7 @@ import {
   SsItemTrabajadorDto,
   SubareaCatDto,
   ObraOficinaStaffDto,
+  TipoEquipoDto,
 } from '../dtos/catalogos.model';
 import { HABILITACION_BASE, buildHabHeaders, buildHabParams } from './http-base';
 
@@ -23,6 +24,7 @@ export class CatalogosHabService {
   private puestos$?: Observable<{ id: number; nombre: string; categoriaId: number | null }[]>;
   private obraOficinaStaff$?: Observable<ObraOficinaStaffDto[]>;
   private jefes$?: Observable<JefeCandidatoDto[]>;
+  private tiposEquipo$?: Observable<TipoEquipoDto[]>;
 
   constructor(private http: HttpClient) {}
 
@@ -127,6 +129,29 @@ export class CatalogosHabService {
     return this.jefes$;
   }
 
+  /**
+   * Catálogo de tipos de equipo (Volquete, Excavadora de Oruga, …) para el desplegable
+   * del formulario de equipos. Ver `crearTipoEquipo` para agregar uno nuevo al vuelo.
+   */
+  getTiposEquipo(): Observable<TipoEquipoDto[]> {
+    if (!this.tiposEquipo$) {
+      this.tiposEquipo$ = this.http
+        .get<TipoEquipoDto[]>(`${this.base}/tipos-equipo`, { headers: buildHabHeaders() })
+        .pipe(shareReplay(1), catchError(() => of([])));
+    }
+    return this.tiposEquipo$;
+  }
+
+  crearTipoEquipo(nombre: string): Observable<TipoEquipoDto> {
+    return this.http
+      .post<TipoEquipoDto>(`${this.base}/tipos-equipo`, { nombre }, { headers: buildHabHeaders() })
+      .pipe(
+        tap(() => {
+          this.tiposEquipo$ = undefined;
+        }),
+      );
+  }
+
   getSubareas(area: string): Observable<SubareaCatDto[]> {
     return this.http.get<SubareaCatDto[]>(`${this.base}/subareas`, {
       headers: buildHabHeaders(),
@@ -141,5 +166,6 @@ export class CatalogosHabService {
     this.areaArbol$ = undefined;
     this.obraOficinaStaff$ = undefined;
     this.jefes$ = undefined;
+    this.tiposEquipo$ = undefined;
   }
 }

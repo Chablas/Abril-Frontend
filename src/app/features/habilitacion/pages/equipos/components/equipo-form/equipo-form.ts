@@ -12,20 +12,23 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
 import { AuthService } from '../../../../../../core/services/auth.service';
 import { EquipoHabService } from '../../../../services/equipo-hab.service';
+import { CatalogosHabService } from '../../../../services/catalogos-hab.service';
 import { EmpresaContratistaService } from '../../../../services/empresa-contratista.service';
 import { EmpresaContratistaListDto } from '../../../../dtos/empresa.model';
+import { TipoEquipoDto } from '../../../../dtos/catalogos.model';
 import { EquipoListDto, EquipoUpsertDto } from '../../../../dtos/equipo.model';
 
 @Component({
   selector: 'app-equipo-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './equipo-form.html',
   styleUrl: './equipo-form.css',
 })
@@ -37,6 +40,7 @@ export class EquipoForm implements OnChanges {
 
   proyectos: ProjectGetDTO[] = [];
   empresas: EmpresaContratistaListDto[] = [];
+  tiposEquipo: TipoEquipoDto[] = [];
 
   model: EquipoUpsertDto & { emailAdmin?: string; emailSsoma?: string; nVin?: string } =
     this.empty();
@@ -44,6 +48,7 @@ export class EquipoForm implements OnChanges {
 
   constructor(
     private equipoService: EquipoHabService,
+    private catalogosService: CatalogosHabService,
     private projectService: ProjectService,
     private empresaService: EmpresaContratistaService,
     private authService: AuthService,
@@ -61,7 +66,7 @@ export class EquipoForm implements OnChanges {
 
   private empty(): EquipoUpsertDto {
     return {
-      tipo: '',
+      tipoEquipoId: 0,
       marca: '',
       modelo: '',
       nSerie: '',
@@ -80,7 +85,7 @@ export class EquipoForm implements OnChanges {
       return;
     }
     this.model = {
-      tipo: this.equipo.tipo ?? '',
+      tipoEquipoId: this.equipo.tipoEquipoId ?? 0,
       marca: this.equipo.marca ?? '',
       modelo: this.equipo.modelo ?? '',
       nSerie: this.equipo.nSerie ?? '',
@@ -94,6 +99,14 @@ export class EquipoForm implements OnChanges {
   }
 
   private loadCatalogos(): void {
+    this.catalogosService.getTiposEquipo().subscribe({
+      next: (data) => {
+        this.tiposEquipo = data;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.tiposEquipo = []; },
+    });
+
     const esContratista = this.authService.isContratista();
     const empresaId = esContratista ? this.authService.getEmpresaId() : null;
 
@@ -145,9 +158,35 @@ export class EquipoForm implements OnChanges {
 
   get canSubmit(): boolean {
     if (this.saving) return false;
-    if (!this.model.tipo?.trim()) return false;
+    if (!this.model.tipoEquipoId) return false;
     if (!this.model.proyectoId) return false;
     return true;
+  }
+
+  /**
+   * Permite dar de alta un tipo de equipo que todavía no está en el catálogo (ej. una
+   * máquina nueva que no es Volquete/Excavadora/etc.), sin salir del formulario de equipo.
+   */
+  agregarTipoEquipo(): void {
+    Swal.fire({
+      title: 'Nuevo tipo de equipo',
+      input: 'text',
+      inputPlaceholder: 'Ej: Volquete',
+      showCancelButton: true,
+      confirmButtonText: 'Crear',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (value) => (!value?.trim() ? 'El nombre es requerido.' : undefined),
+    }).then((result) => {
+      if (!result.isConfirmed || !result.value) return;
+      this.catalogosService.crearTipoEquipo(result.value.trim()).subscribe({
+        next: (tipo) => {
+          this.tiposEquipo = [...this.tiposEquipo, tipo];
+          this.model.tipoEquipoId = tipo.id;
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
   }
 
   submit(): void {
@@ -162,7 +201,7 @@ export class EquipoForm implements OnChanges {
 
     const esContratista = this.authService.isContratista();
     const payload: EquipoUpsertDto = {
-      tipo: this.model.tipo.trim(),
+      tipoEquipoId: this.model.tipoEquipoId,
       marca: this.model.marca?.trim() || undefined,
       modelo: this.model.modelo?.trim() || undefined,
       nSerie: this.model.nSerie?.trim() || undefined,

@@ -12,6 +12,7 @@ import { ActasReunion } from './actas-reunion/actas-reunion';
 import { ReunionDetail } from './actas-reunion/reunion-detail/reunion-detail';
 import { ReunionAgenda } from './actas-reunion/reunion-agenda/reunion-agenda';
 import { ActasReunionConfiguracion } from './actas-reunion/configuracion/actas-reunion-configuracion';
+import { AcuerdoDecision } from './actas-reunion/acuerdo-decision/acuerdo-decision';
 
 import { ConfiguracionInicial } from './planeamiento-bim/configuracion-inicial/configuracion-inicial';
 import { CargaDiaria } from './planeamiento-bim/carga-diaria/carga-diaria';
@@ -87,6 +88,14 @@ export const PROJECTS_ROUTES: Routes = [
     component: ReunionAgenda,
     canActivate: [roleGuard],
     data: { titulo: 'AGENDA DE REUNIÓN', featureKey: 'projects.actas-reunion' },
+  },
+  {
+    // No usa :reunionId (el id que trae es el de reunion_acuerdo_responsable): va antes de
+    // `actas-reunion/:reunionId` para que "acuerdo" no se capture como si fuera un id de reunión.
+    path: 'actas-reunion/acuerdo/:id',
+    component: AcuerdoDecision,
+    canActivate: [roleGuard],
+    data: { titulo: 'ACUERDO DE REUNIÓN', featureKey: 'projects.actas-reunion' },
   },
   {
     path: 'actas-reunion/:reunionId',
