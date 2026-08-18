@@ -29,9 +29,10 @@ export class OnboardingService {
   }
 
   /**
-   * Inicia el onboarding de un colaborador (multipart): los datos en `data` y la carta oferta como
-   * archivo. El backend le envía la carta al correo personal del colaborador, la guarda en su file
-   * de SharePoint y registra el proceso en la fase «Carta oferta firmada».
+   * Inicia el onboarding de un colaborador (multipart): los datos en `data` y la carta oferta (PDF)
+   * como archivo. El backend la guarda en su file de SharePoint, registra el proceso en la fase
+   * «Carta oferta firmada» y le manda al colaborador un correo con el enlace donde la lee y la firma
+   * en línea. La carta ya NO se envía adjunta.
    */
   iniciar(datos: OnboardingCreate, cartaOferta: File): Observable<OnboardingCreateResult> {
     const formData = new FormData();
@@ -42,9 +43,22 @@ export class OnboardingService {
   }
 
   /**
-   * Adjunta la carta oferta que el colaborador devolvió firmada. El backend la guarda en el file
-   * digital del onboarding — la misma carpeta de SharePoint donde quedó la carta oferta enviada — y
-   * la deja pendiente de aprobación.
+   * Reenvía al colaborador el correo con el enlace para firmar su carta oferta. `correo` solo se
+   * manda si GTH lo corrigió; el token del enlace original se conserva.
+   */
+  reenviarEnlaceFirma(onboardingId: number, correo?: string | null): Observable<OnboardingAccionResult> {
+    return this.http.post<OnboardingAccionResult>(
+      `${this.apiUrl}/${onboardingId}/carta-oferta/reenviar`,
+      { correo: correo ?? null },
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Adjunta la carta oferta que el colaborador devolvió firmada. Es la vía de RESPALDO: lo normal es
+   * que la firme él mismo desde el enlace, pero se conserva para quien la firme en papel. El backend
+   * la guarda en el file digital del onboarding — la carpeta «Carta Oferta Firmada» dentro del file
+   * del colaborador — y la deja pendiente de aprobación.
    */
   subirCartaFirmada(onboardingId: number, archivo: File): Observable<OnboardingAccionResult> {
     const formData = new FormData();

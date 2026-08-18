@@ -1,6 +1,6 @@
 <app-abril-modal-panel
   titulo="Nuevo ingreso"
-  subtitulo="Inicia el onboarding enviando la carta oferta"
+  subtitulo="Inicia el onboarding enviando el enlace de la carta oferta"
   icono="ti-user-plus"
   variant="blue"
   width="640px"
@@ -95,6 +95,33 @@
       </div>
     }
 
+    <!-- La firma que el colaborador va a dibujar en el enlace se guarda en su ficha de la base
+         maestra, así que sin ficha el envío no puede salir: el enlace llegaría a una página que no
+         puede terminar. Se avisa acá y no al enviar. -->
+    @if (candidatoId !== null && seleccionado && !seleccionado.tieneFichaMaestra) {
+      <div class="aviso aviso--alerta">
+        <i class="ti ti-alert-triangle"></i>
+        <span>
+          Este colaborador no tiene ficha en la <b>base maestra</b> y ahí se guarda la firma que va a
+          registrar al abrir el enlace. Aprueba su formulario de postulante en <b>Reclutamiento</b>
+          para crearla.
+        </span>
+      </div>
+    }
+
+    <!-- El DNI, a diferencia del correo, no se puede escribir a mano: nombra la carpeta del
+         colaborador en el file de SharePoint y tiene que ser el mismo que el de su ficha. -->
+    @if (candidatoId !== null && !seleccionado?.dni) {
+      <div class="aviso aviso--alerta">
+        <i class="ti ti-alert-triangle"></i>
+        <span>
+          Este colaborador no tiene documento de identidad en la base maestra, y con él se crea su
+          carpeta en el <b>file de colaboradores</b>. Aprueba su formulario de postulante en
+          <b>Reclutamiento</b> para que quede registrado.
+        </span>
+      </div>
+    }
+
     <!-- Los colores del selector y de la tarjeta del archivo adjunto se pasan explícitos porque el
          default de ambos componentes es el verde lima histórico y este modal es azul. Van con los
          mismos valores en los dos estados (vacío y con archivo) para que se lea como la misma caja
@@ -108,9 +135,9 @@
         (remove)="quitarCarta()" />
     } @else {
       <app-file-selector
-        accept=".pdf,.doc,.docx"
+        accept=".pdf"
         label="Arrastra la carta oferta aquí o"
-        hint="PDF, DOC o DOCX · máximo 15 MB"
+        hint="Solo PDF · máximo 15 MB"
         color="var(--color-abril-logo-blue)"
         background="color-mix(in srgb, var(--color-abril-logo-blue) 5%, #fff)"
         backgroundHover="color-mix(in srgb, var(--color-abril-logo-blue) 10%, #fff)"
@@ -127,8 +154,9 @@
     <p class="campo-hint">
       <i class="ti ti-mail-forward"></i>
       <span>
-        La carta se envía adjunta al colaborador, se guarda en su file de SharePoint y el onboarding
-        queda en la fase <b>Carta oferta firmada</b>, esperando que la devuelva firmada.
+        La carta se guarda en el file de SharePoint del colaborador y se le envía un correo con un
+        <b>enlace</b> —no la carta adjunta— para que la lea, registre su firma y la firme en línea. El
+        onboarding queda en la fase <b>Carta oferta firmada</b>, esperando esa firma.
       </span>
     </p>
   }
@@ -138,8 +166,8 @@
       Cancelar
     </button>
     <button type="button" class="btn btn-primary" (click)="enviar()"
-            [disabled]="!puedeEnviar" [title]="motivoBloqueo || 'Enviar la carta oferta'">
-      @if (guardando) { Enviando… } @else { Enviar carta oferta }
+            [disabled]="!puedeEnviar" [title]="motivoBloqueo || 'Enviar el enlace de la carta oferta'">
+      @if (guardando) { Enviando… } @else { Enviar enlace de firma }
     </button>
   </div>
 

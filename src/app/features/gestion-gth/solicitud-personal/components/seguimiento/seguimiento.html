@@ -12,11 +12,14 @@
       <!-- ── Tarjetas resumen ─────────────────────────────────────────── -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-[12px]">
 
-        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white" style="border-color:var(--color-abril-border)">
+        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">
           <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Estado actual</p>
+          <!-- wrap: nombres como "Aprobación Gerencia General" no caben en una línea en una
+               tarjeta de 1/4 del modal; sin esto el badge se desbordaba y la tarjeta vecina lo tapaba. -->
           <div class="mt-[6px]">
             <app-status-badge
               [text]="seguimiento.estadoNombre"
+              [wrap]="true"
               bgColor="var(--color-abril-logo-blue-light)"
               textColor="var(--color-abril-logo-blue)" />
           </div>
@@ -25,7 +28,7 @@
         <!-- La solicitud pasa por dos aprobaciones. La de Gerencia General es la que la hace
              avanzar, así que ocupa el lugar destacado; el visto bueno del gerente del área va
              debajo como constancia. -->
-        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white" style="border-color:var(--color-abril-border)">
+        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">
           <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Aprobaciones</p>
           <p class="mt-[6px] text-[14px] font-semibold" [style.color]="aprobacionGgColor">{{ aprobacionGgLabel }}</p>
           <p class="text-[10.5px] text-gray-400 mt-[2px] leading-tight">{{ aprobacionGgDetalle }}</p>
@@ -36,14 +39,14 @@
           }
         </div>
 
-        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white" style="border-color:var(--color-abril-border)">
+        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">
           <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Proyecto / Obra</p>
           <p class="mt-[6px] text-[14px] font-semibold text-gray-700 truncate" [title]="seguimiento.proyectoObra || ''">
             {{ (seguimiento.proyectoObra | titleCase) || '—' }}
           </p>
         </div>
 
-        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white" style="border-color:var(--color-abril-border)">
+        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">
           <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Adjunto sustento</p>
           @if (seguimiento.sustentoUrl) {
             <a [href]="seguimiento.sustentoUrl" target="_blank" rel="noopener"

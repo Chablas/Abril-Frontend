@@ -33,8 +33,9 @@ import { CandidatoApto, OnboardingListItem } from '../../dtos/onboarding.dto';
  * al aprobar el formulario del postulante) y se muestra para que GTH lo verifique. Se puede corregir
  * a mano si hace falta, y en ese caso el correo corregido viaja en el request.
  *
- * La carta oferta es obligatoria: es lo que se le envía al colaborador y lo que abre la primera fase
- * del proceso («Carta oferta firmada»).
+ * La carta oferta es obligatoria y tiene que ser un PDF: ya no se envía adjunta, sino que se guarda
+ * en el file del colaborador y él la lee y la firma desde un enlace con token. Mostrarla en el
+ * navegador y estamparle la firma solo funciona con un PDF.
  */
 @Component({
   standalone: true,
@@ -119,19 +120,31 @@ export class GthNuevoIngresoModal {
   }
 
   get puedeEnviar(): boolean {
-    return !this.guardando && this.candidatoId !== null && this.carta !== null && !!this.correo.trim();
+    return !this.guardando
+      && this.candidatoId !== null
+      && this.carta !== null
+      && !!this.correo.trim()
+      && !!this.seleccionado?.dni
+      && !!this.seleccionado?.tieneFichaMaestra;
   }
 
   /**
-   * Motivo por el que el botón está bloqueado, para no dejar a GTH adivinando. El caso del correo
-   * vacío es el importante: significa que el formulario del postulante nunca se aprobó, así que no
-   * hay ficha en la base maestra de donde sacarlo.
+   * Motivo por el que el botón está bloqueado, para no dejar a GTH adivinando. Los casos del correo,
+   * el DNI y la ficha vacíos son los importantes: significan que el formulario del postulante nunca
+   * se aprobó, así que no hay ficha en la base maestra de donde sacarlos. El correo se puede escribir
+   * a mano; el DNI no, porque es el que nombra la carpeta del colaborador en SharePoint y tiene que
+   * ser el mismo que el de su ficha; y la ficha tampoco, porque es donde se guarda la firma que el
+   * colaborador va a registrar al abrir el enlace.
    */
   get motivoBloqueo(): string | null {
     if (this.candidatoId === null) return 'Elige al colaborador que inicia su onboarding.';
     if (!this.correo.trim())
       return 'Este colaborador no tiene correo personal en la base maestra. Aprueba su formulario de postulante en Reclutamiento, o escribe el correo aquí.';
-    if (!this.carta) return 'Adjunta la carta oferta que se le enviará.';
+    if (!this.seleccionado?.dni)
+      return 'Este colaborador no tiene documento de identidad en la base maestra. Aprueba su formulario de postulante en Reclutamiento: con el DNI se crea su carpeta en el file de colaboradores.';
+    if (!this.seleccionado?.tieneFichaMaestra)
+      return 'Este colaborador no tiene ficha en la base maestra y ahí se guarda la firma que registrará en el enlace. Aprueba su formulario de postulante en Reclutamiento para crearla.';
+    if (!this.carta) return 'Adjunta la carta oferta (PDF) que va a firmar.';
     return null;
   }
 
@@ -143,10 +156,10 @@ export class GthNuevoIngresoModal {
 
     Swal.fire({
       icon: 'question',
-      title: '¿Enviar la carta oferta?',
-      html: `Se le enviará <b>${this.carta.name}</b> a <b>${correo}</b>${
-        c ? ` y se iniciará el onboarding de <b>${c.nombre}</b>` : ''
-      }.`,
+      title: '¿Enviar el enlace de la carta oferta?',
+      html:
+        `Se le enviará a <b>${correo}</b> un correo con el enlace para leer y firmar ` +
+        `<b>${this.carta.name}</b> en línea${c ? `, y se iniciará el onboarding de <b>${c.nombre}</b>` : ''}.`,
       showCancelButton: true,
       confirmButtonText: 'Enviar',
       cancelButtonText: 'Cancelar',
