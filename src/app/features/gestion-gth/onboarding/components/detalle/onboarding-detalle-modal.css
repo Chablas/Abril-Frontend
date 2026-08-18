@@ -2,6 +2,22 @@
    reimplementarlos acá. Lo de este archivo es solo el checklist: la tarjeta de
    cada actividad y sus cajas de detalle. */
 
+/* ── Fila de fases ───────────────────────────────────────────────────────
+   La fila tiene scroll horizontal propio (con 7 fases no entra en pantallas
+   chicas) y el círculo de la fase que se está viendo lleva un aro dibujado 4px
+   POR FUERA de su caja. Un contenedor con scroll recorta todo lo que se pinte
+   fuera de su área, así que sin este colchón el aro del primer círculo salía
+   cortado por la izquierda y por arriba. El margen negativo compensa el padding
+   para que los círculos queden alineados igual que antes con el resto de la
+   tarjeta: lo único que cambia es que el aro tiene dónde dibujarse. */
+.onb-fases {
+  padding: 6px 6px 0;
+  margin: -6px -6px 0;
+  /* Que tampoco lo recorte al llegar a un círculo con el tabulador. */
+  scroll-padding: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Los nombres de fase son cortos pero no caben en una línea en pantallas chicas:
    se dejan envolver en dos líneas con un ancho tope, como el embudo de la lista. */
 .onb-fases-name {
@@ -75,6 +91,11 @@
   list-style: disc;
   margin: 6px 0 0;
   padding-left: 20px;
+}
+/* Los avisos preventivos son solo la lista de datos: sin encabezado arriba,
+   el margen propio de la lista dejaría la caja descuadrada. */
+.act-box > .act-lista:first-child {
+  margin-top: 0;
 }
 .act-lista li {
   margin: 2px 0;
@@ -200,6 +221,14 @@ app-file-selector {
   font-weight: 500;
   cursor: pointer;
   transition: opacity 0.15s;
+  min-width: 0;
+}
+/* En el ancho justo el rótulo se recorta con «…» antes que empujar al botón
+   fuera del pie. El texto completo sigue estando en el title. */
+.nav-btn-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .nav-btn i {
   font-size: 16px;
@@ -223,4 +252,113 @@ app-file-selector {
 }
 .nav-btn--primario:hover:not(:disabled) {
   background: var(--color-abril-logo-blue-hover);
+}
+
+/* Las dos formas de la posición en el proceso: la larga en escritorio y la
+   abreviada en teléfono (ver el @media del final). */
+.onb-nav-pos-corta {
+  display: none;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────
+   El shell del modal ya lo achica hasta el ancho de la pantalla; lo que falta
+   es que el contenido de adentro no quede apretado. Todo acotado a este @media
+   para no mover nada del escritorio. */
+@media (max-width: 639.98px) {
+  /* Cabecera: el avance ocupaba una columna a la derecha y le quitaba al nombre
+     del colaborador el poco ancho que hay. Pasa a ser una línea propia que se
+     lee de corrido: «AVANCE 11% 2 de 19 tareas». */
+  .onb-head {
+    gap: 10px;
+  }
+  .onb-head-nombre {
+    font-size: 17px;
+  }
+  .onb-head-avance {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    width: 100%;
+    text-align: left;
+  }
+  /* En fila, los márgenes que separaban los tres datos apilados descuadran la
+     línea de base. */
+  .onb-head-avance > * {
+    margin-top: 0;
+  }
+  .onb-head-pct {
+    font-size: 22px;
+  }
+
+  /* Fases: la misma densidad compacta que el embudo de la bandeja. */
+  .onb-fases-card {
+    padding: 12px;
+  }
+  .onb-fases-title {
+    font-size: 13.5px;
+  }
+  .onb-fases-dot {
+    width: 34px;
+    height: 34px;
+    font-size: 13px;
+  }
+  .onb-fases-dot i {
+    font-size: 16px;
+  }
+  .onb-fases-count {
+    font-size: 15px;
+  }
+  .onb-fases-name {
+    font-size: 10.5px;
+    max-width: 66px;
+  }
+  /* min-width del conector: cuánto se puede comprimir la fila antes de
+     necesitar scroll. margin-top = radio del círculo, para que la línea quede a
+     su altura media (17px con círculos de 34px). */
+  .onb-fases-link {
+    min-width: 10px;
+    margin-top: 17px;
+  }
+  /* La fila se arrastra con el dedo: la barra de scroll ocupaba alto y se leía
+     como un corte. Mismo criterio que el embudo de la bandeja. */
+  .onb-fases {
+    scrollbar-width: none;
+  }
+  .onb-fases::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Checklist: tarjeta de actividad y fila del archivo adjunto. */
+  .act {
+    padding: 11px 12px;
+    gap: 9px;
+  }
+  .act-lista {
+    padding-left: 17px;
+  }
+  .act-archivo {
+    padding: 8px 10px;
+    gap: 7px;
+  }
+  /* Los botones reparten el ancho de su línea: cada uno con el ancho de su
+     texto quedaban escalonados y con huecos irregulares al envolverse. */
+  .act-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    padding: 0 10px;
+  }
+
+  /* Pie: los dos botones y la posición tienen que caber en una sola línea. */
+  .nav-btn {
+    height: 34px;
+    padding: 0 12px;
+    font-size: 12.5px;
+    gap: 4px;
+  }
+  .onb-nav-pos {
+    display: none;
+  }
+  .onb-nav-pos-corta {
+    display: inline;
+  }
 }

@@ -132,6 +132,44 @@ export interface AprobacionDecision {
   comentario: string | null;
 }
 
+/**
+ * Decisión en bloque desde la lista: se aprueban (o rechazan) TODAS las vacantes de cada solicitud
+ * seleccionada. El nivel con el que se registra tampoco viaja acá — lo resuelve el backend desde la
+ * categoría de la ficha del usuario, así que la pantalla no puede pedir firmar como Gerencia General.
+ */
+export interface AprobacionDecisionMasiva {
+  /** Solicitudes seleccionadas. */
+  aprobacionIds: number[];
+  /** true = aprobar todas sus vacantes; false = rechazarlas todas. */
+  aprobado: boolean;
+  /** Comentario opcional; queda igual en todas las solicitudes del lote. */
+  comentario: string | null;
+}
+
+/**
+ * Solicitud que quedó fuera del lote y por qué (ya la decidió alguien más de su mismo nivel, se dio
+ * de baja, quedó fuera de alcance). No es un error: se muestran para que el conteo no quede sin
+ * explicación.
+ */
+export interface AprobacionDecisionOmitida {
+  aprobacionId: number;
+  motivo: string;
+}
+
+/** Resultado de una decisión en bloque. */
+export interface AprobacionDecisionMasivaResult {
+  message: string;
+  /** Nivel con el que se registró (GERENTE_GENERAL / GERENTE_AREA). */
+  nivel: AprobacionNivel;
+  /** Eco de lo pedido: true si el lote se aprobó, false si se rechazó. */
+  aprobado: boolean;
+  /** Solicitudes en las que la decisión quedó registrada. */
+  solicitudes: number;
+  /** Vacantes decididas en total. */
+  vacantes: number;
+  omitidas: AprobacionDecisionOmitida[];
+}
+
 /** Resultado de registrar la decisión. */
 export interface AprobacionDecisionResult {
   message: string;

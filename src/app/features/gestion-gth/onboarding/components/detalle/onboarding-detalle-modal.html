@@ -10,7 +10,7 @@
     <!-- ── Cabecera del colaborador ───────────────────────────────────────
          Todo se lee del requerimiento que originó la contratación; acá no se
          captura nada. A la derecha, el avance medido en actividades. -->
-    <div class="flex items-start justify-between gap-[20px] flex-wrap">
+    <div class="onb-head flex items-start justify-between gap-[20px] flex-wrap">
       <div class="min-w-0">
         <div class="flex items-center gap-[10px] flex-wrap">
           <span class="text-[13px] font-bold tracking-wide" style="color:var(--color-abril-logo-blue)">
@@ -22,7 +22,7 @@
             [textColor]="estadoColors(item.estadoCodigo).text" />
         </div>
 
-        <h2 class="text-[20px] font-bold text-gray-800 mt-[4px] leading-tight">
+        <h2 class="onb-head-nombre text-[20px] font-bold text-gray-800 mt-[4px] leading-tight">
           {{ item.nombre | titleCase }}
         </h2>
 
@@ -39,9 +39,9 @@
         </p>
       </div>
 
-      <div class="text-right shrink-0">
+      <div class="onb-head-avance text-right shrink-0">
         <p class="text-[10px] font-semibold tracking-wide uppercase text-gray-400">Avance</p>
-        <p class="text-[30px] font-bold leading-none mt-[2px]" [style.color]="avanceColor(item.avancePorcentaje)">
+        <p class="onb-head-pct text-[30px] font-bold leading-none mt-[2px]" [style.color]="avanceColor(item.avancePorcentaje)">
           {{ item.avancePorcentaje }}%
         </p>
         <p class="text-[11.5px] text-gray-400 mt-[4px]">
@@ -54,27 +54,30 @@
          El número bajo cada círculo es cuántas actividades de esa fase están
          hechas. Solo se puede entrar a las fases ya alcanzadas: las futuras
          todavía no tienen nada que mostrar. -->
-    <div class="rounded-[12px] border bg-white px-[20px] py-[16px]"
+    <div class="onb-fases-card rounded-[12px] border bg-white px-[20px] py-[16px]"
          style="border-color:var(--color-abril-border)">
 
       <div class="flex items-center justify-between gap-[10px] mb-[14px]">
-        <h3 class="text-[15px] font-semibold text-gray-700">Fases</h3>
+        <h3 class="onb-fases-title text-[15px] font-semibold text-gray-700">Fases</h3>
         <span class="text-[11.5px] shrink-0" style="color:var(--color-abril-logo-blue)">
           {{ item.faseNombre }}
         </span>
       </div>
 
+      <!-- El aro de la fase que se está viendo se pinta por fuera del círculo y
+           esta fila tiene scroll propio, así que necesita un colchón para que no
+           se lo recorte el borde del scroll (ver .onb-fases en el CSS). -->
       <div class="onb-fases flex items-start overflow-x-auto">
         @for (f of fases; track f.faseId; let primero = $first) {
 
           @if (!primero) {
-            <div class="h-[2px] flex-1 min-w-[16px] mt-[20px]"
+            <div class="onb-fases-link h-[2px] flex-1 min-w-[16px] mt-[20px]"
                  [style.background]="f.orden <= item.faseOrden
                                    ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-border-strong)'"></div>
           }
 
           <button type="button"
-                  class="flex flex-col items-center gap-[6px] shrink-0 px-[4px]"
+                  class="onb-fases-step flex flex-col items-center gap-[6px] shrink-0 px-[4px]"
                   [class.cursor-pointer]="alcanzada(f)"
                   [class.cursor-not-allowed]="!alcanzada(f)"
                   [disabled]="!alcanzada(f)"
@@ -83,7 +86,7 @@
                          ? f.nombre + ' — ' + hechas(f) + ' de ' + f.actividades.length + ' actividades'
                          : 'Fase aún no alcanzada'">
 
-            <span class="flex items-center justify-center w-[40px] h-[40px] rounded-full text-[14px] font-bold border-2 transition-colors"
+            <span class="onb-fases-dot flex items-center justify-center w-[40px] h-[40px] rounded-full text-[14px] font-bold border-2 transition-colors"
                   [style.background]="f.orden <= item.faseOrden ? 'var(--color-abril-logo-blue)' : '#FFFFFF'"
                   [style.border-color]="f.orden <= item.faseOrden
                                       ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-border-strong)'"
@@ -97,7 +100,7 @@
               }
             </span>
 
-            <span class="text-[17px] font-bold leading-none"
+            <span class="onb-fases-count text-[17px] font-bold leading-none"
                   [style.color]="hechas(f) > 0 ? 'var(--color-abril-body)' : 'var(--color-abril-placeholder)'">
               {{ hechas(f) }}
             </span>
@@ -112,33 +115,32 @@
       </div>
     </div>
 
-    <!-- ── Checklist progresivo ───────────────────────────────────────────
-         El colaborador no ve actividades futuras como pendientes: el checklist
-         se abre fase por fase (RF-ONB-26). -->
-    <div class="flex items-start gap-[10px] rounded-[10px] border px-[16px] py-[13px]"
+    <!-- ── Siguiente paso ─────────────────────────────────────────────────
+         El checklist se abre fase por fase (RF-ONB-26); eso ya se ve en las
+         fases de arriba, así que acá solo va el dato accionable. -->
+    <div class="flex items-center justify-between gap-[12px] flex-wrap rounded-[10px] border px-[16px] py-[10px]"
          style="background:var(--color-abril-logo-blue-light); border-color:var(--color-abril-logo-blue)">
-      <i class="ti ti-info-circle text-[18px] shrink-0 mt-[1px]" style="color:var(--color-abril-logo-blue)"></i>
-      <div class="min-w-0 text-[12.5px] leading-relaxed" style="color:var(--color-abril-logo-blue)">
-        <p class="font-semibold">Checklist progresivo</p>
-        <p class="opacity-90">
-          Debajo de las fases se muestra el flujo operativo desde la carta firmada en adelante.
-          Cuando el onboarding llegue al 100 %, la información del colaborador se migra a la base maestra.
-        </p>
-        <p class="font-semibold mt-[6px]">
-          Avance onboarding: {{ avance.hechasPrevias }} de {{ avance.totalPrevias }} actividades previas a base maestra
-        </p>
+      <p class="flex items-center gap-[8px] min-w-0 text-[12.5px] font-semibold"
+         style="color:var(--color-abril-logo-blue)">
+        <i class="ti ti-arrow-narrow-right text-[17px] shrink-0"></i>
         @if (avance.siguiente) {
-          <p class="font-semibold">Siguiente acción: {{ avance.siguiente.nombre }}</p>
+          <span class="min-w-0">Siguiente: {{ avance.siguiente.nombre }}</span>
         } @else {
-          <p class="font-semibold">No queda ninguna actividad pendiente.</p>
+          <span>Sin actividades pendientes</span>
         }
-      </div>
+      </p>
+      <span class="text-[11.5px] shrink-0 opacity-80" style="color:var(--color-abril-logo-blue)">
+        {{ avance.hechasPrevias }} de {{ avance.totalPrevias }} antes de base maestra
+      </span>
     </div>
 
     <!-- ── Checklist de la fase que se está viendo ────────────────────── -->
     @if (fase; as f) {
       <div class="flex items-center justify-between gap-[10px] pt-[4px]">
-        <h3 class="text-[15px] font-semibold flex items-center gap-[8px]" style="color:var(--color-abril-logo-blue)">
+        <!-- La descripción de la fase va como tooltip: en pantalla el nombre basta. -->
+        <h3 class="text-[15px] font-semibold flex items-center gap-[8px]"
+            style="color:var(--color-abril-logo-blue)"
+            [title]="f.descripcion || f.nombre">
           <i class="ti ti-chevron-down text-[16px]"></i>
           {{ f.nombre }}
         </h3>
@@ -146,10 +148,6 @@
           {{ hechasEnVista }} de {{ f.actividades.length }}
         </span>
       </div>
-
-      @if (f.descripcion) {
-        <p class="text-[12px] text-gray-400 -mt-[8px]">{{ f.descripcion }}</p>
-      }
 
       @for (a of actividades; track a.actividad.actividadId) {
         <div class="act" [class.act--hecha]="a.hecha">
@@ -170,10 +168,10 @@
                 <!-- Corrección administrativa de la razón social (RF-ONB-03):
                      se muestra para que el checklist refleje el proceso completo,
                      pero todavía no está implementada. -->
-                <label class="act-box act-box--aviso flex items-center gap-[9px]"
+                <label class="act-box act-box--aviso flex items-center flex-wrap gap-[9px]"
                        title="Disponible en una próxima entrega">
                   <input type="checkbox" [(ngModel)]="corregirRazonSocial" disabled />
-                  <span class="text-[12.5px] font-medium">Corregir razón social antes de continuar</span>
+                  <span class="text-[12.5px] font-medium">Corregir razón social</span>
                   <span class="act-chip">Próximamente</span>
                 </label>
 
@@ -221,89 +219,60 @@
                   </app-file-selector>
                 }
 
-                <!-- Dónde queda guardada: es el file digital del colaborador. -->
-                <div class="act-box act-box--ok">
-                  <p class="font-semibold flex items-center gap-[6px]">
-                    <i class="ti ti-circle-check text-[15px]"></i> Guardado automático en SharePoint
-                  </p>
-                  <p class="opacity-90">
-                    La carta oferta firmada se guarda en el file digital del colaborador, en la misma
-                    carpeta donde quedó la carta oferta que se le envió.
-                  </p>
-                  @if (item.fileDigitalCarpeta) {
-                    <p class="opacity-75 mt-[3px]">Ruta: SharePoint / {{ item.fileDigitalCarpeta }}</p>
-                  }
-                </div>
-
+                <!-- Estado de la carta y dónde queda archivada (el file digital
+                     del colaborador), en una sola línea de pie. -->
                 <p class="act-pie">
-                  @if (cartaAprobada) {
-                    Carta aprobada el {{ item.cartaFirmadaAprobadaEn | date: 'dd/MM/yyyy HH:mm' }}
-                  } @else if (tieneCartaFirmada) {
-                    Carta adjunta pendiente de revisión y aprobación
-                  } @else {
-                    A la espera de que el colaborador devuelva la carta oferta firmada
+                  <span>
+                    @if (cartaAprobada) {
+                      Aprobada el {{ item.cartaFirmadaAprobadaEn | date: 'dd/MM/yyyy HH:mm' }}
+                    } @else if (tieneCartaFirmada) {
+                      Pendiente de aprobación
+                    } @else {
+                      A la espera de la carta firmada
+                    }
+                  </span>
+                  @if (item.fileDigitalCarpeta) {
+                    <span aria-hidden="true">·</span>
+                    <span>SharePoint / {{ item.fileDigitalCarpeta }}</span>
                   }
                 </p>
               }
 
-              <!-- ── Aviso preventivo a TI ───────────────────────────────── -->
+              <!-- ── Aviso preventivo a TI ─────────────────────────────────
+                   Solo los datos que viajaron en el aviso: qué es y cuándo se
+                   envía ya lo dice el nombre de la actividad. -->
               @case (ACTIVIDAD.avisoTi) {
                 <div class="act-box act-box--ok">
-                  <p class="font-semibold flex items-center gap-[6px]">
-                    <i class="ti ti-circle-check text-[15px]"></i> Notificación automática enviada a TI
-                  </p>
-                  <p class="opacity-90">
-                    El aviso se genera desde el registro de la solicitud, sin esperar el correo de
-                    bienvenida ni requerir una acción manual de GTH.
-                  </p>
                   <ul class="act-lista">
-                    <li><b>Puesto solicitado:</b> {{ (item.puesto | titleCase) || '—' }}</li>
+                    <li><b>Puesto:</b> {{ (item.puesto | titleCase) || '—' }}</li>
                     <li><b>Área / destino:</b> {{ (item.area | titleCase) || '—' }}</li>
                     <li><b>Empresa:</b> {{ item.empresa || '—' }}</li>
                     <li>
-                      <b>Fecha requerida de ingreso:</b>
+                      <b>Ingreso:</b>
                       {{ item.fechaIngreso ? (item.fechaIngreso | date: 'dd/MM/yyyy') : '—' }}
                     </li>
                     <li><b>Requerimiento:</b> {{ item.codigo }}</li>
                   </ul>
-                  <p class="opacity-90 mt-[6px]">
-                    TI recibe una alerta preventiva para anticipar la disponibilidad de equipo, correo,
-                    accesos y sistemas.
-                  </p>
                 </div>
-                <p class="act-pie">Aviso preventivo enviado automáticamente a TI desde la solicitud</p>
               }
 
               <!-- ── Aviso preventivo al responsable de obra / sede ──────── -->
               @case (ACTIVIDAD.avisoObra) {
                 <div class="act-box act-box--aviso">
-                  <p class="font-semibold flex items-center gap-[6px]">
-                    <i class="ti ti-circle-check text-[15px]"></i> Aviso preventivo de espacio enviado automáticamente
-                  </p>
-                  <p class="opacity-90">
-                    Se genera desde el registro del requerimiento para que la obra o sede pueda
-                    anticipar espacio, condiciones de trabajo y coordinaciones de ingreso.
-                  </p>
                   <ul class="act-lista">
-                    <li><b>Puesto solicitado:</b> {{ (item.puesto | titleCase) || '—' }}</li>
+                    <li><b>Puesto:</b> {{ (item.puesto | titleCase) || '—' }}</li>
                     <li><b>Destino:</b> {{ (item.proyectoObra | titleCase) || 'Obra / proyecto del requerimiento' }}</li>
                     <li>
                       <b>Fecha requerida:</b>
                       {{ item.fechaIngreso ? (item.fechaIngreso | date: 'dd/MM/yyyy') : '—' }}
                     </li>
-                    <li><b>Destinatario principal:</b> Administrador(a) de la obra asignada</li>
+                    <li><b>Destinatario:</b> Administrador(a) de la obra asignada</li>
                     <li>
-                      <b>Ruta de respaldo si no existe el responsable:</b>
-                      Residente de obra → Ingeniero(a) de Producción → Coordinación de Administración de Obra
+                      <b>Respaldo:</b>
+                      Residente de obra → Ing. de Producción → Coordinación de Administración de Obra
                     </li>
                   </ul>
-                  <p class="opacity-90 mt-[6px]">
-                    Este primer aviso no incluye datos personales del candidato porque todavía no existe
-                    una persona seleccionada. Se envía únicamente a TI y al responsable de la obra o sede
-                    que corresponda.
-                  </p>
                 </div>
-                <p class="act-pie">Aviso preventivo de espacio enviado automáticamente desde la solicitud</p>
               }
 
               <!-- ── Resto del checklist: se dibuja, aún sin acciones ────── -->
@@ -312,9 +281,8 @@
                   <p class="text-[12.5px] text-gray-500 leading-relaxed mt-[4px]">{{ a.actividad.descripcion }}</p>
                 }
                 @if (!a.hecha) {
-                  <p class="act-pie">
+                  <p class="act-pie" title="Se habilitará cuando se implemente su fase">
                     <span class="act-chip">Próximamente</span>
-                    Esta actividad se habilitará cuando se implemente su fase.
                   </p>
                 }
               }
@@ -333,18 +301,25 @@
        la que toca. -->
   <div modalFooter class="w-full flex items-center justify-between gap-[10px]">
     <button type="button" class="nav-btn nav-btn--secundario"
+            title="Fase anterior"
             [disabled]="!puedeRetroceder" (click)="retroceder()">
       <i class="ti ti-chevron-left"></i>
-      <span class="hidden sm:inline">Fase anterior</span>
+      <span class="nav-btn-label">Fase anterior</span>
     </button>
 
-    <span class="text-[12px] text-gray-400 shrink-0">Fase {{ faseVista }} de {{ totalFases }}</span>
+    <!-- Posición en el proceso. En teléfono se abrevia a «1/7»: el ancho que
+         libera es lo que les falta a los dos botones para no quedarse sin su
+         rótulo (antes se escondía el texto y quedaban dos flechas sueltas). -->
+    <span class="text-[12px] text-gray-400 shrink-0">
+      <span class="onb-nav-pos">Fase {{ faseVista }} de {{ totalFases }}</span>
+      <span class="onb-nav-pos-corta">{{ faseVista }}/{{ totalFases }}</span>
+    </span>
 
     <button type="button" class="nav-btn nav-btn--primario"
             [disabled]="!puedeAvanzar"
             [title]="motivoBloqueo || etiquetaAvanzar"
             (click)="avanzar()">
-      <span class="hidden sm:inline">
+      <span class="nav-btn-label">
         @if (avanzando) { Guardando… } @else { {{ etiquetaAvanzar }} }
       </span>
       <i class="ti ti-chevron-right"></i>
