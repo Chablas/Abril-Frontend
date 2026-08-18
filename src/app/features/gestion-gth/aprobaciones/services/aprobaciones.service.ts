@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
   AprobacionDecision,
+  AprobacionDecisionMasiva,
+  AprobacionDecisionMasivaResult,
   AprobacionDecisionResult,
   AprobacionDetalle,
   AprobacionesPanel,
@@ -39,6 +41,17 @@ export class AprobacionesService {
   /** Registra la decisión: las aprobadas pasan a GTH, las rechazadas quedan cerradas. */
   decidir(aprobacionId: number, dto: AprobacionDecision): Observable<AprobacionDecisionResult> {
     return this.http.post<AprobacionDecisionResult>(`${this.apiUrl}/${aprobacionId}/decision`, dto, {
+      headers: this.headers,
+    });
+  }
+
+  /**
+   * Registra la MISMA decisión sobre varias solicitudes seleccionadas en la lista (todas las
+   * vacantes de cada una), en una sola petición. Responde 200 incluso si alguna no se pudo decidir:
+   * esas vienen en `omitidas` con su motivo.
+   */
+  decidirMasivo(dto: AprobacionDecisionMasiva): Observable<AprobacionDecisionMasivaResult> {
+    return this.http.post<AprobacionDecisionMasivaResult>(`${this.apiUrl}/decision-masiva`, dto, {
       headers: this.headers,
     });
   }

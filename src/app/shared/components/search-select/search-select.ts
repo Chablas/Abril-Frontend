@@ -48,6 +48,15 @@ export class SearchSelect {
    * semántico y no alfabético (ej. meses Ene→Dic, severidad Bajo→Crítico, año ascendente).
    */
   @Input() sortAlpha: boolean = true;
+  /**
+   * Muestra todas las etiquetas en MAYÚSCULA, vengan como vengan de la base de datos.
+   * Desactiva el suavizado a formato de nombre propio que hace `formatLabel` por defecto.
+   *
+   * Es para catálogos de códigos y siglas, donde ese suavizado es directamente un error:
+   * el código de moneda "PEN" se leía "Pen" y "USD" se leía "Usd". Usarlo solo en esos
+   * casos — para nombres (proyectos, personas, empresas) el default es el correcto.
+   */
+  @Input() uppercase: boolean = false;
 
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 
@@ -119,6 +128,7 @@ export class SearchSelect {
 
   private formatLabel(text: string): string {
     if (!text) return text;
+    if (this.uppercase) return text.toUpperCase();
     const isAllCaps = text === text.toUpperCase() && text !== text.toLowerCase();
     if (!isAllCaps) return text;
     return text.toLowerCase().replace(/(^|[\s\-/])([a-záéíóúñ])/g, (_m, sep, c) => sep + c.toUpperCase());
