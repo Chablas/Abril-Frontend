@@ -38,7 +38,10 @@ const DEFAULT_STYLE: BadgeStyle = { bg: '#F3F4F6', text: '#374151' };
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <span
-      class="inline-block rounded-lg px-[8px] py-[2px] my-[4px] text-xs font-semibold whitespace-nowrap"
+      class="inline-block rounded-lg px-[8px] py-[2px] my-[4px] text-xs font-semibold"
+      [class.whitespace-nowrap]="!wrap"
+      [class.whitespace-normal]="wrap"
+      [class.break-words]="wrap"
       [style.background-color]="style.bg"
       [style.color]="style.text">
       {{ label }}
@@ -52,6 +55,13 @@ export class StatusBadge implements OnChanges {
   @Input() text = '';
   @Input() bgColor = '';
   @Input() textColor = '';
+  /**
+   * Permite que la etiqueta ocupe varias líneas. Por defecto va en una sola
+   * (`whitespace-nowrap`) porque casi siempre vive en una celda de tabla; actívalo
+   * cuando el badge va dentro de una tarjeta angosta y el texto es largo
+   * (ej. "Aprobación Gerencia General"), que si no se desborda de la tarjeta.
+   */
+  @Input() wrap = false;
 
   style: BadgeStyle = DEFAULT_STYLE;
   label = '';

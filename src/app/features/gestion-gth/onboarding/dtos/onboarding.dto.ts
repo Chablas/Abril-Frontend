@@ -85,6 +85,11 @@ export interface OnboardingListItem {
   cartaFirmadaNombre: string | null;
   cartaFirmadaUrl: string | null;
   cartaFirmadaSubidaEn: string | null;
+  /**
+   * Fecha en que el POSTULANTE firmó la carta desde el enlace público. Con valor, el documento vino
+   * de él y GTH solo revisa; en null con `cartaFirmadaUrl` llena, lo subió GTH a mano.
+   */
+  cartaFirmadaPostulanteEn: string | null;
   /** Null = adjunta pero todavía sin revisar: es lo que bloquea el avance de la primera fase. */
   cartaFirmadaAprobadaEn: string | null;
 
@@ -112,8 +117,20 @@ export interface CandidatoApto {
    * dónde enviar y el modal bloquea el envío.
    */
   correo: string | null;
+  /**
+   * DNI del colaborador, de la misma ficha que el correo. Con él se nombra su carpeta en el file
+   * de colaboradores de SharePoint («80508050 - NOMBRE»), así que null = no se puede abrir el
+   * onboarding y el modal bloquea el envío.
+   */
+  dni: string | null;
   fechaRequeridaIngreso: string | null;
   jefeDirecto: string | null;
+  /**
+   * true si el candidato ya tiene ficha en `person`. La firma que va a dibujar en el enlace se
+   * guarda ahí, así que sin ficha el modal bloquea el envío. La ficha la crea la aprobación de su
+   * formulario de postulante en Reclutamiento.
+   */
+  tieneFichaMaestra: boolean;
 }
 
 /** Datos del modal «Nuevo ingreso» (van como JSON en el multipart; la carta va como archivo). */

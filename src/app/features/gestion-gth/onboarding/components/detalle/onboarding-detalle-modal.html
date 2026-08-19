@@ -182,6 +182,9 @@
 
                     @if (cartaAprobada) {
                       <span class="act-badge act-badge--ok">Aprobada</span>
+                    } @else if (firmadaPorPostulante) {
+                      <!-- La firmó él desde el enlace: GTH no tiene que adjuntar nada, solo revisar. -->
+                      <span class="act-badge act-badge--pend">Firmada por el colaborador</span>
                     } @else {
                       <span class="act-badge act-badge--pend">Adjunta</span>
                     }
@@ -208,15 +211,41 @@
                     </button>
                   </div>
                 } @else {
-                  <app-file-selector
-                    accept=".pdf,.doc,.docx"
-                    label="Arrastra la carta oferta firmada aquí o"
-                    hint="PDF, DOC o DOCX · máximo 15 MB"
-                    color="var(--color-abril-logo-blue)"
-                    background="color-mix(in srgb, var(--color-abril-logo-blue) 5%, #fff)"
-                    backgroundHover="color-mix(in srgb, var(--color-abril-logo-blue) 10%, #fff)"
-                    (fileSelected)="onCartaFirmadaSeleccionada($event)">
-                  </app-file-selector>
+                  <!-- El camino normal es que el colaborador firme desde el enlace que se le envió;
+                       adjuntarla a mano quedó como respaldo para quien la firme en papel. -->
+                  <div class="act-box act-box--aviso flex items-start gap-[9px]">
+                    <i class="ti ti-clock text-[15px] shrink-0 mt-[1px]"></i>
+                    <span class="text-[12.5px] leading-snug">
+                      Esperando que el colaborador firme su carta desde el enlace que se le envió
+                      @if (item.cartaOfertaEnviadaEn) {
+                        el {{ item.cartaOfertaEnviadaEn | date: 'dd/MM/yyyy HH:mm' }}
+                      }
+                      @if (item.correo) {
+                        a <b>{{ item.correo }}</b>
+                      }.
+                    </span>
+                  </div>
+
+                  <div class="act-archivo">
+                    <button type="button" class="act-btn act-btn--ghost"
+                            [disabled]="reenviando || subiendo || aprobando"
+                            title="Volver a enviarle el correo con el enlace para firmar"
+                            (click)="reenviarEnlace()">
+                      <i class="ti ti-mail-forward"></i>
+                      @if (reenviando) { Reenviando… } @else { Reenviar enlace }
+                    </button>
+
+                    <input #inputRespaldo type="file" class="hidden" accept=".pdf,.doc,.docx"
+                           (change)="onReemplazoSeleccionado($event)" />
+
+                    <button type="button" class="act-btn act-btn--ghost"
+                            [disabled]="subiendo || aprobando || reenviando"
+                            title="Respaldo: solo si el colaborador la firmó en papel y la envió por otro medio"
+                            (click)="inputRespaldo.click()">
+                      <i class="ti ti-upload"></i>
+                      @if (subiendo) { Subiendo… } @else { Adjuntarla a mano }
+                    </button>
+                  </div>
                 }
 
                 <!-- Estado de la carta y dónde queda archivada (el file digital
@@ -225,10 +254,14 @@
                   <span>
                     @if (cartaAprobada) {
                       Aprobada el {{ item.cartaFirmadaAprobadaEn | date: 'dd/MM/yyyy HH:mm' }}
+                    } @else if (firmadaPorPostulante) {
+                      Firmada por el colaborador el
+                      {{ item.cartaFirmadaPostulanteEn | date: 'dd/MM/yyyy HH:mm' }} · pendiente de aprobación
                     } @else if (tieneCartaFirmada) {
-                      Pendiente de aprobación
+                      Adjuntada por GTH el
+                      {{ item.cartaFirmadaSubidaEn | date: 'dd/MM/yyyy HH:mm' }} · pendiente de aprobación
                     } @else {
-                      A la espera de la carta firmada
+                      A la espera de la firma del colaborador
                     }
                   </span>
                   @if (item.fileDigitalCarpeta) {
