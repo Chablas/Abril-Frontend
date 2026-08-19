@@ -24,6 +24,10 @@ import {
   PlanMaestroSemanaDto,
   PpcHistoricoDto,
 } from '../dtos/planeamiento-bim-dashboard.dto';
+import {
+  PortafolioKpisDto,
+  ProyectoPortafolioDto,
+} from '../dtos/planeamiento-bim-portafolio.dto';
 
 @Injectable({
   providedIn: 'root',
@@ -58,8 +62,8 @@ export class PlaneamientoBimService {
   }
 
   // ── Carga Diaria ─────────────────────────────────────────────
-  getCargaDiaria(projectId: number, fecha: string): Observable<CargaDiariaDto> {
-    const params = new HttpParams().set('fecha', fecha);
+  getCargaDiaria(projectId: number, fecha: string, categoria: string = 'GENERAL'): Observable<CargaDiariaDto> {
+    const params = new HttpParams().set('fecha', fecha).set('categoria', categoria);
     return this.http.get<CargaDiariaDto>(`${this.baseUrl}/carga-diaria/${projectId}`, {
       headers: this.headers,
       params,
@@ -74,8 +78,13 @@ export class PlaneamientoBimService {
     });
   }
 
-  subirEvidencias(projectId: number, fecha: string, files: File[]): Observable<EvidenciaFotoDto[]> {
-    const params = new HttpParams().set('fecha', fecha);
+  subirEvidencias(
+    projectId: number,
+    fecha: string,
+    files: File[],
+    categoria: string = 'GENERAL',
+  ): Observable<EvidenciaFotoDto[]> {
+    const params = new HttpParams().set('fecha', fecha).set('categoria', categoria);
     const formData = new FormData();
     files.forEach((file) => formData.append('files', file));
 
@@ -161,6 +170,28 @@ export class PlaneamientoBimService {
     return this.http.get<CausasParetoDto>(`${this.baseUrl}/dashboard/${projectId}/causas-pareto`, {
       headers: this.headers,
       params,
+    });
+  }
+
+  // ── Portafolio (landing, antes de elegir proyecto) ────────────
+  getPortafolioKpis(): Observable<PortafolioKpisDto> {
+    return this.http.get<PortafolioKpisDto>(`${this.baseUrl}/portafolio/kpis`, {
+      headers: this.headers,
+    });
+  }
+
+  getPortafolioProyectos(): Observable<ProyectoPortafolioDto[]> {
+    return this.http.get<ProyectoPortafolioDto[]>(`${this.baseUrl}/portafolio/proyectos`, {
+      headers: this.headers,
+    });
+  }
+
+  exportarPdfProyecto(projectId: number, fecha: string): Observable<Blob> {
+    const params = new HttpParams().set('fecha', fecha);
+    return this.http.post(`${this.baseUrl}/portafolio/${projectId}/export-pdf`, null, {
+      headers: this.headers,
+      params,
+      responseType: 'blob' as const,
     });
   }
 }

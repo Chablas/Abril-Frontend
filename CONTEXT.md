@@ -5140,6 +5140,82 @@ probó visualmente en navegador en esta sesión.
   recién al cerrar sesión con "guardar rama" — para la próxima sesión, verificar rama antes
   de empezar a codear.
 
+## Sesión 2026-08-17 — Fase 3: Dashboard de Portafolio + Evidencia de Procura
+
+Contraparte frontend de Fase 3 backend (Dashboard de Portafolio + Export PDF, Procura
+simplificado), ya cerrada y probada en vivo según el usuario. Contratos leídos directo del
+código C# local (`Abril_Backend/Features/PlaneamientoBimFeature/`), no adivinados.
+
+### 1. Evidencia de Procura (Carga Diaria)
+- Componente nuevo reutilizable `PlaneamientoBimEvidenciaGaleria`
+  (`planeamiento-bim/shared/evidencia-galeria/`) — presentacional puro (sin HTTP propio),
+  usado 2 veces en `carga-diaria.html`: "Evidencias Fotográficas del Día" (categoria=GENERAL,
+  igual que antes) y la nueva "Evidencia de Procura" (categoria=PROCURA), cada una con su
+  propio loading/error/upload independiente.
+- `carga-diaria.ts`: `cargarEvidenciasProcura()` (GET `carga-diaria/{id}?categoria=PROCURA`,
+  dispara junto con la carga normal al cambiar proyecto/fecha — rompe R1 a nivel de acción,
+  mismo criterio ya aceptado en el dashboard de Fase 2a porque el backend no expone un
+  endpoint solo-evidencias) y `onFilesSelectedProcura()`. Misma ventana de 5 días: el
+  `esEditable` de la respuesta con categoria=PROCURA ya viene resuelto por backend,
+  transparente para el frontend.
+- `planeamiento-bim.service.ts` y `CargaDiariaDto`: `categoria` agregado como parámetro
+  opcional (default `'GENERAL'`), no rompe llamadas existentes.
+
+### 2. Dashboard de Portafolio (landing de Planeamiento BIM)
+- DTOs nuevos `planeamiento-bim-portafolio.dto.ts` (`PortafolioKpisDto`,
+  `ProyectoPortafolioDto`), copiados 1:1 de `PortafolioDtos.cs`.
+- 3 métodos nuevos en el service: `getPortafolioKpis()`, `getPortafolioProyectos()`,
+  `exportarPdfProyecto()` (blob + descarga vía `<a download>` programático).
+- Página nueva `planeamiento-bim/portafolio/`: 4 KPI cards (PPC promedio, proyectos por
+  fase, bloqueos vencidos, top causa del mes), tabla con semáforo (`role="img"` +
+  `aria-label`/`title`), filtro (búsqueda + semáforo) y paginación vía `ClientPager` (regla
+  dura de CLAUDE.md, sin excepciones), botón exportar PDF por fila (fecha = hoy, sin
+  selector de fecha en la tabla), link a detalle.
+- `dashboard.ts` (Fase 2a) ahora lee `?projectId=` de query params para preseleccionar el
+  proyecto — hace funcionar el link de la tabla de Portafolio sin tocar el flujo manual
+  existente.
+
+### 3. Navegación — decisión de arquitectura (confirmada con el usuario antes de implementar)
+`roleGuard`/`isNavEntryAllowed` son un OR (featureKey O roles): si el featureKey ya está en
+`allowed_features` del usuario, entra sin mirar `roles`. El featureKey compartido del resto
+del módulo (`planeamiento-bim.configuracion-inicial`) ya está sembrado para USUARIO_UDP, así
+que compartirlo con la ruta de Portafolio (restringida a Administrador Sistema/UDP por el
+propio backend) dejaría entrar a UsuarioUdp aunque el backend le tire 403 después. Por eso:
+- **Entrada nueva y separada**, no reapunte de la existente: "Portafolio BIM"/"Portafolio
+  Planeamiento BIM" en `proyectos.routes.ts`, `projects-tabs.ts` y `navigation.service.ts`,
+  featureKey propio `planeamiento-bim.portafolio` + `roles: [ADMINISTRADOR_SISTEMA,
+  ADMINISTRADOR_UDP]` explícito en los 3 lugares (mismo rol que exige
+  `[Authorize(Roles = "1,2")]` en `PlaneamientoBimPortafolioController`).
+- La entrada existente "Planeamiento BIM" sigue apuntando a `configuracion-inicial` sin
+  cambios — cero impacto para UsuarioUdp.
+- Backend: `Abril_Backend/Migrations/Manual/20260817_PlaneamientoBimPortafolioFeatureSeed.sql`
+  creado (mismo formato que el seed del 2026-08-07, pero solo roles 1 y 2) — **no se
+  ejecutó** contra ninguna BD en esta sesión, queda pendiente que el usuario lo aplique.
+
+### Archivos clave
+- `planeamiento-bim/portafolio/{portafolio.ts,html,css}` (nuevo)
+- `planeamiento-bim/shared/evidencia-galeria/{evidencia-galeria.ts,html,css}` (nuevo)
+- `planeamiento-bim/dtos/planeamiento-bim-portafolio.dto.ts` (nuevo)
+- `planeamiento-bim/carga-diaria/{carga-diaria.ts,html,css}`,
+  `planeamiento-bim/dashboard/dashboard.ts`, `planeamiento-bim/services/planeamiento-bim.service.ts`,
+  `planeamiento-bim/dtos/planeamiento-bim-carga-diaria.dto.ts`
+- `proyectos.routes.ts`, `shared/projects-tabs.ts`, `core/navigation/navigation.service.ts`
+- `Abril_Backend/Migrations/Manual/20260817_PlaneamientoBimPortafolioFeatureSeed.sql`
+
+### Verificado
+`ng build`: 0 errores, mismos warnings preexistentes de terceros (canvg/core-js/flatpickr/
+node-fetch no-ESM, presupuesto de bundle).
+
+### Pendiente
+- Ejecutar la migración SQL del featureKey `planeamiento-bim.portafolio` en BD (dev y prod).
+- Verificación visual en navegador: no se probó ni el flujo de Procura en Carga Diaria ni el
+  Dashboard de Portafolio en esta sesión.
+- Íconos Tabler nuevos (`ti-chart-donut-3`, `ti-truck-delivery`, `ti-file-download`,
+  `ti-loader-2`) no se verificaron uno por uno contra el set instalado — si alguno no existe
+  se vería un hueco visual, no rompe build ni funcionalidad.
+- Selector de fecha para exportar PDF: hoy exporta siempre la fecha actual; si se necesita
+  exportar otra fecha desde la tabla de Portafolio, falta agregar el control.
+
 ## Sesión 2026-08-19 — Lectura de EMO por médico interno de Abril + búsqueda de acuerdos
 
 ### 1) EMOs: lectura a cargo del médico ocupacional de Abril (no la clínica)
@@ -5187,3 +5263,86 @@ ESM). No se probó visualmente en navegador en esta sesión (el usuario verifica
   hasta que se corran.
 - Excluido a propósito de este push: repo `plataforma-cursos` (piloto LOTO en rama separada,
   no tocar git/deploy todavía).
+
+## Sesión 2026-08-19 (tarde) — Bugfix Portafolio BIM (freeze de vista) + selector de fecha en export PDF
+
+### 1) Bug: pantalla pegada en skeleton en `/projects/planeamiento-bim/portafolio`
+Reportado por el usuario probando en localhost:4200 (dev): los 2 GET (`portafolio/kpis`,
+`portafolio/proyectos`) respondían 200 OK en segundos, pero la vista se quedaba
+indefinidamente en skeleton. Diagnóstico reproducido y confirmado con Chrome DevTools
+(`window.ng.getComponent`/`applyChanges`):
+
+- El estado del componente quedaba **correcto** (`loadingKpis`/`loadingProyectos` en
+  `false`, `kpis`/`proyectos` poblados) pero Angular no volvía a correr un tick de
+  change detection automático al resolver el subscribe — la vista se quedaba
+  literalmente congelada hasta la próxima interacción real (click en un botón con
+  handler propio la destrababa).
+- **No es específico de Portafolio ni de tener 2 llamadas HTTP concurrentes**: se
+  probó aislando a una sola llamada (`cargarKpis()` sola, sin `cargarProyectos()`) y
+  el freeze ocurrió igual. Se descartó `runOutsideAngular` de
+  `SessionRefreshService`/`RealtimeService` como causa (ambos re-entran bien a la zona
+  con `zone.run()` y corren en toda la sesión, no solo en Portafolio). `NgZone.run()`
+  explícito envolviendo el callback tampoco lo arregló.
+- Es un problema **sistémico ya conocido en este codebase** (Angular 21 + zone.js +
+  `provideHttpClient(withFetch())` en este entorno de dev no dispara el tick
+  automático de forma confiable tras un subscribe HTTP): `dashboard.ts` (la página
+  hermana de este mismo módulo) y `actas-reunion-dashboard.ts` **ya usaban** el mismo
+  patrón de `ChangeDetectorRef.detectChanges()` explícito antes de esta sesión, y
+  `CONTEXT.md` ya documentaba la convención ("Cambios manuales con
+  `ChangeDetectorRef.detectChanges()` después de async") con un caso previo idéntico
+  (`activar-empresa.component.ts`). 206 archivos del repo ya usan `detectChanges()`.
+- **Fix**: `portafolio.ts` ahora inyecta `ChangeDetectorRef` y llama
+  `this.cdr.detectChanges()` en los 4 callbacks (`next`/`error` de `cargarKpis()` y
+  `cargarProyectos()`), igual que `dashboard.ts`.
+
+### 2) Bug secundario (no era la causa del freeze, pero real): NG0100 en Layout
+Encontrado en el camino, mientras se descartaban hipótesis: `AbrilPageHeaderComponent
+.ngOnInit()` llama `LayoutService.registerPageHeader()`, que hacía `hasPageHeader$.next()`
+**síncrono**, mutando un campo de `Layout` (el padre) a mitad del mismo ciclo de CD en
+el que `Layout` ya había evaluado su `*ngIf` con el valor viejo — dispara
+`ExpressionChangedAfterItHasBeenCheckedError` en **cualquier** página con
+`app-abril-page-header` (no solo Portafolio), aunque normalmente no se nota porque no
+bloqueaba la vista.
+
+- **Fix**: `layout.service.ts` — `registerPageHeader()`/`unregisterPageHeader()` ahora
+  difieren el `hasPageHeader$.next()` a un microtask (`Promise.resolve().then(...)`),
+  moviendo la mutación a un ciclo de CD propio y limpio.
+- Probado con recarga limpia en Cronograma Actividades y Dashboard UDP (páginas
+  preexistentes con el mismo header compartido): ambas renderizan correctamente, sin
+  el NG0100 de `_Layout` y sin regresiones.
+
+### 3) Selector de fecha para exportar PDF (feature pedida por el usuario)
+El endpoint `POST portafolio/{projectId}/export-pdf?fecha=` ya soportaba `fecha` en
+backend (probado); el frontend siempre mandaba la fecha de hoy. Se agregó:
+
+- Popover pequeño anclado al botón de exportar (columna Acciones de la tabla), en vez
+  de un modal completo — abre con `abrirExportarPopover(p, event)`, calcula su
+  posición con `position: fixed` + `getBoundingClientRect()` del botón (evita que se
+  recorte dentro de `.abril-table-wrap`, que hace scroll interno con `overflow-y:
+  auto`).
+- Campo `<input type="date">` con clases `.bim-input`/`.date-select` (mismo criterio
+  visual que Carga Diaria/Dashboard de detalle de este módulo — duplicadas
+  localmente en `portafolio.css`, mismo patrón que ya usan esas 2 páginas, no hay
+  token global para esto en el módulo `planeamiento-bim`).
+- Default: fecha de hoy. Cierra con "Cancelar" o clic en el backdrop. Al confirmar
+  (`confirmarExportarPdf()`), dispara el POST con la fecha elegida.
+- Verificado en navegador: descarga real de PDF con fecha distinta a hoy
+  (`ProgramacionDiaria_7_2026-08-10.pdf`), sin errores en consola. Mantiene el manejo
+  de error existente (F9: `Swal.fire` con mensaje distinguible 401/403).
+
+### Archivos clave
+- `planeamiento-bim/portafolio/portafolio.ts` (detectChanges + lógica de popover)
+- `planeamiento-bim/portafolio/portafolio.html` (popover de fecha)
+- `planeamiento-bim/portafolio/portafolio.css` (estilos del popover + `.bim-input`/`.date-select` locales)
+- `core/services/layout.service.ts` (fix NG0100)
+
+### Verificado
+`npx ng build`: 0 errores, solo warnings preexistentes de terceros. Probado
+extensamente en navegador (Chrome, dev server local): freeze reproducido y confirmado
+arreglado en múltiples recargas limpias; popover de export probado end-to-end
+(abrir/cancelar/confirmar con fecha distinta, descarga real de PDF).
+
+### Pendiente
+- Nada pendiente de esta sesión — feature y fixes verificados end-to-end en navegador
+  por Claude; falta que el usuario los revise en su propia sesión de navegador si
+  quiere una segunda confirmación visual.

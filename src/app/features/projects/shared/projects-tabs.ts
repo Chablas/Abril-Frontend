@@ -1,4 +1,5 @@
 import { AbrilPageTab } from '../../../shared/components/abril-page-header/abril-page-header.component';
+import { Roles } from '../../../core/constants/roles';
 
 /** Pestañas del header de Proyectos — única fuente para todas sus páginas.
  *  Unión de las listas que antes vivían duplicadas por página: 'Actas de Reunión'
@@ -13,5 +14,9 @@ export const PROJECTS_TABS: AbrilPageTab[] = [
   { label: 'Respuesta de Informes',  icono: 'ti-file-report',      route: '/projects/report-response-control',       featureKey: 'projects.report-response-control' },
   { label: 'Residentes',             icono: 'ti-users',            route: '/projects/resident-monitoring-measurement', featureKey: 'projects.resident-monitoring-measurement' },
   { label: 'Planeamiento BIM',       icono: 'ti-building-skyscraper', route: '/projects/planeamiento-bim/configuracion-inicial', featureKey: 'planeamiento-bim.configuracion-inicial' },
+  // Landing de portafolio (Fase 3) — entrada nueva y separada de la de arriba a
+  // propósito: esta requiere rol Administrador (Sistema/UDP), la de arriba sigue
+  // disponible para UsuarioUdp igual que siempre. Ver nota en proyectos.routes.ts.
+  { label: 'Portafolio BIM',         icono: 'ti-chart-donut-3',    route: '/projects/planeamiento-bim/portafolio',   featureKey: 'planeamiento-bim.portafolio', roles: [Roles.ADMINISTRADOR_SISTEMA, Roles.ADMINISTRADOR_UDP] },
   { label: 'Configuraciones',        icono: 'ti-settings',         route: '/projects/configuration/milestones',      featureKey: 'projects.config.milestones' },
 ];
