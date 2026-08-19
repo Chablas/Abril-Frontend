@@ -77,10 +77,24 @@ export class AcuerdosPendientesAnteriores implements OnInit {
   }
 
   marcarCumplido(a: AcuerdoPendienteAnteriorDTO): void {
+    if (a.requiereEvidencia && !a.evidenciaUrl) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta evidencia',
+        text: 'Este acuerdo requiere adjuntar evidencia antes de poder marcarse como cumplido.',
+        confirmButtonColor: 'var(--color-abril-primary)',
+      });
+      return;
+    }
+
+    const tieneEvidencia = !!a.evidenciaUrl;
     Swal.fire({
       icon: 'question',
       title: '¿Marcar acuerdo como cumplido?',
-      text: 'Se registrará hoy como fecha de cumplimiento.',
+      input: 'textarea',
+      inputLabel: tieneEvidencia ? 'Comentario (opcional)' : 'Cómo se levantó (obligatorio, no hay evidencia adjunta)',
+      inputPlaceholder: 'Describe cómo se resolvió el acuerdo...',
+      inputValidator: (value) => (!tieneEvidencia && !value?.trim() ? 'Indica cómo se levantó el acuerdo.' : undefined),
       showCancelButton: true,
       confirmButtonText: 'Sí, cumplido',
       cancelButtonText: 'Cancelar',
@@ -88,7 +102,7 @@ export class AcuerdosPendientesAnteriores implements OnInit {
     }).then((result) => {
       if (!result.isConfirmed) return;
       this.loaderService.show();
-      this.service.marcarAcuerdoCumplido(a.reunionAcuerdoId).subscribe({
+      this.service.marcarAcuerdoCumplido(a.reunionAcuerdoId, { comentario: result.value?.trim() || null }).subscribe({
         next: () => {
           this.loaderService.hide();
           this.cargar();

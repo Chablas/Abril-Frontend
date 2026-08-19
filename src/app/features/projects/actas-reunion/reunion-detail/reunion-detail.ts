@@ -162,10 +162,17 @@ export class ReunionDetail implements OnInit {
       asistio: false,
     });
     this.showParticipanteModal = false;
+    this.guardar(true);
   }
 
   removeParticipante(index: number): void {
     this.participantes.splice(index, 1);
+    this.guardar(true);
+  }
+
+  /** Asistencia marcada/desmarcada: se guarda sola, sin esperar al botón. */
+  onAsistioChange(): void {
+    this.guardar(true);
   }
 
   abrirConvocatoriaMasiva(): void {
@@ -189,10 +196,15 @@ export class ReunionDetail implements OnInit {
       yaAgregados.add(t.workerId);
     }
     this.showConvocatoriaMasivaModal = false;
+    this.guardar(true);
   }
 
-  guardar(): void {
+  /** `silencioso=true` para cambios puntuales de participantes (agregar/quitar/marcar asistencia):
+   * guarda solo, sin loader ni alerta de éxito, y si el tema está vacío en ese momento no interrumpe
+   * con un warning (el usuario lo completará y guardará con el botón cuando esté listo). */
+  guardar(silencioso = false): void {
     if (!this.tema.trim()) {
+      if (silencioso) return;
       Swal.fire({
         icon: 'warning',
         title: 'Datos incompletos',
@@ -202,6 +214,7 @@ export class ReunionDetail implements OnInit {
       return;
     }
     if (this.horaInicio && this.horaFin && this.horaFin <= this.horaInicio) {
+      if (silencioso) return;
       Swal.fire({
         icon: 'warning',
         title: 'Horas inválidas',
@@ -222,7 +235,7 @@ export class ReunionDetail implements OnInit {
         asistio: p.asistio,
       }));
 
-    this.loaderService.show();
+    if (!silencioso) this.loaderService.show();
     this.service
       .update(this.reunionId, {
         tema: this.tema.trim(),
@@ -235,6 +248,10 @@ export class ReunionDetail implements OnInit {
       })
       .subscribe({
         next: () => {
+          if (silencioso) {
+            this.load();
+            return;
+          }
           this.loaderService.hide();
           Swal.fire({
             icon: 'success',
@@ -244,6 +261,7 @@ export class ReunionDetail implements OnInit {
           this.load();
         },
         error: (err: HttpErrorResponse) => {
+          if (silencioso) return;
           this.loaderService.hide();
           this.errorService.handleError(err);
         },
@@ -319,8 +337,6 @@ export class ReunionDetail implements OnInit {
   }
 
   marcarCumplido(acuerdo: ReunionAcuerdoDTO): void {
-    const cumplidoId = this.detalle?.acuerdoEstados.find((e) => e.descripcion === 'CUMPLIDO')?.id;
-    if (!cumplidoId) return;
     if (acuerdo.requiereEvidencia && !acuerdo.evidenciaUrl) {
       Swal.fire({
         icon: 'warning',
@@ -330,44 +346,32 @@ export class ReunionDetail implements OnInit {
       });
       return;
     }
+
+    const tieneEvidencia = !!acuerdo.evidenciaUrl;
     Swal.fire({
       icon: 'question',
       title: '¿Marcar acuerdo como cumplido?',
-      text: 'Se registrará hoy como fecha de cumplimiento.',
+      input: 'textarea',
+      inputLabel: tieneEvidencia ? 'Comentario (opcional)' : 'Cómo se levantó (obligatorio, no hay evidencia adjunta)',
+      inputPlaceholder: 'Describe cómo se resolvió el acuerdo...',
+      inputValidator: (value) => (!tieneEvidencia && !value?.trim() ? 'Indica cómo se levantó el acuerdo.' : undefined),
       showCancelButton: true,
       confirmButtonText: 'Sí, cumplido',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: 'var(--color-abril-primary)',
     }).then((result) => {
       if (!result.isConfirmed) return;
-      const hoy = new Date();
-      const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
       this.loaderService.show();
-      this.service
-        .actualizarAcuerdo(acuerdo.reunionAcuerdoId, {
-          descripcion: acuerdo.descripcion,
-          acciones: acuerdo.acciones,
-          fechaProgramada: acuerdo.fechaProgramada,
-          fechaReprogramacion: acuerdo.fechaReprogramacion,
-          fechaCumplimiento: fechaHoy,
-          reunionAcuerdoEstadoId: cumplidoId,
-          criticidad: acuerdo.criticidad,
-          requiereAceptacion: acuerdo.requiereAceptacion,
-          requiereEvidencia: acuerdo.requiereEvidencia,
-          evidenciaUrl: acuerdo.evidenciaUrl,
-          responsableWorkerIds: acuerdo.responsables.map((r) => r.workerId),
-          responsablePrincipalWorkerId: acuerdo.responsables.find((r) => r.esPrincipal)?.workerId ?? null,
-        })
-        .subscribe({
-          next: () => {
-            this.loaderService.hide();
-            this.load();
-          },
-          error: (err: HttpErrorResponse) => {
-            this.loaderService.hide();
-            this.errorService.handleError(err);
-          },
-        });
+      this.service.marcarAcuerdoCumplido(acuerdo.reunionAcuerdoId, { comentario: result.value?.trim() || null }).subscribe({
+        next: () => {
+          this.loaderService.hide();
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
     });
   }
 

@@ -174,7 +174,7 @@
                 class="w-full h-[34px] px-2 border border-[#E5EAF0] rounded text-sm text-center focus:outline-none focus:border-[var(--color-abril-primary)]" />
             </td>
             <td class="px-2 py-1.5 text-center">
-              <input type="checkbox" [(ngModel)]="p.asistio"
+              <input type="checkbox" [(ngModel)]="p.asistio" (ngModelChange)="onAsistioChange()"
                 class="h-4 w-4 accent-[var(--color-abril-primary)] cursor-pointer" />
             </td>
             <td class="px-2 py-1.5 text-center">

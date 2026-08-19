@@ -105,7 +105,13 @@ export interface ReunionAcuerdoDTO {
   evidenciaUrl: string | null;
   vecesReprogramado: number;
   ultimoMotivoReprogramacion: string | null;
+  /** Cómo se levantó el acuerdo (obligatorio si no tiene evidencia). */
+  comentarioCumplimiento: string | null;
   responsables: ReunionAcuerdoResponsableDTO[];
+}
+
+export interface AcuerdoMarcarCumplidoRequest {
+  comentario: string | null;
 }
 
 /** Un acuerdo aún no cumplido de una edición anterior de la misma convocatoria recurrente. */
@@ -121,6 +127,8 @@ export interface AcuerdoPendienteAnteriorDTO {
   fechaProgramada: string | null;
   reunionAcuerdoEstadoId: number;
   reunionAcuerdoEstado: string;
+  requiereEvidencia: boolean;
+  evidenciaUrl: string | null;
   vecesReprogramado: number;
   ultimoMotivoReprogramacion: string | null;
   responsables: ReunionAcuerdoResponsableDTO[];
@@ -396,6 +404,8 @@ export interface MisAcuerdoDTO {
   fechaCumplimiento: string | null;
   esPrincipal: boolean;
   otrosResponsables: string[];
+  requiereEvidencia: boolean;
+  evidenciaUrl: string | null;
   requiereAceptacion: boolean;
   /** PENDIENTE | ACEPTADO | RECHAZADO. */
   estadoAceptacion: string;

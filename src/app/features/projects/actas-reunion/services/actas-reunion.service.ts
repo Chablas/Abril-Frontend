@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
+  AcuerdoMarcarCumplidoRequest,
   AcuerdoPendienteAnteriorDTO,
   AcuerdoReprogramarRequest,
   AcuerdoResponsableDecisionRequest,
@@ -144,10 +145,10 @@ export class ActasReunionService {
     );
   }
 
-  marcarAcuerdoCumplido(reunionAcuerdoId: number): Observable<{ message: string }> {
+  marcarAcuerdoCumplido(reunionAcuerdoId: number, request: AcuerdoMarcarCumplidoRequest): Observable<{ message: string }> {
     return this.http.patch<{ message: string }>(
       `${this.apiUrl}/acuerdos/${reunionAcuerdoId}/marcar-cumplido`,
-      {},
+      request,
       { headers: this.authHeaders() },
     );
   }

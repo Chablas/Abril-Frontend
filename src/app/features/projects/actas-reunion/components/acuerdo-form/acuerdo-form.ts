@@ -48,7 +48,6 @@ export class AcuerdoForm implements OnInit {
   @Output() saved = new EventEmitter<void>();
 
   descripcion = '';
-  acciones = '';
   fechaProgramada: string | null = null;
   fechaReprogramacion: string | null = null;
   fechaCumplimiento: string | null = null;
@@ -58,6 +57,8 @@ export class AcuerdoForm implements OnInit {
   requiereAceptacion = false;
   requiereEvidencia = false;
   evidenciaUrl: string | null = null;
+  evidenciaNombre: string | null = null;
+  subiendoEvidencia = false;
   responsables: ResponsableRow[] = [];
   responsablePrincipalWorkerId: number | null = null;
   nuevoResponsableId: number | null = null;
@@ -75,8 +76,11 @@ export class AcuerdoForm implements OnInit {
 
   ngOnInit(): void {
     if (this.acuerdo) {
-      this.descripcion = this.acuerdo.descripcion;
-      this.acciones = this.acuerdo.acciones ?? '';
+      // "Acciones" se fusiona en la descripción (eran dos campos redundantes); si el acuerdo
+      // venía con acciones de antes de la fusión, se anexan para no perder esa información.
+      this.descripcion = this.acuerdo.acciones
+        ? `${this.acuerdo.descripcion}\n\n${this.acuerdo.acciones}`
+        : this.acuerdo.descripcion;
       this.fechaProgramada = this.acuerdo.fechaProgramada;
       this.fechaReprogramacion = this.acuerdo.fechaReprogramacion;
       this.fechaCumplimiento = this.acuerdo.fechaCumplimiento;
@@ -85,6 +89,7 @@ export class AcuerdoForm implements OnInit {
       this.requiereAceptacion = this.acuerdo.requiereAceptacion;
       this.requiereEvidencia = this.acuerdo.requiereEvidencia;
       this.evidenciaUrl = this.acuerdo.evidenciaUrl;
+      this.evidenciaNombre = this.evidenciaUrl ? decodeURIComponent(this.evidenciaUrl.split('/').pop() ?? '') : null;
       this.responsables = this.acuerdo.responsables.map((r) => ({
         workerId: r.workerId,
         nombre: r.workerNombre,
@@ -99,12 +104,41 @@ export class AcuerdoForm implements OnInit {
     return this.trabajadores.filter((t) => !yaAgregados.has(t.workerId));
   }
 
-  agregarResponsable(): void {
-    if (this.nuevoResponsableId == null) return;
-    const trabajador = this.trabajadores.find((t) => t.workerId === this.nuevoResponsableId);
+  /** Se agrega directo al elegirlo del buscador, sin un paso de "Agregar" aparte. */
+  seleccionarResponsable(workerId: number | null): void {
+    if (workerId == null) return;
+    const trabajador = this.trabajadores.find((t) => t.workerId === workerId);
     if (!trabajador) return;
     this.responsables.push({ workerId: trabajador.workerId, nombre: trabajador.fullName });
     this.nuevoResponsableId = null;
+  }
+
+  /** Sube el archivo de evidencia como un adjunto más de la reunión (mismo mecanismo que "Archivos
+   * adjuntos" del acta) y usa su URL como evidencia de este acuerdo. */
+  onEvidenciaSeleccionada(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.subiendoEvidencia = true;
+    this.service.subirArchivos(this.reunionId, [file]).subscribe({
+      next: (res) => {
+        this.subiendoEvidencia = false;
+        const archivo = res.archivos[0];
+        this.evidenciaUrl = archivo.archivoUrl;
+        this.evidenciaNombre = archivo.originalFileName;
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subiendoEvidencia = false;
+        this.errorService.handleError(err);
+      },
+    });
+    input.value = '';
+  }
+
+  quitarEvidencia(): void {
+    this.evidenciaUrl = null;
+    this.evidenciaNombre = null;
   }
 
   removerResponsable(workerId: number): void {
@@ -137,7 +171,7 @@ export class AcuerdoForm implements OnInit {
 
     const request = {
       descripcion: this.descripcion.trim(),
-      acciones: this.acciones.trim() || null,
+      acciones: null,
       fechaProgramada: this.fechaProgramada,
       fechaReprogramacion: this.fechaReprogramacion,
       fechaCumplimiento: this.fechaCumplimiento,
