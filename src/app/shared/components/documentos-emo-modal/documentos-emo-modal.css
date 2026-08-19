@@ -98,6 +98,11 @@
   color: #f59e0b;
 }
 
+.doc-sub.pendiente-abril {
+  color: #7c3aed;
+  font-weight: 600;
+}
+
 .doc-actions {
   display: flex;
   align-items: center;

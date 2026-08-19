@@ -107,3 +107,9 @@ export interface ObraOficinaStaffDto {
   obraOficinaStaffId: number;
   name: string;
 }
+
+/** Catálogo de tipos de equipo (Volquete, Excavadora de Oruga, ...) para el formulario de equipos. */
+export interface TipoEquipoDto {
+  id: number;
+  nombre: string;
+}

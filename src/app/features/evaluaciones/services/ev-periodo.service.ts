@@ -19,6 +19,10 @@ export class EvPeriodoService {
     return this.http.get<EvPeriodoDto>(`${this.base}/activo`, { headers: this.headers() });
   }
 
+  getUltimo(): Observable<EvPeriodoDto> {
+    return this.http.get<EvPeriodoDto>(`${this.base}/ultimo`, { headers: this.headers() });
+  }
+
   getAll(): Observable<EvPeriodoDto[]> {
     return this.http.get<EvPeriodoDto[]>(this.base, { headers: this.headers() });
   }

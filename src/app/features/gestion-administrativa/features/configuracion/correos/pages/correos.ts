@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -28,10 +28,14 @@ interface FilaCorreo {
   active: boolean;
 }
 
-/** Estado editable de un correo: sus dos listas de filas. */
+/** Estado editable de un correo: sus dos listas de filas y sus dos interruptores. */
 interface EstadoCorreo {
   incluir: FilaCorreo[];
   excluir: FilaCorreo[];
+  /** Interruptor maestro: apagado = ese correo no se envía. */
+  active: boolean;
+  /** Interruptor del destinatario principal (el revisor en el correo al revisor). */
+  destinatarioPrincipalActivo: boolean;
 }
 
 /**
@@ -42,13 +46,48 @@ interface EstadoCorreo {
  * enviará a"). La exclusión gana aunque el destinatario esté en la lista de envío.
  * Cada destinatario es un trabajador, un área (se expande a sus miembros) o un correo
  * escrito a mano (ej. un grupo de correos como gthnm@abril.pe).
+ *
+ * Los correos que la BD marca como apagables traen además dos interruptores: uno que
+ * apaga el correo completo y otro que saca de la lista a su destinatario principal (el
+ * que calcula el backend). Si al final no queda ningún destinatario, no se envía nada.
  */
 @Component({
   selector: 'app-ga-correos',
   standalone: true,
   imports: [CommonModule, FormsModule, SectionTabs, SearchSelect],
   templateUrl: './correos.html',
-  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
+  styles: [
+    `
+      :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+      /* Interruptor: mismo look que el de la configuración de correos de GTH. */
+      .switch {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        border-radius: 999px;
+        border: none;
+        background: #cbd5e1;
+        cursor: pointer;
+        padding: 0;
+        transition: background 0.18s ease;
+        flex-shrink: 0;
+      }
+      .switch--on { background: var(--color-abril-standard, #0f6e56); }
+      .switch__knob {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+        transition: transform 0.18s ease;
+      }
+      .switch--on .switch__knob { transform: translateX(20px); }
+    `,
+  ],
 })
 export class GaCorreos implements OnInit {
   eventos: CorreoEvento[] = [];
@@ -77,6 +116,7 @@ export class GaCorreos implements OnInit {
     private service: CorreosService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -100,14 +140,18 @@ export class GaCorreos implements OnInit {
           this.estado[ev.codigo] = {
             incluir: (ev.incluir ?? []).map(this.reglaAFila),
             excluir: (ev.excluir ?? []).map(this.reglaAFila),
+            active: ev.active !== false,
+            destinatarioPrincipalActivo: ev.destinatarioPrincipalActivo !== false,
           };
         }
         this.activeCodigo = this.eventos[0]?.codigo ?? null;
         this.loaderService.hide();
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         this.errorService.handleError(err);
+        this.cdr.detectChanges();
       },
     });
   }
@@ -145,7 +189,12 @@ export class GaCorreos implements OnInit {
   // ── Pestañas internas ────────────────────────────────────────────────────
 
   get sectionTabs(): SectionTab[] {
-    return this.eventos.map((e) => ({ id: e.codigo, label: this.labelCorto[e.codigo] ?? e.nombre }));
+    return this.eventos.map((e) => ({
+      id: e.codigo,
+      label: this.labelCorto[e.codigo] ?? e.nombre,
+      // Solo se marcan los apagados: un badge en cada pestaña sería ruido.
+      badge: this.estado[e.codigo]?.active === false ? 'Off' : null,
+    }));
   }
 
   get activeEvento(): CorreoEvento | undefined {
@@ -158,6 +207,31 @@ export class GaCorreos implements OnInit {
 
   onTabChange(codigo: string): void {
     this.activeCodigo = codigo;
+  }
+
+  // ── Interruptores del correo ──────────────────────────────────────────────
+
+  toggleEnvio(): void {
+    const est = this.activeEstado;
+    if (est && this.activeEvento?.permiteDesactivarEnvio) est.active = !est.active;
+  }
+
+  togglePrincipal(): void {
+    const est = this.activeEstado;
+    if (est && this.activeEvento?.permiteDesactivarPrincipal)
+      est.destinatarioPrincipalActivo = !est.destinatarioPrincipalActivo;
+  }
+
+  /**
+   * El correo está prendido pero no le llegaría a nadie: su destinatario principal está
+   * apagado y no hay ningún destinatario activo en "Se enviará a". En ese caso no se envía.
+   */
+  get sinDestinatarios(): boolean {
+    const ev = this.activeEvento;
+    const est = this.activeEstado;
+    if (!ev || !est || !est.active) return false;
+    if (est.destinatarioPrincipalActivo) return false;
+    return !est.incluir.some((f) => f.active);
   }
 
   // ── Edición de filas ───────────────────────────────────────────────────────
@@ -191,7 +265,8 @@ export class GaCorreos implements OnInit {
   guardar(): void {
     const codigo = this.activeCodigo;
     const est = this.activeEstado;
-    if (!codigo || !est) return;
+    const ev = this.activeEvento;
+    if (!codigo || !est || !ev) return;
 
     const incompleta = (f: FilaCorreo): boolean => {
       if (f.tipoCodigo === 'TRABAJADOR') return f.workerId == null;
@@ -224,11 +299,21 @@ export class GaCorreos implements OnInit {
       .updateReglas(codigo, {
         incluir: est.incluir.map(toInput),
         excluir: est.excluir.map(toInput),
+        // Solo se mandan los interruptores que este correo permite cambiar.
+        ...(ev.permiteDesactivarEnvio ? { active: est.active } : {}),
+        ...(ev.permiteDesactivarPrincipal
+          ? { destinatarioPrincipalActivo: est.destinatarioPrincipalActivo }
+          : {}),
       })
       .subscribe({
         next: (res) => {
           this.guardando = false;
+          // El evento guarda el estado que quedó en el servidor: si no se recarga la
+          // pantalla, las pestañas y los interruptores tienen que reflejarlo igual.
+          ev.active = est.active;
+          ev.destinatarioPrincipalActivo = est.destinatarioPrincipalActivo;
           this.loaderService.hide();
+          this.cdr.detectChanges();
           Swal.fire({
             icon: 'success',
             title: 'Guardado',
@@ -241,6 +326,7 @@ export class GaCorreos implements OnInit {
           this.guardando = false;
           this.loaderService.hide();
           this.errorService.handleError(err);
+          this.cdr.detectChanges();
         },
       });
   }

@@ -14,8 +14,9 @@
 <div class="page-container flex flex-col gap-[16px] bg-white flex-1 min-h-0 overflow-auto pb-[64px]">
 
   <!-- ── Aviso de alcance ───────────────────────────────────────────────── -->
-  <!-- De dónde sale lo que se ve. Sin esto, un gerente que ve 2 de 20 solicitudes
-       no puede distinguir un filtro de alcance de un error de la pantalla. -->
+  <!-- De dónde sale lo que se ve, en una línea. Sin esto, un gerente que ve 2 de 20
+       solicitudes no puede distinguir un filtro de alcance de un error de la pantalla.
+       Lo que explicaba el flujo de aprobación se sacó de acá (ver `textoAlcance`). -->
   <div class="ap-scope" [class.ap-scope--empty]="sinAlcance">
     <i class="ti" [ngClass]="sinAlcance ? 'ti-alert-triangle' : 'ti-eye-check'"></i>
     <span>{{ textoAlcance }}</span>
@@ -38,8 +39,7 @@
         </div>
         <div class="flex flex-col min-w-0">
           <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.pendientes }}</span>
-          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiPendientes.label }}</span>
-          <span class="ap-kpi-sub text-[11px] text-gray-400">{{ kpiPendientes.sub }}</span>
+          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiPendientes }}</span>
         </div>
       </div>
 
@@ -54,7 +54,6 @@
         <div class="flex flex-col min-w-0">
           <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.vacantesPendientes }}</span>
           <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Vacantes en cola</span>
-          <span class="ap-kpi-sub text-[11px] text-gray-400">Dentro de lo pendiente</span>
         </div>
       </div>
 
@@ -68,8 +67,7 @@
         </div>
         <div class="flex flex-col min-w-0">
           <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.aprobadas }}</span>
-          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiAprobadas.label }}</span>
-          <span class="ap-kpi-sub text-[11px] text-gray-400">{{ kpiAprobadas.sub }}</span>
+          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiAprobadas }}</span>
         </div>
       </div>
 
@@ -83,8 +81,7 @@
         </div>
         <div class="flex flex-col min-w-0">
           <span class="ap-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.rechazadas }}</span>
-          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiRechazadas.label }}</span>
-          <span class="ap-kpi-sub text-[11px] text-gray-400">{{ kpiRechazadas.sub }}</span>
+          <span class="ap-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">{{ kpiRechazadas }}</span>
         </div>
       </div>
 
@@ -98,31 +95,125 @@
       </span>
     </div>
 
+    <!-- ── Acciones sobre la selección ────────────────────────────────────
+         Decidir varias solicitudes de una: cada fila marcada se aprueba (o se rechaza) COMPLETA,
+         con todas sus vacantes. Las etiquetas cambian con el nivel porque las dos decisiones no
+         valen lo mismo —el Gerente General manda las vacantes a GTH, el gerente del área solo deja
+         constancia—; el backend re-valida quién es quién, y fila por fila.
+         Siempre visibles y deshabilitadas si no aplica, igual que en Gestión de Salidas. -->
+    <div class="flex flex-wrap items-center gap-2">
+      <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">
+        {{ selectedDecidibles.length }} seleccionada{{ selectedDecidibles.length === 1 ? '' : 's' }}
+        <ng-container *ngIf="selectedDecidibles.length > 0">
+          · {{ vacantesSeleccionadas }} vacante{{ vacantesSeleccionadas === 1 ? '' : 's' }}
+        </ng-container>
+        <ng-container *ngIf="seleccionYaDecididas > 0">
+          · {{ seleccionYaDecididas }} ya con tu decisión
+        </ng-container>
+      </span>
+
+      <button
+        type="button"
+        abrilBulkAction="default"
+        (click)="aprobarSeleccion()"
+        [disabled]="!puedeDecidirSeleccion"
+        [title]="motivoSinAccion">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        {{ labelAprobar }}<span *ngIf="puedeDecidirSeleccion"> ({{ selectedDecidibles.length }})</span>
+      </button>
+
+      <button
+        type="button"
+        abrilBulkAction="danger"
+        (click)="rechazarSeleccion()"
+        [disabled]="!puedeDecidirSeleccion"
+        [title]="motivoSinAccion">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+        {{ labelRechazar }}<span *ngIf="puedeDecidirSeleccion"> ({{ selectedDecidibles.length }})</span>
+      </button>
+    </div>
+
     <div class="abril-table-wrap">
       <table class="abril-table abril-table--th-center">
+        <!-- Cada nombre de columna ordena la lista COMPLETA (no solo la página visible) y vuelve
+             a la primera página. El ciclo es asc → desc → orden por defecto, que es la fecha de
+             envío de más reciente a más antigua. -->
         <thead class="sticky top-0 z-10">
           <tr>
-            <th>Solicitud</th>
-            <th>Área</th>
-            <th>Solicitante</th>
-            <th>Enviado</th>
-            <th>Vacantes</th>
+            <th>
+              <input
+                type="checkbox"
+                [checked]="allSelected"
+                [disabled]="pagedAprobaciones.length === 0"
+                (change)="toggleSelectAll()"
+                class="cursor-pointer disabled:cursor-not-allowed"
+                style="accent-color:var(--color-abril-accent)"
+                title="Seleccionar / deseleccionar las solicitudes de esta página" />
+            </th>
+            <th class="cursor-pointer select-none" (click)="toggleSort('codigos')" title="Ordenar por solicitud">
+              <span class="inline-flex items-center gap-1">Solicitud
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('codigos')">{{ sortDirOf('codigos') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="cursor-pointer select-none" (click)="toggleSort('area')" title="Ordenar por área">
+              <span class="inline-flex items-center gap-1">Área
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('area')">{{ sortDirOf('area') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="cursor-pointer select-none" (click)="toggleSort('solicitante')" title="Ordenar por solicitante">
+              <span class="inline-flex items-center gap-1">Solicitante
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('solicitante')">{{ sortDirOf('solicitante') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="cursor-pointer select-none" (click)="toggleSort('enviado')" title="Ordenar por fecha de envío">
+              <span class="inline-flex items-center gap-1">Enviado
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('enviado')">{{ sortDirOf('enviado') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="cursor-pointer select-none" (click)="toggleSort('vacantes')" title="Ordenar por cantidad de vacantes">
+              <span class="inline-flex items-center gap-1">Vacantes
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('vacantes')">{{ sortDirOf('vacantes') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
             <!-- Las dos casillas, siempre visibles: cada gerente necesita ver también
                  la postura del otro nivel para entender en qué quedó la solicitud. -->
-            <th>Gerente del área</th>
-            <th>Gerencia General</th>
+            <th class="cursor-pointer select-none" (click)="toggleSort('gerenteArea')" title="Ordenar por el visto bueno del gerente del área">
+              <span class="inline-flex items-center gap-1">Gerente del área
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('gerenteArea')">{{ sortDirOf('gerenteArea') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
+            <th class="cursor-pointer select-none" (click)="toggleSort('gerenteGeneral')" title="Ordenar por la decisión de Gerencia General">
+              <span class="inline-flex items-center gap-1">Gerencia General
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('gerenteGeneral')">{{ sortDirOf('gerenteGeneral') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
             <th>Acciones</th>
           </tr>
         </thead>
         <tbody>
 
           <tr *ngIf="filteredAprobaciones.length === 0">
-            <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
+            <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
           </tr>
 
-          <tr *ngFor="let a of pagedAprobaciones"
+          <tr *ngFor="let a of pagedAprobaciones; let i = index"
               class="border-b hover:bg-gray-50"
+              [style.background]="selectedIds.has(a.aprobacionId) ? '#EAF6FF' : null"
               style="border-color:var(--color-abril-border)">
+
+            <!-- Selección (Shift+clic marca el rango). select-none evita que Shift
+                 resalte el texto de las filas. -->
+            <td class="select-none" (click)="onSelectClick($event, i)">
+              <input
+                type="checkbox"
+                [checked]="selectedIds.has(a.aprobacionId)"
+                class="cursor-pointer pointer-events-none"
+                style="accent-color:var(--color-abril-accent)" />
+            </td>
 
             <td class="text-gray-700">
               <div class="font-medium">{{ a.codigos || '—' }}</div>
@@ -186,12 +277,25 @@
         {{ mensajeVacio }}
       </div>
 
-      <div *ngFor="let a of pagedAprobaciones"
-           class="rounded-[10px] border bg-white px-[12px] py-[11px]"
+      <div *ngFor="let a of pagedAprobaciones; let i = index"
+           class="rounded-[10px] border px-[12px] py-[11px]"
+           [style.background]="selectedIds.has(a.aprobacionId) ? '#EAF6FF' : '#fff'"
            style="border-color:var(--color-abril-border)">
 
         <div class="flex items-start justify-between gap-[8px]">
-          <span class="text-[12px] font-bold text-gray-700">{{ a.codigos || '—' }}</span>
+          <!-- La misma casilla que en la tabla: las acciones en bloque son las de arriba, así que
+               en móvil también hay que poder marcar la solicitud. -->
+          <!-- Un <label> acá haría que el navegador reenvíe la activación al checkbox y el
+               click llegue dos veces (marcar + desmarcar): va un div, como el <td> de la tabla. -->
+          <div class="flex items-start gap-[8px] min-w-0 cursor-pointer select-none"
+               (click)="onSelectClick($event, i)">
+            <input
+              type="checkbox"
+              [checked]="selectedIds.has(a.aprobacionId)"
+              class="mt-[1px] cursor-pointer pointer-events-none"
+              style="accent-color:var(--color-abril-accent)" />
+            <span class="text-[12px] font-bold text-gray-700 truncate">{{ a.codigos || '—' }}</span>
+          </div>
           <span class="text-[11px] text-gray-400 shrink-0">{{ a.enviado | date:'dd/MM/yyyy' }}</span>
         </div>
 

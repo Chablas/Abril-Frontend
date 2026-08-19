@@ -21,6 +21,16 @@ export interface CorreoEvento {
   nombre: string;
   descripcion?: string | null;
   orden: number;
+  /** Interruptor maestro: false = este correo no se envía. */
+  active: boolean;
+  /** Etiqueta del destinatario principal que calcula el backend (el revisor, el solicitante). */
+  destinatarioPrincipalNombre?: string | null;
+  /** false = el correo no se manda a su destinatario principal, solo a los configurados. */
+  destinatarioPrincipalActivo: boolean;
+  /** true = la pantalla muestra el interruptor maestro de este correo. */
+  permiteDesactivarEnvio: boolean;
+  /** true = la pantalla muestra el interruptor del destinatario principal. */
+  permiteDesactivarPrincipal: boolean;
   /** "Se enviará a" (reglas con es_exclusion = false). */
   incluir: CorreoRegla[];
   /** "Nunca se enviará a" (reglas con es_exclusion = true). */
@@ -71,4 +81,8 @@ export interface CorreoReglaInput {
 export interface CorreoReglasUpdate {
   incluir: CorreoReglaInput[];
   excluir: CorreoReglaInput[];
+  /** Interruptor maestro del correo. Se omite en los correos que no lo permiten. */
+  active?: boolean;
+  /** Interruptor del destinatario principal. Se omite en los correos que no lo permiten. */
+  destinatarioPrincipalActivo?: boolean;
 }

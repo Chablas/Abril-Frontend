@@ -8,6 +8,7 @@ import { Gantt } from './gantt/gantt';
 import { Plantilla } from './plantilla/plantilla';
 import { TareoMarcar } from './tareo/marcar/marcar';
 import { TareoEnrolamiento } from './tareo/enrolamiento/enrolamiento';
+import { TareoEnrolamientoAsistido } from './tareo/enrolamiento-asistido/enrolamiento-asistido';
 import { TareoRevision } from './tareo/revision/revision';
 import { TareoReporteSemanal } from './tareo/reporte-semanal/reporte-semanal';
 import { TareoGestionPermisos } from './tareo/gestion-permisos/gestion-permisos';
@@ -57,6 +58,12 @@ const routes: Routes = [
       {
         path: 'tareo/enrolamiento',
         component: TareoEnrolamiento,
+        canActivate: [roleGuard],
+        data: { titulo: 'ARQUITECTURA COMERCIAL - ENROLAMIENTO', featureKey: 'arquitectura-comercial.tareo.enrolamiento' },
+      },
+      {
+        path: 'tareo/enrolamiento-asistido',
+        component: TareoEnrolamientoAsistido,
         canActivate: [roleGuard],
         data: { titulo: 'ARQUITECTURA COMERCIAL - ENROLAMIENTO', featureKey: 'arquitectura-comercial.tareo.enrolamiento' },
       },

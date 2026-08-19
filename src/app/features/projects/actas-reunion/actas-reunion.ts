@@ -10,6 +10,7 @@ import { DatePicker } from '../../../shared/components/date-picker/date-picker';
 import { Paginator } from '../../../shared/components/paginator/paginator';
 import { ActasReunionService } from './services/actas-reunion.service';
 import { ReunionAdd } from './components/reunion-add/reunion-add';
+import { ACTAS_REUNION_TABS } from './actas-reunion-tabs';
 import {
   CatalogoDTO,
   PagedResultDTO,
@@ -27,6 +28,7 @@ import {
   templateUrl: './actas-reunion.html',
 })
 export class ActasReunion implements OnInit {
+  readonly tabs = ACTAS_REUNION_TABS;
   proyectos: ProyectoFiltroDTO[] = [];
   estados: CatalogoDTO[] = [];
   trabajadores: TrabajadorAbrilDTO[] = [];

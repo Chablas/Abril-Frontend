@@ -208,6 +208,15 @@ export const routes: Routes = [
   },
 
   {
+    // Carta oferta del postulante (acceso por token enviado al correo, sin login): la lee, registra
+    // su firma y la firma en línea. Reemplaza al envío de la carta adjunta por correo.
+    path: 'postulante/carta-oferta',
+    loadComponent: () =>
+      import('./features/gestion-gth/carta-oferta-firma/carta-oferta-firma')
+      .then(m => m.CartaOfertaFirma)
+  },
+
+  {
     path: 'registros-modelo',
     loadComponent: () =>
       import('./features/habilitacion/pages/registros-modelo/registros-modelo')

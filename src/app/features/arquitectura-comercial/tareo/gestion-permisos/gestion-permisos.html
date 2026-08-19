@@ -75,6 +75,11 @@
               <i class="ti ti-file-download"></i> Descargar SSO-FO-150
             </button>
 
+            <a *ngIf="t.autorizacionSubida && t.autorizacionUrl" class="gp-btn gp-btn-outline"
+               [href]="fotoUrlConToken(t.autorizacionUrl)" target="_blank" rel="noopener">
+              <i class="ti ti-file-search"></i> Ver escaneado
+            </a>
+
             <label class="gp-btn gp-btn-outline gp-upload-label">
               <i class="ti ti-upload"></i> {{ subiendoAutorizacion === t.workerId ? 'Subiendo…' : 'Subir escaneado' }}
               <input type="file" accept="image/*,.pdf" hidden [disabled]="subiendoAutorizacion === t.workerId" (change)="onArchivoAutorizacion(t, $event)" />

@@ -77,6 +77,13 @@ export const SSOMA_ROUTES: Routes = [
       import('./gestion/horas-hombre/horas-hombre.routes').then((m) => m.HORAS_HOMBRE_ROUTES),
   },
   {
+    path: 'gestion/programacion-inducciones',
+    loadChildren: () =>
+      import('./gestion/programacion-inducciones/programacion-inducciones.routes').then(
+        (m) => m.PROGRAMACION_INDUCCIONES_ROUTES,
+      ),
+  },
+  {
     path: 'gestion/presupuesto-materiales',
     loadChildren: () =>
       import('./gestion/presupuesto-materiales/presupuesto.routes').then(

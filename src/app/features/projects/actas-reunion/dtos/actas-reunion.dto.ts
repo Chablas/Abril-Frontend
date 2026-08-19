@@ -74,6 +74,8 @@ export interface ReunionParticipanteDTO {
   iniciales: string | null;
   asistio: boolean;
   orden: number;
+  /** true si este participante puede editar el acta igual que su creador. */
+  esCoautor: boolean;
 }
 
 /** Responsable de un acuerdo, con su estado de aceptación individual. */
@@ -84,6 +86,8 @@ export interface ReunionAcuerdoResponsableDTO {
   /** PENDIENTE | ACEPTADO | RECHAZADO. */
   estadoAceptacion: string;
   motivoRechazo: string | null;
+  /** true cuando este responsable es el encargado principal de que el acuerdo se cumpla. */
+  esPrincipal: boolean;
 }
 
 export interface ReunionAcuerdoDTO {
@@ -96,10 +100,49 @@ export interface ReunionAcuerdoDTO {
   reunionAcuerdoEstadoId: number;
   reunionAcuerdoEstado: string;
   orden: number;
+  /** NORMAL | MEDIO | CRITICO. */
+  criticidad: string;
   requiereAceptacion: boolean;
   requiereEvidencia: boolean;
   evidenciaUrl: string | null;
+  /** Solo registra información: no requiere seguimiento ni acción de ningún responsable. */
+  esInformativo: boolean;
+  vecesReprogramado: number;
+  ultimoMotivoReprogramacion: string | null;
+  /** Cómo se levantó el acuerdo (obligatorio si no tiene evidencia). */
+  comentarioCumplimiento: string | null;
   responsables: ReunionAcuerdoResponsableDTO[];
+}
+
+export interface AcuerdoMarcarCumplidoRequest {
+  comentario: string | null;
+  /** URL del archivo ya subido (vía subirArchivos) a usar como evidencia de este acuerdo. */
+  evidenciaUrl?: string | null;
+}
+
+/** Un acuerdo aún no cumplido de una edición anterior de la misma convocatoria recurrente. */
+export interface AcuerdoPendienteAnteriorDTO {
+  reunionAcuerdoId: number;
+  reunionId: number;
+  reunionNumero: number;
+  reunionTema: string;
+  descripcion: string;
+  acciones: string | null;
+  /** NORMAL | MEDIO | CRITICO. */
+  criticidad: string;
+  fechaProgramada: string | null;
+  reunionAcuerdoEstadoId: number;
+  reunionAcuerdoEstado: string;
+  requiereEvidencia: boolean;
+  evidenciaUrl: string | null;
+  vecesReprogramado: number;
+  ultimoMotivoReprogramacion: string | null;
+  responsables: ReunionAcuerdoResponsableDTO[];
+}
+
+export interface AcuerdoReprogramarRequest {
+  nuevaFechaProgramada: string;
+  motivo: string;
 }
 
 export interface ReunionArchivoDTO {
@@ -138,6 +181,9 @@ export interface ReunionDetalleDTO {
   reunionEstadoId: number;
   reunionEstado: string;
   observaciones: string | null;
+  createdUserId: number;
+  /** true si el usuario autenticado es el creador del acta o uno de sus coautores. */
+  puedeEditar: boolean;
   reunionAnteriorId: number | null;
   reunionAnteriorNumero: number | null;
   reunionAnteriorTema: string | null;
@@ -166,6 +212,8 @@ export interface ReunionParticipanteInput {
   cargo: string | null;
   iniciales: string | null;
   asistio: boolean;
+  /** Solo tiene efecto si workerId viene informado (un invitado externo no puede ser coautor). */
+  esCoautor?: boolean;
 }
 
 export interface ReunionCreateRequest {
@@ -216,8 +264,14 @@ export interface ReunionAcuerdoRequest {
   /** Si true, no se puede marcar CUMPLIDO sin adjuntar evidencia. */
   requiereEvidencia: boolean;
   evidenciaUrl: string | null;
+  /** Si true, solo registra información: no requiere seguimiento ni acción de ningún responsable. */
+  esInformativo: boolean;
   /** Ids de workers (cualquier trabajador de la organización, haya asistido o no). */
   responsableWorkerIds: number[];
+  /** NORMAL | MEDIO | CRITICO. */
+  criticidad: string;
+  /** WorkerId del responsable principal cuando hay más de uno; null si solo hay uno o ninguno. */
+  responsablePrincipalWorkerId: number | null;
 }
 
 // ── Carpeta de SharePoint para adjuntos ─────────────────────────────────────
@@ -260,6 +314,56 @@ export interface TemaConvocatoriaDTO {
   recordatorioHorasAntes: number | null;
 }
 
+/** Configuración de recurrencia de un tema (generación automática de la siguiente reunión). */
+export interface TemaRecurrenciaDTO {
+  esRecurrente: boolean;
+  recurrenciaActiva: boolean;
+  areaScopeId: number | null;
+  areaScopeDescripcion: string | null;
+  intervaloDias: number | null;
+  /** YYYY-MM-DD */
+  fechaAncla: string | null;
+  /** HH:mm */
+  horaInicio: string | null;
+  horaFin: string | null;
+  lugar: string | null;
+  diasAnticipacion: number;
+  ultimaFechaGenerada: string | null;
+  /** Informativo, calculado en el backend. */
+  proximaFechaEstimada: string | null;
+}
+
+export interface TemaRecurrenciaSaveRequest {
+  esRecurrente: boolean;
+  recurrenciaActiva: boolean;
+  areaScopeId: number | null;
+  intervaloDias: number | null;
+  fechaAncla: string | null;
+  horaInicio: string | null;
+  horaFin: string | null;
+  lugar: string | null;
+  diasAnticipacion: number;
+}
+
+/** Info del acuerdo/responsable para la página de aceptar/rechazar (link del correo del acta). */
+export interface AcuerdoResponsableInfoDTO {
+  reunionAcuerdoResponsableId: number;
+  reunionId: number;
+  reunionNumero: number;
+  reunionTema: string;
+  acuerdoDescripcion: string;
+  acuerdoAcciones: string | null;
+  fechaProgramada: string | null;
+  /** PENDIENTE | ACEPTADO | RECHAZADO */
+  estadoAceptacion: string;
+  motivoRechazo: string | null;
+}
+
+export interface AcuerdoResponsableDecisionRequest {
+  aceptado: boolean;
+  motivoRechazo: string | null;
+}
+
 export interface TemaConvocatoriaSaveRequest {
   reglas: TemaConvocatoriaReglaInput[];
   agendaFija: boolean;
@@ -272,6 +376,8 @@ export interface ReunionAgendaItemDTO {
   reunionAgendaItemId: number;
   workerId: number;
   workerNombre: string;
+  /** Subárea (nodo area_scope) del trabajador, si tiene una asignada. */
+  subareaDescripcion: string | null;
   descripcion: string;
   orden: number;
 }
@@ -291,6 +397,68 @@ export interface ReunionAgendaItemInput {
 
 export interface GuardarMisTemasRequest {
   temas: ReunionAgendaItemInput[];
+}
+
+/** Un acuerdo del que el usuario autenticado es responsable, en cualquier reunión (dashboard personal). */
+export interface MisAcuerdoDTO {
+  reunionAcuerdoId: number;
+  reunionAcuerdoResponsableId: number;
+  reunionId: number;
+  reunionNumero: number;
+  reunionTema: string;
+  ambito: string;
+  descripcion: string;
+  acciones: string | null;
+  /** NORMAL | MEDIO | CRITICO. */
+  criticidad: string;
+  fechaProgramada: string | null;
+  reunionAcuerdoEstadoId: number;
+  reunionAcuerdoEstado: string;
+  fechaCumplimiento: string | null;
+  esPrincipal: boolean;
+  otrosResponsables: string[];
+  requiereEvidencia: boolean;
+  evidenciaUrl: string | null;
+  /** Cómo se levantó el acuerdo (obligatorio al marcar CUMPLIDO). */
+  comentarioCumplimiento: string | null;
+  requiereAceptacion: boolean;
+  /** PENDIENTE | ACEPTADO | RECHAZADO. */
+  estadoAceptacion: string;
+}
+
+// ── Vista global "Acuerdos" (todas las reuniones donde el usuario participó) ────────────────
+export interface AcuerdoBusquedaItemDTO {
+  reunionAcuerdoId: number;
+  reunionId: number;
+  reunionNumero: number;
+  reunionTema: string;
+  /** Proyecto, área o "Organización". */
+  ambito: string;
+  descripcion: string;
+  /** NORMAL | MEDIO | CRITICO. */
+  criticidad: string;
+  fechaProgramada: string | null;
+  fechaCumplimiento: string | null;
+  reunionAcuerdoEstadoId: number;
+  reunionAcuerdoEstado: string;
+  esInformativo: boolean;
+  requiereEvidencia: boolean;
+  evidenciaUrl: string | null;
+  /** Cómo se levantó el acuerdo (obligatorio al marcar CUMPLIDO). */
+  comentarioCumplimiento: string | null;
+  responsables: string[];
+}
+
+export interface AcuerdoBusquedaFiltro {
+  /** PENDIENTE | EN PROCESO | CUMPLIDO | ANULADO | INFORMATIVO. */
+  estado: string | null;
+  responsableWorkerId: number | null;
+  /** Filtra por fechaProgramada. */
+  desde: string | null;
+  hasta: string | null;
+  texto: string | null;
+  page: number;
+  pageSize: number;
 }
 
 export interface ReunionFiltro {

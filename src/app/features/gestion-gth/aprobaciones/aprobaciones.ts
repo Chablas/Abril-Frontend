@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
+import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../shared/pipes/title-case.pipe';
@@ -10,6 +11,7 @@ import { FilterTriggerButton } from '../../../shared/components/filter-trigger/f
 import { FilterModal } from '../../../shared/components/filter-modal/filter-modal';
 import { SearchInput } from '../../../shared/components/search-input/search-input';
 import { SearchSelect } from '../../../shared/components/search-select/search-select';
+import { AbrilBulkActionDirective } from '../../../shared/directives/abril-bulk-action.directive';
 import { ClientPager } from '../../../shared/utils/client-pager';
 import { AuthService } from '../../../core/services/auth.service';
 import { LoaderService } from '../../../core/services/loader.service';
@@ -18,6 +20,7 @@ import { GthAprobacionDecision } from './components/decision/decision';
 import { AprobacionesService } from './services/aprobaciones.service';
 import { estadoAprobacionColors } from './estado-aprobacion-colors';
 import {
+  AprobacionDecisionOmitida,
   AprobacionListItem,
   AprobacionNivel,
   AprobacionNivelResumen,
@@ -52,6 +55,7 @@ import {
     SearchInput,
     SearchSelect,
     GthAprobacionDecision,
+    AbrilBulkActionDirective,
   ],
   templateUrl: './aprobaciones.html',
   styles: [`
@@ -81,7 +85,7 @@ import {
     }
 
     /* ── Aviso de alcance ─────────────────────────────────────────────────
-       Explica de dónde sale lo que el usuario ve (o por qué no ve nada). No es
+       Una línea con de dónde sale lo que el usuario ve (o por qué no ve nada). No es
        decorativo: sin él, un gerente que solo ve 2 de las 20 solicitudes de la
        empresa no tiene forma de saber si es un filtro o un error. */
     .ap-scope {
@@ -130,7 +134,6 @@ import {
       .ap-kpi-svg { width: 18px; height: 18px; }
       .ap-kpi-value { font-size: 20px; }
       .ap-kpi-label { font-size: 11.5px; margin-top: 3px; line-height: 1.2; }
-      .ap-kpi-sub { font-size: 10px; line-height: 1.2; }
     }
   `],
 })
@@ -220,6 +223,9 @@ export class GthAprobaciones implements OnInit {
         this.resumen = data.resumen;
         this.aprobaciones = data.aprobaciones;
         this.pager.reset();
+        // La lista es nueva: una selección hecha sobre la anterior ya no representa nada.
+        this.selectedIds.clear();
+        this.anclaSeleccion = null;
         this.loaderService.hide();
         this.cdr.detectChanges();
       },
@@ -247,54 +253,46 @@ export class GthAprobaciones implements OnInit {
   }
 
   get subtitulo(): string {
-    if (this.esGerenteGeneral) {
-      return 'Aprueba o rechaza las solicitudes de personal de toda la organización.';
-    }
-    if (this.nivel === 'GERENTE_AREA') {
-      return 'Da tu visto bueno a las solicitudes de personal de tu gerencia.';
-    }
+    if (this.esGerenteGeneral) return 'Solicitudes de personal de toda la organización.';
+    if (this.nivel === 'GERENTE_AREA') return 'Solicitudes de personal de tu gerencia.';
     return 'Solicitudes de personal por aprobar.';
   }
 
-  /** Aviso que explica de dónde sale lo que el usuario ve. */
+  /**
+   * Aviso de alcance: SOLO de dónde sale lo que el usuario ve. Lo que explicaba el flujo
+   * ("tu aprobación es la obligatoria", "avanza recién con la de Gerencia General") se quitó
+   * de acá: el modal de decisión ya lo marca con el chip «Obligatoria» y lo repite en la
+   * confirmación al enviar, que es donde recién importa.
+   *
+   * El caso sin alcance sí conserva el porqué y qué hacer: la pantalla queda vacía a
+   * propósito y sin ese texto se lee como un error.
+   */
   get textoAlcance(): string {
-    if (this.esGerenteGeneral) {
-      return (
-        'Ves todas las solicitudes de la organización. Tu aprobación es la obligatoria: ' +
-        'al confirmarla, las vacantes aprobadas pasan a Gestión de Talento Humano.'
-      );
-    }
+    if (this.esGerenteGeneral) return 'Ves todas las solicitudes de la organización.';
     if (this.nivel === 'GERENTE_AREA') {
-      const area = this.areaAlcance ? `de ${this.areaAlcance}` : 'de tu gerencia';
-      return (
-        `Ves solo las solicitudes ${area} y de las áreas que dependen de ella. Tu visto bueno ` +
-        'queda registrado, pero la solicitud avanza recién con la aprobación de Gerencia General.'
-      );
+      const area = this.areaAlcance ? this.areaAlcance : 'tu gerencia';
+      return `Ves las solicitudes de ${area} y de las áreas que dependen de ella.`;
     }
     return (
-      'Tu ficha de trabajador no es de Gerencia General ni de gerente de área, así que no hay ' +
-      'solicitudes de personal bajo tu alcance. Si crees que debería haberlas, pide a Gestión ' +
-      'del Talento Humano que revise la categoría de tu ficha.'
+      'No hay solicitudes bajo tu alcance: tu ficha no es de Gerencia General ni de gerente de ' +
+      'área. Pide a Gestión del Talento Humano que revise la categoría de tu ficha.'
     );
   }
 
   // ── Textos de las tarjetas (dependen del nivel) ────────────────────────
-  get kpiPendientes(): { label: string; sub: string } {
-    return this.esGerenteGeneral
-      ? { label: 'Por aprobar', sub: 'Esperan tu decisión' }
-      : { label: 'Por revisar', sub: 'Esperan tu visto bueno' };
+  // Solo la etiqueta: la línea de apoyo que llevaban debajo ("Esperan tu decisión",
+  // "Dentro de lo pendiente", "Ninguna vacante continuó") no agregaba nada al número y
+  // dejaba las cuatro tarjetas con tres renglones de texto cada una.
+  get kpiPendientes(): string {
+    return this.esGerenteGeneral ? 'Por aprobar' : 'Por revisar';
   }
 
-  get kpiAprobadas(): { label: string; sub: string } {
-    return this.esGerenteGeneral
-      ? { label: 'Aprobadas', sub: 'Total o parcialmente' }
-      : { label: 'Con tu visto bueno', sub: 'Total o parcialmente' };
+  get kpiAprobadas(): string {
+    return this.esGerenteGeneral ? 'Aprobadas' : 'Con tu visto bueno';
   }
 
-  get kpiRechazadas(): { label: string; sub: string } {
-    return this.esGerenteGeneral
-      ? { label: 'Rechazadas', sub: 'Ninguna vacante continuó' }
-      : { label: 'Observadas', sub: 'Las rechazaste todas' };
+  get kpiRechazadas(): string {
+    return this.esGerenteGeneral ? 'Rechazadas' : 'Observadas';
   }
 
   // ── Modal de decisión ──────────────────────────────────────────────────
@@ -326,6 +324,10 @@ export class GthAprobaciones implements OnInit {
 
   onFilterChange(): void {
     this.pager.reset();
+    // Filtrar esconde filas: si la selección sobreviviera, una acción en bloque actuaría sobre
+    // solicitudes que el usuario ya no tiene delante.
+    this.selectedIds.clear();
+    this.anclaSeleccion = null;
   }
 
   get filteredAprobaciones(): AprobacionListItem[] {
@@ -343,12 +345,19 @@ export class GthAprobaciones implements OnInit {
       );
     });
 
-    // Lo que espera MI decisión primero: es lo único sobre lo que el usuario puede actuar
-    // y, sin esto, una solicitud por decidir puede quedar sepultada en la página 3 del
-    // historial. Dentro de cada bloque, lo más reciente arriba.
+    // Orden de la columna elegida en la cabecera; por defecto, fecha de la más reciente a la más
+    // antigua (ver defaultSortBy).
+    const dir = this.sortDir === 'asc' ? 1 : -1;
     return lista.sort((a, b) => {
-      if (a.esperaMiDecision !== b.esperaMiDecision) return a.esperaMiDecision ? -1 : 1;
-      return b.enviado.localeCompare(a.enviado);
+      const va = this.valorOrden(a, this.sortBy);
+      const vb = this.valorOrden(b, this.sortBy);
+      const cmp =
+        typeof va === 'number' && typeof vb === 'number'
+          ? va - vb
+          : String(va).localeCompare(String(vb), 'es', { sensitivity: 'base', numeric: true });
+      // Desempate por id (lo más reciente primero) para que el orden sea estable: sin él, dos filas
+      // con el mismo valor pueden intercambiarse en cada refresco de la vista.
+      return cmp !== 0 ? cmp * dir : b.aprobacionId - a.aprobacionId;
     });
   }
 
@@ -373,6 +382,280 @@ export class GthAprobaciones implements OnInit {
 
   changePage(page: number): void {
     this.pager.goTo(page);
+  }
+
+  // ── Ordenamiento de columnas (cliente) ─────────────────────────────────
+  /**
+   * Orden por defecto: por fecha de envío, de la más reciente a la más antigua — el mismo criterio
+   * que Gestión de Salidas con su fecha de salida.
+   *
+   * Antes la lista ponía primero lo que esperaba MI decisión y solo dentro de ese bloque ordenaba
+   * por fecha. Ese agrupamiento se sacó porque ahora el orden es el de la columna que el usuario
+   * elige, y lo pendiente se aísla mejor con lo que ya tiene la pantalla: el filtro «Pendiente de
+   * decisión» o un clic en la columna de su propia casilla.
+   */
+  private readonly defaultSortBy = 'enviado';
+  private readonly defaultSortDir: 'asc' | 'desc' = 'desc';
+
+  sortBy: string = this.defaultSortBy;
+  sortDir: 'asc' | 'desc' = this.defaultSortDir;
+
+  /**
+   * Cicla el orden de una columna: ascendente → descendente → vuelve al orden por defecto (fecha,
+   * de la más reciente a la más antigua). La columna de fecha solo alterna desc ⇄ asc, porque
+   * "volver al defecto" ya es su estado descendente.
+   *
+   * El orden se aplica sobre TODA la lista, no sobre la página visible, así que se vuelve a la
+   * primera página: si no, la página 3 de un orden nuevo no significa nada.
+   */
+  toggleSort(column: string): void {
+    if (this.sortBy !== column) {
+      this.sortBy = column;
+      this.sortDir = 'asc';
+    } else if (this.sortDir === 'asc') {
+      this.sortDir = 'desc';
+    } else if (column === this.defaultSortBy) {
+      this.sortDir = 'asc';
+    } else {
+      this.sortBy = this.defaultSortBy;
+      this.sortDir = this.defaultSortDir;
+    }
+    this.pager.reset();
+    // El ancla del rango es un índice dentro de la página: con otro orden ya no apunta a la misma fila.
+    this.anclaSeleccion = null;
+  }
+
+  /** Dirección de orden activa para una columna (null si no se está ordenando por ella). */
+  sortDirOf(column: string): 'asc' | 'desc' | null {
+    return this.sortBy === column ? this.sortDir : null;
+  }
+
+  /** Valor con el que se compara cada columna ordenable. */
+  private valorOrden(a: AprobacionListItem, column: string): string | number {
+    switch (column) {
+      case 'codigos':        return a.codigos ?? '';
+      case 'area':           return a.area ?? '';
+      case 'solicitante':    return a.solicitanteNombre ?? '';
+      case 'vacantes':       return a.totalVacantes;
+      case 'gerenteArea':    return a.gerenteArea.estadoNombre ?? '';
+      case 'gerenteGeneral': return a.gerenteGeneral.estadoNombre ?? '';
+      // `enviado` viene en ISO, así que comparar el texto ya es comparar la fecha.
+      default:               return a.enviado ?? '';
+    }
+  }
+
+  // ── Selección de filas ─────────────────────────────────────────────────
+  /**
+   * Solicitudes marcadas (ids de aprobación). Se limpia al recargar y al cambiar los filtros —una
+   * fila que dejó de estar visible no puede seguir contando para una acción en bloque—, pero
+   * sobrevive al cambio de página y de orden: se puede juntar una selección de varias páginas antes
+   * de decidir.
+   */
+  selectedIds = new Set<number>();
+
+  /** Índice, dentro de la página visible, de la última fila clickeada: ancla del rango con Shift. */
+  private anclaSeleccion: number | null = null;
+
+  /**
+   * Click en la casilla de una fila. Con Shift marca todo el rango entre la última fila clickeada y
+   * la actual (como en Outlook); sin Shift alterna solo esa fila.
+   */
+  onSelectClick(event: MouseEvent, index: number): void {
+    event.stopPropagation();
+    const pagina = this.pagedAprobaciones;
+
+    if (event.shiftKey && this.anclaSeleccion !== null) {
+      // Evita que Shift+clic resalte el texto de las filas del rango.
+      if (typeof window !== 'undefined') window.getSelection()?.removeAllRanges();
+      const [desde, hasta] = [this.anclaSeleccion, index].sort((x, y) => x - y);
+      for (let k = desde; k <= hasta; k++) {
+        const fila = pagina[k];
+        if (fila) this.selectedIds.add(fila.aprobacionId);
+      }
+      return; // el ancla se mantiene
+    }
+
+    const id = pagina[index]?.aprobacionId;
+    if (id === undefined) return;
+    if (this.selectedIds.has(id)) this.selectedIds.delete(id);
+    else                          this.selectedIds.add(id);
+    this.anclaSeleccion = index;
+  }
+
+  /** True si toda la página visible está marcada: es lo que alterna la casilla del encabezado. */
+  get allSelected(): boolean {
+    const pagina = this.pagedAprobaciones;
+    return pagina.length > 0 && pagina.every((a) => this.selectedIds.has(a.aprobacionId));
+  }
+
+  /**
+   * Marca o desmarca la página visible. Solo la página, no la lista completa: el encabezado está
+   * arriba de esas filas y es lo que el usuario está viendo cuando lo clickea.
+   */
+  toggleSelectAll(): void {
+    const pagina = this.pagedAprobaciones;
+    const marcar = !this.allSelected;
+    for (const a of pagina) {
+      if (marcar) this.selectedIds.add(a.aprobacionId);
+      else        this.selectedIds.delete(a.aprobacionId);
+    }
+    this.anclaSeleccion = null;
+  }
+
+  /** Seleccionadas que siguen visibles con los filtros actuales. */
+  get selectedAprobaciones(): AprobacionListItem[] {
+    return this.filteredAprobaciones.filter((a) => this.selectedIds.has(a.aprobacionId));
+  }
+
+  /**
+   * Seleccionadas sobre las que este usuario todavía puede decidir: las que esperan SU casilla. Una
+   * fila que su nivel ya decidió no se vuelve a decidir (el backend re-valida lo mismo), así que se
+   * ignora en vez de bloquear la acción sobre las demás.
+   */
+  get selectedDecidibles(): AprobacionListItem[] {
+    return this.selectedAprobaciones.filter((a) => a.esperaMiDecision);
+  }
+
+  /** Seleccionadas que ya llevan la decisión de este usuario: se dicen, para explicar el conteo. */
+  get seleccionYaDecididas(): number {
+    return this.selectedAprobaciones.length - this.selectedDecidibles.length;
+  }
+
+  /** Vacantes que abarca la selección decidible: la decisión en bloque aplica a TODAS ellas. */
+  get vacantesSeleccionadas(): number {
+    return this.selectedDecidibles.reduce((total, a) => total + a.totalVacantes, 0);
+  }
+
+  get puedeDecidirSeleccion(): boolean {
+    return !this.decidiendo && this.selectedDecidibles.length > 0;
+  }
+
+  /** Por qué está deshabilitada la acción en bloque (null si está habilitada). */
+  get motivoSinAccion(): string | null {
+    if (this.selectedDecidibles.length > 0) return null;
+    if (this.selectedAprobaciones.length > 0)
+      return this.esGerenteGeneral
+        ? 'Gerencia General ya decidió sobre las solicitudes seleccionadas.'
+        : 'Ya registraste tu visto bueno en las solicitudes seleccionadas.';
+    return 'Selecciona al menos una solicitud que espere tu decisión.';
+  }
+
+  // ── Decisión en bloque ─────────────────────────────────────────────────
+  /** true mientras se envía una decisión en bloque (evita el doble envío). */
+  decidiendo = false;
+
+  /** El GG aprueba; el gerente del área da su visto bueno. La palabra no es cosmética: no valen lo mismo. */
+  get labelAprobar(): string {
+    return this.esGerenteGeneral ? 'Aprobar' : 'Dar visto bueno';
+  }
+
+  get labelRechazar(): string {
+    return this.esGerenteGeneral ? 'Rechazar' : 'Observar';
+  }
+
+  aprobarSeleccion(): Promise<void> {
+    return this.decidirSeleccion(true);
+  }
+
+  rechazarSeleccion(): Promise<void> {
+    return this.decidirSeleccion(false);
+  }
+
+  /**
+   * Registra la misma decisión sobre todas las solicitudes seleccionadas. Marcar una fila y aprobar
+   * es aprobar TODAS sus vacantes —eso es lo que el usuario está eligiendo al decidir desde la
+   * lista y no desde el modal—, así que la confirmación habla de solicitudes y de vacantes.
+   *
+   * El texto cambia según el nivel porque las dos decisiones no valen lo mismo: la de Gerencia
+   * General manda las vacantes a GTH, la del gerente del área solo queda registrada. Quién es quién
+   * no lo decide esta pantalla: el backend lo resuelve desde la categoría de la ficha y re-valida
+   * fila por fila.
+   */
+  private async decidirSeleccion(aprobar: boolean): Promise<void> {
+    const items = this.selectedDecidibles;
+    if (this.decidiendo || items.length === 0) return;
+
+    const vacantes = this.vacantesSeleccionadas;
+    const detalle = this.esGerenteGeneral
+      ? aprobar
+        ? `Se aprobarán las ${vacantes} vacante(s) de ${items.length} solicitud(es) y pasarán a Gestión de Talento Humano para iniciar el reclutamiento.`
+        : `Ninguna de las ${vacantes} vacante(s) de ${items.length} solicitud(es) continuará y Gestión de Talento Humano no las recibirá.`
+      : aprobar
+        ? `Tu visto bueno quedará registrado en las ${vacantes} vacante(s) de ${items.length} solicitud(es). Avanzan recién con la aprobación de Gerencia General.`
+        : `Quedarán observadas las ${vacantes} vacante(s) de ${items.length} solicitud(es). Gerencia General verá tu postura al decidir.`;
+
+    const confirm = await Swal.fire({
+      title: aprobar ? `¿${this.labelAprobar} ${items.length} solicitud(es)?` : `¿${this.labelRechazar} ${items.length} solicitud(es)?`,
+      html: detalle,
+      icon: aprobar ? 'question' : 'warning',
+      input: 'textarea',
+      inputLabel: 'Comentario (opcional)',
+      inputPlaceholder: aprobar ? 'Condiciones, observaciones...' : 'Motivo del rechazo...',
+      inputAttributes: { 'aria-label': 'Comentario de la decisión' },
+      showCancelButton: true,
+      confirmButtonText: aprobar ? `Sí, ${this.labelAprobar.toLowerCase()}` : this.labelRechazar,
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: aprobar ? '#64BC04' : '#D30000',
+    });
+    if (!confirm.isConfirmed) return;
+
+    const comentario = typeof confirm.value === 'string' && confirm.value.trim() ? confirm.value.trim() : null;
+
+    this.decidiendo = true;
+    this.loaderService.show();
+    this.service
+      .decidirMasivo({
+        aprobacionIds: items.map((a) => a.aprobacionId),
+        aprobado: aprobar,
+        comentario,
+      })
+      .subscribe({
+        next: (res) => {
+          this.decidiendo = false;
+          this.loaderService.hide();
+          this.cdr.detectChanges();
+          Swal.fire({
+            title: res.solicitudes > 0 ? 'Decisión registrada' : 'No se registró la decisión',
+            html: res.message + this.detalleOmitidas(res.omitidas, items),
+            icon: res.solicitudes === 0 ? 'warning' : res.omitidas.length > 0 ? 'info' : 'success',
+            confirmButtonColor: 'var(--color-abril-logo-blue)',
+          });
+          // Los estados, los contadores y qué filas siguen esperando decisión los calcula el
+          // backend: se recarga en vez de parchear la lista en memoria.
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.decidiendo = false;
+          this.loaderService.hide();
+          this.cdr.detectChanges();
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  /**
+   * Lista de las solicitudes que quedaron fuera del lote, con su código. El motivo lo da el backend
+   * y el código sale de la fila que el usuario tenía en pantalla: decir "2 omitidas" sin decir
+   * cuáles obliga a buscarlas a mano en la lista recargada.
+   */
+  private detalleOmitidas(
+    omitidas: AprobacionDecisionOmitida[],
+    items: AprobacionListItem[],
+  ): string {
+    if (omitidas.length === 0) return '';
+
+    const esc = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const filas = omitidas
+      .map((o) => {
+        const fila = items.find((i) => i.aprobacionId === o.aprobacionId);
+        const etiqueta = fila?.codigos || `Solicitud #${o.aprobacionId}`;
+        return `• <b>${esc(etiqueta)}</b>: ${esc(o.motivo)}`;
+      })
+      .join('<br>');
+
+    return `<div style="margin-top:12px;text-align:left;font-size:12.5px;line-height:1.5;color:#78350F">${filas}</div>`;
   }
 
   // ── Presentación ───────────────────────────────────────────────────────

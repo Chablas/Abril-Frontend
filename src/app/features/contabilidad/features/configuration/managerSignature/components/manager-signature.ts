@@ -1,10 +1,11 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
 import { ManagerSignatureService } from '../services/manager-signature.service';
 import { ManagerSignatureDto } from '../dtos/manager-signature.dto';
+import { SignaturePad } from '../../../../../../shared/components/signature-pad/signature-pad';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 
@@ -13,23 +14,22 @@ import { ErrorService } from '../../../../../../core/services/error.service';
  * Permite dibujar una firma con el mouse (o táctil) en un canvas y guardarla. Esa firma es
  * personal: se guarda en el registro de Person del usuario actual y se estampa en los documentos
  * que dicho usuario firme.
+ *
+ * El lienzo es el componente compartido `app-signature-pad`, el mismo que usa el postulante para
+ * registrar su firma en su carta oferta (Gestión GTH · Onboarding): las dos firmas terminan en las
+ * mismas columnas de Person y se estampan con el mismo helper del backend.
  */
 @Component({
   selector: 'app-manager-signature',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, SignaturePad],
   templateUrl: './manager-signature.html',
 })
-export class ManagerSignature implements OnInit, AfterViewInit {
-  @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
+export class ManagerSignature implements OnInit {
+  @ViewChild('pad') pad!: SignaturePad;
 
   current: ManagerSignatureDto | null = null;
   hasDrawing = false;
-
-  private ctx!: CanvasRenderingContext2D;
-  private drawing = false;
-  private lastX = 0;
-  private lastY = 0;
 
   constructor(
     private service: ManagerSignatureService,
@@ -39,17 +39,6 @@ export class ManagerSignature implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     this.load();
-  }
-
-  ngAfterViewInit(): void {
-    const canvas = this.canvasRef.nativeElement;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    this.ctx = ctx;
-    this.ctx.lineWidth = 2.5;
-    this.ctx.lineCap = 'round';
-    this.ctx.lineJoin = 'round';
-    this.ctx.strokeStyle = '#111111';
   }
 
   load(): void {
@@ -63,65 +52,21 @@ export class ManagerSignature implements OnInit, AfterViewInit {
     });
   }
 
-  // ── Dibujo ──────────────────────────────────────────────────────────
-  private pos(e: PointerEvent): { x: number; y: number } {
-    const canvas = this.canvasRef.nativeElement;
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: ((e.clientX - rect.left) / rect.width) * canvas.width,
-      y: ((e.clientY - rect.top) / rect.height) * canvas.height,
-    };
-  }
-
-  onPointerDown(e: PointerEvent): void {
-    e.preventDefault();
-    this.canvasRef.nativeElement.setPointerCapture(e.pointerId);
-    const p = this.pos(e);
-    this.drawing = true;
-    this.lastX = p.x;
-    this.lastY = p.y;
-    // Un punto/clic simple deja una marca.
-    this.ctx.beginPath();
-    this.ctx.arc(p.x, p.y, this.ctx.lineWidth / 2, 0, Math.PI * 2);
-    this.ctx.fillStyle = '#111111';
-    this.ctx.fill();
-    this.hasDrawing = true;
-  }
-
-  onPointerMove(e: PointerEvent): void {
-    if (!this.drawing) return;
-    e.preventDefault();
-    const p = this.pos(e);
-    this.ctx.beginPath();
-    this.ctx.moveTo(this.lastX, this.lastY);
-    this.ctx.lineTo(p.x, p.y);
-    this.ctx.stroke();
-    this.lastX = p.x;
-    this.lastY = p.y;
-  }
-
-  onPointerUp(): void {
-    this.drawing = false;
-  }
-
   clear(): void {
-    const canvas = this.canvasRef.nativeElement;
-    this.ctx.clearRect(0, 0, canvas.width, canvas.height);
-    this.hasDrawing = false;
+    this.pad?.clear();
   }
 
   save(): void {
-    if (!this.hasDrawing) {
+    const dataUrl = this.pad?.toDataUrl();
+    if (!dataUrl) {
       Swal.fire({ icon: 'warning', title: 'Firma vacía', text: 'Dibuja la firma antes de guardar.' });
       return;
     }
 
-    const dataUrl = this.canvasRef.nativeElement.toDataURL('image/png');
     this.loaderService.show();
     this.service.save(dataUrl).subscribe({
       next: (res) => {
         this.current = res;
-        this.hasDrawing = false;
         this.clear();
         this.loaderService.hide();
         Swal.fire({ icon: 'success', title: 'Firma guardada', timer: 1500, showConfirmButton: false });

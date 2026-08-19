@@ -5,9 +5,10 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { GthCorreosConfig } from '../../shared/correos-config/correos-config';
 
 /**
- * Contenedor de la Configuración de correos de Aprobaciones: el aviso que sale a GTH cuando
- * Gerencia aprueba una solicitud de personal. Vivía en la configuración de Solicitud de Personal,
- * pero ese correo no lo dispara el solicitante sino la decisión que se toma en esta pantalla.
+ * Contenedor de la Configuración de correos de Aprobaciones: los avisos que salen cuando Gerencia
+ * aprueba una solicitud de personal — el de GTH, que arranca el reclutamiento, y el de TI, que le
+ * da la anticipación para alistar equipo y accesos de cada ingreso. Ninguno de los dos lo dispara
+ * el solicitante sino la decisión que se toma en esta pantalla, por eso se configuran acá.
  *
  * Acceso restringido por la feature 'gestion-gth.reclutamiento.configuracion' (roleGuard en la
  * ruta), la misma que habilita las otras dos configuraciones de correos de Gestión GTH: quien

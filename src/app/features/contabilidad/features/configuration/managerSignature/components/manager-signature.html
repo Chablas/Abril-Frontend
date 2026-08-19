@@ -30,15 +30,9 @@
       {{ current ? 'Dibujar una nueva firma (reemplaza la actual)' : 'Dibujar la firma' }}
     </label>
 
-    <canvas #canvas
-      width="600" height="200"
-      class="w-full max-w-[600px] rounded-lg border bg-white touch-none cursor-crosshair"
-      style="border-color:var(--color-abril-border)"
-      (pointerdown)="onPointerDown($event)"
-      (pointermove)="onPointerMove($event)"
-      (pointerup)="onPointerUp()"
-      (pointerleave)="onPointerUp()">
-    </canvas>
+    <div class="max-w-[600px]">
+      <app-signature-pad #pad (drawingChange)="hasDrawing = $event" />
+    </div>
 
     <div class="flex items-center gap-3">
       <button type="button" (click)="clear()"

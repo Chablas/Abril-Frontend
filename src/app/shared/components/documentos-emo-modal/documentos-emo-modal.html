@@ -22,7 +22,10 @@
         <div>
           <p class="doc-title">Lectura EMO</p>
           <p class="doc-sub" *ngIf="emo.urlResultado">Archivo cargado</p>
-          <p class="doc-sub missing" *ngIf="!emo.urlResultado">Sin archivo</p>
+          <p class="doc-sub missing" *ngIf="!emo.urlResultado && !pendienteLecturaAbril">Sin archivo</p>
+          <p class="doc-sub pendiente-abril" *ngIf="pendienteLecturaAbril">
+            Pendiente · la lee el médico de Abril
+          </p>
         </div>
       </div>
       <div class="doc-actions">
@@ -33,11 +36,17 @@
         </button>
         <label class="btn-subir" [class.uploading]="uploading['Lectura']">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          {{ uploading['Lectura'] ? 'Subiendo…' : (emo.urlResultado ? 'Reemplazar' : 'Subir') }}
+          {{ uploading['Lectura'] ? 'Subiendo…' : (emo.urlResultado ? 'Reemplazar' : (pendienteLecturaAbril ? 'Subir y aprobar' : 'Subir')) }}
           <input type="file" accept=".pdf" hidden [disabled]="uploading['Lectura']"
             (change)="onFileSelected($event, 'Lectura')" />
         </label>
       </div>
+    </div>
+
+    <!-- Fecha de lectura: solo visible mientras el EMO esté pendiente de que el médico de Abril la suba. -->
+    <div class="abril-field" *ngIf="pendienteLecturaAbril">
+      <label class="abril-field-label">Fecha de lectura</label>
+      <input type="date" class="abril-field-input" [(ngModel)]="fechaLecturaAbril" />
     </div>
 
     <!-- Certificado de Aptitud -->

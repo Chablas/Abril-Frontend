@@ -33,10 +33,26 @@ export class Historial implements OnInit {
     this.periodoService.getAll().subscribe({
       next: (ps) => {
         this.periodos = ps;
-        if (ps.length) this.selectPeriodo(ps[0]);
+        if (ps.length) this.selectPeriodo(this.periodoPorDefecto(ps));
         this.cdr.detectChanges();
       },
     });
+  }
+
+  // Por defecto selecciona el mes calendario anterior al actual (el último que ya cerró),
+  // no ps[0] a secas: la lista puede incluir períodos futuros o de prueba sembrados de
+  // antemano (p. ej. para poblar la tendencia histórica de gráficos) sin evaluaciones reales.
+  private periodoPorDefecto(ps: EvPeriodoDto[]): EvPeriodoDto {
+    const hoy = new Date();
+    const mesAnteriorMes = hoy.getMonth() === 0 ? 12 : hoy.getMonth();
+    const mesAnteriorAnio = hoy.getMonth() === 0 ? hoy.getFullYear() - 1 : hoy.getFullYear();
+    const delMesAnterior = ps.find((p) => p.mes === mesAnteriorMes && p.anio === mesAnteriorAnio);
+    if (delMesAnterior) return delMesAnterior;
+
+    const yaIniciados = ps.filter(
+      (p) => p.anio < hoy.getFullYear() || (p.anio === hoy.getFullYear() && p.mes <= hoy.getMonth() + 1),
+    );
+    return yaIniciados[0] ?? ps[0];
   }
 
   selectPeriodo(p: EvPeriodoDto): void {

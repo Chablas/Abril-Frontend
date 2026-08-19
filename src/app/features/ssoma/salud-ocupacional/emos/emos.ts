@@ -126,6 +126,9 @@ export class Emos implements OnInit, OnDestroy {
 
   filtrosAbiertos = false;
 
+  /** Subtab "Pendientes de lectura": solo EMOs marcados para que los lea el médico de Abril. */
+  soloPendientesLecturaAbril = false;
+
   /** El botón "Configuración" del header se muestra solo con esta feature. */
   puedeConfigurar = false;
 
@@ -236,6 +239,7 @@ export class Emos implements OnInit, OnDestroy {
       sinCertificado: this.filters.sinCertificado || undefined,
       sinEmoCompleto: this.filters.sinEmoCompleto || undefined,
       sinInterconsulta: this.filters.sinInterconsulta || undefined,
+      pendienteLecturaAbril: this.soloPendientesLecturaAbril || undefined,
       sortBy: this.filters.sortBy || undefined,
       sortDesc: this.filters.sortDesc || undefined,
     };
@@ -263,6 +267,12 @@ export class Emos implements OnInit, OnDestroy {
   }
 
   onFilterChange(): void {
+    this.load(1);
+  }
+
+  setSubtab(pendientesLecturaAbril: boolean): void {
+    if (this.soloPendientesLecturaAbril === pendientesLecturaAbril) return;
+    this.soloPendientesLecturaAbril = pendientesLecturaAbril;
     this.load(1);
   }
 
@@ -300,6 +310,7 @@ export class Emos implements OnInit, OnDestroy {
       sinCertificado: this.filters.sinCertificado || undefined,
       sinEmoCompleto: this.filters.sinEmoCompleto || undefined,
       sinInterconsulta: this.filters.sinInterconsulta || undefined,
+      pendienteLecturaAbril: this.soloPendientesLecturaAbril || undefined,
       sortBy: this.filters.sortBy || undefined,
       sortDesc: this.filters.sortDesc || undefined,
     };
@@ -392,6 +403,11 @@ export class Emos implements OnInit, OnDestroy {
   abrirDocumentos(item: EmoPorTrabajadorDto, event: MouseEvent): void {
     event.stopPropagation();
     this.emoDocumentos = item;
+  }
+
+  onDocumentosClosed(): void {
+    this.emoDocumentos = null;
+    this.load(this.currentPage);
   }
 
   abrirEditar(item: EmoPorTrabajadorDto, event: MouseEvent): void {

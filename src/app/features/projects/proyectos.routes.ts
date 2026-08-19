@@ -10,9 +10,12 @@ import { CronogramaActividades } from './cronograma-actividades/cronograma-activ
 import { ProyectosCronogramaList } from './cronograma-actividades/proyectos-cronograma-list';
 import { CronogramaDashboard } from './cronograma-dashboard/cronograma-dashboard';
 import { ActasReunion } from './actas-reunion/actas-reunion';
+import { ActasReunionDashboard } from './actas-reunion/dashboard/actas-reunion-dashboard';
 import { ReunionDetail } from './actas-reunion/reunion-detail/reunion-detail';
 import { ReunionAgenda } from './actas-reunion/reunion-agenda/reunion-agenda';
 import { ActasReunionConfiguracion } from './actas-reunion/configuracion/actas-reunion-configuracion';
+import { AcuerdoDecision } from './actas-reunion/acuerdo-decision/acuerdo-decision';
+import { AcuerdosBusqueda } from './actas-reunion/acuerdos-busqueda/acuerdos-busqueda';
 
 import { ConfiguracionInicial } from './planeamiento-bim/configuracion-inicial/configuracion-inicial';
 import { CargaDiaria } from './planeamiento-bim/carga-diaria/carga-diaria';
@@ -87,7 +90,15 @@ export const PROJECTS_ROUTES: Routes = [
     data: { titulo: 'DASHBOARD UDP', featureKey: 'projects.cronograma-dashboard' },
   },
   {
+    // Landing por defecto de Actas de Reunión: dashboard personal de "mis acuerdos".
     path: 'actas-reunion',
+    component: ActasReunionDashboard,
+    canActivate: [roleGuard],
+    data: { titulo: 'MIS ACUERDOS', featureKey: 'projects.actas-reunion' },
+  },
+  {
+    // Antes de `actas-reunion/:reunionId` para que el parámetro no capture "lista".
+    path: 'actas-reunion/lista',
     component: ActasReunion,
     canActivate: [roleGuard],
     data: { titulo: 'ACTAS DE REUNIÓN', featureKey: 'projects.actas-reunion' },
@@ -100,11 +111,26 @@ export const PROJECTS_ROUTES: Routes = [
     data: { titulo: 'CONFIGURACIÓN DE ACTAS DE REUNIÓN', featureKey: 'projects.actas-reunion' },
   },
   {
+    // Antes de `actas-reunion/:reunionId` para que el parámetro no capture "acuerdos".
+    path: 'actas-reunion/acuerdos',
+    component: AcuerdosBusqueda,
+    canActivate: [roleGuard],
+    data: { titulo: 'ACUERDOS', featureKey: 'projects.actas-reunion' },
+  },
+  {
     // Antes de `actas-reunion/:reunionId` por especificidad (mismo motivo que "configuracion").
     path: 'actas-reunion/:reunionId/agenda',
     component: ReunionAgenda,
     canActivate: [roleGuard],
     data: { titulo: 'AGENDA DE REUNIÓN', featureKey: 'projects.actas-reunion' },
+  },
+  {
+    // No usa :reunionId (el id que trae es el de reunion_acuerdo_responsable): va antes de
+    // `actas-reunion/:reunionId` para que "acuerdo" no se capture como si fuera un id de reunión.
+    path: 'actas-reunion/acuerdo/:id',
+    component: AcuerdoDecision,
+    canActivate: [roleGuard],
+    data: { titulo: 'ACUERDO DE REUNIÓN', featureKey: 'projects.actas-reunion' },
   },
   {
     path: 'actas-reunion/:reunionId',
