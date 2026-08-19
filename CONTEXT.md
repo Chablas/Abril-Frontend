@@ -5263,3 +5263,86 @@ ESM). No se probó visualmente en navegador en esta sesión (el usuario verifica
   hasta que se corran.
 - Excluido a propósito de este push: repo `plataforma-cursos` (piloto LOTO en rama separada,
   no tocar git/deploy todavía).
+
+## Sesión 2026-08-19 (tarde) — Bugfix Portafolio BIM (freeze de vista) + selector de fecha en export PDF
+
+### 1) Bug: pantalla pegada en skeleton en `/projects/planeamiento-bim/portafolio`
+Reportado por el usuario probando en localhost:4200 (dev): los 2 GET (`portafolio/kpis`,
+`portafolio/proyectos`) respondían 200 OK en segundos, pero la vista se quedaba
+indefinidamente en skeleton. Diagnóstico reproducido y confirmado con Chrome DevTools
+(`window.ng.getComponent`/`applyChanges`):
+
+- El estado del componente quedaba **correcto** (`loadingKpis`/`loadingProyectos` en
+  `false`, `kpis`/`proyectos` poblados) pero Angular no volvía a correr un tick de
+  change detection automático al resolver el subscribe — la vista se quedaba
+  literalmente congelada hasta la próxima interacción real (click en un botón con
+  handler propio la destrababa).
+- **No es específico de Portafolio ni de tener 2 llamadas HTTP concurrentes**: se
+  probó aislando a una sola llamada (`cargarKpis()` sola, sin `cargarProyectos()`) y
+  el freeze ocurrió igual. Se descartó `runOutsideAngular` de
+  `SessionRefreshService`/`RealtimeService` como causa (ambos re-entran bien a la zona
+  con `zone.run()` y corren en toda la sesión, no solo en Portafolio). `NgZone.run()`
+  explícito envolviendo el callback tampoco lo arregló.
+- Es un problema **sistémico ya conocido en este codebase** (Angular 21 + zone.js +
+  `provideHttpClient(withFetch())` en este entorno de dev no dispara el tick
+  automático de forma confiable tras un subscribe HTTP): `dashboard.ts` (la página
+  hermana de este mismo módulo) y `actas-reunion-dashboard.ts` **ya usaban** el mismo
+  patrón de `ChangeDetectorRef.detectChanges()` explícito antes de esta sesión, y
+  `CONTEXT.md` ya documentaba la convención ("Cambios manuales con
+  `ChangeDetectorRef.detectChanges()` después de async") con un caso previo idéntico
+  (`activar-empresa.component.ts`). 206 archivos del repo ya usan `detectChanges()`.
+- **Fix**: `portafolio.ts` ahora inyecta `ChangeDetectorRef` y llama
+  `this.cdr.detectChanges()` en los 4 callbacks (`next`/`error` de `cargarKpis()` y
+  `cargarProyectos()`), igual que `dashboard.ts`.
+
+### 2) Bug secundario (no era la causa del freeze, pero real): NG0100 en Layout
+Encontrado en el camino, mientras se descartaban hipótesis: `AbrilPageHeaderComponent
+.ngOnInit()` llama `LayoutService.registerPageHeader()`, que hacía `hasPageHeader$.next()`
+**síncrono**, mutando un campo de `Layout` (el padre) a mitad del mismo ciclo de CD en
+el que `Layout` ya había evaluado su `*ngIf` con el valor viejo — dispara
+`ExpressionChangedAfterItHasBeenCheckedError` en **cualquier** página con
+`app-abril-page-header` (no solo Portafolio), aunque normalmente no se nota porque no
+bloqueaba la vista.
+
+- **Fix**: `layout.service.ts` — `registerPageHeader()`/`unregisterPageHeader()` ahora
+  difieren el `hasPageHeader$.next()` a un microtask (`Promise.resolve().then(...)`),
+  moviendo la mutación a un ciclo de CD propio y limpio.
+- Probado con recarga limpia en Cronograma Actividades y Dashboard UDP (páginas
+  preexistentes con el mismo header compartido): ambas renderizan correctamente, sin
+  el NG0100 de `_Layout` y sin regresiones.
+
+### 3) Selector de fecha para exportar PDF (feature pedida por el usuario)
+El endpoint `POST portafolio/{projectId}/export-pdf?fecha=` ya soportaba `fecha` en
+backend (probado); el frontend siempre mandaba la fecha de hoy. Se agregó:
+
+- Popover pequeño anclado al botón de exportar (columna Acciones de la tabla), en vez
+  de un modal completo — abre con `abrirExportarPopover(p, event)`, calcula su
+  posición con `position: fixed` + `getBoundingClientRect()` del botón (evita que se
+  recorte dentro de `.abril-table-wrap`, que hace scroll interno con `overflow-y:
+  auto`).
+- Campo `<input type="date">` con clases `.bim-input`/`.date-select` (mismo criterio
+  visual que Carga Diaria/Dashboard de detalle de este módulo — duplicadas
+  localmente en `portafolio.css`, mismo patrón que ya usan esas 2 páginas, no hay
+  token global para esto en el módulo `planeamiento-bim`).
+- Default: fecha de hoy. Cierra con "Cancelar" o clic en el backdrop. Al confirmar
+  (`confirmarExportarPdf()`), dispara el POST con la fecha elegida.
+- Verificado en navegador: descarga real de PDF con fecha distinta a hoy
+  (`ProgramacionDiaria_7_2026-08-10.pdf`), sin errores en consola. Mantiene el manejo
+  de error existente (F9: `Swal.fire` con mensaje distinguible 401/403).
+
+### Archivos clave
+- `planeamiento-bim/portafolio/portafolio.ts` (detectChanges + lógica de popover)
+- `planeamiento-bim/portafolio/portafolio.html` (popover de fecha)
+- `planeamiento-bim/portafolio/portafolio.css` (estilos del popover + `.bim-input`/`.date-select` locales)
+- `core/services/layout.service.ts` (fix NG0100)
+
+### Verificado
+`npx ng build`: 0 errores, solo warnings preexistentes de terceros. Probado
+extensamente en navegador (Chrome, dev server local): freeze reproducido y confirmado
+arreglado en múltiples recargas limpias; popover de export probado end-to-end
+(abrir/cancelar/confirmar con fecha distinta, descarga real de PDF).
+
+### Pendiente
+- Nada pendiente de esta sesión — feature y fixes verificados end-to-end en navegador
+  por Claude; falta que el usuario los revise en su propia sesión de navegador si
+  quiere una segunda confirmación visual.
