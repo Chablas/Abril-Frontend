@@ -5346,3 +5346,11 @@ arreglado en múltiples recargas limpias; popover de export probado end-to-end
 - Nada pendiente de esta sesión — feature y fixes verificados end-to-end en navegador
   por Claude; falta que el usuario los revise en su propia sesión de navegador si
   quiere una segunda confirmación visual.
+
+## Merge a master 2026-08-19 (tarde)
+
+Rama `victor-frontend` (sesión anterior: bugfix freeze Portafolio BIM + NG0100 Layout +
+selector de fecha en export PDF, detalle arriba) mergeada directo a `master` a pedido
+del usuario ("guardar master"), sobre `origin/master` ya actualizado con los cambios de
+Amonestaciones de otra sesión (`8165652f..a43d312d`). Merge limpio, sin conflictos.
+`ng build`: 0 errores.
