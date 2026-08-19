@@ -23,11 +23,19 @@ export class LayoutService {
 
   registerPageHeader(): void {
     this.pageHeaderCount++;
-    this.hasPageHeader$.next(this.pageHeaderCount > 0);
+    // El emit se difiere a un microtask a propósito: llamado desde el ngOnInit de un
+    // hijo (AbrilPageHeaderComponent), un next() síncrono aquí muta el campo de Layout
+    // a mitad del mismo ciclo de CD en el que Layout ya evaluó su *ngIf con el valor
+    // viejo — dispara NG0100 (ExpressionChangedAfterItHasBeenCheckedError) y, peor,
+    // puede dejar colgado el conteo de microtareas de NgZone así que ningún tick
+    // automático vuelve a dispararse (visto en Portafolio BIM: HTTP resuelve y muta el
+    // estado del componente, pero la vista nunca se repinta sola). Diferir el next()
+    // lo mueve a un ciclo de CD propio y limpio.
+    Promise.resolve().then(() => this.hasPageHeader$.next(this.pageHeaderCount > 0));
   }
 
   unregisterPageHeader(): void {
     this.pageHeaderCount = Math.max(0, this.pageHeaderCount - 1);
-    this.hasPageHeader$.next(this.pageHeaderCount > 0);
+    Promise.resolve().then(() => this.hasPageHeader$.next(this.pageHeaderCount > 0));
   }
 }

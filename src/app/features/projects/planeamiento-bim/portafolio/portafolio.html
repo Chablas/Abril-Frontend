@@ -162,7 +162,7 @@
                     class="btn-icon-udp"
                     title="Exportar PDF de programación diaria"
                     [disabled]="exportingProjectId === p.projectId"
-                    (click)="exportarPdf(p)"
+                    (click)="abrirExportarPopover(p, $event)"
                   >
                     <i class="ti" [class.ti-file-download]="exportingProjectId !== p.projectId" [class.ti-loader-2]="exportingProjectId === p.projectId"></i>
                   </button>
@@ -214,3 +214,29 @@
     ></app-search-select>
   </div>
 </app-filter-modal>
+
+<!-- ── Popover: fecha para exportar PDF de programación diaria ────────── -->
+<ng-container *ngIf="exportPopoverProject as ep">
+  <div class="export-popover-backdrop" (click)="cerrarExportarPopover()"></div>
+  <div class="export-popover" [style.top.px]="exportPopoverPos.top" [style.left.px]="exportPopoverPos.left">
+    <div class="export-popover-title">Exportar PDF — {{ ep.projectNombre }}</div>
+    <label class="export-popover-label" for="exportFechaInput">Fecha de programación diaria</label>
+    <input
+      id="exportFechaInput"
+      type="date"
+      class="bim-input date-select"
+      [(ngModel)]="exportPopoverFecha"
+    />
+    <div class="export-popover-actions">
+      <button type="button" class="btn-popover-cancel" (click)="cerrarExportarPopover()">Cancelar</button>
+      <button
+        type="button"
+        class="btn-popover-confirm"
+        [disabled]="!exportPopoverFecha"
+        (click)="confirmarExportarPdf()"
+      >
+        Exportar
+      </button>
+    </div>
+  </div>
+</ng-container>

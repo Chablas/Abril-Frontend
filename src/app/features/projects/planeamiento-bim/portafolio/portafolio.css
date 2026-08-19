@@ -355,6 +355,113 @@
   margin-top: 16px;
 }
 
+/* ── Popover: fecha para exportar PDF ───────────────────────────── */
+.export-popover-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+
+.export-popover {
+  position: fixed;
+  z-index: 1001;
+  width: 240px;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.export-popover-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1e3a5f;
+  margin-bottom: 2px;
+}
+
+.export-popover-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.export-popover .date-select {
+  width: 100%;
+}
+
+.export-popover-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.btn-popover-cancel {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-popover-cancel:hover {
+  background: #f1f5f9;
+}
+
+.btn-popover-confirm {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background: #1e3a5f;
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-popover-confirm:hover:not(:disabled) {
+  background: #16304d;
+}
+
+.btn-popover-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Duplicado a propósito (mismo criterio que dashboard.ts/carga-diaria.ts de este
+   módulo: cada página define su propia copia local, sin token global compartido). */
+.bim-input {
+  height: 38px;
+  padding: 0 12px;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #1e293b;
+  background: #ffffff;
+  outline: none;
+}
+
+.bim-input:focus {
+  border-color: #1e3a5f;
+}
+
+.date-select {
+  height: 38px;
+  font-weight: 600;
+  color: #1e3a5f;
+  border-color: #cbd5e1;
+}
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   .kpi-grid {

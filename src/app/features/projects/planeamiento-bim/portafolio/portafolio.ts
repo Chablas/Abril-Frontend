@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
@@ -28,6 +29,7 @@ function hoyISO(): string {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     AbrilPageHeaderComponent,
     FilterTriggerButton,
     FilterModal,
@@ -53,7 +55,13 @@ export class PlaneamientoBimPortafolio implements OnInit {
 
   // ── Exportar PDF ────────────────────────────────────────────
   exportingProjectId: number | null = null;
-  readonly fechaExport = hoyISO();
+  /** Proyecto para el que está abierto el popover de selección de fecha (null = cerrado). */
+  exportPopoverProject: ProyectoPortafolioDto | null = null;
+  exportPopoverFecha = hoyISO();
+  /** Posición fija calculada desde el botón que abrió el popover (getBoundingClientRect) —
+   *  evita que se recorte dentro de `.abril-table-wrap`, que scrollea con overflow-y. */
+  exportPopoverPos = { top: 0, left: 0 };
+  private static readonly EXPORT_POPOVER_WIDTH = 240;
 
   // ── Filtros + paginación (obligatorio en toda tabla abril-table) ──
   searchText = '';
@@ -72,6 +80,7 @@ export class PlaneamientoBimPortafolio implements OnInit {
   constructor(
     private bimService: PlaneamientoBimService,
     private router: Router,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -86,14 +95,24 @@ export class PlaneamientoBimPortafolio implements OnInit {
     this.loadingKpis = true;
     this.kpisError = null;
 
+    // detectChanges() explícito tras cada respuesta: en dev, Angular no vuelve a correr
+    // un tick automático al resolver este subscribe — el estado del componente queda
+    // correcto pero la vista se congela en skeleton hasta la próxima interacción real
+    // (bug reproducido y confirmado no específico de esta página ni de tener 2 llamadas
+    // concurrentes: ocurre igual con una sola). Es el mismo patrón ya establecido en
+    // dashboard.ts (la página hermana de este módulo) y documentado como convención en
+    // CONTEXT.md ("Cambios manuales con ChangeDetectorRef.detectChanges() después de
+    // async") — no es un problema de OnPush (este componente usa la estrategia default).
     this.bimService.getPortafolioKpis().subscribe({
       next: (data) => {
         this.kpis = data;
         this.loadingKpis = false;
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.loadingKpis = false;
         this.kpisError = this.mensajeError(err, 'No se pudieron cargar los indicadores del portafolio.');
+        this.cdr.detectChanges();
       },
     });
   }
@@ -107,10 +126,12 @@ export class PlaneamientoBimPortafolio implements OnInit {
         this.proyectos = data || [];
         this.pager.reset();
         this.loadingProyectos = false;
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.loadingProyectos = false;
         this.proyectosError = this.mensajeError(err, 'No se pudo cargar el listado de proyectos del portafolio.');
+        this.cdr.detectChanges();
       },
     });
   }
@@ -202,23 +223,46 @@ export class PlaneamientoBimPortafolio implements OnInit {
     });
   }
 
-  exportarPdf(p: ProyectoPortafolioDto): void {
+  abrirExportarPopover(p: ProyectoPortafolioDto, event: MouseEvent): void {
+    const btn = event.currentTarget as HTMLElement;
+    const rect = btn.getBoundingClientRect();
+    const left = Math.min(rect.left, window.innerWidth - PlaneamientoBimPortafolio.EXPORT_POPOVER_WIDTH - 8);
+    this.exportPopoverPos = { top: rect.bottom + 6, left: Math.max(8, left) };
+    this.exportPopoverFecha = hoyISO();
+    this.exportPopoverProject = p;
+  }
+
+  cerrarExportarPopover(): void {
+    this.exportPopoverProject = null;
+  }
+
+  confirmarExportarPdf(): void {
+    const p = this.exportPopoverProject;
+    if (!p || !this.exportPopoverFecha) return;
+    const fecha = this.exportPopoverFecha;
+    this.exportPopoverProject = null;
+    this.exportarPdf(p, fecha);
+  }
+
+  private exportarPdf(p: ProyectoPortafolioDto, fecha: string): void {
     this.exportingProjectId = p.projectId;
 
-    this.bimService.exportarPdfProyecto(p.projectId, this.fechaExport).subscribe({
+    this.bimService.exportarPdfProyecto(p.projectId, fecha).subscribe({
       next: (blob) => {
         this.exportingProjectId = null;
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `ProgramacionDiaria_${p.projectId}_${this.fechaExport}.pdf`;
+        a.download = `ProgramacionDiaria_${p.projectId}_${fecha}.pdf`;
         a.click();
         window.URL.revokeObjectURL(url);
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.exportingProjectId = null;
         const message = this.mensajeError(err, 'No se pudo generar el PDF de programación diaria.');
         Swal.fire({ icon: 'error', title: 'Error', text: message, confirmButtonColor: '#1E3A5F' });
+        this.cdr.detectChanges();
       },
     });
   }
