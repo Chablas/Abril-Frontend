@@ -5139,3 +5139,51 @@ probó visualmente en navegador en esta sesión.
   anterior que había dejado el checkout ahí tras el merge) y se trasladó a `victor-frontend`
   recién al cerrar sesión con "guardar rama" — para la próxima sesión, verificar rama antes
   de empezar a codear.
+
+## Sesión 2026-08-19 — Lectura de EMO por médico interno de Abril + búsqueda de acuerdos
+
+### 1) EMOs: lectura a cargo del médico ocupacional de Abril (no la clínica)
+Backend implementado en la misma sesión (ver CONTEXT.md de Abril_Backend, columna
+`worker_emos.requiere_lectura_abril` + endpoint `POST /emos/{id}/lectura-abril`). Frontend:
+
+- **`completar-emo.ts`/`.html`** (clínica, agenda): nuevo checkbox "Será leído por el médico
+  de Abril Grupo Inmobiliario", excluyente con el checkbox existente "Se realizó lectura del
+  EMO" — al marcarlo se limpia fecha/archivo de lectura y se manda `requiereLecturaAbril: true`
+  en el DTO de creación.
+- **`editar-emo-modal.ts`/`.html`** (interno, SSOMA): mismo checkbox, para marcar/desmarcar el
+  flag en cualquier EMO ya registrado. Se manda siempre explícito en el payload (no
+  condicional como `clinicaId`/`medicoId`) porque el DTO de backend es `bool` no-nullable —
+  omitirlo lo resetearía a `false` en silencio.
+- **`emos.ts`/`.html`**: subtab nueva arriba de la tabla, "Todos los EMOs" | "Pendientes de
+  lectura (médico Abril)" (`soloPendientesLecturaAbril` + `setSubtab()`), filtra vía
+  `EmoPorTrabajadorQuery.pendienteLecturaAbril`.
+- **`documentos-emo-modal.ts`/`.html`**: getter `pendienteLecturaAbril` (`emo.requiereLecturaAbril
+  && !emo.urlResultado`). Cuando es true, la fila "Lectura EMO" muestra "Pendiente · la lee el
+  médico de Abril", un campo de fecha (`abril-field`/`abril-field-label`/`abril-field-input`
+  globales), y el botón cambia a "Subir y aprobar" — pega a `EmoService.completarLecturaAbril()`
+  (endpoint nuevo) en vez del genérico `subirDocumentoEmo()`. `emos.ts.onDocumentosClosed()`
+  recarga la lista al cerrar el modal (antes solo limpiaba el input).
+
+### 2) Actas de Reunión: búsqueda de acuerdos + coautores
+Componente nuevo `actas-reunion/acuerdos-busqueda/` (html+ts). Cambios en `acuerdo-form`,
+`acuerdos-pendientes-anteriores`, `reunion-detail`, `actas-reunion-dashboard`,
+`actas-reunion.service.ts`, `actas-reunion.dto.ts`, `proyectos.routes.ts`,
+`actas-reunion-tabs.ts` — depende de las 2 migraciones SQL del backend (coautor +
+es_informativo), todavía sin aplicar contra la base real.
+
+### 3) Evaluaciones — ajustes menores
+`dashboard-gerencia.ts`, `historial.ts`, `ver-evaluacion-contratistas.ts`,
+`ev-periodo.service.ts` — acarreados de sesión(es) anterior(es).
+
+### Verificado
+`npx ng build`: build correcto, solo warnings preexistentes de terceros (canvg/core-js no
+ESM). No se probó visualmente en navegador en esta sesión (el usuario verifica UI él mismo).
+
+### Pendiente
+- Verificación visual en navegador de la subtab de EMOs y del flujo completo de "Pendientes
+  de lectura" (subir + aprobar) contra un EMO real.
+- Las 2 migraciones SQL de Actas de Reunión (coautor + es_informativo) del backend siguen sin
+  aplicarse contra la base — el frontend de "búsqueda de acuerdos"/coautores no funcionará
+  hasta que se corran.
+- Excluido a propósito de este push: repo `plataforma-cursos` (piloto LOTO en rama separada,
+  no tocar git/deploy todavía).
