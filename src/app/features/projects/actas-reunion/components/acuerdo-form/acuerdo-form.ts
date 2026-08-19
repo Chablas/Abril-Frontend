@@ -56,6 +56,7 @@ export class AcuerdoForm implements OnInit {
   criticidades = CRITICIDADES;
   requiereAceptacion = false;
   requiereEvidencia = false;
+  esInformativo = false;
   evidenciaUrl: string | null = null;
   evidenciaNombre: string | null = null;
   subiendoEvidencia = false;
@@ -88,6 +89,7 @@ export class AcuerdoForm implements OnInit {
       this.criticidad = this.acuerdo.criticidad;
       this.requiereAceptacion = this.acuerdo.requiereAceptacion;
       this.requiereEvidencia = this.acuerdo.requiereEvidencia;
+      this.esInformativo = this.acuerdo.esInformativo;
       this.evidenciaUrl = this.acuerdo.evidenciaUrl;
       this.evidenciaNombre = this.evidenciaUrl ? decodeURIComponent(this.evidenciaUrl.split('/').pop() ?? '') : null;
       this.responsables = this.acuerdo.responsables.map((r) => ({
@@ -95,6 +97,14 @@ export class AcuerdoForm implements OnInit {
         nombre: r.workerNombre,
       }));
       this.responsablePrincipalWorkerId = this.acuerdo.responsables.find((r) => r.esPrincipal)?.workerId ?? null;
+    }
+  }
+
+  /** Un informativo no requiere seguimiento: no tiene sentido pedir aceptación ni evidencia. */
+  onEsInformativoChange(): void {
+    if (this.esInformativo) {
+      this.requiereAceptacion = false;
+      this.requiereEvidencia = false;
     }
   }
 
@@ -180,6 +190,7 @@ export class AcuerdoForm implements OnInit {
       requiereAceptacion: this.requiereAceptacion,
       requiereEvidencia: this.requiereEvidencia,
       evidenciaUrl: this.evidenciaUrl,
+      esInformativo: this.esInformativo,
       responsableWorkerIds: this.responsables.map((r) => r.workerId),
       responsablePrincipalWorkerId: this.responsables.length > 1 ? this.responsablePrincipalWorkerId : null,
     };

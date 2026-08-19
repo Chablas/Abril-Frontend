@@ -104,4 +104,15 @@ export class EmoService {
       headers: buildAuthHeaders(),
     });
   }
+
+  /** Completa la lectura de un EMO "Pendiente de lectura" (médico de Abril): sube el adjunto,
+   *  guarda la fecha y aprueba, siguiendo el mismo proceso que cuando lo sube la clínica. */
+  completarLecturaAbril(emoId: number, archivo: File, fechaLectura: string): Observable<{ url: string; message: string }> {
+    const fd = new FormData();
+    fd.append('archivo', archivo, archivo.name);
+    fd.append('fechaLectura', fechaLectura);
+    return this.http.post<{ url: string; message: string }>(`${this.apiUrl}/${emoId}/lectura-abril`, fd, {
+      headers: buildAuthHeaders(),
+    });
+  }
 }

@@ -63,37 +63,44 @@
       </app-search-select>
     </div>
 
-    <!-- ── Aceptación / evidencia ───────────────────────────────────────────── -->
+    <!-- ── Informativo / aceptación / evidencia ─────────────────────────────── -->
     <div class="flex flex-col gap-2">
       <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-        <input type="checkbox" [(ngModel)]="requiereAceptacion" class="accent-[var(--color-abril-primary)]" />
-        Requiere que cada responsable acepte el acuerdo
+        <input type="checkbox" [(ngModel)]="esInformativo" (ngModelChange)="onEsInformativoChange()" class="accent-[var(--color-abril-primary)]" />
+        Es informativo (solo queda registrado, no requiere seguimiento de nadie)
       </label>
-      <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-        <input type="checkbox" [(ngModel)]="requiereEvidencia" class="accent-[var(--color-abril-primary)]" />
-        Requiere evidencia para poder marcarse como cumplido
-      </label>
-      <p *ngIf="requiereEvidencia && !esEdicion" class="text-[11px] text-gray-400 pl-6">
-        Podrás subir el archivo más adelante, cuando edites este acuerdo.
-      </p>
 
-      <div *ngIf="requiereEvidencia && esEdicion" class="pl-6 flex flex-col gap-1.5">
-        <label class="text-xs font-medium text-gray-500">Archivo de evidencia</label>
-        <div class="flex items-center gap-2">
-          <label class="h-[38px] px-4 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-2">
-            <span class="ti ti-upload text-base"></span>
-            {{ subiendoEvidencia ? 'Subiendo...' : 'Elegir archivo' }}
-            <input type="file" class="hidden" [disabled]="subiendoEvidencia" (change)="onEvidenciaSeleccionada($event)" />
-          </label>
-          <a *ngIf="evidenciaUrl" [href]="evidenciaUrl" target="_blank" rel="noopener noreferrer"
-            class="text-sm truncate max-w-[220px]" style="color:var(--color-abril-primary)" [title]="evidenciaNombre ?? evidenciaUrl">
-            {{ evidenciaNombre ?? 'Ver archivo' }}
-          </a>
-          <button *ngIf="evidenciaUrl" type="button" (click)="quitarEvidencia()" class="text-red-400 hover:text-red-600 cursor-pointer">
-            <span class="ti ti-x text-sm"></span>
-          </button>
+      <ng-container *ngIf="!esInformativo">
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="requiereAceptacion" class="accent-[var(--color-abril-primary)]" />
+          Requiere que cada responsable acepte el acuerdo
+        </label>
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="requiereEvidencia" class="accent-[var(--color-abril-primary)]" />
+          Requiere evidencia para poder marcarse como cumplido
+        </label>
+        <p *ngIf="requiereEvidencia && !esEdicion" class="text-[11px] text-gray-400 pl-6">
+          Podrás subir el archivo más adelante, cuando edites este acuerdo.
+        </p>
+
+        <div *ngIf="requiereEvidencia && esEdicion" class="pl-6 flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-gray-500">Archivo de evidencia</label>
+          <div class="flex items-center gap-2">
+            <label class="h-[38px] px-4 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-2">
+              <span class="ti ti-upload text-base"></span>
+              {{ subiendoEvidencia ? 'Subiendo...' : 'Elegir archivo' }}
+              <input type="file" class="hidden" [disabled]="subiendoEvidencia" (change)="onEvidenciaSeleccionada($event)" />
+            </label>
+            <a *ngIf="evidenciaUrl" [href]="evidenciaUrl" target="_blank" rel="noopener noreferrer"
+              class="text-sm truncate max-w-[220px]" style="color:var(--color-abril-primary)" [title]="evidenciaNombre ?? evidenciaUrl">
+              {{ evidenciaNombre ?? 'Ver archivo' }}
+            </a>
+            <button *ngIf="evidenciaUrl" type="button" (click)="quitarEvidencia()" class="text-red-400 hover:text-red-600 cursor-pointer">
+              <span class="ti ti-x text-sm"></span>
+            </button>
+          </div>
         </div>
-      </div>
+      </ng-container>
     </div>
 
     <div class="w-48">

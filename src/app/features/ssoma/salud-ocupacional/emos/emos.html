@@ -15,6 +15,16 @@
 
 <section class="page-container px-3 py-4 flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
 
+  <!-- Subtabs -->
+  <div class="subtabs">
+    <button type="button" class="subtab-btn" [class.subtab-btn--active]="!soloPendientesLecturaAbril" (click)="setSubtab(false)">
+      Todos los EMOs
+    </button>
+    <button type="button" class="subtab-btn" [class.subtab-btn--active]="soloPendientesLecturaAbril" (click)="setSubtab(true)">
+      Pendientes de lectura (médico Abril)
+    </button>
+  </div>
+
   <!-- Tabla -->
   <div class="abril-table-wrap">
       <table class="abril-table">
@@ -345,5 +355,5 @@
 <app-documentos-emo-modal
   [emo]="emoDocumentos"
   [open]="emoDocumentos !== null"
-  (closed)="emoDocumentos = null"
+  (closed)="onDocumentosClosed()"
 />

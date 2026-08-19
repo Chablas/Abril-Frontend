@@ -3,6 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
+  AcuerdoBusquedaFiltro,
+  AcuerdoBusquedaItemDTO,
   AcuerdoMarcarCumplidoRequest,
   AcuerdoPendienteAnteriorDTO,
   AcuerdoReprogramarRequest,
@@ -50,6 +52,24 @@ export class ActasReunionService {
     if (filtro.desde) params = params.set('desde', filtro.desde);
     if (filtro.hasta) params = params.set('hasta', filtro.hasta);
     return params;
+  }
+
+  private acuerdoBusquedaParams(filtro: AcuerdoBusquedaFiltro): HttpParams {
+    let params = new HttpParams().set('page', filtro.page).set('pageSize', filtro.pageSize);
+    if (filtro.estado) params = params.set('estado', filtro.estado);
+    if (filtro.responsableWorkerId != null) params = params.set('responsableWorkerId', filtro.responsableWorkerId);
+    if (filtro.desde) params = params.set('desde', filtro.desde);
+    if (filtro.hasta) params = params.set('hasta', filtro.hasta);
+    if (filtro.texto) params = params.set('texto', filtro.texto);
+    return params;
+  }
+
+  /** Vista global: acuerdos de todas las reuniones donde el usuario participó. */
+  getAcuerdos(filtro: AcuerdoBusquedaFiltro): Observable<PagedResultDTO<AcuerdoBusquedaItemDTO>> {
+    return this.http.get<PagedResultDTO<AcuerdoBusquedaItemDTO>>(`${this.apiUrl}/acuerdos`, {
+      headers: this.authHeaders(),
+      params: this.acuerdoBusquedaParams(filtro),
+    });
   }
 
   /** Carga inicial: filtros (proyectos, estados) + primera página de reuniones. */

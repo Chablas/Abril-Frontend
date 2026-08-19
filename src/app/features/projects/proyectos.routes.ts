@@ -14,6 +14,7 @@ import { ReunionDetail } from './actas-reunion/reunion-detail/reunion-detail';
 import { ReunionAgenda } from './actas-reunion/reunion-agenda/reunion-agenda';
 import { ActasReunionConfiguracion } from './actas-reunion/configuracion/actas-reunion-configuracion';
 import { AcuerdoDecision } from './actas-reunion/acuerdo-decision/acuerdo-decision';
+import { AcuerdosBusqueda } from './actas-reunion/acuerdos-busqueda/acuerdos-busqueda';
 
 import { ConfiguracionInicial } from './planeamiento-bim/configuracion-inicial/configuracion-inicial';
 import { CargaDiaria } from './planeamiento-bim/carga-diaria/carga-diaria';
@@ -90,6 +91,13 @@ export const PROJECTS_ROUTES: Routes = [
     component: ActasReunionConfiguracion,
     canActivate: [roleGuard],
     data: { titulo: 'CONFIGURACIÓN DE ACTAS DE REUNIÓN', featureKey: 'projects.actas-reunion' },
+  },
+  {
+    // Antes de `actas-reunion/:reunionId` para que el parámetro no capture "acuerdos".
+    path: 'actas-reunion/acuerdos',
+    component: AcuerdosBusqueda,
+    canActivate: [roleGuard],
+    data: { titulo: 'ACUERDOS', featureKey: 'projects.actas-reunion' },
   },
   {
     // Antes de `actas-reunion/:reunionId` por especificidad (mismo motivo que "configuracion").

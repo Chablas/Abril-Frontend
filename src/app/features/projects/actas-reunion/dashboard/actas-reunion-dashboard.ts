@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -31,11 +31,18 @@ export class ActasReunionDashboard implements OnInit {
   nuevaFecha = '';
   motivo = '';
 
+  marcando = false;
+  comentarioCumplimiento = '';
+  evidenciaUrlNueva: string | null = null;
+  evidenciaNombreNueva: string | null = null;
+  subiendoEvidencia = false;
+
   constructor(
     private service: ActasReunionService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private router: Router,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -48,10 +55,12 @@ export class ActasReunionDashboard implements OnInit {
       next: (data) => {
         this.acuerdos = data;
         this.loaderService.hide();
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         this.errorService.handleError(err);
+        this.cdr.detectChanges();
       },
     });
   }
@@ -126,42 +135,84 @@ export class ActasReunionDashboard implements OnInit {
   abrirAcuerdo(a: MisAcuerdoDTO): void {
     this.acuerdoSeleccionado = a;
     this.reprogramando = false;
+    this.marcando = false;
   }
 
   cerrarModal(): void {
     this.acuerdoSeleccionado = null;
     this.reprogramando = false;
+    this.marcando = false;
   }
 
-  marcarCumplido(): void {
+  abrirMarcarCumplido(): void {
+    this.reprogramando = false;
+    this.marcando = true;
+    this.comentarioCumplimiento = '';
+    this.evidenciaUrlNueva = this.acuerdoSeleccionado?.evidenciaUrl ?? null;
+    this.evidenciaNombreNueva = null;
+  }
+
+  /** Sube el archivo como adjunto de la reunión (mismo mecanismo que "Archivos adjuntos" del acta)
+   * y lo deja listo para usarse como evidencia al confirmar. */
+  onEvidenciaSeleccionada(event: Event): void {
+    const a = this.acuerdoSeleccionado;
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!a || !file) return;
+
+    this.subiendoEvidencia = true;
+    this.service.subirArchivos(a.reunionId, [file]).subscribe({
+      next: (res) => {
+        this.subiendoEvidencia = false;
+        const archivo = res.archivos[0];
+        this.evidenciaUrlNueva = archivo.archivoUrl;
+        this.evidenciaNombreNueva = archivo.originalFileName;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subiendoEvidencia = false;
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+    input.value = '';
+  }
+
+  quitarEvidenciaNueva(): void {
+    this.evidenciaUrlNueva = null;
+    this.evidenciaNombreNueva = null;
+  }
+
+  confirmarMarcarCumplido(): void {
     const a = this.acuerdoSeleccionado;
     if (!a) return;
-    if (a.requiereEvidencia && !a.evidenciaUrl) {
+
+    if (a.requiereEvidencia && !this.evidenciaUrlNueva) {
       Swal.fire({
         icon: 'warning',
         title: 'Falta evidencia',
-        text: 'Este acuerdo requiere adjuntar evidencia antes de poder marcarse como cumplido. Edítalo desde el acta completa para subirla.',
+        text: 'Este acuerdo requiere adjuntar un archivo de evidencia antes de poder marcarse como cumplido.',
+        confirmButtonColor: 'var(--color-abril-primary)',
+      });
+      return;
+    }
+    if (!this.comentarioCumplimiento.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta información',
+        text: 'Indica cómo se levantó el acuerdo.',
         confirmButtonColor: 'var(--color-abril-primary)',
       });
       return;
     }
 
-    const tieneEvidencia = !!a.evidenciaUrl;
-    Swal.fire({
-      icon: 'question',
-      title: '¿Marcar acuerdo como cumplido?',
-      input: 'textarea',
-      inputLabel: tieneEvidencia ? 'Comentario (opcional)' : 'Cómo se levantó (obligatorio, no hay evidencia adjunta)',
-      inputPlaceholder: 'Describe cómo se resolvió el acuerdo...',
-      inputValidator: (value) => (!tieneEvidencia && !value?.trim() ? 'Indica cómo se levantó el acuerdo.' : undefined),
-      showCancelButton: true,
-      confirmButtonText: 'Sí, cumplido',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: 'var(--color-abril-primary)',
-    }).then((result) => {
-      if (!result.isConfirmed) return;
-      this.loaderService.show();
-      this.service.marcarAcuerdoCumplido(a.reunionAcuerdoId, { comentario: result.value?.trim() || null }).subscribe({
+    this.loaderService.show();
+    this.service
+      .marcarAcuerdoCumplido(a.reunionAcuerdoId, {
+        comentario: this.comentarioCumplimiento.trim() || null,
+        evidenciaUrl: this.evidenciaUrlNueva,
+      })
+      .subscribe({
         next: () => {
           this.loaderService.hide();
           this.cerrarModal();
@@ -172,10 +223,10 @@ export class ActasReunionDashboard implements OnInit {
           this.errorService.handleError(err);
         },
       });
-    });
   }
 
   abrirReprogramar(): void {
+    this.marcando = false;
     this.reprogramando = true;
     this.nuevaFecha = this.acuerdoSeleccionado?.fechaProgramada ?? '';
     this.motivo = '';
@@ -204,6 +255,7 @@ export class ActasReunionDashboard implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         this.errorService.handleError(err);
+        this.cdr.detectChanges();
       },
     });
   }

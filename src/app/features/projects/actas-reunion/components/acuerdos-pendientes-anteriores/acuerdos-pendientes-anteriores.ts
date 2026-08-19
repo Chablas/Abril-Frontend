@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -29,10 +29,18 @@ export class AcuerdosPendientesAnteriores implements OnInit {
   nuevaFecha = '';
   motivo = '';
 
+  /** reunionAcuerdoId del acuerdo cuyo formulario de marcar cumplido está abierto, o null. */
+  marcandoId: number | null = null;
+  comentarioCumplimiento = '';
+  evidenciaUrlNueva: string | null = null;
+  evidenciaNombreNueva: string | null = null;
+  subiendoEvidencia = false;
+
   constructor(
     private service: ActasReunionService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -41,7 +49,10 @@ export class AcuerdosPendientesAnteriores implements OnInit {
 
   private cargar(): void {
     this.service.getAcuerdosPendientesAnteriores(this.reunionId).subscribe({
-      next: (data) => (this.pendientes = data),
+      next: (data) => {
+        this.pendientes = data;
+        this.cdr.detectChanges();
+      },
       error: () => {},
     });
   }
@@ -76,46 +87,90 @@ export class AcuerdosPendientesAnteriores implements OnInit {
     return a.responsables.map((r) => (r.esPrincipal ? `★ ${r.workerNombre}` : r.workerNombre)).join(' / ');
   }
 
-  marcarCumplido(a: AcuerdoPendienteAnteriorDTO): void {
-    if (a.requiereEvidencia && !a.evidenciaUrl) {
+  abrirMarcarCumplido(a: AcuerdoPendienteAnteriorDTO): void {
+    this.reprogramandoId = null;
+    this.marcandoId = a.reunionAcuerdoId;
+    this.comentarioCumplimiento = '';
+    this.evidenciaUrlNueva = a.evidenciaUrl;
+    this.evidenciaNombreNueva = null;
+  }
+
+  cancelarMarcarCumplido(): void {
+    this.marcandoId = null;
+  }
+
+  /** Sube el archivo como adjunto de la reunión (mismo mecanismo que "Archivos adjuntos" del acta)
+   * y lo deja listo para usarse como evidencia al confirmar. */
+  onEvidenciaSeleccionada(event: Event, reunionId: number): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.subiendoEvidencia = true;
+    this.service.subirArchivos(reunionId, [file]).subscribe({
+      next: (res) => {
+        this.subiendoEvidencia = false;
+        const archivo = res.archivos[0];
+        this.evidenciaUrlNueva = archivo.archivoUrl;
+        this.evidenciaNombreNueva = archivo.originalFileName;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subiendoEvidencia = false;
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+    input.value = '';
+  }
+
+  quitarEvidenciaNueva(): void {
+    this.evidenciaUrlNueva = null;
+    this.evidenciaNombreNueva = null;
+  }
+
+  confirmarMarcarCumplido(a: AcuerdoPendienteAnteriorDTO): void {
+    if (a.requiereEvidencia && !this.evidenciaUrlNueva) {
       Swal.fire({
         icon: 'warning',
         title: 'Falta evidencia',
-        text: 'Este acuerdo requiere adjuntar evidencia antes de poder marcarse como cumplido.',
+        text: 'Este acuerdo requiere adjuntar un archivo de evidencia antes de poder marcarse como cumplido.',
+        confirmButtonColor: 'var(--color-abril-primary)',
+      });
+      return;
+    }
+    if (!this.comentarioCumplimiento.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta información',
+        text: 'Indica cómo se levantó el acuerdo.',
         confirmButtonColor: 'var(--color-abril-primary)',
       });
       return;
     }
 
-    const tieneEvidencia = !!a.evidenciaUrl;
-    Swal.fire({
-      icon: 'question',
-      title: '¿Marcar acuerdo como cumplido?',
-      input: 'textarea',
-      inputLabel: tieneEvidencia ? 'Comentario (opcional)' : 'Cómo se levantó (obligatorio, no hay evidencia adjunta)',
-      inputPlaceholder: 'Describe cómo se resolvió el acuerdo...',
-      inputValidator: (value) => (!tieneEvidencia && !value?.trim() ? 'Indica cómo se levantó el acuerdo.' : undefined),
-      showCancelButton: true,
-      confirmButtonText: 'Sí, cumplido',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: 'var(--color-abril-primary)',
-    }).then((result) => {
-      if (!result.isConfirmed) return;
-      this.loaderService.show();
-      this.service.marcarAcuerdoCumplido(a.reunionAcuerdoId, { comentario: result.value?.trim() || null }).subscribe({
+    this.loaderService.show();
+    this.service
+      .marcarAcuerdoCumplido(a.reunionAcuerdoId, {
+        comentario: this.comentarioCumplimiento.trim() || null,
+        evidenciaUrl: this.evidenciaUrlNueva,
+      })
+      .subscribe({
         next: () => {
           this.loaderService.hide();
+          this.marcandoId = null;
           this.cargar();
         },
         error: (err: HttpErrorResponse) => {
           this.loaderService.hide();
           this.errorService.handleError(err);
+          this.cdr.detectChanges();
         },
       });
-    });
   }
 
   abrirReprogramar(a: AcuerdoPendienteAnteriorDTO): void {
+    this.marcandoId = null;
     this.reprogramandoId = a.reunionAcuerdoId;
     this.nuevaFecha = a.fechaProgramada ?? '';
     this.motivo = '';
@@ -151,6 +206,7 @@ export class AcuerdosPendientesAnteriores implements OnInit {
         error: (err: HttpErrorResponse) => {
           this.loaderService.hide();
           this.errorService.handleError(err);
+          this.cdr.detectChanges();
         },
       });
   }

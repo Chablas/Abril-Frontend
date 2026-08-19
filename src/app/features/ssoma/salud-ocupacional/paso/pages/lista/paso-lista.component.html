@@ -552,7 +552,7 @@
                 <i class="ti ti-paperclip" style="font-size:0.75rem;color:#64748b"></i>
                 <span>{{ arch.archivoNombre }}</span>
                 <button type="button" class="btn-ver-evidencia"
-                  (click)="abrirVisorArchivos(e.archivos ?? [], 0)">
+                  (click)="abrirVisorArchivos(e.archivos, 0)">
                   <i class="ti ti-eye"></i> Ver
                 </button>
               </div>
@@ -562,7 +562,7 @@
                 <i class="ti ti-paperclip" style="font-size:0.75rem;color:#64748b"></i>
                 <span>{{ e.evidenciaNombre ?? 'Evidencia' }}</span>
                 <button type="button" class="btn-ver-evidencia"
-                  (click)="abrirVisorArchivos(e.archivos ?? [], 0)">
+                  (click)="abrirVisorArchivos(e.archivos, 0)">
                   <i class="ti ti-eye"></i> Ver
                 </button>
               </div>
