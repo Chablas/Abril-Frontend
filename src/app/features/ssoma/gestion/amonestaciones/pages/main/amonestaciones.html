@@ -382,17 +382,18 @@
           <div class="table-wrapper">
             <table class="data-table">
               <thead>
-                <tr><th>Código</th><th>Fecha</th><th>Tipo</th><th>Motivo / Falta</th><th>Pts</th><th>Penaliz.</th></tr>
+                <tr><th>Código</th><th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Motivo / Falta</th><th>Pts</th><th>Penaliz.</th></tr>
               </thead>
               <tbody>
                 @for (h of puntajeDto.historial; track h.id) {
-                  <tr>
+                  <tr style="cursor:pointer" (click)="verDetalle(h.id)">
                     <td><code>{{ h.codigo }}</code></td>
                     <td>{{ h.fecha | date:'dd/MM/yyyy' }}</td>
                     <td>
                       <span class="badge" [ngClass]="nivelColor(h.nivelGravedad)">{{ h.tipoSancionNombre }}</span>
                     </td>
-                    <td class="motivo-cell">{{ h.infraccionTipoNombre || '—' }}</td>
+                    <td style="font-size:11px;color:#6b7280">{{ h.infraccionTipoNombre || '—' }}</td>
+                    <td class="motivo-cell" [title]="h.descripcion">{{ h.descripcion || '—' }}</td>
                     <td class="puntos-cell">{{ h.puntosInfraccion }}</td>
                     <td>
                       @if (h.aplicaPenalizacion) {
@@ -709,7 +710,13 @@
               <div><label>Empresa</label><span>{{ detalle.empresaNombre }}</span></div>
               <div><label>Proyecto</label><span>{{ detalle.proyectoNombre }}</span></div>
               <div><label>Fecha</label><span>{{ detalle.fecha | date:'dd/MM/yyyy' }}</span></div>
-              <div><label>Puntos</label><span>{{ detalle.puntosInfraccion }} pt (acum. {{ detalle.puntosAcumulados }})</span></div>
+              <div><label>Puntos</label><span>{{ detalle.puntosInfraccion }} pt (acum. {{ detalle.puntosAcumulados }})</span>
+                @if (puedeEditarAmonestacion && !editando) {
+                  <button class="btn-ver" style="margin-left:8px" (click)="abrirEdicion()" title="Corregir puntos/motivo">
+                    <i class="ti ti-edit"></i> Corregir
+                  </button>
+                }
+              </div>
               @if (detalle.aplicaPenalizacion) {
                 <div><label>Penalización</label><span class="monto">S/ {{ detalle.montoCalculado | number:'1.2-2' }}</span></div>
               }
@@ -719,6 +726,35 @@
             </div>
 
             <div class="det-desc"><label>Descripción</label><p>{{ detalle.descripcion }}</p></div>
+
+            @if (editando) {
+              <div class="det-cierre-area" style="border-color:#f59e0b">
+                <div class="det-cierre-title"><i class="ti ti-edit"></i> Corregir amonestación</div>
+                <p class="det-cierre-desc">
+                  Solo para errores de captura. El cambio queda registrado en el historial del trabajador
+                  y puede desbloquearlo o bloquearlo automáticamente si sus puntos netos cambian de umbral.
+                </p>
+                <div class="form-group">
+                  <label class="escuelita-label">Puntos por infracción</label>
+                  <input type="number" class="form-control" [(ngModel)]="editPuntos" min="0" max="10" />
+                </div>
+                <div class="form-group">
+                  <label class="escuelita-label">Descripción</label>
+                  <textarea class="form-control" rows="3" [(ngModel)]="editDescripcion"></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="escuelita-label">Motivo de la corrección <span style="color:#dc2626">*</span></label>
+                  <textarea class="form-control" rows="2" [(ngModel)]="editMotivoEdicion"
+                            placeholder="Por qué se corrige (mínimo 10 caracteres) — queda en auditoría"></textarea>
+                </div>
+                <div class="det-cierre-row">
+                  <button class="btn-ver" (click)="cancelarEdicion()">Cancelar</button>
+                  <button class="det-cierre-btn" [disabled]="!puedeGuardarEdicion" (click)="guardarEdicion()">
+                    @if (guardandoEdicion) { Guardando… } @else { Guardar corrección }
+                  </button>
+                </div>
+              </div>
+            }
 
             <!-- Evidencias fotográficas -->
             @if (detalle.fotos?.length) {

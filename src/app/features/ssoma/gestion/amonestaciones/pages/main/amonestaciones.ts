@@ -112,6 +112,59 @@ export class Amonestaciones implements OnInit {
   // Confirmar borrador
   confirmando = false;
 
+  // ── Edición (corrección de errores — acceso restringido) ──────────
+  editando = false;
+  guardandoEdicion = false;
+  editPuntos = 0;
+  editDescripcion = '';
+  editMotivoEdicion = '';
+
+  get puedeEditarAmonestacion(): boolean {
+    return (this.authService.getUserEmail() ?? '').toLowerCase() === 'sjustiniani@abril.pe';
+  }
+
+  abrirEdicion(): void {
+    if (!this.detalle) return;
+    this.editPuntos = this.detalle.puntosInfraccion;
+    this.editDescripcion = this.detalle.descripcion;
+    this.editMotivoEdicion = '';
+    this.editando = true;
+    this.cdr.markForCheck();
+  }
+
+  cancelarEdicion(): void {
+    this.editando = false;
+    this.cdr.markForCheck();
+  }
+
+  get puedeGuardarEdicion(): boolean {
+    return !this.guardandoEdicion && this.editMotivoEdicion.trim().length >= 10;
+  }
+
+  guardarEdicion(): void {
+    if (!this.detalle || !this.puedeGuardarEdicion) return;
+    this.guardandoEdicion = true;
+    this.cdr.markForCheck();
+    this.svc.editar(this.detalle.id, {
+      puntosInfraccion: this.editPuntos,
+      descripcion: this.editDescripcion,
+      motivoEdicion: this.editMotivoEdicion.trim(),
+    }).subscribe({
+      next: () => {
+        this.guardandoEdicion = false;
+        this.editando = false;
+        this.verDetalle(this.detalle!.id);
+        this.loadLista();
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.guardandoEdicion = false;
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
   // ── Fotos inline en lista ─────────────────────────────────────────
   fotosCache = new Map<number, AmonFotoDto[]>();
   fotosExpandidoId: number | null = null;
@@ -368,6 +421,7 @@ export class Amonestaciones implements OnInit {
     this.detalle = null;
     this.pdfBlobUrl = null;
     this.loadingDetalle = true;
+    this.editando = false;
     this.cdr.markForCheck();
 
     this.svc.getDetalle(id).subscribe({
@@ -406,6 +460,7 @@ export class Amonestaciones implements OnInit {
     this.detalleVisible = false;
     this.detalle = null;
     this.pdfBlobUrl = null;
+    this.editando = false;
     this.cdr.markForCheck();
   }
 
