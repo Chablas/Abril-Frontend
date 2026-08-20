@@ -309,7 +309,7 @@ export class NavigationService {
         { label: 'Dashboard',               route: '/vecinos/dashboard',            featureKey: 'vecinos.dashboard' },
         { label: 'Gestión de Vecinos',      route: '/vecinos/gestion',              featureKey: 'vecinos.gestion' },
         { label: 'Croquis',                 route: '/vecinos/croquis',              featureKey: 'vecinos.croquis' },
-        { label: 'Control de Vencimientos', route: '/vecinos/control-vencimientos', featureKey: 'vecinos.control-vencimientos' },
+        { label: 'Control de Licencias',    route: '/vecinos/control-licencias',    featureKey: 'vecinos.control-licencias' },
       ],
     },
     {

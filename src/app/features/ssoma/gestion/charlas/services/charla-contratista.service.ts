@@ -7,6 +7,8 @@ import {
   CharlaContratistaPendienteDto,
   CharlaContratistaUploadRequest,
   CharlaContratistaDto,
+  RechazarCharlaContratistaDto,
+  CharlaContratistaRevisionResult,
 } from '../dtos/charla-contratista.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -40,5 +42,34 @@ export class CharlaContratistaService {
 
   subir(req: CharlaContratistaUploadRequest): Observable<CharlaContratistaDto> {
     return this.http.post<CharlaContratistaDto>(this.base, req, { headers: buildAuthHeaders() });
+  }
+
+  // ── Revisión SSOMA / Prevencionista ──────────────────────────────────────
+  getRevision(
+    estado?: string,
+    proyectoId?: number,
+    page = 1,
+    pageSize = 20,
+  ): Observable<CharlaContratistaRevisionResult> {
+    let params = new HttpParams().set('page', page).set('pageSize', pageSize);
+    if (estado) params = params.set('estado', estado);
+    if (proyectoId) params = params.set('proyectoId', proyectoId);
+    return this.http.get<CharlaContratistaRevisionResult>(`${this.base}/revision`, {
+      params,
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  aprobar(id: number): Observable<CharlaContratistaDto> {
+    return this.http.put<CharlaContratistaDto>(`${this.base}/${id}/aprobar`, {}, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  rechazar(id: number, motivo: string): Observable<CharlaContratistaDto> {
+    const dto: RechazarCharlaContratistaDto = { motivo };
+    return this.http.put<CharlaContratistaDto>(`${this.base}/${id}/rechazar`, dto, {
+      headers: buildAuthHeaders(),
+    });
   }
 }

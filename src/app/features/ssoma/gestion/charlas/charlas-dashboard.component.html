@@ -3,12 +3,7 @@
   <app-abril-page-header
     titulo="Charlas y Capacitaciones"
     subtitulo="Gestión y aprobación de charlas de seguridad"
-    [tabs]="[
-      { label: 'Dashboard',      icono: 'ti-chart-bar',      route: '/ssoma/gestion/charlas/dashboard' },
-      { label: 'Charlas Realizadas por Staff', icono: 'ti-users', route: '/ssoma/gestion/charlas/capacitaciones' },
-      { label: 'Registro de Asistencia',     icono: 'ti-plus', route: '/ssoma/gestion/charlas/nueva' },
-      { label: 'Gestión',        icono: 'ti-clipboard-check', route: '/ssoma/gestion/charlas/gestion' }
-    ]"
+    [tabs]="tabsHeader"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     (secondaryClick)="loadAll()">
 
@@ -141,18 +136,27 @@
                           <span class="badge" [ngClass]="capEstadoClass(c.estado)">{{ c.estado }}</span>
                         </td>
                         <td class="ta-c">
-                          @if (c.archivos?.length || c.evidenciaUrl) {
-                            <div class="cap-acciones">
+                          <div class="cap-acciones">
+                            @if (c.archivos?.length || c.evidenciaUrl) {
                               <button class="abril-action-btn" title="Ver" (click)="toggleViewer(c.id)">
                                 <i class="ti" [class.ti-eye]="viewerCapId !== c.id" [class.ti-eye-off]="viewerCapId === c.id"></i>
                               </button>
                               @if (c.archivos?.length) {
                                 <span class="abril-table-badge">{{ c.archivos.length }}</span>
                               }
-                            </div>
-                          } @else {
-                            <span class="td-muted">—</span>
-                          }
+                            }
+                            @if (c.estado === 'Enviado' && puedeAprobar) {
+                              <button abrilBulkAction="primary" title="Aprobar" (click)="aprobarCapacitacion(c)">
+                                <i class="ti ti-circle-check"></i>
+                              </button>
+                              <button abrilBulkAction="danger" title="Rechazar" (click)="rechazarCapacitacion(c)">
+                                <i class="ti ti-circle-x"></i>
+                              </button>
+                            }
+                            @if (!c.archivos?.length && !c.evidenciaUrl && !(c.estado === 'Enviado' && puedeAprobar)) {
+                              <span class="td-muted">—</span>
+                            }
+                          </div>
                         </td>
                       </tr>
                       @if (viewerCapId === c.id) {
@@ -587,7 +591,7 @@
         </div>
         <div class="modal-right">
           <h4 class="section-title">Acciones</h4>
-          @if (charlaDetalle.estado === 'Enviado') {
+          @if (charlaDetalle.estado === 'Enviado' && puedeAprobar) {
             @if (!showRechazarForm) {
               <div class="acciones-btns">
                 <button class="btn-aprobar" (click)="aprobar()"><i class="ti ti-circle-check"></i> Aprobar</button>

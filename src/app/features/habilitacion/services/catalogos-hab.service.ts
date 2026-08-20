@@ -10,6 +10,9 @@ import {
   SubareaCatDto,
   ObraOficinaStaffDto,
   TipoEquipoDto,
+  TipoEquipoAdminDto,
+  ItemEquipoAdminDto,
+  ItemEquipoUpsertRequest,
 } from '../dtos/catalogos.model';
 import { HABILITACION_BASE, buildHabHeaders, buildHabParams } from './http-base';
 
@@ -150,6 +153,50 @@ export class CatalogosHabService {
           this.tiposEquipo$ = undefined;
         }),
       );
+  }
+
+  // ── Administración: Tipos de equipo ──────────────────────────────
+  getTiposEquipoAdmin(): Observable<TipoEquipoAdminDto[]> {
+    return this.http.get<TipoEquipoAdminDto[]>(`${this.base}/tipos-equipo/admin`, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  actualizarTipoEquipo(id: number, nombre: string): Observable<TipoEquipoAdminDto> {
+    return this.http
+      .put<TipoEquipoAdminDto>(`${this.base}/tipos-equipo/${id}`, { nombre }, { headers: buildHabHeaders() })
+      .pipe(tap(() => { this.tiposEquipo$ = undefined; }));
+  }
+
+  toggleTipoEquipo(id: number, activo: boolean): Observable<void> {
+    return this.http
+      .patch<void>(`${this.base}/tipos-equipo/${id}/toggle`, { activo }, { headers: buildHabHeaders() })
+      .pipe(tap(() => { this.tiposEquipo$ = undefined; }));
+  }
+
+  // ── Administración: Ítems de equipo ──────────────────────────────
+  getItemsEquipoAdmin(): Observable<ItemEquipoAdminDto[]> {
+    return this.http.get<ItemEquipoAdminDto[]>(`${this.base}/items-equipo/admin`, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  crearItemEquipo(req: ItemEquipoUpsertRequest): Observable<ItemEquipoAdminDto> {
+    return this.http.post<ItemEquipoAdminDto>(`${this.base}/items-equipo`, req, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  actualizarItemEquipo(id: number, req: ItemEquipoUpsertRequest): Observable<ItemEquipoAdminDto> {
+    return this.http.put<ItemEquipoAdminDto>(`${this.base}/items-equipo/${id}`, req, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  toggleItemEquipo(id: number, activo: boolean): Observable<void> {
+    return this.http.patch<void>(`${this.base}/items-equipo/${id}/toggle`, { activo }, {
+      headers: buildHabHeaders(),
+    });
   }
 
   getSubareas(area: string): Observable<SubareaCatDto[]> {

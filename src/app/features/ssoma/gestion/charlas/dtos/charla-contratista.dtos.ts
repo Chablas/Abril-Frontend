@@ -26,4 +26,19 @@ export interface CharlaContratistaDto {
   evidenciaUrl?: string;
   evidenciaNombre?: string;
   createdAt: string;
+  estado: 'Enviado' | 'Aprobado' | 'Rechazado';
+  aprobadoPorNombre?: string;
+  aprobadoEn?: string;
+  motivoRechazo?: string;
+  /** Solo viene poblado en la lista de revisión SSOMA, no en "mi historial" del contratista. */
+  empresaNombre?: string;
+}
+
+export interface RechazarCharlaContratistaDto {
+  motivo: string;
+}
+
+export interface CharlaContratistaRevisionResult {
+  items: CharlaContratistaDto[];
+  total: number;
 }

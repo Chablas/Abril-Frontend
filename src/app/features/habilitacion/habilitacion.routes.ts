@@ -43,6 +43,13 @@ export const HABILITACION_ROUTES: Routes = [
         data: { titulo: 'HABILITACIÓN - EQUIPOS Y MÁQUINAS', featureKey: 'habilitacion.equipos' },
       },
       {
+        path: 'equipos/catalogo',
+        loadComponent: () =>
+          import('./pages/catalogo-equipos/catalogo-equipos').then((m) => m.CatalogoEquipos),
+        canActivate: [roleGuard],
+        data: { titulo: 'CATÁLOGO DE EQUIPOS', featureKey: 'habilitacion.catalogos.equipos' },
+      },
+      {
         path: 'bandeja',
         loadComponent: () =>
           import('./pages/bandeja/bandeja').then((m) => m.Bandeja),

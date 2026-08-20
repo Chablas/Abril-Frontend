@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { roleGuard } from '../../../../core/guards/role.guard';
 
 export const CHARLAS_ROUTES: Routes = [
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
@@ -26,5 +27,14 @@ export const CHARLAS_ROUTES: Routes = [
     path: 'contratista',
     loadComponent: () => import('./pages/contratista/charlas-contratista').then((m) => m.CharlasContratista),
     data: { titulo: 'CHARLA DIARIA — CONTRATISTA' },
+  },
+  {
+    path: 'revision-contratista',
+    loadComponent: () =>
+      import('./pages/revision-contratista/charlas-revision-contratista').then(
+        (m) => m.CharlasRevisionContratista,
+      ),
+    canActivate: [roleGuard],
+    data: { titulo: 'REVISIÓN CHARLAS CONTRATISTAS', featureKey: 'ssoma.charlas.aprobar' },
   },
 ];

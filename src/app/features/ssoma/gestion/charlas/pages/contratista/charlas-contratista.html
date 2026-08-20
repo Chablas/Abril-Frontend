@@ -107,6 +107,7 @@
           <th>Proyecto</th>
           <th>Tema</th>
           <th>Evidencia</th>
+          <th>Estado</th>
         </tr>
       </thead>
       <tbody>
@@ -118,9 +119,19 @@
             <a *ngIf="h.evidenciaUrl" [href]="h.evidenciaUrl" target="_blank">Ver</a>
             <span *ngIf="!h.evidenciaUrl">—</span>
           </td>
+          <td>
+            <span class="badge" [ngClass]="{
+              'badge-enviado': h.estado === 'Enviado',
+              'badge-ok': h.estado === 'Aprobado',
+              'badge-rechazado': h.estado === 'Rechazado'
+            }">{{ h.estado }}</span>
+            <div *ngIf="h.estado === 'Rechazado' && h.motivoRechazo" class="meta motivo-rechazo">
+              {{ h.motivoRechazo }}
+            </div>
+          </td>
         </tr>
         <tr *ngIf="historialFiltrado.length === 0">
-          <td colspan="4" class="empty">Sin resultados.</td>
+          <td colspan="5" class="empty">Sin resultados.</td>
         </tr>
       </tbody>
     </table>

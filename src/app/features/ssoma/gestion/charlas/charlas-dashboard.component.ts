@@ -18,6 +18,7 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { FindDiaPipe } from './pipes/find-dia.pipe';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { SharedFiltersService } from '../../../../shared/services/shared-filters.service';
+import { AuthService } from '../../../../core/services/auth.service';
 import { hoyIsoLocal, parseFechaLocal, toIsoLocal } from '../../../../shared/utils/fecha-local.util';
 import { SecureImgDirective } from '../../../../shared/directives/secure-img.directive';
 import {
@@ -29,6 +30,7 @@ import { FilterTriggerButton } from '../../../../shared/components/filter-trigge
 import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
 import { StatusBadge } from '../../../../shared/components/status-badge/status-badge';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
+import { AbrilBulkActionDirective } from '../../../../shared/directives/abril-bulk-action.directive';
 
 Chart.register(...registerables);
 
@@ -47,6 +49,7 @@ Chart.register(...registerables);
     FilterModal,
     StatusBadge,
     Paginator,
+    AbrilBulkActionDirective,
   ],
   templateUrl: './charlas-dashboard.component.html',
   styleUrl: './charlas-dashboard.component.css',
@@ -177,7 +180,25 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
     private cdr: ChangeDetectorRef,
     private sanitizer: DomSanitizer,
     private route: ActivatedRoute,
+    public auth: AuthService,
   ) {}
+
+  get puedeAprobar(): boolean {
+    return this.auth.hasFeature('ssoma.charlas.aprobar');
+  }
+
+  get tabsHeader() {
+    const base = [
+      { label: 'Dashboard', icono: 'ti-chart-bar', route: '/ssoma/gestion/charlas/dashboard' },
+      { label: 'Charlas Realizadas por Staff', icono: 'ti-users', route: '/ssoma/gestion/charlas/capacitaciones' },
+      { label: 'Registro de Asistencia', icono: 'ti-plus', route: '/ssoma/gestion/charlas/nueva' },
+      { label: 'Gestión', icono: 'ti-clipboard-check', route: '/ssoma/gestion/charlas/gestion' },
+    ];
+    if (this.puedeAprobar) {
+      base.push({ label: 'Revisión Contratistas', icono: 'ti-building', route: '/ssoma/gestion/charlas/revision-contratista' });
+    }
+    return base;
+  }
 
   ngOnInit(): void {
     this.activeTab = this.route.snapshot.data['tab'] ?? 1;
@@ -471,6 +492,41 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   capEstadoClass(e: string): string {
     const map: Record<string, string> = { Falta: 'badge--naranja', Enviado: 'badge--azul', Aprobado: 'badge--verde', Rechazado: 'badge--rojo' };
     return map[e] ?? 'badge--gris';
+  }
+
+  aprobarCapacitacion(c: Capacitacion): void {
+    if (!c.id) return;
+    this.loader.show();
+    this.svc.cambiarEstado(c.id, 'Aprobado').subscribe({
+      next: () => {
+        this.loader.hide();
+        this.loadTab2();
+        Swal.fire({ icon: 'success', title: 'Capacitación aprobada', timer: 1500, showConfirmButton: false });
+      },
+      error: (err: HttpErrorResponse) => { this.loader.hide(); this.errorService.handleError(err); this.cdr.markForCheck(); },
+    });
+  }
+
+  async rechazarCapacitacion(c: Capacitacion): Promise<void> {
+    if (!c.id) return;
+    const { isConfirmed } = await Swal.fire({
+      icon: 'warning',
+      title: 'Rechazar capacitación',
+      text: '¿Confirmas rechazar esta capacitación?',
+      showCancelButton: true,
+      confirmButtonText: 'Rechazar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!isConfirmed) return;
+    this.loader.show();
+    this.svc.cambiarEstado(c.id, 'Rechazado').subscribe({
+      next: () => {
+        this.loader.hide();
+        this.loadTab2();
+        Swal.fire({ icon: 'info', title: 'Capacitación rechazada', timer: 1500, showConfirmButton: false });
+      },
+      error: (err: HttpErrorResponse) => { this.loader.hide(); this.errorService.handleError(err); this.cdr.markForCheck(); },
+    });
   }
 
   // ── Tab 3 ──────────────────────────────────────────────────────────────────────
