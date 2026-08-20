@@ -5,8 +5,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { environment } from '../../../../../environments/environment';
 import { AbrilPageHeaderComponent, SsomaHeaderBtn } from '../../../../shared/components/abril-page-header/abril-page-header.component';
-import { SectionTabs, SectionTab } from '../../../../shared/components/section-tabs/section-tabs';
+import { SectionTab } from '../../../../shared/components/section-tabs/section-tabs';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
+import { SearchInput } from '../../../../shared/components/search-input/search-input';
+import { Paginator } from '../../../../shared/components/paginator/paginator';
+import { ClientPager } from '../../../../shared/utils/client-pager';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { ControlLicenciasService } from '../services/control-licencias.service';
@@ -19,6 +24,7 @@ import {
 } from '../dtos/control-licencias.dto';
 import { LicenciaUpload } from './licencia-upload/licencia-upload';
 import { LicenciaHistorial } from './licencia-historial/licencia-historial';
+import { LicenciaRecordatorios } from './licencia-recordatorios/licencia-recordatorios';
 import { TipoUpsert, TipoUpsertResult } from './tipo-upsert/tipo-upsert';
 
 import { VECINOS_TABS } from '../../shared/vecinos-tabs';
@@ -35,10 +41,12 @@ export const ROLES_DESTINATARIO_ADICIONAL = ['Jefe SSOMA', 'Residente', 'Coordin
   selector: 'app-control-licencias',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, AbrilPageHeaderComponent, SectionTabs, SearchSelect,
-    LicenciaUpload, LicenciaHistorial, TipoUpsert,
+    CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect,
+    FilterTriggerButton, FilterModal, SearchInput, Paginator,
+    LicenciaUpload, LicenciaHistorial, LicenciaRecordatorios, TipoUpsert,
   ],
   templateUrl: './control-licencias.html',
+  styleUrl: './control-licencias.css',
 })
 export class ControlLicencias implements OnInit {
   readonly tabs = VECINOS_TABS;
@@ -57,6 +65,44 @@ export class ControlLicencias implements OnInit {
   items: VecinoLicenciaItemDTO[] = [];
   plantillaLoaded = false;
 
+  // Filtros + paginación de la Plantilla
+  searchText = '';
+  filtrosAbiertos = false;
+  private readonly pager = new ClientPager<VecinoLicenciaItemDTO>();
+
+  get filtrosActivos(): number {
+    return this.searchText.trim() ? 1 : 0;
+  }
+
+  get filteredItems(): VecinoLicenciaItemDTO[] {
+    return this.items.filter((i) => SearchInput.matches(i.tipoDescripcion, this.searchText));
+  }
+
+  get currentPage(): number {
+    return this.pager.currentPage;
+  }
+
+  get totalPages(): number {
+    return this.pager.totalPages(this.filteredItems);
+  }
+
+  get pagedItems(): VecinoLicenciaItemDTO[] {
+    return this.pager.page(this.filteredItems);
+  }
+
+  changePage(page: number): void {
+    this.pager.goTo(page);
+  }
+
+  onFilterChange(): void {
+    this.pager.reset();
+  }
+
+  limpiarFiltros(): void {
+    this.searchText = '';
+    this.onFilterChange();
+  }
+
   destinatariosAutomaticos: VecinoLicenciaDestinatarioAutomaticoDTO[] = [];
   destinatarios: VecinoLicenciaDestinatarioDTO[] = [];
   destinatariosLoaded = false;
@@ -71,6 +117,9 @@ export class ControlLicencias implements OnInit {
 
   // Modal de historial
   historialItem: VecinoLicenciaItemDTO | null = null;
+
+  // Modal de recordatorios
+  recordatoriosItem: VecinoLicenciaItemDTO | null = null;
 
   // Modal de alta/edición de tipo (catálogo base o propio de proyecto)
   showTipoUpsert = false;
@@ -127,6 +176,7 @@ export class ControlLicencias implements OnInit {
       next: (res) => {
         this.items = res.items;
         this.plantillaLoaded = true;
+        this.pager.reset();
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -225,6 +275,18 @@ export class ControlLicencias implements OnInit {
 
   closeHistorial(): void {
     this.historialItem = null;
+  }
+
+  openRecordatorios(item: VecinoLicenciaItemDTO): void {
+    this.recordatoriosItem = item;
+  }
+
+  closeRecordatorios(): void {
+    this.recordatoriosItem = null;
+  }
+
+  onRecordatoriosChanged(): void {
+    this.loadPlantilla();
   }
 
   openAddTipoProyecto(): void {

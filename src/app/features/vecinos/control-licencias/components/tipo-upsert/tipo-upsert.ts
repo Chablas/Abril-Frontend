@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
+import { AbrilModalPanel } from '../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { VecinoLicenciaTipoDTO } from '../../dtos/control-licencias.dto';
 
 export interface TipoUpsertResult {
@@ -13,7 +13,7 @@ export interface TipoUpsertResult {
 @Component({
   selector: 'app-tipo-upsert',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, AbrilModalPanel],
   templateUrl: './tipo-upsert.html',
 })
 export class TipoUpsert implements OnInit {

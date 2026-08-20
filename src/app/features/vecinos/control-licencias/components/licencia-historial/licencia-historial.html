@@ -1,6 +1,8 @@
-<app-base-modal
-  [title]="'Historial — ' + item.tipoDescripcion"
-  width="w-[520px]"
+<app-abril-modal-panel
+  [titulo]="'Historial — ' + item.tipoDescripcion"
+  icono="ti-history"
+  variant="teal"
+  width="520px"
   (closeModal)="close()">
 
   <div class="flex flex-col gap-2">
@@ -22,9 +24,9 @@
     <p *ngIf="loaded && historial.length === 0" class="text-center text-sm text-gray-400 italic py-6">
       Sin versiones anteriores.
     </p>
-
-    <div class="flex justify-end pt-2">
-      <button type="button" (click)="close()" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Cerrar</button>
-    </div>
   </div>
-</app-base-modal>
+
+  <div modalFooter class="flex justify-end w-full">
+    <button type="button" (click)="close()" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Cerrar</button>
+  </div>
+</app-abril-modal-panel>

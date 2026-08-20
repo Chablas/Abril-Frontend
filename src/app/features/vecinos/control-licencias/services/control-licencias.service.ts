@@ -13,6 +13,8 @@ import {
   VecinoLicenciaHistorialItemDTO,
   VecinoLicenciaDestinatarioDTO,
   VecinoLicenciaDestinatariosResponseDTO,
+  VecinoLicenciaRecordatorioDTO,
+  VecinoLicenciaRecordatorioCreateDTO,
 } from '../dtos/control-licencias.dto';
 
 @Injectable({ providedIn: 'root' })
@@ -68,13 +70,30 @@ export class ControlLicenciasService {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('fechaVencimiento', dto.fechaVencimiento);
-    formData.append('fechaRecordatorio', dto.fechaRecordatorio);
-    formData.append('diasAntes', dto.diasAntes.toString());
+    dto.diasAntesRecordatorio.forEach((d) => formData.append('diasAntesRecordatorio', d.toString()));
     return this.http.post<ApiMessageDTO>(
       `${this.apiUrl}/proyectos/${projectId}/tipos/${tipoId}/upload`,
       formData,
       { headers: this.authHeaders() },
     );
+  }
+
+  addRecordatorio(
+    projectId: number,
+    tipoId: number,
+    dto: VecinoLicenciaRecordatorioCreateDTO,
+  ): Observable<{ recordatorio: VecinoLicenciaRecordatorioDTO; message: string }> {
+    return this.http.post<{ recordatorio: VecinoLicenciaRecordatorioDTO; message: string }>(
+      `${this.apiUrl}/proyectos/${projectId}/tipos/${tipoId}/recordatorios`,
+      dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  deleteRecordatorio(recordatorioId: number): Observable<ApiMessageDTO> {
+    return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/recordatorios/${recordatorioId}`, {
+      headers: this.authHeaders(),
+    });
   }
 
   setNoAplica(projectId: number, tipoId: number, noAplica: boolean): Observable<ApiMessageDTO> {

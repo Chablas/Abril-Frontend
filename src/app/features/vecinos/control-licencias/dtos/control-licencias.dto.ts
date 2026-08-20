@@ -21,12 +21,23 @@ export interface VecinoLicenciaItemDTO {
   archivoUrl: string | null;
   originalFileName: string | null;
   fechaVencimiento: string | null; // YYYY-MM-DD
-  fechaRecordatorio: string | null; // YYYY-MM-DD
-  diasAntes: number | null;
-  recordatorioEnviadoDateTime: string | null;
-  /** Días de antelación por defecto del tipo, para prellenar el formulario de subida. */
+  /** Días de antelación por defecto del tipo, para sugerir el primer recordatorio al subir. */
   diasAntesDefault: number | null;
+  /** Recordatorios activos de la licencia vigente (puede haber varios, ej. 30/15/7/2 días antes). */
+  recordatorios: VecinoLicenciaRecordatorioDTO[];
   versionesHistorial: number;
+}
+
+/** Un recordatorio (N días antes de vencer) de una licencia. */
+export interface VecinoLicenciaRecordatorioDTO {
+  vecinoLicenciaControlRecordatorioId: number;
+  diasAntes: number;
+  fechaRecordatorio: string; // YYYY-MM-DD
+  enviado: boolean;
+}
+
+export interface VecinoLicenciaRecordatorioCreateDTO {
+  diasAntes: number;
 }
 
 export interface VecinoLicenciaPlantillaResponseDTO {
@@ -57,8 +68,8 @@ export interface VecinoLicenciaTipoCreateDTO {
 /** Payload del formulario de subida/reemplazo (el archivo se envía aparte como multipart). */
 export interface VecinoLicenciaUploadDTO {
   fechaVencimiento: string; // YYYY-MM-DD
-  fechaRecordatorio: string; // YYYY-MM-DD
-  diasAntes: number;
+  /** Días de antelación de cada recordatorio a crear (ej. [30, 15, 7, 2]). Al menos uno. */
+  diasAntesRecordatorio: number[];
 }
 
 export interface VecinoLicenciaHistorialItemDTO {
