@@ -158,6 +158,52 @@ export interface ResumenRatiosDto {
   totalFamilias: number;
 }
 
+// ─── Ratios de drivers de proyecto (HH y N Trabajadores por m2) ──────────────
+// Analogo a los ratios de materiales, pero sobre los drivers del proyecto mismo
+// (no consumos). No segmenta por tipo de proyecto; incluidoManual es la unica
+// autoridad real sobre que proyecto entra al calculo, "esOutlier" es solo informativo.
+
+export type TipoDriverRatio = 'HH' | 'TRABAJADORES';
+
+export interface RatioDriverProyectoDto {
+  projectId: number;
+  projectDescription: string;
+  /** Finalizado | Activo | Inactivo — si sigue Activo, el HH/dotación es parcial (Tareo a la fecha). */
+  cicloVida: string;
+  diasRegistrados: number;
+  areaTechada: number;
+  cantidad: number;
+  ratio: number;
+  esOutlier: boolean;
+  incluidoManual: boolean;
+}
+
+export interface RatioDriverComparacionDto {
+  tipoDriver: TipoDriverRatio;
+  proyectos: RatioDriverProyectoDto[];
+  medianaRatio: number;
+  promedioRatio: number;
+  minRatio: number;
+  maxRatio: number;
+}
+
+export interface CalcularRatiosDriversResultDto {
+  ratiosCalculados: number;
+  proyectosSinArea: number;
+  proyectosSinTareo: number;
+}
+
+export interface RatioDriverRecomendadoDto {
+  tipoDriver: TipoDriverRatio;
+  ratioRecomendado: number;
+  nProyectos: number;
+}
+
+export interface RatiosDriversRecomendadosDto {
+  hh: RatioDriverRecomendadoDto | null;
+  trabajadores: RatioDriverRecomendadoDto | null;
+}
+
 // ─── Presupuesto ──────────────────────────────────────────────────────────────
 
 export interface GenerarPresupuestoDto {

@@ -21,6 +21,12 @@ export interface AbrilPageTab {
   icono: string;
   route?: string;
   active?: boolean;
+  /** Por defecto routerLinkActive activa la pestaña si la URL actual EMPIEZA con `route`
+   *  (subset match) — así una pestaña con ruta base (ej. path: '') queda marcada activa
+   *  en todas sus rutas hijas, aunque el usuario esté en una pantalla que ni siquiera es
+   *  una pestaña (ej. un detalle navegado desde otra pestaña). Pasar `exact: true` cuando
+   *  el set de pestañas de la página no debe tener ese comportamiento de prefijo. */
+  exact?: boolean;
   featureKey?: string;
   /** La pestaña se muestra si el usuario tiene acceso a AL MENOS UNO de estos
    *  features. Útil para pestañas "contenedor" (p. ej. Configuración) que

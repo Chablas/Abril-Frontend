@@ -47,6 +47,80 @@
       </div>
     </div>
 
+    <!-- Ratios de dotación: HH y N Trabajadores REALES por m2, calculados desde el Tareo de
+         Control de Acceso (asistencia diaria) — no desde el campo tipeado a mano en la ficha
+         del proyecto. No segmenta por tipo de proyecto; "incluir" es siempre manual — el
+         responsable decide caso por caso, incluso proyectos aún activos (donde el HH
+         acumulado del Tareo es parcial, no el total final de la obra). -->
+    <div class="resumen-card">
+      <div class="resumen-card__header">
+        <h3 class="resumen-card__titulo">Ratios de dotación (HH / N° Trabajadores) — desde Tareo real</h3>
+        <button
+          type="button"
+          class="btn-calcular-drivers"
+          [disabled]="calculandoDrivers"
+          (click)="calcularDrivers()">
+          <i class="ti ti-calculator"></i> {{ calculandoDrivers ? 'Calculando...' : 'Calcular' }}
+        </button>
+      </div>
+
+      <div *ngIf="loadingDrivers" class="loading-msg-small">Cargando ratios de dotación...</div>
+
+      <div *ngIf="!loadingDrivers" class="driver-grid">
+        <ng-container *ngFor="let d of [hhComparacion, trabajadoresComparacion]">
+          <div class="familia-panel" *ngIf="d">
+            <div class="familia-panel__header">
+              <span class="familia-panel__nombre">{{ driverTipoLabel(d.tipoDriver) }}</span>
+              <span class="resumen-inline">
+                <strong>Mediana:</strong> {{ d.medianaRatio | number:'1.4-4' }}
+                &nbsp;·&nbsp;
+                <strong>Rango:</strong> {{ d.minRatio | number:'1.4-4' }} – {{ d.maxRatio | number:'1.4-4' }}
+              </span>
+            </div>
+            <div class="familia-panel__body">
+              <div *ngIf="d.proyectos.length === 0" class="empty-cell">
+                {{ d.tipoDriver === 'HH' ? 'Sin proyectos con Tareo registrado todavía.' : 'Sin proyectos con trabajadores vinculados todavía.' }}
+              </div>
+              <div class="driver-tabla" *ngIf="d.proyectos.length > 0">
+                <div class="driver-tabla__header">
+                  <div>Proyecto</div>
+                  <div>Área m²</div>
+                  <div>{{ d.tipoDriver === 'HH' ? 'HH real acum.' : 'Trab. distintos' }}</div>
+                  <div>Ratio</div>
+                  <div>Incluir</div>
+                </div>
+                <div
+                  *ngFor="let p of d.proyectos"
+                  class="driver-tabla__row"
+                  [class.driver-tabla__row--outlier]="p.esOutlier">
+                  <div class="tabla-cols__proyecto" [title]="p.projectDescription">
+                    {{ p.projectDescription }}
+                    <span *ngIf="p.esOutlier" class="badge badge-warn badge-xs" title="Outlier: fuera de rango normal (IQR)">outlier</span>
+                  </div>
+                  <div>{{ p.areaTechada | number:'1.0-0' }}</div>
+                  <div>{{ p.cantidad | number:'1.0-2' }}</div>
+                  <div><strong>{{ p.ratio | number:'1.4-4' }}</strong></div>
+                  <div class="tabla-cols__dato" [class.tabla-cols__dato--excluido]="!p.incluidoManual">
+                    <input
+                      type="checkbox"
+                      [checked]="p.incluidoManual"
+                      [disabled]="actualizandoDriverProjectId === p.projectId"
+                      (change)="toggleIncluidoDriver(d.tipoDriver, p)" />
+                    <span
+                      class="badge"
+                      [ngClass]="p.cicloVida === 'Finalizado' ? 'badge-ok' : (p.cicloVida === 'Activo' ? 'badge-warn' : 'badge-danger')"
+                      [title]="p.cicloVida === 'Activo' ? 'Proyecto en curso: si es HH, el acumulado es parcial, todavía no es el total final' : p.cicloVida">
+                      {{ p.cicloVida }}<ng-container *ngIf="d.tipoDriver === 'HH'"> · {{ p.diasRegistrados }}d</ng-container>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
     <div *ngIf="loading" class="loading-msg">Cargando familias...</div>
 
     <div *ngIf="!loading" class="familias-lista">
