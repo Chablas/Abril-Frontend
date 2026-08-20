@@ -95,9 +95,10 @@ export class ReclutamientoService {
   }
 
   /**
-   * Envía la long list al solicitante (multipart): metadatos de cada candidato en `data`
-   * y los archivos (CV e informe opcional) como form files con claves `cv_i` / `informe_i`.
-   * El backend envía el correo configurado y avanza el requerimiento a LONG_LIST_ENVIADA.
+   * Envía la long list al solicitante (multipart): metadatos de cada candidato en `data`, su CV
+   * como form file con la clave `cv_i` y cada anexo del portafolio con la clave `anexo_i_j`. El
+   * backend envía el correo configurado (con el CV y los anexos adjuntos) y avanza el
+   * requerimiento a LONG_LIST_ENVIADA.
    */
   enviarLongList(
     requerimientoId: number,
@@ -106,13 +107,18 @@ export class ReclutamientoService {
     const formData = new FormData();
     const meta = candidatos.map((c, i) => {
       formData.append(`cv_${i}`, c.cv, c.cv.name);
-      const informeKey = c.informe ? `informe_${i}` : null;
-      if (c.informe) formData.append(`informe_${i}`, c.informe, c.informe.name);
+
+      const anexoKeys = (c.anexos ?? []).map((anexo, j) => {
+        const key = `anexo_${i}_${j}`;
+        formData.append(key, anexo, anexo.name);
+        return key;
+      });
+
       return {
         nombre: c.nombre,
         comentario: c.comentario,
         cvKey: `cv_${i}`,
-        informeKey,
+        anexoKeys,
       };
     });
     formData.append('data', JSON.stringify({ candidatos: meta }));
@@ -233,12 +239,14 @@ export class ReclutamientoService {
 }
 
 /**
- * Candidato de la long list a enviar (CV obligatorio, informe opcional). El puesto no se manda:
- * lo toma el backend del requerimiento, que es el que registró el solicitante.
+ * Candidato de la long list a enviar: su CV y, opcionalmente, los archivos de su
+ * "Portafolio/Anexos". El puesto no se manda: lo toma el backend del requerimiento, que es el
+ * que registró el solicitante.
  */
 export interface LongListCandidatoEnvio {
   nombre: string;
   comentario: string;
   cv: File;
-  informe: File | null;
+  /** Portafolio/anexos del candidato (0..n), en el orden en que GTH los cargó. */
+  anexos: File[];
 }

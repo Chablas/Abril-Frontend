@@ -94,13 +94,41 @@
                 </div>
               </div>
 
-              @if (sel.cvUrl) {
-                <a [href]="sel.cvUrl" target="_blank" rel="noopener"
-                   class="inline-flex items-center gap-[6px] h-[34px] px-[14px] mt-[12px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
-                   style="background:#15803D">
-                  <i class="ti ti-external-link text-[15px]"></i>
-                  Ver CV del seleccionado
-                </a>
+              <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                @if (sel.cvUrl) {
+                  <a [href]="sel.cvUrl" target="_blank" rel="noopener"
+                     class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                     style="background:#15803D">
+                    <i class="ti ti-external-link text-[15px]"></i>
+                    Ver CV del seleccionado
+                  </a>
+                }
+
+                <!-- Paso que ahora cierra el proceso: GTH le programa el EMO de Ingreso desde
+                     SSOMA. No se programa acá para no duplicar la funcionalidad — se salta a la
+                     pantalla de EMOs con su ficha ya enfocada y el modal abierto. -->
+                @if (sel.emoIngresoPendiente && sel.workerId) {
+                  <button type="button" (click)="programarEmoIngreso(sel)"
+                          class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                          style="background:#005D9D">
+                    <i class="ti ti-calendar-plus text-[15px]"></i>
+                    Programar EMO de ingreso
+                  </button>
+                }
+              </div>
+
+              @if (sel.emoIngresoPendiente) {
+                <p class="text-[11.5px] text-amber-800 mt-[10px] flex items-start gap-[6px]">
+                  <i class="ti ti-alert-circle text-[14px] shrink-0 mt-[1px]"></i>
+                  <span>
+                    @if (sel.workerId) {
+                      El proceso se cierra cuando quede programado su examen médico de ingreso.
+                    } @else {
+                      No se pudo abrir su ficha para el EMO: el candidato no tiene el formulario
+                      del postulante aprobado, así que no está en la base maestra.
+                    }
+                  </span>
+                </p>
               }
             </div>
           </div>
@@ -343,33 +371,52 @@
                     placeholder="Registrar observaciones internas de GTH sobre el candidato..."></textarea>
                 </div>
 
-                <!-- Informe del candidato -->
-                <p class="text-[13px] font-semibold text-gray-700 mt-[12px]">Informe del candidato</p>
-                <input #informeInput type="file" class="hidden" accept=".pdf,.doc,.docx"
-                  (change)="onInformeSeleccionado(c, $event)" />
-                @if (!c.informe) {
-                  <button type="button"
-                    class="w-full h-[42px] mt-[6px] rounded-[7px] border border-dashed hover:bg-gray-50 flex items-center justify-center gap-[8px] text-[13px] font-semibold cursor-pointer transition-colors"
-                    style="border-color:var(--color-abril-border);color:var(--color-abril-logo-blue)"
-                    (click)="informeInput.click()">
-                    <i class="ti ti-file-text text-[16px]"></i>
-                    Adjuntar informe
-                  </button>
-                } @else {
-                  <div class="flex items-center justify-between gap-[12px] mt-[6px] rounded-[7px] border px-[12px] py-[9px]"
-                       style="border-color:var(--color-abril-border)">
-                    <p class="text-[12.5px] text-gray-700 break-all min-w-0">{{ c.informe.name }}</p>
-                    <button type="button"
-                      class="text-[12.5px] font-bold text-red-600 cursor-pointer hover:underline shrink-0"
-                      (click)="quitarInforme(c)">
-                      Quitar
-                    </button>
+                <!-- ── Portafolio/Anexos del candidato ─────────────────────
+                     Opcional y de cantidad libre: van adjuntos en el correo de la
+                     long list y el solicitante los abre desde su revisión. -->
+                <div class="rounded-[8px] border px-[13px] py-[11px] mt-[12px]"
+                     style="border-color:var(--color-abril-border);background:#FAFCFA">
+                  <div class="flex items-center justify-between gap-[10px] flex-wrap">
+                    <p class="text-[12.5px] font-bold text-gray-700">Portafolio/Anexos</p>
+                    <span class="text-[11.5px] text-gray-500">
+                      {{ c.anexos.length }} archivo(s) · opcional
+                    </span>
                   </div>
-                }
+
+                  <input #anexoInput type="file" class="hidden" multiple [accept]="anexosAccept"
+                    (change)="onAnexosSeleccionados($event, i)" />
+                  <button type="button"
+                    class="w-full h-[38px] mt-[9px] rounded-[7px] border border-dashed bg-white hover:bg-[#F1F7F1] flex items-center justify-center gap-[8px] text-[12.5px] font-semibold cursor-pointer transition-colors"
+                    style="border-color:#B7D6A6;color:var(--color-abril-standard)"
+                    (click)="anexoInput.click()">
+                    <i class="ti ti-paperclip text-[15px]"></i>
+                    Adjuntar archivos del portafolio
+                  </button>
+
+                  @for (a of c.anexos; track a; let j = $index) {
+                    <div class="flex items-center justify-between gap-[10px] rounded-[7px] border px-[11px] py-[8px] mt-[8px] bg-white"
+                         style="border-color:var(--color-abril-border)">
+                      <div class="flex items-center gap-[8px] min-w-0">
+                        <i class="ti ti-file text-[16px] shrink-0" style="color:var(--color-abril-standard)"></i>
+                        <span class="text-[12.5px] text-gray-700 truncate">{{ a.name }}</span>
+                        <span class="text-[11px] text-gray-400 shrink-0">{{ pesoArchivo(a) }}</span>
+                      </div>
+                      <button type="button"
+                        class="text-[12px] font-bold text-red-600 cursor-pointer hover:underline shrink-0"
+                        (click)="quitarAnexo(i, j)">
+                        Quitar
+                      </button>
+                    </div>
+                  }
+
+                  <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
+                    PDF, Word, Excel, PPT o imágenes. Se envían adjuntos al solicitante junto con el CV.
+                  </p>
+                </div>
               </div>
             }
 
-            <!-- Envío de la long list: sube los CVs/informes, dispara el correo al solicitante
+            <!-- Envío de la long list: sube los CVs, dispara el correo al solicitante
                  y avanza el requerimiento a "Long list enviada". -->
             <button type="button"
               class="w-full h-[42px] mt-[14px] rounded-[7px] text-[13.5px] font-semibold text-white transition-opacity"
@@ -412,11 +459,6 @@
         <!-- Formulario de información del postulante (funcional) -->
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
           <h3 class="text-[14px] font-bold text-gray-800">Formulario de información del postulante</h3>
-          <p class="text-[12.5px] text-gray-500 mt-[2px] leading-snug">
-            Envía el enlace del formulario al correo de cada candidato aprobado. El postulante lo completa en una
-            página externa; con «Ver formulario» consultas los datos que declaró y los apruebas o rechazas.
-            Puedes marcar varios y enviarles el formulario de una sola vez.
-          </p>
 
           <!-- Selección para el envío masivo. El botón repite el estilo del "Enviar formulario" de cada
                candidato (azul, 38px) en vez del directive abrilBulkAction: ese es teal y está pensado
@@ -563,11 +605,6 @@
         <!-- Control informativo del Multitest -->
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
           <h3 class="text-[14px] font-bold text-gray-800">Control informativo del Multitest</h3>
-          <p class="text-[12.5px] text-gray-500 mt-[2px] leading-snug">
-            El Multitest se gestiona fuera de esta plataforma: el check solo registra si cada candidato
-            ya rindió la evaluación y no cambia el flujo por sí solo. Debe estar marcado en todos para
-            poder continuar a la programación de entrevistas.
-          </p>
 
           @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
             <label class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[11px] mt-[10px] cursor-pointer transition-colors hover:bg-gray-50"
@@ -612,10 +649,6 @@
 
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
           <h3 class="text-[14px] font-bold text-gray-800">Programación de entrevistas</h3>
-          <p class="text-[12.5px] text-gray-500 mt-[2px] leading-snug">
-            Registra la fecha, hora y lugar de cada candidato y envíale la invitación. La
-            invitación se envía al correo que el postulante declaró en su formulario.
-          </p>
 
           @for (c of candidatosParaEntrevista; track c.candidatoId; let i = $index) {
             <div class="rounded-[10px] border px-[14px] py-[12px] mt-[12px]" style="border-color:var(--color-abril-border)">
@@ -627,18 +660,33 @@
                     <p class="text-[11.5px] text-gray-500 mt-[1px]">{{ c.correoContacto }}</p>
                   }
                 </div>
-                @if (noContinua(c)) {
-                  <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full shrink-0"
-                        style="background:#FEE2E2;color:#B91C1C">
-                    No continúa
-                  </span>
-                } @else {
-                  <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full shrink-0"
-                        [style.background]="c.entrevista ? '#DCFCE7' : '#F3F4F6'"
-                        [style.color]="c.entrevista ? '#15803D' : '#6B7280'">
-                    {{ c.entrevista ? 'Programada' : 'Sin programar' }}
-                  </span>
-                }
+                <div class="flex items-center gap-[6px] shrink-0">
+                  <!-- Respuesta del candidato a su citación: la que dio desde los botones del
+                       correo de invitación. Va junto al estado de la cita y no en su lugar
+                       porque son dos cosas distintas — GTH programó, el candidato responde. -->
+                  @if (!noContinua(c) && respuestaEntrevista(c); as respuesta) {
+                    <span class="inline-flex items-center gap-[4px] text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                          [style.background]="respuesta.fondo"
+                          [style.color]="respuesta.color"
+                          [title]="respuesta.detalle">
+                      <i class="ti text-[13px]" [ngClass]="respuesta.icono"></i>
+                      {{ respuesta.texto }}
+                    </span>
+                  }
+
+                  @if (noContinua(c)) {
+                    <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                          style="background:#FEE2E2;color:#B91C1C">
+                      No continúa
+                    </span>
+                  } @else {
+                    <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                          [style.background]="c.entrevista ? '#DCFCE7' : '#F3F4F6'"
+                          [style.color]="c.entrevista ? '#15803D' : '#6B7280'">
+                      {{ c.entrevista ? 'Programada' : 'Sin programar' }}
+                    </span>
+                  }
+                </div>
               </div>
 
               <!-- dense + floatingLabel en fecha y hora: mismas medidas y mismo label flotante que
@@ -694,16 +742,19 @@
                   en {{ c.entrevista?.lugarNombre }}
                 </p>
 
+                @if (c.entrevista?.respondidoEn) {
+                  <p class="text-[11.5px] mt-[3px]"
+                     [style.color]="c.entrevista?.respuestaCodigo === 'CONFIRMADA' ? '#15803D' : '#B91C1C'">
+                    {{ c.entrevista?.respuestaNombre }} ·
+                    {{ c.entrevista?.respondidoEn | date:'dd/MM/yyyy HH:mm' }}
+                  </p>
+                }
+
                 <!-- ── Resultado de la entrevista ─────────────────────────────
                      Solo aparece cuando ya se le envió la invitación: son los comentarios
                      que arman el informe de finalista que ve el solicitante. -->
                 <div class="mt-[12px] pt-[12px] border-t" style="border-color:var(--color-abril-border)">
                   <h4 class="text-[13px] font-bold text-gray-700">Resultado de la entrevista</h4>
-                  <p class="text-[12px] text-gray-500 mt-[2px] leading-snug">
-                    Registra los comentarios del candidato. Al continuar, su informe
-                    se envía al área solicitante para que decida con quién sigue el proceso.
-                    Los tres campos son obligatorios.
-                  </p>
 
                   <div class="abril-field mt-[12px]">
                     <label class="abril-field-label" [for]="'ev-com-entrevista-' + c.candidatoId">
@@ -757,10 +808,6 @@
                           : (noContinua(c) ? 'Reenviar correo de agradecimiento' : 'No continúa · enviar agradecimiento') }}
                     </button>
                   </div>
-
-                  @if (requisitosEvaluacionTexto(c); as requisitos) {
-                    <p class="text-[11.5px] text-gray-500 mt-[6px]">{{ requisitos }}</p>
-                  }
 
                   @if (c.evaluacion?.agradecimientoEnviadoEn) {
                     <p class="text-[11.5px] mt-[8px]" style="color:#B91C1C">

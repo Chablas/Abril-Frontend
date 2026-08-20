@@ -196,6 +196,16 @@ export interface EntrevistaResumen {
   correoEnvio: string;
   /** Momento del último envío de la invitación (ISO, ya en hora Perú). Null si aún no se envió. */
   enviadoEn: string | null;
+  /**
+   * Respuesta del candidato a la citación, la que dio desde los botones del correo:
+   * 'CONFIRMADA' | 'RECHAZADA'. Null mientras no responda — que no es lo mismo que rechazar.
+   * Al reprogramar se limpia: lo que había confirmado era la cita anterior.
+   */
+  respuestaCodigo: string | null;
+  /** Nombre visible de la respuesta ("Confirmada por el candidato"). Null si aún no responde. */
+  respuestaNombre: string | null;
+  /** Momento en que el candidato respondió (ISO, ya en hora Perú). Null si aún no responde. */
+  respondidoEn: string | null;
 }
 
 /** Resultado de programar/reprogramar una entrevista. */

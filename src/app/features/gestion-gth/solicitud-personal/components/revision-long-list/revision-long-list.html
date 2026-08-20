@@ -25,7 +25,6 @@
            style="background:var(--color-abril-logo-blue-light);border:1px solid #a9c9e6">
         <i class="ti ti-info-circle text-[18px] shrink-0 mt-[1px]" style="color:var(--color-abril-logo-blue)"></i>
         <p class="text-[13px] text-gray-700">
-          Revisa los candidatos correspondientes al puesto <b>{{ revision.puesto | titleCase }}</b>.
           Marca <b>Aprobar</b> o <b>Rechazar</b> por candidato y envía tu decisión a GTH.
         </p>
       </div>
@@ -66,6 +65,13 @@
                       <div class="min-w-0">
                         <p class="text-[13.5px] font-bold text-gray-800 truncate">{{ c.nombre | titleCase }}</p>
                         <p class="text-[12px] text-gray-500 truncate">{{ (c.puesto | titleCase) || '—' }}</p>
+                        @if (c.anexos.length > 0) {
+                          <span class="inline-flex items-center gap-[4px] text-[11px] font-semibold mt-[3px]"
+                                style="color:var(--color-abril-logo-blue)">
+                            <i class="ti ti-paperclip text-[13px]"></i>
+                            {{ c.anexos.length }} anexo(s)
+                          </span>
+                        }
                       </div>
                     </div>
                     <app-status-badge
@@ -132,14 +138,33 @@
                 <span class="text-[11px] text-gray-400 shrink-0">PDF</span>
               </div>
 
-              <!-- Nota -->
-              <div class="rounded-[8px] px-[13px] py-[10px] mt-[12px]"
-                   style="background:var(--color-abril-logo-blue-light)">
-                <p class="text-[12px] leading-snug" style="color:var(--color-abril-logo-blue)">
-                  La decisión debe basarse en el CV adjunto. No se muestra porcentaje de compatibilidad
-                  ni información no validada por GTH.
-                </p>
-              </div>
+              <!-- Portafolio/Anexos: los archivos que GTH adjuntó además del CV. -->
+              @if (seleccionado.anexos.length > 0) {
+                <div class="mt-[12px]">
+                  <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">
+                    Portafolio/Anexos ({{ seleccionado.anexos.length }})
+                  </p>
+                  @for (a of seleccionado.anexos; track a.anexoId) {
+                    <div class="flex items-center justify-between gap-[10px] mt-[6px] rounded-[8px] border px-[12px] py-[9px]"
+                         style="border-color:var(--color-abril-border);background:#F8FAFC">
+                      <div class="flex items-center gap-[9px] min-w-0">
+                        <i class="ti ti-paperclip text-[17px] shrink-0" style="color:var(--color-abril-logo-blue)"></i>
+                        <span class="text-[12.5px] font-medium text-gray-700 truncate">{{ a.nombre }}</span>
+                      </div>
+                      @if (a.url) {
+                        <a [href]="a.url" target="_blank" rel="noopener"
+                           class="inline-flex items-center gap-[5px] text-[12px] font-semibold cursor-pointer hover:underline shrink-0"
+                           style="color:var(--color-abril-logo-blue)">
+                          <i class="ti ti-external-link text-[14px]"></i>
+                          Abrir
+                        </a>
+                      } @else {
+                        <span class="text-[11.5px] text-gray-400 shrink-0">No disponible</span>
+                      }
+                    </div>
+                  }
+                </div>
+              }
 
               <!-- Estado de la decisión del solicitante sobre este candidato. -->
               <div class="rounded-[8px] border px-[12px] py-[10px] mt-[12px]" style="border-color:var(--color-abril-border)">

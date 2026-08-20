@@ -207,3 +207,24 @@
     margin-bottom: 14px;
   }
 }
+
+/* Ficha de pre-ingreso (finalista aprobado de Reclutamiento): mismo bloque, en ámbar, para que
+   se lea de una que la persona todavía no es trabajadora de Abril. */
+.worker-card--preingreso {
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+
+.worker-card__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.worker-card__tag i {
+  font-size: 13px;
+}

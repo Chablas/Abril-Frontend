@@ -1,4 +1,4 @@
-<app-base-modal *ngIf="open && emo" title="Documentos EMO" width="w-[520px]" (closeModal)="close()">
+<app-base-modal *ngIf="open && emo" [title]="'Documentos EMO'" width="w-[520px]" (closeModal)="close()">
 
   <div class="worker-header">
     <p class="wh-name">{{ emo.nombreCompleto }}</p>

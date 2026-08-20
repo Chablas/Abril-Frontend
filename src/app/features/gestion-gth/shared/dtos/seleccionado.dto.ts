@@ -19,4 +19,11 @@ export interface Seleccionado {
   seleccionadoPor: string | null;
   /** Responsable del proceso en GTH (el reclutador que llevó la vacante). */
   responsableGth: string | null;
+  /**
+   * Ficha de pre-ingreso del seleccionado en workers: el id con el que GTH abre la programación
+   * de su EMO de Ingreso. Null si el candidato nunca tuvo formulario del postulante aprobado.
+   */
+  workerId: number | null;
+  /** true mientras su EMO de Ingreso siga sin programarse (el requerimiento sigue abierto). */
+  emoIngresoPendiente: boolean;
 }

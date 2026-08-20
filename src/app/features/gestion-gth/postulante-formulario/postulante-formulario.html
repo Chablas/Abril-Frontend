@@ -12,6 +12,7 @@
     <!-- ── Error / token inválido ───────────────────────────────────────── -->
     @else if (errorCarga) {
       <div class="pf-card pf-state">
+        <img class="pf-state-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
         <i class="ti ti-alert-circle pf-state-icon" style="color:#B91C1C"></i>
         <h2 class="pf-state-title">No pudimos abrir el formulario</h2>
         <p class="pf-state-text">{{ mensajeError }}</p>
@@ -21,7 +22,8 @@
     <!-- ── Enviado (agradecimiento) ─────────────────────────────────────── -->
     @else if (enviado) {
       <div class="pf-card pf-state">
-        <i class="ti ti-circle-check pf-state-icon" style="color:#15803D"></i>
+        <img class="pf-state-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
+        <i class="ti ti-circle-check pf-state-icon" style="color:var(--color-abril-primary-dark)"></i>
         <h2 class="pf-state-title">{{ esCorreccion ? '¡Correcciones enviadas!' : '¡Formulario enviado!' }}</h2>
         <p class="pf-state-text">
           Gracias por completar tu información. El equipo de Gestión del Talento Humano de Abril Grupo
@@ -33,7 +35,8 @@
     <!-- ── Solo lectura (ya aprobado por GTH) ───────────────────────────── -->
     @else if (data?.soloLectura) {
       <div class="pf-card pf-state">
-        <i class="ti ti-lock pf-state-icon" style="color:#005D9D"></i>
+        <img class="pf-state-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
+        <i class="ti ti-lock pf-state-icon" style="color:var(--color-abril-primary-dark)"></i>
         <h2 class="pf-state-title">Formulario ya procesado</h2>
         <p class="pf-state-text">
           Este formulario ya fue revisado y aprobado por el equipo de selección, por lo que no admite más
@@ -42,12 +45,12 @@
       </div>
     }
 
-    <!-- ── Formulario (4 pasos) ─────────────────────────────────────────── -->
+    <!-- ── Formulario (5 pasos) ─────────────────────────────────────────── -->
     @else if (data) {
       <!-- Encabezado de marca -->
       <div class="pf-card pf-header">
+        <img class="pf-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
         <h1 class="pf-title">Formulario del postulante</h1>
-        <p class="pf-brand">ABRIL GRUPO INMOBILIARIO</p>
         @if (esCorreccion) {
           <p class="pf-intro">
             Estimado(a) postulante, revisamos el formulario que enviaste para la posición
@@ -83,7 +86,7 @@
       <div class="pf-card pf-body">
 
         <!-- Observaciones de GTH: van fuera del @if de cada paso a propósito, para que el postulante
-             las tenga a la vista en las 4 páginas mientras corrige. -->
+             las tenga a la vista en todas las páginas mientras corrige. -->
         @if (esCorreccion) {
           <div class="pf-alert">
             <i class="ti ti-alert-triangle pf-alert-icon"></i>
@@ -102,8 +105,28 @@
           </div>
         }
 
-        <!-- ── Paso 1 · Datos personales ─────────────────────────────────── -->
+        <!-- ── Paso 1 · Consentimiento de protección de datos ─────────────── -->
+        <!-- Va primero y bloquea el resto: es la autorización que habilita a pedir y guardar todo
+             lo que sigue. El backend valida lo mismo al recibir el envío. -->
         @if (paso === 1) {
+          <h2 class="pf-section-title">Consentimiento de Protección de Datos</h2>
+
+          <div class="pf-toggle-group">
+            <p class="pf-toggle-label">
+              Autorizo el tratamiento de mis datos personales
+              <span class="pf-req">*</span>
+            </p>
+            <div class="pf-toggle-row">
+              <button type="button" class="pf-toggle" [class.pf-toggle--on]="model.consentimientoDatosPersonales === true"
+                      (click)="setBool('consentimientoDatosPersonales', true)">Sí</button>
+              <button type="button" class="pf-toggle" [class.pf-toggle--on]="model.consentimientoDatosPersonales === false"
+                      (click)="setBool('consentimientoDatosPersonales', false)">No</button>
+            </div>
+          </div>
+        }
+
+        <!-- ── Paso 2 · Datos personales ─────────────────────────────────── -->
+        @if (paso === 2) {
           <h2 class="pf-section-title">Datos personales</h2>
           <div class="pf-grid">
             <!-- Los `autocomplete` no son cosmética: sin ellos Chrome adivina el tipo de cada campo por
@@ -126,18 +149,21 @@
               [value]="model.estadoCivilId" (valueChange)="model.estadoCivilId = $event"
               placeholder="Selecciona estado civil" [color]="accent" [sortAlpha]="false"></app-search-select>
 
+            <!-- uppercase: DNI y CE son siglas y el search-select, por defecto, suaviza el TODO
+                 MAYÚSCULAS del catálogo a nombre propio ("Dni" / "Ce"). -->
             <app-search-select label="Tipo de documento *" [options]="tiposDocumento" valueField="id" displayField="nombre"
               [value]="model.tipoDocumentoId" (valueChange)="onTipoDocumentoChange($event)"
-              placeholder="Selecciona tipo de documento" [color]="accent" [sortAlpha]="false"></app-search-select>
+              placeholder="Selecciona tipo de documento" [color]="accent" [sortAlpha]="false"
+              [uppercase]="true"></app-search-select>
 
             <div class="abril-field">
               <label class="abril-field-label">Número de documento (DNI o CE) <span class="pf-req">*</span></label>
               <input type="text" class="abril-field-input" [ngModel]="model.numeroDocumento"
                      (input)="onNumeroDocumentoInput($event)"
                      name="numeroDocumento" autocomplete="off"
-                     [attr.maxlength]="esDni ? dniLargo : null"
+                     [attr.maxlength]="documentoLargoMaximo"
                      [attr.inputmode]="esDni ? 'numeric' : 'text'"
-                     [placeholder]="esDni ? 'Escribe tu DNI (8 dígitos)' : 'Escribe tu número de documento'" />
+                     [placeholder]="documentoPlaceholder" />
             </div>
 
             <app-search-select label="Distrito de residencia *" [options]="distritos" valueField="id" displayField="nombre"
@@ -193,8 +219,8 @@
           </div>
         }
 
-        <!-- ── Paso 2 · Estudios realizados ──────────────────────────────── -->
-        @if (paso === 2) {
+        <!-- ── Paso 3 · Estudios realizados ──────────────────────────────── -->
+        @if (paso === 3) {
           <h2 class="pf-section-title">Estudios realizados</h2>
           <div class="pf-grid">
             <div class="abril-field pf-col-2">
@@ -222,8 +248,8 @@
           </div>
         }
 
-        <!-- ── Paso 3 · Experiencia laboral ──────────────────────────────── -->
-        @if (paso === 3) {
+        <!-- ── Paso 4 · Experiencia laboral ──────────────────────────────── -->
+        @if (paso === 4) {
           <h2 class="pf-section-title">Experiencia laboral</h2>
           <p class="pf-section-hint">Registra la información de tu experiencia más reciente o actual.</p>
           <div class="pf-grid">
@@ -256,10 +282,12 @@
                  app-search-select, para que las fechas queden alineadas con los demás campos. -->
             <app-date-picker label="Fecha de inicio *" [color]="accent"
               [dense]="true" [floatingLabel]="true"
-              [value]="model.fechaInicio" (valueChange)="model.fechaInicio = $event"></app-date-picker>
+              [value]="model.fechaInicio" (valueChange)="onFechaInicioChange($event)"></app-date-picker>
 
+            <!-- min = fecha de inicio: no se puede haber salido de una empresa antes de entrar. -->
             <app-date-picker label="Fecha de término" [color]="accent"
               [dense]="true" [floatingLabel]="true"
+              [min]="model.fechaInicio"
               [value]="model.fechaTermino" (valueChange)="model.fechaTermino = $event"></app-date-picker>
 
             <div class="abril-field pf-col-2">
@@ -311,8 +339,8 @@
           </div>
         }
 
-        <!-- ── Paso 4 · Consentimiento y veracidad ───────────────────────── -->
-        @if (paso === 4) {
+        <!-- ── Paso 5 · Consentimiento y veracidad ───────────────────────── -->
+        @if (paso === 5) {
           <h2 class="pf-section-title">Consentimiento y veracidad de la información</h2>
           <div class="pf-consent">
             <p class="pf-toggle-label">

@@ -17,6 +17,8 @@ export interface CandidatoFormularioResumen {
 
 /** Datos declarados por el postulante, ya resueltos a nombre (para el modal de revisión de GTH). */
 export interface FormularioDatos {
+  // Página 0
+  consentimientoDatosPersonales: boolean | null;
   // Página 1
   nombresCompletos: string | null;
   fechaNacimiento: string | null;

@@ -1,10 +1,23 @@
 :host {
   display: block;
+
+  /* Verdes de la marca Abril (los mismos tokens globales de styles.css), en
+     variables locales para que el acento de todo el formulario se cambie en un
+     solo sitio. El verde oscuro es el único que puede llevar texto blanco
+     encima: el claro (--color-abril-primary) y el lima del logo no dan
+     contraste suficiente. */
+  --pf-green: var(--color-abril-primary-dark, #2e7d32);
+  --pf-green-hover: #1b5e20;
+  --pf-green-soft: var(--color-abril-primary-light, #e8f5e9);
+  --pf-lime: var(--color-abril-lime, #64bc04);
+  --pf-divider: #e4efe4;
 }
 
 .pf-page {
   min-height: 100vh;
-  background: #eef2f6;
+  /* Degradado muy suave: da el tono verde de la marca al fondo sin competir
+     con las tarjetas blancas. */
+  background: linear-gradient(180deg, #e8f2e6 0%, var(--color-abril-page-bg, #f0f4f1) 340px);
   padding: 28px 16px 60px;
 }
 
@@ -25,7 +38,30 @@
 
 /* ── Encabezado ───────────────────────────────────────────────────────── */
 .pf-header {
-  border-top: 5px solid var(--color-abril-logo-blue, #005d9d);
+  position: relative;
+  overflow: hidden;
+  padding-top: 28px;
+}
+
+/* La franja superior va como ::before (y no como border-top) para poder llevar
+   el degradado lima → verde del logo; el `overflow: hidden` de arriba la
+   recorta en las esquinas redondeadas de la tarjeta. */
+.pf-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--pf-lime) 0%, var(--pf-green) 100%);
+}
+
+/* El logo reemplaza al texto "ABRIL GRUPO INMOBILIARIO": la imagen ya lo dice. */
+.pf-logo {
+  display: block;
+  height: 40px;
+  width: auto;
+  margin: 0 0 16px;
 }
 
 .pf-title {
@@ -33,14 +69,6 @@
   font-weight: 800;
   color: #1f2937;
   margin: 0;
-}
-
-.pf-brand {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: var(--color-abril-logo-blue, #005d9d);
-  margin: 2px 0 0;
 }
 
 .pf-intro {
@@ -57,7 +85,7 @@
   gap: 10px 18px;
   margin-top: 18px;
   padding-top: 16px;
-  border-top: 1px solid #eef2f6;
+  border-top: 1px solid var(--pf-divider);
 }
 
 .pf-step {
@@ -86,12 +114,14 @@
 }
 
 .pf-step--active .pf-step-circle {
-  background: var(--color-abril-logo-blue, #005d9d);
+  background: var(--pf-green);
   color: #fff;
+  /* El paso ya hecho también es verde: el halo es lo que distingue al actual. */
+  box-shadow: 0 0 0 3px var(--pf-green-soft);
 }
 
 .pf-step--done .pf-step-circle {
-  background: #15803d;
+  background: var(--pf-green);
   color: #fff;
 }
 
@@ -99,6 +129,11 @@
   font-size: 12.5px;
   font-weight: 600;
   color: #374151;
+}
+
+.pf-step--active .pf-step-label {
+  color: var(--pf-green);
+  font-weight: 700;
 }
 
 /* ── Observaciones de GTH (formulario devuelto para corregir) ─────────── */
@@ -150,7 +185,7 @@
 .pf-section-title {
   font-size: 16px;
   font-weight: 700;
-  color: var(--color-abril-logo-blue, #005d9d);
+  color: var(--pf-green);
   margin: 0 0 4px;
 }
 
@@ -235,8 +270,8 @@ input.abril-field-input {
 }
 
 .pf-toggle--on {
-  background: var(--color-abril-logo-blue, #005d9d);
-  border-color: var(--color-abril-logo-blue, #005d9d);
+  background: var(--pf-green);
+  border-color: var(--pf-green);
   color: #fff;
 }
 
@@ -250,38 +285,39 @@ input.abril-field-input {
       :not(.pf-toggle--on) y el seleccionado tiene el suyo, en azul oscuro. */
 @media (hover: hover) and (pointer: fine) {
   .pf-toggle:not(.pf-toggle--on):hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
+    background: var(--pf-green-soft);
+    border-color: #bcdcbe;
   }
 
   .pf-toggle--on:hover {
-    background: var(--color-abril-logo-blue-hover, #004a7d);
-    border-color: var(--color-abril-logo-blue-hover, #004a7d);
+    background: var(--pf-green-hover);
+    border-color: var(--pf-green-hover);
   }
 }
 
 /* Feedback mientras el dedo/clic está encima: a diferencia del hover, :active sí
    se suelta solo en táctil. */
 .pf-toggle:not(.pf-toggle--on):active {
-  background: #eef2f6;
-  border-color: #cbd5e1;
+  background: #dbeedc;
+  border-color: #bcdcbe;
 }
 
 .pf-toggle--on:active {
-  background: var(--color-abril-logo-blue-hover, #004a7d);
-  border-color: var(--color-abril-logo-blue-hover, #004a7d);
+  background: var(--pf-green-hover);
+  border-color: var(--pf-green-hover);
 }
 
 /* Anillo de foco solo por teclado (mismo tratamiento que app-search-select),
    para que el tap no deje ningún resalte pegado. */
 .pf-toggle:focus-visible {
-  outline: 2px solid var(--color-abril-logo-blue, #005d9d);
+  outline: 2px solid var(--pf-green);
   outline-offset: 2px;
 }
 
+/* ── Consentimientos (paso 5) ───────────────────────────────────────── */
 .pf-consent {
   padding: 16px 0;
-  border-bottom: 1px solid #eef2f6;
+  border-bottom: 1px solid var(--pf-divider);
 }
 
 .pf-consent:last-of-type {
@@ -295,7 +331,7 @@ input.abril-field-input {
   gap: 12px;
   margin-top: 24px;
   padding-top: 18px;
-  border-top: 1px solid #eef2f6;
+  border-top: 1px solid var(--pf-divider);
 }
 
 .pf-btn {
@@ -325,7 +361,7 @@ input.abril-field-input {
 }
 
 .pf-btn--primary {
-  background: var(--color-abril-logo-blue, #005d9d);
+  background: var(--pf-green);
   color: #fff;
 }
 
@@ -334,24 +370,24 @@ input.abril-field-input {
    da :active. */
 @media (hover: hover) and (pointer: fine) {
   .pf-btn--ghost:not(:disabled):hover {
-    background: #f8fafc;
+    background: var(--pf-green-soft);
   }
 
   .pf-btn--primary:not(:disabled):hover {
-    background: var(--color-abril-logo-blue-hover, #004a7d);
+    background: var(--pf-green-hover);
   }
 }
 
 .pf-btn--ghost:not(:disabled):active {
-  background: #eef2f6;
+  background: #dbeedc;
 }
 
 .pf-btn--primary:not(:disabled):active {
-  background: var(--color-abril-logo-blue-hover, #004a7d);
+  background: var(--pf-green-hover);
 }
 
 .pf-btn:focus-visible {
-  outline: 2px solid var(--color-abril-logo-blue, #005d9d);
+  outline: 2px solid var(--pf-green);
   outline-offset: 2px;
 }
 
@@ -363,6 +399,12 @@ input.abril-field-input {
   flex-direction: column;
   align-items: center;
   gap: 10px;
+}
+
+.pf-state-logo {
+  height: 34px;
+  width: auto;
+  margin: 0 0 4px;
 }
 
 .pf-state-icon {
@@ -388,8 +430,8 @@ input.abril-field-input {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  border: 4px solid #dbeafe;
-  border-top-color: var(--color-abril-logo-blue, #005d9d);
+  border: 4px solid var(--pf-green-soft);
+  border-top-color: var(--pf-green);
   animation: pf-spin 0.9s linear infinite;
 }
 
@@ -411,6 +453,15 @@ input.abril-field-input {
 
   .pf-card {
     padding: 18px 14px;
+  }
+
+  .pf-header {
+    padding-top: 22px;
+  }
+
+  .pf-logo {
+    height: 34px;
+    margin-bottom: 14px;
   }
 
   .pf-title {
@@ -462,6 +513,10 @@ input.abril-field-input {
 
   .pf-state {
     padding: 40px 18px;
+  }
+
+  .pf-state-logo {
+    height: 30px;
   }
 
   .pf-state-icon {

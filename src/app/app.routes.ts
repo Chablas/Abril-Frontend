@@ -208,6 +208,15 @@ export const routes: Routes = [
   },
 
   {
+    // Respuesta del candidato a su entrevista (acceso por token, sin login): a esta página llegan
+    // los botones «Confirmar» y «Rechazar» del correo de invitación.
+    path: 'postulante/entrevista',
+    loadComponent: () =>
+      import('./features/gestion-gth/postulante-entrevista/postulante-entrevista')
+      .then(m => m.PostulanteEntrevista)
+  },
+
+  {
     // Carta oferta del postulante (acceso por token enviado al correo, sin login): la lee, registra
     // su firma y la firma en línea. Reemplaza al envío de la carta adjunta por correo.
     path: 'postulante/carta-oferta',

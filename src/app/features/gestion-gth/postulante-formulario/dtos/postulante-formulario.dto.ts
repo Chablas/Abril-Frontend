@@ -26,6 +26,8 @@ export interface DistritoOpcion {
  * (GET público) y para enviar (POST público). Las fechas van como 'YYYY-MM-DD'.
  */
 export interface PostulanteFormularioRespuestas {
+  // Página 0 · Consentimiento de protección de datos
+  consentimientoDatosPersonales: boolean | null;
   // Página 1 · Datos personales
   nombresCompletos: string | null;
   fechaNacimiento: string | null;
@@ -88,6 +90,7 @@ export interface PostulanteFormularioPublico {
 /** Respuesta vacía por defecto (antes de cargar / para inicializar el modelo). */
 export function respuestasVacias(): PostulanteFormularioRespuestas {
   return {
+    consentimientoDatosPersonales: null,
     nombresCompletos: null, fechaNacimiento: null, estadoCivilId: null, tipoDocumentoId: null,
     numeroDocumento: null, distritoId: null, correoElectronico: null, numeroCelular: null,
     pretensionesSalariales: null, disponibilidadId: null, linkedin: null,

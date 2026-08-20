@@ -227,12 +227,20 @@ export interface CandidatoRevision {
   /** Nombre y link del CV en SharePoint (para "Ver CV completo"). */
   cvNombre: string | null;
   cvUrl: string | null;
-  /** Nombre y link del informe en SharePoint (opcional). */
-  informeNombre: string | null;
-  informeUrl: string | null;
+  /** Portafolio/anexos que GTH adjuntó además del CV (vacío si no cargó ninguno). */
+  anexos: CandidatoAnexo[];
   /** Estado de revisión (PENDIENTE / APROBADO / RECHAZADO). */
   estadoCodigo: string;
   estadoNombre: string;
+}
+
+/** Un archivo del "Portafolio/Anexos" de un candidato de la long list. */
+export interface CandidatoAnexo {
+  anexoId: number;
+  /** Nombre con el que GTH lo subió. */
+  nombre: string;
+  /** Link al archivo en SharePoint. Null si la subida no dejó url. */
+  url: string | null;
 }
 
 /** Decisión del solicitante por candidato (aprobar/rechazar) que se envía a GTH. */
@@ -312,7 +320,7 @@ export interface RevisionFinalistas {
 /** Decisión final del solicitante sobre un finalista. */
 export interface FinalistaDecision {
   candidatoId: number;
-  /** true = aprobar y cerrar el proceso; false = rechazar al finalista. */
+  /** true = aprobar (el proceso pasa a EMO de ingreso); false = rechazar al finalista. */
   aprobado: boolean;
 }
 
@@ -326,4 +334,10 @@ export interface FinalistaDecisionResult {
   /** true si ya no queda ningún finalista: el requerimiento vuelve a Long list / CVs. */
   todosRechazados: boolean;
   candidatoNombre: string;
+  /**
+   * Ficha de pre-ingreso creada en workers para el seleccionado. Es el id con el que GTH abre
+   * la programación de su EMO de Ingreso. Null al rechazar, o si el candidato todavía no tiene
+   * el formulario del postulante aprobado.
+   */
+  workerId?: number | null;
 }
