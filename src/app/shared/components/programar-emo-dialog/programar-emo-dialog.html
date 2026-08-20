@@ -9,10 +9,16 @@
   <div class="paso-body">
     <!-- Trabajador: solo lectura, viene de la fila desde la que se abrió el modal -->
     <h2 class="paso-title"><i class="ti ti-user"></i> Trabajador</h2>
-    <div class="worker-card">
+    <div class="worker-card" [class.worker-card--preingreso]="worker.esFinalistaAprobado">
       <span class="worker-card__name">{{ worker.nombreCompleto | titleCase }}</span>
       <span class="worker-card__meta">
         DNI {{ worker.dni }}<ng-container *ngIf="worker.empresa"> · {{ worker.empresa }}</ng-container>
+      </span>
+      <!-- Ficha de pre-ingreso: se dice explícitamente que todavía no es trabajador, para que
+           quien programa entienda por qué el tipo de EMO viene fijado en Ingreso. -->
+      <span class="worker-card__tag" *ngIf="worker.esFinalistaAprobado">
+        <i class="ti ti-user-plus"></i>
+        Finalista aprobado — aún sin contrato. Solo EMO de Ingreso.
       </span>
     </div>
 

@@ -160,6 +160,11 @@ export interface EmoPorTrabajadorDto {
   proyecto?: string;
   proyectoNombre?: string;
   tipoContrata?: string;
+  /**
+   * true cuando la fila no es un trabajador todavía, sino la ficha de pre-ingreso de un finalista
+   * aprobado en Reclutamiento que aún no firma contrato: solo se le puede programar EMO de Ingreso.
+   */
+  esFinalistaAprobado?: boolean;
   tieneEmo: boolean;
   emoId?: number;
   tipoEmo?: string;
@@ -332,6 +337,8 @@ export interface InterconsultaInlineCreateDto {
 }
 
 export interface EmoPorTrabajadorQuery {
+  /** Una sola ficha: lo usa el enlace desde Reclutamiento para abrir directo al finalista. */
+  workerId?: number;
   search?: string;
   aptitud?: string;
   estado?: string;

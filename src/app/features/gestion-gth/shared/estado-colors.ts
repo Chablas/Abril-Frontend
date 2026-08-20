@@ -21,6 +21,7 @@ const PIPELINE: string[] = [
   'LONG_LIST_APROBADA',
   'ENTREVISTAS',
   'SELECCION_JEFATURA',
+  'EMO_INGRESO',
   'CERRADO',
 ];
 
@@ -43,6 +44,7 @@ export function estadoColors(codigo: string): { bg: string; text: string } {
     case 'LONG_LIST_APROBADA': return { bg: '#DCFCE7', text: '#15803D' };
     case 'ENTREVISTAS':        return { bg: '#FCE7F3', text: '#BE185D' };
     case 'SELECCION_JEFATURA': return { bg: '#CFFAFE', text: '#0E7490' };
+    case 'EMO_INGRESO':        return { bg: '#FEF9C3', text: '#A16207' };
     case 'CERRADO':            return { bg: '#E0E7FF', text: '#3730A3' };
     default:                   return { bg: '#F3F4F6', text: '#374151' };
   }

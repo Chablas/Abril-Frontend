@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import { EmoService } from '../services/emo.service';
 import { CatalogosSaludService } from '../services/catalogos-salud.service';
@@ -132,6 +132,13 @@ export class Emos implements OnInit, OnDestroy {
   /** El botón "Configuración" del header se muestra solo con esta feature. */
   puedeConfigurar = false;
 
+  /**
+   * Ficha a la que se entró desde Reclutamiento («Programar EMO de ingreso»). Mientras esté
+   * puesta, la lista muestra solo esa fila: el finalista es uno entre 900+ registros y sin esto
+   * caería en cualquier página. Se limpia con el aviso de arriba de la tabla.
+   */
+  workerIdEnfocado: number | null = null;
+
   items: EmoPorTrabajadorDto[] = [];
   totalRecords = 0;
   totalPages = 1;
@@ -155,6 +162,7 @@ export class Emos implements OnInit, OnDestroy {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private router: Router,
+    private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
     private navigationService: NavigationService,
     private catalogosHabService: CatalogosHabService,
@@ -170,6 +178,24 @@ export class Emos implements OnInit, OnDestroy {
     this.loadEmpresas();
     this.loadProyectos();
     this.loadAreas();
+
+    // Enlace desde Reclutamiento: ?workerId=123&programar=1 deja la lista con esa sola ficha y,
+    // si viene programar=1, abre el modal de programación apenas llegue la fila.
+    const qp = this.route.snapshot.queryParamMap;
+    const workerId = Number(qp.get('workerId'));
+    this.workerIdEnfocado = Number.isFinite(workerId) && workerId > 0 ? workerId : null;
+    this.abrirProgramarAlCargar = this.workerIdEnfocado !== null && qp.get('programar') === '1';
+
+    this.load(1);
+  }
+
+  /** Pendiente de abrir el modal de programación en cuanto llegue la fila del deep link. */
+  private abrirProgramarAlCargar = false;
+
+  /** Vuelve a la lista completa tras haber entrado enfocado en una sola ficha. */
+  quitarFoco(): void {
+    this.workerIdEnfocado = null;
+    this.router.navigate([], { relativeTo: this.route, queryParams: {} });
     this.load(1);
   }
 
@@ -227,6 +253,7 @@ export class Emos implements OnInit, OnDestroy {
     const query: EmoPorTrabajadorQuery = {
       page,
       pageSize: this.pageSize,
+      workerId: this.workerIdEnfocado ?? undefined,
       search: this.filters.search?.trim() || undefined,
       aptitud: this.filters.aptitud || undefined,
       estado: this.filters.estado || undefined,
@@ -251,6 +278,13 @@ export class Emos implements OnInit, OnDestroy {
         this.totalRecords = res.totalRecords;
         this.loading = false;
         this.loaderService.hide();
+
+        if (this.abrirProgramarAlCargar) {
+          this.abrirProgramarAlCargar = false;
+          const ficha = this.items.find((i) => i.workerId === this.workerIdEnfocado);
+          if (ficha) this.selectedWorkerForProgramar = ficha;
+        }
+
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {

@@ -19,8 +19,8 @@ import {
 /**
  * Página PÚBLICA del formulario de información del postulante (acceso por token, sin login).
  * Reemplaza al Microsoft Forms "FORMULARIO POSTULANTE - ABRIL GRUPO INMOBILIARIO". Se llena en
- * 4 pasos (datos personales, estudios, experiencia laboral, consentimiento) y al enviarse queda
- * COMPLETADO a la espera de la revisión de GTH.
+ * 5 pasos (protección de datos, datos personales, estudios, experiencia laboral, consentimiento)
+ * y al enviarse queda COMPLETADO a la espera de la revisión de GTH.
  */
 @Component({
   standalone: true,
@@ -30,8 +30,8 @@ import {
   styleUrl: './postulante-formulario.css',
 })
 export class PostulanteFormulario implements OnInit {
-  /** Color de acento del formulario (azul del logo de Abril). */
-  readonly accent = 'var(--color-abril-logo-blue)';
+  /** Color de acento del formulario (verde de la marca Abril). */
+  readonly accent = 'var(--color-abril-primary-dark)';
 
   token = '';
   cargando = true;
@@ -50,12 +50,20 @@ export class PostulanteFormulario implements OnInit {
 
   /** Largo exacto del número de documento cuando el tipo es DNI (8 dígitos). */
   readonly dniLargo = 8;
+  /** Largo máximo del número de documento cuando el tipo es CE (12 caracteres). */
+  readonly ceLargo = 12;
   /** Largo máximo del número de celular (9 dígitos). */
   readonly celularLargo = 9;
 
   paso = 1;
-  readonly totalPasos = 4;
-  readonly pasosNombres = ['Datos personales', 'Estudios', 'Experiencia laboral', 'Consentimiento'];
+  readonly totalPasos = 5;
+  readonly pasosNombres = [
+    'Protección de datos',
+    'Datos personales',
+    'Estudios',
+    'Experiencia laboral',
+    'Consentimiento',
+  ];
 
   constructor(
     private route: ActivatedRoute,
@@ -137,27 +145,52 @@ export class PostulanteFormulario implements OnInit {
     return this.tiposDocumento.find((t) => t.id === this.model.tipoDocumentoId)?.codigo === 'DNI';
   }
 
-  /** El DNI exige 8 dígitos exactos; para el carné de extranjería basta que esté lleno. */
-  get documentoValido(): boolean {
-    const valor = (this.model.numeroDocumento ?? '').trim();
-    return this.esDni ? /^\d{8}$/.test(valor) : valor.length > 0;
+  /**
+   * Largo máximo del número de documento según el tipo elegido: 8 para el DNI y 12 para el carné
+   * de extranjería. Sin tipo elegido se deja el tope del CE, que es el mayor de los dos.
+   */
+  get documentoLargoMaximo(): number {
+    return this.esDni ? this.dniLargo : this.ceLargo;
+  }
+
+  /** Ayuda del campo, que cambia con el tipo elegido (el largo permitido no es el mismo). */
+  get documentoPlaceholder(): string {
+    return this.esDni
+      ? `Escribe tu DNI (${this.dniLargo} dígitos)`
+      : `Escribe tu número de documento (máx. ${this.ceLargo} caracteres)`;
   }
 
   /**
-   * Al cambiar el tipo de documento re-aplica la regla al valor ya escrito (ej. si venía un carné
-   * alfanumérico y se pasa a DNI, se queda solo con los primeros 8 dígitos).
+   * El DNI exige 8 dígitos exactos; el carné de extranjería es alfanumérico, así que basta con
+   * que esté lleno y no pase de 12 caracteres.
+   */
+  get documentoValido(): boolean {
+    const valor = (this.model.numeroDocumento ?? '').trim();
+    return this.esDni ? /^\d{8}$/.test(valor) : valor.length > 0 && valor.length <= this.ceLargo;
+  }
+
+  /**
+   * Al cambiar el tipo de documento re-aplica la regla al valor ya escrito: si venía un carné
+   * alfanumérico y se pasa a DNI, se queda solo con los primeros 8 dígitos; al revés, se recorta
+   * a los 12 caracteres que admite el carné.
    */
   onTipoDocumentoChange(id: number | null): void {
     this.model.tipoDocumentoId = id;
-    if (this.esDni) {
-      this.model.numeroDocumento = this.soloDigitos(this.model.numeroDocumento, this.dniLargo);
-    }
+    this.model.numeroDocumento = this.esDni
+      ? this.soloDigitos(this.model.numeroDocumento, this.dniLargo)
+      : (this.model.numeroDocumento ?? '').slice(0, this.ceLargo);
   }
 
-  /** Filtra lo tecleado en el número de documento: si es DNI, solo dígitos y máximo 8. */
+  /**
+   * Filtra lo tecleado en el número de documento: con DNI solo dígitos y máximo 8; con CE se
+   * respeta lo alfanumérico pero se corta a 12. El maxlength del input no basta: no ataja el
+   * pegado en todos los navegadores ni el valor que quedó de un tipo de documento anterior.
+   */
   onNumeroDocumentoInput(event: Event): void {
     const input = event.target as HTMLInputElement;
-    const limpio = this.esDni ? this.soloDigitos(input.value, this.dniLargo) : input.value;
+    const limpio = this.esDni
+      ? this.soloDigitos(input.value, this.dniLargo)
+      : input.value.slice(0, this.ceLargo);
     if (input.value !== limpio) input.value = limpio;
     this.model.numeroDocumento = limpio;
   }
@@ -175,12 +208,39 @@ export class PostulanteFormulario implements OnInit {
     return (valor ?? '').replace(/\D/g, '').slice(0, largo);
   }
 
+  // ── Fechas de la experiencia laboral ─────────────────────────────────────
+  /**
+   * No se puede haber salido de una empresa antes de haber entrado. El `[min]` del date-picker de
+   * la fecha de término ya bloquea elegir un día anterior, pero no toca lo que ya estaba puesto:
+   * si el postulante llena el término y después mueve el inicio a una fecha posterior, el término
+   * queda inválido en silencio. Por eso al cambiar el inicio se limpia el término desfasado.
+   */
+  onFechaInicioChange(fecha: string | null): void {
+    this.model.fechaInicio = fecha;
+    if (this.fechasExperienciaInvertidas) this.model.fechaTermino = null;
+  }
+
+  /** true si hay ambas fechas y el término cae antes del inicio (las fechas son 'YYYY-MM-DD'). */
+  get fechasExperienciaInvertidas(): boolean {
+    const inicio = this.model.fechaInicio;
+    const termino = this.model.fechaTermino;
+    return !!inicio && !!termino && termino < inicio;
+  }
+
   // ── Validación por paso ──────────────────────────────────────────────────
   private lleno(v: string | null): boolean {
     return !!v && v.trim().length > 0;
   }
 
-  get puedeAvanzarP1(): boolean {
+  /**
+   * Paso 0: sin el consentimiento de protección de datos no hay base legal para pedirle nada más,
+   * así que el resto del formulario no se desbloquea. El backend valida lo mismo en el envío.
+   */
+  get consentimientoDatosValido(): boolean {
+    return this.model.consentimientoDatosPersonales === true;
+  }
+
+  get datosPersonalesValidos(): boolean {
     const m = this.model;
     return (
       this.lleno(m.nombresCompletos) &&
@@ -196,18 +256,19 @@ export class PostulanteFormulario implements OnInit {
     );
   }
 
-  get puedeAvanzarP2(): boolean {
+  get estudiosValidos(): boolean {
     const m = this.model;
     return this.lleno(m.profesion) && !!m.universidadId && !!m.gradoAcademicoId;
   }
 
-  get puedeAvanzarP3(): boolean {
+  get experienciaValida(): boolean {
     const m = this.model;
     return (
       this.lleno(m.empresa) &&
       this.lleno(m.areaTrabajo) &&
       this.lleno(m.cargo) &&
       !!m.fechaInicio &&
+      !this.fechasExperienciaInvertidas &&
       !!m.motivoCeseId &&
       this.lleno(m.funcionesPrincipales) &&
       this.lleno(m.logros) &&
@@ -223,10 +284,11 @@ export class PostulanteFormulario implements OnInit {
 
   get pasoActualValido(): boolean {
     switch (this.paso) {
-      case 1: return this.puedeAvanzarP1;
-      case 2: return this.puedeAvanzarP2;
-      case 3: return this.puedeAvanzarP3;
-      case 4: return this.puedeEnviar;
+      case 1: return this.consentimientoDatosValido;
+      case 2: return this.datosPersonalesValidos;
+      case 3: return this.estudiosValidos;
+      case 4: return this.experienciaValida;
+      case 5: return this.puedeEnviar;
       default: return false;
     }
   }
@@ -255,21 +317,45 @@ export class PostulanteFormulario implements OnInit {
   }
 
   private avisoIncompleto(): void {
+    // Las fechas invertidas se avisan aparte: es lo único de esta pantalla que no se resuelve
+    // "completando" algo, así que el mensaje genérico dejaría al postulante sin saber qué corregir.
+    if (this.paso === 4 && this.fechasExperienciaInvertidas) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Revisa las fechas',
+        text: 'La fecha de término no puede ser anterior a la fecha de inicio en la empresa.',
+        confirmButtonColor: 'var(--color-abril-primary-dark)',
+      });
+      return;
+    }
+
+    const esProteccionDatos = this.paso === 1;
     Swal.fire({
       icon: 'warning',
-      title: 'Faltan datos',
-      text: 'Completa los campos obligatorios de esta sección antes de continuar.',
-      confirmButtonColor: '#005D9D',
+      title: esProteccionDatos ? 'Consentimiento requerido' : 'Faltan datos',
+      text: esProteccionDatos
+        ? 'Debes autorizar el tratamiento de tus datos personales para continuar con el formulario.'
+        : 'Completa los campos obligatorios de esta sección antes de continuar.',
+      confirmButtonColor: 'var(--color-abril-primary-dark)',
     });
   }
 
   enviar(): void {
+    // El backend rechaza el envío sin consentimiento: si por lo que sea se llegó hasta acá sin él,
+    // se devuelve al paso 0 en vez de mostrar el error del servidor.
+    if (!this.consentimientoDatosValido) {
+      this.paso = 1;
+      this.scrollTop();
+      this.avisoIncompleto();
+      return;
+    }
+
     if (!this.puedeEnviar) {
       Swal.fire({
         icon: 'warning',
         title: 'Consentimiento requerido',
         text: 'Debes confirmar la veracidad de la información y que completaste los documentos requeridos.',
-        confirmButtonColor: '#005D9D',
+        confirmButtonColor: 'var(--color-abril-primary-dark)',
       });
       return;
     }
@@ -290,14 +376,21 @@ export class PostulanteFormulario implements OnInit {
           icon: 'error',
           title: 'No se pudo enviar',
           text: err.error?.message ?? 'Ocurrió un error al enviar el formulario. Inténtalo nuevamente.',
-          confirmButtonColor: '#005D9D',
+          confirmButtonColor: 'var(--color-abril-primary-dark)',
         });
       },
     });
   }
 
   /** Setea un consentimiento booleano (Sí/No). */
-  setBool(campo: 'autorizaVerificacionReferencias' | 'declaracionVeracidad' | 'confirmacionDocumentos', valor: boolean): void {
+  setBool(
+    campo:
+      | 'consentimientoDatosPersonales'
+      | 'autorizaVerificacionReferencias'
+      | 'declaracionVeracidad'
+      | 'confirmacionDocumentos',
+    valor: boolean,
+  ): void {
     this.model[campo] = valor;
   }
 }

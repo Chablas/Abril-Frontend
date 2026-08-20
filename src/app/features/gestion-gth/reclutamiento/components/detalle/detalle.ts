@@ -2,6 +2,8 @@ import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } fro
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { Seleccionado } from '../../../shared/dtos/seleccionado.dto';
 import Swal from 'sweetalert2';
 import { AbrilModalPanel } from '../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
@@ -40,9 +42,20 @@ interface CandidatoLongList {
   nombre: string;
   /** Observaciones internas de GTH sobre el candidato. */
   comentario: string;
-  /** Informe del candidato adjunto (opcional). */
-  informe: File | null;
+  /** Portafolio/anexos del candidato: 0..n archivos además del CV. */
+  anexos: File[];
 }
+
+/** Formatos que acepta el "Portafolio/Anexos" (los mismos que valida el backend). */
+const ANEXOS_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp';
+
+/**
+ * Tope de lo que puede pesar el conjunto de archivos del envío (CVs + anexos). No es una regla
+ * nuestra: es lo que acepta el proveedor de correo con los adjuntos adentro, y el backend lo
+ * valida igual (`MaxLongListCorreoBytes`). Se comprueba también acá para avisar antes de subir
+ * decenas de MB que el servidor va a rechazar.
+ */
+const MAX_LONG_LIST_CORREO_BYTES = 2_800_000;
 
 /**
  * Correo válido para enviarle el formulario al postulante. Misma expresión que valida el backend
@@ -178,7 +191,22 @@ export class GthDetalleRequerimiento implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
+    private router: Router,
   ) {}
+
+  /**
+   * Salta a SSOMA · Salud Ocupacional · EMOs con la ficha del seleccionado enfocada y el modal
+   * de programación abierto. No se programa desde acá a propósito: la funcionalidad de EMOs ya
+   * existe (con sus clínicas, sus correos a la clínica y su control de duplicados) y duplicarla
+   * en Reclutamiento sería tener dos formas de crear la misma cita.
+   */
+  programarEmoIngreso(sel: Seleccionado): void {
+    if (!sel.workerId) return;
+    this.closeModal.emit();
+    this.router.navigate(['/ssoma/salud-ocupacional/emos'], {
+      queryParams: { workerId: sel.workerId, programar: 1 },
+    });
+  }
 
   ngOnInit(): void {
     this.loaderService.show();
@@ -423,7 +451,7 @@ export class GthDetalleRequerimiento implements OnInit {
         cv: file,
         nombre: this.derivarNombre(file.name),
         comentario: '',
-        informe: null,
+        anexos: [],
       });
     }
     input.value = ''; // permite volver a elegir el mismo archivo
@@ -433,14 +461,32 @@ export class GthDetalleRequerimiento implements OnInit {
     this.candidatos.splice(index, 1);
   }
 
-  onInformeSeleccionado(candidato: CandidatoLongList, event: Event): void {
+  // ── Portafolio/Anexos del candidato ─────────────────────────────────────
+  /** Formatos aceptados por el input de anexos (atributo `accept`). */
+  readonly anexosAccept = ANEXOS_ACCEPT;
+
+  /** Agrega al candidato los archivos elegidos, sin repetir los que ya estaban cargados. */
+  onAnexosSeleccionados(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
-    candidato.informe = input.files?.[0] ?? null;
-    input.value = '';
+    const candidato = this.candidatos[index];
+    if (!candidato) return;
+
+    for (const file of Array.from(input.files ?? [])) {
+      const repetido = candidato.anexos.some((a) => a.name === file.name && a.size === file.size);
+      if (!repetido) candidato.anexos.push(file);
+    }
+    input.value = ''; // permite volver a elegir el mismo archivo
   }
 
-  quitarInforme(candidato: CandidatoLongList): void {
-    candidato.informe = null;
+  quitarAnexo(index: number, anexoIndex: number): void {
+    this.candidatos[index]?.anexos.splice(anexoIndex, 1);
+  }
+
+  /** Tamaño de un archivo en KB/MB, para la lista de anexos. */
+  pesoArchivo(file: File): string {
+    return file.size < 1024 * 1024
+      ? `${Math.max(1, Math.round(file.size / 1024))} KB`
+      : `${(file.size / 1024 / 1024).toFixed(1)} MB`;
   }
 
   /** true si se puede enviar la long list (hay al menos un candidato y no se está enviando). */
@@ -449,7 +495,7 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
-   * Envía la long list al solicitante: sube los CVs/informes, dispara el correo configurado
+   * Envía la long list al solicitante: sube los CVs, dispara el correo configurado
    * y avanza el requerimiento a LONG_LIST_ENVIADA. Al terminar, el modal pasa al estado
    * "Long list enviada" (se oculta la carga de candidatos y cambia el "Siguiente paso").
    */
@@ -468,12 +514,31 @@ export class GthDetalleRequerimiento implements OnInit {
       return;
     }
 
+    // Los CVs y los anexos viajan adjuntos en el correo al solicitante, que tiene un tope de
+    // tamaño (ver MAX_LONG_LIST_CORREO_BYTES): se avisa acá para no subirlo y que lo rechace.
+    const pesoTotal = this.candidatos.reduce(
+      (total, c) => total + c.cv.size + c.anexos.reduce((suma, a) => suma + a.size, 0),
+      0,
+    );
+    if (pesoTotal > MAX_LONG_LIST_CORREO_BYTES) {
+      const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+      Swal.fire({
+        icon: 'warning',
+        title: 'Los archivos pesan demasiado',
+        text:
+          `Los CVs y anexos suman ${mb(pesoTotal)} y el correo al solicitante admite hasta ` +
+          `${mb(MAX_LONG_LIST_CORREO_BYTES)}. Reduce o quita algún anexo del portafolio.`,
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
     // El puesto no viaja: el backend lo toma del requerimiento (es el que pidió el solicitante).
     const candidatos: LongListCandidatoEnvio[] = this.candidatos.map((c) => ({
       nombre: c.nombre.trim(),
       comentario: c.comentario.trim(),
       cv: c.cv,
-      informe: c.informe,
+      anexos: c.anexos,
     }));
 
     this.enviando = true;
@@ -846,9 +911,9 @@ export class GthDetalleRequerimiento implements OnInit {
   /** Qué falta para habilitar el paso a entrevistas (hint bajo el botón). Vacío si ya se puede. */
   get requisitosContinuarTexto(): string {
     if (this.puedeContinuarAEntrevistas) return '';
-    if (!this.formulariosDecididos)
-      return 'Revisa el formulario de todos los candidatos para continuar: apruébalo, o recházalo si el postulante nunca lo completó.';
-    if (!this.hayFormularioAprobado)
+    // El "ninguno quedó aprobado" espera a que todos los formularios estén decididos: con alguno
+    // aún pendiente de revisar no hay nada que avisar, y decirlo antes acusaría en falso.
+    if (this.formulariosDecididos && !this.hayFormularioAprobado)
       return 'Ningún formulario quedó aprobado: no hay candidatos a quienes entrevistar.';
     if (!this.multitestCompleto)
       return 'Marca el Multitest de todos los candidatos para continuar.';
@@ -906,6 +971,48 @@ export class GthDetalleRequerimiento implements OnInit {
   puedeEnviarEntrevista(c: CandidatoAprobado): boolean {
     const form = this.entrevistaForm[c.candidatoId];
     return !!form?.fecha && !!form?.hora && !!form?.lugarId && !this.enviandoEntrevista[c.candidatoId];
+  }
+
+  /**
+   * Chip de la respuesta del candidato a su citación, o null si todavía no hay entrevista
+   * programada (en ese caso no hay nada que responder y el chip solo sería ruido).
+   *
+   * Sin responder no es lo mismo que rechazar, por eso son tres estados y no dos: mientras el
+   * candidato no toque ninguno de los dos botones del correo, GTH ve que sigue esperando.
+   */
+  respuestaEntrevista(
+    c: CandidatoAprobado,
+  ): { texto: string; icono: string; fondo: string; color: string; detalle: string } | null {
+    const entrevista = c.entrevista;
+    if (!entrevista?.enviadoEn) return null;
+
+    if (entrevista.respuestaCodigo === 'CONFIRMADA') {
+      return {
+        texto: 'Confirmada',
+        icono: 'ti-circle-check',
+        fondo: '#DCFCE7',
+        color: '#15803D',
+        detalle: 'El candidato confirmó que asistirá a la entrevista.',
+      };
+    }
+
+    if (entrevista.respuestaCodigo === 'RECHAZADA') {
+      return {
+        texto: 'Rechazada',
+        icono: 'ti-circle-x',
+        fondo: '#FEE2E2',
+        color: '#B91C1C',
+        detalle: 'El candidato avisó que no podrá asistir a la entrevista.',
+      };
+    }
+
+    return {
+      texto: 'Sin responder',
+      icono: 'ti-clock',
+      fondo: '#FEF3C7',
+      color: '#92600A',
+      detalle: 'El candidato todavía no confirma ni rechaza la entrevista desde el correo.',
+    };
   }
 
   /** Etiqueta del botón según si la entrevista ya se había programado (reprogramación). */
@@ -981,12 +1088,6 @@ export class GthDetalleRequerimiento implements OnInit {
     return (
       this.puedeEvaluar(c) && this.evaluacionCompleta(c) && !this.guardandoEvaluacion[c.candidatoId]
     );
-  }
-
-  /** Aviso bajo el botón cuando aún faltan comentarios por registrar. Vacío si ya está completo. */
-  requisitosEvaluacionTexto(c: CandidatoAprobado): string {
-    if (!this.puedeEvaluar(c) || this.evaluacionCompleta(c)) return '';
-    return 'Registra el resultado de entrevista, el informe psicotécnico y la recomendación GTH para enviarlo como finalista.';
   }
 
   /**

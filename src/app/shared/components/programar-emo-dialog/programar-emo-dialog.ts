@@ -89,7 +89,16 @@ export class ProgramarEmoDialogComponent implements OnInit {
   ngOnInit(): void {
     this.catalogos.getEmoTipos().subscribe({
       next: (list) => {
-        this.tiposEmo = list;
+        // Ficha de pre-ingreso: el único examen que aplica antes de firmar es el de Ingreso.
+        // El backend lo valida igual (ProgramacionEmoRepository.Create); acá se acota el
+        // desplegable para que no haya que elegir mal primero y leer el error después.
+        this.tiposEmo = this.worker?.esFinalistaAprobado
+          ? list.filter((t) => t.nombre?.trim().toLowerCase() === 'ingreso')
+          : list;
+        // Con una sola opción se preselecciona: no tiene sentido obligar a abrir el desplegable.
+        if (this.worker?.esFinalistaAprobado && this.tiposEmo.length === 1) {
+          this.form.tipoEmoId = this.tiposEmo[0].id;
+        }
         this.cdr.detectChanges();
       },
     });
