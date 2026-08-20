@@ -11,9 +11,6 @@
           [value]="formData.areaNombre || '(No se pudo identificar tu área)'"
           class="w-full border border-[#e2e8f0] rounded-[7px] h-[36px] px-[10px] text-[13px] text-gray-500 bg-gray-50" />
       </div>
-      <p class="text-[11px] text-gray-400">
-        Área asociada al usuario solicitante. No es editable.
-      </p>
     </div>
 
     <!-- ── Cantidad total de vacantes ──────────────────────────────────── -->
@@ -26,7 +23,6 @@
         [fullText]="true"
         [value]="cantidad"
         (valueChange)="onCantidadChange($event)" />
-      <p class="text-[11px] text-gray-400">Se generará un bloque para completar los datos de cada vacante.</p>
     </div>
 
     <!-- Info: una vacante = un requerimiento -->
@@ -53,52 +49,18 @@
         <span class="text-[11px] text-gray-400">Vacante {{ i + 1 }} de {{ vacantes.length }}</span>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[12px]">
-        <!-- ── Puesto: del catálogo, o personalizado (nombre a mano + categoría) ──────
-             En modo personalizado la celda ocupa tres columnas porque pasa a tener dos
-             campos y el label "Nombre del puesto personalizado" es largo: con dos columnas
-             se partía en dos líneas y la segunda tapaba el propio campo. El checkbox queda
-             siempre justo debajo del control de puesto. -->
-        <div class="flex flex-col gap-[4px]" [ngClass]="v.personalizado ? 'sm:col-span-2 lg:col-span-3' : ''">
-          <ng-container *ngIf="!v.personalizado">
-            <app-search-select label="Puesto" placeholder="Selecciona puesto"
-              [options]="formData.puestos" valueField="id" displayField="nombre"
-              [fullText]="true"
-              [(value)]="v.puestoId" />
-            <p *ngIf="submitted && !v.puestoId" class="text-xs text-red-500">Campo requerido</p>
-          </ng-container>
-
-          <div *ngIf="v.personalizado" class="grid grid-cols-1 lg:grid-cols-2 gap-[12px]">
-            <div class="flex flex-col gap-[4px]">
-              <div class="relative mt-[9px]">
-                <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none whitespace-nowrap">Nombre del puesto personalizado</label>
-                <input type="text" [(ngModel)]="v.puestoNombre" [maxlength]="maxPuestoNombre"
-                  placeholder="Escribe el puesto"
-                  class="w-full border border-[#e2e8f0] rounded-[7px] h-[36px] px-[10px] text-[13px] text-gray-700 focus:outline-none" />
-              </div>
-              <p *ngIf="submitted && !v.puestoNombre.trim()" class="text-xs text-red-500">Campo requerido</p>
-            </div>
-
-            <div class="flex flex-col gap-[4px]">
-              <app-search-select label="Categoría" placeholder="Selecciona categoría"
-                [options]="formData.categorias" valueField="id" displayField="nombre"
-                [fullText]="true"
-                [(value)]="v.categoriaId" />
-              <p *ngIf="submitted && !v.categoriaId" class="text-xs text-red-500">Campo requerido</p>
-            </div>
-          </div>
-
-          <label class="flex items-center gap-[8px] cursor-pointer w-fit">
-            <input type="checkbox"
-              class="w-[15px] h-[15px] shrink-0 cursor-pointer"
-              style="accent-color:var(--color-abril-standard)"
-              [checked]="v.personalizado"
-              (change)="togglePersonalizado(v, !v.personalizado)" />
-            <span class="text-[12px] text-gray-600">Puesto personalizado</span>
-          </label>
-          <p *ngIf="v.personalizado" class="text-[11px] text-gray-400">
-            Se agregará al catálogo de puestos con la categoría elegida.
-          </p>
+      <!-- Tres columnas: puesto, tipo y proyecto. Al elegir Reemplazo aparece un cuarto campo
+           (el trabajador reemplazado) y la fila pasa a completarse en la siguiente línea. -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[12px]">
+        <!-- ── Puesto: siempre del catálogo ────────────────────────────────────────────
+             El alta de puestos nuevos es tarea de GTH desde el catálogo de puestos, no del
+             solicitante: acá solo se elige entre los que ya existen. -->
+        <div class="flex flex-col gap-[4px]">
+          <app-search-select label="Puesto" placeholder="Selecciona puesto"
+            [options]="formData.puestos" valueField="id" displayField="nombre"
+            [fullText]="true"
+            [(value)]="v.puestoId" />
+          <p *ngIf="submitted && !v.puestoId" class="text-xs text-red-500">Campo requerido</p>
         </div>
 
         <div class="flex flex-col gap-[4px]">
@@ -136,28 +98,41 @@
           <p *ngIf="submitted && !v.projectId" class="text-xs text-red-500">Campo requerido</p>
         </div>
 
+        <!-- ── Salario bruto mensual ────────────────────────────────────────────────
+             Va por vacante y no por solicitud: dos vacantes de la misma solicitud pueden
+             ser de puestos distintos y cobrar distinto. Es parte de lo que aprueban el
+             gerente del área y Gerencia General, así que viaja en sus correos. -->
         <div class="flex flex-col gap-[4px]">
-          <!-- dense + floatingLabel: mismas medidas y label flotante que app-search-select, para que
-               los cuatro campos de la fila queden a la misma altura. -->
-          <app-date-picker
-            label="Fecha requerida de ingreso"
-            color="var(--color-abril-standard)"
-            [dense]="true"
-            [floatingLabel]="true"
-            [(value)]="v.fecha" />
-          <p *ngIf="submitted && !v.fecha" class="text-xs text-red-500">Campo requerido</p>
+          <div class="abril-field">
+            <!-- La moneda va en el label, como en el resto de los campos de dinero del sistema
+                 (ver «Monto cubierto (S/)» en el caso social de SSOMA): el label flotante nunca
+                 se tapa, y así no hay que pelear el padding de .abril-field-input, que va sin
+                 capa y le gana a cualquier utilidad de Tailwind. -->
+            <label class="abril-field-label" [attr.for]="'gth-salario-' + i">Salario bruto mensual (S/)</label>
+            <input [id]="'gth-salario-' + i" class="abril-field-input" type="number"
+              inputmode="decimal" min="0" [max]="maxSalario" step="0.01" placeholder="0.00"
+              [(ngModel)]="v.salarioBrutoMensual" />
+          </div>
+          <p *ngIf="submitted && salarioInvalido(v)" class="text-xs text-red-500">
+            {{ v.salarioBrutoMensual && v.salarioBrutoMensual > maxSalario
+              ? 'No puede superar S/ ' + (maxSalario | number:'1.2-2')
+              : 'Campo requerido' }}
+          </p>
         </div>
       </div>
     </div>
 
-    <!-- ── Justificación general (opcional) ────────────────────────────── -->
+    <!-- ── Justificación general (obligatoria) ─────────────────────────────
+         Es el sustento que leen el gerente del área y Gerencia General para aprobar, y va en el
+         cuerpo de sus correos: sin ella la solicitud no se registra. -->
     <div class="flex flex-col gap-[4px]">
       <div class="relative mt-[9px]">
-        <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Justificación general de la solicitud (opcional)</label>
-        <textarea [(ngModel)]="justificacion" rows="3"
+        <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Justificación general de la solicitud</label>
+        <textarea [(ngModel)]="justificacion" rows="3" [maxlength]="maxJustificacion"
           placeholder="Explique el motivo de la solicitud, el impacto del personal requerido y cualquier información relevante..."
           class="w-full border border-[#e2e8f0] rounded-[7px] px-[10px] py-[8px] text-[13px] text-gray-700 focus:outline-none resize-y"></textarea>
       </div>
+      <p *ngIf="submitted && !justificacion.trim()" class="text-xs text-red-500">Campo requerido</p>
     </div>
 
     <!-- ── Adjuntar sustento (opcional) ────────────────────────────────── -->
@@ -220,9 +195,6 @@
                 [title]="etiquetaDestinatario(c)">{{ c.email }}</span></ng-container
             >.
           </ng-container>
-          <span class="block mt-[4px] text-gray-500">
-            Gestión de Talento Humano la recibirá recién cuando Gerencia General la apruebe.
-          </span>
         </p>
       </div>
 

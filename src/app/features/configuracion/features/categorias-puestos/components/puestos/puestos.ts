@@ -18,8 +18,8 @@ import { PuestoCreateEdit } from '../puesto-create-edit/puesto-create-edit';
 import { PuestoDetalle } from '../puesto-detalle/puesto-detalle';
 
 /**
- * Sección "Puestos" de Configuración → Categorías y Puestos. Los datos los carga y
- * refresca el contenedor (una sola petición para ambas secciones); acá viven los
+ * Sección "Puestos" de Gestión GTH → Configuración → Categorías y Puestos. Los datos los
+ * carga y refresca el contenedor (una sola petición para ambas secciones); acá viven los
  * filtros, la paginación y los modales propios de la sección.
  */
 @Component({

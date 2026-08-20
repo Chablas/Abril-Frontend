@@ -165,7 +165,6 @@
           <th>Fecha llegada</th>
           <th>Puesto</th>
           <th>Proyecto / Obra</th>
-          <th>Fecha requerida</th>
           <th>Prioridad</th>
           <th>Estado</th>
           <th>Acciones</th>
@@ -174,7 +173,7 @@
       <tbody>
 
         <tr *ngIf="filteredSolicitudes.length === 0">
-          <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
+          <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
         </tr>
 
         <tr *ngFor="let s of pagedSolicitudes"
@@ -190,8 +189,6 @@
           <td class="text-gray-700 font-medium">{{ s.puesto | titleCase }}</td>
 
           <td class="text-gray-500">{{ (s.proyectoObra | titleCase) || '—' }}</td>
-
-          <td class="text-gray-500 whitespace-nowrap">{{ s.fechaRequeridaIngreso | date:'dd/MM/yyyy' }}</td>
 
           <td class="text-center">
             <div class="w-[104px] mx-auto">
@@ -263,16 +260,10 @@
         {{ (s.area | titleCase) || 'Sin área' }} · {{ (s.proyectoObra | titleCase) || 'Sin proyecto' }}
       </p>
 
-      <!-- Fechas -->
-      <div class="grid grid-cols-2 gap-x-[10px] mt-[9px]">
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Fecha llegada</div>
-          <div class="text-[12px] text-gray-600">{{ s.fechaLlegada | date:'dd/MM/yyyy' }}</div>
-        </div>
-        <div>
-          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Fecha requerida</div>
-          <div class="text-[12px] text-gray-600">{{ s.fechaRequeridaIngreso | date:'dd/MM/yyyy' }}</div>
-        </div>
+      <!-- Fecha de llegada de la solicitud -->
+      <div class="mt-[9px]">
+        <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Fecha llegada</div>
+        <div class="text-[12px] text-gray-600">{{ s.fechaLlegada | date:'dd/MM/yyyy' }}</div>
       </div>
 
       <!-- Prioridad + acciones (mismas que la columna "Acciones" de la tabla) -->

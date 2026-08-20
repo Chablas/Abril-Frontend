@@ -233,7 +233,17 @@ export class NavigationService {
         { label: 'Aprobaciones', route: '/gestion-gth/aprobaciones', featureKey: 'gestion-gth.aprobaciones' },
         // Base maestra se agregará con su propia funcionalidad.
       ],
-      groups: [],
+      groups: [
+        {
+          label: 'Configuración',
+          items: [
+            // Datos maestros del catálogo de trabajadores. Antes colgaba de Configuración
+            // global; los administra GTH, así que vive acá (los archivos siguen físicamente
+            // en `features/configuracion/features/categorias-puestos/` hasta refactorizarse).
+            { label: 'Categorías y Puestos', route: '/gestion-gth/configuracion/categorias-puestos', featureKey: 'gestion-gth.config.categorias-puestos' },
+          ],
+        },
+      ],
     },
     {
       key: 'habilitacion',
@@ -335,7 +345,8 @@ export class NavigationService {
       baseRoute: '/configuracion',
       items: [
         { label: 'Proyectos', route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },
-        { label: 'Categorías y Puestos', route: '/configuracion/categorias-puestos', featureKey: 'configuracion.categorias-puestos' },
+        // 'Categorías y Puestos' se movió a Gestión GTH → Configuración
+        // (/gestion-gth/configuracion/categorias-puestos).
         { label: 'Revisores de Áreas', route: '/configuracion/revisores-areas', featureKey: 'configuracion.revisores-areas' },
         { label: 'Centro de aprendizaje', route: '/configuracion/aprendizaje', featureKey: 'configuracion.aprendizaje' },
       ],

@@ -334,6 +334,13 @@
   gap: 4px;
 }
 
+/* Salario bruto mensual de la vacante. Va en negrita y en el gris fuerte del cuerpo:
+   es una cifra que se está aprobando, no un dato de contexto como el proyecto. */
+.ad-vac-salario {
+  font-weight: 600;
+  color: #374151;
+}
+
 /* Postura del otro nivel sobre esta vacante. Gris cuando no opinó; en color cuando
    sí, porque ahí sí es un dato que puede cambiar la decisión del que está firmando. */
 .ad-vac-otro {

@@ -1,10 +1,11 @@
-<div class="abril-field">
+<div class="abril-field" [style.--da-color]="color" [style.--da-bg]="fondo">
   <label class="abril-field-label">{{ label }}</label>
   <app-file-selector
     accept=".pdf,.jpg,.jpeg,.png"
     label="Adjunta uno o varios archivos o"
     hint="PDF, JPG, PNG"
     [color]="color"
+    [background]="fondo"
     (fileSelected)="onFileSelected($event)">
   </app-file-selector>
 

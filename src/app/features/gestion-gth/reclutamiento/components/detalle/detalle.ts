@@ -302,59 +302,6 @@ export class GthDetalleRequerimiento implements OnInit {
     return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'ENTREVISTAS');
   }
 
-  /** true si el proceso ya cerró (el solicitante aprobó a un finalista). */
-  get procesoCerrado(): boolean {
-    return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'CERRADO');
-  }
-
-  /**
-   * true si GTH ya envió a algún finalista y el área solicitante todavía no decide. Compara el
-   * código exacto (no `faseAlcanzada`) porque es una espera puntual: en cuanto el solicitante
-   * decide, el requerimiento sale de esta fase (a Cerrado o de vuelta a Long list).
-   */
-  get esperandoDecisionSolicitante(): boolean {
-    return this.detalle?.estadoCodigo === 'SELECCION_JEFATURA';
-  }
-
-  /** Texto del recuadro "Siguiente paso" según la fase actual. */
-  get siguientePasoTexto(): string {
-    // Va antes que `enEntrevistas`: un requerimiento cerrado también la tiene alcanzada, y decir
-    // "programar la entrevista" contradiría el bloque "Puesto cubierto" de arriba.
-    if (this.procesoCerrado) {
-      const nombre = this.detalle?.seleccionado?.nombre;
-      return nombre
-        ? `Proceso cerrado: ${new TitleCasePipe().transform(nombre)} obtuvo el puesto. Continúa con su onboarding.`
-        : 'Proceso cerrado. No quedan acciones de reclutamiento pendientes.';
-    }
-    // Va antes que `enEntrevistas` por lo mismo: la fase de selección de jefatura también la tiene
-    // alcanzada, y el siguiente paso ya no es de GTH sino del área solicitante.
-    if (this.esperandoDecisionSolicitante)
-      return (
-        `Finalistas enviados: esperar la decisión de ${this.detalle?.area ? new TitleCasePipe().transform(this.detalle.area) : 'el área solicitante'}. ` +
-        'Mientras tanto se puede seguir entrevistando a los demás candidatos y enviar más finalistas.'
-      );
-    if (this.enEntrevistas)
-      return (
-        'Programar la entrevista de cada candidato con formulario aprobado y enviarle la ' +
-        'invitación; luego registrar su resultado y enviarlo como finalista al área solicitante, ' +
-        'o el correo de agradecimiento a quienes no continúan.'
-      );
-    if (this.longListAprobada)
-      return `Continuar proceso con ${this.detalle?.area ? new TitleCasePipe().transform(this.detalle.area) : 'el área solicitante'}.`;
-    if (this.longListEnviada)
-      return 'Esperar revisión del solicitante para continuar con evaluación.';
-    if (this.enLongList)
-      return (
-        'Subir los CVs seleccionados para la long list y registrar, para cada candidato, ' +
-        'el comentario de GTH y su informe antes de enviar al solicitante.'
-      );
-    if (this.vacantePublicada) return 'Revisar CVs recibidos para preparar la long list.';
-    return (
-      'Asignar responsable, prioridad interna y tipo de proceso con su SLA; validar la ' +
-      'razón social y publicar la vacante en los portales seleccionados.'
-    );
-  }
-
   // ── Asignación interna (autosave optimista por cambio) ──────────────────
   onAsignacionChange(campo: keyof AsignacionGth, valor: number | null): void {
     if (!this.detalle) return;
@@ -395,9 +342,32 @@ export class GthDetalleRequerimiento implements OnInit {
     else this.canalesSeleccionados.add(canalId);
   }
 
-  /** true si hay al menos un canal marcado (publicar avanza la fase, exige selección). */
+  /**
+   * true si se puede publicar: al menos un canal marcado y la asignación interna completa.
+   * Publicar avanza la fase, y a partir de ahí el requerimiento ya se trabaja con responsable,
+   * SLA, prioridad y razón social definidos, así que los cuatro se exigen antes de continuar.
+   */
   get puedePublicar(): boolean {
-    return this.canalesSeleccionados.size > 0;
+    const a = this.detalle?.asignacion;
+    return (
+      this.canalesSeleccionados.size > 0 &&
+      !!a?.responsableId &&
+      !!a.tipoProcesoId &&
+      !!a.prioridadId &&
+      !!a.contributorId
+    );
+  }
+
+  /** true si todos los canales disponibles están marcados. */
+  get todosLosCanalesSeleccionados(): boolean {
+    const canales = this.detalle?.canales ?? [];
+    return canales.length > 0 && canales.every((c) => this.canalesSeleccionados.has(c.id));
+  }
+
+  /** Marca todos los canales de una vez, o los desmarca si ya estaban todos marcados. */
+  toggleTodosLosCanales(): void {
+    if (this.todosLosCanalesSeleccionados) this.canalesSeleccionados.clear();
+    else this.canalesSeleccionados = new Set((this.detalle?.canales ?? []).map((c) => c.id));
   }
 
   /**

@@ -131,7 +131,16 @@
             <p class="ad-vac-puesto">{{ v.puesto | titleCase }}</p>
             <div class="ad-vac-detail">
               <span><i class="ti ti-building-community"></i> {{ (v.proyectoObra | titleCase) || '—' }}</span>
-              <span><i class="ti ti-calendar-event"></i> {{ v.fechaRequeridaIngreso | date:'dd/MM/yyyy' }}</span>
+              <!-- El salario es parte de lo que se aprueba, así que va en la misma línea de datos
+                   de la vacante. Guion en las vacantes anteriores a que se pidiera el dato. -->
+              <span class="ad-vac-salario">
+                <i class="ti ti-cash"></i>
+                @if (v.salarioBrutoMensual !== null) {
+                  S/ {{ v.salarioBrutoMensual | number:'1.2-2' }} bruto mensual
+                } @else {
+                  Salario no registrado
+                }
+              </span>
               @if (v.trabajadorReemplazado) {
                 <span><i class="ti ti-arrows-exchange"></i> Reemplaza a {{ v.trabajadorReemplazado | titleCase }}</span>
               }

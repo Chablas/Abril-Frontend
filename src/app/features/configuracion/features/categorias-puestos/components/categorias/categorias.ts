@@ -16,8 +16,8 @@ import { CategoriaAdminDto, PuestoAdminDto } from '../../dtos/categorias-puestos
 import { CategoriaCreateEdit } from '../categoria-create-edit/categoria-create-edit';
 
 /**
- * Sección "Categorías" de Configuración → Categorías y Puestos. Los datos los carga y
- * refresca el contenedor (una sola petición para ambas secciones); acá viven los
+ * Sección "Categorías" de Gestión GTH → Configuración → Categorías y Puestos. Los datos los
+ * carga y refresca el contenedor (una sola petición para ambas secciones); acá viven los
  * filtros, la paginación y los modales propios de la sección.
  */
 @Component({

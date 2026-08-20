@@ -26,8 +26,6 @@ export interface ReclutamientoFormDataDto {
   areaScopeId: number | null;
   maxVacantes: number;
   puestos: OpcionDto[];
-  /** Categorías para el modo "Puesto personalizado" (ver `VacanteCreateDto.categoriaId`). */
-  categorias: OpcionDto[];
   tiposRequerimiento: TipoRequerimientoOpcion[];
   proyectos: OpcionDto[];
   /**
@@ -41,20 +39,11 @@ export interface ReclutamientoFormDataDto {
 }
 
 export interface VacanteCreateDto {
-  /** Puesto del catálogo. Null cuando `puestoPersonalizado` es true. */
+  /**
+   * Puesto del catálogo: es el único origen posible. El solicitante no puede dar de alta puestos
+   * nuevos desde este formulario — eso lo hace GTH en el catálogo de puestos.
+   */
   puestoId: number | null;
-  /**
-   * true = el puesto no estaba en el desplegable: va escrito en `puestoNombre` con la categoría
-   * de `categoriaId`, y el backend lo da de alta en el catálogo de puestos.
-   */
-  puestoPersonalizado: boolean;
-  puestoNombre: string | null;
-  /**
-   * Categoría real de la vacante, obligatoria con `puestoPersonalizado`. Es el par
-   * (puesto, categoría) que queda guardado en el requerimiento para cuando el seleccionado
-   * entre como trabajador; no tiene por qué ser la categoría que trae el puesto del catálogo.
-   */
-  categoriaId: number | null;
   tipoRequerimientoId: number | null;
   /**
    * Trabajador al que reemplaza la vacante. Solo se envía en las de tipo Reemplazo (en las demás
@@ -62,12 +51,19 @@ export interface VacanteCreateDto {
    */
   reemplazaWorkerId: number | null;
   projectId: number | null;
-  /** Fecha requerida de ingreso en formato nativo "YYYY-MM-DD". */
-  fechaRequeridaIngreso: string;
+  /**
+   * Salario bruto mensual de la vacante, en soles. Obligatorio: es parte de lo que aprueban el
+   * gerente del área y Gerencia General, y va en sus correos.
+   */
+  salarioBrutoMensual: number | null;
 }
 
 export interface SolicitudPersonalCreateDto {
-  justificacion: string | null;
+  /**
+   * Justificación general de la solicitud. Obligatoria: es el sustento que leen el gerente del área
+   * y Gerencia General para aprobar, y va en el cuerpo de sus correos.
+   */
+  justificacion: string;
   vacantes: VacanteCreateDto[];
 }
 
@@ -137,8 +133,11 @@ export interface Seguimiento {
   area: string | null;
   proyectoObra: string | null;
   justificacion: string | null;
-  /** Fecha requerida de ingreso ("YYYY-MM-DD"). */
-  fechaRequeridaIngreso: string;
+  /**
+   * Salario bruto mensual declarado para la vacante, en soles. Null en los requerimientos
+   * anteriores a que se pidiera el dato.
+   */
+  salarioBrutoMensual: number | null;
   /** Fecha de envío (ISO, ya en hora Perú). */
   enviado: string;
   estadoCodigo: string;

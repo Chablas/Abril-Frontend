@@ -9,8 +9,11 @@
   @if (seguimiento) {
     <div class="flex flex-col gap-[18px]">
 
-      <!-- ── Tarjetas resumen ─────────────────────────────────────────── -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-[12px]">
+      <!-- ── Tarjetas resumen ───────────────────────────────────────────
+           3 columnas y no 4: con la tarjeta del salario son 5 tarjetas, y a 4 columnas la
+           quinta quedaba sola en su fila. A 3 quedan 3 + 2 y todas las tarjetas salen más
+           anchas que antes (el badge de "Aprobación Gerencia General" es el que más agradece). -->
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-[12px]">
 
         <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">
           <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Estado actual</p>
@@ -44,6 +47,19 @@
           <p class="mt-[6px] text-[14px] font-semibold text-gray-700 truncate" [title]="seguimiento.proyectoObra || ''">
             {{ (seguimiento.proyectoObra | titleCase) || '—' }}
           </p>
+        </div>
+
+        <!-- Salario bruto mensual declarado para esta vacante. Null en los requerimientos
+             registrados antes de que se pidiera el dato. -->
+        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">
+          <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Salario bruto mensual</p>
+          @if (seguimiento.salarioBrutoMensual !== null) {
+            <p class="mt-[6px] text-[14px] font-semibold text-gray-700">
+              S/ {{ seguimiento.salarioBrutoMensual | number:'1.2-2' }}
+            </p>
+          } @else {
+            <p class="mt-[6px] text-[13px] text-gray-400">No registrado</p>
+          }
         </div>
 
         <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">

@@ -30,15 +30,23 @@
           · {{ (detalle.proyectoObra | titleCase) || 'Sin proyecto' }}
           · {{ detalle.vacantes }} vacante(s)
         </p>
-        <p class="text-[12px] text-gray-400 mt-[2px]">
-          Fecha requerida: {{ detalle.fechaRequeridaIngreso | date:'dd/MM/yyyy' }}
-        </p>
         @if (detalle.trabajadorReemplazado) {
           <p class="text-[12px] text-gray-500 mt-[2px]">
             <i class="ti ti-arrows-exchange text-[13px] align-[-1px]"></i>
             Reemplaza a <b class="text-gray-700">{{ detalle.trabajadorReemplazado | titleCase }}</b>
           </p>
         }
+        <!-- Salario bruto mensual que el área declaró y Gerencia General aprobó: es el punto de
+             partida de la oferta, así que GTH lo ve en la cabecera del requerimiento. -->
+        <p class="text-[12px] text-gray-500 mt-[2px]">
+          <i class="ti ti-cash text-[13px] align-[-1px]"></i>
+          Salario bruto mensual:
+          @if (detalle.salarioBrutoMensual !== null) {
+            <b class="text-gray-700">S/ {{ detalle.salarioBrutoMensual | number:'1.2-2' }}</b>
+          } @else {
+            <span class="text-gray-400">no registrado</span>
+          }
+        </p>
         @if (tipoProcesoSeleccionado) {
           <p class="text-[13px] font-semibold mt-[6px]" style="color:var(--color-abril-logo-blue)">
             Plazo estimado del proceso: {{ tipoProcesoSeleccionado.slaDias }} días
@@ -116,7 +124,7 @@
             <!-- Responsable del proceso -->
             <div>
               <app-search-select
-                label="Responsable del proceso"
+                label="Responsable del proceso *"
                 [options]="detalle.responsables"
                 valueField="id"
                 displayField="nombre"
@@ -125,15 +133,12 @@
                 placeholder="Sin asignar"
                 color="var(--color-abril-logo-blue)">
               </app-search-select>
-              <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
-                Se asigna al revisar la bandeja.
-              </p>
             </div>
 
             <!-- Tipo de proceso y SLA -->
             <div>
               <app-search-select
-                label="Tipo de proceso y SLA"
+                label="Tipo de proceso y SLA *"
                 [options]="tiposProcesoOpts"
                 valueField="id"
                 displayField="nombre"
@@ -144,17 +149,12 @@
                 color="var(--color-abril-logo-blue)">
               </app-search-select>
               <!-- El SLA no se repite acá: ya sale como "Plazo estimado del proceso" en la cabecera. -->
-              @if (tipoProcesoSeleccionado) {
-                <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
-                  {{ tipoProcesoSeleccionado.descripcion }}
-                </p>
-              }
             </div>
 
             <!-- Prioridad interna -->
             <div>
               <app-search-select
-                label="Prioridad interna"
+                label="Prioridad interna *"
                 [options]="detalle.prioridades"
                 valueField="id"
                 displayField="nombre"
@@ -164,15 +164,12 @@
                 [sortAlpha]="false"
                 color="var(--color-abril-logo-blue)">
               </app-search-select>
-              <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
-                Uso exclusivo de GTH.
-              </p>
             </div>
 
             <!-- Razón social activa -->
             <div>
               <app-search-select
-                label="Razón social activa"
+                label="Razón social activa *"
                 [options]="detalle.razonesSociales"
                 valueField="id"
                 displayField="nombre"
@@ -198,7 +195,7 @@
         }
       </div>
 
-      <!-- ── Publicado: canales de publicación (antes de publicar) ──────── -->
+      <!-- ── Canales de publicación (antes de publicar) ─────────────── -->
       @if (!vacantePublicada) {
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
 
@@ -207,11 +204,18 @@
             (click)="seccionPublicacion = !seccionPublicacion">
             <i class="ti text-[15px] text-gray-500 transition-transform"
                [ngClass]="seccionPublicacion ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
-            <h3 class="text-[14px] font-bold text-gray-800">Publicado: canales de publicación</h3>
+            <h3 class="text-[14px] font-bold text-gray-800">Canales de publicación</h3>
           </button>
 
           @if (seccionPublicacion) {
-            <p class="text-[13px] text-gray-600 mt-[10px]">Publicar vacante en</p>
+            <div class="flex justify-end mt-[10px]">
+              <button type="button"
+                class="h-[30px] px-[12px] rounded-[7px] border text-[12.5px] font-semibold cursor-pointer transition-colors hover:bg-gray-50"
+                style="border-color:var(--color-abril-border); color:var(--color-abril-logo-blue)"
+                (click)="toggleTodosLosCanales()">
+                {{ todosLosCanalesSeleccionados ? 'Quitar selección' : 'Seleccionar todos' }}
+              </button>
+            </div>
 
             <div class="flex flex-col gap-[10px] mt-[8px]">
               @for (canal of detalle.canales; track canal.id) {
@@ -234,7 +238,7 @@
               style="background:var(--color-abril-logo-blue)"
               [disabled]="!puedePublicar"
               (click)="publicar()">
-              Publicar vacante en canales seleccionados
+              Confirmar publicación de vacante
             </button>
           }
         </div>
@@ -879,16 +883,6 @@
           }
         </div>
       }
-
-      <!-- ── Siguiente paso ─────────────────────────────────────────────── -->
-      <div>
-        <p class="text-[13px] font-semibold text-gray-700 mb-[6px]">Siguiente paso</p>
-        <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[11px]"
-             style="background:#FEF9E7;border:1px solid #F5E1A4">
-          <i class="ti ti-alert-circle text-[18px] shrink-0 mt-[1px]" style="color:#B45309"></i>
-          <p class="text-[13px] text-gray-700">{{ siguientePasoTexto }}</p>
-        </div>
-      </div>
 
     </div>
   }

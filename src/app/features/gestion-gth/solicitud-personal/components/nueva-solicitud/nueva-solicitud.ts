@@ -5,7 +5,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
-import { DatePicker } from '../../../../../shared/components/date-picker/date-picker';
 import { FileSelector, SelectedFile } from '../../../../../shared/components/file-selector/file-selector';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
@@ -20,14 +19,8 @@ import {
 
 /** Estado en memoria de una vacante del formulario. */
 interface VacanteForm {
+  /** Puesto del catálogo: el único origen posible (los puestos nuevos los da de alta GTH). */
   puestoId: number | null;
-  /**
-   * Checkbox "Puesto personalizado": oculta el desplegable de puesto y en su lugar pide
-   * categoría + nombre escrito a mano. El backend da de alta ese puesto en el catálogo.
-   */
-  personalizado: boolean;
-  puestoNombre: string;
-  categoriaId: number | null;
   tipoRequerimientoId: number | null;
   /**
    * Trabajador al que reemplaza la vacante. Solo se pide (y solo se envía) cuando el tipo de
@@ -35,28 +28,37 @@ interface VacanteForm {
    */
   reemplazaWorkerId: number | null;
   projectId: number | null;
-  fecha: string; // "YYYY-MM-DD"
+  /**
+   * Salario bruto mensual de la vacante, en soles. Obligatorio: es lo que aprueban el gerente del
+   * área y Gerencia General junto con la vacante.
+   */
+  salarioBrutoMensual: number | null;
 }
 
 @Component({
   standalone: true,
   selector: 'app-gth-nueva-solicitud',
-  imports: [BaseModal, CommonModule, FormsModule, SearchSelect, DatePicker, FileSelector],
+  imports: [BaseModal, CommonModule, FormsModule, SearchSelect, FileSelector],
   templateUrl: './nueva-solicitud.html',
 })
 export class GthNuevaSolicitud implements OnInit {
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
-  /** Tope del puesto escrito a mano; el backend rechaza cualquier cosa más larga. */
-  readonly maxPuestoNombre = 120;
+  /** Tope de la justificación; el backend rechaza cualquier cosa más larga. */
+  readonly maxJustificacion = 4000;
+
+  /**
+   * Tope del salario bruto mensual, igual al del backend: ataja el dedazo de escribir el sueldo
+   * con los céntimos pegados (3500 00 → 350000) antes de que salga la petición.
+   */
+  readonly maxSalario = 1_000_000;
 
   formData: ReclutamientoFormDataDto = {
     areaNombre: null,
     areaScopeId: null,
     maxVacantes: 10,
     puestos: [],
-    categorias: [],
     tiposRequerimiento: [],
     proyectos: [],
     trabajadoresArea: [],
@@ -93,7 +95,6 @@ export class GthNuevaSolicitud implements OnInit {
       next: (data) => {
         this.formData = {
           ...data,
-          categorias: data.categorias ?? [],
           trabajadoresArea: data.trabajadoresArea ?? [],
           destinatarios: data.destinatarios ?? { para: [], copias: [] },
         };
@@ -126,14 +127,20 @@ export class GthNuevaSolicitud implements OnInit {
   private nuevaVacante(): VacanteForm {
     return {
       puestoId: null,
-      personalizado: false,
-      puestoNombre: '',
-      categoriaId: null,
       tipoRequerimientoId: null,
       reemplazaWorkerId: null,
       projectId: null,
-      fecha: '',
+      salarioBrutoMensual: null,
     };
+  }
+
+  /**
+   * ¿El salario de la vacante está sin llenar o fuera de rango? Es la misma regla que valida
+   * `save()` y la que decide el mensaje bajo el campo, para que no puedan discrepar.
+   */
+  salarioInvalido(v: VacanteForm): boolean {
+    const s = v.salarioBrutoMensual;
+    return s === null || !(s > 0) || s > this.maxSalario;
   }
 
   // ── Reemplazo: a quién se reemplaza ────────────────────────────────
@@ -160,21 +167,6 @@ export class GthNuevaSolicitud implements OnInit {
     return this.formData.trabajadoresArea.length === 0;
   }
 
-  /**
-   * Cambia de modo el puesto de la vacante. Limpia lo del modo que se abandona para no enviar
-   * datos de los dos (el backend ignora el puesto del desplegable cuando es personalizado, pero
-   * dejarlos vivos haría que al desmarcar reapareciera una selección que el usuario ya no ve).
-   */
-  togglePersonalizado(v: VacanteForm, personalizado: boolean): void {
-    v.personalizado = personalizado;
-    if (personalizado) {
-      v.puestoId = null;
-    } else {
-      v.puestoNombre = '';
-      v.categoriaId = null;
-    }
-  }
-
   /** Ajusta la cantidad de bloques de vacante conservando los ya completados. */
   onCantidadChange(cantidad: number): void {
     this.cantidad = cantidad;
@@ -195,29 +187,21 @@ export class GthNuevaSolicitud implements OnInit {
   }
 
   // ── Validación + envío ─────────────────────────────────────────────
-  private get todayStr(): string {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  }
-
   save(): void {
     this.submitted = true;
 
     const errors: string[] = [];
     this.vacantes.forEach((v, i) => {
       const pref = `Vacante ${i + 1}`;
-      if (v.personalizado) {
-        if (!v.categoriaId) errors.push(`${pref}: categoría del puesto personalizado`);
-        if (!v.puestoNombre.trim()) errors.push(`${pref}: nombre del puesto personalizado`);
-      } else if (!v.puestoId) {
-        errors.push(`${pref}: puesto`);
-      }
+      if (!v.puestoId) errors.push(`${pref}: puesto`);
       if (!v.tipoRequerimientoId) errors.push(`${pref}: tipo de requerimiento`);
       if (this.esReemplazo(v) && !this.sinTrabajadoresArea && !v.reemplazaWorkerId)
         errors.push(`${pref}: trabajador al que reemplaza`);
       if (!v.projectId) errors.push(`${pref}: proyecto/obra`);
-      if (!v.fecha) errors.push(`${pref}: fecha requerida de ingreso`);
+      if (this.salarioInvalido(v)) errors.push(`${pref}: salario bruto mensual`);
     });
+
+    if (!this.justificacion.trim()) errors.push('Justificación general de la solicitud');
 
     if (errors.length > 0) {
       Swal.fire({
@@ -230,16 +214,13 @@ export class GthNuevaSolicitud implements OnInit {
     }
 
     const payload: SolicitudPersonalCreateDto = {
-      justificacion: this.justificacion?.trim() || null,
+      justificacion: this.justificacion.trim(),
       vacantes: this.vacantes.map<VacanteCreateDto>((v) => ({
-        puestoId: v.personalizado ? null : v.puestoId,
-        puestoPersonalizado: v.personalizado,
-        puestoNombre: v.personalizado ? v.puestoNombre.trim() : null,
-        categoriaId: v.personalizado ? v.categoriaId : null,
+        puestoId: v.puestoId,
         tipoRequerimientoId: v.tipoRequerimientoId,
         reemplazaWorkerId: this.esReemplazo(v) ? v.reemplazaWorkerId : null,
         projectId: v.projectId,
-        fechaRequeridaIngreso: v.fecha,
+        salarioBrutoMensual: v.salarioBrutoMensual,
       })),
     };
 

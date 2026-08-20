@@ -47,8 +47,6 @@ export interface RequerimientoGthListItem {
   proyectoObra: string | null;
   /** Fecha en que llegó la solicitud (ISO, ya en hora Perú). Columna "Fecha llegada". */
   fechaLlegada: string;
-  /** Fecha requerida de ingreso ("YYYY-MM-DD"). Columna "Fecha requerida". */
-  fechaRequeridaIngreso: string;
   /** Prioridad asignada (id del catálogo). Null si no tiene. Columna "Prioridad". */
   prioridadId: number | null;
   /** Nombre de la prioridad (Alta/Media/Baja). Null si no tiene. */
@@ -86,7 +84,6 @@ export interface TipoProcesoOpcion {
   id: number;
   nombre: string;
   slaDias: number;
-  descripcion: string | null;
 }
 
 /** Opción del desplegable "Razón social activa", con sus cupos disponibles. */
@@ -132,9 +129,14 @@ export interface DetalleRequerimientoGth {
    * registrados desde que se pide ese dato; null en el resto.
    */
   trabajadorReemplazado: string | null;
+  /**
+   * Salario bruto mensual que el área declaró para la vacante, en soles. Es el que Gerencia General
+   * aprobó, así que es el punto de partida de la oferta. Null en los requerimientos anteriores a
+   * que se pidiera el dato.
+   */
+  salarioBrutoMensual: number | null;
   /** Vacantes de este requerimiento (cada vacante genera su propio requerimiento → 1). */
   vacantes: number;
-  fechaRequeridaIngreso: string;
   estadoCodigo: string;
   estadoNombre: string;
   asignacion: AsignacionGth;

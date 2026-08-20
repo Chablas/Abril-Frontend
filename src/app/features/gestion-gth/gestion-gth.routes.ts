@@ -16,8 +16,10 @@ export const GESTION_GTH_ROUTES: Routes = [
     },
   },
   {
-    // Configuración de los correos que salen desde la bandeja de GTH (long list enviada y aviso
-    // de formulario del postulante completado). Misma feature que el botón «Configuración».
+    // Configuración de los correos del proceso de reclutamiento: los que salen desde la bandeja
+    // de GTH (long list, formulario al postulante, correcciones, invitación a entrevista y
+    // agradecimiento) más el aviso de formulario completado. Misma feature que el botón
+    // «Configuración».
     path: 'reclutamiento/configuracion',
     loadComponent: () =>
       import('./reclutamiento/configuracion/reclutamiento-configuracion').then(
@@ -131,6 +133,28 @@ export const GESTION_GTH_ROUTES: Routes = [
     data: {
       titulo: 'SOLICITUD DE PERSONAL - CONFIGURACIÓN',
       featureKey: 'gestion-gth.reclutamiento.configuracion',
+    },
+  },
+  {
+    // Contenedor de Configuración del módulo (patrón de Costos y Presupuestos): agrupa las
+    // pantallas de datos maestros de GTH. Sin sección concreta, cae en la primera —
+    // hoy la única — funcionalidad de configuración.
+    path: 'configuracion',
+    redirectTo: 'configuracion/categorias-puestos',
+    pathMatch: 'full',
+  },
+  {
+    // Categorías y Puestos del catálogo de trabajadores. Antes vivía en Configuración global
+    // (/configuracion/categorias-puestos, que ahora redirige acá): son datos maestros que GTH
+    // administra, así que pertenecen al módulo. Las secciones Categorías/Puestos se conmutan
+    // dentro del contenedor, sin cambiar de ruta.
+    path: 'configuracion/categorias-puestos',
+    loadComponent: () =>
+      import('./configuracion/gth-configuracion').then((m) => m.GthConfiguracion),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'GTH - CONFIGURACIÓN',
+      featureKey: 'gestion-gth.config.categorias-puestos',
     },
   },
 ];

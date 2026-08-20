@@ -123,7 +123,6 @@ export interface CandidatoApto {
    * onboarding y el modal bloquea el envío.
    */
   dni: string | null;
-  fechaRequeridaIngreso: string | null;
   jefeDirecto: string | null;
   /**
    * true si el candidato ya tiene ficha en `person`. La firma que va a dibujar en el enlace se

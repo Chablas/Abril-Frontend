@@ -101,14 +101,14 @@ export class GthNuevoIngresoModal {
   }
 
   /**
-   * Al elegir al colaborador se prellena su correo y la fecha de ingreso que el solicitante pidió
-   * en el requerimiento; GTH puede ajustar ambos antes de enviar.
+   * Al elegir al colaborador se prellena su correo; GTH puede ajustarlo antes de enviar. La fecha
+   * de ingreso se escribe siempre a mano: el requerimiento ya no trae ninguna fecha propuesta.
    */
   onCandidatoChange(id: number | null): void {
     this.candidatoId = id;
     const c = this.seleccionado;
     this.correo = c?.correo ?? '';
-    this.fechaIngreso = c?.fechaRequeridaIngreso ?? null;
+    this.fechaIngreso = null;
   }
 
   onCartaSelected(sel: SelectedFile): void {

@@ -44,8 +44,11 @@ export interface AprobacionVacante {
    */
   trabajadorReemplazado: string | null;
   proyectoObra: string | null;
-  /** Fecha requerida de ingreso ("YYYY-MM-DD"). */
-  fechaRequeridaIngreso: string;
+  /**
+   * Salario bruto mensual declarado para la vacante, en soles: es parte de lo que se está
+   * aprobando. Null en las vacantes anteriores a que se pidiera el dato.
+   */
+  salarioBrutoMensual: number | null;
   /** Visto bueno del gerente del área: true / false / null = no opinó. */
   aprobadoGerenteArea: boolean | null;
   /** Decisión de Gerencia General: true = aprobada, false = rechazada, null = sin decidir. */

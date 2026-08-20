@@ -5,9 +5,11 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { GthCorreosConfig } from '../../shared/correos-config/correos-config';
 
 /**
- * Contenedor de la Configuración de correos de Reclutamiento: los correos que salen desde la
- * bandeja de GTH (long list enviada al solicitante y aviso de formulario del postulante
- * completado). Reemplaza al modal de dos cajas de texto que colgaba del botón «Configuración».
+ * Contenedor de la Configuración de correos de Reclutamiento: los correos del proceso que salen
+ * desde la bandeja de GTH (long list al solicitante, formulario al postulante, correcciones del
+ * formulario, invitación a entrevista y agradecimiento a quien no continúa) más el aviso de
+ * formulario completado, que es el único que GTH recibe en vez de enviar. Reemplaza al modal de
+ * dos cajas de texto que colgaba del botón «Configuración».
  *
  * Acceso restringido por la feature 'gestion-gth.reclutamiento.configuracion' (roleGuard en la
  * ruta), la misma que ya habilitaba ese botón. El contenido lo arma `app-gth-correos-config`,
