@@ -80,13 +80,6 @@
   margin: 0;
 }
 
-.pe-state-note {
-  font-size: 12px;
-  color: #6b7280;
-  line-height: 1.55;
-  max-width: 460px;
-  margin: 4px 0 0;
-}
 
 /* ── Recuadro con los datos de la cita ────────────────────────────────── */
 .pe-cita {

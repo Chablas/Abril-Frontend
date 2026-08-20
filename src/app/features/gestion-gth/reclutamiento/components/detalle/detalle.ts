@@ -165,6 +165,8 @@ export class GthDetalleRequerimiento implements OnInit {
   seleccionFormulario = new Set<number>();
   /** true mientras corre el envío masivo (deshabilita el botón para evitar doble envío). */
   enviandoMasivo = false;
+  /** true mientras se saca del proceso a un postulante rechazado (key = candidatoId). */
+  rechazandoPostulante: Record<number, boolean> = {};
   /** Candidato cuyo modal "Ver formulario" está abierto (null = cerrado). */
   formularioCandidatoId: number | null = null;
 
@@ -180,7 +182,7 @@ export class GthDetalleRequerimiento implements OnInit {
   evaluacionForm: Record<number, EvaluacionFormState> = {};
   /** true mientras se guarda la evaluación de un candidato (key = candidatoId). */
   guardandoEvaluacion: Record<number, boolean> = {};
-  /** true mientras se envía el correo de agradecimiento de un candidato (key = candidatoId). */
+  /** true mientras se envía el correo de fin de proceso de un candidato (key = candidatoId). */
   enviandoAgradecimiento: Record<number, boolean> = {};
 
   private huboCambios = false;
@@ -834,6 +836,63 @@ export class GthDetalleRequerimiento implements OnInit {
     this.cdr.detectChanges();
   }
 
+  /** true si a este candidato ya se le rechazó el formulario del postulante. */
+  formularioRechazado(c: CandidatoAprobado): boolean {
+    return c.formulario?.estadoCodigo === 'RECHAZADO';
+  }
+
+  /**
+   * true si se le puede cerrar el proceso al postulante: su formulario quedó rechazado y todavía
+   * no se le avisó. Rechazar el formulario solo le pide que corrija; esto es lo que lo saca del
+   * proceso y le manda el correo de fin de proceso.
+   */
+  puedeRechazarPostulante(c: CandidatoAprobado): boolean {
+    return this.formularioRechazado(c) && !this.noContinua(c);
+  }
+
+  /**
+   * Saca del proceso al postulante cuyo formulario quedó rechazado y le envía el correo de fin de
+   * proceso. Lo deja en "No continúa", igual que el descarte tras la entrevista.
+   */
+  async rechazarPostulante(c: CandidatoAprobado): Promise<void> {
+    if (this.rechazandoPostulante[c.candidatoId]) return;
+
+    const correo = c.formulario?.correoEnvio ?? c.correoContacto;
+    const confirm = await Swal.fire({
+      icon: 'warning',
+      title: '¿Rechazar al postulante?',
+      html:
+        `Se le enviará a <b>${correo ?? 'su correo registrado'}</b> el correo de fin de proceso. ` +
+        'El postulante quedará como <b>No continúa</b> y no se le podrá programar entrevista.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, rechazar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#B91C1C',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.rechazandoPostulante[c.candidatoId] = true;
+    this.service.rechazarPostulante(c.candidatoId).subscribe({
+      next: (res) => {
+        c.evaluacion = res.evaluacion;
+        this.rechazandoPostulante[c.candidatoId] = false;
+        this.huboCambios = true;
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: 'success',
+          title: 'Postulante rechazado',
+          text: res.message,
+          confirmButtonColor: '#005D9D',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.rechazandoPostulante[c.candidatoId] = false;
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   /** Abre el modal "Ver formulario" del candidato. */
   abrirFormulario(c: CandidatoAprobado): void {
     this.formularioCandidatoId = c.candidatoId;
@@ -873,10 +932,20 @@ export class GthDetalleRequerimiento implements OnInit {
     });
   }
 
-  /** true si todos los candidatos aprobados tienen el Multitest marcado. */
+  /**
+   * true si tienen el Multitest marcado todos los candidatos a los que se les exige. Al que se le
+   * rechazó el formulario ya no se le va a entrevistar, así que pedirle el check dejaba trabado el
+   * paso a entrevistas por una prueba que ese postulante nunca va a rendir. El backend revalida
+   * lo mismo.
+   */
   get multitestCompleto(): boolean {
-    const candidatos = this.detalle?.candidatosAprobados ?? [];
+    const candidatos = this.candidatosConMultitest;
     return candidatos.length > 0 && candidatos.every((c) => c.multitestRealizado);
+  }
+
+  /** Candidatos a los que sí se les pide el Multitest (los que siguen en carrera). */
+  get candidatosConMultitest(): CandidatoAprobado[] {
+    return (this.detalle?.candidatosAprobados ?? []).filter((c) => !this.formularioRechazado(c));
   }
 
   /** true si ningún candidato quedó con el formulario pendiente (todos aprobados o rechazados). */
@@ -916,7 +985,7 @@ export class GthDetalleRequerimiento implements OnInit {
     if (this.formulariosDecididos && !this.hayFormularioAprobado)
       return 'Ningún formulario quedó aprobado: no hay candidatos a quienes entrevistar.';
     if (!this.multitestCompleto)
-      return 'Marca el Multitest de todos los candidatos para continuar.';
+      return 'Marca el Multitest de los candidatos que siguen en el proceso para continuar.';
     return '';
   }
 
@@ -1057,14 +1126,14 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   // ── Evaluación de la entrevista (informe de finalista) ───────────────────
-  /** true si el candidato ya no continúa: se le envió el correo de agradecimiento. */
+  /** true si el candidato ya no continúa: se le envió el correo de fin de proceso. */
   noContinua(c: CandidatoAprobado): boolean {
     return c.evaluacion?.resultadoCodigo === 'NO_PASO';
   }
 
   /**
    * true si se puede registrar la evaluación del candidato: ya se le envió la invitación a la
-   * entrevista y sigue en carrera (al enviar el agradecimiento su informe queda cerrado).
+   * entrevista y sigue en carrera (al enviar el fin de proceso su informe queda cerrado).
    */
   puedeEvaluar(c: CandidatoAprobado): boolean {
     return !!c.entrevista?.enviadoEn && !this.noContinua(c);
@@ -1130,7 +1199,9 @@ export class GthDetalleRequerimiento implements OnInit {
           Swal.fire({
             icon: 'success',
             title: 'Finalista enviado',
-            text: 'El informe del candidato ya está disponible para el área solicitante.',
+            // El mensaje viene del backend: además de confirmar el guardado dice si el aviso al
+            // solicitante salió y a qué correo, que es lo único que GTH no puede ver en pantalla.
+            text: res.message,
             confirmButtonColor: '#005D9D',
           });
         },
@@ -1143,8 +1214,8 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
-   * Envía al candidato el correo de agradecimiento por no continuar en el proceso: deja su
-   * resultado en "No pasó" y lo saca del informe de finalistas del solicitante.
+   * Envía al candidato el correo de fin de proceso por no continuar: deja su resultado en
+   * "No pasó" y lo saca del informe de finalistas del solicitante.
    */
   async enviarAgradecimiento(c: CandidatoAprobado): Promise<void> {
     if (this.enviandoAgradecimiento[c.candidatoId]) return;
@@ -1152,10 +1223,10 @@ export class GthDetalleRequerimiento implements OnInit {
     const yaEnviado = !!c.evaluacion?.agradecimientoEnviadoEn;
     const confirm = await Swal.fire({
       icon: 'question',
-      title: yaEnviado ? '¿Reenviar el correo de agradecimiento?' : '¿Enviar el correo de agradecimiento?',
+      title: yaEnviado ? '¿Reenviar el correo de fin de proceso?' : '¿Enviar el correo de fin de proceso?',
       html:
         `Se le enviará a <b>${c.correoContacto ?? 'su correo registrado'}</b> el correo de ` +
-        'agradecimiento por participar. El candidato quedará registrado como <b>No continúa</b> ' +
+        'fin de proceso. El candidato quedará registrado como <b>No continúa</b> ' +
         'y dejará de aparecer entre los finalistas del área solicitante.',
       showCancelButton: true,
       confirmButtonText: yaEnviado ? 'Sí, reenviar' : 'Sí, enviar',

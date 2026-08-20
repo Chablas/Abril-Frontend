@@ -16,7 +16,7 @@ import { Finalista, RevisionFinalistas } from '../../dtos/solicitud-personal.dto
  *
  * Sobre el finalista seleccionado se toma la decisión final (RF-REC-24):
  *  - Aprobarlo cierra el proceso de reclutamiento; el seleccionado pasa al proceso de onboarding.
- *  - Rechazarlo le envía el mismo correo de agradecimiento que manda GTH a quien no continúa; si
+ *  - Rechazarlo le envía el mismo correo de fin de proceso que manda GTH a quien no continúa; si
  *    con eso no queda ningún finalista, el requerimiento vuelve al paso en el que GTH envía la
  *    long list/CVs al solicitante (RF-REC-25).
  */
@@ -135,17 +135,25 @@ export class GthRevisionFinalistas implements OnInit {
     );
   }
 
-  /** Aprueba al finalista mostrado: cierra el proceso y lo pasa a onboarding. */
+  /**
+   * Aprueba al finalista mostrado: el puesto queda cubierto y GTH le programa su EMO de ingreso.
+   * Al aprobar, los finalistas que seguían en carrera quedan fuera y reciben el correo de fin de
+   * proceso, así que se avisa en el diálogo: es un correo a terceros que se dispara con este clic.
+   */
   async aprobar(): Promise<void> {
     const f = this.seleccionado;
     if (!f || !this.puedeDecidir) return;
 
+    const otros = this.pendientes - 1;
     const confirm = await Swal.fire({
       icon: 'question',
       title: '¿Aprobar a este finalista?',
       html:
         `Se enviará a GTH tu decisión de continuar con <b>${new TitleCasePipe().transform(f.nombre)}</b>. ` +
-        'Con esto el proceso de reclutamiento se cierra y el seleccionado pasa al proceso de onboarding.',
+        'Con esto el puesto queda cubierto y GTH le programará su examen médico de ingreso.' +
+        (otros > 0
+          ? ` Los otros <b>${otros}</b> finalista(s) quedarán fuera del proceso y recibirán el correo de fin de proceso.`
+          : ''),
       showCancelButton: true,
       confirmButtonText: 'Sí, aprobar y enviar a GTH',
       cancelButtonText: 'Cancelar',
@@ -156,7 +164,7 @@ export class GthRevisionFinalistas implements OnInit {
     this.decidir(f, true);
   }
 
-  /** Rechaza al finalista mostrado: se le envía el correo de agradecimiento. */
+  /** Rechaza al finalista mostrado: se le envía el correo de fin de proceso. */
   async rechazar(): Promise<void> {
     const f = this.seleccionado;
     if (!f || !this.puedeDecidir) return;
@@ -166,8 +174,8 @@ export class GthRevisionFinalistas implements OnInit {
       icon: 'warning',
       title: '¿Rechazar a este finalista?',
       html:
-        `Se le enviará a <b>${new TitleCasePipe().transform(f.nombre)}</b> el correo de agradecimiento ` +
-        'por participar y quedará fuera del proceso.' +
+        `Se le enviará a <b>${new TitleCasePipe().transform(f.nombre)}</b> el correo de fin de proceso ` +
+        'y quedará fuera del proceso.' +
         (ultimo
           ? ' Es el último finalista en carrera: al rechazarlo, el requerimiento volverá al paso en el que GTH envía la long list y los CVs.'
           : ''),

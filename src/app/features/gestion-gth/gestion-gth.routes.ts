@@ -17,9 +17,9 @@ export const GESTION_GTH_ROUTES: Routes = [
   },
   {
     // Configuración de los correos del proceso de reclutamiento: los que salen desde la bandeja
-    // de GTH (long list, formulario al postulante, correcciones, invitación a entrevista y
-    // agradecimiento) más el aviso de formulario completado. Misma feature que el botón
-    // «Configuración».
+    // de GTH (long list, formulario al postulante, correcciones, invitación a entrevista,
+    // finalista al solicitante y fin de proceso) más los que GTH recibe (formulario completado y
+    // respuesta del candidato a la entrevista). Misma feature que el botón «Configuración».
     path: 'reclutamiento/configuracion',
     loadComponent: () =>
       import('./reclutamiento/configuracion/reclutamiento-configuracion').then(
@@ -119,6 +119,21 @@ export const GESTION_GTH_ROUTES: Routes = [
     data: {
       titulo: 'SOLICITUD DE PERSONAL',
       featureKey: 'gestion-gth.solicitud-personal',
+    },
+  },
+  {
+    // Misma pantalla del solicitante, con el informe de finalistas ya abierto: es la URL del
+    // botón «Revisar y decidir» del correo que GTH le envía al mandarle un finalista. Segmento
+    // propio ('finalistas') por lo mismo que 'long-list': no competir con 'configuracion'.
+    path: 'solicitud-personal/finalistas/:id',
+    loadComponent: () =>
+      import('./solicitud-personal/solicitud-personal').then((m) => m.GthSolicitudPersonal),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'SOLICITUD DE PERSONAL',
+      featureKey: 'gestion-gth.solicitud-personal',
+      // Distingue este deep link del de long list: ambos son ':id' sobre el mismo componente.
+      modalFinalistas: true,
     },
   },
   {
