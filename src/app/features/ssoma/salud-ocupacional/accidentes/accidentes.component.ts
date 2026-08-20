@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
@@ -35,6 +35,7 @@ import { FilterModal } from '../../../../shared/components/filter-modal/filter-m
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { StatusBadge } from '../../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
+import { WorkerSearchInput } from '../shared/worker-search-input/worker-search-input';
 
 @Component({
   selector: 'app-accidentes',
@@ -52,6 +53,7 @@ import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
     SearchSelect,
     StatusBadge,
     TitleCasePipe,
+    WorkerSearchInput,
   ],
   templateUrl: './accidentes.component.html',
   styleUrl: './accidentes.component.css',
@@ -68,6 +70,7 @@ export class AccidentesComponent implements OnInit, OnDestroy {
   currentPage = 1;
 
   filtros: AccidenteFilterDto = {};
+  workerFiltroSelected: WorkerSearchItemDto | null = null;
 
   // Panel de detalle
   detalle: AccidenteTrabajoDetalleDto | null = null;
@@ -117,7 +120,6 @@ export class AccidentesComponent implements OnInit, OnDestroy {
 
   saving = false;
 
-  private workerChange$ = new Subject<void>();
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -129,7 +131,6 @@ export class AccidentesComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.workerChange$.pipe(debounceTime(400), takeUntil(this.destroy$)).subscribe(() => this.load(1));
     this.load(1);
     this.loadTipos();
     this.catalogosSaludService.getAgentesRiesgo().subscribe({
@@ -187,11 +188,17 @@ export class AccidentesComponent implements OnInit, OnDestroy {
   }
 
   onFilterChange(): void { this.load(1); }
-  onWorkerChange(): void { this.workerChange$.next(); }
   onPageChange(p: number): void { this.load(p); }
+
+  onWorkerFiltroChange(w: WorkerSearchItemDto | null): void {
+    this.workerFiltroSelected = w;
+    this.filtros.workerId = w?.id;
+    this.load(1);
+  }
 
   limpiarFiltros(): void {
     this.filtros = {};
+    this.workerFiltroSelected = null;
     this.load(1);
   }
 

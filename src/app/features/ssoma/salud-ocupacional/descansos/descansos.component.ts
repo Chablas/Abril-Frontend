@@ -4,7 +4,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
@@ -22,6 +22,8 @@ import { SearchSelect } from '../../../../shared/components/search-select/search
 import { DatePicker } from '../../../../shared/components/date-picker/date-picker';
 import { StatusBadge } from '../../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
+import { WorkerSearchInput } from '../shared/worker-search-input/worker-search-input';
+import { WorkerSearchItemDto } from '../dtos/worker-search.model';
 
 @Component({
   selector: 'app-descansos',
@@ -40,6 +42,7 @@ import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
     DatePicker,
     StatusBadge,
     TitleCasePipe,
+    WorkerSearchInput,
   ],
   templateUrl: './descansos.component.html',
   styleUrl: './descansos.component.css',
@@ -58,6 +61,8 @@ export class DescansosComponent implements OnInit, OnDestroy {
   currentPage = 1;
 
   filtros: DescansoFilterDto = {};
+  /** Trabajador elegido en el filtro por nombre/DNI — solo para mostrar la selección; el filtro real sigue viajando como filtros.workerId. */
+  workerFiltroSelected: WorkerSearchItemDto | null = null;
 
   modalVisible = false;
   descansoSeleccionadoId: number | null = null;
@@ -79,7 +84,6 @@ export class DescansosComponent implements OnInit, OnDestroy {
     ];
   }
 
-  private workerChange$ = new Subject<void>();
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -90,7 +94,6 @@ export class DescansosComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.workerChange$.pipe(debounceTime(400), takeUntil(this.destroy$)).subscribe(() => this.load(1));
     this.loadInicial();
   }
 
@@ -143,10 +146,19 @@ export class DescansosComponent implements OnInit, OnDestroy {
   }
 
   onFilterChange(): void { this.load(1); }
-  onWorkerChange(): void { this.workerChange$.next(); }
   onPageChange(p: number): void { this.load(p); }
 
-  limpiarFiltros(): void { this.filtros = {}; this.load(1); }
+  onWorkerFiltroChange(w: WorkerSearchItemDto | null): void {
+    this.workerFiltroSelected = w;
+    this.filtros.workerId = w?.id;
+    this.load(1);
+  }
+
+  limpiarFiltros(): void {
+    this.filtros = {};
+    this.workerFiltroSelected = null;
+    this.load(1);
+  }
 
   abrirModal(id?: number): void {
     this.descansoSeleccionadoId = id ?? null;

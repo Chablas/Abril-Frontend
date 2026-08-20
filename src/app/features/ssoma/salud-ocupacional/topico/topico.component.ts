@@ -4,7 +4,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subject, debounceTime, takeUntil } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
@@ -20,6 +20,8 @@ import { FilterTriggerButton } from '../../../../shared/components/filter-trigge
 import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
 import { StatusBadge } from '../../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
+import { WorkerSearchInput } from '../shared/worker-search-input/worker-search-input';
+import { WorkerSearchItemDto } from '../dtos/worker-search.model';
 
 import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 
@@ -39,6 +41,7 @@ import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
     FilterModal,
     StatusBadge,
     TitleCasePipe,
+    WorkerSearchInput,
   ],
   templateUrl: './topico.component.html',
   styleUrl: './topico.component.css',
@@ -55,6 +58,7 @@ export class TopicoComponent implements OnInit, OnDestroy {
   currentPage = 1;
 
   filtros: TopicoFiltrosDto = {};
+  workerFiltroSelected: WorkerSearchItemDto | null = null;
 
   modalVisible = false;
   atencionSeleccionada: TopicoAtencionDto | null = null;
@@ -75,7 +79,6 @@ export class TopicoComponent implements OnInit, OnDestroy {
     { id: '5', nombre: 'Otro' },
   ];
 
-  private workerChange$ = new Subject<void>();
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -86,7 +89,6 @@ export class TopicoComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.workerChange$.pipe(debounceTime(400), takeUntil(this.destroy$)).subscribe(() => this.load(1));
     this.load(1);
   }
 
@@ -115,11 +117,17 @@ export class TopicoComponent implements OnInit, OnDestroy {
   }
 
   onFilterChange(): void { this.load(1); }
-  onWorkerChange(): void { this.workerChange$.next(); }
   onPageChange(p: number): void { this.load(p); }
+
+  onWorkerFiltroChange(w: WorkerSearchItemDto | null): void {
+    this.workerFiltroSelected = w;
+    this.filtros.workerId = w?.id;
+    this.load(1);
+  }
 
   limpiarFiltros(): void {
     this.filtros = {};
+    this.workerFiltroSelected = null;
     this.load(1);
   }
 

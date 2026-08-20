@@ -126,10 +126,11 @@
     </app-search-select>
   </div>
 
-  <div class="w-full abril-field">
-    <label class="abril-field-label">ID Trabajador</label>
-    <input type="number" class="abril-field-input" [(ngModel)]="filtros.workerId"
-      placeholder="Número" (ngModelChange)="onWorkerChange()" />
+  <div class="w-full">
+    <app-worker-search-input
+      [selected]="workerFiltroSelected"
+      (selectedChange)="onWorkerFiltroChange($event)">
+    </app-worker-search-input>
   </div>
 
   <div class="w-full">
