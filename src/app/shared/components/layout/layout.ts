@@ -2,6 +2,7 @@ import { Component, OnDestroy, inject } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { Sidebar } from '../sidebar/sidebar';
 import { SidebarMobile } from '../sidebar-mobile/sidebar-mobile';
+import { BannerJefeSsomaObligatorio } from '../banner-jefe-ssoma-obligatorio/banner-jefe-ssoma-obligatorio';
 import { NavigationEnd, RouterOutlet } from '@angular/router';
 import { Router } from '@angular/router';
 import { LayoutService } from '../../../core/services/layout.service';
@@ -13,7 +14,7 @@ import { filter, map, startWith } from 'rxjs';
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, Sidebar, SidebarMobile, NgIf],
+  imports: [RouterOutlet, Sidebar, SidebarMobile, NgIf, BannerJefeSsomaObligatorio],
   templateUrl: './layout.html',
   styleUrl: './layout.css',
 })
@@ -77,6 +78,7 @@ export class Layout implements OnDestroy {
       url.includes('/clinica/interconsultas') ||
       url.includes('/clinica/programaciones') ||
       url.includes('/habilitacion/dashboard-contratista') ||
+      url.includes('/habilitacion/evaluar-prevencionista') ||
       url.includes('/evaluaciones/dashboard') ||
       url.includes('/evaluaciones/evaluar') ||
       url.includes('/evaluaciones/historial') ||

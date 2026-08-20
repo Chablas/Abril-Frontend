@@ -1,8 +1,8 @@
 <app-abril-page-header
   badge="EVALUACIONES"
-  titulo="Configuración"
-  subtitulo="Plantilla de criterios y áreas evaluadoras."
-    [tabGroups]="[
+  titulo="Dashboard — Prevencionistas / Coordinadores SSOMA"
+  subtitulo="Evaluaciones de contratistas al equipo SSOMA de proyecto. Visible solo para el Jefe SSOMA."
+  [tabGroups]="[
     { label: 'Residentes',   icono: 'ti-user-check', tabs: [
       { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
       { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
@@ -25,50 +25,56 @@
   ]">
 </app-abril-page-header>
 
-<div class="conf-root">
+<div class="dp-root">
 
-  <div class="conf-body">
-    <div class="area-sidebar">
-      <div class="as-label">Áreas evaluadoras</div>
-      <div class="as-item"
-        *ngFor="let a of areas"
-        [class.active]="areaActiva === a"
-        (click)="selectArea(a)">
-        {{ a }}
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div><span>Cargando...</span>
+  </div>
+
+  <div class="dp-content" *ngIf="!loading && data">
+
+    <div class="filtros-bar">
+      <input class="filtro-search" [(ngModel)]="busqueda" placeholder="Buscar SSOMA, proyecto o empresa evaluadora..." />
+
+      <div class="stat-inline">
+        <span class="si-label">Total</span>
+        <span class="si-num">{{ data.totalEvaluaciones }}</span>
+      </div>
+      <div class="stat-inline" *ngIf="data.promedioGeneral !== null">
+        <span class="si-label">Promedio general</span>
+        <span class="si-num" [ngClass]="notaClase(data.promedioGeneral)">{{ notaDisplay(data.promedioGeneral) }}</span>
       </div>
     </div>
 
-    <div class="criterios-panel">
-      <div class="cp-header-bar">
-        <div class="cp-title">{{ areaActiva }} · {{ criterios.length }} criterios</div>
-      </div>
-      <div class="criterio-list">
-        <div class="criterio-item"
-          *ngFor="let c of criterios; let i = index"
-          [class.inactivo]="!c.activo">
-          <span class="ci-num">{{ i + 1 }}</span>
-          <div class="ci-body">
-            <div *ngIf="editandoId !== c.id" class="ci-text">{{ c.criterio }}</div>
-            <textarea *ngIf="editandoId === c.id" [(ngModel)]="editTexto"
-              class="ci-edit" rows="2">
-            </textarea>
-          </div>
-          <div class="ci-actions">
-            <button *ngIf="editandoId !== c.id" class="ci-btn" (click)="iniciarEdicion(c)">
-              <i class="ti ti-edit"></i>
-            </button>
-            <button *ngIf="editandoId === c.id" class="ci-btn ci-btn-save" (click)="guardarEdicion(c)">
-              <i class="ti ti-check"></i>
-            </button>
-            <button *ngIf="editandoId === c.id" class="ci-btn" (click)="editandoId = null">
-              <i class="ti ti-x"></i>
-            </button>
-            <button class="ci-btn" [title]="c.activo ? 'Desactivar' : 'Activar'" (click)="toggleActivo(c)">
-              <i class="ti" [ngClass]="c.activo ? 'ti-eye' : 'ti-eye-off'"></i>
-            </button>
-          </div>
-        </div>
-      </div>
+    <div class="empty-state" *ngIf="!evaluacionesFiltradas.length">
+      <i class="ti ti-clipboard-off"></i>
+      <p>No hay evaluaciones registradas con los filtros seleccionados.</p>
     </div>
+
+    <div class="table-wrap" *ngIf="evaluacionesFiltradas.length">
+      <table class="ev-table">
+        <thead>
+          <tr>
+            <th>PREVENCIONISTA / COORDINADOR</th>
+            <th>PROYECTO</th>
+            <th>EMPRESA EVALUADORA</th>
+            <th class="nota-col">NOTA</th>
+            <th>COMENTARIO</th>
+            <th>FECHA</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of evaluacionesFiltradas">
+            <td class="contractor-name">{{ e.evaluadoNombre }}</td>
+            <td class="project-cell">{{ e.proyectoNombre }}</td>
+            <td class="project-cell">{{ e.evaluadorContributorNombre }}</td>
+            <td class="nota-col"><span class="nota-chip" [ngClass]="notaClase(e.nota)">{{ notaDisplay(e.nota) }}</span></td>
+            <td class="comentario-cell">{{ e.comentario || '—' }}</td>
+            <td class="project-cell">{{ e.createdAt | date: 'dd/MM/yyyy' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
   </div>
 </div>

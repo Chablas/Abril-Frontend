@@ -230,6 +230,13 @@ export const HABILITACION_ROUTES: Routes = [
     data: { titulo: 'HABILITACIÓN - GESTIÓN USUARIOS CONTRATISTA' },
   },
   {
+    path: 'evaluar-prevencionista',
+    loadComponent: () =>
+      import('./pages/evaluar-prevencionista/evaluar-prevencionista').then((m) => m.EvaluarPrevencionista),
+    canActivate: [authGuard, roleGuard],
+    data: { titulo: 'HABILITACIÓN - EVALUAR SSOMA', roles: ['CONTRATISTA'] },
+  },
+  {
     path: 'cambiar-password',
     loadComponent: () =>
       import('./pages/cambiar-password/cambiar-password').then((m) => m.CambiarPassword),

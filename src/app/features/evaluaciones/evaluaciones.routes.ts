@@ -82,5 +82,33 @@ export const EVALUACIONES_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { titulo: 'EVALUACIONES - VER EVALUACIÓN SUPERVISORES', featureKey: 'evaluaciones.ver-supervisores-contratista' },
   },
+  {
+    path: 'evaluar-jefe-ssoma',
+    loadComponent: () =>
+      import('./pages/evaluar-jefe-ssoma/evaluar-jefe-ssoma').then(m => m.EvaluarJefeSsoma),
+    canActivate: [roleGuard],
+    data: { titulo: 'EVALUACIONES - EVALUAR JEFE SSOMA', featureKey: 'evaluaciones.evaluar-jefe-ssoma' },
+  },
+  {
+    path: 'resultados-jefe-ssoma',
+    loadComponent: () =>
+      import('./pages/resultados-jefe-ssoma/resultados-jefe-ssoma').then(m => m.ResultadosJefeSsoma),
+    canActivate: [roleGuard],
+    data: { titulo: 'EVALUACIONES - RESULTADOS JEFE SSOMA', featureKey: 'evaluaciones.resultados-jefe-ssoma' },
+  },
+  {
+    path: 'mi-perfil-prevencionista',
+    loadComponent: () =>
+      import('./pages/mi-perfil-prevencionista/mi-perfil-prevencionista').then(m => m.MiPerfilPrevencionista),
+    canActivate: [roleGuard],
+    data: { titulo: 'EVALUACIONES - MI PERFIL PREVENCIONISTA', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
+  },
+  {
+    path: 'dashboard-prevencionistas',
+    loadComponent: () =>
+      import('./pages/dashboard-prevencionistas/dashboard-prevencionistas').then(m => m.DashboardPrevencionistas),
+    canActivate: [roleGuard],
+    data: { titulo: 'EVALUACIONES - DASHBOARD PREVENCIONISTAS', featureKey: 'evaluaciones.dashboard-prevencionistas' },
+  },
   { path: '', redirectTo: 'evaluar', pathMatch: 'full' },
 ];
