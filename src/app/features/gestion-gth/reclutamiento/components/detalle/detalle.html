@@ -117,16 +117,15 @@
                 }
               </div>
 
-              @if (sel.emoIngresoPendiente) {
+              <!-- El aviso queda solo para el caso en que no hay ficha que abrir: con el botón
+                   «Programar EMO de ingreso» a la vista, explicar que el proceso cierra al
+                   programarlo era una línea que nadie accionaba. -->
+              @if (sel.emoIngresoPendiente && !sel.workerId) {
                 <p class="text-[11.5px] text-amber-800 mt-[10px] flex items-start gap-[6px]">
                   <i class="ti ti-alert-circle text-[14px] shrink-0 mt-[1px]"></i>
                   <span>
-                    @if (sel.workerId) {
-                      El proceso se cierra cuando quede programado su examen médico de ingreso.
-                    } @else {
-                      No se pudo abrir su ficha para el EMO: el candidato no tiene el formulario
-                      del postulante aprobado, así que no está en la base maestra.
-                    }
+                    No se pudo abrir su ficha para el EMO: el candidato no tiene el formulario
+                    del postulante aprobado, así que no está en la base maestra.
                   </span>
                 </p>
               }
@@ -311,11 +310,6 @@
             <div class="rounded-[8px] bg-[#EFF6FF] px-[14px] py-[11px] mt-[12px]">
               <p class="text-[13px] font-semibold" style="color:var(--color-abril-logo-blue)">
                 Carga de candidatos para long list
-              </p>
-              <p class="text-[12.5px] text-gray-600 mt-[2px] leading-snug">
-                Sube los CVs previamente filtrados por GTH para la long list. Registra el nombre del
-                candidato y adjunta el CV que revisará el solicitante. El puesto se toma
-                automáticamente de la solicitud: <b>{{ detalle.puesto | titleCase }}</b>.
               </p>
             </div>
 
@@ -561,7 +555,33 @@
                     Aprobar formulario
                   </button>
                 }
+
+                <!-- Cerrar el proceso del postulante es una decisión aparte de rechazar su
+                     formulario: rechazarlo solo le pide corregir, esto lo saca del proceso y le
+                     manda el correo de fin de proceso. Por eso aparece recién cuando el
+                     formulario ya quedó rechazado. -->
+                @if (puedeRechazarPostulante(c)) {
+                  <button type="button"
+                    [disabled]="rechazandoPostulante[c.candidatoId]"
+                    (click)="rechazarPostulante(c)"
+                    class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="background:#B91C1C">
+                    <i class="ti ti-user-x text-[15px]"></i>
+                    {{ rechazandoPostulante[c.candidatoId] ? 'Enviando…' : 'Rechazar postulante' }}
+                  </button>
+                }
               </div>
+
+              <!-- Solo para el rechazo en esta etapa: al descartado tras la entrevista ya se lo
+                   dice su propia ficha en «Programación de entrevistas», y este bloque se sigue
+                   pintando cuando el requerimiento ya avanzó a esa fase. -->
+              @if (formularioRechazado(c) && noContinua(c) && c.evaluacion?.agradecimientoEnviadoEn) {
+                <p class="text-[11.5px] mt-[8px]" style="color:#B91C1C">
+                  Fuera del proceso. Correo de fin de proceso enviado a
+                  {{ c.evaluacion?.agradecimientoCorreo }} ·
+                  {{ c.evaluacion?.agradecimientoEnviadoEn | date:'dd/MM/yyyy HH:mm' }}.
+                </p>
+              }
             </div>
           } @empty {
             <p class="text-[12.5px] text-gray-400 italic mt-[10px]">No hay candidatos aprobados registrados.</p>
@@ -602,24 +622,38 @@
         </div>
         ───────────────────────────────────────────────────────────────────── -->
 
-        <!-- Control informativo del Multitest -->
+        <!-- Control informativo del Multitest.
+             Al candidato con el formulario rechazado no se le pide: ya no se le va a entrevistar,
+             así que su fila queda como "No aplica" y no traba el paso a entrevistas. Se sigue
+             mostrando (no se oculta) para que la lista siga siendo la de la long list aprobada. -->
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
           <h3 class="text-[14px] font-bold text-gray-800">Control informativo del Multitest</h3>
 
           @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
-            <label class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[11px] mt-[10px] cursor-pointer transition-colors hover:bg-gray-50"
+            @if (formularioRechazado(c)) {
+              <div class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[11px] mt-[10px] bg-gray-50"
                    style="border-color:var(--color-abril-border)">
-              <div>
-                <p class="text-[13.5px] font-semibold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
-                <p class="text-[12px]" [style.color]="c.multitestRealizado ? '#15803D' : '#6B7280'">
-                  {{ c.multitestRealizado ? 'Realizado' : 'Pendiente de realizar' }}
-                </p>
+                <div>
+                  <p class="text-[13.5px] font-semibold text-gray-400">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
+                  <p class="text-[12px] text-gray-400">No aplica · formulario rechazado</p>
+                </div>
+                <i class="ti ti-minus text-[16px] text-gray-300 shrink-0"></i>
               </div>
-              <input type="checkbox" [checked]="c.multitestRealizado"
-                (change)="toggleMultitest(c, $any($event.target).checked)"
-                class="w-[16px] h-[16px] shrink-0 cursor-pointer"
-                style="accent-color:var(--color-abril-logo-blue)" />
-            </label>
+            } @else {
+              <label class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[11px] mt-[10px] cursor-pointer transition-colors hover:bg-gray-50"
+                     style="border-color:var(--color-abril-border)">
+                <div>
+                  <p class="text-[13.5px] font-semibold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
+                  <p class="text-[12px]" [style.color]="c.multitestRealizado ? '#15803D' : '#6B7280'">
+                    {{ c.multitestRealizado ? 'Realizado' : 'Pendiente de realizar' }}
+                  </p>
+                </div>
+                <input type="checkbox" [checked]="c.multitestRealizado"
+                  (change)="toggleMultitest(c, $any($event.target).checked)"
+                  class="w-[16px] h-[16px] shrink-0 cursor-pointer"
+                  style="accent-color:var(--color-abril-logo-blue)" />
+              </label>
+            }
           }
         </div>
 
@@ -796,7 +830,7 @@
                       {{ guardandoEvaluacion[c.candidatoId] ? 'Enviando…' : 'Continuar y enviar como finalista' }}
                     </button>
 
-                    <!-- Correo de agradecimiento: cierra al candidato como "No continúa" (RG-12). -->
+                    <!-- Correo de fin de proceso: cierra al candidato como "No continúa" (RG-12). -->
                     <button type="button"
                       [disabled]="enviandoAgradecimiento[c.candidatoId]"
                       (click)="enviarAgradecimiento(c)"
@@ -805,13 +839,13 @@
                       <i class="ti ti-mail-x text-[15px]"></i>
                       {{ enviandoAgradecimiento[c.candidatoId]
                           ? 'Enviando…'
-                          : (noContinua(c) ? 'Reenviar correo de agradecimiento' : 'No continúa · enviar agradecimiento') }}
+                          : (noContinua(c) ? 'Reenviar correo de fin de proceso' : 'No continúa · enviar fin de proceso') }}
                     </button>
                   </div>
 
                   @if (c.evaluacion?.agradecimientoEnviadoEn) {
                     <p class="text-[11.5px] mt-[8px]" style="color:#B91C1C">
-                      Correo de agradecimiento enviado a {{ c.evaluacion?.agradecimientoCorreo }} ·
+                      Correo de fin de proceso enviado a {{ c.evaluacion?.agradecimientoCorreo }} ·
                       {{ c.evaluacion?.agradecimientoEnviadoEn | date:'dd/MM/yyyy HH:mm' }}.
                       El candidato ya no continúa en el proceso.
                     </p>

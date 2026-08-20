@@ -185,10 +185,16 @@ export class GthSolicitudPersonal implements OnInit {
   }
 
   ngOnInit(): void {
-    // `/gestion-gth/solicitud-personal/long-list/:id` es la URL del botón del correo de long
-    // list: abre esa revisión directamente. Sin id, la pantalla es solo el panel.
+    // Los dos deep links de los correos abren su modal directamente sobre esta pantalla:
+    //   • `/solicitud-personal/long-list/:id`  → «Revisar long list y CVs».
+    //   • `/solicitud-personal/finalistas/:id` → «Revisar y decidir» del informe de finalistas.
+    // Se distinguen por el flag `modalFinalistas` de la ruta, no por el parámetro (es ':id' en
+    // ambas). Sin id, la pantalla es solo el panel.
     const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (Number.isInteger(id) && id > 0) this.revisionId = id;
+    if (Number.isInteger(id) && id > 0) {
+      if (this.route.snapshot.data['modalFinalistas']) this.finalistasId = id;
+      else this.revisionId = id;
+    }
 
     this.load();
   }
@@ -246,6 +252,13 @@ export class GthSolicitudPersonal implements OnInit {
 
   cerrarFinalistas(): void {
     this.finalistasId = null;
+    // Si se llegó por el enlace del correo (`/solicitud-personal/finalistas/:id`), se limpia la
+    // URL para que un refresco no vuelva a abrir el modal — igual que en la long list.
+    if (this.route.snapshot.data['modalFinalistas']) {
+      this.router.navigate(['/gestion-gth/solicitud-personal']);
+      return;
+    }
+    this.cdr.detectChanges();
   }
 
   // ── Filtro de texto ────────────────────────────────────────────────────

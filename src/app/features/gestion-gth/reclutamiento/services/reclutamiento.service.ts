@@ -178,12 +178,25 @@ export class ReclutamientoService {
   }
 
   /**
-   * Envía al candidato el correo de agradecimiento por no continuar en el proceso y deja su
-   * resultado en "No pasó". El correo destino lo resuelve el backend (el de su entrevista).
+   * Envía al candidato el correo de fin de proceso por no continuar y deja su resultado en
+   * "No pasó". El correo destino lo resuelve el backend (el de su entrevista).
    */
   enviarAgradecimiento(candidatoId: number): Observable<EvaluacionAccionResult> {
     return this.http.post<EvaluacionAccionResult>(
       `${this.apiUrl}/candidato/${candidatoId}/agradecimiento`,
+      {},
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Saca del proceso al postulante cuyo formulario quedó rechazado y le envía el mismo correo de
+   * fin de proceso. El correo destino lo resuelve el backend (el del envío de su formulario);
+   * este candidato aún no tiene entrevista de la que sacarlo.
+   */
+  rechazarPostulante(candidatoId: number): Observable<EvaluacionAccionResult> {
+    return this.http.post<EvaluacionAccionResult>(
+      `${this.apiUrl}/candidato/${candidatoId}/rechazo-postulante`,
       {},
       { headers: this.headers },
     );

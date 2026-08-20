@@ -5,7 +5,7 @@
  */
 
 /** Etapa del proceso en la que se rechazó al candidato. */
-export type EtapaRechazo = 'LONG_LIST' | 'ENTREVISTAS' | 'DECISION_FINAL';
+export type EtapaRechazo = 'LONG_LIST' | 'FORMULARIO' | 'ENTREVISTAS' | 'DECISION_FINAL';
 
 /** Quién tomó el rechazo: el área usuaria o GTH. */
 export type RechazadoPor = 'SOLICITANTE' | 'GTH';
@@ -25,9 +25,9 @@ export interface CandidatoRechazado {
    * etapa "Long list" de vueltas distintas se leen igual.
    */
   numeroLongList: number;
-  /** 'LONG_LIST' | 'ENTREVISTAS' | 'DECISION_FINAL'. */
+  /** 'LONG_LIST' | 'FORMULARIO' | 'ENTREVISTAS' | 'DECISION_FINAL'. */
   etapaCodigo: EtapaRechazo;
-  /** Nombre de la etapa para mostrar ("Long list", "Entrevistas", "Decisión final"). */
+  /** Nombre de la etapa ("Long list", "Formulario", "Entrevistas", "Decisión final"). */
   etapaNombre: string;
   /** 'SOLICITANTE' | 'GTH'. */
   rechazadoPorCodigo: RechazadoPor;
@@ -46,6 +46,7 @@ export interface CandidatoRechazado {
 export function etapaRechazoColors(codigo: string): { bg: string; text: string } {
   switch (codigo) {
     case 'LONG_LIST':      return { bg: '#F3E8FF', text: '#7E22CE' };
+    case 'FORMULARIO':     return { bg: '#E0F2FE', text: '#0369A1' };
     case 'ENTREVISTAS':    return { bg: '#FCE7F3', text: '#BE185D' };
     case 'DECISION_FINAL': return { bg: '#FFEDD5', text: '#C2410C' };
     default:               return { bg: '#F3F4F6', text: '#374151' };
