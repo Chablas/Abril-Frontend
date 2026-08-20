@@ -73,8 +73,20 @@ export interface VecinoLicenciaHistorialItemDTO {
   createdUserName: string | null;
 }
 
+/** Correo resuelto automáticamente desde la ficha del proyecto — mismo criterio que EMOs. */
+export interface VecinoLicenciaDestinatarioAutomaticoDTO {
+  rol: string;
+  email: string | null;
+}
+
+/** Correo adicional configurado a mano (ej. Jefe SSOMA cuando aplique). */
 export interface VecinoLicenciaDestinatarioDTO {
   vecinoLicenciaControlDestinatarioId: number;
   rol: string;
   email: string;
+}
+
+export interface VecinoLicenciaDestinatariosResponseDTO {
+  automaticos: VecinoLicenciaDestinatarioAutomaticoDTO[];
+  adicionales: VecinoLicenciaDestinatarioDTO[];
 }

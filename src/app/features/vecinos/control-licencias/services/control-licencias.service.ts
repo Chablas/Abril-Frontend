@@ -12,6 +12,7 @@ import {
   VecinoLicenciaUploadDTO,
   VecinoLicenciaHistorialItemDTO,
   VecinoLicenciaDestinatarioDTO,
+  VecinoLicenciaDestinatariosResponseDTO,
 } from '../dtos/control-licencias.dto';
 
 @Injectable({ providedIn: 'root' })
@@ -91,8 +92,8 @@ export class ControlLicenciasService {
     );
   }
 
-  getDestinatarios(projectId: number): Observable<VecinoLicenciaDestinatarioDTO[]> {
-    return this.http.get<VecinoLicenciaDestinatarioDTO[]>(`${this.apiUrl}/proyectos/${projectId}/destinatarios`, {
+  getDestinatarios(projectId: number): Observable<VecinoLicenciaDestinatariosResponseDTO> {
+    return this.http.get<VecinoLicenciaDestinatariosResponseDTO>(`${this.apiUrl}/proyectos/${projectId}/destinatarios`, {
       headers: this.authHeaders(),
     });
   }

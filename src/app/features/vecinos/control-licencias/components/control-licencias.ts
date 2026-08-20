@@ -15,6 +15,7 @@ import {
   VecinoLicenciaItemDTO,
   VecinoLicenciaTipoDTO,
   VecinoLicenciaDestinatarioDTO,
+  VecinoLicenciaDestinatarioAutomaticoDTO,
 } from '../dtos/control-licencias.dto';
 import { LicenciaUpload } from './licencia-upload/licencia-upload';
 import { LicenciaHistorial } from './licencia-historial/licencia-historial';
@@ -22,8 +23,13 @@ import { TipoUpsert, TipoUpsertResult } from './tipo-upsert/tipo-upsert';
 
 import { VECINOS_TABS } from '../../shared/vecinos-tabs';
 
-/** Roles a los que se puede recordar el vencimiento, igual criterio que en EMOs — GTH nunca recibe estos avisos. */
-export const ROLES_DESTINATARIO = ['Coordinador SSOMA', 'Jefe SSOMA', 'Administración', 'Residente'];
+/**
+ * Roles adicionales que se pueden configurar a mano por proyecto — Residente, Coordinador
+ * SSOMA y Administración ya se resuelven en automático desde la ficha del proyecto (igual
+ * criterio que EMOs), así que la única fila que suele hacer falta acá es Jefe SSOMA "si
+ * aplica". GTH nunca recibe estos avisos.
+ */
+export const ROLES_DESTINATARIO_ADICIONAL = ['Jefe SSOMA', 'Residente', 'Coordinador SSOMA', 'Administración'];
 
 @Component({
   selector: 'app-control-licencias',
@@ -36,7 +42,7 @@ export const ROLES_DESTINATARIO = ['Coordinador SSOMA', 'Jefe SSOMA', 'Administr
 })
 export class ControlLicencias implements OnInit {
   readonly tabs = VECINOS_TABS;
-  readonly rolesDestinatario = ROLES_DESTINATARIO;
+  readonly rolesDestinatario = ROLES_DESTINATARIO_ADICIONAL;
 
   proyectos: ProjectOptionDTO[] = [];
   selectedProjectId: number | null = null;
@@ -51,9 +57,10 @@ export class ControlLicencias implements OnInit {
   items: VecinoLicenciaItemDTO[] = [];
   plantillaLoaded = false;
 
+  destinatariosAutomaticos: VecinoLicenciaDestinatarioAutomaticoDTO[] = [];
   destinatarios: VecinoLicenciaDestinatarioDTO[] = [];
   destinatariosLoaded = false;
-  nuevoRol = ROLES_DESTINATARIO[0];
+  nuevoRol = ROLES_DESTINATARIO_ADICIONAL[0];
   nuevoEmail = '';
 
   catalogo: VecinoLicenciaTipoDTO[] = [];
@@ -134,7 +141,8 @@ export class ControlLicencias implements OnInit {
     this.loaderService.show();
     this.service.getDestinatarios(this.selectedProjectId).subscribe({
       next: (res) => {
-        this.destinatarios = res;
+        this.destinatariosAutomaticos = res.automaticos;
+        this.destinatarios = res.adicionales;
         this.destinatariosLoaded = true;
         this.loaderService.hide();
       },

@@ -125,12 +125,37 @@
     </div>
 
     <!-- ── Destinatarios ─────────────────────────────────────────────────── -->
-    <div *ngIf="activeSubTab === 'destinatarios'" class="flex flex-col gap-3 pt-1 max-w-xl">
+    <div *ngIf="activeSubTab === 'destinatarios'" class="flex flex-col gap-4 pt-1 max-w-xl">
 
-      <p class="text-xs text-gray-400">
-        Los correos configurados aquí reciben los recordatorios de vencimiento de <b>todas</b> las
-        licencias de este proyecto, según el rol (Residente, Administrador, etc.).
-      </p>
+      <div class="flex flex-col gap-2">
+        <p class="text-xs text-gray-400">
+          Residente, Coordinador SSOMA y Administración se resuelven automáticamente desde la ficha
+          del proyecto — igual criterio que en EMOs. GTH nunca recibe estos avisos.
+        </p>
+        <div class="abril-table-wrap">
+          <table class="abril-table">
+            <thead>
+              <tr>
+                <th>Rol</th>
+                <th>Correo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let a of destinatariosAutomaticos">
+                <td>{{ a.rol }}</td>
+                <td [class.text-amber-600]="!a.email" [class.italic]="!a.email">
+                  {{ a.email || 'Sin correo configurado en la ficha del proyecto' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2">
+        <p class="text-xs text-gray-400">
+          Correos adicionales para este proyecto (ej. <b>Jefe SSOMA</b>, solo si aplica).
+        </p>
 
       <div class="flex items-end gap-2">
         <div class="abril-field flex-1">
@@ -173,8 +198,9 @@
       </div>
 
       <p *ngIf="destinatariosLoaded && destinatarios.length === 0" class="text-center text-sm text-gray-400 italic py-6">
-        No hay destinatarios configurados para este proyecto.
+        No hay destinatarios adicionales para este proyecto.
       </p>
+      </div>
     </div>
   </ng-container>
 </div>
