@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
@@ -28,7 +29,7 @@ import { EquipoListDto, EquipoUpsertDto } from '../../../../dtos/equipo.model';
 @Component({
   selector: 'app-equipo-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
+  imports: [CommonModule, FormsModule, RouterLink, BaseModal, SearchSelect],
   templateUrl: './equipo-form.html',
   styleUrl: './equipo-form.css',
 })
@@ -42,8 +43,7 @@ export class EquipoForm implements OnChanges {
   empresas: EmpresaContratistaListDto[] = [];
   tiposEquipo: TipoEquipoDto[] = [];
 
-  model: EquipoUpsertDto & { emailAdmin?: string; emailSsoma?: string; nVin?: string } =
-    this.empty();
+  model: EquipoUpsertDto & { nVin?: string } = this.empty();
   saving = false;
 
   constructor(
@@ -74,8 +74,6 @@ export class EquipoForm implements OnChanges {
       capacidad: '',
       propietarioEmpresaId: null,
       proyectoId: 0,
-      emailAdmin: '',
-      emailSsoma: '',
     };
   }
 
@@ -93,8 +91,6 @@ export class EquipoForm implements OnChanges {
       capacidad: this.equipo.capacidad ?? '',
       propietarioEmpresaId: null,
       proyectoId: this.equipo.proyectoId,
-      emailAdmin: '',
-      emailSsoma: '',
     };
   }
 
@@ -148,6 +144,10 @@ export class EquipoForm implements OnChanges {
     return this.authService.isContratista();
   }
 
+  get puedeAdministrarCatalogo(): boolean {
+    return this.authService.hasFeature('habilitacion.catalogos.equipos');
+  }
+
   get title(): string {
     return this.equipo ? 'Editar equipo / máquina' : 'Nuevo equipo / máquina';
   }
@@ -163,32 +163,6 @@ export class EquipoForm implements OnChanges {
     return true;
   }
 
-  /**
-   * Permite dar de alta un tipo de equipo que todavía no está en el catálogo (ej. una
-   * máquina nueva que no es Volquete/Excavadora/etc.), sin salir del formulario de equipo.
-   */
-  agregarTipoEquipo(): void {
-    Swal.fire({
-      title: 'Nuevo tipo de equipo',
-      input: 'text',
-      inputPlaceholder: 'Ej: Volquete',
-      showCancelButton: true,
-      confirmButtonText: 'Crear',
-      cancelButtonText: 'Cancelar',
-      inputValidator: (value) => (!value?.trim() ? 'El nombre es requerido.' : undefined),
-    }).then((result) => {
-      if (!result.isConfirmed || !result.value) return;
-      this.catalogosService.crearTipoEquipo(result.value.trim()).subscribe({
-        next: (tipo) => {
-          this.tiposEquipo = [...this.tiposEquipo, tipo];
-          this.model.tipoEquipoId = tipo.id;
-          this.cdr.detectChanges();
-        },
-        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
-      });
-    });
-  }
-
   submit(): void {
     if (!this.canSubmit) {
       Swal.fire({
@@ -199,7 +173,6 @@ export class EquipoForm implements OnChanges {
       return;
     }
 
-    const esContratista = this.authService.isContratista();
     const payload: EquipoUpsertDto = {
       tipoEquipoId: this.model.tipoEquipoId,
       marca: this.model.marca?.trim() || undefined,
@@ -209,8 +182,6 @@ export class EquipoForm implements OnChanges {
       capacidad: this.model.capacidad?.trim() || undefined,
       propietarioEmpresaId: this.model.propietarioEmpresaId ?? undefined,
       proyectoId: this.model.proyectoId,
-      emailAdmin: esContratista ? undefined : (this.model.emailAdmin?.trim() || undefined),
-      emailSsoma: esContratista ? undefined : (this.model.emailSsoma?.trim() || undefined),
     };
 
     this.saving = true;

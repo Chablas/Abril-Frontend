@@ -3,21 +3,19 @@
     <div class="grid-2">
       <div class="col-span-2">
         <label class="field-label">Tipo *</label>
-        <div class="tipo-equipo-row">
-          <app-search-select
-            [showLabel]="false"
-            [options]="tiposEquipo"
-            valueField="id"
-            displayField="nombre"
-            placeholder="Selecciona el tipo de equipo"
-            [allowClear]="false"
-            [value]="model.tipoEquipoId"
-            (valueChange)="model.tipoEquipoId = $event"
-          ></app-search-select>
-          <button type="button" class="btn-agregar-tipo" (click)="agregarTipoEquipo()" title="Agregar nuevo tipo de equipo">
-            + Nuevo tipo
-          </button>
-        </div>
+        <app-search-select
+          [showLabel]="false"
+          [options]="tiposEquipo"
+          valueField="id"
+          displayField="nombre"
+          placeholder="Selecciona el tipo de equipo"
+          [allowClear]="false"
+          [value]="model.tipoEquipoId"
+          (valueChange)="model.tipoEquipoId = $event"
+        ></app-search-select>
+        <p class="field-hint" *ngIf="puedeAdministrarCatalogo">
+          ¿Falta un tipo? Agrégalo desde <a routerLink="/habilitacion/gestion/equipos/catalogo">Catálogo de Equipos</a>.
+        </p>
       </div>
 
       <div>
@@ -65,15 +63,6 @@
             {{ p.projectDescription }}
           </option>
         </select>
-      </div>
-
-      <div *ngIf="!isContratista()">
-        <label class="field-label">Email Admin</label>
-        <input type="email" class="field-input" [(ngModel)]="model.emailAdmin" />
-      </div>
-      <div *ngIf="!isContratista()">
-        <label class="field-label">Email SSOMA</label>
-        <input type="email" class="field-input" [(ngModel)]="model.emailSsoma" />
       </div>
     </div>
 

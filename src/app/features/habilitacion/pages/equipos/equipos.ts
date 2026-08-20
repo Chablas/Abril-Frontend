@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -37,7 +38,7 @@ import { VersionesDoc } from '../trabajadores/components/versiones-doc/versiones
 @Component({
   selector: 'app-hab-equipos',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator, EquipoForm, SearchSelect, DocumentViewer, VersionesDoc],
+  imports: [CommonModule, FormsModule, RouterLink, Paginator, EquipoForm, SearchSelect, DocumentViewer, VersionesDoc],
   templateUrl: './equipos.html',
   styleUrl: './equipos.css',
 })
@@ -273,6 +274,10 @@ export class Equipos implements OnInit, OnDestroy {
       this.authService.hasRole(Roles.ADMINISTRADOR_UDP) ||
       this.authService.hasRole(Roles.ADMINISTRADOR_ADMINISTRACION)
     );
+  }
+
+  get puedeAdministrarCatalogo(): boolean {
+    return this.authService.hasFeature('habilitacion.catalogos.equipos');
   }
 
   getEstadoHabClass(estado: string): string {

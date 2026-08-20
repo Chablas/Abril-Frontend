@@ -16,6 +16,8 @@ import { SearchSelect } from '../../../../../../shared/components/search-select/
 import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { AuthService } from '../../../../../../core/services/auth.service';
+import { Roles } from '../../../../../../core/constants/roles';
 import { WorkerService } from '../../../../../ssoma/salud-ocupacional/services/worker.service';
 import { CatalogosHabService } from '../../../../../habilitacion/services/catalogos-hab.service';
 import { AreaScopeService } from '../../../../shared/services/area-scope.service';
@@ -93,8 +95,14 @@ export class WorkerEditForm implements OnChanges {
     private areaScopeService: AreaScopeService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private authService: AuthService,
     private cdr: ChangeDetectorRef,
   ) {}
+
+  /** Solo Administrador de Obra puede corregir el DNI (rol 60) — restricción reflejada también en el backend. */
+  get puedeEditarDni(): boolean {
+    return this.authService.hasRole(Roles.ADMINISTRADOR_DE_OBRA);
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open) {

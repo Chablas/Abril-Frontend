@@ -5,5 +5,5 @@ export const VECINOS_TABS: AbrilPageTab[] = [
   { label: 'Dashboard',               icono: 'ti-layout-dashboard', route: '/vecinos/dashboard',            featureKey: 'vecinos.dashboard' },
   { label: 'Gestión de Vecinos',      icono: 'ti-users',            route: '/vecinos/gestion',              featureKey: 'vecinos.gestion' },
   { label: 'Croquis',                 icono: 'ti-map-2',            route: '/vecinos/croquis',              featureKey: 'vecinos.croquis' },
-  { label: 'Control de Vencimientos', icono: 'ti-calendar-due',     route: '/vecinos/control-vencimientos', featureKey: 'vecinos.control-vencimientos' },
+  { label: 'Control de Licencias',    icono: 'ti-calendar-due',     route: '/vecinos/control-licencias',    featureKey: 'vecinos.control-licencias' },
 ];

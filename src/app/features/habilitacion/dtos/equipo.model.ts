@@ -34,8 +34,6 @@ export interface EquipoUpsertDto {
   capacidad?: string;
   propietarioEmpresaId?: number | null;
   proyectoId: number;
-  emailAdmin?: string;
-  emailSsoma?: string;
 }
 
 export interface EquipoEntregableUpdateDto {

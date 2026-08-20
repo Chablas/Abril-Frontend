@@ -113,3 +113,27 @@ export interface TipoEquipoDto {
   id: number;
   nombre: string;
 }
+
+export interface TipoEquipoAdminDto {
+  id: number;
+  nombre: string;
+  orden: number;
+  activo: boolean;
+}
+
+/** Ítem/entregable exigido a un equipo. tipoEquipoId null = genérico (aplica a todos los tipos). */
+export interface ItemEquipoAdminDto {
+  id: number;
+  nombre: string;
+  requiereVigencia: boolean;
+  orden: number;
+  activo: boolean;
+  tipoEquipoId: number | null;
+  tipoEquipoNombre: string | null;
+}
+
+export interface ItemEquipoUpsertRequest {
+  nombre: string;
+  requiereVigencia: boolean;
+  tipoEquipoId: number | null;
+}

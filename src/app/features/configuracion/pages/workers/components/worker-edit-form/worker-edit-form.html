@@ -18,7 +18,14 @@
 
       <div>
         <label class="field-label">Número de documento</label>
-        <input type="text" class="field-input" [(ngModel)]="model.numeroDocumento" maxlength="15" />
+        <input
+          type="text"
+          class="field-input"
+          [(ngModel)]="model.numeroDocumento"
+          maxlength="15"
+          [disabled]="!puedeEditarDni"
+          [title]="!puedeEditarDni ? 'Solo un Administrador de Obra puede corregir el número de documento' : ''"
+        />
       </div>
 
       <div>

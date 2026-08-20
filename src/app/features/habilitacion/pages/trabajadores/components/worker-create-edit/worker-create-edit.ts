@@ -19,6 +19,7 @@ import { DatePicker } from '../../../../../../shared/components/date-picker/date
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
+import { Roles } from '../../../../../../core/constants/roles';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { WorkerService } from '../../../../../ssoma/salud-ocupacional/services/worker.service';
 import { TrabajadorHabService } from '../../../../services/trabajador-hab.service';
@@ -263,8 +264,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     return this.mode === 'create' ? 'Nuevo trabajador' : 'Editar trabajador';
   }
 
+  /** En edición, solo Administrador de Obra puede corregir un DNI/CE mal digitado. */
   get dniReadonly(): boolean {
-    return this.mode === 'edit';
+    return this.mode === 'edit' && !this.authService.hasRole(Roles.ADMINISTRADOR_DE_OBRA);
   }
 
   /**

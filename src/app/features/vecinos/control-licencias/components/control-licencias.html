@@ -1,0 +1,200 @@
+<app-abril-page-header
+  titulo="Control de Licencias"
+  subtitulo="Plantilla de licencias y permisos por proyecto, con recordatorios automáticos"
+  [tabs]="tabs"
+  [botonPrimario]="botonPrimario"
+  (primaryClick)="onPrimaryClick()">
+  <div tabsExtra class="w-64">
+    <app-search-select
+      [options]="proyectos"
+      valueField="projectId"
+      displayField="projectDescription"
+      label="Proyecto"
+      placeholder="Selecciona un proyecto"
+      [value]="selectedProjectId"
+      (valueChange)="selectedProjectId = $event; onProjectChange()">
+    </app-search-select>
+  </div>
+</app-abril-page-header>
+
+<div class="p-4 flex flex-col gap-4">
+
+  <app-section-tabs [tabs]="subTabs" [value]="activeSubTab" (valueChange)="onSubTabChange($event)"
+    color="var(--color-abril-standard)">
+  </app-section-tabs>
+
+  <!-- ── Catálogo base (no requiere proyecto seleccionado) ─────────────────── -->
+  <div *ngIf="activeSubTab === 'catalogo'" class="flex flex-col gap-2 pt-1">
+
+    <p class="text-xs text-gray-400">
+      Esta es la plantilla base: los tipos que agregues aquí aparecen de inmediato en <b>todos los proyectos</b>.
+      Cada proyecto puede además tener tipos propios, que se agregan desde su pestaña Plantilla.
+    </p>
+
+    <div class="abril-table-wrap" *ngIf="catalogo.length">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Descripción</th>
+            <th>Días de antelación por defecto</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let tipo of catalogo">
+            <td>{{ tipo.descripcion }}</td>
+            <td>{{ tipo.diasAntesDefault ?? '—' }}</td>
+            <td class="text-right whitespace-nowrap">
+              <button type="button" (click)="editarTipoBase(tipo)" class="text-gray-500 hover:text-gray-700 mr-3" title="Editar">
+                <i class="ti ti-pencil"></i>
+              </button>
+              <button type="button" (click)="eliminarTipoBase(tipo)" class="text-red-600 hover:text-red-800" title="Quitar de la plantilla base">
+                <i class="ti ti-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p *ngIf="catalogoLoaded && catalogo.length === 0" class="text-center text-sm text-gray-400 italic py-6">
+      La plantilla base todavía no tiene tipos configurados.
+    </p>
+  </div>
+
+  <p *ngIf="activeSubTab !== 'catalogo' && !selectedProjectId" class="text-center text-sm text-gray-400 italic py-10">
+    Selecciona un proyecto para ver su Control de Licencias.
+  </p>
+
+  <ng-container *ngIf="activeSubTab !== 'catalogo' && selectedProjectId">
+
+    <!-- ── Plantilla ─────────────────────────────────────────────────────── -->
+    <div *ngIf="activeSubTab === 'plantilla'" class="flex flex-col gap-2 pt-1">
+
+      <p class="text-xs text-gray-400">
+        Sube cada documento de la plantilla. El estado pasa a <b>Cargado</b> automáticamente al adjuntar
+        el archivo. Al reemplazar un documento, la versión anterior queda en el historial. Marca
+        <b>No aplica</b> si el tipo no corresponde a este proyecto.
+      </p>
+
+      <div *ngFor="let item of items"
+        class="flex items-center justify-between gap-3 border border-gray-200 rounded-lg p-3">
+
+        <div class="min-w-0 flex flex-col gap-1">
+          <span class="text-sm font-medium text-gray-700 truncate">
+            {{ item.tipoDescripcion }}
+            <span *ngIf="!item.esBase" class="text-[10px] font-semibold text-gray-400 border border-gray-300 rounded-full px-1.5 py-0.5 ml-1">propio</span>
+          </span>
+          <a *ngIf="item.archivoUrl" [href]="fileUrl(item.archivoUrl)" target="_blank"
+            class="text-xs text-[var(--color-abril-standard)] hover:underline inline-flex items-center gap-1 truncate">
+            <i class="ti ti-file"></i> {{ item.originalFileName || 'Ver archivo' }}
+          </a>
+          <span *ngIf="item.fechaVencimiento" class="text-[11px] text-gray-400">
+            Vence: {{ item.fechaVencimiento | date: 'dd/MM/yyyy' }}
+          </span>
+        </div>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <button *ngIf="item.versionesHistorial > 0" type="button" (click)="openHistorial(item)"
+            class="text-xs font-medium px-2 py-1.5 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 inline-flex items-center gap-1">
+            <i class="ti ti-history"></i> {{ item.versionesHistorial }}
+          </button>
+
+          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" [ngClass]="estadoClass(item)">
+            {{ item.estadoDescripcion }}
+          </span>
+
+          <button *ngIf="!esNoAplica(item)" type="button" (click)="openUpload(item)"
+            class="text-xs font-medium px-3 py-1.5 rounded-lg bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)] cursor-pointer hover:bg-[var(--color-abril-standard-hover)] hover:text-white transition-colors inline-flex items-center gap-1">
+            <i class="ti ti-upload"></i> {{ item.archivoUrl ? 'Reemplazar' : 'Subir' }}
+          </button>
+
+          <button type="button" (click)="toggleNoAplica(item)"
+            class="text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors cursor-pointer"
+            [ngClass]="esNoAplica(item)
+              ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+              : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50'">
+            {{ esNoAplica(item) ? 'Quitar no aplica' : 'No aplica' }}
+          </button>
+        </div>
+      </div>
+
+      <p *ngIf="plantillaLoaded && items.length === 0" class="text-center text-sm text-gray-400 italic py-6">
+        No hay tipos de licencia configurados.
+      </p>
+    </div>
+
+    <!-- ── Destinatarios ─────────────────────────────────────────────────── -->
+    <div *ngIf="activeSubTab === 'destinatarios'" class="flex flex-col gap-3 pt-1 max-w-xl">
+
+      <p class="text-xs text-gray-400">
+        Los correos configurados aquí reciben los recordatorios de vencimiento de <b>todas</b> las
+        licencias de este proyecto, según el rol (Residente, Administrador, etc.).
+      </p>
+
+      <div class="flex items-end gap-2">
+        <div class="abril-field flex-1">
+          <label class="abril-field-label">Rol</label>
+          <select class="abril-field-input" [(ngModel)]="nuevoRol">
+            <option *ngFor="let rol of rolesDestinatario" [value]="rol">{{ rol }}</option>
+          </select>
+        </div>
+        <div class="abril-field flex-1">
+          <label class="abril-field-label">Correo</label>
+          <input class="abril-field-input" type="email" [(ngModel)]="nuevoEmail" placeholder="correo@abril.pe" />
+        </div>
+        <button type="button" (click)="addDestinatario()"
+          class="h-[38px] px-4 rounded-[var(--radius-standard)] bg-[var(--color-abril-standard)] text-white text-sm font-medium hover:bg-[var(--color-abril-standard-hover)] transition-colors">
+          Agregar
+        </button>
+      </div>
+
+      <div class="abril-table-wrap" *ngIf="destinatarios.length">
+        <table class="abril-table">
+          <thead>
+            <tr>
+              <th>Rol</th>
+              <th>Correo</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of destinatarios">
+              <td>{{ d.rol }}</td>
+              <td>{{ d.email }}</td>
+              <td class="text-right">
+                <button type="button" (click)="eliminarDestinatario(d)" class="text-red-600 hover:text-red-800" title="Eliminar">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p *ngIf="destinatariosLoaded && destinatarios.length === 0" class="text-center text-sm text-gray-400 italic py-6">
+        No hay destinatarios configurados para este proyecto.
+      </p>
+    </div>
+  </ng-container>
+</div>
+
+<app-licencia-upload *ngIf="uploadItem && selectedProjectId"
+  [projectId]="selectedProjectId"
+  [item]="uploadItem"
+  (closeModal)="closeUpload()"
+  (uploaded)="onUploaded()">
+</app-licencia-upload>
+
+<app-licencia-historial *ngIf="historialItem && selectedProjectId"
+  [projectId]="selectedProjectId"
+  [item]="historialItem"
+  (closeModal)="closeHistorial()">
+</app-licencia-historial>
+
+<app-tipo-upsert *ngIf="showTipoUpsert"
+  [tipo]="tipoUpsertEditing"
+  [titulo]="tipoUpsertTitulo"
+  (closeModal)="closeTipoUpsert()"
+  (save)="onTipoUpsertSave($event)">
+</app-tipo-upsert>

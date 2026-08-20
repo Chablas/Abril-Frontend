@@ -1,0 +1,68 @@
+.revision-root { display: flex; flex-direction: column; gap: 12px; }
+.revision-body { display: flex; flex-direction: column; gap: 12px; }
+
+.revision-estado-tabs { display: flex; gap: 6px; }
+.estado-tab {
+  padding: 6px 12px; border-radius: 999px; border: 0.5px solid #e8e5df;
+  background: #fff; font-size: 12px; font-weight: 600; color: #5a5850; cursor: pointer;
+}
+.estado-tab--active { background: var(--color-abril-standard); border-color: var(--color-abril-standard); color: #fff; }
+
+.empty-msg { font-size: 12px; color: #a8a59e; padding: 16px 0; margin: 0; }
+
+.skeleton-body {
+  height: 200px; border-radius: 12px;
+  background: linear-gradient(90deg, #f0ede8 25%, #e8e5df 50%, #f0ede8 75%);
+  background-size: 200% 100%; animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* ── MODAL ─────────────────────────────────────────── */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 100; }
+
+.modal-panel {
+  position: fixed; inset: 32px; max-width: 1100px; margin: 0 auto;
+  background: #fff; border-radius: 16px; box-shadow: 0 24px 80px rgba(0,0,0,0.2);
+  z-index: 101; display: flex; flex-direction: column; overflow: hidden;
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 0.5px solid #e8e5df; flex-shrink: 0; }
+.modal-titulo { font-size: 15px; font-weight: 700; color: #1a1a18; }
+.modal-close { background: none; border: none; cursor: pointer; color: #8a8880; font-size: 18px; display: flex; }
+.modal-close:hover { color: #1a1a18; }
+
+.modal-body { display: flex; flex: 1; overflow: hidden; }
+.modal-left { flex: 6; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 16px; border-right: 0.5px solid #e8e5df; }
+.modal-right { flex: 4; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+
+.detalle-meta { display: flex; flex-direction: column; gap: 8px; }
+.meta-row { display: flex; align-items: baseline; gap: 8px; font-size: 13px; }
+.meta-row--col { flex-direction: column; gap: 4px; }
+.meta-lbl { font-size: 11px; font-weight: 600; color: #8a8880; min-width: 72px; }
+.meta-desc { font-size: 13px; color: #1a1a18; line-height: 1.5; }
+
+.section-title { font-size: 12px; font-weight: 700; color: #1a1a18; text-transform: uppercase; letter-spacing: 0.06em; margin: 0; }
+
+.viewer-section { display: flex; flex-direction: column; gap: 6px; }
+.pdf-viewer { width: 100%; height: 380px; border: 0.5px solid #e8e5df; border-radius: 8px; }
+.img-viewer { width: 100%; border-radius: 8px; border: 0.5px solid #e8e5df; }
+.no-evidencia { font-size: 12px; color: #a8a59e; display: flex; align-items: center; gap: 6px; }
+
+.acciones-btns { display: flex; flex-direction: column; gap: 8px; }
+.rechazar-form { display: flex; flex-direction: column; gap: 8px; }
+
+.form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+.form-group span { font-size: 12px; font-weight: 600; color: #5a5850; }
+.form-input { border: 0.5px solid #d4d0c8; border-radius: 8px; padding: 7px 10px; font-size: 13px; outline: none; color: #1a1a18; background: #fff; width: 100%; box-sizing: border-box; }
+.form-textarea { resize: vertical; min-height: 60px; }
+.req { color: #dc2626; }
+
+.estado-badge { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border-radius: 10px; font-size: 12px; }
+.estado-badge div { display: flex; flex-direction: column; gap: 2px; }
+.estado-badge strong { font-size: 13px; }
+.estado-badge--aprobado  { background: #d1fae5; color: #065f46; }
+.estado-badge--rechazado { background: #fee2e2; color: #991b1b; }
+
+@media (max-width: 900px) {
+  .modal-body { flex-direction: column; }
+  .modal-left { border-right: none; border-bottom: 0.5px solid #e8e5df; }
+}

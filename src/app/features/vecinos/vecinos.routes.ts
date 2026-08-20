@@ -23,12 +23,12 @@ export const VECINOS_ROUTES: Routes = [
     data: { titulo: 'CROQUIS', featureKey: 'vecinos.croquis' },
   },
   {
-    path: 'control-vencimientos',
+    path: 'control-licencias',
     loadComponent: () =>
-      import('./control-vencimientos/components/control-vencimientos').then(
-        (m) => m.ControlVencimientos,
+      import('./control-licencias/components/control-licencias').then(
+        (m) => m.ControlLicencias,
       ),
     canActivate: [roleGuard],
-    data: { titulo: 'CONTROL DE VENCIMIENTOS', featureKey: 'vecinos.control-vencimientos' },
+    data: { titulo: 'CONTROL DE LICENCIAS', featureKey: 'vecinos.control-licencias' },
   },
 ];

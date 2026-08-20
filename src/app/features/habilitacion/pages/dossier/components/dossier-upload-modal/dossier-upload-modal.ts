@@ -92,6 +92,8 @@ export class DossierUploadModal implements OnInit {
   labelDoc(estado: DossierEstadoDocumento): string {
     if (estado === 'Subido') return 'Subido';
     if (estado === 'NA') return 'N/A';
+    if (estado === 'Aprobado') return 'Aprobado';
+    if (estado === 'Observado') return 'Observado';
     return 'Pendiente';
   }
 
@@ -117,7 +119,14 @@ export class DossierUploadModal implements OnInit {
 
   marcarNa(tipo: DossierTipoDocumento): void {
     const doc = this.getDoc(tipo);
-    if (!doc) return;
+    if (!doc) {
+      Swal.fire({
+        icon: 'error',
+        title: 'No se pudo actualizar',
+        text: `El documento "${tipo}" no existe para esta semana. Recarga la página o contacta a soporte.`,
+      });
+      return;
+    }
     const esRevertir = doc.estado === 'NA';
     Swal.fire({
       icon: 'question',
@@ -187,6 +196,14 @@ export class DossierUploadModal implements OnInit {
     return this.tipos.every((t) => {
       const doc = this.getDoc(t);
       return doc?.estado === 'Subido' || doc?.estado === 'NA' || doc?.estado === 'Aprobado';
+    });
+  }
+
+  get tiposPendientes(): DossierTipoDocumento[] {
+    if (!this.detalle) return [];
+    return this.tipos.filter((t) => {
+      const doc = this.getDoc(t);
+      return doc?.estado !== 'Subido' && doc?.estado !== 'NA' && doc?.estado !== 'Aprobado';
     });
   }
 

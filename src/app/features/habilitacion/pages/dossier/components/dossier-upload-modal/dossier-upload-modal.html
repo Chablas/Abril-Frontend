@@ -113,7 +113,10 @@
 
     <div class="modal-footer">
       <div class="progreso-label">
-        {{ tipos.filter(t => getDoc(t)?.estado === 'Subido' || getDoc(t)?.estado === 'NA').length }}/{{ tipos.length }} documentos resueltos
+        {{ tipos.length - tiposPendientes.length }}/{{ tipos.length }} documentos resueltos
+        @if (tiposPendientes.length > 0) {
+          <span class="progreso-faltantes">— Falta: {{ tiposPendientes.join(', ') }}</span>
+        }
       </div>
       <div class="modal-actions">
         <button type="button" class="btn-ghost-sm" (click)="cerrar()">Cerrar</button>

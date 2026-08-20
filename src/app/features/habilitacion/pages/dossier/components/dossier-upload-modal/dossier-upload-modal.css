@@ -266,4 +266,5 @@
   flex-shrink: 0;
 }
 .progreso-label { font-size: 12px; color: var(--color-text-secondary, #6b7280); }
+.progreso-faltantes { color: #b45309; font-weight: 500; }
 .modal-actions { display: flex; gap: 8px; }
