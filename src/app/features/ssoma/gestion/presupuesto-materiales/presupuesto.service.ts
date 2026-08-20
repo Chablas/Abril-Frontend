@@ -36,6 +36,10 @@ import {
   MaterialPendienteGlobalDto,
   MaterialNoSsomaDto,
   TipoMaterialDto,
+  TipoDriverRatio,
+  RatioDriverComparacionDto,
+  CalcularRatiosDriversResultDto,
+  RatiosDriversRecomendadosDto,
 } from './presupuesto.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -158,6 +162,40 @@ export class PresupuestoMaterialesService {
       { incluir, campo },
       { headers: this.authHeaders() },
     );
+  }
+
+  // ── Ratios de drivers (HH / N Trabajadores por m2) ─────────────────
+
+  calcularRatiosDrivers(): Observable<CalcularRatiosDriversResultDto> {
+    return this.http.post<CalcularRatiosDriversResultDto>(
+      `${this.base}/ratios/drivers/calcular`,
+      {},
+      { headers: this.authHeaders() },
+    );
+  }
+
+  getComparacionDriver(tipo: TipoDriverRatio): Observable<RatioDriverComparacionDto> {
+    return this.http.get<RatioDriverComparacionDto>(`${this.base}/ratios/drivers/${tipo}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  actualizarIncluidoManualDriver(
+    tipo: TipoDriverRatio,
+    projectId: number,
+    incluir: boolean,
+  ): Observable<unknown> {
+    return this.http.patch(
+      `${this.base}/ratios/drivers/${tipo}/proyectos/${projectId}/incluir`,
+      { incluir },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  getRatiosDriversRecomendados(): Observable<RatiosDriversRecomendadosDto> {
+    return this.http.get<RatiosDriversRecomendadosDto>(`${this.base}/ratios/drivers/recomendados`, {
+      headers: this.authHeaders(),
+    });
   }
 
   // ── Presupuesto ───────────────────────────────────────────────────

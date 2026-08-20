@@ -48,6 +48,11 @@
           <span class="checkbox-label">Se realizó lectura del EMO</span>
         </label>
 
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="requiereLecturaAbril" (change)="onRequiereLecturaAbrilChange()" />
+          <span class="checkbox-label">Será leído por el médico de Abril Grupo Inmobiliario</span>
+        </label>
+
         <ng-container *ngIf="lecturaRealizada">
           <div class="field-group lectura-fields">
             <label class="field-label">Fecha de lectura <span class="req">*</span></label>

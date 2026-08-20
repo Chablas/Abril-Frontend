@@ -39,13 +39,49 @@
         </div>
 
         <div class="flex items-center gap-2 shrink-0">
-          <button type="button" (click)="marcarCumplido(a)"
+          <button type="button" (click)="abrirMarcarCumplido(a)"
             class="text-green-600 hover:text-green-800 cursor-pointer" title="Marcar como cumplido">
             <span class="ti ti-circle-check text-lg"></span>
           </button>
           <button type="button" (click)="abrirReprogramar(a)"
             class="text-amber-600 hover:text-amber-800 cursor-pointer" title="Reprogramar">
             <span class="ti ti-calendar-time text-lg"></span>
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="marcandoId === a.reunionAcuerdoId" class="border-t border-[#E5EAF0] pt-2 flex flex-col gap-2">
+        <div class="flex flex-col gap-1.5">
+          <label class="text-xs font-medium text-gray-500">
+            Archivo de evidencia{{ a.requiereEvidencia ? ' (obligatorio)' : ' (opcional)' }}
+          </label>
+          <div class="flex items-center gap-2">
+            <label class="h-[38px] px-4 border border-[#E5EAF0] rounded-lg text-sm text-gray-600 cursor-pointer hover:bg-gray-50 transition-colors flex items-center gap-2">
+              <span class="ti ti-upload text-base"></span>
+              {{ subiendoEvidencia ? 'Subiendo...' : 'Elegir archivo' }}
+              <input type="file" class="hidden" [disabled]="subiendoEvidencia" (change)="onEvidenciaSeleccionada($event, a.reunionId)" />
+            </label>
+            <a *ngIf="evidenciaUrlNueva" [href]="evidenciaUrlNueva" target="_blank" rel="noopener noreferrer"
+              class="text-sm truncate max-w-[180px]" style="color:var(--color-abril-primary)" [title]="evidenciaNombreNueva ?? evidenciaUrlNueva">
+              {{ evidenciaNombreNueva ?? 'Ver archivo' }}
+            </a>
+            <button *ngIf="evidenciaUrlNueva" type="button" (click)="quitarEvidenciaNueva()" class="text-red-400 hover:text-red-600 cursor-pointer">
+              <span class="ti ti-x text-sm"></span>
+            </button>
+          </div>
+        </div>
+        <label class="text-xs font-medium text-gray-500">Cómo se levantó (obligatorio)</label>
+        <textarea [(ngModel)]="comentarioCumplimiento" rows="2" maxlength="1000"
+          placeholder="Describe cómo se resolvió el acuerdo..."
+          class="w-full px-3 py-2 border border-[#E5EAF0] rounded-lg text-sm focus:outline-none focus:border-[var(--color-abril-primary)] resize-none"></textarea>
+        <div class="flex justify-end gap-2">
+          <button type="button" (click)="cancelarMarcarCumplido()"
+            class="h-[34px] px-3 border border-[#E5EAF0] rounded-lg text-xs text-gray-600 cursor-pointer hover:bg-gray-50">
+            Cancelar
+          </button>
+          <button type="button" (click)="confirmarMarcarCumplido(a)" [disabled]="subiendoEvidencia"
+            class="h-[34px] px-3 bg-[var(--color-abril-primary)] rounded-lg text-white text-xs font-medium cursor-pointer hover:bg-[var(--color-abril-primary-hover)] disabled:opacity-50">
+            Confirmar cumplido
           </button>
         </div>
       </div>

@@ -17,6 +17,7 @@ import {
   AmonestacionDetalleDto,
   AmonestacionDashboardDto,
   AmonestacionCerrarRequest,
+  AmonestacionEditRequest,
   WorkerPuntajeDto,
 } from '../dtos/amonestacion.dtos';
 
@@ -83,6 +84,12 @@ export class AmonestacionService {
       headers: authHeaders(),
     });
   }
+
+  editar(id: number, req: AmonestacionEditRequest): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/${id}`, req, {
+      headers: authHeaders(),
+    });
+  }
 }
 
 // ── Lista negra de trabajadores restringidos (ss_trabajador_restringido) ──
@@ -95,6 +102,7 @@ export interface RestringidoListItemDto {
   proyectoOrigen?: string;
   restringidoPor?: string;
   fechaRestriccion?: string;
+  tipo?: string;
   activo: boolean;
   createdAt?: string;
 }

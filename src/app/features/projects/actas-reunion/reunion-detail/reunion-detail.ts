@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -37,6 +37,7 @@ interface ParticipanteRow {
   cargo: string;
   iniciales: string;
   asistio: boolean;
+  esCoautor: boolean;
 }
 
 @Component({
@@ -62,6 +63,13 @@ export class ReunionDetail implements OnInit {
   // Archivos nuevos por subir
   nuevosArchivos: SelectedFile[] = [];
 
+  /** reunionAcuerdoId del acuerdo cuyo formulario inline de marcar cumplido está abierto, o null. */
+  marcandoCumplidoId: number | null = null;
+  comentarioCumplimiento = '';
+  evidenciaUrlNueva: string | null = null;
+  evidenciaNombreNueva: string | null = null;
+  subiendoEvidenciaCumplimiento = false;
+
   showReprogramarModal = false;
   showAcuerdoModal = false;
   acuerdoEnEdicion: ReunionAcuerdoDTO | null = null;
@@ -75,6 +83,7 @@ export class ReunionDetail implements OnInit {
     private service: ActasReunionService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -102,12 +111,15 @@ export class ReunionDetail implements OnInit {
           cargo: p.cargo ?? '',
           iniciales: p.iniciales ?? '',
           asistio: p.asistio,
+          esCoautor: p.esCoautor,
         }));
         this.loaderService.hide();
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         this.errorService.handleError(err);
+        this.cdr.detectChanges();
       },
     });
     this.cargarAgenda();
@@ -148,6 +160,11 @@ export class ReunionDetail implements OnInit {
     return this.participantes.map((p) => p.iniciales).filter(Boolean);
   }
 
+  /** true si el usuario autenticado es el creador del acta o uno de sus coautores. */
+  get puedeEditar(): boolean {
+    return this.detalle?.puedeEditar ?? false;
+  }
+
   addParticipante(): void {
     this.showParticipanteModal = true;
   }
@@ -160,12 +177,20 @@ export class ReunionDetail implements OnInit {
       cargo: p.cargo,
       iniciales: p.iniciales,
       asistio: false,
+      esCoautor: false,
     });
     this.showParticipanteModal = false;
+    this.guardar(true);
   }
 
   removeParticipante(index: number): void {
     this.participantes.splice(index, 1);
+    this.guardar(true);
+  }
+
+  /** Asistencia/coautoría marcada o desmarcada: se guarda de inmediato (autoguardado). */
+  onAsistioChange(): void {
+    this.guardar(true);
   }
 
   abrirConvocatoriaMasiva(): void {
@@ -185,14 +210,22 @@ export class ReunionDetail implements OnInit {
         cargo: t.cargo ?? '',
         iniciales: '',
         asistio: false,
+        esCoautor: false,
       });
       yaAgregados.add(t.workerId);
     }
     this.showConvocatoriaMasivaModal = false;
+    this.guardar(true);
   }
 
-  guardar(): void {
+  /** `silencioso=true` para autoguardado (todo campo se guarda solo al perder el foco o cambiar,
+   * no hay botón "Guardar" en la página): guarda sin loader ni alerta de éxito, y si el tema está
+   * vacío en ese momento no interrumpe con un warning (el usuario lo completará y el siguiente
+   * blur lo guardará). */
+  guardar(silencioso = false): void {
+    if (!this.puedeEditar) return;
     if (!this.tema.trim()) {
+      if (silencioso) return;
       Swal.fire({
         icon: 'warning',
         title: 'Datos incompletos',
@@ -202,6 +235,9 @@ export class ReunionDetail implements OnInit {
       return;
     }
     if (this.horaInicio && this.horaFin && this.horaFin <= this.horaInicio) {
+      // Esta validación se muestra incluso en modo silencioso (autoguardado): es una acción
+      // deliberada del usuario (acaba de fijar una hora), no un campo a medio escribir como
+      // el tema, así que merece feedback aunque no haya botón "Guardar" de por medio.
       Swal.fire({
         icon: 'warning',
         title: 'Horas inválidas',
@@ -220,9 +256,10 @@ export class ReunionDetail implements OnInit {
         cargo: p.cargo.trim() || null,
         iniciales: p.iniciales.trim() || null,
         asistio: p.asistio,
+        esCoautor: p.esCoautor,
       }));
 
-    this.loaderService.show();
+    if (!silencioso) this.loaderService.show();
     this.service
       .update(this.reunionId, {
         tema: this.tema.trim(),
@@ -235,6 +272,10 @@ export class ReunionDetail implements OnInit {
       })
       .subscribe({
         next: () => {
+          if (silencioso) {
+            this.load();
+            return;
+          }
           this.loaderService.hide();
           Swal.fire({
             icon: 'success',
@@ -244,6 +285,7 @@ export class ReunionDetail implements OnInit {
           this.load();
         },
         error: (err: HttpErrorResponse) => {
+          if (silencioso) return;
           this.loaderService.hide();
           this.errorService.handleError(err);
         },
@@ -318,57 +360,85 @@ export class ReunionDetail implements OnInit {
     this.load();
   }
 
-  marcarCumplido(acuerdo: ReunionAcuerdoDTO): void {
-    const cumplidoId = this.detalle?.acuerdoEstados.find((e) => e.descripcion === 'CUMPLIDO')?.id;
-    if (!cumplidoId) return;
-    if (acuerdo.requiereEvidencia && !acuerdo.evidenciaUrl) {
+  abrirMarcarCumplido(acuerdo: ReunionAcuerdoDTO): void {
+    this.marcandoCumplidoId = acuerdo.reunionAcuerdoId;
+    this.comentarioCumplimiento = '';
+    this.evidenciaUrlNueva = acuerdo.evidenciaUrl;
+    this.evidenciaNombreNueva = null;
+  }
+
+  cancelarMarcarCumplido(): void {
+    this.marcandoCumplidoId = null;
+  }
+
+  /** Sube el archivo como adjunto de la reunión (mismo mecanismo que "Archivos adjuntos" del acta)
+   * y lo deja listo para usarse como evidencia al confirmar. */
+  onEvidenciaCumplimientoSeleccionada(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.subiendoEvidenciaCumplimiento = true;
+    this.service.subirArchivos(this.reunionId, [file]).subscribe({
+      next: (res) => {
+        this.subiendoEvidenciaCumplimiento = false;
+        const archivo = res.archivos[0];
+        this.evidenciaUrlNueva = archivo.archivoUrl;
+        this.evidenciaNombreNueva = archivo.originalFileName;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subiendoEvidenciaCumplimiento = false;
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+    input.value = '';
+  }
+
+  quitarEvidenciaCumplimientoNueva(): void {
+    this.evidenciaUrlNueva = null;
+    this.evidenciaNombreNueva = null;
+  }
+
+  confirmarMarcarCumplido(acuerdo: ReunionAcuerdoDTO): void {
+    if (acuerdo.requiereEvidencia && !this.evidenciaUrlNueva) {
       Swal.fire({
         icon: 'warning',
         title: 'Falta evidencia',
-        text: 'Este acuerdo requiere adjuntar evidencia antes de poder marcarse como cumplido.',
+        text: 'Este acuerdo requiere adjuntar un archivo de evidencia antes de poder marcarse como cumplido.',
         confirmButtonColor: 'var(--color-abril-primary)',
       });
       return;
     }
-    Swal.fire({
-      icon: 'question',
-      title: '¿Marcar acuerdo como cumplido?',
-      text: 'Se registrará hoy como fecha de cumplimiento.',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, cumplido',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: 'var(--color-abril-primary)',
-    }).then((result) => {
-      if (!result.isConfirmed) return;
-      const hoy = new Date();
-      const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
-      this.loaderService.show();
-      this.service
-        .actualizarAcuerdo(acuerdo.reunionAcuerdoId, {
-          descripcion: acuerdo.descripcion,
-          acciones: acuerdo.acciones,
-          fechaProgramada: acuerdo.fechaProgramada,
-          fechaReprogramacion: acuerdo.fechaReprogramacion,
-          fechaCumplimiento: fechaHoy,
-          reunionAcuerdoEstadoId: cumplidoId,
-          criticidad: acuerdo.criticidad,
-          requiereAceptacion: acuerdo.requiereAceptacion,
-          requiereEvidencia: acuerdo.requiereEvidencia,
-          evidenciaUrl: acuerdo.evidenciaUrl,
-          responsableWorkerIds: acuerdo.responsables.map((r) => r.workerId),
-          responsablePrincipalWorkerId: acuerdo.responsables.find((r) => r.esPrincipal)?.workerId ?? null,
-        })
-        .subscribe({
-          next: () => {
-            this.loaderService.hide();
-            this.load();
-          },
-          error: (err: HttpErrorResponse) => {
-            this.loaderService.hide();
-            this.errorService.handleError(err);
-          },
-        });
-    });
+    if (!this.comentarioCumplimiento.trim()) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta información',
+        text: 'Indica cómo se levantó el acuerdo.',
+        confirmButtonColor: 'var(--color-abril-primary)',
+      });
+      return;
+    }
+
+    this.loaderService.show();
+    this.service
+      .marcarAcuerdoCumplido(acuerdo.reunionAcuerdoId, {
+        comentario: this.comentarioCumplimiento.trim() || null,
+        evidenciaUrl: this.evidenciaUrlNueva,
+      })
+      .subscribe({
+        next: () => {
+          this.loaderService.hide();
+          this.marcandoCumplidoId = null;
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   eliminarAcuerdo(acuerdo: ReunionAcuerdoDTO): void {

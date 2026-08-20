@@ -83,10 +83,24 @@ export interface AmonestacionListItemDto {
   tipoSancionNombre: string;
   nivelGravedad: string;
   infraccionTipoNombre: string;
+  descripcion: string;
   puntosInfraccion: number;
   aplicaPenalizacion: boolean;
   montoCalculado: number;
   estado: string;
+}
+
+export interface AmonestacionEditRequest {
+  tipoSancionId?: number;
+  infraccionTipoId?: number;
+  descripcion?: string;
+  puntosInfraccion?: number;
+  aplicaPenalizacion?: boolean;
+  sancionInfraccionId?: number;
+  diasSuspension?: number;
+  fechaInicioSuspension?: string;
+  fechaFinSuspension?: string;
+  motivoEdicion: string;
 }
 
 export interface AmonestacionPagedResult<T> {

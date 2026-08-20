@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Chart, registerables } from 'chart.js';
 import Swal from 'sweetalert2';
@@ -108,10 +109,21 @@ export class PlaneamientoBimDashboard implements OnInit, OnDestroy {
     private bimService: PlaneamientoBimService,
     private projectResidentService: ProjectResidentService,
     private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
     this.cargarProyectos();
+  }
+
+  /** Deep-link desde la tabla de Portafolio (`?projectId=`): preselecciona el
+   *  proyecto apenas termina de cargar la lista, sin tocar el flujo manual normal. */
+  private preseleccionarDesdeQueryParam(): void {
+    const raw = this.route.snapshot.queryParamMap.get('projectId');
+    if (!raw) return;
+    const projectId = Number(raw);
+    if (!projectId || !this.projects.some((p) => p.projectId === projectId)) return;
+    this.onProjectChange(projectId);
   }
 
   ngOnDestroy(): void {
@@ -128,6 +140,7 @@ export class PlaneamientoBimDashboard implements OnInit, OnDestroy {
         this.projects = (res || []).sort((a, b) => a.projectDescription.localeCompare(b.projectDescription));
         this.loadingProjects = false;
         this.cdr.detectChanges();
+        this.preseleccionarDesdeQueryParam();
       },
       error: (err: HttpErrorResponse) => {
         this.loadingProjects = false;

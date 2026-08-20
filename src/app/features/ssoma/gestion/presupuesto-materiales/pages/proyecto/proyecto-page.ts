@@ -11,6 +11,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import {
   PresupuestoResumenDto, GenerarPresupuestoDto, HitoCriticoDisponibleDto,
   PersonalHitoDto, PersonalHitoItemInputDto, RatioProyectoDto,
+  DriverProyectoDto, RatiosDriversRecomendadosDto,
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
@@ -72,6 +73,12 @@ export class ProyectoPage implements OnInit {
 
   formGenerar: GenerarPresupuestoDto = {};
 
+  // ── Sugerencia de HH/Trabajadores desde el histórico de otros proyectos ──
+  // Nunca se aplica sola: solo prellena el formulario, el responsable confirma o ajusta.
+  driverProyecto: DriverProyectoDto | null = null;
+  ratiosDriversRecomendados: RatiosDriversRecomendadosDto | null = null;
+  sugiriendoDrivers = false;
+
   hitosCriticos: HitoCriticoDisponibleDto[] = [];
   loadingHitos = false;
   asignandoHitos = false;
@@ -101,6 +108,7 @@ export class ProyectoPage implements OnInit {
     this.load();
     this.loadHitosCriticos();
     this.loadRatios();
+    this.loadDriverProyecto();
     // El catálogo de hitos se carga primero: la tabla siempre debe salir armada con TODOS los
     // hitos estándar (con fecha vacía si aún no se llenó), no solo con lo que ya esté guardado.
     this.milestoneSvc.getAllMilestone().subscribe({
@@ -407,6 +415,60 @@ export class ProyectoPage implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.loading = false;
         this.loader.hide();
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  /** Área techada del proyecto (para poder sugerir HH/Trabajadores aunque el usuario no
+   * haya escrito un override). Reutiliza el mismo endpoint que la pantalla de Drivers. */
+  private loadDriverProyecto(): void {
+    this.svc.getDrivers().subscribe({
+      next: (drivers) => {
+        this.driverProyecto = drivers.find((d) => d.projectId === this.projectId) ?? null;
+        this.cdr.markForCheck();
+      },
+      error: () => {},
+    });
+  }
+
+  /** Prellena HH y Trabajadores usando el ratio recomendado (mediana) por m² de área techada,
+   * calculado a partir de los proyectos históricos que el responsable marcó como incluidos en
+   * Ratios · Dotación. Nunca se aplica solo: el campo queda editable para que confirmes o ajustes. */
+  sugerirDesdeHistorico(): void {
+    const area = this.formGenerar.areaTechadaM2 || this.driverProyecto?.areaTechadaM2 || 0;
+    if (!area) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta el Área Techada',
+        text: 'Este proyecto no tiene Área Techada configurada. Ingrésala en el campo de arriba antes de sugerir.',
+      });
+      return;
+    }
+    if (this.sugiriendoDrivers) return;
+    this.sugiriendoDrivers = true;
+    this.svc.getRatiosDriversRecomendados().subscribe({
+      next: (r) => {
+        this.ratiosDriversRecomendados = r;
+        this.sugiriendoDrivers = false;
+        if (r.hh) this.formGenerar.hhTotalCasa = Math.round(area * r.hh.ratioRecomendado);
+        if (r.trabajadores) this.formGenerar.trabajadores = Math.round(area * r.trabajadores.ratioRecomendado);
+        if (!r.hh && !r.trabajadores) {
+          Swal.fire({ icon: 'info', title: 'Sin ratios calculados', text: 'Ve a Ratios y corre "Calcular" en Ratios de Dotación primero.' });
+        } else {
+          Swal.fire({
+            icon: 'success',
+            title: 'Sugerencia aplicada',
+            text: `HH y Trabajadores estimados según ${r.hh?.nProyectos ?? r.trabajadores?.nProyectos} proyecto(s) histórico(s). Podés ajustarlos antes de generar.`,
+            timer: 3000,
+            showConfirmButton: false,
+          });
+        }
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.sugiriendoDrivers = false;
         this.error.handleError(err);
         this.cdr.markForCheck();
       },

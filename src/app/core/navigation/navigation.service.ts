@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { NavModule, NavItem, NavGroup } from './nav.model';
 import { AuthService } from '../services/auth.service';
+import { Roles } from '../constants/roles';
 
 @Injectable({ providedIn: 'root' })
 export class NavigationService {
@@ -77,6 +78,9 @@ export class NavigationService {
         { label: 'Control de respuesta de informes',        route: '/projects/report-response-control',      featureKey: 'projects.report-response-control' },
         { label: 'Seguimiento y medición de residentes',    route: '/projects/resident-monitoring-measurement', featureKey: 'projects.resident-monitoring-measurement' },
         { label: 'Configuración Planeamiento BIM',          route: '/projects/planeamiento-bim/configuracion-inicial', featureKey: 'planeamiento-bim.configuracion-inicial' },
+        // Entrada nueva y separada (Fase 3): landing de portafolio, solo
+        // Administrador Sistema/UDP. La de arriba sigue igual para UsuarioUdp.
+        { label: 'Portafolio Planeamiento BIM',             route: '/projects/planeamiento-bim/portafolio',   featureKey: 'planeamiento-bim.portafolio', roles: [Roles.ADMINISTRADOR_SISTEMA, Roles.ADMINISTRADOR_UDP] },
       ],
       groups: [],
     },
@@ -289,6 +293,8 @@ export class NavigationService {
         { label: 'Ver eval. contratistas', route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' },
         { label: 'Evaluar contratista',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
         { label: 'Dashboard contratistas', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
+        { label: 'Evaluar supervisor SSOMA', route: '/evaluaciones/evaluar-supervisor-contratista', featureKey: 'evaluaciones.evaluar-supervisor-contratista' },
+        { label: 'Ver eval. supervisores SSOMA', route: '/evaluaciones/ver-supervisores-contratista', featureKey: 'evaluaciones.ver-supervisores-contratista' },
       ],
       groups: [],
     },

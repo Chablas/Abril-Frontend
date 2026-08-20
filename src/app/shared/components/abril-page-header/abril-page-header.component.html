@@ -80,7 +80,8 @@
         <a *ngIf="tab.route"
            class="abril-tabs__tab"
            [routerLink]="tab.route"
-           routerLinkActive="abril-tabs__tab--active">
+           routerLinkActive="abril-tabs__tab--active"
+           [routerLinkActiveOptions]="{exact: !!tab.exact}">
           <i class="ti {{ tab.icono }}"></i> {{ tab.label }}
         </a>
         <a *ngIf="!tab.route"

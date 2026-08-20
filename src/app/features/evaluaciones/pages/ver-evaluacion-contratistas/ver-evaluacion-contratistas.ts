@@ -45,7 +45,27 @@ export class VerEvaluacionContratistas implements OnInit {
   }
 
   get periodoActual(): EvPeriodoDto | undefined {
-    return this.data?.periodos.find((p) => p.activo) ?? this.data?.periodos[0];
+    if (!this.data?.periodos.length) return undefined;
+    return (
+      this.data.periodos.find((p) => p.activo) ??
+      this.periodoPorDefecto(this.data.periodos)
+    );
+  }
+
+  // Por defecto, el mes calendario anterior al actual (el último que ya cerró), no
+  // periodos[0] a secas: la lista puede incluir períodos futuros o de prueba sembrados de
+  // antemano (p. ej. para poblar la tendencia histórica de gráficos) sin evaluaciones reales.
+  private periodoPorDefecto(periodos: EvPeriodoDto[]): EvPeriodoDto {
+    const hoy = new Date();
+    const mesAnteriorMes = hoy.getMonth() === 0 ? 12 : hoy.getMonth();
+    const mesAnteriorAnio = hoy.getMonth() === 0 ? hoy.getFullYear() - 1 : hoy.getFullYear();
+    const delMesAnterior = periodos.find((p) => p.mes === mesAnteriorMes && p.anio === mesAnteriorAnio);
+    if (delMesAnterior) return delMesAnterior;
+
+    const yaIniciados = periodos.filter(
+      (p) => p.anio < hoy.getFullYear() || (p.anio === hoy.getFullYear() && p.mes <= hoy.getMonth() + 1),
+    );
+    return yaIniciados[0] ?? periodos[0];
   }
 
   estadoClase(estado: string): string {
@@ -81,9 +101,9 @@ export class VerEvaluacionContratistas implements OnInit {
     this.svc.getVer(this.periodoId, this.proyectoId).subscribe({
       next: (d) => {
         this.data = d;
-        if (!this.periodoId) {
+        if (!this.periodoId && d.periodos.length) {
           const activo = d.periodos.find((p) => p.activo);
-          this.periodoId = activo?.id ?? d.periodos[0]?.id ?? null;
+          this.periodoId = (activo ?? this.periodoPorDefecto(d.periodos)).id;
         }
         this.loading = false;
         this.loader.hide();

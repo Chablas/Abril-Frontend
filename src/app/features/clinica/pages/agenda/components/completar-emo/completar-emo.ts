@@ -32,6 +32,8 @@ export class CompletarEmo implements OnChanges {
   notas = '';
   lecturaRealizada = false;
   fechaLectura = '';
+  /** true = no la sube la clínica: la lee después el médico de Abril Grupo Inmobiliario. */
+  requiereLecturaAbril = false;
   saving = false;
 
   get hoy(): string { return hoyIsoLocal(); }
@@ -80,6 +82,7 @@ export class CompletarEmo implements OnChanges {
     this.notas = '';
     this.lecturaRealizada = false;
     this.fechaLectura = '';
+    this.requiereLecturaAbril = false;
     this.restricciones = [];
     this.nuevaRestriccion = '';
     this.icEspecialidad = '';
@@ -101,8 +104,17 @@ export class CompletarEmo implements OnChanges {
   quitarRestriccion(i: number): void { this.restricciones.splice(i, 1); }
 
   onLecturaChange(): void {
-    if (this.lecturaRealizada && !this.fechaLectura) {
-      this.fechaLectura = hoyIsoLocal();
+    if (this.lecturaRealizada) {
+      this.requiereLecturaAbril = false;
+      if (!this.fechaLectura) this.fechaLectura = hoyIsoLocal();
+    }
+  }
+
+  onRequiereLecturaAbrilChange(): void {
+    if (this.requiereLecturaAbril) {
+      this.lecturaRealizada = false;
+      this.fechaLectura = '';
+      this.archivoLectura = null;
     }
   }
 
@@ -170,6 +182,7 @@ export class CompletarEmo implements OnChanges {
       requiereInterconsulta: this.requiereInterconsulta,
       notas: this.notas || undefined,
       fechaLectura: this.lecturaRealizada ? (this.fechaLectura || undefined) : undefined,
+      requiereLecturaAbril: this.requiereLecturaAbril,
       examenes: [],
       restricciones: restriccionesPayload,
       interconsultaInline,

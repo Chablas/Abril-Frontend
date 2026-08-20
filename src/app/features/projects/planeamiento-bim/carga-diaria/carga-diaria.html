@@ -184,45 +184,31 @@
       </div>
 
       <!-- Sección de Fotos Evidencias -->
-      <div class="bim-card">
-        <div class="card-header">
-          <div>
-            <h3 class="card-title">
-              <i class="ti ti-photo title-icon"></i> EVIDENCIAS FOTOGRÁFICAS DEL DÍA
-            </h3>
-            <p class="card-subtitle">Fotografías adjuntas que respaldan el cumplimiento diario</p>
-          </div>
+      <app-planeamiento-bim-evidencia-galeria
+        titulo="EVIDENCIAS FOTOGRÁFICAS DEL DÍA"
+        subtitulo="Fotografías adjuntas que respaldan el cumplimiento diario"
+        icono="ti ti-photo"
+        [evidencias]="cargaDiariaData.evidencias"
+        [editable]="cargaDiariaData.esEditable"
+        [uploading]="uploadingFotos"
+        (filesSelected)="onFilesSelected($event)"
+      ></app-planeamiento-bim-evidencia-galeria>
 
-          <label class="btn-primary-udp file-upload-btn" *ngIf="cargaDiariaData.esEditable">
-            <i class="ti ti-upload"></i> {{ uploadingFotos ? 'Subiendo...' : 'SUBIR FOTO(S)' }}
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              (change)="onFilesSelected($event)"
-              [disabled]="uploadingFotos"
-              style="display: none;"
-            />
-          </label>
-        </div>
-
-        <div class="card-body">
-          <div *ngIf="!cargaDiariaData.evidencias || cargaDiariaData.evidencias.length === 0" class="empty-state">
-            <i class="ti ti-photo-off empty-icon"></i>
-            <p class="empty-title">Sin evidencias fotográficas</p>
-            <p class="empty-sub">No se han subido imágenes para la fecha seleccionada.</p>
-          </div>
-
-          <div *ngIf="cargaDiariaData.evidencias && cargaDiariaData.evidencias.length > 0" class="gallery-grid">
-            <div *ngFor="let foto of cargaDiariaData.evidencias" class="gallery-card">
-              <img [src]="foto.url" alt="Evidencia de Carga Diaria" class="gallery-img" />
-              <div class="gallery-meta">
-                {{ foto.createdDateTime | date:'dd/MM/yyyy HH:mm' }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- Sección de Evidencia de Procura (separada, categoria=PROCURA) -->
+      <app-planeamiento-bim-evidencia-galeria
+        titulo="EVIDENCIA DE PROCURA"
+        subtitulo="Fotografías que respaldan el abastecimiento/procura de materiales del día"
+        icono="ti ti-truck-delivery"
+        [evidencias]="evidenciasProcura"
+        [editable]="esEditableProcura"
+        [loading]="loadingProcura"
+        [uploading]="uploadingFotosProcura"
+        [error]="procuraError"
+        emptyTitulo="Sin evidencia de procura"
+        emptySub="No se han subido imágenes de procura para la fecha seleccionada."
+        (filesSelected)="onFilesSelectedProcura($event)"
+        (retry)="cargarEvidenciasProcura()"
+      ></app-planeamiento-bim-evidencia-galeria>
 
     </ng-container>
   </div>

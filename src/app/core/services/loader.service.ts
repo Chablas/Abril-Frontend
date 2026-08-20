@@ -11,10 +11,10 @@ export class LoaderService {
   loader$ = this.loaderSubject.asObservable();
 
   show() {
-    queueMicrotask(() => this.loaderSubject.next(true));
+    this.loaderSubject.next(true);
   }
 
   hide() {
-    queueMicrotask(() => this.loaderSubject.next(false));
+    this.loaderSubject.next(false);
   }
 }

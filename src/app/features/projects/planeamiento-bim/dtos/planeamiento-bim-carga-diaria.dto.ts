@@ -35,6 +35,9 @@ export interface EvidenciaFotoDto {
 
 export interface CargaDiariaDto {
   fecha: string;
+  /** Categoría de "evidencias" en esta respuesta ("GENERAL" | "PROCURA") — el resto
+   *  del payload (grid, catálogos, bloqueos) no está scoped por categoría. */
+  categoria: string;
   esEditable: boolean;
   zonas: ZonaConfigDTO[];
   actividades: ActividadCatalogoDto[];

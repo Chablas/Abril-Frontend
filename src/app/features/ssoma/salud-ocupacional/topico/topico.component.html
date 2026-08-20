@@ -59,7 +59,7 @@
           </td>
           <td class="text-center">
             <app-status-badge
-              [text]="(a.estado ?? 'Abierta') | uppercase"
+              [text]="a.estado | uppercase"
               [bgColor]="a.estado === 'Cerrada' ? '#F3F4F6' : '#D7FAF4'"
               [textColor]="a.estado === 'Cerrada' ? '#6B7280' : '#009C87'" />
           </td>

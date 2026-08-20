@@ -106,6 +106,33 @@
   color: var(--color-abril-standard);
 }
 
+.subtabs {
+  display: flex;
+  gap: 6px;
+}
+
+.subtab-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.subtab-btn:hover {
+  background: var(--color-abril-standard-light);
+}
+
+.subtab-btn--active {
+  background: var(--color-abril-standard);
+  border-color: var(--color-abril-standard);
+  color: #ffffff;
+}
+
 .empty-row {
   text-align: center;
   color: #9ca3af;

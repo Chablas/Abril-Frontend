@@ -31,6 +31,8 @@ export interface EmoDetalleDto extends EmoListItemDto {
   urlResultado?: string;
   urlAptitud?: string;
   urlEmoCompleto?: string;
+  /** true = la lectura la hace el médico de Abril, no la clínica. */
+  requiereLecturaAbril?: boolean;
   requiereInterconsulta: boolean;
   notas?: string;
   examenes?: EmoExamenDetalleDto[];
@@ -98,6 +100,8 @@ export interface EmoCreateDto {
   examenes: EmoExamenCreateDto[];
   restricciones: EmoRestriccionCreateDto[];
   fechaLectura?: string;
+  /** true = la lectura la hace el médico de Abril, no la clínica. */
+  requiereLecturaAbril?: boolean;
   interconsultaInline?: InterconsultaInlineCreateDto;
 }
 
@@ -170,6 +174,8 @@ export interface EmoPorTrabajadorDto {
   urlAptitud?: string;
   urlEmoCompleto?: string;
   urlResultado?: string;
+  /** true = la lectura la hace el médico de Abril, no la clínica. */
+  requiereLecturaAbril?: boolean;
   requiereInterconsulta?: boolean;
   interconsultaId?: number;
   interconsultaEspecialidad?: string;
@@ -338,6 +344,8 @@ export interface EmoPorTrabajadorQuery {
   sinCertificado?: boolean;
   sinEmoCompleto?: boolean;
   sinInterconsulta?: boolean;
+  /** Subtab "Pendientes de lectura": RequiereLecturaAbril = true y sin archivo de lectura aún. */
+  pendienteLecturaAbril?: boolean;
   /** 'fechaEmo' | 'fechaVencimiento' */
   sortBy?: string;
   sortDesc?: boolean;

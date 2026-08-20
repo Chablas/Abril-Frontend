@@ -183,6 +183,12 @@
           <textarea [(ngModel)]="formGenerar.notas" rows="2" placeholder="Versión inicial, ajuste Q2..."></textarea>
         </label>
       </div>
+      <div class="form-sugerencia">
+        <button type="button" class="btn-sugerir" [disabled]="sugiriendoDrivers" (click)="sugerirDesdeHistorico()">
+          <i class="ti ti-bulb"></i> {{ sugiriendoDrivers ? 'Calculando...' : 'Sugerir HH y Trabajadores desde histórico' }}
+        </button>
+        <span class="form-sugerencia__nota">Usa la mediana de HH/m² y Trabajadores/m² de los proyectos que marcaste como incluidos en Ratios · Dotación. Solo prellena los campos de arriba — vos decidís si lo dejas o lo ajustas.</span>
+      </div>
       <div class="form-actions">
         <button class="btn-primary" (click)="generar()" [disabled]="generando">
           <i class="ti ti-calculator"></i>

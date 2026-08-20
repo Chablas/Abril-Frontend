@@ -12,7 +12,11 @@ import {
   RatioFamiliaComparacionDto,
   RatioProyectoItemDto,
   ResumenRatiosDto,
+  TipoDriverRatio,
+  RatioDriverComparacionDto,
+  RatioDriverProyectoDto,
 } from '../../presupuesto.dtos';
+import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
 import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
@@ -66,9 +70,77 @@ export class RatiosListaPage implements OnInit {
   resumen: ResumenRatiosDto | null = null;
   loadingResumen = false;
 
+  // ── Ratios de dotación (HH / N Trabajadores por m2) ─────────────────
+  hhComparacion: RatioDriverComparacionDto | null = null;
+  trabajadoresComparacion: RatioDriverComparacionDto | null = null;
+  loadingDrivers = false;
+  calculandoDrivers = false;
+  actualizandoDriverProjectId: number | null = null;
+
   ngOnInit(): void {
     this.load();
     this.loadResumen();
+    this.loadDrivers();
+  }
+
+  loadDrivers(): void {
+    this.loadingDrivers = true;
+    this.cdr.markForCheck();
+    this.svc.getComparacionDriver('HH').subscribe({
+      next: (d) => { this.hhComparacion = d; this.loadingDrivers = false; this.cdr.markForCheck(); },
+      error: () => { this.loadingDrivers = false; this.cdr.markForCheck(); },
+    });
+    this.svc.getComparacionDriver('TRABAJADORES').subscribe({
+      next: (d) => { this.trabajadoresComparacion = d; this.cdr.markForCheck(); },
+      error: () => {},
+    });
+  }
+
+  calcularDrivers(): void {
+    if (this.calculandoDrivers) return;
+    this.calculandoDrivers = true;
+    this.loader.show();
+    this.svc.calcularRatiosDrivers().subscribe({
+      next: (res) => {
+        this.calculandoDrivers = false;
+        this.loader.hide();
+        Swal.fire({
+          icon: 'success',
+          title: 'Ratios de dotación calculados',
+          text: `${res.ratiosCalculados} ratio(s) calculados. ${res.proyectosSinTareo} proyecto(s) con área techada quedaron sin ratio de HH por falta de Tareo registrado (Trabajadores no depende del Tareo, se calcula aparte).`,
+        });
+        this.loadDrivers();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.calculandoDrivers = false;
+        this.loader.hide();
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  toggleIncluidoDriver(tipo: TipoDriverRatio, p: RatioDriverProyectoDto): void {
+    if (this.actualizandoDriverProjectId === p.projectId) return;
+    this.actualizandoDriverProjectId = p.projectId;
+    this.cdr.markForCheck();
+    this.svc.actualizarIncluidoManualDriver(tipo, p.projectId, !p.incluidoManual).subscribe({
+      next: () => {
+        this.actualizandoDriverProjectId = null;
+        this.loadDrivers();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.actualizandoDriverProjectId = null;
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  driverTipoLabel(tipo: TipoDriverRatio): string {
+    return tipo === 'HH'
+      ? 'Horas-Hombre por m² de área techada (desde Tareo real)'
+      : 'Trabajadores distintos por m² de área techada (total que pasó por la obra)';
   }
 
   loadResumen(): void {

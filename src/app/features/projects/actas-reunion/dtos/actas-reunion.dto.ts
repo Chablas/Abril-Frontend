@@ -74,6 +74,8 @@ export interface ReunionParticipanteDTO {
   iniciales: string | null;
   asistio: boolean;
   orden: number;
+  /** true si este participante puede editar el acta igual que su creador. */
+  esCoautor: boolean;
 }
 
 /** Responsable de un acuerdo, con su estado de aceptación individual. */
@@ -103,9 +105,19 @@ export interface ReunionAcuerdoDTO {
   requiereAceptacion: boolean;
   requiereEvidencia: boolean;
   evidenciaUrl: string | null;
+  /** Solo registra información: no requiere seguimiento ni acción de ningún responsable. */
+  esInformativo: boolean;
   vecesReprogramado: number;
   ultimoMotivoReprogramacion: string | null;
+  /** Cómo se levantó el acuerdo (obligatorio si no tiene evidencia). */
+  comentarioCumplimiento: string | null;
   responsables: ReunionAcuerdoResponsableDTO[];
+}
+
+export interface AcuerdoMarcarCumplidoRequest {
+  comentario: string | null;
+  /** URL del archivo ya subido (vía subirArchivos) a usar como evidencia de este acuerdo. */
+  evidenciaUrl?: string | null;
 }
 
 /** Un acuerdo aún no cumplido de una edición anterior de la misma convocatoria recurrente. */
@@ -121,6 +133,8 @@ export interface AcuerdoPendienteAnteriorDTO {
   fechaProgramada: string | null;
   reunionAcuerdoEstadoId: number;
   reunionAcuerdoEstado: string;
+  requiereEvidencia: boolean;
+  evidenciaUrl: string | null;
   vecesReprogramado: number;
   ultimoMotivoReprogramacion: string | null;
   responsables: ReunionAcuerdoResponsableDTO[];
@@ -167,6 +181,9 @@ export interface ReunionDetalleDTO {
   reunionEstadoId: number;
   reunionEstado: string;
   observaciones: string | null;
+  createdUserId: number;
+  /** true si el usuario autenticado es el creador del acta o uno de sus coautores. */
+  puedeEditar: boolean;
   reunionAnteriorId: number | null;
   reunionAnteriorNumero: number | null;
   reunionAnteriorTema: string | null;
@@ -195,6 +212,8 @@ export interface ReunionParticipanteInput {
   cargo: string | null;
   iniciales: string | null;
   asistio: boolean;
+  /** Solo tiene efecto si workerId viene informado (un invitado externo no puede ser coautor). */
+  esCoautor?: boolean;
 }
 
 export interface ReunionCreateRequest {
@@ -245,6 +264,8 @@ export interface ReunionAcuerdoRequest {
   /** Si true, no se puede marcar CUMPLIDO sin adjuntar evidencia. */
   requiereEvidencia: boolean;
   evidenciaUrl: string | null;
+  /** Si true, solo registra información: no requiere seguimiento ni acción de ningún responsable. */
+  esInformativo: boolean;
   /** Ids de workers (cualquier trabajador de la organización, haya asistido o no). */
   responsableWorkerIds: number[];
   /** NORMAL | MEDIO | CRITICO. */
@@ -396,9 +417,48 @@ export interface MisAcuerdoDTO {
   fechaCumplimiento: string | null;
   esPrincipal: boolean;
   otrosResponsables: string[];
+  requiereEvidencia: boolean;
+  evidenciaUrl: string | null;
+  /** Cómo se levantó el acuerdo (obligatorio al marcar CUMPLIDO). */
+  comentarioCumplimiento: string | null;
   requiereAceptacion: boolean;
   /** PENDIENTE | ACEPTADO | RECHAZADO. */
   estadoAceptacion: string;
+}
+
+// ── Vista global "Acuerdos" (todas las reuniones donde el usuario participó) ────────────────
+export interface AcuerdoBusquedaItemDTO {
+  reunionAcuerdoId: number;
+  reunionId: number;
+  reunionNumero: number;
+  reunionTema: string;
+  /** Proyecto, área o "Organización". */
+  ambito: string;
+  descripcion: string;
+  /** NORMAL | MEDIO | CRITICO. */
+  criticidad: string;
+  fechaProgramada: string | null;
+  fechaCumplimiento: string | null;
+  reunionAcuerdoEstadoId: number;
+  reunionAcuerdoEstado: string;
+  esInformativo: boolean;
+  requiereEvidencia: boolean;
+  evidenciaUrl: string | null;
+  /** Cómo se levantó el acuerdo (obligatorio al marcar CUMPLIDO). */
+  comentarioCumplimiento: string | null;
+  responsables: string[];
+}
+
+export interface AcuerdoBusquedaFiltro {
+  /** PENDIENTE | EN PROCESO | CUMPLIDO | ANULADO | INFORMATIVO. */
+  estado: string | null;
+  responsableWorkerId: number | null;
+  /** Filtra por fechaProgramada. */
+  desde: string | null;
+  hasta: string | null;
+  texto: string | null;
+  page: number;
+  pageSize: number;
 }
 
 export interface ReunionFiltro {

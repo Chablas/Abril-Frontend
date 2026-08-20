@@ -47,6 +47,8 @@ export class EditarEmoModal implements OnChanges {
   clinicaId: number | null = null;
   medicoId: number | null = null;
   notas = '';
+  /** true = la lectura la hace el médico de Abril, no la clínica. */
+  requiereLecturaAbril = false;
   saving = false;
 
   readonly aptitudOpciones = ['Apto', 'Apto con Restricciones', 'No Apto', 'Observado', 'Pendiente'];
@@ -89,6 +91,7 @@ export class EditarEmoModal implements OnChanges {
     this.clinicaId = null;
     this.medicoId = null;
     this.notas = '';
+    this.requiereLecturaAbril = this.emo.requiereLecturaAbril ?? false;
     const match = this.emoTipos.find(t => t.nombre === this.emo!.tipoEmo);
     this.tipoEmoId = match?.id ?? null;
   }
@@ -118,6 +121,7 @@ export class EditarEmoModal implements OnChanges {
         fechaEmo: this.fechaEmo,
         tipoEmoId: this.tipoEmoId!,
         aptitud: this.aptitud,
+        requiereLecturaAbril: this.requiereLecturaAbril,
         ...(this.clinicaId != null && { clinicaId: this.clinicaId }),
         ...(this.medicoId != null && { medicoId: this.medicoId }),
         ...(this.notas && { notas: this.notas }),
@@ -142,6 +146,7 @@ export class EditarEmoModal implements OnChanges {
         fechaEmo: this.fechaEmo,
         aptitud: this.aptitud,
         requiereInterconsulta: false,
+        requiereLecturaAbril: this.requiereLecturaAbril,
         examenes: [],
         restricciones: [],
         ...(this.clinicaId != null && { clinicaId: this.clinicaId }),
