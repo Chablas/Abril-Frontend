@@ -166,13 +166,25 @@ export class ReclutamientoService {
   }
 
   /**
-   * Guarda la evaluación de la entrevista de un candidato: los tres comentarios del informe
-   * que verá el área solicitante.
+   * Guarda la evaluación de la entrevista de un candidato (multipart): los comentarios del informe
+   * en `data` y, opcionalmente, sus dos archivos como form files (`informeFinal` y
+   * `evaluacionConocimientos`). El backend los sube a SharePoint y los adjunta al correo del
+   * finalista.
    */
-  guardarEvaluacion(candidatoId: number, dto: EvaluacionGuardar): Observable<EvaluacionAccionResult> {
+  guardarEvaluacion(
+    candidatoId: number,
+    dto: EvaluacionGuardar,
+    archivos?: EvaluacionArchivosEnvio,
+  ): Observable<EvaluacionAccionResult> {
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(dto));
+    if (archivos?.informeFinal) formData.append('informeFinal', archivos.informeFinal, archivos.informeFinal.name);
+    if (archivos?.conocimientos)
+      formData.append('evaluacionConocimientos', archivos.conocimientos, archivos.conocimientos.name);
+
     return this.http.put<EvaluacionAccionResult>(
       `${this.apiUrl}/candidato/${candidatoId}/evaluacion`,
-      dto,
+      formData,
       { headers: this.headers },
     );
   }
@@ -249,6 +261,15 @@ export class ReclutamientoService {
       { headers: this.headers },
     );
   }
+}
+
+/**
+ * Archivos nuevos del informe de la entrevista. Los dos son opcionales y solo viajan cuando GTH
+ * acaba de cargarlos: los que ya estaban subidos no se reenvían.
+ */
+export interface EvaluacionArchivosEnvio {
+  informeFinal?: File | null;
+  conocimientos?: File | null;
 }
 
 /**

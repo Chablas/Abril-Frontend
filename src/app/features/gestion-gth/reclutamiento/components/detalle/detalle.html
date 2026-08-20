@@ -820,6 +820,65 @@
                       placeholder="Recomendación de GTH al área solicitante..."></textarea>
                   </div>
 
+                  <!-- ── Archivos del informe ────────────────────────────────
+                       Los dos son opcionales: van adjuntos en el correo al solicitante y
+                       quedan enlazados en su pantalla. -->
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-[10px] mt-[12px]">
+                    @for (slot of slotsArchivoEvaluacion; track slot.codigo) {
+                      <div class="rounded-[8px] border px-[13px] py-[11px]"
+                           style="border-color:var(--color-abril-border);background:#FAFCFA">
+                        <p class="text-[12.5px] font-bold text-gray-700">
+                          {{ slot.label }}
+                          <span class="font-medium text-gray-400">· opcional</span>
+                        </p>
+
+                        @if (archivoNuevo(c, slot.codigo); as nuevo) {
+                          <div class="flex items-center justify-between gap-[10px] rounded-[7px] border px-[11px] py-[8px] mt-[8px] bg-white"
+                               style="border-color:var(--color-abril-border)">
+                            <div class="flex items-center gap-[8px] min-w-0">
+                              <i class="ti ti-file text-[16px] shrink-0" style="color:var(--color-abril-standard)"></i>
+                              <span class="text-[12.5px] text-gray-700 truncate">{{ nuevo.name }}</span>
+                              <span class="text-[11px] text-gray-400 shrink-0">{{ pesoArchivo(nuevo) }}</span>
+                            </div>
+                            <button type="button"
+                              [disabled]="!puedeEvaluar(c)"
+                              class="text-[12px] font-bold text-red-600 cursor-pointer hover:underline shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                              (click)="quitarArchivoEvaluacion(c, slot.codigo)">
+                              Quitar
+                            </button>
+                          </div>
+                        } @else if (archivoGuardado(c, slot.codigo); as guardado) {
+                          <div class="flex items-center justify-between gap-[10px] rounded-[7px] border px-[11px] py-[8px] mt-[8px] bg-white"
+                               style="border-color:var(--color-abril-border)">
+                            <a [href]="guardado.url" target="_blank" rel="noopener"
+                               class="flex items-center gap-[8px] min-w-0 hover:underline"
+                               style="color:var(--color-abril-logo-blue)">
+                              <i class="ti ti-file-check text-[16px] shrink-0"></i>
+                              <span class="text-[12.5px] truncate">{{ guardado.nombre }}</span>
+                            </a>
+                            <button type="button"
+                              [disabled]="!puedeEvaluar(c)"
+                              class="text-[12px] font-bold text-red-600 cursor-pointer hover:underline shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                              (click)="quitarArchivoEvaluacion(c, slot.codigo)">
+                              Quitar
+                            </button>
+                          </div>
+                        } @else {
+                          <input #archivoInput type="file" class="hidden" [accept]="evaluacionAccept"
+                            (change)="onArchivoEvaluacion($event, c, slot.codigo)" />
+                          <button type="button"
+                            [disabled]="!puedeEvaluar(c)"
+                            class="w-full h-[38px] mt-[8px] rounded-[7px] border border-dashed bg-white hover:bg-[#F1F7F1] flex items-center justify-center gap-[8px] text-[12.5px] font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            style="border-color:#B7D6A6;color:var(--color-abril-standard)"
+                            (click)="archivoInput.click()">
+                            <i class="ti ti-paperclip text-[15px]"></i>
+                            Adjuntar
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
+
                   <div class="flex flex-wrap items-center gap-[10px] mt-[12px]">
                     <button type="button"
                       [disabled]="!puedeGuardarEvaluacion(c)"

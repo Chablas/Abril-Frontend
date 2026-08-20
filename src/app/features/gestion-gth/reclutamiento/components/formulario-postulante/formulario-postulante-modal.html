@@ -44,10 +44,9 @@
           <i class="ti ti-clipboard-check text-[20px] shrink-0" style="color:var(--color-abril-logo-blue)"></i>
           <div>
             <p class="text-[13.5px] font-bold" style="color:var(--color-abril-logo-blue)">El postulante completó el formulario.</p>
-            <p class="text-[12.5px] text-gray-600 mt-[1px]">
-              Revisa la información declarada y decide si la apruebas o la rechazas.
-              @if (revision.completadoEn) { Completado el {{ fmtFechaHora(revision.completadoEn) }}. }
-            </p>
+            @if (revision.completadoEn) {
+              <p class="text-[12.5px] text-gray-600 mt-[1px]">Completado el {{ fmtFechaHora(revision.completadoEn) }}.</p>
+            }
           </div>
         </div>
       } @else if (revision.existe) {

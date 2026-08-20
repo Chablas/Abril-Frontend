@@ -125,6 +125,23 @@
                   {{ seleccionado.evaluacion.comentarioRecomendacion || 'GTH aún no registró una recomendación.' }}
                 </p>
               </div>
+
+              <!-- Archivos del informe: los mismos que llegaron adjuntos en el correo. Se muestran
+                   solo si GTH los subió (los dos son opcionales). -->
+              @if (seleccionado.evaluacion.archivos?.length) {
+                <div class="rounded-[8px] border px-[13px] py-[11px] mt-[10px]" style="border-color:var(--color-abril-border)">
+                  <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Archivos del informe</p>
+                  @for (a of seleccionado.evaluacion.archivos; track a.archivoId) {
+                    <a [href]="a.url" target="_blank" rel="noopener"
+                       class="flex items-center gap-[8px] mt-[7px] min-w-0 hover:underline"
+                       style="color:var(--color-abril-logo-blue)">
+                      <i class="ti ti-file-check text-[16px] shrink-0"></i>
+                      <span class="text-[12.5px] font-semibold shrink-0">{{ a.tipoNombre }}:</span>
+                      <span class="text-[12.5px] text-gray-600 truncate">{{ a.nombre }}</span>
+                    </a>
+                  }
+                </div>
+              }
             } @else {
               <p class="text-[13px] text-gray-400 text-center py-[40px]">Selecciona un finalista para ver su informe.</p>
             }
