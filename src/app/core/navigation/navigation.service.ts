@@ -283,6 +283,8 @@ export class NavigationService {
         { label: 'Ver eval. contratistas', route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' },
         { label: 'Evaluar contratista',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
         { label: 'Dashboard contratistas', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
+        { label: 'Evaluar supervisor SSOMA', route: '/evaluaciones/evaluar-supervisor-contratista', featureKey: 'evaluaciones.evaluar-supervisor-contratista' },
+        { label: 'Ver eval. supervisores SSOMA', route: '/evaluaciones/ver-supervisores-contratista', featureKey: 'evaluaciones.ver-supervisores-contratista' },
       ],
       groups: [],
     },

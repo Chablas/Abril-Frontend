@@ -1,0 +1,91 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Ver Evaluaciones — Supervisores de Contratista"
+  subtitulo="Resultados consolidados. Visible solo para el Jefe SSOMA."
+  [tabGroups]="[
+    { label: 'Residentes',   icono: 'ti-user-check', tabs: [
+      { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
+      { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
+      { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
+      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' }
+    ]},
+    { label: 'Contratistas', icono: 'ti-building', tabs: [
+      { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
+      { label: 'Evaluar',          icono: 'ti-pencil',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
+      { label: 'Ver evaluaciones', icono: 'ti-list',      route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' }
+    ]},
+    { label: 'SSOMA', icono: 'ti-shield-check', tabs: [
+      { label: 'Evaluar supervisor', icono: 'ti-pencil', route: '/evaluaciones/evaluar-supervisor-contratista', featureKey: 'evaluaciones.evaluar-supervisor-contratista' },
+      { label: 'Ver evaluaciones',   icono: 'ti-list',   route: '/evaluaciones/ver-supervisores-contratista',   featureKey: 'evaluaciones.ver-supervisores-contratista' }
+    ]}
+  ]">
+</app-abril-page-header>
+
+<div class="ve-root">
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div><span>Cargando evaluaciones...</span>
+  </div>
+
+  <div class="ve-content" *ngIf="!loading && data">
+
+    <!-- FILTROS -->
+    <div class="filtros-bar">
+      <select class="filtro-select" [(ngModel)]="periodoId" (change)="filtrar()">
+        <option [ngValue]="null">Todos los períodos</option>
+        <option *ngFor="let p of data.periodos" [ngValue]="p.id">
+          {{ p.nombreMes }} {{ p.anio }}
+        </option>
+      </select>
+
+      <select class="filtro-select" [(ngModel)]="proyectoId" (change)="filtrar()">
+        <option [ngValue]="null">Todos los proyectos</option>
+        <option *ngFor="let pr of data.proyectos" [ngValue]="pr.proyectoId">
+          {{ pr.proyectoNombre }}
+        </option>
+      </select>
+
+      <input class="filtro-search" [(ngModel)]="busqueda" placeholder="Buscar supervisor, empresa o evaluador..." />
+
+      <div class="promedio-chip" *ngIf="promedioGeneral !== null">
+        <span class="pc-label">Promedio general</span>
+        <span class="pc-num" [ngClass]="notaClase(promedioGeneral)">{{ notaDisplay(promedioGeneral) }}</span>
+      </div>
+    </div>
+
+    <!-- SIN DATOS -->
+    <div class="empty-state" *ngIf="!evaluacionesFiltradas.length">
+      <i class="ti ti-clipboard-off"></i>
+      <p>No hay evaluaciones registradas con los filtros seleccionados.</p>
+    </div>
+
+    <!-- TABLA -->
+    <div class="table-wrap" *ngIf="evaluacionesFiltradas.length">
+      <table class="ev-table">
+        <thead>
+          <tr>
+            <th>SUPERVISOR</th>
+            <th>EMPRESA</th>
+            <th>PROYECTO</th>
+            <th>EVALUADOR</th>
+            <th class="nota-col">NOTA</th>
+            <th>COMENTARIO</th>
+            <th>FECHA</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of evaluacionesFiltradas">
+            <td class="contractor-name">{{ e.supervisorNombre }}</td>
+            <td class="project-cell">{{ e.contributorNombre }}</td>
+            <td class="project-cell">{{ e.proyectoNombre }}</td>
+            <td class="project-cell">{{ e.evaluadorNombre }}</td>
+            <td class="nota-col"><span class="nota-chip" [ngClass]="notaClase(e.nota)">{{ notaDisplay(e.nota) }}</span></td>
+            <td class="comentario-cell">{{ e.comentario || '—' }}</td>
+            <td class="project-cell">{{ e.createdAt | date: 'dd/MM/yyyy' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
