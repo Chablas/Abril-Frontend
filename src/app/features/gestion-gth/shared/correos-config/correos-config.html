@@ -41,56 +41,21 @@
         </div>
       </div>
 
-      <!-- El texto de cada aviso va envuelto en un <span>: el <p> es flex (ícono + texto) y sin
-           el span cada trozo suelto y cada <strong> se volvían ítems flex propios, que en pantallas
-           angostas se acomodaban en columnas de una palabra en vez de leerse como un párrafo. -->
-      <p class="config-warn config-warn--off" *ngIf="!evento.active && !evento.principalAutomatico">
+      <!-- Los avisos son de estado, no explicaciones: uno solo y de una línea. El texto va
+           envuelto en un <span> porque el <p> es flex (ícono + texto) y sin él cada trozo suelto
+           se volvía un ítem flex propio, que en pantallas angostas se acomodaba en columnas de
+           una palabra. -->
+      <p class="config-warn config-warn--off" *ngIf="!evento.active">
         <i class="ti ti-mail-off"></i>
-        <span>
-          Este correo <strong>no se envía</strong> mientras esté desactivado. Los destinatarios de
-          abajo se conservan tal cual para cuando lo vuelvas a prender.
-        </span>
-      </p>
-
-      <!-- Con principal automático apagarlo no detiene el correo: el principal lo pone el sistema
-           al enviar y lo sigue recibiendo. Decir "no se envía" sería mentira. -->
-      <p class="config-warn config-warn--off" *ngIf="!evento.active && evento.principalAutomatico">
-        <i class="ti ti-mail-off"></i>
-        <span>
-          Mientras esté desactivado <strong>no se envía a los destinatarios de abajo</strong>. El
-          principal lo pone el sistema al enviarlo, así que ese lo sigue recibiendo igual.
-        </span>
+        <span>Desactivado: este correo no se envía a nadie.</span>
       </p>
 
       <p class="config-warn" *ngIf="sinPrincipales">
         <i class="ti ti-alert-triangle"></i>
-        <span>
-          No hay ningún destinatario <strong>principal (Para)</strong> activo, así que este correo
-          no le llega a nadie. Prende uno o agrega un correo adicional.
-        </span>
-      </p>
-
-      <p class="config-warn config-warn--info" *ngIf="evento.principalAutomatico && evento.active">
-        <i class="ti ti-info-circle"></i>
-        <span>
-          El destinatario principal de este correo lo pone el sistema al enviarlo, así que abajo
-          solo se agregan <strong>principales adicionales</strong> y copias.
-        </span>
-      </p>
-
-      <p class="config-warn" *ngFor="let f of filasSinCorreo">
-        <i class="ti ti-alert-triangle"></i>
-        <span>
-          <strong>{{ f.nombre || f.codigo }}</strong> está activo pero hoy no resuelve a ningún
-          correo, así que no le llega nada.
-        </span>
+        <span>No le llega a nadie: no hay ningún destinatario «Para» activo.</span>
       </p>
 
       <div class="destinatarios__head">
-        <p class="config-card__sub">
-          Prende o apaga a quién recibe este correo. Los destinatarios del catálogo toman su
-          correo del dato maestro al momento de enviar, así que no hay que escribirlo.
-        </p>
         <button type="button" class="btn-add" (click)="abrirAlta()">
           <i class="ti ti-plus"></i> Agregar correo adicional
         </button>
@@ -113,7 +78,8 @@
                   <span class="dest__name">
                     {{ fila.nombre || fila.email || '—' }}
                     <span class="dest__tag" *ngIf="fila.eliminable">Adicional</span>
-                    <span class="dest__tag dest__tag--auto" *ngIf="!fila.eliminable">Catálogo</span>
+                    <span class="dest__tag dest__tag--auto" *ngIf="fila.esPrincipalSistema">Sistema</span>
+                    <span class="dest__tag dest__tag--auto" *ngIf="!fila.eliminable && !fila.esPrincipalSistema">Catálogo</span>
                   </span>
 
                   <!-- Correo adicional: el correo es el dato -->
@@ -126,9 +92,14 @@
                     <span class="dest__who" *ngIf="fila.nombreResuelto">· {{ fila.nombreResuelto }}</span>
                   </span>
 
+                  <!-- El principal que pone el backend al enviar (el solicitante, el postulante…) -->
+                  <span class="dest__email dest__email--auto" *ngIf="fila.esPrincipalSistema">
+                    <i class="ti ti-wand"></i> Lo resuelve el sistema al enviar
+                  </span>
+
                   <!-- Dinámico que cambia con cada solicitud -->
                   <span class="dest__email dest__email--auto" *ngIf="fila.dependeDeLaSolicitud">
-                    <i class="ti ti-wand"></i> Se resuelve al enviar, según el área de quien solicita
+                    <i class="ti ti-wand"></i> Según el área del solicitante
                   </span>
 
                   <!-- Dinámico que hoy no resuelve a nadie -->
@@ -137,8 +108,6 @@
                     *ngIf="fila.sinCorreo && !fila.dependeDeLaSolicitud">
                     <i class="ti ti-alert-circle"></i> Hoy no resuelve a ningún correo
                   </span>
-
-                  <span class="dest__desc" *ngIf="fila.descripcion">{{ fila.descripcion }}</span>
                 </div>
               </td>
 
@@ -190,7 +159,7 @@
       </div>
 
       <p class="correo-empty" *ngIf="!evento.destinatarios.length && !loading">
-        No hay destinatarios configurados para este correo.
+        Sin destinatarios.
       </p>
     </div>
   </ng-container>
@@ -251,10 +220,7 @@
 
     <p class="form-hint" *ngIf="formId === null">
       <i class="ti ti-info-circle"></i>
-      <span>
-        Se agrega activo solo en <strong>{{ eventoActivo?.nombre }}</strong>. Los otros correos no
-        se tocan.
-      </span>
+      <span>Solo para «{{ eventoActivo?.nombre }}».</span>
     </p>
 
     <p class="form-error" *ngIf="formError">

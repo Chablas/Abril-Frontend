@@ -290,6 +290,23 @@ export interface EvaluacionFinalista {
   agradecimientoEnviadoEn: string | null;
   /** Momento de la decisión final del solicitante (ISO, hora Perú). Null si aún no decidió. */
   decididoEn: string | null;
+  /**
+   * Archivos que GTH adjuntó al informe (informe final y resultados de la evaluación de
+   * conocimientos). Vacío si no subió ninguno: los dos son opcionales.
+   */
+  archivos: ArchivoInformeFinalista[];
+}
+
+/** Un archivo del informe del finalista, para abrirlo desde SharePoint. */
+export interface ArchivoInformeFinalista {
+  archivoId: number;
+  /** Código del documento: 'INFORME_FINAL' | 'EVALUACION_CONOCIMIENTOS'. */
+  tipoCodigo: string;
+  /** Nombre visible del documento ("Informe final"). */
+  tipoNombre: string;
+  /** Nombre del archivo tal como lo subió GTH. */
+  nombre: string;
+  url: string | null;
 }
 
 /** Un finalista con el informe que GTH registró tras su entrevista. */

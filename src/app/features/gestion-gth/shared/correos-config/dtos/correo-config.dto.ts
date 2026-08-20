@@ -40,6 +40,12 @@ export interface CorreoDestinatarioFila {
   sinCorreo: boolean;
   /** true = se resuelve recién al enviar porque depende de quién registre la solicitud. */
   dependeDeLaSolicitud: boolean;
+  /**
+   * true = es el destinatario principal que asigna el sistema (el solicitante, el postulante, el
+   * candidato…). No sale de la tabla de destinatarios sino del propio correo: su interruptor va
+   * por `setPrincipalSistemaActive` y su `destinatarioId` es 0.
+   */
+  esPrincipalSistema: boolean;
   orden: number;
 }
 
@@ -52,8 +58,9 @@ export interface CorreoConfigEvento {
   /** Interruptor maestro: false = el correo no se envía. */
   active: boolean;
   /**
-   * true = el destinatario principal lo pone el backend solo (la long list va siempre al
-   * solicitante), así que acá solo se agregan principales extra y copias.
+   * true = el correo tiene un destinatario principal que pone el backend solo (la long list va
+   * siempre al solicitante). Ese destinatario viene como una fila más de `destinatarios`, con
+   * `esPrincipalSistema` en true.
    */
   principalAutomatico: boolean;
   orden: number;

@@ -232,7 +232,31 @@ export interface EvaluacionResumen {
   agradecimientoCorreo: string | null;
   /** Momento del envío del agradecimiento (ISO, ya en hora Perú). Null si no se envió. */
   agradecimientoEnviadoEn: string | null;
+  /**
+   * Archivos del informe ya subidos (informe final y resultados de la evaluación de
+   * conocimientos). Vacío si GTH no subió ninguno: los dos son opcionales.
+   */
+  archivos: EvaluacionArchivo[];
 }
+
+/** Un archivo del informe de la entrevista, ya subido a SharePoint. */
+export interface EvaluacionArchivo {
+  archivoId: number;
+  /** Código del documento: 'INFORME_FINAL' | 'EVALUACION_CONOCIMIENTOS'. */
+  tipoCodigo: string;
+  /** Nombre visible del documento ("Informe final"). */
+  tipoNombre: string;
+  /** Nombre del archivo con el que GTH lo subió. */
+  nombre: string;
+  /** Link al archivo en SharePoint. Null si la subida no dejó url. */
+  url: string | null;
+}
+
+/** Códigos de los archivos del informe (espejo de gth_evaluacion_archivo_tipo.codigo). */
+export const EVALUACION_ARCHIVO = {
+  informeFinal: 'INFORME_FINAL',
+  conocimientos: 'EVALUACION_CONOCIMIENTOS',
+} as const;
 
 /**
  * Body del guardado de la evaluación (solo comentarios; el resultado no se edita aquí).
@@ -243,6 +267,11 @@ export interface EvaluacionGuardar {
   comentarioEntrevista: string;
   comentarioPsicotecnico: string;
   comentarioRecomendacion: string;
+  /**
+   * Códigos de los archivos que GTH quitó del informe. Los que no vengan acá ni se manden como
+   * archivo nuevo se quedan como estaban: volver a guardar no borra lo ya subido.
+   */
+  archivosQuitados?: string[];
 }
 
 /** Resultado de guardar la evaluación o de enviar el correo de agradecimiento. */

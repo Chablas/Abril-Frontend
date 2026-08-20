@@ -24,13 +24,19 @@ import {
  * cada una, las pestañas salen de lo que devuelve el backend y no de una lista escrita acá.
  *
  * Una sección (`app-section-tabs`) por cada correo, con un interruptor maestro (apagado = ese
- * correo no se envía) y la lista de sus destinatarios, cada uno con su propio interruptor.
+ * correo no se envía a nadie) y la lista de sus destinatarios, cada uno con su propio interruptor.
  *
- * Hay dos clases de destinatario:
+ * Hay tres clases de destinatario:
+ *  • El que asigna el sistema (el solicitante, el postulante, el candidato…): no sale de la tabla
+ *    de destinatarios sino del propio correo, así que su interruptor va a otro endpoint. Se
+ *    reconoce por `esPrincipalSistema` y su `destinatarioId` es 0.
  *  • Dinámicos (Gerente General, gerente del área del solicitante, área de GTH, área de TI): su
  *    correo NO se escribe acá, sale del dato maestro al momento de enviar. Solo se prenden y
  *    apagan.
  *  • Correos adicionales: alta, edición y baja completa desde la pantalla.
+ *
+ * La pantalla no explica el flujo: cada correo trae una descripción de una línea desde la base y
+ * los avisos son de estado (apagado, no le llega a nadie), nunca instructivos.
  */
 @Component({
   standalone: true,
@@ -127,26 +133,18 @@ export class GthCorreosConfig implements OnInit {
     return evento.destinatarios.filter((d) => d.active).length;
   }
 
-  /** Destinatarios principales activos: sin al menos uno, el correo no le llega a nadie. */
+  /**
+   * Destinatarios principales activos: sin al menos uno, el correo no le llega a nadie. Cuenta
+   * también al que asigna el sistema, que ahora es una fila más de la lista.
+   */
   private principalesActivos(evento: CorreoConfigEvento): number {
     return evento.destinatarios.filter((d) => d.active && !d.esCopia).length;
   }
 
-  /**
-   * El correo está prendido pero no tiene a quién mandárselo. Los correos con principal
-   * automático (la long list siempre va al solicitante) nunca caen acá: sí le llega a alguien
-   * aunque la pantalla no tenga ningún principal propio.
-   */
+  /** El correo está prendido pero no tiene a quién mandárselo. */
   get sinPrincipales(): boolean {
     const e = this.eventoActivo;
-    return (
-      !this.loading && !!e && e.active && !e.principalAutomatico && this.principalesActivos(e) === 0
-    );
-  }
-
-  /** Filas activas que hoy no resuelven a ningún correo: no le llega nada a nadie por ellas. */
-  get filasSinCorreo(): CorreoDestinatarioFila[] {
-    return (this.eventoActivo?.destinatarios ?? []).filter((d) => d.active && d.sinCorreo);
+    return !this.loading && !!e && e.active && this.principalesActivos(e) === 0;
   }
 
   // ── Interruptor maestro del correo ──
@@ -180,7 +178,13 @@ export class GthCorreosConfig implements OnInit {
     this.savingDestinatarioId = fila.destinatarioId;
     fila.active = nuevo;
 
-    this.svc.setDestinatarioActive(this.modulo, fila.destinatarioId, nuevo).subscribe({
+    // El destinatario del sistema no es una fila de gth_correo_destinatario: su interruptor vive
+    // en el propio correo, así que se guarda por el código del correo y no por un id.
+    const request$ = fila.esPrincipalSistema
+      ? this.svc.setPrincipalSistemaActive(this.modulo, this.eventoActivoCodigo ?? '', nuevo)
+      : this.svc.setDestinatarioActive(this.modulo, fila.destinatarioId, nuevo);
+
+    request$.subscribe({
       next: () => {
         this.savingDestinatarioId = null;
         this.cdr.detectChanges();

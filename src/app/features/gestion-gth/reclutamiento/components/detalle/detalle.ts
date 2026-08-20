@@ -25,7 +25,14 @@ import {
   DecisionFormularioAplicada,
   FormularioDecisionService,
 } from '../../services/formulario-decision.service';
-import { AsignacionGth, CandidatoAprobado, DetalleRequerimientoGth, Opcion } from '../../dtos/reclutamiento.dto';
+import {
+  AsignacionGth,
+  CandidatoAprobado,
+  DetalleRequerimientoGth,
+  EVALUACION_ARCHIVO,
+  EvaluacionArchivo,
+  Opcion,
+} from '../../dtos/reclutamiento.dto';
 import { CandidatoFormularioResumen } from '../../dtos/formulario-postulante.dto';
 import { GthFormularioPostulanteModal } from '../formulario-postulante/formulario-postulante-modal';
 import { estadoColors, faseAlcanzada } from '../../../shared/estado-colors';
@@ -75,13 +82,26 @@ interface EntrevistaFormState {
 
 /**
  * Datos editables de la evaluación de la entrevista de un candidato: los tres comentarios que
- * arman el informe de finalista que ve el área solicitante.
+ * arman el informe de finalista que ve el área solicitante, más sus dos archivos opcionales.
  */
 interface EvaluacionFormState {
   comentarioEntrevista: string;
   comentarioPsicotecnico: string;
   comentarioRecomendacion: string;
+  /** Archivo recién elegido por tipo (clave = código del catálogo). Aún no está subido. */
+  archivosNuevos: Record<string, File | null>;
+  /** Códigos de los archivos ya subidos que se quitaron: viajan en el guardado para darlos de baja. */
+  quitados: string[];
 }
+
+/** Los dos documentos del informe, en el orden en que se muestran. Los dos son opcionales. */
+const SLOTS_ARCHIVO_EVALUACION: { codigo: string; label: string }[] = [
+  { codigo: EVALUACION_ARCHIVO.informeFinal, label: 'Informe final' },
+  { codigo: EVALUACION_ARCHIVO.conocimientos, label: 'Resultados de evaluación de conocimientos' },
+];
+
+/** Formatos que aceptan los archivos del informe (los mismos que valida el backend). */
+const EVALUACION_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp';
 
 /**
  * Modal de detalle del requerimiento (vista de GTH, se abre con el ojo de la bandeja):
@@ -1159,9 +1179,75 @@ export class GthDetalleRequerimiento implements OnInit {
     );
   }
 
+  // ── Archivos del informe (informe final y evaluación de conocimientos) ───
+  /** Los dos documentos que se pueden adjuntar al informe, en orden. Los dos son opcionales. */
+  readonly slotsArchivoEvaluacion = SLOTS_ARCHIVO_EVALUACION;
+  readonly evaluacionAccept = EVALUACION_ACCEPT;
+
+  /** Archivo recién elegido para ese documento (todavía sin subir). */
+  archivoNuevo(c: CandidatoAprobado, codigo: string): File | null {
+    return this.evaluacionForm[c.candidatoId]?.archivosNuevos[codigo] ?? null;
+  }
+
+  /** Archivo ya subido de ese documento, salvo que se haya quitado en esta edición. */
+  archivoGuardado(c: CandidatoAprobado, codigo: string): EvaluacionArchivo | null {
+    if (this.evaluacionForm[c.candidatoId]?.quitados.includes(codigo)) return null;
+    return c.evaluacion?.archivos?.find((a) => a.tipoCodigo === codigo) ?? null;
+  }
+
   /**
-   * Guarda los tres comentarios del candidato y, con eso, lo envía como finalista: el informe
-   * queda disponible en la vista del área solicitante.
+   * Toma el archivo elegido para ese documento. Se valida el peso acá además del backend: los dos
+   * viajan adjuntos en el correo al solicitante y el proveedor rechaza el mensaje completo si se
+   * pasa, así que conviene avisarlo antes de subir nada.
+   */
+  onArchivoEvaluacion(event: Event, c: CandidatoAprobado, codigo: string): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = '';
+    if (!file) return;
+
+    const form = this.evaluacionForm[c.candidatoId];
+    if (!form) return;
+
+    const otros = Object.entries(form.archivosNuevos)
+      .filter(([k, f]) => k !== codigo && !!f)
+      .reduce((total, [, f]) => total + (f as File).size, 0);
+
+    if (otros + file.size > MAX_LONG_LIST_CORREO_BYTES) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Archivos demasiado pesados',
+        text: `Los archivos del informe no pueden superar los ${(MAX_LONG_LIST_CORREO_BYTES / 1024 / 1024).toFixed(1)} MB en total.`,
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    form.archivosNuevos[codigo] = file;
+    // Cargar uno nuevo reemplaza al que estuviera guardado: deja de contar como quitado.
+    form.quitados = form.quitados.filter((x) => x !== codigo);
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Quita el documento: si es uno recién elegido solo se descarta, y si ya estaba subido se marca
+   * para darlo de baja al guardar (mientras tanto la pantalla lo muestra como vacío).
+   */
+  quitarArchivoEvaluacion(c: CandidatoAprobado, codigo: string): void {
+    const form = this.evaluacionForm[c.candidatoId];
+    if (!form) return;
+
+    if (form.archivosNuevos[codigo]) {
+      form.archivosNuevos[codigo] = null;
+    } else if (!form.quitados.includes(codigo)) {
+      form.quitados = [...form.quitados, codigo];
+    }
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Guarda los tres comentarios del candidato y sus archivos y, con eso, lo envía como finalista:
+   * el informe queda disponible en la vista del área solicitante.
    */
   guardarEvaluacion(c: CandidatoAprobado): void {
     const form = this.evaluacionForm[c.candidatoId];
@@ -1179,14 +1265,26 @@ export class GthDetalleRequerimiento implements OnInit {
 
     this.guardandoEvaluacion[c.candidatoId] = true;
     this.service
-      .guardarEvaluacion(c.candidatoId, {
-        comentarioEntrevista: form.comentarioEntrevista.trim(),
-        comentarioPsicotecnico: form.comentarioPsicotecnico.trim(),
-        comentarioRecomendacion: form.comentarioRecomendacion.trim(),
-      })
+      .guardarEvaluacion(
+        c.candidatoId,
+        {
+          comentarioEntrevista: form.comentarioEntrevista.trim(),
+          comentarioPsicotecnico: form.comentarioPsicotecnico.trim(),
+          comentarioRecomendacion: form.comentarioRecomendacion.trim(),
+          archivosQuitados: form.quitados,
+        },
+        {
+          informeFinal: form.archivosNuevos[EVALUACION_ARCHIVO.informeFinal],
+          conocimientos: form.archivosNuevos[EVALUACION_ARCHIVO.conocimientos],
+        },
+      )
       .subscribe({
         next: (res) => {
           c.evaluacion = res.evaluacion;
+          // Lo que estaba pendiente ya quedó subido o dado de baja: la fila vuelve a partir de lo
+          // que devolvió el backend y no de lo que el usuario tenía a medio cargar.
+          form.archivosNuevos = {};
+          form.quitados = [];
           // Enviar al primer finalista mueve el requerimiento a "Selección jefatura": el badge de
           // la cabecera se refresca con la fase que devuelve el backend (viene solo si cambió).
           if (res.estadoCodigo && this.detalle) {
@@ -1275,6 +1373,8 @@ export class GthDetalleRequerimiento implements OnInit {
         comentarioEntrevista: c.evaluacion?.comentarioEntrevista ?? '',
         comentarioPsicotecnico: c.evaluacion?.comentarioPsicotecnico ?? '',
         comentarioRecomendacion: c.evaluacion?.comentarioRecomendacion ?? '',
+        archivosNuevos: {},
+        quitados: [],
       };
     }
   }

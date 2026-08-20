@@ -49,6 +49,23 @@ export class CorreoConfigService {
     );
   }
 
+  /**
+   * Prende o apaga el destinatario principal que asigna el sistema (el solicitante, el postulante,
+   * el candidato…). Va por el código del correo y no por un id de destinatario: ese destinatario
+   * no es una fila de la tabla, es una propiedad del propio correo.
+   */
+  setPrincipalSistemaActive(
+    modulo: CorreoConfigModulo,
+    codigo: string,
+    active: boolean,
+  ): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.base(modulo)}/correos/${codigo}/principal-automatico/active`,
+      { active },
+      { headers: this.headers },
+    );
+  }
+
   /** Prende o apaga un destinatario dentro de su correo. */
   setDestinatarioActive(
     modulo: CorreoConfigModulo,
