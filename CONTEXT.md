@@ -5354,3 +5354,33 @@ selector de fecha en export PDF, detalle arriba) mergeada directo a `master` a p
 del usuario ("guardar master"), sobre `origin/master` ya actualizado con los cambios de
 Amonestaciones de otra sesión (`8165652f..a43d312d`). Merge limpio, sin conflictos.
 `ng build`: 0 errores.
+
+## Sesión 2026-08-20 — Evaluaciones SSOMA: Flujo A (evaluar/ver supervisores de contratista)
+
+Primer flujo de 3 nuevos pedidos por el usuario (Jefe SSOMA): su equipo (Coordinador
+SSOMA/Prevencionista) evalúa a los supervisores de campo de los contratistas por
+proyecto, visible solo para él. Backend completo en Abril_Backend (los 3 flujos), pero
+en este repo solo se construyó el frontend del Flujo A esta sesión.
+
+- `features/evaluaciones/pages/evaluar-supervisor-contratista/` — clon casi literal de
+  `evaluar-contratista` (mismo layout de dos paneles, escala 0-4 por criterio), solo
+  cambia terminología y el DTO de origen (`ev-supervisor-contratista.model.ts`).
+- `features/evaluaciones/pages/ver-evaluacion-supervisores/` — tabla consolidada
+  (clon de `ver-evaluacion-contratistas`, sin desglose por área ya que este flujo
+  no lo tiene), solo accesible por el Jefe SSOMA.
+- Rutas nuevas en `evaluaciones.routes.ts` + 2 ítems en el sidebar
+  (`navigation.service.ts`), con `featureKey` (`evaluaciones.evaluar-supervisor-contratista`
+  y `evaluaciones.ver-supervisores-contratista`) — el acceso real depende de la
+  migración de `feature`/`role_feature` en Abril_Backend (ver su CONTEXT.md),
+  todavía sin correr contra la base.
+
+### Verificado
+`npm run build`: 0 errores, solo warnings preexistentes de CommonJS de terceros
+(canvg, tfjs, flatpickr). No probado en navegador todavía.
+
+### Pendiente
+- Flujo B (evaluar al Jefe SSOMA, anónimo) y Flujo C (contratistas evalúan
+  Prevencionistas/Coordinadores, dentro del portal `dashboard-contratista` ya
+  existente) — backend ya está, falta todo el frontend.
+- Probar Flujo A en navegador contra el backend real una vez corrida la migración
+  de feature seed.
