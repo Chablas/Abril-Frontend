@@ -48,6 +48,7 @@ export class EvaluarSupervisorContratista implements OnInit {
   comentario = '';
   busqueda = '';
   proyectoFiltroId: number | null = null;
+  empresaFiltroId: number | null = null;
 
   readonly puntajes = [0, 1, 2, 3, 4];
   readonly puntajeLabel = PUNTAJE_LABELS;
@@ -64,11 +65,26 @@ export class EvaluarSupervisorContratista implements OnInit {
     return result.sort((a, b) => a.nombre.localeCompare(b.nombre));
   }
 
+  get empresas(): { id: number; nombre: string }[] {
+    const seen = new Set<number>();
+    const result: { id: number; nombre: string }[] = [];
+    for (const s of this.inicio?.supervisoresAEvaluar ?? []) {
+      if (!seen.has(s.contributorId)) {
+        seen.add(s.contributorId);
+        result.push({ id: s.contributorId, nombre: s.contributorNombre });
+      }
+    }
+    return result.sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }
+
   get supervisoresFiltrados(): EvSupervisorContratistaAEvaluarDto[] {
     if (!this.inicio?.supervisoresAEvaluar) return [];
     let lista = this.inicio.supervisoresAEvaluar;
     if (this.proyectoFiltroId !== null) {
       lista = lista.filter((s) => s.proyectoId === this.proyectoFiltroId);
+    }
+    if (this.empresaFiltroId !== null) {
+      lista = lista.filter((s) => s.contributorId === this.empresaFiltroId);
     }
     const q = this.busqueda.trim().toLowerCase();
     if (!q) return lista;

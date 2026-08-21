@@ -45,16 +45,26 @@
   background: var(--color-abril-bg-alt, #F8FAFC); border-bottom: 1px solid var(--color-abril-border);
   flex-shrink: 0;
 }
+.filtros-panel {
+  display: flex; flex-direction: column; gap: 0;
+  border-bottom: 1px solid var(--color-abril-border);
+  flex-shrink: 0;
+}
 .proyecto-filtro {
   display: flex; flex-direction: column; gap: 4px;
   padding: 12px 20px; border-bottom: 1px solid var(--color-abril-border);
   flex-shrink: 0;
 }
+.filtros-panel .proyecto-filtro { border-bottom: none; padding: 8px 20px; }
+.filtros-panel .proyecto-filtro:first-child { padding-top: 12px; }
+.filtros-panel .proyecto-filtro:last-child { padding-bottom: 12px; }
 .proyecto-filtro label { font-size: 11px; font-weight: 600; color: var(--color-abril-muted); }
-.proyecto-filtro select {
+.proyecto-filtro select, .proyecto-filtro input {
   padding: 6px 10px; border: 1px solid var(--color-abril-border); border-radius: 8px;
   font-size: 13px; background: var(--color-abril-surface); color: var(--color-abril-ink);
+  box-sizing: border-box; width: 100%;
 }
+.proyecto-filtro input:focus { outline: none; border-color: var(--color-abril-primary); }
 
 .empty-list {
   display: flex; flex-direction: column; align-items: center; gap: 8px;
