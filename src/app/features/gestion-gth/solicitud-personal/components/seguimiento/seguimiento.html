@@ -119,14 +119,27 @@
                 </div>
               </div>
 
-              @if (sel.cvUrl) {
-                <a [href]="sel.cvUrl" target="_blank" rel="noopener"
-                   class="inline-flex items-center gap-[6px] h-[34px] px-[14px] mt-[12px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
-                   style="background:#15803D">
-                  <i class="ti ti-external-link text-[15px]"></i>
-                  Ver CV del seleccionado
-                </a>
-              }
+              <!-- Los dos CVs del seleccionado: el que consiguió GTH y el que él mismo adjuntó
+                   en su formulario de postulante. -->
+              <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                @if (sel.cvUrl) {
+                  <a [href]="sel.cvUrl" target="_blank" rel="noopener"
+                     class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                     style="background:#15803D">
+                    <i class="ti ti-external-link text-[15px]"></i>
+                    Ver CV del seleccionado
+                  </a>
+                }
+                @if (sel.cvPostulanteUrl) {
+                  <a [href]="sel.cvPostulanteUrl" target="_blank" rel="noopener"
+                     class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold border cursor-pointer transition-colors hover:bg-emerald-50"
+                     style="border-color:#a7f3d0;color:#15803D;background:#F0FDF4"
+                     [title]="sel.cvPostulanteNombre || ''">
+                    <i class="ti ti-file-check text-[15px]"></i>
+                    Ver CV documentado
+                  </a>
+                }
+              </div>
             </div>
           </div>
         </div>

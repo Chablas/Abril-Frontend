@@ -85,6 +85,13 @@ export interface PostulanteFormularioPublico {
   disponibilidades: OpcionFormulario[];
   motivosCese: OpcionFormulario[];
   respuestas: PostulanteFormularioRespuestas;
+  /**
+   * Nombre del CV documentado que el postulante ya subió, para que al reabrir el enlace (o al
+   * corregir un formulario observado) sepa que no tiene que volver a adjuntarlo. null si todavía
+   * no subió ninguno. No viene la url: el archivo está en SharePoint y el postulante no tiene
+   * acceso, así que un enlace solo le daría un error de permisos.
+   */
+  cvNombre: string | null;
 }
 
 /** Respuesta vacía por defecto (antes de cargar / para inicializar el modelo). */

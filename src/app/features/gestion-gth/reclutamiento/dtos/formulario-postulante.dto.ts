@@ -90,6 +90,16 @@ export interface FormularioCoincidencia {
   bloqueaAprobacion: boolean;
 }
 
+/**
+ * Un CV del candidato para abrirlo desde SharePoint. Los dos del proceso —el que cargó GTH en la
+ * long list y el que adjuntó el postulante en su formulario— tienen esta misma forma.
+ */
+export interface FormularioCv {
+  nombre: string;
+  /** Link al archivo en SharePoint. null si la subida no dejó url. */
+  url: string | null;
+}
+
 /** Formulario del candidato para el modal "Ver formulario" de GTH. */
 export interface FormularioRevision {
   /** false si GTH aún no envió el formulario (el modal solo muestra la estructura/estado). */
@@ -105,6 +115,13 @@ export interface FormularioRevision {
   motivoRechazo: string | null;
   /** Datos declarados por el postulante (null si aún no completó el formulario). */
   datos: FormularioDatos | null;
+  /** CV que GTH cargó en la long list de este candidato. null si la carga no dejó url. */
+  cvGth: FormularioCv | null;
+  /**
+   * CV documentado que adjuntó el propio postulante al enviar el formulario. null si no lo subió
+   * (los formularios anteriores a que se pidiera el archivo) o si todavía no lo envió.
+   */
+  cvPostulante: FormularioCv | null;
   /**
    * El documento declarado ya existe en la base. Null cuando no coincide con nada (el caso normal)
    * o cuando el postulante todavía no llenó el formulario.

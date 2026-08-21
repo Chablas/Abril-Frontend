@@ -82,18 +82,32 @@
           <!-- ── Columna derecha: informe del finalista ─────────────────── -->
           <div class="rounded-[10px] border p-[16px] h-fit" style="border-color:var(--color-abril-border)">
             @if (seleccionado) {
-              <div class="flex items-center justify-between gap-[10px]">
+              <div class="flex items-start justify-between gap-[10px] flex-wrap">
                 <span class="text-[10.5px] font-semibold tracking-wide text-gray-400 uppercase">Informe de finalista</span>
-                @if (seleccionado.cvUrl) {
-                  <a [href]="seleccionado.cvUrl" target="_blank" rel="noopener"
-                     class="inline-flex items-center gap-[6px] h-[32px] px-[13px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
-                     style="background:var(--color-abril-logo-blue)">
-                    <i class="ti ti-external-link text-[15px]"></i>
-                    Ver CV completo
-                  </a>
-                } @else {
-                  <span class="text-[12px] text-gray-400">CV no disponible</span>
-                }
+                <!-- Los dos CVs: el que GTH consiguió y cargó en la long list, y el CV documentado
+                     que el propio postulante adjuntó en su formulario. -->
+                <div class="flex items-center gap-[8px] flex-wrap">
+                  @if (seleccionado.cvUrl) {
+                    <a [href]="seleccionado.cvUrl" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-[6px] h-[32px] px-[13px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                       style="background:var(--color-abril-logo-blue)">
+                      <i class="ti ti-external-link text-[15px]"></i>
+                      Ver CV completo
+                    </a>
+                  } @else {
+                    <span class="text-[12px] text-gray-400">CV no disponible</span>
+                  }
+
+                  @if (seleccionado.cvPostulanteUrl) {
+                    <a [href]="seleccionado.cvPostulanteUrl" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-[6px] h-[32px] px-[13px] rounded-[7px] text-[12.5px] font-semibold border cursor-pointer transition-colors hover:bg-emerald-50"
+                       style="border-color:#a7f3d0;color:#15803D;background:#F0FDF4"
+                       [title]="seleccionado.cvPostulanteNombre || ''">
+                      <i class="ti ti-file-check text-[15px]"></i>
+                      CV documentado
+                    </a>
+                  }
+                </div>
               </div>
 
               <h4 class="text-[18px] font-bold text-gray-800 mt-[8px] leading-tight">{{ seleccionado.nombre | titleCase }}</h4>
@@ -154,13 +168,35 @@
 
   <!-- Footer: la decisión final aplica sobre el finalista mostrado a la derecha. -->
   <div modalFooter class="w-full flex justify-between items-center gap-[12px] flex-wrap">
-    <span class="text-[12.5px] text-gray-500">
-      @if (seleccionado && estaDecidido(seleccionado)) {
-        Ya registraste tu decisión sobre {{ seleccionado.nombre | titleCase }}.
-      } @else if (seleccionado) {
-        Decidiendo sobre <b>{{ seleccionado.nombre | titleCase }}</b>.
+    <div class="flex items-center gap-[14px] flex-wrap">
+      <span class="text-[12.5px] text-gray-500">
+        @if (seleccionado && estaDecidido(seleccionado)) {
+          Ya registraste tu decisión sobre {{ seleccionado.nombre | titleCase }}.
+        } @else if (seleccionado) {
+          Decidiendo sobre <b>{{ seleccionado.nombre | titleCase }}</b>.
+        }
+      </span>
+
+      <!-- Área a la que entra el seleccionado: sale del puesto que se pidió, no del área de quien
+           lo pidió. Solo se pregunta cuando el puesto pertenece a más de un área; con una sola se
+           informa, y si el puesto no tiene ninguna mapeada no hay nada que mostrar. -->
+      @if (!procesoCerrado && seleccionado && !estaDecidido(seleccionado)) {
+        @if (eligeArea) {
+          <div class="w-[260px]">
+            <app-search-select
+              label="Área de destino *"
+              [options]="areasDestino" valueField="id" displayField="nombre"
+              [value]="areaDestinoId" (valueChange)="areaDestinoId = $event"
+              placeholder="¿A qué área entra?"
+              color="var(--color-abril-logo-blue)"></app-search-select>
+          </div>
+        } @else if (areaUnica) {
+          <span class="text-[12.5px] text-gray-500">
+            Área de destino: <b class="text-gray-700">{{ areaUnica.nombre }}</b>
+          </span>
+        }
       }
-    </span>
+    </div>
 
     <div class="flex items-center gap-[10px]">
       <button type="button" (click)="closeModal.emit()"

@@ -28,9 +28,20 @@ export class PostulanteFormularioService {
     });
   }
 
-  /** Envía las respuestas del postulante. */
-  guardarPublico(token: string, respuestas: PostulanteFormularioRespuestas): Observable<MessageResult> {
-    return this.http.post<MessageResult>(`${this.apiUrl}/publico`, respuestas, {
+  /**
+   * Envía las respuestas del postulante. Multipart: `data` = JSON de las respuestas; `cv` = el CV
+   * documentado. El archivo solo viaja cuando el postulante adjuntó uno en este envío: si está
+   * corrigiendo un formulario observado y no lo volvió a adjuntar, el backend conserva el anterior.
+   */
+  guardarPublico(
+    token: string,
+    respuestas: PostulanteFormularioRespuestas,
+    cv: File | null,
+  ): Observable<MessageResult> {
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(respuestas));
+    if (cv) formData.append('cv', cv, cv.name);
+    return this.http.post<MessageResult>(`${this.apiUrl}/publico`, formData, {
       params: { token },
     });
   }
