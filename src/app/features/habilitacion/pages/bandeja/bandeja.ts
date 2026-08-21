@@ -113,6 +113,22 @@ export class Bandeja implements OnInit, OnDestroy {
     );
   }
 
+  get trabajadoresPorProyecto(): { proyectoId: number | null; proyectoNombre: string; items: BandejaItemDto[] }[] {
+    const map = new Map<string, { proyectoId: number | null; proyectoNombre: string; items: BandejaItemDto[] }>();
+    for (const item of this.filteredItems) {
+      const proyectoId = item.proyectoId ?? null;
+      const proyectoNombre = item.proyectoNombre ?? 'Sin proyecto';
+      const key = String(proyectoId ?? proyectoNombre);
+      if (!map.has(key)) {
+        map.set(key, { proyectoId, proyectoNombre, items: [] });
+      }
+      map.get(key)!.items.push(item);
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      a.proyectoNombre.localeCompare(b.proyectoNombre, 'es'),
+    );
+  }
+
   get allItemsSelected(): boolean {
     const fi = this.filteredItems;
     return fi.length > 0 && fi.every((i) => this.selectedIds.has(i.id));
