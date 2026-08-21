@@ -5,10 +5,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { MultiSearchSelect } from '../../../../../../shared/components/multi-search-select/multi-search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { CategoriasPuestosService } from '../../services/categorias-puestos.service';
 import { CategoriaAdminDto, PuestoAdminDto } from '../../dtos/categorias-puestos.dto';
+import { AreaFlatOption } from '../../area-tree';
 
 /**
  * Alta y edición de un puesto. El mismo componente cubre ambos casos: si llega
@@ -17,7 +19,7 @@ import { CategoriaAdminDto, PuestoAdminDto } from '../../dtos/categorias-puestos
 @Component({
   standalone: true,
   selector: 'app-puesto-create-edit',
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, MultiSearchSelect],
   templateUrl: './puesto-create-edit.html',
 })
 export class PuestoCreateEdit implements OnInit {
@@ -25,11 +27,18 @@ export class PuestoCreateEdit implements OnInit {
   @Input() puesto: PuestoAdminDto | null = null;
   /** Categorías disponibles para asignar (ya vienen ordenadas del contenedor). */
   @Input() categorias: CategoriaAdminDto[] = [];
+  /**
+   * Áreas del árbol, aplanadas y con su ruta completa. La ruta hace falta porque el mismo
+   * nombre de área existe en más de una rama y sin ella habría opciones idénticas.
+   */
+  @Input() areaOptions: AreaFlatOption[] = [];
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
   nombre = '';
   categoriaId: number | null = null;
+  /** Áreas del puesto. Vacío es válido: los puestos de obra no pertenecen a ninguna. */
+  areaScopeIds: number[] = [];
   submitted = false;
 
   constructor(
@@ -42,6 +51,7 @@ export class PuestoCreateEdit implements OnInit {
   ngOnInit(): void {
     this.nombre = this.puesto?.nombre ?? '';
     this.categoriaId = this.puesto?.categoriaId ?? null;
+    this.areaScopeIds = (this.puesto?.areas ?? []).map((a) => a.areaScopeId);
   }
 
   get titulo(): string {
@@ -57,7 +67,8 @@ export class PuestoCreateEdit implements OnInit {
     if (!nombre || this.categoriaId == null) return;
 
     this.loaderService.show();
-    const req = { nombre, categoriaId: this.categoriaId };
+    // Las áreas viajan completas, no como delta: lo que no esté acá se le quita al puesto.
+    const req = { nombre, categoriaId: this.categoriaId, areaScopeIds: this.areaScopeIds };
     const request$ = this.puesto
       ? this.service.actualizarPuesto(this.puesto.id, req)
       : this.service.crearPuesto(req);

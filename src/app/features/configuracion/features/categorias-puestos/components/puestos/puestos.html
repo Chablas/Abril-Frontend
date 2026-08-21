@@ -42,6 +42,7 @@
           </th>
           <th>Puesto</th>
           <th>Categoría</th>
+          <th>Áreas</th>
           <th class="text-center w-[160px]">Trabajadores</th>
           <th class="text-center w-[140px]">Estado</th>
           <th class="text-center w-[300px]">Acciones</th>
@@ -50,7 +51,7 @@
       <tbody>
 
         <tr *ngIf="filteredPuestos.length === 0">
-          <td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">
+          <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">
             {{ filtrosActivos > 0 ? 'Sin resultados.' : 'No hay puestos registrados.' }}
           </td>
         </tr>
@@ -78,6 +79,18 @@
           <td class="text-gray-700">
             <span *ngIf="p.categoriaNombre">{{ p.categoriaNombre | titleCase }}</span>
             <span *ngIf="!p.categoriaNombre" class="text-gray-400 italic">Sin categoría</span>
+          </td>
+
+          <!-- Los nombres de área ya vienen capitalizados del catálogo: nada de titleCase acá,
+               que convertiría "SSOMA" en "Ssoma". -->
+          <td class="text-gray-700">
+            <div *ngIf="p.areas?.length" class="flex flex-wrap gap-[4px]">
+              <span *ngFor="let a of p.areas"
+                    class="text-[11px] px-[8px] py-[2px] rounded-full bg-[#EAF6FF] text-[#0B6BA8] font-medium whitespace-nowrap">
+                {{ a.nombre }}
+              </span>
+            </div>
+            <span *ngIf="!p.areas?.length" class="text-gray-400 italic">Sin área</span>
           </td>
 
           <td class="text-center">
@@ -126,6 +139,7 @@
   *ngIf="showModal"
   [puesto]="puestoToEdit"
   [categorias]="categorias"
+  [areaOptions]="areaOptions"
   (closeModal)="closeModales()"
   (saved)="onSaved()" />
 
@@ -145,6 +159,26 @@
       (valueChange)="onFilterChange()"
       width="100%">
     </app-search-input>
+  </div>
+
+  <!-- Área en cascada: elegir una gerencia trae también los puestos de sus áreas hijas,
+       el mismo alcance con el que Solicitud de Personal arma su desplegable. -->
+  <div class="flex flex-wrap gap-3">
+    <ng-container *ngFor="let level of areaLevels; let i = index">
+      <div class="w-[220px]">
+        <app-search-select
+          label="Área"
+          [showLabel]="i === 0"
+          [options]="level"
+          valueField="areaScopeId"
+          displayField="name"
+          [value]="selectedAreaNodes[i]?.areaScopeId"
+          [fullText]="true"
+          [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'"
+          (valueChange)="onAreaNodeChange(i, $event); onFilterChange()">
+        </app-search-select>
+      </div>
+    </ng-container>
   </div>
 
   <div class="w-full">

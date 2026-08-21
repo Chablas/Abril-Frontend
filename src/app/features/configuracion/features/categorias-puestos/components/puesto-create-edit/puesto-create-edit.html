@@ -1,4 +1,4 @@
-<app-base-modal [title]="titulo" width="w-[420px]" (closeModal)="closeModal.emit()">
+<app-base-modal [title]="titulo" width="w-[480px]" (closeModal)="closeModal.emit()">
 
   <div class="flex flex-col gap-[16px] mt-[10px]">
 
@@ -24,11 +24,17 @@
     </app-search-select>
     <p *ngIf="submitted && categoriaId === null" class="text-xs text-red-500 -mt-[10px]">Campo requerido</p>
 
-    <p class="text-xs text-gray-400">
-      Se guarda en mayúsculas. El puesto es el cargo que se muestra en la ficha del trabajador;
-      la lógica interna se resuelve por su categoría, así que cambiarla acá le cambia el nivel a
-      todos los trabajadores con este puesto.
-    </p>
+    <!-- Áreas: opcional a propósito. Los puestos de obra no pertenecen a ninguna, y las áreas
+         solo deciden en qué desplegable de Solicitud de Personal aparece el puesto. -->
+    <app-multi-search-select
+      label="Áreas"
+      [options]="areaOptions"
+      valueField="areaScopeId"
+      displayField="ruta"
+      [value]="areaScopeIds"
+      (valueChange)="areaScopeIds = $event"
+      placeholder="Sin área">
+    </app-multi-search-select>
 
     <div class="flex justify-center mt-[4px]">
       <button

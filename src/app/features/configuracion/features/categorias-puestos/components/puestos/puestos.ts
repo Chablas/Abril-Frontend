@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
@@ -13,7 +13,18 @@ import { SearchSelect } from '../../../../../../shared/components/search-select/
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { CategoriasPuestosService } from '../../services/categorias-puestos.service';
-import { CategoriaAdminDto, PuestoAdminDto } from '../../dtos/categorias-puestos.dto';
+import {
+  AreaNodoDto,
+  CategoriaAdminDto,
+  PuestoAdminDto,
+} from '../../dtos/categorias-puestos.dto';
+import {
+  AreaCascadeNode,
+  AreaFlatOption,
+  buildAreaTree,
+  collectScopeIds,
+  flattenAreaTree,
+} from '../../area-tree';
 import { PuestoCreateEdit } from '../puesto-create-edit/puesto-create-edit';
 import { PuestoDetalle } from '../puesto-detalle/puesto-detalle';
 
@@ -44,6 +55,8 @@ export class ConfigPuestos implements OnChanges {
   @Input() puestos: PuestoAdminDto[] = [];
   /** Categorías del catálogo: alimentan el selector del modal y el filtro por categoría. */
   @Input() categorias: CategoriaAdminDto[] = [];
+  /** Árbol de áreas (lista plana): alimenta el filtro en cascada y el selector del modal. */
+  @Input() areaTree: AreaNodoDto[] = [];
   /** Pide al contenedor recargar el catálogo tras crear/editar/activar. */
   @Output() changed = new EventEmitter<void>();
 
@@ -80,6 +93,14 @@ export class ConfigPuestos implements OnChanges {
   ];
   filtrosAbiertos = false;
 
+  // ── Filtro de área en cascada (mismo patrón que Gestión de Salidas) ──
+  /** Niveles visibles del desplegable: [0] = gerencias, [1] = hijas de la elegida, … */
+  areaLevels: AreaCascadeNode[][] = [];
+  /** Nodo elegido por nivel (undefined = "Todas" en ese nivel). */
+  selectedAreaNodes: (AreaCascadeNode | undefined)[] = [];
+  /** Opciones aplanadas con su ruta, para el selector de áreas del modal de alta/edición. */
+  areaOptions: AreaFlatOption[] = [];
+
   /** IDs seleccionados para la acción bulk. Se mantiene al cambiar de página. */
   selectedIds = new Set<number>();
   /** Índice de la última fila clickeada: ancla del rango con Shift, como en Outlook. */
@@ -94,10 +115,13 @@ export class ConfigPuestos implements OnChanges {
   ) {}
 
   /**
-   * El contenedor reasigna la lista en cada recarga: la selección apuntaría a filas de
-   * la carga anterior, así que se limpia.
+   * El contenedor reasigna las listas en cada recarga: la selección apuntaría a filas de
+   * la carga anterior, así que se limpia. El árbol de áreas se rearma solo cuando llega
+   * uno nuevo, respetando el área que el usuario tenga filtrada — si no, cada guardado le
+   * borraría el filtro.
    */
-  ngOnChanges(): void {
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['areaTree']) this.buildAreaCascade();
     this.limpiarSeleccion();
   }
 
@@ -110,6 +134,7 @@ export class ConfigPuestos implements OnChanges {
     if (this.conCategoriaFilter !== null) n++;
     if (this.usoFilter !== null) n++;
     if (this.estadoFilter !== null) n++;
+    if (this.selectedAreaNodes.some((node) => node)) n++;
     return n;
   }
 
@@ -119,7 +144,62 @@ export class ConfigPuestos implements OnChanges {
     this.conCategoriaFilter = null;
     this.usoFilter = null;
     this.estadoFilter = null;
+    this.areaLevels = this.areaLevels.length ? [this.areaLevels[0]] : this.areaLevels;
+    this.selectedAreaNodes = this.selectedAreaNodes.length ? [undefined] : this.selectedAreaNodes;
     this.onFilterChange();
+  }
+
+  // ── Filtro de área en cascada ─────────────────────────────────────────
+
+  /**
+   * Rearma la jerarquía y deja listo el primer nivel. La ruta que el usuario tenía elegida se
+   * vuelve a recorrer sobre el árbol nuevo y se corta en el primer nodo que ya no exista.
+   */
+  private buildAreaCascade(): void {
+    const seleccionPrevia = this.selectedAreaNodes.map((n) => n?.areaScopeId ?? null);
+    const roots = buildAreaTree(this.areaTree ?? []);
+    this.areaOptions = flattenAreaTree(roots);
+
+    this.areaLevels = roots.length ? [roots] : [];
+    this.selectedAreaNodes = roots.length ? [undefined] : [];
+
+    for (let i = 0; i < seleccionPrevia.length; i++) {
+      const id = seleccionPrevia[i];
+      if (id == null) break;
+      const nodo = this.areaLevels[i]?.find((n) => n.areaScopeId === id);
+      if (!nodo) break;
+      this.onAreaNodeChange(i, id);
+    }
+  }
+
+  /** Al elegir un nodo: recorta los niveles inferiores y, si tiene hijos, agrega el siguiente. */
+  onAreaNodeChange(levelIndex: number, selectedId: number | undefined): void {
+    const selected =
+      selectedId != null
+        ? this.areaLevels[levelIndex]?.find((n) => n.areaScopeId === selectedId)
+        : undefined;
+
+    this.selectedAreaNodes[levelIndex] = selected;
+    this.areaLevels = this.areaLevels.slice(0, levelIndex + 1);
+    this.selectedAreaNodes = this.selectedAreaNodes.slice(0, levelIndex + 1);
+
+    if (selected?.children?.length) {
+      this.areaLevels.push(selected.children);
+      this.selectedAreaNodes.push(undefined);
+    }
+  }
+
+  /**
+   * Áreas que cuentan como coincidencia: el nodo elegido más profundo y todos sus
+   * descendientes. Filtrar por "Gerencia de Proyectos" tiene que traer también los puestos de
+   * SSOMA, Calidad, Unidad de Proyectos, etc. — el mismo alcance que usa Solicitud de Personal.
+   */
+  private get areaScopeIdsFiltrados(): Set<number> | null {
+    for (let i = this.selectedAreaNodes.length - 1; i >= 0; i--) {
+      const nodo = this.selectedAreaNodes[i];
+      if (nodo) return new Set(collectScopeIds(nodo));
+    }
+    return null;
   }
 
   onFilterChange(): void {
@@ -130,6 +210,7 @@ export class ConfigPuestos implements OnChanges {
   }
 
   get filteredPuestos(): PuestoAdminDto[] {
+    const areaIds = this.areaScopeIdsFiltrados;
     return this.puestos.filter((p) => {
       const matchesTexto =
         !this.searchText.trim() ||
@@ -142,8 +223,11 @@ export class ConfigPuestos implements OnChanges {
       const matchesUso =
         this.usoFilter === null || (p.cantidadTrabajadores > 0) === this.usoFilter;
       const matchesEstado = this.estadoFilter === null || p.activo === this.estadoFilter;
+      const matchesArea =
+        areaIds === null || (p.areas ?? []).some((a) => areaIds.has(a.areaScopeId));
       return (
-        matchesTexto && matchesCategoria && matchesConCategoria && matchesUso && matchesEstado
+        matchesTexto && matchesCategoria && matchesConCategoria &&
+        matchesUso && matchesEstado && matchesArea
       );
     });
   }

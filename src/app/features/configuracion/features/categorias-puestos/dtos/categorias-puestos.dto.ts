@@ -24,6 +24,29 @@ export interface PuestoAdminDto {
    * eliminar: un puesto en uso solo se puede desactivar.
    */
   cantidadTrabajadores: number;
+  /**
+   * Áreas a las que pertenece el puesto. Puede estar en varias (CHOFER está en Logística y
+   * en Gerencia General) y también en ninguna: los puestos de obra no tienen área porque el
+   * padrón de GTH solo cubrió personal de oficina.
+   */
+  areas: PuestoAreaDto[];
+}
+
+/** Un área del puesto: el nodo de `area_scope` con su nombre ya resuelto. */
+export interface PuestoAreaDto {
+  areaScopeId: number;
+  nombre: string;
+}
+
+/**
+ * Nodo del árbol `area_scope` como lista plana; el frontend arma la jerarquía con
+ * `areaScopeParentId`. Alimenta el filtro por área en cascada y el selector del modal.
+ */
+export interface AreaNodoDto {
+  areaScopeId: number;
+  areaScopeParentId: number | null;
+  areaItemName: string;
+  displayOrder: number;
 }
 
 /**
@@ -37,16 +60,23 @@ export interface PuestoTrabajadorDto {
   emailCorporativo: string | null;
 }
 
-/** Carga inicial de la pantalla: las dos listas en una sola respuesta. */
+/** Carga inicial de la pantalla: las tres listas en una sola respuesta. */
 export interface CatalogosAdminDto {
   categorias: CategoriaAdminDto[];
   puestos: PuestoAdminDto[];
+  /** Árbol de áreas (lista plana) para el filtro en cascada y el selector del modal. */
+  areaTree: AreaNodoDto[];
 }
 
-/** Alta/edición de un puesto: nombre + la categoría a la que pertenece (obligatoria). */
+/** Alta/edición de un puesto: nombre, categoría (obligatoria) y sus áreas. */
 export interface PuestoUpsertRequest {
   nombre: string;
   categoriaId: number;
+  /**
+   * Áreas del puesto. Es el estado COMPLETO, no un delta: lo que no venga se le quita al
+   * puesto. Vacía = el puesto se queda sin área (válido: los de obra no tienen ninguna).
+   */
+  areaScopeIds: number[];
 }
 
 /**

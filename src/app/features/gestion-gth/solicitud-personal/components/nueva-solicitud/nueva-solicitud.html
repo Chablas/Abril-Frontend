@@ -53,14 +53,21 @@
            (el trabajador reemplazado) y la fila pasa a completarse en la siguiente línea. -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[12px]">
         <!-- ── Puesto: siempre del catálogo ────────────────────────────────────────────
-             El alta de puestos nuevos es tarea de GTH desde el catálogo de puestos, no del
-             solicitante: acá solo se elige entre los que ya existen. -->
+             Solo los puestos que GTH asoció al área del solicitante o a un área hija. El alta
+             de puestos nuevos y su asignación a un área son tarea de GTH desde el catálogo de
+             puestos, no del solicitante: acá solo se elige entre los que ya existen. -->
         <div class="flex flex-col gap-[4px]">
           <app-search-select label="Puesto" placeholder="Selecciona puesto"
             [options]="formData.puestos" valueField="id" displayField="nombre"
             [fullText]="true"
             [(value)]="v.puestoId" />
           <p *ngIf="submitted && !v.puestoId" class="text-xs text-red-500">Campo requerido</p>
+          <!-- Sin puestos no se puede registrar nada: se dice por qué en vez de dejar el
+               desplegable vacío sin explicación. -->
+          <p *ngIf="destinatariosCargados && formData.puestos.length === 0"
+             class="text-xs text-amber-600">
+            Tu área todavía no tiene puestos asignados. Avísale a GTH.
+          </p>
         </div>
 
         <div class="flex flex-col gap-[4px]">

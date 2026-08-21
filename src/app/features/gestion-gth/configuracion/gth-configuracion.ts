@@ -14,6 +14,7 @@ import { NavigationService } from '../../../core/navigation/navigation.service';
 // `gestion-administrativa/` y lo usa el módulo de Configuración.
 import { CategoriasPuestosService } from '../../configuracion/features/categorias-puestos/services/categorias-puestos.service';
 import {
+  AreaNodoDto,
   CategoriaAdminDto,
   PuestoAdminDto,
 } from '../../configuracion/features/categorias-puestos/dtos/categorias-puestos.dto';
@@ -92,6 +93,8 @@ export class GthConfiguracion implements OnInit {
 
   categorias: CategoriaAdminDto[] = [];
   puestos: PuestoAdminDto[] = [];
+  /** Árbol de áreas (lista plana): lo usa la sección Puestos para su filtro y su modal. */
+  areaTree: AreaNodoDto[] = [];
 
   // Referencias a la sección activa (solo una existe a la vez por el *ngIf).
   @ViewChild(ConfigCategorias) private categoriasCmp?: ConfigCategorias;
@@ -125,6 +128,8 @@ export class GthConfiguracion implements OnInit {
           a.nombre.localeCompare(b.nombre),
         );
         this.puestos = [...(data.puestos ?? [])].sort((a, b) => a.nombre.localeCompare(b.nombre));
+        // El árbol se pasa tal cual: la sección Puestos lo jerarquiza y lo ordena a su modo.
+        this.areaTree = data.areaTree ?? [];
         this.loaderService.hide();
         this.cdr.detectChanges();
       },
