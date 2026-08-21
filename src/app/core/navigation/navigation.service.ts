@@ -245,6 +245,9 @@ export class NavigationService {
             // global; los administra GTH, así que vive acá (los archivos siguen físicamente
             // en `features/configuracion/features/categorias-puestos/` hasta refactorizarse).
             { label: 'Categorías y Puestos', route: '/gestion-gth/configuracion/categorias-puestos', featureKey: 'gestion-gth.config.categorias-puestos' },
+            // Quiénes del área de GTH salen en el desplegable «Responsable del proceso» del
+            // detalle de Reclutamiento. La lista sale sola del área: acá solo se activa/desactiva.
+            { label: 'Reclutadores', route: '/gestion-gth/configuracion/reclutadores', featureKey: 'gestion-gth.config.reclutadores' },
           ],
         },
       ],

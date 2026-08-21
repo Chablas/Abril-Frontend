@@ -514,10 +514,27 @@ export class DatePicker implements OnChanges, OnDestroy {
   /** Posiciona la vista en la fecha seleccionada o, si no hay, en el mes actual. */
   private initVista() {
     const p = this.parse(this.value);
-    const base = p ?? { anio: new Date().getFullYear(), mes: new Date().getMonth(), dia: 1 };
+    const base = p ?? this.mesInicialSinValor();
     this.vistaAnio = base.anio;
     this.vistaMes = base.mes;
     this.construirGrid();
+  }
+
+  /**
+   * Mes en el que abre el calendario cuando todavía no hay fecha elegida: el de hoy, salvo que
+   * quede fuera de [min, max] (ej. una fecha de nacimiento con `max` 18 años atrás), en cuyo caso
+   * abre en el extremo del rango más cercano. Abrir en un mes entero deshabilitado obligaría a
+   * navegar años hacia atrás antes de poder elegir algo.
+   */
+  private mesInicialSinValor(): { anio: number; mes: number } {
+    const hoy = new Date();
+    const actual = { anio: hoy.getFullYear(), mes: hoy.getMonth() };
+    const min = this.parse(this.min);
+    const max = this.parse(this.max);
+    const clave = this.clave(actual.anio, actual.mes, 1);
+    if (max && clave > this.clave(max.anio, max.mes, 1)) return { anio: max.anio, mes: max.mes };
+    if (min && clave < this.clave(min.anio, min.mes, 1)) return { anio: min.anio, mes: min.mes };
+    return actual;
   }
 
   /** Desglosa el mes visible en semanas lunes-a-domingo, con relleno de los meses vecinos. */

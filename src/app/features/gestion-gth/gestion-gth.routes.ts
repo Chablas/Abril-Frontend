@@ -152,17 +152,20 @@ export const GESTION_GTH_ROUTES: Routes = [
   },
   {
     // Contenedor de Configuración del módulo (patrón de Costos y Presupuestos): agrupa las
-    // pantallas de datos maestros de GTH. Sin sección concreta, cae en la primera —
-    // hoy la única — funcionalidad de configuración.
+    // pantallas de datos maestros de GTH. Sin sección concreta el contenedor resuelve solo a
+    // qué pestaña caer (la primera a la que el usuario tenga acceso).
     path: 'configuracion',
-    redirectTo: 'configuracion/categorias-puestos',
-    pathMatch: 'full',
+    loadComponent: () =>
+      import('./configuracion/gth-configuracion').then((m) => m.GthConfiguracion),
+    canActivate: [authGuard],
+    data: { titulo: 'GTH - CONFIGURACIÓN' },
   },
   {
     // Categorías y Puestos del catálogo de trabajadores. Antes vivía en Configuración global
     // (/configuracion/categorias-puestos, que ahora redirige acá): son datos maestros que GTH
-    // administra, así que pertenecen al módulo. Las secciones Categorías/Puestos se conmutan
-    // dentro del contenedor, sin cambiar de ruta.
+    // administra, así que pertenecen al módulo. Las secciones Categorías/Puestos son dos
+    // pestañas de esta misma funcionalidad y se conmutan dentro del contenedor, sin cambiar de
+    // ruta, para no repetir la petición del catálogo.
     path: 'configuracion/categorias-puestos',
     loadComponent: () =>
       import('./configuracion/gth-configuracion').then((m) => m.GthConfiguracion),
@@ -170,6 +173,21 @@ export const GESTION_GTH_ROUTES: Routes = [
     data: {
       titulo: 'GTH - CONFIGURACIÓN',
       featureKey: 'gestion-gth.config.categorias-puestos',
+      seccion: 'categorias',
+    },
+  },
+  {
+    // Reclutadores: quiénes del área de Gestión del Talento Humano salen en el desplegable
+    // «Responsable del proceso» del detalle de Reclutamiento. La lista sale sola del área; acá
+    // solo se activan y desactivan, sin tocar la ficha del trabajador en la base maestra.
+    path: 'configuracion/reclutadores',
+    loadComponent: () =>
+      import('./configuracion/gth-configuracion').then((m) => m.GthConfiguracion),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'GTH - CONFIGURACIÓN',
+      featureKey: 'gestion-gth.config.reclutadores',
+      seccion: 'reclutadores',
     },
   },
 ];

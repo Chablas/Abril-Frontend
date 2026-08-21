@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { SectionTabs, SectionTab } from '../../../shared/components/section-tabs/section-tabs';
@@ -20,11 +21,17 @@ import {
 } from '../../configuracion/features/categorias-puestos/dtos/categorias-puestos.dto';
 import { ConfigCategorias } from '../../configuracion/features/categorias-puestos/components/categorias/categorias';
 import { ConfigPuestos } from '../../configuracion/features/categorias-puestos/components/puestos/puestos';
+import { GthReclutadores } from './reclutadores/pages/reclutadores';
 
 /** Definición de una sección de configuración de GTH. */
 interface ConfigSectionDef {
   id: string;
   label: string;
+  /**
+   * Ruta de la sección. Dos secciones pueden compartirla (Categorías y Puestos): en ese caso se
+   * conmutan en local, sin navegar, para no repetir la petición del catálogo.
+   */
+  route: string;
   featureKey: string;
   subtitulo: string;
   /** Etiqueta del botón de crear del header. Sin valor = la sección no crea registros. */
@@ -39,17 +46,14 @@ interface ConfigSectionDef {
  * `costs-configuration` de Costos y Presupuestos y `ga-configuracion` de Gestión
  * Administrativa.
  *
- * Hoy la única funcionalidad de configuración es "Categorías y Puestos" (los datos maestros
- * del catálogo de trabajadores), que antes colgaba de Configuración global
- * (`/configuracion/categorias-puestos`). Sus dos secciones comparten un solo featureKey y se
- * conmutan en local, sin cambiar de ruta, para no repetir la petición del catálogo al saltar
- * de pestaña. Cuando entre una segunda funcionalidad de configuración habrá que darle su
- * propia ruta + featureKey y resolver la sección activa desde `route.data.seccion`, como hacen
- * Costos y Gestión Administrativa.
+ * Cada funcionalidad tiene su propia ruta (`/gestion-gth/configuracion/<seccion>`) con su
+ * `featureKey` + `roleGuard`, y la sección activa se resuelve desde `route.data.seccion`. La
+ * excepción son Categorías y Puestos: son dos pestañas de una misma funcionalidad (comparten
+ * featureKey y ruta) y se conmutan en local, sin cambiar de URL, para no repetir la petición del
+ * catálogo al saltar de pestaña.
  *
- * El contenedor es dueño de la data (una sola petición trae categorías + puestos, que las dos
- * secciones necesitan de entrada); cada sección se encarga de sus filtros, su paginación y sus
- * modales.
+ * El contenedor es dueño de la data de Categorías/Puestos (una sola petición trae las dos listas,
+ * que ambas secciones necesitan de entrada); el resto de secciones carga lo suyo por su cuenta.
  */
 @Component({
   selector: 'app-gth-configuracion',
@@ -61,16 +65,21 @@ interface ConfigSectionDef {
     FilterTriggerButton,
     ConfigCategorias,
     ConfigPuestos,
+    GthReclutadores,
   ],
   templateUrl: './gth-configuracion.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class GthConfiguracion implements OnInit {
+  /** Ruta de la funcionalidad Categorías y Puestos (sus dos secciones la comparten). */
+  private static readonly RUTA_CATALOGO = '/gestion-gth/configuracion/categorias-puestos';
+
   /** Todas las secciones de configuración, en orden de visualización. */
   private readonly allSections: ConfigSectionDef[] = [
     {
       id: 'categorias',
       label: 'Categorías',
+      route: GthConfiguracion.RUTA_CATALOGO,
       featureKey: 'gestion-gth.config.categorias-puestos',
       subtitulo:
         'Categorías del catálogo de trabajadores. La categoría es la que manda sobre los entregables, permisos y filtros internos.',
@@ -79,10 +88,19 @@ export class GthConfiguracion implements OnInit {
     {
       id: 'puestos',
       label: 'Puestos',
+      route: GthConfiguracion.RUTA_CATALOGO,
       featureKey: 'gestion-gth.config.categorias-puestos',
       subtitulo:
         'Puestos del catálogo de trabajadores. El puesto es el cargo que se muestra en la ficha; cada uno pertenece a una categoría.',
       createLabel: 'Nuevo puesto',
+    },
+    {
+      id: 'reclutadores',
+      label: 'Reclutadores',
+      route: '/gestion-gth/configuracion/reclutadores',
+      featureKey: 'gestion-gth.config.reclutadores',
+      subtitulo:
+        'Trabajadores del área de Gestión del Talento Humano. Solo los activos salen en el desplegable «Responsable del proceso» de Reclutamiento.',
     },
   ];
 
@@ -99,12 +117,15 @@ export class GthConfiguracion implements OnInit {
   // Referencias a la sección activa (solo una existe a la vez por el *ngIf).
   @ViewChild(ConfigCategorias) private categoriasCmp?: ConfigCategorias;
   @ViewChild(ConfigPuestos) private puestosCmp?: ConfigPuestos;
+  @ViewChild(GthReclutadores) private reclutadoresCmp?: GthReclutadores;
 
   constructor(
     private service: CategoriasPuestosService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private navigationService: NavigationService,
+    private route: ActivatedRoute,
+    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -113,9 +134,31 @@ export class GthConfiguracion implements OnInit {
       this.navigationService.isFeatureAllowed(s.featureKey),
     );
     this.sectionTabs = this.visibleSections.map((s) => ({ id: s.id, label: s.label }));
-    this.activeSection = this.visibleSections[0]?.id ?? null;
 
-    this.load();
+    this.route.data.subscribe((data) => {
+      const seccion = (data['seccion'] as string | null | undefined) ?? null;
+
+      // Ruta contenedora sin sección concreta: redirigir a la primera permitida.
+      if (!seccion) {
+        if (this.visibleSections.length) {
+          this.router.navigate([this.visibleSections[0].route], { replaceUrl: true });
+        } else {
+          this.router.navigate(['/']);
+        }
+        return;
+      }
+
+      this.activeSection = seccion;
+
+      // El catálogo lo pide el contenedor porque lo comparten Categorías y Puestos. Las demás
+      // secciones cargan lo suyo, así que en ellas no se pide nada de acá.
+      if (this.necesitaCatalogo && !this.categorias.length && !this.puestos.length) this.load();
+    });
+  }
+
+  /** true si la sección activa se alimenta del catálogo de categorías y puestos. */
+  private get necesitaCatalogo(): boolean {
+    return this.activeDef?.route === GthConfiguracion.RUTA_CATALOGO;
   }
 
   load(): void {
@@ -156,10 +199,11 @@ export class GthConfiguracion implements OnInit {
   }
 
   /** Componente de la sección activa (solo una existe a la vez por el *ngIf). */
-  private get activeCmp(): ConfigCategorias | ConfigPuestos | undefined {
+  private get activeCmp(): ConfigCategorias | ConfigPuestos | GthReclutadores | undefined {
     switch (this.activeSection) {
       case 'categorias': return this.categoriasCmp;
       case 'puestos': return this.puestosCmp;
+      case 'reclutadores': return this.reclutadoresCmp;
       default: return undefined;
     }
   }
@@ -169,12 +213,24 @@ export class GthConfiguracion implements OnInit {
   }
 
   onSectionChange(id: string): void {
-    this.activeSection = id;
+    const target = this.visibleSections.find((s) => s.id === id);
+    if (!target) return;
+
+    // Misma ruta (Categorías ↔ Puestos): se conmuta en local para no repetir la petición.
+    if (target.route === this.activeDef?.route) {
+      this.activeSection = id;
+      return;
+    }
+
+    this.router.navigate([target.route]);
   }
 
   /** Abre el modal de creación de la sección activa (botón del header). */
   onCreate(): void {
-    this.activeCmp?.openCreate();
+    switch (this.activeSection) {
+      case 'categorias': this.categoriasCmp?.openCreate(); break;
+      case 'puestos': this.puestosCmp?.openCreate(); break;
+    }
   }
 
   /** Abre el modal de filtros de la sección activa (botón proyectado en el header). */

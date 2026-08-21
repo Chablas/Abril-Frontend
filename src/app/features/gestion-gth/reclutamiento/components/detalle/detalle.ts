@@ -197,6 +197,8 @@ export class GthDetalleRequerimiento implements OnInit {
   // ── Programación de entrevistas (fase "Entrevistas") ─────────────────────
   /** Datos editables de la cita por candidato (key = candidatoId). */
   entrevistaForm: Record<number, EntrevistaFormState> = {};
+  /** Hora con la que arranca una cita sin programar: el inicio de la jornada. */
+  private readonly horaEntrevistaPorDefecto = '08:00';
   /** true mientras se envía/reenvía la invitación de un candidato (key = candidatoId). */
   enviandoEntrevista: Record<number, boolean> = {};
   /** Evaluación editable de la entrevista por candidato (key = candidatoId). */
@@ -1375,8 +1377,8 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
-   * Prellena, por candidato, la cita (con lo ya programado o el primer lugar del catálogo —la
-   * oficina principal— por defecto) y la evaluación de su entrevista.
+   * Prellena, por candidato, la cita (con lo ya programado o, por defecto, el primer lugar del
+   * catálogo —la oficina principal— y el inicio de la jornada) y la evaluación de su entrevista.
    */
   private prepararFormulariosEntrevista(): void {
     if (!this.detalle) return;
@@ -1385,7 +1387,7 @@ export class GthDetalleRequerimiento implements OnInit {
     for (const c of this.detalle.candidatosAprobados) {
       this.entrevistaForm[c.candidatoId] = {
         fecha: c.entrevista?.fecha ?? null,
-        hora: c.entrevista?.hora ?? null,
+        hora: c.entrevista?.hora ?? this.horaEntrevistaPorDefecto,
         lugarId: c.entrevista?.lugarId ?? lugarPorDefecto,
       };
       this.evaluacionForm[c.candidatoId] = {

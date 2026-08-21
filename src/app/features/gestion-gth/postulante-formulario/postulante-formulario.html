@@ -141,8 +141,11 @@
 
             <!-- dense + floatingLabel: mismas medidas (34px) y mismo label flotante que
                  app-search-select, para que la fecha no quede más alta que el combo de al lado. -->
+            <!-- max = hoy menos 18 años: no se contrata a menores de edad, así que el calendario
+                 no deja elegir (ni tipear) una fecha de nacimiento posterior. -->
             <app-date-picker label="Fecha de nacimiento *" [color]="accent"
               [dense]="true" [floatingLabel]="true"
+              [max]="fechaNacimientoMaxima"
               [value]="model.fechaNacimiento" (valueChange)="model.fechaNacimiento = $event"></app-date-picker>
 
             <app-search-select label="Estado civil *" [options]="estadosCiviles" valueField="id" displayField="nombre"

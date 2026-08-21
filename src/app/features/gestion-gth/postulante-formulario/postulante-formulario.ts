@@ -54,6 +54,8 @@ export class PostulanteFormulario implements OnInit {
   readonly ceLargo = 12;
   /** Largo máximo del número de celular (9 dígitos). */
   readonly celularLargo = 9;
+  /** Edad mínima para postular: nadie menor de edad puede ser contratado. */
+  readonly edadMinima = 18;
 
   paso = 1;
   readonly totalPasos = 5;
@@ -208,6 +210,33 @@ export class PostulanteFormulario implements OnInit {
     return (valor ?? '').replace(/\D/g, '').slice(0, largo);
   }
 
+  // ── Fecha de nacimiento (mayoría de edad) ────────────────────────────────
+  /**
+   * Última fecha de nacimiento que deja al postulante con 18 años cumplidos HOY, en formato
+   * 'YYYY-MM-DD'. Es el `max` del date-picker: todo día posterior corresponde a un menor de edad.
+   *
+   * El día se recorta al último del mes en vez de dejar que `Date` lo normalice: un 29/02 restado
+   * 18 años cae en un año no bisiesto y `new Date(...)` lo correría al 01/03, un día más permisivo
+   * que el límite que exige el backend (`DateOnly.AddYears`, que sí recorta).
+   */
+  get fechaNacimientoMaxima(): string {
+    const hoy = new Date();
+    const anio = hoy.getFullYear() - this.edadMinima;
+    const mes = hoy.getMonth();
+    const ultimoDelMes = new Date(anio, mes + 1, 0).getDate();
+    const dia = Math.min(hoy.getDate(), ultimoDelMes);
+    return `${anio}-${`${mes + 1}`.padStart(2, '0')}-${`${dia}`.padStart(2, '0')}`;
+  }
+
+  /**
+   * true si la fecha de nacimiento cargada corresponde a un menor de edad. Las fechas son
+   * 'YYYY-MM-DD', así que la comparación de texto ya ordena cronológicamente.
+   */
+  get esMenorDeEdad(): boolean {
+    const fecha = this.model.fechaNacimiento;
+    return !!fecha && fecha > this.fechaNacimientoMaxima;
+  }
+
   // ── Fechas de la experiencia laboral ─────────────────────────────────────
   /**
    * No se puede haber salido de una empresa antes de haber entrado. El `[min]` del date-picker de
@@ -245,6 +274,7 @@ export class PostulanteFormulario implements OnInit {
     return (
       this.lleno(m.nombresCompletos) &&
       !!m.fechaNacimiento &&
+      !this.esMenorDeEdad &&
       !!m.estadoCivilId &&
       !!m.tipoDocumentoId &&
       this.documentoValido &&
@@ -317,6 +347,18 @@ export class PostulanteFormulario implements OnInit {
   }
 
   private avisoIncompleto(): void {
+    // La fecha de nacimiento de un menor de edad sí está "completa": con el mensaje genérico el
+    // postulante buscaría un campo vacío que no existe, así que se avisa aparte.
+    if (this.paso === 2 && this.esMenorDeEdad) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Revisa tu fecha de nacimiento',
+        text: `Debes tener al menos ${this.edadMinima} años cumplidos para postular.`,
+        confirmButtonColor: 'var(--color-abril-primary-dark)',
+      });
+      return;
+    }
+
     // Las fechas invertidas se avisan aparte: es lo único de esta pantalla que no se resuelve
     // "completando" algo, así que el mensaje genérico dejaría al postulante sin saber qué corregir.
     if (this.paso === 4 && this.fechasExperienciaInvertidas) {
