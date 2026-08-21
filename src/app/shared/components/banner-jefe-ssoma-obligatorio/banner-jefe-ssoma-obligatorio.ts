@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterModule } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
@@ -18,6 +18,10 @@ const RUTA_EVALUACION = '/evaluaciones/evaluar-jefe-ssoma';
 export class BannerJefeSsomaObligatorio implements OnInit, OnDestroy {
   private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
+  // Se inyecta aquí (campo = contexto de inyección) y se pasa a takeUntilDestroyed():
+  // llamarlo sin argumento desde ngOnInit lanza NG0203 y aborta el update pass del
+  // Layout, dejando el sidebar y la página en blanco hasta el siguiente ciclo de CD.
+  private readonly destroyRef = inject(DestroyRef);
   bannerSvc = inject(EvJefeSsomaBannerService);
 
   debeEvaluar = false;
@@ -26,7 +30,7 @@ export class BannerJefeSsomaObligatorio implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.bannerSvc.verificar();
 
-    this.bannerSvc.debeEvaluar$.pipe(takeUntilDestroyed()).subscribe((v) => {
+    this.bannerSvc.debeEvaluar$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((v) => {
       this.debeEvaluar = v;
       this.cdr.markForCheck();
     });
@@ -36,7 +40,7 @@ export class BannerJefeSsomaObligatorio implements OnInit, OnDestroy {
         filter((e): e is NavigationEnd => e instanceof NavigationEnd),
         map((e) => e.urlAfterRedirects.includes(RUTA_EVALUACION)),
         startWith(this.router.url.includes(RUTA_EVALUACION)),
-        takeUntilDestroyed(),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((v) => {
         this.enRutaEvaluacion = v;
