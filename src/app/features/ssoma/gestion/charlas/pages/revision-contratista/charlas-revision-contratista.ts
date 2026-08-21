@@ -7,6 +7,7 @@ import Swal from 'sweetalert2';
 import { CharlaContratistaService } from '../../services/charla-contratista.service';
 import { CharlaContratistaDto } from '../../dtos/charla-contratista.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { FilterTriggerButton } from '../../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
@@ -26,6 +27,7 @@ import { SharedFiltersService } from '../../../../../../shared/services/shared-f
     CommonModule,
     FormsModule,
     AbrilPageHeaderComponent,
+    AbrilModalPanel,
     FilterTriggerButton,
     FilterModal,
     StatusBadge,
@@ -56,6 +58,16 @@ export class CharlasRevisionContratista implements OnInit {
   proyectoId: number | undefined;
 
   filtrosAbiertos = false;
+
+  /** Mismas pestañas que CharlasDashboardComponent — esta página vive dentro del mismo grupo
+   * "Charlas y Capacitaciones" y debe mostrar la misma barra de navegación. */
+  readonly tabsHeader = [
+    { label: 'Dashboard', icono: 'ti-chart-bar', route: '/ssoma/gestion/charlas/dashboard' },
+    { label: 'Charlas Realizadas por Staff', icono: 'ti-users', route: '/ssoma/gestion/charlas/capacitaciones' },
+    { label: 'Registro de Asistencia', icono: 'ti-plus', route: '/ssoma/gestion/charlas/nueva' },
+    { label: 'Gestión', icono: 'ti-clipboard-check', route: '/ssoma/gestion/charlas/gestion' },
+    { label: 'Revisión Contratistas', icono: 'ti-building', route: '/ssoma/gestion/charlas/revision-contratista' },
+  ];
 
   detalle: CharlaContratistaDto | null = null;
   showRechazarForm = false;

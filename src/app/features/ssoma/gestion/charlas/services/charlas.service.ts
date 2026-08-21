@@ -15,6 +15,15 @@ import {
 export class CharlasService {
   private readonly base = `${environment.apiUrl}api/v1/ssoma-charlas`;
 
+  /**
+   * Último proyecto elegido en el Dashboard de Charlas (tab 1), en memoria mientras dura la
+   * sesión de navegación. Cada pestaña de "Charlas y Capacitaciones" es una ruta distinta que
+   * recrea el componente desde cero, así que sin esto cada cambio de pestaña repetía la búsqueda
+   * completa de "primer proyecto con datos" (varias llamadas HTTP secuenciales, ~3s) perdiendo
+   * el proyecto que el usuario ya tenía seleccionado.
+   */
+  ultimoProyectoId: number | undefined;
+
   constructor(private http: HttpClient, private auth: AuthService) {}
 
   private getUserId(): number {

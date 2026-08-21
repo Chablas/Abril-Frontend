@@ -2,7 +2,8 @@
 
   <app-abril-page-header
     titulo="Revisión de Charlas — Contratistas"
-    subtitulo="Aprueba o rechaza la charla diaria que suben las empresas contratistas">
+    subtitulo="Aprueba o rechaza la charla diaria que suben las empresas contratistas"
+    [tabs]="tabsHeader">
     <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
   </app-abril-page-header>
 
@@ -65,12 +66,12 @@
 
 <!-- MODAL: Detalle / Aprobación -->
 @if (detalle) {
-  <div class="modal-backdrop" (click)="cerrarDetalle()"></div>
-  <div class="modal-panel">
-    <div class="modal-header">
-      <span class="modal-titulo">{{ detalle.empresaNombre }} — {{ detalle.tema }}</span>
-      <button class="modal-close" (click)="cerrarDetalle()"><i class="ti ti-x"></i></button>
-    </div>
+  <app-abril-modal-panel
+    [titulo]="detalle.empresaNombre + ' — ' + detalle.tema"
+    icono="ti-eye"
+    variant="blue"
+    width="900px"
+    (closeModal)="cerrarDetalle()">
     <div class="modal-body">
       <div class="modal-left">
         <div class="detalle-meta">
@@ -140,7 +141,7 @@
         }
       </div>
     </div>
-  </div>
+  </app-abril-modal-panel>
 }
 
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
