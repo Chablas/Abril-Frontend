@@ -6,7 +6,6 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { EvJefeSsomaService } from '../../services/ev-jefe-ssoma.service';
-import { EvJefeSsomaBannerService } from '../../../../core/services/ev-jefe-ssoma-banner.service';
 import {
   EvJefeSsomaInicioDto,
   EvSupervisorContratistaCriterioDto,
@@ -77,7 +76,6 @@ export class EvaluarJefeSsoma implements OnInit {
     private loader: LoaderService,
     private errorSvc: ErrorService,
     private cdr: ChangeDetectorRef,
-    private bannerSvc: EvJefeSsomaBannerService,
   ) {}
 
   ngOnInit(): void {
@@ -147,7 +145,6 @@ export class EvaluarJefeSsoma implements OnInit {
               timer: 2500,
               showConfirmButton: false,
             });
-            this.bannerSvc.marcarCompletado();
             this.cargarInicio();
             this.cdr.markForCheck();
           },
