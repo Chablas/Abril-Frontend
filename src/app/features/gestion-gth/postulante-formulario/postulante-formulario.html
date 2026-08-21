@@ -342,9 +342,52 @@
           </div>
         }
 
-        <!-- ── Paso 5 · Consentimiento y veracidad ───────────────────────── -->
+        <!-- ── Paso 5 · CV documentado + consentimiento y veracidad ───────── -->
         @if (paso === 5) {
-          <h2 class="pf-section-title">Consentimiento y veracidad de la información</h2>
+          <h2 class="pf-section-title">CV documentado y consentimiento</h2>
+          <p class="pf-section-hint">
+            Adjunta tu CV documentado (con tus certificados y constancias) y confirma la veracidad de
+            la información registrada.
+          </p>
+
+          <!-- CV documentado: obligatorio. Si ya subió uno en un envío anterior no se le vuelve a
+               pedir el archivo (el <input type=file> no se puede precargar), pero se le dice cuál
+               quedó guardado y puede reemplazarlo. -->
+          <div class="pf-cv">
+            <p class="pf-toggle-label">
+              CV documentado <span class="pf-req">*</span>
+            </p>
+
+            @if (cv) {
+              <div class="pf-cv-file">
+                <i class="ti ti-file-text pf-cv-file-icon"></i>
+                <span class="pf-cv-file-name" [title]="cv.file.name">{{ cv.file.name }}</span>
+                <button type="button" class="pf-cv-remove" (click)="quitarCv()" title="Quitar el archivo">
+                  Quitar
+                </button>
+              </div>
+            } @else {
+              @if (cvNombreCargado) {
+                <div class="pf-cv-file">
+                  <i class="ti ti-file-check pf-cv-file-icon"></i>
+                  <span class="pf-cv-file-name" [title]="cvNombreCargado">{{ cvNombreCargado }}</span>
+                  <span class="pf-cv-file-tag">Ya enviado</span>
+                </div>
+                <p class="pf-hint">
+                  Ya tenemos tu CV. Solo adjunta otro archivo si necesitas reemplazarlo.
+                </p>
+              }
+
+              <app-file-selector
+                [accept]="cvAccept"
+                label="Arrastra tu CV aquí o"
+                [hint]="'PDF, DOC o DOCX · máx. ' + cvMaxMb + ' MB'"
+                [color]="accent"
+                background="#F6FBF2"
+                (fileSelected)="onCvSelected($event)" />
+            }
+          </div>
+
           <div class="pf-consent">
             <p class="pf-toggle-label">
               Declaro bajo juramento que la información consignada es veraz y sustentada en hechos, para

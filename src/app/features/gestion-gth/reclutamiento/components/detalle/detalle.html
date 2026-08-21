@@ -63,91 +63,113 @@
           <div class="flex items-start gap-[10px]">
             <i class="ti ti-user-check text-[20px] shrink-0 mt-[1px]" style="color:#15803D"></i>
             <div class="min-w-0 flex-1">
-              <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#15803D">
-                Puesto cubierto
-              </p>
-              <h3 class="text-[17px] font-bold text-emerald-900 mt-[2px] leading-tight">
-                {{ sel.nombre | titleCase }}
-              </h3>
-              <p class="text-[12.5px] text-emerald-800 mt-[1px]">
-                {{ (sel.puesto | titleCase) || (detalle.puesto | titleCase) }}
-              </p>
-
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-[16px] gap-y-[8px] mt-[12px]">
-                <div>
-                  <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Seleccionado el</p>
-                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
-                    {{ (sel.seleccionadoEn | date:'dd/MM/yyyy HH:mm') || '—' }}
+              <button type="button"
+                class="flex items-start gap-[8px] cursor-pointer w-full text-left"
+                (click)="seccionPuestoCubierto = !seccionPuestoCubierto">
+                <i class="ti text-[15px] shrink-0 mt-[3px] transition-transform" style="color:#15803D"
+                   [ngClass]="seccionPuestoCubierto ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+                <div class="min-w-0">
+                  <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#15803D">
+                    Puesto cubierto
+                  </p>
+                  <h3 class="text-[17px] font-bold text-emerald-900 mt-[2px] leading-tight">
+                    {{ sel.nombre | titleCase }}
+                  </h3>
+                  <p class="text-[12.5px] text-emerald-800 mt-[1px]">
+                    {{ (sel.puesto | titleCase) || (detalle.puesto | titleCase) }}
                   </p>
                 </div>
-                <div>
-                  <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Decidido por</p>
-                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
-                    {{ (sel.seleccionadoPor | titleCase) || 'Área solicitante' }}
-                  </p>
-                </div>
-                <div>
-                  <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Responsable GTH</p>
-                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
-                    {{ (sel.responsableGth | titleCase) || 'Sin asignar' }}
-                  </p>
-                </div>
-              </div>
+              </button>
 
-              <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
-                @if (sel.cvUrl) {
-                  <a [href]="sel.cvUrl" target="_blank" rel="noopener"
-                     class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
-                     style="background:#15803D">
-                    <i class="ti ti-external-link text-[15px]"></i>
-                    Ver CV del seleccionado
-                  </a>
-                }
-
-                <!-- Paso que ahora cierra el proceso: GTH le programa el EMO de Ingreso desde
-                     SSOMA. No se programa acá para no duplicar la funcionalidad — se salta a la
-                     pantalla de EMOs con su ficha ya enfocada y el modal abierto. -->
-                @if (sel.emoIngresoPendiente && sel.workerId) {
-                  <button type="button" (click)="programarEmoIngreso(sel)"
-                          class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
-                          style="background:#005D9D">
-                    <i class="ti ti-calendar-plus text-[15px]"></i>
-                    Programar EMO de ingreso
-                  </button>
-                }
-              </div>
-
-              <!-- El aviso queda solo para el caso en que no hay ficha que abrir: con el botón
-                   «Programar EMO de ingreso» a la vista, explicar que el proceso cierra al
-                   programarlo era una línea que nadie accionaba. -->
-              @if (sel.emoIngresoPendiente && !sel.workerId) {
-                <p class="text-[11.5px] text-amber-800 mt-[10px] flex items-start gap-[6px]">
-                  <i class="ti ti-alert-circle text-[14px] shrink-0 mt-[1px]"></i>
-                  <span>
-                    No se pudo abrir su ficha para el EMO: el candidato no tiene el formulario
-                    del postulante aprobado, así que no está en la base maestra.
-                  </span>
-                </p>
-              }
-
-              <!-- Escenario que no debería darse: la ficha que le tocó al seleccionado es de
-                   alguien que ya trabaja en Abril, así que no es un pre-ingreso y el backend
-                   rechaza la cita. Se dice acá para no dejar la fase sin botón ni explicación. -->
-              @if (sel.emoIngresoBloqueado) {
-                <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[9px] mt-[10px]"
-                     style="border-color:#fecaca;background:#FEF2F2">
-                  <i class="ti ti-alert-triangle text-[17px] shrink-0 mt-[1px]" style="color:#B91C1C"></i>
+              @if (seccionPuestoCubierto) {
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-[16px] gap-y-[8px] mt-[12px]">
                   <div>
-                    <p class="text-[12.5px] font-bold" style="color:#B91C1C">
-                      Escenario no contemplado por el sistema.
+                    <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Seleccionado el</p>
+                    <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                      {{ (sel.seleccionadoEn | date:'dd/MM/yyyy HH:mm') || '—' }}
                     </p>
-                    <p class="text-[12px] mt-[1px]" style="color:#B91C1C">
-                      La ficha de este seleccionado es de alguien que ya trabaja en Abril
-                      ({{ sel.fichaEstadoNombre || 'Activo' }}), así que no se le puede programar el
-                      EMO de Ingreso. Reporta el caso al administrador antes de continuar.
+                  </div>
+                  <div>
+                    <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Decidido por</p>
+                    <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                      {{ (sel.seleccionadoPor | titleCase) || 'Área solicitante' }}
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-[10px] font-semibold tracking-wide text-emerald-700 uppercase">Responsable GTH</p>
+                    <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                      {{ (sel.responsableGth | titleCase) || 'Sin asignar' }}
                     </p>
                   </div>
                 </div>
+
+                <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                  @if (sel.cvUrl) {
+                    <a [href]="sel.cvUrl" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                       style="background:#15803D">
+                      <i class="ti ti-external-link text-[15px]"></i>
+                      Ver CV del seleccionado
+                    </a>
+                  }
+
+                  <!-- El CV que el propio postulante adjuntó en su formulario. Es otro documento, no
+                       el mismo de arriba: el de arriba lo consiguió el reclutador. -->
+                  @if (sel.cvPostulanteUrl) {
+                    <a [href]="sel.cvPostulanteUrl" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold border cursor-pointer transition-colors hover:bg-emerald-50"
+                       style="border-color:#a7f3d0;color:#15803D;background:#F0FDF4"
+                       [title]="sel.cvPostulanteNombre || ''">
+                      <i class="ti ti-file-check text-[15px]"></i>
+                      Ver CV documentado
+                    </a>
+                  }
+
+                  <!-- Paso que ahora cierra el proceso: GTH le programa el EMO de Ingreso desde
+                       SSOMA. No se programa acá para no duplicar la funcionalidad — se salta a la
+                       pantalla de EMOs con su ficha ya enfocada y el modal abierto. -->
+                  @if (sel.emoIngresoPendiente && sel.workerId) {
+                    <button type="button" (click)="programarEmoIngreso(sel)"
+                            class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                            style="background:#005D9D">
+                      <i class="ti ti-calendar-plus text-[15px]"></i>
+                      Programar EMO de ingreso
+                    </button>
+                  }
+                </div>
+
+                <!-- El aviso queda solo para el caso en que no hay ficha que abrir: con el botón
+                     «Programar EMO de ingreso» a la vista, explicar que el proceso cierra al
+                     programarlo era una línea que nadie accionaba. -->
+                @if (sel.emoIngresoPendiente && !sel.workerId) {
+                  <p class="text-[11.5px] text-amber-800 mt-[10px] flex items-start gap-[6px]">
+                    <i class="ti ti-alert-circle text-[14px] shrink-0 mt-[1px]"></i>
+                    <span>
+                      No se pudo abrir su ficha para el EMO: el candidato no tiene el formulario
+                      del postulante aprobado, así que no está en la base maestra.
+                    </span>
+                  </p>
+                }
+
+                <!-- Escenario que no debería darse: la ficha que le tocó al seleccionado es de
+                     alguien que ya trabaja en Abril, así que no es un pre-ingreso y el backend
+                     rechaza la cita. Se dice acá para no dejar la fase sin botón ni explicación. -->
+                @if (sel.emoIngresoBloqueado) {
+                  <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[9px] mt-[10px]"
+                       style="border-color:#fecaca;background:#FEF2F2">
+                    <i class="ti ti-alert-triangle text-[17px] shrink-0 mt-[1px]" style="color:#B91C1C"></i>
+                    <div>
+                      <p class="text-[12.5px] font-bold" style="color:#B91C1C">
+                        Escenario no contemplado por el sistema.
+                      </p>
+                      <p class="text-[12px] mt-[1px]" style="color:#B91C1C">
+                        La ficha de este seleccionado es de alguien que ya trabaja en Abril
+                        ({{ sel.fichaEstadoNombre || 'Activo' }}), así que no se le puede programar el
+                        EMO de Ingreso. Reporta el caso al administrador antes de continuar.
+                      </p>
+                    </div>
+                  </div>
+                }
               }
             </div>
           </div>
@@ -460,176 +482,218 @@
         <div class="rounded-[10px] border px-[16px] py-[13px]" style="border-color:#a7f3d0;background:#F0FDF4">
           <div class="flex items-start gap-[10px]">
             <i class="ti ti-circle-check text-[20px] shrink-0" style="color:#15803D"></i>
-            <div>
-              <h3 class="text-[14px] font-bold text-emerald-800">Long list aprobada por el solicitante</h3>
-              <p class="text-[12.5px] text-emerald-700 mt-[2px] leading-snug">
-                El solicitante aprobó {{ detalle.candidatosAprobados.length }} candidato(s). Envía a cada uno el
-                formulario de información del postulante; cuando lo completen, revísalo y apruébalo o recházalo.
-              </p>
+            <div class="min-w-0 flex-1">
+
+              <button type="button"
+                class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+                (click)="seccionLongListAprobada = !seccionLongListAprobada">
+                <i class="ti text-[15px] shrink-0 transition-transform" style="color:#15803D"
+                   [ngClass]="seccionLongListAprobada ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+                <h3 class="text-[14px] font-bold text-emerald-800">Long list aprobada por el solicitante</h3>
+              </button>
+
+              @if (seccionLongListAprobada) {
+                <p class="text-[12.5px] text-emerald-700 mt-[4px] leading-snug">
+                  El solicitante aprobó {{ detalle.candidatosAprobados.length }} candidato(s). Envía a cada uno el
+                  formulario de información del postulante; cuando lo completen, revísalo y apruébalo o recházalo.
+                </p>
+              }
             </div>
           </div>
         </div>
 
         <!-- Formulario de información del postulante (funcional) -->
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
-          <h3 class="text-[14px] font-bold text-gray-800">Formulario de información del postulante</h3>
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionFormularioPostulante = !seccionFormularioPostulante">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionFormularioPostulante ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Formulario de información del postulante</h3>
+          </button>
 
-          <!-- Selección para el envío masivo. El botón repite el estilo del "Enviar formulario" de cada
-               candidato (azul, 38px) en vez del directive abrilBulkAction: ese es teal y está pensado
-               para la selección de filas de una tabla; acá desentonaría al lado de los botones de la
-               propia ficha, que son los que este reemplaza cuando hay varios candidatos. -->
-          @if (detalle.candidatosAprobados.length > 0) {
-            <div class="flex flex-wrap items-center justify-between gap-[10px] rounded-[8px] border px-[13px] py-[10px] mt-[12px]"
-                 style="border-color:var(--color-abril-border);background:#F8FAFC">
-              <label class="flex items-center gap-[9px] cursor-pointer">
-                <input type="checkbox" [checked]="todosSeleccionados" [indeterminate]="seleccionParcial"
-                  (change)="toggleSeleccionTodos($any($event.target).checked)"
-                  class="w-[15px] h-[15px] shrink-0 cursor-pointer"
-                  style="accent-color:var(--color-abril-logo-blue)" />
-                <span class="text-[13px] font-semibold text-gray-700">Seleccionar todos</span>
-                <span class="text-[12px] text-gray-500">
-                  ({{ seleccionadosCount }} de {{ detalle.candidatosAprobados.length }} seleccionado(s))
-                </span>
-              </label>
-
-              <button type="button"
-                [disabled]="!puedeEnviarSeleccionados"
-                (click)="enviarFormulariosSeleccionados()"
-                class="inline-flex items-center gap-[6px] h-[38px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white shrink-0 cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                style="background:var(--color-abril-logo-blue)">
-                <i class="ti ti-mail-forward text-[15px]"></i>
-                {{ enviandoMasivo ? 'Enviando…' : 'Enviar a los seleccionados (' + seleccionadosCount + ')' }}
-              </button>
-            </div>
-          }
-
-          @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
-            <!-- El borde rojo del candidato bloqueado es lo que lo hace visible sin abrir nada
-                 cuando la lista tiene varios: la selección para el envío masivo no lo tapa. -->
-            <div class="rounded-[10px] border px-[14px] py-[12px] mt-[12px]"
-                 [style.border-color]="c.coincidencia?.bloqueaAprobacion ? '#f87171'
-                   : (seleccionFormulario.has(c.candidatoId) ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-border)')">
-              <div class="flex items-start justify-between gap-[10px]">
+          @if (seccionFormularioPostulante) {
+            <!-- Selección para el envío masivo. El botón repite el estilo del "Enviar formulario" de cada
+                 candidato (azul, 38px) en vez del directive abrilBulkAction: ese es teal y está pensado
+                 para la selección de filas de una tabla; acá desentonaría al lado de los botones de la
+                 propia ficha, que son los que este reemplaza cuando hay varios candidatos. -->
+            @if (detalle.candidatosAprobados.length > 0) {
+              <div class="flex flex-wrap items-center justify-between gap-[10px] rounded-[8px] border px-[13px] py-[10px] mt-[12px]"
+                   style="border-color:var(--color-abril-border);background:#F8FAFC">
                 <label class="flex items-center gap-[9px] cursor-pointer">
-                  <input type="checkbox" [checked]="seleccionFormulario.has(c.candidatoId)"
-                    (change)="toggleSeleccionFormulario(c.candidatoId)"
+                  <input type="checkbox" [checked]="todosSeleccionados" [indeterminate]="seleccionParcial"
+                    (change)="toggleSeleccionTodos($any($event.target).checked)"
                     class="w-[15px] h-[15px] shrink-0 cursor-pointer"
                     style="accent-color:var(--color-abril-logo-blue)" />
-                  <span class="text-[14px] font-bold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</span>
+                  <span class="text-[13px] font-semibold text-gray-700">Seleccionar todos</span>
+                  <span class="text-[12px] text-gray-500">
+                    ({{ seleccionadosCount }} de {{ detalle.candidatosAprobados.length }} seleccionado(s))
+                  </span>
                 </label>
-                <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
-                      [style.background]="estadoFormularioBadge(c).bg" [style.color]="estadoFormularioBadge(c).color">
-                  {{ estadoFormularioBadge(c).text }}
-                </span>
-              </div>
 
-              <!-- Correo del postulante + enviar/reenviar -->
-              <div class="flex items-center gap-[10px] mt-[10px]">
-                <input type="email" [(ngModel)]="correoFormulario[c.candidatoId]"
-                  class="flex-1 h-[38px] rounded-[7px] border px-[12px] text-[13px] disabled:bg-gray-50 disabled:text-gray-400"
-                  style="border-color:var(--color-abril-border)"
-                  placeholder="Correo del postulante" />
                 <button type="button"
-                  [disabled]="enviandoFormulario[c.candidatoId]"
-                  (click)="enviarFormulario(c)"
+                  [disabled]="!puedeEnviarSeleccionados"
+                  (click)="enviarFormulariosSeleccionados()"
                   class="inline-flex items-center gap-[6px] h-[38px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white shrink-0 cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                   style="background:var(--color-abril-logo-blue)">
-                  <i class="ti ti-send text-[15px]"></i>
-                  {{ enviandoFormulario[c.candidatoId] ? 'Enviando…' : (c.formulario ? 'Reenviar' : 'Enviar formulario') }}
+                  <i class="ti ti-mail-forward text-[15px]"></i>
+                  {{ enviandoMasivo ? 'Enviando…' : 'Enviar a los seleccionados (' + seleccionadosCount + ')' }}
                 </button>
               </div>
-              @if (c.formulario?.correoEnvio && c.formulario?.enviadoEn) {
-                <p class="text-[11.5px] text-gray-400 mt-[6px]">
-                  Último envío a {{ c.formulario?.correoEnvio }} · {{ c.formulario?.enviadoEn | date:'dd/MM/yyyy HH:mm' }}
-                </p>
-              }
+            }
 
-              <!-- El documento que declaró el postulante ya existe en la base: aprobar actualizaría
-                   esa ficha en vez de crear una nueva. Va acá y no solo en el modal porque los
-                   botones Aprobar/Rechazar de abajo deciden sin abrirlo. El postulante nunca lo ve. -->
-              @if (avisoCoincidencia(c); as coinc) {
-                <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[9px] mt-[10px]"
-                     [style.border-color]="coinc.borde" [style.background]="coinc.fondo">
-                  <i class="ti text-[17px] shrink-0 mt-[1px]" [ngClass]="coinc.icono" [style.color]="coinc.color"></i>
-                  <div>
-                    <p class="text-[12.5px] font-bold" [style.color]="coinc.color">{{ coinc.titulo }}</p>
-                    <p class="text-[12px] mt-[1px]" [style.color]="coinc.color">{{ coinc.detalle }}</p>
-                  </div>
-                </div>
-              }
-
-              <!-- Ver formulario (abre el modal de revisión) + decidir sin abrirlo cuando ya está
-                   completado: son los mismos botones del modal, a la mano en la ficha. -->
-              <div class="flex flex-wrap items-center gap-[10px] mt-[10px]">
-                <button type="button" (click)="abrirFormulario(c)"
-                  class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold border cursor-pointer transition-colors hover:bg-gray-50"
-                  [style.border-color]="c.formulario?.estadoCodigo === 'APROBADO' ? '#a7f3d0' : (c.formulario?.estadoCodigo === 'RECHAZADO' ? '#fecaca' : 'var(--color-abril-border)')"
-                  [style.color]="c.formulario?.estadoCodigo === 'APROBADO' ? '#15803D' : (c.formulario?.estadoCodigo === 'RECHAZADO' ? '#B91C1C' : 'var(--color-abril-logo-blue)')">
-                  <i class="ti ti-eye text-[15px]"></i>
-                  {{ botonFormularioLabel(c) }}
-                </button>
-
-                <!-- Rechazar también se ofrece sobre un formulario enviado y nunca completado:
-                     es lo que destraba el paso a entrevistas si el postulante no responde. -->
-                @if (formularioRechazable(c)) {
-                  <button type="button"
-                    [disabled]="decidiendoFormulario[c.candidatoId]"
-                    (click)="rechazarFormulario(c)"
-                    class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold border cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    style="border-color:#fecaca;color:#B91C1C;background:#FEF2F2">
-                    <i class="ti ti-x text-[15px]"></i>
-                    {{ formularioPorRevisar(c) ? 'Rechazar formulario' : 'Rechazar sin completar' }}
-                  </button>
-                }
-
-                <!-- Aprobar desaparece cuando el documento declarado es de un trabajador que está
-                     adentro: el aviso de arriba dice de quién es y por qué no se puede. -->
-                @if (formularioAprobable(c)) {
-                  <button type="button"
-                    [disabled]="decidiendoFormulario[c.candidatoId]"
-                    (click)="aprobarFormulario(c)"
-                    class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style="background:#15803D">
-                    <i class="ti ti-check text-[15px]"></i>
-                    Aprobar formulario
-                  </button>
-                } @else if (formularioPorRevisar(c)) {
-                  <span class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold"
-                        style="border:1px solid #fecaca;background:#FEF2F2;color:#B91C1C">
-                    <i class="ti ti-lock text-[15px]"></i>
-                    Aprobación bloqueada
+            @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
+              <!-- El borde rojo del candidato bloqueado es lo que lo hace visible sin abrir nada
+                   cuando la lista tiene varios: la selección para el envío masivo no lo tapa. -->
+              <div class="rounded-[10px] border px-[14px] py-[12px] mt-[12px]"
+                   [style.border-color]="c.coincidencia?.bloqueaAprobacion ? '#f87171'
+                     : (seleccionFormulario.has(c.candidatoId) ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-border)')">
+                <div class="flex items-start justify-between gap-[10px]">
+                  <label class="flex items-center gap-[9px] cursor-pointer">
+                    <input type="checkbox" [checked]="seleccionFormulario.has(c.candidatoId)"
+                      (change)="toggleSeleccionFormulario(c.candidatoId)"
+                      class="w-[15px] h-[15px] shrink-0 cursor-pointer"
+                      style="accent-color:var(--color-abril-logo-blue)" />
+                    <span class="text-[14px] font-bold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</span>
+                  </label>
+                  <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                        [style.background]="estadoFormularioBadge(c).bg" [style.color]="estadoFormularioBadge(c).color">
+                    {{ estadoFormularioBadge(c).text }}
                   </span>
+                </div>
+
+                <!-- Los dos CVs del candidato: el que cargó el reclutador en la long list y el que
+                     el postulante adjuntó en su formulario. Juntos y en la misma ficha porque el
+                     sentido de pedirle el segundo es poder compararlos. -->
+                <div class="flex flex-wrap items-center gap-x-[16px] gap-y-[4px] mt-[8px]">
+                  @if (c.cvUrl) {
+                    <a [href]="c.cvUrl" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-[5px] text-[12.5px] font-semibold hover:underline"
+                       style="color:var(--color-abril-logo-blue)">
+                      <i class="ti ti-file-text text-[15px]"></i>
+                      CV de GTH
+                    </a>
+                  }
+                  @if (c.cvPostulanteUrl) {
+                    <a [href]="c.cvPostulanteUrl" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-[5px] text-[12.5px] font-semibold hover:underline"
+                       style="color:#15803D" [title]="c.cvPostulanteNombre || ''">
+                      <i class="ti ti-file-check text-[15px]"></i>
+                      CV documentado del postulante
+                    </a>
+                  } @else {
+                    <span class="text-[12px] text-gray-400">Sin CV documentado del postulante</span>
+                  }
+                </div>
+
+                <!-- Correo del postulante + enviar/reenviar -->
+                <div class="flex items-center gap-[10px] mt-[10px]">
+                  <input type="email" [(ngModel)]="correoFormulario[c.candidatoId]"
+                    class="flex-1 h-[38px] rounded-[7px] border px-[12px] text-[13px] disabled:bg-gray-50 disabled:text-gray-400"
+                    style="border-color:var(--color-abril-border)"
+                    placeholder="Correo del postulante" />
+                  <button type="button"
+                    [disabled]="enviandoFormulario[c.candidatoId]"
+                    (click)="enviarFormulario(c)"
+                    class="inline-flex items-center gap-[6px] h-[38px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white shrink-0 cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="background:var(--color-abril-logo-blue)">
+                    <i class="ti ti-send text-[15px]"></i>
+                    {{ enviandoFormulario[c.candidatoId] ? 'Enviando…' : (c.formulario ? 'Reenviar' : 'Enviar formulario') }}
+                  </button>
+                </div>
+                @if (c.formulario?.correoEnvio && c.formulario?.enviadoEn) {
+                  <p class="text-[11.5px] text-gray-400 mt-[6px]">
+                    Último envío a {{ c.formulario?.correoEnvio }} · {{ c.formulario?.enviadoEn | date:'dd/MM/yyyy HH:mm' }}
+                  </p>
                 }
 
-                <!-- Cerrar el proceso del postulante es una decisión aparte de rechazar su
-                     formulario: rechazarlo solo le pide corregir, esto lo saca del proceso y le
-                     manda el correo de fin de proceso. Por eso aparece recién cuando el
-                     formulario ya quedó rechazado. -->
-                @if (puedeRechazarPostulante(c)) {
-                  <button type="button"
-                    [disabled]="rechazandoPostulante[c.candidatoId]"
-                    (click)="rechazarPostulante(c)"
-                    class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style="background:#B91C1C">
-                    <i class="ti ti-user-x text-[15px]"></i>
-                    {{ rechazandoPostulante[c.candidatoId] ? 'Enviando…' : 'Rechazar postulante' }}
+                <!-- El documento que declaró el postulante ya existe en la base: aprobar actualizaría
+                     esa ficha en vez de crear una nueva. Va acá y no solo en el modal porque los
+                     botones Aprobar/Rechazar de abajo deciden sin abrirlo. El postulante nunca lo ve. -->
+                @if (avisoCoincidencia(c); as coinc) {
+                  <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[9px] mt-[10px]"
+                       [style.border-color]="coinc.borde" [style.background]="coinc.fondo">
+                    <i class="ti text-[17px] shrink-0 mt-[1px]" [ngClass]="coinc.icono" [style.color]="coinc.color"></i>
+                    <div>
+                      <p class="text-[12.5px] font-bold" [style.color]="coinc.color">{{ coinc.titulo }}</p>
+                      <p class="text-[12px] mt-[1px]" [style.color]="coinc.color">{{ coinc.detalle }}</p>
+                    </div>
+                  </div>
+                }
+
+                <!-- Ver formulario (abre el modal de revisión) + decidir sin abrirlo cuando ya está
+                     completado: son los mismos botones del modal, a la mano en la ficha. -->
+                <div class="flex flex-wrap items-center gap-[10px] mt-[10px]">
+                  <button type="button" (click)="abrirFormulario(c)"
+                    class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold border cursor-pointer transition-colors hover:bg-gray-50"
+                    [style.border-color]="c.formulario?.estadoCodigo === 'APROBADO' ? '#a7f3d0' : (c.formulario?.estadoCodigo === 'RECHAZADO' ? '#fecaca' : 'var(--color-abril-border)')"
+                    [style.color]="c.formulario?.estadoCodigo === 'APROBADO' ? '#15803D' : (c.formulario?.estadoCodigo === 'RECHAZADO' ? '#B91C1C' : 'var(--color-abril-logo-blue)')">
+                    <i class="ti ti-eye text-[15px]"></i>
+                    {{ botonFormularioLabel(c) }}
                   </button>
+
+                  <!-- Rechazar también se ofrece sobre un formulario enviado y nunca completado:
+                       es lo que destraba el paso a entrevistas si el postulante no responde. -->
+                  @if (formularioRechazable(c)) {
+                    <button type="button"
+                      [disabled]="decidiendoFormulario[c.candidatoId]"
+                      (click)="rechazarFormulario(c)"
+                      class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold border cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      style="border-color:#fecaca;color:#B91C1C;background:#FEF2F2">
+                      <i class="ti ti-x text-[15px]"></i>
+                      {{ formularioPorRevisar(c) ? 'Rechazar formulario' : 'Rechazar sin completar' }}
+                    </button>
+                  }
+
+                  <!-- Aprobar desaparece cuando el documento declarado es de un trabajador que está
+                       adentro: el aviso de arriba dice de quién es y por qué no se puede. -->
+                  @if (formularioAprobable(c)) {
+                    <button type="button"
+                      [disabled]="decidiendoFormulario[c.candidatoId]"
+                      (click)="aprobarFormulario(c)"
+                      class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style="background:#15803D">
+                      <i class="ti ti-check text-[15px]"></i>
+                      Aprobar formulario
+                    </button>
+                  } @else if (formularioPorRevisar(c)) {
+                    <span class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold"
+                          style="border:1px solid #fecaca;background:#FEF2F2;color:#B91C1C">
+                      <i class="ti ti-lock text-[15px]"></i>
+                      Aprobación bloqueada
+                    </span>
+                  }
+
+                  <!-- Cerrar el proceso del postulante es una decisión aparte de rechazar su
+                       formulario: rechazarlo solo le pide corregir, esto lo saca del proceso y le
+                       manda el correo de fin de proceso. Por eso aparece recién cuando el
+                       formulario ya quedó rechazado. -->
+                  @if (puedeRechazarPostulante(c)) {
+                    <button type="button"
+                      [disabled]="rechazandoPostulante[c.candidatoId]"
+                      (click)="rechazarPostulante(c)"
+                      class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style="background:#B91C1C">
+                      <i class="ti ti-user-x text-[15px]"></i>
+                      {{ rechazandoPostulante[c.candidatoId] ? 'Enviando…' : 'Rechazar postulante' }}
+                    </button>
+                  }
+                </div>
+
+                <!-- Solo para el rechazo en esta etapa: al descartado tras la entrevista ya se lo
+                     dice su propia ficha en «Programación de entrevistas», y este bloque se sigue
+                     pintando cuando el requerimiento ya avanzó a esa fase. -->
+                @if (formularioRechazado(c) && noContinua(c) && c.evaluacion?.agradecimientoEnviadoEn) {
+                  <p class="text-[11.5px] mt-[8px]" style="color:#B91C1C">
+                    Fuera del proceso. Correo de fin de proceso enviado a
+                    {{ c.evaluacion?.agradecimientoCorreo }} ·
+                    {{ c.evaluacion?.agradecimientoEnviadoEn | date:'dd/MM/yyyy HH:mm' }}.
+                  </p>
                 }
               </div>
-
-              <!-- Solo para el rechazo en esta etapa: al descartado tras la entrevista ya se lo
-                   dice su propia ficha en «Programación de entrevistas», y este bloque se sigue
-                   pintando cuando el requerimiento ya avanzó a esa fase. -->
-              @if (formularioRechazado(c) && noContinua(c) && c.evaluacion?.agradecimientoEnviadoEn) {
-                <p class="text-[11.5px] mt-[8px]" style="color:#B91C1C">
-                  Fuera del proceso. Correo de fin de proceso enviado a
-                  {{ c.evaluacion?.agradecimientoCorreo }} ·
-                  {{ c.evaluacion?.agradecimientoEnviadoEn | date:'dd/MM/yyyy HH:mm' }}.
-                </p>
-              }
-            </div>
-          } @empty {
-            <p class="text-[12.5px] text-gray-400 italic mt-[10px]">No hay candidatos aprobados registrados.</p>
+            } @empty {
+              <p class="text-[12.5px] text-gray-400 italic mt-[10px]">No hay candidatos aprobados registrados.</p>
+            }
           }
         </div>
 
@@ -672,32 +736,40 @@
              así que su fila queda como "No aplica" y no traba el paso a entrevistas. Se sigue
              mostrando (no se oculta) para que la lista siga siendo la de la long list aprobada. -->
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
-          <h3 class="text-[14px] font-bold text-gray-800">Control informativo del Multitest</h3>
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionMultitest = !seccionMultitest">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionMultitest ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Control informativo del Multitest</h3>
+          </button>
 
-          @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
-            @if (formularioRechazado(c)) {
-              <div class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[11px] mt-[10px] bg-gray-50"
-                   style="border-color:var(--color-abril-border)">
-                <div>
-                  <p class="text-[13.5px] font-semibold text-gray-400">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
-                  <p class="text-[12px] text-gray-400">No aplica · formulario rechazado</p>
-                </div>
-                <i class="ti ti-minus text-[16px] text-gray-300 shrink-0"></i>
-              </div>
-            } @else {
-              <label class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[11px] mt-[10px] cursor-pointer transition-colors hover:bg-gray-50"
+          @if (seccionMultitest) {
+            @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
+              @if (formularioRechazado(c)) {
+                <div class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[11px] mt-[10px] bg-gray-50"
                      style="border-color:var(--color-abril-border)">
-                <div>
-                  <p class="text-[13.5px] font-semibold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
-                  <p class="text-[12px]" [style.color]="c.multitestRealizado ? '#15803D' : '#6B7280'">
-                    {{ c.multitestRealizado ? 'Realizado' : 'Pendiente de realizar' }}
-                  </p>
+                  <div>
+                    <p class="text-[13.5px] font-semibold text-gray-400">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
+                    <p class="text-[12px] text-gray-400">No aplica · formulario rechazado</p>
+                  </div>
+                  <i class="ti ti-minus text-[16px] text-gray-300 shrink-0"></i>
                 </div>
-                <input type="checkbox" [checked]="c.multitestRealizado"
-                  (change)="toggleMultitest(c, $any($event.target).checked)"
-                  class="w-[16px] h-[16px] shrink-0 cursor-pointer"
-                  style="accent-color:var(--color-abril-logo-blue)" />
-              </label>
+              } @else {
+                <label class="flex items-center justify-between gap-[12px] rounded-[8px] border px-[14px] py-[11px] mt-[10px] cursor-pointer transition-colors hover:bg-gray-50"
+                       style="border-color:var(--color-abril-border)">
+                  <div>
+                    <p class="text-[13.5px] font-semibold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
+                    <p class="text-[12px]" [style.color]="c.multitestRealizado ? '#15803D' : '#6B7280'">
+                      {{ c.multitestRealizado ? 'Realizado' : 'Pendiente de realizar' }}
+                    </p>
+                  </div>
+                  <input type="checkbox" [checked]="c.multitestRealizado"
+                    (change)="toggleMultitest(c, $any($event.target).checked)"
+                    class="w-[16px] h-[16px] shrink-0 cursor-pointer"
+                    style="accent-color:var(--color-abril-logo-blue)" />
+                </label>
+              }
             }
           }
         </div>
@@ -727,240 +799,248 @@
       @if (enEntrevistas) {
 
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
-          <h3 class="text-[14px] font-bold text-gray-800">Programación de entrevistas</h3>
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionEntrevistas = !seccionEntrevistas">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionEntrevistas ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Programación de entrevistas</h3>
+          </button>
 
-          @for (c of candidatosParaEntrevista; track c.candidatoId; let i = $index) {
-            <div class="rounded-[10px] border px-[14px] py-[12px] mt-[12px]" style="border-color:var(--color-abril-border)">
+          @if (seccionEntrevistas) {
+            @for (c of candidatosParaEntrevista; track c.candidatoId; let i = $index) {
+              <div class="rounded-[10px] border px-[14px] py-[12px] mt-[12px]" style="border-color:var(--color-abril-border)">
 
-              <div class="flex items-start justify-between gap-[10px]">
-                <div>
-                  <p class="text-[14px] font-bold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
-                  @if (c.correoContacto) {
-                    <p class="text-[11.5px] text-gray-500 mt-[1px]">{{ c.correoContacto }}</p>
-                  }
-                </div>
-                <div class="flex items-center gap-[6px] shrink-0">
-                  <!-- Respuesta del candidato a su citación: la que dio desde los botones del
-                       correo de invitación. Va junto al estado de la cita y no en su lugar
-                       porque son dos cosas distintas — GTH programó, el candidato responde. -->
-                  @if (!noContinua(c) && respuestaEntrevista(c); as respuesta) {
-                    <span class="inline-flex items-center gap-[4px] text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
-                          [style.background]="respuesta.fondo"
-                          [style.color]="respuesta.color"
-                          [title]="respuesta.detalle">
-                      <i class="ti text-[13px]" [ngClass]="respuesta.icono"></i>
-                      {{ respuesta.texto }}
-                    </span>
-                  }
-
-                  @if (noContinua(c)) {
-                    <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
-                          style="background:#FEE2E2;color:#B91C1C">
-                      No continúa
-                    </span>
-                  } @else {
-                    <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
-                          [style.background]="c.entrevista ? '#DCFCE7' : '#F3F4F6'"
-                          [style.color]="c.entrevista ? '#15803D' : '#6B7280'">
-                      {{ c.entrevista ? 'Programada' : 'Sin programar' }}
-                    </span>
-                  }
-                </div>
-              </div>
-
-              <!-- dense + floatingLabel en fecha y hora: mismas medidas y mismo label flotante que
-                   app-search-select, para que los tres campos de la fila queden alineados. -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-x-[14px] gap-y-[12px] mt-[10px]">
-                <app-date-picker
-                  label="Fecha de la entrevista"
-                  [dense]="true"
-                  [floatingLabel]="true"
-                  [value]="entrevistaForm[c.candidatoId].fecha"
-                  (valueChange)="entrevistaForm[c.candidatoId].fecha = $event"
-                  [min]="hoyIso"
-                  color="var(--color-abril-logo-blue)">
-                </app-date-picker>
-
-                <app-time-picker
-                  label="Hora"
-                  [dense]="true"
-                  [floatingLabel]="true"
-                  [value]="entrevistaForm[c.candidatoId].hora"
-                  (valueChange)="entrevistaForm[c.candidatoId].hora = $event"
-                  [minuteStep]="5"
-                  color="var(--color-abril-logo-blue)">
-                </app-time-picker>
-
-                <app-search-select
-                  label="Lugar"
-                  [options]="detalle.lugaresEntrevista"
-                  valueField="id"
-                  displayField="nombre"
-                  [value]="entrevistaForm[c.candidatoId].lugarId"
-                  (valueChange)="entrevistaForm[c.candidatoId].lugarId = $event"
-                  placeholder="Selecciona lugar"
-                  [sortAlpha]="false"
-                  color="var(--color-abril-logo-blue)">
-                </app-search-select>
-              </div>
-
-              <button type="button"
-                [disabled]="!puedeEnviarEntrevista(c)"
-                (click)="guardarEntrevista(c)"
-                class="inline-flex items-center gap-[6px] h-[38px] px-[16px] mt-[12px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                style="background:var(--color-abril-logo-blue)">
-                <i class="ti ti-send text-[15px]"></i>
-                {{ botonEntrevistaLabel(c) }}
-              </button>
-
-              @if (c.entrevista?.enviadoEn) {
-                <p class="text-[11.5px] text-gray-400 mt-[6px]">
-                  Invitación enviada a {{ c.entrevista?.correoEnvio }} ·
-                  {{ c.entrevista?.enviadoEn | date:'dd/MM/yyyy HH:mm' }} ·
-                  cita el {{ c.entrevista?.fecha | date:'dd/MM/yyyy' }} a las {{ c.entrevista?.hora }}
-                  en {{ c.entrevista?.lugarNombre }}
-                </p>
-
-                @if (c.entrevista?.respondidoEn) {
-                  <p class="text-[11.5px] mt-[3px]"
-                     [style.color]="c.entrevista?.respuestaCodigo === 'CONFIRMADA' ? '#15803D' : '#B91C1C'">
-                    {{ c.entrevista?.respuestaNombre }} ·
-                    {{ c.entrevista?.respondidoEn | date:'dd/MM/yyyy HH:mm' }}
-                  </p>
-                }
-
-                <!-- ── Resultado de la entrevista ─────────────────────────────
-                     Solo aparece cuando ya se le envió la invitación: son los comentarios
-                     que arman el informe de finalista que ve el solicitante. -->
-                <div class="mt-[12px] pt-[12px] border-t" style="border-color:var(--color-abril-border)">
-                  <h4 class="text-[13px] font-bold text-gray-700">Resultado de la entrevista</h4>
-
-                  <div class="abril-field mt-[12px]">
-                    <label class="abril-field-label" [for]="'ev-com-entrevista-' + c.candidatoId">
-                      Resultado de entrevista <span style="color:#B91C1C">*</span>
-                    </label>
-                    <textarea [id]="'ev-com-entrevista-' + c.candidatoId" class="abril-field-input" rows="2"
-                      [disabled]="!puedeEvaluar(c)"
-                      [(ngModel)]="evaluacionForm[c.candidatoId].comentarioEntrevista"
-                      placeholder="Qué se observó en la entrevista del candidato..."></textarea>
-                  </div>
-
-                  <div class="abril-field mt-[10px]">
-                    <label class="abril-field-label" [for]="'ev-com-psico-' + c.candidatoId">
-                      Informe psicotécnico <span style="color:#B91C1C">*</span>
-                    </label>
-                    <textarea [id]="'ev-com-psico-' + c.candidatoId" class="abril-field-input" rows="2"
-                      [disabled]="!puedeEvaluar(c)"
-                      [(ngModel)]="evaluacionForm[c.candidatoId].comentarioPsicotecnico"
-                      placeholder="Conclusiones del informe psicotécnico..."></textarea>
-                  </div>
-
-                  <div class="abril-field mt-[10px]">
-                    <label class="abril-field-label" [for]="'ev-com-recom-' + c.candidatoId">
-                      Recomendación GTH <span style="color:#B91C1C">*</span>
-                    </label>
-                    <textarea [id]="'ev-com-recom-' + c.candidatoId" class="abril-field-input" rows="2"
-                      [disabled]="!puedeEvaluar(c)"
-                      [(ngModel)]="evaluacionForm[c.candidatoId].comentarioRecomendacion"
-                      placeholder="Recomendación de GTH al área solicitante..."></textarea>
-                  </div>
-
-                  <!-- ── Archivos del informe ────────────────────────────────
-                       Los dos son opcionales: van adjuntos en el correo al solicitante y
-                       quedan enlazados en su pantalla. -->
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-[10px] mt-[12px]">
-                    @for (slot of slotsArchivoEvaluacion; track slot.codigo) {
-                      <div class="rounded-[8px] border px-[13px] py-[11px]"
-                           style="border-color:var(--color-abril-border);background:#FAFCFA">
-                        <p class="text-[12.5px] font-bold text-gray-700">
-                          {{ slot.label }}
-                          <span class="font-medium text-gray-400">· opcional</span>
-                        </p>
-
-                        @if (archivoNuevo(c, slot.codigo); as nuevo) {
-                          <div class="flex items-center justify-between gap-[10px] rounded-[7px] border px-[11px] py-[8px] mt-[8px] bg-white"
-                               style="border-color:var(--color-abril-border)">
-                            <div class="flex items-center gap-[8px] min-w-0">
-                              <i class="ti ti-file text-[16px] shrink-0" style="color:var(--color-abril-standard)"></i>
-                              <span class="text-[12.5px] text-gray-700 truncate">{{ nuevo.name }}</span>
-                              <span class="text-[11px] text-gray-400 shrink-0">{{ pesoArchivo(nuevo) }}</span>
-                            </div>
-                            <button type="button"
-                              [disabled]="!puedeEvaluar(c)"
-                              class="text-[12px] font-bold text-red-600 cursor-pointer hover:underline shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                              (click)="quitarArchivoEvaluacion(c, slot.codigo)">
-                              Quitar
-                            </button>
-                          </div>
-                        } @else if (archivoGuardado(c, slot.codigo); as guardado) {
-                          <div class="flex items-center justify-between gap-[10px] rounded-[7px] border px-[11px] py-[8px] mt-[8px] bg-white"
-                               style="border-color:var(--color-abril-border)">
-                            <a [href]="guardado.url" target="_blank" rel="noopener"
-                               class="flex items-center gap-[8px] min-w-0 hover:underline"
-                               style="color:var(--color-abril-logo-blue)">
-                              <i class="ti ti-file-check text-[16px] shrink-0"></i>
-                              <span class="text-[12.5px] truncate">{{ guardado.nombre }}</span>
-                            </a>
-                            <button type="button"
-                              [disabled]="!puedeEvaluar(c)"
-                              class="text-[12px] font-bold text-red-600 cursor-pointer hover:underline shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                              (click)="quitarArchivoEvaluacion(c, slot.codigo)">
-                              Quitar
-                            </button>
-                          </div>
-                        } @else {
-                          <input #archivoInput type="file" class="hidden" [accept]="evaluacionAccept"
-                            (change)="onArchivoEvaluacion($event, c, slot.codigo)" />
-                          <button type="button"
-                            [disabled]="!puedeEvaluar(c)"
-                            class="w-full h-[38px] mt-[8px] rounded-[7px] border border-dashed bg-white hover:bg-[#F1F7F1] flex items-center justify-center gap-[8px] text-[12.5px] font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            style="border-color:#B7D6A6;color:var(--color-abril-standard)"
-                            (click)="archivoInput.click()">
-                            <i class="ti ti-paperclip text-[15px]"></i>
-                            Adjuntar
-                          </button>
-                        }
-                      </div>
+                <div class="flex items-start justify-between gap-[10px]">
+                  <div>
+                    <p class="text-[14px] font-bold text-gray-800">{{ i + 1 }}. {{ c.nombre | titleCase }}</p>
+                    @if (c.correoContacto) {
+                      <p class="text-[11.5px] text-gray-500 mt-[1px]">{{ c.correoContacto }}</p>
                     }
                   </div>
+                  <div class="flex items-center gap-[6px] shrink-0">
+                    <!-- Respuesta del candidato a su citación: la que dio desde los botones del
+                         correo de invitación. Va junto al estado de la cita y no en su lugar
+                         porque son dos cosas distintas — GTH programó, el candidato responde. -->
+                    @if (!noContinua(c) && respuestaEntrevista(c); as respuesta) {
+                      <span class="inline-flex items-center gap-[4px] text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                            [style.background]="respuesta.fondo"
+                            [style.color]="respuesta.color"
+                            [title]="respuesta.detalle">
+                        <i class="ti text-[13px]" [ngClass]="respuesta.icono"></i>
+                        {{ respuesta.texto }}
+                      </span>
+                    }
 
-                  <div class="flex flex-wrap items-center gap-[10px] mt-[12px]">
-                    <button type="button"
-                      [disabled]="!puedeGuardarEvaluacion(c)"
-                      (click)="guardarEvaluacion(c)"
-                      class="inline-flex items-center gap-[6px] h-[36px] px-[16px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style="background:var(--color-abril-logo-blue)">
-                      <i class="ti ti-send text-[15px]"></i>
-                      {{ guardandoEvaluacion[c.candidatoId] ? 'Enviando…' : 'Continuar y enviar como finalista' }}
-                    </button>
-
-                    <!-- Correo de fin de proceso: cierra al candidato como "No continúa" (RG-12). -->
-                    <button type="button"
-                      [disabled]="enviandoAgradecimiento[c.candidatoId]"
-                      (click)="enviarAgradecimiento(c)"
-                      class="inline-flex items-center gap-[6px] h-[36px] px-[16px] rounded-[7px] border text-[13px] font-semibold cursor-pointer transition-colors hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style="border-color:#fecaca;color:#DC2626">
-                      <i class="ti ti-mail-x text-[15px]"></i>
-                      {{ enviandoAgradecimiento[c.candidatoId]
-                          ? 'Enviando…'
-                          : (noContinua(c) ? 'Reenviar correo de fin de proceso' : 'No continúa · enviar fin de proceso') }}
-                    </button>
+                    @if (noContinua(c)) {
+                      <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                            style="background:#FEE2E2;color:#B91C1C">
+                        No continúa
+                      </span>
+                    } @else {
+                      <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                            [style.background]="c.entrevista ? '#DCFCE7' : '#F3F4F6'"
+                            [style.color]="c.entrevista ? '#15803D' : '#6B7280'">
+                        {{ c.entrevista ? 'Programada' : 'Sin programar' }}
+                      </span>
+                    }
                   </div>
+                </div>
 
-                  @if (c.evaluacion?.agradecimientoEnviadoEn) {
-                    <p class="text-[11.5px] mt-[8px]" style="color:#B91C1C">
-                      Correo de fin de proceso enviado a {{ c.evaluacion?.agradecimientoCorreo }} ·
-                      {{ c.evaluacion?.agradecimientoEnviadoEn | date:'dd/MM/yyyy HH:mm' }}.
-                      El candidato ya no continúa en el proceso.
+                <!-- dense + floatingLabel en fecha y hora: mismas medidas y mismo label flotante que
+                     app-search-select, para que los tres campos de la fila queden alineados. -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-x-[14px] gap-y-[12px] mt-[10px]">
+                  <app-date-picker
+                    label="Fecha de la entrevista"
+                    [dense]="true"
+                    [floatingLabel]="true"
+                    [value]="entrevistaForm[c.candidatoId].fecha"
+                    (valueChange)="entrevistaForm[c.candidatoId].fecha = $event"
+                    [min]="hoyIso"
+                    color="var(--color-abril-logo-blue)">
+                  </app-date-picker>
+
+                  <app-time-picker
+                    label="Hora"
+                    [dense]="true"
+                    [floatingLabel]="true"
+                    [value]="entrevistaForm[c.candidatoId].hora"
+                    (valueChange)="entrevistaForm[c.candidatoId].hora = $event"
+                    [minuteStep]="5"
+                    color="var(--color-abril-logo-blue)">
+                  </app-time-picker>
+
+                  <app-search-select
+                    label="Lugar"
+                    [options]="detalle.lugaresEntrevista"
+                    valueField="id"
+                    displayField="nombre"
+                    [value]="entrevistaForm[c.candidatoId].lugarId"
+                    (valueChange)="entrevistaForm[c.candidatoId].lugarId = $event"
+                    placeholder="Selecciona lugar"
+                    [sortAlpha]="false"
+                    color="var(--color-abril-logo-blue)">
+                  </app-search-select>
+                </div>
+
+                <button type="button"
+                  [disabled]="!puedeEnviarEntrevista(c)"
+                  (click)="guardarEntrevista(c)"
+                  class="inline-flex items-center gap-[6px] h-[38px] px-[16px] mt-[12px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style="background:var(--color-abril-logo-blue)">
+                  <i class="ti ti-send text-[15px]"></i>
+                  {{ botonEntrevistaLabel(c) }}
+                </button>
+
+                @if (c.entrevista?.enviadoEn) {
+                  <p class="text-[11.5px] text-gray-400 mt-[6px]">
+                    Invitación enviada a {{ c.entrevista?.correoEnvio }} ·
+                    {{ c.entrevista?.enviadoEn | date:'dd/MM/yyyy HH:mm' }} ·
+                    cita el {{ c.entrevista?.fecha | date:'dd/MM/yyyy' }} a las {{ c.entrevista?.hora }}
+                    en {{ c.entrevista?.lugarNombre }}
+                  </p>
+
+                  @if (c.entrevista?.respondidoEn) {
+                    <p class="text-[11.5px] mt-[3px]"
+                       [style.color]="c.entrevista?.respuestaCodigo === 'CONFIRMADA' ? '#15803D' : '#B91C1C'">
+                      {{ c.entrevista?.respuestaNombre }} ·
+                      {{ c.entrevista?.respondidoEn | date:'dd/MM/yyyy HH:mm' }}
                     </p>
                   }
-                </div>
-              }
-            </div>
-          } @empty {
-            <p class="text-[12.5px] text-gray-400 italic mt-[10px]">
-              No hay candidatos con el formulario del postulante aprobado.
-            </p>
+
+                  <!-- ── Resultado de la entrevista ─────────────────────────────
+                       Solo aparece cuando ya se le envió la invitación: son los comentarios
+                       que arman el informe de finalista que ve el solicitante. -->
+                  <div class="mt-[12px] pt-[12px] border-t" style="border-color:var(--color-abril-border)">
+                    <h4 class="text-[13px] font-bold text-gray-700">Resultado de la entrevista</h4>
+
+                    <div class="abril-field mt-[12px]">
+                      <label class="abril-field-label" [for]="'ev-com-entrevista-' + c.candidatoId">
+                        Resultado de entrevista <span style="color:#B91C1C">*</span>
+                      </label>
+                      <textarea [id]="'ev-com-entrevista-' + c.candidatoId" class="abril-field-input" rows="2"
+                        [disabled]="!puedeEvaluar(c)"
+                        [(ngModel)]="evaluacionForm[c.candidatoId].comentarioEntrevista"
+                        placeholder="Qué se observó en la entrevista del candidato..."></textarea>
+                    </div>
+
+                    <div class="abril-field mt-[10px]">
+                      <label class="abril-field-label" [for]="'ev-com-psico-' + c.candidatoId">
+                        Informe psicotécnico <span style="color:#B91C1C">*</span>
+                      </label>
+                      <textarea [id]="'ev-com-psico-' + c.candidatoId" class="abril-field-input" rows="2"
+                        [disabled]="!puedeEvaluar(c)"
+                        [(ngModel)]="evaluacionForm[c.candidatoId].comentarioPsicotecnico"
+                        placeholder="Conclusiones del informe psicotécnico..."></textarea>
+                    </div>
+
+                    <div class="abril-field mt-[10px]">
+                      <label class="abril-field-label" [for]="'ev-com-recom-' + c.candidatoId">
+                        Recomendación GTH <span style="color:#B91C1C">*</span>
+                      </label>
+                      <textarea [id]="'ev-com-recom-' + c.candidatoId" class="abril-field-input" rows="2"
+                        [disabled]="!puedeEvaluar(c)"
+                        [(ngModel)]="evaluacionForm[c.candidatoId].comentarioRecomendacion"
+                        placeholder="Recomendación de GTH al área solicitante..."></textarea>
+                    </div>
+
+                    <!-- ── Archivos del informe ────────────────────────────────
+                         Los dos son opcionales: van adjuntos en el correo al solicitante y
+                         quedan enlazados en su pantalla. -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-[10px] mt-[12px]">
+                      @for (slot of slotsArchivoEvaluacion; track slot.codigo) {
+                        <div class="rounded-[8px] border px-[13px] py-[11px]"
+                             style="border-color:var(--color-abril-border);background:#FAFCFA">
+                          <p class="text-[12.5px] font-bold text-gray-700">
+                            {{ slot.label }}
+                            <span class="font-medium text-gray-400">· opcional</span>
+                          </p>
+
+                          @if (archivoNuevo(c, slot.codigo); as nuevo) {
+                            <div class="flex items-center justify-between gap-[10px] rounded-[7px] border px-[11px] py-[8px] mt-[8px] bg-white"
+                                 style="border-color:var(--color-abril-border)">
+                              <div class="flex items-center gap-[8px] min-w-0">
+                                <i class="ti ti-file text-[16px] shrink-0" style="color:var(--color-abril-standard)"></i>
+                                <span class="text-[12.5px] text-gray-700 truncate">{{ nuevo.name }}</span>
+                                <span class="text-[11px] text-gray-400 shrink-0">{{ pesoArchivo(nuevo) }}</span>
+                              </div>
+                              <button type="button"
+                                [disabled]="!puedeEvaluar(c)"
+                                class="text-[12px] font-bold text-red-600 cursor-pointer hover:underline shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                (click)="quitarArchivoEvaluacion(c, slot.codigo)">
+                                Quitar
+                              </button>
+                            </div>
+                          } @else if (archivoGuardado(c, slot.codigo); as guardado) {
+                            <div class="flex items-center justify-between gap-[10px] rounded-[7px] border px-[11px] py-[8px] mt-[8px] bg-white"
+                                 style="border-color:var(--color-abril-border)">
+                              <a [href]="guardado.url" target="_blank" rel="noopener"
+                                 class="flex items-center gap-[8px] min-w-0 hover:underline"
+                                 style="color:var(--color-abril-logo-blue)">
+                                <i class="ti ti-file-check text-[16px] shrink-0"></i>
+                                <span class="text-[12.5px] truncate">{{ guardado.nombre }}</span>
+                              </a>
+                              <button type="button"
+                                [disabled]="!puedeEvaluar(c)"
+                                class="text-[12px] font-bold text-red-600 cursor-pointer hover:underline shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                                (click)="quitarArchivoEvaluacion(c, slot.codigo)">
+                                Quitar
+                              </button>
+                            </div>
+                          } @else {
+                            <input #archivoInput type="file" class="hidden" [accept]="evaluacionAccept"
+                              (change)="onArchivoEvaluacion($event, c, slot.codigo)" />
+                            <button type="button"
+                              [disabled]="!puedeEvaluar(c)"
+                              class="w-full h-[38px] mt-[8px] rounded-[7px] border border-dashed bg-white hover:bg-[#F1F7F1] flex items-center justify-center gap-[8px] text-[12.5px] font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              style="border-color:#B7D6A6;color:var(--color-abril-standard)"
+                              (click)="archivoInput.click()">
+                              <i class="ti ti-paperclip text-[15px]"></i>
+                              Adjuntar
+                            </button>
+                          }
+                        </div>
+                      }
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-[10px] mt-[12px]">
+                      <button type="button"
+                        [disabled]="!puedeGuardarEvaluacion(c)"
+                        (click)="guardarEvaluacion(c)"
+                        class="inline-flex items-center gap-[6px] h-[36px] px-[16px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style="background:var(--color-abril-logo-blue)">
+                        <i class="ti ti-send text-[15px]"></i>
+                        {{ guardandoEvaluacion[c.candidatoId] ? 'Enviando…' : 'Continuar y enviar como finalista' }}
+                      </button>
+
+                      <!-- Correo de fin de proceso: cierra al candidato como "No continúa" (RG-12). -->
+                      <button type="button"
+                        [disabled]="enviandoAgradecimiento[c.candidatoId]"
+                        (click)="enviarAgradecimiento(c)"
+                        class="inline-flex items-center gap-[6px] h-[36px] px-[16px] rounded-[7px] border text-[13px] font-semibold cursor-pointer transition-colors hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style="border-color:#fecaca;color:#DC2626">
+                        <i class="ti ti-mail-x text-[15px]"></i>
+                        {{ enviandoAgradecimiento[c.candidatoId]
+                            ? 'Enviando…'
+                            : (noContinua(c) ? 'Reenviar correo de fin de proceso' : 'No continúa · enviar fin de proceso') }}
+                      </button>
+                    </div>
+
+                    @if (c.evaluacion?.agradecimientoEnviadoEn) {
+                      <p class="text-[11.5px] mt-[8px]" style="color:#B91C1C">
+                        Correo de fin de proceso enviado a {{ c.evaluacion?.agradecimientoCorreo }} ·
+                        {{ c.evaluacion?.agradecimientoEnviadoEn | date:'dd/MM/yyyy HH:mm' }}.
+                        El candidato ya no continúa en el proceso.
+                      </p>
+                    }
+                  </div>
+                }
+              </div>
+            } @empty {
+              <p class="text-[12.5px] text-gray-400 italic mt-[10px]">
+                No hay candidatos con el formulario del postulante aprobado.
+              </p>
+            }
           }
         </div>
       }

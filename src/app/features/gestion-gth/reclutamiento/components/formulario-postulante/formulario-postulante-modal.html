@@ -89,6 +89,43 @@
         </div>
       }
 
+      <!-- ── CVs del candidato ──────────────────────────────────────────── -->
+      <!-- Los dos CVs del proceso, juntos y arriba: el que consiguió el reclutador y el que el
+           postulante declara como suyo. El sentido de pedirle el segundo es poder compararlos, así
+           que se abren desde el mismo sitio. -->
+      <div>
+        <h3 class="text-[13px] font-bold mb-[8px]" style="color:var(--color-abril-logo-blue)">CVs del candidato</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-[10px]">
+          <div class="ff-box">
+            <p class="ff-label">CV cargado por GTH</p>
+            @if (revision.cvGth?.url) {
+              <a [href]="revision.cvGth!.url" target="_blank" rel="noopener"
+                 class="inline-flex items-center gap-[6px] mt-[2px] text-[12.5px] font-semibold hover:underline"
+                 style="color:var(--color-abril-logo-blue)">
+                <i class="ti ti-file-text text-[15px]"></i>
+                <span class="truncate">{{ revision.cvGth!.nombre }}</span>
+              </a>
+            } @else {
+              <p class="ff-value">No cargado</p>
+            }
+          </div>
+
+          <div class="ff-box">
+            <p class="ff-label">CV documentado del postulante</p>
+            @if (revision.cvPostulante?.url) {
+              <a [href]="revision.cvPostulante!.url" target="_blank" rel="noopener"
+                 class="inline-flex items-center gap-[6px] mt-[2px] text-[12.5px] font-semibold hover:underline"
+                 style="color:#15803D">
+                <i class="ti ti-file-check text-[15px]"></i>
+                <span class="truncate">{{ revision.cvPostulante!.nombre }}</span>
+              </a>
+            } @else {
+              <p class="ff-value">{{ completado || aprobado || rechazado ? 'No lo adjuntó' : 'Pendiente de envío' }}</p>
+            }
+          </div>
+        </div>
+      </div>
+
       <!-- ── Datos declarados (o estructura vacía) ──────────────────────── -->
       <!-- Página 0 · Protección de datos -->
       <div>

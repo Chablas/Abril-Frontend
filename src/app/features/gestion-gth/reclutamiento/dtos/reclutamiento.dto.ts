@@ -169,6 +169,16 @@ export interface CandidatoAprobado {
   candidatoId: number;
   nombre: string;
   puesto: string | null;
+  /** Nombre y link del CV que GTH cargó en la long list de este candidato. */
+  cvNombre: string | null;
+  cvUrl: string | null;
+  /**
+   * Nombre y link del CV documentado que adjuntó el propio postulante al enviar su formulario.
+   * null mientras no lo haya enviado. Va junto al de GTH porque el sentido de pedirlo es
+   * comparar los dos.
+   */
+  cvPostulanteNombre: string | null;
+  cvPostulanteUrl: string | null;
   /** Estado del formulario de información del postulante (null si GTH aún no lo envió). */
   formulario?: CandidatoFormularioResumen | null;
   /**

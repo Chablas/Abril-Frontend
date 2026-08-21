@@ -10,9 +10,15 @@ export interface Seleccionado {
   nombre: string;
   /** Puesto del requerimiento (snapshot de la long list), no un dato por candidato. */
   puesto: string | null;
-  /** Nombre y link del CV en SharePoint. */
+  /** Nombre y link del CV que cargó GTH en la long list. */
   cvNombre: string | null;
   cvUrl: string | null;
+  /**
+   * Nombre y link del CV documentado que adjuntó el propio postulante en su formulario. null si no
+   * llegó a subirlo (los procesos anteriores a que se pidiera el archivo).
+   */
+  cvPostulanteNombre: string | null;
+  cvPostulanteUrl: string | null;
   /** Momento en que el solicitante lo aprobó (ISO, ya en hora Perú). */
   seleccionadoEn: string | null;
   /** Usuario del área solicitante que tomó la decisión final. */

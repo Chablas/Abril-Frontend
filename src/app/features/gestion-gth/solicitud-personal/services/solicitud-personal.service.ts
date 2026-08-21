@@ -90,10 +90,11 @@ export class SolicitudPersonalService {
     requerimientoId: number,
     candidatoId: number,
     aprobado: boolean,
+    areaScopeId: number | null = null,
   ): Observable<FinalistaDecisionResult> {
     return this.http.post<FinalistaDecisionResult>(
       `${this.apiUrl}/requerimiento/${requerimientoId}/finalistas/decision`,
-      { candidatoId, aprobado },
+      { candidatoId, aprobado, areaScopeId },
       { headers: this.headers },
     );
   }

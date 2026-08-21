@@ -156,11 +156,18 @@ export class GthDetalleRequerimiento implements OnInit {
    */
   candidatos: CandidatoLongList[] = [];
 
-  // Secciones colapsables (abiertas por defecto, como en el diseño).
+  // Secciones colapsables (abiertas por defecto, como en el diseño). Van en el orden en que
+  // aparecen en el modal: todas las del detalle se abren y cierran igual, así GTH puede dejar
+  // a la vista solo la fase que está trabajando.
+  seccionPuestoCubierto = true;
   seccionAsignacion = true;
   seccionPublicacion = true;
   seccionRevisionCv = true;
   seccionLongList = true;
+  seccionLongListAprobada = true;
+  seccionFormularioPostulante = true;
+  seccionMultitest = true;
+  seccionEntrevistas = true;
   /**
    * "Historial de candidatos rechazados": arranca colapsada, al revés que el resto. Es una
    * consulta de respaldo (a quién ya se descartó), no un paso del proceso: abierta empujaría

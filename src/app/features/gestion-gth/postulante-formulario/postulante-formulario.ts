@@ -6,6 +6,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { SearchSelect } from '../../../shared/components/search-select/search-select';
 import { DatePicker } from '../../../shared/components/date-picker/date-picker';
+import { FileSelector, SelectedFile } from '../../../shared/components/file-selector/file-selector';
 import { PostulanteFormularioService } from './services/postulante-formulario.service';
 import {
   DistritoOpcion,
@@ -25,7 +26,7 @@ import {
 @Component({
   standalone: true,
   selector: 'app-postulante-formulario',
-  imports: [CommonModule, FormsModule, SearchSelect, DatePicker],
+  imports: [CommonModule, FormsModule, SearchSelect, DatePicker, FileSelector],
   templateUrl: './postulante-formulario.html',
   styleUrl: './postulante-formulario.css',
 })
@@ -44,6 +45,17 @@ export class PostulanteFormulario implements OnInit {
 
   data: PostulanteFormularioPublico | null = null;
   model: PostulanteFormularioRespuestas = respuestasVacias();
+
+  /**
+   * CV documentado que el postulante adjuntó en esta sesión. null si no eligió ninguno todavía:
+   * en ese caso el envío vale solo si ya había subido uno antes (ver `cvNombreCargado`), que es el
+   * caso de quien vuelve a abrir el enlace para corregir lo observado.
+   */
+  cv: SelectedFile | null = null;
+
+  /** Formatos y tope del CV. Los mismos que valida el backend. */
+  readonly cvAccept = '.pdf,.doc,.docx';
+  readonly cvMaxMb = 25;
 
   /** Universidades ya ordenadas (alfabéticas y "Otras" al final). Se calcula una sola vez al cargar. */
   universidades: OpcionFormulario[] = [];
@@ -64,7 +76,7 @@ export class PostulanteFormulario implements OnInit {
     'Datos personales',
     'Estudios',
     'Experiencia laboral',
-    'Consentimiento',
+    'CV y consentimiento',
   ];
 
   constructor(
@@ -92,6 +104,9 @@ export class PostulanteFormulario implements OnInit {
         this.data = data;
         this.universidades = this.ordenarUniversidades(data.universidades ?? []);
         this.model = { ...respuestasVacias(), ...data.respuestas };
+        // El archivo no se puede precargar en un <input type=file>: lo que se conserva es el
+        // nombre del que ya está en el servidor, para no volver a pedírselo.
+        this.cv = null;
         this.cargando = false;
         this.cdr.detectChanges();
       },
@@ -118,6 +133,42 @@ export class PostulanteFormulario implements OnInit {
   /** true si el postulante está corrigiendo un formulario observado por GTH. */
   get esCorreccion(): boolean {
     return !!this.observaciones || this.data?.estadoCodigo === 'RECHAZADO';
+  }
+
+  // ── CV documentado ───────────────────────────────────────────────────────
+  /** Nombre del CV que ya está guardado en el servidor (null si nunca subió ninguno). */
+  get cvNombreCargado(): string | null {
+    return this.data?.cvNombre ?? null;
+  }
+
+  /**
+   * true si el envío tiene CV: el que acaba de adjuntar o el que ya estaba guardado. Es la misma
+   * regla que aplica el backend, que también acepta el envío sin archivo cuando ya hay uno.
+   */
+  get cvValido(): boolean {
+    return !!this.cv || !!this.cvNombreCargado;
+  }
+
+  /**
+   * Guarda el CV elegido. Reemplaza al anterior: el formulario pide un archivo, no una lista.
+   * El tope se valida acá además del backend para no hacerle subir 40 MB por gusto a alguien que
+   * está llenando esto desde el celular.
+   */
+  onCvSelected(archivo: SelectedFile): void {
+    if (archivo.file.size > this.cvMaxMb * 1024 * 1024) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'El archivo es muy grande',
+        text: `Tu CV no puede pesar más de ${this.cvMaxMb} MB. Comprímelo o súbelo en PDF.`,
+        confirmButtonColor: 'var(--color-abril-primary-dark)',
+      });
+      return;
+    }
+    this.cv = archivo;
+  }
+
+  quitarCv(): void {
+    this.cv = null;
   }
 
   // ── Catálogos (atajos para el template) ─────────────────────────────────
@@ -309,7 +360,11 @@ export class PostulanteFormulario implements OnInit {
   }
 
   get puedeEnviar(): boolean {
-    return this.model.declaracionVeracidad === true && this.model.confirmacionDocumentos === true;
+    return (
+      this.cvValido &&
+      this.model.declaracionVeracidad === true &&
+      this.model.confirmacionDocumentos === true
+    );
   }
 
   get pasoActualValido(): boolean {
@@ -371,13 +426,37 @@ export class PostulanteFormulario implements OnInit {
       return;
     }
 
-    const esProteccionDatos = this.paso === 1;
+    // El CV no es un campo que se "complete": si falta, el mensaje genérico dejaría al postulante
+    // buscando un campo vacío entre las declaraciones.
+    if (this.paso === 5 && !this.cvValido) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta tu CV',
+        text: 'Adjunta tu CV documentado (PDF, DOC o DOCX) para poder enviar el formulario.',
+        confirmButtonColor: 'var(--color-abril-primary-dark)',
+      });
+      return;
+    }
+
+    // Los dos pasos de consentimiento no tienen "campos obligatorios" que completar sino
+    // declaraciones que marcar, así que cada uno dice lo suyo.
+    if (this.paso === 1 || this.paso === 5) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Consentimiento requerido',
+        text:
+          this.paso === 1
+            ? 'Debes autorizar el tratamiento de tus datos personales para continuar con el formulario.'
+            : 'Debes confirmar la veracidad de la información y que completaste los documentos requeridos.',
+        confirmButtonColor: 'var(--color-abril-primary-dark)',
+      });
+      return;
+    }
+
     Swal.fire({
       icon: 'warning',
-      title: esProteccionDatos ? 'Consentimiento requerido' : 'Faltan datos',
-      text: esProteccionDatos
-        ? 'Debes autorizar el tratamiento de tus datos personales para continuar con el formulario.'
-        : 'Completa los campos obligatorios de esta sección antes de continuar.',
+      title: 'Faltan datos',
+      text: 'Completa los campos obligatorios de esta sección antes de continuar.',
       confirmButtonColor: 'var(--color-abril-primary-dark)',
     });
   }
@@ -393,18 +472,14 @@ export class PostulanteFormulario implements OnInit {
     }
 
     if (!this.puedeEnviar) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Consentimiento requerido',
-        text: 'Debes confirmar la veracidad de la información y que completaste los documentos requeridos.',
-        confirmButtonColor: 'var(--color-abril-primary-dark)',
-      });
+      // El aviso del paso 5 ya distingue el CV faltante de las declaraciones sin marcar.
+      this.avisoIncompleto();
       return;
     }
 
     this.enviando = true;
     // App zoneless: forzamos el refresco para reflejar el estado de envío y la pantalla final.
-    this.service.guardarPublico(this.token, this.model).subscribe({
+    this.service.guardarPublico(this.token, this.model, this.cv?.file ?? null).subscribe({
       next: () => {
         this.enviando = false;
         this.enviado = true;

@@ -315,9 +315,15 @@ export interface Finalista {
   nombre: string;
   /** Puesto del requerimiento (el que registró el solicitante), no un dato por candidato. */
   puesto: string | null;
-  /** Nombre y link del CV en SharePoint (para "Ver CV completo"). */
+  /** Nombre y link del CV que cargó GTH en la long list (para "Ver CV completo"). */
   cvNombre: string | null;
   cvUrl: string | null;
+  /**
+   * Nombre y link del CV documentado que el propio postulante adjuntó en su formulario. null si
+   * no llegó a subirlo. Se muestra junto al de GTH: la decisión final se toma viendo los dos.
+   */
+  cvPostulanteNombre: string | null;
+  cvPostulanteUrl: string | null;
   evaluacion: EvaluacionFinalista;
 }
 
@@ -332,6 +338,19 @@ export interface RevisionFinalistas {
   estadoNombre: string;
   /** Finalistas ordenados alfabéticamente por nombre. */
   finalistas: Finalista[];
+  /**
+   * Áreas a las que puede entrar el seleccionado: las que GTH asoció al puesto del requerimiento.
+   * Definen el área de la ficha de pre-ingreso, con la que se resuelve su jefatura al programarle
+   * el EMO de ingreso.
+   *
+   *   • 2 o más → hay que elegir una para poder aprobar (desplegable «Área de destino»).
+   *   • exactamente 1 → esa, sin preguntar (solo se informa).
+   *   • vacía → el puesto no tiene áreas mapeadas: el backend se cae al área del solicitante.
+   *
+   * El nombre es el del nodo, no la rama completa ("Unidad de Proyectos", no
+   * "Gerencia de Proyectos › Unidad de Proyectos").
+   */
+  areasDestino: OpcionDto[];
 }
 
 /** Decisión final del solicitante sobre un finalista. */
@@ -339,6 +358,11 @@ export interface FinalistaDecision {
   candidatoId: number;
   /** true = aprobar (el proceso pasa a EMO de ingreso); false = rechazar al finalista. */
   aprobado: boolean;
+  /**
+   * Área a la que entra el seleccionado, elegida entre `areasDestino`. Solo se manda al aprobar y
+   * solo cuando el puesto pertenece a dos o más áreas; con una sola la resuelve el backend.
+   */
+  areaScopeId?: number | null;
 }
 
 /** Resultado de registrar la decisión final sobre un finalista. */

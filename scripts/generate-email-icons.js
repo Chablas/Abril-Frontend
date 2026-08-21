@@ -197,6 +197,31 @@ const ICONOS = {
   'req-observaciones': svgFranja(G.franjaLapiz, AMBAR),
 };
 
+// ── Logo de los correos ──────────────────────────────────────────────────────
+//
+// El logo de los correos es un archivo aparte del que usa la app y se deriva de él acá.
+//
+// Por qué no se usa directo public/images/abril-logo.png: ese archivo dice .png en el nombre
+// pero sus bytes son WebP (empieza en RIFF....WEBP), y además tiene transparencia. Los
+// navegadores y Outlook lo detectan por contenido y lo muestran bien, así que el nombre
+// equivocado nunca molestó dentro de la app. En Gmail sí: sus imágenes no las carga el cliente
+// sino su proxy (ci*.googleusercontent.com), que no reenvía WebP — lo recodifica, y lo
+// recodifica a JPEG. JPEG no tiene canal alfa, así que el fondo transparente se aplanaba y el
+// logo salía dentro de un recuadro negro, pero SOLO en Gmail. Los íconos del mismo correo se
+// veían bien porque esos sí son PNG de verdad y el proxy los reenvía tal cual.
+//
+// Las dos cosas que lo evitan van dentro de este archivo generado:
+// 1. Es un PNG de verdad, así que ningún proxy necesita recodificarlo.
+// 2. No tiene canal alfa: el blanco de la tarjeta del correo viene pintado adentro. Aunque
+//    mañana otro cliente o pasarela vuelva a aplanarlo, lo aplana contra blanco y no contra
+//    negro. Mismo criterio que los aros de los íconos: lo que el cliente de correo puede
+//    arruinar se resuelve dentro del binario, no confiando en que lo respete.
+const LOGO_ORIGEN = path.join(__dirname, '..', 'public', 'images', 'abril-logo.png');
+const LOGO_DESTINO = path.join(__dirname, '..', 'public', 'images', 'emails', 'abril-logo.png');
+
+/** El correo lo muestra a 150px; se genera al doble para que no se vea borroso en retina. */
+const LOGO_ANCHO = 300;
+
 (async () => {
   if (!fs.existsSync(OUT)) {
     console.error(`[email-icons] No existe ${OUT}`);
@@ -210,4 +235,14 @@ const ICONOS = {
   }
 
   console.log(`[email-icons] ${Object.keys(ICONOS).length} íconos generados en ${OUT}`);
+
+  // El flatten va ANTES del resize: escalar una imagen ya opaca no puede dejar halos en los
+  // bordes del logotipo, escalar una con alfa sí.
+  await sharp(LOGO_ORIGEN)
+    .flatten({ background: '#FFFFFF' })
+    .resize({ width: LOGO_ANCHO })
+    .png({ compressionLevel: 9 })
+    .toFile(LOGO_DESTINO);
+
+  console.log(`[email-icons] abril-logo.png (${LOGO_ANCHO}px, opaco) generado en ${LOGO_DESTINO}`);
 })();
