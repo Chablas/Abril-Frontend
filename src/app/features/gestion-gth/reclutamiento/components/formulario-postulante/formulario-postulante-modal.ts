@@ -7,6 +7,7 @@ import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { ReclutamientoService } from '../../services/reclutamiento.service';
 import {
+  CoincidenciaAviso,
   DecisionFormularioAplicada,
   FormularioDecisionService,
 } from '../../services/formulario-decision.service';
@@ -120,11 +121,36 @@ export class GthFormularioPostulanteModal implements OnInit {
     return !!this.revision?.datos;
   }
 
+  // ── Coincidencia con la base de datos ─────────────────────────────────
+  /**
+   * Aviso de que el documento declarado ya existe en la base. Se pinta encima de los datos porque
+   * es lo primero que le cambia la decisión a GTH: aprobar no crea una ficha nueva en `person`,
+   * actualiza la que ya estaba.
+   */
+  get avisoCoincidencia(): CoincidenciaAviso | null {
+    return this.decisiones.avisoCoincidencia(this.revision?.coincidencia);
+  }
+
+  /** true si esta coincidencia impide aprobar (el documento es de un trabajador actual). */
+  get aprobacionBloqueada(): boolean {
+    return this.avisoCoincidencia?.bloquea === true;
+  }
+
+  /**
+   * Aprobar sigue exigiendo que el postulante haya completado el formulario, y además que el
+   * documento declarado no sea de un trabajador que está adentro.
+   */
+  get puedeAprobar(): boolean {
+    return this.completado && !this.aprobacionBloqueada;
+  }
+
   // ── Acciones ────────────────────────────────────────────────────────────
   // El flujo (confirmación, llamada y avisos) vive en FormularioDecisionService porque los mismos
   // botones existen en la ficha del candidato, dentro del detalle del requerimiento.
   aprobar(): Promise<void> {
-    return this.decidir(() => this.decisiones.aprobar(this.candidatoId));
+    return this.decidir(() =>
+      this.decisiones.aprobar(this.candidatoId, this.revision?.coincidencia),
+    );
   }
 
   rechazar(): Promise<void> {

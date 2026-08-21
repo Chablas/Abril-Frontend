@@ -74,7 +74,7 @@
           Cambia de puesto de trabajo
         </label>
         <p class="check-hint">
-          Categoría y ocupación son las dos partes del puesto — cambia una, la otra, o ambas.
+          La ocupación es lo que cambia. Su categoría va incluida: la define el catálogo de puestos.
         </p>
       </div>
       <div class="col-span-2" *ngIf="model.cambiaPuesto">
@@ -82,17 +82,18 @@
         <input type="text" class="field-input field-readonly" [value]="worker?.categoria ?? '—'" readonly />
       </div>
       <div class="col-span-2" *ngIf="model.cambiaPuesto">
-        <label class="field-label">Categoría nueva</label>
+        <label class="field-label">Categoría</label>
         <app-search-select
           [options]="categorias"
           valueField="id"
           displayField="nombre"
           [value]="model.categoriaId"
           [showLabel]="false"
-          placeholder="Selecciona categoría"
+          placeholder="Todas las categorías"
           [allowClear]="true"
-          (valueChange)="model.categoriaId = $event"
+          (valueChange)="onCategoriaFiltroChange($event)"
         />
+        <span class="field-hint">Solo filtra las ocupaciones. La categoría real la define la ocupación.</span>
       </div>
       <div class="col-span-2" *ngIf="model.cambiaPuesto">
         <label class="field-label">Ocupación actual</label>
@@ -101,17 +102,20 @@
       <div class="col-span-2" *ngIf="model.cambiaPuesto">
         <label class="field-label">Ocupación nueva</label>
         <app-search-select
-          [options]="puestos"
+          [options]="puestosFiltrados"
           valueField="id"
           displayField="nombre"
           [value]="model.puestoId"
           [showLabel]="false"
           placeholder="Selecciona ocupación"
           [allowClear]="true"
-          (valueChange)="model.puestoId = $event"
+          (valueChange)="onPuestoChange($event)"
         />
       </div>
-      <div class="col-span-2" *ngIf="huboCambioDeOcupacionOCategoria">
+      <div class="col-span-2" *ngIf="categoriaDestinoNombre">
+        <p class="field-hint">Pasa a la categoría {{ categoriaDestinoNombre }}.</p>
+      </div>
+      <div class="col-span-2" *ngIf="huboCambioDeOcupacion">
         <p class="field-warning">
           ⚠ Este cambio exige revisar el Certificado de Aptitud (EMO) — se generará
           convalidación si hay un EMO activo, o se pedirá uno nuevo si no lo hay.

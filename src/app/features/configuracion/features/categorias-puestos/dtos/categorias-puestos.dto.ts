@@ -8,13 +8,14 @@ export interface CategoriaAdminDto {
 
 /**
  * Puesto del catálogo único (reemplazó a la vieja "ocupación", cuya data se fusionó acá).
- * Cada puesto pertenece a una categoría: la categoría es lo que usa la lógica interna y
- * el puesto solo se muestra.
+ * Cada puesto pertenece a exactamente una categoría, y esa es la categoría de todos los
+ * trabajadores que lo tengan: el nombre del puesto no decide nada, pero su categoría sí.
  */
 export interface PuestoAdminDto {
   id: number;
   nombre: string;
-  categoriaId: number | null;
+  /** Obligatoria. Es de acá de donde sale la categoría de cada trabajador con este puesto. */
+  categoriaId: number;
   categoriaNombre: string | null;
   orden: number;
   activo: boolean;
@@ -42,10 +43,10 @@ export interface CatalogosAdminDto {
   puestos: PuestoAdminDto[];
 }
 
-/** Alta/edición de un puesto: nombre + la categoría a la que pertenece. */
+/** Alta/edición de un puesto: nombre + la categoría a la que pertenece (obligatoria). */
 export interface PuestoUpsertRequest {
   nombre: string;
-  categoriaId: number | null;
+  categoriaId: number;
 }
 
 /**

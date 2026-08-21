@@ -9,7 +9,8 @@ export interface WorkerHabilitacionListDto {
   estadoHabilitacion: string;
   /** Nombre de la categoría (campo de lógica). */
   categoria?: string;
-  /** FK a `categoria` — necesaria para filtrar el catálogo de puestos por categoría en "Cambiar obra". */
+  /** FK a `categoria`, derivada de `puesto.categoriaId` — necesaria para filtrar el catálogo
+   * de puestos por categoría en "Cambiar obra". Solo lectura. */
   categoriaId?: number | null;
   /** Nombre del puesto (campo de presentación). */
   puesto?: string;
@@ -124,9 +125,9 @@ export interface WorkerDetalleDto {
   /** Nombre del catálogo (solo lectura). */
   obraOficina?: string;
   aniosExperiencia?: number;
-  /** FK a `categoria`: el campo de lógica. */
+  /** FK a `categoria`, derivada de `puesto.categoriaId`. Solo lectura. */
   categoriaId?: number | null;
-  /** FK a `puesto`: el campo de presentación. */
+  /** FK a `puesto`: el campo de presentación y el único camino a la categoría. */
   puestoId?: number | null;
   /** Nombre del puesto, ya resuelto por el backend. */
   puesto?: string;

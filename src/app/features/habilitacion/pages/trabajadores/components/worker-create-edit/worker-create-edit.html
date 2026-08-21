@@ -225,7 +225,7 @@
             />
           </div>
           <div>
-            <label class="field-label">Categoría * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+            <label class="field-label">Categoría {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
             <app-search-select
               [options]="categorias"
               valueField="id"
@@ -237,7 +237,7 @@
               [allowClear]="true"
               (valueChange)="onCategoriaChange($event)"
             />
-            <span class="field-hint">Define entregables, permisos y filtros internos.</span>
+            <span class="field-hint">Solo filtra los puestos. La categoría real la define el puesto.</span>
           </div>
           <div>
             <label class="field-label">Puesto * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
@@ -252,11 +252,11 @@
               [allowClear]="true"
               (valueChange)="onPuestoChange($event)"
             />
-            <span class="field-hint">Es el cargo que se muestra en el sistema.</span>
+            <span class="field-hint">Es el cargo que se muestra, y de él salen los entregables, permisos y filtros internos.</span>
           </div>
           <div class="col-span-2" *ngIf="mode === 'edit'">
             <p class="field-hint">
-              Para cambiar la categoría o el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              Para cambiar el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
             </p>
           </div>
           <div>
@@ -333,7 +333,7 @@
             </div>
             <div></div>
             <div>
-              <label class="field-label">Categoría * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <label class="field-label">Categoría {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <app-search-select
                 [options]="categorias"
                 valueField="id"
@@ -345,7 +345,7 @@
                 [allowClear]="true"
                 (valueChange)="onCategoriaChange($event)"
               />
-              <span class="field-hint">Define entregables, permisos y filtros internos.</span>
+              <span class="field-hint">Solo filtra los puestos. La categoría real la define el puesto.</span>
             </div>
             <div>
               <label class="field-label">Puesto * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
@@ -360,11 +360,11 @@
                 [allowClear]="true"
                 (valueChange)="onPuestoChange($event)"
               />
-              <span class="field-hint">Es el cargo que se muestra en el sistema.</span>
+              <span class="field-hint">Es el cargo que se muestra, y de él salen los entregables, permisos y filtros internos.</span>
             </div>
             <div class="col-span-2" *ngIf="mode === 'edit'">
               <p class="field-hint">
-                Para cambiar la categoría o el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+                Para cambiar el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
               </p>
             </div>
 
@@ -438,7 +438,7 @@
               </p>
             </div>
             <div>
-              <label class="field-label">Categoría * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <label class="field-label">Categoría {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
               <app-search-select
                 [options]="categorias"
                 valueField="id"
@@ -450,7 +450,7 @@
                 [allowClear]="true"
                 (valueChange)="onCategoriaChange($event)"
               />
-              <span class="field-hint">Define entregables, permisos y filtros internos.</span>
+              <span class="field-hint">Solo filtra los puestos. La categoría real la define el puesto.</span>
             </div>
             <div>
               <label class="field-label">Puesto * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
@@ -465,11 +465,11 @@
                 [allowClear]="true"
                 (valueChange)="onPuestoChange($event)"
               />
-              <span class="field-hint">Es el cargo que se muestra en el sistema.</span>
+              <span class="field-hint">Es el cargo que se muestra, y de él salen los entregables, permisos y filtros internos.</span>
             </div>
             <div class="col-span-2" *ngIf="mode === 'edit'">
               <p class="field-hint">
-                Para cambiar la categoría o el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+                Para cambiar el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
               </p>
             </div>
             <!-- Área: desplegables en cascada sobre el árbol de áreas (workers.area_scope_id).

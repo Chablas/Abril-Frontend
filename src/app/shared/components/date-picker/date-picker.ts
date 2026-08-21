@@ -38,6 +38,8 @@ interface DiaCelda {
 export class DatePicker implements OnChanges, OnDestroy {
   @Input() label: string = '';
   @Input() showLabel: boolean = true;
+  /** true = agrega un asterisco rojo al label para marcar el campo como obligatorio. */
+  @Input() required: boolean = false;
   @Input() placeholder: string = 'dd/mm/aaaa';
   /** Fecha seleccionada en formato `YYYY-MM-DD`, o null/undefined si no hay selección. */
   @Input() value: string | null | undefined = null;

@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { ReclutamientoService } from './reclutamiento.service';
-import { CandidatoFormularioResumen } from '../dtos/formulario-postulante.dto';
+import { CandidatoFormularioResumen, FormularioCoincidencia } from '../dtos/formulario-postulante.dto';
 
 /** Resultado de una decisión ya aplicada sobre el formulario de un candidato. */
 export interface DecisionFormularioAplicada {
@@ -13,6 +13,24 @@ export interface DecisionFormularioAplicada {
   resumen: CandidatoFormularioResumen;
   /** Observaciones que se le enviaron al postulante; null cuando se aprobó. */
   motivo: string | null;
+}
+
+/**
+ * Aviso a pintar cuando el documento declarado ya existe en la base, con su severidad y colores
+ * resueltos. Lo consumen el modal «Ver formulario» y la ficha del candidato del detalle, que
+ * muestran el mismo aviso en dos sitios distintos.
+ */
+export interface CoincidenciaAviso {
+  /** 'info' → existe pero nunca fue trabajador · 'aviso' → tuvo ficha · 'bloqueo' → trabaja acá hoy. */
+  tono: 'info' | 'aviso' | 'bloqueo';
+  icono: string;
+  titulo: string;
+  detalle: string;
+  borde: string;
+  fondo: string;
+  color: string;
+  /** true si con este aviso no se puede aprobar el formulario. */
+  bloquea: boolean;
 }
 
 /**
@@ -29,8 +47,85 @@ export class FormularioDecisionService {
     private errorService: ErrorService,
   ) {}
 
-  /** Aprueba el formulario del candidato. Devuelve null si la operación falló. */
-  aprobar(candidatoId: number): Promise<DecisionFormularioAplicada | null> {
+  /**
+   * Aviso del documento declarado que ya existe en la base, con severidad y colores. null cuando
+   * no hay coincidencia (el caso normal).
+   *
+   * Las tres severidades salen del estado de la ficha que coincide:
+   *  • `info` — existe en la base maestra pero nunca tuvo ficha de trabajador.
+   *  • `aviso` — tuvo ficha, pero hoy no está adentro (retirado, finalista de otro proceso…).
+   *    Aprobar está permitido: es justamente el caso del extrabajador que vuelve a postular.
+   *  • `bloqueo` — trabaja en Abril hoy. Aprobar reescribiría los datos de un trabajador con lo
+   *    que tecleó alguien en un formulario público, así que no se permite.
+   *
+   * Nada de esto se le muestra nunca al postulante: su formulario no sabe con quién coincide.
+   */
+  avisoCoincidencia(c: FormularioCoincidencia | null | undefined): CoincidenciaAviso | null {
+    if (!c) return null;
+
+    const documento = [c.tipoDocumento, c.documento].filter(Boolean).join(' ');
+    const persona = c.nombreEnBd ? `${documento} · ${c.nombreEnBd}` : documento;
+
+    if (c.bloqueaAprobacion) {
+      return {
+        tono: 'bloqueo',
+        icono: 'ti-alert-triangle',
+        titulo: 'El documento declarado es de un trabajador actual de Abril.',
+        detalle: `${persona} · ${c.workersEstadoNombre ?? 'Activo'}. No se puede aprobar este formulario.`,
+        borde: '#fecaca',
+        fondo: '#FEF2F2',
+        color: '#B91C1C',
+        bloquea: true,
+      };
+    }
+
+    if (c.nivel === 'FICHA_PREVIA') {
+      return {
+        tono: 'aviso',
+        icono: 'ti-user-search',
+        titulo: 'Esta persona ya tuvo ficha de trabajador.',
+        detalle: `${persona} · ${c.workersEstadoNombre ?? 'sin estado'}. Al aprobar se actualizará su ficha, no se creará una nueva.`,
+        borde: '#fde68a',
+        fondo: '#FFFBEB',
+        color: '#B45309',
+        bloquea: false,
+      };
+    }
+
+    return {
+      tono: 'info',
+      icono: 'ti-info-circle',
+      titulo: 'Esta persona ya está registrada en la base maestra.',
+      detalle: `${persona}. Sin ficha de trabajador. Al aprobar se actualizará su ficha, no se creará una nueva.`,
+      borde: 'var(--color-abril-border)',
+      fondo: '#F8FAFC',
+      color: '#475569',
+      bloquea: false,
+    };
+  }
+
+  /**
+   * Aprueba el formulario del candidato. Devuelve null si la operación falló.
+   *
+   * `coincidencia` corta antes de llamar al backend cuando el documento declarado es de un
+   * trabajador que está adentro. Es solo para explicar el motivo en el momento: el backend
+   * revalida lo mismo al registrar la decisión (la ficha puede haber cambiado de estado mientras
+   * el modal estaba abierto, y el endpoint existe con o sin pantalla).
+   */
+  aprobar(
+    candidatoId: number,
+    coincidencia?: FormularioCoincidencia | null,
+  ): Promise<DecisionFormularioAplicada | null> {
+    const aviso = this.avisoCoincidencia(coincidencia);
+    if (aviso?.bloquea) {
+      Swal.fire({
+        icon: 'error',
+        title: 'No se puede aprobar',
+        html: `${aviso.titulo}<br><br>${aviso.detalle}`,
+        confirmButtonColor: '#B91C1C',
+      });
+      return Promise.resolve(null);
+    }
     return this.registrar(candidatoId, true, null);
   }
 

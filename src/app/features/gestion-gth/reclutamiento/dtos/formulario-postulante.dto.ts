@@ -55,6 +55,41 @@ export interface FormularioDatos {
   confirmacionDocumentos: boolean | null;
 }
 
+/**
+ * Severidad de la coincidencia del documento declarado con la base (espejo de
+ * `NivelCoincidenciaPersona` del backend). Solo `TRABAJADOR_ACTUAL` bloquea la aprobación.
+ */
+export type NivelCoincidencia = 'SOLO_PERSON' | 'FICHA_PREVIA' | 'TRABAJADOR_ACTUAL';
+
+/**
+ * El documento que el postulante declaró ya existe en la base: aprobar su formulario actualizaría
+ * esa ficha de `person` en vez de crear una nueva.
+ *
+ * Es información **solo para GTH**. El postulante nunca sabe que lo que envió coincide con alguien
+ * ya registrado: no es una regla de negocio suya y decírselo sería filtrar quién está en la base.
+ * Por eso este dato no existe en la página pública del formulario.
+ */
+export interface FormularioCoincidencia {
+  /** Documento declarado que coincide, normalizado. */
+  documento: string;
+  /** Tipo de documento que declaró el postulante (DNI / CE). Null si no lo eligió. */
+  tipoDocumento: string | null;
+  personId: number;
+  /** Nombre con el que esa persona ya está registrada, para compararlo con el declarado. */
+  nombreEnBd: string | null;
+  /** Ficha de workers de esa persona (la que está adentro si hay; si no, la más reciente). */
+  workerId: number | null;
+  /** Código del estado de esa ficha (ACTIVO, RETIRADO…). Null si nunca tuvo ficha. */
+  workersEstadoCodigo: string | null;
+  /** Nombre visible del estado de esa ficha. Null si nunca tuvo ficha. */
+  workersEstadoNombre: string | null;
+  /** true si alguna de sus fichas está adentro de la empresa hoy. */
+  estaAdentro: boolean;
+  nivel: NivelCoincidencia;
+  /** true si esta coincidencia impide aprobar. El backend lo vuelve a validar al decidir. */
+  bloqueaAprobacion: boolean;
+}
+
 /** Formulario del candidato para el modal "Ver formulario" de GTH. */
 export interface FormularioRevision {
   /** false si GTH aún no envió el formulario (el modal solo muestra la estructura/estado). */
@@ -70,6 +105,11 @@ export interface FormularioRevision {
   motivoRechazo: string | null;
   /** Datos declarados por el postulante (null si aún no completó el formulario). */
   datos: FormularioDatos | null;
+  /**
+   * El documento declarado ya existe en la base. Null cuando no coincide con nada (el caso normal)
+   * o cuando el postulante todavía no llenó el formulario.
+   */
+  coincidencia: FormularioCoincidencia | null;
 }
 
 /** Resultado de enviar el formulario o registrar la decisión (para refrescar el modal). */

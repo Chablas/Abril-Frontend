@@ -198,7 +198,7 @@ export interface EmoPorTrabajadorDto {
   categoria?: string;
   /** Nombre del puesto (campo de presentación). */
   puesto?: string;
-  /** FK a `categoria`, para prellenar el desplegable. */
+  /** FK a `categoria`, derivada del puesto. Solo lectura: precarga el filtro de categoría. */
   categoriaId?: number | null;
   /** FK a `puesto`, para prellenar el desplegable. */
   puestoId?: number | null;
@@ -240,9 +240,9 @@ export interface WorkerDatosBasicosDto {
   puesto?: string | null;
   /** Nodo del árbol de áreas asignado al trabajador (workers.area_scope_id). */
   areaScopeId?: number | null;
-  /** FK a `categoria` (workers.categoria_id). */
+  /** FK a `categoria`, derivada de `puesto.categoriaId`. Solo lectura. */
   categoriaId?: number | null;
-  /** FK a `puesto` (workers.puesto_id). */
+  /** FK a `puesto` (workers.puesto_id). Es de acá de donde sale la categoría. */
   puestoId?: number | null;
   /** Correo corporativo (workers.email_corporativo). Null/vacío = sin correo. */
   emailCorporativo?: string | null;
@@ -285,9 +285,11 @@ export interface WorkerUpsertDto {
   emailPersonal?: string | null;
   fechaIngreso?: string | null;
   condicionMedica?: string | null;
-  /** FK a `categoria`: el campo de lógica. */
-  categoriaId?: number | null;
-  /** FK a `puesto`: el campo de presentación. */
+  /**
+   * FK a `puesto`: el campo de presentación del trabajador y el único camino a su categoría
+   * (`puesto.categoriaId`). La categoría no se manda: cambiarla es cambiar de puesto, o
+   * cambiarle la categoría al puesto desde Configuración → Categorías y Puestos.
+   */
   puestoId?: number | null;
   /**
    * Nodo del árbol de áreas elegido (workers.area_scope_id). Cuando se manda, es la fuente de

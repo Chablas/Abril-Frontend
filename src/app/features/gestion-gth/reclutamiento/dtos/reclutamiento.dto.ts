@@ -1,4 +1,4 @@
-import { CandidatoFormularioResumen } from './formulario-postulante.dto';
+import { CandidatoFormularioResumen, FormularioCoincidencia } from './formulario-postulante.dto';
 import { CandidatoRechazado } from '../../shared/dtos/candidato-rechazado.dto';
 import { Seleccionado } from '../../shared/dtos/seleccionado.dto';
 
@@ -171,6 +171,12 @@ export interface CandidatoAprobado {
   puesto: string | null;
   /** Estado del formulario de información del postulante (null si GTH aún no lo envió). */
   formulario?: CandidatoFormularioResumen | null;
+  /**
+   * El documento que declaró el postulante ya existe en la base. Va en la ficha además del modal
+   * porque los botones Aprobar/Rechazar también están acá: sin esto GTH podría aprobar sin haber
+   * visto el aviso. Null cuando no coincide con nada.
+   */
+  coincidencia?: FormularioCoincidencia | null;
   /** true si GTH ya marcó el check informativo del Multitest de este candidato. */
   multitestRealizado: boolean;
   /** Correo del postulante al que se envía la invitación a la entrevista (null si aún no hay formulario). */

@@ -4,7 +4,7 @@
     *ngIf="showLabel && label && !floatingLabel"
     class="text-sm text-[var(--tp-accent)] font-medium"
   >
-    {{ label }}
+    {{ label }}<span *ngIf="required" class="text-red-500"> *</span>
   </label>
 
   <!-- Contenedor relativo para el label flotante y el desplegable. El `mt-[9px]` es el mismo que
@@ -15,7 +15,7 @@
       *ngIf="showLabel && label && floatingLabel"
       class="absolute -top-[8px] left-[9px] z-[1] px-[4px] text-[11px] font-semibold text-gray-600 pointer-events-none leading-none bg-white"
     >
-      {{ label }}
+      {{ label }}<span *ngIf="required" class="text-red-500"> *</span>
     </label>
 
     <!-- Trigger: input editable (HH:mm) + limpiar + botón de reloj -->

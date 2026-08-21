@@ -74,6 +74,21 @@
         </div>
       }
 
+      <!-- ── Coincidencia con la base de datos ──────────────────────────── -->
+      <!-- El documento que declaró el postulante ya existe en `person`, así que aprobar actualiza
+           esa ficha en vez de crear una nueva. Va después del estado y antes de los datos: es lo
+           que le cambia la decisión a GTH. El postulante nunca ve nada de esto. -->
+      @if (avisoCoincidencia; as coinc) {
+        <div class="flex items-start gap-[10px] rounded-[10px] border px-[16px] py-[12px]"
+             [style.border-color]="coinc.borde" [style.background]="coinc.fondo">
+          <i class="ti text-[20px] shrink-0" [ngClass]="coinc.icono" [style.color]="coinc.color"></i>
+          <div>
+            <p class="text-[13.5px] font-bold" [style.color]="coinc.color">{{ coinc.titulo }}</p>
+            <p class="text-[12.5px] mt-[1px]" [style.color]="coinc.color">{{ coinc.detalle }}</p>
+          </div>
+        </div>
+      }
+
       <!-- ── Datos declarados (o estructura vacía) ──────────────────────── -->
       <!-- Página 0 · Protección de datos -->
       <div>
@@ -159,12 +174,19 @@
           <i class="ti ti-x text-[14px]"></i>
           {{ completado ? 'Rechazar' : 'Rechazar sin completar' }}
         </button>
-        @if (completado) {
+        <!-- Aprobar desaparece cuando el documento declarado es de un trabajador que está adentro:
+             aprobarlo actualizaría la ficha de ese trabajador. El aviso de arriba dice de quién es. -->
+        @if (puedeAprobar) {
           <button type="button" [disabled]="procesando" (click)="aprobar()"
             class="h-[38px] px-[20px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             style="background:#15803D">
             <i class="ti ti-check text-[14px]"></i> Aprobar formulario
           </button>
+        } @else if (completado) {
+          <span class="inline-flex items-center gap-[6px] h-[38px] px-[16px] rounded-[7px] text-[13px] font-semibold"
+                style="border:1px solid #fecaca;background:#FEF2F2;color:#B91C1C">
+            <i class="ti ti-lock text-[14px]"></i> Aprobación bloqueada
+          </span>
         }
       </div>
     }

@@ -258,6 +258,33 @@ export class SolicitudSalidaCreate implements OnInit {
     this.recomputarOrigenes();
   }
 
+  // ── Obligatoriedad de motivo y lugares ─────────────────────────────
+  // La regla es la misma para las dos vías de captura: el desplegable del
+  // catálogo y el texto libre de "Otro motivo" / "Otro lugar". Estos helpers son
+  // el único origen de verdad — los usa el template (borde rojo y "Campo
+  // requerido") y validarTrayecto antes de enviar, así ninguna de las dos vías
+  // puede quedar opcional por descuido.
+
+  /** true si el trayecto tiene motivo: opción del desplegable, o texto libre no vacío. */
+  motivoValido(t: TrayectoForm): boolean {
+    return t.motivoLibreOn ? !!t.motivoLibre?.trim() : t.motivoId != null;
+  }
+
+  /**
+   * true si el trayecto tiene lugar de origen. En los trayectos 2+ el origen no se
+   * edita: viene encadenado del destino del trayecto anterior, así que se valida
+   * contra lo que quedó copiado (id o texto libre).
+   */
+  origenValido(t: TrayectoForm, idx: number): boolean {
+    if (idx > 0) return t.lugarOrigenId != null || !!t.lugarOrigenLibre?.trim();
+    return t.origenLibre ? !!t.lugarOrigenLibre?.trim() : t.lugarOrigenId != null;
+  }
+
+  /** true si el trayecto tiene lugar de destino: desplegable, o texto libre no vacío. */
+  destinoValido(t: TrayectoForm): boolean {
+    return t.destinoLibre ? !!t.lugarDestinoLibre?.trim() : t.lugarDestinoId != null;
+  }
+
   // ── Validación + envío ─────────────────────────────────────────────
 
   private validarTrayecto(t: TrayectoForm, idx: number): string[] {
@@ -276,9 +303,9 @@ export class SolicitudSalidaCreate implements OnInit {
     }
     if (!t.sinRetorno && t.horaRetorno && t.horaSalida && t.horaRetorno < t.horaSalida)
       errs.push(`${pref}: la hora de retorno debe ser igual o posterior a la de salida`);
-    if (!t.motivoId && !t.motivoLibre?.trim()) errs.push(`${pref}: motivo`);
-    if (!t.lugarOrigenId && !t.lugarOrigenLibre?.trim()) errs.push(`${pref}: lugar de origen`);
-    if (!t.lugarDestinoId && !t.lugarDestinoLibre?.trim()) errs.push(`${pref}: lugar de destino`);
+    if (!this.motivoValido(t)) errs.push(`${pref}: motivo`);
+    if (!this.origenValido(t, idx)) errs.push(`${pref}: lugar de origen`);
+    if (!this.destinoValido(t)) errs.push(`${pref}: lugar de destino`);
     if (t.lugarOrigenId && t.lugarDestinoId && t.lugarOrigenId === t.lugarDestinoId)
       errs.push(`${pref}: origen y destino no pueden ser iguales`);
     if (this.motivoRequiereAdjunto(t) && t.adjuntos.length === 0)

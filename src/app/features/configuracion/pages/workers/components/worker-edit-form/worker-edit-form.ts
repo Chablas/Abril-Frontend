@@ -35,7 +35,8 @@ interface EditModel {
   cumpleanos: string; // 'YYYY-MM-DD'
   emailCorporativo: string;
   emailPersonal: string;
-  /** FK a `categoria`: el campo de lógica. */
+  /** FK a `categoria`. NO se guarda: es solo el filtro que acota el desplegable de puestos
+   * y muestra a qué categoría pertenece el que se eligió. */
   categoriaId: number | null;
   /** FK a `puesto`: el campo de presentación. */
   puestoId: number | null;
@@ -267,25 +268,25 @@ export class WorkerEditForm implements OnChanges {
     return names.join(' › ');
   }
 
-  /** Al cambiar la categoría se descarta el puesto si ya no pertenece a ella. */
+  /** La categoría no se guarda en el trabajador: filtra el desplegable de puestos, que es lo
+   * que sí se guarda (y de donde el sistema lee la categoría). Al cambiarla se descarta el
+   * puesto si ya no pertenece a ella. */
   onCategoriaChange(categoriaId: number | null): void {
     this.model.categoriaId = categoriaId;
     const puesto = this.puestos.find((p) => p.id === this.model.puestoId);
     if (puesto && puesto.categoriaId !== categoriaId) this.model.puestoId = null;
   }
 
-  /** Elegir un puesto rellena la categoría si aún está vacía. */
+  /** Elegir un puesto fija la categoría, siempre: la del trabajador es la de su puesto. */
   onPuestoChange(puestoId: number | null): void {
     this.model.puestoId = puestoId;
-    if (this.model.categoriaId != null) return;
     const puesto = this.puestos.find((p) => p.id === puestoId);
-    if (puesto?.categoriaId != null) this.model.categoriaId = puesto.categoriaId;
+    if (puesto) this.model.categoriaId = puesto.categoriaId;
   }
 
   /**
-   * Puestos ofrecidos: solo los de la categoría elegida. Un puesto sin categoría no entra en
-   * el filtro — si no pertenece a la categoría elegida, no se ofrece. Sin categoría elegida
-   * se muestran todos, porque no hay con qué filtrar.
+   * Puestos ofrecidos: solo los de la categoría elegida como filtro. Sin filtro se muestran
+   * todos. Todo puesto pertenece a exactamente una categoría (la columna es NOT NULL).
    */
   get puestosFiltrados(): { id: number; nombre: string; categoriaId: number | null }[] {
     if (this.model.categoriaId == null) return this.puestos;
@@ -387,7 +388,7 @@ export class WorkerEditForm implements OnChanges {
       cumpleanos: this.model.cumpleanos || null,
       emailCorporativo: this.model.emailCorporativo?.trim() || null,
       emailPersonal: this.model.emailPersonal?.trim() || null,
-      categoriaId: this.model.categoriaId ?? null,
+      // La categoría no se manda: el backend la lee del puesto.
       puestoId: this.model.puestoId ?? null,
       areaScopeId: this.selectedAreaScopeId,
     };

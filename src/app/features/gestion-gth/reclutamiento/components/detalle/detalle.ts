@@ -22,6 +22,7 @@ import {
   ReclutamientoService,
 } from '../../services/reclutamiento.service';
 import {
+  CoincidenciaAviso,
   DecisionFormularioAplicada,
   FormularioDecisionService,
 } from '../../services/formulario-decision.service';
@@ -826,12 +827,30 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
+   * Aviso de que el documento que declaró el postulante ya existe en la base. null cuando no
+   * coincide con nada. El mismo aviso que pinta el modal «Ver formulario»: la copia y la severidad
+   * salen del servicio compartido para que los dos digan exactamente lo mismo.
+   */
+  avisoCoincidencia(c: CandidatoAprobado): CoincidenciaAviso | null {
+    return this.decisiones.avisoCoincidencia(c.coincidencia);
+  }
+
+  /**
+   * true si se puede aprobar: además de estar completado, el documento declarado no puede ser de
+   * un trabajador que está adentro de la empresa. Aprobarlo actualizaría la ficha de `person` de
+   * ese trabajador con lo que tecleó alguien en un formulario público.
+   */
+  formularioAprobable(c: CandidatoAprobado): boolean {
+    return this.formularioPorRevisar(c) && !c.coincidencia?.bloqueaAprobacion;
+  }
+
+  /**
    * Aprueba/rechaza el formulario desde la ficha del candidato, sin abrir el modal de revisión.
    * Son los mismos botones del modal (mismo flujo y mismas observaciones): acá están a la mano
    * para el caso en que GTH ya revisó los datos y solo quiere decidir.
    */
   aprobarFormulario(c: CandidatoAprobado): Promise<void> {
-    return this.decidirFormulario(c, () => this.decisiones.aprobar(c.candidatoId));
+    return this.decidirFormulario(c, () => this.decisiones.aprobar(c.candidatoId, c.coincidencia));
   }
 
   rechazarFormulario(c: CandidatoAprobado): Promise<void> {

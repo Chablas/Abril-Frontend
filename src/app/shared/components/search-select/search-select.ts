@@ -17,6 +17,8 @@ export class SearchSelect {
   @Output() valueChange = new EventEmitter<any>();
   @Input() label: string = '';
   @Input() showLabel: boolean = true;
+  /** true = agrega un asterisco rojo al label para marcar el campo como obligatorio. */
+  @Input() required: boolean = false;
   @Input() placeholder: string = 'Selecciona';
   @Input() allowClear: boolean = true;
   /** Trigger más chico (26px alto, texto 11px) para celdas de tabla o filas densas. */

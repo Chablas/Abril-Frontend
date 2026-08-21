@@ -80,11 +80,11 @@
           displayField="nombre"
           [value]="model.categoriaId"
           [showLabel]="false"
-          placeholder="Selecciona categoría"
+          placeholder="Todas las categorías"
           [allowClear]="true"
           (valueChange)="onCategoriaChange($event)"
         />
-        <span class="field-hint">Define entregables, permisos y filtros internos.</span>
+        <span class="field-hint">Solo filtra los puestos. La categoría real la define el puesto.</span>
       </div>
 
       <div>
@@ -99,7 +99,7 @@
           [allowClear]="true"
           (valueChange)="onPuestoChange($event)"
         />
-        <span class="field-hint">Es el cargo que se muestra en el sistema.</span>
+        <span class="field-hint">Es el cargo que se muestra, y de él salen los entregables, permisos y filtros internos.</span>
       </div>
 
       <div class="col-span-2" *ngFor="let level of areaLevels; let i = index">

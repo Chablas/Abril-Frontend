@@ -22,10 +22,12 @@
       (valueChange)="categoriaId = $event"
       placeholder="Selecciona categoría">
     </app-search-select>
+    <p *ngIf="submitted && categoriaId === null" class="text-xs text-red-500 -mt-[10px]">Campo requerido</p>
 
     <p class="text-xs text-gray-400">
-      Se guarda en mayúsculas. El puesto es el cargo que se muestra en la ficha del
-      trabajador; la lógica interna se resuelve por su categoría.
+      Se guarda en mayúsculas. El puesto es el cargo que se muestra en la ficha del trabajador;
+      la lógica interna se resuelve por su categoría, así que cambiarla acá le cambia el nivel a
+      todos los trabajadores con este puesto.
     </p>
 
     <div class="flex justify-center mt-[4px]">

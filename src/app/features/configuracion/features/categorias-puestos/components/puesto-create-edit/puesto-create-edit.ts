@@ -51,7 +51,10 @@ export class PuestoCreateEdit implements OnInit {
   save(): void {
     this.submitted = true;
     const nombre = this.nombre.trim();
-    if (!nombre) return;
+    // La categoría es obligatoria: es de acá de donde sale la categoría de cada trabajador
+    // que tenga este puesto, y un puesto sin ella dejaría a esas fichas fuera de todo filtro
+    // y de toda regla.
+    if (!nombre || this.categoriaId == null) return;
 
     this.loaderService.show();
     const req = { nombre, categoriaId: this.categoriaId };

@@ -129,6 +129,26 @@
                   </span>
                 </p>
               }
+
+              <!-- Escenario que no debería darse: la ficha que le tocó al seleccionado es de
+                   alguien que ya trabaja en Abril, así que no es un pre-ingreso y el backend
+                   rechaza la cita. Se dice acá para no dejar la fase sin botón ni explicación. -->
+              @if (sel.emoIngresoBloqueado) {
+                <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[9px] mt-[10px]"
+                     style="border-color:#fecaca;background:#FEF2F2">
+                  <i class="ti ti-alert-triangle text-[17px] shrink-0 mt-[1px]" style="color:#B91C1C"></i>
+                  <div>
+                    <p class="text-[12.5px] font-bold" style="color:#B91C1C">
+                      Escenario no contemplado por el sistema.
+                    </p>
+                    <p class="text-[12px] mt-[1px]" style="color:#B91C1C">
+                      La ficha de este seleccionado es de alguien que ya trabaja en Abril
+                      ({{ sel.fichaEstadoNombre || 'Activo' }}), así que no se le puede programar el
+                      EMO de Ingreso. Reporta el caso al administrador antes de continuar.
+                    </p>
+                  </div>
+                </div>
+              }
             </div>
           </div>
         </div>
@@ -484,8 +504,11 @@
           }
 
           @for (c of detalle.candidatosAprobados; track c.candidatoId; let i = $index) {
+            <!-- El borde rojo del candidato bloqueado es lo que lo hace visible sin abrir nada
+                 cuando la lista tiene varios: la selección para el envío masivo no lo tapa. -->
             <div class="rounded-[10px] border px-[14px] py-[12px] mt-[12px]"
-                 [style.border-color]="seleccionFormulario.has(c.candidatoId) ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-border)'">
+                 [style.border-color]="c.coincidencia?.bloqueaAprobacion ? '#f87171'
+                   : (seleccionFormulario.has(c.candidatoId) ? 'var(--color-abril-logo-blue)' : 'var(--color-abril-border)')">
               <div class="flex items-start justify-between gap-[10px]">
                 <label class="flex items-center gap-[9px] cursor-pointer">
                   <input type="checkbox" [checked]="seleccionFormulario.has(c.candidatoId)"
@@ -521,6 +544,20 @@
                 </p>
               }
 
+              <!-- El documento que declaró el postulante ya existe en la base: aprobar actualizaría
+                   esa ficha en vez de crear una nueva. Va acá y no solo en el modal porque los
+                   botones Aprobar/Rechazar de abajo deciden sin abrirlo. El postulante nunca lo ve. -->
+              @if (avisoCoincidencia(c); as coinc) {
+                <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[9px] mt-[10px]"
+                     [style.border-color]="coinc.borde" [style.background]="coinc.fondo">
+                  <i class="ti text-[17px] shrink-0 mt-[1px]" [ngClass]="coinc.icono" [style.color]="coinc.color"></i>
+                  <div>
+                    <p class="text-[12.5px] font-bold" [style.color]="coinc.color">{{ coinc.titulo }}</p>
+                    <p class="text-[12px] mt-[1px]" [style.color]="coinc.color">{{ coinc.detalle }}</p>
+                  </div>
+                </div>
+              }
+
               <!-- Ver formulario (abre el modal de revisión) + decidir sin abrirlo cuando ya está
                    completado: son los mismos botones del modal, a la mano en la ficha. -->
               <div class="flex flex-wrap items-center gap-[10px] mt-[10px]">
@@ -545,7 +582,9 @@
                   </button>
                 }
 
-                @if (formularioPorRevisar(c)) {
+                <!-- Aprobar desaparece cuando el documento declarado es de un trabajador que está
+                     adentro: el aviso de arriba dice de quién es y por qué no se puede. -->
+                @if (formularioAprobable(c)) {
                   <button type="button"
                     [disabled]="decidiendoFormulario[c.candidatoId]"
                     (click)="aprobarFormulario(c)"
@@ -554,6 +593,12 @@
                     <i class="ti ti-check text-[15px]"></i>
                     Aprobar formulario
                   </button>
+                } @else if (formularioPorRevisar(c)) {
+                  <span class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] text-[13px] font-semibold"
+                        style="border:1px solid #fecaca;background:#FEF2F2;color:#B91C1C">
+                    <i class="ti ti-lock text-[15px]"></i>
+                    Aprobación bloqueada
+                  </span>
                 }
 
                 <!-- Cerrar el proceso del postulante es una decisión aparte de rechazar su

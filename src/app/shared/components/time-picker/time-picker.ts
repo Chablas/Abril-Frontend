@@ -34,6 +34,8 @@ import { FormsModule } from '@angular/forms';
 export class TimePicker implements OnChanges, OnDestroy {
   @Input() label = '';
   @Input() showLabel = true;
+  /** true = agrega un asterisco rojo al label para marcar el campo como obligatorio. */
+  @Input() required = false;
   @Input() placeholder = '--:--';
   /** Hora seleccionada en formato `HH:mm` (24h), o null/undefined si no hay selección. */
   @Input() value: string | null | undefined = null;

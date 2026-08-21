@@ -26,4 +26,12 @@ export interface Seleccionado {
   workerId: number | null;
   /** true mientras su EMO de Ingreso siga sin programarse (el requerimiento sigue abierto). */
   emoIngresoPendiente: boolean;
+  /**
+   * true en un escenario que no debería darse: el requerimiento sigue esperando el EMO de Ingreso
+   * pero la ficha que le tocó al seleccionado es de alguien que ya trabaja en Abril, así que no es
+   * un pre-ingreso y el backend rechaza esa cita. Excluyente con `emoIngresoPendiente`.
+   */
+  emoIngresoBloqueado: boolean;
+  /** Estado de esa ficha ("Activo"…) para nombrarlo en el aviso. Solo si `emoIngresoBloqueado`. */
+  fichaEstadoNombre: string | null;
 }

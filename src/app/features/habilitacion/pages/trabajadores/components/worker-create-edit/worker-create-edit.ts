@@ -50,9 +50,15 @@ interface WorkerFormModel {
   apellidoNombre: string;
   dni: string;
   celular: string;
-  /** FK a `categoria`: el campo de lógica (filtros, bloqueos, restricciones). */
+  /**
+   * FK a `categoria`. NO se guarda: es solo el filtro que acota el desplegable de puestos y
+   * muestra a qué categoría pertenece el que se eligió.
+   */
   categoriaId: number | null;
-  /** FK a `puesto`: el campo de presentación. Un puesto pertenece a una categoría. */
+  /**
+   * FK a `puesto`: el único campo que se guarda de los dos. Es el nombre que se muestra y,
+   * a la vez, el camino a la categoría (todo puesto pertenece a una).
+   */
   puestoId: number | null;
   /**
    * Nodo del árbol de áreas (workers.area_scope_id): el único dato de área que captura el
@@ -333,7 +339,6 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       return (
         base &&
         !!this.model.proyectoId &&
-        this.model.categoriaId != null &&
         this.model.puestoId != null &&
         !!this.model.condicionMedica.trim() &&
         !!this.model.fechaIngreso.trim() &&
@@ -901,8 +906,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   // todos los handlers normalizan a '' antes de asignar (varios getters hacen .trim() encima).
 
   /**
-   * Al cambiar la categoría se descarta el puesto elegido si ya no pertenece a ella,
-   * porque el desplegable de puestos se filtra por categoría.
+   * La categoría no se guarda en el trabajador: es un filtro para acotar el desplegable de
+   * puestos, que es el campo que sí se guarda (y de donde el sistema lee la categoría).
+   * Al cambiarla se descarta el puesto elegido si ya no pertenece a ella.
    */
   onCategoriaChange(categoriaId: number | null): void {
     this.model.categoriaId = categoriaId;
@@ -911,24 +917,23 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   }
 
   /**
-   * Elegir un puesto rellena la categoría si aún está vacía: el puesto ya sabe a qué
-   * categoría pertenece, así se evita tener que elegir dos veces lo mismo.
+   * Elegir un puesto fija la categoría, siempre: el puesto es el único campo que se guarda
+   * y la categoría del trabajador es la de su puesto. El desplegable de categoría es solo
+   * un filtro para encontrar el puesto, así que se sincroniza con lo elegido para que no
+   * muestre una categoría que ya no es la del trabajador.
    */
   onPuestoChange(puestoId: number | null): void {
     this.model.puestoId = puestoId;
-    if (this.model.categoriaId != null) return;
     const puesto = this.puestos.find((p) => p.id === puestoId);
-    if (puesto?.categoriaId != null) this.model.categoriaId = puesto.categoriaId;
+    if (puesto) this.model.categoriaId = puesto.categoriaId;
   }
 
   /**
    * Puestos que se ofrecen: solo los de la categoría elegida. Sin categoría elegida se
    * muestran todos (no hay con qué filtrar todavía).
    *
-   * Un puesto sin categoría asignada NO entra en el filtro: si no pertenece a la categoría
-   * elegida, no tiene por qué ofrecerse ahí. Antes se incluían siempre (quedaron así al
-   * unificar los catálogos, sin datos para deducir su categoría) y eso ensuciaba el
-   * desplegable con puestos ajenos a la categoría.
+   * Todo puesto pertenece a exactamente una categoría (la columna es NOT NULL), así que el
+   * filtro es exacto: no hay puestos "sin categoría" que decidir si entran o no.
    */
   get puestosFiltrados(): { id: number; nombre: string; categoriaId: number | null }[] {
     if (this.model.categoriaId == null) return this.puestos;
@@ -1266,7 +1271,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       emailPersonal: n(this.model.emailPersonal),
       fechaIngreso: n(this.model.fechaIngreso) || undefined,
       condicionMedica: n(this.model.condicionMedica),
-      categoriaId: this.model.categoriaId ?? undefined,
+      // La categoría no se manda: el backend la lee del puesto.
       puestoId: this.model.puestoId ?? undefined,
       // El área se manda como nodo del árbol y el backend deriva de ahí area/subarea/jefatura.
       // Cuando el formulario sí gestiona el área se mandan los tres en null para que manden los
