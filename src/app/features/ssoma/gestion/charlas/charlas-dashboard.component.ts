@@ -31,6 +31,8 @@ import { FilterModal } from '../../../../shared/components/filter-modal/filter-m
 import { StatusBadge } from '../../../../shared/components/status-badge/status-badge';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { AbrilBulkActionDirective } from '../../../../shared/directives/abril-bulk-action.directive';
+import { ClientPager } from '../../../../shared/utils/client-pager';
+import { DEFAULT_PAGE_SIZE } from '../../../../shared/constants/pagination';
 
 Chart.register(...registerables);
 
@@ -74,6 +76,24 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   // Dashboard
   dashPersonalResult: DashPersonalResult = { dias: [], staff: [] };
   loadingDash = false;
+  // La tabla staff x dias puede llegar a decenas de miles de celdas en proyectos grandes
+  // (700+ trabajadores x 40+ dias de charla): renderizarla completa de una sola vez congela
+  // el navegador por varios segundos. Se pagina el listado de staff igual que el resto de
+  // tablas de la app.
+  readonly dashPager = new ClientPager<DashPersonalItem>(DEFAULT_PAGE_SIZE);
+
+  get dashStaffPagina(): DashPersonalItem[] {
+    return this.dashPager.page(this.dashPersonalResult.staff);
+  }
+
+  get dashStaffTotalPages(): number {
+    return this.dashPager.totalPages(this.dashPersonalResult.staff);
+  }
+
+  dashGoPage(p: number): void {
+    this.dashPager.goTo(p);
+    this.cdr.markForCheck();
+  }
 
   // Editar charla (Tab 3): cabecera + asistencia
   editCharlaId: number | null = null;
@@ -203,8 +223,6 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
   ngOnInit(): void {
     this.activeTab = this.route.snapshot.data['tab'] ?? 1;
 
-    // eslint-disable-next-line no-console
-    console.time('[charlas] ngOnInit -> forkJoin inicial');
     forkJoin({
       miProyecto: this.svc.getMiProyecto().pipe(catchError(() => of(null))),
       proyectos: this.filters.getProyectos().pipe(catchError(() => of([]))),
@@ -213,8 +231,6 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
       anios: this.filters.getAnios().pipe(catchError(() => of([]))),
     }).subscribe({
       next: ({ miProyecto, proyectos, supervisores, meses, anios }) => {
-        // eslint-disable-next-line no-console
-        console.timeEnd('[charlas] ngOnInit -> forkJoin inicial');
         this.proyectos = proyectos as any[];
         this.mesesData = meses as any[];
         this.aniosData = anios as any[];
@@ -222,16 +238,20 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
         this.loading = false;
         this.cdr.markForCheck();
 
+        // Si ya elegimos un proyecto antes en esta sesión (ej. el usuario cambió de pestaña
+        // dentro de Charlas), lo reusamos directo en vez de repetir la búsqueda completa.
+        if (this.svc.ultimoProyectoId != null) {
+          this.proyectoId = this.svc.ultimoProyectoId;
+          this.loadAll();
+          return;
+        }
+
         const miProyectoId = miProyecto ? (miProyecto as any).proyectoId : undefined;
         const candidatos = [miProyectoId, ...this.proyectos.map(p => p.id)]
           .filter((id, i, arr) => id != null && arr.indexOf(id) === i);
-        // eslint-disable-next-line no-console
-        console.log('[charlas] candidatos de proyecto:', candidatos);
         if (candidatos.length) this.elegirPrimerProyectoConDatos(candidatos, 0);
       },
       error: (err: HttpErrorResponse) => {
-        // eslint-disable-next-line no-console
-        console.timeEnd('[charlas] ngOnInit -> forkJoin inicial');
         this.loading = false;
         this.errorService.handleError(err);
         this.cdr.markForCheck();
@@ -247,25 +267,15 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
    */
   private elegirPrimerProyectoConDatos(candidatos: number[], i: number): void {
     const id = candidatos[i];
-    // eslint-disable-next-line no-console
-    console.time(`[charlas] getDashPersonal proyecto=${id} (intento ${i + 1}/${candidatos.length})`);
     this.svc.getDashPersonal(id, this.mes, this.anio).pipe(catchError(() => of({ dias: [], staff: [] }))).subscribe({
       next: (d) => {
-        // eslint-disable-next-line no-console
-        console.timeEnd(`[charlas] getDashPersonal proyecto=${id} (intento ${i + 1}/${candidatos.length})`);
-        // eslint-disable-next-line no-console
-        console.log(`[charlas] proyecto=${id}: ${d.staff.length} trabajadores x ${d.dias.length} dias = ${d.staff.length * d.dias.length} celdas`);
         const esUltimo = i === candidatos.length - 1;
         if (d.staff.length > 0 || esUltimo) {
           this.proyectoId = id;
+          this.svc.ultimoProyectoId = id;
           this.dashPersonalResult = d;
+          this.dashPager.reset();
           this.cdr.markForCheck();
-          // eslint-disable-next-line no-console
-          console.time('[charlas] render tabla (post markForCheck)');
-          requestAnimationFrame(() => requestAnimationFrame(() => {
-            // eslint-disable-next-line no-console
-            console.timeEnd('[charlas] render tabla (post markForCheck)');
-          }));
           this.loadAll();
         } else {
           this.elegirPrimerProyectoConDatos(candidatos, i + 1);
@@ -291,6 +301,7 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
 
   onProyectoChange(): void {
     if (!this.proyectoId) return;
+    this.svc.ultimoProyectoId = this.proyectoId;
     this.loadAll();
     if (this.activeTab === 3) this.loadTab3();
   }
@@ -312,7 +323,7 @@ export class CharlasDashboardComponent implements OnInit, AfterViewInit, OnDestr
     this.loadingDash = true;
     this.cdr.markForCheck();
     this.svc.getDashPersonal(this.proyectoId, this.mes, this.anio).subscribe({
-      next: (d) => { this.dashPersonalResult = d; this.loadingDash = false; this.cdr.markForCheck(); },
+      next: (d) => { this.dashPersonalResult = d; this.dashPager.reset(); this.loadingDash = false; this.cdr.markForCheck(); },
       error: (err: HttpErrorResponse) => { this.loadingDash = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
     });
   }

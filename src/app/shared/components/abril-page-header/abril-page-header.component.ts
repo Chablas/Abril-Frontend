@@ -135,6 +135,23 @@ export class AbrilPageHeaderComponent implements OnInit, OnDestroy {
     return this.resolvedTabs.filter((t) => this.navigationService.isNavEntryAllowed(t));
   }
 
+  /**
+   * `tabs`/`tabGroups` suelen venir de getters en la página consumidora (ej.
+   * `tabsHeader` en CharlasDashboardComponent) que reconstruyen el array en cada
+   * ciclo de detección de cambios. Sin trackBy, *ngFor compara por identidad de
+   * objeto y ve "items nuevos" en cada ciclo, destruyendo y recreando los <a> del
+   * menú constantemente — si eso cae justo entre mousedown y click, el navegador
+   * pierde el evento y el usuario necesita un segundo click para navegar (bug real
+   * reportado en Charlas, pero afecta a cualquier página que use este header).
+   */
+  trackByTab(_: number, tab: AbrilPageTab): string {
+    return tab.route ?? tab.label;
+  }
+
+  trackByGroup(_: number, group: AbrilPageTabGroup): string {
+    return group.label;
+  }
+
   navigateToGroup(group: AbrilPageTabGroup): void {
     // Navega a la primera pestaña que el usuario realmente puede ver, no a la
     // primera del arreglo a secas — si la primera pestaña (ej. un Dashboard

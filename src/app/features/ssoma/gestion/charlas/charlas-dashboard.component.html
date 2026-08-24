@@ -51,7 +51,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (p of dashPersonalResult.staff; track p.workerId) {
+                  @for (p of dashStaffPagina; track p.workerId) {
                     @let pctP = p.charlasTotales > 0 ? (p.charlasAsistidas / p.charlasTotales * 100) : 0;
                     <tr>
                       <td class="col-persona-cell td-sticky-left">
@@ -79,6 +79,11 @@
               <span><span class="asist-check">✓</span> Asistió</span>
               <span><span class="asist-x">✗</span> No asistió</span>
             </div>
+            <app-paginator
+              [totalRecords]="dashPersonalResult.staff.length"
+              [currentPage]="dashPager.currentPage"
+              [totalPages]="dashStaffTotalPages"
+              (pageChange)="dashGoPage($event)" />
           </div>
         }
       }

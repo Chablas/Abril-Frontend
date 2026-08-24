@@ -59,7 +59,7 @@
 <!-- Group selector — solo aparece cuando hay múltiples grupos -->
 <div class="abril-tab-groups" *ngIf="hasGroups">
   <button
-    *ngFor="let g of visibleGroups; let i = index"
+    *ngFor="let g of visibleGroups; let i = index; trackBy: trackByGroup"
     class="atg-btn"
     [class.atg-btn--active]="i === activeGroupIndex"
     (click)="navigateToGroup(g)">
@@ -76,7 +76,7 @@
 <div class="abril-tabs" *ngIf="visibleTabs.length || hasExtra">
   <div class="abril-tabs__row">
     <nav class="abril-tabs__nav" *ngIf="visibleTabs.length">
-      <ng-container *ngFor="let tab of visibleTabs">
+      <ng-container *ngFor="let tab of visibleTabs; trackBy: trackByTab">
         <a *ngIf="tab.route"
            class="abril-tabs__tab"
            [routerLink]="tab.route"

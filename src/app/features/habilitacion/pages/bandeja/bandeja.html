@@ -64,41 +64,86 @@
         <div *ngIf="!loading && items.length === 0" class="empty-list">
           No hay documentos pendientes de aprobación.
         </div>
-        <div
-          *ngFor="let item of filteredItems"
-          class="bandeja-card"
-          [class.selected]="selectedItem?.id === item.id"
-          (click)="selectItem(item)"
-        >
-          <input
-            type="checkbox"
-            class="card-checkbox"
-            [checked]="selectedIds.has(item.id)"
-            (change)="toggleSelect(item.id)"
-            (click)="$event.stopPropagation()"
-          />
-          <div class="bc-content">
-            <div class="bc-header">
-              <div class="bc-chips">
-                <span class="btn-chip" [class]="getTipoClass(item.tipo)">{{ item.tipo }}</span>
-                <span class="btn-chip" [class]="getEstadoClass(item.estado)">{{ item.estado }}</span>
-              </div>
-              <span class="bc-fecha" *ngIf="item.vigencia">Vence: {{ item.vigencia | date:'dd/MM/yyyy' }}</span>
+
+        <ng-container *ngIf="!loading && filtroTipo === 'TRABAJADOR'; else flatList">
+          <div *ngFor="let grupo of trabajadoresPorProyecto" class="proyecto-grupo">
+            <div class="proyecto-grupo-header">
+              <span>{{ grupo.proyectoNombre }}</span>
+              <span class="proyecto-grupo-count">{{ grupo.items.length }}</span>
             </div>
-            <div class="bc-entregable">{{ item.nombreEntregable }}</div>
-            <span *ngIf="item.esMensual && item.mesesPendientes && item.mesesPendientes > 1"
-              class="btn-chip chip-orange"
-              style="font-size:0.68rem;margin-top:2px">
-              {{ item.mesesPendientes }} meses pendientes
-            </span>
-            <div class="bc-entidad">{{ item.entidadNombre }}</div>
-            <div class="bc-meta" *ngIf="item.empresaNombre || item.proyectoNombre">
-              <span *ngIf="item.empresaNombre">{{ item.empresaNombre }}</span>
-              <span *ngIf="item.empresaNombre && item.proyectoNombre"> · </span>
-              <span *ngIf="item.proyectoNombre">{{ item.proyectoNombre }}</span>
+            <div
+              *ngFor="let item of grupo.items"
+              class="bandeja-card"
+              [class.selected]="selectedItem?.id === item.id"
+              (click)="selectItem(item)"
+            >
+              <input
+                type="checkbox"
+                class="card-checkbox"
+                [checked]="selectedIds.has(item.id)"
+                (change)="toggleSelect(item.id)"
+                (click)="$event.stopPropagation()"
+              />
+              <div class="bc-content">
+                <div class="bc-header">
+                  <div class="bc-chips">
+                    <span class="btn-chip" [class]="getTipoClass(item.tipo)">{{ item.tipo }}</span>
+                    <span class="btn-chip" [class]="getEstadoClass(item.estado)">{{ item.estado }}</span>
+                  </div>
+                  <span class="bc-fecha" *ngIf="item.vigencia">Vence: {{ item.vigencia | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <div class="bc-entregable">{{ item.nombreEntregable }}</div>
+                <span *ngIf="item.esMensual && item.mesesPendientes && item.mesesPendientes > 1"
+                  class="btn-chip chip-orange"
+                  style="font-size:0.68rem;margin-top:2px">
+                  {{ item.mesesPendientes }} meses pendientes
+                </span>
+                <div class="bc-entidad">{{ item.entidadNombre }}</div>
+                <div class="bc-meta" *ngIf="item.empresaNombre">
+                  <span>{{ item.empresaNombre }}</span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </ng-container>
+
+        <ng-template #flatList>
+          <div
+            *ngFor="let item of filteredItems"
+            class="bandeja-card"
+            [class.selected]="selectedItem?.id === item.id"
+            (click)="selectItem(item)"
+          >
+            <input
+              type="checkbox"
+              class="card-checkbox"
+              [checked]="selectedIds.has(item.id)"
+              (change)="toggleSelect(item.id)"
+              (click)="$event.stopPropagation()"
+            />
+            <div class="bc-content">
+              <div class="bc-header">
+                <div class="bc-chips">
+                  <span class="btn-chip" [class]="getTipoClass(item.tipo)">{{ item.tipo }}</span>
+                  <span class="btn-chip" [class]="getEstadoClass(item.estado)">{{ item.estado }}</span>
+                </div>
+                <span class="bc-fecha" *ngIf="item.vigencia">Vence: {{ item.vigencia | date:'dd/MM/yyyy' }}</span>
+              </div>
+              <div class="bc-entregable">{{ item.nombreEntregable }}</div>
+              <span *ngIf="item.esMensual && item.mesesPendientes && item.mesesPendientes > 1"
+                class="btn-chip chip-orange"
+                style="font-size:0.68rem;margin-top:2px">
+                {{ item.mesesPendientes }} meses pendientes
+              </span>
+              <div class="bc-entidad">{{ item.entidadNombre }}</div>
+              <div class="bc-meta" *ngIf="item.empresaNombre || item.proyectoNombre">
+                <span *ngIf="item.empresaNombre">{{ item.empresaNombre }}</span>
+                <span *ngIf="item.empresaNombre && item.proyectoNombre"> · </span>
+                <span *ngIf="item.proyectoNombre">{{ item.proyectoNombre }}</span>
+              </div>
+            </div>
+          </div>
+        </ng-template>
       </div>
 
       <div class="paginator-wrapper" *ngIf="totalPages > 1">
