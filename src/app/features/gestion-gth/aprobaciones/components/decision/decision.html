@@ -127,10 +127,21 @@
             <div class="ad-vac-top">
               <span class="ad-vac-code">{{ v.codigo }}</span>
               <span class="ad-vac-tag">{{ v.tipoRequerimiento | titleCase }}</span>
+              <!-- Ingreso directo: lo que se aprueba no es una vacante a publicar sino a esta
+                   persona, así que la etiqueta va arriba, junto al código. -->
+              @if (v.esFft) {
+                <span class="ad-vac-tag ad-vac-tag--fft">FFT · Ingreso directo</span>
+              }
             </div>
             <p class="ad-vac-puesto">{{ v.puesto | titleCase }}</p>
             <div class="ad-vac-detail">
               <span><i class="ti ti-building-community"></i> {{ (v.proyectoObra | titleCase) || '—' }}</span>
+              <!-- Candidato del ingreso directo: nombre y correo personal son lo que se está
+                   aprobando, y el correo es al que GTH le mandará el formulario. -->
+              @if (v.esFft) {
+                <span><i class="ti ti-user-check"></i> {{ (v.fftCandidatoNombre | titleCase) || '—' }}</span>
+                <span><i class="ti ti-mail"></i> {{ v.fftCandidatoCorreo || '—' }}</span>
+              }
               <!-- El salario es parte de lo que se aprueba, así que va en la misma línea de datos
                    de la vacante. Guion en las vacantes anteriores a que se pidiera el dato. -->
               <span class="ad-vac-salario">

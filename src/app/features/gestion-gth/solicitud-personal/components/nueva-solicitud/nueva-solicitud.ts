@@ -9,7 +9,7 @@ import { FileSelector, SelectedFile } from '../../../../../shared/components/fil
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { SolicitudPersonalService } from '../../services/solicitud-personal.service';
-import { DestinatarioSolicitud } from '../../../shared/dtos/destinatarios.dto';
+import { DestinatarioSolicitud, SolicitudDestinatarios } from '../../../shared/dtos/destinatarios.dto';
 import {
   ReclutamientoFormDataDto,
   SolicitudPersonalCreateDto,
@@ -33,6 +33,13 @@ interface VacanteForm {
    * área y Gerencia General junto con la vacante.
    */
   salarioBrutoMensual: number | null;
+  /**
+   * Ingreso directo FFT: el solicitante ya sabe a quién quiere. Al marcarlo aparecen (y se exigen)
+   * el nombre y el correo personal del candidato; al desmarcarlo se limpian.
+   */
+  esFft: boolean;
+  fftCandidatoNombre: string;
+  fftCandidatoCorreo: string;
 }
 
 @Component({
@@ -54,6 +61,16 @@ export class GthNuevaSolicitud implements OnInit {
    */
   readonly maxSalario = 1_000_000;
 
+  /** Tope del nombre del candidato FFT, igual que en el backend. */
+  readonly maxFftNombre = 200;
+
+  /**
+   * Correo válido para el candidato FFT. Misma expresión que valida el backend (y que la del envío
+   * del formulario al postulante): es el mismo buzón, así que lo que se acepta acá tiene que ser
+   * exactamente lo que después se pueda usar para escribirle.
+   */
+  private readonly correoValido = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
   formData: ReclutamientoFormDataDto = {
     areaNombre: null,
     areaScopeId: null,
@@ -63,6 +80,8 @@ export class GthNuevaSolicitud implements OnInit {
     proyectos: [],
     trabajadoresArea: [],
     destinatarios: { para: [], copias: [] },
+    esGerenteGeneral: false,
+    destinatariosFft: null,
   };
 
   /** El aviso de destinatarios solo se muestra cuando ya se sabe a quién le llega (o a nadie). */
@@ -97,6 +116,8 @@ export class GthNuevaSolicitud implements OnInit {
           ...data,
           trabajadoresArea: data.trabajadoresArea ?? [],
           destinatarios: data.destinatarios ?? { para: [], copias: [] },
+          esGerenteGeneral: data.esGerenteGeneral ?? false,
+          destinatariosFft: data.destinatariosFft ?? null,
         };
         this.destinatariosCargados = true;
         const max = data.maxVacantes || 10;
@@ -111,12 +132,36 @@ export class GthNuevaSolicitud implements OnInit {
   }
 
   // ── Aviso "a quién le llega esta solicitud" ────────────────────────
+  /**
+   * ¿Esta solicitud se salta la aprobación de Gerencia General? Solo cuando la registra el propio
+   * Gerente General y TODAS sus vacantes son FFT: pedirle su firma sobre un candidato que él mismo
+   * nombró no aprueba nada. Es la misma regla que aplica el backend — si acá dijera otra cosa, el
+   * aviso prometería un correo distinto del que sale.
+   */
+  get omiteAprobacionGg(): boolean {
+    return (
+      this.formData.esGerenteGeneral &&
+      this.vacantes.length > 0 &&
+      this.vacantes.every((v) => v.esFft)
+    );
+  }
+
+  /** El aviso de destinatarios cambia de correo cuando la solicitud se salta la aprobación. */
+  private get destinatariosVigentes(): SolicitudDestinatarios {
+    return (
+      (this.omiteAprobacionGg ? this.formData.destinatariosFft : this.formData.destinatarios) ?? {
+        para: [],
+        copias: [],
+      }
+    );
+  }
+
   get destinatariosPara(): DestinatarioSolicitud[] {
-    return this.formData.destinatarios?.para ?? [];
+    return this.destinatariosVigentes.para ?? [];
   }
 
   get destinatariosCopias(): DestinatarioSolicitud[] {
-    return this.formData.destinatarios?.copias ?? [];
+    return this.destinatariosVigentes.copias ?? [];
   }
 
   /** Tooltip del correo: el nombre de la persona cuando se conoce, más por qué lo recibe. */
@@ -131,7 +176,34 @@ export class GthNuevaSolicitud implements OnInit {
       reemplazaWorkerId: null,
       projectId: null,
       salarioBrutoMensual: null,
+      esFft: false,
+      fftCandidatoNombre: '',
+      fftCandidatoCorreo: '',
     };
+  }
+
+  // ── FFT: el candidato ya tiene nombre ──────────────────────────────
+  /**
+   * Al desmarcar FFT se limpian el nombre y el correo: si no, quedarían enviándose datos que el
+   * usuario ya no ve (y que el backend descartaría igual).
+   */
+  onFftChange(v: VacanteForm, esFft: boolean): void {
+    v.esFft = esFft;
+    if (!esFft) {
+      v.fftCandidatoNombre = '';
+      v.fftCandidatoCorreo = '';
+    }
+  }
+
+  /** ¿Falta el nombre del candidato FFT? Misma regla que valida `save()`. */
+  fftNombreInvalido(v: VacanteForm): boolean {
+    const nombre = v.fftCandidatoNombre.trim();
+    return v.esFft && (nombre.length === 0 || nombre.length > this.maxFftNombre);
+  }
+
+  /** ¿Falta el correo personal del candidato FFT, o no tiene formato de correo? */
+  fftCorreoInvalido(v: VacanteForm): boolean {
+    return v.esFft && !this.correoValido.test(v.fftCandidatoCorreo.trim());
   }
 
   /**
@@ -199,6 +271,8 @@ export class GthNuevaSolicitud implements OnInit {
         errors.push(`${pref}: trabajador al que reemplaza`);
       if (!v.projectId) errors.push(`${pref}: proyecto/obra`);
       if (this.salarioInvalido(v)) errors.push(`${pref}: salario bruto mensual`);
+      if (this.fftNombreInvalido(v)) errors.push(`${pref}: nombre completo del candidato (FFT)`);
+      if (this.fftCorreoInvalido(v)) errors.push(`${pref}: correo personal del candidato (FFT)`);
     });
 
     if (!this.justificacion.trim()) errors.push('Justificación general de la solicitud');
@@ -221,6 +295,9 @@ export class GthNuevaSolicitud implements OnInit {
         reemplazaWorkerId: this.esReemplazo(v) ? v.reemplazaWorkerId : null,
         projectId: v.projectId,
         salarioBrutoMensual: v.salarioBrutoMensual,
+        esFft: v.esFft,
+        fftCandidatoNombre: v.esFft ? v.fftCandidatoNombre.trim() : null,
+        fftCandidatoCorreo: v.esFft ? v.fftCandidatoCorreo.trim() : null,
       })),
     };
 

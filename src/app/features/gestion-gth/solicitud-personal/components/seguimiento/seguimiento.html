@@ -9,6 +9,20 @@
   @if (seguimiento) {
     <div class="flex flex-col gap-[18px]">
 
+      <!-- Ingreso directo FFT: el proceso es más corto y la línea de tiempo de abajo ya viene sin
+           los pasos que no recorre. Se dice acá para que no parezca que faltan fases. -->
+      @if (seguimiento.esFft) {
+        <div class="flex items-start gap-[10px] rounded-[10px] border px-[14px] py-[11px]"
+             style="border-color:var(--color-abril-standard-border);background:var(--color-abril-standard-light)">
+          <i class="ti ti-user-plus text-[19px] shrink-0 mt-[1px]" style="color:var(--color-abril-standard)"></i>
+          <p class="text-[12.5px] text-gray-600 leading-snug">
+            <b>Ingreso directo (FFT)</b> — candidato:
+            {{ (seguimiento.fftCandidatoNombre | titleCase) || 'sin nombre registrado' }}.
+            El proceso omite publicación, revisión de CV, long list y entrevistas.
+          </p>
+        </div>
+      }
+
       <!-- ── Tarjetas resumen ───────────────────────────────────────────
            3 columnas y no 4: con la tarjeta del salario son 5 tarjetas, y a 4 columnas la
            quinta quedaba sola en su fila. A 3 quedan 3 + 2 y todas las tarjetas salen más

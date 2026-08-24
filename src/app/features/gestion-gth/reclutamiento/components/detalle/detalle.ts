@@ -241,6 +241,15 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   ngOnInit(): void {
+    this.cargarDetalle();
+  }
+
+  /**
+   * Trae (o vuelve a traer) el detalle completo del requerimiento. Se recarga cuando una acción
+   * cambia la fase del proceso por detrás y no solo el trozo que se tocó: hoy pasa al aprobar el
+   * formulario de un ingreso directo FFT, que además cierra la selección y salta al EMO.
+   */
+  private cargarDetalle(): void {
     this.loaderService.show();
     this.service.getDetalle(this.requerimientoId).subscribe({
       next: (data) => {
@@ -256,9 +265,12 @@ export class GthDetalleRequerimiento implements OnInit {
         // el foco pasa al envío del formulario del postulante.
         if (this.longListAprobada) {
           this.seccionAsignacion = false;
-          // Prellena el correo de cada candidato con el último usado (si ya se envió).
+          // Prellena el correo de cada candidato con el último usado (si ya se envió) y, si no, con
+          // su correo de contacto: en un FFT ese correo lo declaró el solicitante, así que el envío
+          // del formulario —el único paso del flujo— sale sin tener que tipear nada.
           for (const c of data.candidatosAprobados) {
-            if (c.formulario?.correoEnvio) this.correoFormulario[c.candidatoId] = c.formulario.correoEnvio;
+            const correo = c.formulario?.correoEnvio ?? c.correoContacto;
+            if (correo) this.correoFormulario[c.candidatoId] = correo;
           }
         }
         this.prepararFormulariosEntrevista();
@@ -283,6 +295,9 @@ export class GthDetalleRequerimiento implements OnInit {
   private abrirFormularioSolicitado(): void {
     const candidatoId = this.abrirFormularioCandidatoId;
     if (!candidatoId) return;
+    // Se consume una sola vez: si el detalle se recarga (p. ej. tras aprobar un formulario FFT), el
+    // enlace del correo no puede volver a abrir el modal que el usuario ya cerró.
+    this.abrirFormularioCandidatoId = null;
 
     const esDelRequerimiento = (this.detalle?.candidatosAprobados ?? []).some(
       (c) => c.candidatoId === candidatoId,
@@ -360,6 +375,26 @@ export class GthDetalleRequerimiento implements OnInit {
   /** true si el requerimiento ya pasó a la programación de entrevistas (fase ENTREVISTAS o posterior). */
   get enEntrevistas(): boolean {
     return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'ENTREVISTAS');
+  }
+
+  /**
+   * true si el requerimiento es un ingreso directo **FFT**. En este flujo no hay multitest,
+   * entrevistas, finalistas ni decisión del solicitante: aprobar el formulario cierra la selección
+   * y el proceso pasa al EMO de ingreso. El modal esconde esos pasos en vez de ofrecer botones que
+   * llevarían el proceso a una fase que no le corresponde.
+   */
+  get esFft(): boolean {
+    return !!this.detalle?.esFft;
+  }
+
+  /**
+   * true si a un FFT le falta la razón social. En el flujo normal la exige el botón de publicar,
+   * pero el ingreso directo no publica nada: sin este aviso la ficha del ingreso se crearía sin
+   * razón social y nadie se enteraría hasta el onboarding. Es un aviso, no un bloqueo — la decisión
+   * de asignarla antes o después es de GTH.
+   */
+  get faltaRazonSocialFft(): boolean {
+    return this.esFft && !this.detalle?.asignacion.contributorId;
   }
 
   // ── Asignación interna (autosave optimista por cambio) ──────────────────
@@ -879,6 +914,15 @@ export class GthDetalleRequerimiento implements OnInit {
     if (res) {
       c.formulario = res.resumen;
       this.huboCambios = true;
+
+      // En un ingreso directo FFT, aprobar el formulario NO solo cambia el estado del formulario:
+      // el backend cierra la selección y mueve el requerimiento al EMO de ingreso. Sin recargar, el
+      // modal seguiría mostrando la fase anterior y el bloque de «Puesto cubierto» no aparecería
+      // hasta cerrar y volver a abrir.
+      if (this.esFft && res.resumen.estadoCodigo === 'APROBADO') {
+        this.cargarDetalle();
+        return;
+      }
     }
     // App zoneless: el cambio ocurre después de un await, así que hay que pintar a mano.
     this.cdr.detectChanges();

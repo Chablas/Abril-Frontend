@@ -97,7 +97,12 @@ export class GthSeguimiento implements OnInit {
   /** Detalle bajo la etiqueta: cuándo decidió Gerencia General, o a qué está esperando. */
   get aprobacionGgDetalle(): string {
     const ap = this.seguimiento?.aprobacionGg;
-    if (!ap) return 'Registrada antes de este paso del flujo';
+    // Sin aprobación hay dos motivos posibles: el ingreso directo que registró Gerencia General (no
+    // se aprueba a sí mismo) o un requerimiento anterior a que existiera este paso.
+    if (!ap)
+      return this.seguimiento?.esFft
+        ? 'Ingreso directo pedido por Gerencia General'
+        : 'Registrada antes de este paso del flujo';
     if (ap.decididoEn) return `Gerencia General · ${this.fecha(ap.decididoEn)}`;
     return ap.enviadoEn
       ? `Enviada a los gerentes el ${this.fecha(ap.enviadoEn)}`

@@ -49,6 +49,15 @@ export interface AprobacionVacante {
    * aprobando. Null en las vacantes anteriores a que se pidiera el dato.
    */
   salarioBrutoMensual: number | null;
+  /**
+   * true = ingreso directo **FFT**: la vacante no se publica ni arma long list, el candidato ya
+   * viene con nombre. Lo que se aprueba es a esa persona, así que la fila lo tiene que decir.
+   */
+  esFft: boolean;
+  /** Nombre del candidato FFT que nombró el solicitante. Null en las vacantes normales. */
+  fftCandidatoNombre: string | null;
+  /** Correo personal del candidato FFT. Null en las vacantes normales. */
+  fftCandidatoCorreo: string | null;
   /** Visto bueno del gerente del área: true / false / null = no opinó. */
   aprobadoGerenteArea: boolean | null;
   /** Decisión de Gerencia General: true = aprobada, false = rechazada, null = sin decidir. */

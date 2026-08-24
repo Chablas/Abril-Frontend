@@ -19,6 +19,11 @@
             [text]="detalle.estadoNombre"
             [bgColor]="estadoColors(detalle.estadoCodigo).bg"
             [textColor]="estadoColors(detalle.estadoCodigo).text" />
+          <!-- El flujo es distinto (sin publicación, long list ni entrevistas), así que se ve
+               desde la cabecera y no recién al bajar a las secciones. -->
+          @if (esFft) {
+            <app-status-badge text="FFT · Ingreso directo" bgColor="#DCFCE7" textColor="#166534" />
+          }
         </div>
 
         <h2 class="text-[20px] font-bold text-gray-800 mt-[4px] leading-tight">
@@ -478,10 +483,13 @@
            formulario del postulante es una feature futura (placeholders). -->
       @if (longListAprobada) {
 
-        <!-- Banner: long list aprobada + acción requerida (unificado) -->
+        <!-- Banner: long list aprobada + acción requerida (unificado). En un ingreso directo FFT no
+             hubo long list que aprobar: el candidato lo nombró quien pidió la vacante, así que el
+             banner dice de dónde viene y qué queda por hacer. -->
         <div class="rounded-[10px] border px-[16px] py-[13px]" style="border-color:#a7f3d0;background:#F0FDF4">
           <div class="flex items-start gap-[10px]">
-            <i class="ti ti-circle-check text-[20px] shrink-0" style="color:#15803D"></i>
+            <i class="ti text-[20px] shrink-0" style="color:#15803D"
+               [ngClass]="esFft ? 'ti-user-plus' : 'ti-circle-check'"></i>
             <div class="min-w-0 flex-1">
 
               <button type="button"
@@ -489,18 +497,39 @@
                 (click)="seccionLongListAprobada = !seccionLongListAprobada">
                 <i class="ti text-[15px] shrink-0 transition-transform" style="color:#15803D"
                    [ngClass]="seccionLongListAprobada ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
-                <h3 class="text-[14px] font-bold text-emerald-800">Long list aprobada por el solicitante</h3>
+                <h3 class="text-[14px] font-bold text-emerald-800">
+                  {{ esFft ? 'Ingreso directo (FFT)' : 'Long list aprobada por el solicitante' }}
+                </h3>
               </button>
 
               @if (seccionLongListAprobada) {
                 <p class="text-[12.5px] text-emerald-700 mt-[4px] leading-snug">
-                  El solicitante aprobó {{ detalle.candidatosAprobados.length }} candidato(s). Envía a cada uno el
-                  formulario de información del postulante; cuando lo completen, revísalo y apruébalo o recházalo.
+                  @if (esFft) {
+                    Candidato pedido por nombre: {{ (detalle.fftCandidatoNombre | titleCase) || 'sin nombre registrado' }}.
+                    No hay publicación, long list ni entrevistas. Envíale el formulario de información del
+                    postulante; al aprobarlo pasa directo a la programación de su EMO de ingreso.
+                  } @else {
+                    El solicitante aprobó {{ detalle.candidatosAprobados.length }} candidato(s). Envía a cada uno el
+                    formulario de información del postulante; cuando lo completen, revísalo y apruébalo o recházalo.
+                  }
                 </p>
               }
             </div>
           </div>
         </div>
+
+        <!-- El ingreso directo no pasa por «Confirmar publicación», que es donde el flujo normal
+             exige la razón social: si nadie la asigna, la ficha del ingreso queda sin ella. -->
+        @if (faltaRazonSocialFft) {
+          <div class="flex items-start gap-[9px] rounded-[10px] border px-[14px] py-[11px]"
+               style="border-color:#FDE68A;background:#FEF9C3">
+            <i class="ti ti-alert-triangle text-[18px] shrink-0 mt-[1px]" style="color:#92400E"></i>
+            <p class="text-[12.5px]" style="color:#92400E">
+              Sin razón social asignada: la ficha del ingreso se creará sin ella. Asígnala en
+              «Asignación interna de GTH».
+            </p>
+          </div>
+        }
 
         <!-- Formulario de información del postulante (funcional) -->
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
@@ -734,7 +763,11 @@
         <!-- Control informativo del Multitest.
              Al candidato con el formulario rechazado no se le pide: ya no se le va a entrevistar,
              así que su fila queda como "No aplica" y no traba el paso a entrevistas. Se sigue
-             mostrando (no se oculta) para que la lista siga siendo la de la long list aprobada. -->
+             mostrando (no se oculta) para que la lista siga siendo la de la long list aprobada.
+
+             El ingreso directo FFT no lo lleva: su flujo no tiene entrevista, así que un check
+             informativo que solo existe para habilitarlas no aplica. -->
+        @if (!esFft) {
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
           <button type="button"
             class="flex items-center gap-[8px] cursor-pointer w-full text-left"
@@ -773,10 +806,12 @@
             }
           }
         </div>
+        }
 
         <!-- Continuar a programación de entrevistas: solo mientras el requerimiento no haya
-             pasado ya a esa fase (después el bloque de abajo toma el relevo). -->
-        @if (!enEntrevistas) {
+             pasado ya a esa fase (después el bloque de abajo toma el relevo). El ingreso directo
+             FFT no pasa por ahí: al aprobarle el formulario el proceso salta al EMO de ingreso. -->
+        @if (!enEntrevistas && !esFft) {
           <div>
             <button type="button"
               [disabled]="!puedeContinuarAEntrevistas"
@@ -795,8 +830,12 @@
 
       <!-- ── Programación de entrevistas ──────────────────────────────────
            Por candidato con formulario aprobado: fecha, hora y lugar de la cita +
-           envío de la invitación por correo (reprogramar actualiza y reenvía). -->
-      @if (enEntrevistas) {
+           envío de la invitación por correo (reprogramar actualiza y reenvía).
+
+           Fuera del ingreso directo FFT: ese flujo se salta las entrevistas y al aprobar el
+           formulario ya está en EMO de ingreso, que es una fase POSTERIOR a ENTREVISTAS — sin este
+           filtro la sección aparecería igual, ofreciendo citar a alguien que ya está seleccionado. -->
+      @if (enEntrevistas && !esFft) {
 
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
           <button type="button"

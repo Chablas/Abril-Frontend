@@ -36,6 +36,17 @@ export interface ReclutamientoFormDataDto {
    */
   trabajadoresArea: OpcionDto[];
   destinatarios: SolicitudDestinatarios;
+  /**
+   * true si la ficha del solicitante es de Gerencia General. Con esto el formulario avisa que una
+   * solicitud **FFT** suya no pasa por la aprobación de Gerencia General —se estaría aprobando a
+   * sí mismo— y va directo a GTH. Lo resuelve el backend por la categoría de su ficha, no por rol.
+   */
+  esGerenteGeneral: boolean;
+  /**
+   * A quién le llegaría el aviso a GTH de un pedido FFT del propio Gerente General. Solo viene
+   * cuando `esGerenteGeneral`; en el resto de los casos el aviso es `destinatarios`.
+   */
+  destinatariosFft: SolicitudDestinatarios | null;
 }
 
 export interface VacanteCreateDto {
@@ -56,6 +67,16 @@ export interface VacanteCreateDto {
    * gerente del área y Gerencia General, y va en sus correos.
    */
   salarioBrutoMensual: number | null;
+  /**
+   * true = ingreso directo **FFT**: el solicitante ya sabe a quién quiere, así que la vacante
+   * obliga a declarar nombre y correo personal del candidato y el proceso se salta publicación,
+   * revisión de CV, long list, entrevistas y finalistas.
+   */
+  esFft: boolean;
+  /** Nombre completo del candidato FFT. Obligatorio cuando `esFft`; null en el resto. */
+  fftCandidatoNombre: string | null;
+  /** Correo personal del candidato FFT (el buzón al que GTH le mandará su formulario). */
+  fftCandidatoCorreo: string | null;
 }
 
 export interface SolicitudPersonalCreateDto {
@@ -71,10 +92,16 @@ export interface SolicitudPersonalCreateResult {
   id: number;
   codigos: string[];
   /**
-   * ¿Salió el correo de aprobación al Gerente General? false cuando no hay destinatarios
+   * ¿Salió el correo que arranca el flujo? Normalmente el de aprobación al Gerente General; en el
+   * FFT que registra el propio Gerente General, el aviso a GTH. false cuando no hay destinatarios
    * configurados o el envío falló: la solicitud queda esperando un reenvío.
    */
   correoGerenciaEnviado: boolean;
+  /**
+   * true = la solicitud no pasa por la aprobación de Gerencia General (la registró el propio
+   * Gerente General y todas sus vacantes son FFT): el requerimiento nace ya en manos de GTH.
+   */
+  aprobacionGgOmitida: boolean;
   message: string;
 }
 
@@ -130,6 +157,13 @@ export interface Seguimiento {
   codigo: string;
   puesto: string;
   tipoRequerimiento: string;
+  /**
+   * true = ingreso directo **FFT**. `fases` ya viene sin los pasos que este flujo no recorre; esto
+   * es para poder explicar en pantalla por qué el proceso es más corto.
+   */
+  esFft: boolean;
+  /** Nombre del candidato FFT que nombró el solicitante. Null cuando no es FFT. */
+  fftCandidatoNombre: string | null;
   area: string | null;
   proyectoObra: string | null;
   justificacion: string | null;

@@ -135,6 +135,14 @@ export interface DetalleRequerimientoGth {
    * que se pidiera el dato.
    */
   salarioBrutoMensual: number | null;
+  /**
+   * true = ingreso directo **FFT**: el requerimiento nace con su candidato puesto y se salta
+   * publicación, revisión de CV, long list, entrevistas y finalistas. El modal usa esto para no
+   * ofrecer los pasos que este flujo no tiene: al aprobar el formulario pasa directo al EMO.
+   */
+  esFft: boolean;
+  /** Nombre del candidato FFT que nombró el solicitante. Null cuando no es FFT. */
+  fftCandidatoNombre: string | null;
   /** Vacantes de este requerimiento (cada vacante genera su propio requerimiento → 1). */
   vacantes: number;
   estadoCodigo: string;

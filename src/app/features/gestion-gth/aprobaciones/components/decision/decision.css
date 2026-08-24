@@ -312,6 +312,13 @@
   color: var(--color-abril-logo-blue, #005d9d);
 }
 
+/* Ingreso directo FFT: verde de acción para que se distinga del azul del tipo de
+   requerimiento, que es la etiqueta de al lado. */
+.ad-vac-tag--fft {
+  background: var(--color-abril-standard-light, #eef7f3);
+  color: var(--color-abril-standard, #0f6e56);
+}
+
 .ad-vac-puesto {
   font-size: 14px;
   font-weight: 700;
