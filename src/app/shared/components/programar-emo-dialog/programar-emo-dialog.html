@@ -11,9 +11,9 @@
     <h2 class="paso-title"><i class="ti ti-user"></i> Trabajador</h2>
     <div class="worker-card" [class.worker-card--preingreso]="worker.esFinalistaAprobado">
       <span class="worker-card__name">{{ worker.nombreCompleto | titleCase }}</span>
-      <span class="worker-card__meta">
-        DNI {{ worker.dni }}<ng-container *ngIf="worker.empresa"> · {{ worker.empresa }}</ng-container>
-      </span>
+      <!-- La razón social ya no va acá: se muestra abajo como campo de solo lectura, al lado de
+           la clínica, donde antes estaba el desplegable de médico (lo pidió GTH así). -->
+      <span class="worker-card__meta">DNI {{ worker.dni }}</span>
       <!-- Ficha de pre-ingreso: se dice explícitamente que todavía no es trabajador, para que
            quien programa entienda por qué el tipo de EMO viene fijado en Ingreso. -->
       <span class="worker-card__tag" *ngIf="worker.esFinalistaAprobado">
@@ -66,17 +66,18 @@
         </app-search-select>
       </div>
 
+      <!-- Razón social del trabajador: dato de la ficha, no una decisión de quien programa, así
+           que va de solo lectura. Ocupa el lugar del antiguo desplegable de médico — GTH pidió
+           dejar de elegir médico y ver acá la empresa. El médico de la cita lo pone el backend
+           con el que esté marcado como por defecto en el catálogo. -->
       <div class="abril-field">
-        <app-search-select
-          label="Médico"
-          [color]="accentColor"
-          [options]="medicosFiltrados"
-          valueField="id"
-          displayField="apellidoNombre"
-          [value]="form.medicoId"
-          placeholder="Selecciona médico"
-          (valueChange)="form.medicoId = $event">
-        </app-search-select>
+        <label class="abril-field-label">Razón social</label>
+        <input
+          class="abril-field-input abril-field-input--readonly"
+          type="text"
+          readonly
+          tabindex="-1"
+          [value]="worker.empresa || '—'" />
       </div>
     </div>
 

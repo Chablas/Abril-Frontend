@@ -17,7 +17,6 @@ import {
 import {
   ClinicaSimpleDto,
   EmoTipoDto,
-  MedicoSimpleDto,
 } from '../../../features/ssoma/salud-ocupacional/dtos/catalogos.model';
 import { ErrorService } from '../../../core/services/error.service';
 
@@ -48,19 +47,16 @@ export class ProgramarEmoDialogComponent implements OnInit {
 
   tiposEmo: EmoTipoDto[] = [];
   clinicas: ClinicaSimpleDto[] = [];
-  medicos: MedicoSimpleDto[] = [];
 
   form: {
     fechaProgramada: string;
     tipoEmoId: number | null;
     clinicaId: number | null;
-    medicoId: number | null;
     notas: string;
   } = {
     fechaProgramada: '',
     tipoEmoId: null,
     clinicaId: null,
-    medicoId: null,
     notas: '',
   };
 
@@ -108,12 +104,6 @@ export class ProgramarEmoDialogComponent implements OnInit {
         this.cdr.detectChanges();
       },
     });
-    this.catalogos.getMedicos().subscribe({
-      next: (list) => {
-        this.medicos = list.filter((m) => m.activo);
-        this.cdr.detectChanges();
-      },
-    });
     this.cargarDestinatarios();
   }
 
@@ -158,22 +148,8 @@ export class ProgramarEmoDialogComponent implements OnInit {
     return prefijo ? `${prefijo} ${d.nombre}` : d.nombre;
   }
 
-  /**
-   * Médicos de la clínica elegida (los que no tienen clínica asignada valen para cualquiera),
-   * igual que en el modal de Nuevo EMO: evita ofrecer médicos de otra clínica.
-   */
-  get medicosFiltrados(): MedicoSimpleDto[] {
-    if (!this.form.clinicaId) return this.medicos;
-    return this.medicos.filter((m) => !m.clinicaId || m.clinicaId === this.form.clinicaId);
-  }
-
-  /** Al cambiar de clínica se descarta el médico elegido si pertenecía a otra. */
   onClinicaChange(id: number | null): void {
     this.form.clinicaId = id;
-    if (id && this.form.medicoId) {
-      const medico = this.medicos.find((m) => m.id === this.form.medicoId);
-      if (medico?.clinicaId && medico.clinicaId !== id) this.form.medicoId = null;
-    }
     // Los correos de contacto son de la clínica, así que el aviso cambia con ella.
     this.cargarDestinatarios();
   }
@@ -213,7 +189,9 @@ export class ProgramarEmoDialogComponent implements OnInit {
         fechaProgramada: this.form.fechaProgramada,
         horaProgramada: null,
         clinicaId: this.form.clinicaId,
-        medicoId: this.form.medicoId,
+        // Ya no se elige médico en el modal: el backend le asigna el que esté marcado como
+        // por defecto en ss_medicos_ocupacionales (ProgramacionEmoRepository.Create).
+        medicoId: null,
         notas: this.form.notas || null,
         origen: 'Registro directo',
       })

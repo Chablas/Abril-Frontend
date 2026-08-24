@@ -64,6 +64,19 @@
   min-height: 72px;
 }
 
+/* Razón social: campo de solo lectura. Se apaga el fondo y el cursor de texto para que se lea
+   como dato y no como algo que se puede escribir, sin salirse de la caja de .abril-field-input
+   (así conserva la misma altura que la clínica de al lado). El :focus de la clase global se
+   neutraliza porque con tabindex="-1" no debería llegar el foco, pero un click igual lo daba. */
+.abril-field-input--readonly,
+.abril-field-input--readonly:focus {
+  background: #fafaf9;
+  border-color: #d4d0c8;
+  color: #57534e;
+  cursor: default;
+  user-select: none;
+}
+
 /* Aviso de destinatarios: mismo patrón que el de Solicitud de Salidas ("será notificada a …"),
    pero en el azul de SSOMA. Los correos van resaltados porque son el dato que importa. */
 .aviso {
