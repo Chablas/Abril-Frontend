@@ -14,6 +14,7 @@ import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { ClientPager } from '../../../../shared/utils/client-pager';
 import { PROJECTS_TABS } from '../../shared/projects-tabs';
 import { PlaneamientoBimService } from '../services/planeamiento-bim.service';
+import { PlaneamientoBimSubnavComponent } from '../shared/planeamiento-bim-subnav/planeamiento-bim-subnav';
 import {
   PortafolioKpisDto,
   ProyectoPortafolioDto,
@@ -31,6 +32,7 @@ function hoyISO(): string {
     CommonModule,
     FormsModule,
     AbrilPageHeaderComponent,
+    PlaneamientoBimSubnavComponent,
     FilterTriggerButton,
     FilterModal,
     SearchInput,

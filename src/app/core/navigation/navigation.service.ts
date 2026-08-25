@@ -77,10 +77,12 @@ export class NavigationService {
         { label: 'Control de cuaderno de obra',             route: '/projects/construction-logbook',         featureKey: 'projects.construction-logbook' },
         { label: 'Control de respuesta de informes',        route: '/projects/report-response-control',      featureKey: 'projects.report-response-control' },
         { label: 'Seguimiento y medición de residentes',    route: '/projects/resident-monitoring-measurement', featureKey: 'projects.resident-monitoring-measurement' },
-        { label: 'Configuración Planeamiento BIM',          route: '/projects/planeamiento-bim/configuracion-inicial', featureKey: 'planeamiento-bim.configuracion-inicial' },
-        // Entrada nueva y separada (Fase 3): landing de portafolio, solo
-        // Administrador Sistema/UDP. La de arriba sigue igual para UsuarioUdp.
-        { label: 'Portafolio Planeamiento BIM',             route: '/projects/planeamiento-bim/portafolio',   featureKey: 'planeamiento-bim.portafolio', roles: [Roles.ADMINISTRADOR_SISTEMA, Roles.ADMINISTRADOR_UDP] },
+        {
+          label: 'Planeamiento',
+          route: '/projects/planeamiento-bim/configuracion-inicial',
+          featureKey: 'planeamiento-bim.configuracion-inicial',
+          featureKeys: ['planeamiento-bim.configuracion-inicial', 'planeamiento-bim.portafolio'],
+        },
       ],
       groups: [],
     },

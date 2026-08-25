@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { CatalogService, CatalogTypeDTO, CatalogItemDTO } from '../scope/catalog.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
@@ -8,10 +9,15 @@ import { CatalogItemForm } from './components/catalog-item-form/catalog-item-for
 import { Paginator } from '../../../../../shared/components/paginator/paginator';
 import Swal from 'sweetalert2';
 
+interface DuplicateGroup {
+  description: string;
+  count: number;
+}
+
 @Component({
   selector: 'app-catalog-items',
   standalone: true,
-  imports: [CommonModule, CatalogItemForm, Paginator],
+  imports: [CommonModule, FormsModule, CatalogItemForm, Paginator],
   templateUrl: './catalog-items.html',
   styleUrl: './catalog-items.css',
 })
@@ -25,16 +31,46 @@ export class CatalogItems implements OnInit {
   showForm = false;
   editingItem: CatalogItemDTO | null = null;
 
+  searchTerm = '';
+
   readonly pageSize = 20;
   currentPage = 1;
 
-  get totalRecords(): number { return this.items.length; }
+  /** Normaliza para comparar: mayúsculas, sin espacios al borde, espacios internos colapsados. */
+  private normalize(text: string): string {
+    return text.trim().toUpperCase().replace(/\s+/g, ' ');
+  }
+
+  get filteredItems(): CatalogItemDTO[] {
+    const term = this.normalize(this.searchTerm);
+    if (!term) return this.items;
+    return this.items.filter((i) => this.normalize(i.catalogItemDescription).includes(term));
+  }
+
+  /** Descripciones duplicadas (tras normalizar) dentro del tipo activo. Se calcula sobre TODOS
+   *  los ítems cargados del tipo, no sobre el resultado filtrado por el buscador. */
+  get duplicateGroups(): DuplicateGroup[] {
+    const counts = new Map<string, number>();
+    for (const item of this.items) {
+      const key = this.normalize(item.catalogItemDescription);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .filter(([, count]) => count > 1)
+      .map(([description, count]) => ({ description, count }));
+  }
+
+  get totalRecords(): number { return this.filteredItems.length; }
   get totalPages(): number { return Math.ceil(this.totalRecords / this.pageSize) || 1; }
   get pagedItems(): CatalogItemDTO[] {
     const start = (this.currentPage - 1) * this.pageSize;
-    return this.items.slice(start, start + this.pageSize);
+    return this.filteredItems.slice(start, start + this.pageSize);
   }
   changePage(page: number): void { this.currentPage = page; }
+
+  onSearchChange(): void {
+    this.currentPage = 1;
+  }
 
   constructor(
     private catalogService: CatalogService,
@@ -58,6 +94,7 @@ export class CatalogItems implements OnInit {
   selectType(typeId: number): void {
     this.selectedTypeId = typeId;
     this.loadingItems = true;
+    this.searchTerm = '';
     this.loaderService.show();
     this.catalogService.getItemsByType(typeId).subscribe({
       next: (items) => {

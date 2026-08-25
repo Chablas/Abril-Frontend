@@ -5384,3 +5384,131 @@ en este repo solo se construyó el frontend del Flujo A esta sesión.
   existente) — backend ya está, falta todo el frontend.
 - Probar Flujo A en navegador contra el backend real una vez corrida la migración
   de feature seed.
+
+## Sesión 2026-08-25 — Mejora Continua: rediseño de "Ítems de catálogo" + buscador + duplicados
+
+Pedido del usuario sobre `features/mejora-continua/features/configuration/catalog-items/`
+(pestaña "Ítems de catálogo" dentro de Configuración de Lecciones Aprendidas, ruta
+`/mejora-continua/lecciones-configuracion?seccion=catalog-items`): la pantalla era una
+tabla plana Tailwind con acento verde `#64BC04` (paleta ajena a DESIGN-VICTOR.md), sin
+buscador y sin forma de detectar descripciones repetidas entre los ~208 registros de
+"Partida".
+
+- **Rediseño visual**: `catalog-items.html`/`.css` reescritos con el mismo lenguaje
+  navy/azul UDP que ya usa Planeamiento BIM (`bloqueos.css` como referencia directa) —
+  card contenedora, pills de tipo, tabla con header uppercase 11-12px y hover
+  `#F8FAFC`, botones de acción cuadrados con borde, skeleton loading (F8), estados
+  vacíos con ícono. Aplica igual a las 6 pestañas de tipo (Etapa/Fase/Nivel/Partida/
+  Subespecialidad/Subetapa) porque el componente es data-driven.
+  - Desviación deliberada y confirmada por el usuario del estándar `.abril-table`/
+    `--color-abril-standard` (teal) de la sección "UI standard (2026)" de
+    `CLAUDE.md` — se siguió el precedente ya existente de Planeamiento BIM (CSS
+    propio por componente, paleta UDP de `DESIGN-VICTOR.md`) en vez del sistema
+    compartido genérico.
+  - `catalog-item-form.html`/`.css` (modal de crear/editar ítem) también retocado al
+    mismo lenguaje visual — **sin tocar `catalog-item-form.ts`** (cero cambios de
+    lógica de guardado). El título del modal ("NUEVO ÍTEM"/"EDITAR ÍTEM") queda en
+    color teal porque lo pinta `base-modal` (`style="color:var(--color-abril-standard)"`
+    hardcodeado ahí), componente compartido que no se tocó — única inconsistencia de
+    color conocida, deliberada.
+- **Buscador**: campo sobre la tabla, filtra `items` (el array completo que ya trae
+  `CatalogService.getItemsByType(typeId)` en un solo GET, sin paginación de backend)
+  por `catalogItemDescription`, case-insensitive, sin debounce (dataset pequeño).
+  Resetea a página 1 al escribir. Verificado con "acero" en Partida: 208 → 6
+  resultados en tiempo real.
+- **Alerta de duplicados**: normaliza cada descripción del tipo activo
+  (`trim().toUpperCase().replace(/\s+/g,' ')`), agrupa y marca grupos con más de 1
+  elemento. Banner de advertencia (`#D97706`/`#FEF3C7`, DESIGN-VICTOR §2.1) arriba de
+  la tabla con el conteo y el listado de descripciones repetidas. Cubre solo duplicado
+  exacto tras normalizar — sin matching difuso (Levenshtein), explícitamente fuera de
+  alcance por pedido del usuario. Verificado creando `"acero dimensionado  "`
+  (minúsculas + doble espacio) contra `"ACERO DIMENSIONADO"` existente en Partida: el
+  banner detectó el duplicado correctamente; el ítem de prueba se eliminó después para
+  no dejar basura en los datos reales.
+- No se tocó `catalog.service.ts`, DTOs, `save()`/`delete()`/`update()`, rutas,
+  `navigation.service.ts` ni el componente `Paginator`.
+
+### Archivos clave
+- `catalog-items.ts` — `searchTerm`, getters `filteredItems`/`duplicateGroups`,
+  `pagedItems`/`totalRecords`/`totalPages` recalculados sobre `filteredItems`.
+- `catalog-items.html`/`.css` — rediseño completo (nuevo, antes vacío el `.css`).
+- `components/catalog-item-form/catalog-item-form.html`/`.css` — retoque visual del
+  modal (nuevo el `.css`, antes vacío).
+
+### Verificado
+`npm run build`: 0 errores (solo warnings preexistentes de terceros: canvg,
+flatpickr, tfjs). Probado en navegador (Chrome, dev server local, sesión ya
+logueada): las 6 pestañas de tipo, buscador, banner de duplicados (ciclo completo
+crear→verificar→eliminar), modal de crear/editar. Se vio un `NG0100
+ExpressionChangedAfterItHasBeenCheckedError` en consola en el `App` component raíz
+(patrón conocido de `LoaderService`, ya tocado antes en el merge del 2026-08-19) —
+no es una regresión de esta sesión, no se tocó `loaderService.show()/hide()`.
+
+### Pendiente
+- Nada pendiente de esta sesión — feature verificada end-to-end en navegador por
+  Claude. El usuario puede revisar visualmente si quiere una segunda confirmación.
+
+## Sesión 2026-08-25 (2) — Unificación de Planeamiento BIM + nombres legibles de featureKey en Editar Rol
+
+### Contexto
+Dos frentes en paralelo, ya committeados en `victor-frontend`:
+
+1. **Navegación de Planeamiento BIM**: existían dos entradas separadas en el sidebar
+   y en las pestañas de Proyectos — "Planeamiento BIM" (Configuración/Carga
+   Diaria/Bloqueos/Dashboard, para UsuarioUdp) y "Portafolio BIM" (landing aparte,
+   solo Administrador Sistema/UDP) — con `titulo` distinto por ruta
+   ("CONFIGURACIÓN INICIAL DE PLANEAMIENTO BIM", "DASHBOARD DE PLANEAMIENTO BIM",
+   etc). Se unificaron en una sola entrada "Planeamiento" (`navigation.service.ts`,
+   `projects-tabs.ts`) usando el nuevo campo `featureKeys` (array) para que la
+   entrada se muestre si el usuario tiene *cualquiera* de los featureKey del grupo,
+   sin exponer rutas a las que no tiene acceso. Todas las rutas de
+   `planeamiento-bim/*` ahora comparten `titulo: 'PLANEAMIENTO'`. Se agregó redirect
+   `planeamiento-bim` → `planeamiento-bim/configuracion-inicial` en
+   `proyectos.routes.ts`.
+   - `planeamiento-bim-subnav.ts` (el subnav interno de las 5 pantallas) ahora
+     inyecta `NavigationService` y filtra sus propias tabs con
+     `isNavEntryAllowed()` — antes mostraba "Portafolio" a todos sin chequear rol.
+   - `portafolio.ts`/`.html` ahora importa y renderiza `PlaneamientoBimSubnavComponent`
+     (antes el portafolio no tenía el subnav de las otras 4 pantallas).
+
+2. **Nombres legibles de featureKey en "Editar Rol"** (`security/pages/roles/role-edit`):
+   antes la lista de permisos mostraba el `featureKey` crudo (ej.
+   `"planeamiento-bim.configuracion-inicial"`). Se agregó:
+   - `scripts/generate-feature-display-names.js`: script Node (AST de TypeScript)
+     que escanea `navigation.service.ts` (labels del sidebar) + `route.data.titulo`
+     de toda la app, y genera `src/app/core/navigation/feature-display-names.generated.ts`
+     (archivo generado, no editar a mano — regenerar con
+     `node scripts/generate-feature-display-names.js` cuando se agregue/renombre
+     una pantalla con featureKey nuevo).
+   - `role-edit.ts`: `displayName(featureKey)` prioriza `FEATURE_DISPLAY_NAMES`
+     (el mapa generado) y cae a `humanizeFeatureKey()` (heurística local:
+     separa por `.`/`-`, restituye tildes en palabras españolas terminadas en
+     `-ion`/`-ión` salvo lista de excepciones en inglés y plurales `-iones`,
+     aplica diccionario de siglas/overrides) solo para featureKey sin pantalla
+     propia (permisos finos tipo `arquitectura-comercial.observaciones.editar`).
+   - `role-edit.ts`/`.html`/`.css`: además de los nombres legibles, se agregó
+     agrupación por módulo en acordeones (`ModuleGroup`, `expandedModuleIds`) que
+     se auto-expanden si el módulo ya tiene algún ítem marcado.
+
+### Archivos clave
+- `core/navigation/navigation.service.ts`, `features/projects/shared/projects-tabs.ts`
+  — nuevo campo `featureKeys` en la entrada unificada "Planeamiento".
+- `features/projects/proyectos.routes.ts` — `titulo: 'PLANEAMIENTO'` en las 4 rutas
+  + redirect nuevo.
+- `features/projects/planeamiento-bim/shared/planeamiento-bim-subnav/planeamiento-bim-subnav.ts`
+  — filtro por rol vía `NavigationService.isNavEntryAllowed()`.
+- `features/projects/planeamiento-bim/portafolio/portafolio.ts`/`.html` — ahora
+  incluye el subnav compartido.
+- `scripts/generate-feature-display-names.js` (nuevo) y
+  `core/navigation/feature-display-names.generated.ts` (nuevo, generado).
+- `features/security/pages/roles/components/role-edit/role-edit.ts`/`.html`/`.css`
+  — `displayName()`/`humanizeFeatureKey()`, agrupación por módulo con acordeón.
+
+### Verificado
+`npm run build` (producción): sin errores, solo warnings preexistentes de terceros
+(canvg, flatpickr, node-fetch — no relacionados a esta sesión).
+
+### Pendiente
+- Si se agrega una pantalla nueva con `featureKey` propio, correr
+  `node scripts/generate-feature-display-names.js` de nuevo para que "Editar Rol"
+  muestre su nombre legible en vez de caer al fallback heurístico.

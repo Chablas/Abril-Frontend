@@ -1,10 +1,12 @@
 <app-abril-page-header
-  titulo="PORTAFOLIO DE PLANEAMIENTO BIM"
-  subtitulo="Vista ejecutiva de todos los proyectos con Planeamiento BIM configurado"
+  titulo="PLANEAMIENTO"
+  subtitulo="Vista ejecutiva de todos los proyectos con Planeamiento configurado"
   [tabs]="tabs"
 >
   <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
+
+<app-planeamiento-bim-subnav></app-planeamiento-bim-subnav>
 
 <div class="page-wrapper">
 
