@@ -143,6 +143,22 @@
                   }
                 </div>
 
+                <!-- Con la cita ya creada el proceso sigue abierto hasta que la clínica califique
+                     el examen: sin esta línea la fase «EMO de ingreso» se queda sin botón y sin nada
+                     que diga qué falta. -->
+                @if (sel.emoProgramacionEstado && detalle.estadoCodigo === 'EMO_INGRESO') {
+                  <div class="flex flex-wrap items-center gap-x-[16px] gap-y-[4px] mt-[12px] text-[12px] text-gray-600">
+                    <span class="inline-flex items-center gap-[6px]">
+                      <i class="ti ti-stethoscope text-[14px]" style="color:#A16207"></i>
+                      EMO de ingreso: <b class="text-gray-800">{{ sel.emoProgramacionEstado }}</b>
+                    </span>
+                    @if (sel.emoFechaProgramada) {
+                      <span>Cita: <b class="text-gray-800">{{ sel.emoFechaProgramada | date:'dd/MM/yyyy' }}</b></span>
+                    }
+                    <span>Aptitud: <b class="text-gray-800">{{ sel.emoAptitud || 'Pendiente' }}</b></span>
+                  </div>
+                }
+
                 <!-- El aviso queda solo para el caso en que no hay ficha que abrir: con el botón
                      «Programar EMO de ingreso» a la vista, explicar que el proceso cierra al
                      programarlo era una línea que nadie accionaba. -->
@@ -175,6 +191,61 @@
                     </div>
                   </div>
                 }
+              }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── EMO de ingreso No Apto ────────────────────────────────────────
+           Reemplaza a la tarjeta «Puesto cubierto»: al quedar No Apto el candidato pierde
+           el resultado SELECCIONADO, así que no hay puesto cubierto que mostrar. Las dos
+           salidas son excluyentes y las dos las decide GTH acá. -->
+      @if (emoNoApto) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             style="border-color:#fecaca;background:#FEF2F2">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-stethoscope text-[20px] shrink-0 mt-[1px]" style="color:#B91C1C"></i>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#B91C1C">
+                EMO de ingreso
+              </p>
+              <h3 class="text-[16px] font-bold mt-[2px] leading-tight" style="color:#7F1D1D">
+                {{ (candidatoNoApto?.nombre | titleCase) || 'El candidato seleccionado' }} salió No Apto
+              </h3>
+
+              <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                @if (rechazadosRetomables.length > 0) {
+                  <button type="button" (click)="seccionRechazados = true"
+                          class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                          style="background:#005D9D">
+                    <i class="ti ti-user-search text-[15px]"></i>
+                    Continuar con un rechazado ({{ rechazadosRetomables.length }})
+                  </button>
+                }
+                <!-- Un ingreso directo FFT no tiene long list: nace con el candidato que nombró
+                     el solicitante, así que no hay a dónde volver. -->
+                @if (!esFft) {
+                  <button type="button" (click)="volverALongList()" [disabled]="volviendoALongList"
+                          class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold border cursor-pointer transition-colors hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          style="border-color:#fecaca;color:#B91C1C;background:#fff">
+                    <i class="ti ti-list-search text-[15px]"></i>
+                    {{ volviendoALongList ? 'Volviendo…' : 'Preparar nueva long list' }}
+                  </button>
+                }
+              </div>
+
+              @if (rechazadosRetomables.length === 0) {
+                <p class="text-[11.5px] mt-[10px] flex items-start gap-[6px]" style="color:#991B1B">
+                  <i class="ti ti-alert-circle text-[14px] shrink-0 mt-[1px]"></i>
+                  <span>
+                    @if (esFft) {
+                      Este es un ingreso directo (FFT): no hay otro candidato ni long list a la que volver.
+                    } @else {
+                      No quedan candidatos rechazados con los que continuar.
+                    }
+                  </span>
+                </p>
               }
             </div>
           </div>
@@ -1129,6 +1200,11 @@
                     <th>Rechazado por</th>
                     <th>Fecha</th>
                     <th>CV</th>
+                    <!-- La columna solo existe mientras haya algo que decidir: en el resto del
+                         proceso el historial es de consulta y una columna vacía sobra. -->
+                    @if (emoNoApto) {
+                      <th>Acción</th>
+                    }
                   </tr>
                 </thead>
                 <tbody>
@@ -1164,10 +1240,25 @@
                           <span class="text-gray-400">—</span>
                         }
                       </td>
+                      @if (emoNoApto) {
+                        <td class="whitespace-nowrap">
+                          @if (c.puedeRetomar) {
+                            <button type="button" (click)="retomarCandidato(c)"
+                                    [disabled]="retomando[c.candidatoId]"
+                                    class="inline-flex items-center gap-[6px] h-[30px] px-[12px] rounded-[7px] text-[12px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    style="background:#005D9D">
+                              <i class="ti ti-arrow-back-up text-[14px]"></i>
+                              {{ retomando[c.candidatoId] ? 'Retomando…' : 'Continuar con este' }}
+                            </button>
+                          } @else {
+                            <span class="text-[11.5px] text-gray-400">No apto en el EMO</span>
+                          }
+                        </td>
+                      }
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="5" class="text-center py-[28px] text-gray-400">Sin resultados.</td>
+                      <td [attr.colspan]="emoNoApto ? 6 : 5" class="text-center py-[28px] text-gray-400">Sin resultados.</td>
                     </tr>
                   }
                 </tbody>

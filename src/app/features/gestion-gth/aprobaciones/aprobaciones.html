@@ -317,12 +317,17 @@
           </div>
         </div>
 
-        <!-- Las dos casillas, igual que las dos columnas de la tabla. -->
+        <!-- Las dos casillas, igual que las dos columnas de la tabla.
+             `wrap` porque acá la casilla es media tarjeta: sin él, «Pendiente de decisión»
+             (nowrap por defecto, pensado para una celda de tabla) se sale de la casilla en
+             pantallas angostas y arrastra la página de lado. Cuando entra en una línea, se
+             ve exactamente igual que antes. -->
         <div class="ap-card-niveles">
           <div class="ap-card-nivel">
             <div class="ap-nivel-label">Gerente del área</div>
             <app-status-badge
               [text]="a.gerenteArea.estadoNombre"
+              [wrap]="true"
               [bgColor]="estadoColors(a.gerenteArea.estadoCodigo).bg"
               [textColor]="estadoColors(a.gerenteArea.estadoCodigo).text" />
             <div *ngIf="a.gerenteArea.decididoPor" class="ap-nivel-quien truncate">
@@ -333,6 +338,7 @@
             <div class="ap-nivel-label">Gerencia General</div>
             <app-status-badge
               [text]="a.gerenteGeneral.estadoNombre"
+              [wrap]="true"
               [bgColor]="estadoColors(a.gerenteGeneral.estadoCodigo).bg"
               [textColor]="estadoColors(a.gerenteGeneral.estadoCodigo).text" />
             <div *ngIf="a.gerenteGeneral.decididoPor" class="ap-nivel-quien truncate">

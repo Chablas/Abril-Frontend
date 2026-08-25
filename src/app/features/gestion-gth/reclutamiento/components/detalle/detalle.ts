@@ -201,6 +201,12 @@ export class GthDetalleRequerimiento implements OnInit {
   /** true mientras se avanza a la fase de entrevistas (evita doble clic). */
   continuando = false;
 
+  // ── Reapertura tras un EMO de ingreso No Apto ────────────────────────────
+  /** true mientras se retoma a un rechazado (key = candidatoId): evita el doble clic. */
+  retomando: Record<number, boolean> = {};
+  /** true mientras se devuelve el proceso a Long list. */
+  volviendoALongList = false;
+
   // ── Programación de entrevistas (fase "Entrevistas") ─────────────────────
   /** Datos editables de la cita por candidato (key = candidatoId). */
   entrevistaForm: Record<number, EntrevistaFormState> = {};
@@ -375,6 +381,128 @@ export class GthDetalleRequerimiento implements OnInit {
   /** true si el requerimiento ya pasó a la programación de entrevistas (fase ENTREVISTAS o posterior). */
   get enEntrevistas(): boolean {
     return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'ENTREVISTAS');
+  }
+
+  // ── Reapertura tras un EMO de ingreso No Apto ────────────────────────────
+  /**
+   * true si el EMO de ingreso del seleccionado salió No Apto y el proceso volvió a manos de GTH.
+   * Es la fase en la que hay que elegir con quién sigue: retomar a alguien del historial de
+   * rechazados o preparar una long list nueva.
+   */
+  get emoNoApto(): boolean {
+    return this.detalle?.estadoCodigo === 'EMO_NO_APTO';
+  }
+
+  /**
+   * El candidato que salió No Apto en el EMO. Sale del historial (es el único con etapa 'EMO'), que
+   * es donde queda registrado: al perder el resultado SELECCIONADO deja de haber «Puesto cubierto»
+   * de dónde leer su nombre.
+   */
+  get candidatoNoApto(): CandidatoRechazado | null {
+    return (this.detalle?.candidatosRechazados ?? []).find((c) => c.etapaCodigo === 'EMO') ?? null;
+  }
+
+  /**
+   * Rechazados con los que se puede continuar el proceso. Deja fuera al que acaba de salir No Apto
+   * (su etapa es 'EMO'), que es justamente el motivo por el que estamos en esta fase.
+   */
+  get rechazadosRetomables(): CandidatoRechazado[] {
+    return (this.detalle?.candidatosRechazados ?? []).filter((c) => c.puedeRetomar);
+  }
+
+  /**
+   * Retoma el proceso con un candidato del historial. La fase de destino la decide el backend por
+   * la etapa en la que se lo rechazó, así que acá no se elige nada: se confirma y se recarga el
+   * detalle entero, porque el modal cambia de secciones al cambiar de fase.
+   */
+  async retomarCandidato(c: CandidatoRechazado): Promise<void> {
+    if (this.retomando[c.candidatoId] || !this.detalle) return;
+
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: `¿Continuar con ${c.nombre}?`,
+      html:
+        'El proceso vuelve a la etapa <b>' +
+        c.etapaNombre +
+        '</b>, que es donde se lo había descartado, y este candidato sale del historial de ' +
+        'rechazados. Lo que ya se hizo con él (su formulario, su entrevista, su informe) se conserva.',
+      showCancelButton: true,
+      confirmButtonText: 'Continuar con este candidato',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#005D9D',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.retomando[c.candidatoId] = true;
+    this.loaderService.show();
+    this.service.retomarCandidato(this.requerimientoId, c.candidatoId).subscribe({
+      next: (res) => {
+        this.retomando[c.candidatoId] = false;
+        this.huboCambios = true;
+        // El cambio de fase reordena todo el modal (vuelven las secciones de formulario, entrevistas
+        // o finalistas según a dónde haya ido): se recarga en vez de parchear el estado a mano. El
+        // loader lo apaga la recarga, para no parpadear entre las dos peticiones.
+        this.cargarDetalle();
+        Swal.fire({
+          icon: 'success',
+          title: 'Proceso retomado',
+          text: res.message,
+          confirmButtonColor: '#005D9D',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.retomando[c.candidatoId] = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /**
+   * La otra salida: descartar a todos los rechazados y volver a Long list para armar una nueva.
+   * Los rechazados no se borran —siguen siendo el historial para no repetir candidatos—, solo
+   * dejan de ser una opción de este proceso.
+   */
+  async volverALongList(): Promise<void> {
+    if (this.volviendoALongList || !this.detalle) return;
+
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: '¿Preparar una nueva long list?',
+      html:
+        'El proceso vuelve a <b>Long list</b> para que cargues CVs nuevos y se los envíes al área ' +
+        'solicitante. Los candidatos ya rechazados se quedan en el historial (para no volver a ' +
+        'presentarlos) y no continúan en el proceso.',
+      showCancelButton: true,
+      confirmButtonText: 'Volver a Long list',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#005D9D',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.volviendoALongList = true;
+    this.loaderService.show();
+    this.service.volverALongList(this.requerimientoId).subscribe({
+      next: (res) => {
+        this.volviendoALongList = false;
+        this.huboCambios = true;
+        // El loader lo apaga la recarga (ver retomarCandidato).
+        this.cargarDetalle();
+        Swal.fire({
+          icon: 'success',
+          title: 'Listo',
+          text: res.message,
+          confirmButtonColor: '#005D9D',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.volviendoALongList = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   /**

@@ -107,15 +107,40 @@ import {
 
     @media (max-width: 1099.98px) {
       .abril-table-wrap { display: none; }
-      .ap-cards { display: grid; grid-template-columns: 1fr; gap: 10px; }
+      /* 'minmax(0, 1fr)' y no '1fr': '1fr' es 'minmax(auto, 1fr)', o sea que la columna
+         se estira hasta el min-content de la tarjeta, y el min-content de la tarjeta lo
+         fija la justificación —un <p> con 'truncate', que es 'white-space: nowrap': su
+         ancho intrínseco es el texto ENTERO, sin cortar. Con una justificación larga la
+         tarjeta salía unos píxeles más ancha que el aviso de alcance y los KPIs, y esos
+         píxeles los scrolleaba .page-container de lado; al correrse, el padding-left de
+         10px se iba y la tarjeta quedaba pegada al borde (bug real reportado en móvil).
+         Con el min en 0 la columna nunca pasa del ancho disponible y la justificación
+         se recorta con puntos suspensivos, igual que en la columna de la tabla. */
+      .ap-cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+      /* Red de seguridad: ni un dato raro (una justificación de una sola palabra
+         larguísima, un correo sin espacios) puede volver a mover la página de lado.
+         Solo en este rango, donde la tabla está oculta y no hay nada ancho que recortar. */
+      .page-container { overflow-x: hidden; }
     }
+
+    /* La columna acota el track, pero la tarjeta es un grid item y su 'min-width: auto'
+       sigue siendo su min-content: sin esto se desborda igual de su propia columna. */
+    .ap-cards > * { min-width: 0; }
 
     @media (min-width: 640px) and (max-width: 1099.98px) {
-      .ap-cards { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+      /* 'min(320px, 100%)' en vez de '320px' fijo: si el área útil llegara a ser menor
+         que 320px (sidebar + padding en el borde bajo de este rango), la columna rígida
+         desbordaría en lugar de encogerse. */
+      .ap-cards { grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); }
     }
 
-    /* Las dos casillas dentro de la tarjeta, una al lado de la otra. */
-    .ap-card-niveles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 9px; }
+    /* Las dos casillas dentro de la tarjeta, una al lado de la otra.
+       Mismo motivo que en .ap-cards: con '1fr 1fr' cada columna se estira hasta el
+       min-content de su casilla, y el badge («Pendiente de decisión») es nowrap. */
+    .ap-card-niveles {
+      display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 8px; margin-top: 9px;
+    }
     .ap-card-nivel {
       border: 0.5px solid var(--color-abril-border); border-radius: var(--radius-standard);
       padding: 7px 8px; min-width: 0;
@@ -125,6 +150,10 @@ import {
       letter-spacing: 0.03em; color: #9ca3af; margin-bottom: 4px;
     }
     .ap-nivel-quien { font-size: 10.5px; color: #9ca3af; margin-top: 3px; line-height: 1.25; }
+
+    /* 'grid-cols-2' de Tailwind ya es 'repeat(2, minmax(0, 1fr))', pero las tarjetas
+       de resumen son grid items y su 'min-width: auto' las dejaría desbordar el track. */
+    .ap-kpi { min-width: 0; }
 
     @media (max-width: 639.98px) {
       .page-container { gap: 12px; }

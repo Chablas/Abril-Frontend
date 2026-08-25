@@ -116,6 +116,17 @@ export interface EstadoTransicionResult {
   estadoNombre: string;
 }
 
+/**
+ * Resultado de retomar el proceso con un candidato del historial de rechazados: además del nuevo
+ * estado del requerimiento, desde qué etapa se lo retomó. La fase de destino no la elige GTH — la
+ * decide la etapa del rechazo, porque retomar significa continuar justo desde ahí.
+ */
+export interface RetomarCandidatoResult extends EstadoTransicionResult {
+  etapaCodigo: string;
+  etapaNombre: string;
+  candidatoNombre: string;
+}
+
 /** Detalle del requerimiento para la vista de GTH: cabecera + asignación + catálogos + canales. */
 export interface DetalleRequerimientoGth {
   requerimientoId: number;

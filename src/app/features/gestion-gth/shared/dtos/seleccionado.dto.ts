@@ -30,8 +30,25 @@ export interface Seleccionado {
    * de su EMO de Ingreso. Null si el candidato nunca tuvo formulario del postulante aprobado.
    */
   workerId: number | null;
-  /** true mientras su EMO de Ingreso siga sin programarse (el requerimiento sigue abierto). */
+  /**
+   * true mientras su EMO de Ingreso siga sin programarse: es lo que enciende el botón «Programar
+   * EMO de ingreso». Ya no equivale a "el proceso sigue abierto" — con la cita creada y el
+   * resultado pendiente es false y el requerimiento sigue en EMO de ingreso.
+   */
   emoIngresoPendiente: boolean;
+  /**
+   * Estado de la cita del EMO ("Programado", "Aceptado por Clínica", "En Atención", "Completado"…).
+   * null si todavía no se le programó ninguna. Es lo que explica por qué el proceso sigue abierto
+   * entre la cita y el resultado.
+   */
+  emoProgramacionEstado: string | null;
+  /** Fecha de la cita del EMO (ISO, hora Perú). null si no hay cita. */
+  emoFechaProgramada: string | null;
+  /**
+   * Aptitud del EMO ya registrado ("Apto", "Apto con Restricciones", "Observado", "No Apto").
+   * null mientras la clínica no cargue el resultado. Con "Apto" el proceso cierra solo.
+   */
+  emoAptitud: string | null;
   /**
    * true en un escenario que no debería darse: el requerimiento sigue esperando el EMO de Ingreso
    * pero la ficha que le tocó al seleccionado es de alguien que ya trabaja en Abril, así que no es

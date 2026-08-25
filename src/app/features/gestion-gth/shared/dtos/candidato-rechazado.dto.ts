@@ -5,10 +5,16 @@
  */
 
 /** Etapa del proceso en la que se rechazó al candidato. */
-export type EtapaRechazo = 'LONG_LIST' | 'FORMULARIO' | 'ENTREVISTAS' | 'DECISION_FINAL';
+export type EtapaRechazo =
+  | 'LONG_LIST'
+  | 'FORMULARIO'
+  | 'ENTREVISTAS'
+  | 'DECISION_FINAL'
+  /** El seleccionado salió No Apto en su EMO de ingreso. Es la única de la que no se puede volver. */
+  | 'EMO';
 
-/** Quién tomó el rechazo: el área usuaria o GTH. */
-export type RechazadoPor = 'SOLICITANTE' | 'GTH';
+/** Quién tomó el rechazo: el área usuaria, GTH o el examen médico. */
+export type RechazadoPor = 'SOLICITANTE' | 'GTH' | 'SALUD_OCUPACIONAL';
 
 /**
  * Un candidato que quedó rechazado en algún punto del proceso, con la etapa del rechazo. Incluye
@@ -25,14 +31,18 @@ export interface CandidatoRechazado {
    * etapa "Long list" de vueltas distintas se leen igual.
    */
   numeroLongList: number;
-  /** 'LONG_LIST' | 'FORMULARIO' | 'ENTREVISTAS' | 'DECISION_FINAL'. */
   etapaCodigo: EtapaRechazo;
-  /** Nombre de la etapa ("Long list", "Formulario", "Entrevistas", "Decisión final"). */
+  /** Nombre de la etapa ("Long list", "Formulario", "Entrevistas", "Decisión final", "EMO"). */
   etapaNombre: string;
-  /** 'SOLICITANTE' | 'GTH'. */
   rechazadoPorCodigo: RechazadoPor;
-  /** "Área solicitante" / "GTH". */
+  /** "Área solicitante" / "GTH" / "Salud Ocupacional". */
   rechazadoPorNombre: string;
+  /**
+   * true si GTH puede retomar el proceso con este candidato desde donde se lo rechazó. Lo son todos
+   * menos los de la etapa 'EMO'. El botón, además, solo se muestra con el requerimiento en la fase
+   * EMO_NO_APTO: este campo dice si el candidato es retomable, no si se puede retomar ahora.
+   */
+  puedeRetomar: boolean;
   /** Momento del rechazo (ISO, ya en hora Perú). */
   rechazadoEn: string;
   /** Comentario interno que GTH registró sobre el candidato al cargar la long list. */
@@ -49,6 +59,7 @@ export function etapaRechazoColors(codigo: string): { bg: string; text: string }
     case 'FORMULARIO':     return { bg: '#E0F2FE', text: '#0369A1' };
     case 'ENTREVISTAS':    return { bg: '#FCE7F3', text: '#BE185D' };
     case 'DECISION_FINAL': return { bg: '#FFEDD5', text: '#C2410C' };
+    case 'EMO':            return { bg: '#FEE2E2', text: '#B91C1C' };
     default:               return { bg: '#F3F4F6', text: '#374151' };
   }
 }

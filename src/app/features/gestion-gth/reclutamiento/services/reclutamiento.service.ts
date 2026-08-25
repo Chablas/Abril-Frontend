@@ -10,6 +10,7 @@ import {
   EstadoTransicionResult,
   EvaluacionAccionResult,
   EvaluacionGuardar,
+  RetomarCandidatoResult,
 } from '../dtos/reclutamiento.dto';
 import {
   FormularioAccionResult,
@@ -143,6 +144,31 @@ export class ReclutamientoService {
   continuarAEntrevistas(requerimientoId: number): Observable<EstadoTransicionResult> {
     return this.http.patch<EstadoTransicionResult>(
       `${this.apiUrl}/requerimiento/${requerimientoId}/continuar-entrevistas`,
+      {},
+      { headers: this.headers },
+    );
+  }
+
+  // ── Salidas de la fase «EMO no apto» ─────────────────────────────────────
+  // Las dos formas de continuar cuando el EMO de ingreso del seleccionado salió No Apto. Son
+  // excluyentes: o se sigue con alguien ya descartado, o se arma una long list nueva.
+
+  /**
+   * Retoma el proceso con un candidato del historial de rechazados. El requerimiento vuelve solo a
+   * la fase en la que se lo había descartado; el frontend no la elige ni la manda.
+   */
+  retomarCandidato(requerimientoId: number, candidatoId: number): Observable<RetomarCandidatoResult> {
+    return this.http.post<RetomarCandidatoResult>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/retomar-candidato/${candidatoId}`,
+      {},
+      { headers: this.headers },
+    );
+  }
+
+  /** Descarta a los rechazados y devuelve el requerimiento a Long list para preparar una nueva. */
+  volverALongList(requerimientoId: number): Observable<EstadoTransicionResult> {
+    return this.http.post<EstadoTransicionResult>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/nueva-long-list`,
       {},
       { headers: this.headers },
     );
