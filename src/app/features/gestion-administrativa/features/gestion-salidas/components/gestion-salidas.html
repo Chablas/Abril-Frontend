@@ -6,6 +6,18 @@
   (secondaryClick)="exportarExcel()"
   [tabs]="tabs">
 
+  <!-- Toggle "Hoy": acota la tabla al día en curso y arranca encendido. Va aquí, al costado del
+       botón "Filtros" y no dentro del modal, porque es el filtro que más se prende y apaga y su
+       estado tiene que leerse de un vistazo sin abrir nada. -->
+  <button tabsExtra type="button" class="hoy-toggle" [class.hoy-toggle--on]="soloHoy"
+          (click)="toggleSoloHoy()"
+          [title]="soloHoy
+            ? 'Mostrando solo las salidas de hoy — clic para ver todas las fechas'
+            : 'Mostrar solo las salidas de hoy'">
+    <i class="ti ti-calendar-event text-[14px]"></i>
+    <span class="btn-label">Hoy</span>
+  </button>
+
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
   <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>

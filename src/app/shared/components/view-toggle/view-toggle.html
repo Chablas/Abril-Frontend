@@ -4,9 +4,11 @@
     *ngFor="let mode of modes; let i = index"
     type="button"
     (click)="select(mode.value)"
+    [style.background]="value === mode.value ? activeBackground : null"
+    [style.color]="value === mode.value ? activeColor : null"
     [ngClass]="[
       value === mode.value
-        ? 'bg-[#E5F7D1] text-[#64BC04]'
+        ? ''
         : 'bg-white text-gray-400 hover:text-gray-600 hover:bg-gray-50',
       i > 0 ? 'border-l border-[#D6DEE5]' : ''
     ]"

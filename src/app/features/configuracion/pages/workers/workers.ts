@@ -107,6 +107,11 @@ export class Workers implements OnInit, OnDestroy {
     const query: EmoPorTrabajadorQuery = {
       page,
       pageSize: this.pageSize,
+      // Esta pantalla mantiene el catálogo de fichas, así que ve la tabla `workers` completa:
+      // retirados y fichas sin vinculación incluidos. Es la única que manda este flag; sin él
+      // Categorías y Puestos contaba trabajadores que después no se podían buscar acá para
+      // reasignarles el puesto.
+      todasLasFichas: true,
       search: this.filters.search?.trim() || undefined,
       aptitud: this.filters.aptitud || undefined,
       estado: this.filters.estado || undefined,

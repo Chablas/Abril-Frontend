@@ -81,8 +81,8 @@ export class EditLesson implements OnInit {
     private errorService: ErrorService,
   ) {}
 
-  private getLimeColor(): string {
-    return getComputedStyle(document.documentElement).getPropertyValue('--color-abril-lime').trim() || '#64BC04';
+  private getStandardColor(): string {
+    return getComputedStyle(document.documentElement).getPropertyValue('--color-abril-standard').trim() || '#0F6E56';
   }
 
   ngOnInit(): void {
@@ -392,7 +392,7 @@ export class EditLesson implements OnInit {
     this.lessonService.updateLesson(this.lessonId, form).subscribe({
       next: () => {
         this.loaderService.hide();
-        Swal.fire({ title: 'Lección actualizada', text: 'Volvió a estado pendiente para revisión.', icon: 'success', confirmButtonColor: this.getLimeColor() });
+        Swal.fire({ title: 'Lección actualizada', text: 'Volvió a estado pendiente para revisión.', icon: 'success', confirmButtonColor: this.getStandardColor() });
         this.saved.emit();
         this.closeModal.emit();
       },

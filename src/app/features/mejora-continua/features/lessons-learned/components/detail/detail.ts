@@ -41,8 +41,8 @@ export class DetailLesson implements OnInit {
     private errorService: ErrorService,
   ) {}
 
-  private getLimeColor(): string {
-    return getComputedStyle(document.documentElement).getPropertyValue('--color-abril-lime').trim() || '#64BC04';
+  private getStandardColor(): string {
+    return getComputedStyle(document.documentElement).getPropertyValue('--color-abril-standard').trim() || '#0F6E56';
   }
 
   ngOnInit(): void {
@@ -69,7 +69,7 @@ export class DetailLesson implements OnInit {
     this.lessonService.approveLesson(this.lessonId).subscribe({
       next: (res: ApiMessageDTO) => {
         this.loaderService.hide();
-        Swal.fire({ title: 'Lección aprobada', text: res.message ?? '', icon: 'success', confirmButtonColor: this.getLimeColor() });
+        Swal.fire({ title: 'Lección aprobada', text: res.message ?? '', icon: 'success', confirmButtonColor: this.getStandardColor() });
         this.reviewed.emit();
         this.loadLesson();
       },
@@ -86,7 +86,7 @@ export class DetailLesson implements OnInit {
       inputPlaceholder: 'Indica qué debe corregir...',
       showCancelButton: true,
       confirmButtonColor: '#d33',
-      cancelButtonColor: this.getLimeColor(),
+      cancelButtonColor: this.getStandardColor(),
       cancelButtonText: 'Cancelar',
       confirmButtonText: 'Rechazar',
     }).then((result) => {
@@ -96,7 +96,7 @@ export class DetailLesson implements OnInit {
       this.lessonService.rejectLesson(this.lessonId, comment).subscribe({
         next: (res: ApiMessageDTO) => {
           this.loaderService.hide();
-          Swal.fire({ title: 'Lección rechazada', text: res.message ?? '', icon: 'success', confirmButtonColor: this.getLimeColor() });
+          Swal.fire({ title: 'Lección rechazada', text: res.message ?? '', icon: 'success', confirmButtonColor: this.getStandardColor() });
           this.reviewed.emit();
           this.loadLesson();
         },
@@ -116,7 +116,7 @@ export class DetailLesson implements OnInit {
       title: '¿Estas seguro/a?',
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: this.getLimeColor(),
+      confirmButtonColor: this.getStandardColor(),
       cancelButtonColor: '#d33',
       cancelButtonText: 'Cancelar',
       confirmButtonText: 'Si, eliminalo!',
@@ -129,7 +129,7 @@ export class DetailLesson implements OnInit {
             Swal.fire({
               title: 'Eliminado!',
               text: response.message ?? 'El registro ha sido eliminado.',
-              confirmButtonColor: this.getLimeColor(),
+              confirmButtonColor: this.getStandardColor(),
               icon: 'success',
             });
             this.deleted.emit();

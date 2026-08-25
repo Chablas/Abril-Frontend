@@ -22,6 +22,13 @@ export class BaseModal {
   @Input() preventCloseWhenDirty: boolean = false;
   /** Si es true, ocupa toda la pantalla (sin backdrop ni tarjeta centrada) — para accesos rápidos móviles. */
   @Input() fullScreen: boolean = false;
+  /**
+   * Color de la X de cierre. El título ya usa --color-abril-standard, pero la X quedó
+   * en el verde lima histórico, así que en una pantalla con acento verde oscuro era el
+   * único punto lima del modal. El default es ese mismo lima para que los ~130 modales
+   * que no pasan nada se vean exactamente igual que antes.
+   */
+  @Input() closeColor: string = '#64BC04';
   @Output() closeModal = new EventEmitter();
 
   /** El contenido del modal fue modificado respecto a su estado inicial. */

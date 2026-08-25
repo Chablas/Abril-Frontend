@@ -40,7 +40,40 @@ interface AreaCascadeNode {
   selector: 'app-gestion-salidas',
   imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, TimePicker, Paginator, GestionSalidaDetalleModal, AbrilPageHeaderComponent, TitleCasePipe, FabButton, FilterTriggerButton, FilterModal, AbrilBulkActionDirective],
   templateUrl: './gestion-salidas.html',
-  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
+  styles: [`
+    :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+    /* Toggle "Hoy" del encabezado: misma forma y tamaño que el botón "Filtros" de al lado.
+       Apagado se ve neutro como el resto de botones del header; encendido va relleno en teal
+       para que se note sin leer que la tabla está acotada al día en curso. Se estila con clases
+       (no con [style]) para no matar el :hover, que un estilo en línea siempre le gana. */
+    .hoy-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 12px;
+      border: 1px solid var(--color-abril-border);
+      border-radius: 7px;
+      background: #FFFFFF;
+      color: var(--color-abril-body);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color .15s, border-color .15s, color .15s;
+    }
+    .hoy-toggle:hover { background: #F9FAFB; }
+    .hoy-toggle--on {
+      background: var(--color-abril-standard);
+      border-color: var(--color-abril-standard);
+      color: #FFFFFF;
+    }
+    .hoy-toggle--on:hover { background: var(--color-abril-standard-hover); }
+    /* Foco visible por teclado (Tab), no al hacer clic — igual que app-filter-trigger. */
+    .hoy-toggle:focus-visible {
+      outline: 2px solid var(--color-abril-standard);
+      outline-offset: 2px;
+    }
+  `],
 })
 export class GestionSalidas implements OnInit {
   readonly tabs = GESTION_ADMINISTRATIVA_TABS;
@@ -68,6 +101,14 @@ export class GestionSalidas implements OnInit {
     estadoRendicion:   null as string | null,
     estadoAprobacion:  null as string | null,
   };
+
+  /**
+   * Filtro "Hoy": acota la tabla a las salidas cuya fecha de salida es la de hoy (hora de Perú;
+   * la resuelve el backend). Arranca ACTIVO porque al entrar lo que se necesita ver es el día en
+   * curso; al apagarlo se ven todas las fechas. Vive junto al botón "Filtros" y no dentro del
+   * modal, así que ni suma al badge de filtros activos ni lo toca "Limpiar filtros".
+   */
+  soloHoy = true;
 
   // ── Filtro de área en cascada (igual al de Visibilidad de Salidas) ──
   /** Niveles visibles del desplegable en cascada: [0] = raíces, [1] = hijos del nodo elegido, … */
@@ -292,6 +333,7 @@ export class GestionSalidas implements OnInit {
       this.sortBy,
       this.sortDir,
       this.currentAreaScopeIds(),
+      this.soloHoy,
     ).subscribe({
       next: (res) => {
         this.salidas      = res.data;
@@ -309,6 +351,12 @@ export class GestionSalidas implements OnInit {
 
   onSearch(): void {
     this.load(1);
+  }
+
+  /** Alterna el filtro "Hoy" y recarga la tabla desde la primera página. */
+  toggleSoloHoy(): void {
+    this.soloHoy = !this.soloHoy;
+    this.onSearch();
   }
 
   onPageChange(page: number): void {
@@ -350,6 +398,7 @@ export class GestionSalidas implements OnInit {
       this.filters.estadoRendicion,
       this.filters.estadoAprobacion,
       this.currentAreaScopeIds(),
+      this.soloHoy,
     ).subscribe({
       next: (blob) => {
         const url  = URL.createObjectURL(blob);

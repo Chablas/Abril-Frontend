@@ -29,6 +29,7 @@ export class GestionSalidasService {
     sortBy: string | null = null,
     sortDir: 'asc' | 'desc' | null = null,
     areaScopeIds: number[] | null = null,
+    soloHoy = false,
   ): Observable<PagedResponseDto<GestionSalidaListItemDto>> {
     let params = new HttpParams().set('page', page);
     if (workerId != null)        params = params.set('workerId', workerId);
@@ -38,6 +39,7 @@ export class GestionSalidasService {
     if (sortBy)                  params = params.set('sortBy', sortBy);
     if (sortDir)                 params = params.set('sortDir', sortDir);
     if (areaScopeIds)            for (const id of areaScopeIds) params = params.append('areaScopeIds', id);
+    if (soloHoy)                 params = params.set('soloHoy', true);
     return this.http.get<PagedResponseDto<GestionSalidaListItemDto>>(this.apiUrl, { headers: this.headers, params });
   }
 
@@ -112,6 +114,7 @@ export class GestionSalidasService {
     estadoRendicion: string | null = null,
     estadoAprobacion: string | null = null,
     areaScopeIds: number[] | null = null,
+    soloHoy = false,
   ): Observable<Blob> {
     let params = new HttpParams();
     if (workerId != null)        params = params.set('workerId', workerId);
@@ -119,6 +122,7 @@ export class GestionSalidasService {
     if (estadoRendicion)         params = params.set('estadoRendicion', estadoRendicion);
     if (estadoAprobacion)        params = params.set('estadoAprobacion', estadoAprobacion);
     if (areaScopeIds)            for (const id of areaScopeIds) params = params.append('areaScopeIds', id);
+    if (soloHoy)                 params = params.set('soloHoy', true);
     return this.http.get(`${this.apiUrl}/exportar-excel`, {
       headers: this.headers,
       params,

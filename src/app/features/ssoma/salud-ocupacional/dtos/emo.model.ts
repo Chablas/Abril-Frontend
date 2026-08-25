@@ -341,6 +341,13 @@ export interface InterconsultaInlineCreateDto {
 export interface EmoPorTrabajadorQuery {
   /** Una sola ficha: lo usa el enlace desde Reclutamiento para abrir directo al finalista. */
   workerId?: number;
+  /**
+   * Trae TODAS las fichas de `workers` (solo se descartan las eliminadas, `person.state`),
+   * sin exigir vinculación vigente con una empresa Abril. Lo manda únicamente
+   * Configuración → Trabajadores, que es donde se corrige el puesto/área de cualquier ficha
+   * —incluidas las de retirados—. Las pantallas de EMOs (SSOMA y Clínica) no lo mandan.
+   */
+  todasLasFichas?: boolean;
   search?: string;
   aptitud?: string;
   estado?: string;
