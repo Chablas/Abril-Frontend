@@ -24,17 +24,18 @@
     </app-search-select>
     <p *ngIf="submitted && categoriaId === null" class="text-xs text-red-500 -mt-[10px]">Campo requerido</p>
 
-    <!-- Áreas: opcional a propósito. Los puestos de obra no pertenecen a ninguna, y las áreas
-         solo deciden en qué desplegable de Solicitud de Personal aparece el puesto. -->
-    <app-multi-search-select
-      label="Áreas"
+    <!-- Área: opcional a propósito. Los puestos de obra no pertenecen a ninguna, y el área
+         solo decide en qué desplegable de Solicitud de Personal aparece el puesto. Una sola:
+         un cargo que existe en dos áreas son dos puestos distintos. -->
+    <app-search-select
+      label="Área"
       [options]="areaOptions"
       valueField="areaScopeId"
       displayField="ruta"
-      [value]="areaScopeIds"
-      (valueChange)="areaScopeIds = $event"
+      [value]="areaScopeId"
+      (valueChange)="areaScopeId = $event ?? null"
       placeholder="Sin área">
-    </app-multi-search-select>
+    </app-search-select>
 
     <div class="flex justify-center mt-[4px]">
       <button

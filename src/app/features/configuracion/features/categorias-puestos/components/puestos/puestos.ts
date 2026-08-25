@@ -224,7 +224,7 @@ export class ConfigPuestos implements OnChanges {
         this.usoFilter === null || (p.cantidadTrabajadores > 0) === this.usoFilter;
       const matchesEstado = this.estadoFilter === null || p.activo === this.estadoFilter;
       const matchesArea =
-        areaIds === null || (p.areas ?? []).some((a) => areaIds.has(a.areaScopeId));
+        areaIds === null || (p.areaScopeId !== null && areaIds.has(p.areaScopeId));
       return (
         matchesTexto && matchesCategoria && matchesConCategoria &&
         matchesUso && matchesEstado && matchesArea

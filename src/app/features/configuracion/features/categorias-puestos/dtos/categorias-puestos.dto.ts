@@ -25,17 +25,15 @@ export interface PuestoAdminDto {
    */
   cantidadTrabajadores: number;
   /**
-   * Áreas a las que pertenece el puesto. Puede estar en varias (CHOFER está en Logística y
-   * en Gerencia General) y también en ninguna: los puestos de obra no tienen área porque el
-   * padrón de GTH solo cubrió personal de oficina.
+   * Área a la que pertenece el puesto (nodo de `area_scope`). Una sola desde el corte del
+   * 25-ago: un cargo que existe en dos áreas son dos puestos con el mismo nombre. `null` =
+   * sin área, que es válido: los puestos de obra no tienen porque el padrón de GTH solo
+   * cubrió personal de oficina.
    */
-  areas: PuestoAreaDto[];
-}
+  areaScopeId: number | null;
 
-/** Un área del puesto: el nodo de `area_scope` con su nombre ya resuelto. */
-export interface PuestoAreaDto {
-  areaScopeId: number;
-  nombre: string;
+  /** Nombre del área ya resuelto por el backend, para pintarlo sin recorrer el árbol. */
+  areaNombre: string | null;
 }
 
 /**
@@ -68,15 +66,12 @@ export interface CatalogosAdminDto {
   areaTree: AreaNodoDto[];
 }
 
-/** Alta/edición de un puesto: nombre, categoría (obligatoria) y sus áreas. */
+/** Alta/edición de un puesto: nombre, categoría (obligatoria) y su área. */
 export interface PuestoUpsertRequest {
   nombre: string;
   categoriaId: number;
-  /**
-   * Áreas del puesto. Es el estado COMPLETO, no un delta: lo que no venga se le quita al
-   * puesto. Vacía = el puesto se queda sin área (válido: los de obra no tienen ninguna).
-   */
-  areaScopeIds: number[];
+  /** Área del puesto. `null` = se queda sin área (válido: los de obra no tienen ninguna). */
+  areaScopeId: number | null;
 }
 
 /**

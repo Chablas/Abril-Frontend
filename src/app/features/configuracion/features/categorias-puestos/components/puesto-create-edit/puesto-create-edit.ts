@@ -5,7 +5,6 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
-import { MultiSearchSelect } from '../../../../../../shared/components/multi-search-select/multi-search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { CategoriasPuestosService } from '../../services/categorias-puestos.service';
@@ -19,7 +18,7 @@ import { AreaFlatOption } from '../../area-tree';
 @Component({
   standalone: true,
   selector: 'app-puesto-create-edit',
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, MultiSearchSelect],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './puesto-create-edit.html',
 })
 export class PuestoCreateEdit implements OnInit {
@@ -37,8 +36,8 @@ export class PuestoCreateEdit implements OnInit {
 
   nombre = '';
   categoriaId: number | null = null;
-  /** Áreas del puesto. Vacío es válido: los puestos de obra no pertenecen a ninguna. */
-  areaScopeIds: number[] = [];
+  /** Área del puesto. Null es válido: los puestos de obra no pertenecen a ninguna. */
+  areaScopeId: number | null = null;
   submitted = false;
 
   constructor(
@@ -51,7 +50,7 @@ export class PuestoCreateEdit implements OnInit {
   ngOnInit(): void {
     this.nombre = this.puesto?.nombre ?? '';
     this.categoriaId = this.puesto?.categoriaId ?? null;
-    this.areaScopeIds = (this.puesto?.areas ?? []).map((a) => a.areaScopeId);
+    this.areaScopeId = this.puesto?.areaScopeId ?? null;
   }
 
   get titulo(): string {
@@ -67,8 +66,8 @@ export class PuestoCreateEdit implements OnInit {
     if (!nombre || this.categoriaId == null) return;
 
     this.loaderService.show();
-    // Las áreas viajan completas, no como delta: lo que no esté acá se le quita al puesto.
-    const req = { nombre, categoriaId: this.categoriaId, areaScopeIds: this.areaScopeIds };
+    // Sin área es un envío válido, no un campo vacío: los puestos de obra no tienen ninguna.
+    const req = { nombre, categoriaId: this.categoriaId, areaScopeId: this.areaScopeId };
     const request$ = this.puesto
       ? this.service.actualizarPuesto(this.puesto.id, req)
       : this.service.crearPuesto(req);

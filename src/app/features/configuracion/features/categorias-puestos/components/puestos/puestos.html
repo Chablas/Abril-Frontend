@@ -42,7 +42,7 @@
           </th>
           <th>Puesto</th>
           <th>Categoría</th>
-          <th>Áreas</th>
+          <th>Área</th>
           <th class="text-center w-[160px]">Trabajadores</th>
           <th class="text-center w-[140px]">Estado</th>
           <th class="text-center w-[300px]">Acciones</th>
@@ -84,13 +84,11 @@
           <!-- Los nombres de área ya vienen capitalizados del catálogo: nada de titleCase acá,
                que convertiría "SSOMA" en "Ssoma". -->
           <td class="text-gray-700">
-            <div *ngIf="p.areas?.length" class="flex flex-wrap gap-[4px]">
-              <span *ngFor="let a of p.areas"
-                    class="text-[11px] px-[8px] py-[2px] rounded-full bg-[#EAF6FF] text-[#0B6BA8] font-medium whitespace-nowrap">
-                {{ a.nombre }}
-              </span>
-            </div>
-            <span *ngIf="!p.areas?.length" class="text-gray-400 italic">Sin área</span>
+            <span *ngIf="p.areaNombre"
+                  class="text-[11px] px-[8px] py-[2px] rounded-full bg-[#EAF6FF] text-[#0B6BA8] font-medium whitespace-nowrap">
+              {{ p.areaNombre }}
+            </span>
+            <span *ngIf="!p.areaNombre" class="text-gray-400 italic">Sin área</span>
           </td>
 
           <td class="text-center">
