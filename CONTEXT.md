@@ -5384,3 +5384,66 @@ en este repo solo se construyó el frontend del Flujo A esta sesión.
   existente) — backend ya está, falta todo el frontend.
 - Probar Flujo A en navegador contra el backend real una vez corrida la migración
   de feature seed.
+
+## Sesión 2026-08-25 — Mejora Continua: rediseño de "Ítems de catálogo" + buscador + duplicados
+
+Pedido del usuario sobre `features/mejora-continua/features/configuration/catalog-items/`
+(pestaña "Ítems de catálogo" dentro de Configuración de Lecciones Aprendidas, ruta
+`/mejora-continua/lecciones-configuracion?seccion=catalog-items`): la pantalla era una
+tabla plana Tailwind con acento verde `#64BC04` (paleta ajena a DESIGN-VICTOR.md), sin
+buscador y sin forma de detectar descripciones repetidas entre los ~208 registros de
+"Partida".
+
+- **Rediseño visual**: `catalog-items.html`/`.css` reescritos con el mismo lenguaje
+  navy/azul UDP que ya usa Planeamiento BIM (`bloqueos.css` como referencia directa) —
+  card contenedora, pills de tipo, tabla con header uppercase 11-12px y hover
+  `#F8FAFC`, botones de acción cuadrados con borde, skeleton loading (F8), estados
+  vacíos con ícono. Aplica igual a las 6 pestañas de tipo (Etapa/Fase/Nivel/Partida/
+  Subespecialidad/Subetapa) porque el componente es data-driven.
+  - Desviación deliberada y confirmada por el usuario del estándar `.abril-table`/
+    `--color-abril-standard` (teal) de la sección "UI standard (2026)" de
+    `CLAUDE.md` — se siguió el precedente ya existente de Planeamiento BIM (CSS
+    propio por componente, paleta UDP de `DESIGN-VICTOR.md`) en vez del sistema
+    compartido genérico.
+  - `catalog-item-form.html`/`.css` (modal de crear/editar ítem) también retocado al
+    mismo lenguaje visual — **sin tocar `catalog-item-form.ts`** (cero cambios de
+    lógica de guardado). El título del modal ("NUEVO ÍTEM"/"EDITAR ÍTEM") queda en
+    color teal porque lo pinta `base-modal` (`style="color:var(--color-abril-standard)"`
+    hardcodeado ahí), componente compartido que no se tocó — única inconsistencia de
+    color conocida, deliberada.
+- **Buscador**: campo sobre la tabla, filtra `items` (el array completo que ya trae
+  `CatalogService.getItemsByType(typeId)` en un solo GET, sin paginación de backend)
+  por `catalogItemDescription`, case-insensitive, sin debounce (dataset pequeño).
+  Resetea a página 1 al escribir. Verificado con "acero" en Partida: 208 → 6
+  resultados en tiempo real.
+- **Alerta de duplicados**: normaliza cada descripción del tipo activo
+  (`trim().toUpperCase().replace(/\s+/g,' ')`), agrupa y marca grupos con más de 1
+  elemento. Banner de advertencia (`#D97706`/`#FEF3C7`, DESIGN-VICTOR §2.1) arriba de
+  la tabla con el conteo y el listado de descripciones repetidas. Cubre solo duplicado
+  exacto tras normalizar — sin matching difuso (Levenshtein), explícitamente fuera de
+  alcance por pedido del usuario. Verificado creando `"acero dimensionado  "`
+  (minúsculas + doble espacio) contra `"ACERO DIMENSIONADO"` existente en Partida: el
+  banner detectó el duplicado correctamente; el ítem de prueba se eliminó después para
+  no dejar basura en los datos reales.
+- No se tocó `catalog.service.ts`, DTOs, `save()`/`delete()`/`update()`, rutas,
+  `navigation.service.ts` ni el componente `Paginator`.
+
+### Archivos clave
+- `catalog-items.ts` — `searchTerm`, getters `filteredItems`/`duplicateGroups`,
+  `pagedItems`/`totalRecords`/`totalPages` recalculados sobre `filteredItems`.
+- `catalog-items.html`/`.css` — rediseño completo (nuevo, antes vacío el `.css`).
+- `components/catalog-item-form/catalog-item-form.html`/`.css` — retoque visual del
+  modal (nuevo el `.css`, antes vacío).
+
+### Verificado
+`npm run build`: 0 errores (solo warnings preexistentes de terceros: canvg,
+flatpickr, tfjs). Probado en navegador (Chrome, dev server local, sesión ya
+logueada): las 6 pestañas de tipo, buscador, banner de duplicados (ciclo completo
+crear→verificar→eliminar), modal de crear/editar. Se vio un `NG0100
+ExpressionChangedAfterItHasBeenCheckedError` en consola en el `App` component raíz
+(patrón conocido de `LoaderService`, ya tocado antes en el merge del 2026-08-19) —
+no es una regresión de esta sesión, no se tocó `loaderService.show()/hide()`.
+
+### Pendiente
+- Nada pendiente de esta sesión — feature verificada end-to-end en navegador por
+  Claude. El usuario puede revisar visualmente si quiere una segunda confirmación.
