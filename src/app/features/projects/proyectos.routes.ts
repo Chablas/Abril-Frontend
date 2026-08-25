@@ -26,6 +26,11 @@ import { PlaneamientoBimPortafolio } from './planeamiento-bim/portafolio/portafo
 export const PROJECTS_ROUTES: Routes = [
   { path: '', redirectTo: 'projects-dashboard', pathMatch: 'full' },
   {
+    path: 'planeamiento-bim',
+    redirectTo: 'planeamiento-bim/configuracion-inicial',
+    pathMatch: 'full',
+  },
+  {
     // Landing del feature (antes de elegir proyecto) — restringido a
     // AdministradorSistema/AdministradorUdp, sin UsuarioUdp (mismo rol que exige
     // [Authorize] en PlaneamientoBimPortafolioController). No comparte el
@@ -36,7 +41,7 @@ export const PROJECTS_ROUTES: Routes = [
     component: PlaneamientoBimPortafolio,
     canActivate: [roleGuard],
     data: {
-      titulo: 'PORTAFOLIO DE PLANEAMIENTO BIM',
+      titulo: 'PLANEAMIENTO',
       featureKey: 'planeamiento-bim.portafolio',
       roles: [Roles.ADMINISTRADOR_SISTEMA, Roles.ADMINISTRADOR_UDP],
     },
@@ -45,25 +50,25 @@ export const PROJECTS_ROUTES: Routes = [
     path: 'planeamiento-bim/configuracion-inicial',
     component: ConfiguracionInicial,
     canActivate: [roleGuard],
-    data: { titulo: 'CONFIGURACIÓN INICIAL DE PLANEAMIENTO BIM', featureKey: 'planeamiento-bim.configuracion-inicial' },
+    data: { titulo: 'PLANEAMIENTO', featureKey: 'planeamiento-bim.configuracion-inicial' },
   },
   {
     path: 'planeamiento-bim/carga-diaria',
     component: CargaDiaria,
     canActivate: [roleGuard],
-    data: { titulo: 'CARGA DIARIA DE PLANEAMIENTO BIM', featureKey: 'planeamiento-bim.configuracion-inicial' },
+    data: { titulo: 'PLANEAMIENTO', featureKey: 'planeamiento-bim.configuracion-inicial' },
   },
   {
     path: 'planeamiento-bim/bloqueos',
     component: Bloqueos,
     canActivate: [roleGuard],
-    data: { titulo: 'GESTIÓN DE BLOQUEOS DE PLANEAMIENTO BIM', featureKey: 'planeamiento-bim.configuracion-inicial' },
+    data: { titulo: 'PLANEAMIENTO', featureKey: 'planeamiento-bim.configuracion-inicial' },
   },
   {
     path: 'planeamiento-bim/dashboard',
     component: PlaneamientoBimDashboard,
     canActivate: [roleGuard],
-    data: { titulo: 'DASHBOARD DE PLANEAMIENTO BIM', featureKey: 'planeamiento-bim.configuracion-inicial' },
+    data: { titulo: 'PLANEAMIENTO', featureKey: 'planeamiento-bim.configuracion-inicial' },
   },
   {
     path: 'projects-dashboard',
