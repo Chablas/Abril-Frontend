@@ -5447,3 +5447,68 @@ no es una regresión de esta sesión, no se tocó `loaderService.show()/hide()`.
 ### Pendiente
 - Nada pendiente de esta sesión — feature verificada end-to-end en navegador por
   Claude. El usuario puede revisar visualmente si quiere una segunda confirmación.
+
+## Sesión 2026-08-25 (2) — Unificación de Planeamiento BIM + nombres legibles de featureKey en Editar Rol
+
+### Contexto
+Dos frentes en paralelo, ya committeados en `victor-frontend`:
+
+1. **Navegación de Planeamiento BIM**: existían dos entradas separadas en el sidebar
+   y en las pestañas de Proyectos — "Planeamiento BIM" (Configuración/Carga
+   Diaria/Bloqueos/Dashboard, para UsuarioUdp) y "Portafolio BIM" (landing aparte,
+   solo Administrador Sistema/UDP) — con `titulo` distinto por ruta
+   ("CONFIGURACIÓN INICIAL DE PLANEAMIENTO BIM", "DASHBOARD DE PLANEAMIENTO BIM",
+   etc). Se unificaron en una sola entrada "Planeamiento" (`navigation.service.ts`,
+   `projects-tabs.ts`) usando el nuevo campo `featureKeys` (array) para que la
+   entrada se muestre si el usuario tiene *cualquiera* de los featureKey del grupo,
+   sin exponer rutas a las que no tiene acceso. Todas las rutas de
+   `planeamiento-bim/*` ahora comparten `titulo: 'PLANEAMIENTO'`. Se agregó redirect
+   `planeamiento-bim` → `planeamiento-bim/configuracion-inicial` en
+   `proyectos.routes.ts`.
+   - `planeamiento-bim-subnav.ts` (el subnav interno de las 5 pantallas) ahora
+     inyecta `NavigationService` y filtra sus propias tabs con
+     `isNavEntryAllowed()` — antes mostraba "Portafolio" a todos sin chequear rol.
+   - `portafolio.ts`/`.html` ahora importa y renderiza `PlaneamientoBimSubnavComponent`
+     (antes el portafolio no tenía el subnav de las otras 4 pantallas).
+
+2. **Nombres legibles de featureKey en "Editar Rol"** (`security/pages/roles/role-edit`):
+   antes la lista de permisos mostraba el `featureKey` crudo (ej.
+   `"planeamiento-bim.configuracion-inicial"`). Se agregó:
+   - `scripts/generate-feature-display-names.js`: script Node (AST de TypeScript)
+     que escanea `navigation.service.ts` (labels del sidebar) + `route.data.titulo`
+     de toda la app, y genera `src/app/core/navigation/feature-display-names.generated.ts`
+     (archivo generado, no editar a mano — regenerar con
+     `node scripts/generate-feature-display-names.js` cuando se agregue/renombre
+     una pantalla con featureKey nuevo).
+   - `role-edit.ts`: `displayName(featureKey)` prioriza `FEATURE_DISPLAY_NAMES`
+     (el mapa generado) y cae a `humanizeFeatureKey()` (heurística local:
+     separa por `.`/`-`, restituye tildes en palabras españolas terminadas en
+     `-ion`/`-ión` salvo lista de excepciones en inglés y plurales `-iones`,
+     aplica diccionario de siglas/overrides) solo para featureKey sin pantalla
+     propia (permisos finos tipo `arquitectura-comercial.observaciones.editar`).
+   - `role-edit.ts`/`.html`/`.css`: además de los nombres legibles, se agregó
+     agrupación por módulo en acordeones (`ModuleGroup`, `expandedModuleIds`) que
+     se auto-expanden si el módulo ya tiene algún ítem marcado.
+
+### Archivos clave
+- `core/navigation/navigation.service.ts`, `features/projects/shared/projects-tabs.ts`
+  — nuevo campo `featureKeys` en la entrada unificada "Planeamiento".
+- `features/projects/proyectos.routes.ts` — `titulo: 'PLANEAMIENTO'` en las 4 rutas
+  + redirect nuevo.
+- `features/projects/planeamiento-bim/shared/planeamiento-bim-subnav/planeamiento-bim-subnav.ts`
+  — filtro por rol vía `NavigationService.isNavEntryAllowed()`.
+- `features/projects/planeamiento-bim/portafolio/portafolio.ts`/`.html` — ahora
+  incluye el subnav compartido.
+- `scripts/generate-feature-display-names.js` (nuevo) y
+  `core/navigation/feature-display-names.generated.ts` (nuevo, generado).
+- `features/security/pages/roles/components/role-edit/role-edit.ts`/`.html`/`.css`
+  — `displayName()`/`humanizeFeatureKey()`, agrupación por módulo con acordeón.
+
+### Verificado
+`npm run build` (producción): sin errores, solo warnings preexistentes de terceros
+(canvg, flatpickr, node-fetch — no relacionados a esta sesión).
+
+### Pendiente
+- Si se agrega una pantalla nueva con `featureKey` propio, correr
+  `node scripts/generate-feature-display-names.js` de nuevo para que "Editar Rol"
+  muestre su nombre legible en vez de caer al fallback heurístico.
