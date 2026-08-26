@@ -386,10 +386,14 @@ export class Agenda implements OnInit {
   rechazar(item: ProgramacionClinicaDto): void {
     Swal.fire({
       title: 'Rechazar programación',
-      html: `<span style="font-size:0.87rem;color:#94a3b8">${item.workerNombre}</span>`,
-      input: 'text',
-      inputPlaceholder: 'Motivo de rechazo *',
-      inputAttributes: { autocomplete: 'off' },
+      html: `
+        <span style="font-size:0.87rem;color:#94a3b8">${item.workerNombre}</span>
+        <input id="swal-motivo-rechazo" class="swal2-input" placeholder="Motivo de rechazo *" autocomplete="off">
+        <label style="display:flex;align-items:center;gap:8px;justify-content:center;margin-top:10px;font-size:0.85rem;color:#cbd5e1;cursor:pointer;">
+          <input id="swal-enviar-correo" type="checkbox" checked style="width:16px;height:16px;cursor:pointer;">
+          Enviar correo de notificación de rechazo
+        </label>
+      `,
       background: '#1e293b',
       color: '#f1f5f9',
       confirmButtonColor: '#ef4444',
@@ -397,19 +401,24 @@ export class Agenda implements OnInit {
       showCancelButton: true,
       confirmButtonText: 'Rechazar',
       cancelButtonText: 'Cancelar',
-      preConfirm: (motivo: string) => {
-        if (!motivo?.trim()) {
+      focusConfirm: false,
+      preConfirm: () => {
+        const motivoInput = document.getElementById('swal-motivo-rechazo') as HTMLInputElement | null;
+        const enviarCorreoInput = document.getElementById('swal-enviar-correo') as HTMLInputElement | null;
+        const motivo = motivoInput?.value?.trim();
+        if (!motivo) {
           Swal.showValidationMessage('Ingresa el motivo de rechazo');
           return false;
         }
-        return motivo.trim();
+        return { motivo, enviarCorreo: enviarCorreoInput?.checked ?? true };
       },
     }).then((result) => {
       if (result.isConfirmed && result.value) {
         this.ejecutarAccion(item.id, {
           id: item.id,
           accion: 'Rechazar',
-          motivoRechazo: result.value,
+          motivoRechazo: result.value.motivo,
+          enviarCorreo: result.value.enviarCorreo,
         });
       }
     });

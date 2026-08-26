@@ -113,16 +113,18 @@ export class Bandeja implements OnInit, OnDestroy {
     );
   }
 
-  get trabajadoresPorProyecto(): { proyectoId: number | null; proyectoNombre: string; items: BandejaItemDto[] }[] {
-    const map = new Map<string, { proyectoId: number | null; proyectoNombre: string; items: BandejaItemDto[] }>();
-    for (const item of this.filteredItems) {
-      const proyectoId = item.proyectoId ?? null;
-      const proyectoNombre = item.proyectoNombre ?? 'Sin proyecto';
-      const key = String(proyectoId ?? proyectoNombre);
-      if (!map.has(key)) {
-        map.set(key, { proyectoId, proyectoNombre, items: [] });
+  /**
+   * El proyecto es el encabezado visual y las tarjetas de siempre (una por empresa+fecha, ver
+   * groupInducciones) quedan anidadas adentro — no se pierde la distinción entre sesiones de
+   * inducción de empresas distintas.
+   */
+  get induccionGruposPorProyecto(): { proyectoId: number; proyectoNombre: string; grupos: InduccionGrupo[] }[] {
+    const map = new Map<number, { proyectoId: number; proyectoNombre: string; grupos: InduccionGrupo[] }>();
+    for (const grupo of this.induccionGrupos) {
+      if (!map.has(grupo.proyectoId)) {
+        map.set(grupo.proyectoId, { proyectoId: grupo.proyectoId, proyectoNombre: grupo.proyectoNombre, grupos: [] });
       }
-      map.get(key)!.items.push(item);
+      map.get(grupo.proyectoId)!.grupos.push(grupo);
     }
     return Array.from(map.values()).sort((a, b) =>
       a.proyectoNombre.localeCompare(b.proyectoNombre, 'es'),

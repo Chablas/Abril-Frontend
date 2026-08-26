@@ -1,3 +1,16 @@
+export interface InspeccionDestinatarioDto {
+  nombre: string;
+  email: string;
+}
+
+export interface InspeccionDestinatariosCierreDto {
+  residenteEmail: string | null;
+  coordSsomaEmail: string | null;
+  gerenteInmobiliarioEmail: string | null;
+  prevencionistas: InspeccionDestinatarioDto[];
+  tuEmail: string | null;
+}
+
 export interface InspeccionTipoDto {
   id: number;
   nombre: string;
