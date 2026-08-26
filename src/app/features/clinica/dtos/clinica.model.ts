@@ -100,6 +100,8 @@ export interface ClinicaAccionDto {
   horaNueva?: string;
   /** Solo con accion 'Aceptar' (incluye Reprogramar): corrige el tipo de EMO si la clínica se equivocó al programar. */
   tipoEmoId?: number;
+  /** Solo con accion 'Rechazar': si es false, no se envía el correo de notificación de rechazo. Default true. */
+  enviarCorreo?: boolean;
 }
 
 export type EstadoProgramacionClinica =

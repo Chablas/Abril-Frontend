@@ -427,9 +427,11 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.mostrarAgregarProyecto = true;
   }
 
-  onProyectoAgregado(dto: WorkerProyectoDto): void {
-    this.workerSeleccionadoProyectos = [...this.workerSeleccionadoProyectos, dto];
+  onProyectoAgregado(_dto: WorkerProyectoDto): void {
     this.mostrarAgregarProyecto = false;
+    if (this.selectedWorker) {
+      this.cargarProyectos(this.selectedWorker.workerId);
+    }
     this.loadWorkers(this.currentPage);
   }
 
