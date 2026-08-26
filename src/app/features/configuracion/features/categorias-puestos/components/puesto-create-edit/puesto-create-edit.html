@@ -37,9 +37,6 @@
       (valueChange)="onSolicitanteChange($event ?? null)"
       placeholder="Sin área">
     </app-search-select>
-    <p class="text-[11px] text-gray-400 -mt-[10px]">
-      Solo esa área y las que dependen de ella verán el puesto al pedir personal.
-    </p>
 
     <app-search-select
       label="Área a la que irá el postulante"
@@ -50,14 +47,6 @@
       (valueChange)="areaDestinoScopeId = $event ?? null"
       placeholder="La misma del solicitante">
     </app-search-select>
-    <p class="text-[11px] text-gray-400 -mt-[10px]">
-      <ng-container *ngIf="areaDestinoNombre">
-        Quien sea contratado para este puesto entra a <b>{{ areaDestinoNombre }}</b>.
-      </ng-container>
-      <ng-container *ngIf="!areaDestinoNombre">
-        Sin área de destino, el contratado entra al área de quien lo pidió.
-      </ng-container>
-    </p>
 
     <div class="flex justify-center mt-[4px]">
       <button

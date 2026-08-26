@@ -70,13 +70,6 @@ export class PuestoCreateEdit implements OnInit {
     if (this.areaDestinoScopeId === null) this.areaDestinoScopeId = areaScopeId;
   }
 
-  /** Nombre del área elegida como destino, para el aviso de a dónde entra el postulante. */
-  get areaDestinoNombre(): string | null {
-    return (
-      this.areaOptions.find((a) => a.areaScopeId === this.areaDestinoScopeId)?.ruta ?? null
-    );
-  }
-
   save(): void {
     this.submitted = true;
     const nombre = this.nombre.trim();
