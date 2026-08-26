@@ -62,6 +62,13 @@
             [fullText]="true"
             [(value)]="v.puestoId" />
           <p *ngIf="submitted && !v.puestoId" class="text-xs text-red-500">Campo requerido</p>
+          <!-- El área ya no se elige: la decide el puesto. Solo se informa cuando NO es la del
+               propio solicitante, que es el caso raro y el que hay que hacer visible. Sin
+               titleCase: los nombres del catálogo ya vienen capitalizados. -->
+          <p *ngIf="areaDestino(v) && areaDestino(v) !== formData.areaNombre"
+             class="text-[11px] text-gray-500">
+            Ingresa al área de <b class="text-gray-700">{{ areaDestino(v) }}</b>
+          </p>
           <!-- Sin puestos no se puede registrar nada: se dice por qué en vez de dejar el
                desplegable vacío sin explicación. -->
           <p *ngIf="destinatariosCargados && formData.puestos.length === 0"

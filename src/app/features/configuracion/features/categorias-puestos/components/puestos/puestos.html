@@ -42,7 +42,8 @@
           </th>
           <th>Puesto</th>
           <th>Categoría</th>
-          <th>Área</th>
+          <th>Lo pide</th>
+          <th>Va a</th>
           <th class="text-center w-[160px]">Trabajadores</th>
           <th class="text-center w-[140px]">Estado</th>
           <th class="text-center w-[300px]">Acciones</th>
@@ -51,7 +52,7 @@
       <tbody>
 
         <tr *ngIf="filteredPuestos.length === 0">
-          <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">
+          <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">
             {{ filtrosActivos > 0 ? 'Sin resultados.' : 'No hay puestos registrados.' }}
           </td>
         </tr>
@@ -84,11 +85,23 @@
           <!-- Los nombres de área ya vienen capitalizados del catálogo: nada de titleCase acá,
                que convertiría "SSOMA" en "Ssoma". -->
           <td class="text-gray-700">
-            <span *ngIf="p.areaNombre"
+            <span *ngIf="p.areaSolicitanteNombre"
                   class="text-[11px] px-[8px] py-[2px] rounded-full bg-[#EAF6FF] text-[#0B6BA8] font-medium whitespace-nowrap">
-              {{ p.areaNombre }}
+              {{ p.areaSolicitanteNombre }}
             </span>
-            <span *ngIf="!p.areaNombre" class="text-gray-400 italic">Sin área</span>
+            <span *ngIf="!p.areaSolicitanteNombre" class="text-gray-400 italic">Sin área</span>
+          </td>
+
+          <!-- El destino solo se pinta cuando es OTRA área: repetir la misma etiqueta dos veces
+               en cada fila haría que las pocas que sí difieren pasen desapercibidas. -->
+          <td class="text-gray-700">
+            <span *ngIf="p.areaDestinoNombre && p.areaDestinoScopeId !== p.areaSolicitanteScopeId"
+                  class="text-[11px] px-[8px] py-[2px] rounded-full bg-[#FFF3DC] text-[#B26A00] font-medium whitespace-nowrap">
+              {{ p.areaDestinoNombre }}
+            </span>
+            <span *ngIf="p.areaDestinoNombre && p.areaDestinoScopeId === p.areaSolicitanteScopeId"
+                  class="text-gray-400">La misma</span>
+            <span *ngIf="!p.areaDestinoNombre" class="text-gray-400 italic">Sin área</span>
           </td>
 
           <td class="text-center">
@@ -188,6 +201,17 @@
       [value]="categoriaFilter"
       (valueChange)="categoriaFilter = $event; onFilterChange()"
       placeholder="Todas las categorías">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Áreas del puesto"
+      [options]="areaEstadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="areaEstadoFilter"
+      (valueChange)="areaEstadoFilter = $event; onFilterChange()">
     </app-search-select>
   </div>
 

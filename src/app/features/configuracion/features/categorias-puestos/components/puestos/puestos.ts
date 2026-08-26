@@ -84,6 +84,18 @@ export class ConfigPuestos implements OnChanges {
     { value: true, label: 'Con categoría' },
     { value: false, label: 'Sin categoría' },
   ];
+  /**
+   * Estado de las dos áreas del puesto. Sirve para encontrar lo que le falta a GTH sin tener
+   * que recorrer la tabla: los puestos que nadie puede pedir, los que no dicen a dónde entra
+   * el contratado, y los pocos en los que pedir y entrar son áreas distintas.
+   */
+  areaEstadoFilter: 'sin-solicitante' | 'sin-destino' | 'distintas' | null = null;
+  readonly areaEstadoFilterOptions = [
+    { value: null, label: 'Todos' },
+    { value: 'sin-solicitante', label: 'Sin área que lo pida' },
+    { value: 'sin-destino', label: 'Sin área de destino' },
+    { value: 'distintas', label: 'Pide y va a áreas distintas' },
+  ];
   /** true = solo puestos en uso, false = solo los que no tiene ningún trabajador. */
   usoFilter: boolean | null = null;
   readonly usoFilterOptions = [
@@ -132,6 +144,7 @@ export class ConfigPuestos implements OnChanges {
     if (this.searchText.trim()) n++;
     if (this.categoriaFilter !== null) n++;
     if (this.conCategoriaFilter !== null) n++;
+    if (this.areaEstadoFilter !== null) n++;
     if (this.usoFilter !== null) n++;
     if (this.estadoFilter !== null) n++;
     if (this.selectedAreaNodes.some((node) => node)) n++;
@@ -142,6 +155,7 @@ export class ConfigPuestos implements OnChanges {
     this.searchText = '';
     this.categoriaFilter = null;
     this.conCategoriaFilter = null;
+    this.areaEstadoFilter = null;
     this.usoFilter = null;
     this.estadoFilter = null;
     this.areaLevels = this.areaLevels.length ? [this.areaLevels[0]] : this.areaLevels;
@@ -193,6 +207,9 @@ export class ConfigPuestos implements OnChanges {
    * Áreas que cuentan como coincidencia: el nodo elegido más profundo y todos sus
    * descendientes. Filtrar por "Gerencia de Proyectos" tiene que traer también los puestos de
    * SSOMA, Calidad, Unidad de Proyectos, etc. — el mismo alcance que usa Solicitud de Personal.
+   *
+   * El filtro mira las DOS áreas del puesto: quien busca "Producción" quiere ver también los
+   * puestos que entran ahí aunque los pida la Gerencia Inmobiliaria.
    */
   private get areaScopeIdsFiltrados(): Set<number> | null {
     for (let i = this.selectedAreaNodes.length - 1; i >= 0; i--) {
@@ -224,10 +241,20 @@ export class ConfigPuestos implements OnChanges {
         this.usoFilter === null || (p.cantidadTrabajadores > 0) === this.usoFilter;
       const matchesEstado = this.estadoFilter === null || p.activo === this.estadoFilter;
       const matchesArea =
-        areaIds === null || (p.areaScopeId !== null && areaIds.has(p.areaScopeId));
+        areaIds === null ||
+        (p.areaSolicitanteScopeId !== null && areaIds.has(p.areaSolicitanteScopeId)) ||
+        (p.areaDestinoScopeId !== null && areaIds.has(p.areaDestinoScopeId));
+      const matchesAreaEstado =
+        this.areaEstadoFilter === null ||
+        (this.areaEstadoFilter === 'sin-solicitante' && p.areaSolicitanteScopeId === null) ||
+        (this.areaEstadoFilter === 'sin-destino' && p.areaDestinoScopeId === null) ||
+        (this.areaEstadoFilter === 'distintas' &&
+          p.areaSolicitanteScopeId !== null &&
+          p.areaDestinoScopeId !== null &&
+          p.areaSolicitanteScopeId !== p.areaDestinoScopeId);
       return (
         matchesTexto && matchesCategoria && matchesConCategoria &&
-        matchesUso && matchesEstado && matchesArea
+        matchesUso && matchesEstado && matchesArea && matchesAreaEstado
       );
     });
   }

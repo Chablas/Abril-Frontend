@@ -24,18 +24,40 @@
     </app-search-select>
     <p *ngIf="submitted && categoriaId === null" class="text-xs text-red-500 -mt-[10px]">Campo requerido</p>
 
-    <!-- Área: opcional a propósito. Los puestos de obra no pertenecen a ninguna, y el área
-         solo decide en qué desplegable de Solicitud de Personal aparece el puesto. Una sola:
-         un cargo que existe en dos áreas son dos puestos distintos. -->
+    <!-- Las dos áreas son opcionales a propósito: los puestos de obra no tienen ninguna. La
+         primera decide en qué desplegable de Solicitud de Personal aparece el puesto; la
+         segunda, a qué área entra el trabajador que lo ocupe. Casi siempre son la misma, así
+         que elegir la primera propone la segunda. -->
     <app-search-select
-      label="Área"
+      label="Área que puede pedir este puesto"
       [options]="areaOptions"
       valueField="areaScopeId"
       displayField="ruta"
-      [value]="areaScopeId"
-      (valueChange)="areaScopeId = $event ?? null"
+      [value]="areaSolicitanteScopeId"
+      (valueChange)="onSolicitanteChange($event ?? null)"
       placeholder="Sin área">
     </app-search-select>
+    <p class="text-[11px] text-gray-400 -mt-[10px]">
+      Solo esa área y las que dependen de ella verán el puesto al pedir personal.
+    </p>
+
+    <app-search-select
+      label="Área a la que irá el postulante"
+      [options]="areaOptions"
+      valueField="areaScopeId"
+      displayField="ruta"
+      [value]="areaDestinoScopeId"
+      (valueChange)="areaDestinoScopeId = $event ?? null"
+      placeholder="La misma del solicitante">
+    </app-search-select>
+    <p class="text-[11px] text-gray-400 -mt-[10px]">
+      <ng-container *ngIf="areaDestinoNombre">
+        Quien sea contratado para este puesto entra a <b>{{ areaDestinoNombre }}</b>.
+      </ng-container>
+      <ng-container *ngIf="!areaDestinoNombre">
+        Sin área de destino, el contratado entra al área de quien lo pidió.
+      </ng-container>
+    </p>
 
     <div class="flex justify-center mt-[4px]">
       <button

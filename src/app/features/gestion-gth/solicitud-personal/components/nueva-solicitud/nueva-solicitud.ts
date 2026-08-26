@@ -216,6 +216,20 @@ export class GthNuevaSolicitud implements OnInit {
   }
 
   // ── Reemplazo: a quién se reemplaza ────────────────────────────────
+  // ── A dónde entra el contratado ────────────────────────────────────
+  /**
+   * Área a la que entrará quien ocupe el puesto elegido. Sale del puesto, no del solicitante:
+   * la Gerencia Inmobiliaria pide un Ingeniero Residente y el residente entra a Residencia. Por
+   * eso el formulario ya no pregunta el área — solo la informa.
+   *
+   * null cuando no hay puesto elegido o el puesto no tiene destino (los de obra): en ese caso
+   * el contratado entra al área del propio solicitante.
+   */
+  areaDestino(v: VacanteForm): string | null {
+    if (!v.puestoId) return null;
+    return this.formData.puestos.find((p) => p.id === v.puestoId)?.areaDestino ?? null;
+  }
+
   /** ¿La vacante es un reemplazo? Se decide por el código del catálogo, no por su nombre. */
   esReemplazo(v: VacanteForm): boolean {
     const tipo = this.formData.tiposRequerimiento.find((t) => t.id === v.tipoRequerimientoId);

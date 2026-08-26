@@ -177,24 +177,13 @@
         }
       </span>
 
-      <!-- Área a la que entra el seleccionado: sale del puesto que se pidió, no del área de quien
-           lo pidió. Solo se pregunta cuando el puesto pertenece a más de un área; con una sola se
-           informa, y si el puesto no tiene ninguna mapeada no hay nada que mostrar. -->
-      @if (!procesoCerrado && seleccionado && !estaDecidido(seleccionado)) {
-        @if (eligeArea) {
-          <div class="w-[260px]">
-            <app-search-select
-              label="Área de destino *"
-              [options]="areasDestino" valueField="id" displayField="nombre"
-              [value]="areaDestinoId" (valueChange)="areaDestinoId = $event"
-              placeholder="¿A qué área entra?"
-              color="var(--color-abril-logo-blue)"></app-search-select>
-          </div>
-        } @else if (areaUnica) {
-          <span class="text-[12.5px] text-gray-500">
-            Área de destino: <b class="text-gray-700">{{ areaUnica.nombre }}</b>
-          </span>
-        }
+      <!-- Área a la que entra el seleccionado. No se elige: la decide el puesto que se pidió.
+           Cuando el puesto no tiene destino (los de obra) no hay nada que mostrar — entra al
+           área de quien pidió la vacante. -->
+      @if (!procesoCerrado && seleccionado && !estaDecidido(seleccionado) && areaDestinoNombre) {
+        <span class="text-[12.5px] text-gray-500">
+          Ingresa a <b class="text-gray-700">{{ areaDestinoNombre }}</b>
+        </span>
       }
     </div>
 

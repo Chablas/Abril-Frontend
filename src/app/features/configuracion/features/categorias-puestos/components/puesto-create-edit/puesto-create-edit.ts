@@ -36,8 +36,10 @@ export class PuestoCreateEdit implements OnInit {
 
   nombre = '';
   categoriaId: number | null = null;
-  /** Área del puesto. Null es válido: los puestos de obra no pertenecen a ninguna. */
-  areaScopeId: number | null = null;
+  /** Área que puede pedir el puesto. Null es válido: los puestos de obra no tienen ninguna. */
+  areaSolicitanteScopeId: number | null = null;
+  /** Área a la que entra el postulante. Null = se cae al área del solicitante. */
+  areaDestinoScopeId: number | null = null;
   submitted = false;
 
   constructor(
@@ -50,11 +52,29 @@ export class PuestoCreateEdit implements OnInit {
   ngOnInit(): void {
     this.nombre = this.puesto?.nombre ?? '';
     this.categoriaId = this.puesto?.categoriaId ?? null;
-    this.areaScopeId = this.puesto?.areaScopeId ?? null;
+    this.areaSolicitanteScopeId = this.puesto?.areaSolicitanteScopeId ?? null;
+    this.areaDestinoScopeId = this.puesto?.areaDestinoScopeId ?? null;
   }
 
   get titulo(): string {
     return this.puesto ? 'EDITAR PUESTO' : 'NUEVO PUESTO';
+  }
+
+  /**
+   * Al elegir quién pide el puesto se propone esa misma área como destino, que es el caso de
+   * la enorme mayoría (de 112 puestos mapeados, solo 6 difieren). Solo se propone mientras el
+   * destino esté vacío: si ya eligieron uno distinto, no se pisa.
+   */
+  onSolicitanteChange(areaScopeId: number | null): void {
+    this.areaSolicitanteScopeId = areaScopeId;
+    if (this.areaDestinoScopeId === null) this.areaDestinoScopeId = areaScopeId;
+  }
+
+  /** Nombre del área elegida como destino, para el aviso de a dónde entra el postulante. */
+  get areaDestinoNombre(): string | null {
+    return (
+      this.areaOptions.find((a) => a.areaScopeId === this.areaDestinoScopeId)?.ruta ?? null
+    );
   }
 
   save(): void {
@@ -67,7 +87,12 @@ export class PuestoCreateEdit implements OnInit {
 
     this.loaderService.show();
     // Sin área es un envío válido, no un campo vacío: los puestos de obra no tienen ninguna.
-    const req = { nombre, categoriaId: this.categoriaId, areaScopeId: this.areaScopeId };
+    const req = {
+      nombre,
+      categoriaId: this.categoriaId,
+      areaSolicitanteScopeId: this.areaSolicitanteScopeId,
+      areaDestinoScopeId: this.areaDestinoScopeId,
+    };
     const request$ = this.puesto
       ? this.service.actualizarPuesto(this.puesto.id, req)
       : this.service.crearPuesto(req);

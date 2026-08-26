@@ -133,6 +133,12 @@ export interface DetalleRequerimientoGth {
   codigo: string;
   puesto: string;
   area: string | null;
+  /**
+   * Área a la que entra el contratado: la de destino del puesto pedido, que no siempre es la del
+   * solicitante (la Gerencia Inmobiliaria pide un Ingeniero Residente y el residente entra a
+   * Residencia). `null` = el puesto no tiene destino y entra al área del solicitante.
+   */
+  areaDestino: string | null;
   proyectoObra: string | null;
   tipoRequerimiento: string;
   /**

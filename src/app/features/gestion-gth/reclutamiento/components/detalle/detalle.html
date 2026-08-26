@@ -35,6 +35,15 @@
           · {{ (detalle.proyectoObra | titleCase) || 'Sin proyecto' }}
           · {{ detalle.vacantes }} vacante(s)
         </p>
+        <!-- El área a la que entra el contratado la decide el puesto, y solo se dice cuando NO es
+             la de quien lo pidió: repetirla siempre sería ruido en la enorme mayoría de casos.
+             Sin titleCase: los nombres del catálogo ya vienen capitalizados. -->
+        @if (detalle.areaDestino && detalle.areaDestino !== detalle.area) {
+          <p class="text-[12px] text-gray-500 mt-[2px]">
+            <i class="ti ti-arrow-right text-[13px] align-[-1px]"></i>
+            Ingresa al área de <b class="text-gray-700">{{ detalle.areaDestino }}</b>
+          </p>
+        }
         @if (detalle.trabajadorReemplazado) {
           <p class="text-[12px] text-gray-500 mt-[2px]">
             <i class="ti ti-arrows-exchange text-[13px] align-[-1px]"></i>

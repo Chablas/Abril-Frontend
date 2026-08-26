@@ -6,9 +6,8 @@ import { AbrilModalPanel } from '../../../../../shared/components/abril-modal-pa
 import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
-import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { SolicitudPersonalService } from '../../services/solicitud-personal.service';
-import { Finalista, OpcionDto, RevisionFinalistas } from '../../dtos/solicitud-personal.dto';
+import { Finalista, RevisionFinalistas } from '../../dtos/solicitud-personal.dto';
 
 /**
  * Modal "Finalistas enviados por GTH" (vista del solicitante): lista los candidatos que GTH ya
@@ -24,7 +23,7 @@ import { Finalista, OpcionDto, RevisionFinalistas } from '../../dtos/solicitud-p
 @Component({
   standalone: true,
   selector: 'app-gth-revision-finalistas',
-  imports: [CommonModule, AbrilModalPanel, TitleCasePipe, SearchSelect],
+  imports: [CommonModule, AbrilModalPanel, TitleCasePipe],
   templateUrl: './revision-finalistas.html',
 })
 export class GthRevisionFinalistas implements OnInit {
@@ -41,13 +40,6 @@ export class GthRevisionFinalistas implements OnInit {
 
   /** true mientras se registra una decisión (evita doble envío). */
   decidiendo = false;
-
-  /**
-   * Área a la que entra el seleccionado. Solo se elige cuando el puesto pertenece a dos o más
-   * áreas; con una sola queda fijada en esa y con ninguna se deja en null (el backend cae al área
-   * del solicitante, que es lo que se usaba antes de esta regla).
-   */
-  areaDestinoId: number | null = null;
 
   constructor(
     private service: SolicitudPersonalService,
@@ -75,16 +67,6 @@ export class GthRevisionFinalistas implements OnInit {
         this.seleccionado = opts.irAPendiente
           ? data.finalistas.find((f) => !this.estaDecidido(f)) ?? data.finalistas[0] ?? null
           : data.finalistas.find((f) => f.candidatoId === previo) ?? data.finalistas[0] ?? null;
-        // Con una sola área no hay nada que preguntar: se fija sola. Con varias se conserva la
-        // que ya eligió, porque acá se recarga tras cada rechazo y no tiene por qué volver a
-        // elegirla; solo se limpia si dejó de ser una opción válida.
-        const areas = data.areasDestino ?? [];
-        this.areaDestinoId =
-          areas.length === 1
-            ? areas[0].id
-            : areas.some((a) => a.id === this.areaDestinoId)
-              ? this.areaDestinoId
-              : null;
         this.loaderService.hide();
         this.cdr.detectChanges();
       },
@@ -125,27 +107,6 @@ export class GthRevisionFinalistas implements OnInit {
     return f.cvNombre || `CV_${f.nombre}.pdf`;
   }
 
-  // ── Área a la que entra el seleccionado ─────────────────────────────────
-  /** Áreas del puesto entre las que se elige (vacío si el puesto no tiene ninguna mapeada). */
-  get areasDestino(): OpcionDto[] {
-    return this.revision?.areasDestino ?? [];
-  }
-
-  /** true si hay que preguntar el área: el puesto pertenece a más de una. */
-  get eligeArea(): boolean {
-    return this.areasDestino.length > 1;
-  }
-
-  /** Área única del puesto, para informarla sin desplegable. null si hay varias o ninguna. */
-  get areaUnica(): OpcionDto | null {
-    return this.areasDestino.length === 1 ? this.areasDestino[0] : null;
-  }
-
-  /** Con varias áreas no se puede aprobar sin elegir una: es el área de la ficha del seleccionado. */
-  get areaDestinoValida(): boolean {
-    return !this.eligeArea || !!this.areaDestinoId;
-  }
-
   // ── Decisión final sobre el finalista ───────────────────────────────────
   /** true si el finalista ya fue aprobado por el solicitante. */
   esSeleccionado(f: Finalista): boolean {
@@ -182,19 +143,6 @@ export class GthRevisionFinalistas implements OnInit {
   async aprobar(): Promise<void> {
     const f = this.seleccionado;
     if (!f || !this.puedeDecidir) return;
-
-    // El área queda en la ficha del seleccionado y con ella se resuelve su jefatura al
-    // programarle el EMO de ingreso: con varias opciones no se puede adivinar.
-    if (!this.areaDestinoValida) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Falta el área de destino',
-        text: 'Este puesto pertenece a más de un área: elige a cuál entra el postulante antes de aprobarlo.',
-        confirmButtonText: 'Entendido',
-        confirmButtonColor: '#005D9D',
-      });
-      return;
-    }
 
     const otros = this.pendientes - 1;
     const confirm = await Swal.fire({
@@ -242,9 +190,13 @@ export class GthRevisionFinalistas implements OnInit {
     this.decidir(f, false);
   }
 
-  /** Nombre del área a la que entra el seleccionado, para confirmarlo antes de aprobar. */
+  /**
+   * Área a la que entra el seleccionado. La decide el puesto que se pidió, no el solicitante:
+   * acá solo se muestra. Null cuando el puesto no tiene destino (los de obra), y entonces el
+   * backend usa el área de quien pidió la vacante.
+   */
   get areaDestinoNombre(): string | null {
-    return this.areasDestino.find((a) => a.id === this.areaDestinoId)?.nombre ?? null;
+    return this.revision?.areaDestino?.nombre ?? null;
   }
 
   /** Finalistas que todavía no tienen decisión del solicitante. */
@@ -255,9 +207,7 @@ export class GthRevisionFinalistas implements OnInit {
   private decidir(f: Finalista, aprobado: boolean): void {
     this.decidiendo = true;
     this.loaderService.show();
-    // El área solo viaja al aprobar: al rechazar no hay ficha que crear.
-    const areaScopeId = aprobado ? this.areaDestinoId : null;
-    this.service.decidirFinalista(this.requerimientoId, f.candidatoId, aprobado, areaScopeId).subscribe({
+    this.service.decidirFinalista(this.requerimientoId, f.candidatoId, aprobado).subscribe({
       next: (res) => {
         this.decidiendo = false;
         this.loaderService.hide();

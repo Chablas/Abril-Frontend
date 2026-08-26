@@ -20,12 +20,21 @@ export interface TipoRequerimientoOpcion extends OpcionDto {
 /** Código del tipo de requerimiento que obliga a decir a quién se reemplaza. */
 export const TIPO_REQUERIMIENTO_REEMPLAZO = 'REEMPLAZO';
 
+/**
+ * Ítem del desplegable «Puesto». Trae el área a la que entra quien ocupe el puesto: el
+ * solicitante ya no elige área, la decide el puesto que pide. `null` = el puesto no tiene
+ * destino (los de obra) y el contratado entra al área del propio solicitante.
+ */
+export interface PuestoOpcion extends OpcionDto {
+  areaDestino: string | null;
+}
+
 /** Datos del formulario "Nueva solicitud de personal" en una sola petición. */
 export interface ReclutamientoFormDataDto {
   areaNombre: string | null;
   areaScopeId: number | null;
   maxVacantes: number;
-  puestos: OpcionDto[];
+  puestos: PuestoOpcion[];
   tiposRequerimiento: TipoRequerimientoOpcion[];
   proyectos: OpcionDto[];
   /**
@@ -373,30 +382,27 @@ export interface RevisionFinalistas {
   /** Finalistas ordenados alfabéticamente por nombre. */
   finalistas: Finalista[];
   /**
-   * Áreas a las que puede entrar el seleccionado: las que GTH asoció al puesto del requerimiento.
-   * Definen el área de la ficha de pre-ingreso, con la que se resuelve su jefatura al programarle
-   * el EMO de ingreso.
+   * Área a la que entra el seleccionado: la de destino del puesto del requerimiento. Define el
+   * área de su ficha de pre-ingreso, con la que se resuelve su jefatura al programarle el EMO
+   * de ingreso.
    *
-   *   • 2 o más → hay que elegir una para poder aprobar (desplegable «Área de destino»).
-   *   • exactamente 1 → esa, sin preguntar (solo se informa).
-   *   • vacía → el puesto no tiene áreas mapeadas: el backend se cae al área del solicitante.
+   * Es informativa — no se elige. `null` cuando el puesto no tiene destino (los de obra): el
+   * backend se cae al área del solicitante.
    *
    * El nombre es el del nodo, no la rama completa ("Unidad de Proyectos", no
    * "Gerencia de Proyectos › Unidad de Proyectos").
    */
-  areasDestino: OpcionDto[];
+  areaDestino: OpcionDto | null;
 }
 
-/** Decisión final del solicitante sobre un finalista. */
+/**
+ * Decisión final del solicitante sobre un finalista. El área a la que entra el seleccionado no
+ * viaja: la decide el puesto que se pidió y la resuelve el backend.
+ */
 export interface FinalistaDecision {
   candidatoId: number;
   /** true = aprobar (el proceso pasa a EMO de ingreso); false = rechazar al finalista. */
   aprobado: boolean;
-  /**
-   * Área a la que entra el seleccionado, elegida entre `areasDestino`. Solo se manda al aprobar y
-   * solo cuando el puesto pertenece a dos o más áreas; con una sola la resuelve el backend.
-   */
-  areaScopeId?: number | null;
 }
 
 /** Resultado de registrar la decisión final sobre un finalista. */

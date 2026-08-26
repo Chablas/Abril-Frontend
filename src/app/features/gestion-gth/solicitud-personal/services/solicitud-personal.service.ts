@@ -85,16 +85,17 @@ export class SolicitudPersonalService {
    * Registra la decisión final del solicitante sobre un finalista. El backend mueve el
    * requerimiento (cerrado al aprobar; de vuelta a long list si se rechazó a todos), le envía el
    * correo de agradecimiento al rechazado y notifica a GTH.
+   *
+   * El área a la que entra el aprobado no se manda: la decide el puesto del requerimiento.
    */
   decidirFinalista(
     requerimientoId: number,
     candidatoId: number,
     aprobado: boolean,
-    areaScopeId: number | null = null,
   ): Observable<FinalistaDecisionResult> {
     return this.http.post<FinalistaDecisionResult>(
       `${this.apiUrl}/requerimiento/${requerimientoId}/finalistas/decision`,
-      { candidatoId, aprobado, areaScopeId },
+      { candidatoId, aprobado },
       { headers: this.headers },
     );
   }

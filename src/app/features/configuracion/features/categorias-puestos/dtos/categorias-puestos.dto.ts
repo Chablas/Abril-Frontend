@@ -25,15 +25,26 @@ export interface PuestoAdminDto {
    */
   cantidadTrabajadores: number;
   /**
-   * Área a la que pertenece el puesto (nodo de `area_scope`). Una sola desde el corte del
-   * 25-ago: un cargo que existe en dos áreas son dos puestos con el mismo nombre. `null` =
+   * Área que puede PEDIR este puesto en Solicitud de Personal (nodo de `area_scope`): al
+   * solicitante se le ofrecen los puestos de su área y de sus áreas hijas. Una sola. `null` =
    * sin área, que es válido: los puestos de obra no tienen porque el padrón de GTH solo
    * cubrió personal de oficina.
    */
-  areaScopeId: number | null;
+  areaSolicitanteScopeId: number | null;
 
-  /** Nombre del área ya resuelto por el backend, para pintarlo sin recorrer el árbol. */
-  areaNombre: string | null;
+  /** Nombre del área solicitante ya resuelto por el backend, para pintarlo sin recorrer el árbol. */
+  areaSolicitanteNombre: string | null;
+
+  /**
+   * Área a la que ENTRA el postulante si lo aprueban como finalista: es la que queda en su
+   * ficha y con la que se resuelve su jefatura. No es la misma que la de arriba — la Gerencia
+   * Inmobiliaria pide un Ingeniero Residente y el residente entra a Residencia. `null` = se
+   * cae al área del solicitante.
+   */
+  areaDestinoScopeId: number | null;
+
+  /** Nombre del área de destino ya resuelto por el backend. */
+  areaDestinoNombre: string | null;
 }
 
 /**
@@ -66,12 +77,14 @@ export interface CatalogosAdminDto {
   areaTree: AreaNodoDto[];
 }
 
-/** Alta/edición de un puesto: nombre, categoría (obligatoria) y su área. */
+/** Alta/edición de un puesto: nombre, categoría (obligatoria) y sus dos áreas. */
 export interface PuestoUpsertRequest {
   nombre: string;
   categoriaId: number;
-  /** Área del puesto. `null` = se queda sin área (válido: los de obra no tienen ninguna). */
-  areaScopeId: number | null;
+  /** Área que puede pedirlo. `null` = se queda sin área (válido: los de obra no tienen ninguna). */
+  areaSolicitanteScopeId: number | null;
+  /** Área a la que entra el postulante. `null` = se cae al área del solicitante. */
+  areaDestinoScopeId: number | null;
 }
 
 /**

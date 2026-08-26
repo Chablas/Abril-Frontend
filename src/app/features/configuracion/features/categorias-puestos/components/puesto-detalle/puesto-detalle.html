@@ -12,17 +12,26 @@
       <span *ngIf="!puesto.categoriaNombre" class="text-[11px] text-gray-400 italic">Sin categoría</span>
     </div>
 
-    <!-- Área del puesto. Ya viene en la fila, así que no cuesta una petición extra. Sin
-         titleCase: los nombres del catálogo ya están capitalizados y el pipe convertiría
+    <!-- Las dos áreas del puesto. Ya vienen en la fila, así que no cuestan una petición extra.
+         Sin titleCase: los nombres del catálogo ya están capitalizados y el pipe convertiría
          "SSOMA" en "Ssoma". -->
     <div class="flex flex-wrap items-center gap-[6px]">
-      <span class="text-[11px] text-gray-500">Área:</span>
-      <span *ngIf="puesto.areaNombre"
+      <span class="text-[11px] text-gray-500">Lo pide:</span>
+      <span *ngIf="puesto.areaSolicitanteNombre"
             class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium whitespace-nowrap">
-        {{ puesto.areaNombre }}
+        {{ puesto.areaSolicitanteNombre }}
       </span>
-      <span *ngIf="!puesto.areaNombre" class="text-[11px] text-gray-400 italic">
+      <span *ngIf="!puesto.areaSolicitanteNombre" class="text-[11px] text-gray-400 italic">
         Sin área asignada
+      </span>
+
+      <span class="text-[11px] text-gray-500 ml-[8px]">Va a:</span>
+      <span *ngIf="puesto.areaDestinoNombre"
+            class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#FFF3DC] text-[#B26A00] font-medium whitespace-nowrap">
+        {{ puesto.areaDestinoNombre }}
+      </span>
+      <span *ngIf="!puesto.areaDestinoNombre" class="text-[11px] text-gray-400 italic">
+        El área de quien lo pida
       </span>
     </div>
 
