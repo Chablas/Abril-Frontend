@@ -506,9 +506,10 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
-   * true si el requerimiento es un ingreso directo **FFT**. En este flujo no hay multitest,
-   * entrevistas, finalistas ni decisión del solicitante: aprobar el formulario cierra la selección
-   * y el proceso pasa al EMO de ingreso. El modal esconde esos pasos en vez de ofrecer botones que
+   * true si el requerimiento es un ingreso directo **FFT**. En este flujo no hay publicación, ni
+   * long list, ni formulario del postulante, ni multitest, ni entrevistas, ni finalistas, ni
+   * decisión del solicitante: al aprobarse la vacante el candidato queda seleccionado y el proceso
+   * pasa directo al EMO de ingreso. El modal esconde esos pasos en vez de ofrecer botones que
    * llevarían el proceso a una fase que no le corresponde.
    */
   get esFft(): boolean {
@@ -517,9 +518,10 @@ export class GthDetalleRequerimiento implements OnInit {
 
   /**
    * true si a un FFT le falta la razón social. En el flujo normal la exige el botón de publicar,
-   * pero el ingreso directo no publica nada: sin este aviso la ficha del ingreso se crearía sin
-   * razón social y nadie se enteraría hasta el onboarding. Es un aviso, no un bloqueo — la decisión
-   * de asignarla antes o después es de GTH.
+   * pero el ingreso directo no publica nada: su ficha de pre-ingreso se abre al aprobarse la
+   * vacante, así que sin este aviso quedaría sin razón social y nadie se enteraría hasta el
+   * onboarding. Al asignarla, el backend se la baja a la ficha. Es un aviso, no un bloqueo — la
+   * decisión de asignarla antes o después es de GTH.
    */
   get faltaRazonSocialFft(): boolean {
     return this.esFft && !this.detalle?.asignacion.contributorId;

@@ -17,8 +17,34 @@ export interface TipoRequerimientoOpcion extends OpcionDto {
   codigo: string;
 }
 
-/** Código del tipo de requerimiento que obliga a decir a quién se reemplaza. */
+/**
+ * Código del tipo de requerimiento que obliga a decir a quién se reemplaza. Es también el que
+ * NO pide sueldo: el puesto que se cubre ya existe con su banda, así que el formulario no lo
+ * muestra y el backend descarta lo que llegue.
+ */
 export const TIPO_REQUERIMIENTO_REEMPLAZO = 'REEMPLAZO';
+
+/**
+ * Opción del desplegable «Tipo de documento» del candidato de un ingreso directo (FFT). El
+ * `codigo` estable es lo que decide cuántos dígitos admite el número, así que se compara por él
+ * y nunca por el nombre.
+ */
+export interface TipoDocumentoOpcion extends OpcionDto {
+  /** `DNI` | `CE`. */
+  codigo: string;
+}
+
+/** Código del tipo de documento que se ofrece por defecto. */
+export const TIPO_DOCUMENTO_DNI = 'DNI';
+
+/**
+ * Cuántos dígitos admite el documento según su tipo. Es la misma regla que aplica el backend
+ * (`FftDocumento`): el DNI son 8 exactos y el carné de extranjería, entre 8 y 12. Un tipo que se
+ * agregue al catálogo sin regla propia entra por el caso amplio, igual que allá.
+ */
+export function largoDocumento(codigo: string | null | undefined): { min: number; max: number } {
+  return codigo?.trim().toUpperCase() === TIPO_DOCUMENTO_DNI ? { min: 8, max: 8 } : { min: 8, max: 12 };
+}
 
 /**
  * Ítem del desplegable «Puesto». Trae el área a la que entra quien ocupe el puesto: el
@@ -50,10 +76,16 @@ export interface ReclutamientoFormDataDto {
   tiposRequerimiento: TipoRequerimientoOpcion[];
   proyectos: OpcionDto[];
   /**
+   * Tipos de documento del candidato de un ingreso directo (DNI / CE), del mismo catálogo que usa
+   * el formulario del postulante.
+   */
+  tiposDocumento: TipoDocumentoOpcion[];
+  /**
    * Trabajadores entre los que se elige al reemplazado: los del área del solicitante y los de
    * cualquier área hija, incluido él mismo (pedir el reemplazo propio por renuncia o promoción es
-   * un caso real). Vacía cuando el solicitante no tiene área registrada: en ese caso no hay de
-   * dónde elegir y el campo deja de ser obligatorio.
+   * un caso real). Solo los que trabajan en Abril hoy — el backend descarta a los retirados y a
+   * las fichas de pre-ingreso de Reclutamiento. Vacía cuando el solicitante no tiene área
+   * registrada: en ese caso no hay de dónde elegir y el campo deja de ser obligatorio.
    */
   trabajadoresArea: OpcionDto[];
   destinatarios: SolicitudDestinatarios;
@@ -79,13 +111,15 @@ export interface VacanteCreateDto {
   tipoRequerimientoId: number | null;
   /**
    * Trabajador al que reemplaza la vacante. Solo se envía en las de tipo Reemplazo (en las demás
-   * va null); el backend revalida que pertenezca al área del solicitante o a un área hija.
+   * va null); el backend revalida contra la misma lista que ofreció el formulario — área del
+   * solicitante o hija, y trabajando hoy.
    */
   reemplazaWorkerId: number | null;
   projectId: number | null;
   /**
-   * Salario bruto mensual de la vacante, en soles. Obligatorio: es parte de lo que aprueban el
-   * gerente del área y Gerencia General, y va en sus correos.
+   * Salario bruto mensual de la vacante, en soles. Obligatorio en las vacantes NUEVAS —es parte de
+   * lo que aprueba Gerencia General y va en sus correos— y null en los REEMPLAZOS, donde el
+   * formulario ni siquiera lo pide.
    */
   salarioBrutoMensual: number | null;
   /**
@@ -96,12 +130,15 @@ export interface VacanteCreateDto {
   esFft: boolean;
   /** Nombre completo del candidato FFT. Obligatorio cuando `esFft`; null en el resto. */
   fftCandidatoNombre: string | null;
+  /** Tipo de documento del candidato FFT (`gth_tipo_documento`). Obligatorio cuando `esFft`. */
+  fftTipoDocumentoId: number | null;
   /**
-   * DNI del candidato FFT (8 dígitos). Obligatorio cuando `esFft`: es la llave con la que el
-   * candidato entra a `person` apenas se registra la solicitud, sin esperar a su formulario.
+   * Número de documento del candidato FFT; el largo lo decide su tipo (ver `largoDocumento`).
+   * Obligatorio cuando `esFft`: es la llave con la que el candidato entra a `person` apenas se
+   * registra la solicitud.
    */
   fftCandidatoDocumento: string | null;
-  /** Correo personal del candidato FFT (el buzón al que GTH le mandará su formulario). */
+  /** Correo personal del candidato FFT. */
   fftCandidatoCorreo: string | null;
 }
 

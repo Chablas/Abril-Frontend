@@ -1,17 +1,20 @@
-<div class="flex flex-col flex-1 p-8 gap-5 bg-white">
+<div class="dashboard-page">
 
   <!-- Saludo -->
   <app-home-greeting [firstName]="firstName" [subtitle]="jobTitle ? jobTitle + ' · ' + todayCapitalized : todayCapitalized" />
 
   <!-- Novedades y comunicados (copia exacta de las tarjetas SOMOS ABRIL del boletín).
        El Centro de aprendizaje ahora es la 4ta tarjeta (antes iba en una columna a la
-       derecha) y lleva a su propia página /centro-aprendizaje. -->
-  <div class="rounded-2xl border p-5 pt-14 flex-1" style="border-color:#ececec">
-    <div class="flex items-center gap-2 mb-8" style="color:#16a34a">
+       derecha) y lleva a su propia página /centro-aprendizaje.
+       El layout (paddings, columnas y el aire que necesitan el perro y el botón que
+       sobresalen de cada tarjeta) vive en dashboard.css, no en utilidades sueltas:
+       son medidas que dependen unas de otras y se explican mejor juntas. -->
+  <div class="novedades-panel">
+    <div class="novedades-head">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="#16a34a"><path d="M8 5v14l11-7z"/></svg>
-      <span class="text-[11px] font-bold uppercase tracking-[0.06em]">Novedades y comunicados</span>
+      <span>Novedades y comunicados</span>
     </div>
-    <div class="grid gap-6 pb-4 grid-cols-4 max-[1200px]:grid-cols-2 max-[640px]:grid-cols-1">
+    <div class="novedades-grid">
       <app-highlight-card
         *ngFor="let h of novedades"
         [titulo]="h.titulo"

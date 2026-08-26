@@ -54,7 +54,8 @@ export interface AprobacionVacante {
   proyectoObra: string | null;
   /**
    * Salario bruto mensual declarado para la vacante, en soles: es parte de lo que se está
-   * aprobando. Null en las vacantes anteriores a que se pidiera el dato.
+   * aprobando. Null en los REEMPLAZOS —que ya no lo declaran— y en las vacantes anteriores a que
+   * se pidiera el dato; en los dos casos no se muestra nada.
    */
   salarioBrutoMensual: number | null;
   /**
@@ -65,11 +66,15 @@ export interface AprobacionVacante {
   /** Nombre del candidato FFT que nombró el solicitante. Null en las vacantes normales. */
   fftCandidatoNombre: string | null;
   /**
-   * DNI del candidato FFT: es lo único que lo identifica sin ambigüedad (dos candidatos pueden
-   * llamarse igual) y con lo que ya quedó registrado en la base maestra. Null en las vacantes
-   * normales y en los FFT anteriores a que se pidiera el dato.
+   * Número de documento del candidato FFT: es lo único que lo identifica sin ambigüedad (dos
+   * candidatos pueden llamarse igual) y con lo que ya quedó registrado en la base maestra. Null en
+   * las vacantes normales y en los FFT anteriores a que se pidiera el dato.
    */
   fftCandidatoDocumento: string | null;
+  /** Nombre del tipo de ese documento (DNI / CE). Null cuando no lo hay. */
+  fftTipoDocumento: string | null;
+  /** El documento con su tipo, listo para mostrar: «DNI 12345678». Lo arma el backend. */
+  fftDocumentoTexto: string | null;
   /** Correo personal del candidato FFT. Null en las vacantes normales. */
   fftCandidatoCorreo: string | null;
   /** Código estable del tipo (`NUEVO` / `REEMPLAZO`): es lo que decide la `ruta`. */
@@ -114,10 +119,14 @@ export interface AprobacionDetalle {
   puedeDecidir: boolean;
   vacantes: AprobacionVacante[];
   /**
-   * A quién le llegará el correo a Gestión de Talento Humano al confirmar. Lo resuelve el backend
-   * con la misma lógica del envío, así que el aviso del modal no puede divergir del correo que
-   * sale. Null salvo cuando quien abre es el Gerente General y aún no ha decidido: es el único
-   * caso en que ese correo va a salir.
+   * A quién le llegarán los correos que dispara ESTA decisión al confirmar: los de Gerencia General
+   * (el aviso a GTH y el de vacantes aprobadas a TI) o el de reemplazos aprobados, según el nivel
+   * de quien abre. Los resuelve el backend con la misma lógica del envío, así que el aviso del
+   * modal no puede divergir de los correos que salen. Null en lectura o si no se pudieron resolver.
+   *
+   * Que estén resueltos no significa que el correo vaya a salir: en un reemplazo lo dispara recién
+   * la SEGUNDA firma, así que el modal solo muestra el aviso cuando la decisión en curso deja
+   * alguna vacante lista (`completarian`).
    */
   destinatarios: SolicitudDestinatarios | null;
 }
@@ -125,20 +134,28 @@ export interface AprobacionDetalle {
 /** Una solicitud en la lista de «Aprobaciones» (una fila = una solicitud de personal). */
 export interface AprobacionListItem {
   aprobacionId: number;
-  /** Códigos de las vacantes de la solicitud, separados por ", ". */
+  /**
+   * Códigos de las vacantes que este usuario ve —las de su ruta—, separados por ", ". Una solicitud
+   * mixta se lee distinto según quién pregunte: el Gerente General ve solo las nuevas.
+   */
   codigos: string;
   area: string | null;
   solicitanteNombre: string | null;
   justificacion: string | null;
   /** Fecha de registro de la solicitud (ISO, hora Perú). */
   enviado: string;
+  /**
+   * Cuántas vacantes de esta solicitud le tocan al usuario. NO es el total de la solicitud: el
+   * backend no manda las de la otra ruta. El total real lo ve el solicitante en su seguimiento.
+   */
   totalVacantes: number;
-  /** Cuántas de esas vacantes le tocan al usuario que consulta (las de su ruta). */
-  vacantesDeMiRuta: number;
   gerenteArea: AprobacionNivelResumen;
   gerenteGeneral: AprobacionNivelResumen;
   gth: AprobacionNivelResumen;
-  /** Qué firmas necesita esta solicitud, derivadas de los tipos de sus vacantes. */
+  /**
+   * Qué firmas necesita lo que este usuario ve. La casilla de la otra ruta llega siempre en false,
+   * así que `casillas()` no la pinta.
+   */
   requiereGerenteGeneral: boolean;
   requiereGerenteArea: boolean;
   requiereGth: boolean;

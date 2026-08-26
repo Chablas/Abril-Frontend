@@ -110,9 +110,9 @@
         </div>
 
         <!-- ── A quién reemplaza (solo si el tipo es Reemplazo) ──────────────────────
-             La lista son los trabajadores del área del solicitante y de cualquier área
-             hija (incluido él mismo: pedir el reemplazo propio por renuncia o promoción
-             es un caso real). Va pegado al tipo porque solo existe por él. -->
+             La lista son los trabajadores que hoy están en el área del solicitante o en
+             cualquier área hija (incluido él mismo: pedir el reemplazo propio por renuncia
+             o promoción es un caso real). Va pegado al tipo porque solo existe por él. -->
         <div *ngIf="esReemplazo(v)" class="flex flex-col gap-[4px]">
           <app-search-select label="Trabajador reemplazado" placeholder="Buscar por nombre o DNI..."
             [options]="formData.trabajadoresArea" valueField="id" displayField="nombre"
@@ -135,11 +135,12 @@
           <p *ngIf="submitted && !v.projectId" class="text-xs text-red-500">Campo requerido</p>
         </div>
 
-        <!-- ── Salario bruto mensual ────────────────────────────────────────────────
+        <!-- ── Salario bruto mensual (solo en las vacantes nuevas) ──────────────────
              Va por vacante y no por solicitud: dos vacantes de la misma solicitud pueden
-             ser de puestos distintos y cobrar distinto. Es parte de lo que aprueban el
-             gerente del área y Gerencia General, así que viaja en sus correos. -->
-        <div class="flex flex-col gap-[4px]">
+             ser de puestos distintos y cobrar distinto. Es parte de lo que aprueba Gerencia
+             General, así que viaja en su correo.
+             En un REEMPLAZO no se pide: el puesto que se cubre ya existe con su banda. -->
+        <div *ngIf="pideSalario(v)" class="flex flex-col gap-[4px]">
           <div class="abril-field">
             <!-- La moneda va en el label, como en el resto de los campos de dinero del sistema
                  (ver «Monto cubierto (S/)» en el caso social de SSOMA): el label flotante nunca
@@ -178,11 +179,12 @@
           </span>
         </label>
 
-        <!-- El DNI va junto al nombre y al correo porque es parte del mismo dato: con él el
-             candidato entra a la base maestra de personas apenas se registra la solicitud, en vez
-             de esperar a que llene su formulario. -->
+        <!-- El documento va junto al nombre y al correo porque es parte del mismo dato: con él el
+             candidato entra a la base maestra de personas apenas se registra la solicitud. El tipo
+             va primero porque es el que decide cuántos dígitos admite el número (DNI 8 exactos,
+             CE de 8 a 12) y el campo no deja teclear más. -->
         <div *ngIf="v.esFft" class="grid grid-cols-1 sm:grid-cols-12 gap-[12px]">
-          <div class="flex flex-col gap-[4px] sm:col-span-5">
+          <div class="flex flex-col gap-[4px] sm:col-span-4">
             <div class="abril-field">
               <label class="abril-field-label" [attr.for]="'gth-fft-nombre-' + i">Nombre completo del candidato</label>
               <input [id]="'gth-fft-nombre-' + i" class="abril-field-input" type="text"
@@ -192,21 +194,33 @@
             <p *ngIf="submitted && fftNombreInvalido(v)" class="text-xs text-red-500">Campo requerido</p>
           </div>
 
+          <!-- uppercase: DNI y CE son siglas y el search-select, por defecto, suaviza el TODO
+               MAYÚSCULAS del catálogo a nombre propio ("Dni" / "Ce"). sortAlpha en false para que
+               DNI quede primero, que es el orden del catálogo y el caso normal. -->
+          <div class="flex flex-col gap-[4px] sm:col-span-2">
+            <app-search-select label="Tipo de documento" placeholder="Tipo"
+              [options]="formData.tiposDocumento" valueField="id" displayField="nombre"
+              [fullText]="true" [uppercase]="true" [sortAlpha]="false"
+              [value]="v.fftTipoDocumentoId"
+              (valueChange)="onFftTipoDocumentoChange(v, $event)" />
+            <p *ngIf="submitted && fftTipoDocumentoInvalido(v)" class="text-xs text-red-500">Campo requerido</p>
+          </div>
+
           <div class="flex flex-col gap-[4px] sm:col-span-3">
             <div class="abril-field">
-              <label class="abril-field-label" [attr.for]="'gth-fft-dni-' + i">DNI del candidato</label>
-              <input [id]="'gth-fft-dni-' + i" class="abril-field-input" type="text"
-                inputmode="numeric" autocomplete="off" [maxlength]="largoFftDocumento"
-                placeholder="8 dígitos"
+              <label class="abril-field-label" [attr.for]="'gth-fft-doc-' + i">N.° de documento</label>
+              <input [id]="'gth-fft-doc-' + i" class="abril-field-input" type="text"
+                inputmode="numeric" autocomplete="off" [maxlength]="largoDocumento(v).max"
+                [placeholder]="placeholderDocumento(v)"
                 [ngModel]="v.fftCandidatoDocumento"
                 (input)="onFftDocumentoInput(v, $event)" />
             </div>
             <p *ngIf="submitted && fftDocumentoInvalido(v)" class="text-xs text-red-500">
-              {{ v.fftCandidatoDocumento.trim() ? 'Debe tener 8 dígitos' : 'Campo requerido' }}
+              {{ v.fftCandidatoDocumento.trim() ? reglaDocumento(v) : 'Campo requerido' }}
             </p>
           </div>
 
-          <div class="flex flex-col gap-[4px] sm:col-span-4">
+          <div class="flex flex-col gap-[4px] sm:col-span-3">
             <div class="abril-field">
               <label class="abril-field-label" [attr.for]="'gth-fft-correo-' + i">Correo personal del candidato</label>
               <input [id]="'gth-fft-correo-' + i" class="abril-field-input" type="email"
@@ -284,7 +298,7 @@
         </svg>
         <p class="text-[13px] text-gray-600">
           Como Gerencia General, tu ingreso directo <b>no espera aprobación</b>: pasa directo a Gestión
-          de Talento Humano para el envío del formulario al candidato.
+          de Talento Humano para la programación del EMO de ingreso del candidato.
         </p>
       </div>
 
@@ -300,7 +314,7 @@
             ><span *ngIf="i > 0">{{ last ? ' y ' : ', ' }}</span
             ><span class="font-medium" style="color:var(--color-abril-standard)"
               [title]="etiquetaDestinatario(d)">{{ d.email }}</span></ng-container
-          >{{ omiteAprobacionGg ? ' para que le envíen el formulario al candidato.' : ' para su aprobación.' }}
+          >{{ omiteAprobacionGg ? ' para que le programen el EMO al candidato.' : ' para su aprobación.' }}
           <ng-container *ngIf="destinatariosCopias.length">
             Con copia a
             <ng-container *ngFor="let c of destinatariosCopias; let i = index; let last = last"

@@ -24,16 +24,17 @@ import {
 import { DestinatarioSolicitud } from '../../../shared/dtos/destinatarios.dto';
 
 /**
- * Modal de decisión sobre una solicitud de personal: la solicitud completa con sus vacantes y, en
- * cada una, Aprobar o Rechazar.
+ * Modal de decisión sobre una solicitud de personal: sus vacantes de la ruta del usuario y, en cada
+ * una, Aprobar o Rechazar. Las de la otra ruta no llegan del backend — el Gerente General decide
+ * las nuevas y las FFT, el gerente del área y GTH los reemplazos —, así que acá nunca aparecen.
  *
- * La solicitud tiene DOS casillas —el visto bueno del gerente del área y la aprobación de Gerencia
- * General— y el usuario solo marca la suya (`data.nivel`, que el backend resuelve desde la
- * categoría de su ficha). La del otro nivel se muestra como información en todo momento: saber que
- * el gerente del área ya observó una vacante es justo el contexto que necesita el GG para decidir.
+ * El usuario marca su casilla (`data.nivel`, que el backend resuelve desde la categoría de su
+ * ficha) y ve como información la del otro firmante de su MISMA ruta: en un reemplazo, quien decide
+ * necesita saber si el otro ya firmó para saber si la vacante puede avanzar.
  *
- * Solo la decisión de Gerencia General manda las vacantes aprobadas a Gestión de Talento Humano.
- * Si el nivel del usuario ya decidió, el modal abre en lectura — es también la ficha del historial.
+ * Un reemplazo llega a Gestión de Talento Humano con las dos firmas de su ruta; una vacante nueva,
+ * con la de Gerencia General sola. Si el nivel del usuario ya decidió, el modal abre en lectura —
+ * es también la ficha del historial.
  */
 @Component({
   standalone: true,
@@ -145,23 +146,12 @@ export class GthAprobacionDecision implements OnInit {
 
   // ── Decisión por vacante ────────────────────────────────────────────────
   /**
-   * Solo las vacantes que le toca decidir a este usuario. Una solicitud mixta se decide en dos
-   * actos —el Gerente General firma las nuevas, el gerente del área y GTH los reemplazos—, así que
-   * mostrarle las ajenas solo le daría botones que el backend va a rechazar.
+   * Las vacantes del modal. Ya vienen recortadas a la ruta del usuario desde el backend —el Gerente
+   * General recibe las nuevas y las FFT, el gerente del área y GTH los reemplazos—, así que acá no
+   * se vuelve a filtrar: las de la otra ruta no llegan.
    */
   get vacantes(): AprobacionVacante[] {
-    const todas = this.data?.vacantes ?? [];
-    const nivel = this.data?.nivel;
-    if (!nivel || nivel === 'NINGUNO') return todas;
-    return todas.filter((v) =>
-      v.ruta === 'GG' ? nivel === 'GERENTE_GENERAL' : nivel === 'GERENTE_AREA' || nivel === 'GTH',
-    );
-  }
-
-  /** Vacantes de la solicitud que decide otra gente: se listan aparte, solo para dar contexto. */
-  get vacantesDeOtros(): AprobacionVacante[] {
-    const mias = new Set(this.vacantes.map((v) => v.requerimientoId));
-    return (this.data?.vacantes ?? []).filter((v) => !mias.has(v.requerimientoId));
+    return this.data?.vacantes ?? [];
   }
 
   get soloLectura(): boolean {
@@ -241,12 +231,14 @@ export class GthAprobacionDecision implements OnInit {
   }
 
   // ── Aviso "a quién le llega esta decisión" ──────────────────────────────
-  // La decisión de Gerencia General dispara dos correos —el aviso a GTH y el de vacantes
-  // aprobadas a TI—, y los dos solo salen si queda al menos una vacante aprobada (así lo hace el
-  // backend), así que el aviso se apaga en cuanto la decisión en curso las rechaza todas:
-  // prometer un envío que no va a ocurrir es peor que no avisar nada. Los destinatarios llegan
-  // ya fusionados en una sola lista: lo que importa es a quién le llega la decisión, no cuántos
-  // correos salen. Al gerente del área ni se le muestra — su visto bueno no dispara ninguno.
+  // Toda decisión puede disparar correos: la de Gerencia General manda el aviso a GTH y el de
+  // vacantes aprobadas a TI; la del gerente del área y la de GTH, el de reemplazos aprobados. Los
+  // destinatarios llegan del backend ya fusionados en una sola lista y resueltos con la misma
+  // lógica del envío real, así que el aviso no puede prometer algo distinto de lo que sale.
+  //
+  // Lo que decide si se muestra no es haber aprobado, sino que la decisión DEJE alguna vacante
+  // lista para pasar a GTH: un reemplazo necesita las dos firmas, así que la primera no dispara
+  // nada y prometer un envío que no va a ocurrir es peor que no avisar nada.
 
   /** true cuando ya se sabe a quién le llegarían los correos (null = no aplica o no se pudo resolver). */
   get destinatariosCargados(): boolean {
@@ -261,9 +253,32 @@ export class GthAprobacionDecision implements OnInit {
     return this.data?.destinatarios?.copias ?? [];
   }
 
-  /** Se rechazaron todas las vacantes ya decididas: no habrá correo que enviar. */
+  /**
+   * Vacantes que ESTA decisión dejaría listas para pasar a Gestión de Talento Humano. Para Gerencia
+   * General son todas las que apruebe, porque su firma va sola; en un reemplazo, solo aquellas en
+   * las que la otra firma YA está puesta — las demás se quedan esperándola.
+   */
+  get completarian(): number {
+    return this.vacantes.filter(
+      (v) =>
+        this.decisiones.get(v.requerimientoId) === true &&
+        (this.esGerenteGeneral || this.decisionOtroNivel(v) === true),
+    ).length;
+  }
+
+  /** La decisión en curso no deja ninguna vacante lista: no habrá correo que enviar. */
   get sinEnvio(): boolean {
-    return this.vacantes.length > 0 && this.pendientes === 0 && this.aprobadas === 0;
+    return this.vacantes.length > 0 && this.pendientes === 0 && this.completarian === 0;
+  }
+
+  /**
+   * Por qué no sale correo. Rechazarlo todo y quedar esperando la otra firma se ven igual en el
+   * conteo pero no son lo mismo, y quien decide necesita saber cuál de las dos le pasó.
+   */
+  get motivoSinEnvio(): string {
+    if (this.aprobadas === 0) return 'Rechazas todas las vacantes: no se enviará ningún correo.';
+    const falta = this.esGth ? 'el gerente del área' : 'GTH';
+    return `Lo que apruebes espera la firma de ${falta}: todavía no se enviará ningún correo.`;
   }
 
   /** Tooltip del correo: el nombre de la persona cuando se conoce, más por qué lo recibe. */

@@ -50,23 +50,38 @@
             Reemplaza a <b class="text-gray-700">{{ detalle.trabajadorReemplazado | titleCase }}</b>
           </p>
         }
-        <!-- Salario bruto mensual que el área declaró y Gerencia General aprobó: es el punto de
-             partida de la oferta, así que GTH lo ve en la cabecera del requerimiento. -->
-        <p class="text-[12px] text-gray-500 mt-[2px]">
-          <i class="ti ti-cash text-[13px] align-[-1px]"></i>
-          Salario bruto mensual:
-          @if (detalle.salarioBrutoMensual !== null) {
+        <!-- Salario bruto mensual que el área declaró y se aprobó: es el punto de partida de la
+             oferta, así que GTH lo ve en la cabecera del requerimiento. La línea entera desaparece
+             cuando la vacante no lo declara —los reemplazos ya no lo piden—: un "no registrado"
+             fijo en todos ellos no dice nada. -->
+        @if (detalle.salarioBrutoMensual !== null) {
+          <p class="text-[12px] text-gray-500 mt-[2px]">
+            <i class="ti ti-cash text-[13px] align-[-1px]"></i>
+            Salario bruto mensual:
             <b class="text-gray-700">S/ {{ detalle.salarioBrutoMensual | number:'1.2-2' }}</b>
-          } @else {
-            <span class="text-gray-400">no registrado</span>
-          }
-        </p>
+          </p>
+        }
         @if (tipoProcesoSeleccionado) {
           <p class="text-[13px] font-semibold mt-[6px]" style="color:var(--color-abril-logo-blue)">
             Plazo estimado del proceso: {{ tipoProcesoSeleccionado.slaDias }} días
           </p>
         }
       </div>
+
+      <!-- El ingreso directo no pasa por «Confirmar publicación», que es donde el flujo normal
+           exige la razón social. Su ficha de pre-ingreso se abre en cuanto se aprueba la vacante,
+           así que sin este aviso nace sin razón social y nadie se entera. Va arriba de todo porque
+           es lo único que le falta al proceso; al asignarla se le baja a la ficha. -->
+      @if (faltaRazonSocialFft) {
+        <div class="flex items-start gap-[9px] rounded-[10px] border px-[14px] py-[11px]"
+             style="border-color:#FDE68A;background:#FEF9C3">
+          <i class="ti ti-alert-triangle text-[18px] shrink-0 mt-[1px]" style="color:#92400E"></i>
+          <p class="text-[12.5px]" style="color:#92400E">
+            Sin razón social asignada: la ficha del ingreso está sin ella. Asígnala en
+            «Asignación interna de GTH».
+          </p>
+        </div>
+      }
 
       <!-- ── Puesto cubierto: quién obtuvo el puesto ──────────────────────
            Va arriba de todo porque es el resultado del proceso: al abrir un
@@ -92,6 +107,14 @@
                   <p class="text-[12.5px] text-emerald-800 mt-[1px]">
                     {{ (sel.puesto | titleCase) || (detalle.puesto | titleCase) }}
                   </p>
+                  <!-- En un ingreso directo no hubo proceso de selección: quien pidió la vacante
+                       nombró a esta persona. Se dice acá, que es donde se la está mostrando como
+                       la elegida, con el documento con el que quedó registrada. -->
+                  @if (esFft) {
+                    <p class="text-[11.5px] text-emerald-700 mt-[3px]">
+                      Ingreso directo (FFT): lo pidió por nombre el área solicitante@if (detalle.fftCandidatoDocumento) {<span>, {{ detalle.fftCandidatoDocumento }}</span>}.
+                    </p>
+                  }
                 </div>
               </button>
 
@@ -175,8 +198,8 @@
                   <p class="text-[11.5px] text-amber-800 mt-[10px] flex items-start gap-[6px]">
                     <i class="ti ti-alert-circle text-[14px] shrink-0 mt-[1px]"></i>
                     <span>
-                      No se pudo abrir su ficha para el EMO: el candidato no tiene el formulario
-                      del postulante aprobado, así que no está en la base maestra.
+                      No se pudo abrir su ficha para el EMO: el candidato no está en la base maestra
+                      de personas.
                     </span>
                   </p>
                 }
@@ -585,9 +608,9 @@
               @if (seccionLongListAprobada) {
                 <p class="text-[12.5px] text-emerald-700 mt-[4px] leading-snug">
                   @if (esFft) {
-                    Candidato pedido por nombre: {{ (detalle.fftCandidatoNombre | titleCase) || 'sin nombre registrado' }}@if (detalle.fftCandidatoDocumento) {<span>, DNI {{ detalle.fftCandidatoDocumento }}</span>}.
-                    No hay publicación, long list ni entrevistas. Envíale el formulario de información del
-                    postulante; al aprobarlo pasa directo a la programación de su EMO de ingreso.
+                    Candidato pedido por nombre: {{ (detalle.fftCandidatoNombre | titleCase) || 'sin nombre registrado' }}@if (detalle.fftCandidatoDocumento) {<span>, {{ detalle.fftCandidatoDocumento }}</span>}.
+                    Este ingreso quedó del flujo anterior, en el que el candidato sí llenaba el formulario:
+                    envíaselo y, al aprobarlo, pasa a la programación de su EMO de ingreso.
                   } @else {
                     El solicitante aprobó {{ detalle.candidatosAprobados.length }} candidato(s). Envía a cada uno el
                     formulario de información del postulante; cuando lo completen, revísalo y apruébalo o recházalo.
@@ -597,19 +620,6 @@
             </div>
           </div>
         </div>
-
-        <!-- El ingreso directo no pasa por «Confirmar publicación», que es donde el flujo normal
-             exige la razón social: si nadie la asigna, la ficha del ingreso queda sin ella. -->
-        @if (faltaRazonSocialFft) {
-          <div class="flex items-start gap-[9px] rounded-[10px] border px-[14px] py-[11px]"
-               style="border-color:#FDE68A;background:#FEF9C3">
-            <i class="ti ti-alert-triangle text-[18px] shrink-0 mt-[1px]" style="color:#92400E"></i>
-            <p class="text-[12.5px]" style="color:#92400E">
-              Sin razón social asignada: la ficha del ingreso se creará sin ella. Asígnala en
-              «Asignación interna de GTH».
-            </p>
-          </div>
-        }
 
         <!-- Formulario de información del postulante (funcional) -->
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">

@@ -18,7 +18,8 @@
           <p class="text-[12.5px] text-gray-600 leading-snug">
             <b>Ingreso directo (FFT)</b> — candidato:
             {{ (seguimiento.fftCandidatoNombre | titleCase) || 'sin nombre registrado' }}.
-            El proceso omite publicación, revisión de CV, long list y entrevistas.
+            El proceso omite publicación, revisión de CV, long list, formulario del postulante y
+            entrevistas: pasa directo al examen médico de ingreso.
           </p>
         </div>
       }
@@ -63,18 +64,17 @@
           </p>
         </div>
 
-        <!-- Salario bruto mensual declarado para esta vacante. Null en los requerimientos
-             registrados antes de que se pidiera el dato. -->
-        <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">
-          <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Salario bruto mensual</p>
-          @if (seguimiento.salarioBrutoMensual !== null) {
+        <!-- Salario bruto mensual declarado para esta vacante. La tarjeta entera desaparece si no
+             lo hay: los reemplazos ya no lo declaran (y los requerimientos anteriores a que se
+             pidiera el dato tampoco lo tienen), así que reservarle un recuadro vacío sobra. -->
+        @if (seguimiento.salarioBrutoMensual !== null) {
+          <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">
+            <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Salario bruto mensual</p>
             <p class="mt-[6px] text-[14px] font-semibold text-gray-700">
               S/ {{ seguimiento.salarioBrutoMensual | number:'1.2-2' }}
             </p>
-          } @else {
-            <p class="mt-[6px] text-[13px] text-gray-400">No registrado</p>
-          }
-        </div>
+          </div>
+        }
 
         <div class="rounded-[10px] border px-[14px] py-[12px] bg-white min-w-0" style="border-color:var(--color-abril-border)">
           <p class="text-[10px] font-semibold tracking-wide text-gray-400 uppercase">Adjunto sustento</p>

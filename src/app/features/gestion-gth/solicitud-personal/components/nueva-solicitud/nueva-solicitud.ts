@@ -12,8 +12,10 @@ import { ErrorService } from '../../../../../core/services/error.service';
 import { SolicitudPersonalService } from '../../services/solicitud-personal.service';
 import { DestinatarioSolicitud, SolicitudDestinatarios } from '../../../shared/dtos/destinatarios.dto';
 import {
+  largoDocumento,
   ReclutamientoFormDataDto,
   SolicitudPersonalCreateDto,
+  TIPO_DOCUMENTO_DNI,
   TIPO_REQUERIMIENTO_REEMPLAZO,
   VacanteCreateDto,
 } from '../../dtos/solicitud-personal.dto';
@@ -30,17 +32,20 @@ interface VacanteForm {
   reemplazaWorkerId: number | null;
   projectId: number | null;
   /**
-   * Salario bruto mensual de la vacante, en soles. Obligatorio: es lo que aprueban el gerente del
-   * área y Gerencia General junto con la vacante.
+   * Salario bruto mensual de la vacante, en soles. Solo se pide en las vacantes NUEVAS: en un
+   * reemplazo el puesto ya existe con su banda, así que el campo ni se muestra y se limpia al
+   * cambiar de tipo.
    */
   salarioBrutoMensual: number | null;
   /**
    * Ingreso directo FFT: el solicitante ya sabe a quién quiere. Al marcarlo aparecen (y se exigen)
-   * el nombre, el DNI y el correo personal del candidato; al desmarcarlo se limpian.
+   * el nombre, el documento y el correo personal del candidato; al desmarcarlo se limpian.
    */
   esFft: boolean;
   fftCandidatoNombre: string;
-  /** DNI del candidato: con él entra a la base maestra de personas al registrarse la solicitud. */
+  /** Tipo de documento del candidato (DNI por defecto): decide cuántos dígitos admite el número. */
+  fftTipoDocumentoId: number | null;
+  /** Documento del candidato: con él entra a la base maestra de personas al registrarse la solicitud. */
   fftCandidatoDocumento: string;
   fftCandidatoCorreo: string;
 }
@@ -67,15 +72,6 @@ export class GthNuevaSolicitud implements OnInit {
   /** Tope del nombre del candidato FFT, igual que en el backend. */
   readonly maxFftNombre = 200;
 
-  /** Largo del DNI del candidato FFT: 8 dígitos exactos, igual que en el backend. */
-  readonly largoFftDocumento = 8;
-
-  /**
-   * DNI válido para el candidato FFT: 8 dígitos exactos. Misma regla que el backend y que el
-   * formulario del postulante — los dos terminan en la misma columna de `person`, que tiene
-   * UNIQUE, así que aceptar acá un formato más suelto duplicaría a la misma persona.
-   */
-  private readonly documentoValido = /^\d{8}$/;
 
   /**
    * Correo válido para el candidato FFT. Misma expresión que valida el backend (y que la del envío
@@ -93,6 +89,7 @@ export class GthNuevaSolicitud implements OnInit {
     puestos: [],
     tiposRequerimiento: [],
     proyectos: [],
+    tiposDocumento: [],
     trabajadoresArea: [],
     destinatarios: { para: [], copias: [] },
     esGerenteGeneral: false,
@@ -129,12 +126,17 @@ export class GthNuevaSolicitud implements OnInit {
       next: (data) => {
         this.formData = {
           ...data,
+          tiposDocumento: data.tiposDocumento ?? [],
           trabajadoresArea: data.trabajadoresArea ?? [],
           destinatarios: data.destinatarios ?? { para: [], copias: [] },
           esGerenteGeneral: data.esGerenteGeneral ?? false,
           destinatariosFft: data.destinatariosFft ?? null,
         };
         this.destinatariosCargados = true;
+        // El tipo de documento arranca en DNI, que es el caso normal; queda cambiarlo solo cuando
+        // el candidato es extranjero. Se aplica a los bloques que ya existen y a los que se
+        // agreguen después (ver nuevaVacante).
+        for (const v of this.vacantes) v.fftTipoDocumentoId ??= this.tipoDocumentoPorDefecto;
         const max = data.maxVacantes || 10;
         this.cantidadOptions = Array.from({ length: max }, (_, i) => ({
           id: i + 1,
@@ -193,20 +195,67 @@ export class GthNuevaSolicitud implements OnInit {
       salarioBrutoMensual: null,
       esFft: false,
       fftCandidatoNombre: '',
+      fftTipoDocumentoId: this.tipoDocumentoPorDefecto,
       fftCandidatoDocumento: '',
       fftCandidatoCorreo: '',
     };
   }
 
+  // ── Documento del candidato FFT ────────────────────────────────────────
+  /** DNI, o el primero del catálogo si algún día deja de existir. Null mientras no haya cargado. */
+  private get tipoDocumentoPorDefecto(): number | null {
+    const tipos = this.formData.tiposDocumento;
+    return (
+      tipos.find((t) => t.codigo?.toUpperCase() === TIPO_DOCUMENTO_DNI)?.id ?? tipos[0]?.id ?? null
+    );
+  }
+
+  /** Código del tipo elegido en esta vacante (`DNI` / `CE`); null si todavía no eligió. */
+  private codigoTipoDocumento(v: VacanteForm): string | null {
+    return this.formData.tiposDocumento.find((t) => t.id === v.fftTipoDocumentoId)?.codigo ?? null;
+  }
+
+  /** Dígitos que admite el documento de esta vacante, según el tipo elegido. */
+  largoDocumento(v: VacanteForm): { min: number; max: number } {
+    return largoDocumento(this.codigoTipoDocumento(v));
+  }
+
+  /**
+   * Lo que se le dice al solicitante cuando el largo no cuadra. Se arma del mismo rango que valida
+   * `save()` para que el mensaje no pueda contradecir a la regla.
+   */
+  reglaDocumento(v: VacanteForm): string {
+    const { min, max } = this.largoDocumento(v);
+    return min === max ? `Debe tener ${min} dígitos` : `Debe tener entre ${min} y ${max} dígitos`;
+  }
+
+  /** El mismo rango, en el placeholder del campo: se ve antes de escribir nada. */
+  placeholderDocumento(v: VacanteForm): string {
+    const { min, max } = this.largoDocumento(v);
+    return min === max ? `${min} dígitos` : `${min} a ${max} dígitos`;
+  }
+
+  /**
+   * Al cambiar el tipo se recorta lo ya escrito al nuevo máximo: pasar de CE (12) a DNI (8) con el
+   * número puesto dejaría un valor que el propio campo ya no deja teclear.
+   */
+  onFftTipoDocumentoChange(v: VacanteForm, tipoId: number | null): void {
+    v.fftTipoDocumentoId = tipoId;
+    v.fftCandidatoDocumento = v.fftCandidatoDocumento.slice(0, this.largoDocumento(v).max);
+  }
+
   // ── FFT: el candidato ya tiene nombre ──────────────────────────────
   /**
-   * Al desmarcar FFT se limpian el nombre, el DNI y el correo: si no, quedarían enviándose datos
-   * que el usuario ya no ve (y que el backend descartaría igual).
+   * Al desmarcar FFT se limpian el nombre, el documento y el correo: si no, quedarían enviándose
+   * datos que el usuario ya no ve (y que el backend descartaría igual). El tipo de documento
+   * vuelve a su valor por defecto en vez de quedar vacío, para que al remarcar la casilla el campo
+   * abra listo.
    */
   onFftChange(v: VacanteForm, esFft: boolean): void {
     v.esFft = esFft;
     if (!esFft) {
       v.fftCandidatoNombre = '';
+      v.fftTipoDocumentoId = this.tipoDocumentoPorDefecto;
       v.fftCandidatoDocumento = '';
       v.fftCandidatoCorreo = '';
     }
@@ -219,19 +268,28 @@ export class GthNuevaSolicitud implements OnInit {
   }
 
   /**
-   * Filtra lo tecleado en el DNI: solo dígitos y máximo 8. El `maxlength` del input no basta —
-   * no ataja el pegado de un número con puntos o espacios, que es la forma más común de copiarlo.
+   * Filtra lo tecleado en el documento: solo dígitos y como máximo los que admita su tipo, así no
+   * se puede pasar de largo. El `maxlength` del input no basta — no ataja el pegado de un número
+   * con puntos o espacios, que es la forma más común de copiarlo.
    */
   onFftDocumentoInput(v: VacanteForm, event: Event): void {
     const input = event.target as HTMLInputElement;
-    const limpio = input.value.replace(/\D/g, '').slice(0, this.largoFftDocumento);
+    const limpio = input.value.replace(/\D/g, '').slice(0, this.largoDocumento(v).max);
     if (input.value !== limpio) input.value = limpio;
     v.fftCandidatoDocumento = limpio;
   }
 
-  /** ¿Falta el DNI del candidato FFT, o no tiene los 8 dígitos? */
+  /** ¿Falta el tipo de documento del candidato FFT? */
+  fftTipoDocumentoInvalido(v: VacanteForm): boolean {
+    return v.esFft && !v.fftTipoDocumentoId;
+  }
+
+  /** ¿Falta el documento del candidato FFT, o no tiene los dígitos que su tipo exige? */
   fftDocumentoInvalido(v: VacanteForm): boolean {
-    return v.esFft && !this.documentoValido.test(v.fftCandidatoDocumento.trim());
+    if (!v.esFft) return false;
+    const { min, max } = this.largoDocumento(v);
+    const largo = v.fftCandidatoDocumento.trim().length;
+    return largo < min || largo > max;
   }
 
   /** ¿Falta el correo personal del candidato FFT, o no tiene formato de correo? */
@@ -241,11 +299,22 @@ export class GthNuevaSolicitud implements OnInit {
 
   /**
    * ¿El salario de la vacante está sin llenar o fuera de rango? Es la misma regla que valida
-   * `save()` y la que decide el mensaje bajo el campo, para que no puedan discrepar.
+   * `save()` y la que decide el mensaje bajo el campo, para que no puedan discrepar. En un
+   * reemplazo no se pide: el campo ni se muestra, así que nunca es inválido.
    */
   salarioInvalido(v: VacanteForm): boolean {
+    if (!this.pideSalario(v)) return false;
     const s = v.salarioBrutoMensual;
     return s === null || !(s > 0) || s > this.maxSalario;
+  }
+
+  /**
+   * ¿Esta vacante pide el sueldo? Solo las NUEVAS: en un reemplazo se cubre un puesto que ya
+   * existe con su banda, así que declararlo de nuevo no aporta nada a la aprobación. Mientras no
+   * se haya elegido el tipo se muestra, para no dejar el bloque incompleto de entrada.
+   */
+  pideSalario(v: VacanteForm): boolean {
+    return !this.esReemplazo(v);
   }
 
   // ── Reemplazo: a quién se reemplaza ────────────────────────────────
@@ -270,12 +339,14 @@ export class GthNuevaSolicitud implements OnInit {
   }
 
   /**
-   * Al dejar de ser un reemplazo se limpia el trabajador elegido: si no, quedaría enviándose un
-   * dato que el usuario ya no ve (y que el backend descartaría igual).
+   * Al cambiar el tipo se limpia lo que el otro tipo no usa: el trabajador reemplazado fuera de un
+   * reemplazo, y el sueldo dentro de uno. Si no, quedarían enviándose datos que el usuario ya no
+   * ve (y que el backend descartaría igual).
    */
   onTipoRequerimientoChange(v: VacanteForm, tipoId: number | null): void {
     v.tipoRequerimientoId = tipoId;
-    if (!this.esReemplazo(v)) v.reemplazaWorkerId = null;
+    if (this.esReemplazo(v)) v.salarioBrutoMensual = null;
+    else v.reemplazaWorkerId = null;
   }
 
   /**
@@ -319,7 +390,9 @@ export class GthNuevaSolicitud implements OnInit {
       if (!v.projectId) errors.push(`${pref}: proyecto/obra`);
       if (this.salarioInvalido(v)) errors.push(`${pref}: salario bruto mensual`);
       if (this.fftNombreInvalido(v)) errors.push(`${pref}: nombre completo del candidato (FFT)`);
-      if (this.fftDocumentoInvalido(v)) errors.push(`${pref}: DNI del candidato (FFT)`);
+      if (this.fftTipoDocumentoInvalido(v)) errors.push(`${pref}: tipo de documento del candidato (FFT)`);
+      if (this.fftDocumentoInvalido(v))
+        errors.push(`${pref}: documento del candidato (FFT) — ${this.reglaDocumento(v).toLowerCase()}`);
       if (this.fftCorreoInvalido(v)) errors.push(`${pref}: correo personal del candidato (FFT)`);
     });
 
@@ -342,9 +415,12 @@ export class GthNuevaSolicitud implements OnInit {
         tipoRequerimientoId: v.tipoRequerimientoId,
         reemplazaWorkerId: this.esReemplazo(v) ? v.reemplazaWorkerId : null,
         projectId: v.projectId,
-        salarioBrutoMensual: v.salarioBrutoMensual,
+        // En un reemplazo el campo ni se mostró: se manda null explícito en vez de lo que hubiera
+        // quedado de un cambio de tipo.
+        salarioBrutoMensual: this.pideSalario(v) ? v.salarioBrutoMensual : null,
         esFft: v.esFft,
         fftCandidatoNombre: v.esFft ? v.fftCandidatoNombre.trim() : null,
+        fftTipoDocumentoId: v.esFft ? v.fftTipoDocumentoId : null,
         fftCandidatoDocumento: v.esFft ? v.fftCandidatoDocumento.trim() : null,
         fftCandidatoCorreo: v.esFft ? v.fftCandidatoCorreo.trim() : null,
       })),

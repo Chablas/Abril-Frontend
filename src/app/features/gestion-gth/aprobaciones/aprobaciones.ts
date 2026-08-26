@@ -29,17 +29,18 @@ import {
 
 /**
  * «Aprobaciones» (Gestión GTH): la bandeja de los gerentes. Cada fila es una solicitud de personal
- * con DOS casillas de decisión —el visto bueno del gerente del área y la aprobación de Gerencia
- * General, que es la obligatoria y la que la manda a GTH.
+ * recortada a las vacantes que le toca decidir a quien mira.
  *
  * El rol abre la pantalla; lo que se ve dentro depende de la CATEGORÍA de la ficha de trabajador y
- * lo resuelve el backend (`nivel`):
- *   • Gerente General → todas las solicitudes, y decide en la casilla de Gerencia General.
- *   • Gerente → solo las de su área hacia abajo, y decide en la casilla del gerente del área.
+ * lo resuelve el backend (`nivel`). Cada nivel tiene su ÁREA y su TIPO de vacante:
+ *   • Gerente General → toda la empresa, pero solo las vacantes NUEVAS y las FFT.
+ *   • Gerente → su área hacia abajo, y solo los REEMPLAZOS.
+ *   • GTH → toda la empresa, y solo los REEMPLAZOS (la otra firma del reemplazo).
  *   • Cualquier otra categoría → ninguna solicitud; la pantalla explica por qué.
  *
- * Todo lo que depende del nivel (tarjetas, columnas, textos) se deriva de ese campo: la pantalla no
- * decide por su cuenta quién es quién, solo pinta lo que el backend ya filtró.
+ * Las vacantes de la otra ruta no llegan al frontend: `totalVacantes`, `codigos` y las casillas ya
+ * vienen recortados. Todo lo que depende del nivel (tarjetas, columnas, textos) se deriva de ese
+ * campo: la pantalla no decide por su cuenta quién es quién, solo pinta lo que el backend ya filtró.
  */
 @Component({
   standalone: true,
@@ -627,23 +628,26 @@ export class GthAprobaciones implements OnInit {
    * es aprobar TODAS sus vacantes —eso es lo que el usuario está eligiendo al decidir desde la
    * lista y no desde el modal—, así que la confirmación habla de solicitudes y de vacantes.
    *
-   * El texto cambia según el nivel porque las dos decisiones no valen lo mismo: la de Gerencia
-   * General manda las vacantes a GTH, la del gerente del área solo queda registrada. Quién es quién
-   * no lo decide esta pantalla: el backend lo resuelve desde la categoría de la ficha y re-valida
-   * fila por fila.
+   * El texto cambia según el nivel porque las dos decisiones no mueven lo mismo: la de Gerencia
+   * General manda sola las vacantes a GTH, y la del gerente del área o la de GTH las mandan recién
+   * cuando se juntan las dos. Quién es quién no lo decide esta pantalla: el backend lo resuelve
+   * desde la categoría de la ficha y re-valida fila por fila.
    */
   private async decidirSeleccion(aprobar: boolean): Promise<void> {
     const items = this.selectedDecidibles;
     if (this.decidiendo || items.length === 0) return;
 
     const vacantes = this.vacantesSeleccionadas;
+    // La firma que falta para completar un reemplazo es la del OTRO: el gerente del área espera a
+    // GTH y GTH espera al gerente del área.
+    const faltante = this.esGth ? 'el gerente del área' : 'Gestión del Talento Humano';
     const detalle = this.esGerenteGeneral
       ? aprobar
         ? `Se aprobarán las ${vacantes} vacante(s) de ${items.length} solicitud(es) y pasarán a Gestión de Talento Humano para iniciar el reclutamiento.`
         : `Ninguna de las ${vacantes} vacante(s) de ${items.length} solicitud(es) continuará y Gestión de Talento Humano no las recibirá.`
       : aprobar
-        ? `Tu visto bueno quedará registrado en las ${vacantes} vacante(s) de ${items.length} solicitud(es). Avanzan recién con la aprobación de Gerencia General.`
-        : `Quedarán observadas las ${vacantes} vacante(s) de ${items.length} solicitud(es). Gerencia General verá tu postura al decidir.`;
+        ? `Tu firma quedará registrada en las ${vacantes} vacante(s) de ${items.length} solicitud(es). Cada una pasa a Gestión de Talento Humano en cuanto tenga también la aprobación de ${faltante}.`
+        : `Ninguna de las ${vacantes} vacante(s) de ${items.length} solicitud(es) continuará: tu rechazo las cierra sin esperar la otra firma.`;
 
     const confirm = await Swal.fire({
       title: aprobar ? `¿${this.labelAprobar} ${items.length} solicitud(es)?` : `¿${this.labelRechazar} ${items.length} solicitud(es)?`,
