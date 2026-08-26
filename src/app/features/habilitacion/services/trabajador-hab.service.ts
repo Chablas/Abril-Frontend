@@ -5,6 +5,7 @@ import { PagedResponseDTO } from '../../../core/dtos/api/pagedResponse.model';
 import {
   AgregarProyectoDto,
   DocumentoVersionDto,
+  InterconsultaPendienteHabDto,
   WorkerDetalleDto,
   WorkerEditDto,
   WorkerEntregableDto,
@@ -28,6 +29,12 @@ export class TrabajadorHabService {
     return this.http.get<PagedResponseDTO<WorkerHabilitacionListDto>>(this.base, {
       headers: buildHabHeaders(),
       params: buildHabParams(params),
+    });
+  }
+
+  getInterconsultasPendientes(): Observable<InterconsultaPendienteHabDto[]> {
+    return this.http.get<InterconsultaPendienteHabDto[]>(`${this.base}/interconsultas-pendientes`, {
+      headers: buildHabHeaders(),
     });
   }
 

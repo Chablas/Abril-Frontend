@@ -7,6 +7,10 @@ export interface WorkerHabilitacionListDto {
   proyectoActual?: string;
   proyectoActualId?: number;
   estadoHabilitacion: string;
+  /** Habilitación SSOMA de la empresa Contratista (ignora entregables administrativos) —
+   * siempre true para Casa/oficina central. Si es false y estadoHabilitacion es "No Autorizado",
+   * el motivo es la empresa y no la documentación propia del trabajador. */
+  empresaHabilitada?: boolean;
   /** Nombre de la categoría (campo de lógica). */
   categoria?: string;
   /** FK a `categoria`, derivada de `puesto.categoriaId` — necesaria para filtrar el catálogo
@@ -30,6 +34,16 @@ export interface WorkerHabilitacionListDto {
   /** "Pendiente" si el trabajador tiene una interconsulta sin levantar. */
   interconsultaEstado?: string | null;
   interconsultaEspecialidad?: string | null;
+}
+
+/** Fila del widget "Interconsultas pendientes" (junto a "EMOs Programados"). Sin datos
+ * clínicos: solo lo necesario para coordinar la cita. */
+export interface InterconsultaPendienteHabDto {
+  workerId: number;
+  workerNombre: string;
+  razonSocial?: string | null;
+  proyectoActual?: string | null;
+  diasPendiente: number;
 }
 
 export interface WorkerEntregableDto {

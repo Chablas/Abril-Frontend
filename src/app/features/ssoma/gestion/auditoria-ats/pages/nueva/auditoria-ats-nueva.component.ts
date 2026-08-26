@@ -142,6 +142,10 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
         this.auditorId = me.id;
         this.auditorNombre = me.apellidoNombre;
         this.auditorCargo = me.cargo || me.puesto || '';
+        // Proyecto sugerido = obra actual del auditor. Antes quedaba en null salvo que la
+        // persona lo eligiera a mano, así que muchas auditorías se guardaban sin proyecto y
+        // quedaban invisibles para los indicadores de la empresa (Ejec: 1 aunque hubiera más).
+        this.proyectoId ??= this.workers.find((w) => w.workerId === me.id)?.proyectoActualId ?? null;
         this.cdr.markForCheck();
       },
       error: () => {
@@ -197,11 +201,11 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
   // ── Evaluación ─────────────────────────────────────────────────────────────
 
   abrirEvaluacion(): void {
-    if (!this.auditorId || !this.auditadoId || !this.fecha) {
+    if (!this.auditorId || !this.auditadoId || !this.proyectoId || !this.fecha) {
       Swal.fire({
         icon: 'warning',
         title: 'Completa los datos obligatorios',
-        text: 'Selecciona el auditor, el auditado y la fecha antes de evaluar.',
+        text: 'Selecciona el auditor, el auditado, el proyecto y la fecha antes de evaluar.',
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
@@ -272,6 +276,7 @@ export class AuditoriaAtsNuevaComponent implements OnInit {
       !this.sinWorkerVinculado &&
       !!this.auditorId &&
       !!this.auditadoId &&
+      !!this.proyectoId &&
       !!this.fecha &&
       this.evaluacionCompleta
     );

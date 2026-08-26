@@ -223,6 +223,7 @@
 
 .ca-list-nombre { font-size: 0.95rem; font-weight: 600; color: #111827; }
 .ca-list-sub    { font-size: 0.82rem; color: #6b7280; margin-top: 0.1rem; }
+.ca-noauth-motivo { font-size: 0.78rem; color: #b91c1c; font-weight: 600; margin-top: 0.15rem; }
 .ca-list-arrow  { margin-left: auto; color: #9ca3af; flex-shrink: 0; }
 
 .ca-list-dot {
@@ -263,6 +264,16 @@
   padding: 1rem;
   text-align: center;
   border-radius: 10px 10px 0 0;
+}
+
+.ca-motivo-empresa {
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.6rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid #fecaca;
 }
 
 .ca-result-body {

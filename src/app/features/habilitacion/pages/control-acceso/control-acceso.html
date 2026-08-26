@@ -95,6 +95,9 @@
           <div [class]="r.estadoHabilitacion === 'Habilitado' ? 'ca-status-habilitado' : 'ca-status-no-autorizado'">
             {{ estadoLabel(r.estadoHabilitacion) }}
           </div>
+          <div *ngIf="!r.empresaHabilitada" class="ca-motivo-empresa">
+            {{ r.motivoNoAutorizado || 'Empresa no habilitada (SSOMA)' }} — no depende de la documentación propia del trabajador.
+          </div>
 
           <!-- Datos -->
           <div class="ca-result-body">
@@ -238,6 +241,7 @@
             <div class="ca-list-sub">
               {{ w.empresaNombre }}<ng-container *ngIf="w.dni"> · DNI {{ w.dni }}</ng-container>
             </div>
+            <div *ngIf="!w.empresaHabilitada" class="ca-noauth-motivo">Empresa no habilitada (SSOMA)</div>
           </div>
           <span class="ca-noauth-badge" [class.ca-noauth-badge--green]="w.estadoHabilitacion === 'Habilitado'">
             {{ w.estadoHabilitacion }}

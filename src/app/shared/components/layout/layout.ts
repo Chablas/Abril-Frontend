@@ -2,6 +2,7 @@ import { Component, OnDestroy, inject } from '@angular/core';
 import { NgIf } from '@angular/common';
 import { Sidebar } from '../sidebar/sidebar';
 import { SidebarMobile } from '../sidebar-mobile/sidebar-mobile';
+import { AlertaLoginSsoma } from '../alerta-login-ssoma/alerta-login-ssoma';
 import { NavigationEnd, RouterOutlet } from '@angular/router';
 import { Router } from '@angular/router';
 import { LayoutService } from '../../../core/services/layout.service';
@@ -13,7 +14,7 @@ import { filter, map, startWith } from 'rxjs';
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet, Sidebar, SidebarMobile, NgIf],
+  imports: [RouterOutlet, Sidebar, SidebarMobile, NgIf, AlertaLoginSsoma],
   templateUrl: './layout.html',
   styleUrl: './layout.css',
 })

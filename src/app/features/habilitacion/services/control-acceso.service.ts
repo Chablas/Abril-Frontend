@@ -21,6 +21,8 @@ export interface ConsultaResultDto {
   sctrEstado: string | null;
   sctrVigencia: string | null;
   entregables: EntregableResumenDto[] | null;
+  empresaHabilitada: boolean;
+  motivoNoAutorizado: string | null;
 }
 
 export interface InduccionHoyDto {
@@ -42,6 +44,8 @@ export interface NoAutorizadoDto {
   empresaNombre: string;
   proyectoNombre: string;
   estadoHabilitacion: string;
+  empresaHabilitada: boolean;
+  motivoNoAutorizado: string | null;
 }
 
 export interface TareoPartidaDto {
