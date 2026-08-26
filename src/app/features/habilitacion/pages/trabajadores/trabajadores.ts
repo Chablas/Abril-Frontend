@@ -45,6 +45,7 @@ import { ProgramarInduccion } from './components/programar-induccion/programar-i
 import { ProgramarEmoDialogComponent } from '../../../../shared/components/programar-emo-dialog/programar-emo-dialog';
 import { EmoPorTrabajadorDto } from '../../../ssoma/salud-ocupacional/dtos/emo.model';
 import { EmosProgramados } from './components/emos-programados/emos-programados';
+import { InterconsultasPendientes } from './components/interconsultas-pendientes/interconsultas-pendientes';
 import { SctrVidaLeyService } from '../../services/sctr-vidaley.service';
 import { SctrVidaLeyDto } from '../../dtos/sctr.model';
 import { CatalogosHabService } from '../../services/catalogos-hab.service';
@@ -72,6 +73,7 @@ import { getGerencias, getHijos } from '../../../../shared/utils/area-arbol.util
     WorkerCreateEdit,
     ProgramarEmoDialogComponent,
     EmosProgramados,
+    InterconsultasPendientes,
   ],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
@@ -212,6 +214,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   mostrarProgramarEmo = false;
   workerParaProgramarEmo: WorkerHabilitacionListDto | null = null;
   mostrarEmosProgramados = false;
+  mostrarInterconsultasPendientes = false;
   preselectedEmpresaId: number | null = null;
   workerParaAccion: WorkerHabilitacionListDto | null = null;
   workerParaReingreso: WorkerHabilitacionListDto | null = null;
@@ -1213,6 +1216,10 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   abrirEmosProgramados(): void {
     this.mostrarEmosProgramados = true;
+  }
+
+  abrirInterconsultasPendientes(): void {
+    this.mostrarInterconsultasPendientes = true;
   }
 
   emoProgLabel(estado: string): string {

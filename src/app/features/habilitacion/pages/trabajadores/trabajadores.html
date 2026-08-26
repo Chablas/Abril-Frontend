@@ -26,6 +26,9 @@
       <button class="btn-ghost-sm btn-induccion" (click)="abrirEmosProgramados()">
         EMOs Programados
       </button>
+      <button class="btn-ghost-sm btn-induccion" (click)="abrirInterconsultasPendientes()">
+        Interconsultas Pendientes
+      </button>
       <button *ngIf="isAdmin() || isContratista()" class="btn-topbar-nuevo" (click)="abrirCrear()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M12 5v14M5 12h14"/>
@@ -108,7 +111,12 @@
           <div class="wc-foot">
             <div class="wc-foot-left">
               <span class="wc-proyecto">{{ w.proyectoActual ?? 'Sin asignar' }}</span>
-              <span [class]="getEstadoClass(w.estadoHabilitacion)">{{ w.estadoHabilitacion }}</span>
+              <span
+                [class]="getEstadoClass(w.estadoHabilitacion)"
+                [title]="w.estadoHabilitacion === 'No Autorizado' && w.empresaHabilitada === false
+                  ? 'No autorizado — Empresa no habilitada (SSOMA), no es documentación propia del trabajador'
+                  : null"
+              >{{ w.estadoHabilitacion === 'No Autorizado' && w.empresaHabilitada === false ? 'No Autorizado (empresa)' : w.estadoHabilitacion }}</span>
             </div>
             <div class="wc-actions">
               <button
@@ -816,3 +824,7 @@
   [proyectos]="catalogoProyectos"
   (closed)="mostrarEmosProgramados = false">
 </app-emos-programados>
+<app-interconsultas-pendientes
+  *ngIf="mostrarInterconsultasPendientes"
+  (closed)="mostrarInterconsultasPendientes = false">
+</app-interconsultas-pendientes>

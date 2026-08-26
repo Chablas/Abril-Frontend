@@ -74,6 +74,7 @@
             <span
               *ngIf="!isLoadingProgreso(p.id) && getProgreso(p.id)"
               [class]="'btn-chip ' + getEstadoBadgeClass(p.id)"
+              title="Calculado solo sobre entregables SSOMA (no incluye documentación administrativa)"
             >{{ getEstadoBadge(p.id) }}</span>
           </div>
 
@@ -120,6 +121,7 @@
         <span
           *ngIf="!isLoadingProgreso(selectedProyecto.id) && getProgreso(selectedProyecto.id)"
           [class]="'btn-chip ' + getEstadoBadgeClass(selectedProyecto.id)"
+          title="Calculado solo sobre entregables SSOMA (no incluye documentación administrativa)"
         >{{ getEstadoBadge(selectedProyecto.id) }}</span>
       </div>
     </div>

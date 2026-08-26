@@ -102,6 +102,10 @@ export class Empresa implements OnInit {
   private excluirSCTRVidaLey(list: EmpresaEntregableDto[]): EmpresaEntregableDto[] {
     return list.filter((e) => !this.SCTR_VIDA_LEY_IDS.includes(e.itemId));
   }
+
+  private filtrarSsoma(list: EmpresaEntregableDto[]): EmpresaEntregableDto[] {
+    return list.filter((e) => (e.responsable || '').toUpperCase() === 'SSOMA');
+  }
   private readonly VIGENCIA_ANTE_UPLOAD_IDS = [11, 12, 20, 22];
 
   get esSCTRoVidaLey(): boolean {
@@ -255,14 +259,15 @@ export class Empresa implements OnInit {
       this.habEmpresaService.getEntregables(eid, p.id).subscribe({
         next: (items) => {
           const list = this.excluirSCTRVidaLey(items ?? []);
-          console.log('proyecto:', p.nombre, 'entregables:', list);
-          console.log('total:', list.length, 'aprobados:', list.filter((e) => e.estado === 'Aprobado').length);
+          // El estado "Habilitado"/"En proceso" de la empresa se calcula SOLO sobre entregables
+          // SSOMA — los administrativos no deben bloquear el ingreso de trabajadores a obra.
+          const ssoma = this.filtrarSsoma(list);
           this.progresoPorProyecto.set(p.id, {
-            total: list.length,
-            aprobadosEquiv: list.filter(
+            total: ssoma.length,
+            aprobadosEquiv: ssoma.filter(
               (e) => e.estado === 'Aprobado' || e.estado === 'No Aplica' || e.estado === 'En Plazo',
             ).length,
-            rechazados: list.filter((e) => e.estado === 'Rechazado').length,
+            rechazados: ssoma.filter((e) => e.estado === 'Rechazado').length,
             entregables: list,
           });
           this.loadingProgreso.delete(p.id);
@@ -855,18 +860,15 @@ export class Empresa implements OnInit {
     this.habEmpresaService.getEntregables(eid, pid).subscribe({
       next: (items) => {
         const list = this.excluirSCTRVidaLey(items ?? []);
-        console.log('entregables frescos:', list.map(e => ({
-          id: e.id, itemId: e.itemId, estado: e.estado,
-          meses: e.meses?.length
-        })));
         this.entregables = [...list];
         this.cdr.detectChanges();
+        const ssoma = this.filtrarSsoma(list);
         this.progresoPorProyecto.set(pid, {
-          total: list.length,
-          aprobadosEquiv: list.filter(
+          total: ssoma.length,
+          aprobadosEquiv: ssoma.filter(
             (e) => e.estado === 'Aprobado' || e.estado === 'No Aplica' || e.estado === 'En Plazo',
           ).length,
-          rechazados: list.filter((e) => e.estado === 'Rechazado').length,
+          rechazados: ssoma.filter((e) => e.estado === 'Rechazado').length,
           entregables: list,
         });
         if (this.selectedEntregable) {
