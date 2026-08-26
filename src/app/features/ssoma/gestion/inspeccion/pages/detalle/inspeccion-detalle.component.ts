@@ -255,28 +255,60 @@ export class InspeccionDetalleComponent implements OnInit {
 
   cerrarColaborativa(): void {
     if (this.cerrandoColaborativa) return;
-    Swal.fire({
-      icon: 'question',
-      title: '¿Cerrar esta inspección?',
-      text: 'Ya no se podrán agregar más hallazgos de otros participantes.',
-      showCancelButton: true,
-      confirmButtonText: 'Cerrar inspección',
-      cancelButtonText: 'Cancelar',
-    }).then((res) => {
-      if (!res.isConfirmed) return;
-      this.cerrandoColaborativa = true;
-      this.cdr.markForCheck();
-      this.inspeccionService.cerrarColaborativa(this.id).subscribe({
-        next: () => {
-          this.cerrandoColaborativa = false;
-          this.load();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.cerrandoColaborativa = false;
-          this.errorService.handleError(err);
+    this.inspeccionService.getDestinatariosCierreColaborativa(this.id).subscribe({
+      next: (d) => {
+        const roles: { rol: string; email: string | null }[] = [
+          { rol: 'Residente', email: d.residenteEmail },
+          { rol: 'Coordinador SSOMA', email: d.coordSsomaEmail },
+          { rol: 'Gerente Inmobiliario', email: d.gerenteInmobiliarioEmail },
+        ];
+        if (d.prevencionistas.length) {
+          d.prevencionistas.forEach((p) => roles.push({ rol: 'Prevencionista', email: `${p.email} (${p.nombre})` }));
+        } else {
+          roles.push({ rol: 'Prevencionista', email: null });
+        }
+        const filas = roles
+          .map(
+            ({ rol, email }) =>
+              `<tr><td style="padding:2px 8px 2px 0;color:#6b7280">${rol}</td><td>${
+                email ?? '<span style="color:#d97706">sin correo cargado</span>'
+              }</td></tr>`,
+          )
+          .join('');
+        const cc = d.tuEmail
+          ? `<p style="margin-top:8px;font-size:0.85rem;color:#6b7280">Con copia a ti: ${d.tuEmail}</p>`
+          : '';
+
+        Swal.fire({
+          icon: 'question',
+          title: '¿Cerrar esta inspección?',
+          html: `
+            <p style="text-align:left">Ya no se podrán agregar más hallazgos de otros participantes.</p>
+            <p style="text-align:left;margin-top:8px">Al hacer clic se enviará un correo a:</p>
+            <table style="text-align:left;font-size:0.9rem">${filas}</table>
+            ${cc}
+          `,
+          showCancelButton: true,
+          confirmButtonText: 'Cerrar inspección',
+          cancelButtonText: 'Cancelar',
+        }).then((res) => {
+          if (!res.isConfirmed) return;
+          this.cerrandoColaborativa = true;
           this.cdr.markForCheck();
-        },
-      });
+          this.inspeccionService.cerrarColaborativa(this.id).subscribe({
+            next: () => {
+              this.cerrandoColaborativa = false;
+              this.load();
+            },
+            error: (err: HttpErrorResponse) => {
+              this.cerrandoColaborativa = false;
+              this.errorService.handleError(err);
+              this.cdr.markForCheck();
+            },
+          });
+        });
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
   }
 

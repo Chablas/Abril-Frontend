@@ -12,6 +12,7 @@ import {
   CerrarHallazgoRequest,
   InspeccionHallazgoRequest,
   InspeccionAbiertaListItemDto,
+  InspeccionDestinatariosCierreDto,
 } from './inspeccion.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -97,6 +98,10 @@ export class InspeccionService {
 
   cerrarColaborativa(id: number): Observable<{ message: string }> {
     return this.http.patch<{ message: string }>(`${this.base}/${id}/cerrar-colaborativa`, {});
+  }
+
+  getDestinatariosCierreColaborativa(id: number): Observable<InspeccionDestinatariosCierreDto> {
+    return this.http.get<InspeccionDestinatariosCierreDto>(`${this.base}/${id}/destinatarios-cierre-colaborativa`);
   }
 
   reabrirColaborativa(id: number): Observable<{ message: string }> {
