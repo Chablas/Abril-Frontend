@@ -96,37 +96,72 @@ export class GthAprobacionDecision implements OnInit {
     });
   }
 
-  // ── Nivel del usuario y las dos casillas ────────────────────────────────
+  // ── Nivel del usuario y las casillas ────────────────────────────────────
   get esGerenteGeneral(): boolean {
     return this.data?.nivel === 'GERENTE_GENERAL';
+  }
+
+  get esGth(): boolean {
+    return this.data?.nivel === 'GTH';
   }
 
   /** Casilla que el usuario puede marcar. */
   get miCasilla(): AprobacionNivelResumen | null {
     if (!this.data) return null;
-    return this.esGerenteGeneral ? this.data.gerenteGeneral : this.data.gerenteArea;
+    if (this.esGerenteGeneral) return this.data.gerenteGeneral;
+    if (this.esGth) return this.data.gth;
+    return this.data.gerenteArea;
   }
 
-  /** Casilla del otro nivel: solo se muestra, nunca se edita. */
-  get otraCasilla(): AprobacionNivelResumen | null {
-    if (!this.data) return null;
-    return this.esGerenteGeneral ? this.data.gerenteArea : this.data.gerenteGeneral;
+  /** Nombre de la firma del usuario, para rotular su casilla. */
+  get miNivelLabel(): string {
+    if (this.esGerenteGeneral) return 'Gerencia General';
+    if (this.esGth) return 'GTH';
+    return 'Gerente del área';
   }
 
-  get otroNivelLabel(): string {
-    return this.esGerenteGeneral ? 'Gerente del área' : 'Gerencia General';
+  /**
+   * Las OTRAS firmas que esta solicitud necesita: solo se muestran, nunca se editan. Son las que
+   * la solicitud requiere menos la propia — en un reemplazo, quien decide ve la casilla del otro
+   * firmante y sabe si la vacante ya puede avanzar o sigue esperando.
+   */
+  get otrasCasillas(): { etiqueta: string; resumen: AprobacionNivelResumen }[] {
+    const d = this.data;
+    if (!d) return [];
+    const out: { etiqueta: string; resumen: AprobacionNivelResumen }[] = [];
+    if (d.requiereGerenteGeneral && !this.esGerenteGeneral)
+      out.push({ etiqueta: 'Gerencia General', resumen: d.gerenteGeneral });
+    if (d.requiereGerenteArea && d.nivel !== 'GERENTE_AREA')
+      out.push({ etiqueta: 'Gerente del área', resumen: d.gerenteArea });
+    if (d.requiereGth && !this.esGth)
+      out.push({ etiqueta: 'GTH', resumen: d.gth });
+    return out;
   }
 
   get titulo(): string {
     if (this.soloLectura) return 'Decisión registrada';
-    return this.esGerenteGeneral
-      ? 'Aprobación de solicitud de personal'
-      : 'Visto bueno de la solicitud de personal';
+    return 'Aprobación de solicitud de personal';
   }
 
   // ── Decisión por vacante ────────────────────────────────────────────────
+  /**
+   * Solo las vacantes que le toca decidir a este usuario. Una solicitud mixta se decide en dos
+   * actos —el Gerente General firma las nuevas, el gerente del área y GTH los reemplazos—, así que
+   * mostrarle las ajenas solo le daría botones que el backend va a rechazar.
+   */
   get vacantes(): AprobacionVacante[] {
-    return this.data?.vacantes ?? [];
+    const todas = this.data?.vacantes ?? [];
+    const nivel = this.data?.nivel;
+    if (!nivel || nivel === 'NINGUNO') return todas;
+    return todas.filter((v) =>
+      v.ruta === 'GG' ? nivel === 'GERENTE_GENERAL' : nivel === 'GERENTE_AREA' || nivel === 'GTH',
+    );
+  }
+
+  /** Vacantes de la solicitud que decide otra gente: se listan aparte, solo para dar contexto. */
+  get vacantesDeOtros(): AprobacionVacante[] {
+    const mias = new Set(this.vacantes.map((v) => v.requerimientoId));
+    return (this.data?.vacantes ?? []).filter((v) => !mias.has(v.requerimientoId));
   }
 
   get soloLectura(): boolean {
@@ -135,23 +170,31 @@ export class GthAprobacionDecision implements OnInit {
 
   /** Lo que MI nivel dejó registrado en esta vacante (null si aún no decidió). */
   decisionRegistrada(v: AprobacionVacante): boolean | null {
-    return this.esGerenteGeneral ? v.aprobadoGerenteGeneral : v.aprobadoGerenteArea;
-  }
-
-  /** Lo que el OTRO nivel dejó registrado en esta vacante (null si no opinó). */
-  decisionOtroNivel(v: AprobacionVacante): boolean | null {
-    return this.esGerenteGeneral ? v.aprobadoGerenteArea : v.aprobadoGerenteGeneral;
+    if (this.esGerenteGeneral) return v.aprobadoGerenteGeneral;
+    if (this.esGth) return v.aprobadoGth;
+    return v.aprobadoGerenteArea;
   }
 
   /**
-   * Etiqueta de la postura del otro nivel dentro de la fila de la vacante. La plantilla solo la
-   * pinta cuando ese nivel ya decidió: repetir "sin decidir" en cada fila no aporta nada, porque
-   * su casilla de arriba ya lo dice una vez.
+   * Lo que la OTRA firma dejó registrado en esta vacante (null si no aplica o no opinó). Solo los
+   * reemplazos tienen dos firmas; en la ruta de Gerencia General no hay «otra».
+   */
+  decisionOtroNivel(v: AprobacionVacante): boolean | null {
+    if (v.ruta !== 'AREA_GTH') return null;
+    return this.data?.nivel === 'GERENTE_AREA' ? v.aprobadoGth : v.aprobadoGerenteArea;
+  }
+
+  /**
+   * La postura de la OTRA firma de la vacante, cuando la hay. Solo tiene sentido en los reemplazos
+   * (los únicos con dos firmas): dice si la vacante ya está lista para avanzar o sigue esperando.
+   * Cadena vacía cuando la otra parte todavía no opinó — repetir «sin decidir» en cada fila no
+   * aporta nada, la casilla de arriba ya lo dice una vez.
    */
   textoOtroNivel(v: AprobacionVacante): string {
     const otro = this.decisionOtroNivel(v);
     if (otro === null) return '';
-    return `${this.otroNivelLabel}: ${otro ? 'aprobada' : 'rechazada'}`;
+    const quien = this.data?.nivel === 'GERENTE_AREA' ? 'GTH' : 'Gerente del área';
+    return `${quien}: ${otro ? 'aprobada' : 'rechazada'}`;
   }
 
   decision(v: AprobacionVacante): boolean | undefined {
@@ -242,14 +285,17 @@ export class GthAprobacionDecision implements OnInit {
   async confirmar(): Promise<void> {
     if (!this.puedeConfirmar) return;
 
-    // El detalle cambia según quién firma: el GG mueve la solicitud, el gerente del área no.
+    // El detalle cambia según quién firma: la del Gerente General mueve sus vacantes sola, la de
+    // un reemplazo necesita además la del otro firmante (gerente del área ↔ GTH).
     const detalle = this.esGerenteGeneral
       ? this.aprobadas === 0
         ? 'Ninguna vacante continuará y Gestión de Talento Humano no recibirá la solicitud.'
         : this.rechazadas === 0
           ? `Las ${this.aprobadas} vacantes pasarán a Gestión de Talento Humano para iniciar el reclutamiento.`
           : `${this.aprobadas} vacante(s) pasarán a Gestión de Talento Humano y ${this.rechazadas} no continuarán.`
-      : 'Tu visto bueno quedará registrado. La solicitud avanza recién con la aprobación de Gerencia General.';
+      : this.aprobadas === 0
+        ? 'Ninguna vacante continuará: un rechazo la cierra sin esperar la otra firma.'
+        : `Tu decisión quedará registrada. Cada vacante aprobada pasa a Gestión de Talento Humano en cuanto tenga también la firma de ${this.esGth ? 'el gerente del área' : 'GTH'}.`;
 
     const confirm = await Swal.fire({
       title: '¿Confirmas tu decisión?',

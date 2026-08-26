@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { FileSelector, SelectedFile } from '../../../../../shared/components/file-selector/file-selector';
+import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { SolicitudPersonalService } from '../../services/solicitud-personal.service';
@@ -35,17 +36,19 @@ interface VacanteForm {
   salarioBrutoMensual: number | null;
   /**
    * Ingreso directo FFT: el solicitante ya sabe a quién quiere. Al marcarlo aparecen (y se exigen)
-   * el nombre y el correo personal del candidato; al desmarcarlo se limpian.
+   * el nombre, el DNI y el correo personal del candidato; al desmarcarlo se limpian.
    */
   esFft: boolean;
   fftCandidatoNombre: string;
+  /** DNI del candidato: con él entra a la base maestra de personas al registrarse la solicitud. */
+  fftCandidatoDocumento: string;
   fftCandidatoCorreo: string;
 }
 
 @Component({
   standalone: true,
   selector: 'app-gth-nueva-solicitud',
-  imports: [BaseModal, CommonModule, FormsModule, SearchSelect, FileSelector],
+  imports: [BaseModal, CommonModule, FormsModule, SearchSelect, FileSelector, TitleCasePipe],
   templateUrl: './nueva-solicitud.html',
 })
 export class GthNuevaSolicitud implements OnInit {
@@ -64,6 +67,16 @@ export class GthNuevaSolicitud implements OnInit {
   /** Tope del nombre del candidato FFT, igual que en el backend. */
   readonly maxFftNombre = 200;
 
+  /** Largo del DNI del candidato FFT: 8 dígitos exactos, igual que en el backend. */
+  readonly largoFftDocumento = 8;
+
+  /**
+   * DNI válido para el candidato FFT: 8 dígitos exactos. Misma regla que el backend y que el
+   * formulario del postulante — los dos terminan en la misma columna de `person`, que tiene
+   * UNIQUE, así que aceptar acá un formato más suelto duplicaría a la misma persona.
+   */
+  private readonly documentoValido = /^\d{8}$/;
+
   /**
    * Correo válido para el candidato FFT. Misma expresión que valida el backend (y que la del envío
    * del formulario al postulante): es el mismo buzón, así que lo que se acepta acá tiene que ser
@@ -74,6 +87,8 @@ export class GthNuevaSolicitud implements OnInit {
   formData: ReclutamientoFormDataDto = {
     areaNombre: null,
     areaScopeId: null,
+    puestoNombre: null,
+    categoriaNombre: null,
     maxVacantes: 10,
     puestos: [],
     tiposRequerimiento: [],
@@ -178,19 +193,21 @@ export class GthNuevaSolicitud implements OnInit {
       salarioBrutoMensual: null,
       esFft: false,
       fftCandidatoNombre: '',
+      fftCandidatoDocumento: '',
       fftCandidatoCorreo: '',
     };
   }
 
   // ── FFT: el candidato ya tiene nombre ──────────────────────────────
   /**
-   * Al desmarcar FFT se limpian el nombre y el correo: si no, quedarían enviándose datos que el
-   * usuario ya no ve (y que el backend descartaría igual).
+   * Al desmarcar FFT se limpian el nombre, el DNI y el correo: si no, quedarían enviándose datos
+   * que el usuario ya no ve (y que el backend descartaría igual).
    */
   onFftChange(v: VacanteForm, esFft: boolean): void {
     v.esFft = esFft;
     if (!esFft) {
       v.fftCandidatoNombre = '';
+      v.fftCandidatoDocumento = '';
       v.fftCandidatoCorreo = '';
     }
   }
@@ -199,6 +216,22 @@ export class GthNuevaSolicitud implements OnInit {
   fftNombreInvalido(v: VacanteForm): boolean {
     const nombre = v.fftCandidatoNombre.trim();
     return v.esFft && (nombre.length === 0 || nombre.length > this.maxFftNombre);
+  }
+
+  /**
+   * Filtra lo tecleado en el DNI: solo dígitos y máximo 8. El `maxlength` del input no basta —
+   * no ataja el pegado de un número con puntos o espacios, que es la forma más común de copiarlo.
+   */
+  onFftDocumentoInput(v: VacanteForm, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const limpio = input.value.replace(/\D/g, '').slice(0, this.largoFftDocumento);
+    if (input.value !== limpio) input.value = limpio;
+    v.fftCandidatoDocumento = limpio;
+  }
+
+  /** ¿Falta el DNI del candidato FFT, o no tiene los 8 dígitos? */
+  fftDocumentoInvalido(v: VacanteForm): boolean {
+    return v.esFft && !this.documentoValido.test(v.fftCandidatoDocumento.trim());
   }
 
   /** ¿Falta el correo personal del candidato FFT, o no tiene formato de correo? */
@@ -286,6 +319,7 @@ export class GthNuevaSolicitud implements OnInit {
       if (!v.projectId) errors.push(`${pref}: proyecto/obra`);
       if (this.salarioInvalido(v)) errors.push(`${pref}: salario bruto mensual`);
       if (this.fftNombreInvalido(v)) errors.push(`${pref}: nombre completo del candidato (FFT)`);
+      if (this.fftDocumentoInvalido(v)) errors.push(`${pref}: DNI del candidato (FFT)`);
       if (this.fftCorreoInvalido(v)) errors.push(`${pref}: correo personal del candidato (FFT)`);
     });
 
@@ -311,6 +345,7 @@ export class GthNuevaSolicitud implements OnInit {
         salarioBrutoMensual: v.salarioBrutoMensual,
         esFft: v.esFft,
         fftCandidatoNombre: v.esFft ? v.fftCandidatoNombre.trim() : null,
+        fftCandidatoDocumento: v.esFft ? v.fftCandidatoDocumento.trim() : null,
         fftCandidatoCorreo: v.esFft ? v.fftCandidatoCorreo.trim() : null,
       })),
     };

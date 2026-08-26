@@ -7,6 +7,9 @@
   [botonPrimario]="{ label: 'Crear usuario para persona externa', icono: 'ti-plus' }"
   (secondaryClick)="showAbrilWorkerModal = true"
   (primaryClick)="showCreateModal = true">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
 <div class="flex-1 min-h-0 bg-white rounded-lg p-[20px]">
@@ -14,6 +17,7 @@
     <app-user-list
       class="w-full"
       (pagedData)="updatePagination($event)"
+      (categoriasLoaded)="onCategoriasLoaded($event)"
       (editUser)="openEditForm($event)"
       (userToggled)="reloadUsers()"
       (userDeleted)="reloadUsers()"
@@ -27,6 +31,27 @@
     ></app-paginator>
   </div>
 </div>
+
+<!-- ── Panel de filtros estándar ──────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <!-- Los nombres del catálogo se guardan en MAYÚSCULAS y traen siglas ("COORDINADOR SSOMA"),
+         así que se muestran tal cual: el suavizado a nombre propio los rompe ("Coordinador Ssoma"). -->
+    <app-search-select
+      label="Categoría"
+      [options]="categorias"
+      valueField="categoriaId"
+      displayField="nombre"
+      [value]="categoriaId"
+      [uppercase]="true"
+      [fullText]="true"
+      placeholder="Todas las categorías"
+      (valueChange)="onCategoriaChange($event)">
+    </app-search-select>
+  </div>
+
+</app-filter-modal>
 
 <app-user-create
   *ngIf="showCreateModal"

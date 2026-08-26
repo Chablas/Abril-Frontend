@@ -78,7 +78,7 @@
           </td>
         </tr>
         <tr *ngIf="tableData.data.length === 0">
-          <td colspan="6" class="text-center text-gray-400 py-10 text-sm">Sin usuarios registrados.</td>
+          <td colspan="6" class="text-center text-gray-400 py-10 text-sm">{{ emptyMessage }}</td>
         </tr>
       </tbody>
     </table>
@@ -126,6 +126,6 @@
         </div>
       </div>
     </div>
-    <p *ngIf="tableData.data.length === 0" class="text-center text-gray-400 py-10 text-sm">Sin usuarios registrados.</p>
+    <p *ngIf="tableData.data.length === 0" class="text-center text-gray-400 py-10 text-sm">{{ emptyMessage }}</p>
   </div>
 </div>

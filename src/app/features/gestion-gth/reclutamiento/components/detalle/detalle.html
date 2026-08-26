@@ -585,7 +585,7 @@
               @if (seccionLongListAprobada) {
                 <p class="text-[12.5px] text-emerald-700 mt-[4px] leading-snug">
                   @if (esFft) {
-                    Candidato pedido por nombre: {{ (detalle.fftCandidatoNombre | titleCase) || 'sin nombre registrado' }}.
+                    Candidato pedido por nombre: {{ (detalle.fftCandidatoNombre | titleCase) || 'sin nombre registrado' }}@if (detalle.fftCandidatoDocumento) {<span>, DNI {{ detalle.fftCandidatoDocumento }}</span>}.
                     No hay publicación, long list ni entrevistas. Envíale el formulario de información del
                     postulante; al aprobarlo pasa directo a la programación de su EMO de ingreso.
                   } @else {

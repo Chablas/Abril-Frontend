@@ -9,6 +9,7 @@ import { UserFeatureUpdateDto } from '../../../../../core/dtos/user/userFeatureU
 import { AbrilWorkerOptionDto } from '../../../../../core/dtos/user/abrilWorkerOption.model';
 import { AbrilWorkerUserCreateDto } from '../../../../../core/dtos/user/abrilWorkerUserCreate.model';
 import { AbrilManualUserCreateDto } from '../../../../../core/dtos/user/abrilManualUserCreate.model';
+import { UserListInitialDto } from '../dtos/user-filters.dto';
 
 function buildAuthHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -21,13 +22,28 @@ export class UserFeatureService {
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * Carga inicial de la pantalla: opciones del filtro de categoría + primera página de la
+   * tabla en una sola petición. Los cambios de búsqueda, filtro o página van a `getUserPaged`,
+   * que ya no necesita volver a traer las opciones.
+   */
+  getInitialData(page = 1, pageSize = 10): Observable<UserListInitialDto> {
+    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+    return this.http.get<UserListInitialDto>(
+      `${this.apiUrl}/initial?${params.toString()}`,
+      { headers: buildAuthHeaders() },
+    );
+  }
+
   getUserPaged(
     page: number,
     pageSize = 10,
     search?: string,
+    categoriaId?: number | null,
   ): Observable<PagedResponseDTO<UserListItemDto>> {
     const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
     if (search && search.trim()) params.set('search', search.trim());
+    if (categoriaId != null) params.set('categoriaId', String(categoriaId));
     return this.http.get<PagedResponseDTO<UserListItemDto>>(
       `${this.apiUrl}/paged?${params.toString()}`,
       { headers: buildAuthHeaders() },

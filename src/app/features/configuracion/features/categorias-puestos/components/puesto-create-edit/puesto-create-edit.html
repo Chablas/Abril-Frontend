@@ -20,6 +20,7 @@
       displayField="nombre"
       [value]="categoriaId"
       (valueChange)="categoriaId = $event"
+      [fullText]="true"
       placeholder="Selecciona categoría">
     </app-search-select>
     <p *ngIf="submitted && categoriaId === null" class="text-xs text-red-500 -mt-[10px]">Campo requerido</p>
@@ -35,6 +36,7 @@
       displayField="ruta"
       [value]="areaSolicitanteScopeId"
       (valueChange)="onSolicitanteChange($event ?? null)"
+      [fullText]="true"
       placeholder="Sin área">
     </app-search-select>
 
@@ -45,6 +47,7 @@
       displayField="ruta"
       [value]="areaDestinoScopeId"
       (valueChange)="areaDestinoScopeId = $event ?? null"
+      [fullText]="true"
       placeholder="La misma del solicitante">
     </app-search-select>
 

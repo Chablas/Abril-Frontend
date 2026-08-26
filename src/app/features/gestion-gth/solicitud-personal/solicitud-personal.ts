@@ -314,10 +314,12 @@ export class GthSolicitudPersonal implements OnInit {
   /** Mismo mapa que usa la bandeja de GTH: un estado se pinta igual en todo el módulo. */
   readonly estadoColors = estadoColors;
 
-  // ── Reenvío del correo a Gerencia General ──────────────────────────────
+  // ── Reenvío del correo de aprobación ───────────────────────────────────
   /**
-   * El requerimiento está esperando la decisión de Gerencia General: se puede reenviar el correo
-   * (sirve cuando el envío automático falló o hubo que corregir los destinatarios).
+   * El requerimiento está esperando su aprobación: se puede reenviar el correo (sirve cuando el
+   * envío automático falló o hubo que corregir los destinatarios). A quién se le reenvía lo decide
+   * el backend por el tipo de la vacante — Gerencia General en las nuevas, el gerente del área y
+   * GTH en los reemplazos—, así que acá no se nombra a nadie.
    */
   esperandoGerencia(s: SolicitudVacanteListItem): boolean {
     return s.estadoCodigo === 'APROBACION_GG';
@@ -325,8 +327,8 @@ export class GthSolicitudPersonal implements OnInit {
 
   async reenviarAGerencia(s: SolicitudVacanteListItem): Promise<void> {
     const confirm = await Swal.fire({
-      title: '¿Reenviar a Gerencia General?',
-      text: `Se volverá a enviar el correo de aprobación de ${s.codigo} con el mismo enlace.`,
+      title: '¿Reenviar la aprobación?',
+      text: `Se volverá a enviar el correo de aprobación de ${s.codigo} a quien todavía no ha decidido.`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Sí, reenviar',

@@ -3,12 +3,35 @@
 
   <div class="flex flex-col gap-[20px] mt-[16px]">
 
-    <!-- ── Área del solicitante (solo lectura) ─────────────────────────── -->
-    <div class="flex flex-col gap-[4px]">
+    <!-- ── Tu ficha: área, categoría y puesto (solo lectura) ───────────────────────
+         Los tres salen de la ficha de trabajador del usuario y no se eligen: se muestran
+         para que sepa desde dónde está pidiendo. La categoría no vive en la ficha — se llega
+         por el puesto (workers.puesto_id → puesto.categoria_id). El puesto y la categoría pasan
+         por titleCase porque el catálogo los guarda en MAYÚSCULAS y el desplegable «Puesto» de
+         abajo ya los suaviza igual: sin esto la misma palabra se vería de dos formas en el mismo
+         modal. -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-[12px]">
       <div class="relative mt-[9px]">
-        <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Área del solicitante</label>
+        <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Tu área</label>
         <input type="text" disabled
           [value]="formData.areaNombre || '(No se pudo identificar tu área)'"
+          [title]="formData.areaNombre || '(No se pudo identificar tu área)'"
+          class="w-full border border-[#e2e8f0] rounded-[7px] h-[36px] px-[10px] text-[13px] text-gray-500 bg-gray-50" />
+      </div>
+
+      <div class="relative mt-[9px]">
+        <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Tu categoría</label>
+        <input type="text" disabled
+          [value]="(formData.categoriaNombre | titleCase) || '(No se pudo identificar tu categoría)'"
+          [title]="(formData.categoriaNombre | titleCase) || '(No se pudo identificar tu categoría)'"
+          class="w-full border border-[#e2e8f0] rounded-[7px] h-[36px] px-[10px] text-[13px] text-gray-500 bg-gray-50" />
+      </div>
+
+      <div class="relative mt-[9px]">
+        <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Tu puesto</label>
+        <input type="text" disabled
+          [value]="(formData.puestoNombre | titleCase) || '(No se pudo identificar tu puesto)'"
+          [title]="(formData.puestoNombre | titleCase) || '(No se pudo identificar tu puesto)'"
           class="w-full border border-[#e2e8f0] rounded-[7px] h-[36px] px-[10px] text-[13px] text-gray-500 bg-gray-50" />
       </div>
     </div>
@@ -155,8 +178,11 @@
           </span>
         </label>
 
-        <div *ngIf="v.esFft" class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
-          <div class="flex flex-col gap-[4px]">
+        <!-- El DNI va junto al nombre y al correo porque es parte del mismo dato: con él el
+             candidato entra a la base maestra de personas apenas se registra la solicitud, en vez
+             de esperar a que llene su formulario. -->
+        <div *ngIf="v.esFft" class="grid grid-cols-1 sm:grid-cols-12 gap-[12px]">
+          <div class="flex flex-col gap-[4px] sm:col-span-5">
             <div class="abril-field">
               <label class="abril-field-label" [attr.for]="'gth-fft-nombre-' + i">Nombre completo del candidato</label>
               <input [id]="'gth-fft-nombre-' + i" class="abril-field-input" type="text"
@@ -166,7 +192,21 @@
             <p *ngIf="submitted && fftNombreInvalido(v)" class="text-xs text-red-500">Campo requerido</p>
           </div>
 
-          <div class="flex flex-col gap-[4px]">
+          <div class="flex flex-col gap-[4px] sm:col-span-3">
+            <div class="abril-field">
+              <label class="abril-field-label" [attr.for]="'gth-fft-dni-' + i">DNI del candidato</label>
+              <input [id]="'gth-fft-dni-' + i" class="abril-field-input" type="text"
+                inputmode="numeric" autocomplete="off" [maxlength]="largoFftDocumento"
+                placeholder="8 dígitos"
+                [ngModel]="v.fftCandidatoDocumento"
+                (input)="onFftDocumentoInput(v, $event)" />
+            </div>
+            <p *ngIf="submitted && fftDocumentoInvalido(v)" class="text-xs text-red-500">
+              {{ v.fftCandidatoDocumento.trim() ? 'Debe tener 8 dígitos' : 'Campo requerido' }}
+            </p>
+          </div>
+
+          <div class="flex flex-col gap-[4px] sm:col-span-4">
             <div class="abril-field">
               <label class="abril-field-label" [attr.for]="'gth-fft-correo-' + i">Correo personal del candidato</label>
               <input [id]="'gth-fft-correo-' + i" class="abril-field-input" type="email"

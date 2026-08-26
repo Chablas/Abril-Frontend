@@ -160,6 +160,12 @@ export interface DetalleRequerimientoGth {
   esFft: boolean;
   /** Nombre del candidato FFT que nombró el solicitante. Null cuando no es FFT. */
   fftCandidatoNombre: string | null;
+  /**
+   * DNI del candidato FFT: sirve para saber a quién se le está mandando el formulario cuando hay
+   * nombres parecidos, y es con el que ya quedó registrado en la base maestra al pedirse la
+   * vacante. Null cuando no es FFT o el requerimiento es anterior a que se pidiera el dato.
+   */
+  fftCandidatoDocumento: string | null;
   /** Vacantes de este requerimiento (cada vacante genera su propio requerimiento → 1). */
   vacantes: number;
   estadoCodigo: string;

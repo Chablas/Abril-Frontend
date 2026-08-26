@@ -179,16 +179,12 @@
                 <span class="text-[10px]" [class.opacity-30]="!sortDirOf('vacantes')">{{ sortDirOf('vacantes') === 'desc' ? '▼' : '▲' }}</span>
               </span>
             </th>
-            <!-- Las dos casillas, siempre visibles: cada gerente necesita ver también
-                 la postura del otro nivel para entender en qué quedó la solicitud. -->
-            <th class="cursor-pointer select-none" (click)="toggleSort('gerenteArea')" title="Ordenar por el visto bueno del gerente del área">
-              <span class="inline-flex items-center gap-1">Gerente del área
-                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('gerenteArea')">{{ sortDirOf('gerenteArea') === 'desc' ? '▼' : '▲' }}</span>
-              </span>
-            </th>
-            <th class="cursor-pointer select-none" (click)="toggleSort('gerenteGeneral')" title="Ordenar por la decisión de Gerencia General">
-              <span class="inline-flex items-center gap-1">Gerencia General
-                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('gerenteGeneral')">{{ sortDirOf('gerenteGeneral') === 'desc' ? '▼' : '▲' }}</span>
+            <!-- Una sola columna con las firmas que ESTA solicitud necesita: quién aprueba lo
+                 decide el tipo de cada vacante, así que no son siempre las mismas. Cada quien ve
+                 también la postura de los demás para entender en qué quedó la solicitud. -->
+            <th class="cursor-pointer select-none" (click)="toggleSort('aprobaciones')" title="Ordenar por tu decisión">
+              <span class="inline-flex items-center gap-1">Aprobaciones
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('aprobaciones')">{{ sortDirOf('aprobaciones') === 'desc' ? '▼' : '▲' }}</span>
               </span>
             </th>
             <th>Acciones</th>
@@ -197,7 +193,7 @@
         <tbody>
 
           <tr *ngIf="filteredAprobaciones.length === 0">
-            <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
+            <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
           </tr>
 
           <tr *ngFor="let a of pagedAprobaciones; let i = index"
@@ -234,22 +230,17 @@
             </td>
 
             <td class="text-center">
-              <app-status-badge
-                [text]="a.gerenteArea.estadoNombre"
-                [bgColor]="estadoColors(a.gerenteArea.estadoCodigo).bg"
-                [textColor]="estadoColors(a.gerenteArea.estadoCodigo).text" />
-              <div *ngIf="a.gerenteArea.decididoPor" class="text-[10.5px] text-gray-400 mt-[3px]">
-                {{ a.gerenteArea.decididoPor | titleCase }}
-              </div>
-            </td>
-
-            <td class="text-center">
-              <app-status-badge
-                [text]="a.gerenteGeneral.estadoNombre"
-                [bgColor]="estadoColors(a.gerenteGeneral.estadoCodigo).bg"
-                [textColor]="estadoColors(a.gerenteGeneral.estadoCodigo).text" />
-              <div *ngIf="a.gerenteGeneral.decididoPor" class="text-[10.5px] text-gray-400 mt-[3px]">
-                {{ a.gerenteGeneral.decididoPor | titleCase }}
+              <div class="flex flex-col items-center gap-[7px]">
+                <div *ngFor="let c of casillas(a)">
+                  <div class="text-[10px] uppercase tracking-wide text-gray-400 mb-[2px]">{{ c.etiqueta }}</div>
+                  <app-status-badge
+                    [text]="c.resumen.estadoNombre"
+                    [bgColor]="estadoColors(c.resumen.estadoCodigo).bg"
+                    [textColor]="estadoColors(c.resumen.estadoCodigo).text" />
+                  <div *ngIf="c.resumen.decididoPor" class="text-[10.5px] text-gray-400 mt-[3px]">
+                    {{ c.resumen.decididoPor | titleCase }}
+                  </div>
+                </div>
               </div>
             </td>
 
@@ -317,32 +308,21 @@
           </div>
         </div>
 
-        <!-- Las dos casillas, igual que las dos columnas de la tabla.
+        <!-- Las firmas que la solicitud necesita, igual que la columna de la tabla.
              `wrap` porque acá la casilla es media tarjeta: sin él, «Pendiente de decisión»
              (nowrap por defecto, pensado para una celda de tabla) se sale de la casilla en
              pantallas angostas y arrastra la página de lado. Cuando entra en una línea, se
              ve exactamente igual que antes. -->
         <div class="ap-card-niveles">
-          <div class="ap-card-nivel">
-            <div class="ap-nivel-label">Gerente del área</div>
+          <div class="ap-card-nivel" *ngFor="let c of casillas(a)">
+            <div class="ap-nivel-label">{{ c.etiqueta }}</div>
             <app-status-badge
-              [text]="a.gerenteArea.estadoNombre"
+              [text]="c.resumen.estadoNombre"
               [wrap]="true"
-              [bgColor]="estadoColors(a.gerenteArea.estadoCodigo).bg"
-              [textColor]="estadoColors(a.gerenteArea.estadoCodigo).text" />
-            <div *ngIf="a.gerenteArea.decididoPor" class="ap-nivel-quien truncate">
-              {{ a.gerenteArea.decididoPor | titleCase }}
-            </div>
-          </div>
-          <div class="ap-card-nivel">
-            <div class="ap-nivel-label">Gerencia General</div>
-            <app-status-badge
-              [text]="a.gerenteGeneral.estadoNombre"
-              [wrap]="true"
-              [bgColor]="estadoColors(a.gerenteGeneral.estadoCodigo).bg"
-              [textColor]="estadoColors(a.gerenteGeneral.estadoCodigo).text" />
-            <div *ngIf="a.gerenteGeneral.decididoPor" class="ap-nivel-quien truncate">
-              {{ a.gerenteGeneral.decididoPor | titleCase }}
+              [bgColor]="estadoColors(c.resumen.estadoCodigo).bg"
+              [textColor]="estadoColors(c.resumen.estadoCodigo).text" />
+            <div *ngIf="c.resumen.decididoPor" class="ap-nivel-quien truncate">
+              {{ c.resumen.decididoPor | titleCase }}
             </div>
           </div>
         </div>
@@ -393,7 +373,7 @@
     <!-- Filtra por MI casilla, no por la del otro nivel: es mi decisión la que rastreo.
          Orden semántico (pendiente → cerrada), por eso sortAlpha=false. -->
     <app-search-select
-      [label]="esGerenteGeneral ? 'Mi decisión' : 'Mi visto bueno'"
+      [label]="'Mi decisión'"
       placeholder="Selecciona estado"
       [options]="estados"
       valueField="codigo"

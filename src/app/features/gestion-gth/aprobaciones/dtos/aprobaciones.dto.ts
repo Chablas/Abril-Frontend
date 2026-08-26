@@ -4,13 +4,21 @@ import { SolicitudDestinatarios } from '../../shared/dtos/destinatarios.dto';
  * Nivel con el que el usuario entra a «Aprobaciones». Lo resuelve el backend desde la CATEGORÍA de
  * su ficha de trabajador, no desde su rol: el rol solo abre la pantalla.
  *
- * - `GERENTE_GENERAL`: ve todas las solicitudes. Su decisión es la obligatoria — manda las vacantes
- *   aprobadas a Gestión de Talento Humano.
- * - `GERENTE_AREA`: ve y decide solo las de su área hacia abajo. Su decisión es un visto bueno que
- *   queda registrado, pero no hace avanzar la solicitud.
+ * - `GERENTE_GENERAL`: ve todas las solicitudes y decide las vacantes NUEVAS y las FFT. Su firma
+ *   sola las manda a Gestión de Talento Humano.
+ * - `GERENTE_AREA`: ve las de su área hacia abajo y decide las de REEMPLAZO, junto con GTH.
+ * - `GTH`: cualquier trabajador del área de Gestión del Talento Humano. Ve los reemplazos de toda
+ *   la empresa y los decide junto con el gerente del área: hacen falta las dos firmas.
  * - `NINGUNO`: entra a la pantalla, pero no hay solicitudes bajo su alcance.
  */
-export type AprobacionNivel = 'GERENTE_GENERAL' | 'GERENTE_AREA' | 'NINGUNO';
+export type AprobacionNivel = 'GERENTE_GENERAL' | 'GERENTE_AREA' | 'GTH' | 'NINGUNO';
+
+/**
+ * Por dónde se aprueba una vacante. Lo deriva el backend del tipo de requerimiento y del flag FFT:
+ * - `GG`: solo Gerencia General (las vacantes nuevas y todas las FFT).
+ * - `AREA_GTH`: el gerente del área Y GTH, las dos firmas (los reemplazos que no son FFT).
+ */
+export type RutaAprobacion = 'GG' | 'AREA_GTH';
 
 /**
  * Una de las dos casillas de decisión de la solicitud (gerente del área o Gerencia General). Las
@@ -56,12 +64,24 @@ export interface AprobacionVacante {
   esFft: boolean;
   /** Nombre del candidato FFT que nombró el solicitante. Null en las vacantes normales. */
   fftCandidatoNombre: string | null;
+  /**
+   * DNI del candidato FFT: es lo único que lo identifica sin ambigüedad (dos candidatos pueden
+   * llamarse igual) y con lo que ya quedó registrado en la base maestra. Null en las vacantes
+   * normales y en los FFT anteriores a que se pidiera el dato.
+   */
+  fftCandidatoDocumento: string | null;
   /** Correo personal del candidato FFT. Null en las vacantes normales. */
   fftCandidatoCorreo: string | null;
-  /** Visto bueno del gerente del área: true / false / null = no opinó. */
+  /** Código estable del tipo (`NUEVO` / `REEMPLAZO`): es lo que decide la `ruta`. */
+  tipoRequerimientoCodigo: string;
+  /** Por dónde se aprueba esta vacante. El modal solo deja marcar las de la ruta del usuario. */
+  ruta: RutaAprobacion;
+  /** Decisión del gerente del área: true / false / null = sin decidir. */
   aprobadoGerenteArea: boolean | null;
   /** Decisión de Gerencia General: true = aprobada, false = rechazada, null = sin decidir. */
   aprobadoGerenteGeneral: boolean | null;
+  /** Decisión de GTH: true / false / null = sin decidir. Solo aplica en la ruta `AREA_GTH`. */
+  aprobadoGth: boolean | null;
 }
 
 /** Detalle de una aprobación: cabecera de la solicitud, sus vacantes y las dos casillas. */
@@ -74,10 +94,20 @@ export interface AprobacionDetalle {
   sustentoUrl: string | null;
   /** Fecha de registro de la solicitud (ISO, ya en hora Perú). */
   enviado: string;
-  /** Visto bueno del gerente del área (no condiciona el avance de la solicitud). */
+  /** Decisión del gerente del área (una de las dos firmas de los reemplazos). */
   gerenteArea: AprobacionNivelResumen;
-  /** Decisión de Gerencia General (la que manda las vacantes a GTH). */
+  /** Decisión de Gerencia General (la que mueve las vacantes nuevas y las FFT). */
   gerenteGeneral: AprobacionNivelResumen;
+  /** Decisión de GTH (la otra firma de los reemplazos). */
+  gth: AprobacionNivelResumen;
+  /**
+   * Qué firmas necesita ESTA solicitud, derivadas de los tipos de sus vacantes. La pantalla pinta
+   * solo las casillas que hacen falta en vez de mostrar tres siempre, dos de ellas eternamente
+   * pendientes sin que nadie las vaya a tocar.
+   */
+  requiereGerenteGeneral: boolean;
+  requiereGerenteArea: boolean;
+  requiereGth: boolean;
   /** Con qué poder entra el usuario que abrió el modal. */
   nivel: AprobacionNivel;
   /** true si todavía puede registrar SU decisión; false ⇒ el modal abre en lectura. */
@@ -103,8 +133,15 @@ export interface AprobacionListItem {
   /** Fecha de registro de la solicitud (ISO, hora Perú). */
   enviado: string;
   totalVacantes: number;
+  /** Cuántas de esas vacantes le tocan al usuario que consulta (las de su ruta). */
+  vacantesDeMiRuta: number;
   gerenteArea: AprobacionNivelResumen;
   gerenteGeneral: AprobacionNivelResumen;
+  gth: AprobacionNivelResumen;
+  /** Qué firmas necesita esta solicitud, derivadas de los tipos de sus vacantes. */
+  requiereGerenteGeneral: boolean;
+  requiereGerenteArea: boolean;
+  requiereGth: boolean;
   /** true si esta fila espera la decisión del usuario que consulta. */
   esperaMiDecision: boolean;
 }

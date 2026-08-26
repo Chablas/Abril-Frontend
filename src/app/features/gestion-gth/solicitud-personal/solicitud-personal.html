@@ -215,7 +215,7 @@
               <button *ngIf="esperandoGerencia(s)" type="button" (click)="reenviarAGerencia(s)"
                 class="inline-flex items-center justify-center w-[30px] h-[30px] rounded-[7px] cursor-pointer transition-colors hover:opacity-80"
                 style="background:#FEF3C7;color:#B45309;border:0.5px solid #FCD34D"
-                title="Reenviar el correo de aprobación a Gerencia General">
+                title="Reenviar el correo de aprobación a quien todavía no ha decidido">
                 <i class="ti ti-mail-forward text-[15px]"></i>
               </button>
             </div>
@@ -283,9 +283,9 @@
       <button *ngIf="esperandoGerencia(s)" type="button" (click)="reenviarAGerencia(s)"
         class="w-full inline-flex items-center justify-center gap-[6px] h-[36px] mt-[7px] rounded-[7px] text-[12.5px] font-medium cursor-pointer transition-colors"
         style="background:#FEF3C7;color:#B45309;border:0.5px solid #FCD34D"
-        title="Reenviar el correo de aprobación a Gerencia General">
+        title="Reenviar el correo de aprobación a quien todavía no ha decidido">
         <i class="ti ti-mail-forward text-[15px]"></i>
-        Reenviar a Gerencia General
+        Reenviar aprobación
       </button>
 
     </div>

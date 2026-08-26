@@ -8,59 +8,64 @@
 
   @if (!cargando && data) {
 
-    <!-- ── Las dos casillas ────────────────────────────────────────────── -->
-    <!-- Siempre visibles, decida quien decida: cada gerente necesita ver la postura
-         del otro nivel para entender en qué quedó la solicitud.
+    <!-- ── Las firmas de la solicitud ──────────────────────────────────── -->
+    <!-- Todas visibles, decida quien decida: en un reemplazo cada firmante necesita
+         ver la postura del otro para entender en qué quedó la solicitud.
          Acá antes iba un aviso de instrucciones ("estás decidiendo como X, marca
          Aprobar o Rechazar en cada vacante…"): se quitó por redundante. El chip
          «Tu casilla» ya dice quién firma, los botones dicen qué hacer y la
          consecuencia se repite en la confirmación al enviar, que es donde importa.
          Los estados van en la misma línea del título y el detalle (quién y cuándo)
          solo aparece si esa casilla ya decidió — el badge basta cuando está
-         pendiente. -->
+         pendiente.
+         Solo se pintan las firmas que ESTA solicitud necesita, y la propia primero: quién aprueba
+         lo decide el tipo de cada vacante, así que ya no son siempre las mismas dos. Los reemplazos
+         llevan dos (gerente del área y GTH) y las vacantes nuevas una sola (Gerencia General). -->
     <div class="ad-niveles">
-      <div class="ad-nivel" [class.ad-nivel--mio]="!esGerenteGeneral">
-        <div class="ad-nivel-head">
-          <span class="ad-nivel-titulo">Gerente del área</span>
-          @if (!esGerenteGeneral) { <span class="ad-nivel-chip">Tu casilla</span> }
-          <span class="ad-nivel-badge"
-                [style.background]="estadoColors(data.gerenteArea.estadoCodigo).bg"
-                [style.color]="estadoColors(data.gerenteArea.estadoCodigo).text">
-            {{ data.gerenteArea.estadoNombre }}
-          </span>
+      @if (miCasilla) {
+        <div class="ad-nivel ad-nivel--mio">
+          <div class="ad-nivel-head">
+            <span class="ad-nivel-titulo">{{ miNivelLabel }}</span>
+            <span class="ad-nivel-chip">Tu casilla</span>
+            <span class="ad-nivel-badge"
+                  [style.background]="estadoColors(miCasilla.estadoCodigo).bg"
+                  [style.color]="estadoColors(miCasilla.estadoCodigo).text">
+              {{ miCasilla.estadoNombre }}
+            </span>
+          </div>
+          @if (miCasilla.decidida) {
+            <p class="ad-nivel-meta">
+              {{ (miCasilla.decididoPor | titleCase) || 'Sin registro de quién decidió' }}
+              @if (miCasilla.decididoEn) { · {{ miCasilla.decididoEn | date:'dd/MM/yyyy HH:mm' }} }
+            </p>
+          }
+          @if (miCasilla.comentario) {
+            <p class="ad-nivel-comentario">“{{ miCasilla.comentario }}”</p>
+          }
         </div>
-        @if (data.gerenteArea.decidida) {
-          <p class="ad-nivel-meta">
-            {{ (data.gerenteArea.decididoPor | titleCase) || 'Sin registro de quién decidió' }}
-            @if (data.gerenteArea.decididoEn) { · {{ data.gerenteArea.decididoEn | date:'dd/MM/yyyy HH:mm' }} }
-          </p>
-        }
-        @if (data.gerenteArea.comentario) {
-          <p class="ad-nivel-comentario">“{{ data.gerenteArea.comentario }}”</p>
-        }
-      </div>
+      }
 
-      <div class="ad-nivel" [class.ad-nivel--mio]="esGerenteGeneral">
-        <div class="ad-nivel-head">
-          <span class="ad-nivel-titulo">Gerencia General</span>
-          @if (esGerenteGeneral) { <span class="ad-nivel-chip">Tu casilla</span> }
-          <span class="ad-nivel-chip ad-nivel-chip--req">Obligatoria</span>
-          <span class="ad-nivel-badge"
-                [style.background]="estadoColors(data.gerenteGeneral.estadoCodigo).bg"
-                [style.color]="estadoColors(data.gerenteGeneral.estadoCodigo).text">
-            {{ data.gerenteGeneral.estadoNombre }}
-          </span>
+      @for (c of otrasCasillas; track c.etiqueta) {
+        <div class="ad-nivel">
+          <div class="ad-nivel-head">
+            <span class="ad-nivel-titulo">{{ c.etiqueta }}</span>
+            <span class="ad-nivel-badge"
+                  [style.background]="estadoColors(c.resumen.estadoCodigo).bg"
+                  [style.color]="estadoColors(c.resumen.estadoCodigo).text">
+              {{ c.resumen.estadoNombre }}
+            </span>
+          </div>
+          @if (c.resumen.decidida) {
+            <p class="ad-nivel-meta">
+              {{ (c.resumen.decididoPor | titleCase) || 'Sin registro de quién decidió' }}
+              @if (c.resumen.decididoEn) { · {{ c.resumen.decididoEn | date:'dd/MM/yyyy HH:mm' }} }
+            </p>
+          }
+          @if (c.resumen.comentario) {
+            <p class="ad-nivel-comentario">“{{ c.resumen.comentario }}”</p>
+          }
         </div>
-        @if (data.gerenteGeneral.decidida) {
-          <p class="ad-nivel-meta">
-            {{ (data.gerenteGeneral.decididoPor | titleCase) || 'Sin registro de quién decidió' }}
-            @if (data.gerenteGeneral.decididoEn) { · {{ data.gerenteGeneral.decididoEn | date:'dd/MM/yyyy HH:mm' }} }
-          </p>
-        }
-        @if (data.gerenteGeneral.comentario) {
-          <p class="ad-nivel-comentario">“{{ data.gerenteGeneral.comentario }}”</p>
-        }
-      </div>
+      }
     </div>
 
     <!-- ── Datos de la solicitud ───────────────────────────────────────── -->
@@ -136,10 +141,12 @@
             <p class="ad-vac-puesto">{{ v.puesto | titleCase }}</p>
             <div class="ad-vac-detail">
               <span><i class="ti ti-building-community"></i> {{ (v.proyectoObra | titleCase) || '—' }}</span>
-              <!-- Candidato del ingreso directo: nombre y correo personal son lo que se está
-                   aprobando, y el correo es al que GTH le mandará el formulario. -->
+              <!-- Candidato del ingreso directo: nombre, DNI y correo personal son lo que se está
+                   aprobando. El DNI es lo que lo identifica sin ambigüedad; el correo es al que
+                   GTH le mandará el formulario. -->
               @if (v.esFft) {
                 <span><i class="ti ti-user-check"></i> {{ (v.fftCandidatoNombre | titleCase) || '—' }}</span>
+                <span><i class="ti ti-id-badge"></i> DNI {{ v.fftCandidatoDocumento || '—' }}</span>
                 <span><i class="ti ti-mail"></i> {{ v.fftCandidatoCorreo || '—' }}</span>
               }
               <!-- El salario es parte de lo que se aprueba, así que va en la misma línea de datos
@@ -243,7 +250,7 @@
       } @else if (!esGerenteGeneral) {
         <div class="ad-note ad-note--mail ad-note--done">
           <i class="ti ti-mail-off"></i>
-          <span>Tu visto bueno no envía correos.</span>
+          <span>Un reemplazo pasa a Gestión de Talento Humano cuando lo aprueban las dos firmas.</span>
         </div>
       }
     }

@@ -11,6 +11,7 @@ import { UserListItemDto } from '../../../../../core/dtos/user/userListItem.mode
 import { PagedResponseDTO } from '../../../../../core/dtos/api/pagedResponse.model';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
+import { UserCategoriaOptionDto } from '../dtos/user-filters.dto';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -30,6 +31,15 @@ export class UserList implements OnInit, OnDestroy {
 
   searchTerm = '';
 
+  readonly pageSize = 10;
+
+  /**
+   * Categoría del trabajador por la que se filtra (null = todas). La dueña del desplegable es
+   * la página contenedora, porque el botón "Filtros" vive en el encabezado; acá solo se guarda
+   * para que toda recarga (búsqueda, paginación, alta/baja de un usuario) la siga respetando.
+   */
+  categoriaId: number | null = null;
+
   /** Stream para debouncing del input — evita fetchs en cada tecla. */
   private search$ = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -38,6 +48,8 @@ export class UserList implements OnInit, OnDestroy {
   @Output() editUser = new EventEmitter<UserListItemDto>();
   @Output() userToggled = new EventEmitter<void>();
   @Output() userDeleted = new EventEmitter<void>();
+  /** Opciones del filtro de categoría, tal como llegaron en la carga inicial. */
+  @Output() categoriasLoaded = new EventEmitter<UserCategoriaOptionDto[]>();
 
   constructor(
     private userFeatureService: UserFeatureService,
@@ -53,7 +65,7 @@ export class UserList implements OnInit, OnDestroy {
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => this.loadUsers(1));
 
-    setTimeout(() => this.loadUsers());
+    setTimeout(() => this.loadInitial());
   }
 
   ngOnDestroy(): void {
@@ -66,12 +78,16 @@ export class UserList implements OnInit, OnDestroy {
     this.search$.next(value);
   }
 
-  loadUsers(page: number = 1) {
+  /**
+   * Primera carga de la pantalla: trae las opciones del filtro y la primera página de la tabla
+   * en una sola petición. De ahí en adelante se usa `loadUsers`, que solo pide la tabla.
+   */
+  private loadInitial(): void {
     this.loaderService.show();
-    this.userFeatureService.getUserPaged(page, 10, this.searchTerm).subscribe({
+    this.userFeatureService.getInitialData(1, this.pageSize).subscribe({
       next: (response) => {
-        this.tableData = response;
-        this.pagedData.emit(response);
+        this.applyPage(response.users);
+        this.categoriasLoaded.emit(response.categorias);
         this.loaderService.hide();
         this.cdr.detectChanges();
       },
@@ -79,6 +95,31 @@ export class UserList implements OnInit, OnDestroy {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  /** Aplica el filtro de categoría y vuelve a la primera página. */
+  setCategoriaFilter(categoriaId: number | null): void {
+    this.categoriaId = categoriaId;
+    this.loadUsers(1);
+  }
+
+  loadUsers(page: number = 1) {
+    this.loaderService.show();
+    this.userFeatureService.getUserPaged(page, this.pageSize, this.searchTerm, this.categoriaId).subscribe({
+      next: (response) => {
+        this.applyPage(response);
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  private applyPage(response: PagedResponseDTO<UserListItemDto>): void {
+    this.tableData = response;
+    this.pagedData.emit(response);
   }
 
   resendEmail(user: UserListItemDto, event: MouseEvent) {
@@ -159,6 +200,13 @@ export class UserList implements OnInit, OnDestroy {
         },
       });
     });
+  }
+
+  /** Distingue "no hay usuarios" de "la búsqueda o el filtro no devolvieron nada". */
+  get emptyMessage(): string {
+    return this.searchTerm.trim() || this.categoriaId !== null
+      ? 'Ningún usuario coincide con la búsqueda o el filtro.'
+      : 'Sin usuarios registrados.';
   }
 
   getRolesText(user: UserListItemDto): string {

@@ -276,14 +276,36 @@ export class GthAprobaciones implements OnInit {
     return this.nivel === 'NINGUNO';
   }
 
+  /** true si el usuario entra como Gestión del Talento Humano. */
+  get esGth(): boolean {
+    return this.nivel === 'GTH';
+  }
+
+  /**
+   * Las firmas que ESTA solicitud necesita, en el orden del flujo, para pintarlas en la fila. Solo
+   * las que aplican: una solicitud de puras vacantes nuevas muestra únicamente a Gerencia General,
+   * y una de puros reemplazos, al gerente del área y a GTH. Mostrar las tres siempre dejaría dos
+   * casillas eternamente en «pendiente» que nadie va a tocar.
+   */
+  casillas(a: AprobacionListItem): { etiqueta: string; resumen: AprobacionNivelResumen }[] {
+    const out: { etiqueta: string; resumen: AprobacionNivelResumen }[] = [];
+    if (a.requiereGerenteGeneral) out.push({ etiqueta: 'Gerencia General', resumen: a.gerenteGeneral });
+    if (a.requiereGerenteArea) out.push({ etiqueta: 'Gerente del área', resumen: a.gerenteArea });
+    if (a.requiereGth) out.push({ etiqueta: 'GTH', resumen: a.gth });
+    return out;
+  }
+
   /** Casilla del usuario en una fila: es contra la suya que se ordena, filtra y cuenta. */
   miCasilla(a: AprobacionListItem): AprobacionNivelResumen {
-    return this.esGerenteGeneral ? a.gerenteGeneral : a.gerenteArea;
+    if (this.nivel === 'GERENTE_GENERAL') return a.gerenteGeneral;
+    if (this.nivel === 'GTH') return a.gth;
+    return a.gerenteArea;
   }
 
   get subtitulo(): string {
-    if (this.esGerenteGeneral) return 'Solicitudes de personal de toda la organización.';
-    if (this.nivel === 'GERENTE_AREA') return 'Solicitudes de personal de tu gerencia.';
+    if (this.esGerenteGeneral) return 'Vacantes nuevas de toda la organización.';
+    if (this.esGth) return 'Reemplazos de toda la organización.';
+    if (this.nivel === 'GERENTE_AREA') return 'Reemplazos de tu gerencia.';
     return 'Solicitudes de personal por aprobar.';
   }
 
@@ -297,14 +319,20 @@ export class GthAprobaciones implements OnInit {
    * propósito y sin ese texto se lee como un error.
    */
   get textoAlcance(): string {
-    if (this.esGerenteGeneral) return 'Ves todas las solicitudes de la organización.';
+    if (this.esGerenteGeneral) {
+      return 'Apruebas las vacantes nuevas y los ingresos directos de toda la organización.';
+    }
+    if (this.esGth) {
+      return 'Apruebas los reemplazos de toda la organización, junto con el gerente de cada área.';
+    }
     if (this.nivel === 'GERENTE_AREA') {
       const area = this.areaAlcance ? this.areaAlcance : 'tu gerencia';
-      return `Ves las solicitudes de ${area} y de las áreas que dependen de ella.`;
+      return `Apruebas los reemplazos de ${area} y de las áreas que dependen de ella, junto con Gestión del Talento Humano.`;
     }
     return (
-      'No hay solicitudes bajo tu alcance: tu ficha no es de Gerencia General ni de gerente de ' +
-      'área. Pide a Gestión del Talento Humano que revise la categoría de tu ficha.'
+      'No hay solicitudes bajo tu alcance: tu ficha no es de Gerencia General, ni de gerente de ' +
+      'área, ni del área de Gestión del Talento Humano. Pide a Gestión del Talento Humano que ' +
+      'revise tu ficha.'
     );
   }
 
@@ -312,16 +340,19 @@ export class GthAprobaciones implements OnInit {
   // Solo la etiqueta: la línea de apoyo que llevaban debajo ("Esperan tu decisión",
   // "Dentro de lo pendiente", "Ninguna vacante continuó") no agregaba nada al número y
   // dejaba las cuatro tarjetas con tres renglones de texto cada una.
+  // Las tres firmas mandan igual desde el corte por tipo de requerimiento (la del área y la de
+  // GTH ya no son un visto bueno: sin ellas el reemplazo no avanza), así que las etiquetas dejaron
+  // de cambiar por nivel.
   get kpiPendientes(): string {
-    return this.esGerenteGeneral ? 'Por aprobar' : 'Por revisar';
+    return 'Por aprobar';
   }
 
   get kpiAprobadas(): string {
-    return this.esGerenteGeneral ? 'Aprobadas' : 'Con tu visto bueno';
+    return 'Aprobadas';
   }
 
   get kpiRechazadas(): string {
-    return this.esGerenteGeneral ? 'Rechazadas' : 'Observadas';
+    return 'Rechazadas';
   }
 
   // ── Modal de decisión ──────────────────────────────────────────────────
@@ -466,8 +497,9 @@ export class GthAprobaciones implements OnInit {
       case 'area':           return a.area ?? '';
       case 'solicitante':    return a.solicitanteNombre ?? '';
       case 'vacantes':       return a.totalVacantes;
-      case 'gerenteArea':    return a.gerenteArea.estadoNombre ?? '';
-      case 'gerenteGeneral': return a.gerenteGeneral.estadoNombre ?? '';
+      // Una sola columna «Aprobaciones» que muestra las firmas que la solicitud necesita: se
+      // ordena por la del propio usuario, que es la que le interesa rastrear.
+      case 'aprobaciones':   return this.miCasilla(a).estadoNombre ?? '';
       // `enviado` viene en ISO, así que comparar el texto ya es comparar la fecha.
       default:               return a.enviado ?? '';
     }

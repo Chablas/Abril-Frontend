@@ -73,28 +73,46 @@ export class GthSeguimiento implements OnInit {
   }
 
   /**
-   * Etiqueta principal de la tarjeta "Aprobaciones": la decisión de GERENCIA GENERAL sobre ESTA
-   * vacante si ya la hay, o el estado mientras siga pendiente. Es la que manda — sin ella la
-   * vacante no avanza, por eso ocupa el lugar destacado.
+   * Etiqueta principal de la tarjeta "Aprobaciones": la decisión que manda sobre ESTA vacante, o el
+   * estado mientras siga pendiente. Cuál manda depende del tipo de requerimiento: en una vacante
+   * nueva (o un FFT) es la de Gerencia General; en un reemplazo hacen falta las DOS —la del gerente
+   * del área y la de GTH—, así que la etiqueta las resume: aprobada solo con ambas, rechazada
+   * apenas una diga que no.
    */
   get aprobacionGgLabel(): string {
     const ap = this.seguimiento?.aprobacionGg;
     if (!ap) return 'No requerida';
-    if (ap.aprobado === true) return 'Aprobada';
-    if (ap.aprobado === false) return 'Rechazada';
+    const d = this.decisionQueManda;
+    if (d === true) return 'Aprobada';
+    if (d === false) return 'Rechazada';
     return ap.enviadoEn ? 'Pendiente' : 'Correo sin enviar';
+  }
+
+  /**
+   * La decisión que decide el destino de la vacante: la de Gerencia General en la ruta GG, y la
+   * conjunción de las dos firmas en la de reemplazo (aprobada con las dos en true; rechazada apenas
+   * una diga que no; pendiente mientras falte alguna).
+   */
+  private get decisionQueManda(): boolean | null {
+    const ap = this.seguimiento?.aprobacionGg;
+    if (!ap) return null;
+    if (ap.ruta !== 'AREA_GTH') return ap.aprobado;
+    if (ap.aprobadoGerenteArea === false || ap.aprobadoGth === false) return false;
+    if (ap.aprobadoGerenteArea === true && ap.aprobadoGth === true) return true;
+    return null;
   }
 
   /** Color de la etiqueta principal (verde aprobada, rojo rechazada, ámbar pendiente). */
   get aprobacionGgColor(): string {
     const ap = this.seguimiento?.aprobacionGg;
     if (!ap) return '#6B7280';
-    if (ap.aprobado === true) return '#15803D';
-    if (ap.aprobado === false) return '#B91C1C';
+    const d = this.decisionQueManda;
+    if (d === true) return '#15803D';
+    if (d === false) return '#B91C1C';
     return '#B45309';
   }
 
-  /** Detalle bajo la etiqueta: cuándo decidió Gerencia General, o a qué está esperando. */
+  /** Detalle bajo la etiqueta: cuándo se decidió y quién, o a qué está esperando. */
   get aprobacionGgDetalle(): string {
     const ap = this.seguimiento?.aprobacionGg;
     // Sin aprobación hay dos motivos posibles: el ingreso directo que registró Gerencia General (no
@@ -103,30 +121,52 @@ export class GthSeguimiento implements OnInit {
       return this.seguimiento?.esFft
         ? 'Ingreso directo pedido por Gerencia General'
         : 'Registrada antes de este paso del flujo';
+
+    if (ap.ruta === 'AREA_GTH') {
+      // El reemplazo lo cierra la ÚLTIMA de las dos firmas, así que se muestra esa fecha.
+      const fechas = [ap.gerenteAreaDecididoEn, ap.gthDecididoEn].filter(
+        (f): f is string => !!f,
+      );
+      const ultima = fechas.sort().pop();
+      if (this.decisionQueManda !== null && ultima) {
+        return `Gerente del área y GTH · ${this.fecha(ultima)}`;
+      }
+      return ap.enviadoEn
+        ? `Enviada al gerente del área y a GTH el ${this.fecha(ap.enviadoEn)}`
+        : 'No se pudo enviar el correo; usa «Reenviar aprobación»';
+    }
+
     if (ap.decididoEn) return `Gerencia General · ${this.fecha(ap.decididoEn)}`;
     return ap.enviadoEn
-      ? `Enviada a los gerentes el ${this.fecha(ap.enviadoEn)}`
-      : 'No se pudo enviar el correo; usa «Reenviar a Gerencia General»';
+      ? `Enviada a Gerencia General el ${this.fecha(ap.enviadoEn)}`
+      : 'No se pudo enviar el correo; usa «Reenviar aprobación»';
   }
 
   /**
-   * Segunda línea de la tarjeta: el visto bueno del gerente del área sobre ESTA vacante. Es
-   * redundante para el flujo (no lo bloquea) pero el solicitante quiere saber si su gerente ya
-   * respaldó la solicitud. Null cuando no hay aprobación registrada.
+   * Segunda línea de la tarjeta: el desglose de las dos firmas. Solo tiene sentido en los
+   * reemplazos, que son los únicos que las tienen — en la ruta de Gerencia General la etiqueta
+   * principal ya lo dice todo y repetirlo sería ruido. Null cuando no aplica.
    */
   get aprobacionAreaLabel(): string | null {
     const ap = this.seguimiento?.aprobacionGg;
-    if (!ap) return null;
-    if (ap.aprobadoGerenteArea === true) return 'Gerente del área: aprobada';
-    if (ap.aprobadoGerenteArea === false) return 'Gerente del área: rechazada';
-    return 'Gerente del área: sin visto bueno';
+    if (!ap || ap.ruta !== 'AREA_GTH') return null;
+    return (
+      `Gerente del área: ${this.textoFirma(ap.aprobadoGerenteArea)} · ` +
+      `GTH: ${this.textoFirma(ap.aprobadoGth)}`
+    );
   }
 
-  /** Color de esa segunda línea; gris mientras el gerente del área no opine. */
+  private textoFirma(v: boolean | null): string {
+    if (v === true) return 'aprobada';
+    if (v === false) return 'rechazada';
+    return 'sin decidir';
+  }
+
+  /** Color de esa segunda línea; gris mientras falte alguna de las dos firmas. */
   get aprobacionAreaColor(): string {
-    const ap = this.seguimiento?.aprobacionGg;
-    if (ap?.aprobadoGerenteArea === true) return '#15803D';
-    if (ap?.aprobadoGerenteArea === false) return '#B91C1C';
+    const d = this.decisionQueManda;
+    if (d === true) return '#15803D';
+    if (d === false) return '#B91C1C';
     return '#9CA3AF';
   }
 
@@ -135,9 +175,15 @@ export class GthSeguimiento implements OnInit {
     return this.seguimiento?.aprobacionGg?.comentario ?? null;
   }
 
-  /** Comentario que dejó el gerente del área en su visto bueno (si hay). */
+  /** Comentarios que dejaron el gerente del área y GTH al decidir un reemplazo (si hay). */
   get aprobacionAreaComentario(): string | null {
-    return this.seguimiento?.aprobacionGg?.gerenteAreaComentario ?? null;
+    const ap = this.seguimiento?.aprobacionGg;
+    if (!ap) return null;
+    const partes = [
+      ap.gerenteAreaComentario ? `Gerente del área: ${ap.gerenteAreaComentario}` : null,
+      ap.gthComentario ? `GTH: ${ap.gthComentario}` : null,
+    ].filter((x): x is string => !!x);
+    return partes.length > 0 ? partes.join(' · ') : null;
   }
 
   // ── Historial de candidatos rechazados ──────────────────────────────────

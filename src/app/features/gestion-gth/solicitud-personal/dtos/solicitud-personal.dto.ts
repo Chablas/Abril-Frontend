@@ -33,6 +33,18 @@ export interface PuestoOpcion extends OpcionDto {
 export interface ReclutamientoFormDataDto {
   areaNombre: string | null;
   areaScopeId: number | null;
+  /**
+   * Puesto del propio solicitante, para el campo de solo lectura «Tu puesto». Sale de
+   * `workers.puesto_id → puesto.nombre`. null cuando el usuario no tiene ficha de trabajador o
+   * su ficha todavía no tiene puesto.
+   */
+  puestoNombre: string | null;
+  /**
+   * Categoría del propio solicitante, para el campo de solo lectura «Tu categoría». No se guarda
+   * en la ficha: se llega por el puesto (`puesto.categoria_id`), así que sin puesto tampoco hay
+   * categoría.
+   */
+  categoriaNombre: string | null;
   maxVacantes: number;
   puestos: PuestoOpcion[];
   tiposRequerimiento: TipoRequerimientoOpcion[];
@@ -84,6 +96,11 @@ export interface VacanteCreateDto {
   esFft: boolean;
   /** Nombre completo del candidato FFT. Obligatorio cuando `esFft`; null en el resto. */
   fftCandidatoNombre: string | null;
+  /**
+   * DNI del candidato FFT (8 dígitos). Obligatorio cuando `esFft`: es la llave con la que el
+   * candidato entra a `person` apenas se registra la solicitud, sin esperar a su formulario.
+   */
+  fftCandidatoDocumento: string | null;
   /** Correo personal del candidato FFT (el buzón al que GTH le mandará su formulario). */
   fftCandidatoCorreo: string | null;
 }
@@ -158,6 +175,21 @@ export interface AprobacionGgResumen {
   comentario: string | null;
   /** Comentario del gerente del área. */
   gerenteAreaComentario: string | null;
+  /** Estado de la decisión de GTH sobre la solicitud (solo cuenta en los reemplazos). */
+  gthEstadoCodigo: string;
+  gthEstadoNombre: string;
+  /** Decisión de GTH sobre ESTA vacante: true / false / null = sin decidir. */
+  aprobadoGth: boolean | null;
+  /** Momento de la decisión de GTH (ISO, hora Perú). */
+  gthDecididoEn: string | null;
+  /** Comentario de GTH. */
+  gthComentario: string | null;
+  /**
+   * Por dónde se aprueba esta vacante: `GG` (solo Gerencia General, las nuevas y las FFT) o
+   * `AREA_GTH` (gerente del área + GTH, los reemplazos). Con esto la tarjeta muestra solo las
+   * firmas que hacen falta en vez de las tres.
+   */
+  ruta: 'GG' | 'AREA_GTH';
 }
 
 /** Detalle de seguimiento de un requerimiento (modal "Estado del reclutamiento"). */
