@@ -160,6 +160,15 @@ export class GestionVecinosService {
     );
   }
 
+  /** Edita el texto de una solicitud ya registrada. */
+  updateSolicitudDescripcion(solicitudId: number, descripcion: string): Observable<ApiMessageDTO> {
+    return this.http.patch<ApiMessageDTO>(
+      `${this.apiUrl}/solicitudes/${solicitudId}/descripcion`,
+      { descripcion },
+      { headers: this.authHeaders() },
+    );
+  }
+
   // ── Compromisos ─────────────────────────────────────────────────────
   getCompromisos(solicitudId: number): Observable<VecinoCompromisoItemDTO[]> {
     return this.http.get<VecinoCompromisoItemDTO[]>(

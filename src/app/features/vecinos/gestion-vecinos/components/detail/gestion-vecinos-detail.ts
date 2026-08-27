@@ -205,6 +205,52 @@ export class GestionVecinosDetail implements OnInit {
     });
   }
 
+  // ── Edición inline del texto de una solicitud ──────────────────────────
+  editDescripcionId: number | null = null;
+  descripcionDraft = '';
+
+  startEditDescripcion(s: VecinoSolicitudItemDTO): void {
+    this.editDescripcionId = s.vecinoSolicitudId;
+    this.descripcionDraft = s.descripcion;
+  }
+
+  cancelEditDescripcion(): void {
+    this.editDescripcionId = null;
+    this.descripcionDraft = '';
+  }
+
+  saveDescripcion(s: VecinoSolicitudItemDTO): void {
+    const valor = this.descripcionDraft.trim();
+    if (!valor) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Descripción requerida',
+        text: 'La solicitud no puede quedarse sin descripción.',
+        confirmButtonColor: '#4CAF50',
+      });
+      return;
+    }
+    if (valor === s.descripcion) {
+      this.cancelEditDescripcion();
+      return;
+    }
+
+    this.loaderService.show();
+    this.service.updateSolicitudDescripcion(s.vecinoSolicitudId, valor).subscribe({
+      next: () => {
+        s.descripcion = valor;
+        this.editDescripcionId = null;
+        this.descripcionDraft = '';
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   // ── Requisitos ─────────────────────────────────────────────────────────
   private loadRequisitos(): void {
     this.loaderService.show();
