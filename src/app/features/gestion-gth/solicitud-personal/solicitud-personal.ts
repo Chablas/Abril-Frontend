@@ -149,6 +149,14 @@ export class GthSolicitudPersonal implements OnInit {
 
   solicitudes: SolicitudVacanteListItem[] = [];
 
+  /**
+   * ¿El usuario puede mover los requerimientos del área (registrar, decidir, reenviar)? Lo
+   * resuelve el backend por la categoría de su puesto (JEFE / GERENTE / GERENTE GENERAL) y llega
+   * con el panel. Arranca en false: hasta que la respuesta llegue, la pantalla no ofrece ninguna
+   * acción que después vaya a ser rechazada.
+   */
+  puedeGestionar = false;
+
   // ── Filtros ───────────────────────────────────────────────────────────
   searchText = '';
   filtrosAbiertos = false;
@@ -206,6 +214,7 @@ export class GthSolicitudPersonal implements OnInit {
         this.resumen = data.resumen;
         this.gestionCandidatos = data.gestionCandidatos;
         this.solicitudes = data.misSolicitudes;
+        this.puedeGestionar = data.puedeGestionar;
         this.pager.reset();
         this.loaderService.hide();
       },
@@ -288,9 +297,12 @@ export class GthSolicitudPersonal implements OnInit {
 
   /** Mensaje de lista vacía, compartido por la tabla (desktop) y las tarjetas (móvil). */
   get mensajeVacio(): string {
-    return this.searchText.trim()
-      ? 'Sin resultados para la búsqueda.'
-      : 'Aún no has registrado solicitudes de vacante. Usa el botón «Nueva solicitud».';
+    if (this.searchText.trim()) return 'Sin resultados para la búsqueda.';
+    // La lista es del área, no del usuario: quien no puede registrar tampoco tiene que leer una
+    // instrucción para hacerlo.
+    return this.puedeGestionar
+      ? 'Tu área aún no ha registrado solicitudes de vacante. Usa el botón «Nueva solicitud».'
+      : 'Tu área aún no ha registrado solicitudes de vacante.';
   }
 
   // ── Paginación (cliente) ───────────────────────────────────────────────

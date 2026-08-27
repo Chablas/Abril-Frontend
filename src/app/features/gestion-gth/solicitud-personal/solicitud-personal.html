@@ -1,7 +1,7 @@
 <app-abril-page-header
   [badge]="'GESTIÓN DE TALENTO · ' + anioActual"
   titulo="Solicitud de Personal"
-  subtitulo="Solicita nuevas vacantes y da seguimiento a tus requerimientos."
+  subtitulo="Solicita nuevas vacantes y da seguimiento a los requerimientos de tu área."
   [botonSecundario]="botonConfiguracion"
   (secondaryClick)="abrirConfiguracion()"
   [hasExtra]="true">
@@ -31,7 +31,7 @@
       </div>
       <div class="flex flex-col min-w-0">
         <span class="sp-kpi-value text-[26px] font-bold leading-none text-gray-800">{{ resumen.totalRegistradas }}</span>
-        <span class="sp-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Mis solicitudes</span>
+        <span class="sp-kpi-label text-[13px] font-semibold text-gray-700 mt-[6px]">Solicitudes del área</span>
         <span class="sp-kpi-sub text-[11px] text-gray-400">Total registradas</span>
       </div>
     </div>
@@ -87,7 +87,7 @@
   <!-- Lo que GTH le dejó por revisar al solicitante. Dos tipos de tarjeta según `tipo`:
        "Long list enviada por GTH" (decide qué CVs pasan) y "Finalistas enviados por GTH"
        (informe de las entrevistas, solo lectura). -->
-  <div *ngIf="gestionCandidatos.length > 0"
+  <div *ngIf="puedeGestionar && gestionCandidatos.length > 0"
        class="sp-cand-box rounded-[12px] border p-[16px]"
        style="border-color:#bfdbfe;background:var(--color-abril-logo-blue-light)">
 
@@ -149,9 +149,9 @@
     </div>
   </div>
 
-  <!-- ── Tabla: Mis solicitudes de vacante ─────────────────────────────── -->
+  <!-- ── Tabla: solicitudes de vacante del área ────────────────────────── -->
   <div class="flex items-center justify-between gap-[10px]">
-    <h2 class="text-[15px] font-semibold text-gray-700">Mis solicitudes de vacante</h2>
+    <h2 class="text-[15px] font-semibold text-gray-700">Solicitudes de vacante del área</h2>
     <span class="text-[12px] text-gray-400 shrink-0">{{ filteredSolicitudes.length }} registro{{ filteredSolicitudes.length === 1 ? '' : 's' }}</span>
   </div>
 
@@ -187,7 +187,15 @@
             </div>
           </td>
 
-          <td class="text-gray-500">{{ (s.area | titleCase) || '—' }}</td>
+          <td class="text-gray-500">
+            <div>{{ (s.area | titleCase) || '—' }}</div>
+            <!-- La lista es de toda el área: sin esto no se distingue el pedido de uno del
+                 pedido del vecino. -->
+            <div *ngIf="s.solicitante" class="text-[11px] text-gray-400 truncate max-w-[180px]"
+                 [title]="s.solicitante">
+              {{ s.solicitante | titleCase }}
+            </div>
+          </td>
 
           <td class="text-gray-500">{{ (s.proyectoObra | titleCase) || '—' }}</td>
 
@@ -212,7 +220,7 @@
 
               <!-- Solo mientras espera la decisión del GG: cubre el caso de que el correo
                    automático no haya podido salir. -->
-              <button *ngIf="esperandoGerencia(s)" type="button" (click)="reenviarAGerencia(s)"
+              <button *ngIf="puedeGestionar && esperandoGerencia(s)" type="button" (click)="reenviarAGerencia(s)"
                 class="inline-flex items-center justify-center w-[30px] h-[30px] rounded-[7px] cursor-pointer transition-colors hover:opacity-80"
                 style="background:#FEF3C7;color:#B45309;border:0.5px solid #FCD34D"
                 title="Reenviar el correo de aprobación a quien todavía no ha decidido">
@@ -261,6 +269,7 @@
         <div class="min-w-0">
           <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Área</div>
           <div class="text-[12px] text-gray-600 truncate">{{ (s.area | titleCase) || '—' }}</div>
+          <div *ngIf="s.solicitante" class="text-[11px] text-gray-400 truncate">{{ s.solicitante | titleCase }}</div>
         </div>
         <div class="min-w-0">
           <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Proyecto / Obra</div>
@@ -280,7 +289,7 @@
         Hacer seguimiento
       </button>
 
-      <button *ngIf="esperandoGerencia(s)" type="button" (click)="reenviarAGerencia(s)"
+      <button *ngIf="puedeGestionar && esperandoGerencia(s)" type="button" (click)="reenviarAGerencia(s)"
         class="w-full inline-flex items-center justify-center gap-[6px] h-[36px] mt-[7px] rounded-[7px] text-[12.5px] font-medium cursor-pointer transition-colors"
         style="background:#FEF3C7;color:#B45309;border:0.5px solid #FCD34D"
         title="Reenviar el correo de aprobación a quien todavía no ha decidido">
@@ -302,8 +311,9 @@
 
 </div>
 
-<!-- FAB: abre el formulario. *ngIf para que no se solape con el modal abierto. -->
-<app-fab *ngIf="!showModal" label="Nueva solicitud" (clicked)="showModal = true"></app-fab>
+<!-- FAB: abre el formulario. Solo la jefatura del área registra solicitudes (el backend rechaza
+     el POST del resto); el *ngIf de showModal es para que no se solape con el modal abierto. -->
+<app-fab *ngIf="puedeGestionar && !showModal" label="Nueva solicitud" (clicked)="showModal = true"></app-fab>
 
 <app-gth-nueva-solicitud
   *ngIf="showModal"
@@ -326,6 +336,7 @@
 <app-gth-revision-long-list
   *ngIf="revisionId !== null"
   [requerimientoId]="revisionId"
+  [puedeGestionar]="puedeGestionar"
   (decided)="load()"
   (closeModal)="cerrarRevision()">
 </app-gth-revision-long-list>
@@ -334,6 +345,7 @@
 <app-gth-revision-finalistas
   *ngIf="finalistasId !== null"
   [requerimientoId]="finalistasId"
+  [puedeGestionar]="puedeGestionar"
   (decided)="load()"
   (closeModal)="cerrarFinalistas()">
 </app-gth-revision-finalistas>

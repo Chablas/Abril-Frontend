@@ -80,8 +80,9 @@
                       [textColor]="estadoColors(estadoEfectivo(c).codigo).text" />
                   </div>
 
-                  <!-- Aprobar / Rechazar: funcionan como toggle (checkbox) por candidato -->
-                  <div class="grid grid-cols-2 gap-[10px] mt-[11px]">
+                  <!-- Aprobar / Rechazar: funcionan como toggle (checkbox) por candidato.
+                       En modo consulta no se dibujan: no hay nada que decidir. -->
+                  <div *ngIf="puedeGestionar" class="grid grid-cols-2 gap-[10px] mt-[11px]">
                     <button type="button" (click)="$event.stopPropagation(); aprobar(c)"
                       class="h-[34px] rounded-[7px] border text-[12.5px] font-semibold cursor-pointer transition-colors flex items-center justify-center gap-[6px]"
                       [ngClass]="esAprobado(c)
@@ -197,7 +198,7 @@
       class="h-[36px] px-[22px] rounded-[7px] text-[13px] font-medium text-gray-600 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
       Cerrar
     </button>
-    <button type="button"
+    <button *ngIf="puedeGestionar" type="button"
       class="h-[38px] px-[20px] rounded-[7px] text-[13px] font-semibold text-white transition-opacity"
       [ngClass]="puedeEnviar ? 'cursor-pointer hover:opacity-90' : 'opacity-50 cursor-not-allowed'"
       style="background:var(--color-abril-logo-blue)"

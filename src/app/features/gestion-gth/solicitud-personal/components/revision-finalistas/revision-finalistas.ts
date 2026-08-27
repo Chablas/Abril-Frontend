@@ -31,6 +31,12 @@ import { Finalista, RevisionFinalistas } from '../../dtos/solicitud-personal.dto
 export class GthRevisionFinalistas implements OnInit {
   /** Id del requerimiento cuyo informe de finalistas se muestra. */
   @Input({ required: true }) requerimientoId!: number;
+  /**
+   * false = modo consulta: se lee el informe pero no se decide. Es lo que ve quien pertenece al
+   * área sin ser jefatura y entra por el enlace del correo; la decisión es de JEFE / GERENTE /
+   * GERENTE GENERAL y el backend la rechaza igual (403).
+   */
+  @Input() puedeGestionar = true;
   @Output() closeModal = new EventEmitter<void>();
   /** Emite cuando se registró una decisión (para que el panel del solicitante se recargue). */
   @Output() decided = new EventEmitter<void>();
@@ -130,10 +136,14 @@ export class GthRevisionFinalistas implements OnInit {
     return (this.revision?.finalistas ?? []).some((f) => this.esSeleccionado(f));
   }
 
-  /** Solo se decide sobre el finalista mostrado, si sigue pendiente y el proceso no está cerrado. */
+  /**
+   * Solo se decide sobre el finalista mostrado, si sigue pendiente, el proceso no está cerrado y
+   * el usuario es jefatura del área (los demás entran a leer el informe).
+   */
   get puedeDecidir(): boolean {
     return (
-      !!this.seleccionado && !this.estaDecidido(this.seleccionado) && !this.procesoCerrado && !this.decidiendo
+      this.puedeGestionar
+      && !!this.seleccionado && !this.estaDecidido(this.seleccionado) && !this.procesoCerrado && !this.decidiendo
     );
   }
 

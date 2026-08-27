@@ -282,12 +282,20 @@ export class Agenda implements OnInit {
   }
 
   // ── Modal Aceptar ────────────────────────────────────────
+  /**
+   * Hora con la que abre el modal de aceptación cuando la programación no trae ninguna: las 8:00,
+   * que es la hora habitual de atención. La hora es obligatoria para aceptar, así que dejar el
+   * campo vacío obligaba a elegirla a mano en todas las citas sin hora.
+   */
+  private static readonly HORA_ATENCION_DEFECTO = '08:00';
+
   abrirAceptar(item: ProgramacionClinicaDto): void {
     this.modalAceptar = {
       open: true,
       item,
       nuevaFecha: item.fechaProgramada ? item.fechaProgramada.substring(0, 10) : '',
-      horaAceptar: item.horaProgramada ?? '',
+      // Solo cuando no hay hora programada: si la clínica ya tiene una, manda la suya.
+      horaAceptar: (item.horaProgramada ?? '').trim() || Agenda.HORA_ATENCION_DEFECTO,
       tipoEmoId: item.tipoEmoId ?? null,
       fechaError: '',
       horaError: '',

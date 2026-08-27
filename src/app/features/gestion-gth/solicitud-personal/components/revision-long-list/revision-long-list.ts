@@ -30,6 +30,12 @@ import { CandidatoDecision, CandidatoRevision, RevisionLongList } from '../../dt
 export class GthRevisionLongList implements OnInit {
   /** Id del requerimiento cuya long list se revisa. */
   @Input({ required: true }) requerimientoId!: number;
+  /**
+   * false = modo consulta: se ven los CVs pero no se decide. Es lo que ve quien pertenece al área
+   * sin ser jefatura y entra por el enlace del correo; la decisión es de JEFE / GERENTE / GERENTE
+   * GENERAL y el backend la rechaza igual (403).
+   */
+  @Input() puedeGestionar = true;
   @Output() closeModal = new EventEmitter<void>();
   /** Emite cuando la decisión se registró con éxito (para que el panel se recargue). */
   @Output() decided = new EventEmitter<void>();

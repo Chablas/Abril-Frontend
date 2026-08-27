@@ -286,6 +286,11 @@ export interface SolicitudVacanteListItem {
   enviado: string;
   estadoCodigo: string;
   estadoNombre: string;
+  /**
+   * Quién registró la solicitud. La tabla muestra los requerimientos de toda el área, así que la
+   * fila tiene que decir de quién es el pedido. Null si ese usuario no tiene ficha de trabajador.
+   */
+  solicitante: string | null;
 }
 
 /**
@@ -327,6 +332,13 @@ export interface SolicitantePanel {
   resumen: ResumenSolicitantePanel;
   gestionCandidatos: GestionCandidatoCard[];
   misSolicitudes: SolicitudVacanteListItem[];
+  /**
+   * ¿El usuario puede mover estos requerimientos (registrar una solicitud, decidir la long list,
+   * decidir al finalista, reenviar la aprobación)? Lo decide el backend por la categoría de su
+   * puesto: solo JEFE, GERENTE y GERENTE GENERAL. Con `false` la pantalla es de consulta y no se
+   * muestran los botones de acción — el backend igual los rechaza.
+   */
+  puedeGestionar: boolean;
 }
 
 /** Un candidato de la long list como lo revisa el solicitante (modal "Revisar long list y CVs"). */
