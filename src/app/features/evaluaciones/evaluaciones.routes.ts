@@ -110,5 +110,12 @@ export const EVALUACIONES_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { titulo: 'EVALUACIONES - DASHBOARD PREVENCIONISTAS', featureKey: 'evaluaciones.dashboard-prevencionistas' },
   },
+  {
+    path: 'gestion-ssoma',
+    loadComponent: () =>
+      import('./pages/gestion-ssoma/gestion-ssoma').then(m => m.GestionSsoma),
+    canActivate: [roleGuard],
+    data: { titulo: 'EVALUACIONES - GESTIÓN SSOMA', featureKey: 'evaluaciones.gestion-ssoma' },
+  },
   { path: '', redirectTo: 'evaluar', pathMatch: 'full' },
 ];

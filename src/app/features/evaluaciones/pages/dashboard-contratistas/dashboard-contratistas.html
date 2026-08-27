@@ -7,7 +7,8 @@
       { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
       { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
       { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
-      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' }
+      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' },
+      { label: 'Asignaciones',  icono: 'ti-users',            route: '/evaluaciones/asignaciones',   featureKey: 'evaluaciones.asignaciones' }
     ]},
     { label: 'Contratistas', icono: 'ti-building', tabs: [
       { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
@@ -25,6 +26,9 @@
     { label: 'Prevencionistas', icono: 'ti-vest', tabs: [
       { label: 'Mi perfil', icono: 'ti-user', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
       { label: 'Dashboard', icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' }
+    ]},
+    { label: 'Gestión SSOMA', icono: 'ti-users-group', tabs: [
+      { label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' }
     ]}
   ]">
 </app-abril-page-header>
@@ -110,14 +114,18 @@
             <!-- Donut distribución -->
             <div class="chart-card">
               <div class="cc-title">Distribución por estado</div>
-              <canvas id="chart-donut-cv" height="220"></canvas>
+              <div class="chart-container">
+                <canvas id="chart-donut-cv"></canvas>
+              </div>
             </div>
 
             <!-- Radar contratista activo -->
             <div class="chart-card" *ngIf="contraHistaActivo">
               <div class="cc-title">{{ contraHistaActivo.contributorNombre }}</div>
               <div class="cc-sub">Desempeño por área</div>
-              <canvas id="chart-radar-cv" height="220"></canvas>
+              <div class="chart-container">
+                <canvas id="chart-radar-cv"></canvas>
+              </div>
             </div>
           </div>
 
@@ -166,7 +174,9 @@
         <div *ngIf="vista === 'tendencia'" class="tendencia-view">
           <div class="chart-card chart-card-full">
             <div class="cc-title">Evolución histórica por contratista</div>
-            <canvas id="chart-tendencia-cv" height="300"></canvas>
+            <div class="chart-container chart-container-lg">
+              <canvas id="chart-tendencia-cv"></canvas>
+            </div>
           </div>
         </div>
 

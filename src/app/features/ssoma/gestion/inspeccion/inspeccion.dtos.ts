@@ -8,6 +8,8 @@ export interface InspeccionDestinatariosCierreDto {
   coordSsomaEmail: string | null;
   gerenteInmobiliarioEmail: string | null;
   prevencionistas: InspeccionDestinatarioDto[];
+  participantes: InspeccionDestinatarioDto[];
+  jefeSsomaEmail: string | null;
   tuEmail: string | null;
 }
 
@@ -48,6 +50,16 @@ export interface InspeccionHallazgoRequest {
   latitud?: number;
   longitud?: number;
   fotosBase64: string[];
+}
+
+export interface EditarHallazgoRequest {
+  descripcion: string;
+  tipo: 'Critico' | 'Mayor' | 'Menor';
+  area?: string;
+  responsableNombre?: string;
+  responsableCargo?: string;
+  fechaLimite?: string;
+  accionCorrectiva?: string;
 }
 
 export interface CrearInspeccionRequest {

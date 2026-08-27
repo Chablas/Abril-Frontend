@@ -324,6 +324,20 @@
 .badge-mayor   { background: #fef3c7; color: #92400e; }
 .badge-menor   { background: #fefce8; color: #713f12; }
 
+.tipo-btns { display: flex; gap: 8px; }
+.btn-tipo {
+  flex: 1;
+  padding: 7px;
+  border-radius: 8px;
+  border: 1px solid #e8e5df;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.5;
+}
+.btn-tipo--active { opacity: 1; }
+
 .hallazgo-estado {
   display: inline-block;
   padding: 2px 8px;
@@ -347,6 +361,40 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+/* Agrupa Editar/Eliminar/Cerrar y empuja el grupo entero al borde derecho de .hallazgo-top —
+   así ninguno de los 3 botones necesita su propio margin-left:auto (evitaría que el espacio
+   sobrante se reparta entre ellos y los separe). */
+.hallazgo-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.hallazgo-actions .btn-cerrar-hallazgo { margin-left: 0; }
+
+.btn-editar-hallazgo {
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: 0.5px solid #6b7280;
+  background: #fff;
+  color: #374151;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-eliminar-hallazgo {
+  padding: 4px 10px;
+  border-radius: 7px;
+  border: 0.5px solid #dc2626;
+  background: #fff;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-eliminar-hallazgo:disabled { opacity: 0.6; cursor: default; }
 
 .hallazgo-desc { font-size: 13px; color: #1a1a18; }
 

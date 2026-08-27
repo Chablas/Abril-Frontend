@@ -100,3 +100,9 @@ export interface EvContratistaTendenciaDto {
   contributorNombre: string;
   notaTotal: number | null;
 }
+
+// ─── ENVÍO DE RESULTADOS A GERENTES ────────────────────────────────────────
+export interface EvContratistaEnvioResultadoDto {
+  enviados: number;
+  omitidosSinEmail: string[];
+}

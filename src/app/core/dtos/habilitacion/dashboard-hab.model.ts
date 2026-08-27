@@ -1,49 +1,68 @@
 export interface DashboardKpisDto {
-  empresasTotal: number;
+  empresasActivas: number;
   empresasHabilitadas: number;
+  empresasNoHabilitadas: number;
   workersTotal: number;
   workersHabilitados: number;
-  entregablesVencidos: number;
+  workersNoAutorizados: number;
+  workersAutorizadoTemporal: number;
+  entregablesEmpresaVencidos: number;
+  entregablesEmpresaFalta: number;
+  entregablesTrabajadorVencidos: number;
+  entregablesTrabajadorFalta: number;
+  entregablesCasaVencidos: number;
+  entregablesCasaFalta: number;
+  emosVencidos: number;
+  interconsultasPendientes: number;
+  personalCasaTotal: number;
+  personalCasaHabilitado: number;
+  personalCasaNoHabilitado: number;
 }
 
-export interface EmpresaRiesgoDto {
+export interface EmpresaResumenDto {
   empresaId: number;
   nombre: string;
-  nivelRiesgo: string;
-  entregablesVencidos: number;
-  entregablesPorVencer: number;
-  workersActivos: number;
+  habilitada: boolean;
+  workersTotal: number;
+  workersHabilitados: number;
+  workersNoAutorizados: number;
 }
 
-export interface WorkerRiesgoDto {
+export interface WorkerNombradoDto {
   workerId: number;
   nombre: string;
   dni: string;
   empresa: string;
-  proyecto: string;
-  documentosVencidos: string[];
+  motivo: string;
 }
 
-export interface ProyectoEstadoDto {
-  proyectoId: number;
-  nombre: string;
-  empresasActivas: number;
-  workersHabilitados: number;
-  workersTotal: number;
-}
-
-export interface VencimientoProximoDto {
-  tipo: string;
+export interface EntregableNombradoDto {
   entidad: string;
+  item: string;
+  vigencia: string | null;
+}
+
+export interface InterconsultaNombradaDto {
+  workerId: number;
   nombre: string;
-  fechaVencimiento: string;
-  diasRestantes: number;
+  empresa: string;
+  especialidad: string;
+  diasDesdeDerivacion: number;
 }
 
 export interface DashboardAdminDto {
+  proyectoId: number;
+  proyectoNombre: string;
   kpis: DashboardKpisDto;
-  empresasEnRiesgo: EmpresaRiesgoDto[];
-  workersEnRiesgo: WorkerRiesgoDto[];
-  estadoPorProyecto: ProyectoEstadoDto[];
-  vencimientosProximos: VencimientoProximoDto[];
+  empresas: EmpresaResumenDto[];
+  trabajadoresNoAutorizados: WorkerNombradoDto[];
+  entregablesEmpresaVencidos: EntregableNombradoDto[];
+  entregablesEmpresaFalta: EntregableNombradoDto[];
+  entregablesTrabajadorVencidos: EntregableNombradoDto[];
+  entregablesTrabajadorFalta: EntregableNombradoDto[];
+  entregablesCasaVencidos: EntregableNombradoDto[];
+  entregablesCasaFalta: EntregableNombradoDto[];
+  emosVencidos: WorkerNombradoDto[];
+  interconsultas: InterconsultaNombradaDto[];
+  personalCasaNoHabilitado: WorkerNombradoDto[];
 }

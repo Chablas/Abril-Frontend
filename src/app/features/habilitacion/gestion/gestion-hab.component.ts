@@ -1,19 +1,10 @@
-import {
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  Component,
-  OnDestroy,
-  OnInit,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { jwtDecode } from 'jwt-decode';
 import {
   AbrilPageHeaderComponent,
   AbrilPageTab,
 } from '../../../shared/components/abril-page-header/abril-page-header.component';
-import { DashboardHabService } from '../../../core/services/dashboard-hab.service';
-import { DashboardAdminDto } from '../../../core/dtos/habilitacion/dashboard-hab.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { NavigationService } from '../../../core/navigation/navigation.service';
 import { Roles } from '../../../core/constants/roles';
@@ -26,27 +17,11 @@ import { Roles } from '../../../core/constants/roles';
   styleUrl: './gestion-hab.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GestionHabComponent implements OnInit, OnDestroy {
-  resumen: DashboardAdminDto | null = null;
-  refreshing = false;
+export class GestionHabComponent {
   contratistaTabsConActivo: AbrilPageTab[] = this.buildContratistaTabs();
-
-  private refreshTimer: ReturnType<typeof setTimeout> | null = null;
 
   get esContratista(): boolean {
     return this.authService.isContratista();
-  }
-
-  get empresasTotal(): number {
-    return this.resumen?.kpis?.empresasTotal ?? 0;
-  }
-
-  get workersTotal(): number {
-    return this.resumen?.kpis?.workersTotal ?? 0;
-  }
-
-  get entregablesVencidos(): number {
-    return this.resumen?.kpis?.entregablesVencidos ?? 0;
   }
 
   // El featureKey de cada tab coincide con el del roleGuard de su ruta hija
@@ -75,19 +50,9 @@ export class GestionHabComponent implements OnInit, OnDestroy {
   }
 
   constructor(
-    private dashboardService: DashboardHabService,
-    private cdr: ChangeDetectorRef,
     private authService: AuthService,
     private navService: NavigationService,
   ) {}
-
-  ngOnInit(): void {
-    this.loadResumen();
-  }
-
-  ngOnDestroy(): void {
-    if (this.refreshTimer) clearTimeout(this.refreshTimer);
-  }
 
   private buildContratistaTabs(): AbrilPageTab[] {
     return [
@@ -100,25 +65,5 @@ export class GestionHabComponent implements OnInit, OnDestroy {
       { label: 'Usuarios',     icono: 'ti-users-group',      route: '/habilitacion/gestion/usuarios' },
       { label: 'Dossier',      icono: 'ti-folder',           route: '/habilitacion/gestion/dossier' },
     ];
-  }
-
-  loadResumen(): void {
-    this.refreshing = true;
-    this.dashboardService.getResumen().subscribe({
-      next: (res) => {
-        this.resumen = res;
-        this.refreshing = false;
-        this.cdr.detectChanges();
-      },
-      error: () => {
-        this.refreshing = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  onRefresh(): void {
-    if (this.refreshing) return;
-    this.loadResumen();
   }
 }

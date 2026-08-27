@@ -7,7 +7,8 @@
       { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
       { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
       { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
-      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' }
+      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' },
+      { label: 'Asignaciones',  icono: 'ti-users',            route: '/evaluaciones/asignaciones',   featureKey: 'evaluaciones.asignaciones' }
     ]},
     { label: 'Contratistas', icono: 'ti-building', tabs: [
       { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
@@ -25,6 +26,9 @@
     { label: 'Prevencionistas', icono: 'ti-vest', tabs: [
       { label: 'Mi perfil', icono: 'ti-user', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
       { label: 'Dashboard', icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' }
+    ]},
+    { label: 'Gestión SSOMA', icono: 'ti-users-group', tabs: [
+      { label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' }
     ]}
   ]">
 </app-abril-page-header>
@@ -108,14 +112,6 @@
             <div class="ac-sub">Vence {{ periodo.fechaCierre | date:'dd MMM' }}</div>
           </div>
         </div>
-        <div class="alert-card alert-y"
-          *ngIf="dashboard.evaluacionesEsperadas > dashboard.evaluacionesCompletadas">
-          <div class="ac-icon"><i class="ti ti-mail"></i></div>
-          <div class="ac-body">
-            <div class="ac-title">{{ dashboard.evaluacionesEsperadas - dashboard.evaluacionesCompletadas }} pendientes</div>
-            <div class="ac-sub">Recordatorio enviado</div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -134,13 +130,9 @@
           <div class="kc-sub"><span class="kc-badge kb-b">Evaluados este mes</span></div>
         </div>
         <div class="kpi-cell">
-          <div class="kc-lbl"><i class="ti ti-circle-check"></i> Completitud</div>
-          <div class="kc-num kc-green">{{ pctCompletitud }}%</div>
-          <div class="kc-sub">
-            <span class="kc-badge" [ngClass]="pctCompletitud >= 80 ? 'kb-g' : 'kb-y'">
-              {{ dashboard.evaluacionesCompletadas }} / {{ dashboard.evaluacionesEsperadas }}
-            </span>
-          </div>
+          <div class="kc-lbl"><i class="ti ti-circle-check"></i> Evaluaciones registradas</div>
+          <div class="kc-num kc-green">{{ dashboard.evaluacionesCompletadas }}</div>
+          <div class="kc-sub"><span class="kc-badge kb-g">{{ periodo?.nombreMes }} {{ periodo?.anio }}</span></div>
         </div>
         <div class="kpi-cell">
           <div class="kc-lbl"><i class="ti ti-alert-triangle"></i> Bajo rendimiento</div>

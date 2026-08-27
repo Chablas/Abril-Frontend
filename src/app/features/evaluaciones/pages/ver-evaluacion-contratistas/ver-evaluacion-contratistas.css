@@ -1,4 +1,14 @@
-.ve-root { padding: 24px; }
+:host {
+  display: flex; flex-direction: column;
+  height: 100%; min-height: 0;
+  background: #F8FAFC;
+}
+
+.ve-root {
+  background: #F8FAFC;
+  padding: 10px; display: flex; flex-direction: column; gap: 6px;
+  flex: 1; min-height: 0; box-sizing: border-box; overflow-y: auto;
+}
 
 .loading-state {
   display: flex; align-items: center; justify-content: center; gap: 12px;
@@ -10,13 +20,13 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.ve-content { display: flex; flex-direction: column; gap: 16px; }
+.ve-content { display: flex; flex-direction: column; gap: 8px; }
 
 /* ─── FILTROS ─── */
 .filtros-bar {
   display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-  padding: 14px 20px; background: var(--color-abril-surface);
-  border: 1px solid var(--color-abril-border); border-radius: 12px;
+  padding: 8px 16px; background: var(--color-abril-surface);
+  border: 1px solid var(--color-abril-border); border-radius: 10px;
 }
 .filtro-select, .filtro-search {
   height: 36px; padding: 0 12px; border: 1px solid var(--color-abril-border);
@@ -25,6 +35,14 @@
 }
 .filtro-select:focus, .filtro-search:focus { outline: none; border-color: var(--color-abril-primary); }
 .filtro-search { min-width: 200px; }
+
+.btn-enviar-resultados {
+  display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px;
+  background: var(--color-abril-primary); color: #fff; border: none; border-radius: 8px;
+  font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.btn-enviar-resultados:hover:not(:disabled) { opacity: 0.9; }
+.btn-enviar-resultados:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .leyenda { display: flex; gap: 16px; margin-left: auto; }
 .leyenda-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; }
@@ -44,7 +62,7 @@
 /* ─── TABLA ─── */
 .table-wrap {
   background: var(--color-abril-surface); border: 1px solid var(--color-abril-border);
-  border-radius: 12px; overflow: auto;
+  border-radius: 10px; overflow: auto;
 }
 .ev-table { width: 100%; border-collapse: collapse; min-width: 900px; }
 .ev-table thead tr {
@@ -105,8 +123,8 @@
 /* ─── RESUMEN PIE ─── */
 .resumen-bar {
   display: flex; gap: 16px; align-items: center;
-  padding: 14px 20px; background: var(--color-abril-surface);
-  border: 1px solid var(--color-abril-border); border-radius: 12px;
+  padding: 8px 16px; background: var(--color-abril-surface);
+  border: 1px solid var(--color-abril-border); border-radius: 10px;
 }
 .rb-item { display: flex; align-items: center; gap: 8px; }
 .rb-num { font-size: 22px; font-weight: 800; }

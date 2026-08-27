@@ -97,13 +97,6 @@ export class DashboardGerencia implements OnInit, AfterViewInit {
     setTimeout(() => this.renderCharts(), 100);
   }
 
-  get pctCompletitud(): number {
-    if (!this.dashboard || !this.dashboard.evaluacionesEsperadas) return 0;
-    return Math.round(
-      (this.dashboard.evaluacionesCompletadas / this.dashboard.evaluacionesEsperadas) * 100,
-    );
-  }
-
   scoreColor(nota: number | null): string {
     if (nota === null) return '#6B7280';
     if (nota >= 16) return '#059669';

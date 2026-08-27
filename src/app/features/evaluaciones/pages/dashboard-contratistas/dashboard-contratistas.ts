@@ -152,6 +152,8 @@ export class DashboardContratistas implements OnInit, AfterViewInit {
         }],
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         cutout: '70%',
         plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
       },
@@ -180,6 +182,8 @@ export class DashboardContratistas implements OnInit, AfterViewInit {
         }],
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         scales: { r: { min: 0, max: 20, ticks: { stepSize: 5, font: { size: 10 } } } },
         plugins: { legend: { display: false } },
       },
@@ -213,6 +217,8 @@ export class DashboardContratistas implements OnInit, AfterViewInit {
       type: 'line',
       data: { labels: periodos, datasets },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
         scales: {
           y: { min: 0, max: 20, ticks: { stepSize: 5 }, title: { display: true, text: 'Nota /20' } },

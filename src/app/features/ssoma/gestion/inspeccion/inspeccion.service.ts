@@ -10,6 +10,7 @@ import {
   InspeccionChecklistItemDto,
   CrearInspeccionRequest,
   CerrarHallazgoRequest,
+  EditarHallazgoRequest,
   InspeccionHallazgoRequest,
   InspeccionAbiertaListItemDto,
   InspeccionDestinatariosCierreDto,
@@ -70,6 +71,19 @@ export class InspeccionService {
     return this.http.patch<{ message: string }>(
       `${environment.apiUrl}api/v1/ssoma-inspeccion-hallazgo/${id}/cerrar`,
       request,
+    );
+  }
+
+  editarHallazgo(id: number, request: EditarHallazgoRequest): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${environment.apiUrl}api/v1/ssoma-inspeccion-hallazgo/${id}`,
+      request,
+    );
+  }
+
+  eliminarHallazgo(id: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(
+      `${environment.apiUrl}api/v1/ssoma-inspeccion-hallazgo/${id}`,
     );
   }
 

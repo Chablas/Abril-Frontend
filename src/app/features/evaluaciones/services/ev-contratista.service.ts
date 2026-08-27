@@ -8,6 +8,7 @@ import {
   EvContratistaVerInicioDto,
   EvContratistaDashboardDto,
   EvContratistaEvaluacionCreateDto,
+  EvContratistaEnvioResultadoDto,
 } from '../dtos/ev-contratista.model';
 
 @Injectable({ providedIn: 'root' })
@@ -50,6 +51,15 @@ export class EvContratistaService {
       `${this.base}/no-aplica`,
       { motivo, proyectoId: proyectoId ?? null, contributorId: contributorId ?? null },
       { headers: this.headers() },
+    );
+  }
+
+  enviarResultados(periodoId: number): Observable<EvContratistaEnvioResultadoDto> {
+    const params = new HttpParams().set('periodoId', periodoId.toString());
+    return this.http.post<EvContratistaEnvioResultadoDto>(
+      `${this.base}/enviar-resultados`,
+      null,
+      { headers: this.headers(), params },
     );
   }
 }
