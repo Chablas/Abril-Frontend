@@ -9,6 +9,7 @@ import {
   InspeccionHallazgoDto,
   InspeccionRespuestaDto,
   CerrarHallazgoRequest,
+  EditarHallazgoRequest,
 } from '../../inspeccion.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -42,6 +43,17 @@ export class InspeccionDetalleComponent implements OnInit {
   cierreFotoBase64 = '';
   cierreFotoPreview = '';
   cerrando = false;
+
+  hallazgoEditar: InspeccionHallazgoDto | null = null;
+  editDescripcion = '';
+  editTipo: 'Critico' | 'Mayor' | 'Menor' = 'Mayor';
+  editArea = '';
+  editResponsableNombre = '';
+  editResponsableCargo = '';
+  editFechaLimite = '';
+  editAccionCorrectiva = '';
+  guardandoEdicion = false;
+  eliminandoId: number | null = null;
 
   lightboxUrl = '';
   lightboxOpen = false;
@@ -232,6 +244,85 @@ export class InspeccionDetalleComponent implements OnInit {
         this.errorService.handleError(err);
         this.cdr.markForCheck();
       },
+    });
+  }
+
+  abrirEditar(h: InspeccionHallazgoDto): void {
+    this.hallazgoEditar = h;
+    this.editDescripcion = h.descripcion;
+    this.editTipo = h.tipo;
+    this.editArea = h.area ?? '';
+    this.editResponsableNombre = h.responsableNombre ?? '';
+    this.editResponsableCargo = h.responsableCargo ?? '';
+    this.editFechaLimite = h.fechaLimite ? h.fechaLimite.substring(0, 10) : '';
+    this.editAccionCorrectiva = h.accionCorrectiva ?? '';
+    this.cdr.markForCheck();
+  }
+
+  cerrarDrawerEditar(): void {
+    this.hallazgoEditar = null;
+    this.cdr.markForCheck();
+  }
+
+  confirmarEdicion(): void {
+    if (!this.editDescripcion.trim()) {
+      Swal.fire({ icon: 'warning', title: 'Ingresa la descripción del hallazgo', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+      return;
+    }
+    if (!this.hallazgoEditar) return;
+    this.guardandoEdicion = true;
+    this.loaderService.show();
+    const req: EditarHallazgoRequest = {
+      descripcion: this.editDescripcion,
+      tipo: this.editTipo,
+      area: this.editArea || undefined,
+      responsableNombre: this.editResponsableNombre || undefined,
+      responsableCargo: this.editResponsableCargo || undefined,
+      fechaLimite: this.editFechaLimite || undefined,
+      accionCorrectiva: this.editAccionCorrectiva || undefined,
+    };
+    this.inspeccionService.editarHallazgo(this.hallazgoEditar.id, req).subscribe({
+      next: () => {
+        this.guardandoEdicion = false;
+        this.loaderService.hide();
+        this.hallazgoEditar = null;
+        Swal.fire({ icon: 'success', title: 'Hallazgo actualizado', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+        this.load();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.guardandoEdicion = false;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  eliminarHallazgo(h: InspeccionHallazgoDto): void {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar hallazgo?',
+      text: 'Esta acción no se puede deshacer desde la pantalla.',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.eliminandoId = h.id;
+      this.cdr.markForCheck();
+      this.inspeccionService.eliminarHallazgo(h.id).subscribe({
+        next: () => {
+          this.eliminandoId = null;
+          Swal.fire({ icon: 'success', title: 'Hallazgo eliminado', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.eliminandoId = null;
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
     });
   }
 

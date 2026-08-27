@@ -177,10 +177,18 @@
                 <div class="hallazgo-top">
                   <span class="badge-tipo" [ngClass]="tipoClass(h.tipo)">{{ h.tipo }}</span>
                   <span class="hallazgo-estado" [ngClass]="estadoHallazgoClass(h.estado)">{{ h.estado }}</span>
-                  @if (h.estado === 'Abierto') {
-                    <button type="button" class="btn-cerrar-hallazgo" (click)="abrirCierre(h)">
-                      Cerrar
-                    </button>
+                  @if (h.estado === 'Abierto' && data.estado === 'Abierta') {
+                    <div class="hallazgo-actions">
+                      <button type="button" class="btn-editar-hallazgo" (click)="abrirEditar(h)">
+                        Editar
+                      </button>
+                      <button type="button" class="btn-eliminar-hallazgo" [disabled]="eliminandoId === h.id" (click)="eliminarHallazgo(h)">
+                        @if (eliminandoId === h.id) { <i class="ti ti-loader-2 spin"></i> } @else { Eliminar }
+                      </button>
+                      <button type="button" class="btn-cerrar-hallazgo" (click)="abrirCierre(h)">
+                        Cerrar
+                      </button>
+                    </div>
                   }
                 </div>
                 <div class="hallazgo-desc">{{ h.descripcion }}</div>
@@ -298,6 +306,59 @@
         <button type="button" class="btn-cancelar" (click)="cerrarDrawer()">Cancelar</button>
         <button type="button" class="btn-confirmar" [disabled]="cerrando" (click)="confirmarCierre()">
           @if (cerrando) { <i class="ti ti-loader-2 spin"></i> } @else { Confirmar cierre }
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- DRAWER: Editar hallazgo -->
+  @if (hallazgoEditar) {
+    <div class="drawer-backdrop" (click)="cerrarDrawerEditar()"></div>
+    <div class="drawer">
+      <div class="drawer-header">
+        <span class="drawer-title">Editar hallazgo</span>
+        <button type="button" class="drawer-close" (click)="cerrarDrawerEditar()">
+          <i class="ti ti-x"></i>
+        </button>
+      </div>
+      <div class="drawer-body">
+        <div class="form-group">
+          <label class="form-label">Descripción <span class="required">*</span></label>
+          <textarea class="form-input" [(ngModel)]="editDescripcion" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Criticidad</label>
+          <select class="form-input" [(ngModel)]="editTipo">
+            <option value="Critico">Crítico</option>
+            <option value="Mayor">Mayor</option>
+            <option value="Menor">Menor</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Área</label>
+          <input type="text" class="form-input" [(ngModel)]="editArea" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Responsable</label>
+          <input type="text" class="form-input" [(ngModel)]="editResponsableNombre" placeholder="Nombre" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cargo del responsable</label>
+          <input type="text" class="form-input" [(ngModel)]="editResponsableCargo" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha límite</label>
+          <input type="date" class="form-input" [(ngModel)]="editFechaLimite" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Acción correctiva propuesta</label>
+          <textarea class="form-input" [(ngModel)]="editAccionCorrectiva" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="drawer-footer">
+        <button type="button" class="btn-cancelar" (click)="cerrarDrawerEditar()">Cancelar</button>
+        <button type="button" class="btn-confirmar" [disabled]="guardandoEdicion" (click)="confirmarEdicion()">
+          @if (guardandoEdicion) { <i class="ti ti-loader-2 spin"></i> } @else { Guardar cambios }
         </button>
       </div>
     </div>

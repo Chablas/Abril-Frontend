@@ -50,6 +50,16 @@ export interface InspeccionHallazgoRequest {
   fotosBase64: string[];
 }
 
+export interface EditarHallazgoRequest {
+  descripcion: string;
+  tipo: 'Critico' | 'Mayor' | 'Menor';
+  area?: string;
+  responsableNombre?: string;
+  responsableCargo?: string;
+  fechaLimite?: string;
+  accionCorrectiva?: string;
+}
+
 export interface CrearInspeccionRequest {
   proyectoId: number;
   tipoId: number;
