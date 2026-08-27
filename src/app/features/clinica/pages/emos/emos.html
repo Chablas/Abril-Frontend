@@ -8,70 +8,6 @@
 
 <div class="emos-root">
 
-  <!-- Barra de filtros -->
-  <div class="filters-bar">
-    <div class="filters-inner">
-
-      <div class="filter-field filter-search">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
-        </svg>
-        <input
-          type="text"
-          placeholder="Buscar por nombre o DNI…"
-          [ngModel]="filters.search"
-          (ngModelChange)="onSearchChange($event)"
-        />
-      </div>
-
-      <div class="filter-field">
-        <app-search-select
-          [options]="aptitudOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.aptitud"
-          [showLabel]="false"
-          [compact]="true"
-          placeholder="Todas las aptitudes"
-          (valueChange)="filters.aptitud = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-
-      <div class="filter-field">
-        <app-search-select
-          [options]="estadoOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.estado"
-          [showLabel]="false"
-          [compact]="true"
-          placeholder="Todos los estados"
-          (valueChange)="filters.estado = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-
-      <div class="filter-field">
-        <app-search-select
-          [options]="empresaOptions"
-          valueField="id"
-          displayField="nombre"
-          [value]="filters.empresaId"
-          [showLabel]="false"
-          [compact]="true"
-          placeholder="Empresa"
-          (valueChange)="filters.empresaId = $event; onFilterChange()"
-        ></app-search-select>
-      </div>
-
-      <button *ngIf="hasActiveFilters" type="button" class="btn-clear" (click)="clearFilters()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-        Limpiar
-      </button>
-    </div>
-  </div>
-
   <!-- Tabla -->
   <div class="table-shell">
     <div class="table-scroll">
@@ -205,8 +141,65 @@
 
 </div>
 
-<!-- ── Modal de filtros de evidencia ────────────────────────────────── -->
+<!-- ── Modal de filtros ─────────────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Nombre o DNI..."
+      [value]="filters.search"
+      (valueChange)="onSearchChange($event)"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Aptitud"
+      [options]="aptitudOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.aptitud"
+      placeholder="Todas"
+      (valueChange)="filters.aptitud = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.estado"
+      placeholder="Todos"
+      (valueChange)="filters.estado = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Empresa"
+      [options]="empresaOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.empresaId"
+      placeholder="Todas"
+      (valueChange)="filters.empresaId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.proyectoId"
+      placeholder="Todos"
+      (valueChange)="filters.proyectoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
   <label class="flex items-center gap-2 text-[12px] text-gray-700">
     <input type="checkbox" [(ngModel)]="filters.sinLectura" (ngModelChange)="onFilterChange()" />
     Sin Lectura EMO (evidencia)

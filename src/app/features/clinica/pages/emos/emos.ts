@@ -22,6 +22,7 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
 import { SearchInput } from '../../../../shared/components/search-input/search-input';
+import { ProyectoHabilitadoService } from '../../../ssoma/shared/services/proyecto-habilitado.service';
 
 import { CLINICA_TABS } from '../../shared/clinica-tabs';
 interface FilterOption {
@@ -45,6 +46,7 @@ export class ClinicaEmos implements OnInit, OnDestroy {
     aptitud: '',
     estado: '',
     empresaId: 0,
+    proyectoId: '',
     sinLectura: false,
     sinCertificado: false,
     sinEmoCompleto: false,
@@ -69,6 +71,7 @@ export class ClinicaEmos implements OnInit, OnDestroy {
   ];
 
   empresaOptions: Array<EmpresaSimpleDto & { idAsString?: string }> = [];
+  proyectoOptions: FilterOption[] = [{ id: '', nombre: 'Todos los proyectos' }];
 
   items: EmoPorTrabajadorDto[] = [];
   totalRecords = 0;
@@ -87,6 +90,7 @@ export class ClinicaEmos implements OnInit, OnDestroy {
   constructor(
     private service: EmoService,
     private catalogos: CatalogosSaludService,
+    private proyectoService: ProyectoHabilitadoService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private router: Router,
@@ -99,6 +103,7 @@ export class ClinicaEmos implements OnInit, OnDestroy {
       .subscribe(() => this.load(1));
 
     this.loadEmpresas();
+    this.loadProyectos();
     this.load(1);
   }
 
@@ -110,14 +115,30 @@ export class ClinicaEmos implements OnInit, OnDestroy {
   private loadEmpresas(): void {
     this.catalogos.getEmpresas().subscribe({
       next: (list) => {
+        // Solo razones sociales de Abril: los trabajadores de contratistas no se gestionan aquí.
         this.empresaOptions = [
           { id: 0, nombre: 'Todas las empresas', esAbril: false },
-          ...list,
+          ...list.filter((e) => e.esAbril),
         ];
         this.cdr.detectChanges();
       },
       error: () => {
         this.empresaOptions = [{ id: 0, nombre: 'Todas las empresas', esAbril: false }];
+      },
+    });
+  }
+
+  private loadProyectos(): void {
+    this.proyectoService.getHabilitados().subscribe({
+      next: (proyectos) => {
+        this.proyectoOptions = [
+          { id: '', nombre: 'Todos los proyectos' },
+          ...proyectos.map((p) => ({ id: String(p.projectId), nombre: p.projectDescription })),
+        ];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        // Catálogo secundario: si falla, se mantiene solo la opción "Todos".
       },
     });
   }
@@ -132,6 +153,7 @@ export class ClinicaEmos implements OnInit, OnDestroy {
       aptitud: this.filters.aptitud || undefined,
       estado: this.filters.estado || undefined,
       empresaId: this.filters.empresaId || undefined,
+      proyectoId: this.filters.proyectoId ? Number(this.filters.proyectoId) : undefined,
       sinLectura: this.filters.sinLectura || undefined,
       sinCertificado: this.filters.sinCertificado || undefined,
       sinEmoCompleto: this.filters.sinEmoCompleto || undefined,
@@ -166,7 +188,7 @@ export class ClinicaEmos implements OnInit, OnDestroy {
 
   clearFilters(): void {
     this.filters = {
-      search: '', aptitud: '', estado: '', empresaId: 0,
+      search: '', aptitud: '', estado: '', empresaId: 0, proyectoId: '',
       sinLectura: false, sinCertificado: false, sinEmoCompleto: false, sinInterconsulta: false,
     };
     this.load(1);
@@ -254,25 +276,13 @@ export class ClinicaEmos implements OnInit, OnDestroy {
     return item.tieneEmo ? item.estado ?? '—' : 'Sin EMO';
   }
 
-  get hasActiveFilters(): boolean {
-    return !!(
-      this.filters.search ||
-      this.filters.aptitud ||
-      this.filters.estado ||
-      this.filters.empresaId ||
-      this.filters.sinLectura ||
-      this.filters.sinCertificado ||
-      this.filters.sinEmoCompleto ||
-      this.filters.sinInterconsulta
-    );
-  }
-
   get filtrosActivos(): number {
     let n = 0;
     if (this.filters.search) n++;
     if (this.filters.aptitud) n++;
     if (this.filters.estado) n++;
     if (this.filters.empresaId) n++;
+    if (this.filters.proyectoId) n++;
     if (this.filters.sinLectura) n++;
     if (this.filters.sinCertificado) n++;
     if (this.filters.sinEmoCompleto) n++;

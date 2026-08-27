@@ -131,6 +131,10 @@
       {{ agenda!.agendaTexto }}
     </p>
 
+    <app-temas-puntuales-agenda *ngIf="agenda!.agendaFija"
+      [reunionId]="reunionId" [agenda]="agenda!" (saved)="cargarAgenda()">
+    </app-temas-puntuales-agenda>
+
     <app-mis-temas-agenda *ngIf="!agenda!.agendaFija"
       [reunionId]="reunionId" [agenda]="agenda!" (saved)="cargarAgenda()">
     </app-mis-temas-agenda>

@@ -1,9 +1,13 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { lastValueFrom } from 'rxjs';
+import { Subject, debounceTime, takeUntil, lastValueFrom } from 'rxjs';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { DocumentViewer } from '../../../../shared/components/document-viewer/document-viewer';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { SearchInput } from '../../../../shared/components/search-input/search-input';
 import { InterconsultaService } from '../../../ssoma/salud-ocupacional/services/interconsulta.service';
 import {
   InterconsultaListDto,
@@ -12,8 +16,13 @@ import {
 } from '../../../ssoma/salud-ocupacional/dtos/interconsulta.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
-
+
 import { CLINICA_TABS } from '../../shared/clinica-tabs';
+interface FilterOption {
+  id: string;
+  nombre: string;
+}
+
 interface LevantamientoData {
   fechaAtencion: string;
   resultado: string;
@@ -37,16 +46,20 @@ interface EditandoData {
 @Component({
   selector: 'app-interconsultas-clinica',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, DocumentViewer],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, DocumentViewer, FilterTriggerButton, FilterModal, SearchSelect, SearchInput],
   templateUrl: './interconsultas.html',
   styleUrls: ['./interconsultas.css'],
 })
-export class InterconsultasClinica implements OnInit {
+export class InterconsultasClinica implements OnInit, OnDestroy {
   readonly tabs = CLINICA_TABS;
   items: InterconsultaListDto[] = [];
   loading = false;
   filtroEstado = 'Pendiente';
   filtroSearch = '';
+  filtrosAbiertos = false;
+
+  private searchChange$ = new Subject<string>();
+  private destroy$ = new Subject<void>();
 
   // Levantar interconsulta pendiente
   interconsultaActiva: InterconsultaListDto | null = null;
@@ -64,7 +77,12 @@ export class InterconsultasClinica implements OnInit {
   visorUrl = '';
   visorNombre = '';
 
-  readonly estados = ['', 'Pendiente', 'Atendida', 'Cancelada'];
+  readonly estadoOptions: FilterOption[] = [
+    { id: '', nombre: 'Todos' },
+    { id: 'Pendiente', nombre: 'Pendiente' },
+    { id: 'Atendida', nombre: 'Atendida' },
+    { id: 'Cancelada', nombre: 'Cancelada' },
+  ];
 
   constructor(
     private svc: InterconsultaService,
@@ -74,7 +92,38 @@ export class InterconsultasClinica implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.searchChange$
+      .pipe(debounceTime(350), takeUntil(this.destroy$))
+      .subscribe(() => this.load());
+
     this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  onSearchChange(value: string): void {
+    this.filtroSearch = value;
+    this.searchChange$.next(value);
+  }
+
+  onFilterChange(): void {
+    this.load();
+  }
+
+  clearFilters(): void {
+    this.filtroEstado = 'Pendiente';
+    this.filtroSearch = '';
+    this.load();
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filtroEstado && this.filtroEstado !== 'Pendiente') n++;
+    if (this.filtroSearch) n++;
+    return n;
   }
 
   load(): void {

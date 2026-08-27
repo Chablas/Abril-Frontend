@@ -16,6 +16,7 @@ import {
   PagedResultDTO,
   ReunionAcuerdoRequest,
   ReunionAgendaDTO,
+  ReunionAgendaItemDTO,
   ReunionArchivoDTO,
   ReunionCreateRequest,
   ReunionDetalleDTO,
@@ -262,8 +263,8 @@ export class ActasReunionService {
 
   /**
    * Trabajadores que calzan con un área/gerencia (incluye descendencia en el árbol area_scope),
-   * una lista de puestos marcados en un checklist, y/o el staff asignado a un proyecto (ss_contratista_usuario
-   * con scope POR_PROYECTO). Los tres filtros son opcionales y se combinan con AND; null/vacío
+   * una lista de puestos marcados en un checklist, y/o el staff vinculado actualmente a un proyecto
+   * (worker_vinculaciones vigente). Los tres filtros son opcionales y se combinan con AND; null/vacío
    * = cualquiera. Para convocatoria masiva.
    */
   buscarTrabajadoresPorFiltro(
@@ -294,6 +295,23 @@ export class ActasReunionService {
     return this.http.put<{ message: string }>(`${this.apiUrl}/${reunionId}/agenda/mis-temas`, request, {
       headers: this.authHeaders(),
     });
+  }
+
+  /** Agrega un tema puntual a una reunión de agenda fija, sin activar el flujo de agenda dinámica. */
+  agregarTemaPuntual(reunionId: number, descripcion: string): Observable<ReunionAgendaItemDTO> {
+    return this.http.post<ReunionAgendaItemDTO>(
+      `${this.apiUrl}/${reunionId}/agenda/temas-puntuales`,
+      { descripcion },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Elimina un tema puntual — solo quien lo agregó puede quitarlo. */
+  eliminarTemaPuntual(reunionId: number, reunionAgendaItemId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(
+      `${this.apiUrl}/${reunionId}/agenda/temas-puntuales/${reunionAgendaItemId}`,
+      { headers: this.authHeaders() },
+    );
   }
 
   // ── Dashboard "Mis acuerdos" ────────────────────────────────────────────────

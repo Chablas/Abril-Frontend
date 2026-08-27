@@ -20,6 +20,7 @@ import {
 } from '../components/participante-add/participante-add';
 import { ConvocatoriaMasiva } from '../components/convocatoria-masiva/convocatoria-masiva';
 import { MisTemasAgenda } from '../components/mis-temas-agenda/mis-temas-agenda';
+import { TemasPuntualesAgenda } from '../components/temas-puntuales-agenda/temas-puntuales-agenda';
 import { AcuerdosPendientesAnteriores } from '../components/acuerdos-pendientes-anteriores/acuerdos-pendientes-anteriores';
 import {
   ProyectoFiltroDTO,
@@ -43,7 +44,7 @@ interface ParticipanteRow {
 @Component({
   selector: 'app-reunion-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, FileSelector, FilePreview, SearchSelect, ReunionAdd, ReunionReprogramar, AcuerdoForm, ParticipanteAdd, ConvocatoriaMasiva, MisTemasAgenda, AcuerdosPendientesAnteriores],
+  imports: [CommonModule, FormsModule, FileSelector, FilePreview, SearchSelect, ReunionAdd, ReunionReprogramar, AcuerdoForm, ParticipanteAdd, ConvocatoriaMasiva, MisTemasAgenda, TemasPuntualesAgenda, AcuerdosPendientesAnteriores],
   templateUrl: './reunion-detail.html',
 })
 export class ReunionDetail implements OnInit {

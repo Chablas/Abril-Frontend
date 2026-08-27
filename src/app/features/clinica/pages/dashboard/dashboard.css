@@ -43,74 +43,6 @@
   animation: spin 0.75s linear infinite;
 }
 
-/* ── Header band (stays dark) ─────────────────────── */
-.dash-header {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  background: #0f172a;
-  padding: 12px 24px;
-}
-.dash-header-left {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-.dash-logo {
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  background: #1e293b;
-  border: 1px solid #334155;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.3rem;
-  flex-shrink: 0;
-}
-.dash-title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #f8fafc;
-  margin: 0;
-  letter-spacing: -0.02em;
-}
-.dash-sub {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin: 2px 0 0;
-  text-transform: capitalize;
-}
-
-/* C4 — Pulse badge ──────────────────────────────── */
-.clinica-activa-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: rgba(34, 197, 94, 0.15);
-  border: 1px solid rgba(34, 197, 94, 0.4);
-  border-radius: 20px;
-  padding: 6px 14px;
-  color: #86efac;
-  font-size: 0.8rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.pulse-dot {
-  width: 8px;
-  height: 8px;
-  background: #22c55e;
-  border-radius: 50%;
-  flex-shrink: 0;
-  animation: pulse-green 2s infinite;
-}
-@keyframes pulse-green {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.4; transform: scale(1.4); }
-}
-
 /* ── Body: everything below header ───────────────── */
 .dash-body {
   flex: 1;
@@ -538,7 +470,6 @@
 }
 
 @media (max-width: 640px) {
-  .dash-header { padding: 10px 14px; }
   .dash-body   { padding: 8px 12px; gap: 8px; }
   .ops-grid    { grid-template-columns: 1fr; }
   .kpi-grid    { grid-template-columns: 1fr; }
