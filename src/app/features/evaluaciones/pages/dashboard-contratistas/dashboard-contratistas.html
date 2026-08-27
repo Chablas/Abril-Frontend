@@ -114,14 +114,18 @@
             <!-- Donut distribución -->
             <div class="chart-card">
               <div class="cc-title">Distribución por estado</div>
-              <canvas id="chart-donut-cv" height="220"></canvas>
+              <div class="chart-container">
+                <canvas id="chart-donut-cv"></canvas>
+              </div>
             </div>
 
             <!-- Radar contratista activo -->
             <div class="chart-card" *ngIf="contraHistaActivo">
               <div class="cc-title">{{ contraHistaActivo.contributorNombre }}</div>
               <div class="cc-sub">Desempeño por área</div>
-              <canvas id="chart-radar-cv" height="220"></canvas>
+              <div class="chart-container">
+                <canvas id="chart-radar-cv"></canvas>
+              </div>
             </div>
           </div>
 
@@ -170,7 +174,9 @@
         <div *ngIf="vista === 'tendencia'" class="tendencia-view">
           <div class="chart-card chart-card-full">
             <div class="cc-title">Evolución histórica por contratista</div>
-            <canvas id="chart-tendencia-cv" height="300"></canvas>
+            <div class="chart-container chart-container-lg">
+              <canvas id="chart-tendencia-cv"></canvas>
+            </div>
           </div>
         </div>
 

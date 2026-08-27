@@ -78,6 +78,8 @@ export class DashboardHabComponent implements OnInit {
   get entregablesEmpresaFalta(): EntregableNombradoDto[] { return this.data?.entregablesEmpresaFalta ?? []; }
   get entregablesTrabajadorVencidos(): EntregableNombradoDto[] { return this.data?.entregablesTrabajadorVencidos ?? []; }
   get entregablesTrabajadorFalta(): EntregableNombradoDto[] { return this.data?.entregablesTrabajadorFalta ?? []; }
+  get entregablesCasaVencidos(): EntregableNombradoDto[] { return this.data?.entregablesCasaVencidos ?? []; }
+  get entregablesCasaFalta(): EntregableNombradoDto[] { return this.data?.entregablesCasaFalta ?? []; }
 
   // Contratista getters
   get proyectoTabActual(): EmpresaProyectoDto | null { return this.proyectos[this.proyectoTabSeleccionado] ?? null; }

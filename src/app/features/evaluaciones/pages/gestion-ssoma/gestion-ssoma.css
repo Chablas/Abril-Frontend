@@ -1,10 +1,12 @@
 :host {
   display: flex; flex-direction: column;
   height: 100%; min-height: 0;
+  background: #F8FAFC;
 }
 
 .gs-root {
-  padding: 24px; display: flex; flex-direction: column; gap: 16px;
+  background: #F8FAFC;
+  padding: 10px; display: flex; flex-direction: column; gap: 6px;
   flex: 1; min-height: 0; box-sizing: border-box;
 }
 
@@ -29,13 +31,13 @@
 }
 .eval-card {
   background: var(--color-abril-surface); border: 1px solid var(--color-abril-border);
-  border-radius: 12px; overflow: hidden;
+  border-radius: 10px; overflow: hidden;
   display: flex; flex-direction: column; min-height: 0;
   width: 100%; max-width: 760px;
 }
 .ec-header {
   display: flex; align-items: flex-start; justify-content: space-between;
-  padding: 20px 24px; border-bottom: 1px solid var(--color-abril-border);
+  padding: 12px 16px; border-bottom: 1px solid var(--color-abril-border);
   flex-shrink: 0;
 }
 .ec-title { font-size: 16px; font-weight: 700; }
@@ -52,24 +54,24 @@
 
 /* ─── Modo lista: panel izquierdo + panel derecho ─── */
 .gs-content {
-  display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: stretch;
+  display: grid; grid-template-columns: 360px 1fr; gap: 6px; align-items: stretch;
   flex: 1; min-height: 0;
 }
 
 .panel-left {
   background: var(--color-abril-surface); border: 1px solid var(--color-abril-border);
-  border-radius: 12px; overflow: hidden;
+  border-radius: 10px; overflow: hidden;
   display: flex; flex-direction: column; min-height: 0;
 }
 .panel-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 20px; border-bottom: 1px solid var(--color-abril-border);
+  padding: 10px 16px; border-bottom: 1px solid var(--color-abril-border);
   flex-shrink: 0;
 }
 .panel-title { font-size: 14px; font-weight: 600; }
 .period-info {
   display: flex; align-items: center; gap: 6px;
-  padding: 8px 20px; font-size: 12px; color: var(--color-abril-muted);
+  padding: 6px 16px; font-size: 12px; color: var(--color-abril-muted);
   background: var(--color-abril-bg-alt, #F8FAFC); border-bottom: 1px solid var(--color-abril-border);
   flex-shrink: 0;
 }
@@ -80,7 +82,7 @@
 }
 .proyecto-filtro {
   display: flex; flex-direction: column; gap: 4px;
-  padding: 12px 20px; border-bottom: 1px solid var(--color-abril-border);
+  padding: 8px 16px; border-bottom: 1px solid var(--color-abril-border);
   flex-shrink: 0;
 }
 .filtros-panel .proyecto-filtro { border-bottom: none; }
@@ -103,7 +105,7 @@
 .contractor-list { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; }
 
 .contractor-card {
-  padding: 14px 20px; border-bottom: 1px solid var(--color-abril-border);
+  padding: 8px 16px; border-bottom: 1px solid var(--color-abril-border);
   cursor: pointer; transition: background 0.15s;
 }
 .contractor-card:hover:not(.evaluated) { background: var(--color-abril-bg-alt, #F1F5F9); }
@@ -127,7 +129,7 @@
 
 .panel-right {
   background: var(--color-abril-surface); border: 1px solid var(--color-abril-border);
-  border-radius: 12px; overflow: hidden;
+  border-radius: 10px; overflow: hidden;
   display: flex; flex-direction: column; min-height: 0;
 }
 .empty-form {
@@ -142,7 +144,7 @@
 
 .ef-header {
   display: flex; align-items: flex-start; justify-content: space-between;
-  padding: 20px 24px; border-bottom: 1px solid var(--color-abril-border);
+  padding: 12px 16px; border-bottom: 1px solid var(--color-abril-border);
   flex-shrink: 0;
 }
 .ef-title { font-size: 16px; font-weight: 700; }
@@ -155,7 +157,7 @@
 
 /* ─── Escala 1-5 (compartida entre modo anónimo y modo lista) ─── */
 .scale-ref {
-  display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 24px;
+  display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 16px;
   background: var(--color-abril-bg-alt, #F8FAFC); border-bottom: 1px solid var(--color-abril-border);
   flex-shrink: 0;
 }
@@ -175,7 +177,7 @@
 }
 .criterion-row {
   display: grid; grid-template-columns: 28px 1fr auto;
-  gap: 12px; align-items: center; padding: 10px 24px;
+  gap: 12px; align-items: center; padding: 8px 16px;
   border-bottom: 1px solid var(--color-abril-border);
 }
 .criterion-row:last-child { border-bottom: none; }
@@ -205,7 +207,7 @@
 /* ─── Fortalezas / oportunidades de mejora ─── */
 .obs-row {
   display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
-  padding: 12px 24px; border-top: 1px solid var(--color-abril-border);
+  padding: 8px 16px; border-top: 1px solid var(--color-abril-border);
   flex-shrink: 0;
 }
 .obs-field { display: flex; flex-direction: column; min-width: 0; }
@@ -220,7 +222,7 @@
 
 .bottom-bar {
   display: flex; align-items: center; justify-content: flex-end; gap: 16px;
-  padding: 12px 24px; border-top: 1px solid var(--color-abril-border);
+  padding: 8px 16px; border-top: 1px solid var(--color-abril-border);
   background: var(--color-abril-bg-alt, #F8FAFC);
   flex-shrink: 0;
 }

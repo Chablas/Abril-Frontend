@@ -1,14 +1,14 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { EvAsignacionesService } from '../services/ev-asignaciones.service';
 import { ProyectoAsignadoDto, SupervisorAsignacionDto } from '../dtos/ev-asignaciones.model';
 
 @Component({
   selector: 'app-asignaciones',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
   templateUrl: './asignaciones.html',
   styleUrl: './asignaciones.css',
 })

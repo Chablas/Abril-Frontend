@@ -10,6 +10,8 @@ export interface DashboardKpisDto {
   entregablesEmpresaFalta: number;
   entregablesTrabajadorVencidos: number;
   entregablesTrabajadorFalta: number;
+  entregablesCasaVencidos: number;
+  entregablesCasaFalta: number;
   emosVencidos: number;
   interconsultasPendientes: number;
   personalCasaTotal: number;
@@ -58,6 +60,8 @@ export interface DashboardAdminDto {
   entregablesEmpresaFalta: EntregableNombradoDto[];
   entregablesTrabajadorVencidos: EntregableNombradoDto[];
   entregablesTrabajadorFalta: EntregableNombradoDto[];
+  entregablesCasaVencidos: EntregableNombradoDto[];
+  entregablesCasaFalta: EntregableNombradoDto[];
   emosVencidos: WorkerNombradoDto[];
   interconsultas: InterconsultaNombradaDto[];
   personalCasaNoHabilitado: WorkerNombradoDto[];
