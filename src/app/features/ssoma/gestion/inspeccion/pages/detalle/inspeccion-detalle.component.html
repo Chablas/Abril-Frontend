@@ -328,11 +328,15 @@
         </div>
         <div class="form-group">
           <label class="form-label">Criticidad</label>
-          <select class="form-input" [(ngModel)]="editTipo">
-            <option value="Critico">Crítico</option>
-            <option value="Mayor">Mayor</option>
-            <option value="Menor">Menor</option>
-          </select>
+          <div class="tipo-btns">
+            @for (t of ['Critico', 'Mayor', 'Menor']; track t) {
+              <button type="button" class="btn-tipo" [ngClass]="tipoClass(t)"
+                [class.btn-tipo--active]="editTipo === t"
+                (click)="setEditTipo($any(t))">
+                {{ t }}
+              </button>
+            }
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Área</label>

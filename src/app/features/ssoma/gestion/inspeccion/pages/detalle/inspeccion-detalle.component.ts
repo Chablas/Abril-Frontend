@@ -264,6 +264,11 @@ export class InspeccionDetalleComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
+  setEditTipo(t: 'Critico' | 'Mayor' | 'Menor'): void {
+    this.editTipo = t;
+    this.cdr.markForCheck();
+  }
+
   confirmarEdicion(): void {
     if (!this.editDescripcion.trim()) {
       Swal.fire({ icon: 'warning', title: 'Ingresa la descripción del hallazgo', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
