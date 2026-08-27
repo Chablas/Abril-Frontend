@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { DashboardAdminDto } from '../dtos/habilitacion/dashboard-hab.model';
@@ -15,7 +15,8 @@ export class DashboardHabService {
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
 
-  getResumen(): Observable<DashboardAdminDto> {
-    return this.http.get<DashboardAdminDto>(this.apiUrl, { headers: this.authHeaders() });
+  getResumen(proyectoId: number): Observable<DashboardAdminDto> {
+    const params = new HttpParams().set('proyectoId', proyectoId);
+    return this.http.get<DashboardAdminDto>(this.apiUrl, { headers: this.authHeaders(), params });
   }
 }

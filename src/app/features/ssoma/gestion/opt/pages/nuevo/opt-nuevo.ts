@@ -16,6 +16,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { forkJoin } from 'rxjs';
 import { OptService } from '../../services/opt.service';
+import { PetsService } from '../../../pets/pets.service';
 import {
   OptPetDto,
   OptCriterioVerificacionDto,
@@ -140,6 +141,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
 
   constructor(
     private optService: OptService,
+    private petsService: PetsService,
     private projectService: ProjectService,
     private trabajadorHabService: TrabajadorHabService,
     private workerSearchService: WorkerSearchService,
@@ -213,6 +215,47 @@ export class OptNuevo implements OnInit, AfterViewInit {
     this.petVisorUrl = '';
     this.petVisorNombre = '';
     this.cdr.markForCheck();
+
+    if (this.petSeleccionado) {
+      if (this.pasos.length > 0) {
+        Swal.fire({
+          icon: 'question',
+          title: 'Reemplazar pasos',
+          text: `¿Traer los pasos de "${this.petSeleccionado.nombre}"? Esto reemplaza los ${this.pasos.length} paso(s) que ya tienes en la lista.`,
+          showCancelButton: true,
+          confirmButtonText: 'Sí, traer pasos',
+          cancelButtonText: 'No, mantener los míos',
+        }).then((res) => {
+          if (res.isConfirmed) this.cargarPasosDelPet(this.petSeleccionado!.id);
+        });
+      } else {
+        this.cargarPasosDelPet(this.petSeleccionado.id);
+      }
+    }
+  }
+
+  // Trae automáticamente los pasos del catálogo del PETS seleccionado — así OPT
+  // deja de requerir tipear a mano el "paso a paso" cada vez que se observa una
+  // tarea que ya tiene un PETS estructurado en la plataforma.
+  private cargarPasosDelPet(petId: number): void {
+    this.petsService.getPasos(petId).subscribe({
+      next: (pasosPet) => {
+        if (pasosPet.length === 0) return;
+        this.pasos = pasosPet.map((p) => ({
+          id: this.pasoNextId++,
+          numeroDisplay: '',
+          descripcion: p.descripcion,
+          resultado: '',
+          desviacionObservada: '',
+        }));
+        this.renumerarPasos();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        // Sin catálogo de pasos para este PETS todavía: no bloquea — se puede
+        // seguir tipeando los pasos a mano como antes.
+      },
+    });
   }
 
   private readonly SHAREPOINT_SITE = 'https://abrilinmob.sharepoint.com/sites/SSOMA-Powerapps/';

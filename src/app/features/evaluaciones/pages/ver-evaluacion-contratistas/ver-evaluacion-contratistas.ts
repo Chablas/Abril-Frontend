@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
@@ -28,6 +29,7 @@ export class VerEvaluacionContratistas implements OnInit {
   proyectoId: number | null = null;
   busqueda = '';
   estadoFiltro: string = '';
+  enviandoResultados = false;
 
   readonly areas = ['OF. TÉCNICA', 'SSOMA', 'RESIDENCIA', 'CALIDAD', 'PRODUCCIÓN'];
 
@@ -136,5 +138,44 @@ export class VerEvaluacionContratistas implements OnInit {
 
   countEstado(estado: string): number {
     return this.evaluacionesFiltradas.filter((e) => e.estado === estado).length;
+  }
+
+  async enviarResultados(): Promise<void> {
+    if (!this.periodoId) return;
+
+    const periodo = this.data?.periodos.find((p) => p.id === this.periodoId);
+    const nombrePeriodo = periodo ? `${periodo.nombreMes} ${periodo.anio}` : 'este período';
+
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: '¿Enviar resultados a los gerentes?',
+      text: `Se enviará un correo a cada empresa contratista evaluada en ${nombrePeriodo} con su nota y la de sus supervisores.`,
+      showCancelButton: true,
+      confirmButtonText: 'Enviar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.enviandoResultados = true;
+    this.svc.enviarResultados(this.periodoId).subscribe({
+      next: (r) => {
+        this.enviandoResultados = false;
+        const detalle =
+          r.omitidosSinEmail.length > 0
+            ? `<br><br>Sin correo registrado (no se enviaron):<br>${r.omitidosSinEmail.join('<br>')}`
+            : '';
+        Swal.fire({
+          icon: 'success',
+          title: 'Resultados enviados',
+          html: `Se envió a <strong>${r.enviados}</strong> empresa(s).${detalle}`,
+        });
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.enviandoResultados = false;
+        this.errorSvc.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
   }
 }

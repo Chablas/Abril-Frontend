@@ -363,9 +363,6 @@ export class InspeccionDetalleComponent implements OnInit {
         } else {
           roles.push({ rol: 'Prevencionista', email: null });
         }
-        if (d.participantes.length) {
-          d.participantes.forEach((p) => roles.push({ rol: 'Participante', email: `${p.email} (${p.nombre})` }));
-        }
         const filas = roles
           .map(
             ({ rol, email }) =>
@@ -374,7 +371,9 @@ export class InspeccionDetalleComponent implements OnInit {
               }</td></tr>`,
           )
           .join('');
-        const ccEmails = [d.tuEmail, d.jefeSsomaEmail].filter((e): e is string => !!e);
+        const ccEmails = [d.tuEmail, d.jefeSsomaEmail]
+          .filter((e): e is string => !!e)
+          .concat(d.participantes.map((p) => `${p.email} (${p.nombre})`));
         const cc = ccEmails.length
           ? `<p style="margin-top:8px;font-size:0.85rem;color:#6b7280">Con copia a: ${ccEmails.join(', ')}</p>`
           : '';

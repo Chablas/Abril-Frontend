@@ -4,6 +4,12 @@
   margin: 0 auto;
 }
 
+/* ── Selector de proyecto ─────────────────────────────────── */
+.db-proyecto-header {
+  margin-bottom: 1.5rem;
+  max-width: 360px;
+}
+
 /* ── Skeleton ─────────────────────────────────────────────── */
 .skeleton-wrap { animation: pulse 1.5s infinite; }
 

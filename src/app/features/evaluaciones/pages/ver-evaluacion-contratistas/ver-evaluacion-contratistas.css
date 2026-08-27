@@ -26,6 +26,14 @@
 .filtro-select:focus, .filtro-search:focus { outline: none; border-color: var(--color-abril-primary); }
 .filtro-search { min-width: 200px; }
 
+.btn-enviar-resultados {
+  display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px;
+  background: var(--color-abril-primary); color: #fff; border: none; border-radius: 8px;
+  font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.btn-enviar-resultados:hover:not(:disabled) { opacity: 0.9; }
+.btn-enviar-resultados:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .leyenda { display: flex; gap: 16px; margin-left: auto; }
 .leyenda-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; }
 .dot { width: 10px; height: 10px; border-radius: 50%; }
