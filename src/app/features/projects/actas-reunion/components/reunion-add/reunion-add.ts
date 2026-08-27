@@ -311,7 +311,14 @@ export class ReunionAdd implements OnInit {
         forkJoin(
           reglasValidas.map((r) => this.service.buscarTrabajadoresPorFiltro(r.areaScopeId, r.puestoIds, r.projectId)),
         ).subscribe({
-          next: (resultados) => this.onTrabajadoresAgregadosMasivamente(resultados.flat()),
+          next: (resultados) => {
+            // Los excluidos a mano de una regla "Staff de un proyecto" no deben volver a colarse aquí.
+            const trabajadores = resultados.flatMap((lista, i) => {
+              const excluidos = new Set(reglasValidas[i].workerIdsExcluidos);
+              return lista.filter((t) => !excluidos.has(t.workerId));
+            });
+            this.onTrabajadoresAgregadosMasivamente(trabajadores);
+          },
           error: () => {},
         });
       },

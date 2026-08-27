@@ -6,6 +6,7 @@ import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { ActasReunionService } from '../services/actas-reunion.service';
 import { MisTemasAgenda } from '../components/mis-temas-agenda/mis-temas-agenda';
+import { TemasPuntualesAgenda } from '../components/temas-puntuales-agenda/temas-puntuales-agenda';
 import { ReunionAgendaDTO } from '../dtos/actas-reunion.dto';
 
 /**
@@ -16,7 +17,7 @@ import { ReunionAgendaDTO } from '../dtos/actas-reunion.dto';
 @Component({
   selector: 'app-reunion-agenda',
   standalone: true,
-  imports: [CommonModule, MisTemasAgenda],
+  imports: [CommonModule, MisTemasAgenda, TemasPuntualesAgenda],
   templateUrl: './reunion-agenda.html',
 })
 export class ReunionAgenda implements OnInit {
@@ -34,13 +35,17 @@ export class ReunionAgenda implements OnInit {
   ngOnInit(): void {
     this.reunionId = Number(this.route.snapshot.paramMap.get('reunionId'));
     this.loaderService.show();
+    this.cargarAgenda(() => this.loaderService.hide());
+  }
+
+  cargarAgenda(onDone?: () => void): void {
     this.service.getAgenda(this.reunionId).subscribe({
       next: (data) => {
         this.agenda = data;
-        this.loaderService.hide();
+        onDone?.();
       },
       error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
+        onDone?.();
         this.errorService.handleError(err);
       },
     });

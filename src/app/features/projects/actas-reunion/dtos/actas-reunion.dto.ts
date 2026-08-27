@@ -298,12 +298,15 @@ export interface TemaConvocatoriaReglaDTO {
   projectId: number | null;
   projectDescription: string | null;
   puestoIds: number[];
+  /** Workers del staff del proyecto excluidos a mano (solo aplica cuando projectId tiene valor). */
+  workerIdsExcluidos: number[];
 }
 
 export interface TemaConvocatoriaReglaInput {
   areaScopeId: number | null;
   projectId: number | null;
   puestoIds: number[];
+  workerIdsExcluidos: number[];
 }
 
 /** Convocatoria recurrente asociada a un tema (ej. "Reunión de Jefaturas de Proyectos"). */
@@ -386,6 +389,8 @@ export interface ReunionAgendaDTO {
   requiereAgenda: boolean;
   agendaFija: boolean;
   agendaTexto: string | null;
+  /** Temas por participante cuando agendaFija es false, o los "temas puntuales" agregados a
+   *  mano para esta ocurrencia cuando agendaFija es true. */
   items: ReunionAgendaItemDTO[];
   participantesPendientes: string[];
   workerIdActual: number | null;

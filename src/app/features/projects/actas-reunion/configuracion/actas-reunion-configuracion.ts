@@ -24,12 +24,24 @@ interface PuestoRow {
   marcado: boolean;
 }
 
+interface StaffRow {
+  workerId: number;
+  nombre: string;
+  cargo: string;
+  marcado: boolean;
+}
+
 /** Una regla de convocatoria en edición: a quién convoca (área/gerencia y/o proyecto + puestos). */
 interface ReglaConvocatoria {
+  /** Cada regla convoca a UN grupo: por área/puesto, o por el staff completo de un proyecto — nunca ambos a la vez (ver onModoReglaChange). */
+  modo: 'AREA_PUESTO' | 'PROYECTO';
   areaScopePath: AreaScopeTreeDto[];
   puestos: PuestoRow[];
   filtroPuesto: string;
   projectId: number | null;
+  /** Staff vigente del proyecto elegido, para poder destildar individuos (ver cargarStaff). */
+  staff: StaffRow[];
+  filtroStaff: string;
 }
 
 /**
@@ -111,7 +123,26 @@ export class ActasReunionConfiguracion implements OnInit {
   }
 
   private reglaVacia(): ReglaConvocatoria {
-    return { areaScopePath: [], puestos: [], filtroPuesto: '', projectId: null };
+    return { modo: 'AREA_PUESTO', areaScopePath: [], puestos: [], filtroPuesto: '', projectId: null, staff: [], filtroStaff: '' };
+  }
+
+  /**
+   * Cada regla convoca por área/puesto O por staff de un proyecto, nunca ambos: combinarlos filtraba
+   * con AND (intersección) y solía dar cero resultados. Al cambiar de modo se limpia el otro lado
+   * para que la regla quede siempre en un estado válido; para convocar a varios grupos se usa otra regla.
+   */
+  onModoReglaChange(regla: ReglaConvocatoria, modo: 'AREA_PUESTO' | 'PROYECTO'): void {
+    if (regla.modo === modo) return;
+    regla.modo = modo;
+    if (modo === 'PROYECTO') {
+      regla.areaScopePath = [];
+      regla.puestos.forEach((p) => (p.marcado = false));
+      regla.filtroPuesto = '';
+    } else {
+      regla.projectId = null;
+      regla.staff = [];
+      regla.filtroStaff = '';
+    }
   }
 
   /** Busca la cadena de nodos (raíz → hoja) que llega al area_scope_id dado, para preseleccionar la cascada. */
@@ -144,6 +175,80 @@ export class ActasReunionConfiguracion implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  /**
+   * Trae el staff vigente del proyecto elegido y lo deja como checklist editable (todos marcados
+   * por defecto). `workerIdsExcluidos` solo se usa al reabrir un tema ya configurado — es la lista
+   * que vino del backend, no algo que el usuario elija en el momento.
+   */
+  private cargarStaff(regla: ReglaConvocatoria, workerIdsExcluidos: number[] = []): void {
+    if (regla.projectId == null) {
+      regla.staff = [];
+      return;
+    }
+    const excluidos = new Set(workerIdsExcluidos);
+    this.service.buscarTrabajadoresPorFiltro(null, null, regla.projectId).subscribe({
+      next: (data) => {
+        regla.staff = data.map((t) => ({
+          workerId: t.workerId,
+          nombre: t.fullName,
+          cargo: t.cargo ?? '',
+          marcado: !excluidos.has(t.workerId),
+        }));
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  staffFiltrado(regla: ReglaConvocatoria): StaffRow[] {
+    const texto = regla.filtroStaff.trim().toLowerCase();
+    if (!texto) return regla.staff;
+    return regla.staff.filter((s) => s.nombre.toLowerCase().includes(texto));
+  }
+
+  todosStaffMarcados(regla: ReglaConvocatoria): boolean {
+    const visibles = this.staffFiltrado(regla);
+    return visibles.length > 0 && visibles.every((s) => s.marcado);
+  }
+
+  toggleTodosStaff(regla: ReglaConvocatoria, valor: boolean): void {
+    this.staffFiltrado(regla).forEach((s) => (s.marcado = valor));
+  }
+
+  nuevoTema(): void {
+    Swal.fire({
+      title: 'Nuevo tema',
+      input: 'text',
+      inputPlaceholder: 'Ej. Reunión de Comité de Obra',
+      inputAttributes: { maxlength: '300' },
+      showCancelButton: true,
+      confirmButtonText: 'Crear',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: 'var(--color-abril-primary)',
+      inputValidator: (value) => (!value?.trim() ? 'Escribe un nombre para el tema' : undefined),
+    }).then((result) => {
+      if (!result.isConfirmed || !result.value?.trim()) return;
+      this.loaderService.show();
+      this.service.agregarTema(result.value.trim()).subscribe({
+        next: (nuevoTema) => {
+          this.loaderService.hide();
+          if (!this.temas.some((t) => t.id === nuevoTema.id)) {
+            this.temas = [...this.temas, { ...nuevoTema, areaScopeId: null }].sort((a, b) =>
+              a.descripcion.localeCompare(b.descripcion),
+            );
+          }
+          this.temaSeleccionadoId = nuevoTema.id;
+          this.onTemaSeleccionadoChange();
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
     });
   }
 
@@ -190,13 +295,19 @@ export class ActasReunionConfiguracion implements OnInit {
         this.reglas =
           data.reglas.length > 0
             ? data.reglas.map((r) => ({
+                modo: r.projectId != null ? ('PROYECTO' as const) : ('AREA_PUESTO' as const),
                 areaScopePath: r.areaScopeId != null ? this.buscarRuta(this.arbol, r.areaScopeId) ?? [] : [],
                 puestos: [] as PuestoRow[],
                 filtroPuesto: '',
                 projectId: r.projectId,
+                staff: [] as StaffRow[],
+                filtroStaff: '',
               }))
             : [this.reglaVacia()];
-        this.reglas.forEach((regla, i) => this.cargarPuestos(regla, data.reglas[i]?.puestoIds ?? []));
+        this.reglas.forEach((regla, i) => {
+          this.cargarPuestos(regla, data.reglas[i]?.puestoIds ?? []);
+          if (regla.projectId != null) this.cargarStaff(regla, data.reglas[i]?.workerIdsExcluidos ?? []);
+        });
         this.agendaFija = data.agendaFija;
         this.agendaTexto = data.agendaTexto ?? '';
         this.recordatorioHorasAntes = data.recordatorioHorasAntes;
@@ -257,6 +368,11 @@ export class ActasReunionConfiguracion implements OnInit {
 
   onProjectIdReglaChange(regla: ReglaConvocatoria, projectId: number | null): void {
     regla.projectId = projectId;
+    if (projectId == null) {
+      regla.staff = [];
+      return;
+    }
+    this.cargarStaff(regla);
   }
 
   puestosFiltrados(regla: ReglaConvocatoria): PuestoRow[] {
@@ -291,6 +407,7 @@ export class ActasReunionConfiguracion implements OnInit {
         areaScopeId: this.areaScopeIdDeRegla(r),
         projectId: r.projectId,
         puestoIds: r.puestos.filter((p) => p.marcado).map((p) => p.id),
+        workerIdsExcluidos: r.projectId != null ? r.staff.filter((s) => !s.marcado).map((s) => s.workerId) : [],
       }));
 
     this.loaderService.show();

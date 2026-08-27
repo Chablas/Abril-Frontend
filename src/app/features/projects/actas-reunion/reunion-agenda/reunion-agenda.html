@@ -7,6 +7,9 @@
       <ng-container *ngIf="agenda.agendaFija">
         <h2 class="text-base font-semibold text-[var(--color-abril-primary)]">Agenda de la reunión</h2>
         <p class="text-sm text-gray-700 whitespace-pre-line border border-[#E5EAF0] rounded-lg p-4 bg-[#F5F8FA]">{{ agenda.agendaTexto }}</p>
+
+        <app-temas-puntuales-agenda [reunionId]="reunionId" [agenda]="agenda" (saved)="cargarAgenda()"></app-temas-puntuales-agenda>
+
         <button type="button" (click)="irAReunion()"
           class="self-start text-sm text-[var(--color-abril-primary)] hover:underline">
           Ver el acta de la reunión
