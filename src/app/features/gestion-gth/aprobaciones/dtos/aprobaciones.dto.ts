@@ -4,7 +4,7 @@ import { SolicitudDestinatarios } from '../../shared/dtos/destinatarios.dto';
  * Nivel con el que el usuario entra a «Aprobaciones». Lo resuelve el backend desde la CATEGORÍA de
  * su ficha de trabajador, no desde su rol: el rol solo abre la pantalla.
  *
- * - `GERENTE_GENERAL`: ve todas las solicitudes y decide las vacantes NUEVAS y las FFT. Su firma
+ * - `GERENTE_GENERAL`: ve todas las solicitudes y decide las vacantes NUEVAS. Su firma
  *   sola las manda a Gestión de Talento Humano.
  * - `GERENTE_AREA`: ve las de su área hacia abajo y decide las de REEMPLAZO, junto con GTH.
  * - `GTH`: cualquier trabajador del área de Gestión del Talento Humano. Ve los reemplazos de toda
@@ -15,10 +15,12 @@ export type AprobacionNivel = 'GERENTE_GENERAL' | 'GERENTE_AREA' | 'GTH' | 'NING
 
 /**
  * Por dónde se aprueba una vacante. Lo deriva el backend del tipo de requerimiento y del flag FFT:
- * - `GG`: solo Gerencia General (las vacantes nuevas y todas las FFT).
+ * - `GG`: solo Gerencia General (las vacantes nuevas que no son un ingreso directo).
  * - `AREA_GTH`: el gerente del área Y GTH, las dos firmas (los reemplazos que no son FFT).
+ * - `NINGUNA`: el ingreso directo FFT, que no firma nadie. No llega a esta pantalla —el backend
+ *   recorta esas vacantes— pero está en el tipo porque es una de las rutas del flujo.
  */
-export type RutaAprobacion = 'GG' | 'AREA_GTH';
+export type RutaAprobacion = 'GG' | 'AREA_GTH' | 'NINGUNA';
 
 /**
  * Una de las dos casillas de decisión de la solicitud (gerente del área o Gerencia General). Las
@@ -101,7 +103,7 @@ export interface AprobacionDetalle {
   enviado: string;
   /** Decisión del gerente del área (una de las dos firmas de los reemplazos). */
   gerenteArea: AprobacionNivelResumen;
-  /** Decisión de Gerencia General (la que mueve las vacantes nuevas y las FFT). */
+  /** Decisión de Gerencia General (la que mueve las vacantes nuevas). */
   gerenteGeneral: AprobacionNivelResumen;
   /** Decisión de GTH (la otra firma de los reemplazos). */
   gth: AprobacionNivelResumen;

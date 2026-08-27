@@ -15,7 +15,9 @@ import { Finalista, RevisionFinalistas } from '../../dtos/solicitud-personal.dto
  * psicotécnico y recomendación de GTH) y el link a su CV.
  *
  * Sobre el finalista seleccionado se toma la decisión final (RF-REC-24):
- *  - Aprobarlo cierra el proceso de reclutamiento; el seleccionado pasa al proceso de onboarding.
+ *  - Aprobarlo lo manda al EMO de ingreso, que es el último paso del proceso: según cómo salga el
+ *    examen, GTH cierra el reclutamiento —y ahí el seleccionado pasa a onboarding— o retoma el
+ *    proceso con otro candidato.
  *  - Rechazarlo le envía el mismo correo de fin de proceso que manda GTH a quien no continúa; si
  *    con eso no queda ningún finalista, el requerimiento vuelve al paso en el que GTH envía la
  *    long list/CVs al solicitante (RF-REC-25).

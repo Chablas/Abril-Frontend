@@ -33,7 +33,9 @@ import {
  *
  * El rol abre la pantalla; lo que se ve dentro depende de la CATEGORÍA de la ficha de trabajador y
  * lo resuelve el backend (`nivel`). Cada nivel tiene su ÁREA y su TIPO de vacante:
- *   • Gerente General → toda la empresa, pero solo las vacantes NUEVAS y las FFT.
+ *   • Gerente General → toda la empresa, pero solo las vacantes NUEVAS. Un ingreso directo FFT
+ *     no lo aprueba nadie y no llega acá (salvo los que quedaron esperando su firma de antes de
+ *     ese cambio).
  *   • Gerente → su área hacia abajo, y solo los REEMPLAZOS.
  *   • GTH → toda la empresa, y solo los REEMPLAZOS (la otra firma del reemplazo).
  *   • Cualquier otra categoría → ninguna solicitud; la pantalla explica por qué.
@@ -321,7 +323,7 @@ export class GthAprobaciones implements OnInit {
    */
   get textoAlcance(): string {
     if (this.esGerenteGeneral) {
-      return 'Apruebas las vacantes nuevas y los ingresos directos de toda la organización.';
+      return 'Apruebas las vacantes nuevas de toda la organización.';
     }
     if (this.esGth) {
       return 'Apruebas los reemplazos de toda la organización, junto con el gerente de cada área.';

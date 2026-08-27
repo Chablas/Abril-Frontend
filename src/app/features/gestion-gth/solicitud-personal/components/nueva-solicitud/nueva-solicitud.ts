@@ -10,7 +10,7 @@ import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { SolicitudPersonalService } from '../../services/solicitud-personal.service';
-import { DestinatarioSolicitud, SolicitudDestinatarios } from '../../../shared/dtos/destinatarios.dto';
+import { DestinatarioSolicitud } from '../../../shared/dtos/destinatarios.dto';
 import {
   largoDocumento,
   ReclutamientoFormDataDto,
@@ -92,7 +92,6 @@ export class GthNuevaSolicitud implements OnInit {
     tiposDocumento: [],
     trabajadoresArea: [],
     destinatarios: { para: [], copias: [] },
-    esGerenteGeneral: false,
     destinatariosFft: null,
   };
 
@@ -129,7 +128,6 @@ export class GthNuevaSolicitud implements OnInit {
           tiposDocumento: data.tiposDocumento ?? [],
           trabajadoresArea: data.trabajadoresArea ?? [],
           destinatarios: data.destinatarios ?? { para: [], copias: [] },
-          esGerenteGeneral: data.esGerenteGeneral ?? false,
           destinatariosFft: data.destinatariosFft ?? null,
         };
         this.destinatariosCargados = true;
@@ -150,35 +148,34 @@ export class GthNuevaSolicitud implements OnInit {
 
   // ── Aviso "a quién le llega esta solicitud" ────────────────────────
   /**
-   * ¿Esta solicitud se salta la aprobación de Gerencia General? Solo cuando la registra el propio
-   * Gerente General y TODAS sus vacantes son FFT: pedirle su firma sobre un candidato que él mismo
-   * nombró no aprueba nada. Es la misma regla que aplica el backend — si acá dijera otra cosa, el
-   * aviso prometería un correo distinto del que sale.
+   * ¿Hay alguna vacante de ingreso directo? A un FFT no lo aprueba nadie —lo pida quien lo pida—
+   * así que su aviso va directo a GTH y con otros destinatarios. Es la misma regla que aplica el
+   * backend: si acá dijera otra cosa, el aviso prometería correos distintos de los que salen.
    */
-  get omiteAprobacionGg(): boolean {
-    return (
-      this.formData.esGerenteGeneral &&
-      this.vacantes.length > 0 &&
-      this.vacantes.every((v) => v.esFft)
-    );
+  get hayIngresoDirecto(): boolean {
+    return this.vacantes.some((v) => v.esFft);
   }
 
-  /** El aviso de destinatarios cambia de correo cuando la solicitud se salta la aprobación. */
-  private get destinatariosVigentes(): SolicitudDestinatarios {
-    return (
-      (this.omiteAprobacionGg ? this.formData.destinatariosFft : this.formData.destinatarios) ?? {
-        para: [],
-        copias: [],
-      }
-    );
+  /** ¿Hay alguna vacante que sí espere una firma? Es la que dispara el correo de aprobación. */
+  get hayVacantesPorAprobar(): boolean {
+    return this.vacantes.some((v) => !v.esFft);
   }
 
   get destinatariosPara(): DestinatarioSolicitud[] {
-    return this.destinatariosVigentes.para ?? [];
+    return this.formData.destinatarios?.para ?? [];
   }
 
   get destinatariosCopias(): DestinatarioSolicitud[] {
-    return this.destinatariosVigentes.copias ?? [];
+    return this.formData.destinatarios?.copias ?? [];
+  }
+
+  /** Destinatarios del aviso a GTH del ingreso directo (correo aparte del de aprobación). */
+  get destinatariosFftPara(): DestinatarioSolicitud[] {
+    return this.formData.destinatariosFft?.para ?? [];
+  }
+
+  get destinatariosFftCopias(): DestinatarioSolicitud[] {
+    return this.formData.destinatariosFft?.copias ?? [];
   }
 
   /** Tooltip del correo: el nombre de la persona cuando se conoce, más por qué lo recibe. */

@@ -12,6 +12,7 @@
 
     <!-- Trigger -->
     <button
+      #trigger
       type="button"
       (pointerdown)="onTriggerPointerDown($event)"
       (click)="onTriggerClick($event)"
@@ -68,10 +69,18 @@
       </span>
     </button>
 
-    <!-- Dropdown -->
+    <!-- Dropdown: `fixed` respecto al viewport (no `absolute`) para que pueda salirse de su
+         contenedor. Dentro de un modal angosto un panel `absolute` queda recortado, y hacer que el
+         contenedor crezca haría que el modal se agrande y se achique al abrir y cerrar el combo.
+         La posición se recalcula en cada scroll para que acompañe al campo (ver search-select.ts). -->
     <div
+      #panel
       *ngIf="isOpen"
-      class="absolute top-[calc(100%+4px)] left-0 right-0 bg-white border border-[#e2e8f0] rounded-[7px] shadow-lg z-50 overflow-hidden"
+      class="fixed bg-white border border-[#e2e8f0] rounded-[7px] shadow-lg z-50 overflow-hidden"
+      [style.top.px]="panelTop"
+      [style.bottom.px]="panelBottom"
+      [style.left.px]="panelLeft"
+      [style.width.px]="panelWidth"
     >
       <!-- Buscador -->
       <div *ngIf="options.length > 5" class="p-[6px] border-b border-[#e2e8f0]">

@@ -13,6 +13,9 @@ import { CompletarEmo } from './components/completar-emo/completar-emo';
 import { environment } from '../../../../../environments/environment';
 import { hoyIsoLocal } from '../../../../shared/utils/fecha-local.util';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { SearchInput } from '../../../../shared/components/search-input/search-input';
+import { DatePicker } from '../../../../shared/components/date-picker/date-picker';
+import { TimePicker } from '../../../../shared/components/time-picker/time-picker';
 import { CatalogosSaludService } from '../../../ssoma/salud-ocupacional/services/catalogos-salud.service';
 import { EmoTipoDto } from '../../../ssoma/salud-ocupacional/dtos/catalogos.model';
 
@@ -22,12 +25,28 @@ type FiltroEstado = '' | 'Programado' | 'Aceptado por Clínica' | 'En Atención'
 @Component({
   selector: 'app-clinica-agenda',
   standalone: true,
-  imports: [CommonModule, FormsModule, CompletarEmo, AbrilPageHeaderComponent, SearchSelect],
+  imports: [
+    CommonModule,
+    FormsModule,
+    CompletarEmo,
+    AbrilPageHeaderComponent,
+    SearchSelect,
+    SearchInput,
+    DatePicker,
+    TimePicker,
+  ],
   templateUrl: './agenda.html',
   styleUrls: ['./agenda.css'],
 })
 export class Agenda implements OnInit {
   readonly tabs = CLINICA_TABS;
+
+  /**
+   * Acento de los desplegables de los modales de la agenda (fecha, hora y tipo de EMO): el mismo
+   * verde del botón «Confirmar», para que los tres campos se lean como parte del mismo formulario
+   * y no cada uno con el color por defecto de su componente.
+   */
+  readonly accentoModal = '#22c55e';
   items: ProgramacionClinicaDto[] = [];
   loading = false;
   accionando: number | null = null;
@@ -249,10 +268,14 @@ export class Agenda implements OnInit {
     } else if (this.filtroEstado) {
       base = base.filter(i => i.estado === this.filtroEstado);
     }
-    if (this.busqueda.trim()) {
-      const q = this.busqueda.trim().toLowerCase();
-      base = base.filter(i =>
-        i.workerNombre.toLowerCase().includes(q) || i.workerDni.includes(q),
+    // Búsqueda por nombre o DNI con la misma lógica que el resto de la app (palabras en cualquier
+    // orden, sin tildes). El `?? ''` no es defensivo de más: el backend sirve `workerDni` (y el
+    // nombre) como opcionales, y un solo registro sin DNI hacía reventar el filtro con
+    // "Cannot read properties of null" — por eso la búsqueda de esta pantalla no funcionaba.
+    const q = this.busqueda.trim();
+    if (q) {
+      base = base.filter(
+        i => SearchInput.matches(i.workerNombre ?? '', q) || (i.workerDni ?? '').includes(q),
       );
     }
     return base;
@@ -351,7 +374,7 @@ export class Agenda implements OnInit {
     console.log('[Reprogramar] payload:', body);
     this.modalConfirmarReprogramar = {
       open: true,
-      workerNombre: item.workerNombre,
+      workerNombre: item.workerNombre ?? '',
       fechaNueva: this.modalReprogramar.nuevaFecha,
       horaNueva: this.modalReprogramar.nuevaHora,
       body,
@@ -514,8 +537,8 @@ export class Agenda implements OnInit {
       progId: item.id,
       workerId: item.workerId,
       emoId: item.emoId ?? null,
-      workerNombre: item.workerNombre,
-      workerDni: item.workerDni,
+      workerNombre: item.workerNombre ?? '',
+      workerDni: item.workerDni ?? '',
       especialidad: '',
       observacion: '',
       requiereSeguimiento: false,

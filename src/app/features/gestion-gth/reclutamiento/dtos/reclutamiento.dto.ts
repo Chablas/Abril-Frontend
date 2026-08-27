@@ -1,6 +1,7 @@
 import { CandidatoFormularioResumen, FormularioCoincidencia } from './formulario-postulante.dto';
 import { CandidatoRechazado } from '../../shared/dtos/candidato-rechazado.dto';
 import { Seleccionado } from '../../shared/dtos/seleccionado.dto';
+import { RazonSocialCupo } from '../../../../shared/dtos/razon-social.dto';
 
 /** Opción genérica {id, nombre} para desplegables (p.ej. el catálogo de prioridades). */
 export interface Opcion {
@@ -86,14 +87,6 @@ export interface TipoProcesoOpcion {
   slaDias: number;
 }
 
-/** Opción del desplegable "Razón social activa", con sus cupos disponibles. */
-export interface RazonSocialOpcion {
-  id: number;
-  nombre: string;
-  /** Cupos = tope (20) − trabajadores vigentes en la base maestra (practicantes no consumen). */
-  cuposDisponibles: number;
-}
-
 /**
  * Canal de publicación de vacantes y su estado para el requerimiento consultado. No hay
  * integración con las APIs de los portales: el canal solo se marca para dejar registro de dónde
@@ -174,7 +167,7 @@ export interface DetalleRequerimientoGth {
   responsables: Opcion[];
   tiposProceso: TipoProcesoOpcion[];
   prioridades: Opcion[];
-  razonesSociales: RazonSocialOpcion[];
+  razonesSociales: RazonSocialCupo[];
   canales: CanalPublicacion[];
   /** Lugares donde se puede citar al candidato (desplegable de programación de entrevistas). */
   lugaresEntrevista: Opcion[];

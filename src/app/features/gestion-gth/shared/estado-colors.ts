@@ -22,12 +22,19 @@ const PIPELINE: string[] = [
   'ENTREVISTAS',
   'SELECCION_JEFATURA',
   'EMO_INGRESO',
-  // El EMO salió No Apto y el proceso volvió a manos de GTH. Va acá y no fuera del pipeline (como
-  // RECHAZADO_GG) porque el requerimiento SÍ recorrió todas las fases anteriores: sacarlo de la
-  // lista haría que `faseAlcanzada` dijera que no llegó a ninguna y el detalle escondería todas
-  // sus secciones justo cuando GTH tiene que decidir con qué candidato sigue.
+  // Las cuatro fases de resultado del examen. Van acá y no fuera del pipeline (como RECHAZADO_GG)
+  // porque el requerimiento SÍ recorrió todas las fases anteriores: sacarlas de la lista haría que
+  // `faseAlcanzada` dijera que no llegó a ninguna y el detalle escondería todas sus secciones justo
+  // cuando GTH tiene que decidir qué hacer con el resultado.
+  'EMO_OBSERVADO',
   'EMO_NO_APTO',
+  'EMO_APTO',
+  'EMO_APTO_RESTRICCIONES',
   'CERRADO',
+  // El proceso terminó sin cubrir la vacante (ingreso directo FFT que salió No Apto en el EMO).
+  // Va junto a CERRADO porque también recorrió todo el pipeline; es un estado aparte para que no
+  // se cuente como un cierre exitoso.
+  'CERRADO_SIN_CUBRIR',
 ];
 
 /** true si el estado actual ya alcanzó (o superó) la fase indicada del pipeline. */
@@ -50,8 +57,12 @@ export function estadoColors(codigo: string): { bg: string; text: string } {
     case 'ENTREVISTAS':        return { bg: '#FCE7F3', text: '#BE185D' };
     case 'SELECCION_JEFATURA': return { bg: '#CFFAFE', text: '#0E7490' };
     case 'EMO_INGRESO':        return { bg: '#FEF9C3', text: '#A16207' };
+    case 'EMO_APTO':           return { bg: '#DCFCE7', text: '#15803D' };
+    case 'EMO_APTO_RESTRICCIONES': return { bg: '#DCFCE7', text: '#15803D' };
+    case 'EMO_OBSERVADO':      return { bg: '#FFEDD5', text: '#C2410C' };
     case 'EMO_NO_APTO':        return { bg: '#FEE2E2', text: '#B91C1C' };
     case 'CERRADO':            return { bg: '#E0E7FF', text: '#3730A3' };
+    case 'CERRADO_SIN_CUBRIR': return { bg: '#F3F4F6', text: '#4B5563' };
     default:                   return { bg: '#F3F4F6', text: '#374151' };
   }
 }

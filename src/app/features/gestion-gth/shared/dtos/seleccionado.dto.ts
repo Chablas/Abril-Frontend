@@ -46,7 +46,11 @@ export interface Seleccionado {
   emoFechaProgramada: string | null;
   /**
    * Aptitud del EMO ya registrado ("Apto", "Apto con Restricciones", "Observado", "No Apto").
-   * null mientras la clínica no cargue el resultado. Con "Apto" el proceso cierra solo.
+   * null mientras la clínica no cargue el resultado.
+   *
+   * Es la que decide a qué fase va el requerimiento —EMO_APTO, EMO_APTO_RESTRICCIONES,
+   * EMO_OBSERVADO o EMO_NO_APTO—, pero ninguna de ellas cierra el proceso: con un apto el cierre
+   * lo confirma GTH desde el detalle, que es lo que pasa al seleccionado a onboarding.
    */
   emoAptitud: string | null;
   /**

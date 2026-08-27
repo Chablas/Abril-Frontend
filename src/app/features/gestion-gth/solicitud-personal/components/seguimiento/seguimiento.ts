@@ -75,9 +75,9 @@ export class GthSeguimiento implements OnInit {
   /**
    * Etiqueta principal de la tarjeta "Aprobaciones": la decisión que manda sobre ESTA vacante, o el
    * estado mientras siga pendiente. Cuál manda depende del tipo de requerimiento: en una vacante
-   * nueva (o un FFT) es la de Gerencia General; en un reemplazo hacen falta las DOS —la del gerente
-   * del área y la de GTH—, así que la etiqueta las resume: aprobada solo con ambas, rechazada
-   * apenas una diga que no.
+   * nueva es la de Gerencia General; en un reemplazo hacen falta las DOS —la del gerente del área y
+   * la de GTH—, así que la etiqueta las resume: aprobada solo con ambas, rechazada apenas una diga
+   * que no. Un ingreso directo no tiene ninguna: llega sin tarjeta.
    */
   get aprobacionGgLabel(): string {
     const ap = this.seguimiento?.aprobacionGg;
@@ -115,11 +115,11 @@ export class GthSeguimiento implements OnInit {
   /** Detalle bajo la etiqueta: cuándo se decidió y quién, o a qué está esperando. */
   get aprobacionGgDetalle(): string {
     const ap = this.seguimiento?.aprobacionGg;
-    // Sin aprobación hay dos motivos posibles: el ingreso directo que registró Gerencia General (no
-    // se aprueba a sí mismo) o un requerimiento anterior a que existiera este paso.
+    // Sin aprobación hay dos motivos posibles: el ingreso directo, que no lo firma nadie, o un
+    // requerimiento anterior a que existiera este paso.
     if (!ap)
       return this.seguimiento?.esFft
-        ? 'Ingreso directo pedido por Gerencia General'
+        ? 'El ingreso directo no pasa por aprobación'
         : 'Registrada antes de este paso del flujo';
 
     if (ap.ruta === 'AREA_GTH') {

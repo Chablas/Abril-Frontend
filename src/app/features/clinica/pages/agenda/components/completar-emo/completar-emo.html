@@ -1,4 +1,4 @@
-<app-base-modal *ngIf="open" title="Registrar Resultado EMO" width="w-[640px]" (closeModal)="close()">
+<app-base-modal *ngIf="open" [title]="'Registrar Resultado EMO'" width="w-[640px]" (closeModal)="close()">
   <div class="form-wrapper">
 
     <!-- Worker info -->
@@ -14,14 +14,25 @@
       <div class="emo-section-body">
         <div class="field-group">
           <label class="field-label">Aptitud <span class="req">*</span></label>
-          <select class="field-input" [(ngModel)]="aptitud">
-            <option value="">Seleccionar...</option>
-            <option *ngFor="let a of aptitudes" [value]="a">{{ a }}</option>
-          </select>
+          <app-search-select
+            [options]="aptitudOptions"
+            valueField="id"
+            displayField="nombre"
+            placeholder="Selecciona la aptitud"
+            [sortAlpha]="false"
+            [value]="aptitud || null"
+            (valueChange)="aptitud = $event || ''">
+          </app-search-select>
         </div>
         <div class="field-group">
           <label class="field-label">Fecha del EMO <span class="req">*</span></label>
-          <input type="date" class="field-input" [(ngModel)]="fechaEmo" [max]="hoy" />
+          <app-date-picker
+            [showLabel]="false"
+            [dense]="true"
+            [max]="hoy"
+            [value]="fechaEmo"
+            (valueChange)="fechaEmo = $event || ''">
+          </app-date-picker>
           <p class="field-error" *ngIf="!fechaEmo">La fecha del EMO es obligatoria</p>
         </div>
         <div class="field-group">
@@ -36,7 +47,7 @@
       ⚠ Este trabajador quedará como No Apto y será bloqueado en habilitación automáticamente.
     </div>
     <div class="alert-box alert-orange" *ngIf="aptitud === 'Observado'">
-      ⚠ Estado Observado — requiere interconsulta para definir aptitud final.
+      ⚠ Estado Observado — hay que derivar al trabajador a interconsulta para definir su aptitud final.
     </div>
 
     <!-- ── Sección 2: Lectura del EMO ───────────────────────── -->
@@ -56,7 +67,12 @@
         <ng-container *ngIf="lecturaRealizada">
           <div class="field-group lectura-fields">
             <label class="field-label">Fecha de lectura <span class="req">*</span></label>
-            <input type="date" class="field-input" [(ngModel)]="fechaLectura" />
+            <app-date-picker
+              [showLabel]="false"
+              [dense]="true"
+              [value]="fechaLectura"
+              (valueChange)="fechaLectura = $event || ''">
+            </app-date-picker>
             <p class="field-error" *ngIf="!fechaLectura">La fecha de lectura es obligatoria</p>
           </div>
 
@@ -138,7 +154,7 @@
           <textarea class="field-input" rows="2" [(ngModel)]="icDiagnostico"
             placeholder="Descripción del diagnóstico..."></textarea>
         </div>
-        <label *ngIf="aptitud === 'No Apto'" class="checkbox-row" style="margin-top:0.5rem">
+        <label class="checkbox-row" style="margin-top:0.5rem">
           <input type="checkbox" [(ngModel)]="icRequiereSeguimiento" />
           <span class="checkbox-label">Requiere seguimiento</span>
         </label>

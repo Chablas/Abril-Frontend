@@ -89,11 +89,13 @@
           </span>
         </button>
       </div>
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="text" class="search-input" placeholder="Buscar trabajador o DNI..."
-          [(ngModel)]="busqueda" />
-      </div>
+      <app-search-input
+        class="search-slot"
+        placeholder="Buscar por nombre o DNI..."
+        width="260px"
+        [value]="busqueda"
+        (valueChange)="busqueda = $event">
+      </app-search-input>
     </div>
 
     <!-- Cards zone -->
@@ -230,7 +232,7 @@
      Modal — Confirmar aceptación
      ═══════════════════════════════════════════════════ -->
 <div class="modal-backdrop" *ngIf="modalAceptar.open" (click)="cancelarAceptar()"></div>
-<div class="dark-modal" *ngIf="modalAceptar.open" (click)="$event.stopPropagation()">
+<div class="dark-modal em-modal" *ngIf="modalAceptar.open" (click)="$event.stopPropagation()">
 
   <div class="dm-header">
     <div>
@@ -246,10 +248,14 @@
   <div class="dm-body">
     <div class="dm-field-grid">
       <div class="dm-field">
-        <label class="dm-label">Fecha de atención</label>
-        <input type="date" class="dm-input"
-          [(ngModel)]="modalAceptar.nuevaFecha"
-          (ngModelChange)="modalAceptar.fechaError = ''" />
+        <label class="dm-label">Fecha de atención <span style="color:#dc2626">*</span></label>
+        <app-date-picker
+          [showLabel]="false"
+          [dense]="true"
+          [color]="accentoModal"
+          [value]="modalAceptar.nuevaFecha"
+          (valueChange)="modalAceptar.nuevaFecha = $event || ''; modalAceptar.fechaError = ''">
+        </app-date-picker>
         <p class="dm-error-inline" *ngIf="modalAceptar.fechaError">
           {{ modalAceptar.fechaError }}
         </p>
@@ -260,11 +266,15 @@
       </div>
       <div class="dm-field">
         <label class="dm-label">
-          HORA DE ATENCIÓN <span style="color:#dc2626">*</span>
+          Hora de atención <span style="color:#dc2626">*</span>
         </label>
-        <input type="time" class="dm-input" required placeholder="HH:MM"
-          [(ngModel)]="modalAceptar.horaAceptar"
-          (ngModelChange)="modalAceptar.horaError = ''" />
+        <app-time-picker
+          [showLabel]="false"
+          [dense]="true"
+          [color]="accentoModal"
+          [value]="modalAceptar.horaAceptar"
+          (valueChange)="modalAceptar.horaAceptar = $event || ''; modalAceptar.horaError = ''">
+        </app-time-picker>
         <p class="dm-error-inline" *ngIf="modalAceptar.horaError">
           {{ modalAceptar.horaError }}
         </p>
@@ -276,6 +286,7 @@
           valueField="id"
           displayField="nombre"
           placeholder="Selecciona tipo de EMO"
+          [color]="accentoModal"
           [value]="modalAceptar.tipoEmoId"
           (valueChange)="modalAceptar.tipoEmoId = $event">
         </app-search-select>
@@ -299,7 +310,7 @@
      Modal — Reprogramar cita
      ═══════════════════════════════════════════════════ -->
 <div class="modal-backdrop" *ngIf="modalReprogramar.open" (click)="cancelarReprogramar()"></div>
-<div class="dark-modal" *ngIf="modalReprogramar.open" (click)="$event.stopPropagation()">
+<div class="dark-modal em-modal" *ngIf="modalReprogramar.open" (click)="$event.stopPropagation()">
 
   <div class="dm-header">
     <div>
@@ -315,19 +326,27 @@
   <div class="dm-body">
     <div class="dm-field-grid">
       <div class="dm-field">
-        <label class="dm-label">FECHA DE ATENCIÓN <span style="color:#dc2626">*</span></label>
-        <input type="date" class="dm-input"
-          [(ngModel)]="modalReprogramar.nuevaFecha"
-          (ngModelChange)="modalReprogramar.fechaError = ''" />
+        <label class="dm-label">Fecha de atención <span style="color:#dc2626">*</span></label>
+        <app-date-picker
+          [showLabel]="false"
+          [dense]="true"
+          [color]="accentoModal"
+          [value]="modalReprogramar.nuevaFecha"
+          (valueChange)="modalReprogramar.nuevaFecha = $event || ''; modalReprogramar.fechaError = ''">
+        </app-date-picker>
         <p class="dm-error-inline" *ngIf="modalReprogramar.fechaError">
           {{ modalReprogramar.fechaError }}
         </p>
       </div>
       <div class="dm-field">
-        <label class="dm-label">HORA DE ATENCIÓN <span style="color:#dc2626">*</span></label>
-        <input type="time" class="dm-input" placeholder="HH:MM"
-          [(ngModel)]="modalReprogramar.nuevaHora"
-          (ngModelChange)="modalReprogramar.horaError = ''" />
+        <label class="dm-label">Hora de atención <span style="color:#dc2626">*</span></label>
+        <app-time-picker
+          [showLabel]="false"
+          [dense]="true"
+          [color]="accentoModal"
+          [value]="modalReprogramar.nuevaHora"
+          (valueChange)="modalReprogramar.nuevaHora = $event || ''; modalReprogramar.horaError = ''">
+        </app-time-picker>
         <p class="dm-error-inline" *ngIf="modalReprogramar.horaError">
           {{ modalReprogramar.horaError }}
         </p>
@@ -339,6 +358,7 @@
           valueField="id"
           displayField="nombre"
           placeholder="Selecciona tipo de EMO"
+          [color]="accentoModal"
           [value]="modalReprogramar.tipoEmoId"
           (valueChange)="modalReprogramar.tipoEmoId = $event">
         </app-search-select>

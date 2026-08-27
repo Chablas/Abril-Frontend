@@ -55,8 +55,14 @@ export interface CreateProgramacionDto {
 export interface ProgramacionClinicaDto {
   id: number;
   workerId: number;
-  workerNombre: string;
-  workerDni: string;
+  /**
+   * Nombre y DNI del trabajador de la cita. Van como nullables porque el backend los sirve así
+   * (`ProgramacionListDto.WorkerNombre/WorkerDni` son `string?`): declararlos no-nulos hacía que
+   * el filtro del buscador llamara `.includes()` sobre un null, y esa excepción dentro del getter
+   * se comía el render de toda la pantalla — por eso «buscar trabajador o DNI» no hacía nada.
+   */
+  workerNombre: string | null;
+  workerDni: string | null;
   /** Nombre del puesto del trabajador (campo de presentación). */
   puesto?: string | null;
   tipoEmo: string;

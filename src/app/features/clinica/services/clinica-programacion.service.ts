@@ -9,6 +9,7 @@ import {
   ProgramacionDestinatariosPreviewDto,
 } from '../dtos/clinica.model';
 import { hoyIsoLocal } from '../../../shared/utils/fecha-local.util';
+import { RazonSocialCupo } from '../../../shared/dtos/razon-social.dto';
 
 function buildClinicaHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -93,6 +94,17 @@ export class ClinicaProgramacionService {
     }>(`${PROGRAMACIONES_BASE}/inasistencias/enviar-correos`, null, {
       headers: buildClinicaHeaders(),
       params,
+    });
+  }
+
+  /**
+   * Razones sociales del grupo con sus cupos. Solo se pide cuando el trabajador llegó SIN razón
+   * social (el ingreso directo FFT, que pasa de la solicitud al EMO sin tocar la asignación de
+   * Reclutamiento): en el caso normal el modal muestra la que ya tiene y no gasta esta petición.
+   */
+  getRazonesSociales(): Observable<RazonSocialCupo[]> {
+    return this.http.get<RazonSocialCupo[]>(`${PROGRAMACIONES_BASE}/razones-sociales`, {
+      headers: buildClinicaHeaders(),
     });
   }
 

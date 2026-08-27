@@ -77,6 +77,23 @@
   user-select: none;
 }
 
+/* Cupos de la razón social elegida, debajo del desplegable: mismo lugar y mismo peso que el
+   hint de cupos de Reclutamiento, para que el dato se lea igual en las dos pantallas. */
+.razon-hint {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: #6b7280;
+}
+
+/* Sin cupos no se bloquea la cita (la razón social puede estar por ampliarse), pero tiene que
+   verse: es la misma advertencia que da Reclutamiento al asignarla. */
+.razon-hint--warn {
+  margin-top: 6px;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
 /* Aviso de destinatarios: mismo patrón que el de Solicitud de Salidas ("será notificada a …"),
    pero en el azul de SSOMA. Los correos van resaltados porque son el dato que importa. */
 .aviso {

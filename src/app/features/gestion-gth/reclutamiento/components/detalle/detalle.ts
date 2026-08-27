@@ -383,7 +383,25 @@ export class GthDetalleRequerimiento implements OnInit {
     return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'ENTREVISTAS');
   }
 
-  // ── Reapertura tras un EMO de ingreso No Apto ────────────────────────────
+  // ── Resultado del EMO de ingreso ─────────────────────────────────────────
+  // El examen ya no cierra el proceso: lo deja en la fase que dice cómo salió, y de ahí sale un
+  // camino distinto por resultado. Apto (con o sin restricciones) lo cierra GTH; No Apto abre la
+  // decisión de con quién sigue; Observado no habilita nada — solo espera la interconsulta.
+
+  /** true si el EMO de ingreso salió Apto o Apto con Restricciones: falta cerrar el proceso. */
+  get emoApto(): boolean {
+    const codigo = this.detalle?.estadoCodigo;
+    return codigo === 'EMO_APTO' || codigo === 'EMO_APTO_RESTRICCIONES';
+  }
+
+  /**
+   * true si el EMO de ingreso quedó Observado. El proceso no avanza ni retrocede: hay que esperar
+   * el resultado de la interconsulta, que al cargarse como EMO vuelve a mover el requerimiento.
+   */
+  get emoObservado(): boolean {
+    return this.detalle?.estadoCodigo === 'EMO_OBSERVADO';
+  }
+
   /**
    * true si el EMO de ingreso del seleccionado salió No Apto y el proceso volvió a manos de GTH.
    * Es la fase en la que hay que elegir con quién sigue: retomar a alguien del historial de
@@ -391,6 +409,75 @@ export class GthDetalleRequerimiento implements OnInit {
    */
   get emoNoApto(): boolean {
     return this.detalle?.estadoCodigo === 'EMO_NO_APTO';
+  }
+
+  /**
+   * true si el proceso terminó sin cubrir la vacante: el ingreso directo (FFT) salió No Apto en el
+   * EMO y no había otros candidatos ni long list a la que volver. No hay nada que hacer acá — para
+   * volver a pedir la vacante hay que registrar una solicitud nueva.
+   */
+  get cerradoSinCubrir(): boolean {
+    return this.detalle?.estadoCodigo === 'CERRADO_SIN_CUBRIR';
+  }
+
+  /**
+   * Aptitud que registró la clínica, para nombrarla en la tarjeta del resultado. Sale del propio
+   * examen del seleccionado; si por lo que sea no viniera, se cae al nombre de la fase, que dice
+   * lo mismo.
+   */
+  get emoAptitudNombre(): string {
+    return this.detalle?.seleccionado?.emoAptitud || this.detalle?.estadoNombre || '';
+  }
+
+  /** true mientras se cierra el proceso (evita el doble clic). */
+  cerrandoProceso = false;
+
+  /**
+   * Cierra el proceso y habilita el paso a onboarding. Es lo que antes hacía solo el EMO: ahora lo
+   * confirma GTH con el resultado del examen a la vista, porque cerrar es exactamente lo que pone
+   * al seleccionado en la bandeja de Onboarding.
+   */
+  async cerrarProceso(): Promise<void> {
+    if (this.cerrandoProceso || !this.detalle) return;
+
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: '¿Cerrar el proceso?',
+      html:
+        'El examen médico de ingreso salió <b>' +
+        this.emoAptitudNombre +
+        '</b>. Al cerrar, el proceso de reclutamiento termina y el seleccionado pasa a ' +
+        '<b>Onboarding</b> como candidato por ingresar.',
+      showCancelButton: true,
+      confirmButtonText: 'Cerrar proceso y continuar a Onboarding',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#15803D',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.cerrandoProceso = true;
+    this.loaderService.show();
+    this.service.cerrarProceso(this.requerimientoId).subscribe({
+      next: (res) => {
+        this.cerrandoProceso = false;
+        this.huboCambios = true;
+        // Cerrar cambia las secciones del modal (desaparece la tarjeta del resultado del EMO), así
+        // que se recarga el detalle entero. El loader lo apaga esa recarga.
+        this.cargarDetalle();
+        Swal.fire({
+          icon: 'success',
+          title: 'Proceso cerrado',
+          text: res.message,
+          confirmButtonColor: '#15803D',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.cerrandoProceso = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   /**

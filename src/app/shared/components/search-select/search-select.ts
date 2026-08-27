@@ -1,6 +1,21 @@
-import { Component, Input, Output, EventEmitter, ElementRef, HostListener, ViewChild } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  HostListener,
+  Input,
+  OnDestroy,
+  Output,
+  ViewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import {
+  anclaSigueVisible,
+  bloqueContenedorFijo,
+  contenedoresQueRecortan,
+} from '../../utils/panel-flotante.util';
 
 @Component({
   selector: 'app-search-select',
@@ -9,7 +24,7 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './search-select.html',
   styleUrl: './search-select.css',
 })
-export class SearchSelect {
+export class SearchSelect implements OnDestroy {
   @Input() options: any[] = [];
   @Input() valueField: string = 'id';
   @Input() displayField: string = 'name';
@@ -61,17 +76,85 @@ export class SearchSelect {
   @Input() uppercase: boolean = false;
 
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+  /** Botón del combobox: es lo que se mide para colocar el desplegable (ver `panelTop`). */
+  @ViewChild('trigger') private triggerRef?: ElementRef<HTMLElement>;
+  /** Panel desplegable; se mide para decidir de qué lado del combobox abrirlo. */
+  @ViewChild('panel') private panelRef?: ElementRef<HTMLElement>;
 
   isOpen = false;
   searchText = '';
 
-  constructor(private el: ElementRef) {}
+  /**
+   * Posición del desplegable (`position: fixed`, calculada respecto al viewport). Usar `fixed` en
+   * vez de `absolute` es lo que le permite salirse de su contenedor: dentro de un modal angosto
+   * (o de cualquier caja con `overflow: hidden`) un panel `absolute` queda recortado, y la
+   * alternativa —dejar que el contenedor crezca— haría que el modal se agrande y se achique cada
+   * vez que se abre y se cierra el combo. Es el mismo mecanismo que ya usan `app-date-picker` y
+   * `app-time-picker`, que abren su panel así por este mismo motivo.
+   *
+   * Como `fixed` no acompaña al scroll por sí solo, la posición se recalcula en cada scroll (ver
+   * `reposicionar`). El anclaje vertical es por `top` (panel debajo del combo) o por `bottom`
+   * (panel encima, cuando abajo no entra); el que no se usa queda en null para que Angular no
+   * escriba esa propiedad.
+   *
+   * OJO: un ancestro con `transform` sí vuelve a recortar el panel, porque pasa a ser el bloque
+   * contenedor de los `fixed` que cuelgan de él. Un modal propio tiene que centrarse con flex o
+   * con `inset: 0; margin: auto`, no con `translate(-50%, -50%)`.
+   */
+  panelTop: number | null = 0;
+  panelBottom: number | null = null;
+  panelLeft = 0;
+  /** Ancho del panel: el del propio combobox, para que se vea igual que cuando era `absolute`. */
+  panelWidth = 0;
+
+  /**
+   * Alto aproximado del panel. Solo se usa para decidir si abre hacia abajo o hacia arriba en el
+   * primer cálculo, cuando el panel todavía no está en el DOM y no se puede medir de verdad
+   * (buscador + lista de opciones, que está topada en 200px).
+   */
+  private readonly altoPanelEstimado = 240;
+
+  /**
+   * Ancestro que hace de bloque contenedor de los `position: fixed` (uno con transform/filter/etc.),
+   * resuelto al abrir. null = el bloque contenedor es el viewport, que es el caso normal.
+   */
+  private bloqueFijo: HTMLElement | null = null;
+
+  /** Ancestros que pueden recortar el combobox (scroll u `overflow: hidden`), cacheados al abrir. */
+  private contenedoresRecorte: HTMLElement[] = [];
+
+  private destruido = false;
+
+  /**
+   * Handler de scroll/resize (capturing): recoloca el panel para que siga al combobox. Los scrolls
+   * originados dentro del propio componente (la lista de opciones scrollea) no mueven el combo,
+   * así que se ignoran — solo cuentan los de ancestros reales.
+   */
+  private readonly onAncestorScroll = (event?: Event) => {
+    if (event?.target instanceof Node && this.el.nativeElement.contains(event.target)) return;
+    this.reposicionar();
+  };
+
+  constructor(
+    private el: ElementRef,
+    private cdr: ChangeDetectorRef,
+  ) {}
+
+  ngOnDestroy(): void {
+    this.destruido = true;
+    this.desconectarListeners();
+  }
 
   @HostListener('document:pointerdown', ['$event'])
   onDocumentPointerDown(event: PointerEvent) {
     if (this.isOpen && !this.el.nativeElement.contains(event.target as Node)) {
       this.close();
     }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape() {
+    if (this.isOpen) this.close();
   }
 
   /** Quita tildes/diacríticos y pasa a minúsculas para comparar (ej. "Máximo" ≈ "maximo"). */
@@ -200,18 +283,107 @@ export class SearchSelect {
   }
 
   private togglePanel() {
-    this.isOpen = !this.isOpen;
     if (this.isOpen) {
-      this.searchText = '';
-      setTimeout(() => this.searchInput?.nativeElement.focus());
+      this.close();
+      return;
     }
+    this.abrir();
+  }
+
+  private abrir() {
+    this.isOpen = true;
+    this.searchText = '';
+    this.contenedoresRecorte = this.calcularContenedoresRecorte();
+    this.bloqueFijo = bloqueContenedorFijo(this.el.nativeElement);
+    this.posicionarPanel();
+    if (typeof document !== 'undefined') {
+      // Captura: los contenedores internos con scroll (una tabla, el cuerpo de un modal) no
+      // burbujean su evento 'scroll', así que hay que escucharlo en fase de captura.
+      document.addEventListener('scroll', this.onAncestorScroll, true);
+      window.addEventListener('resize', this.onAncestorScroll);
+    }
+    // Recolocar ya con el alto real: al abrir, el panel todavía no existe en el DOM.
+    setTimeout(() => {
+      this.searchInput?.nativeElement.focus();
+      this.reposicionar();
+    });
+  }
+
+  /**
+   * Recalcula la posición del panel tras un scroll/resize para que siga al combobox. Si el combo
+   * dejó de verse (salió del viewport o lo recortó un contenedor con scroll) se cierra, para que
+   * el panel no quede flotando sobre contenido que no le corresponde.
+   *
+   * El `detectChanges` es indispensable: el listener se registra con `addEventListener` (no con un
+   * binding de Angular) y la app corre zoneless, así que sin él el cambio de posición no se
+   * pintaría y el panel se quedaría clavado donde estaba.
+   */
+  private reposicionar() {
+    if (this.destruido || !this.isOpen || typeof window === 'undefined') return;
+    const rect = this.rectDelTrigger();
+    if (rect && this.anclaVisible(rect)) this.posicionarPanel(rect);
+    else this.close();
+    this.cdr.detectChanges();
+  }
+
+  /** Caja del botón del combobox, que es lo que el panel tiene que seguir. */
+  private rectDelTrigger(): DOMRect | null {
+    const nodo = this.triggerRef?.nativeElement ?? (this.el.nativeElement as HTMLElement);
+    return nodo ? (nodo.getBoundingClientRect() as DOMRect) : null;
+  }
+
+  /** Coloca el panel (`fixed`) pegado al combo y ajustado para no salirse del viewport. */
+  private posicionarPanel(rect?: DOMRect | null) {
+    if (typeof window === 'undefined') return;
+    const r = rect ?? this.rectDelTrigger();
+    if (!r) return;
+
+    const margen = 8;
+    this.panelWidth = Math.round(r.width);
+    const left = Math.max(Math.min(r.left, window.innerWidth - this.panelWidth - margen), margen);
+
+    // Los `fixed` se miden contra el viewport salvo que algún ancestro tenga transform/filter/etc.,
+    // en cuyo caso ese ancestro pasa a ser su bloque contenedor y hay que descontarle su origen
+    // (ver `bloqueContenedorFijo`). Sin esto, un combo dentro del cajón de filtros —que se abre y
+    // se cierra con `translate-x-*`— dibujaba el desplegable fuera de la pantalla.
+    const cb = this.bloqueFijo?.getBoundingClientRect();
+    this.panelLeft = Math.round(left - (cb?.left ?? 0));
+
+    // Abre hacia arriba solo si debajo del combo no entra y encima hay más espacio. En ese caso se
+    // ancla por `bottom` para que siga pegado al combo aunque el panel cambie de alto (la lista se
+    // acorta al escribir en el buscador).
+    const alto = this.panelRef?.nativeElement.offsetHeight || this.altoPanelEstimado;
+    const espacioAbajo = window.innerHeight - r.bottom - margen;
+    const espacioArriba = r.top - margen;
+    if (espacioAbajo < alto && espacioArriba > espacioAbajo) {
+      this.panelTop = null;
+      this.panelBottom = Math.round((cb?.bottom ?? window.innerHeight) - r.top + 4);
+    } else {
+      this.panelBottom = null;
+      this.panelTop = Math.round(r.bottom + 4 - (cb?.top ?? 0));
+    }
+  }
+
+  private calcularContenedoresRecorte(): HTMLElement[] {
+    return contenedoresQueRecortan(this.el.nativeElement as HTMLElement);
+  }
+
+  /** true si el combo sigue a la vista: dentro del viewport y sin que lo recorte ningún ancestro. */
+  private anclaVisible(rect: DOMRect): boolean {
+    return anclaSigueVisible(rect, this.contenedoresRecorte);
+  }
+
+  private desconectarListeners() {
+    if (typeof document === 'undefined') return;
+    document.removeEventListener('scroll', this.onAncestorScroll, true);
+    window.removeEventListener('resize', this.onAncestorScroll);
   }
 
   select(option: any) {
     this.value = option[this.valueField];
     this.valueChange.emit(this.value);
     this.notifyChange();
-    this.isOpen = false;
+    this.close();
     this.searchText = '';
   }
 
@@ -233,6 +405,9 @@ export class SearchSelect {
 
   close() {
     this.isOpen = false;
+    this.contenedoresRecorte = [];
+    this.bloqueFijo = null;
+    this.desconectarListeners();
   }
 
   trackByOption = (_index: number, option: any): any => option[this.valueField];

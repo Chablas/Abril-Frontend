@@ -66,19 +66,44 @@
         </app-search-select>
       </div>
 
-      <!-- Razón social del trabajador: dato de la ficha, no una decisión de quien programa, así
-           que va de solo lectura. Ocupa el lugar del antiguo desplegable de médico — GTH pidió
-           dejar de elegir médico y ver acá la empresa. El médico de la cita lo pone el backend
-           con el que esté marcado como por defecto en el catálogo. -->
-      <div class="abril-field">
-        <label class="abril-field-label">Razón social</label>
-        <input
-          class="abril-field-input abril-field-input--readonly"
-          type="text"
-          readonly
-          tabindex="-1"
-          [value]="worker.empresa || '—'" />
+      <!-- Razón social del trabajador. Normalmente es un dato de la ficha y no una decisión de
+           quien programa, así que va de solo lectura; ocupa el lugar del antiguo desplegable de
+           médico — GTH pidió dejar de elegir médico y ver acá la empresa. El médico de la cita lo
+           pone el backend con el que esté marcado como por defecto en el catálogo.
+
+           La excepción es el ingreso directo FFT: llega al EMO sin razón social porque su vacante
+           no se aprueba ni se publica y nadie pasó por la asignación de Reclutamiento. Ahí sí hay
+           que elegirla, y es obligatoria: sin ella la cita queda fuera de Programaciones. -->
+      <div class="abril-field" *ngIf="pideRazonSocial; else razonSocialFicha">
+        <app-search-select
+          label="Razón social *"
+          [color]="accentColor"
+          [options]="razonesSociales"
+          valueField="id"
+          displayField="nombre"
+          [value]="form.empresaId"
+          placeholder="Selecciona razón social"
+          (valueChange)="form.empresaId = $event">
+        </app-search-select>
+        <p class="razon-hint" *ngIf="razonSocialSeleccionada">
+          Cupos disponibles: <b>{{ razonSocialSeleccionada.cuposDisponibles }}</b> de 20.
+        </p>
+        <p class="razon-hint razon-hint--warn" *ngIf="sinCupos">
+          La razón social seleccionada no tiene cupos disponibles.
+        </p>
       </div>
+
+      <ng-template #razonSocialFicha>
+        <div class="abril-field">
+          <label class="abril-field-label">Razón social</label>
+          <input
+            class="abril-field-input abril-field-input--readonly"
+            type="text"
+            readonly
+            tabindex="-1"
+            [value]="worker.empresa || '—'" />
+        </div>
+      </ng-template>
     </div>
 
     <div class="abril-field">

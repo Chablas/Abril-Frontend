@@ -18,6 +18,7 @@ import {
   ClinicaSimpleDto,
   EmoTipoDto,
 } from '../../../features/ssoma/salud-ocupacional/dtos/catalogos.model';
+import { RazonSocialCupo } from '../../dtos/razon-social.dto';
 import { ErrorService } from '../../../core/services/error.service';
 
 /**
@@ -48,15 +49,23 @@ export class ProgramarEmoDialogComponent implements OnInit {
   tiposEmo: EmoTipoDto[] = [];
   clinicas: ClinicaSimpleDto[] = [];
 
+  /**
+   * Razones sociales del grupo con sus cupos. Solo se cargan cuando hay que elegir una
+   * (ver `pideRazonSocial`); en el caso normal la lista queda vacía y no se pide nada.
+   */
+  razonesSociales: RazonSocialCupo[] = [];
+
   form: {
     fechaProgramada: string;
     tipoEmoId: number | null;
     clinicaId: number | null;
+    empresaId: number | null;
     notas: string;
   } = {
     fechaProgramada: '',
     tipoEmoId: null,
     clinicaId: null,
+    empresaId: null,
     notas: '',
   };
 
@@ -104,7 +113,45 @@ export class ProgramarEmoDialogComponent implements OnInit {
         this.cdr.detectChanges();
       },
     });
+    if (this.pideRazonSocial) this.cargarRazonesSociales();
     this.cargarDestinatarios();
+  }
+
+  // ── Razón social ────────────────────────────────────────────────────────
+  /**
+   * ¿Hay que elegirle la razón social? Solo cuando la ficha no tiene ninguna, que es el caso del
+   * ingreso directo FFT: su vacante no se aprueba ni se publica, así que nadie pasó por la
+   * asignación interna de Reclutamiento y llegó al EMO sin empresa. Sin ella la cita quedaría
+   * fuera de la pantalla de Programaciones y del correo a la clínica, así que es obligatoria.
+   *
+   * En el resto de los casos la razón social es un dato de la ficha y no una decisión de quien
+   * programa, así que se sigue mostrando de solo lectura.
+   */
+  get pideRazonSocial(): boolean {
+    return !this.worker?.empresaId;
+  }
+
+  private cargarRazonesSociales(): void {
+    this.programacionService.getRazonesSociales().subscribe({
+      next: (list) => {
+        this.razonesSociales = list ?? [];
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** Razón social elegida, para el aviso de cupos. */
+  get razonSocialSeleccionada(): RazonSocialCupo | null {
+    return this.razonesSociales.find((r) => r.id === this.form.empresaId) ?? null;
+  }
+
+  /** true si la razón social elegida ya no tiene cupo para una persona más. */
+  get sinCupos(): boolean {
+    return this.razonSocialSeleccionada?.cuposDisponibles === 0;
   }
 
   private cargarDestinatarios(): void {
@@ -155,6 +202,7 @@ export class ProgramarEmoDialogComponent implements OnInit {
   }
 
   get canSubmit(): boolean {
+    if (this.pideRazonSocial && !this.form.empresaId) return false;
     return !!(this.form.fechaProgramada && this.form.tipoEmoId && this.form.clinicaId);
   }
 
@@ -185,7 +233,9 @@ export class ProgramarEmoDialogComponent implements OnInit {
       .programarEmo({
         workerId: this.worker.workerId,
         tipoEmoId: this.form.tipoEmoId!,
-        empresaId: this.worker.empresaId ?? null,
+        // La elegida en el modal cuando la ficha no traía ninguna: el backend se la asigna al
+        // trabajador (y al requerimiento del que salió), no la usa solo para esta cita.
+        empresaId: this.form.empresaId ?? this.worker.empresaId ?? null,
         fechaProgramada: this.form.fechaProgramada,
         horaProgramada: null,
         clinicaId: this.form.clinicaId,

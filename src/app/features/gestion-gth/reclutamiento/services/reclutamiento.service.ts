@@ -175,6 +175,19 @@ export class ReclutamientoService {
   }
 
   /**
+   * Cierra el proceso desde «EMO apto» / «EMO apto con restricciones» y habilita el paso a
+   * onboarding: el requerimiento pasa a CERRADO, que es lo que hace aparecer al seleccionado en la
+   * bandeja de Onboarding como candidato por ingresar.
+   */
+  cerrarProceso(requerimientoId: number): Observable<EstadoTransicionResult> {
+    return this.http.post<EstadoTransicionResult>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/cerrar-proceso`,
+      {},
+      { headers: this.headers },
+    );
+  }
+
+  /**
    * Programa (o reprograma) la entrevista de un candidato y envía la invitación al correo que
    * declaró en su formulario. El correo destino lo resuelve el backend, no viaja en el body.
    */

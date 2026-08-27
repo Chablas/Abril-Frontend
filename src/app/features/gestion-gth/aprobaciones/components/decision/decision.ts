@@ -26,7 +26,7 @@ import { DestinatarioSolicitud } from '../../../shared/dtos/destinatarios.dto';
 /**
  * Modal de decisión sobre una solicitud de personal: sus vacantes de la ruta del usuario y, en cada
  * una, Aprobar o Rechazar. Las de la otra ruta no llegan del backend — el Gerente General decide
- * las nuevas y las FFT, el gerente del área y GTH los reemplazos —, así que acá nunca aparecen.
+ * las nuevas, el gerente del área y GTH los reemplazos —, así que acá nunca aparecen.
  *
  * El usuario marca su casilla (`data.nivel`, que el backend resuelve desde la categoría de su
  * ficha) y ve como información la del otro firmante de su MISMA ruta: en un reemplazo, quien decide
@@ -147,7 +147,7 @@ export class GthAprobacionDecision implements OnInit {
   // ── Decisión por vacante ────────────────────────────────────────────────
   /**
    * Las vacantes del modal. Ya vienen recortadas a la ruta del usuario desde el backend —el Gerente
-   * General recibe las nuevas y las FFT, el gerente del área y GTH los reemplazos—, así que acá no
+   * General recibe las nuevas, el gerente del área y GTH los reemplazos—, así que acá no
    * se vuelve a filtrar: las de la otra ruta no llegan.
    */
   get vacantes(): AprobacionVacante[] {

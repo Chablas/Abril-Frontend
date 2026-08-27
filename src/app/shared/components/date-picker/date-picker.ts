@@ -13,6 +13,11 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import {
+  anclaSigueVisible,
+  bloqueContenedorFijo,
+  contenedoresQueRecortan,
+} from '../../utils/panel-flotante.util';
 
 /** Una celda del calendario (puede pertenecer al mes vecino como relleno). */
 interface DiaCelda {
@@ -142,6 +147,12 @@ export class DatePicker implements OnChanges, OnDestroy {
     this.reposicionar();
   };
 
+  /**
+   * Ancestro que hace de bloque contenedor de los `position: fixed` (uno con transform/filter/etc.),
+   * resuelto al abrir. null = el bloque contenedor es el viewport, que es el caso normal.
+   */
+  private bloqueFijo: HTMLElement | null = null;
+
   /** Ancestros que pueden recortar el campo (scroll u `overflow: hidden`), cacheados al abrir. */
   private contenedoresRecorte: HTMLElement[] = [];
 
@@ -208,6 +219,7 @@ export class DatePicker implements OnChanges, OnDestroy {
     this.isOpen = true;
     this.vista = 'dias';
     this.contenedoresRecorte = this.calcularContenedoresRecorte();
+    this.bloqueFijo = bloqueContenedorFijo(this.el.nativeElement);
     this.posicionarPanel();
     if (typeof document !== 'undefined') {
       // Captura: los contenedores internos con scroll (ej. la tabla del cronograma) no
@@ -231,6 +243,7 @@ export class DatePicker implements OnChanges, OnDestroy {
     this.isOpen = false;
     this.vista = 'dias';
     this.contenedoresRecorte = [];
+    this.bloqueFijo = null;
     if (typeof document !== 'undefined') {
       document.removeEventListener('scroll', this.onAncestorScroll, true);
       window.removeEventListener('resize', this.onAncestorScroll);
@@ -259,8 +272,14 @@ export class DatePicker implements OnChanges, OnDestroy {
     if (typeof window === 'undefined') return;
     const r = rect ?? (this.el.nativeElement.getBoundingClientRect() as DOMRect);
     const margen = 12;
-    const left = Math.min(r.left, window.innerWidth - this.anchoPanel - margen);
-    this.panelLeft = Math.max(left, margen);
+    const left = Math.max(Math.min(r.left, window.innerWidth - this.anchoPanel - margen), margen);
+
+    // Los `fixed` se miden contra el viewport salvo que algún ancestro tenga transform/filter/etc.,
+    // en cuyo caso ese ancestro pasa a ser su bloque contenedor y hay que descontarle su origen
+    // (ver `bloqueContenedorFijo`). Sin esto, un campo dentro del cajón de filtros —que se abre y
+    // se cierra con `translate-x-*`— dibujaba el calendario fuera de la pantalla.
+    const cb = this.bloqueFijo?.getBoundingClientRect();
+    this.panelLeft = Math.round(left - (cb?.left ?? 0));
 
     // Abre hacia arriba solo si debajo del campo no entra y encima hay más espacio. En ese caso
     // se ancla por `bottom` para que siga pegado al campo aunque cambie de alto (las grillas de
@@ -270,49 +289,20 @@ export class DatePicker implements OnChanges, OnDestroy {
     const espacioArriba = r.top - margen;
     if (espacioAbajo < alto && espacioArriba > espacioAbajo) {
       this.panelTop = null;
-      this.panelBottom = Math.round(window.innerHeight - r.top + 4);
+      this.panelBottom = Math.round((cb?.bottom ?? window.innerHeight) - r.top + 4);
     } else {
       this.panelBottom = null;
-      this.panelTop = Math.round(r.bottom + 4);
+      this.panelTop = Math.round(r.bottom + 4 - (cb?.top ?? 0));
     }
   }
 
-  /**
-   * Ancestros con scroll/`overflow: hidden` que pueden recortar el campo.
-   *
-   * El recorrido se corta al llegar a un ancestro `position: fixed`: ese subárbol se posiciona
-   * respecto al viewport, así que el overflow de lo que está por encima ya no lo recorta. Sin
-   * ese corte, un campo dentro de un modal a pantalla completa (`app-base-modal [fullScreen]`)
-   * arrastraba como "recortadores" al `main` y al `page-content` del layout, que empiezan
-   * después del sidebar (240px): el campo cae a la izquierda de ellos, `anclaVisible` lo daba
-   * por oculto y `reposicionar` cerraba el calendario apenas se abría.
-   */
   private calcularContenedoresRecorte(): HTMLElement[] {
-    if (typeof window === 'undefined') return [];
-    const out: HTMLElement[] = [];
-    let nodo = this.el.nativeElement as HTMLElement;
-    let estiloNodo = getComputedStyle(nodo);
-    let padre = nodo.parentElement;
-    while (padre && padre !== document.body && padre !== document.documentElement) {
-      if (estiloNodo.position === 'fixed') break;
-      const estiloPadre = getComputedStyle(padre);
-      if (/auto|scroll|hidden/.test(`${estiloPadre.overflowY} ${estiloPadre.overflowX}`)) {
-        out.push(padre);
-      }
-      nodo = padre;
-      estiloNodo = estiloPadre;
-      padre = padre.parentElement;
-    }
-    return out;
+    return contenedoresQueRecortan(this.el.nativeElement as HTMLElement);
   }
 
   /** true si el campo sigue a la vista: dentro del viewport y sin que lo recorte ningún ancestro. */
   private anclaVisible(rect: DOMRect): boolean {
-    if (rect.bottom <= 0 || rect.top >= window.innerHeight) return false;
-    return this.contenedoresRecorte.every((c) => {
-      const r = c.getBoundingClientRect();
-      return rect.bottom > r.top && rect.top < r.bottom && rect.right > r.left && rect.left < r.right;
-    });
+    return anclaSigueVisible(rect, this.contenedoresRecorte);
   }
 
   /** Alterna entre la grilla de días y el selector de mes (click en el mes de la cabecera). */

@@ -48,21 +48,15 @@
   gap: 0.5rem;
 }
 
-.date-picker-wrap, .search-wrap {
+.date-picker-wrap {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
+  padding: 0.32rem 0.7rem;
 }
-.date-picker-wrap { padding: 0.32rem 0.7rem; }
-.search-wrap {
-  padding: 0.3rem 0.7rem;
-  min-width: 180px;
-  transition: border-color 0.15s;
-}
-.search-wrap:focus-within { border-color: #94a3b8; }
 
 .date-icon { font-size: 0.85rem; }
 .date-input {
@@ -190,17 +184,9 @@
 }
 .pill-active .pill-count { background: rgba(0, 0, 0, 0.12); }
 
-.search-icon { font-size: 0.82rem; }
-.search-input {
-  background: transparent;
-  border: none;
-  outline: none;
-  color: #1e293b;
-  font-size: 0.80rem;
-  font-family: inherit;
-  width: 100%;
-}
-.search-input::placeholder { color: #cbd5e1; }
+/* El buscador de trabajador/DNI es `app-search-input` (el estándar de la app), no un input
+   propio: el hueco solo lo alinea a la derecha de la fila de filtros. */
+.search-slot { flex-shrink: 0; }
 
 .cards-zone {
   flex: 1;
@@ -472,22 +458,31 @@
   background: rgba(0, 0, 0, 0.5);
   z-index: 100;
 }
+/* Centrado con `inset: 0; margin: auto` y NO con `translate(-50%, -50%)`: un ancestro con
+   `transform` se vuelve el bloque contenedor de los `position: fixed` que cuelgan de él, y eso
+   volvería a recortar los desplegables de app-search-select / app-date-picker / app-time-picker
+   dentro del modal, que es justo lo que se quería evitar. */
 .dark-modal {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  margin: auto;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: var(--radius-md);
-  width: 100%;
+  width: calc(100vw - 2rem);
   max-width: 420px;
+  height: fit-content;
+  max-height: calc(100vh - 3rem);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   z-index: 101;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
+
+/* Modales de aceptar/reprogramar la cita: más anchos que el resto porque llevan fecha y hora en
+   una fila y el combo de tipo de EMO debajo, y con 420px los tres campos quedaban apretados. */
+.em-modal { max-width: 560px; }
 .dm-header {
   display: flex;
   align-items: flex-start;
@@ -528,11 +523,16 @@
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
+  /* El modal ya no crece sin tope (max-height): el cuerpo es lo que scrollea si el contenido no
+     entra. Los desplegables son `fixed` y se recolocan solos al scrollear, así que no se cortan. */
+  overflow-y: auto;
+  min-height: 0;
 }
 .dm-field-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.85rem;
+  gap: 0.85rem 1rem;
+  align-items: start;
 }
 .dm-field { display: flex; flex-direction: column; gap: 0.3rem; }
 .dm-label {
@@ -701,7 +701,7 @@
   .agenda-header     { padding: 10px 14px 8px; }
   .stats-bar         { padding: 6px 14px; }
   .controls-row      { padding: 6px 14px; flex-direction: column; align-items: stretch; }
-  .search-wrap       { min-width: 0; }
+  .search-slot       { width: 100%; }
   .cards-zone        { padding: 10px 12px; }
   .dark-modal        { max-width: calc(100vw - 2rem); }
   .dm-field-grid     { grid-template-columns: 1fr; }

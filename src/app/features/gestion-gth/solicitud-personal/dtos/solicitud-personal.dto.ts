@@ -90,14 +90,10 @@ export interface ReclutamientoFormDataDto {
   trabajadoresArea: OpcionDto[];
   destinatarios: SolicitudDestinatarios;
   /**
-   * true si la ficha del solicitante es de Gerencia General. Con esto el formulario avisa que una
-   * solicitud **FFT** suya no pasa por la aprobación de Gerencia General —se estaría aprobando a
-   * sí mismo— y va directo a GTH. Lo resuelve el backend por la categoría de su ficha, no por rol.
-   */
-  esGerenteGeneral: boolean;
-  /**
-   * A quién le llegaría el aviso a GTH de un pedido FFT del propio Gerente General. Solo viene
-   * cuando `esGerenteGeneral`; en el resto de los casos el aviso es `destinatarios`.
+   * A quién le llegaría el aviso a GTH de una vacante de ingreso directo **FFT**. A un ingreso
+   * directo no lo aprueba nadie —lo pida quien lo pida— así que su aviso reemplaza a
+   * `destinatarios` en esas vacantes, y una solicitud que mezcle las dos clases manda los dos
+   * correos.
    */
   destinatariosFft: SolicitudDestinatarios | null;
 }
@@ -155,16 +151,19 @@ export interface SolicitudPersonalCreateResult {
   id: number;
   codigos: string[];
   /**
-   * ¿Salió el correo que arranca el flujo? Normalmente el de aprobación al Gerente General; en el
-   * FFT que registra el propio Gerente General, el aviso a GTH. false cuando no hay destinatarios
-   * configurados o el envío falló: la solicitud queda esperando un reenvío.
+   * ¿Salió TODO lo que tenía que salir? Las vacantes normales disparan el correo de aprobación y
+   * las de ingreso directo el aviso a GTH; una solicitud mixta manda los dos y esto es true solo si
+   * salieron ambos. false cuando no hay destinatarios configurados o el envío falló: la solicitud
+   * queda esperando un reenvío.
    */
   correoGerenciaEnviado: boolean;
   /**
-   * true = la solicitud no pasa por la aprobación de Gerencia General (la registró el propio
-   * Gerente General y todas sus vacantes son FFT): el requerimiento nace ya en manos de GTH.
+   * true = la solicitud no pasa por «Aprobaciones» porque TODAS sus vacantes son de ingreso directo
+   * FFT: los requerimientos nacen ya en manos de GTH esperando el EMO de ingreso.
    */
   aprobacionGgOmitida: boolean;
+  /** true si la solicitud trae al menos una vacante de ingreso directo FFT. */
+  hayIngresoDirecto: boolean;
   message: string;
 }
 
@@ -222,9 +221,10 @@ export interface AprobacionGgResumen {
   /** Comentario de GTH. */
   gthComentario: string | null;
   /**
-   * Por dónde se aprueba esta vacante: `GG` (solo Gerencia General, las nuevas y las FFT) o
-   * `AREA_GTH` (gerente del área + GTH, los reemplazos). Con esto la tarjeta muestra solo las
-   * firmas que hacen falta en vez de las tres.
+   * Por dónde se aprueba esta vacante: `GG` (solo Gerencia General, las nuevas) o `AREA_GTH`
+   * (gerente del área + GTH, los reemplazos). Con esto la tarjeta muestra solo las firmas que hacen
+   * falta en vez de las tres. Un ingreso directo FFT no tiene aprobación: en esos la tarjeta llega
+   * en null y no hay `ruta` que mirar.
    */
   ruta: 'GG' | 'AREA_GTH';
 }

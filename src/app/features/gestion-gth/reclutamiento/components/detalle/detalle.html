@@ -162,9 +162,11 @@
                     </a>
                   }
 
-                  <!-- Paso que ahora cierra el proceso: GTH le programa el EMO de Ingreso desde
+                  <!-- Último paso de GTH antes del cierre: programarle el EMO de Ingreso desde
                        SSOMA. No se programa acá para no duplicar la funcionalidad — se salta a la
-                       pantalla de EMOs con su ficha ya enfocada y el modal abierto. -->
+                       pantalla de EMOs con su ficha ya enfocada y el modal abierto. Programar la
+                       cita no cierra nada: el proceso sigue abierto hasta que la clínica califique
+                       el examen y GTH confirme el cierre. -->
                   @if (sel.emoIngresoPendiente && sel.workerId) {
                     <button type="button" (click)="programarEmoIngreso(sel)"
                             class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
@@ -192,8 +194,8 @@
                 }
 
                 <!-- El aviso queda solo para el caso en que no hay ficha que abrir: con el botón
-                     «Programar EMO de ingreso» a la vista, explicar que el proceso cierra al
-                     programarlo era una línea que nadie accionaba. -->
+                     «Programar EMO de ingreso» a la vista, explicar de nuevo para qué sirve era una
+                     línea que nadie accionaba. -->
                 @if (sel.emoIngresoPendiente && !sel.workerId) {
                   <p class="text-[11.5px] text-amber-800 mt-[10px] flex items-start gap-[6px]">
                     <i class="ti ti-alert-circle text-[14px] shrink-0 mt-[1px]"></i>
@@ -224,6 +226,67 @@
                   </div>
                 }
               }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── EMO de ingreso Apto / Apto con Restricciones ──────────────────
+           Va junto a «Puesto cubierto» (el candidato sigue siendo el seleccionado) porque el
+           examen ya no cierra el proceso solo: lo deja acá y el cierre lo confirma GTH, que es
+           lo que hace aparecer al seleccionado en Onboarding. -->
+      @if (emoApto) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             style="border-color:#a7f3d0;background:#F0FDF4">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-stethoscope text-[20px] shrink-0 mt-[1px]" style="color:#15803D"></i>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#15803D">
+                EMO de ingreso
+              </p>
+              <h3 class="text-[16px] font-bold mt-[2px] leading-tight" style="color:#14532D">
+                Resultado: {{ emoAptitudNombre }}
+              </h3>
+              <p class="text-[12.5px] mt-[3px]" style="color:#166534">
+                El proceso de reclutamiento está listo para cerrarse. Al cerrarlo,
+                {{ (detalle.seleccionado?.nombre | titleCase) || 'el seleccionado' }} pasa a
+                Onboarding como candidato por ingresar.
+              </p>
+
+              <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                <button type="button" (click)="cerrarProceso()" [disabled]="cerrandoProceso"
+                        class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style="background:#15803D">
+                  <i class="ti ti-circle-check text-[15px]"></i>
+                  {{ cerrandoProceso ? 'Cerrando…' : 'Cerrar proceso y continuar a Onboarding' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── EMO de ingreso Observado ──────────────────────────────────────
+           La única fase del EMO sin salida: no se puede cerrar (todavía no hay aptitud) ni
+           continuar con otro candidato (este todavía puede resultar apto). Solo se espera el
+           resultado de la interconsulta, que al cargarse como EMO vuelve a mover el proceso. -->
+      @if (emoObservado) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             style="border-color:#fed7aa;background:#FFF7ED">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-stethoscope text-[20px] shrink-0 mt-[1px]" style="color:#C2410C"></i>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#C2410C">
+                EMO de ingreso
+              </p>
+              <h3 class="text-[16px] font-bold mt-[2px] leading-tight" style="color:#7C2D12">
+                Resultado: Observado
+              </h3>
+              <p class="text-[12.5px] mt-[3px]" style="color:#9A3412">
+                {{ (detalle.seleccionado?.nombre | titleCase) || 'El seleccionado' }} fue derivado a
+                interconsulta: su aptitud real se define con ese resultado. Hasta entonces el proceso
+                no se cierra ni continúa con otro candidato.
+              </p>
             </div>
           </div>
         </div>
@@ -279,6 +342,33 @@
                   </span>
                 </p>
               }
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- ── Proceso cerrado sin cubrir la vacante ─────────────────────────
+           Un ingreso directo (FFT) que salió No Apto en el EMO: no tiene rechazados que retomar
+           ni long list a la que volver, así que no hay ninguna acción que ofrecer. Se dice para
+           que el modal no quede sin explicación de por qué el proceso terminó así. -->
+      @if (cerradoSinCubrir) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             style="border-color:#e5e7eb;background:#F9FAFB">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-circle-off text-[20px] shrink-0 mt-[1px]" style="color:#4B5563"></i>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#4B5563">
+                Proceso terminado
+              </p>
+              <h3 class="text-[16px] font-bold mt-[2px] leading-tight" style="color:#1F2937">
+                La vacante no se cubrió
+              </h3>
+              <p class="text-[12.5px] mt-[3px]" style="color:#4B5563">
+                {{ (candidatoNoApto?.nombre | titleCase) || 'El candidato' }} salió No Apto en el EMO
+                de ingreso y este pedido era un ingreso directo (FFT): no hay otros candidatos ni
+                long list a la que volver. Para volver a pedir la vacante hay que registrar una nueva
+                solicitud.
+              </p>
             </div>
           </div>
         </div>

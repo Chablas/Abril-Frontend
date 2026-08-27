@@ -4,6 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Observable, forkJoin, of } from 'rxjs';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
 import { EmoService } from '../../../../../ssoma/salud-ocupacional/services/emo.service';
 import { EmoCreateDto, InterconsultaInlineCreateDto, EmoRestriccionCreateDto } from '../../../../../ssoma/salud-ocupacional/dtos/emo.model';
 import { SALUD_OCUPACIONAL_BASE, buildAuthHeaders } from '../../../../../ssoma/salud-ocupacional/services/http-base';
@@ -16,7 +18,7 @@ import { hoyIsoLocal } from '../../../../../../shared/utils/fecha-local.util';
 @Component({
   selector: 'app-completar-emo',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, DatePicker],
   templateUrl: './completar-emo.html',
   styleUrls: ['./completar-emo.css'],
 })
@@ -51,9 +53,24 @@ export class CompletarEmo implements OnChanges {
 
   readonly aptitudes = ['Apto', 'Apto con Restricciones', 'No Apto', 'Observado'];
 
+  /**
+   * Las mismas aptitudes en el formato que consume `app-search-select`. El orden es semántico
+   * (de la mejor a la peor), no alfabético: por eso el combo va con `[sortAlpha]="false"`.
+   */
+  readonly aptitudOptions = this.aptitudes.map((a) => ({ id: a, nombre: a }));
+
   get requiereRestriccion(): boolean { return this.aptitud === 'Apto con Restricciones'; }
   get requiereDocumentos(): boolean { return this.aptitud === 'Apto' || this.aptitud === 'Apto con Restricciones'; }
-  get requiereInterconsulta(): boolean { return this.aptitud === 'No Apto' || this.aptitud === 'Observado'; }
+
+  /**
+   * Solo «Observado» exige interconsulta: esa aptitud significa literalmente que falta derivar al
+   * postulante para saber su resultado real, así que sin especialidad el registro no dice nada.
+   *
+   * «No Apto» NO la exige. Es un veredicto cerrado —el trabajador queda bloqueado en habilitación
+   * y, si venía de un proceso de selección, ese proceso se detiene—, así que pedir una derivación
+   * para poder guardarlo solo trababa el registro de un resultado que ya estaba decidido.
+   */
+  get requiereInterconsulta(): boolean { return this.aptitud === 'Observado'; }
 
   get canSubmit(): boolean {
     if (!this.aptitud || !this.fechaEmo || !this.programacion || this.saving) return false;
@@ -169,7 +186,7 @@ export class CompletarEmo implements OnChanges {
       interconsultaInline = {
         especialidad: this.icEspecialidad.trim(),
         diagnostico: this.icDiagnostico.trim() || undefined,
-        requiereSeguimiento: this.aptitud === 'No Apto' ? this.icRequiereSeguimiento : false,
+        requiereSeguimiento: this.icRequiereSeguimiento,
       };
     }
 
