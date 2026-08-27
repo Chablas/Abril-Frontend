@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Roles de usuario de la aplicación (cross-cutting).
  *
  * Cada constante es el **ID del rol** (tal como está en la tabla `role` de la BD de
@@ -60,6 +60,10 @@ export const Roles = {
   ADMINISTRADOR_SOLICITUD_SALIDAS:  '76', // ADMINISTRADOR DE SOLICITUD DE SALIDAS
   USUARIO_GTH:                      '77', // USUARIO DE GTH
   USUARIO_REVISOR_SALIDAS:          '78', // USUARIO REVISOR DE SALIDAS
+  // TESORERO: no basta con tenerlo. El backend solo concede sus features si además el puesto del
+  // trabajador es de categoría TESORERO (ver AuthRepository.GetAllowedFeaturesAsync), así que un
+  // hasRole(TESORERO) puede ser true sin que la persona vea la pantalla.
+  TESORERO:                         '80', // TESORERO
 } as const;
 
 /** Unión de los valores literales de rol (para tipar parámetros que esperen un rol). */

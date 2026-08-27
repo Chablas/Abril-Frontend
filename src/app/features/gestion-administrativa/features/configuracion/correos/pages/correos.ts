@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+﻿import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -104,12 +104,18 @@ export class GaCorreos implements OnInit {
   filtrosActivos = 0;
   filtrosAbiertos = false;
 
-  /** Etiquetas cortas para las pestañas internas. */
+  /**
+   * Etiquetas cortas para las pestañas internas. Las pestañas salen de ga_correo_evento, así que
+   * un correo nuevo aparece solo: sin entrada acá se muestra con su nombre completo.
+   */
   private readonly labelCorto: Record<string, string> = {
     REVISOR: 'Revisor',
     CONFIRMACION: 'Confirmación',
     APROBADA: 'Aprobada',
     RECHAZADA: 'Rechazada',
+    S10_REVISOR: 'S10 al revisor',
+    REEMBOLSO_APROBADO: 'Reembolso OK',
+    REEMBOLSO_RECHAZADO: 'Reembolso observado',
   };
 
   constructor(

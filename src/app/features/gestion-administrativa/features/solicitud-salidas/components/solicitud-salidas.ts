@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { CommonModule, DatePipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import { SolicitudSalidaCreate } from './create/create';
@@ -19,12 +19,17 @@ import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
+import { ConsolidadoS10Modal } from '../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
+import {
+  ConsolidadoS10Ambito,
+  ConsolidadoS10Dto,
+} from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 @Component({
   standalone: true,
   selector: 'app-solicitud-salidas',
-  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, StatusBadge, SolicitudSalidaDetalleModal, SolicitudSalidaCapturasModal, SearchSelect, AbrilPageHeaderComponent, FabButton, TitleCasePipe, FilterTriggerButton, FilterModal, AbrilBulkActionDirective],
+  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, StatusBadge, SolicitudSalidaDetalleModal, SolicitudSalidaCapturasModal, SearchSelect, AbrilPageHeaderComponent, FabButton, TitleCasePipe, FilterTriggerButton, FilterModal, AbrilBulkActionDirective, ConsolidadoS10Modal],
   templateUrl: './solicitud-salidas.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
@@ -41,6 +46,9 @@ export class SolicitudSalidas implements OnInit {
 
   /** ID de la solicitud cuyo modal de subir capturas está abierto. null = cerrado. */
   capturasId: number | null = null;
+
+  /** Solicitud cuyo modal de Consolidado del S10 está abierto. null = cerrado. */
+  consolidadoDe: SolicitudSalidaListItemDto | null = null;
 
   /** IDs seleccionados para la acción bulk de rendición. */
   selectedIds = new Set<number>();
@@ -88,6 +96,7 @@ export class SolicitudSalidas implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -98,6 +107,11 @@ export class SolicitudSalidas implements OnInit {
       this.showModal = true;
       this.modalFullScreen = true;
     }
+
+    // Enlace directo de los correos del reembolso ("Ver mi solicitud" / "Subsanar observaciones"):
+    // abre el detalle de esa solicitud sin que el trabajador tenga que buscarla en la tabla.
+    const solicitudId = Number(this.route.snapshot.queryParamMap.get('solicitud'));
+    if (solicitudId > 0) this.detalleId = solicitudId;
   }
 
   loadFilterData(): void {
@@ -269,32 +283,110 @@ export class SolicitudSalidas implements OnInit {
 
     this.loaderService.show();
     this.service.marcarRendidasBulk(ids).subscribe({
-      next: (response) => {
-        const blob = response.body as Blob;
-        const count = Number(response.headers.get('X-Rendidas-Count') ?? ids.length);
-        const filename = this.extractFilename(response.headers.get('Content-Disposition'))
-                      ?? `Planilla_Rendicion_${new Date().toISOString().slice(0, 10)}.pdf`;
-
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.click();
-        URL.revokeObjectURL(url);
-
-        this.loaderService.hide();
-        Swal.fire({
-          title: `${count} solicitud(es) rendida(s)`,
-          text: 'Se descargó la planilla de gasto por movilidad.',
-          icon: 'success',
-        });
-        this.load();
-      },
+      next: (response) => this.descargarPlanilla(response, ids.length),
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         this.errorService.handleError(err);
+        this.cdr.detectChanges();
       },
     });
+  }
+
+  // ── Rendición del mes anterior ───────────────────────────────────────
+
+  /** Nombre del mes anterior al actual, para nombrar la acción sin ambigüedad. */
+  get mesAnteriorLabel(): string {
+    const hoy = new Date();
+    const mes = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    const nombre = mes.toLocaleDateString('es-PE', { month: 'long' });
+    return nombre.charAt(0).toUpperCase() + nombre.slice(1);
+  }
+
+  /**
+   * Rinde de una vez todas las salidas propias del mes anterior que estén listas. El backend
+   * resuelve qué entra (aprobadas, no rendidas y con capturas en todos sus trayectos) e ignora
+   * el resto, así que no depende de lo que esté cargado en la tabla.
+   */
+  async rendirMesAnterior(): Promise<void> {
+    const result = await Swal.fire({
+      icon: 'question',
+      title: `¿Rendir tus salidas de ${this.mesAnteriorLabel}?`,
+      text: 'Solo entran las aprobadas con las capturas de todos sus trayectos.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, rendir',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0086A5',
+    });
+    if (!result.isConfirmed) return;
+
+    this.loaderService.show();
+    this.service.rendirMesAnterior().subscribe({
+      next: (response) => this.descargarPlanilla(response),
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** Descarga el PDF devuelto por una rendición y refresca la tabla. */
+  private descargarPlanilla(response: HttpResponse<Blob>, countFallback = 0): void {
+    const blob = response.body as Blob;
+    const count = Number(response.headers.get('X-Rendidas-Count') ?? countFallback);
+    const filename = this.extractFilename(response.headers.get('Content-Disposition'))
+                  ?? `Planilla_Rendicion_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    this.loaderService.hide();
+    Swal.fire({
+      title: `${count} solicitud(es) rendida(s)`,
+      text: 'Se descargó la planilla de gasto por movilidad.',
+      icon: 'success',
+    });
+    this.load();
+  }
+
+  // ── Consolidado del S10 (solo salidas rendidas) ──────────────────────
+
+  /** El consolidado solo aplica cuando la salida ya fue rendida. */
+  puedeAdjuntarConsolidado(s: SolicitudSalidaListItemDto): boolean {
+    return s.estadoRendicion === 'Rendido';
+  }
+
+  abrirConsolidado(s: SolicitudSalidaListItemDto, ev: Event): void {
+    ev.stopPropagation(); // no abrir el modal de detalle
+    this.consolidadoDe = s;
+  }
+
+  /** Función de subida que consume el modal compartido (ya sabe a qué endpoint pegarle). */
+  readonly subirConsolidado = (file: File, ambito: ConsolidadoS10Ambito) =>
+    this.service.uploadConsolidadoS10(this.consolidadoDe!.id, file, ambito);
+
+  /** Consolidado vigente de la salida abierta, para mostrarlo dentro del modal. */
+  get consolidadoActual(): ConsolidadoS10Dto | null {
+    const s = this.consolidadoDe;
+    if (!s?.consolidadoS10Url) return null;
+    return {
+      id: 0,
+      ambito: s.consolidadoS10Ambito ?? 'Rendicion',
+      pdfUrl: s.consolidadoS10Url,
+      pdfFilename: s.consolidadoS10Filename ?? 'Consolidado del S10',
+      uploadedAt: '',
+    };
+  }
+
+  /** Cierra el modal; si se subió algo recarga para reflejarlo en toda la planilla. */
+  cerrarConsolidado(subido: ConsolidadoS10Dto | null): void {
+    this.consolidadoDe = null;
+    if (subido) this.load();
+    else        this.cdr.detectChanges();
   }
 
   private extractFilename(contentDisposition: string | null): string | null {
@@ -336,5 +428,53 @@ export class SolicitudSalidas implements OnInit {
     return estado === 'Rendido'
       ? { bg: '#DBEAFE', text: '#0086A5' }
       : { bg: '#F3F4F6', text: '#6B7280' };
+  }
+
+  // ── Reembolso ────────────────────────────────────────────────────────
+
+  reembolsoColors(estado: string): { bg: string; text: string } {
+    switch (estado) {
+      case 'Aprobado':  return { bg: '#D7FAF4', text: '#009C87' };
+      case 'Rechazado': return { bg: '#FAD5D4', text: '#D30000' };
+      case 'Firmado':   return { bg: '#E0E7FF', text: '#4338CA' };
+      case 'Pagado':    return { bg: '#DCFCE7', text: '#15803D' };
+      default:          return { bg: '#FEF9C3', text: '#92400E' }; // Pendiente
+    }
+  }
+
+  /**
+   * Avisa al jefe/revisor que el Consolidado del S10 ya está adjunto. Se puede repetir a
+   * propósito (un correo se pierde, el jefe lo archiva sin leer): la fecha del último aviso queda
+   * a la vista en el botón para que no se convierta en insistencia a ciegas.
+   */
+  async notificarRevisor(s: SolicitudSalidaListItemDto, ev: Event): Promise<void> {
+    ev.stopPropagation(); // no abrir el detalle
+
+    if (s.revisorNotificadoAt) {
+      const result = await Swal.fire({
+        icon: 'question',
+        title: '¿Volver a avisar?',
+        text: 'Ya le avisaste a tu revisor por esta salida. Se le enviará el correo otra vez.',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, avisar de nuevo',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#0F6E56',
+      });
+      if (!result.isConfirmed) return;
+    }
+
+    this.loaderService.show();
+    this.service.notificarRevisor(s.id).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        Swal.fire({ icon: 'success', title: res.message, timer: 2000, showConfirmButton: false });
+        this.load();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
   }
 }

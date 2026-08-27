@@ -1,3 +1,5 @@
+import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+
 export interface SolicitudSalidaCapturaDto {
   id: number;
   imageUrl: string;
@@ -44,5 +46,7 @@ export interface SolicitudSalidaDetalleDto {
   motivoRechazo: string | null;
   /** PDF de la planilla de rendición. Null si la solicitud aún no fue rendida. */
   rendicion: SolicitudSalidaRendicionDto | null;
+  /** Consolidado del S10 vigente (propio de la salida o heredado de su planilla). Null si no hay. */
+  consolidadoS10: ConsolidadoS10Dto | null;
   trayectos: TrayectoDetalleDto[];
 }

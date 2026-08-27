@@ -1,4 +1,4 @@
-<app-abril-page-header
+﻿<app-abril-page-header
   badge="GESTIÓN ADMINISTRATIVA · CONFIGURACIÓN"
   titulo="Configuración"
   [subtitulo]="subtitulo"
@@ -8,7 +8,7 @@
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas y
        delega en el modal de filtros de la sección activa. -->
-  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="onOpenFilters()" />
+  <app-filter-trigger *ngIf="seccionConFiltros" tabsExtra [count]="filtrosActivos" (open)="onOpenFilters()" />
 </app-abril-page-header>
 
 <div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
@@ -37,4 +37,10 @@
 
   <!-- SECCIÓN: Correos -->
   <app-ga-correos *ngIf="activeSection === 'correos'"></app-ga-correos>
+
+  <!-- SECCIÓN: Tu firma. Panel compartido: la misma firma que registra Contabilidad. -->
+  <div *ngIf="activeSection === 'firma'" class="overflow-y-auto">
+    <app-firma-personal
+      descripcion="Se estampa en la planilla de rendición que firmes y en el resto de documentos que firmes" />
+  </div>
 </div>

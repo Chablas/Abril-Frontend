@@ -1,10 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { SectionTabs, SectionTab } from '../../../../shared/components/section-tabs/section-tabs';
 import { InvoiceFolder } from './invoiceFolder/components/invoice-folder';
-import { ManagerSignature } from './managerSignature/components/manager-signature';
+import { FirmaPersonal } from '../../../../shared/components/firma-personal/firma-personal';
 
 import { CONTABILIDAD_TABS } from '../../shared/contabilidad-tabs';
 type ConfigSection = 'carpeta-facturas' | 'firma-gg';
@@ -19,7 +19,7 @@ type ConfigSection = 'carpeta-facturas' | 'firma-gg';
 @Component({
   selector: 'app-contabilidad-configuracion',
   standalone: true,
-  imports: [CommonModule, SectionTabs, InvoiceFolder, ManagerSignature, AbrilPageHeaderComponent],
+  imports: [CommonModule, SectionTabs, InvoiceFolder, FirmaPersonal, AbrilPageHeaderComponent],
   templateUrl: './contabilidad-configuracion.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })

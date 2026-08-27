@@ -1,6 +1,7 @@
-import { Routes } from '@angular/router';
+﻿import { Routes } from '@angular/router';
 import { authGuard } from '../../core/guards/auth.guard';
 import { roleGuard } from '../../core/guards/role.guard';
+import { Roles } from '../../core/constants/roles';
 
 export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
   { path: '', redirectTo: 'solicitud-salidas', pathMatch: 'full' },
@@ -114,6 +115,22 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
       featureKey: 'gestion-administrativa.config.carpeta-adjuntos',
       seccion: 'carpeta-adjuntos',
+    },
+  },
+  // "Tu firma" no se restringe por featureKey sino por rol: la firma es de la persona, no de una
+  // funcionalidad, y la necesita cualquier trabajador de Abril que vaya a firmar algo (el jefe que
+  // firma una planilla de rendición, pero también quien firme en otro módulo). USUARIO DE ABRIL
+  // (12) es el rol base de todo empleado, así que deja fuera solo a las sesiones que no son de
+  // Abril (contratistas y clínica, que tienen su propio flujo de auth).
+  {
+    path: 'configuracion/firma',
+    loadComponent: () =>
+      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
+      seccion: 'firma',
+      roles: [Roles.USUARIO_DE_ABRIL],
     },
   },
   {

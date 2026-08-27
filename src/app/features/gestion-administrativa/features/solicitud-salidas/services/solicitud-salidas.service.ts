@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
@@ -10,6 +10,10 @@ import {
   SolicitudSalidaCapturaDto,
   SolicitudSalidaDetalleDto,
 } from '../dtos/solicitud-salida-detalle.dto';
+import {
+  ConsolidadoS10Ambito,
+  ConsolidadoS10Dto,
+} from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 
 @Injectable({ providedIn: 'root' })
 export class SolicitudSalidasService {
@@ -72,6 +76,16 @@ export class SolicitudSalidasService {
     });
   }
 
+  /**
+   * Avisa al jefe/revisor que el Consolidado del S10 ya está adjunto y su reembolso espera
+   * revisión. Lo dispara el trabajador; el correo lleva el botón que abre la solicitud exacta.
+   */
+  notificarRevisor(id: number): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.apiUrl}/${id}/notificar-revisor`, {}, {
+      headers: this.headers,
+    });
+  }
+
   /** Cancela una solicitud propia que esté Pendiente (registrada por error o salida no realizada). */
   cancelar(id: number): Observable<{ message: string }> {
     return this.http.patch<{ message: string }>(`${this.apiUrl}/${id}/cancelar`, {}, {
@@ -92,6 +106,42 @@ export class SolicitudSalidasService {
         responseType: 'blob',
         observe: 'response',
       },
+    );
+  }
+
+  /**
+   * Rinde de una vez TODAS las solicitudes propias del mes anterior que estén listas (aprobadas,
+   * no rendidas y con las capturas de todos sus trayectos) y descarga la planilla. El conteo real
+   * viene en el header X-Rendidas-Count.
+   */
+  rendirMesAnterior(): Observable<HttpResponse<Blob>> {
+    return this.http.patch(
+      `${this.apiUrl}/rendir-mes-anterior`,
+      {},
+      {
+        headers: this.headers,
+        responseType: 'blob',
+        observe: 'response',
+      },
+    );
+  }
+
+  /**
+   * Adjunta (o reemplaza) el PDF Consolidado del S10 de una salida propia ya rendida.
+   * `ambito` decide si el archivo cubre toda la planilla de rendición o solo esa salida.
+   */
+  uploadConsolidadoS10(
+    solicitudId: number,
+    file: File,
+    ambito: ConsolidadoS10Ambito,
+  ): Observable<ConsolidadoS10Dto> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('ambito', ambito);
+    return this.http.post<ConsolidadoS10Dto>(
+      `${this.apiUrl}/${solicitudId}/consolidado-s10`,
+      formData,
+      { headers: this.headers },
     );
   }
 

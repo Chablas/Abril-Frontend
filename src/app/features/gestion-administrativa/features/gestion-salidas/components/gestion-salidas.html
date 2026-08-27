@@ -1,7 +1,9 @@
 ﻿<app-abril-page-header
   [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
   titulo="Gestión de Salidas"
-  subtitulo="Aprobación y rendición de solicitudes de salida."
+  [subtitulo]="esTesorero
+    ? 'Reembolsos firmados por la jefatura, listos para pagar.'
+    : 'Aprobación, rendición y reembolso de solicitudes de salida.'"
   [botonSecundario]="{ label: 'Exportar a excel', icono: 'ti-download' }"
   (secondaryClick)="exportarExcel()"
   [tabs]="tabs">
@@ -30,6 +32,8 @@
   <div class="flex flex-wrap items-center gap-2">
     <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">{{ selectedIds.size }} seleccionada{{ selectedIds.size === 1 ? '' : 's' }}</span>
 
+    <!-- Acciones de aprobación / rendición: no son de Tesorería, que solo paga. -->
+    <ng-container *ngIf="!esTesorero">
     <button
       type="button"
       abrilBulkAction="default"
@@ -67,6 +71,20 @@
 
     <button
       type="button"
+      abrilBulkAction="default"
+      (click)="rendirMesAnterior()"
+      [title]="rendicionMesAnteriorFiltrada
+        ? 'Rinde las salidas de ' + mesAnteriorLabel + ' que dejan ver los filtros activos y ya tengan sus capturas'
+        : 'Rinde todas las salidas de ' + mesAnteriorLabel + ' que ya tengan sus capturas'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2">
+        <rect x="3" y="4" width="18" height="17" rx="2"/>
+        <path stroke-linecap="round" d="M8 2v4M16 2v4M3 10h18"/>
+      </svg>
+      {{ rendirMesAnteriorLabel }}
+    </button>
+
+    <button
+      type="button"
       abrilBulkAction="danger"
       (click)="cancelarBulk()"
       [disabled]="selectedCancelables.length === 0"
@@ -76,6 +94,65 @@
         <path stroke-linecap="round" d="M6.3 6.3l11.4 11.4"/>
       </svg>
       Cancelar<span *ngIf="selectedCancelables.length > 0"> ({{ selectedCancelables.length }})</span>
+    </button>
+
+    <!-- ── Reembolso: solo sobre salidas rendidas con el Consolidado del S10 adjunto ── -->
+    <span class="w-px h-[22px] bg-gray-200 mx-1"></span>
+
+    <button
+      type="button"
+      abrilBulkAction="default"
+      (click)="aprobarReembolsoBulk()"
+      [disabled]="!puedeDecidirReembolso"
+      [title]="reembolsoIncluyePropia
+        ? 'No puedes aprobar el reembolso de tus propias salidas — deselecciona las tuyas'
+        : 'Solo salidas rendidas con el Consolidado del S10 adjunto'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+      Aprobar reembolso<span *ngIf="puedeDecidirReembolso"> ({{ selectedReembolsoRevisables.length }})</span>
+    </button>
+
+    <button
+      type="button"
+      abrilBulkAction="danger"
+      (click)="rechazarReembolsoBulk()"
+      [disabled]="!puedeDecidirReembolso"
+      [title]="reembolsoIncluyePropia
+        ? 'No puedes rechazar el reembolso de tus propias salidas — deselecciona las tuyas'
+        : 'Se le pedirá una observación para que el trabajador sepa qué corregir'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
+        <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
+      </svg>
+      Rechazar reembolso<span *ngIf="puedeDecidirReembolso"> ({{ selectedReembolsoRevisables.length }})</span>
+    </button>
+
+    <button
+      type="button"
+      abrilBulkAction="primary"
+      (click)="firmarBulk()"
+      [disabled]="selectedFirmables.length === 0"
+      title="Estampa tu firma en la planilla de rendición (el PDF original se conserva)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 20h18M4.5 16.5 16 5a2.1 2.1 0 0 1 3 3L7.5 19.5 3 21l1.5-4.5Z"/>
+      </svg>
+      Firmar<span *ngIf="selectedFirmables.length > 0"> ({{ selectedFirmables.length }})</span>
+    </button>
+    </ng-container>
+
+    <!-- ── Tesorería: lo único que hace en esta pantalla ── -->
+    <button
+      *ngIf="esTesorero"
+      type="button"
+      abrilBulkAction="primary"
+      (click)="marcarPagadasBulk()"
+      [disabled]="selectedPagables.length === 0"
+      title="Solo se puede marcar como pagado lo que la jefatura ya firmó">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <rect x="2.5" y="5.5" width="19" height="13" rx="2"/>
+        <path stroke-linecap="round" d="M2.5 10h19M6 15h4"/>
+      </svg>
+      Marcar como pagadas<span *ngIf="selectedPagables.length > 0"> ({{ selectedPagables.length }})</span>
     </button>
   </div>
 
@@ -153,6 +230,11 @@
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('estadoRendicion')">{{ sortDirOf('estadoRendicion') === 'desc' ? '▼' : '▲' }}</span>
             </span>
           </th>
+          <th class="cursor-pointer select-none" (click)="toggleSort('estadoReembolso')" title="Ordenar por reembolso">
+            <span class="inline-flex items-center gap-1">Reembolso
+              <span class="text-[10px]" [class.opacity-30]="!sortDirOf('estadoReembolso')">{{ sortDirOf('estadoReembolso') === 'desc' ? '▼' : '▲' }}</span>
+            </span>
+          </th>
           <th class="cursor-pointer select-none" (click)="toggleSort('createdAt')" title="Ordenar por fecha de registro">
             <span class="inline-flex items-center gap-1">Registrada
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('createdAt')">{{ sortDirOf('createdAt') === 'desc' ? '▼' : '▲' }}</span>
@@ -171,7 +253,7 @@
       <tbody>
 
         <tr *ngIf="salidas.length === 0">
-          <td [attr.colspan]="esRecepcion ? 16 : 14" class="text-center py-[40px] text-gray-400 text-sm">
+          <td [attr.colspan]="esRecepcion ? 17 : 15" class="text-center py-[40px] text-gray-400 text-sm">
             No hay solicitudes registradas.
           </td>
         </tr>
@@ -268,12 +350,28 @@
             <!-- No aprobada → guion -->
             <span *ngIf="s.estadoAprobacion !== 'Aprobado'" class="text-gray-300">—</span>
 
-            <!-- Aprobada y ya rendida → solo badge -->
-            <app-status-badge
-              *ngIf="s.estadoAprobacion === 'Aprobado' && s.estadoRendicion === 'Rendido'"
-              [text]="s.estadoRendicion"
-              [bgColor]="rendicionColors(s.estadoRendicion).bg"
-              [textColor]="rendicionColors(s.estadoRendicion).text" />
+            <!-- Aprobada y ya rendida → badge + acceso al Consolidado del S10 -->
+            <div *ngIf="s.estadoAprobacion === 'Aprobado' && s.estadoRendicion === 'Rendido'"
+                 class="inline-flex items-center gap-1.5">
+              <app-status-badge
+                [text]="s.estadoRendicion"
+                [bgColor]="rendicionColors(s.estadoRendicion).bg"
+                [textColor]="rendicionColors(s.estadoRendicion).text" />
+              <button
+                type="button"
+                (click)="abrirConsolidado(s, $event)"
+                [title]="s.consolidadoS10Url
+                  ? 'Consolidado del S10 adjunto — clic para reemplazarlo'
+                  : 'Adjuntar el PDF Consolidado del S10'"
+                class="consolidado-chip"
+                [class.consolidado-chip--on]="!!s.consolidadoS10Url">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                S10
+              </button>
+            </div>
 
             <!-- Aprobada y no rendida + con capturas → badge (rendible vía selección) -->
             <app-status-badge
@@ -295,6 +393,39 @@
               </svg>
               Capturas incompletas
             </span>
+          </td>
+
+          <!-- Reembolso: el visto bueno al gasto. Mientras no haya S10 adjunto no hay nada que
+               revisar, así que se muestra el motivo en vez de un badge "Pendiente" engañoso. -->
+          <td>
+            <div *ngIf="s.reembolsoRevisable || s.estadoReembolso !== 'Pendiente'"
+                 class="inline-flex items-center gap-1.5">
+              <app-status-badge
+                [text]="s.estadoReembolso"
+                [bgColor]="reembolsoColors(s.estadoReembolso).bg"
+                [textColor]="reembolsoColors(s.estadoReembolso).text"
+                [title]="s.estadoReembolso === 'Rechazado' && s.observacionReembolso
+                  ? 'Observación: ' + s.observacionReembolso
+                  : (s.reembolsoDecididoPor ? 'Revisado por ' + s.reembolsoDecididoPor : null)" />
+
+              <button
+                *ngIf="s.planillaFirmadaUrl"
+                type="button"
+                (click)="abrirPlanillaFirmada(s, $event)"
+                class="consolidado-chip consolidado-chip--on"
+                title="Abrir la planilla de rendición firmada">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M3 20h18M4.5 16.5 16 5a2.1 2.1 0 0 1 3 3L7.5 19.5 3 21l1.5-4.5Z"/>
+                </svg>
+                Firma
+              </button>
+            </div>
+
+            <span *ngIf="!s.reembolsoRevisable && s.estadoReembolso === 'Pendiente'"
+                  class="text-gray-300"
+                  [title]="s.estadoRendicion === 'Rendido'
+                    ? 'Falta adjuntar el Consolidado del S10 para poder revisar el reembolso'
+                    : 'El reembolso se revisa recién cuando la salida está rendida'">—</span>
           </td>
 
           <td class="text-gray-400 whitespace-nowrap">
@@ -346,7 +477,7 @@
 
 </div>
 
-<app-fab label="Solicitar salida" (clicked)="irASolicitarSalida()"></app-fab>
+<app-fab *ngIf="!esTesorero" label="Solicitar salida" (clicked)="irASolicitarSalida()"></app-fab>
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
@@ -391,7 +522,8 @@
     </app-search-select>
   </div>
 
-  <div class="flex gap-3">
+  <!-- Estado y rendición no le dicen nada a Tesorería: todo lo que ve está aprobado y rendido. -->
+  <div class="flex gap-3" *ngIf="!esTesorero">
     <div class="flex-1">
       <app-search-select
         label="Estado"
@@ -415,10 +547,36 @@
     </div>
   </div>
 
+  <div class="w-full">
+    <app-search-select
+      label="Reembolso"
+      [options]="estadoReembolsoOptions"
+      valueField="value"
+      displayField="label"
+      [value]="filters.estadoReembolso"
+      (valueChange)="filters.estadoReembolso = $event; onSearch()">
+    </app-search-select>
+  </div>
+
 </app-filter-modal>
+
+<!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->
+<app-consolidado-s10-modal
+  *ngIf="consolidadoDe !== null"
+  [upload]="subirConsolidado"
+  [actual]="consolidadoActual"
+  (close)="cerrarConsolidado($event)" />
 
 <!-- ── Modal detalle de solicitud rendida ─────────────────────────────── -->
 <app-gestion-salida-detalle-modal
   *ngIf="detalle"
   [detalle]="detalle"
   (close)="cerrarDetalle()" />
+
+<!-- ── Modal para registrar la firma la primera vez ────────────────────
+     Salta con el 409 de "Firmar": el usuario dibuja su firma sin salir de la pantalla y la
+     firma que había pedido se reintenta sola. -->
+<app-firma-registrar-modal
+  *ngIf="firmaModalAbierto"
+  (guardada)="onFirmaRegistrada()"
+  (cerrar)="cerrarFirmaModal()" />

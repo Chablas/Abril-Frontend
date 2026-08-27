@@ -1,4 +1,4 @@
-<app-base-modal
+﻿<app-base-modal
   [title]="'Detalle de la solicitud'"
   width="w-[720px]"
   (closeModal)="cerrar()">
@@ -135,6 +135,30 @@
       </a>
       <div class="text-xs text-gray-400">
         Rendido el {{ detalle.rendicion.rendidoAt | date:'dd/MM/yyyy HH:mm' }}
+      </div>
+    </div>
+
+    <!-- ── Consolidado del S10 ───────────────────────────────────────── -->
+    <div *ngIf="detalle.consolidadoS10" class="border-t pt-4 flex flex-col gap-2" style="border-color:var(--color-abril-border)">
+      <div class="text-xs text-gray-500 uppercase">
+        Consolidado del S10
+        <span class="normal-case text-gray-400">
+          ({{ detalle.consolidadoS10.ambito === 'Rendicion' ? 'toda la planilla' : 'solo esta salida' }})
+        </span>
+      </div>
+      <a
+        [href]="detalle.consolidadoS10.pdfUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all" style="color:var(--color-abril-accent)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+        {{ detalle.consolidadoS10.pdfFilename }}
+      </a>
+      <div class="text-xs text-gray-400">
+        Adjuntado el {{ detalle.consolidadoS10.uploadedAt | date:'dd/MM/yyyy HH:mm' }}
       </div>
     </div>
 

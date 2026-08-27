@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+﻿import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
@@ -11,6 +11,8 @@ import { GaTrayectos } from '../trayectos/pages/trayectos';
 import { VisibilidadSalidas } from './visibilidad-salidas/pages/visibilidad-salidas';
 import { GaCarpetaAdjuntos } from './carpeta-adjuntos/pages/carpeta-adjuntos';
 import { GaCorreos } from './correos/pages/correos';
+import { Roles } from '../../../../core/constants/roles';
+import { FirmaPersonal } from '../../../../shared/components/firma-personal/firma-personal';
 
 import { GESTION_ADMINISTRATIVA_TABS } from '../../shared/gestion-administrativa-tabs';
 /** Definición de una sección de configuración de Gestión Administrativa. */
@@ -18,7 +20,13 @@ interface ConfigSectionDef {
   id: string;
   label: string;
   route: string;
-  featureKey: string;
+  /**
+   * Feature que hay que tener para ver la sección. Sin valor, la sección se filtra por
+   * <see cref="roles"/> (hoy solo "Tu firma": la firma es de la persona, no de una funcionalidad).
+   */
+  featureKey?: string;
+  /** Roles que abren la sección cuando no se filtra por featureKey. */
+  roles?: string[];
   subtitulo: string;
   /** Etiqueta del botón de crear del header. Sin valor = la sección no crea registros. */
   createLabel?: string;
@@ -59,6 +67,7 @@ interface ConfigSectionDef {
     VisibilidadSalidas,
     GaCarpetaAdjuntos,
     GaCorreos,
+    FirmaPersonal,
   ],
   templateUrl: './ga-configuracion.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
@@ -115,6 +124,17 @@ export class GaConfiguracion implements OnInit {
       subtitulo:
         'Define, por cada correo del flujo de salidas, a quién se le envía y a quién nunca (la exclusión gana). Cada destinatario puede ser un trabajador, un área (se envía a sus miembros) o un correo escrito a mano.',
     },
+    // Por rol y no por featureKey: la firma es de la persona, no de una funcionalidad. Todo
+    // USUARIO DE ABRIL entra acá a registrar la suya, y es la MISMA que se estampa en las facturas
+    // de Contabilidad y en la carta oferta de Onboarding.
+    {
+      id: 'firma',
+      label: 'Tu firma',
+      route: '/gestion-administrativa/configuracion/firma',
+      roles: [Roles.USUARIO_DE_ABRIL],
+      subtitulo:
+        'Tu firma personal. Es la que se estampa en la planilla de rendición que firmes y en el resto de documentos que firmes en la intranet.',
+    },
   ];
 
   /** Secciones a las que el usuario tiene acceso (las que se muestran como pestañas). */
@@ -138,7 +158,7 @@ export class GaConfiguracion implements OnInit {
 
   ngOnInit(): void {
     this.visibleSections = this.allSections.filter((s) =>
-      this.navigationService.isFeatureAllowed(s.featureKey),
+      this.navigationService.isNavEntryAllowed({ featureKey: s.featureKey, roles: s.roles }),
     );
     this.sectionTabs = this.visibleSections.map((s) => ({ id: s.id, label: s.label }));
 
@@ -195,6 +215,14 @@ export class GaConfiguracion implements OnInit {
 
   get filtrosActivos(): number {
     return this.activeCmp?.filtrosActivos ?? 0;
+  }
+
+  /**
+   * "Tu firma" es un panel, no una lista: no tiene tabla que filtrar, así que el botón "Filtros"
+   * no se muestra ahí (si no, quedaría un botón que no abre nada).
+   */
+  get seccionConFiltros(): boolean {
+    return this.activeSection !== 'firma';
   }
 
   onSectionChange(id: string): void {

@@ -28,6 +28,18 @@
 
     <button
       type="button"
+      abrilBulkAction="default"
+      (click)="rendirMesAnterior()"
+      [title]="'Rinde de una vez todas tus salidas de ' + mesAnteriorLabel + ' que ya tengan sus capturas'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="4" width="18" height="17" rx="2"/>
+        <path stroke-linecap="round" d="M8 2v4M16 2v4M3 10h18"/>
+      </svg>
+      Rendir {{ mesAnteriorLabel }}
+    </button>
+
+    <button
+      type="button"
       abrilBulkAction="danger"
       (click)="cancelarBulk()"
       [disabled]="selectedCancelables.length === 0"
@@ -64,13 +76,14 @@
           <th>Destino</th>
           <th>Estado</th>
           <th>Rendición</th>
+          <th>Reembolso</th>
           <th>Registrada</th>
           <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngIf="solicitudes.length === 0">
-          <td colspan="12" class="text-center py-[40px] text-gray-400 text-sm">
+          <td colspan="13" class="text-center py-[40px] text-gray-400 text-sm">
             No hay solicitudes registradas.
           </td>
         </tr>
@@ -149,11 +162,27 @@
               <span class="text-gray-300">—</span>
             </ng-template>
           </td>
+          <!-- Reembolso: el visto bueno de la jefatura al gasto. Con el rechazo se muestra la
+               observación en el tooltip, que es lo que hay que subsanar. -->
+          <td>
+            <app-status-badge
+              *ngIf="s.estadoRendicion === 'Rendido'; else sinReembolso"
+              [text]="s.estadoReembolso"
+              [bgColor]="reembolsoColors(s.estadoReembolso).bg"
+              [textColor]="reembolsoColors(s.estadoReembolso).text"
+              [title]="s.estadoReembolso === 'Rechazado' && s.observacionReembolso
+                ? 'Observación: ' + s.observacionReembolso
+                : null" />
+            <ng-template #sinReembolso>
+              <span class="text-gray-300">—</span>
+            </ng-template>
+          </td>
+
           <td class="text-gray-400 whitespace-nowrap">
             {{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}
           </td>
           <td (click)="$event.stopPropagation()">
-            <div *ngIf="puedeSubirCapturas(s) || esSeleccionable(s); else sinAcciones" class="flex items-center gap-2">
+            <div *ngIf="puedeSubirCapturas(s) || esSeleccionable(s) || puedeAdjuntarConsolidado(s) || s.puedeNotificarRevisor; else sinAcciones" class="flex items-center gap-2">
               <button
                 *ngIf="puedeSubirCapturas(s)"
                 type="button"
@@ -181,6 +210,41 @@
                   <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
                 </svg>
                 Rendir
+              </button>
+              <button
+                *ngIf="puedeAdjuntarConsolidado(s)"
+                type="button"
+                (click)="abrirConsolidado(s, $event)"
+                [title]="s.consolidadoS10Url ? 'Reemplazar el Consolidado del S10' : 'Adjuntar el PDF Consolidado del S10'"
+                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                style="background:var(--color-abril-standard)"
+                onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+                onmouseout="this.style.background='var(--color-abril-standard)'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                {{ s.consolidadoS10Url ? 'Consolidado S10 ✓' : 'Consolidado S10' }}
+              </button>
+
+              <!-- Se habilita recién con el S10 adjunto: antes de eso el revisor no tendría qué
+                   mirar. Después de aprobado (o firmado, o pagado) desaparece. -->
+              <button
+                *ngIf="s.puedeNotificarRevisor"
+                type="button"
+                (click)="notificarRevisor(s, $event)"
+                [title]="s.revisorNotificadoAt
+                  ? 'Ya le avisaste el ' + (s.revisorNotificadoAt | date:'dd/MM/yyyy HH:mm') + ' — puedes volver a avisarle'
+                  : 'Avísale a tu jefe/revisor que ya adjuntaste el Consolidado del S10'"
+                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold transition-colors"
+                [style.background]="s.revisorNotificadoAt ? '#FFFFFF' : '#005D9D'"
+                [style.color]="s.revisorNotificadoAt ? '#005D9D' : '#FFFFFF'"
+                [style.border]="s.revisorNotificadoAt ? '1px solid #005D9D' : '1px solid #005D9D'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2.5" y="4.5" width="19" height="15" rx="2"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m3 6 9 6 9-6"/>
+                </svg>
+                {{ s.revisorNotificadoAt ? 'Revisor avisado ✓' : 'Avisar al revisor' }}
               </button>
             </div>
             <ng-template #sinAcciones>
@@ -214,6 +278,13 @@
   *ngIf="capturasId !== null"
   [solicitudId]="capturasId"
   (close)="cerrarCapturas($event)" />
+
+<!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->
+<app-consolidado-s10-modal
+  *ngIf="consolidadoDe !== null"
+  [upload]="subirConsolidado"
+  [actual]="consolidadoActual"
+  (close)="cerrarConsolidado($event)" />
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">

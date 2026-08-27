@@ -1,4 +1,4 @@
-<app-base-modal
+﻿<app-base-modal
   [title]="'Detalle de la solicitud'"
   width="w-[720px]"
   (closeModal)="cerrar()">
@@ -33,6 +33,49 @@
           <span class="text-gray-300">—</span>
         </ng-template>
       </div>
+      <!-- Reembolso: el visto bueno de la jefatura al gasto, que arranca recién con la salida
+           rendida. Antes de eso no hay nada que mostrar. -->
+      <div *ngIf="detalle.estadoRendicion === 'Rendido'">
+        <div class="text-xs text-gray-500 uppercase">Reembolso</div>
+        <app-status-badge
+          [text]="detalle.estadoReembolso"
+          [bgColor]="reembolsoColors(detalle.estadoReembolso).bg"
+          [textColor]="reembolsoColors(detalle.estadoReembolso).text" />
+      </div>
+
+      <!-- Quién lo revisó, quién lo firmó y quién lo pagó: la trazabilidad completa del gasto. -->
+      <div *ngIf="detalle.reembolsoDecididoPor" class="col-span-2">
+        <div class="text-xs text-gray-500 uppercase">Reembolso revisado por</div>
+        <div class="text-gray-800">
+          {{ detalle.reembolsoDecididoPor | titleCase }}
+          <span class="text-xs text-gray-400">
+            · {{ detalle.reembolsoDecididoAt | date:'dd/MM/yyyy HH:mm' }}
+          </span>
+        </div>
+      </div>
+
+      <div *ngIf="detalle.observacionReembolso" class="col-span-2">
+        <div class="text-xs text-gray-500 uppercase">Observación del reembolso</div>
+        <div class="text-sm rounded-lg px-3 py-2 whitespace-pre-line"
+             style="background:#FEE2E2;color:#991B1B">{{ detalle.observacionReembolso }}</div>
+      </div>
+
+      <div *ngIf="detalle.firmadoPor">
+        <div class="text-xs text-gray-500 uppercase">Firmado por</div>
+        <div class="text-gray-800">
+          {{ detalle.firmadoPor | titleCase }}
+          <span class="text-xs text-gray-400">· {{ detalle.firmadoAt | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="detalle.pagadoPor">
+        <div class="text-xs text-gray-500 uppercase">Pagado por</div>
+        <div class="text-gray-800">
+          {{ detalle.pagadoPor | titleCase }}
+          <span class="text-xs text-gray-400">· {{ detalle.pagadoAt | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+
       <!-- Área: aquí sí va el árbol completo (la tabla muestra solo la más baja). -->
       <div class="col-span-2">
         <div class="text-xs text-gray-500 uppercase">Área</div>
@@ -169,6 +212,44 @@
       </a>
       <div class="text-xs text-gray-400">
         Rendido el {{ detalle.rendicion.rendidoAt | date:'dd/MM/yyyy HH:mm' }}
+      </div>
+
+      <!-- Copia firmada. El PDF original de arriba nunca se toca: la firma va sobre una copia. -->
+      <a
+        *ngIf="detalle.rendicion.pdfFirmadoUrl"
+        [href]="detalle.rendicion.pdfFirmadoUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+        style="color:var(--color-abril-standard)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 20h18M4.5 16.5 16 5a2.1 2.1 0 0 1 3 3L7.5 19.5 3 21l1.5-4.5Z"/>
+        </svg>
+        Planilla firmada
+      </a>
+    </div>
+
+    <!-- ── Consolidado del S10 ───────────────────────────────────────── -->
+    <div *ngIf="detalle.consolidadoS10" class="border-t pt-4 flex flex-col gap-2" style="border-color:var(--color-abril-border)">
+      <div class="text-xs text-gray-500 uppercase">
+        Consolidado del S10
+        <span class="normal-case text-gray-400">
+          ({{ detalle.consolidadoS10.ambito === 'Rendicion' ? 'toda la planilla' : 'solo esta salida' }})
+        </span>
+      </div>
+      <a
+        [href]="detalle.consolidadoS10.pdfUrl"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all" style="color:var(--color-abril-accent)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        </svg>
+        {{ detalle.consolidadoS10.pdfFilename }}
+      </a>
+      <div class="text-xs text-gray-400">
+        Adjuntado el {{ detalle.consolidadoS10.uploadedAt | date:'dd/MM/yyyy HH:mm' }}
       </div>
     </div>
 
