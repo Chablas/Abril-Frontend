@@ -8,6 +8,8 @@ export interface InspeccionDestinatariosCierreDto {
   coordSsomaEmail: string | null;
   gerenteInmobiliarioEmail: string | null;
   prevencionistas: InspeccionDestinatarioDto[];
+  participantes: InspeccionDestinatarioDto[];
+  jefeSsomaEmail: string | null;
   tuEmail: string | null;
 }
 
