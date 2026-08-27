@@ -3,31 +3,10 @@
   titulo="Programaciones"
   subtitulo="Historial de programaciones de la clínica."
   [tabs]="tabs">
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
 <div class="prog-root">
-
-  <!-- ── Controls ─────────────────────────────────────── -->
-  <div class="controls-row">
-    <div class="ctrl-field">
-      <label class="ctrl-label">Desde</label>
-      <input type="date" class="ctrl-input" [(ngModel)]="filtroDesde" />
-    </div>
-    <div class="ctrl-field">
-      <label class="ctrl-label">Hasta</label>
-      <input type="date" class="ctrl-input" [(ngModel)]="filtroHasta" />
-    </div>
-    <div class="ctrl-field">
-      <label class="ctrl-label">Estado</label>
-      <select class="ctrl-input ctrl-select" [(ngModel)]="filtroEstado">
-        <option value="">Todos los estados</option>
-        <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
-      </select>
-    </div>
-    <button class="btn-buscar" (click)="load()" [disabled]="loading">
-      {{ loading ? 'Buscando…' : 'Buscar' }}
-    </button>
-  </div>
 
   <!-- ── Table zone ────────────────────────────────────── -->
   <div class="table-zone">
@@ -100,3 +79,30 @@
   </div>
 
 </div>
+
+<!-- ── Modal de filtros ─────────────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+  <div class="w-full abril-field">
+    <input type="date" id="prog-desde" class="abril-field-input" placeholder=" "
+      [(ngModel)]="filtroDesde" (ngModelChange)="load()" />
+    <label class="abril-field-label" for="prog-desde">Desde</label>
+  </div>
+
+  <div class="w-full abril-field">
+    <input type="date" id="prog-hasta" class="abril-field-input" placeholder=" "
+      [(ngModel)]="filtroHasta" (ngModelChange)="load()" />
+    <label class="abril-field-label" for="prog-hasta">Hasta</label>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filtroEstado"
+      placeholder="Todos"
+      (valueChange)="filtroEstado = $event; load()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

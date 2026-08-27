@@ -19,28 +19,16 @@
 .agenda-header {
   flex-shrink: 0;
   display: flex;
-  flex-direction: column;
-  background: #0f172a;
-  padding: 14px 20px 0;
+  background: #F8FAFC;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.5rem 1.25rem;
 }
 .header-main-row {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   gap: 1rem;
-  padding-bottom: 10px;
-}
-.header-left { display: flex; flex-direction: column; gap: 2px; }
-.agenda-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #f8fafc;
-  margin: 0;
-}
-.agenda-sub {
-  font-size: 0.76rem;
-  color: #64748b;
-  margin: 0;
+  width: 100%;
 }
 .header-right {
   display: flex;
@@ -698,7 +686,7 @@
 }
 @media (max-width: 640px) {
   .cards-grid        { grid-template-columns: 1fr; }
-  .agenda-header     { padding: 10px 14px 8px; }
+  .agenda-header     { padding: 0.5rem 0.9rem; }
   .stats-bar         { padding: 6px 14px; }
   .controls-row      { padding: 6px 14px; flex-direction: column; align-items: stretch; }
   .search-wrap       { min-width: 0; }
