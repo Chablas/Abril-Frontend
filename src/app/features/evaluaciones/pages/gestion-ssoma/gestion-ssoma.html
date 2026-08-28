@@ -28,7 +28,8 @@
       { label: 'Dashboard', icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' }
     ]},
     { label: 'Gestión SSOMA', icono: 'ti-users-group', tabs: [
-      { label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' }
+      { label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-gestion-ssoma', featureKey: 'evaluaciones.resultados-gestion-ssoma' }
     ]}
   ]">
 </app-abril-page-header>
@@ -48,84 +49,8 @@
     <p>No hay un período de evaluación abierto en este momento.</p>
   </div>
 
-  <!-- ═══ MODO ANÓNIMO (Prevencionista -> su Coordinador SSOMA) ═══ -->
-  <ng-container *ngIf="!loading && inicio?.periodo && modoAnonimo">
-
-    <!-- Ya evaluó -->
-    <div class="empty-state" *ngIf="inicio?.yaEvalueMiCoordinador">
-      <i class="ti ti-check"></i>
-      <h3>Ya evaluaste este período</h3>
-      <p>Gracias por completar tu evaluación anónima a tu Coordinador SSOMA de {{ inicio!.periodo!.nombreMes }} {{ inicio!.periodo!.anio }}.</p>
-    </div>
-
-    <!-- Formulario anónimo -->
-    <div class="gs-content-single" *ngIf="!inicio?.yaEvalueMiCoordinador">
-      <div class="eval-card">
-        <div class="ec-header">
-          <div>
-            <div class="ec-title">Evaluación a tu Coordinador SSOMA</div>
-            <div class="ec-sub">
-              <i class="ti ti-calendar"></i>
-              {{ inicio!.periodo!.nombreMes }} {{ inicio!.periodo!.anio }} · {{ inicio!.periodo!.diasRestantes }} días restantes
-            </div>
-          </div>
-          <div class="ec-anon">
-            <i class="ti ti-shield-lock"></i> Anónimo
-          </div>
-        </div>
-
-        <div class="scale-ref">
-          <span *ngFor="let p of puntajes" class="scale-chip" [ngClass]="'scale-' + p">
-            {{ p }}: {{ puntajeLabel[p] }}
-          </span>
-        </div>
-
-        <div class="criteria-list">
-          <div class="criterion-row" *ngFor="let d of detalles; let i = index">
-            <div class="cr-num">{{ i + 1 }}</div>
-            <div class="cr-text">{{ d.criterio }}</div>
-            <div class="cr-puntaje">
-              <button *ngFor="let p of puntajes"
-                class="puntaje-btn"
-                [class.selected]="d.puntaje === p"
-                [ngClass]="d.puntaje === p ? 'puntaje-' + p : ''"
-                (click)="setPuntaje(i, p)">
-                {{ p }}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="obs-row">
-          <div class="obs-field">
-            <label class="cmt-label">Fortalezas (opcional, tampoco queda asociado a tu identidad)</label>
-            <textarea class="cmt-input" rows="2" [(ngModel)]="fortalezas"
-              placeholder="¿Qué hace bien?"></textarea>
-          </div>
-          <div class="obs-field">
-            <label class="cmt-label">Oportunidades de mejora (opcional)</label>
-            <textarea class="cmt-input" rows="2" [(ngModel)]="oportunidadesMejora"
-              placeholder="¿Qué podría mejorar?"></textarea>
-          </div>
-        </div>
-
-        <div class="bottom-bar">
-          <div class="nota-preview" *ngIf="notaCalculada > 0">
-            <span class="np-label">Nota:</span>
-            <span class="np-num" [ngClass]="estadoClase(notaCalculada)">{{ notaCalculada }}</span>
-            <span class="np-estado" [ngClass]="estadoClase(notaCalculada)">{{ estadoLabel(notaCalculada) }}</span>
-          </div>
-          <button class="btn-guardar" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
-            <i class="ti ti-device-floppy"></i>
-            {{ guardando ? 'Guardando...' : 'Registrar evaluación' }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </ng-container>
-
-  <!-- ═══ MODO LISTA (Jefe SSOMA / Coordinador SSOMA evaluando hacia abajo) ═══ -->
-  <div class="gs-content" *ngIf="!loading && inicio?.periodo && !modoAnonimo">
+  <!-- ═══ LISTA DE CANDIDATOS A EVALUAR ═══ -->
+  <div class="gs-content" *ngIf="!loading && inicio?.periodo">
 
     <!-- PANEL IZQUIERDO -->
     <div class="panel-left">
@@ -163,7 +88,7 @@
             <div class="cc-avatar">{{ c.nombreCompleto.charAt(0) }}</div>
             <div class="cc-info">
               <div class="cc-name">{{ c.nombreCompleto }}</div>
-              <div class="cc-ruc">{{ c.tipo }}</div>
+              <div class="cc-ruc">{{ c.tipo }}<span *ngIf="c.esAnonimo"> · <i class="ti ti-shield-lock"></i> anónimo</span></div>
               <div class="cc-project" *ngIf="c.proyectoNombre"><i class="ti ti-building"></i> {{ c.proyectoNombre }}</div>
             </div>
           </div>
@@ -189,6 +114,9 @@
           <div>
             <div class="ef-title">{{ seleccionado.nombreCompleto }}</div>
             <div class="ef-sub">{{ seleccionado.tipo }}<ng-container *ngIf="seleccionado.proyectoNombre"> · {{ seleccionado.proyectoNombre }}</ng-container></div>
+          </div>
+          <div class="ec-anon" *ngIf="seleccionado.esAnonimo">
+            <i class="ti ti-shield-lock"></i> Anónimo
           </div>
           <button class="btn-cambiar" (click)="cambiarCandidato()">
             <i class="ti ti-x"></i>

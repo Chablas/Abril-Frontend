@@ -41,3 +41,40 @@ export interface EvGestionSsomaDetalleCreateDto {
   criterio: string;
   puntaje: number;
 }
+
+// ─── RESULTADOS (Jefe SSOMA) ─────────────────────────────────────────────────
+export interface EvGestionSsomaResultadosDto {
+  periodo: EvPeriodoDto | null;
+  totalRespuestas: number;
+  promedioGeneral: number | null;
+  promediosPorCriterio: EvGestionSsomaCriterioPromedioDto[];
+  evaluaciones: EvGestionSsomaResumenDto[];
+}
+
+export interface EvGestionSsomaCriterioPromedioDto {
+  criterio: string;
+  promedio: number;
+}
+
+export interface EvGestionSsomaResumenDto {
+  relacion: string; // "D1" | "D2" | "D3" | "D4" | "D5"
+  evaluadoNombre: string;
+  evaluadorNombre: string | null; // null en D4 (anónima)
+  nota: number | null;
+  fortalezas: string | null;
+  oportunidadesMejora: string | null;
+  createdAt: string;
+}
+
+export interface EvGestionSsomaCumplimientoDto {
+  totalEsperadas: number;
+  totalCompletadas: number;
+  pendientes: EvGestionSsomaPendienteDto[];
+}
+
+export interface EvGestionSsomaPendienteDto {
+  userId: number;
+  nombreCompleto: string;
+  emailCorporativo: string;
+  relacion: string;
+}
