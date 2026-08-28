@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { jwtDecode } from 'jwt-decode';
@@ -18,6 +19,8 @@ import { Roles } from '../../../../core/constants/roles';
 import { HabEmpresaService } from '../../services/hab-empresa.service';
 import { SharepointUploadService } from '../../services/sharepoint-upload.service';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
 import { DocumentViewer } from '../../../../shared/components/document-viewer/document-viewer';
 import { VersionesDoc } from '../trabajadores/components/versiones-doc/versiones-doc';
 import { ProyectosEmpresa } from './components/proyectos-empresa/proyectos-empresa';
@@ -30,7 +33,7 @@ import {
   EmpresaContratistaListDto,
   EmpresaEntregableDto,
   EmpresaEntregableUpdateDto,
-  EmpresaPorProyectoDto,
+  EmpresaSimpleDto,
   EntregableMesDto,
   ProyectoDisponibleDto,
 } from '../../dtos/empresa.model';
@@ -45,7 +48,16 @@ interface ProgresoProyecto {
 @Component({
   selector: 'app-hab-empresa',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, DocumentViewer, VersionesDoc, ProyectosEmpresa],
+  imports: [
+    CommonModule,
+    FormsModule,
+    SearchSelect,
+    DocumentViewer,
+    VersionesDoc,
+    ProyectosEmpresa,
+    FilterTriggerButton,
+    FilterModal,
+  ],
   templateUrl: './empresa.html',
   styleUrl: './empresa.css',
 })
@@ -134,14 +146,35 @@ export class Empresa implements OnInit {
 
   mostrarProyectos = false;
 
-  // ── Filtro "por proyecto" (admin): ver empresas habilitadas/no habilitadas y sus
-  // entregables SSOMA/Administración de un proyecto, en vez de elegir empresa primero ──
-  modoFiltro: 'empresa' | 'proyecto' = 'empresa';
-  proyectosFiltro: ProjectGetDTO[] = [];
-  selectedProyectoFiltroId: number | null = null;
-  empresasPorProyecto: EmpresaPorProyectoDto[] = [];
-  loadingEmpresasPorProyecto = false;
+  // ── Filtros (admin): Proyecto + Empresa en cascada, misma vista que "por empresa" ──
+  filtrosAbiertos = false;
+  catalogoProyectos: ProjectGetDTO[] = [];
+  filtroProyectoId: number | null = null;
+  /** Empresas del proyecto elegido — narrows las opciones del combo Empresa (cascada). */
+  empresasDeProyecto: EmpresaSimpleDto[] = [];
   private pendingProyectoFiltroId: number | null = null;
+
+  get empresaOptions(): EmpresaSimpleDto[] {
+    return this.filtroProyectoId ? this.empresasDeProyecto : this.empresas;
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filtroProyectoId) n++;
+    if (this.empresaId) n++;
+    return n;
+  }
+
+  limpiarFiltros(): void {
+    this.filtroProyectoId = null;
+    this.empresasDeProyecto = [];
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { proyectoId: null },
+      queryParamsHandling: 'merge',
+    });
+    this.onEmpresaChange(null);
+  }
 
   modalVersionesOpen = false;
   historialVersiones: DocumentoVersionDto[] = [];
@@ -160,6 +193,8 @@ export class Empresa implements OnInit {
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     private projectService: ProjectService,
+    private route: ActivatedRoute,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -171,6 +206,13 @@ export class Empresa implements OnInit {
       }
     } else if (this.isAdmin()) {
       this.loadEmpresasAdmin();
+      this.loadCatalogoProyectos();
+      // Viene de otra pestaña (Dashboard/Trabajadores/Equipos) con un proyecto ya elegido —
+      // lo aplicamos como filtro para que el combo Empresa arranque acotado a ese proyecto.
+      const proyectoIdUrl = Number(this.route.snapshot.queryParamMap.get('proyectoId'));
+      if (Number.isFinite(proyectoIdUrl) && proyectoIdUrl > 0) {
+        this.onFiltroProyectoChange(proyectoIdUrl);
+      }
     }
   }
 
@@ -227,7 +269,9 @@ export class Empresa implements OnInit {
   onEmpresaChange(id: number | null): void {
     this.empresaId = id;
     this.resetAll();
-    if (id) this.loadProyectos();
+    if (!id) return;
+    if (this.filtroProyectoId) this.pendingProyectoFiltroId = this.filtroProyectoId;
+    this.loadProyectos();
   }
 
   private resetAll(): void {
@@ -270,51 +314,43 @@ export class Empresa implements OnInit {
     });
   }
 
-  // ── Filtro "por proyecto" ──
+  // ── Filtro Proyecto (cascada sobre el combo Empresa) ──
 
-  toggleModoFiltro(): void {
-    this.modoFiltro = this.modoFiltro === 'empresa' ? 'proyecto' : 'empresa';
-    if (this.modoFiltro === 'proyecto' && this.proyectosFiltro.length === 0) {
-      this.loadProyectosFiltro();
-    }
-    this.cdr.detectChanges();
-  }
-
-  private loadProyectosFiltro(): void {
+  private loadCatalogoProyectos(): void {
     this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
       next: (res) => {
-        this.proyectosFiltro = res.data ?? [];
+        this.catalogoProyectos = res.data ?? [];
         this.cdr.detectChanges();
       },
-      error: () => { this.proyectosFiltro = []; this.cdr.detectChanges(); },
+      error: () => { this.catalogoProyectos = []; this.cdr.detectChanges(); },
     });
   }
 
-  onProyectoFiltroChange(id: number | null): void {
-    this.selectedProyectoFiltroId = id;
-    this.empresasPorProyecto = [];
-    if (!id) return;
-    this.loadingEmpresasPorProyecto = true;
+  onFiltroProyectoChange(id: number | null): void {
+    this.filtroProyectoId = id;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { proyectoId: id ?? null },
+      queryParamsHandling: 'merge',
+    });
+    if (!id) {
+      this.empresasDeProyecto = [];
+      return;
+    }
     this.habEmpresaService.getEmpresasPorProyecto(id).subscribe({
       next: (res) => {
-        this.empresasPorProyecto = res ?? [];
-        this.loadingEmpresasPorProyecto = false;
+        this.empresasDeProyecto = (res ?? []).map((e) => ({ id: e.empresaId, razonSocial: e.nombre }));
+        // Cascada: si la empresa elegida no pertenece al proyecto recién filtrado, se limpia.
+        if (this.empresaId && !this.empresasDeProyecto.some((e) => e.id === this.empresaId)) {
+          this.onEmpresaChange(null);
+        }
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        this.loadingEmpresasPorProyecto = false;
+        this.empresasDeProyecto = [];
         this.errorService.handleError(err);
       },
     });
-  }
-
-  /** Desde la fila de una empresa en el modo "por proyecto": salta directo a sus entregables
-   * en ese proyecto, reusando el flujo normal empresa→proyecto. */
-  verEmpresaEnProyecto(row: EmpresaPorProyectoDto): void {
-    if (!this.selectedProyectoFiltroId) return;
-    this.pendingProyectoFiltroId = this.selectedProyectoFiltroId;
-    this.modoFiltro = 'empresa';
-    this.onEmpresaChange(row.empresaId);
   }
 
   private loadProgresoBatch(proyectos: ProyectoDisponibleDto[]): void {

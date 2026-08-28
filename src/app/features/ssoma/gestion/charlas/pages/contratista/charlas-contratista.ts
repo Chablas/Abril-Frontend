@@ -11,12 +11,13 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { ClientPager } from '../../../../../../shared/utils/client-pager';
 import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 
 @Component({
   selector: 'app-charlas-contratista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, FileSelector, Paginator, SearchInput],
+  imports: [CommonModule, FormsModule, FileSelector, Paginator, SearchInput, AbrilModalPanel],
   templateUrl: './charlas-contratista.html',
   styleUrl: './charlas-contratista.css',
 })

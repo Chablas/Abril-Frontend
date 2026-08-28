@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { jwtDecode } from 'jwt-decode';
 import { AuthService } from '../../../core/services/auth.service';
 import { Roles } from '../../../core/constants/roles';
@@ -123,9 +123,16 @@ export class DashboardHabComponent implements OnInit {
     private habEmpresaService: HabEmpresaService,
     private trabajadorService: TrabajadorHabService,
     private equipoService: EquipoHabService,
+    private route: ActivatedRoute,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
+    const proyectoIdUrl = Number(this.route.snapshot.queryParamMap.get('proyectoId'));
+    if (Number.isFinite(proyectoIdUrl) && proyectoIdUrl > 0) {
+      this.selectedProyectoId = proyectoIdUrl;
+    }
+
     if (this.esContratista) {
       this.empresaId = this.authService.getEmpresaId() ?? null;
       const token = this.authService.getToken();
@@ -164,7 +171,12 @@ export class DashboardHabComponent implements OnInit {
       next: (res) => {
         this.proyectosAdmin = res.data ?? [];
         this.cdr.detectChanges();
-        this.preseleccionarProyectoActual();
+        if (this.selectedProyectoId) {
+          // Ya vino de la URL (?proyectoId=...) — no hace falta preseleccionar de nuevo.
+          this.load();
+        } else {
+          this.preseleccionarProyectoActual();
+        }
       },
       error: () => { this.proyectosAdmin = []; this.cdr.detectChanges(); },
     });
@@ -189,6 +201,11 @@ export class DashboardHabComponent implements OnInit {
   onProyectoChange(id: number | null): void {
     this.selectedProyectoId = id;
     this.data = null;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { proyectoId: id ?? null },
+      queryParamsHandling: 'merge',
+    });
     if (id) this.load();
   }
 

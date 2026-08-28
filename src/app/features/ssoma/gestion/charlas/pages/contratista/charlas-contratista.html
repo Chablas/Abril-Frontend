@@ -55,36 +55,41 @@
     </div>
   </section>
 
-  <!-- Formulario -->
-  <section class="card form-card" *ngIf="proyectoSeleccionado">
-    <h3>Registrar charla — {{ proyectoSeleccionado.proyectoNombre }}</h3>
-    <p class="meta">Fecha: {{ proyectoSeleccionado.fecha }}</p>
+  <!-- Formulario (modal estándar SSOMA) -->
+  @if (proyectoSeleccionado) {
+    <app-abril-modal-panel
+      titulo="Registrar charla"
+      [subtitulo]="proyectoSeleccionado.proyectoNombre + ' · ' + proyectoSeleccionado.fecha"
+      icono="ti-message-circle"
+      variant="blue"
+      (closeModal)="cerrarFormulario()">
 
-    <label class="field-label">Tema de la charla *</label>
-    <input type="text" class="field-input" [(ngModel)]="tema" placeholder="Ej. Trabajos en altura" />
+      <label class="field-label">Tema de la charla *</label>
+      <input type="text" class="field-input" [(ngModel)]="tema" placeholder="Ej. Trabajos en altura" />
 
-    <label class="field-label">Observaciones</label>
-    <textarea class="field-input" rows="3" [(ngModel)]="descripcion" placeholder="Opcional"></textarea>
+      <label class="field-label">Observaciones</label>
+      <textarea class="field-input" rows="3" [(ngModel)]="descripcion" placeholder="Opcional"></textarea>
 
-    <label class="field-label">Evidencia (foto/PDF)</label>
-    <app-file-selector
-      *ngIf="!archivo"
-      accept=".png,.jpg,.jpeg,.pdf"
-      hint="PNG, JPG o PDF"
-      (fileSelected)="onArchivoSeleccionado($event)"
-    ></app-file-selector>
-    <div *ngIf="archivo" class="archivo-preview">
-      <span>{{ archivo.file.name }}</span>
-      <button type="button" class="btn-link" (click)="quitarArchivo()">Quitar</button>
-    </div>
+      <label class="field-label">Evidencia (foto/PDF)</label>
+      <app-file-selector
+        *ngIf="!archivo"
+        accept=".png,.jpg,.jpeg,.pdf"
+        hint="PNG, JPG o PDF"
+        (fileSelected)="onArchivoSeleccionado($event)"
+      ></app-file-selector>
+      <div *ngIf="archivo" class="archivo-preview">
+        <span>{{ archivo.file.name }}</span>
+        <button type="button" class="btn-link" (click)="quitarArchivo()">Quitar</button>
+      </div>
 
-    <div class="form-actions">
-      <button class="btn-secondary" (click)="cerrarFormulario()" [disabled]="guardando">Cancelar</button>
-      <button class="btn-primary" (click)="guardar()" [disabled]="guardando">
-        {{ guardando ? 'Guardando...' : 'Guardar charla' }}
-      </button>
-    </div>
-  </section>
+      <div modalFooter>
+        <button class="btn-secondary" (click)="cerrarFormulario()" [disabled]="guardando">Cancelar</button>
+        <button class="btn-primary" (click)="guardar()" [disabled]="guardando">
+          {{ guardando ? 'Guardando...' : 'Guardar charla' }}
+        </button>
+      </div>
+    </app-abril-modal-panel>
+  }
 
   <!-- Historial -->
   <section class="card">

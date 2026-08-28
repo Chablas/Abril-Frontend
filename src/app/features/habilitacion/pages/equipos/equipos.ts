@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -105,14 +105,33 @@ export class Equipos implements OnInit, OnDestroy {
     private projectService: ProjectService,
     private empresaContratistaService: EmpresaContratistaService,
     private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
     this.searchChange$
       .pipe(debounceTime(300), takeUntil(this.destroy$))
       .subscribe(() => this.loadEquipos(1));
+
+    const proyectoId = this.route.snapshot.queryParamMap.get('proyectoId');
+    if (proyectoId) this.filtroProyectoId = Number(proyectoId);
+
     this.loadEquipos(1);
     this.loadCatalogos();
+  }
+
+  /** A diferencia de los demás filtros, el proyecto se refleja en la URL para que se
+   * mantenga al cambiar de pestaña (Dashboard/Empresa/Trabajadores/Equipos comparten
+   * ?proyectoId=). */
+  onProyectoFiltroChange(id: number | null): void {
+    this.filtroProyectoId = id;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { proyectoId: id ?? null },
+      queryParamsHandling: 'merge',
+    });
+    this.onFilterChange();
   }
 
   private loadCatalogos(): void {

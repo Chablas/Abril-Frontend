@@ -103,17 +103,8 @@
           <div class="ca-result-body">
             <div class="ca-result-nombre">{{ r.apellidoNombre }}</div>
             <div class="ca-result-meta">
-              <span class="ca-result-empresa">{{ r.empresa }}</span>
+              <span class="ca-result-empresa">{{ r.empresaNombre }}</span>
               <span class="ca-result-dni">DNI {{ r.dni }}</span>
-            </div>
-
-            <!-- SCTR -->
-            <div *ngIf="r.sctrVigencia" class="ca-docs">
-              <div class="ca-docs-title ca-docs-title--neutral">SCTR</div>
-              <div class="ca-sctr-row">
-                <span *ngIf="r.sctrEstado" class="ca-sctr-estado">{{ r.sctrEstado }}</span>
-                <span class="ca-doc-fecha" style="margin-left: 0">Vence: {{ r.sctrVigencia | date:'dd/MM/yyyy' }}</span>
-              </div>
             </div>
 
             <!-- Documentos faltantes -->

@@ -251,7 +251,7 @@
             [value]="filtroProyectoId"
             placeholder="Todos los proyectos"
             [allowClear]="true"
-            (valueChange)="filtroProyectoId = $event; onFilterChange()"
+            (valueChange)="onProyectoFiltroChange($event)"
           />
         </div>
 

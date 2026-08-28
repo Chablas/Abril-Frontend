@@ -12,17 +12,17 @@ export interface EntregableResumenDto {
 export interface ConsultaResultDto {
   workerId: number;
   apellidoNombre: string;
-  nombre: string;
-  empresa: string;
   dni: string;
+  empresaNombre: string;
+  proyectoNombre: string;
   estadoHabilitacion: string;
+  empresaActiva: boolean;
   documentosFaltantes: string[] | null;
   documentosPorVencer: { nombre: string; vigencia: string }[] | null;
-  sctrEstado: string | null;
-  sctrVigencia: string | null;
   entregables: EntregableResumenDto[] | null;
   empresaHabilitada: boolean;
   motivoNoAutorizado: string | null;
+  restringido: boolean;
 }
 
 export interface InduccionHoyDto {
