@@ -47,6 +47,20 @@
       </div>
     </div>
 
+    <!-- FOTOS DEL HALLAZGO: qué se debe levantar -->
+    <div class="abril-section-title">Foto(s) del hallazgo</div>
+    <div class="fotos-hallazgo-grid" *ngIf="rac.fotos.length > 0; else sinFotoHallazgo">
+      <div class="foto-hallazgo-item" *ngFor="let foto of rac.fotos">
+        <app-draggable-image *ngIf="fotoHallazgoUrls.get(foto.id) as url; else fotoHallazgoCargando" [src]="url" />
+        <ng-template #fotoHallazgoCargando>
+          <div class="foto-hallazgo-cargando"><i class="ti ti-loader-2 spin"></i></div>
+        </ng-template>
+      </div>
+    </div>
+    <ng-template #sinFotoHallazgo>
+      <p class="form-hint">Este RAC no tiene fotos del hallazgo registradas.</p>
+    </ng-template>
+
     <!-- DESCRIPCIÓN DEL CIERRE -->
     <div class="abril-field">
       <label class="abril-field-label">

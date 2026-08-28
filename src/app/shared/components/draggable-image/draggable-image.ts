@@ -55,6 +55,47 @@ export class DraggableImage {
     this.dragging = false;
   }
 
+  private touchStartDist = 0;
+  private touchStartZoom = 1;
+
+  onTouchStart(event: TouchEvent) {
+    if (event.touches.length === 1) {
+      this.dragging = true;
+      this.lastX = event.touches[0].clientX;
+      this.lastY = event.touches[0].clientY;
+    } else if (event.touches.length === 2) {
+      this.dragging = false;
+      this.touchStartDist = this.getTouchDist(event.touches);
+      this.touchStartZoom = this.zoom;
+    }
+  }
+
+  onTouchMove(event: TouchEvent) {
+    event.preventDefault();
+    if (event.touches.length === 1 && this.dragging) {
+      const dx = event.touches[0].clientX - this.lastX;
+      const dy = event.touches[0].clientY - this.lastY;
+      const speedFactor = 1 / this.zoom;
+      this.pos.x += dx * speedFactor;
+      this.pos.y += dy * speedFactor;
+      this.lastX = event.touches[0].clientX;
+      this.lastY = event.touches[0].clientY;
+    } else if (event.touches.length === 2) {
+      const dist = this.getTouchDist(event.touches);
+      this.zoom = Math.max(0.1, this.touchStartZoom * (dist / this.touchStartDist));
+    }
+  }
+
+  onTouchEnd(event: TouchEvent) {
+    if (event.touches.length === 0) this.dragging = false;
+  }
+
+  private getTouchDist(touches: TouchList): number {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
   toggleExpand() {
     this.expanded = !this.expanded;
     // al colapsar, resetea zoom y posicion

@@ -187,7 +187,10 @@
       <div class="detalle-seccion__titulo">Fotos</div>
       <div class="fotos-grid" *ngIf="rac.fotos.length > 0">
         <div class="foto-item" *ngFor="let foto of rac.fotos">
-          <app-draggable-image [src]="fotoUrl(foto.url)" />
+          <app-draggable-image *ngIf="fotoUrls.get(foto.id) as url; else fotoCargando" [src]="url" />
+          <ng-template #fotoCargando>
+            <div class="foto-cargando"><i class="ti ti-loader-2 spin"></i></div>
+          </ng-template>
           <span class="foto-badge">{{ foto.tipo }}</span>
         </div>
       </div>

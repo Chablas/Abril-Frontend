@@ -1,26 +1,27 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RacService } from '../../services/rac.service';
-import { RacDetalleDto, RacCerrarRequest } from '../../dtos/rac.dtos';
+import { RacDetalleDto, RacCerrarRequest, RacFotoDto } from '../../dtos/rac.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { PhotoGridPicker } from '../../../../../../shared/components/photo-grid-picker/photo-grid-picker';
+import { DraggableImage } from '../../../../../../shared/components/draggable-image/draggable-image';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-rac-cerrar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilModalPanel, PhotoGridPicker],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, PhotoGridPicker, DraggableImage],
   templateUrl: './rac-cerrar.html',
   styleUrl: './rac-cerrar.css',
 })
-export class RacCerrar implements OnInit {
+export class RacCerrar implements OnInit, OnDestroy {
   rac: RacDetalleDto | null = null;
   loading = false;
   guardando = false;
@@ -29,6 +30,7 @@ export class RacCerrar implements OnInit {
   fotoCierrePreview: string | null = null;
   subiendoFoto = false;
   fotoCierreUrl: string | null = null;
+  fotoHallazgoUrls = new Map<number, string>();
 
   constructor(
     private racService: RacService,
@@ -75,6 +77,7 @@ export class RacCerrar implements OnInit {
         }
         this.loading = false;
         this.loaderService.hide();
+        this.cargarFotosHallazgo(rac.id, rac.fotos);
         this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
@@ -84,6 +87,27 @@ export class RacCerrar implements OnInit {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  /**
+   * Las fotos se guardan en SharePoint y su URL directa exige sesión SSO en ese sitio,
+   * así que el navegador no puede cargarlas como <img src> normal. Se piden como blob
+   * autenticado al backend (que sí tiene un token de aplicación para Graph).
+   */
+  private cargarFotosHallazgo(racId: number, fotos: RacFotoDto[]): void {
+    for (const foto of fotos) {
+      this.racService.getFoto(racId, foto.id).subscribe({
+        next: (blob) => {
+          this.fotoHallazgoUrls.set(foto.id, URL.createObjectURL(blob));
+          this.cdr.markForCheck();
+        },
+        error: () => {},
+      });
+    }
+  }
+
+  ngOnDestroy(): void {
+    for (const url of this.fotoHallazgoUrls.values()) URL.revokeObjectURL(url);
   }
 
   get puedeGuardar(): boolean {
