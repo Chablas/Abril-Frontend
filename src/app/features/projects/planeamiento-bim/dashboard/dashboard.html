@@ -328,40 +328,40 @@
         </ng-container>
       </div>
 
-      <!-- ═══════════════ 6. BLOQUEOS ABIERTOS ═══════════════ -->
+      <!-- ═══════════════ 6. RESTRICCIONES ABIERTAS ═══════════════ -->
       <div class="bim-card">
         <div class="card-header">
           <div>
-            <h3 class="card-title"><i class="ti ti-barrier-block title-icon"></i> BLOQUEOS ABIERTOS</h3>
-            <p class="card-subtitle">Bloqueos activos del proyecto (fecha de cierre no registrada)</p>
+            <h3 class="card-title"><i class="ti ti-barrier-block title-icon"></i> RESTRICCIONES ABIERTAS</h3>
+            <p class="card-subtitle">Restricciones activas del proyecto (fecha de cierre no registrada)</p>
           </div>
-          <span class="card-badge" *ngIf="!loadingBloqueos && !bloqueosError">{{ bloqueosActivos.length }} ACTIVOS</span>
+          <span class="card-badge" *ngIf="!loadingRestricciones && !restriccionesError">{{ restriccionesActivas.length }} ACTIVAS</span>
         </div>
 
-        <div *ngIf="loadingBloqueos" class="skeleton-wrapper">
+        <div *ngIf="loadingRestricciones" class="skeleton-wrapper">
           <div class="skeleton-line" *ngFor="let i of [1,2]"></div>
         </div>
 
-        <div *ngIf="bloqueosError && !loadingBloqueos" class="bim-alert bim-alert--danger">
+        <div *ngIf="restriccionesError && !loadingRestricciones" class="bim-alert bim-alert--danger">
           <i class="ti ti-alert-triangle-filled alert-icon"></i>
-          <div class="alert-content"><strong>Error:</strong> {{ bloqueosError }}</div>
-          <button type="button" class="btn-retry" (click)="cargarBloqueosActivos()">
+          <div class="alert-content"><strong>Error:</strong> {{ restriccionesError }}</div>
+          <button type="button" class="btn-retry" (click)="cargarRestriccionesActivas()">
             <i class="ti ti-refresh"></i> Reintentar
           </button>
         </div>
 
-        <ng-container *ngIf="!loadingBloqueos && !bloqueosError">
-          <div *ngIf="bloqueosActivos.length === 0" class="empty-sub-list">
-            No hay bloqueos activos registrados para este proyecto.
+        <ng-container *ngIf="!loadingRestricciones && !restriccionesError">
+          <div *ngIf="restriccionesActivas.length === 0" class="empty-sub-list">
+            No hay restricciones activas registradas para este proyecto.
           </div>
 
-          <ul *ngIf="bloqueosActivos.length > 0" class="bloqueos-list">
-            <li *ngFor="let b of bloqueosActivos" class="bloqueo-item">
-              <span class="badge-estado" [class.badge-estado--atraso]="b.estado === 'ABIERTO'" [class.badge-estado--pendiente]="b.estado === 'EN_GESTION'">
-                <i class="ti ti-alert-triangle"></i> {{ b.estado === 'ABIERTO' ? 'ABIERTO' : 'EN GESTIÓN' }}
+          <ul *ngIf="restriccionesActivas.length > 0" class="bloqueos-list">
+            <li *ngFor="let r of restriccionesActivas" class="bloqueo-item">
+              <span class="badge-estado" [class.badge-estado--atraso]="r.estado === 'ABIERTO'" [class.badge-estado--pendiente]="r.estado === 'EN_GESTION'">
+                <i class="ti ti-alert-triangle"></i> {{ r.estado === 'ABIERTO' ? 'ABIERTO' : 'EN GESTIÓN' }}
               </span>
-              <span class="bloqueo-desc">{{ b.descripcion }}</span>
-              <span class="bloqueo-fecha">{{ b.fechaCreacion | date:'dd/MM/yyyy' }}</span>
+              <span class="bloqueo-desc">{{ r.descripcion }}</span>
+              <span class="bloqueo-fecha">{{ r.fechaCreacion | date:'dd/MM/yyyy' }}</span>
             </li>
           </ul>
         </ng-container>

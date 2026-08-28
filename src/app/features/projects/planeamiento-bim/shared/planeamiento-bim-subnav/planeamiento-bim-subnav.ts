@@ -36,9 +36,9 @@ export class PlaneamientoBimSubnavComponent {
       featureKey: 'planeamiento-bim.configuracion-inicial',
     },
     {
-      label: 'Bloqueos',
+      label: 'Restricciones',
       icon: 'ti ti-barrier-block',
-      route: '/projects/planeamiento-bim/bloqueos',
+      route: '/projects/planeamiento-bim/restricciones',
       featureKey: 'planeamiento-bim.configuracion-inicial',
     },
     {

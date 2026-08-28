@@ -1,5 +1,5 @@
 import { ZonaConfigDTO } from './planeamiento-bim-config.dto';
-import { BloqueoDto } from './planeamiento-bim-bloqueo.dto';
+import { RestriccionDto } from './planeamiento-bim-restriccion.dto';
 
 export interface ActividadCatalogoDto {
   id: number;
@@ -44,7 +44,7 @@ export interface CargaDiariaDto {
   causas: CausaCatalogoDto[];
   celdas: CeldaDto[];
   evidencias: EvidenciaFotoDto[];
-  bloqueosActivos: BloqueoDto[];
+  restriccionesActivas: RestriccionDto[];
 }
 
 export interface CeldaUpdateDto {

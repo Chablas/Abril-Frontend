@@ -5,28 +5,46 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
 import { AbrilPageHeaderComponent, SsomaHeaderBtn } from '../../../../shared/components/abril-page-header/abril-page-header.component';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { ProjectResidentService } from '../../../../core/services/projectResident.service';
 import { ProjectSimpleDTO } from '../../../../core/dtos/project/projectSimple.model';
 import { PROJECTS_TABS } from '../../shared/projects-tabs';
 import { PlaneamientoBimService } from '../services/planeamiento-bim.service';
 import {
-  FaseConfigDTO,
+  NivelConfigDTO,
   PlaneamientoBimConfigDTO,
   ResponsableBimWorkerDTO,
+  SectorConfigDTO,
+  TipoEstructura,
   ZonaConfigDTO,
+  ZonaUpdateDto,
 } from '../dtos/planeamiento-bim-config.dto';
 
 import { PlaneamientoBimSubnavComponent } from '../shared/planeamiento-bim-subnav/planeamiento-bim-subnav';
 
+/** Estado local de edición de una zona: además de lo que devuelve el GET, agrega los sectores
+ *  compartidos (derivados) como bucket propio, separado de los exclusivos de cada nivel. */
+interface ZonaEdicion extends ZonaConfigDTO {
+  sectoresCompartidos: SectorConfigDTO[];
+}
+
+const TIPOS_ESTRUCTURA: { id: TipoEstructura; nombre: string }[] = [
+  { id: 'SUBESTRUCTURA', nombre: 'Subestructura' },
+  { id: 'SUPERESTRUCTURA', nombre: 'Superestructura' },
+];
+
 @Component({
   selector: 'app-configuracion-inicial',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, PlaneamientoBimSubnavComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, PlaneamientoBimSubnavComponent, SearchSelect],
   templateUrl: './configuracion-inicial.html',
   styleUrl: './configuracion-inicial.css',
 })
 export class ConfiguracionInicial implements OnInit {
   readonly tabs = PROJECTS_TABS;
+  readonly tiposEstructura = TIPOS_ESTRUCTURA;
+  /** Meta PPC estándar del sistema (Fase A backend) — fija, ya no se edita ni se envía desde acá. */
+  readonly metaPpcEstandar = 85;
   projects: ProjectSimpleDTO[] = [];
   selectedProjectId: number | null = null;
 
@@ -38,6 +56,9 @@ export class ConfiguracionInicial implements OnInit {
     zonas: [],
     fases: [],
   };
+
+  /** Zonas en edición, con el bucket de sectoresCompartidos ya derivado del GET. */
+  zonas: ZonaEdicion[] = [];
 
   loadingProjects = false;
   loadingConfig = false;
@@ -112,6 +133,7 @@ export class ConfiguracionInicial implements OnInit {
           zonas: data?.zonas || [],
           fases: data?.fases || [],
         };
+        this.zonas = (this.config.zonas || []).map((z) => this.derivarZonaEdicion(z));
         this.loadingConfig = false;
         this.cdr.detectChanges();
       },
@@ -123,52 +145,88 @@ export class ConfiguracionInicial implements OnInit {
     });
   }
 
+  /**
+   * A partir del shape de lectura (donde un sector compartido viene repetido bajo CADA nivel de
+   * la zona), separa: sectoresCompartidos (el sector aparece, por id, en TODOS los niveles) y dentro
+   * de cada nivel, solo sus sectores exclusivos (los que no están en el bucket de compartidos).
+   */
+  private derivarZonaEdicion(zona: ZonaConfigDTO): ZonaEdicion {
+    const niveles = (zona.niveles || []).map((n) => ({ ...n, sectores: [...(n.sectores || [])] }));
+
+    let compartidos: SectorConfigDTO[] = [];
+    if (niveles.length > 0) {
+      const primerNivel = niveles[0];
+      compartidos = (primerNivel.sectores || []).filter((sector) => {
+        if (sector.id == null) return false; // sectores nuevos sin id no se pueden comparar entre niveles
+        return niveles.every((n) => (n.sectores || []).some((s) => s.id === sector.id));
+      });
+    }
+
+    const idsCompartidos = new Set(compartidos.map((s) => s.id));
+    niveles.forEach((n) => {
+      n.sectores = (n.sectores || []).filter((s) => !idsCompartidos.has(s.id));
+    });
+
+    return { ...zona, niveles, sectoresCompartidos: compartidos };
+  }
+
   // ── Gestión de Zonas ─────────────────────────────────────────
   addZona(): void {
-    this.config.zonas.push({
+    this.zonas.push({
       id: null,
       nombre: '',
-      orden: this.config.zonas.length + 1,
+      orden: this.zonas.length + 1,
       niveles: [],
-      sectores: [],
+      sectoresCompartidos: [],
     });
   }
 
   removeZona(index: number): void {
-    this.config.zonas.splice(index, 1);
+    this.zonas.splice(index, 1);
   }
 
   // ── Gestión de Niveles ───────────────────────────────────────
-  addNivel(zona: ZonaConfigDTO): void {
+  addNivel(zona: ZonaEdicion): void {
     if (!zona.niveles) zona.niveles = [];
     const nuevoOrden = zona.niveles.length + 1;
     zona.niveles.push({
       id: null,
       nombre: '',
       orden: nuevoOrden,
+      tipoEstructura: null,
+      sectores: [],
     });
   }
 
-  removeNivel(zona: ZonaConfigDTO, index: number): void {
+  removeNivel(zona: ZonaEdicion, index: number): void {
     zona.niveles.splice(index, 1);
     // Reordenar automáticamente los niveles restantes
     zona.niveles.forEach((n, idx) => (n.orden = idx + 1));
   }
 
-  // ── Gestión de Sectores ──────────────────────────────────────
-  addSector(zona: ZonaConfigDTO): void {
-    if (!zona.sectores) zona.sectores = [];
-    const nuevoOrden = zona.sectores.length + 1;
-    zona.sectores.push({
-      id: null,
-      nombre: '',
-      orden: nuevoOrden,
-    });
+  // ── Gestión de Sectores exclusivos de un Nivel ────────────────
+  addSectorNivel(nivel: NivelConfigDTO): void {
+    if (!nivel.sectores) nivel.sectores = [];
+    nivel.sectores.push({ id: null, nombre: '' });
   }
 
-  removeSector(zona: ZonaConfigDTO, index: number): void {
-    zona.sectores.splice(index, 1);
-    zona.sectores.forEach((s, idx) => (s.orden = idx + 1));
+  removeSectorNivel(nivel: NivelConfigDTO, index: number): void {
+    nivel.sectores.splice(index, 1);
+  }
+
+  // ── Gestión de Sectores Compartidos de la Zona ────────────────
+  addSectorCompartido(zona: ZonaEdicion): void {
+    if (!zona.sectoresCompartidos) zona.sectoresCompartidos = [];
+    zona.sectoresCompartidos.push({ id: null, nombre: '' });
+  }
+
+  removeSectorCompartido(zona: ZonaEdicion, index: number): void {
+    zona.sectoresCompartidos.splice(index, 1);
+  }
+
+  totalSectores(zona: ZonaEdicion): number {
+    const exclusivos = (zona.niveles || []).reduce((acc, n) => acc + (n.sectores?.length || 0), 0);
+    return exclusivos + (zona.sectoresCompartidos?.length || 0);
   }
 
   // ── Guardar Configuración ────────────────────────────────────
@@ -181,19 +239,6 @@ export class ConfiguracionInicial implements OnInit {
         confirmButtonColor: '#1E3A5F',
       });
       return;
-    }
-
-    // Validar Meta PPC (0 - 100)
-    if (this.config.metaPpc !== null && this.config.metaPpc !== undefined) {
-      if (isNaN(this.config.metaPpc) || this.config.metaPpc < 0 || this.config.metaPpc > 100) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Meta PPC inválida',
-          text: 'La Meta PPC debe ser un número entero o decimal entre 0% y 100%.',
-          confirmButtonColor: '#1E3A5F',
-        });
-        return;
-      }
     }
 
     // Validar fechas de fases (fechaInicio <= fechaFinMeta)
@@ -211,9 +256,9 @@ export class ConfiguracionInicial implements OnInit {
       }
     }
 
-    // Validar nombres de zonas
-    for (let i = 0; i < (this.config.zonas || []).length; i++) {
-      const z = this.config.zonas[i];
+    // Validar nombres de zonas + duplicados de niveles/sectores
+    for (let i = 0; i < this.zonas.length; i++) {
+      const z = this.zonas[i];
       if (!z.nombre || !z.nombre.trim()) {
         Swal.fire({
           icon: 'warning',
@@ -223,30 +268,87 @@ export class ConfiguracionInicial implements OnInit {
         });
         return;
       }
+
+      // Niveles duplicados dentro de la misma zona
+      const nombresNiveles = (z.niveles || []).map((n) => n.nombre.trim().toLowerCase()).filter((n) => n);
+      const nivelDuplicado = nombresNiveles.find((n, idx) => nombresNiveles.indexOf(n) !== idx);
+      if (nivelDuplicado) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Nivel duplicado',
+          text: `El nivel "${nivelDuplicado}" ya existe en la zona "${z.nombre}". Cada nivel debe tener un nombre único dentro de su zona.`,
+          confirmButtonColor: '#1E3A5F',
+        });
+        return;
+      }
+
+      // Sectores compartidos duplicados entre sí
+      const nombresCompartidos = (z.sectoresCompartidos || []).map((s) => s.nombre.trim().toLowerCase()).filter((n) => n);
+      const compartidoDuplicado = nombresCompartidos.find((n, idx) => nombresCompartidos.indexOf(n) !== idx);
+      if (compartidoDuplicado) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Sector compartido duplicado',
+          text: `El sector "${compartidoDuplicado}" ya existe entre los sectores compartidos de la zona "${z.nombre}".`,
+          confirmButtonColor: '#1E3A5F',
+        });
+        return;
+      }
+
+      // Sectores exclusivos duplicados dentro de un mismo nivel, o repetidos contra los compartidos
+      for (const nivel of z.niveles || []) {
+        const nombresExclusivos = (nivel.sectores || []).map((s) => s.nombre.trim().toLowerCase()).filter((n) => n);
+        const exclusivoDuplicado = nombresExclusivos.find((n, idx) => nombresExclusivos.indexOf(n) !== idx);
+        if (exclusivoDuplicado) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sector duplicado',
+            text: `El sector "${exclusivoDuplicado}" ya existe en este nivel ("${nivel.nombre || 'sin nombre'}").`,
+            confirmButtonColor: '#1E3A5F',
+          });
+          return;
+        }
+        const chocaConCompartido = nombresExclusivos.find((n) => nombresCompartidos.includes(n));
+        if (chocaConCompartido) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Sector duplicado',
+            text: `El sector "${chocaConCompartido}" ya existe como sector compartido de la zona "${z.nombre}"; no puede repetirse como exclusivo del nivel "${nivel.nombre || 'sin nombre'}".`,
+            confirmButtonColor: '#1E3A5F',
+          });
+          return;
+        }
+      }
     }
 
     this.savingConfig = true;
     this.saveError = null;
     this.cdr.detectChanges();
 
-    const payload = {
-      responsableId: this.config.responsableId ? Number(this.config.responsableId) : null,
-      metaPpc: this.config.metaPpc !== null && this.config.metaPpc !== undefined ? Number(this.config.metaPpc) : null,
-      zonas: (this.config.zonas || []).map((z, idx) => ({
-        id: z.id ?? null,
-        nombre: z.nombre.trim(),
-        orden: z.orden || (idx + 1),
-        niveles: (z.niveles || []).map((n, nIdx) => ({
-          id: n.id ?? null,
-          nombre: n.nombre.trim(),
-          orden: Number(n.orden) || (nIdx + 1),
-        })),
-        sectores: (z.sectores || []).map((s, sIdx) => ({
+    const zonasPayload: ZonaUpdateDto[] = this.zonas.map((z, idx) => ({
+      id: z.id ?? null,
+      nombre: z.nombre.trim(),
+      orden: z.orden || (idx + 1),
+      niveles: (z.niveles || []).map((n, nIdx) => ({
+        id: n.id ?? null,
+        nombre: n.nombre.trim(),
+        orden: Number(n.orden) || (nIdx + 1),
+        tipoEstructura: n.tipoEstructura || null,
+        sectores: (n.sectores || []).map((s) => ({
           id: s.id ?? null,
           nombre: s.nombre.trim(),
-          orden: Number(s.orden) || (sIdx + 1),
         })),
       })),
+      sectoresCompartidos: (z.sectoresCompartidos || []).map((s) => ({
+        id: s.id ?? null,
+        nombre: s.nombre.trim(),
+      })),
+    }));
+
+    // Meta PPC ya no se envía: es un estándar fijo que administra el backend (Fase A).
+    const payload = {
+      responsableId: this.config.responsableId ? Number(this.config.responsableId) : null,
+      zonas: zonasPayload,
       fases: (this.config.fases || []).map((f) => ({
         id: f.id,
         fechaInicio: f.fechaInicio || null,
@@ -254,7 +356,7 @@ export class ConfiguracionInicial implements OnInit {
       })),
     };
 
-    this.bimService.saveConfiguracion(this.selectedProjectId, payload as any).subscribe({
+    this.bimService.saveConfiguracion(this.selectedProjectId, payload).subscribe({
       next: () => {
         this.savingConfig = false;
         this.cdr.detectChanges();
