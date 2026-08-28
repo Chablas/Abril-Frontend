@@ -23,6 +23,7 @@ export class GaMotivoEdit implements OnInit {
   descripcion = '';
   requiereAdjunto = false;
   esHoraEstimada = false;
+  requiereMotivoAdicional = false;
   submitted = false;
 
   constructor(
@@ -35,6 +36,7 @@ export class GaMotivoEdit implements OnInit {
     this.descripcion = this.motivo.descripcion;
     this.requiereAdjunto = this.motivo.requiereAdjunto;
     this.esHoraEstimada = this.motivo.esHoraEstimada;
+    this.requiereMotivoAdicional = this.motivo.requiereMotivoAdicional;
   }
 
   save(): void {
@@ -47,6 +49,7 @@ export class GaMotivoEdit implements OnInit {
         descripcion: this.descripcion.trim(),
         requiereAdjunto: this.requiereAdjunto,
         esHoraEstimada: this.esHoraEstimada,
+        requiereMotivoAdicional: this.requiereMotivoAdicional,
       })
       .subscribe({
       next: (res) => {

@@ -22,6 +22,8 @@ interface TrayectoForm {
   motivoId: number | null;
   motivoLibre: string | null;
   motivoLibreOn: boolean;
+  /** Detalle obligatorio cuando el motivo elegido tiene requiereMotivoAdicional. */
+  motivoAdicional: string | null;
   /** Origen solo es editable en el primer trayecto. */
   lugarOrigenId: number | null;
   lugarOrigenLibre: string | null;
@@ -53,6 +55,14 @@ export class SolicitudSalidaCreate implements OnInit {
    * Mantener alineado con el recorte a 2 líneas del PDF (TablaMaxLineas).
    */
   readonly MOTIVO_LIBRE_MAX = 90;
+
+  /**
+   * Máximo de caracteres del motivo adicional. Este detalle no reemplaza al motivo:
+   * en el PDF y en los correos va pegado a él ("Visita a obra — ..."), así que se deja
+   * menos margen que en MOTIVO_LIBRE_MAX para que la suma siga entrando en las 2 líneas
+   * de la columna MOTIVO de la planilla.
+   */
+  readonly MOTIVO_ADICIONAL_MAX = 60;
 
   formData: SolicitudSalidaFormDataDto = {
     motivos: [],
@@ -112,6 +122,7 @@ export class SolicitudSalidaCreate implements OnInit {
       motivoId: null,
       motivoLibre: null,
       motivoLibreOn: false,
+      motivoAdicional: null,
       lugarOrigenId: null,
       lugarOrigenLibre: null,
       origenLibre: false,
@@ -189,6 +200,7 @@ export class SolicitudSalidaCreate implements OnInit {
     t.motivoLibreOn = checked;
     t.motivoId = null;
     t.motivoLibre = null;
+    t.motivoAdicional = null;
     t.adjuntos = [];
   }
 
@@ -198,6 +210,15 @@ export class SolicitudSalidaCreate implements OnInit {
   motivoRequiereAdjunto(t: TrayectoForm): boolean {
     if (t.motivoId == null) return false;
     return this.formData.motivos.find((m) => m.id === t.motivoId)?.requiereAdjunto ?? false;
+  }
+
+  /**
+   * true si el motivo elegido del trayecto exige escribir un motivo adicional.
+   * Solo aplica a los motivos del catálogo: "Otro motivo" ya es texto libre.
+   */
+  motivoRequiereMotivoAdicional(t: TrayectoForm): boolean {
+    if (t.motivoId == null) return false;
+    return this.formData.motivos.find((m) => m.id === t.motivoId)?.requiereMotivoAdicional ?? false;
   }
 
   /**
@@ -232,8 +253,9 @@ export class SolicitudSalidaCreate implements OnInit {
 
   onMotivoChange(t: TrayectoForm, motivoId: number | null): void {
     t.motivoId = motivoId;
-    // Los adjuntos pertenecen al motivo elegido: al cambiarlo se descartan.
+    // Los adjuntos y el motivo adicional pertenecen al motivo elegido: al cambiarlo se descartan.
     t.adjuntos = [];
+    t.motivoAdicional = null;
   }
 
   /** El file-selector emite un evento por archivo; los acumulamos en el trayecto. */
@@ -270,6 +292,11 @@ export class SolicitudSalidaCreate implements OnInit {
     return t.motivoLibreOn ? !!t.motivoLibre?.trim() : t.motivoId != null;
   }
 
+  /** true si el motivo adicional está resuelto: o el motivo no lo pide, o está escrito. */
+  motivoAdicionalValido(t: TrayectoForm): boolean {
+    return this.motivoRequiereMotivoAdicional(t) ? !!t.motivoAdicional?.trim() : true;
+  }
+
   /**
    * true si el trayecto tiene lugar de origen. En los trayectos 2+ el origen no se
    * edita: viene encadenado del destino del trayecto anterior, así que se valida
@@ -304,6 +331,7 @@ export class SolicitudSalidaCreate implements OnInit {
     if (!t.sinRetorno && t.horaRetorno && t.horaSalida && t.horaRetorno < t.horaSalida)
       errs.push(`${pref}: la hora de retorno debe ser igual o posterior a la de salida`);
     if (!this.motivoValido(t)) errs.push(`${pref}: motivo`);
+    if (!this.motivoAdicionalValido(t)) errs.push(`${pref}: motivo adicional`);
     if (!this.origenValido(t, idx)) errs.push(`${pref}: lugar de origen`);
     if (!this.destinoValido(t)) errs.push(`${pref}: lugar de destino`);
     if (t.lugarOrigenId && t.lugarDestinoId && t.lugarOrigenId === t.lugarDestinoId)
@@ -349,6 +377,7 @@ export class SolicitudSalidaCreate implements OnInit {
         horaRetorno: t.sinRetorno ? null : t.horaRetorno,
         motivoId: t.motivoId,
         motivoLibre: t.motivoLibre?.trim() || null,
+        motivoAdicional: t.motivoAdicional?.trim() || null,
         lugarOrigenId: t.lugarOrigenId,
         lugarOrigenLibre: t.lugarOrigenLibre?.trim() || null,
         lugarDestinoId: t.lugarDestinoId,

@@ -33,6 +33,18 @@
       </span>
     </label>
 
+    <label class="flex items-start gap-[8px] cursor-pointer select-none w-fit">
+      <input
+        type="checkbox"
+        class="w-4 h-4 mt-[2px] cursor-pointer"
+        style="accent-color:var(--color-abril-primary)"
+        [(ngModel)]="requiereMotivoAdicional" />
+      <span class="flex flex-col">
+        <span class="text-sm text-gray-700">Requiere motivo adicional</span>
+        <span class="text-xs text-gray-400">Al elegir este motivo, el trabajador deberá escribir un detalle obligatorio que explique la salida.</span>
+      </span>
+    </label>
+
     <div class="flex justify-center mt-[4px]">
       <button
         (click)="save()"

@@ -74,6 +74,10 @@
             <div class="text-xs text-gray-500 uppercase">Motivo</div>
             <div class="text-gray-800">{{ t.motivo }}</div>
           </div>
+          <div *ngIf="t.motivoAdicional" class="col-span-2">
+            <div class="text-xs text-gray-500 uppercase">Motivo adicional</div>
+            <div class="text-gray-800">{{ t.motivoAdicional }}</div>
+          </div>
           <div>
             <div class="text-xs text-gray-500 uppercase">Origen</div>
             <div class="text-gray-800">{{ t.lugarOrigen ?? '—' }}</div>

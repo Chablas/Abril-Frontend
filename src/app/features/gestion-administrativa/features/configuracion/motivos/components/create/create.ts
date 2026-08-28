@@ -21,6 +21,7 @@ export class GaMotivoCreate {
   descripcion = '';
   requiereAdjunto = false;
   esHoraEstimada = false;
+  requiereMotivoAdicional = false;
   submitted = false;
 
   constructor(
@@ -39,6 +40,7 @@ export class GaMotivoCreate {
         descripcion: this.descripcion.trim(),
         requiereAdjunto: this.requiereAdjunto,
         esHoraEstimada: this.esHoraEstimada,
+        requiereMotivoAdicional: this.requiereMotivoAdicional,
       })
       .subscribe({
       next: (res) => {

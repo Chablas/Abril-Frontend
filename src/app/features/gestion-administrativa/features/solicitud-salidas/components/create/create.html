@@ -54,6 +54,21 @@
         <p *ngIf="submitted && !motivoValido(t)" class="text-xs text-red-500">Campo requerido</p>
       </div>
 
+      <!-- Motivo adicional: lo pide el motivo elegido (Configuración → Motivos). Acompaña
+           al motivo, no lo reemplaza: en el detalle, los correos y la planilla se muestra
+           pegado a él. -->
+      <div *ngIf="motivoRequiereMotivoAdicional(t)" class="flex flex-col gap-[4px]"
+           [class.campo-error]="submitted && !motivoAdicionalValido(t)">
+        <div class="relative mt-[9px]">
+          <label class="absolute -top-[8px] left-[9px] z-[1] px-[4px] bg-white text-[11px] font-semibold text-gray-600 pointer-events-none leading-none">Motivo adicional <span class="text-red-500">*</span></label>
+          <input type="text" [(ngModel)]="t.motivoAdicional" placeholder="Detalla a qué se debe la salida"
+            [maxlength]="MOTIVO_ADICIONAL_MAX"
+            class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none" />
+        </div>
+        <span class="text-[11px] text-gray-400 self-end">{{ t.motivoAdicional?.length || 0 }}/{{ MOTIVO_ADICIONAL_MAX }}</span>
+        <p *ngIf="submitted && !motivoAdicionalValido(t)" class="text-xs text-red-500">Campo requerido</p>
+      </div>
+
       <!-- Horas (habilitadas recién al elegir el motivo; la etiqueta del retorno depende de él).
            En móvil cada hora toma el ancho completo: al 50% no cabe el label
            "Hora de retorno estimada" sin partirse en dos líneas. -->

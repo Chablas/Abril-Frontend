@@ -5,6 +5,8 @@ export interface TrayectoCreateDto {
   horaRetorno: string | null;
   motivoId: number | null;
   motivoLibre: string | null;
+  /** Detalle obligatorio cuando el motivo elegido lo exige. */
+  motivoAdicional: string | null;
   lugarOrigenId: number | null;
   lugarOrigenLibre: string | null;
   lugarDestinoId: number | null;

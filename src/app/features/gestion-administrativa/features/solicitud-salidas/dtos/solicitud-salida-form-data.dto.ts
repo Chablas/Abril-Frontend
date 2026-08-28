@@ -5,6 +5,8 @@ export interface MotivoSalidaDto {
   requiereAdjunto: boolean;
   /** Si true, las horas declaradas con este motivo son estimadas (cambia la etiqueta de la hora de retorno). */
   esHoraEstimada: boolean;
+  /** Si true, al elegir este motivo el formulario exige escribir un motivo adicional (detalle). */
+  requiereMotivoAdicional: boolean;
 }
 
 export interface LugarSalidaDto {

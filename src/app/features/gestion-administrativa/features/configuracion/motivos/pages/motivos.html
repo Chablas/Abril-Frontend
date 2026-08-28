@@ -17,6 +17,14 @@
                 title="Los motivos con hora estimada indican a recepción que NO registre la hora real de salida/retorno de esas salidas. Además, si todos los trayectos de una solicitud usan motivos de hora estimada, no se muestra el recordatorio de recuperación de horas (ni en el formulario ni en los correos).">?</span>
             </span>
           </th>
+          <th class="text-center">
+            <span class="inline-flex items-center gap-[5px]">
+              Motivo adicional
+              <span
+                class="inline-flex items-center justify-center w-[15px] h-[15px] rounded-full border border-current text-[10px] font-bold leading-none cursor-help select-none"
+                title="Al elegir estos motivos en Solicitud de Salidas, el trabajador debe escribir además un detalle obligatorio que explique la salida.">?</span>
+            </span>
+          </th>
           <th class="text-center">Estado</th>
           <th class="text-center">Acciones</th>
         </tr>
@@ -24,7 +32,7 @@
       <tbody>
 
         <tr *ngIf="filteredMotivos.length === 0">
-          <td colspan="5" class="text-center py-[40px] text-gray-400 text-sm">
+          <td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">
             {{ searchText.trim() || estadoFilter !== null ? 'Sin resultados.' : 'No hay motivos registrados.' }}
           </td>
         </tr>
@@ -48,6 +56,15 @@
               Estimada
             </span>
             <span *ngIf="!m.esHoraEstimada" class="text-gray-300">—</span>
+          </td>
+
+          <td class="text-center">
+            <span *ngIf="m.requiereMotivoAdicional"
+                  class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#EDE9FE] text-[#6D28D9] font-medium whitespace-nowrap"
+                  title="Al elegir este motivo se exige escribir un detalle obligatorio">
+              Requerido
+            </span>
+            <span *ngIf="!m.requiereMotivoAdicional" class="text-gray-300">—</span>
           </td>
 
           <td class="text-center">

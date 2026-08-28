@@ -151,6 +151,8 @@ export interface GestionSalidaTrayectoDto {
   horaSalida: string;
   horaRetorno: string | null;
   motivo: string;
+  /** Detalle que acompaña al motivo cuando este lo exige. Null si no aplica. */
+  motivoAdicional: string | null;
   lugarOrigen: string | null;
   lugarDestino: string | null;
   /** Documentos adjuntos del trayecto (motivos que requieren documento). Vacío si no tiene. */
