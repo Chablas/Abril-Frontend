@@ -193,14 +193,17 @@ export class GthSolicitudPersonal implements OnInit {
   }
 
   ngOnInit(): void {
-    // Los dos deep links de los correos abren su modal directamente sobre esta pantalla:
-    //   • `/solicitud-personal/long-list/:id`  → «Revisar long list y CVs».
-    //   • `/solicitud-personal/finalistas/:id` → «Revisar y decidir» del informe de finalistas.
-    // Se distinguen por el flag `modalFinalistas` de la ruta, no por el parámetro (es ':id' en
-    // ambas). Sin id, la pantalla es solo el panel.
+    // Los tres deep links de los correos abren su modal directamente sobre esta pantalla:
+    //   • `/solicitud-personal/long-list/:id`   → «Revisar long list y CVs».
+    //   • `/solicitud-personal/finalistas/:id`  → «Revisar y decidir» del informe de finalistas.
+    //   • `/solicitud-personal/seguimiento/:id` → el seguimiento de la vacante, para los correos
+    //     que le cuentan algo sin pedirle una decisión (entrevista confirmada, candidato retomado).
+    // Se distinguen por los flags de la ruta, no por el parámetro (es ':id' en las tres). Sin id,
+    // la pantalla es solo el panel.
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (Number.isInteger(id) && id > 0) {
-      if (this.route.snapshot.data['modalFinalistas']) this.finalistasId = id;
+      if (this.route.snapshot.data['modalSeguimiento']) this.seguimientoId = id;
+      else if (this.route.snapshot.data['modalFinalistas']) this.finalistasId = id;
       else this.revisionId = id;
     }
 
@@ -239,6 +242,13 @@ export class GthSolicitudPersonal implements OnInit {
 
   cerrarSeguimiento(): void {
     this.seguimientoId = null;
+    // Si se llegó por el enlace de un correo (`/solicitud-personal/seguimiento/:id`), se limpia la
+    // URL para que un refresco no vuelva a abrir el modal — igual que en la long list.
+    if (this.route.snapshot.data['modalSeguimiento']) {
+      this.router.navigate(['/gestion-gth/solicitud-personal']);
+      return;
+    }
+    this.cdr.detectChanges();
   }
 
   // ── Tarjetas de "Gestión de candidatos" ────────────────────────────────

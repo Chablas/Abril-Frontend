@@ -97,9 +97,9 @@
 
     <!-- ── Acciones sobre la selección ────────────────────────────────────
          Decidir varias solicitudes de una: cada fila marcada se aprueba (o se rechaza) COMPLETA,
-         con todas sus vacantes. Las etiquetas cambian con el nivel porque las dos decisiones no
-         valen lo mismo —el Gerente General manda las vacantes a GTH, el gerente del área solo deja
-         constancia—; el backend re-valida quién es quién, y fila por fila.
+         con todas sus vacantes. Las tres firmas aprueban de verdad —la del gerente del área le
+         pasa el reemplazo a GTH, la de GTH lo manda a reclutamiento—, así que las etiquetas son
+         las mismas para todos; el backend re-valida quién es quién, y fila por fila.
          Siempre visibles y deshabilitadas si no aplica, igual que en Gestión de Salidas. -->
     <div class="flex flex-wrap items-center gap-2">
       <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">

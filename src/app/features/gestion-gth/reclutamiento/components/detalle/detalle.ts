@@ -1,4 +1,13 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+  ViewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -156,9 +165,10 @@ export class GthDetalleRequerimiento implements OnInit {
    */
   candidatos: CandidatoLongList[] = [];
 
-  // Secciones colapsables (abiertas por defecto, como en el diseño). Van en el orden en que
-  // aparecen en el modal: todas las del detalle se abren y cierran igual, así GTH puede dejar
-  // a la vista solo la fase que está trabajando.
+  // Secciones colapsables. Todas se abren y cierran igual, así GTH puede dejar a la vista solo lo
+  // que está trabajando. El estado inicial no es fijo: al cargar el detalle, las de los pasos que
+  // el proceso ya dejó atrás arrancan cerradas (ver colapsarSeccionesCompletadas). Van en el orden
+  // en que aparecen en el modal.
   seccionPuestoCubierto = true;
   seccionAsignacion = true;
   seccionPublicacion = true;
@@ -174,6 +184,9 @@ export class GthDetalleRequerimiento implements OnInit {
    * hacia abajo la sección de la fase actual, que es lo que GTH viene a hacer.
    */
   seccionRechazados = false;
+
+  /** Contenedor del historial de rechazados, para poder llevar la vista hasta él. */
+  @ViewChild('historialRechazados') private historialRechazadosRef?: ElementRef<HTMLElement>;
 
   // La sección "Plantilla de comunicación" está comentada en el HTML: era una maqueta y su
   // envío es el mismo correo que ya manda "Enviar formulario". Su estado local
@@ -267,10 +280,8 @@ export class GthDetalleRequerimiento implements OnInit {
         this.canalesSeleccionados = new Set(
           data.canales.filter((c) => c.publicado).map((c) => c.id),
         );
-        // En la fase "Long list aprobada" la asignación va colapsada (como en el diseño):
-        // el foco pasa al envío del formulario del postulante.
+        this.colapsarSeccionesCompletadas();
         if (this.longListAprobada) {
-          this.seccionAsignacion = false;
           // Prellena el correo de cada candidato con el último usado (si ya se envió) y, si no, con
           // su correo de contacto: en un FFT ese correo lo declaró el solicitante, así que el envío
           // del formulario —el único paso del flujo— sale sin tener que tipear nada.
@@ -290,6 +301,37 @@ export class GthDetalleRequerimiento implements OnInit {
         this.cerrar();
       },
     });
+  }
+
+  /**
+   * Deja abiertas solo las secciones que todavía dan trabajo y cierra las de los pasos que el
+   * proceso ya dejó atrás. El modal arrastra todas las fases recorridas y, desplegadas, empujan
+   * hacia abajo la única que importa —la de la fase actual— y se leen como si fueran pasos
+   * pendientes.
+   *
+   * Cerrada no es escondida: el encabezado sigue ahí y se abre con un clic, que es justo lo que se
+   * quiere para consultar lo ya hecho.
+   *
+   * Se recalcula en cada carga del detalle (no solo en la primera) porque varias acciones avanzan
+   * la fase y recargan: la sección que acaba de completarse tiene que cerrarse sola. Las que solo
+   * existen mientras son el paso actual (publicación, revisión de CV, carga de la long list) no
+   * aparecen acá: su `@if` ya las saca del modal cuando dejan de aplicar.
+   */
+  private colapsarSeccionesCompletadas(): void {
+    // La asignación interna se completa al publicar la vacante.
+    this.seccionAsignacion = !this.vacantePublicada;
+
+    // Long list aprobada, formulario del postulante y Multitest son el trabajo de la fase
+    // "Long list aprobada": quedan atrás al pasar a entrevistas (o, en un ingreso directo FFT, al
+    // aprobarse el formulario, que lo manda derecho al EMO).
+    const antesDeEntrevistas = !this.enEntrevistas;
+    this.seccionLongListAprobada = antesDeEntrevistas;
+    this.seccionFormularioPostulante = antesDeEntrevistas;
+    this.seccionMultitest = antesDeEntrevistas;
+
+    // La programación de entrevistas se completa cuando el finalista pasa a decisión del área.
+    this.seccionEntrevistas =
+      !this.detalle || !faseAlcanzada(this.detalle.estadoCodigo, 'SELECCION_JEFATURA');
   }
 
   /**
@@ -495,6 +537,24 @@ export class GthDetalleRequerimiento implements OnInit {
    */
   get rechazadosRetomables(): CandidatoRechazado[] {
     return (this.detalle?.candidatosRechazados ?? []).filter((c) => c.puedeRetomar);
+  }
+
+  /**
+   * «Continuar con un rechazado»: despliega el historial y baja la vista hasta él. El historial
+   * está al final del modal, así que abrirlo sin más no se ve — el botón parecía no hacer nada.
+   */
+  verHistorialRechazados(): void {
+    this.seccionRechazados = true;
+    // App zoneless: sin esto la sección no llega a existir en el DOM antes del scroll.
+    this.cdr.detectChanges();
+    // Y un frame más para que el navegador tenga el layout ya recalculado: la sección acaba de
+    // crecer al desplegarse y su posición final es la de después de ese reflow.
+    requestAnimationFrame(() => {
+      this.historialRechazadosRef?.nativeElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
   }
 
   /**

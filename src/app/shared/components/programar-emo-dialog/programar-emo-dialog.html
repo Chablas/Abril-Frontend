@@ -28,11 +28,14 @@
       <div class="abril-field">
         <!-- dense + floatingLabel: mismas medidas y mismo label que app-search-select, para que la
              fecha no se vea más grande que los desplegables de al lado. -->
+        <!-- Sin fechas pasadas: la cita es una reserva a futuro con la clínica. El calendario las
+             deshabilita y el campo rechaza una escrita a mano. -->
         <app-date-picker
           label="Fecha programada *"
           [dense]="true"
           [floatingLabel]="true"
           [color]="accentColor"
+          [min]="minFechaProgramada"
           [value]="form.fechaProgramada || null"
           (valueChange)="form.fechaProgramada = $event ?? ''">
         </app-date-picker>

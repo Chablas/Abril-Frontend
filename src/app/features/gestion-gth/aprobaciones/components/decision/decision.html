@@ -210,13 +210,13 @@
       </div>
 
       <!-- ── A quién le llega la decisión ───────────────────────────────────
-           Aparece para los tres niveles: la decisión de Gerencia General dispara el aviso a GTH y
-           el de vacantes aprobadas a TI, y la del gerente del área o la de GTH, el de reemplazos
-           aprobados. Los destinatarios los resuelve el backend con la misma lógica del envío real
-           —lo que esté activo en esas secciones de la Configuración, fusionado en una sola lista—,
-           así que el aviso no puede prometer algo distinto de lo que sale. Y como los correos solo
-           salen si la decisión deja alguna vacante lista, cuando no queda ninguna el aviso lo dice
-           en vez de callarlo.
+           Aparece para los tres niveles: la de Gerencia General dispara el aviso a GTH y el de
+           vacantes aprobadas a TI; la del gerente del área, el que le pide a GTH la segunda firma
+           del reemplazo; la de GTH, esa segunda firma, el de reemplazos aprobados y el de TI. Los
+           destinatarios los resuelve el backend con la misma lógica del envío real —lo que esté
+           activo en esas secciones de la Configuración, fusionado en una sola lista—, así que el
+           aviso no puede prometer algo distinto de lo que sale. Rechazarlo todo no manda nada, y
+           en ese caso el aviso lo dice en vez de callarlo.
            Los textos son a propósito telegráficos: lo único que hace falta saber acá es a qué
            correo llega (o que no llega a ninguno), no el detalle del flujo. -->
       @if (destinatariosCargados) {
@@ -247,11 +247,6 @@
             <span>Sin destinatarios activos: no se enviará el aviso. Revísalos en «Configuración».</span>
           </div>
         }
-      } @else if (!esGerenteGeneral) {
-        <div class="ad-note ad-note--mail ad-note--done">
-          <i class="ti ti-mail-off"></i>
-          <span>Un reemplazo pasa a Gestión de Talento Humano cuando lo aprueban las dos firmas.</span>
-        </div>
       }
     }
 

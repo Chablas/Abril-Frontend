@@ -311,7 +311,7 @@
 
               <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
                 @if (rechazadosRetomables.length > 0) {
-                  <button type="button" (click)="seccionRechazados = true"
+                  <button type="button" (click)="verHistorialRechazados()"
                           class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
                           style="background:#005D9D">
                     <i class="ti ti-user-search text-[15px]"></i>
@@ -1269,7 +1269,8 @@
            a todos, el requerimiento vuelve a Long list y esta es la lista que GTH
            mira para no volver a presentar a los mismos candidatos. -->
       @if (detalle.candidatosRechazados.length > 0) {
-        <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
+        <div #historialRechazados
+             class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
 
           <button type="button"
             class="flex items-center gap-[8px] cursor-pointer w-full text-left"

@@ -6,9 +6,10 @@ import { SolicitudDestinatarios } from '../../shared/dtos/destinatarios.dto';
  *
  * - `GERENTE_GENERAL`: ve todas las solicitudes y decide las vacantes NUEVAS. Su firma
  *   sola las manda a Gestión de Talento Humano.
- * - `GERENTE_AREA`: ve las de su área hacia abajo y decide las de REEMPLAZO, junto con GTH.
- * - `GTH`: cualquier trabajador del área de Gestión del Talento Humano. Ve los reemplazos de toda
- *   la empresa y los decide junto con el gerente del área: hacen falta las dos firmas.
+ * - `GERENTE_AREA`: ve las de su área hacia abajo y decide las de REEMPLAZO. Firma PRIMERO: su
+ *   visto bueno es lo que le pasa la vacante a GTH, y su rechazo la cierra ahí mismo.
+ * - `GTH`: cualquier trabajador del área de Gestión del Talento Humano. Pone la SEGUNDA firma de
+ *   los reemplazos, de toda la empresa. Solo le aparecen los que el gerente del área ya aprobó.
  * - `NINGUNO`: entra a la pantalla, pero no hay solicitudes bajo su alcance.
  */
 export type AprobacionNivel = 'GERENTE_GENERAL' | 'GERENTE_AREA' | 'GTH' | 'NINGUNO';
@@ -16,7 +17,8 @@ export type AprobacionNivel = 'GERENTE_GENERAL' | 'GERENTE_AREA' | 'GTH' | 'NING
 /**
  * Por dónde se aprueba una vacante. Lo deriva el backend del tipo de requerimiento y del flag FFT:
  * - `GG`: solo Gerencia General (las vacantes nuevas que no son un ingreso directo).
- * - `AREA_GTH`: el gerente del área Y GTH, las dos firmas (los reemplazos que no son FFT).
+ * - `AREA_GTH`: el gerente del área Y GTH, las dos firmas y en ese orden (los reemplazos que no
+ *   son FFT). GTH no ve la vacante hasta que el gerente del área la aprueba.
  * - `NINGUNA`: el ingreso directo FFT, que no firma nadie. No llega a esta pantalla —el backend
  *   recorta esas vacantes— pero está en el tipo porque es una de las rutas del flujo.
  */
@@ -121,14 +123,15 @@ export interface AprobacionDetalle {
   puedeDecidir: boolean;
   vacantes: AprobacionVacante[];
   /**
-   * A quién le llegarán los correos que dispara ESTA decisión al confirmar: los de Gerencia General
-   * (el aviso a GTH y el de vacantes aprobadas a TI) o el de reemplazos aprobados, según el nivel
-   * de quien abre. Los resuelve el backend con la misma lógica del envío, así que el aviso del
-   * modal no puede divergir de los correos que salen. Null en lectura o si no se pudieron resolver.
+   * A quién le llegarán los correos que dispara ESTA decisión al confirmar, según el nivel de quien
+   * abre: los de Gerencia General (el aviso a GTH y el de vacantes aprobadas a TI), el que le pide
+   * a GTH la segunda firma del reemplazo (decisión del gerente del área) o el de reemplazos
+   * aprobados más el de TI (decisión de GTH). Los resuelve el backend con la misma lógica del
+   * envío, así que el aviso del modal no puede divergir de los correos que salen. Null en lectura o
+   * si no se pudieron resolver.
    *
-   * Que estén resueltos no significa que el correo vaya a salir: en un reemplazo lo dispara recién
-   * la SEGUNDA firma, así que el modal solo muestra el aviso cuando la decisión en curso deja
-   * alguna vacante lista (`completarian`).
+   * Que estén resueltos no significa que el correo vaya a salir: rechazarlo todo no manda nada, y
+   * el modal lo dice en vez de prometer un envío que no ocurre (`sinEnvio`).
    */
   destinatarios: SolicitudDestinatarios | null;
 }

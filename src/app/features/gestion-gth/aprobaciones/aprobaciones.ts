@@ -36,8 +36,9 @@ import {
  *   • Gerente General → toda la empresa, pero solo las vacantes NUEVAS. Un ingreso directo FFT
  *     no lo aprueba nadie y no llega acá (salvo los que quedaron esperando su firma de antes de
  *     ese cambio).
- *   • Gerente → su área hacia abajo, y solo los REEMPLAZOS.
- *   • GTH → toda la empresa, y solo los REEMPLAZOS (la otra firma del reemplazo).
+ *   • Gerente → su área hacia abajo, y solo los REEMPLAZOS. Firma PRIMERO.
+ *   • GTH → toda la empresa, y solo los REEMPLAZOS que el gerente del área YA aprobó: su firma es
+ *     la segunda, así que hasta ese momento esas solicitudes no le aparecen.
  *   • Cualquier otra categoría → ninguna solicitud; la pantalla explica por qué.
  *
  * Las vacantes de la otra ruta no llegan al frontend: `totalVacantes`, `codigos` y las casillas ya
@@ -600,7 +601,7 @@ export class GthAprobaciones implements OnInit {
     if (this.selectedAprobaciones.length > 0)
       return this.esGerenteGeneral
         ? 'Gerencia General ya decidió sobre las solicitudes seleccionadas.'
-        : 'Ya registraste tu visto bueno en las solicitudes seleccionadas.';
+        : 'Ya registraste tu decisión en las solicitudes seleccionadas.';
     return 'Selecciona al menos una solicitud que espere tu decisión.';
   }
 
@@ -608,13 +609,17 @@ export class GthAprobaciones implements OnInit {
   /** true mientras se envía una decisión en bloque (evita el doble envío). */
   decidiendo = false;
 
-  /** El GG aprueba; el gerente del área da su visto bueno. La palabra no es cosmética: no valen lo mismo. */
+  /**
+   * Las tres firmas aprueban de verdad: sin la del gerente del área el reemplazo no llega a GTH, y
+   * sin la de GTH no llega a reclutamiento. Ninguna es ya un "visto bueno" que solo deja
+   * constancia, así que las etiquetas no cambian por nivel.
+   */
   get labelAprobar(): string {
-    return this.esGerenteGeneral ? 'Aprobar' : 'Dar visto bueno';
+    return 'Aprobar';
   }
 
   get labelRechazar(): string {
-    return this.esGerenteGeneral ? 'Rechazar' : 'Observar';
+    return 'Rechazar';
   }
 
   aprobarSeleccion(): Promise<void> {
@@ -630,26 +635,24 @@ export class GthAprobaciones implements OnInit {
    * es aprobar TODAS sus vacantes —eso es lo que el usuario está eligiendo al decidir desde la
    * lista y no desde el modal—, así que la confirmación habla de solicitudes y de vacantes.
    *
-   * El texto cambia según el nivel porque las dos decisiones no mueven lo mismo: la de Gerencia
-   * General manda sola las vacantes a GTH, y la del gerente del área o la de GTH las mandan recién
-   * cuando se juntan las dos. Quién es quién no lo decide esta pantalla: el backend lo resuelve
-   * desde la categoría de la ficha y re-valida fila por fila.
+   * El texto cambia según el nivel porque las decisiones no mueven lo mismo: la de Gerencia General
+   * y la de GTH mandan las vacantes a reclutamiento, y la del gerente del área —la primera de las
+   * dos firmas de un reemplazo— se las pasa a GTH para que ponga la segunda. Quién es quién no lo
+   * decide esta pantalla: el backend lo resuelve desde la categoría de la ficha y re-valida fila
+   * por fila.
    */
   private async decidirSeleccion(aprobar: boolean): Promise<void> {
     const items = this.selectedDecidibles;
     if (this.decidiendo || items.length === 0) return;
 
     const vacantes = this.vacantesSeleccionadas;
-    // La firma que falta para completar un reemplazo es la del OTRO: el gerente del área espera a
-    // GTH y GTH espera al gerente del área.
-    const faltante = this.esGth ? 'el gerente del área' : 'Gestión del Talento Humano';
-    const detalle = this.esGerenteGeneral
+    const detalle = this.esGerenteGeneral || this.esGth
       ? aprobar
         ? `Se aprobarán las ${vacantes} vacante(s) de ${items.length} solicitud(es) y pasarán a Gestión de Talento Humano para iniciar el reclutamiento.`
         : `Ninguna de las ${vacantes} vacante(s) de ${items.length} solicitud(es) continuará y Gestión de Talento Humano no las recibirá.`
       : aprobar
-        ? `Tu firma quedará registrada en las ${vacantes} vacante(s) de ${items.length} solicitud(es). Cada una pasa a Gestión de Talento Humano en cuanto tenga también la aprobación de ${faltante}.`
-        : `Ninguna de las ${vacantes} vacante(s) de ${items.length} solicitud(es) continuará: tu rechazo las cierra sin esperar la otra firma.`;
+        ? `Las ${vacantes} vacante(s) de ${items.length} solicitud(es) pasarán a Gestión de Talento Humano para su aprobación.`
+        : `Ninguna de las ${vacantes} vacante(s) de ${items.length} solicitud(es) continuará: tu rechazo las cierra y no llegan a Gestión de Talento Humano.`;
 
     const confirm = await Swal.fire({
       title: aprobar ? `¿${this.labelAprobar} ${items.length} solicitud(es)?` : `¿${this.labelRechazar} ${items.length} solicitud(es)?`,
@@ -742,7 +745,6 @@ export class GthAprobaciones implements OnInit {
 
   /** Texto del botón de la fila: decidir si le toca, consultar si ya pasó por ahí. */
   textoAccion(a: AprobacionListItem): string {
-    if (!a.esperaMiDecision) return 'Ver decisión';
-    return this.esGerenteGeneral ? 'Revisar y aprobar' : 'Revisar y dar visto bueno';
+    return a.esperaMiDecision ? 'Revisar y aprobar' : 'Ver decisión';
   }
 }

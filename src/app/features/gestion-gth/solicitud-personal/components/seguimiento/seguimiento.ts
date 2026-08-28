@@ -75,9 +75,9 @@ export class GthSeguimiento implements OnInit {
   /**
    * Etiqueta principal de la tarjeta "Aprobaciones": la decisión que manda sobre ESTA vacante, o el
    * estado mientras siga pendiente. Cuál manda depende del tipo de requerimiento: en una vacante
-   * nueva es la de Gerencia General; en un reemplazo hacen falta las DOS —la del gerente del área y
-   * la de GTH—, así que la etiqueta las resume: aprobada solo con ambas, rechazada apenas una diga
-   * que no. Un ingreso directo no tiene ninguna: llega sin tarjeta.
+   * nueva es la de Gerencia General; en un reemplazo hacen falta las DOS —primero la del gerente
+   * del área y después la de GTH—, así que la etiqueta las resume: aprobada solo con ambas,
+   * rechazada apenas una diga que no. Un ingreso directo no tiene ninguna: llega sin tarjeta.
    */
   get aprobacionGgLabel(): string {
     const ap = this.seguimiento?.aprobacionGg;
@@ -123,17 +123,22 @@ export class GthSeguimiento implements OnInit {
         : 'Registrada antes de este paso del flujo';
 
     if (ap.ruta === 'AREA_GTH') {
-      // El reemplazo lo cierra la ÚLTIMA de las dos firmas, así que se muestra esa fecha.
+      // El reemplazo lo cierra la ÚLTIMA de las dos firmas, así que se muestra esa fecha. Con un
+      // rechazo puede haber una sola: la del que dijo que no, que cierra la vacante ahí mismo.
       const fechas = [ap.gerenteAreaDecididoEn, ap.gthDecididoEn].filter(
         (f): f is string => !!f,
       );
       const ultima = fechas.sort().pop();
       if (this.decisionQueManda !== null && ultima) {
-        return `Gerente del área y GTH · ${this.fecha(ultima)}`;
+        const quien = ap.aprobadoGerenteArea === false ? 'Gerente del área' : 'Gerente del área y GTH';
+        return `${quien} · ${this.fecha(ultima)}`;
       }
-      return ap.enviadoEn
-        ? `Enviada al gerente del área y a GTH el ${this.fecha(ap.enviadoEn)}`
-        : 'No se pudo enviar el correo; usa «Reenviar aprobación»';
+      if (!ap.enviadoEn) return 'No se pudo enviar el correo; usa «Reenviar aprobación»';
+      // Las dos firmas van EN ORDEN: primero el gerente del área y, con su visto bueno, GTH. La
+      // línea dice en manos de quién está ahora, no a quiénes se le mandó alguna vez.
+      return ap.gerenteAreaDecididoEn
+        ? `En Gestión del Talento Humano desde el ${this.fecha(ap.gerenteAreaDecididoEn)}`
+        : `Enviada al gerente del área el ${this.fecha(ap.enviadoEn)}`;
     }
 
     if (ap.decididoEn) return `Gerencia General · ${this.fecha(ap.decididoEn)}`;
