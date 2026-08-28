@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -236,6 +236,7 @@ export class Trabajadores implements OnInit, OnDestroy {
     private catalogosHabService: CatalogosHabService,
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -567,6 +568,18 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   onFilterChange(): void {
     this.loadWorkers(1);
+  }
+
+  /** A diferencia de los demás filtros, el proyecto se refleja en la URL para que se
+   * mantenga al cambiar de pestaña (Dashboard/Empresa/Trabajadores comparten ?proyectoId=). */
+  onProyectoFiltroChange(id: number | null): void {
+    this.filtroProyectoId = id;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { proyectoId: id ?? null },
+      queryParamsHandling: 'merge',
+    });
+    this.onFilterChange();
   }
 
   onPageChange(page: number): void {

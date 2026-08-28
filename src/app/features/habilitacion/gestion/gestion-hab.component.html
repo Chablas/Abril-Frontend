@@ -8,7 +8,7 @@
 <div class="gestion-shell">
   <nav class="gestion-tabs" *ngIf="!esContratista">
     @for (tab of visibleTabs; track tab.path) {
-      <a class="gestion-tab" [routerLink]="tab.path" routerLinkActive="gestion-tab--active">{{ tab.label }}</a>
+      <a class="gestion-tab" [routerLink]="tab.path" queryParamsHandling="preserve" routerLinkActive="gestion-tab--active">{{ tab.label }}</a>
     }
   </nav>
   <div class="gestion-content">

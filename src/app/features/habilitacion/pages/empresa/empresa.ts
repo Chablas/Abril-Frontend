@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { jwtDecode } from 'jwt-decode';
@@ -160,6 +161,8 @@ export class Empresa implements OnInit {
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     private projectService: ProjectService,
+    private route: ActivatedRoute,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -170,7 +173,16 @@ export class Empresa implements OnInit {
         this.loadProyectos();
       }
     } else if (this.isAdmin()) {
-      this.loadEmpresasAdmin();
+      const proyectoIdUrl = Number(this.route.snapshot.queryParamMap.get('proyectoId'));
+      if (Number.isFinite(proyectoIdUrl) && proyectoIdUrl > 0) {
+        // Viene de otra pestaña (Dashboard/Trabajadores) con un proyecto ya elegido —
+        // saltar directo al modo "por proyecto" en vez de arrancar en "por empresa".
+        this.modoFiltro = 'proyecto';
+        this.loadProyectosFiltro();
+        this.onProyectoFiltroChange(proyectoIdUrl);
+      } else {
+        this.loadEmpresasAdmin();
+      }
     }
   }
 
@@ -277,6 +289,14 @@ export class Empresa implements OnInit {
     if (this.modoFiltro === 'proyecto' && this.proyectosFiltro.length === 0) {
       this.loadProyectosFiltro();
     }
+    if (this.modoFiltro === 'empresa') {
+      this.selectedProyectoFiltroId = null;
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { proyectoId: null },
+        queryParamsHandling: 'merge',
+      });
+    }
     this.cdr.detectChanges();
   }
 
@@ -293,6 +313,11 @@ export class Empresa implements OnInit {
   onProyectoFiltroChange(id: number | null): void {
     this.selectedProyectoFiltroId = id;
     this.empresasPorProyecto = [];
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { proyectoId: id ?? null },
+      queryParamsHandling: 'merge',
+    });
     if (!id) return;
     this.loadingEmpresasPorProyecto = true;
     this.habEmpresaService.getEmpresasPorProyecto(id).subscribe({
