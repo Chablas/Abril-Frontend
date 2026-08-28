@@ -5,6 +5,8 @@ export interface ProjectEditDto {
   abbreviation?: string;
   levelDescription?: string;
   estado?: string;
+  /** Ciclo de vida real para el cálculo de ratios SSOMA: Finalizado | Activo | Inactivo. */
+  cicloVida?: string;
 
   // Contribuyente
   contributorId?: number;
