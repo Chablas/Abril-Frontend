@@ -904,46 +904,6 @@ export class Trabajadores implements OnInit, OnDestroy {
       return;
     }
 
-    // Marcar Aprobado exige cotejar trabajador y archivo antes de guardar (ver
-    // confirmarAntesDeAprobar): sin este paso, "Guardar" con Aprobado ya
-    // seleccionado en el combo aplicaba de inmediato sin ninguna verificación.
-    if (!this.isContratista() && this.panelEstado === 'Aprobado') {
-      this.confirmarAntesDeAprobar().then((confirmado) => {
-        if (confirmado) this.ejecutarGuardarEntregable();
-      });
-      return;
-    }
-
-    this.ejecutarGuardarEntregable();
-  }
-
-  /**
-   * Confirmación explícita antes de aprobar un entregable: muestra el trabajador y el
-   * archivo adjunto para que el revisor los coteje antes de dar acceso. Ver caso RIQUEZ
-   * GOZAR / LAOS CUERVO (2026-08-28): dos EMOs se aprobaron cruzados entre dos fichas
-   * nuevas creadas el mismo día, sin ningún punto de verificación visual que lo evitara.
-   */
-  private confirmarAntesDeAprobar(): Promise<boolean> {
-    const archivo = this.selectedEntregable?.archivoUrl
-      ? this.extractFileName(this.selectedEntregable.archivoUrl)
-      : (this.archivosPendientes.find(a => a.path)?.nombre ?? null);
-    return Swal.fire({
-      icon: 'warning',
-      title: '¿Aprobar entregable?',
-      html: `<b>${this.selectedEntregable?.nombreItem}</b> de <b>${this.selectedWorker?.apellidoNombre}</b> — DNI ${this.selectedWorker?.dni}` +
-            (archivo ? `<br><br>Archivo adjunto: <b>${archivo}</b>` : '') +
-            `<br><br>Verifica que el trabajador y el archivo correspondan antes de aprobar.`,
-      showCancelButton: true,
-      confirmButtonText: 'Sí, aprobar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#64bc04',
-      cancelButtonColor: '#6b7280',
-    }).then((res) => res.isConfirmed);
-  }
-
-  private ejecutarGuardarEntregable(): void {
-    if (!this.selectedEntregable || !this.selectedWorker) return;
-
     let payload: WorkerEntregableUpdateDto;
 
     if (this.isContratista()) {
@@ -996,8 +956,16 @@ export class Trabajadores implements OnInit, OnDestroy {
   aprobarEntregable(): void {
     if (!this.selectedEntregable || !this.selectedWorker) return;
 
-    this.confirmarAntesDeAprobar().then((confirmado) => {
-      if (!confirmado || !this.selectedEntregable || !this.selectedWorker) return;
+    Swal.fire({
+      icon: 'question',
+      title: '¿Aprobar entregable?',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64bc04',
+      cancelButtonColor: '#6b7280',
+    }).then((res) => {
+      if (!res.isConfirmed || !this.selectedEntregable || !this.selectedWorker) return;
       this.loaderService.show();
       this.trabajadorHabService
         .updateEntregable(this.selectedEntregable.id, {
