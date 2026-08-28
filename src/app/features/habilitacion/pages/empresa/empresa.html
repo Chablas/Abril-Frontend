@@ -2,18 +2,39 @@
 
   <!-- TOP BAR -->
   <div class="stats-bar">
-    <div class="stats-left">
-      <ng-container *ngIf="isAdmin()">
-        <app-filter-trigger [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
-        <button
-          type="button"
-          class="btn-ghost-sm"
-          [disabled]="!empresaId"
-          (click)="abrirProyectos()"
-        >
-          Gestionar proyectos
-        </button>
-      </ng-container>
+    <div class="stats-left" *ngIf="isAdmin()" style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap">
+      <div style="min-width:220px">
+        <app-search-select
+          label="Proyecto"
+          [options]="catalogoProyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="filtroProyectoId"
+          placeholder="Todos los proyectos"
+          [allowClear]="true"
+          (valueChange)="onFiltroProyectoChange($event)"
+        />
+      </div>
+      <div style="min-width:220px">
+        <app-search-select
+          label="Empresa"
+          [options]="empresaOptions"
+          valueField="id"
+          displayField="razonSocial"
+          [value]="empresaId"
+          placeholder="Todas las razones sociales"
+          [allowClear]="true"
+          (valueChange)="onEmpresaChange($event)"
+        />
+      </div>
+      <button
+        type="button"
+        class="btn-ghost-sm"
+        [disabled]="!empresaId"
+        (click)="abrirProyectos()"
+      >
+        Gestionar proyectos
+      </button>
     </div>
     <div class="stats-right" *ngIf="empresaId">
       <button type="button" class="btn-ghost-sm" (click)="loadProyectos()">
@@ -28,43 +49,59 @@
     </div>
   </div>
 
-  <!-- Modal de filtros (solo admin) -->
-  <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
-    <div class="w-full">
-      <app-search-select
-        label="Proyecto"
-        [options]="catalogoProyectos"
-        valueField="projectId"
-        displayField="projectDescription"
-        [value]="filtroProyectoId"
-        placeholder="Todos los proyectos"
-        [allowClear]="true"
-        (valueChange)="onFiltroProyectoChange($event)"
-      />
-    </div>
-    <div class="w-full">
-      <app-search-select
-        label="Empresa"
-        [options]="empresaOptions"
-        valueField="id"
-        displayField="razonSocial"
-        [value]="empresaId"
-        placeholder="Todas las razones sociales"
-        [allowClear]="true"
-        (valueChange)="onEmpresaChange($event)"
-      />
-    </div>
-  </app-filter-modal>
+  <!-- Admin: proyecto elegido en Filtros sin empresa aún -> tabla resumen de empresas del proyecto -->
+  <ng-container *ngIf="isAdmin() && filtroProyectoId && !empresaId">
+    <div class="list-msg" *ngIf="loadingEmpresasPorProyecto">Cargando empresas…</div>
 
-  <!-- EMPTY STATE: no empresa seleccionada -->
-  <div class="center-empty" *ngIf="!empresaId">
+    <div class="proj-empty" *ngIf="!loadingEmpresasPorProyecto && empresasPorProyecto.length === 0">
+      <p>No hay empresas activas en este proyecto.</p>
+    </div>
+
+    <div class="abril-table-wrap" *ngIf="!loadingEmpresasPorProyecto && empresasPorProyecto.length > 0" style="padding: 0 20px;">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Empresa</th>
+            <th>Estado</th>
+            <th>Entregables SSOMA</th>
+            <th>Entregables Administración</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let e of empresasPorProyecto">
+            <td style="font-weight:600">{{ e.nombre }}</td>
+            <td>
+              <span [class]="e.habilitada ? 'chip-green' : 'chip-red'">
+                {{ e.habilitada ? 'Habilitada' : 'No habilitada' }}
+              </span>
+            </td>
+            <td>
+              <span class="chip-green" style="margin-right:6px">{{ e.entregablesSsomaSubidos }} subidos</span>
+              <span class="chip-red" *ngIf="e.entregablesSsomaFaltantes > 0">{{ e.entregablesSsomaFaltantes }} faltan</span>
+            </td>
+            <td>
+              <span class="chip-green" style="margin-right:6px">{{ e.entregablesAdminSubidos }} subidos</span>
+              <span class="chip-red" *ngIf="e.entregablesAdminFaltantes > 0">{{ e.entregablesAdminFaltantes }} faltan</span>
+            </td>
+            <td>
+              <button type="button" class="btn-ghost-sm" (click)="onEmpresaChange(e.empresaId)">Ver entregables</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+
+  <!-- EMPTY STATE: nada seleccionado todavía -->
+  <div class="center-empty" *ngIf="!empresaId && !filtroProyectoId">
     <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
       <rect x="12" y="8" width="40" height="48" rx="6" fill="#f1f5f9" stroke="#e2e8f0" stroke-width="1.5"/>
       <rect x="20" y="20" width="24" height="3" rx="1.5" fill="#cbd5e1"/>
       <rect x="20" y="28" width="18" height="3" rx="1.5" fill="#e2e8f0"/>
       <rect x="20" y="36" width="20" height="3" rx="1.5" fill="#e2e8f0"/>
     </svg>
-    <p class="center-empty-text">Selecciona una empresa para ver sus proyectos activos.</p>
+    <p class="center-empty-text">Selecciona una empresa o un proyecto para ver sus contratistas.</p>
   </div>
 
   <!-- Admin: proyecto se elige en Filtros, no hace falta una grilla intermedia -->

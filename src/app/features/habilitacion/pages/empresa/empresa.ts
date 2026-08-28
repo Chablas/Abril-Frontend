@@ -33,6 +33,7 @@ import {
   EmpresaContratistaListDto,
   EmpresaEntregableDto,
   EmpresaEntregableUpdateDto,
+  EmpresaPorProyectoDto,
   EmpresaSimpleDto,
   EntregableMesDto,
   ProyectoDisponibleDto,
@@ -152,6 +153,10 @@ export class Empresa implements OnInit {
   filtroProyectoId: number | null = null;
   /** Empresas del proyecto elegido — narrows las opciones del combo Empresa (cascada). */
   empresasDeProyecto: EmpresaSimpleDto[] = [];
+  /** Mismas empresas del proyecto elegido, con su estado de habilitación y entregables —
+   * para la tabla resumen que se ve al elegir un proyecto sin haber elegido aún una empresa. */
+  empresasPorProyecto: EmpresaPorProyectoDto[] = [];
+  loadingEmpresasPorProyecto = false;
   private pendingProyectoFiltroId: number | null = null;
 
   get empresaOptions(): EmpresaSimpleDto[] {
@@ -168,6 +173,7 @@ export class Empresa implements OnInit {
   limpiarFiltros(): void {
     this.filtroProyectoId = null;
     this.empresasDeProyecto = [];
+    this.empresasPorProyecto = [];
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { proyectoId: null },
@@ -207,12 +213,14 @@ export class Empresa implements OnInit {
     } else if (this.isAdmin()) {
       this.loadEmpresasAdmin();
       this.loadCatalogoProyectos();
-      // Viene de otra pestaña (Dashboard/Trabajadores/Equipos) con un proyecto ya elegido —
-      // lo aplicamos como filtro para que el combo Empresa arranque acotado a ese proyecto.
-      const proyectoIdUrl = Number(this.route.snapshot.queryParamMap.get('proyectoId'));
-      if (Number.isFinite(proyectoIdUrl) && proyectoIdUrl > 0) {
-        this.onFiltroProyectoChange(proyectoIdUrl);
-      }
+      // Por defecto arranca en el proyecto donde la persona tiene su vinculación activa
+      // hoy, en vez de "todos los proyectos" — cada quien ve primero lo suyo.
+      this.empresaContratistaService.getMiProyectoActual().subscribe({
+        next: (res) => {
+          if (res.proyectoId) this.onFiltroProyectoChange(res.proyectoId);
+        },
+        error: () => {},
+      });
     }
   }
 
@@ -224,7 +232,8 @@ export class Empresa implements OnInit {
     return (
       this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA) ||
       this.authService.hasRole(Roles.ADMINISTRADOR_ADMINISTRACION) ||
-      this.authService.hasRole(Roles.ADMINISTRADOR_UDP)
+      this.authService.hasRole(Roles.ADMINISTRADOR_UDP) ||
+      this.authService.hasRole(Roles.COORDINADOR_SSOMA)
     );
   }
 
@@ -335,11 +344,16 @@ export class Empresa implements OnInit {
     });
     if (!id) {
       this.empresasDeProyecto = [];
+      this.empresasPorProyecto = [];
       return;
     }
+    this.loadingEmpresasPorProyecto = true;
     this.habEmpresaService.getEmpresasPorProyecto(id).subscribe({
       next: (res) => {
-        this.empresasDeProyecto = (res ?? []).map((e) => ({ id: e.empresaId, razonSocial: e.nombre }));
+        const list = res ?? [];
+        this.empresasPorProyecto = list;
+        this.empresasDeProyecto = list.map((e) => ({ id: e.empresaId, razonSocial: e.nombre }));
+        this.loadingEmpresasPorProyecto = false;
         // Cascada: si la empresa elegida no pertenece al proyecto recién filtrado, se limpia.
         if (this.empresaId && !this.empresasDeProyecto.some((e) => e.id === this.empresaId)) {
           this.onEmpresaChange(null);
@@ -348,6 +362,8 @@ export class Empresa implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.empresasDeProyecto = [];
+        this.empresasPorProyecto = [];
+        this.loadingEmpresasPorProyecto = false;
         this.errorService.handleError(err);
       },
     });

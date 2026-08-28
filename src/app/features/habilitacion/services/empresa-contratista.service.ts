@@ -25,6 +25,12 @@ export class EmpresaContratistaService {
     });
   }
 
+  getMiProyectoActual(): Observable<{ proyectoId: number | null }> {
+    return this.http.get<{ proyectoId: number | null }>(`${this.base}/mi-proyecto-actual`, {
+      headers: buildHabHeaders(),
+    });
+  }
+
   getEmpresa(id: number): Observable<EmpresaContratistaDetalleDto> {
     return this.http.get<EmpresaContratistaDetalleDto>(`${this.base}/${id}`, {
       headers: buildHabHeaders(),
