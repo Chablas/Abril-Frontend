@@ -1,3 +1,13 @@
+export interface EmpresaPorProyectoDto {
+  empresaId: number;
+  nombre: string;
+  habilitada: boolean;
+  entregablesSsomaSubidos: number;
+  entregablesSsomaFaltantes: number;
+  entregablesAdminSubidos: number;
+  entregablesAdminFaltantes: number;
+}
+
 export interface EmpresaSimpleDto {
   id: number;
   razonSocial: string;

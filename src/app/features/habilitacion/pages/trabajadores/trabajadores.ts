@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -234,12 +235,25 @@ export class Trabajadores implements OnInit, OnDestroy {
     private sctrVidaLeyService: SctrVidaLeyService,
     private catalogosHabService: CatalogosHabService,
     private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
     this.searchChange$
       .pipe(debounceTime(350), takeUntil(this.destroy$))
       .subscribe(() => this.loadWorkers(1));
+
+    // Deep-link desde el dashboard: /trabajadores?estado=No+Autorizado&contrataCasa=Casa&proyectoId=12
+    const qp = this.route.snapshot.queryParamMap;
+    const estado = qp.get('estado');
+    const contrataCasa = qp.get('contrataCasa');
+    const proyectoId = qp.get('proyectoId');
+    const soloEmoVencido = qp.get('soloEmoVencido');
+    if (estado) this.filtroEstado = estado;
+    if (contrataCasa) this.filtroContratistaCasa = contrataCasa;
+    if (proyectoId) this.filtroProyectoId = Number(proyectoId);
+    if (soloEmoVencido === 'true') this.soloEmoVencido = true;
+
     this.loadWorkers(1);
     this.loadCatalogos();
   }

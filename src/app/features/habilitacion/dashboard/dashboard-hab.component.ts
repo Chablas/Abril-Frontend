@@ -55,6 +55,16 @@ export class DashboardHabComponent implements OnInit {
   totalEquipos = 0;
   proximosVencer: any[] = [];
 
+  /** Secciones colapsables de la vista admin (tablas de detalle bajo las tarjetas KPI) —
+   * arrancan todas cerradas para que se vean solo los títulos hasta que el usuario elija cuál abrir. */
+  private seccionesAbiertas = new Set<string>();
+  toggleSeccion(nombre: string): void {
+    if (this.seccionesAbiertas.has(nombre)) this.seccionesAbiertas.delete(nombre);
+    else this.seccionesAbiertas.add(nombre);
+    this.cdr.detectChanges();
+  }
+  seccionAbierta(nombre: string): boolean { return this.seccionesAbiertas.has(nombre); }
+
   get esContratista(): boolean { return this.authService.isContratista(); }
 
   get isAdmin(): boolean {
@@ -154,8 +164,25 @@ export class DashboardHabComponent implements OnInit {
       next: (res) => {
         this.proyectosAdmin = res.data ?? [];
         this.cdr.detectChanges();
+        this.preseleccionarProyectoActual();
       },
       error: () => { this.proyectosAdmin = []; this.cdr.detectChanges(); },
+    });
+  }
+
+  /** Preselecciona el proyecto "actual" del usuario (tabla user_project) si tiene uno
+   * asignado y sigue en la lista de proyectos activos; si tiene varios, deja el primero. */
+  preseleccionarProyectoActual(): void {
+    this.projectService.getMisProyectos().subscribe({
+      next: (ids) => {
+        if (this.selectedProyectoId || !ids?.length) return;
+        const asignado = this.proyectosAdmin.find(p => ids.includes(p.projectId));
+        if (asignado) {
+          this.onProyectoChange(asignado.projectId);
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => {},
     });
   }
 

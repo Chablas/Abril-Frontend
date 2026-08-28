@@ -85,6 +85,15 @@ export class ProjectService {
     });
   }
 
+  /** IDs de proyecto asignados al usuario logueado (tabla user_project) — para preseleccionar
+   * el proyecto "actual" en dashboards que hoy arrancan sin nada elegido. */
+  getMisProyectos(): Observable<number[]> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<number[]>(`${this.apiUrl}/mine`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
   /** Activa/desactiva rápido si el proyecto aparece en los selectores de Arquitectura Comercial. */
   toggleArquitecturaComercial(projectId: number): Observable<{ tieneArquitecturaComercial: boolean }> {
     const token = localStorage.getItem('access_token');

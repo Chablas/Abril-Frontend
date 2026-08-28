@@ -7,23 +7,46 @@ import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { InduccionService } from '../../services/induccion.service';
 import { InduccionListDto } from '../../dtos/induccion.model';
+import { SearchInput } from '../../../../shared/components/search-input/search-input';
+import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
+import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
 @Component({
   selector: 'app-hab-inducciones',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchInput, FilterTriggerButton, FilterModal],
   templateUrl: './inducciones.html',
   styleUrl: './inducciones.css',
 })
 export class Inducciones implements OnInit {
   inducciones: InduccionListDto[] = [];
   private _todas: InduccionListDto[] = [];
+  private _filtradasServidor: InduccionListDto[] = [];
   loading = false;
 
   filtroEstado = '';
   filtroFechaDesde = '';
   filtroFechaHasta = '';
+  filtroProyectoId: number | null = null;
+  busqueda = '';
+  filtrosAbiertos = false;
 
   readonly hoy = new Date().toISOString().substring(0, 10);
+
+  get catalogoProyectos(): { id: number; nombre: string }[] {
+    const map = new Map<number, string>();
+    for (const i of this._todas) map.set(i.proyectoId, i.proyectoNombre);
+    return Array.from(map, ([id, nombre]) => ({ id, nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }
+
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.filtroEstado) n++;
+    if (this.filtroFechaDesde) n++;
+    if (this.filtroFechaHasta) n++;
+    if (this.filtroProyectoId) n++;
+    return n;
+  }
 
   constructor(
     private induccionService: InduccionService,
@@ -51,11 +74,12 @@ export class Inducciones implements OnInit {
     this.induccionService.getList(params).subscribe({
       next: (res) => {
         this._todas = res ?? [];
-        this.inducciones = this.filtroEstado === 'INGRESO'
+        this._filtradasServidor = this.filtroEstado === 'INGRESO'
           ? this._todas.filter(i => i.ingresoConfirmado && i.estado !== 'REALIZADA')
           : this.filtroEstado === 'PROGRAMADA'
             ? this._todas.filter(i => !i.ingresoConfirmado)
             : this._todas;
+        this.aplicarFiltrosLocales();
         this.loading = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
@@ -68,14 +92,45 @@ export class Inducciones implements OnInit {
     });
   }
 
+  /** Proyecto y búsqueda (trabajador/DNI) filtran sobre lo ya cargado — no ameritan
+   * ida y vuelta al servidor, la lista por empresa ya es acotada. */
+  private aplicarFiltrosLocales(): void {
+    let lista = this._filtradasServidor;
+    if (this.filtroProyectoId) {
+      lista = lista.filter(i => i.proyectoId === this.filtroProyectoId);
+    }
+    if (this.busqueda.trim()) {
+      lista = lista.filter(i =>
+        SearchInput.matches(i.apellidoNombre, this.busqueda) ||
+        SearchInput.matches(i.dni, this.busqueda));
+    }
+    this.inducciones = lista;
+  }
+
+  onBusquedaChange(): void {
+    this.aplicarFiltrosLocales();
+    this.cdr.detectChanges();
+  }
+
+  onProyectoFiltroChange(): void {
+    this.aplicarFiltrosLocales();
+    this.cdr.detectChanges();
+  }
+
   onFilterChange(): void {
     this.load();
+  }
+
+  abrirFiltros(): void {
+    this.filtrosAbiertos = true;
   }
 
   clearFilters(): void {
     this.filtroEstado = '';
     this.filtroFechaDesde = '';
     this.filtroFechaHasta = '';
+    this.filtroProyectoId = null;
+    this.busqueda = '';
     this.load();
   }
 

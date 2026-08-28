@@ -181,13 +181,16 @@ export class Dossier implements OnInit {
 
   chipSemana(estado: DossierEstadoSemana): string {
     if (estado === 'Aprobado') return 'chip-green';
-    if (estado === 'Enviado' || estado === 'Rechazado' || estado === 'Observado') return 'chip-orange';
+    if (estado === 'Rechazado') return 'chip-red';
+    if (estado === 'Observado') return 'chip-orange';
+    if (estado === 'Enviado') return 'chip-blue';
     if (estado === 'NoAplica') return 'chip-gray';
     return 'chip-blue';
   }
 
   labelSemana(estado: DossierEstadoSemana): string {
     if (estado === 'NoAplica') return 'N/A';
+    if (estado === 'Observado') return 'Con observaciones';
     return estado;
   }
 

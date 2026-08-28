@@ -106,7 +106,13 @@
 
 .doc-info { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .doc-tipo { font-size: 12px; font-weight: 600; }
+.chip { font-weight: 600; border-radius: 99px; padding: 2px 9px; }
 .chip-sm { font-size: 10px; padding: 1px 7px; border-radius: 99px; }
+.chip-green  { background: #dcfce7; color: #166534; }
+.chip-blue   { background: #dbeafe; color: #1e40af; }
+.chip-orange { background: #fef3c7; color: #92400e; }
+.chip-red    { background: #fee2e2; color: #991b1b; }
+.chip-gray   { background: #f1f5f9; color: #475569; }
 
 .doc-actions { display: flex; gap: 4px; flex-wrap: wrap; }
 

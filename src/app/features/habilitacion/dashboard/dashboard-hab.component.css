@@ -2,6 +2,9 @@
   padding: 1rem 1.25rem;
   width: 100%;
   box-sizing: border-box;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* ── Selector de proyecto ─────────────────────────────────── */
@@ -105,6 +108,9 @@
   border-top: 1px solid #F3F4F6;
 }
 .kg-row { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; }
+a.kg-row-link, a.kg-hero-link { text-decoration: none; color: inherit; border-radius: 6px; margin: 0 -4px; padding: 0 4px; }
+a.kg-row-link:hover, a.kg-hero-link:hover { background: #F3F4F6; cursor: pointer; }
+a.kg-hero-link { display: block; }
 .kg-row-lbl { flex: 1; color: #4B5563; }
 .kg-row-val { font-weight: 700; }
 .kg-row-pct { font-size: 0.65rem; color: #9CA3AF; min-width: 30px; text-align: right; }
@@ -119,7 +125,11 @@
 .kg-val-y { color: #CA8A04; }
 .kg-val-o { color: #EA580C; }
 
-.kg-entregables { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; flex: 1; }
+.kg-ent-sub { font-size: 0.68rem; color: #6B7280; line-height: 1.4; margin-top: -0.2rem; }
+.kg-ent-group { display: flex; flex-direction: column; gap: 0.35rem; }
+.kg-ent-group-lbl { font-size: 0.68rem; font-weight: 600; color: #4B5563; display: flex; align-items: center; gap: 4px; }
+.kg-ent-group-lbl i { font-size: 0.75rem; color: #9CA3AF; }
+.kg-entregables { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
 .kg-ent-cell { background: #F9FAFB; border-radius: 8px; padding: 0.5rem 0.6rem; text-align: center; }
 .kg-ent-num { font-size: 1.25rem; font-weight: 800; line-height: 1; }
 .kg-ent-lbl { font-size: 0.6rem; color: #6B7280; margin-top: 3px; text-transform: uppercase; letter-spacing: .02em; }
@@ -141,6 +151,23 @@
   text-transform: uppercase;
   letter-spacing: .04em;
 }
+
+.section-title-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.section-title-toggle i { font-size: 0.9rem; color: #9CA3AF; flex-shrink: 0; }
+.section-title-toggle .section-count { font-weight: 500; color: #9CA3AF; text-transform: none; letter-spacing: normal; }
+.section-title-toggle:hover { color: #111827; }
+.table-section .table-wrap { margin-top: 0.75rem; }
 
 /* ── Table ────────────────────────────────────────────────── */
 .table-wrap { overflow-x: auto; }
