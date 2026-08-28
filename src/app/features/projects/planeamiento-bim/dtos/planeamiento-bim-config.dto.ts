@@ -70,7 +70,7 @@ export interface ZonaUpdateDto {
 
 export interface PlaneamientoBimConfigUpdateDto {
   responsableId: number | null;
-  metaPpc: number | null;
+  // Meta PPC ya no se envía: es un estándar fijo administrado por el backend (Fase A).
   zonas: ZonaUpdateDto[];
   fases: { id: number; fechaInicio: string | null; fechaFinMeta: string | null }[];
 }

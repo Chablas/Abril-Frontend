@@ -116,25 +116,14 @@
               </select>
             </div>
 
-            <!-- Meta PPC -->
+            <!-- Meta PPC: estándar del sistema, solo lectura (Fase A backend) -->
             <div class="bim-field">
-              <label class="bim-field-label" for="metaPpcInput">META PPC DEL PROYECTO (%)</label>
-              <div class="ppc-input-wrapper">
-                <input
-                  id="metaPpcInput"
-                  type="number"
-                  class="bim-input"
-                  min="0"
-                  max="100"
-                  step="1"
-                  placeholder="Ej. 85"
-                  [(ngModel)]="config.metaPpc"
-                />
-                <span class="ppc-suffix">%</span>
+              <label class="bim-field-label" for="metaPpcReadonly">META PPC DEL PROYECTO (%)</label>
+              <div class="ppc-readonly-wrapper" id="metaPpcReadonly">
+                <span class="ppc-readonly-value">{{ metaPpcEstandar }}%</span>
+                <span class="ppc-readonly-badge"><i class="ti ti-lock"></i> ESTÁNDAR DEL SISTEMA</span>
               </div>
-              <span *ngIf="config.metaPpc !== null && config.metaPpc !== undefined && (config.metaPpc < 0 || config.metaPpc > 100)" class="field-error">
-                Debe ser un valor entre 0 y 100
-              </span>
+              <span class="field-hint">Meta PPC fija para todos los proyectos, no editable desde aquí.</span>
             </div>
           </div>
         </div>
