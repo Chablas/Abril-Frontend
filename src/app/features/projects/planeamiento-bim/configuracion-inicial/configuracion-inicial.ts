@@ -27,6 +27,8 @@ import { PlaneamientoBimSubnavComponent } from '../shared/planeamiento-bim-subna
 })
 export class ConfiguracionInicial implements OnInit {
   readonly tabs = PROJECTS_TABS;
+  /** Meta PPC estándar del sistema (Fase A backend) — fija, ya no se edita ni se envía desde acá. */
+  readonly metaPpcEstandar = 85;
   projects: ProjectSimpleDTO[] = [];
   selectedProjectId: number | null = null;
 
@@ -183,19 +185,6 @@ export class ConfiguracionInicial implements OnInit {
       return;
     }
 
-    // Validar Meta PPC (0 - 100)
-    if (this.config.metaPpc !== null && this.config.metaPpc !== undefined) {
-      if (isNaN(this.config.metaPpc) || this.config.metaPpc < 0 || this.config.metaPpc > 100) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Meta PPC inválida',
-          text: 'La Meta PPC debe ser un número entero o decimal entre 0% y 100%.',
-          confirmButtonColor: '#1E3A5F',
-        });
-        return;
-      }
-    }
-
     // Validar fechas de fases (fechaInicio <= fechaFinMeta)
     for (const fase of (this.config.fases || [])) {
       if (fase.fechaInicio && fase.fechaFinMeta) {
@@ -229,9 +218,9 @@ export class ConfiguracionInicial implements OnInit {
     this.saveError = null;
     this.cdr.detectChanges();
 
+    // Meta PPC ya no se envía: es un estándar fijo que administra el backend (Fase A).
     const payload = {
       responsableId: this.config.responsableId ? Number(this.config.responsableId) : null,
-      metaPpc: this.config.metaPpc !== null && this.config.metaPpc !== undefined ? Number(this.config.metaPpc) : null,
       zonas: (this.config.zonas || []).map((z, idx) => ({
         id: z.id ?? null,
         nombre: z.nombre.trim(),
