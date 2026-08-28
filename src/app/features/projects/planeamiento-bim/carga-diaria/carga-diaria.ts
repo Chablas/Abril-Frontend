@@ -140,6 +140,11 @@ export class CargaDiaria implements OnInit {
     });
   }
 
+  /** Suma los sectores de todos los niveles de la zona (ya no cuelgan de la zona misma). */
+  totalSectoresZona(zona: ZonaConfigDTO): number {
+    return (zona.niveles || []).reduce((acc, n) => acc + (n.sectores?.length || 0), 0);
+  }
+
   private getKey(zId: number, nId: number, sId: number, aId: number): string {
     return `${zId}_${nId}_${sId}_${aId}`;
   }

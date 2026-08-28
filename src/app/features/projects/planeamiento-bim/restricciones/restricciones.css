@@ -7,7 +7,7 @@
   background-color: #F4F6F9;
 }
 
-.bim-bloqueos-page {
+.bim-restricciones-page {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -324,6 +324,43 @@
   gap: 0.35rem;
 }
 
+.modal-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.modal-form-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.modal-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #1E3A5F;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-top: 1px solid #F1F5F9;
+  padding-top: 1rem;
+  margin-top: 0.25rem;
+}
+
+.modal-section-title .field-hint {
+  text-transform: none;
+  font-weight: 500;
+  letter-spacing: normal;
+}
+
+.modal-catalogo-error {
+  padding: 0.75rem 1rem;
+  font-size: 0.78rem;
+}
+
 .bim-field-label {
   font-size: 0.75rem;
   font-weight: 700;
@@ -450,6 +487,12 @@
   background: #FDF2F2;
   border: 1px solid #FCA5A5;
   color: #991B1B;
+}
+
+.bim-alert--warning {
+  background: #FFFBEB;
+  border: 1px solid #FCD34D;
+  color: #92400E;
 }
 
 .alert-icon {

@@ -90,7 +90,7 @@
 
       <!-- Fila Superior: Datos Generales (Responsable & Meta PPC) + Fases Meta -->
       <div class="top-section-grid">
-        
+
         <!-- Card 1: Responsable y Meta PPC -->
         <div class="bim-card">
           <div class="card-header">
@@ -203,13 +203,13 @@
         </div>
 
         <div class="card-body">
-          <div *ngIf="config.zonas.length === 0" class="empty-state">
+          <div *ngIf="zonas.length === 0" class="empty-state">
             <i class="ti ti-folder-off empty-icon"></i>
             <p class="empty-title">Sin zonas configuradas</p>
             <p class="empty-sub">Haga clic en "+ AGREGAR ZONA" para definir la primera zona espacial del proyecto.</p>
           </div>
 
-          <div *ngFor="let zona of config.zonas; let zIdx = index" class="zona-card">
+          <div *ngFor="let zona of zonas; let zIdx = index" class="zona-card">
             <!-- Header de Zona -->
             <div class="zona-header">
               <div class="zona-title-wrap">
@@ -224,7 +224,7 @@
 
               <div class="zona-actions">
                 <span class="counts-badge">
-                  {{ zona.niveles?.length || 0 }} Niveles | {{ zona.sectores?.length || 0 }} Sectores
+                  {{ zona.niveles.length || 0 }} Niveles | {{ totalSectores(zona) }} Sectores
                 </span>
                 <button
                   type="button"
@@ -237,9 +237,9 @@
               </div>
             </div>
 
-            <!-- Listas Hermanas Independientes: Niveles vs Sectores -->
+            <!-- Niveles (cada uno con su tipo de estructura y sectores exclusivos) + Sectores Compartidos de la Zona -->
             <div class="zona-columns-grid">
-              
+
               <!-- Columna Niveles -->
               <div class="sub-column">
                 <div class="sub-column-header">
@@ -252,68 +252,96 @@
                 </div>
 
                 <div *ngIf="!zona.niveles || zona.niveles.length === 0" class="empty-sub-list">
-                  Sin niveles en esta zona.
+                  Sin niveles en esta zona. Agregue el primero con "Agregar Nivel".
                 </div>
 
-                <div *ngIf="zona.niveles && zona.niveles.length > 0" class="sub-list-wrap">
-                  <table class="sub-table">
-                    <thead>
-                      <tr>
-                        <th style="width: 70px;">ORDEN</th>
-                        <th>NOMBRE DEL NIVEL</th>
-                        <th style="width: 40px;"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let nivel of zona.niveles; let nIdx = index">
-                        <td>
-                          <input
-                            type="number"
-                            class="bim-input-small text-center"
-                            [(ngModel)]="nivel.orden"
-                            min="1"
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="text"
-                            class="bim-input-small"
-                            placeholder="Ej. Piso 1, Sótano 2"
-                            [(ngModel)]="nivel.nombre"
-                          />
-                        </td>
-                        <td class="text-center">
-                          <button
-                            type="button"
-                            class="btn-trash-sm"
-                            title="Eliminar Nivel"
-                            (click)="removeNivel(zona, nIdx)"
-                          >
-                            <i class="ti ti-x"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                <div *ngFor="let nivel of zona.niveles; let nIdx = index" class="nivel-card">
+                  <div class="nivel-card-row">
+                    <input
+                      type="number"
+                      class="bim-input-small nivel-orden-input text-center"
+                      [(ngModel)]="nivel.orden"
+                      min="1"
+                      title="Orden"
+                    />
+                    <input
+                      type="text"
+                      class="bim-input-small nivel-nombre-input"
+                      placeholder="Ej. Piso 1, Sótano 2"
+                      [(ngModel)]="nivel.nombre"
+                    />
+                    <button
+                      type="button"
+                      class="btn-trash-sm"
+                      title="Eliminar Nivel"
+                      (click)="removeNivel(zona, nIdx)"
+                    >
+                      <i class="ti ti-x"></i>
+                    </button>
+                  </div>
+
+                  <div class="nivel-card-row">
+                    <app-search-select
+                      class="nivel-tipo-select"
+                      label=""
+                      [showLabel]="false"
+                      placeholder="Selecciona tipo de estructura"
+                      [options]="tiposEstructura"
+                      valueField="id"
+                      displayField="nombre"
+                      [(value)]="nivel.tipoEstructura"
+                      [compact]="true"
+                    ></app-search-select>
+                  </div>
+
+                  <!-- Sectores exclusivos de este nivel -->
+                  <div class="nivel-sectores-block">
+                    <div class="nivel-sectores-header">
+                      <span>SECTORES EXCLUSIVOS DE ESTE NIVEL</span>
+                      <button type="button" class="btn-sub-add btn-sub-add--sm" (click)="addSectorNivel(nivel)">
+                        <i class="ti ti-plus"></i> Agregar
+                      </button>
+                    </div>
+                    <div *ngIf="!nivel.sectores || nivel.sectores.length === 0" class="empty-sub-list empty-sub-list--sm">
+                      Sin sectores exclusivos. Si el sector aplica a todos los niveles, agréguelo en "Sectores Compartidos".
+                    </div>
+                    <div *ngFor="let sector of nivel.sectores; let sIdx = index" class="nivel-sector-row">
+                      <input
+                        type="text"
+                        class="bim-input-small"
+                        placeholder="Ej. Sector Norte, Sector 1"
+                        [(ngModel)]="sector.nombre"
+                      />
+                      <button
+                        type="button"
+                        class="btn-trash-sm"
+                        title="Eliminar Sector"
+                        (click)="removeSectorNivel(nivel, sIdx)"
+                      >
+                        <i class="ti ti-x"></i>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <!-- Columna Sectores -->
+              <!-- Columna Sectores Compartidos -->
               <div class="sub-column">
                 <div class="sub-column-header">
                   <span class="sub-column-title">
-                    <i class="ti ti-grid-dots"></i> SECTORES
+                    <i class="ti ti-grid-dots"></i> SECTORES COMPARTIDOS
                   </span>
-                  <button type="button" class="btn-sub-add" (click)="addSector(zona)">
+                  <button type="button" class="btn-sub-add" (click)="addSectorCompartido(zona)">
                     <i class="ti ti-plus"></i> Agregar Sector
                   </button>
                 </div>
+                <p class="sub-column-hint">Aplican automáticamente a todos los niveles de esta zona.</p>
 
-                <div *ngIf="!zona.sectores || zona.sectores.length === 0" class="empty-sub-list">
-                  Sin sectores en esta zona.
+                <div *ngIf="!zona.sectoresCompartidos || zona.sectoresCompartidos.length === 0" class="empty-sub-list">
+                  Sin sectores compartidos en esta zona.
                 </div>
 
-                <div *ngIf="zona.sectores && zona.sectores.length > 0" class="sub-list-wrap">
+                <div *ngIf="zona.sectoresCompartidos && zona.sectoresCompartidos.length > 0" class="sub-list-wrap">
                   <table class="sub-table">
                     <thead>
                       <tr>
@@ -322,7 +350,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let sector of zona.sectores; let sIdx = index">
+                      <tr *ngFor="let sector of zona.sectoresCompartidos; let sIdx = index">
                         <td>
                           <input
                             type="text"
@@ -336,7 +364,7 @@
                             type="button"
                             class="btn-trash-sm"
                             title="Eliminar Sector"
-                            (click)="removeSector(zona, sIdx)"
+                            (click)="removeSectorCompartido(zona, sIdx)"
                           >
                             <i class="ti ti-x"></i>
                           </button>
