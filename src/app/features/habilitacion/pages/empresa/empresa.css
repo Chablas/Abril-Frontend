@@ -28,11 +28,6 @@
   min-width: 0;
 }
 
-.emp-selector-wrap {
-  width: 300px;
-  flex-shrink: 0;
-}
-
 .stats-right {
   flex-shrink: 0;
 }
@@ -992,6 +987,5 @@ textarea.field-input {
 
 @media (max-width: 768px) {
   .drawer { width: 100%; }
-  .emp-selector-wrap { width: 220px; }
   .proj-grid { grid-template-columns: 1fr; }
 }
