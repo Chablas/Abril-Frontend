@@ -17,7 +17,6 @@ import {
   CargaDiariaDto,
   CausaCatalogoDto,
   CeldaDto,
-  EvidenciaFotoDto,
 } from '../dtos/planeamiento-bim-carga-diaria.dto';
 import { ZonaConfigDTO } from '../dtos/planeamiento-bim-config.dto';
 
@@ -52,13 +51,6 @@ export class CargaDiaria implements OnInit {
   savingCarga = false;
   uploadingFotos = false;
   loadError: string | null = null;
-
-  // ── Evidencia de Procura (misma fecha/proyecto, categoría aparte) ─────
-  evidenciasProcura: EvidenciaFotoDto[] = [];
-  esEditableProcura = false;
-  loadingProcura = false;
-  uploadingFotosProcura = false;
-  procuraError: string | null = null;
 
   // Modal para detalle de Causa de Incumplimiento
   showCausaModal = false;
@@ -104,14 +96,12 @@ export class CargaDiaria implements OnInit {
     if (!projectId) return;
     this.selectedProjectId = Number(projectId);
     this.cargarCargaDiaria();
-    this.cargarEvidenciasProcura();
   }
 
   onFechaChange(fecha: string): void {
     this.fechaSeleccionada = fecha;
     if (this.selectedProjectId) {
       this.cargarCargaDiaria();
-      this.cargarEvidenciasProcura();
     }
   }
 
@@ -256,56 +246,6 @@ export class CargaDiaria implements OnInit {
     });
   }
 
-  // ── Evidencia de Procura (misma ventana de edición de 5 días, transparente) ──
-  cargarEvidenciasProcura(): void {
-    if (!this.selectedProjectId || !this.fechaSeleccionada) return;
-
-    this.loadingProcura = true;
-    this.procuraError = null;
-    this.cdr.detectChanges();
-
-    this.bimService.getCargaDiaria(this.selectedProjectId, this.fechaSeleccionada, 'PROCURA').subscribe({
-      next: (data) => {
-        this.evidenciasProcura = data.evidencias || [];
-        this.esEditableProcura = data.esEditable;
-        this.loadingProcura = false;
-        this.cdr.detectChanges();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loadingProcura = false;
-        this.procuraError = this.mensajeError(err, 'No se pudo cargar la evidencia de procura.');
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  onFilesSelectedProcura(files: File[]): void {
-    if (!files || files.length === 0 || !this.selectedProjectId) return;
-
-    this.uploadingFotosProcura = true;
-    this.cdr.detectChanges();
-
-    this.bimService.subirEvidencias(this.selectedProjectId, this.fechaSeleccionada, files, 'PROCURA').subscribe({
-      next: (nuevasFotos) => {
-        this.uploadingFotosProcura = false;
-        this.evidenciasProcura.push(...nuevasFotos);
-        Swal.fire({
-          icon: 'success',
-          title: 'Evidencias de procura subidas',
-          text: `Se han subido ${nuevasFotos.length} fotos de evidencia de procura.`,
-          timer: 1800,
-          showConfirmButton: false,
-        });
-        this.cdr.detectChanges();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.uploadingFotosProcura = false;
-        this.handleError(err, 'No se pudieron subir las evidencias de procura.');
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
   // ── Guardar Carga Diaria ─────────────────────────────────────
   onGuardar(): void {
     if (!this.selectedProjectId || !this.fechaSeleccionada) {
@@ -387,15 +327,5 @@ export class CargaDiaria implements OnInit {
       text: message,
       confirmButtonColor: '#1E3A5F',
     });
-  }
-
-  /** Error inline (sin Swal) para la sección de Procura — no es la acción
-   *  principal del usuario, mismo criterio que las secciones del dashboard. */
-  private mensajeError(err: HttpErrorResponse, defaultMsg: string): string {
-    if (err.status === 401) return 'Sesión Expirada (401): su sesión no es válida o ha caducado. Por favor vuelva a iniciar sesión.';
-    if (err.status === 403) return 'Acceso Denegado (403): no tiene permisos suficientes para ver esta información.';
-    if (err.status === 404) return err.error?.message || 'No Encontrado (404): el proyecto o recurso solicitado no fue encontrado.';
-    if (err.error?.message) return err.error.message;
-    return defaultMsg;
   }
 }
