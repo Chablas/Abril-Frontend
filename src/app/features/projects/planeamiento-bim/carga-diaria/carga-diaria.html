@@ -189,7 +189,7 @@
         </div>
       </div>
 
-      <!-- Sección de Fotos Evidencias -->
+      <!-- Sección de Fotos Evidencias (avance ejecutado del día) -->
       <app-planeamiento-bim-evidencia-galeria
         titulo="EVIDENCIAS FOTOGRÁFICAS DEL DÍA"
         subtitulo="Fotografías adjuntas que respaldan el cumplimiento diario"
@@ -198,22 +198,6 @@
         [editable]="cargaDiariaData.esEditable"
         [uploading]="uploadingFotos"
         (filesSelected)="onFilesSelected($event)"
-      ></app-planeamiento-bim-evidencia-galeria>
-
-      <!-- Sección de Evidencia de Procura (separada, categoria=PROCURA) -->
-      <app-planeamiento-bim-evidencia-galeria
-        titulo="EVIDENCIA DE PROCURA"
-        subtitulo="Fotografías que respaldan el abastecimiento/procura de materiales del día"
-        icono="ti ti-truck-delivery"
-        [evidencias]="evidenciasProcura"
-        [editable]="esEditableProcura"
-        [loading]="loadingProcura"
-        [uploading]="uploadingFotosProcura"
-        [error]="procuraError"
-        emptyTitulo="Sin evidencia de procura"
-        emptySub="No se han subido imágenes de procura para la fecha seleccionada."
-        (filesSelected)="onFilesSelectedProcura($event)"
-        (retry)="cargarEvidenciasProcura()"
       ></app-planeamiento-bim-evidencia-galeria>
 
     </ng-container>
