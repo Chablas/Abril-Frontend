@@ -21,6 +21,7 @@ interface ProjectFormModel {
   abbreviation: string;
   levelDescription: string;
   estado: string;
+  cicloVida: string;
 
   rucInput: string;
   contributor: ContributorLookupDto | null;
@@ -95,6 +96,7 @@ export class ProyectoEdit implements OnInit {
       abbreviation:  this.project.abbreviation  ?? '',
       levelDescription: this.project.levelDescription ?? '',
       estado: this.project.estado ?? '',
+      cicloVida: this.project.cicloVida ?? 'Activo',
 
       rucInput: this.project.contributorRuc ?? '',
       contributor:
@@ -225,6 +227,7 @@ export class ProyectoEdit implements OnInit {
       abbreviation:       this.form.abbreviation.trim()  || undefined,
       levelDescription:   this.form.levelDescription.trim() || undefined,
       estado:             this.form.estado.trim() || undefined,
+      cicloVida:          this.form.cicloVida || undefined,
 
       contributorId: this.form.contributor?.contributorId,
       legalEntityRegistryNumber: this.form.contributor
@@ -284,6 +287,7 @@ export class ProyectoEdit implements OnInit {
       abbreviation: '',
       levelDescription: '',
       estado: '',
+      cicloVida: 'Activo',
 
       rucInput: '',
       contributor: null,

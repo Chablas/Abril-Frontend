@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import {
   EmpresaEntregableDto,
   EmpresaEntregableUpdateDto,
+  EmpresaPorProyectoDto,
   EmpresaProyectoDto,
   EntregableMesDto,
   ProyectoDisponibleDto,
@@ -101,6 +102,15 @@ export class HabEmpresaService {
     return this.http.patch<EmpresaEntregableDto>(
       `${this.base}/${empresaId}/entregables/${entregableId}/mes`,
       dto,
+      { headers: buildHabHeaders() },
+    );
+  }
+
+  /** Vista proyecto-primero: empresas activas en un proyecto con su estado de habilitación y
+   * sus entregables subidos/faltantes agrupados por responsable (SSOMA/Administración). */
+  getEmpresasPorProyecto(proyectoId: number): Observable<EmpresaPorProyectoDto[]> {
+    return this.http.get<EmpresaPorProyectoDto[]>(
+      `${HABILITACION_BASE}/proyectos/${proyectoId}/empresas`,
       { headers: buildHabHeaders() },
     );
   }

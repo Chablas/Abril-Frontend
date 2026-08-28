@@ -94,13 +94,23 @@ export class DossierRevisarModal implements OnInit, OnDestroy {
     return 'chip-blue';
   }
 
+  /**
+   * "Observado" a nivel semana significa "el contratista debe corregir y reenviar" — se
+   * muestra como "Con observaciones" para no confundirlo con "Rechazado" (que es una acción
+   * distinta: el revisor rechaza toda la semana de una vez vía RevisarAsync, no un documento
+   * puntual). Ver DossierRepository.RevisarDocumentoAsync para el recálculo automático.
+   */
   labelEstado(estado: string): string {
-    return estado === 'NoAplica' ? 'No aplica' : estado;
+    if (estado === 'NoAplica') return 'No aplica';
+    if (estado === 'Observado') return 'Con observaciones';
+    return estado;
   }
 
   chipSemana(estado: string): string {
     if (estado === 'Aprobado') return 'chip-green';
-    if (estado === 'Rechazado' || estado === 'Enviado' || estado === 'Observado') return 'chip-orange';
+    if (estado === 'Rechazado') return 'chip-red';
+    if (estado === 'Observado') return 'chip-orange';
+    if (estado === 'Enviado') return 'chip-blue';
     if (estado === 'NoAplica') return 'chip-gray';
     return 'chip-blue';
   }

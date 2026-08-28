@@ -19,6 +19,11 @@ export class EvEvaluacionService {
     return this.http.post(this.base, dto, { headers: this.headers() });
   }
 
+  /** Corrige una evaluación ya enviada — solo dentro de las 24h de haberla creado. */
+  actualizar(id: number, dto: EvEvaluacionCreateDto): Observable<any> {
+    return this.http.put(`${this.base}/${id}`, dto, { headers: this.headers() });
+  }
+
   getMisEvaluaciones(): Observable<EvEvaluacionResponseDto[]> {
     return this.http.get<EvEvaluacionResponseDto[]>(`${this.base}/mis-evaluaciones`, { headers: this.headers() });
   }

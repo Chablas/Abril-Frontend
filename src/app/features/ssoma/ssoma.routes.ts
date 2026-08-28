@@ -24,6 +24,11 @@ export const SSOMA_ROUTES: Routes = [
       import('./gestion/opt/opt.routes').then((m) => m.OPT_ROUTES),
   },
   {
+    path: 'gestion/pets',
+    loadChildren: () =>
+      import('./gestion/pets/pets.routes').then((m) => m.PETS_ROUTES),
+  },
+  {
     path: 'gestion/inspeccion',
     loadChildren: () =>
       import('./gestion/inspeccion/inspeccion.routes').then((m) => m.INSPECCION_ROUTES),

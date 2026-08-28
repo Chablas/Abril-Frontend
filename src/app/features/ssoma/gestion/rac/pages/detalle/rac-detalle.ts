@@ -1,9 +1,9 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RacService } from '../../services/rac.service';
-import { RacDetalleDto } from '../../dtos/rac.dtos';
+import { RacDetalleDto, RacFotoDto } from '../../dtos/rac.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
@@ -18,13 +18,12 @@ import Swal from 'sweetalert2';
   templateUrl: './rac-detalle.html',
   styleUrl: './rac-detalle.css',
 })
-export class RacDetalle implements OnInit {
+export class RacDetalle implements OnInit, OnDestroy {
   rac: RacDetalleDto | null = null;
   loading = false;
   descargandoPdf = false;
   readonly anioActual = new Date().getFullYear();
-  private readonly SP_FOTOS_BASE =
-    'https://abrilinmob.sharepoint.com/sites/SSOMA-Powerapps/RacFotos2026';
+  fotoUrls = new Map<number, string>();
 
   constructor(
     private racService: RacService,
@@ -66,6 +65,7 @@ export class RacDetalle implements OnInit {
         this.rac = rac;
         this.loading = false;
         this.loaderService.hide();
+        this.cargarFotos(rac.id, rac.fotos);
         this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
@@ -75,6 +75,28 @@ export class RacDetalle implements OnInit {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  /**
+   * Las fotos se guardan en SharePoint y su URL directa exige sesión SSO en ese sitio,
+   * así que el navegador no puede cargarlas como <img src> normal (queda en blanco).
+   * Se piden como blob autenticado al backend (que sí tiene un token de aplicación para
+   * Graph) y se arma un object URL local para cada una.
+   */
+  private cargarFotos(racId: number, fotos: RacFotoDto[]): void {
+    for (const foto of fotos) {
+      this.racService.getFoto(racId, foto.id).subscribe({
+        next: (blob) => {
+          this.fotoUrls.set(foto.id, URL.createObjectURL(blob));
+          this.cdr.markForCheck();
+        },
+        error: () => {},
+      });
+    }
+  }
+
+  ngOnDestroy(): void {
+    for (const url of this.fotoUrls.values()) URL.revokeObjectURL(url);
   }
 
   irACerrar(): void {
@@ -123,12 +145,6 @@ export class RacDetalle implements OnInit {
       case 'Cerrado': return 'estado-cerrado';
       default:        return '';
     }
-  }
-
-  fotoUrl(url: string): string {
-    if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return this.SP_FOTOS_BASE + (url.startsWith('/') ? url : '/' + url);
   }
 
   formatFecha(f: string | undefined): string {

@@ -38,6 +38,18 @@
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
       <div class="flex flex-col">
+        <p class="text-[#64BC04]">Ciclo de vida <span class="text-gray-400 text-sm">(para ratios SSOMA)</span></p>
+        <select [(ngModel)]="form.cicloVida"
+          class="pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-lg cursor-pointer">
+          <option value="Activo">ACTIVO</option>
+          <option value="Finalizado">FINALIZADO</option>
+          <option value="Inactivo">INACTIVO</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
+      <div class="flex flex-col">
         <p class="text-[#64BC04]">Abreviación <span class="text-gray-400 text-sm">(opcional)</span></p>
         <input type="text" [(ngModel)]="form.abbreviation" placeholder="Ej: CDR33, KAU"
           class="border border-[#E2E2E2] rounded-lg p-[10px]" />

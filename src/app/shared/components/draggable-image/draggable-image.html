@@ -14,9 +14,12 @@
     </button>
 
     <div class="w-screen h-screen flex items-center justify-center overflow-hidden" (mousemove)="onMouseMove($event)"
+        (touchmove)="onTouchMove($event)" (touchend)="onTouchEnd($event)"
         (click)="toggleExpand()">
         <img [src]="imageUrl" (wheel)="onWheelZoom($event)" (mousedown)="onMouseDown($event)"
+            (touchstart)="$event.stopPropagation(); onTouchStart($event)"
             (click)="$event.stopPropagation()" [style.transform]="transform"
+            style="touch-action: none;"
             class="transition-transform duration-75 cursor-grab active:cursor-grabbing select-none max-h-full max-w-full object-contain"
             draggable="false" alt="Imagen" />
     </div>

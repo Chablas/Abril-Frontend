@@ -5512,3 +5512,21 @@ Dos frentes en paralelo, ya committeados en `victor-frontend`:
 - Si se agrega una pantalla nueva con `featureKey` propio, correr
   `node scripts/generate-feature-display-names.js` de nuevo para que "Editar Rol"
   muestre su nombre legible en vez de caer al fallback heurístico.
+
+## Sesión 2026-08-28 — Ciclo de vida de proyecto (ratios SSOMA) + módulo PETS
+
+### Contexto
+Diagnóstico del módulo Presupuesto de Materiales SSOMA para generar el presupuesto real de Sauce Zen: el ratio HH/m² histórico depende de qué proyectos estén marcados como realmente terminados, pero `Project` no tenía forma de editar ese ciclo de vida (la columna existía en backend y ya la usaba el motor de ratios, pero ningún formulario la escribía).
+
+### Cambios
+- `dtos/project.dto.ts`, `dtos/project-edit.dto.ts`: nuevo campo `cicloVida`.
+- `components/edit/proyecto-edit.ts`: carga/guarda `cicloVida` (default `'Activo'`).
+- `components/edit/proyecto-edit.html`: nuevo select "Ciclo de vida (para ratios SSOMA)" con Activo/Finalizado/Inactivo — en Configuración → Proyectos → Editar.
+- Módulo PETS (Procedimientos Escritos de Trabajo Seguro): nuevas páginas `features/ssoma/gestion/pets/` (lista, detalle) + rutas/navegación — trabajo de otra sesión, integrado aquí solo para build/commit.
+
+### Verificado
+`npm run build` (producción): 0 errores.
+
+### Pendiente
+- Marcar "Finalizado" en Configuración → Proyectos a los proyectos SSOMA ya culminados (Los Laureles, Aquilaria, Gardenia, Amancae, Amaranta, Camelia, Lilas, Sauco).
+- Módulo PETS: el usuario mencionó que quedan "modelos" pendientes de otra sesión (más allá de un fix de build de DTOs duplicados hecho en el backend esta sesión).

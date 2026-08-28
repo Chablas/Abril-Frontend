@@ -245,102 +245,119 @@
       <!-- EMPRESAS -->
       <div class="kg-card">
         <div class="kg-title"><i class="ti ti-building"></i> Empresas</div>
-        <div class="kg-hero">
+        <a class="kg-hero kg-hero-link" routerLink="/habilitacion/gestion/empresa" [queryParams]="{ proyectoId: selectedProyectoId }">
           <div class="kg-num">{{ kpis?.empresasActivas ?? 0 }}</div>
           <div class="kg-lbl">Empresas activas</div>
-        </div>
+        </a>
         <div class="kg-breakdown">
-          <div class="kg-row">
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/empresa" [queryParams]="{ proyectoId: selectedProyectoId, habilitada: 'true' }">
             <span class="kg-dot kg-dot-g"></span><span class="kg-row-lbl">Habilitadas</span>
             <span class="kg-row-val kg-val-g">{{ kpis?.empresasHabilitadas ?? 0 }}</span>
             <span class="kg-row-pct">{{ pct(kpis?.empresasHabilitadas ?? 0, kpis?.empresasActivas ?? 0) }}%</span>
-          </div>
-          <div class="kg-row">
+          </a>
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/empresa" [queryParams]="{ proyectoId: selectedProyectoId, habilitada: 'false' }">
             <span class="kg-dot kg-dot-r"></span><span class="kg-row-lbl">No habilitadas</span>
             <span class="kg-row-val kg-val-r">{{ kpis?.empresasNoHabilitadas ?? 0 }}</span>
-          </div>
+          </a>
         </div>
       </div>
 
       <!-- TRABAJADORES CONTRATISTA -->
       <div class="kg-card">
         <div class="kg-title"><i class="ti ti-users"></i> Trabajadores contratista</div>
-        <div class="kg-hero">
+        <a class="kg-hero kg-hero-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Contratista' }">
           <div class="kg-num">{{ kpis?.workersTotal ?? 0 }}</div>
           <div class="kg-lbl">Total trabajadores</div>
-        </div>
+        </a>
         <div class="kg-breakdown">
-          <div class="kg-row">
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Contratista', estado: 'Habilitado' }">
             <span class="kg-dot kg-dot-g"></span><span class="kg-row-lbl">Habilitados</span>
             <span class="kg-row-val kg-val-g">{{ kpis?.workersHabilitados ?? 0 }}</span>
             <span class="kg-row-pct">{{ pct(kpis?.workersHabilitados ?? 0, kpis?.workersTotal ?? 0) }}%</span>
-          </div>
-          <div class="kg-row">
+          </a>
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Contratista', estado: 'No Autorizado' }">
             <span class="kg-dot kg-dot-r"></span><span class="kg-row-lbl">No autorizados</span>
             <span class="kg-row-val kg-val-r">{{ kpis?.workersNoAutorizados ?? 0 }}</span>
-          </div>
-          <div class="kg-row">
+          </a>
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Contratista', estado: 'Autorizado Temporalmente' }">
             <span class="kg-dot kg-dot-y"></span><span class="kg-row-lbl">Autorizados temporalmente</span>
             <span class="kg-row-val kg-val-y">{{ kpis?.workersAutorizadoTemporal ?? 0 }}</span>
-          </div>
+          </a>
         </div>
       </div>
 
       <!-- PERSONAL CASA (separado de contratista) -->
       <div class="kg-card">
         <div class="kg-title"><i class="ti ti-home"></i> Personal casa</div>
-        <div class="kg-hero">
+        <a class="kg-hero kg-hero-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Casa' }">
           <div class="kg-num">{{ kpis?.personalCasaTotal ?? 0 }}</div>
           <div class="kg-lbl">Total personal casa</div>
-        </div>
+        </a>
         <div class="kg-breakdown">
-          <div class="kg-row">
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Casa', estado: 'Habilitado' }">
             <span class="kg-dot kg-dot-g"></span><span class="kg-row-lbl">Habilitado</span>
             <span class="kg-row-val kg-val-g">{{ kpis?.personalCasaHabilitado ?? 0 }}</span>
             <span class="kg-row-pct">{{ pct(kpis?.personalCasaHabilitado ?? 0, kpis?.personalCasaTotal ?? 0) }}%</span>
-          </div>
-          <div class="kg-row">
+          </a>
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Casa', estado: 'No Autorizado' }">
             <span class="kg-dot kg-dot-r"></span><span class="kg-row-lbl">No habilitado</span>
             <span class="kg-row-val kg-val-r">{{ kpis?.personalCasaNoHabilitado ?? 0 }}</span>
-          </div>
-          <div class="kg-row">
+          </a>
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Casa', soloEmoVencido: 'true' }">
             <span class="kg-dot kg-dot-y"></span><span class="kg-row-lbl">EMOs vencidos</span>
             <span class="kg-row-val kg-val-y">{{ kpis?.emosVencidos ?? 0 }}</span>
-          </div>
-          <div class="kg-row">
+          </a>
+          <span class="kg-row">
             <span class="kg-dot kg-dot-o"></span><span class="kg-row-lbl">Interconsultas pend.</span>
             <span class="kg-row-val kg-val-o">{{ kpis?.interconsultasPendientes ?? 0 }}</span>
-          </div>
+          </span>
         </div>
       </div>
 
       <!-- ENTREGABLES -->
       <div class="kg-card">
-        <div class="kg-title"><i class="ti ti-file-alert"></i> Entregables</div>
-        <div class="kg-entregables">
-          <div class="kg-ent-cell">
-            <div class="kg-ent-num kg-val-r">{{ kpis?.entregablesEmpresaVencidos ?? 0 }}</div>
-            <div class="kg-ent-lbl">Empresa vencidos</div>
+        <div class="kg-title"><i class="ti ti-file-alert"></i> Entregables pendientes</div>
+        <div class="kg-ent-sub">Documentos que cada empresa/trabajador debe presentar. <strong>Vencido</strong>: se subió pero venció y falta renovar. <strong>Falta</strong>: nunca se subió.</div>
+
+        <div class="kg-ent-group">
+          <div class="kg-ent-group-lbl"><i class="ti ti-building"></i> Empresa (documentos de la razón social)</div>
+          <div class="kg-entregables">
+            <div class="kg-ent-cell">
+              <div class="kg-ent-num kg-val-r">{{ kpis?.entregablesEmpresaVencidos ?? 0 }}</div>
+              <div class="kg-ent-lbl">Vencidos</div>
+            </div>
+            <div class="kg-ent-cell">
+              <div class="kg-ent-num kg-val-o">{{ kpis?.entregablesEmpresaFalta ?? 0 }}</div>
+              <div class="kg-ent-lbl">Falta</div>
+            </div>
           </div>
-          <div class="kg-ent-cell">
-            <div class="kg-ent-num kg-val-o">{{ kpis?.entregablesEmpresaFalta ?? 0 }}</div>
-            <div class="kg-ent-lbl">Empresa falta</div>
+        </div>
+
+        <div class="kg-ent-group">
+          <div class="kg-ent-group-lbl"><i class="ti ti-users"></i> Trabajadores contratista</div>
+          <div class="kg-entregables">
+            <div class="kg-ent-cell">
+              <div class="kg-ent-num kg-val-r">{{ kpis?.entregablesTrabajadorVencidos ?? 0 }}</div>
+              <div class="kg-ent-lbl">Vencidos</div>
+            </div>
+            <div class="kg-ent-cell">
+              <div class="kg-ent-num kg-val-o">{{ kpis?.entregablesTrabajadorFalta ?? 0 }}</div>
+              <div class="kg-ent-lbl">Falta</div>
+            </div>
           </div>
-          <div class="kg-ent-cell">
-            <div class="kg-ent-num kg-val-r">{{ kpis?.entregablesTrabajadorVencidos ?? 0 }}</div>
-            <div class="kg-ent-lbl">Contratista vencidos</div>
-          </div>
-          <div class="kg-ent-cell">
-            <div class="kg-ent-num kg-val-o">{{ kpis?.entregablesTrabajadorFalta ?? 0 }}</div>
-            <div class="kg-ent-lbl">Contratista falta</div>
-          </div>
-          <div class="kg-ent-cell">
-            <div class="kg-ent-num kg-val-r">{{ kpis?.entregablesCasaVencidos ?? 0 }}</div>
-            <div class="kg-ent-lbl">Personal casa vencidos</div>
-          </div>
-          <div class="kg-ent-cell">
-            <div class="kg-ent-num kg-val-o">{{ kpis?.entregablesCasaFalta ?? 0 }}</div>
-            <div class="kg-ent-lbl">Personal casa falta</div>
+        </div>
+
+        <div class="kg-ent-group">
+          <div class="kg-ent-group-lbl"><i class="ti ti-home"></i> Personal casa</div>
+          <div class="kg-entregables">
+            <div class="kg-ent-cell">
+              <div class="kg-ent-num kg-val-r">{{ kpis?.entregablesCasaVencidos ?? 0 }}</div>
+              <div class="kg-ent-lbl">Vencidos</div>
+            </div>
+            <div class="kg-ent-cell">
+              <div class="kg-ent-num kg-val-o">{{ kpis?.entregablesCasaFalta ?? 0 }}</div>
+              <div class="kg-ent-lbl">Falta</div>
+            </div>
           </div>
         </div>
       </div>
@@ -349,170 +366,209 @@
 
     @if (empresas.length > 0) {
       <section class="table-section">
-        <h2 class="section-title">Empresas</h2>
-        <div class="table-wrap">
-          <table class="hab-table">
-            <thead><tr><th>Nombre</th><th>Habilitada</th><th>Trabajadores Hab. / Total</th></tr></thead>
-            <tbody>
-              @for (emp of empresas; track emp.empresaId) {
-                <tr>
-                  <td class="font-medium">{{ emp.nombre }}</td>
-                  <td><span [class]="'badge-riesgo ' + (emp.habilitada ? 'badge-riesgo-bajo' : 'badge-riesgo-alto')">{{ emp.habilitada ? 'Habilitada' : 'No habilitada' }}</span></td>
-                  <td class="text-center">{{ emp.workersHabilitados }} / {{ emp.workersTotal }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('empresas')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('empresas')" [class.ti-chevron-down]="seccionAbierta('empresas')"></i>
+          Empresas <span class="section-count">({{ empresas.length }})</span>
+        </button>
+        @if (seccionAbierta('empresas')) {
+          <div class="table-wrap">
+            <table class="hab-table">
+              <thead><tr><th>Nombre</th><th>Habilitada</th><th>Trabajadores Hab. / Total</th></tr></thead>
+              <tbody>
+                @for (emp of empresas; track emp.empresaId) {
+                  <tr>
+                    <td class="font-medium">{{ emp.nombre }}</td>
+                    <td><span [class]="'badge-riesgo ' + (emp.habilitada ? 'badge-riesgo-bajo' : 'badge-riesgo-alto')">{{ emp.habilitada ? 'Habilitada' : 'No habilitada' }}</span></td>
+                    <td class="text-center">{{ emp.workersHabilitados }} / {{ emp.workersTotal }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </section>
     }
 
     @if (trabajadoresNoAutorizados.length > 0) {
       <section class="table-section">
-        <h2 class="section-title">Trabajadores No Autorizados</h2>
-        <div class="table-wrap">
-          <table class="hab-table">
-            <thead><tr><th>Nombre</th><th>DNI</th><th>Empresa</th><th>Motivo</th></tr></thead>
-            <tbody>
-              @for (w of trabajadoresNoAutorizados; track w.workerId) {
-                <tr>
-                  <td class="font-medium">{{ w.nombre }}</td>
-                  <td class="text-gray-500">{{ w.dni }}</td>
-                  <td>{{ w.empresa }}</td>
-                  <td class="text-sm">{{ w.motivo }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-        <div class="card-link" routerLink="/habilitacion/gestion/trabajadores">
-          <i class="ti ti-arrow-right"></i> Ver todos los trabajadores
-        </div>
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('noAutorizados')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('noAutorizados')" [class.ti-chevron-down]="seccionAbierta('noAutorizados')"></i>
+          Trabajadores No Autorizados <span class="section-count">({{ trabajadoresNoAutorizados.length }})</span>
+        </button>
+        @if (seccionAbierta('noAutorizados')) {
+          <div class="table-wrap">
+            <table class="hab-table">
+              <thead><tr><th>Nombre</th><th>DNI</th><th>Empresa</th><th>Motivo</th></tr></thead>
+              <tbody>
+                @for (w of trabajadoresNoAutorizados; track w.workerId) {
+                  <tr>
+                    <td class="font-medium">{{ w.nombre }}</td>
+                    <td class="text-gray-500">{{ w.dni }}</td>
+                    <td>{{ w.empresa }}</td>
+                    <td class="text-sm">{{ w.motivo }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="card-link" routerLink="/habilitacion/gestion/trabajadores">
+            <i class="ti ti-arrow-right"></i> Ver todos los trabajadores
+          </div>
+        }
       </section>
     }
 
     @if (emosVencidos.length > 0) {
       <section class="table-section">
-        <h2 class="section-title">EMOs Vencidos</h2>
-        <div class="table-wrap">
-          <table class="hab-table">
-            <thead><tr><th>Nombre</th><th>DNI</th><th>Empresa</th></tr></thead>
-            <tbody>
-              @for (w of emosVencidos; track w.workerId) {
-                <tr>
-                  <td class="font-medium">{{ w.nombre }}</td>
-                  <td class="text-gray-500">{{ w.dni }}</td>
-                  <td>{{ w.empresa }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('emosVencidos')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('emosVencidos')" [class.ti-chevron-down]="seccionAbierta('emosVencidos')"></i>
+          EMOs Vencidos <span class="section-count">({{ emosVencidos.length }})</span>
+        </button>
+        @if (seccionAbierta('emosVencidos')) {
+          <div class="table-wrap">
+            <table class="hab-table">
+              <thead><tr><th>Nombre</th><th>DNI</th><th>Empresa</th></tr></thead>
+              <tbody>
+                @for (w of emosVencidos; track w.workerId) {
+                  <tr>
+                    <td class="font-medium">{{ w.nombre }}</td>
+                    <td class="text-gray-500">{{ w.dni }}</td>
+                    <td>{{ w.empresa }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </section>
     }
 
     @if (interconsultas.length > 0) {
       <section class="table-section">
-        <h2 class="section-title">Interconsultas Pendientes</h2>
-        <div class="table-wrap">
-          <table class="hab-table">
-            <thead><tr><th>Nombre</th><th>Empresa</th><th>Especialidad</th><th>Días en espera</th></tr></thead>
-            <tbody>
-              @for (i of interconsultas; track i.workerId) {
-                <tr>
-                  <td class="font-medium">{{ i.nombre }}</td>
-                  <td>{{ i.empresa }}</td>
-                  <td>{{ i.especialidad }}</td>
-                  <td class="text-center">{{ i.diasDesdeDerivacion }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('interconsultas')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('interconsultas')" [class.ti-chevron-down]="seccionAbierta('interconsultas')"></i>
+          Interconsultas Pendientes <span class="section-count">({{ interconsultas.length }})</span>
+        </button>
+        @if (seccionAbierta('interconsultas')) {
+          <div class="table-wrap">
+            <table class="hab-table">
+              <thead><tr><th>Nombre</th><th>Empresa</th><th>Especialidad</th><th>Días en espera</th></tr></thead>
+              <tbody>
+                @for (i of interconsultas; track i.workerId) {
+                  <tr>
+                    <td class="font-medium">{{ i.nombre }}</td>
+                    <td>{{ i.empresa }}</td>
+                    <td>{{ i.especialidad }}</td>
+                    <td class="text-center">{{ i.diasDesdeDerivacion }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </section>
     }
 
     @if (personalCasaNoHabilitado.length > 0) {
       <section class="table-section">
-        <h2 class="section-title">Personal Casa No Habilitado</h2>
-        <div class="table-wrap">
-          <table class="hab-table">
-            <thead><tr><th>Nombre</th><th>DNI</th><th>Motivo</th></tr></thead>
-            <tbody>
-              @for (w of personalCasaNoHabilitado; track w.workerId) {
-                <tr>
-                  <td class="font-medium">{{ w.nombre }}</td>
-                  <td class="text-gray-500">{{ w.dni }}</td>
-                  <td class="text-sm">{{ w.motivo }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('casaNoHabilitado')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('casaNoHabilitado')" [class.ti-chevron-down]="seccionAbierta('casaNoHabilitado')"></i>
+          Personal Casa No Habilitado <span class="section-count">({{ personalCasaNoHabilitado.length }})</span>
+        </button>
+        @if (seccionAbierta('casaNoHabilitado')) {
+          <div class="table-wrap">
+            <table class="hab-table">
+              <thead><tr><th>Nombre</th><th>DNI</th><th>Motivo</th></tr></thead>
+              <tbody>
+                @for (w of personalCasaNoHabilitado; track w.workerId) {
+                  <tr>
+                    <td class="font-medium">{{ w.nombre }}</td>
+                    <td class="text-gray-500">{{ w.dni }}</td>
+                    <td class="text-sm">{{ w.motivo }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </section>
     }
 
     @if (entregablesEmpresaVencidos.length > 0 || entregablesEmpresaFalta.length > 0) {
       <section class="table-section">
-        <h2 class="section-title">Entregables de Empresa</h2>
-        <div class="table-wrap">
-          <table class="hab-table">
-            <thead><tr><th>Empresa</th><th>Entregable</th><th>Vigencia</th><th>Estado</th></tr></thead>
-            <tbody>
-              @for (e of entregablesEmpresaVencidos; track $index) {
-                <tr>
-                  <td class="font-medium">{{ e.entidad }}</td>
-                  <td>{{ e.item }}</td>
-                  <td class="text-gray-500 text-sm">{{ e.vigencia | date: 'dd/MM/yyyy' }}</td>
-                  <td><span class="badge-riesgo badge-riesgo-alto">Vencido</span></td>
-                </tr>
-              }
-              @for (e of entregablesEmpresaFalta; track $index) {
-                <tr>
-                  <td class="font-medium">{{ e.entidad }}</td>
-                  <td>{{ e.item }}</td>
-                  <td class="text-gray-500 text-sm">—</td>
-                  <td><span class="badge-riesgo badge-riesgo-medio">Falta</span></td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('entEmpresa')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('entEmpresa')" [class.ti-chevron-down]="seccionAbierta('entEmpresa')"></i>
+          Entregables de Empresa <span class="section-count">({{ entregablesEmpresaVencidos.length + entregablesEmpresaFalta.length }})</span>
+        </button>
+        @if (seccionAbierta('entEmpresa')) {
+          <div class="table-wrap">
+            <table class="hab-table">
+              <thead><tr><th>Empresa</th><th>Entregable</th><th>Vigencia</th><th>Estado</th></tr></thead>
+              <tbody>
+                @for (e of entregablesEmpresaVencidos; track $index) {
+                  <tr>
+                    <td class="font-medium">{{ e.entidad }}</td>
+                    <td>{{ e.item }}</td>
+                    <td class="text-gray-500 text-sm">{{ e.vigencia | date: 'dd/MM/yyyy' }}</td>
+                    <td><span class="badge-riesgo badge-riesgo-alto">Vencido</span></td>
+                  </tr>
+                }
+                @for (e of entregablesEmpresaFalta; track $index) {
+                  <tr>
+                    <td class="font-medium">{{ e.entidad }}</td>
+                    <td>{{ e.item }}</td>
+                    <td class="text-gray-500 text-sm">—</td>
+                    <td><span class="badge-riesgo badge-riesgo-medio">Falta</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </section>
     }
 
     @if (entregablesTrabajadorVencidos.length > 0 || entregablesTrabajadorFalta.length > 0) {
       <section class="table-section">
-        <h2 class="section-title">Entregables de Trabajador Contratista</h2>
-        <div class="table-wrap">
-          <table class="hab-table">
-            <thead><tr><th>Trabajador</th><th>Entregable</th><th>Vigencia</th><th>Estado</th></tr></thead>
-            <tbody>
-              @for (e of entregablesTrabajadorVencidos; track $index) {
-                <tr>
-                  <td class="font-medium">{{ e.entidad }}</td>
-                  <td>{{ e.item }}</td>
-                  <td class="text-gray-500 text-sm">{{ e.vigencia | date: 'dd/MM/yyyy' }}</td>
-                  <td><span class="badge-riesgo badge-riesgo-alto">Vencido</span></td>
-                </tr>
-              }
-              @for (e of entregablesTrabajadorFalta; track $index) {
-                <tr>
-                  <td class="font-medium">{{ e.entidad }}</td>
-                  <td>{{ e.item }}</td>
-                  <td class="text-gray-500 text-sm">—</td>
-                  <td><span class="badge-riesgo badge-riesgo-medio">Falta</span></td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('entContratista')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('entContratista')" [class.ti-chevron-down]="seccionAbierta('entContratista')"></i>
+          Entregables de Trabajador Contratista <span class="section-count">({{ entregablesTrabajadorVencidos.length + entregablesTrabajadorFalta.length }})</span>
+        </button>
+        @if (seccionAbierta('entContratista')) {
+          <div class="table-wrap">
+            <table class="hab-table">
+              <thead><tr><th>Trabajador</th><th>Entregable</th><th>Vigencia</th><th>Estado</th></tr></thead>
+              <tbody>
+                @for (e of entregablesTrabajadorVencidos; track $index) {
+                  <tr>
+                    <td class="font-medium">{{ e.entidad }}</td>
+                    <td>{{ e.item }}</td>
+                    <td class="text-gray-500 text-sm">{{ e.vigencia | date: 'dd/MM/yyyy' }}</td>
+                    <td><span class="badge-riesgo badge-riesgo-alto">Vencido</span></td>
+                  </tr>
+                }
+                @for (e of entregablesTrabajadorFalta; track $index) {
+                  <tr>
+                    <td class="font-medium">{{ e.entidad }}</td>
+                    <td>{{ e.item }}</td>
+                    <td class="text-gray-500 text-sm">—</td>
+                    <td><span class="badge-riesgo badge-riesgo-medio">Falta</span></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
       </section>
     }
 
     @if (entregablesCasaVencidos.length > 0 || entregablesCasaFalta.length > 0) {
       <section class="table-section">
-        <h2 class="section-title">Entregables de Personal Casa</h2>
+        <button type="button" class="section-title section-title-toggle" (click)="toggleSeccion('entCasa')">
+          <i class="ti" [class.ti-chevron-right]="!seccionAbierta('entCasa')" [class.ti-chevron-down]="seccionAbierta('entCasa')"></i>
+          Entregables de Personal Casa <span class="section-count">({{ entregablesCasaVencidos.length + entregablesCasaFalta.length }})</span>
+        </button>
+        @if (seccionAbierta('entCasa')) {
         <div class="table-wrap">
           <table class="hab-table">
             <thead><tr><th>Trabajador</th><th>Entregable</th><th>Vigencia</th><th>Estado</th></tr></thead>
@@ -536,6 +592,7 @@
             </tbody>
           </table>
         </div>
+        }
       </section>
     }
   }

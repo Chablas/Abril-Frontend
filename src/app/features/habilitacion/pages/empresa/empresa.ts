@@ -24,10 +24,13 @@ import { ProyectosEmpresa } from './components/proyectos-empresa/proyectos-empre
 import { ArchivoStagingDto, DocumentoVersionDto } from '../../dtos/trabajador.model';
 import { Observable, EMPTY } from 'rxjs';
 import { EmpresaContratistaService } from '../../services/empresa-contratista.service';
+import { ProjectService } from '../../../../core/services/project.service';
+import { ProjectGetDTO } from '../../../../core/dtos/project/project.model';
 import {
   EmpresaContratistaListDto,
   EmpresaEntregableDto,
   EmpresaEntregableUpdateDto,
+  EmpresaPorProyectoDto,
   EntregableMesDto,
   ProyectoDisponibleDto,
 } from '../../dtos/empresa.model';
@@ -131,6 +134,15 @@ export class Empresa implements OnInit {
 
   mostrarProyectos = false;
 
+  // ── Filtro "por proyecto" (admin): ver empresas habilitadas/no habilitadas y sus
+  // entregables SSOMA/Administración de un proyecto, en vez de elegir empresa primero ──
+  modoFiltro: 'empresa' | 'proyecto' = 'empresa';
+  proyectosFiltro: ProjectGetDTO[] = [];
+  selectedProyectoFiltroId: number | null = null;
+  empresasPorProyecto: EmpresaPorProyectoDto[] = [];
+  loadingEmpresasPorProyecto = false;
+  private pendingProyectoFiltroId: number | null = null;
+
   modalVersionesOpen = false;
   historialVersiones: DocumentoVersionDto[] = [];
   loadingHistorial = false;
@@ -147,6 +159,7 @@ export class Empresa implements OnInit {
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
+    private projectService: ProjectService,
   ) {}
 
   ngOnInit(): void {
@@ -243,12 +256,65 @@ export class Empresa implements OnInit {
         this.loadingProyectos = false;
         this.cdr.detectChanges();
         this.loadProgresoBatch(this.proyectosActivos);
+
+        if (this.pendingProyectoFiltroId != null) {
+          const target = this.proyectosActivos.find(p => p.id === this.pendingProyectoFiltroId);
+          this.pendingProyectoFiltroId = null;
+          if (target) this.selectProyecto(target);
+        }
       },
       error: (err) => {
         this.loadingProyectos = false;
         this.errorService.handleError(err);
       },
     });
+  }
+
+  // ── Filtro "por proyecto" ──
+
+  toggleModoFiltro(): void {
+    this.modoFiltro = this.modoFiltro === 'empresa' ? 'proyecto' : 'empresa';
+    if (this.modoFiltro === 'proyecto' && this.proyectosFiltro.length === 0) {
+      this.loadProyectosFiltro();
+    }
+    this.cdr.detectChanges();
+  }
+
+  private loadProyectosFiltro(): void {
+    this.projectService.getProjectsPaged({ page: 1, pageSize: 200 }).subscribe({
+      next: (res) => {
+        this.proyectosFiltro = res.data ?? [];
+        this.cdr.detectChanges();
+      },
+      error: () => { this.proyectosFiltro = []; this.cdr.detectChanges(); },
+    });
+  }
+
+  onProyectoFiltroChange(id: number | null): void {
+    this.selectedProyectoFiltroId = id;
+    this.empresasPorProyecto = [];
+    if (!id) return;
+    this.loadingEmpresasPorProyecto = true;
+    this.habEmpresaService.getEmpresasPorProyecto(id).subscribe({
+      next: (res) => {
+        this.empresasPorProyecto = res ?? [];
+        this.loadingEmpresasPorProyecto = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingEmpresasPorProyecto = false;
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /** Desde la fila de una empresa en el modo "por proyecto": salta directo a sus entregables
+   * en ese proyecto, reusando el flujo normal empresa→proyecto. */
+  verEmpresaEnProyecto(row: EmpresaPorProyectoDto): void {
+    if (!this.selectedProyectoFiltroId) return;
+    this.pendingProyectoFiltroId = this.selectedProyectoFiltroId;
+    this.modoFiltro = 'empresa';
+    this.onEmpresaChange(row.empresaId);
   }
 
   private loadProgresoBatch(proyectos: ProyectoDisponibleDto[]): void {

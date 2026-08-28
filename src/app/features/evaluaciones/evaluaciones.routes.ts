@@ -117,5 +117,12 @@ export const EVALUACIONES_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { titulo: 'EVALUACIONES - GESTIÓN SSOMA', featureKey: 'evaluaciones.gestion-ssoma' },
   },
+  {
+    path: 'resultados-gestion-ssoma',
+    loadComponent: () =>
+      import('./pages/resultados-gestion-ssoma/resultados-gestion-ssoma').then(m => m.ResultadosGestionSsoma),
+    canActivate: [roleGuard],
+    data: { titulo: 'EVALUACIONES - RESULTADOS GESTIÓN SSOMA', featureKey: 'evaluaciones.resultados-gestion-ssoma' },
+  },
   { path: '', redirectTo: 'evaluar', pathMatch: 'full' },
 ];

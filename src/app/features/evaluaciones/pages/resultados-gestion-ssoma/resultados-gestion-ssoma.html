@@ -1,7 +1,7 @@
 <app-abril-page-header
   badge="EVALUACIONES"
-  titulo="Resultados — Evaluación al Jefe SSOMA"
-  subtitulo="Promedio y comentarios agregados. Anónimo: no se muestra quién evaluó ni qué nota puso cada persona."
+  titulo="Resultados — Gestión SSOMA"
+  subtitulo="Evaluaciones internas de liderazgo/gestión de personas: Jefe SSOMA ↔ Coordinadores/Prevencionistas, Coordinador ↔ sus Prevencionistas, y Prevencionista ↔ Prevencionista."
   [tabGroups]="[
     { label: 'Residentes',   icono: 'ti-user-check', tabs: [
       { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
@@ -61,7 +61,7 @@
       <div class="stat-card" *ngIf="cumplimiento">
         <div class="stat-label">Cumplimiento</div>
         <div class="stat-num stat-cumplimiento">{{ porcentajeCompletado }}%</div>
-        <div class="stat-sub">{{ cumplimiento.totalCompletaron }} de {{ cumplimiento.totalEvaluadores }} completaron</div>
+        <div class="stat-sub">{{ cumplimiento.totalCompletadas }} de {{ cumplimiento.totalEsperadas }} relaciones evaluadas</div>
         <div class="progress-bar"><div class="progress-fill" [style.width.%]="porcentajeCompletado"></div></div>
       </div>
     </div>
@@ -78,33 +78,34 @@
       </div>
     </div>
 
-    <!-- TENDENCIA -->
-    <div class="section-card" *ngIf="resultados!.tendencia.length">
-      <div class="section-title">Tendencia histórica</div>
-      <div class="tendencia-row">
-        <div class="tendencia-item" *ngFor="let t of resultados!.tendencia">
-          <div class="ti-mes">{{ t.nombreMes }} {{ t.anio }}</div>
-          <div class="ti-valor" [ngClass]="notaClase(t.promedio)">{{ notaDisplay(t.promedio) }}</div>
+    <!-- DETALLE DE EVALUACIONES (filtrable por relación) -->
+    <div class="section-card" *ngIf="resultados!.evaluaciones.length">
+      <div class="section-title-row">
+        <div class="section-title">Evaluaciones registradas</div>
+        <select class="relacion-filtro" [(ngModel)]="filtroRelacion">
+          <option value="">Todas las relaciones</option>
+          <option *ngFor="let r of relacionesDisponibles" [value]="r">{{ relacionLabel[r] ?? r }}</option>
+        </select>
+      </div>
+      <div class="eval-row" *ngFor="let e of evaluacionesFiltradas">
+        <div class="er-main">
+          <span class="er-relacion">{{ relacionLabel[e.relacion] ?? e.relacion }}</span>
+          <span class="er-evaluado">{{ e.evaluadoNombre }}</span>
+          <span class="er-por" *ngIf="e.evaluadorNombre">por {{ e.evaluadorNombre }}</span>
+          <span class="er-por er-anon" *ngIf="!e.evaluadorNombre"><i class="ti ti-shield-lock"></i> anónima</span>
         </div>
+        <span class="er-nota" [ngClass]="notaClase(e.nota)">{{ notaDisplay(e.nota) }}</span>
       </div>
     </div>
 
-    <!-- COMENTARIOS (sin autor) -->
-    <div class="section-card" *ngIf="resultados!.comentarios.length">
-      <div class="section-title">Comentarios (anónimos)</div>
-      <div class="comentario-item" *ngFor="let c of resultados!.comentarios">
-        <i class="ti ti-quote"></i> {{ c }}
-      </div>
-    </div>
-
-    <!-- PENDIENTES DE EVALUAR (sin notas) -->
+    <!-- PENDIENTES DE EVALUAR -->
     <div class="section-card" *ngIf="cumplimiento?.pendientes?.length">
       <div class="section-title">Aún no han evaluado</div>
       <div class="pendiente-item" *ngFor="let p of cumplimiento!.pendientes">
         <div class="pe-avatar">{{ p.nombreCompleto.charAt(0) }}</div>
         <div class="pe-info">
           <div class="pe-nombre">{{ p.nombreCompleto }}</div>
-          <div class="pe-email">{{ p.emailCorporativo }}</div>
+          <div class="pe-email">{{ p.emailCorporativo }} · {{ relacionLabel[p.relacion] ?? p.relacion }}</div>
         </div>
       </div>
     </div>

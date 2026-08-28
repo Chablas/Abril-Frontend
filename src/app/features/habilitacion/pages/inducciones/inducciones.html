@@ -5,42 +5,55 @@
       <h2 class="section-title">INDUCCIONES</h2>
       <p class="section-sub">Seguimiento de inducciones programadas para tu empresa</p>
     </div>
-    <button type="button" class="btn-ghost-sm" (click)="clearFilters()">Limpiar filtros</button>
-  </div>
-
-  <div class="filters-card">
-    <div class="filters-grid">
-      <div>
-        <label class="field-label">Estado</label>
-        <select class="field-input" [(ngModel)]="filtroEstado" (change)="onFilterChange()">
-          <option value="">Todos los estados</option>
-          <option value="PROGRAMADA">Programada</option>
-          <option value="REALIZADA">Realizada</option>
-          <option value="FALTA">No asistió</option>
-          <option value="RECHAZADA">Rechazada</option>
-          <option value="INGRESO">Ingresó</option>
-        </select>
-      </div>
-      <div>
-        <label class="field-label">Fecha desde</label>
-        <input
-          type="date"
-          class="field-input"
-          [(ngModel)]="filtroFechaDesde"
-          (change)="onFilterChange()"
-        />
-      </div>
-      <div>
-        <label class="field-label">Fecha hasta</label>
-        <input
-          type="date"
-          class="field-input"
-          [(ngModel)]="filtroFechaHasta"
-          (change)="onFilterChange()"
-        />
-      </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <app-search-input
+        placeholder="Buscar por nombre o DNI..."
+        [value]="busqueda"
+        (valueChange)="busqueda = $event; onBusquedaChange()"
+        width="240px"
+      />
+      <app-filter-trigger [count]="filtrosActivos" (open)="abrirFiltros()" />
     </div>
   </div>
+
+  <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="clearFilters()">
+    <div>
+      <label class="field-label">Proyecto</label>
+      <select class="field-input" [(ngModel)]="filtroProyectoId" (change)="onProyectoFiltroChange()">
+        <option [ngValue]="null">Todos los proyectos</option>
+        <option *ngFor="let p of catalogoProyectos" [ngValue]="p.id">{{ p.nombre }}</option>
+      </select>
+    </div>
+    <div>
+      <label class="field-label">Estado</label>
+      <select class="field-input" [(ngModel)]="filtroEstado" (change)="onFilterChange()">
+        <option value="">Todos los estados</option>
+        <option value="PROGRAMADA">Programada</option>
+        <option value="REALIZADA">Realizada</option>
+        <option value="FALTA">No asistió</option>
+        <option value="RECHAZADA">Rechazada</option>
+        <option value="INGRESO">Ingresó</option>
+      </select>
+    </div>
+    <div>
+      <label class="field-label">Fecha desde</label>
+      <input
+        type="date"
+        class="field-input"
+        [(ngModel)]="filtroFechaDesde"
+        (change)="onFilterChange()"
+      />
+    </div>
+    <div>
+      <label class="field-label">Fecha hasta</label>
+      <input
+        type="date"
+        class="field-input"
+        [(ngModel)]="filtroFechaHasta"
+        (change)="onFilterChange()"
+      />
+    </div>
+  </app-filter-modal>
 
   <div class="table-wrapper">
     <table class="data-table">

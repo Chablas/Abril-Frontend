@@ -53,6 +53,19 @@ export class EvaluarResidente implements OnInit {
   proyectoFiltroId: number | null = null;
   mostrarSelectProyecto = false;
   puntajes = [1, 2, 3, 4, 5];
+  /** Evaluación ya guardada para el (residente, área) actual, si existe — el backend no
+   * permite re-evaluar en el mismo período (409), así que en vez de mostrar un formulario
+   * en blanco que va a fallar al guardar, se muestran los puntajes que ya se enviaron. */
+  evaluacionExistente: EvEvaluacionResponseDto | null = null;
+  /** El evaluador puede corregir su propia nota hasta 24h después de haberla enviado —
+   * pasado ese plazo, o si fue otro evaluador (no aplica acá, siempre es "yo"), queda fija. */
+  corrigiendo = false;
+  get dentroDeVentanaCorreccion(): boolean {
+    if (!this.evaluacionExistente) return false;
+    const creado = new Date(this.evaluacionExistente.createdAt).getTime();
+    return Date.now() - creado <= 24 * 60 * 60 * 1000;
+  }
+  get soloLectura(): boolean { return this.evaluacionExistente !== null && !this.corrigiendo; }
   labelPuntaje: Record<number, string> = {
     1: 'Deficiente',
     2: 'Regular',
@@ -103,6 +116,7 @@ export class EvaluarResidente implements OnInit {
   }
 
   get puedeGuardar(): boolean {
+    if (this.soloLectura) return false;
     if (!this.residenteSeleccionado || !this.areaSeleccionada) return false;
     if (this.noAplica) return this.noAplicaMotivo.trim().length > 0;
     return (
@@ -176,6 +190,13 @@ export class EvaluarResidente implements OnInit {
     this.noAplicaMotivo = '';
     this.busqueda = '';
     this.dropdownAbierto = false;
+    this.evaluacionExistente = null;
+    this.corrigiendo = false;
+    this.cdr.detectChanges();
+  }
+
+  corregir(): void {
+    this.corrigiendo = true;
     this.cdr.detectChanges();
   }
 
@@ -213,26 +234,51 @@ export class EvaluarResidente implements OnInit {
 
   selectArea(area: string): void {
     this.areaSeleccionada = area;
+    this.corrigiendo = false;
     this.plantillaService.getByArea(area).subscribe({
       next: (criterios) => {
-        this.detalles = criterios.map((c) => ({
-          plantillaId: c.id,
-          criterio: c.criterio,
-          puntaje: null,
-          esNa: false,
-        }));
+        this.evaluacionExistente = this.residenteSeleccionado
+          ? this.misEvaluaciones.find(
+              (e) => e.evaluadoUserId === this.residenteSeleccionado!.userId && e.areaNombre === area,
+            ) ?? null
+          : null;
+
+        if (this.evaluacionExistente) {
+          const ev = this.evaluacionExistente;
+          this.detalles = criterios.map((c) => {
+            const guardado = ev.detalles.find((d) => d.plantillaId === c.id);
+            return {
+              plantillaId: c.id,
+              criterio: c.criterio,
+              puntaje: guardado?.puntaje ?? null,
+              esNa: guardado?.esNa ?? false,
+            };
+          });
+          this.comentario = ev.comentario ?? '';
+          this.noAplica = ev.noAplica;
+          this.noAplicaMotivo = ev.noAplicaMotivo ?? '';
+        } else {
+          this.detalles = criterios.map((c) => ({
+            plantillaId: c.id,
+            criterio: c.criterio,
+            puntaje: null,
+            esNa: false,
+          }));
+        }
         this.cdr.detectChanges();
       },
     });
   }
 
   setPuntaje(idx: number, val: number): void {
+    if (this.soloLectura) return;
     this.detalles[idx].puntaje = val;
     this.detalles[idx].esNa = false;
     this.cdr.detectChanges();
   }
 
   setNa(idx: number): void {
+    if (this.soloLectura) return;
     this.detalles[idx].esNa = true;
     this.detalles[idx].puntaje = null;
     this.cdr.detectChanges();
@@ -251,7 +297,10 @@ export class EvaluarResidente implements OnInit {
       noAplicaMotivo: this.noAplicaMotivo || null,
       detalles: this.detalles,
     };
-    this.evalService.crear(dto as any).subscribe({
+    const request = this.corrigiendo && this.evaluacionExistente
+      ? this.evalService.actualizar(this.evaluacionExistente.id, dto as any)
+      : this.evalService.crear(dto as any);
+    request.subscribe({
       next: (r: any) => {
         this.guardando = false;
         this.successMsg = `Evaluación guardada · Nota: ${r.nota}`;
@@ -278,6 +327,8 @@ export class EvaluarResidente implements OnInit {
     this.comentario = '';
     this.noAplica = false;
     this.noAplicaMotivo = '';
+    this.evaluacionExistente = null;
+    this.corrigiendo = false;
   }
 
   yaEvaluo(residenteId: number, area: string): boolean {

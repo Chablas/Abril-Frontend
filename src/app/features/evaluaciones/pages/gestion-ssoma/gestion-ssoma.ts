@@ -22,6 +22,9 @@ interface DetalleForm {
 
 interface CandidatoUi extends EvGestionSsomaAEvaluarDto {
   tipo: 'Prevencionista' | 'Coordinador SSOMA';
+  /** true = "Mi coordinador SSOMA" (D4): el guardado va sin evaluadoUserId, el
+   * servidor resuelve el destinatario y nunca queda asociado a quien evalúa. */
+  esAnonimo?: boolean;
 }
 
 const PUNTAJE_LABELS: Record<number, string> = {
@@ -45,14 +48,12 @@ export class GestionSsoma implements OnInit {
   loading = true;
   guardando = false;
 
-  // Modo lista: Jefe SSOMA (ve Prevencionistas + Coordinadores) o Coordinador
-  // SSOMA (ve solo Prevencionistas de su proyecto) — elige a quién evaluar.
+  // Lista de candidatos a evaluar: Jefe SSOMA ve Prevencionistas + Coordinadores;
+  // Coordinador SSOMA ve los Prevencionistas de su proyecto; Prevencionista ve a
+  // los demás Prevencionistas de su proyecto (D5) y a "Mi Coordinador SSOMA"
+  // (D4, anónimo — es una tarjeta más de la lista, no una vista aparte).
   seleccionado: CandidatoUi | null = null;
   busqueda = '';
-
-  // Modo anónimo: Prevencionista evaluando a su Coordinador SSOMA — un solo
-  // objetivo implícito, sin lista que elegir.
-  modoAnonimo = false;
 
   detalles: DetalleForm[] = [];
   fortalezas = '';
@@ -64,7 +65,16 @@ export class GestionSsoma implements OnInit {
   get candidatos(): CandidatoUi[] {
     const prev = (this.inicio?.prevencionistas ?? []).map((p) => ({ ...p, tipo: 'Prevencionista' as const }));
     const coord = (this.inicio?.coordinadores ?? []).map((c) => ({ ...c, tipo: 'Coordinador SSOMA' as const }));
-    return [...prev, ...coord];
+    const miCoord = this.inicio?.miCoordinador
+      ? [{
+          ...this.inicio.miCoordinador,
+          nombreCompleto: 'Mi Coordinador SSOMA',
+          tipo: 'Coordinador SSOMA' as const,
+          esAnonimo: true,
+          yaEvalue: this.inicio.yaEvalueMiCoordinador,
+        }]
+      : [];
+    return [...miCoord, ...prev, ...coord];
   }
 
   get candidatosFiltrados(): CandidatoUi[] {
@@ -120,16 +130,7 @@ export class GestionSsoma implements OnInit {
         this.inicio = data;
         this.loading = false;
         this.loader.hide();
-
-        // Caso anónimo (Prevencionista -> su Coordinador): no hay lista que
-        // elegir, se arma el formulario directo si aún no evaluó.
-        this.modoAnonimo = !!data.miCoordinador;
-        if (this.modoAnonimo && !data.yaEvalueMiCoordinador) {
-          this.detalles = this.nuevosDetalles();
-          this.fortalezas = '';
-          this.oportunidadesMejora = '';
-        }
-
+        this.seleccionado = null;
         this.cdr.markForCheck();
       },
       error: (err) => {
@@ -173,8 +174,8 @@ export class GestionSsoma implements OnInit {
   }
 
   guardar(): void {
-    if (!this.puedeGuardar) return;
-    if (!this.modoAnonimo && !this.seleccionado) return;
+    if (!this.puedeGuardar || !this.seleccionado) return;
+    const esAnonimo = !!this.seleccionado.esAnonimo;
 
     const detallesDto: EvGestionSsomaDetalleCreateDto[] = this.detalles.map((d) => ({
       plantillaId: d.plantillaId,
@@ -183,7 +184,7 @@ export class GestionSsoma implements OnInit {
     }));
 
     const dto = {
-      evaluadoUserId: this.modoAnonimo ? null : this.seleccionado!.userId,
+      evaluadoUserId: esAnonimo ? null : this.seleccionado.userId,
       fortalezas: this.fortalezas.trim() || null,
       oportunidadesMejora: this.oportunidadesMejora.trim() || null,
       detalles: detallesDto,
@@ -215,7 +216,7 @@ export class GestionSsoma implements OnInit {
       });
     };
 
-    if (this.modoAnonimo) {
+    if (esAnonimo) {
       Swal.fire({
         icon: 'question',
         title: 'Registrar evaluación anónima',

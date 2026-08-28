@@ -94,6 +94,10 @@ export class RacService {
     return this.http.get(`${this.base}/${id}/pdf`, { responseType: 'blob', headers: buildAuthHeaders() });
   }
 
+  getFoto(racId: number, fotoId: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${racId}/fotos/${fotoId}`, { responseType: 'blob', headers: buildAuthHeaders() });
+  }
+
   // ── Penalidades ──────────────────────────────────────────────────
 
   getPenalidadList(q: PenalidadListQuery): Observable<RacPagedResult<PenalidadListItemDto>> {
