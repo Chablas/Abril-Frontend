@@ -72,6 +72,21 @@ export class ProgramarEmoDialogComponent implements OnInit {
   submitting = false;
 
   /**
+   * Fecha mínima de la cita: hoy. Una programación es una reserva a futuro con la clínica, así que
+   * un día pasado no es una cita sino un dato mal tipeado. Se calcula al construir el modal (vive
+   * lo que dura la programación, no hace falta refrescarla) y en hora local, que es la del usuario
+   * que la agenda — `toISOString()` la pasaría a UTC y en la noche de Perú daría el día siguiente.
+   */
+  readonly minFechaProgramada = ProgramarEmoDialogComponent.hoyLocal();
+
+  private static hoyLocal(): string {
+    const hoy = new Date();
+    const mes = `${hoy.getMonth() + 1}`.padStart(2, '0');
+    const dia = `${hoy.getDate()}`.padStart(2, '0');
+    return `${hoy.getFullYear()}-${mes}-${dia}`;
+  }
+
+  /**
    * A quién le va a llegar cada correo del flujo, resuelto por el backend con la misma lógica
    * del envío real. Son DOS correos con destinatarios propios (los configura por separado
    * Configuración de EMOs), así que el modal los muestra por separado en vez de dar a entender

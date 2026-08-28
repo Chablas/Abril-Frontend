@@ -29,12 +29,12 @@ import { DestinatarioSolicitud } from '../../../shared/dtos/destinatarios.dto';
  * las nuevas, el gerente del área y GTH los reemplazos —, así que acá nunca aparecen.
  *
  * El usuario marca su casilla (`data.nivel`, que el backend resuelve desde la categoría de su
- * ficha) y ve como información la del otro firmante de su MISMA ruta: en un reemplazo, quien decide
- * necesita saber si el otro ya firmó para saber si la vacante puede avanzar.
+ * ficha) y ve como información la del otro firmante de su MISMA ruta.
  *
- * Un reemplazo llega a Gestión de Talento Humano con las dos firmas de su ruta; una vacante nueva,
- * con la de Gerencia General sola. Si el nivel del usuario ya decidió, el modal abre en lectura —
- * es también la ficha del historial.
+ * Un reemplazo necesita las dos firmas de su ruta y van en ORDEN: primero el gerente del área y,
+ * con su visto bueno, GTH — que por eso ve siempre la casilla del área ya aprobada. Una vacante
+ * nueva se mueve con la de Gerencia General sola. Si el nivel del usuario ya decidió, el modal abre
+ * en lectura — es también la ficha del historial.
  */
 @Component({
   standalone: true,
@@ -123,8 +123,8 @@ export class GthAprobacionDecision implements OnInit {
 
   /**
    * Las OTRAS firmas que esta solicitud necesita: solo se muestran, nunca se editan. Son las que
-   * la solicitud requiere menos la propia — en un reemplazo, quien decide ve la casilla del otro
-   * firmante y sabe si la vacante ya puede avanzar o sigue esperando.
+   * la solicitud requiere menos la propia — en un reemplazo, GTH ve el visto bueno del área (el
+   * que le abrió el turno) y el gerente del área ve que GTH todavía no firmó.
    */
   get otrasCasillas(): { etiqueta: string; resumen: AprobacionNivelResumen }[] {
     const d = this.data;
@@ -176,8 +176,9 @@ export class GthAprobacionDecision implements OnInit {
 
   /**
    * La postura de la OTRA firma de la vacante, cuando la hay. Solo tiene sentido en los reemplazos
-   * (los únicos con dos firmas): dice si la vacante ya está lista para avanzar o sigue esperando.
-   * Cadena vacía cuando la otra parte todavía no opinó — repetir «sin decidir» en cada fila no
+   * (los únicos con dos firmas). Con las firmas en orden, en la práctica es lo que ve GTH: el
+   * visto bueno del área que le abrió el turno. Cadena vacía cuando la otra parte todavía no opinó
+   * —el caso del gerente del área, que firma primero—: repetir «sin decidir» en cada fila no
    * aporta nada, la casilla de arriba ya lo dice una vez.
    */
   textoOtroNivel(v: AprobacionVacante): string {
@@ -231,14 +232,11 @@ export class GthAprobacionDecision implements OnInit {
   }
 
   // ── Aviso "a quién le llega esta decisión" ──────────────────────────────
-  // Toda decisión puede disparar correos: la de Gerencia General manda el aviso a GTH y el de
-  // vacantes aprobadas a TI; la del gerente del área y la de GTH, el de reemplazos aprobados. Los
+  // Toda decisión aprobatoria dispara correos: la de Gerencia General manda el aviso a GTH y el de
+  // vacantes aprobadas a TI; la del gerente del área le pide a GTH la segunda firma del reemplazo;
+  // la de GTH, que es esa segunda firma, manda el de reemplazos aprobados y el de TI. Los
   // destinatarios llegan del backend ya fusionados en una sola lista y resueltos con la misma
   // lógica del envío real, así que el aviso no puede prometer algo distinto de lo que sale.
-  //
-  // Lo que decide si se muestra no es haber aprobado, sino que la decisión DEJE alguna vacante
-  // lista para pasar a GTH: un reemplazo necesita las dos firmas, así que la primera no dispara
-  // nada y prometer un envío que no va a ocurrir es peor que no avisar nada.
 
   /** true cuando ya se sabe a quién le llegarían los correos (null = no aplica o no se pudo resolver). */
   get destinatariosCargados(): boolean {
@@ -254,31 +252,17 @@ export class GthAprobacionDecision implements OnInit {
   }
 
   /**
-   * Vacantes que ESTA decisión dejaría listas para pasar a Gestión de Talento Humano. Para Gerencia
-   * General son todas las que apruebe, porque su firma va sola; en un reemplazo, solo aquellas en
-   * las que la otra firma YA está puesta — las demás se quedan esperándola.
+   * La decisión en curso no dispara ningún correo. Con las firmas en secuencia eso pasa en un solo
+   * caso: rechazar todo. Cualquier aprobación manda algo — la de Gerencia General y la de GTH
+   * pasan sus vacantes a reclutamiento, y la del gerente del área le pide a GTH la segunda firma.
    */
-  get completarian(): number {
-    return this.vacantes.filter(
-      (v) =>
-        this.decisiones.get(v.requerimientoId) === true &&
-        (this.esGerenteGeneral || this.decisionOtroNivel(v) === true),
-    ).length;
-  }
-
-  /** La decisión en curso no deja ninguna vacante lista: no habrá correo que enviar. */
   get sinEnvio(): boolean {
-    return this.vacantes.length > 0 && this.pendientes === 0 && this.completarian === 0;
+    return this.vacantes.length > 0 && this.pendientes === 0 && this.aprobadas === 0;
   }
 
-  /**
-   * Por qué no sale correo. Rechazarlo todo y quedar esperando la otra firma se ven igual en el
-   * conteo pero no son lo mismo, y quien decide necesita saber cuál de las dos le pasó.
-   */
+  /** Por qué no sale correo. */
   get motivoSinEnvio(): string {
-    if (this.aprobadas === 0) return 'Rechazas todas las vacantes: no se enviará ningún correo.';
-    const falta = this.esGth ? 'el gerente del área' : 'GTH';
-    return `Lo que apruebes espera la firma de ${falta}: todavía no se enviará ningún correo.`;
+    return 'Rechazas todas las vacantes: no se enviará ningún correo.';
   }
 
   /** Tooltip del correo: el nombre de la persona cuando se conoce, más por qué lo recibe. */
@@ -300,17 +284,23 @@ export class GthAprobacionDecision implements OnInit {
   async confirmar(): Promise<void> {
     if (!this.puedeConfirmar) return;
 
-    // El detalle cambia según quién firma: la del Gerente General mueve sus vacantes sola, la de
-    // un reemplazo necesita además la del otro firmante (gerente del área ↔ GTH).
-    const detalle = this.esGerenteGeneral
-      ? this.aprobadas === 0
+    // El detalle cambia según quién firma: la del Gerente General y la de GTH mandan sus vacantes
+    // a reclutamiento; la del gerente del área, que es la PRIMERA de las dos de un reemplazo, se
+    // las pasa a GTH para que ponga la segunda.
+    const aReclutamiento =
+      this.aprobadas === 0
         ? 'Ninguna vacante continuará y Gestión de Talento Humano no recibirá la solicitud.'
         : this.rechazadas === 0
           ? `Las ${this.aprobadas} vacantes pasarán a Gestión de Talento Humano para iniciar el reclutamiento.`
-          : `${this.aprobadas} vacante(s) pasarán a Gestión de Talento Humano y ${this.rechazadas} no continuarán.`
-      : this.aprobadas === 0
-        ? 'Ninguna vacante continuará: un rechazo la cierra sin esperar la otra firma.'
-        : `Tu decisión quedará registrada. Cada vacante aprobada pasa a Gestión de Talento Humano en cuanto tenga también la firma de ${this.esGth ? 'el gerente del área' : 'GTH'}.`;
+          : `${this.aprobadas} vacante(s) pasarán a Gestión de Talento Humano y ${this.rechazadas} no continuarán.`;
+
+    const detalle =
+      this.esGerenteGeneral || this.esGth
+        ? aReclutamiento
+        : this.aprobadas === 0
+          ? 'Ninguna vacante continuará: tu rechazo la cierra y no pasa a Gestión de Talento Humano.'
+          : `${this.aprobadas} vacante(s) pasarán a Gestión de Talento Humano para su aprobación` +
+            (this.rechazadas > 0 ? ` y ${this.rechazadas} no continuarán.` : '.');
 
     const confirm = await Swal.fire({
       title: '¿Confirmas tu decisión?',

@@ -137,6 +137,22 @@ export const GESTION_GTH_ROUTES: Routes = [
     },
   },
   {
+    // Misma pantalla del solicitante, con el seguimiento de un requerimiento ya abierto: es la URL
+    // de los correos que le cuentan algo de su vacante sin pedirle una decisión (la entrevista que
+    // el candidato confirmó, el candidato que GTH retomó del historial). Segmento propio
+    // ('seguimiento') por lo mismo que 'long-list' y 'finalistas': no competir con 'configuracion'.
+    path: 'solicitud-personal/seguimiento/:id',
+    loadComponent: () =>
+      import('./solicitud-personal/solicitud-personal').then((m) => m.GthSolicitudPersonal),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'SOLICITUD DE PERSONAL',
+      featureKey: 'gestion-gth.solicitud-personal',
+      // Distingue este deep link de los otros dos: los tres son ':id' sobre el mismo componente.
+      modalSeguimiento: true,
+    },
+  },
+  {
     // Configuración de los correos del flujo: qué correos se envían y a quién.
     // Misma feature que ya habilitaba el botón «Configuración» de la pantalla anterior.
     path: 'solicitud-personal/configuracion',
