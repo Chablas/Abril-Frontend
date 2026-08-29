@@ -41,18 +41,31 @@
       </div>
     </section>
 
-    <!-- ── PROCEDIMIENTO DE TRABAJO (pasos) ────────────────────────────── -->
-    <section class="card">
+    <!-- ── PESTAÑAS ─────────────────────────────────────────────────────── -->
+    <div class="tabs-bar">
+      <button
+        type="button"
+        class="tab-btn"
+        *ngFor="let t of tabs"
+        [class.tab-btn--activo]="seccionActiva === t.key"
+        (click)="seleccionarTab(t.key)"
+      >
+        {{ t.label }}
+      </button>
+    </div>
+
+    <!-- ── SECCIONES EN ÁRBOL (Procedimiento + texto libre) ─────────────── -->
+    <section class="card" *ngIf="tabActiva.kind === 'arbol'">
       <div class="card-titulo-row">
         <div>
-          <h2 class="card-titulo">Procedimiento de trabajo</h2>
-          <p class="card-hint">
+          <h2 class="card-titulo">{{ tabActiva.label }}</h2>
+          <p class="card-hint" *ngIf="seccionActiva === 'procedimiento'">
             Estos pasos son los que OPT jala automáticamente al seleccionar este PETS. El número
             se calcula por posición — insertar uno en medio corre el resto sin que tengas que
             renumerar nada.
           </p>
         </div>
-        <div class="import-actions" *ngIf="!previewPasos && !previewManual">
+        <div class="import-actions" *ngIf="seccionActiva === 'procedimiento' && !previewPasos && !previewManual">
           <a class="btn-plantilla" [href]="plantillaUrl" download title="Descargar un Word con la estructura y estilos que la plataforma reconoce">
             <i class="ti ti-file-download"></i> Descargar plantilla
           </a>
@@ -64,7 +77,7 @@
       </div>
 
       <!-- ── VISTA PREVIA DE IMPORTACIÓN (nada se guarda hasta confirmar) ── -->
-      <div class="import-preview" *ngIf="previewPasos">
+      <div class="import-preview" *ngIf="seccionActiva === 'procedimiento' && previewPasos">
         <p class="import-preview-hint">
           <i class="ti ti-info-circle"></i>
           Detecté {{ previewPasos.length }} paso(s) en "PROCEDIMIENTO DE TRABAJO", con subtítulos
@@ -90,7 +103,7 @@
       </div>
 
       <!-- ── SELECCIÓN MANUAL (respaldo cuando no se detecta el encabezado) ── -->
-      <div class="import-preview" *ngIf="previewManual">
+      <div class="import-preview" *ngIf="seccionActiva === 'procedimiento' && previewManual">
         <p class="import-preview-hint">
           <i class="ti ti-info-circle"></i>
           No detecté el título automáticamente. Marca los párrafos que sí son pasos —
@@ -235,6 +248,100 @@
           </div>
         </div>
       </ng-template>
+    </section>
+
+    <!-- ── CATÁLOGO (Marco Legal / EPP / Recursos) ─────────────────────── -->
+    <section class="card" *ngIf="tabActiva.kind === 'catalogo'">
+      <h2 class="card-titulo">{{ tabActiva.label }}</h2>
+
+      <div class="catalogo-bloque" *ngFor="let sub of catalogoTipos[tabActiva.key]">
+        <h3 class="catalogo-bloque-titulo" *ngIf="sub.label">{{ sub.label }}</h3>
+
+        <ul class="catalogo-lista">
+          <li class="catalogo-item" *ngFor="let item of itemsPorTipo(tabActiva.key, sub.value)">
+            <i class="ti ti-check catalogo-item-check"></i>
+            <span class="catalogo-item-texto">{{ item.descripcion }}</span>
+            <span class="catalogo-item-badge" *ngIf="item.esPersonalizado">Propio de este PETS</span>
+            <button class="btn-icon" title="Quitar de este PETS" (click)="quitarSeleccion(item)"><i class="ti ti-x"></i></button>
+            <button
+              class="btn-icon btn-icon-danger"
+              *ngIf="!item.esPersonalizado"
+              title="Eliminar del catálogo global (afecta a todos los PETS)"
+              (click)="eliminarDeCatalogoGlobal(item)"
+            >
+              <i class="ti ti-trash"></i>
+            </button>
+          </li>
+          <li class="catalogo-vacio" *ngIf="itemsPorTipo(tabActiva.key, sub.value).length === 0">
+            Todavía no hay ítems seleccionados.
+          </li>
+        </ul>
+
+        <div class="catalogo-agregar">
+          <select
+            class="abril-field-input catalogo-select"
+            [ngModel]="seleccionEnCurso[claveCatalogo(tabActiva.key, sub.value)]"
+            (ngModelChange)="seleccionEnCurso[claveCatalogo(tabActiva.key, sub.value)] = $event"
+          >
+            <option [ngValue]="null">Elegir del catálogo...</option>
+            <option *ngFor="let op of opcionesDisponibles(tabActiva.key, sub.value)" [ngValue]="op.id">{{ op.descripcion }}</option>
+          </select>
+          <button
+            class="btn-secondary"
+            [disabled]="!seleccionEnCurso[claveCatalogo(tabActiva.key, sub.value)] || guardandoSeleccion[claveCatalogo(tabActiva.key, sub.value)]"
+            (click)="agregarDesdeCatalogo(tabActiva.key, sub.value)"
+          >
+            Agregar
+          </button>
+        </div>
+
+        <div class="catalogo-personalizado">
+          <input
+            type="text"
+            class="abril-field-input"
+            placeholder="¿No está en la lista? Escríbelo aquí..."
+            [ngModel]="personalizadoTexto[claveCatalogo(tabActiva.key, sub.value)]"
+            (ngModelChange)="personalizadoTexto[claveCatalogo(tabActiva.key, sub.value)] = $event"
+          />
+          <label class="check-label">
+            <input
+              type="checkbox"
+              [ngModel]="personalizadoAlCatalogo[claveCatalogo(tabActiva.key, sub.value)]"
+              (ngModelChange)="personalizadoAlCatalogo[claveCatalogo(tabActiva.key, sub.value)] = $event"
+            />
+            Agregar también al catálogo global (disponible para otros PETS)
+          </label>
+          <button
+            class="btn-secondary"
+            [disabled]="!personalizadoTexto[claveCatalogo(tabActiva.key, sub.value)]?.trim() || guardandoSeleccion[claveCatalogo(tabActiva.key, sub.value)]"
+            (click)="agregarPersonalizado(tabActiva.key, sub.value)"
+          >
+            Agregar
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── ANEXOS ───────────────────────────────────────────────────────── -->
+    <section class="card" *ngIf="tabActiva.kind === 'anexos'">
+      <h2 class="card-titulo">Anexos</h2>
+
+      <ul class="catalogo-lista">
+        <li class="catalogo-item" *ngFor="let anexo of detalle.anexos">
+          <i class="ti ti-paperclip catalogo-item-check"></i>
+          <a class="catalogo-item-texto" [href]="anexoUrl(anexo)" target="_blank" rel="noopener">{{ anexo.nombre }}</a>
+          <button class="btn-icon btn-icon-danger" title="Eliminar" (click)="eliminarAnexo(anexo)"><i class="ti ti-trash"></i></button>
+        </li>
+        <li class="catalogo-vacio" *ngIf="detalle.anexos.length === 0">Todavía no hay anexos.</li>
+      </ul>
+
+      <div class="catalogo-agregar">
+        <input type="text" class="abril-field-input" placeholder="Nombre del anexo" [(ngModel)]="nuevoAnexoNombre" />
+        <label class="btn-secondary btn-importar">
+          {{ subiendoAnexo ? 'Subiendo…' : 'Subir archivo' }}
+          <input type="file" hidden (change)="onAnexoSeleccionado($event)" [disabled]="subiendoAnexo" />
+        </label>
+      </div>
     </section>
 
   </div>

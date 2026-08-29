@@ -16,6 +16,31 @@ export interface PetPasoDto {
   orden: number;
 }
 
+export type PetSeccionTexto =
+  | 'introduccion'
+  | 'alcance'
+  | 'objetivo'
+  | 'definiciones'
+  | 'responsabilidades'
+  | 'restricciones';
+
+export interface PetItemSeleccionadoDto {
+  id: number;
+  grupo: string; // marco_legal | epp | recurso
+  tipo?: string | null;
+  catalogoItemId?: number | null;
+  descripcion: string;
+  esPersonalizado: boolean;
+  orden: number;
+}
+
+export interface PetAnexoDto {
+  id: number;
+  nombre: string;
+  archivoUrl: string;
+  orden: number;
+}
+
 export interface PetDetalleDto {
   id: number;
   nombre: string;
@@ -23,6 +48,11 @@ export interface PetDetalleDto {
   sharepointUrl?: string;
   activo: boolean;
   pasos: PetPasoDto[];
+  secciones: Record<PetSeccionTexto, PetPasoDto[]>;
+  marcoLegal: PetItemSeleccionadoDto[];
+  epp: PetItemSeleccionadoDto[];
+  recursos: PetItemSeleccionadoDto[];
+  anexos: PetAnexoDto[];
 }
 
 export interface CrearPetRequest {
@@ -40,6 +70,7 @@ export interface ActualizarPetRequest {
 
 export interface CrearPetPasoRequest {
   descripcion: string;
+  seccion?: string; // procedimiento (default) | introduccion | alcance | objetivo | definiciones | responsabilidades | restricciones
   parentId?: number | null;
   tipo?: string; // subtitulo | paso | letra | guion — default 'paso'
   posicion?: number;
@@ -51,8 +82,39 @@ export interface ActualizarPetPasoRequest {
 }
 
 export interface ReordenarPasosRequest {
+  seccion?: string;
   parentId?: number | null;
   pasoIds: number[];
+}
+
+// ── Catálogo (Marco Legal / EPP / Recursos) ──────────────────────────────────────
+
+export interface CatalogoItemDto {
+  id: number;
+  grupo: string;
+  tipo?: string | null;
+  descripcion: string;
+  activo: boolean;
+  orden: number;
+}
+
+export interface CrearCatalogoItemRequest {
+  grupo: string;
+  tipo?: string | null;
+  descripcion: string;
+}
+
+export interface SeleccionarItemCatalogoRequest {
+  grupo: string;
+  tipo?: string | null;
+  catalogoItemId: number;
+}
+
+export interface AgregarItemPersonalizadoRequest {
+  grupo: string;
+  tipo?: string | null;
+  descripcion: string;
+  agregarAlCatalogoGlobal: boolean;
 }
 
 // "indice" = posición original del párrafo en el Word (identificador estable).

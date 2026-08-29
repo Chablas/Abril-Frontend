@@ -5,7 +5,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { PetsService } from '../../pets.service';
-import { PetDetalleDto, PetPasoDto, ImportPasoPreviewDto, ImportParrafoDto } from '../../pets.dtos';
+import {
+  PetDetalleDto,
+  PetPasoDto,
+  ImportPasoPreviewDto,
+  ImportParrafoDto,
+  PetItemSeleccionadoDto,
+  PetAnexoDto,
+  CatalogoItemDto,
+} from '../../pets.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { environment } from '../../../../../../../environments/environment';
@@ -61,6 +69,48 @@ const TIPOS_PASO = [
   { value: 'subtitulo', label: 'Subtítulo' },
 ];
 
+type TabKind = 'arbol' | 'catalogo' | 'anexos';
+
+interface TabDef {
+  key: string;
+  label: string;
+  kind: TabKind;
+}
+
+const TABS: TabDef[] = [
+  { key: 'procedimiento', label: 'Procedimiento', kind: 'arbol' },
+  { key: 'introduccion', label: 'Introducción', kind: 'arbol' },
+  { key: 'alcance', label: 'Alcance', kind: 'arbol' },
+  { key: 'objetivo', label: 'Objetivo', kind: 'arbol' },
+  { key: 'marco_legal', label: 'Marco Legal', kind: 'catalogo' },
+  { key: 'definiciones', label: 'Definiciones', kind: 'arbol' },
+  { key: 'responsabilidades', label: 'Responsabilidades', kind: 'arbol' },
+  { key: 'epp', label: 'EPP', kind: 'catalogo' },
+  { key: 'recurso', label: 'Recursos', kind: 'catalogo' },
+  { key: 'restricciones', label: 'Restricciones', kind: 'arbol' },
+  { key: 'anexos', label: 'Anexos', kind: 'anexos' },
+];
+
+// Sub-bloques dentro de una pestaña de catálogo: Marco Legal no distingue tipo,
+// EPP y Recursos sí — cada bloque se agrega/elimina de forma independiente.
+const CATALOGO_TIPOS: Record<string, { value: string | null; label: string }[]> = {
+  marco_legal: [{ value: null, label: 'Normas aplicables' }],
+  epp: [
+    { value: 'basico', label: 'EPP básico' },
+    { value: 'especifico', label: 'EPP específico según la tarea' },
+    { value: 'emergencia', label: 'EPP de emergencia' },
+  ],
+  recurso: [
+    { value: 'equipo', label: 'Equipos' },
+    { value: 'herramienta', label: 'Herramientas' },
+    { value: 'material', label: 'Materiales' },
+  ],
+};
+
+function claveCatalogo(grupo: string, tipo: string | null): string {
+  return `${grupo}:${tipo ?? ''}`;
+}
+
 @Component({
   selector: 'app-pets-detalle',
   standalone: true,
@@ -76,9 +126,33 @@ export class PetsDetalle implements OnInit {
   guardandoCabecera = false;
 
   readonly tiposPaso = TIPOS_PASO;
+  readonly tabs = TABS;
+  readonly catalogoTipos = CATALOGO_TIPOS;
 
-  // Árbol de "Procedimiento de trabajo", reconstruido cada vez que se recarga.
-  arbol: PasoNodo[] = [];
+  seccionActiva = 'procedimiento';
+
+  get tabActiva(): TabDef {
+    return this.tabs.find((t) => t.key === this.seccionActiva) ?? this.tabs[0];
+  }
+
+  // Árboles por sección (procedimiento + las de texto libre), reconstruidos cada
+  // vez que se recarga. Solo se muestra el de la pestaña activa.
+  arboles: Record<string, PasoNodo[]> = {};
+
+  get arbol(): PasoNodo[] {
+    return this.arboles[this.seccionActiva] ?? [];
+  }
+
+  // ── Catálogo (Marco Legal / EPP / Recursos) ──────────────────────────────
+  catalogoOpciones: Record<string, CatalogoItemDto[]> = {};
+  seleccionEnCurso: Record<string, number | null> = {};
+  personalizadoTexto: Record<string, string> = {};
+  personalizadoAlCatalogo: Record<string, boolean> = {};
+  guardandoSeleccion: Record<string, boolean> = {};
+
+  // ── Anexos ────────────────────────────────────────────────────────────────
+  nuevoAnexoNombre = '';
+  subiendoAnexo = false;
 
   // Agregar al final (nivel superior)
   nuevoPasoTexto = '';
@@ -137,7 +211,15 @@ export class PetsDetalle implements OnInit {
     this.petsService.getDetalle(this.id).subscribe({
       next: (d) => {
         this.detalle = d;
-        this.arbol = this.construirArbol(d.pasos);
+        this.arboles = {
+          procedimiento: this.construirArbol(d.pasos),
+          introduccion: this.construirArbol(d.secciones?.introduccion ?? []),
+          alcance: this.construirArbol(d.secciones?.alcance ?? []),
+          objetivo: this.construirArbol(d.secciones?.objetivo ?? []),
+          definiciones: this.construirArbol(d.secciones?.definiciones ?? []),
+          responsabilidades: this.construirArbol(d.secciones?.responsabilidades ?? []),
+          restricciones: this.construirArbol(d.secciones?.restricciones ?? []),
+        };
         this.loading = false;
         this.cdr.markForCheck();
       },
@@ -147,6 +229,21 @@ export class PetsDetalle implements OnInit {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  // ── PESTAÑAS ──────────────────────────────────────────────────────────────
+  seleccionarTab(key: string): void {
+    this.seccionActiva = key;
+    // Cualquier edición/inserción a medias queda de la pestaña anterior — se
+    // descarta al cambiar para no dejar un formulario abierto "flotando".
+    this.cancelarInsertar();
+    this.cancelarEdicion();
+
+    const tab = this.tabs.find((t) => t.key === key);
+    if (tab?.kind === 'catalogo') {
+      this.cargarOpcionesCatalogo(tab.key);
+    }
+    this.cdr.markForCheck();
   }
 
   private construirArbol(pasos: PetPasoDto[]): PasoNodo[] {
@@ -228,31 +325,35 @@ export class PetsDetalle implements OnInit {
     const texto = this.nuevoPasoTexto.trim();
     if (!texto) return;
     this.agregando = true;
-    this.petsService.agregarPaso(this.id, { descripcion: texto, parentId: null, tipo: this.nuevoPasoTipo }).subscribe({
-      next: () => {
-        this.agregando = false;
-        this.nuevoPasoTexto = '';
-        this.load();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.agregando = false;
-        this.errorService.handleError(err);
-        this.cdr.markForCheck();
-      },
-    });
+    this.petsService
+      .agregarPaso(this.id, { descripcion: texto, seccion: this.seccionActiva, parentId: null, tipo: this.nuevoPasoTipo })
+      .subscribe({
+        next: () => {
+          this.agregando = false;
+          this.nuevoPasoTexto = '';
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.agregando = false;
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
   }
 
   // ── PASOS: agregar dentro de un subtítulo ────────────────────────────────
   agregarHijo(nodo: PasoNodo): void {
     const texto = nodo.nuevoHijoTexto.trim();
     if (!texto) return;
-    this.petsService.agregarPaso(this.id, { descripcion: texto, parentId: nodo.id, tipo: nodo.nuevoHijoTipo }).subscribe({
-      next: () => this.load(),
-      error: (err: HttpErrorResponse) => {
-        this.errorService.handleError(err);
-        this.cdr.markForCheck();
-      },
-    });
+    this.petsService
+      .agregarPaso(this.id, { descripcion: texto, seccion: this.seccionActiva, parentId: nodo.id, tipo: nodo.nuevoHijoTipo })
+      .subscribe({
+        next: () => this.load(),
+        error: (err: HttpErrorResponse) => {
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
   }
 
   // ── PASOS: insertar en una posición específica ───────────────────────────
@@ -278,7 +379,13 @@ export class PetsDetalle implements OnInit {
     if (!texto || this.insertarEnIndice === null) return;
     const posicion = this.insertarEnIndice + 1; // 1-based para el backend
     this.petsService
-      .agregarPaso(this.id, { descripcion: texto, parentId: this.insertarEnPadre, tipo: this.insertarTipo, posicion })
+      .agregarPaso(this.id, {
+        descripcion: texto,
+        seccion: this.seccionActiva,
+        parentId: this.insertarEnPadre,
+        tipo: this.insertarTipo,
+        posicion,
+      })
       .subscribe({
         next: () => {
           this.cancelarInsertar();
@@ -358,7 +465,7 @@ export class PetsDetalle implements OnInit {
     copia.splice(hacia, 0, movido);
     const pasoIds = copia.map((p) => p.id);
 
-    this.petsService.reordenarPasos(this.id, { parentId, pasoIds }).subscribe({
+    this.petsService.reordenarPasos(this.id, { seccion: this.seccionActiva, parentId, pasoIds }).subscribe({
       next: () => this.load(),
       error: (err: HttpErrorResponse) => {
         this.errorService.handleError(err);
@@ -539,5 +646,174 @@ export class PetsDetalle implements OnInit {
           this.cdr.markForCheck();
         },
       });
+  }
+
+  // ── CATÁLOGO (Marco Legal / EPP / Recursos) ──────────────────────────────
+
+  claveCatalogo(grupo: string, tipo: string | null): string {
+    return claveCatalogo(grupo, tipo);
+  }
+
+  itemsPorTipo(grupo: string, tipo: string | null): PetItemSeleccionadoDto[] {
+    if (!this.detalle) return [];
+    const lista =
+      grupo === 'marco_legal' ? this.detalle.marcoLegal : grupo === 'epp' ? this.detalle.epp : this.detalle.recursos;
+    return (lista ?? []).filter((i) => (tipo == null ? true : i.tipo === tipo));
+  }
+
+  opcionesDisponibles(grupo: string, tipo: string | null): CatalogoItemDto[] {
+    const seleccionadosIds = new Set(
+      this.itemsPorTipo(grupo, tipo)
+        .map((i) => i.catalogoItemId)
+        .filter((id): id is number => id != null),
+    );
+    return (this.catalogoOpciones[claveCatalogo(grupo, tipo)] ?? []).filter((o) => !seleccionadosIds.has(o.id));
+  }
+
+  private cargarOpcionesCatalogo(grupo: string): void {
+    const tipos = this.catalogoTipos[grupo] ?? [{ value: null, label: '' }];
+    tipos.forEach((t) => {
+      this.petsService.getCatalogo(grupo, t.value ?? undefined).subscribe({
+        next: (items) => {
+          this.catalogoOpciones[claveCatalogo(grupo, t.value)] = items;
+          this.cdr.markForCheck();
+        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
+  }
+
+  agregarDesdeCatalogo(grupo: string, tipo: string | null): void {
+    const clave = claveCatalogo(grupo, tipo);
+    const catalogoItemId = this.seleccionEnCurso[clave];
+    if (!catalogoItemId) return;
+
+    this.guardandoSeleccion[clave] = true;
+    this.petsService
+      .seleccionarCatalogoItem(this.id, { grupo, tipo: tipo ?? undefined, catalogoItemId })
+      .subscribe({
+        next: () => {
+          this.guardandoSeleccion[clave] = false;
+          this.seleccionEnCurso[clave] = null;
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.guardandoSeleccion[clave] = false;
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  agregarPersonalizado(grupo: string, tipo: string | null): void {
+    const clave = claveCatalogo(grupo, tipo);
+    const texto = (this.personalizadoTexto[clave] ?? '').trim();
+    if (!texto) return;
+    const agregarAlCatalogoGlobal = !!this.personalizadoAlCatalogo[clave];
+
+    this.guardandoSeleccion[clave] = true;
+    this.petsService
+      .agregarItemPersonalizado(this.id, { grupo, tipo: tipo ?? undefined, descripcion: texto, agregarAlCatalogoGlobal })
+      .subscribe({
+        next: () => {
+          this.guardandoSeleccion[clave] = false;
+          this.personalizadoTexto[clave] = '';
+          this.personalizadoAlCatalogo[clave] = false;
+          if (agregarAlCatalogoGlobal) this.cargarOpcionesCatalogo(grupo);
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.guardandoSeleccion[clave] = false;
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  // "Quitar" solo de este PETS — no toca el catálogo global.
+  quitarSeleccion(item: PetItemSeleccionadoDto): void {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Quitar de este PETS',
+      text: 'Deja de aparecer en este PETS. Si viene del catálogo global, sigue disponible para los demás.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, quitar',
+      cancelButtonText: 'Cancelar',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.petsService.eliminarSeleccion(this.id, item.id).subscribe({
+        next: () => this.load(),
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
+  }
+
+  // Elimina (desactiva) del catálogo GLOBAL — afecta la disponibilidad futura
+  // para TODOS los PETS, no solo este.
+  eliminarDeCatalogoGlobal(item: PetItemSeleccionadoDto): void {
+    if (item.catalogoItemId == null) return;
+    Swal.fire({
+      icon: 'warning',
+      title: 'Eliminar del catálogo global',
+      text: 'Dejará de poder elegirse en CUALQUIER PETS a futuro. Los PETS que ya lo tenían seleccionado no se ven afectados.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar del catálogo',
+      cancelButtonText: 'Cancelar',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.petsService.desactivarCatalogoItem(item.catalogoItemId!).subscribe({
+        next: () => {
+          this.cargarOpcionesCatalogo(item.grupo);
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
+  }
+
+  // ── ANEXOS ────────────────────────────────────────────────────────────────
+
+  anexoUrl(anexo: PetAnexoDto): string {
+    return anexo.archivoUrl.startsWith('http') ? anexo.archivoUrl : `${this.apiOrigin}${anexo.archivoUrl}`;
+  }
+
+  onAnexoSeleccionado(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const nombre = this.nuevoAnexoNombre.trim() || file.name;
+    this.subiendoAnexo = true;
+    this.petsService.subirAnexo(this.id, nombre, file).subscribe({
+      next: () => {
+        this.subiendoAnexo = false;
+        this.nuevoAnexoNombre = '';
+        input.value = '';
+        this.load();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subiendoAnexo = false;
+        input.value = '';
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  eliminarAnexo(anexo: PetAnexoDto): void {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Eliminar anexo',
+      text: `¿Eliminar "${anexo.nombre}"?`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.petsService.eliminarAnexo(this.id, anexo.id).subscribe({
+        next: () => this.load(),
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
   }
 }
