@@ -9,6 +9,7 @@ export interface ImportConsumoResultDto {
   lineasEliminadas: number;
   lineasSinCambio: number;
   lineasEstandarizadas: number;
+  lineasAutoRechazadas: number;
   lineasPendientes: number;
   lineasSinMatch: number;
   estado: string;
@@ -92,6 +93,19 @@ export interface RevisionResultDto {
   rechazados: number;
   notificacionesEnviadas: number;
   errores: string[];
+}
+
+export interface CrearItemCatalogoDto {
+  nombre: string;
+  familiaId: number;
+}
+
+export interface CrearFamiliaCatalogoDto {
+  nombre: string;
+  tipoId: number;
+  variableBase: string;
+  unidadMedida?: string | null;
+  perteneceSsoma: boolean;
 }
 
 export interface BuscarItemDto {

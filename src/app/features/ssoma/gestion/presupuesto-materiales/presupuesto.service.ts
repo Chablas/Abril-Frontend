@@ -9,6 +9,8 @@ import {
   RevisionDecisionDto,
   RevisionResultDto,
   BuscarItemDto,
+  CrearItemCatalogoDto,
+  CrearFamiliaCatalogoDto,
   DriverProyectoDto,
   ActualizarDriversDto,
   ActualizarDriversResultDto,
@@ -383,6 +385,18 @@ export class PresupuestoMaterialesService {
 
   actualizarFamiliaCatalogo(id: number, dto: ActualizarFamiliaDto): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${this.base}/catalogo/familias/${id}`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  crearItemCatalogo(dto: CrearItemCatalogoDto): Observable<BuscarItemDto> {
+    return this.http.post<BuscarItemDto>(`${this.base}/catalogo/items`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  crearFamiliaCatalogo(dto: CrearFamiliaCatalogoDto): Observable<FamiliaCatalogoDto> {
+    return this.http.post<FamiliaCatalogoDto>(`${this.base}/catalogo/familias`, dto, {
       headers: this.authHeaders(),
     });
   }

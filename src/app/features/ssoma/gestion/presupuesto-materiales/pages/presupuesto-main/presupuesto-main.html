@@ -77,6 +77,10 @@
                 <span class="pres-result-val">{{ uploadResult.lineasEstandarizadas }}</span>
                 <span class="pres-result-lbl">Estandarizadas</span>
               </div>
+              <div class="pres-result-item">
+                <span class="pres-result-val">{{ uploadResult.lineasAutoRechazadas }}</span>
+                <span class="pres-result-lbl">Auto-rechazadas</span>
+              </div>
               <div class="pres-result-item pres-result-warn">
                 <span class="pres-result-val">{{ uploadResult.lineasPendientes }}</span>
                 <span class="pres-result-lbl">Pendientes</span>
@@ -151,17 +155,16 @@
                     </td>
                     <td class="pres-td-date">{{ c.creadoEn | date:'dd/MM/yyyy HH:mm' }}</td>
                     <td>
-                      @if (c.lineasPendientes > 0) {
-                        <button class="pres-btn-xs"
-                          [disabled]="estandarizandoId === c.id"
-                          (click)="estandarizar(c.id)">
-                          @if (estandarizandoId === c.id) {
-                            <i class="ti ti-loader-2 spin"></i>
-                          } @else {
-                            <i class="ti ti-refresh"></i> Re-estandarizar
-                          }
-                        </button>
-                      }
+                      <button class="pres-btn-xs"
+                        [disabled]="estandarizandoId === c.id"
+                        title="Vuelve a intentar estandarizar las líneas de esta carga que sigan sin ítem asignado (útil tras agregar alias o corregir el catálogo)."
+                        (click)="estandarizar(c.id)">
+                        @if (estandarizandoId === c.id) {
+                          <i class="ti ti-loader-2 spin"></i>
+                        } @else {
+                          <i class="ti ti-refresh"></i> Re-estandarizar
+                        }
+                      </button>
                     </td>
                   </tr>
                 }
