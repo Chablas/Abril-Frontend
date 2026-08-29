@@ -15,6 +15,8 @@ import { ProyectoHabilitadoService } from '../../../../shared/services/proyecto-
 import {
   ConsumoCargaResumenDto,
   ImportConsumoResultDto,
+  HhCargaResumenDto,
+  ImportHhResultDto,
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
@@ -45,13 +47,20 @@ export class PresupuestoMainComponent implements OnInit {
   proyectos: ProyectoSimple[] = [];
   proyectoId: number | null = null;
 
-  // Cargas S10
+  // Cargas S10 (materiales)
   cargas: ConsumoCargaResumenDto[] = [];
   loadingCargas = false;
   subiendoArchivo = false;
   uploadResult: ImportConsumoResultDto | null = null;
   archivoSeleccionado: File | null = null;
   estandarizandoId: number | null = null;
+
+  // Cargas de Horas Hombre (planilla/Tareo semanal)
+  cargasHh: HhCargaResumenDto[] = [];
+  loadingCargasHh = false;
+  subiendoArchivoHh = false;
+  uploadResultHh: ImportHhResultDto | null = null;
+  archivoSeleccionadoHh: File | null = null;
 
   ngOnInit(): void {
     this.loadProyectos();
@@ -73,11 +82,14 @@ export class PresupuestoMainComponent implements OnInit {
   onProyectoChange(): void {
     this.cargas = [];
     this.uploadResult = null;
+    this.cargasHh = [];
+    this.uploadResultHh = null;
     if (!this.proyectoId) { this.cdr.markForCheck(); return; }
     this.loadCargas();
+    this.loadCargasHh();
   }
 
-  // ─── Cargas ──────────────────────────────────────────────────────────────
+  // ─── Cargas de materiales (S10) ─────────────────────────────────────────
 
   loadCargas(): void {
     if (!this.proyectoId) return;
@@ -137,6 +149,54 @@ export class PresupuestoMainComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.estandarizandoId = null;
+        this.errorSvc.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  // ─── Cargas de Horas Hombre ──────────────────────────────────────────────
+
+  loadCargasHh(): void {
+    if (!this.proyectoId) return;
+    this.loadingCargasHh = true;
+    this.cdr.markForCheck();
+    this.svc.listarCargasHh(this.proyectoId).subscribe({
+      next: (c) => {
+        this.cargasHh = c;
+        this.loadingCargasHh = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingCargasHh = false;
+        this.errorSvc.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  onArchivoChangeHh(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.archivoSeleccionadoHh = input.files?.[0] ?? null;
+    this.uploadResultHh = null;
+    this.cdr.markForCheck();
+  }
+
+  subirHh(): void {
+    if (!this.proyectoId || !this.archivoSeleccionadoHh || this.subiendoArchivoHh) return;
+    this.subiendoArchivoHh = true;
+    this.uploadResultHh = null;
+    this.cdr.markForCheck();
+    this.svc.importarHh(this.proyectoId, this.archivoSeleccionadoHh).subscribe({
+      next: (res) => {
+        this.uploadResultHh = res;
+        this.subiendoArchivoHh = false;
+        this.archivoSeleccionadoHh = null;
+        this.loadCargasHh();
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subiendoArchivoHh = false;
         this.errorSvc.handleError(err);
         this.cdr.markForCheck();
       },

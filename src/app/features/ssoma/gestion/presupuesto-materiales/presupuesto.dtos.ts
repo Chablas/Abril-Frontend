@@ -4,6 +4,10 @@ export interface ImportConsumoResultDto {
   cargaId: number;
   nombreArchivo: string;
   totalLineas: number;
+  lineasNuevas: number;
+  lineasActualizadas: number;
+  lineasEliminadas: number;
+  lineasSinCambio: number;
   lineasEstandarizadas: number;
   lineasPendientes: number;
   lineasSinMatch: number;
@@ -18,11 +22,45 @@ export interface ConsumoCargaResumenDto {
   fechaMin: string;
   fechaMax: string;
   totalLineas: number;
+  lineasNuevas: number;
+  lineasActualizadas: number;
+  lineasEliminadas: number;
   lineasEstandarizadas: number;
   lineasPendientes: number;
   estado: string;
   creadoEn: string;
   porcentajeEstandarizado: number;
+}
+
+// ─── Cargas de Horas Hombre (planilla/Tareo semanal) ──────────────────────────
+
+export interface ImportHhResultDto {
+  cargaId: number;
+  nombreArchivo: string;
+  totalLineas: number;
+  lineasNuevas: number;
+  lineasActualizadas: number;
+  lineasEliminadas: number;
+  lineasSinCambio: number;
+  horasLaboradasTotales: number;
+  estado: string;
+  advertencias: string[];
+}
+
+export interface HhCargaResumenDto {
+  id: number;
+  projectId: number;
+  nombreArchivo: string;
+  anioMin: number;
+  semanaMin: number;
+  anioMax: number;
+  semanaMax: number;
+  totalLineas: number;
+  lineasNuevas: number;
+  lineasActualizadas: number;
+  lineasEliminadas: number;
+  estado: string;
+  creadoEn: string;
 }
 
 // ─── Revisión de materiales ───────────────────────────────────────────────────

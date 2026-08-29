@@ -40,6 +40,8 @@ import {
   RatioDriverComparacionDto,
   CalcularRatiosDriversResultDto,
   RatiosDriversRecomendadosDto,
+  ImportHhResultDto,
+  HhCargaResumenDto,
 } from './presupuesto.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -91,6 +93,25 @@ export class PresupuestoMaterialesService {
     return this.http.post<RevisionResultDto>(
       `${this.base}/proyectos/${projectId}/revision/procesar`,
       { projectId, decisiones },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── Cargas de Horas Hombre ──────────────────────────────────────────
+
+  importarHh(projectId: number, archivo: File): Observable<ImportHhResultDto> {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    return this.http.post<ImportHhResultDto>(
+      `${this.base}/proyectos/${projectId}/hh-cargas`,
+      formData,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  listarCargasHh(projectId: number): Observable<HhCargaResumenDto[]> {
+    return this.http.get<HhCargaResumenDto[]>(
+      `${this.base}/proyectos/${projectId}/hh-cargas`,
       { headers: this.authHeaders() },
     );
   }
