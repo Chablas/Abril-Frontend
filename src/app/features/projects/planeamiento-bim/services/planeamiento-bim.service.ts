@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
   PlaneamientoBimConfigDTO,
+  PlaneamientoBimConfigUpdateDto,
   ResponsableBimWorkerDTO,
 } from '../dtos/planeamiento-bim-config.dto';
 import {
@@ -12,10 +13,10 @@ import {
   EvidenciaFotoDto,
 } from '../dtos/planeamiento-bim-carga-diaria.dto';
 import {
-  BloqueoCreateDto,
-  BloqueoDto,
-  BloqueoUpdateDto,
-} from '../dtos/planeamiento-bim-bloqueo.dto';
+  RestriccionCreateDto,
+  RestriccionDto,
+  RestriccionUpdateDto,
+} from '../dtos/planeamiento-bim-restriccion.dto';
 import {
   AvanceProyectoDto,
   CausasParetoDto,
@@ -55,7 +56,7 @@ export class PlaneamientoBimService {
     });
   }
 
-  saveConfiguracion(projectId: number, payload: PlaneamientoBimConfigDTO): Observable<any> {
+  saveConfiguracion(projectId: number, payload: PlaneamientoBimConfigUpdateDto): Observable<any> {
     return this.http.put<any>(`${this.baseUrl}/configuracion/${projectId}`, payload, {
       headers: this.headers,
     });
@@ -94,32 +95,32 @@ export class PlaneamientoBimService {
     });
   }
 
-  // ── Bloqueos ─────────────────────────────────────────────────
-  getBloqueos(projectId: number, soloActivos?: boolean): Observable<BloqueoDto[]> {
+  // ── Restricciones ────────────────────────────────────────────
+  getRestricciones(projectId: number, soloActivos?: boolean): Observable<RestriccionDto[]> {
     let params = new HttpParams();
     if (soloActivos !== undefined && soloActivos !== null) {
       params = params.set('soloActivos', soloActivos.toString());
     }
-    return this.http.get<BloqueoDto[]>(`${this.baseUrl}/bloqueos/${projectId}`, {
+    return this.http.get<RestriccionDto[]>(`${this.baseUrl}/restricciones/${projectId}`, {
       headers: this.headers,
       params,
     });
   }
 
-  createBloqueo(projectId: number, payload: BloqueoCreateDto): Observable<BloqueoDto> {
-    return this.http.post<BloqueoDto>(`${this.baseUrl}/bloqueos/${projectId}`, payload, {
+  createRestriccion(projectId: number, payload: RestriccionCreateDto): Observable<RestriccionDto> {
+    return this.http.post<RestriccionDto>(`${this.baseUrl}/restricciones/${projectId}`, payload, {
       headers: this.headers,
     });
   }
 
-  updateBloqueo(id: number, payload: BloqueoUpdateDto): Observable<BloqueoDto> {
-    return this.http.put<BloqueoDto>(`${this.baseUrl}/bloqueos/${id}`, payload, {
+  updateRestriccion(id: number, payload: RestriccionUpdateDto): Observable<RestriccionDto> {
+    return this.http.put<RestriccionDto>(`${this.baseUrl}/restricciones/${id}`, payload, {
       headers: this.headers,
     });
   }
 
-  cerrarBloqueo(id: number): Observable<BloqueoDto> {
-    return this.http.put<BloqueoDto>(`${this.baseUrl}/bloqueos/${id}/cerrar`, {}, {
+  cerrarRestriccion(id: number): Observable<RestriccionDto> {
+    return this.http.put<RestriccionDto>(`${this.baseUrl}/restricciones/${id}/cerrar`, {}, {
       headers: this.headers,
     });
   }

@@ -13,7 +13,7 @@ import { PROJECTS_TABS } from '../../shared/projects-tabs';
 import { PlaneamientoBimService } from '../services/planeamiento-bim.service';
 import { PlaneamientoBimSubnavComponent } from '../shared/planeamiento-bim-subnav/planeamiento-bim-subnav';
 import { EvidenciaFotoDto } from '../dtos/planeamiento-bim-carga-diaria.dto';
-import { BloqueoDto } from '../dtos/planeamiento-bim-bloqueo.dto';
+import { RestriccionDto } from '../dtos/planeamiento-bim-restriccion.dto';
 import {
   AvanceProyectoDto,
   CausaParetoDto,
@@ -100,10 +100,10 @@ export class PlaneamientoBimDashboard implements OnInit, OnDestroy {
   loadingEvidencias = false;
   evidenciasError: string | null = null;
 
-  // ── Bloqueos abiertos ───────────────────────────────────────
-  bloqueosActivos: BloqueoDto[] = [];
-  loadingBloqueos = false;
-  bloqueosError: string | null = null;
+  // ── Restricciones abiertas ────────────────────────────────────
+  restriccionesActivas: RestriccionDto[] = [];
+  loadingRestricciones = false;
+  restriccionesError: string | null = null;
 
   constructor(
     private bimService: PlaneamientoBimService,
@@ -162,7 +162,7 @@ export class PlaneamientoBimDashboard implements OnInit, OnDestroy {
     this.cargarPpc();
     this.cargarPareto();
     this.cargarEvidencias();
-    this.cargarBloqueosActivos();
+    this.cargarRestriccionesActivas();
   }
 
   aplicarFiltroFechas(): void {
@@ -487,22 +487,22 @@ export class PlaneamientoBimDashboard implements OnInit, OnDestroy {
     });
   }
 
-  // ── Bloqueos abiertos ───────────────────────────────────────
-  cargarBloqueosActivos(): void {
+  // ── Restricciones abiertas ────────────────────────────────────
+  cargarRestriccionesActivas(): void {
     if (!this.selectedProjectId) return;
-    this.loadingBloqueos = true;
-    this.bloqueosError = null;
+    this.loadingRestricciones = true;
+    this.restriccionesError = null;
     this.cdr.detectChanges();
 
-    this.bimService.getBloqueos(this.selectedProjectId, true).subscribe({
+    this.bimService.getRestricciones(this.selectedProjectId, true).subscribe({
       next: (data) => {
-        this.bloqueosActivos = data || [];
-        this.loadingBloqueos = false;
+        this.restriccionesActivas = data || [];
+        this.loadingRestricciones = false;
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        this.loadingBloqueos = false;
-        this.bloqueosError = this.mensajeError(err, 'No se pudo cargar el listado de bloqueos abiertos.');
+        this.loadingRestricciones = false;
+        this.restriccionesError = this.mensajeError(err, 'No se pudo cargar el listado de restricciones abiertas.');
         this.cdr.detectChanges();
       },
     });
