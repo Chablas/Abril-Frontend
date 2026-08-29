@@ -72,3 +72,10 @@ export interface EvSupervisorContratistaDashboardDto {
   promedioGeneral: number | null;
   evaluaciones: EvSupervisorContratistaResumenDto[];
 }
+
+// ─── MI PERFIL (el propio supervisor/prevencionista de la contratista) ─────
+export interface EvSupervisorContratistaMiPerfilDto {
+  promedioGeneral: number | null;
+  totalEvaluaciones: number;
+  comentarios: string[];
+}

@@ -8,6 +8,7 @@ import {
   EvSupervisorContratistaVerInicioDto,
   EvSupervisorContratistaDashboardDto,
   EvSupervisorContratistaEvaluacionCreateDto,
+  EvSupervisorContratistaMiPerfilDto,
 } from '../dtos/ev-supervisor-contratista.model';
 
 @Injectable({ providedIn: 'root' })
@@ -36,6 +37,15 @@ export class EvSupervisorContratistaService {
     if (periodoId) params = params.set('periodoId', periodoId.toString());
     if (proyectoId) params = params.set('proyectoId', proyectoId.toString());
     return this.http.get<EvSupervisorContratistaDashboardDto>(`${this.base}/dashboard`, {
+      headers: this.headers(),
+      params,
+    });
+  }
+
+  getMiPerfil(periodoId?: number | null): Observable<EvSupervisorContratistaMiPerfilDto> {
+    let params = new HttpParams();
+    if (periodoId) params = params.set('periodoId', periodoId.toString());
+    return this.http.get<EvSupervisorContratistaMiPerfilDto>(`${this.base}/mi-perfil`, {
       headers: this.headers(),
       params,
     });

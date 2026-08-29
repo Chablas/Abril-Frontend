@@ -71,6 +71,7 @@ export class DashboardContratista implements OnInit {
     { label: 'SCTR',         icono: 'ti-shield-check',     route: '/habilitacion/gestion/sctr-vidaley' },
     { label: 'Inducciones',  icono: 'ti-school',           route: '/habilitacion/gestion/inducciones' },
     { label: 'Evaluar SSOMA', icono: 'ti-clipboard-check', route: '/habilitacion/evaluar-prevencionista' },
+    { label: 'Mi Desempeño', icono: 'ti-report',          route: '/habilitacion/mi-perfil-supervisor' },
     { label: 'Usuarios',     icono: 'ti-users-group',      active: false },
   ];
 
