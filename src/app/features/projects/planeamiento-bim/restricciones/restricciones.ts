@@ -12,7 +12,7 @@ import { ProjectSimpleDTO } from '../../../../core/dtos/project/projectSimple.mo
 import { PROJECTS_TABS } from '../../shared/projects-tabs';
 import { PlaneamientoBimService } from '../services/planeamiento-bim.service';
 import { RestriccionDto } from '../dtos/planeamiento-bim-restriccion.dto';
-import { NivelConfigDTO, SectorConfigDTO, ZonaConfigDTO } from '../dtos/planeamiento-bim-config.dto';
+import { NivelTorreDTO, TorreConfigDTO } from '../dtos/planeamiento-bim-config.dto';
 import { ActividadCatalogoDto } from '../dtos/planeamiento-bim-carga-diaria.dto';
 import { PlaneamientoBimSubnavComponent } from '../shared/planeamiento-bim-subnav/planeamiento-bim-subnav';
 
@@ -47,11 +47,11 @@ export class Restricciones implements OnInit {
   savingRestriccion = false;
   loadError: string | null = null;
 
-  // ── Catálogo de ubicación (Zona/Nivel/Sector/Actividad) del formulario ──
+  // ── Catálogo de ubicación (Torre/Nivel/Sector/Actividad) del formulario ──
   // Se carga una sola vez por proyecto, al abrir el modal (no en la selección de
-  // proyecto ni en el listado), reutilizando GET carga-diaria (trae zonas+actividades
+  // proyecto ni en el listado), reutilizando GET carga-diaria (trae torres+actividades
   // en una sola llamada, igual que ya hace Dashboard para evidencias).
-  zonasCatalogo: ZonaConfigDTO[] = [];
+  torresCatalogo: TorreConfigDTO[] = [];
   actividadesCatalogo: ActividadCatalogoDto[] = [];
   loadingCatalogos = false;
   catalogoError: string | null = null;
@@ -65,9 +65,9 @@ export class Restricciones implements OnInit {
   formDescripcion: string = '';
   formEstado: string = 'ABIERTO'; // "ABIERTO" | "EN_GESTION"
   formFechaLevantamientoPrevista: string | null = null;
-  formZonaId: number | null = null;
+  formTorreId: number | null = null;
   formNivelId: number | null = null;
-  formSectorId: number | null = null;
+  formSector: number | null = null;
   formActividadId: number | null = null;
 
   readonly btnCrearHeader: SsomaHeaderBtn = {
@@ -145,29 +145,65 @@ export class Restricciones implements OnInit {
     return r.fechaCierre === null;
   }
 
-  // ── Catálogo de ubicación (cascada Zona → Nivel → Sector, + Actividad) ──
-  get nivelesDisponibles(): NivelConfigDTO[] {
-    return this.zonasCatalogo.find((z) => z.id === this.formZonaId)?.niveles || [];
+  tieneUbicacion(r: RestriccionDto): boolean {
+    return !!(r.torreNombre || r.nivelNombre || (r.sector !== null && r.sector !== undefined) || r.actividadNombre);
   }
 
-  get sectoresDisponibles(): SectorConfigDTO[] {
-    return this.nivelesDisponibles.find((n) => n.id === this.formNivelId)?.sectores || [];
+  formatUbicacion(r: RestriccionDto): string {
+    const partes: string[] = [];
+    if (r.torreNombre) partes.push(r.torreNombre);
+    if (r.nivelNombre) partes.push(r.nivelNombre);
+    if (r.sector !== null && r.sector !== undefined) partes.push(`Sector ${r.sector}`);
+    if (r.actividadNombre) partes.push(r.actividadNombre);
+    return partes.length > 0 ? partes.join(' / ') : '—';
   }
 
-  onFormZonaChange(zonaId: number | null): void {
-    this.formZonaId = zonaId;
+  // ── Catálogo de ubicación (cascada Torre → Nivel → Sector derivado, + Actividad) ──
+  get torreSeleccionada(): TorreConfigDTO | undefined {
+    return this.torresCatalogo.find((t) => t.id === this.formTorreId);
+  }
+
+  get nivelesDisponibles(): NivelTorreDTO[] {
+    return (this.torreSeleccionada?.niveles || []).slice().sort((a, b) => a.orden - b.orden);
+  }
+
+  get nivelSeleccionado(): NivelTorreDTO | undefined {
+    return this.nivelesDisponibles.find((n) => n.id === this.formNivelId);
+  }
+
+  /**
+   * Calcula dinámicamente el arreglo de sectores derivado [1 .. N] según el tipoEstructura
+   * del nivel seleccionado y el conteo de la torre (cantidadSectoresSubestructura o
+   * cantidadSectoresSuperestructura).
+   */
+  get sectoresDisponibles(): { id: number; nombre: string }[] {
+    const torre = this.torreSeleccionada;
+    const nivel = this.nivelSeleccionado;
+    if (!torre || !nivel || !nivel.tipoEstructura) return [];
+
+    const cantidad =
+      nivel.tipoEstructura === 'SUBESTRUCTURA'
+        ? torre.cantidadSectoresSubestructura || 0
+        : torre.cantidadSectoresSuperestructura || 0;
+
+    if (cantidad <= 0) return [];
+    return Array.from({ length: cantidad }, (_, i) => ({ id: i + 1, nombre: `Sector ${i + 1}` }));
+  }
+
+  onFormTorreChange(torreId: number | null): void {
+    this.formTorreId = torreId;
     this.formNivelId = null;
-    this.formSectorId = null;
+    this.formSector = null;
   }
 
   onFormNivelChange(nivelId: number | null): void {
     this.formNivelId = nivelId;
-    this.formSectorId = null;
+    this.formSector = null;
   }
 
   private cargarCatalogoUbicacion(projectId: number): void {
     // Ya cargado para este proyecto: no repetir la llamada (1 GET por apertura de modal, no por proyecto).
-    if (this.catalogoProjectId === projectId && (this.zonasCatalogo.length > 0 || this.actividadesCatalogo.length > 0)) {
+    if (this.catalogoProjectId === projectId && (this.torresCatalogo.length > 0 || this.actividadesCatalogo.length > 0)) {
       return;
     }
 
@@ -177,7 +213,7 @@ export class Restricciones implements OnInit {
 
     this.bimService.getCargaDiaria(projectId, hoyISO()).subscribe({
       next: (data) => {
-        this.zonasCatalogo = (data.zonas || []).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+        this.torresCatalogo = (data.torres || []).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
         this.actividadesCatalogo = (data.actividades || []).slice().sort((a, b) => a.orden - b.orden);
         this.catalogoProjectId = projectId;
         this.loadingCatalogos = false;
@@ -185,7 +221,7 @@ export class Restricciones implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.loadingCatalogos = false;
-        this.catalogoError = 'No se pudo cargar el catálogo de zonas, niveles, sectores y actividades. Puede guardar la restricción sin especificar ubicación, o reintentar.';
+        this.catalogoError = 'No se pudo cargar el catálogo de torres, niveles, sectores y actividades. Puede guardar la restricción sin especificar ubicación, o reintentar.';
         this.cdr.detectChanges();
       },
     });
@@ -208,9 +244,9 @@ export class Restricciones implements OnInit {
     this.formDescripcion = '';
     this.formEstado = 'ABIERTO';
     this.formFechaLevantamientoPrevista = null;
-    this.formZonaId = null;
+    this.formTorreId = null;
     this.formNivelId = null;
-    this.formSectorId = null;
+    this.formSector = null;
     this.formActividadId = null;
     this.showModal = true;
     this.cargarCatalogoUbicacion(this.selectedProjectId);
@@ -234,10 +270,10 @@ export class Restricciones implements OnInit {
     // Si el estado en BD es CERRADO por algún motivo erróneo, fallback a EN_GESTION
     this.formEstado = r.estado === 'CERRADO' ? 'EN_GESTION' : r.estado;
     this.formFechaLevantamientoPrevista = r.fechaLevantamientoPrevista;
-    this.formZonaId = r.zonaId;
-    this.formNivelId = r.nivelId;
-    this.formSectorId = r.sectorId;
-    this.formActividadId = r.actividadId;
+    this.formTorreId = r.torreId ?? null;
+    this.formNivelId = r.nivelId ?? null;
+    this.formSector = r.sector ?? null;
+    this.formActividadId = r.actividadId ?? null;
     this.showModal = true;
     if (this.selectedProjectId) this.cargarCatalogoUbicacion(this.selectedProjectId);
     this.cdr.detectChanges();
@@ -248,9 +284,9 @@ export class Restricciones implements OnInit {
     this.formDescripcion = '';
     this.formEstado = 'ABIERTO';
     this.formFechaLevantamientoPrevista = null;
-    this.formZonaId = null;
+    this.formTorreId = null;
     this.formNivelId = null;
-    this.formSectorId = null;
+    this.formSector = null;
     this.formActividadId = null;
     this.editingId = null;
     this.cdr.detectChanges();
@@ -284,9 +320,9 @@ export class Restricciones implements OnInit {
       descripcion: this.formDescripcion.trim(),
       estado: this.formEstado,
       fechaLevantamientoPrevista: this.formFechaLevantamientoPrevista || null,
-      zonaId: this.formZonaId,
+      torreId: this.formTorreId,
       nivelId: this.formNivelId,
-      sectorId: this.formSectorId,
+      sector: this.formSector !== null && this.formSector !== undefined ? Number(this.formSector) : null,
       actividadId: this.formActividadId,
     };
 

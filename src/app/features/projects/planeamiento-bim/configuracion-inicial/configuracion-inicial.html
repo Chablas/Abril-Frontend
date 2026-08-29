@@ -2,7 +2,7 @@
   <!-- Encabezado Estándar Abril con Pestañas de Proyectos -->
   <app-abril-page-header
     titulo="PLANEAMIENTO"
-    subtitulo="Definición de zonas, niveles, sectores, responsable, meta PPC y fechas metas por fase"
+    subtitulo="Definición de torres, niveles, sectores, responsable, meta PPC y fechas metas por fase"
     [tabs]="tabs"
     [botonPrimario]="btnGuardarHeader"
     [botonPrimarioDeshabilitado]="savingConfig || loadingConfig || !selectedProjectId"
@@ -177,193 +177,196 @@
 
       </div>
 
-      <!-- Sección Inferior: Zonas, Niveles y Sectores -->
+      <!-- Sección Inferior: Torres, Niveles y Sectores -->
       <div class="bim-card">
         <div class="card-header">
           <div>
             <h3 class="card-title">
-              <i class="ti ti-layout-grid title-icon"></i> ZONAS, NIVELES Y SECTORES
+              <i class="ti ti-layout-grid title-icon"></i> TORRES, NIVELES Y SECTORES
             </h3>
             <p class="card-subtitle">Estructura espacial del proyecto para la Carga Diaria de Planeamiento BIM</p>
           </div>
-          <button type="button" class="btn-primary-udp" (click)="addZona()">
-            <i class="ti ti-plus"></i> AGREGAR ZONA
+          <button type="button" class="btn-primary-udp" (click)="addTorre()">
+            <i class="ti ti-plus"></i> AGREGAR TORRE
           </button>
         </div>
 
         <div class="card-body">
-          <div *ngIf="zonas.length === 0" class="empty-state">
+          <div *ngIf="torres.length === 0" class="empty-state">
             <i class="ti ti-folder-off empty-icon"></i>
-            <p class="empty-title">Sin zonas configuradas</p>
-            <p class="empty-sub">Haga clic en "+ AGREGAR ZONA" para definir la primera zona espacial del proyecto.</p>
+            <p class="empty-title">Sin torres configuradas</p>
+            <p class="empty-sub">Haga clic en "+ AGREGAR TORRE" para definir la primera torre del proyecto.</p>
           </div>
 
-          <div *ngFor="let zona of zonas; let zIdx = index" class="zona-card">
-            <!-- Header de Zona -->
+          <div *ngFor="let torre of torres; let tIdx = index" class="zona-card">
+            <!-- Header de Torre -->
             <div class="zona-header">
               <div class="zona-title-wrap">
-                <span class="zona-index-badge">ZONA #{{ zIdx + 1 }}</span>
+                <span class="zona-index-badge">TORRE #{{ tIdx + 1 }}</span>
                 <input
                   type="text"
                   class="bim-input zona-name-input"
-                  placeholder="Ej. Zona A - Edificio Principal"
-                  [(ngModel)]="zona.nombre"
+                  placeholder="Ej. Torre A - Edificio Principal"
+                  [(ngModel)]="torre.nombre"
                 />
               </div>
 
               <div class="zona-actions">
                 <span class="counts-badge">
-                  {{ zona.niveles.length || 0 }} Niveles | {{ totalSectores(zona) }} Sectores
+                  {{ torre.niveles.length || 0 }} Niveles | {{ totalSectoresTorre(torre) }} Sectores
                 </span>
                 <button
                   type="button"
                   class="btn-danger-icon"
-                  title="Eliminar Zona"
-                  (click)="removeZona(zIdx)"
+                  title="Eliminar Torre"
+                  (click)="removeTorre(tIdx)"
                 >
                   <i class="ti ti-trash"></i>
                 </button>
               </div>
             </div>
 
-            <!-- Niveles (cada uno con su tipo de estructura y sectores exclusivos) + Sectores Compartidos de la Zona -->
-            <div class="zona-columns-grid">
+            <!-- Cantidad de sectores por clasificación (a nivel de Torre) -->
+            <div class="torre-sectores-count-row">
+              <div class="bim-field torre-sectores-count-field">
+                <label class="bim-field-label">SECTORES DE SUBESTRUCTURA</label>
+                <input
+                  type="number"
+                  class="bim-input-small"
+                  min="0"
+                  placeholder="Ej. 4"
+                  [(ngModel)]="torre.cantidadSectoresSubestructura"
+                />
+              </div>
+              <div class="bim-field torre-sectores-count-field">
+                <label class="bim-field-label">SECTORES DE SUPERESTRUCTURA</label>
+                <input
+                  type="number"
+                  class="bim-input-small"
+                  min="0"
+                  placeholder="Ej. 6"
+                  [(ngModel)]="torre.cantidadSectoresSuperestructura"
+                />
+              </div>
+            </div>
 
-              <!-- Columna Niveles -->
-              <div class="sub-column">
-                <div class="sub-column-header">
-                  <span class="sub-column-title">
-                    <i class="ti ti-layers-intersect"></i> NIVELES
-                  </span>
-                  <button type="button" class="btn-sub-add" (click)="addNivel(zona)">
+            <!-- Niveles: orden, nombre, clasificación y sectores derivados -->
+            <div class="sub-column">
+              <div class="sub-column-header">
+                <span class="sub-column-title">
+                  <i class="ti ti-layers-intersect"></i> NIVELES
+                </span>
+                <div class="nivel-header-actions">
+                  <button type="button" class="btn-sub-add" (click)="toggleNivelTipico(torre)">
+                    <i class="ti ti-stack-2"></i> Agregar Nivel Típico
+                  </button>
+                  <button type="button" class="btn-sub-add" (click)="addNivel(torre)">
                     <i class="ti ti-plus"></i> Agregar Nivel
                   </button>
                 </div>
+              </div>
 
-                <div *ngIf="!zona.niveles || zona.niveles.length === 0" class="empty-sub-list">
-                  Sin niveles en esta zona. Agregue el primero con "Agregar Nivel".
-                </div>
-
-                <div *ngFor="let nivel of zona.niveles; let nIdx = index" class="nivel-card">
-                  <div class="nivel-card-row">
-                    <input
-                      type="number"
-                      class="bim-input-small nivel-orden-input text-center"
-                      [(ngModel)]="nivel.orden"
-                      min="1"
-                      title="Orden"
-                    />
+              <!-- Generador de niveles típicos (rango) -->
+              <div *ngIf="torre.mostrarNivelTipico" class="nivel-tipico-panel">
+                <div class="nivel-tipico-row">
+                  <div class="bim-field">
+                    <label class="bim-field-label">NOMBRE BASE</label>
                     <input
                       type="text"
-                      class="bim-input-small nivel-nombre-input"
-                      placeholder="Ej. Piso 1, Sótano 2"
-                      [(ngModel)]="nivel.nombre"
+                      class="bim-input-small"
+                      placeholder="Ej. Piso"
+                      [(ngModel)]="torre.nivelTipicoForm.nombreBase"
                     />
-                    <button
-                      type="button"
-                      class="btn-trash-sm"
-                      title="Eliminar Nivel"
-                      (click)="removeNivel(zona, nIdx)"
-                    >
-                      <i class="ti ti-x"></i>
-                    </button>
                   </div>
-
-                  <div class="nivel-card-row">
+                  <div class="bim-field nivel-tipico-field--num">
+                    <label class="bim-field-label">DESDE</label>
+                    <input
+                      type="number"
+                      class="bim-input-small"
+                      placeholder="Ej. 2"
+                      [(ngModel)]="torre.nivelTipicoForm.desde"
+                    />
+                  </div>
+                  <div class="bim-field nivel-tipico-field--num">
+                    <label class="bim-field-label">HASTA</label>
+                    <input
+                      type="number"
+                      class="bim-input-small"
+                      placeholder="Ej. 29"
+                      [(ngModel)]="torre.nivelTipicoForm.hasta"
+                    />
+                  </div>
+                  <div class="bim-field nivel-tipico-field--tipo">
+                    <label class="bim-field-label">CLASIFICACIÓN</label>
                     <app-search-select
-                      class="nivel-tipo-select"
                       label=""
                       [showLabel]="false"
                       placeholder="Selecciona tipo de estructura"
                       [options]="tiposEstructura"
                       valueField="id"
                       displayField="nombre"
-                      [(value)]="nivel.tipoEstructura"
+                      [(value)]="torre.nivelTipicoForm.tipoEstructura"
                       [compact]="true"
                     ></app-search-select>
                   </div>
-
-                  <!-- Sectores exclusivos de este nivel -->
-                  <div class="nivel-sectores-block">
-                    <div class="nivel-sectores-header">
-                      <span>SECTORES EXCLUSIVOS DE ESTE NIVEL</span>
-                      <button type="button" class="btn-sub-add btn-sub-add--sm" (click)="addSectorNivel(nivel)">
-                        <i class="ti ti-plus"></i> Agregar
-                      </button>
-                    </div>
-                    <div *ngIf="!nivel.sectores || nivel.sectores.length === 0" class="empty-sub-list empty-sub-list--sm">
-                      Sin sectores exclusivos. Si el sector aplica a todos los niveles, agréguelo en "Sectores Compartidos".
-                    </div>
-                    <div *ngFor="let sector of nivel.sectores; let sIdx = index" class="nivel-sector-row">
-                      <input
-                        type="text"
-                        class="bim-input-small"
-                        placeholder="Ej. Sector Norte, Sector 1"
-                        [(ngModel)]="sector.nombre"
-                      />
-                      <button
-                        type="button"
-                        class="btn-trash-sm"
-                        title="Eliminar Sector"
-                        (click)="removeSectorNivel(nivel, sIdx)"
-                      >
-                        <i class="ti ti-x"></i>
-                      </button>
-                    </div>
-                  </div>
                 </div>
-              </div>
-
-              <!-- Columna Sectores Compartidos -->
-              <div class="sub-column">
-                <div class="sub-column-header">
-                  <span class="sub-column-title">
-                    <i class="ti ti-grid-dots"></i> SECTORES COMPARTIDOS
-                  </span>
-                  <button type="button" class="btn-sub-add" (click)="addSectorCompartido(zona)">
-                    <i class="ti ti-plus"></i> Agregar Sector
+                <div class="nivel-tipico-actions">
+                  <button type="button" class="btn-sub-add" (click)="toggleNivelTipico(torre)">Cancelar</button>
+                  <button type="button" class="btn-primary-udp" (click)="confirmarNivelTipico(torre)">
+                    <i class="ti ti-check"></i> Generar Niveles
                   </button>
                 </div>
-                <p class="sub-column-hint">Aplican automáticamente a todos los niveles de esta zona.</p>
-
-                <div *ngIf="!zona.sectoresCompartidos || zona.sectoresCompartidos.length === 0" class="empty-sub-list">
-                  Sin sectores compartidos en esta zona.
-                </div>
-
-                <div *ngIf="zona.sectoresCompartidos && zona.sectoresCompartidos.length > 0" class="sub-list-wrap">
-                  <table class="sub-table">
-                    <thead>
-                      <tr>
-                        <th>NOMBRE DEL SECTOR</th>
-                        <th style="width: 40px;"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let sector of zona.sectoresCompartidos; let sIdx = index">
-                        <td>
-                          <input
-                            type="text"
-                            class="bim-input-small"
-                            placeholder="Ej. Sector Norte, Sector 1"
-                            [(ngModel)]="sector.nombre"
-                          />
-                        </td>
-                        <td class="text-center">
-                          <button
-                            type="button"
-                            class="btn-trash-sm"
-                            title="Eliminar Sector"
-                            (click)="removeSectorCompartido(zona, sIdx)"
-                          >
-                            <i class="ti ti-x"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
               </div>
 
+              <div *ngIf="!torre.niveles || torre.niveles.length === 0" class="empty-sub-list">
+                Sin niveles en esta torre. Agregue el primero con "Agregar Nivel" o "Agregar Nivel Típico".
+              </div>
+
+              <div *ngFor="let nivel of torre.niveles; let nIdx = index" class="nivel-card">
+                <div class="nivel-card-row">
+                  <input
+                    type="number"
+                    class="bim-input-small nivel-orden-input text-center"
+                    [(ngModel)]="nivel.orden"
+                    (blur)="onOrdenManual(torre, nivel)"
+                    min="1"
+                    title="Orden"
+                  />
+                  <input
+                    type="text"
+                    class="bim-input-small nivel-nombre-input"
+                    placeholder="Ej. Piso 1, Sótano 2"
+                    [(ngModel)]="nivel.nombre"
+                  />
+                  <app-search-select
+                    class="nivel-tipo-select"
+                    label=""
+                    [showLabel]="false"
+                    placeholder="Selecciona tipo de estructura"
+                    [options]="tiposEstructura"
+                    valueField="id"
+                    displayField="nombre"
+                    [(value)]="nivel.tipoEstructura"
+                    [compact]="true"
+                  ></app-search-select>
+                  <button
+                    type="button"
+                    class="btn-trash-sm"
+                    title="Eliminar Nivel"
+                    (click)="removeNivel(torre, nIdx)"
+                  >
+                    <i class="ti ti-x"></i>
+                  </button>
+                </div>
+
+                <div class="nivel-sectores-derivados">
+                  <i class="ti ti-grid-dots"></i>
+                  <span *ngIf="nivel.tipoEstructura">{{ sectoresDeNivel(torre, nivel) }} sectores</span>
+                  <span *ngIf="!nivel.tipoEstructura" class="nivel-sectores-derivados--hint">
+                    Seleccione la clasificación para ver la cantidad de sectores
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 

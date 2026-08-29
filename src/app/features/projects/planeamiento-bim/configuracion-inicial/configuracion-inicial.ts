@@ -11,21 +11,34 @@ import { ProjectSimpleDTO } from '../../../../core/dtos/project/projectSimple.mo
 import { PROJECTS_TABS } from '../../shared/projects-tabs';
 import { PlaneamientoBimService } from '../services/planeamiento-bim.service';
 import {
-  NivelConfigDTO,
+  NivelTorreDTO,
   PlaneamientoBimConfigDTO,
   ResponsableBimWorkerDTO,
-  SectorConfigDTO,
   TipoEstructura,
-  ZonaConfigDTO,
-  ZonaUpdateDto,
+  TorreConfigDTO,
+  TorreUpdateDto,
 } from '../dtos/planeamiento-bim-config.dto';
 
 import { PlaneamientoBimSubnavComponent } from '../shared/planeamiento-bim-subnav/planeamiento-bim-subnav';
 
-/** Estado local de edición de una zona: además de lo que devuelve el GET, agrega los sectores
- *  compartidos (derivados) como bucket propio, separado de los exclusivos de cada nivel. */
-interface ZonaEdicion extends ZonaConfigDTO {
-  sectoresCompartidos: SectorConfigDTO[];
+/** Datos transitorios del formulario "Agregar nivel típico" — nunca se envían al backend,
+ *  solo sirven para generar filas normales de nivel en el arreglo local de la torre. */
+interface NivelTipicoForm {
+  nombreBase: string;
+  desde: number | null;
+  hasta: number | null;
+  tipoEstructura: TipoEstructura | null;
+}
+
+function nuevoNivelTipicoForm(): NivelTipicoForm {
+  return { nombreBase: '', desde: null, hasta: null, tipoEstructura: null };
+}
+
+/** Estado local de edición de una torre: además de lo que devuelve el GET, agrega el estado
+ *  transitorio del generador de "niveles típicos" (rango), que no forma parte del payload. */
+interface TorreEdicion extends TorreConfigDTO {
+  mostrarNivelTipico: boolean;
+  nivelTipicoForm: NivelTipicoForm;
 }
 
 const TIPOS_ESTRUCTURA: { id: TipoEstructura; nombre: string }[] = [
@@ -53,12 +66,12 @@ export class ConfiguracionInicial implements OnInit {
   config: PlaneamientoBimConfigDTO = {
     responsableId: null,
     metaPpc: null,
-    zonas: [],
+    torres: [],
     fases: [],
   };
 
-  /** Zonas en edición, con el bucket de sectoresCompartidos ya derivado del GET. */
-  zonas: ZonaEdicion[] = [];
+  /** Torres en edición, con el estado transitorio del generador de niveles típicos. */
+  torres: TorreEdicion[] = [];
 
   loadingProjects = false;
   loadingConfig = false;
@@ -130,10 +143,10 @@ export class ConfiguracionInicial implements OnInit {
           projectId: data?.projectId ?? projectId,
           responsableId: data?.responsableId ?? null,
           metaPpc: data?.metaPpc ?? null,
-          zonas: data?.zonas || [],
+          torres: data?.torres || [],
           fases: data?.fases || [],
         };
-        this.zonas = (this.config.zonas || []).map((z) => this.derivarZonaEdicion(z));
+        this.torres = (this.config.torres || []).map((t) => this.derivarTorreEdicion(t));
         this.loadingConfig = false;
         this.cdr.detectChanges();
       },
@@ -145,92 +158,156 @@ export class ConfiguracionInicial implements OnInit {
     });
   }
 
-  /**
-   * A partir del shape de lectura (donde un sector compartido viene repetido bajo CADA nivel de
-   * la zona), separa: sectoresCompartidos (el sector aparece, por id, en TODOS los niveles) y dentro
-   * de cada nivel, solo sus sectores exclusivos (los que no están en el bucket de compartidos).
-   */
-  private derivarZonaEdicion(zona: ZonaConfigDTO): ZonaEdicion {
-    const niveles = (zona.niveles || []).map((n) => ({ ...n, sectores: [...(n.sectores || [])] }));
-
-    // "Compartido" solo tiene sentido si hay más de un nivel para compartir entre sí — con un único
-    // nivel, `every()` se cumple trivialmente para cualquier sector de ese nivel (verdad vacía) y
-    // reclasificaría como compartido TODO sector exclusivo, aunque se haya guardado bien. Bug real
-    // reportado y diagnosticado en sesión 2026-08-28 (ver CONTEXT.md).
-    let compartidos: SectorConfigDTO[] = [];
-    if (niveles.length > 1) {
-      const primerNivel = niveles[0];
-      compartidos = (primerNivel.sectores || []).filter((sector) => {
-        if (sector.id == null) return false; // sectores nuevos sin id no se pueden comparar entre niveles
-        return niveles.every((n) => (n.sectores || []).some((s) => s.id === sector.id));
-      });
-    }
-
-    const idsCompartidos = new Set(compartidos.map((s) => s.id));
-    niveles.forEach((n) => {
-      n.sectores = (n.sectores || []).filter((s) => !idsCompartidos.has(s.id));
-    });
-
-    return { ...zona, niveles, sectoresCompartidos: compartidos };
+  /** A partir del shape del GET, agrega el estado transitorio del generador de niveles típicos. */
+  private derivarTorreEdicion(torre: TorreConfigDTO): TorreEdicion {
+    return {
+      ...torre,
+      niveles: [...(torre.niveles || [])],
+      mostrarNivelTipico: false,
+      nivelTipicoForm: nuevoNivelTipicoForm(),
+    };
   }
 
-  // ── Gestión de Zonas ─────────────────────────────────────────
-  addZona(): void {
-    this.zonas.push({
+  // ── Gestión de Torres ────────────────────────────────────────
+  addTorre(): void {
+    this.torres.push({
       id: null,
       nombre: '',
-      orden: this.zonas.length + 1,
+      orden: this.torres.length + 1,
+      cantidadSectoresSubestructura: null,
+      cantidadSectoresSuperestructura: null,
       niveles: [],
-      sectoresCompartidos: [],
+      mostrarNivelTipico: false,
+      nivelTipicoForm: nuevoNivelTipicoForm(),
     });
   }
 
-  removeZona(index: number): void {
-    this.zonas.splice(index, 1);
+  removeTorre(index: number): void {
+    this.torres.splice(index, 1);
+  }
+
+  totalSectoresTorre(torre: TorreEdicion): number {
+    return (torre.cantidadSectoresSubestructura || 0) + (torre.cantidadSectoresSuperestructura || 0);
   }
 
   // ── Gestión de Niveles ───────────────────────────────────────
-  addNivel(zona: ZonaEdicion): void {
-    if (!zona.niveles) zona.niveles = [];
-    const nuevoOrden = zona.niveles.length + 1;
-    zona.niveles.push({
+  /**
+   * Único punto de recálculo de `orden`: reasigna 1..N a TODOS los niveles de la torre según
+   * su posición actual en el arreglo, sin importar si se originaron por "+ Agregar Nivel" o
+   * por "Agregar Nivel Típico" — un solo contador correlativo por torre, no por origen.
+   */
+  private renumerarNiveles(torre: TorreEdicion): void {
+    torre.niveles.forEach((n, idx) => (n.orden = idx + 1));
+  }
+
+  addNivel(torre: TorreEdicion): void {
+    if (!torre.niveles) torre.niveles = [];
+    torre.niveles.push({
       id: null,
       nombre: '',
-      orden: nuevoOrden,
+      orden: torre.niveles.length + 1,
       tipoEstructura: null,
-      sectores: [],
     });
+    this.renumerarNiveles(torre);
   }
 
-  removeNivel(zona: ZonaEdicion, index: number): void {
-    zona.niveles.splice(index, 1);
-    // Reordenar automáticamente los niveles restantes
-    zona.niveles.forEach((n, idx) => (n.orden = idx + 1));
+  removeNivel(torre: TorreEdicion, index: number): void {
+    torre.niveles.splice(index, 1);
+    this.renumerarNiveles(torre);
   }
 
-  // ── Gestión de Sectores exclusivos de un Nivel ────────────────
-  addSectorNivel(nivel: NivelConfigDTO): void {
-    if (!nivel.sectores) nivel.sectores = [];
-    nivel.sectores.push({ id: null, nombre: '' });
+  /**
+   * Edición manual del campo Orden (punto 7 del diseño: queda editable a mano). Si el valor
+   * ingresado colisiona con el de otro nivel, se resuelve reordenando el arreglo por el nuevo
+   * valor (el nivel editado gana los empates, como si "se insertara" en esa posición) y luego
+   * renumerando 1..N en cascada — decisión tomada por ser el comportamiento más simple y
+   * predecible. Se dispara en `blur`, no en cada tecla, para no reordenar el DOM mientras el
+   * usuario todavía está escribiendo un número de dos dígitos.
+   */
+  onOrdenManual(torre: TorreEdicion, nivel: NivelTorreDTO): void {
+    const valor = Number(nivel.orden);
+    nivel.orden = Number.isFinite(valor) && valor >= 1 ? Math.floor(valor) : 1;
+
+    torre.niveles = [...torre.niveles].sort((a, b) => {
+      const ordenA = a === nivel ? a.orden - 0.5 : a.orden;
+      const ordenB = b === nivel ? b.orden - 0.5 : b.orden;
+      return ordenA - ordenB;
+    });
+    this.renumerarNiveles(torre);
   }
 
-  removeSectorNivel(nivel: NivelConfigDTO, index: number): void {
-    nivel.sectores.splice(index, 1);
+  /** Sectores derivados del nivel, según su clasificación y el conteo definido en la torre. */
+  sectoresDeNivel(torre: TorreEdicion, nivel: NivelTorreDTO): number {
+    if (nivel.tipoEstructura === 'SUBESTRUCTURA') return torre.cantidadSectoresSubestructura || 0;
+    if (nivel.tipoEstructura === 'SUPERESTRUCTURA') return torre.cantidadSectoresSuperestructura || 0;
+    return 0;
   }
 
-  // ── Gestión de Sectores Compartidos de la Zona ────────────────
-  addSectorCompartido(zona: ZonaEdicion): void {
-    if (!zona.sectoresCompartidos) zona.sectoresCompartidos = [];
-    zona.sectoresCompartidos.push({ id: null, nombre: '' });
+  // ── Niveles típicos (rango) ────────────────────────────────────
+  toggleNivelTipico(torre: TorreEdicion): void {
+    torre.mostrarNivelTipico = !torre.mostrarNivelTipico;
+    if (torre.mostrarNivelTipico) {
+      torre.nivelTipicoForm = nuevoNivelTipicoForm();
+    }
   }
 
-  removeSectorCompartido(zona: ZonaEdicion, index: number): void {
-    zona.sectoresCompartidos.splice(index, 1);
-  }
+  confirmarNivelTipico(torre: TorreEdicion): void {
+    const form = torre.nivelTipicoForm;
+    const nombreBase = (form.nombreBase || '').trim();
 
-  totalSectores(zona: ZonaEdicion): number {
-    const exclusivos = (zona.niveles || []).reduce((acc, n) => acc + (n.sectores?.length || 0), 0);
-    return exclusivos + (zona.sectoresCompartidos?.length || 0);
+    if (!nombreBase) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Nombre base requerido',
+        text: 'Ingrese un nombre base para los niveles típicos, por ejemplo "Piso".',
+        confirmButtonColor: '#1E3A5F',
+      });
+      return;
+    }
+
+    if (form.desde == null || form.hasta == null || !Number.isInteger(form.desde) || !Number.isInteger(form.hasta)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Rango inválido',
+        text: 'Ingrese los números "desde" y "hasta" del rango de niveles típicos.',
+        confirmButtonColor: '#1E3A5F',
+      });
+      return;
+    }
+
+    if (form.desde > form.hasta) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Rango inválido',
+        text: 'El número "desde" no puede ser mayor que el número "hasta".',
+        confirmButtonColor: '#1E3A5F',
+      });
+      return;
+    }
+
+    if (!form.tipoEstructura) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Clasificación requerida',
+        text: 'Seleccione la clasificación (Subestructura o Superestructura) de los niveles típicos.',
+        confirmButtonColor: '#1E3A5F',
+      });
+      return;
+    }
+
+    if (!torre.niveles) torre.niveles = [];
+    for (let numero = form.desde; numero <= form.hasta; numero++) {
+      torre.niveles.push({
+        id: null,
+        nombre: `${nombreBase} ${numero}`,
+        orden: torre.niveles.length + 1,
+        tipoEstructura: form.tipoEstructura,
+      });
+    }
+    this.renumerarNiveles(torre);
+
+    torre.mostrarNivelTipico = false;
+    torre.nivelTipicoForm = nuevoNivelTipicoForm();
   }
 
   // ── Guardar Configuración ────────────────────────────────────
@@ -260,68 +337,30 @@ export class ConfiguracionInicial implements OnInit {
       }
     }
 
-    // Validar nombres de zonas + duplicados de niveles/sectores
-    for (let i = 0; i < this.zonas.length; i++) {
-      const z = this.zonas[i];
-      if (!z.nombre || !z.nombre.trim()) {
+    // Validar nombres de torres + niveles duplicados
+    for (let i = 0; i < this.torres.length; i++) {
+      const t = this.torres[i];
+      if (!t.nombre || !t.nombre.trim()) {
         Swal.fire({
           icon: 'warning',
-          title: 'Nombre de Zona requerido',
-          text: `La zona #${i + 1} no tiene un nombre asignado.`,
+          title: 'Nombre de Torre requerido',
+          text: `La torre #${i + 1} no tiene un nombre asignado.`,
           confirmButtonColor: '#1E3A5F',
         });
         return;
       }
 
-      // Niveles duplicados dentro de la misma zona
-      const nombresNiveles = (z.niveles || []).map((n) => n.nombre.trim().toLowerCase()).filter((n) => n);
+      // Niveles duplicados dentro de la misma torre
+      const nombresNiveles = (t.niveles || []).map((n) => n.nombre.trim().toLowerCase()).filter((n) => n);
       const nivelDuplicado = nombresNiveles.find((n, idx) => nombresNiveles.indexOf(n) !== idx);
       if (nivelDuplicado) {
         Swal.fire({
           icon: 'warning',
           title: 'Nivel duplicado',
-          text: `El nivel "${nivelDuplicado}" ya existe en la zona "${z.nombre}". Cada nivel debe tener un nombre único dentro de su zona.`,
+          text: `El nivel "${nivelDuplicado}" ya existe en la torre "${t.nombre}". Cada nivel debe tener un nombre único dentro de su torre.`,
           confirmButtonColor: '#1E3A5F',
         });
         return;
-      }
-
-      // Sectores compartidos duplicados entre sí
-      const nombresCompartidos = (z.sectoresCompartidos || []).map((s) => s.nombre.trim().toLowerCase()).filter((n) => n);
-      const compartidoDuplicado = nombresCompartidos.find((n, idx) => nombresCompartidos.indexOf(n) !== idx);
-      if (compartidoDuplicado) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Sector compartido duplicado',
-          text: `El sector "${compartidoDuplicado}" ya existe entre los sectores compartidos de la zona "${z.nombre}".`,
-          confirmButtonColor: '#1E3A5F',
-        });
-        return;
-      }
-
-      // Sectores exclusivos duplicados dentro de un mismo nivel, o repetidos contra los compartidos
-      for (const nivel of z.niveles || []) {
-        const nombresExclusivos = (nivel.sectores || []).map((s) => s.nombre.trim().toLowerCase()).filter((n) => n);
-        const exclusivoDuplicado = nombresExclusivos.find((n, idx) => nombresExclusivos.indexOf(n) !== idx);
-        if (exclusivoDuplicado) {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Sector duplicado',
-            text: `El sector "${exclusivoDuplicado}" ya existe en este nivel ("${nivel.nombre || 'sin nombre'}").`,
-            confirmButtonColor: '#1E3A5F',
-          });
-          return;
-        }
-        const chocaConCompartido = nombresExclusivos.find((n) => nombresCompartidos.includes(n));
-        if (chocaConCompartido) {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Sector duplicado',
-            text: `El sector "${chocaConCompartido}" ya existe como sector compartido de la zona "${z.nombre}"; no puede repetirse como exclusivo del nivel "${nivel.nombre || 'sin nombre'}".`,
-            confirmButtonColor: '#1E3A5F',
-          });
-          return;
-        }
       }
     }
 
@@ -329,30 +368,24 @@ export class ConfiguracionInicial implements OnInit {
     this.saveError = null;
     this.cdr.detectChanges();
 
-    const zonasPayload: ZonaUpdateDto[] = this.zonas.map((z, idx) => ({
-      id: z.id ?? null,
-      nombre: z.nombre.trim(),
-      orden: z.orden || (idx + 1),
-      niveles: (z.niveles || []).map((n, nIdx) => ({
+    const torresPayload: TorreUpdateDto[] = this.torres.map((t, idx) => ({
+      id: t.id ?? null,
+      nombre: t.nombre.trim(),
+      orden: t.orden || (idx + 1),
+      cantidadSectoresSubestructura: Number(t.cantidadSectoresSubestructura) || 0,
+      cantidadSectoresSuperestructura: Number(t.cantidadSectoresSuperestructura) || 0,
+      niveles: (t.niveles || []).map((n, nIdx) => ({
         id: n.id ?? null,
         nombre: n.nombre.trim(),
         orden: Number(n.orden) || (nIdx + 1),
         tipoEstructura: n.tipoEstructura || null,
-        sectores: (n.sectores || []).map((s) => ({
-          id: s.id ?? null,
-          nombre: s.nombre.trim(),
-        })),
-      })),
-      sectoresCompartidos: (z.sectoresCompartidos || []).map((s) => ({
-        id: s.id ?? null,
-        nombre: s.nombre.trim(),
       })),
     }));
 
     // Meta PPC ya no se envía: es un estándar fijo que administra el backend (Fase A).
     const payload = {
       responsableId: this.config.responsableId ? Number(this.config.responsableId) : null,
-      zonas: zonasPayload,
+      torres: torresPayload,
       fases: (this.config.fases || []).map((f) => ({
         id: f.id,
         fechaInicio: f.fechaInicio || null,
@@ -383,7 +416,7 @@ export class ConfiguracionInicial implements OnInit {
           Swal.fire({
             icon: 'error',
             title: 'Conflicto al eliminar (409)',
-            text: 'No se puede eliminar la zona, nivel o sector indicado porque cuenta con registros asociados en la Carga Diaria.',
+            text: 'No se puede eliminar la torre, nivel o sector indicado porque cuenta con registros asociados en la Carga Diaria.',
             confirmButtonColor: '#1E3A5F',
           });
         } else {

@@ -111,7 +111,7 @@
               <tr>
                 <th style="width: 60px;">ID</th>
                 <th>DESCRIPCIÓN DE LA RESTRICCIÓN</th>
-                <th style="width: 170px;">UBICACIÓN</th>
+                <th style="width: 200px;">UBICACIÓN</th>
                 <th style="width: 130px;">ESTADO</th>
                 <th style="width: 150px;">FECHA CREACIÓN</th>
                 <th style="width: 150px;">LEVANT. PREVISTA</th>
@@ -126,10 +126,10 @@
                   <span class="desc-text">{{ r.descripcion }}</span>
                 </td>
                 <td class="date-cell">
-                  <span *ngIf="r.zonaNombre || r.nivelNombre || r.sectorNombre || r.actividadNombre">
-                    {{ [r.zonaNombre, r.nivelNombre, r.sectorNombre, r.actividadNombre].join(' / ') }}
+                  <span *ngIf="tieneUbicacion(r)">
+                    {{ formatUbicacion(r) }}
                   </span>
-                  <span *ngIf="!r.zonaNombre && !r.nivelNombre && !r.sectorNombre && !r.actividadNombre" class="text-active-dash">—</span>
+                  <span *ngIf="!tieneUbicacion(r)" class="text-active-dash">—</span>
                 </td>
                 <td>
                   <!-- REGLA ESENCIAL: Activo se evalúa por fechaCierre === null -->
@@ -251,13 +251,14 @@
 
       <div class="modal-form-grid-4">
         <app-search-select
-          label="Zona"
-          placeholder="Selecciona zona"
-          [options]="zonasCatalogo"
+          label="Torre"
+          placeholder="Selecciona torre"
+          [options]="torresCatalogo"
           valueField="id"
           displayField="nombre"
-          [value]="formZonaId"
-          (valueChange)="onFormZonaChange($event)"
+          [value]="formTorreId"
+          (valueChange)="onFormTorreChange($event)"
+          [sortAlpha]="false"
           [disabled]="savingRestriccion || loadingCatalogos"
         ></app-search-select>
 
@@ -269,7 +270,8 @@
           displayField="nombre"
           [value]="formNivelId"
           (valueChange)="onFormNivelChange($event)"
-          [disabled]="savingRestriccion || loadingCatalogos || !formZonaId"
+          [sortAlpha]="false"
+          [disabled]="savingRestriccion || loadingCatalogos || !formTorreId"
         ></app-search-select>
 
         <app-search-select
@@ -278,8 +280,10 @@
           [options]="sectoresDisponibles"
           valueField="id"
           displayField="nombre"
-          [(value)]="formSectorId"
-          [disabled]="savingRestriccion || loadingCatalogos || !formNivelId"
+          [value]="formSector"
+          (valueChange)="formSector = $event"
+          [sortAlpha]="false"
+          [disabled]="savingRestriccion || loadingCatalogos || !formNivelId || sectoresDisponibles.length === 0"
         ></app-search-select>
 
         <app-search-select
@@ -288,7 +292,8 @@
           [options]="actividadesCatalogo"
           valueField="id"
           displayField="nombre"
-          [(value)]="formActividadId"
+          [value]="formActividadId"
+          (valueChange)="formActividadId = $event"
           [disabled]="savingRestriccion || loadingCatalogos"
         ></app-search-select>
       </div>

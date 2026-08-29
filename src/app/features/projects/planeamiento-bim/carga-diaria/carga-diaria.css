@@ -223,24 +223,10 @@
   text-align: center;
 }
 
-.nivel-cell {
-  background: #F8FAFC;
-  vertical-align: middle !important;
-  font-weight: 700;
-  color: #1E3A5F;
-}
-
 .sector-cell {
   background: #FFFFFF;
   font-weight: 600;
   color: #475569;
-}
-
-.sector-cell--empty {
-  font-style: italic;
-  font-weight: 400;
-  color: #94A3B8;
-  text-align: left;
 }
 
 /* ── Botones de Celda Interactiva ────────────────────────────── */

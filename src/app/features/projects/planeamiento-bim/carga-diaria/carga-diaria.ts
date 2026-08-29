@@ -18,7 +18,7 @@ import {
   CausaCatalogoDto,
   CeldaDto,
 } from '../dtos/planeamiento-bim-carga-diaria.dto';
-import { ZonaConfigDTO } from '../dtos/planeamiento-bim-config.dto';
+import { NivelTorreDTO, TorreConfigDTO } from '../dtos/planeamiento-bim-config.dto';
 
 @Component({
   selector: 'app-carga-diaria',
@@ -41,10 +41,15 @@ export class CargaDiaria implements OnInit {
   fechaSeleccionada: string = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
   cargaDiariaData: CargaDiariaDto | null = null;
-  zonas: ZonaConfigDTO[] = [];
+  torres: TorreConfigDTO[] = [];
   actividades: ActividadCatalogoDto[] = [];
   causasCatalogo: CausaCatalogoDto[] = [];
   celdasMap: Map<string, CeldaDto> = new Map();
+
+  /** Selector de captura Torre → Nivel (el Sector ya no se elige: se muestran todos
+   *  los 1..N de una vez, como filas individualmente clickeables de la grilla). */
+  selectedTorreId: number | null = null;
+  selectedNivelId: number | null = null;
 
   loadingProjects = false;
   loadingCarga = false;
@@ -56,6 +61,7 @@ export class CargaDiaria implements OnInit {
   showCausaModal = false;
   activeCeldaKey: string | null = null;
   activeCelda: CeldaDto | null = null;
+  activeCeldaPrevCumplida: boolean | null = null;
   modalCausaId: number | null = null;
   modalCausaDetalle: string = '';
 
@@ -86,7 +92,7 @@ export class CargaDiaria implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.loadingProjects = false;
-        this.handleError(err, 'No se pudo cargar la lista de proyectos.');
+        this.handleError(err, 'No se pudo cargar la lista de proyectos.', true);
         this.cdr.detectChanges();
       },
     });
@@ -115,87 +121,131 @@ export class CargaDiaria implements OnInit {
     this.bimService.getCargaDiaria(this.selectedProjectId, this.fechaSeleccionada).subscribe({
       next: (data) => {
         this.cargaDiariaData = data;
-        this.zonas = data.zonas || [];
+        this.torres = data.torres || [];
         this.actividades = data.actividades || [];
         this.causasCatalogo = (data.causas || []).sort((a, b) => a.orden - b.orden);
         this.inicializarMapCeldas(data.celdas || []);
+        // La torre/nivel seleccionados pueden no existir más tras recargar (otro proyecto/fecha)
+        this.selectedTorreId = null;
+        this.selectedNivelId = null;
         this.loadingCarga = false;
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
         this.loadingCarga = false;
-        this.handleError(err, 'No se pudo obtener la carga diaria para la fecha seleccionada.');
+        this.handleError(err, 'No se pudo obtener la carga diaria para la fecha seleccionada.', true);
         this.cdr.detectChanges();
       },
     });
   }
 
-  /** Suma los sectores de todos los niveles de la zona (ya no cuelgan de la zona misma). */
-  totalSectoresZona(zona: ZonaConfigDTO): number {
-    return (zona.niveles || []).reduce((acc, n) => acc + (n.sectores?.length || 0), 0);
+  // ── Selector de captura: Torre → Nivel ────────────────────────
+  get torreSeleccionada(): TorreConfigDTO | undefined {
+    return this.torres.find((t) => t.id === this.selectedTorreId);
   }
 
-  private getKey(zId: number, nId: number, sId: number, aId: number): string {
-    return `${zId}_${nId}_${sId}_${aId}`;
+  get nivelesDisponibles(): NivelTorreDTO[] {
+    return this.torreSeleccionada?.niveles || [];
+  }
+
+  get nivelSeleccionado(): NivelTorreDTO | undefined {
+    return this.nivelesDisponibles.find((n) => n.id === this.selectedNivelId);
+  }
+
+  /** Sectores derivados (1..N) del nivel elegido, según su clasificación y el conteo de la torre. */
+  get sectoresDelNivel(): number[] {
+    const torre = this.torreSeleccionada;
+    const nivel = this.nivelSeleccionado;
+    if (!torre || !nivel || !nivel.tipoEstructura) return [];
+    const cantidad = nivel.tipoEstructura === 'SUBESTRUCTURA'
+      ? torre.cantidadSectoresSubestructura || 0
+      : torre.cantidadSectoresSuperestructura || 0;
+    return Array.from({ length: cantidad }, (_, i) => i + 1);
+  }
+
+  onTorreSeleccionada(torreId: number | null): void {
+    this.selectedTorreId = torreId;
+    this.selectedNivelId = null;
+  }
+
+  onNivelSeleccionado(nivelId: number | null): void {
+    this.selectedNivelId = nivelId;
+  }
+
+  private getKey(tId: number, nId: number, sId: number, aId: number): string {
+    return `${tId}_${nId}_${sId}_${aId}`;
   }
 
   private inicializarMapCeldas(celdasExistentes: CeldaDto[]): void {
     this.celdasMap.clear();
     celdasExistentes.forEach((c) => {
-      const key = this.getKey(c.zonaId, c.nivelId, c.sectorId, c.actividadId);
+      const key = this.getKey(c.torreId, c.nivelId, c.sectorId, c.actividadId);
       this.celdasMap.set(key, { ...c });
     });
   }
 
-  getCelda(zId: number, nId: number, sId: number, aId: number): CeldaDto | undefined {
-    return this.celdasMap.get(this.getKey(zId, nId, sId, aId));
+  getCelda(tId: number, nId: number, sId: number, aId: number): CeldaDto | undefined {
+    return this.celdasMap.get(this.getKey(tId, nId, sId, aId));
   }
 
-  getCellTitle(zId: number, nId: number, sId: number, aId: number): string {
-    const celda = this.getCelda(zId, nId, sId, aId);
-    if (!celda) return 'Sin cargar (clic para marcar)';
-    return celda.cumplida ? 'Cumplido' : `No Cumplido: ${celda.causaNombre || 'Sin causa'}`;
+  getCellTitle(tId: number, nId: number, sId: number, aId: number): string {
+    const celda = this.getCelda(tId, nId, sId, aId);
+    if (!celda || celda.cumplida === null) return 'Sin cargar (clic para marcar cumplido)';
+    if (celda.cumplida === true) return 'Cumplido (clic para marcar no cumplido)';
+    return `No Cumplido: ${celda.causaNombre || 'Sin causa'} (clic para volver a neutro)`;
   }
 
-  toggleCumplimiento(zId: number, nId: number, sId: number, aId: number): void {
+  /**
+   * Ciclo Tri-state de Celda:
+   * 1. null (Neutro / '—') -> pasa a true (Cumplido / '✓')
+   * 2. true (Cumplido) -> pasa a false (No Cumplido / '✕') y abre modal de causa
+   * 3. false (No Cumplido) -> pasa a null (Neutro / '—') limpiando la causa
+   */
+  toggleCumplimiento(tId: number, nId: number, sId: number, aId: number): void {
     if (!this.cargaDiariaData?.esEditable) return;
 
-    const key = this.getKey(zId, nId, sId, aId);
+    const key = this.getKey(tId, nId, sId, aId);
     let celda = this.celdasMap.get(key);
 
-    if (!celda) {
-      // Primera vez que se interactúa con la celda: pasa a cumplida = true
-      celda = {
-        zonaId: zId,
-        nivelId: nId,
-        sectorId: sId,
-        actividadId: aId,
-        cumplida: true,
-        causaId: null,
-        causaNombre: null,
-        causaDetalle: null,
-      };
-      this.celdasMap.set(key, celda);
-    } else {
-      if (celda.cumplida) {
-        // Pasa de cumplida a no cumplida -> abrir modal de causa de incumplimiento
-        celda.cumplida = false;
-        this.openCausaModal(key, celda);
+    if (!celda || celda.cumplida === null) {
+      // Estado 1 -> 2: De neutro a cumplido (true)
+      if (!celda) {
+        celda = {
+          torreId: tId,
+          nivelId: nId,
+          sectorId: sId,
+          actividadId: aId,
+          cumplida: true,
+          causaId: null,
+          causaNombre: null,
+          causaDetalle: null,
+        };
+        this.celdasMap.set(key, celda);
       } else {
-        // Pasa de no cumplida a cumplida -> reset causa
         celda.cumplida = true;
         celda.causaId = null;
         celda.causaNombre = null;
         celda.causaDetalle = null;
       }
+    } else if (celda.cumplida === true) {
+      // Estado 2 -> 3: De cumplido a no cumplido (false) -> abrir modal de causa
+      this.openCausaModal(key, celda, true);
+    } else {
+      // Estado 3 -> 1: De no cumplido a neutro (null)
+      celda.cumplida = null;
+      celda.causaId = null;
+      celda.causaNombre = null;
+      celda.causaDetalle = null;
+      this.celdasMap.delete(key);
     }
     this.cdr.detectChanges();
   }
 
   // ── Modal de Causa de Incumplimiento ──────────────────────────
-  openCausaModal(key: string, celda: CeldaDto): void {
+  openCausaModal(key: string, celda: CeldaDto, prevCumplida: boolean | null = true): void {
     this.activeCeldaKey = key;
     this.activeCelda = celda;
+    this.activeCeldaPrevCumplida = prevCumplida;
     this.modalCausaId = celda.causaId || null;
     this.modalCausaDetalle = celda.causaDetalle || '';
     this.showCausaModal = true;
@@ -203,6 +253,17 @@ export class CargaDiaria implements OnInit {
   }
 
   closeCausaModal(): void {
+    if (this.activeCelda && !this.activeCelda.causaId) {
+      // Si el usuario cancela sin seleccionar causa, revertir al estado previo
+      if (this.activeCeldaPrevCumplida === null) {
+        this.activeCelda.cumplida = null;
+        if (this.activeCeldaKey) {
+          this.celdasMap.delete(this.activeCeldaKey);
+        }
+      } else {
+        this.activeCelda.cumplida = this.activeCeldaPrevCumplida;
+      }
+    }
     this.showCausaModal = false;
     this.activeCeldaKey = null;
     this.activeCelda = null;
@@ -212,12 +273,26 @@ export class CargaDiaria implements OnInit {
   saveCausaModal(): void {
     if (!this.activeCelda) return;
 
+    if (!this.modalCausaId) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Causa requerida',
+        text: 'Por favor seleccione la causa de no cumplimiento.',
+        confirmButtonColor: '#1E3A5F',
+      });
+      return;
+    }
+
+    this.activeCelda.cumplida = false;
     this.activeCelda.causaId = this.modalCausaId;
     const causaObj = this.causasCatalogo.find((c) => c.id === this.modalCausaId);
     this.activeCelda.causaNombre = causaObj ? causaObj.nombre : null;
     this.activeCelda.causaDetalle = this.modalCausaDetalle.trim() || null;
 
-    this.closeCausaModal();
+    this.showCausaModal = false;
+    this.activeCeldaKey = null;
+    this.activeCelda = null;
+    this.cdr.detectChanges();
   }
 
   // ── Subida de Fotos Evidencias ────────────────────────────────
@@ -245,7 +320,7 @@ export class CargaDiaria implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.uploadingFotos = false;
-        this.handleError(err, 'No se pudieron subir las evidencias fotográficas.');
+        this.handleError(err, 'No se pudieron subir las evidencias fotográficas.', false);
         this.cdr.detectChanges();
       },
     });
@@ -273,18 +348,35 @@ export class CargaDiaria implements OnInit {
       return;
     }
 
-    this.savingCarga = true;
-    this.cdr.detectChanges();
+    // Filtrar estrictamente solo las celdas evaluadas (cumplida !== null && cumplida !== undefined)
+    const celdasEvaluadas = Array.from(this.celdasMap.values()).filter(
+      (c) => c.cumplida !== null && c.cumplida !== undefined
+    );
 
-    const celdasArray = Array.from(this.celdasMap.values()).map((c) => ({
-      zonaId: c.zonaId,
+    // Validación de Frontend: solo al guardar, verificar que las celdas marcadas como no cumplidas tengan causa
+    const celdasSinCausa = celdasEvaluadas.filter((c) => c.cumplida === false && !c.causaId);
+    if (celdasSinCausa.length > 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Causa requerida',
+        text: 'Debe indicar la causa de no cumplimiento para las celdas marcadas como no hechas.',
+        confirmButtonColor: '#1E3A5F',
+      });
+      return;
+    }
+
+    const celdasArray = celdasEvaluadas.map((c) => ({
+      torreId: c.torreId,
       nivelId: c.nivelId,
       sectorId: c.sectorId,
       actividadId: c.actividadId,
-      cumplida: c.cumplida,
-      causaId: c.causaId ?? null,
-      causaDetalle: c.causaDetalle ?? null,
+      cumplida: c.cumplida as boolean,
+      causaId: c.cumplida ? null : (c.causaId ?? null),
+      causaDetalle: c.cumplida ? null : (c.causaDetalle ?? null),
     }));
+
+    this.savingCarga = true;
+    this.cdr.detectChanges();
 
     this.bimService.saveCargaDiaria(this.selectedProjectId, this.fechaSeleccionada, { celdas: celdasArray }).subscribe({
       next: () => {
@@ -300,14 +392,14 @@ export class CargaDiaria implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.savingCarga = false;
-        this.handleError(err, 'No se pudo guardar la carga diaria.');
+        this.handleError(err, 'No se pudo guardar la carga diaria.', false);
         this.cdr.detectChanges();
       },
     });
   }
 
   // ── Manejo Distinguible de Errores (F9) ────────────────────────
-  private handleError(err: HttpErrorResponse, defaultMsg: string): void {
+  private handleError(err: HttpErrorResponse, defaultMsg: string, isLoadError: boolean = true): void {
     let title = 'Error';
     let message = defaultMsg;
 
@@ -324,7 +416,9 @@ export class CargaDiaria implements OnInit {
       message = err.error.message;
     }
 
-    this.loadError = `${title}: ${message}`;
+    if (isLoadError) {
+      this.loadError = `${title}: ${message}`;
+    }
 
     Swal.fire({
       icon: 'error',
@@ -334,3 +428,4 @@ export class CargaDiaria implements OnInit {
     });
   }
 }
+
