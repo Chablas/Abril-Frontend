@@ -5566,3 +5566,33 @@ Causa raíz identificada en `configuracion-inicial.ts:153-166` (`derivarZonaEdic
 - **Corregir el bug de `derivarZonaEdicion`** para zonas de un solo nivel (diagnosticado arriba, no aplicado).
 - Confirmar con backend el nombre real de los campos donde hice supuestos: `RestriccionDto` (`fechaLevantamientoPrevista`, `zonaId/nivelId/sectorId/actividadId` + `...Nombre`) y `CargaDiariaDto.restriccionesActivas`.
 - **No mergear a `master`** hasta coordinar el deploy simultáneo con backend (rompe contrato JSON de configuración).
+
+## Sesión 2026-08-29 — Planeamiento BIM: Migración a Torres en Restricciones y Soporte Tri-State en Carga Diaria
+
+### Contexto
+Se actualizó el flujo de Restricciones para integrarse al nuevo modelo de Torre -> Nivel -> Sector derivado (1..N) -> Actividad, y se corrigió el manejo de estados en la matriz de Carga Diaria implementando un ciclo Tri-state limpio (null -> true -> false -> null) para evitar falsos errores de causa de no cumplimiento.
+
+### Cambios
+1. **Restricciones — Modelo de Torres y Sectores Derivados**:
+   - DTOs (`planeamiento-bim-restriccion.dto.ts`): Reemplazados `zonaId`, `zonaNombre`, `sectorId` y `sectorNombre` por `torreId: number | null`, `torreNombre: string | null` y `sector: number | null` (número entero opcional derivado 1..N). Aliases `RestriccionDTO`, `CrearRestriccionDTO`, `ActualizarRestriccionDTO`.
+   - Cascada en modal (`restricciones.ts`, `restricciones.html`): Torre (`torresCatalogo`) -> Nivel (`nivelesDisponibles`) -> Sector derivado (`sectoresDisponibles` `[1..N]` calculado según `tipoEstructura` y conteo de la torre) -> Actividad (`actividadesCatalogo`).
+   - Tabla (`restricciones.html`): Columna de Ubicación formateada como `Torre / Nivel / Sector X / Actividad`.
+2. **Carga Diaria — Soporte Tri-State y Manejo de Causas**:
+   - DTOs (`planeamiento-bim-carga-diaria.dto.ts`): `CeldaDto.cumplida` tipado como `boolean | null`.
+   - Ciclo Tri-State (`carga-diaria.ts`, `carga-diaria.html`):
+     - `null` (Neutro / '—'): Celda no tocada / no programada.
+     - `true` (Cumplido / '✓'): Actividad completada.
+     - `false` (No Cumplido / '✕'): Actividad no completada con causa de incumplimiento obligatoria.
+     - Al hacer clic en una celda `false`, vuelve a `null` limpiando la causa.
+     - Si se cancela el modal de causa sin seleccionar, se revierte al estado previo.
+   - Filtrado y validación al guardar (`onGuardar`): Solo se envían las celdas evaluadas (`cumplida !== null`). Las celdas neutras no viajan como incumplidas. Validación `celdasSinCausa` verifica estrictamente `c.cumplida === false && !c.causaId`.
+   - Separación de errores: `handleError` no contamina `loadError` al guardar o subir fotos, evitando falsos banners de "Error de Carga".
+
+### Archivos clave
+- `src/app/features/projects/planeamiento-bim/dtos/planeamiento-bim-restriccion.dto.ts`
+- `src/app/features/projects/planeamiento-bim/dtos/planeamiento-bim-carga-diaria.dto.ts`
+- `src/app/features/projects/planeamiento-bim/restricciones/restricciones.ts` / `restricciones.html`
+- `src/app/features/projects/planeamiento-bim/carga-diaria/carga-diaria.ts` / `carga-diaria.html`
+
+### Verificado
+`npm run build`: 0 errores.
