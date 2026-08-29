@@ -153,8 +153,12 @@ export class ConfiguracionInicial implements OnInit {
   private derivarZonaEdicion(zona: ZonaConfigDTO): ZonaEdicion {
     const niveles = (zona.niveles || []).map((n) => ({ ...n, sectores: [...(n.sectores || [])] }));
 
+    // "Compartido" solo tiene sentido si hay más de un nivel para compartir entre sí — con un único
+    // nivel, `every()` se cumple trivialmente para cualquier sector de ese nivel (verdad vacía) y
+    // reclasificaría como compartido TODO sector exclusivo, aunque se haya guardado bien. Bug real
+    // reportado y diagnosticado en sesión 2026-08-28 (ver CONTEXT.md).
     let compartidos: SectorConfigDTO[] = [];
-    if (niveles.length > 0) {
+    if (niveles.length > 1) {
       const primerNivel = niveles[0];
       compartidos = (primerNivel.sectores || []).filter((sector) => {
         if (sector.id == null) return false; // sectores nuevos sin id no se pueden comparar entre niveles
