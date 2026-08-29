@@ -115,7 +115,10 @@ export class EvaluarPrevencionista implements OnInit {
   seleccionar(a: EvPrevencionistaAEvaluarDto): void {
     this.seleccionado = a;
     this.comentario = '';
-    this.detalles = (this.inicio?.plantilla ?? []).map((p: EvSupervisorContratistaCriterioDto) => ({
+    const plantilla = a.evaluadoPuesto === 'Coordinador SSOMA'
+      ? (this.inicio?.plantillaCoordinador ?? [])
+      : (this.inicio?.plantillaPrevencionista ?? []);
+    this.detalles = plantilla.map((p: EvSupervisorContratistaCriterioDto) => ({
       plantillaId: p.id,
       criterio: p.criterio,
       puntaje: null,

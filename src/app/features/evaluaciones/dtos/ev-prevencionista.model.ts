@@ -20,7 +20,8 @@ export interface EvPrevencionistaDetalleCreateDto {
 // ─── INICIO (pantalla evaluar, dentro del portal contratista) ──────────────
 export interface EvPrevencionistaInicioDto {
   periodo: EvPeriodoDto | null;
-  plantilla: EvSupervisorContratistaCriterioDto[];
+  plantillaCoordinador: EvSupervisorContratistaCriterioDto[];
+  plantillaPrevencionista: EvSupervisorContratistaCriterioDto[];
   aEvaluar: EvPrevencionistaAEvaluarDto[];
 }
 

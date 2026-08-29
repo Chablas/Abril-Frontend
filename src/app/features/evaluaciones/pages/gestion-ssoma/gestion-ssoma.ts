@@ -142,8 +142,11 @@ export class GestionSsoma implements OnInit {
     });
   }
 
-  private nuevosDetalles(): DetalleForm[] {
-    return (this.inicio?.plantilla ?? []).map((p: EvSupervisorContratistaCriterioDto) => ({
+  private nuevosDetalles(tipo: CandidatoUi['tipo']): DetalleForm[] {
+    const plantilla = tipo === 'Coordinador SSOMA'
+      ? (this.inicio?.plantillaCoordinador ?? [])
+      : (this.inicio?.plantillaPrevencionista ?? []);
+    return plantilla.map((p: EvSupervisorContratistaCriterioDto) => ({
       plantillaId: p.id,
       criterio: p.criterio,
       puntaje: null,
@@ -154,7 +157,7 @@ export class GestionSsoma implements OnInit {
     if (c.yaEvalue) return;
     this.seleccionado = c;
     this.busqueda = '';
-    this.detalles = this.nuevosDetalles();
+    this.detalles = this.nuevosDetalles(c.tipo);
     this.fortalezas = '';
     this.oportunidadesMejora = '';
     this.cdr.markForCheck();

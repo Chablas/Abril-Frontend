@@ -9,7 +9,8 @@ export type { EvSupervisorContratistaCriterioDto } from './ev-supervisor-contrat
 // D4 (Prevencionista, anónima): miCoordinador viene poblado, las listas no.
 export interface EvGestionSsomaInicioDto {
   periodo: EvPeriodoDto | null;
-  plantilla: EvSupervisorContratistaCriterioDto[];
+  plantillaCoordinador: EvSupervisorContratistaCriterioDto[];
+  plantillaPrevencionista: EvSupervisorContratistaCriterioDto[];
   prevencionistas: EvGestionSsomaAEvaluarDto[];
   coordinadores: EvGestionSsomaAEvaluarDto[];
   miCoordinador: EvGestionSsomaAEvaluarDto | null;
