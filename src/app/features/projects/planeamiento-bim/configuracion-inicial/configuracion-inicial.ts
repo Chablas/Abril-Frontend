@@ -6,18 +6,16 @@ import Swal from 'sweetalert2';
 
 import { AbrilPageHeaderComponent, SsomaHeaderBtn } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
-import { ProjectResidentService } from '../../../../core/services/projectResident.service';
-import { ProjectSimpleDTO } from '../../../../core/dtos/project/projectSimple.model';
 import { PROJECTS_TABS } from '../../shared/projects-tabs';
 import { PlaneamientoBimService } from '../services/planeamiento-bim.service';
 import {
   NivelTorreDTO,
   PlaneamientoBimConfigDTO,
-  ResponsableBimWorkerDTO,
   TipoEstructura,
   TorreConfigDTO,
   TorreUpdateDto,
 } from '../dtos/planeamiento-bim-config.dto';
+import { ProyectoBimSimpleDto } from '../dtos/planeamiento-bim-proyecto.dto';
 
 import { PlaneamientoBimSubnavComponent } from '../shared/planeamiento-bim-subnav/planeamiento-bim-subnav';
 
@@ -58,10 +56,8 @@ export class ConfiguracionInicial implements OnInit {
   readonly tiposEstructura = TIPOS_ESTRUCTURA;
   /** Meta PPC estándar del sistema (Fase A backend) — fija, ya no se edita ni se envía desde acá. */
   readonly metaPpcEstandar = 85;
-  projects: ProjectSimpleDTO[] = [];
+  projects: ProyectoBimSimpleDto[] = [];
   selectedProjectId: number | null = null;
-
-  responsables: ResponsableBimWorkerDTO[] = [];
 
   config: PlaneamientoBimConfigDTO = {
     responsableId: null,
@@ -86,7 +82,6 @@ export class ConfiguracionInicial implements OnInit {
 
   constructor(
     private bimService: PlaneamientoBimService,
-    private projectResidentService: ProjectResidentService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -98,25 +93,13 @@ export class ConfiguracionInicial implements OnInit {
     this.loadingProjects = true;
     this.loadError = null;
 
-    // Llamada ultraligera a GET /api/v1/projectResident/projects
-    this.projectResidentService.getProjectsDescription().subscribe({
+    // Catálogo ya filtrado por rol/asignación en backend (admin ve todo, PLANEAMIENTO_UDP
+    // solo donde es responsable) — no requiere filtro adicional acá.
+    this.bimService.getProyectos().subscribe({
       next: (res) => {
         this.projects = (res || []).sort((a, b) => a.projectDescription.localeCompare(b.projectDescription));
         this.loadingProjects = false;
         this.cdr.detectChanges();
-
-        // Cargar catálogo de responsables de Planeamiento BIM
-        this.bimService.getResponsables().subscribe({
-          next: (respList) => {
-            this.responsables = respList || [];
-            this.cdr.detectChanges();
-          },
-          error: (err: HttpErrorResponse) => {
-            // DEBUG: Error cargando catálogo de responsables
-            this.responsables = [];
-            this.cdr.detectChanges();
-          },
-        });
       },
       error: (err: HttpErrorResponse) => {
         this.loadingProjects = false;

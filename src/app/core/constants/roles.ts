@@ -60,6 +60,7 @@ export const Roles = {
   ADMINISTRADOR_SOLICITUD_SALIDAS:  '76', // ADMINISTRADOR DE SOLICITUD DE SALIDAS
   USUARIO_GTH:                      '77', // USUARIO DE GTH
   USUARIO_REVISOR_SALIDAS:          '78', // USUARIO REVISOR DE SALIDAS
+  PLANEAMIENTO_UDP:                 '80', // PLANEAMIENTO UDP
   // TESORERO: no basta con tenerlo. El backend solo concede sus features si además el puesto del
   // trabajador es de categoría TESORERO (46) — ver AuthRepository.GetAllowedFeaturesAsync —, así
   // que un hasRole(TESORERO) puede ser true sin que la persona vea la pantalla. Para saber si

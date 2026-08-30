@@ -91,31 +91,16 @@
       <!-- Fila Superior: Datos Generales (Responsable & Meta PPC) + Fases Meta -->
       <div class="top-section-grid">
 
-        <!-- Card 1: Responsable y Meta PPC -->
+        <!-- Card 1: Meta PPC -->
         <div class="bim-card">
           <div class="card-header">
             <h3 class="card-title">
-              <i class="ti ti-user-check title-icon"></i> RESPONSABLE Y META PPC
+              <i class="ti ti-target-arrow title-icon"></i> META PPC DEL PROYECTO
             </h3>
             <span class="card-badge">PROYECTO</span>
           </div>
 
           <div class="card-body general-fields">
-            <!-- Responsable Planeamiento BIM -->
-            <div class="bim-field">
-              <label class="bim-field-label" for="responsableSelect">RESPONSABLE PLANEAMIENTO BIM</label>
-              <select
-                id="responsableSelect"
-                class="bim-select"
-                [(ngModel)]="config.responsableId"
-              >
-                <option [ngValue]="null">-- Sin Responsable Asignado --</option>
-                <option *ngFor="let r of responsables" [value]="r.id">
-                  {{ r.apellidoNombre }}
-                </option>
-              </select>
-            </div>
-
             <!-- Meta PPC: estándar del sistema, solo lectura (Fase A backend) -->
             <div class="bim-field">
               <label class="bim-field-label" for="metaPpcReadonly">META PPC DEL PROYECTO (%)</label>

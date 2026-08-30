@@ -6,8 +6,6 @@ import Swal from 'sweetalert2';
 
 import { AbrilPageHeaderComponent, SsomaHeaderBtn } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
-import { ProjectResidentService } from '../../../../core/services/projectResident.service';
-import { ProjectSimpleDTO } from '../../../../core/dtos/project/projectSimple.model';
 import { PROJECTS_TABS } from '../../shared/projects-tabs';
 import { PlaneamientoBimService } from '../services/planeamiento-bim.service';
 import { PlaneamientoBimSubnavComponent } from '../shared/planeamiento-bim-subnav/planeamiento-bim-subnav';
@@ -19,6 +17,7 @@ import {
   CeldaDto,
 } from '../dtos/planeamiento-bim-carga-diaria.dto';
 import { NivelTorreDTO, TorreConfigDTO } from '../dtos/planeamiento-bim-config.dto';
+import { ProyectoBimSimpleDto } from '../dtos/planeamiento-bim-proyecto.dto';
 
 @Component({
   selector: 'app-carga-diaria',
@@ -36,7 +35,7 @@ import { NivelTorreDTO, TorreConfigDTO } from '../dtos/planeamiento-bim-config.d
 })
 export class CargaDiaria implements OnInit {
   readonly tabs = PROJECTS_TABS;
-  projects: ProjectSimpleDTO[] = [];
+  projects: ProyectoBimSimpleDto[] = [];
   selectedProjectId: number | null = null;
   fechaSeleccionada: string = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
@@ -72,7 +71,6 @@ export class CargaDiaria implements OnInit {
 
   constructor(
     private bimService: PlaneamientoBimService,
-    private projectResidentService: ProjectResidentService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -84,7 +82,9 @@ export class CargaDiaria implements OnInit {
     this.loadingProjects = true;
     this.loadError = null;
 
-    this.projectResidentService.getProjectsDescription().subscribe({
+    // Catálogo ya filtrado por rol/asignación en backend (admin ve todo, PLANEAMIENTO_UDP
+    // solo donde es responsable) — no requiere filtro adicional acá.
+    this.bimService.getProyectos().subscribe({
       next: (res) => {
         this.projects = (res || []).sort((a, b) => a.projectDescription.localeCompare(b.projectDescription));
         this.loadingProjects = false;
