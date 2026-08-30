@@ -26,6 +26,10 @@ export interface ProjectEditDto {
   responsableUdp?: string;
   responsableUdpId?: number;
 
+  // Responsable Planeamiento BIM
+  responsablePlaneamientoBim?: string;
+  responsablePlaneamientoBimId?: number;
+
   // Fechas (formato YYYY-MM-DD)
   fechaInicio?: string;
   fechaFin?: string;

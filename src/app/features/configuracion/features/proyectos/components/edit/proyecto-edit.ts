@@ -36,6 +36,8 @@ interface ProjectFormModel {
   responsableArqComId: number | null;
   responsableUdp: string;
   responsableUdpId: number | null;
+  responsablePlaneamientoBim: string;
+  responsablePlaneamientoBimId: number | null;
 
   fechaInicio: string | null;
   fechaFin: string | null;
@@ -78,6 +80,7 @@ export class ProyectoEdit implements OnInit {
 
   responsablesArqCom: ResponsableLookupDto[] = [];
   responsablesUdp: ResponsableLookupDto[] = [];
+  responsablesPlaneamientoBim: ResponsableLookupDto[] = [];
   loadingResponsables = true;
   responsablesError = false;
 
@@ -123,6 +126,8 @@ export class ProyectoEdit implements OnInit {
       responsableArqComId: this.project.responsableArqComId ?? null,
       responsableUdp:      this.project.responsableUdp      ?? '',
       responsableUdpId:    this.project.responsableUdpId    ?? null,
+      responsablePlaneamientoBim:   this.project.responsablePlaneamientoBim   ?? '',
+      responsablePlaneamientoBimId: this.project.responsablePlaneamientoBimId ?? null,
 
       fechaInicio: this.project.fechaInicio ? this.project.fechaInicio.substring(0, 10) : '',
       fechaFin:    this.project.fechaFin    ? this.project.fechaFin.substring(0, 10)    : '',
@@ -188,10 +193,12 @@ export class ProyectoEdit implements OnInit {
     forkJoin({
       arqCom: this.proyectoService.getResponsables('ARQ_COMERCIAL'),
       udp: this.proyectoService.getResponsables('UDP'),
+      planeamientoBim: this.proyectoService.getResponsables('PLANEAMIENTO_UDP'),
     }).subscribe({
-      next: ({ arqCom, udp }) => {
+      next: ({ arqCom, udp, planeamientoBim }) => {
         this.responsablesArqCom = [...arqCom].sort((a, b) => a.apellidoNombre.localeCompare(b.apellidoNombre));
         this.responsablesUdp = [...udp].sort((a, b) => a.apellidoNombre.localeCompare(b.apellidoNombre));
+        this.responsablesPlaneamientoBim = [...planeamientoBim].sort((a, b) => a.apellidoNombre.localeCompare(b.apellidoNombre));
         this.loadingResponsables = false;
         this.cdr.detectChanges();
       },
@@ -214,6 +221,12 @@ export class ProyectoEdit implements OnInit {
     this.form.responsableUdpId = id;
     const found = this.responsablesUdp.find((r) => r.id === id);
     this.form.responsableUdp = found ? found.apellidoNombre : '';
+  }
+
+  onResponsablePlaneamientoBimChange(id: number | null): void {
+    this.form.responsablePlaneamientoBimId = id;
+    const found = this.responsablesPlaneamientoBim.find((r) => r.id === id);
+    this.form.responsablePlaneamientoBim = found ? found.apellidoNombre : '';
   }
 
   save(): void {
@@ -243,6 +256,8 @@ export class ProyectoEdit implements OnInit {
       responsableArqComId: this.form.responsableArqComId ?? undefined,
       responsableUdp:      this.form.responsableUdp.trim() || undefined,
       responsableUdpId:    this.form.responsableUdpId ?? undefined,
+      responsablePlaneamientoBim:   this.form.responsablePlaneamientoBim.trim() || undefined,
+      responsablePlaneamientoBimId: this.form.responsablePlaneamientoBimId ?? undefined,
 
       fechaInicio: this.form.fechaInicio || undefined,
       fechaFin:    this.form.fechaFin    || undefined,
@@ -302,6 +317,8 @@ export class ProyectoEdit implements OnInit {
       responsableArqComId: null,
       responsableUdp: '',
       responsableUdpId: null,
+      responsablePlaneamientoBim: '',
+      responsablePlaneamientoBimId: null,
 
       fechaInicio: '',
       fechaFin: '',

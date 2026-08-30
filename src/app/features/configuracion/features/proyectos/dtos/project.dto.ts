@@ -32,6 +32,10 @@ export interface ProjectDto {
   responsableUdp?: string;
   responsableUdpId?: number;
 
+  // Responsable Planeamiento BIM
+  responsablePlaneamientoBim?: string;
+  responsablePlaneamientoBimId?: number;
+
   // Fechas (ISO string)
   fechaInicio?: string;
   fechaFin?: string;

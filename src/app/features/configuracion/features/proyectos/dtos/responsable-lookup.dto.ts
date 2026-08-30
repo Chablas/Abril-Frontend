@@ -3,4 +3,4 @@ export interface ResponsableLookupDto {
   apellidoNombre: string;
 }
 
-export type ResponsableTipo = 'ARQ_COMERCIAL' | 'UDP';
+export type ResponsableTipo = 'ARQ_COMERCIAL' | 'UDP' | 'PLANEAMIENTO_UDP';
