@@ -140,8 +140,11 @@
                     [class.pres-tr--rechazado]="getDecision(item.lineaId) === 'RECHAZADO'">
                   <td>{{ item.projectDescription }}</td>
                   <td class="pres-td-recurso">{{ item.recursoCrudo }}</td>
-                  @if (item.nombreItemSugerido) {
-                    <td>{{ item.nombreItemSugerido }}</td>
+                  @if (item.nombreItemSugerido && !sugerenciaDescartada.has(item.lineaId)) {
+                    <td>
+                      {{ item.nombreItemSugerido }}
+                      <button class="pres-link-crear" style="display:block;margin-top:2px" (click)="descartarSugerencia(item)">¿No es este ítem? Buscar otro</button>
+                    </td>
                     <td class="pres-td-familia">{{ item.nombreFamiliaSugerida ?? '—' }}</td>
                     <td>
                       @if (item.scoreMatch) {
