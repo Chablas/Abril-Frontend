@@ -55,6 +55,10 @@ export class EvSupervisorContratistaService {
     return this.http.post(this.base, dto, { headers: this.headers() });
   }
 
+  actualizar(id: number, dto: EvSupervisorContratistaEvaluacionCreateDto): Observable<any> {
+    return this.http.put(`${this.base}/${id}`, dto, { headers: this.headers() });
+  }
+
   marcarNoAplica(motivo: string, proyectoId?: number, supervisorSsContratistaUsuarioId?: number): Observable<any> {
     return this.http.post(
       `${this.base}/no-aplica`,

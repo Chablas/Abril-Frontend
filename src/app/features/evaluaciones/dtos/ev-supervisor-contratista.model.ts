@@ -24,6 +24,16 @@ export interface EvSupervisorContratistaAEvaluarDto {
   proyectoNombre: string;
   yaEvalue: boolean;
   notaPrevia: number | null;
+  evaluacionId: number | null;
+  comentarioPrevio: string | null;
+  detallesPrevios: EvSupervisorContratistaDetallePrevioDto[];
+}
+
+export interface EvSupervisorContratistaDetallePrevioDto {
+  plantillaId: number | null;
+  criterio: string;
+  puntaje: number | null;
+  esNa: boolean;
 }
 
 // ─── CREATE ───────────────────────────────────────────────────────────────
