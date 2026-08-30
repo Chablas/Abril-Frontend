@@ -5622,3 +5622,29 @@ Se agregó un tercer autocomplete de responsable en la sección "RESPONSABLE" de
 
 ### Verificado
 `ng build`: 0 errores (antes y después del rename de "Udp" a "Bim" en los campos de datos).
+
+## Sesión 2026-08-30 (cont.) — Planeamiento BIM: rol PLANEAMIENTO_UDP y selector de proyecto filtrado por backend
+
+### Contexto
+Continuación de la sesión anterior. Backend cerró y ya implementó localmente (commit `3c9b4d5d`, sin push) el contrato de 2 endpoints nuevos: `GET api/v1/project/me/worker` (resuelve el Worker del usuario logueado, 404 si no tiene ficha) y `GET api/v1/planeamiento-bim/proyectos` (lista de proyectos ya filtrada por rol/asignación: admin ve todo, `PLANEAMIENTO_UDP` (rol 80) ve solo donde es responsable, cualquier otro caso `[]`). Esta sesión consumió el segundo endpoint; el primero (`me/worker`) queda para una tarea futura, no implementado todavía.
+
+### Cambios
+1. **`core/constants/roles.ts`**: agregado `PLANEAMIENTO_UDP: '80'` (faltaba, el archivo saltaba de 78 a 83).
+2. **Selector de proyecto de las 4 pestañas de Planeamiento BIM** (`configuracion-inicial.ts`, `carga-diaria.ts`, `restricciones.ts`, `dashboard.ts`): reemplazado `ProjectResidentService.getProjectsDescription()` por `PlaneamientoBimService.getProyectos()` (nuevo método → `GET api/v1/planeamiento-bim/proyectos`, nuevo DTO `ProyectoBimSimpleDto` en `dtos/planeamiento-bim-proyecto.dto.ts`). Sin filtro adicional en frontend — se consume y muestra tal cual, el backend ya resuelve el rol/asignación. Se eliminó la inyección de `ProjectResidentService` en los 4 componentes (sin otro uso). **Portafolio no se tocó** (ruta ya tenía `roles: [ADMINISTRADOR_SISTEMA, ADMINISTRADOR_UDP]` hardcodeado y no usa selector de proyecto).
+3. **Configuración Inicial** (`configuracion-inicial.html`/`.ts`): quitado el selector "RESPONSABLE PLANEAMIENTO BIM" de la card "RESPONSABLE Y META PPC" — el campo se gestiona ahora desde Configuración de Proyectos (ver sesión anterior). Card renombrada a "META PPC DEL PROYECTO" (ícono `ti-target-arrow`), única con "META PPC DEL PROYECTO (%)" de solo lectura. Se limpió el catálogo local `responsables[]` y la llamada a `bimService.getResponsables()` (quedaban sin consumidor). **Se dejó intacto** `config.responsableId` en el modelo TS y en el payload de `saveConfiguracion()` — no se tocó el contrato de `PlaneamientoBimConfigUpdateDto` por falta de confirmación explícita de que backend lo haya quitado; viaja sin editarse desde acá. Tampoco se tocó el método compartido `PlaneamientoBimService.getResponsables()` ni el DTO `ResponsableBimWorkerDTO` (quedan sin consumidor en este componente, pero no se asumió que estén muertos a nivel de servicio compartido).
+
+### Decisión de diseño (sin cambios de código) — guard de las 4 rutas
+Se discutió si agregar `roles: [ADMINISTRADOR_SISTEMA, ADMINISTRADOR_UDP, PLANEAMIENTO_UDP]` al `data` de las 4 rutas (`configuracion-inicial`, `carga-diaria`, `restricciones`, `dashboard`), que hoy solo usan `featureKey`. **Decisión: no tocar el guard.** `roleGuard` es un OR (`featureKey` O `roles`) que retorna `true` en cuanto el `featureKey` matchea, sin llegar a evaluar `roles` — agregar `roles` ahí no restringe nada (cualquiera con el featureKey ya entra), solo abriría una vía extra de entrada para alguien con uno de esos 3 roles pero sin el featureKey asignado. Portafolio es la excepción justificada: no comparte featureKey con el resto del módulo porque backend tiene `[Authorize]` duro restringido a esos 2 roles en `PlaneamientoBimPortafolioController`, así que el frontend espeja esa restricción con `roles` en vez de `featureKey`. El caso "usuario con featureKey pero sin rol legítimo" ya queda cubierto por el contrato del endpoint (`[]` → dropdown vacío, sin bloqueo de pantalla). **Pendiente de verificar con backend** (fuera de alcance frontend): si los endpoints de escritura de estas 4 pantallas (`saveConfiguracion`, `saveCargaDiaria`, `createRestriccion`, etc.) validan que el `projectId` recibido pertenece al usuario, o si confían en que el frontend solo mande IDs que el usuario vio en su propio dropdown — si no lo validan, ahí hay un hueco real de autorización de backend, no de frontend.
+
+### Archivos clave
+- `src/app/core/constants/roles.ts`
+- `src/app/features/projects/planeamiento-bim/dtos/planeamiento-bim-proyecto.dto.ts` (nuevo)
+- `src/app/features/projects/planeamiento-bim/services/planeamiento-bim.service.ts`
+- `src/app/features/projects/planeamiento-bim/{configuracion-inicial,carga-diaria,restricciones,dashboard}/*.ts`
+
+### Pendiente
+- Implementar `GET api/v1/project/me/worker` (`MyWorkerDto { workerId, apellidoNombre }`) cuando se defina su uso concreto en el frontend — no se tocó en esta sesión.
+- Confirmar con backend si `config.responsableId` sigue vigente en `PlaneamientoBimConfigUpdateDto` (se dejó intacto por precaución, ver arriba).
+
+### Verificado
+`ng build`: 0 errores.
