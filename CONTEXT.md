@@ -5596,3 +5596,29 @@ Se actualizó el flujo de Restricciones para integrarse al nuevo modelo de Torre
 
 ### Verificado
 `npm run build`: 0 errores.
+
+## Sesión 2026-08-30 — Configuración de Proyectos: campo Responsable Planeamiento BIM
+
+### Contexto
+Se agregó un tercer autocomplete de responsable en la sección "RESPONSABLE" del formulario de edición de proyecto (`Configuración → Proyectos`), junto a los ya existentes "Responsable Arq. Comercial" y "Responsable UDP". Además se auditó el estado de sincronización de la rama `victor-frontend` contra `origin` a pedido del usuario y se revisó en detalle el commit `fb944101` (soporte tri-state en Carga Diaria de Planeamiento BIM) para confirmar que el diseño no requería revertirse.
+
+### Cambios
+1. **Nuevo campo "Responsable Planeamiento UDP" (label) / `responsablePlaneamientoBim` (dato)**:
+   - `dtos/responsable-lookup.dto.ts`: `ResponsableTipo` ahora incluye `'PLANEAMIENTO_UDP'` (el parámetro `tipo` del query string, confirmado por backend y sin renombrar).
+   - `dtos/project.dto.ts` y `dtos/project-edit.dto.ts`: nuevos campos `responsablePlaneamientoBim?` / `responsablePlaneamientoBimId?` — nombre alineado al DTO real de backend (`ResponsablePlaneamientoBim`/`Id`, no "Udp") tras corrección pedida por el usuario.
+   - `components/edit/proyecto-edit.ts`: tercer `app-search-select` cableado igual que los otros dos — array `responsablesPlaneamientoBim`, tercera llamada en el `forkJoin` de `loadResponsables()` (`getResponsables('PLANEAMIENTO_UDP')`), handler `onResponsablePlaneamientoBimChange()`, incluido en `save()` y en `emptyForm()`.
+   - `components/edit/proyecto-edit.html`: layout de la sección Responsable cambiado de `sm:grid-cols-2` a `sm:grid-cols-3` (una sola fila, mismo patrón que "Ubicación del proyecto"). **El label visible se dejó intencionalmente como "Responsable Planeamiento UDP"** — decisión explícita del usuario, aunque el campo de datos interno reutiliza el nombre "Planeamiento BIM" ya definido por backend. No tocar este texto sin pedido explícito.
+   - Solo se tocó el formulario de **edición**; el formulario de creación de proyecto no tiene sección "Responsable" y no fue modificado.
+
+### Diagnóstico de sincronización de rama (sin cambios de código)
+- Confirmado que `fb944101` (tri-state en Carga Diaria) ya estaba pusheado a `origin/victor-frontend` antes de esta sesión — no era un commit solo-local.
+- El ciclo tri-state (`cumplida: boolean | null`) fuerza causa obligatoria en dos capas (modal + validación al guardar) y **no** crea fila en `bim_registro_diario` para el estado Neutro (`null` se filtra del payload antes de enviarlo) — confirmado no afecta el acuerdo de `PorcentajeAvance` con backend. Con esto el usuario decidió mantener el diseño tal cual, sin revertir a binario puro.
+
+### Archivos clave
+- `src/app/features/configuracion/features/proyectos/dtos/responsable-lookup.dto.ts`
+- `src/app/features/configuracion/features/proyectos/dtos/project.dto.ts`
+- `src/app/features/configuracion/features/proyectos/dtos/project-edit.dto.ts`
+- `src/app/features/configuracion/features/proyectos/components/edit/proyecto-edit.ts` / `.html`
+
+### Verificado
+`ng build`: 0 errores (antes y después del rename de "Udp" a "Bim" en los campos de datos).
