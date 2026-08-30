@@ -67,6 +67,9 @@ export class CatalogoPage implements OnInit {
   itemManualPorLinea: Map<number, BuscarItemDto> = new Map();
   private timersBusqueda: Map<number, ReturnType<typeof setTimeout>> = new Map();
 
+  /** Líneas donde el usuario descartó la sugerencia automática por estar mal (para buscar/crear otro ítem a mano). */
+  sugerenciaDescartada: Set<number> = new Set();
+
   // Alta manual de un ítem que de verdad no existe en el catálogo
   crearItemAbiertoPara: number | null = null;
   nuevoItemNombre = '';
@@ -213,9 +216,7 @@ export class CatalogoPage implements OnInit {
       this.decisiones.set(item.lineaId, {
         lineaId: item.lineaId,
         decision,
-        itemIdConfirmado: decision === 'AUTORIZADO'
-          ? (item.itemIdSugerido ?? this.itemManualPorLinea.get(item.lineaId)?.id)
-          : undefined,
+        itemIdConfirmado: decision === 'AUTORIZADO' ? this.itemConfirmadoPara(item) : undefined,
       });
     }
     this.cdr.detectChanges();
@@ -225,9 +226,22 @@ export class CatalogoPage implements OnInit {
     return this.decisiones.get(lineaId)?.decision ?? null;
   }
 
-  /** Sin sugerencia automática, hace falta haber elegido un ítem a mano antes de poder autorizar. */
+  private itemConfirmadoPara(item: MaterialPendienteGlobalDto): number | undefined {
+    if (this.sugerenciaDescartada.has(item.lineaId)) return this.itemManualPorLinea.get(item.lineaId)?.id;
+    return item.itemIdSugerido ?? this.itemManualPorLinea.get(item.lineaId)?.id;
+  }
+
+  /** Sin sugerencia automática (o descartada por incorrecta), hace falta haber elegido un ítem a mano antes de poder autorizar. */
   puedeAutorizar(item: MaterialPendienteGlobalDto): boolean {
+    if (this.sugerenciaDescartada.has(item.lineaId)) return this.itemManualPorLinea.has(item.lineaId);
     return !!item.itemIdSugerido || this.itemManualPorLinea.has(item.lineaId);
+  }
+
+  /** La sugerencia automática estaba mal (p.ej. coincide en texto pero no en medida real): descartarla y pasar a búsqueda/creación manual. */
+  descartarSugerencia(item: MaterialPendienteGlobalDto): void {
+    this.sugerenciaDescartada.add(item.lineaId);
+    this.decisiones.delete(item.lineaId);
+    this.cdr.detectChanges();
   }
 
   itemManualSeleccionado(lineaId: number): BuscarItemDto | undefined {
