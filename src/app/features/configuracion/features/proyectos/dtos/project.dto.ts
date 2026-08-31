@@ -32,6 +32,11 @@ export interface ProjectDto {
   responsableUdp?: string;
   responsableUdpId?: number;
 
+  /** Coordinador administrativo: FK a workers. El correo se resuelve en vivo desde su ficha. */
+  workersCoordAdminId?: number | null;
+  /** Nombre del coordinador administrativo, para pintarlo sin buscarlo en la lista. */
+  coordAdminNombre?: string | null;
+
   // Fechas (ISO string)
   fechaInicio?: string;
   fechaFin?: string;

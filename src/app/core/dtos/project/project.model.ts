@@ -12,7 +12,6 @@ export interface ProjectGetDTO {
     emailResponsable?: string;
     emailRrhh?: string;
     emailCoordSsoma?: string;
-    emailCoordAdmin?: string;
     fechaInicio?: string;
     fechaFin?: string;
     areaM2?: number;

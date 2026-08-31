@@ -9,7 +9,7 @@ import { ProjectCreateDto } from '../dtos/project-create.dto';
 import { ProjectEditDto } from '../dtos/project-edit.dto';
 import { ProjectFilterDto } from '../dtos/project-filter.dto';
 import { ContributorLookupDto } from '../dtos/company-lookup.dto';
-import { ResponsableLookupDto, ResponsableTipo } from '../dtos/responsable-lookup.dto';
+import { ProjectLookupsDto } from '../dtos/responsable-lookup.dto';
 
 @Injectable({ providedIn: 'root' })
 export class ProyectoService {
@@ -53,10 +53,14 @@ export class ProyectoService {
     });
   }
 
-  getResponsables(tipo: ResponsableTipo): Observable<ResponsableLookupDto[]> {
-    return this.http.get<ResponsableLookupDto[]>(`${this.apiUrl}/responsables`, {
+  /**
+   * Los tres desplegables del modal (Arq. Comercial, UDP y coordinador administrativo)
+   * en una sola petición — antes eran dos llamadas en paralelo y el coordinador habría
+   * sido una tercera.
+   */
+  getLookups(): Observable<ProjectLookupsDto> {
+    return this.http.get<ProjectLookupsDto>(`${this.apiUrl}/lookups`, {
       headers: this.headers,
-      params: { tipo },
     });
   }
 }
