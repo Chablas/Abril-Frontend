@@ -35,8 +35,47 @@
         <label class="check-label">
           <input type="checkbox" [(ngModel)]="detalle.activo" /> Activo (visible para OPT y checklists)
         </label>
-        <button class="btn-primary" (click)="guardarCabecera()" [disabled]="guardandoCabecera">
-          {{ guardandoCabecera ? 'Guardando…' : 'Guardar cambios' }}
+        <div class="cabecera-actions-botones">
+          <button class="btn-secondary" (click)="exportarPdf()" [disabled]="exportandoPdf" title="Genera un PDF de trabajo con el estado actual — no reemplaza el documento oficial">
+            <i class="ti ti-file-download"></i> {{ exportandoPdf ? 'Generando…' : 'Vista previa PDF' }}
+          </button>
+          <button class="btn-primary" (click)="guardarCabecera()" [disabled]="guardandoCabecera">
+            {{ guardandoCabecera ? 'Guardando…' : 'Guardar cambios' }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── FIRMAS ───────────────────────────────────────────────────────── -->
+    <section class="card">
+      <h2 class="card-titulo">Firmas</h2>
+      <div class="firmas-grid">
+        <div class="firma-col" *ngFor="let r of rolesFirma">
+          <h3 class="catalogo-bloque-titulo">{{ r.label }}</h3>
+          <div class="abril-field">
+            <label class="abril-field-label">Nombre</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="detalle.firmas[r.value].nombre" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Cargo</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="detalle.firmas[r.value].cargo" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Fecha</label>
+            <input type="date" class="abril-field-input" [(ngModel)]="detalle.firmas[r.value].fecha" />
+          </div>
+          <div class="firma-imagen">
+            <img *ngIf="firmaUrl(detalle.firmas[r.value])" [src]="firmaUrl(detalle.firmas[r.value])" alt="Firma" />
+            <label class="btn-imagen">
+              {{ subiendoFirmaRol === r.value ? 'Subiendo…' : (firmaUrl(detalle.firmas[r.value]) ? 'Cambiar firma' : 'Subir firma') }}
+              <input type="file" accept="image/*" hidden (change)="onFirmaImagenSeleccionada($event, r.value)" [disabled]="subiendoFirmaRol === r.value" />
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="agregar-final">
+        <button class="btn-primary" (click)="guardarFirmas()" [disabled]="guardandoFirmas">
+          {{ guardandoFirmas ? 'Guardando…' : 'Guardar firmas' }}
         </button>
       </div>
     </section>
@@ -65,7 +104,7 @@
             renumerar nada.
           </p>
         </div>
-        <div class="import-actions" *ngIf="seccionActiva === 'procedimiento' && !previewPasos && !previewManual">
+        <div class="import-actions" *ngIf="seccionActiva === 'procedimiento' && !previewSeccionesArbol && !previewSeccionesTexto && !previewManual">
           <a class="btn-plantilla" [href]="plantillaUrl" download title="Descargar un Word con la estructura y estilos que la plataforma reconoce">
             <i class="ti ti-file-download"></i> Descargar plantilla
           </a>
@@ -76,28 +115,47 @@
         </div>
       </div>
 
-      <!-- ── VISTA PREVIA DE IMPORTACIÓN (nada se guarda hasta confirmar) ── -->
-      <div class="import-preview" *ngIf="seccionActiva === 'procedimiento' && previewPasos">
+      <!-- ── VISTA PREVIA DE IMPORTACIÓN (nada se guarda hasta confirmar) ──
+           Detecta TODAS las secciones conocidas del documento, no solo Procedimiento
+           — cada una se revisa/edita aquí y al confirmar cae en su propia pestaña. -->
+      <div class="import-preview" *ngIf="seccionActiva === 'procedimiento' && (previewSeccionesArbol || previewSeccionesTexto)">
         <p class="import-preview-hint">
           <i class="ti ti-info-circle"></i>
-          Detecté {{ previewPasos.length }} paso(s) en "PROCEDIMIENTO DE TRABAJO", con subtítulos
-          detectados automáticamente (sangría = nivel). Revisa el tipo, edita el texto o quita
-          los que no correspondan antes de confirmar — nada se guarda todavía.
+          Detecté {{ objectKeys(previewSeccionesArbol).length + objectKeys(previewSeccionesTexto).length }} sección(es)
+          en el documento. Revisa cada una — nada se guarda todavía.
         </p>
 
-        <div class="preview-row" *ngFor="let p of previewPasos; let i = index" [style.marginLeft.px]="p.profundidad * 24">
-          <select class="abril-field-input preview-tipo" [(ngModel)]="p.tipo">
-            <option *ngFor="let t of tiposPaso" [value]="t.value">{{ t.label }}</option>
-          </select>
-          <img *ngIf="p.imagenBase64" [src]="p.imagenBase64" class="preview-img" alt="Imagen detectada" />
-          <textarea class="abril-field-input preview-textarea" rows="2" [(ngModel)]="p.texto"></textarea>
-          <button class="btn-icon btn-icon-danger" title="Quitar" (click)="quitarPreviewPaso(i)"><i class="ti ti-trash"></i></button>
+        <div class="import-seccion-bloque" *ngFor="let seccion of objectKeys(previewSeccionesArbol)">
+          <h3 class="catalogo-bloque-titulo">{{ labelDeSeccion(seccion) }}</h3>
+          <div class="preview-row" *ngFor="let p of previewSeccionesArbol![seccion]; let i = index" [style.marginLeft.px]="p.profundidad * 24">
+            <select class="abril-field-input preview-tipo" [(ngModel)]="p.tipo">
+              <option *ngFor="let t of tiposPaso" [value]="t.value">{{ t.label }}</option>
+            </select>
+            <img *ngIf="p.imagenBase64" [src]="p.imagenBase64" class="preview-img" alt="Imagen detectada" />
+            <textarea class="abril-field-input preview-textarea" rows="2" [(ngModel)]="p.texto"></textarea>
+            <button class="btn-icon btn-icon-danger" title="Quitar" (click)="quitarPreviewPaso(seccion, i)"><i class="ti ti-trash"></i></button>
+          </div>
         </div>
+
+        <div class="import-seccion-bloque" *ngFor="let seccion of objectKeys(previewSeccionesTexto)">
+          <h3 class="catalogo-bloque-titulo">{{ labelDeSeccion(seccion) }}</h3>
+          <textarea
+            class="abril-field-input"
+            rows="6"
+            [ngModel]="previewSeccionesTexto![seccion]"
+            (ngModelChange)="previewSeccionesTexto![seccion] = $event"
+          ></textarea>
+        </div>
+
+        <label class="check-label" *ngIf="totalExistenteEnSeccionesDetectadas() > 0">
+          <input type="checkbox" [(ngModel)]="reemplazarAlConfirmar" />
+          Reemplazar Procedimiento/Responsabilidades existentes ({{ totalExistenteEnSeccionesDetectadas() }} paso(s) se eliminarán)
+        </label>
 
         <div class="preview-actions">
           <button class="btn-secondary" (click)="cancelarImportacion()" [disabled]="confirmandoImportacion">Cancelar</button>
-          <button class="btn-primary" (click)="confirmarImportacion()" [disabled]="previewPasos.length === 0 || confirmandoImportacion">
-            {{ confirmandoImportacion ? 'Guardando…' : 'Confirmar importación (' + previewPasos.length + ' pasos)' }}
+          <button class="btn-primary" (click)="confirmarImportacion()" [disabled]="confirmandoImportacion">
+            {{ confirmandoImportacion ? 'Guardando…' : 'Confirmar importación' }}
           </button>
         </div>
       </div>
@@ -139,6 +197,11 @@
           </div>
         </div>
 
+        <label class="check-label" *ngIf="detalle.pasos.length > 0">
+          <input type="checkbox" [(ngModel)]="reemplazarAlConfirmar" />
+          Reemplazar el Procedimiento actual ({{ detalle.pasos.length }} paso(s) existentes se eliminarán)
+        </label>
+
         <div class="preview-actions">
           <span class="manual-contador">{{ seleccionadosManual.length }} párrafo(s) seleccionado(s)</span>
           <button class="btn-secondary" (click)="cancelarImportacionManual()" [disabled]="confirmandoImportacion">Cancelar</button>
@@ -148,7 +211,7 @@
         </div>
       </div>
 
-      <ng-container *ngIf="!previewPasos && !previewManual">
+      <ng-container *ngIf="!previewSeccionesArbol && !previewSeccionesTexto && !previewManual">
       <div class="pasos-list" *ngIf="arbol.length > 0; else sinPasos">
         <ng-container *ngFor="let nodo of arbol; let i = index">
           <ng-container
@@ -248,6 +311,23 @@
           </div>
         </div>
       </ng-template>
+    </section>
+
+    <!-- ── SECCIÓN NARRATIVA (bloque de texto único) ────────────────────── -->
+    <section class="card" *ngIf="tabActiva.kind === 'texto'">
+      <h2 class="card-titulo">{{ tabActiva.label }}</h2>
+      <textarea
+        class="abril-field-input"
+        rows="16"
+        placeholder="Escribe el contenido de esta sección..."
+        [ngModel]="textoSecciones[seccionActiva]"
+        (ngModelChange)="textoSecciones[seccionActiva] = $event"
+      ></textarea>
+      <div class="agregar-final">
+        <button class="btn-primary" (click)="guardarTextoSeccion()" [disabled]="guardandoTextoSeccion[seccionActiva]">
+          {{ guardandoTextoSeccion[seccionActiva] ? 'Guardando…' : 'Guardar cambios' }}
+        </button>
+      </div>
     </section>
 
     <!-- ── CATÁLOGO (Marco Legal / EPP / Recursos) ─────────────────────── -->

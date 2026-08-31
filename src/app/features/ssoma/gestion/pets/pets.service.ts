@@ -18,6 +18,7 @@ import {
   CrearCatalogoItemRequest,
   SeleccionarItemCatalogoRequest,
   AgregarItemPersonalizadoRequest,
+  ActualizarFirmaRequest,
 } from './pets.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -86,6 +87,16 @@ export class PetsService {
     );
   }
 
+  // ── Secciones de texto único (Introducción / Alcance / Objetivo / Definiciones / Restricciones) ──
+
+  actualizarSeccionTexto(id: number, seccion: string, contenido: string): Observable<void> {
+    return this.http.put<void>(
+      `${this.base}/${id}/secciones-texto/${seccion}`,
+      { contenido },
+      { headers: buildAuthHeaders() },
+    );
+  }
+
   // ── Catálogo (Marco Legal / EPP / Recursos) ────────────────────────────────
 
   getCatalogo(grupo: string, tipo?: string | null): Observable<CatalogoItemDto[]> {
@@ -129,5 +140,28 @@ export class PetsService {
 
   eliminarAnexo(id: number, anexoId: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}/anexos/${anexoId}`, { headers: buildAuthHeaders() });
+  }
+
+  // ── Firmas (Elaborado por / Revisado por / Aprobado por) ────────────────────
+
+  actualizarFirma(id: number, rol: string, req: ActualizarFirmaRequest): Observable<void> {
+    return this.http.put<void>(`${this.base}/${id}/firmas/${rol}`, req, { headers: buildAuthHeaders() });
+  }
+
+  subirFirma(id: number, rol: string, file: File): Observable<{ firmaUrl: string }> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<{ firmaUrl: string }>(`${this.base}/${id}/firmas/${rol}/imagen`, fd, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  // ── Exportar ──────────────────────────────────────────────────────────────
+
+  exportarPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/exportar-pdf`, {
+      headers: buildAuthHeaders(),
+      responseType: 'blob',
+    });
   }
 }

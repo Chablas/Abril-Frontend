@@ -16,13 +16,9 @@ export interface PetPasoDto {
   orden: number;
 }
 
-export type PetSeccionTexto =
-  | 'introduccion'
-  | 'alcance'
-  | 'objetivo'
-  | 'definiciones'
-  | 'responsabilidades'
-  | 'restricciones';
+// Secciones narrativas: un solo bloque de texto cada una (no árbol). Procedimiento
+// y Responsabilidades sí tienen estructura real y van aparte, en árbol.
+export type PetSeccionTexto = 'introduccion' | 'alcance' | 'objetivo' | 'definiciones' | 'restricciones';
 
 export interface PetItemSeleccionadoDto {
   id: number;
@@ -41,6 +37,22 @@ export interface PetAnexoDto {
   orden: number;
 }
 
+export type PetRolFirma = 'elaborado' | 'revisado' | 'aprobado';
+
+export interface PetFirmaDto {
+  rol: string;
+  nombre?: string | null;
+  cargo?: string | null;
+  fecha?: string | null;
+  firmaUrl?: string | null;
+}
+
+export interface ActualizarFirmaRequest {
+  nombre?: string | null;
+  cargo?: string | null;
+  fecha?: string | null;
+}
+
 export interface PetDetalleDto {
   id: number;
   nombre: string;
@@ -48,11 +60,13 @@ export interface PetDetalleDto {
   sharepointUrl?: string;
   activo: boolean;
   pasos: PetPasoDto[];
-  secciones: Record<PetSeccionTexto, PetPasoDto[]>;
+  responsabilidades: PetPasoDto[];
+  seccionesTexto: Record<PetSeccionTexto, string>;
   marcoLegal: PetItemSeleccionadoDto[];
   epp: PetItemSeleccionadoDto[];
   recursos: PetItemSeleccionadoDto[];
   anexos: PetAnexoDto[];
+  firmas: Record<PetRolFirma, PetFirmaDto>;
 }
 
 export interface CrearPetRequest {
@@ -70,7 +84,7 @@ export interface ActualizarPetRequest {
 
 export interface CrearPetPasoRequest {
   descripcion: string;
-  seccion?: string; // procedimiento (default) | introduccion | alcance | objetivo | definiciones | responsabilidades | restricciones
+  seccion?: string; // procedimiento (default) | responsabilidades — únicas dos secciones en árbol
   parentId?: number | null;
   tipo?: string; // subtitulo | paso | letra | guion — default 'paso'
   posicion?: number;
@@ -138,7 +152,12 @@ export interface ImportParrafoDto {
 
 export interface PetsImportPreviewDto {
   seccionEncontrada: boolean;
-  pasos: ImportPasoPreviewDto[];
+  // Procedimiento y Responsabilidades — detectadas y ya armadas en árbol.
+  seccionesArbol: Record<string, ImportPasoPreviewDto[]>;
+  // Introducción/Alcance/Objetivo/Definiciones/Restricciones — texto ya concatenado
+  // por sección, editable antes de confirmar.
+  seccionesTexto: Record<string, string>;
+  // Respaldo cuando no se detecta NINGÚN título de sección conocido.
   todosLosParrafos: ImportParrafoDto[];
 }
 
@@ -151,5 +170,10 @@ export interface ImportPasoConfirmDto {
 }
 
 export interface ConfirmarImportacionRequest {
-  pasos: ImportPasoConfirmDto[];
+  seccionesArbol: Record<string, ImportPasoConfirmDto[]>;
+  seccionesTexto: Record<string, string>;
+  // true: borra la sección en árbol vigente antes de insertar (reimportar una
+  // versión corregida). false/omitido: agrega al final, como hasta ahora. No aplica
+  // a seccionesTexto: esas siempre se sobrescriben (es un solo bloque).
+  reemplazar?: boolean;
 }
