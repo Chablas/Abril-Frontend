@@ -5566,3 +5566,22 @@ Causa raíz identificada en `configuracion-inicial.ts:153-166` (`derivarZonaEdic
 - **Corregir el bug de `derivarZonaEdicion`** para zonas de un solo nivel (diagnosticado arriba, no aplicado).
 - Confirmar con backend el nombre real de los campos donde hice supuestos: `RestriccionDto` (`fechaLevantamientoPrevista`, `zonaId/nivelId/sectorId/actividadId` + `...Nombre`) y `CargaDiariaDto.restriccionesActivas`.
 - **No mergear a `master`** hasta coordinar el deploy simultáneo con backend (rompe contrato JSON de configuración).
+
+## Sesión 2026-08-30 — PETS: estructura completa, Firmas, exportación PDF + Presupuesto Materiales: progreso de estandarización
+
+### PETS
+`pets-detalle` pasó de una sola vista de "Procedimiento" a un sistema de pestañas completo:
+- Pestañas de texto único (textarea + Guardar) para Introducción/Alcance/Objetivo/Definiciones/Restricciones — Procedimiento y Responsabilidades siguen siendo árbol.
+- Pestañas de catálogo (checkboxes, con opción de agregar ítem propio del PETS o al catálogo global) para Marco Legal/EPP/Recursos, y pestaña de Anexos.
+- Card de Firmas (Elaborado/Revisado/Aprobado por: nombre, cargo, fecha, firma opcional como imagen) siempre visible junto a Datos generales.
+- Importador de Word: la vista previa ahora muestra cada sección detectada por separado (árbol o texto) antes de confirmar, con opción de "reemplazar" las secciones en árbol existentes.
+- Botón "Vista previa PDF" en Datos generales: abre una pestaña en blanco de forma síncrona en el click (para no chocar con el bloqueador de pop-ups) y le carga el PDF vía `location.href` cuando llega — inline, no descarga.
+
+### Presupuesto Materiales
+`presupuesto.service.ts` consume dos endpoints nuevos del backend: progreso en vivo de una estandarización de carga en curso ("línea X de Y") y cálculo de ratios de todos los proyectos de una sola vez.
+
+### Nota
+Los cambios que aparecían sin commitear en `evaluaciones/` y `core/navigation/` resultaron ser ruido de fin de línea (CRLF/LF) sin ningún contenido real — `git add` los normalizó y quedaron sin nada que commitear.
+
+### Verificado
+`ng build` → 0 errores (solo warnings preexistentes de dependencias CommonJS).
