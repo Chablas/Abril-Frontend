@@ -89,6 +89,9 @@ export class GthNuevaSolicitud implements OnInit {
     puestos: [],
     tiposRequerimiento: [],
     proyectos: [],
+    // Arranca en false: hasta que llegue la respuesta el formulario no ofrece la casilla de
+    // ingreso directo, que después el backend podría rechazar.
+    puedePedirIngresoDirecto: false,
     tiposDocumento: [],
     trabajadoresArea: [],
     destinatarios: { para: [], copias: [] },
@@ -125,6 +128,7 @@ export class GthNuevaSolicitud implements OnInit {
       next: (data) => {
         this.formData = {
           ...data,
+          puedePedirIngresoDirecto: data.puedePedirIngresoDirecto ?? false,
           tiposDocumento: data.tiposDocumento ?? [],
           trabajadoresArea: data.trabajadoresArea ?? [],
           destinatarios: data.destinatarios ?? { para: [], copias: [] },
@@ -146,14 +150,24 @@ export class GthNuevaSolicitud implements OnInit {
     });
   }
 
+  // ── FFT: quién puede pedir un ingreso directo ──────────────────────
+  /**
+   * ¿Se le ofrece la casilla FFT? Solo a GTH, el área dueña del proceso: un ingreso directo se
+   * salta la aprobación, la publicación y la selección entera. Lo decide el backend por el área de
+   * su ficha, no el rol, y es él quien rechaza una vacante marcada por cualquier otro.
+   */
+  get puedePedirIngresoDirecto(): boolean {
+    return this.formData.puedePedirIngresoDirecto;
+  }
+
   // ── Aviso "a quién le llega esta solicitud" ────────────────────────
   /**
-   * ¿Hay alguna vacante de ingreso directo? A un FFT no lo aprueba nadie —lo pida quien lo pida—
-   * así que su aviso va directo a GTH y con otros destinatarios. Es la misma regla que aplica el
-   * backend: si acá dijera otra cosa, el aviso prometería correos distintos de los que salen.
+   * ¿Hay alguna vacante de ingreso directo? A un FFT no lo aprueba nadie, así que su aviso va
+   * directo a GTH y con otros destinatarios. Es la misma regla que aplica el backend: si acá
+   * dijera otra cosa, el aviso prometería correos distintos de los que salen.
    */
   get hayIngresoDirecto(): boolean {
-    return this.vacantes.some((v) => v.esFft);
+    return this.puedePedirIngresoDirecto && this.vacantes.some((v) => v.esFft);
   }
 
   /** ¿Hay alguna vacante que sí espere una firma? Es la que dispara el correo de aprobación. */
@@ -415,7 +429,8 @@ export class GthNuevaSolicitud implements OnInit {
         // En un reemplazo el campo ni se mostró: se manda null explícito en vez de lo que hubiera
         // quedado de un cambio de tipo.
         salarioBrutoMensual: this.pideSalario(v) ? v.salarioBrutoMensual : null,
-        esFft: v.esFft,
+        // Sin la casilla no hay ingreso directo que enviar: el backend lo rechazaría con un 403.
+        esFft: this.puedePedirIngresoDirecto && v.esFft,
         fftCandidatoNombre: v.esFft ? v.fftCandidatoNombre.trim() : null,
         fftTipoDocumentoId: v.esFft ? v.fftTipoDocumentoId : null,
         fftCandidatoDocumento: v.esFft ? v.fftCandidatoDocumento.trim() : null,

@@ -72,20 +72,31 @@ export interface ReclutamientoFormDataDto {
    */
   categoriaNombre: string | null;
   maxVacantes: number;
+  /**
+   * Puestos que este solicitante puede pedir. Los de su área y sus áreas hijas; si es de GTH, el
+   * catálogo completo pero solo los activos y con área de destino («Va a»).
+   */
   puestos: PuestoOpcion[];
   tiposRequerimiento: TipoRequerimientoOpcion[];
   proyectos: OpcionDto[];
   /**
+   * ¿Puede marcar una vacante como ingreso directo **FFT**? Solo GTH: el FFT se salta el proceso
+   * entero, así que la casilla es del área dueña del proceso. Con false el bloque no se muestra y
+   * el backend rechaza igual cualquier vacante marcada.
+   */
+  puedePedirIngresoDirecto: boolean;
+  /**
    * Tipos de documento del candidato de un ingreso directo (DNI / CE), del mismo catálogo que usa
-   * el formulario del postulante.
+   * el formulario del postulante. Vacía cuando no se puede pedir un ingreso directo.
    */
   tiposDocumento: TipoDocumentoOpcion[];
   /**
    * Trabajadores entre los que se elige al reemplazado: los del área del solicitante y los de
    * cualquier área hija, incluido él mismo (pedir el reemplazo propio por renuncia o promoción es
-   * un caso real). Solo los que trabajan en Abril hoy — el backend descarta a los retirados y a
-   * las fichas de pre-ingreso de Reclutamiento. Vacía cuando el solicitante no tiene área
-   * registrada: en ese caso no hay de dónde elegir y el campo deja de ser obligatorio.
+   * un caso real). Si es de GTH llegan todos, sin recortar por área: pide puestos de toda la
+   * empresa. Solo los que trabajan en Abril hoy — el backend descarta a los retirados y a las
+   * fichas de pre-ingreso de Reclutamiento. Vacía cuando el solicitante no tiene área registrada:
+   * en ese caso no hay de dónde elegir y el campo deja de ser obligatorio.
    */
   trabajadoresArea: OpcionDto[];
   destinatarios: SolicitudDestinatarios;

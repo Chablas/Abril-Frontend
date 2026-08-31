@@ -163,8 +163,13 @@
            Va por vacante y no por solicitud: una misma solicitud puede pedir un ingreso
            directo y una vacante normal. Al marcarlo, la vacante deja de publicarse y de
            armar long list, así que hay que decir a QUIÉN se quiere: nombre y correo
-           personal son el único destinatario posible del formulario del postulante. -->
-      <div class="flex flex-col gap-[10px] rounded-[8px] px-[13px] py-[11px]"
+           personal son el único destinatario posible del formulario del postulante.
+
+           Solo para GTH (puedePedirIngresoDirecto): el ingreso directo se salta la aprobación
+           y la selección enteras, así que es del área dueña del proceso. Esconderlo al resto
+           no es la regla, es la cortesía: el backend rechaza la vacante marcada igual. -->
+      <div *ngIf="puedePedirIngresoDirecto"
+           class="flex flex-col gap-[10px] rounded-[8px] px-[13px] py-[11px]"
            [style.background]="v.esFft ? 'var(--color-abril-standard-light)' : '#FAFAFA'"
            [style.border]="'1px solid ' + (v.esFft ? 'var(--color-abril-standard-border)' : '#F0F0F0')">
 
