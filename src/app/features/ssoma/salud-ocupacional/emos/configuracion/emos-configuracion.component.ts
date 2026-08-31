@@ -10,7 +10,7 @@ import { EmoCorreosConfigComponent } from './correos/emo-correos-config.componen
  *
  * Acceso restringido por la feature 'ssoma.salud-ocupacional.emos.configuracion'
  * (roleGuard en la ruta). El contenido lo arma `app-emo-correos-config`, que trae
- * los 4 correos de EMO desde el backend y los pinta como secciones — las pestañas
+ * los correos de EMO desde el backend y los pinta como secciones — las pestañas
  * salen de los datos, no de una lista escrita acá.
  */
 @Component({

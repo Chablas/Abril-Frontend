@@ -390,6 +390,33 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   }
 
   /**
+   * Personal Externo (vigilancia, mantenimiento, choferes). No se apoya en `esCasa` como las
+   * otras tres clasificaciones: estas fichas vienen de la Data Maestra de GTH con
+   * `contrata_casa` vacío, así que exigirlo las dejaría fuera de todas las ramas y la sección
+   * "Asignación" saldría en blanco — que es justo lo que pasaba antes de que existiera su rama.
+   */
+  get esPersonalExterno(): boolean {
+    return !this.esContratista && this.model.obraOficina === 'Personal Externo';
+  }
+
+  /**
+   * Si los desplegables de Categoría/Puesto se pueden tocar.
+   *
+   * Al crear siempre; al editar solo en Staff, Oficina Central y Personal Externo. En Obra
+   * sigue siendo de solo lectura: el cambio de puesto de un obrero pasa por "Cambiar obra /
+   * puesto de trabajo", que es el único camino que evalúa si el EMO vigente sigue valiendo
+   * para el puesto nuevo (mismo protocolo de riesgo alto) y deja auditoría del cambio.
+   *
+   * Se mira el modelo y no el trabajador que abrió el modal a propósito: la clasificación se
+   * puede estar asignando en este mismo formulario (ver `clasificacionEditable`), y ahí lo que
+   * manda es la que quedó elegida.
+   */
+  get puestoEditable(): boolean {
+    if (this.mode === 'create') return true;
+    return this.esStaffOOficina || this.esPersonalExterno;
+  }
+
+  /**
    * True cuando el formulario muestra (y por tanto es dueño de) los desplegables de área. En Obra
    * y en contratistas no se capturan, así que ahí el área guardada se reenvía intacta en vez de
    * mandar nulls que la borrarían.

@@ -23,16 +23,17 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 /**
  * Configuración de EMOs → destinatarios de los correos de EMO.
  *
- * Una sección (`app-section-tabs`) por cada uno de los 4 correos: programación
- * automática, programación manual, aceptada por la clínica y rechazada por la
- * clínica. Dentro de cada sección, una matriz destinatario × perfil del
- * trabajador (Oficina Central / Staff / Obra / Contratista) con un interruptor
- * por celda, porque a un trabajador de Oficina Central no le escribe la misma
- * gente que a uno de obra.
+ * Una sección (`app-section-tabs`) por cada correo: programación automática,
+ * programación manual, aceptada por la clínica, rechazada por la clínica y el
+ * resultado del examen. Dentro de cada sección, una matriz destinatario × perfil
+ * del trabajador (Oficina Central / Staff / Obra) con un interruptor por celda,
+ * porque a un trabajador de Oficina Central no le escribe la misma gente que a
+ * uno de obra.
  *
  * Hay tres clases de destinatario:
- *  • Dinámicos (clínica, jefe, trabajador, residente, coordinadores, admin de la
- *    razón social, GTH): su correo se resuelve al enviar, solo se prenden/apagan.
+ *  • Dinámicos (clínica, jefe o solicitante, trabajador, residente, coordinadores,
+ *    admin de la razón social, GTH): su correo se resuelve al enviar, solo se
+ *    prenden/apagan.
  *  • Buzones de área (medicina ocupacional, ArqCom, Post Venta): el correo se
  *    edita acá; ya no vive en el appsettings del servidor.
  *  • Correos adicionales: alta/edición/baja completa desde la pantalla.
