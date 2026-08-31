@@ -87,6 +87,8 @@ export interface DocumentoVersionDto {
   subidoPorEmpresaId?: number;
   subidoPorNombre?: string;
   estadoAlSubir?: string;
+  aprobadoPorUserId?: number;
+  aprobadoPorNombre?: string;
   createdAt: string;
   archivos?: DocumentoArchivoDto[];
 }
