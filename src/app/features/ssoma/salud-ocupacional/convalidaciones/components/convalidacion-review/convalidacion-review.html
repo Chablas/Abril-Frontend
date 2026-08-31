@@ -82,7 +82,7 @@
         </div>
       </div>
 
-      <div class="doc-card" *ngIf="item.interconsultaEstado">
+      <div class="doc-card" *ngFor="let ic of item.interconsultas">
         <div class="doc-card-icon inter-icon">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -91,17 +91,20 @@
           </svg>
         </div>
         <div class="doc-card-body">
-          <p class="doc-card-title">Interconsulta</p>
-          <p class="doc-card-sub" *ngIf="item.interconsultaUrlInforme">
-            Archivo disponible · {{ item.interconsultaEspecialidad }}
+          <p class="doc-card-title">
+            Informe Interconsulta
+            <span class="inter-estado" [class.pendiente]="ic.estado === 'Pendiente'">{{ ic.estado }}</span>
           </p>
-          <p class="doc-card-sub missing" *ngIf="!item.interconsultaUrlInforme">
-            Pendiente · {{ item.interconsultaEspecialidad }}
+          <p class="doc-card-sub" *ngIf="ic.urlInforme">
+            Archivo disponible · {{ ic.especialidad }} · {{ ic.fechaDerivacion | date:'dd/MM/yyyy' }}
+          </p>
+          <p class="doc-card-sub missing" *ngIf="!ic.urlInforme">
+            Sin archivo · {{ ic.especialidad }} · {{ ic.fechaDerivacion | date:'dd/MM/yyyy' }}
           </p>
         </div>
         <div class="doc-card-actions">
-          <button *ngIf="item.interconsultaUrlInforme" type="button" class="doc-btn-ver"
-            (click)="verDocumento(item.interconsultaUrlInforme, 'Informe Interconsulta')">
+          <button *ngIf="ic.urlInforme" type="button" class="doc-btn-ver"
+            (click)="verDocumento(ic.urlInforme, 'Informe Interconsulta · ' + ic.especialidad)">
             Ver
           </button>
         </div>

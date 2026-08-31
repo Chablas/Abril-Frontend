@@ -29,9 +29,10 @@ import { CandidatoApto, OnboardingListItem } from '../../dtos/onboarding.dto';
  * que no hay forma de arrancar un onboarding de alguien que aún está en proceso de selección. Esa
  * lista la calcula el backend y viene con la bandeja.
  *
- * El correo NO se pide: sale de la base de datos (`person.email`, el correo personal que GTH validó
- * al aprobar el formulario del postulante) y se muestra para que GTH lo verifique. Se puede corregir
- * a mano si hace falta, y en ese caso el correo corregido viaja en el request.
+ * El correo personal NO se pide: sale siempre de la ficha de la base maestra (`person.email`) —
+ * igual para un ingreso normal que para un ingreso directo FFT — y se muestra para que GTH lo
+ * verifique. Se puede corregir a mano si hace falta, y en ese caso el correo corregido viaja en el
+ * request.
  *
  * La carta oferta es obligatoria y tiene que ser un PDF: ya no se envía adjunta, sino que se guarda
  * en el file del colaborador y él la lee y la firma desde un enlace con token. Mostrarla en el
@@ -66,7 +67,7 @@ export class GthNuevoIngresoModal {
   fechaIngreso: string | null = null;
   observacion = '';
 
-  /** Correo destino. Se prellena con el de la base de datos y GTH lo puede corregir. */
+  /** Correo personal destino. Se prellena con el de la base maestra y GTH lo puede corregir. */
   correo = '';
 
   carta: File | null = null;
@@ -101,8 +102,8 @@ export class GthNuevoIngresoModal {
   }
 
   /**
-   * Al elegir al colaborador se prellena su correo; GTH puede ajustarlo antes de enviar. La fecha
-   * de ingreso se escribe siempre a mano: el requerimiento ya no trae ninguna fecha propuesta.
+   * Al elegir al colaborador se prellena su correo personal; GTH puede ajustarlo antes de enviar.
+   * La fecha de ingreso se escribe siempre a mano: el requerimiento ya no trae ninguna propuesta.
    */
   onCandidatoChange(id: number | null): void {
     this.candidatoId = id;
@@ -121,17 +122,17 @@ export class GthNuevoIngresoModal {
 
   /**
    * Aviso de estado de la ficha de la base maestra: qué le falta al colaborador elegido. Los tres
-   * casos (correo, DNI, ficha) vienen del mismo origen —su formulario de postulante nunca se
-   * aprobó—, así que van en una sola línea y no en tres cajas apiladas. El correo se puede escribir
-   * a mano en el modal; el DNI y la ficha no (ver `motivoBloqueo`).
+   * casos (correo, DNI, ficha) salen de esa misma ficha, así que van en una sola línea y no en tres
+   * cajas apiladas. El correo se puede escribir a mano en el modal; el DNI y la ficha no (ver
+   * `motivoBloqueo`).
    */
   get avisoFichaMaestra(): string | null {
     const c = this.seleccionado;
     if (!c) return null;
-    if (!c.tieneFichaMaestra) return 'Sin ficha en la base maestra: su formulario de postulante no está aprobado.';
+    if (!c.tieneFichaMaestra) return 'Sin ficha en la base maestra.';
 
     const falta: string[] = [];
-    if (!c.correo) falta.push('correo');
+    if (!c.correo) falta.push('correo personal');
     if (!c.dni) falta.push('documento de identidad');
     if (!falta.length) return null;
     return `Su ficha de la base maestra no tiene ${falta.join(' ni ')}.`;
@@ -148,15 +149,15 @@ export class GthNuevoIngresoModal {
 
   /**
    * Motivo por el que el botón está bloqueado, para no dejar a GTH adivinando. Los casos del correo,
-   * el DNI y la ficha vacíos son los importantes: significan que el formulario del postulante nunca
-   * se aprobó, así que no hay ficha en la base maestra de donde sacarlos. El correo se puede escribir
-   * a mano; el DNI no, porque es el que nombra la carpeta del colaborador en SharePoint y tiene que
-   * ser el mismo que el de su ficha; y la ficha tampoco, porque es donde se guarda la firma que el
-   * colaborador va a registrar al abrir el enlace.
+   * el DNI y la ficha vacíos son los importantes: significan que el colaborador todavía no tiene
+   * ficha en la base maestra —o que la tiene incompleta— y de ahí es de donde salen los tres. El
+   * correo se puede escribir a mano; el DNI no, porque es el que nombra la carpeta del colaborador
+   * en SharePoint y tiene que ser el mismo que el de su ficha; y la ficha tampoco, porque es donde
+   * se guarda la firma que el colaborador va a registrar al abrir el enlace.
    */
   get motivoBloqueo(): string | null {
     if (this.candidatoId === null) return 'Elige al colaborador.';
-    if (!this.correo.trim()) return 'Falta el correo del colaborador.';
+    if (!this.correo.trim()) return 'Falta el correo personal del colaborador.';
     if (!this.seleccionado?.dni) return 'Sin documento de identidad en la base maestra: con él se crea su carpeta en el file.';
     if (!this.seleccionado?.tieneFichaMaestra) return 'Sin ficha en la base maestra: ahí se guarda la firma que registrará en el enlace.';
     if (!this.carta) return 'Adjunta la carta oferta en PDF.';
