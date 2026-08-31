@@ -651,9 +651,17 @@ export class Trabajadores implements OnInit, OnDestroy {
   estaVencido(estado: string, vigencia?: string | null): boolean {
     // "Renovando" conserva la vigencia aprobada anterior; si esa ya venció, cuenta como vencido.
     if ((estado !== 'Aprobado' && estado !== 'Renovando') || !vigencia) return false;
-    const vigenciaDate = new Date(vigencia);
-    if (isNaN(vigenciaDate.getTime())) return false;
-    return vigenciaDate.getTime() <= Date.now();
+    if (isNaN(new Date(vigencia).getTime())) return false;
+    // Comparación por FECHA (no por instante). Antes se comparaba new Date(vigencia).getTime()
+    // contra Date.now(): al parsear una fecha ISO sin hora como medianoche UTC, un documento
+    // vigente "hasta el 31" ya salía "Vencido" desde las 19:00 del día 30 en hora Lima (UTC-5),
+    // y seguía marcado vencido durante todo el día 31 en vez de recién el 1. Se toma el día
+    // calendario directo del string (sin pasar por Date, que reintroduciría el mismo corrimiento
+    // de zona horaria al convertir de vuelta) y se compara con "<" para que el documento siga
+    // vigente durante todo su último día.
+    const hoyStr = new Date().toLocaleDateString('en-CA');
+    const vigenciaStr = vigencia.slice(0, 10);
+    return vigenciaStr < hoyStr;
   }
 
   getEstadoLabel(estado: string, vigencia?: string | null): string {

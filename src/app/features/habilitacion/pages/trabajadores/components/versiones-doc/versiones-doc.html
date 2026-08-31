@@ -10,18 +10,20 @@
             <th>Fecha</th>
             <th>Archivo</th>
             <th>Estado al subir</th>
+            <th>Aprobado/rechazado por</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <tr *ngIf="versiones.length === 0">
-            <td colspan="5" class="empty-row">Sin versiones registradas.</td>
+            <td colspan="6" class="empty-row">Sin versiones registradas.</td>
           </tr>
           <tr *ngFor="let v of versiones">
             <td>v{{ v.version }}</td>
             <td>{{ v.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
             <td>{{ v.archivos && v.archivos.length > 0 ? v.archivos[0].nombreArchivo : (v.archivoUrl ? v.archivoUrl.split('/').pop() : '—') }}</td>
             <td>{{ v.estadoAlSubir ?? '—' }}</td>
+            <td>{{ v.aprobadoPorNombre ?? '—' }}</td>
             <td class="row-actions">
               <button type="button" class="btn-link" (click)="abrirVisor(v.archivoUrl)">
                 Ver
