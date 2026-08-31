@@ -336,13 +336,13 @@
     (closeModal)="modalAbierto = false" />
 }
 
-<!-- ── Modal de detalle del onboarding (clic en una fila) ───────────────── -->
+<!-- ── Modal de detalle del onboarding (clic en una fila o enlace del correo) ── -->
 @if (detalle) {
   <app-gth-onboarding-detalle-modal
     [colaborador]="detalle"
     [fases]="fases"
     (actualizado)="onDetalleActualizado($event)"
-    (closeModal)="detalle = null" />
+    (closeModal)="cerrarDetalle()" />
 }
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────────── -->

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../shared/pipes/title-case.pipe';
@@ -86,6 +86,12 @@ export class GthOnboarding implements OnInit {
   /** Colaborador cuyo detalle está abierto (se abre al hacer clic en su fila). */
   detalle: OnboardingListItem | null = null;
 
+  /**
+   * Onboarding que hay que abrir apenas llegue la bandeja. Solo lo llena el enlace del correo de
+   * «carta oferta firmada» (`/onboarding/colaborador/:id`); en la navegación normal queda en null.
+   */
+  private deepLinkOnboardingId: number | null = null;
+
   private readonly pager = new ClientPager<OnboardingListItem>(DEFAULT_PAGE_SIZE);
 
   constructor(
@@ -93,6 +99,7 @@ export class GthOnboarding implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private authService: AuthService,
+    private route: ActivatedRoute,
     private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
@@ -117,6 +124,12 @@ export class GthOnboarding implements OnInit {
   }
 
   ngOnInit(): void {
+    // `/gestion-gth/onboarding/colaborador/:id` es la URL del botón del correo que avisa que el
+    // colaborador firmó su carta oferta: abre su detalle, que es donde se revisa y se aprueba. Sin
+    // id, la pantalla es solo la bandeja.
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    if (Number.isInteger(id) && id > 0) this.deepLinkOnboardingId = id;
+
     this.load();
   }
 
@@ -129,6 +142,14 @@ export class GthOnboarding implements OnInit {
         this.colaboradores = data.colaboradores;
         this.candidatosAptos = data.candidatosAptos;
         this.pager.reset();
+        // El detalle se abre recién acá porque el modal recibe la fila entera, no un id: hasta que
+        // no llega la bandeja no hay nada que abrirle. Si esa fila ya no está (el onboarding se dio
+        // de baja después de mandar el correo), se queda en la bandeja.
+        if (this.deepLinkOnboardingId !== null) {
+          this.detalle =
+            this.colaboradores.find((c) => c.onboardingId === this.deepLinkOnboardingId) ?? null;
+          this.deepLinkOnboardingId = null;
+        }
         this.loaderService.hide();
         this.cdr.detectChanges();
       },
@@ -161,6 +182,15 @@ export class GthOnboarding implements OnInit {
   // ── Modal de detalle ────────────────────────────────────────────────────
   abrirDetalle(colaborador: OnboardingListItem): void {
     this.detalle = colaborador;
+  }
+
+  /**
+   * Cierra el detalle. Si se llegó por el enlace del correo (`/onboarding/colaborador/:id`), se
+   * limpia la URL para que un refresco no vuelva a abrir el modal.
+   */
+  cerrarDetalle(): void {
+    this.detalle = null;
+    if (this.route.snapshot.paramMap.get('id')) this.router.navigate(['/gestion-gth/onboarding']);
   }
 
   /**

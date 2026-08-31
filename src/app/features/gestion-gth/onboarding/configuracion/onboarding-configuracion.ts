@@ -5,9 +5,11 @@ import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-pa
 import { GthCorreosConfig } from '../../shared/correos-config/correos-config';
 
 /**
- * Contenedor de la Configuración de correos de Onboarding: hoy, la carta oferta que recibe el
- * colaborador con el enlace para leerla, registrar su firma y firmarla en línea. Sale tanto al
- * abrir el onboarding como al reenviar el enlace desde el detalle, con el mismo cuerpo.
+ * Contenedor de la Configuración de correos de Onboarding: la ida y la vuelta de la carta oferta.
+ * La ida es el correo que recibe el colaborador con el enlace para leerla, registrar su firma y
+ * firmarla en línea (sale tanto al abrir el onboarding como al reenviar el enlace desde el
+ * detalle, con el mismo cuerpo); la vuelta es el aviso a GTH de que ya la firmó, que dispara él
+ * mismo desde ese enlace.
  *
  * Acceso restringido por la feature 'gestion-gth.reclutamiento.configuracion' (roleGuard en la
  * ruta), la misma que habilita las otras tres configuraciones de correos de Gestión GTH: quien

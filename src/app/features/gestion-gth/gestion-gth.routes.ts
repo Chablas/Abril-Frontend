@@ -57,9 +57,21 @@ export const GESTION_GTH_ROUTES: Routes = [
     },
   },
   {
-    // Configuración del correo de la carta oferta: el que recibe el colaborador con el enlace
-    // para leerla, registrar su firma y firmarla en línea. Misma feature que las otras tres
-    // configuraciones de correos del módulo.
+    // Misma bandeja de Onboarding, con el detalle de un colaborador ya abierto: es la URL del
+    // botón del correo que avisa que firmó su carta oferta, y lleva justo a donde se revisa y se
+    // aprueba. Segmento propio ('colaborador') para que no compita con 'onboarding/configuracion'.
+    path: 'onboarding/colaborador/:id',
+    loadComponent: () => import('./onboarding/onboarding').then((m) => m.GthOnboarding),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'ONBOARDING',
+      featureKey: 'gestion-gth.onboarding',
+    },
+  },
+  {
+    // Configuración de los correos del onboarding: el que recibe el colaborador con el enlace
+    // para leer y firmar su carta oferta, y el que recibe GTH cuando la firma. Misma feature que
+    // las otras tres configuraciones de correos del módulo.
     path: 'onboarding/configuracion',
     loadComponent: () =>
       import('./onboarding/configuracion/onboarding-configuracion').then(
