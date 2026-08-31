@@ -1,6 +1,5 @@
 <app-abril-modal-panel
   titulo="Nuevo ingreso"
-  subtitulo="Inicia el onboarding enviando el enlace de la carta oferta"
   icono="ti-user-plus"
   variant="blue"
   width="640px"
@@ -15,10 +14,7 @@
   @if (candidatos.length === 0) {
     <div class="aviso aviso--vacio">
       <i class="ti ti-info-circle"></i>
-      <span>
-        Todavía no hay candidatos listos para onboarding. Aparecen acá cuando el área solicitante
-        selecciona a un finalista y su requerimiento queda <b>Cerrado</b> en Reclutamiento.
-      </span>
+      <span>Sin candidatos listos: ningún requerimiento quedó <b>Cerrado</b> con finalista.</span>
     </div>
   } @else {
     <app-search-select
@@ -52,23 +48,14 @@
     <div class="abril-section-title">Carta oferta</div>
 
     <div class="form-row">
-      <!-- El hint del correo va DENTRO de esta columna, no debajo de la fila: colgado de la fila
-           se metía bajo el campo de fecha (y al colapsar a una columna en móvil, encima de él). -->
+      <!-- El correo no se pide: llega desde la base maestra y se muestra para que GTH lo
+           verifique. La columna se mantiene para que la fila siga siendo correo + fecha. -->
       <div class="form-col">
         <div class="abril-field">
           <label class="abril-field-label">Correo del colaborador *</label>
           <input type="email" class="abril-field-input" [(ngModel)]="correo"
                  placeholder="correo@ejemplo.com" [disabled]="candidatoId === null" />
         </div>
-
-        <!-- El correo no se pide: sale de la base maestra. Se muestra de dónde vino
-             para que GTH sepa qué está confirmando y cuándo debe corregirlo. -->
-        @if (candidatoId !== null && seleccionado?.correo) {
-          <p class="campo-hint">
-            <i class="ti ti-database"></i>
-            <span>Correo personal registrado en la base maestra. Corrígelo solo si cambió.</span>
-          </p>
-        }
       </div>
 
       <!-- dense + floatingLabel: mismas medidas (34px) y mismo label flotante que el campo de
@@ -84,41 +71,14 @@
       </app-date-picker>
     </div>
 
-    @if (candidatoId !== null && !seleccionado?.correo) {
+    <!-- Un solo aviso con lo que le falta a la ficha de la base maestra. Antes eran tres cajas
+         apiladas (correo, ficha, DNI) que además se mostraban juntas, porque los tres casos salen
+         del mismo origen: el formulario del postulante nunca se aprobó. El detalle de qué bloquea
+         cada uno vive en el título del botón (`motivoBloqueo`). -->
+    @if (avisoFichaMaestra) {
       <div class="aviso aviso--alerta">
         <i class="ti ti-alert-triangle"></i>
-        <span>
-          Este colaborador no tiene correo personal en la base maestra: su formulario de postulante
-          no está aprobado. Apruébalo en <b>Reclutamiento</b> para que quede registrado, o escribe
-          el correo aquí.
-        </span>
-      </div>
-    }
-
-    <!-- La firma que el colaborador va a dibujar en el enlace se guarda en su ficha de la base
-         maestra, así que sin ficha el envío no puede salir: el enlace llegaría a una página que no
-         puede terminar. Se avisa acá y no al enviar. -->
-    @if (candidatoId !== null && seleccionado && !seleccionado.tieneFichaMaestra) {
-      <div class="aviso aviso--alerta">
-        <i class="ti ti-alert-triangle"></i>
-        <span>
-          Este colaborador no tiene ficha en la <b>base maestra</b> y ahí se guarda la firma que va a
-          registrar al abrir el enlace. Aprueba su formulario de postulante en <b>Reclutamiento</b>
-          para crearla.
-        </span>
-      </div>
-    }
-
-    <!-- El DNI, a diferencia del correo, no se puede escribir a mano: nombra la carpeta del
-         colaborador en el file de SharePoint y tiene que ser el mismo que el de su ficha. -->
-    @if (candidatoId !== null && !seleccionado?.dni) {
-      <div class="aviso aviso--alerta">
-        <i class="ti ti-alert-triangle"></i>
-        <span>
-          Este colaborador no tiene documento de identidad en la base maestra, y con él se crea su
-          carpeta en el <b>file de colaboradores</b>. Aprueba su formulario de postulante en
-          <b>Reclutamiento</b> para que quede registrado.
-        </span>
+        <span>{{ avisoFichaMaestra }}</span>
       </div>
     }
 
@@ -146,19 +106,12 @@
     }
 
     <div class="abril-field">
-      <label class="abril-field-label">Observación interna</label>
+      <label class="abril-field-label">
+        Observación interna <span class="label-opcional">· opcional</span>
+      </label>
       <textarea class="abril-field-input" rows="2" [(ngModel)]="observacion"
-                placeholder="Opcional: nota de GTH sobre este ingreso."></textarea>
+                placeholder="Nota interna de GTH"></textarea>
     </div>
-
-    <p class="campo-hint">
-      <i class="ti ti-mail-forward"></i>
-      <span>
-        La carta se guarda en el file de SharePoint del colaborador y se le envía un correo con un
-        <b>enlace</b> —no la carta adjunta— para que la lea, registre su firma y la firme en línea. El
-        onboarding queda en la fase <b>Carta oferta firmada</b>, esperando esa firma.
-      </span>
-    </p>
   }
 
   <div modalFooter class="modal-footer-row">

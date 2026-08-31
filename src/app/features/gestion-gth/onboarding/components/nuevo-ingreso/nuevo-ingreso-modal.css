@@ -7,8 +7,8 @@
 .abril-field { margin-bottom: 14px; }
 
 /* Correo + fecha de ingreso. `align-items: start` para que el date-picker no se
-   estire al alto de la columna del correo (que además lleva su hint debajo), y
-   la fecha se queda en un ancho fijo porque no necesita más que dd/mm/aaaa. */
+   estire al alto de la columna del correo, y la fecha se queda en un ancho fijo
+   porque no necesita más que dd/mm/aaaa. */
 .form-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 200px;
@@ -17,10 +17,8 @@
   margin-bottom: 14px;
 }
 .form-col { min-width: 0; }
-/* El margen inferior lo lleva la fila; dentro de la columna el hint va pegado
-   a su campo, que es de lo que habla. */
+/* El margen inferior lo lleva la fila, no el campo. */
 .form-row .abril-field { margin-bottom: 0; }
-.form-row .campo-hint { margin: 6px 0 0; }
 
 @media (max-width: 520px) {
   .form-row { grid-template-columns: 1fr; }
@@ -72,20 +70,8 @@
   color: #92400e;
 }
 
-/* El texto va SIEMPRE dentro de un <span>: al ser flex, cada nodo suelto del
-   párrafo (incluido un <b> intercalado) se vuelve un ítem propio y el texto se
-   partía en columnas en vez de fluir como un párrafo. */
-.campo-hint {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  font-size: 11.5px;
-  color: #6b7280;
-  line-height: 1.4;
-  margin: -6px 0 14px;
-}
-.campo-hint i { font-size: 13px; flex-shrink: 0; margin-top: 1px; }
-.campo-hint span { flex: 1 1 auto; min-width: 0; }
+/* «· opcional» junto al label flotante, en vez de un párrafo debajo del campo. */
+.label-opcional { font-weight: 500; color: #9ca3af; }
 
 /* Separa el selector/preview de la carta del bloque siguiente. */
 app-file-selector,

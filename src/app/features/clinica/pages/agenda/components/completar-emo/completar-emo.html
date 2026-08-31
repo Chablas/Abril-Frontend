@@ -1,4 +1,4 @@
-<app-base-modal *ngIf="open" [title]="'Registrar Resultado EMO'" width="w-[640px]" (closeModal)="close()">
+<app-base-modal *ngIf="open" [title]="'Registrar Resultado EMO'" width="w-[720px]" (closeModal)="close()">
   <div class="form-wrapper">
 
     <!-- Worker info -->
@@ -83,7 +83,7 @@
                 (change)="onArchivoLectura($event)" />
               <span class="file-zone-icon">📎</span>
               <span *ngIf="!archivoLectura" class="file-zone-hint">PDF, JPG o PNG — clic para seleccionar</span>
-              <span *ngIf="archivoLectura" class="file-zone-name">✓ {{ archivoLectura.name }}</span>
+              <span *ngIf="archivoLectura" class="file-zone-name" [title]="archivoLectura.name">✓ {{ archivoLectura.name }}</span>
             </label>
             <p class="field-error" *ngIf="!archivoLectura">Debes adjuntar el informe de lectura</p>
           </div>
@@ -102,7 +102,7 @@
             <input type="file" accept=".pdf" class="file-hidden" (change)="onArchivoAptitud($event)" />
             <span class="file-zone-icon">📄</span>
             <span *ngIf="!archivoAptitud" class="file-zone-hint">Seleccionar PDF</span>
-            <span *ngIf="archivoAptitud" class="file-zone-name">✓ {{ archivoAptitud.name }}</span>
+            <span *ngIf="archivoAptitud" class="file-zone-name" [title]="archivoAptitud.name">✓ {{ archivoAptitud.name }}</span>
           </label>
         </div>
 
@@ -112,7 +112,7 @@
             <input type="file" accept=".pdf" class="file-hidden" (change)="onArchivoEmo($event)" />
             <span class="file-zone-icon">📋</span>
             <span *ngIf="!archivoEmo" class="file-zone-hint">Seleccionar PDF</span>
-            <span *ngIf="archivoEmo" class="file-zone-name">✓ {{ archivoEmo.name }}</span>
+            <span *ngIf="archivoEmo" class="file-zone-name" [title]="archivoEmo.name">✓ {{ archivoEmo.name }}</span>
           </label>
         </div>
 

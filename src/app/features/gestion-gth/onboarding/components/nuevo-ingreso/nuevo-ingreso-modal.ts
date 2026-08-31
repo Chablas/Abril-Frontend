@@ -119,6 +119,24 @@ export class GthNuevoIngresoModal {
     this.carta = null;
   }
 
+  /**
+   * Aviso de estado de la ficha de la base maestra: qué le falta al colaborador elegido. Los tres
+   * casos (correo, DNI, ficha) vienen del mismo origen —su formulario de postulante nunca se
+   * aprobó—, así que van en una sola línea y no en tres cajas apiladas. El correo se puede escribir
+   * a mano en el modal; el DNI y la ficha no (ver `motivoBloqueo`).
+   */
+  get avisoFichaMaestra(): string | null {
+    const c = this.seleccionado;
+    if (!c) return null;
+    if (!c.tieneFichaMaestra) return 'Sin ficha en la base maestra: su formulario de postulante no está aprobado.';
+
+    const falta: string[] = [];
+    if (!c.correo) falta.push('correo');
+    if (!c.dni) falta.push('documento de identidad');
+    if (!falta.length) return null;
+    return `Su ficha de la base maestra no tiene ${falta.join(' ni ')}.`;
+  }
+
   get puedeEnviar(): boolean {
     return !this.guardando
       && this.candidatoId !== null
@@ -137,14 +155,11 @@ export class GthNuevoIngresoModal {
    * colaborador va a registrar al abrir el enlace.
    */
   get motivoBloqueo(): string | null {
-    if (this.candidatoId === null) return 'Elige al colaborador que inicia su onboarding.';
-    if (!this.correo.trim())
-      return 'Este colaborador no tiene correo personal en la base maestra. Aprueba su formulario de postulante en Reclutamiento, o escribe el correo aquí.';
-    if (!this.seleccionado?.dni)
-      return 'Este colaborador no tiene documento de identidad en la base maestra. Aprueba su formulario de postulante en Reclutamiento: con el DNI se crea su carpeta en el file de colaboradores.';
-    if (!this.seleccionado?.tieneFichaMaestra)
-      return 'Este colaborador no tiene ficha en la base maestra y ahí se guarda la firma que registrará en el enlace. Aprueba su formulario de postulante en Reclutamiento para crearla.';
-    if (!this.carta) return 'Adjunta la carta oferta (PDF) que va a firmar.';
+    if (this.candidatoId === null) return 'Elige al colaborador.';
+    if (!this.correo.trim()) return 'Falta el correo del colaborador.';
+    if (!this.seleccionado?.dni) return 'Sin documento de identidad en la base maestra: con él se crea su carpeta en el file.';
+    if (!this.seleccionado?.tieneFichaMaestra) return 'Sin ficha en la base maestra: ahí se guarda la firma que registrará en el enlace.';
+    if (!this.carta) return 'Adjunta la carta oferta en PDF.';
     return null;
   }
 
