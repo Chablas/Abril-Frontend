@@ -457,6 +457,8 @@ export class NavigationService {
               { label: 'Auditoría de ATS', route: '/ssoma/gestion/auditoria-ats/lista' },
               { label: 'Amonestaciones y Suspensiones', route: '/ssoma/gestion/amonestaciones' },
               { label: 'Dossier', route: '/habilitacion/gestion/dossier' },
+              { label: 'Evaluar SSOMA', route: '/habilitacion/evaluar-prevencionista' },
+              { label: 'Mi Desempeño', route: '/habilitacion/mi-perfil-supervisor' },
             ],
             groups: [],
           };

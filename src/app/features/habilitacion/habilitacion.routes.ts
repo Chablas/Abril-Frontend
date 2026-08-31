@@ -237,6 +237,13 @@ export const HABILITACION_ROUTES: Routes = [
     data: { titulo: 'HABILITACIÓN - EVALUAR SSOMA', roles: ['CONTRATISTA'] },
   },
   {
+    path: 'mi-perfil-supervisor',
+    loadComponent: () =>
+      import('./pages/mi-perfil-supervisor/mi-perfil-supervisor').then((m) => m.MiPerfilSupervisor),
+    canActivate: [authGuard, roleGuard],
+    data: { titulo: 'HABILITACIÓN - MI DESEMPEÑO SSOMA', roles: ['CONTRATISTA'] },
+  },
+  {
     path: 'cambiar-password',
     loadComponent: () =>
       import('./pages/cambiar-password/cambiar-password').then((m) => m.CambiarPassword),

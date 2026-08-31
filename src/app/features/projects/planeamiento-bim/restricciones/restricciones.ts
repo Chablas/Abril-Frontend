@@ -6,15 +6,22 @@ import Swal from 'sweetalert2';
 
 import { AbrilPageHeaderComponent, SsomaHeaderBtn } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { ProjectResidentService } from '../../../../core/services/projectResident.service';
 import { ProjectSimpleDTO } from '../../../../core/dtos/project/projectSimple.model';
 import { PROJECTS_TABS } from '../../shared/projects-tabs';
 import { PlaneamientoBimService } from '../services/planeamiento-bim.service';
-import { BloqueoDto } from '../dtos/planeamiento-bim-bloqueo.dto';
+import { RestriccionDto } from '../dtos/planeamiento-bim-restriccion.dto';
+import { NivelConfigDTO, SectorConfigDTO, ZonaConfigDTO } from '../dtos/planeamiento-bim-config.dto';
+import { ActividadCatalogoDto } from '../dtos/planeamiento-bim-carga-diaria.dto';
 import { PlaneamientoBimSubnavComponent } from '../shared/planeamiento-bim-subnav/planeamiento-bim-subnav';
 
+function hoyISO(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
 @Component({
-  selector: 'app-bloqueos',
+  selector: 'app-restricciones',
   standalone: true,
   imports: [
     CommonModule,
@@ -22,22 +29,33 @@ import { PlaneamientoBimSubnavComponent } from '../shared/planeamiento-bim-subna
     AbrilPageHeaderComponent,
     PlaneamientoBimSubnavComponent,
     BaseModal,
+    SearchSelect,
   ],
-  templateUrl: './bloqueos.html',
-  styleUrl: './bloqueos.css',
+  templateUrl: './restricciones.html',
+  styleUrl: './restricciones.css',
 })
-export class Bloqueos implements OnInit {
+export class Restricciones implements OnInit {
   readonly tabs = PROJECTS_TABS;
   projects: ProjectSimpleDTO[] = [];
   selectedProjectId: number | null = null;
 
-  bloqueos: BloqueoDto[] = [];
+  restricciones: RestriccionDto[] = [];
   soloActivos: boolean = false;
 
   loadingProjects = false;
-  loadingBloqueos = false;
-  savingBloqueo = false;
+  loadingRestricciones = false;
+  savingRestriccion = false;
   loadError: string | null = null;
+
+  // ── Catálogo de ubicación (Zona/Nivel/Sector/Actividad) del formulario ──
+  // Se carga una sola vez por proyecto, al abrir el modal (no en la selección de
+  // proyecto ni en el listado), reutilizando GET carga-diaria (trae zonas+actividades
+  // en una sola llamada, igual que ya hace Dashboard para evidencias).
+  zonasCatalogo: ZonaConfigDTO[] = [];
+  actividadesCatalogo: ActividadCatalogoDto[] = [];
+  loadingCatalogos = false;
+  catalogoError: string | null = null;
+  private catalogoProjectId: number | null = null;
 
   // Modal State
   showModal = false;
@@ -46,9 +64,14 @@ export class Bloqueos implements OnInit {
 
   formDescripcion: string = '';
   formEstado: string = 'ABIERTO'; // "ABIERTO" | "EN_GESTION"
+  formFechaLevantamientoPrevista: string | null = null;
+  formZonaId: number | null = null;
+  formNivelId: number | null = null;
+  formSectorId: number | null = null;
+  formActividadId: number | null = null;
 
   readonly btnCrearHeader: SsomaHeaderBtn = {
-    label: 'Nuevo Bloqueo',
+    label: 'Nueva Restricción',
     icono: 'ti ti-plus',
   };
 
@@ -83,25 +106,25 @@ export class Bloqueos implements OnInit {
   onProjectChange(projectId: number | null): void {
     if (!projectId) return;
     this.selectedProjectId = Number(projectId);
-    this.cargarBloqueos();
+    this.cargarRestricciones();
   }
 
-  cargarBloqueos(): void {
+  cargarRestricciones(): void {
     if (!this.selectedProjectId) return;
 
-    this.loadingBloqueos = true;
+    this.loadingRestricciones = true;
     this.loadError = null;
     this.cdr.detectChanges();
 
-    this.bimService.getBloqueos(this.selectedProjectId, this.soloActivos).subscribe({
+    this.bimService.getRestricciones(this.selectedProjectId, this.soloActivos).subscribe({
       next: (data) => {
-        this.bloqueos = data || [];
-        this.loadingBloqueos = false;
+        this.restricciones = data || [];
+        this.loadingRestricciones = false;
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        this.loadingBloqueos = false;
-        this.handleError(err, 'No se pudo cargar el listado de bloqueos.');
+        this.loadingRestricciones = false;
+        this.handleError(err, 'No se pudo cargar el listado de restricciones.');
         this.cdr.detectChanges();
       },
     });
@@ -110,16 +133,62 @@ export class Bloqueos implements OnInit {
   toggleSoloActivos(): void {
     this.soloActivos = !this.soloActivos;
     if (this.selectedProjectId) {
-      this.cargarBloqueos();
+      this.cargarRestricciones();
     }
   }
 
   /**
-   * REGLA CLAVE BLOQUEOS:
+   * REGLA CLAVE RESTRICCIONES:
    * "activo" se determina estrictamente por fechaCierre === null (NUNCA por estado).
    */
-  esActivo(b: BloqueoDto): boolean {
-    return b.fechaCierre === null;
+  esActivo(r: RestriccionDto): boolean {
+    return r.fechaCierre === null;
+  }
+
+  // ── Catálogo de ubicación (cascada Zona → Nivel → Sector, + Actividad) ──
+  get nivelesDisponibles(): NivelConfigDTO[] {
+    return this.zonasCatalogo.find((z) => z.id === this.formZonaId)?.niveles || [];
+  }
+
+  get sectoresDisponibles(): SectorConfigDTO[] {
+    return this.nivelesDisponibles.find((n) => n.id === this.formNivelId)?.sectores || [];
+  }
+
+  onFormZonaChange(zonaId: number | null): void {
+    this.formZonaId = zonaId;
+    this.formNivelId = null;
+    this.formSectorId = null;
+  }
+
+  onFormNivelChange(nivelId: number | null): void {
+    this.formNivelId = nivelId;
+    this.formSectorId = null;
+  }
+
+  private cargarCatalogoUbicacion(projectId: number): void {
+    // Ya cargado para este proyecto: no repetir la llamada (1 GET por apertura de modal, no por proyecto).
+    if (this.catalogoProjectId === projectId && (this.zonasCatalogo.length > 0 || this.actividadesCatalogo.length > 0)) {
+      return;
+    }
+
+    this.loadingCatalogos = true;
+    this.catalogoError = null;
+    this.cdr.detectChanges();
+
+    this.bimService.getCargaDiaria(projectId, hoyISO()).subscribe({
+      next: (data) => {
+        this.zonasCatalogo = (data.zonas || []).slice().sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0));
+        this.actividadesCatalogo = (data.actividades || []).slice().sort((a, b) => a.orden - b.orden);
+        this.catalogoProjectId = projectId;
+        this.loadingCatalogos = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingCatalogos = false;
+        this.catalogoError = 'No se pudo cargar el catálogo de zonas, niveles, sectores y actividades. Puede guardar la restricción sin especificar ubicación, o reintentar.';
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   // ── Modales y Formulario ─────────────────────────────────────
@@ -128,7 +197,7 @@ export class Bloqueos implements OnInit {
       Swal.fire({
         icon: 'warning',
         title: 'Selección requerida',
-        text: 'Por favor, seleccione un proyecto antes de registrar un bloqueo.',
+        text: 'Por favor, seleccione un proyecto antes de registrar una restricción.',
         confirmButtonColor: '#1E3A5F',
       });
       return;
@@ -138,27 +207,39 @@ export class Bloqueos implements OnInit {
     this.editingId = null;
     this.formDescripcion = '';
     this.formEstado = 'ABIERTO';
+    this.formFechaLevantamientoPrevista = null;
+    this.formZonaId = null;
+    this.formNivelId = null;
+    this.formSectorId = null;
+    this.formActividadId = null;
     this.showModal = true;
+    this.cargarCatalogoUbicacion(this.selectedProjectId);
     this.cdr.detectChanges();
   }
 
-  openEditModal(b: BloqueoDto): void {
-    if (!this.esActivo(b)) {
+  openEditModal(r: RestriccionDto): void {
+    if (!this.esActivo(r)) {
       Swal.fire({
         icon: 'info',
-        title: 'Bloqueo Cerrado',
-        text: 'Este bloqueo ya fue cerrado y no se puede editar.',
+        title: 'Restricción Cerrada',
+        text: 'Esta restricción ya fue levantada/cerrada y no se puede editar.',
         confirmButtonColor: '#1E3A5F',
       });
       return;
     }
 
     this.modalMode = 'EDIT';
-    this.editingId = b.id;
-    this.formDescripcion = b.descripcion;
+    this.editingId = r.id;
+    this.formDescripcion = r.descripcion;
     // Si el estado en BD es CERRADO por algún motivo erróneo, fallback a EN_GESTION
-    this.formEstado = b.estado === 'CERRADO' ? 'EN_GESTION' : b.estado;
+    this.formEstado = r.estado === 'CERRADO' ? 'EN_GESTION' : r.estado;
+    this.formFechaLevantamientoPrevista = r.fechaLevantamientoPrevista;
+    this.formZonaId = r.zonaId;
+    this.formNivelId = r.nivelId;
+    this.formSectorId = r.sectorId;
+    this.formActividadId = r.actividadId;
     this.showModal = true;
+    if (this.selectedProjectId) this.cargarCatalogoUbicacion(this.selectedProjectId);
     this.cdr.detectChanges();
   }
 
@@ -166,6 +247,11 @@ export class Bloqueos implements OnInit {
     this.showModal = false;
     this.formDescripcion = '';
     this.formEstado = 'ABIERTO';
+    this.formFechaLevantamientoPrevista = null;
+    this.formZonaId = null;
+    this.formNivelId = null;
+    this.formSectorId = null;
+    this.formActividadId = null;
     this.editingId = null;
     this.cdr.detectChanges();
   }
@@ -175,7 +261,7 @@ export class Bloqueos implements OnInit {
       Swal.fire({
         icon: 'warning',
         title: 'Descripción requerida',
-        text: 'Por favor ingrese la descripción del bloqueo.',
+        text: 'Por favor ingrese la descripción de la restricción.',
         confirmButtonColor: '#1E3A5F',
       });
       return;
@@ -185,105 +271,109 @@ export class Bloqueos implements OnInit {
       Swal.fire({
         icon: 'warning',
         title: 'Estado inválido',
-        text: 'El estado del bloqueo solo puede ser "ABIERTO" o "EN GESTIÓN".',
+        text: 'El estado de la restricción solo puede ser "ABIERTO" o "EN GESTIÓN".',
         confirmButtonColor: '#1E3A5F',
       });
       return;
     }
 
-    this.savingBloqueo = true;
+    this.savingRestriccion = true;
     this.cdr.detectChanges();
+
+    const payload = {
+      descripcion: this.formDescripcion.trim(),
+      estado: this.formEstado,
+      fechaLevantamientoPrevista: this.formFechaLevantamientoPrevista || null,
+      zonaId: this.formZonaId,
+      nivelId: this.formNivelId,
+      sectorId: this.formSectorId,
+      actividadId: this.formActividadId,
+    };
 
     if (this.modalMode === 'CREATE') {
       if (!this.selectedProjectId) return;
-      this.bimService.createBloqueo(this.selectedProjectId, {
-        descripcion: this.formDescripcion.trim(),
-        estado: this.formEstado,
-      }).subscribe({
+      this.bimService.createRestriccion(this.selectedProjectId, payload).subscribe({
         next: () => {
-          this.savingBloqueo = false;
+          this.savingRestriccion = false;
           this.closeModal();
           Swal.fire({
             icon: 'success',
-            title: 'Bloqueo registrado',
-            text: 'El bloqueo ha sido creado exitosamente.',
+            title: 'Restricción registrada',
+            text: 'La restricción ha sido creada exitosamente.',
             timer: 1800,
             showConfirmButton: false,
           });
-          this.cargarBloqueos();
+          this.cargarRestricciones();
         },
         error: (err: HttpErrorResponse) => {
-          this.savingBloqueo = false;
-          this.handleError(err, 'No se pudo registrar el bloqueo.');
+          this.savingRestriccion = false;
+          this.handleError(err, 'No se pudo registrar la restricción.');
           this.cdr.detectChanges();
         },
       });
     } else {
       if (!this.editingId) return;
-      this.bimService.updateBloqueo(this.editingId, {
-        descripcion: this.formDescripcion.trim(),
-        estado: this.formEstado,
-      }).subscribe({
+      this.bimService.updateRestriccion(this.editingId, payload).subscribe({
         next: () => {
-          this.savingBloqueo = false;
+          this.savingRestriccion = false;
           this.closeModal();
           Swal.fire({
             icon: 'success',
-            title: 'Bloqueo actualizado',
+            title: 'Restricción actualizada',
             text: 'Los cambios han sido guardados exitosamente.',
             timer: 1800,
             showConfirmButton: false,
           });
-          this.cargarBloqueos();
+          this.cargarRestricciones();
         },
         error: (err: HttpErrorResponse) => {
-          this.savingBloqueo = false;
-          this.handleError(err, 'No se pudo actualizar el bloqueo.');
+          this.savingRestriccion = false;
+          this.handleError(err, 'No se pudo actualizar la restricción.');
           this.cdr.detectChanges();
         },
       });
     }
   }
 
-  cerrarBloqueo(b: BloqueoDto): void {
-    if (!this.esActivo(b)) {
+  cerrarRestriccion(r: RestriccionDto): void {
+    if (!this.esActivo(r)) {
       Swal.fire({
         icon: 'info',
-        title: 'Ya Cerrado',
-        text: 'Este bloqueo ya fue cerrado previamente.',
+        title: 'Ya Cerrada',
+        text: 'Esta restricción ya fue cerrada previamente.',
         confirmButtonColor: '#1E3A5F',
       });
       return;
     }
 
     Swal.fire({
-      title: '¿Cerrar bloqueo?',
-      text: `¿Está seguro de cerrar el bloqueo: "${b.descripcion}"? Esta acción no se puede deshacer.`,
+      title: '¿Cerrar restricción?',
+      text: `¿Está seguro de cerrar la restricción: "${r.descripcion}"? Esta acción no se puede deshacer.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#1E3A5F',
       cancelButtonColor: '#94A3B8',
-      confirmButtonText: 'Sí, cerrar bloqueo',
+      confirmButtonText: 'Sí, cerrar restricción',
       cancelButtonText: 'Cancelar',
     }).then((result) => {
       if (result.isConfirmed) {
-        this.loadingBloqueos = true;
+        this.loadingRestricciones = true;
         this.cdr.detectChanges();
 
-        this.bimService.cerrarBloqueo(b.id).subscribe({
+        this.bimService.cerrarRestriccion(r.id).subscribe({
           next: () => {
             Swal.fire({
               icon: 'success',
-              title: 'Bloqueo Cerrado',
-              text: 'El bloqueo se ha cerrado correctamente.',
+              title: 'Restricción Cerrada',
+              text: 'La restricción se ha cerrado correctamente.',
               timer: 1800,
               showConfirmButton: false,
             });
-            this.cargarBloqueos();
+            this.cargarRestricciones();
           },
           error: (err: HttpErrorResponse) => {
-            this.loadingBloqueos = false;
-            this.handleError(err, 'No se pudo cerrar el bloqueo.');
+            this.loadingRestricciones = false;
+            this.handleError(err, 'No se pudo cerrar la restricción.');
             this.cdr.detectChanges();
           },
         });
@@ -304,7 +394,7 @@ export class Bloqueos implements OnInit {
       message = 'No tiene permisos suficientes para realizar esta acción en el sistema.';
     } else if (err.status === 409) {
       title = 'Conflicto (409)';
-      message = err.error?.message || 'El bloqueo indicado ya se encuentra cerrado o en un estado no modificable.';
+      message = err.error?.message || 'La restricción indicada ya se encuentra cerrada o en un estado no modificable.';
     } else if (err.status === 404) {
       title = 'No Encontrado (404)';
       message = err.error?.message || 'El recurso solicitado no fue encontrado.';

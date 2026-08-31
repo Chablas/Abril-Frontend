@@ -108,7 +108,7 @@
           *ngFor="let s of supervisoresFiltrados"
           [class.active]="supervisorSeleccionado?.supervisorSsContratistaUsuarioId === s.supervisorSsContratistaUsuarioId"
           [class.evaluated]="s.yaEvalue"
-          (click)="!s.yaEvalue && seleccionarSupervisor(s)">
+          (click)="seleccionarSupervisor(s)">
           <div class="cc-header">
             <div class="cc-avatar">{{ s.supervisorNombre.charAt(0) }}</div>
             <div class="cc-info">
@@ -197,7 +197,7 @@
             </div>
             <button class="btn-guardar" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
               <i class="ti ti-device-floppy"></i>
-              {{ guardando ? 'Guardando...' : 'Registrar evaluación' }}
+              {{ guardando ? 'Guardando...' : (supervisorSeleccionado?.yaEvalue ? 'Actualizar evaluación' : 'Registrar evaluación') }}
             </button>
           </div>
         </div>

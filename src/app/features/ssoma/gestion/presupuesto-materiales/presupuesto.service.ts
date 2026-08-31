@@ -9,6 +9,8 @@ import {
   RevisionDecisionDto,
   RevisionResultDto,
   BuscarItemDto,
+  CrearItemCatalogoDto,
+  CrearFamiliaCatalogoDto,
   DriverProyectoDto,
   ActualizarDriversDto,
   ActualizarDriversResultDto,
@@ -40,6 +42,9 @@ import {
   RatioDriverComparacionDto,
   CalcularRatiosDriversResultDto,
   RatiosDriversRecomendadosDto,
+  ImportHhResultDto,
+  HhCargaResumenDto,
+  CalcularRatiosTodosResultDto,
 } from './presupuesto.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -77,6 +82,14 @@ export class PresupuestoMaterialesService {
     );
   }
 
+  /** Progreso en vivo de una estandarización en curso — para mostrar "línea X de Y" mientras dura. */
+  obtenerProgresoEstandarizacion(cargaId: number): Observable<{ enProceso: boolean; procesadas?: number; total?: number }> {
+    return this.http.get<{ enProceso: boolean; procesadas?: number; total?: number }>(
+      `${this.base}/cargas/${cargaId}/progreso`,
+      { headers: this.authHeaders() },
+    );
+  }
+
   getPendientes(projectId: number): Observable<MaterialPendienteDto[]> {
     return this.http.get<MaterialPendienteDto[]>(
       `${this.base}/proyectos/${projectId}/revision/pendientes`,
@@ -91,6 +104,25 @@ export class PresupuestoMaterialesService {
     return this.http.post<RevisionResultDto>(
       `${this.base}/proyectos/${projectId}/revision/procesar`,
       { projectId, decisiones },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── Cargas de Horas Hombre ──────────────────────────────────────────
+
+  importarHh(projectId: number, archivo: File): Observable<ImportHhResultDto> {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    return this.http.post<ImportHhResultDto>(
+      `${this.base}/proyectos/${projectId}/hh-cargas`,
+      formData,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  listarCargasHh(projectId: number): Observable<HhCargaResumenDto[]> {
+    return this.http.get<HhCargaResumenDto[]>(
+      `${this.base}/proyectos/${projectId}/hh-cargas`,
       { headers: this.authHeaders() },
     );
   }
@@ -121,6 +153,15 @@ export class PresupuestoMaterialesService {
   calcularRatios(projectId: number): Observable<{ ratiosCalculados: number }> {
     return this.http.post<{ ratiosCalculados: number }>(
       `${this.base}/ratios/proyectos/${projectId}/calcular`,
+      {},
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Calcula ratios de todos los proyectos con consumo SSOMA estandarizado de una sola vez. */
+  calcularRatiosTodos(): Observable<CalcularRatiosTodosResultDto> {
+    return this.http.post<CalcularRatiosTodosResultDto>(
+      `${this.base}/ratios/proyectos/calcular-todos`,
       {},
       { headers: this.authHeaders() },
     );
@@ -362,6 +403,18 @@ export class PresupuestoMaterialesService {
 
   actualizarFamiliaCatalogo(id: number, dto: ActualizarFamiliaDto): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(`${this.base}/catalogo/familias/${id}`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  crearItemCatalogo(dto: CrearItemCatalogoDto): Observable<BuscarItemDto> {
+    return this.http.post<BuscarItemDto>(`${this.base}/catalogo/items`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  crearFamiliaCatalogo(dto: CrearFamiliaCatalogoDto): Observable<FamiliaCatalogoDto> {
+    return this.http.post<FamiliaCatalogoDto>(`${this.base}/catalogo/familias`, dto, {
       headers: this.authHeaders(),
     });
   }

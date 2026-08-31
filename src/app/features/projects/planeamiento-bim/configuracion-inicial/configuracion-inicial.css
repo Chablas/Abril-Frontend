@@ -197,24 +197,37 @@
   letter-spacing: 0.04em;
 }
 
-.ppc-input-wrapper {
-  position: relative;
+.ppc-readonly-wrapper {
   display: flex;
   align-items: center;
+  gap: 0.75rem;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background: #F8FAFC;
 }
 
-.ppc-suffix {
-  position: absolute;
-  right: 12px;
+.ppc-readonly-value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1E3A5F;
+}
+
+.ppc-readonly-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
   font-weight: 700;
+  letter-spacing: 0.03em;
   color: #64748B;
-  font-size: 0.9rem;
 }
 
-.field-error {
+.field-hint {
   font-size: 0.75rem;
-  color: #DC2626;
-  font-weight: 500;
+  color: #64748B;
+  margin-top: 2px;
 }
 
 /* ── Inputs y Selects ───────────────────────────────────────── */
@@ -487,6 +500,81 @@
   font-style: italic;
   padding: 0.5rem;
   text-align: center;
+}
+
+.empty-sub-list--sm {
+  padding: 0.35rem;
+  font-size: 0.72rem;
+}
+
+.sub-column-hint {
+  font-size: 0.72rem;
+  color: #64748B;
+  margin: -0.3rem 0 0 0;
+}
+
+/* ── Tarjetas de Nivel (orden/nombre, tipo de estructura, sectores exclusivos) ── */
+.nivel-card {
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  background: #F8FAFC;
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nivel-card + .nivel-card {
+  margin-top: 0.6rem;
+}
+
+.nivel-card-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nivel-orden-input {
+  width: 44px;
+  flex-shrink: 0;
+}
+
+.nivel-nombre-input {
+  flex: 1;
+}
+
+.nivel-tipo-select {
+  flex: 1;
+  display: block;
+}
+
+.nivel-sectores-block {
+  border-top: 1px dashed #CBD5E1;
+  padding-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.nivel-sectores-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #64748B;
+  letter-spacing: 0.03em;
+}
+
+.btn-sub-add--sm {
+  font-size: 0.68rem;
+  padding: 2px 7px;
+}
+
+.nivel-sector-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .sub-table {

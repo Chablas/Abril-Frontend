@@ -4,7 +4,12 @@ export interface ImportConsumoResultDto {
   cargaId: number;
   nombreArchivo: string;
   totalLineas: number;
+  lineasNuevas: number;
+  lineasActualizadas: number;
+  lineasEliminadas: number;
+  lineasSinCambio: number;
   lineasEstandarizadas: number;
+  lineasAutoRechazadas: number;
   lineasPendientes: number;
   lineasSinMatch: number;
   estado: string;
@@ -18,11 +23,45 @@ export interface ConsumoCargaResumenDto {
   fechaMin: string;
   fechaMax: string;
   totalLineas: number;
+  lineasNuevas: number;
+  lineasActualizadas: number;
+  lineasEliminadas: number;
   lineasEstandarizadas: number;
   lineasPendientes: number;
   estado: string;
   creadoEn: string;
   porcentajeEstandarizado: number;
+}
+
+// ─── Cargas de Horas Hombre (planilla/Tareo semanal) ──────────────────────────
+
+export interface ImportHhResultDto {
+  cargaId: number;
+  nombreArchivo: string;
+  totalLineas: number;
+  lineasNuevas: number;
+  lineasActualizadas: number;
+  lineasEliminadas: number;
+  lineasSinCambio: number;
+  horasLaboradasTotales: number;
+  estado: string;
+  advertencias: string[];
+}
+
+export interface HhCargaResumenDto {
+  id: number;
+  projectId: number;
+  nombreArchivo: string;
+  anioMin: number;
+  semanaMin: number;
+  anioMax: number;
+  semanaMax: number;
+  totalLineas: number;
+  lineasNuevas: number;
+  lineasActualizadas: number;
+  lineasEliminadas: number;
+  estado: string;
+  creadoEn: string;
 }
 
 // ─── Revisión de materiales ───────────────────────────────────────────────────
@@ -54,6 +93,19 @@ export interface RevisionResultDto {
   rechazados: number;
   notificacionesEnviadas: number;
   errores: string[];
+}
+
+export interface CrearItemCatalogoDto {
+  nombre: string;
+  familiaId: number;
+}
+
+export interface CrearFamiliaCatalogoDto {
+  nombre: string;
+  tipoId: number;
+  variableBase: string;
+  unidadMedida?: string | null;
+  perteneceSsoma: boolean;
 }
 
 export interface BuscarItemDto {
@@ -125,6 +177,19 @@ export interface RatioFamiliaComparacionDto {
   minRatio: number;
   maxRatio: number;
   promedioPrecioUnitario: number;
+}
+
+export interface CalcularRatiosResultDto {
+  projectId: number;
+  projectDescription: string;
+  ratiosCalculados: number;
+  familiasSinDriver: number;
+  advertencias: string[];
+}
+
+export interface CalcularRatiosTodosResultDto {
+  totalProyectosProcesados: number;
+  proyectos: CalcularRatiosResultDto[];
 }
 
 export interface RatioProyectoDto {

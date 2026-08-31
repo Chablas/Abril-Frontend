@@ -16,7 +16,14 @@
     <div class="resumen-card">
       <div class="resumen-card__header">
         <h3 class="resumen-card__titulo">Resumen general</h3>
-        <span class="resumen-card__total" *ngIf="resumen">{{ resumen.totalFamilias }} familias SSOMA activas</span>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="resumen-card__total" *ngIf="resumen">{{ resumen.totalFamilias }} familias SSOMA activas</span>
+          <button class="btn-outline btn-sm" [disabled]="calculandoTodos" (click)="calcularTodosLosRatios()"
+            title="Calcula el ratio de cada proyecto con Kardex estandarizado, de una sola vez (en vez de proyecto por proyecto).">
+            <i class="ti" [ngClass]="calculandoTodos ? 'ti-loader-2 spin' : 'ti-calculator'"></i>
+            {{ calculandoTodos ? 'Calculando...' : 'Calcular ratios de todos' }}
+          </button>
+        </div>
       </div>
       <div *ngIf="loadingResumen" class="loading-msg-small">Cargando resumen...</div>
       <div *ngIf="!loadingResumen && resumen && resumen.proyectos.length === 0" class="empty-cell">

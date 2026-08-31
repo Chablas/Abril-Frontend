@@ -5530,3 +5530,58 @@ Diagnóstico del módulo Presupuesto de Materiales SSOMA para generar el presupu
 ### Pendiente
 - Marcar "Finalizado" en Configuración → Proyectos a los proyectos SSOMA ya culminados (Los Laureles, Aquilaria, Gardenia, Amancae, Amaranta, Camelia, Lilas, Sauco).
 - Módulo PETS: el usuario mencionó que quedan "modelos" pendientes de otra sesión (más allá de un fix de build de DTOs duplicados hecho en el backend esta sesión).
+
+## Sesión 2026-08-28 — Planeamiento BIM Fase C: Sectores por Nivel, Restricciones, Meta PPC readonly (prep coordinado con backend)
+
+### Contexto
+Backend preparó su Fase C de Planeamiento BIM (Tarea 2 + Tarea 3) rompiendo el contrato JSON de `GET/PUT /planeamiento-bim/configuracion/{projectId}` — los Sectores pasan de colgar de la Zona a colgar de cada Nivel. Se pidió preparar el frontend en paralelo, sin mergear a `master`, para desplegar ambos lados el mismo día. Además se pidieron 2 cambios independientes (no bloqueados por la coordinación) y luego, en un mensaje posterior, se corrigió la instrucción de branching: todo debía vivir en `victor-frontend` (nunca ramas `feature/*` nuevas), así que el trabajo se hizo primero en 2 ramas temporales y luego se consolidó ahí.
+
+### Cambios (los 6 puntos, todos ya en `victor-frontend`, ninguno en `master`)
+1. **Sectores por Nivel** (`ZonaDto.Niveles[].Sectores` en vez de `Zona.Sectores`): `configuracion-inicial` separa sectores "exclusivos de nivel" de "compartidos de zona" (bucket `sectoresCompartidos`, derivado al cargar comparando qué sector aparece en TODOS los niveles de la zona); al guardar arma `ZonaUpdateDto.SectoresCompartidos` aparte de `niveles[].sectores`. `carga-diaria` lee el grid desde `nivel.sectores` en vez de `zona.sectores`.
+2. **`tipoEstructura`** (`SUBESTRUCTURA`/`SUPERESTRUCTURA`) por Nivel — selector nuevo en Configuración Inicial.
+3. **Rename Bloqueos → Restricciones** (terminología Last Planner System): componente/ruta/DTOs/service completos, endpoint `/planeamiento-bim/bloqueos` → `/planeamiento-bim/restricciones`, labels en Dashboard y Portafolio. El campo `bloqueosActivos` de `CargaDiariaDto` se renombró a `restriccionesActivas` (supuesto: backend también lo renombra ahí — **no confirmado explícitamente**, verificar antes del deploy). El campo `proyectosConBloqueosVencidos` del DTO de Portafolio (`/portafolio/kpis`, endpoint distinto) **se dejó sin tocar**, solo cambió el label visible.
+4. **Formulario de Restricciones**: 4 selects opcionales (Zona→Nivel→Sector en cascada + Actividad) y "Fecha de levantamiento prevista". El catálogo de zonas/niveles/sectores/actividades para esos selects se resuelve reutilizando `getCargaDiaria` (1 sola llamada, igual patrón que ya usa Dashboard) al abrir el modal — no hay endpoint de catálogo dedicado.
+5. **Meta PPC de solo lectura**: ya no es un input editable, muestra fijo `85%` (constante `metaPpcEstandar` en el componente) y ya no se envía en el payload de guardado (`PlaneamientoBimConfigUpdateDto` ya no tiene `metaPpc`). Confirmado desbloqueado por el commit `813a0631` de backend.
+6. **Quitar evidencia de Procura** ("materiales que llegan a obra") en Carga Diaria — se eliminó toda la sección/estado/métodos relacionados, se dejó intacta la evidencia de avance ejecutado del día.
+
+### Bug encontrado (diagnosticado, NO corregido — el usuario pidió solo diagnóstico)
+Reportado: un sector agregado en "Sectores exclusivos de este nivel" aparece como "Sector compartido" al recargar, después de guardar.
+
+Confirmado con el payload real del PUT (backend local no disponible — se interceptó `window.fetch` para capturar el body antes del 503): el sector SÍ llega bien ubicado en `niveles[].sectores`, con `sectoresCompartidos: []`. **El bug no está en el guardado.**
+
+Causa raíz identificada en `configuracion-inicial.ts:153-166` (`derivarZonaEdicion`): la detección de "sector compartido" es `niveles.every(n => n.sectores.some(s => s.id === sector.id))`. Cuando la zona tiene **un solo nivel**, esa condición se cumple trivialmente para cualquier sector de ese nivel (verdad vacía), así que TODO sector de una zona de un solo nivel se reclasifica como compartido al recargar, sin importar que se haya guardado como exclusivo. Con 2+ niveles la lógica funciona bien. Verificado simulando el algoritmo exacto con Node.
+
+### Archivos clave
+- `features/projects/planeamiento-bim/dtos/planeamiento-bim-config.dto.ts` — `TipoEstructura`, `NivelUpdateDto`/`ZonaUpdateDto`/`PlaneamientoBimConfigUpdateDto` nuevos.
+- `features/projects/planeamiento-bim/dtos/planeamiento-bim-restriccion.dto.ts` (nuevo, reemplaza `planeamiento-bim-bloqueo.dto.ts`).
+- `features/projects/planeamiento-bim/restricciones/` (nuevo, reemplaza `bloqueos/`).
+- `features/projects/planeamiento-bim/configuracion-inicial/configuracion-inicial.ts` — `derivarZonaEdicion()` (bug pendiente), payload de guardado.
+- `features/projects/planeamiento-bim/carga-diaria/carga-diaria.ts`/`.html` — grid por nivel, sin sección Procura.
+- `features/projects/planeamiento-bim/services/planeamiento-bim.service.ts`, `proyectos.routes.ts`, `shared/planeamiento-bim-subnav/`.
+
+### Verificado
+`ng build` (producción): 0 errores en cada punto individual y en el merge final a `victor-frontend`.
+
+### Pendiente
+- **Corregir el bug de `derivarZonaEdicion`** para zonas de un solo nivel (diagnosticado arriba, no aplicado).
+- Confirmar con backend el nombre real de los campos donde hice supuestos: `RestriccionDto` (`fechaLevantamientoPrevista`, `zonaId/nivelId/sectorId/actividadId` + `...Nombre`) y `CargaDiariaDto.restriccionesActivas`.
+- **No mergear a `master`** hasta coordinar el deploy simultáneo con backend (rompe contrato JSON de configuración).
+
+## Sesión 2026-08-30 — PETS: estructura completa, Firmas, exportación PDF + Presupuesto Materiales: progreso de estandarización
+
+### PETS
+`pets-detalle` pasó de una sola vista de "Procedimiento" a un sistema de pestañas completo:
+- Pestañas de texto único (textarea + Guardar) para Introducción/Alcance/Objetivo/Definiciones/Restricciones — Procedimiento y Responsabilidades siguen siendo árbol.
+- Pestañas de catálogo (checkboxes, con opción de agregar ítem propio del PETS o al catálogo global) para Marco Legal/EPP/Recursos, y pestaña de Anexos.
+- Card de Firmas (Elaborado/Revisado/Aprobado por: nombre, cargo, fecha, firma opcional como imagen) siempre visible junto a Datos generales.
+- Importador de Word: la vista previa ahora muestra cada sección detectada por separado (árbol o texto) antes de confirmar, con opción de "reemplazar" las secciones en árbol existentes.
+- Botón "Vista previa PDF" en Datos generales: abre una pestaña en blanco de forma síncrona en el click (para no chocar con el bloqueador de pop-ups) y le carga el PDF vía `location.href` cuando llega — inline, no descarga.
+
+### Presupuesto Materiales
+`presupuesto.service.ts` consume dos endpoints nuevos del backend: progreso en vivo de una estandarización de carga en curso ("línea X de Y") y cálculo de ratios de todos los proyectos de una sola vez.
+
+### Nota
+Los cambios que aparecían sin commitear en `evaluaciones/` y `core/navigation/` resultaron ser ruido de fin de línea (CRLF/LF) sin ningún contenido real — `git add` los normalizó y quedaron sin nada que commitear.
+
+### Verificado
+`ng build` → 0 errores (solo warnings preexistentes de dependencias CommonJS).

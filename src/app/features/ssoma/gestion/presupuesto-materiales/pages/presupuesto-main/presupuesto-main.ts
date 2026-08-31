@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  OnDestroy,
   OnInit,
   inject,
 } from '@angular/core';
@@ -15,6 +16,8 @@ import { ProyectoHabilitadoService } from '../../../../shared/services/proyecto-
 import {
   ConsumoCargaResumenDto,
   ImportConsumoResultDto,
+  HhCargaResumenDto,
+  ImportHhResultDto,
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
@@ -33,7 +36,7 @@ interface ProyectoSimple {
   styleUrl: './presupuesto-main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PresupuestoMainComponent implements OnInit {
+export class PresupuestoMainComponent implements OnInit, OnDestroy {
   private svc = inject(PresupuestoMaterialesService);
   private loader = inject(LoaderService);
   private errorSvc = inject(ErrorService);
@@ -45,16 +48,29 @@ export class PresupuestoMainComponent implements OnInit {
   proyectos: ProyectoSimple[] = [];
   proyectoId: number | null = null;
 
-  // Cargas S10
+  // Cargas S10 (materiales)
   cargas: ConsumoCargaResumenDto[] = [];
   loadingCargas = false;
   subiendoArchivo = false;
   uploadResult: ImportConsumoResultDto | null = null;
   archivoSeleccionado: File | null = null;
   estandarizandoId: number | null = null;
+  progresoEstandarizacion: { procesadas: number; total: number } | null = null;
+  private pollProgreso: ReturnType<typeof setInterval> | null = null;
+
+  // Cargas de Horas Hombre (planilla/Tareo semanal)
+  cargasHh: HhCargaResumenDto[] = [];
+  loadingCargasHh = false;
+  subiendoArchivoHh = false;
+  uploadResultHh: ImportHhResultDto | null = null;
+  archivoSeleccionadoHh: File | null = null;
 
   ngOnInit(): void {
     this.loadProyectos();
+  }
+
+  ngOnDestroy(): void {
+    this.detenerPollProgreso();
   }
 
   private loadProyectos(): void {
@@ -73,11 +89,14 @@ export class PresupuestoMainComponent implements OnInit {
   onProyectoChange(): void {
     this.cargas = [];
     this.uploadResult = null;
+    this.cargasHh = [];
+    this.uploadResultHh = null;
     if (!this.proyectoId) { this.cdr.markForCheck(); return; }
     this.loadCargas();
+    this.loadCargasHh();
   }
 
-  // ─── Cargas ──────────────────────────────────────────────────────────────
+  // ─── Cargas de materiales (S10) ─────────────────────────────────────────
 
   loadCargas(): void {
     if (!this.proyectoId) return;
@@ -128,15 +147,90 @@ export class PresupuestoMainComponent implements OnInit {
   estandarizar(cargaId: number): void {
     if (this.estandarizandoId === cargaId) return;
     this.estandarizandoId = cargaId;
+    this.progresoEstandarizacion = null;
     this.cdr.markForCheck();
+    this.iniciarPollProgreso(cargaId);
     this.svc.estandarizar(cargaId).subscribe({
       next: () => {
+        this.detenerPollProgreso();
         this.estandarizandoId = null;
+        this.progresoEstandarizacion = null;
         this.loadCargas();
         this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
+        this.detenerPollProgreso();
         this.estandarizandoId = null;
+        this.progresoEstandarizacion = null;
+        this.errorSvc.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  /** Consulta el progreso cada 1.5s mientras dura la estandarización — puede tardar varios minutos
+   * en lotes grandes (miles de líneas), y sin esto la pantalla se queda "Procesando..." sin más info. */
+  private iniciarPollProgreso(cargaId: number): void {
+    this.pollProgreso = setInterval(() => {
+      this.svc.obtenerProgresoEstandarizacion(cargaId).subscribe({
+        next: (p) => {
+          this.progresoEstandarizacion = p.enProceso && p.total ? { procesadas: p.procesadas ?? 0, total: p.total } : null;
+          this.cdr.markForCheck();
+        },
+        error: () => {},
+      });
+    }, 1500);
+  }
+
+  private detenerPollProgreso(): void {
+    if (this.pollProgreso) {
+      clearInterval(this.pollProgreso);
+      this.pollProgreso = null;
+    }
+  }
+
+  // ─── Cargas de Horas Hombre ──────────────────────────────────────────────
+
+  loadCargasHh(): void {
+    if (!this.proyectoId) return;
+    this.loadingCargasHh = true;
+    this.cdr.markForCheck();
+    this.svc.listarCargasHh(this.proyectoId).subscribe({
+      next: (c) => {
+        this.cargasHh = c;
+        this.loadingCargasHh = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingCargasHh = false;
+        this.errorSvc.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  onArchivoChangeHh(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.archivoSeleccionadoHh = input.files?.[0] ?? null;
+    this.uploadResultHh = null;
+    this.cdr.markForCheck();
+  }
+
+  subirHh(): void {
+    if (!this.proyectoId || !this.archivoSeleccionadoHh || this.subiendoArchivoHh) return;
+    this.subiendoArchivoHh = true;
+    this.uploadResultHh = null;
+    this.cdr.markForCheck();
+    this.svc.importarHh(this.proyectoId, this.archivoSeleccionadoHh).subscribe({
+      next: (res) => {
+        this.uploadResultHh = res;
+        this.subiendoArchivoHh = false;
+        this.archivoSeleccionadoHh = null;
+        this.loadCargasHh();
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subiendoArchivoHh = false;
         this.errorSvc.handleError(err);
         this.cdr.markForCheck();
       },

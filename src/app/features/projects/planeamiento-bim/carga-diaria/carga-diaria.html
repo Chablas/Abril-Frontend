@@ -95,13 +95,13 @@
     <!-- Contenido de Carga Diaria -->
     <ng-container *ngIf="!loadingCarga && selectedProjectId && cargaDiariaData && !loadError">
       
-      <!-- Resumen de Bloqueos Activos -->
-      <div *ngIf="cargaDiariaData.bloqueosActivos && cargaDiariaData.bloqueosActivos.length > 0" class="bim-alert bim-alert--warning">
+      <!-- Resumen de Restricciones Activas -->
+      <div *ngIf="cargaDiariaData.restriccionesActivas && cargaDiariaData.restriccionesActivas.length > 0" class="bim-alert bim-alert--warning">
         <i class="ti ti-barrier-block alert-icon"></i>
         <div class="alert-content">
-          <strong>Bloqueos Activos en Proyecto ({{ cargaDiariaData.bloqueosActivos.length }}):</strong>
-          <span *ngFor="let b of cargaDiariaData.bloqueosActivos" class="bloqueo-inline-tag">
-            #{{ b.id }} - {{ b.descripcion }}
+          <strong>Restricciones Activas en Proyecto ({{ cargaDiariaData.restriccionesActivas.length }}):</strong>
+          <span *ngFor="let r of cargaDiariaData.restriccionesActivas" class="bloqueo-inline-tag">
+            #{{ r.id }} - {{ r.descripcion }}
           </span>
         </div>
       </div>
@@ -116,23 +116,23 @@
         </p>
       </div>
 
-      <!-- Matrix Grilla de Zonas y Actividades -->
+      <!-- Matrix Grilla de Zonas y Actividades (los sectores cuelgan de cada Nivel, no de la Zona) -->
       <div *ngFor="let zona of zonas" class="bim-card zona-grid-card">
         <div class="card-header">
           <h3 class="card-title">
             <i class="ti ti-layout-grid title-icon"></i> {{ zona.nombre }}
           </h3>
           <span class="card-badge">
-            {{ zona.niveles.length }} NIVELES × {{ zona.sectores.length }} SECTORES
+            {{ zona.niveles.length }} NIVELES × {{ totalSectoresZona(zona) }} REGISTROS DE SECTOR
           </span>
         </div>
 
         <div class="card-body">
-          <div *ngIf="zona.niveles.length === 0 || zona.sectores.length === 0" class="empty-sub-list">
-            Sin estructura de niveles/sectores definida para esta zona. (Configúrela en "Configuración Inicial").
+          <div *ngIf="zona.niveles.length === 0" class="empty-sub-list">
+            Sin niveles definidos para esta zona. (Configúrela en "Configuración Inicial").
           </div>
 
-          <div *ngIf="zona.niveles.length > 0 && zona.sectores.length > 0" class="table-responsive">
+          <div *ngIf="zona.niveles.length > 0" class="table-responsive">
             <table class="bim-grid-table">
               <thead>
                 <tr>
@@ -146,8 +146,14 @@
               </thead>
               <tbody>
                 <ng-container *ngFor="let nivel of zona.niveles">
-                  <tr *ngFor="let sector of zona.sectores; let sIdx = index">
-                    <td *ngIf="sIdx === 0" [attr.rowspan]="zona.sectores.length" class="nivel-cell font-bold text-navy">
+                  <tr *ngIf="nivel.sectores.length === 0">
+                    <td class="nivel-cell font-bold text-navy">{{ nivel.nombre }}</td>
+                    <td class="sector-cell sector-cell--empty" [attr.colspan]="1 + actividades.length">
+                      Sin sectores configurados para este nivel.
+                    </td>
+                  </tr>
+                  <tr *ngFor="let sector of nivel.sectores; let sIdx = index">
+                    <td *ngIf="sIdx === 0" [attr.rowspan]="nivel.sectores.length" class="nivel-cell font-bold text-navy">
                       {{ nivel.nombre }}
                     </td>
                     <td class="sector-cell">
@@ -183,7 +189,7 @@
         </div>
       </div>
 
-      <!-- Sección de Fotos Evidencias -->
+      <!-- Sección de Fotos Evidencias (avance ejecutado del día) -->
       <app-planeamiento-bim-evidencia-galeria
         titulo="EVIDENCIAS FOTOGRÁFICAS DEL DÍA"
         subtitulo="Fotografías adjuntas que respaldan el cumplimiento diario"
@@ -192,22 +198,6 @@
         [editable]="cargaDiariaData.esEditable"
         [uploading]="uploadingFotos"
         (filesSelected)="onFilesSelected($event)"
-      ></app-planeamiento-bim-evidencia-galeria>
-
-      <!-- Sección de Evidencia de Procura (separada, categoria=PROCURA) -->
-      <app-planeamiento-bim-evidencia-galeria
-        titulo="EVIDENCIA DE PROCURA"
-        subtitulo="Fotografías que respaldan el abastecimiento/procura de materiales del día"
-        icono="ti ti-truck-delivery"
-        [evidencias]="evidenciasProcura"
-        [editable]="esEditableProcura"
-        [loading]="loadingProcura"
-        [uploading]="uploadingFotosProcura"
-        [error]="procuraError"
-        emptyTitulo="Sin evidencia de procura"
-        emptySub="No se han subido imágenes de procura para la fecha seleccionada."
-        (filesSelected)="onFilesSelectedProcura($event)"
-        (retry)="cargarEvidenciasProcura()"
       ></app-planeamiento-bim-evidencia-galeria>
 
     </ng-container>

@@ -79,6 +79,7 @@ export class Layout implements OnDestroy {
       url.includes('/clinica/programaciones') ||
       url.includes('/habilitacion/dashboard-contratista') ||
       url.includes('/habilitacion/evaluar-prevencionista') ||
+      url.includes('/habilitacion/mi-perfil-supervisor') ||
       url.includes('/evaluaciones/dashboard') ||
       url.includes('/evaluaciones/evaluar') ||
       url.includes('/evaluaciones/historial') ||

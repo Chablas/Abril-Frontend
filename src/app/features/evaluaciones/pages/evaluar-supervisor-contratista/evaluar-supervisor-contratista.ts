@@ -159,13 +159,25 @@ export class EvaluarSupervisorContratista implements OnInit {
   seleccionarSupervisor(s: EvSupervisorContratistaAEvaluarDto): void {
     this.supervisorSeleccionado = s;
     this.busqueda = '';
-    this.comentario = '';
-    this.detalles = (this.inicio?.plantilla ?? []).map((p: EvSupervisorContratistaCriterioDto) => ({
-      plantillaId: p.id,
-      criterio: p.criterio,
-      puntaje: null,
-      esNa: false,
-    }));
+
+    if (s.yaEvalue && s.detallesPrevios.length > 0) {
+      // Editando una evaluación ya registrada: precarga lo que puso, mientras el período siga abierto.
+      this.comentario = s.comentarioPrevio ?? '';
+      this.detalles = s.detallesPrevios.map((d) => ({
+        plantillaId: d.plantillaId,
+        criterio: d.criterio,
+        puntaje: d.puntaje,
+        esNa: d.esNa,
+      }));
+    } else {
+      this.comentario = '';
+      this.detalles = (this.inicio?.plantilla ?? []).map((p: EvSupervisorContratistaCriterioDto) => ({
+        plantillaId: p.id,
+        criterio: p.criterio,
+        puntaje: null,
+        esNa: false,
+      }));
+    }
     this.cdr.markForCheck();
   }
 
@@ -251,34 +263,39 @@ export class EvaluarSupervisorContratista implements OnInit {
     this.guardando = true;
     this.loader.show();
 
-    this.svc
-      .crear({
-        supervisorSsContratistaUsuarioId: this.supervisorSeleccionado.supervisorSsContratistaUsuarioId,
-        proyectoId: this.supervisorSeleccionado.proyectoId,
-        comentario: this.comentario || null,
-        detalles: detallesDto,
-      })
-      .subscribe({
-        next: (res) => {
-          this.guardando = false;
-          this.loader.hide();
-          Swal.fire({
-            icon: 'success',
-            title: 'Evaluación registrada',
-            text: `Nota: ${res.nota} / 20`,
-            timer: 2500,
-            showConfirmButton: false,
-          });
-          this.cambiarSupervisor();
-          this.cargarInicio();
-          this.cdr.markForCheck();
-        },
-        error: (err) => {
-          this.guardando = false;
-          this.loader.hide();
-          this.errorSvc.handleError(err);
-          this.cdr.markForCheck();
-        },
-      });
+    const dto = {
+      supervisorSsContratistaUsuarioId: this.supervisorSeleccionado.supervisorSsContratistaUsuarioId,
+      proyectoId: this.supervisorSeleccionado.proyectoId,
+      comentario: this.comentario || null,
+      detalles: detallesDto,
+    };
+
+    const editando = this.supervisorSeleccionado.yaEvalue && this.supervisorSeleccionado.evaluacionId != null;
+    const request = editando
+      ? this.svc.actualizar(this.supervisorSeleccionado.evaluacionId!, dto)
+      : this.svc.crear(dto);
+
+    request.subscribe({
+      next: (res) => {
+        this.guardando = false;
+        this.loader.hide();
+        Swal.fire({
+          icon: 'success',
+          title: editando ? 'Evaluación actualizada' : 'Evaluación registrada',
+          text: `Nota: ${res.nota} / 20`,
+          timer: 2500,
+          showConfirmButton: false,
+        });
+        this.cambiarSupervisor();
+        this.cargarInicio();
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.guardando = false;
+        this.loader.hide();
+        this.errorSvc.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
   }
 }

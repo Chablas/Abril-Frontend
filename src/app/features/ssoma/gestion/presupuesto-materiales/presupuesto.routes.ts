@@ -8,10 +8,12 @@ export const PRESUPUESTO_MATERIALES_ROUTES: Routes = [
     data: { titulo: 'PRESUPUESTO MATERIALES · IMPORTACIÓN', roles: [] },
   },
   {
+    // La pantalla de Revisión (por proyecto) se consolidó dentro de Catálogo → Sin
+    // estandarizar (global, con filtro y paginación) — se deja el redirect por si queda
+    // algún enlace viejo apuntando acá.
     path: 'revision',
-    loadComponent: () =>
-      import('./pages/revision/revision-page').then((m) => m.RevisionPage),
-    data: { titulo: 'PRESUPUESTO MATERIALES · REVISIÓN', roles: [] },
+    redirectTo: 'catalogo',
+    pathMatch: 'full',
   },
   {
     path: 'drivers',

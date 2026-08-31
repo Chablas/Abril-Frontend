@@ -24,6 +24,16 @@ export interface EvSupervisorContratistaAEvaluarDto {
   proyectoNombre: string;
   yaEvalue: boolean;
   notaPrevia: number | null;
+  evaluacionId: number | null;
+  comentarioPrevio: string | null;
+  detallesPrevios: EvSupervisorContratistaDetallePrevioDto[];
+}
+
+export interface EvSupervisorContratistaDetallePrevioDto {
+  plantillaId: number | null;
+  criterio: string;
+  puntaje: number | null;
+  esNa: boolean;
 }
 
 // ─── CREATE ───────────────────────────────────────────────────────────────
@@ -71,4 +81,11 @@ export interface EvSupervisorContratistaDashboardDto {
   totalEvaluaciones: number;
   promedioGeneral: number | null;
   evaluaciones: EvSupervisorContratistaResumenDto[];
+}
+
+// ─── MI PERFIL (el propio supervisor/prevencionista de la contratista) ─────
+export interface EvSupervisorContratistaMiPerfilDto {
+  promedioGeneral: number | null;
+  totalEvaluaciones: number;
+  comentarios: string[];
 }

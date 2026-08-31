@@ -19,7 +19,7 @@ import { AcuerdosBusqueda } from './actas-reunion/acuerdos-busqueda/acuerdos-bus
 
 import { ConfiguracionInicial } from './planeamiento-bim/configuracion-inicial/configuracion-inicial';
 import { CargaDiaria } from './planeamiento-bim/carga-diaria/carga-diaria';
-import { Bloqueos } from './planeamiento-bim/bloqueos/bloqueos';
+import { Restricciones } from './planeamiento-bim/restricciones/restricciones';
 import { PlaneamientoBimDashboard } from './planeamiento-bim/dashboard/dashboard';
 import { PlaneamientoBimPortafolio } from './planeamiento-bim/portafolio/portafolio';
 
@@ -59,8 +59,8 @@ export const PROJECTS_ROUTES: Routes = [
     data: { titulo: 'PLANEAMIENTO', featureKey: 'planeamiento-bim.configuracion-inicial' },
   },
   {
-    path: 'planeamiento-bim/bloqueos',
-    component: Bloqueos,
+    path: 'planeamiento-bim/restricciones',
+    component: Restricciones,
     canActivate: [roleGuard],
     data: { titulo: 'PLANEAMIENTO', featureKey: 'planeamiento-bim.configuracion-inicial' },
   },
