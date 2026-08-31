@@ -16,8 +16,13 @@
  *  • `aprobaciones`       → los avisos a GTH y a TI que dispara la decisión de Gerencia.
  *  • `reclutamiento`      → los del proceso que maneja GTH (long list, formulario al postulante,
  *                           formulario completado, correcciones, entrevista y agradecimiento).
+ *  • `onboarding`        → la carta oferta al colaborador ya elegido.
  */
-export type CorreoConfigModulo = 'solicitud-personal' | 'aprobaciones' | 'reclutamiento';
+export type CorreoConfigModulo =
+  | 'solicitud-personal'
+  | 'aprobaciones'
+  | 'reclutamiento'
+  | 'onboarding';
 
 /** Una fila de la sección de un correo. */
 export interface CorreoDestinatarioFila {

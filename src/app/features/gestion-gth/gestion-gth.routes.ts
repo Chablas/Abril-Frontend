@@ -57,6 +57,21 @@ export const GESTION_GTH_ROUTES: Routes = [
     },
   },
   {
+    // Configuración del correo de la carta oferta: el que recibe el colaborador con el enlace
+    // para leerla, registrar su firma y firmarla en línea. Misma feature que las otras tres
+    // configuraciones de correos del módulo.
+    path: 'onboarding/configuracion',
+    loadComponent: () =>
+      import('./onboarding/configuracion/onboarding-configuracion').then(
+        (m) => m.GthOnboardingConfiguracion,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'ONBOARDING - CONFIGURACIÓN',
+      featureKey: 'gestion-gth.reclutamiento.configuracion',
+    },
+  },
+  {
     // Vista del solicitante (jefatura/gerencia): registra y hace seguimiento a sus vacantes.
     path: 'solicitud-personal',
     loadComponent: () =>

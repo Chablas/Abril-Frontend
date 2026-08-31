@@ -94,6 +94,13 @@ const G = {
     '<circle cx="9.4" cy="6.8" r="4.6"/>' +
     '<path d="M1.8 21.8v-1.4a5.2 5.2 0 0 1 5.2-5.2h4.4"/>' +
     '<path d="M14.4 18.4l2.8 2.8 5-5.4"/>',
+  // Empresa que contrata (fila de la carta oferta). Es el edificio institucional de frontón y
+  // columnas, no otro bloque de oficinas: en la misma tarjeta va `proyecto`, que ya es un bloque
+  // con ventanas, y dos edificios parecidos uno debajo del otro no se distinguen a 28px.
+  empresa:
+    '<path d="M2.4 9.4 12 3.8l9.6 5.6"/>' +
+    '<path d="M4.8 9.8v8.8M9.6 9.8v8.8M14.4 9.8v8.8M19.2 9.8v8.8"/>' +
+    '<path d="M2.6 18.8h18.8M3.8 21.6h16.4"/>',
   plazo:
     '<path d="M5.6 2.2h12.8M5.6 21.8h12.8"/>' +
     '<path d="M7.4 2.2v4.4c0 1.1.5 2.1 1.3 2.8L12 12l-3.3 2.6c-.8.7-1.3 1.7-1.3 2.8v4.4"/>' +
@@ -128,6 +135,14 @@ const G = {
     '<path d="M14.2 2.4H6.8a2.4 2.4 0 0 0-2.4 2.4v14.4a2.4 2.4 0 0 0 2.4 2.4h10.4a2.4 2.4 0 0 0 2.4-2.4V7.6Z"/>' +
     '<path d="M14.2 2.4v5.2h5.4"/>' +
     '<path d="M12 10.6v4.6M12 18.6h.02"/>',
+  // Carta oferta: la misma hoja de `formulario`/`correccion` (son la misma familia de documentos)
+  // pero firmada — la rúbrica del final es lo que la distingue y es justo lo que el correo pide.
+  carta:
+    '<path d="M14.2 2.4H6.8a2.4 2.4 0 0 0-2.4 2.4v14.4a2.4 2.4 0 0 0 2.4 2.4h10.4a2.4 2.4 0 0 0 2.4-2.4V7.6Z"/>' +
+    '<path d="M14.2 2.4v5.2h5.4"/>' +
+    '<path d="M7.8 11.2h4.8"/>' +
+    '<path d="M7.6 16.9c.9-1.9 1.8-1.9 2.5 0s1.6 1.9 2.5 0"/>' +
+    '<path d="M13.4 16.9h3"/>',
 
   // Franja (van dentro del círculo relleno, en blanco)
   franjaCheck: '<path d="M4.6 12.4 9.8 17.6 19.4 6.6"/>',
@@ -178,6 +193,7 @@ const ICONOS = {
   'req-comentario': svgFila(G.comentario),
   'req-vistobueno': svgFila(G.vistobueno),
   'req-plazo': svgFila(G.plazo),
+  'onb-empresa': svgFila(G.empresa),
 
   // Cabecera (44px en el correo)
   'req-aprobada': svgAro(G.aprobada),
@@ -189,6 +205,7 @@ const ICONOS = {
   'req-longlist': svgAro(G.longlist),
   'req-formulario': svgAro(G.formulario),
   'req-correccion': svgAro(G.correccion),
+  'onb-carta': svgAro(G.carta),
 
   // Franja (40px en el correo)
   'req-check': svgFranja(G.franjaCheck, VERDE),
