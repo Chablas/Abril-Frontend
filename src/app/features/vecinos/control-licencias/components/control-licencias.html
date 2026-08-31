@@ -7,7 +7,7 @@
   [botonPrimario]="botonPrimario"
   (primaryClick)="onPrimaryClick()">
   <div tabsExtra class="flex items-end gap-2">
-    <app-filter-trigger *ngIf="activeSubTab === 'plantilla' && selectedProjectId" [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+    <app-filter-trigger *ngIf="activeSubTab === 'plantilla'" [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
     <div class="w-64">
       <app-search-select
         [options]="proyectos"
@@ -71,25 +71,35 @@
     </p>
   </div>
 
-  <p *ngIf="activeSubTab !== 'catalogo' && !selectedProjectId" class="text-center text-sm text-gray-400 italic py-10">
-    Selecciona un proyecto para ver su Control de Licencias.
-  </p>
+  <!-- ── Dashboard gerencial (no requiere proyecto seleccionado: ve todas las obras) ─── -->
+  <app-licencia-dashboard *ngIf="activeSubTab === 'dashboard'"></app-licencia-dashboard>
 
-  <ng-container *ngIf="activeSubTab !== 'catalogo' && selectedProjectId">
-
-    <!-- ── Plantilla ─────────────────────────────────────────────────────── -->
+    <!-- ── Plantilla (todas las obras por defecto; filtra con el selector de Obras) ────── -->
     <div *ngIf="activeSubTab === 'plantilla'" class="flex flex-col gap-2 pt-3">
 
       <p class="text-xs text-gray-400">
         Sube cada documento de la plantilla. El estado pasa a <b>Cargado</b> automáticamente al adjuntar
         el archivo. Al reemplazar un documento, la versión anterior queda en el historial. Marca
-        <b>No aplica</b> si el tipo no corresponde a este proyecto.
+        <b>No aplica</b> si el tipo no corresponde a ese proyecto.
       </p>
+
+      <div class="w-80">
+        <app-multi-search-select
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          label="Obras"
+          placeholder="Todas las obras"
+          [value]="plantillaProjectIds"
+          (valueChange)="plantillaProjectIds = $event; onPlantillaFiltroChange()">
+        </app-multi-search-select>
+      </div>
 
       <div class="abril-table-wrap">
         <table class="abril-table">
           <thead>
             <tr>
+              <th>Obra</th>
               <th>Tipo</th>
               <th>Documento</th>
               <th>Vencimiento</th>
@@ -100,14 +110,22 @@
           </thead>
           <tbody>
             <tr *ngIf="filteredItems.length === 0">
-              <td colspan="6" class="text-center py-10 text-gray-400 text-sm">
-                {{ searchText.trim() ? 'Sin resultados.' : 'No hay tipos de licencia configurados.' }}
+              <td colspan="7" class="text-center py-10 text-gray-400 text-sm">
+                {{ searchText.trim() ? 'Sin resultados.' : (plantillaLoaded ? 'No hay tipos de licencia configurados.' : 'Cargando...') }}
               </td>
             </tr>
             <tr *ngFor="let item of pagedItems">
-              <td>
-                <span class="font-medium text-gray-700">{{ item.tipoDescripcion }}</span>
+              <td class="text-gray-500">{{ item.projectDescription }}</td>
+              <td [class.cursor-pointer]="esAnexoH(item) && item.archivoUrl"
+                [title]="esAnexoH(item) && item.archivoUrl ? 'Click para ver/agregar visitas' : ''"
+                (click)="esAnexoH(item) && item.archivoUrl && openVisitas(item)">
+                <span class="font-medium" [ngClass]="esAnexoH(item) && item.archivoUrl ? 'text-[var(--color-abril-standard)] hover:underline' : 'text-gray-700'">
+                  {{ item.tipoDescripcion }}
+                </span>
                 <span *ngIf="!item.esBase" class="text-[10px] font-semibold text-gray-400 border border-gray-300 rounded-full px-1.5 py-0.5 ml-1">propio</span>
+                <span *ngIf="esAnexoH(item) && item.visitas.length" class="text-[10px] font-semibold text-gray-400 ml-1">
+                  ({{ item.visitas.length }} visita{{ item.visitas.length === 1 ? '' : 's' }})
+                </span>
               </td>
               <td>
                 <a *ngIf="item.archivoUrl" [href]="fileUrl(item.archivoUrl)" target="_blank"
@@ -143,9 +161,18 @@
                   class="text-gray-500 hover:text-gray-700 mr-2" title="Recordatorios">
                   <i class="ti ti-bell"></i>
                 </button>
+                <button *ngIf="esAnexoH(item) && item.archivoUrl" type="button" (click)="openVisitas(item)"
+                  class="text-gray-500 hover:text-gray-700 mr-2 inline-flex items-center gap-0.5"
+                  [title]="'Visitas\n' + visitasTooltip(item)">
+                  <i class="ti ti-calendar-event"></i><span *ngIf="item.visitas.length" class="text-[11px]">{{ item.visitas.length }}</span>
+                </button>
                 <button *ngIf="item.versionesHistorial > 0" type="button" (click)="openHistorial(item)"
                   class="text-gray-500 hover:text-gray-700 mr-2 inline-flex items-center gap-0.5" title="Historial">
                   <i class="ti ti-history"></i><span class="text-[11px]">{{ item.versionesHistorial }}</span>
+                </button>
+                <button type="button" (click)="openFechas(item)"
+                  class="text-gray-500 hover:text-gray-700 mr-2" title="Fechas del dashboard (inscripción/inicio/renovación)">
+                  <i class="ti ti-calendar"></i>
                 </button>
                 <button *ngIf="!esNoAplica(item)" type="button" (click)="openUpload(item)"
                   class="text-xs font-medium px-3 py-1.5 rounded-lg bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)] cursor-pointer hover:bg-[var(--color-abril-standard-hover)] hover:text-white transition-colors inline-flex items-center gap-1">
@@ -174,8 +201,12 @@
       </div>
     </div>
 
-    <!-- ── Destinatarios ─────────────────────────────────────────────────── -->
-    <div *ngIf="activeSubTab === 'destinatarios'" class="flex flex-col gap-4 pt-3 max-w-xl">
+    <!-- ── Destinatarios (requiere un proyecto puntual) ─────────────────────── -->
+    <p *ngIf="activeSubTab === 'destinatarios' && !selectedProjectId" class="text-center text-sm text-gray-400 italic py-10">
+      Selecciona un proyecto para ver sus destinatarios.
+    </p>
+
+    <div *ngIf="activeSubTab === 'destinatarios' && selectedProjectId" class="flex flex-col gap-4 pt-3 max-w-xl">
 
       <div class="flex flex-col gap-2">
         <p class="text-xs text-gray-400">
@@ -252,7 +283,6 @@
       </p>
       </div>
     </div>
-  </ng-container>
 </div>
 </div>
 
@@ -267,25 +297,39 @@
   </div>
 </app-filter-modal>
 
-<app-licencia-upload *ngIf="uploadItem && selectedProjectId"
-  [projectId]="selectedProjectId"
+<app-licencia-upload *ngIf="uploadItem && activeProjectId"
+  [projectId]="activeProjectId"
   [item]="uploadItem"
   (closeModal)="closeUpload()"
   (uploaded)="onUploaded()">
 </app-licencia-upload>
 
-<app-licencia-historial *ngIf="historialItem && selectedProjectId"
-  [projectId]="selectedProjectId"
+<app-licencia-historial *ngIf="historialItem && activeProjectId"
+  [projectId]="activeProjectId"
   [item]="historialItem"
   (closeModal)="closeHistorial()">
 </app-licencia-historial>
 
-<app-licencia-recordatorios *ngIf="recordatoriosItem && selectedProjectId"
-  [projectId]="selectedProjectId"
+<app-licencia-recordatorios *ngIf="recordatoriosItem && activeProjectId"
+  [projectId]="activeProjectId"
   [item]="recordatoriosItem"
   (closeModal)="closeRecordatorios()"
   (changed)="onRecordatoriosChanged()">
 </app-licencia-recordatorios>
+
+<app-licencia-visitas *ngIf="visitasItem && activeProjectId"
+  [projectId]="activeProjectId"
+  [item]="visitasItem"
+  (closeModal)="closeVisitas()"
+  (changed)="onVisitasChanged()">
+</app-licencia-visitas>
+
+<app-licencia-fechas *ngIf="fechasItem && activeProjectId"
+  [projectId]="activeProjectId"
+  [item]="fechasItem"
+  (closeModal)="closeFechas()"
+  (changed)="onFechasChanged()">
+</app-licencia-fechas>
 
 <app-tipo-upsert *ngIf="showTipoUpsert"
   [tipo]="tipoUpsertEditing"

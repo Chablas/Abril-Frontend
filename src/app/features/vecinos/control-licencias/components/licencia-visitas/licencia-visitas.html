@@ -1,0 +1,65 @@
+<app-abril-modal-panel
+  [titulo]="'Visitas — ' + item.tipoDescripcion"
+  icono="ti-calendar-event"
+  variant="teal"
+  width="440px"
+  (closeModal)="close()">
+
+  <p class="text-xs text-gray-400 mb-1">
+    Registra cada fecha de visita de la municipalidad. Se envía un recordatorio automático 2 días antes.
+  </p>
+
+  <div *ngIf="destinatariosLoaded" class="mb-2 rounded-lg border px-3 py-2"
+    [ngClass]="destinatariosResueltos.length ? 'border-[var(--color-abril-standard-border)] bg-[var(--color-abril-standard-light)]' : 'border-amber-200 bg-amber-50'">
+    <p class="text-[11px] font-semibold" [ngClass]="destinatariosResueltos.length ? 'text-[var(--color-abril-standard)]' : 'text-amber-700'">
+      <i class="ti ti-mail"></i> Se enviará a:
+    </p>
+    <p *ngFor="let d of destinatariosResueltos" class="text-[11px] text-gray-600">{{ d }}</p>
+    <p *ngIf="!destinatariosResueltos.length" class="text-[11px] text-amber-700">
+      Sin correo de Residente ni Administración en la ficha del proyecto. Nadie recibirá el aviso hasta corregirlo.
+    </p>
+  </div>
+
+  <div class="flex flex-col gap-2">
+    <div *ngFor="let v of item.visitas"
+      class="flex items-center justify-between gap-2 border border-gray-200 rounded-lg px-3 py-2">
+      <div class="flex flex-col">
+        <span class="text-sm font-medium text-gray-700">{{ v.fechaVisita | date: 'dd/MM/yyyy' }}</span>
+        <span *ngIf="v.observacion" class="text-[11px] text-gray-400">{{ v.observacion }}</span>
+        <span class="text-[11px] text-gray-400">Recordatorio: {{ v.fechaRecordatorio | date: 'dd/MM/yyyy' }}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span *ngIf="v.enviado" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Enviado</span>
+        <button type="button" (click)="eliminar(v)" class="text-red-600 hover:text-red-800" title="Eliminar">
+          <i class="ti ti-trash"></i>
+        </button>
+      </div>
+    </div>
+
+    <p *ngIf="item.visitas.length === 0" class="text-center text-sm text-gray-400 italic py-4">
+      Sin visitas registradas.
+    </p>
+  </div>
+
+  <div class="flex flex-col gap-2 pt-3">
+    <div class="flex items-end gap-2">
+      <div class="abril-field flex-1">
+        <label class="abril-field-label">Fecha de visita</label>
+        <input class="abril-field-input" type="date" [(ngModel)]="nuevaFecha" />
+      </div>
+      <button type="button" (click)="agregar()"
+        class="h-[38px] px-4 rounded-[var(--radius-standard)] bg-[var(--color-abril-standard)] text-white text-sm font-medium hover:bg-[var(--color-abril-standard-hover)] transition-colors">
+        Agregar
+      </button>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Observación (opcional)</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="nuevaObservacion"
+        (keydown.enter)="agregar()" placeholder="Ej. Inspección de fachada" />
+    </div>
+  </div>
+
+  <div modalFooter class="flex justify-end w-full">
+    <button type="button" (click)="close()" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Cerrar</button>
+  </div>
+</app-abril-modal-panel>

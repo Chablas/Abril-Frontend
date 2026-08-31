@@ -7,23 +7,24 @@ import { AbrilModalPanel } from '../../../../../shared/components/abril-modal-pa
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { ControlLicenciasService } from '../../services/control-licencias.service';
-import { VecinoLicenciaItemDTO, VecinoLicenciaRecordatorioDTO } from '../../dtos/control-licencias.dto';
+import { VecinoLicenciaItemDTO, VecinoLicenciaVisitaDTO } from '../../dtos/control-licencias.dto';
 
 @Component({
-  selector: 'app-licencia-recordatorios',
+  selector: 'app-licencia-visitas',
   standalone: true,
   imports: [CommonModule, FormsModule, AbrilModalPanel],
-  templateUrl: './licencia-recordatorios.html',
+  templateUrl: './licencia-visitas.html',
 })
-export class LicenciaRecordatorios implements OnInit {
+export class LicenciaVisitas implements OnInit {
   @Input({ required: true }) projectId!: number;
   @Input({ required: true }) item!: VecinoLicenciaItemDTO;
   @Output() closeModal = new EventEmitter<void>();
   @Output() changed = new EventEmitter<void>();
 
-  nuevoDiasAntes: number | null = null;
+  nuevaFecha: string | null = null;
+  nuevaObservacion = '';
 
-  /** Correos que efectivamente recibirán estos recordatorios, para que quien los configura los confirme. */
+  /** Correos que efectivamente recibirán el recordatorio (Residente + Administración), para que quien registra la visita los confirme. */
   destinatariosResueltos: string[] = [];
   destinatariosLoaded = false;
 
@@ -36,9 +37,9 @@ export class LicenciaRecordatorios implements OnInit {
   ngOnInit(): void {
     this.service.getDestinatarios(this.projectId).subscribe({
       next: (res) => {
-        const automaticos = res.automaticos.filter((a) => a.email).map((a) => `${a.rol}: ${a.email}`);
-        const adicionales = res.adicionales.map((d) => `${d.rol}: ${d.email}`);
-        this.destinatariosResueltos = [...automaticos, ...adicionales];
+        this.destinatariosResueltos = res.automaticos
+          .filter((a) => (a.rol === 'Residente' || a.rol === 'Administración') && a.email)
+          .map((a) => `${a.rol}: ${a.email}`);
         this.destinatariosLoaded = true;
       },
       error: () => {
@@ -52,31 +53,37 @@ export class LicenciaRecordatorios implements OnInit {
   }
 
   agregar(): void {
-    if (this.nuevoDiasAntes == null || this.nuevoDiasAntes < 0) {
-      Swal.fire({ icon: 'warning', title: 'Indica los días de antelación', confirmButtonColor: '#0F6E56' });
+    if (!this.nuevaFecha) {
+      Swal.fire({ icon: 'warning', title: 'Indica la fecha de visita', confirmButtonColor: '#0F6E56' });
       return;
     }
 
     this.loaderService.show();
-    this.service.addRecordatorio(this.projectId, this.item.vecinoLicenciaControlTipoId, { diasAntes: this.nuevoDiasAntes }).subscribe({
-      next: (res) => {
-        this.item.recordatorios = [...this.item.recordatorios, res.recordatorio].sort((a, b) => b.diasAntes - a.diasAntes);
-        this.nuevoDiasAntes = null;
-        this.loaderService.hide();
-        this.changed.emit();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
-        this.errorService.handleError(err);
-      },
-    });
+    this.service
+      .addVisita(this.projectId, this.item.vecinoLicenciaControlTipoId, {
+        fechaVisita: this.nuevaFecha,
+        observacion: this.nuevaObservacion.trim() || null,
+      })
+      .subscribe({
+        next: (res) => {
+          this.item.visitas = [...this.item.visitas, res.visita].sort((a, b) => a.fechaVisita.localeCompare(b.fechaVisita));
+          this.nuevaFecha = null;
+          this.nuevaObservacion = '';
+          this.loaderService.hide();
+          this.changed.emit();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
   }
 
-  async eliminar(r: VecinoLicenciaRecordatorioDTO): Promise<void> {
+  async eliminar(v: VecinoLicenciaVisitaDTO): Promise<void> {
     const { isConfirmed } = await Swal.fire({
       icon: 'question',
-      title: '¿Eliminar este recordatorio?',
-      text: `${r.diasAntes} día(s) antes del vencimiento`,
+      title: '¿Eliminar esta visita?',
+      text: `Visita del ${v.fechaVisita}`,
       showCancelButton: true,
       confirmButtonText: 'Eliminar',
       cancelButtonText: 'Cancelar',
@@ -85,10 +92,10 @@ export class LicenciaRecordatorios implements OnInit {
     if (!isConfirmed) return;
 
     this.loaderService.show();
-    this.service.deleteRecordatorio(r.vecinoLicenciaControlRecordatorioId).subscribe({
+    this.service.deleteVisita(v.vecinoLicenciaControlVisitaId).subscribe({
       next: () => {
-        this.item.recordatorios = this.item.recordatorios.filter(
-          (x) => x.vecinoLicenciaControlRecordatorioId !== r.vecinoLicenciaControlRecordatorioId,
+        this.item.visitas = this.item.visitas.filter(
+          (x) => x.vecinoLicenciaControlVisitaId !== v.vecinoLicenciaControlVisitaId,
         );
         this.loaderService.hide();
         this.changed.emit();

@@ -1,0 +1,73 @@
+<app-abril-modal-panel
+  [titulo]="'Fechas — ' + item.tipoDescripcion"
+  icono="ti-calendar"
+  variant="teal"
+  width="460px"
+  (closeModal)="close()">
+
+  <p class="text-xs text-gray-400 mb-2">
+    Estas fechas alimentan el dashboard gerencial. Si no hay una fecha real, elige el motivo
+    (No se cuenta / Pendiente / Indeterminado / No registrada) en vez de dejarla en blanco.
+  </p>
+
+  <div class="flex flex-col gap-3">
+    <div class="flex items-end gap-2">
+      <div class="abril-field flex-1" *ngIf="!fechaInscripcionEstado">
+        <label class="abril-field-label">Fecha de inscripción</label>
+        <input class="abril-field-input" type="date" [(ngModel)]="fechaInscripcion" />
+      </div>
+      <div class="abril-field flex-1" [class.flex-1]="fechaInscripcionEstado" [ngClass]="{ 'w-full': !!fechaInscripcionEstado }">
+        <label class="abril-field-label">{{ fechaInscripcionEstado ? 'Fecha de inscripción' : 'Estado' }}</label>
+        <select class="abril-field-input" [(ngModel)]="fechaInscripcionEstado">
+          <option *ngFor="let o of estadoOpciones" [value]="o.value">{{ o.label }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="flex items-end gap-2">
+      <div class="abril-field flex-1" *ngIf="!fechaInicioEstado">
+        <label class="abril-field-label">Fecha de inicio</label>
+        <input class="abril-field-input" type="date" [(ngModel)]="fechaInicio" />
+      </div>
+      <div class="abril-field flex-1">
+        <label class="abril-field-label">{{ fechaInicioEstado ? 'Fecha de inicio' : 'Estado' }}</label>
+        <select class="abril-field-input" [(ngModel)]="fechaInicioEstado">
+          <option *ngFor="let o of estadoOpciones" [value]="o.value">{{ o.label }}</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Estado de vencimiento (si no hay fecha real cargada)</label>
+      <select class="abril-field-input" [(ngModel)]="fechaVencimientoEstado">
+        <option *ngFor="let o of estadoOpciones" [value]="o.value">{{ o.label }}</option>
+      </select>
+    </div>
+
+    <div class="flex items-end gap-2">
+      <div class="abril-field flex-1" *ngIf="!fechaRenovacionEstado">
+        <label class="abril-field-label">Fecha de renovación</label>
+        <input class="abril-field-input" type="date" [(ngModel)]="fechaRenovacion" />
+      </div>
+      <div class="abril-field flex-1">
+        <label class="abril-field-label">{{ fechaRenovacionEstado ? 'Fecha de renovación' : 'Estado' }}</label>
+        <select class="abril-field-input" [(ngModel)]="fechaRenovacionEstado">
+          <option *ngFor="let o of estadoOpciones" [value]="o.value">{{ o.label }}</option>
+        </select>
+      </div>
+    </div>
+
+    <label class="flex items-center gap-2 text-sm text-gray-700">
+      <input type="checkbox" [(ngModel)]="mesActivo" />
+      Mes activo
+    </label>
+  </div>
+
+  <div modalFooter class="flex justify-end gap-2 w-full">
+    <button type="button" (click)="close()" class="px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Cancelar</button>
+    <button type="button" (click)="guardar()"
+      class="px-4 py-2 rounded-[var(--radius-standard)] bg-[var(--color-abril-standard)] text-white text-sm font-medium hover:bg-[var(--color-abril-standard-hover)] transition-colors">
+      Guardar
+    </button>
+  </div>
+</app-abril-modal-panel>

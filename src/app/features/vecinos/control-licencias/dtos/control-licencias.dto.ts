@@ -10,6 +10,10 @@ export interface CatalogOptionDTO {
 
 /** Un tipo de licencia dentro de la plantilla de un proyecto, con su estado vigente. */
 export interface VecinoLicenciaItemDTO {
+  /** Solo poblado en la vista combinada (todos los proyectos). */
+  projectId?: number;
+  projectDescription?: string;
+
   vecinoLicenciaControlId: number | null;
   vecinoLicenciaControlTipoId: number;
   tipoDescripcion: string;
@@ -26,6 +30,89 @@ export interface VecinoLicenciaItemDTO {
   /** Recordatorios activos de la licencia vigente (puede haber varios, ej. 30/15/7/2 días antes). */
   recordatorios: VecinoLicenciaRecordatorioDTO[];
   versionesHistorial: number;
+  /** Fechas de visita de la municipalidad registradas (solo aplica al tipo Anexo H). */
+  visitas: VecinoLicenciaVisitaDTO[];
+
+  fechaInscripcion: string | null; // YYYY-MM-DD
+  fechaInscripcionEstado: FechaEstado | null;
+  fechaInicio: string | null; // YYYY-MM-DD
+  fechaInicioEstado: FechaEstado | null;
+  fechaVencimientoEstado: FechaEstado | null;
+  fechaRenovacion: string | null; // YYYY-MM-DD
+  fechaRenovacionEstado: FechaEstado | null;
+  /** SI/NO manual: si el documento está vigente/activo este mes. */
+  mesActivo: boolean;
+}
+
+/** Cuando una fecha del dashboard no es una fecha real: motivo textual (ver reference del comité). */
+export type FechaEstado = 'NoSeCuenta' | 'Pendiente' | 'Indeterminado' | 'NoRegistrada';
+
+export const FECHA_ESTADO_LABEL: Record<FechaEstado, string> = {
+  NoSeCuenta: 'No se cuenta',
+  Pendiente: 'Pendiente',
+  Indeterminado: 'Indeterminado',
+  NoRegistrada: 'No registrada',
+};
+
+/** Edita las fechas ampliadas del dashboard (inscripción/inicio/renovación) y el flag Mes Activo. */
+export interface VecinoLicenciaFechasUpdateDTO {
+  fechaInscripcion: string | null;
+  fechaInscripcionEstado: FechaEstado | null;
+  fechaInicio: string | null;
+  fechaInicioEstado: FechaEstado | null;
+  fechaVencimientoEstado: FechaEstado | null;
+  fechaRenovacion: string | null;
+  fechaRenovacionEstado: FechaEstado | null;
+  mesActivo: boolean;
+}
+
+/** Una fila del dashboard gerencial: un tipo de licencia de un proyecto, con su semáforo de criticidad. */
+export interface VecinoLicenciaDashboardItemDTO {
+  projectId: number;
+  projectDescription: string;
+  /** Razón social y RUC del proyecto (vía Project.ContributorId), para el encabezado del PDF del comité. */
+  razonSocial: string | null;
+  ruc: string | null;
+  tipoDescripcion: string;
+  estadoDescripcion: string;
+  fechaInscripcion: string | null;
+  fechaInscripcionEstado: FechaEstado | null;
+  fechaInicio: string | null;
+  fechaInicioEstado: FechaEstado | null;
+  fechaVencimiento: string | null;
+  fechaVencimientoEstado: FechaEstado | null;
+  fechaRenovacion: string | null;
+  fechaRenovacionEstado: FechaEstado | null;
+  mesActivo: boolean;
+  diasParaVencer: number | null;
+  semaforo: 'rojo' | 'amarillo' | 'verde' | 'gris';
+}
+
+export interface VecinoLicenciaDashboardResumenDTO {
+  documentos: number;
+  activos: number;
+  pendientes: number;
+  noAplica: number;
+  noTiene: number;
+}
+
+export interface VecinoLicenciaDashboardResponseDTO {
+  items: VecinoLicenciaDashboardItemDTO[];
+  resumen: VecinoLicenciaDashboardResumenDTO;
+}
+
+/** Una fecha de visita de la municipalidad registrada en el Anexo H de una licencia. */
+export interface VecinoLicenciaVisitaDTO {
+  vecinoLicenciaControlVisitaId: number;
+  fechaVisita: string; // YYYY-MM-DD
+  observacion: string | null;
+  fechaRecordatorio: string; // YYYY-MM-DD
+  enviado: boolean;
+}
+
+export interface VecinoLicenciaVisitaCreateDTO {
+  fechaVisita: string; // YYYY-MM-DD
+  observacion: string | null;
 }
 
 /** Un recordatorio (N días antes de vencer) de una licencia. */
