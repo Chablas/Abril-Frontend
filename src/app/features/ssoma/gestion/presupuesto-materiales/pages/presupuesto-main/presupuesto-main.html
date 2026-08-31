@@ -31,7 +31,21 @@
     </div>
   } @else {
 
-      <!-- Upload materiales -->
+      <!-- Guía del orden para armar el presupuesto -->
+      <div class="pres-guia">
+        <div class="pres-guia-titulo"><i class="ti ti-route"></i> Orden para armar el presupuesto de este proyecto</div>
+        <ol class="pres-guia-pasos">
+          <li><strong>Cargas</strong> (acá) — sube el Kardex de materiales y el Excel de Horas Hombre.</li>
+          <li><strong>Catálogo → Sin estandarizar</strong> — revisa y asigna cada material pendiente; hasta que no quede ninguno, no cuenta para el ratio.</li>
+          <li><strong>Datos Base</strong> — confirma Área Techada, HH Total y Trabajadores del proyecto.</li>
+          <li><strong>Ratios</strong> — calcula el ratio de consumo por família y revisa qué proyectos incluir o marcar como outlier.</li>
+          <li><strong>Generar presupuesto</strong> — desde la ficha del proyecto (botón "Ir" en Datos Base), con los ratios y datos base ya listos.</li>
+        </ol>
+      </div>
+
+      <!-- Materiales (subir + historial) y Horas Hombre (subir + historial), en columnas lado a lado -->
+      <div class="pres-upload-grid">
+      <div class="pres-col">
       <div class="pres-card">
         <h3 class="pres-card-title"><i class="ti ti-upload"></i> Subir Kardex de materiales</h3>
         <p class="pres-card-sub">Kardex con columnas Movimiento/Nro. Guía/Partida de Control (.xlsx / .xls), máximo 20 MB. Sube el acumulado completo del proyecto en cada subida — el sistema se queda solo con los egresos de Seguridad y Salud Ocupacional y compara contra lo ya cargado.</p>
@@ -51,6 +65,16 @@
             }
           </button>
         </div>
+
+        @if (subiendoArchivo) {
+          <div class="pres-progreso-aviso">
+            <i class="ti ti-alert-triangle"></i>
+            <div>
+              <strong>No cierres ni recargues esta pantalla.</strong> Con Kardex grandes (miles de líneas) esto puede
+              tardar varios minutos — si sales de acá antes de que termine, el proceso queda a medias.
+            </div>
+          </div>
+        }
 
         @if (uploadResult) {
           <div class="pres-result" [class.pres-result--ok]="uploadResult.lineasPendientes === 0">
@@ -172,8 +196,28 @@
             </table>
           </div>
         }
+
+        @if (estandarizandoId !== null) {
+          <div class="pres-progreso-aviso">
+            <i class="ti ti-alert-triangle"></i>
+            <div>
+              <strong>No cierres ni recargues esta pantalla</strong> — la estandarización sigue corriendo en el servidor,
+              pero si sales de acá antes de que termine, el navegador corta la conexión y el proceso queda a medias.
+              @if (progresoEstandarizacion) {
+                <div class="pres-progreso-barra">
+                  <div class="pres-progreso-fill" [style.width.%]="(progresoEstandarizacion.procesadas / progresoEstandarizacion.total) * 100"></div>
+                </div>
+                <span>{{ progresoEstandarizacion.procesadas | number }} de {{ progresoEstandarizacion.total | number }} líneas procesadas</span>
+              } @else {
+                <span>Calculando progreso...</span>
+              }
+            </div>
+          </div>
+        }
+      </div>
       </div>
 
+      <div class="pres-col">
       <!-- Upload Horas Hombre -->
       <div class="pres-card">
         <h3 class="pres-card-title"><i class="ti ti-clock-hour-4"></i> Subir Excel de Horas Hombre</h3>
@@ -273,6 +317,8 @@
             </table>
           </div>
         }
+      </div>
+      </div>
       </div>
   }
 </div>

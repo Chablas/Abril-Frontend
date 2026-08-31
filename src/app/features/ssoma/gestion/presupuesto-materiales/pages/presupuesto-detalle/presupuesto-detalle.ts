@@ -155,4 +155,17 @@ export class PresupuestoDetallePage implements OnInit {
   tieneOverride(l: PresupuestoLineaDto): boolean {
     return l.cantidadManual !== null || l.precioManual !== null;
   }
+
+  /** Nombre legible de la variable base (antes se mostraba el código crudo, ej. "AREATECHADA"). */
+  baseLabel(variableBase: string): string {
+    switch (variableBase) {
+      case 'HH': return 'Horas-Hombre';
+      case 'AREATECHADA': return 'Área Techada (m²)';
+      case 'TRABAJADORES': return 'Trabajadores';
+      case 'CALCULADO': return 'Calculado (sin ratio real)';
+      case 'FIJO': return 'Monto fijo';
+      case 'METRADO': return 'Metrado';
+      default: return variableBase;
+    }
+  }
 }

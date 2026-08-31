@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  OnDestroy,
   OnInit,
   inject,
 } from '@angular/core';
@@ -35,7 +36,7 @@ interface ProyectoSimple {
   styleUrl: './presupuesto-main.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PresupuestoMainComponent implements OnInit {
+export class PresupuestoMainComponent implements OnInit, OnDestroy {
   private svc = inject(PresupuestoMaterialesService);
   private loader = inject(LoaderService);
   private errorSvc = inject(ErrorService);
@@ -54,6 +55,8 @@ export class PresupuestoMainComponent implements OnInit {
   uploadResult: ImportConsumoResultDto | null = null;
   archivoSeleccionado: File | null = null;
   estandarizandoId: number | null = null;
+  progresoEstandarizacion: { procesadas: number; total: number } | null = null;
+  private pollProgreso: ReturnType<typeof setInterval> | null = null;
 
   // Cargas de Horas Hombre (planilla/Tareo semanal)
   cargasHh: HhCargaResumenDto[] = [];
@@ -64,6 +67,10 @@ export class PresupuestoMainComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProyectos();
+  }
+
+  ngOnDestroy(): void {
+    this.detenerPollProgreso();
   }
 
   private loadProyectos(): void {
@@ -140,19 +147,46 @@ export class PresupuestoMainComponent implements OnInit {
   estandarizar(cargaId: number): void {
     if (this.estandarizandoId === cargaId) return;
     this.estandarizandoId = cargaId;
+    this.progresoEstandarizacion = null;
     this.cdr.markForCheck();
+    this.iniciarPollProgreso(cargaId);
     this.svc.estandarizar(cargaId).subscribe({
       next: () => {
+        this.detenerPollProgreso();
         this.estandarizandoId = null;
+        this.progresoEstandarizacion = null;
         this.loadCargas();
         this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
+        this.detenerPollProgreso();
         this.estandarizandoId = null;
+        this.progresoEstandarizacion = null;
         this.errorSvc.handleError(err);
         this.cdr.markForCheck();
       },
     });
+  }
+
+  /** Consulta el progreso cada 1.5s mientras dura la estandarización — puede tardar varios minutos
+   * en lotes grandes (miles de líneas), y sin esto la pantalla se queda "Procesando..." sin más info. */
+  private iniciarPollProgreso(cargaId: number): void {
+    this.pollProgreso = setInterval(() => {
+      this.svc.obtenerProgresoEstandarizacion(cargaId).subscribe({
+        next: (p) => {
+          this.progresoEstandarizacion = p.enProceso && p.total ? { procesadas: p.procesadas ?? 0, total: p.total } : null;
+          this.cdr.markForCheck();
+        },
+        error: () => {},
+      });
+    }, 1500);
+  }
+
+  private detenerPollProgreso(): void {
+    if (this.pollProgreso) {
+      clearInterval(this.pollProgreso);
+      this.pollProgreso = null;
+    }
   }
 
   // ─── Cargas de Horas Hombre ──────────────────────────────────────────────

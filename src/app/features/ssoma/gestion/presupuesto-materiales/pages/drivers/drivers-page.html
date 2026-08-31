@@ -1,8 +1,8 @@
 <div class="page-root">
   <app-abril-page-header
     badge="SSOMA · Materiales"
-    titulo="Drivers por Proyecto"
-    subtitulo="HH, Área Techada y Trabajadores usados para calcular ratios"
+    titulo="Datos Base del Proyecto"
+    subtitulo="HH, Área Techada y Trabajadores de cada proyecto — la base con la que se calculan los ratios"
     [tabs]="headerTabs"
     [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
     (secondaryClick)="load()">
@@ -75,7 +75,7 @@
               <td><span class="badge" [ngClass]="fuenteClass(d)">{{ fuente(d) }}</span></td>
               <td class="num-col">{{ d.familiasConRatio }}</td>
               <td class="actions-cell">
-                <button class="btn-edit" (click)="abrirEdicion(d)" title="Editar drivers">
+                <button class="btn-edit" (click)="abrirEdicion(d)" title="Editar datos base">
                   <i class="ti ti-pencil"></i>
                 </button>
               </td>

@@ -179,6 +179,19 @@ export interface RatioFamiliaComparacionDto {
   promedioPrecioUnitario: number;
 }
 
+export interface CalcularRatiosResultDto {
+  projectId: number;
+  projectDescription: string;
+  ratiosCalculados: number;
+  familiasSinDriver: number;
+  advertencias: string[];
+}
+
+export interface CalcularRatiosTodosResultDto {
+  totalProyectosProcesados: number;
+  proyectos: CalcularRatiosResultDto[];
+}
+
 export interface RatioProyectoDto {
   id: number;
   familiaId: number;

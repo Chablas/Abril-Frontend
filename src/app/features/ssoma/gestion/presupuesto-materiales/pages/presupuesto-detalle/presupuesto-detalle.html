@@ -63,9 +63,9 @@
             <thead>
               <tr>
                 <th>Familia</th>
-                <th>Base</th>
+                <th>Se calcula por</th>
                 <th class="num">Ratio</th>
-                <th class="num">Driver</th>
+                <th class="num">Cant. base</th>
                 <th class="num">Cantidad</th>
                 <th class="num">Precio unit.</th>
                 <th class="num">Total</th>
@@ -84,7 +84,7 @@
                     <span *ngIf="!l.tieneHistoria" class="sin-hist-badge" title="Sin datos históricos">!</span>
                     <span *ngIf="tieneOverride(l)" class="override-badge" title="Valor manual">M</span>
                   </td>
-                  <td class="base-cell">{{ l.variableBase }}</td>
+                  <td class="base-cell">{{ baseLabel(l.variableBase) }}</td>
                   <td class="num">{{ l.ratioRecomendado | number:'1.4-4' }}</td>
                   <td class="num">{{ l.valorDriver | number:'1.0-0' }}</td>
                   <td class="num">{{ (l.cantidadManual ?? l.cantidadEstimada) | number:'1.2-2' }}</td>

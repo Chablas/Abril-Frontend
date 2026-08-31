@@ -69,6 +69,7 @@ export class RatiosListaPage implements OnInit {
   // ── Resumen general ────────────────────────────────────────────────
   resumen: ResumenRatiosDto | null = null;
   loadingResumen = false;
+  calculandoTodos = false;
 
   // ── Ratios de dotación (HH / N Trabajadores por m2) ─────────────────
   hhComparacion: RatioDriverComparacionDto | null = null;
@@ -93,6 +94,35 @@ export class RatiosListaPage implements OnInit {
     this.svc.getComparacionDriver('TRABAJADORES').subscribe({
       next: (d) => { this.trabajadoresComparacion = d; this.cdr.markForCheck(); },
       error: () => {},
+    });
+  }
+
+  /** Calcula ratios de TODOS los proyectos con consumo SSOMA estandarizado de una sola vez — evita
+   * tener que entrar a la ficha de cada proyecto y darle "Calcular ratios" uno por uno. */
+  calcularTodosLosRatios(): void {
+    if (this.calculandoTodos) return;
+    this.calculandoTodos = true;
+    this.loader.show();
+    this.svc.calcularRatiosTodos().subscribe({
+      next: (res) => {
+        this.calculandoTodos = false;
+        this.loader.hide();
+        const conAdvertencias = res.proyectos.filter((p) => p.advertencias.length > 0).length;
+        Swal.fire({
+          icon: 'success',
+          title: 'Ratios calculados',
+          text: `${res.totalProyectosProcesados} proyecto(s) procesados.` +
+            (conAdvertencias > 0 ? ` ${conAdvertencias} con alguna advertencia (revisa la consola/detalle).` : ''),
+        });
+        this.load();
+        this.loadResumen();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.calculandoTodos = false;
+        this.loader.hide();
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
     });
   }
 

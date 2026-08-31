@@ -44,6 +44,7 @@ import {
   RatiosDriversRecomendadosDto,
   ImportHhResultDto,
   HhCargaResumenDto,
+  CalcularRatiosTodosResultDto,
 } from './presupuesto.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -77,6 +78,14 @@ export class PresupuestoMaterialesService {
     return this.http.post<ImportConsumoResultDto>(
       `${this.base}/cargas/${cargaId}/estandarizar`,
       {},
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Progreso en vivo de una estandarización en curso — para mostrar "línea X de Y" mientras dura. */
+  obtenerProgresoEstandarizacion(cargaId: number): Observable<{ enProceso: boolean; procesadas?: number; total?: number }> {
+    return this.http.get<{ enProceso: boolean; procesadas?: number; total?: number }>(
+      `${this.base}/cargas/${cargaId}/progreso`,
       { headers: this.authHeaders() },
     );
   }
@@ -144,6 +153,15 @@ export class PresupuestoMaterialesService {
   calcularRatios(projectId: number): Observable<{ ratiosCalculados: number }> {
     return this.http.post<{ ratiosCalculados: number }>(
       `${this.base}/ratios/proyectos/${projectId}/calcular`,
+      {},
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Calcula ratios de todos los proyectos con consumo SSOMA estandarizado de una sola vez. */
+  calcularRatiosTodos(): Observable<CalcularRatiosTodosResultDto> {
+    return this.http.post<CalcularRatiosTodosResultDto>(
+      `${this.base}/ratios/proyectos/calcular-todos`,
       {},
       { headers: this.authHeaders() },
     );

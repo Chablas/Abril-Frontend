@@ -125,16 +125,23 @@
     <div class="hitos-card">
       <div class="hitos-card-header">
         <h3 class="form-titulo" style="margin:0;">Ratios calculados del proyecto</h3>
-        <button class="btn-outline btn-sm" (click)="toggleRatios()">
-          <i class="ti" [ngClass]="mostrarRatios ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
-          {{ mostrarRatios ? 'Ocultar' : 'Ver ratios' }} ({{ ratios.length }})
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-outline btn-sm" [disabled]="calculandoRatios" (click)="calcularRatios()"
+            title="Calcula el consumo por família de este proyecto contra su propia Área Techada/HH/Trabajadores.">
+            <i class="ti" [ngClass]="calculandoRatios ? 'ti-loader-2 spin' : 'ti-calculator'"></i>
+            {{ calculandoRatios ? 'Calculando...' : (ratios.length > 0 ? 'Recalcular ratios' : 'Calcular ratios') }}
+          </button>
+          <button class="btn-outline btn-sm" (click)="toggleRatios()">
+            <i class="ti" [ngClass]="mostrarRatios ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
+            {{ mostrarRatios ? 'Ocultar' : 'Ver ratios' }} ({{ ratios.length }})
+          </button>
+        </div>
       </div>
 
       <div *ngIf="mostrarRatios">
         <div *ngIf="loadingRatios" class="loading-msg">Cargando ratios...</div>
         <div *ngIf="!loadingRatios && ratios.length === 0" class="empty-state" style="padding: 1rem;">
-          <p>Este proyecto todavía no tiene ratios calculados. Ve a la pestaña "Drivers" para calcularlos.</p>
+          <p>Este proyecto todavía no tiene ratios calculados. Dale al botón "Calcular ratios" de arriba (necesita que Área Techada/HH/Trabajadores estén configurados en "Datos Base", y que el Kardex ya esté estandarizado).</p>
         </div>
         <div *ngIf="!loadingRatios && ratios.length > 0" class="ratios-tabla">
           <div class="ratios-tabla__header">
@@ -168,7 +175,7 @@
     <!-- Formulario generar -->
     <div *ngIf="mostrarFormGenerar" class="form-generar">
       <h3 class="form-titulo">Generar nuevo presupuesto</h3>
-      <p class="form-desc">Deja los campos vacíos para usar los drivers configurados del proyecto.</p>
+      <p class="form-desc">Deja los campos vacíos para usar los datos base configurados del proyecto (pestaña "Datos Base").</p>
       <div class="form-fields">
         <label>HH Total (override)
           <input type="number" [(ngModel)]="formGenerar.hhTotalCasa" placeholder="Usar valor del proyecto" />

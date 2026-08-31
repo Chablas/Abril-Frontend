@@ -93,6 +93,7 @@ export class ProyectoPage implements OnInit {
   ratios: RatioProyectoDto[] = [];
   loadingRatios = false;
   mostrarRatios = false;
+  calculandoRatios = false;
 
   // ── Cronograma de hitos (tabla simple, misma data que /mejora-continua/milestone-schedule) ──
   hitosSchedule: FilaHito[] = [];
@@ -270,6 +271,27 @@ export class ProyectoPage implements OnInit {
   toggleRatios(): void {
     this.mostrarRatios = !this.mostrarRatios;
     this.cdr.markForCheck();
+  }
+
+  /** Calcula (o recalcula) el ratio de consumo por família de este proyecto, contra sus propios
+   * datos base (HH/Área/Trabajadores) — sin esto la tabla de ratios nunca deja de estar vacía. */
+  calcularRatios(): void {
+    if (this.calculandoRatios) return;
+    this.calculandoRatios = true;
+    this.mostrarRatios = true;
+    this.cdr.markForCheck();
+    this.svc.calcularRatios(this.projectId).subscribe({
+      next: () => {
+        this.calculandoRatios = false;
+        this.loadRatios();
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.calculandoRatios = false;
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   loadHitosCriticos(): void {
