@@ -299,6 +299,7 @@ export class GthDetalleRequerimiento implements OnInit {
         // envío, si GTH lo había corregido a mano). GTH lo puede ajustar antes de enviarla.
         this.cartaCorreo = data.cartaOferta?.correo ?? data.cartaOferta?.correoSugerido ?? '';
         this.cartaFechaIngreso = data.cartaOferta?.fechaIngreso ?? null;
+        this.prepararFormularioCarta();
         this.abrirFormularioSolicitado();
         this.loaderService.hide();
         this.cdr.detectChanges();
@@ -490,6 +491,21 @@ export class GthDetalleRequerimiento implements OnInit {
   cartaCorreo = '';
   cartaArchivo: File | null = null;
 
+  /**
+   * De dónde sale la carta que se va a enviar. «generar» la arma el sistema desde la plantilla;
+   * «adjuntar» es la de siempre, un PDF que GTH trae ya armado. Las dos terminan en el mismo envío
+   * y el candidato recibe un PDF en los dos casos.
+   */
+  cartaModo: 'generar' | 'adjuntar' = 'generar';
+
+  /** Condiciones que la plantilla imprime y que solo puede poner GTH. */
+  cartaSueldo: number | null = null;
+  cartaFechaLimite: string | null = null;
+
+  /** Resaltado de la zona de «soltar aquí» mientras se arrastra un archivo encima. */
+  cartaArrastrando = false;
+
+  generandoCarta = false;
   enviandoCarta = false;
   reenviandoCarta = false;
   subiendoCartaFirmada = false;
@@ -511,8 +527,18 @@ export class GthDetalleRequerimiento implements OnInit {
     return !!this.carta && (this.emoApto || this.cartaEnviada);
   }
 
+  /**
+   * La carta ya salió. Se mira `enviadaEn` y NO la existencia de la fila: desde que la carta se
+   * puede generar en el sistema, la fila existe también como borrador —documento listo, nada
+   * enviado— y confundir las dos cosas dejaría a GTH sin el botón de enviar.
+   */
   get cartaEnviada(): boolean {
-    return this.carta?.cartaOfertaId != null;
+    return !!this.carta?.enviadaEn;
+  }
+
+  /** Hay un Word generado esperando revisión (o esperando que se mande). */
+  get cartaGenerada(): boolean {
+    return !!this.carta?.generadaUrl;
   }
 
   get cartaFirmada(): boolean {
@@ -554,20 +580,178 @@ export class GthDetalleRequerimiento implements OnInit {
     if (!this.cartaCorreo.trim()) return 'Falta el correo personal del colaborador.';
     if (!this.carta?.dni) return 'Sin documento de identidad en la base maestra: con él se crea su carpeta en el file.';
     if (!this.carta?.tieneFichaMaestra) return 'Sin ficha en la base maestra: ahí se guarda la firma que registrará en el enlace.';
-    if (!this.cartaArchivo) return 'Adjunta la carta oferta en PDF.';
+    if (this.cartaModo === 'generar' && !this.cartaGenerada) return 'Genera la carta oferta antes de enviarla.';
+    if (this.cartaModo === 'generar' && this.cartaDatosDesfasados) {
+      return 'Cambiaste las condiciones: vuelve a generar la carta antes de enviarla.';
+    }
+    if (this.cartaModo === 'adjuntar' && !this.cartaArchivo) return 'Adjunta la carta oferta en PDF.';
     return null;
   }
 
-  get puedeEnviarCarta(): boolean {
-    return !this.enviandoCarta && this.motivoBloqueoCarta === null;
+  /**
+   * El formulario dice una cosa y el documento generado dice otra. Pasa cuando GTH toca el sueldo o
+   * una fecha después de generar: el Word sigue con los valores viejos y esos son los que leería el
+   * candidato. Se corta el envío en vez de guardar los nuevos, que dejaría la fila contradiciendo a
+   * su propio documento.
+   */
+  get cartaDatosDesfasados(): boolean {
+    const co = this.carta;
+    if (!co?.generadaUrl) return false;
+    // El sueldo se compara como número: el input lo entrega como number y el backend lo serializa
+    // con decimales («3500.00»), así que un !== de texto marcaría desfase donde no lo hay.
+    const sueldoIgual =
+      this.cartaSueldo == null || co.sueldo == null
+        ? this.cartaSueldo == null && co.sueldo == null
+        : Number(this.cartaSueldo) === Number(co.sueldo);
+
+    return (
+      !sueldoIgual ||
+      (this.cartaFechaIngreso ?? null) !== (co.fechaIngreso ?? null) ||
+      (this.cartaFechaLimite ?? null) !== (co.fechaLimiteAceptacion ?? null)
+    );
   }
+
+  get puedeEnviarCarta(): boolean {
+    return !this.enviandoCarta && !this.generandoCarta && this.motivoBloqueoCarta === null;
+  }
+
+  // ── Generación de la carta desde la plantilla ────────────────────────────────
+
+  /**
+   * Por qué no se puede generar todavía. Las tres condiciones del miniformulario se imprimen en el
+   * documento, así que ninguna puede ir vacía: el hueco lo ve el candidato, no nosotros.
+   */
+  get motivoBloqueoGenerar(): string | null {
+    if (!this.carta?.dni) return 'Sin documento de identidad en la base maestra: con él se crea su carpeta en el file.';
+    if (!this.carta?.tieneFichaMaestra) return 'Sin ficha en la base maestra: de ahí sale el nombre de la carta.';
+    if (!this.cartaFechaIngreso) return 'Indica la fecha de ingreso.';
+    if (this.cartaSueldo == null || this.cartaSueldo <= 0) return 'Indica el sueldo mensual ofrecido.';
+    if (!this.cartaFechaLimite) return 'Indica hasta cuándo puede aceptar.';
+    if (this.cartaFechaLimite < this.hoyIso) return 'La fecha límite de aceptación ya pasó.';
+    return null;
+  }
+
+  get puedeGenerarCarta(): boolean {
+    return !this.generandoCarta && !this.enviandoCarta && this.motivoBloqueoGenerar === null;
+  }
+
+  /**
+   * Deja el formulario de la carta como corresponde al estado en que se abre el detalle: con lo que
+   * quedó guardado si ya hay borrador y, si es la primera vez, con la fecha límite propuesta
+   * (mañana). El archivo adjunto no sobrevive a una recarga: vive solo en el navegador.
+   */
+  private prepararFormularioCarta(): void {
+    const co = this.detalle?.cartaOferta ?? null;
+    this.cartaArchivo = null;
+    this.cartaArrastrando = false;
+    this.cartaSueldo = co?.sueldo ?? null;
+    this.cartaFechaLimite = co?.fechaLimiteAceptacion ?? this.manianaIso();
+    this.cartaModo = 'generar';
+  }
+
+  /**
+   * Mañana en `YYYY-MM-DD`: el plazo de aceptación que se propone por defecto. Se arma con la hora
+   * local y no con `toISOString()`, que en Perú devuelve el día siguiente desde las 19:00.
+   */
+  private manianaIso(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const mes = `${d.getMonth() + 1}`.padStart(2, '0');
+    const dia = `${d.getDate()}`.padStart(2, '0');
+    return `${d.getFullYear()}-${mes}-${dia}`;
+  }
+
+  /**
+   * Arma el Word desde la plantilla y lo deja en el file del colaborador. No manda nada: deja el
+   * documento para revisar. Se puede repetir; cada generación pisa a la anterior.
+   */
+  async generarCartaOferta(): Promise<void> {
+    if (!this.puedeGenerarCarta) return;
+
+    if (this.cartaGenerada) {
+      const confirm = await Swal.fire({
+        icon: 'question',
+        title: '¿Volver a generar la carta?',
+        html:
+          'Se reemplaza el documento actual por uno nuevo: <b>se pierde cualquier corrección</b> ' +
+          'que le hayas hecho en Word.',
+        showCancelButton: true,
+        confirmButtonText: 'Regenerar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: 'var(--color-abril-logo-blue)',
+      });
+      if (!confirm.isConfirmed) return;
+    }
+
+    this.generandoCarta = true;
+    this.loaderService.show();
+
+    this.service
+      .generarCartaOferta(this.requerimientoId, {
+        fechaIngreso: this.cartaFechaIngreso,
+        sueldo: this.cartaSueldo,
+        fechaLimiteAceptacion: this.cartaFechaLimite,
+      })
+      .subscribe({
+        next: (res) => {
+          this.generandoCarta = false;
+          this.loaderService.hide();
+          this.aplicarCarta(res);
+          Swal.fire({ icon: 'success', title: 'Carta oferta generada', text: res.message });
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.generandoCarta = false;
+          this.loaderService.hide();
+          this.cdr.detectChanges();
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  // ── Carta que trae GTH ya armada ─────────────────────────────────────────────
 
   onCartaSeleccionada(event: Event): void {
     const input = event.target as HTMLInputElement;
     const archivo = input.files?.[0] ?? null;
     // Se limpia el input para que volver a elegir el mismo archivo dispare el change de nuevo.
     input.value = '';
-    if (archivo) this.cartaArchivo = archivo;
+    if (archivo) this.tomarCartaArchivo(archivo);
+  }
+
+  onCartaArrastreEntra(event: DragEvent): void {
+    event.preventDefault();
+    this.cartaArrastrando = true;
+  }
+
+  onCartaArrastreSale(event: DragEvent): void {
+    event.preventDefault();
+    this.cartaArrastrando = false;
+  }
+
+  onCartaSoltada(event: DragEvent): void {
+    event.preventDefault();
+    this.cartaArrastrando = false;
+    const archivo = event.dataTransfer?.files?.[0];
+    if (archivo) this.tomarCartaArchivo(archivo);
+  }
+
+  /**
+   * Acepta el archivo elegido, venga del explorador o de un arrastre. El PDF se exige también acá y
+   * no solo en el backend porque soltar el Word es el error fácil de cometer y el aviso llega antes
+   * de subir el archivo entero para nada.
+   */
+  private tomarCartaArchivo(archivo: File): void {
+    if (!archivo.name.toLowerCase().endsWith('.pdf')) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Solo PDF',
+        text: 'El candidato lee y firma la carta dentro de la intranet, y eso necesita un PDF. Si la tienes en Word, genérala desde el sistema.',
+      });
+      return;
+    }
+    this.cartaArchivo = archivo;
+    this.cartaModo = 'adjuntar';
   }
 
   quitarCartaArchivo(): void {
@@ -581,16 +765,21 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   async enviarCartaOferta(): Promise<void> {
-    if (!this.puedeEnviarCarta || !this.cartaArchivo || !this.detalle) return;
+    if (!this.puedeEnviarCarta || !this.detalle) return;
+
+    // Sin archivo va la generada: el backend convierte su Word a PDF en el momento del envío, así
+    // que también salen las correcciones que GTH le haya hecho en SharePoint.
+    const adjunta = this.cartaModo === 'adjuntar' ? this.cartaArchivo : null;
+    if (this.cartaModo === 'adjuntar' && !adjunta) return;
 
     const correo = this.cartaCorreo.trim().toLowerCase();
     const confirm = await Swal.fire({
       icon: 'question',
       title: '¿Enviar la carta oferta?',
-      html:
-        `Se le enviará a <b>${correo}</b> un correo con el enlace para leer y firmar ` +
-        `<b>${this.cartaArchivo.name}</b> en línea. El proceso se cierra recién cuando firme y ` +
-        'apruebes el documento.',
+      html: adjunta
+        ? `Se le enviará a <b>${correo}</b> el enlace para firmar <b>${adjunta.name}</b>.`
+        : `Se le enviará a <b>${correo}</b> el enlace para firmar la carta generada, ` +
+          'convertida a <b>PDF</b> tal como está ahora en su file.',
       showCancelButton: true,
       confirmButtonText: 'Enviar carta oferta',
       cancelButtonText: 'Cancelar',
@@ -610,7 +799,7 @@ export class GthDetalleRequerimiento implements OnInit {
           // sigue siendo la fuente de verdad y este campo es únicamente la corrección manual.
           correo: correo === (this.carta?.correoSugerido ?? '').toLowerCase() ? null : correo,
         },
-        this.cartaArchivo,
+        adjunta,
       )
       .subscribe({
         next: (res) => {
@@ -1626,7 +1815,10 @@ export class GthDetalleRequerimiento implements OnInit {
     );
   }
 
-  /** Fecha de hoy en `YYYY-MM-DD`: no se cita a un candidato en una fecha pasada. */
+  /**
+   * Fecha de hoy en `YYYY-MM-DD`. La usan la citación a entrevista (no se cita en una fecha pasada)
+   * y el plazo de aceptación de la carta oferta (no se ofrece un plazo ya vencido).
+   */
   get hoyIso(): string {
     const hoy = new Date();
     const mes = `${hoy.getMonth() + 1}`.padStart(2, '0');

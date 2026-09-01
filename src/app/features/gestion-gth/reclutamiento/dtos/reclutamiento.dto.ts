@@ -188,8 +188,8 @@ export interface DetalleRequerimientoGth {
   seleccionado: Seleccionado | null;
   /**
    * Carta oferta del seleccionado: el último paso del proceso, el que lo cierra. null mientras no
-   * haya seleccionado. Con seleccionado y sin enviar todavía (`cartaOfertaId` en null) trae solo
-   * los datos de destino, que es lo que la sección necesita para poder enviarla.
+   * haya seleccionado. Con seleccionado y sin generar ni enviar nada todavía (`cartaOfertaId` en
+   * null) trae solo los datos de destino, que es lo que la sección necesita para poder armarla.
    */
   cartaOferta: CartaOfertaRequerimiento | null;
 }
@@ -215,11 +215,31 @@ export interface CartaOfertaRequerimiento {
   /** La firma que dibuja en el enlace se guarda en su ficha: sin ficha el envío queda bloqueado. */
   tieneFichaMaestra: boolean;
 
-  // ── Envío: todo null mientras la carta no se haya enviado ──────────────────
-  /** null = la carta oferta todavía no se envió. */
+  // ── La carta: existe desde que se genera el borrador ───────────────────────
+  /**
+   * null = no hay carta ni borrador. Que tenga valor NO quiere decir que se haya enviado: para eso
+   * está `enviadaEn`.
+   */
   cartaOfertaId: number | null;
-  /** Fecha de ingreso pactada (`YYYY-MM-DD`), una de las condiciones que viajan en el correo. */
+  /**
+   * Fecha de ingreso pactada (`YYYY-MM-DD`). Es también la fecha de inicio de labores que imprime
+   * la carta generada.
+   */
   fechaIngreso: string | null;
+  /** Sueldo ofrecido, tal como salió impreso. null si la carta se adjuntó ya armada. */
+  sueldo: number | null;
+  /** Hasta cuándo puede aceptar (`YYYY-MM-DD`). null si la carta se adjuntó ya armada. */
+  fechaLimiteAceptacion: string | null;
+
+  // ── Borrador generado desde la plantilla (.docx) ───────────────────────────
+  /** null = la carta no se generó acá. */
+  generadaNombre: string | null;
+  /** Enlace al Word en SharePoint: es lo que GTH abre para revisarlo (y corregirlo) antes de enviar. */
+  generadaUrl: string | null;
+  /** Momento de la última generación (ISO, ya en hora Perú). */
+  generadaEn: string | null;
+
+  // ── Envío: todo null mientras la carta no se haya enviado ──────────────────
   cartaNombre: string | null;
   cartaUrl: string | null;
   /** Correo al que se envió el enlace (el histórico del envío). */
@@ -241,6 +261,20 @@ export interface CartaOfertaRequerimiento {
 
   /** Carpeta de SharePoint donde vive el file digital del colaborador. */
   fileDigitalCarpeta: string | null;
+}
+
+/**
+ * Lo que GTH pone a mano para que el sistema arme la carta oferta: las tres condiciones que el
+ * documento no puede sacar solo de la base de datos. El resto de los datos —nombre, puesto,
+ * jefatura, razón social— los resuelve el backend.
+ */
+export interface CartaOfertaGenerar {
+  /** Fecha de inicio de labores (`YYYY-MM-DD`). Es la misma fecha de ingreso que hereda el onboarding. */
+  fechaIngreso: string | null;
+  /** Sueldo básico bruto mensual en soles. Lo define GTH, no sale del requerimiento. */
+  sueldo: number | null;
+  /** Hasta cuándo el candidato puede aceptar (`YYYY-MM-DD`). */
+  fechaLimiteAceptacion: string | null;
 }
 
 /** Datos del envío de la carta oferta (van como JSON en el multipart; la carta va como archivo). */

@@ -7,6 +7,7 @@ import {
   BandejaReclutamiento,
   CartaOfertaAccionResult,
   CartaOfertaEnviar,
+  CartaOfertaGenerar,
   DetalleRequerimientoGth,
   EntrevistaAccionResult,
   EstadoTransicionResult,
@@ -181,19 +182,36 @@ export class ReclutamientoService {
   // que el candidato firma su carta y GTH la aprueba.
 
   /**
-   * Envía la carta oferta al seleccionado (multipart): los datos en `data` y el PDF como archivo.
-   * El backend la guarda en el file del colaborador y le manda al candidato un correo con el
-   * enlace donde la lee y la firma en línea; la carta NO va adjunta. Mueve el requerimiento de
-   * «EMO apto» / «EMO apto con restricciones» a CARTA_OFERTA.
+   * Arma la carta oferta desde la plantilla del sistema y deja el Word en el file del colaborador
+   * para que GTH lo revise. No envía nada ni mueve la fase: es un borrador que se puede regenerar
+   * mientras la carta no salga.
+   */
+  generarCartaOferta(
+    requerimientoId: number,
+    datos: CartaOfertaGenerar,
+  ): Observable<CartaOfertaAccionResult> {
+    return this.http.post<CartaOfertaAccionResult>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/carta-oferta/generar`,
+      datos,
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Envía la carta oferta al seleccionado (multipart): los datos en `data` y, si GTH la adjuntó, el
+   * PDF como archivo — sin archivo se manda la que se generó acá, convertida a PDF. El backend la
+   * guarda en el file del colaborador y le manda al candidato un correo con el enlace donde la lee
+   * y la firma en línea; la carta NO va adjunta. Mueve el requerimiento de «EMO apto» / «EMO apto
+   * con restricciones» a CARTA_OFERTA.
    */
   enviarCartaOferta(
     requerimientoId: number,
     datos: CartaOfertaEnviar,
-    carta: File,
+    carta: File | null,
   ): Observable<CartaOfertaAccionResult> {
     const formData = new FormData();
     formData.append('data', JSON.stringify(datos));
-    formData.append('carta', carta, carta.name);
+    if (carta) formData.append('carta', carta, carta.name);
 
     return this.http.post<CartaOfertaAccionResult>(
       `${this.apiUrl}/requerimiento/${requerimientoId}/carta-oferta`,
