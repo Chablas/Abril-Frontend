@@ -3,17 +3,23 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import { InspeccionService } from '../../inspeccion.service';
 import {
   InspeccionDetalleDto,
   InspeccionHallazgoDto,
   InspeccionRespuestaDto,
+  InspeccionTipoDto,
   CerrarHallazgoRequest,
   EditarHallazgoRequest,
+  EditarInspeccionRequest,
 } from '../../inspeccion.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { ProjectService } from '../../../../../../core/services/project.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import Swal from 'sweetalert2';
 
 interface GrupoRespuesta {
@@ -26,7 +32,7 @@ interface GrupoRespuesta {
   selector: 'app-inspeccion-detalle',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect, AbrilModalPanel],
   templateUrl: './inspeccion-detalle.component.html',
   styleUrl: './inspeccion-detalle.component.css',
 })
@@ -54,6 +60,30 @@ export class InspeccionDetalleComponent implements OnInit {
   editAccionCorrectiva = '';
   guardandoEdicion = false;
   eliminandoId: number | null = null;
+
+  // Editar inspección (datos generales, incluido el proyecto)
+  editarInspeccionAbierta = false;
+  cargandoCatalogosEdicion = false;
+  guardandoInspeccion = false;
+  proyectosCat: any[] = [];
+  tiposCat: InspeccionTipoDto[] = [];
+  edProyectoId = 0;
+  edTipoId = 0;
+  edEsPlanificada = true;
+  edFecha = '';
+  edHoraInicio = '';
+  edHoraFin = '';
+  edArea = '';
+  edResponsableArea = '';
+  edInspectorNombre = '';
+  edInspectorCargo = '';
+  edInspectorEmpresa = '';
+  edRepresentanteNombre = '';
+  edRepresentanteCargo = '';
+
+  get edTiposOpts(): { id: number; label: string }[] {
+    return this.tiposCat.map((t) => ({ id: t.id, label: `${t.nombre} (${t.ambito})` }));
+  }
 
   lightboxUrl = '';
   lightboxOpen = false;
@@ -95,6 +125,7 @@ export class InspeccionDetalleComponent implements OnInit {
 
   constructor(
     private inspeccionService: InspeccionService,
+    private projectService: ProjectService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private route: ActivatedRoute,
@@ -329,6 +360,106 @@ export class InspeccionDetalleComponent implements OnInit {
         },
       });
     });
+  }
+
+  abrirEditarInspeccion(): void {
+    if (!this.data) return;
+    this.edProyectoId = this.data.proyectoId;
+    this.edTipoId = this.data.tipoId;
+    this.edEsPlanificada = this.data.esPlanificada;
+    this.edFecha = this.data.fecha.substring(0, 10);
+    this.edHoraInicio = this.data.horaInicio ?? '';
+    this.edHoraFin = this.data.horaFin ?? '';
+    this.edArea = this.data.area ?? '';
+    this.edResponsableArea = this.data.responsableArea ?? '';
+    this.edInspectorNombre = this.data.inspectorNombre ?? '';
+    this.edInspectorCargo = this.data.inspectorCargo ?? '';
+    this.edInspectorEmpresa = this.data.inspectorEmpresa ?? '';
+    this.edRepresentanteNombre = this.data.representanteNombre ?? '';
+    this.edRepresentanteCargo = this.data.representanteCargo ?? '';
+    this.editarInspeccionAbierta = true;
+    this.cdr.markForCheck();
+
+    if (this.proyectosCat.length && this.tiposCat.length) return;
+    this.cargandoCatalogosEdicion = true;
+    forkJoin({
+      catalogos: this.inspeccionService.getCatalogos(),
+      proyectos: this.projectService.getProjectsPaged({ pageSize: 200, active: true }),
+    }).subscribe({
+      next: ({ catalogos, proyectos }) => {
+        this.tiposCat = catalogos.tipos;
+        this.proyectosCat = proyectos.data;
+        this.cargandoCatalogosEdicion = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.cargandoCatalogosEdicion = false;
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  cerrarEditarInspeccion(): void {
+    this.editarInspeccionAbierta = false;
+    this.cdr.markForCheck();
+  }
+
+  confirmarEditarInspeccion(): void {
+    if (!this.edProyectoId || !this.edTipoId || !this.edFecha) {
+      Swal.fire({ icon: 'warning', title: 'Completa proyecto, tipo y fecha', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+      return;
+    }
+    const cambiaProyecto = !!this.data && this.edProyectoId !== this.data.proyectoId;
+    const enviar = () => {
+      this.guardandoInspeccion = true;
+      this.loaderService.show();
+      const req: EditarInspeccionRequest = {
+        proyectoId: this.edProyectoId,
+        tipoId: this.edTipoId,
+        esPlanificada: this.edEsPlanificada,
+        fecha: this.edFecha,
+        horaInicio: this.edHoraInicio || undefined,
+        horaFin: this.edHoraFin || undefined,
+        area: this.edArea || undefined,
+        responsableArea: this.edResponsableArea || undefined,
+        inspectorNombre: this.edInspectorNombre || undefined,
+        inspectorCargo: this.edInspectorCargo || undefined,
+        inspectorEmpresa: this.edInspectorEmpresa || undefined,
+        representanteNombre: this.edRepresentanteNombre || undefined,
+        representanteCargo: this.edRepresentanteCargo || undefined,
+      };
+      this.inspeccionService.editar(this.id, req).subscribe({
+        next: () => {
+          this.guardandoInspeccion = false;
+          this.loaderService.hide();
+          this.editarInspeccionAbierta = false;
+          Swal.fire({ icon: 'success', title: 'Inspección actualizada', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.guardandoInspeccion = false;
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+    };
+
+    if (cambiaProyecto) {
+      Swal.fire({
+        icon: 'question',
+        title: '¿Cambiar el proyecto de esta inspección?',
+        text: 'Se notificará por correo al residente y responsables del proyecto nuevo.',
+        showCancelButton: true,
+        confirmButtonText: 'Guardar y notificar',
+        cancelButtonText: 'Cancelar',
+      }).then((res) => {
+        if (res.isConfirmed) enviar();
+      });
+    } else {
+      enviar();
+    }
   }
 
   openLightbox(url: string): void {

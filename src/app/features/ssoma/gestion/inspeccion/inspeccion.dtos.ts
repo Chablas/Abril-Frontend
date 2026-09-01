@@ -89,6 +89,22 @@ export interface CrearInspeccionRequest {
   fotosAreaBase64?: string[];
 }
 
+export interface EditarInspeccionRequest {
+  proyectoId: number;
+  tipoId: number;
+  esPlanificada: boolean;
+  fecha: string;
+  horaInicio?: string;
+  horaFin?: string;
+  area?: string;
+  responsableArea?: string;
+  inspectorNombre?: string;
+  inspectorCargo?: string;
+  inspectorEmpresa?: string;
+  representanteNombre?: string;
+  representanteCargo?: string;
+}
+
 export interface ParticipanteDto {
   id: number;
   nombre: string;

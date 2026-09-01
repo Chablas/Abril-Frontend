@@ -9,6 +9,7 @@ import {
   InspeccionTipoDto,
   InspeccionChecklistItemDto,
   CrearInspeccionRequest,
+  EditarInspeccionRequest,
   CerrarHallazgoRequest,
   EditarHallazgoRequest,
   InspeccionHallazgoRequest,
@@ -65,6 +66,10 @@ export class InspeccionService {
 
   crear(request: CrearInspeccionRequest): Observable<{ id: number; message: string }> {
     return this.http.post<{ id: number; message: string }>(this.base, request);
+  }
+
+  editar(id: number, request: EditarInspeccionRequest): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/${id}`, request);
   }
 
   cerrarHallazgo(id: number, request: CerrarHallazgoRequest): Observable<{ message: string }> {
