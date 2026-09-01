@@ -14,7 +14,7 @@
   @if (candidatos.length === 0) {
     <div class="aviso aviso--vacio">
       <i class="ti ti-info-circle"></i>
-      <span>Sin candidatos listos: ningún requerimiento quedó <b>Cerrado</b> con finalista.</span>
+      <span>Sin candidatos listos: ningún requerimiento quedó <b>Cerrado</b> con su carta oferta aprobada.</span>
     </div>
   } @else {
     <app-search-select
@@ -31,79 +31,38 @@
   }
 
   <!-- Resumen de la vacante que ganó: se lee del requerimiento, no se captura. -->
-  @if (seleccionado) {
+  @if (seleccionado; as sel) {
     <div class="colaborador-card">
-      <strong>{{ seleccionado.nombre | titleCase }}</strong>
-      <span><i class="ti ti-file-text"></i> {{ seleccionado.codigo }}</span>
-      <span><i class="ti ti-briefcase"></i> {{ (seleccionado.puesto | titleCase) || '—' }}</span>
-      <span><i class="ti ti-sitemap"></i> {{ (seleccionado.area | titleCase) || '—' }}</span>
-      <span><i class="ti ti-building"></i> {{ seleccionado.empresa || '—' }}</span>
-      <span><i class="ti ti-map-pin"></i> {{ (seleccionado.proyectoObra | titleCase) || '—' }}</span>
-      <span><i class="ti ti-user-check"></i> Jefe directo: {{ (seleccionado.jefeDirecto | titleCase) || '—' }}</span>
+      <strong>{{ sel.nombre | titleCase }}</strong>
+      <span><i class="ti ti-file-text"></i> {{ sel.codigo }}</span>
+      <span><i class="ti ti-briefcase"></i> {{ (sel.puesto | titleCase) || '—' }}</span>
+      <span><i class="ti ti-sitemap"></i> {{ (sel.area | titleCase) || '—' }}</span>
+      <span><i class="ti ti-building"></i> {{ sel.empresa || '—' }}</span>
+      <span><i class="ti ti-map-pin"></i> {{ (sel.proyectoObra | titleCase) || '—' }}</span>
+      <span><i class="ti ti-user-check"></i> Jefe directo: {{ (sel.jefeDirecto | titleCase) || '—' }}</span>
+      <span><i class="ti ti-mail"></i> {{ sel.correo || 'Sin correo personal' }}</span>
+      @if (sel.fileDigitalCarpeta) {
+        <span><i class="ti ti-folder"></i> {{ sel.fileDigitalCarpeta }}</span>
+      }
     </div>
   }
 
-  <!-- ── Carta oferta ───────────────────────────────────────────────────── -->
+  <!-- ── Ingreso ────────────────────────────────────────────────────────── -->
   @if (candidatos.length > 0) {
-    <div class="abril-section-title">Carta oferta</div>
+    <div class="abril-section-title">Ingreso</div>
 
-    <div class="form-row">
-      <!-- El correo personal no se pide: llega desde la ficha de la base maestra y se muestra para
-           que GTH lo verifique. La columna se mantiene para que la fila siga siendo correo + fecha. -->
-      <div class="form-col">
-        <div class="abril-field">
-          <label class="abril-field-label">Correo personal *</label>
-          <input type="email" class="abril-field-input" [(ngModel)]="correo"
-                 placeholder="correo@ejemplo.com" [disabled]="candidatoId === null" />
-        </div>
-      </div>
-
-      <!-- dense + floatingLabel: mismas medidas (34px) y mismo label flotante que el campo de
-           correo, para que ambos queden a la misma altura y arranquen en la misma línea. -->
-      <app-date-picker
-        label="Fecha de ingreso"
-        color="var(--color-abril-logo-blue)"
-        [dense]="true"
-        [floatingLabel]="true"
-        [value]="fechaIngreso"
-        [disabled]="candidatoId === null"
-        (valueChange)="fechaIngreso = $event">
-      </app-date-picker>
-    </div>
-
-    <!-- Un solo aviso con lo que le falta a la ficha de la base maestra. Antes eran tres cajas
-         apiladas (correo, ficha, DNI) que además se mostraban juntas, porque los tres casos salen
-         del mismo origen: el formulario del postulante nunca se aprobó. El detalle de qué bloquea
-         cada uno vive en el título del botón (`motivoBloqueo`). -->
-    @if (avisoFichaMaestra) {
-      <div class="aviso aviso--alerta">
-        <i class="ti ti-alert-triangle"></i>
-        <span>{{ avisoFichaMaestra }}</span>
-      </div>
-    }
-
-    <!-- Los colores del selector y de la tarjeta del archivo adjunto se pasan explícitos porque el
-         default de ambos componentes es el verde lima histórico y este modal es azul. Van con los
-         mismos valores en los dos estados (vacío y con archivo) para que se lea como la misma caja
-         y no cambie de color al adjuntar. Se derivan del token del azul del logo, sin hex nuevos. -->
-    @if (carta) {
-      <app-file-preview
-        [files]="cartaPreview"
-        color="var(--color-abril-logo-blue)"
-        iconColor="var(--color-abril-logo-blue)"
-        background="color-mix(in srgb, var(--color-abril-logo-blue) 5%, #fff)"
-        (remove)="quitarCarta()" />
-    } @else {
-      <app-file-selector
-        accept=".pdf"
-        label="Arrastra la carta oferta aquí o"
-        hint="Solo PDF · máximo 15 MB"
-        color="var(--color-abril-logo-blue)"
-        background="color-mix(in srgb, var(--color-abril-logo-blue) 5%, #fff)"
-        backgroundHover="color-mix(in srgb, var(--color-abril-logo-blue) 10%, #fff)"
-        (fileSelected)="onCartaSelected($event)">
-      </app-file-selector>
-    }
+    <!-- dense + floatingLabel: mismas medidas (34px) que el resto de campos del modal. La fecha
+         llega prellenada con la que quedó pactada en su carta oferta; se corrige acá si el ingreso
+         se movió entre la firma y la apertura del onboarding. -->
+    <app-date-picker
+      label="Fecha de ingreso"
+      color="var(--color-abril-logo-blue)"
+      [dense]="true"
+      [floatingLabel]="true"
+      [value]="fechaIngreso"
+      [disabled]="candidatoId === null"
+      (valueChange)="fechaIngreso = $event">
+    </app-date-picker>
 
     <div class="abril-field">
       <label class="abril-field-label">
@@ -119,8 +78,8 @@
       Cancelar
     </button>
     <button type="button" class="btn btn-primary" (click)="enviar()"
-            [disabled]="!puedeEnviar" [title]="motivoBloqueo || 'Enviar el enlace de la carta oferta'">
-      @if (guardando) { Enviando… } @else { Enviar enlace de firma }
+            [disabled]="!puedeEnviar" [title]="motivoBloqueo || 'Iniciar el onboarding'">
+      @if (guardando) { Iniciando… } @else { Iniciar onboarding }
     </button>
   </div>
 

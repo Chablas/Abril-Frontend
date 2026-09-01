@@ -162,6 +162,7 @@
 <app-detail
   *ngIf="selectedItem"
   [item]="selectedItem"
+  [allowRegeneratePackage]="allowRegeneratePackage"
   (closeModal)="selectedItem = null"
   (statusChanged)="onStatusChanged()">
 </app-detail>

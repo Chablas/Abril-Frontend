@@ -135,6 +135,7 @@ export class NavigationService {
             { label: 'Planos por proyecto',  route: '/costs/configuration/project-link',         featureKey: 'costs.config.project-link' },
             { label: 'Carpeta adjudicaciones', route: '/costs/configuration/adjudicacion-folder', featureKey: 'costs.config.adjudicacion-folder' },
             { label: 'Correos C. y Ppto.',   route: '/costs/configuration/costos-presupuestos-email', featureKey: 'costs.config.costos-presupuestos-email' },
+            { label: 'Pasos',                route: '/costs/configuration/pasos',                    featureKey: 'costs.config.pasos' },
           ],
         },
       ],

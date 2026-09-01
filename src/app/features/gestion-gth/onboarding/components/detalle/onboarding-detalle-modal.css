@@ -130,85 +130,6 @@
 }
 
 /* ── Fila del archivo adjunto (carta oferta firmada) ───────────────────── */
-.act-archivo {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 9px;
-  margin-top: 9px;
-  padding: 9px 12px;
-  border: 1px solid var(--color-abril-border);
-  border-radius: 8px;
-  background: #fafafa;
-}
-.act-archivo-nombre {
-  flex: 1 1 220px;
-  min-width: 0;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: #374151;
-  word-break: break-all;
-}
-
-.act-badge {
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 10.5px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.act-badge--ok {
-  background: #dcfce7;
-  color: #15803d;
-}
-.act-badge--pend {
-  background: #fef3c7;
-  color: #b45309;
-}
-
-.act-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 31px;
-  padding: 0 13px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-.act-btn i {
-  font-size: 14px;
-}
-.act-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.act-btn--primary {
-  background: var(--color-abril-logo-blue);
-  border: 1px solid var(--color-abril-logo-blue);
-  color: #fff;
-}
-.act-btn--primary:hover:not(:disabled) {
-  background: var(--color-abril-logo-blue-hover);
-}
-.act-btn--ghost {
-  background: #fff;
-  border: 1px solid var(--color-abril-logo-blue);
-  color: var(--color-abril-logo-blue);
-}
-.act-btn--ghost:hover:not(:disabled) {
-  background: var(--color-abril-logo-blue-light);
-}
-
-/* El selector de archivo ocupa su propia línea dentro de la actividad. */
-app-file-selector {
-  display: block;
-  margin-top: 9px;
-}
-
 /* ── Botones de navegación entre fases (pie del modal) ─────────────────── */
 .nav-btn {
   display: inline-flex;
@@ -328,24 +249,13 @@ app-file-selector {
     display: none;
   }
 
-  /* Checklist: tarjeta de actividad y fila del archivo adjunto. */
+  /* Checklist: tarjeta de actividad. */
   .act {
     padding: 11px 12px;
     gap: 9px;
   }
   .act-lista {
     padding-left: 17px;
-  }
-  .act-archivo {
-    padding: 8px 10px;
-    gap: 7px;
-  }
-  /* Los botones reparten el ancho de su línea: cada uno con el ancho de su
-     texto quedaban escalonados y con huecos irregulares al envolverse. */
-  .act-btn {
-    flex: 1 1 auto;
-    justify-content: center;
-    padding: 0 10px;
   }
 
   /* Pie: los dos botones y la posición tienen que caber en una sola línea. */

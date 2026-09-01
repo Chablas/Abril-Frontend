@@ -1,9 +1,7 @@
 <app-abril-page-header
   [badge]="'GESTIÓN DE TALENTO · ' + anioActual"
   titulo="Onboarding"
-  subtitulo="Acompaña el ingreso de los colaboradores desde la carta oferta hasta la base maestra."
-  [botonSecundario]="botonConfiguracion"
-  (secondaryClick)="abrirConfiguracion()"
+  subtitulo="Acompaña el ingreso de los colaboradores hasta que sus datos pasan a la base maestra."
   [hasExtra]="true">
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
@@ -99,7 +97,7 @@
           colaborador{{ resumen.candidatosPorIngresar === 1 ? '' : 'es' }}
           seleccionado{{ resumen.candidatosPorIngresar === 1 ? '' : 's' }} en reclutamiento
         </span>
-        <span class="opacity-80">— Haz clic para enviarle la carta oferta e iniciar su onboarding</span>
+        <span class="opacity-80">— Haz clic para iniciar su onboarding</span>
       </span>
 
       <i class="ti ti-chevron-right text-[18px] ml-auto shrink-0" style="color:var(--color-abril-logo-blue)"></i>
@@ -169,19 +167,17 @@
           <th>Jefe directo</th>
           <th>Estado</th>
           <th>Avance</th>
-          <th>Carta</th>
         </tr>
       </thead>
       <tbody>
 
         @if (filteredColaboradores.length === 0) {
           <tr>
-            <td colspan="10" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
+            <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
           </tr>
         }
 
-        <!-- La fila entera abre el detalle del onboarding (el enlace de la carta
-             se excluye: es una acción propia, no una forma de entrar al detalle). -->
+        <!-- La fila entera abre el detalle del onboarding. -->
         @for (c of pagedColaboradores; track c.onboardingId) {
           <tr class="border-b hover:bg-gray-50 cursor-pointer" style="border-color:var(--color-abril-border)"
               (click)="abrirDetalle(c)" title="Ver el detalle del onboarding">
@@ -227,18 +223,6 @@
               </div>
             </td>
 
-            <td class="text-center whitespace-nowrap">
-              @if (c.cartaOfertaUrl) {
-                <a [href]="c.cartaOfertaUrl" target="_blank" rel="noopener" (click)="$event.stopPropagation()"
-                   class="abril-action-btn abril-action-btn--primary"
-                   [title]="'Ver ' + (c.cartaOfertaNombre || 'carta oferta')">
-                  <i class="ti ti-file-text"></i>
-                </a>
-              } @else {
-                <span class="text-gray-300">—</span>
-              }
-            </td>
-
           </tr>
         }
       </tbody>
@@ -246,7 +230,7 @@
   </div>
 
   <!-- ── Los mismos colaboradores, en tarjetas (móvil y tablet) ───────────
-       Las 10 columnas no entran por debajo de 1024px. Comparten filtros,
+       Las 9 columnas no entran por debajo de 1024px. Comparten filtros,
        paginación y acciones con la tabla: es la misma lista, otro dibujo. -->
   <div class="onb-cards">
 
@@ -298,13 +282,6 @@
             </div>
             <span class="text-[11.5px] font-semibold text-gray-600 shrink-0">{{ c.avancePorcentaje }}%</span>
           </div>
-
-          @if (c.cartaOfertaUrl) {
-            <a [href]="c.cartaOfertaUrl" target="_blank" rel="noopener" (click)="$event.stopPropagation()"
-               class="abril-action-btn abril-action-btn--primary shrink-0" title="Ver carta oferta">
-              <i class="ti ti-file-text"></i>
-            </a>
-          }
         </div>
 
       </div>

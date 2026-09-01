@@ -37,6 +37,15 @@
           Fecha de ingreso:
           {{ item.fechaIngreso ? (item.fechaIngreso | date: 'dd/MM/yyyy') : 'por confirmar' }}
         </p>
+
+        <!-- File digital del colaborador: la carpeta que abrió su carta oferta al final de
+             Reclutamiento y donde va todo el expediente de acá en adelante. -->
+        @if (item.fileDigitalCarpeta) {
+          <p class="text-[12px] text-gray-400 mt-[2px] flex items-start gap-[6px]">
+            <i class="ti ti-folder text-[14px] shrink-0 mt-[1px]"></i>
+            <span>SharePoint / {{ item.fileDigitalCarpeta }}</span>
+          </p>
+        }
       </div>
 
       <div class="onb-head-avance text-right shrink-0">
@@ -161,115 +170,6 @@
             <p class="text-[13.5px] font-semibold text-gray-800 leading-snug">{{ a.actividad.nombre }}</p>
 
             @switch (a.actividad.codigo) {
-
-              <!-- ── Revisar y aprobar la carta oferta firmada ───────────── -->
-              @case (ACTIVIDAD.revisarAprobarCarta) {
-
-                <!-- Corrección administrativa de la razón social (RF-ONB-03):
-                     se muestra para que el checklist refleje el proceso completo,
-                     pero todavía no está implementada. -->
-                <label class="act-box act-box--aviso flex items-center flex-wrap gap-[9px]"
-                       title="Disponible en una próxima entrega">
-                  <input type="checkbox" [(ngModel)]="corregirRazonSocial" disabled />
-                  <span class="text-[12.5px] font-medium">Corregir razón social</span>
-                  <span class="act-chip">Próximamente</span>
-                </label>
-
-                @if (tieneCartaFirmada) {
-                  <div class="act-archivo">
-                    <i class="ti ti-file-text text-[16px] shrink-0" style="color:var(--color-abril-logo-blue)"></i>
-                    <span class="act-archivo-nombre">{{ item.cartaFirmadaNombre }}</span>
-
-                    @if (cartaAprobada) {
-                      <span class="act-badge act-badge--ok">Aprobada</span>
-                    } @else if (firmadaPorPostulante) {
-                      <!-- La firmó él desde el enlace: GTH no tiene que adjuntar nada, solo revisar. -->
-                      <span class="act-badge act-badge--pend">Firmada por el colaborador</span>
-                    } @else {
-                      <span class="act-badge act-badge--pend">Adjunta</span>
-                    }
-
-                    <a [href]="item.cartaFirmadaUrl" target="_blank" rel="noopener"
-                       class="act-btn act-btn--ghost" title="Abrir la carta firmada en SharePoint">
-                      <i class="ti ti-eye"></i> Ver carta
-                    </a>
-
-                    @if (!cartaAprobada) {
-                      <button type="button" class="act-btn act-btn--primary"
-                              [disabled]="aprobando || subiendo" (click)="aprobarCarta()">
-                        @if (aprobando) { Aprobando… } @else { Aprobar carta }
-                      </button>
-                    }
-
-                    <input #inputReemplazo type="file" class="hidden" accept=".pdf,.doc,.docx"
-                           (change)="onReemplazoSeleccionado($event)" />
-
-                    <button type="button" class="act-btn act-btn--ghost"
-                            [disabled]="subiendo || aprobando" (click)="inputReemplazo.click()">
-                      <i class="ti ti-refresh"></i>
-                      @if (subiendo) { Subiendo… } @else { Reemplazar }
-                    </button>
-                  </div>
-                } @else {
-                  <!-- El camino normal es que el colaborador firme desde el enlace que se le envió;
-                       adjuntarla a mano quedó como respaldo para quien la firme en papel. -->
-                  <div class="act-box act-box--aviso flex items-start gap-[9px]">
-                    <i class="ti ti-clock text-[15px] shrink-0 mt-[1px]"></i>
-                    <span class="text-[12.5px] leading-snug">
-                      Esperando que el colaborador firme su carta desde el enlace que se le envió
-                      @if (item.cartaOfertaEnviadaEn) {
-                        el {{ item.cartaOfertaEnviadaEn | date: 'dd/MM/yyyy HH:mm' }}
-                      }
-                      @if (item.correo) {
-                        a <b>{{ item.correo }}</b>
-                      }.
-                    </span>
-                  </div>
-
-                  <div class="act-archivo">
-                    <button type="button" class="act-btn act-btn--ghost"
-                            [disabled]="reenviando || subiendo || aprobando"
-                            title="Volver a enviarle el correo con el enlace para firmar"
-                            (click)="reenviarEnlace()">
-                      <i class="ti ti-mail-forward"></i>
-                      @if (reenviando) { Reenviando… } @else { Reenviar enlace }
-                    </button>
-
-                    <input #inputRespaldo type="file" class="hidden" accept=".pdf,.doc,.docx"
-                           (change)="onReemplazoSeleccionado($event)" />
-
-                    <button type="button" class="act-btn act-btn--ghost"
-                            [disabled]="subiendo || aprobando || reenviando"
-                            title="Respaldo: solo si el colaborador la firmó en papel y la envió por otro medio"
-                            (click)="inputRespaldo.click()">
-                      <i class="ti ti-upload"></i>
-                      @if (subiendo) { Subiendo… } @else { Adjuntarla a mano }
-                    </button>
-                  </div>
-                }
-
-                <!-- Estado de la carta y dónde queda archivada (el file digital
-                     del colaborador), en una sola línea de pie. -->
-                <p class="act-pie">
-                  <span>
-                    @if (cartaAprobada) {
-                      Aprobada el {{ item.cartaFirmadaAprobadaEn | date: 'dd/MM/yyyy HH:mm' }}
-                    } @else if (firmadaPorPostulante) {
-                      Firmada por el colaborador el
-                      {{ item.cartaFirmadaPostulanteEn | date: 'dd/MM/yyyy HH:mm' }} · pendiente de aprobación
-                    } @else if (tieneCartaFirmada) {
-                      Adjuntada por GTH el
-                      {{ item.cartaFirmadaSubidaEn | date: 'dd/MM/yyyy HH:mm' }} · pendiente de aprobación
-                    } @else {
-                      A la espera de la firma del colaborador
-                    }
-                  </span>
-                  @if (item.fileDigitalCarpeta) {
-                    <span aria-hidden="true">·</span>
-                    <span>SharePoint / {{ item.fileDigitalCarpeta }}</span>
-                  }
-                </p>
-              }
 
               <!-- ── Aviso preventivo a TI ─────────────────────────────────
                    Solo los datos que viajaron en el aviso: qué es y cuándo se

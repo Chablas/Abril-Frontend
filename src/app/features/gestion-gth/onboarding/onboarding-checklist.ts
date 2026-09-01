@@ -9,9 +9,12 @@ import { ActividadOnboarding, FaseOnboarding, OnboardingListItem } from './dtos/
  * los checks del detalle podrían discrepar. Este archivo solo cuenta y agrupa.
  */
 
-/** Códigos estables de las fases (espejo de `gth_onboarding_fase.codigo`). */
+/**
+ * Códigos estables de las fases (espejo de `gth_onboarding_fase.codigo`). CARTA_OFERTA_FIRMADA ya
+ * no está: la carta oferta pasó a ser el último paso de Reclutamiento y el checklist arranca en
+ * FILE_DIGITAL.
+ */
 export const FASE = {
-  cartaOfertaFirmada: 'CARTA_OFERTA_FIRMADA',
   fileDigital: 'FILE_DIGITAL',
   correoBienvenida: 'CORREO_BIENVENIDA',
   formularioWeb: 'FORMULARIO_WEB',
@@ -22,7 +25,6 @@ export const FASE = {
 
 /** Códigos estables de las actividades con tarjeta propia en el detalle. */
 export const ACTIVIDAD = {
-  revisarAprobarCarta: 'REVISAR_APROBAR_CARTA',
   avisoTi: 'AVISO_TI',
   avisoObra: 'AVISO_OBRA',
 } as const;

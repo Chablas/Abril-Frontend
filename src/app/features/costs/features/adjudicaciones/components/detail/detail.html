@@ -1145,7 +1145,7 @@
 
           <!-- Generar paquete PDF -->
           <button (click)="generatePackage()"
-            [disabled]="actualStatus !== 4 || generatingPackage || !canSendToSc"
+            [disabled]="!canGeneratePackage || generatingPackage"
             class="flex items-center justify-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-blue-500 text-blue-500 hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
             <svg *ngIf="!generatingPackage" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round"
@@ -1171,8 +1171,9 @@
 
         </div>
 
-        <!-- Nota informativa -->
-        <p class="text-xs text-gray-400 leading-relaxed">
+        <!-- Nota informativa (solo mientras el paso 4 sigue abierto: pasado el paso el correo
+             al SC ya salió y regenerar no lo vuelve a enviar) -->
+        <p *ngIf="actualStatus === 4" class="text-xs text-gray-400 leading-relaxed">
           Al hacer clic en <strong>"Enviar al SC"</strong> se adjuntará este archivo al correo que se enviará a todos los correos del contratista.
         </p>
 

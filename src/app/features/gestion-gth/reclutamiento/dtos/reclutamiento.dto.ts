@@ -186,6 +186,76 @@ export interface DetalleRequerimientoGth {
    * el frontend lo usa como bandera para mostrar el bloque "Puesto cubierto".
    */
   seleccionado: Seleccionado | null;
+  /**
+   * Carta oferta del seleccionado: el último paso del proceso, el que lo cierra. null mientras no
+   * haya seleccionado. Con seleccionado y sin enviar todavía (`cartaOfertaId` en null) trae solo
+   * los datos de destino, que es lo que la sección necesita para poder enviarla.
+   */
+  cartaOferta: CartaOfertaRequerimiento | null;
+}
+
+/**
+ * La carta oferta del seleccionado tal como la ve GTH en el detalle. Espejo de
+ * `CartaOfertaRequerimientoDto`.
+ */
+export interface CartaOfertaRequerimiento {
+  // ── Destino: sale de la ficha de la base maestra del seleccionado ──────────
+  /** Nombre del colaborador (el de su ficha maestra, o el del candidato si aún no la tiene). */
+  nombre: string;
+  /**
+   * Correo personal al que iría la carta (`person.email`). null = su ficha no lo tiene y hay que
+   * escribirlo a mano en el modal.
+   */
+  correoSugerido: string | null;
+  /**
+   * Documento de identidad de esa misma ficha: es el que nombra su carpeta en el file de
+   * colaboradores, así que null bloquea el envío.
+   */
+  dni: string | null;
+  /** La firma que dibuja en el enlace se guarda en su ficha: sin ficha el envío queda bloqueado. */
+  tieneFichaMaestra: boolean;
+
+  // ── Envío: todo null mientras la carta no se haya enviado ──────────────────
+  /** null = la carta oferta todavía no se envió. */
+  cartaOfertaId: number | null;
+  /** Fecha de ingreso pactada (`YYYY-MM-DD`), una de las condiciones que viajan en el correo. */
+  fechaIngreso: string | null;
+  cartaNombre: string | null;
+  cartaUrl: string | null;
+  /** Correo al que se envió el enlace (el histórico del envío). */
+  correo: string | null;
+  /** Momento del último envío del enlace (ISO, ya en hora Perú). */
+  enviadaEn: string | null;
+
+  // ── Carta firmada ──────────────────────────────────────────────────────────
+  firmadaNombre: string | null;
+  firmadaUrl: string | null;
+  firmadaSubidaEn: string | null;
+  /**
+   * Momento en que el CANDIDATO firmó desde el enlace público. Con valor, el documento vino de él y
+   * GTH solo revisa; en null con `firmadaUrl` llena, lo subió GTH a mano.
+   */
+  firmadaPostulanteEn: string | null;
+  /** Momento en que GTH la aprobó: es lo que cierra el requerimiento. */
+  aprobadaEn: string | null;
+
+  /** Carpeta de SharePoint donde vive el file digital del colaborador. */
+  fileDigitalCarpeta: string | null;
+}
+
+/** Datos del envío de la carta oferta (van como JSON en el multipart; la carta va como archivo). */
+export interface CartaOfertaEnviar {
+  fechaIngreso: string | null;
+  /** Solo se manda si GTH corrigió a mano el correo que resolvió el backend. */
+  correo: string | null;
+}
+
+/**
+ * Resultado de cualquier acción sobre la carta oferta: la carta ya actualizada y la fase en la que
+ * quedó el requerimiento. El modal repinta con esto sin volver a pedir el detalle entero.
+ */
+export interface CartaOfertaAccionResult extends EstadoTransicionResult {
+  cartaOferta: CartaOfertaRequerimiento | null;
 }
 
 /** Candidato aprobado por el solicitante, como lo ve GTH en la fase "Long list aprobada". */

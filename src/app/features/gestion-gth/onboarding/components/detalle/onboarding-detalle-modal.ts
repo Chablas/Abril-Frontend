@@ -8,7 +8,6 @@ import {
   Output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { AbrilModalPanel } from '../../../../../shared/components/abril-modal-panel/abril-modal-panel';
@@ -23,7 +22,6 @@ import {
   ACTIVIDAD,
   ActividadEstado,
   AvanceChecklist,
-  FASE,
   actividadesDeFase,
   avanceChecklist,
   faseCompletada,
@@ -38,16 +36,14 @@ import {
  * las fases futuras quedan bloqueadas (RF-ONB-26: solo se muestran las fases alcanzadas y el
  * siguiente paso).
  *
- * De momento la única fase con operación real es la primera: revisar la carta oferta firmada,
- * aprobarla y continuar. Lo normal es que el propio colaborador la firme desde el enlace que se le
- * envió —y entonces acá solo se revisa—; adjuntarla a mano quedó como respaldo para quien la firme en
- * papel. El resto del checklist se dibuja para que se vea el proceso completo, pero sin acciones — se
- * irán habilitando fase por fase.
+ * Ninguna fase tiene operación real todavía: la carta oferta —que era la única— pasó a ser el
+ * último paso de Reclutamiento. El checklist se dibuja para que se vea el proceso completo, y las
+ * fases se irán habilitando una por una.
  */
 @Component({
   standalone: true,
   selector: 'app-gth-onboarding-detalle-modal',
-  imports: [CommonModule, FormsModule, AbrilModalPanel, StatusBadge, TitleCasePipe],
+  imports: [CommonModule, AbrilModalPanel, StatusBadge, TitleCasePipe],
   templateUrl: './onboarding-detalle-modal.html',
   styleUrl: './onboarding-detalle-modal.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,16 +64,7 @@ export class GthOnboardingDetalleModal implements OnInit {
   /** Fase que se está viendo (por `orden`), independiente de en cuál está parado el colaborador. */
   faseVista = 1;
 
-  subiendo = false;
-  aprobando = false;
   avanzando = false;
-  reenviando = false;
-
-  /**
-   * Corrección administrativa de la razón social antes de continuar (RF-ONB-03). Todavía no está
-   * implementada: se muestra para que el checklist refleje el proceso completo, pero no se guarda.
-   */
-  corregirRazonSocial = false;
 
   readonly ACTIVIDAD = ACTIVIDAD;
   estadoColors = estadoOnboardingColors;
@@ -149,153 +136,6 @@ export class GthOnboardingDetalleModal implements OnInit {
     return this.faseVista === this.item.faseOrden;
   }
 
-  // ── Carta oferta firmada ────────────────────────────────────────────────
-
-  get tieneCartaFirmada(): boolean {
-    return !!this.item.cartaFirmadaUrl;
-  }
-
-  get cartaAprobada(): boolean {
-    return !!this.item.cartaFirmadaAprobadaEn;
-  }
-
-  /**
-   * True si el documento firmado lo produjo el propio colaborador desde el enlace público. En ese
-   * caso GTH no adjuntó nada: solo tiene que revisarlo y aprobarlo.
-   */
-  get firmadaPorPostulante(): boolean {
-    return !!this.item.cartaFirmadaPostulanteEn;
-  }
-
-  /**
-   * Reenvía el correo con el enlace de firma. Es también la vía por la que un onboarding abierto
-   * antes de la firma en línea obtiene su enlace: el backend le genera el token en ese momento.
-   */
-  reenviarEnlace(): void {
-    if (this.reenviando) return;
-
-    Swal.fire({
-      icon: 'question',
-      title: '¿Reenviar el enlace de firma?',
-      html: this.item.correo
-        ? `Se le volverá a enviar a <b>${this.item.correo}</b> el correo con el enlace para leer y firmar su carta oferta.`
-        : 'Se le volverá a enviar el correo con el enlace para leer y firmar su carta oferta.',
-      showCancelButton: true,
-      confirmButtonText: 'Reenviar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: 'var(--color-abril-logo-blue)',
-    }).then((res) => {
-      if (!res.isConfirmed) return;
-
-      this.reenviando = true;
-      this.loaderService.show();
-
-      this.service.reenviarEnlaceFirma(this.item.onboardingId).subscribe({
-        next: (r) => {
-          this.reenviando = false;
-          this.loaderService.hide();
-          this.aplicar(r.colaborador);
-          Swal.fire({ icon: 'success', title: 'Enlace reenviado', text: r.message });
-          this.cdr.detectChanges();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.reenviando = false;
-          this.loaderService.hide();
-          this.errorService.handleError(err);
-          this.cdr.detectChanges();
-        },
-      });
-    });
-  }
-
-  /**
-   * Carga a mano desde el input oculto: sirve tanto para adjuntar la carta firmada por primera vez
-   * (respaldo, cuando el colaborador la firmó en papel) como para reemplazar la que ya está.
-   */
-  onReemplazoSeleccionado(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const archivo = input.files?.[0];
-    // Se limpia el input para que volver a elegir el mismo archivo dispare el change de nuevo.
-    input.value = '';
-    if (archivo) this.reemplazarCartaFirmada(archivo);
-  }
-
-  /** Reemplazar la carta borra la aprobación anterior: se avisa antes de subir la nueva. */
-  reemplazarCartaFirmada(archivo: File): void {
-    if (!this.cartaAprobada) {
-      this.subirCartaFirmada(archivo);
-      return;
-    }
-    Swal.fire({
-      icon: 'question',
-      title: '¿Reemplazar la carta aprobada?',
-      text: 'La aprobación actual se anula y tendrás que volver a aprobar la carta nueva.',
-      showCancelButton: true,
-      confirmButtonText: 'Reemplazar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: 'var(--color-abril-logo-blue)',
-    }).then((res) => {
-      if (res.isConfirmed) this.subirCartaFirmada(archivo);
-    });
-  }
-
-  private subirCartaFirmada(archivo: File): void {
-    if (this.subiendo) return;
-    this.subiendo = true;
-    this.loaderService.show();
-
-    this.service.subirCartaFirmada(this.item.onboardingId, archivo).subscribe({
-      next: (res) => {
-        this.subiendo = false;
-        this.loaderService.hide();
-        this.aplicar(res.colaborador);
-        Swal.fire({ icon: 'success', title: 'Carta firmada adjuntada', text: res.message });
-        this.cdr.detectChanges();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.subiendo = false;
-        this.loaderService.hide();
-        this.errorService.handleError(err);
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  aprobarCarta(): void {
-    if (this.aprobando || !this.tieneCartaFirmada || this.cartaAprobada) return;
-
-    Swal.fire({
-      icon: 'question',
-      title: '¿Aprobar la carta oferta firmada?',
-      text: 'Confirma que revisaste el documento adjunto y que las condiciones son correctas.',
-      showCancelButton: true,
-      confirmButtonText: 'Aprobar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: 'var(--color-abril-logo-blue)',
-    }).then((res) => {
-      if (!res.isConfirmed) return;
-
-      this.aprobando = true;
-      this.loaderService.show();
-
-      this.service.aprobarCartaFirmada(this.item.onboardingId).subscribe({
-        next: (r) => {
-          this.aprobando = false;
-          this.loaderService.hide();
-          this.aplicar(r.colaborador);
-          Swal.fire({ icon: 'success', title: 'Carta aprobada', text: r.message });
-          this.cdr.detectChanges();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.aprobando = false;
-          this.loaderService.hide();
-          this.errorService.handleError(err);
-          this.cdr.detectChanges();
-        },
-      });
-    });
-  }
-
   // ── Navegación del pie del modal ────────────────────────────────────────
 
   get puedeRetroceder(): boolean {
@@ -329,15 +169,7 @@ export class GthOnboardingDetalleModal implements OnInit {
   get motivoBloqueo(): string | null {
     if (!this.viendoFaseActual) return null;
     if (this.esUltimaFase) return 'El onboarding ya está en su última fase.';
-
-    const fase = this.fase;
-    if (fase?.codigo !== FASE.cartaOfertaFirmada)
-      return `La fase «${fase?.nombre}» todavía no está habilitada para avanzar desde el sistema.`;
-
-    if (!this.tieneCartaFirmada)
-      return 'Todavía no hay carta oferta firmada: espera a que el colaborador la firme desde su enlace, o adjúntala a mano.';
-    if (!this.cartaAprobada) return 'Aprueba la carta oferta firmada antes de continuar.';
-    return null;
+    return `La fase «${this.fase?.nombre}» todavía no está habilitada para avanzar desde el sistema.`;
   }
 
   avanzar(): void {

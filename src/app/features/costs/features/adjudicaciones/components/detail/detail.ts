@@ -29,6 +29,12 @@ import Swal from 'sweetalert2';
 })
 export class Detail implements OnInit {
   @Input() item!: ProjectSubContractorDTO;
+  /**
+   * Opción "Permitir volver a generar el contrato completo" del paso 4
+   * (Configuración de Costos → Pasos). Prendida, habilita "Generar archivo" en el paso 4
+   * aunque la adjudicación ya haya avanzado. No reabre el envío del correo al SC.
+   */
+  @Input() allowRegeneratePackage = false;
   @Output() closeModal = new EventEmitter<void>();
   @Output() statusChanged = new EventEmitter<void>();
 
@@ -322,6 +328,17 @@ export class Detail implements OnInit {
   /** Solo Oficina Técnica puede enviar al SC (avanzar del paso 4 al 5). */
   get canSendToSc(): boolean {
     return this.hasOfTecnica;
+  }
+
+  /**
+   * Habilita "Generar archivo" en el paso 4. En el paso 4 siempre; después solo si está
+   * prendida la opción de Configuración → Pasos. Regenerar NO reabre el correo al SC:
+   * el botón de avance sigue siendo "Siguiente paso".
+   */
+  get canGeneratePackage(): boolean {
+    if (!this.canSendToSc) return false;
+    if (this.actualStatus === 4) return true;
+    return this.actualStatus > 4 && this.allowRegeneratePackage;
   }
 
   /** Solo Oficina Central puede marcar la llegada y confirmar la recepción (paso 5 → 6). */
@@ -944,8 +961,10 @@ export class Detail implements OnInit {
   }
 
   generatePackage(): void {
-    // Solo Oficina Técnica (o Administrador) puede generar el contrato completo.
-    if (!this.canSendToSc) return;
+    // Solo Oficina Técnica (o Administrador) puede generar el contrato completo, y pasado el
+    // paso 4 solo si la opción de Configuración → Pasos está prendida.
+    if (!this.canGeneratePackage) return;
+    const regenerando = this.actualStatus > 4;
     this.generatingPackage = true;
     this.loaderService.show();
     this.adjudicacionesService.generateContractPackage(this.item.projectSubContractorId).subscribe({
@@ -972,8 +991,10 @@ export class Detail implements OnInit {
 
         Swal.fire({
           icon: 'success',
-          title: 'Paquete generado',
-          text: 'El PDF combinado está listo. Haz clic en "Enviar al SC" para enviarlo.',
+          title: regenerando ? 'Contrato completo regenerado' : 'Paquete generado',
+          text: regenerando
+            ? 'El archivo quedó reemplazado. No se envía ningún correo.'
+            : 'El PDF combinado está listo. Haz clic en "Enviar al SC" para enviarlo.',
           draggable: true,
         });
       },

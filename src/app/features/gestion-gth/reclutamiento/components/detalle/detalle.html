@@ -232,9 +232,9 @@
       }
 
       <!-- ── EMO de ingreso Apto / Apto con Restricciones ──────────────────
-           Va junto a «Puesto cubierto» (el candidato sigue siendo el seleccionado) porque el
-           examen ya no cierra el proceso solo: lo deja acá y el cierre lo confirma GTH, que es
-           lo que hace aparecer al seleccionado en Onboarding. -->
+           Va junto a «Puesto cubierto» (el candidato sigue siendo el seleccionado). El examen no
+           cierra el proceso: lo deja listo para el último paso, que es la carta oferta de la
+           sección de abajo. -->
       @if (emoApto) {
         <div class="rounded-[10px] border px-[16px] py-[14px]"
              style="border-color:#a7f3d0;background:#F0FDF4">
@@ -248,19 +248,9 @@
                 Resultado: {{ emoAptitudNombre }}
               </h3>
               <p class="text-[12.5px] mt-[3px]" style="color:#166534">
-                El proceso de reclutamiento está listo para cerrarse. Al cerrarlo,
-                {{ (detalle.seleccionado?.nombre | titleCase) || 'el seleccionado' }} pasa a
-                Onboarding como candidato por ingresar.
+                {{ (detalle.seleccionado?.nombre | titleCase) || 'El seleccionado' }} puede entrar.
+                Queda el último paso: enviarle su <b>carta oferta</b> para que la firme.
               </p>
-
-              <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
-                <button type="button" (click)="cerrarProceso()" [disabled]="cerrandoProceso"
-                        class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                        style="background:#15803D">
-                  <i class="ti ti-circle-check text-[15px]"></i>
-                  {{ cerrandoProceso ? 'Cerrando…' : 'Cerrar proceso y continuar a Onboarding' }}
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -371,6 +361,247 @@
               </p>
             </div>
           </div>
+        </div>
+      }
+
+      <!-- ── Carta oferta: el último paso del proceso ──────────────────────
+           Aparece en cuanto el EMO sale bien (es cuando GTH puede enviarla) y se queda para
+           siempre una vez enviada, también con el proceso cerrado: es el expediente de cómo se
+           aceptó la propuesta. Aprobar el documento firmado es lo que cierra el requerimiento. -->
+      @if (mostrarCartaOferta && carta; as co) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             [style.border-color]="cartaAprobada ? '#a7f3d0' : (cartaFirmada ? '#a7f3d0' : (cartaEnviada ? '#ddd6fe' : 'var(--color-abril-border)'))"
+             [style.background]="cartaAprobada || cartaFirmada ? '#F0FDF4' : (cartaEnviada ? '#F5F3FF' : '#fff')">
+
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionCartaOferta = !seccionCartaOferta">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionCartaOferta ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <i class="ti ti-file-certificate text-[18px]"
+               [style.color]="cartaFirmada ? '#15803D' : (cartaEnviada ? '#6D28D9' : 'var(--color-abril-logo-blue)')"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Carta oferta</h3>
+            @if (cartaAprobada) {
+              <app-status-badge text="Aprobada" bgColor="#DCFCE7" textColor="#15803D" />
+            } @else if (cartaFirmada) {
+              <app-status-badge text="Firmada · por revisar" bgColor="#FEF3C7" textColor="#B45309" />
+            } @else if (cartaEnviada) {
+              <app-status-badge text="Esperando firma" bgColor="#EDE9FE" textColor="#6D28D9" />
+            } @else {
+              <app-status-badge text="Por enviar" bgColor="#F3F4F6" textColor="#374151" />
+            }
+          </button>
+
+          @if (seccionCartaOferta) {
+
+            <!-- ── Todavía no se envió: el formulario de envío ──────────────── -->
+            @if (!cartaEnviada) {
+              <p class="text-[12.5px] text-gray-600 mt-[10px]">
+                Último paso: la firma
+                <b class="text-gray-800">{{ co.nombre | titleCase }}</b> desde el enlace que se le
+                envía por correo.
+              </p>
+
+              @if (avisoFichaCarta) {
+                <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[9px] mt-[10px]"
+                     style="border-color:#FDE68A;background:#FEF9C3">
+                  <i class="ti ti-alert-triangle text-[16px] shrink-0 mt-[1px]" style="color:#92400E"></i>
+                  <p class="text-[12px]" style="color:#92400E">{{ avisoFichaCarta }}</p>
+                </div>
+              }
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-[16px] gap-y-[14px] mt-[12px]">
+                <div>
+                  <label class="abril-field-label" for="carta-correo">Correo del colaborador *</label>
+                  <input id="carta-correo" type="email" class="abril-field-input"
+                    [(ngModel)]="cartaCorreo" name="cartaCorreo"
+                    placeholder="correo@ejemplo.com" autocomplete="off" />
+                  <p class="text-[11px] text-gray-500 mt-[4px]">
+                    De su ficha de la base maestra.
+                  </p>
+                </div>
+
+                <div>
+                  <app-date-picker
+                    label="Fecha de ingreso"
+                    [floatingLabel]="true"
+                    [value]="cartaFechaIngreso"
+                    (valueChange)="cartaFechaIngreso = $event"
+                    color="var(--color-abril-logo-blue)">
+                  </app-date-picker>
+                  <p class="text-[11px] text-gray-500 mt-[4px]">Opcional: va en el correo.</p>
+                </div>
+              </div>
+
+              <div class="mt-[12px]">
+                <p class="abril-field-label">Carta oferta (PDF) *</p>
+                @if (cartaArchivo) {
+                  <div class="flex items-center justify-between gap-[10px] h-[38px] px-[12px] rounded-[7px] border bg-white"
+                       style="border-color:var(--color-abril-border)">
+                    <span class="flex items-center gap-[8px] min-w-0">
+                      <i class="ti ti-file-type-pdf text-[16px] shrink-0" style="color:var(--color-abril-logo-blue)"></i>
+                      <span class="text-[12.5px] truncate">{{ cartaArchivo.name }}</span>
+                      <span class="text-[11.5px] text-gray-400 shrink-0">{{ cartaArchivoPeso }}</span>
+                    </span>
+                    <button type="button" (click)="quitarCartaArchivo()"
+                      class="text-[12px] font-bold text-red-600 cursor-pointer hover:underline shrink-0">
+                      Quitar
+                    </button>
+                  </div>
+                } @else {
+                  <input #cartaInput type="file" class="hidden" accept=".pdf"
+                    (change)="onCartaSeleccionada($event)" />
+                  <button type="button" (click)="cartaInput.click()"
+                    class="w-full h-[38px] rounded-[7px] border border-dashed bg-white hover:bg-[#F1F7F1] flex items-center justify-center gap-[8px] text-[12.5px] font-semibold cursor-pointer transition-colors"
+                    style="border-color:#B7D6A6;color:var(--color-abril-standard)">
+                    <i class="ti ti-paperclip text-[15px]"></i>
+                    Adjuntar carta oferta
+                  </button>
+                  <p class="text-[11px] text-gray-500 mt-[4px]">Solo PDF · máximo 15 MB.</p>
+                }
+              </div>
+
+              <div class="flex flex-wrap items-center gap-[10px] mt-[14px]">
+                <button type="button" (click)="enviarCartaOferta()" [disabled]="!puedeEnviarCarta"
+                  [title]="motivoBloqueoCarta || ''"
+                  class="inline-flex items-center gap-[6px] h-[36px] px-[16px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style="background:#15803D">
+                  <i class="ti ti-send text-[15px]"></i>
+                  {{ enviandoCarta ? 'Enviando…' : 'Enviar carta oferta' }}
+                </button>
+                @if (motivoBloqueoCarta) {
+                  <span class="text-[11.5px] text-gray-500">{{ motivoBloqueoCarta }}</span>
+                }
+              </div>
+            }
+
+            <!-- ── Ya enviada: documentos, estado y acciones ────────────────── -->
+            @else {
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-[16px] gap-y-[8px] mt-[12px]">
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-gray-500 uppercase">Enviada a</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px] break-all">{{ co.correo || '—' }}</p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-gray-500 uppercase">Enviada el</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                    {{ (co.enviadaEn | date:'dd/MM/yyyy HH:mm') || '—' }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-gray-500 uppercase">Fecha de ingreso</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                    {{ (co.fechaIngreso | date:'dd/MM/yyyy') || 'Sin definir' }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                @if (co.cartaUrl) {
+                  <a [href]="co.cartaUrl" target="_blank" rel="noopener"
+                     class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold border cursor-pointer transition-colors hover:bg-gray-50"
+                     style="border-color:var(--color-abril-border);color:var(--color-abril-logo-blue);background:#fff"
+                     [title]="co.cartaNombre || ''">
+                    <i class="ti ti-file-type-pdf text-[15px]"></i>
+                    Ver carta enviada
+                  </a>
+                }
+                @if (co.firmadaUrl) {
+                  <a [href]="co.firmadaUrl" target="_blank" rel="noopener"
+                     class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                     style="background:#15803D"
+                     [title]="co.firmadaNombre || ''">
+                    <i class="ti ti-file-check text-[15px]"></i>
+                    Ver carta firmada
+                  </a>
+                }
+              </div>
+
+              <!-- Esperando la firma del candidato -->
+              @if (!cartaFirmada) {
+                <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[10px] mt-[12px]"
+                     style="border-color:#ddd6fe;background:#fff">
+                  <i class="ti ti-clock text-[17px] shrink-0 mt-[1px]" style="color:#6D28D9"></i>
+                  <p class="text-[12.5px]" style="color:#5B21B6">
+                    Esperando la firma de <b>{{ co.nombre | titleCase }}</b> desde su enlace.
+                  </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                  <button type="button" (click)="reenviarCartaOferta()" [disabled]="reenviandoCarta"
+                    class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="background:var(--color-abril-logo-blue)">
+                    <i class="ti ti-mail-forward text-[15px]"></i>
+                    {{ reenviandoCarta ? 'Reenviando…' : 'Reenviar enlace de firma' }}
+                  </button>
+
+                  <!-- Respaldo: para el que la firmó en papel en vez de usar el enlace. -->
+                  <input #firmadaInput type="file" class="hidden" [accept]="cartaFirmadaAccept"
+                    (change)="onCartaFirmadaSeleccionada($event)" />
+                  <button type="button" (click)="firmadaInput.click()" [disabled]="subiendoCartaFirmada"
+                    class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] border text-[12.5px] font-semibold cursor-pointer transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="border-color:var(--color-abril-border);color:var(--color-abril-standard);background:#fff">
+                    <i class="ti ti-paperclip text-[15px]"></i>
+                    {{ subiendoCartaFirmada ? 'Adjuntando…' : 'Adjuntar carta firmada en papel' }}
+                  </button>
+                </div>
+              }
+
+              <!-- Firmada: falta la revisión de GTH, que es la que cierra el proceso -->
+              @else if (!cartaAprobada) {
+                <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[10px] mt-[12px]"
+                     style="border-color:#FDE68A;background:#FEF9C3">
+                  <i class="ti ti-writing-sign text-[17px] shrink-0 mt-[1px]" style="color:#92400E"></i>
+                  <p class="text-[12.5px]" style="color:#92400E">
+                    @if (cartaFirmadaPorPostulante) {
+                      <b>{{ co.nombre | titleCase }}</b> firmó su carta el
+                      {{ co.firmadaPostulanteEn | date:'dd/MM/yyyy HH:mm' }} · pendiente de tu aprobación.
+                    } @else {
+                      Carta firmada adjuntada el
+                      {{ co.firmadaSubidaEn | date:'dd/MM/yyyy HH:mm' }} · pendiente de tu aprobación.
+                    }
+                  </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                  <button type="button" (click)="aprobarCartaOferta()" [disabled]="aprobandoCarta"
+                    class="inline-flex items-center gap-[6px] h-[36px] px-[16px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="background:#15803D">
+                    <i class="ti ti-circle-check text-[15px]"></i>
+                    {{ aprobandoCarta ? 'Aprobando…' : 'Aprobar y cerrar el proceso' }}
+                  </button>
+
+                  <input #reemplazoInput type="file" class="hidden" [accept]="cartaFirmadaAccept"
+                    (change)="onCartaFirmadaSeleccionada($event)" />
+                  <button type="button" (click)="reemplazoInput.click()" [disabled]="subiendoCartaFirmada"
+                    class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] border text-[12.5px] font-semibold cursor-pointer transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="border-color:var(--color-abril-border);color:var(--color-abril-standard);background:#fff">
+                    <i class="ti ti-refresh text-[15px]"></i>
+                    {{ subiendoCartaFirmada ? 'Reemplazando…' : 'Reemplazar documento' }}
+                  </button>
+                </div>
+              }
+
+              <!-- Aprobada: el proceso quedó cerrado -->
+              @else {
+                <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[10px] mt-[12px]"
+                     style="border-color:#a7f3d0;background:#fff">
+                  <i class="ti ti-circle-check text-[17px] shrink-0 mt-[1px]" style="color:#15803D"></i>
+                  <p class="text-[12.5px]" style="color:#166534">
+                    Carta aprobada el {{ co.aprobadaEn | date:'dd/MM/yyyy HH:mm' }}: el proceso de
+                    reclutamiento quedó cerrado y el colaborador ya aparece en Onboarding.
+                  </p>
+                </div>
+              }
+
+              @if (co.fileDigitalCarpeta) {
+                <p class="text-[11.5px] text-gray-500 mt-[10px] flex items-start gap-[6px]">
+                  <i class="ti ti-folder text-[14px] shrink-0 mt-[1px]"></i>
+                  <span>File del colaborador: {{ co.fileDigitalCarpeta }}</span>
+                </p>
+              }
+            }
+          }
         </div>
       }
 

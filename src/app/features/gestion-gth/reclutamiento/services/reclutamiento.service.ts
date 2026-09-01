@@ -5,6 +5,8 @@ import { environment } from '../../../../../environments/environment';
 import {
   AsignacionGth,
   BandejaReclutamiento,
+  CartaOfertaAccionResult,
+  CartaOfertaEnviar,
   DetalleRequerimientoGth,
   EntrevistaAccionResult,
   EstadoTransicionResult,
@@ -174,14 +176,70 @@ export class ReclutamientoService {
     );
   }
 
+  // ── Carta oferta: el último paso del proceso ─────────────────────────────
+  // Reemplaza al viejo «cerrar proceso» del EMO apto: ahora el requerimiento no se cierra hasta
+  // que el candidato firma su carta y GTH la aprueba.
+
   /**
-   * Cierra el proceso desde «EMO apto» / «EMO apto con restricciones» y habilita el paso a
-   * onboarding: el requerimiento pasa a CERRADO, que es lo que hace aparecer al seleccionado en la
-   * bandeja de Onboarding como candidato por ingresar.
+   * Envía la carta oferta al seleccionado (multipart): los datos en `data` y el PDF como archivo.
+   * El backend la guarda en el file del colaborador y le manda al candidato un correo con el
+   * enlace donde la lee y la firma en línea; la carta NO va adjunta. Mueve el requerimiento de
+   * «EMO apto» / «EMO apto con restricciones» a CARTA_OFERTA.
    */
-  cerrarProceso(requerimientoId: number): Observable<EstadoTransicionResult> {
-    return this.http.post<EstadoTransicionResult>(
-      `${this.apiUrl}/requerimiento/${requerimientoId}/cerrar-proceso`,
+  enviarCartaOferta(
+    requerimientoId: number,
+    datos: CartaOfertaEnviar,
+    carta: File,
+  ): Observable<CartaOfertaAccionResult> {
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(datos));
+    formData.append('carta', carta, carta.name);
+
+    return this.http.post<CartaOfertaAccionResult>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/carta-oferta`,
+      formData,
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Reenvía al candidato el correo con el enlace para firmar su carta oferta. `correo` solo se
+   * manda si GTH lo corrigió; el token del enlace original se conserva.
+   */
+  reenviarCartaOferta(
+    requerimientoId: number,
+    correo?: string | null,
+  ): Observable<CartaOfertaAccionResult> {
+    return this.http.post<CartaOfertaAccionResult>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/carta-oferta/reenviar`,
+      { correo: correo ?? null },
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Adjunta la carta oferta que el candidato devolvió firmada. Es la vía de RESPALDO: lo normal es
+   * que la firme él mismo desde el enlace, pero se conserva para quien la firme en papel. Deja el
+   * requerimiento en CARTA_OFERTA_FIRMADA, pendiente de aprobación.
+   */
+  subirCartaOfertaFirmada(requerimientoId: number, archivo: File): Observable<CartaOfertaAccionResult> {
+    const formData = new FormData();
+    formData.append('archivo', archivo, archivo.name);
+
+    return this.http.post<CartaOfertaAccionResult>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/carta-oferta/firmada`,
+      formData,
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Aprueba la carta oferta firmada y CIERRA el proceso: el requerimiento pasa a CERRADO, que es lo
+   * que hace aparecer al seleccionado en la bandeja de Onboarding como candidato por ingresar.
+   */
+  aprobarCartaOferta(requerimientoId: number): Observable<CartaOfertaAccionResult> {
+    return this.http.post<CartaOfertaAccionResult>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/carta-oferta/firmada/aprobar`,
       {},
       { headers: this.headers },
     );

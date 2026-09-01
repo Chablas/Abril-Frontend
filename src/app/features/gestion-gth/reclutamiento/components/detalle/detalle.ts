@@ -38,6 +38,8 @@ import {
 import {
   AsignacionGth,
   CandidatoAprobado,
+  CartaOfertaAccionResult,
+  CartaOfertaRequerimiento,
   DetalleRequerimientoGth,
   EVALUACION_ARCHIVO,
   EvaluacionArchivo,
@@ -178,6 +180,8 @@ export class GthDetalleRequerimiento implements OnInit {
   seccionFormularioPostulante = true;
   seccionMultitest = true;
   seccionEntrevistas = true;
+  /** Carta oferta: el último paso del proceso (envío, firma del candidato y aprobación de GTH). */
+  seccionCartaOferta = true;
   /**
    * "Historial de candidatos rechazados": arranca colapsada, al revés que el resto. Es una
    * consulta de respaldo (a quién ya se descartó), no un paso del proceso: abierta empujaría
@@ -291,6 +295,10 @@ export class GthDetalleRequerimiento implements OnInit {
           }
         }
         this.prepararFormulariosEntrevista();
+        // Correo destino de la carta oferta: el de su ficha de la base maestra (o el del último
+        // envío, si GTH lo había corregido a mano). GTH lo puede ajustar antes de enviarla.
+        this.cartaCorreo = data.cartaOferta?.correo ?? data.cartaOferta?.correoSugerido ?? '';
+        this.cartaFechaIngreso = data.cartaOferta?.fechaIngreso ?? null;
         this.abrirFormularioSolicitado();
         this.loaderService.hide();
         this.cdr.detectChanges();
@@ -471,55 +479,276 @@ export class GthDetalleRequerimiento implements OnInit {
     return this.detalle?.seleccionado?.emoAptitud || this.detalle?.estadoNombre || '';
   }
 
-  /** true mientras se cierra el proceso (evita el doble clic). */
-  cerrandoProceso = false;
+  // ── Carta oferta: el último paso del proceso ─────────────────────────────
+  // Reemplaza al viejo botón «Cerrar proceso» del EMO apto. Ahora el reclutamiento no termina con
+  // el examen: GTH le manda la carta oferta al seleccionado, él la firma desde su enlace y recién
+  // cuando GTH aprueba ese documento el requerimiento pasa a CERRADO. La carta vivía como primer
+  // paso de Onboarding; se movió acá completa (envío, firma y aprobación).
+
+  /** Datos del envío, mientras la carta todavía no se haya mandado. */
+  cartaFechaIngreso: string | null = null;
+  cartaCorreo = '';
+  cartaArchivo: File | null = null;
+
+  enviandoCarta = false;
+  reenviandoCarta = false;
+  subiendoCartaFirmada = false;
+  aprobandoCarta = false;
+
+  /** Formatos del documento firmado que GTH puede adjuntar a mano (los mismos que valida el backend). */
+  readonly cartaFirmadaAccept = '.pdf,.doc,.docx';
+
+  get carta(): CartaOfertaRequerimiento | null {
+    return this.detalle?.cartaOferta ?? null;
+  }
 
   /**
-   * Cierra el proceso y habilita el paso a onboarding. Es lo que antes hacía solo el EMO: ahora lo
-   * confirma GTH con el resultado del examen a la vista, porque cerrar es exactamente lo que pone
-   * al seleccionado en la bandeja de Onboarding.
+   * La sección se dibuja desde que el examen salió bien —es cuando GTH puede mandar la carta— y se
+   * queda para siempre en cuanto hay una enviada, también con el proceso ya cerrado: es el
+   * expediente de cómo se aceptó la propuesta.
    */
-  async cerrarProceso(): Promise<void> {
-    if (this.cerrandoProceso || !this.detalle) return;
+  get mostrarCartaOferta(): boolean {
+    return !!this.carta && (this.emoApto || this.cartaEnviada);
+  }
 
+  get cartaEnviada(): boolean {
+    return this.carta?.cartaOfertaId != null;
+  }
+
+  get cartaFirmada(): boolean {
+    return !!this.carta?.firmadaUrl;
+  }
+
+  get cartaAprobada(): boolean {
+    return !!this.carta?.aprobadaEn;
+  }
+
+  /** true si el documento firmado lo produjo el propio candidato desde el enlace público. */
+  get cartaFirmadaPorPostulante(): boolean {
+    return !!this.carta?.firmadaPostulanteEn;
+  }
+
+  /**
+   * Aviso de estado de la ficha de la base maestra: qué le falta al seleccionado para poder
+   * mandarle la carta. Los tres casos salen de esa misma ficha, así que van en una sola línea. El
+   * correo se puede escribir a mano acá; el DNI y la ficha no (ver `motivoBloqueoCarta`).
+   */
+  get avisoFichaCarta(): string | null {
+    const c = this.carta;
+    if (!c) return null;
+    if (!c.tieneFichaMaestra) return 'Sin ficha en la base maestra.';
+
+    const falta: string[] = [];
+    if (!c.correoSugerido) falta.push('correo personal');
+    if (!c.dni) falta.push('documento de identidad');
+    if (!falta.length) return null;
+    return `Su ficha de la base maestra no tiene ${falta.join(' ni ')}.`;
+  }
+
+  /**
+   * Por qué no se puede enviar todavía. El correo se puede escribir a mano; el DNI no, porque es el
+   * que nombra la carpeta del colaborador en SharePoint y tiene que ser el mismo de su ficha; y la
+   * ficha tampoco, porque es donde se guarda la firma que va a registrar al abrir el enlace.
+   */
+  get motivoBloqueoCarta(): string | null {
+    if (!this.cartaCorreo.trim()) return 'Falta el correo personal del colaborador.';
+    if (!this.carta?.dni) return 'Sin documento de identidad en la base maestra: con él se crea su carpeta en el file.';
+    if (!this.carta?.tieneFichaMaestra) return 'Sin ficha en la base maestra: ahí se guarda la firma que registrará en el enlace.';
+    if (!this.cartaArchivo) return 'Adjunta la carta oferta en PDF.';
+    return null;
+  }
+
+  get puedeEnviarCarta(): boolean {
+    return !this.enviandoCarta && this.motivoBloqueoCarta === null;
+  }
+
+  onCartaSeleccionada(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0] ?? null;
+    // Se limpia el input para que volver a elegir el mismo archivo dispare el change de nuevo.
+    input.value = '';
+    if (archivo) this.cartaArchivo = archivo;
+  }
+
+  quitarCartaArchivo(): void {
+    this.cartaArchivo = null;
+  }
+
+  /** Peso del archivo elegido, para mostrarlo junto a su nombre. */
+  get cartaArchivoPeso(): string {
+    if (!this.cartaArchivo) return '';
+    return `${(this.cartaArchivo.size / 1024 / 1024).toFixed(2)} MB`;
+  }
+
+  async enviarCartaOferta(): Promise<void> {
+    if (!this.puedeEnviarCarta || !this.cartaArchivo || !this.detalle) return;
+
+    const correo = this.cartaCorreo.trim().toLowerCase();
     const confirm = await Swal.fire({
       icon: 'question',
-      title: '¿Cerrar el proceso?',
+      title: '¿Enviar la carta oferta?',
       html:
-        'El examen médico de ingreso salió <b>' +
-        this.emoAptitudNombre +
-        '</b>. Al cerrar, el proceso de reclutamiento termina y el seleccionado pasa a ' +
-        '<b>Onboarding</b> como candidato por ingresar.',
+        `Se le enviará a <b>${correo}</b> un correo con el enlace para leer y firmar ` +
+        `<b>${this.cartaArchivo.name}</b> en línea. El proceso se cierra recién cuando firme y ` +
+        'apruebes el documento.',
       showCancelButton: true,
-      confirmButtonText: 'Cerrar proceso y continuar a Onboarding',
+      confirmButtonText: 'Enviar carta oferta',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#15803D',
     });
     if (!confirm.isConfirmed) return;
 
-    this.cerrandoProceso = true;
+    this.enviandoCarta = true;
     this.loaderService.show();
-    this.service.cerrarProceso(this.requerimientoId).subscribe({
+
+    this.service
+      .enviarCartaOferta(
+        this.requerimientoId,
+        {
+          fechaIngreso: this.cartaFechaIngreso,
+          // Solo se manda si difiere del que resolvió el backend: así el correo de la base maestra
+          // sigue siendo la fuente de verdad y este campo es únicamente la corrección manual.
+          correo: correo === (this.carta?.correoSugerido ?? '').toLowerCase() ? null : correo,
+        },
+        this.cartaArchivo,
+      )
+      .subscribe({
+        next: (res) => {
+          this.enviandoCarta = false;
+          this.loaderService.hide();
+          this.cartaArchivo = null;
+          this.aplicarCarta(res);
+          Swal.fire({ icon: 'success', title: 'Carta oferta enviada', text: res.message, confirmButtonColor: '#15803D' });
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.enviandoCarta = false;
+          this.loaderService.hide();
+          this.cdr.detectChanges();
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  async reenviarCartaOferta(): Promise<void> {
+    if (this.reenviandoCarta) return;
+
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: '¿Reenviar el enlace de firma?',
+      html: this.carta?.correo
+        ? `Se le volverá a enviar a <b>${this.carta.correo}</b> el correo con el enlace para leer y firmar su carta oferta.`
+        : 'Se le volverá a enviar el correo con el enlace para leer y firmar su carta oferta.',
+      showCancelButton: true,
+      confirmButtonText: 'Reenviar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: 'var(--color-abril-logo-blue)',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.reenviandoCarta = true;
+    this.loaderService.show();
+
+    this.service.reenviarCartaOferta(this.requerimientoId).subscribe({
       next: (res) => {
-        this.cerrandoProceso = false;
-        this.huboCambios = true;
-        // Cerrar cambia las secciones del modal (desaparece la tarjeta del resultado del EMO), así
-        // que se recarga el detalle entero. El loader lo apaga esa recarga.
-        this.cargarDetalle();
-        Swal.fire({
-          icon: 'success',
-          title: 'Proceso cerrado',
-          text: res.message,
-          confirmButtonColor: '#15803D',
-        });
+        this.reenviandoCarta = false;
+        this.loaderService.hide();
+        this.aplicarCarta(res);
+        Swal.fire({ icon: 'success', title: 'Enlace reenviado', text: res.message });
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        this.cerrandoProceso = false;
+        this.reenviandoCarta = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
         this.errorService.handleError(err);
       },
     });
+  }
+
+  /**
+   * Carga a mano del documento firmado: es la vía de RESPALDO, para el candidato que firmó en papel
+   * en vez de usar el enlace. Sirve también para reemplazar el que ya está mientras no se apruebe.
+   */
+  onCartaFirmadaSeleccionada(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    input.value = '';
+    if (archivo) this.subirCartaFirmada(archivo);
+  }
+
+  private subirCartaFirmada(archivo: File): void {
+    if (this.subiendoCartaFirmada) return;
+    this.subiendoCartaFirmada = true;
+    this.loaderService.show();
+
+    this.service.subirCartaOfertaFirmada(this.requerimientoId, archivo).subscribe({
+      next: (res) => {
+        this.subiendoCartaFirmada = false;
+        this.loaderService.hide();
+        this.aplicarCarta(res);
+        Swal.fire({ icon: 'success', title: 'Carta firmada adjuntada', text: res.message });
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subiendoCartaFirmada = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /** Aprobar la carta firmada es lo que cierra el proceso y pasa al colaborador a Onboarding. */
+  async aprobarCartaOferta(): Promise<void> {
+    if (this.aprobandoCarta || !this.cartaFirmada || this.cartaAprobada) return;
+
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: '¿Aprobar la carta oferta firmada?',
+      html:
+        'Confirma que revisaste el documento firmado y que las condiciones son correctas. Al ' +
+        'aprobarla, el proceso de reclutamiento queda <b>cerrado</b> y ' +
+        `${this.detalle?.seleccionado?.nombre ?? 'el seleccionado'} pasa a <b>Onboarding</b> como ` +
+        'candidato por ingresar.',
+      showCancelButton: true,
+      confirmButtonText: 'Aprobar y cerrar el proceso',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#15803D',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.aprobandoCarta = true;
+    this.loaderService.show();
+
+    this.service.aprobarCartaOferta(this.requerimientoId).subscribe({
+      next: (res) => {
+        this.aprobandoCarta = false;
+        this.loaderService.hide();
+        this.aplicarCarta(res);
+        Swal.fire({ icon: 'success', title: 'Proceso cerrado', text: res.message, confirmButtonColor: '#15803D' });
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.aprobandoCarta = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /**
+   * Deja el modal con la carta y la fase que devolvió la acción. No se recarga el detalle entero:
+   * la respuesta ya trae las dos cosas que cambian, y las secciones que dependen de la fase (la
+   * tarjeta del EMO, esta misma sección) se recalculan solas al cambiar `estadoCodigo`.
+   */
+  private aplicarCarta(res: CartaOfertaAccionResult): void {
+    if (!this.detalle) return;
+    this.huboCambios = true;
+    this.detalle.cartaOferta = res.cartaOferta;
+    this.detalle.estadoCodigo = res.estadoCodigo;
+    this.detalle.estadoNombre = res.estadoNombre;
   }
 
   /**

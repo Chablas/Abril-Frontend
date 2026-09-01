@@ -7,10 +7,10 @@ import { GthCorreosConfig } from '../../shared/correos-config/correos-config';
 /**
  * Contenedor de la Configuración de correos de Reclutamiento: los correos del proceso que salen
  * desde la bandeja de GTH (long list al solicitante, formulario al postulante, correcciones del
- * formulario, invitación a entrevista, finalista al solicitante y fin de proceso a quien no
- * continúa) más los dos que GTH recibe en vez de enviar: el aviso de formulario completado y la
- * respuesta del candidato a su citación. Reemplaza al modal de dos cajas de texto que colgaba del
- * botón «Configuración».
+ * formulario, invitación a entrevista, finalista al solicitante, fin de proceso a quien no continúa
+ * y la carta oferta con la que cierra el proceso) más los que GTH recibe en vez de enviar: el aviso
+ * de formulario completado, la respuesta del candidato a su citación y el aviso de que firmó su
+ * carta. Reemplaza al modal de dos cajas de texto que colgaba del botón «Configuración».
  *
  * Acceso restringido por la feature 'gestion-gth.reclutamiento.configuracion' (roleGuard en la
  * ruta), la misma que ya habilitaba ese botón. El contenido lo arma `app-gth-correos-config`,

@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute, Router } from '@angular/router';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../shared/pipes/title-case.pipe';
@@ -15,7 +14,6 @@ import { ClientPager } from '../../../shared/utils/client-pager';
 import { DEFAULT_PAGE_SIZE } from '../../../shared/constants/pagination';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { OnboardingService } from './services/onboarding.service';
 import {
   CandidatoApto,
@@ -31,9 +29,9 @@ import { avanceColor, estadoOnboardingColors } from './onboarding-estado-colors'
  * Onboarding (Gestión GTH): la fase que sigue a Reclutamiento. Muestra las tarjetas de resumen, el
  * embudo «Fases del onboarding» y la tabla de colaboradores ingresados.
  *
- * Un colaborador entra acá solo cuando su proceso de reclutamiento terminó: el área solicitante lo
- * seleccionó y su requerimiento quedó cerrado. Desde el FAB «Nuevo ingreso» GTH abre su onboarding
- * enviándole la carta oferta al correo personal que quedó en la base maestra.
+ * Un colaborador entra acá solo cuando su proceso de reclutamiento terminó: firmó su carta oferta
+ * y GTH se la aprobó, que es lo que cierra el requerimiento. Desde el FAB «Nuevo ingreso» GTH abre
+ * su onboarding sobre el file digital que esa carta ya creó.
  */
 @Component({
   standalone: true,
@@ -86,50 +84,16 @@ export class GthOnboarding implements OnInit {
   /** Colaborador cuyo detalle está abierto (se abre al hacer clic en su fila). */
   detalle: OnboardingListItem | null = null;
 
-  /**
-   * Onboarding que hay que abrir apenas llegue la bandeja. Solo lo llena el enlace del correo de
-   * «carta oferta firmada» (`/onboarding/colaborador/:id`); en la navegación normal queda en null.
-   */
-  private deepLinkOnboardingId: number | null = null;
-
   private readonly pager = new ClientPager<OnboardingListItem>(DEFAULT_PAGE_SIZE);
 
   constructor(
     private service: OnboardingService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
-    private authService: AuthService,
-    private route: ActivatedRoute,
-    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
 
-  /** feature_key que habilita la configuración de correos (dinámico vía role_feature en BD). */
-  private static readonly FEATURE_CONFIG = 'gestion-gth.reclutamiento.configuracion';
-
-  /** ¿El usuario puede configurar los correos? (según los roles asignados a la feature). */
-  get puedeConfigurar(): boolean {
-    return this.authService.hasFeature(GthOnboarding.FEATURE_CONFIG);
-  }
-
-  /** Botón "Configuración" del header: solo si el rol del usuario tiene la feature. */
-  get botonConfiguracion() {
-    return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
-  }
-
-  /** Lleva a la pantalla de configuración del correo de la carta oferta. */
-  abrirConfiguracion(): void {
-    if (!this.puedeConfigurar) return;
-    this.router.navigate(['/gestion-gth/onboarding/configuracion']);
-  }
-
   ngOnInit(): void {
-    // `/gestion-gth/onboarding/colaborador/:id` es la URL del botón del correo que avisa que el
-    // colaborador firmó su carta oferta: abre su detalle, que es donde se revisa y se aprueba. Sin
-    // id, la pantalla es solo la bandeja.
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    if (Number.isInteger(id) && id > 0) this.deepLinkOnboardingId = id;
-
     this.load();
   }
 
@@ -142,14 +106,6 @@ export class GthOnboarding implements OnInit {
         this.colaboradores = data.colaboradores;
         this.candidatosAptos = data.candidatosAptos;
         this.pager.reset();
-        // El detalle se abre recién acá porque el modal recibe la fila entera, no un id: hasta que
-        // no llega la bandeja no hay nada que abrirle. Si esa fila ya no está (el onboarding se dio
-        // de baja después de mandar el correo), se queda en la bandeja.
-        if (this.deepLinkOnboardingId !== null) {
-          this.detalle =
-            this.colaboradores.find((c) => c.onboardingId === this.deepLinkOnboardingId) ?? null;
-          this.deepLinkOnboardingId = null;
-        }
         this.loaderService.hide();
         this.cdr.detectChanges();
       },
@@ -184,19 +140,13 @@ export class GthOnboarding implements OnInit {
     this.detalle = colaborador;
   }
 
-  /**
-   * Cierra el detalle. Si se llegó por el enlace del correo (`/onboarding/colaborador/:id`), se
-   * limpia la URL para que un refresco no vuelva a abrir el modal.
-   */
   cerrarDetalle(): void {
     this.detalle = null;
-    if (this.route.snapshot.paramMap.get('id')) this.router.navigate(['/gestion-gth/onboarding']);
   }
 
   /**
-   * El detalle devuelve la fila ya actualizada (subió la carta firmada, la aprobó o avanzó de
-   * fase). Se reemplaza en la lista en vez de recargar la bandeja; el embudo y las tarjetas se
-   * recalculan porque dependen del conjunto entero.
+   * El detalle devuelve la fila ya actualizada (avanzó de fase). Se reemplaza en la lista en vez de
+   * recargar la bandeja; el embudo y las tarjetas se recalculan porque dependen del conjunto entero.
    */
   onDetalleActualizado(colaborador: OnboardingListItem): void {
     this.colaboradores = this.colaboradores.map((c) =>
@@ -270,7 +220,7 @@ export class GthOnboarding implements OnInit {
   get mensajeVacio(): string {
     if (this.filtrosActivos > 0) return 'Sin resultados para los filtros aplicados.';
     return this.resumen.candidatosPorIngresar > 0
-      ? 'Aún no has iniciado ningún onboarding. Usa «Nuevo ingreso» para empezar con los candidatos que ya terminaron reclutamiento.'
+      ? 'Aún no has iniciado ningún onboarding. Usa «Nuevo ingreso» para empezar con los candidatos que ya firmaron su carta oferta.'
       : 'Aún no hay colaboradores en onboarding.';
   }
 

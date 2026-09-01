@@ -14,15 +14,17 @@
  * (`api/v1/gestion-gth/{modulo}/configuracion`) y define qué correos administra cada una:
  *  • `solicitud-personal` → el flujo del solicitante (aprobación de GG, decisiones de candidatos).
  *  • `aprobaciones`       → los avisos a GTH y a TI que dispara la decisión de Gerencia.
- *  • `reclutamiento`      → los del proceso que maneja GTH (long list, formulario al postulante,
- *                           formulario completado, correcciones, entrevista y agradecimiento).
- *  • `onboarding`        → la carta oferta al colaborador ya elegido.
+ *  • `reclutamiento`      → los del proceso que maneja GTH de punta a punta (long list, formulario
+ *                           al postulante, formulario completado, correcciones, entrevista,
+ *                           agradecimiento y la carta oferta con la que cierra el proceso).
+ *
+ * Onboarding ya no tiene pantalla propia: sus dos únicos correos eran los de la carta oferta, que
+ * pasó a ser el último paso de Reclutamiento. Vuelve como una opción más cuando tenga correos suyos.
  */
 export type CorreoConfigModulo =
   | 'solicitud-personal'
   | 'aprobaciones'
-  | 'reclutamiento'
-  | 'onboarding';
+  | 'reclutamiento';
 
 /** Una fila de la sección de un correo. */
 export interface CorreoDestinatarioFila {

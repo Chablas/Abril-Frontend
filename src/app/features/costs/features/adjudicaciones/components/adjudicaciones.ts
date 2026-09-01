@@ -61,6 +61,13 @@ export class Adjudicaciones implements OnInit {
   /** Solo Oficina Central y el Administrador pueden crear adjudicaciones. Oficina Técnica lo tiene bloqueado. */
   canCreate = false;
 
+  /**
+   * Opción "Permitir volver a generar el contrato completo" del paso 4
+   * (Configuración de Costos → Pasos). Viene con los datos de la primera carga, no en una
+   * petición aparte.
+   */
+  allowRegeneratePackage = false;
+
   constructor(
     private adjudicacionesService: AdjudicacionesService,
     private loaderService: LoaderService,
@@ -89,6 +96,7 @@ export class Adjudicaciones implements OnInit {
         this.contractModalities = response.filters.contractModalities;
         this.paymentMethods = response.filters.paymentMethods;
         this.projectSubContractorStatuses = response.filters.projectSubContractorStatuses;
+        this.allowRegeneratePackage = response.filters.allowRegenerateContractPackage;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {

@@ -29,55 +29,11 @@ export class OnboardingService {
   }
 
   /**
-   * Inicia el onboarding de un colaborador (multipart): los datos en `data` y la carta oferta (PDF)
-   * como archivo. El backend la guarda en su file de SharePoint, registra el proceso en la fase
-   * «Carta oferta firmada» y le manda al colaborador un correo con el enlace donde la lee y la firma
-   * en línea. La carta ya NO se envía adjunta.
+   * Abre el onboarding de un colaborador. Ya no se sube ni se envía nada: la carta oferta se firmó
+   * y se aprobó en Reclutamiento, y de ahí el backend hereda su ficha maestra y su file digital.
    */
-  iniciar(datos: OnboardingCreate, cartaOferta: File): Observable<OnboardingCreateResult> {
-    const formData = new FormData();
-    formData.append('data', JSON.stringify(datos));
-    formData.append('cartaOferta', cartaOferta, cartaOferta.name);
-
-    return this.http.post<OnboardingCreateResult>(this.apiUrl, formData, { headers: this.headers });
-  }
-
-  /**
-   * Reenvía al colaborador el correo con el enlace para firmar su carta oferta. `correo` solo se
-   * manda si GTH lo corrigió; el token del enlace original se conserva.
-   */
-  reenviarEnlaceFirma(onboardingId: number, correo?: string | null): Observable<OnboardingAccionResult> {
-    return this.http.post<OnboardingAccionResult>(
-      `${this.apiUrl}/${onboardingId}/carta-oferta/reenviar`,
-      { correo: correo ?? null },
-      { headers: this.headers },
-    );
-  }
-
-  /**
-   * Adjunta la carta oferta que el colaborador devolvió firmada. Es la vía de RESPALDO: lo normal es
-   * que la firme él mismo desde el enlace, pero se conserva para quien la firme en papel. El backend
-   * la guarda en el file digital del onboarding — la carpeta «Carta Oferta Firmada» dentro del file
-   * del colaborador — y la deja pendiente de aprobación.
-   */
-  subirCartaFirmada(onboardingId: number, archivo: File): Observable<OnboardingAccionResult> {
-    const formData = new FormData();
-    formData.append('archivo', archivo, archivo.name);
-
-    return this.http.post<OnboardingAccionResult>(
-      `${this.apiUrl}/${onboardingId}/carta-firmada`,
-      formData,
-      { headers: this.headers },
-    );
-  }
-
-  /** Aprueba la carta oferta firmada adjunta (primera actividad del checklist). */
-  aprobarCartaFirmada(onboardingId: number): Observable<OnboardingAccionResult> {
-    return this.http.post<OnboardingAccionResult>(
-      `${this.apiUrl}/${onboardingId}/carta-firmada/aprobar`,
-      {},
-      { headers: this.headers },
-    );
+  iniciar(datos: OnboardingCreate): Observable<OnboardingCreateResult> {
+    return this.http.post<OnboardingCreateResult>(this.apiUrl, datos, { headers: this.headers });
   }
 
   /** Avanza el onboarding a la fase siguiente del checklist. */
