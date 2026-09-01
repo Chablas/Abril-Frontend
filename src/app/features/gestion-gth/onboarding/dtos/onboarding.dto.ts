@@ -112,9 +112,9 @@ export interface CandidatoApto {
   empresa: string | null;
   proyectoObra: string | null;
   /**
-   * Correo personal al que iría la carta oferta. Lo resuelve el backend desde la base de datos
-   * (`person.email`, lo que GTH validó al aprobar el formulario del postulante). Null = no hay a
-   * dónde enviar y el modal bloquea el envío.
+   * Correo personal al que iría la carta oferta. Sale siempre de la ficha de la base maestra
+   * (`person.email`), sea el ingreso normal o el directo FFT. Null = su ficha no tiene correo, no
+   * hay a dónde enviar y el modal bloquea el envío.
    */
   correo: string | null;
   /**
@@ -126,8 +126,8 @@ export interface CandidatoApto {
   jefeDirecto: string | null;
   /**
    * true si el candidato ya tiene ficha en `person`. La firma que va a dibujar en el enlace se
-   * guarda ahí, así que sin ficha el modal bloquea el envío. La ficha la crea la aprobación de su
-   * formulario de postulante en Reclutamiento.
+   * guarda ahí, así que sin ficha el modal bloquea el envío. La ficha la abre la aprobación de su
+   * formulario de postulante o, en el ingreso directo FFT, la propia solicitud de personal.
    */
   tieneFichaMaestra: boolean;
 }

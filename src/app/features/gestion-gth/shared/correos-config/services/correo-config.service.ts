@@ -14,9 +14,9 @@ import {
  * destinatarios activos. Los correos de los gerentes no se escriben acá, salen del dato maestro
  * del trabajador al momento de enviar.
  *
- * Todas las operaciones reciben el `modulo` porque hay tres pantallas con su propio juego de
- * correos —Solicitud de Personal, Aprobaciones y Reclutamiento— y el backend acota cada una a
- * los suyos.
+ * Todas las operaciones reciben el `modulo` porque hay cuatro pantallas con su propio juego de
+ * correos —Solicitud de Personal, Aprobaciones, Reclutamiento y Onboarding— y el backend acota
+ * cada una a los suyos.
  */
 @Injectable({ providedIn: 'root' })
 export class CorreoConfigService {

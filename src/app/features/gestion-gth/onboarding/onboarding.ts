@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../shared/pipes/title-case.pipe';
@@ -14,6 +15,7 @@ import { ClientPager } from '../../../shared/utils/client-pager';
 import { DEFAULT_PAGE_SIZE } from '../../../shared/constants/pagination';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { OnboardingService } from './services/onboarding.service';
 import {
   CandidatoApto,
@@ -90,8 +92,29 @@ export class GthOnboarding implements OnInit {
     private service: OnboardingService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private authService: AuthService,
+    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
+
+  /** feature_key que habilita la configuración de correos (dinámico vía role_feature en BD). */
+  private static readonly FEATURE_CONFIG = 'gestion-gth.reclutamiento.configuracion';
+
+  /** ¿El usuario puede configurar los correos? (según los roles asignados a la feature). */
+  get puedeConfigurar(): boolean {
+    return this.authService.hasFeature(GthOnboarding.FEATURE_CONFIG);
+  }
+
+  /** Botón "Configuración" del header: solo si el rol del usuario tiene la feature. */
+  get botonConfiguracion() {
+    return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
+  }
+
+  /** Lleva a la pantalla de configuración del correo de la carta oferta. */
+  abrirConfiguracion(): void {
+    if (!this.puedeConfigurar) return;
+    this.router.navigate(['/gestion-gth/onboarding/configuracion']);
+  }
 
   ngOnInit(): void {
     this.load();

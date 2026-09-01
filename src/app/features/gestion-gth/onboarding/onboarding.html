@@ -2,6 +2,8 @@
   [badge]="'GESTIÓN DE TALENTO · ' + anioActual"
   titulo="Onboarding"
   subtitulo="Acompaña el ingreso de los colaboradores desde la carta oferta hasta la base maestra."
+  [botonSecundario]="botonConfiguracion"
+  (secondaryClick)="abrirConfiguracion()"
   [hasExtra]="true">
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
