@@ -17,6 +17,7 @@ import {
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
+import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
@@ -43,6 +44,15 @@ export class InspeccionDetalleComponent implements OnInit {
 
   grupos: GrupoRespuesta[] = [];
   mostrarNA = false;
+
+  private miWorkerId: number | null = null;
+  private esJefeSsomaActual = false;
+
+  /** Solo quien creó el hallazgo o el Jefe SSOMA pueden editarlo/eliminarlo — mismo criterio
+   * que valida el backend (InspeccionRepository.EditarHallazgoAsync/EliminarHallazgoAsync). */
+  puedeModificarHallazgo(h: InspeccionHallazgoDto): boolean {
+    return this.esJefeSsomaActual || (this.miWorkerId != null && h.creadoPorWorkerId === this.miWorkerId);
+  }
 
   hallazgoCierre: InspeccionHallazgoDto | null = null;
   cierreAccion = '';
@@ -126,6 +136,7 @@ export class InspeccionDetalleComponent implements OnInit {
   constructor(
     private inspeccionService: InspeccionService,
     private projectService: ProjectService,
+    private workerSearchService: WorkerSearchService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private route: ActivatedRoute,
@@ -136,6 +147,14 @@ export class InspeccionDetalleComponent implements OnInit {
   ngOnInit(): void {
     this.id = Number(this.route.snapshot.paramMap.get('id'));
     this.load();
+    this.workerSearchService.getMe().subscribe({
+      next: (me) => {
+        this.miWorkerId = me.id;
+        this.esJefeSsomaActual = (me.puesto ?? '').trim().toUpperCase() === 'JEFE DE SEGURIDAD Y SALUD EN EL TRABAJO';
+        this.cdr.markForCheck();
+      },
+      error: () => {},
+    });
   }
 
   load(): void {

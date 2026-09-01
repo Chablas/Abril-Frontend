@@ -187,12 +187,14 @@
                   <span class="hallazgo-estado" [ngClass]="estadoHallazgoClass(h.estado)">{{ h.estado }}</span>
                   @if (h.estado === 'Abierto' && data.estado !== 'Cerrada') {
                     <div class="hallazgo-actions">
-                      <button type="button" class="btn-editar-hallazgo" (click)="abrirEditar(h)">
-                        Editar
-                      </button>
-                      <button type="button" class="btn-eliminar-hallazgo" [disabled]="eliminandoId === h.id" (click)="eliminarHallazgo(h)">
-                        @if (eliminandoId === h.id) { <i class="ti ti-loader-2 spin"></i> } @else { Eliminar }
-                      </button>
+                      @if (puedeModificarHallazgo(h)) {
+                        <button type="button" class="btn-editar-hallazgo" (click)="abrirEditar(h)">
+                          Editar
+                        </button>
+                        <button type="button" class="btn-eliminar-hallazgo" [disabled]="eliminandoId === h.id" (click)="eliminarHallazgo(h)">
+                          @if (eliminandoId === h.id) { <i class="ti ti-loader-2 spin"></i> } @else { Eliminar }
+                        </button>
+                      }
                       <button type="button" class="btn-cerrar-hallazgo" (click)="abrirCierre(h)">
                         Cerrar
                       </button>

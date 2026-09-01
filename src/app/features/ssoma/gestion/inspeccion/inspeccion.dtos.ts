@@ -150,6 +150,7 @@ export interface InspeccionHallazgoDto {
   latitud: number | null;
   longitud: number | null;
   creadoPorNombre: string | null;
+  creadoPorWorkerId: number | null;
   fotos: InspeccionHallazgoFotoDto[];
 }
 
