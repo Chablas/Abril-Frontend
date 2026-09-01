@@ -24,6 +24,7 @@ import { DocumentoVersionDto } from '../../../../dtos/trabajador.model';
 export class VersionesDoc implements OnChanges {
   @Input() open = false;
   @Input() entregableId: number | undefined;
+  @Input() proyectoNombre: string | undefined;
   @Input() loader!: (id: number) => Observable<DocumentoVersionDto[]>;
   @Output() closed = new EventEmitter<void>();
 

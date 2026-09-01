@@ -12,7 +12,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { PresupuestoMaterialesService } from '../../presupuesto.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { DriverProyectoDto, ActualizarDriversDto } from '../../presupuesto.dtos';
+import { DriverProyectoDto, ActualizarDriversDto, RatiosDriversRecomendadosDto } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
 import { ProyectoHabilitadoService } from '../../../../shared/services/proyecto-habilitado.service';
@@ -53,6 +53,7 @@ export class DriversPage implements OnInit {
   drivers: DriverProyectoDto[] = [];
   loading = false;
   editandoId: number | null = null;
+  recomendados: RatiosDriversRecomendadosDto | null = null;
 
   searchText = '';
   private readonly pager = new ClientPager<DriverProyectoDto>();
@@ -84,6 +85,14 @@ export class DriversPage implements OnInit {
   ngOnInit(): void {
     this.load();
     this.loadProyectosHabilitados();
+    this.loadRecomendados();
+  }
+
+  private loadRecomendados(): void {
+    this.svc.getRatiosDriversRecomendados().subscribe({
+      next: (r) => { this.recomendados = r; this.cdr.markForCheck(); },
+      error: () => {},
+    });
   }
 
   private loadProyectosHabilitados(): void {
@@ -137,6 +146,26 @@ export class DriversPage implements OnInit {
 
   cancelarEdicion(): void {
     this.editandoId = null;
+    this.cdr.markForCheck();
+  }
+
+  get puedeCalcularPorMediana(): boolean {
+    return !!this.recomendados?.hh && !!this.recomendados?.trabajadores;
+  }
+
+  calcularPorMediana(): void {
+    const area = Number(this.form.areaTechadaM2) || 0;
+    if (area <= 0) {
+      Swal.fire({ icon: 'warning', title: 'Falta el Área', text: 'Ingrese primero el Área Techada (m²) para poder calcular HH y Trabajadores.' });
+      return;
+    }
+    if (!this.recomendados?.hh || !this.recomendados?.trabajadores) {
+      Swal.fire({ icon: 'warning', title: 'Sin ratio recomendado', text: 'Todavía no hay un ratio de HH/Trabajadores recomendado calculado.' });
+      return;
+    }
+    this.form.hhTotalCasa = Math.round(area * this.recomendados.hh.ratioRecomendado * 100) / 100;
+    this.form.trabajadores = Math.round(area * this.recomendados.trabajadores.ratioRecomendado);
+    this.form.hhFuente = 'HH_CALCULADO_MEDIANA';
     this.cdr.markForCheck();
   }
 

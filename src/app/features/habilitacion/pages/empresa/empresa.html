@@ -872,6 +872,7 @@
 <app-hab-versiones-doc
   [open]="modalVersionesOpen"
   [entregableId]="selectedEntregable?.itemId"
+  [proyectoNombre]="selectedProyecto?.nombre"
   [loader]="versionesLoader"
   (closed)="closeVersiones()"
 />

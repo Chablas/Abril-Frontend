@@ -45,10 +45,10 @@ export class HabEmpresaService {
     );
   }
 
-  getVersiones(empresaId: number, itemId: number): Observable<DocumentoVersionDto[]> {
+  getVersiones(empresaId: number, proyectoId: number, itemId: number): Observable<DocumentoVersionDto[]> {
     return this.http.get<DocumentoVersionDto[]>(
       `${this.base}/${empresaId}/entregables/${itemId}/versiones`,
-      { headers: buildHabHeaders() },
+      { headers: buildHabHeaders(), params: { proyectoId } },
     );
   }
 

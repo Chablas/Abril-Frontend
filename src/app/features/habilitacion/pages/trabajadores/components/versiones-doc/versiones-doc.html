@@ -7,6 +7,7 @@
         <thead>
           <tr>
             <th>Versión</th>
+            <th>Proyecto</th>
             <th>Fecha</th>
             <th>Archivo</th>
             <th>Estado al subir</th>
@@ -16,10 +17,11 @@
         </thead>
         <tbody>
           <tr *ngIf="versiones.length === 0">
-            <td colspan="6" class="empty-row">Sin versiones registradas.</td>
+            <td colspan="7" class="empty-row">Sin versiones registradas.</td>
           </tr>
           <tr *ngFor="let v of versiones">
             <td>v{{ v.version }}</td>
+            <td>{{ proyectoNombre ?? (v.proyectoId ? ('Proyecto #' + v.proyectoId) : '—') }}</td>
             <td>{{ v.createdAt | date: 'dd/MM/yyyy HH:mm' }}</td>
             <td>{{ v.archivos && v.archivos.length > 0 ? v.archivos[0].nombreArchivo : (v.archivoUrl ? v.archivoUrl.split('/').pop() : '—') }}</td>
             <td>{{ v.estadoAlSubir ?? '—' }}</td>
