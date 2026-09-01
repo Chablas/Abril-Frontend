@@ -88,15 +88,23 @@
                   <strong>{{ d.projectDescription }}</strong>
 
                   <div class="edit-fields">
-                    <label>HH Total
-                      <input type="number" [(ngModel)]="form.hhTotalCasa" min="0" step="0.01" />
-                    </label>
                     <label>Área Techada (m²)
                       <input type="number" [(ngModel)]="form.areaTechadaM2" min="0" step="0.01" />
+                    </label>
+                    <label>HH Total
+                      <input type="number" [(ngModel)]="form.hhTotalCasa" min="0" step="0.01" />
                     </label>
                     <label>Trabajadores
                       <input type="number" [(ngModel)]="form.trabajadores" min="0" />
                     </label>
+                    <button
+                      type="button"
+                      class="btn-edit"
+                      title="Calcular HH y Trabajadores con el ratio recomendado (mediana histórica) × Área Techada"
+                      [disabled]="!puedeCalcularPorMediana"
+                      (click)="calcularPorMediana()">
+                      <i class="ti ti-calculator"></i> Calcular por mediana
+                    </button>
                     <label>Fuente HH
                       <app-search-select
                         [options]="hhFuenteOpts"

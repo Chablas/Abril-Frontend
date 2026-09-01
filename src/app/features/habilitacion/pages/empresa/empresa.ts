@@ -187,7 +187,9 @@ export class Empresa implements OnInit {
   loadingHistorial = false;
   mostrarHistorial = false;
   versionesLoader = (id: number): Observable<DocumentoVersionDto[]> =>
-    this.empresaId ? this.habEmpresaService.getVersiones(this.empresaId, id) : EMPTY;
+    this.empresaId && this.selectedProyecto
+      ? this.habEmpresaService.getVersiones(this.empresaId, this.selectedProyecto.id, id)
+      : EMPTY;
 
   constructor(
     private habEmpresaService: HabEmpresaService,
@@ -1018,12 +1020,12 @@ export class Empresa implements OnInit {
   }
 
   cargarHistorial(): void {
-    if (!this.selectedEntregable || !this.empresaId) return;
+    if (!this.selectedEntregable || !this.empresaId || !this.selectedProyecto) return;
     this.mostrarHistorial = !this.mostrarHistorial;
     if (this.mostrarHistorial && this.historialVersiones.length === 0) {
       this.loadingHistorial = true;
       this.habEmpresaService
-        .getVersiones(this.empresaId, this.selectedEntregable.id)
+        .getVersiones(this.empresaId, this.selectedProyecto!.id, this.selectedEntregable.id)
         .subscribe({
           next: (res) => {
             this.historialVersiones = (res ?? []).sort(

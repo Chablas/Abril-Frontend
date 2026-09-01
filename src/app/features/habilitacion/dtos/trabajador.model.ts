@@ -91,6 +91,8 @@ export interface DocumentoVersionDto {
   aprobadoPorNombre?: string;
   createdAt: string;
   archivos?: DocumentoArchivoDto[];
+  proyectoId?: number;
+  empresaId?: number;
 }
 
 export interface ArchivoStagingDto {
