@@ -9,7 +9,7 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { CategoriasPuestosService } from '../../services/categorias-puestos.service';
 import { CategoriaAdminDto, PuestoAdminDto } from '../../dtos/categorias-puestos.dto';
-import { AreaFlatOption } from '../../area-tree';
+import { AreaCascade, AreaCascadeNode } from '../../area-tree';
 
 /**
  * Alta y edición de un puesto. El mismo componente cubre ambos casos: si llega
@@ -26,20 +26,25 @@ export class PuestoCreateEdit implements OnInit {
   @Input() puesto: PuestoAdminDto | null = null;
   /** Categorías disponibles para asignar (ya vienen ordenadas del contenedor). */
   @Input() categorias: CategoriaAdminDto[] = [];
-  /**
-   * Áreas del árbol, aplanadas y con su ruta completa. La ruta hace falta porque el mismo
-   * nombre de área existe en más de una rama y sin ella habría opciones idénticas.
-   */
-  @Input() areaOptions: AreaFlatOption[] = [];
+  /** Árbol de áreas ya jerarquizado: alimenta las dos cascadas de área del formulario. */
+  @Input() areaRoots: AreaCascadeNode[] = [];
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
   nombre = '';
   categoriaId: number | null = null;
-  /** Área que puede pedir el puesto. Null es válido: los puestos de obra no tienen ninguna. */
-  areaSolicitanteScopeId: number | null = null;
-  /** Área a la que entra el postulante. Null = se cae al área del solicitante. */
-  areaDestinoScopeId: number | null = null;
+  /**
+   * Cascada del área que puede pedir el puesto. Sin área es válido: los puestos de obra no
+   * tienen ninguna.
+   */
+  solicitante = new AreaCascade();
+  /** Cascada del área a la que entra el postulante. Vacía = se cae al área del solicitante. */
+  destino = new AreaCascade();
+  /**
+   * El usuario ya eligió un destino a mano (o el puesto venía con uno guardado). Mientras sea
+   * false, el destino sigue al solicitante paso a paso.
+   */
+  private destinoTocado = false;
   submitted = false;
 
   constructor(
@@ -52,8 +57,10 @@ export class PuestoCreateEdit implements OnInit {
   ngOnInit(): void {
     this.nombre = this.puesto?.nombre ?? '';
     this.categoriaId = this.puesto?.categoriaId ?? null;
-    this.areaSolicitanteScopeId = this.puesto?.areaSolicitanteScopeId ?? null;
-    this.areaDestinoScopeId = this.puesto?.areaDestinoScopeId ?? null;
+    this.solicitante = new AreaCascade(this.areaRoots, this.puesto?.areaSolicitanteScopeId ?? null);
+    this.destino = new AreaCascade(this.areaRoots, this.puesto?.areaDestinoScopeId ?? null);
+    // Un destino ya guardado no se pisa al mover el área solicitante.
+    this.destinoTocado = this.puesto?.areaDestinoScopeId != null;
   }
 
   get titulo(): string {
@@ -62,12 +69,18 @@ export class PuestoCreateEdit implements OnInit {
 
   /**
    * Al elegir quién pide el puesto se propone esa misma área como destino, que es el caso de
-   * la enorme mayoría (de 112 puestos mapeados, solo 6 difieren). Solo se propone mientras el
-   * destino esté vacío: si ya eligieron uno distinto, no se pisa.
+   * la enorme mayoría (de 112 puestos mapeados, solo 6 difieren). Con la cascada el área se
+   * elige en varios pasos, así que el destino acompaña al solicitante en cada paso mientras no
+   * lo hayan tocado a mano: si ya eligieron uno distinto, no se pisa.
    */
-  onSolicitanteChange(areaScopeId: number | null): void {
-    this.areaSolicitanteScopeId = areaScopeId;
-    if (this.areaDestinoScopeId === null) this.areaDestinoScopeId = areaScopeId;
+  onSolicitanteLevelChange(index: number, areaScopeId: number | null): void {
+    this.solicitante.onLevelChange(index, areaScopeId);
+    if (!this.destinoTocado) this.destino.reset(this.solicitante.selectedId);
+  }
+
+  onDestinoLevelChange(index: number, areaScopeId: number | null): void {
+    this.destino.onLevelChange(index, areaScopeId);
+    this.destinoTocado = true;
   }
 
   save(): void {
@@ -80,11 +93,13 @@ export class PuestoCreateEdit implements OnInit {
 
     this.loaderService.show();
     // Sin área es un envío válido, no un campo vacío: los puestos de obra no tienen ninguna.
+    // De cada cascada sale el nodo más profundo elegido: dejar la subárea vacía guarda el
+    // área del nivel de arriba.
     const req = {
       nombre,
       categoriaId: this.categoriaId,
-      areaSolicitanteScopeId: this.areaSolicitanteScopeId,
-      areaDestinoScopeId: this.areaDestinoScopeId,
+      areaSolicitanteScopeId: this.solicitante.selectedId,
+      areaDestinoScopeId: this.destino.selectedId,
     };
     const request$ = this.puesto
       ? this.service.actualizarPuesto(this.puesto.id, req)

@@ -18,13 +18,7 @@ import {
   CategoriaAdminDto,
   PuestoAdminDto,
 } from '../../dtos/categorias-puestos.dto';
-import {
-  AreaCascadeNode,
-  AreaFlatOption,
-  buildAreaTree,
-  collectScopeIds,
-  flattenAreaTree,
-} from '../../area-tree';
+import { AreaCascadeNode, buildAreaTree, collectScopeIds } from '../../area-tree';
 import { PuestoCreateEdit } from '../puesto-create-edit/puesto-create-edit';
 import { PuestoDetalle } from '../puesto-detalle/puesto-detalle';
 
@@ -110,8 +104,8 @@ export class ConfigPuestos implements OnChanges {
   areaLevels: AreaCascadeNode[][] = [];
   /** Nodo elegido por nivel (undefined = "Todas" en ese nivel). */
   selectedAreaNodes: (AreaCascadeNode | undefined)[] = [];
-  /** Opciones aplanadas con su ruta, para el selector de áreas del modal de alta/edición. */
-  areaOptions: AreaFlatOption[] = [];
+  /** Raices del arbol jerarquizado: alimentan las cascadas de area del modal de alta/edicion. */
+  areaRoots: AreaCascadeNode[] = [];
 
   /** IDs seleccionados para la acción bulk. Se mantiene al cambiar de página. */
   selectedIds = new Set<number>();
@@ -172,7 +166,7 @@ export class ConfigPuestos implements OnChanges {
   private buildAreaCascade(): void {
     const seleccionPrevia = this.selectedAreaNodes.map((n) => n?.areaScopeId ?? null);
     const roots = buildAreaTree(this.areaTree ?? []);
-    this.areaOptions = flattenAreaTree(roots);
+    this.areaRoots = roots;
 
     this.areaLevels = roots.length ? [roots] : [];
     this.selectedAreaNodes = roots.length ? [undefined] : [];

@@ -230,6 +230,12 @@ export interface CartaOfertaRequerimiento {
   sueldo: number | null;
   /** Hasta cuándo puede aceptar (`YYYY-MM-DD`). null si la carta se adjuntó ya armada. */
   fechaLimiteAceptacion: string | null;
+  /**
+   * Las condiciones de contrato que imprime la carta, una por viñeta y en orden. Vacía mientras no
+   * se haya generado ningún borrador, y también en las cartas anteriores a la plantilla nueva: esas
+   * llevan el bloque de condiciones escrito dentro del propio .docx.
+   */
+  condiciones: string[];
 
   // ── Borrador generado desde la plantilla (.docx) ───────────────────────────
   /** null = la carta no se generó acá. */
@@ -256,6 +262,12 @@ export interface CartaOfertaRequerimiento {
    * GTH solo revisa; en null con `firmadaUrl` llena, lo subió GTH a mano.
    */
   firmadaPostulanteEn: string | null;
+  /**
+   * Cuándo el colaborador pulsó «Finalizar» en su enlace. Con valor, el documento firmado es el
+   * DEFINITIVO: GTH ya no lo puede reemplazar, solo aprobarlo. Null en las cartas que se subieron
+   * firmadas a mano y en las anteriores a que ese paso existiera.
+   */
+  finalizadaEn: string | null;
   /** Momento en que GTH la aprobó: es lo que cierra el requerimiento. */
   aprobadaEn: string | null;
 
@@ -275,6 +287,12 @@ export interface CartaOfertaGenerar {
   sueldo: number | null;
   /** Hasta cuándo el candidato puede aceptar (`YYYY-MM-DD`). */
   fechaLimiteAceptacion: string | null;
+  /**
+   * Las condiciones de contrato, una por viñeta y en este orden. Las escribe GTH porque cambian con
+   * el cargo (la jornada de staff de obra no es la de oficina, ni la condición laboral de un puesto
+   * de confianza la de uno sin categoría). El backend descarta las vacías y exige al menos una.
+   */
+  condiciones: string[];
 }
 
 /** Datos del envío de la carta oferta (van como JSON en el multipart; la carta va como archivo). */

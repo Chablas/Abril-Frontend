@@ -489,21 +489,20 @@ export class GthDetalleRequerimiento implements OnInit {
   /** Datos del envío, mientras la carta todavía no se haya mandado. */
   cartaFechaIngreso: string | null = null;
   cartaCorreo = '';
-  cartaArchivo: File | null = null;
-
-  /**
-   * De dónde sale la carta que se va a enviar. «generar» la arma el sistema desde la plantilla;
-   * «adjuntar» es la de siempre, un PDF que GTH trae ya armado. Las dos terminan en el mismo envío
-   * y el candidato recibe un PDF en los dos casos.
-   */
-  cartaModo: 'generar' | 'adjuntar' = 'generar';
 
   /** Condiciones que la plantilla imprime y que solo puede poner GTH. */
   cartaSueldo: number | null = null;
   cartaFechaLimite: string | null = null;
 
-  /** Resaltado de la zona de «soltar aquí» mientras se arrastra un archivo encima. */
-  cartaArrastrando = false;
+  /**
+   * Las condiciones de contrato que imprime la carta: un campo de texto por viñeta. Es una lista y
+   * no un textarea porque cada elemento es una viñeta del documento —el backend las guarda así, una
+   * fila por condición— y partir un textarea por saltos de línea deja que un enter de más meta una
+   * viñeta vacía en la carta sin que nadie lo vea hasta abrirla.
+   *
+   * Arranca con una línea en blanco: el formulario tiene que mostrar dónde se escribe.
+   */
+  cartaCondiciones: string[] = [''];
 
   generandoCarta = false;
   enviandoCarta = false;
@@ -555,6 +554,15 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
+   * true si el colaborador cerró el trámite con «Finalizar» desde su enlace. Ese es el documento que
+   * él firmó y con el que se le avisó al solicitante que la oferta quedó aceptada: GTH ya no lo
+   * puede reemplazar por otro —solo revisarlo y aprobarlo—, y el backend lo corta igual.
+   */
+  get cartaFinalizadaPorColaborador(): boolean {
+    return !!this.carta?.finalizadaEn;
+  }
+
+  /**
    * Aviso de estado de la ficha de la base maestra: qué le falta al seleccionado para poder
    * mandarle la carta. Los tres casos salen de esa misma ficha, así que van en una sola línea. El
    * correo se puede escribir a mano acá; el DNI y la ficha no (ver `motivoBloqueoCarta`).
@@ -580,11 +588,10 @@ export class GthDetalleRequerimiento implements OnInit {
     if (!this.cartaCorreo.trim()) return 'Falta el correo personal del colaborador.';
     if (!this.carta?.dni) return 'Sin documento de identidad en la base maestra: con él se crea su carpeta en el file.';
     if (!this.carta?.tieneFichaMaestra) return 'Sin ficha en la base maestra: ahí se guarda la firma que registrará en el enlace.';
-    if (this.cartaModo === 'generar' && !this.cartaGenerada) return 'Genera la carta oferta antes de enviarla.';
-    if (this.cartaModo === 'generar' && this.cartaDatosDesfasados) {
+    if (!this.cartaGenerada) return 'Genera la carta oferta antes de enviarla.';
+    if (this.cartaDatosDesfasados) {
       return 'Cambiaste las condiciones: vuelve a generar la carta antes de enviarla.';
     }
-    if (this.cartaModo === 'adjuntar' && !this.cartaArchivo) return 'Adjunta la carta oferta en PDF.';
     return null;
   }
 
@@ -604,11 +611,25 @@ export class GthDetalleRequerimiento implements OnInit {
         ? this.cartaSueldo == null && co.sueldo == null
         : Number(this.cartaSueldo) === Number(co.sueldo);
 
+    // Las condiciones se comparan ya limpias, que es como se mandan: agregar una fila y dejarla
+    // vacía —o borrar un espacio de más— no cambia lo que dice el documento.
+    const condicionesFormulario = this.condicionesLimpias;
+    const condicionesGeneradas = co.condiciones ?? [];
+    const condicionesIguales =
+      condicionesFormulario.length === condicionesGeneradas.length &&
+      condicionesFormulario.every((c, i) => c === condicionesGeneradas[i]);
+
     return (
       !sueldoIgual ||
+      !condicionesIguales ||
       (this.cartaFechaIngreso ?? null) !== (co.fechaIngreso ?? null) ||
       (this.cartaFechaLimite ?? null) !== (co.fechaLimiteAceptacion ?? null)
     );
+  }
+
+  /** Las condiciones tal como se van a mandar: sin espacios de borde y sin las que quedaron vacías. */
+  private get condicionesLimpias(): string[] {
+    return this.cartaCondiciones.map((c) => (c ?? '').trim()).filter((c) => c.length > 0);
   }
 
   get puedeEnviarCarta(): boolean {
@@ -628,7 +649,24 @@ export class GthDetalleRequerimiento implements OnInit {
     if (this.cartaSueldo == null || this.cartaSueldo <= 0) return 'Indica el sueldo mensual ofrecido.';
     if (!this.cartaFechaLimite) return 'Indica hasta cuándo puede aceptar.';
     if (this.cartaFechaLimite < this.hoyIso) return 'La fecha límite de aceptación ya pasó.';
+    if (this.condicionesLimpias.length === 0) return 'Escribe al menos una condición de contrato.';
     return null;
+  }
+
+  // ── Condiciones de contrato: una viñeta de la carta por campo ────────────────
+
+  /** Agrega una viñeta más al final y deja el foco donde el usuario va a escribir. */
+  agregarCondicion(): void {
+    this.cartaCondiciones.push('');
+  }
+
+  /**
+   * Quita una viñeta. Nunca deja la lista sin campos: sin ninguno el formulario no muestra dónde
+   * escribir y la única salida sería recargar el detalle.
+   */
+  quitarCondicion(indice: number): void {
+    this.cartaCondiciones.splice(indice, 1);
+    if (this.cartaCondiciones.length === 0) this.cartaCondiciones = [''];
   }
 
   get puedeGenerarCarta(): boolean {
@@ -642,11 +680,12 @@ export class GthDetalleRequerimiento implements OnInit {
    */
   private prepararFormularioCarta(): void {
     const co = this.detalle?.cartaOferta ?? null;
-    this.cartaArchivo = null;
-    this.cartaArrastrando = false;
     this.cartaSueldo = co?.sueldo ?? null;
     this.cartaFechaLimite = co?.fechaLimiteAceptacion ?? this.manianaIso();
-    this.cartaModo = 'generar';
+    // Las del borrador, o una línea en blanco si todavía no se generó nada. Se copia el arreglo en
+    // vez de referenciarlo: el formulario se edita, y editar el del DTO haría que
+    // `cartaDatosDesfasados` se compare contra sí mismo y nunca detecte el cambio.
+    this.cartaCondiciones = co?.condiciones?.length ? [...co.condiciones] : [''];
   }
 
   /**
@@ -691,6 +730,7 @@ export class GthDetalleRequerimiento implements OnInit {
         fechaIngreso: this.cartaFechaIngreso,
         sueldo: this.cartaSueldo,
         fechaLimiteAceptacion: this.cartaFechaLimite,
+        condiciones: this.condicionesLimpias,
       })
       .subscribe({
         next: (res) => {
@@ -709,77 +749,24 @@ export class GthDetalleRequerimiento implements OnInit {
       });
   }
 
-  // ── Carta que trae GTH ya armada ─────────────────────────────────────────────
-
-  onCartaSeleccionada(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const archivo = input.files?.[0] ?? null;
-    // Se limpia el input para que volver a elegir el mismo archivo dispare el change de nuevo.
-    input.value = '';
-    if (archivo) this.tomarCartaArchivo(archivo);
-  }
-
-  onCartaArrastreEntra(event: DragEvent): void {
-    event.preventDefault();
-    this.cartaArrastrando = true;
-  }
-
-  onCartaArrastreSale(event: DragEvent): void {
-    event.preventDefault();
-    this.cartaArrastrando = false;
-  }
-
-  onCartaSoltada(event: DragEvent): void {
-    event.preventDefault();
-    this.cartaArrastrando = false;
-    const archivo = event.dataTransfer?.files?.[0];
-    if (archivo) this.tomarCartaArchivo(archivo);
-  }
+  // ── Envío de la carta al candidato ───────────────────────────────────────────
 
   /**
-   * Acepta el archivo elegido, venga del explorador o de un arrastre. El PDF se exige también acá y
-   * no solo en el backend porque soltar el Word es el error fácil de cometer y el aviso llega antes
-   * de subir el archivo entero para nada.
+   * Manda la carta generada. La vía de adjuntar un PDF propio se retiró: la plantilla imprime la
+   * fecha de conformidad del colaborador, que solo pone el sistema al abrirse el enlace, así que una
+   * carta traída de afuera saldría sin ella. Para corregir el texto está «Ver y editar en Word»
+   * sobre el documento generado, que es lo que esa vía resolvía de verdad.
    */
-  private tomarCartaArchivo(archivo: File): void {
-    if (!archivo.name.toLowerCase().endsWith('.pdf')) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Solo PDF',
-        text: 'El candidato lee y firma la carta dentro de la intranet, y eso necesita un PDF. Si la tienes en Word, genérala desde el sistema.',
-      });
-      return;
-    }
-    this.cartaArchivo = archivo;
-    this.cartaModo = 'adjuntar';
-  }
-
-  quitarCartaArchivo(): void {
-    this.cartaArchivo = null;
-  }
-
-  /** Peso del archivo elegido, para mostrarlo junto a su nombre. */
-  get cartaArchivoPeso(): string {
-    if (!this.cartaArchivo) return '';
-    return `${(this.cartaArchivo.size / 1024 / 1024).toFixed(2)} MB`;
-  }
-
   async enviarCartaOferta(): Promise<void> {
     if (!this.puedeEnviarCarta || !this.detalle) return;
-
-    // Sin archivo va la generada: el backend convierte su Word a PDF en el momento del envío, así
-    // que también salen las correcciones que GTH le haya hecho en SharePoint.
-    const adjunta = this.cartaModo === 'adjuntar' ? this.cartaArchivo : null;
-    if (this.cartaModo === 'adjuntar' && !adjunta) return;
 
     const correo = this.cartaCorreo.trim().toLowerCase();
     const confirm = await Swal.fire({
       icon: 'question',
       title: '¿Enviar la carta oferta?',
-      html: adjunta
-        ? `Se le enviará a <b>${correo}</b> el enlace para firmar <b>${adjunta.name}</b>.`
-        : `Se le enviará a <b>${correo}</b> el enlace para firmar la carta generada, ` +
-          'convertida a <b>PDF</b> tal como está ahora en su file.',
+      html:
+        `Se le enviará a <b>${correo}</b> el enlace para firmar la carta generada, ` +
+        'convertida a <b>PDF</b> tal como está ahora en su file.',
       showCancelButton: true,
       confirmButtonText: 'Enviar carta oferta',
       cancelButtonText: 'Cancelar',
@@ -799,13 +786,11 @@ export class GthDetalleRequerimiento implements OnInit {
           // sigue siendo la fuente de verdad y este campo es únicamente la corrección manual.
           correo: correo === (this.carta?.correoSugerido ?? '').toLowerCase() ? null : correo,
         },
-        adjunta,
       )
       .subscribe({
         next: (res) => {
           this.enviandoCarta = false;
           this.loaderService.hide();
-          this.cartaArchivo = null;
           this.aplicarCarta(res);
           Swal.fire({ icon: 'success', title: 'Carta oferta enviada', text: res.message, confirmButtonColor: '#15803D' });
           this.cdr.detectChanges();

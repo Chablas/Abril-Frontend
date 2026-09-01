@@ -9,6 +9,7 @@ import {
   AreaTypeCreateDto,
   AreaTypeEditDto,
   AreaTypeSimpleDto,
+  AreaTypeFilterDto,
 } from '../dtos/areaType.model';
 
 @Injectable({ providedIn: 'root' })
@@ -22,10 +23,12 @@ export class AreaTypeService {
     return { Authorization: `Bearer ${token}` };
   }
 
-  getPaged(page: number, pageSize: number = 10): Observable<PagedResponseDTO<AreaTypeDto>> {
-    const params = new HttpParams()
-      .set('page', page.toString())
-      .set('pageSize', pageSize.toString());
+  getPaged(filter: AreaTypeFilterDto): Observable<PagedResponseDTO<AreaTypeDto>> {
+    let params = new HttpParams().set('page', filter.page.toString());
+    if (filter.pageSize != null) params = params.set('pageSize', filter.pageSize.toString());
+    if (filter.active != null) params = params.set('active', String(filter.active));
+    if (filter.search) params = params.set('search', filter.search);
+
     return this.http.get<PagedResponseDTO<AreaTypeDto>>(`${this.apiUrl}/paged`, {
       params,
       headers: this.authHeaders(),

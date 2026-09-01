@@ -153,7 +153,7 @@
   *ngIf="showModal"
   [puesto]="puestoToEdit"
   [categorias]="categorias"
-  [areaOptions]="areaOptions"
+  [areaRoots]="areaRoots"
   (closeModal)="closeModales()"
   (saved)="onSaved()" />
 
@@ -188,6 +188,7 @@
           displayField="name"
           [value]="selectedAreaNodes[i]?.areaScopeId"
           [fullText]="true"
+          [rawLabel]="true"
           [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'"
           (valueChange)="onAreaNodeChange(i, $event); onFilterChange()">
         </app-search-select>

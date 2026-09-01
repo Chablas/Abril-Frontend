@@ -28,28 +28,41 @@
     <!-- Las dos áreas son opcionales a propósito: los puestos de obra no tienen ninguna. La
          primera decide en qué desplegable de Solicitud de Personal aparece el puesto; la
          segunda, a qué área entra el trabajador que lo ocupe. Casi siempre son la misma, así
-         que elegir la primera propone la segunda. -->
-    <app-search-select
-      label="Área que puede pedir este puesto"
-      [options]="areaOptions"
-      valueField="areaScopeId"
-      displayField="ruta"
-      [value]="areaSolicitanteScopeId"
-      (valueChange)="onSolicitanteChange($event ?? null)"
-      [fullText]="true"
-      placeholder="Sin área">
-    </app-search-select>
+         que elegir la primera propone la segunda.
+         Cada una es una cascada sobre el árbol de áreas: al elegir un área aparece el
+         desplegable de sus subáreas, y se guarda el nivel más profundo que se haya elegido
+         (dejar la subárea vacía guarda el área de arriba). -->
+    <div class="flex flex-col gap-[12px]">
+      <app-search-select
+        *ngFor="let level of solicitante.levels; let i = index"
+        [label]="i === 0 ? 'Área que puede pedir este puesto' : 'Subárea'"
+        [options]="level.options"
+        valueField="areaScopeId"
+        displayField="name"
+        [value]="level.selected"
+        [sortAlpha]="false"
+        [fullText]="true"
+        [rawLabel]="true"
+        [placeholder]="i === 0 ? 'Sin área' : 'Selecciona subárea'"
+        (valueChange)="onSolicitanteLevelChange(i, $event ?? null)">
+      </app-search-select>
+    </div>
 
-    <app-search-select
-      label="Área a la que irá el postulante"
-      [options]="areaOptions"
-      valueField="areaScopeId"
-      displayField="ruta"
-      [value]="areaDestinoScopeId"
-      (valueChange)="areaDestinoScopeId = $event ?? null"
-      [fullText]="true"
-      placeholder="La misma del solicitante">
-    </app-search-select>
+    <div class="flex flex-col gap-[12px]">
+      <app-search-select
+        *ngFor="let level of destino.levels; let i = index"
+        [label]="i === 0 ? 'Área a la que irá el postulante' : 'Subárea'"
+        [options]="level.options"
+        valueField="areaScopeId"
+        displayField="name"
+        [value]="level.selected"
+        [sortAlpha]="false"
+        [fullText]="true"
+        [rawLabel]="true"
+        [placeholder]="i === 0 ? 'La misma del solicitante' : 'Selecciona subárea'"
+        (valueChange)="onDestinoLevelChange(i, $event ?? null)">
+      </app-search-select>
+    </div>
 
     <div class="flex justify-center mt-[4px]">
       <button

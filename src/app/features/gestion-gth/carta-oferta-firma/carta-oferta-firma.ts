@@ -56,6 +56,11 @@ export class CartaOfertaFirma implements OnInit, OnDestroy {
   /** true tras firmar en esta misma visita: muestra la pantalla de confirmación. */
   firmadoAhora = false;
 
+  // ── Cierre del trámite ──────────────────────────────────────────────────
+  finalizando = false;
+  /** true tras finalizar en esta misma visita. */
+  finalizadoAhora = false;
+
   constructor(
     private route: ActivatedRoute,
     private service: CartaOfertaFirmaService,
@@ -149,6 +154,14 @@ export class CartaOfertaFirma implements OnInit, OnDestroy {
     return !!this.data?.aprobada;
   }
 
+  /**
+   * true si ya cerró el trámite con «Finalizar» (en esta visita o de antes). Desde acá la página es
+   * de solo lectura para él: la firma quedó como definitiva y no hay nada más que hacer.
+   */
+  get yaFinalizada(): boolean {
+    return this.finalizadoAhora || !!this.data?.finalizada;
+  }
+
   /** Firma registrada en su ficha, si tiene. Es la que se va a estampar. */
   get firmaDataUrl(): string | null {
     return this.data?.firmaDataUrl ?? null;
@@ -160,7 +173,10 @@ export class CartaOfertaFirma implements OnInit, OnDestroy {
 
   /** El lienzo solo se muestra mientras la firma pueda cambiar. */
   get puedeRegistrarFirma(): boolean {
-    return !this.aprobada && !this.guardandoFirma && !this.firmando;
+    return (
+      !this.aprobada && !this.yaFinalizada && !this.guardandoFirma && !this.firmando &&
+      !this.finalizando
+    );
   }
 
   /**
@@ -168,12 +184,24 @@ export class CartaOfertaFirma implements OnInit, OnDestroy {
    * trazo del lienzo. Así no se puede firmar con algo que nunca quedó registrado.
    */
   get puedeFirmar(): boolean {
-    return this.tieneFirmaRegistrada && !this.firmando && !this.guardandoFirma && !this.aprobada;
+    return (
+      this.tieneFirmaRegistrada && !this.firmando && !this.guardandoFirma && !this.finalizando &&
+      !this.aprobada && !this.yaFinalizada
+    );
+  }
+
+  /**
+   * «Finalizar» aparece recién con el documento firmado: es el paso que cierra el trámite y le dice
+   * al colaborador que ya no tiene que hacer nada más. Antes de firmar no hay nada que cerrar.
+   */
+  get puedeFinalizar(): boolean {
+    return this.yaFirmada && !this.yaFinalizada && !this.finalizando && !this.firmando;
   }
 
   /** Por qué no se puede firmar todavía (va como texto de ayuda y tooltip del botón). */
   get motivoBloqueo(): string | null {
     if (this.aprobada) return 'Tu carta oferta ya fue revisada y aprobada: el proceso está cerrado.';
+    if (this.yaFinalizada) return 'Ya finalizaste tu carta oferta: la firma quedó como definitiva.';
     if (!this.tieneFirmaRegistrada)
       return 'Dibuja tu firma en el recuadro y presiona «Guardar firma» para habilitar la firma del documento.';
     return null;
@@ -266,6 +294,65 @@ export class CartaOfertaFirma implements OnInit, OnDestroy {
           Swal.fire({
             icon: 'error',
             title: 'No se pudo firmar',
+            text: err.error?.message ?? 'Inténtalo de nuevo en unos minutos.',
+          });
+          this.cdr.detectChanges();
+        },
+      });
+    });
+  }
+
+  // ── Cierre del trámite ──────────────────────────────────────────────────
+
+  /**
+   * Cierra el trámite. Existe para que el colaborador sepa que terminó: firmar deja el documento
+   * listo, pero sin un paso explícito la página se queda igual y él no tiene forma de saber si le
+   * falta algo. Del lado del backend además avisa al solicitante de la vacante.
+   *
+   * La confirmación es a propósito más dura que la de firmar: después de finalizar ya no puede
+   * volver a firmar, así que conviene que lo lea antes y no después.
+   */
+  finalizar(): void {
+    if (!this.puedeFinalizar) return;
+
+    Swal.fire({
+      icon: 'question',
+      title: '¿Finalizar el proceso?',
+      html:
+        'Con esto confirmas que tu carta oferta quedó firmada y que no vas a hacer más cambios. ' +
+        '<b>Después de finalizar ya no podrás volver a firmarla.</b>',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, finalizar',
+      cancelButtonText: 'Todavía no',
+      confirmButtonColor: 'var(--color-abril-logo-blue)',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+
+      this.finalizando = true;
+      this.cdr.detectChanges();
+
+      this.service.finalizar(this.token).subscribe({
+        next: (r) => {
+          this.finalizando = false;
+          this.finalizadoAhora = true;
+          if (this.data) {
+            this.data.finalizada = true;
+            this.data.finalizadaEn = r.finalizadaEn;
+          }
+          Swal.fire({
+            icon: 'success',
+            title: '¡Todo listo!',
+            text: r.message,
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: 'var(--color-abril-logo-blue)',
+          });
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.finalizando = false;
+          Swal.fire({
+            icon: 'error',
+            title: 'No se pudo finalizar',
             text: err.error?.message ?? 'Inténtalo de nuevo en unos minutos.',
           });
           this.cdr.detectChanges();

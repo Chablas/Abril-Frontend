@@ -31,6 +31,16 @@ export interface CartaOfertaFirmaPublico {
 
   /** true si GTH ya revisó y aprobó la carta firmada: el proceso está cerrado. */
   aprobada: boolean;
+
+  /**
+   * true si el colaborador ya pulsó «Finalizar». La página pasa a su pantalla de cierre: firmó y
+   * cerró el trámite, y no hay nada más que pueda hacer desde acá.
+   */
+  finalizada: boolean;
+  finalizadaEn: string | null;
+
+  /** Cuándo abrió este enlace por primera vez: es la fecha de conformidad que imprime su carta. */
+  primeraAperturaEn: string | null;
 }
 
 /** Resultado de guardar la firma: la firma que quedó, para repintarla. */
@@ -44,4 +54,10 @@ export interface CartaOfertaFirmaGuardarResult {
 export interface CartaOfertaFirmarResult {
   message: string;
   firmadaEn: string | null;
+}
+
+/** Resultado de finalizar: el cierre del trámite, después de firmar. */
+export interface CartaOfertaFinalizarResult {
+  message: string;
+  finalizadaEn: string | null;
 }

@@ -419,156 +419,125 @@
                 </div>
               </div>
 
-              <!-- ── De dónde sale la carta ──────────────────────────────────
-                   Las dos vías terminan en el mismo envío y el candidato recibe un PDF en las dos:
-                   la generada se convierte al mandarla. -->
-              <div class="flex items-center gap-[6px] p-[3px] mt-[14px] rounded-[8px] w-fit"
-                   style="background:#F3F4F6">
-                <button type="button" (click)="cartaModo = 'generar'"
-                  class="inline-flex items-center gap-[6px] h-[28px] px-[12px] rounded-[6px] text-[12px] font-semibold cursor-pointer transition-colors"
-                  [style.background]="cartaModo === 'generar' ? '#fff' : 'transparent'"
-                  [style.color]="cartaModo === 'generar' ? 'var(--color-abril-logo-blue)' : '#6B7280'"
-                  [style.boxShadow]="cartaModo === 'generar' ? '0 1px 2px rgba(0,0,0,.08)' : 'none'">
-                  <i class="ti ti-wand text-[14px]"></i>
-                  Generar en el sistema
-                </button>
-                <button type="button" (click)="cartaModo = 'adjuntar'"
-                  class="inline-flex items-center gap-[6px] h-[28px] px-[12px] rounded-[6px] text-[12px] font-semibold cursor-pointer transition-colors"
-                  [style.background]="cartaModo === 'adjuntar' ? '#fff' : 'transparent'"
-                  [style.color]="cartaModo === 'adjuntar' ? 'var(--color-abril-logo-blue)' : '#6B7280'"
-                  [style.boxShadow]="cartaModo === 'adjuntar' ? '0 1px 2px rgba(0,0,0,.08)' : 'none'">
-                  <i class="ti ti-paperclip text-[14px]"></i>
-                  Adjuntar archivo
-                </button>
-              </div>
+              <!-- ── Generar: el miniformulario con lo que la plantilla imprime ──
+                   Es la ÚNICA vía. Adjuntar un PDF propio dejó de ser posible cuando la plantilla
+                   pasó a llevar la fecha de conformidad del colaborador: ese dato solo lo pone el
+                   sistema al abrirse el enlace, y una carta traída de afuera saldría sin él. Para
+                   corregir el texto sigue estando «Ver y editar en Word» sobre el generado. -->
+              <div class="rounded-[9px] border px-[14px] py-[12px] mt-[12px]"
+                   style="border-color:var(--color-abril-border);background:#FAFAFA">
 
-              <!-- ── Generar: el miniformulario con lo que la plantilla imprime ── -->
-              @if (cartaModo === 'generar') {
-                <div class="rounded-[9px] border px-[14px] py-[12px] mt-[10px]"
-                     style="border-color:var(--color-abril-border);background:#FAFAFA">
-
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-x-[16px]">
-                    <app-date-picker
-                      label="Fecha de ingreso *"
-                      [dense]="true"
-                      [floatingLabel]="true"
-                      [value]="cartaFechaIngreso"
-                      (valueChange)="cartaFechaIngreso = $event"
-                      color="var(--color-abril-logo-blue)">
-                    </app-date-picker>
-
-                    <div class="abril-field">
-                      <label class="abril-field-label" for="carta-sueldo">Sueldo mensual (S/) *</label>
-                      <input id="carta-sueldo" type="number" min="0" step="50"
-                        class="abril-field-input h-[34px]"
-                        [(ngModel)]="cartaSueldo" name="cartaSueldo"
-                        placeholder="0.00" autocomplete="off" />
-                    </div>
-
-                    <app-date-picker
-                      label="Aceptar hasta el *"
-                      [dense]="true"
-                      [floatingLabel]="true"
-                      [min]="hoyIso"
-                      [value]="cartaFechaLimite"
-                      (valueChange)="cartaFechaLimite = $event"
-                      color="var(--color-abril-logo-blue)">
-                    </app-date-picker>
-                  </div>
-
-                  <div class="flex flex-wrap items-center gap-[10px] mt-[12px]">
-                    <button type="button" (click)="generarCartaOferta()" [disabled]="!puedeGenerarCarta"
-                      [title]="motivoBloqueoGenerar || ''"
-                      class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                      style="background:var(--color-abril-logo-blue)">
-                      <i class="ti text-[15px] inline-block"
-                         [ngClass]="generandoCarta ? 'ti-loader-2 animate-spin' : 'ti-wand'"></i>
-                      {{ generandoCarta ? 'Generando…' : (cartaGenerada ? 'Regenerar' : 'Generar carta oferta') }}
-                    </button>
-
-                    @if (co.generadaUrl) {
-                      <a [href]="co.generadaUrl" target="_blank" rel="noopener"
-                         class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold border cursor-pointer transition-colors hover:bg-gray-50"
-                         style="border-color:var(--color-abril-border);color:var(--color-abril-standard);background:#fff"
-                         [title]="co.generadaNombre || ''">
-                        <i class="ti ti-file-type-docx text-[15px]"></i>
-                        Ver y editar en Word
-                      </a>
-                    }
-
-                    @if (motivoBloqueoGenerar && !cartaGenerada) {
-                      <span class="text-[11.5px] text-gray-500">{{ motivoBloqueoGenerar }}</span>
-                    }
-                  </div>
-
-                  @if (cartaGenerada) {
-                    <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[9px] mt-[11px]"
-                         style="border-color:#BFDBFE;background:#EFF6FF">
-                      <i class="ti ti-file-check text-[16px] shrink-0 mt-[1px]" style="color:#1D4ED8"></i>
-                      <p class="text-[12px]" style="color:#1E40AF">
-                        Documento generado el {{ co.generadaEn | date:'dd/MM/yyyy HH:mm' }}. Se
-                        envía convertido a PDF, con los cambios que le hagas en Word.
-                      </p>
-                    </div>
-                  }
-                </div>
-              }
-
-              <!-- ── Adjuntar: la carta que GTH trae ya armada ─────────────── -->
-              @else {
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-[16px]">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-x-[16px]">
                   <app-date-picker
-                    label="Fecha de ingreso"
+                    label="Fecha de ingreso *"
                     [dense]="true"
                     [floatingLabel]="true"
                     [value]="cartaFechaIngreso"
                     (valueChange)="cartaFechaIngreso = $event"
                     color="var(--color-abril-logo-blue)">
                   </app-date-picker>
+
+                  <div class="abril-field">
+                    <label class="abril-field-label" for="carta-sueldo">Sueldo mensual (S/) *</label>
+                    <input id="carta-sueldo" type="number" min="0" step="50"
+                      class="abril-field-input h-[34px]"
+                      [(ngModel)]="cartaSueldo" name="cartaSueldo"
+                      placeholder="0.00" autocomplete="off" />
+                  </div>
+
+                  <app-date-picker
+                    label="Aceptar hasta el *"
+                    [dense]="true"
+                    [floatingLabel]="true"
+                    [min]="hoyIso"
+                    [value]="cartaFechaLimite"
+                    (valueChange)="cartaFechaLimite = $event"
+                    color="var(--color-abril-logo-blue)">
+                  </app-date-picker>
                 </div>
 
-                <!-- Mismo caso que el correo: sin .abril-field el label flotante no tiene
-                     contenedor relativo y se escapa del campo. -->
-                <div class="abril-field">
-                  <p class="abril-field-label">Carta oferta (PDF) *</p>
-                  @if (cartaArchivo) {
-                    <div class="flex items-center justify-between gap-[10px] h-[38px] px-[12px] rounded-[7px] border bg-white"
-                         style="border-color:var(--color-abril-border)">
-                      <span class="flex items-center gap-[8px] min-w-0">
-                        <i class="ti ti-file-type-pdf text-[16px] shrink-0" style="color:var(--color-abril-logo-blue)"></i>
-                        <span class="text-[12.5px] truncate">{{ cartaArchivo.name }}</span>
-                        <span class="text-[11.5px] text-gray-400 shrink-0">{{ cartaArchivoPeso }}</span>
-                      </span>
-                      <button type="button" (click)="quitarCartaArchivo()"
-                        class="text-[12px] font-bold text-red-600 cursor-pointer hover:underline shrink-0">
-                        Quitar
-                      </button>
-                    </div>
-                  } @else {
-                    <input #cartaInput type="file" class="hidden" accept=".pdf"
-                      (change)="onCartaSeleccionada($event)" />
-                    <!-- El dragover también tiene que cancelarse o el navegador abre el archivo en
-                         una pestaña en vez de dejarlo caer acá. -->
-                    <button type="button" (click)="cartaInput.click()"
-                      (dragenter)="onCartaArrastreEntra($event)"
-                      (dragover)="onCartaArrastreEntra($event)"
-                      (dragleave)="onCartaArrastreSale($event)"
-                      (drop)="onCartaSoltada($event)"
-                      class="w-full h-[62px] rounded-[7px] border border-dashed flex flex-col items-center justify-center gap-[2px] text-[12.5px] font-semibold cursor-pointer transition-colors"
-                      [style.borderColor]="cartaArrastrando ? 'var(--color-abril-standard)' : '#B7D6A6'"
-                      [style.background]="cartaArrastrando ? '#EAF4E6' : '#fff'"
-                      style="color:var(--color-abril-standard)">
-                      <span class="flex items-center gap-[8px] pointer-events-none">
-                        <i class="ti ti-paperclip text-[15px]"></i>
-                        {{ cartaArrastrando ? 'Suelta el PDF aquí' : 'Adjuntar carta oferta' }}
-                      </span>
-                      <span class="text-[11px] font-normal text-gray-500 pointer-events-none">
-                        o arrastra el archivo · solo PDF, máximo 15 MB
-                      </span>
+                <!-- ── Condiciones de contrato ──────────────────────────────
+                     Un campo por viñeta del documento, porque así se guardan y así se
+                     imprimen. Cambian con el cargo (la jornada de staff de obra no es la
+                     de oficina), por eso las escribe GTH y no salen de la vacante. -->
+                <div class="mt-[14px]">
+                  <div class="flex items-center justify-between gap-[10px] mb-[8px]">
+                    <span class="text-[12px] font-semibold" style="color:var(--color-abril-standard)">
+                      Condiciones de contrato *
+                    </span>
+                    <button type="button" (click)="agregarCondicion()"
+                      class="inline-flex items-center gap-[5px] h-[27px] px-[10px] rounded-[6px] text-[11.5px] font-semibold border cursor-pointer transition-colors hover:bg-gray-50"
+                      style="border-color:var(--color-abril-border);color:var(--color-abril-logo-blue);background:#fff">
+                      <i class="ti ti-plus text-[13px]"></i>
+                      Agregar condición
                     </button>
+                  </div>
+
+                  <div class="flex flex-col gap-[7px]">
+                    <!-- track por índice y no por valor: el valor es justo lo que el usuario
+                         está editando, y dos condiciones vacías al agregar chocarían. -->
+                    @for (condicion of cartaCondiciones; track $index) {
+                      <div class="flex items-center gap-[8px]">
+                        <span class="w-[5px] h-[5px] rounded-full shrink-0"
+                              style="background:var(--color-abril-logo-blue)"></span>
+
+                        <div class="flex-1 min-w-0">
+                          <input type="text" class="abril-field-input h-[34px]"
+                            [ngModel]="cartaCondiciones[$index]"
+                            (ngModelChange)="cartaCondiciones[$index] = $event"
+                            [name]="'cartaCondicion' + $index"
+                            maxlength="500"
+                            placeholder="Contrato a plazo fijo renovable."
+                            autocomplete="off" />
+                        </div>
+
+                        <button type="button" (click)="quitarCondicion($index)"
+                          title="Quitar condición"
+                          class="inline-flex items-center justify-center w-[30px] h-[30px] shrink-0 rounded-[6px] border cursor-pointer transition-colors hover:bg-gray-50"
+                          style="border-color:var(--color-abril-border);color:#9CA3AF;background:#fff">
+                          <i class="ti ti-trash text-[14px]"></i>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-[10px] mt-[12px]">
+                  <button type="button" (click)="generarCartaOferta()" [disabled]="!puedeGenerarCarta"
+                    [title]="motivoBloqueoGenerar || ''"
+                    class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="background:var(--color-abril-logo-blue)">
+                    <i class="ti text-[15px] inline-block"
+                       [ngClass]="generandoCarta ? 'ti-loader-2 animate-spin' : 'ti-wand'"></i>
+                    {{ generandoCarta ? 'Generando…' : (cartaGenerada ? 'Regenerar' : 'Generar carta oferta') }}
+                  </button>
+
+                  @if (co.generadaUrl) {
+                    <a [href]="co.generadaUrl" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold border cursor-pointer transition-colors hover:bg-gray-50"
+                       style="border-color:var(--color-abril-border);color:var(--color-abril-standard);background:#fff"
+                       [title]="co.generadaNombre || ''">
+                      <i class="ti ti-file-type-docx text-[15px]"></i>
+                      Ver y editar en Word
+                    </a>
+                  }
+
+                  @if (motivoBloqueoGenerar && !cartaGenerada) {
+                    <span class="text-[11.5px] text-gray-500">{{ motivoBloqueoGenerar }}</span>
                   }
                 </div>
-              }
+
+                @if (cartaGenerada) {
+                  <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[9px] mt-[11px]"
+                       style="border-color:#BFDBFE;background:#EFF6FF">
+                    <i class="ti ti-file-check text-[16px] shrink-0 mt-[1px]" style="color:#1D4ED8"></i>
+                    <p class="text-[12px]" style="color:#1E40AF">
+                      Documento generado el {{ co.generadaEn | date:'dd/MM/yyyy HH:mm' }}. Se
+                      envía convertido a PDF, con los cambios que le hagas en Word.
+                    </p>
+                  </div>
+                }
+              </div>
 
               <div class="flex flex-wrap items-center gap-[10px] mt-[14px]">
                 <button type="button" (click)="enviarCartaOferta()" [disabled]="!puedeEnviarCarta"
@@ -662,7 +631,10 @@
                      style="border-color:#FDE68A;background:#FEF9C3">
                   <i class="ti ti-writing-sign text-[17px] shrink-0 mt-[1px]" style="color:#92400E"></i>
                   <p class="text-[12.5px]" style="color:#92400E">
-                    @if (cartaFirmadaPorPostulante) {
+                    @if (cartaFinalizadaPorColaborador) {
+                      <b>{{ co.nombre | titleCase }}</b> firmó y finalizó su carta el
+                      {{ co.finalizadaEn | date:'dd/MM/yyyy HH:mm' }} · pendiente de tu aprobación.
+                    } @else if (cartaFirmadaPorPostulante) {
                       <b>{{ co.nombre | titleCase }}</b> firmó su carta el
                       {{ co.firmadaPostulanteEn | date:'dd/MM/yyyy HH:mm' }} · pendiente de tu aprobación.
                     } @else {
@@ -680,14 +652,24 @@
                     {{ aprobandoCarta ? 'Aprobando…' : 'Aprobar y cerrar el proceso' }}
                   </button>
 
-                  <input #reemplazoInput type="file" class="hidden" [accept]="cartaFirmadaAccept"
-                    (change)="onCartaFirmadaSeleccionada($event)" />
-                  <button type="button" (click)="reemplazoInput.click()" [disabled]="subiendoCartaFirmada"
-                    class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] border text-[12.5px] font-semibold cursor-pointer transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style="border-color:var(--color-abril-border);color:var(--color-abril-standard);background:#fff">
-                    <i class="ti ti-refresh text-[15px]"></i>
-                    {{ subiendoCartaFirmada ? 'Reemplazando…' : 'Reemplazar documento' }}
-                  </button>
+                  <!-- Reemplazar el documento solo mientras el colaborador NO haya finalizado. Con
+                       su cierre, ese es el documento que él firmó y con el que se le avisó al
+                       solicitante: cambiarlo dejaría el expediente con una carta que nunca vio. -->
+                  @if (!cartaFinalizadaPorColaborador) {
+                    <input #reemplazoInput type="file" class="hidden" [accept]="cartaFirmadaAccept"
+                      (change)="onCartaFirmadaSeleccionada($event)" />
+                    <button type="button" (click)="reemplazoInput.click()" [disabled]="subiendoCartaFirmada"
+                      class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] border text-[12.5px] font-semibold cursor-pointer transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style="border-color:var(--color-abril-border);color:var(--color-abril-standard);background:#fff">
+                      <i class="ti ti-refresh text-[15px]"></i>
+                      {{ subiendoCartaFirmada ? 'Reemplazando…' : 'Reemplazar documento' }}
+                    </button>
+                  } @else {
+                    <span class="inline-flex items-center gap-[6px] text-[11.5px] text-gray-500">
+                      <i class="ti ti-lock text-[14px]"></i>
+                      Documento definitivo: el colaborador cerró su firma.
+                    </span>
+                  }
                 </div>
               }
 

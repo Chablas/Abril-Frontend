@@ -207,11 +207,12 @@ export class ReclutamientoService {
   enviarCartaOferta(
     requerimientoId: number,
     datos: CartaOfertaEnviar,
-    carta: File | null,
   ): Observable<CartaOfertaAccionResult> {
+    // Sigue siendo multipart aunque ya no viaje ningún archivo: el endpoint recibe los datos en la
+    // parte «data» y cambiarlo a JSON obligaría a tocar también el binder del backend, que además
+    // tiene que seguir aceptando la parte «carta» para responderle a un cliente viejo que la mande.
     const formData = new FormData();
     formData.append('data', JSON.stringify(datos));
-    if (carta) formData.append('carta', carta, carta.name);
 
     return this.http.post<CartaOfertaAccionResult>(
       `${this.apiUrl}/requerimiento/${requerimientoId}/carta-oferta`,

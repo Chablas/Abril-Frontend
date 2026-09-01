@@ -29,10 +29,16 @@
             Estimado(a) <b>{{ data.nombre }}</b>, tu carta oferta firmada ya fue revisada y aprobada por
             Gestión del Talento Humano. Abajo puedes consultarla y descargarla cuando lo necesites.
           </p>
+        } @else if (yaFinalizada) {
+          <p class="co-intro">
+            Estimado(a) <b>{{ data.nombre }}</b>, tu proceso quedó completo: firmaste tu carta oferta y
+            la enviaste. No tienes que hacer nada más — el equipo de Gestión del Talento Humano se
+            pondrá en contacto contigo para los siguientes pasos.
+          </p>
         } @else if (yaFirmada) {
           <p class="co-intro">
-            Estimado(a) <b>{{ data.nombre }}</b>, ya firmaste tu carta oferta. El equipo de Gestión del
-            Talento Humano la está revisando y se pondrá en contacto contigo para los siguientes pasos.
+            Estimado(a) <b>{{ data.nombre }}</b>, ya firmaste tu carta oferta. Revísala y presiona
+            <b>Finalizar</b> para cerrar el proceso.
           </p>
         } @else {
           <p class="co-intro">
@@ -154,7 +160,13 @@
             <i class="ti ti-circle-check co-state-icon" style="color:#15803D"></i>
             <div>
               <h2 class="co-section-title">
-                {{ aprobada ? 'Carta oferta firmada y aprobada' : 'Carta oferta firmada' }}
+                @if (aprobada) {
+                  Carta oferta firmada y aprobada
+                } @else if (yaFinalizada) {
+                  Proceso completo
+                } @else {
+                  Carta oferta firmada
+                }
               </h2>
               <p class="co-state-text">
                 @if (data.firmadaEn) {
@@ -162,21 +174,38 @@
                 }
                 @if (aprobada) {
                   Gestión del Talento Humano ya la revisó y aprobó.
+                } @else if (yaFinalizada) {
+                  Ya no tienes nada pendiente. Gestión del Talento Humano se pondrá en contacto
+                  contigo para los siguientes pasos.
                 } @else {
-                  Gestión del Talento Humano la revisará y se pondrá en contacto contigo.
+                  Revísala y presiona «Finalizar» para cerrar el proceso.
                 }
               </p>
             </div>
           </div>
         }
 
-        @if (!aprobada) {
+        <!-- Firmar: desaparece en cuanto el colaborador finaliza (o GTH aprueba). Hasta ese
+             momento puede volver a firmar, que es para lo que sirve el margen entre los dos pasos. -->
+        @if (!aprobada && !yaFinalizada) {
           <div class="co-firmar-accion">
-            <button type="button" class="co-btn co-btn-primary"
-              (click)="firmar()" [disabled]="!puedeFirmar" [title]="motivoBloqueo ?? ''">
-              <i class="ti ti-writing-sign"></i>
-              {{ firmando ? 'Firmando…' : (yaFirmada ? 'Volver a firmar' : 'Firmar') }}
-            </button>
+            <div class="co-firmar-botones">
+              <button type="button" class="co-btn co-btn-primary"
+                (click)="firmar()" [disabled]="!puedeFirmar" [title]="motivoBloqueo ?? ''">
+                <i class="ti ti-writing-sign"></i>
+                {{ firmando ? 'Firmando…' : (yaFirmada ? 'Volver a firmar' : 'Firmar') }}
+              </button>
+
+              <!-- Finalizar: el cierre del trámite. Solo aparece con el documento ya firmado. -->
+              @if (yaFirmada) {
+                <button type="button" class="co-btn co-btn-finalizar"
+                  (click)="finalizar()" [disabled]="!puedeFinalizar">
+                  <i class="ti" [class.ti-loader-2]="finalizando" [class.ti-circle-check]="!finalizando"
+                     [class.co-spin]="finalizando"></i>
+                  {{ finalizando ? 'Finalizando…' : 'Finalizar' }}
+                </button>
+              }
+            </div>
 
             @if (motivoBloqueo) {
               <p class="co-bloqueo">{{ motivoBloqueo }}</p>
@@ -184,6 +213,11 @@
               <p class="co-hint">
                 Al firmar, tu firma registrada se estampa en tu carta oferta y el documento se envía a
                 Gestión del Talento Humano.
+              </p>
+            } @else {
+              <p class="co-hint">
+                Si tu firma quedó bien, presiona <b>Finalizar</b> para cerrar el proceso. Después de
+                finalizar ya no podrás volver a firmar.
               </p>
             }
           </div>

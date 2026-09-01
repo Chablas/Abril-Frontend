@@ -19,3 +19,10 @@ export interface AreaTypeSimpleDto {
   areaTypeId: number;
   areaTypeName: string;
 }
+
+export interface AreaTypeFilterDto {
+  page: number;
+  pageSize?: number;
+  active?: boolean | null;
+  search?: string | null;
+}
