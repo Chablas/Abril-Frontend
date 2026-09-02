@@ -92,7 +92,11 @@
                 <div class="driver-tabla__header">
                   <div>Proyecto</div>
                   <div>Área m²</div>
-                  <div>{{ d.tipoDriver === 'HH' ? 'HH real acum.' : 'Trab. distintos' }}</div>
+                  <div [title]="d.tipoDriver === 'HH' ? 'Suma de Tareo/planilla, en vivo' : 'Distintos en worker_vinculaciones, en vivo'">
+                    {{ d.tipoDriver === 'HH' ? 'HH acum. real' : 'Trab. acum. real' }}
+                  </div>
+                  <div title="Total final tipeado a mano en Datos Base, cuando el proyecto ya cerró">Final manual</div>
+                  <div title="Manual si existe, si no el acumulado real — este es el que entra a la mediana">Oficial</div>
                   <div>Ratio</div>
                   <div>Incluir</div>
                 </div>
@@ -105,7 +109,12 @@
                     <span *ngIf="p.esOutlier" class="badge badge-warn badge-xs" title="Outlier: fuera de rango normal (IQR)">outlier</span>
                   </div>
                   <div>{{ p.areaTechada | number:'1.0-0' }}</div>
-                  <div>{{ p.cantidad | number:'1.0-2' }}</div>
+                  <div>{{ p.cantidadCalculado | number:'1.0-2' }}</div>
+                  <div>
+                    <span *ngIf="p.cantidadManual !== null">{{ p.cantidadManual | number:'1.0-2' }}</span>
+                    <span *ngIf="p.cantidadManual === null" class="empty-cell" title="Sin valor manual cargado en Datos Base">—</span>
+                  </div>
+                  <div><strong>{{ p.cantidad | number:'1.0-2' }}</strong></div>
                   <div><strong>{{ p.ratio | number:'1.4-4' }}</strong></div>
                   <div class="tabla-cols__dato" [class.tabla-cols__dato--excluido]="!p.incluidoManual">
                     <input

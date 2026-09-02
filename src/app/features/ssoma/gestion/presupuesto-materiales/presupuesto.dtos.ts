@@ -237,8 +237,15 @@ export interface RatioDriverProyectoDto {
   cicloVida: string;
   diasRegistrados: number;
   areaTechada: number;
+  /** Valor "oficial" (manual si existe, si no el calculado) — el que entra a la mediana. */
   cantidad: number;
   ratio: number;
+  /** Acumulado real calculado desde Tareo/planilla (HH) o worker_vinculaciones (TRABAJADORES), "en vivo". */
+  cantidadCalculado: number;
+  /** Valor final tipeado a mano en Datos Base — null si el proyecto todavía no lo tiene cargado. */
+  cantidadManual: number | null;
+  /** Solo informativo para HH: HH_REAL | HH_PROYECTADO | HH_CALCULADO_MEDIANA. */
+  hhFuente: string | null;
   esOutlier: boolean;
   incluidoManual: boolean;
 }
