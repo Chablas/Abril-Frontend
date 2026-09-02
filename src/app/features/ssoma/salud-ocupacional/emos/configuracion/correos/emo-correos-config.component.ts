@@ -25,10 +25,17 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
  *
  * Una sección (`app-section-tabs`) por cada correo: programación automática,
  * programación manual, aceptada por la clínica, rechazada por la clínica y el
- * resultado del examen. Dentro de cada sección, una matriz destinatario × perfil
- * del trabajador (Oficina Central / Staff / Obra) con un interruptor por celda,
- * porque a un trabajador de Oficina Central no le escribe la misma gente que a
- * uno de obra.
+ * resultado del examen. Los cuatro últimos vienen dos veces —«· Trabajador» y
+ * «· Postulante»—: el EMO de Ingreso que GTH programa desde Reclutamiento le habla
+ * a alguien que todavía no trabaja acá, así que su correo lo llama postulante y lo
+ * recibe otra gente (el solicitante de la vacante, no un jefe que no tiene).
+ *
+ * Dentro de cada sección, una matriz destinatario × perfil del trabajador
+ * (Oficina Central / Staff / Obra) con un interruptor por celda, porque a un
+ * trabajador de Oficina Central no le escribe la misma gente que a uno de obra.
+ *
+ * Las secciones NO están escritas acá: salen de `ss_emo_correo_evento`. Un correo
+ * nuevo (o una versión nueva de uno existente) aparece solo, sin tocar este archivo.
  *
  * Hay tres clases de destinatario:
  *  • Dinámicos (clínica, jefe o solicitante, trabajador, residente, coordinadores,

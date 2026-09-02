@@ -53,14 +53,14 @@
         <h1 class="pf-title">Formulario del postulante</h1>
         @if (esCorreccion) {
           <p class="pf-intro">
-            Estimado(a) postulante, revisamos el formulario que enviaste para la posición
+            Estimado(a) postulante, revisamos el formulario que enviaste para el puesto
             <b>{{ data.puesto }}</b> y necesitamos que corrijas algunos puntos. Tus respuestas ya están
             cargadas: solo actualiza lo observado y vuelve a enviarlo. Los campos marcados con
             <span style="color:#B91C1C">*</span> son obligatorios.
           </p>
         } @else {
           <p class="pf-intro">
-            Estimado(a) postulante, gracias por participar de este proceso de selección para la posición
+            Estimado(a) postulante, gracias por participar de este proceso de selección para el puesto
             <b>{{ data.puesto }}</b>. A continuación, te pediremos que completes tus datos para tener tu
             información lo más clara posible. Los campos marcados con <span style="color:#B91C1C">*</span> son
             obligatorios.
@@ -301,7 +301,7 @@
             </div>
 
             <div class="abril-field pf-col-2">
-              <label class="abril-field-label">Logros obtenidos en esta posición <span class="pf-req">*</span></label>
+              <label class="abril-field-label">Logros obtenidos en este puesto <span class="pf-req">*</span></label>
               <textarea class="abril-field-input" rows="3" [(ngModel)]="model.logros"
                         name="logros" autocomplete="off"
                         placeholder="Describe tus logros"></textarea>

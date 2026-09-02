@@ -28,15 +28,15 @@
           <i class="ti ti-circle-check pe-state-icon" style="color:var(--pe-green)"></i>
           <h2 class="pe-state-title">¡Asistencia confirmada!</h2>
           <p class="pe-state-text">
-            Gracias por confirmar, {{ data.candidatoNombre }}. Te esperamos en la entrevista para la
-            posición <b>{{ data.puesto }}</b>. El equipo de Gestión del Talento Humano ya fue notificado.
+            Gracias por confirmar, {{ data.candidatoNombre }}. Te esperamos en la entrevista para el
+            puesto <b>{{ data.puesto }}</b>. El equipo de Gestión del Talento Humano ya fue notificado.
           </p>
         } @else {
           <i class="ti ti-circle-x pe-state-icon" style="color:#B91C1C"></i>
           <h2 class="pe-state-title">Respuesta registrada</h2>
           <p class="pe-state-text">
             Gracias por avisarnos, {{ data.candidatoNombre }}. Registramos que no podrás asistir a la
-            entrevista para la posición <b>{{ data.puesto }}</b>. El equipo de Gestión del Talento
+            entrevista para el puesto <b>{{ data.puesto }}</b>. El equipo de Gestión del Talento
             Humano ya fue notificado y se pondrá en contacto contigo.
           </p>
         }
@@ -52,10 +52,28 @@
             <i class="ti ti-clock"></i>
             <span>{{ data.hora }}</span>
           </div>
+          <!-- El lugar con su referencia y el enlace al mapa: el postulante suele leer esta
+               pantalla desde el celular y es justo el momento en que necesita saber cómo llegar. -->
           @if (data.lugarNombre) {
-            <div class="pe-cita-item">
+            <div class="pe-cita-item pe-cita-item--lugar">
               <i class="ti ti-map-pin"></i>
-              <span>{{ data.lugarNombre }}</span>
+              <div class="pe-lugar">
+                <span>{{ data.lugarNombre }}</span>
+                @if (data.lugarReferencia) {
+                  <span class="pe-lugar-ref">{{ data.lugarReferencia }}</span>
+                }
+                @if (data.lugarMapsUrl) {
+                  <a
+                    class="pe-lugar-mapa"
+                    [href]="data.lugarMapsUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <i class="ti ti-external-link"></i>
+                    Ver en Google Maps
+                  </a>
+                }
+              </div>
             </div>
           }
         </div>
