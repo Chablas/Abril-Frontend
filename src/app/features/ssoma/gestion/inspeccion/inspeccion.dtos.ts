@@ -89,6 +89,22 @@ export interface CrearInspeccionRequest {
   fotosAreaBase64?: string[];
 }
 
+export interface EditarInspeccionRequest {
+  proyectoId: number;
+  tipoId: number;
+  esPlanificada: boolean;
+  fecha: string;
+  horaInicio?: string;
+  horaFin?: string;
+  area?: string;
+  responsableArea?: string;
+  inspectorNombre?: string;
+  inspectorCargo?: string;
+  inspectorEmpresa?: string;
+  representanteNombre?: string;
+  representanteCargo?: string;
+}
+
 export interface ParticipanteDto {
   id: number;
   nombre: string;
@@ -134,6 +150,7 @@ export interface InspeccionHallazgoDto {
   latitud: number | null;
   longitud: number | null;
   creadoPorNombre: string | null;
+  creadoPorWorkerId: number | null;
   fotos: InspeccionHallazgoFotoDto[];
 }
 
