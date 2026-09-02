@@ -472,23 +472,21 @@
                 Para cambiar el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
               </p>
             </div>
-            <!-- Área: desplegables en cascada sobre el árbol de áreas (workers.area_scope_id).
-                 Se guarda el nodo elegido y el backend deriva de ahí la área/subárea legacy. -->
-            <div class="col-span-2" *ngFor="let level of areaLevels; let i = index">
-              <label class="field-label">{{ i === 0 ? 'Área *' : 'Subárea' }}</label>
-              <app-search-select
-                [options]="level.options"
-                valueField="areaScopeId"
-                displayField="areaItemName"
-                [value]="level.selected"
-                [showLabel]="false"
-                [sortAlpha]="false"
-                [placeholder]="
-                  cargandoAreas ? 'Cargando…' : i === 0 ? 'Selecciona área' : 'Selecciona subárea'
-                "
-                [allowClear]="true"
-                (valueChange)="onAreaLevelChange(i, $event)"
+            <!-- Área (workers.area_scope_id): no se elige, sale del puesto de arriba — su área
+                 de destino, la que dice a dónde ENTRA quien lo ejerce. Se muestra la ruta
+                 completa del nodo y el backend deriva de él la área/subárea legacy. -->
+            <div class="col-span-2">
+              <label class="field-label">Área * (solo lectura)</label>
+              <input
+                type="text"
+                class="field-input field-readonly"
+                readonly
+                [value]="areaPathLabel"
+                [placeholder]="areaPlaceholder"
               />
+              <span class="field-hint" *ngIf="puestoSinAreaDestino">
+                El puesto no tiene área de destino: se asigna en Configuración → Categorías y Puestos.
+              </span>
             </div>
 
             <!-- Jefe del trabajador: por defecto el revisor que sugiere su área (solo lectura);
@@ -502,7 +500,7 @@
                 class="field-input field-readonly"
                 readonly
                 [value]="revisorNombre || ''"
-                [placeholder]="areaScopeIdElegido ? 'Sin revisor configurado para esta área' : 'Selecciona un área'"
+                [placeholder]="model.areaScopeId ? 'Sin revisor configurado para esta área' : 'Sin área asignada'"
               />
 
               <app-search-select
@@ -521,7 +519,7 @@
               <span class="field-hint" *ngIf="!model.jefePersonalizado && esRevisorDeSuPropiaArea">
                 Es el revisor de su propia área, así que le corresponde el siguiente revisor válido.
               </span>
-              <span class="field-hint" *ngIf="!model.jefePersonalizado && areaScopeIdElegido && !revisorNombre">
+              <span class="field-hint" *ngIf="!model.jefePersonalizado && model.areaScopeId && !revisorNombre">
                 Configúralo en Configuración → Revisores de Áreas.
               </span>
 
@@ -561,10 +559,11 @@
           </ng-container>
 
           <!-- PERSONAL EXTERNO -->
-          <!-- Vigilancia, mantenimiento y choferes. Solo se captura la asignación: no tienen
-               área en el árbol ni correo corporativo, así que el área y el jefe guardados se
-               reenvían intactos (gestionaArea / gestionaJefe quedan en false). Antes esta
-               clasificación no tenía rama y la sección salía en blanco. -->
+          <!-- Vigilancia, mantenimiento y choferes. Solo se captura la asignación: su área sale
+               del puesto igual que en Staff / Oficina Central (gestionaArea), pero no tienen
+               correo corporativo ni jefe propio, así que el jefe guardado se reenvía intacto
+               (gestionaJefe queda en false). Antes esta clasificación no tenía rama y la sección
+               salía en blanco. -->
           <ng-container *ngIf="esPersonalExterno">
             <div class="col-span-2">
               <label class="field-label">Proyecto {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
@@ -634,6 +633,21 @@
                 (valueChange)="onPuestoChange($event)"
               />
               <span class="field-hint">Es el cargo que se muestra, y de él salen los entregables, permisos y filtros internos.</span>
+            </div>
+            <!-- Misma área derivada del puesto que en Staff / Oficina Central, pero acá no es
+                 obligatoria: estas fichas vienen de la Data Maestra de GTH y muchas no la traen. -->
+            <div class="col-span-2">
+              <label class="field-label">Área (solo lectura)</label>
+              <input
+                type="text"
+                class="field-input field-readonly"
+                readonly
+                [value]="areaPathLabel"
+                [placeholder]="areaPlaceholder"
+              />
+              <span class="field-hint" *ngIf="puestoSinAreaDestino">
+                El puesto no tiene área de destino: se asigna en Configuración → Categorías y Puestos.
+              </span>
             </div>
             <div>
               <label class="field-label">Fecha de ingreso</label>

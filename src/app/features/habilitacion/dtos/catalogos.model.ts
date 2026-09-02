@@ -108,6 +108,20 @@ export interface ObraOficinaStaffDto {
   name: string;
 }
 
+/**
+ * Ítem del catálogo de puestos. Lleva `categoriaId` para filtrar el desplegable sin volver al
+ * servidor, y `areaDestinoScopeId` porque el área del trabajador ya no se elige: se deriva del
+ * puesto (es "el área a la que va", no la que puede pedirlo). `areaDestinoScopeId` en null = el
+ * puesto no tiene área de destino configurada, que es un caso válido (los puestos de obra no
+ * tienen ninguna).
+ */
+export interface PuestoCatDto {
+  id: number;
+  nombre: string;
+  categoriaId: number;
+  areaDestinoScopeId: number | null;
+}
+
 /** Catálogo de tipos de equipo (Volquete, Excavadora de Oruga, ...) para el formulario de equipos. */
 export interface TipoEquipoDto {
   id: number;

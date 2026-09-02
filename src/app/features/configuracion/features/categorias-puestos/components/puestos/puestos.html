@@ -175,25 +175,34 @@
     </app-search-input>
   </div>
 
-  <!-- Área en cascada: elegir una gerencia trae también los puestos de sus áreas hijas,
-       el mismo alcance con el que Solicitud de Personal arma su desplegable. -->
-  <div class="flex flex-wrap gap-3">
-    <ng-container *ngFor="let level of areaLevels; let i = index">
-      <div class="w-[220px]">
-        <app-search-select
-          label="Área"
-          [showLabel]="i === 0"
-          [options]="level"
-          valueField="areaScopeId"
-          displayField="name"
-          [value]="selectedAreaNodes[i]?.areaScopeId"
-          [fullText]="true"
-          [rawLabel]="true"
-          [placeholder]="i === 0 ? 'Todas las áreas' : 'Todas las subáreas'"
-          (valueChange)="onAreaNodeChange(i, $event); onFilterChange()">
-        </app-search-select>
-      </div>
-    </ng-container>
+  <!-- Un filtro por columna, con las áreas que hay hoy en cada una y por su nombre suelto
+       ("Calidad", no la rama entera). rawLabel para no convertir "SSOMA" en "Ssoma". -->
+  <div class="w-full">
+    <app-search-select
+      label="Área que lo pide"
+      [options]="areaSolicitanteOptions"
+      valueField="areaScopeId"
+      displayField="label"
+      [value]="areaSolicitanteFilter"
+      [fullText]="true"
+      [rawLabel]="true"
+      placeholder="Todas las áreas"
+      (valueChange)="areaSolicitanteFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Área a la que va"
+      [options]="areaDestinoOptions"
+      valueField="areaScopeId"
+      displayField="label"
+      [value]="areaDestinoFilter"
+      [fullText]="true"
+      [rawLabel]="true"
+      placeholder="Todas las áreas"
+      (valueChange)="areaDestinoFilter = $event; onFilterChange()">
+    </app-search-select>
   </div>
 
   <div class="w-full">

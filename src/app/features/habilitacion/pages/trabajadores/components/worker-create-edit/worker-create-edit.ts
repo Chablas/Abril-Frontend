@@ -35,15 +35,9 @@ import {
   AreaArbolRevisorDto,
   JefeCandidatoDto,
   ObraOficinaStaffDto,
+  PuestoCatDto,
 } from '../../../../dtos/catalogos.model';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
-
-/** Un nivel de la cascada de áreas: los hermanos disponibles y el nodo elegido en ese nivel. */
-interface AreaLevel {
-  options: AreaArbolNodoDto[];
-  /** areaScopeId elegido, o null si el nivel está vacío. */
-  selected: number | null;
-}
 
 interface WorkerFormModel {
   tipoDocumento: 'DNI' | 'CE';
@@ -61,8 +55,10 @@ interface WorkerFormModel {
    */
   puestoId: number | null;
   /**
-   * Nodo del árbol de áreas (workers.area_scope_id): el único dato de área que captura el
-   * formulario. Los campos legacy area/subarea/jefatura los deriva el backend a partir de él.
+   * Nodo del árbol de áreas (workers.area_scope_id): el único dato de área que guarda el
+   * formulario. Ya no se elige a mano — sale del puesto (`puesto.area_destino_scope_id`) en las
+   * clasificaciones que gestionan el área. Los campos legacy area/subarea/jefatura los deriva el
+   * backend a partir de él.
    */
   areaScopeId: number | null;
   /**
@@ -155,19 +151,15 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   proyectos: ProjectGetDTO[] = [];
   categorias: { id: number; nombre: string }[] = [];
   /** Catálogo completo de puestos; el desplegable muestra `puestosFiltrados`. */
-  puestos: { id: number; nombre: string; categoriaId: number | null }[] = [];
+  puestos: PuestoCatDto[] = [];
   empresaContratistaNombre = '';
 
   /**
-   * Desplegables en cascada del árbol de áreas (uno por nivel), mismo patrón que
-   * Configuración → Trabajadores. Se guarda el último nodo elegido, sin obligar a llegar a una hoja.
+   * Árbol de áreas indexado por nodo. Ya no alimenta ningún desplegable: el área es de solo
+   * lectura y sale del puesto, así que el árbol solo sirve para pintar la ruta del nodo derivado
+   * y para leer su revisor.
    */
-  areaLevels: AreaLevel[] = [];
-  /** Nodos del árbol tal como los devuelve el backend (planos, con revisor ya resuelto). */
-  private areaNodos: AreaArbolNodoDto[] = [];
   private areaPorId = new Map<number, AreaArbolNodoDto>();
-  /** areaScopeParentId → hijos. La clave null son las raíces (gerencias). */
-  private areaHijos = new Map<number | null, AreaArbolNodoDto[]>();
   cargandoAreas = false;
 
   /**
@@ -417,12 +409,17 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   }
 
   /**
-   * True cuando el formulario muestra (y por tanto es dueño de) los desplegables de área. En Obra
-   * y en contratistas no se capturan, así que ahí el área guardada se reenvía intacta en vez de
-   * mandar nulls que la borrarían.
+   * True cuando el formulario es dueño del área del trabajador. Ya no significa "muestra los
+   * desplegables de área": el área no se elige a mano en ninguna parte, sale del puesto
+   * (`puesto.area_destino_scope_id`, el área a la que VA quien lo ejerce) y el formulario solo la
+   * muestra de solo lectura.
+   *
+   * Lo son Staff, Oficina Central y Personal Externo. En Obra y en contratistas no: el área
+   * guardada se reenvía intacta en vez de mandar nulls que la borrarían — un obrero no tiene área
+   * en el árbol y sus puestos tampoco tienen destino configurado.
    */
   get gestionaArea(): boolean {
-    return this.esStaffOOficina;
+    return this.esStaffOOficina || this.esPersonalExterno;
   }
 
   /**
@@ -547,9 +544,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           // desplegable muestre su nombre en vez de quedarse vacío.
           this.asegurarJefeGuardadoEnOpciones();
           this.loadingDetalle = false;
-          // El árbol puede haber llegado antes que el detalle: en ese caso hay que rearmar la
-          // cascada ahora que ya se sabe en qué nodo está el trabajador.
-          this.initAreaLevels();
+          // Recién ahora se sabe qué puesto tiene la ficha, así que su área ya se puede derivar.
+          // Si el catálogo de puestos todavía no llegó, se vuelve a intentar cuando llegue.
+          this.sincronizarAreaConPuesto(true);
           this.cdr.detectChanges();
         },
         error: () => {
@@ -564,11 +561,6 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
         this.model.contrataCasa = 'Casa';
       }
     }
-
-    // Cascada de áreas para el modelo ya reseteado. Si el árbol todavía no llegó queda solo el
-    // nivel raíz vacío (mostrando "Cargando…") y se vuelve a armar cuando llega, igual que cuando
-    // llega el detalle del trabajador con su nodo asignado.
-    this.initAreaLevels();
 
     if (this.esContratista) {
       const empresaId = this.authService.getEmpresaId();
@@ -619,7 +611,13 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       error: () => {},
     });
     this.catalogosHabService.getPuestos().subscribe({
-      next: (data) => { this.puestos = data; this.cdr.detectChanges(); },
+      next: (data) => {
+        this.puestos = data;
+        // El área sale del puesto y es este catálogo el que la trae, así que hasta acá no se
+        // puede derivar (el detalle del trabajador suele llegar antes).
+        this.sincronizarAreaConPuesto(true);
+        this.cdr.detectChanges();
+      },
       error: () => {},
     });
     this.catalogosHabService.getJefes().subscribe({
@@ -692,24 +690,16 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       });
   }
 
-  // ── Árbol de áreas ───────────────────────────────────────────────────
+  // ── Área del trabajador ──────────────────────
+  //
+  // El área no se elige en el formulario: sale del puesto. Cada puesto declara el área a la
+  // que ENTRA quien lo ejerce (`puesto.area_destino_scope_id`, distinta de la que puede
+  // PEDIRLO), y es esa la que queda en `workers.area_scope_id`. Así que el árbol ya no alimenta
+  // ningún desplegable: solo sirve para pintar la ruta del nodo derivado y leer su revisor.
 
-  /** Indexa el árbol plano que devuelve el backend y arma la cascada inicial. */
+  /** Indexa el árbol plano que devuelve el backend. */
   private setAreaArbol(nodos: AreaArbolNodoDto[]): void {
-    this.areaNodos = nodos ?? [];
-    this.areaPorId = new Map(this.areaNodos.map((n) => [n.areaScopeId, n]));
-    this.areaHijos = new Map();
-    for (const nodo of this.areaNodos) {
-      const key = nodo.areaScopeParentId ?? null;
-      const hermanos = this.areaHijos.get(key);
-      if (hermanos) hermanos.push(nodo);
-      else this.areaHijos.set(key, [nodo]);
-    }
-    this.initAreaLevels();
-  }
-
-  private hijosDe(areaScopeId: number | null): AreaArbolNodoDto[] {
-    return this.areaHijos.get(areaScopeId) ?? [];
+    this.areaPorId = new Map((nodos ?? []).map((n) => [n.areaScopeId, n]));
   }
 
   /** Camino raíz → nodo, o null si el nodo no existe en el árbol vivo. */
@@ -728,66 +718,70 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   }
 
   /**
-   * Un desplegable por cada nivel del camino hasta el nodo asignado, más uno vacío con los hijos
-   * del último nodo (si tiene) para poder profundizar. No obliga a llegar a una hoja: se guarda
-   * el nodo más profundo que se haya elegido.
+   * El puesto elegido tal como viene del catálogo, o undefined si todavía no llegó (o si el
+   * puesto está inhabilitado y por eso no figura, que le pasa a fichas antiguas).
    */
-  private initAreaLevels(): void {
-    // Siempre queda al menos el nivel raíz, aunque el árbol no haya llegado todavía: así el campo
-    // de Área no aparece de golpe a mitad de la carga (muestra "Cargando…" y se llena solo).
-    const camino = this.model.areaScopeId ? this.caminoHasta(this.model.areaScopeId) : null;
-    this.areaLevels = [
-      { options: this.hijosDe(null), selected: camino?.[0]?.areaScopeId ?? null },
-    ];
-    if (!camino) return;
+  private get puestoElegido(): PuestoCatDto | undefined {
+    if (this.model.puestoId == null) return undefined;
+    return this.puestos.find((p) => p.id === this.model.puestoId);
+  }
 
-    for (let i = 0; i < camino.length; i++) {
-      const hijos = this.hijosDe(camino[i].areaScopeId);
-      if (!hijos.length) continue;
-      const siguiente = camino[i + 1] ?? null;
-      this.areaLevels.push({ options: hijos, selected: siguiente?.areaScopeId ?? null });
-    }
+  /** Área de destino del puesto elegido, o null si ese puesto no tiene ninguna configurada. */
+  private get areaDestinoDelPuesto(): number | null {
+    return this.puestoElegido?.areaDestinoScopeId ?? null;
   }
 
   /**
-   * Al elegir un nodo se descartan los niveles más profundos y, si el nodo tiene hijos, se agrega
-   * un desplegable vacío para el siguiente nivel (opcional).
+   * Sincroniza el área del modelo con el área de destino del puesto elegido. Se llama al elegir
+   * un puesto y también cuando llegan el detalle del trabajador o el catálogo de puestos, porque
+   * hasta que los dos no estén no se sabe qué área derivar.
+   *
+   * `conservarSiFalta` es lo que protege a las fichas ya guardadas: al abrir el formulario, un
+   * puesto sin área de destino conserva la que la ficha traía en vez de borrarla — no hay de
+   * dónde derivarla y el formulario avisa que al puesto le falta configurarla (ver
+   * `puestoSinAreaDestino`). Es el caso de los puestos que el padrón de GTH no alcanzó a mapear.
+   * Al cambiar el puesto a mano NO se conserva: el área quedaría contradiciendo al puesto que se
+   * está viendo en pantalla.
    */
-  onAreaLevelChange(index: number, value: number | null): void {
-    const level = this.areaLevels[index];
-    level.selected = value ?? null;
-    this.areaLevels = this.areaLevels.slice(0, index + 1);
-    if (value != null) {
-      const hijos = this.hijosDe(value);
-      if (hijos.length) this.areaLevels.push({ options: hijos, selected: null });
-    }
-    this.model.areaScopeId = this.areaScopeIdElegido;
+  private sincronizarAreaConPuesto(conservarSiFalta: boolean): void {
+    if (!this.gestionaArea) return;
+    const destino = this.areaDestinoDelPuesto;
+    if (destino == null && conservarSiFalta) return;
+    this.model.areaScopeId = destino;
   }
 
-  /** Nodo más profundo elegido en la cascada (lo que se guarda en workers.area_scope_id). */
-  get areaScopeIdElegido(): number | null {
-    for (let i = this.areaLevels.length - 1; i >= 0; i--) {
-      if (this.areaLevels[i].selected != null) return this.areaLevels[i].selected;
-    }
-    return null;
+  /**
+   * True cuando el puesto elegido está en el catálogo y no tiene área de destino configurada. Es
+   * lo que explica que el campo de Área salga vacío (o con la que ya traía la ficha) pese a haber
+   * puesto: se arregla en Configuración → Categorías y Puestos, no acá.
+   *
+   * Se exige que el puesto esté en el catálogo para no avisar de algo que todavía no se sabe: el
+   * detalle del trabajador llega antes que el catálogo y el aviso alcanzaba a parpadear.
+   */
+  get puestoSinAreaDestino(): boolean {
+    const puesto = this.puestoElegido;
+    return !!puesto && puesto.areaDestinoScopeId == null;
   }
 
-  /** Nodo elegido, para leer su equivalencia legacy y su revisor. */
+  /** Nodo del área guardada, para leer su equivalencia legacy y su revisor. */
   private get areaNodoElegido(): AreaArbolNodoDto | null {
-    const id = this.areaScopeIdElegido;
+    const id = this.model.areaScopeId;
     return id != null ? this.areaPorId.get(id) ?? null : null;
   }
 
-  /** Ruta legible de la selección (ej. "Gerencia de Proyectos › Unidad de Proyectos"). */
+  /** Ruta legible del área (ej. "Gerencia de Proyectos › Unidad de Proyectos"). */
   get areaPathLabel(): string {
-    const nombres: string[] = [];
-    for (const level of this.areaLevels) {
-      if (level.selected == null) break;
-      const nodo = level.options.find((o) => o.areaScopeId === level.selected);
-      if (!nodo) break;
-      nombres.push(nodo.areaItemName);
-    }
-    return nombres.join(' › ');
+    const id = this.model.areaScopeId;
+    if (id == null) return '';
+    return (this.caminoHasta(id) ?? []).map((n) => n.areaItemName).join(' › ');
+  }
+
+  /** Texto del campo de Área mientras no haya ninguna que mostrar. */
+  get areaPlaceholder(): string {
+    if (this.cargandoAreas) return 'Cargando…';
+    if (this.model.puestoId == null) return 'Selecciona un puesto';
+    if (this.puestoSinAreaDestino) return 'El puesto no tiene área de destino configurada';
+    return '';
   }
 
   /** Área/subárea legacy a las que va a caer el nodo elegido (las deriva el backend al guardar). */
@@ -879,7 +873,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
    */
   get faltaJefePersonalizado(): boolean {
     return (
-      this.gestionaArea &&
+      this.esStaffOOficina &&
       this.model.jefePersonalizado &&
       this.model.jefePersonalizadoWorkerId == null
     );
@@ -934,25 +928,31 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
 
   /**
    * La categoría no se guarda en el trabajador: es un filtro para acotar el desplegable de
-   * puestos, que es el campo que sí se guarda (y de donde el sistema lee la categoría).
-   * Al cambiarla se descarta el puesto elegido si ya no pertenece a ella.
+   * puestos, que es el campo que sí se guarda (y de donde el sistema lee la categoría y el
+   * área). Al cambiarla se descarta el puesto elegido si ya no pertenece a ella, y con él el
+   * área que salía de ese puesto.
    */
   onCategoriaChange(categoriaId: number | null): void {
     this.model.categoriaId = categoriaId;
     const puesto = this.puestos.find((p) => p.id === this.model.puestoId);
     if (puesto && puesto.categoriaId !== categoriaId) this.model.puestoId = null;
+    // Si el puesto se descartó, el área que salía de él tiene que irse con él.
+    this.sincronizarAreaConPuesto(false);
   }
 
   /**
-   * Elegir un puesto fija la categoría, siempre: el puesto es el único campo que se guarda
-   * y la categoría del trabajador es la de su puesto. El desplegable de categoría es solo
-   * un filtro para encontrar el puesto, así que se sincroniza con lo elegido para que no
+   * Elegir un puesto fija la categoría Y el área, siempre: el puesto es el campo del que salen
+   * las dos (`puesto.categoria_id` y `puesto.area_destino_scope_id`). El desplegable de categoría
+   * es solo un filtro para encontrar el puesto, así que se sincroniza con lo elegido para que no
    * muestre una categoría que ya no es la del trabajador.
    */
   onPuestoChange(puestoId: number | null): void {
     this.model.puestoId = puestoId;
     const puesto = this.puestos.find((p) => p.id === puestoId);
     if (puesto) this.model.categoriaId = puesto.categoriaId;
+    // El área del trabajador es la de destino de su puesto, así que se arrastra con él —
+    // incluso cuando el puesto nuevo no tiene ninguna y la ficha se queda sin área.
+    this.sincronizarAreaConPuesto(false);
   }
 
   /**
@@ -962,7 +962,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
    * Todo puesto pertenece a exactamente una categoría (la columna es NOT NULL), así que el
    * filtro es exacto: no hay puestos "sin categoría" que decidir si entran o no.
    */
-  get puestosFiltrados(): { id: number; nombre: string; categoriaId: number | null }[] {
+  get puestosFiltrados(): PuestoCatDto[] {
     if (this.model.categoriaId == null) return this.puestos;
     return this.puestos.filter(
       (p) =>
@@ -992,10 +992,10 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     if (this.model.obraOficina !== 'Oficina Central') {
       this.model.sctr = true;
     }
-    // Cambiar de Obra/Staff/Oficina cambia si el formulario gestiona el área o no, así que la
-    // selección anterior se descarta y la cascada vuelve a empezar.
-    this.model.areaScopeId = null;
-    this.initAreaLevels();
+    // La clasificación ya no decide el área: donde el formulario la gestiona sale del puesto, y
+    // en Obra se reenvía intacta la que estuviera guardada. Solo hay que re-derivarla, porque
+    // pasar a Obra o venir de ella cambia si el formulario es dueño del área.
+    this.sincronizarAreaConPuesto(true);
     // El jefe elegido se conserva, pero cada clasificación lo muestra distinto (checkbox en
     // Staff/Oficina, desplegable suelto en Obra): se sincroniza el checkbox con lo que haya
     // elegido para que al pasar a Staff/Oficina el jefe no quede guardado pero invisible.

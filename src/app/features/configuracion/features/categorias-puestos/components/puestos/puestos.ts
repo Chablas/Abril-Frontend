@@ -18,7 +18,12 @@ import {
   CategoriaAdminDto,
   PuestoAdminDto,
 } from '../../dtos/categorias-puestos.dto';
-import { AreaCascadeNode, buildAreaTree, collectScopeIds } from '../../area-tree';
+import {
+  AreaCascadeNode,
+  AreaFilterOption,
+  buildAreaFilterOptions,
+  buildAreaTree,
+} from '../../area-tree';
 import { PuestoCreateEdit } from '../puesto-create-edit/puesto-create-edit';
 import { PuestoDetalle } from '../puesto-detalle/puesto-detalle';
 
@@ -99,11 +104,18 @@ export class ConfigPuestos implements OnChanges {
   ];
   filtrosAbiertos = false;
 
-  // ── Filtro de área en cascada (mismo patrón que Gestión de Salidas) ──
-  /** Niveles visibles del desplegable: [0] = gerencias, [1] = hijas de la elegida, … */
-  areaLevels: AreaCascadeNode[][] = [];
-  /** Nodo elegido por nivel (undefined = "Todas" en ese nivel). */
-  selectedAreaNodes: (AreaCascadeNode | undefined)[] = [];
+  // ── Filtros por área: uno por columna de la tabla ────────────────────
+  /**
+   * Área exacta de la columna "Lo pide". No arrastra el subárbol: las opciones son las áreas
+   * que se ven hoy en esa columna, así que elegir "Gerencia de Proyectos" trae los puestos
+   * que pide la gerencia misma, no los de sus áreas hijas — que ya salen eligiéndolas a ellas.
+   */
+  areaSolicitanteFilter: number | null = null;
+  /** Área exacta de la columna "Va a", con el mismo criterio que el de arriba. */
+  areaDestinoFilter: number | null = null;
+  /** Opciones de cada filtro: las áreas presentes en su columna, no el árbol entero. */
+  areaSolicitanteOptions: AreaFilterOption[] = [];
+  areaDestinoOptions: AreaFilterOption[] = [];
   /** Raices del arbol jerarquizado: alimentan las cascadas de area del modal de alta/edicion. */
   areaRoots: AreaCascadeNode[] = [];
 
@@ -122,12 +134,12 @@ export class ConfigPuestos implements OnChanges {
 
   /**
    * El contenedor reasigna las listas en cada recarga: la selección apuntaría a filas de
-   * la carga anterior, así que se limpia. El árbol de áreas se rearma solo cuando llega
-   * uno nuevo, respetando el área que el usuario tenga filtrada — si no, cada guardado le
-   * borraría el filtro.
+   * la carga anterior, así que se limpia. Las opciones de los filtros por área salen de los
+   * puestos, así que se rearman con cada lista nueva.
    */
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['areaTree']) this.buildAreaCascade();
+    if (changes['areaTree']) this.areaRoots = buildAreaTree(this.areaTree ?? []);
+    if (changes['puestos'] || changes['areaTree']) this.rearmarFiltrosDeArea();
     this.limpiarSeleccion();
   }
 
@@ -141,7 +153,8 @@ export class ConfigPuestos implements OnChanges {
     if (this.areaEstadoFilter !== null) n++;
     if (this.usoFilter !== null) n++;
     if (this.estadoFilter !== null) n++;
-    if (this.selectedAreaNodes.some((node) => node)) n++;
+    if (this.areaSolicitanteFilter !== null) n++;
+    if (this.areaDestinoFilter !== null) n++;
     return n;
   }
 
@@ -152,65 +165,44 @@ export class ConfigPuestos implements OnChanges {
     this.areaEstadoFilter = null;
     this.usoFilter = null;
     this.estadoFilter = null;
-    this.areaLevels = this.areaLevels.length ? [this.areaLevels[0]] : this.areaLevels;
-    this.selectedAreaNodes = this.selectedAreaNodes.length ? [undefined] : this.selectedAreaNodes;
+    this.areaSolicitanteFilter = null;
+    this.areaDestinoFilter = null;
     this.onFilterChange();
   }
 
-  // ── Filtro de área en cascada ─────────────────────────────────────────
+  // ── Filtros por área ──────────────────────────────────────────────────
 
   /**
-   * Rearma la jerarquía y deja listo el primer nivel. La ruta que el usuario tenía elegida se
-   * vuelve a recorrer sobre el árbol nuevo y se corta en el primer nodo que ya no exista.
+   * Rearma las opciones de los dos filtros con las áreas que hay en la tabla. Si el área que
+   * el usuario tenía filtrada dejó de aparecer en su columna (se editó el último puesto que
+   * la usaba), se suelta el filtro: dejarlo puesto mostraría una tabla vacía y ninguna opción
+   * visible que lo explique.
    */
-  private buildAreaCascade(): void {
-    const seleccionPrevia = this.selectedAreaNodes.map((n) => n?.areaScopeId ?? null);
-    const roots = buildAreaTree(this.areaTree ?? []);
-    this.areaRoots = roots;
+  private rearmarFiltrosDeArea(): void {
+    const puestos = this.puestos ?? [];
+    const nodos = this.areaTree ?? [];
 
-    this.areaLevels = roots.length ? [roots] : [];
-    this.selectedAreaNodes = roots.length ? [undefined] : [];
+    this.areaSolicitanteOptions = buildAreaFilterOptions(
+      puestos.map((p) => ({ id: p.areaSolicitanteScopeId, nombre: p.areaSolicitanteNombre })),
+      nodos,
+    );
+    this.areaDestinoOptions = buildAreaFilterOptions(
+      puestos.map((p) => ({ id: p.areaDestinoScopeId, nombre: p.areaDestinoNombre })),
+      nodos,
+    );
 
-    for (let i = 0; i < seleccionPrevia.length; i++) {
-      const id = seleccionPrevia[i];
-      if (id == null) break;
-      const nodo = this.areaLevels[i]?.find((n) => n.areaScopeId === id);
-      if (!nodo) break;
-      this.onAreaNodeChange(i, id);
+    if (
+      this.areaSolicitanteFilter !== null &&
+      !this.areaSolicitanteOptions.some((o) => o.areaScopeId === this.areaSolicitanteFilter)
+    ) {
+      this.areaSolicitanteFilter = null;
     }
-  }
-
-  /** Al elegir un nodo: recorta los niveles inferiores y, si tiene hijos, agrega el siguiente. */
-  onAreaNodeChange(levelIndex: number, selectedId: number | undefined): void {
-    const selected =
-      selectedId != null
-        ? this.areaLevels[levelIndex]?.find((n) => n.areaScopeId === selectedId)
-        : undefined;
-
-    this.selectedAreaNodes[levelIndex] = selected;
-    this.areaLevels = this.areaLevels.slice(0, levelIndex + 1);
-    this.selectedAreaNodes = this.selectedAreaNodes.slice(0, levelIndex + 1);
-
-    if (selected?.children?.length) {
-      this.areaLevels.push(selected.children);
-      this.selectedAreaNodes.push(undefined);
+    if (
+      this.areaDestinoFilter !== null &&
+      !this.areaDestinoOptions.some((o) => o.areaScopeId === this.areaDestinoFilter)
+    ) {
+      this.areaDestinoFilter = null;
     }
-  }
-
-  /**
-   * Áreas que cuentan como coincidencia: el nodo elegido más profundo y todos sus
-   * descendientes. Filtrar por "Gerencia de Proyectos" tiene que traer también los puestos de
-   * SSOMA, Calidad, Unidad de Proyectos, etc. — el mismo alcance que usa Solicitud de Personal.
-   *
-   * El filtro mira las DOS áreas del puesto: quien busca "Producción" quiere ver también los
-   * puestos que entran ahí aunque los pida la Gerencia Inmobiliaria.
-   */
-  private get areaScopeIdsFiltrados(): Set<number> | null {
-    for (let i = this.selectedAreaNodes.length - 1; i >= 0; i--) {
-      const nodo = this.selectedAreaNodes[i];
-      if (nodo) return new Set(collectScopeIds(nodo));
-    }
-    return null;
   }
 
   onFilterChange(): void {
@@ -221,7 +213,6 @@ export class ConfigPuestos implements OnChanges {
   }
 
   get filteredPuestos(): PuestoAdminDto[] {
-    const areaIds = this.areaScopeIdsFiltrados;
     return this.puestos.filter((p) => {
       const matchesTexto =
         !this.searchText.trim() ||
@@ -234,10 +225,11 @@ export class ConfigPuestos implements OnChanges {
       const matchesUso =
         this.usoFilter === null || (p.cantidadTrabajadores > 0) === this.usoFilter;
       const matchesEstado = this.estadoFilter === null || p.activo === this.estadoFilter;
-      const matchesArea =
-        areaIds === null ||
-        (p.areaSolicitanteScopeId !== null && areaIds.has(p.areaSolicitanteScopeId)) ||
-        (p.areaDestinoScopeId !== null && areaIds.has(p.areaDestinoScopeId));
+      const matchesAreaSolicitante =
+        this.areaSolicitanteFilter === null ||
+        p.areaSolicitanteScopeId === this.areaSolicitanteFilter;
+      const matchesAreaDestino =
+        this.areaDestinoFilter === null || p.areaDestinoScopeId === this.areaDestinoFilter;
       const matchesAreaEstado =
         this.areaEstadoFilter === null ||
         (this.areaEstadoFilter === 'sin-solicitante' && p.areaSolicitanteScopeId === null) ||
@@ -248,7 +240,8 @@ export class ConfigPuestos implements OnChanges {
           p.areaSolicitanteScopeId !== p.areaDestinoScopeId);
       return (
         matchesTexto && matchesCategoria && matchesConCategoria &&
-        matchesUso && matchesEstado && matchesArea && matchesAreaEstado
+        matchesUso && matchesEstado && matchesAreaEstado &&
+        matchesAreaSolicitante && matchesAreaDestino
       );
     });
   }

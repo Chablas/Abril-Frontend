@@ -31,11 +31,54 @@ export function buildAreaTree(nodes: AreaNodoDto[]): AreaCascadeNode[] {
   return roots;
 }
 
-/** El nodo y todos sus descendientes: es el alcance real de un filtro por área. */
-export function collectScopeIds(node: AreaCascadeNode): number[] {
-  const ids = [node.areaScopeId];
-  for (const c of node.children) ids.push(...collectScopeIds(c));
-  return ids;
+/** Opción de los filtros por área de la tabla: el id con el que se compara y su nombre visible. */
+export interface AreaFilterOption {
+  areaScopeId: number;
+  label: string;
+}
+
+/**
+ * Opciones de un filtro por área a partir de las áreas que REALMENTE aparecen hoy en una
+ * columna de la tabla ("Lo pide" o "Va a"), no del árbol completo: ofrecer un área que ningún
+ * puesto usa solo lleva a una tabla vacía.
+ *
+ * La etiqueta es el nombre del área a secas, sin la rama de la que cuelga ("Calidad", no
+ * "Gerencia de Proyectos › Calidad"), igual que la celda de la tabla. La única excepción son
+ * los nombres repetidos — el árbol tiene dos "Producción" y dos "Unidad de Proyectos" en
+ * ramas distintas: a esos se les agrega el padre entre paréntesis, porque si no quedarían dos
+ * opciones idénticas y elegir una sería una lotería.
+ *
+ * El orden alfabético lo pone `app-search-select` (`sortAlpha`), acá no hace falta.
+ */
+export function buildAreaFilterOptions(
+  areas: readonly { id: number | null; nombre: string | null }[],
+  nodes: readonly AreaNodoDto[],
+): AreaFilterOption[] {
+  // Un área de baja llega con nombre en null aunque conserve el id: sin nombre no hay opción
+  // que mostrar, y la celda de esa fila tampoco dice nada.
+  const nombrePorId = new Map<number, string>();
+  for (const a of areas) {
+    if (a.id != null && a.nombre) nombrePorId.set(a.id, a.nombre);
+  }
+
+  const vistos = new Set<string>();
+  const repetidos = new Set<string>();
+  for (const nombre of nombrePorId.values()) {
+    if (vistos.has(nombre)) repetidos.add(nombre);
+    else vistos.add(nombre);
+  }
+
+  const nodoPorId = new Map(nodes.map((n) => [n.areaScopeId, n]));
+  const opciones: AreaFilterOption[] = [];
+  for (const [areaScopeId, nombre] of nombrePorId) {
+    const padreId = nodoPorId.get(areaScopeId)?.areaScopeParentId ?? null;
+    const padre = padreId != null ? nodoPorId.get(padreId)?.areaItemName : undefined;
+    opciones.push({
+      areaScopeId,
+      label: repetidos.has(nombre) && padre ? `${nombre} (${padre})` : nombre,
+    });
+  }
+  return opciones;
 }
 
 /** Un nivel de la cascada: los hermanos disponibles en ese nivel y el nodo elegido. */
