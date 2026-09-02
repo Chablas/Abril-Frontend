@@ -1,6 +1,6 @@
 /**
  * De dónde sale un destinatario del correo de la cita: es el código del destinatario en
- * la Configuración de EMOs (CLINICA, JEFE, TRABAJADOR, RESIDENTE, COORD_ADMIN,
+ * la Configuración de EMOs (CLINICA, JEFE, SOLICITANTE, TRABAJADOR, RESIDENTE, COORD_ADMIN,
  * COORD_SSOMA, ADMIN_RAZON_SOCIAL, GTH, MEDICINA_OCUPACIONAL, ARQCOM_*, POSTVENTA_*)
  * o 'ADICIONAL' si es un correo agregado a mano.
  */

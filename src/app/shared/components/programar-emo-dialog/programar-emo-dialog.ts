@@ -203,10 +203,23 @@ export class ProgramarEmoDialogComponent implements OnInit {
     };
   }
 
-  /** Etiqueta del destinatario: "Clínica ServiSalud", "Jefe Juan Pérez" o el correo a secas. */
+  /**
+   * Etiqueta del destinatario: "Clínica ServiSalud", "Jefe Juan Pérez",
+   * "Solicitante Juan Pérez" o el correo a secas.
+   *
+   * Solo llevan prefijo los destinatarios cuyo nombre es el de una persona o empresa concreta:
+   * sin él no se entendería a título de qué está ahí. Los demás ya traen su propia etiqueta
+   * ("Residente del proyecto", "Medicina Ocupacional") y se muestran tal cual.
+   */
   etiquetaDestinatario(d: ProgramacionDestinatarioDto): string {
     if (!d.nombre) return d.email;
-    const prefijo = d.origen === 'CLINICA' ? 'Clínica' : d.origen === 'JEFE' ? 'Jefe' : '';
+
+    const prefijo =
+      d.origen === 'CLINICA' ? 'Clínica'
+      : d.origen === 'JEFE' ? 'Jefe'
+      : d.origen === 'SOLICITANTE' ? 'Solicitante'
+      : '';
+
     return prefijo ? `${prefijo} ${d.nombre}` : d.nombre;
   }
 
