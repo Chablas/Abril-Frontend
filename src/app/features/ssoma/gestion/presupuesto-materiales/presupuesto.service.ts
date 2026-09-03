@@ -205,6 +205,15 @@ export class PresupuestoMaterialesService {
     );
   }
 
+  /** Activa/desactiva una familia directamente desde Ratios (mismo flag que "Activo" en Catálogo). */
+  actualizarActivoFamilia(familiaId: number, activo: boolean): Observable<unknown> {
+    return this.http.patch(
+      `${this.base}/ratios/familias/${familiaId}/activo`,
+      { activo },
+      { headers: this.authHeaders() },
+    );
+  }
+
   // ── Ratios de drivers (HH / N Trabajadores por m2) ─────────────────
 
   calcularRatiosDrivers(): Observable<CalcularRatiosDriversResultDto> {
@@ -229,6 +238,19 @@ export class PresupuestoMaterialesService {
     return this.http.patch(
       `${this.base}/ratios/drivers/${tipo}/proyectos/${projectId}/incluir`,
       { incluir },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** fuente: 'CALCULADO' | 'MANUAL' | 'PROYECTADO' | null (ninguno, excluye el proyecto). */
+  actualizarFuenteCantidadDriver(
+    tipo: TipoDriverRatio,
+    projectId: number,
+    fuente: string | null,
+  ): Observable<unknown> {
+    return this.http.patch(
+      `${this.base}/ratios/drivers/${tipo}/proyectos/${projectId}/fuente`,
+      { fuente },
       { headers: this.authHeaders() },
     );
   }

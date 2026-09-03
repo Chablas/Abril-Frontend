@@ -73,13 +73,15 @@ export class PresupuestoMainComponent implements OnInit, OnDestroy {
     this.detenerPollProgreso();
   }
 
+  /** Todos los proyectos, no solo los "habilitados" (activos) — un proyecto Finalizado/Inactivo
+   * también necesita subir aquí su Excel de HH/materiales, aunque ya no aparezca en el filtro
+   * de habilitados de otras pantallas. */
   private loadProyectos(): void {
-    this.proyectoHabilitadoSvc.getHabilitados().subscribe({
+    this.proyectoHabilitadoSvc.getTodos().subscribe({
       next: (res) => {
-        this.proyectos = res.map((p) => ({
-          projectId: p.projectId,
-          projectDescription: p.projectDescription,
-        }));
+        this.proyectos = res
+          .map((p) => ({ projectId: p.proyectoId, projectDescription: p.proyectoDescription }))
+          .sort((a, b) => a.projectDescription.localeCompare(b.projectDescription));
         this.cdr.markForCheck();
       },
       error: () => {},

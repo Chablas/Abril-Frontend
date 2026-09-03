@@ -21,6 +21,11 @@ export const AC_REVISIONES_TABS: AbrilPageTab[] = [
   { label: 'Lista',     icono: 'ti-list',             route: '/arquitectura-comercial/revisiones/lista',     featureKey: 'arquitectura-comercial.revisiones.lista' },
 ];
 
+export const AC_COSTOS_TABS: AbrilPageTab[] = [
+  { label: 'Registro',  icono: 'ti-table',            route: '/arquitectura-comercial/costos/registro',  featureKey: 'arquitectura-comercial.costos' },
+  { label: 'Dashboard', icono: 'ti-layout-dashboard',  route: '/arquitectura-comercial/costos/dashboard', featureKey: 'arquitectura-comercial.costos' },
+];
+
 export const AC_TAREO_TABS: AbrilPageTab[] = [
   { label: 'Marcar',            icono: 'ti-clock-play',   route: '/arquitectura-comercial/tareo/marcar',            featureKey: 'arquitectura-comercial.tareo.marcar' },
   { label: 'Enrolamiento',      icono: 'ti-camera',       route: '/arquitectura-comercial/tareo/enrolamiento-asistido', featureKey: 'arquitectura-comercial.tareo.enrolamiento' },

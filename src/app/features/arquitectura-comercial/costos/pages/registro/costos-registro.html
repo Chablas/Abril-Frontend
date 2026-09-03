@@ -1,0 +1,110 @@
+<app-abril-page-header
+  badge="COSTOS"
+  titulo="Registro de Costos"
+  subtitulo="Conteo semanal del gasto del mes y proyección al mes siguiente, por proyecto."
+  [tabs]="tabs"
+  [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+  (secondaryClick)="load()">
+
+  <div tabsExtra class="filtros-row">
+    <div class="w-[240px]">
+      <app-search-select
+        [options]="proyectos"
+        valueField="id"
+        displayField="nombre"
+        placeholder="Buscar proyecto..."
+        [value]="proyectoId"
+        (valueChange)="onProyectoChange($event)">
+      </app-search-select>
+    </div>
+    <select class="abril-field-input periodo-select" [(ngModel)]="mes" (ngModelChange)="onPeriodoChange()">
+      @for (m of nombresMes; track m; let i = $index) {
+        <option [ngValue]="i + 1">{{ m }}</option>
+      }
+    </select>
+    <input
+      type="number"
+      class="abril-field-input periodo-select periodo-select--anio"
+      [(ngModel)]="anio"
+      (ngModelChange)="onPeriodoChange()" />
+  </div>
+</app-abril-page-header>
+
+<div class="costos-root">
+  @if (error) {
+    <div class="alert-error"><i class="ti ti-alert-circle"></i> {{ error }}</div>
+  }
+
+  @if (loading) {
+    <div class="skeleton-card skeleton-card--tall"></div>
+  }
+
+  @if (!loading && matriz) {
+    <div class="costos-layout">
+      <div class="matriz-card">
+        <div class="matriz-card__titulo">{{ matriz.proyectoNombre }}</div>
+
+        <div class="abril-table-wrap">
+          <table class="abril-table costos-table">
+            <thead>
+              <tr>
+                <th rowspan="2" class="col-partida">Partidas</th>
+                <th [attr.colspan]="semanas().length + 1">{{ mesLabel(matriz.mes) }}</th>
+                <th rowspan="2">Total {{ mesProyeccionLabel() }}</th>
+              </tr>
+              <tr>
+                @for (s of semanas(); track s) {
+                  <th class="col-semana">S{{ s }}</th>
+                }
+                <th class="col-total">Total mes</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (partida of matriz.partidas; track partida.partida) {
+                <tr>
+                  <td class="col-partida">{{ partida.partida }}</td>
+                  @for (s of semanas(); track s) {
+                    <td class="col-semana">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        class="celda-input"
+                        [ngModel]="montoSemana(partida.partida, s)"
+                        (change)="guardarRegistro(partida.partida, s, $any($event.target).value)" />
+                    </td>
+                  }
+                  <td class="col-total celda-calculada">{{ partida.totalMes | number: '1.0-2' }}</td>
+                  <td class="col-total celda-calculada">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      class="celda-input"
+                      [ngModel]="montoProyeccion(partida.partida)"
+                      (change)="guardarProyeccion(partida.partida, $any($event.target).value)" />
+                  </td>
+                </tr>
+              }
+              <tr class="fila-subtotal">
+                <td class="col-partida">Subtotal</td>
+                @for (s of semanas(); track s) {
+                  <td class="col-semana celda-calculada">{{ totalSemanaColumna(s) | number: '1.0-2' }}</td>
+                }
+                <td class="col-total celda-calculada">{{ matriz.subtotalMes | number: '1.0-2' }}</td>
+                <td class="col-total celda-calculada">{{ matriz.subtotalProyeccion | number: '1.0-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (!loading && !matriz && !error) {
+    <div class="empty-state">
+      <i class="ti ti-mood-empty"></i>
+      <span>Selecciona un proyecto para ver su registro de costos.</span>
+    </div>
+  }
+</div>

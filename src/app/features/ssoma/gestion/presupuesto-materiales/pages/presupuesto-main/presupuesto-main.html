@@ -31,24 +31,12 @@
     </div>
   } @else {
 
-      <!-- Guía del orden para armar el presupuesto -->
-      <div class="pres-guia">
-        <div class="pres-guia-titulo"><i class="ti ti-route"></i> Orden para armar el presupuesto de este proyecto</div>
-        <ol class="pres-guia-pasos">
-          <li><strong>Cargas</strong> (acá) — sube el Kardex de materiales y el Excel de Horas Hombre.</li>
-          <li><strong>Catálogo → Sin estandarizar</strong> — revisa y asigna cada material pendiente; hasta que no quede ninguno, no cuenta para el ratio.</li>
-          <li><strong>Datos Base</strong> — confirma Área Techada, HH Total y Trabajadores del proyecto.</li>
-          <li><strong>Ratios</strong> — calcula el ratio de consumo por família y revisa qué proyectos incluir o marcar como outlier.</li>
-          <li><strong>Generar presupuesto</strong> — desde la ficha del proyecto (botón "Ir" en Datos Base), con los ratios y datos base ya listos.</li>
-        </ol>
-      </div>
-
       <!-- Materiales (subir + historial) y Horas Hombre (subir + historial), en columnas lado a lado -->
       <div class="pres-upload-grid">
       <div class="pres-col">
       <div class="pres-card">
         <h3 class="pres-card-title"><i class="ti ti-upload"></i> Subir Kardex de materiales</h3>
-        <p class="pres-card-sub">Kardex con columnas Movimiento/Nro. Guía/Partida de Control (.xlsx / .xls), máximo 20 MB. Sube el acumulado completo del proyecto en cada subida — el sistema se queda solo con los egresos de Seguridad y Salud Ocupacional y compara contra lo ya cargado.</p>
+        <p class="pres-card-sub">Descarga el Kardex del S10 y súbelo tal cual, sin modificarlo. Debe ser el acumulado completo del proyecto (no solo lo nuevo de la semana) — el sistema filtra automáticamente los egresos de Seguridad y Salud Ocupacional y compara contra lo ya cargado, así que puedes subirlo cada semana sin miedo a duplicar nada.</p>
         <div class="pres-upload-row">
           <input type="file" accept=".xlsx,.xls" class="pres-file-input" (change)="onArchivoChange($event)" #fileInput />
           <label class="pres-file-label" (click)="fileInput.click()">

@@ -1,0 +1,116 @@
+<app-abril-page-header
+  badge="ALMACÉN"
+  titulo="Dashboard Logístico"
+  subtitulo="Flujo de materiales, participación por proyecto y alertas de stock crítico."
+  [tabs]="tabs"
+  [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+  (secondaryClick)="load()">
+
+  <div tabsExtra class="w-[220px]">
+    <app-search-select
+      [options]="proyectos"
+      valueField="id"
+      displayField="nombre"
+      placeholder="Buscar proyecto..."
+      [value]="proyectoId"
+      (valueChange)="onProyectoChange($event)">
+    </app-search-select>
+  </div>
+</app-abril-page-header>
+
+<div class="dashboard-root">
+  @if (error) {
+    <div class="alert-error"><i class="ti ti-alert-circle"></i> {{ error }}</div>
+  }
+
+  @if (data) {
+    <div class="stats-grid">
+      <div class="stat-card stat-card--consumo">
+        <div class="stat-card__icon"><i class="ti ti-arrow-big-down-lines"></i></div>
+        <div class="stat-card__body">
+          <span class="stat-card__val">{{ totalConsumoGlobal | number: '1.0-0' }}</span>
+          <span class="stat-card__lbl">Consumo total (salidas)</span>
+        </div>
+      </div>
+      <div class="stat-card stat-card--top">
+        <div class="stat-card__icon"><i class="ti ti-building"></i></div>
+        <div class="stat-card__body">
+          <span class="stat-card__val stat-card__val--texto">{{ proyectoQueMasConsume }}</span>
+          <span class="stat-card__lbl">Proyecto que más consume</span>
+        </div>
+      </div>
+      <div class="stat-card stat-card--seguimiento">
+        <div class="stat-card__icon"><i class="ti ti-list-check"></i></div>
+        <div class="stat-card__body">
+          <span class="stat-card__val">{{ totalMaterialesSeguimiento }}</span>
+          <span class="stat-card__lbl">Materiales con umbrales configurados</span>
+        </div>
+      </div>
+      <div class="stat-card stat-card--critico">
+        <div class="stat-card__icon"><i class="ti ti-alert-triangle"></i></div>
+        <div class="stat-card__body">
+          <span class="stat-card__val">{{ totalCriticos }}</span>
+          <span class="stat-card__lbl">Materiales en estado Crítico</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  <div class="dash-body">
+    <div class="dash-card">
+      <h2 class="dash-card__title"><i class="ti ti-chart-bar"></i> Flujo de Materiales: Ingresos vs. Salidas Globales</h2>
+      <div class="chart-card__body"><canvas id="chart-almacen-flujo"></canvas></div>
+    </div>
+
+    <div class="dash-card">
+      <h2 class="dash-card__title"><i class="ti ti-chart-pie"></i> ¿Qué proyecto consume más materiales? (Participación acumulada)</h2>
+      <div class="chart-card__body"><canvas id="chart-almacen-participacion"></canvas></div>
+      @if (data && data.participacionProyectos.length === 0) {
+        <div class="empty-state--inline">Sin salidas registradas.</div>
+      }
+    </div>
+
+    <div class="dash-card dash-card--full">
+      <h2 class="dash-card__title"><i class="ti ti-alert-triangle"></i> Materiales con Stock Crítico y Necesidad de Compra Urgente</h2>
+      <div class="abril-table-wrap">
+        <table class="abril-table dash-table">
+          <thead>
+            <tr>
+              <th>Material / Insumo</th>
+              <th class="ta-c">Stock Actual</th>
+              <th class="ta-c">Punto de Reorden</th>
+              <th class="ta-c">Stock de Seguridad</th>
+              <th class="ta-c">Estado</th>
+              <th>Acción Recomendada</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (!data || data.materialesCriticos.length === 0) {
+              <tr><td colspan="6" class="text-center py-[24px] text-gray-400 text-sm">
+                Ningún material tiene umbrales configurados todavía — edítalos desde Stock y Movimientos → Nuevo material.
+              </td></tr>
+            }
+            @for (m of data?.materialesCriticos ?? []; track trackByMaterial($index, m)) {
+              <tr>
+                <td class="fw-600">{{ m.materialNombre }}</td>
+                <td class="ta-c">{{ m.stockActual | number: '1.0-2' }} {{ m.unidadMedida }}</td>
+                <td class="ta-c">{{ m.puntoReorden | number: '1.0-2' }}</td>
+                <td class="ta-c">{{ m.stockSeguridad | number: '1.0-2' }}</td>
+                <td class="ta-c"><span [class]="estadoClase(m.estado)">{{ m.estado }}</span></td>
+                <td>{{ m.accionRecomendada }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="dash-card dash-card--full">
+      <h2 class="dash-card__title"><i class="ti ti-clock-hour-4"></i> Análisis de Cobertura y Tiempos de Entrega (Días de Stock por Insumo Crítico)</h2>
+      <div class="chart-card__body"><canvas id="chart-almacen-cobertura"></canvas></div>
+      @if (data) {
+        <div class="cobertura-hint">Línea roja = límite de seguridad ({{ data.limiteSeguridadDias }} días).</div>
+      }
+    </div>
+  </div>
+</div>

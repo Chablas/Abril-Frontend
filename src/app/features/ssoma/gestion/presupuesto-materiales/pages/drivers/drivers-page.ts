@@ -95,13 +95,14 @@ export class DriversPage implements OnInit {
     });
   }
 
+  /** Todos los proyectos, no solo los "habilitados" (activos) — un proyecto Finalizado/Inactivo
+   * también necesita entrar a su ficha para completar Datos Base o subir Excel en Cargas. */
   private loadProyectosHabilitados(): void {
-    this.proyectoHabilitadoSvc.getHabilitados().subscribe({
+    this.proyectoHabilitadoSvc.getTodos().subscribe({
       next: (res) => {
-        this.proyectosHabilitados = res.map((p) => ({
-          projectId: p.projectId,
-          projectDescription: p.projectDescription,
-        }));
+        this.proyectosHabilitados = res
+          .map((p) => ({ projectId: p.proyectoId, projectDescription: p.proyectoDescription }))
+          .sort((a, b) => a.projectDescription.localeCompare(b.projectDescription));
         this.cdr.markForCheck();
       },
       error: () => {},

@@ -18,9 +18,10 @@ import { AbrilPageTab } from '../../../../shared/components/abril-page-header/ab
  * es lo correcto.
  */
 export const PRESUPUESTO_TABS: AbrilPageTab[] = [
-  { label: 'Cargas',                  icono: 'ti-file-spreadsheet', route: '/ssoma/gestion/presupuesto-materiales', exact: true },
+  { label: 'Cargar Consumos',         icono: 'ti-file-spreadsheet', route: '/ssoma/gestion/presupuesto-materiales', exact: true },
   { label: 'Datos Base',              icono: 'ti-settings',        route: '/ssoma/gestion/presupuesto-materiales/drivers', exact: true },
   { label: 'Ratios',                  icono: 'ti-chart-bar',       route: '/ssoma/gestion/presupuesto-materiales/ratios', exact: true },
+  { label: 'Gasto SSOMA',             icono: 'ti-report-money',    route: '/ssoma/gestion/presupuesto-materiales/resumen', exact: true },
   { label: 'Kits / BOM',              icono: 'ti-package',         route: '/ssoma/gestion/presupuesto-materiales/kits', exact: true },
   { label: 'Catálogo',                icono: 'ti-list-details',    route: '/ssoma/gestion/presupuesto-materiales/catalogo', exact: true },
 ];

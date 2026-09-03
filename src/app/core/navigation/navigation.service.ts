@@ -151,6 +151,7 @@ export class NavigationService {
         { label: 'Gestión de Actividades',   route: '/arquitectura-comercial/dashboard', featureKey: 'arquitectura-comercial.dashboard' },
         { label: 'Gestión de Observaciones', route: '/arquitectura-comercial/observaciones/dashboard', featureKey: 'arquitectura-comercial.observaciones.dashboard' },
         { label: 'Gestión de Revisiones',    route: '/arquitectura-comercial/revisiones/dashboard', featureKey: 'arquitectura-comercial.revisiones.dashboard' },
+        { label: 'Costos',                   route: '/arquitectura-comercial/costos/registro',      featureKey: 'arquitectura-comercial.costos' },
         {
           label: 'Tareo',
           route: '/arquitectura-comercial/tareo/marcar',
@@ -163,7 +164,16 @@ export class NavigationService {
           ],
         },
       ],
-      groups: [],
+      groups: [
+        {
+          label: 'Almacén',
+          items: [
+            { label: 'Dashboard',                   route: '/almacen/dashboard',      featureKey: 'almacen.materiales' },
+            { label: 'Stock y Movimientos',         route: '/almacen/stock',          featureKey: 'almacen.materiales' },
+            { label: 'Órdenes de Compra/Contratos', route: '/almacen/ordenes-compra', featureKey: 'almacen.ordenes-compra' },
+          ],
+        },
+      ],
     },
     {
       key: 'ssoma',

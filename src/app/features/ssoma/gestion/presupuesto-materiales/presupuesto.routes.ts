@@ -22,6 +22,12 @@ export const PRESUPUESTO_MATERIALES_ROUTES: Routes = [
     data: { titulo: 'PRESUPUESTO MATERIALES · DRIVERS', roles: [] },
   },
   {
+    path: 'resumen',
+    loadComponent: () =>
+      import('./pages/resumen-general/resumen-general').then((m) => m.ResumenGeneralPage),
+    data: { titulo: 'PRESUPUESTO MATERIALES · GASTO SSOMA', roles: [] },
+  },
+  {
     path: 'ratios',
     loadComponent: () =>
       import('./pages/ratios-lista/ratios-lista').then((m) => m.RatiosListaPage),

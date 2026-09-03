@@ -1,0 +1,107 @@
+.costos-root {
+  padding: 16px 24px 32px;
+}
+
+.filtros-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.periodo-select {
+  height: 40px;
+  min-width: 90px;
+}
+
+.periodo-select--anio {
+  width: 90px;
+}
+
+.matriz-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius-standard);
+  padding: 16px;
+}
+
+.matriz-card__titulo {
+  font-weight: 700;
+  font-size: 14px;
+  color: #1f2937;
+  margin-bottom: 12px;
+}
+
+.costos-table th,
+.costos-table td {
+  text-align: center;
+}
+
+.col-partida {
+  text-align: left !important;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.col-semana,
+.col-total {
+  min-width: 90px;
+}
+
+.celda-input {
+  width: 100%;
+  min-width: 70px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 4px 6px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.celda-input:focus {
+  outline: none;
+  border-color: var(--color-abril-standard);
+}
+
+.celda-calculada {
+  font-weight: 600;
+  background: #f3f8f7;
+}
+
+.fila-subtotal td {
+  background: var(--color-abril-standard-light);
+  font-weight: 700;
+}
+
+.alert-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-standard);
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #6b7280;
+  padding: 48px 0;
+}
+
+.skeleton-card--tall {
+  height: 280px;
+  border-radius: var(--radius-standard);
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}

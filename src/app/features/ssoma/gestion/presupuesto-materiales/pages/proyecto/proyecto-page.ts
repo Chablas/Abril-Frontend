@@ -12,9 +12,11 @@ import {
   PresupuestoResumenDto, GenerarPresupuestoDto, HitoCriticoDisponibleDto,
   PersonalHitoDto, PersonalHitoItemInputDto, RatioProyectoDto,
   DriverProyectoDto, RatiosDriversRecomendadosDto,
+  KitResumenDto, KitDetalleDto, KitCalculoLineaDto,
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import Swal from 'sweetalert2';
 import { MilestoneScheduleService } from '../../../../../../core/services/milestoneSchedule.service';
 import { MilestoneScheduleHistoryService } from '../../../../../../core/services/milestoneScheduleHistory.service';
@@ -39,8 +41,20 @@ interface FilaHito {
   esHitoCritico: boolean;
 }
 
+// ── Incremento temporal de la cuadrilla de acero (pasa de contratista a "casa" en proyectos
+// nuevos, con excepción de Cedro 33 y Kaurí que se quedan como estaban). Sacado del histórico
+// real de CAMELIA (único de los 3 proyectos con esta partida ya finalizado; 2A Ingenieria &
+// Negocios S.A.C., 110 días, 31/10/24-03/07/25): 15.671 HH / 19.446 m² = 0,8059 HH/m².
+// Trabajadores: no hay identidad de persona en esa fuente (solo cabezas por día), así que se
+// estima desde el pico de personal en un solo día (31) + 10% de rotación asumida (no medida) =
+// 34,1 personas / 19.446 m² = 0,0018 trab/m². Usar solo hasta que el primer proyecto que ya
+// tenga esta cuadrilla como "casa" complete su propio historial real — ahí reemplazar por el
+// ratio medido en vez de esta estimación.
+const ACERO_HH_POR_M2 = 0.8059;
+const ACERO_TRABAJADORES_POR_M2 = 0.0018;
+
 const ROLES_PERSONAL: string[] = [
-  'PREVENCIONISTA', 'MONITOR', 'VIGIA',
+  'PREVENCIONISTA', 'MONITOR', 'VIGIA', 'ENCAPSULADOR',
   'CAPATAZ', 'OFICIAL', 'OPERARIO', 'PEON', 'AYUDANTE',
 ];
 const SEMANAS_POR_MES = 4.345;
@@ -49,7 +63,7 @@ const SEMANAS_POR_MES = 4.345;
   selector: 'app-proyecto-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
   templateUrl: './proyecto-page.html',
   styleUrl: './proyecto-page.css',
 })
@@ -79,6 +93,11 @@ export class ProyectoPage implements OnInit {
   ratiosDriversRecomendados: RatiosDriversRecomendadosDto | null = null;
   sugiriendoDrivers = false;
 
+  // ── Adicional de cuadrilla de acero (temporal, ver constantes arriba) ──
+  incluirAcero = false;
+  private aceroHhAplicado = 0;
+  private aceroTrabAplicado = 0;
+
   hitosCriticos: HitoCriticoDisponibleDto[] = [];
   loadingHitos = false;
   asignandoHitos = false;
@@ -94,6 +113,76 @@ export class ProyectoPage implements OnInit {
   loadingRatios = false;
   mostrarRatios = false;
   calculandoRatios = false;
+
+  // ── Kits / BOM (Botiquín, Estación de Emergencia): calculadora embebida acá mismo, para no
+  // tener que salir a la pestaña global — el resultado es informativo, la cantidad final se
+  // sigue cargando a mano en el presupuesto (no hay todavía un hook que la inyecte sola). ──
+  mostrarKits = false;
+  kits: KitResumenDto[] = [];
+  kitsCargados = false;
+  kitSeleccionadoId: number | null = null;
+  kitDetalle: KitDetalleDto | null = null;
+  cantidadKits: number | null = null;
+  resultadoKit: KitCalculoLineaDto[] = [];
+
+  /// Familias de "cálculo técnico" por metrado (Barra FRP, Ductos, etc.) — todavía no tienen una
+  /// fórmula/calculadora propia; se listan acá para que no se pierdan de vista mientras se diseña.
+  readonly familiasCalculoTecnico = [
+    'Barra FRP',
+    'Ductos (Fenólico 18mm + Listones 3x2)',
+    'Rodapiés (Triplay Lupuna 8mm)',
+    'Punto de Anclaje Textil',
+    'Tubería PVC 1"',
+  ];
+
+  toggleKits(): void {
+    this.mostrarKits = !this.mostrarKits;
+    if (this.mostrarKits && !this.kitsCargados) this.cargarKits();
+    this.cdr.markForCheck();
+  }
+
+  private cargarKits(): void {
+    this.svc.listarKits().subscribe({
+      next: (kits) => {
+        this.kits = kits;
+        this.kitsCargados = true;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => { this.error.handleError(err); this.cdr.markForCheck(); },
+    });
+  }
+
+  get kitsOpts(): any[] {
+    return this.kits.map((k) => ({ ...k, _label: `${k.nombre} (${k.nombreTipo})` }));
+  }
+
+  onSeleccionarKit(): void {
+    this.resultadoKit = [];
+    this.cantidadKits = null;
+    if (this.kitSeleccionadoId == null) { this.kitDetalle = null; return; }
+    this.loader.show();
+    this.svc.getKit(this.kitSeleccionadoId).subscribe({
+      next: (kit) => { this.kitDetalle = kit; this.loader.hide(); this.cdr.markForCheck(); },
+      error: (err: HttpErrorResponse) => { this.loader.hide(); this.error.handleError(err); this.cdr.markForCheck(); },
+    });
+  }
+
+  calcularKit(): void {
+    if (!this.kitSeleccionadoId || !this.cantidadKits || this.cantidadKits <= 0) return;
+    this.loader.show();
+    this.svc.calcularKit(this.kitSeleccionadoId, this.cantidadKits).subscribe({
+      next: (lineas) => { this.resultadoKit = lineas; this.loader.hide(); this.cdr.markForCheck(); },
+      error: (err: HttpErrorResponse) => { this.loader.hide(); this.error.handleError(err); this.cdr.markForCheck(); },
+    });
+  }
+
+  get kitConsumibles(): KitCalculoLineaDto[] {
+    return this.resultadoKit.filter((r) => r.esConsumible);
+  }
+
+  get kitDurables(): KitCalculoLineaDto[] {
+    return this.resultadoKit.filter((r) => !r.esConsumible);
+  }
 
   // ── Cronograma de hitos (tabla simple, misma data que /mejora-continua/milestone-schedule) ──
   hitosSchedule: FilaHito[] = [];
@@ -495,6 +584,35 @@ export class ProyectoPage implements OnInit {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  /** Suma o quita el adicional estimado de la cuadrilla de acero (ver ACERO_HH_POR_M2 /
+   * ACERO_TRABAJADORES_POR_M2 arriba) sobre lo que ya haya en el formulario — nunca reemplaza,
+   * solo incrementa/decrementa, para no pisar un ajuste manual o una sugerencia previa. */
+  toggleAcero(): void {
+    const area = this.formGenerar.areaTechadaM2 || this.driverProyecto?.areaTechadaM2 || 0;
+    if (!area) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta el Área Techada',
+        text: 'Ingresa el Área Techada antes de activar el adicional de acero.',
+      });
+      this.incluirAcero = false;
+      this.cdr.markForCheck();
+      return;
+    }
+    if (this.incluirAcero) {
+      this.aceroHhAplicado = Math.round(area * ACERO_HH_POR_M2);
+      this.aceroTrabAplicado = Math.round(area * ACERO_TRABAJADORES_POR_M2);
+      this.formGenerar.hhTotalCasa = (this.formGenerar.hhTotalCasa || 0) + this.aceroHhAplicado;
+      this.formGenerar.trabajadores = (this.formGenerar.trabajadores || 0) + this.aceroTrabAplicado;
+    } else {
+      this.formGenerar.hhTotalCasa = Math.max(0, (this.formGenerar.hhTotalCasa || 0) - this.aceroHhAplicado);
+      this.formGenerar.trabajadores = Math.max(0, (this.formGenerar.trabajadores || 0) - this.aceroTrabAplicado);
+      this.aceroHhAplicado = 0;
+      this.aceroTrabAplicado = 0;
+    }
+    this.cdr.markForCheck();
   }
 
   generar(): void {

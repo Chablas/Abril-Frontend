@@ -1,0 +1,189 @@
+<app-abril-page-header
+  badge="ALMACÉN"
+  titulo="Stock y Movimientos"
+  subtitulo="Control de ingresos y salidas de materiales por proyecto."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: 'Nuevo movimiento', icono: 'ti-plus' }"
+  (primaryClick)="abrirNuevoMovimiento()">
+
+  <div tabsExtra class="w-[220px]">
+    <app-search-select
+      [options]="proyectos"
+      valueField="id"
+      displayField="nombre"
+      placeholder="Buscar proyecto..."
+      [value]="proyectoId"
+      (valueChange)="onProyectoChange($event)">
+    </app-search-select>
+  </div>
+  <button tabsExtra type="button" title="Nuevo material"
+          class="flex items-center gap-[6px] px-[12px] py-[7px] rounded-[7px] border text-sm font-medium text-gray-700 hover:bg-gray-50"
+          style="border-color:var(--color-abril-border)"
+          (click)="showNuevoMaterial = true">
+    <i class="ti ti-box"></i> <span>Nuevo material</span>
+  </button>
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="almacen-root">
+  <div class="stock-card">
+    <div class="stock-card__titulo">Saldo actual {{ proyectoId ? 'del proyecto' : '(todos los proyectos)' }}</div>
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Artículo</th>
+            <th>Uni. Medida</th>
+            <th class="text-center">Total Ingresos</th>
+            <th class="text-center">Total Salidas</th>
+            <th class="text-center">Saldo Actual</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (!stock || stock.materiales.length === 0) {
+            <tr><td colspan="6" class="text-center py-[24px] text-gray-400 text-sm">Sin movimientos registrados.</td></tr>
+          }
+          @for (m of stock?.materiales ?? []; track trackByMaterial($index, m)) {
+            <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+              <td>{{ m.materialCodigo }}</td>
+              <td>{{ m.materialNombre }}</td>
+              <td>{{ m.unidadMedida }}</td>
+              <td class="text-center">{{ m.totalIngresos | number: '1.0-2' }}</td>
+              <td class="text-center">{{ m.totalSalidas | number: '1.0-2' }}</td>
+              <td class="text-center" [class.saldo-negativo]="m.saldoActual < 0">{{ m.saldoActual | number: '1.0-2' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="mov-card">
+    <div class="stock-card__titulo">Movimientos</div>
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Proyecto</th>
+            <th>Artículo</th>
+            <th class="text-center">Tipo</th>
+            <th class="text-center">Cantidad</th>
+            <th>Origen/Destino</th>
+            <th>Registrado por</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (movimientos.length === 0) {
+            <tr><td colspan="7" class="text-center py-[24px] text-gray-400 text-sm">{{ filtrosActivos ? 'Sin resultados.' : 'No hay movimientos registrados.' }}</td></tr>
+          }
+          @for (m of movimientos; track trackByMovimiento($index, m)) {
+            <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+              <td class="whitespace-nowrap">{{ m.fecha | date: 'dd/MM/yyyy' }}</td>
+              <td>{{ m.proyectoNombre }}</td>
+              <td>{{ m.materialCodigo }} · {{ m.materialNombre }}</td>
+              <td class="text-center">
+                <span class="badge-tipo" [class.badge-tipo--ingreso]="m.tipo === 'Ingreso'" [class.badge-tipo--salida]="m.tipo === 'Salida'">{{ m.tipo }}</span>
+              </td>
+              <td class="text-center">{{ m.cantidad | number: '1.0-2' }} {{ m.unidadMedida }}</td>
+              <td>{{ m.origen }}</td>
+              <td>{{ m.creadoPor }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <app-paginator [totalRecords]="total" [currentPage]="pagina" [totalPages]="totalPages" (pageChange)="changePage($event)"></app-paginator>
+  </div>
+</div>
+
+@if (showNuevoMovimiento) {
+  <app-base-modal title="NUEVO MOVIMIENTO" width="w-[480px]" (closeModal)="showNuevoMovimiento = false">
+    <div class="flex flex-col gap-[14px] mt-[16px]">
+      <app-search-select
+        [options]="proyectos"
+        valueField="id"
+        displayField="nombre"
+        placeholder="Buscar proyecto..."
+        label="Proyecto"
+        [value]="nuevoMovimiento.proyectoId"
+        (valueChange)="nuevoMovimiento.proyectoId = $event">
+      </app-search-select>
+
+      <app-search-select
+        [options]="materiales"
+        valueField="id"
+        displayField="nombre"
+        placeholder="Buscar material..."
+        label="Material"
+        [value]="nuevoMovimiento.materialId"
+        (valueChange)="nuevoMovimiento.materialId = $event">
+      </app-search-select>
+
+      <div class="flex gap-[10px]">
+        <select class="abril-field-input" style="flex:1" [(ngModel)]="nuevoMovimiento.tipo">
+          @for (t of tiposMovimiento; track t) { <option [ngValue]="t">{{ t }}</option> }
+        </select>
+        <input type="date" class="abril-field-input" style="flex:1" [(ngModel)]="nuevoMovimiento.fecha" />
+      </div>
+
+      <input type="number" min="0.01" step="0.01" class="abril-field-input" placeholder="Cantidad" [(ngModel)]="nuevoMovimiento.cantidad" />
+      <input type="text" class="abril-field-input" placeholder="Origen (proveedor) o destino" [(ngModel)]="nuevoMovimiento.origen" />
+      <textarea class="abril-field-input" placeholder="Comentario (opcional)" rows="2" [(ngModel)]="nuevoMovimiento.comentario"></textarea>
+
+      <div class="flex justify-center mt-[4px]">
+        <button (click)="guardarMovimiento()" [disabled]="guardando" class="w-[160px] py-[8px] rounded-[10px] cursor-pointer" style="background:var(--color-abril-standard)">
+          <p class="text-white text-base font-medium text-center">Guardar</p>
+        </button>
+      </div>
+    </div>
+  </app-base-modal>
+}
+
+@if (showNuevoMaterial) {
+  <app-base-modal title="NUEVO MATERIAL" width="w-[400px]" (closeModal)="showNuevoMaterial = false">
+    <div class="flex flex-col gap-[14px] mt-[16px]">
+      <input type="text" class="abril-field-input" placeholder="Código" [(ngModel)]="nuevoMaterial.codigo" />
+      <input type="text" class="abril-field-input" placeholder="Nombre del artículo" [(ngModel)]="nuevoMaterial.nombre" />
+      <input type="text" class="abril-field-input" placeholder="Unidad de medida (UND, METRO, BOLSAS...)" [(ngModel)]="nuevoMaterial.unidadMedida" />
+      <div class="flex gap-[10px]">
+        <input type="number" min="0" step="0.01" class="abril-field-input" style="flex:1" placeholder="Punto de reorden (opcional)" [(ngModel)]="nuevoMaterial.puntoReorden" />
+        <input type="number" min="0" step="0.01" class="abril-field-input" style="flex:1" placeholder="Stock de seguridad (opcional)" [(ngModel)]="nuevoMaterial.stockSeguridad" />
+      </div>
+      <p class="hint-umbrales">Solo los materiales con estos dos umbrales configurados aparecen en el dashboard de stock crítico.</p>
+      <div class="flex justify-center mt-[4px]">
+        <button (click)="guardarMaterial()" [disabled]="guardando" class="w-[160px] py-[8px] rounded-[10px] cursor-pointer" style="background:var(--color-abril-standard)">
+          <p class="text-white text-base font-medium text-center">Guardar</p>
+        </button>
+      </div>
+    </div>
+  </app-base-modal>
+}
+
+@if (filtrosAbiertos) {
+  <app-filter-modal (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+    <div class="w-full flex flex-col gap-[12px]">
+      <app-search-select
+        [options]="materiales"
+        valueField="id"
+        displayField="nombre"
+        placeholder="Buscar material..."
+        label="Material"
+        [value]="materialIdFiltro"
+        (valueChange)="materialIdFiltro = $event; onFilterChange()">
+      </app-search-select>
+
+      <select class="abril-field-input" [(ngModel)]="tipoFiltro" (ngModelChange)="onFilterChange()">
+        <option [ngValue]="null">Todos los tipos</option>
+        @for (t of tiposMovimiento; track t) { <option [ngValue]="t">{{ t }}</option> }
+      </select>
+
+      <div class="flex gap-[10px]">
+        <input type="date" class="abril-field-input" style="flex:1" [(ngModel)]="desde" (ngModelChange)="onFilterChange()" />
+        <input type="date" class="abril-field-input" style="flex:1" [(ngModel)]="hasta" (ngModelChange)="onFilterChange()" />
+      </div>
+    </div>
+  </app-filter-modal>
+}
