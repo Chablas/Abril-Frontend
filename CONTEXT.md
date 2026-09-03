@@ -5585,3 +5585,20 @@ Los cambios que aparecían sin commitear en `evaluaciones/` y `core/navigation/`
 
 ### Verificado
 `ng build` → 0 errores (solo warnings preexistentes de dependencias CommonJS).
+
+## Sesión 2026-09-03 — Residente sin selector de Proyecto/Empresa en Gestión de Ingresos
+
+### Problema
+El rol `RESIDENTE` no veía los combos "Proyecto"/"Empresa" en `/habilitacion/gestion/empresa` (pestaña Empresa de Gestión de Ingresos) — caía siempre en el empty state "Selecciona una empresa o un proyecto...".
+
+### Causa
+`empresa.ts:isAdmin()` (método local del componente, no un flag global — cada página de `habilitacion` define su propio `isAdmin()` con su propia lista de roles) solo incluía `ADMINISTRADOR_SSOMA`, `ADMINISTRADOR_ADMINISTRACION`, `ADMINISTRADOR_UDP`, `COORDINADOR_SSOMA`. El bloque de combos en `empresa.html:5` está detrás de `*ngIf="isAdmin()"`. `RESIDENTE` tampoco cae en `isContratista()` (depende de `user.tipo === 'CONTRATISTA'`, no de rol) → sin ningún control visible.
+
+### Fix
+`features/habilitacion/pages/empresa/empresa.ts:233-241` — agregado `Roles.RESIDENTE` a la condición de `isAdmin()`. Cambio aislado a este componente: verificado que `evaluacion-supervisores.ts` y `dashboard-hab.component.ts` tienen su propio `isAdmin()` local independiente (no se ven afectados).
+
+### Pendiente / detectado de paso (no resuelto esta sesión)
+La pantalla "Registros Modelo" (ATS, checklists, etc. — `/habilitacion/registros-modelo`) tiene datos cargados en la tabla `SsRegistroModelo` pero **no está enlazada en ningún menú del sidebar** (revisado `navigation.service.ts` completo) y su ruta tiene `roles: ['CONTRATISTA']` en `habilitacion.routes.ts:179`. Queda como funcionalidad huérfana — pendiente decidir si se engancha al menú y para qué rol(es).
+
+### Verificado
+`ng build` → 0 errores (solo warnings preexistentes de dependencias CommonJS).
