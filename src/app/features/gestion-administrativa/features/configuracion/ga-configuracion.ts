@@ -122,7 +122,7 @@ export class GaConfiguracion implements OnInit {
       route: '/gestion-administrativa/configuracion/correos',
       featureKey: 'gestion-administrativa.config.correos',
       subtitulo:
-        'Define, por cada correo del flujo de salidas, a quién se le envía y a quién nunca (la exclusión gana). Cada destinatario puede ser un trabajador, un área (se envía a sus miembros) o un correo escrito a mano.',
+        'Qué correos del flujo de salidas se envían y quién los recibe. Cada destinatario se prende y se apaga por separado, incluido el que resuelve el sistema. Puede ser un trabajador, un área (se envía a sus miembros) o un correo escrito a mano.',
     },
     // Por rol y no por featureKey: la firma es de la persona, no de una funcionalidad. Todo
     // USUARIO DE ABRIL entra acá a registrar la suya, y es la MISMA que se estampa en las facturas

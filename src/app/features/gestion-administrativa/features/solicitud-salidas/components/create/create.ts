@@ -70,6 +70,7 @@ export class SolicitudSalidaCreate implements OnInit {
     aprobadorEmail: null,
     esTI: false,
     trayectosCatalogo: [],
+    trayectosNoReembolsables: [],
   };
 
   fechaSalida = '';
@@ -171,7 +172,7 @@ export class SolicitudSalidaCreate implements OnInit {
     }
   }
 
-  private destinoLabel(t: TrayectoForm): string {
+  destinoLabel(t: TrayectoForm): string {
     if (t.lugarDestinoLibre) return t.lugarDestinoLibre;
     if (t.lugarDestinoId == null) return '';
     const lugar = (this.formData.lugares ?? []).find((l: any) => l.id === t.lugarDestinoId);
@@ -189,6 +190,77 @@ export class SolicitudSalidaCreate implements OnInit {
       (c) => c.lugarOrigenId === t.lugarOrigenId && c.lugarDestinoId === t.lugarDestinoId,
     );
     return match ? match.monto : null;
+  }
+
+  // ── Reembolso de movilidad ─────────────────────────────────────────
+  // La regla es asimétrica y se decide entre dos configuraciones (Gestión
+  // Administrativa → Configuración): el MOTIVO concede el reembolso y el
+  // TRAYECTO puede quitárselo, nunca al revés. Por eso un par (origen, destino)
+  // marcado como no reembolsable (hoy Oficina Central ↔ Bosque Real, que la
+  // empresa cubre con movilidad propia) gana sobre el motivo.
+  // Acá solo se informa: el trabajador no elige si su salida es reembolsable.
+
+  /** Etiqueta del lugar de origen del trayecto (texto libre, o nombre del catálogo). */
+  origenLabel(t: TrayectoForm): string {
+    if (t.lugarOrigenLibre) return t.lugarOrigenLibre;
+    if (t.lugarOrigenId == null) return '';
+    return (this.formData.lugares ?? []).find((l) => l.id === t.lugarOrigenId)?.nombreDisplay ?? '';
+  }
+
+  /** Motivo del trayecto tal cual se guardará: el del catálogo, o el de "Otro motivo". */
+  motivoLabel(t: TrayectoForm): string {
+    if (t.motivoLibreOn) return t.motivoLibre?.trim() || 'Otro motivo';
+    if (t.motivoId == null) return '';
+    return this.formData.motivos.find((m) => m.id === t.motivoId)?.descripcion ?? '';
+  }
+
+  /** "Origen → Destino", o cadena vacía mientras falte alguno de los dos. */
+  rutaLabel(t: TrayectoForm): string {
+    const origen = this.origenLabel(t);
+    const destino = this.destinoLabel(t);
+    return origen && destino ? `${origen} → ${destino}` : '';
+  }
+
+  /**
+   * true si el motivo elegido concede reembolso. "Otro motivo" nunca lo concede:
+   * un motivo fuera del catálogo no tiene configuración que consultar.
+   */
+  motivoEsReembolsable(t: TrayectoForm): boolean {
+    if (t.motivoId == null) return false;
+    return this.formData.motivos.find((m) => m.id === t.motivoId)?.esReembolsable ?? false;
+  }
+
+  /** true si el par (origen, destino) elegido está marcado como no reembolsable. */
+  trayectoExcluido(t: TrayectoForm): boolean {
+    if (t.lugarOrigenId == null || t.lugarDestinoId == null) return false;
+    return (this.formData.trayectosNoReembolsables ?? []).some(
+      (p) => p.lugarOrigenId === t.lugarOrigenId && p.lugarDestinoId === t.lugarDestinoId,
+    );
+  }
+
+  /** true si el trayecto genera reembolso: lo concede el motivo y el trayecto no lo anula. */
+  trayectoCorrespondeReembolso(t: TrayectoForm): boolean {
+    return this.motivoEsReembolsable(t) && !this.trayectoExcluido(t);
+  }
+
+  /**
+   * El aviso de reembolso solo aparece cuando algún trayecto eligió un motivo que lo
+   * concede: para el resto de salidas no hay nada que informar.
+   */
+  get mostrarReembolso(): boolean {
+    return this.trayectos.some((t) => this.motivoEsReembolsable(t));
+  }
+
+  /** true si al menos un trayecto termina generando reembolso. */
+  get correspondeReembolso(): boolean {
+    return this.trayectos.some((t) => this.trayectoCorrespondeReembolso(t));
+  }
+
+  /** Motivo por el que un trayecto no genera reembolso; vacío si sí lo genera. */
+  razonSinReembolso(t: TrayectoForm): string {
+    if (this.trayectoCorrespondeReembolso(t)) return '';
+    if (this.trayectoExcluido(t)) return 'trayecto no reembolsable';
+    return 'motivo no reembolsable';
   }
 
   // ── Manejo de horas ────────────────────────────────────────────────

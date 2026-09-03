@@ -10,6 +10,9 @@ export interface MotivoSalidaDto {
   /** Si false, el formulario no pide horas ni lugares y la solicitud queda con un solo
    *  trayecto (ej. licencia sin goce de haber). */
   pideHorasLugares: boolean;
+  /** Si true, una salida con este motivo genera reembolso de movilidad. Los pares de
+   *  `trayectosNoReembolsables` lo anulan; un trayecto nunca lo concede por su cuenta. */
+  esReembolsable: boolean;
 }
 
 export interface LugarSalidaDto {
@@ -24,6 +27,12 @@ export interface TrayectoCatalogoOptionDto {
   monto: number;
 }
 
+/** Par (origen, destino) del catálogo que nunca genera reembolso. */
+export interface TrayectoNoReembolsableDto {
+  lugarOrigenId: number;
+  lugarDestinoId: number;
+}
+
 export interface SolicitudSalidaFormDataDto {
   motivos: MotivoSalidaDto[];
   lugares: LugarSalidaDto[];
@@ -32,4 +41,8 @@ export interface SolicitudSalidaFormDataDto {
   esTI: boolean;
   /** Catálogo (lugarOrigenId, lugarDestinoId) → monto. Solo poblado si esTI. */
   trayectosCatalogo: TrayectoCatalogoOptionDto[];
+  /** Pares (origen, destino) que anulan el reembolso del motivo. Llega para todos:
+   *  la regla de reembolso no depende de ser TI (a diferencia de `trayectosCatalogo`,
+   *  que lleva montos). */
+  trayectosNoReembolsables: TrayectoNoReembolsableDto[];
 }

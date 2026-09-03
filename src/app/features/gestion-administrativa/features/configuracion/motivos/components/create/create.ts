@@ -24,6 +24,8 @@ export class GaMotivoCreate {
   requiereMotivoAdicional = false;
   /** Un motivo nuevo se comporta como los de siempre: pide horas, lugares y trayectos. */
   pideHorasLugares = true;
+  /** Un motivo nuevo no genera reembolso salvo que se marque: el reembolso es la excepción. */
+  esReembolsable = false;
   submitted = false;
 
   constructor(
@@ -44,6 +46,7 @@ export class GaMotivoCreate {
         esHoraEstimada: this.esHoraEstimada,
         requiereMotivoAdicional: this.requiereMotivoAdicional,
         pideHorasLugares: this.pideHorasLugares,
+        esReembolsable: this.esReembolsable,
       })
       .subscribe({
       next: (res) => {

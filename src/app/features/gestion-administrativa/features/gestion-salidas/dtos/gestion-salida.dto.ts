@@ -5,6 +5,8 @@
 
 export interface GestionSalidaListItemDto {
   id: number;
+  /** Código SOL-AAAA-NNNN. Null solo en solicitudes anteriores a la columna. */
+  codigo: string | null;
   workerId: number;
   trabajador: string;
   /**
@@ -168,6 +170,8 @@ export interface GestionSalidaTrayectoDto {
 
 export interface GestionSalidaDetalleDto {
   id: number;
+  /** Código SOL-AAAA-NNNN. Null solo en solicitudes anteriores a la columna. */
+  codigo: string | null;
   workerId: number;
   trabajador: string;
   /** Área más baja del trabajador (último nodo de `areaRuta`). */

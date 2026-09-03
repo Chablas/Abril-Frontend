@@ -57,6 +57,18 @@
       </span>
     </label>
 
+    <label class="flex items-start gap-[8px] cursor-pointer select-none w-fit">
+      <input
+        type="checkbox"
+        class="w-4 h-4 mt-[2px] cursor-pointer"
+        style="accent-color:var(--color-abril-primary)"
+        [(ngModel)]="esReembolsable" />
+      <span class="flex flex-col">
+        <span class="text-sm text-gray-700">Reembolsable</span>
+        <span class="text-xs text-gray-400">Las salidas con este motivo generan reembolso de movilidad, salvo en los trayectos marcados como no reembolsables.</span>
+      </span>
+    </label>
+
     <div class="flex justify-center mt-[4px]">
       <button
         (click)="save()"

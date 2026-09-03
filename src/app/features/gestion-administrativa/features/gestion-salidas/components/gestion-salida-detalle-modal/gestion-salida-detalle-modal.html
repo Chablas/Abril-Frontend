@@ -1,5 +1,5 @@
 ﻿<app-base-modal
-  [title]="'Detalle de la solicitud'"
+  [title]="detalle?.codigo ? 'Solicitud ' + detalle.codigo : 'Detalle de la solicitud'"
   width="w-[720px]"
   (closeModal)="cerrar()">
 

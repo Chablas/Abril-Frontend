@@ -67,7 +67,7 @@
               style="accent-color:var(--color-abril-accent)"
               title="Seleccionar / deseleccionar todo" />
           </th>
-          <th>#</th>
+          <th>N° solicitud</th>
           <th>Fecha</th>
           <th>Salida</th>
           <th>Retorno</th>
@@ -104,7 +104,7 @@
               style="accent-color:var(--color-abril-accent)" />
           </td>
 
-          <td class="text-gray-500">{{ i + 1 }}</td>
+          <td class="text-gray-700 font-medium whitespace-nowrap">{{ s.codigo ?? '—' }}</td>
           <td class="text-gray-700">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
           <td class="text-gray-700">
             {{ s.horaSalida ?? '—' }}

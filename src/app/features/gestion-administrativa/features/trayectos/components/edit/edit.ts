@@ -28,6 +28,7 @@ export class GaTrayectoEdit implements OnInit {
   lugarOrigenId: number | null = null;
   lugarDestinoId: number | null = null;
   monto: number | null = null;
+  esReembolsable = true;
   submitted = false;
 
   constructor(
@@ -40,6 +41,7 @@ export class GaTrayectoEdit implements OnInit {
     this.lugarOrigenId  = this.trayecto.lugarOrigenId;
     this.lugarDestinoId = this.trayecto.lugarDestinoId;
     this.monto          = this.trayecto.monto;
+    this.esReembolsable = this.trayecto.esReembolsable;
     this.loadLugares();
   }
 
@@ -88,6 +90,7 @@ export class GaTrayectoEdit implements OnInit {
         lugarOrigenId: this.lugarOrigenId,
         lugarDestinoId: this.lugarDestinoId,
         monto: this.monto,
+        esReembolsable: this.esReembolsable,
       })
       .subscribe({
         next: (res) => {

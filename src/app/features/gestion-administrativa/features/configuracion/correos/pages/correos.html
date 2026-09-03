@@ -1,215 +1,266 @@
-<div class="flex flex-col gap-[12px] flex-1 min-h-0 overflow-auto pt-[4px] pb-[8px]">
+<div class="config-stack">
 
-  <!-- Pestañas internas: un correo a la vez -->
+  <!-- Una pestaña por cada correo del flujo. -->
   <app-section-tabs
-    class="shrink-0"
+    *ngIf="eventos.length > 1"
     [tabs]="sectionTabs"
-    [value]="activeCodigo"
+    [value]="eventoActivoCodigo"
     color="var(--color-abril-standard)"
-    (valueChange)="onTabChange($event)">
+    (valueChange)="onSectionChange($event)">
   </app-section-tabs>
 
-  <ng-container *ngIf="activeEvento as ev">
-    <ng-container *ngIf="activeEstado as est">
+  <ng-container *ngIf="eventoActivo as evento">
+    <div class="config-card" [class.config-card--off]="!evento.active">
 
-      <!-- Descripción + interruptor maestro del correo -->
-      <div class="flex items-start justify-between gap-[12px] shrink-0">
-        <p class="text-xs text-gray-500 leading-relaxed">{{ ev.descripcion }}</p>
+      <div class="config-card__head config-card__head--row">
+        <div class="config-card__headtext">
+          <h3 class="config-card__title">
+            <i class="ti ti-mail"></i>
+            {{ evento.nombre }}
+          </h3>
+          <p class="config-card__sub" *ngIf="evento.descripcion">{{ evento.descripcion }}</p>
+        </div>
 
-        <div *ngIf="ev.permiteDesactivarEnvio" class="flex items-center gap-[8px] shrink-0">
-          <span class="text-[11px] font-medium whitespace-nowrap"
-                [ngClass]="est.active ? 'text-[#3C7A16]' : 'text-gray-400'">
-            {{ est.active ? 'Correo activo' : 'Correo desactivado' }}
+        <!-- Interruptor maestro: apaga el correo completo sin perder su configuración -->
+        <div class="master" *ngIf="evento.permiteDesactivarEnvio">
+          <span class="master__label" [class.master__label--off]="!evento.active">
+            {{ evento.active ? 'Correo activo' : 'Correo desactivado' }}
           </span>
-          <button type="button" class="switch" role="switch"
-            [attr.aria-checked]="est.active"
-            [attr.aria-label]="(est.active ? 'Desactivar' : 'Activar') + ' ' + ev.nombre"
-            [class.switch--on]="est.active"
-            (click)="toggleEnvio()">
+          <button
+            type="button"
+            class="switch"
+            role="switch"
+            [attr.aria-checked]="evento.active"
+            [attr.aria-label]="(evento.active ? 'Desactivar' : 'Activar') + ' ' + evento.nombre"
+            [class.switch--on]="evento.active"
+            [disabled]="savingEventoCodigo !== null"
+            (click)="toggleEvento(evento)">
             <span class="switch__knob"></span>
           </button>
         </div>
       </div>
 
-      <!-- Avisos: correo apagado, o prendido pero sin nadie a quién mandárselo -->
-      <p *ngIf="!est.active"
-        class="text-[11px] text-[#92400E] bg-[#FEF9C3] border border-[#FDE68A] rounded-[8px] px-[12px] py-[8px] shrink-0">
-        Este correo no se está enviando. Su configuración se conserva y vuelve a salir apenas lo actives.
-      </p>
-      <p *ngIf="sinDestinatarios"
-        class="text-[11px] text-[#B42318] bg-[#FDECEC] border border-[#F5C9C6] rounded-[8px] px-[12px] py-[8px] shrink-0">
-        Con el destinatario principal apagado y sin destinatarios activos en "Se enviará a", este correo
-        no le llega a nadie: no se enviará.
+      <!-- Avisos de estado, no explicaciones: uno solo y de una línea. -->
+      <p class="config-warn config-warn--off" *ngIf="!evento.active">
+        <i class="ti ti-mail-off"></i>
+        <span>Desactivado: este correo no se envía a nadie.</span>
       </p>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-[16px] shrink-0"
-           [class.opacity-60]="!est.active">
+      <p class="config-warn" *ngIf="sinDestinatarios">
+        <i class="ti ti-alert-triangle"></i>
+        <span>No le llega a nadie: no hay ningún destinatario activo.</span>
+      </p>
 
-        <!-- Columna: se enviará a (inclusiones) -->
-        <section class="border border-[#D6DEE5] rounded-[10px] overflow-hidden flex flex-col">
-          <header class="px-[14px] py-[10px] bg-[#E9F7E0] border-b border-[#CFE9BD]">
-            <p class="text-sm font-semibold text-[#3C7A16]">Se enviará a</p>
-            <p class="text-[11px] text-gray-500">Destinatarios del correo (además del destinatario principal).</p>
-          </header>
-          <div class="p-[12px] flex flex-col gap-[10px]">
-
-            <!-- Destinatario principal: lo resuelve el backend al enviar, acá solo se prende o apaga -->
-            <div *ngIf="ev.permiteDesactivarPrincipal"
-              class="border rounded-[8px] p-[10px] flex items-center justify-between gap-[10px] transition-colors"
-              [ngClass]="est.destinatarioPrincipalActivo
-                ? 'border-[#CFE9BD] bg-[#F4FBEE]'
-                : 'border-[#E2E8EE] bg-gray-50'">
-              <div class="min-w-0">
-                <p class="text-[12px] font-semibold"
-                   [ngClass]="est.destinatarioPrincipalActivo ? 'text-[#3C7A16]' : 'text-gray-400'">
-                  Destinatario principal
-                </p>
-                <p class="text-[11px] text-gray-500 leading-snug">
-                  {{ ev.destinatarioPrincipalNombre }}. Se resuelve automáticamente al enviar.
-                </p>
-              </div>
-              <button type="button" class="switch shrink-0" role="switch"
-                [attr.aria-checked]="est.destinatarioPrincipalActivo"
-                [attr.aria-label]="(est.destinatarioPrincipalActivo ? 'Desactivar' : 'Activar') + ' destinatario principal'"
-                [class.switch--on]="est.destinatarioPrincipalActivo"
-                (click)="togglePrincipal()">
-                <span class="switch__knob"></span>
-              </button>
-            </div>
-
-            <ng-container *ngFor="let row of est.incluir; let i = index">
-              <ng-container *ngTemplateOutlet="filaTpl; context: { $implicit: row, lista: est.incluir, index: i }"></ng-container>
-            </ng-container>
-            <p *ngIf="est.incluir.length === 0" class="text-xs text-gray-400 text-center py-[8px]">
-              Sin destinatarios configurados.
-            </p>
-            <div>
-              <button type="button" (click)="agregar(est.incluir)"
-                class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-[#64BC04] text-[#3C7A16] hover:bg-[#E5F7D1] transition-colors cursor-pointer">
-                + Agregar destinatario
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <!-- Columna: nunca se enviará a (exclusiones) -->
-        <section class="border border-[#D6DEE5] rounded-[10px] overflow-hidden flex flex-col">
-          <header class="px-[14px] py-[10px] bg-[#FDECEC] border-b border-[#F5C9C6]">
-            <p class="text-sm font-semibold text-[#B42318]">Nunca se enviará a</p>
-            <p class="text-[11px] text-gray-500">Gana sobre la lista de envío, incluso si es miembro de un área.</p>
-          </header>
-          <div class="p-[12px] flex flex-col gap-[10px]">
-            <ng-container *ngFor="let row of est.excluir; let i = index">
-              <ng-container *ngTemplateOutlet="filaTpl; context: { $implicit: row, lista: est.excluir, index: i }"></ng-container>
-            </ng-container>
-            <p *ngIf="est.excluir.length === 0" class="text-xs text-gray-400 text-center py-[8px]">
-              Nadie excluido.
-            </p>
-            <div>
-              <button type="button" (click)="agregar(est.excluir)"
-                class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-[#D30000] text-[#B42318] hover:bg-[#FAD5D4] transition-colors cursor-pointer">
-                + Agregar exclusión
-              </button>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      <div class="flex justify-center mt-[4px] shrink-0">
-        <button type="button" (click)="guardar()" [disabled]="guardando"
-          class="w-[200px] py-[9px] rounded-[10px] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-default"
-          style="background: var(--color-abril-standard)">
-          <p class="text-white text-base font-medium text-center">Guardar</p>
+      <div class="destinatarios__head">
+        <button type="button" class="btn-add" (click)="abrirAlta()">
+          <i class="ti ti-plus"></i> Agregar destinatario
         </button>
       </div>
-    </ng-container>
+
+      <div class="matriz-wrap">
+        <table class="matriz">
+          <thead>
+            <tr>
+              <th class="matriz__dest">Destinatario</th>
+              <th class="matriz__tipo">Recibe como</th>
+              <th class="matriz__tipo">Tipo</th>
+              <th class="matriz__switch">Activo</th>
+              <th class="matriz__acciones"></th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <!-- Destinatario principal: no es una fila de reglas, lo resuelve el backend al
+                 enviar. Se dibuja igual que los demás para que su interruptor esté al lado. -->
+            <tr *ngIf="evento.permiteDesactivarPrincipal">
+              <td class="matriz__dest">
+                <div class="dest">
+                  <span class="dest__name">
+                    {{ evento.destinatarioPrincipalNombre || 'Destinatario principal' }}
+                    <span class="dest__tag dest__tag--auto">Sistema</span>
+                  </span>
+                  <span class="dest__email dest__email--auto">
+                    <i class="ti ti-wand"></i> Lo resuelve el sistema al enviar
+                  </span>
+                </div>
+              </td>
+
+              <td class="matriz__tipo"><span class="pill">Para</span></td>
+              <td class="matriz__tipo"><span class="pill pill--cc">Automático</span></td>
+
+              <td class="matriz__switch">
+                <button
+                  type="button"
+                  class="switch"
+                  role="switch"
+                  [attr.aria-checked]="evento.destinatarioPrincipalActivo"
+                  [attr.aria-label]="(evento.destinatarioPrincipalActivo ? 'Desactivar' : 'Activar') + ' destinatario principal'"
+                  [class.switch--on]="evento.destinatarioPrincipalActivo"
+                  [disabled]="savingDestinatarioId !== null"
+                  (click)="togglePrincipal(evento)">
+                  <span class="switch__knob"></span>
+                </button>
+              </td>
+
+              <td class="matriz__acciones"></td>
+            </tr>
+
+            <tr *ngFor="let fila of evento.destinatarios; trackBy: trackFila">
+              <td class="matriz__dest">
+                <div class="dest">
+                  <span class="dest__name">{{ fila.nombre || '—' }}</span>
+
+                  <!-- Trabajador y correo a mano: la dirección es el dato -->
+                  <span class="dest__email" *ngIf="fila.email">
+                    <i class="ti ti-at"></i> {{ fila.email }}
+                  </span>
+
+                  <!-- Área: se expande a los correos de sus miembros al enviar -->
+                  <span class="dest__email" *ngIf="fila.tipoCodigo === 'AREA' && !fila.sinCorreo">
+                    <i class="ti ti-wand"></i>
+                    {{ fila.miembros }} {{ fila.miembros === 1 ? 'trabajador' : 'trabajadores' }}
+                    <span class="dest__who">· {{ fila.incluirDescendientes ? 'con sub-áreas' : 'sin sub-áreas' }}</span>
+                  </span>
+
+                  <span class="dest__email dest__email--warn" *ngIf="fila.sinCorreo">
+                    <i class="ti ti-alert-circle"></i> Hoy no resuelve a ningún correo
+                  </span>
+                </div>
+              </td>
+
+              <!-- Los destinatarios configurados van siempre en copia: el "Para" es del principal
+                   (y lo ocupan ellos solo si el principal está apagado). -->
+              <td class="matriz__tipo"><span class="pill pill--cc">CC</span></td>
+              <td class="matriz__tipo"><span class="pill">{{ tipoLabel(fila) }}</span></td>
+
+              <td class="matriz__switch">
+                <button
+                  type="button"
+                  class="switch"
+                  role="switch"
+                  [attr.aria-checked]="fila.active"
+                  [attr.aria-label]="(fila.active ? 'Desactivar' : 'Activar') + ' ' + fila.nombre"
+                  [class.switch--on]="fila.active"
+                  [disabled]="savingDestinatarioId !== null"
+                  (click)="toggleDestinatario(fila)">
+                  <span class="switch__knob"></span>
+                </button>
+              </td>
+
+              <td class="matriz__acciones">
+                <button
+                  type="button"
+                  class="btn-icon"
+                  [disabled]="savingDestinatarioId === fila.id"
+                  title="Editar destinatario"
+                  (click)="abrirEdicion(fila)">
+                  <i class="ti ti-pencil"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn-icon btn-icon--danger"
+                  [disabled]="savingDestinatarioId === fila.id"
+                  title="Eliminar"
+                  (click)="eliminar(fila)">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="correo-empty" *ngIf="!evento.destinatarios.length && !evento.permiteDesactivarPrincipal && !loading">
+        Sin destinatarios.
+      </p>
+    </div>
   </ng-container>
 </div>
 
-<!-- ── Plantilla de fila de destinatario (reusada por ambas columnas) ─────── -->
-<ng-template #filaTpl let-row let-lista="lista" let-i="index">
-  <div class="border border-[#E2E8EE] rounded-[8px] p-[10px] flex flex-col gap-[8px] bg-white">
+<!-- ── Modal de alta/edición de un destinatario ── -->
+<app-abril-modal-panel
+  *ngIf="formOpen"
+  [titulo]="formTitulo"
+  icono="ti-mail-plus"
+  width="520px"
+  (closeModal)="cerrarForm()">
 
-    <!-- Selector de tipo + quitar -->
-    <div class="flex items-center justify-between gap-[8px]">
-      <div class="flex gap-[4px]">
-        <button type="button" (click)="setTipo(row, 'TRABAJADOR')"
-          class="text-[11px] px-[8px] py-[3px] rounded-full border transition-colors cursor-pointer"
-          [ngClass]="row.tipoCodigo === 'TRABAJADOR'
-            ? 'border-[var(--color-abril-standard)] bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)] font-semibold'
-            : 'border-gray-200 text-gray-500 hover:bg-gray-50'">
-          Trabajador
-        </button>
-        <button type="button" (click)="setTipo(row, 'AREA')"
-          class="text-[11px] px-[8px] py-[3px] rounded-full border transition-colors cursor-pointer"
-          [ngClass]="row.tipoCodigo === 'AREA'
-            ? 'border-[var(--color-abril-standard)] bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)] font-semibold'
-            : 'border-gray-200 text-gray-500 hover:bg-gray-50'">
-          Área
-        </button>
-        <button type="button" (click)="setTipo(row, 'CORREO')"
-          class="text-[11px] px-[8px] py-[3px] rounded-full border transition-colors cursor-pointer"
-          [ngClass]="row.tipoCodigo === 'CORREO'
-            ? 'border-[var(--color-abril-standard)] bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)] font-semibold'
-            : 'border-gray-200 text-gray-500 hover:bg-gray-50'">
-          Correo
-        </button>
-      </div>
-      <button type="button" (click)="quitar(lista, i)"
-        class="shrink-0 text-[#D30000] hover:bg-[#FAD5D4] rounded-full w-[24px] h-[24px] flex items-center justify-center cursor-pointer transition-colors"
-        title="Quitar">
-        ✕
-      </button>
+  <!-- Alto fijo: los desplegables se dibujan en absoluto dentro del cuerpo del modal, que tiene
+       overflow-y auto. Sin reservar el alto, abrir uno saca una barra de scroll y mueve el
+       trigger bajo el cursor (ver el CSS compartido). -->
+  <div class="correo-form">
+    <div class="form-row">
+      <app-search-select
+        label="Tipo de destinatario"
+        [options]="tipoOptions"
+        valueField="id"
+        displayField="label"
+        [value]="formTipo"
+        [allowClear]="false"
+        [sortAlpha]="false"
+        placeholder="Selecciona tipo"
+        (valueChange)="onFormTipoChange($event)">
+      </app-search-select>
     </div>
 
-    <!-- Control según el tipo -->
-    <div>
-      <!-- Trabajador -->
-      <app-search-select *ngIf="row.tipoCodigo === 'TRABAJADOR'"
+    <div class="form-row" *ngIf="formTipo === 'TRABAJADOR'">
+      <app-search-select
+        label="Trabajador"
         [options]="trabajadores"
         valueField="workerId"
         displayField="fullName"
-        [value]="row.workerId"
-        (valueChange)="row.workerId = $event"
-        [showLabel]="false"
-        placeholder="Buscar trabajador...">
+        [value]="formWorkerId"
+        placeholder="Buscar trabajador..."
+        (valueChange)="formWorkerId = $event">
       </app-search-select>
+    </div>
 
-      <!-- Área (se expande a sus miembros) -->
-      <div *ngIf="row.tipoCodigo === 'AREA'" class="flex flex-col gap-[6px]">
+    <ng-container *ngIf="formTipo === 'AREA'">
+      <div class="form-row">
         <app-search-select
+          label="Área"
           [options]="areas"
           valueField="areaScopeId"
           displayField="label"
-          [value]="row.areaScopeId"
-          (valueChange)="row.areaScopeId = $event"
-          [showLabel]="false"
-          placeholder="Selecciona área...">
+          [value]="formAreaScopeId"
+          placeholder="Selecciona área..."
+          (valueChange)="formAreaScopeId = $event">
         </app-search-select>
-        <label class="flex items-center gap-[6px] text-[11px] text-gray-600 cursor-pointer select-none">
-          <input type="checkbox" class="w-3.5 h-3.5 accent-[var(--color-abril-standard)] cursor-pointer"
-                 [checked]="row.incluirDescendientes"
-                 (change)="row.incluirDescendientes = !row.incluirDescendientes" />
-          Incluir sub-áreas
-        </label>
-        <p class="text-[11px] text-gray-400 leading-snug">
-          Se envía al correo corporativo de cada trabajador del área.
-        </p>
       </div>
+      <label class="form-check">
+        <input type="checkbox" [(ngModel)]="formIncluirDescendientes" name="incluirDescendientes" />
+        <span>Incluir sub-áreas</span>
+      </label>
+    </ng-container>
 
-      <!-- Correo manual -->
-      <input *ngIf="row.tipoCodigo === 'CORREO'" type="email"
-        [(ngModel)]="row.correo"
-        placeholder="correo@abril.pe (o un grupo de correos)"
-        class="w-full h-[34px] px-[10px] text-[12px] border border-gray-300 rounded-[7px] focus:outline-none focus:border-[var(--color-abril-standard)]" />
+    <div class="form-row" *ngIf="formTipo === 'CORREO'">
+      <div class="abril-field">
+        <label class="abril-field-label">Correo *</label>
+        <input
+          type="email"
+          class="abril-field-input"
+          name="correo"
+          placeholder="correo@abril.pe"
+          [(ngModel)]="formCorreo" />
+      </div>
     </div>
 
-    <!-- Activo / inactivo -->
-    <label class="flex items-center gap-[6px] text-[11px] text-gray-600 cursor-pointer select-none">
-      <input type="checkbox" class="w-3.5 h-3.5 accent-[var(--color-abril-standard)] cursor-pointer"
-             [checked]="row.active"
-             (change)="row.active = !row.active" />
-      Activo
-    </label>
+    <p class="form-hint" *ngIf="formId === null">
+      <i class="ti ti-info-circle"></i>
+      <span>Solo para «{{ eventoActivo?.nombre }}».</span>
+    </p>
+
+    <p class="form-error" *ngIf="formError">
+      <i class="ti ti-alert-circle"></i> <span>{{ formError }}</span>
+    </p>
   </div>
-</ng-template>
+
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-ghost" (click)="cerrarForm()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="!formValido || saving" (click)="guardarForm()">
+      <i class="ti ti-loader-2 spin" *ngIf="saving"></i>
+      <i class="ti ti-check" *ngIf="!saving"></i>
+      {{ saving ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</app-abril-modal-panel>

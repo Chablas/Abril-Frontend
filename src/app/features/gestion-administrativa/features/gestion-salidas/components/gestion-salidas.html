@@ -174,7 +174,7 @@
               style="accent-color:var(--color-abril-accent)"
               title="Seleccionar / deseleccionar todo" />
           </th>
-          <th>#</th>
+          <th>N° solicitud</th>
           <th class="cursor-pointer select-none" (click)="toggleSort('trabajador')" title="Ordenar por trabajador">
             <span class="inline-flex items-center gap-1">Trabajador
               <span class="text-[10px]" [class.opacity-30]="!sortDirOf('trabajador')">{{ sortDirOf('trabajador') === 'desc' ? '▼' : '▲' }}</span>
@@ -275,7 +275,7 @@
               style="accent-color:var(--color-abril-accent)" />
           </td>
 
-          <td class="text-gray-500">{{ (currentPage - 1) * pageSize + i + 1 }}</td>
+          <td class="text-gray-700 font-medium whitespace-nowrap">{{ s.codigo ?? '—' }}</td>
 
           <td class="text-gray-700 whitespace-nowrap">{{ s.trabajador | titleCase }}</td>
 

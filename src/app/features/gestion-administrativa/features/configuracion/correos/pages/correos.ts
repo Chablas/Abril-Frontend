@@ -1,4 +1,4 @@
-﻿import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -7,106 +7,106 @@ import Swal from 'sweetalert2';
 import { CorreosService } from '../services/correos.service';
 import {
   CorreoAreaOption,
+  CorreoDestinatario,
   CorreoEvento,
-  CorreoRegla,
-  CorreoReglaInput,
   CorreoTipoCodigo,
   CorreoWorkerOption,
 } from '../dtos/ga-correo.dto';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { SectionTabs, SectionTab } from '../../../../../../shared/components/section-tabs/section-tabs';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
-
-/** Fila editable de un destinatario (inclusión o exclusión). */
-interface FilaCorreo {
-  tipoCodigo: CorreoTipoCodigo;
-  workerId: number | null;
-  areaScopeId: number | null;
-  correo: string;
-  incluirDescendientes: boolean;
-  active: boolean;
-}
-
-/** Estado editable de un correo: sus dos listas de filas y sus dos interruptores. */
-interface EstadoCorreo {
-  incluir: FilaCorreo[];
-  excluir: FilaCorreo[];
-  /** Interruptor maestro: apagado = ese correo no se envía. */
-  active: boolean;
-  /** Interruptor del destinatario principal (el revisor en el correo al revisor). */
-  destinatarioPrincipalActivo: boolean;
-}
 
 /**
  * Sección "Correos" de la Configuración de Gestión Administrativa.
  *
- * Por cada correo del flujo de salidas (Revisor, Confirmación, Aprobada, Rechazada)
- * define a quién SÍ se envía ("Se enviará a") y a quién NUNCA se envía ("Nunca se
- * enviará a"). La exclusión gana aunque el destinatario esté en la lista de envío.
- * Cada destinatario es un trabajador, un área (se expande a sus miembros) o un correo
- * escrito a mano (ej. un grupo de correos como gthnm@abril.pe).
+ * Una sección por cada correo del flujo de salidas, con su interruptor maestro (apagado = ese
+ * correo no se envía a nadie) y la matriz de sus destinatarios, cada uno con su propio
+ * interruptor — incluido el destinatario principal (el revisor de la solicitud, el solicitante),
+ * que no es una fila de la tabla de reglas sino una propiedad del propio correo.
  *
- * Los correos que la BD marca como apagables traen además dos interruptores: uno que
- * apaga el correo completo y otro que saca de la lista a su destinatario principal (el
- * que calcula el backend). Si al final no queda ningún destinatario, no se envía nada.
+ * Es la misma pantalla que la configuración de correos de Gestión GTH y comparte su hoja de
+ * estilos (`shared/styles/correos-config.css`). Lo que cambia es el dato: acá un destinatario
+ * puede ser un trabajador, un área (se expande a sus miembros) o un correo escrito a mano.
+ *
+ * Todo guarda al momento de tocarlo: los interruptores son optimistas y se revierten si el
+ * guardado falla; el alta, la edición y la baja recargan la lista.
+ *
+ * La lista "nunca se enviará a" se dio de baja en septiembre de 2026: nunca quedaba registro de
+ * por qué alguien estaba excluido, y la misma exclusión se logra apagando o quitando su fila.
  */
 @Component({
   selector: 'app-ga-correos',
   standalone: true,
-  imports: [CommonModule, FormsModule, SectionTabs, SearchSelect],
+  imports: [CommonModule, FormsModule, AbrilModalPanel, SectionTabs, SearchSelect],
   templateUrl: './correos.html',
-  styles: [
-    `
-      :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  styleUrl: '../../../../../../shared/styles/correos-config.css',
+  // Lo propio de esta pantalla: el resto del look sale de la hoja compartida.
+  styles: [`
+    :host { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: auto; }
 
-      /* Interruptor: mismo look que el de la configuración de correos de GTH. */
-      .switch {
-        position: relative;
-        width: 44px;
-        height: 24px;
-        border-radius: 999px;
-        border: none;
-        background: #cbd5e1;
-        cursor: pointer;
-        padding: 0;
-        transition: background 0.18s ease;
-        flex-shrink: 0;
-      }
-      .switch--on { background: var(--color-abril-standard, #0f6e56); }
-      .switch__knob {
-        position: absolute;
-        top: 3px;
-        left: 3px;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        background: #fff;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-        transition: transform 0.18s ease;
-      }
-      .switch--on .switch__knob { transform: translateX(20px); }
-    `,
-  ],
+    /* "Incluir sub-áreas": solo aparece con el tipo Área, dentro del modal. */
+    .form-check {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: -4px 0 14px;
+      font-size: 0.82rem;
+      color: #475569;
+      cursor: pointer;
+      user-select: none;
+    }
+    .form-check input {
+      width: 15px;
+      height: 15px;
+      accent-color: var(--color-abril-standard, #0f6e56);
+      cursor: pointer;
+    }
+  `],
 })
 export class GaCorreos implements OnInit {
   eventos: CorreoEvento[] = [];
   trabajadores: CorreoWorkerOption[] = [];
   areas: CorreoAreaOption[] = [];
+  loading = false;
 
-  /** Estado editable por código de correo. */
-  estado: Record<string, EstadoCorreo> = {};
-  activeCodigo: string | null = null;
+  /** Código del correo cuya sección se está viendo. */
+  eventoActivoCodigo: string | null = null;
 
-  guardando = false;
+  /** id del destinatario que se está guardando, para bloquear su fila. 0 = el principal. */
+  savingDestinatarioId: number | null = null;
+  /** Código del correo cuyo interruptor maestro se está guardando. */
+  savingEventoCodigo: string | null = null;
 
   // Contrato del contenedor GaConfiguracion (esta sección no tiene filtros).
   filtrosActivos = 0;
   filtrosAbiertos = false;
 
+  // ── Modal de alta/edición de un destinatario ──
+  formOpen = false;
+  /** null = alta; distinto de null = edición. */
+  formId: number | null = null;
+  formTipo: CorreoTipoCodigo = 'TRABAJADOR';
+  formWorkerId: number | null = null;
+  formAreaScopeId: number | null = null;
+  formCorreo = '';
+  formIncluirDescendientes = true;
+  formError: string | null = null;
+  saving = false;
+
+  /** Opciones de "Tipo de destinatario". Orden deliberado → `sortAlpha` en false. */
+  readonly tipoOptions: { id: CorreoTipoCodigo; label: string }[] = [
+    { id: 'TRABAJADOR', label: 'Trabajador' },
+    { id: 'AREA', label: 'Área' },
+    { id: 'CORREO', label: 'Correo escrito a mano' },
+  ];
+
+  private static readonly EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
   /**
-   * Etiquetas cortas para las pestañas internas. Las pestañas salen de ga_correo_evento, así que
-   * un correo nuevo aparece solo: sin entrada acá se muestra con su nombre completo.
+   * Etiquetas cortas para las pestañas. Las pestañas salen de ga_correo_evento, así que un correo
+   * nuevo aparece solo: sin entrada acá se muestra con su nombre completo.
    */
   private readonly labelCorto: Record<string, string> = {
     REVISOR: 'Revisor',
@@ -130,6 +130,7 @@ export class GaCorreos implements OnInit {
   }
 
   load(): void {
+    this.loading = true;
     this.loaderService.show();
     this.service.getInicial().subscribe({
       next: (data) => {
@@ -141,20 +142,15 @@ export class GaCorreos implements OnInit {
           (a.label ?? a.nombre).localeCompare(b.label ?? b.nombre),
         );
 
-        this.estado = {};
-        for (const ev of this.eventos) {
-          this.estado[ev.codigo] = {
-            incluir: (ev.incluir ?? []).map(this.reglaAFila),
-            excluir: (ev.excluir ?? []).map(this.reglaAFila),
-            active: ev.active !== false,
-            destinatarioPrincipalActivo: ev.destinatarioPrincipalActivo !== false,
-          };
-        }
-        this.activeCodigo = this.eventos[0]?.codigo ?? null;
+        if (!this.eventos.some((e) => e.codigo === this.eventoActivoCodigo))
+          this.eventoActivoCodigo = this.eventos[0]?.codigo ?? null;
+
+        this.loading = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
+        this.loading = false;
         this.loaderService.hide();
         this.errorService.handleError(err);
         this.cdr.detectChanges();
@@ -164,8 +160,8 @@ export class GaCorreos implements OnInit {
 
   /**
    * Calcula la etiqueta de cada área para el desplegable. Si dos áreas comparten nombre
-   * (ej. dos nodos "Gestión del Talento Humano"), desambigua con el nombre del padre; si no
-   * hay padre, usa el correo de grupo del área.
+   * (ej. dos nodos "Producción"), desambigua con el nombre del padre; si no hay padre, usa el
+   * correo de grupo del área.
    */
   private conEtiquetas(areas: CorreoAreaOption[]): CorreoAreaOption[] {
     const conteo = new Map<string, number>();
@@ -183,157 +179,239 @@ export class GaCorreos implements OnInit {
     });
   }
 
-  private reglaAFila = (r: CorreoRegla): FilaCorreo => ({
-    tipoCodigo: r.tipoCodigo,
-    workerId: r.workerId ?? null,
-    areaScopeId: r.areaScopeId ?? null,
-    correo: r.correo ?? '',
-    incluirDescendientes: r.incluirDescendientes,
-    active: r.active,
-  });
-
-  // ── Pestañas internas ────────────────────────────────────────────────────
+  // ── Secciones ────────────────────────────────────────────────────────────
 
   get sectionTabs(): SectionTab[] {
     return this.eventos.map((e) => ({
       id: e.codigo,
       label: this.labelCorto[e.codigo] ?? e.nombre,
-      // Solo se marcan los apagados: un badge en cada pestaña sería ruido.
-      badge: this.estado[e.codigo]?.active === false ? 'Off' : null,
+      badge: e.active ? this.destinatariosActivos(e) : 'Off',
     }));
   }
 
-  get activeEvento(): CorreoEvento | undefined {
-    return this.eventos.find((e) => e.codigo === this.activeCodigo);
+  get eventoActivo(): CorreoEvento | null {
+    return this.eventos.find((e) => e.codigo === this.eventoActivoCodigo) ?? null;
   }
 
-  get activeEstado(): EstadoCorreo | undefined {
-    return this.activeCodigo ? this.estado[this.activeCodigo] : undefined;
+  onSectionChange(codigo: string): void {
+    this.eventoActivoCodigo = codigo;
+    this.cdr.detectChanges();
   }
 
-  onTabChange(codigo: string): void {
-    this.activeCodigo = codigo;
+  /** Cuántos destinatarios reciben ese correo hoy (contando al principal). */
+  private destinatariosActivos(evento: CorreoEvento): number {
+    const principal = evento.destinatarioPrincipalActivo ? 1 : 0;
+    return principal + evento.destinatarios.filter((d) => d.active).length;
   }
 
-  // ── Interruptores del correo ──────────────────────────────────────────────
-
-  toggleEnvio(): void {
-    const est = this.activeEstado;
-    if (est && this.activeEvento?.permiteDesactivarEnvio) est.active = !est.active;
-  }
-
-  togglePrincipal(): void {
-    const est = this.activeEstado;
-    if (est && this.activeEvento?.permiteDesactivarPrincipal)
-      est.destinatarioPrincipalActivo = !est.destinatarioPrincipalActivo;
-  }
-
-  /**
-   * El correo está prendido pero no le llegaría a nadie: su destinatario principal está
-   * apagado y no hay ningún destinatario activo en "Se enviará a". En ese caso no se envía.
-   */
+  /** El correo está prendido pero no tiene a quién mandárselo. */
   get sinDestinatarios(): boolean {
-    const ev = this.activeEvento;
-    const est = this.activeEstado;
-    if (!ev || !est || !est.active) return false;
-    if (est.destinatarioPrincipalActivo) return false;
-    return !est.incluir.some((f) => f.active);
+    const e = this.eventoActivo;
+    return !this.loading && !!e && e.active && this.destinatariosActivos(e) === 0;
   }
 
-  // ── Edición de filas ───────────────────────────────────────────────────────
+  // ── Interruptor maestro del correo ───────────────────────────────────────
 
-  agregar(lista: FilaCorreo[]): void {
-    lista.push({
-      tipoCodigo: 'TRABAJADOR',
-      workerId: null,
-      areaScopeId: null,
-      correo: '',
-      incluirDescendientes: true,
-      active: true,
+  toggleEvento(evento: CorreoEvento): void {
+    if (this.savingEventoCodigo !== null || !evento.permiteDesactivarEnvio) return;
+
+    const nuevo = !evento.active;
+    this.savingEventoCodigo = evento.codigo;
+    // Optimista: se pinta al toque y se revierte si el guardado falla.
+    evento.active = nuevo;
+
+    this.service.setEventoActive(evento.codigo, nuevo).subscribe({
+      next: () => {
+        this.savingEventoCodigo = null;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        evento.active = !nuevo;
+        this.savingEventoCodigo = null;
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
     });
   }
 
-  quitar(lista: FilaCorreo[], i: number): void {
-    lista.splice(i, 1);
+  // ── Interruptor de un destinatario ───────────────────────────────────────
+
+  /** Interruptor del destinatario principal: va por el código del correo, no por un id. */
+  togglePrincipal(evento: CorreoEvento): void {
+    if (this.savingDestinatarioId !== null || !evento.permiteDesactivarPrincipal) return;
+
+    const nuevo = !evento.destinatarioPrincipalActivo;
+    this.savingDestinatarioId = 0;
+    evento.destinatarioPrincipalActivo = nuevo;
+
+    this.service.setPrincipalActive(evento.codigo, nuevo).subscribe({
+      next: () => {
+        this.savingDestinatarioId = null;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        evento.destinatarioPrincipalActivo = !nuevo;
+        this.savingDestinatarioId = null;
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
   }
 
-  /** Cambia el tipo de destinatario de una fila y limpia los campos que no aplican. */
-  setTipo(fila: FilaCorreo, tipo: CorreoTipoCodigo): void {
-    fila.tipoCodigo = tipo;
-    fila.workerId = null;
-    fila.areaScopeId = null;
-    fila.correo = '';
-    fila.incluirDescendientes = true;
+  toggleDestinatario(fila: CorreoDestinatario): void {
+    if (this.savingDestinatarioId !== null) return;
+
+    const nuevo = !fila.active;
+    this.savingDestinatarioId = fila.id;
+    fila.active = nuevo;
+
+    this.service.setDestinatarioActive(fila.id, nuevo).subscribe({
+      next: () => {
+        this.savingDestinatarioId = null;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        fila.active = !nuevo;
+        this.savingDestinatarioId = null;
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
   }
 
-  // ── Guardar ────────────────────────────────────────────────────────────────
+  // ── Alta / edición ───────────────────────────────────────────────────────
 
-  guardar(): void {
-    const codigo = this.activeCodigo;
-    const est = this.activeEstado;
-    const ev = this.activeEvento;
-    if (!codigo || !est || !ev) return;
+  abrirAlta(): void {
+    this.formId = null;
+    this.formTipo = 'TRABAJADOR';
+    this.formWorkerId = null;
+    this.formAreaScopeId = null;
+    this.formCorreo = '';
+    this.formIncluirDescendientes = true;
+    this.formError = null;
+    this.formOpen = true;
+    this.cdr.detectChanges();
+  }
 
-    const incompleta = (f: FilaCorreo): boolean => {
-      if (f.tipoCodigo === 'TRABAJADOR') return f.workerId == null;
-      if (f.tipoCodigo === 'AREA') return f.areaScopeId == null;
-      return !f.correo.trim();
+  abrirEdicion(fila: CorreoDestinatario): void {
+    this.formId = fila.id;
+    this.formTipo = fila.tipoCodigo;
+    this.formWorkerId = fila.workerId;
+    this.formAreaScopeId = fila.areaScopeId;
+    this.formCorreo = fila.tipoCodigo === 'CORREO' ? (fila.email ?? '') : '';
+    this.formIncluirDescendientes = fila.incluirDescendientes;
+    this.formError = null;
+    this.formOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  cerrarForm(): void {
+    if (this.saving) return;
+    this.formOpen = false;
+    this.cdr.detectChanges();
+  }
+
+  get formTitulo(): string {
+    return this.formId === null ? 'Agregar destinatario' : 'Editar destinatario';
+  }
+
+  /** Al cambiar de tipo se limpia lo que ya no aplica: la fila guarda un solo dato. */
+  onFormTipoChange(tipo: CorreoTipoCodigo): void {
+    this.formTipo = tipo;
+    this.formWorkerId = null;
+    this.formAreaScopeId = null;
+    this.formCorreo = '';
+    this.formIncluirDescendientes = true;
+    this.cdr.detectChanges();
+  }
+
+  get formValido(): boolean {
+    if (this.formTipo === 'TRABAJADOR') return this.formWorkerId != null;
+    if (this.formTipo === 'AREA') return this.formAreaScopeId != null;
+    return GaCorreos.EMAIL_RE.test(this.formCorreo.trim());
+  }
+
+  guardarForm(): void {
+    if (!this.formValido || this.saving) return;
+    const codigo = this.eventoActivoCodigo;
+    if (!codigo) return;
+
+    this.saving = true;
+    this.formError = null;
+
+    const dto = {
+      tipoCodigo: this.formTipo,
+      workerId: this.formTipo === 'TRABAJADOR' ? this.formWorkerId : null,
+      areaScopeId: this.formTipo === 'AREA' ? this.formAreaScopeId : null,
+      correo: this.formTipo === 'CORREO' ? this.formCorreo.trim().toLowerCase() : null,
+      incluirDescendientes: this.formTipo === 'AREA' ? this.formIncluirDescendientes : true,
     };
 
-    if (est.incluir.some(incompleta) || est.excluir.some(incompleta)) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'Filas incompletas',
-        text: 'Completa el trabajador, área o correo de cada fila, o quita las filas vacías.',
-        confirmButtonColor: '#64BC04',
-      });
-      return;
-    }
+    const request$ =
+      this.formId === null
+        ? this.service.crearDestinatario(codigo, dto)
+        : this.service.actualizarDestinatario(this.formId, dto);
 
-    const toInput = (f: FilaCorreo): CorreoReglaInput => ({
-      tipoCodigo: f.tipoCodigo,
-      workerId: f.tipoCodigo === 'TRABAJADOR' ? f.workerId : null,
-      areaScopeId: f.tipoCodigo === 'AREA' ? f.areaScopeId : null,
-      correo: f.tipoCodigo === 'CORREO' ? f.correo.trim() : null,
-      incluirDescendientes: f.incluirDescendientes,
-      active: f.active,
-    });
-
-    this.guardando = true;
-    this.loaderService.show();
-    this.service
-      .updateReglas(codigo, {
-        incluir: est.incluir.map(toInput),
-        excluir: est.excluir.map(toInput),
-        // Solo se mandan los interruptores que este correo permite cambiar.
-        ...(ev.permiteDesactivarEnvio ? { active: est.active } : {}),
-        ...(ev.permiteDesactivarPrincipal
-          ? { destinatarioPrincipalActivo: est.destinatarioPrincipalActivo }
-          : {}),
-      })
-      .subscribe({
-        next: (res) => {
-          this.guardando = false;
-          // El evento guarda el estado que quedó en el servidor: si no se recarga la
-          // pantalla, las pestañas y los interruptores tienen que reflejarlo igual.
-          ev.active = est.active;
-          ev.destinatarioPrincipalActivo = est.destinatarioPrincipalActivo;
-          this.loaderService.hide();
-          this.cdr.detectChanges();
-          Swal.fire({
-            icon: 'success',
-            title: 'Guardado',
-            text: res?.message ?? 'Destinatarios actualizados.',
-            timer: 1800,
-            showConfirmButton: false,
-          });
-        },
-        error: (err: HttpErrorResponse) => {
-          this.guardando = false;
-          this.loaderService.hide();
+    request$.subscribe({
+      next: () => {
+        this.saving = false;
+        this.formOpen = false;
+        this.load();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.saving = false;
+        // 400/409 traen un mensaje útil (destinatario repetido, correo inválido): se muestra
+        // dentro del modal en vez de cerrarlo con un alert genérico.
+        if (err.status === 400 || err.status === 409) {
+          this.formError = err.error?.message ?? 'No se pudo guardar el destinatario.';
+        } else {
           this.errorService.handleError(err);
-          this.cdr.detectChanges();
-        },
-      });
+        }
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  // ── Eliminar ─────────────────────────────────────────────────────────────
+
+  async eliminar(fila: CorreoDestinatario): Promise<void> {
+    if (this.savingDestinatarioId !== null) return;
+
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: '¿Eliminar destinatario?',
+      text: `${fila.nombre} dejará de recibir «${this.eventoActivo?.nombre}».`,
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.savingDestinatarioId = fila.id;
+    this.service.eliminarDestinatario(fila.id).subscribe({
+      next: () => {
+        this.savingDestinatarioId = null;
+        this.load();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.savingDestinatarioId = null;
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** Etiqueta del tipo para la columna "Recibe como" de la matriz. */
+  tipoLabel(fila: CorreoDestinatario): string {
+    switch (fila.tipoCodigo) {
+      case 'TRABAJADOR': return 'Trabajador';
+      case 'AREA': return 'Área';
+      default: return 'Correo';
+    }
+  }
+
+  trackFila(_: number, f: CorreoDestinatario): number {
+    return f.id;
   }
 }

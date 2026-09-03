@@ -44,7 +44,9 @@ import {
   selector: 'app-gth-correos-config',
   imports: [CommonModule, FormsModule, AbrilModalPanel, SectionTabs, SearchSelect],
   templateUrl: './correos-config.html',
-  styleUrl: './correos-config.css',
+  // Hoja compartida con la configuración de correos de Gestión Administrativa: las dos pantallas
+  // son la misma matriz de destinatarios y tienen que verse igual (ver shared/styles).
+  styleUrl: '../../../../shared/styles/correos-config.css',
 })
 export class GthCorreosConfig implements OnInit {
   /** Pantalla que lo usa: define qué correos trae y sobre cuáles puede escribir. */

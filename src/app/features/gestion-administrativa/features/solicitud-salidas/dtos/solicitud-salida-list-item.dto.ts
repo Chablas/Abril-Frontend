@@ -2,6 +2,8 @@
 
 export interface SolicitudSalidaListItemDto {
   id: number;
+  /** Código SOL-AAAA-NNNN. Null solo en solicitudes anteriores a la columna. */
+  codigo: string | null;
   fechaSalida: string;
   /** Hora de salida del primer trayecto. Null si el motivo no pide horario. */
   horaSalida: string | null;

@@ -42,6 +42,8 @@ export interface SolicitudSalidaRendicionDto {
 
 export interface SolicitudSalidaDetalleDto {
   id: number;
+  /** Código SOL-AAAA-NNNN. Null solo en solicitudes anteriores a la columna. */
+  codigo: string | null;
   fechaSalida: string;
   estadoAprobacion: string;
   estadoRendicion: string;

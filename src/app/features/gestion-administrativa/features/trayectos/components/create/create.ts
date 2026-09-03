@@ -24,6 +24,9 @@ export class GaTrayectoCreate implements OnInit {
   lugarOrigenId: number | null = null;
   lugarDestinoId: number | null = null;
   monto: number | null = null;
+  /** Un trayecto del catálogo existe porque tiene movilidad: nace reembolsable y se
+   *  desmarca solo para declararlo excepción (ej. Oficina Central ↔ Bosque Real). */
+  esReembolsable = true;
   submitted = false;
 
   constructor(
@@ -73,6 +76,7 @@ export class GaTrayectoCreate implements OnInit {
         lugarOrigenId: this.lugarOrigenId,
         lugarDestinoId: this.lugarDestinoId,
         monto: this.monto,
+        esReembolsable: this.esReembolsable,
       })
       .subscribe({
         next: (res) => {
