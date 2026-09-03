@@ -42,19 +42,21 @@ interface EditModel {
   puestoId: number | null;
 }
 
-/** Un nivel del árbol de áreas: opciones (hermanos) y el nodo elegido en ese nivel. */
-interface AreaLevel {
-  options: AreaScopeTreeDto[];
-  selected: number | null; // areaScopeId
+/** Puesto del catálogo. Trae el área de destino porque es de ahí que sale la del trabajador. */
+interface PuestoOpcion {
+  id: number;
+  nombre: string;
+  categoriaId: number | null;
+  areaDestinoScopeId: number | null;
 }
 
 /**
  * Edición mínima de un trabajador (Configuración → Trabajadores). Por ahora solo
  * permite cambiar nombre completo, tipo y número de documento y cumpleaños; todos
  * viven en la tabla `person`, por eso se usa el endpoint dedicado `datos-basicos`
- * que no toca el resto de campos del worker. También asigna el área del trabajador
- * (workers.area_scope_id) mediante desplegables en cascada sobre la Jerarquía de
- * áreas: se guarda el último nodo seleccionado, sin obligar a llegar a una hoja.
+ * que no toca el resto de campos del worker. También permite cambiar el puesto, y con
+ * él cambia el área: el área ya no se elige, se deriva de `puesto.areaDestinoScopeId`
+ * y se muestra de solo lectura (igual que en /habilitacion/gestion/trabajadores).
  */
 @Component({
   selector: 'app-worker-edit-form',
@@ -83,10 +85,9 @@ export class WorkerEditForm implements OnChanges {
   private teniaAlgunCorreo = false;
 
   categorias: { id: number; nombre: string }[] = [];
-  puestos: { id: number; nombre: string; categoriaId: number | null }[] = [];
+  puestos: PuestoOpcion[] = [];
 
-  /** Desplegables en cascada del árbol de áreas (uno por nivel de la Jerarquía). */
-  areaLevels: AreaLevel[] = [];
+  /** El árbol solo se usa para pintar la ruta del área derivada; ya no alimenta desplegables. */
   private areaTree: AreaScopeTreeDto[] = [];
   private areaTreeLoaded = false;
 
@@ -173,48 +174,17 @@ export class WorkerEditForm implements OnChanges {
     });
   }
 
-  /** Carga la Jerarquía de áreas una sola vez; luego solo re-inicializa los niveles. */
+  /** Carga la Jerarquía de áreas una sola vez; solo sirve para pintar la ruta del área. */
   private loadAreaTree(): void {
-    if (this.areaTreeLoaded) {
-      this.initAreaLevels();
-      return;
-    }
+    if (this.areaTreeLoaded) return;
     this.areaScopeService.getTree().subscribe({
       next: (tree) => {
         this.areaTree = tree ?? [];
         this.areaTreeLoaded = true;
-        this.initAreaLevels();
         this.cdr.detectChanges();
       },
       error: () => {},
     });
-  }
-
-  /**
-   * Arma los niveles a partir del area_scope_id actual del trabajador: un desplegable
-   * por cada nivel del camino raíz → nodo asignado, más uno vacío con los hijos del
-   * último nodo (si tiene) para poder profundizar.
-   */
-  private initAreaLevels(): void {
-    const path = this.worker?.areaScopeId
-      ? this.findPath(this.areaTree, this.worker.areaScopeId)
-      : null;
-    this.areaLevels = [
-      {
-        options: this.visibleOptions(this.areaTree, path?.[0]?.areaScopeId ?? null),
-        selected: path?.[0]?.areaScopeId ?? null,
-      },
-    ];
-    if (!path) return;
-    for (let i = 0; i < path.length; i++) {
-      const children = path[i].children ?? [];
-      if (!children.length) continue;
-      const next = path[i + 1] ?? null;
-      this.areaLevels.push({
-        options: this.visibleOptions(children, next?.areaScopeId ?? null),
-        selected: next?.areaScopeId ?? null,
-      });
-    }
   }
 
   /** Camino raíz → nodo con el areaScopeId buscado, o null si no existe en el árbol. */
@@ -227,45 +197,41 @@ export class WorkerEditForm implements OnChanges {
     return null;
   }
 
-  /** Oculta nodos inactivos, salvo que sean el valor ya asignado (para no romper el prellenado). */
-  private visibleOptions(nodes: AreaScopeTreeDto[], selectedId: number | null): AreaScopeTreeDto[] {
-    return (nodes ?? []).filter((n) => n.active || n.areaScopeId === selectedId);
+  /** El puesto elegido tal como viene del catálogo, o undefined si todavía no llegó. */
+  private get puestoElegido(): PuestoOpcion | undefined {
+    if (this.model.puestoId == null) return undefined;
+    return this.puestos.find((p) => p.id === this.model.puestoId);
+  }
+
+  /** Área del trabajador: la de destino del puesto elegido. No se elige ni se guarda acá. */
+  get areaScopeIdDerivada(): number | null {
+    return this.puestoElegido?.areaDestinoScopeId ?? null;
   }
 
   /**
-   * Al elegir un nodo se descartan los niveles más profundos y, si el nodo tiene hijos,
-   * se agrega un desplegable vacío para el siguiente nivel (opcional: si no se llena,
-   * se guarda el último nodo seleccionado).
+   * True cuando el puesto elegido está en el catálogo y no tiene área de destino. Es lo que
+   * explica que el campo de Área salga vacío pese a haber puesto; se arregla en Categorías y
+   * Puestos, no acá. Se exige que el puesto esté en el catálogo para no avisar de algo que
+   * todavía no se sabe: el detalle del trabajador llega antes que el catálogo.
    */
-  onAreaLevelChange(index: number, value: number | null): void {
-    const level = this.areaLevels[index];
-    level.selected = value ?? null;
-    this.areaLevels = this.areaLevels.slice(0, index + 1);
-    if (value == null) return;
-    const node = level.options.find((o) => o.areaScopeId === value);
-    if (node?.children?.length) {
-      this.areaLevels.push({ options: this.visibleOptions(node.children, null), selected: null });
-    }
+  get puestoSinAreaDestino(): boolean {
+    const puesto = this.puestoElegido;
+    return !!puesto && puesto.areaDestinoScopeId == null;
   }
 
-  /** Último nodo seleccionado en la cascada (el que se guarda en workers.area_scope_id). */
-  get selectedAreaScopeId(): number | null {
-    for (let i = this.areaLevels.length - 1; i >= 0; i--) {
-      if (this.areaLevels[i].selected != null) return this.areaLevels[i].selected;
-    }
-    return null;
-  }
-
-  /** Ruta legible de la selección actual (ej. "Gerencia de Proyectos › Unidad de Proyectos"). */
+  /** Ruta legible del área derivada (ej. "Gerencia de Proyectos › Unidad de Proyectos"). */
   get areaPathLabel(): string {
-    const names: string[] = [];
-    for (const level of this.areaLevels) {
-      if (level.selected == null) break;
-      const node = level.options.find((o) => o.areaScopeId === level.selected);
-      if (!node) break;
-      names.push(node.areaItemName);
-    }
-    return names.join(' › ');
+    const id = this.areaScopeIdDerivada;
+    if (id == null || !this.areaTreeLoaded) return '';
+    return (this.findPath(this.areaTree, id) ?? []).map((n) => n.areaItemName).join(' › ');
+  }
+
+  /** Texto del campo de Área mientras no haya ninguna que mostrar. */
+  get areaPlaceholder(): string {
+    if (!this.areaTreeLoaded) return 'Cargando…';
+    if (this.model.puestoId == null) return 'Selecciona un puesto';
+    if (this.puestoSinAreaDestino) return 'El puesto no tiene área de destino configurada';
+    return '';
   }
 
   /** La categoría no se guarda en el trabajador: filtra el desplegable de puestos, que es lo
@@ -388,9 +354,8 @@ export class WorkerEditForm implements OnChanges {
       cumpleanos: this.model.cumpleanos || null,
       emailCorporativo: this.model.emailCorporativo?.trim() || null,
       emailPersonal: this.model.emailPersonal?.trim() || null,
-      // La categoría no se manda: el backend la lee del puesto.
+      // Ni la categoría ni el área se mandan: el backend las lee del puesto.
       puestoId: this.model.puestoId ?? null,
-      areaScopeId: this.selectedAreaScopeId,
     };
 
     this.saving = true;

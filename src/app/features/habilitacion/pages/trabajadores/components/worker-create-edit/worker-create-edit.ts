@@ -1300,11 +1300,10 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       condicionMedica: n(this.model.condicionMedica),
       // La categoría no se manda: el backend la lee del puesto.
       puestoId: this.model.puestoId ?? undefined,
-      // El área se manda como nodo del árbol y el backend deriva de ahí area/subarea/jefatura.
-      // Cuando el formulario sí gestiona el área se mandan los tres en null para que manden los
-      // derivados (y para que limpiar el desplegable realmente limpie el área); cuando no la
-      // gestiona se reenvían intactos para no borrar lo que ya estaba guardado.
-      areaScopeId: this.model.areaScopeId,
+      // El área ya no se manda: el backend la saca del puesto (puesto.area_destino_scope_id) y
+      // de ahí deriva area/subarea/jefatura. Cuando el formulario sí gestiona el área se mandan
+      // los tres textos en null para que manden los derivados; cuando no la gestiona se reenvían
+      // intactos para no borrar lo que ya estaba guardado.
       area: this.gestionaArea ? null : n(this.model.area),
       subarea: this.gestionaArea ? null : n(this.model.subarea),
       contrataCasa: this.esContratista ? 'Contratista' : n(this.model.contrataCasa),

@@ -15,7 +15,7 @@ import { CartaOfertaFirmaPublico } from './dtos/carta-oferta-firma.dto';
  * firmaba a mano y la devolvía por correo para que GTH la subiera al intranet. Acá el postulante:
  *   1. lee su carta oferta (la que GTH cargó, servida por el backend desde SharePoint);
  *   2. dibuja y guarda su firma, que queda en su ficha de la base maestra;
- *   3. presiona «Firmar» y el backend la estampa en la última página del PDF y lo deja en el file
+ *   3. presiona «Firmar» y el backend la estampa en todas las hojas del PDF y lo deja en el file
  *      digital como su carta oferta firmada, a la espera de la revisión de GTH.
  *
  * El botón «Firmar» solo se habilita cuando ya hay una firma registrada: firmar es estampar la firma

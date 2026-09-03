@@ -102,19 +102,18 @@
         <span class="field-hint">Es el cargo que se muestra, y de él salen los entregables, permisos y filtros internos.</span>
       </div>
 
-      <div class="col-span-2" *ngFor="let level of areaLevels; let i = index">
-        <label class="field-label">{{ i === 0 ? 'Área' : 'Área (nivel ' + (i + 1) + ')' }}</label>
-        <app-search-select
-          [options]="level.options"
-          valueField="areaScopeId"
-          displayField="areaItemName"
-          [value]="level.selected"
-          [showLabel]="false"
-          [sortAlpha]="false"
-          placeholder="Selecciona área"
-          [allowClear]="true"
-          (valueChange)="onAreaLevelChange(i, $event)"
+      <div class="col-span-2">
+        <label class="field-label">Área</label>
+        <input
+          type="text"
+          class="field-input field-readonly"
+          readonly
+          [value]="areaPathLabel"
+          [placeholder]="areaPlaceholder"
         />
+        <span class="field-hint" *ngIf="puestoSinAreaDestino">
+          El puesto no tiene área de destino: se asigna en Categorías y Puestos.
+        </span>
       </div>
 
     </div>
