@@ -10,24 +10,28 @@
 
 <section class="page-container px-3 py-4 flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
 
-  <!-- Tabla -->
-  <div class="abril-table-wrap">
+  <!-- Tabla (>=lg). Los anchos van en % para que el espacio sobrante en pantallas grandes se
+       reparta entre todas las columnas en vez de acumularse en el nombre del trabajador; el
+       min-width + scroll horizontal del wrapper evita que "Acceso" se corte al no alcanzar. -->
+  <div class="abril-table-wrap dm-table-wrap">
       <table class="abril-table">
         <colgroup>
-          <col style="width:50px"/>
-          <col/>
-          <col style="width:160px"/>
-          <col style="width:100px"/>
-          <col style="width:100px"/>
-          <col style="width:44px"/>
-          <col style="width:110px"/>
-          <col style="width:80px"/>
-          <col style="width:36px"/>
+          <col style="width:4%"/>
+          <col style="width:19%"/>
+          <col style="width:12%"/>
+          <col style="width:15%"/>
+          <col style="width:9%"/>
+          <col style="width:9%"/>
+          <col style="width:5%"/>
+          <col style="width:11%"/>
+          <col style="width:11%"/>
+          <col style="width:5%"/>
         </colgroup>
         <thead class="sticky top-0 z-10">
           <tr>
             <th>#</th>
             <th>Trabajador</th>
+            <th>Obra / Oficina</th>
             <th>Tipo</th>
             <th>Inicio</th>
             <th>Fin</th>
@@ -45,6 +49,10 @@
                 <span class="worker-name">{{ (d.workerNombre | titleCase) ?? '—' }}</span>
                 <span class="worker-dni">{{ d.workerDni }}</span>
               </div>
+            </td>
+            <td [title]="d.obraOficinaStaffNombre ?? ''">
+              <span *ngIf="d.obraOficinaStaffNombre; else sinUbicacion" class="ubicacion-cell">{{ d.obraOficinaStaffNombre }}</span>
+              <ng-template #sinUbicacion><span class="dato-vacio">—</span></ng-template>
             </td>
             <td><span class="badge badge-gray">{{ d.tipo }}</span></td>
             <td class="text-gray-500">{{ d.fechaInicio | date:'dd/MM/yyyy' }}</td>
@@ -71,12 +79,69 @@
             </td>
           </tr>
           <tr *ngIf="!loading && descansos.length === 0">
-            <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
+            <td colspan="10" class="text-center py-[40px] text-gray-400 text-sm">
               {{ hasFilters ? 'Sin resultados.' : 'Sin descansos médicos registrados.' }}
             </td>
           </tr>
         </tbody>
       </table>
+  </div>
+
+  <!-- Lista (<lg): con 10 columnas la tabla se comprime hasta que el nombre del trabajador se
+       encima con el pill del tipo, así que cada descanso se muestra como tarjeta. -->
+  <div class="dm-cards">
+    <article *ngFor="let d of descansos" class="dm-card" (click)="abrirModal(d.id)">
+      <header class="dm-card__head">
+        <div class="dm-card__ident">
+          <span class="dm-card__name">{{ (d.workerNombre | titleCase) ?? '—' }}</span>
+          <span class="dm-card__dni">DNI · {{ d.workerDni ?? '—' }}</span>
+        </div>
+        <span class="badge shrink-0" [ngClass]="estadoBadgeClass(d.estado)">{{ d.estado }}</span>
+      </header>
+
+      <div class="dm-card__badges">
+        <span class="badge badge-gray">{{ d.tipo }}</span>
+        <span *ngIf="d.trabajadorBloqueado" class="blocked-chip">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+          </svg>
+          Bloqueado
+        </span>
+        <span *ngIf="!d.trabajadorBloqueado" class="free-chip">Activo</span>
+      </div>
+
+      <dl class="dm-card__grid">
+        <div class="dm-card__item">
+          <dt>Inicio</dt>
+          <dd>{{ d.fechaInicio | date:'dd/MM/yyyy' }}</dd>
+        </div>
+        <div class="dm-card__item">
+          <dt>Fin</dt>
+          <dd>{{ d.fechaFin | date:'dd/MM/yyyy' }}</dd>
+        </div>
+        <div class="dm-card__item">
+          <dt>Días</dt>
+          <dd>{{ d.dias }}</dd>
+        </div>
+        <div class="dm-card__item">
+          <dt>Obra / Oficina</dt>
+          <dd>{{ d.obraOficinaStaffNombre ?? '—' }}</dd>
+        </div>
+      </dl>
+
+      <footer class="dm-card__actions" (click)="$event.stopPropagation()">
+        <button type="button" class="dm-card__btn dm-card__btn--danger" (click)="eliminar(d, $event)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+          </svg>
+          Eliminar
+        </button>
+      </footer>
+    </article>
+
+    <p *ngIf="!loading && descansos.length === 0" class="dm-cards__empty">
+      {{ hasFilters ? 'Sin resultados.' : 'Sin descansos médicos registrados.' }}
+    </p>
   </div>
 
   <div *ngIf="totalRecords > 0" class="shrink-0 max-w-[440px]">
@@ -138,6 +203,18 @@
       [sortAlpha]="false"
       [value]="filtros.tipoId"
       (valueChange)="filtros.tipoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Obra / Oficina"
+      [options]="obraOficinaOpts"
+      valueField="obraOficinaStaffId"
+      displayField="name"
+      [sortAlpha]="false"
+      [value]="filtros.obraOficinaStaffId"
+      (valueChange)="filtros.obraOficinaStaffId = $event; onFilterChange()">
     </app-search-select>
   </div>
 

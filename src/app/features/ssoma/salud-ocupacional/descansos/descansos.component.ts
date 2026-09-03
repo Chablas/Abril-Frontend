@@ -12,7 +12,9 @@ import { FabButton } from '../../../../shared/components/fab-button/fab-button';
 import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 import { DescansosService } from './descansos.service';
 import { DescansoModalComponent } from './descanso-modal.component';
-import { DescansoMedicoListItemDto, DescansoFilterDto, DescansoTipoDto } from './descansos.dtos';
+import {
+  DescansoMedicoListItemDto, DescansoFilterDto, DescansoTipoDto, ObraOficinaStaffOpcionDto,
+} from './descansos.dtos';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { ErrorService } from '../../../../core/services/error.service';
 import { LoaderService } from '../../../../core/services/loader.service';
@@ -20,7 +22,6 @@ import { FilterTriggerButton } from '../../../../shared/components/filter-trigge
 import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { DatePicker } from '../../../../shared/components/date-picker/date-picker';
-import { StatusBadge } from '../../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 import { WorkerSearchInput } from '../shared/worker-search-input/worker-search-input';
 import { WorkerSearchItemDto } from '../dtos/worker-search.model';
@@ -40,7 +41,6 @@ import { WorkerSearchItemDto } from '../dtos/worker-search.model';
     FilterModal,
     SearchSelect,
     DatePicker,
-    StatusBadge,
     TitleCasePipe,
     WorkerSearchInput,
   ],
@@ -55,6 +55,8 @@ export class DescansosComponent implements OnInit, OnDestroy {
   descansos: DescansoMedicoListItemDto[] = [];
   /** Catálogo de tipos (ss_descanso_tipo): alimenta el filtro y el formulario del modal. */
   tipos: DescansoTipoDto[] = [];
+  /** Catálogo workers_obra_oficina_staff: alimenta el filtro "Obra / Oficina". */
+  obraOficinaStaff: ObraOficinaStaffOpcionDto[] = [];
   loading = false;
   totalPages = 1;
   totalRecords = 0;
@@ -84,6 +86,11 @@ export class DescansosComponent implements OnInit, OnDestroy {
     ];
   }
 
+  /** Opciones del filtro "Obra / Oficina": "Todos" + el catálogo, en el orden del backend. */
+  get obraOficinaOpts(): { obraOficinaStaffId: number | null; name: string }[] {
+    return [{ obraOficinaStaffId: null, name: 'Todos' }, ...this.obraOficinaStaff];
+  }
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -105,7 +112,8 @@ export class DescansosComponent implements OnInit, OnDestroy {
     this.loaderService.show();
     this.svc.getInicio({ page: 1 }).subscribe({
       next: (res) => {
-        this.tipos        = res.tipos;
+        this.tipos            = res.tipos;
+        this.obraOficinaStaff = res.obraOficinaStaff ?? [];
         this.descansos    = res.descansos.data;
         this.currentPage  = res.descansos.page;
         this.totalPages   = Math.max(res.descansos.totalPages, 1);
@@ -196,7 +204,8 @@ export class DescansosComponent implements OnInit, OnDestroy {
 
   get hasFilters(): boolean {
     return !!(this.filtros.fechaDesde || this.filtros.fechaHasta
-           || this.filtros.workerId   || this.filtros.estado || this.filtros.tipoId);
+           || this.filtros.workerId   || this.filtros.estado || this.filtros.tipoId
+           || this.filtros.obraOficinaStaffId);
   }
 
   get filtrosActivos(): number {
@@ -206,6 +215,7 @@ export class DescansosComponent implements OnInit, OnDestroy {
     if (this.filtros.workerId) n++;
     if (this.filtros.estado) n++;
     if (this.filtros.tipoId) n++;
+    if (this.filtros.obraOficinaStaffId) n++;
     return n;
   }
 

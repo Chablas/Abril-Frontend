@@ -48,9 +48,36 @@
 .btn-link { font-size: .82rem; color: var(--color-abril-standard); font-weight: 600; }
 .btn-link:hover { text-decoration: underline; }
 
+/* ── Tabla ─────────────────────────────────────────────────────────
+   Anchos en % (ver colgroup) para que el sobrante de una pantalla grande se
+   reparta entre todas las columnas: con una columna en `auto` el nombre del
+   trabajador se comía todo el espacio libre y dejaba un hueco enorme.
+   min-width + overflow-x del wrapper: por debajo de ~1080px las 10 columnas
+   ya no caben y "Acceso" salía cortado, así que se scrollea en horizontal en
+   vez de comprimirse. */
 .abril-table {
   table-layout: fixed;
+  min-width: 1080px;
 }
+/* Tabla (>=1024px) vs tarjetas: el corte va acá y no con `hidden lg:block` /
+   `lg:hidden` en el HTML porque las utilidades de Tailwind viven en
+   @layer utilities y el CSS del componente no está en ninguna capa — cualquier
+   `display` declarado acá le gana a la utilidad y se verían las dos vistas a
+   la vez. Un solo origen de verdad para el breakpoint. */
+.dm-table-wrap { display: none; overflow-x: auto; }
+.dm-cards { display: flex; }
+@media (min-width: 1024px) {
+  .dm-table-wrap { display: block; }
+  .dm-cards { display: none; }
+}
+/* Padding lateral más corto que el estándar (14px): con 10 columnas el ancho
+   útil de cada celda es lo que decide si un pill entra completo o se corta. */
+.abril-table th,
+.abril-table td { padding-left: 10px; padding-right: 10px; }
+/* `text-center` en el <th> no alcanza: el `text-align: left` global de
+   .abril-table th está fuera de @layer y le gana a la utilidad de Tailwind,
+   así que el encabezado quedaba a la izquierda y la celda centrada. */
+.abril-table th.text-center { text-align: center; }
 .abril-table td {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -60,10 +87,15 @@
 .abril-table tbody tr:last-child td { border-bottom: 0; }
 
 .col-mono { color: #9ca3af; font-size: .72rem; font-variant-numeric: tabular-nums; }
-.col-worker { white-space: normal !important; overflow: visible !important; }
+/* El nombre puede ocupar dos líneas, pero sin desbordar la celda: con
+   `overflow: visible` se encimaba sobre el pill de la columna de al lado. */
+.col-worker { white-space: normal !important; overflow-wrap: anywhere; }
 .worker-cell { display: flex; flex-direction: column; gap: .1rem; }
 .worker-name { font-size: .78rem; font-weight: 600; color: #111827; line-height: 1.2; }
 .worker-dni  { font-size: .7rem; color: #9ca3af; }
+
+.ubicacion-cell { font-size: .75rem; color: #374151; }
+.dato-vacio { color: #cbd5e1; }
 
 .badge {
   display: inline-flex;
@@ -114,3 +146,108 @@
   white-space: nowrap;
 }
 .text-right { text-align: right; }
+
+/* ── Tarjetas (<lg) ────────────────────────────────────────────────
+   Reemplazan a la tabla por debajo de lg: con 10 columnas comprimidas el
+   nombre del trabajador terminaba encimado con el pill del tipo. */
+.dm-cards {
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 0 1 auto;
+  padding-bottom: 4px;
+}
+
+.dm-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-abril-border, #e5e7eb);
+  border-radius: var(--radius-standard, 10px);
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.dm-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dm-card__ident {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.dm-card__name {
+  font-size: .85rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.25;
+}
+
+.dm-card__dni { font-size: .72rem; color: #9ca3af; }
+
+.dm-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dm-card__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  margin: 0;
+}
+
+.dm-card__item { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.dm-card__item dt {
+  font-size: .64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #94a3b8;
+}
+.dm-card__item dd {
+  margin: 0;
+  font-size: .78rem;
+  color: #374151;
+  overflow-wrap: anywhere;
+}
+
+.dm-card__actions {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 8px;
+}
+
+.dm-card__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-abril-border, #e5e7eb);
+  border-radius: 7px;
+  background: #fff;
+  font-size: .74rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+}
+.dm-card__btn--danger:hover { background: #fee2e2; border-color: #fca5a5; color: #dc2626; }
+
+.dm-cards__empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: .82rem;
+  padding: 2rem 1rem;
+  margin: 0;
+}
