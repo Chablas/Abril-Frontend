@@ -139,6 +139,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/contabilidad/contabilidad.routes')
           .then(m => m.CONTABILIDAD_ROUTES)
+      },
+
+      {
+        path: 'almacen',
+        loadChildren: () =>
+          import('./features/almacen/almacen.routes')
+          .then(m => m.ALMACEN_ROUTES)
       }
     ]
   },

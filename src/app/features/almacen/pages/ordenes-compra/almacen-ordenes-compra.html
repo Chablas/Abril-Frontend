@@ -1,0 +1,130 @@
+<app-abril-page-header
+  badge="ALMACÉN"
+  titulo="Órdenes de Compra y Contratos"
+  subtitulo="Documentos subidos por proyecto, con registro de quién los cargó."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: 'Subir documento', icono: 'ti-upload' }"
+  (primaryClick)="abrirNuevo()">
+
+  <div tabsExtra class="w-[220px]">
+    <app-search-select
+      [options]="proyectos"
+      valueField="id"
+      displayField="nombre"
+      placeholder="Buscar proyecto..."
+      [value]="proyectoId"
+      (valueChange)="onProyectoChange($event)">
+    </app-search-select>
+  </div>
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="oc-root">
+  <div class="abril-table-wrap">
+    <table class="abril-table">
+      <thead>
+        <tr>
+          <th>N° Documento</th>
+          <th class="text-center">Tipo</th>
+          <th>Proyecto</th>
+          <th>Proveedor</th>
+          <th class="text-center">Fecha</th>
+          <th class="text-center">Monto</th>
+          <th>Subido por</th>
+          <th class="text-center">Archivo</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (items.length === 0) {
+          <tr><td colspan="8" class="text-center py-[32px] text-gray-400 text-sm">{{ filtrosActivos ? 'Sin resultados.' : 'No hay documentos cargados.' }}</td></tr>
+        }
+        @for (o of items; track trackById($index, o)) {
+          <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+            <td class="font-medium">{{ o.numero }}</td>
+            <td class="text-center">
+              <span class="badge-tipo-doc" [class.badge-tipo-doc--contrato]="o.tipo === 'Contrato'">{{ o.tipo }}</span>
+            </td>
+            <td>{{ o.proyectoNombre }}</td>
+            <td>{{ o.proveedor }}</td>
+            <td class="text-center whitespace-nowrap">{{ o.fecha | date: 'dd/MM/yyyy' }}</td>
+            <td class="text-center whitespace-nowrap">{{ o.moneda }} {{ o.monto | number: '1.2-2' }}</td>
+            <td>{{ o.subidoPor }}</td>
+            <td class="text-center">
+              <button type="button" title="Ver archivo" class="btn-ver-archivo" (click)="verArchivo(o)">
+                <i class="ti ti-file-download"></i>
+              </button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <app-paginator [totalRecords]="total" [currentPage]="pagina" [totalPages]="totalPages" (pageChange)="changePage($event)"></app-paginator>
+</div>
+
+@if (showNuevo) {
+  <app-base-modal title="SUBIR ORDEN DE COMPRA / CONTRATO" width="w-[480px]" (closeModal)="showNuevo = false">
+    <div class="flex flex-col gap-[14px] mt-[16px]">
+      <app-search-select
+        [options]="proyectos"
+        valueField="id"
+        displayField="nombre"
+        placeholder="Buscar proyecto..."
+        label="Proyecto"
+        [value]="nuevo.proyectoId"
+        (valueChange)="nuevo.proyectoId = $event">
+      </app-search-select>
+
+      <div class="flex gap-[10px]">
+        <select class="abril-field-input" style="flex:1" [(ngModel)]="nuevo.tipo">
+          @for (t of tipos; track t) { <option [ngValue]="t">{{ t }}</option> }
+        </select>
+        <input type="text" class="abril-field-input" style="flex:1" placeholder="N° documento" [(ngModel)]="nuevo.numero" />
+      </div>
+
+      <input type="text" class="abril-field-input" placeholder="Proveedor / Contratista" [(ngModel)]="nuevo.proveedor" />
+
+      <div class="flex gap-[10px]">
+        <select class="abril-field-input" style="width:90px" [(ngModel)]="nuevo.moneda">
+          <option value="PEN">PEN</option>
+          <option value="USD">USD</option>
+        </select>
+        <input type="number" min="0" step="0.01" class="abril-field-input" style="flex:1" placeholder="Monto" [(ngModel)]="nuevo.monto" />
+        <input type="date" class="abril-field-input" style="flex:1" [(ngModel)]="nuevo.fecha" />
+      </div>
+
+      <div class="archivo-picker">
+        <label class="archivo-picker__label">
+          <i class="ti ti-paperclip"></i>
+          {{ archivoSeleccionado?.name ?? 'Seleccionar archivo (PDF, Word, Excel)' }}
+          <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" (change)="onArchivoSeleccionado($event)" hidden />
+        </label>
+      </div>
+
+      <div class="flex justify-center mt-[4px]">
+        <button (click)="guardar()" [disabled]="guardando" class="w-[160px] py-[8px] rounded-[10px] cursor-pointer" style="background:var(--color-abril-standard)">
+          <p class="text-white text-base font-medium text-center">Guardar</p>
+        </button>
+      </div>
+    </div>
+  </app-base-modal>
+}
+
+@if (filtrosAbiertos) {
+  <app-filter-modal (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+    <div class="w-full flex flex-col gap-[12px]">
+      <app-search-input
+        placeholder="Buscar por número o proveedor..."
+        [(value)]="searchText"
+        (valueChange)="onFilterChange()"
+        width="100%">
+      </app-search-input>
+
+      <select class="abril-field-input" [(ngModel)]="tipoFiltro" (ngModelChange)="onFilterChange()">
+        <option [ngValue]="null">Todos los tipos</option>
+        @for (t of tipos; track t) { <option [ngValue]="t">{{ t }}</option> }
+      </select>
+    </div>
+  </app-filter-modal>
+}

@@ -1,0 +1,82 @@
+<app-abril-page-header
+  [badge]="'ARQ. COMERCIAL · ' + anioActual"
+  titulo="Dashboard de Costos"
+  subtitulo="Comparación de gasto entre proyectos y evolución mensual vs. presupuesto meta."
+  [tabs]="tabs"
+  [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+  (secondaryClick)="load()">
+</app-abril-page-header>
+
+<div class="dashboard-root">
+  @if (error) {
+    <div class="alert-error"><i class="ti ti-alert-circle"></i> {{ error }}</div>
+  }
+
+  @if (dashboard) {
+    <div class="stats-grid">
+      <div class="stat-card stat-card--gasto">
+        <div class="stat-card__icon"><i class="ti ti-cash"></i></div>
+        <div class="stat-card__body">
+          <span class="stat-card__val">S/. {{ totalGastoMes | number: '1.0-0' }}</span>
+          <span class="stat-card__lbl">Gasto del mes actual</span>
+        </div>
+      </div>
+      <div class="stat-card stat-card--proyeccion">
+        <div class="stat-card__icon"><i class="ti ti-trending-up"></i></div>
+        <div class="stat-card__body">
+          <span class="stat-card__val">{{ proyeccionProximoMes !== null ? ('S/. ' + (proyeccionProximoMes | number: '1.0-0')) : '—' }}</span>
+          <span class="stat-card__lbl">Proyección próximo mes</span>
+        </div>
+      </div>
+      <div class="stat-card stat-card--proyectos">
+        <div class="stat-card__icon"><i class="ti ti-building"></i></div>
+        <div class="stat-card__body">
+          <span class="stat-card__val">{{ totalProyectos }}</span>
+          <span class="stat-card__lbl">Proyectos con gasto registrado</span>
+        </div>
+      </div>
+      <div class="stat-card stat-card--top">
+        <div class="stat-card__icon"><i class="ti ti-crown"></i></div>
+        <div class="stat-card__body">
+          <span class="stat-card__val stat-card__val--texto">{{ proyectoConMayorGasto }}</span>
+          <span class="stat-card__lbl">Mayor gasto del mes</span>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (puedeConfigurarMeta) {
+    <div class="dash-card meta-card">
+      <h2 class="dash-card__title"><i class="ti ti-target-arrow"></i> Presupuesto Meta mensual</h2>
+      <div class="meta-card__form">
+        <select class="abril-field-input meta-select" [(ngModel)]="metaMes">
+          @for (m of ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic']; track m; let i = $index) {
+            <option [ngValue]="i + 1">{{ m }}</option>
+          }
+        </select>
+        <input type="number" class="abril-field-input meta-select" [(ngModel)]="metaAnio" />
+        <input type="number" min="0" step="0.01" class="abril-field-input meta-monto" placeholder="Monto meta" [(ngModel)]="metaMonto" />
+        <button type="button" class="btn-guardar-meta" (click)="guardarMeta()">Guardar meta</button>
+      </div>
+    </div>
+  }
+
+  <div class="dash-body">
+    <div class="dash-card">
+      <h2 class="dash-card__title"><i class="ti ti-chart-pie"></i> Comparación de costos por proyecto (mes actual)</h2>
+      <div class="chart-card__body">
+        <canvas id="chart-costos-dona"></canvas>
+      </div>
+      @if (dashboard && dashboard.proyectos.length === 0) {
+        <div class="empty-state empty-state--inline">Sin gasto registrado este mes.</div>
+      }
+    </div>
+
+    <div class="dash-card dash-card--full">
+      <h2 class="dash-card__title"><i class="ti ti-chart-line"></i> Evolución mensual del gasto vs. presupuesto meta</h2>
+      <div class="chart-card__body">
+        <canvas id="chart-costos-evolucion"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
