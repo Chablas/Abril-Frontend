@@ -119,6 +119,48 @@
   color: #b91c1c;
 }
 
+/* El lugar es el único dato de varias líneas (dirección + referencia + mapa), así que su
+   ícono se alinea arriba en vez de al centro del bloque. */
+.pe-cita-item--lugar {
+  align-items: flex-start;
+}
+
+.pe-cita-item--lugar > i {
+  margin-top: 1px;
+}
+
+.pe-lugar {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+}
+
+.pe-lugar-ref {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.pe-lugar-mapa {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--pe-green);
+  text-decoration: underline;
+}
+
+/* El ícono del enlace no hereda el rojo del recuadro de rechazo: sigue siendo una acción. */
+.pe-cita--no .pe-lugar-mapa,
+.pe-cita--no .pe-lugar-mapa i {
+  color: var(--pe-green);
+}
+
 /* ── Spinner ──────────────────────────────────────────────────────────── */
 .pe-spinner {
   width: 42px;

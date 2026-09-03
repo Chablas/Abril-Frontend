@@ -522,7 +522,7 @@ export class Detail implements OnInit {
   }
 
   /** Escribe el registro de un documento en el item local (mantiene la vista coherente). */
-  private setDocFile(key: string, file: ProjectSubContractorFileDTO): void {
+  private setDocFile(key: string, file: ProjectSubContractorFileDTO | undefined): void {
     switch (key) {
       case 'Contract':             this.item.contract             = file; break;
       case 'SummarySheet':         this.item.summarySheet         = file; break;
@@ -542,6 +542,47 @@ export class Detail implements OnInit {
 
   canGenerate(key: string): boolean {
     return this.generableKeys.has(key);
+  }
+
+  /** Documento cuyo archivo se está eliminando en este momento. */
+  deletingDoc: string | null = null;
+
+  /**
+   * Quita el archivo del documento. Es un soft delete: en la BD el registro queda con
+   * state = false y el archivo en OneDrive se conserva, pero deja de verse en el expediente.
+   * El estado y la observación se van con él, porque describían al archivo eliminado.
+   */
+  async deleteDocFile(docKey: string, docLabel: string): Promise<void> {
+    if (this.deletingDoc !== null || this.uploadingDoc !== null || this.generatingDoc !== null) return;
+
+    const confirm = await Swal.fire({
+      icon: 'warning',
+      title: `¿Eliminar el archivo de ${docLabel}?`,
+      text: 'También se borra su estado y observación.',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#64BC04',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.deletingDoc = docKey;
+    this.loaderService.show();
+    this.adjudicacionesService.deleteDocument(this.item.projectSubContractorId, docKey).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        this.deletingDoc = null;
+        this.setDocFile(docKey, undefined);
+        this.docForms[docKey] = { statusId: null, observation: '' };
+        Swal.fire({ icon: 'success', title: res.message ?? 'Archivo eliminado exitosamente', draggable: true });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.deletingDoc = null;
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   generateDoc(docKey: string): void {
@@ -589,6 +630,7 @@ export class Detail implements OnInit {
   private static readonly PDF_ACCEPT = '.pdf,application/pdf';
 
   triggerUpload(docKey: string): void {
+    if (this.deletingDoc !== null) return;
     this.currentDocType = docKey;
     this.fileInput.nativeElement.value = '';
     // Restringir el selector de archivos según el tipo de documento
@@ -619,14 +661,14 @@ export class Detail implements OnInit {
   private dragEnterCount: Record<string, number> = {};
 
   onDocDragEnter(docKey: string, event: DragEvent): void {
-    if (this.isTemplateDoc(docKey) || this.uploadingDoc !== null) return;
+    if (this.isTemplateDoc(docKey) || this.uploadingDoc !== null || this.deletingDoc !== null) return;
     event.preventDefault();
     this.dragEnterCount[docKey] = (this.dragEnterCount[docKey] ?? 0) + 1;
     this.dragDoc = docKey;
   }
 
   onDocDragOver(docKey: string, event: DragEvent): void {
-    if (this.isTemplateDoc(docKey) || this.uploadingDoc !== null) return;
+    if (this.isTemplateDoc(docKey) || this.uploadingDoc !== null || this.deletingDoc !== null) return;
     // Necesario para permitir el drop; el estado visual lo maneja dragenter/dragleave.
     event.preventDefault();
   }
@@ -640,7 +682,7 @@ export class Detail implements OnInit {
   }
 
   onDocDrop(docKey: string, event: DragEvent): void {
-    if (this.isTemplateDoc(docKey) || this.uploadingDoc !== null) return;
+    if (this.isTemplateDoc(docKey) || this.uploadingDoc !== null || this.deletingDoc !== null) return;
     event.preventDefault();
     this.dragEnterCount[docKey] = 0;
     this.dragDoc = null;

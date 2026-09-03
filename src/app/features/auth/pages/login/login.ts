@@ -181,10 +181,16 @@ export class Login implements OnInit {
       this.cdr.detectChanges();
       // El usuario cerró el popup — no mostrar error
       if (['user_cancelled', 'popup_window_error', 'timed_out'].includes(err?.errorCode)) return;
+      // `err.error.message` es el mensaje del backend (el token de Microsoft salió bien pero el
+      // login del sistema lo rechazó: p. ej. cuenta sin ficha de trabajador). Va primero porque
+      // en un HttpErrorResponse el `message` de Angular es el genérico "Http failure response
+      // for ...: 403 Forbidden", que no le dice nada al usuario. `err.message` cubre los errores
+      // de MSAL, que sí llegan como Error con mensaje propio.
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: err?.message ?? 'No se pudo iniciar sesión con Microsoft.',
+        text:
+          err?.error?.message ?? err?.message ?? 'No se pudo iniciar sesión con Microsoft.',
       });
     }
   }

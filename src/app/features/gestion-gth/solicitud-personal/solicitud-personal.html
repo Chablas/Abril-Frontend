@@ -160,7 +160,7 @@
       <thead class="sticky top-0 z-10">
         <tr>
           <th>Código</th>
-          <th>Posición</th>
+          <th>Puesto</th>
           <th>Área</th>
           <th>Proyecto / Obra</th>
           <th>Enviado</th>
@@ -258,7 +258,7 @@
           [textColor]="estadoColors(s.estadoCodigo).text" />
       </div>
 
-      <!-- Posición + justificación -->
+      <!-- Puesto + justificación -->
       <p class="text-[13.5px] font-semibold text-gray-800 mt-[5px] leading-snug">{{ s.puesto | titleCase }}</p>
       <p *ngIf="s.justificacion" class="text-[11.5px] text-gray-400 mt-[1px] truncate" [title]="s.justificacion">
         {{ s.justificacion }}
