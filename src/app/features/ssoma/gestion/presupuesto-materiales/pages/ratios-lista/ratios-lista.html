@@ -90,37 +90,70 @@
               </div>
               <div class="driver-tabla" *ngIf="d.proyectos.length > 0">
                 <div class="driver-tabla__header">
-                  <div>Proyecto</div>
-                  <div>Área m²</div>
-                  <div [title]="d.tipoDriver === 'HH' ? 'Suma de Tareo/planilla, en vivo' : 'Distintos en worker_vinculaciones, en vivo'">
-                    {{ d.tipoDriver === 'HH' ? 'HH acum. real' : 'Trab. acum. real' }}
+                  <div class="th-sort" (click)="ordenarDriver(d.tipoDriver, 'projectDescription')">
+                    Proyecto <span *ngIf="driverSortCol(d.tipoDriver) === 'projectDescription'">{{ driverSortDir(d.tipoDriver) === 'asc' ? '▲' : '▼' }}</span>
                   </div>
-                  <div title="Total final tipeado a mano en Datos Base, cuando el proyecto ya cerró">Final manual</div>
-                  <div title="Manual si existe, si no el acumulado real — este es el que entra a la mediana">Oficial</div>
-                  <div>Ratio</div>
-                  <div>Incluir</div>
+                  <div class="th-sort" (click)="ordenarDriver(d.tipoDriver, 'areaTechada')">
+                    Área m² <span *ngIf="driverSortCol(d.tipoDriver) === 'areaTechada'">{{ driverSortDir(d.tipoDriver) === 'asc' ? '▲' : '▼' }}</span>
+                  </div>
+                  <div class="th-sort" (click)="ordenarDriver(d.tipoDriver, 'cantidadProyectado')"
+                    title="Estimación de presupuesto tipeada a mano en Datos Base, mientras la obra sigue activa (HH_PROYECTADO / HH_CALCULADO_MEDIANA) — no es un dato real">
+                    Proyectado <span *ngIf="driverSortCol(d.tipoDriver) === 'cantidadProyectado'">{{ driverSortDir(d.tipoDriver) === 'asc' ? '▲' : '▼' }}</span>
+                  </div>
+                  <div class="th-sort" (click)="ordenarDriver(d.tipoDriver, 'cantidadCalculado')"
+                    [title]="d.tipoDriver === 'HH' ? 'Suma de Tareo/planilla, en vivo' : 'Distintos en worker_vinculaciones, en vivo'">
+                    {{ d.tipoDriver === 'HH' ? 'HH acum. real' : 'Trab. acum. real' }}
+                    <span *ngIf="driverSortCol(d.tipoDriver) === 'cantidadCalculado'">{{ driverSortDir(d.tipoDriver) === 'asc' ? '▲' : '▼' }}</span>
+                  </div>
+                  <div class="th-sort" (click)="ordenarDriver(d.tipoDriver, 'cantidadManual')"
+                    title="Total real final tipeado a mano en Datos Base, solo cuando la obra ya cerró (HH_REAL)">
+                    Real final <span *ngIf="driverSortCol(d.tipoDriver) === 'cantidadManual'">{{ driverSortDir(d.tipoDriver) === 'asc' ? '▲' : '▼' }}</span>
+                  </div>
+                  <div class="th-sort" (click)="ordenarDriver(d.tipoDriver, 'ratio')"
+                    title="El que entra a la mediana: Real final si existe, si no el acumulado real. Nunca el proyectado.">
+                    Ratio <span *ngIf="driverSortCol(d.tipoDriver) === 'ratio'">{{ driverSortDir(d.tipoDriver) === 'asc' ? '▲' : '▼' }}</span>
+                  </div>
+                  <div title="Cuál de los 3 valores usar para el ratio de este proyecto — tú decides, incluso puedes no elegir ninguno">Usar</div>
+                  <div class="th-sort" (click)="ordenarDriver(d.tipoDriver, 'incluidoManual')" title="Ordenar: los incluidos primero">
+                    Incluir <span *ngIf="driverSortCol(d.tipoDriver) === 'incluidoManual'">{{ driverSortDir(d.tipoDriver) === 'asc' ? '▲' : '▼' }}</span>
+                  </div>
                 </div>
                 <div
-                  *ngFor="let p of d.proyectos"
+                  *ngFor="let p of proyectosOrdenados(d)"
                   class="driver-tabla__row"
                   [class.driver-tabla__row--outlier]="p.esOutlier">
                   <div class="tabla-cols__proyecto" [title]="p.projectDescription">
                     {{ p.projectDescription }}
                     <span *ngIf="p.esOutlier" class="badge badge-warn badge-xs" title="Outlier: fuera de rango normal (IQR)">outlier</span>
                   </div>
-                  <div>{{ p.areaTechada | number:'1.0-0' }}</div>
-                  <div>{{ p.cantidadCalculado | number:'1.0-2' }}</div>
-                  <div>
-                    <span *ngIf="p.cantidadManual !== null">{{ p.cantidadManual | number:'1.0-2' }}</span>
-                    <span *ngIf="p.cantidadManual === null" class="empty-cell" title="Sin valor manual cargado en Datos Base">—</span>
+                  <div class="celda-num">{{ p.areaTechada | number:'1.0-0' }}</div>
+                  <div class="celda-num">
+                    <span *ngIf="p.cantidadProyectado !== null">{{ p.cantidadProyectado | number:formatoCantidad(d.tipoDriver) }}</span>
+                    <span *ngIf="p.cantidadProyectado === null" class="celda-vacia">—</span>
                   </div>
-                  <div><strong>{{ p.cantidad | number:'1.0-2' }}</strong></div>
-                  <div><strong>{{ p.ratio | number:'1.4-4' }}</strong></div>
+                  <div class="celda-num">{{ p.cantidadCalculado | number:formatoCantidad(d.tipoDriver) }}</div>
+                  <div class="celda-num">
+                    <span *ngIf="p.cantidadManual !== null">{{ p.cantidadManual | number:formatoCantidad(d.tipoDriver) }}</span>
+                    <span *ngIf="p.cantidadManual === null" class="celda-vacia">—</span>
+                  </div>
+                  <div class="celda-num"><strong>{{ p.ratio | number:'1.4-4' }}</strong></div>
+                  <div>
+                    <select
+                      class="select-fuente"
+                      [disabled]="actualizandoDriverProjectId === p.projectId"
+                      [ngModel]="p.fuenteCantidad ?? ''"
+                      (ngModelChange)="cambiarFuenteDriver(d.tipoDriver, p, $event)">
+                      <option value="">Ninguno</option>
+                      <option value="PROYECTADO" [disabled]="p.cantidadProyectado === null">Proyectado</option>
+                      <option value="CALCULADO" [disabled]="p.cantidadCalculado <= 0">Acumulado real</option>
+                      <option value="MANUAL" [disabled]="p.cantidadManual === null">Real final</option>
+                    </select>
+                  </div>
                   <div class="tabla-cols__dato" [class.tabla-cols__dato--excluido]="!p.incluidoManual">
                     <input
                       type="checkbox"
                       [checked]="p.incluidoManual"
-                      [disabled]="actualizandoDriverProjectId === p.projectId"
+                      [disabled]="actualizandoDriverProjectId === p.projectId || !p.fuenteCantidad"
                       (change)="toggleIncluidoDriver(d.tipoDriver, p)" />
                     <span
                       class="badge"

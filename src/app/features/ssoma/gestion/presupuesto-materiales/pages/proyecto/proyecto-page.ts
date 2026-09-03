@@ -39,6 +39,18 @@ interface FilaHito {
   esHitoCritico: boolean;
 }
 
+// ── Incremento temporal de la cuadrilla de acero (pasa de contratista a "casa" en proyectos
+// nuevos, con excepción de Cedro 33 y Kaurí que se quedan como estaban). Sacado del histórico
+// real de CAMELIA (único de los 3 proyectos con esta partida ya finalizado; 2A Ingenieria &
+// Negocios S.A.C., 110 días, 31/10/24-03/07/25): 15.671 HH / 19.446 m² = 0,8059 HH/m².
+// Trabajadores: no hay identidad de persona en esa fuente (solo cabezas por día), así que se
+// estima desde el pico de personal en un solo día (31) + 10% de rotación asumida (no medida) =
+// 34,1 personas / 19.446 m² = 0,0018 trab/m². Usar solo hasta que el primer proyecto que ya
+// tenga esta cuadrilla como "casa" complete su propio historial real — ahí reemplazar por el
+// ratio medido en vez de esta estimación.
+const ACERO_HH_POR_M2 = 0.8059;
+const ACERO_TRABAJADORES_POR_M2 = 0.0018;
+
 const ROLES_PERSONAL: string[] = [
   'PREVENCIONISTA', 'MONITOR', 'VIGIA',
   'CAPATAZ', 'OFICIAL', 'OPERARIO', 'PEON', 'AYUDANTE',
@@ -78,6 +90,11 @@ export class ProyectoPage implements OnInit {
   driverProyecto: DriverProyectoDto | null = null;
   ratiosDriversRecomendados: RatiosDriversRecomendadosDto | null = null;
   sugiriendoDrivers = false;
+
+  // ── Adicional de cuadrilla de acero (temporal, ver constantes arriba) ──
+  incluirAcero = false;
+  private aceroHhAplicado = 0;
+  private aceroTrabAplicado = 0;
 
   hitosCriticos: HitoCriticoDisponibleDto[] = [];
   loadingHitos = false;
@@ -495,6 +512,35 @@ export class ProyectoPage implements OnInit {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  /** Suma o quita el adicional estimado de la cuadrilla de acero (ver ACERO_HH_POR_M2 /
+   * ACERO_TRABAJADORES_POR_M2 arriba) sobre lo que ya haya en el formulario — nunca reemplaza,
+   * solo incrementa/decrementa, para no pisar un ajuste manual o una sugerencia previa. */
+  toggleAcero(): void {
+    const area = this.formGenerar.areaTechadaM2 || this.driverProyecto?.areaTechadaM2 || 0;
+    if (!area) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Falta el Área Techada',
+        text: 'Ingresa el Área Techada antes de activar el adicional de acero.',
+      });
+      this.incluirAcero = false;
+      this.cdr.markForCheck();
+      return;
+    }
+    if (this.incluirAcero) {
+      this.aceroHhAplicado = Math.round(area * ACERO_HH_POR_M2);
+      this.aceroTrabAplicado = Math.round(area * ACERO_TRABAJADORES_POR_M2);
+      this.formGenerar.hhTotalCasa = (this.formGenerar.hhTotalCasa || 0) + this.aceroHhAplicado;
+      this.formGenerar.trabajadores = (this.formGenerar.trabajadores || 0) + this.aceroTrabAplicado;
+    } else {
+      this.formGenerar.hhTotalCasa = Math.max(0, (this.formGenerar.hhTotalCasa || 0) - this.aceroHhAplicado);
+      this.formGenerar.trabajadores = Math.max(0, (this.formGenerar.trabajadores || 0) - this.aceroTrabAplicado);
+      this.aceroHhAplicado = 0;
+      this.aceroTrabAplicado = 0;
+    }
+    this.cdr.markForCheck();
   }
 
   generar(): void {

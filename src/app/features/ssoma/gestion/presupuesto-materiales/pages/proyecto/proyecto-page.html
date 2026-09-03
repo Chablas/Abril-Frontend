@@ -195,6 +195,18 @@
           <i class="ti ti-bulb"></i> {{ sugiriendoDrivers ? 'Calculando...' : 'Sugerir HH y Trabajadores desde histórico' }}
         </button>
         <span class="form-sugerencia__nota">Usa la mediana de HH/m² y Trabajadores/m² de los proyectos que marcaste como incluidos en Ratios · Dotación. Solo prellena los campos de arriba — vos decidís si lo dejas o lo ajustas.</span>
+
+        <label class="form-check-acero">
+          <input type="checkbox" [ngModel]="incluirAcero" (ngModelChange)="incluirAcero = $event; toggleAcero()" />
+          Incluir cuadrilla de acero como personal propio (adicional)
+        </label>
+        <span class="form-sugerencia__nota">
+          Suma un estimado de <strong>0,8059 HH/m²</strong> y <strong>0,0018 trabajadores/m²</strong> —
+          sacado del histórico real de CAMELIA (único proyecto ya cerrado con esta cuadrilla, antes
+          contratista). El de trabajadores incluye un 10% de rotación asumido, no medido, porque esa
+          fuente no identifica personas. Usar solo hasta que el primer proyecto que ya tenga esta
+          cuadrilla como propia complete su propio histórico real.
+        </span>
       </div>
       <div class="form-actions">
         <button class="btn-primary" (click)="generar()" [disabled]="generando">

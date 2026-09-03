@@ -242,8 +242,13 @@ export interface RatioDriverProyectoDto {
   ratio: number;
   /** Acumulado real calculado desde Tareo/planilla (HH) o worker_vinculaciones (TRABAJADORES), "en vivo". */
   cantidadCalculado: number;
-  /** Valor final tipeado a mano en Datos Base — null si el proyecto todavía no lo tiene cargado. */
+  /** Valor REAL final tipeado a mano en Datos Base — solo cuando hhFuente es HH_REAL. */
   cantidadManual: number | null;
+  /** Valor PROYECTADO/estimado tipeado a mano en Datos Base — solo cuando hhFuente es
+   * HH_PROYECTADO o HH_CALCULADO_MEDIANA. Puramente informativo, no entra a la mediana. */
+  cantidadProyectado: number | null;
+  /** Cuál de los 3 valores eligió el responsable para Cantidad/Ratio: CALCULADO | MANUAL | PROYECTADO | null. */
+  fuenteCantidad: string | null;
   /** Solo informativo para HH: HH_REAL | HH_PROYECTADO | HH_CALCULADO_MEDIANA. */
   hhFuente: string | null;
   esOutlier: boolean;

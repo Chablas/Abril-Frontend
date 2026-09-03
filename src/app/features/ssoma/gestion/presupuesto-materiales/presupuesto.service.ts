@@ -233,6 +233,19 @@ export class PresupuestoMaterialesService {
     );
   }
 
+  /** fuente: 'CALCULADO' | 'MANUAL' | 'PROYECTADO' | null (ninguno, excluye el proyecto). */
+  actualizarFuenteCantidadDriver(
+    tipo: TipoDriverRatio,
+    projectId: number,
+    fuente: string | null,
+  ): Observable<unknown> {
+    return this.http.patch(
+      `${this.base}/ratios/drivers/${tipo}/proyectos/${projectId}/fuente`,
+      { fuente },
+      { headers: this.authHeaders() },
+    );
+  }
+
   getRatiosDriversRecomendados(): Observable<RatiosDriversRecomendadosDto> {
     return this.http.get<RatiosDriversRecomendadosDto>(`${this.base}/ratios/drivers/recomendados`, {
       headers: this.authHeaders(),

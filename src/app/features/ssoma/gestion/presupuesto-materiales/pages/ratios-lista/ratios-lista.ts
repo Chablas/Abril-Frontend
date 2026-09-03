@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { PresupuestoMaterialesService } from '../../presupuesto.service';
@@ -28,7 +29,7 @@ import { SearchSelect } from '../../../../../../shared/components/search-select/
   selector: 'app-ratios-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, SearchInput, SearchSelect],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, SearchInput, SearchSelect],
   templateUrl: './ratios-lista.html',
   styleUrl: './ratios-lista.css',
 })
@@ -167,10 +168,65 @@ export class RatiosListaPage implements OnInit {
     });
   }
 
+  /** El responsable elige, por proyecto, cuál de los 3 valores usar (o "Ninguno" para excluirlo). */
+  cambiarFuenteDriver(tipo: TipoDriverRatio, p: RatioDriverProyectoDto, fuente: string): void {
+    if (this.actualizandoDriverProjectId === p.projectId) return;
+    const valor = fuente === '' ? null : fuente;
+    this.actualizandoDriverProjectId = p.projectId;
+    this.cdr.markForCheck();
+    this.svc.actualizarFuenteCantidadDriver(tipo, p.projectId, valor).subscribe({
+      next: () => {
+        this.actualizandoDriverProjectId = null;
+        this.loadDrivers();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.actualizandoDriverProjectId = null;
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
   driverTipoLabel(tipo: TipoDriverRatio): string {
     return tipo === 'HH'
       ? 'Horas-Hombre por m² de área techada (desde Tareo real)'
       : 'Trabajadores distintos por m² de área techada (total que pasó por la obra)';
+  }
+
+  /** Trabajadores son enteros (no se cuentan medias personas); HH admite decimales. */
+  formatoCantidad(tipo: TipoDriverRatio): string {
+    return tipo === 'TRABAJADORES' ? '1.0-0' : '1.0-2';
+  }
+
+  // ── Orden de la tabla de Ratios de dotación: cada panel (HH / Trabajadores) ordena aparte,
+  // así el responsable puede comparar por la columna que le interese antes de marcar "Incluir". ──
+  private driverSortState: Record<TipoDriverRatio, { col: string; dir: 'asc' | 'desc' }> = {
+    HH: { col: 'ratio', dir: 'asc' },
+    TRABAJADORES: { col: 'ratio', dir: 'asc' },
+  };
+
+  driverSortCol(tipo: TipoDriverRatio): string { return this.driverSortState[tipo].col; }
+  driverSortDir(tipo: TipoDriverRatio): 'asc' | 'desc' { return this.driverSortState[tipo].dir; }
+
+  ordenarDriver(tipo: TipoDriverRatio, col: string): void {
+    const estado = this.driverSortState[tipo];
+    estado.dir = estado.col === col && estado.dir === 'asc' ? 'desc' : 'asc';
+    estado.col = col;
+    this.cdr.markForCheck();
+  }
+
+  proyectosOrdenados(d: RatioDriverComparacionDto): RatioDriverProyectoDto[] {
+    const { col, dir } = this.driverSortState[d.tipoDriver];
+    const factor = dir === 'asc' ? 1 : -1;
+    return [...d.proyectos].sort((a, b) => {
+      const va = (a as any)[col];
+      const vb = (b as any)[col];
+      if (va === null || va === undefined) return vb === null || vb === undefined ? 0 : 1;
+      if (vb === null || vb === undefined) return -1;
+      if (typeof va === 'string') return va.localeCompare(vb) * factor;
+      if (typeof va === 'boolean') return (Number(va) - Number(vb)) * factor;
+      return (va - vb) * factor;
+    });
   }
 
   loadResumen(): void {

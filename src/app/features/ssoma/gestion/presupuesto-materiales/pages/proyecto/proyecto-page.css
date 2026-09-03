@@ -23,6 +23,9 @@
 .btn-sugerir:hover:not(:disabled) { background: #f0f9ff; }
 .btn-sugerir:disabled { opacity: 0.6; cursor: default; }
 .form-sugerencia__nota { font-size: 0.7rem; color: #6b7280; }
+.form-check-acero { display: flex; align-items: center; gap: 6px; font-size: 0.8rem;
+  font-weight: 600; color: #334155; cursor: pointer; margin-top: 0.25rem; }
+.form-check-acero input { width: 14px; height: 14px; cursor: pointer; }
 
 .empty-state { display: flex; flex-direction: column; align-items: center; gap: 1rem;
   padding: 3rem; text-align: center; color: #6b7280; }
