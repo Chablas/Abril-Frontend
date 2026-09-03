@@ -12,54 +12,12 @@
   </app-abril-page-header>
 
   <div class="page-body">
-    <!-- Resumen general de proyectos con ratios calculados -->
-    <div class="resumen-card">
-      <div class="resumen-card__header">
-        <h3 class="resumen-card__titulo">Resumen general</h3>
-        <div style="display:flex; align-items:center; gap:12px;">
-          <span class="resumen-card__total" *ngIf="resumen">{{ resumen.totalFamilias }} familias SSOMA activas</span>
-          <button class="btn-outline btn-sm" [disabled]="calculandoTodos" (click)="calcularTodosLosRatios()"
-            title="Calcula el ratio de cada proyecto con Kardex estandarizado, de una sola vez (en vez de proyecto por proyecto).">
-            <i class="ti" [ngClass]="calculandoTodos ? 'ti-loader-2 spin' : 'ti-calculator'"></i>
-            {{ calculandoTodos ? 'Calculando...' : 'Calcular ratios de todos' }}
-          </button>
-        </div>
-      </div>
-      <div *ngIf="loadingResumen" class="loading-msg-small">Cargando resumen...</div>
-      <div *ngIf="!loadingResumen && resumen && resumen.proyectos.length === 0" class="empty-cell">
-        Todavía no hay proyectos con ratios calculados.
-      </div>
-      <div *ngIf="!loadingResumen && resumen && resumen.proyectos.length > 0" class="resumen-tabla">
-        <div class="resumen-tabla__header">
-          <div>Proyecto</div>
-          <div>Familias calculadas</div>
-          <div>Gasto SSOMA total</div>
-          <div>Rango de consumo</div>
-        </div>
-        <div
-          *ngFor="let p of resumen.proyectos"
-          class="resumen-tabla__row"
-          (click)="irAProyecto(p.projectId)"
-        >
-          <div class="resumen-tabla__proyecto">{{ p.projectDescription }}</div>
-          <div>{{ p.familiasCalculadas }}</div>
-          <div>S/ {{ p.totalGastoSsoma | number:'1.2-2' }}</div>
-          <div>
-            <ng-container *ngIf="p.fechaMin && p.fechaMax">
-              {{ p.fechaMin | date:'dd/MM/yy' }} – {{ p.fechaMax | date:'dd/MM/yy' }}
-            </ng-container>
-            <span *ngIf="!p.fechaMin">—</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Ratios de dotación: HH y N Trabajadores REALES por m2, calculados desde el Tareo de
          Control de Acceso (asistencia diaria) — no desde el campo tipeado a mano en la ficha
          del proyecto. No segmenta por tipo de proyecto; "incluir" es siempre manual — el
          responsable decide caso por caso, incluso proyectos aún activos (donde el HH
          acumulado del Tareo es parcial, no el total final de la obra). -->
-    <div class="resumen-card">
+    <div class="resumen-card" *ngIf="mostrarDotacion">
       <div class="resumen-card__header">
         <h3 class="resumen-card__titulo">Ratios de dotación (HH / N° Trabajadores) — desde Tareo real</h3>
         <button
@@ -170,10 +128,20 @@
       </div>
     </div>
 
+    <div *ngIf="!loading" class="ratios-toolbar">
+      <button class="btn-outline btn-sm" [disabled]="calculandoTodos" (click)="calcularTodosLosRatios()"
+        title="Calcula el ratio de cada proyecto con Kardex estandarizado, de una sola vez (en vez de proyecto por proyecto). También disponible en Gasto SSOMA.">
+        <i class="ti" [ngClass]="calculandoTodos ? 'ti-loader-2 spin' : 'ti-calculator'"></i>
+        {{ calculandoTodos ? 'Calculando...' : 'Calcular ratios de todos' }}
+      </button>
+    </div>
+
     <div *ngIf="loading" class="loading-msg">Cargando familias...</div>
 
     <div *ngIf="!loading" class="familias-lista">
-      <div *ngFor="let f of familiasFiltradas" class="familia-panel">
+      <ng-container *ngFor="let grupo of gruposPorTipo; trackBy: trackByTipo">
+        <div class="familias-lista__tipo-header">{{ grupo.tipo }}</div>
+        <div *ngFor="let f of grupo.familias; trackBy: trackByFamiliaId" class="familia-panel">
         <div class="familia-panel__header">
           <span class="familia-panel__nombre">{{ f.nombreFamilia }}</span>
           <span class="familia-panel__tipo">{{ f.tipoMaterial }}</span>
@@ -196,6 +164,16 @@
           </span>
 
           <span *ngIf="f.nOutliers > 0" class="badge badge-warn">{{ f.nOutliers }} outlier(s)</span>
+
+          <label class="familia-panel__activo" title="Desactivar esta familia la saca del cálculo de ratio y del presupuesto de proyectos nuevos, sin borrar su histórico.">
+            <input
+              type="checkbox"
+              [checked]="true"
+              [disabled]="desactivandoFamiliaId === f.familiaId"
+              (change)="desactivarFamilia(f)"
+            />
+            Activo
+          </label>
         </div>
 
         <div class="familia-panel__body">
@@ -239,7 +217,8 @@
             </div>
           </ng-container>
         </div>
-      </div>
+        </div>
+      </ng-container>
 
       <div *ngIf="familiasFiltradas.length === 0" class="empty-cell">
         No hay familias que coincidan con la búsqueda.

@@ -4,7 +4,6 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
 import { PresupuestoMaterialesService } from '../../presupuesto.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -12,7 +11,6 @@ import {
   FamiliaConRatioDto,
   RatioFamiliaComparacionDto,
   RatioProyectoItemDto,
-  ResumenRatiosDto,
   TipoDriverRatio,
   RatioDriverComparacionDto,
   RatioDriverProyectoDto,
@@ -39,7 +37,6 @@ export class RatiosListaPage implements OnInit {
   private loader = inject(LoaderService);
   private error = inject(ErrorService);
   private cdr = inject(ChangeDetectorRef);
-  private router = inject(Router);
 
   familias: FamiliaConRatioDto[] = [];
   loading = false;
@@ -66,10 +63,7 @@ export class RatiosListaPage implements OnInit {
   detalles: Map<number, RatioFamiliaComparacionDto> = new Map();
   cargandoDetalleIds: Set<number> = new Set();
   actualizandoProjectId: number | null = null;
-
-  // ── Resumen general ────────────────────────────────────────────────
-  resumen: ResumenRatiosDto | null = null;
-  loadingResumen = false;
+  desactivandoFamiliaId: number | null = null;
   calculandoTodos = false;
 
   // ── Ratios de dotación (HH / N Trabajadores por m2) ─────────────────
@@ -81,7 +75,6 @@ export class RatiosListaPage implements OnInit {
 
   ngOnInit(): void {
     this.load();
-    this.loadResumen();
     this.loadDrivers();
   }
 
@@ -99,7 +92,8 @@ export class RatiosListaPage implements OnInit {
   }
 
   /** Calcula ratios de TODOS los proyectos con consumo SSOMA estandarizado de una sola vez — evita
-   * tener que entrar a la ficha de cada proyecto y darle "Calcular ratios" uno por uno. */
+   * tener que entrar a la ficha de cada proyecto y darle "Calcular ratios" uno por uno. Duplicado
+   * a propósito en Ratios y en Gasto SSOMA — es el mismo cálculo, dos puntos de entrada. */
   calcularTodosLosRatios(): void {
     if (this.calculandoTodos) return;
     this.calculandoTodos = true;
@@ -116,7 +110,6 @@ export class RatiosListaPage implements OnInit {
             (conAdvertencias > 0 ? ` ${conAdvertencias} con alguna advertencia (revisa la consola/detalle).` : ''),
         });
         this.load();
-        this.loadResumen();
       },
       error: (err: HttpErrorResponse) => {
         this.calculandoTodos = false;
@@ -229,25 +222,6 @@ export class RatiosListaPage implements OnInit {
     });
   }
 
-  loadResumen(): void {
-    this.loadingResumen = true;
-    this.svc.getResumenRatios().subscribe({
-      next: (r) => {
-        this.resumen = r;
-        this.loadingResumen = false;
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.loadingResumen = false;
-        this.cdr.markForCheck();
-      },
-    });
-  }
-
-  irAProyecto(projectId: number): void {
-    this.router.navigate(['/ssoma/gestion/presupuesto-materiales/proyecto', projectId]);
-  }
-
   load(): void {
     this.loading = true;
     this.loader.show();
@@ -273,8 +247,20 @@ export class RatiosListaPage implements OnInit {
     return Array.from(new Set(this.familias.map((f) => f.tipoMaterial))).sort();
   }
 
+  /** Valor sintético del filtro Tipo para el panel de Ratios de dotación (HH/Trabajadores) — no
+   * es un Tipo real de familia, así que se agrega a mano a las opciones del filtro. */
+  readonly TIPO_DOTACION = '__DOTACION__';
+
   get tiposFilterOptions(): { value: string; label: string }[] {
-    return this.tiposDisponibles.map((t) => ({ value: t, label: t }));
+    return [
+      { value: this.TIPO_DOTACION, label: 'Ratios de dotación (HH / Trabajadores)' },
+      ...this.tiposDisponibles.map((t) => ({ value: t, label: t })),
+    ];
+  }
+
+  /** El panel de dotación se ve cuando no hay filtro de Tipo, o cuando se elige explícitamente. */
+  get mostrarDotacion(): boolean {
+    return !this.tipoSeleccionado || this.tipoSeleccionado === this.TIPO_DOTACION;
   }
 
   get variableBasesFilterOptions(): { value: string; label: string }[] {
@@ -283,6 +269,26 @@ export class RatiosListaPage implements OnInit {
 
   get variableBasesDisponibles(): string[] {
     return Array.from(new Set(this.familias.map((f) => f.variableBase))).sort();
+  }
+
+  /** Agrupa las tarjetas por Tipo (Botiquín, EPC, EPP, etc.) para navegar más intuitivo — no
+   * reordena nada, el backend ya entrega las familias ordenadas por Tipo. */
+  get gruposPorTipo(): { tipo: string; familias: FamiliaConRatioDto[] }[] {
+    const grupos: { tipo: string; familias: FamiliaConRatioDto[] }[] = [];
+    for (const f of this.familiasFiltradas) {
+      const ultimo = grupos[grupos.length - 1];
+      if (ultimo && ultimo.tipo === f.tipoMaterial) ultimo.familias.push(f);
+      else grupos.push({ tipo: f.tipoMaterial, familias: [f] });
+    }
+    return grupos;
+  }
+
+  trackByTipo(_index: number, grupo: { tipo: string }): string {
+    return grupo.tipo;
+  }
+
+  trackByFamiliaId(_index: number, f: FamiliaConRatioDto): number {
+    return f.familiaId;
   }
 
   get familiasFiltradas(): FamiliaConRatioDto[] {
@@ -357,6 +363,36 @@ export class RatiosListaPage implements OnInit {
         this.error.handleError(err);
         this.cdr.markForCheck();
       },
+    });
+  }
+
+  /** Desactiva una familia (mismo flag "Activo" de Catálogo) desde su propia tarjeta de Ratios —
+   * la saca del cálculo/presupuesto de proyectos nuevos sin borrar su histórico. Pide confirmación
+   * porque afecta a todos los proyectos futuros, no solo al que se está revisando. */
+  desactivarFamilia(f: FamiliaConRatioDto): void {
+    Swal.fire({
+      icon: 'question',
+      title: `¿Desactivar "${f.nombreFamilia}"?`,
+      text: 'Deja de considerarse en el ratio y el presupuesto de proyectos nuevos. El histórico ya calculado no se toca. Puedes reactivarla luego desde Catálogo.',
+      showCancelButton: true,
+      confirmButtonText: 'Desactivar',
+      cancelButtonText: 'Cancelar',
+    }).then((r) => {
+      if (!r.isConfirmed) return;
+      this.desactivandoFamiliaId = f.familiaId;
+      this.cdr.markForCheck();
+      this.svc.actualizarActivoFamilia(f.familiaId, false).subscribe({
+        next: () => {
+          this.desactivandoFamiliaId = null;
+          this.familias = this.familias.filter((fam) => fam.familiaId !== f.familiaId);
+          this.cdr.markForCheck();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.desactivandoFamiliaId = null;
+          this.error.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
     });
   }
 

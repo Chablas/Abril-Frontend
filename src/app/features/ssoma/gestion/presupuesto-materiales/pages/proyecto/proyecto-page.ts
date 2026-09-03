@@ -12,9 +12,11 @@ import {
   PresupuestoResumenDto, GenerarPresupuestoDto, HitoCriticoDisponibleDto,
   PersonalHitoDto, PersonalHitoItemInputDto, RatioProyectoDto,
   DriverProyectoDto, RatiosDriversRecomendadosDto,
+  KitResumenDto, KitDetalleDto, KitCalculoLineaDto,
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import Swal from 'sweetalert2';
 import { MilestoneScheduleService } from '../../../../../../core/services/milestoneSchedule.service';
 import { MilestoneScheduleHistoryService } from '../../../../../../core/services/milestoneScheduleHistory.service';
@@ -52,7 +54,7 @@ const ACERO_HH_POR_M2 = 0.8059;
 const ACERO_TRABAJADORES_POR_M2 = 0.0018;
 
 const ROLES_PERSONAL: string[] = [
-  'PREVENCIONISTA', 'MONITOR', 'VIGIA',
+  'PREVENCIONISTA', 'MONITOR', 'VIGIA', 'ENCAPSULADOR',
   'CAPATAZ', 'OFICIAL', 'OPERARIO', 'PEON', 'AYUDANTE',
 ];
 const SEMANAS_POR_MES = 4.345;
@@ -61,7 +63,7 @@ const SEMANAS_POR_MES = 4.345;
   selector: 'app-proyecto-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect],
   templateUrl: './proyecto-page.html',
   styleUrl: './proyecto-page.css',
 })
@@ -111,6 +113,76 @@ export class ProyectoPage implements OnInit {
   loadingRatios = false;
   mostrarRatios = false;
   calculandoRatios = false;
+
+  // ── Kits / BOM (Botiquín, Estación de Emergencia): calculadora embebida acá mismo, para no
+  // tener que salir a la pestaña global — el resultado es informativo, la cantidad final se
+  // sigue cargando a mano en el presupuesto (no hay todavía un hook que la inyecte sola). ──
+  mostrarKits = false;
+  kits: KitResumenDto[] = [];
+  kitsCargados = false;
+  kitSeleccionadoId: number | null = null;
+  kitDetalle: KitDetalleDto | null = null;
+  cantidadKits: number | null = null;
+  resultadoKit: KitCalculoLineaDto[] = [];
+
+  /// Familias de "cálculo técnico" por metrado (Barra FRP, Ductos, etc.) — todavía no tienen una
+  /// fórmula/calculadora propia; se listan acá para que no se pierdan de vista mientras se diseña.
+  readonly familiasCalculoTecnico = [
+    'Barra FRP',
+    'Ductos (Fenólico 18mm + Listones 3x2)',
+    'Rodapiés (Triplay Lupuna 8mm)',
+    'Punto de Anclaje Textil',
+    'Tubería PVC 1"',
+  ];
+
+  toggleKits(): void {
+    this.mostrarKits = !this.mostrarKits;
+    if (this.mostrarKits && !this.kitsCargados) this.cargarKits();
+    this.cdr.markForCheck();
+  }
+
+  private cargarKits(): void {
+    this.svc.listarKits().subscribe({
+      next: (kits) => {
+        this.kits = kits;
+        this.kitsCargados = true;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => { this.error.handleError(err); this.cdr.markForCheck(); },
+    });
+  }
+
+  get kitsOpts(): any[] {
+    return this.kits.map((k) => ({ ...k, _label: `${k.nombre} (${k.nombreTipo})` }));
+  }
+
+  onSeleccionarKit(): void {
+    this.resultadoKit = [];
+    this.cantidadKits = null;
+    if (this.kitSeleccionadoId == null) { this.kitDetalle = null; return; }
+    this.loader.show();
+    this.svc.getKit(this.kitSeleccionadoId).subscribe({
+      next: (kit) => { this.kitDetalle = kit; this.loader.hide(); this.cdr.markForCheck(); },
+      error: (err: HttpErrorResponse) => { this.loader.hide(); this.error.handleError(err); this.cdr.markForCheck(); },
+    });
+  }
+
+  calcularKit(): void {
+    if (!this.kitSeleccionadoId || !this.cantidadKits || this.cantidadKits <= 0) return;
+    this.loader.show();
+    this.svc.calcularKit(this.kitSeleccionadoId, this.cantidadKits).subscribe({
+      next: (lineas) => { this.resultadoKit = lineas; this.loader.hide(); this.cdr.markForCheck(); },
+      error: (err: HttpErrorResponse) => { this.loader.hide(); this.error.handleError(err); this.cdr.markForCheck(); },
+    });
+  }
+
+  get kitConsumibles(): KitCalculoLineaDto[] {
+    return this.resultadoKit.filter((r) => r.esConsumible);
+  }
+
+  get kitDurables(): KitCalculoLineaDto[] {
+    return this.resultadoKit.filter((r) => !r.esConsumible);
+  }
 
   // ── Cronograma de hitos (tabla simple, misma data que /mejora-continua/milestone-schedule) ──
   hitosSchedule: FilaHito[] = [];

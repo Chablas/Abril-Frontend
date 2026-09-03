@@ -1,0 +1,53 @@
+<div class="page-root">
+  <app-abril-page-header
+    badge="SSOMA · Materiales"
+    titulo="Gasto SSOMA"
+    subtitulo="Consumo real acumulado por proyecto a la fecha, según el último cálculo de ratios"
+    [tabs]="headerTabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="loadResumen()">
+  </app-abril-page-header>
+
+  <div class="page-body">
+    <div class="resumen-card">
+      <div class="resumen-card__header">
+        <h3 class="resumen-card__titulo">Resumen general</h3>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <span class="resumen-card__total" *ngIf="resumen">{{ resumen.totalFamilias }} familias SSOMA activas</span>
+          <button class="btn-outline btn-sm" [disabled]="calculandoTodos" (click)="calcularTodosLosRatios()"
+            title="Calcula el ratio de cada proyecto con Kardex estandarizado, de una sola vez (en vez de proyecto por proyecto).">
+            <i class="ti" [ngClass]="calculandoTodos ? 'ti-loader-2 spin' : 'ti-calculator'"></i>
+            {{ calculandoTodos ? 'Calculando...' : 'Calcular ratios de todos' }}
+          </button>
+        </div>
+      </div>
+      <div *ngIf="loadingResumen" class="loading-msg-small">Cargando resumen...</div>
+      <div *ngIf="!loadingResumen && resumen && resumen.proyectos.length === 0" class="empty-cell">
+        Todavía no hay proyectos con ratios calculados.
+      </div>
+      <div *ngIf="!loadingResumen && resumen && resumen.proyectos.length > 0" class="resumen-tabla">
+        <div class="resumen-tabla__header">
+          <div>Proyecto</div>
+          <div>Familias calculadas</div>
+          <div>Gasto SSOMA total</div>
+          <div>Rango de consumo</div>
+        </div>
+        <div
+          *ngFor="let p of resumen.proyectos"
+          class="resumen-tabla__row"
+          (click)="irAProyecto(p.projectId)"
+        >
+          <div class="resumen-tabla__proyecto">{{ p.projectDescription }}</div>
+          <div>{{ p.familiasCalculadas }}</div>
+          <div>S/ {{ p.totalGastoSsoma | number:'1.2-2' }}</div>
+          <div>
+            <ng-container *ngIf="p.fechaMin && p.fechaMax">
+              {{ p.fechaMin | date:'dd/MM/yy' }} – {{ p.fechaMax | date:'dd/MM/yy' }}
+            </ng-container>
+            <span *ngIf="!p.fechaMin">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
