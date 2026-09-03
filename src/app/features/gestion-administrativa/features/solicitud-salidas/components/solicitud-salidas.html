@@ -107,7 +107,7 @@
           <td class="text-gray-500">{{ i + 1 }}</td>
           <td class="text-gray-700">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
           <td class="text-gray-700">
-            {{ s.horaSalida }}
+            {{ s.horaSalida ?? '—' }}
             <span *ngIf="s.trayectosCount > 1"
                   class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle" style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
                   [title]="s.trayectosCount + ' trayectos'">

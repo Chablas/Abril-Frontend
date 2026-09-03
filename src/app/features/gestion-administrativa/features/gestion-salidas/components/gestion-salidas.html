@@ -290,7 +290,7 @@
           <td class="text-gray-700 whitespace-nowrap">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
 
           <td class="text-gray-700">
-            {{ s.horaSalida }}
+            {{ s.horaSalida ?? '—' }}
             <span *ngIf="s.trayectosCount > 1"
                   class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
                   style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
@@ -432,30 +432,31 @@
             {{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}
           </td>
 
-          <!-- Hora real de salida (recepción). Con motivo de hora estimada no se registra. -->
+          <!-- Hora real de salida (recepción). No se registra con motivo de hora estimada
+               ni cuando el motivo no declara horario. -->
           <td *ngIf="esRecepcion"  (click)="$event.stopPropagation()">
-            <div *ngIf="!s.esHoraEstimada" class="w-[120px]" title="Registra la hora real en que la persona salió">
+            <div *ngIf="registraHoraReal(s)" class="w-[120px]" title="Registra la hora real en que la persona salió">
               <app-time-picker
                 [showLabel]="false"
                 color="var(--color-abril-standard)"
                 [value]="horaSalidaRealInput(s)"
                 (valueChange)="guardarHoraSalidaReal(s, $event)" />
             </div>
-            <span *ngIf="s.esHoraEstimada" class="text-gray-300"
-                  title="Motivo con hora estimada: no se registra hora real">—</span>
+            <span *ngIf="!registraHoraReal(s)" class="text-gray-300"
+                  [title]="motivoHoraRealNoAplica(s)">—</span>
           </td>
 
-          <!-- Hora real de retorno (recepción). Con motivo de hora estimada no se registra. -->
+          <!-- Hora real de retorno (recepción). Misma regla que la de salida. -->
           <td *ngIf="esRecepcion"  (click)="$event.stopPropagation()">
-            <div *ngIf="!s.esHoraEstimada" class="w-[120px]" title="Registra la hora real en que la persona retornó">
+            <div *ngIf="registraHoraReal(s)" class="w-[120px]" title="Registra la hora real en que la persona retornó">
               <app-time-picker
                 [showLabel]="false"
                 color="var(--color-abril-standard)"
                 [value]="horaRetornoRealInput(s)"
                 (valueChange)="guardarHoraRetornoReal(s, $event)" />
             </div>
-            <span *ngIf="s.esHoraEstimada" class="text-gray-300"
-                  title="Motivo con hora estimada: no se registra hora real">—</span>
+            <span *ngIf="!registraHoraReal(s)" class="text-gray-300"
+                  [title]="motivoHoraRealNoAplica(s)">—</span>
           </td>
 
         </tr>

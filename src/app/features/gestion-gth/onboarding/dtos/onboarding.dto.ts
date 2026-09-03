@@ -7,18 +7,17 @@
  * del colaborador y la fecha de ingreso pactada.
  */
 
-/** Todo lo que la pantalla necesita al entrar, en una sola petición. */
+/**
+ * Todo lo que la pantalla necesita al entrar, en una sola petición.
+ *
+ * Ya no viajan «candidatos aptos»: el que termina reclutamiento entra solo a la lista, así que no
+ * hay desplegable que llenar ni alta manual que hacer.
+ */
 export interface BandejaOnboarding {
   resumen: ResumenOnboarding;
   /** Fases del catálogo en orden, con cuántos colaboradores hay parados en cada una. */
   fases: FaseOnboarding[];
   colaboradores: OnboardingListItem[];
-  /**
-   * Candidatos aptos para iniciar onboarding: seleccionados de requerimientos ya cerrados —o sea,
-   * con su carta oferta firmada y aprobada— que todavía no tienen onboarding. Es el desplegable del
-   * modal «Nuevo ingreso».
-   */
-  candidatosAptos: CandidatoApto[];
 }
 
 export interface ResumenOnboarding {
@@ -26,7 +25,6 @@ export interface ResumenOnboarding {
   enProceso: number;
   completos: number;
   colaboradoresNuevos: number;
-  candidatosPorIngresar: number;
 }
 
 export interface FaseOnboarding {
@@ -88,43 +86,35 @@ export interface OnboardingListItem {
 
   observacion: string | null;
   iniciadoEn: string | null;
-}
 
-/** Una opción del desplegable del modal «Nuevo ingreso». */
-export interface CandidatoApto {
-  candidatoId: number;
-  requerimientoId: number;
-  personId: number | null;
-  nombre: string;
-  codigo: string;
-  puesto: string | null;
-  area: string | null;
-  empresa: string | null;
-  proyectoObra: string | null;
-  /** Correo personal del colaborador (el de su ficha de la base maestra). */
-  correo: string | null;
-  jefeDirecto: string | null;
+  // ── Aviso al responsable de obra (fase «Correo de bienvenida») ─────────────
+
   /**
-   * Fecha de ingreso pactada en su carta oferta. Prellena el modal: GTH la puede ajustar si el
-   * ingreso se movió entre la firma y la apertura del onboarding.
+   * false cuando este ingreso no lleva ese aviso: a Oficina Central no hay obra que avisarle, y un
+   * proyecto sin coordinador administrativo no tiene a quién escribirle.
    */
-  fechaIngreso: string | null;
-  /** Carpeta del file digital que abrió su carta oferta. El onboarding la hereda tal cual. */
-  fileDigitalCarpeta: string | null;
-}
+  avisoObraAplica: boolean;
+  /** Por qué no aplica; null cuando sí aplica. */
+  avisoObraMotivoNoAplica: string | null;
+  /** Coordinador administrativo del proyecto: el destinatario del aviso. */
+  avisoObraDestinatario: string | null;
+  avisoObraEmail: string | null;
+  /** Cuándo salió el aviso. null = todavía no. */
+  avisoObraEnviadoEn: string | null;
 
-/** Datos del modal «Nuevo ingreso». */
-export interface OnboardingCreate {
-  candidatoId: number;
-  /** Si no viaja, se usa la que quedó pactada en la carta oferta. */
-  fechaIngreso: string | null;
-  observacion: string | null;
-}
+  // ── Correo de bienvenida y formulario del colaborador ─────────────────────
 
-export interface OnboardingCreateResult {
-  onboardingId: number;
-  message: string;
-  colaborador: OnboardingListItem | null;
+  /** Cuándo salió el correo de bienvenida. null = todavía no. */
+  bienvenidaEnviadaEn: string | null;
+  /**
+   * Buzón al que salió (o al que saldría): el correo personal de su ficha maestra. null cuando esa
+   * ficha no tiene correo, que es lo único que impide mandar la bienvenida.
+   */
+  bienvenidaEmail: string | null;
+  /** Hasta cuándo tiene el colaborador para completar su formulario. */
+  formularioFechaLimite: string | null;
+  /** Cuándo envió su formulario. null = todavía no lo mandó. */
+  formularioCompletadoEn: string | null;
 }
 
 /** Resultado de avanzar de fase: la fila ya actualizada. */

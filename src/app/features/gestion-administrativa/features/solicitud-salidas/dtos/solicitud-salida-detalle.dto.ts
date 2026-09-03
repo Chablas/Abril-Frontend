@@ -16,7 +16,8 @@ export interface TrayectoAdjuntoDto {
 export interface TrayectoDetalleDto {
   id: number;
   orden: number;
-  horaSalida: string;
+  /** Null en trayectos de motivos que no piden horario. */
+  horaSalida: string | null;
   horaRetorno: string | null;
   motivo: string;
   /** Detalle que acompaña al motivo cuando este lo exige. Null si no aplica. */

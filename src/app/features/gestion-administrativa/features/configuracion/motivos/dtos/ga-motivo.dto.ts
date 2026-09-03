@@ -8,6 +8,9 @@ export interface GaMotivoSalidaConfigItemDto {
   esHoraEstimada: boolean;
   /** Si true, al elegir este motivo en una solicitud se exige escribir un motivo adicional. */
   requiereMotivoAdicional: boolean;
+  /** Si false, al elegir este motivo la solicitud no pide horas, ni lugares,
+   *  ni trayectos adicionales (ej. licencia sin goce de haber). */
+  pideHorasLugares: boolean;
   createdAt: string;
 }
 
@@ -16,6 +19,9 @@ export interface GaMotivoSalidaCreateDto {
   requiereAdjunto: boolean;
   esHoraEstimada: boolean;
   requiereMotivoAdicional: boolean;
+  /** Si false, al elegir este motivo la solicitud no pide horas, ni lugares,
+   *  ni trayectos adicionales (ej. licencia sin goce de haber). */
+  pideHorasLugares: boolean;
 }
 
 export interface GaMotivoSalidaEditDto {
@@ -23,4 +29,7 @@ export interface GaMotivoSalidaEditDto {
   requiereAdjunto: boolean;
   esHoraEstimada: boolean;
   requiereMotivoAdicional: boolean;
+  /** Si false, al elegir este motivo la solicitud no pide horas, ni lugares,
+   *  ni trayectos adicionales (ej. licencia sin goce de haber). */
+  pideHorasLugares: boolean;
 }

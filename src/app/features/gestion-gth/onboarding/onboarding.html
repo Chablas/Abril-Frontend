@@ -2,6 +2,8 @@
   [badge]="'GESTIÓN DE TALENTO · ' + anioActual"
   titulo="Onboarding"
   subtitulo="Acompaña el ingreso de los colaboradores hasta que sus datos pasan a la base maestra."
+  [botonSecundario]="botonConfiguracion"
+  (secondaryClick)="abrirConfiguracion()"
   [hasExtra]="true">
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
@@ -77,32 +79,6 @@
     </div>
 
   </div>
-
-  <!-- ── Aviso: candidatos que ya pueden entrar a onboarding ─────────────── -->
-  <!-- Solo aparece si Reclutamiento dejó a alguien listo. Abre el modal directamente:
-       es la única forma de iniciar un onboarding, así que el aviso es también el atajo. -->
-  @if (resumen.candidatosPorIngresar > 0) {
-    <button type="button" (click)="modalAbierto = true"
-      class="onb-aviso flex items-center gap-[12px] w-full text-left rounded-[10px] border px-[16px] py-[12px] cursor-pointer transition-colors"
-      style="background:var(--color-abril-logo-blue-light); border-color:var(--color-abril-logo-blue)"
-      title="Iniciar el onboarding de un colaborador">
-
-      <span class="onb-aviso-icon flex items-center justify-center w-[34px] h-[34px] rounded-full shrink-0 bg-white">
-        <i class="ti ti-user-plus text-[18px]" style="color:var(--color-abril-logo-blue)"></i>
-      </span>
-
-      <span class="onb-aviso-text text-[13.5px] min-w-0" style="color:var(--color-abril-logo-blue)">
-        <span class="font-semibold">
-          {{ resumen.candidatosPorIngresar }}
-          colaborador{{ resumen.candidatosPorIngresar === 1 ? '' : 'es' }}
-          seleccionado{{ resumen.candidatosPorIngresar === 1 ? '' : 's' }} en reclutamiento
-        </span>
-        <span class="opacity-80">— Haz clic para iniciar su onboarding</span>
-      </span>
-
-      <i class="ti ti-chevron-right text-[18px] ml-auto shrink-0" style="color:var(--color-abril-logo-blue)"></i>
-    </button>
-  }
 
   <!-- ── Embudo: fases del onboarding ───────────────────────────────────── -->
   <!-- Las fases y su orden las define el catálogo del backend. Un clic en un
@@ -298,20 +274,6 @@
   </div>
 
 </div>
-
-<!-- Acción principal de la página: iniciar un onboarding. Se oculta con el modal
-     abierto para que no se superponga a su propio formulario. -->
-@if (!modalAbierto) {
-  <app-fab label="Nuevo ingreso" (clicked)="modalAbierto = true" />
-}
-
-<!-- ── Modal «Nuevo ingreso» ────────────────────────────────────────────── -->
-@if (modalAbierto) {
-  <app-gth-nuevo-ingreso-modal
-    [candidatos]="candidatosAptos"
-    (creado)="onCreado($event)"
-    (closeModal)="modalAbierto = false" />
-}
 
 <!-- ── Modal de detalle del onboarding (clic en una fila o enlace del correo) ── -->
 @if (detalle) {

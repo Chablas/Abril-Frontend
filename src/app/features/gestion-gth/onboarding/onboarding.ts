@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { StatusBadge } from '../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../shared/pipes/title-case.pipe';
@@ -9,19 +10,13 @@ import { FilterTriggerButton } from '../../../shared/components/filter-trigger/f
 import { FilterModal } from '../../../shared/components/filter-modal/filter-modal';
 import { SearchInput } from '../../../shared/components/search-input/search-input';
 import { SearchSelect } from '../../../shared/components/search-select/search-select';
-import { FabButton } from '../../../shared/components/fab-button/fab-button';
 import { ClientPager } from '../../../shared/utils/client-pager';
 import { DEFAULT_PAGE_SIZE } from '../../../shared/constants/pagination';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { OnboardingService } from './services/onboarding.service';
-import {
-  CandidatoApto,
-  FaseOnboarding,
-  OnboardingListItem,
-  ResumenOnboarding,
-} from './dtos/onboarding.dto';
-import { GthNuevoIngresoModal } from './components/nuevo-ingreso/nuevo-ingreso-modal';
+import { FaseOnboarding, OnboardingListItem, ResumenOnboarding } from './dtos/onboarding.dto';
 import { GthOnboardingDetalleModal } from './components/detalle/onboarding-detalle-modal';
 import { avanceColor, estadoOnboardingColors } from './onboarding-estado-colors';
 
@@ -29,9 +24,10 @@ import { avanceColor, estadoOnboardingColors } from './onboarding-estado-colors'
  * Onboarding (Gestión GTH): la fase que sigue a Reclutamiento. Muestra las tarjetas de resumen, el
  * embudo «Fases del onboarding» y la tabla de colaboradores ingresados.
  *
- * Un colaborador entra acá solo cuando su proceso de reclutamiento terminó: firmó su carta oferta
- * y GTH se la aprobó, que es lo que cierra el requerimiento. Desde el FAB «Nuevo ingreso» GTH abre
- * su onboarding sobre el file digital que esa carta ya creó.
+ * Un colaborador aparece acá en cuanto su proceso de reclutamiento termina: firmó su carta oferta y
+ * GTH se la aprobó, que es lo que cierra el requerimiento. No hay alta manual — el backend le abre
+ * el onboarding sobre el file digital que esa carta ya creó, así que la lista es el resultado del
+ * proceso anterior y no una bandeja de pendientes por dar de alta.
  */
 @Component({
   standalone: true,
@@ -46,8 +42,6 @@ import { avanceColor, estadoOnboardingColors } from './onboarding-estado-colors'
     FilterModal,
     SearchInput,
     SearchSelect,
-    FabButton,
-    GthNuevoIngresoModal,
     GthOnboardingDetalleModal,
   ],
   templateUrl: './onboarding.html',
@@ -62,7 +56,6 @@ export class GthOnboarding implements OnInit {
     enProceso: 0,
     completos: 0,
     colaboradoresNuevos: 0,
-    candidatosPorIngresar: 0,
   };
 
   /** Fases del embudo, en orden (vienen del catálogo del backend). */
@@ -70,19 +63,17 @@ export class GthOnboarding implements OnInit {
 
   colaboradores: OnboardingListItem[] = [];
 
-  /** Candidatos aptos para el modal «Nuevo ingreso» (los calcula el backend con la bandeja). */
-  candidatosAptos: CandidatoApto[] = [];
-
   // ── Filtros ─────────────────────────────────────────────────────────────
   searchText = '';
   filtrosAbiertos = false;
   /** Filtro por fase: se activa también con los círculos del embudo. */
   faseCodigo: string | null = null;
 
-  modalAbierto = false;
-
   /** Colaborador cuyo detalle está abierto (se abre al hacer clic en su fila). */
   detalle: OnboardingListItem | null = null;
+
+  /** La misma feature que gobierna las otras tres configuraciones de correos del módulo. */
+  private static readonly FEATURE_CONFIG = 'gestion-gth.reclutamiento.configuracion';
 
   private readonly pager = new ClientPager<OnboardingListItem>(DEFAULT_PAGE_SIZE);
 
@@ -90,8 +81,23 @@ export class GthOnboarding implements OnInit {
     private service: OnboardingService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private authService: AuthService,
+    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
+
+  /** Botón «Configuración» del header: solo si el rol del usuario tiene la feature. */
+  get botonConfiguracion() {
+    return this.authService.hasFeature(GthOnboarding.FEATURE_CONFIG)
+      ? { label: 'Configuración', icono: 'ti-settings' }
+      : undefined;
+  }
+
+  /** Lleva a la configuración de correos del onboarding. */
+  abrirConfiguracion(): void {
+    if (!this.botonConfiguracion) return;
+    this.router.navigate(['/gestion-gth/onboarding/configuracion']);
+  }
 
   ngOnInit(): void {
     this.load();
@@ -104,7 +110,6 @@ export class GthOnboarding implements OnInit {
         this.resumen = data.resumen;
         this.fases = data.fases;
         this.colaboradores = data.colaboradores;
-        this.candidatosAptos = data.candidatosAptos;
         this.pager.reset();
         this.loaderService.hide();
         this.cdr.detectChanges();
@@ -115,24 +120,6 @@ export class GthOnboarding implements OnInit {
         this.cdr.detectChanges();
       },
     });
-  }
-
-  // ── Modal «Nuevo ingreso» ───────────────────────────────────────────────
-  /**
-   * El colaborador recién creado se inserta arriba de la lista en vez de recargar la bandeja: el
-   * backend ya devolvió la fila completa. Los contadores del resumen y del embudo sí se recalculan
-   * porque dependen del conjunto entero.
-   */
-  onCreado(colaborador: OnboardingListItem): void {
-    this.colaboradores = [colaborador, ...this.colaboradores];
-    this.candidatosAptos = this.candidatosAptos.filter((c) => c.candidatoId !== colaborador.candidatoId);
-    this.recalcularContadores();
-    // «Colaboradores nuevos» son los onboardings de los últimos 7 días: el que se acaba de abrir
-    // entra sí o sí, y es el único contador que no se puede derivar de la lista (no viaja la fecha
-    // de inicio de los anteriores como para recontarlos acá).
-    this.resumen = { ...this.resumen, colaboradoresNuevos: this.resumen.colaboradoresNuevos + 1 };
-    this.pager.reset();
-    this.cdr.detectChanges();
   }
 
   // ── Modal de detalle ────────────────────────────────────────────────────
@@ -173,7 +160,6 @@ export class GthOnboarding implements OnInit {
       }).length,
       enProceso: this.colaboradores.filter((c) => c.estadoCodigo !== 'COMPLETO').length,
       completos: this.colaboradores.filter((c) => c.estadoCodigo === 'COMPLETO').length,
-      candidatosPorIngresar: this.candidatosAptos.length,
     };
   }
 
@@ -218,9 +204,8 @@ export class GthOnboarding implements OnInit {
   }
 
   get mensajeVacio(): string {
-    if (this.filtrosActivos > 0) return 'Sin resultados para los filtros aplicados.';
-    return this.resumen.candidatosPorIngresar > 0
-      ? 'Aún no has iniciado ningún onboarding. Usa «Nuevo ingreso» para empezar con los candidatos que ya firmaron su carta oferta.'
+    return this.filtrosActivos > 0
+      ? 'Sin resultados para los filtros aplicados.'
       : 'Aún no hay colaboradores en onboarding.';
   }
 

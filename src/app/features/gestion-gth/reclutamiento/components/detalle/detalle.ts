@@ -580,15 +580,16 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
-   * Por qué no se puede enviar todavía. El correo se puede escribir a mano; el DNI no, porque es el
-   * que nombra la carpeta del colaborador en SharePoint y tiene que ser el mismo de su ficha; y la
-   * ficha tampoco, porque es donde se guarda la firma que va a registrar al abrir el enlace.
+   * Qué está mal, no qué toca hacer: solo avisa de lo que el usuario no ve en la pantalla. El correo
+   * se puede escribir a mano; el DNI no, porque es el que nombra la carpeta del colaborador en
+   * SharePoint y tiene que ser el mismo de su ficha; y la ficha tampoco, porque es donde se guarda
+   * la firma que va a registrar al abrir el enlace. Que todavía no haya carta generada se ve en la
+   * pantalla, así que bloquea el botón sin texto (ver `puedeEnviarCarta`).
    */
   get motivoBloqueoCarta(): string | null {
     if (!this.cartaCorreo.trim()) return 'Falta el correo personal del colaborador.';
     if (!this.carta?.dni) return 'Sin documento de identidad en la base maestra: con él se crea su carpeta en el file.';
     if (!this.carta?.tieneFichaMaestra) return 'Sin ficha en la base maestra: ahí se guarda la firma que registrará en el enlace.';
-    if (!this.cartaGenerada) return 'Genera la carta oferta antes de enviarla.';
     if (this.cartaDatosDesfasados) {
       return 'Cambiaste las condiciones: vuelve a generar la carta antes de enviarla.';
     }
@@ -633,24 +634,43 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   get puedeEnviarCarta(): boolean {
-    return !this.enviandoCarta && !this.generandoCarta && this.motivoBloqueoCarta === null;
+    return (
+      !this.enviandoCarta &&
+      !this.generandoCarta &&
+      this.cartaGenerada &&
+      this.motivoBloqueoCarta === null
+    );
   }
 
   // ── Generación de la carta desde la plantilla ────────────────────────────────
 
   /**
-   * Por qué no se puede generar todavía. Las tres condiciones del miniformulario se imprimen en el
-   * documento, así que ninguna puede ir vacía: el hueco lo ve el candidato, no nosotros.
+   * Solo lo que no se ve en la pantalla: la ficha de la base maestra, que se consulta aparte, y una
+   * fecha límite que ya venció (el campo está lleno y parece correcto). Los campos vacíos no dicen
+   * nada acá — se ven solos en el formulario y bloquean el botón sin texto (ver
+   * `datosCartaCompletos`).
    */
   get motivoBloqueoGenerar(): string | null {
     if (!this.carta?.dni) return 'Sin documento de identidad en la base maestra: con él se crea su carpeta en el file.';
     if (!this.carta?.tieneFichaMaestra) return 'Sin ficha en la base maestra: de ahí sale el nombre de la carta.';
-    if (!this.cartaFechaIngreso) return 'Indica la fecha de ingreso.';
-    if (this.cartaSueldo == null || this.cartaSueldo <= 0) return 'Indica el sueldo mensual ofrecido.';
-    if (!this.cartaFechaLimite) return 'Indica hasta cuándo puede aceptar.';
-    if (this.cartaFechaLimite < this.hoyIso) return 'La fecha límite de aceptación ya pasó.';
-    if (this.condicionesLimpias.length === 0) return 'Escribe al menos una condición de contrato.';
+    if (this.cartaFechaLimite && this.cartaFechaLimite < this.hoyIso) {
+      return 'La fecha límite de aceptación ya pasó.';
+    }
     return null;
+  }
+
+  /**
+   * Los datos del miniformulario que se imprimen en el documento: ninguno puede ir vacío, porque el
+   * hueco lo ve el candidato y no nosotros.
+   */
+  private get datosCartaCompletos(): boolean {
+    return (
+      !!this.cartaFechaIngreso &&
+      this.cartaSueldo != null &&
+      this.cartaSueldo > 0 &&
+      !!this.cartaFechaLimite &&
+      this.condicionesLimpias.length > 0
+    );
   }
 
   // ── Condiciones de contrato: una viñeta de la carta por campo ────────────────
@@ -670,7 +690,12 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   get puedeGenerarCarta(): boolean {
-    return !this.generandoCarta && !this.enviandoCarta && this.motivoBloqueoGenerar === null;
+    return (
+      !this.generandoCarta &&
+      !this.enviandoCarta &&
+      this.datosCartaCompletos &&
+      this.motivoBloqueoGenerar === null
+    );
   }
 
   /**
@@ -1083,6 +1108,22 @@ export class GthDetalleRequerimiento implements OnInit {
     const asignacion = this.detalle.asignacion;
     if (asignacion[campo] === valor) return;
 
+    // Una razón social llena ni se guarda ni se queda elegida: esta sección se autoguarda con cada
+    // cambio y aceptarla en el modelo la mandaría igual en el próximo campo que se toque. Se corta
+    // antes de escribirla, así que el desplegable vuelve solo a lo que estaba.
+    if (campo === 'contributorId') {
+      const elegida = this.detalle.razonesSociales.find((r) => r.id === valor);
+      if (elegida && elegida.cuposDisponibles === 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Razón social sin cupos',
+          text: `${elegida.nombre} ya llegó al tope de 20 trabajadores: elige otra.`,
+          confirmButtonColor: '#005D9D',
+        });
+        return;
+      }
+    }
+
     const prev = asignacion[campo];
     asignacion[campo] = valor;
 
@@ -1111,6 +1152,22 @@ export class GthDetalleRequerimiento implements OnInit {
     return !!this.detalle && !!razon && razon.cuposDisponibles < this.detalle.vacantes;
   }
 
+  /**
+   * true si la razón social del requerimiento ya llegó al tope de 20: no entra nadie más, así que
+   * el proceso no puede avanzar con ella.
+   *
+   * Es distinto de `sinCupos`, que avisa cuando quedan cupos pero no alcanzan para todas las
+   * vacantes: eso se sigue permitiendo (la razón social puede estar por ampliarse y las vacantes se
+   * cubren de a una). Con cero no hay nada que ampliar sobre la marcha.
+   *
+   * Se calcula sobre lo guardado, no sobre lo que se acaba de elegir: elegir una llena está
+   * cortado antes (`onAsignacionChange`). Esto cubre el otro caso — la razón social se asignó hace
+   * tiempo y se llenó después.
+   */
+  get razonSocialLlena(): boolean {
+    return this.razonSocialSeleccionada?.cuposDisponibles === 0;
+  }
+
   // ── Publicación en canales ──────────────────────────────────────────────
   toggleCanal(canalId: number): void {
     if (this.canalesSeleccionados.has(canalId)) this.canalesSeleccionados.delete(canalId);
@@ -1121,6 +1178,10 @@ export class GthDetalleRequerimiento implements OnInit {
    * true si se puede publicar: al menos un canal marcado y la asignación interna completa.
    * Publicar avanza la fase, y a partir de ahí el requerimiento ya se trabaja con responsable,
    * SLA, prioridad y razón social definidos, así que los cuatro se exigen antes de continuar.
+   *
+   * Y la razón social tiene que tener cupo: publicar arranca el proceso que termina metiendo a
+   * alguien en esa empresa, así que con el tope ya cubierto no se avanza (`razonSocialLlena`).
+   * Descubrirlo al final, con el candidato ya elegido, es lo que hay que evitar.
    */
   get puedePublicar(): boolean {
     const a = this.detalle?.asignacion;
@@ -1129,7 +1190,8 @@ export class GthDetalleRequerimiento implements OnInit {
       !!a?.responsableId &&
       !!a.tipoProcesoId &&
       !!a.prioridadId &&
-      !!a.contributorId
+      !!a.contributorId &&
+      !this.razonSocialLlena
     );
   }
 

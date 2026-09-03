@@ -335,6 +335,22 @@ export class GestionSalidas implements OnInit {
     return s.horaRetornoReal ? s.horaRetornoReal.substring(0, 5) : '';
   }
 
+  /**
+   * true si recepción registra la hora real de esta salida. No se registra en dos casos: los
+   * motivos de hora estimada, y los motivos que no declaran horario (la salida no trae hora de
+   * salida, ej. licencia sin goce de haber).
+   */
+  registraHoraReal(s: GestionSalidaListItemDto): boolean {
+    return !s.esHoraEstimada && !!s.horaSalida;
+  }
+
+  /** Por qué esta salida no lleva hora real — va en el title del guion. */
+  motivoHoraRealNoAplica(s: GestionSalidaListItemDto): string {
+    return s.horaSalida
+      ? 'Motivo con hora estimada: no se registra hora real'
+      : 'El motivo de esta salida no declara horario';
+  }
+
   ngOnInit(): void {
     this.estadoReembolsoOptions = this.estadoReembolsoOptionsRevisor;
 

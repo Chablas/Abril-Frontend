@@ -772,7 +772,11 @@
                   Cupos disponibles: <b>{{ razonSocialSeleccionada.cuposDisponibles }}</b> de 20.
                 </p>
               }
-              @if (sinCupos) {
+              @if (razonSocialLlena) {
+                <p class="text-[11.5px] font-semibold text-red-600 mt-[6px] leading-snug">
+                  Ya llegó al tope de 20 trabajadores: elige otra para poder publicar la vacante.
+                </p>
+              } @else if (sinCupos) {
                 <p class="text-[11.5px] font-semibold text-red-600 mt-[6px] leading-snug">
                   La razón social seleccionada no cuenta con cupos suficientes para las
                   {{ detalle.vacantes }} vacantes.
@@ -829,6 +833,14 @@
               (click)="publicar()">
               Confirmar publicación de vacante
             </button>
+
+            <!-- La sección de asignación puede estar plegada, así que el motivo se repite acá: sin
+                 esto el botón queda apagado sin nada a la vista que lo explique. -->
+            @if (razonSocialLlena) {
+              <p class="text-[11.5px] font-semibold text-red-600 mt-[8px] leading-snug">
+                La razón social elegida ya llegó al tope de 20 trabajadores.
+              </p>
+            }
           }
         </div>
       }

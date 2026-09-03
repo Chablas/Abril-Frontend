@@ -1,0 +1,60 @@
+<app-base-modal [title]="titulo" width="w-[560px]"
+                [preventCloseWhenDirty]="true" (closeModal)="close()">
+  <div class="bf-form">
+
+    <div class="bf-grid">
+      <div class="abril-field bf-col-2">
+        <label class="abril-field-label">Nombre <span style="color:#b91c1c">*</span></label>
+        <input type="text" class="abril-field-input" [(ngModel)]="model.nombre"
+               name="nombre" autocomplete="off" maxlength="150"
+               placeholder="Ej. Banco de Crédito del Perú (BCP)" />
+        <p class="bf-hint">Es el nombre que ven las razones sociales y el nuevo colaborador.</p>
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">
+          Código @if (!esEdicion) { <span style="color:#b91c1c">*</span> }
+        </label>
+        <input type="text" class="abril-field-input" [class.bf-readonly]="esEdicion"
+               [ngModel]="model.codigo" (input)="onCodigoInput($event)"
+               [readonly]="esEdicion"
+               name="codigo" autocomplete="off" maxlength="30"
+               placeholder="Ej. BCP" />
+        <p class="bf-hint">
+          {{ esEdicion
+             ? 'El código no se edita: es la clave con la que se identifica el banco.'
+             : 'Identificador corto, en mayúsculas. No se podrá cambiar después.' }}
+        </p>
+      </div>
+
+      <app-search-select label="Estado" [options]="estadoOptions" valueField="id" displayField="nombre"
+        [value]="model.activo" (valueChange)="model.activo = $event"
+        placeholder="Selecciona el estado" [allowClear]="false" [sortAlpha]="false"></app-search-select>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Orden</label>
+        <input type="number" min="0" class="abril-field-input" [(ngModel)]="model.orden"
+               name="orden" autocomplete="off" placeholder="0" />
+        <p class="bf-hint">Posición en los desplegables. A igual orden, manda el nombre.</p>
+      </div>
+    </div>
+
+    @if (esEdicion && banco!.razonesSociales > 0) {
+      <p class="bf-nota">
+        <i class="ti ti-info-circle"></i>
+        {{ banco!.razonesSociales }} razón(es) social(es) trabajan con este banco. Desactivarlo lo
+        saca de los desplegables, pero las que ya lo tienen lo conservan.
+      </p>
+    }
+
+    <footer class="bf-footer">
+      <button type="button" class="bf-btn bf-btn--ghost" [disabled]="guardando" (click)="close()">
+        Cancelar
+      </button>
+      <button type="button" class="bf-btn bf-btn--primary" [disabled]="guardando" (click)="guardar()">
+        {{ guardando ? 'Guardando…' : (esEdicion ? 'Guardar' : 'Registrar') }}
+      </button>
+    </footer>
+
+  </div>
+</app-base-modal>

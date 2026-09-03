@@ -12,6 +12,7 @@
     <!-- ── Error / token inválido ───────────────────────────────────────── -->
     @else if (errorCarga) {
       <div class="co-card co-state">
+        <img class="co-state-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
         <i class="ti ti-alert-circle co-state-icon" style="color:#B91C1C"></i>
         <h2 class="co-state-title">No pudimos abrir tu carta oferta</h2>
         <p class="co-state-text">{{ mensajeError }}</p>
@@ -21,30 +22,27 @@
     @else if (data) {
       <!-- ── Encabezado de marca ────────────────────────────────────────── -->
       <div class="co-card co-header">
+        <img class="co-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
         <h1 class="co-title">Carta oferta</h1>
-        <p class="co-brand">ABRIL GRUPO INMOBILIARIO</p>
 
         @if (aprobada) {
           <p class="co-intro">
-            Estimado(a) <b>{{ data.nombre }}</b>, tu carta oferta firmada ya fue revisada y aprobada por
-            Gestión del Talento Humano. Abajo puedes consultarla y descargarla cuando lo necesites.
+            Estimado(a) <b>{{ data.nombre }}</b>, Gestión del Talento Humano ya revisó y aprobó tu
+            carta oferta firmada.
           </p>
         } @else if (yaFinalizada) {
           <p class="co-intro">
-            Estimado(a) <b>{{ data.nombre }}</b>, tu proceso quedó completo: firmaste tu carta oferta y
-            la enviaste. No tienes que hacer nada más — el equipo de Gestión del Talento Humano se
-            pondrá en contacto contigo para los siguientes pasos.
+            Estimado(a) <b>{{ data.nombre }}</b>, tu proceso quedó completo: firmaste tu carta oferta
+            y la enviaste.
           </p>
         } @else if (yaFirmada) {
           <p class="co-intro">
-            Estimado(a) <b>{{ data.nombre }}</b>, ya firmaste tu carta oferta. Revísala y presiona
-            <b>Finalizar</b> para cerrar el proceso.
+            Estimado(a) <b>{{ data.nombre }}</b>, ya firmaste tu carta oferta.
           </p>
         } @else {
           <p class="co-intro">
-            Estimado(a) <b>{{ data.nombre }}</b>, nos complace informarte que fuiste seleccionado(a) para
-            el puesto de <b>{{ data.puesto }}</b>. Lee tu carta oferta, registra tu firma y fírmala
-            desde esta misma página: no necesitas imprimir ni escanear nada.
+            Estimado(a) <b>{{ data.nombre }}</b>, nos complace informarte que fuiste seleccionado(a)
+            para el puesto de <b>{{ data.puesto }}</b>.
           </p>
         }
       </div>
@@ -100,9 +98,7 @@
         } @else if (documentoUrl) {
           <!-- El PDF llega como blob desde el backend: el postulante nunca ve la URL de SharePoint. -->
           <iframe class="co-viewer" [src]="documentoUrl" title="Carta oferta"></iframe>
-          <p class="co-hint">
-            Si el documento no se ve en tu dispositivo, usa <b>Abrir en otra pestaña</b>.
-          </p>
+          <p class="co-hint">Si no se ve en tu dispositivo, ábrelo en otra pestaña.</p>
         }
       </div>
 
@@ -122,10 +118,7 @@
             <img [src]="firmaDataUrl" alt="Tu firma registrada" class="co-firma-img" />
           </div>
         } @else {
-          <p class="co-hint">
-            Todavía no has registrado tu firma. Dibújala en el recuadro y presiona
-            <b>Guardar firma</b>.
-          </p>
+          <p class="co-hint">Todavía no registras tu firma.</p>
         }
 
         <!-- Lienzo: se oculta cuando el proceso ya está cerrado (aprobado por GTH). -->
@@ -147,7 +140,6 @@
                 (click)="guardarFirma()" [disabled]="!hayTrazo || guardandoFirma">
                 {{ guardandoFirma ? 'Guardando…' : 'Guardar firma' }}
               </button>
-              <span class="co-hint">Dibuja con el mouse o con el dedo si estás en un celular.</span>
             </div>
           </div>
         }
@@ -157,7 +149,7 @@
       <div class="co-card co-firmar">
         @if (yaFirmada) {
           <div class="co-firmado">
-            <i class="ti ti-circle-check co-state-icon" style="color:#15803D"></i>
+            <i class="ti ti-circle-check co-state-icon" style="color:var(--co-green)"></i>
             <div>
               <h2 class="co-section-title">
                 @if (aprobada) {
@@ -175,10 +167,7 @@
                 @if (aprobada) {
                   Gestión del Talento Humano ya la revisó y aprobó.
                 } @else if (yaFinalizada) {
-                  Ya no tienes nada pendiente. Gestión del Talento Humano se pondrá en contacto
-                  contigo para los siguientes pasos.
-                } @else {
-                  Revísala y presiona «Finalizar» para cerrar el proceso.
+                  Gestión del Talento Humano se pondrá en contacto contigo.
                 }
               </p>
             </div>
@@ -190,7 +179,10 @@
         @if (!aprobada && !yaFinalizada) {
           <div class="co-firmar-accion">
             <div class="co-firmar-botones">
-              <button type="button" class="co-btn co-btn-primary"
+              <!-- Con el documento ya firmado, «Volver a firmar» deja de ser la acción principal:
+                   pasa a ghost para que el verde quede solo en Finalizar, que es lo que cierra. -->
+              <button type="button" class="co-btn"
+                [class.co-btn-primary]="!yaFirmada" [class.co-btn-ghost]="yaFirmada"
                 (click)="firmar()" [disabled]="!puedeFirmar" [title]="motivoBloqueo ?? ''">
                 <i class="ti ti-writing-sign"></i>
                 {{ firmando ? 'Firmando…' : (yaFirmada ? 'Volver a firmar' : 'Firmar') }}
@@ -211,22 +203,18 @@
               <p class="co-bloqueo">{{ motivoBloqueo }}</p>
             } @else if (!yaFirmada) {
               <p class="co-hint">
-                Al firmar, tu firma registrada se estampa en tu carta oferta y el documento se envía a
-                Gestión del Talento Humano.
+                Tu firma se estampa en la carta oferta y el documento se envía a Gestión del Talento
+                Humano.
               </p>
             } @else {
-              <p class="co-hint">
-                Si tu firma quedó bien, presiona <b>Finalizar</b> para cerrar el proceso. Después de
-                finalizar ya no podrás volver a firmar.
-              </p>
+              <p class="co-hint">Después de finalizar ya no podrás volver a firmar.</p>
             }
           </div>
         }
       </div>
 
       <p class="co-pie">
-        Este enlace es personal. Si tienes dudas sobre la propuesta, responde el correo con el que lo
-        recibiste y el equipo de Gestión del Talento Humano te apoyará.
+        Este enlace es personal. Si tienes dudas, responde el correo con el que lo recibiste.
       </p>
     }
 

@@ -1,7 +1,7 @@
 <app-abril-page-header
   badge="CONFIGURACIÓN"
   titulo="Razones Sociales"
-  subtitulo="Empresas del grupo Abril."
+  subtitulo="Empresas del grupo Abril y de terceros."
   [tabs]="tabs"
   [botonPrimario]="{ label: 'Nueva razón social', icono: 'ti-plus' }"
   (primaryClick)="openCreateModal()">
@@ -15,23 +15,27 @@
         <label class="filter-label">Buscar</label>
         <app-search-input
           width="100%"
-          placeholder="Razón social"
+          placeholder="Razón social o RUC"
           [value]="filters.search"
           (valueChange)="onSearchChange($event)">
         </app-search-input>
       </div>
 
       <div>
+        <label class="filter-label">Grupo</label>
+        <app-search-select
+          [options]="grupoOptions" valueField="value" displayField="label"
+          placeholder="Todas" [showLabel]="false" [allowClear]="false" [sortAlpha]="false"
+          [value]="filters.grupo" (valueChange)="onGrupoChange($event)">
+        </app-search-select>
+      </div>
+
+      <div>
         <label class="filter-label">Estado</label>
         <app-search-select
-          [options]="estadoOptions"
-          valueField="value"
-          displayField="label"
-          placeholder="Todos"
-          [showLabel]="false"
-          [allowClear]="false"
-          [value]="filters.estado"
-          (valueChange)="onEstadoChange($event)">
+          [options]="estadoOptions" valueField="value" displayField="label"
+          placeholder="Todos" [showLabel]="false" [allowClear]="false" [sortAlpha]="false"
+          [value]="filters.estado" (valueChange)="onEstadoChange($event)">
         </app-search-select>
       </div>
     </div>
@@ -48,23 +52,28 @@
           <tr>
             <th>Razón Social</th>
             <th>RUC</th>
-            <th>Partida Registral</th>
             <th>Tipo Actividad</th>
             <th>Dirección</th>
+            <th>Banco</th>
             <th>Estado</th>
             <th class="text-right">Acciones</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let item of pageItems">
-            <td class="font-semibold text-gray-800">{{ item.nombre }}</td>
+            <td class="font-semibold text-gray-800">
+              {{ item.nombre }}
+              <!-- La marca de grupo va pegada al nombre y no en su propia columna: es una
+                   propiedad de la empresa, no un dato aparte que se lea en vertical. -->
+              <span *ngIf="item.esAbril" class="badge chip-lime ml-2">Abril</span>
+            </td>
             <td class="text-gray-600">{{ item.ruc || '—' }}</td>
-            <td class="text-gray-600">{{ item.partidaRegistral || '—' }}</td>
             <td class="text-gray-600">{{ item.tipoActividad || '—' }}</td>
             <td class="text-gray-600">{{ item.direccion || '—' }}</td>
+            <td class="text-gray-600">{{ item.bancoNombre || '—' }}</td>
             <td>
-              <span class="badge border" [ngClass]="(item.activo ?? true) ? 'chip-green' : 'chip-gray'">
-                {{ (item.activo ?? true) ? 'Activo' : 'Inactivo' }}
+              <span class="badge border" [ngClass]="item.activo ? 'chip-green' : 'chip-gray'">
+                {{ item.activo ? 'Activo' : 'Inactivo' }}
               </span>
             </td>
             <td class="text-right">
@@ -76,7 +85,11 @@
             </td>
           </tr>
           <tr *ngIf="!loading && pageItems.length === 0">
-            <td colspan="7" class="empty-row">Sin razones sociales registradas.</td>
+            <td colspan="7" class="empty-row">
+              {{ hasActiveFilters
+                 ? 'Ninguna razón social coincide con los filtros.'
+                 : 'Sin razones sociales registradas.' }}
+            </td>
           </tr>
         </tbody>
       </table>
@@ -93,16 +106,18 @@
   </div>
 </section>
 
-<app-company-edit-form
-  *ngIf="editModalOpen"
-  [open]="editModalOpen"
-  [company]="editCompany"
-  (closed)="closeEditModal()"
-  (saved)="onEditSaved()"
-></app-company-edit-form>
-
-<app-company-create-form
+<app-razon-social-create
   *ngIf="createModalOpen"
+  [bancos]="bancos"
   (closed)="closeCreateModal()"
   (saved)="onCreated()"
-></app-company-create-form>
+></app-razon-social-create>
+
+<app-razon-social-edit
+  *ngIf="editModalOpen && editItem"
+  [open]="editModalOpen"
+  [razonSocial]="editItem!"
+  [bancos]="bancos"
+  (closed)="closeEditModal()"
+  (saved)="onEdited($event)"
+></app-razon-social-edit>

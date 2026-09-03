@@ -1,0 +1,93 @@
+<app-base-modal *ngIf="open" [title]="'Editar razón social'" width="w-[720px]"
+                [preventCloseWhenDirty]="true" (closeModal)="close()">
+  <div class="rs-form">
+
+    <!-- ── Identidad (solo lectura) ─────────────────────────────────────
+         Los tres vienen de SUNAT: cambiarlos sería otra empresa, no una
+         corrección de esta. -->
+    <section>
+      <h4 class="rs-seccion-titulo"><i class="ti ti-id"></i> Identidad</h4>
+
+      <div class="rs-grid">
+        <div class="abril-field rs-col-2">
+          <label class="abril-field-label">Razón social</label>
+          <input type="text" class="abril-field-input rs-readonly" [value]="nombre" readonly />
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">RUC</label>
+          <input type="text" class="abril-field-input rs-readonly" [value]="ruc" readonly />
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Partida registral</label>
+          <input type="text" class="abril-field-input rs-readonly"
+                 [value]="partidaRegistral || '—'" readonly />
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Datos editables ──────────────────────────────────────────────── -->
+    <section>
+      <h4 class="rs-seccion-titulo"><i class="ti ti-pencil"></i> Datos editables</h4>
+
+      <div class="rs-grid">
+        <div class="abril-field rs-col-2">
+          <label class="abril-field-label">Dirección <span style="color:#b91c1c">*</span></label>
+          <input type="text" class="abril-field-input" [(ngModel)]="model.direccion"
+                 name="direccion" autocomplete="street-address" placeholder="Dirección fiscal" />
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Tipo de actividad</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="model.tipoActividad"
+                 name="tipoActividad" autocomplete="off"
+                 placeholder="Ej. Actividades inmobiliarias" />
+        </div>
+
+        <!-- Los estados son dos: el combo con búsqueda es el mismo componente del
+             resto de la app, así que la fila queda alineada sin trucos. -->
+        <app-search-select label="Estado" [options]="estadoOptions" valueField="id" displayField="nombre"
+          [value]="model.activo" (valueChange)="model.activo = $event"
+          placeholder="Selecciona el estado" [allowClear]="false" [sortAlpha]="false"></app-search-select>
+      </div>
+    </section>
+
+    <!-- ── Grupo Abril + banco ──────────────────────────────────────────── -->
+    <section class="rs-abril" [class.rs-abril--on]="model.esAbril">
+      <label class="rs-check">
+        <input type="checkbox" [ngModel]="model.esAbril"
+               (ngModelChange)="onEsAbrilChange($event)" name="esAbril" />
+        <span class="rs-check-texto">
+          <span class="rs-check-label">Es una razón social del grupo Abril</span>
+          <span class="rs-check-hint">
+            Márcala si con esta empresa se contrata personal propio. Solo estas aparecen en el
+            formulario de bienvenida del nuevo colaborador.
+          </span>
+        </span>
+      </label>
+
+      @if (model.esAbril) {
+        <div class="rs-banco">
+          <app-search-select label="Banco" [options]="bancos" valueField="id" displayField="nombre"
+            [value]="model.bancoId" (valueChange)="model.bancoId = $event"
+            placeholder="Selecciona el banco" [rawLabel]="true"></app-search-select>
+          <p class="rs-hint">
+            Es el banco en el que se le abre la cuenta sueldo a quien se contrate con esta razón
+            social. Se administra en Configuración → Bancos.
+          </p>
+        </div>
+      }
+    </section>
+
+    <footer class="rs-footer">
+      <button type="button" class="rs-btn rs-btn--ghost" [disabled]="guardando" (click)="close()">
+        Cancelar
+      </button>
+      <button type="button" class="rs-btn rs-btn--primary" [disabled]="guardando" (click)="guardar()">
+        {{ guardando ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </footer>
+
+  </div>
+</app-base-modal>

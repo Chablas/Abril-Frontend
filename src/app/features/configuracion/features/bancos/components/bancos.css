@@ -164,6 +164,16 @@
   border-color: #bfdbfe;
 }
 
+.chip-red {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fecaca;
+}
+
+.text-center {
+  text-align: center;
+}
+
 .row-actions {
   display: flex;
   justify-content: flex-end;

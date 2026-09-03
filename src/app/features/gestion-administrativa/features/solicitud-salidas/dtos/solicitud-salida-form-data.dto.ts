@@ -7,6 +7,9 @@ export interface MotivoSalidaDto {
   esHoraEstimada: boolean;
   /** Si true, al elegir este motivo el formulario exige escribir un motivo adicional (detalle). */
   requiereMotivoAdicional: boolean;
+  /** Si false, el formulario no pide horas ni lugares y la solicitud queda con un solo
+   *  trayecto (ej. licencia sin goce de haber). */
+  pideHorasLugares: boolean;
 }
 
 export interface LugarSalidaDto {

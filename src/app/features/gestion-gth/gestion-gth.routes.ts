@@ -47,7 +47,22 @@ export const GESTION_GTH_ROUTES: Routes = [
     },
   },
   {
-    // Onboarding: la fase que sigue a Reclutamiento. Solo entran los candidatos cuyo
+    // Va ANTES de 'onboarding' por lo mismo que las otras configuraciones del módulo: si no,
+    // una ruta con parámetro se quedaría con el segmento 'configuracion'. Misma feature que las
+    // otras tres: quien administra los correos de Gestión GTH los administra todos.
+    path: 'onboarding/configuracion',
+    loadComponent: () =>
+      import('./onboarding/configuracion/onboarding-configuracion').then(
+        (m) => m.GthOnboardingConfiguracion,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'ONBOARDING - CONFIGURACIÓN',
+      featureKey: 'gestion-gth.reclutamiento.configuracion',
+    },
+  },
+  {
+    // Onboarding: la fase que sigue a Reclutamiento. Entran solos los candidatos cuyo
     // requerimiento quedó cerrado, o sea los que ya firmaron su carta oferta y GTH la aprobó.
     path: 'onboarding',
     loadComponent: () => import('./onboarding/onboarding').then((m) => m.GthOnboarding),

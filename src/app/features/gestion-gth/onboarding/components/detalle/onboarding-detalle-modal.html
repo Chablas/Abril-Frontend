@@ -171,41 +171,148 @@
 
             @switch (a.actividad.codigo) {
 
-              <!-- ── Aviso preventivo a TI ─────────────────────────────────
-                   Solo los datos que viajaron en el aviso: qué es y cuándo se
-                   envía ya lo dice el nombre de la actividad. -->
-              @case (ACTIVIDAD.avisoTi) {
-                <div class="act-box act-box--ok">
-                  <ul class="act-lista">
-                    <li><b>Puesto:</b> {{ (item.puesto | titleCase) || '—' }}</li>
-                    <li><b>Área / destino:</b> {{ (item.area | titleCase) || '—' }}</li>
-                    <li><b>Empresa:</b> {{ item.empresa || '—' }}</li>
-                    <li>
-                      <b>Ingreso:</b>
-                      {{ item.fechaIngreso ? (item.fechaIngreso | date: 'dd/MM/yyyy') : '—' }}
-                    </li>
-                    <li><b>Requerimiento:</b> {{ item.codigo }}</li>
-                  </ul>
-                </div>
+              <!-- ── Correo de bienvenida ──────────────────────────────────
+                   Le abre al colaborador su formulario «Nuevos Talentos» y le
+                   manda el enlace. Es lo primero que recibe ya como parte del
+                   equipo, así que lo dispara GTH y no el sistema. -->
+              @case (ACTIVIDAD.enviarBienvenida) {
+                @if (bienvenidaBloqueada) {
+                  <p class="act-pie">{{ bienvenidaBloqueada }}</p>
+                } @else {
+                  <div class="act-box act-box--bienvenida">
+                    <ul class="act-lista">
+                      <li><b>Destinatario:</b> {{ (item.nombre | titleCase) }} · {{ item.bienvenidaEmail }}</li>
+                      <li><b>Puesto:</b> {{ (item.puesto | titleCase) || '—' }}</li>
+                      <li>
+                        <b>Fecha de ingreso:</b>
+                        {{ item.fechaIngreso ? (item.fechaIngreso | date: 'dd/MM/yyyy') : 'Por confirmar' }}
+                      </li>
+                    </ul>
+
+                    <!-- El plazo se elige acá y no en el correo: es lo único de
+                         este envío que cambia según cuánto falte para el ingreso. -->
+                    <div class="act-campo">
+                      <app-date-picker label="Fecha límite para responder" [color]="accent"
+                        [dense]="true" [floatingLabel]="true"
+                        [min]="hoy"
+                        [value]="fechaLimite" (valueChange)="fechaLimite = $event"></app-date-picker>
+                    </div>
+                  </div>
+
+                  <!-- Documentos normativos: manual de onboarding, RIT, reglamento
+                       SST y formatos de cargo. El tope no es una política nuestra
+                       sino el del proveedor de correo, así que el peso se muestra
+                       en vivo en vez de descubrirse al enviar. -->
+                  <div class="act-adjuntos">
+                    <p class="act-adjuntos-titulo">
+                      Documentos a adjuntar
+                      <span class="act-adjuntos-opcional">opcional</span>
+                    </p>
+
+                    @if (adjuntos.length) {
+                      <app-file-preview
+                        [files]="adjuntosPreview"
+                        [color]="accent"
+                        (remove)="quitarAdjunto($event)" />
+                    }
+
+                    <app-file-selector
+                      [accept]="adjuntosAccept"
+                      label="Arrastra los documentos aquí o"
+                      [hint]="'PDF, Word, Excel, PowerPoint o imágenes · hasta ' + pesoLegible(adjuntosMaxBytes) + ' en total'"
+                      [color]="accent"
+                      background="#F1F7FC"
+                      (fileSelected)="agregarAdjunto($event)" />
+
+                    @if (adjuntos.length) {
+                      <p class="act-adjuntos-peso" [class.act-adjuntos-peso--excedido]="adjuntosExcedidos">
+                        {{ adjuntos.length }} archivo(s) · {{ pesoLegible(adjuntosBytes) }}
+                        de {{ pesoLegible(adjuntosMaxBytes) }}
+                      </p>
+                    }
+                  </div>
+
+                  <div class="act-acciones">
+                    <button type="button" class="act-btn"
+                            [disabled]="enviandoBienvenida"
+                            (click)="enviarBienvenida()">
+                      <i class="ti" [class.ti-send]="!enviandoBienvenida"
+                         [class.ti-loader-2]="enviandoBienvenida" [class.act-spin]="enviandoBienvenida"></i>
+                      {{ enviandoBienvenida ? 'Enviando…'
+                       : (item.bienvenidaEnviadaEn ? 'Volver a enviar' : 'Enviar bienvenida') }}
+                    </button>
+
+                    @if (item.bienvenidaEnviadaEn) {
+                      <span class="act-enviado">
+                        Enviado el {{ item.bienvenidaEnviadaEn | date: 'dd/MM/yyyy HH:mm' }}
+                      </span>
+                    }
+                  </div>
+                }
               }
 
-              <!-- ── Aviso preventivo al responsable de obra / sede ──────── -->
+              <!-- ── Formulario recibido ───────────────────────────────────
+                   No tiene acción: lo cumple el propio colaborador desde el
+                   enlace. Acá solo se muestra en qué está. -->
+              @case (ACTIVIDAD.recibirFormulario) {
+                @if (item.formularioCompletadoEn) {
+                  <p class="act-pie">
+                    Recibido el {{ item.formularioCompletadoEn | date: 'dd/MM/yyyy HH:mm' }}
+                  </p>
+                } @else if (item.bienvenidaEnviadaEn) {
+                  <p class="act-pie">
+                    Enlace enviado
+                    @if (item.formularioFechaLimite) {
+                      · vence el {{ item.formularioFechaLimite | date: 'dd/MM/yyyy' }}
+                    }
+                    · a la espera de su respuesta.
+                  </p>
+                } @else {
+                  <p class="act-pie">Se habilita al enviar el correo de bienvenida.</p>
+                }
+              }
+
+              <!-- ── Aviso al responsable de obra ──────────────────────────
+                   Lo manda GTH con un clic: hasta ese momento la fecha de
+                   ingreso todavía se puede mover. Solo aplica a los ingresos a
+                   una obra o sede; en el resto la tarjeta explica por qué no. -->
               @case (ACTIVIDAD.avisoObra) {
-                <div class="act-box act-box--aviso">
-                  <ul class="act-lista">
-                    <li><b>Puesto:</b> {{ (item.puesto | titleCase) || '—' }}</li>
-                    <li><b>Destino:</b> {{ (item.proyectoObra | titleCase) || 'Obra / proyecto del requerimiento' }}</li>
-                    <li>
-                      <b>Fecha requerida:</b>
-                      {{ item.fechaIngreso ? (item.fechaIngreso | date: 'dd/MM/yyyy') : '—' }}
-                    </li>
-                    <li><b>Destinatario:</b> Administrador(a) de la obra asignada</li>
-                    <li>
-                      <b>Respaldo:</b>
-                      Residente de obra → Ing. de Producción → Coordinación de Administración de Obra
-                    </li>
-                  </ul>
-                </div>
+                @if (!item.avisoObraAplica) {
+                  <p class="act-pie">{{ item.avisoObraMotivoNoAplica }}</p>
+                } @else {
+                  <div class="act-box act-box--aviso">
+                    <ul class="act-lista">
+                      <li><b>Puesto:</b> {{ (item.puesto | titleCase) || '—' }}</li>
+                      <li><b>Destino:</b> {{ (item.proyectoObra | titleCase) || '—' }}</li>
+                      <li>
+                        <b>Fecha de ingreso:</b>
+                        {{ item.fechaIngreso ? (item.fechaIngreso | date: 'dd/MM/yyyy') : 'Por confirmar' }}
+                      </li>
+                      <li>
+                        <b>Destinatario:</b>
+                        {{ (item.avisoObraDestinatario | titleCase) || 'Coordinador administrativo' }}
+                        @if (item.avisoObraEmail) { · {{ item.avisoObraEmail }} }
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div class="act-acciones">
+                    <button type="button" class="act-btn"
+                            [disabled]="enviandoAviso"
+                            (click)="enviarAvisoObra()">
+                      <i class="ti" [class.ti-send]="!enviandoAviso"
+                         [class.ti-loader-2]="enviandoAviso" [class.act-spin]="enviandoAviso"></i>
+                      {{ enviandoAviso ? 'Enviando…'
+                       : (item.avisoObraEnviadoEn ? 'Volver a enviar' : 'Enviar aviso') }}
+                    </button>
+
+                    @if (item.avisoObraEnviadoEn) {
+                      <span class="act-enviado">
+                        Enviado el {{ item.avisoObraEnviadoEn | date: 'dd/MM/yyyy HH:mm' }}
+                      </span>
+                    }
+                  </div>
+                }
               }
 
               <!-- ── Resto del checklist: se dibuja, aún sin acciones ────── -->

@@ -25,6 +25,14 @@
                 title="Al elegir estos motivos en Solicitud de Salidas, el trabajador debe escribir además un detalle obligatorio que explique la salida.">?</span>
             </span>
           </th>
+          <th class="text-center">
+            <span class="inline-flex items-center gap-[5px]">
+              Horas y lugares
+              <span
+                class="inline-flex items-center justify-center w-[15px] h-[15px] rounded-full border border-current text-[10px] font-bold leading-none cursor-help select-none"
+                title="Los motivos sin horas ni lugares describen una ausencia de día completo (ej. licencia sin goce de haber): al elegirlos en Solicitud de Salidas no se piden horas ni lugares y la solicitud queda con un solo trayecto.">?</span>
+            </span>
+          </th>
           <th class="text-center">Estado</th>
           <th class="text-center">Acciones</th>
         </tr>
@@ -32,7 +40,7 @@
       <tbody>
 
         <tr *ngIf="filteredMotivos.length === 0">
-          <td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">
+          <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">
             {{ searchText.trim() || estadoFilter !== null ? 'Sin resultados.' : 'No hay motivos registrados.' }}
           </td>
         </tr>
@@ -65,6 +73,15 @@
               Requerido
             </span>
             <span *ngIf="!m.requiereMotivoAdicional" class="text-gray-300">—</span>
+          </td>
+
+          <td class="text-center">
+            <span *ngIf="!m.pideHorasLugares"
+                  class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#FEE2E2] text-[#B91C1C] font-medium whitespace-nowrap"
+                  title="No se piden horas ni lugares y la solicitud queda con un solo trayecto">
+              No se piden
+            </span>
+            <span *ngIf="m.pideHorasLugares" class="text-gray-300">—</span>
           </td>
 
           <td class="text-center">

@@ -18,7 +18,8 @@ export interface GestionSalidaListItemDto {
    */
   revisorNombre: string | null;
   fechaSalida: string;
-  horaSalida: string;
+  /** Null cuando el motivo no pide horario. */
+  horaSalida: string | null;
   horaRetorno: string | null;
   motivo: string;
   lugarOrigen: string | null;
@@ -148,7 +149,8 @@ export interface GestionSalidaAdjuntoDto {
 export interface GestionSalidaTrayectoDto {
   id: number;
   orden: number;
-  horaSalida: string;
+  /** Null cuando el motivo no pide horario. */
+  horaSalida: string | null;
   horaRetorno: string | null;
   motivo: string;
   /** Detalle que acompaña al motivo cuando este lo exige. Null si no aplica. */

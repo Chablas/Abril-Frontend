@@ -3,7 +3,8 @@ import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Proyectos } from './features/proyectos/components/proyectos';
 import { Area } from './features/area/components/area';
-import { Companies } from './pages/companies/companies';
+import { RazonesSociales } from './features/razones-sociales/components/razones-sociales';
+import { Bancos } from './features/bancos/components/bancos';
 import { Workers } from './pages/workers/workers';
 import { Feriados } from './features/feriados/components/feriados';
 import { Aprendizaje } from './features/aprendizaje/components/aprendizaje';
@@ -35,9 +36,17 @@ const routes: Routes = [
       },
       {
         path: 'companies',
-        component: Companies,
+        component: RazonesSociales,
         canActivate: [roleGuard],
         data: { titulo: 'CONFIGURACIÓN - RAZONES SOCIALES', featureKey: 'configuracion.companies' },
+      },
+      {
+        // Catálogo de bancos: de acá sale el banco de cada razón social del grupo, y de ahí el
+        // que el formulario de bienvenida le nombra al nuevo colaborador.
+        path: 'bancos',
+        component: Bancos,
+        canActivate: [roleGuard],
+        data: { titulo: 'CONFIGURACIÓN - BANCOS', featureKey: 'configuracion.bancos' },
       },
       {
         path: 'workers',

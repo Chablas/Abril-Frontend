@@ -164,7 +164,11 @@ export class ProgramarEmoDialogComponent implements OnInit {
     return this.razonesSociales.find((r) => r.id === this.form.empresaId) ?? null;
   }
 
-  /** true si la razón social elegida ya no tiene cupo para una persona más. */
+  /**
+   * true si la razón social elegida ya no tiene cupo para una persona más. Bloquea el guardado:
+   * elegirla acá no es un dato de esta cita, es asignársela a la ficha (ver `enviar`), así que
+   * dejar pasar una llena sería meter un trabajador por encima del tope de 20.
+   */
   get sinCupos(): boolean {
     return this.razonSocialSeleccionada?.cuposDisponibles === 0;
   }
@@ -230,7 +234,7 @@ export class ProgramarEmoDialogComponent implements OnInit {
   }
 
   get canSubmit(): boolean {
-    if (this.pideRazonSocial && !this.form.empresaId) return false;
+    if (this.pideRazonSocial && (!this.form.empresaId || this.sinCupos)) return false;
     return !!(this.form.fechaProgramada && this.form.tipoEmoId && this.form.clinicaId);
   }
 

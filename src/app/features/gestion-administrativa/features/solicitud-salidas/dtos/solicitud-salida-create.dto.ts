@@ -1,6 +1,7 @@
 export interface TrayectoCreateDto {
   /** "HH:mm" */
-  horaSalida: string;
+  /** Null cuando el motivo elegido no pide horario. */
+  horaSalida: string | null;
   /** "HH:mm" or null (sin retorno) */
   horaRetorno: string | null;
   motivoId: number | null;

@@ -22,6 +22,8 @@ export class GaMotivoCreate {
   requiereAdjunto = false;
   esHoraEstimada = false;
   requiereMotivoAdicional = false;
+  /** Un motivo nuevo se comporta como los de siempre: pide horas, lugares y trayectos. */
+  pideHorasLugares = true;
   submitted = false;
 
   constructor(
@@ -41,6 +43,7 @@ export class GaMotivoCreate {
         requiereAdjunto: this.requiereAdjunto,
         esHoraEstimada: this.esHoraEstimada,
         requiereMotivoAdicional: this.requiereMotivoAdicional,
+        pideHorasLugares: this.pideHorasLugares,
       })
       .subscribe({
       next: (res) => {
