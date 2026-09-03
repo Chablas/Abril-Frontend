@@ -5597,8 +5597,21 @@ El rol `RESIDENTE` no veía los combos "Proyecto"/"Empresa" en `/habilitacion/ge
 ### Fix
 `features/habilitacion/pages/empresa/empresa.ts:233-241` — agregado `Roles.RESIDENTE` a la condición de `isAdmin()`. Cambio aislado a este componente: verificado que `evaluacion-supervisores.ts` y `dashboard-hab.component.ts` tienen su propio `isAdmin()` local independiente (no se ven afectados).
 
-### Pendiente / detectado de paso (no resuelto esta sesión)
-La pantalla "Registros Modelo" (ATS, checklists, etc. — `/habilitacion/registros-modelo`) tiene datos cargados en la tabla `SsRegistroModelo` pero **no está enlazada en ningún menú del sidebar** (revisado `navigation.service.ts` completo) y su ruta tiene `roles: ['CONTRATISTA']` en `habilitacion.routes.ts:179`. Queda como funcionalidad huérfana — pendiente decidir si se engancha al menú y para qué rol(es).
+### Registros Modelo: enganchado al menú + descargas rotas corregidas
+Detectado de paso: "Registros Modelo" (ATS, checklists, etc. — `/habilitacion/registros-modelo`) tenía datos en `SsRegistroModelo` pero no estaba enlazado en ningún menú, y su ruta tenía `roles: ['CONTRATISTA']` en `habilitacion.routes.ts:179`. El usuario pidió que sea visible para todos.
+
+- **Fix ruta**: `habilitacion.routes.ts:174-179` — quitado `roleGuard`/`featureKey`/`roles`, solo `authGuard` (mismo patrón que `dashboard`).
+- **Fix menú**: `navigation.service.ts` — agregado ítem "Registros Modelo" → `/habilitacion/registros-modelo` en el desplegable "Gestión SSOMA", en los dos lugares donde se arma esa lista (general y la override específica para usuarios tipo Contratista).
+- **Bug de datos encontrado al probar**: 5 de 16 registros daban 404 al descargar (`RegistrosModeloController`/`ArchivoHabilitacionController.Descargar` en el backend, `[AllowAnonymous]`, sin cambios de código). Diagnosticado con Graph API directo (usando el `ClientSecret` de `AzureAd` en `appsettings.Production.json` — **el usuario pegó ese archivo completo en el chat sin querer; quedó expuesto en el historial, recomendado rotar `ClientSecret`, `AccountKey` de Azure Storage, y el resto de secretos si el historial se comparte**). Sitio SharePoint real: `SSOMA-Powerapps` (`https://abrilinmob.sharepoint.com/sites/SSOMA-Powerapps`), biblioteca `ModeloDocumentos`. Causa: `archivo_url` en BD no coincidía con el nombre/extensión real del archivo (ej. `.xlsx` en BD vs `.docx` real, o nombre truncado). Corregido directo en BD vía pgAdmin (no vía código):
+  ```sql
+  UPDATE ss_registro_modelo SET archivo_url = 'ModeloDocumentos/Modelo Organigrama.docx' WHERE id = 10;
+  UPDATE ss_registro_modelo SET archivo_url = 'ModeloDocumentos/Modelo PETS SSO Y MA.docx' WHERE id = 11;
+  UPDATE ss_registro_modelo SET archivo_url = 'ModeloDocumentos/Modelo Plan Anual de SSOMA.docx' WHERE id = 12;
+  UPDATE ss_registro_modelo SET archivo_url = 'ModeloDocumentos/SSO-FO-018.aATS Albañileria.xlsx' WHERE id = 13;
+  UPDATE ss_registro_modelo SET archivo_url = 'ModeloDocumentos/SSO-FO-018.d ATS LIMPIEZA DE OT Y VECINOS.xlsx' WHERE id = 16;
+  ```
+  Verificado post-fix: los 16 registros devuelven redirect (200/302 efectivo) al descargar.
+- **Nota**: hay archivos "... - Copia.xlsx/docx" duplicados en la biblioteca `ModeloDocumentos` (basura de versiones anteriores) — no tocados, pendiente si algún día se quiere limpiar.
 
 ### Verificado
 `ng build` → 0 errores (solo warnings preexistentes de dependencias CommonJS).
