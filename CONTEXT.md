@@ -5615,3 +5615,36 @@ Detectado de paso: "Registros Modelo" (ATS, checklists, etc. — `/habilitacion/
 
 ### Verificado
 `ng build` → 0 errores (solo warnings preexistentes de dependencias CommonJS).
+
+## Sesión 2026-09-03 (continuación) — Presupuesto Materiales: Vigilancia, Dotación por etapas, Cálculo técnico + freeze real cazado
+
+### Contexto
+Continuación de la sesión de Presupuesto Materiales SSOMA (Sauce Zen). El usuario pidió: cálculo técnico manual para Barandas FRP/Rodapié/Tubería/Ducto, cálculo de HH y cantidad de servicios (Dotación de personal, Vigilancia) según etapas del cronograma, y separar Barra FRP en 25mm/21mm en el Catálogo (backend/BD, ver `Abril_Backend/CONTEXT.md`).
+
+### Cambios en `proyecto-page.ts`/`.html`/`.css`
+
+**Cálculo técnico** (reemplaza el bloque "pendiente" que solo listaba las familias): calculadora tipo Kits/BOM para Barandas (FRP 25mm+21mm, 3.4ml → 3×25mm×1.7m + 4×21mm×2m), Rodapié (reusa los mismos ML de Barandas, triplay 8mm 6 tiras×2.44m/plancha), Tubería PVC 1" (derivada automáticamente de la cantidad de barras FRP 25mm — 1 poste por barra, 5 postes por barra de 3m) y Ducto (fenólico +10%, perímetro estimado como cuadrado, listón en bastidores 12'=3.6576m). Todo informativo, la cantidad final se sigue cargando a mano en el presupuesto (`cantidadManual`).
+
+**Dotación de personal por hito**: cada fila ahora tiene un select "Etapa de salida" (además de la etapa de ingreso = el hito). Si se elige una, "Semanas" se calcula sola desde las fechas reales del cronograma y queda de solo lectura; sin elegirla, sigue siendo manual como antes.
+
+**Vigilancia (nueva sección)**: mismo patrón que Dotación de personal pero facturada por punto/turno, con precio tomado de Ratios/Catálogo (família "Servicio de Vigilancia") en vez de tipeado a mano. DTOs nuevos en `presupuesto.dtos.ts`, métodos nuevos en `presupuesto.service.ts`.
+
+### Bug real cazado: freeze de "Cargando dotación/vigilancia..." al marcar hitos críticos
+Reportado por el usuario: al marcar un hito como "crítico" y guardar el cronograma, la pantalla se quedaba congelada ("La página no responde" de Chrome), con errores `NG0100` en consola creciendo sin parar. Diagnóstico largo (múltiples hipótesis descartadas: bug de backend, HMR, extensiones — confirmado con incógnito y con `git stash` de todos los cambios de la sesión que el freeze **ya existía antes** de tocar nada de Vigilancia/Dotación hoy):
+
+- **Causa real**: `personalPorHito` era un *getter* que reconstruía un `Map`/array nuevo cada vez que Angular lo leía en el `*ngFor`. Al no tener datos (`hitosCriticos` vacío, antes de marcar cualquier hito crítico) nunca se ejecutaba de verdad; en cuanto había al menos un hito crítico, el `*ngFor` leía el getter en cada ciclo de change detection, veía una referencia distinta siempre, y Angular entraba en un ciclo de repintado que nunca se estabilizaba.
+- **Fix**: `personalPorHito` pasó de getter a propiedad normal, recalculada una sola vez en `construirFilasPersonal()` (cuando llegan los datos), no en cada tick de CD.
+- **Efecto secundario real, ya corregido de paso**: `LoaderService.show()/hide()` (`core/services/loader.service.ts`) llamaba `.next()` de forma síncrona dentro de ciclos de CD en curso, disparando `NG0100` en el `*ngIf="loader$ | async"` global de `App` — se usa en decenas de páginas de toda la app. Se difirió a un macrotask (`setTimeout`), mismo patrón que ya se usó antes para el bug análogo de `LayoutService.hasPageHeader$` (ver sesión "Bugfix Portafolio BIM", 2026-08-19).
+
+### Archivos clave
+- `features/ssoma/gestion/presupuesto-materiales/pages/proyecto/proyecto-page.ts`/`.html`/`.css`
+- `features/ssoma/gestion/presupuesto-materiales/presupuesto.dtos.ts`, `presupuesto.service.ts`
+- `core/services/loader.service.ts`
+
+### Verificado
+`ng build` (producción) → 0 errores, solo warnings preexistentes de terceros (canvg, flatpickr, tfjs). No se probó en navegador tras el fix final del freeze — el usuario lo verifica él mismo en su sesión.
+
+### Pendiente
+- Confirmar en navegador que el freeze de Dotación/Vigilancia no vuelve a aparecer tras el fix.
+- PDF de entrega del presupuesto a Costos — pendiente de construir (se acordó hacerlo después de validar que Vigilancia/Dotación funcionan bien).
+- Revisar si `kitsOpts` (getter en la misma página, sección Kits/BOM) tiene el mismo patrón de "array nuevo en cada acceso" — no causó problema porque esa sección no se renderiza automáticamente (está detrás de un toggle manual), pero es el mismo antipatrón.
