@@ -4,6 +4,9 @@ import { Roles } from '../../../core/constants/roles';
 /** Pestañas del header de Gestión Administrativa — única fuente para todas sus páginas. */
 export const GESTION_ADMINISTRATIVA_TABS: AbrilPageTab[] = [
   { label: 'Solicitud de Salidas',   icono: 'ti-file-text',  route: '/gestion-administrativa/solicitud-salidas',   featureKey: 'gestion-administrativa.solicitud-salidas' },
+  // Va justo después de Solicitud de Salidas porque es su continuación: la rendición se crea ahí
+  // y todo lo que sigue (Consolidado del S10, aviso al revisor, reembolso) se hace acá.
+  { label: 'Mis Rendiciones',        icono: 'ti-receipt',    route: '/gestion-administrativa/rendiciones',         featureKey: 'gestion-administrativa.rendiciones' },
   { label: 'Gestión de Salidas',     icono: 'ti-briefcase',  route: '/gestion-administrativa/gestion-salidas',     featureKey: 'gestion-administrativa.gestion-salidas' },
   { label: 'Delegación de Revisión', icono: 'ti-user-check', route: '/gestion-administrativa/delegacion-revision', featureKey: 'gestion-administrativa.delegacion-revision' },
   // La pestaña se abre también por ROL y no solo por featureKeys: desde que existe la sección

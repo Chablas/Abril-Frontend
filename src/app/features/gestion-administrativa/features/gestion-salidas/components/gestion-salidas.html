@@ -27,8 +27,10 @@
 <div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden pb-[64px]">
 
   <!-- ── Tarjetas de resumen ───────────────────────────────────────────────
-       Bandeja pendiente del usuario: no dependen de los filtros de la tabla, por eso no cambian
-       al buscar. Tesorería no las ve: su pantalla es de pagos, no de rendición. -->
+       Se cuentan sobre el mismo conjunto que alimenta la tabla (todas las páginas, no solo la
+       visible), así que acompañan a los filtros: cada tarjeta sigue significando lo que dice su
+       etiqueta, lo que cambia es el universo. Tesorería no las ve: su pantalla es de pagos, no de
+       rendición. -->
   <div class="resumen-cards" *ngIf="!esTesorero">
     <div class="resumen-card resumen-card--ok">
       <span class="resumen-card__label">Aptas para rendir</span>

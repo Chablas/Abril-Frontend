@@ -1,0 +1,222 @@
+<app-abril-page-header
+  [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
+  titulo="Mis Rendiciones"
+  subtitulo="Mis planillas rendidas y su reembolso."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden pb-[24px]">
+
+  <!-- ── Tarjetas de resumen ───────────────────────────────────────────────
+       Se cuentan sobre el mismo conjunto que muestra la tabla, así que acompañan a los filtros.
+       Son los tres pasos que le pueden faltar al trabajador, en el orden del flujo. -->
+  <div class="resumen-cards">
+    <div class="resumen-card resumen-card--warn">
+      <span class="resumen-card__label">Sin consolidado</span>
+      <span class="resumen-card__value">{{ resumen.sinConsolidado }}</span>
+      <span class="resumen-card__hint">Falta adjuntar el PDF del S10</span>
+    </div>
+    <div class="resumen-card resumen-card--info">
+      <span class="resumen-card__label">Por avisar</span>
+      <span class="resumen-card__value">{{ resumen.porAvisar }}</span>
+      <span class="resumen-card__hint">Listas para que las revise tu jefe</span>
+    </div>
+    <div class="resumen-card resumen-card--alert">
+      <span class="resumen-card__label">Observadas</span>
+      <span class="resumen-card__value">{{ resumen.observadas }}</span>
+      <span class="resumen-card__hint">Requieren subsanación</span>
+    </div>
+  </div>
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Planilla</th>
+          <th>Periodo</th>
+          <th>Salidas</th>
+          <th>Monto</th>
+          <th>Rendida</th>
+          <th>Documentos</th>
+          <th>Reembolso</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="rendiciones.length === 0">
+          <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">
+            No tienes rendiciones. Se crean al rendir tus salidas desde Solicitud de Salidas.
+          </td>
+        </tr>
+
+        <tr
+          *ngFor="let r of rendiciones"
+          (click)="abrirDetalle(r)"
+          title="Ver las salidas de esta planilla"
+          class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
+          style="border-color:var(--color-abril-border)">
+
+          <td class="text-gray-700 font-medium whitespace-nowrap">{{ r.numeroPlanilla ?? '—' }}</td>
+          <td class="text-gray-700 whitespace-nowrap">{{ r.periodo }}</td>
+          <td class="text-gray-700 text-center">{{ r.salidasCount }}</td>
+          <td class="text-gray-700 whitespace-nowrap">S/ {{ r.montoTotal | number:'1.2-2' }}</td>
+          <td class="text-gray-400 whitespace-nowrap">{{ r.rendidoAt | date:'dd/MM/yyyy HH:mm' }}</td>
+
+          <!-- Los tres papeles de la planilla en una sola celda: se abren, no cambian nada.
+               El consolidado y la copia firmada se muestran también cuando faltan, para que se
+               vea qué le queda al expediente. -->
+          <td (click)="$event.stopPropagation()">
+            <div class="flex flex-wrap items-center gap-[6px]">
+              <a class="doc-chip" [href]="r.pdfUrl" target="_blank" rel="noopener noreferrer"
+                 [title]="r.pdfFilename">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                Planilla
+              </a>
+
+              <a *ngIf="r.consolidadoS10; else sinConsolidado"
+                 class="doc-chip" [href]="r.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
+                 [title]="r.consolidadoS10.pdfFilename">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                S10 ✓
+              </a>
+              <ng-template #sinConsolidado>
+                <span class="doc-chip doc-chip--pendiente" title="Todavía no se adjuntó el Consolidado del S10">
+                  S10 pendiente
+                </span>
+              </ng-template>
+
+              <a *ngIf="r.pdfFirmadoUrl"
+                 class="doc-chip" [href]="r.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
+                 [title]="'Planilla firmada por la jefatura el ' + (r.firmadoAt | date:'dd/MM/yyyy HH:mm')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Firmada
+              </a>
+            </div>
+          </td>
+
+          <!-- Reembolso: resumen de las salidas propias de la planilla. Con la observación en el
+               tooltip, que es lo que hay que subsanar. -->
+          <td>
+            <app-status-badge
+              [text]="reembolsoTexto(r)"
+              [bgColor]="reembolsoColors(r.estadoReembolso).bg"
+              [textColor]="reembolsoColors(r.estadoReembolso).text"
+              [title]="reembolsoTitle(r)" />
+          </td>
+
+          <td (click)="$event.stopPropagation()">
+            <div *ngIf="r.puedeAdjuntarConsolidado; else sinAcciones" class="flex items-center gap-2">
+              <button
+                type="button"
+                (click)="abrirConsolidado(r, $event)"
+                [title]="r.consolidadoS10 ? 'Reemplazar el Consolidado del S10 de esta planilla' : 'Adjuntar el PDF Consolidado del S10 de esta planilla'"
+                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                style="background:var(--color-abril-standard)"
+                onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+                onmouseout="this.style.background='var(--color-abril-standard)'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                {{ r.consolidadoS10 ? 'Consolidado S10 ✓' : 'Consolidado S10' }}
+              </button>
+
+              <!-- Se habilita recién con el S10 adjunto: antes de eso el revisor no tendría qué
+                   mirar. Después de aprobado (o firmado, o pagado) desaparece con la celda. -->
+              <button
+                *ngIf="r.puedeNotificarRevisor"
+                type="button"
+                (click)="notificarRevisor(r, $event)"
+                [title]="r.revisorNotificadoAt
+                  ? 'Ya le avisaste el ' + (r.revisorNotificadoAt | date:'dd/MM/yyyy HH:mm') + ' — puedes volver a avisarle'
+                  : 'Avísale a tu jefe/revisor que ya adjuntaste el Consolidado del S10'"
+                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold transition-colors"
+                [style.background]="r.revisorNotificadoAt ? '#FFFFFF' : '#005D9D'"
+                [style.color]="r.revisorNotificadoAt ? '#005D9D' : '#FFFFFF'"
+                style="border:1px solid #005D9D">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2.5" y="4.5" width="19" height="15" rx="2"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m3 6 9 6 9-6"/>
+                </svg>
+                {{ r.revisorNotificadoAt ? 'Revisor avisado ✓' : 'Avisar al revisor' }}
+              </button>
+            </div>
+            <ng-template #sinAcciones>
+              <span class="text-gray-300">—</span>
+            </ng-template>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ── Modal de detalle (salidas de la planilla) ─────────────────────── -->
+<app-rendicion-detalle-modal
+  *ngIf="detalleId !== null"
+  [rendicionId]="detalleId"
+  (close)="cerrarDetalle($event)" />
+
+<!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->
+<app-consolidado-s10-modal
+  *ngIf="consolidadoDe !== null"
+  [upload]="subirConsolidado"
+  [actual]="consolidadoDe.consolidadoS10"
+  [referencia]="consolidadoReferencia"
+  (close)="cerrarConsolidado($event)" />
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <app-search-select
+      label="Periodo"
+      placeholder="Selecciona el periodo"
+      [options]="periodoOptions"
+      valueField="key"
+      displayField="label"
+      [sortAlpha]="false"
+      [rawLabel]="true"
+      [value]="filters.periodoKey"
+      (valueChange)="filters.periodoKey = $event; load()">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <app-search-select
+        label="Reembolso"
+        [options]="estadoReembolsoOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filters.estadoReembolso"
+        (valueChange)="filters.estadoReembolso = $event; load()">
+      </app-search-select>
+    </div>
+
+    <div class="flex-1">
+      <app-search-select
+        label="Consolidado del S10"
+        [options]="consolidadoOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filters.consolidado"
+        (valueChange)="filters.consolidado = $event; load()">
+      </app-search-select>
+    </div>
+  </div>
+
+</app-filter-modal>

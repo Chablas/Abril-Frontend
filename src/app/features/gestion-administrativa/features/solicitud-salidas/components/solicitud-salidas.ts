@@ -8,11 +8,11 @@ import { SolicitudSalidaCreate } from './create/create';
 import { SolicitudSalidasService } from '../services/solicitud-salidas.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
-import { SolicitudSalidaListItemDto } from '../dtos/solicitud-salida-list-item.dto';
 import {
-  MesRendicionDto,
   ResumenRendicionDto,
-} from '../dtos/solicitud-salida-filter-data.dto';
+  SolicitudSalidaListItemDto,
+} from '../dtos/solicitud-salida-list-item.dto';
+import { MesRendicionDto } from '../dtos/solicitud-salida-filter-data.dto';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SolicitudSalidaDetalleModal } from './solicitud-salida-detalle-modal/solicitud-salida-detalle-modal';
 import { SolicitudSalidaCapturasModal } from './solicitud-salida-capturas-modal/solicitud-salida-capturas-modal';
@@ -23,25 +23,20 @@ import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
-import { ConsolidadoS10Modal } from '../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
-import {
-  ConsolidadoS10Ambito,
-  ConsolidadoS10Dto,
-} from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 @Component({
   standalone: true,
   selector: 'app-solicitud-salidas',
-  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, StatusBadge, SolicitudSalidaDetalleModal, SolicitudSalidaCapturasModal, SearchSelect, AbrilPageHeaderComponent, FabButton, TitleCasePipe, FilterTriggerButton, FilterModal, AbrilBulkActionDirective, ConsolidadoS10Modal],
+  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, StatusBadge, SolicitudSalidaDetalleModal, SolicitudSalidaCapturasModal, SearchSelect, AbrilPageHeaderComponent, FabButton, TitleCasePipe, FilterTriggerButton, FilterModal, AbrilBulkActionDirective],
   templateUrl: './solicitud-salidas.html',
   styles: [`
     :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 
     /* ── Tarjetas de resumen + barra "Mes a rendir" ─────────────────────────
-       Mismo lenguaje visual que Gestión de Salidas: las tarjetas son la bandeja pendiente del
-       trabajador (no el resultado del filtro) y la barra concentra todo lo de la rendición, que
-       es un eje aparte de las demás acciones. */
+       Mismo lenguaje visual que Gestión de Salidas: las tarjetas cuentan el mismo conjunto que la
+       tabla (se mueven con los filtros) y la barra concentra todo lo de la rendición, que es un
+       eje aparte de las demás acciones. */
     .resumen-cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -116,9 +111,6 @@ export class SolicitudSalidas implements OnInit {
   /** ID de la solicitud cuyo modal de subir capturas está abierto. null = cerrado. */
   capturasId: number | null = null;
 
-  /** Solicitud cuyo modal de Consolidado del S10 está abierto. null = cerrado. */
-  consolidadoDe: SolicitudSalidaListItemDto | null = null;
-
   /** IDs seleccionados para la acción bulk de rendición. */
   selectedIds = new Set<number>();
   /** Índice de la última fila clickeada (ancla para la selección por rango con Shift). */
@@ -166,7 +158,10 @@ export class SolicitudSalidas implements OnInit {
    */
   todoElMes = false;
 
-  /** Números de las tarjetas del encabezado. */
+  /**
+   * Números de las tarjetas del encabezado. Los cuenta el backend sobre el MISMO conjunto que
+   * muestra la tabla, así que llegan con el listado y cambian con cada filtro.
+   */
   resumen: ResumenRendicionDto = { aptasParaRendir: 0, capturasIncompletas: 0, observadas: 0 };
 
   get filtrosActivos(): number {
@@ -212,7 +207,7 @@ export class SolicitudSalidas implements OnInit {
           { id: null, nombreDisplay: 'Todos los proyectos' },
           ...[...data.lugaresProyecto].sort((a, b) => a.nombreDisplay.localeCompare(b.nombreDisplay)),
         ];
-        this.aplicarPeriodos(data.mesesRendicion ?? [], data.resumen);
+        this.aplicarPeriodos(data.mesesRendicion ?? []);
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
@@ -221,17 +216,15 @@ export class SolicitudSalidas implements OnInit {
   // ── Periodo de rendición ("Mes a rendir") ───────────────────────────────
 
   /**
-   * Guarda los meses y las tarjetas que devolvió el backend. Si el periodo elegido ya no existe
-   * (se rindió todo ese mes) se apaga solo: dejarlo puesto mostraría una tabla vacía sin decir
-   * por qué.
+   * Guarda los meses que devolvió el backend. Si el periodo elegido ya no existe (se rindió todo
+   * ese mes) se apaga solo: dejarlo puesto mostraría una tabla vacía sin decir por qué.
    */
-  private aplicarPeriodos(meses: MesRendicionDto[], resumen: ResumenRendicionDto | undefined): void {
+  private aplicarPeriodos(meses: MesRendicionDto[]): void {
     this.mesesRendicion = meses;
     this.mesOptions = [
       { key: null, label: 'Sin filtrar por mes' },
       ...meses.map((m) => ({ key: this.mesKey(m.anio, m.mes), label: m.label })),
     ];
-    this.resumen = resumen ?? { aptasParaRendir: 0, capturasIncompletas: 0, observadas: 0 };
 
     if (this.mesRendirKey && !meses.some((m) => this.mesKey(m.anio, m.mes) === this.mesRendirKey)) {
       this.mesRendirKey = null;
@@ -267,8 +260,11 @@ export class SolicitudSalidas implements OnInit {
       this.mesSeleccionado?.anio ?? null,
       this.mesSeleccionado?.mes ?? null,
     ).subscribe({
-      next: (data) => {
-        this.solicitudes = data;
+      next: (res) => {
+        this.solicitudes = res.data;
+        // Las tarjetas se cuentan sobre este mismo conjunto filtrado: llegan con el listado, no
+        // con filter-data, así que un cambio de filtro las mueve sin una petición extra.
+        this.resumen = res.resumen;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
@@ -282,9 +278,9 @@ export class SolicitudSalidas implements OnInit {
   }
 
   /**
-   * Recarga la tabla y los números del encabezado. Se usa después de cada acción que mueve el
-   * estado (rendir, cancelar, adjuntar el S10): las tarjetas y el desplegable de mes salen de
-   * `filter-data`, así que sin esto seguirían mostrando el conteo de antes de la acción.
+   * Recarga la tabla (con sus tarjetas) y el desplegable de mes. Se usa después de cada acción que
+   * mueve el estado (rendir, cancelar, adjuntar el S10): el desplegable sale de `filter-data`, así
+   * que sin esto seguiría ofreciendo periodos con el conteo de antes de la acción.
    */
   private recargar(): void {
     this.load();
@@ -623,41 +619,6 @@ export class SolicitudSalidas implements OnInit {
     this.recargar();
   }
 
-  // ── Consolidado del S10 (solo salidas rendidas) ──────────────────────
-
-  /** El consolidado solo aplica cuando la salida ya fue rendida. */
-  puedeAdjuntarConsolidado(s: SolicitudSalidaListItemDto): boolean {
-    return s.estadoRendicion === 'Rendido';
-  }
-
-  abrirConsolidado(s: SolicitudSalidaListItemDto, ev: Event): void {
-    ev.stopPropagation(); // no abrir el modal de detalle
-    this.consolidadoDe = s;
-  }
-
-  /** Función de subida que consume el modal compartido (ya sabe a qué endpoint pegarle). */
-  readonly subirConsolidado = (file: File, ambito: ConsolidadoS10Ambito) =>
-    this.service.uploadConsolidadoS10(this.consolidadoDe!.id, file, ambito);
-
-  /** Consolidado vigente de la salida abierta, para mostrarlo dentro del modal. */
-  get consolidadoActual(): ConsolidadoS10Dto | null {
-    const s = this.consolidadoDe;
-    if (!s?.consolidadoS10Url) return null;
-    return {
-      id: 0,
-      ambito: s.consolidadoS10Ambito ?? 'Rendicion',
-      pdfUrl: s.consolidadoS10Url,
-      pdfFilename: s.consolidadoS10Filename ?? 'Consolidado del S10',
-      uploadedAt: '',
-    };
-  }
-
-  /** Cierra el modal; si se subió algo recarga para reflejarlo en toda la planilla. */
-  cerrarConsolidado(subido: ConsolidadoS10Dto | null): void {
-    this.consolidadoDe = null;
-    if (subido) this.recargar();
-    else        this.cdr.detectChanges();
-  }
 
   private extractFilename(contentDisposition: string | null): string | null {
     if (!contentDisposition) return null;
@@ -710,41 +671,5 @@ export class SolicitudSalidas implements OnInit {
       case 'Pagado':    return { bg: '#DCFCE7', text: '#15803D' };
       default:          return { bg: '#FEF9C3', text: '#92400E' }; // Pendiente
     }
-  }
-
-  /**
-   * Avisa al jefe/revisor que el Consolidado del S10 ya está adjunto. Se puede repetir a
-   * propósito (un correo se pierde, el jefe lo archiva sin leer): la fecha del último aviso queda
-   * a la vista en el botón para que no se convierta en insistencia a ciegas.
-   */
-  async notificarRevisor(s: SolicitudSalidaListItemDto, ev: Event): Promise<void> {
-    ev.stopPropagation(); // no abrir el detalle
-
-    if (s.revisorNotificadoAt) {
-      const result = await Swal.fire({
-        icon: 'question',
-        title: '¿Volver a avisar?',
-        text: 'Ya le avisaste a tu revisor por esta salida. Se le enviará el correo otra vez.',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, avisar de nuevo',
-        cancelButtonText: 'Cancelar',
-        confirmButtonColor: '#0F6E56',
-      });
-      if (!result.isConfirmed) return;
-    }
-
-    this.loaderService.show();
-    this.service.notificarRevisor(s.id).subscribe({
-      next: (res) => {
-        this.loaderService.hide();
-        Swal.fire({ icon: 'success', title: res.message, timer: 2000, showConfirmButton: false });
-        this.recargar();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
-        this.errorService.handleError(err);
-        this.cdr.detectChanges();
-      },
-    });
   }
 }

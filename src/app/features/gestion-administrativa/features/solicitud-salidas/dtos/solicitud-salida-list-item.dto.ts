@@ -1,6 +1,4 @@
-﻿import { ConsolidadoS10Ambito } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
-
-export interface SolicitudSalidaListItemDto {
+﻿export interface SolicitudSalidaListItemDto {
   id: number;
   /** Código SOL-AAAA-NNNN. Null solo en solicitudes anteriores a la columna. */
   codigo: string | null;
@@ -40,15 +38,10 @@ export interface SolicitudSalidaListItemDto {
    */
   aptaParaRendir: boolean;
 
-  // ── Consolidado del S10 (solo salidas rendidas) ──────────────────────
-  /** URL del PDF Consolidado del S10 vigente, o null si aún no se adjuntó. */
-  consolidadoS10Url: string | null;
-  /** Nombre del archivo del consolidado vigente. Null si no hay. */
-  consolidadoS10Filename: string | null;
-  /** "Rendicion" (cubre toda la planilla) | "Solicitud" (solo esta salida) | null si no hay. */
-  consolidadoS10Ambito: ConsolidadoS10Ambito | null;
-
   // ── Reembolso ────────────────────────────────────────────────────────
+  // Solo informativo acá: el reembolso se sigue por PLANILLA, y adjuntar el Consolidado del S10
+  // o avisarle al revisor son acciones de Mis Rendiciones.
+
   /**
    * Visto bueno de la jefatura al GASTO, una vez rendida la salida y adjunto el Consolidado del
    * S10: "Pendiente" | "Aprobado" | "Rechazado" | "Firmado" | "Pagado".
@@ -56,8 +49,21 @@ export interface SolicitudSalidaListItemDto {
   estadoReembolso: 'Pendiente' | 'Aprobado' | 'Rechazado' | 'Firmado' | 'Pagado';
   /** Lo que el jefe observó al rechazar: es lo que hay que subsanar. */
   observacionReembolso: string | null;
-  /** True cuando ya se le puede avisar al revisor (rendida + S10 adjunto + reembolso abierto). */
-  puedeNotificarRevisor: boolean;
-  /** Última vez que se le avisó al revisor. Null si nunca. */
-  revisorNotificadoAt: string | null;
+}
+
+/**
+ * Números de las tarjetas del encabezado. Se cuentan sobre el MISMO conjunto que muestra la tabla
+ * (con los filtros ya aplicados), así que acompañan a la búsqueda: por eso viajan con el listado y
+ * no con los datos de los filtros.
+ */
+export interface ResumenRendicionDto {
+  aptasParaRendir: number;
+  capturasIncompletas: number;
+  observadas: number;
+}
+
+/** Respuesta del listado: las filas y las tarjetas, contadas sobre ese mismo conjunto filtrado. */
+export interface SolicitudSalidaListResultDto {
+  data: SolicitudSalidaListItemDto[];
+  resumen: ResumenRendicionDto;
 }

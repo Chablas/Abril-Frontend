@@ -111,6 +111,15 @@ export interface PagedResponseDto<T> {
   data: T[];
 }
 
+/**
+ * Respuesta del listado: la página de la tabla más los números de las tarjetas, contados sobre
+ * todo el conjunto filtrado (no sobre la página). Van juntos para que un cambio de filtro se
+ * resuelva en una sola petición.
+ */
+export interface GestionSalidaPagedDto extends PagedResponseDto<GestionSalidaListItemDto> {
+  resumen: ResumenRendicionDto;
+}
+
 export interface GestionSalidaFilterDataDto {
   trabajadores: TrabajadorOptionDto[];
   lugaresProyecto: LugarProyectoOptionDto[];
@@ -123,8 +132,6 @@ export interface GestionSalidaFilterDataDto {
   esTesorero: boolean;
   /** Meses que ofrece el desplegable "Mes a rendir" (los que tienen algo apto). */
   mesesRendicion: MesRendicionDto[];
-  /** Números de las tarjetas del encabezado. */
-  resumen: ResumenRendicionDto;
 }
 
 /** Un mes del desplegable "Mes a rendir". */
@@ -143,8 +150,9 @@ export interface MesRendicionDto {
 }
 
 /**
- * Números de las tarjetas. Se calculan sobre todo el alcance del usuario, no sobre los filtros de
- * la tabla: son la bandeja pendiente, así que no cambian al filtrar.
+ * Números de las tarjetas del encabezado. Se cuentan sobre el MISMO conjunto filtrado que alimenta
+ * la tabla —todas las páginas, no solo la visible—, así que acompañan a la búsqueda: por eso
+ * viajan con el listado y no con los datos de los filtros.
  */
 export interface ResumenRendicionDto {
   aptasParaRendir: number;

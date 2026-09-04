@@ -1,0 +1,175 @@
+<app-base-modal
+  [title]="detalle?.numeroPlanilla ? 'Planilla ' + detalle!.numeroPlanilla : 'Planilla de rendición'"
+  width="w-[820px]"
+  (closeModal)="cerrar()">
+
+  <div *ngIf="detalle as d" class="flex flex-col gap-4 pt-4">
+
+    <!-- ── Cabecera: de qué planilla se trata ───────────────────────────── -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Periodo</span>
+        <span class="text-sm text-gray-700">{{ d.periodo }}</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas</span>
+        <span class="text-sm text-gray-700">{{ d.salidasCount }}</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Monto rendido</span>
+        <span class="text-sm text-gray-700">S/ {{ d.montoTotal | number:'1.2-2' }}</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Rendida</span>
+        <span class="text-sm text-gray-700">{{ d.rendidoAt | date:'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+    </div>
+
+    <!-- ── Estado del reembolso ─────────────────────────────────────────── -->
+    <div class="flex items-center gap-3 border-t pt-3" style="border-color:var(--color-abril-border)">
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">Reembolso</span>
+      <app-status-badge
+        [text]="reembolsoTexto(d.estadoReembolso)"
+        [bgColor]="reembolsoColors(d.estadoReembolso).bg"
+        [textColor]="reembolsoColors(d.estadoReembolso).text" />
+      <span *ngIf="d.reembolsoMixto" class="text-[11px] text-gray-500 italic">
+        tus salidas no están todas en el mismo estado — se muestra la más atrasada
+      </span>
+      <span *ngIf="d.revisorNotificadoAt" class="text-[11px] text-gray-400 ml-auto">
+        Revisor avisado el {{ d.revisorNotificadoAt | date:'dd/MM/yyyy HH:mm' }}
+      </span>
+    </div>
+
+    <!-- Observación del rechazo: es lo único que hay que leer para saber qué corregir. -->
+    <div *ngIf="d.estadoReembolso === 'Rechazado' && d.observacionReembolso"
+         class="border rounded-lg p-3 text-sm"
+         style="border-color:#FCA5A5;background:#FEF2F2;color:#991B1B">
+      <span class="font-semibold">Observación:</span> {{ d.observacionReembolso }}
+    </div>
+
+    <!-- ── Documentos ───────────────────────────────────────────────────── -->
+    <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">Documentos</span>
+
+      <a [href]="d.pdfUrl" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
+        </svg>
+        {{ d.pdfFilename }}
+      </a>
+
+      <a *ngIf="d.consolidadoS10" [href]="d.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
+        </svg>
+        {{ d.consolidadoS10.pdfFilename }}
+        <span class="text-xs text-gray-400 font-normal">· Consolidado del S10</span>
+      </a>
+      <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
+        Falta el Consolidado del S10.
+      </span>
+
+      <a *ngIf="d.pdfFirmadoUrl" [href]="d.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {{ d.pdfFirmadoFilename ?? 'Planilla firmada' }}
+        <span class="text-xs text-gray-400 font-normal">· firmada el {{ d.firmadoAt | date:'dd/MM/yyyy' }}</span>
+      </a>
+    </div>
+
+    <!-- ── Salidas de la planilla ───────────────────────────────────────── -->
+    <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas de esta planilla</span>
+
+      <div class="abril-table-wrap">
+        <table class="abril-table abril-table--th-center">
+          <thead>
+            <tr>
+              <th>N° solicitud</th>
+              <th>Fecha</th>
+              <th>Motivo</th>
+              <th>Origen</th>
+              <th>Destino</th>
+              <th>Monto</th>
+              <th>Reembolso</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of d.salidas" class="border-b" style="border-color:var(--color-abril-border)">
+              <td class="text-gray-700 font-medium whitespace-nowrap">{{ s.codigo ?? '—' }}</td>
+              <td class="text-gray-700 whitespace-nowrap">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
+              <td class="text-gray-700">
+                {{ s.motivo | titleCase }}
+                <span *ngIf="s.trayectosCount > 1"
+                      class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
+                      style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
+                      [title]="s.trayectosCount + ' trayectos'">
+                  +{{ s.trayectosCount - 1 }}
+                </span>
+              </td>
+              <td class="text-gray-500">{{ (s.lugarOrigen | titleCase) || '—' }}</td>
+              <td class="text-gray-500">{{ (s.lugarDestino | titleCase) || '—' }}</td>
+              <td class="text-gray-700 whitespace-nowrap">S/ {{ s.monto | number:'1.2-2' }}</td>
+              <td>
+                <app-status-badge
+                  [text]="reembolsoTexto(s.estadoReembolso)"
+                  [bgColor]="reembolsoColors(s.estadoReembolso).bg"
+                  [textColor]="reembolsoColors(s.estadoReembolso).text"
+                  [title]="s.estadoReembolso === 'Rechazado' && s.observacionReembolso
+                    ? 'Observación: ' + s.observacionReembolso
+                    : null" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Acciones ─────────────────────────────────────────────────────── -->
+    <div *ngIf="d.puedeAdjuntarConsolidado" class="flex justify-end gap-3 border-t pt-3"
+         style="border-color:var(--color-abril-border)">
+      <button
+        *ngIf="d.puedeNotificarRevisor"
+        type="button"
+        (click)="notificarRevisor()"
+        [title]="d.revisorNotificadoAt
+          ? 'Ya le avisaste el ' + (d.revisorNotificadoAt | date:'dd/MM/yyyy HH:mm') + ' — puedes volver a avisarle'
+          : 'Avísale a tu jefe/revisor que ya adjuntaste el Consolidado del S10'"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors"
+        [style.background]="d.revisorNotificadoAt ? '#FFFFFF' : '#005D9D'"
+        [style.color]="d.revisorNotificadoAt ? '#005D9D' : '#FFFFFF'"
+        style="border:1px solid #005D9D">
+        {{ d.revisorNotificadoAt ? 'Volver a avisar al revisor' : 'Avisar al revisor' }}
+      </button>
+
+      <button
+        type="button"
+        (click)="consolidadoAbierto = true"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
+        style="background:var(--color-abril-standard)"
+        onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+        onmouseout="this.style.background='var(--color-abril-standard)'">
+        {{ d.consolidadoS10 ? 'Reemplazar Consolidado del S10' : 'Adjuntar Consolidado del S10' }}
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>
+
+<!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->
+<app-consolidado-s10-modal
+  *ngIf="consolidadoAbierto"
+  [upload]="subirConsolidado"
+  [actual]="detalle?.consolidadoS10 ?? null"
+  [referencia]="consolidadoReferencia"
+  (close)="cerrarConsolidado($event)" />

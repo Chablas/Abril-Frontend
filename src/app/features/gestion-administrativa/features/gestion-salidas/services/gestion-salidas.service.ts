@@ -5,14 +5,10 @@ import { environment } from '../../../../../../environments/environment';
 import {
   GestionSalidaDetalleDto,
   GestionSalidaFilterDataDto,
-  GestionSalidaListItemDto,
-  PagedResponseDto,
+  GestionSalidaPagedDto,
   ReembolsoBulkResultDto,
 } from '../dtos/gestion-salida.dto';
-import {
-  ConsolidadoS10Ambito,
-  ConsolidadoS10Dto,
-} from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 
 @Injectable({ providedIn: 'root' })
 export class GestionSalidasService {
@@ -38,7 +34,7 @@ export class GestionSalidasService {
     soloHoy = false,
     rendicionAnio: number | null = null,
     rendicionMes: number | null = null,
-  ): Observable<PagedResponseDto<GestionSalidaListItemDto>> {
+  ): Observable<GestionSalidaPagedDto> {
     let params = new HttpParams().set('page', page);
     if (rendicionAnio != null && rendicionMes != null) {
       params = params.set('rendicionAnio', rendicionAnio).set('rendicionMes', rendicionMes);
@@ -52,7 +48,7 @@ export class GestionSalidasService {
     if (sortDir)                 params = params.set('sortDir', sortDir);
     if (areaScopeIds)            for (const id of areaScopeIds) params = params.append('areaScopeIds', id);
     if (soloHoy)                 params = params.set('soloHoy', true);
-    return this.http.get<PagedResponseDto<GestionSalidaListItemDto>>(this.apiUrl, { headers: this.headers, params });
+    return this.http.get<GestionSalidaPagedDto>(this.apiUrl, { headers: this.headers, params });
   }
 
   getDetalle(id: number): Observable<GestionSalidaDetalleDto> {
@@ -148,17 +144,13 @@ export class GestionSalidasService {
   }
 
   /**
-   * Adjunta (o reemplaza) el PDF Consolidado del S10 de una salida ya rendida.
-   * `ambito` decide si el archivo cubre toda la planilla de rendición o solo esa salida.
+   * Adjunta (o reemplaza) el PDF Consolidado del S10 de la PLANILLA a la que pertenece esa salida.
+   * El id es el de la salida porque es lo que la tabla tiene a mano; el backend resuelve su
+   * planilla y el archivo cubre todas sus salidas.
    */
-  uploadConsolidadoS10(
-    solicitudId: number,
-    file: File,
-    ambito: ConsolidadoS10Ambito,
-  ): Observable<ConsolidadoS10Dto> {
+  uploadConsolidadoS10(solicitudId: number, file: File): Observable<ConsolidadoS10Dto> {
     const formData = new FormData();
     formData.append('file', file, file.name);
-    formData.append('ambito', ambito);
     return this.http.post<ConsolidadoS10Dto>(
       `${this.apiUrl}/${solicitudId}/consolidado-s10`,
       formData,

@@ -30,10 +30,7 @@ import { FilterTriggerButton } from '../../../../../shared/components/filter-tri
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
 import { ConsolidadoS10Modal } from '../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
-import {
-  ConsolidadoS10Ambito,
-  ConsolidadoS10Dto,
-} from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 
 import { FirmaRegistrarModal } from '../../../../../shared/components/firma-personal/registrar-modal/firma-registrar-modal';
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
@@ -116,9 +113,9 @@ interface AreaCascadeNode {
     }
 
     /* ── Tarjetas de resumen + barra "Mes a rendir" ─────────────────────────
-       Las tarjetas son la bandeja pendiente del usuario (no el resultado del filtro), así que
-       no cambian al buscar; se recargan solas después de cada acción que las mueve. Se estilan
-       acá y no en styles.css porque el trío es propio de las dos pantallas de salidas. */
+       Las tarjetas cuentan el mismo conjunto que la tabla, así que se mueven con los filtros y
+       con cada acción que cambia el estado. Se estilan acá y no en styles.css porque el trío es
+       propio de las dos pantallas de salidas. */
     .resumen-cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -293,7 +290,11 @@ export class GestionSalidas implements OnInit {
    */
   todoElMes = false;
 
-  /** Números de las tarjetas del encabezado. */
+  /**
+   * Números de las tarjetas del encabezado. Los cuenta el backend sobre el MISMO conjunto que
+   * alimenta la tabla (todas las páginas, no solo la visible), así que llegan con el listado y
+   * cambian con cada filtro.
+   */
   resumen: ResumenRendicionDto = { aptasParaRendir: 0, capturasIncompletas: 0, observadas: 0 };
 
   // ── Filtro de área en cascada (igual al de Visibilidad de Salidas) ──
@@ -503,7 +504,7 @@ export class GestionSalidas implements OnInit {
           ...data.lugaresProyecto,
         ];
         this.buildAreaCascade(data.areaTree);
-        this.aplicarPeriodos(data.mesesRendicion ?? [], data.resumen);
+        this.aplicarPeriodos(data.mesesRendicion ?? []);
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
@@ -512,17 +513,15 @@ export class GestionSalidas implements OnInit {
   // ── Periodo de rendición ("Mes a rendir") ───────────────────────────────
 
   /**
-   * Guarda los meses y las tarjetas que devolvió el backend. Si el periodo que estaba elegido ya
-   * no existe (se rindió todo ese mes) se apaga solo: dejarlo puesto mostraría una tabla vacía
-   * sin decir por qué.
+   * Guarda los meses que devolvió el backend. Si el periodo que estaba elegido ya no existe (se
+   * rindió todo ese mes) se apaga solo: dejarlo puesto mostraría una tabla vacía sin decir por qué.
    */
-  private aplicarPeriodos(meses: MesRendicionDto[], resumen: ResumenRendicionDto | undefined): void {
+  private aplicarPeriodos(meses: MesRendicionDto[]): void {
     this.mesesRendicion = meses;
     this.mesOptions = [
       { key: null, label: 'Sin filtrar por mes' },
       ...meses.map((m) => ({ key: this.mesKey(m.anio, m.mes), label: m.label })),
     ];
-    this.resumen = resumen ?? { aptasParaRendir: 0, capturasIncompletas: 0, observadas: 0 };
 
     if (this.mesRendirKey && !meses.some((m) => this.mesKey(m.anio, m.mes) === this.mesRendirKey)) {
       this.mesRendirKey = null;
@@ -633,6 +632,9 @@ export class GestionSalidas implements OnInit {
         this.currentPage  = res.page;
         this.totalPages   = res.totalPages;
         this.totalRecords = res.totalRecords;
+        // Las tarjetas se cuentan sobre todo el conjunto filtrado (no sobre esta página): llegan
+        // con el listado, así que un cambio de filtro las mueve sin una petición extra.
+        this.resumen      = res.resumen;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -649,9 +651,9 @@ export class GestionSalidas implements OnInit {
   }
 
   /**
-   * Recarga la tabla y los números del encabezado. Se usa después de cada acción que mueve el
-   * estado (aprobar, rendir, decidir un reembolso): las tarjetas y el desplegable de mes salen de
-   * `filter-data`, así que sin esto seguirían mostrando el conteo de antes de la acción.
+   * Recarga la tabla (con sus tarjetas) y el desplegable de mes. Se usa después de cada acción que
+   * mueve el estado (aprobar, rendir, decidir un reembolso): el desplegable sale de `filter-data`,
+   * así que sin esto seguiría ofreciendo periodos con el conteo de antes de la acción.
    */
   private recargar(): void {
     this.load(this.currentPage);
@@ -1192,8 +1194,8 @@ export class GestionSalidas implements OnInit {
   }
 
   /** Función de subida que consume el modal compartido (ya sabe a qué endpoint pegarle). */
-  readonly subirConsolidado = (file: File, ambito: ConsolidadoS10Ambito) =>
-    this.service.uploadConsolidadoS10(this.consolidadoDe!.id, file, ambito);
+  readonly subirConsolidado = (file: File) =>
+    this.service.uploadConsolidadoS10(this.consolidadoDe!.id, file);
 
   /** Consolidado vigente de la salida abierta, para mostrarlo dentro del modal. */
   get consolidadoActual(): ConsolidadoS10Dto | null {

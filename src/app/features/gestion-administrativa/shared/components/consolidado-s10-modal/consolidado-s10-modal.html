@@ -6,13 +6,18 @@
 
   <div class="flex flex-col gap-4 pt-4">
 
+    <!-- ── A qué planilla se está adjuntando ─────────────────────────────
+         El archivo cubre la planilla entera, así que decir cuál es lo único que hace falta:
+         no hay ámbito que elegir. -->
+    <div *ngIf="referencia" class="text-xs text-gray-500">
+      Cubre todas las salidas de la planilla <span class="font-semibold text-gray-700">{{ referencia }}</span>
+    </div>
+
     <!-- ── Consolidado ya adjunto: aviso de estado, no instrucción ───────── -->
     <div *ngIf="actual"
          class="border rounded-lg p-3 flex flex-col gap-1"
          style="border-color:var(--color-abril-standard-border);background:var(--color-abril-standard-light)">
-      <div class="text-xs text-gray-500 uppercase">
-        Adjunto {{ actual.ambito === 'Rendicion' ? 'a la planilla' : 'a esta salida' }}
-      </div>
+      <div class="text-xs text-gray-500 uppercase">Adjunto</div>
       <a
         [href]="actual.pdfUrl"
         target="_blank"
@@ -25,38 +30,8 @@
         </svg>
         {{ actual.pdfFilename }}
       </a>
-      <!-- La fecha solo viene cuando el consolidado se acaba de subir o llega del detalle;
-           desde la tabla el listado no la trae, así que se omite en vez de dejar el punto suelto. -->
       <div class="text-xs text-gray-400">
         <span *ngIf="actual.uploadedAt">{{ actual.uploadedAt | date:'dd/MM/yyyy HH:mm' }} · </span>subir otro lo reemplaza
-      </div>
-    </div>
-
-    <!-- ── Ámbito (por defecto, toda la planilla) ────────────────────────── -->
-    <div class="flex flex-col gap-2">
-      <div class="text-xs text-gray-500 uppercase">Asociar a</div>
-      <div class="flex gap-3">
-        <button
-          type="button"
-          (click)="setAmbito('Rendicion')"
-          [disabled]="!tieneRendicion"
-          class="ambito-opt"
-          [class.ambito-opt--on]="ambito === 'Rendicion'">
-          <span class="ambito-opt__title">Toda la planilla</span>
-          <span class="ambito-opt__hint">Todas las salidas de esa rendición</span>
-        </button>
-
-        <button
-          type="button"
-          (click)="setAmbito('Solicitud')"
-          class="ambito-opt"
-          [class.ambito-opt--on]="ambito === 'Solicitud'">
-          <span class="ambito-opt__title">Solo esta salida</span>
-          <span class="ambito-opt__hint">Únicamente el registro seleccionado</span>
-        </button>
-      </div>
-      <div *ngIf="!tieneRendicion" class="text-xs" style="color:#D97706">
-        Esta salida no tiene planilla de rendición asociada.
       </div>
     </div>
 

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
 import { Observable } from 'rxjs';
 import Swal from 'sweetalert2';
 
@@ -9,15 +9,16 @@ import { FileSelector, SelectedFile } from '../../../../../shared/components/fil
 import { FilePreview } from '../../../../../shared/components/file-preview/file-preview';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
-import { ConsolidadoS10Ambito, ConsolidadoS10Dto } from './consolidado-s10.dto';
+import { ConsolidadoS10Dto } from './consolidado-s10.dto';
 
 /**
- * Adjunta el PDF "Consolidado del S10" de una salida ya rendida. Lo usan las dos pantallas de
- * salidas (autoservicio y gestión); cada una le pasa su propia función de subida, que es lo único
- * que cambia entre ambas (endpoint + guard de propiedad en el backend).
+ * Adjunta el PDF "Consolidado del S10" de una planilla de rendición. Lo usan Mis Rendiciones (el
+ * autoservicio, donde el trabajador lo sube) y Gestión de Salidas (el revisor, que puede subirlo
+ * en su nombre); cada una le pasa su propia función de subida, que es lo único que cambia entre
+ * ambas (endpoint + guard de propiedad en el backend).
  *
- * El ámbito lo elige el usuario: por defecto el archivo cubre toda la planilla de rendición —una
- * planilla es un registro en el S10— y como alternativa puede cubrir solo esa salida.
+ * Ya no hay ámbito que elegir: el archivo cubre siempre la planilla completa, porque una planilla
+ * es un registro en el S10.
  */
 @Component({
   standalone: true,
@@ -26,23 +27,19 @@ import { ConsolidadoS10Ambito, ConsolidadoS10Dto } from './consolidado-s10.dto';
   templateUrl: './consolidado-s10-modal.html',
   styleUrl: './consolidado-s10-modal.css',
 })
-export class ConsolidadoS10Modal implements OnInit, OnDestroy {
+export class ConsolidadoS10Modal implements OnDestroy {
   /** Función de subida que inyecta la pantalla anfitriona (ya sabe a qué endpoint pegarle). */
-  @Input({ required: true }) upload!: (file: File, ambito: ConsolidadoS10Ambito) => Observable<ConsolidadoS10Dto>;
+  @Input({ required: true }) upload!: (file: File) => Observable<ConsolidadoS10Dto>;
 
-  /** Consolidado vigente, si la salida ya tenía uno. Se muestra para poder abrirlo o reemplazarlo. */
+  /** Consolidado vigente, si la planilla ya tenía uno. Se muestra para abrirlo o reemplazarlo. */
   @Input() actual: ConsolidadoS10Dto | null = null;
 
-  /**
-   * False cuando la salida está rendida pero sin planilla asociada: ahí el ámbito "toda la planilla"
-   * no aplica y solo se puede adjuntar a la salida.
-   */
-  @Input() tieneRendicion = true;
+  /** Referencia de la planilla ("TI: 000123") para que se vea a cuál se está adjuntando. */
+  @Input() referencia: string | null = null;
 
   /** Emite al cerrar: el consolidado subido, o null si se cerró sin subir nada. */
   @Output() close = new EventEmitter<ConsolidadoS10Dto | null>();
 
-  ambito: ConsolidadoS10Ambito = 'Rendicion';
   archivo: File | null = null;
 
   constructor(
@@ -50,10 +47,6 @@ export class ConsolidadoS10Modal implements OnInit, OnDestroy {
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
   ) {}
-
-  ngOnInit(): void {
-    if (!this.tieneRendicion) this.ambito = 'Solicitud';
-  }
 
   ngOnDestroy(): void {
     if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
@@ -79,11 +72,6 @@ export class ConsolidadoS10Modal implements OnInit, OnDestroy {
     this.archivo = null;
   }
 
-  setAmbito(valor: ConsolidadoS10Ambito): void {
-    if (valor === 'Rendicion' && !this.tieneRendicion) return;
-    this.ambito = valor;
-  }
-
   cerrar(): void {
     this.close.emit(null);
   }
@@ -92,7 +80,7 @@ export class ConsolidadoS10Modal implements OnInit, OnDestroy {
     if (!this.archivo) return;
 
     this.loader.show();
-    this.upload(this.archivo, this.ambito).subscribe({
+    this.upload(this.archivo).subscribe({
       next: (dto) => {
         this.loader.hide();
         Swal.fire({

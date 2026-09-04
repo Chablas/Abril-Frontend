@@ -18,6 +18,16 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
     },
   },
   {
+    path: 'rendiciones',
+    loadComponent: () =>
+      import('./features/rendiciones/components/rendiciones').then((m) => m.Rendiciones),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'MIS RENDICIONES',
+      featureKey: 'gestion-administrativa.rendiciones',
+    },
+  },
+  {
     path: 'gestion-salidas',
     loadComponent: () =>
       import('./features/gestion-salidas/components/gestion-salidas').then(
