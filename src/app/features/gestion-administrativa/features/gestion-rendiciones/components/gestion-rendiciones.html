@@ -1,0 +1,302 @@
+<app-abril-page-header
+  [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
+  titulo="Gestión de Rendiciones"
+  subtitulo="Revisión, aprobación y firma de las planillas de rendición."
+  [tabs]="tabs">
+
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden pb-[24px]">
+
+  <!-- ── Tarjetas de resumen ───────────────────────────────────────────────
+       Se cuentan sobre el mismo conjunto que muestra la tabla, así que acompañan a los filtros.
+       Son los tres estados del flujo que esperan al revisor. -->
+  <div class="resumen-cards">
+    <div class="resumen-card resumen-card--warn">
+      <span class="resumen-card__label">Sin consolidado</span>
+      <span class="resumen-card__value">{{ resumen.sinConsolidado }}</span>
+      <span class="resumen-card__hint">Todavía no hay qué revisar</span>
+    </div>
+    <div class="resumen-card resumen-card--info">
+      <span class="resumen-card__label">Por revisar</span>
+      <span class="resumen-card__value">{{ resumen.porRevisar }}</span>
+      <span class="resumen-card__hint">Esperan tu visto bueno</span>
+    </div>
+    <div class="resumen-card resumen-card--ok">
+      <span class="resumen-card__label">Por firmar</span>
+      <span class="resumen-card__value">{{ resumen.porFirmar }}</span>
+      <span class="resumen-card__hint">Aprobadas, falta la firma</span>
+    </div>
+  </div>
+
+  <!-- ── Acciones bulk sobre la selección ────────────────────────────────── -->
+  <div class="flex flex-wrap items-center gap-2">
+    <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">
+      {{ selectedIds.size }} planilla{{ selectedIds.size === 1 ? '' : 's' }} seleccionada{{ selectedIds.size === 1 ? '' : 's' }}
+    </span>
+
+    <button
+      type="button"
+      abrilBulkAction="default"
+      (click)="aprobarBulk()"
+      [disabled]="!puedeDecidir"
+      [title]="decisionIncluyePropias
+        ? 'No puedes decidir el reembolso de tus propias salidas — deselecciona esas planillas'
+        : 'Solo planillas con el Consolidado del S10 adjunto'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+      Aprobar reembolso<span *ngIf="puedeDecidir"> ({{ selectedPorDecidir.length }})</span>
+    </button>
+
+    <button
+      type="button"
+      abrilBulkAction="danger"
+      (click)="rechazarBulk()"
+      [disabled]="!puedeDecidir"
+      [title]="decisionIncluyePropias
+        ? 'No puedes decidir el reembolso de tus propias salidas — deselecciona esas planillas'
+        : 'Se te pedirá una observación para que el trabajador sepa qué corregir'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
+        <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
+      </svg>
+      Rechazar reembolso<span *ngIf="puedeDecidir"> ({{ selectedPorDecidir.length }})</span>
+    </button>
+
+    <button
+      type="button"
+      abrilBulkAction="primary"
+      (click)="firmarBulk()"
+      [disabled]="selectedPorFirmar.length === 0"
+      title="Estampa tu firma en la planilla de rendición (el PDF original se conserva)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 20h18M4.5 16.5 16 5a2.1 2.1 0 0 1 3 3L7.5 19.5 3 21l1.5-4.5Z"/>
+      </svg>
+      Firmar<span *ngIf="selectedPorFirmar.length > 0"> ({{ selectedPorFirmar.length }})</span>
+    </button>
+  </div>
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>
+            <input
+              type="checkbox"
+              [checked]="allSelected"
+              [disabled]="rendiciones.length === 0"
+              (change)="toggleSelectAll()"
+              class="cursor-pointer disabled:cursor-not-allowed"
+              style="accent-color:var(--color-abril-accent)"
+              title="Seleccionar / deseleccionar todo" />
+          </th>
+          <th>Planilla</th>
+          <th>Trabajador</th>
+          <th>Periodo</th>
+          <th>Salidas</th>
+          <th>Monto</th>
+          <th>Rendida</th>
+          <th>Documentos</th>
+          <th>Reembolso</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="rendiciones.length === 0">
+          <td colspan="10" class="text-center py-[40px] text-gray-400 text-sm">
+            No hay planillas de rendición en tu alcance.
+          </td>
+        </tr>
+
+        <tr
+          *ngFor="let r of rendiciones"
+          (click)="abrirDetalle(r)"
+          title="Ver las salidas de esta planilla"
+          class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
+          [style.background]="selectedIds.has(r.id) ? '#EAF6FF' : null"
+          style="border-color:var(--color-abril-border)">
+
+          <td class="select-none" (click)="onSelectClick($event, r)">
+            <input
+              type="checkbox"
+              [checked]="selectedIds.has(r.id)"
+              class="cursor-pointer pointer-events-none"
+              style="accent-color:var(--color-abril-accent)" />
+          </td>
+
+          <td class="text-gray-700 font-medium whitespace-nowrap">{{ r.numeroPlanilla ?? '—' }}</td>
+          <td class="text-gray-700" [title]="r.trabajadores.join(', ')">
+            {{ trabajadoresTexto(r) | titleCase }}
+          </td>
+          <td class="text-gray-700 whitespace-nowrap">{{ r.periodo }}</td>
+          <td class="text-gray-700 text-center">{{ r.salidasCount }}</td>
+          <td class="text-gray-700 whitespace-nowrap">S/ {{ r.montoTotal | number:'1.2-2' }}</td>
+          <td class="text-gray-400 whitespace-nowrap">{{ r.rendidoAt | date:'dd/MM/yyyy HH:mm' }}</td>
+
+          <td (click)="$event.stopPropagation()">
+            <div class="flex flex-wrap items-center gap-[6px]">
+              <a class="doc-chip" [href]="r.pdfUrl" target="_blank" rel="noopener noreferrer"
+                 [title]="r.pdfFilename">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                Planilla
+              </a>
+
+              <a *ngIf="r.consolidadoS10; else sinConsolidado"
+                 class="doc-chip" [href]="r.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
+                 [title]="r.consolidadoS10.pdfFilename">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                S10 ✓
+              </a>
+              <ng-template #sinConsolidado>
+                <span class="doc-chip doc-chip--pendiente" title="El trabajador todavía no adjuntó el Consolidado del S10">
+                  S10 pendiente
+                </span>
+              </ng-template>
+
+              <a *ngIf="r.pdfFirmadoUrl"
+                 class="doc-chip" [href]="r.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
+                 [title]="'Planilla firmada el ' + (r.firmadoAt | date:'dd/MM/yyyy HH:mm')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Firmada
+              </a>
+            </div>
+          </td>
+
+          <td>
+            <app-status-badge
+              [text]="reembolsoTexto(r.estadoReembolso)"
+              [bgColor]="reembolsoColors(r.estadoReembolso).bg"
+              [textColor]="reembolsoColors(r.estadoReembolso).text"
+              [title]="reembolsoTitle(r)" />
+          </td>
+
+          <td (click)="$event.stopPropagation()">
+            <!-- El revisor puede adjuntar el consolidado en nombre del trabajador cuando este no
+                 puede. Después de decidido el reembolso ya no aporta nada. -->
+            <button
+              *ngIf="r.estadoReembolso === 'Pendiente' || r.estadoReembolso === 'Rechazado'; else sinAcciones"
+              type="button"
+              (click)="abrirConsolidado(r, $event)"
+              [title]="r.consolidadoS10 ? 'Reemplazar el Consolidado del S10' : 'Adjuntar el Consolidado del S10 en nombre del trabajador'"
+              class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+              style="background:var(--color-abril-standard)"
+              onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+              onmouseout="this.style.background='var(--color-abril-standard)'">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                <path d="M14 2v6h6" stroke-linejoin="round"/>
+              </svg>
+              {{ r.consolidadoS10 ? 'Consolidado S10 ✓' : 'Consolidado S10' }}
+            </button>
+            <ng-template #sinAcciones>
+              <span class="text-gray-300">—</span>
+            </ng-template>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ── Modal de detalle (salidas de la planilla) ─────────────────────── -->
+<app-gestion-rendicion-detalle-modal
+  *ngIf="detalleId !== null"
+  [rendicionId]="detalleId"
+  (close)="cerrarDetalle($event)" />
+
+<!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->
+<app-consolidado-s10-modal
+  *ngIf="consolidadoDe !== null"
+  [upload]="subirConsolidado"
+  [actual]="consolidadoDe.consolidadoS10"
+  [referencia]="consolidadoReferencia"
+  (close)="cerrarConsolidado($event)" />
+
+<!-- ── Modal para registrar la firma la primera vez ────────────────────
+     Salta con el 409 de "Firmar": el usuario dibuja su firma sin salir de la pantalla y la firma
+     que había pedido se reintenta sola. -->
+<app-firma-registrar-modal
+  *ngIf="firmaModalAbierto"
+  (guardada)="onFirmaRegistrada()"
+  (cerrar)="cerrarFirmaModal()" />
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <app-search-select
+      label="Trabajador"
+      placeholder="Buscar por nombre o DNI..."
+      [options]="trabajadorOptions"
+      valueField="workerId"
+      displayField="nombreCompleto"
+      [value]="filters.workerId"
+      (valueChange)="filters.workerId = $event; load()">
+    </app-search-select>
+  </div>
+
+  <!-- Área en cascada: cada nivel abre el siguiente si el nodo tiene hijos. -->
+  <div class="flex flex-col gap-3">
+    <div *ngFor="let nivel of areaLevels; let i = index" class="w-full">
+      <app-search-select
+        [label]="i === 0 ? 'Área' : 'Subárea'"
+        placeholder="Todas"
+        [options]="nivel"
+        valueField="areaScopeId"
+        displayField="name"
+        [value]="selectedAreaNodes[i]?.areaScopeId ?? null"
+        (valueChange)="onAreaNodeChange(i, $event); load()">
+      </app-search-select>
+    </div>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Periodo"
+      placeholder="Selecciona el periodo"
+      [options]="periodoOptions"
+      valueField="key"
+      displayField="label"
+      [sortAlpha]="false"
+      [rawLabel]="true"
+      [value]="filters.periodoKey"
+      (valueChange)="filters.periodoKey = $event; load()">
+    </app-search-select>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <app-search-select
+        label="Reembolso"
+        [options]="estadoReembolsoOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filters.estadoReembolso"
+        (valueChange)="filters.estadoReembolso = $event; load()">
+      </app-search-select>
+    </div>
+
+    <div class="flex-1">
+      <app-search-select
+        label="Consolidado del S10"
+        [options]="consolidadoOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filters.consolidado"
+        (valueChange)="filters.consolidado = $event; load()">
+      </app-search-select>
+    </div>
+  </div>
+
+</app-filter-modal>

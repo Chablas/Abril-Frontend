@@ -40,6 +40,28 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
     },
   },
   {
+    path: 'gestion-rendiciones',
+    loadComponent: () =>
+      import('./features/gestion-rendiciones/components/gestion-rendiciones').then(
+        (m) => m.GestionRendiciones,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'GESTIÓN DE RENDICIONES',
+      featureKey: 'gestion-administrativa.gestion-rendiciones',
+    },
+  },
+  {
+    path: 'reembolsos',
+    loadComponent: () =>
+      import('./features/reembolsos/components/reembolsos').then((m) => m.Reembolsos),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'REEMBOLSOS',
+      featureKey: 'gestion-administrativa.reembolsos',
+    },
+  },
+  {
     path: 'delegacion-revision',
     loadComponent: () =>
       import('./features/delegacion-revision/components/delegacion-revision').then(

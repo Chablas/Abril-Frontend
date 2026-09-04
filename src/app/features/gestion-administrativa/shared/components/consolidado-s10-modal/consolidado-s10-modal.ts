@@ -13,9 +13,9 @@ import { ConsolidadoS10Dto } from './consolidado-s10.dto';
 
 /**
  * Adjunta el PDF "Consolidado del S10" de una planilla de rendición. Lo usan Mis Rendiciones (el
- * autoservicio, donde el trabajador lo sube) y Gestión de Salidas (el revisor, que puede subirlo
- * en su nombre); cada una le pasa su propia función de subida, que es lo único que cambia entre
- * ambas (endpoint + guard de propiedad en el backend).
+ * autoservicio, donde el trabajador lo sube) y Gestión de Rendiciones (el revisor, que puede
+ * subirlo en su nombre); cada una le pasa su propia función de subida, que es lo único que cambia
+ * entre ambas (endpoint + guard de propiedad en el backend).
  *
  * Ya no hay ámbito que elegir: el archivo cubre siempre la planilla completa, porque una planilla
  * es un registro en el S10.

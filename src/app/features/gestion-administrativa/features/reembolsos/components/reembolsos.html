@@ -1,0 +1,220 @@
+<app-abril-page-header
+  [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
+  titulo="Reembolsos"
+  subtitulo="Planillas firmadas por la jefatura, listas para pagar."
+  [tabs]="tabs">
+
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden pb-[24px]">
+
+  <!-- ── Tarjetas de resumen ───────────────────────────────────────────────
+       Se cuentan sobre el mismo conjunto que muestra la tabla, así que acompañan a los filtros. -->
+  <div class="resumen-cards">
+    <div class="resumen-card resumen-card--pend">
+      <span class="resumen-card__label">Por pagar</span>
+      <span class="resumen-card__value">{{ resumen.porPagar }}</span>
+      <span class="resumen-card__hint">Planillas firmadas sin pagar</span>
+    </div>
+    <div class="resumen-card resumen-card--monto">
+      <span class="resumen-card__label">Monto por pagar</span>
+      <span class="resumen-card__value">S/ {{ resumen.montoPorPagar | number:'1.2-2' }}</span>
+      <span class="resumen-card__hint">Suma a desembolsar</span>
+    </div>
+    <div class="resumen-card resumen-card--ok">
+      <span class="resumen-card__label">Pagadas</span>
+      <span class="resumen-card__value">{{ resumen.pagadas }}</span>
+      <span class="resumen-card__hint">Ya cerradas</span>
+    </div>
+  </div>
+
+  <!-- ── Acción ─────────────────────────────────────────────────────────── -->
+  <div class="flex flex-wrap items-center gap-2">
+    <span *ngIf="selectedPagables.length > 0" class="text-[11px] text-gray-500 mr-1">
+      {{ selectedPagables.length }} planilla{{ selectedPagables.length === 1 ? '' : 's' }}
+      · S/ {{ montoSeleccionado | number:'1.2-2' }}
+    </span>
+
+    <button
+      type="button"
+      abrilBulkAction="primary"
+      (click)="marcarPagadas()"
+      [disabled]="selectedPagables.length === 0"
+      title="Solo se puede marcar como pagado lo que la jefatura ya firmó">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+        <rect x="2.5" y="5.5" width="19" height="13" rx="2"/>
+        <path stroke-linecap="round" d="M2.5 10h19M6 15h4"/>
+      </svg>
+      Marcar como pagadas<span *ngIf="selectedPagables.length > 0"> ({{ selectedPagables.length }})</span>
+    </button>
+  </div>
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>
+            <input
+              type="checkbox"
+              [checked]="allSelected"
+              [disabled]="pagables.length === 0"
+              (change)="toggleSelectAll()"
+              class="cursor-pointer disabled:cursor-not-allowed"
+              style="accent-color:var(--color-abril-accent)"
+              title="Seleccionar / deseleccionar todo lo que falta pagar" />
+          </th>
+          <th>Planilla</th>
+          <th>Trabajador</th>
+          <th>Periodo</th>
+          <th>Salidas</th>
+          <th>Monto</th>
+          <th>Firmada</th>
+          <th>Documentos</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="planillas.length === 0">
+          <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
+            No hay planillas firmadas por pagar.
+          </td>
+        </tr>
+
+        <tr
+          *ngFor="let r of planillas"
+          (click)="abrirDetalle(r)"
+          title="Ver el desglose de esta planilla"
+          class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
+          [style.background]="selectedIds.has(r.id) ? '#EAF6FF' : null"
+          style="border-color:var(--color-abril-border)">
+
+          <td class="select-none" (click)="onSelectClick($event, r)">
+            <input
+              type="checkbox"
+              [checked]="selectedIds.has(r.id)"
+              [disabled]="r.porPagarCount === 0"
+              class="cursor-pointer pointer-events-none disabled:cursor-not-allowed"
+              style="accent-color:var(--color-abril-accent)"
+              [title]="r.porPagarCount === 0 ? 'Ya está pagada' : null" />
+          </td>
+
+          <td class="text-gray-700 font-medium whitespace-nowrap">{{ r.numeroPlanilla ?? '—' }}</td>
+          <td class="text-gray-700" [title]="r.trabajadores.join(', ')">
+            {{ trabajadoresTexto(r) | titleCase }}
+          </td>
+          <td class="text-gray-700 whitespace-nowrap">{{ r.periodo }}</td>
+          <td class="text-gray-700 text-center">{{ r.salidasCount }}</td>
+          <td class="text-gray-700 whitespace-nowrap font-medium">S/ {{ r.montoTotal | number:'1.2-2' }}</td>
+          <td class="text-gray-400 whitespace-nowrap">{{ r.firmadoAt | date:'dd/MM/yyyy' }}</td>
+
+          <td (click)="$event.stopPropagation()">
+            <div class="flex flex-wrap items-center gap-[6px]">
+              <a *ngIf="r.pdfFirmadoUrl"
+                 class="doc-chip" [href]="r.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
+                 [title]="r.pdfFirmadoFilename ?? 'Planilla firmada'">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Firmada
+              </a>
+
+              <a class="doc-chip" [href]="r.pdfUrl" target="_blank" rel="noopener noreferrer"
+                 [title]="r.pdfFilename">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                Planilla
+              </a>
+
+              <a *ngIf="r.consolidadoS10"
+                 class="doc-chip" [href]="r.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
+                 [title]="r.consolidadoS10.pdfFilename">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                S10
+              </a>
+            </div>
+          </td>
+
+          <td>
+            <app-status-badge
+              [text]="r.estadoReembolso"
+              [bgColor]="reembolsoColors(r.estadoReembolso).bg"
+              [textColor]="reembolsoColors(r.estadoReembolso).text"
+              [title]="estadoTitle(r)" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- ── Modal de detalle (salidas de la planilla) ─────────────────────── -->
+<app-reembolso-detalle-modal
+  *ngIf="detalleId !== null"
+  [rendicionId]="detalleId"
+  (close)="cerrarDetalle()" />
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <app-search-select
+      label="Trabajador"
+      placeholder="Buscar por nombre o DNI..."
+      [options]="trabajadorOptions"
+      valueField="workerId"
+      displayField="nombreCompleto"
+      [value]="filters.workerId"
+      (valueChange)="filters.workerId = $event; load()">
+    </app-search-select>
+  </div>
+
+  <div class="flex flex-col gap-3">
+    <div *ngFor="let nivel of areaLevels; let i = index" class="w-full">
+      <app-search-select
+        [label]="i === 0 ? 'Área' : 'Subárea'"
+        placeholder="Todas"
+        [options]="nivel"
+        valueField="areaScopeId"
+        displayField="name"
+        [value]="selectedAreaNodes[i]?.areaScopeId ?? null"
+        (valueChange)="onAreaNodeChange(i, $event); load()">
+      </app-search-select>
+    </div>
+  </div>
+
+  <div class="flex gap-3">
+    <div class="flex-1">
+      <app-search-select
+        label="Periodo"
+        placeholder="Selecciona el periodo"
+        [options]="periodoOptions"
+        valueField="key"
+        displayField="label"
+        [sortAlpha]="false"
+        [rawLabel]="true"
+        [value]="filters.periodoKey"
+        (valueChange)="filters.periodoKey = $event; load()">
+      </app-search-select>
+    </div>
+
+    <div class="flex-1">
+      <app-search-select
+        label="Estado"
+        [options]="estadoOptions"
+        valueField="value"
+        displayField="label"
+        [value]="filters.estadoReembolso"
+        (valueChange)="filters.estadoReembolso = $event; load()">
+      </app-search-select>
+    </div>
+  </div>
+
+</app-filter-modal>

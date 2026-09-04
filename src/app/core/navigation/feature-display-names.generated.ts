@@ -74,6 +74,8 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "gestion-administrativa.config.visibilidad-salidas": "Visibilidad de Salidas",
   "gestion-administrativa.delegacion-revision": "Delegación de Revisión",
   "gestion-administrativa.gestion-salidas": "Gestión de Salidas",
+  "gestion-administrativa.gestion-rendiciones": "Gestión de Rendiciones",
+  "gestion-administrativa.reembolsos": "Reembolsos",
   "gestion-administrativa.rendiciones": "Mis Rendiciones",
   "gestion-administrativa.solicitud-salidas": "Solicitud de Salidas",
   "gestion-gth.aprobaciones": "Aprobaciones",

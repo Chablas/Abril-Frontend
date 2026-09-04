@@ -1,0 +1,170 @@
+<app-base-modal
+  [title]="detalle?.numeroPlanilla ? 'Planilla ' + detalle!.numeroPlanilla : 'Planilla de rendición'"
+  width="w-[900px]"
+  (closeModal)="cerrar()">
+
+  <div *ngIf="detalle as d" class="flex flex-col gap-4 pt-4">
+
+    <!-- ── Cabecera ─────────────────────────────────────────────────────── -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Periodo</span>
+        <span class="text-sm text-gray-700">{{ d.periodo }}</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas</span>
+        <span class="text-sm text-gray-700">{{ d.salidasCount }}</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Monto</span>
+        <span class="text-sm text-gray-700">S/ {{ d.montoTotal | number:'1.2-2' }}</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Rendida</span>
+        <span class="text-sm text-gray-700">{{ d.rendidoAt | date:'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+    </div>
+
+    <!-- ── Documentos ───────────────────────────────────────────────────── -->
+    <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">Documentos</span>
+
+      <a [href]="d.pdfUrl" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
+        </svg>
+        {{ d.pdfFilename }}
+      </a>
+
+      <a *ngIf="d.consolidadoS10" [href]="d.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
+        </svg>
+        {{ d.consolidadoS10.pdfFilename }}
+        <span class="text-xs text-gray-400 font-normal">· Consolidado del S10</span>
+      </a>
+      <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
+        El trabajador todavía no adjuntó el Consolidado del S10.
+      </span>
+
+      <a *ngIf="d.pdfFirmadoUrl" [href]="d.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {{ d.pdfFirmadoFilename ?? 'Planilla firmada' }}
+        <span class="text-xs text-gray-400 font-normal">· firmada el {{ d.firmadoAt | date:'dd/MM/yyyy' }}</span>
+      </a>
+    </div>
+
+    <!-- ── Salidas: acá se decide una por una ───────────────────────────── -->
+    <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
+      <div class="flex items-center gap-3">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas de esta planilla</span>
+        <span *ngIf="seleccionadas.size > 0" class="text-[11px] text-gray-500">
+          {{ seleccionadas.size }} seleccionada{{ seleccionadas.size === 1 ? '' : 's' }}
+        </span>
+
+        <div class="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            abrilBulkAction="default"
+            (click)="aprobar()"
+            [disabled]="seleccionadas.size === 0">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            Aprobar
+          </button>
+          <button
+            type="button"
+            abrilBulkAction="danger"
+            (click)="rechazar()"
+            [disabled]="seleccionadas.size === 0">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
+              <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
+            </svg>
+            Rechazar
+          </button>
+        </div>
+      </div>
+
+      <div class="abril-table-wrap">
+        <table class="abril-table abril-table--th-center">
+          <thead>
+            <tr>
+              <th>
+                <input
+                  type="checkbox"
+                  [checked]="todasSeleccionadas"
+                  [disabled]="decidibles.length === 0"
+                  (change)="toggleTodas()"
+                  class="cursor-pointer disabled:cursor-not-allowed"
+                  style="accent-color:var(--color-abril-accent)"
+                  title="Seleccionar / deseleccionar las que se pueden decidir" />
+              </th>
+              <th>N° solicitud</th>
+              <th>Trabajador</th>
+              <th>Fecha</th>
+              <th>Motivo</th>
+              <th>Destino</th>
+              <th>Monto</th>
+              <th>Reembolso</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of d.salidas"
+                class="border-b"
+                [style.background]="seleccionadas.has(s.id) ? '#EAF6FF' : null"
+                style="border-color:var(--color-abril-border)">
+              <td class="select-none">
+                <input
+                  type="checkbox"
+                  [checked]="seleccionadas.has(s.id)"
+                  [disabled]="!puedeDecidirSalida(s.id)"
+                  (change)="toggleSalida(s.id)"
+                  class="cursor-pointer disabled:cursor-not-allowed"
+                  style="accent-color:var(--color-abril-accent)"
+                  [title]="s.esPropia
+                    ? 'Es tu propia salida: no puedes decidir su reembolso'
+                    : (s.porDecidir ? null : 'Su reembolso ya fue decidido o falta el Consolidado del S10')" />
+              </td>
+              <td class="text-gray-700 font-medium whitespace-nowrap">{{ s.codigo ?? '—' }}</td>
+              <td class="text-gray-700">{{ s.trabajador | titleCase }}</td>
+              <td class="text-gray-700 whitespace-nowrap">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
+              <td class="text-gray-700">
+                {{ s.motivo | titleCase }}
+                <span *ngIf="s.trayectosCount > 1"
+                      class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
+                      style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
+                      [title]="s.trayectosCount + ' trayectos'">
+                  +{{ s.trayectosCount - 1 }}
+                </span>
+              </td>
+              <td class="text-gray-500">{{ (s.lugarDestino | titleCase) || '—' }}</td>
+              <td class="text-gray-700 whitespace-nowrap">S/ {{ s.monto | number:'1.2-2' }}</td>
+              <td>
+                <app-status-badge
+                  [text]="reembolsoTexto(s.estadoReembolso)"
+                  [bgColor]="reembolsoColors(s.estadoReembolso).bg"
+                  [textColor]="reembolsoColors(s.estadoReembolso).text"
+                  [title]="s.estadoReembolso === 'Rechazado' && s.observacionReembolso
+                    ? 'Observación: ' + s.observacionReembolso
+                    : null" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</app-base-modal>

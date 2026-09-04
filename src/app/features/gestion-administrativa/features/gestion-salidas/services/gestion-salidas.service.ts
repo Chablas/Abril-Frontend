@@ -6,9 +6,7 @@ import {
   GestionSalidaDetalleDto,
   GestionSalidaFilterDataDto,
   GestionSalidaPagedDto,
-  ReembolsoBulkResultDto,
 } from '../dtos/gestion-salida.dto';
-import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 
 @Injectable({ providedIn: 'root' })
 export class GestionSalidasService {
@@ -140,57 +138,6 @@ export class GestionSalidasService {
       params,
       responseType: 'blob',
       observe: 'response',
-    });
-  }
-
-  /**
-   * Adjunta (o reemplaza) el PDF Consolidado del S10 de la PLANILLA a la que pertenece esa salida.
-   * El id es el de la salida porque es lo que la tabla tiene a mano; el backend resuelve su
-   * planilla y el archivo cubre todas sus salidas.
-   */
-  uploadConsolidadoS10(solicitudId: number, file: File): Observable<ConsolidadoS10Dto> {
-    const formData = new FormData();
-    formData.append('file', file, file.name);
-    return this.http.post<ConsolidadoS10Dto>(
-      `${this.apiUrl}/${solicitudId}/consolidado-s10`,
-      formData,
-      { headers: this.headers },
-    );
-  }
-
-  // ── Reembolso ────────────────────────────────────────────────────────
-
-  /** Aprueba el reembolso de las salidas indicadas (rendidas y con Consolidado del S10). */
-  aprobarReembolso(ids: number[]): Observable<ReembolsoBulkResultDto> {
-    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/aprobar`, { ids }, {
-      headers: this.headers,
-    });
-  }
-
-  /** Rechaza el reembolso con una observación (obligatoria: es lo que el trabajador subsana). */
-  rechazarReembolso(ids: number[], observacion: string): Observable<ReembolsoBulkResultDto> {
-    return this.http.patch<ReembolsoBulkResultDto>(
-      `${this.apiUrl}/reembolso/rechazar`,
-      { ids, observacion },
-      { headers: this.headers },
-    );
-  }
-
-  /**
-   * Firma la planilla de rendición de las salidas con reembolso aprobado. Responde 409 cuando el
-   * usuario todavía no registró su firma: la pantalla usa ese código para abrir el modal donde la
-   * dibuja y reintentar, en vez de mandarlo a Configuración.
-   */
-  firmarPlanillas(ids: number[]): Observable<ReembolsoBulkResultDto> {
-    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/firmar`, { ids }, {
-      headers: this.headers,
-    });
-  }
-
-  /** Tesorería marca como pagadas las salidas ya firmadas. */
-  marcarPagadas(ids: number[]): Observable<ReembolsoBulkResultDto> {
-    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/pagar`, { ids }, {
-      headers: this.headers,
     });
   }
 

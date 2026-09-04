@@ -1,7 +1,4 @@
-﻿import {
-  ConsolidadoS10Ambito,
-  ConsolidadoS10Dto,
-} from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+﻿import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 
 export interface GestionSalidaListItemDto {
   id: number;
@@ -69,15 +66,10 @@ export interface GestionSalidaListItemDto {
    */
   esPropia: boolean;
 
-  // ── Consolidado del S10 (solo salidas rendidas) ──────────────────────
-  /** URL del PDF Consolidado del S10 vigente, o null si aún no se adjuntó. */
-  consolidadoS10Url: string | null;
-  /** Nombre del archivo del consolidado vigente. Null si no hay. */
-  consolidadoS10Filename: string | null;
-  /** "Rendicion" (cubre toda la planilla) | "Solicitud" (solo esta salida) | null si no hay. */
-  consolidadoS10Ambito: ConsolidadoS10Ambito | null;
-
   // ── Reembolso ────────────────────────────────────────────────────────
+  // Solo informativo acá: adjuntar el Consolidado del S10, decidir el reembolso y firmar la
+  // planilla son de Gestión de Rendiciones, y el pago de Reembolsos (Tesorería).
+
   /**
    * Eje aparte de la aprobación de la salida y de la rendición: es el visto bueno al GASTO.
    * "Pendiente" | "Aprobado" | "Rechazado" | "Firmado" | "Pagado".
@@ -85,7 +77,7 @@ export interface GestionSalidaListItemDto {
   estadoReembolso: EstadoReembolso;
   /**
    * True cuando ya hay algo que revisar: la salida está rendida y tiene adjunto el Consolidado
-   * del S10. Es lo que habilita Aprobar/Rechazar reembolso.
+   * del S10. Acá solo sirve para no pintar un badge "Pendiente" engañoso.
    */
   reembolsoRevisable: boolean;
   /** Observación del último rechazo — lo que el trabajador tiene que subsanar. */
@@ -93,10 +85,6 @@ export interface GestionSalidaListItemDto {
   /** Nombre de quien aprobó/rechazó el reembolso. */
   reembolsoDecididoPor: string | null;
   reembolsoDecididoAt: string | null;
-  /** Última vez que el trabajador avisó al revisor que ya adjuntó el S10. */
-  revisorNotificadoAt: string | null;
-  /** webUrl de la planilla de rendición ya FIRMADA. Null mientras nadie la firme. */
-  planillaFirmadaUrl: string | null;
 }
 
 /** Los cinco estados por los que pasa el reembolso de una salida rendida. */
@@ -125,11 +113,6 @@ export interface GestionSalidaFilterDataDto {
   lugaresProyecto: LugarProyectoOptionDto[];
   /** Árbol area_scope (lista plana) para el filtro de área en cascada. */
   areaTree: AreaNodeDto[];
-  /**
-   * True si el usuario entra en modo TESORERÍA (rol TESORERO + puesto de categoría Tesorero).
-   * Lo decide el backend: el frontend solo ve el rol del token, y la categoría vive en la base.
-   */
-  esTesorero: boolean;
   /** Meses que ofrece el desplegable "Mes a rendir" (los que tienen algo apto). */
   mesesRendicion: MesRendicionDto[];
 }
@@ -260,12 +243,4 @@ export interface GestionSalidaDetalleDto {
   /** Consolidado del S10 vigente (propio de la salida o heredado de su planilla). Null si no hay. */
   consolidadoS10: ConsolidadoS10Dto | null;
   trayectos: GestionSalidaTrayectoDto[];
-}
-
-/** Resultado de una acción en bloque sobre el reembolso (aprobar, rechazar, firmar, pagar). */
-export interface ReembolsoBulkResultDto {
-  procesadas: number;
-  /** Cuántas planillas distintas se firmaron. Solo lo llena la acción de firmar. */
-  planillasFirmadas: number;
-  message: string;
 }

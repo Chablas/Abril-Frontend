@@ -12,7 +12,6 @@ import { Roles } from '../../../../../core/constants/roles';
 import { FormsModule } from '@angular/forms';
 import {
   AreaNodeDto,
-  EstadoReembolso,
   GestionSalidaDetalleDto,
   GestionSalidaListItemDto,
   MesRendicionDto,
@@ -29,10 +28,7 @@ import { FabButton } from '../../../../../shared/components/fab-button/fab-butto
 import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
-import { ConsolidadoS10Modal } from '../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
-import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
-
-import { FirmaRegistrarModal } from '../../../../../shared/components/firma-personal/registrar-modal/firma-registrar-modal';
+import { reembolsoColors } from '../../../shared/dtos/rendicion-shared.dto';
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 /** Nodo del árbol de áreas para el desplegable en cascada del filtro. */
 interface AreaCascadeNode {
@@ -44,7 +40,7 @@ interface AreaCascadeNode {
 @Component({
   standalone: true,
   selector: 'app-gestion-salidas',
-  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, TimePicker, Paginator, GestionSalidaDetalleModal, AbrilPageHeaderComponent, TitleCasePipe, FabButton, FilterTriggerButton, FilterModal, AbrilBulkActionDirective, ConsolidadoS10Modal, FirmaRegistrarModal],
+  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, TimePicker, Paginator, GestionSalidaDetalleModal, AbrilPageHeaderComponent, TitleCasePipe, FabButton, FilterTriggerButton, FilterModal, AbrilBulkActionDirective],
   templateUrl: './gestion-salidas.html',
   styles: [`
     :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
@@ -78,38 +74,6 @@ interface AreaCascadeNode {
     .hoy-toggle:focus-visible {
       outline: 2px solid var(--color-abril-standard);
       outline-offset: 2px;
-    }
-
-    /* Chip del Consolidado del S10 dentro de la celda de Rendición. Va aquí y no en una
-       columna propia porque el consolidado es parte de la rendición y la tabla ya trae 14/16
-       columnas. Relleno = ya hay archivo adjunto; contorno = falta adjuntarlo. */
-    .consolidado-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 6px;
-      border: 1px solid var(--color-abril-border);
-      border-radius: 4px;
-      background: #FFFFFF;
-      color: #6B7280;
-      font-size: 11px;
-      font-weight: 700;
-      line-height: 1.4;
-      cursor: pointer;
-      transition: background-color .15s ease, border-color .15s ease, color .15s ease;
-    }
-    .consolidado-chip:hover {
-      border-color: var(--color-abril-standard);
-      color: var(--color-abril-standard);
-    }
-    .consolidado-chip:focus-visible {
-      outline: 2px solid var(--color-abril-standard);
-      outline-offset: 2px;
-    }
-    .consolidado-chip--on {
-      border-color: var(--color-abril-standard);
-      background: var(--color-abril-standard-light);
-      color: var(--color-abril-standard);
     }
 
     /* ── Tarjetas de resumen + barra "Mes a rendir" ─────────────────────────
@@ -204,29 +168,16 @@ export class GestionSalidas implements OnInit {
   ];
 
   /**
-   * Estados del reembolso para el desplegable. Un tesorero solo ve Firmadas y Pagadas: su bandeja
-   * es esa y el backend la recorta igual, así que ofrecerle "Pendientes" sería un filtro que
-   * siempre devuelve vacío.
-   *
-   * Es un campo y no un getter a propósito: `app-search-select` compara `[options]` por
-   * referencia, y un getter devolvería un array nuevo en cada pasada de detección de cambios.
-   * El rol no cambia dentro de la sesión, así que se calcula una vez en ngOnInit.
+   * Estados del reembolso para el desplegable. Acá es solo un filtro informativo: el reembolso se
+   * decide en Gestión de Rendiciones y se paga en Reembolsos.
    */
-  estadoReembolsoOptions: { value: string | null; label: string }[] = [];
-
-  private readonly estadoReembolsoOptionsRevisor = [
+  readonly estadoReembolsoOptions = [
     { value: null,        label: 'Todos' },
     { value: 'Pendiente', label: 'Por revisar' },
     { value: 'Aprobado',  label: 'Aprobados' },
     { value: 'Rechazado', label: 'Rechazados' },
     { value: 'Firmado',   label: 'Firmados' },
     { value: 'Pagado',    label: 'Pagados' },
-  ];
-
-  private readonly estadoReembolsoOptionsTesoreria = [
-    { value: null,      label: 'Firmadas y pagadas' },
-    { value: 'Firmado', label: 'Solo firmadas' },
-    { value: 'Pagado',  label: 'Solo pagadas' },
   ];
 
   filters = {
@@ -236,25 +187,6 @@ export class GestionSalidas implements OnInit {
     estadoAprobacion:  null as string | null,
     estadoReembolso:   null as string | null,
   };
-
-  /**
-   * Modo TESORERÍA: la pantalla es una bandeja de pagos — solo salidas firmadas y pagadas, sin las
-   * acciones de aprobación/rendición (que no son suyas) y con "Marcar como pagadas" habilitado.
-   *
-   * Lo decide el BACKEND y llega en `filter-data`: son dos condiciones (el rol TESORERO y que el
-   * puesto del trabajador sea de categoría Tesorero) y la segunda vive en la base. Mirando solo
-   * `hasRole(TESORERO)` se le habría pintado la bandeja de tesorería a alguien con el rol pero sin
-   * el puesto, con un botón de pagar que el backend rechaza.
-   *
-   * Arranca en false: hasta que responda `filter-data` la pantalla se comporta como la de siempre.
-   */
-  esTesorero = false;
-
-  /** Modal para registrar la firma en el momento (se abre con el 409 de firmar). */
-  firmaModalAbierto = false;
-
-  /** Ids que se estaban firmando cuando saltó el modal de firma, para reintentar al guardarla. */
-  private idsPendientesDeFirma: number[] = [];
 
   /**
    * Filtro "Hoy": acota la tabla a las salidas cuya fecha de salida es la de hoy (hora de Perú;
@@ -326,9 +258,6 @@ export class GestionSalidas implements OnInit {
 
   /** Detalle abierto en modal (null = modal cerrado). */
   detalle: GestionSalidaDetalleDto | null = null;
-
-  /** Salida cuyo modal de Consolidado del S10 está abierto. null = cerrado. */
-  consolidadoDe: GestionSalidaListItemDto | null = null;
 
   /** Modal de filtros (los combos viven ahí para no ocupar espacio fijo en la galería). */
   filtrosAbiertos = false;
@@ -454,13 +383,12 @@ export class GestionSalidas implements OnInit {
   }
 
   ngOnInit(): void {
-    this.estadoReembolsoOptions = this.estadoReembolsoOptionsRevisor;
-
     this.loadFilterData();
     this.load();
 
-    // Los botones de los correos ("Revisar el reembolso") entran por acá: abren directo el detalle
-    // de esa solicitud sin que el revisor tenga que buscarla en la tabla.
+    // El botón del correo de aprobación de la salida entra por acá: abre directo el detalle de
+    // esa solicitud sin que el revisor tenga que buscarla en la tabla. Los correos del reembolso
+    // ya no caen acá: llevan a Gestión de Rendiciones, que es donde se decide.
     const solicitudId = Number(this.route.snapshot.queryParamMap.get('solicitud'));
     if (solicitudId > 0) this.abrirDetallePorId(solicitudId);
   }
@@ -485,16 +413,6 @@ export class GestionSalidas implements OnInit {
   loadFilterData(): void {
     this.service.getFilterData().subscribe({
       next: (data) => {
-        // El modo tesorería lo decide el backend (rol + categoría del puesto). Al entrar en él la
-        // pantalla se recarga sin el filtro "Hoy": Tesorería paga contra fechas pasadas, así que
-        // acotarla al día en curso le dejaría la bandeja vacía.
-        if (data.esTesorero && !this.esTesorero) {
-          this.esTesorero = true;
-          this.estadoReembolsoOptions = this.estadoReembolsoOptionsTesoreria;
-          this.soloHoy = false;
-          this.load();
-        }
-
         this.trabajadorOptions = [
           { workerId: null, nombreCompleto: 'Todos los trabajadores' },
           ...data.trabajadores,
@@ -652,7 +570,7 @@ export class GestionSalidas implements OnInit {
 
   /**
    * Recarga la tabla (con sus tarjetas) y el desplegable de mes. Se usa después de cada acción que
-   * mueve el estado (aprobar, rendir, decidir un reembolso): el desplegable sale de `filter-data`,
+   * mueve el estado (aprobar, rechazar, cancelar, rendir): el desplegable sale de `filter-data`,
    * así que sin esto seguiría ofreciendo periodos con el conteo de antes de la acción.
    */
   private recargar(): void {
@@ -1181,41 +1099,6 @@ export class GestionSalidas implements OnInit {
     this.recargar();
   }
 
-  // ── Consolidado del S10 (solo salidas rendidas) ──────────────────────
-
-  /** El consolidado solo aplica cuando la salida ya fue rendida. */
-  puedeAdjuntarConsolidado(s: GestionSalidaListItemDto): boolean {
-    return s.estadoRendicion === 'Rendido';
-  }
-
-  abrirConsolidado(s: GestionSalidaListItemDto, ev: Event): void {
-    ev.stopPropagation(); // no abrir el modal de detalle
-    this.consolidadoDe = s;
-  }
-
-  /** Función de subida que consume el modal compartido (ya sabe a qué endpoint pegarle). */
-  readonly subirConsolidado = (file: File) =>
-    this.service.uploadConsolidadoS10(this.consolidadoDe!.id, file);
-
-  /** Consolidado vigente de la salida abierta, para mostrarlo dentro del modal. */
-  get consolidadoActual(): ConsolidadoS10Dto | null {
-    const s = this.consolidadoDe;
-    if (!s?.consolidadoS10Url) return null;
-    return {
-      id: 0,
-      ambito: s.consolidadoS10Ambito ?? 'Rendicion',
-      pdfUrl: s.consolidadoS10Url,
-      pdfFilename: s.consolidadoS10Filename ?? 'Consolidado del S10',
-      uploadedAt: '',
-    };
-  }
-
-  /** Cierra el modal; si se subió algo recarga para reflejarlo en toda la planilla. */
-  cerrarConsolidado(subido: ConsolidadoS10Dto | null): void {
-    this.consolidadoDe = null;
-    if (subido) this.recargar();
-    else        this.cdr.detectChanges();
-  }
 
   private extractFilename(contentDisposition: string | null): string | null {
     if (!contentDisposition) return null;
@@ -1261,199 +1144,6 @@ export class GestionSalidas implements OnInit {
       : { bg: '#F3F4F6', text: '#6B7280' };
   }
 
-  // ── Reembolso ────────────────────────────────────────────────────────
-
-  reembolsoColors(estado: EstadoReembolso): { bg: string; text: string } {
-    switch (estado) {
-      case 'Aprobado':  return { bg: '#D7FAF4', text: '#009C87' };
-      case 'Rechazado': return { bg: '#FAD5D4', text: '#D30000' };
-      case 'Firmado':   return { bg: '#E0E7FF', text: '#4338CA' };
-      case 'Pagado':    return { bg: '#DCFCE7', text: '#15803D' };
-      default:          return { bg: '#FEF9C3', text: '#92400E' }; // Pendiente
-    }
-  }
-
-  /**
-   * Seleccionadas cuyo reembolso se puede decidir: ya rendidas, con el Consolidado del S10 adjunto
-   * y sin decidir (o rechazadas, que se pueden reconsiderar). Nunca las propias, misma regla que
-   * la aprobación de la salida.
-   */
-  get selectedReembolsoRevisables(): GestionSalidaListItemDto[] {
-    return this.selectedSalidas.filter(
-      (s) =>
-        s.reembolsoRevisable &&
-        (s.estadoReembolso === 'Pendiente' || s.estadoReembolso === 'Rechazado'),
-    );
-  }
-
-  /** True si alguna candidata a decidir el reembolso es propia (y el usuario no es Gerente). */
-  get reembolsoIncluyePropia(): boolean {
-    return this.selectedReembolsoRevisables.some((s) => !s.puedeDecidir);
-  }
-
-  get puedeDecidirReembolso(): boolean {
-    return this.selectedReembolsoRevisables.length > 0 && !this.reembolsoIncluyePropia;
-  }
-
-  /** Seleccionadas listas para firmar: el reembolso ya está aprobado. */
-  get selectedFirmables(): GestionSalidaListItemDto[] {
-    return this.selectedSalidas.filter((s) => s.estadoReembolso === 'Aprobado');
-  }
-
-  /** Seleccionadas que Tesorería puede marcar como pagadas: las ya firmadas. */
-  get selectedPagables(): GestionSalidaListItemDto[] {
-    return this.selectedSalidas.filter((s) => s.estadoReembolso === 'Firmado');
-  }
-
-  async aprobarReembolsoBulk(): Promise<void> {
-    const items = this.selectedReembolsoRevisables;
-    if (items.length === 0 || this.reembolsoIncluyePropia) return;
-
-    const result = await Swal.fire({
-      icon: 'question',
-      title: `¿Aprobar ${items.length} reembolso(s)?`,
-      text: 'Se le avisará por correo a cada trabajador.',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, aprobar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#64BC04',
-    });
-    if (!result.isConfirmed) return;
-
-    this.loaderService.show();
-    this.service.aprobarReembolso(items.map((s) => s.id)).subscribe({
-      next: (res) => this.trasAccionReembolso(res.message),
-      error: (err: HttpErrorResponse) => this.errorReembolso(err),
-    });
-  }
-
-  async rechazarReembolsoBulk(): Promise<void> {
-    const items = this.selectedReembolsoRevisables;
-    if (items.length === 0 || this.reembolsoIncluyePropia) return;
-
-    // La observación es el correo: es lo único que el trabajador va a leer para saber qué corregir,
-    // así que se pide acá y el backend la exige también.
-    const result = await Swal.fire({
-      icon: 'warning',
-      title: `¿Rechazar ${items.length} reembolso(s)?`,
-      input: 'textarea',
-      inputLabel: 'Observación',
-      inputPlaceholder: 'Qué tiene que corregir el trabajador…',
-      inputAttributes: { 'aria-label': 'Observación del rechazo', maxlength: '1000' },
-      showCancelButton: true,
-      confirmButtonText: 'Rechazar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#D30000',
-      inputValidator: (valor) =>
-        valor && valor.trim().length > 0 ? null : 'Escribe la observación del rechazo.',
-    });
-    if (!result.isConfirmed) return;
-
-    this.loaderService.show();
-    this.service.rechazarReembolso(items.map((s) => s.id), (result.value as string).trim()).subscribe({
-      next: (res) => this.trasAccionReembolso(res.message),
-      error: (err: HttpErrorResponse) => this.errorReembolso(err),
-    });
-  }
-
-  async firmarBulk(): Promise<void> {
-    const items = this.selectedFirmables;
-    if (items.length === 0) return;
-
-    const result = await Swal.fire({
-      icon: 'question',
-      title: `¿Firmar ${items.length} salida(s)?`,
-      text: 'Se estampará tu firma en la planilla de rendición. El PDF original se conserva.',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, firmar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0F6E56',
-    });
-    if (!result.isConfirmed) return;
-
-    this.firmar(items.map((s) => s.id));
-  }
-
-  /**
-   * Firma las planillas. El 409 significa "todavía no registraste tu firma": en vez de mandar al
-   * usuario a Configuración se abre el modal para que la dibuje ahí mismo, y al guardarla se
-   * reintenta sola la firma que quedó pendiente.
-   */
-  private firmar(ids: number[]): void {
-    this.loaderService.show();
-    this.service.firmarPlanillas(ids).subscribe({
-      next: (res) => {
-        this.idsPendientesDeFirma = [];
-        this.trasAccionReembolso(res.message);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
-        if (err.status === 409 && !this.firmaModalAbierto) {
-          this.idsPendientesDeFirma = ids;
-          this.firmaModalAbierto = true;
-          this.cdr.detectChanges();
-          return;
-        }
-        this.errorService.handleError(err);
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  /** El usuario acaba de registrar su firma en el modal: se reintenta lo que estaba firmando. */
-  onFirmaRegistrada(): void {
-    this.firmaModalAbierto = false;
-    const ids = this.idsPendientesDeFirma;
-    this.idsPendientesDeFirma = [];
-    if (ids.length > 0) this.firmar(ids);
-    else this.cdr.detectChanges();
-  }
-
-  cerrarFirmaModal(): void {
-    this.firmaModalAbierto = false;
-    this.idsPendientesDeFirma = [];
-    this.cdr.detectChanges();
-  }
-
-  async marcarPagadasBulk(): Promise<void> {
-    const items = this.selectedPagables;
-    if (items.length === 0) return;
-
-    const result = await Swal.fire({
-      icon: 'question',
-      title: `¿Marcar ${items.length} reembolso(s) como pagado(s)?`,
-      text: 'Es el último paso del ciclo: después no se revierte desde la pantalla.',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, marcar como pagadas',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#15803D',
-    });
-    if (!result.isConfirmed) return;
-
-    this.loaderService.show();
-    this.service.marcarPagadas(items.map((s) => s.id)).subscribe({
-      next: (res) => this.trasAccionReembolso(res.message),
-      error: (err: HttpErrorResponse) => this.errorReembolso(err),
-    });
-  }
-
-  private trasAccionReembolso(message: string): void {
-    this.loaderService.hide();
-    Swal.fire({ title: message, icon: 'success', timer: 1800, showConfirmButton: false });
-    this.recargar();
-  }
-
-  private errorReembolso(err: HttpErrorResponse): void {
-    this.loaderService.hide();
-    this.errorService.handleError(err);
-    this.cdr.detectChanges();
-  }
-
-  /** Abre la planilla firmada de una salida en otra pestaña. */
-  abrirPlanillaFirmada(s: GestionSalidaListItemDto, ev: Event): void {
-    ev.stopPropagation();
-    if (s.planillaFirmadaUrl && typeof window !== 'undefined') {
-      window.open(s.planillaFirmadaUrl, '_blank', 'noopener');
-    }
-  }
+  /** El badge del reembolso es informativo acá; el color sale del shared del módulo. */
+  readonly reembolsoColors = reembolsoColors;
 }
