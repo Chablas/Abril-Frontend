@@ -86,6 +86,17 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       seccion: 'trayectos',
     },
   },
+  {
+    path: 'configuracion/capturas',
+    loadComponent: () =>
+      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
+      featureKey: 'gestion-administrativa.config.capturas',
+      seccion: 'capturas',
+    },
+  },
   // Revisores de áreas se movió al módulo de configuración global (define el jefe de
   // cada área, no solo para salidas). Se mantiene la ruta antigua como redirección para
   // no romper enlaces. La de revisores por trabajador se retiró junto con su pantalla:

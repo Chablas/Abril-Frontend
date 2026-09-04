@@ -11,6 +11,7 @@ import { GaTrayectos } from '../trayectos/pages/trayectos';
 import { VisibilidadSalidas } from './visibilidad-salidas/pages/visibilidad-salidas';
 import { GaCarpetaAdjuntos } from './carpeta-adjuntos/pages/carpeta-adjuntos';
 import { GaCorreos } from './correos/pages/correos';
+import { GaCapturas } from './capturas/pages/capturas';
 import { Roles } from '../../../../core/constants/roles';
 import { FirmaPersonal } from '../../../../shared/components/firma-personal/firma-personal';
 
@@ -67,6 +68,7 @@ interface ConfigSectionDef {
     VisibilidadSalidas,
     GaCarpetaAdjuntos,
     GaCorreos,
+    GaCapturas,
     FirmaPersonal,
   ],
   templateUrl: './ga-configuracion.html',
@@ -99,6 +101,14 @@ export class GaConfiguracion implements OnInit {
       featureKey: 'gestion-administrativa.config.trayectos',
       subtitulo: 'Trayectos y tarifas de movilidad configurados.',
       createLabel: 'Nuevo trayecto',
+    },
+    {
+      id: 'capturas',
+      label: 'Capturas',
+      route: '/gestion-administrativa/configuracion/capturas',
+      featureKey: 'gestion-administrativa.config.capturas',
+      subtitulo:
+        'Áreas que deben subir capturas de movilidad para rendir una salida. Por defecto, obligatorias.',
     },
     {
       id: 'visibilidad-salidas',
@@ -149,6 +159,7 @@ export class GaConfiguracion implements OnInit {
   @ViewChild(VisibilidadSalidas) private visibilidadCmp?: VisibilidadSalidas;
   @ViewChild(GaCarpetaAdjuntos) private carpetaAdjuntosCmp?: GaCarpetaAdjuntos;
   @ViewChild(GaCorreos) private correosCmp?: GaCorreos;
+  @ViewChild(GaCapturas) private capturasCmp?: GaCapturas;
 
   constructor(
     private route: ActivatedRoute,
@@ -201,6 +212,7 @@ export class GaConfiguracion implements OnInit {
     | VisibilidadSalidas
     | GaCarpetaAdjuntos
     | GaCorreos
+    | GaCapturas
     | undefined {
     switch (this.activeSection) {
       case 'lugares': return this.lugaresCmp;
@@ -209,6 +221,7 @@ export class GaConfiguracion implements OnInit {
       case 'visibilidad-salidas': return this.visibilidadCmp;
       case 'carpeta-adjuntos': return this.carpetaAdjuntosCmp;
       case 'correos': return this.correosCmp;
+      case 'capturas': return this.capturasCmp;
       default: return undefined;
     }
   }

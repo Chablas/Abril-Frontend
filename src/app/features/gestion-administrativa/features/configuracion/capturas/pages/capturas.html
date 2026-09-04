@@ -1,0 +1,98 @@
+<!-- Sección embebida en GaConfiguracion: el header y el disparador de filtros
+     viven en el contenedor (`ga-configuracion`). -->
+<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Área</th>
+          <th>Área padre</th>
+          <th class="text-center w-[260px]">Capturas de movilidad</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="filteredAreas.length === 0">
+          <td colspan="3" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ filtrosActivos > 0 ? 'Sin resultados.' : 'No hay áreas activas.' }}
+          </td>
+        </tr>
+
+        <tr *ngFor="let a of pagedAreas" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+
+          <td class="text-gray-700">{{ a.areaName }}</td>
+          <td class="text-gray-700">{{ a.parentName || '—' }}</td>
+
+          <td class="text-center">
+            <label class="inline-flex items-center gap-[8px] cursor-pointer select-none">
+              <input
+                type="checkbox"
+                class="w-4 h-4 cursor-pointer"
+                style="accent-color:var(--color-abril-primary)"
+                [checked]="a.capturasObligatorias"
+                (change)="toggleObligatorias(a)"
+                [title]="a.capturasObligatorias
+                  ? 'Los trabajadores de esta área deben subir una captura por trayecto para poder rendir'
+                  : 'Los trabajadores de esta área pueden rendir sin subir capturas'" />
+              <span class="text-sm" [class.text-gray-700]="a.capturasObligatorias" [class.text-gray-400]="!a.capturasObligatorias">
+                {{ a.capturasObligatorias ? 'Obligatorias' : 'Opcionales' }}
+              </span>
+            </label>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredAreas.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <!-- rawLabel: sin él, "SSOMA" se mostraría como "Ssoma". -->
+    <app-search-select
+      label="Área"
+      [options]="areaFilterOptions"
+      valueField="areaScopeId"
+      displayField="label"
+      [rawLabel]="true"
+      [value]="areaFilter"
+      (valueChange)="areaFilter = $event; onFilterChange()"
+      placeholder="Todas las áreas">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Tipo de área"
+      [options]="tipos"
+      valueField="areaTypeId"
+      displayField="areaTypeName"
+      [value]="tipoFilter"
+      (valueChange)="tipoFilter = $event; onFilterChange()"
+      placeholder="Todos los tipos">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por área o área padre..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+</app-filter-modal>

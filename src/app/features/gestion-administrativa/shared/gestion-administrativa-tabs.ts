@@ -10,5 +10,5 @@ export const GESTION_ADMINISTRATIVA_TABS: AbrilPageTab[] = [
   // "Tu firma" (que es de todo USUARIO DE ABRIL, no de una funcionalidad) la pantalla siempre tiene
   // al menos una sección que mostrar, así que dejarla solo con los featureKeys de configuración
   // habría escondido la firma de la mayoría. El acceso a cada sección sigue filtrado adentro.
-  { label: 'Configuración',          icono: 'ti-settings',   route: '/gestion-administrativa/configuracion',       featureKeys: ['gestion-administrativa.config.lugares','gestion-administrativa.config.motivos','gestion-administrativa.config.trayectos','gestion-administrativa.config.visibilidad-salidas','gestion-administrativa.config.carpeta-adjuntos','gestion-administrativa.config.correos'], roles: [Roles.USUARIO_DE_ABRIL] },
+  { label: 'Configuración',          icono: 'ti-settings',   route: '/gestion-administrativa/configuracion',       featureKeys: ['gestion-administrativa.config.lugares','gestion-administrativa.config.motivos','gestion-administrativa.config.trayectos','gestion-administrativa.config.capturas','gestion-administrativa.config.visibilidad-salidas','gestion-administrativa.config.carpeta-adjuntos','gestion-administrativa.config.correos'], roles: [Roles.USUARIO_DE_ABRIL] },
 ];

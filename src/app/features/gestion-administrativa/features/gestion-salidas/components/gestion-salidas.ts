@@ -832,15 +832,15 @@ export class GestionSalidas implements OnInit {
   /**
    * Rinde de una vez todas las salidas del mes anterior que estén listas dentro del alcance del
    * usuario, respetando los filtros de trabajador/área/proyecto. El backend decide qué entra
-   * (aprobadas, no rendidas y con capturas en todos sus trayectos) e ignora el resto.
+   * (aprobadas, no rendidas y con sus trayectos cubiertos) e ignora el resto.
    */
   async rendirMesAnterior(): Promise<void> {
     const result = await Swal.fire({
       icon: 'question',
       title: `¿Rendir las salidas de ${this.mesAnteriorLabel}?`,
       text: this.rendicionMesAnteriorFiltrada
-        ? 'Se rinde solo lo que dejan ver los filtros activos, y solo lo aprobado con todas sus capturas.'
-        : 'Solo entran las aprobadas con las capturas de todos sus trayectos.',
+        ? 'Se rinde solo lo que dejan ver los filtros activos, y solo lo aprobado que esté listo para rendir.'
+        : 'Solo entran las aprobadas que ya estén listas para rendir.',
       showCancelButton: true,
       confirmButtonText: 'Sí, rendir',
       cancelButtonText: 'Cancelar',

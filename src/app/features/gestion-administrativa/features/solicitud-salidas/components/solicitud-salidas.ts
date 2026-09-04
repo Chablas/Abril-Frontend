@@ -304,14 +304,14 @@ export class SolicitudSalidas implements OnInit {
 
   /**
    * Rinde de una vez todas las salidas propias del mes anterior que estén listas. El backend
-   * resuelve qué entra (aprobadas, no rendidas y con capturas en todos sus trayectos) e ignora
+   * resuelve qué entra (aprobadas, no rendidas y con sus trayectos cubiertos) e ignora
    * el resto, así que no depende de lo que esté cargado en la tabla.
    */
   async rendirMesAnterior(): Promise<void> {
     const result = await Swal.fire({
       icon: 'question',
       title: `¿Rendir tus salidas de ${this.mesAnteriorLabel}?`,
-      text: 'Solo entran las aprobadas con las capturas de todos sus trayectos.',
+      text: 'Solo entran las aprobadas que ya estén listas para rendir.',
       showCancelButton: true,
       confirmButtonText: 'Sí, rendir',
       cancelButtonText: 'Cancelar',
