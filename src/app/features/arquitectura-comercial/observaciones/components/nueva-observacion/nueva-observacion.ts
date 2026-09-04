@@ -22,6 +22,15 @@ import { SupervisorAcDTO } from '../../../../../core/dtos/arquitectura-comercial
  * Cualquier otra sesión (login individual) usa directamente el nombre de quien está logueado. */
 const CUENTAS_COMPARTIDAS = ['operarioscomercial@abril.pe'];
 
+/** Hoy en `YYYY-MM-DD` según la zona del equipo. `toISOString().slice(0, 10)` daría la fecha UTC,
+ * que a partir de las 19:00 de Lima ya es el día siguiente: la observación salía fechada mañana. */
+function hoyLocal(): string {
+  const d = new Date();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
 @Component({
   standalone: true,
   selector: 'app-nueva-observacion',
@@ -48,7 +57,7 @@ export class NuevaObservacion implements OnInit {
 
   // ── Fijos: se mantienen entre observaciones del mismo recorrido ──
   proyectoId: number | null = null;
-  fecha = new Date().toISOString().slice(0, 10);
+  fecha = hoyLocal();
   personaReporta = '';
 
   // ── Variables por observación ──
