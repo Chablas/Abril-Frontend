@@ -13,6 +13,7 @@ import {
   PersonalHitoDto, PersonalHitoItemInputDto, RatioProyectoDto,
   DriverProyectoDto, RatiosDriversRecomendadosDto,
   KitResumenDto, KitDetalleDto, KitCalculoLineaDto,
+  VigilanciaHitoDto, VigilanciaHitoItemInputDto,
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
@@ -28,6 +29,20 @@ interface FilaPersonalHito extends PersonalHitoItemInputDto {
   hitoDescripcion: string;
   hitoFecha: string | null;
   total: number;
+}
+
+interface FilaVigilancia extends VigilanciaHitoItemInputDto {
+  hitoDescripcion: string;
+  hitoFecha: string | null;
+  total: number;
+}
+
+/** Diferencia en semanas entre dos fechas 'YYYY-MM-DD' (o lo que traiga el hito) — para prellenar
+ * "Semanas" cuando el usuario elige etapa de salida en vez de tipearlas a mano. */
+function semanasEntreFechas(fechaIngreso: string | null, fechaSalida: string | null): number {
+  if (!fechaIngreso || !fechaSalida) return 0;
+  const dias = (new Date(fechaSalida).getTime() - new Date(fechaIngreso).getTime()) / 86400000;
+  return dias > 0 ? Math.round((dias / 7) * 100) / 100 : 0;
 }
 
 /** Fila editable de la tabla de cronograma — misma data que /mejora-continua/milestone-schedule,
@@ -108,6 +123,89 @@ export class ProyectoPage implements OnInit {
   personalLoading = false;
   personalGuardando = false;
 
+  // ── Vigilancia externa por hito (facturada por punto/turno, precio desde Ratios) ───────────
+  vigilanciaFilas: FilaVigilancia[] = [];
+  vigilanciaLoading = false;
+  vigilanciaGuardando = false;
+  precioVigilanciaActual = 0;
+
+  private loadVigilancia(hitos: HitoCriticoDisponibleDto[]): void {
+    if (hitos.length === 0) {
+      this.vigilanciaFilas = [];
+      return;
+    }
+    this.vigilanciaLoading = true;
+    this.cdr.markForCheck();
+    this.svc.getPrecioVigilanciaActual().subscribe({
+      next: (p) => { this.precioVigilanciaActual = p.precioUnitario; this.cdr.markForCheck(); },
+      error: () => {},
+    });
+    this.svc.getVigilanciaHitos(this.projectId).subscribe({
+      next: (existentes) => {
+        this.vigilanciaFilas = hitos.map((hito) => {
+          const existente = existentes.find((e) => e.hitoId === hito.hitoId);
+          return {
+            hitoId: hito.hitoId,
+            hitoDescripcion: hito.hitoDescripcion,
+            hitoFecha: hito.hitoFecha,
+            hitoSalidaId: existente?.hitoSalidaId ?? null,
+            cantidadPuntos: existente?.cantidadPuntos ?? 0,
+            semanas: existente?.semanas ?? 0,
+            total: existente?.total ?? 0,
+          };
+        });
+        this.vigilanciaLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => { this.vigilanciaLoading = false; this.cdr.markForCheck(); },
+    });
+  }
+
+  onEtapaSalidaVigilanciaChange(fila: FilaVigilancia): void {
+    if (fila.hitoSalidaId) {
+      const salida = this.hitosCriticos.find((h) => h.hitoId === fila.hitoSalidaId);
+      fila.semanas = semanasEntreFechas(fila.hitoFecha, salida?.hitoFecha ?? null);
+    }
+    this.recalcularTotalVigilancia(fila);
+  }
+
+  recalcularTotalVigilancia(fila: FilaVigilancia): void {
+    fila.total = fila.cantidadPuntos * this.precioVigilanciaActual * (fila.semanas / SEMANAS_POR_MES);
+  }
+
+  get vigilanciaTotalGeneral(): number {
+    return this.vigilanciaFilas.reduce((acc, f) => acc + (f.total || 0), 0);
+  }
+
+  guardarVigilancia(): void {
+    if (this.vigilanciaGuardando) return;
+    const items = this.vigilanciaFilas
+      .filter((f) => f.cantidadPuntos > 0)
+      .map((f) => ({
+        hitoId: f.hitoId,
+        hitoSalidaId: f.hitoSalidaId ?? null,
+        cantidadPuntos: f.cantidadPuntos,
+        semanas: f.semanas,
+      }));
+
+    this.vigilanciaGuardando = true;
+    this.loader.show();
+    this.svc.guardarVigilanciaHitos(this.projectId, { items }).subscribe({
+      next: () => {
+        this.vigilanciaGuardando = false;
+        this.loader.hide();
+        Swal.fire({ icon: 'success', title: 'Vigilancia guardada', timer: 2000, showConfirmButton: false });
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.vigilanciaGuardando = false;
+        this.loader.hide();
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
   // ── Ratios calculados del proyecto ──────────────────────────────────
   ratios: RatioProyectoDto[] = [];
   loadingRatios = false;
@@ -125,15 +223,66 @@ export class ProyectoPage implements OnInit {
   cantidadKits: number | null = null;
   resultadoKit: KitCalculoLineaDto[] = [];
 
-  /// Familias de "cálculo técnico" por metrado (Barra FRP, Ductos, etc.) — todavía no tienen una
-  /// fórmula/calculadora propia; se listan acá para que no se pierdan de vista mientras se diseña.
-  readonly familiasCalculoTecnico = [
-    'Barra FRP',
-    'Ductos (Fenólico 18mm + Listones 3x2)',
-    'Rodapiés (Triplay Lupuna 8mm)',
-    'Punto de Anclaje Textil',
-    'Tubería PVC 1"',
-  ];
+  // ── Cálculo técnico por metrado (Barandas FRP, Rodapié, Tubería PVC, Ducto) — calculadora
+  // informativa igual que Kits/BOM: el resultado se ve acá, la cantidad final se sigue cargando
+  // a mano en el presupuesto (cantidadManual). "Punto de Anclaje Textil" no tiene fórmula, se
+  // carga siempre 100% manual (así lo pidió el responsable SSOMA).
+  mostrarCalculoTecnico = false;
+
+  // Barandas: por cada 3.4 ml se requieren 3 barras FRP de 25mm x 1.7m + 4 barras FRP de 21mm x 2m.
+  // Sin merma (vienen cortadas), redondeo hacia arriba por tramo — la variación es mínima.
+  barandasMl: number | null = null;
+  get barandasTramos(): number {
+    return this.barandasMl && this.barandasMl > 0 ? Math.ceil(this.barandasMl / 3.4) : 0;
+  }
+  get barandasFrp25Ml(): number { return this.barandasTramos * 3 * 1.7; }
+  get barandasFrp21Ml(): number { return this.barandasTramos * 4 * 2; }
+  /** Número de barras FRP 25mm (piezas de 1.7m) — cada una necesita un poste/tramo de tubería
+   * PVC 1" de 60cm, así que esta cantidad alimenta directo el cálculo de Tubería de abajo. */
+  get barandasFrp25Unidades(): number { return this.barandasTramos * 3; }
+
+  // Rodapié: mismos metros lineales que Barandas (van juntos en el mismo tramo de obra) — triplay
+  // 8mm de 2.44 x 1.22, tira de 20cm de ancho cortada del lado de 1.22m → 6 tiras de 2.44m por
+  // plancha = 14.64 ml utilizables por plancha.
+  private static readonly RODAPIE_ML_POR_PLANCHA = 14.64;
+  get rodapiePlanchas(): number {
+    return this.barandasMl && this.barandasMl > 0
+      ? Math.ceil(this.barandasMl / ProyectoPage.RODAPIE_ML_POR_PLANCHA)
+      : 0;
+  }
+
+  // Tubería PVC 1": un poste (60cm) por cada barra FRP 25mm requerida; barra de 3m cortada
+  // cada 60cm = 5 tramos por barra, exacto.
+  get tuberiaCantidadTubos(): number { return this.barandasFrp25Unidades; }
+  get tuberiaBarras(): number {
+    return this.tuberiaCantidadTubos > 0 ? Math.ceil(this.tuberiaCantidadTubos / 5) : 0;
+  }
+
+  // Ducto (un solo ducto): fenólico 18mm 2.44x1.22 con +10% de exceso; perímetro estimado
+  // asumiendo forma cuadrada (lado = raíz del área) para dimensionar el listón de refuerzo;
+  // bastidor de listón 2"x3"x12' (12' = 3.6576m). Sin merma adicional.
+  private static readonly FENOLICO_AREA_PLANCHA = 2.44 * 1.22;
+  private static readonly LISTON_ML_POR_BASTIDOR = 3.6576;
+  ductoAreaM2: number | null = null;
+  get ductoPlanchasFenolico(): number {
+    if (!this.ductoAreaM2 || this.ductoAreaM2 <= 0) return 0;
+    const areaEfectiva = this.ductoAreaM2 * 1.10;
+    return Math.ceil(areaEfectiva / ProyectoPage.FENOLICO_AREA_PLANCHA);
+  }
+  get ductoPerimetroEstimado(): number {
+    if (!this.ductoAreaM2 || this.ductoAreaM2 <= 0) return 0;
+    const lado = Math.sqrt(this.ductoAreaM2);
+    return 4 * lado;
+  }
+  get ductoBastidoresListon(): number {
+    const perimetro = this.ductoPerimetroEstimado;
+    return perimetro > 0 ? Math.ceil(perimetro / ProyectoPage.LISTON_ML_POR_BASTIDOR) : 0;
+  }
+
+  toggleCalculoTecnico(): void {
+    this.mostrarCalculoTecnico = !this.mostrarCalculoTecnico;
+    this.cdr.markForCheck();
+  }
 
   toggleKits(): void {
     this.mostrarKits = !this.mostrarKits;
@@ -392,6 +541,7 @@ export class ProyectoPage implements OnInit {
         this.loadingHitos = false;
         this.cdr.markForCheck();
         this.loadPersonalPanel(hitos);
+        this.loadVigilancia(hitos);
       },
       error: () => {
         this.loadingHitos = false;
@@ -426,6 +576,7 @@ export class ProyectoPage implements OnInit {
           hitoId: hito.hitoId,
           hitoDescripcion: hito.hitoDescripcion,
           hitoFecha: hito.hitoFecha,
+          hitoSalidaId: existente?.hitoSalidaId ?? null,
           rol,
           cantidad: existente?.cantidad ?? 0,
           semanas: existente?.semanas ?? 0,
@@ -434,14 +585,14 @@ export class ProyectoPage implements OnInit {
         });
       }
     }
+    this.actualizarPersonalPorHito();
   }
 
-  recalcularTotalPersonal(fila: FilaPersonalHito): void {
-    fila.total = fila.cantidad * fila.costoMensual * (fila.semanas / SEMANAS_POR_MES);
-  }
-
-  /** Agrupa las filas por hito para pintar una sección por hito con sus roles debajo. */
-  get personalPorHito(): { hitoId: number; hitoDescripcion: string; hitoFecha: string | null; filas: FilaPersonalHito[] }[] {
+  /** Recalcula el agrupado por hito UNA vez (no en cada ciclo de change detection). Antes era un
+   * getter que reconstruía un array/Map nuevo en cada acceso — con `personalPorHito` leído desde
+   * el *ngFor del template, Angular lo evaluaba en cada tick, veía una referencia distinta cada
+   * vez, y entraba en un ciclo de repintado que nunca se estabilizaba (el freeze real). */
+  private actualizarPersonalPorHito(): void {
     const grupos = new Map<number, { hitoId: number; hitoDescripcion: string; hitoFecha: string | null; filas: FilaPersonalHito[] }>();
     for (const fila of this.personalFilas) {
       if (!grupos.has(fila.hitoId)) {
@@ -449,8 +600,33 @@ export class ProyectoPage implements OnInit {
       }
       grupos.get(fila.hitoId)!.filas.push(fila);
     }
-    return Array.from(grupos.values());
+    this.personalPorHito = Array.from(grupos.values());
   }
+
+  /** Etapas disponibles para "Etapa de salida" en el select de una fila — cualquier hito crítico
+   * del cronograma (incluido el mismo de ingreso, por si entra y sale el mismo día no tiene caso,
+   * pero no se restringe para no complicar la lista). */
+  get etapasSalidaOpts(): HitoCriticoDisponibleDto[] {
+    return this.hitosCriticos;
+  }
+
+  /** Al elegir/quitar la etapa de salida, recalcula "Semanas" desde las fechas reales del cronograma
+   * (mismo criterio que aplicará el backend al guardar) y deja "Semanas" de solo lectura en ese caso. */
+  onEtapaSalidaChange(fila: FilaPersonalHito): void {
+    if (fila.hitoSalidaId) {
+      const salida = this.hitosCriticos.find((h) => h.hitoId === fila.hitoSalidaId);
+      fila.semanas = semanasEntreFechas(fila.hitoFecha, salida?.hitoFecha ?? null);
+    }
+    this.recalcularTotalPersonal(fila);
+  }
+
+  recalcularTotalPersonal(fila: FilaPersonalHito): void {
+    fila.total = fila.cantidad * fila.costoMensual * (fila.semanas / SEMANAS_POR_MES);
+  }
+
+  /** Agrupado por hito para pintar una sección por hito con sus roles debajo — se recalcula solo
+   * en actualizarPersonalPorHito(), no en cada ciclo de change detection (ver esa nota). */
+  personalPorHito: { hitoId: number; hitoDescripcion: string; hitoFecha: string | null; filas: FilaPersonalHito[] }[] = [];
 
   get personalTotalGeneral(): number {
     return this.personalFilas.reduce((acc, f) => acc + (f.total || 0), 0);
@@ -460,7 +636,14 @@ export class ProyectoPage implements OnInit {
     if (this.personalGuardando) return;
     const items = this.personalFilas
       .filter((f) => f.cantidad > 0 && f.costoMensual > 0)
-      .map((f) => ({ hitoId: f.hitoId, rol: f.rol, cantidad: f.cantidad, semanas: f.semanas, costoMensual: f.costoMensual }));
+      .map((f) => ({
+        hitoId: f.hitoId,
+        hitoSalidaId: f.hitoSalidaId ?? null,
+        rol: f.rol,
+        cantidad: f.cantidad,
+        semanas: f.semanas,
+        costoMensual: f.costoMensual,
+      }));
 
     this.personalGuardando = true;
     this.loader.show();

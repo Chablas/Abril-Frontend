@@ -45,6 +45,8 @@ import {
   ImportHhResultDto,
   HhCargaResumenDto,
   CalcularRatiosTodosResultDto,
+  VigilanciaHitoDto,
+  VigilanciaHitoGuardarDto,
 } from './presupuesto.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -457,5 +459,29 @@ export class PresupuestoMaterialesService {
     return this.http.get<MaterialNoSsomaDto[]>(`${this.base}/catalogo/no-ssoma`, {
       headers: this.authHeaders(),
     });
+  }
+
+  // ── Vigilancia externa por hito (facturada por punto/turno, precio desde Ratios) ──────────
+
+  getVigilanciaHitos(projectId: number): Observable<VigilanciaHitoDto[]> {
+    return this.http.get<VigilanciaHitoDto[]>(
+      `${this.base}/proyectos/${projectId}/vigilancia-hitos`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  getPrecioVigilanciaActual(): Observable<{ precioUnitario: number }> {
+    return this.http.get<{ precioUnitario: number }>(
+      `${this.base}/vigilancia/precio-actual`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  guardarVigilanciaHitos(projectId: number, dto: VigilanciaHitoGuardarDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.base}/proyectos/${projectId}/vigilancia-hitos`,
+      dto,
+      { headers: this.authHeaders() },
+    );
   }
 }

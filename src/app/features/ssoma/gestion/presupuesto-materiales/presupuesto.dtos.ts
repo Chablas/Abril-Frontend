@@ -445,6 +445,11 @@ export interface PersonalHitoDto {
   hitoDescripcion: string;
   hitoFecha: string | null;
   esHitoCritico: boolean;
+  /** Etapa de salida elegida (opcional) — si viene, `semanas` ya fue calculada por el backend
+   * a partir de las fechas reales del cronograma. Null = semanas manual (comportamiento anterior). */
+  hitoSalidaId: number | null;
+  hitoSalidaDescripcion: string | null;
+  hitoSalidaFecha: string | null;
   rol: string;
   cantidad: number;
   semanas: number;
@@ -454,6 +459,7 @@ export interface PersonalHitoDto {
 
 export interface PersonalHitoItemInputDto {
   hitoId: number;
+  hitoSalidaId?: number | null;
   rol: string;
   cantidad: number;
   semanas: number;
@@ -462,6 +468,34 @@ export interface PersonalHitoItemInputDto {
 
 export interface PersonalHitoGuardarDto {
   items: PersonalHitoItemInputDto[];
+}
+
+// ─── Vigilancia externa por hito (facturada por punto/turno, precio desde Ratios) ────────────
+
+export interface VigilanciaHitoDto {
+  id: number;
+  hitoId: number;
+  hitoDescripcion: string;
+  hitoFecha: string | null;
+  esHitoCritico: boolean;
+  hitoSalidaId: number | null;
+  hitoSalidaDescripcion: string | null;
+  hitoSalidaFecha: string | null;
+  cantidadPuntos: number;
+  semanas: number;
+  precioUnitario: number;
+  total: number;
+}
+
+export interface VigilanciaHitoItemInputDto {
+  hitoId: number;
+  hitoSalidaId?: number | null;
+  cantidadPuntos: number;
+  semanas: number;
+}
+
+export interface VigilanciaHitoGuardarDto {
+  items: VigilanciaHitoItemInputDto[];
 }
 
 // ─── Kits / BOM (Botiquín, Estación de Emergencia, etc.) ──────────────────────
