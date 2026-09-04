@@ -31,6 +31,24 @@ export interface GestionSalidaListItemDto {
   estadoRendicion: string;
   createdAt: string;
   puedeRendirse: boolean;
+  /**
+   * True si al menos un trayecto lleva un motivo marcado como reembolsable en
+   * Configuración → Motivos. Sin eso la salida no genera gasto de movilidad y no hay qué rendir.
+   */
+  esReembolsable: boolean;
+  /**
+   * Último día para rendir esta salida (YYYY-MM-DD): el 7.º día hábil del mes siguiente al de su
+   * fecha de salida, sin sábados, domingos ni los feriados de Configuración → Feriados.
+   */
+  plazoRendicionHasta: string;
+  /** True si el plazo ya pasó: la salida ya no se rinde, pero su detalle se sigue viendo. */
+  plazoVencido: boolean;
+  /**
+   * True si la salida está lista para rendirse: aprobada, no rendida, con los trayectos cubiertos
+   * (`puedeRendirse`), con motivo reembolsable (`esReembolsable`) y dentro del plazo. Lo calcula el
+   * backend: es la misma condición que usan el desplegable "Mes a rendir" y las tarjetas.
+   */
+  aptaParaRendir: boolean;
   /** Hora real de salida registrada por recepción ("HH:mm:ss") — dato extra. */
   horaSalidaReal: string | null;
   /** Hora real de retorno registrada por recepción ("HH:mm:ss") — dato extra. */
@@ -103,6 +121,35 @@ export interface GestionSalidaFilterDataDto {
    * Lo decide el backend: el frontend solo ve el rol del token, y la categoría vive en la base.
    */
   esTesorero: boolean;
+  /** Meses que ofrece el desplegable "Mes a rendir" (los que tienen algo apto). */
+  mesesRendicion: MesRendicionDto[];
+  /** Números de las tarjetas del encabezado. */
+  resumen: ResumenRendicionDto;
+}
+
+/** Un mes del desplegable "Mes a rendir". */
+export interface MesRendicionDto {
+  anio: number;
+  mes: number;
+  /** "Agosto 2026" — ya viene capitalizado del backend. */
+  label: string;
+  /** Cuántas solicitudes aptas para rendir tiene ese mes dentro del alcance del usuario. */
+  cantidad: number;
+  /**
+   * Último día para rendir ese mes (YYYY-MM-DD): el 7.º día hábil del mes siguiente. Solo se
+   * ofrecen meses cuyo plazo sigue abierto, así que siempre es de hoy en adelante.
+   */
+  fechaLimite: string;
+}
+
+/**
+ * Números de las tarjetas. Se calculan sobre todo el alcance del usuario, no sobre los filtros de
+ * la tabla: son la bandeja pendiente, así que no cambian al filtrar.
+ */
+export interface ResumenRendicionDto {
+  aptasParaRendir: number;
+  capturasIncompletas: number;
+  observadas: number;
 }
 
 /** Nodo del árbol area_scope; el frontend arma la jerarquía a partir de la lista plana. */

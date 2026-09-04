@@ -36,8 +36,13 @@ export class GestionSalidasService {
     sortDir: 'asc' | 'desc' | null = null,
     areaScopeIds: number[] | null = null,
     soloHoy = false,
+    rendicionAnio: number | null = null,
+    rendicionMes: number | null = null,
   ): Observable<PagedResponseDto<GestionSalidaListItemDto>> {
     let params = new HttpParams().set('page', page);
+    if (rendicionAnio != null && rendicionMes != null) {
+      params = params.set('rendicionAnio', rendicionAnio).set('rendicionMes', rendicionMes);
+    }
     if (workerId != null)        params = params.set('workerId', workerId);
     if (lugarProyectoId != null) params = params.set('lugarProyectoId', lugarProyectoId);
     if (estadoRendicion)         params = params.set('estadoRendicion', estadoRendicion);
@@ -116,20 +121,25 @@ export class GestionSalidasService {
   }
 
   /**
-   * Rinde de una vez TODAS las salidas del mes anterior que estén listas (aprobadas, no rendidas y
-   * con las capturas de todos sus trayectos) dentro del alcance del usuario, respetando los filtros
-   * de trabajador/área/proyecto que se le pasen. El conteo real viene en X-Rendidas-Count.
+   * Rinde de una vez TODAS las salidas del mes indicado (sin año/mes, el anterior) que estén aptas
+   * —aprobadas, no rendidas, con las capturas de todos sus trayectos y con motivo reembolsable—
+   * dentro del alcance del usuario, respetando los filtros de trabajador/área/proyecto que se le
+   * pasen. Es lo que ejecuta "seleccionar todas las del mes": la selección vive en el servidor,
+   * no en los ids de la página. El conteo real viene en X-Rendidas-Count.
    */
-  rendirMesAnterior(
+  rendirMes(
     workerId: number | null,
     lugarProyectoId: number | null,
     areaScopeIds: number[] | null = null,
+    anio: number | null = null,
+    mes: number | null = null,
   ): Observable<HttpResponse<Blob>> {
     let params = new HttpParams();
     if (workerId != null)        params = params.set('workerId', workerId);
     if (lugarProyectoId != null) params = params.set('lugarProyectoId', lugarProyectoId);
     if (areaScopeIds)            for (const id of areaScopeIds) params = params.append('areaScopeIds', id);
-    return this.http.patch(`${this.apiUrl}/rendir-mes-anterior`, {}, {
+    if (anio != null && mes != null) params = params.set('anio', anio).set('mes', mes);
+    return this.http.patch(`${this.apiUrl}/rendir-mes`, {}, {
       headers: this.headers,
       params,
       responseType: 'blob',

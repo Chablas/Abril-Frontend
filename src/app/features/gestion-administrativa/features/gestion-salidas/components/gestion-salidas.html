@@ -26,11 +26,93 @@
 
 <div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden pb-[64px]">
 
+  <!-- ── Tarjetas de resumen ───────────────────────────────────────────────
+       Bandeja pendiente del usuario: no dependen de los filtros de la tabla, por eso no cambian
+       al buscar. Tesorería no las ve: su pantalla es de pagos, no de rendición. -->
+  <div class="resumen-cards" *ngIf="!esTesorero">
+    <div class="resumen-card resumen-card--ok">
+      <span class="resumen-card__label">Aptas para rendir</span>
+      <span class="resumen-card__value">{{ resumen.aptasParaRendir }}</span>
+      <span class="resumen-card__hint">Con capturas y motivo reembolsable</span>
+    </div>
+    <div class="resumen-card resumen-card--warn">
+      <span class="resumen-card__label">Capturas incompletas</span>
+      <span class="resumen-card__value">{{ resumen.capturasIncompletas }}</span>
+      <span class="resumen-card__hint">Requeridas cuando hay monto</span>
+    </div>
+    <div class="resumen-card resumen-card--alert">
+      <span class="resumen-card__label">Observadas</span>
+      <span class="resumen-card__value">{{ resumen.observadas }}</span>
+      <span class="resumen-card__hint">Requieren subsanación</span>
+    </div>
+  </div>
+
+  <!-- ── Mes a rendir ──────────────────────────────────────────────────────
+       El desplegable no solo elige el periodo: FILTRA la tabla a lo apto para rendir de ese mes.
+       Arranca apagado porque "Hoy" ya viene encendido, y los dos son excluyentes (gana el
+       último que se toca). Con un mes puesto aparece "seleccionar todas las del mes", que cambia
+       la selección de "los ids de esta página" a "el periodo entero", que resuelve el servidor. -->
+  <div class="rendicion-bar" *ngIf="!esTesorero">
+    <app-search-select
+      class="rendicion-bar__select"
+      label="Mes a rendir"
+      placeholder="Selecciona el mes"
+      [options]="mesOptions"
+      valueField="key"
+      displayField="label"
+      [sortAlpha]="false"
+      [rawLabel]="true"
+      [value]="mesRendirKey"
+      (valueChange)="onMesRendirChange($event)" />
+
+    <span class="rendicion-bar__estado" *ngIf="mesSeleccionado; else sinMes">
+      <strong>{{ totalRecords }}</strong>
+      apta{{ totalRecords === 1 ? '' : 's' }} para rendir en {{ mesSeleccionado.label }}<span
+        *ngIf="rendicionFiltrada"> (con los filtros activos)</span>
+      · vence el {{ mesSeleccionado.fechaLimite + 'T00:00:00' | date:'dd/MM/yyyy' }}
+      · {{ seleccionResumen }}
+    </span>
+    <ng-template #sinMes>
+      <!-- Sin periodos abiertos el desplegable queda vacío: se dice por qué, en vez de dejar un
+           control que no ofrece nada. -->
+      <span class="rendicion-bar__estado" *ngIf="mesesRendicion.length === 0; else sinFiltroMes">
+        No hay periodos abiertos para rendir · {{ seleccionResumen }}
+      </span>
+      <ng-template #sinFiltroMes>
+        <span class="rendicion-bar__estado">Sin filtro de mes · {{ seleccionResumen }}</span>
+      </ng-template>
+    </ng-template>
+
+    <label class="rendicion-bar__todas"
+           [title]="mesSeleccionado
+             ? 'Rinde todas las aptas del mes, no solo las de esta página'
+             : 'Elige un mes para habilitarlo'">
+      <input type="checkbox"
+             [checked]="todoElMes"
+             [disabled]="!mesSeleccionado || totalRecords === 0"
+             (change)="toggleTodoElMes()" />
+      Seleccionar todas del mes
+    </label>
+
+    <button
+      type="button"
+      abrilBulkAction="primary"
+      class="ml-auto"
+      (click)="marcarRendidasBulk()"
+      [disabled]="rendiblesCount === 0"
+      title="Marca como rendidas las solicitudes seleccionadas y descarga la planilla de gasto por movilidad">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
+      </svg>
+      Marcar como rendidas<span *ngIf="rendiblesCount > 0"> ({{ rendiblesCount }})</span>
+    </button>
+  </div>
+
   <!-- ── Acciones bulk sobre la selección ──────────────────────────────────
        Siempre visibles (deshabilitadas si no aplica), estilo neutro con
        ícono de color — mismo lenguaje que el botón "Filtros". -->
   <div class="flex flex-wrap items-center gap-2">
-    <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">{{ selectedIds.size }} seleccionada{{ selectedIds.size === 1 ? '' : 's' }}</span>
+    <span *ngIf="seleccionadasCount > 0" class="text-[11px] text-gray-500 mr-1">{{ seleccionadasCount }} seleccionada{{ seleccionadasCount === 1 ? '' : 's' }}</span>
 
     <!-- Acciones de aprobación / rendición: no son de Tesorería, que solo paga. -->
     <ng-container *ngIf="!esTesorero">
@@ -56,31 +138,6 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>
       </svg>
       Rechazar<span *ngIf="puedeRechazarSeleccion"> ({{ selectedRechazables.length }})</span>
-    </button>
-
-    <button
-      type="button"
-      abrilBulkAction="primary"
-      (click)="marcarRendidasBulk()"
-      [disabled]="selectedRendibles.length === 0">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
-      </svg>
-      Marcar como rendidas<span *ngIf="selectedRendibles.length > 0"> ({{ selectedRendibles.length }})</span>
-    </button>
-
-    <button
-      type="button"
-      abrilBulkAction="default"
-      (click)="rendirMesAnterior()"
-      [title]="rendicionMesAnteriorFiltrada
-        ? 'Rinde las salidas de ' + mesAnteriorLabel + ' que dejan ver los filtros activos y ya estén listas para rendir'
-        : 'Rinde todas las salidas de ' + mesAnteriorLabel + ' que ya estén listas para rendir'">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2">
-        <rect x="3" y="4" width="18" height="17" rx="2"/>
-        <path stroke-linecap="round" d="M8 2v4M16 2v4M3 10h18"/>
-      </svg>
-      {{ rendirMesAnteriorLabel }}
     </button>
 
     <button
@@ -263,14 +320,14 @@
           (click)="onRowClick($event, i)"
           title="Ver detalle (Shift+clic para seleccionar)"
           class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
-          [style.background]="selectedIds.has(s.id) ? '#EAF6FF' : null"
+          [style.background]="filaSeleccionada(s) ? '#EAF6FF' : null"
           style="border-color:var(--color-abril-border)">
 
           <!-- Selección (Shift+clic para rango). select-none evita que Shift resalte texto. -->
           <td class="select-none" (click)="onSelectClick($event, i)">
             <input
               type="checkbox"
-              [checked]="selectedIds.has(s.id)"
+              [checked]="filaSeleccionada(s)"
               class="cursor-pointer pointer-events-none"
               style="accent-color:var(--color-abril-accent)" />
           </td>
@@ -384,7 +441,8 @@
             <span
               *ngIf="s.estadoAprobacion === 'Aprobado'
                   && s.estadoRendicion === 'No rendido'
-                  && !s.puedeRendirse"
+                  && !s.puedeRendirse
+                  && !s.plazoVencido"
               title="No se puede rendir: faltan capturas en al menos un trayecto"
               class="inline-flex items-center gap-[6px] text-xs text-gray-500 italic">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -392,6 +450,42 @@
                 <path stroke-linecap="round" d="M12 8v4m0 4h.01"/>
               </svg>
               Capturas incompletas
+            </span>
+
+            <!-- Aprobada + no rendida, con capturas, pero el motivo NO es reembolsable: no genera
+                 gasto de movilidad, así que no hay nada que rendir. Se dice acá para que no
+                 parezca que la fila simplemente "no se deja seleccionar". -->
+            <span
+              *ngIf="s.estadoAprobacion === 'Aprobado'
+                  && s.estadoRendicion === 'No rendido'
+                  && s.puedeRendirse
+                  && !s.esReembolsable
+                  && !s.plazoVencido"
+              title="No se rinde: el motivo de esta salida no está marcado como reembolsable en Configuración → Motivos"
+              class="inline-flex items-center gap-[6px] text-xs text-gray-500 italic">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path stroke-linecap="round" d="M8.5 8.5l7 7"/>
+              </svg>
+              No reembolsable
+            </span>
+
+            <!-- Plazo cerrado: pasó el 7.º día hábil del mes siguiente. La salida ya no se rinde;
+                 la fila sigue clickeable y su detalle se ve igual que siempre. -->
+            <span
+              *ngIf="s.estadoAprobacion === 'Aprobado'
+                  && s.estadoRendicion === 'No rendido'
+                  && s.plazoVencido"
+              [title]="'El plazo para rendir esta salida venció el '
+                + (s.plazoRendicionHasta + 'T00:00:00' | date:'dd/MM/yyyy')
+                + ' (7.º día hábil del mes siguiente)'"
+              class="inline-flex items-center gap-[6px] text-xs italic"
+              style="color:var(--color-abril-danger-dark)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="9"/>
+                <path stroke-linecap="round" d="M12 7v5l3 2"/>
+              </svg>
+              Plazo vencido
             </span>
           </td>
 

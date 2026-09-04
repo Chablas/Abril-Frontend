@@ -9,6 +9,10 @@ import { SolicitudSalidasService } from '../services/solicitud-salidas.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { SolicitudSalidaListItemDto } from '../dtos/solicitud-salida-list-item.dto';
+import {
+  MesRendicionDto,
+  ResumenRendicionDto,
+} from '../dtos/solicitud-salida-filter-data.dto';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SolicitudSalidaDetalleModal } from './solicitud-salida-detalle-modal/solicitud-salida-detalle-modal';
 import { SolicitudSalidaCapturasModal } from './solicitud-salida-capturas-modal/solicitud-salida-capturas-modal';
@@ -31,7 +35,72 @@ import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrat
   selector: 'app-solicitud-salidas',
   imports: [CommonModule, DatePipe, SolicitudSalidaCreate, StatusBadge, SolicitudSalidaDetalleModal, SolicitudSalidaCapturasModal, SearchSelect, AbrilPageHeaderComponent, FabButton, TitleCasePipe, FilterTriggerButton, FilterModal, AbrilBulkActionDirective, ConsolidadoS10Modal],
   templateUrl: './solicitud-salidas.html',
-  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
+  styles: [`
+    :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+    /* ── Tarjetas de resumen + barra "Mes a rendir" ─────────────────────────
+       Mismo lenguaje visual que Gestión de Salidas: las tarjetas son la bandeja pendiente del
+       trabajador (no el resultado del filtro) y la barra concentra todo lo de la rendición, que
+       es un eje aparte de las demás acciones. */
+    .resumen-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 10px;
+    }
+    .resumen-card {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 10px 14px;
+      border: 1px solid var(--color-abril-border);
+      border-left: 3px solid var(--color-abril-border-strong);
+      border-radius: var(--radius-md);
+      background: #FFFFFF;
+    }
+    .resumen-card__label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #6B7280;
+    }
+    .resumen-card__value { font-size: 22px; font-weight: 700; line-height: 1.1; color: var(--color-abril-ink); }
+    .resumen-card__hint  { font-size: 11px; color: #9CA3AF; }
+    .resumen-card--ok    { border-left-color: var(--color-abril-standard); }
+    .resumen-card--ok    .resumen-card__value { color: var(--color-abril-standard); }
+    .resumen-card--warn  { border-left-color: var(--color-abril-warning); }
+    .resumen-card--warn  .resumen-card__value { color: var(--color-abril-warning-dark); }
+    .resumen-card--alert { border-left-color: var(--color-abril-danger); }
+    .resumen-card--alert .resumen-card__value { color: var(--color-abril-danger-dark); }
+
+    /* Va en blanco (y no tintada) porque el label flotante de app-search-select corta el borde
+       con un fondo blanco fijo: sobre un fondo de color se vería el recorte. */
+    .rendicion-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 14px 10px;
+      border: 1px solid var(--color-abril-standard-border);
+      border-left: 3px solid var(--color-abril-standard);
+      border-radius: var(--radius-md);
+      background: #FFFFFF;
+    }
+    .rendicion-bar__select { width: 200px; }
+    .rendicion-bar__estado { font-size: 12px; color: var(--color-abril-body); }
+    .rendicion-bar__estado strong { color: var(--color-abril-standard); }
+    .rendicion-bar__todas {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--color-abril-body);
+      cursor: pointer;
+      user-select: none;
+    }
+    .rendicion-bar__todas input { accent-color: var(--color-abril-standard); cursor: pointer; }
+    .rendicion-bar__todas input:disabled { cursor: not-allowed; }
+  `],
 })
 export class SolicitudSalidas implements OnInit {
   readonly tabs = GESTION_ADMINISTRATIVA_TABS;
@@ -78,6 +147,28 @@ export class SolicitudSalidas implements OnInit {
   /** Modal de filtros (mismo patrón que Gestión de Salidas). */
   filtrosAbiertos = false;
 
+  // ── Periodo de rendición ("Mes a rendir") ────────────────────────────
+  /** Meses ofrecidos por el desplegable, con su cantidad de aptas (los arma el backend). */
+  mesesRendicion: MesRendicionDto[] = [];
+
+  /** Opciones del `app-search-select` del periodo: la clave es "AAAA-MM". */
+  mesOptions: { key: string | null; label: string }[] = [];
+
+  /**
+   * Periodo elegido ("AAAA-MM") o null = apagado, que es como arranca. Al prenderlo la tabla
+   * muestra SOLO lo apto para rendir de ese mes.
+   */
+  mesRendirKey: string | null = null;
+
+  /**
+   * "Seleccionar todas las del mes": la selección deja de ser la lista de ids visibles y pasa a
+   * ser el periodo completo, que resuelve el servidor.
+   */
+  todoElMes = false;
+
+  /** Números de las tarjetas del encabezado. */
+  resumen: ResumenRendicionDto = { aptasParaRendir: 0, capturasIncompletas: 0, observadas: 0 };
+
   get filtrosActivos(): number {
     let n = 0;
     if (this.filters.lugarProyectoId != null)  n++;
@@ -121,9 +212,48 @@ export class SolicitudSalidas implements OnInit {
           { id: null, nombreDisplay: 'Todos los proyectos' },
           ...[...data.lugaresProyecto].sort((a, b) => a.nombreDisplay.localeCompare(b.nombreDisplay)),
         ];
+        this.aplicarPeriodos(data.mesesRendicion ?? [], data.resumen);
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  // ── Periodo de rendición ("Mes a rendir") ───────────────────────────────
+
+  /**
+   * Guarda los meses y las tarjetas que devolvió el backend. Si el periodo elegido ya no existe
+   * (se rindió todo ese mes) se apaga solo: dejarlo puesto mostraría una tabla vacía sin decir
+   * por qué.
+   */
+  private aplicarPeriodos(meses: MesRendicionDto[], resumen: ResumenRendicionDto | undefined): void {
+    this.mesesRendicion = meses;
+    this.mesOptions = [
+      { key: null, label: 'Sin filtrar por mes' },
+      ...meses.map((m) => ({ key: this.mesKey(m.anio, m.mes), label: m.label })),
+    ];
+    this.resumen = resumen ?? { aptasParaRendir: 0, capturasIncompletas: 0, observadas: 0 };
+
+    if (this.mesRendirKey && !meses.some((m) => this.mesKey(m.anio, m.mes) === this.mesRendirKey)) {
+      this.mesRendirKey = null;
+      this.todoElMes = false;
+    }
+    this.cdr.detectChanges();
+  }
+
+  private mesKey(anio: number, mes: number): string {
+    return `${anio}-${String(mes).padStart(2, '0')}`;
+  }
+
+  /** Periodo elegido, o null si el desplegable está apagado. */
+  get mesSeleccionado(): MesRendicionDto | null {
+    if (!this.mesRendirKey) return null;
+    return this.mesesRendicion.find((m) => this.mesKey(m.anio, m.mes) === this.mesRendirKey) ?? null;
+  }
+
+  /** Cambio del periodo: descarta la selección anterior, que era de otro conjunto de filas. */
+  onMesRendirChange(key: string | null): void {
+    this.mesRendirKey = key || null;
+    this.onSearch();
   }
 
   load(): void {
@@ -134,6 +264,8 @@ export class SolicitudSalidas implements OnInit {
       this.filters.lugarProyectoId,
       this.filters.estadoAprobacion,
       this.filters.estadoRendicion,
+      this.mesSeleccionado?.anio ?? null,
+      this.mesSeleccionado?.mes ?? null,
     ).subscribe({
       next: (data) => {
         this.solicitudes = data;
@@ -143,13 +275,25 @@ export class SolicitudSalidas implements OnInit {
     });
   }
 
+  /** Cualquier cambio de filtro suelta la selección del mes: ya no es el mismo conjunto. */
   onSearch(): void {
+    this.todoElMes = false;
     this.load();
+  }
+
+  /**
+   * Recarga la tabla y los números del encabezado. Se usa después de cada acción que mueve el
+   * estado (rendir, cancelar, adjuntar el S10): las tarjetas y el desplegable de mes salen de
+   * `filter-data`, así que sin esto seguirían mostrando el conteo de antes de la acción.
+   */
+  private recargar(): void {
+    this.load();
+    this.loadFilterData();
   }
 
   onSaved(): void {
     this.showModal = false;
-    this.load();
+    this.recargar();
   }
 
   abrirDetalle(s: SolicitudSalidaListItemDto): void {
@@ -162,11 +306,13 @@ export class SolicitudSalidas implements OnInit {
 
   // ── Selección de filas (estilo Outlook: click abre detalle, shift+click selecciona) ──
 
-  /** Solo se pueden rendir: Aprobadas + No rendidas + con TODOS los trayectos cubiertos. */
+  /**
+   * Solo se rinde lo apto: aprobada, no rendida, con TODOS los trayectos cubiertos y con un motivo
+   * marcado como reembolsable en Configuración → Motivos. Lo resuelve el backend en `aptaParaRendir`
+   * para que la pantalla, el desplegable de mes y las tarjetas no puedan discrepar.
+   */
   esSeleccionable(s: SolicitudSalidaListItemDto): boolean {
-    return s.estadoAprobacion === 'Aprobado'
-      && s.estadoRendicion === 'No rendido'
-      && s.puedeRendirse;
+    return s.aptaParaRendir;
   }
 
   /** Click sobre una fila: con Shift selecciona (o rango); sin Shift abre el detalle. */
@@ -186,29 +332,150 @@ export class SolicitudSalidas implements OnInit {
   onSelectClick(event: MouseEvent, index: number): void {
     event.stopPropagation();
 
+    // Volver a elegir fila por fila cancela "todas las del mes": son dos formas distintas de
+    // seleccionar y mantener las dos a la vez haría que el conteo mienta.
+    this.todoElMes = false;
+
+    const clickeada = this.solicitudes[index];
+
+    // Una planilla de rendición es de UN SOLO MES. Si la fila es de otro mes que el que ya está
+    // seleccionado, la selección arranca de cero con esta fila en vez de bloquear el clic.
+    if (this.mesDeSeleccion && this.mesDeFecha(clickeada.fechaSalida) !== this.mesDeSeleccion) {
+      this.selectedIds.clear();
+      this.selectedIds.add(clickeada.id);
+      this.lastClickedIndex = index;
+      return;
+    }
+
     if (event.shiftKey && this.lastClickedIndex !== null) {
       const [desde, hasta] = [this.lastClickedIndex, index].sort((a, b) => a - b);
-      for (let k = desde; k <= hasta; k++) this.selectedIds.add(this.solicitudes[k].id);
+      const mesAncla = this.mesDeFecha(this.solicitudes[this.lastClickedIndex].fechaSalida);
+      for (let k = desde; k <= hasta; k++) {
+        // El rango se recorta al mes del ancla: un Shift+clic que cruza meses no puede colar
+        // filas de otro periodo en la selección.
+        if (this.mesDeFecha(this.solicitudes[k].fechaSalida) === mesAncla) {
+          this.selectedIds.add(this.solicitudes[k].id);
+        }
+      }
       return; // el ancla se mantiene
     }
 
-    const id = this.solicitudes[index].id;
+    const id = clickeada.id;
     if (this.selectedIds.has(id)) this.selectedIds.delete(id);
     else                          this.selectedIds.add(id);
     this.lastClickedIndex = index;
   }
 
-  get allSelected(): boolean {
-    return this.solicitudes.length > 0 && this.solicitudes.every((s) => this.selectedIds.has(s.id));
+  /** "AAAA-MM" de una fecha de salida ("YYYY-MM-DD"), para comparar periodos sin parsear fechas. */
+  private mesDeFecha(fechaSalida: string): string {
+    return fechaSalida.substring(0, 7);
   }
 
+  /** Periodo ("AAAA-MM") al que pertenece la selección por filas, o null si no hay nada elegido. */
+  get mesDeSeleccion(): string | null {
+    const primera = this.solicitudes.find((s) => this.selectedIds.has(s.id));
+    return primera ? this.mesDeFecha(primera.fechaSalida) : null;
+  }
+
+  private filasDelMes(mes: string): SolicitudSalidaListItemDto[] {
+    return this.solicitudes.filter((s) => this.mesDeFecha(s.fechaSalida) === mes);
+  }
+
+  /**
+   * "Todo seleccionado" se mide contra el mes de la selección, no contra la tabla entera: la lista
+   * mezcla meses y una planilla es de uno solo, así que marcar la casilla de la cabecera nunca
+   * puede dejar una selección que el backend vaya a rechazar.
+   */
+  get allSelected(): boolean {
+    if (this.todoElMes) return this.solicitudes.length > 0;
+    const mes = this.mesDeSeleccion;
+    if (!mes) return false;
+    return this.filasDelMes(mes).every((s) => this.selectedIds.has(s.id));
+  }
+
+  /**
+   * Si la fila entra en la selección actual. Con "todas del mes" marcado entran todas las que la
+   * tabla está mostrando (el filtro ya dejó solo lo apto de ese periodo), aunque sus ids no estén
+   * en `selectedIds` — esa selección la resuelve el servidor.
+   */
+  filaSeleccionada(s: SolicitudSalidaListItemDto): boolean {
+    return this.todoElMes || this.selectedIds.has(s.id);
+  }
+
+  /**
+   * Casilla de la cabecera: selecciona (o suelta) las filas del mes ya seleccionado; sin selección
+   * previa toma el mes de la primera fila. Con el filtro de mes puesto la tabla es de un solo
+   * periodo y esto equivale a "seleccionar todo".
+   */
   toggleSelectAll(): void {
+    this.todoElMes = false;
     if (this.allSelected) {
       this.selectedIds.clear();
-    } else {
-      this.selectedIds = new Set(this.solicitudes.map((s) => s.id));
+      this.lastClickedIndex = null;
+      return;
     }
+
+    const mes = this.mesDeSeleccion
+      ?? (this.solicitudes.length ? this.mesDeFecha(this.solicitudes[0].fechaSalida) : null);
+    if (!mes) return;
+
+    this.selectedIds = new Set(this.filasDelMes(mes).map((s) => s.id));
     this.lastClickedIndex = null;
+  }
+
+  /**
+   * "Seleccionar todas las del mes": pasa de la selección por ids a una selección por periodo que
+   * ejecuta el servidor. Solo tiene sentido con un mes elegido, porque ahí la tabla ya muestra
+   * únicamente lo apto para rendir.
+   */
+  toggleTodoElMes(): void {
+    if (!this.mesRendirKey) return;
+    this.todoElMes = !this.todoElMes;
+    if (this.todoElMes) {
+      this.selectedIds.clear();
+      this.lastClickedIndex = null;
+    }
+  }
+
+  /** Cuántos registros abarca la selección actual, sea cual sea la forma en que se hizo. */
+  get seleccionadasCount(): number {
+    return this.todoElMes ? this.solicitudes.length : this.selectedIds.size;
+  }
+
+  /** Cuántos de los seleccionados se van a rendir realmente. */
+  get rendiblesCount(): number {
+    return this.todoElMes ? this.solicitudes.length : this.selectedRendibles.length;
+  }
+
+  /**
+   * Texto del indicador de selección de la barra de rendición. Nombra el periodo cuando la
+   * selección viene de filas sueltas: como una planilla es de un solo mes, saber cuál está en
+   * juego es parte de lo que el trabajador tiene que ver antes de rendir.
+   */
+  get seleccionResumen(): string {
+    if (this.todoElMes) {
+      const mes = this.mesSeleccionado?.label ?? 'el mes';
+      return `Seleccionadas todas las de ${mes}: ${this.solicitudes.length}`;
+    }
+    if (this.selectedIds.size === 0) return 'Sin solicitudes seleccionadas';
+
+    const n = this.selectedIds.size;
+    const listas = this.selectedRendibles.length;
+    const periodo = this.mesRendirKey ? '' : ` de ${this.etiquetaDeMes(this.mesDeSeleccion)}`;
+    const base = `${n} seleccionada${n === 1 ? '' : 's'}${periodo}`;
+    return listas === n ? base : `${base} · ${listas} lista${listas === 1 ? '' : 's'} para rendir`;
+  }
+
+  /** "AAAA-MM" → "Agosto 2026". Cae al nombre calculado si el mes no está en el catálogo. */
+  private etiquetaDeMes(clave: string | null): string {
+    if (!clave) return 'ese mes';
+    const mes = this.mesesRendicion.find((m) => this.mesKey(m.anio, m.mes) === clave);
+    if (mes) return mes.label;
+    const nombre = new Date(`${clave}-01T00:00:00`).toLocaleDateString('es-PE', {
+      month: 'long',
+      year: 'numeric',
+    });
+    return nombre.charAt(0).toUpperCase() + nombre.slice(1);
   }
 
   get selectedSolicitudes(): SolicitudSalidaListItemDto[] {
@@ -246,7 +513,7 @@ export class SolicitudSalidas implements OnInit {
       next: () => {
         this.loaderService.hide();
         Swal.fire({ title: `${items.length} solicitud(es) cancelada(s)`, icon: 'success', timer: 1500, showConfirmButton: false });
-        this.load();
+        this.recargar();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -256,7 +523,13 @@ export class SolicitudSalidas implements OnInit {
   }
 
   // ── Acción bulk: rendir + descargar planilla ─────────────────────────
+  /**
+   * Rinde lo seleccionado. Hay dos caminos según cómo se hizo la selección, y por eso es un solo
+   * botón y no dos: por ids cuando se eligieron filas, y por periodo cuando está marcado "todas
+   * las del mes", donde el conjunto lo resuelve el servidor.
+   */
   rendirBulk(): Promise<void> {
+    if (this.todoElMes) return this.rendirTodoElMes();
     return this.rendir(this.selectedRendibles.map((s) => s.id));
   }
 
@@ -292,26 +565,19 @@ export class SolicitudSalidas implements OnInit {
     });
   }
 
-  // ── Rendición del mes anterior ───────────────────────────────────────
-
-  /** Nombre del mes anterior al actual, para nombrar la acción sin ambigüedad. */
-  get mesAnteriorLabel(): string {
-    const hoy = new Date();
-    const mes = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
-    const nombre = mes.toLocaleDateString('es-PE', { month: 'long' });
-    return nombre.charAt(0).toUpperCase() + nombre.slice(1);
-  }
-
   /**
-   * Rinde de una vez todas las salidas propias del mes anterior que estén listas. El backend
-   * resuelve qué entra (aprobadas, no rendidas y con sus trayectos cubiertos) e ignora
-   * el resto, así que no depende de lo que esté cargado en la tabla.
+   * Rinde TODAS las salidas propias aptas del periodo elegido. El backend resuelve qué entra
+   * (aprobadas, no rendidas, con sus trayectos cubiertos y con motivo reembolsable) e ignora el
+   * resto, así que no depende de lo que esté cargado en la tabla.
    */
-  async rendirMesAnterior(): Promise<void> {
+  private async rendirTodoElMes(): Promise<void> {
+    const mes = this.mesSeleccionado;
+    if (!mes) return;
+
     const result = await Swal.fire({
       icon: 'question',
-      title: `¿Rendir tus salidas de ${this.mesAnteriorLabel}?`,
-      text: 'Solo entran las aprobadas que ya estén listas para rendir.',
+      title: `¿Rendir tus salidas de ${mes.label}?`,
+      text: 'Entran todas las salidas del mes que estén aptas para rendir.',
       showCancelButton: true,
       confirmButtonText: 'Sí, rendir',
       cancelButtonText: 'Cancelar',
@@ -320,7 +586,7 @@ export class SolicitudSalidas implements OnInit {
     if (!result.isConfirmed) return;
 
     this.loaderService.show();
-    this.service.rendirMesAnterior().subscribe({
+    this.service.rendirMes(mes.anio, mes.mes).subscribe({
       next: (response) => this.descargarPlanilla(response),
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -332,6 +598,10 @@ export class SolicitudSalidas implements OnInit {
 
   /** Descarga el PDF devuelto por una rendición y refresca la tabla. */
   private descargarPlanilla(response: HttpResponse<Blob>, countFallback = 0): void {
+    // Lo que se acaba de rendir ya no está pendiente: la selección del mes deja de tener sentido
+    // y quedaría marcada sobre un conjunto distinto al que el usuario aceptó.
+    this.todoElMes = false;
+
     const blob = response.body as Blob;
     const count = Number(response.headers.get('X-Rendidas-Count') ?? countFallback);
     const filename = this.extractFilename(response.headers.get('Content-Disposition'))
@@ -350,7 +620,7 @@ export class SolicitudSalidas implements OnInit {
       text: 'Se descargó la planilla de gasto por movilidad.',
       icon: 'success',
     });
-    this.load();
+    this.recargar();
   }
 
   // ── Consolidado del S10 (solo salidas rendidas) ──────────────────────
@@ -385,7 +655,7 @@ export class SolicitudSalidas implements OnInit {
   /** Cierra el modal; si se subió algo recarga para reflejarlo en toda la planilla. */
   cerrarConsolidado(subido: ConsolidadoS10Dto | null): void {
     this.consolidadoDe = null;
-    if (subido) this.load();
+    if (subido) this.recargar();
     else        this.cdr.detectChanges();
   }
 
@@ -412,7 +682,7 @@ export class SolicitudSalidas implements OnInit {
    */
   cerrarCapturas(recargar: boolean): void {
     this.capturasId = null;
-    if (recargar) this.load();
+    if (recargar) this.recargar();
   }
 
   aprobacionColors(estado: string): { bg: string; text: string } {
@@ -468,7 +738,7 @@ export class SolicitudSalidas implements OnInit {
       next: (res) => {
         this.loaderService.hide();
         Swal.fire({ icon: 'success', title: res.message, timer: 2000, showConfirmButton: false });
-        this.load();
+        this.recargar();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();

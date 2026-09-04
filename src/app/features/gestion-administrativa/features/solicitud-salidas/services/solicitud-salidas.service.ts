@@ -30,11 +30,16 @@ export class SolicitudSalidasService {
     lugarProyectoId: number | null = null,
     estadoAprobacion: string | null = null,
     estadoRendicion: string | null = null,
+    rendicionAnio: number | null = null,
+    rendicionMes: number | null = null,
   ): Observable<SolicitudSalidaListItemDto[]> {
     let params = new HttpParams();
     if (lugarProyectoId != null) params = params.set('lugarProyectoId', lugarProyectoId);
     if (estadoAprobacion)        params = params.set('estadoAprobacion', estadoAprobacion);
     if (estadoRendicion)         params = params.set('estadoRendicion', estadoRendicion);
+    if (rendicionAnio != null && rendicionMes != null) {
+      params = params.set('rendicionAnio', rendicionAnio).set('rendicionMes', rendicionMes);
+    }
     return this.http.get<SolicitudSalidaListItemDto[]>(this.apiUrl, { headers: this.headers, params });
   }
 
@@ -110,16 +115,21 @@ export class SolicitudSalidasService {
   }
 
   /**
-   * Rinde de una vez TODAS las solicitudes propias del mes anterior que estén listas (aprobadas,
-   * no rendidas y con las capturas de todos sus trayectos) y descarga la planilla. El conteo real
-   * viene en el header X-Rendidas-Count.
+   * Rinde de una vez TODAS las solicitudes propias del mes indicado (sin año/mes, el anterior) que
+   * estén aptas —aprobadas, no rendidas, con las capturas de todos sus trayectos y con motivo
+   * reembolsable— y descarga la planilla. Es lo que ejecuta "seleccionar todas las del mes": la
+   * selección vive en el servidor, no en los ids de la página. El conteo real viene en el header
+   * X-Rendidas-Count.
    */
-  rendirMesAnterior(): Observable<HttpResponse<Blob>> {
+  rendirMes(anio: number | null = null, mes: number | null = null): Observable<HttpResponse<Blob>> {
+    let params = new HttpParams();
+    if (anio != null && mes != null) params = params.set('anio', anio).set('mes', mes);
     return this.http.patch(
-      `${this.apiUrl}/rendir-mes-anterior`,
+      `${this.apiUrl}/rendir-mes`,
       {},
       {
         headers: this.headers,
+        params,
         responseType: 'blob',
         observe: 'response',
       },

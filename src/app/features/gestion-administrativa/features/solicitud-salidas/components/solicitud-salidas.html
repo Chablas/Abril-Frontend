@@ -10,33 +10,90 @@
 
 <div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden pb-[64px]">
 
-  <!-- ── Acción bulk sobre la selección (rendir) ──────────────────────────
-       Visible siempre (deshabilitada si no aplica), mismo lenguaje que Gestión de Salidas. -->
-  <div class="flex flex-wrap items-center gap-2">
-    <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">{{ selectedIds.size }} seleccionada{{ selectedIds.size === 1 ? '' : 's' }}</span>
+  <!-- ── Tarjetas de resumen ───────────────────────────────────────────────
+       Bandeja pendiente del trabajador: no dependen de los filtros de la tabla, por eso no
+       cambian al buscar. -->
+  <div class="resumen-cards">
+    <div class="resumen-card resumen-card--ok">
+      <span class="resumen-card__label">Aptas para rendir</span>
+      <span class="resumen-card__value">{{ resumen.aptasParaRendir }}</span>
+      <span class="resumen-card__hint">Con capturas y motivo reembolsable</span>
+    </div>
+    <div class="resumen-card resumen-card--warn">
+      <span class="resumen-card__label">Capturas incompletas</span>
+      <span class="resumen-card__value">{{ resumen.capturasIncompletas }}</span>
+      <span class="resumen-card__hint">Requeridas cuando hay monto</span>
+    </div>
+    <div class="resumen-card resumen-card--alert">
+      <span class="resumen-card__label">Observadas</span>
+      <span class="resumen-card__value">{{ resumen.observadas }}</span>
+      <span class="resumen-card__hint">Requieren subsanación</span>
+    </div>
+  </div>
+
+  <!-- ── Mes a rendir ──────────────────────────────────────────────────────
+       El desplegable no solo elige el periodo: FILTRA la tabla a lo apto para rendir de ese mes.
+       Arranca apagado. Con un mes puesto aparece "seleccionar todas las del mes", que cambia la
+       selección de "estos ids" a "el periodo entero", que resuelve el servidor. -->
+  <div class="rendicion-bar">
+    <app-search-select
+      class="rendicion-bar__select"
+      label="Mes a rendir"
+      placeholder="Selecciona el mes"
+      [options]="mesOptions"
+      valueField="key"
+      displayField="label"
+      [sortAlpha]="false"
+      [rawLabel]="true"
+      [value]="mesRendirKey"
+      (valueChange)="onMesRendirChange($event)" />
+
+    <span class="rendicion-bar__estado" *ngIf="mesSeleccionado; else sinMes">
+      <strong>{{ solicitudes.length }}</strong>
+      apta{{ solicitudes.length === 1 ? '' : 's' }} para rendir en {{ mesSeleccionado.label }}
+      · vence el {{ mesSeleccionado.fechaLimite + 'T00:00:00' | date:'dd/MM/yyyy' }}
+      · {{ seleccionResumen }}
+    </span>
+    <ng-template #sinMes>
+      <!-- Sin periodos abiertos el desplegable queda vacío: se dice por qué, en vez de dejar un
+           control que no ofrece nada. -->
+      <span class="rendicion-bar__estado" *ngIf="mesesRendicion.length === 0; else sinFiltroMes">
+        No hay periodos abiertos para rendir · {{ seleccionResumen }}
+      </span>
+      <ng-template #sinFiltroMes>
+        <span class="rendicion-bar__estado">Sin filtro de mes · {{ seleccionResumen }}</span>
+      </ng-template>
+    </ng-template>
+
+    <label class="rendicion-bar__todas"
+           [title]="mesSeleccionado
+             ? 'Rinde todas tus salidas aptas de ese mes'
+             : 'Elige un mes para habilitarlo'">
+      <input type="checkbox"
+             [checked]="todoElMes"
+             [disabled]="!mesSeleccionado || solicitudes.length === 0"
+             (change)="toggleTodoElMes()" />
+      Seleccionar todas del mes
+    </label>
 
     <button
       type="button"
       abrilBulkAction="primary"
+      class="ml-auto"
       (click)="rendirBulk()"
-      [disabled]="selectedRendibles.length === 0">
+      [disabled]="rendiblesCount === 0"
+      title="Rinde las solicitudes seleccionadas y descarga tu planilla de gasto por movilidad">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
       </svg>
-      Rendir<span *ngIf="selectedRendibles.length > 0"> ({{ selectedRendibles.length }})</span>
+      Rendir<span *ngIf="rendiblesCount > 0"> ({{ rendiblesCount }})</span>
     </button>
+  </div>
 
-    <button
-      type="button"
-      abrilBulkAction="default"
-      (click)="rendirMesAnterior()"
-      [title]="'Rinde de una vez todas tus salidas de ' + mesAnteriorLabel + ' que ya estén listas para rendir'">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="4" width="18" height="17" rx="2"/>
-        <path stroke-linecap="round" d="M8 2v4M16 2v4M3 10h18"/>
-      </svg>
-      Rendir {{ mesAnteriorLabel }}
-    </button>
+  <!-- ── Acción bulk sobre la selección ───────────────────────────────────
+       Visible siempre (deshabilitada si no aplica), mismo lenguaje que Gestión de Salidas. -->
+  <div class="flex flex-wrap items-center gap-2">
+    <span *ngIf="seleccionadasCount > 0" class="text-[11px] text-gray-500 mr-1">{{ seleccionadasCount }} seleccionada{{ seleccionadasCount === 1 ? '' : 's' }}</span>
 
     <button
       type="button"
@@ -92,14 +149,14 @@
           (click)="onRowClick($event, i)"
           title="Ver detalle (Shift+clic para seleccionar)"
           class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
-          [style.background]="selectedIds.has(s.id) ? '#EAF6FF' : null"
+          [style.background]="filaSeleccionada(s) ? '#EAF6FF' : null"
           style="border-color:var(--color-abril-border)">
 
           <!-- Selección (Shift+clic para rango). select-none evita que Shift resalte texto. -->
           <td class="select-none" (click)="onSelectClick($event, i)">
             <input
               type="checkbox"
-              [checked]="selectedIds.has(s.id)"
+              [checked]="filaSeleccionada(s)"
               class="cursor-pointer pointer-events-none"
               style="accent-color:var(--color-abril-accent)" />
           </td>
@@ -153,11 +210,38 @@
               [textColor]="aprobacionColors(s.estadoAprobacion).text" />
           </td>
           <td>
-            <app-status-badge
-              *ngIf="s.estadoAprobacion === 'Aprobado'; else sinRendicion"
-              [text]="s.estadoRendicion"
-              [bgColor]="rendicionColors(s.estadoRendicion).bg"
-              [textColor]="rendicionColors(s.estadoRendicion).text" />
+            <div *ngIf="s.estadoAprobacion === 'Aprobado'; else sinRendicion"
+                 class="inline-flex flex-col items-start gap-[2px]">
+              <app-status-badge
+                [text]="s.estadoRendicion"
+                [bgColor]="rendicionColors(s.estadoRendicion).bg"
+                [textColor]="rendicionColors(s.estadoRendicion).text" />
+
+              <!-- No rendida, con sus capturas, pero el motivo no es reembolsable: no genera gasto
+                   de movilidad, así que no hay nada que rendir. Se dice acá para que el botón
+                   "Rendir" no falte sin explicación. -->
+              <span
+                *ngIf="s.estadoRendicion === 'No rendido'
+                    && s.puedeRendirse
+                    && !s.esReembolsable
+                    && !s.plazoVencido"
+                title="No se rinde: el motivo de esta salida no está marcado como reembolsable"
+                class="text-[11px] text-gray-500 italic whitespace-nowrap">
+                No reembolsable
+              </span>
+
+              <!-- Plazo cerrado: pasó el 7.º día hábil del mes siguiente. Ya no se rinde, pero el
+                   detalle se sigue viendo con un clic en la fila. -->
+              <span
+                *ngIf="s.estadoRendicion === 'No rendido' && s.plazoVencido"
+                [title]="'El plazo para rendir esta salida venció el '
+                  + (s.plazoRendicionHasta + 'T00:00:00' | date:'dd/MM/yyyy')
+                  + ' (7.º día hábil del mes siguiente)'"
+                class="text-[11px] italic whitespace-nowrap"
+                style="color:var(--color-abril-danger-dark)">
+                Plazo vencido
+              </span>
+            </div>
             <ng-template #sinRendicion>
               <span class="text-gray-300">—</span>
             </ng-template>

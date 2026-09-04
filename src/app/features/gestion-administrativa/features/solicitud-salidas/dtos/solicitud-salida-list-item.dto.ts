@@ -21,6 +21,24 @@ export interface SolicitudSalidaListItemDto {
   createdAt: string;
   /** True si todos los trayectos tienen capturas (o catálogo TI) — habilita la rendición. */
   puedeRendirse: boolean;
+  /**
+   * True si al menos un trayecto lleva un motivo marcado como reembolsable en
+   * Configuración → Motivos. Sin eso la salida no genera gasto de movilidad y no hay qué rendir.
+   */
+  esReembolsable: boolean;
+  /**
+   * Último día para rendir esta salida (YYYY-MM-DD): el 7.º día hábil del mes siguiente al de su
+   * fecha de salida, sin sábados, domingos ni los feriados de Configuración → Feriados.
+   */
+  plazoRendicionHasta: string;
+  /** True si el plazo ya pasó: la salida ya no se rinde, pero su detalle se sigue viendo. */
+  plazoVencido: boolean;
+  /**
+   * True si la salida está lista para rendirse: aprobada, no rendida, con los trayectos cubiertos,
+   * con motivo reembolsable y dentro del plazo. Lo calcula el backend: es la misma condición que
+   * usan el desplegable "Mes a rendir" y las tarjetas del encabezado.
+   */
+  aptaParaRendir: boolean;
 
   // ── Consolidado del S10 (solo salidas rendidas) ──────────────────────
   /** URL del PDF Consolidado del S10 vigente, o null si aún no se adjuntó. */
