@@ -17,6 +17,7 @@ import { FilterTriggerButton } from '../../../../../shared/components/filter-tri
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { SearchInput } from '../../../../../shared/components/search-input/search-input';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { DatePicker } from '../../../../../shared/components/date-picker/date-picker';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
 import { NuevaObservacion } from '../../components/nueva-observacion/nueva-observacion';
 import { LevantarObservacion } from '../../components/levantar-observacion/levantar-observacion';
@@ -38,6 +39,7 @@ import { AC_OBSERVACIONES_TABS } from '../../../shared/arquitectura-comercial-ta
     FilterModal,
     SearchInput,
     SearchSelect,
+    DatePicker,
     AbrilBulkActionDirective,
     NuevaObservacion,
     LevantarObservacion,

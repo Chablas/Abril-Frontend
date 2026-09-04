@@ -424,16 +424,22 @@
   </div>
 
   <div class="w-full flex gap-[8px]">
-    <div class="flex-1 abril-field">
-      <input type="date" id="obsDesde" class="abril-field-input" placeholder=" "
-             [(ngModel)]="desde" (ngModelChange)="onFilterChange()" [attr.max]="hasta" />
-      <label for="obsDesde" class="abril-field-label">Desde</label>
-    </div>
-    <div class="flex-1 abril-field">
-      <input type="date" id="obsHasta" class="abril-field-input" placeholder=" "
-             [(ngModel)]="hasta" (ngModelChange)="onFilterChange()" [attr.min]="desde" />
-      <label for="obsHasta" class="abril-field-label">Hasta</label>
-    </div>
+    <app-date-picker
+      class="flex-1"
+      label="Desde"
+      [floatingLabel]="true"
+      [max]="hasta"
+      [value]="desde"
+      (valueChange)="desde = $event; onFilterChange()">
+    </app-date-picker>
+    <app-date-picker
+      class="flex-1"
+      label="Hasta"
+      [floatingLabel]="true"
+      [min]="desde"
+      [value]="hasta"
+      (valueChange)="hasta = $event; onFilterChange()">
+    </app-date-picker>
   </div>
 
   <div class="w-full flex gap-[8px]">
