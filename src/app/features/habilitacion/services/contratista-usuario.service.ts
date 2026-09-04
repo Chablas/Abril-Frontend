@@ -14,6 +14,8 @@ export interface ContratistaUsuarioDto {
   activo: boolean;
   proyectoIds: number[];
   modulos?: string;
+  workerId?: number | null;
+  esWorker?: boolean;
 }
 
 export interface WorkerBusquedaDto {
@@ -41,6 +43,9 @@ export interface ActualizarUsuarioDto {
   activo?: boolean;
   proyectoIds?: number[];
   modulos?: string;
+  /** Solo se envía cuando el usuario tocó el buscador de "vincular trabajador". */
+  workerId?: number | null;
+  vincularWorker?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })

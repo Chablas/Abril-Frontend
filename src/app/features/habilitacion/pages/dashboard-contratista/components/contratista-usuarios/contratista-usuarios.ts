@@ -304,6 +304,9 @@ export class ContratistaUsuarios implements OnInit, OnChanges {
 
   abrirModalEditar(u: ContratistaUsuarioDto): void {
     const proyectosHtml = this.buildProyectosHtml(u.proyectoIds ?? []);
+    (window as any)._workerVinculadoEdicion = u.esWorker && u.workerId
+      ? { id: u.workerId, nombre: u.nombreCompleto }
+      : null;
     Swal.fire({
       title: u.nombreCompleto || u.email,
       html: this.buildFormHtml({
@@ -314,6 +317,8 @@ export class ContratistaUsuarios implements OnInit, OnChanges {
         proyectosHtml,
         initialScope: u.scope,
         modulos: u.modulos,
+        showVincularWorker: true,
+        workerVinculadoNombre: u.esWorker ? (u.nombreCompleto || null) : null,
       }),
       showCancelButton: true,
       confirmButtonText: 'Guardar',
@@ -321,10 +326,14 @@ export class ContratistaUsuarios implements OnInit, OnChanges {
       confirmButtonColor: '#64bc04',
       focusConfirm: false,
       width: '420px',
-      didOpen: () => this.hookScopeToggle(),
+      didOpen: () => {
+        this.hookScopeToggle();
+        this.hookVincularWorkerSearch();
+      },
       preConfirm: () => this.preConfirmEditar(),
     }).then((result) => {
       if (!result.isConfirmed || !result.value) return;
+      (window as any)._workerVinculadoEdicion = null;
       this.usuarioService
         .actualizar(u.id, this.contractorId, result.value as ActualizarUsuarioDto)
         .subscribe({
@@ -335,6 +344,50 @@ export class ContratistaUsuarios implements OnInit, OnChanges {
           error: (err: HttpErrorResponse) => this.errorService.handleError(err),
         });
     });
+  }
+
+  /**
+   * Wire de la sección "Vincular trabajador" del modal de Editar. Reutiliza
+   * el mismo endpoint buscarWorkers que usa la invitación de "Trabajador en
+   * obra" (abrirModalWorker), pero acá el usuario ya existe: solo cambia (o
+   * agrega) el worker_id que faltaba.
+   */
+  private hookVincularWorkerSearch(): void {
+    const searchEl = document.getElementById('swal-vincular-search') as HTMLInputElement | null;
+    const resultsEl = document.getElementById('swal-vincular-results');
+    if (!searchEl || !resultsEl) return;
+
+    searchEl.addEventListener('input', async () => {
+      const q = searchEl.value.trim();
+      if (q.length < 2) { resultsEl.innerHTML = ''; return; }
+      const workers = await this.usuarioService.buscarWorkers(this.contractorId, q).toPromise();
+      resultsEl.innerHTML = (workers ?? []).map((w) => `
+        <div data-id="${w.id}" data-nombre="${w.nombreCompleto ?? ''}"
+          style="padding:8px;border:1px solid #e2e8f0;border-radius:6px;margin-bottom:4px;cursor:pointer;font-size:0.83rem;">
+          <strong>${w.nombreCompleto ?? '—'}</strong> · ${w.dni ?? ''}
+        </div>`).join('');
+
+      resultsEl.querySelectorAll('[data-id]').forEach((el) => {
+        el.addEventListener('click', () => {
+          const elem = el as HTMLElement;
+          const w = { id: parseInt(elem.dataset['id']!), nombre: elem.dataset['nombre'] };
+          (window as any)._workerVinculadoEdicion = w;
+          this.renderVinculadoActual(w);
+          resultsEl.innerHTML = '';
+          searchEl.value = '';
+        });
+      });
+    });
+  }
+
+  private renderVinculadoActual(w: { id: number; nombre?: string } | null): void {
+    const el = document.getElementById('swal-vinculado-actual');
+    if (!el) return;
+    el.innerHTML = w
+      ? `✓ Vinculado a <strong>${w.nombre}</strong>`
+      : `⚠ Sin vincular — no podrá usar OPT, Inspecciones ni el resto de herramientas de gestión SSOMA.`;
+    el.style.color = w ? '#166534' : '#b45309';
+    el.style.background = w ? '#f0fdf4' : '#fffbeb';
   }
 
   toggleActivar(u: ContratistaUsuarioDto): void {
@@ -413,6 +466,8 @@ export class ContratistaUsuarios implements OnInit, OnChanges {
     showTipoAcceso?: boolean;
     isClinica?: boolean;
     modulos?: string;
+    showVincularWorker?: boolean;
+    workerVinculadoNombre?: string | null;
   }): string {
     const emailField = opts.email
       ? `<div style="margin-bottom:14px;">
@@ -454,9 +509,26 @@ export class ContratistaUsuarios implements OnInit, OnChanges {
         </div>`
       : '';
 
+    const vincularWorkerField = opts.showVincularWorker
+      ? `<div style="margin-bottom:14px;">
+          <label style="${this.labelCss}">Ficha de trabajador</label>
+          <div id="swal-vinculado-actual" style="font-size:0.82rem;border-radius:8px;padding:8px 10px;margin-bottom:6px;
+            background:${opts.workerVinculadoNombre ? '#f0fdf4' : '#fffbeb'};
+            color:${opts.workerVinculadoNombre ? '#166534' : '#b45309'};">
+            ${opts.workerVinculadoNombre
+              ? `✓ Vinculado a <strong>${opts.workerVinculadoNombre}</strong>`
+              : '⚠ Sin vincular — no podrá usar OPT, Inspecciones ni el resto de herramientas de gestión SSOMA.'}
+          </div>
+          <input id="swal-vincular-search" type="text" placeholder="Buscar trabajador por DNI o apellido para vincular/cambiar..."
+            style="${this.inputCss}">
+          <div id="swal-vincular-results" style="margin-top:6px;max-height:160px;overflow-y:auto;"></div>
+        </div>`
+      : '';
+
     return `
       <div style="text-align:left;">
         ${emailField}
+        ${vincularWorkerField}
         <div style="margin-bottom:14px;">
           <label style="${this.labelCss}">Rol *</label>
           <select id="swal-rol" style="${this.inputCss}">${rolOpts}</select>
@@ -536,6 +608,16 @@ export class ContratistaUsuarios implements OnInit, OnChanges {
     const scope = (document.getElementById('swal-scope') as HTMLSelectElement).value;
     const proyectoIds = scope === 'POR_PROYECTO' ? this.getSelectedProyectoIds() : [];
     const modulos = (document.getElementById('swal-modulos') as HTMLSelectElement).value;
-    return { email, rolNombre, scope, proyectoIds, modulos };
+
+    // Solo se manda si el modal tenía la sección de vinculación (Editar la trae siempre) —
+    // el valor viaja tal cual está en window, sea el original (sin cambios) o el que el
+    // usuario acaba de seleccionar en el buscador.
+    const vinculado = document.getElementById('swal-vinculado-actual')
+      ? (window as any)._workerVinculadoEdicion
+      : undefined;
+    const vincularWorker = vinculado !== undefined;
+    const workerId = vinculado ? vinculado.id : null;
+
+    return { email, rolNombre, scope, proyectoIds, modulos, vincularWorker, workerId };
   }
 }

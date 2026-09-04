@@ -60,7 +60,13 @@
       </thead>
       <tbody>
         <tr *ngFor="let u of usuarios" class="cu-row">
-          <td class="cu-td-name">{{ u.nombreCompleto || '—' }}</td>
+          <td class="cu-td-name">
+            {{ u.nombreCompleto || '—' }}
+            <span *ngIf="!u.esWorker" class="cu-worker-warning"
+              title="No tiene una ficha de trabajador vinculada: no podrá usar OPT, Inspecciones ni el resto de herramientas de gestión SSOMA que dependen de su ficha. Usa &quot;Editar&quot; para vincularlo.">
+              ⚠ Sin vincular
+            </span>
+          </td>
           <td class="cu-td-email">{{ u.email }}</td>
           <td>
             <span class="cu-rol-badge" [class.cu-rol-badge--owner]="u.rolNombre === 'OWNER'"
