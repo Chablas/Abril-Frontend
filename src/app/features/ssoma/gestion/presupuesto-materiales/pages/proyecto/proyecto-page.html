@@ -2,284 +2,97 @@
   <app-abril-page-header
     badge="SSOMA · Materiales"
     [titulo]="proyectNombre"
-    subtitulo="Versiones de presupuesto de materiales"
+    subtitulo="Presupuesto, cronograma, dotación y cálculos técnicos de este proyecto"
     [tabs]="headerTabs"
-    [botonPrimario]="{ label: 'Generar presupuesto', icono: 'ti-plus' }"
     [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
-    (primaryClick)="mostrarFormGenerar = !mostrarFormGenerar; cdr.markForCheck()"
     (secondaryClick)="volver()">
+
+    <div tabsExtra class="w-[240px]">
+      <app-search-select
+        [options]="proyectos"
+        valueField="projectId"
+        displayField="projectDescription"
+        [value]="projectId"
+        [showLabel]="false"
+        placeholder="Cambiar de proyecto..."
+        (valueChange)="cambiarProyecto($event)">
+      </app-search-select>
+    </div>
   </app-abril-page-header>
 
-  <!-- Cronograma de hitos del proyecto: tabla simple, misma data que /mejora-continua/milestone-schedule -->
-  <div class="page-body" style="padding-bottom: 0;">
-    <div class="hitos-card">
-      <div class="hitos-card-header">
-        <h3 class="form-titulo" style="margin:0;">Cronograma de hitos</h3>
-        <div style="display:flex; gap:0.5rem;">
-          <button class="btn-outline btn-sm" (click)="irACronograma()" title="Ver cronograma completo en Gantt, con orden y dependencias">
-            <i class="ti ti-chart-gantt"></i> Ver Gantt
-          </button>
-          <button class="btn-primary" (click)="asignarHitos()" [disabled]="asignandoHitos || hitosCriticos.length === 0">
-            <i class="ti ti-arrows-shuffle"></i>
-            {{ asignandoHitos ? 'Asignando...' : 'Asignar hitos al consumo' }}
-          </button>
-        </div>
-      </div>
-      <p class="form-desc" style="margin-top:0;">
-        Marca "crítico" los hitos que cortan una etapa constructiva — esos reparten el consumo de
-        materiales y la dotación de personal por fase. Los cambios aquí se guardan en el mismo
-        cronograma que /mejora-continua/milestone-schedule.
-      </p>
+  <!-- Datos Base: siempre visible arriba, nunca escondido detrás de un lápiz. Una sola fila,
+       sin card/título propios, para no restarle alto a la galería de sub-tabs de abajo. -->
+  <div class="datos-base-row" *ngIf="driverProyecto as d">
+    <span class="datos-base-row__titulo"><i class="ti ti-settings"></i> Datos base</span>
+    <span class="datos-base-row__divider"></span>
 
-      <div *ngIf="loadingSchedule" class="loading-msg">Cargando cronograma...</div>
-
-      <div *ngIf="errorSchedule" class="empty-cell" style="color:#dc2626; background:#fef2f2; border-radius:6px; padding:0.75rem;">
-        {{ errorSchedule }}
-      </div>
-
-      <div *ngIf="!loadingSchedule && !errorSchedule" class="schedule-tabla">
-        <div class="schedule-tabla__header">
-          <div>Hito</div>
-          <div>Inicio</div>
-          <div>Fin</div>
-          <div>Crítico</div>
-          <div></div>
-        </div>
-        <div *ngFor="let h of hitosSchedule; let i = index" class="schedule-tabla__row">
-          <div class="schedule-tabla__nombre">{{ h.text }}</div>
-          <div><input type="date" [(ngModel)]="h.plannedStartDate" /></div>
-          <div><input type="date" [(ngModel)]="h.plannedEndDate" /></div>
-          <div class="schedule-tabla__critico"><input type="checkbox" [(ngModel)]="h.esHitoCritico" /></div>
-          <div>
-            <button class="btn-icon-danger" (click)="quitarHitoSchedule(i)" title="Quitar">
-              <i class="ti ti-trash"></i>
-            </button>
-          </div>
-        </div>
-        <div *ngIf="hitosSchedule.length === 0" class="empty-cell">
-          No hay hitos en el catálogo todavía.
-        </div>
-      </div>
-
-      <div class="schedule-agregar">
-        <input type="text" [(ngModel)]="nuevoHitoTexto" placeholder="Agregar un hito que no está en el catálogo..." class="schedule-input-texto" />
-        <button class="btn-outline btn-sm" (click)="agregarHitoPersonalizado()" [disabled]="!nuevoHitoTexto.trim()">
-          <i class="ti ti-plus"></i> Agregar
-        </button>
-      </div>
-
-      <div class="form-actions" style="margin-top: 0.75rem;">
-        <button class="btn-primary" (click)="guardarSchedule()" [disabled]="guardandoSchedule">
-          <i class="ti ti-device-floppy"></i>
-          {{ guardandoSchedule ? 'Guardando...' : 'Guardar cronograma' }}
-        </button>
-      </div>
-
-      <!-- Dotación de personal por hito, aquí mismo -->
-      <div *ngIf="!loadingHitos && hitosCriticos.length > 0" class="personal-section">
-        <h3 class="form-titulo personal-section-titulo">Dotación de personal por hito</h3>
-        <div *ngIf="personalLoading" class="loading-msg">Cargando dotación...</div>
-
-        <div *ngIf="!personalLoading" class="personal-grid">
-          <div class="personal-hito-block" *ngFor="let grupo of personalPorHito">
-            <div class="personal-hito-titulo">
-              {{ grupo.hitoDescripcion }}
-              <span class="hito-fecha" *ngIf="grupo.hitoFecha">{{ grupo.hitoFecha | date:'dd/MM/yyyy' }}</span>
-            </div>
-            <table class="abril-table personal-tabla">
-              <thead>
-                <tr>
-                  <th>Rol</th>
-                  <th>Cant.</th>
-                  <th>Sem.</th>
-                  <th>S/ mes</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let fila of grupo.filas">
-                  <td class="personal-rol">{{ fila.rol }}</td>
-                  <td><input type="number" min="0" [(ngModel)]="fila.cantidad" (change)="recalcularTotalPersonal(fila)" /></td>
-                  <td><input type="number" min="0" step="0.5" [(ngModel)]="fila.semanas" (change)="recalcularTotalPersonal(fila)" /></td>
-                  <td><input type="number" min="0" step="50" [(ngModel)]="fila.costoMensual" (change)="recalcularTotalPersonal(fila)" /></td>
-                  <td class="personal-total-cell">{{ fila.total | number:'1.2-2' }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div *ngIf="!personalLoading" class="personal-footer">
-          <span>Total general: S/ {{ personalTotalGeneral | number:'1.2-2' }}</span>
-          <button class="btn-primary" (click)="guardarPersonal()" [disabled]="personalGuardando">
-            <i class="ti ti-device-floppy"></i>
-            {{ personalGuardando ? 'Guardando...' : 'Guardar dotación' }}
-          </button>
-        </div>
-      </div>
+    <div class="datos-base-row__fields">
+      <label>Área techada (m²)
+        <input type="number" [(ngModel)]="d.areaTechadaM2" min="0" step="0.01" (ngModelChange)="marcarSucioDriver()" />
+      </label>
+      <label>HH total
+        <input type="number" [(ngModel)]="d.hhTotalCasa" min="0" step="0.01" (ngModelChange)="marcarSucioDriver()" />
+      </label>
+      <label>Trabajadores
+        <input type="number" [(ngModel)]="d.trabajadores" min="0" (ngModelChange)="marcarSucioDriver()" />
+      </label>
+      <label>Fuente HH
+        <app-search-select
+          [options]="hhFuenteOpts"
+          valueField="id"
+          displayField="label"
+          [value]="d.hhFuente"
+          [compact]="true"
+          [showLabel]="false"
+          [allowClear]="false"
+          [sortAlpha]="false"
+          placeholder="Selecciona fuente"
+          (valueChange)="d.hhFuente = $event; marcarSucioDriver()">
+        </app-search-select>
+      </label>
     </div>
+
+    <span class="datos-base-row__divider"></span>
+
+    <div class="datos-base-row__acciones">
+      <button
+        type="button"
+        class="btn-outline btn-sm"
+        title="Calcular HH y Trabajadores con el ratio recomendado (mediana histórica) × Área Techada"
+        [disabled]="!puedeCalcularPorMedianaDriver"
+        (click)="calcularPorMedianaDriver()">
+        <i class="ti ti-calculator"></i> Por mediana
+      </button>
+      <label class="check-label">
+        <input type="checkbox" [(ngModel)]="d._recalcularRatios" />
+        Recalcular ratios
+      </label>
+      <button class="btn-primary btn-sm" [disabled]="!d._dirty || d._guardando" (click)="guardarDriver()">
+        <i class="ti" [ngClass]="d._guardando ? 'ti-loader-2 spin' : 'ti-device-floppy'"></i>
+        {{ d._guardando ? 'Guardando...' : 'Guardar' }}
+      </button>
+    </div>
+
+    <span class="datos-base-row__familias">{{ d.familiasConRatio }} familias con ratio</span>
   </div>
 
-  <!-- Ratios calculados del proyecto -->
-  <div class="page-body" style="padding-bottom: 0;">
-    <div class="hitos-card">
-      <div class="hitos-card-header">
-        <h3 class="form-titulo" style="margin:0;">Ratios calculados del proyecto</h3>
-        <div style="display:flex; gap:8px;">
-          <button class="btn-outline btn-sm" [disabled]="calculandoRatios" (click)="calcularRatios()"
-            title="Calcula el consumo por família de este proyecto contra su propia Área Techada/HH/Trabajadores.">
-            <i class="ti" [ngClass]="calculandoRatios ? 'ti-loader-2 spin' : 'ti-calculator'"></i>
-            {{ calculandoRatios ? 'Calculando...' : (ratios.length > 0 ? 'Recalcular ratios' : 'Calcular ratios') }}
-          </button>
-          <button class="btn-outline btn-sm" (click)="toggleRatios()">
-            <i class="ti" [ngClass]="mostrarRatios ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
-            {{ mostrarRatios ? 'Ocultar' : 'Ver ratios' }} ({{ ratios.length }})
-          </button>
-        </div>
-      </div>
+  <nav class="proyecto-subtabs">
+    <button *ngFor="let t of subTabs" type="button"
+      class="proyecto-subtab"
+      [class.proyecto-subtab--active]="activeSubTab === t.id"
+      (click)="cambiarSubTab(t.id)">
+      <i class="ti" [ngClass]="t.icon"></i>
+      {{ t.label }}
+    </button>
+  </nav>
 
-      <div *ngIf="mostrarRatios">
-        <div *ngIf="loadingRatios" class="loading-msg">Cargando ratios...</div>
-        <div *ngIf="!loadingRatios && ratios.length === 0" class="empty-state" style="padding: 1rem;">
-          <p>Este proyecto todavía no tiene ratios calculados. Dale al botón "Calcular ratios" de arriba (necesita que Área Techada/HH/Trabajadores estén configurados en "Datos Base", y que el Kardex ya esté estandarizado).</p>
-        </div>
-        <div *ngIf="!loadingRatios && ratios.length > 0" class="ratios-tabla">
-          <div class="ratios-tabla__header">
-            <div>Familia</div>
-            <div>Tipo</div>
-            <div>Ratio</div>
-            <div>Precio unit.</div>
-            <div>Cant. total</div>
-          </div>
-          <div
-            *ngFor="let r of ratios"
-            class="ratios-tabla__row"
-            [class.ratios-tabla__row--outlier]="r.esOutlier"
-          >
-            <div class="ratios-tabla__familia">
-              {{ r.nombreFamilia }}
-              <span *ngIf="r.esOutlier" class="badge badge-warn" title="Outlier respecto a otros proyectos">outlier</span>
-            </div>
-            <div>{{ r.tipoMaterial }}</div>
-            <div>{{ r.ratioCantidad | number:'1.2-6' }}</div>
-            <div>S/ {{ r.precioUnitarioPromedio | number:'1.2-2' }}</div>
-            <div>{{ r.cantidadTotal | number:'1.0-2' }}</div>
-          </div>
-        </div>
-      </div>
+  <!-- ═══════════════════ PRESUPUESTO ═══════════════════ -->
+  <div class="page-body" *ngIf="activeSubTab === 'presupuesto'">
+    <div class="subtab-toolbar">
+      <button class="btn-primary" (click)="mostrarFormGenerar = !mostrarFormGenerar; cdr.markForCheck()">
+        <i class="ti ti-plus"></i> Generar presupuesto
+      </button>
     </div>
-  </div>
-
-  <!-- Kits / BOM (Botiquín, Estación de Emergencia) -->
-  <div class="page-body" style="padding-bottom: 0;">
-    <div class="hitos-card">
-      <div class="hitos-card-header">
-        <h3 class="form-titulo" style="margin:0;">Kits / BOM (Botiquín, Estación de Emergencia)</h3>
-        <button class="btn-outline btn-sm" (click)="toggleKits()">
-          <i class="ti" [ngClass]="mostrarKits ? 'ti-chevron-up' : 'ti-chevron-down'"></i>
-          {{ mostrarKits ? 'Ocultar' : 'Calcular kit' }}
-        </button>
-      </div>
-
-      <div *ngIf="mostrarKits">
-        <div class="form-row">
-          <label>Kit
-            <app-search-select
-              [options]="kitsOpts"
-              valueField="id"
-              displayField="_label"
-              [value]="kitSeleccionadoId"
-              [compact]="true"
-              [showLabel]="false"
-              placeholder="Selecciona kit"
-              (valueChange)="kitSeleccionadoId = $event; onSeleccionarKit()">
-            </app-search-select>
-          </label>
-
-          <label *ngIf="kitDetalle">Cantidad de kits
-            <input type="number" min="1" [(ngModel)]="cantidadKits" placeholder="Ej. 3" />
-          </label>
-
-          <button *ngIf="kitDetalle" class="btn-primary" (click)="calcularKit()" [disabled]="!cantidadKits || cantidadKits <= 0">
-            <i class="ti ti-calculator"></i> Calcular
-          </button>
-        </div>
-
-        <div *ngIf="kitDetalle && resultadoKit.length === 0" class="bom-card">
-          <h3 class="bom-titulo">Receta de "{{ kitDetalle.nombre }}" (por 1 kit)</h3>
-          <table class="abril-table tabla-bom">
-            <thead>
-              <tr><th>Material</th><th>Cantidad por kit</th><th>Tipo</th></tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of kitDetalle.items">
-                <td>{{ item.nombreFamilia }}</td>
-                <td>{{ item.cantidadPorKit }}</td>
-                <td>
-                  <span class="badge" [ngClass]="item.esConsumible ? 'badge-consumible' : 'badge-durable'">
-                    {{ item.esConsumible ? 'Consumible' : 'Equipo durable' }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div *ngIf="resultadoKit.length > 0" class="resultado-grid">
-          <div class="resultado-col">
-            <h3 class="resultado-titulo">Equipo durable — se compra 1 sola vez</h3>
-            <table class="abril-table tabla-bom">
-              <thead><tr><th>Material</th><th>Cantidad inicial</th></tr></thead>
-              <tbody>
-                <tr *ngFor="let l of kitDurables">
-                  <td>{{ l.nombreFamilia }}</td>
-                  <td class="total-cell">{{ l.cantidadTotal | number:'1.0-2' }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div class="resultado-col">
-            <h3 class="resultado-titulo">Consumibles — cantidad inicial (más reposición aparte)</h3>
-            <table class="abril-table tabla-bom">
-              <thead><tr><th>Material</th><th>Cantidad inicial</th></tr></thead>
-              <tbody>
-                <tr *ngFor="let l of kitConsumibles">
-                  <td>{{ l.nombreFamilia }}</td>
-                  <td class="total-cell">{{ l.cantidadTotal | number:'1.0-2' }}</td>
-                </tr>
-              </tbody>
-            </table>
-            <p class="nota-reposicion">
-              <i class="ti ti-info-circle"></i>
-              Estos consumibles además deben reponerse periódicamente durante la obra — ese ratio de
-              reposición (por HH o trabajadores) se calcula aparte, igual que con los EPP.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Cálculo técnico por metrado — pendiente de diseñar, se listan acá para no perderlas de vista -->
-  <div class="page-body" style="padding-bottom: 0;">
-    <div class="hitos-card">
-      <div class="hitos-card-header">
-        <h3 class="form-titulo" style="margin:0;">Cálculo técnico (pendiente)</h3>
-      </div>
-      <div class="empty-state" style="padding: 1rem;">
-        <p>
-          Estas familias necesitan una calculadora propia por metrado/ingeniería (no ratio por HH/Área,
-          no Kit×BOM) — todavía no está diseñada. Por ahora se calculan y cargan manualmente en el
-          presupuesto:
-        </p>
-        <ul style="margin: 0.5rem 0 0 1.25rem;">
-          <li *ngFor="let f of familiasCalculoTecnico">{{ f }}</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
-  <div class="page-body">
 
     <!-- Formulario generar -->
     <div *ngIf="mostrarFormGenerar" class="form-generar">
@@ -365,6 +178,530 @@
           </button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ CRONOGRAMA ═══════════════════ -->
+  <div class="page-body" *ngIf="activeSubTab === 'cronograma'" style="padding-bottom: 0;">
+    <div class="hitos-card">
+      <div class="hitos-card-header">
+        <h3 class="form-titulo" style="margin:0;">Cronograma de hitos</h3>
+        <div style="display:flex; gap:0.5rem;">
+          <button class="btn-outline btn-sm" (click)="irACronograma()" title="Ver cronograma completo en Gantt, con orden y dependencias">
+            <i class="ti ti-chart-gantt"></i> Ver Gantt
+          </button>
+          <button class="btn-primary" (click)="asignarHitos()" [disabled]="asignandoHitos || hitosCriticos.length === 0">
+            <i class="ti ti-arrows-shuffle"></i>
+            {{ asignandoHitos ? 'Asignando...' : 'Asignar hitos al consumo' }}
+          </button>
+        </div>
+      </div>
+      <p class="form-desc" style="margin-top:0;">
+        Marca "crítico" los hitos que cortan una etapa constructiva — esos reparten el consumo de
+        materiales y la dotación de personal por fase. Los cambios aquí se guardan en el mismo
+        cronograma que /mejora-continua/milestone-schedule.
+      </p>
+
+      <div *ngIf="loadingSchedule" class="loading-msg">Cargando cronograma...</div>
+
+      <div *ngIf="errorSchedule" class="empty-cell" style="color:#dc2626; background:#fef2f2; border-radius:6px; padding:0.75rem;">
+        {{ errorSchedule }}
+      </div>
+
+      <div *ngIf="!loadingSchedule && !errorSchedule" class="schedule-tabla">
+        <div class="schedule-tabla__header">
+          <div>Hito</div>
+          <div>Inicio</div>
+          <div>Fin</div>
+          <div>Crítico</div>
+          <div></div>
+        </div>
+        <div *ngFor="let h of hitosSchedule; let i = index" class="schedule-tabla__row">
+          <div class="schedule-tabla__nombre">{{ h.text }}</div>
+          <div><input type="date" [(ngModel)]="h.plannedStartDate" /></div>
+          <div><input type="date" [(ngModel)]="h.plannedEndDate" /></div>
+          <div class="schedule-tabla__critico"><input type="checkbox" [(ngModel)]="h.esHitoCritico" /></div>
+          <div>
+            <button class="btn-icon-danger" (click)="quitarHitoSchedule(i)" title="Quitar">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div *ngIf="hitosSchedule.length === 0" class="empty-cell">
+          No hay hitos en el catálogo todavía.
+        </div>
+      </div>
+
+      <div class="schedule-agregar">
+        <input type="text" [(ngModel)]="nuevoHitoTexto" placeholder="Agregar un hito que no está en el catálogo..." class="schedule-input-texto" />
+        <button class="btn-outline btn-sm" (click)="agregarHitoPersonalizado()" [disabled]="!nuevoHitoTexto.trim()">
+          <i class="ti ti-plus"></i> Agregar
+        </button>
+      </div>
+
+      <div class="form-actions" style="margin-top: 0.75rem;">
+        <button class="btn-primary" (click)="guardarSchedule()" [disabled]="guardandoSchedule">
+          <i class="ti ti-device-floppy"></i>
+          {{ guardandoSchedule ? 'Guardando...' : 'Guardar cronograma' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PERSONAL ═══════════════════ -->
+  <div class="page-body" *ngIf="activeSubTab === 'personal'" style="padding-bottom: 0;">
+    <div class="hitos-card">
+      <h3 class="form-titulo" style="margin:0 0 0.5rem;">Dotación de personal por hito</h3>
+      <p class="form-desc" style="margin-top:0;" *ngIf="hitosCriticos.length === 0 && !loadingHitos">
+        Marca al menos un hito como "crítico" en Cronograma para poder asignarle personal.
+      </p>
+      <div *ngIf="personalLoading" class="loading-msg">Cargando dotación...</div>
+
+      <div *ngIf="!personalLoading && personalPorHito.length > 0">
+        <div class="personal-tarifas-row">
+          <label>S/ semana Oficial
+            <input type="number" min="0" step="50" [ngModel]="costoOficial" (ngModelChange)="actualizarTarifa('OFICIAL', $event)" />
+          </label>
+          <button type="button" class="btn-outline btn-sm personal-tarifa-reset"
+            *ngIf="tarifaOficialSugerida != null && costoOficial !== tarifaOficialSugerida"
+            title="Volver al valor calculado automáticamente ({{ tarifaOficialSugerida | number:'1.2-2' }})"
+            (click)="restablecerTarifaSugerida('OFICIAL')">
+            <i class="ti ti-refresh"></i>
+          </button>
+          <label>S/ semana Peón
+            <input type="number" min="0" step="50" [ngModel]="costoPeon" (ngModelChange)="actualizarTarifa('PEON', $event)" />
+          </label>
+          <button type="button" class="btn-outline btn-sm personal-tarifa-reset"
+            *ngIf="tarifaPeonSugerida != null && costoPeon !== tarifaPeonSugerida"
+            title="Volver al valor calculado automáticamente ({{ tarifaPeonSugerida | number:'1.2-2' }})"
+            (click)="restablecerTarifaSugerida('PEON')">
+            <i class="ti ti-refresh"></i>
+          </button>
+          <span class="personal-tarifas-nota">La tarifa es semanal (no mensual) y se calcula sola desde la planilla real de otros proyectos; se puede editar a mano y el cambio se guarda. Usa <i class="ti ti-refresh"></i> para volver al valor calculado. El Prevencionista no suma al presupuesto: es solo el recordatorio de en qué etapa debe ingresar a la obra.</span>
+        </div>
+
+        <div class="personal-tabla-scroll">
+          <table class="abril-table personal-tabla-matriz personal-tabla-matriz--roles">
+            <thead>
+              <tr>
+                <th rowspan="2">Etapa</th>
+                <th rowspan="2">Etapa de salida</th>
+                <th rowspan="2">Sem.</th>
+                <th *ngFor="let grupo of gruposRolPersonal" [attr.colspan]="grupo.cols.length" class="personal-grupo-th">{{ grupo.rolBase }}</th>
+                <th rowspan="2">Total</th>
+              </tr>
+              <tr>
+                <ng-container *ngFor="let grupo of gruposRolPersonal">
+                  <th *ngFor="let cfg of grupo.cols" class="personal-sub-th" [class.personal-grupo-inicio]="cfg.esInicioGrupo">{{ cfg.label }}</th>
+                </ng-container>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let grupo of personalPorHito">
+                <td class="personal-rol">
+                  {{ grupo.hitoDescripcion }}
+                  <span class="hito-fecha" *ngIf="grupo.hitoFecha">{{ grupo.hitoFecha | date:'dd/MM/yyyy' }}</span>
+                </td>
+                <td>
+                  <select [ngModel]="etapaSalidaHito(grupo.hitoId)" (ngModelChange)="actualizarEtapaSalidaHito(grupo.hitoId, $event)">
+                    <option [ngValue]="null">Manual (tipear semanas)</option>
+                    <option *ngFor="let e of etapasSalidaOpts" [ngValue]="e.hitoId">{{ e.hitoDescripcion }}</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="number" min="0" step="0.5"
+                    [ngModel]="semanasHito(grupo.hitoId)" (ngModelChange)="actualizarSemanasHito(grupo.hitoId, $event)"
+                    [disabled]="!!etapaSalidaHito(grupo.hitoId)"
+                    [title]="etapaSalidaHito(grupo.hitoId) ? 'Calculado desde las fechas del cronograma' : ''" />
+                </td>
+                <ng-container *ngFor="let cfg of rolesPersonalConfig">
+                  <td class="personal-celda-rol" [class.personal-grupo-inicio]="cfg.esInicioGrupo">
+                    <input type="number" min="0"
+                      [ngModel]="cantidadCelda(grupo.hitoId, cfg.rolKey)" (ngModelChange)="actualizarCantidadCelda(grupo.hitoId, cfg.rolKey, $event)" />
+                  </td>
+                </ng-container>
+                <td class="personal-total-cell">{{ totalHito(grupo.hitoId) | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div *ngIf="!personalLoading && personalFilas.length > 0" class="personal-footer">
+        <span>Total general: S/ {{ personalTotalGeneral | number:'1.2-2' }}</span>
+        <button class="btn-primary" (click)="guardarPersonal()" [disabled]="personalGuardando">
+          <i class="ti ti-device-floppy"></i>
+          {{ personalGuardando ? 'Guardando...' : 'Guardar dotación' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ VIGILANCIA ═══════════════════ -->
+  <div class="page-body" *ngIf="activeSubTab === 'vigilancia'" style="padding-bottom: 0;">
+    <div class="hitos-card">
+      <h3 class="form-titulo" style="margin:0 0 0.5rem;">Vigilancia (servicio externo por punto/turno)</h3>
+      <p class="form-desc" style="margin-top:0;" *ngIf="hitosCriticos.length === 0 && !loadingHitos">
+        Marca al menos un hito como "crítico" en Cronograma para poder planificar vigilancia.
+      </p>
+      <p class="form-desc" style="color:#6b7280; margin: -0.25rem 0 0.75rem 0;" *ngIf="hitosCriticos.length > 0">
+        Precio unitario vigente: S/ {{ precioVigilanciaActual | number:'1.2-2' }} por punto/turno
+        (valor real confirmado — el Kardex de Vigilancia todavía no tiene la cantidad de turnos por
+        línea corregida, así que no se usa el promedio de Ratios hasta que se estandarice).
+      </p>
+      <div *ngIf="vigilanciaLoading" class="loading-msg">Cargando vigilancia...</div>
+
+      <div *ngIf="!vigilanciaLoading && vigilanciaFilas.length > 0" class="personal-tabla-scroll">
+        <table class="abril-table personal-tabla-matriz">
+          <thead>
+            <tr>
+              <th>Etapa de ingreso</th>
+              <th>Puntos</th>
+              <th>Etapa de salida</th>
+              <th>Sem.</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let fila of vigilanciaFilas">
+              <td class="personal-rol">{{ fila.hitoDescripcion }}</td>
+              <td><input type="number" min="0" [(ngModel)]="fila.cantidadPuntos" (change)="recalcularTotalVigilancia(fila)" /></td>
+              <td>
+                <select [(ngModel)]="fila.hitoSalidaId" (change)="onEtapaSalidaVigilanciaChange(fila)">
+                  <option [ngValue]="null">Manual (tipear semanas)</option>
+                  <option *ngFor="let e of hitosCriticos" [ngValue]="e.hitoId">{{ e.hitoDescripcion }}</option>
+                </select>
+              </td>
+              <td>
+                <input type="number" min="0" step="0.5" [(ngModel)]="fila.semanas"
+                  [disabled]="!!fila.hitoSalidaId" (change)="recalcularTotalVigilancia(fila)"
+                  [title]="fila.hitoSalidaId ? 'Calculado desde las fechas del cronograma' : ''" />
+              </td>
+              <td class="personal-total-cell">{{ fila.total | number:'1.2-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!vigilanciaLoading && vigilanciaFilas.length > 0" class="personal-footer">
+        <span>Total general: S/ {{ vigilanciaTotalGeneral | number:'1.2-2' }}</span>
+        <button class="btn-primary" (click)="guardarVigilancia()" [disabled]="vigilanciaGuardando">
+          <i class="ti ti-device-floppy"></i>
+          {{ vigilanciaGuardando ? 'Guardando...' : 'Guardar vigilancia' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SERVICIOS (costo fijo, cantidad manual) ═══════════════════ -->
+  <div class="page-body" *ngIf="activeSubTab === 'servicios'" style="padding-bottom: 0;">
+    <div class="hitos-card">
+      <h3 class="form-titulo" style="margin:0 0 0.5rem;">Servicios de costo fijo</h3>
+      <p class="form-desc" style="margin-top:0;">
+        Familias de Catálogo marcadas como "Fijo" (alquileres, letreros, etc.) — no escalan con
+        HH/Área/Trabajadores como los materiales, así que la cantidad se tipea a mano acá. El
+        precio unitario sigue viniendo de Ratios (mismo mecanismo que Vigilancia) y se actualiza
+        recién al guardar.
+      </p>
+      <div *ngIf="serviciosLoading" class="loading-msg">Cargando servicios...</div>
+
+      <div *ngIf="!serviciosLoading && serviciosCargados && serviciosFilas.length === 0" class="empty-cell">
+        No hay familias marcadas como "Fijo" en Catálogo todavía.
+      </div>
+
+      <div *ngIf="!serviciosLoading && serviciosFilas.length > 0" class="personal-tabla-scroll">
+        <table class="abril-table personal-tabla-matriz">
+          <thead>
+            <tr>
+              <th>Servicio</th>
+              <th>Cantidad</th>
+              <th>Unidad</th>
+              <th>Precio unit. (última vez guardado)</th>
+              <th>Total</th>
+              <th>Notas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let fila of serviciosFilas">
+              <td class="personal-rol">{{ fila.nombreFamilia }}</td>
+              <td><input type="number" min="0" step="0.01" [(ngModel)]="fila.metrado" (change)="recalcularTotalServicio(fila)" /></td>
+              <td>{{ fila.unidadMedida ?? '—' }}</td>
+              <td>S/ {{ fila.precioUnitario | number:'1.2-2' }}</td>
+              <td class="personal-total-cell">{{ fila.total | number:'1.2-2' }}</td>
+              <td><input type="text" [(ngModel)]="fila.descripcion" placeholder="Opcional" /></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!serviciosLoading && serviciosFilas.length > 0" class="personal-footer">
+        <span>Total general: S/ {{ serviciosTotalGeneral | number:'1.2-2' }}</span>
+        <button class="btn-primary" (click)="guardarServicios()" [disabled]="serviciosGuardando">
+          <i class="ti ti-device-floppy"></i>
+          {{ serviciosGuardando ? 'Guardando...' : 'Guardar servicios' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ RATIOS ═══════════════════ -->
+  <div class="page-body" *ngIf="activeSubTab === 'ratios'" style="padding-bottom: 0;">
+    <div class="hitos-card">
+      <div class="hitos-card-header">
+        <h3 class="form-titulo" style="margin:0;">Ratios calculados del proyecto</h3>
+        <button class="btn-outline btn-sm" [disabled]="calculandoRatios" (click)="calcularRatios()"
+          title="Calcula el consumo por família de este proyecto contra su propia Área Techada/HH/Trabajadores.">
+          <i class="ti" [ngClass]="calculandoRatios ? 'ti-loader-2 spin' : 'ti-calculator'"></i>
+          {{ calculandoRatios ? 'Calculando...' : (ratios.length > 0 ? 'Recalcular ratios' : 'Calcular ratios') }}
+        </button>
+      </div>
+
+      <div *ngIf="loadingRatios" class="loading-msg">Cargando ratios...</div>
+      <div *ngIf="!loadingRatios && ratios.length === 0" class="empty-state" style="padding: 1rem;">
+        <p>Este proyecto todavía no tiene ratios calculados. Dale al botón "Calcular ratios" de arriba (necesita que Área Techada/HH/Trabajadores estén configurados en "Datos Base", y que el Kardex ya esté estandarizado).</p>
+      </div>
+      <div *ngIf="!loadingRatios && ratios.length > 0" class="ratios-tabla">
+        <div class="ratios-tabla__header">
+          <div>Familia</div>
+          <div>Tipo</div>
+          <div>Ratio</div>
+          <div>Precio unit.</div>
+          <div>Cant. total</div>
+        </div>
+        <div
+          *ngFor="let r of ratios"
+          class="ratios-tabla__row"
+          [class.ratios-tabla__row--outlier]="r.esOutlier"
+        >
+          <div class="ratios-tabla__familia">
+            {{ r.nombreFamilia }}
+            <span *ngIf="r.esOutlier" class="badge badge-warn" title="Outlier respecto a otros proyectos">outlier</span>
+          </div>
+          <div>{{ r.tipoMaterial }}</div>
+          <div>{{ r.ratioCantidad | number:'1.2-6' }}</div>
+          <div>S/ {{ r.precioUnitarioPromedio | number:'1.2-2' }}</div>
+          <div>{{ r.cantidadTotal | number:'1.0-2' }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ KITS / BOM ═══════════════════ -->
+  <div class="page-body" *ngIf="activeSubTab === 'kits'" style="padding-bottom: 0;">
+    <div class="hitos-card">
+      <h3 class="form-titulo" style="margin:0 0 0.75rem;">Kits / BOM (Botiquín, Estación de Emergencia)</h3>
+
+      <!-- Kits ya guardados en el presupuesto — pueden ser varios tipos a la vez (ej. Botiquín x3 y
+           Estación de Emergencia x1), separado de la calculadora de abajo que sirve para agregar/editar. -->
+      <div *ngIf="kitsGuardadosLoading" class="loading-msg">Cargando kits guardados...</div>
+      <div *ngIf="!kitsGuardadosLoading && kitsGuardados.length > 0" class="kits-guardados-card">
+        <div class="kits-guardados-header">
+          <span>Kits guardados en este proyecto</span>
+          <span class="kits-guardados-total">Total: S/ {{ kitsGuardadosTotal | number:'1.2-2' }}</span>
+        </div>
+        <div class="kits-guardados-lista">
+          <div class="kit-guardado-chip" *ngFor="let kg of kitsGuardados">
+            <span class="kit-guardado-nombre">{{ kg.nombreKit }}</span>
+            <span class="kit-guardado-cantidad">× {{ kg.cantidadKits }}</span>
+            <span class="kit-guardado-monto">S/ {{ kg.total | number:'1.2-2' }}</span>
+            <button type="button" class="kit-guardado-quitar" title="Quitar del presupuesto"
+              (click)="eliminarKitGuardado(kg.kitId, kg.nombreKit)">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label>Kit
+          <app-search-select
+            [options]="kitsOpts"
+            valueField="id"
+            displayField="_label"
+            [value]="kitSeleccionadoId"
+            [compact]="true"
+            [showLabel]="false"
+            placeholder="Selecciona kit"
+            (valueChange)="kitSeleccionadoId = $event; onSeleccionarKit()">
+          </app-search-select>
+        </label>
+
+        <label *ngIf="kitDetalle">Cantidad de kits
+          <input type="number" min="1" [(ngModel)]="cantidadKits" placeholder="Ej. 3" />
+        </label>
+
+        <button *ngIf="kitDetalle" class="btn-primary" (click)="calcularKit()" [disabled]="!cantidadKits || cantidadKits <= 0">
+          <i class="ti ti-calculator"></i> Calcular
+        </button>
+      </div>
+
+      <div *ngIf="kitDetalle && resultadoKit.length === 0" class="bom-card">
+        <h3 class="bom-titulo">Receta de "{{ kitDetalle.nombre }}" (por 1 kit)</h3>
+        <table class="abril-table tabla-bom">
+          <thead>
+            <tr><th>Material</th><th>Cantidad por kit</th><th>Tipo</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of kitDetalle.items">
+              <td>{{ item.nombreFamilia }}</td>
+              <td>{{ item.cantidadPorKit }}</td>
+              <td>
+                <span class="badge" [ngClass]="item.esConsumible ? 'badge-consumible' : 'badge-durable'">
+                  {{ item.esConsumible ? 'Consumible' : 'Equipo durable' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="resultadoKit.length > 0" class="resultado-grid">
+        <div class="resultado-col">
+          <h3 class="resultado-titulo">Equipo durable — se compra 1 sola vez</h3>
+          <table class="abril-table tabla-bom">
+            <thead><tr><th>Material</th><th>Cantidad inicial</th><th>Precio unit.</th><th>Subtotal</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let l of kitDurables">
+                <td>{{ l.nombreFamilia }}</td>
+                <td class="total-cell">{{ l.cantidadTotal | number:'1.0-2' }}</td>
+                <td>S/ {{ l.precioUnitario | number:'1.2-2' }}</td>
+                <td class="total-cell">S/ {{ l.total | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="resultado-col">
+          <h3 class="resultado-titulo">Consumibles — cantidad inicial (más reposición aparte)</h3>
+          <table class="abril-table tabla-bom">
+            <thead><tr><th>Material</th><th>Cantidad inicial</th><th>Precio unit.</th><th>Subtotal</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let l of kitConsumibles">
+                <td>{{ l.nombreFamilia }}</td>
+                <td class="total-cell">{{ l.cantidadTotal | number:'1.0-2' }}</td>
+                <td>S/ {{ l.precioUnitario | number:'1.2-2' }}</td>
+                <td class="total-cell">S/ {{ l.total | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="nota-reposicion">
+            <i class="ti ti-info-circle"></i>
+            Estos consumibles además deben reponerse periódicamente durante la obra — ese ratio de
+            reposición (por HH o trabajadores) se calcula aparte, igual que con los EPP.
+          </p>
+        </div>
+      </div>
+
+      <div *ngIf="resultadoKit.length > 0" class="personal-footer">
+        <span>Total general: S/ {{ kitTotalGeneral | number:'1.2-2' }}</span>
+        <button class="btn-primary" (click)="guardarKit()" [disabled]="kitGuardando">
+          <i class="ti" [ngClass]="kitGuardando ? 'ti-loader-2 spin' : 'ti-device-floppy'"></i>
+          {{ kitGuardando ? 'Guardando...' : 'Guardar kit en el presupuesto' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ CÁLCULO TÉCNICO ═══════════════════ -->
+  <div class="page-body" *ngIf="activeSubTab === 'calculo-tecnico'" style="padding-bottom: 0;">
+    <div class="hitos-card">
+      <h3 class="form-titulo" style="margin:0 0 0.75rem;">Cálculo técnico</h3>
+
+      <div class="resultado-grid">
+
+        <!-- Barandas: Barra FRP 25mm + 21mm -->
+        <div class="bom-card">
+          <h3 class="bom-titulo">Barandas (Barra FRP 25mm + 21mm)</h3>
+          <div class="form-row" style="margin-bottom: 0.75rem;">
+            <label>Metros lineales de baranda
+              <input type="number" min="0" step="0.1" [(ngModel)]="barandasMl" (ngModelChange)="guardarCalculoTecnicoLocal()" placeholder="Ej. 120" />
+            </label>
+          </div>
+          <p class="form-desc" style="color:#6b7280;">
+            Vertical (parantes): 1 barra FRP 25mm de 1.7m cada 1.0 ml (espaciamiento aproximado, a confirmar). Horizontal (doble línea) = 2 × ml, en barras FRP 21mm — la pieza real varía entre 1.50 y 2.00m según el tramo, así que acá solo se informa el total en ml, no las unidades.
+          </p>
+          <table class="abril-table tabla-bom" *ngIf="barandasFrp25Unidades > 0">
+            <thead><tr><th>Barra</th><th>Metros lineales</th><th>Unidades</th></tr></thead>
+            <tbody>
+              <tr><td>FRP 25mm x 1.7m (vertical)</td><td class="total-cell">{{ barandasFrp25Ml | number:'1.1-1' }} ml</td><td class="total-cell">{{ barandasFrp25Unidades }}</td></tr>
+              <tr><td>FRP 21mm (horizontal)</td><td class="total-cell">{{ barandasFrp21Ml | number:'1.1-1' }} ml</td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Rodapié: Triplay 8mm — mismos ML que Barandas (van juntos en el mismo tramo) -->
+        <div class="bom-card">
+          <h3 class="bom-titulo">Rodapié (Triplay 8mm 2.44 x 1.22, tira de 20cm)</h3>
+          <p class="form-desc" style="color:#6b7280;">
+            Usa los mismos metros lineales de Barandas (arriba) — van en el mismo tramo de obra.
+            6 tiras de 2.44m por plancha (14.64 ml utilizables/plancha).
+          </p>
+          <table class="abril-table tabla-bom" *ngIf="rodapiePlanchas > 0">
+            <thead><tr><th>Material</th><th>Cantidad</th></tr></thead>
+            <tbody>
+              <tr><td>Plancha triplay 8mm</td><td class="total-cell">{{ rodapiePlanchas }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Tubería PVC 1" — 1 poste por cada barra FRP 25mm de Barandas -->
+        <div class="bom-card">
+          <h3 class="bom-titulo">Tubería PVC 1" (postes)</h3>
+          <p class="form-desc" style="color:#6b7280;">
+            1 poste de 60cm por cada barra FRP 25mm requerida (arriba: {{ tuberiaCantidadTubos }} postes).
+            Barra de 3m cortada cada 60cm = 5 tramos por barra, exacto.
+          </p>
+          <table class="abril-table tabla-bom" *ngIf="tuberiaBarras > 0">
+            <thead><tr><th>Material</th><th>Cantidad</th></tr></thead>
+            <tbody>
+              <tr><td>Barra PVC 1" x 3m</td><td class="total-cell">{{ tuberiaBarras }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Ducto: Fenólico + Listón -->
+        <div class="bom-card">
+          <h3 class="bom-titulo">Ducto (Fenólico 18mm + Listón 3x2")</h3>
+          <div class="form-row" style="margin-bottom: 0.75rem;">
+            <label>Área total a tapar (m²)
+              <input type="number" min="0" step="0.1" [(ngModel)]="ductoAreaM2" (ngModelChange)="guardarCalculoTecnicoLocal()" placeholder="Ej. 15" />
+            </label>
+          </div>
+          <p class="form-desc" style="color:#6b7280;">
+            Fenólico con +40% de exceso (el área es el total de todos los ductos juntos; los ductos chicos desperdician más material, individualmente, que uno grande); listón: ~2 bastidores 2"x3"x12' por plancha (3.6576 ml c/u).
+          </p>
+          <table class="abril-table tabla-bom" *ngIf="ductoPlanchasFenolico > 0">
+            <thead><tr><th>Material</th><th>Cantidad</th></tr></thead>
+            <tbody>
+              <tr><td>Plancha fenólico 18mm</td><td class="total-cell">{{ ductoPlanchasFenolico }}</td></tr>
+              <tr><td>Bastidor listón 2"x3"x12'</td><td class="total-cell">{{ ductoBastidoresListon }}</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Marcelinos = Punto de Anclaje Textil en el catálogo — sin fórmula, cantidad 100% manual.
+             A diferencia de Barandas/Ducto, este SÍ se guarda en el presupuesto real (botón aparte). -->
+        <div class="bom-card">
+          <h3 class="bom-titulo">Marcelinos (Punto de Anclaje Textil)</h3>
+          <div class="form-row" style="margin-bottom: 0.75rem; align-items: flex-end;">
+            <label>Cantidad
+              <input type="number" min="0" step="1" [(ngModel)]="marcelinosCantidad" (ngModelChange)="guardarCalculoTecnicoLocal()" placeholder="Ej. 12" />
+            </label>
+            <button type="button" class="btn-primary" [disabled]="marcelinosGuardando" (click)="guardarMarcelinosEnPresupuesto()">
+              <i class="ti" [ngClass]="marcelinosGuardando ? 'ti-loader-2 spin' : 'ti-device-floppy'"></i>
+              {{ marcelinosGuardando ? 'Guardando...' : 'Guardar en presupuesto' }}
+            </button>
+          </div>
+          <p class="form-desc" style="color:#6b7280;">
+            Sin fórmula — la cantidad la decide el responsable SSOMA a mano, no escala por Área/HH/Trabajadores.
+            "Guardar en presupuesto" la escribe directo en la línea real (necesita que el proyecto ya tenga un presupuesto generado).
+          </p>
+        </div>
+      </div>
+
+      <p class="nota-reposicion">
+        <i class="ti ti-info-circle"></i>
+Barandas/Ducto son solo resultado informativo (la cantidad final se sigue cargando a mano en Presupuesto → Detalle). Marcelinos es la excepción: su botón "Guardar en presupuesto" sí escribe directo en la línea real.
+      </p>
     </div>
   </div>
 </div>

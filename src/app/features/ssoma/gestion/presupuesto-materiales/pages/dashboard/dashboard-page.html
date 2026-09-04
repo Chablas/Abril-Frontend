@@ -1,0 +1,219 @@
+<div class="page-root">
+  <app-abril-page-header
+    badge="SSOMA · Materiales"
+    titulo="Dashboard de Presupuesto"
+    subtitulo="Presupuestado vs. consumo real del Kardex, para seguimiento gerencial"
+    [tabs]="headerTabs">
+  </app-abril-page-header>
+
+  <div class="page-body">
+    <nav class="db-subtabs">
+      <button type="button" class="db-subtab" [class.db-subtab--active]="vista === 'proyecto'" (click)="cambiarVista('proyecto')">
+        <i class="ti ti-building"></i> Por Proyecto
+      </button>
+      <button type="button" class="db-subtab" [class.db-subtab--active]="vista === 'acumulado'" (click)="cambiarVista('acumulado')">
+        <i class="ti ti-chart-bar"></i> Dashboard SSOMA (todos los proyectos)
+      </button>
+    </nav>
+
+    <!-- ═══════════════════ POR PROYECTO ═══════════════════ -->
+    <div *ngIf="vista === 'proyecto'">
+      <div class="db-filtros">
+        <label class="db-filtro-group">
+          <span class="db-filtro-label">Proyecto</span>
+          <app-search-select
+            [options]="proyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="proyectoId"
+            [showLabel]="false"
+            placeholder="Buscar proyecto..."
+            (valueChange)="proyectoId = $event; onProyectoChange()">
+          </app-search-select>
+        </label>
+      </div>
+
+      <div *ngIf="!proyectoId" class="db-empty">
+        <i class="ti ti-building" style="font-size:40px;color:#cbd5e1"></i>
+        <p>Selecciona un proyecto para ver su dashboard.</p>
+      </div>
+
+      <div *ngIf="proyectoId && loadingDashboard" class="db-empty">
+        <i class="ti ti-loader-2 spin" style="font-size:32px;color:#94a3b8"></i>
+        <p>Calculando dashboard...</p>
+      </div>
+
+      <div *ngIf="proyectoId && !loadingDashboard && sinPresupuesto" class="db-empty">
+        <i class="ti ti-file-off" style="font-size:40px;color:#cbd5e1"></i>
+        <p>Este proyecto todavía no tiene un presupuesto generado.</p>
+      </div>
+
+      <ng-container *ngIf="proyectoId && !loadingDashboard && !sinPresupuesto && dashboard as d">
+        <!-- Header con gauge -->
+        <div class="db-header-card">
+          <div class="db-header-info">
+            <span class="db-header-badge">Presupuesto v{{ d.version }}</span>
+            <h2 class="db-header-titulo">{{ d.projectDescription }}</h2>
+            <span class="db-header-sub">{{ d.semanasRegistradas }} semana(s) de control registradas</span>
+          </div>
+          <div class="db-gauge">
+            <svg viewBox="0 0 100 100" class="db-gauge-svg">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#e2e8f0" stroke-width="10" transform="rotate(-90 50 50)"/>
+              <circle cx="50" cy="50" r="40" fill="none" [attr.stroke]="gaugeColorPresupuesto(d.pctConsumido)"
+                stroke-width="10" stroke-linecap="round" stroke-dasharray="251.2"
+                [attr.stroke-dashoffset]="gaugeOffset(d.pctConsumido)"
+                transform="rotate(-90 50 50)" class="db-gauge-arc"/>
+              <text x="50" y="46" text-anchor="middle" class="db-gauge-num" [attr.fill]="gaugeColorPresupuesto(d.pctConsumido)">
+                {{ d.pctConsumido | number:'1.0-0' }}%
+              </text>
+              <text x="50" y="60" text-anchor="middle" class="db-gauge-sub">Consumido</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="db-kpis-row">
+          <div class="db-kpi">
+            <span class="db-kpi-val">S/ {{ d.totalPresupuestado | number:'1.0-0' }}</span>
+            <span class="db-kpi-lbl">Presupuestado</span>
+          </div>
+          <div class="db-kpi">
+            <span class="db-kpi-val">S/ {{ d.totalConsumido | number:'1.0-0' }}</span>
+            <span class="db-kpi-lbl">Consumido real</span>
+          </div>
+          <div class="db-kpi" [class.db-kpi--danger]="d.totalSaldo < 0">
+            <span class="db-kpi-val">S/ {{ d.totalSaldo | number:'1.0-0' }}</span>
+            <span class="db-kpi-lbl">{{ d.totalSaldo >= 0 ? 'Saldo disponible' : 'Sobrecosto' }}</span>
+          </div>
+          <div class="db-kpi" [class.db-kpi--warn]="d.familiasEnAlerta > 0">
+            <span class="db-kpi-val">{{ d.familiasEnAlerta }}</span>
+            <span class="db-kpi-lbl">Familias en alerta</span>
+          </div>
+          <div class="db-kpi db-kpi--fuera" *ngIf="d.familiasFueraDePresupuesto > 0">
+            <span class="db-kpi-val">{{ d.familiasFueraDePresupuesto }}</span>
+            <span class="db-kpi-lbl">Fuera de presupuesto</span>
+          </div>
+        </div>
+
+        <!-- Por tipo -->
+        <div class="db-section" *ngIf="d.tipos.length > 0">
+          <h3 class="db-section-title"><i class="ti ti-category"></i> Consumo por tipo de material</h3>
+          <div class="db-tipos">
+            <div class="db-tipo-row" *ngFor="let t of d.tipos">
+              <span class="db-tipo-nombre">{{ t.nombreTipo }}</span>
+              <div class="db-tipo-bar">
+                <div class="db-tipo-bar-fill"
+                     [style.width.%]="t.pctConsumido < 100 ? t.pctConsumido : 100"
+                     [ngClass]="semaforoClass(tipoSemaforo(t.pctConsumido))"></div>
+              </div>
+              <span class="db-tipo-pct">{{ t.pctConsumido | number:'1.0-0' }}%</span>
+              <span class="db-tipo-monto">S/ {{ t.totalConsumido | number:'1.0-0' }} / {{ t.totalPresupuestado | number:'1.0-0' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Atención requerida -->
+        <div class="db-section">
+          <h3 class="db-section-title"><i class="ti ti-alert-triangle"></i> Atención requerida</h3>
+          <div *ngIf="familiasDestacadas.length === 0" class="db-ok-msg">
+            <i class="ti ti-circle-check"></i> Todas las familias están dentro de lo presupuestado.
+          </div>
+          <div *ngIf="familiasDestacadas.length > 0" class="db-lista">
+            <div class="db-lista-fila" *ngFor="let f of familiasDestacadas" [ngClass]="semaforoClass(f.semaforo)">
+              <span class="db-lista-dot"></span>
+              <span class="db-lista-nombre">{{ f.nombreFamilia }}</span>
+              <span class="db-lista-cifras" *ngIf="!f.fueraDePresupuesto">
+                {{ f.cantidadConsumida | number:'1.0-2' }} / {{ f.cantidadPresupuestada | number:'1.0-2' }} ({{ f.pctConsumido | number:'1.0-0' }}%)
+              </span>
+              <span class="db-lista-cifras" *ngIf="f.fueraDePresupuesto">
+                S/ {{ f.totalConsumido | number:'1.0-0' }} sin planificar
+              </span>
+              <span class="db-lista-tag" [ngClass]="semaforoClass(f.semaforo)">{{ semaforoLabel(f.semaforo) }}</span>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- ═══════════════════ ACUMULADO ═══════════════════ -->
+    <div *ngIf="vista === 'acumulado'">
+      <div *ngIf="loadingAcumulado" class="db-empty">
+        <i class="ti ti-loader-2 spin" style="font-size:32px;color:#94a3b8"></i>
+        <p>Calculando dashboard acumulado...</p>
+      </div>
+
+      <ng-container *ngIf="!loadingAcumulado && acumulado as a">
+        <div class="db-header-card">
+          <div class="db-header-info">
+            <span class="db-header-badge">{{ a.totalProyectos }} proyecto(s) con presupuesto</span>
+            <h2 class="db-header-titulo">Presupuesto SSOMA · Todos los proyectos</h2>
+          </div>
+          <div class="db-gauge">
+            <svg viewBox="0 0 100 100" class="db-gauge-svg">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#e2e8f0" stroke-width="10" transform="rotate(-90 50 50)"/>
+              <circle cx="50" cy="50" r="40" fill="none" [attr.stroke]="gaugeColorPresupuesto(a.pctConsumido)"
+                stroke-width="10" stroke-linecap="round" stroke-dasharray="251.2"
+                [attr.stroke-dashoffset]="gaugeOffset(a.pctConsumido)"
+                transform="rotate(-90 50 50)" class="db-gauge-arc"/>
+              <text x="50" y="46" text-anchor="middle" class="db-gauge-num" [attr.fill]="gaugeColorPresupuesto(a.pctConsumido)">
+                {{ a.pctConsumido | number:'1.0-0' }}%
+              </text>
+              <text x="50" y="60" text-anchor="middle" class="db-gauge-sub">Global</text>
+            </svg>
+          </div>
+        </div>
+
+        <div class="db-kpis-row">
+          <div class="db-kpi">
+            <span class="db-kpi-val">S/ {{ a.totalPresupuestado | number:'1.0-0' }}</span>
+            <span class="db-kpi-lbl">Presupuestado (total)</span>
+          </div>
+          <div class="db-kpi">
+            <span class="db-kpi-val">S/ {{ a.totalConsumido | number:'1.0-0' }}</span>
+            <span class="db-kpi-lbl">Consumido (total)</span>
+          </div>
+          <div class="db-kpi" [class.db-kpi--danger]="a.totalSaldo < 0">
+            <span class="db-kpi-val">S/ {{ a.totalSaldo | number:'1.0-0' }}</span>
+            <span class="db-kpi-lbl">{{ a.totalSaldo >= 0 ? 'Saldo disponible' : 'Sobrecosto' }}</span>
+          </div>
+          <div class="db-kpi" [class.db-kpi--warn]="a.proyectosEnAlerta > 0">
+            <span class="db-kpi-val">{{ a.proyectosEnAlerta }}</span>
+            <span class="db-kpi-lbl">Proyectos en alerta</span>
+          </div>
+          <div class="db-kpi db-kpi--fuera" *ngIf="a.proyectosConFueraDePresupuesto > 0">
+            <span class="db-kpi-val">{{ a.proyectosConFueraDePresupuesto }}</span>
+            <span class="db-kpi-lbl">Con gasto fuera de presupuesto</span>
+          </div>
+        </div>
+
+        <div class="db-section">
+          <h3 class="db-section-title"><i class="ti ti-list-details"></i> Por proyecto</h3>
+          <div *ngIf="a.proyectos.length === 0" class="db-empty">
+            <p>Todavía no hay proyectos con presupuesto generado.</p>
+          </div>
+          <div class="db-proyectos-lista" *ngIf="a.proyectos.length > 0">
+            <div class="db-proyecto-fila" *ngFor="let p of a.proyectos" [ngClass]="semaforoClass(p.semaforo)">
+              <div class="db-proyecto-info">
+                <span class="db-proyecto-dot"></span>
+                <span class="db-proyecto-nombre">{{ p.projectDescription }}</span>
+                <span class="db-lista-tag" [ngClass]="semaforoClass(p.semaforo)">{{ semaforoLabel(p.semaforo) }}</span>
+                <span class="db-badge-fuera" *ngIf="p.familiasFueraDePresupuesto > 0">
+                  {{ p.familiasFueraDePresupuesto }} fuera de presupuesto
+                </span>
+              </div>
+              <div class="db-proyecto-bar">
+                <div class="db-proyecto-bar-fill"
+                     [style.width.%]="p.pctConsumido < 100 ? p.pctConsumido : 100"
+                     [ngClass]="semaforoClass(p.semaforo)"></div>
+              </div>
+              <div class="db-proyecto-cifras">
+                <span>{{ p.pctConsumido | number:'1.0-0' }}%</span>
+                <span>S/ {{ p.totalConsumido | number:'1.0-0' }} / {{ p.totalPresupuestado | number:'1.0-0' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>

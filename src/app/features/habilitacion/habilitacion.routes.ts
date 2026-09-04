@@ -175,8 +175,8 @@ export const HABILITACION_ROUTES: Routes = [
     path: 'registros-modelo',
     loadComponent: () =>
       import('./pages/registros-modelo/registros-modelo').then((m) => m.RegistrosModelo),
-    canActivate: [authGuard, roleGuard],
-    data: { titulo: 'HABILITACIÓN - REGISTROS MODELO', featureKey: 'habilitacion.registros-modelo', roles: ['CONTRATISTA'] },
+    canActivate: [authGuard],
+    data: { titulo: 'HABILITACIÓN - REGISTROS MODELO' },
   },
   {
     path: 'evaluacion-supervisores',

@@ -235,7 +235,8 @@ export class Empresa implements OnInit {
       this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA) ||
       this.authService.hasRole(Roles.ADMINISTRADOR_ADMINISTRACION) ||
       this.authService.hasRole(Roles.ADMINISTRADOR_UDP) ||
-      this.authService.hasRole(Roles.COORDINADOR_SSOMA)
+      this.authService.hasRole(Roles.COORDINADOR_SSOMA) ||
+      this.authService.hasRole(Roles.RESIDENTE)
     );
   }
 

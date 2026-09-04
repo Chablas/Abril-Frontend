@@ -8,16 +8,27 @@
     (secondaryClick)="load()">
 
     <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
-    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+    <app-filter-trigger *ngIf="vistaRatios === 'materiales'" tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
   </app-abril-page-header>
 
   <div class="page-body">
+    <nav class="ratios-subtabs">
+      <button type="button" class="ratios-subtab" [class.ratios-subtab--active]="vistaRatios === 'materiales'"
+        (click)="cambiarVistaRatios('materiales')">
+        <i class="ti ti-boxes"></i> Ratios de Materiales
+      </button>
+      <button type="button" class="ratios-subtab" [class.ratios-subtab--active]="vistaRatios === 'dotacion'"
+        (click)="cambiarVistaRatios('dotacion')">
+        <i class="ti ti-users"></i> Ratios de Dotación (HH / Trabajadores)
+      </button>
+    </nav>
+
     <!-- Ratios de dotación: HH y N Trabajadores REALES por m2, calculados desde el Tareo de
          Control de Acceso (asistencia diaria) — no desde el campo tipeado a mano en la ficha
          del proyecto. No segmenta por tipo de proyecto; "incluir" es siempre manual — el
          responsable decide caso por caso, incluso proyectos aún activos (donde el HH
          acumulado del Tareo es parcial, no el total final de la obra). -->
-    <div class="resumen-card" *ngIf="mostrarDotacion">
+    <div class="resumen-card" *ngIf="vistaRatios === 'dotacion'">
       <div class="resumen-card__header">
         <h3 class="resumen-card__titulo">Ratios de dotación (HH / N° Trabajadores) — desde Tareo real</h3>
         <button
@@ -128,6 +139,7 @@
       </div>
     </div>
 
+    <ng-container *ngIf="vistaRatios === 'materiales'">
     <div *ngIf="!loading" class="ratios-toolbar">
       <button class="btn-outline btn-sm" [disabled]="calculandoTodos" (click)="calcularTodosLosRatios()"
         title="Calcula el ratio de cada proyecto con Kardex estandarizado, de una sola vez (en vez de proyecto por proyecto). También disponible en Gasto SSOMA.">
@@ -224,6 +236,7 @@
         No hay familias que coincidan con la búsqueda.
       </div>
     </div>
+    </ng-container>
   </div>
 </div>
 

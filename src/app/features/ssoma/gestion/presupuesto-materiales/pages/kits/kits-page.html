@@ -65,25 +65,26 @@
 
     <div *ngIf="loading" class="loading-msg">Cargando kits...</div>
 
-    <div *ngIf="!loading" class="form-row">
-      <label>Kit
-        <app-search-select
-          [options]="kitsOpts"
-          valueField="id"
-          displayField="_label"
-          [value]="kitSeleccionadoId"
-          [compact]="true"
-          [showLabel]="false"
-          placeholder="Selecciona kit"
-          (valueChange)="kitSeleccionadoId = $event; onSeleccionarKit()">
-        </app-search-select>
-      </label>
+    <div *ngIf="!loading && kits.length === 0" class="empty-state">
+      <i class="ti ti-package" style="font-size:40px;color:#cbd5e1"></i>
+      <p>No hay kits creados todavía.</p>
+    </div>
 
-      <label *ngIf="kitDetalle">Cantidad de kits
+    <div *ngIf="!loading && kits.length > 0" class="kits-grid">
+      <button type="button" *ngFor="let k of kits" class="kit-card"
+        [class.kit-card--activo]="kitSeleccionadoId === k.id"
+        (click)="seleccionarKit(k.id)">
+        <i class="ti ti-package kit-card__icono"></i>
+        <span class="kit-card__nombre">{{ k.nombre }}</span>
+        <span class="kit-card__tipo">{{ k.nombreTipo }}</span>
+      </button>
+    </div>
+
+    <div *ngIf="kitDetalle" class="kit-calc-row">
+      <label>Cantidad de kits
         <input type="number" min="1" [(ngModel)]="cantidadKits" placeholder="Ej. 3" />
       </label>
-
-      <button *ngIf="kitDetalle" class="btn-primary" (click)="calcular()" [disabled]="!cantidadKits || cantidadKits <= 0">
+      <button class="btn-primary" (click)="calcular()" [disabled]="!cantidadKits || cantidadKits <= 0">
         <i class="ti ti-calculator"></i> Calcular
       </button>
     </div>

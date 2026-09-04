@@ -388,7 +388,7 @@ export interface ControlSemanaDto {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
-export type Semaforo = 'OK' | 'ADVERTENCIA' | 'ALERTA' | 'SIN_PRESUPUESTO';
+export type Semaforo = 'OK' | 'ADVERTENCIA' | 'ALERTA' | 'SIN_PRESUPUESTO' | 'FUERA_DE_PRESUPUESTO';
 
 export interface DashboardLineaDto {
   familiaId: number;
@@ -404,6 +404,8 @@ export interface DashboardLineaDto {
   totalSaldo: number;
   pctConsumido: number;
   semaforo: Semaforo;
+  /** Hubo consumo real de esta família pero el presupuesto no tenía línea para ella. */
+  fueraDePresupuesto: boolean;
 }
 
 export interface DashboardTipoDto {
@@ -428,7 +430,35 @@ export interface DashboardPresupuestoDto {
   semanasRegistradas: number;
   familiasEnAlerta: number;
   familiasEnAdvertencia: number;
+  familiasFueraDePresupuesto: number;
   tipos: DashboardTipoDto[];
+}
+
+// ─── Dashboard acumulado (todos los proyectos con presupuesto) — vista gerencial ──────────────
+
+export interface DashboardAcumuladoProyectoDto {
+  presupuestoId: number;
+  projectId: number;
+  projectDescription: string;
+  version: number;
+  totalPresupuestado: number;
+  totalConsumido: number;
+  totalSaldo: number;
+  pctConsumido: number;
+  semaforo: Semaforo;
+  familiasFueraDePresupuesto: number;
+}
+
+export interface DashboardAcumuladoDto {
+  totalProyectos: number;
+  totalPresupuestado: number;
+  totalConsumido: number;
+  totalSaldo: number;
+  pctConsumido: number;
+  proyectosEnAlerta: number;
+  proyectosEnAdvertencia: number;
+  proyectosConFueraDePresupuesto: number;
+  proyectos: DashboardAcumuladoProyectoDto[];
 }
 
 // ─── Dotación de personal SSOMA por hito crítico ──────────────────────────────
@@ -445,6 +475,11 @@ export interface PersonalHitoDto {
   hitoDescripcion: string;
   hitoFecha: string | null;
   esHitoCritico: boolean;
+  /** Etapa de salida elegida (opcional) — si viene, `semanas` ya fue calculada por el backend
+   * a partir de las fechas reales del cronograma. Null = semanas manual (comportamiento anterior). */
+  hitoSalidaId: number | null;
+  hitoSalidaDescripcion: string | null;
+  hitoSalidaFecha: string | null;
   rol: string;
   cantidad: number;
   semanas: number;
@@ -454,6 +489,7 @@ export interface PersonalHitoDto {
 
 export interface PersonalHitoItemInputDto {
   hitoId: number;
+  hitoSalidaId?: number | null;
   rol: string;
   cantidad: number;
   semanas: number;
@@ -462,6 +498,68 @@ export interface PersonalHitoItemInputDto {
 
 export interface PersonalHitoGuardarDto {
   items: PersonalHitoItemInputDto[];
+}
+
+/** Tarifa "S/ mes" sugerida por categoría — punto de partida estimado desde otros proyectos, editable. */
+export interface PersonalTarifasSugeridasDto {
+  oficial: number;
+  peon: number;
+}
+
+// ─── Vigilancia externa por hito (facturada por punto/turno, precio desde Ratios) ────────────
+
+export interface VigilanciaHitoDto {
+  id: number;
+  hitoId: number;
+  hitoDescripcion: string;
+  hitoFecha: string | null;
+  esHitoCritico: boolean;
+  hitoSalidaId: number | null;
+  hitoSalidaDescripcion: string | null;
+  hitoSalidaFecha: string | null;
+  cantidadPuntos: number;
+  semanas: number;
+  precioUnitario: number;
+  total: number;
+}
+
+export interface VigilanciaHitoItemInputDto {
+  hitoId: number;
+  hitoSalidaId?: number | null;
+  cantidadPuntos: number;
+  semanas: number;
+}
+
+export interface VigilanciaHitoGuardarDto {
+  items: VigilanciaHitoItemInputDto[];
+}
+
+// ─── Servicios de costo fijo (VariableBase = FIJO) — cantidad manual, precio desde Ratios ─────
+
+export interface FamiliaFijaDisponibleDto {
+  familiaId: number;
+  nombreFamilia: string;
+  unidadMedida: string | null;
+}
+
+export interface ServicioFijoDto {
+  familiaId: number;
+  nombreFamilia: string;
+  unidadMedida: string | null;
+  metrado: number;
+  precioUnitario: number;
+  total: number;
+  descripcion: string | null;
+}
+
+export interface ServicioFijoItemInputDto {
+  familiaId: number;
+  metrado: number;
+  descripcion?: string | null;
+}
+
+export interface ServiciosFijosGuardarDto {
+  items: ServicioFijoItemInputDto[];
 }
 
 // ─── Kits / BOM (Botiquín, Estación de Emergencia, etc.) ──────────────────────
@@ -495,6 +593,23 @@ export interface KitCalculoLineaDto {
   cantidadPorKit: number;
   cantidadTotal: number;
   esConsumible: boolean;
+  /** Ya vienen poblados tanto en la vista previa (calcularKit, precio en vivo desde Ratios) como en
+   * lo ya guardado (getKitsGuardados, snapshot al momento de guardar). */
+  precioUnitario: number;
+  total: number;
+}
+
+export interface KitProyectoGuardarDto {
+  kitId: number;
+  cantidadKits: number;
+}
+
+export interface KitProyectoGuardadoDto {
+  kitId: number;
+  nombreKit: string;
+  cantidadKits: number;
+  lineas: KitCalculoLineaDto[];
+  total: number;
 }
 
 export interface KitItemInputDto {

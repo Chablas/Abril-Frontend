@@ -5585,3 +5585,112 @@ Los cambios que aparecían sin commitear en `evaluaciones/` y `core/navigation/`
 
 ### Verificado
 `ng build` → 0 errores (solo warnings preexistentes de dependencias CommonJS).
+
+## Sesión 2026-09-03 — Residente sin selector de Proyecto/Empresa en Gestión de Ingresos
+
+### Problema
+El rol `RESIDENTE` no veía los combos "Proyecto"/"Empresa" en `/habilitacion/gestion/empresa` (pestaña Empresa de Gestión de Ingresos) — caía siempre en el empty state "Selecciona una empresa o un proyecto...".
+
+### Causa
+`empresa.ts:isAdmin()` (método local del componente, no un flag global — cada página de `habilitacion` define su propio `isAdmin()` con su propia lista de roles) solo incluía `ADMINISTRADOR_SSOMA`, `ADMINISTRADOR_ADMINISTRACION`, `ADMINISTRADOR_UDP`, `COORDINADOR_SSOMA`. El bloque de combos en `empresa.html:5` está detrás de `*ngIf="isAdmin()"`. `RESIDENTE` tampoco cae en `isContratista()` (depende de `user.tipo === 'CONTRATISTA'`, no de rol) → sin ningún control visible.
+
+### Fix
+`features/habilitacion/pages/empresa/empresa.ts:233-241` — agregado `Roles.RESIDENTE` a la condición de `isAdmin()`. Cambio aislado a este componente: verificado que `evaluacion-supervisores.ts` y `dashboard-hab.component.ts` tienen su propio `isAdmin()` local independiente (no se ven afectados).
+
+### Registros Modelo: enganchado al menú + descargas rotas corregidas
+Detectado de paso: "Registros Modelo" (ATS, checklists, etc. — `/habilitacion/registros-modelo`) tenía datos en `SsRegistroModelo` pero no estaba enlazado en ningún menú, y su ruta tenía `roles: ['CONTRATISTA']` en `habilitacion.routes.ts:179`. El usuario pidió que sea visible para todos.
+
+- **Fix ruta**: `habilitacion.routes.ts:174-179` — quitado `roleGuard`/`featureKey`/`roles`, solo `authGuard` (mismo patrón que `dashboard`).
+- **Fix menú**: `navigation.service.ts` — agregado ítem "Registros Modelo" → `/habilitacion/registros-modelo` en el desplegable "Gestión SSOMA", en los dos lugares donde se arma esa lista (general y la override específica para usuarios tipo Contratista).
+- **Bug de datos encontrado al probar**: 5 de 16 registros daban 404 al descargar (`RegistrosModeloController`/`ArchivoHabilitacionController.Descargar` en el backend, `[AllowAnonymous]`, sin cambios de código). Diagnosticado con Graph API directo (usando el `ClientSecret` de `AzureAd` en `appsettings.Production.json` — **el usuario pegó ese archivo completo en el chat sin querer; quedó expuesto en el historial, recomendado rotar `ClientSecret`, `AccountKey` de Azure Storage, y el resto de secretos si el historial se comparte**). Sitio SharePoint real: `SSOMA-Powerapps` (`https://abrilinmob.sharepoint.com/sites/SSOMA-Powerapps`), biblioteca `ModeloDocumentos`. Causa: `archivo_url` en BD no coincidía con el nombre/extensión real del archivo (ej. `.xlsx` en BD vs `.docx` real, o nombre truncado). Corregido directo en BD vía pgAdmin (no vía código):
+  ```sql
+  UPDATE ss_registro_modelo SET archivo_url = 'ModeloDocumentos/Modelo Organigrama.docx' WHERE id = 10;
+  UPDATE ss_registro_modelo SET archivo_url = 'ModeloDocumentos/Modelo PETS SSO Y MA.docx' WHERE id = 11;
+  UPDATE ss_registro_modelo SET archivo_url = 'ModeloDocumentos/Modelo Plan Anual de SSOMA.docx' WHERE id = 12;
+  UPDATE ss_registro_modelo SET archivo_url = 'ModeloDocumentos/SSO-FO-018.aATS Albañileria.xlsx' WHERE id = 13;
+  UPDATE ss_registro_modelo SET archivo_url = 'ModeloDocumentos/SSO-FO-018.d ATS LIMPIEZA DE OT Y VECINOS.xlsx' WHERE id = 16;
+  ```
+  Verificado post-fix: los 16 registros devuelven redirect (200/302 efectivo) al descargar.
+- **Nota**: hay archivos "... - Copia.xlsx/docx" duplicados en la biblioteca `ModeloDocumentos` (basura de versiones anteriores) — no tocados, pendiente si algún día se quiere limpiar.
+
+### Verificado
+`ng build` → 0 errores (solo warnings preexistentes de dependencias CommonJS).
+
+## Sesión 2026-09-03 (continuación) — Presupuesto Materiales: Vigilancia, Dotación por etapas, Cálculo técnico + freeze real cazado
+
+### Contexto
+Continuación de la sesión de Presupuesto Materiales SSOMA (Sauce Zen). El usuario pidió: cálculo técnico manual para Barandas FRP/Rodapié/Tubería/Ducto, cálculo de HH y cantidad de servicios (Dotación de personal, Vigilancia) según etapas del cronograma, y separar Barra FRP en 25mm/21mm en el Catálogo (backend/BD, ver `Abril_Backend/CONTEXT.md`).
+
+### Cambios en `proyecto-page.ts`/`.html`/`.css`
+
+**Cálculo técnico** (reemplaza el bloque "pendiente" que solo listaba las familias): calculadora tipo Kits/BOM para Barandas (FRP 25mm+21mm, 3.4ml → 3×25mm×1.7m + 4×21mm×2m), Rodapié (reusa los mismos ML de Barandas, triplay 8mm 6 tiras×2.44m/plancha), Tubería PVC 1" (derivada automáticamente de la cantidad de barras FRP 25mm — 1 poste por barra, 5 postes por barra de 3m) y Ducto (fenólico +10%, perímetro estimado como cuadrado, listón en bastidores 12'=3.6576m). Todo informativo, la cantidad final se sigue cargando a mano en el presupuesto (`cantidadManual`).
+
+**Dotación de personal por hito**: cada fila ahora tiene un select "Etapa de salida" (además de la etapa de ingreso = el hito). Si se elige una, "Semanas" se calcula sola desde las fechas reales del cronograma y queda de solo lectura; sin elegirla, sigue siendo manual como antes.
+
+**Vigilancia (nueva sección)**: mismo patrón que Dotación de personal pero facturada por punto/turno, con precio tomado de Ratios/Catálogo (família "Servicio de Vigilancia") en vez de tipeado a mano. DTOs nuevos en `presupuesto.dtos.ts`, métodos nuevos en `presupuesto.service.ts`.
+
+### Bug real cazado: freeze de "Cargando dotación/vigilancia..." al marcar hitos críticos
+Reportado por el usuario: al marcar un hito como "crítico" y guardar el cronograma, la pantalla se quedaba congelada ("La página no responde" de Chrome), con errores `NG0100` en consola creciendo sin parar. Diagnóstico largo (múltiples hipótesis descartadas: bug de backend, HMR, extensiones — confirmado con incógnito y con `git stash` de todos los cambios de la sesión que el freeze **ya existía antes** de tocar nada de Vigilancia/Dotación hoy):
+
+- **Causa real**: `personalPorHito` era un *getter* que reconstruía un `Map`/array nuevo cada vez que Angular lo leía en el `*ngFor`. Al no tener datos (`hitosCriticos` vacío, antes de marcar cualquier hito crítico) nunca se ejecutaba de verdad; en cuanto había al menos un hito crítico, el `*ngFor` leía el getter en cada ciclo de change detection, veía una referencia distinta siempre, y Angular entraba en un ciclo de repintado que nunca se estabilizaba.
+- **Fix**: `personalPorHito` pasó de getter a propiedad normal, recalculada una sola vez en `construirFilasPersonal()` (cuando llegan los datos), no en cada tick de CD.
+- **Efecto secundario real, ya corregido de paso**: `LoaderService.show()/hide()` (`core/services/loader.service.ts`) llamaba `.next()` de forma síncrona dentro de ciclos de CD en curso, disparando `NG0100` en el `*ngIf="loader$ | async"` global de `App` — se usa en decenas de páginas de toda la app. Se difirió a un macrotask (`setTimeout`), mismo patrón que ya se usó antes para el bug análogo de `LayoutService.hasPageHeader$` (ver sesión "Bugfix Portafolio BIM", 2026-08-19).
+
+### Archivos clave
+- `features/ssoma/gestion/presupuesto-materiales/pages/proyecto/proyecto-page.ts`/`.html`/`.css`
+- `features/ssoma/gestion/presupuesto-materiales/presupuesto.dtos.ts`, `presupuesto.service.ts`
+- `core/services/loader.service.ts`
+
+### Verificado
+`ng build` (producción) → 0 errores, solo warnings preexistentes de terceros (canvg, flatpickr, tfjs). No se probó en navegador tras el fix final del freeze — el usuario lo verifica él mismo en su sesión.
+
+### Pendiente
+- Confirmar en navegador que el freeze de Dotación/Vigilancia no vuelve a aparecer tras el fix.
+- PDF de entrega del presupuesto a Costos — pendiente de construir (se acordó hacerlo después de validar que Vigilancia/Dotación funcionan bien).
+- Revisar si `kitsOpts` (getter en la misma página, sección Kits/BOM) tiene el mismo patrón de "array nuevo en cada acceso" — no causó problema porque esa sección no se renderiza automáticamente (está detrás de un toggle manual), pero es el mismo antipatrón.
+
+## Sesión 2026-09-04 — Rediseño UI completo del módulo + Personal/Vigilancia/Kits/Cálculo técnico terminados
+
+### Contexto
+Continuación directa de la sesión anterior. Arrancó como un pedido de rediseño visual del módulo completo (10 páginas) reaccionando a capturas en vivo, y terminó destapando y arreglando varios bugs reales de cálculo en Personal/Vigilancia/Kits que dejaban el presupuesto en S/0,00 o duplicado (ver `Abril_Backend/CONTEXT.md` para el detalle de los fixes de backend — acá solo el lado frontend).
+
+### Rediseño UI (todo el módulo, pase DESIGN-VICTOR)
+- **Nuevo Dashboard** (`pages/dashboard/`): vista por proyecto y vista acumulada (todos los proyectos), gauges circulares SVG (mismo mecanismo que Indicadores Proactivos) para % de consumo vs. presupuesto.
+- **Datos Base fusionado en la ficha del proyecto** (antes era su propia página con un click extra): ahora es una barra compacta de una sola fila arriba de las sub-tabs de `proyecto-page`, con combobox de proyecto en el header (`tabsExtra`) que se propaga a Dashboard/Cargar Consumos/etc. vía `getUltimoProyectoId()`/`setUltimoProyectoId()` en localStorage — con fallback a `WorkerVinculacion` del usuario logueado.
+- `drivers-page` pasó a ser un redirector puro: resuelve el proyecto del usuario (o el último elegido) y navega directo a la ficha.
+- Ratios separado en sub-tabs "Materiales"/"Dotación"; Kits convertido de combobox a galería de cards; pase de colores/radios DESIGN-VICTOR en `catalogo-page`, `control-semana`, `presupuesto-detalle`, `resumen-general`, `ratios-lista` (varios bugs de estilo reales: `.btn-outline`/`.btn-sm` no definidos en el CSS propio del componente — Angular no hereda CSS entre componentes —, error HTTP silenciado en `resumen-general` sin feedback visual).
+
+### Personal (Dotación por hito) — rediseño de matriz + bugs reales
+- Matriz única: etapas como filas, roles como columnas (antes era una grilla de cards angosta que se solapaba). Roles reducidos a Prevencionista/Monitor/Vígia/Encapsulador; Monitor/Vígia/Encapsulador con sub-columnas Oficial/Peón (cantidad propia en cada una, no un selector excluyente — se puede cargar Oficial Y Peón a la vez en la misma etapa).
+- Tarifa "S/ semana" (no mensual) por categoría, con sugerencia automática desde el backend (promedio real de planilla, ver backend) y botón ↻ para restablecer si se edita a mano.
+- Prevencionista sin categoría ni costo — es solo el recordatorio de en qué etapa debe ingresar a la obra.
+- **Bug real corregido**: `construirFilasPersonal` cargaba `semanas`/`hitoSalidaId` por fila individual (por rol) en vez de tomarlas de cualquier fila ya guardada del mismo hito — un rol nuevo (nunca guardado antes) arrancaba en `semanas=0` y su Total daba 0 pese a tener cantidad y tarifa.
+- **Bug real corregido**: `guardarPersonal()` exigía `costoMensual > 0` para incluir la fila — si la tarifa global estaba en 0 al momento de guardar, se perdían Monitor/Vígia/Encapsulador completos (solo Prevencionista tenía excepción). Ahora el filtro es solo `cantidad > 0`.
+
+### Vigilancia — bug real corregido
+`fila.total` se calculaba una sola vez al cargar los datos existentes y nunca se recalculaba cuando llegaba el precio unitario (pedido en un `HttpClient` request aparte, async) — quedaba pegado en 0 o en el precio viejo. Ahora recalcula todas las filas apenas resuelve cualquiera de los dos requests (precio o filas), sea cual sea el orden de llegada.
+
+### Kits/BOM — de calculadora de pantalla a guardado real
+- Antes solo calculaba y mostraba en pantalla (se perdía al recargar, sin backend involucrado). Ahora: sección "Kits guardados en este proyecto" (siempre visible arriba de la calculadora) con chips por kit (nombre, cantidad, monto, botón ✕ para quitar) — soporta **varios kits guardados a la vez** (ej. Botiquín ×3 y Estación de Emergencia ×1).
+- Tablas de resultado (durable/consumibles) ahora muestran precio unitario y subtotal por línea (antes solo cantidad) — el precio viene en vivo desde Ratios incluso en la vista previa, antes de guardar.
+
+### Cálculo técnico — fórmulas corregidas contra data real + Marcelinos con guardado real
+- Barandas: separado en Vertical (parantes, FRP 25mm×1.7m, uno cada X metros — espaciamiento todavía aproximado 1.0m, no confirmado) y Horizontal (doble línea = 2×ml exacto, verificado contra tabla de referencia real del usuario, FRP 21mm tratado a 2.0m parejo por pieza — la pieza real varía 1.50-2.00m, no vale la pena inventar unidades falsas).
+- Ducto: exceso de fenólico subido de +10% a +40% (verificado: tratar el área total como un solo rectángulo infra-estima el desperdicio real de cortar muchos ductos chicos por separado — un cálculo ducto-por-ducto real dio 385 planchas contra 261 de la fórmula vieja). Bastidores de listón recalculados como "2 por plancha" (perímetro de una plancha individual, no perímetro del área total) — antes daba 31 bastidores para un caso donde correspondían ~730+.
+- Barandas/Ducto: inputs persistidos en `localStorage` por proyecto (antes se perdían al recargar o cambiar de sub-tab) — siguen siendo solo informativos, no tocan el presupuesto real.
+- **Marcelinos (= Punto de Anclaje Textil en el catálogo) es la excepción**: tiene su propio botón "Guardar en presupuesto" que sí escribe directo en la línea real del presupuesto vigente (`PUT proyectos/{projectId}/familias/{familiaId}/cantidad-manual`, backend nuevo) — antes solo guardaba en localStorage y nunca llegaba al presupuesto real, pese a la expectativa del usuario de que si "lo puso manual" ya debía estar contando.
+
+### Archivos clave
+- `features/ssoma/gestion/presupuesto-materiales/pages/proyecto/proyecto-page.ts`/`.html`/`.css` (el más grande, casi todo el trabajo de esta sesión)
+- `features/ssoma/gestion/presupuesto-materiales/pages/dashboard/` (nuevo)
+- `features/ssoma/gestion/presupuesto-materiales/pages/drivers/`, `presupuesto-main/`, `kits/`, `ratios-lista/`, `resumen-general/`, `catalogo/`, `control-semana/`, `presupuesto-detalle/`
+- `features/ssoma/gestion/presupuesto-materiales/presupuesto.dtos.ts`, `presupuesto.service.ts`, `presupuesto.routes.ts`, `presupuesto.tabs.ts`
+
+### Verificado
+`npm run build` → 0 errores, solo warnings preexistentes de terceros (canvg, flatpickr, tfjs, node-fetch). No se probó en navegador — el usuario verifica visualmente él mismo (instrucción explícita de la sesión, no se usan preview tools en este repo).
+
+### Pendiente
+- **Doble conteo en Presupuesto → Detalle sin resolver del todo** (ver `Abril_Backend/CONTEXT.md`, sección "Pendiente"): famílias de tipo Botiquín/Estación de Emergencia que todavía no están en la receta de ningún kit puntual se siguen colando por ratio automático. Cambio discutido y revertido a pedido explícito del usuario — retomar la próxima sesión.
+- Confirmar el espaciamiento real de parantes de Baranda vertical (hoy 1.0m aproximado, sin confirmar contra dato real de obra).
+- Corregir en Kardex la cantidad real de turnos por línea de Vigilancia (hoy siempre 1) — permitiría volver a calcular su precio desde Ratios en vez del valor fijo S/3,500 hardcodeado.
+- Regenerar los presupuestos que ya se generaron antes del fix de doble conteo del backend (quedan con líneas duplicadas viejas).

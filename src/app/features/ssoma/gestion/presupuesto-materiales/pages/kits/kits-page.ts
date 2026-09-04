@@ -144,6 +144,12 @@ export class KitsPage implements OnInit {
     });
   }
 
+  seleccionarKit(id: number): void {
+    if (this.kitSeleccionadoId === id) return;
+    this.kitSeleccionadoId = id;
+    this.onSeleccionarKit();
+  }
+
   onSeleccionarKit(): void {
     this.resultado = [];
     this.cantidadKits = null;
