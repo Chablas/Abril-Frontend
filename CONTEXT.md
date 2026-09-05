@@ -5648,3 +5648,24 @@ Se discutió si agregar `roles: [ADMINISTRADOR_SISTEMA, ADMINISTRADOR_UDP, PLANE
 
 ### Verificado
 `ng build`: 0 errores.
+
+## Sesión 2026-09-04 (cont.) — Cronograma de Hitos: soporte para hitos obligatorios y puntuales en la plantilla
+
+### Contexto
+Backend agregó dos campos nuevos a cada hito del catálogo (`esObligatorio`, `esPuntual`). Se pidió que la vista de plantilla de `milestone-schedule` (tabla `#/Hito/Inicio/Fin/Estado` con chip "PLANTILLA") los consuma: marcar visualmente los obligatorios, impedir que queden sin fecha sin confirmación explícita, y mostrar un solo input de fecha (bajo "Fin") para los puntuales.
+
+### Cambios
+1. **DTO**: `core/dtos/milestoneSchedule/milestoneScheduleFakeData.model.ts` — agregado `esObligatorio: boolean` y `esPuntual: boolean` a `MilestoneScheduleFakeDataDTO` (fuente de `GET /fake-data`, la que arma la plantilla).
+2. **`milestone-schedule.ts`**: los dos flags se propagan a cada `undatedTask` en el mapeo de `getFakeData()`; los hitos personalizados (`agregarHitoPersonalizado()`) los reciben en `false`/`false` (no existen en el catálogo).
+   - Los inputs de fecha pasaron de `[(ngModel)]` + `(change)="onFechaChange(hito)"` a `[ngModel]` (unidireccional) + `(ngModelChange)="onInicioChange/onFinChange"`, que delegan en `aplicarCambioFecha()`: si el hito es obligatorio y el cambio lo dejaría sin ninguna fecha, confirma con SweetAlert2 antes de aplicar — si cancela, no se reasigna nada y el binding unidireccional revierte solo el input al valor anterior.
+   - Nueva `hitosObligatoriosSinFecha()` bloquea `addMilestoneScheduleOnMilestoneScheduleHistory()` (primer click "Guardar" en la vista plantilla) con un `Swal` de error que lista los hitos afectados por nombre, antes de transicionar al Gantt o de tocar el backend.
+   - **Hitos puntuales**: confirmado con backend que el campo canónico es `plannedEndDate` (`plannedStartDate` no admite `null` en el DTO). En pantalla el único input visible va bajo la columna "Fin" (`hito.endDate`); `sincronizarDTODesdeUndatedTasks()` espeja ese mismo valor en `plannedStartDate` **solo al armar el payload de guardado**, para que `buildSavePayload()` no lo descarte por `plannedStartDate` vacío.
+3. **`milestone-schedule.html`**: badge "Obligatorio" junto al nombre del hito; columna "Inicio" oculta (`—`) y columna "Fin" habilitada cuando `hito.esPuntual` (comparte input/handler con `esRango`).
+4. **`milestone-schedule.css`**: `.badge-obligatorio` (fondo `#FEF3C7`, texto `#D97706`, paleta warning de DESIGN-VICTOR.md).
+
+### Archivos clave
+- `src/app/core/dtos/milestoneSchedule/milestoneScheduleFakeData.model.ts`
+- `src/app/features/mejora-continua/milestone-schedule/milestone-schedule.ts` / `.html` / `.css`
+
+### Verificado
+`ng build` (producción): 0 errores.
