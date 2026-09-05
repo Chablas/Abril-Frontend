@@ -89,9 +89,44 @@
       </button>
     </div>
 
+    <!-- Editar BOM del kit: trae TODAS las famílias activas del mismo tipo, no solo las que ya
+         están en la receta, para poder agregar materiales nuevos o cambiar cantidades. -->
+    <div *ngIf="mostrarFormEditar && kitDetalle" class="crear-kit-card">
+      <h3 class="form-titulo">Editar "{{ kitDetalle.nombre }}"</h3>
+      <p class="form-desc">
+        Aparecen todos los materiales activos del tipo "{{ kitDetalle.nombreTipo }}" — los que ya
+        están en la receta traen su cantidad actual; pon una cantidad mayor a 0 en los que quieras
+        agregar, o cámbiala en los que ya existen. Deja en 0 los que no aplican.
+      </p>
+      <table class="abril-table tabla-bom">
+        <thead>
+          <tr><th>Material</th><th>Cantidad por kit</th><th>Consumible</th></tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let f of editandoKitItems">
+            <td>{{ f.nombreFamilia }}</td>
+            <td><input type="number" min="0" step="0.01" [(ngModel)]="f.cantidadPorKit" class="item-cantidad" /></td>
+            <td><input type="checkbox" [(ngModel)]="f.esConsumible" /></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="form-actions">
+        <button class="btn-outline" (click)="cancelarEditarKit()">Cancelar</button>
+        <button class="btn-primary" (click)="guardarEdicionKit()" [disabled]="guardandoEdicion">
+          <i class="ti ti-device-floppy"></i>
+          {{ guardandoEdicion ? 'Guardando...' : 'Guardar cambios' }}
+        </button>
+      </div>
+    </div>
+
     <!-- BOM del kit seleccionado (receta) -->
-    <div *ngIf="kitDetalle && resultado.length === 0" class="bom-card">
-      <h3 class="bom-titulo">Receta de "{{ kitDetalle.nombre }}" (por 1 kit)</h3>
+    <div *ngIf="!mostrarFormEditar && kitDetalle && resultado.length === 0" class="bom-card">
+      <div class="bom-header-row">
+        <h3 class="bom-titulo">Receta de "{{ kitDetalle.nombre }}" (por 1 kit)</h3>
+        <button class="btn-outline btn-sm" (click)="abrirEditarKit()">
+          <i class="ti ti-pencil"></i> Editar
+        </button>
+      </div>
       <table class="abril-table tabla-bom">
         <thead>
           <tr><th>Material</th><th>Cantidad por kit</th><th>Tipo</th></tr>

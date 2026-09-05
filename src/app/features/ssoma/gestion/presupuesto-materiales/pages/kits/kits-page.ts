@@ -10,6 +10,13 @@ import {
   KitResumenDto, KitDetalleDto, KitCalculoLineaDto, KitItemInputDto,
   TipoMaterialDto, FamiliaCatalogoDto,
 } from '../../presupuesto.dtos';
+
+interface FilaEdicionKit {
+  familiaId: number;
+  nombreFamilia: string;
+  cantidadPorKit: number;
+  esConsumible: boolean;
+}
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
@@ -182,6 +189,79 @@ export class KitsPage implements OnInit {
         this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
+        this.loader.hide();
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  // ── Editar kit (agregar materiales activos que faltan / cambiar cantidades) ─────
+  mostrarFormEditar = false;
+  guardandoEdicion = false;
+  editandoKitItems: FilaEdicionKit[] = [];
+
+  /** Trae TODAS las famílias activas del mismo tipo que el kit (ej. todo lo de categoría
+   * "BOTIQUIN"), no solo las que ya están en el BOM — así se pueden agregar materiales nuevos que
+   * se activaron en Catálogo después de crear el kit, sin tener que recrearlo desde cero. */
+  abrirEditarKit(): void {
+    if (!this.kitDetalle) return;
+    this.mostrarFormEditar = true;
+    this.loader.show();
+    this.svc.listarFamiliasCatalogo(undefined, this.kitDetalle.tipoId, true).subscribe({
+      next: (familias) => {
+        const existentes = new Map(this.kitDetalle!.items.map((i) => [i.familiaId, i]));
+        this.editandoKitItems = familias
+          .sort((a, b) => a.nombre.localeCompare(b.nombre))
+          .map((f) => {
+            const ex = existentes.get(f.id);
+            return {
+              familiaId: f.id,
+              nombreFamilia: f.nombre,
+              cantidadPorKit: ex?.cantidadPorKit ?? 0,
+              esConsumible: ex?.esConsumible ?? true,
+            };
+          });
+        this.loader.hide();
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loader.hide();
+        this.error.handleError(err);
+        this.mostrarFormEditar = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  cancelarEditarKit(): void {
+    this.mostrarFormEditar = false;
+    this.cdr.markForCheck();
+  }
+
+  guardarEdicionKit(): void {
+    if (!this.kitDetalle || this.guardandoEdicion) return;
+    const items: KitItemInputDto[] = this.editandoKitItems
+      .filter((f) => f.cantidadPorKit > 0)
+      .map((f) => ({ familiaId: f.familiaId, cantidadPorKit: f.cantidadPorKit, esConsumible: f.esConsumible }));
+
+    if (items.length === 0) {
+      Swal.fire({ icon: 'warning', title: 'El kit necesita al menos un material con cantidad mayor a 0.' });
+      return;
+    }
+
+    this.guardandoEdicion = true;
+    this.loader.show();
+    this.svc.editarKit(this.kitDetalle.id, { items }).subscribe({
+      next: () => {
+        this.guardandoEdicion = false;
+        this.loader.hide();
+        this.mostrarFormEditar = false;
+        Swal.fire({ icon: 'success', title: 'Kit actualizado', timer: 1500, showConfirmButton: false });
+        this.onSeleccionarKit();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.guardandoEdicion = false;
         this.loader.hide();
         this.error.handleError(err);
         this.cdr.markForCheck();

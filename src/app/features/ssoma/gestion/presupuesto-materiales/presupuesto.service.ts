@@ -18,6 +18,7 @@ import {
   ActualizarLineaPresupuestoDto,
   PresupuestoResumenDto,
   PresupuestoDetalleDto,
+  PresupuestoDestinatarioDto,
   AbrirSemanaDto,
   RegistrarConsumoLineaDto,
   ControlSemanaDto,
@@ -36,6 +37,7 @@ import {
   KitProyectoGuardarDto,
   KitProyectoGuardadoDto,
   KitCreateDto,
+  KitEditarDto,
   FamiliaCatalogoDto,
   ActualizarFamiliaDto,
   MaterialPendienteGlobalDto,
@@ -320,6 +322,20 @@ export class PresupuestoMaterialesService {
     );
   }
 
+  eliminarPresupuesto(presupuestoId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(
+      `${this.base}/presupuestos/${presupuestoId}`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  getDestinatariosAprobacion(presupuestoId: number): Observable<PresupuestoDestinatarioDto[]> {
+    return this.http.get<PresupuestoDestinatarioDto[]>(
+      `${this.base}/presupuestos/${presupuestoId}/destinatarios-aprobacion`,
+      { headers: this.authHeaders() },
+    );
+  }
+
   aprobarPresupuesto(presupuestoId: number): Observable<{ estado: string }> {
     return this.http.post<{ estado: string }>(
       `${this.base}/presupuestos/${presupuestoId}/aprobar`,
@@ -501,6 +517,13 @@ export class PresupuestoMaterialesService {
 
   crearKit(dto: KitCreateDto): Observable<{ id: number }> {
     return this.http.post<{ id: number }>(`${this.base}/kits`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  /** Reemplaza el BOM completo de un kit ya existente (agregar/quitar materiales o cambiar cantidades). */
+  editarKit(kitId: number, dto: KitEditarDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/kits/${kitId}`, dto, {
       headers: this.authHeaders(),
     });
   }

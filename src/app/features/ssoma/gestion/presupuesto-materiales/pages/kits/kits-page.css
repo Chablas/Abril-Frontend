@@ -11,6 +11,8 @@
 
 .bom-card, .resultado-col { background: white; border: 0.5px solid #E2E8F0; border-radius: 10px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
 .bom-titulo, .resultado-titulo { font-weight: 600; color: #111827; margin: 0 0 0.75rem 0; font-size: 0.9rem; }
+.bom-header-row { display: flex; align-items: center; justify-content: space-between; }
+.bom-header-row .bom-titulo { margin: 0; }
 
 .tabla-bom { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 .tabla-bom th { text-align: left; padding: 6px 8px; font-weight: 600; font-size: 0.75rem; }

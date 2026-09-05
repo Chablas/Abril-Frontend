@@ -100,13 +100,16 @@
       <p class="form-desc">Deja los campos vacíos para usar los datos base configurados del proyecto (pestaña "Datos Base").</p>
       <div class="form-fields">
         <label>HH Total (override)
-          <input type="number" [(ngModel)]="formGenerar.hhTotalCasa" placeholder="Usar valor del proyecto" />
+          <input type="number" [(ngModel)]="formGenerar.hhTotalCasa"
+                 [placeholder]="driverProyecto?.hhTotalCasa != null ? ('Usa ' + (driverProyecto!.hhTotalCasa | number:'1.0-2')) : 'Usar valor del proyecto'" />
         </label>
         <label>Área Techada m² (override)
-          <input type="number" [(ngModel)]="formGenerar.areaTechadaM2" placeholder="Usar valor del proyecto" />
+          <input type="number" [(ngModel)]="formGenerar.areaTechadaM2"
+                 [placeholder]="driverProyecto?.areaTechadaM2 != null ? ('Usa ' + (driverProyecto!.areaTechadaM2 | number:'1.0-2')) : 'Usar valor del proyecto'" />
         </label>
         <label>Trabajadores (override)
-          <input type="number" [(ngModel)]="formGenerar.trabajadores" placeholder="Usar valor del proyecto" />
+          <input type="number" [(ngModel)]="formGenerar.trabajadores"
+                 [placeholder]="driverProyecto?.trabajadores != null ? ('Usa ' + driverProyecto!.trabajadores) : 'Usar valor del proyecto'" />
         </label>
         <label class="full-width">Notas
           <textarea [(ngModel)]="formGenerar.notas" rows="2" placeholder="Versión inicial, ajuste Q2..."></textarea>
@@ -175,6 +178,9 @@
           </button>
           <button *ngIf="p.estado === 'APROBADO'" class="btn-sm btn-primary-sm" (click)="irAControl(p.id)">
             <i class="ti ti-chart-bar"></i> Control
+          </button>
+          <button *ngIf="p.estado === 'BORRADOR'" class="btn-sm btn-icon-danger" (click)="eliminarPresupuesto(p)" title="Eliminar esta versión">
+            <i class="ti ti-trash"></i>
           </button>
         </div>
       </div>
@@ -396,7 +402,7 @@
   <!-- ═══════════════════ SERVICIOS (costo fijo, cantidad manual) ═══════════════════ -->
   <div class="page-body" *ngIf="activeSubTab === 'servicios'" style="padding-bottom: 0;">
     <div class="hitos-card">
-      <h3 class="form-titulo" style="margin:0 0 0.5rem;">Servicios de costo fijo</h3>
+      <h3 class="form-titulo" style="margin:0 0 0.5rem;">Servicios y equipos (costo fijo)</h3>
       <p class="form-desc" style="margin-top:0;">
         Familias de Catálogo marcadas como "Fijo" (alquileres, letreros, etc.) — no escalan con
         HH/Área/Trabajadores como los materiales, así que la cantidad se tipea a mano acá. El
@@ -633,7 +639,8 @@
           <h3 class="bom-titulo">Rodapié (Triplay 8mm 2.44 x 1.22, tira de 20cm)</h3>
           <p class="form-desc" style="color:#6b7280;">
             Usa los mismos metros lineales de Barandas (arriba) — van en el mismo tramo de obra.
-            6 tiras de 2.44m por plancha (14.64 ml utilizables/plancha).
+            6 tiras de 2.44m por plancha (14.64 ml/plancha), con 13% de traslape entre tiras
+            (rendimiento útil real ≈12.74 ml/plancha).
           </p>
           <table class="abril-table tabla-bom" *ngIf="rodapiePlanchas > 0">
             <thead><tr><th>Material</th><th>Cantidad</th></tr></thead>

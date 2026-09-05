@@ -183,7 +183,7 @@ export class ProyectoPage implements OnInit {
     { id: 'cronograma', label: 'Cronograma', icon: 'ti-calendar-time' },
     { id: 'personal', label: 'Personal', icon: 'ti-users' },
     { id: 'vigilancia', label: 'Vigilancia', icon: 'ti-shield-lock' },
-    { id: 'servicios', label: 'Servicios', icon: 'ti-tool' },
+    { id: 'servicios', label: 'Servicios y equipos', icon: 'ti-tool' },
     { id: 'ratios', label: 'Ratios', icon: 'ti-chart-bar' },
     { id: 'kits', label: 'Kits / BOM', icon: 'ti-package' },
     { id: 'calculo-tecnico', label: 'Cálculo técnico', icon: 'ti-calculator' },
@@ -452,12 +452,16 @@ export class ProyectoPage implements OnInit {
 
   // Rodapié: mismos metros lineales que Barandas (van juntos en el mismo tramo de obra) — triplay
   // 8mm de 2.44 x 1.22, tira de 20cm de ancho cortada del lado de 1.22m → 6 tiras de 2.44m por
-  // plancha = 14.64 ml utilizables por plancha.
+  // plancha = 14.64 ml utilizables por plancha. En obra las tiras se traslapan entre sí (reportado
+  // por el responsable SSOMA), así que el rendimiento útil real es menor — 13% de traslape,
+  // verificado contra un caso real (4467 ml → 350 planchas reales, contra 306 de la fórmula sin
+  // traslape).
   private static readonly RODAPIE_ML_POR_PLANCHA = 14.64;
+  private static readonly RODAPIE_TRASLAPE_PCT = 0.13;
   get rodapiePlanchas(): number {
-    return this.barandasMl && this.barandasMl > 0
-      ? Math.ceil(this.barandasMl / ProyectoPage.RODAPIE_ML_POR_PLANCHA)
-      : 0;
+    if (!this.barandasMl || this.barandasMl <= 0) return 0;
+    const mlUtilesPorPlancha = ProyectoPage.RODAPIE_ML_POR_PLANCHA * (1 - ProyectoPage.RODAPIE_TRASLAPE_PCT);
+    return Math.ceil(this.barandasMl / mlUtilesPorPlancha);
   }
 
   // Tubería PVC 1": un poste (60cm) por cada barra FRP 25mm requerida; barra de 3m cortada
@@ -470,14 +474,14 @@ export class ProyectoPage implements OnInit {
   // Ducto: fenólico 18mm, plancha de 2.44×1.22. El área que se tipea es el TOTAL de todos los
   // ductos del proyecto juntos, pero en obra cada ducto se corta y arma por separado — ductos
   // chicos desperdician proporcionalmente mucho más material que uno grande (una plancha entera se
-  // gasta igual para tapar un tramo de 2m² que uno de 20m²). +40% de exceso aproxima ese
-  // desperdicio de fragmentación: verificado contra un cálculo real ducto-por-ducto (777m² total,
-  // 6 ductos de distinto tamaño) que dio 385 planchas reales, contra ~261 de tratar los 777m² como
-  // un área única sin margen — la diferencia real ronda +40-50%, no el +10% que había antes.
+  // gasta igual para tapar un tramo de 2m² que uno de 20m²). +47.4% de exceso (merma por
+  // fragmentación) aproxima ese desperdicio: verificado contra un cálculo real ducto-por-ducto
+  // (777m² total, 6 ductos de distinto tamaño) que dio 385 planchas reales, contra ~261 de tratar
+  // los 777m² como un área única sin margen. El +40% usado antes daba 366, todavía corto.
   private static readonly FENOLICO_LADO_A = 2.44;
   private static readonly FENOLICO_LADO_B = 1.22;
   private static readonly FENOLICO_AREA_PLANCHA = ProyectoPage.FENOLICO_LADO_A * ProyectoPage.FENOLICO_LADO_B;
-  private static readonly FENOLICO_EXCESO = 1.40;
+  private static readonly FENOLICO_EXCESO = 1.474;
   // Bastidor de listón 2"x3"x12' (12' = 3.6576 ml) — va UNO POR PLANCHA (marco perimetral de cada
   // plancha individual), no un perímetro del área total: perímetro de 1 plancha = 2×(2.44+1.22) =
   // 7.32 ml ÷ 3.6576 ml/bastidor ≈ 2 bastidores por plancha, que es justo la proporción real
@@ -535,11 +539,13 @@ export class ProyectoPage implements OnInit {
           this.marcelinosGuardando = false;
           this.loader.hide();
           Swal.fire({ icon: 'success', title: 'Marcelinos actualizado en el presupuesto', timer: 2000, showConfirmButton: false });
+          this.cdr.markForCheck();
         },
         error: (err: HttpErrorResponse) => {
           this.marcelinosGuardando = false;
           this.loader.hide();
           this.error.handleError(err);
+          this.cdr.markForCheck();
         },
       });
   }
@@ -1383,8 +1389,12 @@ export class ProyectoPage implements OnInit {
     if (this.incluirAcero) {
       this.aceroHhAplicado = Math.round(area * ACERO_HH_POR_M2);
       this.aceroTrabAplicado = Math.round(area * ACERO_TRABAJADORES_POR_M2);
-      this.formGenerar.hhTotalCasa = (this.formGenerar.hhTotalCasa || 0) + this.aceroHhAplicado;
-      this.formGenerar.trabajadores = (this.formGenerar.trabajadores || 0) + this.aceroTrabAplicado;
+      // Si el campo está vacío ("usar valor del proyecto"), la base es el driver del proyecto, no 0
+      // — sin esto, activar el checkbox reemplazaba el HH/Trabajadores real por solo el adicional.
+      const hhBase   = this.formGenerar.hhTotalCasa  ?? this.driverProyecto?.hhTotalCasa  ?? 0;
+      const trabBase = this.formGenerar.trabajadores ?? this.driverProyecto?.trabajadores ?? 0;
+      this.formGenerar.hhTotalCasa  = hhBase   + this.aceroHhAplicado;
+      this.formGenerar.trabajadores = trabBase + this.aceroTrabAplicado;
     } else {
       this.formGenerar.hhTotalCasa = Math.max(0, (this.formGenerar.hhTotalCasa || 0) - this.aceroHhAplicado);
       this.formGenerar.trabajadores = Math.max(0, (this.formGenerar.trabajadores || 0) - this.aceroTrabAplicado);
@@ -1420,6 +1430,33 @@ export class ProyectoPage implements OnInit {
 
   irAControl(id: number): void {
     this.router.navigate(['/ssoma/gestion/presupuesto-materiales/presupuesto', id, 'control']);
+  }
+
+  eliminarPresupuesto(p: PresupuestoResumenDto): void {
+    Swal.fire({
+      icon: 'warning',
+      title: `¿Eliminar la versión ${p.version}?`,
+      text: 'Se borran todas sus líneas (materiales, Personal, Vigilancia, Servicios y Kits). No se puede deshacer.',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonText: 'Cancelar',
+    }).then((r) => {
+      if (!r.isConfirmed) return;
+      this.loader.show();
+      this.svc.eliminarPresupuesto(p.id).subscribe({
+        next: () => {
+          this.loader.hide();
+          Swal.fire({ icon: 'success', title: 'Presupuesto eliminado', timer: 1500, showConfirmButton: false });
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loader.hide();
+          this.error.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+    });
   }
 
   volver(): void {

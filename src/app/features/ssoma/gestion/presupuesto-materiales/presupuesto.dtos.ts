@@ -340,6 +340,11 @@ export interface PresupuestoTipoDto {
   familias: PresupuestoLineaDto[];
 }
 
+export interface PresupuestoDestinatarioDto {
+  rol: string;
+  email: string;
+}
+
 export interface PresupuestoDetalleDto extends PresupuestoResumenDto {
   notas: string | null;
   tipos: PresupuestoTipoDto[];
@@ -621,6 +626,10 @@ export interface KitItemInputDto {
 export interface KitCreateDto {
   nombre: string;
   tipoId: number;
+  items: KitItemInputDto[];
+}
+
+export interface KitEditarDto {
   items: KitItemInputDto[];
 }
 
