@@ -273,7 +273,10 @@
             <tbody>
                 <tr *ngFor="let hito of hitosFiltrados; let i = index">
                     <td class="td-num">{{ i + 1 }}</td>
-                    <td class="td-nombre">{{ hito.text }}</td>
+                    <td class="td-nombre">
+                        {{ hito.text }}
+                        <span *ngIf="hito.esObligatorio" class="badge badge-obligatorio" title="No puede quedar sin fecha">Obligatorio</span>
+                    </td>
                     <td class="td-badge">
                         <input *ngIf="authService.hasRole(Roles.RESIDENTE)" type="checkbox" [checked]="hito.esCritico" (change)="toggleCritico(hito)" />
                     </td>
@@ -281,13 +284,14 @@
                         <input type="checkbox" [checked]="hito.esRango" (change)="toggleRango(hito)" [disabled]="hito.esCritico" />
                     </td>
                     <td class="td-fecha">
-                        <input type="date" [(ngModel)]="hito.startDate" (change)="onFechaChange(hito)"
+                        <input *ngIf="!hito.esPuntual" type="date" [ngModel]="hito.startDate" (ngModelChange)="onInicioChange(hito, $event)"
                             [title]="hito.esCritico ? 'Fecha real de este corte de etapa (ej. Fin de casco, Entrega final).' : ''" />
+                        <span *ngIf="hito.esPuntual" class="text-gray-300">—</span>
                     </td>
                     <td class="td-fecha">
-                        <input *ngIf="hito.esRango" type="date"
-                            [(ngModel)]="hito.endDate" (change)="onFechaChange(hito)" />
-                        <span *ngIf="!hito.esRango" class="text-gray-300">—</span>
+                        <input *ngIf="hito.esRango || hito.esPuntual" type="date"
+                            [ngModel]="hito.endDate" (ngModelChange)="onFinChange(hito, $event)" />
+                        <span *ngIf="!hito.esRango && !hito.esPuntual" class="text-gray-300">—</span>
                     </td>
                     <td class="td-badge">
                         <span class="badge" [ngClass]="tieneFecha(hito) ? 'badge-con-fecha' : 'badge-sin-fecha'">

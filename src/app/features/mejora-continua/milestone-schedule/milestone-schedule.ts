@@ -225,6 +225,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       customDescription: descripcion,
       esCritico: false,
       esRango: false,
+      esObligatorio: false,
+      esPuntual: false,
       text: descripcion,
       order: this.undatedTasks.length + 1,
       start_date: null,
@@ -285,16 +287,68 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     this.sincronizarDTODesdeUndatedTasks();
   }
 
+  /**
+   * Aplica el nuevo valor de un campo de fecha del hito, salvo que sea obligatorio y este
+   * cambio lo deje sin ninguna fecha: ahí se confirma primero con SweetAlert2. Si cancela, no
+   * se toca `hito[campo]` — el input usa binding unidireccional ([ngModel]), así que vuelve
+   * solo a mostrar el valor anterior en el siguiente ciclo de detección de cambios.
+   */
+  private aplicarCambioFecha(hito: any, campo: 'startDate' | 'endDate', valor: string): void {
+    const quedariaConFecha = campo === 'startDate' ? !!(valor || hito.endDate) : !!(hito.startDate || valor);
+
+    if (hito.esObligatorio && this.tieneFecha(hito) && !quedariaConFecha) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Hito obligatorio',
+        html: `<b>${hito.text}</b> es un hito obligatorio y no puede quedar sin fecha. ¿Confirmas dejarlo sin fecha de todas formas?`,
+        showCancelButton: true,
+        confirmButtonText: 'Sí, dejar sin fecha',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#D97706',
+      }).then((result) => {
+        if (!result.isConfirmed) return;
+        hito[campo] = valor;
+        this.onFechaChange(hito);
+      });
+      return;
+    }
+
+    hito[campo] = valor;
+    this.onFechaChange(hito);
+  }
+
+  onInicioChange(hito: any, valor: string): void {
+    this.aplicarCambioFecha(hito, 'startDate', valor);
+  }
+
+  /** También atiende el input "Fin" de hitos puntuales (esPuntual): ahí es su única fecha real. */
+  onFinChange(hito: any, valor: string): void {
+    this.aplicarCambioFecha(hito, 'endDate', valor);
+  }
+
+  /** Hitos obligatorios sin ninguna fecha cargada — bloquean el guardado de la plantilla. */
+  private hitosObligatoriosSinFecha(): any[] {
+    return this.undatedTasks.filter((t: any) => t.esObligatorio && !this.tieneFecha(t));
+  }
+
   /** Reconstruye el DTO de guardado completo a partir de undatedTasks (fuente de verdad de la plantilla). */
   private sincronizarDTODesdeUndatedTasks(): void {
-    this.milestoneScheduleHistoryCreateDTO.milestoneSchedules = this.undatedTasks.map((t: any, i: number) => ({
-      milestoneId: t.milestoneId,
-      customDescription: t.milestoneId == null ? t.customDescription : undefined,
-      plannedStartDate: t.startDate?.substring(0, 10) || '',
-      plannedEndDate: t.endDate?.substring(0, 10) || null,
-      order: i + 1,
-      esHitoCritico: !!t.esCritico,
-    }));
+    this.milestoneScheduleHistoryCreateDTO.milestoneSchedules = this.undatedTasks.map((t: any, i: number) => {
+      const finClean = t.endDate?.substring(0, 10) || '';
+      // Puntual: la fecha real es plannedEndDate (confirmado con backend). plannedStartDate no
+      // admite null en el DTO ni sobrevive el filtro de buildSavePayload() si queda vacío, así
+      // que se espeja el mismo valor ahí solo para el payload — en pantalla sigue habiendo un
+      // único input, bajo la columna "Fin".
+      const inicioClean = t.esPuntual ? finClean : (t.startDate?.substring(0, 10) || '');
+      return {
+        milestoneId: t.milestoneId,
+        customDescription: t.milestoneId == null ? t.customDescription : undefined,
+        plannedStartDate: inicioClean,
+        plannedEndDate: t.endDate?.substring(0, 10) || null,
+        order: i + 1,
+        esHitoCritico: !!t.esCritico,
+      };
+    });
   }
 
   getEstado(task: any): string {
@@ -690,6 +744,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
               customDescription: undefined as string | undefined,
               esCritico: false,
               esRango: false,
+              esObligatorio: m.esObligatorio,
+              esPuntual: m.esPuntual,
               text: m.milestoneDescription,
               order: m.order,
               start_date: null as Date | null,
@@ -877,6 +933,17 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
   addMilestoneScheduleOnMilestoneScheduleHistory() {
     if (this.noMilestones && this.undatedTasks.length > 0) {
+      const faltantes = this.hitosObligatoriosSinFecha();
+      if (faltantes.length > 0) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Faltan fechas obligatorias',
+          html:
+            'Los siguientes hitos son obligatorios y no pueden guardarse sin fecha:<br><br>' +
+            faltantes.map((h) => `• ${h.text}`).join('<br>'),
+        });
+        return;
+      }
       // Vista de plantilla: solo transicionar al Gantt, sin llamada al backend
       this.promoteUndatedTasksToGantt();
       return;

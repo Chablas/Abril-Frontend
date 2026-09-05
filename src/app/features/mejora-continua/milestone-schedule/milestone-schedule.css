@@ -195,6 +195,7 @@
 .badge { font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
 .badge-sin-fecha { background: #f1f5f9; color: #94a3b8; }
 .badge-con-fecha { background: #E6F1FB; color: #185FA5; }
+.badge-obligatorio { background: #FEF3C7; color: #D97706; margin-left: 6px; }
 
 /* ── Modal "Ver historial de cronograma de hitos" ───────────────────────── */
 
