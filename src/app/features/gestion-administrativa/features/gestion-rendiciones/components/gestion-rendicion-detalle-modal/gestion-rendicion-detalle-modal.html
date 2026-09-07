@@ -49,14 +49,14 @@
 
     <!-- Los dos botones de la primera revisión: la decisión es de la planilla entera, así que van
          acá y no en la tabla de salidas de más abajo. -->
-    <div *ngIf="d.porPrimeraRevision" class="flex flex-wrap items-center gap-3">
+    <div *ngIf="d.porPrimeraRevision" class="flex flex-wrap items-center justify-center gap-3">
       <button
         type="button"
         (click)="aprobarPrimeraRevision()"
-        [disabled]="d.incluyePropias"
-        [title]="d.incluyePropias
-          ? 'No puedes revisar una rendición con tus propias salidas'
-          : 'Habilita al trabajador a cargar el Consolidado del S10'"
+        [disabled]="!d.puedeDecidir"
+        [title]="d.puedeDecidir
+          ? 'Habilita al trabajador a cargar el Consolidado del S10'
+          : 'No puedes revisar una rendición con tus propias salidas'"
         class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
         style="background:var(--color-abril-standard)">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -68,10 +68,10 @@
       <button
         type="button"
         (click)="observarPrimeraRevision()"
-        [disabled]="d.incluyePropias"
-        [title]="d.incluyePropias
-          ? 'No puedes revisar una rendición con tus propias salidas'
-          : 'Se te pedirá el comentario de qué tiene que corregir'"
+        [disabled]="!d.puedeDecidir"
+        [title]="d.puedeDecidir
+          ? 'Se te pedirá el comentario de qué tiene que corregir'
+          : 'No puedes revisar una rendición con tus propias salidas'"
         class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         style="background:#FFFFFF;color:#D30000;border:1px solid #D30000">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -81,7 +81,7 @@
         Observar
       </button>
 
-      <span *ngIf="d.incluyePropias" class="text-[11px] text-gray-500 italic">
+      <span *ngIf="!d.puedeDecidir" class="text-[11px] text-gray-500 italic">
         Esta rendición incluye salidas tuyas: la tiene que revisar otro jefe.
       </span>
     </div>
@@ -116,6 +116,7 @@
             : 'El Consolidado del S10 se habilita al aprobar la primera revisión.' }}
       </span>
 
+      <!-- Las dos copias que deja la aprobación: aprobar ES firmar, y firma los dos documentos. -->
       <a *ngIf="d.pdfFirmadoUrl" [href]="d.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
          class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
          style="color:var(--color-abril-accent)">
@@ -125,54 +126,28 @@
         {{ d.pdfFirmadoFilename ?? 'Planilla firmada' }}
         <span class="text-xs text-gray-400 font-normal">· firmada el {{ d.firmadoAt | date:'dd/MM/yyyy' }}</span>
       </a>
+
+      <a *ngIf="d.consolidadoS10?.pdfFirmadoUrl as firmado" [href]="firmado" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {{ d.consolidadoS10?.pdfFirmadoFilename ?? 'Consolidado del S10 firmado' }}
+        <span class="text-xs text-gray-400 font-normal">
+          · firmado el {{ d.consolidadoS10?.firmadoAt | date:'dd/MM/yyyy' }}
+        </span>
+      </a>
     </div>
 
-    <!-- ── Salidas: acá se decide una por una ───────────────────────────── -->
+    <!-- ── Salidas: solo lectura. Lo que agrupa la planilla que se está decidiendo. ── -->
     <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
-      <div class="flex items-center gap-3">
-        <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas de esta planilla</span>
-        <span *ngIf="seleccionadas.size > 0" class="text-[11px] text-gray-500">
-          {{ seleccionadas.size }} seleccionada{{ seleccionadas.size === 1 ? '' : 's' }}
-        </span>
-
-        <div class="ml-auto flex items-center gap-2">
-          <button
-            type="button"
-            abrilBulkAction="default"
-            (click)="aprobar()"
-            [disabled]="seleccionadas.size === 0">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-            </svg>
-            Aprobar
-          </button>
-          <button
-            type="button"
-            abrilBulkAction="danger"
-            (click)="rechazar()"
-            [disabled]="seleccionadas.size === 0">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
-              <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
-            </svg>
-            Rechazar
-          </button>
-        </div>
-      </div>
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas de esta planilla</span>
 
       <div class="abril-table-wrap">
         <table class="abril-table abril-table--th-center">
           <thead>
             <tr>
-              <th>
-                <input
-                  type="checkbox"
-                  [checked]="todasSeleccionadas"
-                  [disabled]="decidibles.length === 0"
-                  (change)="toggleTodas()"
-                  class="cursor-pointer disabled:cursor-not-allowed"
-                  style="accent-color:var(--color-abril-accent)"
-                  title="Seleccionar / deseleccionar las que se pueden decidir" />
-              </th>
               <th>N° solicitud</th>
               <th>Trabajador</th>
               <th>Fecha</th>
@@ -185,20 +160,7 @@
           <tbody>
             <tr *ngFor="let s of d.salidas"
                 class="border-b"
-                [style.background]="seleccionadas.has(s.id) ? '#EAF6FF' : null"
                 style="border-color:var(--color-abril-border)">
-              <td class="select-none">
-                <input
-                  type="checkbox"
-                  [checked]="seleccionadas.has(s.id)"
-                  [disabled]="!puedeDecidirSalida(s.id)"
-                  (change)="toggleSalida(s.id)"
-                  class="cursor-pointer disabled:cursor-not-allowed"
-                  style="accent-color:var(--color-abril-accent)"
-                  [title]="s.esPropia
-                    ? 'Es tu propia salida: no puedes decidir su reembolso'
-                    : (s.porDecidir ? null : 'Su reembolso ya fue decidido o falta el Consolidado del S10')" />
-              </td>
               <td class="text-gray-700 font-medium whitespace-nowrap">{{ s.codigo ?? '—' }}</td>
               <td class="text-gray-700">{{ s.trabajador | titleCase }}</td>
               <td class="text-gray-700 whitespace-nowrap">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
@@ -228,6 +190,55 @@
       </div>
     </div>
 
+    <!-- ── Decisión del reembolso ─────────────────────────────────────────
+         Es de la planilla entera, igual que la primera revisión: no se aprueban unas salidas sí y
+         otras no. Cubre las que todavía están por decidir; las ya decididas el backend las ignora. -->
+    <div *ngIf="d.porDecidirCount > 0"
+         class="flex flex-wrap items-center justify-center gap-3 border-t pt-3"
+         style="border-color:var(--color-abril-border)">
+      <button
+        type="button"
+        (click)="aprobar()"
+        [disabled]="!d.puedeDecidir"
+        [title]="d.puedeDecidir
+          ? 'Aprueba el reembolso y estampa tu firma en la planilla y en su Consolidado del S10'
+          : 'No puedes decidir el reembolso de tus propias salidas'"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+        style="background:var(--color-abril-standard)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        Aprobar el reembolso
+      </button>
+
+      <button
+        type="button"
+        (click)="rechazar()"
+        [disabled]="!d.puedeDecidir"
+        [title]="d.puedeDecidir
+          ? 'Se te pedirá la observación de qué tiene que corregir el trabajador'
+          : 'No puedes decidir el reembolso de tus propias salidas'"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        style="background:#FFFFFF;color:#D30000;border:1px solid #D30000">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+        Rechazar
+      </button>
+
+      <span *ngIf="!d.puedeDecidir" class="text-[11px] text-gray-500 italic">
+        Esta rendición incluye salidas tuyas: la tiene que revisar otro jefe.
+      </span>
+    </div>
+
   </div>
 
 </app-base-modal>
+
+<!-- ── Modal para registrar la firma la primera vez ─────────────────────
+     Salta con el 409 de aprobar: el revisor dibuja su firma sin salir de la pantalla y la
+     aprobación que había pedido se reintenta sola. -->
+<app-firma-registrar-modal
+  *ngIf="firmaModalAbierto"
+  (guardada)="onFirmaRegistrada()"
+  (cerrar)="cerrarFirmaModal()" />

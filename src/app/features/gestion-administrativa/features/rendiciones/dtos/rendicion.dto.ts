@@ -29,6 +29,12 @@ export interface RendicionListItemDto {
   periodoMes: number;
   salidasCount: number;
   montoTotal: number;
+  /**
+   * Monto de la planilla COMPLETA (todas sus salidas, de todos sus trabajadores). Es el importe
+   * que se registró en el S10, así que es contra este —y no contra `montoTotal`, que viene
+   * recortado— que tiene que cuadrar el monto del Consolidado del S10.
+   */
+  montoTotalPlanilla: number;
 
   // ── Documentos de la planilla ──────────────────────────────────────────
   pdfUrl: string;
@@ -116,6 +122,25 @@ export interface PeriodoOptionDto {
   label: string;
 }
 
+/**
+ * Destinatarios REALES de un correo del flujo, ya resueltos por el backend con la configuración
+ * de Configuración → Correos. No es "tu jefe": el revisor puede estar apagado ahí y el correo
+ * irse solo a los destinatarios configurados. `para` vacío = no le llega a nadie.
+ */
+export interface CorreoDestinatariosDto {
+  para: string[];
+  copia: string[];
+}
+
+/**
+ * Datos de arranque de la pantalla: lo que NO cambia al mover los filtros. Por eso las opciones
+ * del filtro de periodo viajan junto a los destinatarios de los correos que dispara la pantalla,
+ * que son los mismos para toda ella (está acotada a un solo trabajador).
+ */
 export interface RendicionFilterDataDto {
   periodos: PeriodoOptionDto[];
+  /** A quién le llega el aviso de la primera revisión. Lo dispara "Enviar a revisión". */
+  correoPrimeraRevision: CorreoDestinatariosDto;
+  /** A quién le llega el aviso del Consolidado del S10. Lo dispara "Avisar al revisor". */
+  correoS10Revisor: CorreoDestinatariosDto;
 }

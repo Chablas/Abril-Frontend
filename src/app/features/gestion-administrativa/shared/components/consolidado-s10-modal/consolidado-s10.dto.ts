@@ -11,5 +11,20 @@ export interface ConsolidadoS10Dto {
   ambito: ConsolidadoS10Ambito;
   pdfUrl: string;
   pdfFilename: string;
+  /**
+   * Importe total con el que el S10 registró la planilla. Cuadra con el monto de la planilla
+   * completa: el backend no acepta otro. Null en los consolidados subidos antes de que el
+   * formulario pidiera el dato.
+   */
+  montoTotal: number | null;
+  /** Número de guía del S10. Es texto (puede traer letras). Null en los consolidados viejos. */
+  numeroGuia: string | null;
+  /**
+   * Copia firmada por el revisor (todas sus hojas). La genera la aprobación del reembolso
+   * —aprobar ES firmar—, así que es null mientras no se haya aprobado.
+   */
+  pdfFirmadoUrl: string | null;
+  pdfFirmadoFilename: string | null;
+  firmadoAt: string | null;
   uploadedAt: string;
 }

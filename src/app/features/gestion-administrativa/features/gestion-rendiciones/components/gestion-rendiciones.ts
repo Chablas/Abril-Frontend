@@ -124,13 +124,13 @@ export class GestionRendiciones implements OnInit {
   detalleId: number | null = null;
   consolidadoDe: GestionRendicionListItemDto | null = null;
 
-  /** Modal para registrar la firma en el momento (se abre con el 409 de firmar). */
+  /** Modal para registrar la firma en el momento (se abre con el 409 de aprobar). */
   firmaModalAbierto = false;
   /** Selección que se estaba firmando cuando saltó el modal, para reintentar al guardarla. */
   private accionPendienteDeFirma: ReembolsoAccionDto | null = null;
 
   resumen: ResumenGestionRendicionesDto = {
-    primeraRevision: 0, sinConsolidado: 0, porRevisar: 0, porFirmar: 0,
+    primeraRevision: 0, sinConsolidado: 0, porRevisar: 0,
   };
 
   // ── Filtros ────────────────────────────────────────────────────────
@@ -388,18 +388,17 @@ export class GestionRendiciones implements OnInit {
     return this.seleccionadas.filter((r) => r.porDecidirCount > 0);
   }
 
-  /** True si alguna candidata a decidir incluye salidas propias: el backend las rechaza. */
-  get decisionIncluyePropias(): boolean {
-    return this.selectedPorDecidir.some((r) => r.incluyePropias);
+  /**
+   * True si alguna candidata a decidir tiene salidas propias que no le toca decidir: el backend
+   * las rechaza. Lo decide el backend por planilla (`puedeDecidir`), que solo deja pasar las
+   * propias cuando el usuario es su propio revisor (jefe personalizado apuntándose a sí mismo).
+   */
+  get decisionBloqueada(): boolean {
+    return this.selectedPorDecidir.some((r) => !r.puedeDecidir);
   }
 
   get puedeDecidir(): boolean {
-    return this.selectedPorDecidir.length > 0 && !this.decisionIncluyePropias;
-  }
-
-  /** Seleccionadas con reembolso aprobado esperando firma. */
-  get selectedPorFirmar(): GestionRendicionListItemDto[] {
-    return this.seleccionadas.filter((r) => r.porFirmarCount > 0);
+    return this.selectedPorDecidir.length > 0 && !this.decisionBloqueada;
   }
 
   private accionDe(items: GestionRendicionListItemDto[], observacion?: string): ReembolsoAccionDto {
@@ -413,13 +412,13 @@ export class GestionRendiciones implements OnInit {
     return this.seleccionadas.filter((r) => r.porPrimeraRevision);
   }
 
-  /** True si alguna candidata incluye salidas propias: el backend las rechaza. */
-  get primeraRevisionIncluyePropias(): boolean {
-    return this.selectedPorPrimeraRevision.some((r) => r.incluyePropias);
+  /** True si alguna candidata tiene salidas propias que no le toca revisar: el backend las rechaza. */
+  get primeraRevisionBloqueada(): boolean {
+    return this.selectedPorPrimeraRevision.some((r) => !r.puedeDecidir);
   }
 
   get puedeDecidirPrimeraRevision(): boolean {
-    return this.selectedPorPrimeraRevision.length > 0 && !this.primeraRevisionIncluyePropias;
+    return this.selectedPorPrimeraRevision.length > 0 && !this.primeraRevisionBloqueada;
   }
 
   private accionPrimeraRevisionDe(
@@ -512,7 +511,8 @@ export class GestionRendiciones implements OnInit {
     const result = await Swal.fire({
       icon: 'question',
       title: items.length === 1 ? '¿Aprobar este reembolso?' : `¿Aprobar ${items.length} planillas?`,
-      text: `Se aprobarán ${salidas} salida(s) y se les avisará a sus solicitantes.`,
+      text: `Se aprobarán ${salidas} salida(s), se estampará tu firma en la planilla y en su `
+          + 'Consolidado del S10, y se les avisará a sus solicitantes.',
       showCancelButton: true,
       confirmButtonText: 'Sí, aprobar',
       cancelButtonText: 'Cancelar',
@@ -520,11 +520,8 @@ export class GestionRendiciones implements OnInit {
     });
     if (!result.isConfirmed) return;
 
-    this.loaderService.show();
-    this.service.aprobarReembolso(this.accionDe(items)).subscribe({
-      next: (res) => this.trasAccion(res.message),
-      error: (err: HttpErrorResponse) => this.errorAccion(err),
-    });
+    // Aprobar firma: si el revisor no tiene firma registrada, el 409 abre el modal para dibujarla.
+    this.aprobar(this.accionDe(items));
   }
 
   async rechazarBulk(): Promise<void> {
@@ -552,31 +549,14 @@ export class GestionRendiciones implements OnInit {
     });
   }
 
-  async firmarBulk(): Promise<void> {
-    const items = this.selectedPorFirmar;
-    if (items.length === 0) return;
-
-    const result = await Swal.fire({
-      icon: 'question',
-      title: items.length === 1 ? '¿Firmar esta planilla?' : `¿Firmar ${items.length} planillas?`,
-      text: 'Se estampará tu firma sobre una copia; el PDF original se conserva.',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, firmar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0086A5',
-    });
-    if (!result.isConfirmed) return;
-
-    this.firmar(this.accionDe(items));
-  }
-
   /**
-   * Ejecuta la firma. El 409 significa que el usuario todavía no registró su firma: en vez de
-   * mandarlo a Configuración se abre el modal donde la dibuja y la acción se reintenta sola.
+   * Ejecuta la aprobación, que ES la firma: estampa la firma del revisor en la planilla y en su
+   * Consolidado del S10. El 409 significa que todavía no registró su firma — en vez de mandarlo a
+   * Configuración se abre el modal donde la dibuja y la acción se reintenta sola.
    */
-  private firmar(accion: ReembolsoAccionDto): void {
+  private aprobar(accion: ReembolsoAccionDto): void {
     this.loaderService.show();
-    this.service.firmar(accion).subscribe({
+    this.service.aprobarReembolso(accion).subscribe({
       next: (res) => this.trasAccion(res.message),
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -595,7 +575,7 @@ export class GestionRendiciones implements OnInit {
     this.firmaModalAbierto = false;
     const accion = this.accionPendienteDeFirma;
     this.accionPendienteDeFirma = null;
-    if (accion) this.firmar(accion);
+    if (accion) this.aprobar(accion);
   }
 
   cerrarFirmaModal(): void {
@@ -635,8 +615,8 @@ export class GestionRendiciones implements OnInit {
     this.consolidadoDe = r;
   }
 
-  readonly subirConsolidado = (file: File) =>
-    this.service.uploadConsolidadoS10(this.consolidadoDe!.id, file);
+  readonly subirConsolidado = (file: File, montoTotal: number, numeroGuia: string) =>
+    this.service.uploadConsolidadoS10(this.consolidadoDe!.id, file, montoTotal, numeroGuia);
 
   get consolidadoReferencia(): string | null {
     const r = this.consolidadoDe;

@@ -9,10 +9,12 @@ import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { AuthService } from '../../../../../core/services/auth.service';
 import {
+  CorreoDestinatariosDto,
   PeriodoOptionDto,
   RendicionListItemDto,
   ResumenRendicionesDto,
 } from '../dtos/rendicion.dto';
+import { avisoCorreoHtml } from '../correo-aviso';
 import { primeraRevisionColors } from '../../../shared/dtos/rendicion-shared.dto';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
@@ -132,6 +134,15 @@ export class Rendiciones implements OnInit {
    */
   resumen: ResumenRendicionesDto = { porEnviar: 0, sinConsolidado: 0, porAvisar: 0, observadas: 0 };
 
+  // ── Correos que dispara la pantalla ───────────────────────────────
+  //
+  // Los destinatarios REALES de los dos avisos, ya resueltos por el backend aplicando
+  // Configuración → Correos. Son los mismos para toda la pantalla —está acotada a un solo
+  // trabajador—, así que llegan con los datos de arranque y no con cada fila ni con cada filtro.
+  // Se pasan también al modal de detalle, que dispara los mismos correos desde sus botones.
+  correoPrimeraRevision: CorreoDestinatariosDto = { para: [], copia: [] };
+  correoS10Revisor: CorreoDestinatariosDto = { para: [], copia: [] };
+
   // ── Filtros ────────────────────────────────────────────────────────
   periodoOptions: { key: string | null; label: string }[] = [{ key: null, label: 'Todos los periodos' }];
   private periodos: PeriodoOptionDto[] = [];
@@ -227,6 +238,10 @@ export class Rendiciones implements OnInit {
     this.service.getFilterData().subscribe({
       next: (data) => {
         this.periodos = data.periodos ?? [];
+        // Los correos vienen en esta misma carga: se refrescan después de cada acción
+        // (recargar() la vuelve a llamar) sin una petición aparte.
+        this.correoPrimeraRevision = data.correoPrimeraRevision ?? { para: [], copia: [] };
+        this.correoS10Revisor      = data.correoS10Revisor ?? { para: [], copia: [] };
         this.periodoOptions = [
           { key: null, label: 'Todos los periodos' },
           ...this.periodos.map((p) => ({ key: this.periodoKey(p.anio, p.mes), label: p.label })),
@@ -318,7 +333,13 @@ export class Rendiciones implements OnInit {
     const result = await Swal.fire({
       icon: 'question',
       title: '¿Enviar ' + r.codigo + ' a revisión?',
-      text: 'Se le avisará a tu jefe para que la apruebe u observe.',
+      // Sin nadie a quien avisar el envío igual procede: la rendición pasa a revisión y el jefe la
+      // ve en su bandeja. Es un aviso de estado, no un bloqueo.
+      html: avisoCorreoHtml(
+        this.correoPrimeraRevision,
+        'para que la apruebe u observe',
+        'Pasará a revisión, pero nadie recibirá el aviso por correo: está apagado en Configuración → Correos.',
+      ),
       showCancelButton: true,
       confirmButtonText: 'Sí, enviar',
       cancelButtonText: 'Cancelar',
@@ -400,8 +421,8 @@ export class Rendiciones implements OnInit {
   }
 
   /** Función de subida que consume el modal compartido (ya sabe a qué endpoint pegarle). */
-  readonly subirConsolidado = (file: File) =>
-    this.service.uploadConsolidadoS10(this.consolidadoDe!.id, file);
+  readonly subirConsolidado = (file: File, montoTotal: number, numeroGuia: string) =>
+    this.service.uploadConsolidadoS10(this.consolidadoDe!.id, file, montoTotal, numeroGuia);
 
   /** Referencia que muestra el modal para que se vea a qué planilla se está adjuntando. */
   get consolidadoReferencia(): string | null {
@@ -426,18 +447,35 @@ export class Rendiciones implements OnInit {
   async notificarRevisor(r: RendicionListItemDto, ev: Event): Promise<void> {
     ev.stopPropagation(); // no abrir el detalle
 
-    if (r.revisorNotificadoAt) {
-      const result = await Swal.fire({
-        icon: 'question',
-        title: '¿Volver a avisar?',
-        text: 'Ya le avisaste a tu revisor por esta planilla. Se le enviará el correo otra vez.',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, avisar de nuevo',
-        cancelButtonText: 'Cancelar',
+    // A diferencia del envío a primera revisión, este aviso ES el correo: sin destinatarios el
+    // backend responde 409, así que se corta acá y se dice por qué en vez de dejar intentarlo.
+    if (this.correoS10Revisor.para.length === 0) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Nadie recibiría el aviso',
+        text: 'El correo «S10 al revisor» está apagado o sin destinatarios en Configuración → Correos.',
         confirmButtonColor: '#0F6E56',
       });
-      if (!result.isConfirmed) return;
+      return;
     }
+
+    const yaAvisado = r.revisorNotificadoAt
+      ? '<div style="text-align:left;font-size:13px;color:#6B7280;margin-bottom:8px">Ya le avisaste por esta planilla: se le enviará el correo otra vez.</div>'
+      : '';
+
+    const result = await Swal.fire({
+      icon: 'question',
+      title: r.revisorNotificadoAt ? '¿Volver a avisar?' : '¿Avisar al revisor?',
+      html: yaAvisado + avisoCorreoHtml(
+        this.correoS10Revisor,
+        'para que revise el reembolso de esta planilla',
+      ),
+      showCancelButton: true,
+      confirmButtonText: r.revisorNotificadoAt ? 'Sí, avisar de nuevo' : 'Sí, avisar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0F6E56',
+    });
+    if (!result.isConfirmed) return;
 
     this.loaderService.show();
     this.service.notificarRevisor(r.id).subscribe({

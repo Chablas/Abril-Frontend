@@ -50,11 +50,21 @@ export class SalidaDetalleService {
     );
   }
 
-  /** Corrige el monto de una captura ya subida. */
-  actualizarMontoCaptura(capturaId: number, monto: number): Observable<{ message: string }> {
-    return this.http.patch<{ message: string }>(
-      `${this.apiUrl}/capturas/${capturaId}/monto`,
-      { monto },
+  /**
+   * Guarda los cambios de una captura ya subida: su monto y, si se pasa `file`, además reemplaza
+   * su imagen. Es una sola llamada porque en la pantalla es un solo botón "Guardar": lo que el
+   * trabajador corrige es la fila, no un campo suelto. Devuelve la captura ya actualizada para
+   * repintar la miniatura sin recargar el detalle.
+   */
+  actualizarCaptura(
+    capturaId: number, monto: number, file?: File | null,
+  ): Observable<SolicitudSalidaCapturaDto> {
+    const formData = new FormData();
+    formData.append('monto', String(monto));
+    if (file) formData.append('file', file, file.name);
+    return this.http.patch<SolicitudSalidaCapturaDto>(
+      `${this.apiUrl}/capturas/${capturaId}`,
+      formData,
       { headers: this.headers },
     );
   }

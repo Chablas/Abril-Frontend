@@ -32,6 +32,12 @@ export interface GestionRendicionListItemDto {
   trabajadores: string[];
   salidasCount: number;
   montoTotal: number;
+  /**
+   * Monto de la planilla COMPLETA (todas sus salidas, de todos sus trabajadores). Es el importe
+   * que se registró en el S10, así que es contra este —y no contra `montoTotal`, que viene
+   * recortado— que tiene que cuadrar el monto del Consolidado del S10.
+   */
+  montoTotalPlanilla: number;
 
   // ── Documentos ─────────────────────────────────────────────────────────
   pdfUrl: string;
@@ -65,13 +71,19 @@ export interface GestionRendicionListItemDto {
   // ── Qué se puede hacer con esta planilla ───────────────────────────────
   /** Salidas con el reembolso listo para decidir (rendidas, con S10 y sin decidir). */
   porDecidirCount: number;
-  /** Salidas con el reembolso aprobado y todavía sin firmar. */
-  porFirmarCount: number;
-  /** True si alguna salida visible es del propio revisor: no puede decidirla salvo que sea Gerente. */
-  incluyePropias: boolean;
+  /**
+   * True si el usuario puede decidir sobre esta planilla (su primera revisión y el reembolso de
+   * sus salidas). False cuando incluye salidas SUYAS y él no es su propio revisor: nadie decide
+   * lo suyo, y la única excepción es tener el jefe personalizado apuntándose a sí mismo.
+   */
+  puedeDecidir: boolean;
 }
 
-/** Una salida de la planilla, para decidir su reembolso una por una desde el detalle. */
+/**
+ * Una salida de la planilla, para que el revisor vea qué agrupa el documento que está decidiendo.
+ * Es solo lectura: el reembolso se decide por planilla entera (`puedeDecidir` + `porDecidirCount`
+ * de la planilla), no salida por salida.
+ */
 export interface GestionRendicionSalidaDto {
   id: number;
   codigo: string | null;
@@ -85,12 +97,25 @@ export interface GestionRendicionSalidaDto {
   monto: number;
   estadoReembolso: EstadoReembolso;
   observacionReembolso: string | null;
-  porDecidir: boolean;
-  esPropia: boolean;
+}
+
+/**
+ * Destinatarios REALES de un correo del flujo, ya resueltos por el backend con la configuración
+ * de Configuración → Correos. `para` vacío = no le llega a nadie.
+ */
+export interface CorreoDestinatariosDto {
+  para: string[];
+  copia: string[];
 }
 
 export interface GestionRendicionDetalleDto extends GestionRendicionListItemDto {
   salidas: GestionRendicionSalidaDto[];
+  /**
+   * A quién le llega el aviso de «reembolso aprobado» si el revisor aprueba esta planilla, según
+   * Configuración → Correos → «Reembolso OK». El destinatario principal es cada solicitante de
+   * las salidas por decidir, así que la lista es de esta planilla y no de la pantalla.
+   */
+  correoReembolsoAprobado: CorreoDestinatariosDto;
 }
 
 /**
@@ -105,7 +130,6 @@ export interface ResumenGestionRendicionesDto {
   /** Con reembolso por decidir (con S10 adjunto) — la segunda revisión. */
   porRevisar: number;
   /** Con reembolso aprobado esperando la firma. */
-  porFirmar: number;
 }
 
 export interface GestionRendicionListResultDto {

@@ -6,7 +6,7 @@ import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
-import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
+import { FirmaRegistrarModal } from '../../../../../../shared/components/firma-personal/registrar-modal/firma-registrar-modal';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { GestionRendicionesService } from '../../services/gestion-rendiciones.service';
@@ -22,15 +22,18 @@ import {
 /**
  * Detalle de una planilla para el revisor: sus documentos y las salidas que agrupa.
  *
- * La PRIMERA revisión se decide por planilla entera (es lo que se revisa: el documento), así que
- * sus dos botones están al pie del modal. El REEMBOLSO, en cambio, se decide SALIDA POR SALIDA,
- * que es la granularidad que el modelo soporta y la que hace falta cuando una planilla trae una
- * salida con problema y el resto bien; la decisión en bloque se hace desde la tabla.
+ * Los DOS momentos de decisión son de la planilla entera —la primera revisión y el reembolso—, así
+ * que sus botones van al pie del modal y la tabla de salidas es solo lectura. El reembolso se
+ * decidía salida por salida con checkboxes; ya no: lo que se revisa es un documento (la planilla,
+ * su Consolidado del S10) y aprobar media planilla dejaba al trabajador con un reembolso partido.
+ * Además la subsanación ya era por planilla —volver a adjuntar el consolidado reabre TODAS sus
+ * salidas rechazadas—, así que decidir por partes nunca tuvo una vuelta atrás a la misma
+ * granularidad.
  */
 @Component({
   standalone: true,
   selector: 'app-gestion-rendicion-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, AbrilBulkActionDirective],
+  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, FirmaRegistrarModal],
   templateUrl: './gestion-rendicion-detalle-modal.html',
 })
 export class GestionRendicionDetalleModal implements OnInit {
@@ -41,8 +44,8 @@ export class GestionRendicionDetalleModal implements OnInit {
 
   detalle: GestionRendicionDetalleDto | null = null;
 
-  /** Salidas marcadas para decidir su reembolso una por una. */
-  seleccionadas = new Set<number>();
+  /** Modal para dibujar la firma en el momento. Lo abre el 409 de aprobar. */
+  firmaModalAbierto = false;
 
   private huboCambios = false;
 
@@ -62,7 +65,6 @@ export class GestionRendicionDetalleModal implements OnInit {
     this.service.getDetalle(this.rendicionId).subscribe({
       next: (data) => {
         this.detalle = data;
-        this.seleccionadas.clear();
         this.loader.hide();
         this.cdr.detectChanges();
       },
@@ -78,54 +80,32 @@ export class GestionRendicionDetalleModal implements OnInit {
     this.close.emit(this.huboCambios);
   }
 
-  // ── Selección de salidas ─────────────────────────────────────────────
+  // ── Reembolso (por planilla: el revisor decide el documento entero) ───
 
-  /** Solo se decide lo que tiene reembolso pendiente y no es del propio revisor. */
-  puedeDecidirSalida(id: number): boolean {
-    const s = this.detalle?.salidas.find((x) => x.id === id);
-    return !!s && s.porDecidir && !s.esPropia;
-  }
-
-  toggleSalida(id: number): void {
-    if (!this.puedeDecidirSalida(id)) return;
-    if (this.seleccionadas.has(id)) this.seleccionadas.delete(id);
-    else                            this.seleccionadas.add(id);
-  }
-
-  get decidibles(): number[] {
-    return (this.detalle?.salidas ?? [])
-      .filter((s) => s.porDecidir && !s.esPropia)
-      .map((s) => s.id);
-  }
-
-  get todasSeleccionadas(): boolean {
-    const ids = this.decidibles;
-    return ids.length > 0 && ids.every((id) => this.seleccionadas.has(id));
-  }
-
-  toggleTodas(): void {
-    if (this.todasSeleccionadas) this.seleccionadas.clear();
-    else this.seleccionadas = new Set(this.decidibles);
-  }
-
+  /**
+   * La decisión va por `rendicionIds`: el backend resuelve las salidas de la planilla que están
+   * dentro del alcance del revisor y se queda solo con las que tienen el reembolso por decidir —
+   * las ya decididas las ignora en silencio, así que reaprobar no las pisa.
+   */
   private accion(observacion?: string): ReembolsoAccionDto {
     return {
-      rendicionIds: [],
-      solicitudIds: [...this.seleccionadas],
+      rendicionIds: this.detalle ? [this.detalle.id] : [],
+      solicitudIds: [],
       observacion: observacion ?? null,
     };
   }
 
-  // ── Acciones ─────────────────────────────────────────────────────────
-
   async aprobar(): Promise<void> {
-    const n = this.seleccionadas.size;
-    if (n === 0) return;
+    const d = this.detalle;
+    if (!d || d.porDecidirCount === 0 || !d.puedeDecidir) return;
 
     const result = await Swal.fire({
       icon: 'question',
-      title: n === 1 ? '¿Aprobar esta salida?' : `¿Aprobar ${n} salidas?`,
-      text: 'Se les avisará a sus solicitantes.',
+      title: '¿Aprobar el reembolso de ' + d.codigo + '?',
+      html: `<div style="text-align:left;font-size:13px;color:#4B5563">`
+          + `Cubre las <b>${d.porDecidirCount}</b> salida(s) de la planilla que están por decidir. `
+          + 'Se estampará tu firma en todas las hojas de la planilla y de su Consolidado del S10.'
+          + `</div>${this.avisoCorreoHtml()}`,
       showCancelButton: true,
       confirmButtonText: 'Sí, aprobar',
       cancelButtonText: 'Cancelar',
@@ -133,20 +113,77 @@ export class GestionRendicionDetalleModal implements OnInit {
     });
     if (!result.isConfirmed) return;
 
+    this.ejecutarAprobacion();
+  }
+
+  /**
+   * A quién le va a llegar el aviso de "reembolso aprobado". El backend resuelve las direcciones
+   * con el MISMO cálculo que hace el envío (Configuración → Correos → «Reembolso OK»), así que la
+   * confirmación no promete un correo a alguien que la configuración dejó fuera.
+   */
+  private avisoCorreoHtml(): string {
+    const dest = this.detalle?.correoReembolsoAprobado;
+    const escapar = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const para = (dest?.para ?? []).map(escapar).join(', ');
+    const copia = (dest?.copia ?? []).map(escapar).join(', ');
+
+    // La decisión se guarda igual sin correo (el aviso es best-effort), así que esto es un aviso
+    // de estado y no un bloqueo.
+    if (!para) {
+      return `<div style="text-align:left;margin-top:10px;background:#FEF9C3;border:1px solid #FDE68A;border-radius:8px;padding:10px 12px;font-size:13px;color:#92400E">
+        Nadie recibirá el aviso por correo: está apagado en Configuración → Correos.
+      </div>`;
+    }
+
+    return `<div style="text-align:left;margin-top:10px;font-size:13px;color:#4B5563">
+      Se notificará a <b style="color:var(--color-abril-logo-blue);word-break:break-all">${para}</b>.
+      ${copia
+        ? `<div style="margin-top:4px;color:#6B7280">En copia: <span style="word-break:break-all">${copia}</span></div>`
+        : ''}
+    </div>`;
+  }
+
+  /**
+   * Aprueba, que es lo mismo que firmar. El 409 significa que el revisor todavía no registró su
+   * firma: en vez de mandarlo a Configuración se abre el modal donde la dibuja y la aprobación se
+   * reintenta sola.
+   */
+  private ejecutarAprobacion(): void {
     this.loader.show();
     this.service.aprobarReembolso(this.accion()).subscribe({
       next: (res) => this.trasAccion(res.message),
-      error: (err: HttpErrorResponse) => this.errorAccion(err),
+      error: (err: HttpErrorResponse) => {
+        this.loader.hide();
+        if (err.status === 409) {
+          this.firmaModalAbierto = true;
+          this.cdr.detectChanges();
+          return;
+        }
+        this.errorAccion(err);
+      },
     });
   }
 
+  onFirmaRegistrada(): void {
+    this.firmaModalAbierto = false;
+    this.ejecutarAprobacion();
+  }
+
+  cerrarFirmaModal(): void {
+    this.firmaModalAbierto = false;
+    this.cdr.detectChanges();
+  }
+
   async rechazar(): Promise<void> {
-    const n = this.seleccionadas.size;
-    if (n === 0) return;
+    const d = this.detalle;
+    if (!d || d.porDecidirCount === 0 || !d.puedeDecidir) return;
 
     const { value: observacion, isConfirmed } = await Swal.fire({
       icon: 'warning',
-      title: n === 1 ? '¿Rechazar esta salida?' : `¿Rechazar ${n} salidas?`,
+      title: '¿Rechazar el reembolso de ' + d.codigo + '?',
+      text: `Cubre las ${d.porDecidirCount} salida(s) de la planilla que están por decidir.`,
       input: 'textarea',
       inputLabel: 'Observación',
       inputPlaceholder: 'Qué tiene que corregir el trabajador…',

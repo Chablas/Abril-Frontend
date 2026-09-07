@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import Swal from 'sweetalert2';
 
@@ -9,7 +9,8 @@ import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { RendicionesService } from '../../services/rendiciones.service';
-import { RendicionDetalleDto } from '../../dtos/rendicion.dto';
+import { CorreoDestinatariosDto, RendicionDetalleDto } from '../../dtos/rendicion.dto';
+import { avisoCorreoHtml } from '../../correo-aviso';
 import { ConsolidadoS10Modal } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
 import { ConsolidadoS10Dto } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { SalidaCapturasModal } from '../../../../shared/components/salida-capturas-modal/salida-capturas-modal';
@@ -37,6 +38,15 @@ export class RendicionDetalleModal implements OnInit {
    * corregir capturas y montos. Lo decide la pantalla, que es la que conoce el estado de la fila.
    */
   @Input() subsanando = false;
+
+  /**
+   * A quién le llegan de verdad los dos correos que dispara este modal, ya resueltos con
+   * Configuración → Correos. Los pasa la pantalla, que los trae con sus datos de arranque: son
+   * los mismos para todas sus planillas (está acotada a un solo trabajador) y pedirlos otra vez
+   * acá sería una petición de más por cada planilla que se abre.
+   */
+  @Input() correoPrimeraRevision: CorreoDestinatariosDto = { para: [], copia: [] };
+  @Input() correoS10Revisor: CorreoDestinatariosDto = { para: [], copia: [] };
 
   /** Emite true si algo cambió (hay que recargar la tabla de atrás), false si solo se cerró. */
   @Output() close = new EventEmitter<boolean>();
@@ -83,8 +93,8 @@ export class RendicionDetalleModal implements OnInit {
 
   // ── Consolidado del S10 ──────────────────────────────────────────────
 
-  readonly subirConsolidado = (file: File) =>
-    this.service.uploadConsolidadoS10(this.rendicionId, file);
+  readonly subirConsolidado = (file: File, montoTotal: number, numeroGuia: string) =>
+    this.service.uploadConsolidadoS10(this.rendicionId, file, montoTotal, numeroGuia);
 
   get consolidadoReferencia(): string | null {
     const d = this.detalle;
@@ -102,24 +112,84 @@ export class RendicionDetalleModal implements OnInit {
     }
   }
 
+  // ── Enviar a primera revisión ────────────────────────────────────────
+
+  /**
+   * Manda la planilla a la primera revisión de la jefatura. Está acá además de en la tabla porque
+   * el detalle es donde se ve lo que se está por mandar (montos, salidas y el PDF).
+   */
+  async enviarPrimeraRevision(): Promise<void> {
+    const d = this.detalle;
+    if (!d) return;
+
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Enviar ' + d.codigo + ' a revisión?',
+      // Sin nadie a quien avisar el envío igual procede: la rendición pasa a revisión y el jefe la
+      // ve en su bandeja. Es un aviso de estado, no un bloqueo.
+      html: avisoCorreoHtml(
+        this.correoPrimeraRevision,
+        'para que la apruebe u observe',
+        'Pasará a revisión, pero nadie recibirá el aviso por correo: está apagado en Configuración → Correos.',
+      ),
+      showCancelButton: true,
+      confirmButtonText: 'Sí, enviar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0F6E56',
+    });
+    if (!result.isConfirmed) return;
+
+    this.loader.show();
+    this.service.enviarPrimeraRevision(d.id).subscribe({
+      next: (res) => {
+        this.loader.hide();
+        Swal.fire({ icon: 'success', title: res.message, timer: 2400, showConfirmButton: false });
+        // Se cierra: la planilla pasó a manos del jefe y ya no hay nada que hacerle desde acá.
+        this.close.emit(true);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loader.hide();
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   // ── Aviso al revisor ─────────────────────────────────────────────────
 
   async notificarRevisor(): Promise<void> {
     const d = this.detalle;
     if (!d) return;
 
-    if (d.revisorNotificadoAt) {
-      const result = await Swal.fire({
-        icon: 'question',
-        title: '¿Volver a avisar?',
-        text: 'Ya le avisaste a tu revisor por esta planilla. Se le enviará el correo otra vez.',
-        showCancelButton: true,
-        confirmButtonText: 'Sí, avisar de nuevo',
-        cancelButtonText: 'Cancelar',
+    // A diferencia del envío a primera revisión, este aviso ES el correo: sin destinatarios el
+    // backend responde 409, así que se corta acá y se dice por qué en vez de dejar intentarlo.
+    if (this.correoS10Revisor.para.length === 0) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Nadie recibiría el aviso',
+        text: 'El correo «S10 al revisor» está apagado o sin destinatarios en Configuración → Correos.',
         confirmButtonColor: '#0F6E56',
       });
-      if (!result.isConfirmed) return;
+      return;
     }
+
+    const yaAvisado = d.revisorNotificadoAt
+      ? '<div style="text-align:left;font-size:13px;color:#6B7280;margin-bottom:8px">Ya le avisaste por esta planilla: se le enviará el correo otra vez.</div>'
+      : '';
+
+    const result = await Swal.fire({
+      icon: 'question',
+      title: d.revisorNotificadoAt ? '¿Volver a avisar?' : '¿Avisar al revisor?',
+      html: yaAvisado + avisoCorreoHtml(
+        this.correoS10Revisor,
+        'para que revise el reembolso de esta planilla',
+      ),
+      showCancelButton: true,
+      confirmButtonText: d.revisorNotificadoAt ? 'Sí, avisar de nuevo' : 'Sí, avisar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0F6E56',
+    });
+    if (!result.isConfirmed) return;
 
     this.loader.show();
     this.service.notificarRevisor(d.id).subscribe({
@@ -135,6 +205,65 @@ export class RendicionDetalleModal implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  // ── Volver a generar la planilla (subsanación) ───────────────────────
+
+  /**
+   * Vuelve a generar el PDF de la planilla con los montos ya corregidos. Vive también acá —y no
+   * solo en la tabla— porque corregir las capturas se hace desde este modal: tener que cerrarlo
+   * para dar el último paso era el hueco del flujo. La planilla conserva su código y queda lista
+   * para reenviar a primera revisión.
+   */
+  async regenerarPlanilla(): Promise<void> {
+    const d = this.detalle;
+    if (!d) return;
+
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Volver a generar ' + d.codigo + '?',
+      text: 'La planilla se rehace con los montos actuales y queda lista para reenviar a revisión.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, generar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0F6E56',
+    });
+    if (!result.isConfirmed) return;
+
+    this.loader.show();
+    this.service.regenerarPlanilla(d.id).subscribe({
+      next: (res) => {
+        this.loader.hide();
+        this.descargar(res, d.codigo + '.pdf');
+        this.huboCambios = true;
+        Swal.fire({
+          icon: 'success',
+          title: 'Planilla regenerada',
+          text: d.codigo + ' quedó lista para enviar de nuevo a revisión.',
+          timer: 2800,
+          showConfirmButton: false,
+        });
+        // Se cierra: la planilla salió de "Observada" y lo que sigue —enviarla a revisión— es de
+        // la tabla. Dejar el modal abierto mostrando un estado que ya cambió confunde más.
+        this.close.emit(true);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loader.hide();
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** Dispara la descarga del PDF que devuelve el backend. */
+  private descargar(response: HttpResponse<Blob>, filename: string): void {
+    if (!response.body) return;
+    const url = URL.createObjectURL(response.body);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   // ── Capturas de una salida (subsanación) ─────────────────────────────

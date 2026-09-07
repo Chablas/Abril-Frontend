@@ -247,6 +247,8 @@
   *ngIf="detalleId !== null"
   [rendicionId]="detalleId"
   [subsanando]="detalleSubsanando"
+  [correoPrimeraRevision]="correoPrimeraRevision"
+  [correoS10Revisor]="correoS10Revisor"
   (close)="cerrarDetalle($event)" />
 
 <!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->
@@ -255,6 +257,7 @@
   [upload]="subirConsolidado"
   [actual]="consolidadoDe.consolidadoS10"
   [referencia]="consolidadoReferencia"
+  [montoEsperado]="consolidadoDe.montoTotalPlanilla"
   (close)="cerrarConsolidado($event)" />
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->

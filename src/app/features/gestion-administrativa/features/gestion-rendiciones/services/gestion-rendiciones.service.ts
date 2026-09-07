@@ -60,10 +60,18 @@ export class GestionRendicionesService {
     });
   }
 
-  /** Adjunta (o reemplaza) el Consolidado del S10 de la planilla. Cubre todas sus salidas. */
-  uploadConsolidadoS10(rendicionId: number, file: File): Observable<ConsolidadoS10Dto> {
+  /**
+   * Adjunta (o reemplaza) el Consolidado del S10 de la planilla. Cubre todas sus salidas, así que
+   * `montoTotal` tiene que cuadrar con el monto de la planilla completa: el backend lo re-valida y
+   * responde 400 si no coincide.
+   */
+  uploadConsolidadoS10(
+    rendicionId: number, file: File, montoTotal: number, numeroGuia: string,
+  ): Observable<ConsolidadoS10Dto> {
     const formData = new FormData();
     formData.append('file', file, file.name);
+    formData.append('montoTotal', String(montoTotal));
+    formData.append('numeroGuia', numeroGuia);
     return this.http.post<ConsolidadoS10Dto>(
       `${this.apiUrl}/${rendicionId}/consolidado-s10`,
       formData,
@@ -100,17 +108,6 @@ export class GestionRendicionesService {
   /** La observación es obligatoria: es lo que el trabajador subsana. */
   rechazarReembolso(accion: ReembolsoAccionDto): Observable<ReembolsoBulkResultDto> {
     return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/rechazar`, accion, {
-      headers: this.headers,
-    });
-  }
-
-  /**
-   * Firma las planillas de lo seleccionado. Responde 409 cuando el usuario todavía no registró su
-   * firma: la pantalla usa ese código para abrir el modal donde la dibuja y reintentar, en vez de
-   * mandarlo a Configuración.
-   */
-  firmar(accion: ReembolsoAccionDto): Observable<ReembolsoBulkResultDto> {
-    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/firmar`, accion, {
       headers: this.headers,
     });
   }

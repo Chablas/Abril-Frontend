@@ -878,7 +878,36 @@ export class GthDetalleRequerimiento implements OnInit {
     const input = event.target as HTMLInputElement;
     const archivo = input.files?.[0];
     input.value = '';
-    if (archivo) this.subirCartaFirmada(archivo);
+    if (!archivo) return;
+
+    // El `accept` del input solo filtra el diálogo de archivos, así que el formato y el peso se
+    // comprueban acá con los mismos topes que valida el backend (`AllowedCartaFirmadaExt` y
+    // `MaxCartaBytes`). Sin esto el archivo se sube completo y recién lo rechaza el servidor con
+    // un 400, después de toda la espera de la subida.
+    const ext = '.' + (archivo.name.split('.').pop() ?? '').toLowerCase();
+    if (!archivo.name.includes('.') || !this.cartaFirmadaAccept.split(',').includes(ext)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Formato no permitido',
+        text: `«${archivo.name}» no es un formato permitido. Adjunta un PDF, DOC o DOCX.`,
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    if (archivo.size > MAX_ARCHIVO_BYTES) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'La carta pesa demasiado',
+        text:
+          `«${archivo.name}» pesa ${mbTexto(archivo.size)} y el máximo es ` +
+          `${mbTexto(MAX_ARCHIVO_BYTES)}.`,
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    this.subirCartaFirmada(archivo);
   }
 
   private subirCartaFirmada(archivo: File): void {

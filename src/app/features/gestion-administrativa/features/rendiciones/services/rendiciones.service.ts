@@ -78,10 +78,18 @@ export class RendicionesService {
     );
   }
 
-  /** Adjunta (o reemplaza) el Consolidado del S10 de la planilla. Cubre todas sus salidas. */
-  uploadConsolidadoS10(rendicionId: number, file: File): Observable<ConsolidadoS10Dto> {
+  /**
+   * Adjunta (o reemplaza) el Consolidado del S10 de la planilla. Cubre todas sus salidas, así que
+   * `montoTotal` tiene que cuadrar con el monto de la planilla completa: el backend lo re-valida y
+   * responde 400 si no coincide.
+   */
+  uploadConsolidadoS10(
+    rendicionId: number, file: File, montoTotal: number, numeroGuia: string,
+  ): Observable<ConsolidadoS10Dto> {
     const formData = new FormData();
     formData.append('file', file, file.name);
+    formData.append('montoTotal', String(montoTotal));
+    formData.append('numeroGuia', numeroGuia);
     return this.http.post<ConsolidadoS10Dto>(
       `${this.apiUrl}/${rendicionId}/consolidado-s10`,
       formData,
