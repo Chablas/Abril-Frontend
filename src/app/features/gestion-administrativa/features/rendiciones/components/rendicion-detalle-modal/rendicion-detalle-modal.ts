@@ -12,26 +12,40 @@ import { RendicionesService } from '../../services/rendiciones.service';
 import { RendicionDetalleDto } from '../../dtos/rendicion.dto';
 import { ConsolidadoS10Modal } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
 import { ConsolidadoS10Dto } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { SalidaCapturasModal } from '../../../../shared/components/salida-capturas-modal/salida-capturas-modal';
+import { primeraRevisionColors } from '../../../../shared/dtos/rendicion-shared.dto';
 
 /**
- * Detalle de una planilla: sus documentos, el estado del reembolso y las salidas propias que
- * agrupa. Trae también las dos acciones de la pantalla (adjuntar el Consolidado del S10 y avisar
- * al revisor) porque los correos del reembolso abren directo acá.
+ * Detalle de una planilla: sus documentos, el estado de la primera revisión y del reembolso, y las
+ * salidas propias que agrupa. Trae también las acciones de la pantalla (adjuntar el Consolidado
+ * del S10, avisar al revisor y corregir las capturas al subsanar) porque los correos del flujo
+ * abren directo acá.
  */
 @Component({
   standalone: true,
   selector: 'app-rendicion-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, ConsolidadoS10Modal],
+  imports: [
+    CommonModule, BaseModal, StatusBadge, TitleCasePipe, ConsolidadoS10Modal, SalidaCapturasModal,
+  ],
   templateUrl: './rendicion-detalle-modal.html',
 })
 export class RendicionDetalleModal implements OnInit {
   @Input({ required: true }) rendicionId!: number;
+
+  /**
+   * true = se abrió para subsanar una rendición observada: cada salida muestra su botón de
+   * corregir capturas y montos. Lo decide la pantalla, que es la que conoce el estado de la fila.
+   */
+  @Input() subsanando = false;
 
   /** Emite true si algo cambió (hay que recargar la tabla de atrás), false si solo se cerró. */
   @Output() close = new EventEmitter<boolean>();
 
   detalle: RendicionDetalleDto | null = null;
   consolidadoAbierto = false;
+
+  /** id de la salida cuyo modal de capturas está abierto. null = cerrado. */
+  capturasSolicitudId: number | null = null;
 
   /** Se enciende con la primera acción para avisarle al padre que su tabla quedó desfasada. */
   private huboCambios = false;
@@ -123,7 +137,31 @@ export class RendicionDetalleModal implements OnInit {
     });
   }
 
+  // ── Capturas de una salida (subsanación) ─────────────────────────────
+
+  abrirCapturas(solicitudId: number): void {
+    this.capturasSolicitudId = solicitudId;
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Al cerrar el modal de capturas se recarga el detalle si algo cambió: los montos de la tabla
+   * salen de las capturas, así que quedarían desfasados. La planilla NO se regenera acá — eso es
+   * un paso aparte de la pantalla, porque el PDF cubre la planilla entera.
+   */
+  cerrarCapturas(cambio: boolean): void {
+    this.capturasSolicitudId = null;
+    if (cambio) {
+      this.huboCambios = true;
+      this.cargar();
+    } else {
+      this.cdr.detectChanges();
+    }
+  }
+
   // ── Colores de estado ────────────────────────────────────────────────
+
+  readonly primeraRevisionColors = primeraRevisionColors;
 
   reembolsoColors(estado: string): { bg: string; text: string } {
     switch (estado) {

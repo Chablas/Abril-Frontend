@@ -1,8 +1,10 @@
 <app-abril-page-header
   [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
   titulo="Gestión de Rendiciones"
-  subtitulo="Revisión, aprobación y firma de las planillas de rendición."
-  [tabs]="tabs">
+  subtitulo="Primera revisión, reembolso y firma de las planillas de rendición."
+  [tabs]="tabs"
+  [botonSecundario]="botonConfiguracion"
+  (secondaryClick)="abrirConfiguracion()">
 
   <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
@@ -13,15 +15,20 @@
        Se cuentan sobre el mismo conjunto que muestra la tabla, así que acompañan a los filtros.
        Son los tres estados del flujo que esperan al revisor. -->
   <div class="resumen-cards">
+    <div class="resumen-card resumen-card--primary">
+      <span class="resumen-card__label">1.ª revisión</span>
+      <span class="resumen-card__value">{{ resumen.primeraRevision }}</span>
+      <span class="resumen-card__hint">Tramos y montos por revisar</span>
+    </div>
     <div class="resumen-card resumen-card--warn">
       <span class="resumen-card__label">Sin consolidado</span>
       <span class="resumen-card__value">{{ resumen.sinConsolidado }}</span>
-      <span class="resumen-card__hint">Todavía no hay qué revisar</span>
+      <span class="resumen-card__hint">Aprobadas, esperan el S10</span>
     </div>
     <div class="resumen-card resumen-card--info">
-      <span class="resumen-card__label">Por revisar</span>
+      <span class="resumen-card__label">2.ª revisión</span>
       <span class="resumen-card__value">{{ resumen.porRevisar }}</span>
-      <span class="resumen-card__hint">Esperan tu visto bueno</span>
+      <span class="resumen-card__hint">Reembolsos por decidir</span>
     </div>
     <div class="resumen-card resumen-card--ok">
       <span class="resumen-card__label">Por firmar</span>
@@ -35,6 +42,38 @@
     <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">
       {{ selectedIds.size }} planilla{{ selectedIds.size === 1 ? '' : 's' }} seleccionada{{ selectedIds.size === 1 ? '' : 's' }}
     </span>
+
+    <!-- Primera revisión: es el primer paso del flujo, así que va primero en la barra. -->
+    <button
+      type="button"
+      abrilBulkAction="primary"
+      (click)="aprobarPrimeraRevision()"
+      [disabled]="!puedeDecidirPrimeraRevision"
+      [title]="primeraRevisionIncluyePropias
+        ? 'No puedes revisar una rendición con tus propias salidas — deselecciónala'
+        : 'Aprobar la primera revisión habilita al trabajador a cargar el Consolidado del S10'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+      Aprobar 1.ª revisión<span *ngIf="puedeDecidirPrimeraRevision"> ({{ selectedPorPrimeraRevision.length }})</span>
+    </button>
+
+    <button
+      type="button"
+      abrilBulkAction="danger"
+      (click)="observarPrimeraRevision()"
+      [disabled]="!puedeDecidirPrimeraRevision"
+      [title]="primeraRevisionIncluyePropias
+        ? 'No puedes revisar una rendición con tus propias salidas — deselecciónala'
+        : 'Se te pedirá el comentario de qué capturas o montos tiene que corregir'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
+        <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+      </svg>
+      Observar 1.ª revisión<span *ngIf="puedeDecidirPrimeraRevision"> ({{ selectedPorPrimeraRevision.length }})</span>
+    </button>
+
+    <span class="w-px h-5 bg-[#E5E7EB] mx-1"></span>
 
     <button
       type="button"
@@ -92,12 +131,13 @@
               style="accent-color:var(--color-abril-accent)"
               title="Seleccionar / deseleccionar todo" />
           </th>
-          <th>Planilla</th>
+          <th>Rendición</th>
           <th>Trabajador</th>
           <th>Periodo</th>
           <th>Salidas</th>
           <th>Monto</th>
           <th>Rendida</th>
+          <th>1.ª revisión</th>
           <th>Documentos</th>
           <th>Reembolso</th>
           <th>Acciones</th>
@@ -105,7 +145,7 @@
       </thead>
       <tbody>
         <tr *ngIf="rendiciones.length === 0">
-          <td colspan="10" class="text-center py-[40px] text-gray-400 text-sm">
+          <td colspan="11" class="text-center py-[40px] text-gray-400 text-sm">
             No hay planillas de rendición en tu alcance.
           </td>
         </tr>
@@ -126,7 +166,14 @@
               style="accent-color:var(--color-abril-accent)" />
           </td>
 
-          <td class="text-gray-700 font-medium whitespace-nowrap">{{ r.numeroPlanilla ?? '—' }}</td>
+          <!-- El código REN-AAAA-NNNN es el identificador de la rendición y es como el trabajador
+               la nombra; el número de planilla es lo que se imprime en el papel. -->
+          <td class="whitespace-nowrap">
+            <div class="flex flex-col leading-tight">
+              <span class="text-gray-700 font-medium">{{ r.codigo }}</span>
+              <span *ngIf="r.numeroPlanilla" class="text-[11px] text-gray-400">{{ r.numeroPlanilla }}</span>
+            </div>
+          </td>
           <td class="text-gray-700" [title]="r.trabajadores.join(', ')">
             {{ trabajadoresTexto(r) | titleCase }}
           </td>
@@ -134,6 +181,15 @@
           <td class="text-gray-700 text-center">{{ r.salidasCount }}</td>
           <td class="text-gray-700 whitespace-nowrap">S/ {{ r.montoTotal | number:'1.2-2' }}</td>
           <td class="text-gray-400 whitespace-nowrap">{{ r.rendidoAt | date:'dd/MM/yyyy HH:mm' }}</td>
+
+          <!-- Primera revisión: es lo que habilita el Consolidado del S10. -->
+          <td>
+            <app-status-badge
+              [text]="r.estadoPrimeraRevision"
+              [bgColor]="primeraRevisionColors(r.estadoPrimeraRevision).bg"
+              [textColor]="primeraRevisionColors(r.estadoPrimeraRevision).text"
+              [title]="primeraRevisionTitle(r)" />
+          </td>
 
           <td (click)="$event.stopPropagation()">
             <div class="flex flex-wrap items-center gap-[6px]">
@@ -156,8 +212,11 @@
                 S10 ✓
               </a>
               <ng-template #sinConsolidado>
-                <span class="doc-chip doc-chip--pendiente" title="El trabajador todavía no adjuntó el Consolidado del S10">
-                  S10 pendiente
+                <span class="doc-chip doc-chip--pendiente"
+                      [title]="r.estadoPrimeraRevision === 'Aprobada'
+                        ? 'El trabajador todavía no adjuntó el Consolidado del S10'
+                        : 'El Consolidado del S10 se habilita al aprobar la primera revisión'">
+                  {{ r.estadoPrimeraRevision === 'Aprobada' ? 'S10 pendiente' : 'S10 no habilitado' }}
                 </span>
               </ng-template>
 
@@ -181,26 +240,67 @@
           </td>
 
           <td (click)="$event.stopPropagation()">
-            <!-- El revisor puede adjuntar el consolidado en nombre del trabajador cuando este no
-                 puede. Después de decidido el reembolso ya no aporta nada. -->
-            <button
-              *ngIf="r.estadoReembolso === 'Pendiente' || r.estadoReembolso === 'Rechazado'; else sinAcciones"
-              type="button"
-              (click)="abrirConsolidado(r, $event)"
-              [title]="r.consolidadoS10 ? 'Reemplazar el Consolidado del S10' : 'Adjuntar el Consolidado del S10 en nombre del trabajador'"
-              class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
-              style="background:var(--color-abril-standard)"
-              onmouseover="this.style.background='var(--color-abril-standard-hover)'"
-              onmouseout="this.style.background='var(--color-abril-standard)'">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-                <path d="M14 2v6h6" stroke-linejoin="round"/>
-              </svg>
-              {{ r.consolidadoS10 ? 'Consolidado S10 ✓' : 'Consolidado S10' }}
-            </button>
-            <ng-template #sinAcciones>
-              <span class="text-gray-300">—</span>
-            </ng-template>
+            <div class="flex flex-wrap items-center gap-2">
+
+              <!-- Los dos botones de la primera revisión, sin pasar por la selección: es la
+                   decisión que el correo pide y la que más se repite fila por fila. -->
+              <ng-container *ngIf="r.porPrimeraRevision">
+                <button
+                  type="button"
+                  (click)="aprobarPrimeraRevision([r])"
+                  [disabled]="r.incluyePropias"
+                  [title]="r.incluyePropias
+                    ? 'No puedes revisar una rendición con tus propias salidas'
+                    : 'Aprobar la primera revisión de ' + r.codigo"
+                  class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  style="background:var(--color-abril-standard)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                  </svg>
+                  Aprobar
+                </button>
+
+                <button
+                  type="button"
+                  (click)="observarPrimeraRevision([r])"
+                  [disabled]="r.incluyePropias"
+                  [title]="r.incluyePropias
+                    ? 'No puedes revisar una rendición con tus propias salidas'
+                    : 'Observar ' + r.codigo + ' con un comentario de qué corregir'"
+                  class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style="background:#FFFFFF;color:#D30000;border:1px solid #D30000">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+                  </svg>
+                  Observar
+                </button>
+              </ng-container>
+
+              <!-- El revisor puede adjuntar el consolidado en nombre del trabajador cuando este no
+                   puede. Solo con la primera revisión aprobada, y hasta que el reembolso se decida. -->
+              <button
+                *ngIf="r.estadoPrimeraRevision === 'Aprobada'
+                    && (r.estadoReembolso === 'Pendiente' || r.estadoReembolso === 'Rechazado')"
+                type="button"
+                (click)="abrirConsolidado(r, $event)"
+                [title]="r.consolidadoS10 ? 'Reemplazar el Consolidado del S10' : 'Adjuntar el Consolidado del S10 en nombre del trabajador'"
+                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                style="background:var(--color-abril-standard)"
+                onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+                onmouseout="this.style.background='var(--color-abril-standard)'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                {{ r.consolidadoS10 ? 'Consolidado S10 ✓' : 'Consolidado S10' }}
+              </button>
+
+              <span *ngIf="!r.porPrimeraRevision
+                        && !(r.estadoPrimeraRevision === 'Aprobada'
+                             && (r.estadoReembolso === 'Pendiente' || r.estadoReembolso === 'Rechazado'))"
+                    class="text-gray-300">—</span>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -272,6 +372,18 @@
       [rawLabel]="true"
       [value]="filters.periodoKey"
       (valueChange)="filters.periodoKey = $event; load()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Primera revisión"
+      [options]="estadoPrimeraRevisionOptions"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      [value]="filters.estadoPrimeraRevision"
+      (valueChange)="filters.estadoPrimeraRevision = $event; load()">
     </app-search-select>
   </div>
 

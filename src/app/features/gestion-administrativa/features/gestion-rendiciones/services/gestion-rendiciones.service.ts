@@ -8,6 +8,7 @@ import {
   GestionRendicionDetalleDto,
   GestionRendicionFilterDataDto,
   GestionRendicionListResultDto,
+  PrimeraRevisionAccionDto,
   ReembolsoAccionDto,
 } from '../dtos/gestion-rendicion.dto';
 
@@ -28,6 +29,7 @@ export class GestionRendicionesService {
    */
   getAll(
     workerId: number | null = null,
+    estadoPrimeraRevision: string | null = null,
     estadoReembolso: string | null = null,
     conConsolidado: boolean | null = null,
     areaScopeIds: number[] | null = null,
@@ -36,6 +38,7 @@ export class GestionRendicionesService {
   ): Observable<GestionRendicionListResultDto> {
     let params = new HttpParams();
     if (workerId != null)        params = params.set('workerId', workerId);
+    if (estadoPrimeraRevision)   params = params.set('estadoPrimeraRevision', estadoPrimeraRevision);
     if (estadoReembolso)         params = params.set('estadoReembolso', estadoReembolso);
     if (conConsolidado != null)  params = params.set('conConsolidado', conConsolidado);
     if (areaScopeIds)            for (const id of areaScopeIds) params = params.append('areaScopeIds', id);
@@ -65,6 +68,26 @@ export class GestionRendicionesService {
       `${this.apiUrl}/${rendicionId}/consolidado-s10`,
       formData,
       { headers: this.headers },
+    );
+  }
+
+  /**
+   * Aprueba la primera revisión: habilita al trabajador a cargar el Consolidado del S10 y le avisa
+   * por correo.
+   */
+  aprobarPrimeraRevision(accion: PrimeraRevisionAccionDto): Observable<ReembolsoBulkResultDto> {
+    return this.http.patch<ReembolsoBulkResultDto>(
+      `${this.apiUrl}/primera-revision/aprobar`, accion, { headers: this.headers },
+    );
+  }
+
+  /**
+   * Observa la primera revisión. El comentario es obligatorio: es lo que el trabajador lee para
+   * saber qué corregir antes de volver a generar la rendición.
+   */
+  observarPrimeraRevision(accion: PrimeraRevisionAccionDto): Observable<ReembolsoBulkResultDto> {
+    return this.http.patch<ReembolsoBulkResultDto>(
+      `${this.apiUrl}/primera-revision/observar`, accion, { headers: this.headers },
     );
   }
 

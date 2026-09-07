@@ -1,4 +1,4 @@
-import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { ConsolidadoS10Dto } from '../components/consolidado-s10-modal/consolidado-s10.dto';
 
 export interface SolicitudSalidaCapturaDto {
   id: number;

@@ -1,5 +1,5 @@
 <app-base-modal
-  [title]="detalle?.numeroPlanilla ? 'Planilla ' + detalle!.numeroPlanilla : 'Planilla de rendición'"
+  [title]="detalle ? 'Rendición ' + detalle.codigo : 'Rendición'"
   width="w-[820px]"
   (closeModal)="cerrar()">
 
@@ -23,6 +23,29 @@
         <span class="text-[11px] uppercase text-gray-400 font-semibold">Rendida</span>
         <span class="text-sm text-gray-700">{{ d.rendidoAt | date:'dd/MM/yyyy HH:mm' }}</span>
       </div>
+    </div>
+
+    <!-- ── Primera revisión ─────────────────────────────────────────────── -->
+    <div class="flex items-center gap-3 border-t pt-3" style="border-color:var(--color-abril-border)">
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">1.ª revisión</span>
+      <app-status-badge
+        [text]="d.estadoPrimeraRevision"
+        [bgColor]="primeraRevisionColors(d.estadoPrimeraRevision).bg"
+        [textColor]="primeraRevisionColors(d.estadoPrimeraRevision).text" />
+      <span *ngIf="d.enviadaRevisionAt" class="text-[11px] text-gray-400">
+        Enviada el {{ d.enviadaRevisionAt | date:'dd/MM/yyyy HH:mm' }}
+      </span>
+      <span *ngIf="d.primeraRevisionAt" class="text-[11px] text-gray-400 ml-auto">
+        Revisada el {{ d.primeraRevisionAt | date:'dd/MM/yyyy HH:mm' }}
+      </span>
+    </div>
+
+    <!-- El comentario del jefe: es lo único que hay que leer para saber qué corregir. -->
+    <div *ngIf="d.estadoPrimeraRevision === 'Observada' && d.primeraRevisionObservacion"
+         class="border rounded-lg p-3 text-sm"
+         style="border-color:#FCA5A5;background:#FEF2F2;color:#991B1B">
+      <span class="font-semibold">Observación de la primera revisión:</span>
+      {{ d.primeraRevisionObservacion }}
     </div>
 
     <!-- ── Estado del reembolso ─────────────────────────────────────────── -->
@@ -72,7 +95,9 @@
         <span class="text-xs text-gray-400 font-normal">· Consolidado del S10</span>
       </a>
       <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
-        Falta el Consolidado del S10.
+        {{ d.estadoPrimeraRevision === 'Aprobada'
+            ? 'Falta el Consolidado del S10.'
+            : 'El Consolidado del S10 se habilita cuando tu jefe apruebe la primera revisión.' }}
       </span>
 
       <a *ngIf="d.pdfFirmadoUrl" [href]="d.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
@@ -101,6 +126,7 @@
               <th>Destino</th>
               <th>Monto</th>
               <th>Reembolso</th>
+              <th *ngIf="subsanando">Capturas</th>
             </tr>
           </thead>
           <tbody>
@@ -128,10 +154,34 @@
                     ? 'Observación: ' + s.observacionReembolso
                     : null" />
               </td>
+
+              <!-- Solo al subsanar: es el momento en que el backend deja tocar las capturas. -->
+              <td *ngIf="subsanando">
+                <button
+                  type="button"
+                  (click)="abrirCapturas(s.id)"
+                  title="Corregir las capturas y los montos de los trayectos de esta salida"
+                  class="inline-flex items-center gap-[5px] whitespace-nowrap cursor-pointer rounded-[6px] px-2.5 py-1 text-[11px] font-semibold transition-colors"
+                  style="background:#FFFFFF;color:#B45309;border:1px solid #B45309">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/>
+                  </svg>
+                  Corregir
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
+    </div>
+
+    <!-- Estado, no instrucción: el botón de regenerar vive en la tabla de la pantalla, donde la
+         acción es de la planilla entera y no de una salida. -->
+    <div *ngIf="subsanando" class="border rounded-lg p-3 text-sm"
+         style="border-color:#FDE68A;background:#FFFBEB;color:#92400E">
+      Después de corregir, vuelve a generar la rendición desde la tabla: conserva el código
+      <b>{{ d.codigo }}</b>.
     </div>
 
     <!-- ── Acciones ─────────────────────────────────────────────────────── -->
@@ -173,3 +223,10 @@
   [actual]="detalle?.consolidadoS10 ?? null"
   [referencia]="consolidadoReferencia"
   (close)="cerrarConsolidado($event)" />
+
+<!-- ── Modal de capturas de una salida (subsanación) ─────────────────── -->
+<app-salida-capturas-modal
+  *ngIf="capturasSolicitudId !== null"
+  [solicitudId]="capturasSolicitudId"
+  [subsanacion]="true"
+  (close)="cerrarCapturas($event)" />

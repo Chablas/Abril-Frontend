@@ -7,11 +7,11 @@ import { StatusBadge } from '../../../../../../shared/components/status-badge/st
 import { DraggableImage } from '../../../../../../shared/components/draggable-image/draggable-image';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { SolicitudSalidasService } from '../../services/solicitud-salidas.service';
+import { SalidaDetalleService } from '../../../../shared/services/salida-detalle.service';
 import {
   SolicitudSalidaDetalleDto,
   TrayectoDetalleDto,
-} from '../../dtos/solicitud-salida-detalle.dto';
+} from '../../../../shared/dtos/salida-detalle.dto';
 
 @Component({
   standalone: true,
@@ -39,7 +39,7 @@ export class SolicitudSalidaDetalleModal implements OnInit {
   }
 
   constructor(
-    private service: SolicitudSalidasService,
+    private service: SalidaDetalleService,
     private loader: LoaderService,
     private errorService: ErrorService,
   ) {}

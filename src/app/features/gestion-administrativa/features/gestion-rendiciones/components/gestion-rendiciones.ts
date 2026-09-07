@@ -1,5 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
@@ -11,10 +11,12 @@ import {
   AreaNodeDto,
   GestionRendicionListItemDto,
   PeriodoOptionDto,
+  PrimeraRevisionAccionDto,
   ReembolsoAccionDto,
   ResumenGestionRendicionesDto,
 } from '../dtos/gestion-rendicion.dto';
-import { reembolsoColors } from '../../../shared/dtos/rendicion-shared.dto';
+import { primeraRevisionColors, reembolsoColors } from '../../../shared/dtos/rendicion-shared.dto';
+import { AuthService } from '../../../../../core/services/auth.service';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
@@ -83,6 +85,8 @@ interface AreaCascadeNode {
     .resumen-card__hint  { font-size: 11px; color: #9CA3AF; }
     .resumen-card--warn  { border-left-color: var(--color-abril-warning); }
     .resumen-card--warn  .resumen-card__value { color: var(--color-abril-warning-dark); }
+    .resumen-card--primary { border-left-color: #005D9D; }
+    .resumen-card--primary .resumen-card__value { color: #005D9D; }
     .resumen-card--info  { border-left-color: var(--color-abril-standard); }
     .resumen-card--info  .resumen-card__value { color: var(--color-abril-standard); }
     .resumen-card--ok    { border-left-color: #4338CA; }
@@ -125,12 +129,22 @@ export class GestionRendiciones implements OnInit {
   /** Selección que se estaba firmando cuando saltó el modal, para reintentar al guardarla. */
   private accionPendienteDeFirma: ReembolsoAccionDto | null = null;
 
-  resumen: ResumenGestionRendicionesDto = { sinConsolidado: 0, porRevisar: 0, porFirmar: 0 };
+  resumen: ResumenGestionRendicionesDto = {
+    primeraRevision: 0, sinConsolidado: 0, porRevisar: 0, porFirmar: 0,
+  };
 
   // ── Filtros ────────────────────────────────────────────────────────
   trabajadorOptions: any[] = [{ workerId: null, nombreCompleto: 'Todos los trabajadores' }];
   periodoOptions: { key: string | null; label: string }[] = [{ key: null, label: 'Todos los periodos' }];
   private periodos: PeriodoOptionDto[] = [];
+
+  readonly estadoPrimeraRevisionOptions = [
+    { value: null,                  label: 'Todas' },
+    { value: 'En primera revisión', label: 'Por revisar' },
+    { value: 'Observada',           label: 'Observadas' },
+    { value: 'Aprobada',            label: 'Aprobadas' },
+    { value: 'Lista para enviar',   label: 'Sin enviar' },
+  ];
 
   readonly estadoReembolsoOptions = [
     { value: null,        label: 'Todos' },
@@ -148,6 +162,7 @@ export class GestionRendiciones implements OnInit {
 
   filters = {
     workerId:        null as number | null,
+    estadoPrimeraRevision: null as string | null,
     estadoReembolso: null as string | null,
     consolidado:     null as string | null,
     periodoKey:      null as string | null,
@@ -162,6 +177,7 @@ export class GestionRendiciones implements OnInit {
   get filtrosActivos(): number {
     let n = 0;
     if (this.filters.workerId != null)        n++;
+    if (this.filters.estadoPrimeraRevision != null) n++;
     if (this.filters.estadoReembolso != null) n++;
     if (this.filters.consolidado != null)     n++;
     if (this.filters.periodoKey != null)      n++;
@@ -170,7 +186,10 @@ export class GestionRendiciones implements OnInit {
   }
 
   limpiarFiltros(): void {
-    this.filters = { workerId: null, estadoReembolso: null, consolidado: null, periodoKey: null };
+    this.filters = {
+      workerId: null, estadoPrimeraRevision: null, estadoReembolso: null,
+      consolidado: null, periodoKey: null,
+    };
     this.areaLevels = this.areaLevels.length ? [this.areaLevels[0]] : this.areaLevels;
     this.selectedAreaNodes = this.selectedAreaNodes.length ? [undefined] : this.selectedAreaNodes;
     this.load();
@@ -180,18 +199,51 @@ export class GestionRendiciones implements OnInit {
     private service: GestionRendicionesService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private authService: AuthService,
     private route: ActivatedRoute,
+    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
+
+  // ── Botón "Configuración" del header ─────────────────────────────────
+  // Lleva a la sección Correos de la Configuración del módulo. Se restringe con la misma feature
+  // que ya protege esa sección: quien no la tiene no ve el botón.
+
+  private static readonly FEATURE_CONFIG_CORREOS = 'gestion-administrativa.config.correos';
+
+  get puedeConfigurar(): boolean {
+    return this.authService.hasFeature(GestionRendiciones.FEATURE_CONFIG_CORREOS);
+  }
+
+  get botonConfiguracion() {
+    return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
+  }
+
+  abrirConfiguracion(): void {
+    if (!this.puedeConfigurar) return;
+    this.router.navigate(['/gestion-administrativa/configuracion/correos']);
+  }
 
   ngOnInit(): void {
     this.loadFilterData();
     this.load();
 
-    // Enlace directo del correo al revisor ("Revisar el reembolso"): abre esa planilla.
+    // Enlace directo de los correos ("Revisar el reembolso", "Aprobar", "Observar"): abre esa
+    // planilla. `accion` la agregan los dos botones del correo de primera revisión y deja el
+    // diálogo planteado, pero la decisión se confirma acá — nunca desde el correo.
     const rendicionId = Number(this.route.snapshot.queryParamMap.get('rendicion'));
-    if (rendicionId > 0) this.detalleId = rendicionId;
+    if (rendicionId > 0) {
+      this.detalleId = rendicionId;
+      this.accionPendiente = this.route.snapshot.queryParamMap.get('accion');
+    }
   }
+
+  /**
+   * Acción que venía en el enlace del correo ("aprobar" | "observar"), a la espera de que el
+   * listado cargue. Se resuelve una sola vez: si el revisor cierra el diálogo sin decidir, no
+   * vuelve a saltar.
+   */
+  private accionPendiente: string | null = null;
 
   loadFilterData(): void {
     this.service.getFilterData().subscribe({
@@ -231,6 +283,7 @@ export class GestionRendiciones implements OnInit {
     const periodo = this.periodoSeleccionado;
     this.service.getAll(
       this.filters.workerId,
+      this.filters.estadoPrimeraRevision,
       this.filters.estadoReembolso,
       this.filters.consolidado == null ? null : this.filters.consolidado === 'si',
       this.currentAreaScopeIds(),
@@ -242,6 +295,7 @@ export class GestionRendiciones implements OnInit {
         // Las tarjetas se cuentan sobre este mismo conjunto filtrado: llegan con el listado.
         this.resumen = res.resumen;
         this.loaderService.hide();
+        this.resolverAccionDelCorreo();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -350,6 +404,102 @@ export class GestionRendiciones implements OnInit {
 
   private accionDe(items: GestionRendicionListItemDto[], observacion?: string): ReembolsoAccionDto {
     return { rendicionIds: items.map((r) => r.id), solicitudIds: [], observacion: observacion ?? null };
+  }
+
+  // ── Primera revisión ─────────────────────────────────────────────────
+
+  /** Seleccionadas que están esperando la primera revisión. */
+  get selectedPorPrimeraRevision(): GestionRendicionListItemDto[] {
+    return this.seleccionadas.filter((r) => r.porPrimeraRevision);
+  }
+
+  /** True si alguna candidata incluye salidas propias: el backend las rechaza. */
+  get primeraRevisionIncluyePropias(): boolean {
+    return this.selectedPorPrimeraRevision.some((r) => r.incluyePropias);
+  }
+
+  get puedeDecidirPrimeraRevision(): boolean {
+    return this.selectedPorPrimeraRevision.length > 0 && !this.primeraRevisionIncluyePropias;
+  }
+
+  private accionPrimeraRevisionDe(
+    items: GestionRendicionListItemDto[], observacion?: string,
+  ): PrimeraRevisionAccionDto {
+    return { rendicionIds: items.map((r) => r.id), observacion: observacion ?? null };
+  }
+
+  async aprobarPrimeraRevision(items = this.selectedPorPrimeraRevision): Promise<void> {
+    if (items.length === 0) return;
+
+    const result = await Swal.fire({
+      icon: 'question',
+      title: items.length === 1
+        ? '¿Aprobar la rendición ' + items[0].codigo + '?'
+        : '¿Aprobar ' + items.length + ' rendiciones?',
+      text: 'El trabajador podrá cargar el Consolidado del S10 y se le avisará por correo.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0F6E56',
+    });
+    if (!result.isConfirmed) return;
+
+    this.loaderService.show();
+    this.service.aprobarPrimeraRevision(this.accionPrimeraRevisionDe(items)).subscribe({
+      next: (res) => this.trasDecisionPrimeraRevision(res.message),
+      error: (err: HttpErrorResponse) => this.errorAccion(err),
+    });
+  }
+
+  async observarPrimeraRevision(items = this.selectedPorPrimeraRevision): Promise<void> {
+    if (items.length === 0) return;
+
+    const { value: observacion, isConfirmed } = await Swal.fire({
+      icon: 'warning',
+      title: items.length === 1
+        ? '¿Observar la rendición ' + items[0].codigo + '?'
+        : '¿Observar ' + items.length + ' rendiciones?',
+      input: 'textarea',
+      inputLabel: 'Observación',
+      inputPlaceholder: 'Qué capturas o montos tiene que corregir el trabajador…',
+      inputValidator: (v) => (v && v.trim() ? null : 'La observación es obligatoria'),
+      showCancelButton: true,
+      confirmButtonText: 'Observar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#D30000',
+    });
+    if (!isConfirmed || !observacion) return;
+
+    this.loaderService.show();
+    this.service.observarPrimeraRevision(this.accionPrimeraRevisionDe(items, observacion)).subscribe({
+      next: (res) => this.trasDecisionPrimeraRevision(res.message),
+      error: (err: HttpErrorResponse) => this.errorAccion(err),
+    });
+  }
+
+  /**
+   * Igual que `trasAccion`, pero cierra el detalle: decidida la primera revisión ya no hay nada que
+   * mirar ahí, y con el enlace del correo el modal queda abierto detrás del diálogo.
+   */
+  private trasDecisionPrimeraRevision(message: string): void {
+    this.detalleId = null;
+    this.trasAccion(message);
+  }
+
+  /**
+   * Abre el diálogo que pedía el botón del correo. Si la planilla ya no está esperando la primera
+   * revisión (otro jefe decidió antes), no se plantea nada: la pantalla ya muestra en qué quedó.
+   */
+  private resolverAccionDelCorreo(): void {
+    const accion = this.accionPendiente;
+    if (!accion || this.detalleId === null) return;
+    this.accionPendiente = null;
+
+    const planilla = this.rendiciones.find((r) => r.id === this.detalleId);
+    if (!planilla?.porPrimeraRevision) return;
+
+    if (accion === 'aprobar')      void this.aprobarPrimeraRevision([planilla]);
+    else if (accion === 'observar') void this.observarPrimeraRevision([planilla]);
   }
 
   // ── Acciones ─────────────────────────────────────────────────────────
@@ -503,6 +653,18 @@ export class GestionRendiciones implements OnInit {
   // ── Presentación ─────────────────────────────────────────────────────
 
   readonly reembolsoColors = reembolsoColors;
+  readonly primeraRevisionColors = primeraRevisionColors;
+
+  /** Tooltip del badge de la primera revisión: lo que importa es la observación. */
+  primeraRevisionTitle(r: GestionRendicionListItemDto): string | null {
+    if (r.estadoPrimeraRevision === 'Observada' && r.primeraRevisionObservacion) {
+      return 'Observación: ' + r.primeraRevisionObservacion;
+    }
+    if (r.estadoPrimeraRevision === 'Lista para enviar') {
+      return 'El trabajador todavía no la envió a revisión.';
+    }
+    return null;
+  }
 
   /** El badge dice "Observado" y no "Rechazado": describe en qué quedó la planilla. */
   reembolsoTexto(estado: string): string {

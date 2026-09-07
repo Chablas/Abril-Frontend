@@ -1,4 +1,7 @@
 import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { EstadoPrimeraRevision } from '../../../shared/dtos/rendicion-shared.dto';
+
+export type { EstadoPrimeraRevision };
 
 /** Estados del reembolso de una planilla (resumen de los de sus salidas). */
 export type EstadoReembolso = 'Pendiente' | 'Aprobado' | 'Rechazado' | 'Firmado' | 'Pagado';
@@ -12,6 +15,11 @@ export type EstadoReembolso = 'Pendiente' | 'Aprobado' | 'Rechazado' | 'Firmado'
  */
 export interface RendicionListItemDto {
   id: number;
+  /**
+   * Código REN-AAAA-NNNN: es como el trabajador nombra su rendición, y lo que se conserva cuando
+   * una rendición observada se vuelve a generar.
+   */
+  codigo: string;
   /** Correlativo impreso en la planilla ("TI: 000123"). Null en las que no lo tienen. */
   numeroPlanilla: string | null;
   rendidoAt: string;
@@ -32,6 +40,22 @@ export interface RendicionListItemDto {
   /** Consolidado del S10 vigente de la planilla. Null si todavía no se adjuntó. */
   consolidadoS10: ConsolidadoS10Dto | null;
 
+  // ── Primera revisión ───────────────────────────────────────────────────
+  // El paso que va ANTES del Consolidado del S10: el jefe revisa tramos, montos y capturas.
+  // Es de la planilla, así que no se resume de las salidas como el reembolso.
+
+  estadoPrimeraRevision: EstadoPrimeraRevision;
+  /** Cuándo se envió a primera revisión. Null si todavía no se envió. */
+  enviadaRevisionAt: string | null;
+  /** Cuándo decidió el jefe. Null si todavía no decidió. */
+  primeraRevisionAt: string | null;
+  /** Comentario del jefe al observar: es lo que hay que corregir. */
+  primeraRevisionObservacion: string | null;
+  /** True si está "Lista para enviar": se puede mandar a primera revisión. */
+  puedeEnviarPrimeraRevision: boolean;
+  /** True si está observada: hay que corregir capturas y montos y volver a generarla. */
+  puedeSubsanar: boolean;
+
   // ── Reembolso ──────────────────────────────────────────────────────────
   /** Resumen de las salidas propias: gana el estado que más atención pide. */
   estadoReembolso: EstadoReembolso;
@@ -40,6 +64,7 @@ export interface RendicionListItemDto {
   /** Lo que el jefe observó al rechazar: es lo que hay que subsanar. */
   observacionReembolso: string | null;
   revisorNotificadoAt: string | null;
+  /** True con la primera revisión aprobada y el reembolso abierto (RG-35). */
   puedeAdjuntarConsolidado: boolean;
   puedeNotificarRevisor: boolean;
 }
@@ -68,8 +93,13 @@ export interface RendicionDetalleDto extends RendicionListItemDto {
  * no con los datos de los filtros.
  */
 export interface ResumenRendicionesDto {
+  /** Rendidas que todavía no se enviaron a primera revisión. */
+  porEnviar: number;
+  /** Aprobadas en primera revisión y sin el Consolidado del S10 adjunto. */
   sinConsolidado: number;
+  /** Con consolidado y reembolso abierto, pero sin avisarle todavía al revisor. */
   porAvisar: number;
+  /** Observadas: la primera revisión o el reembolso volvieron con observaciones. */
   observadas: number;
 }
 

@@ -1,17 +1,19 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule, DatePipe } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
 import { RendicionesService } from '../services/rendiciones.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
+import { AuthService } from '../../../../../core/services/auth.service';
 import {
   PeriodoOptionDto,
   RendicionListItemDto,
   ResumenRendicionesDto,
 } from '../dtos/rendicion.dto';
+import { primeraRevisionColors } from '../../../shared/dtos/rendicion-shared.dto';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
@@ -69,6 +71,8 @@ import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrat
     }
     .resumen-card__value { font-size: 22px; font-weight: 700; line-height: 1.1; color: var(--color-abril-ink); }
     .resumen-card__hint  { font-size: 11px; color: #9CA3AF; }
+    .resumen-card--primary { border-left-color: #005D9D; }
+    .resumen-card--primary .resumen-card__value { color: #005D9D; }
     .resumen-card--warn  { border-left-color: var(--color-abril-warning); }
     .resumen-card--warn  .resumen-card__value { color: var(--color-abril-warning-dark); }
     .resumen-card--info  { border-left-color: var(--color-abril-standard); }
@@ -112,6 +116,13 @@ export class Rendiciones implements OnInit {
   /** ID de la planilla cuyo modal de detalle está abierto. null = cerrado. */
   detalleId: number | null = null;
 
+  /**
+   * True cuando el detalle se abre para subsanar: cada salida muestra ahí su botón de corregir
+   * capturas y montos. Se resuelve acá y no en el modal porque es la fila la que sabe si su
+   * rendición volvió observada.
+   */
+  detalleSubsanando = false;
+
   /** Planilla cuyo modal de Consolidado del S10 está abierto. null = cerrado. */
   consolidadoDe: RendicionListItemDto | null = null;
 
@@ -119,11 +130,19 @@ export class Rendiciones implements OnInit {
    * Números de las tarjetas. Los cuenta el backend sobre el MISMO conjunto que muestra la tabla,
    * así que llegan con el listado y cambian con cada filtro.
    */
-  resumen: ResumenRendicionesDto = { sinConsolidado: 0, porAvisar: 0, observadas: 0 };
+  resumen: ResumenRendicionesDto = { porEnviar: 0, sinConsolidado: 0, porAvisar: 0, observadas: 0 };
 
   // ── Filtros ────────────────────────────────────────────────────────
   periodoOptions: { key: string | null; label: string }[] = [{ key: null, label: 'Todos los periodos' }];
   private periodos: PeriodoOptionDto[] = [];
+
+  readonly estadoPrimeraRevisionOptions = [
+    { value: null,                  label: 'Todas' },
+    { value: 'Lista para enviar',   label: 'Por enviar' },
+    { value: 'En primera revisión', label: 'En revisión' },
+    { value: 'Observada',           label: 'Observadas' },
+    { value: 'Aprobada',            label: 'Aprobadas' },
+  ];
 
   readonly estadoReembolsoOptions = [
     { value: null,         label: 'Todos' },
@@ -140,6 +159,7 @@ export class Rendiciones implements OnInit {
   ];
 
   filters = {
+    estadoPrimeraRevision: null as string | null,
     estadoReembolso: null as string | null,
     consolidado:     null as string | null,
     periodoKey:      null as string | null,
@@ -149,6 +169,7 @@ export class Rendiciones implements OnInit {
 
   get filtrosActivos(): number {
     let n = 0;
+    if (this.filters.estadoPrimeraRevision != null) n++;
     if (this.filters.estadoReembolso != null) n++;
     if (this.filters.consolidado != null)     n++;
     if (this.filters.periodoKey != null)      n++;
@@ -156,7 +177,9 @@ export class Rendiciones implements OnInit {
   }
 
   limpiarFiltros(): void {
-    this.filters = { estadoReembolso: null, consolidado: null, periodoKey: null };
+    this.filters = {
+      estadoPrimeraRevision: null, estadoReembolso: null, consolidado: null, periodoKey: null,
+    };
     this.load();
   }
 
@@ -164,9 +187,31 @@ export class Rendiciones implements OnInit {
     private service: RendicionesService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private authService: AuthService,
     private route: ActivatedRoute,
+    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
+
+  // ── Botón "Configuración" del header ─────────────────────────────────
+  // Lleva a la sección Correos de la Configuración del módulo, que es donde se prende, se apaga y
+  // se le suman destinatarios a cada correo del flujo. Se restringe con la misma feature que ya
+  // protege esa sección: quien no la tiene no ve el botón.
+
+  private static readonly FEATURE_CONFIG_CORREOS = 'gestion-administrativa.config.correos';
+
+  get puedeConfigurar(): boolean {
+    return this.authService.hasFeature(Rendiciones.FEATURE_CONFIG_CORREOS);
+  }
+
+  get botonConfiguracion() {
+    return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
+  }
+
+  abrirConfiguracion(): void {
+    if (!this.puedeConfigurar) return;
+    this.router.navigate(['/gestion-administrativa/configuracion/correos']);
+  }
 
   ngOnInit(): void {
     this.loadFilterData();
@@ -210,6 +255,7 @@ export class Rendiciones implements OnInit {
     this.loaderService.show();
     const periodo = this.periodoSeleccionado;
     this.service.getMisRendiciones(
+      this.filters.estadoPrimeraRevision,
       this.filters.estadoReembolso,
       this.filters.consolidado == null ? null : this.filters.consolidado === 'si',
       periodo?.anio ?? null,
@@ -243,12 +289,107 @@ export class Rendiciones implements OnInit {
 
   abrirDetalle(r: RendicionListItemDto): void {
     this.detalleId = r.id;
+    this.detalleSubsanando = r.puedeSubsanar;
+  }
+
+  /** Abre el detalle en modo subsanación desde el botón de la fila. */
+  corregirCapturas(r: RendicionListItemDto, ev: Event): void {
+    ev.stopPropagation();
+    this.detalleId = r.id;
+    this.detalleSubsanando = true;
   }
 
   cerrarDetalle(cambio: boolean): void {
     this.detalleId = null;
+    this.detalleSubsanando = false;
     if (cambio) this.recargar();
     else        this.cdr.detectChanges();
+  }
+
+  // ── Primera revisión ─────────────────────────────────────────────────
+
+  /**
+   * Envía la planilla a la primera revisión de la jefatura. Se confirma porque a partir de ahí el
+   * documento está en manos del jefe y el trabajador ya no puede tocar sus montos.
+   */
+  async enviarPrimeraRevision(r: RendicionListItemDto, ev: Event): Promise<void> {
+    ev.stopPropagation();
+
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Enviar ' + r.codigo + ' a revisión?',
+      text: 'Se le avisará a tu jefe para que la apruebe u observe.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, enviar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0F6E56',
+    });
+    if (!result.isConfirmed) return;
+
+    this.loaderService.show();
+    this.service.enviarPrimeraRevision(r.id).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        Swal.fire({ icon: 'success', title: res.message, timer: 2400, showConfirmButton: false });
+        this.recargar();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /**
+   * Vuelve a generar la planilla de una rendición observada, ya con las capturas y los montos
+   * corregidos. Conserva el código, descarga el PDF nuevo y la deja lista para reenviar.
+   */
+  async regenerarPlanilla(r: RendicionListItemDto, ev: Event): Promise<void> {
+    ev.stopPropagation();
+
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Volver a generar ' + r.codigo + '?',
+      text: 'La planilla se rehace con los montos actuales y queda lista para reenviar a revisión.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, generar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0F6E56',
+    });
+    if (!result.isConfirmed) return;
+
+    this.loaderService.show();
+    this.service.regenerarPlanilla(r.id).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        this.descargar(res, r.codigo + '.pdf');
+        Swal.fire({
+          icon: 'success',
+          title: 'Planilla regenerada',
+          text: r.codigo + ' quedó lista para enviar de nuevo a revisión.',
+          timer: 2800,
+          showConfirmButton: false,
+        });
+        this.recargar();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** Dispara la descarga del PDF que devuelve el backend. */
+  private descargar(response: HttpResponse<Blob>, filename: string): void {
+    if (!response.body) return;
+    const url = URL.createObjectURL(response.body);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
   // ── Consolidado del S10 ──────────────────────────────────────────────
@@ -314,6 +455,19 @@ export class Rendiciones implements OnInit {
   }
 
   // ── Colores de estado ────────────────────────────────────────────────
+
+  readonly primeraRevisionColors = primeraRevisionColors;
+
+  /** Tooltip del badge de la primera revisión: lo único que importa es la observación. */
+  primeraRevisionTitle(r: RendicionListItemDto): string | null {
+    if (r.estadoPrimeraRevision === 'Observada' && r.primeraRevisionObservacion) {
+      return 'Observación: ' + r.primeraRevisionObservacion;
+    }
+    if (r.estadoPrimeraRevision === 'Lista para enviar') {
+      return 'Todavía no la enviaste a tu jefe para la primera revisión.';
+    }
+    return null;
+  }
 
   reembolsoColors(estado: string): { bg: string; text: string } {
     switch (estado) {

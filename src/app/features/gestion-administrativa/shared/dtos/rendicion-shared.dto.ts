@@ -14,6 +14,17 @@ export interface ReembolsoBulkResultDto {
 /** Estados del reembolso, tal como los nombra el backend. */
 export type EstadoReembolso = 'Pendiente' | 'Aprobado' | 'Rechazado' | 'Firmado' | 'Pagado';
 
+/**
+ * Estados de la PRIMERA revisión de una planilla, tal como los nombra el backend. Es el paso
+ * anterior al Consolidado del S10: el jefe revisa tramos, montos y capturas, y solo con su
+ * aprobación el trabajador puede cargar el consolidado.
+ */
+export type EstadoPrimeraRevision =
+  | 'Lista para enviar'
+  | 'En primera revisión'
+  | 'Aprobada'
+  | 'Observada';
+
 export interface TrabajadorOptionDto {
   workerId: number;
   nombreCompleto: string;
@@ -49,5 +60,18 @@ export function reembolsoColors(estado: string): { bg: string; text: string } {
     case 'Firmado':   return { bg: '#E0E7FF', text: '#4338CA' };
     case 'Pagado':    return { bg: '#DCFCE7', text: '#15803D' };
     default:          return { bg: '#FEF9C3', text: '#92400E' }; // Pendiente
+  }
+}
+
+/**
+ * Colores del badge de la primera revisión. "Lista para enviar" va en gris a propósito: no espera
+ * a nadie más que al propio trabajador y no debe competir con los estados que sí piden atención.
+ */
+export function primeraRevisionColors(estado: string): { bg: string; text: string } {
+  switch (estado) {
+    case 'En primera revisión': return { bg: '#DBEAFE', text: '#1D4ED8' };
+    case 'Aprobada':            return { bg: '#D7FAF4', text: '#009C87' };
+    case 'Observada':           return { bg: '#FAD5D4', text: '#D30000' };
+    default:                    return { bg: '#F3F4F6', text: '#4B5563' }; // Lista para enviar
   }
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
@@ -25,12 +25,14 @@ export class RendicionesService {
    * Vienen juntos para que un cambio de filtro se resuelva en una sola petición.
    */
   getMisRendiciones(
+    estadoPrimeraRevision: string | null = null,
     estadoReembolso: string | null = null,
     conConsolidado: boolean | null = null,
     periodoAnio: number | null = null,
     periodoMes: number | null = null,
   ): Observable<RendicionListResultDto> {
     let params = new HttpParams();
+    if (estadoPrimeraRevision) params = params.set('estadoPrimeraRevision', estadoPrimeraRevision);
     if (estadoReembolso) params = params.set('estadoReembolso', estadoReembolso);
     if (conConsolidado != null) params = params.set('conConsolidado', conConsolidado);
     if (periodoAnio != null && periodoMes != null) {
@@ -49,6 +51,31 @@ export class RendicionesService {
     return this.http.get<RendicionDetalleDto>(`${this.apiUrl}/${id}/detalle`, {
       headers: this.headers,
     });
+  }
+
+  /**
+   * Envía la planilla a la primera revisión de la jefatura. Dispara los dos correos del paso: la
+   * confirmación al propio solicitante y el aviso al jefe con los botones de aprobar y observar.
+   */
+  enviarPrimeraRevision(rendicionId: number): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(
+      `${this.apiUrl}/${rendicionId}/enviar-revision`,
+      {},
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Vuelve a generar el PDF de una rendición observada y lo descarga. La rendición conserva su
+   * código y su número de planilla, y queda lista para reenviar a revisión. Responde el archivo,
+   * igual que rendir: por eso va como blob.
+   */
+  regenerarPlanilla(rendicionId: number): Observable<HttpResponse<Blob>> {
+    return this.http.patch(
+      `${this.apiUrl}/${rendicionId}/regenerar-planilla`,
+      {},
+      { headers: this.headers, responseType: 'blob', observe: 'response' },
+    );
   }
 
   /** Adjunta (o reemplaza) el Consolidado del S10 de la planilla. Cubre todas sus salidas. */

@@ -14,14 +14,18 @@ import {
   GestionRendicionDetalleDto,
   ReembolsoAccionDto,
 } from '../../dtos/gestion-rendicion.dto';
-import { reembolsoColors } from '../../../../shared/dtos/rendicion-shared.dto';
+import {
+  primeraRevisionColors,
+  reembolsoColors,
+} from '../../../../shared/dtos/rendicion-shared.dto';
 
 /**
  * Detalle de una planilla para el revisor: sus documentos y las salidas que agrupa.
  *
- * Acá el reembolso se decide SALIDA POR SALIDA, que es la granularidad que el modelo soporta y la
- * que hace falta cuando una planilla trae una salida con problema y el resto bien. La decisión en
- * bloque, por planilla entera, se hace desde la tabla.
+ * La PRIMERA revisión se decide por planilla entera (es lo que se revisa: el documento), así que
+ * sus dos botones están al pie del modal. El REEMBOLSO, en cambio, se decide SALIDA POR SALIDA,
+ * que es la granularidad que el modelo soporta y la que hace falta cuando una planilla trae una
+ * salida con problema y el resto bien; la decisión en bloque se hace desde la tabla.
  */
 @Component({
   standalone: true,
@@ -174,8 +178,65 @@ export class GestionRendicionDetalleModal implements OnInit {
     this.cdr.detectChanges();
   }
 
+  // ── Primera revisión (por planilla: es el documento lo que se revisa) ──
+
+  async aprobarPrimeraRevision(): Promise<void> {
+    const d = this.detalle;
+    if (!d?.porPrimeraRevision) return;
+
+    const result = await Swal.fire({
+      icon: 'question',
+      title: '¿Aprobar la rendición ' + d.codigo + '?',
+      text: 'El trabajador podrá cargar el Consolidado del S10 y se le avisará por correo.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0F6E56',
+    });
+    if (!result.isConfirmed) return;
+
+    this.loader.show();
+    this.service.aprobarPrimeraRevision({ rendicionIds: [d.id] }).subscribe({
+      next: (res) => this.trasDecisionPrimeraRevision(res.message),
+      error: (err: HttpErrorResponse) => this.errorAccion(err),
+    });
+  }
+
+  async observarPrimeraRevision(): Promise<void> {
+    const d = this.detalle;
+    if (!d?.porPrimeraRevision) return;
+
+    const { value: observacion, isConfirmed } = await Swal.fire({
+      icon: 'warning',
+      title: '¿Observar la rendición ' + d.codigo + '?',
+      input: 'textarea',
+      inputLabel: 'Observación',
+      inputPlaceholder: 'Qué capturas o montos tiene que corregir el trabajador…',
+      inputValidator: (v) => (v && v.trim() ? null : 'La observación es obligatoria'),
+      showCancelButton: true,
+      confirmButtonText: 'Observar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#D30000',
+    });
+    if (!isConfirmed || !observacion) return;
+
+    this.loader.show();
+    this.service.observarPrimeraRevision({ rendicionIds: [d.id], observacion }).subscribe({
+      next: (res) => this.trasDecisionPrimeraRevision(res.message),
+      error: (err: HttpErrorResponse) => this.errorAccion(err),
+    });
+  }
+
+  /** Cierra el modal: decidida la primera revisión, ya no hay nada que mirar en este detalle. */
+  private trasDecisionPrimeraRevision(message: string): void {
+    this.loader.hide();
+    Swal.fire({ title: message, icon: 'success', timer: 2000, showConfirmButton: false });
+    this.close.emit(true);
+  }
+
   // ── Presentación ─────────────────────────────────────────────────────
 
+  readonly primeraRevisionColors = primeraRevisionColors;
   readonly reembolsoColors = reembolsoColors;
 
   reembolsoTexto(estado: string): string {

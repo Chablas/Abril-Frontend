@@ -1,5 +1,5 @@
 <app-base-modal
-  [title]="detalle?.numeroPlanilla ? 'Planilla ' + detalle!.numeroPlanilla : 'Planilla de rendición'"
+  [title]="detalle ? 'Rendición ' + detalle.codigo : 'Rendición'"
   width="w-[900px]"
   (closeModal)="cerrar()">
 
@@ -23,6 +23,67 @@
         <span class="text-[11px] uppercase text-gray-400 font-semibold">Rendida</span>
         <span class="text-sm text-gray-700">{{ d.rendidoAt | date:'dd/MM/yyyy HH:mm' }}</span>
       </div>
+    </div>
+
+    <!-- ── Primera revisión ─────────────────────────────────────────────── -->
+    <div class="flex items-center gap-3 border-t pt-3" style="border-color:var(--color-abril-border)">
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">1.ª revisión</span>
+      <app-status-badge
+        [text]="d.estadoPrimeraRevision"
+        [bgColor]="primeraRevisionColors(d.estadoPrimeraRevision).bg"
+        [textColor]="primeraRevisionColors(d.estadoPrimeraRevision).text" />
+      <span *ngIf="d.enviadaRevisionAt" class="text-[11px] text-gray-400">
+        Enviada el {{ d.enviadaRevisionAt | date:'dd/MM/yyyy HH:mm' }}
+      </span>
+      <span *ngIf="d.primeraRevisionAt" class="text-[11px] text-gray-400 ml-auto">
+        Revisada el {{ d.primeraRevisionAt | date:'dd/MM/yyyy HH:mm' }}
+      </span>
+    </div>
+
+    <div *ngIf="d.estadoPrimeraRevision === 'Observada' && d.primeraRevisionObservacion"
+         class="border rounded-lg p-3 text-sm"
+         style="border-color:#FCA5A5;background:#FEF2F2;color:#991B1B">
+      <span class="font-semibold">Observación de la primera revisión:</span>
+      {{ d.primeraRevisionObservacion }}
+    </div>
+
+    <!-- Los dos botones de la primera revisión: la decisión es de la planilla entera, así que van
+         acá y no en la tabla de salidas de más abajo. -->
+    <div *ngIf="d.porPrimeraRevision" class="flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        (click)="aprobarPrimeraRevision()"
+        [disabled]="d.incluyePropias"
+        [title]="d.incluyePropias
+          ? 'No puedes revisar una rendición con tus propias salidas'
+          : 'Habilita al trabajador a cargar el Consolidado del S10'"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+        style="background:var(--color-abril-standard)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        Aprobar la primera revisión
+      </button>
+
+      <button
+        type="button"
+        (click)="observarPrimeraRevision()"
+        [disabled]="d.incluyePropias"
+        [title]="d.incluyePropias
+          ? 'No puedes revisar una rendición con tus propias salidas'
+          : 'Se te pedirá el comentario de qué tiene que corregir'"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        style="background:#FFFFFF;color:#D30000;border:1px solid #D30000">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+        </svg>
+        Observar
+      </button>
+
+      <span *ngIf="d.incluyePropias" class="text-[11px] text-gray-500 italic">
+        Esta rendición incluye salidas tuyas: la tiene que revisar otro jefe.
+      </span>
     </div>
 
     <!-- ── Documentos ───────────────────────────────────────────────────── -->
@@ -50,7 +111,9 @@
         <span class="text-xs text-gray-400 font-normal">· Consolidado del S10</span>
       </a>
       <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
-        El trabajador todavía no adjuntó el Consolidado del S10.
+        {{ d.estadoPrimeraRevision === 'Aprobada'
+            ? 'El trabajador todavía no adjuntó el Consolidado del S10.'
+            : 'El Consolidado del S10 se habilita al aprobar la primera revisión.' }}
       </span>
 
       <a *ngIf="d.pdfFirmadoUrl" [href]="d.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"

@@ -6,10 +6,6 @@ import { SolicitudSalidaFormDataDto } from '../dtos/solicitud-salida-form-data.d
 import { SolicitudSalidaCreateDto } from '../dtos/solicitud-salida-create.dto';
 import { SolicitudSalidaListResultDto } from '../dtos/solicitud-salida-list-item.dto';
 import { SolicitudSalidaFilterDataDto } from '../dtos/solicitud-salida-filter-data.dto';
-import {
-  SolicitudSalidaCapturaDto,
-  SolicitudSalidaDetalleDto,
-} from '../dtos/solicitud-salida-detalle.dto';
 
 @Injectable({ providedIn: 'root' })
 export class SolicitudSalidasService {
@@ -75,12 +71,6 @@ export class SolicitudSalidasService {
     });
   }
 
-  getDetalle(id: number): Observable<SolicitudSalidaDetalleDto> {
-    return this.http.get<SolicitudSalidaDetalleDto>(`${this.apiUrl}/${id}/detalle`, {
-      headers: this.headers,
-    });
-  }
-
   /** Cancela una solicitud propia que esté Pendiente (registrada por error o salida no realizada). */
   cancelar(id: number): Observable<{ message: string }> {
     return this.http.patch<{ message: string }>(`${this.apiUrl}/${id}/cancelar`, {}, {
@@ -123,23 +113,6 @@ export class SolicitudSalidasService {
         responseType: 'blob',
         observe: 'response',
       },
-    );
-  }
-
-  /** Sube capturas asociadas a un trayecto específico. */
-  uploadCapturasToTrayecto(
-    trayectoId: number,
-    items: { file: File; monto: number }[],
-  ): Observable<SolicitudSalidaCapturaDto[]> {
-    const formData = new FormData();
-    items.forEach((it) => {
-      formData.append('files', it.file, it.file.name);
-      formData.append('montos', it.monto.toString());
-    });
-    return this.http.post<SolicitudSalidaCapturaDto[]>(
-      `${this.apiUrl}/trayectos/${trayectoId}/capturas`,
-      formData,
-      { headers: this.headers },
     );
   }
 }
