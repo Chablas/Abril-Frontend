@@ -101,8 +101,8 @@ export class ReclutamientoService {
   /**
    * Envía la long list al solicitante (multipart): metadatos de cada candidato en `data`, su CV
    * como form file con la clave `cv_i` y cada anexo del portafolio con la clave `anexo_i_j`. El
-   * backend envía el correo configurado (con el CV y los anexos adjuntos) y avanza el
-   * requerimiento a LONG_LIST_ENVIADA.
+   * backend sube los archivos a SharePoint, envía el correo configurado (que los enlaza, no los
+   * adjunta) y avanza el requerimiento a LONG_LIST_ENVIADA.
    */
   enviarLongList(
     requerimientoId: number,
@@ -284,7 +284,7 @@ export class ReclutamientoService {
   /**
    * Guarda la evaluación de la entrevista de un candidato (multipart): los comentarios del informe
    * en `data` y, opcionalmente, sus dos archivos como form files (`informeFinal` y
-   * `evaluacionConocimientos`). El backend los sube a SharePoint y los adjunta al correo del
+   * `evaluacionConocimientos`). El backend los sube a SharePoint y los enlaza en el correo del
    * finalista.
    */
   guardarEvaluacion(

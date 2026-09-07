@@ -148,7 +148,15 @@
             <div class="text-gray-800">{{ t.horaRetorno ?? '—' }}</div>
           </div>
           <div class="col-span-2">
-            <div class="text-xs text-gray-500 uppercase">Motivo</div>
+            <div class="flex items-center gap-[6px]">
+              <span class="text-xs text-gray-500 uppercase">Motivo</span>
+              <!-- Solo con motivo del catálogo: el motivo libre no tiene el flag configurado. -->
+              <span *ngIf="t.esReembolsable !== null"
+                    class="text-[10px] px-[8px] py-[2px] rounded-full font-semibold tracking-wide whitespace-nowrap"
+                    [ngClass]="t.esReembolsable ? 'bg-[#DCFCE7] text-[#14532D]' : 'bg-[#F3F4F6] text-[#6B7280]'">
+                {{ t.esReembolsable ? 'CON REEMBOLSO' : 'SIN REEMBOLSO' }}
+              </span>
+            </div>
             <div class="text-gray-800">{{ t.motivo }}</div>
           </div>
           <div *ngIf="t.motivoAdicional" class="col-span-2">

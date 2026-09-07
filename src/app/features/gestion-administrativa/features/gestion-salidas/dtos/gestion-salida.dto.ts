@@ -206,6 +206,12 @@ export interface GestionSalidaTrayectoDto {
   montoCatalogo: number | null;
   /** Monto efectivo: suma capturas o montoCatalogo. */
   montoTotal: number;
+  /**
+   * Si el trayecto genera reembolso de movilidad: lo concede el motivo del catálogo
+   * (Configuración → Motivos) y el par (origen, destino) puede anularlo, nunca al revés.
+   * Null con motivo libre: no está en el catálogo, no tiene el flag y no se pinta el pill.
+   */
+  esReembolsable: boolean | null;
 }
 
 export interface GestionSalidaDetalleDto {

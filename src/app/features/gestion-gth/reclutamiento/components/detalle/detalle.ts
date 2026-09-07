@@ -69,12 +69,17 @@ interface CandidatoLongList {
 const ANEXOS_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp';
 
 /**
- * Tope de lo que puede pesar el conjunto de archivos del envío (CVs + anexos). No es una regla
- * nuestra: es lo que acepta el proveedor de correo con los adjuntos adentro, y el backend lo
- * valida igual (`MaxLongListCorreoBytes`). Se comprueba también acá para avisar antes de subir
- * decenas de MB que el servidor va a rechazar.
+ * Topes de los archivos del envío (CVs y anexos de la long list, y los dos del informe del
+ * finalista). Son reglas NUESTRAS, no del proveedor de correo: desde que los archivos viajan
+ * enlazados a SharePoint y no adjuntos, el correo pesa lo mismo con 2 MB que con 20 MB. El
+ * backend valida los mismos números (`MaxLongListFileBytes` y `MaxLongListTotalBytes`); se
+ * comprueban también acá para avisar antes de subir algo que el servidor va a rechazar.
  */
-const MAX_LONG_LIST_CORREO_BYTES = 2_800_000;
+const MAX_ARCHIVO_BYTES = 20 * 1024 * 1024;
+const MAX_ARCHIVOS_TOTAL_BYTES = 60 * 1024 * 1024;
+
+/** Tamaño en MB con un decimal, para los mensajes de tope de archivos. */
+const mbTexto = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 /**
  * Correo válido para enviarle el formulario al postulante. Misma expresión que valida el backend
@@ -1323,20 +1328,35 @@ export class GthDetalleRequerimiento implements OnInit {
       return;
     }
 
-    // Los CVs y los anexos viajan adjuntos en el correo al solicitante, que tiene un tope de
-    // tamaño (ver MAX_LONG_LIST_CORREO_BYTES): se avisa acá para no subirlo y que lo rechace.
+    // Los archivos se suben a SharePoint y el correo al solicitante lleva sus enlaces, así que
+    // el tope es el de la subida: por archivo y por peso de toda la petición.
+    const pesado = this.candidatos
+      .flatMap((c) => [c.cv, ...c.anexos])
+      .find((f) => f.size > MAX_ARCHIVO_BYTES);
+    if (pesado) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Un archivo pesa demasiado',
+        text:
+          `«${pesado.name}» pesa ${mbTexto(pesado.size)} y el máximo por archivo es ` +
+          `${mbTexto(MAX_ARCHIVO_BYTES)}.`,
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
     const pesoTotal = this.candidatos.reduce(
       (total, c) => total + c.cv.size + c.anexos.reduce((suma, a) => suma + a.size, 0),
       0,
     );
-    if (pesoTotal > MAX_LONG_LIST_CORREO_BYTES) {
-      const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    if (pesoTotal > MAX_ARCHIVOS_TOTAL_BYTES) {
       Swal.fire({
         icon: 'warning',
         title: 'Los archivos pesan demasiado',
         text:
-          `Los CVs y anexos suman ${mb(pesoTotal)} y el correo al solicitante admite hasta ` +
-          `${mb(MAX_LONG_LIST_CORREO_BYTES)}. Reduce o quita algún anexo del portafolio.`,
+          `Los CVs y anexos suman ${mbTexto(pesoTotal)} y el envío admite hasta ` +
+          `${mbTexto(MAX_ARCHIVOS_TOTAL_BYTES)}. Quita algún anexo del portafolio o envía la ` +
+          `long list en dos tandas.`,
         confirmButtonColor: '#005D9D',
       });
       return;
@@ -2013,9 +2033,9 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
-   * Toma el archivo elegido para ese documento. Se valida el peso acá además del backend: los dos
-   * viajan adjuntos en el correo al solicitante y el proveedor rechaza el mensaje completo si se
-   * pasa, así que conviene avisarlo antes de subir nada.
+   * Toma el archivo elegido para ese documento. Se valida el peso acá además del backend para
+   * avisarlo antes de subir nada: los archivos se guardan en SharePoint y el correo al
+   * solicitante los enlaza, así que el tope es el de la subida y no el del correo.
    */
   onArchivoEvaluacion(event: Event, c: CandidatoAprobado, codigo: string): void {
     const input = event.target as HTMLInputElement;
@@ -2030,11 +2050,23 @@ export class GthDetalleRequerimiento implements OnInit {
       .filter(([k, f]) => k !== codigo && !!f)
       .reduce((total, [, f]) => total + (f as File).size, 0);
 
-    if (otros + file.size > MAX_LONG_LIST_CORREO_BYTES) {
+    if (file.size > MAX_ARCHIVO_BYTES) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'El archivo pesa demasiado',
+        text:
+          `«${file.name}» pesa ${mbTexto(file.size)} y el máximo por archivo es ` +
+          `${mbTexto(MAX_ARCHIVO_BYTES)}.`,
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    if (otros + file.size > MAX_ARCHIVOS_TOTAL_BYTES) {
       Swal.fire({
         icon: 'warning',
         title: 'Archivos demasiado pesados',
-        text: `Los archivos del informe no pueden superar los ${(MAX_LONG_LIST_CORREO_BYTES / 1024 / 1024).toFixed(1)} MB en total.`,
+        text: `Los archivos del informe no pueden superar los ${mbTexto(MAX_ARCHIVOS_TOTAL_BYTES)} en total.`,
         confirmButtonColor: '#005D9D',
       });
       return;

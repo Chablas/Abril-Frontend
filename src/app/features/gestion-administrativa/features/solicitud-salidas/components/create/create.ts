@@ -35,6 +35,12 @@ interface TrayectoForm {
   destinoLibre: boolean;
   /** Documentos adjuntos (prueba) — al menos uno obligatorio cuando el motivo elegido lo requiere. */
   adjuntos: SelectedFile[];
+  /**
+   * true = el trayecto está cerrado en el formulario. Vive acá y no en el DOM porque cerrarlo
+   * desmonta sus campos: si el estado viviera en el template se perdería lo ya escrito. Los
+   * trayectos nacen abiertos y `save()` reabre los que tengan errores.
+   */
+  colapsado: boolean;
 }
 
 @Component({
@@ -169,6 +175,7 @@ export class SolicitudSalidaCreate implements OnInit {
       lugarDestinoLibre: null,
       destinoLibre: false,
       adjuntos: [],
+      colapsado: false,
     };
   }
 
@@ -243,13 +250,6 @@ export class SolicitudSalidaCreate implements OnInit {
     return (this.formData.lugares ?? []).find((l) => l.id === t.lugarOrigenId)?.nombreDisplay ?? '';
   }
 
-  /** Motivo del trayecto tal cual se guardará: el del catálogo, o el de "Otro motivo". */
-  motivoLabel(t: TrayectoForm): string {
-    if (t.motivoLibreOn) return t.motivoLibre?.trim() || 'Otro motivo';
-    if (t.motivoId == null) return '';
-    return this.formData.motivos.find((m) => m.id === t.motivoId)?.descripcion ?? '';
-  }
-
   /** "Origen → Destino", o cadena vacía mientras falte alguno de los dos. */
   rutaLabel(t: TrayectoForm): string {
     const origen = this.origenLabel(t);
@@ -279,19 +279,6 @@ export class SolicitudSalidaCreate implements OnInit {
     return this.motivoEsReembolsable(t) && !this.trayectoExcluido(t);
   }
 
-  /**
-   * El aviso de reembolso solo aparece cuando algún trayecto eligió un motivo que lo
-   * concede: para el resto de salidas no hay nada que informar.
-   */
-  get mostrarReembolso(): boolean {
-    return this.trayectos.some((t) => this.motivoEsReembolsable(t));
-  }
-
-  /** true si al menos un trayecto termina generando reembolso. */
-  get correspondeReembolso(): boolean {
-    return this.trayectos.some((t) => this.trayectoCorrespondeReembolso(t));
-  }
-
   /** Motivo por el que un trayecto no genera reembolso; vacío si sí lo genera. */
   razonSinReembolso(t: TrayectoForm): string {
     if (this.trayectoCorrespondeReembolso(t)) return '';
@@ -300,6 +287,17 @@ export class SolicitudSalidaCreate implements OnInit {
   }
 
   // ── Manejo de horas ────────────────────────────────────────────────
+
+  /**
+   * La hora de retorno no puede ser anterior a la de salida del mismo trayecto: su desplegable
+   * ya deshabilita esas opciones vía `min`. Al mover la salida hacia adelante, un retorno que ya
+   * estaba elegido y queda por debajo se descarta — dejarlo mostraría en el campo un valor que su
+   * propio panel marca como no elegible, y `validarTrayecto` lo rebotaría igual al enviar.
+   */
+  onHoraSalidaChange(t: TrayectoForm, hora: string | null): void {
+    t.horaSalida = hora ?? '';
+    if (t.horaSalida && t.horaRetorno && t.horaRetorno < t.horaSalida) t.horaRetorno = '';
+  }
 
   onSinRetornoChange(t: TrayectoForm, checked: boolean): void {
     t.sinRetorno = checked;
@@ -539,7 +537,13 @@ export class SolicitudSalidaCreate implements OnInit {
     }
 
     const errors: string[] = [];
-    this.trayectos.forEach((t, i) => errors.push(...this.validarTrayecto(t, i)));
+    this.trayectos.forEach((t, i) => {
+      const errs = this.validarTrayecto(t, i);
+      // Cerrado y con errores: se reabre. Si no, el aviso nombra un trayecto cuyos campos en
+      // rojo están desmontados y el usuario no tiene qué corregir a la vista.
+      if (errs.length > 0) t.colapsado = false;
+      errors.push(...errs);
+    });
     if (errors.length > 0) {
       Swal.fire({
         title: 'Campos requeridos',
