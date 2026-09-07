@@ -36,7 +36,22 @@ export interface TrayectoNoReembolsableDto {
 export interface SolicitudSalidaFormDataDto {
   motivos: MotivoSalidaDto[];
   lugares: LugarSalidaDto[];
-  aprobadorEmail: string | null;
+  /**
+   * Correos que de verdad van a recibir el aviso con los botones de aprobar/rechazar, ya
+   * aplicada la configuración de Configuración → Correos → Revisor. No es "el revisor": ese
+   * puede estar apagado ahí y el aviso irse solo a los destinatarios configurados. Vacío = no
+   * se le envía a nadie.
+   */
+  correoRevisorPara: string[];
+  /** Los que van en copia de ese mismo aviso. */
+  correoRevisorCopia: string[];
+  /**
+   * Lo mismo para la confirmación informativa (Configuración → Correos → Confirmación), que
+   * sale junto con la anterior pero sin botones. Vacío = no se envía a nadie.
+   */
+  correoConfirmacionPara: string[];
+  /** Los que van en copia de la confirmación. */
+  correoConfirmacionCopia: string[];
   /** True si el trabajador es de Tecnología de la Información. */
   esTI: boolean;
   /** Catálogo (lugarOrigenId, lugarDestinoId) → monto. Solo poblado si esTI. */

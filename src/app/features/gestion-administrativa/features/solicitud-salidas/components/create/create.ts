@@ -67,7 +67,10 @@ export class SolicitudSalidaCreate implements OnInit {
   formData: SolicitudSalidaFormDataDto = {
     motivos: [],
     lugares: [],
-    aprobadorEmail: null,
+    correoRevisorPara: [],
+    correoRevisorCopia: [],
+    correoConfirmacionPara: [],
+    correoConfirmacionCopia: [],
     esTI: false,
     trayectosCatalogo: [],
     trayectosNoReembolsables: [],
@@ -100,6 +103,39 @@ export class SolicitudSalidaCreate implements OnInit {
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  // ── Correos que salen al registrar la solicitud ────────────────────
+  //
+  // Los dos correos del alta, con los destinatarios que el backend ya resolvió aplicando
+  // Configuración → Correos: el de aprobación (sección Revisor) y la confirmación informativa
+  // (sección Confirmación). Se muestran los correos REALES, no a quién le tocaría: cada
+  // destinatario se prende y se apaga por separado en esa pantalla, el revisor incluido.
+
+  /**
+   * Destinatarios del aviso con los botones de aprobar/rechazar. No es "el revisor de tu área":
+   * ese puede estar apagado en la configuración, y entonces el aviso se va solo a los
+   * destinatarios agregados ahí. '' = no le llega a nadie.
+   */
+  get correoRevisorPara(): string {
+    return (this.formData.correoRevisorPara ?? []).join(', ');
+  }
+
+  /** Los que van en copia de ese aviso; '' si no hay ninguno. */
+  get correoRevisorCopia(): string {
+    return (this.formData.correoRevisorCopia ?? []).join(', ');
+  }
+
+  /**
+   * Destinatarios de la confirmación informativa, "Para" y copias en UNA sola lista: a todos
+   * les llega el mismo correo y separarlos solo agregaba ruido a un aviso que no pide ninguna
+   * acción (quién es Para y quién CC se ve en Configuración → Correos). '' = no se envía a nadie.
+   */
+  get correoConfirmacion(): string {
+    return [
+      ...(this.formData.correoConfirmacionPara ?? []),
+      ...(this.formData.correoConfirmacionCopia ?? []),
+    ].join(', ');
   }
 
   // ── Helpers ────────────────────────────────────────────────────────

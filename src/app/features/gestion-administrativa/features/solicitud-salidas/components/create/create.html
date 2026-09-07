@@ -278,25 +278,43 @@
 
     </div>
 
-    <!-- ── Aprobador ─────────────────────────────────────────────────── -->
-    <div *ngIf="formData.aprobadorEmail" class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[10px]" style="background:var(--color-abril-standard-light);border:1px solid var(--color-abril-standard-border)">
+    <!-- ── Correos que salen al registrar ────────────────────────────────
+         Los destinatarios REALES de los dos correos del alta, no a quién le tocaría: se
+         configuran uno por uno en Configuración → Correos (secciones Revisor y Confirmación),
+         donde hasta el revisor puede estar apagado. -->
+    <div *ngIf="correoRevisorPara" class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[10px]" style="background:var(--color-abril-standard-light);border:1px solid var(--color-abril-standard-border)">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]" style="color:var(--color-abril-standard)">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/>
       </svg>
       <p class="text-[13px] text-gray-600 min-w-0">
         Esta solicitud será notificada a
-        <span class="font-medium break-all" style="color:var(--color-abril-standard)">{{ formData.aprobadorEmail }}</span>
+        <span class="font-medium break-all" style="color:var(--color-abril-standard)">{{ correoRevisorPara }}</span>
         para su aprobación.
+        <span *ngIf="correoRevisorCopia" class="block mt-[2px] text-gray-500">
+          En copia: <span class="break-all">{{ correoRevisorCopia }}</span>
+        </span>
       </p>
     </div>
 
-    <div *ngIf="!formData.aprobadorEmail && formData.motivos.length > 0"
+    <div *ngIf="!correoRevisorPara && formData.motivos.length > 0"
          class="flex items-start gap-[10px] bg-[#FEF9C3] border border-[#FDE68A] rounded-[8px] px-[14px] py-[10px]">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]">
         <path d="M12 2L1 21h22L12 2zm0 6l7.5 13h-15L12 8zm-1 4v4h2v-4h-2zm0 5v2h2v-2h-2z" fill="#92400E"/>
       </svg>
       <p class="text-sm text-[#92400E]">
-        No se pudo identificar a tu jefatura inmediata. Contacta al administrador antes de registrar la solicitud.
+        Nadie recibirá el aviso de esta solicitud. Contacta al administrador antes de registrarla.
+      </p>
+    </div>
+
+    <div *ngIf="correoConfirmacion"
+         class="flex items-start gap-[10px] bg-gray-50 border border-gray-200 rounded-[8px] px-[14px] py-[10px]">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px] text-gray-400">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/>
+      </svg>
+      <p class="text-[13px] text-gray-600 min-w-0">
+        También será notificada a
+        <span class="font-medium break-all text-gray-700">{{ correoConfirmacion }}</span>
+        para su conocimiento.
       </p>
     </div>
 

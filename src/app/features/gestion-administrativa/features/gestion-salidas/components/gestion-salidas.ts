@@ -683,7 +683,8 @@ export class GestionSalidas implements OnInit {
 
   /**
    * Rechaza en bloque las solicitudes seleccionadas que sean rechazables: pendientes, o aprobadas
-   * que aún no fueron rendidas. Nunca las propias (salvo Gerente) ni las ya rendidas.
+   * que aún no fueron rendidas. Nunca las propias (salvo si es su propio revisor) ni las ya
+   * rendidas.
    */
   async rechazarBulk(): Promise<void> {
     if (!this.puedeRechazarSeleccion) return;
@@ -923,8 +924,9 @@ export class GestionSalidas implements OnInit {
 
   /**
    * True si alguna candidata (a aprobar o rechazar) es propia y no decidible. Nadie decide lo suyo
-   * (salvo Gerente), y si se mezcla una propia con otras se bloquea toda la acción — hay que
-   * deseleccionar la propia primero. El backend lo determina por fila (`puedeDecidir`) y lo re-valida.
+   * salvo quien es su propio revisor (jefe personalizado apuntándose a sí mismo), y si se mezcla
+   * una no decidible con otras se bloquea toda la acción — hay que deseleccionarla primero. El
+   * backend lo determina por fila (`puedeDecidir`) y lo re-valida al aprobar/rechazar.
    */
   get aprobacionIncluyePropia(): boolean {
     return this.selectedPendientes.some((s) => !s.puedeDecidir);

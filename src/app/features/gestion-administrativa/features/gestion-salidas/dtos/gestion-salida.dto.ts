@@ -57,7 +57,9 @@ export interface GestionSalidaListItemDto {
   esHoraEstimada: boolean;
   /**
    * True si el usuario logueado puede aprobar/rechazar esta salida. False cuando es su propia
-   * salida y no es Gerente (nadie aprueba lo suyo salvo gerentes). No afecta la rendición.
+   * salida y él no es su propio revisor: lo suyo solo lo decide quien tenga el jefe personalizado
+   * apuntándose a sí mismo, que es además quien recibe el correo con los botones. No afecta la
+   * rendición.
    */
   puedeDecidir: boolean;
   /**

@@ -199,8 +199,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
 
   /**
    * Persona de la ficha que se está editando (`workers.person_id`), del detalle. Con ella se
-   * descarta al propio trabajador de los candidatos a jefe: la misma persona puede tener varias
-   * fichas en `workers` (reingreso), así que comparar solo `workerId` dejaría pasar el caso.
+   * descarta al propio trabajador de los revisores que sugiere su área: la misma persona puede
+   * tener varias fichas en `workers` (reingreso), así que comparar solo `workerId` dejaría pasar
+   * el caso. No aplica al desplegable de jefe personalizado — ver `jefesDisponibles`.
    */
   private workerPersonId: number | null = null;
 
@@ -836,9 +837,10 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   }
 
   /**
-   * Nadie puede ser su propio jefe. Se compara por persona además de por ficha porque un
-   * reingreso deja varias filas en `workers` para la misma persona y el revisor puede estar
-   * configurado en cualquiera de ellas (misma regla que aplica el backend al notificar).
+   * Nadie puede ser su propio jefe, aplicado solo al revisor que sale del área (el jefe
+   * personalizado se elige a mano y sí puede ser él mismo). Se compara por persona además de por
+   * ficha porque un reingreso deja varias filas en `workers` para la misma persona y el revisor
+   * puede estar configurado en cualquiera de ellas (misma regla que aplica el backend al notificar).
    */
   private esElPropioTrabajador(candidato: {
     workerId?: number | null;
@@ -860,10 +862,14 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   // desplegable y lo que se elija ahí se sobrepone a ese revisor en todo el sistema (correos
   // de EMO, aprobación de salidas, recordatorios).
 
-  /** Opciones del desplegable, sin el propio trabajador: nadie puede ser su propio jefe. */
+  /**
+   * Opciones del desplegable: TODOS los candidatos, incluido el propio trabajador. Acá no rige
+   * "nadie puede ser su propio jefe" a propósito — marcar el checkbox es una elección explícita
+   * y el backend la respeta. Lo que sigue descartándolo es el revisor que se deriva del área
+   * (`revisorDelArea`), que nadie elige a mano.
+   */
   get jefesDisponibles(): JefeCandidatoDto[] {
-    if (this.mode !== 'edit' || !this.worker) return this.jefes;
-    return this.jefes.filter((j) => !this.esElPropioTrabajador(j));
+    return this.jefes;
   }
 
   /**
