@@ -1,0 +1,205 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Períodos"
+  subtitulo="Apertura y cierre de la ventana de evaluación."
+  [botonPrimario]="{ label: 'Nuevo período', icono: 'ti-plus' }"
+  (primaryClick)="abrirCrear()"
+  [tabGroups]="[
+    { label: 'Residentes',   icono: 'ti-user-check', tabs: [
+      { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
+      { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
+      { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
+      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' },
+      { label: 'Asignaciones',  icono: 'ti-users',            route: '/evaluaciones/asignaciones',   featureKey: 'evaluaciones.asignaciones' }
+    ]},
+    { label: 'Contratistas', icono: 'ti-building', tabs: [
+      { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
+      { label: 'Evaluar',          icono: 'ti-pencil',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
+      { label: 'Ver evaluaciones', icono: 'ti-list',      route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' }
+    ]},
+    { label: 'Superv. Contratista', icono: 'ti-shield-check', tabs: [
+      { label: 'Evaluar supervisor', icono: 'ti-pencil', route: '/evaluaciones/evaluar-supervisor-contratista', featureKey: 'evaluaciones.evaluar-supervisor-contratista' },
+      { label: 'Ver evaluaciones',   icono: 'ti-list',   route: '/evaluaciones/ver-supervisores-contratista',   featureKey: 'evaluaciones.ver-supervisores-contratista' }
+    ]},
+    { label: 'Jefe SSOMA', icono: 'ti-user-shield', tabs: [
+      { label: 'Evaluar Jefe SSOMA', icono: 'ti-pencil', route: '/evaluaciones/evaluar-jefe-ssoma', featureKey: 'evaluaciones.evaluar-jefe-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-jefe-ssoma', featureKey: 'evaluaciones.resultados-jefe-ssoma' }
+    ]},
+    { label: 'Prevencionistas', icono: 'ti-vest', tabs: [
+      { label: 'Mi perfil', icono: 'ti-user', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
+      { label: 'Dashboard', icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' }
+    ]},
+    { label: 'Gestión SSOMA', icono: 'ti-users-group', tabs: [
+      { label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
+      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-gestion-ssoma', featureKey: 'evaluaciones.resultados-gestion-ssoma' }
+    ]},
+    { label: 'Administración', icono: 'ti-settings-automation', tabs: [
+      { label: 'Períodos', icono: 'ti-calendar-time', route: '/evaluaciones/periodos', featureKey: 'evaluaciones.periodos' }
+    ]}
+  ]">
+</app-abril-page-header>
+
+<div class="flex flex-col gap-[16px] p-[20px]">
+
+  <div class="max-w-[320px]">
+    <input
+      type="text"
+      [(ngModel)]="searchText"
+      (ngModelChange)="onFilterChange()"
+      placeholder="Buscar por mes o año..."
+      class="w-full border border-[#E2E2E2] rounded-[8px] px-[12px] py-[9px] text-sm text-gray-700 focus:outline-none" />
+  </div>
+
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Período</th>
+          <th class="text-center">Apertura</th>
+          <th class="text-center">Cierre</th>
+          <th class="text-center">Días restantes</th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="!loading && filteredPeriodos.length === 0">
+          <td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ searchText.trim() ? 'Sin resultados.' : 'No hay períodos registrados.' }}
+          </td>
+        </tr>
+
+        <tr *ngFor="let p of pagedPeriodos" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+          <td class="text-gray-700 capitalize">{{ p.nombreMes }} {{ p.anio }}</td>
+          <td class="text-center">{{ p.fechaApertura | date: 'dd/MM/yyyy' }}</td>
+          <td class="text-center">{{ p.fechaCierre | date: 'dd/MM/yyyy' }}</td>
+          <td class="text-center">{{ p.activo ? p.diasRestantes : '—' }}</td>
+          <td class="text-center">
+            <app-status-badge
+              [text]="p.activo ? 'ACTIVO' : 'INACTIVO'"
+              [bgColor]="p.activo ? '#D7FAF4' : '#FAD5D4'"
+              [textColor]="p.activo ? '#009C87' : '#D30000'" />
+          </td>
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[8px]">
+              <button
+                *ngIf="!p.activo"
+                (click)="activar(p)"
+                [abrilBulkAction]="'default'">
+                Activar
+              </button>
+              <button
+                *ngIf="p.activo"
+                (click)="desactivar(p)"
+                [abrilBulkAction]="'danger'">
+                Cortar ahora
+              </button>
+              <button
+                (click)="abrirExtender(p)"
+                [abrilBulkAction]="'primary'">
+                Extender
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredPeriodos.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modal: extender ventana ────────────────────────────────────────── -->
+<app-base-modal *ngIf="showExtenderModal" [title]="'REABRIR PERÍODO'" width="w-[420px]" (closeModal)="cerrarExtender()">
+  <div class="flex flex-col gap-[16px] mt-[20px]" *ngIf="periodoAExtender as p">
+    <p class="text-sm text-gray-600">
+      El período de <strong class="capitalize">{{ p.nombreMes }} {{ p.anio }}</strong> cerró el
+      <strong>{{ p.fechaCierre | date: 'dd/MM/yyyy' }}</strong>. Elige hasta cuándo se reabre.
+    </p>
+
+    <div class="flex flex-col gap-[4px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Nueva fecha de cierre</label>
+      <input
+        type="date"
+        [(ngModel)]="nuevaFechaCierre"
+        class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
+      <p *ngIf="extenderSubmitted && !nuevaFechaCierre" class="text-xs text-red-500">Campo requerido</p>
+    </div>
+
+    <div class="flex justify-center mt-[4px]">
+      <button
+        (click)="confirmarExtender()"
+        [disabled]="extenderGuardando"
+        class="w-[180px] py-[8px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-primary)">
+        <p class="text-white text-base font-medium text-center">
+          {{ extenderGuardando ? 'Guardando…' : 'Reabrir período' }}
+        </p>
+      </button>
+    </div>
+  </div>
+</app-base-modal>
+
+<!-- ── Modal: crear período manual ────────────────────────────────────── -->
+<app-base-modal *ngIf="showCrearModal" [title]="'NUEVO PERÍODO'" width="w-[420px]" (closeModal)="cerrarCrear()">
+  <div class="flex flex-col gap-[16px] mt-[20px]">
+
+    <div class="flex gap-[12px]">
+      <div class="flex flex-col gap-[4px] flex-1">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Mes</label>
+        <select
+          [(ngModel)]="crearMes"
+          class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none">
+          <option *ngFor="let m of meses; let i = index" [value]="i + 1">{{ m }}</option>
+        </select>
+      </div>
+      <div class="flex flex-col gap-[4px] w-[120px]">
+        <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Año</label>
+        <input
+          type="number"
+          [(ngModel)]="crearAnio"
+          class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-[4px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Fecha de apertura</label>
+      <input
+        type="date"
+        [(ngModel)]="crearFechaApertura"
+        class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
+      <p *ngIf="crearSubmitted && !crearFechaApertura" class="text-xs text-red-500">Campo requerido</p>
+    </div>
+
+    <div class="flex flex-col gap-[4px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Fecha de cierre</label>
+      <input
+        type="date"
+        [(ngModel)]="crearFechaCierre"
+        class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
+      <p *ngIf="crearSubmitted && !crearFechaCierre" class="text-xs text-red-500">Campo requerido</p>
+    </div>
+
+    <div class="flex justify-center mt-[4px]">
+      <button
+        (click)="confirmarCrear()"
+        [disabled]="crearGuardando"
+        class="w-[160px] py-[8px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-primary)">
+        <p class="text-white text-base font-medium text-center">
+          {{ crearGuardando ? 'Guardando…' : 'Guardar' }}
+        </p>
+      </button>
+    </div>
+
+  </div>
+</app-base-modal>

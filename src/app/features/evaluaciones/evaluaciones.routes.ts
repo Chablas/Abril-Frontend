@@ -124,5 +124,12 @@ export const EVALUACIONES_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { titulo: 'EVALUACIONES - RESULTADOS GESTIÓN SSOMA', featureKey: 'evaluaciones.resultados-gestion-ssoma' },
   },
+  {
+    path: 'periodos',
+    loadComponent: () =>
+      import('./pages/periodos/periodos').then(m => m.EvPeriodos),
+    canActivate: [roleGuard],
+    data: { titulo: 'EVALUACIONES - PERÍODOS', featureKey: 'evaluaciones.periodos' },
+  },
   { path: '', redirectTo: 'evaluar', pathMatch: 'full' },
 ];

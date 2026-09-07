@@ -321,6 +321,7 @@ export class NavigationService {
         { label: 'Mi perfil (Prev./Coord.)', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
         { label: 'Dashboard Prev./Coord.', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' },
         { label: 'Gestión SSOMA', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
+        { label: 'Períodos', route: '/evaluaciones/periodos', featureKey: 'evaluaciones.periodos' },
       ],
       groups: [],
     },

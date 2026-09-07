@@ -54,7 +54,7 @@ export class DashboardGerencia implements OnInit, AfterViewInit {
 
   ngOnInit(): void {
     // El dashboard es un resumen de solo lectura: usa el ÚLTIMO período registrado,
-    // no el "activo" (que solo existe durante la ventana de evaluación, día 25 -> día 4).
+    // no el "activo" (que solo existe durante la ventana de evaluación, día 25 -> fin de mes).
     // Así se ve todo el mes, no solo esos días.
     this.periodoService.getUltimo().subscribe({
       next: (p) => {

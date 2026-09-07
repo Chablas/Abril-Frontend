@@ -46,6 +46,16 @@ export interface InterconsultaPendienteHabDto {
   diasPendiente: number;
 }
 
+export interface RetiroAutomaticoRecienteDto {
+  workerId: number;
+  workerNombre: string;
+  dni?: string | null;
+  razonSocial?: string | null;
+  motivo: string;
+  entregablesVencidos?: string | null;
+  ejecutadoEn: string;
+}
+
 export interface WorkerEntregableDto {
   id: number;
   itemId: number;

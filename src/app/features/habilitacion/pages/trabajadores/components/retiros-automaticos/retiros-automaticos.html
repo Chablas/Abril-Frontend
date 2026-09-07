@@ -1,0 +1,38 @@
+<div class="modal-overlay" (click)="closed.emit()">
+  <div class="modal-panel" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h2 class="modal-title">Retiros Automáticos</h2>
+      <button class="btn-close" (click)="closed.emit()">✕</button>
+    </div>
+
+    <p class="modal-subtitle">
+      Trabajadores retirados automáticamente en los últimos 7 días por no contar con los
+      entregables vigentes de su empresa (EMO, SCTR, Vida Ley, etc.).
+    </p>
+
+    <div class="gallery-wrap">
+      <div *ngIf="loading" class="loading-msg">Cargando…</div>
+
+      <div *ngIf="!loading" class="gallery">
+        <div class="card" *ngFor="let item of items">
+          <div class="card-header">
+            <span class="worker-name">{{ item.workerNombre }}</span>
+            <span class="dni" *ngIf="item.dni">{{ item.dni }}</span>
+          </div>
+          <div class="card-empresa">{{ item.razonSocial ?? '—' }}</div>
+          <div class="card-motivo">{{ item.motivo }}</div>
+          <div class="card-entregables" *ngIf="entregablesList(item).length > 0">
+            <span class="chip" *ngFor="let e of entregablesList(item)">{{ e }}</span>
+          </div>
+          <div class="card-fecha">Retirado el {{ item.ejecutadoEn | date: 'dd/MM/yyyy' }}</div>
+        </div>
+
+        <div *ngIf="items.length === 0" class="empty-msg">
+          Sin retiros automáticos en los últimos 7 días
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -8,3 +8,10 @@ export interface EvPeriodoDto {
   nombreMes: string;
   diasRestantes: number;
 }
+
+export interface EvPeriodoCreateDto {
+  mes: number;
+  anio: number;
+  fechaApertura: string;
+  fechaCierre: string;
+}
