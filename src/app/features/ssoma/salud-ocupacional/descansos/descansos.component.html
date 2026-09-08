@@ -17,15 +17,14 @@
       <table class="abril-table">
         <colgroup>
           <col style="width:4%"/>
-          <col style="width:19%"/>
-          <col style="width:12%"/>
+          <col style="width:21%"/>
+          <col style="width:13%"/>
           <col style="width:15%"/>
           <col style="width:9%"/>
           <col style="width:9%"/>
           <col style="width:5%"/>
-          <col style="width:11%"/>
-          <col style="width:11%"/>
-          <col style="width:5%"/>
+          <col style="width:12%"/>
+          <col style="width:12%"/>
         </colgroup>
         <thead class="sticky top-0 z-10">
           <tr>
@@ -38,7 +37,6 @@
             <th class="text-center">Días</th>
             <th class="text-center">Estado</th>
             <th>Acceso</th>
-            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -70,16 +68,9 @@
               </span>
               <span *ngIf="!d.trabajadorBloqueado" class="free-chip">Activo</span>
             </td>
-            <td class="text-right" (click)="$event.stopPropagation()">
-              <button class="row-action" (click)="eliminar(d, $event)" title="Eliminar">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
-                </svg>
-              </button>
-            </td>
           </tr>
           <tr *ngIf="!loading && descansos.length === 0">
-            <td colspan="10" class="text-center py-[40px] text-gray-400 text-sm">
+            <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
               {{ hasFilters ? 'Sin resultados.' : 'Sin descansos médicos registrados.' }}
             </td>
           </tr>
@@ -87,7 +78,7 @@
       </table>
   </div>
 
-  <!-- Lista (<lg): con 10 columnas la tabla se comprime hasta que el nombre del trabajador se
+  <!-- Lista (<lg): con 9 columnas la tabla se comprime hasta que el nombre del trabajador se
        encima con el pill del tipo, así que cada descanso se muestra como tarjeta. -->
   <div class="dm-cards">
     <article *ngFor="let d of descansos" class="dm-card" (click)="abrirModal(d.id)">
@@ -128,15 +119,6 @@
           <dd>{{ d.obraOficinaStaffNombre ?? '—' }}</dd>
         </div>
       </dl>
-
-      <footer class="dm-card__actions" (click)="$event.stopPropagation()">
-        <button type="button" class="dm-card__btn dm-card__btn--danger" (click)="eliminar(d, $event)">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
-          </svg>
-          Eliminar
-        </button>
-      </footer>
     </article>
 
     <p *ngIf="!loading && descansos.length === 0" class="dm-cards__empty">

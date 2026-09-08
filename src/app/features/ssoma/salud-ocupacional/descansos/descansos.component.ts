@@ -5,7 +5,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, takeUntil } from 'rxjs';
-import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { FabButton } from '../../../../shared/components/fab-button/fab-button';
@@ -181,26 +180,6 @@ export class DescansosComponent implements OnInit, OnDestroy {
   }
 
   onGuardado(): void { this.cerrarModal(); this.load(this.currentPage); }
-
-  eliminar(d: DescansoMedicoListItemDto, ev: MouseEvent): void {
-    ev.stopPropagation();
-    Swal.fire({
-      icon: 'question',
-      title: '¿Eliminar descanso?',
-      text: `Descanso #${d.id} — ${d.workerNombre ?? ''}`,
-      showCancelButton: true,
-      confirmButtonText: 'Eliminar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#dc2626',
-    }).then(r => {
-      if (!r.isConfirmed) return;
-      this.loaderService.show();
-      this.svc.delete(d.id).subscribe({
-        next: () => { this.loaderService.hide(); this.load(this.currentPage); },
-        error: (err: HttpErrorResponse) => { this.loaderService.hide(); this.errorService.handleError(err); },
-      });
-    });
-  }
 
   get hasFilters(): boolean {
     return !!(this.filtros.fechaDesde || this.filtros.fechaHasta

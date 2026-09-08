@@ -20,8 +20,10 @@ export interface RazonSocial {
   bancoId: number | null;
   bancoNombre: string | null;
   /**
-   * Trabajadores que hoy están en Abril bajo esta razón social. No es el histórico: deja fuera a
-   * los retirados y a las fichas de pre-ingreso (`workers_estado.esta_adentro`). Solo el conteo —
+   * Trabajadores que hoy están en Abril bajo esta razón social y que le consumen cupo del tope de
+   * 20 que aplica Reclutamiento: es el mismo número, a propósito. No es el histórico ni la
+   * planilla completa — quedan fuera los retirados y las fichas de pre-ingreso
+   * (`workers_estado.esta_adentro`), el personal de Obra y los practicantes. Solo el conteo —
    * quiénes son se piden al abrir el detalle, ver `RazonSocialTrabajador`.
    */
   cantidadTrabajadores: number;
