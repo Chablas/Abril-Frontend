@@ -163,6 +163,10 @@ export class AccidenteListaComponent implements OnInit {
     this.router.navigate(['/ssoma/gestion/accidentes-incidentes/nuevo']);
   }
 
+  irAAntecedentes(): void {
+    this.router.navigate(['/ssoma/gestion/accidentes-incidentes/antecedentes']);
+  }
+
   async confirmarEliminar(event: Event, id: number): Promise<void> {
     event.stopPropagation();
     const result = await Swal.fire({

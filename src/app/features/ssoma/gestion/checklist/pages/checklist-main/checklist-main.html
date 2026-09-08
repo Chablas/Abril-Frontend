@@ -8,125 +8,10 @@
 
 <div class="cl-wrap">
 
-  <!-- ── TAB: POR PROYECTO ──────────────────────────────────────────────── -->
-  @if (tab === 'resumen') {
+  @if (detalleVisible) {
 
-    <!-- Selector de proyecto -->
-    <div class="cl-toolbar">
-      <div class="cl-toolbar-left">
-        <app-search-select
-          label="Proyecto"
-          [options]="proyectos"
-          valueField="projectId"
-          displayField="projectDescription"
-          [value]="proyectoId"
-          placeholder="Buscar proyecto..."
-          (valueChange)="proyectoId = $event; onProyectoChange()">
-        </app-search-select>
-      </div>
-      @if (proyectoId && checklistCards.length > 0) {
-        <button class="cl-btn-refresh" (click)="loadResumen()" title="Refrescar">
-          <i class="ti ti-refresh"></i>
-        </button>
-      }
-    </div>
-
-    @if (!proyectoId) {
-      <div class="empty-state">
-        <i class="ti ti-clipboard-list" style="font-size:48px;color:#d1d5db"></i>
-        <p>Selecciona un proyecto para ver sus checklists.</p>
-      </div>
-    } @else if (loadingResumen) {
-      <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando checklists...</div>
-    } @else if (!detalleVisible) {
-
-      <!-- Grid de tarjetas de checklist -->
-      @if (checklistCards.length === 0) {
-        <div class="empty-state">
-          <i class="ti ti-clipboard-x" style="font-size:48px;color:#d1d5db"></i>
-          <p>No hay checklists para este proyecto.</p>
-        </div>
-      } @else {
-        <div class="cl-cards-grid">
-          @for (card of checklistCards; track card.checklistProyectoId) {
-            <div class="cl-card" [class.cl-card--completado]="card.estado === 'completado'" (click)="abrirDetalle(card)">
-              <div class="cl-card-header">
-                <div class="cl-card-title">{{ card.nombrePlantilla }}</div>
-                <span class="cl-badge" [ngClass]="estadoClass(card.estado)">
-                  {{ estadoLabel(card.estado) }}
-                </span>
-              </div>
-              <div class="cl-card-progress">
-                <div class="cl-progress-bar">
-                  <div class="cl-progress-fill"
-                    [style.width.%]="card.porcentajeCompletado"
-                    [style.background]="porcentajeColor(card.porcentajeCompletado)">
-                  </div>
-                </div>
-                <span class="cl-progress-pct" [style.color]="porcentajeColor(card.porcentajeCompletado)">
-                  {{ card.porcentajeCompletado | number:'1.0-0' }}%
-                </span>
-              </div>
-              <div class="cl-card-footer">
-                <span class="cl-card-items">
-                  <i class="ti ti-check"></i>
-                  {{ card.itemsCompletados }} / {{ card.totalItems }} ítems
-                </span>
-                @if (card.esObligatorio) {
-                  <span class="cl-tag-obligatorio">Obligatorio</span>
-                }
-              </div>
-            </div>
-          }
-        </div>
-      }
-
-      <!-- Botón para activar checklist opcional -->
-      @if (proyectoId) {
-        <div class="cl-activar-section">
-          <h3 class="cl-section-title">
-            <i class="ti ti-plus-circle"></i> Activar checklist opcional
-          </h3>
-          <p class="cl-section-sub">Activa checklists como Torre Grúa, SUNAFIL, ITSE, etc. cuando corresponda.</p>
-          @if (plantillas.length === 0) {
-            <button class="cl-btn-secondary" (click)="loadPlantillas()">
-              <i class="ti ti-list"></i> Ver plantillas disponibles
-            </button>
-          } @else {
-            <div class="cl-plantillas-list">
-              @for (p of plantillas; track p.id) {
-                @if (!p.esObligatorio) {
-                  <div class="cl-plantilla-row">
-                    <div class="cl-plantilla-info">
-                      <span class="cl-plantilla-nombre">{{ p.nombre }}</span>
-                      <span class="cl-plantilla-items">{{ p.totalItems }} ítems</span>
-                    </div>
-                    @if (plantillaYaActiva(p.id)) {
-                      <span class="cl-tag-activa"><i class="ti ti-check"></i> Activa</span>
-                    } @else {
-                      <button class="cl-btn-activar"
-                        [disabled]="activandoId === p.id"
-                        (click)="activarChecklist(p.id); $event.stopPropagation()">
-                        @if (activandoId === p.id) {
-                          <i class="ti ti-loader-2 spin"></i>
-                        } @else {
-                          <i class="ti ti-plus"></i>
-                        }
-                        Activar
-                      </button>
-                    }
-                  </div>
-                }
-              }
-            </div>
-          }
-        </div>
-      }
-
-    } @else {
-
-      <!-- ── Detalle del checklist ──────────────────────────────────────── -->
-      <div class="cl-detalle">
+    <!-- ── Detalle del checklist (compartido entre "Por Proyecto" y "Por Partida") ── -->
+    <div class="cl-detalle">
         <div class="cl-detalle-header">
           <button class="cl-btn-back" (click)="cerrarDetalle()">
             <i class="ti ti-arrow-left"></i> Volver
@@ -148,6 +33,24 @@
             </div>
           }
         </div>
+
+        @if (detalle && detalle.estado === 'no_aplica') {
+          <div class="cl-no-aplica-banner">
+            <i class="ti ti-info-circle"></i>
+            <div>
+              <strong>No aplica.</strong> {{ detalle.noAplicaMotivo }}
+              @if (detalle.noAplicaPor) {
+                <span class="cl-item-meta">
+                  — {{ detalle.noAplicaPor }}
+                  @if (detalle.noAplicaFecha) { · {{ detalle.noAplicaFecha | date:'dd/MM/yyyy' }} }
+                </span>
+              }
+            </div>
+            <button type="button" class="cl-btn-reactivar" (click)="reactivarDetalle()">
+              <i class="ti ti-rotate"></i> Reactivar
+            </button>
+          </div>
+        }
 
         @if (loadingDetalle) {
           <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando ítems...</div>
@@ -174,6 +77,15 @@
                   @if (item.tieneAdjuntoRef) {
                     <span class="cl-item-adjunto"><i class="ti ti-paperclip"></i> Requiere adjunto</span>
                   }
+                  @if (item.imagenesReferencia.length > 0) {
+                    <div class="cl-img-gallery">
+                      @for (img of item.imagenesReferencia; track img.id) {
+                        <div class="cl-img-thumb">
+                          <app-draggable-image [src]="img.url" [apiUrl]="apiOrigin"></app-draggable-image>
+                        </div>
+                      }
+                    </div>
+                  }
                   @if (item.completado && item.completadoPor) {
                     <span class="cl-item-meta">
                       <i class="ti ti-user-check"></i> {{ item.completadoPor }}
@@ -182,12 +94,40 @@
                       }
                     </span>
                   }
+                  @if (item.completado && item.urlAdjunto) {
+                    <div class="cl-img-gallery">
+                      <div class="cl-img-thumb">
+                        <app-draggable-image [src]="item.urlAdjunto" [apiUrl]="apiOrigin"></app-draggable-image>
+                      </div>
+                    </div>
+                  }
                   @if (!item.completado) {
                     <input
                       class="cl-item-obs"
                       type="text"
                       placeholder="Observación (opcional)"
                       [(ngModel)]="observacionTemp[item.id]" />
+
+                    <!-- Evidencia de cumplimiento: opcional, nunca bloquea marcar el check -->
+                    @if (adjuntoTemp[item.id]) {
+                      <div class="cl-adjunto-listo">
+                        <i class="ti ti-paperclip"></i>
+                        <span class="cl-adjunto-nombre">{{ adjuntoTemp[item.id].nombre }}</span>
+                        <button type="button" class="cl-adjunto-quitar" (click)="quitarAdjuntoTemp(item)" title="Quitar">
+                          <i class="ti ti-x"></i>
+                        </button>
+                      </div>
+                    } @else {
+                      <label class="cl-adjunto-btn" [class.cl-adjunto-btn--busy]="subiendoAdjuntoId === item.id">
+                        @if (subiendoAdjuntoId === item.id) {
+                          <i class="ti ti-loader-2 spin"></i> Subiendo...
+                        } @else {
+                          <i class="ti ti-camera-plus"></i> Adjuntar evidencia (opcional)
+                        }
+                        <input type="file" accept="image/*" hidden
+                          (change)="onSeleccionarAdjunto(item, $any($event.target).files); $any($event.target).value = ''" />
+                      </label>
+                    }
                   }
                 </div>
                 <div class="cl-item-num">{{ item.orden }}</div>
@@ -195,23 +135,330 @@
             }
           </div>
         }
+    </div>
+
+  } @else if (tab === 'resumen') {
+
+    <!-- ── TAB: POR PROYECTO (obligatorios generales + opcionales) ─────────── -->
+    <div class="cl-toolbar">
+      <div class="cl-toolbar-left">
+        <app-search-select
+          label="Proyecto"
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="proyectoId"
+          placeholder="Buscar proyecto..."
+          (valueChange)="proyectoId = $event; onProyectoChange()">
+        </app-search-select>
+      </div>
+      @if (proyectoId && checklistCards.length > 0) {
+        <button class="cl-btn-refresh" (click)="loadResumen()" title="Refrescar">
+          <i class="ti ti-refresh"></i>
+        </button>
+      }
+    </div>
+
+    @if (!proyectoId) {
+      <div class="empty-state">
+        <i class="ti ti-clipboard-list" style="font-size:48px;color:#d1d5db"></i>
+        <p>Selecciona un proyecto para ver sus checklists.</p>
+      </div>
+    } @else if (loadingResumen) {
+      <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando checklists...</div>
+    } @else {
+
+      <h3 class="cl-section-title cl-section-title--principal">
+        <i class="ti ti-shield-check"></i> Checklists Activos
+      </h3>
+
+      @if (cardsGenerales.length === 0) {
+        <div class="empty-state">
+          <i class="ti ti-clipboard-x" style="font-size:48px;color:#d1d5db"></i>
+          <p>No hay checklists activos para este proyecto.</p>
+        </div>
+      } @else {
+        <div class="cl-cards-grid">
+          @for (card of cardsGenerales; track card.checklistProyectoId) {
+            <div class="cl-card" [class.cl-card--completado]="card.estado === 'completado'" [class.cl-card--no-aplica]="card.estado === 'no_aplica'" (click)="abrirDetalle(card)">
+              <div class="cl-card-header">
+                <div class="cl-card-title">{{ card.nombrePlantilla }}</div>
+                <span class="cl-badge" [ngClass]="estadoClass(card.estado)">
+                  {{ estadoLabel(card.estado) }}
+                </span>
+              </div>
+              @if (card.estado === 'no_aplica') {
+                <p class="cl-no-aplica-motivo"><i class="ti ti-info-circle"></i> {{ card.noAplicaMotivo }}</p>
+              } @else {
+                <div class="cl-card-progress">
+                  <div class="cl-progress-bar">
+                    <div class="cl-progress-fill"
+                      [style.width.%]="card.porcentajeCompletado"
+                      [style.background]="porcentajeColor(card.porcentajeCompletado)">
+                    </div>
+                  </div>
+                  <span class="cl-progress-pct" [style.color]="porcentajeColor(card.porcentajeCompletado)">
+                    {{ card.porcentajeCompletado | number:'1.0-0' }}%
+                  </span>
+                </div>
+              }
+              <div class="cl-card-footer">
+                <span class="cl-card-items">
+                  <i class="ti ti-check"></i>
+                  {{ card.itemsCompletados }} / {{ card.totalItems }} ítems
+                </span>
+                @if (card.esObligatorio) {
+                  <span class="cl-tag-obligatorio">Obligatorio</span>
+                }
+              </div>
+              @if (card.estado === 'no_aplica') {
+                <button type="button" class="cl-btn-reactivar" (click)="reactivarChecklist(card); $event.stopPropagation()">
+                  <i class="ti ti-rotate"></i> Reactivar
+                </button>
+              } @else if (card.estado !== 'completado') {
+                <button type="button" class="cl-btn-no-aplica" (click)="abrirNoAplicaModal(card); $event.stopPropagation()">
+                  No aplica a este proyecto
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Checklists opcionales: no obligatorios, requieren activarse manualmente
+           cuando corresponda. Sección secundaria a propósito — menos peso visual
+           que los obligatorios de arriba. -->
+      <div class="cl-activar-section cl-activar-section--secundaria">
+        <h3 class="cl-section-title cl-section-title--secundario">
+          <i class="ti ti-list-check"></i> Checklists Opcionales
+        </h3>
+        <p class="cl-section-sub">Torre Grúa, SUNAFIL, ITSE, etc. — actívalos cuando corresponda a la etapa del proyecto.</p>
+        @if (loadingPlantillas) {
+          <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando...</div>
+        } @else {
+          <div class="cl-plantillas-grid">
+            @for (p of plantillas; track p.id) {
+              @if (!p.esObligatorio) {
+                <div class="cl-plantilla-card" [class.cl-plantilla-card--activa]="plantillaYaActiva(p.id)">
+                  <div class="cl-plantilla-card-header">
+                    <span class="cl-plantilla-nombre">{{ p.nombre }}</span>
+                    @if (plantillaYaActiva(p.id)) {
+                      <span class="cl-tag-activa"><i class="ti ti-check"></i> Activa</span>
+                    } @else {
+                      <span class="cl-tag-inactiva">Sin activar</span>
+                    }
+                  </div>
+                  <span class="cl-plantilla-items">{{ p.totalItems }} ítems</span>
+                  @if (!plantillaYaActiva(p.id)) {
+                    <button class="cl-btn-activar cl-btn-activar--full"
+                      [disabled]="activandoId === p.id"
+                      (click)="activarChecklist(p.id); $event.stopPropagation()">
+                      @if (activandoId === p.id) {
+                        <i class="ti ti-loader-2 spin"></i>
+                      } @else {
+                        <i class="ti ti-plus"></i>
+                      }
+                      Activar
+                    </button>
+                  } @else if (puedeDesactivar(p.id)) {
+                    <button class="cl-btn-desactivar"
+                      [disabled]="activandoId === p.id"
+                      (click)="desactivarChecklist(p.id); $event.stopPropagation()"
+                      title="Solo se puede desactivar mientras no tenga ítems completados">
+                      @if (activandoId === p.id) {
+                        <i class="ti ti-loader-2 spin"></i>
+                      } @else {
+                        <i class="ti ti-x"></i>
+                      }
+                      Desactivar
+                    </button>
+                  }
+                </div>
+              }
+            }
+          </div>
+        }
       </div>
     }
-  }
 
-  <!-- ── TAB: CATÁLOGO DE PLANTILLAS ──────────────────────────────────────── -->
-  @if (tab === 'plantillas') {
+  } @else if (tab === 'partida') {
+
+    <!-- ── TAB: POR PARTIDA (etapa constructiva) ────────────────────────────── -->
+    <div class="cl-toolbar">
+      <div class="cl-toolbar-left">
+        <app-search-select
+          label="Proyecto"
+          [options]="proyectos"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="proyectoId"
+          placeholder="Buscar proyecto..."
+          (valueChange)="proyectoId = $event; onProyectoChange()">
+        </app-search-select>
+      </div>
+      @if (proyectoId && checklistCards.length > 0) {
+        <button class="cl-btn-refresh" (click)="loadResumen()" title="Refrescar">
+          <i class="ti ti-refresh"></i>
+        </button>
+      }
+    </div>
+
+    @if (!proyectoId) {
+      <div class="empty-state">
+        <i class="ti ti-clipboard-list" style="font-size:48px;color:#d1d5db"></i>
+        <p>Selecciona un proyecto para ver sus checklists por partida.</p>
+      </div>
+    } @else if (loadingResumen) {
+      <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando checklists...</div>
+    } @else if (gruposPorPartida.length === 0) {
+      <div class="empty-state">
+        <i class="ti ti-stack-2" style="font-size:48px;color:#d1d5db"></i>
+        <p>Este proyecto todavía no tiene checklists asignados a una partida.</p>
+      </div>
+    } @else {
+      @for (grupo of gruposPorPartida; track grupo.partidaId) {
+        <h3 class="cl-section-title cl-section-title--principal">
+          <i class="ti ti-stack-2"></i> {{ grupo.partidaNombre }}
+        </h3>
+        <div class="cl-cards-grid" style="margin-bottom:28px;">
+          @for (card of grupo.cards; track card.checklistProyectoId) {
+            <div class="cl-card" [class.cl-card--completado]="card.estado === 'completado'" [class.cl-card--no-aplica]="card.estado === 'no_aplica'" (click)="abrirDetalle(card)">
+              <div class="cl-card-header">
+                <div class="cl-card-title">{{ card.nombrePlantilla }}</div>
+                <span class="cl-badge" [ngClass]="estadoClass(card.estado)">
+                  {{ estadoLabel(card.estado) }}
+                </span>
+              </div>
+              @if (card.estado === 'no_aplica') {
+                <p class="cl-no-aplica-motivo"><i class="ti ti-info-circle"></i> {{ card.noAplicaMotivo }}</p>
+              } @else {
+                <div class="cl-card-progress">
+                  <div class="cl-progress-bar">
+                    <div class="cl-progress-fill"
+                      [style.width.%]="card.porcentajeCompletado"
+                      [style.background]="porcentajeColor(card.porcentajeCompletado)">
+                    </div>
+                  </div>
+                  <span class="cl-progress-pct" [style.color]="porcentajeColor(card.porcentajeCompletado)">
+                    {{ card.porcentajeCompletado | number:'1.0-0' }}%
+                  </span>
+                </div>
+              }
+              <div class="cl-card-footer">
+                <span class="cl-card-items">
+                  <i class="ti ti-check"></i>
+                  {{ card.itemsCompletados }} / {{ card.totalItems }} ítems
+                </span>
+                <span class="cl-tag-obligatorio">Obligatorio</span>
+              </div>
+              @if (card.estado === 'no_aplica') {
+                <button type="button" class="cl-btn-reactivar" (click)="reactivarChecklist(card); $event.stopPropagation()">
+                  <i class="ti ti-rotate"></i> Reactivar
+                </button>
+              } @else if (card.estado !== 'completado') {
+                <button type="button" class="cl-btn-no-aplica" (click)="abrirNoAplicaModal(card); $event.stopPropagation()">
+                  No aplica a este proyecto
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+    }
+
+  } @else if (tab === 'plantillas') {
+
+    <!-- ── TAB: CATÁLOGO DE PLANTILLAS ──────────────────────────────────────── -->
     @if (loadingPlantillas) {
       <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando plantillas...</div>
     } @else if (!plantillaDetalleVisible) {
-      <div class="cl-plantillas-filter" style="margin-bottom:12px;">
+      <!-- Gestión de partidas (etapas constructivas) -->
+      <div class="cl-partidas-manager">
+        <h3 class="cl-section-title"><i class="ti ti-stack-2"></i> Partidas (etapas constructivas)</h3>
+        <div class="cl-partidas-list">
+          @for (part of partidas; track part.id; let i = $index) {
+            <div class="cl-partida-row">
+              <div class="cl-partida-row-order">
+                <button type="button" class="cl-btn-icon-mini" [disabled]="i === 0" (click)="moverPartida(part, -1)" title="Subir">
+                  <i class="ti ti-chevron-up"></i>
+                </button>
+                <button type="button" class="cl-btn-icon-mini" [disabled]="i === partidas.length - 1" (click)="moverPartida(part, 1)" title="Bajar">
+                  <i class="ti ti-chevron-down"></i>
+                </button>
+              </div>
+              <span class="cl-tag-partida cl-tag-partida--lg">{{ part.nombre }} <em>({{ part.totalPlantillas }})</em></span>
+              <button type="button" class="cl-btn-icon-mini cl-btn-icon-mini--danger" (click)="eliminarPartida(part)" title="Eliminar partida">
+                <i class="ti ti-trash"></i>
+              </button>
+            </div>
+          }
+        </div>
+        <div class="cl-partidas-add">
+          <input class="cl-item-obs" type="text" style="max-width:260px"
+            placeholder="Nueva partida (ej. Muro Anclado)..."
+            [(ngModel)]="nuevaPartidaNombre" />
+          <button class="cl-btn-activar" [disabled]="!nuevaPartidaNombre.trim() || creandoPartida" (click)="crearPartida()">
+            @if (creandoPartida) { <i class="ti ti-loader-2 spin"></i> } <i class="ti ti-plus"></i> Agregar
+          </button>
+        </div>
+      </div>
+
+      <div class="cl-plantillas-filter" style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:flex-end; gap:12px;">
         <app-search-input
           placeholder="Buscar plantilla por nombre..."
           [(value)]="plantillasSearchText"
           (valueChange)="onPlantillasFilterChange()"
           width="280px">
         </app-search-input>
+        <button class="cl-btn-activar" (click)="abrirNuevaPlantilla()">
+          <i class="ti ti-plus"></i> Nueva plantilla
+        </button>
       </div>
+      <!-- Plantillas por partida: siempre obligatorias, se crean solas apenas se
+           agrega la partida — esta sección se ve deliberadamente distinta
+           (borde/acento verde) de las plantillas generales de abajo. -->
+      <h3 class="cl-section-title cl-section-title--principal">
+        <i class="ti ti-stack-2"></i> Plantillas por Partida
+      </h3>
+      <div class="cl-plantillas-tabla cl-plantillas-tabla--partida abril-table-wrap">
+        <table class="abril-table cl-table">
+          <thead class="sticky top-0 z-10">
+            <tr>
+              <th>#</th>
+              <th>Partida</th>
+              <th>Plantilla</th>
+              <th>Ítems</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (plantillasPorPartidaFiltradas.length === 0) {
+              <tr><td colspan="5" class="text-center py-[40px] text-gray-400 text-sm">Aún no hay plantillas por partida.</td></tr>
+            }
+            @for (p of plantillasPorPartidaFiltradas; track p.id) {
+              <tr class="cl-row-clickable" (click)="verPlantilla(p)" title="Ver modelo">
+                <td class="cl-td-num">{{ p.orden }}</td>
+                <td><span class="cl-tag-partida">{{ p.partidaNombre }}</span></td>
+                <td class="cl-td-nombre">{{ p.nombre }}</td>
+                <td class="cl-td-center">{{ p.totalItems }}</td>
+                <td>
+                  @if (p.activo) {
+                    <span class="cl-badge estado-completado">Activo</span>
+                  } @else {
+                    <span class="cl-badge estado-pendiente">Inactivo</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Plantillas generales: Torre Grúa, SUNAFIL, ITSE, etc. — activación
+           manual u obligatoria pero sin partida. -->
+      <h3 class="cl-section-title cl-section-title--secundario" style="margin-top:24px;">
+        <i class="ti ti-template"></i> Plantillas Generales
+      </h3>
       <div class="cl-plantillas-tabla abril-table-wrap">
         <table class="abril-table cl-table">
           <thead class="sticky top-0 z-10">
@@ -226,7 +473,7 @@
             </tr>
           </thead>
           <tbody>
-            @if (plantillasFiltradas.length === 0) {
+            @if (plantillasGeneralesFiltradas.length === 0) {
               <tr><td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">Sin resultados.</td></tr>
             }
             @for (p of plantillasPaged; track p.id) {
@@ -261,7 +508,7 @@
       </div>
       <div class="shrink-0 max-w-[440px]" style="margin-top:12px;">
         <app-paginator
-          [totalRecords]="plantillasFiltradas.length"
+          [totalRecords]="plantillasGeneralesFiltradas.length"
           [currentPage]="plantillasCurrentPage"
           [totalPages]="plantillasTotalPages"
           (pageChange)="changePlantillasPage($event)">
@@ -271,19 +518,32 @@
 
       <!-- ── Modelo de plantilla: ver + editar/agregar items ─────────────── -->
       <div class="cl-detalle">
-        <div class="cl-detalle-header">
+        <div class="cl-detalle-header cl-detalle-header--compact">
           <button class="cl-btn-back" (click)="cerrarPlantillaDetalle()">
             <i class="ti ti-arrow-left"></i> Volver
           </button>
           @if (plantillaDetalle) {
-            <div class="cl-detalle-title-row">
-              <h2 class="cl-detalle-title">{{ plantillaDetalle.nombre }}</h2>
-              @if (plantillaDetalle.esObligatorio) {
-                <span class="cl-tag-obligatorio">Obligatorio</span>
-              }
+            <div class="cl-detalle-toolbar">
+              <div class="cl-detalle-title-row">
+                <h2 class="cl-detalle-title">{{ plantillaDetalle.nombre }}</h2>
+                @if (plantillaDetalle.esObligatorio) {
+                  <span class="cl-tag-obligatorio">Obligatorio</span>
+                }
+              </div>
+              <div class="cl-partida-select-row cl-partida-select-row--inline">
+                <label class="cl-label">Partida</label>
+                <select class="cl-select cl-select--sm"
+                  [ngModel]="plantillaDetalle.partidaId ?? ''"
+                  (ngModelChange)="cambiarPartidaPlantilla($event)">
+                  <option value="">— Sin partida (general) —</option>
+                  @for (part of partidas; track part.id) {
+                    <option [value]="part.id">{{ part.nombre }}</option>
+                  }
+                </select>
+              </div>
             </div>
             @if (plantillaDetalle.descripcion) {
-              <p class="cl-section-sub">{{ plantillaDetalle.descripcion }}</p>
+              <p class="cl-section-sub cl-section-sub--compact">{{ plantillaDetalle.descripcion }}</p>
             }
           }
         </div>
@@ -292,8 +552,18 @@
           <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando ítems...</div>
         } @else if (plantillaDetalle) {
           <div class="cl-items-list">
-            @for (item of plantillaDetalle.items; track item.id) {
+            @for (item of plantillaDetalle.items; track item.id; let i = $index) {
               <div class="cl-item">
+                @if (editandoItemId !== item.id) {
+                  <div class="cl-item-order-col">
+                    <button type="button" class="cl-btn-icon-mini" [disabled]="i === 0 || moviendoItemId === item.id" (click)="moverItemPlantilla(item, -1)" title="Subir">
+                      <i class="ti ti-chevron-up"></i>
+                    </button>
+                    <button type="button" class="cl-btn-icon-mini" [disabled]="i === plantillaDetalle.items.length - 1 || moviendoItemId === item.id" (click)="moverItemPlantilla(item, 1)" title="Bajar">
+                      <i class="ti ti-chevron-down"></i>
+                    </button>
+                  </div>
+                }
                 @if (editandoItemId === item.id) {
                   <div class="cl-item-content" style="width:100%">
                     <input class="cl-item-obs" type="text" [(ngModel)]="itemEditTexto" placeholder="Descripción del ítem" />
@@ -319,6 +589,30 @@
                     @if (!item.activo) {
                       <span class="cl-item-meta">Inactivo</span>
                     }
+
+                    <!-- Galería de fotos de referencia: "cómo debe quedar" -->
+                    <div class="cl-img-gallery">
+                      @for (img of item.imagenesReferencia; track img.id) {
+                        <div class="cl-img-thumb cl-img-thumb--editable">
+                          <app-draggable-image [src]="img.url" [apiUrl]="apiOrigin"></app-draggable-image>
+                          <div class="cl-img-thumb-overlay">
+                            <button type="button" class="cl-img-thumb-action" title="Eliminar foto"
+                              (click)="eliminarImagenItem(item, img.id)">
+                              <i class="ti ti-trash"></i>
+                            </button>
+                          </div>
+                        </div>
+                      }
+                      <label class="cl-img-add-btn" [class.cl-img-add-btn--busy]="subiendoImagenItemId === item.id">
+                        @if (subiendoImagenItemId === item.id) {
+                          <i class="ti ti-loader-2 spin"></i>
+                        } @else {
+                          <i class="ti ti-camera-plus"></i>
+                        }
+                        <input type="file" accept="image/*" multiple hidden
+                          (change)="onSeleccionarImagenes(item, $any($event.target).files); $any($event.target).value = ''" />
+                      </label>
+                    </div>
                   </div>
                   <button class="cl-btn-secondary" (click)="editarItemPlantilla(item)" title="Editar ítem">
                     <i class="ti ti-pencil"></i>
@@ -329,25 +623,123 @@
             }
           </div>
 
-          <!-- Agregar nuevo item (cooperativo) -->
-          <div class="cl-activar-section">
-            <h3 class="cl-section-title"><i class="ti ti-plus-circle"></i> Agregar ítem</h3>
-            <div class="cl-item-content" style="gap:8px;display:flex;flex-direction:column">
-              <input class="cl-item-obs" type="text" [(ngModel)]="nuevoItemTexto"
-                placeholder="Descripción del nuevo ítem..." />
-              <label class="cl-checkbox-inline">
-                <input type="checkbox" [(ngModel)]="nuevoItemAdjunto" /> Requiere adjunto
-              </label>
-              <button class="cl-btn-activar" style="align-self:flex-start"
-                [disabled]="!nuevoItemTexto.trim() || agregandoItem"
-                (click)="agregarItemPlantilla()">
-                @if (agregandoItem) { <i class="ti ti-loader-2 spin"></i> } <i class="ti ti-plus"></i> Agregar
-              </button>
-            </div>
-          </div>
+          <!-- Botón flotante: agregar ítem no debe perderse abajo de la lista
+               a medida que crece (antes era un formulario inline al final). -->
+          <app-fab *ngIf="!showAgregarItemModal" label="Agregar ítem" (clicked)="abrirAgregarItemModal()"></app-fab>
         }
       </div>
     }
   }
 
 </div>
+
+<!-- Modal: agregar ítem al checklist -->
+@if (showAgregarItemModal) {
+  <app-abril-modal-panel
+    titulo="Agregar ítem"
+    [subtitulo]="plantillaDetalle?.nombre ?? ''"
+    icono="ti-plus-circle"
+    variant="blue"
+    (closeModal)="cerrarAgregarItemModal()">
+
+    <div class="abril-field">
+      <label class="abril-field-label">Descripción *</label>
+      <textarea class="abril-field-input" rows="2" [(ngModel)]="nuevoItemTexto"
+        placeholder="Descripción del nuevo ítem..."></textarea>
+    </div>
+
+    <label class="cl-checkbox-inline">
+      <input type="checkbox" [(ngModel)]="nuevoItemAdjunto" /> Requiere adjunto
+    </label>
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarAgregarItemModal()" [disabled]="agregandoItem">Cancelar</button>
+      <button class="btn btn-primary" [disabled]="!nuevoItemTexto.trim() || agregandoItem" (click)="agregarItemPlantilla()">
+        @if (agregandoItem) { Agregando… } @else { Agregar }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}
+
+<!-- Modal: nueva plantilla de checklist -->
+@if (showNuevaPlantillaModal) {
+  <app-abril-modal-panel
+    titulo="Nueva plantilla de checklist"
+    icono="ti-clipboard-plus"
+    variant="blue"
+    (closeModal)="cerrarNuevaPlantillaModal()">
+
+    <div class="abril-field">
+      <label class="abril-field-label">Nombre *</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="nuevaPlantillaForm.nombre" placeholder="Ej. Escuadras - Muro Anclado" />
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Descripción</label>
+      <textarea class="abril-field-input" rows="2" [(ngModel)]="nuevaPlantillaForm.descripcion"></textarea>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Partida (etapa constructiva)</label>
+      <select class="abril-field-input"
+        [ngModel]="nuevaPlantillaForm.partidaId ?? ''"
+        (ngModelChange)="onNuevaPlantillaPartidaChange($event ? +$event : null)">
+        <option value="">— Sin partida (checklist general/opcional) —</option>
+        @for (part of partidas; track part.id) {
+          <option [value]="part.id">{{ part.nombre }}</option>
+        }
+      </select>
+    </div>
+
+    @if (nuevaPlantillaForm.partidaId) {
+      <p class="cl-nota-obligatorio">
+        <i class="ti ti-info-circle"></i>
+        Al tener partida, será <strong>obligatoria para todos los proyectos activos</strong> desde ahora — incluidos los ya existentes.
+      </p>
+    } @else {
+      <div class="abril-field">
+        <label class="abril-field-label">Tipo de activación</label>
+        <select class="abril-field-input" [(ngModel)]="nuevaPlantillaForm.tipoActivacion">
+          <option value="manual">Manual (se activa por proyecto cuando corresponda)</option>
+          <option value="automatico">Automático (obligatorio para todos)</option>
+        </select>
+      </div>
+    }
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarNuevaPlantillaModal()" [disabled]="guardandoNuevaPlantilla">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardarNuevaPlantilla()" [disabled]="!canGuardarNuevaPlantilla">
+        @if (guardandoNuevaPlantilla) { Guardando… } @else { Crear plantilla }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}
+
+<!-- Modal: marcar checklist como "no aplica" -->
+@if (showNoAplicaModal && noAplicaCard) {
+  <app-abril-modal-panel
+    titulo="Marcar como no aplica"
+    [subtitulo]="noAplicaCard.nombrePlantilla"
+    icono="ti-mood-empty"
+    variant="blue"
+    (closeModal)="cerrarNoAplicaModal()">
+
+    <p class="cl-section-sub">
+      Para proyectos avanzados que ya pasaron esta etapa antes de que este checklist existiera,
+      u obligatorios que genuinamente no le corresponden a este proyecto. El motivo queda registrado.
+    </p>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Motivo *</label>
+      <textarea class="abril-field-input" rows="3" [(ngModel)]="noAplicaMotivoTexto"
+        placeholder="Ej. La etapa de Muro Anclado ya se ejecutó en 2024, antes de este checklist..."></textarea>
+    </div>
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarNoAplicaModal()" [disabled]="guardandoNoAplica">Cancelar</button>
+      <button class="btn btn-primary" (click)="confirmarNoAplica()" [disabled]="!canConfirmarNoAplica">
+        @if (guardandoNoAplica) { Guardando… } @else { Marcar como no aplica }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}

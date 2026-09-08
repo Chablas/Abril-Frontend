@@ -1,0 +1,210 @@
+<app-abril-page-header
+  badge="SSOMA · Gestión"
+  titulo="Cumplimiento SSOMA"
+  subtitulo="Guía de cumplimiento mínimo del Coordinador SSOMA y el Prevencionista"
+  [tabs]="headerTabs"
+  (tabClick)="onTabClick($event)">
+</app-abril-page-header>
+
+<div class="cu-wrap">
+
+  <!-- ── TAB: POR PROYECTO ──────────────────────────────────────────────── -->
+  @if (tab === 'resumen') {
+
+    <div class="cu-toolbar">
+      <app-search-select
+        label="Proyecto"
+        [options]="proyectos"
+        valueField="projectId"
+        displayField="projectDescription"
+        [value]="proyectoId"
+        placeholder="Buscar proyecto..."
+        (valueChange)="proyectoId = $event; onProyectoChange()">
+      </app-search-select>
+    </div>
+
+    @if (!proyectoId) {
+      <div class="empty-state">
+        <i class="ti ti-clipboard-list" style="font-size:48px;color:#d1d5db"></i>
+        <p>Selecciona un proyecto para ver su cumplimiento.</p>
+      </div>
+    } @else if (loadingResumen) {
+      <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando actividades...</div>
+    } @else {
+
+      <!-- Chips de frecuencia -->
+      <div class="cu-frecuencia-chips">
+        @for (chip of frecuenciaChips; track chip.key) {
+          <button type="button" class="cu-frecuencia-chip"
+            [class.cu-frecuencia-chip--active]="frecuenciaActiva === chip.key"
+            (click)="setFrecuencia(chip.key)">
+            <i class="ti" [ngClass]="chip.icono"></i>
+            {{ chip.label }}
+            <span class="cu-frecuencia-chip-count" [class.cu-frecuencia-chip-count--ok]="chip.cumplidas === chip.total && chip.total > 0">
+              {{ chip.cumplidas }}/{{ chip.total }}
+            </span>
+          </button>
+        }
+      </div>
+
+      @if (actividadesPorFrecuencia.length === 0) {
+        <div class="empty-state">
+          <i class="ti ti-clipboard-x" style="font-size:48px;color:#d1d5db"></i>
+          <p>No hay actividades configuradas para esta frecuencia.</p>
+        </div>
+      } @else {
+        <div class="cu-items-list">
+          @for (item of actividadesPorFrecuencia; track item.actividadId) {
+            <div class="cu-item" [class.cu-item--completado]="item.cumplido">
+              <div class="cu-item-check-col">
+                <button class="cu-checkbox"
+                  [class.cu-checkbox--checked]="item.cumplido"
+                  [disabled]="guardandoActividadId === item.actividadId"
+                  (click)="toggleActividad(item)">
+                  @if (guardandoActividadId === item.actividadId) {
+                    <i class="ti ti-loader-2 spin"></i>
+                  } @else if (item.cumplido) {
+                    <i class="ti ti-check"></i>
+                  }
+                </button>
+              </div>
+              <div class="cu-item-content">
+                <div class="cu-item-header-row">
+                  <p class="cu-item-desc" [class.cu-item-desc--done]="item.cumplido">{{ item.nombre }}</p>
+                  <span class="cu-tag-rol">{{ rolLabel(item.rolResponsable) }}</span>
+                </div>
+                @if (item.descripcion) {
+                  <p class="cu-item-subdesc">{{ item.descripcion }}</p>
+                }
+                @if (item.cumplido && item.cumplidoPor) {
+                  <span class="cu-item-meta">
+                    <i class="ti ti-user-check"></i> {{ item.cumplidoPor }}
+                    @if (item.fechaCumplimiento) {
+                      · {{ item.fechaCumplimiento | date:'dd/MM/yyyy HH:mm' }}
+                    }
+                  </span>
+                }
+                @if (!item.cumplido) {
+                  <input
+                    class="cu-item-obs"
+                    type="text"
+                    placeholder="Observación (opcional)"
+                    [(ngModel)]="observacionTemp[item.actividadId]" />
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    }
+  }
+
+  <!-- ── TAB: CATÁLOGO DE ACTIVIDADES ──────────────────────────────────────── -->
+  @if (tab === 'catalogo') {
+    <div class="cu-catalogo-header">
+      <button class="cu-btn-activar" (click)="abrirNuevaActividad()">
+        <i class="ti ti-plus"></i> Nueva actividad
+      </button>
+    </div>
+
+    @if (loadingCatalogo) {
+      <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando catálogo...</div>
+    } @else {
+      <div class="abril-table-wrap">
+        <table class="abril-table">
+          <thead class="sticky top-0 z-10">
+            <tr>
+              <th>#</th>
+              <th>Nombre</th>
+              <th>Frecuencia</th>
+              <th>Responsable</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (actividadesCatalogo.length === 0) {
+              <tr><td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">Sin actividades registradas.</td></tr>
+            }
+            @for (a of catalogoPaged; track a.id) {
+              <tr class="cu-row-clickable" (click)="abrirEditarActividad(a)">
+                <td class="cu-td-num">{{ a.orden }}</td>
+                <td class="cu-td-nombre">{{ a.nombre }}</td>
+                <td><span class="cu-tag-frecuencia">{{ frecuenciaLabel(a.frecuencia) }}</span></td>
+                <td>{{ rolLabel(a.rolResponsable) }}</td>
+                <td>
+                  @if (a.activo) {
+                    <span class="cu-badge cu-badge--activo">Activo</span>
+                  } @else {
+                    <span class="cu-badge cu-badge--inactivo">Inactivo</span>
+                  }
+                </td>
+                <td><i class="ti ti-pencil" style="color:#9ca3af"></i></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="shrink-0 max-w-[440px]" style="margin-top:12px;">
+        <app-paginator
+          [totalRecords]="actividadesCatalogo.length"
+          [currentPage]="catalogoCurrentPage"
+          [totalPages]="catalogoTotalPages"
+          (pageChange)="changeCatalogoPage($event)">
+        </app-paginator>
+      </div>
+    }
+  }
+
+</div>
+
+<!-- Modal crear/editar actividad -->
+@if (showFormModal) {
+  <app-abril-modal-panel
+    [titulo]="editandoId ? 'Editar actividad' : 'Nueva actividad de cumplimiento'"
+    icono="ti-list-check"
+    variant="blue"
+    (closeModal)="cerrarFormModal()">
+
+    <div class="abril-field">
+      <label class="abril-field-label">Nombre *</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.nombre" placeholder="Ej. Recorrido de campo diario" />
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Descripción</label>
+      <textarea class="abril-field-input" rows="2" [(ngModel)]="form.descripcion"></textarea>
+    </div>
+
+    <div class="form-row">
+      <div class="abril-field">
+        <label class="abril-field-label">Frecuencia</label>
+        <select class="abril-field-input" [(ngModel)]="form.frecuencia">
+          @for (f of frecuencias; track f.value) {
+            <option [value]="f.value">{{ f.label }}</option>
+          }
+        </select>
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Responsable</label>
+        <select class="abril-field-input" [(ngModel)]="form.rolResponsable">
+          @for (r of roles; track r.value) {
+            <option [value]="r.value">{{ r.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="abril-field" style="max-width:140px">
+      <label class="abril-field-label">Orden</label>
+      <input class="abril-field-input" type="number" [(ngModel)]="form.orden" min="0" />
+    </div>
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarFormModal()" [disabled]="saving">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardarActividad()" [disabled]="!canSubmitForm">
+        @if (saving) { Guardando… } @else { Guardar }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}

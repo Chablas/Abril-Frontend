@@ -1,0 +1,249 @@
+<app-abril-page-header
+  badge="SSOMA · Gestión"
+  titulo="Activos Rotativos"
+  subtitulo="Control de equipos que circulan entre proyectos: tambores retráctiles, frenos de cuerda y similares"
+  [botonPrimario]="{ label: 'Nuevo activo', icono: 'ti-plus' }"
+  (primaryClick)="abrirNuevo()">
+</app-abril-page-header>
+
+<div class="ar-wrap">
+
+  <!-- Gestión de categorías -->
+  <div class="ar-categorias-manager">
+    <h3 class="ar-section-title"><i class="ti ti-category-2"></i> Categorías de activo</h3>
+    <div class="ar-categorias-tags">
+      @for (cat of categorias; track cat.id) {
+        <span class="ar-tag-categoria">{{ cat.nombre }} <em>({{ cat.totalActivos }})</em></span>
+      }
+    </div>
+    <div class="ar-categorias-add">
+      <input class="ar-input" type="text" style="max-width:260px"
+        placeholder="Nueva categoría (ej. Freno de Cuerda)..."
+        [(ngModel)]="nuevaCategoriaNombre" />
+      <button class="ar-btn-secondary" [disabled]="!nuevaCategoriaNombre.trim() || creandoCategoria" (click)="crearCategoria()">
+        @if (creandoCategoria) { <i class="ti ti-loader-2 spin"></i> } <i class="ti ti-plus"></i> Agregar
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="ar-filtros">
+    <app-search-input
+      placeholder="Buscar por nombre o código..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="260px">
+    </app-search-input>
+
+    <select class="ar-select" [(ngModel)]="filtroCategoriaId" (ngModelChange)="onFilterChange()">
+      <option [ngValue]="null">Todas las categorías</option>
+      @for (cat of categorias; track cat.id) {
+        <option [ngValue]="cat.id">{{ cat.nombre }}</option>
+      }
+    </select>
+
+    <select class="ar-select" [(ngModel)]="filtroEstado" (ngModelChange)="onFilterChange()">
+      <option [ngValue]="null">Todos los estados</option>
+      @for (e of estados; track e.value) {
+        <option [ngValue]="e.value">{{ e.label }}</option>
+      }
+    </select>
+
+    @if (filtrosActivos) {
+      <button class="ar-btn-link" (click)="limpiarFiltros()">Limpiar filtros</button>
+    }
+  </div>
+
+  @if (loading) {
+    <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando activos...</div>
+  } @else if (activosFiltrados.length === 0) {
+    <div class="empty-state">
+      <i class="ti ti-package-off" style="font-size:48px;color:#d1d5db"></i>
+      <p>No hay activos registrados{{ filtrosActivos ? ' con estos filtros' : '' }}.</p>
+    </div>
+  } @else {
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Código</th>
+            <th>Estado</th>
+            <th>Proyecto actual</th>
+            <th>Contacto</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (a of activosPaged; track a.id) {
+            <tr>
+              <td class="ar-td-nombre">{{ a.nombre }}</td>
+              <td>{{ a.categoriaNombre }}</td>
+              <td>{{ a.codigo || '—' }}</td>
+              <td><span class="ar-badge" [ngClass]="estadoClass(a.estado)">{{ estadoLabel(a.estado) }}</span></td>
+              <td>
+                @if (a.proyectoActualNombre) {
+                  {{ a.proyectoActualNombre }}
+                } @else {
+                  <span class="ar-almacen">Almacén central</span>
+                }
+              </td>
+              <td>
+                @if (a.responsableNombre || a.responsableTelefono) {
+                  <div class="ar-contacto">
+                    @if (a.responsableNombre) { <span>{{ a.responsableNombre }}</span> }
+                    @if (a.responsableTelefono) {
+                      <span class="ar-contacto-tel"><i class="ti ti-phone"></i> {{ a.responsableTelefono }}</span>
+                    }
+                  </div>
+                } @else {
+                  <span style="color:#9ca3af">—</span>
+                }
+              </td>
+              <td class="ar-td-acciones">
+                <button class="ar-btn-icon" title="Traspasar a otro proyecto" (click)="abrirMover(a)">
+                  <i class="ti ti-arrows-exchange"></i>
+                </button>
+                <button class="ar-btn-icon" title="Editar" (click)="abrirEditar(a)">
+                  <i class="ti ti-pencil"></i>
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="shrink-0 max-w-[440px]" style="margin-top:12px;">
+      <app-paginator
+        [totalRecords]="activosFiltrados.length"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="changePage($event)">
+      </app-paginator>
+    </div>
+  }
+</div>
+
+<!-- Modal crear/editar activo -->
+@if (showFormModal) {
+  <app-abril-modal-panel
+    [titulo]="editandoId ? 'Editar activo' : 'Nuevo activo rotativo'"
+    icono="ti-package"
+    variant="blue"
+    (closeModal)="cerrarFormModal()">
+
+    <div class="abril-field">
+      <label class="abril-field-label">Nombre *</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.nombre" placeholder="Ej. Tambor retráctil #3" />
+    </div>
+
+    <div class="form-row">
+      <div>
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Categoría *"
+          [options]="categorias"
+          valueField="id"
+          displayField="nombre"
+          [value]="form.categoriaId || null"
+          placeholder="Selecciona categoría"
+          (valueChange)="form.categoriaId = $event">
+        </app-search-select>
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Código / serie</label>
+        <input class="abril-field-input" type="text" [(ngModel)]="form.codigo" placeholder="Opcional" />
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="abril-field">
+        <label class="abril-field-label">Estado</label>
+        <select class="abril-field-input" [(ngModel)]="form.estado">
+          @for (e of estados; track e.value) {
+            <option [value]="e.value">{{ e.label }}</option>
+          }
+        </select>
+      </div>
+      <div>
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Proyecto actual"
+          [options]="proyectos"
+          valueField="id"
+          displayField="nombre"
+          [value]="form.proyectoActualId ?? null"
+          [allowClear]="true"
+          placeholder="Buscar proyecto... (vacío = almacén central)"
+          (valueChange)="form.proyectoActualId = $event">
+        </app-search-select>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="abril-field">
+        <label class="abril-field-label">Responsable / contacto</label>
+        <input class="abril-field-input" type="text" [(ngModel)]="form.responsableNombre" placeholder="A quién solicitarlo" />
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Teléfono de contacto</label>
+        <input class="abril-field-input" type="text" [(ngModel)]="form.responsableTelefono" />
+      </div>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Observaciones</label>
+      <textarea class="abril-field-input" rows="3" [(ngModel)]="form.observaciones"></textarea>
+    </div>
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarFormModal()" [disabled]="saving">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardarActivo()" [disabled]="!canSubmitForm">
+        @if (saving) { Guardando… } @else { Guardar }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}
+
+<!-- Modal traspaso a otro proyecto -->
+@if (showMoverModal && moviendoActivo) {
+  <app-abril-modal-panel
+    titulo="Traspasar activo"
+    [subtitulo]="moviendoActivo.nombre"
+    icono="ti-arrows-exchange"
+    variant="blue"
+    (closeModal)="cerrarMoverModal()">
+
+    <p class="ar-mover-actual">
+      Ubicación actual:
+      <strong>{{ moviendoActivo.proyectoActualNombre || 'Almacén central' }}</strong>
+    </p>
+
+    <div>
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Nuevo proyecto"
+        [options]="proyectos"
+        valueField="id"
+        displayField="nombre"
+        [value]="nuevoProyectoId"
+        [allowClear]="true"
+        placeholder="Buscar proyecto... (vacío = almacén central)"
+        (valueChange)="nuevoProyectoId = $event">
+      </app-search-select>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Observación</label>
+      <textarea class="abril-field-input" rows="2" [(ngModel)]="observacionMovimiento" placeholder="Opcional"></textarea>
+    </div>
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarMoverModal()" [disabled]="moviendo">Cancelar</button>
+      <button class="btn btn-primary" (click)="confirmarMover()" [disabled]="moviendo">
+        @if (moviendo) { Traspasando… } @else { Confirmar traspaso }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}
