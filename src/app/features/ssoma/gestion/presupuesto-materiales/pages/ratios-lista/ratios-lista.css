@@ -7,6 +7,15 @@
 
 .ratios-toolbar { display: flex; justify-content: flex-end; margin-bottom: 0.75rem; }
 
+.btn-outline { display: inline-flex; align-items: center; gap: 6px;
+  background: white; color: #1E3A5F; border: 1px solid #E2E8F0; border-radius: 6px; cursor: pointer;
+  font-size: 0.875rem; font-weight: 500; padding: 8px 16px; transition: background 0.15s ease; }
+.btn-outline:hover:not(:disabled) { background: #F8FAFC; border-color: #1E3A5F; }
+.btn-outline:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-sm { padding: 6px 12px; font-size: 0.8rem; }
+.spin { animation: rl-spin 0.8s linear infinite; }
+@keyframes rl-spin { to { transform: rotate(360deg); } }
+
 .filtro-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
 .filtro-input { flex: 1; min-width: 220px; max-width: 360px; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db;
   border-radius: 6px; font-size: 0.875rem; }
@@ -22,16 +31,16 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  color: #6b7280;
+  color: #64748B;
   padding: 0.5rem 0.25rem 0.125rem;
-  border-bottom: 2px solid var(--color-abril-standard, #0F6E56);
+  border-bottom: 2px solid #1E3A5F;
 }
 .familias-lista__tipo-header:first-child { padding-top: 0; }
 
-.familia-panel { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; background: white; }
+.familia-panel { border: 0.5px solid #E2E8F0; border-radius: 10px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
 
 .familia-panel__header { display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 0.875rem;
-  font-size: 0.8rem; background: #f9fafb; border-bottom: 1px solid #e5e7eb; flex-wrap: wrap; }
+  font-size: 0.8rem; background: transparent; border-bottom: 0.5px solid #E2E8F0; flex-wrap: wrap; }
 .familia-panel__nombre { font-weight: 700; color: #111827; }
 .familia-panel__tipo { color: #6b7280; font-size: 0.8rem; }
 .familia-panel__driver { color: #9ca3af; font-size: 0.75rem; }
@@ -39,14 +48,14 @@
 
 .familia-panel__body { padding: 0.5rem 0.875rem 0.75rem; }
 
-.tabla-cols { border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
+.tabla-cols { border: none; }
 
 .tabla-cols__header, .tabla-cols__row {
   display: grid; grid-template-columns: 1.5fr 1fr 1fr; align-items: center;
   padding: 0.375rem 0.5rem; font-size: 0.75rem;
 }
-.tabla-cols__header { background: #f9fafb; font-size: 0.62rem; text-transform: uppercase;
-  font-weight: 600; color: #6b7280; }
+.tabla-cols__header { background: transparent; font-size: 0.62rem; text-transform: uppercase;
+  font-weight: 700; color: #64748B; border-bottom: 1px solid #E2E8F0; }
 .tabla-cols__row { border-top: 1px solid #f3f4f6; }
 .tabla-cols__row--outlier { background: #fffbeb; }
 
@@ -56,11 +65,11 @@
 .tabla-cols__dato input { width: 12px; height: 12px; cursor: pointer; margin: 0; flex-shrink: 0; }
 .tabla-cols__dato--excluido { opacity: 0.45; text-decoration: line-through; }
 
-.badge { display: inline-block; padding: 2px 8px; border-radius: 9999px;
-  font-size: 0.7rem; font-weight: 600; white-space: nowrap; cursor: help; }
-.badge-warn { background: #fef9c3; color: #a16207; }
-.badge-ok { background: #dcfce7; color: #15803d; }
-.badge-danger { background: #fee2e2; color: #b91c1c; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; cursor: help; }
+.badge-warn { background: #fef3c7; color: #92400e; }
+.badge-ok { background: #dcfce7; color: #166534; }
+.badge-danger { background: #fee2e2; color: #991b1b; }
 .badge-xs { padding: 1px 6px; font-size: 0.65rem; }
 
 .unidad-nota { color: #9ca3af; font-size: 0.7rem; }
@@ -69,11 +78,11 @@
 .celda-vacia { color: #cbd5e1; }
 
 /* ── Resumen general ────────────────────────────────────────────── */
-.resumen-card { border: 1px solid #e5e7eb; border-radius: 8px; background: white;
-  margin-bottom: 1.25rem; overflow: hidden; }
+.resumen-card { border: 0.5px solid #E2E8F0; border-radius: 10px; background: white;
+  margin-bottom: 1.25rem; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
 .resumen-card__header { display: flex; align-items: center; justify-content: space-between;
-  padding: 0.75rem 1rem; border-bottom: 1px solid #e5e7eb; background: #f9fafb; }
-.resumen-card__titulo { font-size: 0.9rem; font-weight: 600; color: #111827; margin: 0; }
+  padding: 0.875rem 1.125rem; border-bottom: 0.5px solid #E2E8F0; background: transparent; }
+.resumen-card__titulo { font-size: 0.9rem; font-weight: 700; color: #1E3A5F; margin: 0; }
 .resumen-card__total { font-size: 0.75rem; color: #6b7280; }
 
 .resumen-tabla__header, .resumen-tabla__row {
@@ -87,34 +96,45 @@
 .resumen-tabla__proyecto { font-weight: 600; color: #111827; }
 
 /* ── Ratios de dotación (HH / N Trabajadores) ──────────────────────── */
-.btn-calcular-drivers { display: inline-flex; align-items: center; gap: 6px; padding: 0.4rem 0.75rem;
-  border: 1px solid var(--color-abril-standard, #0F6E56); border-radius: 6px; background: white;
-  color: var(--color-abril-standard, #0F6E56); font-size: 0.8rem; font-weight: 600; cursor: pointer; }
-.btn-calcular-drivers:disabled { opacity: 0.6; cursor: default; }
-.btn-calcular-drivers:hover:not(:disabled) { background: var(--color-abril-standard-light, #f0faf7); }
+.btn-calcular-drivers { display: inline-flex; align-items: center; gap: 6px; padding: 0.5rem 0.9rem;
+  border: none; border-radius: 6px; background: #1E3A5F;
+  color: #fff; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.15s ease; }
+.btn-calcular-drivers:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-calcular-drivers:hover:not(:disabled) { background: color-mix(in srgb, #1E3A5F 92%, black); }
 
 .driver-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(460px, 1fr)); gap: 1.25rem;
   padding: 0 1rem 1.25rem; align-items: start; }
 
-.driver-tabla { border: 1px solid #e5e7eb; border-radius: var(--radius-standard, 7px); overflow: hidden;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04); }
+.driver-tabla { border: none; }
 .driver-tabla__header, .driver-tabla__row {
   display: grid; grid-template-columns: 1.3fr 0.65fr 0.75fr 0.75fr 0.75fr 0.65fr 0.85fr 0.9fr;
   align-items: center; column-gap: 0.5rem; padding: 0.55rem 0.75rem; font-size: 0.78rem;
 }
-.driver-tabla__header { background: #f8fafc; font-size: 0.65rem; text-transform: uppercase;
-  letter-spacing: 0.02em; font-weight: 700; color: #64748b; border-bottom: 1px solid #e5e7eb; }
+.driver-tabla__header { background: transparent; font-size: 0.65rem; text-transform: uppercase;
+  letter-spacing: 0.02em; font-weight: 700; color: #64748B; border-bottom: 1px solid #E2E8F0; }
 .driver-tabla__row { border-top: 1px solid #f1f5f9; transition: background-color 0.1s ease; }
 .driver-tabla__row:hover { background: #fafbfc; }
 .driver-tabla__row--outlier { background: #fffbeb; }
 .driver-tabla__row--outlier:hover { background: #fef3c7; }
 .celda-num { text-align: right; font-variant-numeric: tabular-nums; color: #334155; }
 .th-sort { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 3px; }
-.th-sort:hover { color: var(--color-abril-standard, #0F6E56); }
+.th-sort:hover { color: #1E3A5F; }
 
 .select-fuente {
   width: 100%; padding: 0.3rem 0.4rem; border: 1px solid #d8dee6; border-radius: 5px;
   font-size: 0.72rem; color: #334155; background: white; cursor: pointer;
 }
-.select-fuente:hover:not(:disabled) { border-color: var(--color-abril-standard, #0F6E56); }
+.select-fuente:hover:not(:disabled) { border-color: #1E3A5F; }
 .select-fuente:disabled { opacity: 0.6; cursor: default; }
+
+/* ── Sub-tabs: Ratios de Materiales | Ratios de Dotación ─────────────────── */
+.ratios-subtabs { display: flex; gap: 4px; border-bottom: 1px solid #E2E8F0; margin-bottom: 1rem; }
+.ratios-subtab {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 14px; border: none; background: transparent; cursor: pointer;
+  font-size: 0.85rem; font-weight: 600; color: #64748B;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+.ratios-subtab:hover { color: #1E3A5F; }
+.ratios-subtab--active { color: #1E3A5F; border-bottom-color: #1E3A5F; }

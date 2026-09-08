@@ -175,6 +175,21 @@
   white-space: nowrap;
 }
 
+.cu-worker-warning {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  padding: 2px 8px;
+  vertical-align: middle;
+  cursor: help;
+  white-space: nowrap;
+}
+
 .cu-td-email {
   font-size: 0.78rem;
   color: #64748b;

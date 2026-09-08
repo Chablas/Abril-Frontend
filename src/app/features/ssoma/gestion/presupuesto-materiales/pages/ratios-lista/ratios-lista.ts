@@ -73,6 +73,15 @@ export class RatiosListaPage implements OnInit {
   calculandoDrivers = false;
   actualizandoDriverProjectId: number | null = null;
 
+  /** Ratios de Materiales (por família) y Ratios de Dotación (HH/Trabajadores) son dos mesas de
+   * trabajo distintas — separadas en sub-tabs en vez de una encima de la otra en scroll. */
+  vistaRatios: 'materiales' | 'dotacion' = 'materiales';
+
+  cambiarVistaRatios(v: 'materiales' | 'dotacion'): void {
+    this.vistaRatios = v;
+    this.cdr.markForCheck();
+  }
+
   ngOnInit(): void {
     this.load();
     this.loadDrivers();

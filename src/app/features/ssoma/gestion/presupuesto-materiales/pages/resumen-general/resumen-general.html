@@ -22,10 +22,13 @@
         </div>
       </div>
       <div *ngIf="loadingResumen" class="loading-msg-small">Cargando resumen...</div>
-      <div *ngIf="!loadingResumen && resumen && resumen.proyectos.length === 0" class="empty-cell">
+      <div *ngIf="!loadingResumen && errorResumen" class="empty-cell" style="color:#C0392B;">
+        <i class="ti ti-alert-triangle"></i> {{ errorResumen }}
+      </div>
+      <div *ngIf="!loadingResumen && !errorResumen && resumen && resumen.proyectos.length === 0" class="empty-cell">
         Todavía no hay proyectos con ratios calculados.
       </div>
-      <div *ngIf="!loadingResumen && resumen && resumen.proyectos.length > 0" class="resumen-tabla">
+      <div *ngIf="!loadingResumen && !errorResumen && resumen && resumen.proyectos.length > 0" class="resumen-tabla">
         <div class="resumen-tabla__header">
           <div>Proyecto</div>
           <div>Familias calculadas</div>

@@ -240,6 +240,7 @@ export class NavigationService {
         { label: 'Proyectos Habilitados SSOMA', route: '/ssoma/gestion/proyectos-habilitados', featureKey: 'ssoma.gestion.proyectos-habilitados' },
         { label: 'Presupuesto Materiales', route: '/ssoma/gestion/presupuesto-materiales', featureKey: 'ssoma.gestion.presupuesto-materiales' },
         { label: 'Horas Hombre', route: '/ssoma/gestion/horas-hombre/dashboard', featureKey: 'ssoma.gestion.horas-hombre' },
+        { label: 'Registros Modelo', route: '/habilitacion/registros-modelo' },
       ],
     },
     {
@@ -326,6 +327,7 @@ export class NavigationService {
         { label: 'Mi perfil (Prev./Coord.)', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
         { label: 'Dashboard Prev./Coord.', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' },
         { label: 'Gestión SSOMA', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
+        { label: 'Períodos', route: '/evaluaciones/periodos', featureKey: 'evaluaciones.periodos' },
       ],
       groups: [],
     },
@@ -476,6 +478,7 @@ export class NavigationService {
               { label: 'Dossier', route: '/habilitacion/gestion/dossier' },
               { label: 'Evaluar SSOMA', route: '/habilitacion/evaluar-prevencionista' },
               { label: 'Mi Desempeño', route: '/habilitacion/mi-perfil-supervisor' },
+              { label: 'Registros Modelo', route: '/habilitacion/registros-modelo' },
             ],
             groups: [],
           };

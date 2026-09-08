@@ -155,8 +155,11 @@ export class SctrSubir implements OnChanges, OnDestroy {
   }
 
   onEsOficinaStaffChange(): void {
+    // Oficina Central / Staff solo cambia el criterio de proyecto (no aplica) —
+    // ya NO fuerza el tipo a VIDA_LEY: un trabajador de Staff/Oficina también
+    // puede requerir SCTR (p.ej. visitas a obra), así que el tipo lo sigue
+    // eligiendo el usuario libremente en el selector.
     if (this.esOficinaStaff) {
-      this.model.tipo = 'VIDA_LEY';
       this.model.proyectoId = null;
     }
     this.model.empresaId = null;

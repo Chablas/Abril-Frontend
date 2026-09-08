@@ -5,11 +5,14 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { forkJoin } from 'rxjs';
 import { PresupuestoMaterialesService } from '../../presupuesto.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import {
   PresupuestoDetalleDto, PresupuestoLineaDto, ActualizarLineaPresupuestoDto,
+  PersonalHitoDto, VigilanciaHitoDto, ServicioFijoDto, KitProyectoGuardadoDto,
+  PresupuestoDestinatarioDto,
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import Swal from 'sweetalert2';
@@ -42,6 +45,26 @@ export class PresupuestoDetallePage implements OnInit {
   // Acordeón de tipos
   tipoAbierto: Set<number> = new Set();
 
+  // Otras secciones del presupuesto que NO son materiales por ratio — ya suman al total del
+  // presupuesto (PresupuestoTotalHelper en el backend) pero antes no aparecían en este resumen,
+  // así que parecía que "faltaban" los kits, personal, vigilancia y servicios ya cargados.
+  personalHitos: PersonalHitoDto[] = [];
+  vigilanciaHitos: VigilanciaHitoDto[] = [];
+  serviciosFijos: ServicioFijoDto[] = [];
+  kitsGuardados: KitProyectoGuardadoDto[] = [];
+  otrasSeccionesAbierto: Set<string> = new Set();
+
+  get totalPersonal(): number { return this.personalHitos.reduce((a, p) => a + (p.total || 0), 0); }
+  get totalVigilancia(): number { return this.vigilanciaHitos.reduce((a, v) => a + (v.total || 0), 0); }
+  get totalServicios(): number { return this.serviciosFijos.reduce((a, s) => a + (s.total || 0), 0); }
+  get totalKits(): number { return this.kitsGuardados.reduce((a, k) => a + (k.total || 0), 0); }
+
+  toggleSeccion(id: string): void {
+    if (this.otrasSeccionesAbierto.has(id)) this.otrasSeccionesAbierto.delete(id);
+    else this.otrasSeccionesAbierto.add(id);
+    this.cdr.markForCheck();
+  }
+
   ngOnInit(): void {
     this.presupuestoId = Number(this.route.snapshot.paramMap.get('presupuestoId'));
     this.load();
@@ -53,13 +76,38 @@ export class PresupuestoDetallePage implements OnInit {
     this.svc.getPresupuestoDetalle(this.presupuestoId).subscribe({
       next: (d) => {
         this.detalle = d;
-        // Abrir todos los tipos por defecto
-        d.tipos.forEach((t) => this.tipoAbierto.add(t.tipoId));
+        this.cargarOtrasSecciones(d.projectId);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loading = false;
+        this.loader.hide();
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  /** Personal, Vigilancia, Servicios y Kits no viven en el detalle del presupuesto (son tablas
+   * aparte, editables desde "Datos Base" del proyecto) — se cargan por projectId, igual que en la
+   * calculadora del proyecto, solo que acá es de solo lectura (el resumen completo). */
+  private cargarOtrasSecciones(projectId: number): void {
+    forkJoin({
+      personal: this.svc.getPersonalHitos(projectId),
+      vigilancia: this.svc.getVigilanciaHitos(projectId),
+      servicios: this.svc.getServiciosFijos(projectId),
+      kits: this.svc.getKitsGuardados(projectId),
+    }).subscribe({
+      next: ({ personal, vigilancia, servicios, kits }) => {
+        this.personalHitos = personal;
+        this.vigilanciaHitos = vigilancia;
+        this.serviciosFijos = servicios;
+        this.kitsGuardados = kits;
         this.loading = false;
         this.loader.hide();
         this.cdr.markForCheck();
       },
       error: (err: HttpErrorResponse) => {
+        // No bloquea la vista del presupuesto si estas secciones fallan — son informativas.
         this.loading = false;
         this.loader.hide();
         this.error.handleError(err);
@@ -107,12 +155,33 @@ export class PresupuestoDetallePage implements OnInit {
   }
 
   aprobar(): void {
+    this.loader.show();
+    this.svc.getDestinatariosAprobacion(this.presupuestoId).subscribe({
+      next: (destinatarios) => this.confirmarAprobacion(destinatarios),
+      error: () => {
+        // Si falla la vista previa, no bloquea aprobar — solo se pierde el detalle de a quién.
+        this.confirmarAprobacion([]);
+      },
+    });
+  }
+
+  /** Muestra a quiénes se les va a avisar (mismo resolver que usa el envío real, así la vista
+   * previa nunca puede mostrar algo distinto de lo que después se envía de verdad) y recién ahí
+   * pide confirmar. */
+  private confirmarAprobacion(destinatarios: PresupuestoDestinatarioDto[]): void {
+    this.loader.hide();
+    const listaHtml = destinatarios.length > 0
+      ? `<ul style="text-align:left;margin:0.5rem 0 0;padding-left:1.2rem;">`
+        + destinatarios.map((d) => `<li><strong>${d.rol}:</strong> ${d.email}</li>`).join('')
+        + `</ul>`
+      : `<p style="color:#b45309;">No se pudo resolver ningún destinatario válido — no se enviará ningún correo.</p>`;
+
     Swal.fire({
       icon: 'question',
       title: '¿Aprobar presupuesto?',
-      text: 'Una vez aprobado podrás registrar el control semanal de consumo.',
+      html: `<p>Una vez aprobado podrás registrar el control semanal de consumo. Se avisará por correo a:</p>${listaHtml}`,
       showCancelButton: true,
-      confirmButtonText: 'Aprobar',
+      confirmButtonText: 'Aprobar y enviar',
       cancelButtonText: 'Cancelar',
     }).then((r) => {
       if (!r.isConfirmed) return;
@@ -147,9 +216,7 @@ export class PresupuestoDetallePage implements OnInit {
   }
 
   totalEfectivo(l: PresupuestoLineaDto): number {
-    const qty = l.cantidadManual ?? l.cantidadEstimada;
-    const prc = l.precioManual   ?? l.precioUnitario;
-    return Math.round(qty * prc * 100) / 100;
+    return l.totalEfectivo;
   }
 
   tieneOverride(l: PresupuestoLineaDto): boolean {

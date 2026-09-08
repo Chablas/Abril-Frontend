@@ -22,6 +22,7 @@ export const PRESUPUESTO_TABS: AbrilPageTab[] = [
   { label: 'Datos Base',              icono: 'ti-settings',        route: '/ssoma/gestion/presupuesto-materiales/drivers', exact: true },
   { label: 'Ratios',                  icono: 'ti-chart-bar',       route: '/ssoma/gestion/presupuesto-materiales/ratios', exact: true },
   { label: 'Gasto SSOMA',             icono: 'ti-report-money',    route: '/ssoma/gestion/presupuesto-materiales/resumen', exact: true },
+  { label: 'Dashboard',               icono: 'ti-layout-dashboard', route: '/ssoma/gestion/presupuesto-materiales/dashboard', exact: true },
   { label: 'Kits / BOM',              icono: 'ti-package',         route: '/ssoma/gestion/presupuesto-materiales/kits', exact: true },
   { label: 'Catálogo',                icono: 'ti-list-details',    route: '/ssoma/gestion/presupuesto-materiales/catalogo', exact: true },
 ];

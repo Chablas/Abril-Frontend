@@ -1,4 +1,4 @@
-.pres-wrap { padding: 16px; max-width: 1300px; background: #ffffff; }
+.pres-wrap { padding: 16px 24px 24px; background: #ffffff; display: flex; flex-direction: column; gap: 16px; min-height: calc(100% - 32px); }
 
 .pres-toolbar { display: flex; gap: 12px; margin-bottom: 20px; }
 .pres-field { display: flex; flex-direction: column; gap: 4px; }
@@ -9,9 +9,11 @@
 }
 
 .pres-card {
-  background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
-  padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  background: #fff; border: 0.5px solid #E2E8F0; border-radius: 10px;
+  padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: box-shadow 0.2s ease;
 }
+.pres-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
 
 /* Aviso "no cierres esta pantalla" durante subida/estandarización de lotes grandes */
 .pres-progreso-aviso {
@@ -35,16 +37,14 @@
 .pres-guia-pasos { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 3px; }
 .pres-guia-pasos li::marker { font-weight: 600; }
 
-/* Materiales (subir + su historial) y Horas Hombre (subir + su historial), cada uno en su propia
-   columna — así ninguno de los dos formularios queda fuera de vista por el otro. */
-.pres-upload-grid {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; align-items: start;
-}
-.pres-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.pres-col > .pres-card { margin-bottom: 0; }
-@media (max-width: 1100px) {
-  .pres-upload-grid { grid-template-columns: 1fr; }
-}
+/* Fila de accesos rápidos a los modales de subida — chica a propósito: lo que domina la
+   pantalla es el comparativo de abajo, no el formulario de carga. */
+.pres-actions-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* Historial de cargas, ahora dentro de cada modal (ver pres-modal-historial más abajo). */
+.pres-modal-historial { margin-top: 18px; padding-top: 18px; border-top: 1px solid #e5e7eb; }
+
+.pres-comparativo--grow { flex: 1; }
 .pres-card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
 .pres-card-title { font-size: 15px; font-weight: 600; color: #1e3a5f; margin: 0 0 6px; display: flex; align-items: center; gap: 6px; }
 .pres-card-sub { font-size: 13px; color: #6b7280; margin: 0 0 14px; }
@@ -64,9 +64,10 @@
 .pres-btn-primary {
   display: inline-flex; align-items: center; gap: 6px;
   height: 38px; padding: 0 18px;
-  background: #1e3a5f; color: #fff; border: none; border-radius: 8px;
-  font-size: 13px; font-weight: 500; cursor: pointer;
+  background: #1E3A5F; color: #fff; border: none; border-radius: 6px;
+  font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.15s ease;
 }
+.pres-btn-primary:hover:not(:disabled) { background: color-mix(in srgb, #1E3A5F 92%, black); }
 .pres-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
 .pres-btn-icon {
   width: 34px; height: 34px; border: 1px solid #d1d5db; border-radius: 8px;
@@ -84,9 +85,9 @@
 .pres-result-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .pres-result-val { font-size: 22px; font-weight: 700; color: #1e3a5f; }
 .pres-result-lbl { font-size: 11px; color: #6b7280; }
-.pres-result-ok .pres-result-val { color: #16a34a; }
-.pres-result-warn .pres-result-val { color: #d97706; }
-.pres-result-danger .pres-result-val { color: #dc2626; }
+.pres-result-ok .pres-result-val { color: #1B6B3A; }
+.pres-result-warn .pres-result-val { color: #D97706; }
+.pres-result-danger .pres-result-val { color: #C0392B; }
 .pres-warns { margin: 6px 0 0; padding: 0 0 0 18px; }
 .pres-warns li { font-size: 12px; color: #92400e; list-style: disc; }
 
@@ -111,10 +112,10 @@
 .pres-mini-pct { font-size: 12px; color: #374151; }
 
 /* Badge */
-.pres-badge { font-size: 11px; border-radius: 999px; padding: 2px 9px; font-weight: 600; }
-.pres-badge--ok { background: #dcfce7; color: #15803d; }
+.pres-badge { font-size: 11px; text-transform: uppercase; font-weight: 700; border-radius: 4px; padding: 2px 9px; }
+.pres-badge--ok { background: #dcfce7; color: #166534; }
 .pres-badge--warn { background: #fef3c7; color: #92400e; }
-.pres-badge--neutral { background: #f3f4f6; color: #6b7280; }
+.pres-badge--neutral { background: #f1f5f9; color: #64748B; }
 
 /* Re-standardize btn */
 .pres-btn-xs {
@@ -135,8 +136,8 @@
   background: #fff; cursor: pointer; font-size: 14px; display: inline-flex;
   align-items: center; justify-content: center; margin: 0 2px; transition: all 0.12s;
 }
-.pres-btn-auth:hover, .pres-btn-auth--active { background: #dcfce7; border-color: #16a34a; color: #16a34a; }
-.pres-btn-rej:hover, .pres-btn-rej--active { background: #fee2e2; border-color: #dc2626; color: #dc2626; }
+.pres-btn-auth:hover, .pres-btn-auth--active { background: #dcfce7; border-color: #1B6B3A; color: #1B6B3A; }
+.pres-btn-rej:hover, .pres-btn-rej--active { background: #fee2e2; border-color: #C0392B; color: #C0392B; }
 .pres-tr--autorizado { background: #f0fdf4; }
 .pres-tr--rechazado { background: #fff1f2; }
 
@@ -146,3 +147,97 @@
 }
 .spin { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Botón chico que abre el modal de subida — borde de color (no gris) para que se lea como
+   acción, mismo tratamiento que los botones "ghost" de Indicadores Proactivos. */
+.pres-upload-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid #E2E8F0; border-radius: 6px;
+  padding: 9px 16px; cursor: pointer;
+  font-size: 13px; font-weight: 600; color: #1E3A5F;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.pres-upload-btn:hover { background: #F8FAFC; border-color: #1E3A5F; }
+.pres-upload-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pres-upload-btn i { font-size: 15px; }
+.pres-modal-sub { font-size: 13px; color: #6b7280; margin: 0 0 14px; }
+
+/* ── Comparativo gerencial: presupuesto vs. consumo real ─────────────────── */
+.pres-comparativo {
+  background: #fff; border: 0.5px solid #E2E8F0; border-radius: 10px;
+  padding: 22px 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.pres-comparativo-loading {
+  display: flex; align-items: center; gap: 10px; color: #6b7280; font-size: 14px; justify-content: center;
+}
+.pres-comparativo-empty {
+  display: flex; align-items: center; gap: 16px;
+}
+.pres-comparativo-empty > i { font-size: 32px; color: #cbd5e1; flex-shrink: 0; }
+.pres-comparativo-empty strong { font-size: 14px; color: #1e3a5f; }
+.pres-comparativo-empty p { font-size: 13px; color: #6b7280; margin: 4px 0 0; }
+.pres-comparativo-empty a { color: #1e3a5f; font-weight: 600; text-decoration: underline; }
+
+.pres-comparativo-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+.pres-comparativo-title { font-size: 16px; font-weight: 700; color: #1e3a5f; margin: 0; display: flex; align-items: center; gap: 8px; }
+.pres-comparativo-sub { font-size: 12px; color: #9ca3af; }
+
+.pres-comparativo-pct {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border-radius: 12px; padding: 8px 20px; min-width: 92px; flex-shrink: 0;
+}
+.pres-comparativo-pct-val { font-size: 22px; font-weight: 800; line-height: 1.1; }
+.pres-comparativo-pct-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; opacity: 0.85; }
+
+.pres-comparativo-bar { height: 10px; background: #f1f5f9; border-radius: 99px; overflow: hidden; margin-bottom: 18px; }
+.pres-comparativo-bar-fill { height: 100%; border-radius: 99px; transition: width 0.4s ease; }
+
+.pres-comparativo-kpis { display: flex; gap: 28px; flex-wrap: wrap; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid #f1f5f9; }
+.pres-kpi { display: flex; flex-direction: column; gap: 2px; }
+.pres-kpi-val { font-size: 19px; font-weight: 700; color: #1e3a5f; font-variant-numeric: tabular-nums; }
+.pres-kpi-lbl { font-size: 12px; color: #6b7280; }
+.pres-kpi--danger .pres-kpi-val { color: #C0392B; }
+.pres-kpi--fuera .pres-kpi-val { color: #7c3aed; }
+
+.pres-comparativo-lista { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; }
+.pres-comparativo-ok-msg {
+  display: flex; align-items: center; gap: 8px; color: #15803d; font-size: 13px;
+  background: #f0fdf4; border-radius: 8px; padding: 12px 14px;
+}
+
+.pres-comparativo-fila {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  border-radius: 9px; padding: 10px 14px; border-left: 4px solid transparent;
+  background: #fafafa;
+}
+.pres-comparativo-fila-nombre { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #1f2937; }
+.pres-comparativo-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.pres-comparativo-fila-detalle { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #6b7280; }
+.pres-comparativo-fila-cifras { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pres-comparativo-fila-pct { font-weight: 700; font-variant-numeric: tabular-nums; }
+.pres-comparativo-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; padding: 3px 9px; border-radius: 4px; white-space: nowrap; }
+
+/* Semáforo — paleta UDP exacta (DESIGN-VICTOR.md §6.4), reutilizada en el % global, la barra,
+   cada fila y su tag. */
+.sem--ok { background: #dcfce7; color: #166534; }
+.pres-comparativo-fila.sem--ok { border-left-color: #1B6B3A; }
+.pres-comparativo-fila.sem--ok .pres-comparativo-dot { background: #1B6B3A; }
+.pres-comparativo-fila-pct.sem--ok, .pres-comparativo-bar-fill.sem--ok { color: #166534; background: #1B6B3A; }
+
+.sem--advertencia { background: #fef3c7; color: #92400e; }
+.pres-comparativo-fila.sem--advertencia { border-left-color: #D97706; background: #fffbeb; }
+.pres-comparativo-fila.sem--advertencia .pres-comparativo-dot { background: #D97706; }
+.pres-comparativo-bar-fill.sem--advertencia { background: #D97706; }
+
+.sem--alerta { background: #fee2e2; color: #991b1b; }
+.pres-comparativo-fila.sem--alerta { border-left-color: #C0392B; background: #fef2f2; }
+.pres-comparativo-fila.sem--alerta .pres-comparativo-dot { background: #C0392B; }
+.pres-comparativo-bar-fill.sem--alerta { background: #C0392B; }
+
+/* Fuera de presupuesto: morado, deliberadamente distinto de rojo/ámbar — no es "mal gastado",
+   es "gasto que no estaba planificado" y merece su propia lectura visual. */
+.sem--fuera { background: #ede9fe; color: #6d28d9; }
+.pres-comparativo-fila.sem--fuera { border-left-color: #7c3aed; background: #f5f3ff; }
+.pres-comparativo-fila.sem--fuera .pres-comparativo-dot { background: #7c3aed; }
+
+.sem--neutral { background: #f1f5f9; color: #64748B; }

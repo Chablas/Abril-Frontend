@@ -33,6 +33,7 @@ export class ResumenGeneralPage implements OnInit {
 
   resumen: ResumenRatiosDto | null = null;
   loadingResumen = false;
+  errorResumen: string | null = null;
   calculandoTodos = false;
 
   ngOnInit(): void {
@@ -41,6 +42,7 @@ export class ResumenGeneralPage implements OnInit {
 
   loadResumen(): void {
     this.loadingResumen = true;
+    this.errorResumen = null;
     this.cdr.markForCheck();
     this.svc.getResumenRatios().subscribe({
       next: (r) => {
@@ -48,8 +50,9 @@ export class ResumenGeneralPage implements OnInit {
         this.loadingResumen = false;
         this.cdr.markForCheck();
       },
-      error: () => {
+      error: (err: HttpErrorResponse) => {
         this.loadingResumen = false;
+        this.errorResumen = err.error?.message ?? 'No se pudo cargar el resumen. Intenta actualizar.';
         this.cdr.markForCheck();
       },
     });

@@ -47,6 +47,7 @@ import { ProgramarEmoDialogComponent } from '../../../../shared/components/progr
 import { EmoPorTrabajadorDto } from '../../../ssoma/salud-ocupacional/dtos/emo.model';
 import { EmosProgramados } from './components/emos-programados/emos-programados';
 import { InterconsultasPendientes } from './components/interconsultas-pendientes/interconsultas-pendientes';
+import { RetirosAutomaticos } from './components/retiros-automaticos/retiros-automaticos';
 import { SctrVidaLeyService } from '../../services/sctr-vidaley.service';
 import { SctrVidaLeyDto } from '../../dtos/sctr.model';
 import { CatalogosHabService } from '../../services/catalogos-hab.service';
@@ -75,6 +76,7 @@ import { getGerencias, getHijos } from '../../../../shared/utils/area-arbol.util
     ProgramarEmoDialogComponent,
     EmosProgramados,
     InterconsultasPendientes,
+    RetirosAutomaticos,
   ],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
@@ -216,6 +218,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   workerParaProgramarEmo: WorkerHabilitacionListDto | null = null;
   mostrarEmosProgramados = false;
   mostrarInterconsultasPendientes = false;
+  mostrarRetirosAutomaticos = false;
   preselectedEmpresaId: number | null = null;
   workerParaAccion: WorkerHabilitacionListDto | null = null;
   workerParaReingreso: WorkerHabilitacionListDto | null = null;
@@ -1255,6 +1258,10 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   abrirInterconsultasPendientes(): void {
     this.mostrarInterconsultasPendientes = true;
+  }
+
+  abrirRetirosAutomaticos(): void {
+    this.mostrarRetirosAutomaticos = true;
   }
 
   emoProgLabel(estado: string): string {
