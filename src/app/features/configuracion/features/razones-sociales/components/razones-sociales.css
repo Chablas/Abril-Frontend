@@ -164,6 +164,14 @@
   border-color: #bfdbfe;
 }
 
+/* Conteo de trabajadores. Mismo teal que el chip «N trabajador(es)» de Configuración →
+   Categorías y Puestos: es el mismo dato leído desde otro catálogo. */
+.chip-teal {
+  background: #d7faf4;
+  color: #009c87;
+  border-color: #a6f0e4;
+}
+
 /* Marca de «es del grupo Abril»: va en el lima de la hoja del logo, que es el color con el que la
    empresa se identifica a sí misma en el resto de la app. */
 .chip-lime {
@@ -174,6 +182,15 @@
 
 .ml-2 {
   margin-left: 0.5rem;
+}
+
+/* La fila entera abre el detalle de trabajadores. */
+.row-clickable {
+  cursor: pointer;
+}
+
+.row-clickable:hover td {
+  background: #f9fafb;
 }
 
 .row-actions {

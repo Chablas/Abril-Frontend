@@ -1,0 +1,89 @@
+<app-base-modal [title]="'TRABAJADORES DE LA RAZÓN SOCIAL'" width="w-[720px]" (closeModal)="closed.emit()">
+
+  <div class="flex flex-col gap-[12px] mt-[10px]">
+
+    <!-- Razón social clickeada: el título del modal es genérico. Sin titleCase, que convertiría
+         "SAC" en "Sac". -->
+    <div class="flex flex-wrap items-center gap-[8px]">
+      <span class="text-[15px] font-semibold text-gray-800">{{ razonSocial.nombre }}</span>
+      <span *ngIf="razonSocial.ruc"
+            class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#EAF6FF] text-[#0B6BA8] font-medium whitespace-nowrap">
+        RUC {{ razonSocial.ruc }}
+      </span>
+      <span *ngIf="razonSocial.esAbril"
+            class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#EEF8E2] text-[#3F7A04] font-medium whitespace-nowrap">
+        Abril
+      </span>
+    </div>
+
+    <div *ngIf="trabajadores.length > 0" class="w-full">
+      <app-search-input
+        placeholder="Buscar por nombre, correo o tipo de ubicación..."
+        [(value)]="searchText"
+        (valueChange)="onSearchChange()"
+        width="100%">
+      </app-search-input>
+    </div>
+
+    <div class="abril-table-wrap max-h-[46vh]">
+      <table class="abril-table abril-table--th-center">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Trabajador</th>
+            <th class="w-[180px]">Tipo de ubicación</th>
+            <th class="w-[240px]">Correo corporativo</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <tr *ngIf="filteredTrabajadores.length === 0">
+            <td colspan="3" class="text-center py-[40px] text-gray-400 text-sm">
+              <ng-container *ngIf="!cargado">Cargando...</ng-container>
+              <ng-container *ngIf="cargado && trabajadores.length > 0">Sin resultados.</ng-container>
+              <ng-container *ngIf="cargado && trabajadores.length === 0">
+                Ningún trabajador está en Abril bajo esta razón social.
+              </ng-container>
+            </td>
+          </tr>
+
+          <tr *ngFor="let t of pagedTrabajadores"
+              class="border-b hover:bg-gray-50"
+              style="border-color:var(--color-abril-border)">
+
+            <td class="text-gray-700">{{ t.nombreCompleto | titleCase }}</td>
+
+            <!-- Sale de obra_oficina_staff_id. Sin titleCase: los nombres del catálogo ya vienen
+                 capitalizados. -->
+            <td class="text-center">
+              <span *ngIf="t.tipoUbicacionNombre"
+                    class="text-[11px] px-[10px] py-[3px] rounded-full font-medium whitespace-nowrap"
+                    [ngClass]="tipoUbicacionClase(t.tipoUbicacionId)">
+                {{ t.tipoUbicacionNombre }}
+              </span>
+              <span *ngIf="!t.tipoUbicacionNombre" class="text-[11px] text-gray-400 italic">
+                Sin tipo de ubicación
+              </span>
+            </td>
+
+            <td class="text-gray-700">
+              <span *ngIf="t.emailCorporativo">{{ t.emailCorporativo }}</span>
+              <span *ngIf="!t.emailCorporativo" class="text-gray-400 italic">Sin correo</span>
+            </td>
+
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="totalPages > 1" class="max-w-[440px]">
+      <app-paginator
+        [totalRecords]="filteredTrabajadores.length"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="changePage($event)">
+      </app-paginator>
+    </div>
+
+  </div>
+
+</app-base-modal>

@@ -6,6 +6,7 @@ import {
   RazonSocial,
   RazonSocialBandeja,
   RazonSocialCreate,
+  RazonSocialTrabajador,
   RazonSocialUpdate,
   SunatContributor,
 } from '../dtos/razon-social.dto';
@@ -24,6 +25,17 @@ export class RazonSocialService {
   /** Carga inicial: tabla + catálogo de bancos, en una sola petición. */
   getBandeja(): Observable<RazonSocialBandeja> {
     return this.http.get<RazonSocialBandeja>(this.apiUrl, { headers: this.headers });
+  }
+
+  /**
+   * Trabajadores de la razón social, para el modal de detalle. Va aparte de la bandeja a
+   * propósito: una razón social puede tener cientos de fichas y el detalle casi nunca se abre,
+   * así que la carga inicial solo trae el conteo.
+   */
+  getTrabajadores(id: number): Observable<RazonSocialTrabajador[]> {
+    return this.http.get<RazonSocialTrabajador[]>(`${this.apiUrl}/${id}/trabajadores`, {
+      headers: this.headers,
+    });
   }
 
   /** Consulta de RUC a SUNAT para el alta. */

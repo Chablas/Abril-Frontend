@@ -14,6 +14,7 @@ import { RazonSocialService } from '../services/razon-social.service';
 import { BancoOpcion, RazonSocial } from '../dtos/razon-social.dto';
 import { RazonSocialCreateModal } from './razon-social-create/razon-social-create';
 import { RazonSocialEditModal } from './razon-social-edit/razon-social-edit';
+import { RazonSocialTrabajadoresModal } from './razon-social-trabajadores/razon-social-trabajadores';
 
 /**
  * Configuración → Razones Sociales: las empresas del sistema, propias y de terceros.
@@ -28,6 +29,7 @@ import { RazonSocialEditModal } from './razon-social-edit/razon-social-edit';
   imports: [
     CommonModule, FormsModule, Paginator, SearchInput, SearchSelect,
     AbrilPageHeaderComponent, RazonSocialCreateModal, RazonSocialEditModal,
+    RazonSocialTrabajadoresModal,
   ],
   templateUrl: './razones-sociales.html',
   styleUrl: './razones-sociales.css',
@@ -63,6 +65,8 @@ export class RazonesSociales implements OnInit, OnDestroy {
   editModalOpen = false;
   editItem: RazonSocial | null = null;
   createModalOpen = false;
+  /** Razón social cuyo detalle de trabajadores está abierto. `null` = modal cerrado. */
+  trabajadoresItem: RazonSocial | null = null;
 
   private searchChange$ = new Subject<string>();
   private destroy$ = new Subject<void>();
@@ -174,6 +178,15 @@ export class RazonesSociales implements OnInit, OnDestroy {
   onCreated(): void {
     this.createModalOpen = false;
     this.load();
+  }
+
+  /** Detalle con los trabajadores de la razón social: la fila entera lo abre. */
+  openTrabajadoresModal(item: RazonSocial): void {
+    this.trabajadoresItem = item;
+  }
+
+  closeTrabajadoresModal(): void {
+    this.trabajadoresItem = null;
   }
 
   openEditModal(item: RazonSocial): void {

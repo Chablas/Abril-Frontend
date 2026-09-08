@@ -19,6 +19,30 @@ export interface RazonSocial {
   /** Banco con el que trabaja. Solo lo tienen las del grupo. */
   bancoId: number | null;
   bancoNombre: string | null;
+  /**
+   * Trabajadores que hoy están en Abril bajo esta razón social. No es el histórico: deja fuera a
+   * los retirados y a las fichas de pre-ingreso (`workers_estado.esta_adentro`). Solo el conteo —
+   * quiénes son se piden al abrir el detalle, ver `RazonSocialTrabajador`.
+   */
+  cantidadTrabajadores: number;
+}
+
+/**
+ * Fila del detalle «trabajadores de esta razón social». Es una ficha de `workers`, no una persona:
+ * quien reingresó tiene más de una y las dos salen si ambas apuntan a esta razón social — a
+ * propósito, para que la lista cuadre con `cantidadTrabajadores`.
+ */
+export interface RazonSocialTrabajador {
+  workerId: number;
+  nombreCompleto: string;
+  emailCorporativo: string | null;
+  /**
+   * Tipo de ubicación del trabajador (catálogo `workers_obra_oficina_staff`): Obra, Staff,
+   * Oficina Central o Personal Externo. No confundir con la ubicación de trabajo del formulario
+   * de onboarding, que es otro catálogo. `null` en las fichas que nunca lo tuvieron cargado.
+   */
+  tipoUbicacionId: number | null;
+  tipoUbicacionNombre: string | null;
 }
 
 /** Una opción del desplegable «Banco». */
