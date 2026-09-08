@@ -19,14 +19,10 @@
       <div class="grid-2">
         <div>
           <label class="field-label">Tipo *</label>
-          @if (!esOficinaStaff) {
-            <select class="field-input" [(ngModel)]="model.tipo">
-              <option value="SCTR">SCTR</option>
-              <option value="VIDA_LEY">Vida Ley</option>
-            </select>
-          } @else {
-            <div class="tipo-badge-vidaley">Vida Ley</div>
-          }
+          <select class="field-input" [(ngModel)]="model.tipo">
+            <option value="SCTR">SCTR</option>
+            <option value="VIDA_LEY">Vida Ley</option>
+          </select>
           <div class="ostaff-toggle-wrap">
             <label class="ostaff-toggle" [class.ostaff-toggle--on]="esOficinaStaff">
               <input type="checkbox" [(ngModel)]="esOficinaStaff" (change)="onEsOficinaStaffChange()" />
