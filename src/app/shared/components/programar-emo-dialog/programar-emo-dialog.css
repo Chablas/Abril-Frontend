@@ -86,8 +86,8 @@
   color: #6b7280;
 }
 
-/* Sin cupos no se bloquea la cita (la razón social puede estar por ampliarse), pero tiene que
-   verse: es la misma advertencia que da Reclutamiento al asignarla. */
+/* Sin cupos no se puede guardar (elegirla acá se la asigna a la ficha), así que el aviso explica
+   por qué el botón quedó apagado. Es la misma advertencia que da Reclutamiento al asignarla. */
 .razon-hint--warn {
   margin-top: 6px;
   color: #b91c1c;

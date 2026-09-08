@@ -1,0 +1,142 @@
+<app-abril-page-header
+  badge="CONFIGURACIÓN"
+  titulo="Razones Sociales"
+  subtitulo="Empresas del grupo Abril y de terceros."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: 'Nueva razón social', icono: 'ti-plus' }"
+  (primaryClick)="openCreateModal()">
+</app-abril-page-header>
+
+<section class="p-6 space-y-4 flex-1 min-h-0">
+
+  <div class="filters-card">
+    <div class="filters-grid">
+      <div class="filter-search">
+        <label class="filter-label">Buscar</label>
+        <app-search-input
+          width="100%"
+          placeholder="Razón social o RUC"
+          [value]="filters.search"
+          (valueChange)="onSearchChange($event)">
+        </app-search-input>
+      </div>
+
+      <div>
+        <label class="filter-label">Grupo</label>
+        <app-search-select
+          [options]="grupoOptions" valueField="value" displayField="label"
+          placeholder="Todas" [showLabel]="false" [allowClear]="false" [sortAlpha]="false"
+          [value]="filters.grupo" (valueChange)="onGrupoChange($event)">
+        </app-search-select>
+      </div>
+
+      <div>
+        <label class="filter-label">Estado</label>
+        <app-search-select
+          [options]="estadoOptions" valueField="value" displayField="label"
+          placeholder="Todos" [showLabel]="false" [allowClear]="false" [sortAlpha]="false"
+          [value]="filters.estado" (valueChange)="onEstadoChange($event)">
+        </app-search-select>
+      </div>
+    </div>
+
+    <div *ngIf="hasActiveFilters" class="pt-2">
+      <button type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Razón Social</th>
+            <th>RUC</th>
+            <th>Tipo Actividad</th>
+            <th>Dirección</th>
+            <th>Banco</th>
+            <th class="text-center">Trabajadores</th>
+            <th>Estado</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- La fila abre el detalle con los trabajadores de la razón social. La celda de
+               acciones corta la propagación para no abrirlo al usar «Editar». -->
+          <tr *ngFor="let item of pageItems"
+              class="row-clickable"
+              (click)="openTrabajadoresModal(item)"
+              title="Ver los trabajadores de esta razón social">
+            <td class="font-semibold text-gray-800">
+              {{ item.nombre }}
+              <!-- La marca de grupo va pegada al nombre y no en su propia columna: es una
+                   propiedad de la empresa, no un dato aparte que se lea en vertical. -->
+              <span *ngIf="item.esAbril" class="badge chip-lime ml-2">Abril</span>
+            </td>
+            <td class="text-gray-600">{{ item.ruc || '—' }}</td>
+            <td class="text-gray-600">{{ item.tipoActividad || '—' }}</td>
+            <td class="text-gray-600">{{ item.direccion || '—' }}</td>
+            <td class="text-gray-600">{{ item.bancoNombre || '—' }}</td>
+            <!-- Solo los que están en Abril hoy: los retirados no cuentan. -->
+            <td class="text-center">
+              <span *ngIf="item.cantidadTrabajadores > 0" class="badge chip-teal">
+                {{ item.cantidadTrabajadores }} trabajador(es)
+              </span>
+              <span *ngIf="item.cantidadTrabajadores === 0" class="text-gray-300">—</span>
+            </td>
+            <td>
+              <span class="badge border" [ngClass]="item.activo ? 'chip-green' : 'chip-gray'">
+                {{ item.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="text-right" (click)="$event.stopPropagation()">
+              <div class="row-actions">
+                <button type="button" class="btn-chip chip-blue" (click)="openEditModal(item)">
+                  Editar
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && pageItems.length === 0">
+            <td colspan="8" class="empty-row">
+              {{ hasActiveFilters
+                 ? 'Ninguna razón social coincide con los filtros.'
+                 : 'Sin razones sociales registradas.' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="totalRecords > 0" class="paginator-wrapper">
+      <app-paginator
+        [totalRecords]="totalRecords"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="onPageChange($event)"
+      ></app-paginator>
+    </div>
+  </div>
+</section>
+
+<app-razon-social-create
+  *ngIf="createModalOpen"
+  [bancos]="bancos"
+  (closed)="closeCreateModal()"
+  (saved)="onCreated()"
+></app-razon-social-create>
+
+<app-razon-social-trabajadores
+  *ngIf="trabajadoresItem"
+  [razonSocial]="trabajadoresItem!"
+  (closed)="closeTrabajadoresModal()"
+></app-razon-social-trabajadores>
+
+<app-razon-social-edit
+  *ngIf="editModalOpen && editItem"
+  [open]="editModalOpen"
+  [razonSocial]="editItem!"
+  [bancos]="bancos"
+  (closed)="closeEditModal()"
+  (saved)="onEdited($event)"
+></app-razon-social-edit>

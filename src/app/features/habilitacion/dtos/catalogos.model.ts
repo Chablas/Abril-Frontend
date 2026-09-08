@@ -92,7 +92,7 @@ export interface AreaArbolRevisorProyectoDto {
  */
 export interface JefeCandidatoDto {
   workerId: number;
-  /** Persona del candidato, para descartar al propio trabajador aunque su ficha sea otra. */
+  /** Persona del candidato (una persona puede tener varias fichas en `workers` por reingreso). */
   personId?: number | null;
   fullName?: string | null;
   email?: string | null;

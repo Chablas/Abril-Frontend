@@ -101,6 +101,13 @@ const G = {
     '<path d="M2.4 9.4 12 3.8l9.6 5.6"/>' +
     '<path d="M4.8 9.8v8.8M9.6 9.8v8.8M14.4 9.8v8.8M19.2 9.8v8.8"/>' +
     '<path d="M2.6 18.8h18.8M3.8 21.6h16.4"/>',
+  // Documentación que el colaborador tiene que enviar (fila del correo de bienvenida): una hoja
+  // con un clip. La hoja sola ya la usa `formulario` en la cabecera del mismo correo, y dos hojas
+  // iguales en el mismo mensaje no se distinguen.
+  documentos:
+    '<path d="M13.6 2.4H6.4a2.4 2.4 0 0 0-2.4 2.4v14.4a2.4 2.4 0 0 0 2.4 2.4h11.2a2.4 2.4 0 0 0 2.4-2.4V8.8Z"/>' +
+    '<path d="M13.6 2.4v6.4H20"/>' +
+    '<path d="M7.6 13.2h8.8M7.6 17h5.6"/>',
   plazo:
     '<path d="M5.6 2.2h12.8M5.6 21.8h12.8"/>' +
     '<path d="M7.4 2.2v4.4c0 1.1.5 2.1 1.3 2.8L12 12l-3.3 2.6c-.8.7-1.3 1.7-1.3 2.8v4.4"/>' +
@@ -135,6 +142,13 @@ const G = {
     '<path d="M14.2 2.4H6.8a2.4 2.4 0 0 0-2.4 2.4v14.4a2.4 2.4 0 0 0 2.4 2.4h10.4a2.4 2.4 0 0 0 2.4-2.4V7.6Z"/>' +
     '<path d="M14.2 2.4v5.2h5.4"/>' +
     '<path d="M12 10.6v4.6M12 18.6h.02"/>',
+  // Bienvenida al equipo (cabecera del correo de onboarding): la puerta con la flecha que entra.
+  // No es un corazón ni una estrella —esas ya son `gracias` y `finalista`, del final del proceso
+  // de selección—: acá lo que pasa es que alguien entra a la empresa.
+  bienvenida:
+    '<path d="M13.8 2.6h4.2a2.4 2.4 0 0 1 2.4 2.4v14a2.4 2.4 0 0 1-2.4 2.4h-4.2"/>' +
+    '<path d="M9.4 16.6 14 12 9.4 7.4"/>' +
+    '<path d="M14 12H3.4"/>',
   // Carta oferta: la misma hoja de `formulario`/`correccion` (son la misma familia de documentos)
   // pero firmada — la rúbrica del final es lo que la distingue y es justo lo que el correo pide.
   carta:
@@ -194,6 +208,7 @@ const ICONOS = {
   'req-vistobueno': svgFila(G.vistobueno),
   'req-plazo': svgFila(G.plazo),
   'onb-empresa': svgFila(G.empresa),
+  'onb-documentos': svgFila(G.documentos),
 
   // Cabecera (44px en el correo)
   'req-aprobada': svgAro(G.aprobada),
@@ -206,6 +221,7 @@ const ICONOS = {
   'req-formulario': svgAro(G.formulario),
   'req-correccion': svgAro(G.correccion),
   'onb-carta': svgAro(G.carta),
+  'onb-bienvenida': svgAro(G.bienvenida),
 
   // Franja (40px en el correo)
   'req-check': svgFranja(G.franjaCheck, VERDE),

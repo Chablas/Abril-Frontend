@@ -1,10 +1,9 @@
-﻿import {
-  ConsolidadoS10Ambito,
-  ConsolidadoS10Dto,
-} from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+﻿import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 
 export interface GestionSalidaListItemDto {
   id: number;
+  /** Código SOL-AAAA-NNNN. Null solo en solicitudes anteriores a la columna. */
+  codigo: string | null;
   workerId: number;
   trabajador: string;
   /**
@@ -18,7 +17,8 @@ export interface GestionSalidaListItemDto {
    */
   revisorNombre: string | null;
   fechaSalida: string;
-  horaSalida: string;
+  /** Null cuando el motivo no pide horario. */
+  horaSalida: string | null;
   horaRetorno: string | null;
   motivo: string;
   lugarOrigen: string | null;
@@ -28,6 +28,25 @@ export interface GestionSalidaListItemDto {
   estadoRendicion: string;
   createdAt: string;
   puedeRendirse: boolean;
+  /**
+   * True si al menos un trayecto lleva un motivo marcado como reembolsable en
+   * Configuración → Motivos. Sin eso la salida no genera gasto de movilidad y no hay qué rendir.
+   */
+  esReembolsable: boolean;
+  /**
+   * Último día para rendir esta salida (YYYY-MM-DD): el N.º día hábil del mes siguiente al de su (N sale de
+   * Mis Rendiciones → Configuración → Días reembolsables)
+   * fecha de salida, sin sábados, domingos ni los feriados de Configuración → Feriados.
+   */
+  plazoRendicionHasta: string;
+  /** True si el plazo ya pasó: la salida ya no se rinde, pero su detalle se sigue viendo. */
+  plazoVencido: boolean;
+  /**
+   * True si la salida está lista para rendirse: aprobada, no rendida, con los trayectos cubiertos
+   * (`puedeRendirse`), con motivo reembolsable (`esReembolsable`) y dentro del plazo. Lo calcula el
+   * backend: es la misma condición que usan el desplegable "Mes a rendir" y las tarjetas.
+   */
+  aptaParaRendir: boolean;
   /** Hora real de salida registrada por recepción ("HH:mm:ss") — dato extra. */
   horaSalidaReal: string | null;
   /** Hora real de retorno registrada por recepción ("HH:mm:ss") — dato extra. */
@@ -38,8 +57,11 @@ export interface GestionSalidaListItemDto {
    */
   esHoraEstimada: boolean;
   /**
-   * True si el usuario logueado puede aprobar/rechazar esta salida. False cuando es su propia
-   * salida y no es Gerente (nadie aprueba lo suyo salvo gerentes). No afecta la rendición.
+   * True si el usuario logueado puede aprobar/rechazar esta salida, o sea si es su revisor: el
+   * jefe personalizado del trabajador, el revisor que sale de su área subiendo por el árbol, o
+   * cualquiera de GTH cuando la resolución cayó al fallback del área de GTH. Ver la salida no
+   * alcanza: el alcance por área da a ver una rama (un gerente, recepción), decidirla es solo del
+   * revisor. Lo calcula y lo re-valida el backend. No afecta la rendición.
    */
   puedeDecidir: boolean;
   /**
@@ -48,15 +70,10 @@ export interface GestionSalidaListItemDto {
    */
   esPropia: boolean;
 
-  // ── Consolidado del S10 (solo salidas rendidas) ──────────────────────
-  /** URL del PDF Consolidado del S10 vigente, o null si aún no se adjuntó. */
-  consolidadoS10Url: string | null;
-  /** Nombre del archivo del consolidado vigente. Null si no hay. */
-  consolidadoS10Filename: string | null;
-  /** "Rendicion" (cubre toda la planilla) | "Solicitud" (solo esta salida) | null si no hay. */
-  consolidadoS10Ambito: ConsolidadoS10Ambito | null;
-
   // ── Reembolso ────────────────────────────────────────────────────────
+  // Solo informativo acá: adjuntar el Consolidado del S10, decidir el reembolso y firmar la
+  // planilla son de Gestión de Rendiciones, y el pago de Reembolsos (Tesorería).
+
   /**
    * Eje aparte de la aprobación de la salida y de la rendición: es el visto bueno al GASTO.
    * "Pendiente" | "Aprobado" | "Rechazado" | "Firmado" | "Pagado".
@@ -64,7 +81,7 @@ export interface GestionSalidaListItemDto {
   estadoReembolso: EstadoReembolso;
   /**
    * True cuando ya hay algo que revisar: la salida está rendida y tiene adjunto el Consolidado
-   * del S10. Es lo que habilita Aprobar/Rechazar reembolso.
+   * del S10. Acá solo sirve para no pintar un badge "Pendiente" engañoso.
    */
   reembolsoRevisable: boolean;
   /** Observación del último rechazo — lo que el trabajador tiene que subsanar. */
@@ -72,10 +89,6 @@ export interface GestionSalidaListItemDto {
   /** Nombre de quien aprobó/rechazó el reembolso. */
   reembolsoDecididoPor: string | null;
   reembolsoDecididoAt: string | null;
-  /** Última vez que el trabajador avisó al revisor que ya adjuntó el S10. */
-  revisorNotificadoAt: string | null;
-  /** webUrl de la planilla de rendición ya FIRMADA. Null mientras nadie la firme. */
-  planillaFirmadaUrl: string | null;
 }
 
 /** Los cinco estados por los que pasa el reembolso de una salida rendida. */
@@ -90,16 +103,49 @@ export interface PagedResponseDto<T> {
   data: T[];
 }
 
+/**
+ * Respuesta del listado: la página de la tabla más los números de las tarjetas, contados sobre
+ * todo el conjunto filtrado (no sobre la página). Van juntos para que un cambio de filtro se
+ * resuelva en una sola petición.
+ */
+export interface GestionSalidaPagedDto extends PagedResponseDto<GestionSalidaListItemDto> {
+  resumen: ResumenRendicionDto;
+}
+
 export interface GestionSalidaFilterDataDto {
   trabajadores: TrabajadorOptionDto[];
   lugaresProyecto: LugarProyectoOptionDto[];
   /** Árbol area_scope (lista plana) para el filtro de área en cascada. */
   areaTree: AreaNodeDto[];
+  /** Meses que ofrece el desplegable "Mes a rendir" (los que tienen algo apto). */
+  mesesRendicion: MesRendicionDto[];
+}
+
+/** Un mes del desplegable "Mes a rendir". */
+export interface MesRendicionDto {
+  anio: number;
+  mes: number;
+  /** "Agosto 2026" — ya viene capitalizado del backend. */
+  label: string;
+  /** Cuántas solicitudes aptas para rendir tiene ese mes dentro del alcance del usuario. */
+  cantidad: number;
   /**
-   * True si el usuario entra en modo TESORERÍA (rol TESORERO + puesto de categoría Tesorero).
-   * Lo decide el backend: el frontend solo ve el rol del token, y la categoría vive en la base.
+   * Último día para rendir ese mes (YYYY-MM-DD): el N.º día hábil del mes siguiente, con N
+   * configurable en Mis Rendiciones → Configuración → Días reembolsables. Solo se
+   * ofrecen meses cuyo plazo sigue abierto, así que siempre es de hoy en adelante.
    */
-  esTesorero: boolean;
+  fechaLimite: string;
+}
+
+/**
+ * Números de las tarjetas del encabezado. Se cuentan sobre el MISMO conjunto filtrado que alimenta
+ * la tabla —todas las páginas, no solo la visible—, así que acompañan a la búsqueda: por eso
+ * viajan con el listado y no con los datos de los filtros.
+ */
+export interface ResumenRendicionDto {
+  aptasParaRendir: number;
+  capturasIncompletas: number;
+  observadas: number;
 }
 
 /** Nodo del árbol area_scope; el frontend arma la jerarquía a partir de la lista plana. */
@@ -148,7 +194,8 @@ export interface GestionSalidaAdjuntoDto {
 export interface GestionSalidaTrayectoDto {
   id: number;
   orden: number;
-  horaSalida: string;
+  /** Null cuando el motivo no pide horario. */
+  horaSalida: string | null;
   horaRetorno: string | null;
   motivo: string;
   /** Detalle que acompaña al motivo cuando este lo exige. Null si no aplica. */
@@ -162,10 +209,18 @@ export interface GestionSalidaTrayectoDto {
   montoCatalogo: number | null;
   /** Monto efectivo: suma capturas o montoCatalogo. */
   montoTotal: number;
+  /**
+   * Si el trayecto genera reembolso de movilidad: lo concede el motivo del catálogo
+   * (Configuración → Motivos) y el par (origen, destino) puede anularlo, nunca al revés.
+   * Null con motivo libre: no está en el catálogo, no tiene el flag y no se pinta el pill.
+   */
+  esReembolsable: boolean | null;
 }
 
 export interface GestionSalidaDetalleDto {
   id: number;
+  /** Código SOL-AAAA-NNNN. Null solo en solicitudes anteriores a la columna. */
+  codigo: string | null;
   workerId: number;
   trabajador: string;
   /** Área más baja del trabajador (último nodo de `areaRuta`). */
@@ -184,6 +239,11 @@ export interface GestionSalidaDetalleDto {
   estadoRendicion: string;
   createdAt: string;
   motivoRechazo: string | null;
+  /**
+   * True si quien abre el detalle es el revisor de esta salida — lo único que hace aparecer los
+   * botones de aprobar/rechazar del modal. Misma regla que `puedeDecidir` del listado.
+   */
+  puedeDecidir: boolean;
 
   // ── Reembolso ────────────────────────────────────────────────────────
   estadoReembolso: EstadoReembolso;
@@ -199,12 +259,4 @@ export interface GestionSalidaDetalleDto {
   /** Consolidado del S10 vigente (propio de la salida o heredado de su planilla). Null si no hay. */
   consolidadoS10: ConsolidadoS10Dto | null;
   trayectos: GestionSalidaTrayectoDto[];
-}
-
-/** Resultado de una acción en bloque sobre el reembolso (aprobar, rechazar, firmar, pagar). */
-export interface ReembolsoBulkResultDto {
-  procesadas: number;
-  /** Cuántas planillas distintas se firmaron. Solo lo llena la acción de firmar. */
-  planillasFirmadas: number;
-  message: string;
 }

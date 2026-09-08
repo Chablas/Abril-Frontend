@@ -1,0 +1,355 @@
+<div class="cf-page">
+  <div class="cf-shell">
+
+    <!-- ── Cargando ─────────────────────────────────────────────────────── -->
+    @if (cargando) {
+      <div class="cf-card cf-state">
+        <div class="cf-spinner"></div>
+        <p class="cf-state-text">Cargando formulario…</p>
+      </div>
+    }
+
+    <!-- ── Error / token inválido ───────────────────────────────────────── -->
+    @else if (errorCarga) {
+      <div class="cf-card cf-state">
+        <img class="cf-state-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
+        <i class="ti ti-alert-circle cf-state-icon" style="color:#B91C1C"></i>
+        <h2 class="cf-state-title">No pudimos abrir el formulario</h2>
+        <p class="cf-state-text">{{ mensajeError }}</p>
+      </div>
+    }
+
+    <!-- ── Enviado (agradecimiento) ─────────────────────────────────────── -->
+    @else if (enviado) {
+      <div class="cf-card cf-state">
+        <img class="cf-state-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
+        <i class="ti ti-circle-check cf-state-icon" style="color:var(--color-abril-primary-dark)"></i>
+        <h2 class="cf-state-title">¡Formulario enviado!</h2>
+        <p class="cf-state-text">
+          Gracias por completar tu información. El equipo de Gestión del Talento Humano se pondrá en
+          contacto contigo para coordinar tu examen médico y los siguientes pasos de tu ingreso.
+        </p>
+      </div>
+    }
+
+    <!-- ── Ya enviado antes (solo lectura) ──────────────────────────────── -->
+    @else if (data?.soloLectura) {
+      <div class="cf-card cf-state">
+        <img class="cf-state-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
+        <i class="ti ti-lock cf-state-icon" style="color:var(--color-abril-primary-dark)"></i>
+        <h2 class="cf-state-title">Formulario ya enviado</h2>
+        <p class="cf-state-text">
+          Ya recibimos tu información y no admite más cambios. Si necesitas corregir algo, escríbele
+          al equipo de Gestión del Talento Humano.
+        </p>
+      </div>
+    }
+
+    <!-- ── Formulario (7 pasos) ─────────────────────────────────────────── -->
+    @else if (data) {
+      <!-- Encabezado de marca -->
+      <div class="cf-card cf-header">
+        <img class="cf-logo" src="/images/abril-logo.png" alt="Abril Grupo Inmobiliario" />
+        <h1 class="cf-title">Formulario · Nuevos Talentos</h1>
+        <p class="cf-intro">
+          ¡Hola {{ data.nombre }}! Estamos muy contentos de que te unas a nuestro equipo. Para
+          preparar tu llegada necesitamos algunos datos: te tomará solo unos minutos. Los campos
+          marcados con <span style="color:#B91C1C">*</span> son obligatorios.
+        </p>
+
+        @if (data.fechaLimite) {
+          <p class="cf-plazo">
+            <i class="ti ti-clock"></i>
+            Tienes hasta el <b>{{ data.fechaLimite | date: 'dd/MM/yyyy' }}</b> para enviarlo.
+          </p>
+        }
+
+        <!-- Indicador de pasos -->
+        <div class="cf-steps">
+          @for (nombre of pasosNombres; track $index) {
+            <div class="cf-step"
+                 [class.cf-step--active]="paso === $index + 1"
+                 [class.cf-step--done]="paso > $index + 1">
+              <span class="cf-step-circle">
+                @if (paso > $index + 1) { <i class="ti ti-check"></i> } @else { {{ $index + 1 }} }
+              </span>
+              <span class="cf-step-label">{{ nombre }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Cuerpo del paso -->
+      <div class="cf-card cf-body">
+
+        <!-- ── Paso 1 · Datos personales ──────────────────────────────────
+             Lo que ya nos diste en tu postulación va en el panel de arriba, en
+             solo lectura: acá abajo solo se pide lo que todavía no tenemos. -->
+        @if (paso === 1) {
+          <h2 class="cf-section-title">Datos personales</h2>
+          <p class="cf-section-hint">
+            Verifica los datos que ya tenemos registrados. Si algo no está correcto, avísale al
+            equipo de Gestión del Talento Humano.
+          </p>
+
+          <dl class="cf-datos">
+            <div class="cf-dato">
+              <dt>Nombres y apellidos</dt>
+              <dd>{{ data.datosRegistrados.nombresCompletos || '—' }}</dd>
+            </div>
+            <div class="cf-dato">
+              <dt>{{ data.datosRegistrados.tipoDocumento || 'Documento' }}</dt>
+              <dd>{{ data.datosRegistrados.numeroDocumento || '—' }}</dd>
+            </div>
+            <div class="cf-dato">
+              <dt>Fecha de nacimiento</dt>
+              <dd>
+                {{ data.datosRegistrados.fechaNacimiento
+                   ? (data.datosRegistrados.fechaNacimiento | date: 'dd/MM/yyyy') : '—' }}
+              </dd>
+            </div>
+            <div class="cf-dato">
+              <dt>Celular</dt>
+              <dd>{{ data.datosRegistrados.numeroCelular || '—' }}</dd>
+            </div>
+            <div class="cf-dato">
+              <dt>Distrito de residencia</dt>
+              <dd>{{ data.datosRegistrados.distrito || '—' }}</dd>
+            </div>
+            <div class="cf-dato">
+              <dt>Estado civil</dt>
+              <dd>{{ data.datosRegistrados.estadoCivil || '—' }}</dd>
+            </div>
+          </dl>
+
+          <div class="cf-grid">
+            <div class="abril-field cf-col-2">
+              <label class="abril-field-label">Dirección de domicilio actual <span class="cf-req">*</span></label>
+              <input type="text" class="abril-field-input" [(ngModel)]="model.direccion"
+                     name="direccion" autocomplete="street-address"
+                     placeholder="Calle / avenida, número, referencia" />
+            </div>
+          </div>
+        }
+
+        <!-- ── Paso 2 · Información laboral ───────────────────────────────
+             Viene precargado con lo que ya se pactó: el colaborador confirma en
+             vez de transcribir el correo de bienvenida. -->
+        @if (paso === 2) {
+          <h2 class="cf-section-title">Información laboral</h2>
+          <p class="cf-section-hint">
+            Confirma las condiciones de tu ingreso, tal como figuran en el correo que te enviamos.
+          </p>
+
+          <div class="cf-grid">
+            <app-search-select label="Puesto al que ingresas *" [options]="puestos" valueField="id" displayField="nombre"
+              [value]="model.puestoId" (valueChange)="model.puestoId = $event"
+              placeholder="Busca tu puesto" [color]="accent"></app-search-select>
+
+            <!-- dense + floatingLabel: mismas medidas (34px) y mismo label flotante que
+                 app-search-select, para que la fecha no quede más alta que el combo de al lado. -->
+            <app-date-picker label="Fecha de ingreso *" [color]="accent"
+              [dense]="true" [floatingLabel]="true"
+              [value]="model.fechaIngreso" (valueChange)="onFechaIngresoChange($event)"></app-date-picker>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Remuneración mensual (S/) <span class="cf-req">*</span></label>
+              <input type="number" min="0" step="0.01" class="abril-field-input"
+                     [(ngModel)]="model.remuneracionMensual"
+                     name="remuneracionMensual" autocomplete="off"
+                     placeholder="Ej. 4500" />
+              <p class="cf-hint">Monto bruto, sin bonos ni comisiones.</p>
+            </div>
+
+            <app-search-select label="Ubicación de trabajo *" [options]="ubicaciones" valueField="id" displayField="nombre"
+              [value]="model.ubicacionId" (valueChange)="model.ubicacionId = $event"
+              placeholder="Selecciona tu ubicación" [color]="accent" [sortAlpha]="false"></app-search-select>
+
+            <!-- rawLabel: son nombres legales (S.A.C., siglas) y el suavizado a nombre propio
+                 los deformaría. -->
+            <app-search-select label="Razón social *" [options]="razonesSociales" valueField="id" displayField="nombre"
+              [value]="model.contributorId" (valueChange)="model.contributorId = $event"
+              placeholder="Busca tu razón social" [color]="accent" [rawLabel]="true"
+              class="cf-col-2"></app-search-select>
+          </div>
+        }
+
+        <!-- ── Paso 3 · Pago de haberes ───────────────────────────────────
+             El banco no lo elige el colaborador: lo define su razón social. -->
+        @if (paso === 3) {
+          <h2 class="cf-section-title">Pago de haberes</h2>
+
+          @if (banco) {
+            <p class="cf-section-hint">
+              En <b>{{ razonSocial?.nombre }}</b> se trabaja con el banco <b>{{ banco }}</b>.
+            </p>
+
+            <div class="cf-toggle-group">
+              <p class="cf-toggle-label">
+                ¿Deseas que se te cree una cuenta sueldo en {{ banco }}? <span class="cf-req">*</span>
+              </p>
+              <div class="cf-toggle-row">
+                <button type="button" class="cf-toggle" [class.cf-toggle--on]="model.cuentaSueldo === true"
+                        (click)="setBool('cuentaSueldo', true)">Sí</button>
+                <button type="button" class="cf-toggle" [class.cf-toggle--on]="model.cuentaSueldo === false"
+                        (click)="setBool('cuentaSueldo', false)">No</button>
+              </div>
+            </div>
+          } @else {
+            <div class="cf-nota">
+              <i class="ti ti-info-circle cf-nota-icon"></i>
+              <p>
+                Tu razón social todavía no tiene un banco asignado, así que este paso no aplica.
+                El equipo de Gestión del Talento Humano coordinará contigo el pago de tus haberes.
+              </p>
+            </div>
+          }
+        }
+
+        <!-- ── Paso 4 · Información personal complementaria ───────────────── -->
+        @if (paso === 4) {
+          <h2 class="cf-section-title">Información complementaria</h2>
+          <div class="cf-grid">
+            <app-search-select label="Género *" [options]="sexos" valueField="id" displayField="nombre"
+              [value]="model.sexoId" (valueChange)="model.sexoId = $event"
+              placeholder="Selecciona tu género" [color]="accent" [sortAlpha]="false"></app-search-select>
+
+            <!-- El valor del combo es el `id` de la opción, no la cantidad: app-search-select trata
+                 el 0 como "sin selección" y «0 hijos» se vería como un campo vacío. -->
+            <app-search-select label="Número de hijos *" [options]="opcionesHijos" valueField="id" displayField="nombre"
+              [value]="opcionHijos" (valueChange)="onHijosChange($event)"
+              placeholder="Selecciona" [color]="accent" [sortAlpha]="false"></app-search-select>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Contacto de emergencia <span class="cf-req">*</span></label>
+              <input type="text" class="abril-field-input" [(ngModel)]="model.contactoEmergencia"
+                     name="contactoEmergencia" autocomplete="off"
+                     placeholder="Ej. María Pérez (madre)" />
+              <p class="cf-hint">Escribe su nombre completo y su parentesco contigo.</p>
+            </div>
+
+            <div class="abril-field">
+              <label class="abril-field-label">Celular del contacto de emergencia <span class="cf-req">*</span></label>
+              <input type="text" class="abril-field-input" [ngModel]="model.celularEmergencia"
+                     (input)="onCelularEmergenciaInput($event)"
+                     name="celularEmergencia" autocomplete="off"
+                     [attr.maxlength]="celularLargo" inputmode="numeric"
+                     placeholder="Ej. 987654321" />
+            </div>
+
+            <!-- uppercase: las tallas son códigos (XS, S, M…) y el suavizado a nombre propio
+                 las convertiría en "Xs" / "Xxl". -->
+            <app-search-select label="Talla de botas *" [options]="tallasCalzado" valueField="id" displayField="nombre"
+              [value]="model.tallaCalzadoId" (valueChange)="model.tallaCalzadoId = $event"
+              placeholder="Selecciona tu talla" [color]="accent" [sortAlpha]="false"></app-search-select>
+
+            <app-search-select label="Talla de blusa o camisa *" [options]="tallas" valueField="id" displayField="nombre"
+              [value]="model.tallaId" (valueChange)="model.tallaId = $event"
+              placeholder="Selecciona tu talla" [color]="accent" [sortAlpha]="false"
+              [uppercase]="true"></app-search-select>
+
+            <div class="cf-col-2 cf-toggle-group">
+              <p class="cf-toggle-label">¿Usas lentes de medida? <span class="cf-req">*</span></p>
+              <div class="cf-toggle-row">
+                <button type="button" class="cf-toggle" [class.cf-toggle--on]="model.usaLentes === true"
+                        (click)="setBool('usaLentes', true)">Sí</button>
+                <button type="button" class="cf-toggle" [class.cf-toggle--on]="model.usaLentes === false"
+                        (click)="setBool('usaLentes', false)">No</button>
+              </div>
+            </div>
+
+            <div class="abril-field cf-col-2">
+              <label class="abril-field-label">Cuéntanos tus hobbies principales <span class="cf-req">*</span></label>
+              <textarea class="abril-field-input" rows="3" [(ngModel)]="model.hobbies"
+                        name="hobbies" autocomplete="off"
+                        placeholder="Ej. correr, cocinar, tocar guitarra"></textarea>
+            </div>
+          </div>
+        }
+
+        <!-- ── Paso 5 · Renta de 5ta categoría ────────────────────────────── -->
+        @if (paso === 5) {
+          <h2 class="cf-section-title">Renta de 5ta categoría</h2>
+          <p class="cf-section-hint">
+            Presentar el certificado de renta de 5ta categoría es responsabilidad del colaborador.
+            Cuéntanos en qué situación estás para poder hacer la gestión correspondiente.
+          </p>
+
+          <div class="cf-opciones">
+            @for (o of rentaQuinta; track o.id) {
+              <button type="button" class="cf-opcion"
+                      [class.cf-opcion--on]="model.rentaQuintaId === o.id"
+                      (click)="model.rentaQuintaId = o.id">
+                <span class="cf-opcion-radio"></span>
+                <span class="cf-opcion-texto">{{ o.nombre }}</span>
+              </button>
+            }
+          </div>
+        }
+
+        <!-- ── Paso 6 · Programación del EMO ──────────────────────────────── -->
+        @if (paso === 6) {
+          <h2 class="cf-section-title">Examen Médico Ocupacional (EMO)</h2>
+          <p class="cf-section-hint">
+            Elige la fecha en la que quieres dar tu EMO de entrada. Tiene que ser antes de tu fecha
+            de ingreso. Si ya diste el examen médico, no necesitas agendar una nueva fecha.
+          </p>
+
+          <div class="cf-nota">
+            <i class="ti ti-map-pin cf-nota-icon"></i>
+            <p>
+              El examen es en la clínica <b>ServiSalud</b>, Av. Máximo Abril 552, Jesús María.
+              De lunes a sábado, con hora de entrada a las <b>07:30 a. m.</b> Ante cualquier duda o
+              reprogramación, el enfermero se comunicará contigo.
+            </p>
+          </div>
+
+          <div class="cf-grid">
+            <!-- max = fecha de ingreso: el EMO de entrada se da antes de empezar. -->
+            <app-date-picker label="Fecha del EMO *" [color]="accent"
+              [dense]="true" [floatingLabel]="true"
+              [max]="model.fechaIngreso"
+              [value]="model.fechaEmo" (valueChange)="model.fechaEmo = $event"></app-date-picker>
+          </div>
+        }
+
+        <!-- ── Paso 7 · Consentimiento y veracidad ────────────────────────── -->
+        @if (paso === 7) {
+          <h2 class="cf-section-title">Consentimiento y veracidad</h2>
+
+          <div class="cf-consent">
+            <p class="cf-toggle-label">
+              Declaro bajo juramento que la información consignada es veraz y sustentada en hechos,
+              para efectos del proceso de onboarding en Abril Grupo Inmobiliario.
+              <span class="cf-req">*</span>
+            </p>
+            <div class="cf-toggle-row">
+              <button type="button" class="cf-toggle" [class.cf-toggle--on]="model.declaracionVeracidad === true"
+                      (click)="setBool('declaracionVeracidad', true)">Sí</button>
+              <button type="button" class="cf-toggle" [class.cf-toggle--on]="model.declaracionVeracidad === false"
+                      (click)="setBool('declaracionVeracidad', false)">No</button>
+            </div>
+          </div>
+        }
+
+        <!-- Navegación -->
+        <div class="cf-nav">
+          <button type="button" class="cf-btn cf-btn--ghost" [disabled]="paso === 1 || enviando" (click)="anterior()">
+            <i class="ti ti-arrow-left"></i> Anterior
+          </button>
+
+          @if (paso < totalPasos) {
+            <button type="button" class="cf-btn cf-btn--primary" (click)="siguiente()">
+              Siguiente <i class="ti ti-arrow-right"></i>
+            </button>
+          } @else {
+            <button type="button" class="cf-btn cf-btn--primary" [disabled]="enviando" (click)="enviar()">
+              {{ enviando ? 'Enviando…' : 'Enviar formulario' }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+  </div>
+</div>

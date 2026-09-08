@@ -16,7 +16,10 @@ export class NavigationService {
       landing: '/gestion-administrativa/solicitud-salidas',
       items: [
         { label: 'Solicitud de Salidas', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
+        { label: 'Mis Rendiciones',      route: '/gestion-administrativa/rendiciones',       featureKey: 'gestion-administrativa.rendiciones' },
         { label: 'Gestión de Salidas',   route: '/gestion-administrativa/gestion-salidas',   featureKey: 'gestion-administrativa.gestion-salidas' },
+        { label: 'Gestión de Rendiciones', route: '/gestion-administrativa/gestion-rendiciones', featureKey: 'gestion-administrativa.gestion-rendiciones' },
+        { label: 'Reembolsos',           route: '/gestion-administrativa/reembolsos',        featureKey: 'gestion-administrativa.reembolsos' },
         { label: 'Delegación de Revisión', route: '/gestion-administrativa/delegacion-revision', featureKey: 'gestion-administrativa.delegacion-revision' },
       ],
       groups: [
@@ -26,9 +29,12 @@ export class NavigationService {
             { label: 'Lugares',   route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
             { label: 'Motivos',   route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
             { label: 'Trayectos', route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
+            { label: 'Capturas', route: '/gestion-administrativa/configuracion/capturas', featureKey: 'gestion-administrativa.config.capturas' },
             { label: 'Visibilidad de Salidas', route: '/gestion-administrativa/configuracion/visibilidad-salidas', featureKey: 'gestion-administrativa.config.visibilidad-salidas' },
             { label: 'Carpeta Adjuntos', route: '/gestion-administrativa/configuracion/carpeta-adjuntos', featureKey: 'gestion-administrativa.config.carpeta-adjuntos' },
-            { label: 'Correos', route: '/gestion-administrativa/configuracion/correos', featureKey: 'gestion-administrativa.config.correos' },
+            // Los correos ya no están acá: cada pantalla del flujo administra los que se
+            // originan en ella desde su propio botón «Configuración»
+            // (/gestion-administrativa/<pantalla>/configuracion).
             // Por rol y no por featureKey: la firma es de la persona, no de una funcionalidad.
             // Mismo criterio que el roleGuard de su ruta (ver gestion-administrativa.routes.ts).
             { label: 'Tu firma', route: '/gestion-administrativa/configuracion/firma', roles: [Roles.USUARIO_DE_ABRIL] },

@@ -80,6 +80,13 @@
   border: 1px solid #fcd34d;
   color: #92400e;
 }
+/* El correo de bienvenida le habla al colaborador, no a un tercero: va en el azul
+   institucional del panel y no en el ámbar de los avisos preventivos. */
+.act-box--bienvenida {
+  background: var(--color-abril-logo-blue-light);
+  border: 1px solid var(--color-abril-logo-blue);
+  color: var(--color-abril-logo-blue);
+}
 .act-box input[type='checkbox'] {
   width: 15px;
   height: 15px;
@@ -104,6 +111,56 @@
   font-weight: 600;
 }
 
+/* Campo editable dentro de una caja de detalle (la fecha límite del correo de
+   bienvenida). El ancho se acota para que el date-picker no se estire a lo largo
+   de toda la tarjeta, y el margen superior lo separa de la lista de datos. */
+.act-campo {
+  margin-top: 12px;
+  max-width: 240px;
+}
+
+/* ── Documentos adjuntos del correo de bienvenida ───────────────────────── */
+.act-adjuntos {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.act-adjuntos-titulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.act-adjuntos-opcional {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #6b7280;
+  background: #f3f4f6;
+  border-radius: 999px;
+  padding: 2px 7px;
+}
+
+.act-adjuntos-peso {
+  margin: 0;
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+/* El tope lo pone el proveedor de correo, no nosotros: pasarse no es un aviso
+   más, es que el envío no va a salir. */
+.act-adjuntos-peso--excedido {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
 /* Pie de la actividad: la frase de estado que va debajo de todo. */
 .act-pie {
   display: flex;
@@ -113,6 +170,56 @@
   margin-top: 8px;
   font-size: 11.5px;
   color: #6b7280;
+}
+
+/* ── Acción de una actividad (hoy solo el aviso al responsable de obra) ─── */
+.act-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 9px;
+}
+
+.act-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 13px;
+  border-radius: 7px;
+  border: none;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.act-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.act-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Cuándo salió el correo: es el estado de la actividad, al lado del botón. */
+.act-enviado {
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+.act-spin {
+  animation: act-spin 0.9s linear infinite;
+}
+
+@keyframes act-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Marca de "todavía no implementado". No es un estado del proceso: es una

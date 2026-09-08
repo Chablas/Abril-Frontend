@@ -1,0 +1,275 @@
+<div class="config-stack">
+
+  <!-- Aviso de estado, no explicación: la pantalla existe para que un correo nuevo entre sin
+       tocar código, así que se dice qué pasa hoy y nada más. -->
+  <div class="config-card" *ngIf="sinCorreos">
+    <p class="config-warn">
+      <i class="ti ti-mail-off"></i>
+      <span>{{ textoSinCorreos }}</span>
+    </p>
+  </div>
+
+  <!-- Una subsección por cada correo que se origina en esta pantalla. -->
+  <app-section-tabs
+    *ngIf="eventos.length > 1"
+    [tabs]="sectionTabs"
+    [value]="eventoActivoCodigo"
+    color="var(--color-abril-standard)"
+    (valueChange)="onSectionChange($event)">
+  </app-section-tabs>
+
+  <ng-container *ngIf="eventoActivo as evento">
+    <div class="config-card" [class.config-card--off]="!evento.active">
+
+      <div class="config-card__head config-card__head--row">
+        <div class="config-card__headtext">
+          <h3 class="config-card__title">
+            <i class="ti ti-mail"></i>
+            {{ evento.nombre }}
+          </h3>
+          <p class="config-card__sub" *ngIf="evento.descripcion">{{ evento.descripcion }}</p>
+        </div>
+
+        <!-- Interruptor maestro: apaga el correo completo sin perder su configuración -->
+        <div class="master" *ngIf="evento.permiteDesactivarEnvio">
+          <span class="master__label" [class.master__label--off]="!evento.active">
+            {{ evento.active ? 'Correo activo' : 'Correo desactivado' }}
+          </span>
+          <button
+            type="button"
+            class="switch"
+            role="switch"
+            [attr.aria-checked]="evento.active"
+            [attr.aria-label]="(evento.active ? 'Desactivar' : 'Activar') + ' ' + evento.nombre"
+            [class.switch--on]="evento.active"
+            [disabled]="savingEventoCodigo !== null"
+            (click)="toggleEvento(evento)">
+            <span class="switch__knob"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Avisos de estado, no explicaciones: uno solo y de una línea. -->
+      <p class="config-warn config-warn--off" *ngIf="!evento.active">
+        <i class="ti ti-mail-off"></i>
+        <span>Desactivado: este correo no se envía a nadie.</span>
+      </p>
+
+      <p class="config-warn" *ngIf="sinDestinatarios">
+        <i class="ti ti-alert-triangle"></i>
+        <span>No le llega a nadie: no hay ningún destinatario activo.</span>
+      </p>
+
+      <div class="destinatarios__head">
+        <button type="button" class="btn-add" (click)="abrirAlta()">
+          <i class="ti ti-plus"></i> Agregar destinatario
+        </button>
+      </div>
+
+      <div class="matriz-wrap">
+        <table class="matriz">
+          <thead>
+            <tr>
+              <th class="matriz__dest">Destinatario</th>
+              <th class="matriz__tipo">Recibe como</th>
+              <th class="matriz__tipo">Tipo</th>
+              <th class="matriz__switch">Activo</th>
+              <th class="matriz__acciones"></th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <!-- Destinatario principal: no es una fila de reglas, lo resuelve el backend al
+                 enviar. Se dibuja igual que los demás para que su interruptor esté al lado. -->
+            <tr *ngIf="evento.permiteDesactivarPrincipal">
+              <td class="matriz__dest">
+                <div class="dest">
+                  <span class="dest__name">
+                    {{ evento.destinatarioPrincipalNombre || 'Destinatario principal' }}
+                    <span class="dest__tag dest__tag--auto">Sistema</span>
+                  </span>
+                  <span class="dest__email dest__email--auto">
+                    <i class="ti ti-wand"></i> Lo resuelve el sistema al enviar
+                  </span>
+                </div>
+              </td>
+
+              <td class="matriz__tipo"><span class="pill">Para</span></td>
+              <td class="matriz__tipo"><span class="pill pill--cc">Automático</span></td>
+
+              <td class="matriz__switch">
+                <button
+                  type="button"
+                  class="switch"
+                  role="switch"
+                  [attr.aria-checked]="evento.destinatarioPrincipalActivo"
+                  [attr.aria-label]="(evento.destinatarioPrincipalActivo ? 'Desactivar' : 'Activar') + ' destinatario principal'"
+                  [class.switch--on]="evento.destinatarioPrincipalActivo"
+                  [disabled]="savingDestinatarioId !== null"
+                  (click)="togglePrincipal(evento)">
+                  <span class="switch__knob"></span>
+                </button>
+              </td>
+
+              <td class="matriz__acciones"></td>
+            </tr>
+
+            <tr *ngFor="let fila of evento.destinatarios; trackBy: trackFila">
+              <td class="matriz__dest">
+                <div class="dest">
+                  <span class="dest__name">{{ fila.nombre || '—' }}</span>
+
+                  <!-- Trabajador y correo a mano: la dirección es el dato -->
+                  <span class="dest__email" *ngIf="fila.email">
+                    <i class="ti ti-at"></i> {{ fila.email }}
+                  </span>
+
+                  <!-- Área: se expande a los correos de sus miembros al enviar -->
+                  <span class="dest__email" *ngIf="fila.tipoCodigo === 'AREA' && !fila.sinCorreo">
+                    <i class="ti ti-wand"></i>
+                    {{ fila.miembros }} {{ fila.miembros === 1 ? 'trabajador' : 'trabajadores' }}
+                    <span class="dest__who">· {{ fila.incluirDescendientes ? 'con sub-áreas' : 'sin sub-áreas' }}</span>
+                  </span>
+
+                  <span class="dest__email dest__email--warn" *ngIf="fila.sinCorreo">
+                    <i class="ti ti-alert-circle"></i> Hoy no resuelve a ningún correo
+                  </span>
+                </div>
+              </td>
+
+              <!-- Los destinatarios configurados van siempre en copia: el "Para" es del principal
+                   (y lo ocupan ellos solo si el principal está apagado). -->
+              <td class="matriz__tipo"><span class="pill pill--cc">CC</span></td>
+              <td class="matriz__tipo"><span class="pill">{{ tipoLabel(fila) }}</span></td>
+
+              <td class="matriz__switch">
+                <button
+                  type="button"
+                  class="switch"
+                  role="switch"
+                  [attr.aria-checked]="fila.active"
+                  [attr.aria-label]="(fila.active ? 'Desactivar' : 'Activar') + ' ' + fila.nombre"
+                  [class.switch--on]="fila.active"
+                  [disabled]="savingDestinatarioId !== null"
+                  (click)="toggleDestinatario(fila)">
+                  <span class="switch__knob"></span>
+                </button>
+              </td>
+
+              <td class="matriz__acciones">
+                <button
+                  type="button"
+                  class="btn-icon"
+                  [disabled]="savingDestinatarioId === fila.id"
+                  title="Editar destinatario"
+                  (click)="abrirEdicion(fila)">
+                  <i class="ti ti-pencil"></i>
+                </button>
+                <button
+                  type="button"
+                  class="btn-icon btn-icon--danger"
+                  [disabled]="savingDestinatarioId === fila.id"
+                  title="Eliminar"
+                  (click)="eliminar(fila)">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="correo-empty" *ngIf="!evento.destinatarios.length && !evento.permiteDesactivarPrincipal && !loading">
+        Sin destinatarios.
+      </p>
+    </div>
+  </ng-container>
+</div>
+
+<!-- ── Modal de alta/edición de un destinatario ── -->
+<app-abril-modal-panel
+  *ngIf="formOpen"
+  [titulo]="formTitulo"
+  icono="ti-mail-plus"
+  width="520px"
+  (closeModal)="cerrarForm()">
+
+  <!-- Alto fijo: los desplegables se dibujan en absoluto dentro del cuerpo del modal, que tiene
+       overflow-y auto. Sin reservar el alto, abrir uno saca una barra de scroll y mueve el
+       trigger bajo el cursor (ver el CSS compartido). -->
+  <div class="correo-form">
+    <div class="form-row">
+      <app-search-select
+        label="Tipo de destinatario"
+        [options]="tipoOptions"
+        valueField="id"
+        displayField="label"
+        [value]="formTipo"
+        [allowClear]="false"
+        [sortAlpha]="false"
+        placeholder="Selecciona tipo"
+        (valueChange)="onFormTipoChange($event)">
+      </app-search-select>
+    </div>
+
+    <div class="form-row" *ngIf="formTipo === 'TRABAJADOR'">
+      <app-search-select
+        label="Trabajador"
+        [options]="trabajadores"
+        valueField="workerId"
+        displayField="fullName"
+        [value]="formWorkerId"
+        placeholder="Buscar trabajador..."
+        (valueChange)="formWorkerId = $event">
+      </app-search-select>
+    </div>
+
+    <ng-container *ngIf="formTipo === 'AREA'">
+      <div class="form-row">
+        <app-search-select
+          label="Área"
+          [options]="areas"
+          valueField="areaScopeId"
+          displayField="label"
+          [value]="formAreaScopeId"
+          placeholder="Selecciona área..."
+          (valueChange)="formAreaScopeId = $event">
+        </app-search-select>
+      </div>
+      <label class="form-check">
+        <input type="checkbox" [(ngModel)]="formIncluirDescendientes" name="incluirDescendientes" />
+        <span>Incluir sub-áreas</span>
+      </label>
+    </ng-container>
+
+    <div class="form-row" *ngIf="formTipo === 'CORREO'">
+      <div class="abril-field">
+        <label class="abril-field-label">Correo *</label>
+        <input
+          type="email"
+          class="abril-field-input"
+          name="correo"
+          placeholder="correo@abril.pe"
+          [(ngModel)]="formCorreo" />
+      </div>
+    </div>
+
+    <p class="form-hint" *ngIf="formId === null">
+      <i class="ti ti-info-circle"></i>
+      <span>Solo para «{{ eventoActivo?.nombre }}».</span>
+    </p>
+
+    <p class="form-error" *ngIf="formError">
+      <i class="ti ti-alert-circle"></i> <span>{{ formError }}</span>
+    </p>
+  </div>
+
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-ghost" (click)="cerrarForm()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="!formValido || saving" (click)="guardarForm()">
+      <i class="ti ti-loader-2 spin" *ngIf="saving"></i>
+      <i class="ti ti-check" *ngIf="!saving"></i>
+      {{ saving ? 'Guardando…' : 'Guardar' }}
+    </button>
+  </div>
+</app-abril-modal-panel>

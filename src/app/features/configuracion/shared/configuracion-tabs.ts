@@ -6,6 +6,7 @@ export const CONFIGURACION_TABS: AbrilPageTab[] = [
   { label: 'Proyectos',                       icono: 'ti-folder',   route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },
   { label: 'Áreas',                           icono: 'ti-layout',   route: '/configuracion/area',      featureKey: 'configuracion.area' },
   { label: 'Razones Sociales',                icono: 'ti-building', route: '/configuracion/companies', featureKey: 'configuracion.companies' },
+  { label: 'Bancos',                          icono: 'ti-building-bank', route: '/configuracion/bancos', featureKey: 'configuracion.bancos' },
   { label: 'Trabajadores',                    icono: 'ti-users',    route: '/configuracion/workers',   featureKey: 'configuracion.workers' },
   // 'Categorías y Puestos' se movió a Gestión GTH → Configuración
   // (/gestion-gth/configuracion/categorias-puestos): los administra GTH, no Configuración

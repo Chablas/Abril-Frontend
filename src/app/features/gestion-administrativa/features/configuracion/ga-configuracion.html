@@ -29,14 +29,14 @@
   <!-- SECCIÓN: Trayectos -->
   <app-ga-trayectos *ngIf="activeSection === 'trayectos'"></app-ga-trayectos>
 
+  <!-- SECCIÓN: Capturas (obligatorias/opcionales por área) -->
+  <app-ga-capturas *ngIf="activeSection === 'capturas'"></app-ga-capturas>
+
   <!-- SECCIÓN: Visibilidad de Salidas -->
   <app-visibilidad-salidas *ngIf="activeSection === 'visibilidad-salidas'"></app-visibilidad-salidas>
 
   <!-- SECCIÓN: Carpeta Adjuntos -->
   <app-ga-carpeta-adjuntos *ngIf="activeSection === 'carpeta-adjuntos'"></app-ga-carpeta-adjuntos>
-
-  <!-- SECCIÓN: Correos -->
-  <app-ga-correos *ngIf="activeSection === 'correos'"></app-ga-correos>
 
   <!-- SECCIÓN: Tu firma. Panel compartido: la misma firma que registra Contabilidad. -->
   <div *ngIf="activeSection === 'firma'" class="overflow-y-auto">

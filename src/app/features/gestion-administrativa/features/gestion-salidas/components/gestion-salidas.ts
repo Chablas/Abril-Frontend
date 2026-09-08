@@ -12,9 +12,10 @@ import { Roles } from '../../../../../core/constants/roles';
 import { FormsModule } from '@angular/forms';
 import {
   AreaNodeDto,
-  EstadoReembolso,
   GestionSalidaDetalleDto,
   GestionSalidaListItemDto,
+  MesRendicionDto,
+  ResumenRendicionDto,
 } from '../dtos/gestion-salida.dto';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
@@ -27,13 +28,7 @@ import { FabButton } from '../../../../../shared/components/fab-button/fab-butto
 import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
-import { ConsolidadoS10Modal } from '../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
-import {
-  ConsolidadoS10Ambito,
-  ConsolidadoS10Dto,
-} from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
-
-import { FirmaRegistrarModal } from '../../../../../shared/components/firma-personal/registrar-modal/firma-registrar-modal';
+import { reembolsoColors } from '../../../shared/dtos/rendicion-shared.dto';
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 /** Nodo del árbol de áreas para el desplegable en cascada del filtro. */
 interface AreaCascadeNode {
@@ -45,7 +40,7 @@ interface AreaCascadeNode {
 @Component({
   standalone: true,
   selector: 'app-gestion-salidas',
-  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, TimePicker, Paginator, GestionSalidaDetalleModal, AbrilPageHeaderComponent, TitleCasePipe, FabButton, FilterTriggerButton, FilterModal, AbrilBulkActionDirective, ConsolidadoS10Modal, FirmaRegistrarModal],
+  imports: [CommonModule, FormsModule, StatusBadge, SearchSelect, TimePicker, Paginator, GestionSalidaDetalleModal, AbrilPageHeaderComponent, TitleCasePipe, FabButton, FilterTriggerButton, FilterModal, AbrilBulkActionDirective],
   templateUrl: './gestion-salidas.html',
   styles: [`
     :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
@@ -81,37 +76,75 @@ interface AreaCascadeNode {
       outline-offset: 2px;
     }
 
-    /* Chip del Consolidado del S10 dentro de la celda de Rendición. Va aquí y no en una
-       columna propia porque el consolidado es parte de la rendición y la tabla ya trae 14/16
-       columnas. Relleno = ya hay archivo adjunto; contorno = falta adjuntarlo. */
-    .consolidado-chip {
+    /* ── Tarjetas de resumen + barra "Mes a rendir" ─────────────────────────
+       Las tarjetas cuentan el mismo conjunto que la tabla, así que se mueven con los filtros y
+       con cada acción que cambia el estado. Se estilan acá y no en styles.css porque el trío es
+       propio de las dos pantallas de salidas. */
+    .resumen-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 10px;
+    }
+    .resumen-card {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 10px 14px;
+      border: 1px solid var(--color-abril-border);
+      border-left: 3px solid var(--color-abril-border-strong);
+      border-radius: var(--radius-md);
+      background: #FFFFFF;
+    }
+    .resumen-card__label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: #6B7280;
+    }
+    .resumen-card__value { font-size: 22px; font-weight: 700; line-height: 1.1; color: var(--color-abril-ink); }
+    .resumen-card__hint  { font-size: 11px; color: #9CA3AF; }
+    .resumen-card--ok    { border-left-color: var(--color-abril-standard); }
+    .resumen-card--ok    .resumen-card__value { color: var(--color-abril-standard); }
+    .resumen-card--warn  { border-left-color: var(--color-abril-warning); }
+    .resumen-card--warn  .resumen-card__value { color: var(--color-abril-warning-dark); }
+    .resumen-card--alert { border-left-color: var(--color-abril-danger); }
+    .resumen-card--alert .resumen-card__value { color: var(--color-abril-danger-dark); }
+
+    /* Barra del periodo de rendición: el desplegable, el estado de lo seleccionado y el botón
+       que rinde. Va separada de la fila de acciones para que "rendir" no se confunda con
+       aprobar/rechazar, que son de otro eje.
+
+       Va en blanco (y no en el teal claro de la marca) porque el label flotante de
+       app-search-select corta el borde con un fondo blanco fijo: sobre un fondo tintado se vería
+       el recorte. El acento queda en el borde izquierdo. */
+    .rendicion-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 14px 10px;
+      border: 1px solid var(--color-abril-standard-border);
+      border-left: 3px solid var(--color-abril-standard);
+      border-radius: var(--radius-md);
+      background: #FFFFFF;
+    }
+    .rendicion-bar__select { width: 200px; }
+    .rendicion-bar__estado { font-size: 12px; color: var(--color-abril-body); }
+    .rendicion-bar__estado strong { color: var(--color-abril-standard); }
+    /* Casilla "Seleccionar todas del mes": la selección deja de ser la de la página y pasa a ser
+       la del periodo entero, que resuelve el servidor. */
+    .rendicion-bar__todas {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
-      padding: 2px 6px;
-      border: 1px solid var(--color-abril-border);
-      border-radius: 4px;
-      background: #FFFFFF;
-      color: #6B7280;
-      font-size: 11px;
-      font-weight: 700;
-      line-height: 1.4;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--color-abril-body);
       cursor: pointer;
-      transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+      user-select: none;
     }
-    .consolidado-chip:hover {
-      border-color: var(--color-abril-standard);
-      color: var(--color-abril-standard);
-    }
-    .consolidado-chip:focus-visible {
-      outline: 2px solid var(--color-abril-standard);
-      outline-offset: 2px;
-    }
-    .consolidado-chip--on {
-      border-color: var(--color-abril-standard);
-      background: var(--color-abril-standard-light);
-      color: var(--color-abril-standard);
-    }
+    .rendicion-bar__todas input { accent-color: var(--color-abril-standard); cursor: pointer; }
+    .rendicion-bar__todas input:disabled { cursor: not-allowed; }
   `],
 })
 export class GestionSalidas implements OnInit {
@@ -135,29 +168,16 @@ export class GestionSalidas implements OnInit {
   ];
 
   /**
-   * Estados del reembolso para el desplegable. Un tesorero solo ve Firmadas y Pagadas: su bandeja
-   * es esa y el backend la recorta igual, así que ofrecerle "Pendientes" sería un filtro que
-   * siempre devuelve vacío.
-   *
-   * Es un campo y no un getter a propósito: `app-search-select` compara `[options]` por
-   * referencia, y un getter devolvería un array nuevo en cada pasada de detección de cambios.
-   * El rol no cambia dentro de la sesión, así que se calcula una vez en ngOnInit.
+   * Estados del reembolso para el desplegable. Acá es solo un filtro informativo: el reembolso se
+   * decide en Gestión de Rendiciones y se paga en Reembolsos.
    */
-  estadoReembolsoOptions: { value: string | null; label: string }[] = [];
-
-  private readonly estadoReembolsoOptionsRevisor = [
+  readonly estadoReembolsoOptions = [
     { value: null,        label: 'Todos' },
     { value: 'Pendiente', label: 'Por revisar' },
     { value: 'Aprobado',  label: 'Aprobados' },
     { value: 'Rechazado', label: 'Rechazados' },
     { value: 'Firmado',   label: 'Firmados' },
     { value: 'Pagado',    label: 'Pagados' },
-  ];
-
-  private readonly estadoReembolsoOptionsTesoreria = [
-    { value: null,      label: 'Firmadas y pagadas' },
-    { value: 'Firmado', label: 'Solo firmadas' },
-    { value: 'Pagado',  label: 'Solo pagadas' },
   ];
 
   filters = {
@@ -169,31 +189,45 @@ export class GestionSalidas implements OnInit {
   };
 
   /**
-   * Modo TESORERÍA: la pantalla es una bandeja de pagos — solo salidas firmadas y pagadas, sin las
-   * acciones de aprobación/rendición (que no son suyas) y con "Marcar como pagadas" habilitado.
-   *
-   * Lo decide el BACKEND y llega en `filter-data`: son dos condiciones (el rol TESORERO y que el
-   * puesto del trabajador sea de categoría Tesorero) y la segunda vive en la base. Mirando solo
-   * `hasRole(TESORERO)` se le habría pintado la bandeja de tesorería a alguien con el rol pero sin
-   * el puesto, con un botón de pagar que el backend rechaza.
-   *
-   * Arranca en false: hasta que responda `filter-data` la pantalla se comporta como la de siempre.
-   */
-  esTesorero = false;
-
-  /** Modal para registrar la firma en el momento (se abre con el 409 de firmar). */
-  firmaModalAbierto = false;
-
-  /** Ids que se estaban firmando cuando saltó el modal de firma, para reintentar al guardarla. */
-  private idsPendientesDeFirma: number[] = [];
-
-  /**
    * Filtro "Hoy": acota la tabla a las salidas cuya fecha de salida es la de hoy (hora de Perú;
    * la resuelve el backend). Arranca ACTIVO porque al entrar lo que se necesita ver es el día en
    * curso; al apagarlo se ven todas las fechas. Vive junto al botón "Filtros" y no dentro del
    * modal, así que ni suma al badge de filtros activos ni lo toca "Limpiar filtros".
    */
   soloHoy = true;
+
+  // ── Periodo de rendición ("Mes a rendir") ────────────────────────────
+  /**
+   * Meses ofrecidos por el desplegable, con su cantidad de aptas. Los arma el backend a partir de
+   * lo que realmente hay pendiente en el alcance del usuario, más el mes anterior como piso.
+   */
+  mesesRendicion: MesRendicionDto[] = [];
+
+  /** Opciones del `app-search-select` del periodo: la clave es "AAAA-MM". */
+  mesOptions: { key: string | null; label: string }[] = [];
+
+  /**
+   * Periodo elegido ("AAAA-MM") o null = apagado. Arranca APAGADO a propósito: el filtro "Hoy"
+   * ya viene encendido y dos filtros de fecha a la vez no dirían qué se está viendo.
+   *
+   * Al prenderlo la tabla muestra SOLO lo apto para rendir de ese mes; es excluyente con "Hoy" y
+   * gana el último que se toca.
+   */
+  mesRendirKey: string | null = null;
+
+  /**
+   * "Seleccionar todas las del mes": la selección deja de ser la lista de ids de la página y pasa
+   * a ser el periodo completo, que resuelve el servidor (por eso no se puede combinar con la
+   * selección por fila — tocar cualquier casilla la apaga).
+   */
+  todoElMes = false;
+
+  /**
+   * Números de las tarjetas del encabezado. Los cuenta el backend sobre el MISMO conjunto que
+   * alimenta la tabla (todas las páginas, no solo la visible), así que llegan con el listado y
+   * cambian con cada filtro.
+   */
+  resumen: ResumenRendicionDto = { aptasParaRendir: 0, capturasIncompletas: 0, observadas: 0 };
 
   // ── Filtro de área en cascada (igual al de Visibilidad de Salidas) ──
   /** Niveles visibles del desplegable en cascada: [0] = raíces, [1] = hijos del nodo elegido, … */
@@ -224,9 +258,6 @@ export class GestionSalidas implements OnInit {
 
   /** Detalle abierto en modal (null = modal cerrado). */
   detalle: GestionSalidaDetalleDto | null = null;
-
-  /** Salida cuyo modal de Consolidado del S10 está abierto. null = cerrado. */
-  consolidadoDe: GestionSalidaListItemDto | null = null;
 
   /** Modal de filtros (los combos viven ahí para no ocupar espacio fijo en la galería). */
   filtrosAbiertos = false;
@@ -265,6 +296,27 @@ export class GestionSalidas implements OnInit {
     private route:         ActivatedRoute,
     private cdr:           ChangeDetectorRef,
   ) {}
+
+  // ── Botón "Configuración" del header ─────────────────────────────────
+  // Lleva a la configuración de ESTA pantalla: los correos de la decisión del revisor (solicitud
+  // aprobada y rechazada), que no se originan en ningún otro lado. Se restringe con la misma
+  // feature que antes protegía la sección Correos de Configuración: quien no la tiene no ve el
+  // botón.
+
+  private static readonly FEATURE_CONFIG_CORREOS = 'gestion-administrativa.config.correos';
+
+  get puedeConfigurar(): boolean {
+    return this.authService.hasFeature(GestionSalidas.FEATURE_CONFIG_CORREOS);
+  }
+
+  get botonConfiguracion() {
+    return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
+  }
+
+  abrirConfiguracion(): void {
+    if (!this.puedeConfigurar) return;
+    this.router.navigate(['/gestion-administrativa/gestion-salidas/configuracion']);
+  }
 
   /** FAB "Solicitar salida": lleva a la pestaña de autoservicio con el formulario abierto. */
   irASolicitarSalida(): void {
@@ -335,14 +387,29 @@ export class GestionSalidas implements OnInit {
     return s.horaRetornoReal ? s.horaRetornoReal.substring(0, 5) : '';
   }
 
-  ngOnInit(): void {
-    this.estadoReembolsoOptions = this.estadoReembolsoOptionsRevisor;
+  /**
+   * true si recepción registra la hora real de esta salida. No se registra en dos casos: los
+   * motivos de hora estimada, y los motivos que no declaran horario (la salida no trae hora de
+   * salida, ej. licencia sin goce de haber).
+   */
+  registraHoraReal(s: GestionSalidaListItemDto): boolean {
+    return !s.esHoraEstimada && !!s.horaSalida;
+  }
 
+  /** Por qué esta salida no lleva hora real — va en el title del guion. */
+  motivoHoraRealNoAplica(s: GestionSalidaListItemDto): string {
+    return s.horaSalida
+      ? 'Motivo con hora estimada: no se registra hora real'
+      : 'El motivo de esta salida no declara horario';
+  }
+
+  ngOnInit(): void {
     this.loadFilterData();
     this.load();
 
-    // Los botones de los correos ("Revisar el reembolso") entran por acá: abren directo el detalle
-    // de esa solicitud sin que el revisor tenga que buscarla en la tabla.
+    // El botón del correo de aprobación de la salida entra por acá: abre directo el detalle de
+    // esa solicitud sin que el revisor tenga que buscarla en la tabla. Los correos del reembolso
+    // ya no caen acá: llevan a Gestión de Rendiciones, que es donde se decide.
     const solicitudId = Number(this.route.snapshot.queryParamMap.get('solicitud'));
     if (solicitudId > 0) this.abrirDetallePorId(solicitudId);
   }
@@ -367,16 +434,6 @@ export class GestionSalidas implements OnInit {
   loadFilterData(): void {
     this.service.getFilterData().subscribe({
       next: (data) => {
-        // El modo tesorería lo decide el backend (rol + categoría del puesto). Al entrar en él la
-        // pantalla se recarga sin el filtro "Hoy": Tesorería paga contra fechas pasadas, así que
-        // acotarla al día en curso le dejaría la bandeja vacía.
-        if (data.esTesorero && !this.esTesorero) {
-          this.esTesorero = true;
-          this.estadoReembolsoOptions = this.estadoReembolsoOptionsTesoreria;
-          this.soloHoy = false;
-          this.load();
-        }
-
         this.trabajadorOptions = [
           { workerId: null, nombreCompleto: 'Todos los trabajadores' },
           ...data.trabajadores,
@@ -386,9 +443,54 @@ export class GestionSalidas implements OnInit {
           ...data.lugaresProyecto,
         ];
         this.buildAreaCascade(data.areaTree);
+        this.aplicarPeriodos(data.mesesRendicion ?? []);
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  // ── Periodo de rendición ("Mes a rendir") ───────────────────────────────
+
+  /**
+   * Guarda los meses que devolvió el backend. Si el periodo que estaba elegido ya no existe (se
+   * rindió todo ese mes) se apaga solo: dejarlo puesto mostraría una tabla vacía sin decir por qué.
+   */
+  private aplicarPeriodos(meses: MesRendicionDto[]): void {
+    this.mesesRendicion = meses;
+    this.mesOptions = [
+      { key: null, label: 'Sin filtrar por mes' },
+      ...meses.map((m) => ({ key: this.mesKey(m.anio, m.mes), label: m.label })),
+    ];
+
+    if (this.mesRendirKey && !meses.some((m) => this.mesKey(m.anio, m.mes) === this.mesRendirKey)) {
+      this.mesRendirKey = null;
+      this.todoElMes = false;
+    }
+    this.cdr.detectChanges();
+  }
+
+  private mesKey(anio: number, mes: number): string {
+    return `${anio}-${String(mes).padStart(2, '0')}`;
+  }
+
+  /** Periodo elegido, o null si el desplegable está apagado. */
+  get mesSeleccionado(): MesRendicionDto | null {
+    if (!this.mesRendirKey) return null;
+    return this.mesesRendicion.find((m) => this.mesKey(m.anio, m.mes) === this.mesRendirKey) ?? null;
+  }
+
+  private get rendicionAnio(): number | null { return this.mesSeleccionado?.anio ?? null; }
+  private get rendicionMes(): number | null  { return this.mesSeleccionado?.mes  ?? null; }
+
+  /**
+   * Cambio del periodo. Apaga "Hoy" —los dos acotan la fecha y no pueden convivir— y descarta la
+   * selección anterior, que era de otro conjunto de filas.
+   */
+  onMesRendirChange(key: string | null): void {
+    this.mesRendirKey = key || null;
+    this.todoElMes = false;
+    if (this.mesRendirKey) this.soloHoy = false;
+    this.onSearch();
   }
 
   // ── Filtro de área en cascada ────────────────────────────────────────────
@@ -461,12 +563,17 @@ export class GestionSalidas implements OnInit {
       this.sortDir,
       this.currentAreaScopeIds(),
       this.soloHoy,
+      this.rendicionAnio,
+      this.rendicionMes,
     ).subscribe({
       next: (res) => {
         this.salidas      = res.data;
         this.currentPage  = res.page;
         this.totalPages   = res.totalPages;
         this.totalRecords = res.totalRecords;
+        // Las tarjetas se cuentan sobre todo el conjunto filtrado (no sobre esta página): llegan
+        // con el listado, así que un cambio de filtro las mueve sin una petición extra.
+        this.resumen      = res.resumen;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -476,13 +583,32 @@ export class GestionSalidas implements OnInit {
     });
   }
 
+  /** Cualquier cambio de filtro vuelve a la primera página y suelta la selección del mes. */
   onSearch(): void {
+    this.todoElMes = false;
     this.load(1);
   }
 
-  /** Alterna el filtro "Hoy" y recarga la tabla desde la primera página. */
+  /**
+   * Recarga la tabla (con sus tarjetas) y el desplegable de mes. Se usa después de cada acción que
+   * mueve el estado (aprobar, rechazar, cancelar, rendir): el desplegable sale de `filter-data`,
+   * así que sin esto seguiría ofreciendo periodos con el conteo de antes de la acción.
+   */
+  private recargar(): void {
+    this.load(this.currentPage);
+    this.loadFilterData();
+  }
+
+  /**
+   * Alterna el filtro "Hoy" y recarga la tabla desde la primera página. Al prenderlo apaga el
+   * periodo de rendición: los dos acotan la fecha, así que gana el último que se toca.
+   */
   toggleSoloHoy(): void {
     this.soloHoy = !this.soloHoy;
+    if (this.soloHoy && this.mesRendirKey) {
+      this.mesRendirKey = null;
+      this.todoElMes = false;
+    }
     this.onSearch();
   }
 
@@ -567,7 +693,7 @@ export class GestionSalidas implements OnInit {
       next: () => {
         this.loaderService.hide();
         Swal.fire({ title: `${items.length} solicitud(es) aprobada(s)`, icon: 'success', timer: 1500, showConfirmButton: false });
-        this.load(this.currentPage);
+        this.recargar();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -578,7 +704,8 @@ export class GestionSalidas implements OnInit {
 
   /**
    * Rechaza en bloque las solicitudes seleccionadas que sean rechazables: pendientes, o aprobadas
-   * que aún no fueron rendidas. Nunca las propias (salvo Gerente) ni las ya rendidas.
+   * que aún no fueron rendidas. Solo las que este usuario decide (es su revisor) y nunca las ya
+   * rendidas. Rechaza sin pedir motivo; el motivo se pide en el botón del detalle.
    */
   async rechazarBulk(): Promise<void> {
     if (!this.puedeRechazarSeleccion) return;
@@ -601,7 +728,7 @@ export class GestionSalidas implements OnInit {
       next: () => {
         this.loaderService.hide();
         Swal.fire({ title: `${items.length} solicitud(es) rechazada(s)`, icon: 'success', timer: 1500, showConfirmButton: false });
-        this.load(this.currentPage);
+        this.recargar();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -615,11 +742,13 @@ export class GestionSalidas implements OnInit {
   /** Índice de la última fila clickeada (ancla para la selección por rango con Shift). */
   private lastClickedIndex: number | null = null;
 
-  /** Solo se pueden rendir Aprobadas + No rendidas + con TODOS los trayectos teniendo capturas. */
+  /**
+   * Solo se rinde lo apto: aprobada, no rendida, con TODOS los trayectos cubiertos y con un motivo
+   * marcado como reembolsable en Configuración → Motivos. Lo resuelve el backend en `aptaParaRendir`
+   * para que la pantalla, el desplegable de mes y las tarjetas no puedan discrepar.
+   */
   esSeleccionable(s: GestionSalidaListItemDto): boolean {
-    return s.estadoAprobacion === 'Aprobado'
-      && s.estadoRendicion === 'No rendido'
-      && s.puedeRendirse;
+    return s.aptaParaRendir;
   }
 
   /**
@@ -644,29 +773,149 @@ export class GestionSalidas implements OnInit {
   onSelectClick(event: MouseEvent, index: number): void {
     event.stopPropagation();
 
+    // Volver a elegir fila por fila cancela "todas las del mes": son dos formas distintas de
+    // seleccionar y mantener las dos a la vez haría que el conteo mienta.
+    this.todoElMes = false;
+
+    const clickeada = this.salidas[index];
+
+    // Una planilla de rendición es de UN SOLO MES. Si la fila es de otro mes que el que ya está
+    // seleccionado, la selección arranca de cero con esta fila en vez de bloquear el clic: así el
+    // usuario cambia de periodo sin tener que ir a deseleccionar lo anterior.
+    if (this.mesDeSeleccion && this.mesDeFecha(clickeada.fechaSalida) !== this.mesDeSeleccion) {
+      this.selectedIds.clear();
+      this.selectedIds.add(clickeada.id);
+      this.lastClickedIndex = index;
+      return;
+    }
+
     if (event.shiftKey && this.lastClickedIndex !== null) {
       const [desde, hasta] = [this.lastClickedIndex, index].sort((a, b) => a - b);
-      for (let k = desde; k <= hasta; k++) this.selectedIds.add(this.salidas[k].id);
+      const mesAncla = this.mesDeFecha(this.salidas[this.lastClickedIndex].fechaSalida);
+      for (let k = desde; k <= hasta; k++) {
+        // El rango se recorta al mes del ancla: un Shift+clic que cruza meses no puede colar
+        // filas de otro periodo en la selección.
+        if (this.mesDeFecha(this.salidas[k].fechaSalida) === mesAncla) this.selectedIds.add(this.salidas[k].id);
+      }
       return; // el ancla se mantiene
     }
 
-    const id = this.salidas[index].id;
+    const id = clickeada.id;
     if (this.selectedIds.has(id)) this.selectedIds.delete(id);
     else                          this.selectedIds.add(id);
     this.lastClickedIndex = index;
   }
 
-  get allSelected(): boolean {
-    return this.salidas.length > 0 && this.salidas.every((s) => this.selectedIds.has(s.id));
+  /** "AAAA-MM" de una fecha de salida ("YYYY-MM-DD"), para comparar periodos sin parsear fechas. */
+  private mesDeFecha(fechaSalida: string): string {
+    return fechaSalida.substring(0, 7);
   }
 
+  /** Periodo ("AAAA-MM") al que pertenece la selección por filas, o null si no hay nada elegido. */
+  get mesDeSeleccion(): string | null {
+    const primera = this.salidas.find((s) => this.selectedIds.has(s.id));
+    return primera ? this.mesDeFecha(primera.fechaSalida) : null;
+  }
+
+  /**
+   * "Todo seleccionado" se mide contra el mes de la selección, no contra la página entera: una
+   * página puede mezclar meses y una planilla es de uno solo, así que marcar la casilla de la
+   * cabecera nunca puede dejar la tabla en un estado que el backend vaya a rechazar.
+   */
+  get allSelected(): boolean {
+    if (this.todoElMes) return this.salidas.length > 0;
+    const mes = this.mesDeSeleccion;
+    if (!mes) return false;
+    return this.filasDelMes(mes).every((s) => this.selectedIds.has(s.id));
+  }
+
+  private filasDelMes(mes: string): GestionSalidaListItemDto[] {
+    return this.salidas.filter((s) => this.mesDeFecha(s.fechaSalida) === mes);
+  }
+
+  /**
+   * Si la fila entra en la selección actual. Con "todas del mes" marcado entran todas las que la
+   * tabla está mostrando (el filtro ya dejó solo lo apto de ese periodo), aunque sus ids no estén
+   * en `selectedIds` — esa selección la resuelve el servidor.
+   */
+  filaSeleccionada(s: GestionSalidaListItemDto): boolean {
+    return this.todoElMes || this.selectedIds.has(s.id);
+  }
+
+  /**
+   * Casilla de la cabecera: selecciona (o suelta) las filas de la PÁGINA actual que sean del mes
+   * ya seleccionado; sin selección previa toma el mes de la primera fila. Con el filtro de mes
+   * puesto la página es de un solo periodo y esto equivale a "seleccionar todo".
+   */
   toggleSelectAll(): void {
+    this.todoElMes = false;
     if (this.allSelected) {
       this.selectedIds.clear();
-    } else {
-      this.selectedIds = new Set(this.salidas.map((s) => s.id));
+      this.lastClickedIndex = null;
+      return;
     }
+
+    const mes = this.mesDeSeleccion
+      ?? (this.salidas.length ? this.mesDeFecha(this.salidas[0].fechaSalida) : null);
+    if (!mes) return;
+
+    this.selectedIds = new Set(this.filasDelMes(mes).map((s) => s.id));
     this.lastClickedIndex = null;
+  }
+
+  /**
+   * "Seleccionar todas las del mes": pasa de la selección por ids (limitada a la página) a una
+   * selección por periodo que ejecuta el servidor. Solo tiene sentido con un mes elegido, porque
+   * ahí la tabla ya muestra únicamente lo apto para rendir.
+   */
+  toggleTodoElMes(): void {
+    if (!this.mesRendirKey) return;
+    this.todoElMes = !this.todoElMes;
+    if (this.todoElMes) {
+      this.selectedIds.clear();
+      this.lastClickedIndex = null;
+    }
+  }
+
+  /** Cuántos registros abarca la selección actual, sea cual sea la forma en que se hizo. */
+  get seleccionadasCount(): number {
+    return this.todoElMes ? this.totalRecords : this.selectedIds.size;
+  }
+
+  /** Cuántos de los seleccionados se van a rendir realmente. */
+  get rendiblesCount(): number {
+    return this.todoElMes ? this.totalRecords : this.selectedRendibles.length;
+  }
+
+  /**
+   * Texto del indicador de selección de la barra de rendición. Nombra el periodo cuando la
+   * selección viene de filas sueltas: como una planilla es de un solo mes, saber cuál está en
+   * juego es parte de lo que el usuario tiene que ver antes de rendir.
+   */
+  get seleccionResumen(): string {
+    if (this.todoElMes) {
+      const mes = this.mesSeleccionado?.label ?? 'el mes';
+      return `Seleccionadas todas las de ${mes}: ${this.totalRecords}`;
+    }
+    if (this.selectedIds.size === 0) return 'Sin solicitudes seleccionadas';
+
+    const n = this.selectedIds.size;
+    const listas = this.selectedRendibles.length;
+    const periodo = this.mesRendirKey ? '' : ` de ${this.etiquetaDeMes(this.mesDeSeleccion)}`;
+    const base = `${n} seleccionada${n === 1 ? '' : 's'}${periodo}`;
+    return listas === n ? base : `${base} · ${listas} lista${listas === 1 ? '' : 's'} para rendir`;
+  }
+
+  /** "AAAA-MM" → "Agosto 2026". Cae al propio código si el mes no está en el catálogo. */
+  private etiquetaDeMes(clave: string | null): string {
+    if (!clave) return 'ese mes';
+    const mes = this.mesesRendicion.find((m) => this.mesKey(m.anio, m.mes) === clave);
+    if (mes) return mes.label;
+    const nombre = new Date(`${clave}-01T00:00:00`).toLocaleDateString('es-PE', {
+      month: 'long',
+      year: 'numeric',
+    });
+    return nombre.charAt(0).toUpperCase() + nombre.slice(1);
   }
 
   // ── Subconjuntos válidos de la selección por acción ──────────────────
@@ -695,26 +944,27 @@ export class GestionSalidas implements OnInit {
   }
 
   /**
-   * True si alguna candidata (a aprobar o rechazar) es propia y no decidible. Nadie decide lo suyo
-   * (salvo Gerente), y si se mezcla una propia con otras se bloquea toda la acción — hay que
-   * deseleccionar la propia primero. El backend lo determina por fila (`puedeDecidir`) y lo re-valida.
+   * True si alguna candidata (a aprobar o rechazar) no la decide este usuario: cada salida la
+   * decide SOLO su revisor, y ver la fila no alcanza (el alcance por área da a ver una rama, no a
+   * decidirla). Si se mezcla una así con otras se bloquea toda la acción — hay que deseleccionarla
+   * primero. El backend lo determina por fila (`puedeDecidir`) y lo re-valida al aprobar/rechazar.
    */
-  get aprobacionIncluyePropia(): boolean {
+  get aprobacionIncluyeNoDecidibles(): boolean {
     return this.selectedPendientes.some((s) => !s.puedeDecidir);
   }
 
-  get rechazoIncluyePropia(): boolean {
+  get rechazoIncluyeNoDecidibles(): boolean {
     return this.selectedRechazables.some((s) => !s.puedeDecidir);
   }
 
-  /** True si se puede aprobar la selección: hay pendientes y NINGUNA es propia. */
+  /** True si se puede aprobar la selección: hay pendientes y de TODAS es el revisor. */
   get puedeAprobarSeleccion(): boolean {
-    return this.selectedPendientes.length > 0 && !this.aprobacionIncluyePropia;
+    return this.selectedPendientes.length > 0 && !this.aprobacionIncluyeNoDecidibles;
   }
 
-  /** True si se puede rechazar la selección: hay rechazables y NINGUNA es propia. */
+  /** True si se puede rechazar la selección: hay rechazables y de TODAS es el revisor. */
   get puedeRechazarSeleccion(): boolean {
-    return this.selectedRechazables.length > 0 && !this.rechazoIncluyePropia;
+    return this.selectedRechazables.length > 0 && !this.rechazoIncluyeNoDecidibles;
   }
 
   /** Seleccionadas que pueden rendirse (aplican a Marcar como rendidas). */
@@ -751,7 +1001,7 @@ export class GestionSalidas implements OnInit {
       next: () => {
         this.loaderService.hide();
         Swal.fire({ title: `${items.length} solicitud(es) cancelada(s)`, icon: 'success', timer: 1500, showConfirmButton: false });
-        this.load(this.currentPage);
+        this.recargar();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -760,7 +1010,17 @@ export class GestionSalidas implements OnInit {
     });
   }
 
+  // ── Rendición ────────────────────────────────────────────────────────
+
+  /**
+   * Rinde lo seleccionado. Hay dos caminos según cómo se hizo la selección, y por eso es un solo
+   * botón y no dos: por ids cuando se eligieron filas (la página es el límite de lo que el cliente
+   * conoce) y por periodo cuando está marcado "todas las del mes", donde el conjunto lo resuelve
+   * el servidor y puede pasar de la página visible.
+   */
   async marcarRendidasBulk(): Promise<void> {
+    if (this.todoElMes) return this.rendirTodoElMes();
+
     const ids = this.selectedRendibles.map((s) => s.id);
     if (ids.length === 0) return;
 
@@ -786,45 +1046,31 @@ export class GestionSalidas implements OnInit {
     });
   }
 
-  // ── Rendición del mes anterior ───────────────────────────────────────
-
-  /** Nombre del mes anterior al actual, para nombrar la acción sin ambigüedad. */
-  get mesAnteriorLabel(): string {
-    const hoy = new Date();
-    const mes = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
-    const nombre = mes.toLocaleDateString('es-PE', { month: 'long' });
-    return nombre.charAt(0).toUpperCase() + nombre.slice(1);
-  }
-
   /**
-   * True cuando hay algún filtro de alcance activo (trabajador, proyecto o área). La acción del
-   * mes anterior respeta esos filtros, así que el botón lo dice en su propio nombre.
+   * True cuando hay algún filtro de alcance activo (trabajador, proyecto o área). La rendición del
+   * mes completo respeta esos filtros, así que la barra lo dice antes de que el usuario confirme.
    */
-  get rendicionMesAnteriorFiltrada(): boolean {
+  get rendicionFiltrada(): boolean {
     return this.filters.workerId != null
         || this.filters.lugarProyectoId != null
         || this.currentAreaScopeIds() != null;
   }
 
-  /** Texto del botón: avisa cuando el alcance está recortado por los filtros. */
-  get rendirMesAnteriorLabel(): string {
-    return this.rendicionMesAnteriorFiltrada
-      ? `Rendir ${this.mesAnteriorLabel} (filtrado)`
-      : `Rendir ${this.mesAnteriorLabel}`;
-  }
-
   /**
-   * Rinde de una vez todas las salidas del mes anterior que estén listas dentro del alcance del
-   * usuario, respetando los filtros de trabajador/área/proyecto. El backend decide qué entra
-   * (aprobadas, no rendidas y con capturas en todos sus trayectos) e ignora el resto.
+   * Rinde TODAS las salidas aptas del periodo elegido dentro del alcance del usuario, respetando
+   * los filtros de trabajador/área/proyecto. El servidor decide qué entra (aprobadas, no rendidas,
+   * con sus trayectos cubiertos y con motivo reembolsable) e ignora el resto.
    */
-  async rendirMesAnterior(): Promise<void> {
+  private async rendirTodoElMes(): Promise<void> {
+    const mes = this.mesSeleccionado;
+    if (!mes) return;
+
     const result = await Swal.fire({
       icon: 'question',
-      title: `¿Rendir las salidas de ${this.mesAnteriorLabel}?`,
-      text: this.rendicionMesAnteriorFiltrada
-        ? 'Se rinde solo lo que dejan ver los filtros activos, y solo lo aprobado con todas sus capturas.'
-        : 'Solo entran las aprobadas con las capturas de todos sus trayectos.',
+      title: `¿Rendir las salidas de ${mes.label}?`,
+      text: this.rendicionFiltrada
+        ? 'Se rinde solo lo que dejan ver los filtros activos, y solo lo que está apto para rendir.'
+        : 'Entran todas las salidas del mes que estén aptas para rendir.',
       showCancelButton: true,
       confirmButtonText: 'Sí, rendir',
       cancelButtonText: 'Cancelar',
@@ -833,10 +1079,12 @@ export class GestionSalidas implements OnInit {
     if (!result.isConfirmed) return;
 
     this.loaderService.show();
-    this.service.rendirMesAnterior(
+    this.service.rendirMes(
       this.filters.workerId,
       this.filters.lugarProyectoId,
       this.currentAreaScopeIds(),
+      mes.anio,
+      mes.mes,
     ).subscribe({
       next: (response) => this.descargarPlanilla(response),
       error: (err: HttpErrorResponse) => {
@@ -849,6 +1097,10 @@ export class GestionSalidas implements OnInit {
 
   /** Descarga el PDF devuelto por una rendición y refresca la tabla. */
   private descargarPlanilla(response: HttpResponse<Blob>, countFallback = 0): void {
+    // Lo que se acaba de rendir ya no está pendiente: la selección del mes deja de tener sentido
+    // y quedaría marcada sobre un conjunto distinto al que el usuario aceptó.
+    this.todoElMes = false;
+
     const blob = response.body as Blob;
     const count = Number(response.headers.get('X-Rendidas-Count') ?? countFallback);
     const filename = this.extractFilename(response.headers.get('Content-Disposition'))
@@ -867,44 +1119,9 @@ export class GestionSalidas implements OnInit {
       text: 'Se descargó la planilla de gasto por movilidad.',
       icon: 'success',
     });
-    this.load(this.currentPage);
+    this.recargar();
   }
 
-  // ── Consolidado del S10 (solo salidas rendidas) ──────────────────────
-
-  /** El consolidado solo aplica cuando la salida ya fue rendida. */
-  puedeAdjuntarConsolidado(s: GestionSalidaListItemDto): boolean {
-    return s.estadoRendicion === 'Rendido';
-  }
-
-  abrirConsolidado(s: GestionSalidaListItemDto, ev: Event): void {
-    ev.stopPropagation(); // no abrir el modal de detalle
-    this.consolidadoDe = s;
-  }
-
-  /** Función de subida que consume el modal compartido (ya sabe a qué endpoint pegarle). */
-  readonly subirConsolidado = (file: File, ambito: ConsolidadoS10Ambito) =>
-    this.service.uploadConsolidadoS10(this.consolidadoDe!.id, file, ambito);
-
-  /** Consolidado vigente de la salida abierta, para mostrarlo dentro del modal. */
-  get consolidadoActual(): ConsolidadoS10Dto | null {
-    const s = this.consolidadoDe;
-    if (!s?.consolidadoS10Url) return null;
-    return {
-      id: 0,
-      ambito: s.consolidadoS10Ambito ?? 'Rendicion',
-      pdfUrl: s.consolidadoS10Url,
-      pdfFilename: s.consolidadoS10Filename ?? 'Consolidado del S10',
-      uploadedAt: '',
-    };
-  }
-
-  /** Cierra el modal; si se subió algo recarga para reflejarlo en toda la planilla. */
-  cerrarConsolidado(subido: ConsolidadoS10Dto | null): void {
-    this.consolidadoDe = null;
-    if (subido) this.load(this.currentPage);
-    else        this.cdr.detectChanges();
-  }
 
   private extractFilename(contentDisposition: string | null): string | null {
     if (!contentDisposition) return null;
@@ -921,6 +1138,83 @@ export class GestionSalidas implements OnInit {
       next: (data) => {
         this.detalle = data;
         this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  // ── Decisión desde el detalle (el camino del correo) ─────────────────
+  //
+  // El botón del correo al revisor cae en este modal, así que la decisión se toma ahí mismo sin
+  // volver a la tabla ni buscar la fila. Los botones existen solo si el backend marcó
+  // `puedeDecidir` en el detalle (quien mira es el revisor de esa salida) y los endpoints
+  // re-validan lo mismo, así que no alcanza con forzarlos desde el navegador.
+
+  /** Aprueba la salida abierta en el detalle. */
+  async aprobarDetalle(): Promise<void> {
+    const d = this.detalle;
+    if (!d) return;
+
+    const result = await Swal.fire({
+      icon: 'question',
+      title: d.codigo ? `¿Aprobar la solicitud ${d.codigo}?` : '¿Aprobar esta solicitud?',
+      text: 'Se le avisará al solicitante que su salida quedó aprobada.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64BC04',
+    });
+    if (!result.isConfirmed) return;
+
+    this.ejecutarDecisionDetalle(
+      this.service.aprobar(d.id),
+      'Solicitud aprobada',
+    );
+  }
+
+  /**
+   * Rechaza la salida abierta en el detalle. El motivo es opcional —el rechazo no siempre necesita
+   * explicación y el botón bulk de la tabla nunca lo pidió—, pero si se escribe le llega al
+   * solicitante en su correo de rechazo.
+   */
+  async rechazarDetalle(): Promise<void> {
+    const d = this.detalle;
+    if (!d) return;
+
+    const { value: motivo, isConfirmed } = await Swal.fire({
+      icon: 'warning',
+      title: d.codigo ? `¿Rechazar la solicitud ${d.codigo}?` : '¿Rechazar esta solicitud?',
+      input: 'textarea',
+      inputLabel: 'Motivo (opcional)',
+      inputPlaceholder: 'Por qué no procede la salida…',
+      showCancelButton: true,
+      confirmButtonText: 'Rechazar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#D30000',
+    });
+    if (!isConfirmed) return;
+
+    this.ejecutarDecisionDetalle(
+      this.service.rechazar(d.id, (motivo ?? '').trim() || null),
+      'Solicitud rechazada',
+    );
+  }
+
+  /**
+   * Ejecuta la decisión y cierra el detalle: el estado que se está mirando ya cambió, así que
+   * dejarlo abierto mostraría datos viejos. La tabla y las tarjetas se recargan detrás.
+   */
+  private ejecutarDecisionDetalle(peticion: Observable<{ message: string }>, titulo: string): void {
+    this.loaderService.show();
+    peticion.subscribe({
+      next: () => {
+        this.loaderService.hide();
+        this.detalle = null;
+        Swal.fire({ title: titulo, icon: 'success', timer: 1500, showConfirmButton: false });
+        this.recargar();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -950,199 +1244,6 @@ export class GestionSalidas implements OnInit {
       : { bg: '#F3F4F6', text: '#6B7280' };
   }
 
-  // ── Reembolso ────────────────────────────────────────────────────────
-
-  reembolsoColors(estado: EstadoReembolso): { bg: string; text: string } {
-    switch (estado) {
-      case 'Aprobado':  return { bg: '#D7FAF4', text: '#009C87' };
-      case 'Rechazado': return { bg: '#FAD5D4', text: '#D30000' };
-      case 'Firmado':   return { bg: '#E0E7FF', text: '#4338CA' };
-      case 'Pagado':    return { bg: '#DCFCE7', text: '#15803D' };
-      default:          return { bg: '#FEF9C3', text: '#92400E' }; // Pendiente
-    }
-  }
-
-  /**
-   * Seleccionadas cuyo reembolso se puede decidir: ya rendidas, con el Consolidado del S10 adjunto
-   * y sin decidir (o rechazadas, que se pueden reconsiderar). Nunca las propias, misma regla que
-   * la aprobación de la salida.
-   */
-  get selectedReembolsoRevisables(): GestionSalidaListItemDto[] {
-    return this.selectedSalidas.filter(
-      (s) =>
-        s.reembolsoRevisable &&
-        (s.estadoReembolso === 'Pendiente' || s.estadoReembolso === 'Rechazado'),
-    );
-  }
-
-  /** True si alguna candidata a decidir el reembolso es propia (y el usuario no es Gerente). */
-  get reembolsoIncluyePropia(): boolean {
-    return this.selectedReembolsoRevisables.some((s) => !s.puedeDecidir);
-  }
-
-  get puedeDecidirReembolso(): boolean {
-    return this.selectedReembolsoRevisables.length > 0 && !this.reembolsoIncluyePropia;
-  }
-
-  /** Seleccionadas listas para firmar: el reembolso ya está aprobado. */
-  get selectedFirmables(): GestionSalidaListItemDto[] {
-    return this.selectedSalidas.filter((s) => s.estadoReembolso === 'Aprobado');
-  }
-
-  /** Seleccionadas que Tesorería puede marcar como pagadas: las ya firmadas. */
-  get selectedPagables(): GestionSalidaListItemDto[] {
-    return this.selectedSalidas.filter((s) => s.estadoReembolso === 'Firmado');
-  }
-
-  async aprobarReembolsoBulk(): Promise<void> {
-    const items = this.selectedReembolsoRevisables;
-    if (items.length === 0 || this.reembolsoIncluyePropia) return;
-
-    const result = await Swal.fire({
-      icon: 'question',
-      title: `¿Aprobar ${items.length} reembolso(s)?`,
-      text: 'Se le avisará por correo a cada trabajador.',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, aprobar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#64BC04',
-    });
-    if (!result.isConfirmed) return;
-
-    this.loaderService.show();
-    this.service.aprobarReembolso(items.map((s) => s.id)).subscribe({
-      next: (res) => this.trasAccionReembolso(res.message),
-      error: (err: HttpErrorResponse) => this.errorReembolso(err),
-    });
-  }
-
-  async rechazarReembolsoBulk(): Promise<void> {
-    const items = this.selectedReembolsoRevisables;
-    if (items.length === 0 || this.reembolsoIncluyePropia) return;
-
-    // La observación es el correo: es lo único que el trabajador va a leer para saber qué corregir,
-    // así que se pide acá y el backend la exige también.
-    const result = await Swal.fire({
-      icon: 'warning',
-      title: `¿Rechazar ${items.length} reembolso(s)?`,
-      input: 'textarea',
-      inputLabel: 'Observación',
-      inputPlaceholder: 'Qué tiene que corregir el trabajador…',
-      inputAttributes: { 'aria-label': 'Observación del rechazo', maxlength: '1000' },
-      showCancelButton: true,
-      confirmButtonText: 'Rechazar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#D30000',
-      inputValidator: (valor) =>
-        valor && valor.trim().length > 0 ? null : 'Escribe la observación del rechazo.',
-    });
-    if (!result.isConfirmed) return;
-
-    this.loaderService.show();
-    this.service.rechazarReembolso(items.map((s) => s.id), (result.value as string).trim()).subscribe({
-      next: (res) => this.trasAccionReembolso(res.message),
-      error: (err: HttpErrorResponse) => this.errorReembolso(err),
-    });
-  }
-
-  async firmarBulk(): Promise<void> {
-    const items = this.selectedFirmables;
-    if (items.length === 0) return;
-
-    const result = await Swal.fire({
-      icon: 'question',
-      title: `¿Firmar ${items.length} salida(s)?`,
-      text: 'Se estampará tu firma en la planilla de rendición. El PDF original se conserva.',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, firmar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0F6E56',
-    });
-    if (!result.isConfirmed) return;
-
-    this.firmar(items.map((s) => s.id));
-  }
-
-  /**
-   * Firma las planillas. El 409 significa "todavía no registraste tu firma": en vez de mandar al
-   * usuario a Configuración se abre el modal para que la dibuje ahí mismo, y al guardarla se
-   * reintenta sola la firma que quedó pendiente.
-   */
-  private firmar(ids: number[]): void {
-    this.loaderService.show();
-    this.service.firmarPlanillas(ids).subscribe({
-      next: (res) => {
-        this.idsPendientesDeFirma = [];
-        this.trasAccionReembolso(res.message);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
-        if (err.status === 409 && !this.firmaModalAbierto) {
-          this.idsPendientesDeFirma = ids;
-          this.firmaModalAbierto = true;
-          this.cdr.detectChanges();
-          return;
-        }
-        this.errorService.handleError(err);
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  /** El usuario acaba de registrar su firma en el modal: se reintenta lo que estaba firmando. */
-  onFirmaRegistrada(): void {
-    this.firmaModalAbierto = false;
-    const ids = this.idsPendientesDeFirma;
-    this.idsPendientesDeFirma = [];
-    if (ids.length > 0) this.firmar(ids);
-    else this.cdr.detectChanges();
-  }
-
-  cerrarFirmaModal(): void {
-    this.firmaModalAbierto = false;
-    this.idsPendientesDeFirma = [];
-    this.cdr.detectChanges();
-  }
-
-  async marcarPagadasBulk(): Promise<void> {
-    const items = this.selectedPagables;
-    if (items.length === 0) return;
-
-    const result = await Swal.fire({
-      icon: 'question',
-      title: `¿Marcar ${items.length} reembolso(s) como pagado(s)?`,
-      text: 'Es el último paso del ciclo: después no se revierte desde la pantalla.',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, marcar como pagadas',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#15803D',
-    });
-    if (!result.isConfirmed) return;
-
-    this.loaderService.show();
-    this.service.marcarPagadas(items.map((s) => s.id)).subscribe({
-      next: (res) => this.trasAccionReembolso(res.message),
-      error: (err: HttpErrorResponse) => this.errorReembolso(err),
-    });
-  }
-
-  private trasAccionReembolso(message: string): void {
-    this.loaderService.hide();
-    Swal.fire({ title: message, icon: 'success', timer: 1800, showConfirmButton: false });
-    this.load(this.currentPage);
-  }
-
-  private errorReembolso(err: HttpErrorResponse): void {
-    this.loaderService.hide();
-    this.errorService.handleError(err);
-    this.cdr.detectChanges();
-  }
-
-  /** Abre la planilla firmada de una salida en otra pestaña. */
-  abrirPlanillaFirmada(s: GestionSalidaListItemDto, ev: Event): void {
-    ev.stopPropagation();
-    if (s.planillaFirmadaUrl && typeof window !== 'undefined') {
-      window.open(s.planillaFirmadaUrl, '_blank', 'noopener');
-    }
-  }
+  /** El badge del reembolso es informativo acá; el color sale del shared del módulo. */
+  readonly reembolsoColors = reembolsoColors;
 }

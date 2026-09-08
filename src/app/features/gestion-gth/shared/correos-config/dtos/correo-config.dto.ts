@@ -17,14 +17,14 @@
  *  • `reclutamiento`      → los del proceso que maneja GTH de punta a punta (long list, formulario
  *                           al postulante, formulario completado, correcciones, entrevista,
  *                           agradecimiento y la carta oferta con la que cierra el proceso).
- *
- * Onboarding ya no tiene pantalla propia: sus dos únicos correos eran los de la carta oferta, que
- * pasó a ser el último paso de Reclutamiento. Vuelve como una opción más cuando tenga correos suyos.
+ *  • `onboarding`         → los del checklist del colaborador ya contratado (hoy, el aviso al
+ *                           responsable de la obra donde entra).
  */
 export type CorreoConfigModulo =
   | 'solicitud-personal'
   | 'aprobaciones'
-  | 'reclutamiento';
+  | 'reclutamiento'
+  | 'onboarding';
 
 /** Una fila de la sección de un correo. */
 export interface CorreoDestinatarioFila {

@@ -7,6 +7,12 @@ export interface MotivoSalidaDto {
   esHoraEstimada: boolean;
   /** Si true, al elegir este motivo el formulario exige escribir un motivo adicional (detalle). */
   requiereMotivoAdicional: boolean;
+  /** Si false, el formulario no pide horas ni lugares y la solicitud queda con un solo
+   *  trayecto (ej. licencia sin goce de haber). */
+  pideHorasLugares: boolean;
+  /** Si true, una salida con este motivo genera reembolso de movilidad. Los pares de
+   *  `trayectosNoReembolsables` lo anulan; un trayecto nunca lo concede por su cuenta. */
+  esReembolsable: boolean;
 }
 
 export interface LugarSalidaDto {
@@ -21,12 +27,37 @@ export interface TrayectoCatalogoOptionDto {
   monto: number;
 }
 
+/** Par (origen, destino) del catálogo que nunca genera reembolso. */
+export interface TrayectoNoReembolsableDto {
+  lugarOrigenId: number;
+  lugarDestinoId: number;
+}
+
 export interface SolicitudSalidaFormDataDto {
   motivos: MotivoSalidaDto[];
   lugares: LugarSalidaDto[];
-  aprobadorEmail: string | null;
+  /**
+   * Correos que de verdad van a recibir el aviso con los botones de aprobar/rechazar, ya
+   * aplicada la configuración de Configuración → Correos → Revisor. No es "el revisor": ese
+   * puede estar apagado ahí y el aviso irse solo a los destinatarios configurados. Vacío = no
+   * se le envía a nadie.
+   */
+  correoRevisorPara: string[];
+  /** Los que van en copia de ese mismo aviso. */
+  correoRevisorCopia: string[];
+  /**
+   * Lo mismo para la confirmación informativa (Configuración → Correos → Confirmación), que
+   * sale junto con la anterior pero sin botones. Vacío = no se envía a nadie.
+   */
+  correoConfirmacionPara: string[];
+  /** Los que van en copia de la confirmación. */
+  correoConfirmacionCopia: string[];
   /** True si el trabajador es de Tecnología de la Información. */
   esTI: boolean;
   /** Catálogo (lugarOrigenId, lugarDestinoId) → monto. Solo poblado si esTI. */
   trayectosCatalogo: TrayectoCatalogoOptionDto[];
+  /** Pares (origen, destino) que anulan el reembolso del motivo. Llega para todos:
+   *  la regla de reembolso no depende de ser TI (a diferencia de `trayectosCatalogo`,
+   *  que lleva montos). */
+  trayectosNoReembolsables: TrayectoNoReembolsableDto[];
 }

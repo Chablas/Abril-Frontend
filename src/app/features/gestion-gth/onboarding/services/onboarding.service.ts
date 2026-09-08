@@ -2,12 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
-import {
-  BandejaOnboarding,
-  OnboardingAccionResult,
-  OnboardingCreate,
-  OnboardingCreateResult,
-} from '../dtos/onboarding.dto';
+import { BandejaOnboarding, OnboardingAccionResult } from '../dtos/onboarding.dto';
 
 @Injectable({ providedIn: 'root' })
 export class OnboardingService {
@@ -21,19 +16,46 @@ export class OnboardingService {
   }
 
   /**
-   * Bandeja de Onboarding: resumen, fases, colaboradores ingresados y los candidatos aptos del
-   * modal «Nuevo ingreso», todo en una sola petición.
+   * Bandeja de Onboarding: resumen, fases y colaboradores ingresados, en una sola petición. El
+   * backend le abre el onboarding, de paso, a todo el que ya terminó reclutamiento.
    */
   getBandeja(): Observable<BandejaOnboarding> {
     return this.http.get<BandejaOnboarding>(`${this.apiUrl}/bandeja`, { headers: this.headers });
   }
 
   /**
-   * Abre el onboarding de un colaborador. Ya no se sube ni se envía nada: la carta oferta se firmó
-   * y se aprobó en Reclutamiento, y de ahí el backend hereda su ficha maestra y su file digital.
+   * Envía el aviso al coordinador administrativo de la obra donde entra el colaborador y marca esa
+   * actividad del checklist como cumplida.
    */
-  iniciar(datos: OnboardingCreate): Observable<OnboardingCreateResult> {
-    return this.http.post<OnboardingCreateResult>(this.apiUrl, datos, { headers: this.headers });
+  enviarAvisoObra(onboardingId: number): Observable<OnboardingAccionResult> {
+    return this.http.post<OnboardingAccionResult>(
+      `${this.apiUrl}/${onboardingId}/aviso-obra`,
+      {},
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Envía el correo de bienvenida: le abre al colaborador su formulario «Nuevos Talentos» y le
+   * manda el enlace, la documentación que tiene que enviar y la fecha límite.
+   *
+   * Multipart: `data` = JSON con la fecha límite; `archivos` = los documentos normativos que GTH
+   * quiera adjuntar (opcionales; el backend valida formato y tope de tamaño).
+   */
+  enviarBienvenida(
+    onboardingId: number,
+    fechaLimite: string | null,
+    archivos: File[],
+  ): Observable<OnboardingAccionResult> {
+    const formData = new FormData();
+    formData.append('data', JSON.stringify({ fechaLimite }));
+    for (const archivo of archivos) formData.append('archivos', archivo, archivo.name);
+
+    return this.http.post<OnboardingAccionResult>(
+      `${this.apiUrl}/formulario/${onboardingId}/bienvenida`,
+      formData,
+      { headers: this.headers },
+    );
   }
 
   /** Avanza el onboarding a la fase siguiente del checklist. */

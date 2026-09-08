@@ -10,6 +10,14 @@
           <th>Origen</th>
           <th>Destino</th>
           <th>Monto (S/)</th>
+          <th class="text-center">
+            <span class="inline-flex items-center gap-[5px]">
+              Reembolso
+              <span
+                class="inline-flex items-center justify-center w-[15px] h-[15px] rounded-full border border-current text-[10px] font-bold leading-none cursor-help select-none"
+                title="Los trayectos no reembolsables anulan el reembolso aunque el motivo elegido sí lo permita (ej. Oficina Central ↔ Bosque Real, que la empresa cubre con movilidad propia).">?</span>
+            </span>
+          </th>
           <th>Estado</th>
           <th>Acciones</th>
         </tr>
@@ -17,7 +25,7 @@
       <tbody>
 
         <tr *ngIf="filteredTrayectos.length === 0">
-          <td colspan="5" class="text-center py-[40px] text-gray-400 text-sm">
+          <td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">
             {{ searchText.trim() || estadoFilter !== null ? 'Sin resultados.' : 'No hay trayectos registrados.' }}
           </td>
         </tr>
@@ -28,6 +36,15 @@
           <td class="text-gray-700">{{ t.lugarDestinoNombre | titleCase }}</td>
           <td class="text-right text-gray-800 font-medium">
             {{ t.monto | number:'1.2-2' }}
+          </td>
+
+          <td class="text-center">
+            <span *ngIf="!t.esReembolsable"
+                  class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#FEE2E2] text-[#B91C1C] font-medium whitespace-nowrap"
+                  title="Las salidas por este trayecto nunca generan reembolso">
+              No reembolsable
+            </span>
+            <span *ngIf="t.esReembolsable" class="text-gray-300">—</span>
           </td>
 
           <td class="text-center">

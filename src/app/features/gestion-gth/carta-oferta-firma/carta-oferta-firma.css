@@ -4,11 +4,24 @@
 
 :host {
   display: block;
+
+  /* Verdes de la marca Abril (los mismos tokens globales de styles.css), en variables locales para
+     que el acento de toda la página se cambie en un solo sitio. Es la misma paleta que usa el
+     formulario público del postulante: las dos páginas le llegan por correo al mismo destinatario.
+     El verde oscuro es el único que puede llevar texto blanco encima: el claro
+     (--color-abril-primary) y el lima del logo no dan contraste suficiente. */
+  --co-green: var(--color-abril-primary-dark, #2e7d32);
+  --co-green-hover: #1b5e20;
+  --co-green-soft: var(--color-abril-primary-light, #e8f5e9);
+  --co-lime: var(--color-abril-lime, #64bc04);
+  --co-divider: #e4efe4;
 }
 
 .co-page {
   min-height: 100vh;
-  background: #eef2f6;
+  /* Degradado muy suave: da el tono verde de la marca al fondo sin competir con las tarjetas
+     blancas. Mismo tratamiento que `postulante-formulario.css`. */
+  background: linear-gradient(180deg, #e8f2e6 0%, var(--color-abril-page-bg, #f0f4f1) 340px);
   padding: 28px 16px 60px;
 }
 
@@ -29,7 +42,30 @@
 
 /* ── Encabezado ───────────────────────────────────────────────────────── */
 .co-header {
-  border-top: 5px solid var(--color-abril-logo-blue, #005d9d);
+  position: relative;
+  overflow: hidden;
+  padding-top: 28px;
+}
+
+/* La franja superior va como ::before (y no como border-top) para poder llevar el degradado
+   lima → verde del logo; el `overflow: hidden` de arriba la recorta en las esquinas redondeadas
+   de la tarjeta. */
+.co-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, var(--co-lime) 0%, var(--co-green) 100%);
+}
+
+/* El logo reemplaza al texto "ABRIL GRUPO INMOBILIARIO": la imagen ya lo dice. */
+.co-logo {
+  display: block;
+  height: 40px;
+  width: auto;
+  margin: 0 0 16px;
 }
 
 .co-title {
@@ -39,19 +75,11 @@
   margin: 0;
 }
 
-.co-brand {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--color-abril-logo-blue, #005d9d);
-  margin: 4px 0 0;
-}
-
 .co-intro {
   font-size: 13.5px;
   line-height: 1.65;
   color: #4b5563;
-  margin: 14px 0 0;
+  margin: 12px 0 0;
 }
 
 /* ── Secciones ────────────────────────────────────────────────────────── */
@@ -105,7 +133,7 @@
   display: block;
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-abril-logo-blue, #005d9d);
+  color: var(--co-green);
   margin-bottom: 8px;
 }
 
@@ -235,29 +263,30 @@
   cursor: not-allowed;
 }
 
-.co-btn-primary {
-  background: var(--color-abril-logo-blue, #005d9d);
+/* Firmar (antes de firmar) y Finalizar (después) son la acción principal de la página, cada una en
+   su momento, así que las dos van en el verde de la marca. Nunca compiten: con el documento ya
+   firmado, «Volver a firmar» pasa a ghost y el verde se queda para Finalizar. */
+.co-btn-primary,
+.co-btn-finalizar {
+  background: var(--co-green);
   color: #ffffff;
+}
+
+.co-btn-primary:hover:not(:disabled),
+.co-btn-finalizar:hover:not(:disabled) {
+  background: var(--co-green-hover);
+}
+
+/* Tamaño de los botones de esa fila, sea cual sea la variante: así «Volver a firmar» en ghost mide
+   exactamente lo mismo que Finalizar y la fila no queda escalonada. */
+.co-firmar-botones .co-btn {
   padding: 12px 26px;
   font-size: 14.5px;
 }
 
 .co-btn-secondary {
-  background: var(--color-abril-lime, #8dc63f);
+  background: var(--co-lime);
   color: #ffffff;
-}
-
-/* Finalizar: el cierre del trámite. Va en el verde del check de «firmada» y no en el azul de
-   Firmar, para que se lea como el paso que confirma y no como otra variante de firmar. */
-.co-btn-finalizar {
-  background: #15803d;
-  color: #ffffff;
-  padding: 12px 26px;
-  font-size: 14.5px;
-}
-
-.co-btn-finalizar:hover:not(:disabled) {
-  background: #166534;
 }
 
 /* Giro del ícono mientras la petición está en vuelo. */
@@ -286,7 +315,7 @@
   gap: 6px;
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--color-abril-logo-blue, #005d9d);
+  color: var(--co-green);
   cursor: pointer;
 }
 
@@ -301,8 +330,8 @@
 }
 
 .co-badge-ok {
-  background: #d7faf4;
-  color: #009c87;
+  background: var(--co-green-soft);
+  color: var(--co-green);
 }
 
 .co-hint {
@@ -328,6 +357,13 @@
   gap: 14px;
   text-align: center;
   padding: 56px 28px;
+}
+
+/* En las tarjetas de estado (cargando, error) el logo va centrado y es lo único que identifica la
+   página: no hay encabezado de marca en esos casos. */
+.co-state-logo {
+  height: 38px;
+  width: auto;
 }
 
 .co-state-icon {
@@ -365,8 +401,8 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  border: 4px solid #dbeafe;
-  border-top-color: var(--color-abril-logo-blue, #005d9d);
+  border: 4px solid var(--co-green-soft);
+  border-top-color: var(--co-green);
   animation: co-spin 0.9s linear infinite;
 }
 
@@ -402,7 +438,9 @@
     justify-content: center;
   }
 
-  .co-btn-primary {
+  /* Firmar y Finalizar a todo el ancho: son la acción de la página y en el celular se pulsan con
+     el pulgar. Se toma la fila entera para que las dos se vean igual de importantes. */
+  .co-firmar-botones .co-btn {
     width: 100%;
     justify-content: center;
   }

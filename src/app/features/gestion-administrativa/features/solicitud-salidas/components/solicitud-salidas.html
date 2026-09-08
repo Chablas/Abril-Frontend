@@ -2,7 +2,9 @@
   [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
   titulo="Solicitud de Salidas"
   subtitulo="Mis solicitudes de viáticos y movilidad."
-  [tabs]="tabs">
+  [tabs]="tabs"
+  [botonSecundario]="botonConfiguracion"
+  (secondaryClick)="abrirConfiguracion()">
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
   <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
@@ -10,33 +12,90 @@
 
 <div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden pb-[64px]">
 
-  <!-- ── Acción bulk sobre la selección (rendir) ──────────────────────────
-       Visible siempre (deshabilitada si no aplica), mismo lenguaje que Gestión de Salidas. -->
-  <div class="flex flex-wrap items-center gap-2">
-    <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">{{ selectedIds.size }} seleccionada{{ selectedIds.size === 1 ? '' : 's' }}</span>
+  <!-- ── Tarjetas de resumen ───────────────────────────────────────────────
+       Se cuentan sobre el mismo conjunto que muestra la tabla, así que acompañan a los filtros:
+       cada tarjeta sigue significando lo que dice su etiqueta, lo que cambia es el universo. -->
+  <div class="resumen-cards">
+    <div class="resumen-card resumen-card--ok">
+      <span class="resumen-card__label">Aptas para rendir</span>
+      <span class="resumen-card__value">{{ resumen.aptasParaRendir }}</span>
+      <span class="resumen-card__hint">Con capturas y motivo reembolsable</span>
+    </div>
+    <div class="resumen-card resumen-card--warn">
+      <span class="resumen-card__label">Capturas incompletas</span>
+      <span class="resumen-card__value">{{ resumen.capturasIncompletas }}</span>
+      <span class="resumen-card__hint">Requeridas cuando hay monto</span>
+    </div>
+    <div class="resumen-card resumen-card--alert">
+      <span class="resumen-card__label">Observadas</span>
+      <span class="resumen-card__value">{{ resumen.observadas }}</span>
+      <span class="resumen-card__hint">Requieren subsanación</span>
+    </div>
+  </div>
+
+  <!-- ── Mes a rendir ──────────────────────────────────────────────────────
+       El desplegable no solo elige el periodo: FILTRA la tabla a lo apto para rendir de ese mes.
+       Arranca apagado. Con un mes puesto aparece "seleccionar todas las del mes", que cambia la
+       selección de "estos ids" a "el periodo entero", que resuelve el servidor. -->
+  <div class="rendicion-bar">
+    <app-search-select
+      class="rendicion-bar__select"
+      label="Mes a rendir"
+      placeholder="Selecciona el mes"
+      [options]="mesOptions"
+      valueField="key"
+      displayField="label"
+      [sortAlpha]="false"
+      [rawLabel]="true"
+      [value]="mesRendirKey"
+      (valueChange)="onMesRendirChange($event)" />
+
+    <span class="rendicion-bar__estado" *ngIf="mesSeleccionado; else sinMes">
+      <strong>{{ solicitudes.length }}</strong>
+      apta{{ solicitudes.length === 1 ? '' : 's' }} para rendir en {{ mesSeleccionado.label }}
+      · vence el {{ mesSeleccionado.fechaLimite + 'T00:00:00' | date:'dd/MM/yyyy' }}
+      · {{ seleccionResumen }}
+    </span>
+    <ng-template #sinMes>
+      <!-- Sin periodos abiertos el desplegable queda vacío: se dice por qué, en vez de dejar un
+           control que no ofrece nada. -->
+      <span class="rendicion-bar__estado" *ngIf="mesesRendicion.length === 0; else sinFiltroMes">
+        No hay periodos abiertos para rendir · {{ seleccionResumen }}
+      </span>
+      <ng-template #sinFiltroMes>
+        <span class="rendicion-bar__estado">Sin filtro de mes · {{ seleccionResumen }}</span>
+      </ng-template>
+    </ng-template>
+
+    <label class="rendicion-bar__todas"
+           [title]="mesSeleccionado
+             ? 'Rinde todas tus salidas aptas de ese mes'
+             : 'Elige un mes para habilitarlo'">
+      <input type="checkbox"
+             [checked]="todoElMes"
+             [disabled]="!mesSeleccionado || solicitudes.length === 0"
+             (change)="toggleTodoElMes()" />
+      Seleccionar todas del mes
+    </label>
 
     <button
       type="button"
       abrilBulkAction="primary"
+      class="ml-auto"
       (click)="rendirBulk()"
-      [disabled]="selectedRendibles.length === 0">
+      [disabled]="rendiblesCount === 0"
+      title="Rinde las solicitudes seleccionadas y descarga tu planilla de gasto por movilidad">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
       </svg>
-      Rendir<span *ngIf="selectedRendibles.length > 0"> ({{ selectedRendibles.length }})</span>
+      Rendir<span *ngIf="rendiblesCount > 0"> ({{ rendiblesCount }})</span>
     </button>
+  </div>
 
-    <button
-      type="button"
-      abrilBulkAction="default"
-      (click)="rendirMesAnterior()"
-      [title]="'Rinde de una vez todas tus salidas de ' + mesAnteriorLabel + ' que ya tengan sus capturas'">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="4" width="18" height="17" rx="2"/>
-        <path stroke-linecap="round" d="M8 2v4M16 2v4M3 10h18"/>
-      </svg>
-      Rendir {{ mesAnteriorLabel }}
-    </button>
+  <!-- ── Acción bulk sobre la selección ───────────────────────────────────
+       Visible siempre (deshabilitada si no aplica), mismo lenguaje que Gestión de Salidas. -->
+  <div class="flex flex-wrap items-center gap-2">
+    <span *ngIf="seleccionadasCount > 0" class="text-[11px] text-gray-500 mr-1">{{ seleccionadasCount }} seleccionada{{ seleccionadasCount === 1 ? '' : 's' }}</span>
 
     <button
       type="button"
@@ -67,7 +126,7 @@
               style="accent-color:var(--color-abril-accent)"
               title="Seleccionar / deseleccionar todo" />
           </th>
-          <th>#</th>
+          <th>N° solicitud</th>
           <th>Fecha</th>
           <th>Salida</th>
           <th>Retorno</th>
@@ -92,22 +151,22 @@
           (click)="onRowClick($event, i)"
           title="Ver detalle (Shift+clic para seleccionar)"
           class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
-          [style.background]="selectedIds.has(s.id) ? '#EAF6FF' : null"
+          [style.background]="filaSeleccionada(s) ? '#EAF6FF' : null"
           style="border-color:var(--color-abril-border)">
 
           <!-- Selección (Shift+clic para rango). select-none evita que Shift resalte texto. -->
           <td class="select-none" (click)="onSelectClick($event, i)">
             <input
               type="checkbox"
-              [checked]="selectedIds.has(s.id)"
+              [checked]="filaSeleccionada(s)"
               class="cursor-pointer pointer-events-none"
               style="accent-color:var(--color-abril-accent)" />
           </td>
 
-          <td class="text-gray-500">{{ i + 1 }}</td>
+          <td class="text-gray-700 font-medium whitespace-nowrap">{{ s.codigo ?? '—' }}</td>
           <td class="text-gray-700">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
           <td class="text-gray-700">
-            {{ s.horaSalida }}
+            {{ s.horaSalida ?? '—' }}
             <span *ngIf="s.trayectosCount > 1"
                   class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle" style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
                   [title]="s.trayectosCount + ' trayectos'">
@@ -153,11 +212,37 @@
               [textColor]="aprobacionColors(s.estadoAprobacion).text" />
           </td>
           <td>
-            <app-status-badge
-              *ngIf="s.estadoAprobacion === 'Aprobado'; else sinRendicion"
-              [text]="s.estadoRendicion"
-              [bgColor]="rendicionColors(s.estadoRendicion).bg"
-              [textColor]="rendicionColors(s.estadoRendicion).text" />
+            <div *ngIf="s.estadoAprobacion === 'Aprobado'; else sinRendicion"
+                 class="inline-flex flex-col items-start gap-[2px]">
+              <app-status-badge
+                [text]="s.estadoRendicion"
+                [bgColor]="rendicionColors(s.estadoRendicion).bg"
+                [textColor]="rendicionColors(s.estadoRendicion).text" />
+
+              <!-- No rendida, con sus capturas, pero el motivo no es reembolsable: no genera gasto
+                   de movilidad, así que no hay nada que rendir. Se dice acá para que el botón
+                   "Rendir" no falte sin explicación. -->
+              <span
+                *ngIf="s.estadoRendicion === 'No rendido'
+                    && s.puedeRendirse
+                    && !s.esReembolsable
+                    && !s.plazoVencido"
+                title="No se rinde: el motivo de esta salida no está marcado como reembolsable"
+                class="text-[11px] text-gray-500 italic whitespace-nowrap">
+                No reembolsable
+              </span>
+
+              <!-- Plazo cerrado: pasó el último día hábil del plazo configurado. Ya no se rinde,
+                   pero el detalle se sigue viendo con un clic en la fila. -->
+              <span
+                *ngIf="s.estadoRendicion === 'No rendido' && s.plazoVencido"
+                [title]="'El plazo para rendir esta salida venció el '
+                  + (s.plazoRendicionHasta + 'T00:00:00' | date:'dd/MM/yyyy')"
+                class="text-[11px] italic whitespace-nowrap"
+                style="color:var(--color-abril-danger-dark)">
+                Plazo vencido
+              </span>
+            </div>
             <ng-template #sinRendicion>
               <span class="text-gray-300">—</span>
             </ng-template>
@@ -171,7 +256,7 @@
               [bgColor]="reembolsoColors(s.estadoReembolso).bg"
               [textColor]="reembolsoColors(s.estadoReembolso).text"
               [title]="s.estadoReembolso === 'Rechazado' && s.observacionReembolso
-                ? 'Observación: ' + s.observacionReembolso
+                ? 'Observación: ' + s.observacionReembolso + ' · se subsana en Mis Rendiciones'
                 : null" />
             <ng-template #sinReembolso>
               <span class="text-gray-300">—</span>
@@ -182,7 +267,9 @@
             {{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}
           </td>
           <td (click)="$event.stopPropagation()">
-            <div *ngIf="puedeSubirCapturas(s) || esSeleccionable(s) || puedeAdjuntarConsolidado(s) || s.puedeNotificarRevisor; else sinAcciones" class="flex items-center gap-2">
+            <!-- La columna llega hasta rendir. Lo que sigue (Consolidado del S10, aviso al
+                 revisor) es de la PLANILLA y vive en Mis Rendiciones. -->
+            <div *ngIf="puedeSubirCapturas(s) || esSeleccionable(s); else sinAcciones" class="flex items-center gap-2">
               <button
                 *ngIf="puedeSubirCapturas(s)"
                 type="button"
@@ -210,41 +297,6 @@
                   <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
                 </svg>
                 Rendir
-              </button>
-              <button
-                *ngIf="puedeAdjuntarConsolidado(s)"
-                type="button"
-                (click)="abrirConsolidado(s, $event)"
-                [title]="s.consolidadoS10Url ? 'Reemplazar el Consolidado del S10' : 'Adjuntar el PDF Consolidado del S10'"
-                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
-                style="background:var(--color-abril-standard)"
-                onmouseover="this.style.background='var(--color-abril-standard-hover)'"
-                onmouseout="this.style.background='var(--color-abril-standard)'">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-                  <path d="M14 2v6h6" stroke-linejoin="round"/>
-                </svg>
-                {{ s.consolidadoS10Url ? 'Consolidado S10 ✓' : 'Consolidado S10' }}
-              </button>
-
-              <!-- Se habilita recién con el S10 adjunto: antes de eso el revisor no tendría qué
-                   mirar. Después de aprobado (o firmado, o pagado) desaparece. -->
-              <button
-                *ngIf="s.puedeNotificarRevisor"
-                type="button"
-                (click)="notificarRevisor(s, $event)"
-                [title]="s.revisorNotificadoAt
-                  ? 'Ya le avisaste el ' + (s.revisorNotificadoAt | date:'dd/MM/yyyy HH:mm') + ' — puedes volver a avisarle'
-                  : 'Avísale a tu jefe/revisor que ya adjuntaste el Consolidado del S10'"
-                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold transition-colors"
-                [style.background]="s.revisorNotificadoAt ? '#FFFFFF' : '#005D9D'"
-                [style.color]="s.revisorNotificadoAt ? '#005D9D' : '#FFFFFF'"
-                [style.border]="s.revisorNotificadoAt ? '1px solid #005D9D' : '1px solid #005D9D'">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="2.5" y="4.5" width="19" height="15" rx="2"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m3 6 9 6 9-6"/>
-                </svg>
-                {{ s.revisorNotificadoAt ? 'Revisor avisado ✓' : 'Avisar al revisor' }}
               </button>
             </div>
             <ng-template #sinAcciones>
@@ -274,17 +326,10 @@
   (close)="cerrarDetalle()" />
 
 <!-- ── Modal de subir capturas ───────────────────────────────────────── -->
-<app-solicitud-salida-capturas-modal
+<app-salida-capturas-modal
   *ngIf="capturasId !== null"
   [solicitudId]="capturasId"
   (close)="cerrarCapturas($event)" />
-
-<!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->
-<app-consolidado-s10-modal
-  *ngIf="consolidadoDe !== null"
-  [upload]="subirConsolidado"
-  [actual]="consolidadoActual"
-  (close)="cerrarConsolidado($event)" />
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">

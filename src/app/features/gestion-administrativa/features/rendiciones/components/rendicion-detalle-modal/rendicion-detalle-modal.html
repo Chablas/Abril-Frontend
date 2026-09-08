@@ -1,0 +1,270 @@
+<app-base-modal
+  [title]="detalle ? 'Rendición ' + detalle.codigo : 'Rendición'"
+  width="w-[820px]"
+  (closeModal)="cerrar()">
+
+  <div *ngIf="detalle as d" class="flex flex-col gap-4 pt-4">
+
+    <!-- ── Cabecera: de qué planilla se trata ───────────────────────────── -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Periodo</span>
+        <span class="text-sm text-gray-700">{{ d.periodo }}</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas</span>
+        <span class="text-sm text-gray-700">{{ d.salidasCount }}</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Monto rendido</span>
+        <span class="text-sm text-gray-700">S/ {{ d.montoTotal | number:'1.2-2' }}</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Rendida</span>
+        <span class="text-sm text-gray-700">{{ d.rendidoAt | date:'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+    </div>
+
+    <!-- ── Primera revisión ─────────────────────────────────────────────── -->
+    <div class="flex items-center gap-3 border-t pt-3" style="border-color:var(--color-abril-border)">
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">1.ª revisión</span>
+      <app-status-badge
+        [text]="d.estadoPrimeraRevision"
+        [bgColor]="primeraRevisionColors(d.estadoPrimeraRevision).bg"
+        [textColor]="primeraRevisionColors(d.estadoPrimeraRevision).text" />
+      <span *ngIf="d.enviadaRevisionAt" class="text-[11px] text-gray-400">
+        Enviada el {{ d.enviadaRevisionAt | date:'dd/MM/yyyy HH:mm' }}
+      </span>
+      <span *ngIf="d.primeraRevisionAt" class="text-[11px] text-gray-400 ml-auto">
+        Revisada el {{ d.primeraRevisionAt | date:'dd/MM/yyyy HH:mm' }}
+      </span>
+    </div>
+
+    <!-- El comentario del jefe: es lo único que hay que leer para saber qué corregir. -->
+    <div *ngIf="d.estadoPrimeraRevision === 'Observada' && d.primeraRevisionObservacion"
+         class="border rounded-lg p-3 text-sm"
+         style="border-color:#FCA5A5;background:#FEF2F2;color:#991B1B">
+      <span class="font-semibold">Observación de la primera revisión:</span>
+      {{ d.primeraRevisionObservacion }}
+    </div>
+
+    <!-- ── Estado del reembolso ─────────────────────────────────────────── -->
+    <div class="flex items-center gap-3 border-t pt-3" style="border-color:var(--color-abril-border)">
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">Reembolso</span>
+      <app-status-badge
+        [text]="reembolsoTexto(d.estadoReembolso)"
+        [bgColor]="reembolsoColors(d.estadoReembolso).bg"
+        [textColor]="reembolsoColors(d.estadoReembolso).text" />
+      <span *ngIf="d.reembolsoMixto" class="text-[11px] text-gray-500 italic">
+        tus salidas no están todas en el mismo estado — se muestra la más atrasada
+      </span>
+      <span *ngIf="d.revisorNotificadoAt" class="text-[11px] text-gray-400 ml-auto">
+        Revisor avisado el {{ d.revisorNotificadoAt | date:'dd/MM/yyyy HH:mm' }}
+      </span>
+    </div>
+
+    <!-- Observación del rechazo: es lo único que hay que leer para saber qué corregir. -->
+    <div *ngIf="d.estadoReembolso === 'Rechazado' && d.observacionReembolso"
+         class="border rounded-lg p-3 text-sm"
+         style="border-color:#FCA5A5;background:#FEF2F2;color:#991B1B">
+      <span class="font-semibold">Observación:</span> {{ d.observacionReembolso }}
+    </div>
+
+    <!-- ── Documentos ───────────────────────────────────────────────────── -->
+    <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">Documentos</span>
+
+      <a [href]="d.pdfUrl" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
+        </svg>
+        {{ d.pdfFilename }}
+      </a>
+
+      <a *ngIf="d.consolidadoS10" [href]="d.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
+        </svg>
+        {{ d.consolidadoS10.pdfFilename }}
+        <span class="text-xs text-gray-400 font-normal">· Consolidado del S10</span>
+      </a>
+      <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
+        {{ d.estadoPrimeraRevision === 'Aprobada'
+            ? 'Falta el Consolidado del S10.'
+            : 'El Consolidado del S10 se habilita cuando tu jefe apruebe la primera revisión.' }}
+      </span>
+
+      <a *ngIf="d.pdfFirmadoUrl" [href]="d.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {{ d.pdfFirmadoFilename ?? 'Planilla firmada' }}
+        <span class="text-xs text-gray-400 font-normal">· firmada el {{ d.firmadoAt | date:'dd/MM/yyyy' }}</span>
+      </a>
+    </div>
+
+    <!-- ── Salidas de la planilla ───────────────────────────────────────── -->
+    <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas de esta planilla</span>
+
+      <div class="abril-table-wrap">
+        <table class="abril-table abril-table--th-center">
+          <thead>
+            <tr>
+              <th>N° solicitud</th>
+              <th>Fecha</th>
+              <th>Motivo</th>
+              <th>Origen</th>
+              <th>Destino</th>
+              <th>Monto</th>
+              <th>Reembolso</th>
+              <th *ngIf="subsanando">Capturas</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of d.salidas" class="border-b" style="border-color:var(--color-abril-border)">
+              <td class="text-gray-700 font-medium whitespace-nowrap">{{ s.codigo ?? '—' }}</td>
+              <td class="text-gray-700 whitespace-nowrap">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
+              <td class="text-gray-700">
+                {{ s.motivo | titleCase }}
+                <span *ngIf="s.trayectosCount > 1"
+                      class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
+                      style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
+                      [title]="s.trayectosCount + ' trayectos'">
+                  +{{ s.trayectosCount - 1 }}
+                </span>
+              </td>
+              <td class="text-gray-500">{{ (s.lugarOrigen | titleCase) || '—' }}</td>
+              <td class="text-gray-500">{{ (s.lugarDestino | titleCase) || '—' }}</td>
+              <td class="text-gray-700 whitespace-nowrap">S/ {{ s.monto | number:'1.2-2' }}</td>
+              <td>
+                <app-status-badge
+                  [text]="reembolsoTexto(s.estadoReembolso)"
+                  [bgColor]="reembolsoColors(s.estadoReembolso).bg"
+                  [textColor]="reembolsoColors(s.estadoReembolso).text"
+                  [title]="s.estadoReembolso === 'Rechazado' && s.observacionReembolso
+                    ? 'Observación: ' + s.observacionReembolso
+                    : null" />
+              </td>
+
+              <!-- Solo al subsanar: es el momento en que el backend deja tocar las capturas. -->
+              <td *ngIf="subsanando">
+                <button
+                  type="button"
+                  (click)="abrirCapturas(s.id)"
+                  title="Corregir las capturas y los montos de los trayectos de esta salida"
+                  class="inline-flex items-center gap-[5px] whitespace-nowrap cursor-pointer rounded-[6px] px-2.5 py-1 text-[11px] font-semibold transition-colors"
+                  style="background:#FFFFFF;color:#B45309;border:1px solid #B45309">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                          d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/>
+                  </svg>
+                  Corregir
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Cierre de la subsanación: el aviso de estado y el último paso, juntos. La acción es de
+         la planilla entera (no de una salida), así que va acá abajo y no en la tabla de arriba. -->
+    <div *ngIf="subsanando"
+         class="border rounded-lg p-3 flex flex-col items-center gap-3 text-sm text-center"
+         style="border-color:#FDE68A;background:#FFFBEB;color:#92400E">
+      <span>
+        Al terminar de corregir, vuelve a generar la rendición: conserva el código
+        <b>{{ d.codigo }}</b>.
+      </span>
+
+      <button
+        type="button"
+        (click)="regenerarPlanilla()"
+        title="Rehace la planilla con los montos actuales y la deja lista para reenviar a revisión"
+        class="inline-flex items-center gap-[6px] h-[34px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors flex-shrink-0"
+        style="background:var(--color-abril-standard)"
+        onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+        onmouseout="this.style.background='var(--color-abril-standard)'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-3-6.7M21 3v6h-6"/>
+        </svg>
+        Volver a generar
+      </button>
+    </div>
+
+    <!-- ── Acciones ─────────────────────────────────────────────────────── -->
+
+    <!-- "Lista para enviar": el único paso pendiente es mandarla a primera revisión. -->
+    <div *ngIf="d.puedeEnviarPrimeraRevision" class="flex justify-center border-t pt-3"
+         style="border-color:var(--color-abril-border)">
+      <button
+        type="button"
+        (click)="enviarPrimeraRevision()"
+        title="Enviar esta rendición a la primera revisión de tu jefe"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
+        style="background:var(--color-abril-logo-blue)"
+        onmouseover="this.style.background='var(--color-abril-logo-blue-hover)'"
+        onmouseout="this.style.background='var(--color-abril-logo-blue)'">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m22 2-7 20-4-9-9-4Z"/>
+          <path stroke-linecap="round" d="M22 2 11 13"/>
+        </svg>
+        Enviar a revisión
+      </button>
+    </div>
+
+    <div *ngIf="d.puedeAdjuntarConsolidado" class="flex flex-wrap justify-center gap-3 border-t pt-3"
+         style="border-color:var(--color-abril-border)">
+      <button
+        *ngIf="d.puedeNotificarRevisor"
+        type="button"
+        (click)="notificarRevisor()"
+        [title]="d.revisorNotificadoAt
+          ? 'Ya le avisaste el ' + (d.revisorNotificadoAt | date:'dd/MM/yyyy HH:mm') + ' — puedes volver a avisarle'
+          : 'Avísale a tu jefe/revisor que ya adjuntaste el Consolidado del S10'"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors"
+        [style.background]="d.revisorNotificadoAt ? '#FFFFFF' : '#005D9D'"
+        [style.color]="d.revisorNotificadoAt ? '#005D9D' : '#FFFFFF'"
+        style="border:1px solid #005D9D">
+        {{ d.revisorNotificadoAt ? 'Volver a avisar al revisor' : 'Avisar al revisor' }}
+      </button>
+
+      <button
+        type="button"
+        (click)="consolidadoAbierto = true"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
+        style="background:var(--color-abril-standard)"
+        onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+        onmouseout="this.style.background='var(--color-abril-standard)'">
+        {{ d.consolidadoS10 ? 'Reemplazar Consolidado del S10' : 'Adjuntar Consolidado del S10' }}
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>
+
+<!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->
+<app-consolidado-s10-modal
+  *ngIf="consolidadoAbierto"
+  [upload]="subirConsolidado"
+  [actual]="detalle?.consolidadoS10 ?? null"
+  [referencia]="consolidadoReferencia"
+  [montoEsperado]="detalle?.montoTotalPlanilla ?? 0"
+  (close)="cerrarConsolidado($event)" />
+
+<!-- ── Modal de capturas de una salida (subsanación) ─────────────────── -->
+<app-salida-capturas-modal
+  *ngIf="capturasSolicitudId !== null"
+  [solicitudId]="capturasSolicitudId"
+  [subsanacion]="true"
+  (close)="cerrarCapturas($event)" />

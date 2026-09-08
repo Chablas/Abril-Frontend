@@ -269,7 +269,7 @@ export class CartaOfertaFirma implements OnInit, OnDestroy {
       showCancelButton: true,
       confirmButtonText: 'Firmar',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: 'var(--color-abril-logo-blue)',
+      confirmButtonColor: 'var(--color-abril-primary-dark)',
     }).then((res) => {
       if (!res.isConfirmed) return;
 
@@ -324,7 +324,7 @@ export class CartaOfertaFirma implements OnInit, OnDestroy {
       showCancelButton: true,
       confirmButtonText: 'Sí, finalizar',
       cancelButtonText: 'Todavía no',
-      confirmButtonColor: 'var(--color-abril-logo-blue)',
+      confirmButtonColor: 'var(--color-abril-primary-dark)',
     }).then((res) => {
       if (!res.isConfirmed) return;
 
@@ -344,7 +344,7 @@ export class CartaOfertaFirma implements OnInit, OnDestroy {
             title: '¡Todo listo!',
             text: r.message,
             confirmButtonText: 'Entendido',
-            confirmButtonColor: 'var(--color-abril-logo-blue)',
+            confirmButtonColor: 'var(--color-abril-primary-dark)',
           });
           this.cdr.detectChanges();
         },

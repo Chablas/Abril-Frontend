@@ -772,7 +772,11 @@
                   Cupos disponibles: <b>{{ razonSocialSeleccionada.cuposDisponibles }}</b> de 20.
                 </p>
               }
-              @if (sinCupos) {
+              @if (razonSocialLlena) {
+                <p class="text-[11.5px] font-semibold text-red-600 mt-[6px] leading-snug">
+                  Ya llegó al tope de 20 trabajadores: elige otra para poder publicar la vacante.
+                </p>
+              } @else if (sinCupos) {
                 <p class="text-[11.5px] font-semibold text-red-600 mt-[6px] leading-snug">
                   La razón social seleccionada no cuenta con cupos suficientes para las
                   {{ detalle.vacantes }} vacantes.
@@ -829,6 +833,14 @@
               (click)="publicar()">
               Confirmar publicación de vacante
             </button>
+
+            <!-- La sección de asignación puede estar plegada, así que el motivo se repite acá: sin
+                 esto el botón queda apagado sin nada a la vista que lo explique. -->
+            @if (razonSocialLlena) {
+              <p class="text-[11.5px] font-semibold text-red-600 mt-[8px] leading-snug">
+                La razón social elegida ya llegó al tope de 20 trabajadores.
+              </p>
+            }
           }
         </div>
       }
@@ -928,7 +940,7 @@
                 </div>
 
                 <!-- ── Portafolio/Anexos del candidato ─────────────────────
-                     Opcional y de cantidad libre: van adjuntos en el correo de la
+                     Opcional y de cantidad libre: van enlazados en el correo de la
                      long list y el solicitante los abre desde su revisión. -->
                 <div class="rounded-[8px] border px-[13px] py-[11px] mt-[12px]"
                      style="border-color:var(--color-abril-border);background:#FAFCFA">
@@ -966,7 +978,7 @@
                   }
 
                   <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
-                    PDF, Word, Excel, PPT o imágenes. Se envían adjuntos al solicitante junto con el CV.
+                    PDF, Word, Excel, PPT o imágenes. Máx. 20 MB por archivo.
                   </p>
                 </div>
               </div>
@@ -1486,7 +1498,7 @@
                     </div>
 
                     <!-- ── Archivos del informe ────────────────────────────────
-                         Los dos son opcionales: van adjuntos en el correo al solicitante y
+                         Los dos son opcionales: van enlazados en el correo al solicitante y
                          quedan enlazados en su pantalla. -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-[10px] mt-[12px]">
                       @for (slot of slotsArchivoEvaluacion; track slot.codigo) {

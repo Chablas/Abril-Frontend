@@ -6,6 +6,21 @@ import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { FileSelector, SelectedFile } from '../../../../../shared/components/file-selector/file-selector';
+
+/**
+ * Tope del sustento, el mismo que valida el backend (`MaxSustentoBytes`). El archivo no viaja
+ * adjunto en ningún correo —se sube a SharePoint y los correos llevan su enlace—, así que el
+ * límite es nuestro y no el del proveedor de correo.
+ */
+const MAX_SUSTENTO_BYTES = 20 * 1024 * 1024;
+
+/**
+ * Formatos del sustento, los mismos que valida el backend (`AllowedSustentoExt`). Las imágenes
+ * entran porque lo que motiva la vacante suele llegar como foto o captura y no como archivo de
+ * oficina. Ojo con `.heic`: es el formato por defecto de las fotos de iPhone y NO está
+ * permitido, así que ese caso lo tiene que atajar el aviso de abajo.
+ */
+const SUSTENTO_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.webp';
 import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
@@ -108,6 +123,7 @@ export class GthNuevaSolicitud implements OnInit {
   vacantes: VacanteForm[] = [];
   justificacion = '';
   sustento: SelectedFile | null = null;
+  readonly sustentoAccept = SUSTENTO_ACCEPT;
 
   submitted = false;
 
@@ -380,6 +396,36 @@ export class GthNuevaSolicitud implements OnInit {
 
   // ── Sustento (adjunto único opcional) ──────────────────────────────
   onSustentoSelected(file: SelectedFile): void {
+    // El `accept` del input solo filtra el diálogo de archivos: al arrastrar y soltar no se
+    // aplica, así que el formato se comprueba acá. Sin esto el archivo se sube completo y recién
+    // lo rechaza el backend con un 400, después de que el usuario llenó todo el formulario.
+    const ext = '.' + (file.file.name.split('.').pop() ?? '').toLowerCase();
+    if (!file.file.name.includes('.') || !SUSTENTO_ACCEPT.split(',').includes(ext)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Formato de sustento no permitido',
+        text:
+          `«${file.file.name}» no es un formato permitido. Adjunta un PDF, DOC, DOCX, XLS, XLSX, ` +
+          'JPG, PNG o WEBP.',
+        confirmButtonColor: 'var(--color-abril-standard)',
+      });
+      return;
+    }
+
+    // El file-selector no valida tamaño, así que se comprueba acá: sin esto un archivo de más de
+    // 20 MB se sube completo y recién lo rechaza el backend, después de la espera de la subida.
+    if (file.file.size > MAX_SUSTENTO_BYTES) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'El sustento pesa demasiado',
+        text:
+          `«${file.file.name}» pesa ${(file.file.size / 1024 / 1024).toFixed(1)} MB y el máximo es ` +
+          `${MAX_SUSTENTO_BYTES / 1024 / 1024} MB.`,
+        confirmButtonColor: 'var(--color-abril-standard)',
+      });
+      return;
+    }
+
     this.sustento = file; // reemplaza: solo un sustento por solicitud
   }
 

@@ -35,6 +35,18 @@
       <p *ngIf="submitted && (monto === null || monto < 0)" class="text-xs text-red-500">Ingresa un monto válido</p>
     </div>
 
+    <label class="flex items-start gap-[8px] cursor-pointer select-none w-fit">
+      <input
+        type="checkbox"
+        class="w-4 h-4 mt-[2px] cursor-pointer"
+        style="accent-color:var(--color-abril-primary)"
+        [(ngModel)]="esReembolsable" />
+      <span class="flex flex-col">
+        <span class="text-sm text-gray-700">Reembolsable</span>
+        <span class="text-xs text-gray-400">Desmarcado, las salidas por este trayecto no generan reembolso aunque el motivo elegido sí lo permita.</span>
+      </span>
+    </label>
+
     <div class="flex justify-center pt-[4px]">
       <button
         (click)="save()"

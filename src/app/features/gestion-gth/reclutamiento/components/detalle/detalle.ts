@@ -69,12 +69,17 @@ interface CandidatoLongList {
 const ANEXOS_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp';
 
 /**
- * Tope de lo que puede pesar el conjunto de archivos del envío (CVs + anexos). No es una regla
- * nuestra: es lo que acepta el proveedor de correo con los adjuntos adentro, y el backend lo
- * valida igual (`MaxLongListCorreoBytes`). Se comprueba también acá para avisar antes de subir
- * decenas de MB que el servidor va a rechazar.
+ * Topes de los archivos del envío (CVs y anexos de la long list, y los dos del informe del
+ * finalista). Son reglas NUESTRAS, no del proveedor de correo: desde que los archivos viajan
+ * enlazados a SharePoint y no adjuntos, el correo pesa lo mismo con 2 MB que con 20 MB. El
+ * backend valida los mismos números (`MaxLongListFileBytes` y `MaxLongListTotalBytes`); se
+ * comprueban también acá para avisar antes de subir algo que el servidor va a rechazar.
  */
-const MAX_LONG_LIST_CORREO_BYTES = 2_800_000;
+const MAX_ARCHIVO_BYTES = 20 * 1024 * 1024;
+const MAX_ARCHIVOS_TOTAL_BYTES = 60 * 1024 * 1024;
+
+/** Tamaño en MB con un decimal, para los mensajes de tope de archivos. */
+const mbTexto = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 /**
  * Correo válido para enviarle el formulario al postulante. Misma expresión que valida el backend
@@ -580,15 +585,16 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
-   * Por qué no se puede enviar todavía. El correo se puede escribir a mano; el DNI no, porque es el
-   * que nombra la carpeta del colaborador en SharePoint y tiene que ser el mismo de su ficha; y la
-   * ficha tampoco, porque es donde se guarda la firma que va a registrar al abrir el enlace.
+   * Qué está mal, no qué toca hacer: solo avisa de lo que el usuario no ve en la pantalla. El correo
+   * se puede escribir a mano; el DNI no, porque es el que nombra la carpeta del colaborador en
+   * SharePoint y tiene que ser el mismo de su ficha; y la ficha tampoco, porque es donde se guarda
+   * la firma que va a registrar al abrir el enlace. Que todavía no haya carta generada se ve en la
+   * pantalla, así que bloquea el botón sin texto (ver `puedeEnviarCarta`).
    */
   get motivoBloqueoCarta(): string | null {
     if (!this.cartaCorreo.trim()) return 'Falta el correo personal del colaborador.';
     if (!this.carta?.dni) return 'Sin documento de identidad en la base maestra: con él se crea su carpeta en el file.';
     if (!this.carta?.tieneFichaMaestra) return 'Sin ficha en la base maestra: ahí se guarda la firma que registrará en el enlace.';
-    if (!this.cartaGenerada) return 'Genera la carta oferta antes de enviarla.';
     if (this.cartaDatosDesfasados) {
       return 'Cambiaste las condiciones: vuelve a generar la carta antes de enviarla.';
     }
@@ -633,24 +639,43 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   get puedeEnviarCarta(): boolean {
-    return !this.enviandoCarta && !this.generandoCarta && this.motivoBloqueoCarta === null;
+    return (
+      !this.enviandoCarta &&
+      !this.generandoCarta &&
+      this.cartaGenerada &&
+      this.motivoBloqueoCarta === null
+    );
   }
 
   // ── Generación de la carta desde la plantilla ────────────────────────────────
 
   /**
-   * Por qué no se puede generar todavía. Las tres condiciones del miniformulario se imprimen en el
-   * documento, así que ninguna puede ir vacía: el hueco lo ve el candidato, no nosotros.
+   * Solo lo que no se ve en la pantalla: la ficha de la base maestra, que se consulta aparte, y una
+   * fecha límite que ya venció (el campo está lleno y parece correcto). Los campos vacíos no dicen
+   * nada acá — se ven solos en el formulario y bloquean el botón sin texto (ver
+   * `datosCartaCompletos`).
    */
   get motivoBloqueoGenerar(): string | null {
     if (!this.carta?.dni) return 'Sin documento de identidad en la base maestra: con él se crea su carpeta en el file.';
     if (!this.carta?.tieneFichaMaestra) return 'Sin ficha en la base maestra: de ahí sale el nombre de la carta.';
-    if (!this.cartaFechaIngreso) return 'Indica la fecha de ingreso.';
-    if (this.cartaSueldo == null || this.cartaSueldo <= 0) return 'Indica el sueldo mensual ofrecido.';
-    if (!this.cartaFechaLimite) return 'Indica hasta cuándo puede aceptar.';
-    if (this.cartaFechaLimite < this.hoyIso) return 'La fecha límite de aceptación ya pasó.';
-    if (this.condicionesLimpias.length === 0) return 'Escribe al menos una condición de contrato.';
+    if (this.cartaFechaLimite && this.cartaFechaLimite < this.hoyIso) {
+      return 'La fecha límite de aceptación ya pasó.';
+    }
     return null;
+  }
+
+  /**
+   * Los datos del miniformulario que se imprimen en el documento: ninguno puede ir vacío, porque el
+   * hueco lo ve el candidato y no nosotros.
+   */
+  private get datosCartaCompletos(): boolean {
+    return (
+      !!this.cartaFechaIngreso &&
+      this.cartaSueldo != null &&
+      this.cartaSueldo > 0 &&
+      !!this.cartaFechaLimite &&
+      this.condicionesLimpias.length > 0
+    );
   }
 
   // ── Condiciones de contrato: una viñeta de la carta por campo ────────────────
@@ -670,7 +695,12 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   get puedeGenerarCarta(): boolean {
-    return !this.generandoCarta && !this.enviandoCarta && this.motivoBloqueoGenerar === null;
+    return (
+      !this.generandoCarta &&
+      !this.enviandoCarta &&
+      this.datosCartaCompletos &&
+      this.motivoBloqueoGenerar === null
+    );
   }
 
   /**
@@ -848,7 +878,36 @@ export class GthDetalleRequerimiento implements OnInit {
     const input = event.target as HTMLInputElement;
     const archivo = input.files?.[0];
     input.value = '';
-    if (archivo) this.subirCartaFirmada(archivo);
+    if (!archivo) return;
+
+    // El `accept` del input solo filtra el diálogo de archivos, así que el formato y el peso se
+    // comprueban acá con los mismos topes que valida el backend (`AllowedCartaFirmadaExt` y
+    // `MaxCartaBytes`). Sin esto el archivo se sube completo y recién lo rechaza el servidor con
+    // un 400, después de toda la espera de la subida.
+    const ext = '.' + (archivo.name.split('.').pop() ?? '').toLowerCase();
+    if (!archivo.name.includes('.') || !this.cartaFirmadaAccept.split(',').includes(ext)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Formato no permitido',
+        text: `«${archivo.name}» no es un formato permitido. Adjunta un PDF, DOC o DOCX.`,
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    if (archivo.size > MAX_ARCHIVO_BYTES) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'La carta pesa demasiado',
+        text:
+          `«${archivo.name}» pesa ${mbTexto(archivo.size)} y el máximo es ` +
+          `${mbTexto(MAX_ARCHIVO_BYTES)}.`,
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    this.subirCartaFirmada(archivo);
   }
 
   private subirCartaFirmada(archivo: File): void {
@@ -1083,6 +1142,22 @@ export class GthDetalleRequerimiento implements OnInit {
     const asignacion = this.detalle.asignacion;
     if (asignacion[campo] === valor) return;
 
+    // Una razón social llena ni se guarda ni se queda elegida: esta sección se autoguarda con cada
+    // cambio y aceptarla en el modelo la mandaría igual en el próximo campo que se toque. Se corta
+    // antes de escribirla, así que el desplegable vuelve solo a lo que estaba.
+    if (campo === 'contributorId') {
+      const elegida = this.detalle.razonesSociales.find((r) => r.id === valor);
+      if (elegida && elegida.cuposDisponibles === 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Razón social sin cupos',
+          text: `${elegida.nombre} ya llegó al tope de 20 trabajadores: elige otra.`,
+          confirmButtonColor: '#005D9D',
+        });
+        return;
+      }
+    }
+
     const prev = asignacion[campo];
     asignacion[campo] = valor;
 
@@ -1111,6 +1186,22 @@ export class GthDetalleRequerimiento implements OnInit {
     return !!this.detalle && !!razon && razon.cuposDisponibles < this.detalle.vacantes;
   }
 
+  /**
+   * true si la razón social del requerimiento ya llegó al tope de 20: no entra nadie más, así que
+   * el proceso no puede avanzar con ella.
+   *
+   * Es distinto de `sinCupos`, que avisa cuando quedan cupos pero no alcanzan para todas las
+   * vacantes: eso se sigue permitiendo (la razón social puede estar por ampliarse y las vacantes se
+   * cubren de a una). Con cero no hay nada que ampliar sobre la marcha.
+   *
+   * Se calcula sobre lo guardado, no sobre lo que se acaba de elegir: elegir una llena está
+   * cortado antes (`onAsignacionChange`). Esto cubre el otro caso — la razón social se asignó hace
+   * tiempo y se llenó después.
+   */
+  get razonSocialLlena(): boolean {
+    return this.razonSocialSeleccionada?.cuposDisponibles === 0;
+  }
+
   // ── Publicación en canales ──────────────────────────────────────────────
   toggleCanal(canalId: number): void {
     if (this.canalesSeleccionados.has(canalId)) this.canalesSeleccionados.delete(canalId);
@@ -1121,6 +1212,10 @@ export class GthDetalleRequerimiento implements OnInit {
    * true si se puede publicar: al menos un canal marcado y la asignación interna completa.
    * Publicar avanza la fase, y a partir de ahí el requerimiento ya se trabaja con responsable,
    * SLA, prioridad y razón social definidos, así que los cuatro se exigen antes de continuar.
+   *
+   * Y la razón social tiene que tener cupo: publicar arranca el proceso que termina metiendo a
+   * alguien en esa empresa, así que con el tope ya cubierto no se avanza (`razonSocialLlena`).
+   * Descubrirlo al final, con el candidato ya elegido, es lo que hay que evitar.
    */
   get puedePublicar(): boolean {
     const a = this.detalle?.asignacion;
@@ -1129,7 +1224,8 @@ export class GthDetalleRequerimiento implements OnInit {
       !!a?.responsableId &&
       !!a.tipoProcesoId &&
       !!a.prioridadId &&
-      !!a.contributorId
+      !!a.contributorId &&
+      !this.razonSocialLlena
     );
   }
 
@@ -1261,20 +1357,35 @@ export class GthDetalleRequerimiento implements OnInit {
       return;
     }
 
-    // Los CVs y los anexos viajan adjuntos en el correo al solicitante, que tiene un tope de
-    // tamaño (ver MAX_LONG_LIST_CORREO_BYTES): se avisa acá para no subirlo y que lo rechace.
+    // Los archivos se suben a SharePoint y el correo al solicitante lleva sus enlaces, así que
+    // el tope es el de la subida: por archivo y por peso de toda la petición.
+    const pesado = this.candidatos
+      .flatMap((c) => [c.cv, ...c.anexos])
+      .find((f) => f.size > MAX_ARCHIVO_BYTES);
+    if (pesado) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Un archivo pesa demasiado',
+        text:
+          `«${pesado.name}» pesa ${mbTexto(pesado.size)} y el máximo por archivo es ` +
+          `${mbTexto(MAX_ARCHIVO_BYTES)}.`,
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
     const pesoTotal = this.candidatos.reduce(
       (total, c) => total + c.cv.size + c.anexos.reduce((suma, a) => suma + a.size, 0),
       0,
     );
-    if (pesoTotal > MAX_LONG_LIST_CORREO_BYTES) {
-      const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    if (pesoTotal > MAX_ARCHIVOS_TOTAL_BYTES) {
       Swal.fire({
         icon: 'warning',
         title: 'Los archivos pesan demasiado',
         text:
-          `Los CVs y anexos suman ${mb(pesoTotal)} y el correo al solicitante admite hasta ` +
-          `${mb(MAX_LONG_LIST_CORREO_BYTES)}. Reduce o quita algún anexo del portafolio.`,
+          `Los CVs y anexos suman ${mbTexto(pesoTotal)} y el envío admite hasta ` +
+          `${mbTexto(MAX_ARCHIVOS_TOTAL_BYTES)}. Quita algún anexo del portafolio o envía la ` +
+          `long list en dos tandas.`,
         confirmButtonColor: '#005D9D',
       });
       return;
@@ -1951,9 +2062,9 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
-   * Toma el archivo elegido para ese documento. Se valida el peso acá además del backend: los dos
-   * viajan adjuntos en el correo al solicitante y el proveedor rechaza el mensaje completo si se
-   * pasa, así que conviene avisarlo antes de subir nada.
+   * Toma el archivo elegido para ese documento. Se valida el peso acá además del backend para
+   * avisarlo antes de subir nada: los archivos se guardan en SharePoint y el correo al
+   * solicitante los enlaza, así que el tope es el de la subida y no el del correo.
    */
   onArchivoEvaluacion(event: Event, c: CandidatoAprobado, codigo: string): void {
     const input = event.target as HTMLInputElement;
@@ -1968,11 +2079,23 @@ export class GthDetalleRequerimiento implements OnInit {
       .filter(([k, f]) => k !== codigo && !!f)
       .reduce((total, [, f]) => total + (f as File).size, 0);
 
-    if (otros + file.size > MAX_LONG_LIST_CORREO_BYTES) {
+    if (file.size > MAX_ARCHIVO_BYTES) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'El archivo pesa demasiado',
+        text:
+          `«${file.name}» pesa ${mbTexto(file.size)} y el máximo por archivo es ` +
+          `${mbTexto(MAX_ARCHIVO_BYTES)}.`,
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    if (otros + file.size > MAX_ARCHIVOS_TOTAL_BYTES) {
       Swal.fire({
         icon: 'warning',
         title: 'Archivos demasiado pesados',
-        text: `Los archivos del informe no pueden superar los ${(MAX_LONG_LIST_CORREO_BYTES / 1024 / 1024).toFixed(1)} MB en total.`,
+        text: `Los archivos del informe no pueden superar los ${mbTexto(MAX_ARCHIVOS_TOTAL_BYTES)} en total.`,
         confirmButtonColor: '#005D9D',
       });
       return;

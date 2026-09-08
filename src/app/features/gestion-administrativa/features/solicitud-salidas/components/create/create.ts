@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -35,6 +35,12 @@ interface TrayectoForm {
   destinoLibre: boolean;
   /** Documentos adjuntos (prueba) — al menos uno obligatorio cuando el motivo elegido lo requiere. */
   adjuntos: SelectedFile[];
+  /**
+   * true = el trayecto está cerrado en el formulario. Vive acá y no en el DOM porque cerrarlo
+   * desmonta sus campos: si el estado viviera en el template se perdería lo ya escrito. Los
+   * trayectos nacen abiertos y `save()` reabre los que tengan errores.
+   */
+  colapsado: boolean;
 }
 
 @Component({
@@ -67,9 +73,13 @@ export class SolicitudSalidaCreate implements OnInit {
   formData: SolicitudSalidaFormDataDto = {
     motivos: [],
     lugares: [],
-    aprobadorEmail: null,
+    correoRevisorPara: [],
+    correoRevisorCopia: [],
+    correoConfirmacionPara: [],
+    correoConfirmacionCopia: [],
     esTI: false,
     trayectosCatalogo: [],
+    trayectosNoReembolsables: [],
   };
 
   fechaSalida = '';
@@ -81,6 +91,7 @@ export class SolicitudSalidaCreate implements OnInit {
     private service: SolicitudSalidasService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -98,6 +109,39 @@ export class SolicitudSalidaCreate implements OnInit {
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  // ── Correos que salen al registrar la solicitud ────────────────────
+  //
+  // Los dos correos del alta, con los destinatarios que el backend ya resolvió aplicando
+  // Configuración → Correos: el de aprobación (sección Revisor) y la confirmación informativa
+  // (sección Confirmación). Se muestran los correos REALES, no a quién le tocaría: cada
+  // destinatario se prende y se apaga por separado en esa pantalla, el revisor incluido.
+
+  /**
+   * Destinatarios del aviso con los botones de aprobar/rechazar. No es "el revisor de tu área":
+   * ese puede estar apagado en la configuración, y entonces el aviso se va solo a los
+   * destinatarios agregados ahí. '' = no le llega a nadie.
+   */
+  get correoRevisorPara(): string {
+    return (this.formData.correoRevisorPara ?? []).join(', ');
+  }
+
+  /** Los que van en copia de ese aviso; '' si no hay ninguno. */
+  get correoRevisorCopia(): string {
+    return (this.formData.correoRevisorCopia ?? []).join(', ');
+  }
+
+  /**
+   * Destinatarios de la confirmación informativa, "Para" y copias en UNA sola lista: a todos
+   * les llega el mismo correo y separarlos solo agregaba ruido a un aviso que no pide ninguna
+   * acción (quién es Para y quién CC se ve en Configuración → Correos). '' = no se envía a nadie.
+   */
+  get correoConfirmacion(): string {
+    return [
+      ...(this.formData.correoConfirmacionPara ?? []),
+      ...(this.formData.correoConfirmacionCopia ?? []),
+    ].join(', ');
   }
 
   // ── Helpers ────────────────────────────────────────────────────────
@@ -131,12 +175,14 @@ export class SolicitudSalidaCreate implements OnInit {
       lugarDestinoLibre: null,
       destinoLibre: false,
       adjuntos: [],
+      colapsado: false,
     };
   }
 
   // ── Trayectos dinámicos ────────────────────────────────────────────
 
   agregarTrayecto(): void {
+    if (!this.puedeAgregarTrayecto) return;
     const prev = this.trayectos[this.trayectos.length - 1];
     const nuevo = this.nuevoTrayecto(false);
     // Auto-encadenar: el origen del nuevo trayecto = destino del anterior (solo display).
@@ -169,7 +215,7 @@ export class SolicitudSalidaCreate implements OnInit {
     }
   }
 
-  private destinoLabel(t: TrayectoForm): string {
+  destinoLabel(t: TrayectoForm): string {
     if (t.lugarDestinoLibre) return t.lugarDestinoLibre;
     if (t.lugarDestinoId == null) return '';
     const lugar = (this.formData.lugares ?? []).find((l: any) => l.id === t.lugarDestinoId);
@@ -189,7 +235,69 @@ export class SolicitudSalidaCreate implements OnInit {
     return match ? match.monto : null;
   }
 
+  // ── Reembolso de movilidad ─────────────────────────────────────────
+  // La regla es asimétrica y se decide entre dos configuraciones (Gestión
+  // Administrativa → Configuración): el MOTIVO concede el reembolso y el
+  // TRAYECTO puede quitárselo, nunca al revés. Por eso un par (origen, destino)
+  // marcado como no reembolsable (hoy Oficina Central ↔ Bosque Real, que la
+  // empresa cubre con movilidad propia) gana sobre el motivo.
+  // Acá solo se informa: el trabajador no elige si su salida es reembolsable.
+
+  /** Etiqueta del lugar de origen del trayecto (texto libre, o nombre del catálogo). */
+  origenLabel(t: TrayectoForm): string {
+    if (t.lugarOrigenLibre) return t.lugarOrigenLibre;
+    if (t.lugarOrigenId == null) return '';
+    return (this.formData.lugares ?? []).find((l) => l.id === t.lugarOrigenId)?.nombreDisplay ?? '';
+  }
+
+  /** "Origen → Destino", o cadena vacía mientras falte alguno de los dos. */
+  rutaLabel(t: TrayectoForm): string {
+    const origen = this.origenLabel(t);
+    const destino = this.destinoLabel(t);
+    return origen && destino ? `${origen} → ${destino}` : '';
+  }
+
+  /**
+   * true si el motivo elegido concede reembolso. "Otro motivo" nunca lo concede:
+   * un motivo fuera del catálogo no tiene configuración que consultar.
+   */
+  motivoEsReembolsable(t: TrayectoForm): boolean {
+    if (t.motivoId == null) return false;
+    return this.formData.motivos.find((m) => m.id === t.motivoId)?.esReembolsable ?? false;
+  }
+
+  /** true si el par (origen, destino) elegido está marcado como no reembolsable. */
+  trayectoExcluido(t: TrayectoForm): boolean {
+    if (t.lugarOrigenId == null || t.lugarDestinoId == null) return false;
+    return (this.formData.trayectosNoReembolsables ?? []).some(
+      (p) => p.lugarOrigenId === t.lugarOrigenId && p.lugarDestinoId === t.lugarDestinoId,
+    );
+  }
+
+  /** true si el trayecto genera reembolso: lo concede el motivo y el trayecto no lo anula. */
+  trayectoCorrespondeReembolso(t: TrayectoForm): boolean {
+    return this.motivoEsReembolsable(t) && !this.trayectoExcluido(t);
+  }
+
+  /** Motivo por el que un trayecto no genera reembolso; vacío si sí lo genera. */
+  razonSinReembolso(t: TrayectoForm): string {
+    if (this.trayectoCorrespondeReembolso(t)) return '';
+    if (this.trayectoExcluido(t)) return 'trayecto no reembolsable';
+    return 'motivo no reembolsable';
+  }
+
   // ── Manejo de horas ────────────────────────────────────────────────
+
+  /**
+   * La hora de retorno no puede ser anterior a la de salida del mismo trayecto: su desplegable
+   * ya deshabilita esas opciones vía `min`. Al mover la salida hacia adelante, un retorno que ya
+   * estaba elegido y queda por debajo se descarta — dejarlo mostraría en el campo un valor que su
+   * propio panel marca como no elegible, y `validarTrayecto` lo rebotaría igual al enviar.
+   */
+  onHoraSalidaChange(t: TrayectoForm, hora: string | null): void {
+    t.horaSalida = hora ?? '';
+    if (t.horaSalida && t.horaRetorno && t.horaRetorno < t.horaSalida) t.horaRetorno = '';
+  }
 
   onSinRetornoChange(t: TrayectoForm, checked: boolean): void {
     t.sinRetorno = checked;
@@ -202,6 +310,9 @@ export class SolicitudSalidaCreate implements OnInit {
     t.motivoLibre = null;
     t.motivoAdicional = null;
     t.adjuntos = [];
+    // "Otro motivo" siempre pide horario: si venía de un motivo que no lo pedía, el primer
+    // trayecto recupera su hora de salida por defecto.
+    if (!t.horaSalida && t === this.trayectos[0]) t.horaSalida = this.nowStr;
   }
 
   // ── Documento adjunto por motivo ───────────────────────────────────
@@ -242,7 +353,9 @@ export class SolicitudSalidaCreate implements OnInit {
    * y nunca dispara el recordatorio. El backend replica la regla para omitirlo en los correos.
    */
   get mostrarRecordatorioRecuperacion(): boolean {
-    return this.trayectos.some((t) => t.motivoId != null && !this.motivoEsHoraEstimada(t));
+    return this.trayectos.some(
+      (t) => t.motivoId != null && !this.motivoEsHoraEstimada(t) && this.motivoPideHorasLugares(t),
+    );
   }
 
   /** Etiqueta de la hora de retorno según el motivo: estimada / exacta (neutra sin motivo aún). */
@@ -251,11 +364,72 @@ export class SolicitudSalidaCreate implements OnInit {
     return this.motivoEsHoraEstimada(t) ? 'Hora de retorno estimada' : 'Hora de retorno exacta';
   }
 
-  onMotivoChange(t: TrayectoForm, motivoId: number | null): void {
+  async onMotivoChange(t: TrayectoForm, motivoId: number | null): Promise<void> {
+    const anterior = t.motivoId;
     t.motivoId = motivoId;
     // Los adjuntos y el motivo adicional pertenecen al motivo elegido: al cambiarlo se descartan.
     t.adjuntos = [];
     t.motivoAdicional = null;
+
+    if (this.motivoPideHorasLugares(t)) {
+      // Al volver a un motivo normal, el primer trayecto recupera la hora de salida por
+      // defecto que se le había limpiado.
+      if (!t.horaSalida && t === this.trayectos[0]) t.horaSalida = this.nowStr;
+      return;
+    }
+
+    // El motivo no admite varios trayectos: se descartan los demás, previa confirmación
+    // para no borrar en silencio lo que el trabajador ya había escrito.
+    if (this.trayectos.length > 1) {
+      const result = await Swal.fire({
+        icon: 'warning',
+        title: 'Este motivo no admite varios trayectos',
+        text: 'Se quitarán los demás trayectos de la solicitud.',
+        showCancelButton: true,
+        confirmButtonText: 'Continuar',
+        cancelButtonText: 'Elegir otro motivo',
+        confirmButtonColor: '#0086A5',
+      });
+      if (!result.isConfirmed) {
+        t.motivoId = anterior;
+        this.cdr.detectChanges();
+        return;
+      }
+      this.trayectos = [t];
+    }
+
+    this.limpiarHorasYLugares(t);
+    this.cdr.detectChanges();
+  }
+
+  /** Descarta horario y lugares del trayecto: su motivo no los pide. */
+  private limpiarHorasYLugares(t: TrayectoForm): void {
+    t.horaSalida = '';
+    t.horaRetorno = '';
+    t.sinRetorno = false;
+    t.lugarOrigenId = null;
+    t.lugarOrigenLibre = null;
+    t.origenLibre = false;
+    t.origenAutoLabel = '';
+    t.lugarDestinoId = null;
+    t.lugarDestinoLibre = null;
+    t.destinoLibre = false;
+  }
+
+  /**
+   * true si el motivo elegido pide horas, lugares y trayectos — lo normal. Los motivos con
+   * pideHorasLugares = false describen una ausencia de día completo (ej. licencia sin goce de
+   * haber): no llevan horario ni lugares y la solicitud queda con un solo trayecto. Sin motivo
+   * elegido, y con "Otro motivo", se pide todo.
+   */
+  motivoPideHorasLugares(t: TrayectoForm): boolean {
+    if (t.motivoId == null) return true;
+    return this.formData.motivos.find((m) => m.id === t.motivoId)?.pideHorasLugares ?? true;
+  }
+
+  /** Los motivos que no piden horario tampoco admiten trayectos adicionales. */
+  get puedeAgregarTrayecto(): boolean {
+    return this.trayectos.every((t) => this.motivoPideHorasLugares(t));
   }
 
   /** El file-selector emite un evento por archivo; los acumulamos en el trayecto. */
@@ -318,6 +492,14 @@ export class SolicitudSalidaCreate implements OnInit {
     const errs: string[] = [];
     const pref = `Trayecto ${idx + 1}`;
 
+    if (!this.motivoValido(t)) errs.push(`${pref}: motivo`);
+    if (!this.motivoAdicionalValido(t)) errs.push(`${pref}: motivo adicional`);
+    if (this.motivoRequiereAdjunto(t) && t.adjuntos.length === 0)
+      errs.push(`${pref}: el motivo seleccionado requiere al menos un documento adjunto`);
+
+    // Un motivo que no pide horario ni lugares no tiene nada más que validar.
+    if (!this.motivoPideHorasLugares(t)) return errs;
+
     if (!t.horaSalida) errs.push(`${pref}: hora de salida`);
     if (!t.sinRetorno && !t.horaRetorno) errs.push(`${pref}: hora de retorno`);
     // La salida no puede ser de un tiempo pasado: la fecha debe ser hoy o futura
@@ -330,14 +512,10 @@ export class SolicitudSalidaCreate implements OnInit {
     }
     if (!t.sinRetorno && t.horaRetorno && t.horaSalida && t.horaRetorno < t.horaSalida)
       errs.push(`${pref}: la hora de retorno debe ser igual o posterior a la de salida`);
-    if (!this.motivoValido(t)) errs.push(`${pref}: motivo`);
-    if (!this.motivoAdicionalValido(t)) errs.push(`${pref}: motivo adicional`);
     if (!this.origenValido(t, idx)) errs.push(`${pref}: lugar de origen`);
     if (!this.destinoValido(t)) errs.push(`${pref}: lugar de destino`);
     if (t.lugarOrigenId && t.lugarDestinoId && t.lugarOrigenId === t.lugarDestinoId)
       errs.push(`${pref}: origen y destino no pueden ser iguales`);
-    if (this.motivoRequiereAdjunto(t) && t.adjuntos.length === 0)
-      errs.push(`${pref}: el motivo seleccionado requiere al menos un documento adjunto`);
     return errs;
   }
 
@@ -359,7 +537,13 @@ export class SolicitudSalidaCreate implements OnInit {
     }
 
     const errors: string[] = [];
-    this.trayectos.forEach((t, i) => errors.push(...this.validarTrayecto(t, i)));
+    this.trayectos.forEach((t, i) => {
+      const errs = this.validarTrayecto(t, i);
+      // Cerrado y con errores: se reabre. Si no, el aviso nombra un trayecto cuyos campos en
+      // rojo están desmontados y el usuario no tiene qué corregir a la vista.
+      if (errs.length > 0) t.colapsado = false;
+      errors.push(...errs);
+    });
     if (errors.length > 0) {
       Swal.fire({
         title: 'Campos requeridos',
@@ -372,17 +556,20 @@ export class SolicitudSalidaCreate implements OnInit {
 
     const payload: SolicitudSalidaCreateDto = {
       fechaSalida: this.fechaSalida,
-      trayectos: this.trayectos.map<TrayectoCreateDto>((t) => ({
-        horaSalida: t.horaSalida,
-        horaRetorno: t.sinRetorno ? null : t.horaRetorno,
-        motivoId: t.motivoId,
-        motivoLibre: t.motivoLibre?.trim() || null,
-        motivoAdicional: t.motivoAdicional?.trim() || null,
-        lugarOrigenId: t.lugarOrigenId,
-        lugarOrigenLibre: t.lugarOrigenLibre?.trim() || null,
-        lugarDestinoId: t.lugarDestinoId,
-        lugarDestinoLibre: t.lugarDestinoLibre?.trim() || null,
-      })),
+      trayectos: this.trayectos.map<TrayectoCreateDto>((t) => {
+        const pide = this.motivoPideHorasLugares(t);
+        return {
+          horaSalida: pide ? t.horaSalida : null,
+          horaRetorno: pide && !t.sinRetorno ? t.horaRetorno : null,
+          motivoId: t.motivoId,
+          motivoLibre: t.motivoLibre?.trim() || null,
+          motivoAdicional: t.motivoAdicional?.trim() || null,
+          lugarOrigenId: pide ? t.lugarOrigenId : null,
+          lugarOrigenLibre: pide ? t.lugarOrigenLibre?.trim() || null : null,
+          lugarDestinoId: pide ? t.lugarDestinoId : null,
+          lugarDestinoLibre: pide ? t.lugarDestinoLibre?.trim() || null : null,
+        };
+      }),
     };
 
     // Documentos adjuntos por índice de trayecto (N por trayecto). Se aplana:
@@ -395,7 +582,7 @@ export class SolicitudSalidaCreate implements OnInit {
     this.service.create(payload, adjuntos).subscribe({
       next: (res) => {
         this.loaderService.hide();
-        Swal.fire({ title: res.message, icon: 'success', draggable: true });
+        Swal.fire({ title: res.message, icon: 'success', draggable: true, confirmButtonColor: '#0F6E56' });
         this.saved.emit();
         this.closeModal.emit();
       },

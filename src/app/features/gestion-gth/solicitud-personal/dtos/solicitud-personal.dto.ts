@@ -60,13 +60,13 @@ export interface ReclutamientoFormDataDto {
   areaNombre: string | null;
   areaScopeId: number | null;
   /**
-   * Puesto del propio solicitante, para el campo de solo lectura «Tu puesto». Sale de
+   * Puesto del propio solicitante, para el campo de solo lectura «Puesto» de la cabecera. Sale de
    * `workers.puesto_id → puesto.nombre`. null cuando el usuario no tiene ficha de trabajador o
    * su ficha todavía no tiene puesto.
    */
   puestoNombre: string | null;
   /**
-   * Categoría del propio solicitante, para el campo de solo lectura «Tu categoría». No se guarda
+   * Categoría del propio solicitante, para el campo de solo lectura «Categoría». No se guarda
    * en la ficha: se llega por el puesto (`puesto.categoria_id`), así que sin puesto tampoco hay
    * categoría.
    */
