@@ -1,30 +1,37 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
-import { CorreosService } from '../services/correos.service';
+import { CorreosService } from './services/correos.service';
 import {
   CorreoAreaOption,
   CorreoDestinatario,
   CorreoEvento,
+  CorreoPantalla,
   CorreoTipoCodigo,
   CorreoWorkerOption,
-} from '../dtos/ga-correo.dto';
-import { LoaderService } from '../../../../../../core/services/loader.service';
-import { ErrorService } from '../../../../../../core/services/error.service';
-import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
-import { SectionTabs, SectionTab } from '../../../../../../shared/components/section-tabs/section-tabs';
-import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+} from './dtos/ga-correo.dto';
+import { LoaderService } from '../../../../../core/services/loader.service';
+import { ErrorService } from '../../../../../core/services/error.service';
+import { AbrilModalPanel } from '../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { SectionTabs, SectionTab } from '../../../../../shared/components/section-tabs/section-tabs';
+import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 
 /**
- * Sección "Correos" de la Configuración de Gestión Administrativa.
+ * Matriz de destinatarios de los correos de una pantalla del flujo de salidas.
  *
- * Una sección por cada correo del flujo de salidas, con su interruptor maestro (apagado = ese
- * correo no se envía a nadie) y la matriz de sus destinatarios, cada uno con su propio
- * interruptor — incluido el destinatario principal (el revisor de la solicitud, el solicitante),
- * que no es una fila de la tabla de reglas sino una propiedad del propio correo.
+ * La comparten las cinco configuraciones del módulo (Solicitud de Salidas, Mis Rendiciones,
+ * Gestión de Salidas, Gestión de Rendiciones y Reembolsos): el `pantalla` decide qué correos
+ * administra cada una, y las subsecciones salen de lo que devuelve el backend, no de una lista
+ * escrita acá. Reemplaza a la pantalla única Configuración → Correos, donde los once correos del
+ * flujo estaban juntos sin decir de dónde salía cada uno.
+ *
+ * Una subsección (`app-section-tabs`) por correo, con su interruptor maestro (apagado = ese correo
+ * no se envía a nadie) y la matriz de sus destinatarios, cada uno con su propio interruptor —
+ * incluido el destinatario principal (el revisor de la solicitud, el solicitante), que no es una
+ * fila de la tabla de reglas sino una propiedad del propio correo.
  *
  * Es la misma pantalla que la configuración de correos de Gestión GTH y comparte su hoja de
  * estilos (`shared/styles/correos-config.css`). Lo que cambia es el dato: acá un destinatario
@@ -32,19 +39,16 @@ import { SearchSelect } from '../../../../../../shared/components/search-select/
  *
  * Todo guarda al momento de tocarlo: los interruptores son optimistas y se revierten si el
  * guardado falla; el alta, la edición y la baja recargan la lista.
- *
- * La lista "nunca se enviará a" se dio de baja en septiembre de 2026: nunca quedaba registro de
- * por qué alguien estaba excluido, y la misma exclusión se logra apagando o quitando su fila.
  */
 @Component({
-  selector: 'app-ga-correos',
+  selector: 'app-ga-correos-config',
   standalone: true,
   imports: [CommonModule, FormsModule, AbrilModalPanel, SectionTabs, SearchSelect],
-  templateUrl: './correos.html',
-  styleUrl: '../../../../../../shared/styles/correos-config.css',
+  templateUrl: './correos-config.html',
+  styleUrl: '../../../../../shared/styles/correos-config.css',
   // Lo propio de esta pantalla: el resto del look sale de la hoja compartida.
   styles: [`
-    :host { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: auto; }
+    :host { display: block; width: 100%; }
 
     /* "Incluir sub-áreas": solo aparece con el tipo Área, dentro del modal. */
     .form-check {
@@ -65,23 +69,28 @@ import { SearchSelect } from '../../../../../../shared/components/search-select/
     }
   `],
 })
-export class GaCorreos implements OnInit {
+export class GaCorreosConfig implements OnChanges {
+  /** Pantalla cuya configuración se está viendo: define qué correos trae y sobre cuáles escribe. */
+  @Input({ required: true }) pantalla!: CorreoPantalla;
+
+  /**
+   * Aviso de estado para la pantalla que hoy no origina ningún correo (Reembolsos). Se recibe de
+   * afuera porque el motivo es de esa pantalla, no de este componente.
+   */
+  @Input() textoSinCorreos = 'Esta pantalla no origina correos.';
+
   eventos: CorreoEvento[] = [];
   trabajadores: CorreoWorkerOption[] = [];
   areas: CorreoAreaOption[] = [];
   loading = false;
 
-  /** Código del correo cuya sección se está viendo. */
+  /** Código del correo cuya subsección se está viendo. */
   eventoActivoCodigo: string | null = null;
 
   /** id del destinatario que se está guardando, para bloquear su fila. 0 = el principal. */
   savingDestinatarioId: number | null = null;
   /** Código del correo cuyo interruptor maestro se está guardando. */
   savingEventoCodigo: string | null = null;
-
-  // Contrato del contenedor GaConfiguracion (esta sección no tiene filtros).
-  filtrosActivos = 0;
-  filtrosAbiertos = false;
 
   // ── Modal de alta/edición de un destinatario ──
   formOpen = false;
@@ -105,8 +114,8 @@ export class GaCorreos implements OnInit {
   private static readonly EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
   /**
-   * Etiquetas cortas para las pestañas. Las pestañas salen de ga_correo_evento, así que un correo
-   * nuevo aparece solo: sin entrada acá se muestra con su nombre completo.
+   * Etiquetas cortas para las subsecciones. Salen de ga_correo_evento, así que un correo nuevo
+   * aparece solo: sin entrada acá se muestra con su nombre completo.
    */
   private readonly labelCorto: Record<string, string> = {
     REVISOR: 'Revisor',
@@ -129,14 +138,21 @@ export class GaCorreos implements OnInit {
     private cdr: ChangeDetectorRef,
   ) {}
 
-  ngOnInit(): void {
-    this.load();
+  /**
+   * Se recarga cuando cambia la pantalla y no solo al crearse: las cinco configuraciones montan
+   * el mismo contenedor, así que ir de una a otra puede reusar esta instancia con otro `pantalla`.
+   */
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['pantalla']) {
+      this.eventoActivoCodigo = null;
+      this.load();
+    }
   }
 
   load(): void {
     this.loading = true;
     this.loaderService.show();
-    this.service.getInicial().subscribe({
+    this.service.getInicial(this.pantalla).subscribe({
       next: (data) => {
         this.eventos = data.eventos ?? [];
         this.trabajadores = (data.trabajadores ?? []).sort((a, b) =>
@@ -183,7 +199,7 @@ export class GaCorreos implements OnInit {
     });
   }
 
-  // ── Secciones ────────────────────────────────────────────────────────────
+  // ── Subsecciones ─────────────────────────────────────────────────────────
 
   get sectionTabs(): SectionTab[] {
     return this.eventos.map((e) => ({
@@ -195,6 +211,11 @@ export class GaCorreos implements OnInit {
 
   get eventoActivo(): CorreoEvento | null {
     return this.eventos.find((e) => e.codigo === this.eventoActivoCodigo) ?? null;
+  }
+
+  /** La pantalla no origina ningún correo (hoy, solo Reembolsos). */
+  get sinCorreos(): boolean {
+    return !this.loading && this.eventos.length === 0;
   }
 
   onSectionChange(codigo: string): void {
@@ -224,7 +245,7 @@ export class GaCorreos implements OnInit {
     // Optimista: se pinta al toque y se revierte si el guardado falla.
     evento.active = nuevo;
 
-    this.service.setEventoActive(evento.codigo, nuevo).subscribe({
+    this.service.setEventoActive(this.pantalla, evento.codigo, nuevo).subscribe({
       next: () => {
         this.savingEventoCodigo = null;
         this.cdr.detectChanges();
@@ -248,7 +269,7 @@ export class GaCorreos implements OnInit {
     this.savingDestinatarioId = 0;
     evento.destinatarioPrincipalActivo = nuevo;
 
-    this.service.setPrincipalActive(evento.codigo, nuevo).subscribe({
+    this.service.setPrincipalActive(this.pantalla, evento.codigo, nuevo).subscribe({
       next: () => {
         this.savingDestinatarioId = null;
         this.cdr.detectChanges();
@@ -269,7 +290,7 @@ export class GaCorreos implements OnInit {
     this.savingDestinatarioId = fila.id;
     fila.active = nuevo;
 
-    this.service.setDestinatarioActive(fila.id, nuevo).subscribe({
+    this.service.setDestinatarioActive(this.pantalla, fila.id, nuevo).subscribe({
       next: () => {
         this.savingDestinatarioId = null;
         this.cdr.detectChanges();
@@ -332,7 +353,7 @@ export class GaCorreos implements OnInit {
   get formValido(): boolean {
     if (this.formTipo === 'TRABAJADOR') return this.formWorkerId != null;
     if (this.formTipo === 'AREA') return this.formAreaScopeId != null;
-    return GaCorreos.EMAIL_RE.test(this.formCorreo.trim());
+    return GaCorreosConfig.EMAIL_RE.test(this.formCorreo.trim());
   }
 
   guardarForm(): void {
@@ -353,8 +374,8 @@ export class GaCorreos implements OnInit {
 
     const request$ =
       this.formId === null
-        ? this.service.crearDestinatario(codigo, dto)
-        : this.service.actualizarDestinatario(this.formId, dto);
+        ? this.service.crearDestinatario(this.pantalla, codigo, dto)
+        : this.service.actualizarDestinatario(this.pantalla, this.formId, dto);
 
     request$.subscribe({
       next: () => {
@@ -393,7 +414,7 @@ export class GaCorreos implements OnInit {
     if (!confirm.isConfirmed) return;
 
     this.savingDestinatarioId = fila.id;
-    this.service.eliminarDestinatario(fila.id).subscribe({
+    this.service.eliminarDestinatario(this.pantalla, fila.id).subscribe({
       next: () => {
         this.savingDestinatarioId = null;
         this.load();

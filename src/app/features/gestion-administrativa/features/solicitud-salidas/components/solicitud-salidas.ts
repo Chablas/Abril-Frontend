@@ -1,5 +1,5 @@
 ﻿import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
@@ -8,6 +8,7 @@ import { SolicitudSalidaCreate } from './create/create';
 import { SolicitudSalidasService } from '../services/solicitud-salidas.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
+import { AuthService } from '../../../../../core/services/auth.service';
 import {
   ResumenRendicionDto,
   SolicitudSalidaListItemDto,
@@ -181,9 +182,31 @@ export class SolicitudSalidas implements OnInit {
     private service: SolicitudSalidasService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private authService: AuthService,
     private route: ActivatedRoute,
+    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
+
+  // ── Botón "Configuración" del header ─────────────────────────────────
+  // Lleva a la configuración de ESTA pantalla: los correos que salen al crear una solicitud (el
+  // aviso al revisor y la confirmación al solicitante). Se restringe con la misma feature que
+  // antes protegía la sección Correos de Configuración: quien no la tiene no ve el botón.
+
+  private static readonly FEATURE_CONFIG_CORREOS = 'gestion-administrativa.config.correos';
+
+  get puedeConfigurar(): boolean {
+    return this.authService.hasFeature(SolicitudSalidas.FEATURE_CONFIG_CORREOS);
+  }
+
+  get botonConfiguracion() {
+    return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
+  }
+
+  abrirConfiguracion(): void {
+    if (!this.puedeConfigurar) return;
+    this.router.navigate(['/gestion-administrativa/solicitud-salidas/configuracion']);
+  }
 
   ngOnInit(): void {
     this.loadFilterData();

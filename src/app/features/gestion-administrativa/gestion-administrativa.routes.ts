@@ -6,6 +6,25 @@ import { Roles } from '../../core/constants/roles';
 export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
   { path: '', redirectTo: 'solicitud-salidas', pathMatch: 'full' },
   {
+    // Configuración de Solicitud de Salidas: los correos que se ORIGINAN acá (el aviso al
+    // revisor y la confirmación al solicitante).
+    // Va ANTES de 'solicitud-salidas' para que el segmento 'configuracion' no se lo coma
+    // la pantalla.
+    // Misma feature que ya protegía la sección Correos de Configuración: quien administra los
+    // correos de salidas los administra todos.
+    path: 'solicitud-salidas/configuracion',
+    loadComponent: () =>
+      import('./shared/configuracion/pantalla-configuracion').then(
+        (m) => m.GaPantallaConfiguracion,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'SOLICITUD DE SALIDAS - CONFIGURACIÓN',
+      featureKey: 'gestion-administrativa.config.correos',
+      pantalla: 'solicitud-salidas',
+    },
+  },
+  {
     path: 'solicitud-salidas',
     loadComponent: () =>
       import('./features/solicitud-salidas/components/solicitud-salidas').then(
@@ -18,6 +37,26 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
     },
   },
   {
+    // Configuración de Mis Rendiciones: los correos que se ORIGINAN acá (enviar la planilla a
+    // primera revisión y avisar del S10) más el plazo para rendir («Días reembolsables»), que
+    // antes estaba hardcodeado en 7 días hábiles.
+    // Va ANTES de 'rendiciones' para que el segmento 'configuracion' no se lo coma
+    // la pantalla.
+    // Misma feature que ya protegía la sección Correos de Configuración: quien administra los
+    // correos de salidas los administra todos.
+    path: 'rendiciones/configuracion',
+    loadComponent: () =>
+      import('./shared/configuracion/pantalla-configuracion').then(
+        (m) => m.GaPantallaConfiguracion,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'MIS RENDICIONES - CONFIGURACIÓN',
+      featureKey: 'gestion-administrativa.config.correos',
+      pantalla: 'rendiciones',
+    },
+  },
+  {
     path: 'rendiciones',
     loadComponent: () =>
       import('./features/rendiciones/components/rendiciones').then((m) => m.Rendiciones),
@@ -25,6 +64,25 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
     data: {
       titulo: 'MIS RENDICIONES',
       featureKey: 'gestion-administrativa.rendiciones',
+    },
+  },
+  {
+    // Configuración de Gestión de Salidas: los correos que se ORIGINAN acá (la solicitud
+    // aprobada y la rechazada, que salen de la decisión del revisor).
+    // Va ANTES de 'gestion-salidas' para que el segmento 'configuracion' no se lo coma
+    // la pantalla.
+    // Misma feature que ya protegía la sección Correos de Configuración: quien administra los
+    // correos de salidas los administra todos.
+    path: 'gestion-salidas/configuracion',
+    loadComponent: () =>
+      import('./shared/configuracion/pantalla-configuracion').then(
+        (m) => m.GaPantallaConfiguracion,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'GESTIÓN DE SALIDAS - CONFIGURACIÓN',
+      featureKey: 'gestion-administrativa.config.correos',
+      pantalla: 'gestion-salidas',
     },
   },
   {
@@ -40,6 +98,25 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
     },
   },
   {
+    // Configuración de Gestión de Rendiciones: los correos que se ORIGINAN acá (las dos
+    // decisiones del revisor: primera revisión y reembolso).
+    // Va ANTES de 'gestion-rendiciones' para que el segmento 'configuracion' no se lo coma
+    // la pantalla.
+    // Misma feature que ya protegía la sección Correos de Configuración: quien administra los
+    // correos de salidas los administra todos.
+    path: 'gestion-rendiciones/configuracion',
+    loadComponent: () =>
+      import('./shared/configuracion/pantalla-configuracion').then(
+        (m) => m.GaPantallaConfiguracion,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'GESTIÓN DE RENDICIONES - CONFIGURACIÓN',
+      featureKey: 'gestion-administrativa.config.correos',
+      pantalla: 'gestion-rendiciones',
+    },
+  },
+  {
     path: 'gestion-rendiciones',
     loadComponent: () =>
       import('./features/gestion-rendiciones/components/gestion-rendiciones').then(
@@ -49,6 +126,25 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
     data: {
       titulo: 'GESTIÓN DE RENDICIONES',
       featureKey: 'gestion-administrativa.gestion-rendiciones',
+    },
+  },
+  {
+    // Configuración de Reembolsos: los correos que se ORIGINAN acá (hoy ninguno: marcar una
+    // planilla como pagada no envía correos).
+    // Va ANTES de 'reembolsos' para que el segmento 'configuracion' no se lo coma
+    // la pantalla.
+    // Misma feature que ya protegía la sección Correos de Configuración: quien administra los
+    // correos de salidas los administra todos.
+    path: 'reembolsos/configuracion',
+    loadComponent: () =>
+      import('./shared/configuracion/pantalla-configuracion').then(
+        (m) => m.GaPantallaConfiguracion,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'REEMBOLSOS - CONFIGURACIÓN',
+      featureKey: 'gestion-administrativa.config.correos',
+      pantalla: 'reembolsos',
     },
   },
   {
@@ -176,15 +272,12 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       roles: [Roles.USUARIO_DE_ABRIL],
     },
   },
+  // La sección Correos de Configuración se dio de baja: los once correos del flujo estaban
+  // juntos sin decir de dónde salía cada uno. La ruta se conserva como redirección para no
+  // romper enlaces viejos y cae en la primera pantalla del flujo.
   {
     path: 'configuracion/correos',
-    loadComponent: () =>
-      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
-    canActivate: [authGuard, roleGuard],
-    data: {
-      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
-      featureKey: 'gestion-administrativa.config.correos',
-      seccion: 'correos',
-    },
+    redirectTo: 'solicitud-salidas/configuracion',
+    pathMatch: 'full',
   },
 ];

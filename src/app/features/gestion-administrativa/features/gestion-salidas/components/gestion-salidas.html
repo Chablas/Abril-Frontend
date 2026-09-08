@@ -4,6 +4,8 @@
   subtitulo="Aprobación y rendición de solicitudes de salida."
   [botonSecundario]="{ label: 'Exportar a excel', icono: 'ti-download' }"
   (secondaryClick)="exportarExcel()"
+  [botonTerciario]="botonConfiguracion"
+  (tertiaryClick)="abrirConfiguracion()"
   [tabs]="tabs">
 
   <!-- Toggle "Hoy": acota la tabla al día en curso y arranca encendido. Va aquí, al costado del
@@ -118,7 +120,7 @@
       abrilBulkAction="default"
       (click)="aprobarBulk()"
       [disabled]="!puedeAprobarSeleccion"
-      [title]="aprobacionIncluyePropia ? 'No puedes aprobar tus propias salidas — deselecciona las tuyas' : null">
+      [title]="aprobacionIncluyeNoDecidibles ? 'Solo apruebas las salidas de las que eres el revisor — deselecciona las demás' : null">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
       </svg>
@@ -130,7 +132,7 @@
       abrilBulkAction="danger"
       (click)="rechazarBulk()"
       [disabled]="!puedeRechazarSeleccion"
-      [title]="rechazoIncluyePropia ? 'No puedes rechazar tus propias salidas — deselecciona las tuyas' : null">
+      [title]="rechazoIncluyeNoDecidibles ? 'Solo rechazas las salidas de las que eres el revisor — deselecciona las demás' : null">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18"/>
       </svg>
@@ -394,15 +396,16 @@
               No reembolsable
             </span>
 
-            <!-- Plazo cerrado: pasó el 7.º día hábil del mes siguiente. La salida ya no se rinde;
-                 la fila sigue clickeable y su detalle se ve igual que siempre. -->
+            <!-- Plazo cerrado: pasó el último día hábil del plazo (Mis Rendiciones →
+                 Configuración → Días reembolsables). La salida ya no se rinde; la fila sigue
+                 clickeable y su detalle se ve igual que siempre. El tooltip solo dice la fecha:
+                 el número de días es configurable y quedaría desactualizado escrito acá. -->
             <span
               *ngIf="s.estadoAprobacion === 'Aprobado'
                   && s.estadoRendicion === 'No rendido'
                   && s.plazoVencido"
               [title]="'El plazo para rendir esta salida venció el '
-                + (s.plazoRendicionHasta + 'T00:00:00' | date:'dd/MM/yyyy')
-                + ' (7.º día hábil del mes siguiente)'"
+                + (s.plazoRendicionHasta + 'T00:00:00' | date:'dd/MM/yyyy')"
               class="inline-flex items-center gap-[6px] text-xs italic"
               style="color:var(--color-abril-danger-dark)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -571,5 +574,7 @@
 <app-gestion-salida-detalle-modal
   *ngIf="detalle"
   [detalle]="detalle"
+  (aprobar)="aprobarDetalle()"
+  (rechazar)="rechazarDetalle()"
   (close)="cerrarDetalle()" />
 

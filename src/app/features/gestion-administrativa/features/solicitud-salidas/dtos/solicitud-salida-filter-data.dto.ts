@@ -12,7 +12,8 @@ export interface MesRendicionDto {
   /** Cuántas solicitudes propias aptas para rendir tiene ese mes. */
   cantidad: number;
   /**
-   * Último día para rendir ese mes (YYYY-MM-DD): el 7.º día hábil del mes siguiente. Solo se
+   * Último día para rendir ese mes (YYYY-MM-DD): el N.º día hábil del mes siguiente, con N
+   * configurable en Mis Rendiciones → Configuración → Días reembolsables. Solo se
    * ofrecen meses cuyo plazo sigue abierto, así que siempre es de hoy en adelante.
    */
   fechaLimite: string;

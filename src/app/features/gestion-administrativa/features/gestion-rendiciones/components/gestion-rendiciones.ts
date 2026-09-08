@@ -206,8 +206,9 @@ export class GestionRendiciones implements OnInit {
   ) {}
 
   // ── Botón "Configuración" del header ─────────────────────────────────
-  // Lleva a la sección Correos de la Configuración del módulo. Se restringe con la misma feature
-  // que ya protege esa sección: quien no la tiene no ve el botón.
+  // Lleva a la configuración de ESTA pantalla: los correos de las dos decisiones del revisor
+  // (primera revisión y reembolso), que no se originan en ningún otro lado. Se restringe con la
+  // misma feature que antes protegía la sección Correos: quien no la tiene no ve el botón.
 
   private static readonly FEATURE_CONFIG_CORREOS = 'gestion-administrativa.config.correos';
 
@@ -221,7 +222,7 @@ export class GestionRendiciones implements OnInit {
 
   abrirConfiguracion(): void {
     if (!this.puedeConfigurar) return;
-    this.router.navigate(['/gestion-administrativa/configuracion/correos']);
+    this.router.navigate(['/gestion-administrativa/gestion-rendiciones/configuracion']);
   }
 
   ngOnInit(): void {

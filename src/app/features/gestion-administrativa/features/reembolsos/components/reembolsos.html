@@ -2,7 +2,9 @@
   [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
   titulo="Reembolsos"
   subtitulo="Planillas firmadas por la jefatura, listas para pagar."
-  [tabs]="tabs">
+  [tabs]="tabs"
+  [botonSecundario]="botonConfiguracion"
+  (secondaryClick)="abrirConfiguracion()">
 
   <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>

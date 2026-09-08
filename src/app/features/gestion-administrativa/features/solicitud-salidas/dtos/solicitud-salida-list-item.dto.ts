@@ -25,7 +25,8 @@
    */
   esReembolsable: boolean;
   /**
-   * Último día para rendir esta salida (YYYY-MM-DD): el 7.º día hábil del mes siguiente al de su
+   * Último día para rendir esta salida (YYYY-MM-DD): el N.º día hábil del mes siguiente al de su (N sale de
+   * Mis Rendiciones → Configuración → Días reembolsables)
    * fecha de salida, sin sábados, domingos ni los feriados de Configuración → Feriados.
    */
   plazoRendicionHasta: string;

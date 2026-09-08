@@ -10,7 +10,6 @@ import { GaMotivos } from './motivos/pages/motivos';
 import { GaTrayectos } from '../trayectos/pages/trayectos';
 import { VisibilidadSalidas } from './visibilidad-salidas/pages/visibilidad-salidas';
 import { GaCarpetaAdjuntos } from './carpeta-adjuntos/pages/carpeta-adjuntos';
-import { GaCorreos } from './correos/pages/correos';
 import { GaCapturas } from './capturas/pages/capturas';
 import { Roles } from '../../../../core/constants/roles';
 import { FirmaPersonal } from '../../../../shared/components/firma-personal/firma-personal';
@@ -37,10 +36,14 @@ interface ConfigSectionDef {
  * Contenedor de configuración de Gestión Administrativa.
  *
  * Agrupa bajo `/gestion-administrativa/configuracion` las pantallas de
- * configuración propias de salidas (lugares, motivos, trayectos, visibilidad,
- * carpeta de adjuntos y correos) conmutándolas con el componente
+ * configuración propias de salidas (lugares, motivos, trayectos, capturas,
+ * visibilidad y carpeta de adjuntos) conmutándolas con el componente
  * `app-section-tabs`, siguiendo el mismo patrón que `costs-configuration` de
  * Costos y Presupuestos.
+ *
+ * Los correos tampoco viven aquí desde setiembre de 2026: se repartieron entre las
+ * pantallas donde se originan (`/gestion-administrativa/<pantalla>/configuracion`, con
+ * `GaPantallaConfiguracion`), porque juntos no se sabía qué correo salía de dónde.
  *
  * Los revisores de áreas ya NO viven aquí: definen el jefe de cada área para toda
  * la organización, así que se movieron al módulo de configuración global
@@ -67,7 +70,6 @@ interface ConfigSectionDef {
     GaTrayectos,
     VisibilidadSalidas,
     GaCarpetaAdjuntos,
-    GaCorreos,
     GaCapturas,
     FirmaPersonal,
   ],
@@ -126,14 +128,6 @@ export class GaConfiguracion implements OnInit {
       subtitulo:
         'Carpeta de SharePoint/OneDrive donde se guardan los documentos adjuntos de las solicitudes de salida (motivos que requieren documento).',
     },
-    {
-      id: 'correos',
-      label: 'Correos',
-      route: '/gestion-administrativa/configuracion/correos',
-      featureKey: 'gestion-administrativa.config.correos',
-      subtitulo:
-        'Qué correos del flujo de salidas se envían y quién los recibe. Cada destinatario se prende y se apaga por separado, incluido el que resuelve el sistema. Puede ser un trabajador, un área (se envía a sus miembros) o un correo escrito a mano.',
-    },
     // Por rol y no por featureKey: la firma es de la persona, no de una funcionalidad. Todo
     // USUARIO DE ABRIL entra acá a registrar la suya, y es la MISMA que se estampa en las facturas
     // de Contabilidad y en la carta oferta de Onboarding.
@@ -158,7 +152,6 @@ export class GaConfiguracion implements OnInit {
   @ViewChild(GaTrayectos) private trayectosCmp?: GaTrayectos;
   @ViewChild(VisibilidadSalidas) private visibilidadCmp?: VisibilidadSalidas;
   @ViewChild(GaCarpetaAdjuntos) private carpetaAdjuntosCmp?: GaCarpetaAdjuntos;
-  @ViewChild(GaCorreos) private correosCmp?: GaCorreos;
   @ViewChild(GaCapturas) private capturasCmp?: GaCapturas;
 
   constructor(
@@ -211,7 +204,6 @@ export class GaConfiguracion implements OnInit {
     | GaTrayectos
     | VisibilidadSalidas
     | GaCarpetaAdjuntos
-    | GaCorreos
     | GaCapturas
     | undefined {
     switch (this.activeSection) {
@@ -220,7 +212,6 @@ export class GaConfiguracion implements OnInit {
       case 'trayectos': return this.trayectosCmp;
       case 'visibilidad-salidas': return this.visibilidadCmp;
       case 'carpeta-adjuntos': return this.carpetaAdjuntosCmp;
-      case 'correos': return this.correosCmp;
       case 'capturas': return this.capturasCmp;
       default: return undefined;
     }

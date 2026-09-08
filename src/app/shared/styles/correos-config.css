@@ -1,7 +1,8 @@
 /* Matriz de destinatarios de una configuración de correos. La comparten la de Gestión GTH
    (features/gestion-gth/shared/correos-config) y la de Gestión Administrativa
-   (features/gestion-administrativa/features/configuracion/correos): son la misma pantalla
-   sobre datos distintos, así que un cambio acá se ve en las dos.
+   (features/gestion-administrativa/shared/configuracion/correos, más su sección hermana
+   "Días reembolsables"): son la misma pantalla sobre datos distintos, así que un cambio acá
+   se ve en las dos.
 
    Mismo lenguaje visual que la Configuración de EMOs
    (ssoma/salud-ocupacional/emos/configuracion/correos), sin la matriz por perfil:

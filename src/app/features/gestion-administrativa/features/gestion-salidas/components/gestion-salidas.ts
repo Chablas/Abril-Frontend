@@ -297,6 +297,27 @@ export class GestionSalidas implements OnInit {
     private cdr:           ChangeDetectorRef,
   ) {}
 
+  // ── Botón "Configuración" del header ─────────────────────────────────
+  // Lleva a la configuración de ESTA pantalla: los correos de la decisión del revisor (solicitud
+  // aprobada y rechazada), que no se originan en ningún otro lado. Se restringe con la misma
+  // feature que antes protegía la sección Correos de Configuración: quien no la tiene no ve el
+  // botón.
+
+  private static readonly FEATURE_CONFIG_CORREOS = 'gestion-administrativa.config.correos';
+
+  get puedeConfigurar(): boolean {
+    return this.authService.hasFeature(GestionSalidas.FEATURE_CONFIG_CORREOS);
+  }
+
+  get botonConfiguracion() {
+    return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
+  }
+
+  abrirConfiguracion(): void {
+    if (!this.puedeConfigurar) return;
+    this.router.navigate(['/gestion-administrativa/gestion-salidas/configuracion']);
+  }
+
   /** FAB "Solicitar salida": lleva a la pestaña de autoservicio con el formulario abierto. */
   irASolicitarSalida(): void {
     this.router.navigate(['/gestion-administrativa/solicitud-salidas'], { queryParams: { nuevo: '1' } });
@@ -683,8 +704,8 @@ export class GestionSalidas implements OnInit {
 
   /**
    * Rechaza en bloque las solicitudes seleccionadas que sean rechazables: pendientes, o aprobadas
-   * que aún no fueron rendidas. Nunca las propias (salvo si es su propio revisor) ni las ya
-   * rendidas.
+   * que aún no fueron rendidas. Solo las que este usuario decide (es su revisor) y nunca las ya
+   * rendidas. Rechaza sin pedir motivo; el motivo se pide en el botón del detalle.
    */
   async rechazarBulk(): Promise<void> {
     if (!this.puedeRechazarSeleccion) return;
@@ -923,27 +944,27 @@ export class GestionSalidas implements OnInit {
   }
 
   /**
-   * True si alguna candidata (a aprobar o rechazar) es propia y no decidible. Nadie decide lo suyo
-   * salvo quien es su propio revisor (jefe personalizado apuntándose a sí mismo), y si se mezcla
-   * una no decidible con otras se bloquea toda la acción — hay que deseleccionarla primero. El
-   * backend lo determina por fila (`puedeDecidir`) y lo re-valida al aprobar/rechazar.
+   * True si alguna candidata (a aprobar o rechazar) no la decide este usuario: cada salida la
+   * decide SOLO su revisor, y ver la fila no alcanza (el alcance por área da a ver una rama, no a
+   * decidirla). Si se mezcla una así con otras se bloquea toda la acción — hay que deseleccionarla
+   * primero. El backend lo determina por fila (`puedeDecidir`) y lo re-valida al aprobar/rechazar.
    */
-  get aprobacionIncluyePropia(): boolean {
+  get aprobacionIncluyeNoDecidibles(): boolean {
     return this.selectedPendientes.some((s) => !s.puedeDecidir);
   }
 
-  get rechazoIncluyePropia(): boolean {
+  get rechazoIncluyeNoDecidibles(): boolean {
     return this.selectedRechazables.some((s) => !s.puedeDecidir);
   }
 
-  /** True si se puede aprobar la selección: hay pendientes y NINGUNA es propia. */
+  /** True si se puede aprobar la selección: hay pendientes y de TODAS es el revisor. */
   get puedeAprobarSeleccion(): boolean {
-    return this.selectedPendientes.length > 0 && !this.aprobacionIncluyePropia;
+    return this.selectedPendientes.length > 0 && !this.aprobacionIncluyeNoDecidibles;
   }
 
-  /** True si se puede rechazar la selección: hay rechazables y NINGUNA es propia. */
+  /** True si se puede rechazar la selección: hay rechazables y de TODAS es el revisor. */
   get puedeRechazarSeleccion(): boolean {
-    return this.selectedRechazables.length > 0 && !this.rechazoIncluyePropia;
+    return this.selectedRechazables.length > 0 && !this.rechazoIncluyeNoDecidibles;
   }
 
   /** Seleccionadas que pueden rendirse (aplican a Marcar como rendidas). */
@@ -1117,6 +1138,83 @@ export class GestionSalidas implements OnInit {
       next: (data) => {
         this.detalle = data;
         this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  // ── Decisión desde el detalle (el camino del correo) ─────────────────
+  //
+  // El botón del correo al revisor cae en este modal, así que la decisión se toma ahí mismo sin
+  // volver a la tabla ni buscar la fila. Los botones existen solo si el backend marcó
+  // `puedeDecidir` en el detalle (quien mira es el revisor de esa salida) y los endpoints
+  // re-validan lo mismo, así que no alcanza con forzarlos desde el navegador.
+
+  /** Aprueba la salida abierta en el detalle. */
+  async aprobarDetalle(): Promise<void> {
+    const d = this.detalle;
+    if (!d) return;
+
+    const result = await Swal.fire({
+      icon: 'question',
+      title: d.codigo ? `¿Aprobar la solicitud ${d.codigo}?` : '¿Aprobar esta solicitud?',
+      text: 'Se le avisará al solicitante que su salida quedó aprobada.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, aprobar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64BC04',
+    });
+    if (!result.isConfirmed) return;
+
+    this.ejecutarDecisionDetalle(
+      this.service.aprobar(d.id),
+      'Solicitud aprobada',
+    );
+  }
+
+  /**
+   * Rechaza la salida abierta en el detalle. El motivo es opcional —el rechazo no siempre necesita
+   * explicación y el botón bulk de la tabla nunca lo pidió—, pero si se escribe le llega al
+   * solicitante en su correo de rechazo.
+   */
+  async rechazarDetalle(): Promise<void> {
+    const d = this.detalle;
+    if (!d) return;
+
+    const { value: motivo, isConfirmed } = await Swal.fire({
+      icon: 'warning',
+      title: d.codigo ? `¿Rechazar la solicitud ${d.codigo}?` : '¿Rechazar esta solicitud?',
+      input: 'textarea',
+      inputLabel: 'Motivo (opcional)',
+      inputPlaceholder: 'Por qué no procede la salida…',
+      showCancelButton: true,
+      confirmButtonText: 'Rechazar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#D30000',
+    });
+    if (!isConfirmed) return;
+
+    this.ejecutarDecisionDetalle(
+      this.service.rechazar(d.id, (motivo ?? '').trim() || null),
+      'Solicitud rechazada',
+    );
+  }
+
+  /**
+   * Ejecuta la decisión y cierra el detalle: el estado que se está mirando ya cambió, así que
+   * dejarlo abierto mostraría datos viejos. La tabla y las tarjetas se recargan detrás.
+   */
+  private ejecutarDecisionDetalle(peticion: Observable<{ message: string }>, titulo: string): void {
+    this.loaderService.show();
+    peticion.subscribe({
+      next: () => {
+        this.loaderService.hide();
+        this.detalle = null;
+        Swal.fire({ title: titulo, icon: 'success', timer: 1500, showConfirmButton: false });
+        this.recargar();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();

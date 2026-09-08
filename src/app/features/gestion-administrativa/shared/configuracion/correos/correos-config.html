@@ -1,6 +1,15 @@
 <div class="config-stack">
 
-  <!-- Una pestaña por cada correo del flujo. -->
+  <!-- Aviso de estado, no explicación: la pantalla existe para que un correo nuevo entre sin
+       tocar código, así que se dice qué pasa hoy y nada más. -->
+  <div class="config-card" *ngIf="sinCorreos">
+    <p class="config-warn">
+      <i class="ti ti-mail-off"></i>
+      <span>{{ textoSinCorreos }}</span>
+    </p>
+  </div>
+
+  <!-- Una subsección por cada correo que se origina en esta pantalla. -->
   <app-section-tabs
     *ngIf="eventos.length > 1"
     [tabs]="sectionTabs"

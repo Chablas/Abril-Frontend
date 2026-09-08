@@ -34,7 +34,8 @@ export interface GestionSalidaListItemDto {
    */
   esReembolsable: boolean;
   /**
-   * Último día para rendir esta salida (YYYY-MM-DD): el 7.º día hábil del mes siguiente al de su
+   * Último día para rendir esta salida (YYYY-MM-DD): el N.º día hábil del mes siguiente al de su (N sale de
+   * Mis Rendiciones → Configuración → Días reembolsables)
    * fecha de salida, sin sábados, domingos ni los feriados de Configuración → Feriados.
    */
   plazoRendicionHasta: string;
@@ -56,10 +57,11 @@ export interface GestionSalidaListItemDto {
    */
   esHoraEstimada: boolean;
   /**
-   * True si el usuario logueado puede aprobar/rechazar esta salida. False cuando es su propia
-   * salida y él no es su propio revisor: lo suyo solo lo decide quien tenga el jefe personalizado
-   * apuntándose a sí mismo, que es además quien recibe el correo con los botones. No afecta la
-   * rendición.
+   * True si el usuario logueado puede aprobar/rechazar esta salida, o sea si es su revisor: el
+   * jefe personalizado del trabajador, el revisor que sale de su área subiendo por el árbol, o
+   * cualquiera de GTH cuando la resolución cayó al fallback del área de GTH. Ver la salida no
+   * alcanza: el alcance por área da a ver una rama (un gerente, recepción), decidirla es solo del
+   * revisor. Lo calcula y lo re-valida el backend. No afecta la rendición.
    */
   puedeDecidir: boolean;
   /**
@@ -128,7 +130,8 @@ export interface MesRendicionDto {
   /** Cuántas solicitudes aptas para rendir tiene ese mes dentro del alcance del usuario. */
   cantidad: number;
   /**
-   * Último día para rendir ese mes (YYYY-MM-DD): el 7.º día hábil del mes siguiente. Solo se
+   * Último día para rendir ese mes (YYYY-MM-DD): el N.º día hábil del mes siguiente, con N
+   * configurable en Mis Rendiciones → Configuración → Días reembolsables. Solo se
    * ofrecen meses cuyo plazo sigue abierto, así que siempre es de hoy en adelante.
    */
   fechaLimite: string;
@@ -236,6 +239,11 @@ export interface GestionSalidaDetalleDto {
   estadoRendicion: string;
   createdAt: string;
   motivoRechazo: string | null;
+  /**
+   * True si quien abre el detalle es el revisor de esta salida — lo único que hace aparecer los
+   * botones de aprobar/rechazar del modal. Misma regla que `puedeDecidir` del listado.
+   */
+  puedeDecidir: boolean;
 
   // ── Reembolso ────────────────────────────────────────────────────────
   estadoReembolso: EstadoReembolso;

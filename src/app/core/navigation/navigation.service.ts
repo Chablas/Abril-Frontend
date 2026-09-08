@@ -32,7 +32,9 @@ export class NavigationService {
             { label: 'Capturas', route: '/gestion-administrativa/configuracion/capturas', featureKey: 'gestion-administrativa.config.capturas' },
             { label: 'Visibilidad de Salidas', route: '/gestion-administrativa/configuracion/visibilidad-salidas', featureKey: 'gestion-administrativa.config.visibilidad-salidas' },
             { label: 'Carpeta Adjuntos', route: '/gestion-administrativa/configuracion/carpeta-adjuntos', featureKey: 'gestion-administrativa.config.carpeta-adjuntos' },
-            { label: 'Correos', route: '/gestion-administrativa/configuracion/correos', featureKey: 'gestion-administrativa.config.correos' },
+            // Los correos ya no están acá: cada pantalla del flujo administra los que se
+            // originan en ella desde su propio botón «Configuración»
+            // (/gestion-administrativa/<pantalla>/configuracion).
             // Por rol y no por featureKey: la firma es de la persona, no de una funcionalidad.
             // Mismo criterio que el roleGuard de su ruta (ver gestion-administrativa.routes.ts).
             { label: 'Tu firma', route: '/gestion-administrativa/configuracion/firma', roles: [Roles.USUARIO_DE_ABRIL] },

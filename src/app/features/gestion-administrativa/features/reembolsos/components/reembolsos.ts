@@ -1,4 +1,5 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
@@ -6,6 +7,7 @@ import Swal from 'sweetalert2';
 import { ReembolsosService } from '../services/reembolsos.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
+import { AuthService } from '../../../../../core/services/auth.service';
 import {
   AreaNodeDto,
   PeriodoOptionDto,
@@ -152,8 +154,30 @@ export class Reembolsos implements OnInit {
     private service: ReembolsosService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private authService: AuthService,
+    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
+
+  // ── Botón "Configuración" del header ─────────────────────────────────
+  // Lleva a la configuración de ESTA pantalla: los correos que se originarían en la bandeja de
+  // Tesorería (hoy ninguno: marcar pagado no avisa a nadie). Se restringe con la misma feature
+  // que antes protegía la sección Correos de Configuración: quien no la tiene no ve el botón.
+
+  private static readonly FEATURE_CONFIG_CORREOS = 'gestion-administrativa.config.correos';
+
+  get puedeConfigurar(): boolean {
+    return this.authService.hasFeature(Reembolsos.FEATURE_CONFIG_CORREOS);
+  }
+
+  get botonConfiguracion() {
+    return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
+  }
+
+  abrirConfiguracion(): void {
+    if (!this.puedeConfigurar) return;
+    this.router.navigate(['/gestion-administrativa/reembolsos/configuracion']);
+  }
 
   ngOnInit(): void {
     this.loadFilterData();

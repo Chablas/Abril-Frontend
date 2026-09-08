@@ -582,7 +582,7 @@ export class SolicitudSalidaCreate implements OnInit {
     this.service.create(payload, adjuntos).subscribe({
       next: (res) => {
         this.loaderService.hide();
-        Swal.fire({ title: res.message, icon: 'success', draggable: true });
+        Swal.fire({ title: res.message, icon: 'success', draggable: true, confirmButtonColor: '#0F6E56' });
         this.saved.emit();
         this.closeModal.emit();
       },

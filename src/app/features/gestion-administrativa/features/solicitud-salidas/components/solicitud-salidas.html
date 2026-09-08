@@ -2,7 +2,9 @@
   [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
   titulo="Solicitud de Salidas"
   subtitulo="Mis solicitudes de viáticos y movilidad."
-  [tabs]="tabs">
+  [tabs]="tabs"
+  [botonSecundario]="botonConfiguracion"
+  (secondaryClick)="abrirConfiguracion()">
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
   <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
@@ -230,13 +232,12 @@
                 No reembolsable
               </span>
 
-              <!-- Plazo cerrado: pasó el 7.º día hábil del mes siguiente. Ya no se rinde, pero el
-                   detalle se sigue viendo con un clic en la fila. -->
+              <!-- Plazo cerrado: pasó el último día hábil del plazo configurado. Ya no se rinde,
+                   pero el detalle se sigue viendo con un clic en la fila. -->
               <span
                 *ngIf="s.estadoRendicion === 'No rendido' && s.plazoVencido"
                 [title]="'El plazo para rendir esta salida venció el '
-                  + (s.plazoRendicionHasta + 'T00:00:00' | date:'dd/MM/yyyy')
-                  + ' (7.º día hábil del mes siguiente)'"
+                  + (s.plazoRendicionHasta + 'T00:00:00' | date:'dd/MM/yyyy')"
                 class="text-[11px] italic whitespace-nowrap"
                 style="color:var(--color-abril-danger-dark)">
                 Plazo vencido

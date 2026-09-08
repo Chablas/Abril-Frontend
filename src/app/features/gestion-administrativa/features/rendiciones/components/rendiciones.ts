@@ -205,9 +205,9 @@ export class Rendiciones implements OnInit {
   ) {}
 
   // ── Botón "Configuración" del header ─────────────────────────────────
-  // Lleva a la sección Correos de la Configuración del módulo, que es donde se prende, se apaga y
-  // se le suman destinatarios a cada correo del flujo. Se restringe con la misma feature que ya
-  // protege esa sección: quien no la tiene no ve el botón.
+  // Lleva a la configuración de ESTA pantalla: sus correos (enviar la planilla a primera revisión
+  // y avisar del S10) y el plazo para rendir ("Días reembolsables"). Se restringe con la misma
+  // feature que antes protegía la sección Correos: quien no la tiene no ve el botón.
 
   private static readonly FEATURE_CONFIG_CORREOS = 'gestion-administrativa.config.correos';
 
@@ -221,7 +221,7 @@ export class Rendiciones implements OnInit {
 
   abrirConfiguracion(): void {
     if (!this.puedeConfigurar) return;
-    this.router.navigate(['/gestion-administrativa/configuracion/correos']);
+    this.router.navigate(['/gestion-administrativa/rendiciones/configuracion']);
   }
 
   ngOnInit(): void {

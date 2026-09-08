@@ -1,6 +1,11 @@
 /**
- * Configuración de los correos de Solicitud de Salidas: una sección por correo del flujo, cada
- * una con su interruptor maestro y su lista de destinatarios, todos activables uno por uno.
+ * Configuración de los correos del flujo de salidas: una sección por correo, cada una con su
+ * interruptor maestro y su lista de destinatarios, todos activables uno por uno.
+ *
+ * Los correos NO viven todos juntos: cada uno cuelga de la pantalla donde SE ORIGINA
+ * (`CorreoPantalla`), y esa pantalla los administra desde su propio botón «Configuración». Antes
+ * estaban los once en Configuración → Correos, que se dio de baja por lo mismo: no se sabía qué
+ * correo salía de dónde.
  *
  * Hay dos clases de destinatario:
  *  • El **principal**, que resuelve el backend al enviar (el revisor de la solicitud, el
@@ -9,6 +14,26 @@
  *  • Los **configurados** (`ga_correo_regla`): un trabajador, un área (se expande a sus miembros)
  *    o un correo escrito a mano. Se agregan, editan, prenden/apagan y eliminan desde la pantalla.
  */
+
+/**
+ * Pantalla del flujo cuya configuración se está viendo. Es el segmento del backend
+ * (`api/v1/gestion-administrativa/{pantalla}/configuracion/correos`) y también el de la URL del
+ * frontend, y define qué correos administra cada una — el criterio es dónde se ORIGINA el correo,
+ * no a quién le llega:
+ *  • `solicitud-salidas`   → los dos que salen al crear la solicitud.
+ *  • `rendiciones`         → los que dispara el trabajador (enviar la planilla a 1.ª revisión y
+ *                            avisar que adjuntó el Consolidado del S10).
+ *  • `gestion-salidas`     → la decisión del revisor sobre la solicitud (aprobada / rechazada).
+ *  • `gestion-rendiciones` → las dos decisiones del revisor sobre la planilla (1.ª revisión y
+ *                            reembolso).
+ *  • `reembolsos`          → Tesorería: hoy ninguno (marcar pagado no envía correos).
+ */
+export type CorreoPantalla =
+  | 'solicitud-salidas'
+  | 'rendiciones'
+  | 'gestion-salidas'
+  | 'gestion-rendiciones'
+  | 'reembolsos';
 
 /** Códigos estables del catálogo de tipos de destinatario. */
 export type CorreoTipoCodigo = 'TRABAJADOR' | 'AREA' | 'CORREO';
@@ -68,7 +93,7 @@ export interface CorreoAreaOption {
   label?: string;
 }
 
-/** Carga inicial de la pantalla (1 sola petición). */
+/** Carga inicial de la sección (1 sola petición). */
 export interface CorreoConfigInicial {
   eventos: CorreoEvento[];
   trabajadores: CorreoWorkerOption[];

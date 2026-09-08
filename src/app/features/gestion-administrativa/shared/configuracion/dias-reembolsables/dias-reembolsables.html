@@ -1,0 +1,75 @@
+<div class="config-stack">
+  <div class="config-card">
+
+    <div class="config-card__head">
+      <div class="config-card__headtext">
+        <h3 class="config-card__title">
+          <i class="ti ti-calendar-clock"></i>
+          Plazo para rendir
+        </h3>
+        <p class="config-card__sub">
+          Días hábiles del mes siguiente durante los que se pueden rendir las salidas de un mes.
+          No cuentan sábados, domingos ni los feriados de Configuración → Feriados.
+        </p>
+      </div>
+    </div>
+
+    <div class="form-row plazo-field">
+      <div class="abril-field">
+        <label class="abril-field-label">Días hábiles *</label>
+        <input
+          type="number"
+          class="abril-field-input"
+          name="diasHabilesPlazo"
+          inputmode="numeric"
+          [min]="minimo"
+          [max]="maximo"
+          step="1"
+          [disabled]="loading || saving"
+          [ngModel]="dias"
+          (ngModelChange)="onDiasChange($event)" />
+      </div>
+    </div>
+
+    <!-- Avisos de estado: qué significa hoy el número guardado, no instrucciones. -->
+    <p class="config-warn" *ngIf="plazo && !hayCambios && !plazo.mesAnteriorVencido">
+      <i class="ti ti-info-circle"></i>
+      <span>
+        Las salidas de {{ periodoAnterior }} se rinden hasta el
+        {{ limiteFecha | date:'dd/MM/yyyy' }}.
+      </span>
+    </p>
+
+    <p class="config-warn config-warn--off" *ngIf="plazo && !hayCambios && plazo.mesAnteriorVencido">
+      <i class="ti ti-clock-off"></i>
+      <span>
+        El plazo de {{ periodoAnterior }} venció el {{ limiteFecha | date:'dd/MM/yyyy' }}: ese mes
+        ya no se puede rendir.
+      </span>
+    </p>
+
+    <p class="config-warn" *ngIf="hayCambios">
+      <i class="ti ti-alert-triangle"></i>
+      <span>
+        Sin guardar. El plazo vigente sigue siendo de
+        {{ plazo?.diasHabilesPlazo }} día{{ plazo?.diasHabilesPlazo === 1 ? '' : 's' }} hábil{{ plazo?.diasHabilesPlazo === 1 ? '' : 'es' }}.
+      </span>
+    </p>
+
+    <p class="form-error" *ngIf="error">
+      <i class="ti ti-alert-circle"></i> <span>{{ error }}</span>
+    </p>
+
+    <div class="plazo-actions">
+      <button type="button" class="btn-primary" [disabled]="!puedeGuardar" (click)="guardar()">
+        <i class="ti ti-loader-2 spin" *ngIf="saving"></i>
+        <i class="ti ti-check" *ngIf="!saving"></i>
+        {{ saving ? 'Guardando…' : 'Guardar' }}
+      </button>
+
+      <span class="plazo-ok" *ngIf="guardado && !hayCambios">
+        <i class="ti ti-circle-check"></i> Guardado
+      </span>
+    </div>
+  </div>
+</div>
