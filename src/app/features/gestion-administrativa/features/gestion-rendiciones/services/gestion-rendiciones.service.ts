@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { CorreoAvisoDto, CorreoPreviewRequestDto } from '../../../shared/correo-aviso';
 import { ReembolsoBulkResultDto } from '../../../shared/dtos/rendicion-shared.dto';
 import {
   GestionRendicionDetalleDto,
@@ -108,6 +109,18 @@ export class GestionRendicionesService {
   /** La observación es obligatoria: es lo que el trabajador subsana. */
   rechazarReembolso(accion: ReembolsoAccionDto): Observable<ReembolsoBulkResultDto> {
     return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/rechazar`, accion, {
+      headers: this.headers,
+    });
+  }
+
+  /**
+   * Qué correos saldrían al tomar una de las cuatro decisiones sobre la selección, y a quién. Se
+   * pide al apretar el botón —no al cargar la pantalla— porque depende de qué está seleccionado, y
+   * lo resuelve el servidor para que la confirmación no pueda desalinearse de Configuración →
+   * Correos.
+   */
+  correoPreview(request: CorreoPreviewRequestDto): Observable<CorreoAvisoDto[]> {
+    return this.http.post<CorreoAvisoDto[]>(`${this.apiUrl}/correo-preview`, request, {
       headers: this.headers,
     });
   }

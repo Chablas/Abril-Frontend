@@ -14,8 +14,9 @@ import {
   RendicionListItemDto,
   ResumenRendicionesDto,
 } from '../dtos/rendicion.dto';
-import { avisoCorreoHtml } from '../correo-aviso';
-import { primeraRevisionColors } from '../../../shared/dtos/rendicion-shared.dto';
+import { avisosDe } from '../../../shared/correo-aviso';
+import { confirmarConCorreos } from '../../../shared/confirmar-correos';
+import { primeraRevisionColors, reembolsoColors } from '../../../shared/dtos/rendicion-shared.dto';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
@@ -161,6 +162,7 @@ export class Rendiciones implements OnInit {
     { value: 'Rechazado',  label: 'Observadas' },
     { value: 'Aprobado',   label: 'Aprobadas' },
     { value: 'Firmado',    label: 'Firmadas' },
+    { value: 'Proceder con el reembolso', label: 'En Tesorería' },
     { value: 'Pagado',     label: 'Pagadas' },
   ];
   readonly consolidadoOptions = [
@@ -330,20 +332,13 @@ export class Rendiciones implements OnInit {
   async enviarPrimeraRevision(r: RendicionListItemDto, ev: Event): Promise<void> {
     ev.stopPropagation();
 
-    const result = await Swal.fire({
-      icon: 'question',
-      title: '¿Enviar ' + r.codigo + ' a revisión?',
+    const result = await confirmarConCorreos({
+      titulo: '¿Enviar ' + r.codigo + ' a revisión?',
+      avisos: avisosDe('Al revisor', this.correoPrimeraRevision),
       // Sin nadie a quien avisar el envío igual procede: la rendición pasa a revisión y el jefe la
       // ve en su bandeja. Es un aviso de estado, no un bloqueo.
-      html: avisoCorreoHtml(
-        this.correoPrimeraRevision,
-        'para que la apruebe u observe',
-        'Pasará a revisión, pero nadie recibirá el aviso por correo: está apagado en Configuración → Correos.',
-      ),
-      showCancelButton: true,
+      sinNadie: 'Pasa a revisión, pero sin aviso por correo: está apagado en Configuración → Correos.',
       confirmButtonText: 'Sí, enviar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0F6E56',
     });
     if (!result.isConfirmed) return;
 
@@ -372,7 +367,7 @@ export class Rendiciones implements OnInit {
     const result = await Swal.fire({
       icon: 'question',
       title: '¿Volver a generar ' + r.codigo + '?',
-      text: 'La planilla se rehace con los montos actuales y queda lista para reenviar a revisión.',
+      text: 'Queda lista para reenviar a revisión.',
       showCancelButton: true,
       confirmButtonText: 'Sí, generar',
       cancelButtonText: 'Cancelar',
@@ -459,21 +454,12 @@ export class Rendiciones implements OnInit {
       return;
     }
 
-    const yaAvisado = r.revisorNotificadoAt
-      ? '<div style="text-align:left;font-size:13px;color:#6B7280;margin-bottom:8px">Ya le avisaste por esta planilla: se le enviará el correo otra vez.</div>'
-      : '';
-
-    const result = await Swal.fire({
-      icon: 'question',
-      title: r.revisorNotificadoAt ? '¿Volver a avisar?' : '¿Avisar al revisor?',
-      html: yaAvisado + avisoCorreoHtml(
-        this.correoS10Revisor,
-        'para que revise el reembolso de esta planilla',
-      ),
-      showCancelButton: true,
+    const result = await confirmarConCorreos({
+      titulo: r.revisorNotificadoAt ? '¿Volver a avisar?' : '¿Avisar al revisor?',
+      // Solo cuando es una repetición: el resto del tiempo el título ya lo dice todo.
+      nota: r.revisorNotificadoAt ? 'Ya le avisaste por esta planilla.' : undefined,
+      avisos: avisosDe('Al revisor', this.correoS10Revisor),
       confirmButtonText: r.revisorNotificadoAt ? 'Sí, avisar de nuevo' : 'Sí, avisar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0F6E56',
     });
     if (!result.isConfirmed) return;
 
@@ -507,15 +493,9 @@ export class Rendiciones implements OnInit {
     return null;
   }
 
-  reembolsoColors(estado: string): { bg: string; text: string } {
-    switch (estado) {
-      case 'Aprobado':  return { bg: '#D7FAF4', text: '#009C87' };
-      case 'Rechazado': return { bg: '#FAD5D4', text: '#D30000' };
-      case 'Firmado':   return { bg: '#E0E7FF', text: '#4338CA' };
-      case 'Pagado':    return { bg: '#DCFCE7', text: '#15803D' };
-      default:          return { bg: '#FEF9C3', text: '#92400E' }; // Pendiente
-    }
-  }
+  // Los colores del estado del reembolso viven en el shared del módulo: el mismo estado tiene
+  // que verse igual en las cinco pantallas del ciclo.
+  readonly reembolsoColors = reembolsoColors;
 
   /** El badge dice "Observado" y no "Rechazado": lo que el trabajador tiene que hacer es subsanar. */
   reembolsoTexto(r: RendicionListItemDto): string {

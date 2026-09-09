@@ -522,7 +522,7 @@ export class SolicitudSalidaCreate implements OnInit {
   save(): void {
     this.submitted = true;
     if (!this.fechaSalida) {
-      Swal.fire({ title: 'Falta la fecha', icon: 'warning', confirmButtonColor: '#64BC04' });
+      Swal.fire({ title: 'Falta la fecha', icon: 'warning', confirmButtonColor: '#0F6E56' });
       return;
     }
     // Solo validación de frontend: la fecha de salida no puede ser anterior a hoy.
@@ -531,7 +531,7 @@ export class SolicitudSalidaCreate implements OnInit {
         title: 'Fecha inválida',
         text: 'La fecha de salida no puede ser anterior a hoy.',
         icon: 'warning',
-        confirmButtonColor: '#64BC04',
+        confirmButtonColor: '#0F6E56',
       });
       return;
     }
@@ -547,9 +547,9 @@ export class SolicitudSalidaCreate implements OnInit {
     if (errors.length > 0) {
       Swal.fire({
         title: 'Campos requeridos',
-        html: `<ul class="text-left text-sm list-disc pl-4">${errors.map((e) => `<li>${e}</li>`).join('')}</ul>`,
+        html: `<ul class="text-left list-disc pl-4">${errors.map((e) => `<li>${e}</li>`).join('')}</ul>`,
         icon: 'warning',
-        confirmButtonColor: '#64BC04',
+        confirmButtonColor: '#0F6E56',
       });
       return;
     }

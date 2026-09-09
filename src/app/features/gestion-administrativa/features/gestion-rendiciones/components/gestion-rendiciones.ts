@@ -16,6 +16,7 @@ import {
   ResumenGestionRendicionesDto,
 } from '../dtos/gestion-rendicion.dto';
 import { primeraRevisionColors, reembolsoColors } from '../../../shared/dtos/rendicion-shared.dto';
+import { confirmarConCorreos, pedirAvisos } from '../../../shared/confirmar-correos';
 import { AuthService } from '../../../../../core/services/auth.service';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
@@ -152,6 +153,7 @@ export class GestionRendiciones implements OnInit {
     { value: 'Rechazado', label: 'Observadas' },
     { value: 'Aprobado',  label: 'Aprobadas' },
     { value: 'Firmado',   label: 'Firmadas' },
+    { value: 'Proceder con el reembolso', label: 'En Tesorería' },
     { value: 'Pagado',    label: 'Pagadas' },
   ];
   readonly consolidadoOptions = [
@@ -428,19 +430,36 @@ export class GestionRendiciones implements OnInit {
     return { rendicionIds: items.map((r) => r.id), observacion: observacion ?? null };
   }
 
+  /**
+   * A quién le van a llegar los avisos de la decisión sobre esta selección. Lo resuelve el backend
+   * con el MISMO cálculo que hace el envío (Configuración → Correos), así que la confirmación no
+   * promete un correo a alguien que la configuración dejó fuera.
+   *
+   * Se pide al apretar el botón y no al cargar la pantalla porque depende de qué está seleccionado:
+   * los destinatarios principales son los solicitantes de esas planillas.
+   */
+  private avisos(
+    items: GestionRendicionListItemDto[],
+    accion: 'PRIMERA_REVISION' | 'REEMBOLSO',
+    aprobar: boolean,
+  ) {
+    return pedirAvisos(this.service.correoPreview({
+      rendicionIds: items.map((r) => r.id),
+      accion,
+      aprobar,
+    }));
+  }
+
   async aprobarPrimeraRevision(items = this.selectedPorPrimeraRevision): Promise<void> {
     if (items.length === 0) return;
 
-    const result = await Swal.fire({
-      icon: 'question',
-      title: items.length === 1
+    const result = await confirmarConCorreos({
+      titulo: items.length === 1
         ? '¿Aprobar la rendición ' + items[0].codigo + '?'
         : '¿Aprobar ' + items.length + ' rendiciones?',
-      text: 'El trabajador podrá cargar el Consolidado del S10 y se le avisará por correo.',
-      showCancelButton: true,
+      nota: 'Habilita al trabajador a cargar el Consolidado del S10.',
+      avisos: await this.avisos(items, 'PRIMERA_REVISION', true),
       confirmButtonText: 'Sí, aprobar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0F6E56',
     });
     if (!result.isConfirmed) return;
 
@@ -454,18 +473,17 @@ export class GestionRendiciones implements OnInit {
   async observarPrimeraRevision(items = this.selectedPorPrimeraRevision): Promise<void> {
     if (items.length === 0) return;
 
-    const { value: observacion, isConfirmed } = await Swal.fire({
+    const { value: observacion, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
-      title: items.length === 1
+      titulo: items.length === 1
         ? '¿Observar la rendición ' + items[0].codigo + '?'
         : '¿Observar ' + items.length + ' rendiciones?',
-      input: 'textarea',
-      inputLabel: 'Observación',
-      inputPlaceholder: 'Qué capturas o montos tiene que corregir el trabajador…',
-      inputValidator: (v) => (v && v.trim() ? null : 'La observación es obligatoria'),
-      showCancelButton: true,
+      avisos: await this.avisos(items, 'PRIMERA_REVISION', false),
+      observacion: {
+        label: 'Observación',
+        placeholder: 'Qué capturas o montos tiene que corregir el trabajador…',
+      },
       confirmButtonText: 'Observar',
-      cancelButtonText: 'Cancelar',
       confirmButtonColor: '#D30000',
     });
     if (!isConfirmed || !observacion) return;
@@ -509,15 +527,13 @@ export class GestionRendiciones implements OnInit {
     if (items.length === 0) return;
 
     const salidas = items.reduce((acc, r) => acc + r.porDecidirCount, 0);
-    const result = await Swal.fire({
-      icon: 'question',
-      title: items.length === 1 ? '¿Aprobar este reembolso?' : `¿Aprobar ${items.length} planillas?`,
-      text: `Se aprobarán ${salidas} salida(s), se estampará tu firma en la planilla y en su `
-          + 'Consolidado del S10, y se les avisará a sus solicitantes.',
-      showCancelButton: true,
+    const result = await confirmarConCorreos({
+      titulo: items.length === 1 ? '¿Aprobar este reembolso?' : `¿Aprobar ${items.length} planillas?`,
+      // El conteo no está en la tabla —una planilla puede traer varias salidas por decidir— y la
+      // firma es el efecto que no se ve.
+      nota: `${salidas} salida(s). Se firma la planilla y su Consolidado del S10.`,
+      avisos: await this.avisos(items, 'REEMBOLSO', true),
       confirmButtonText: 'Sí, aprobar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0F6E56',
     });
     if (!result.isConfirmed) return;
 
@@ -529,16 +545,12 @@ export class GestionRendiciones implements OnInit {
     const items = this.selectedPorDecidir;
     if (items.length === 0) return;
 
-    const { value: observacion, isConfirmed } = await Swal.fire({
+    const { value: observacion, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
-      title: items.length === 1 ? '¿Rechazar este reembolso?' : `¿Rechazar ${items.length} planillas?`,
-      input: 'textarea',
-      inputLabel: 'Observación',
-      inputPlaceholder: 'Qué tiene que corregir el trabajador…',
-      inputValidator: (v) => (v && v.trim() ? null : 'La observación es obligatoria'),
-      showCancelButton: true,
+      titulo: items.length === 1 ? '¿Rechazar este reembolso?' : `¿Rechazar ${items.length} planillas?`,
+      avisos: await this.avisos(items, 'REEMBOLSO', false),
+      observacion: { label: 'Observación', placeholder: 'Qué tiene que corregir el trabajador…' },
       confirmButtonText: 'Rechazar',
-      cancelButtonText: 'Cancelar',
       confirmButtonColor: '#D30000',
     });
     if (!isConfirmed || !observacion) return;

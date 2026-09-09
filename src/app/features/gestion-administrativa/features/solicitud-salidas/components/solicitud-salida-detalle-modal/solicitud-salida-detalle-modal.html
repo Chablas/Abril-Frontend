@@ -1,6 +1,7 @@
 ﻿<app-base-modal
   [title]="detalle?.codigo ? 'Solicitud ' + detalle!.codigo : 'Detalle de la solicitud'"
   width="w-[720px]"
+  closeColor="var(--color-abril-standard)"
   (closeModal)="cerrar()">
 
   <div *ngIf="detalle" class="flex flex-col gap-4 pt-4">

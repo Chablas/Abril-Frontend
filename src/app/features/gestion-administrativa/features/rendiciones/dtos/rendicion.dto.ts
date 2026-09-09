@@ -1,10 +1,9 @@
 import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
-import { EstadoPrimeraRevision } from '../../../shared/dtos/rendicion-shared.dto';
+import { EstadoPrimeraRevision, EstadoReembolso } from '../../../shared/dtos/rendicion-shared.dto';
 
-export type { EstadoPrimeraRevision };
-
-/** Estados del reembolso de una planilla (resumen de los de sus salidas). */
-export type EstadoReembolso = 'Pendiente' | 'Aprobado' | 'Rechazado' | 'Firmado' | 'Pagado';
+// Los dos ejes de estado de una planilla salen del shared del módulo: son los mismos que muestran
+// Gestión de Rendiciones y Reembolsos, y repetir la unión acá la dejaba desactualizada.
+export type { EstadoPrimeraRevision, EstadoReembolso };
 
 /**
  * Una planilla de rendición del trabajador: un PDF que agrupa N salidas y equivale a un registro

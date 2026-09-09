@@ -4,6 +4,7 @@ import { BaseModal } from '../../../../../../shared/components/base-modal/base-m
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
 import { DraggableImage } from '../../../../../../shared/components/draggable-image/draggable-image';
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
+import { reembolsoColors } from '../../../../shared/dtos/rendicion-shared.dto';
 import {
   GestionSalidaDetalleDto,
   GestionSalidaTrayectoDto,
@@ -72,13 +73,7 @@ export class GestionSalidaDetalleModal {
       : { bg: '#F3F4F6', text: '#6B7280' };
   }
 
-  reembolsoColors(estado: string): { bg: string; text: string } {
-    switch (estado) {
-      case 'Aprobado':  return { bg: '#D7FAF4', text: '#009C87' };
-      case 'Rechazado': return { bg: '#FAD5D4', text: '#D30000' };
-      case 'Firmado':   return { bg: '#E0E7FF', text: '#4338CA' };
-      case 'Pagado':    return { bg: '#DCFCE7', text: '#15803D' };
-      default:          return { bg: '#FEF9C3', text: '#92400E' }; // Pendiente
-    }
-  }
+  // Los colores del estado del reembolso viven en el shared del módulo: el mismo estado tiene
+  // que verse igual en las cinco pantallas del ciclo.
+  readonly reembolsoColors = reembolsoColors;
 }

@@ -1,6 +1,7 @@
 <app-base-modal
   [title]="detalle ? 'Rendición ' + detalle.codigo : 'Rendición'"
   width="w-[900px]"
+  closeColor="var(--color-abril-standard)"
   (closeModal)="cerrar()">
 
   <div *ngIf="detalle as d" class="flex flex-col gap-4 pt-4">
@@ -98,6 +99,7 @@
           <path d="M14 2v6h6" stroke-linejoin="round"/>
         </svg>
         {{ d.pdfFilename }}
+        <span class="text-xs text-gray-400 font-normal">· Planilla de gasto</span>
       </a>
 
       <a *ngIf="d.consolidadoS10" [href]="d.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"

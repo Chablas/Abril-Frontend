@@ -26,6 +26,8 @@ import { FilterModal } from '../../../../../shared/components/filter-modal/filte
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
 
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
+import { reembolsoColors } from '../../../shared/dtos/rendicion-shared.dto';
+
 @Component({
   standalone: true,
   selector: 'app-solicitud-salidas',
@@ -519,7 +521,7 @@ export class SolicitudSalidas implements OnInit {
     const result = await Swal.fire({
       icon: 'warning',
       title: items.length === 1 ? '¿Cancelar esta solicitud?' : `¿Cancelar ${items.length} solicitudes?`,
-      text: 'Se anularán tus solicitudes pendientes seleccionadas. Esta acción no se puede deshacer.',
+      text: 'No se puede deshacer.',
       showCancelButton: true,
       confirmButtonText: 'Sí, cancelar',
       cancelButtonText: 'Volver',
@@ -565,7 +567,7 @@ export class SolicitudSalidas implements OnInit {
     const result = await Swal.fire({
       icon: 'question',
       title: ids.length === 1 ? '¿Rendir esta solicitud?' : `¿Rendir ${ids.length} solicitudes?`,
-      text: 'Se marcará como rendida y se descargará tu planilla de gasto por movilidad.',
+      text: 'Se descarga tu planilla de gasto por movilidad.',
       showCancelButton: true,
       confirmButtonText: 'Sí, rendir',
       cancelButtonText: 'Cancelar',
@@ -596,7 +598,7 @@ export class SolicitudSalidas implements OnInit {
     const result = await Swal.fire({
       icon: 'question',
       title: `¿Rendir tus salidas de ${mes.label}?`,
-      text: 'Entran todas las salidas del mes que estén aptas para rendir.',
+      text: 'Entran solo las salidas aptas para rendir.',
       showCancelButton: true,
       confirmButtonText: 'Sí, rendir',
       cancelButtonText: 'Cancelar',
@@ -638,6 +640,7 @@ export class SolicitudSalidas implements OnInit {
       title: `${count} solicitud(es) rendida(s)`,
       text: 'Se descargó la planilla de gasto por movilidad.',
       icon: 'success',
+      confirmButtonColor: '#0F6E56',
     });
     this.recargar();
   }
@@ -686,13 +689,7 @@ export class SolicitudSalidas implements OnInit {
 
   // ── Reembolso ────────────────────────────────────────────────────────
 
-  reembolsoColors(estado: string): { bg: string; text: string } {
-    switch (estado) {
-      case 'Aprobado':  return { bg: '#D7FAF4', text: '#009C87' };
-      case 'Rechazado': return { bg: '#FAD5D4', text: '#D30000' };
-      case 'Firmado':   return { bg: '#E0E7FF', text: '#4338CA' };
-      case 'Pagado':    return { bg: '#DCFCE7', text: '#15803D' };
-      default:          return { bg: '#FEF9C3', text: '#92400E' }; // Pendiente
-    }
-  }
+  // Los colores del estado del reembolso viven en el shared del módulo: el mismo estado tiene
+  // que verse igual en las cinco pantallas del ciclo.
+  readonly reembolsoColors = reembolsoColors;
 }

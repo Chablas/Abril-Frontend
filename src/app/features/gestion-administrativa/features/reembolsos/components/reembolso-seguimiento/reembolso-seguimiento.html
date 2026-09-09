@@ -1,0 +1,128 @@
+<!-- ── Totales del conjunto filtrado ─────────────────────────────────────
+     El filtro por colaborador es el del modal de filtros de la pantalla: al elegir uno, estos
+     tres números pasan a ser los suyos. -->
+<div class="total-cards">
+  <div class="total-card">
+    <span class="total-card__label">Total abonado</span>
+    <span class="total-card__value">S/ {{ data.totalAbonado | number:'1.2-2' }}</span>
+    <span class="total-card__hint">Reembolsos ya pagados</span>
+  </div>
+  <div class="total-card">
+    <span class="total-card__label">Rendiciones pagadas</span>
+    <span class="total-card__value">{{ data.rendicionesPagadas }}</span>
+    <span class="total-card__hint">Planillas cerradas</span>
+  </div>
+  <div class="total-card">
+    <span class="total-card__label">Colaboradores</span>
+    <span class="total-card__value">{{ data.colaboradoresCount }}</span>
+    <span class="total-card__hint">Con al menos un pago</span>
+  </div>
+</div>
+
+<div class="flex flex-col gap-[8px] flex-1 min-h-0 overflow-auto pr-1">
+
+  <div *ngIf="data.colaboradores.length === 0"
+       class="text-center py-[40px] text-gray-400 text-sm">
+    Todavía no hay reembolsos pagados con estos filtros.
+  </div>
+
+  <div *ngFor="let c of pagedColaboradores" class="colaborador">
+
+    <div class="colaborador__head"
+         (click)="toggle(c)"
+         [title]="expandidos.has(c.workerId) ? 'Ocultar sus rendiciones' : 'Ver sus rendiciones pagadas'">
+
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.5"
+           class="flex-shrink-0"
+           [style.transform]="expandidos.has(c.workerId) ? 'rotate(90deg)' : null"
+           style="transition:transform .15s ease">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+      </svg>
+
+      <div class="flex flex-col min-w-0">
+        <span class="text-sm font-semibold text-gray-700 truncate">{{ c.trabajador | titleCase }}</span>
+        <span class="text-[11px] text-gray-400 truncate">{{ (c.area | titleCase) || 'Sin área' }}</span>
+      </div>
+
+      <div class="flex flex-col ml-auto text-right">
+        <span class="text-[10px] uppercase font-bold tracking-wide text-gray-400">Total abonado</span>
+        <span class="text-sm font-bold" style="color:#15803D">S/ {{ c.totalAbonado | number:'1.2-2' }}</span>
+      </div>
+
+      <div class="flex flex-col text-right">
+        <span class="text-[10px] uppercase font-bold tracking-wide text-gray-400">Rendiciones</span>
+        <span class="text-sm text-gray-700">{{ c.rendicionesPagadas }}</span>
+      </div>
+
+      <div class="flex flex-col text-right">
+        <span class="text-[10px] uppercase font-bold tracking-wide text-gray-400">Último pago</span>
+        <span class="text-sm text-gray-700">{{ (c.ultimoPagoAt | date:'dd/MM/yyyy') || '—' }}</span>
+      </div>
+    </div>
+
+    <!-- Detalle por rendición: periodo, guía, monto abonado, estado y última actualización. -->
+    <div *ngIf="expandidos.has(c.workerId)" class="abril-table-wrap border-t"
+         style="border-color:var(--color-abril-border)">
+      <table class="abril-table abril-table--th-center">
+        <thead>
+          <tr>
+            <th>Rendición</th>
+            <th>Planilla</th>
+            <th>Periodo</th>
+            <th>Guía S10</th>
+            <th>Salidas</th>
+            <th>Monto abonado</th>
+            <th>Estado</th>
+            <th>Última actualización</th>
+            <th>Documentos</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of c.rendiciones" class="border-b" style="border-color:var(--color-abril-border)">
+            <td class="text-gray-700 font-medium whitespace-nowrap">{{ r.codigo }}</td>
+            <td class="text-gray-500 whitespace-nowrap">{{ r.numeroPlanilla ?? '—' }}</td>
+            <td class="text-gray-700 whitespace-nowrap">{{ r.periodo }}</td>
+            <td class="text-gray-700 whitespace-nowrap">{{ r.numeroGuia || '—' }}</td>
+            <td class="text-gray-700 text-center">{{ r.salidasCount }}</td>
+            <td class="text-gray-700 whitespace-nowrap font-medium">S/ {{ r.montoAbonado | number:'1.2-2' }}</td>
+            <td>
+              <app-status-badge
+                [text]="r.estado"
+                [bgColor]="reembolsoColors(r.estado).bg"
+                [textColor]="reembolsoColors(r.estado).text" />
+            </td>
+            <td class="text-gray-500 whitespace-nowrap">
+              <div class="flex flex-col leading-tight">
+                <span>{{ r.actualizadoAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                <span *ngIf="r.pagadoPor" class="text-[11px] text-gray-400">{{ r.pagadoPor | titleCase }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="flex flex-wrap items-center gap-[6px]">
+                <a *ngIf="r.pdfFirmadoUrl" [href]="r.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
+                   title="Planilla de gasto firmada"
+                   class="text-[11px] font-semibold hover:underline"
+                   style="color:var(--color-abril-accent)">Planilla</a>
+                <a *ngIf="r.consolidadoS10Url" [href]="r.consolidadoS10Url" target="_blank" rel="noopener noreferrer"
+                   title="Consolidado del S10"
+                   class="text-[11px] font-semibold hover:underline"
+                   style="color:var(--color-abril-accent)">S10</a>
+                <span *ngIf="!r.pdfFirmadoUrl && !r.consolidadoS10Url" class="text-[11px] text-gray-400">—</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Ancho limitado y a la izquierda: no invade la esquina del botón flotante. -->
+<div class="shrink-0 max-w-[440px]">
+  <app-paginator
+    [totalRecords]="data.colaboradores.length"
+    [currentPage]="currentPage"
+    [totalPages]="totalPages"
+    (pageChange)="changePage($event)">
+  </app-paginator>
+</div>

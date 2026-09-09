@@ -29,6 +29,7 @@ import { FilterTriggerButton } from '../../../../../shared/components/filter-tri
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
 import { reembolsoColors } from '../../../shared/dtos/rendicion-shared.dto';
+import { confirmarConCorreos, pedirAvisos } from '../../../shared/confirmar-correos';
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 /** Nodo del árbol de áreas para el desplegable en cascada del filtro. */
 interface AreaCascadeNode {
@@ -177,6 +178,7 @@ export class GestionSalidas implements OnInit {
     { value: 'Aprobado',  label: 'Aprobados' },
     { value: 'Rechazado', label: 'Rechazados' },
     { value: 'Firmado',   label: 'Firmados' },
+    { value: 'Proceder con el reembolso', label: 'En Tesorería' },
     { value: 'Pagado',    label: 'Pagados' },
   ];
 
@@ -671,20 +673,27 @@ export class GestionSalidas implements OnInit {
   }
 
   // ── Acciones bulk: aprobar / rechazar ────────────────────────────────
+  /**
+   * A quién le va a llegar el aviso de la decisión sobre estas salidas. Lo resuelve el backend con
+   * el MISMO cálculo que hace el envío (Configuración → Correos), así que la confirmación no
+   * promete un correo que la configuración dejó fuera. Se pide al apretar el botón porque los
+   * destinatarios principales son los solicitantes de lo seleccionado.
+   */
+  private avisos(items: { id: number }[], aprobar: boolean) {
+    return pedirAvisos(this.service.correoPreview(items.map((s) => s.id), aprobar));
+  }
+
   /** Aprueba en bloque las solicitudes seleccionadas que estén en estado Pendiente. */
   async aprobarBulk(): Promise<void> {
     if (!this.puedeAprobarSeleccion) return;
     const items = this.selectedPendientes;
     if (items.length === 0) return;
 
-    const result = await Swal.fire({
-      icon: 'question',
-      title: `¿Aprobar ${items.length} solicitud(es)?`,
-      text: 'Se aprobarán todas las solicitudes pendientes seleccionadas.',
-      showCancelButton: true,
+    const result = await confirmarConCorreos({
+      titulo: `¿Aprobar ${items.length} solicitud(es)?`,
+      avisos: await this.avisos(items, true),
       confirmButtonText: 'Sí, aprobar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#64BC04',
+      confirmButtonColor: '#0F6E56',
     });
     if (!result.isConfirmed) return;
 
@@ -712,13 +721,13 @@ export class GestionSalidas implements OnInit {
     const items = this.selectedRechazables;
     if (items.length === 0) return;
 
-    const result = await Swal.fire({
+    const result = await confirmarConCorreos({
       icon: 'warning',
-      title: `¿Rechazar ${items.length} solicitud(es)?`,
-      text: 'Se rechazarán las solicitudes seleccionadas que estén pendientes o aprobadas aún no rendidas.',
-      showCancelButton: true,
+      titulo: `¿Rechazar ${items.length} solicitud(es)?`,
+      // El conjunto es más chico que la selección: eso no se ve en la tabla.
+      nota: 'Solo las pendientes y las aprobadas sin rendir.',
+      avisos: await this.avisos(items, false),
       confirmButtonText: 'Rechazar',
-      cancelButtonText: 'Cancelar',
       confirmButtonColor: '#D30000',
     });
     if (!result.isConfirmed) return;
@@ -988,7 +997,7 @@ export class GestionSalidas implements OnInit {
     const result = await Swal.fire({
       icon: 'warning',
       title: items.length === 1 ? '¿Cancelar esta solicitud?' : `¿Cancelar ${items.length} solicitud(es)?`,
-      text: 'Se anularán tus solicitudes pendientes seleccionadas. Esta acción no se puede deshacer.',
+      text: 'No se puede deshacer.',
       showCancelButton: true,
       confirmButtonText: 'Sí, cancelar',
       cancelButtonText: 'Volver',
@@ -1027,7 +1036,7 @@ export class GestionSalidas implements OnInit {
     const result = await Swal.fire({
       icon: 'question',
       title: `¿Marcar ${ids.length} solicitud(es) como rendidas?`,
-      text: 'Esto indica que ya fueron rendidas en el sistema S10.',
+      text: 'Indica que ya fueron rendidas en el S10.',
       showCancelButton: true,
       confirmButtonText: 'Sí, marcar como rendidas',
       cancelButtonText: 'Cancelar',
@@ -1069,8 +1078,8 @@ export class GestionSalidas implements OnInit {
       icon: 'question',
       title: `¿Rendir las salidas de ${mes.label}?`,
       text: this.rendicionFiltrada
-        ? 'Se rinde solo lo que dejan ver los filtros activos, y solo lo que está apto para rendir.'
-        : 'Entran todas las salidas del mes que estén aptas para rendir.',
+        ? 'Solo lo que dejan ver los filtros activos y esté apto para rendir.'
+        : 'Entran solo las salidas aptas para rendir.',
       showCancelButton: true,
       confirmButtonText: 'Sí, rendir',
       cancelButtonText: 'Cancelar',
@@ -1118,6 +1127,7 @@ export class GestionSalidas implements OnInit {
       title: `${count} solicitud(es) marcada(s) como rendida(s)`,
       text: 'Se descargó la planilla de gasto por movilidad.',
       icon: 'success',
+      confirmButtonColor: '#0F6E56',
     });
     this.recargar();
   }
@@ -1158,14 +1168,11 @@ export class GestionSalidas implements OnInit {
     const d = this.detalle;
     if (!d) return;
 
-    const result = await Swal.fire({
-      icon: 'question',
-      title: d.codigo ? `¿Aprobar la solicitud ${d.codigo}?` : '¿Aprobar esta solicitud?',
-      text: 'Se le avisará al solicitante que su salida quedó aprobada.',
-      showCancelButton: true,
+    const result = await confirmarConCorreos({
+      titulo: d.codigo ? `¿Aprobar la solicitud ${d.codigo}?` : '¿Aprobar esta solicitud?',
+      avisos: await pedirAvisos(this.service.correoPreview([d.id], true)),
       confirmButtonText: 'Sí, aprobar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#64BC04',
+      confirmButtonColor: '#0F6E56',
     });
     if (!result.isConfirmed) return;
 
@@ -1184,15 +1191,16 @@ export class GestionSalidas implements OnInit {
     const d = this.detalle;
     if (!d) return;
 
-    const { value: motivo, isConfirmed } = await Swal.fire({
+    const { value: motivo, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
-      title: d.codigo ? `¿Rechazar la solicitud ${d.codigo}?` : '¿Rechazar esta solicitud?',
-      input: 'textarea',
-      inputLabel: 'Motivo (opcional)',
-      inputPlaceholder: 'Por qué no procede la salida…',
-      showCancelButton: true,
+      titulo: d.codigo ? `¿Rechazar la solicitud ${d.codigo}?` : '¿Rechazar esta solicitud?',
+      avisos: await pedirAvisos(this.service.correoPreview([d.id], false)),
+      observacion: {
+        label: 'Motivo (opcional)',
+        placeholder: 'Por qué no procede la salida…',
+        obligatoria: false,
+      },
       confirmButtonText: 'Rechazar',
-      cancelButtonText: 'Cancelar',
       confirmButtonColor: '#D30000',
     });
     if (!isConfirmed) return;

@@ -747,6 +747,20 @@ app-layout .full-page-wrapper app-header .sm\:hidden {
   display: none !important;
 }
 
+/* ── SweetAlert2: botón de confirmar por defecto ──────────────────────
+   SweetAlert2 trae #7066e0 (morado) como color del botón de confirmar y lo
+   sirve por esta variable, así que toda llamada a Swal.fire() que no pase
+   confirmButtonColor sale morada — hoy son ~450 en la app. Se cambia acá y
+   no en cada archivo: el color que pasa el llamador va inline y le gana a
+   esta variable, así que los botones con color propio (rojo de las acciones
+   destructivas, etc.) no se tocan.
+   El selector es html:root y no :root a propósito: la hoja de SweetAlert2 se
+   inyecta en runtime y puede quedar después de esta, y con la misma
+   especificidad ganaría la suya. */
+html:root {
+  --swal2-confirm-button-background-color: var(--color-abril-standard);
+}
+
 /* ── SweetAlert2 preset paleta UDP (DESIGN-VICTOR.md §6.9) ────────────
    Usado por shared/utils/sweetalert-udp.ts. No repetir colores sueltos
    en llamadas a Swal.fire(): agregar aquí si se necesita un nuevo ícono. */

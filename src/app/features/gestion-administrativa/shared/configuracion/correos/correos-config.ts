@@ -129,6 +129,8 @@ export class GaCorreosConfig implements OnChanges {
     S10_REVISOR: 'S10 al revisor',
     REEMBOLSO_APROBADO: 'Reembolso OK',
     REEMBOLSO_RECHAZADO: 'Reembolso observado',
+    TESORERIA_REEMBOLSO: 'Aviso a Tesorería',
+    REEMBOLSO_PAGADO: 'Reembolso pagado',
   };
 
   constructor(

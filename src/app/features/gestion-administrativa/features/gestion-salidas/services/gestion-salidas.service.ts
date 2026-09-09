@@ -2,6 +2,7 @@
 import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
+import { CorreoAvisoDto } from '../../../shared/correo-aviso';
 import {
   GestionSalidaDetalleDto,
   GestionSalidaFilterDataDto,
@@ -167,5 +168,18 @@ export class GestionSalidasService {
       params,
       responseType: 'blob',
     });
+  }
+
+  /**
+   * A quién le llegaría el aviso al aprobar o rechazar las salidas indicadas. Se pide al apretar el
+   * botón porque depende de la selección, y lo resuelve el servidor para que la confirmación no
+   * pueda desalinearse de Configuración → Correos.
+   */
+  correoPreview(solicitudIds: number[], aprobar: boolean): Observable<CorreoAvisoDto[]> {
+    return this.http.post<CorreoAvisoDto[]>(
+      `${this.apiUrl}/correo-preview`,
+      { solicitudIds, aprobar },
+      { headers: this.headers },
+    );
   }
 }

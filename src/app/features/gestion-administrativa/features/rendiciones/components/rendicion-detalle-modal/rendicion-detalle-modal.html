@@ -1,6 +1,7 @@
 <app-base-modal
   [title]="detalle ? 'Rendición ' + detalle.codigo : 'Rendición'"
   width="w-[820px]"
+  closeColor="var(--color-abril-standard)"
   (closeModal)="cerrar()">
 
   <div *ngIf="detalle as d" class="flex flex-col gap-4 pt-4">
@@ -82,6 +83,7 @@
           <path d="M14 2v6h6" stroke-linejoin="round"/>
         </svg>
         {{ d.pdfFilename }}
+        <span class="text-xs text-gray-400 font-normal">· Planilla de gasto</span>
       </a>
 
       <a *ngIf="d.consolidadoS10" [href]="d.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
@@ -100,6 +102,8 @@
             : 'El Consolidado del S10 se habilita cuando tu jefe apruebe la primera revisión.' }}
       </span>
 
+      <!-- Las dos copias que deja la aprobación del reembolso: aprobar ES firmar, y firma los
+           dos documentos. -->
       <a *ngIf="d.pdfFirmadoUrl" [href]="d.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
          class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
          style="color:var(--color-abril-accent)">
@@ -108,6 +112,18 @@
         </svg>
         {{ d.pdfFirmadoFilename ?? 'Planilla firmada' }}
         <span class="text-xs text-gray-400 font-normal">· firmada el {{ d.firmadoAt | date:'dd/MM/yyyy' }}</span>
+      </a>
+
+      <a *ngIf="d.consolidadoS10?.pdfFirmadoUrl as firmado" [href]="firmado" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {{ d.consolidadoS10?.pdfFirmadoFilename ?? 'Consolidado del S10 firmado' }}
+        <span class="text-xs text-gray-400 font-normal">
+          · firmado el {{ d.consolidadoS10?.firmadoAt | date:'dd/MM/yyyy' }}
+        </span>
       </a>
     </div>
 

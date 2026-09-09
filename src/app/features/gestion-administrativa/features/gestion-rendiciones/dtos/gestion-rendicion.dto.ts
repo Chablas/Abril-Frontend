@@ -99,23 +99,12 @@ export interface GestionRendicionSalidaDto {
   observacionReembolso: string | null;
 }
 
-/**
- * Destinatarios REALES de un correo del flujo, ya resueltos por el backend con la configuración
- * de Configuración → Correos. `para` vacío = no le llega a nadie.
- */
-export interface CorreoDestinatariosDto {
-  para: string[];
-  copia: string[];
-}
-
 export interface GestionRendicionDetalleDto extends GestionRendicionListItemDto {
   salidas: GestionRendicionSalidaDto[];
-  /**
-   * A quién le llega el aviso de «reembolso aprobado» si el revisor aprueba esta planilla, según
-   * Configuración → Correos → «Reembolso OK». El destinatario principal es cada solicitante de
-   * las salidas por decidir, así que la lista es de esta planilla y no de la pantalla.
-   */
-  correoReembolsoAprobado: CorreoDestinatariosDto;
+  // Los destinatarios de los correos de las decisiones NO vienen acá: se piden aparte con
+  // `correoPreview` al apretar el botón. Antes había un `correoReembolsoAprobado` que el backend
+  // nunca llenaba, así que el modal decía siempre "nadie recibirá el aviso" aunque el correo
+  // estuviera activo. Ver shared/correo-aviso.ts.
 }
 
 /**

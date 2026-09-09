@@ -18,6 +18,7 @@ import {
   primeraRevisionColors,
   reembolsoColors,
 } from '../../../../shared/dtos/rendicion-shared.dto';
+import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-correos';
 
 /**
  * Detalle de una planilla para el revisor: sus documentos y las salidas que agrupa.
@@ -99,17 +100,12 @@ export class GestionRendicionDetalleModal implements OnInit {
     const d = this.detalle;
     if (!d || d.porDecidirCount === 0 || !d.puedeDecidir) return;
 
-    const result = await Swal.fire({
-      icon: 'question',
-      title: '¿Aprobar el reembolso de ' + d.codigo + '?',
-      html: `<div style="text-align:left;font-size:13px;color:#4B5563">`
-          + `Cubre las <b>${d.porDecidirCount}</b> salida(s) de la planilla que están por decidir. `
-          + 'Se estampará tu firma en todas las hojas de la planilla y de su Consolidado del S10.'
-          + `</div>${this.avisoCorreoHtml()}`,
-      showCancelButton: true,
+    const result = await confirmarConCorreos({
+      titulo: '¿Aprobar el reembolso de ' + d.codigo + '?',
+      // Lo único que el modal no muestra: que aprobar ES firmar los dos documentos.
+      nota: 'Se firma la planilla y su Consolidado del S10.',
+      avisos: await this.avisos('REEMBOLSO', true),
       confirmButtonText: 'Sí, aprobar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0F6E56',
     });
     if (!result.isConfirmed) return;
 
@@ -117,32 +113,19 @@ export class GestionRendicionDetalleModal implements OnInit {
   }
 
   /**
-   * A quién le va a llegar el aviso de "reembolso aprobado". El backend resuelve las direcciones
-   * con el MISMO cálculo que hace el envío (Configuración → Correos → «Reembolso OK»), así que la
-   * confirmación no promete un correo a alguien que la configuración dejó fuera.
+   * A quién le va a llegar el aviso de la decisión. Lo resuelve el backend con el MISMO cálculo
+   * que hace el envío (Configuración → Correos), así que la confirmación no promete un correo a
+   * alguien que la configuración dejó fuera ni dice que no le llega a nadie cuando sí está activo.
+   *
+   * Se pide al apretar el botón y no al abrir el detalle: son cuatro decisiones con cuatro correos
+   * distintos y resolver las cuatro cada vez que se abre el modal es trabajo que casi nunca se usa.
    */
-  private avisoCorreoHtml(): string {
-    const dest = this.detalle?.correoReembolsoAprobado;
-    const escapar = (s: string) =>
-      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-    const para = (dest?.para ?? []).map(escapar).join(', ');
-    const copia = (dest?.copia ?? []).map(escapar).join(', ');
-
-    // La decisión se guarda igual sin correo (el aviso es best-effort), así que esto es un aviso
-    // de estado y no un bloqueo.
-    if (!para) {
-      return `<div style="text-align:left;margin-top:10px;background:#FEF9C3;border:1px solid #FDE68A;border-radius:8px;padding:10px 12px;font-size:13px;color:#92400E">
-        Nadie recibirá el aviso por correo: está apagado en Configuración → Correos.
-      </div>`;
-    }
-
-    return `<div style="text-align:left;margin-top:10px;font-size:13px;color:#4B5563">
-      Se notificará a <b style="color:var(--color-abril-logo-blue);word-break:break-all">${para}</b>.
-      ${copia
-        ? `<div style="margin-top:4px;color:#6B7280">En copia: <span style="word-break:break-all">${copia}</span></div>`
-        : ''}
-    </div>`;
+  private avisos(accion: 'PRIMERA_REVISION' | 'REEMBOLSO', aprobar: boolean) {
+    return pedirAvisos(this.service.correoPreview({
+      rendicionIds: [this.detalle!.id],
+      accion,
+      aprobar,
+    }));
   }
 
   /**
@@ -180,17 +163,12 @@ export class GestionRendicionDetalleModal implements OnInit {
     const d = this.detalle;
     if (!d || d.porDecidirCount === 0 || !d.puedeDecidir) return;
 
-    const { value: observacion, isConfirmed } = await Swal.fire({
+    const { value: observacion, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
-      title: '¿Rechazar el reembolso de ' + d.codigo + '?',
-      text: `Cubre las ${d.porDecidirCount} salida(s) de la planilla que están por decidir.`,
-      input: 'textarea',
-      inputLabel: 'Observación',
-      inputPlaceholder: 'Qué tiene que corregir el trabajador…',
-      inputValidator: (v) => (v && v.trim() ? null : 'La observación es obligatoria'),
-      showCancelButton: true,
+      titulo: '¿Rechazar el reembolso de ' + d.codigo + '?',
+      avisos: await this.avisos('REEMBOLSO', false),
+      observacion: { label: 'Observación', placeholder: 'Qué tiene que corregir el trabajador…' },
       confirmButtonText: 'Rechazar',
-      cancelButtonText: 'Cancelar',
       confirmButtonColor: '#D30000',
     });
     if (!isConfirmed || !observacion) return;
@@ -221,14 +199,11 @@ export class GestionRendicionDetalleModal implements OnInit {
     const d = this.detalle;
     if (!d?.porPrimeraRevision) return;
 
-    const result = await Swal.fire({
-      icon: 'question',
-      title: '¿Aprobar la rendición ' + d.codigo + '?',
-      text: 'El trabajador podrá cargar el Consolidado del S10 y se le avisará por correo.',
-      showCancelButton: true,
+    const result = await confirmarConCorreos({
+      titulo: '¿Aprobar la rendición ' + d.codigo + '?',
+      nota: 'Habilita al trabajador a cargar el Consolidado del S10.',
+      avisos: await this.avisos('PRIMERA_REVISION', true),
       confirmButtonText: 'Sí, aprobar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0F6E56',
     });
     if (!result.isConfirmed) return;
 
@@ -243,16 +218,15 @@ export class GestionRendicionDetalleModal implements OnInit {
     const d = this.detalle;
     if (!d?.porPrimeraRevision) return;
 
-    const { value: observacion, isConfirmed } = await Swal.fire({
+    const { value: observacion, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
-      title: '¿Observar la rendición ' + d.codigo + '?',
-      input: 'textarea',
-      inputLabel: 'Observación',
-      inputPlaceholder: 'Qué capturas o montos tiene que corregir el trabajador…',
-      inputValidator: (v) => (v && v.trim() ? null : 'La observación es obligatoria'),
-      showCancelButton: true,
+      titulo: '¿Observar la rendición ' + d.codigo + '?',
+      avisos: await this.avisos('PRIMERA_REVISION', false),
+      observacion: {
+        label: 'Observación',
+        placeholder: 'Qué capturas o montos tiene que corregir el trabajador…',
+      },
       confirmButtonText: 'Observar',
-      cancelButtonText: 'Cancelar',
       confirmButtonColor: '#D30000',
     });
     if (!isConfirmed || !observacion) return;

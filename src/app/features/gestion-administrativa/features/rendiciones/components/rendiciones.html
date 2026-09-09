@@ -90,7 +90,7 @@
               [title]="primeraRevisionTitle(r)" />
           </td>
 
-          <!-- Los tres papeles de la planilla en una sola celda: se abren, no cambian nada.
+          <!-- Los papeles de la planilla en una sola celda: se abren, no cambian nada.
                El consolidado y la copia firmada se muestran también cuando faltan, para que se
                vea qué le queda al expediente. -->
           <td (click)="$event.stopPropagation()">
@@ -122,13 +122,24 @@
                 </span>
               </ng-template>
 
+              <!-- Las dos copias que deja la aprobación del reembolso: aprobar firma los dos
+                   documentos. -->
               <a *ngIf="r.pdfFirmadoUrl"
                  class="doc-chip" [href]="r.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
                  [title]="'Planilla firmada por la jefatura el ' + (r.firmadoAt | date:'dd/MM/yyyy HH:mm')">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Firmada
+                Planilla firmada
+              </a>
+
+              <a *ngIf="r.consolidadoS10?.pdfFirmadoUrl as firmado"
+                 class="doc-chip" [href]="firmado" target="_blank" rel="noopener noreferrer"
+                 [title]="'Consolidado del S10 firmado por la jefatura el ' + (r.consolidadoS10?.firmadoAt | date:'dd/MM/yyyy HH:mm')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                S10 firmado
               </a>
             </div>
           </td>

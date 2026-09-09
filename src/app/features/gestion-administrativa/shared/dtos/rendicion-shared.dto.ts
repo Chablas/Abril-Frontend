@@ -11,8 +11,18 @@ export interface ReembolsoBulkResultDto {
   message: string;
 }
 
-/** Estados del reembolso, tal como los nombra el backend. */
-export type EstadoReembolso = 'Pendiente' | 'Aprobado' | 'Rechazado' | 'Firmado' | 'Pagado';
+/**
+ * Estados del reembolso, tal como los nombra el backend. "Proceder con el reembolso" es el paso
+ * de Tesorería entre la firma y el pago: la revisión documental ya está confirmada y el
+ * desembolso queda habilitado (RG-26).
+ */
+export type EstadoReembolso =
+  | 'Pendiente'
+  | 'Aprobado'
+  | 'Rechazado'
+  | 'Firmado'
+  | 'Proceder con el reembolso'
+  | 'Pagado';
 
 /**
  * Estados de la PRIMERA revisión de una planilla, tal como los nombra el backend. Es el paso
@@ -58,9 +68,20 @@ export function reembolsoColors(estado: string): { bg: string; text: string } {
     case 'Aprobado':  return { bg: '#D7FAF4', text: '#009C87' };
     case 'Rechazado': return { bg: '#FAD5D4', text: '#D30000' };
     case 'Firmado':   return { bg: '#E0E7FF', text: '#4338CA' };
+    // Ya pasó por Tesorería pero todavía no se desembolsó: ámbar, no verde — sigue esperando.
+    case 'Proceder con el reembolso': return { bg: '#FFEDD5', text: '#C2410C' };
     case 'Pagado':    return { bg: '#DCFCE7', text: '#15803D' };
     default:          return { bg: '#FEF9C3', text: '#92400E' }; // Pendiente
   }
+}
+
+/**
+ * Etiqueta corta del estado del reembolso para las tablas. Solo cambia "Proceder con el
+ * reembolso", que es el nombre del requerimiento funcional y no entra en una celda; el resto se
+ * muestra tal cual lo nombra el backend.
+ */
+export function reembolsoLabelCorto(estado: string): string {
+  return estado === 'Proceder con el reembolso' ? 'Por pagar' : estado;
 }
 
 /**

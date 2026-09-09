@@ -1,7 +1,7 @@
 <app-abril-page-header
   [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
   titulo="Reembolsos"
-  subtitulo="Planillas firmadas por la jefatura, listas para pagar."
+  subtitulo="Planillas firmadas por la jefatura: revisión de Tesorería y pago."
   [tabs]="tabs"
   [botonSecundario]="botonConfiguracion"
   (secondaryClick)="abrirConfiguracion()">
@@ -11,160 +11,229 @@
 
 <div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden pb-[24px]">
 
-  <!-- ── Tarjetas de resumen ───────────────────────────────────────────────
-       Se cuentan sobre el mismo conjunto que muestra la tabla, así que acompañan a los filtros. -->
-  <div class="resumen-cards">
-    <div class="resumen-card resumen-card--pend">
-      <span class="resumen-card__label">Por pagar</span>
-      <span class="resumen-card__value">{{ resumen.porPagar }}</span>
-      <span class="resumen-card__hint">Planillas firmadas sin pagar</span>
+  <app-section-tabs
+    class="shrink-0"
+    [tabs]="vistas"
+    [value]="vista"
+    color="var(--color-abril-standard)"
+    (valueChange)="cambiarVista($event)" />
+
+  <!-- ══════════ Bandeja de trabajo ══════════════════════════════════════ -->
+  <ng-container *ngIf="vista === 'bandeja'">
+
+    <!-- ── Tarjetas de resumen ─────────────────────────────────────────────
+         Los tres pasos de Tesorería en el orden del flujo. Se cuentan sobre el mismo conjunto
+         que muestra la tabla, así que acompañan a los filtros. -->
+    <div class="resumen-cards">
+      <div class="resumen-card resumen-card--rev">
+        <span class="resumen-card__label">Por revisar</span>
+        <span class="resumen-card__value">{{ resumen.porRevisar }}</span>
+        <span class="resumen-card__hint">Firmadas, esperan tu revisión</span>
+      </div>
+      <div class="resumen-card resumen-card--pend">
+        <span class="resumen-card__label">Por pagar</span>
+        <span class="resumen-card__value">{{ resumen.porPagar }}</span>
+        <span class="resumen-card__hint">Revisión confirmada</span>
+      </div>
+      <div class="resumen-card resumen-card--monto">
+        <span class="resumen-card__label">Monto por pagar</span>
+        <span class="resumen-card__value">S/ {{ resumen.montoPorPagar | number:'1.2-2' }}</span>
+        <span class="resumen-card__hint">Suma a desembolsar</span>
+      </div>
+      <div class="resumen-card resumen-card--ok">
+        <span class="resumen-card__label">Pagadas</span>
+        <span class="resumen-card__value">{{ resumen.pagadas }}</span>
+        <span class="resumen-card__hint">Ya cerradas</span>
+      </div>
     </div>
-    <div class="resumen-card resumen-card--monto">
-      <span class="resumen-card__label">Monto por pagar</span>
-      <span class="resumen-card__value">S/ {{ resumen.montoPorPagar | number:'1.2-2' }}</span>
-      <span class="resumen-card__hint">Suma a desembolsar</span>
+
+    <!-- ── Acciones ─────────────────────────────────────────────────────────
+         Dos pasos y no uno: primero se confirma la revisión documental y recién entonces se
+         puede pagar. Cada botón actúa sobre la parte de la selección que le corresponde. -->
+    <div class="flex flex-wrap items-center gap-2">
+      <span *ngIf="seleccionadasPorPagar.length > 0" class="text-[11px] text-gray-500 mr-1">
+        {{ seleccionadasPorPagar.length }} por pagar · S/ {{ montoSeleccionado | number:'1.2-2' }}
+      </span>
+
+      <button
+        type="button"
+        abrilBulkAction="default"
+        (click)="confirmarRevision()"
+        [disabled]="seleccionadasPorRevisar.length === 0"
+        title="Confirma que la planilla, el Consolidado del S10 y la firma están conformes. Habilita el pago.">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4"/>
+          <circle cx="12" cy="12" r="9"/>
+        </svg>
+        Confirmar revisión<span *ngIf="seleccionadasPorRevisar.length > 0"> ({{ seleccionadasPorRevisar.length }})</span>
+      </button>
+
+      <button
+        type="button"
+        abrilBulkAction="primary"
+        (click)="marcarPagadas()"
+        [disabled]="seleccionadasPorPagar.length === 0"
+        title="Solo se puede pagar lo que ya tiene la revisión de Tesorería confirmada">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <rect x="2.5" y="5.5" width="19" height="13" rx="2"/>
+          <path stroke-linecap="round" d="M2.5 10h19M6 15h4"/>
+        </svg>
+        Marcar como pagadas<span *ngIf="seleccionadasPorPagar.length > 0"> ({{ seleccionadasPorPagar.length }})</span>
+      </button>
     </div>
-    <div class="resumen-card resumen-card--ok">
-      <span class="resumen-card__label">Pagadas</span>
-      <span class="resumen-card__value">{{ resumen.pagadas }}</span>
-      <span class="resumen-card__hint">Ya cerradas</span>
+
+    <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+    <div class="abril-table-wrap">
+      <table class="abril-table abril-table--th-center">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>
+              <input
+                type="checkbox"
+                [checked]="allSelected"
+                [disabled]="accionables.length === 0"
+                (change)="toggleSelectAll()"
+                class="cursor-pointer disabled:cursor-not-allowed"
+                style="accent-color:var(--color-abril-accent)"
+                title="Seleccionar / deseleccionar todo lo que falta revisar o pagar" />
+            </th>
+            <th>Planilla</th>
+            <th>Trabajador</th>
+            <th>Periodo</th>
+            <th>Salidas</th>
+            <th>Monto</th>
+            <th>Guía S10</th>
+            <th>Firma de jefatura</th>
+            <th>Documentos</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="planillas.length === 0">
+            <td colspan="10" class="text-center py-[40px] text-gray-400 text-sm">
+              No hay planillas firmadas por revisar ni pagar.
+            </td>
+          </tr>
+
+          <tr
+            *ngFor="let r of pagedPlanillas"
+            (click)="abrirDetalle(r)"
+            title="Ver el desglose, los tramos y los vouchers de esta planilla"
+            class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
+            [style.background]="selectedIds.has(r.id) ? '#EAF6FF' : null"
+            style="border-color:var(--color-abril-border)">
+
+            <td class="select-none" (click)="onSelectClick($event, r)">
+              <input
+                type="checkbox"
+                [checked]="selectedIds.has(r.id)"
+                [disabled]="!!motivoNoAccionable(r)"
+                class="cursor-pointer pointer-events-none disabled:cursor-not-allowed"
+                style="accent-color:var(--color-abril-accent)"
+                [title]="motivoNoAccionable(r)" />
+            </td>
+
+            <td class="text-gray-700 font-medium whitespace-nowrap" [title]="r.codigo">
+              {{ r.numeroPlanilla ?? r.codigo }}
+            </td>
+            <td class="text-gray-700" [title]="r.trabajadores.join(', ')">
+              {{ trabajadoresTexto(r) | titleCase }}
+            </td>
+            <td class="text-gray-700 whitespace-nowrap">{{ r.periodo }}</td>
+            <td class="text-gray-700 text-center">{{ r.salidasCount }}</td>
+            <td class="text-gray-700 whitespace-nowrap font-medium">S/ {{ r.montoTotal | number:'1.2-2' }}</td>
+
+            <td class="text-gray-700 whitespace-nowrap">
+              {{ r.consolidadoS10?.numeroGuia || '—' }}
+            </td>
+
+            <!-- La firma electrónica: nombre y fecha/hora es lo que la hace evidencia (RG-24). -->
+            <td class="whitespace-nowrap">
+              <div *ngIf="r.firmadoAt; else sinFirma" class="flex flex-col leading-tight">
+                <span class="text-gray-700 text-[12px]">{{ (r.firmadoPor | titleCase) || 'Jefatura' }}</span>
+                <span class="text-gray-400 text-[11px]">{{ r.firmadoAt | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+              <ng-template #sinFirma><span class="text-gray-400">—</span></ng-template>
+            </td>
+
+            <td (click)="$event.stopPropagation()">
+              <div class="flex flex-wrap items-center gap-[6px]">
+                <a *ngIf="r.pdfFirmadoUrl"
+                   class="doc-chip" [href]="r.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
+                   [title]="r.pdfFirmadoFilename ?? 'Planilla firmada'">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Firmada
+                </a>
+
+                <a class="doc-chip" [href]="r.pdfUrl" target="_blank" rel="noopener noreferrer"
+                   [title]="r.pdfFilename">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                    <path d="M14 2v6h6" stroke-linejoin="round"/>
+                  </svg>
+                  Planilla
+                </a>
+
+                <a *ngIf="r.consolidadoS10"
+                   class="doc-chip" [href]="r.consolidadoS10.pdfFirmadoUrl ?? r.consolidadoS10.pdfUrl"
+                   target="_blank" rel="noopener noreferrer"
+                   [title]="r.consolidadoS10.pdfFilename">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                    <path d="M14 2v6h6" stroke-linejoin="round"/>
+                  </svg>
+                  S10
+                </a>
+              </div>
+            </td>
+
+            <td>
+              <app-status-badge
+                [text]="reembolsoLabelCorto(r.estadoReembolso)"
+                [bgColor]="reembolsoColors(r.estadoReembolso).bg"
+                [textColor]="reembolsoColors(r.estadoReembolso).text"
+                [title]="estadoTitle(r)" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
-  </div>
 
-  <!-- ── Acción ─────────────────────────────────────────────────────────── -->
-  <div class="flex flex-wrap items-center gap-2">
-    <span *ngIf="selectedPagables.length > 0" class="text-[11px] text-gray-500 mr-1">
-      {{ selectedPagables.length }} planilla{{ selectedPagables.length === 1 ? '' : 's' }}
-      · S/ {{ montoSeleccionado | number:'1.2-2' }}
-    </span>
+    <!-- Ancho limitado y a la izquierda: no invade la esquina del botón flotante. -->
+    <div class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="planillas.length"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="changePage($event)">
+      </app-paginator>
+    </div>
+  </ng-container>
 
-    <button
-      type="button"
-      abrilBulkAction="primary"
-      (click)="marcarPagadas()"
-      [disabled]="selectedPagables.length === 0"
-      title="Solo se puede marcar como pagado lo que la jefatura ya firmó">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-        <rect x="2.5" y="5.5" width="19" height="13" rx="2"/>
-        <path stroke-linecap="round" d="M2.5 10h19M6 15h4"/>
-      </svg>
-      Marcar como pagadas<span *ngIf="selectedPagables.length > 0"> ({{ selectedPagables.length }})</span>
-    </button>
-  </div>
-
-  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
-  <div class="abril-table-wrap">
-    <table class="abril-table abril-table--th-center">
-      <thead class="sticky top-0 z-10">
-        <tr>
-          <th>
-            <input
-              type="checkbox"
-              [checked]="allSelected"
-              [disabled]="pagables.length === 0"
-              (change)="toggleSelectAll()"
-              class="cursor-pointer disabled:cursor-not-allowed"
-              style="accent-color:var(--color-abril-accent)"
-              title="Seleccionar / deseleccionar todo lo que falta pagar" />
-          </th>
-          <th>Planilla</th>
-          <th>Trabajador</th>
-          <th>Periodo</th>
-          <th>Salidas</th>
-          <th>Monto</th>
-          <th>Firmada</th>
-          <th>Documentos</th>
-          <th>Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngIf="planillas.length === 0">
-          <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
-            No hay planillas firmadas por pagar.
-          </td>
-        </tr>
-
-        <tr
-          *ngFor="let r of planillas"
-          (click)="abrirDetalle(r)"
-          title="Ver el desglose de esta planilla"
-          class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
-          [style.background]="selectedIds.has(r.id) ? '#EAF6FF' : null"
-          style="border-color:var(--color-abril-border)">
-
-          <td class="select-none" (click)="onSelectClick($event, r)">
-            <input
-              type="checkbox"
-              [checked]="selectedIds.has(r.id)"
-              [disabled]="r.porPagarCount === 0"
-              class="cursor-pointer pointer-events-none disabled:cursor-not-allowed"
-              style="accent-color:var(--color-abril-accent)"
-              [title]="r.porPagarCount === 0 ? 'Ya está pagada' : null" />
-          </td>
-
-          <td class="text-gray-700 font-medium whitespace-nowrap">{{ r.numeroPlanilla ?? '—' }}</td>
-          <td class="text-gray-700" [title]="r.trabajadores.join(', ')">
-            {{ trabajadoresTexto(r) | titleCase }}
-          </td>
-          <td class="text-gray-700 whitespace-nowrap">{{ r.periodo }}</td>
-          <td class="text-gray-700 text-center">{{ r.salidasCount }}</td>
-          <td class="text-gray-700 whitespace-nowrap font-medium">S/ {{ r.montoTotal | number:'1.2-2' }}</td>
-          <td class="text-gray-400 whitespace-nowrap">{{ r.firmadoAt | date:'dd/MM/yyyy' }}</td>
-
-          <td (click)="$event.stopPropagation()">
-            <div class="flex flex-wrap items-center gap-[6px]">
-              <a *ngIf="r.pdfFirmadoUrl"
-                 class="doc-chip" [href]="r.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
-                 [title]="r.pdfFirmadoFilename ?? 'Planilla firmada'">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Firmada
-              </a>
-
-              <a class="doc-chip" [href]="r.pdfUrl" target="_blank" rel="noopener noreferrer"
-                 [title]="r.pdfFilename">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-                  <path d="M14 2v6h6" stroke-linejoin="round"/>
-                </svg>
-                Planilla
-              </a>
-
-              <a *ngIf="r.consolidadoS10"
-                 class="doc-chip" [href]="r.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
-                 [title]="r.consolidadoS10.pdfFilename">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-                  <path d="M14 2v6h6" stroke-linejoin="round"/>
-                </svg>
-                S10
-              </a>
-            </div>
-          </td>
-
-          <td>
-            <app-status-badge
-              [text]="r.estadoReembolso"
-              [bgColor]="reembolsoColors(r.estadoReembolso).bg"
-              [textColor]="reembolsoColors(r.estadoReembolso).text"
-              [title]="estadoTitle(r)" />
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+  <!-- ══════════ Seguimiento de pagos ════════════════════════════════════ -->
+  <app-reembolso-seguimiento *ngIf="vista === 'seguimiento'" [query]="seguimientoQuery" />
 
 </div>
 
-<!-- ── Modal de detalle (salidas de la planilla) ─────────────────────── -->
+<!-- ── Modal de detalle (salidas, tramos y vouchers de la planilla) ───── -->
 <app-reembolso-detalle-modal
   *ngIf="detalleId !== null"
   [rendicionId]="detalleId"
-  (close)="cerrarDetalle()" />
+  (close)="cerrarDetalle($event)" />
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por planilla, trabajador o guía..."
+      [(value)]="searchText"
+      (valueChange)="onSearchChange()"
+      width="100%">
+    </app-search-input>
+  </div>
 
   <div class="w-full">
     <app-search-select
@@ -207,7 +276,8 @@
       </app-search-select>
     </div>
 
-    <div class="flex-1">
+    <!-- El estado solo aplica a la bandeja: en el seguimiento todo está pagado. -->
+    <div class="flex-1" *ngIf="vista === 'bandeja'">
       <app-search-select
         label="Estado"
         [options]="estadoOptions"

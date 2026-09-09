@@ -1,4 +1,6 @@
-﻿import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+﻿import { EstadoReembolso } from '../../../shared/dtos/rendicion-shared.dto';
+
+import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 
 export interface GestionSalidaListItemDto {
   id: number;
@@ -91,8 +93,11 @@ export interface GestionSalidaListItemDto {
   reembolsoDecididoAt: string | null;
 }
 
-/** Los cinco estados por los que pasa el reembolso de una salida rendida. */
-export type EstadoReembolso = 'Pendiente' | 'Aprobado' | 'Rechazado' | 'Firmado' | 'Pagado';
+/**
+ * Los estados por los que pasa el reembolso de una salida rendida. Salen del shared del módulo:
+ * son los mismos que muestran Mis Rendiciones, Gestión de Rendiciones y Reembolsos.
+ */
+export type { EstadoReembolso };
 
 /** Respuesta paginada genérica del backend (PagedResult<T>). */
 export interface PagedResponseDto<T> {

@@ -1,4 +1,6 @@
-﻿export interface SolicitudSalidaListItemDto {
+﻿import { EstadoReembolso } from '../../../shared/dtos/rendicion-shared.dto';
+
+export interface SolicitudSalidaListItemDto {
   id: number;
   /** Código SOL-AAAA-NNNN. Null solo en solicitudes anteriores a la columna. */
   codigo: string | null;
@@ -45,9 +47,9 @@
 
   /**
    * Visto bueno de la jefatura al GASTO, una vez rendida la salida y adjunto el Consolidado del
-   * S10: "Pendiente" | "Aprobado" | "Rechazado" | "Firmado" | "Pagado".
+   * S10, y después el paso de Tesorería hasta el pago.
    */
-  estadoReembolso: 'Pendiente' | 'Aprobado' | 'Rechazado' | 'Firmado' | 'Pagado';
+  estadoReembolso: EstadoReembolso;
   /** Lo que el jefe observó al rechazar: es lo que hay que subsanar. */
   observacionReembolso: string | null;
 }
