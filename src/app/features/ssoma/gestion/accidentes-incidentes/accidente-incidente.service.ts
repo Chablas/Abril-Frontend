@@ -12,6 +12,8 @@ import {
   ActualizarEntregableRequest,
   Rm050Dto,
   GuardarRm050Request,
+  AntecedenteItemDto,
+  ExportarAntecedentesRequest,
 } from './accidente-incidente.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -162,5 +164,33 @@ export class AccidenteIncidenteService {
   reclasificar(id: number): Observable<{ message: string; accidenteTrabajoId?: number }> {
     return this.http.post<{ message: string; accidenteTrabajoId?: number }>(
       `${this.base}/${id}/reclasificar`, {}, { headers: this.authHeaders() });
+  }
+
+  // ── Antecedentes de eventos ─────────────────────────────────────────────
+
+  buscarAntecedentes(params: {
+    palabraClave: string;
+    proyectoId?: number;
+    tipoId?: number;
+    fechaDesde?: string;
+    fechaHasta?: string;
+    page?: number;
+    pageSize?: number;
+  }): Observable<{ items: AntecedenteItemDto[]; total: number; page: number; pageSize: number; totalPages: number }> {
+    let p = new HttpParams().set('palabraClave', params.palabraClave);
+    if (params.proyectoId) p = p.set('proyectoId', params.proyectoId);
+    if (params.tipoId) p = p.set('tipoId', params.tipoId);
+    if (params.fechaDesde) p = p.set('fechaDesde', params.fechaDesde);
+    if (params.fechaHasta) p = p.set('fechaHasta', params.fechaHasta);
+    p = p.set('page', params.page ?? 1);
+    p = p.set('pageSize', params.pageSize ?? 20);
+    return this.http.get<any>(`${this.base}/antecedentes`, { headers: this.authHeaders(), params: p });
+  }
+
+  exportarAntecedentesPdf(req: ExportarAntecedentesRequest): Observable<Blob> {
+    return this.http.post(`${this.base}/antecedentes/pdf`, req, {
+      headers: this.authHeaders(),
+      responseType: 'blob',
+    });
   }
 }

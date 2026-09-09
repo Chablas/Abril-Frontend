@@ -95,5 +95,19 @@ export const SSOMA_ROUTES: Routes = [
         (m) => m.PRESUPUESTO_MATERIALES_ROUTES,
       ),
   },
+  {
+    path: 'gestion/activos-rotativos',
+    loadChildren: () =>
+      import('./gestion/activos-rotativos/activos-rotativos.routes').then(
+        (m) => m.ACTIVOS_ROTATIVOS_ROUTES,
+      ),
+  },
+  {
+    path: 'gestion/cumplimiento',
+    loadChildren: () =>
+      import('./gestion/cumplimiento-ssoma/cumplimiento-ssoma.routes').then(
+        (m) => m.CUMPLIMIENTO_SSOMA_ROUTES,
+      ),
+  },
   { path: '', redirectTo: 'salud-ocupacional', pathMatch: 'full' },
 ];

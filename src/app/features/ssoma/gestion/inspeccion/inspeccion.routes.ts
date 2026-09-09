@@ -31,6 +31,14 @@ export const INSPECCION_ROUTES: Routes = [
     data: { titulo: 'INSPECCIONES ABIERTAS' },
   },
   {
+    path: 'cruzadas',
+    loadComponent: () =>
+      import('./pages/cruzadas/inspeccion-cruzadas.component').then(
+        (m) => m.InspeccionCruzadasComponent,
+      ),
+    data: { titulo: 'INSPECCIONES CRUZADAS' },
+  },
+  {
     path: ':id/agregar-hallazgo',
     loadComponent: () =>
       import('./pages/agregar-hallazgo/inspeccion-agregar-hallazgo.component').then(

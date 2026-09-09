@@ -385,3 +385,25 @@ export const TIPOS_CONTACTO = [
 ];
 
 export const NIVELES_CONSECUENCIA_INCIDENTE = [1, 2]; // Solo N1 y N2 para incidentes
+
+// ── Antecedentes de eventos (búsqueda temática) ───────────────────────────────
+
+export interface AntecedenteItemDto {
+  id: number;
+  codigo: string;
+  tipoNombre: string;
+  proyectoNombre: string;
+  fecha: string;
+  lugarExacto: string;
+  descripcion: string;
+  danoProceso?: string;
+  accionesInmediatas?: string;
+  mecanismo?: string;
+  agenteCausante?: string;
+}
+
+export interface ExportarAntecedentesRequest {
+  titulo: string;
+  palabraClave: string;
+  ids: number[];
+}

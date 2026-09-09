@@ -8,6 +8,9 @@
 
     <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
     <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+    <button type="button" tabsExtra class="btn-ghost" (click)="irAAntecedentes()">
+      <i class="ti ti-history"></i> Antecedentes
+    </button>
   </app-abril-page-header>
 
   <div class="lista-body">

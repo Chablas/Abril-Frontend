@@ -9,6 +9,14 @@ export const ACCIDENTE_INCIDENTE_ROUTES: Routes = [
     data: { titulo: 'ACCIDENTES E INCIDENTES' },
   },
   {
+    path: 'antecedentes',
+    loadComponent: () =>
+      import('./pages/antecedentes/antecedentes.component').then(
+        (m) => m.AntecedentesComponent,
+      ),
+    data: { titulo: 'ANTECEDENTES DE EVENTOS SSOMA' },
+  },
+  {
     path: 'nuevo',
     loadComponent: () =>
       import('./pages/crear-editar/accidente-crear-editar.component').then(
