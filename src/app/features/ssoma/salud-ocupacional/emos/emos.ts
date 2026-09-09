@@ -31,6 +31,8 @@ import { DocumentosEmoModal } from '../../../../shared/components/documentos-emo
 import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
 import { SearchInput } from '../../../../shared/components/search-input/search-input';
+import { ViewToggle } from '../../../../shared/components/view-toggle/view-toggle';
+import { ViewToggleMode } from '../../../../shared/components/view-toggle/view-toggle.model';
 import { TitleCasePipe } from '../../../../shared/pipes/title-case.pipe';
 import { SSOMA_TABS } from '../shared/salud-ocupacional-tabs';
 import { NavigationService } from '../../../../core/navigation/navigation.service';
@@ -65,6 +67,7 @@ const FEATURE_CONFIGURACION = 'ssoma.salud-ocupacional.emos.configuracion';
     FilterModal,
     SearchInput,
     TitleCasePipe,
+    ViewToggle,
   ],
   templateUrl: './emos.html',
   styleUrl: './emos.css',
@@ -73,6 +76,32 @@ export class Emos implements OnInit, OnDestroy {
   readonly tabs = SSOMA_TABS;
   anioActual = new Date().getFullYear();
   readonly pageSize = 50;
+
+  /**
+   * Las dos presentaciones de la lista. Antes convivían con `hidden md:block` / `md:hidden`,
+   * pero `.emo-cards { display: flex }` de este CSS le gana a la utilidad de Tailwind (que
+   * vive en @layer utilities) y las dos se veían a la vez. Ahora se eligen con el toggle.
+   */
+  readonly viewModes: ViewToggleMode[] = [
+    {
+      value: 'tabla',
+      label: 'Tabla',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5h18v14H3V5Zm0 5h18M3 15h18M9 5v14"/></svg>',
+    },
+    {
+      value: 'extendida',
+      label: 'Tabla extendida',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 4h18v6H3V4Zm0 10h18v6H3v-6Zm3-8v2m0 10v2"/></svg>',
+    },
+  ];
+
+  /**
+   * Arranca en "extendida" solo en pantallas angostas: la tabla tiene 13 columnas y un
+   * min-width de 1180px, así que en un teléfono nace scrolleada de lado. A partir de ahí
+   * manda el toggle.
+   */
+  viewMode: 'tabla' | 'extendida' =
+    typeof window !== 'undefined' && window.innerWidth < 768 ? 'extendida' : 'tabla';
 
   filters = {
     search: '',
@@ -302,6 +331,10 @@ export class Emos implements OnInit, OnDestroy {
 
   onFilterChange(): void {
     this.load(1);
+  }
+
+  onViewModeChange(mode: string): void {
+    this.viewMode = mode as 'tabla' | 'extendida';
   }
 
   setSubtab(pendientesLecturaAbril: boolean): void {

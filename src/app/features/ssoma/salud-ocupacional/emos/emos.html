@@ -15,14 +15,25 @@
 
 <section class="page-container px-3 py-4 flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
 
-  <!-- Subtabs -->
-  <div class="subtabs">
-    <button type="button" class="subtab-btn" [class.subtab-btn--active]="!soloPendientesLecturaAbril" (click)="setSubtab(false)">
-      Todos los EMOs
-    </button>
-    <button type="button" class="subtab-btn" [class.subtab-btn--active]="soloPendientesLecturaAbril" (click)="setSubtab(true)">
-      Pendientes de lectura (médico Abril)
-    </button>
+  <!-- Subtabs + selector de vista -->
+  <div class="list-toolbar">
+    <div class="subtabs">
+      <button type="button" class="subtab-btn" [class.subtab-btn--active]="!soloPendientesLecturaAbril" (click)="setSubtab(false)">
+        Todos los EMOs
+      </button>
+      <button type="button" class="subtab-btn" [class.subtab-btn--active]="soloPendientesLecturaAbril" (click)="setSubtab(true)">
+        Pendientes de lectura (médico Abril)
+      </button>
+    </div>
+
+    <app-view-toggle
+      class="shrink-0"
+      [modes]="viewModes"
+      [value]="viewMode"
+      activeColor="var(--color-abril-standard)"
+      activeBackground="var(--color-abril-standard-light)"
+      (valueChange)="onViewModeChange($event)"
+    ></app-view-toggle>
   </div>
 
   <!-- Enlace desde Reclutamiento: la lista queda acotada a una sola ficha, así que se avisa
@@ -37,8 +48,8 @@
     </button>
   </div>
 
-  <!-- Tabla (desde md: en móvil se usa la lista de tarjetas de abajo) -->
-  <div class="abril-table-wrap hidden md:block">
+  <!-- Vista "Tabla": una fila por trabajador. -->
+  <div class="abril-table-wrap" *ngIf="viewMode === 'tabla'">
       <table class="abril-table">
         <colgroup>
           <col style="width: auto" />
@@ -198,10 +209,10 @@
       </table>
   </div>
 
-  <!-- Lista móvil (<md): la tabla tiene 13 columnas y con table-layout:fixed se comprimen
-       hasta encimarse, así que en móvil cada trabajador se muestra como tarjeta. Mismos
-       datos y mismas acciones que la fila, incluida "Programar EMO con clínica". -->
-  <div class="emo-cards md:hidden">
+  <!-- Vista "Tabla extendida": los mismos datos y las mismas acciones de la fila, pero
+       desplegados en una ficha por trabajador. Es también la vista con la que arranca el
+       móvil, donde las 13 columnas de la tabla no entran. -->
+  <div class="emo-cards" *ngIf="viewMode === 'extendida'">
     <article
       *ngFor="let item of items"
       class="emo-card"
