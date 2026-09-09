@@ -65,6 +65,34 @@ interface VacanteForm {
   fftCandidatoCorreo: string;
 }
 
+/**
+ * Un aviso de correo del pie del modal: a quién le llega lo que se está por registrar y con qué
+ * palabras se dice. Sale uno por cada clase de vacante cargada (nuevas, reemplazos e ingresos
+ * directos), más los informativos de las que avisan a alguien que no firma nada.
+ */
+interface AvisoCorreo {
+  /** Identidad del aviso para el `trackBy` (los avisos aparecen y desaparecen al escribir). */
+  clave: string;
+  /**
+   * true = nadie tiene que hacer nada con ese correo (se le avisa al gerente del área de una
+   * vacante nueva, se anuncia el turno siguiente de un reemplazo). Van en gris para que no
+   * compitan con el correo que sí pide una firma, y no se muestran si no hay a quién mandarlos.
+   */
+  informativo: boolean;
+  /** Lo que abre la frase: «Esta solicitud será notificada a». */
+  encabezado: string;
+  /** Lo que la cierra, después de los correos: «para su aprobación.». */
+  cierre: string;
+  para: DestinatarioSolicitud[];
+  copias: DestinatarioSolicitud[];
+  /**
+   * Advertencia para cuando ese correo no le llega a nadie. null en los informativos, que en ese
+   * caso no se muestran: lo que hay que avisar es que una firma se va a quedar sin pedir, no que
+   * un aviso de cortesía no salga.
+   */
+  sinDestinatarios: string | null;
+}
+
 @Component({
   standalone: true,
   selector: 'app-gth-nueva-solicitud',
@@ -109,7 +137,10 @@ export class GthNuevaSolicitud implements OnInit {
     puedePedirIngresoDirecto: false,
     tiposDocumento: [],
     trabajadoresArea: [],
-    destinatarios: { para: [], copias: [] },
+    destinatariosNuevas: { para: [], copias: [] },
+    destinatariosNuevasAviso: { para: [], copias: [] },
+    destinatariosReemplazos: { para: [], copias: [] },
+    destinatariosReemplazosGth: { para: [], copias: [] },
     destinatariosFft: null,
   };
 
@@ -147,7 +178,10 @@ export class GthNuevaSolicitud implements OnInit {
           puedePedirIngresoDirecto: data.puedePedirIngresoDirecto ?? false,
           tiposDocumento: data.tiposDocumento ?? [],
           trabajadoresArea: data.trabajadoresArea ?? [],
-          destinatarios: data.destinatarios ?? { para: [], copias: [] },
+          destinatariosNuevas: data.destinatariosNuevas ?? { para: [], copias: [] },
+          destinatariosNuevasAviso: data.destinatariosNuevasAviso ?? { para: [], copias: [] },
+          destinatariosReemplazos: data.destinatariosReemplazos ?? { para: [], copias: [] },
+          destinatariosReemplazosGth: data.destinatariosReemplazosGth ?? { para: [], copias: [] },
           destinatariosFft: data.destinatariosFft ?? null,
         };
         this.destinatariosCargados = true;
@@ -177,35 +211,147 @@ export class GthNuevaSolicitud implements OnInit {
   }
 
   // ── Aviso "a quién le llega esta solicitud" ────────────────────────
+  // No hay un destinatario único: cada vacante sale por la ruta de su tipo y cada ruta tiene su
+  // propio correo. Las tres clases y sus reglas son las mismas que aplica el backend al enviar
+  // (ver RutaAprobacion): si acá dijeran otra cosa, el aviso prometería correos distintos de los
+  // que salen.
+
   /**
-   * ¿Hay alguna vacante de ingreso directo? A un FFT no lo aprueba nadie, así que su aviso va
-   * directo a GTH y con otros destinatarios. Es la misma regla que aplica el backend: si acá
-   * dijera otra cosa, el aviso prometería correos distintos de los que salen.
+   * ¿Es un ingreso directo? A un FFT no lo aprueba nadie, así que su aviso va derecho a GTH y con
+   * otros destinatarios. Sin la casilla habilitada no hay ingreso directo posible.
    */
+  private esIngresoDirecto(v: VacanteForm): boolean {
+    return this.puedePedirIngresoDirecto && v.esFft;
+  }
+
+  /**
+   * ¿Es una vacante NUEVA, de las que firma Gerencia General? Mientras no se haya elegido el tipo
+   * no es de ninguna clase: la vacante todavía no tiene ruta y prometer un correo por ella sería
+   * adivinar. Cualquier otro tipo que no sea Reemplazo va por Gerencia General, igual que en el
+   * backend.
+   */
+  private esNueva(v: VacanteForm): boolean {
+    return !this.esIngresoDirecto(v) && v.tipoRequerimientoId !== null && !this.esReemplazo(v);
+  }
+
+  /** ¿Es un reemplazo, de los que firman el gerente del área y después GTH? */
+  private esReemplazoPorAprobar(v: VacanteForm): boolean {
+    return !this.esIngresoDirecto(v) && this.esReemplazo(v);
+  }
+
   get hayIngresoDirecto(): boolean {
-    return this.puedePedirIngresoDirecto && this.vacantes.some((v) => v.esFft);
+    return this.vacantes.some((v) => this.esIngresoDirecto(v));
   }
 
-  /** ¿Hay alguna vacante que sí espere una firma? Es la que dispara el correo de aprobación. */
-  get hayVacantesPorAprobar(): boolean {
-    return this.vacantes.some((v) => !v.esFft);
+  get hayVacantesNuevas(): boolean {
+    return this.vacantes.some((v) => this.esNueva(v));
   }
 
-  get destinatariosPara(): DestinatarioSolicitud[] {
-    return this.formData.destinatarios?.para ?? [];
+  get hayReemplazos(): boolean {
+    return this.vacantes.some((v) => this.esReemplazoPorAprobar(v));
   }
 
-  get destinatariosCopias(): DestinatarioSolicitud[] {
-    return this.formData.destinatarios?.copias ?? [];
+  /**
+   * Los avisos de correo que corresponden a lo que hay cargado en este momento, en el orden del
+   * flujo. Se arman acá y no en la plantilla porque la misma regla que decide CUÁLES se muestran
+   * decide cómo se redactan: con una sola clase de vacante la frase puede hablar de «esta
+   * solicitud», pero en cuanto hay dos hay que decir de qué vacantes habla cada correo o se
+   * leerían como si fueran de todas.
+   */
+  get avisosCorreo(): AvisoCorreo[] {
+    const nuevas = this.hayVacantesNuevas;
+    const reemplazos = this.hayReemplazos;
+    const fft = this.hayIngresoDirecto;
+    const unaSolaClase = [nuevas, reemplazos, fft].filter(Boolean).length === 1;
+
+    const avisos: AvisoCorreo[] = [];
+
+    if (nuevas) {
+      avisos.push({
+        clave: 'nuevas',
+        informativo: false,
+        encabezado: unaSolaClase
+          ? 'Esta solicitud será notificada a'
+          : 'Las vacantes nuevas se notificarán a',
+        cierre: 'para su aprobación.',
+        para: this.formData.destinatariosNuevas.para,
+        copias: this.formData.destinatariosNuevas.copias,
+        sinDestinatarios:
+          'No hay ningún destinatario para el correo de aprobación de las vacantes nuevas: ' +
+          'quedarán registradas pero sin avisarle a nadie. Podrás reenviarlas desde «Mis ' +
+          'solicitudes de vacante» cuando se configuren.',
+      });
+
+      // Al gerente del área no se le pide nada por una vacante nueva —la firma Gerencia General—
+      // pero se le avisa. Si nadie está configurado para recibirlo, ese correo simplemente no
+      // sale y no hay nada que anunciar.
+      if (this.formData.destinatariosNuevasAviso.para.length) {
+        avisos.push({
+          clave: 'nuevas-aviso',
+          informativo: true,
+          encabezado: 'También se le avisará a',
+          cierre: 'para su conocimiento.',
+          para: this.formData.destinatariosNuevasAviso.para,
+          copias: this.formData.destinatariosNuevasAviso.copias,
+          sinDestinatarios: null,
+        });
+      }
+    }
+
+    if (reemplazos) {
+      avisos.push({
+        clave: 'reemplazos',
+        informativo: false,
+        encabezado: unaSolaClase
+          ? 'Esta solicitud será notificada a'
+          : 'Los reemplazos se notificarán a',
+        cierre: 'para su aprobación.',
+        para: this.formData.destinatariosReemplazos.para,
+        copias: this.formData.destinatariosReemplazos.copias,
+        sinDestinatarios:
+          'No hay ningún destinatario para el correo de aprobación de los reemplazos: quedarán ' +
+          'registrados pero sin avisarle a nadie. Podrás reenviarlos desde «Mis solicitudes de ' +
+          'vacante» cuando se configuren.',
+      });
+
+      // Las dos firmas del reemplazo son secuenciales: a GTH no le llega nada hasta que el
+      // gerente del área aprueba, así que se nombra como lo que es —el paso siguiente— y no
+      // como un correo que sale ahora.
+      if (this.formData.destinatariosReemplazosGth.para.length) {
+        avisos.push({
+          clave: 'reemplazos-gth',
+          informativo: true,
+          encabezado: 'Cuando el gerente del área apruebe, se le pedirá la aprobación a',
+          cierre: 'para continuar.',
+          para: this.formData.destinatariosReemplazosGth.para,
+          copias: this.formData.destinatariosReemplazosGth.copias,
+          sinDestinatarios: null,
+        });
+      }
+    }
+
+    if (fft) {
+      avisos.push({
+        clave: 'fft',
+        informativo: false,
+        encabezado: unaSolaClase
+          ? 'Esta solicitud será notificada a'
+          : 'Los ingresos directos se notificarán a',
+        cierre: 'para su EMO.',
+        para: this.formData.destinatariosFft?.para ?? [],
+        copias: this.formData.destinatariosFft?.copias ?? [],
+        sinDestinatarios:
+          'No hay ningún destinatario para el aviso de los ingresos directos a Gestión de ' +
+          'Talento Humano: quedarán registrados pero sin avisarle a nadie. Igual aparecerán en ' +
+          'la bandeja de Reclutamiento.',
+      });
+    }
+
+    return avisos;
   }
 
-  /** Destinatarios del aviso a GTH del ingreso directo (correo aparte del de aprobación). */
-  get destinatariosFftPara(): DestinatarioSolicitud[] {
-    return this.formData.destinatariosFft?.para ?? [];
-  }
-
-  get destinatariosFftCopias(): DestinatarioSolicitud[] {
-    return this.formData.destinatariosFft?.copias ?? [];
+  trackAviso(_: number, aviso: AvisoCorreo): string {
+    return aviso.clave;
   }
 
   /** Tooltip del correo: el nombre de la persona cuando se conoce, más por qué lo recibe. */

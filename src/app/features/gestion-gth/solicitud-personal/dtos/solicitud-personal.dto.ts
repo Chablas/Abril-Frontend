@@ -99,12 +99,36 @@ export interface ReclutamientoFormDataDto {
    * en ese caso no hay de dónde elegir y el campo deja de ser obligatorio.
    */
   trabajadoresArea: OpcionDto[];
-  destinatarios: SolicitudDestinatarios;
+
+  // ── A quién le llega la solicitud ──────────────────────────────────────
+  // Llegan todos los correos que el alta puede disparar, no uno solo: cada vacante sale por la
+  // ruta de su tipo y cada ruta tiene su propio correo con su propia configuración. Como el tipo
+  // se elige dentro del modal, el aviso se arma acá con lo que haya elegido en cada momento. Los
+  // resuelve el mismo servicio que hace el envío real, así que no pueden divergir; listas vacías
+  // = ese correo hoy no le llega a nadie.
+
+  /** Vacantes NUEVAS: la firma que se pide (a Gerencia General). */
+  destinatariosNuevas: SolicitudDestinatarios;
+  /**
+   * Vacantes NUEVAS: el aviso informativo que sale junto con el anterior. El gerente del área no
+   * las aprueba —eso es de Gerencia General— pero tiene que enterarse.
+   */
+  destinatariosNuevasAviso: SolicitudDestinatarios;
+  /**
+   * REEMPLAZOS: la primera de sus dos firmas (el gerente del área del solicitante). Es la única
+   * que sale al registrar: la de GTH se pide recién cuando el área aprueba.
+   */
+  destinatariosReemplazos: SolicitudDestinatarios;
+  /**
+   * REEMPLAZOS: la segunda firma. No sale ahora —la dispara la aprobación del gerente del área—
+   * pero el aviso la nombra para que se vea por dónde va a seguir el pedido.
+   */
+  destinatariosReemplazosGth: SolicitudDestinatarios;
   /**
    * A quién le llegaría el aviso a GTH de una vacante de ingreso directo **FFT**. A un ingreso
-   * directo no lo aprueba nadie —lo pida quien lo pida— así que su aviso reemplaza a
-   * `destinatarios` en esas vacantes, y una solicitud que mezcle las dos clases manda los dos
-   * correos.
+   * directo no lo aprueba nadie —lo pida quien lo pida— así que su aviso reemplaza al de
+   * aprobación en esas vacantes, y una solicitud que mezcle clases manda los correos de todas.
+   * `null` cuando el solicitante no puede pedir ingresos directos.
    */
   destinatariosFft: SolicitudDestinatarios | null;
 }
