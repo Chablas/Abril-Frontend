@@ -14,66 +14,12 @@
   overflow-y: auto;
 }
 
-/* ── Gestor de categorías ───────────────────────────────────────────────── */
-.ar-categorias-manager {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 16px;
-}
-.ar-section-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1e3a5f;
-  margin: 0 0 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.ar-categorias-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
-.ar-tag-categoria {
-  font-size: 12px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  border: 1px solid #bfdbfe;
-  border-radius: 999px;
-  padding: 3px 10px;
-  font-weight: 500;
-}
-.ar-tag-categoria em { font-style: normal; opacity: 0.7; }
-.ar-categorias-add { display: flex; align-items: center; gap: 8px; }
-
-.ar-input {
-  height: 34px;
-  padding: 0 10px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  font-size: 13px;
-  background: #fff;
-}
-.ar-btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 14px;
-  background: #fff;
-  border: 1px solid #1e3a5f;
-  border-radius: 8px;
-  color: #1e3a5f;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-}
-.ar-btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
-
 /* ── Filtros ────────────────────────────────────────────────────────────── */
 .ar-filtros {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   flex-wrap: wrap;
 }
 .ar-select {
@@ -115,6 +61,7 @@
   transition: all 0.15s;
 }
 .ar-btn-icon:hover { border-color: #1e3a5f; color: #1e3a5f; }
+.ar-btn-icon--danger:hover { border-color: #dc2626; color: #dc2626; }
 
 .ar-badge { font-size: 11px; border-radius: 999px; padding: 2px 10px; font-weight: 600; white-space: nowrap; }
 .ar-badge--disponible { background: #dcfce7; color: #15803d; }
@@ -123,6 +70,39 @@
 .ar-badge--baja { background: #fee2e2; color: #991b1b; }
 
 .ar-mover-actual { font-size: 13px; color: #374151; margin: 0 0 12px; }
+
+/* ── Control S10 (comprado vs. registrado) ─────────────────────────────── */
+.ar-section-sub { font-size: 12.5px; color: #6b7280; margin: 0 0 10px; }
+.ar-td-center { text-align: center; }
+.ar-tag-s10 {
+  font-size: 11px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-weight: 500;
+}
+.ar-diferencia--alerta { color: #dc2626; font-weight: 700; }
+
+.ar-vincular-resultados {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+.ar-vincular-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 13px;
+}
+.ar-vincular-item:last-child { border-bottom: none; }
+.ar-vincular-item:hover { background: #f8fafc; }
+.ar-vincular-familia { font-size: 11px; color: #9ca3af; }
 
 .form-row {
   display: grid;

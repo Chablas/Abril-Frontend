@@ -8,6 +8,9 @@ import {
   CumplimientoResumenDto,
   CumplimientoItemDto,
   CumplimientoMarcarDto,
+  CumplimientoMiResumenDto,
+  CumplimientoHistoricoDto,
+  CumplimientoFrecuencia,
 } from './cumplimiento-ssoma.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -49,6 +52,25 @@ export class CumplimientoSsomaService {
     return this.http.patch<CumplimientoItemDto>(
       `${this.base}/proyecto/${proyectoId}/actividades/${actividadId}`,
       dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  getMiResumen(): Observable<CumplimientoMiResumenDto> {
+    return this.http.get<CumplimientoMiResumenDto>(`${this.base}/mi-resumen`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getHistorico(
+    proyectoId: number,
+    frecuencia: CumplimientoFrecuencia,
+    desde: string,
+    hasta: string,
+  ): Observable<CumplimientoHistoricoDto> {
+    const params = `?frecuencia=${frecuencia}&desde=${desde}&hasta=${hasta}`;
+    return this.http.get<CumplimientoHistoricoDto>(
+      `${this.base}/proyecto/${proyectoId}/historico${params}`,
       { headers: this.authHeaders() },
     );
   }

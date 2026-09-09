@@ -3,12 +3,14 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
-  ActivoRotativoCategoriaDto,
-  ActivoRotativoCategoriaUpsertDto,
+  ActivoRotativoMaterialDto,
+  ActivoRotativoMaterialUpsertDto,
   ActivoRotativoListDto,
   ActivoRotativoDetalleDto,
   ActivoRotativoUpsertDto,
   ActivoRotativoMoverDto,
+  PresupuestoItemBuscarDto,
+  ResponsableSsomaDto,
 } from './activos-rotativos.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -21,22 +23,41 @@ export class ActivosRotativosService {
     return new HttpHeaders({ Authorization: `Bearer ${token ?? ''}` });
   }
 
-  // ─── Categorías ──────────────────────────────────────────────────────────────
+  // ─── Materiales ────────────────────────────────────────────────────────────
 
-  getCategorias(): Observable<ActivoRotativoCategoriaDto[]> {
-    return this.http.get<ActivoRotativoCategoriaDto[]>(`${this.base}/categorias`, {
+  getMateriales(): Observable<ActivoRotativoMaterialDto[]> {
+    return this.http.get<ActivoRotativoMaterialDto[]>(`${this.base}/materiales`, {
       headers: this.authHeaders(),
     });
   }
 
-  createCategoria(dto: ActivoRotativoCategoriaUpsertDto): Observable<ActivoRotativoCategoriaDto> {
-    return this.http.post<ActivoRotativoCategoriaDto>(`${this.base}/categorias`, dto, {
+  createMaterial(dto: ActivoRotativoMaterialUpsertDto): Observable<ActivoRotativoMaterialDto> {
+    return this.http.post<ActivoRotativoMaterialDto>(`${this.base}/materiales`, dto, {
       headers: this.authHeaders(),
     });
   }
 
-  updateCategoria(categoriaId: number, dto: ActivoRotativoCategoriaUpsertDto): Observable<void> {
-    return this.http.put<void>(`${this.base}/categorias/${categoriaId}`, dto, {
+  updateMaterial(materialId: number, dto: ActivoRotativoMaterialUpsertDto): Observable<void> {
+    return this.http.put<void>(`${this.base}/materiales/${materialId}`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  deleteMaterial(materialId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/materiales/${materialId}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getResponsablesSsoma(): Observable<ResponsableSsomaDto[]> {
+    return this.http.get<ResponsableSsomaDto[]>(`${this.base}/responsables-ssoma`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  buscarItemPresupuesto(q: string): Observable<PresupuestoItemBuscarDto[]> {
+    const params = q ? `?q=${encodeURIComponent(q)}` : '';
+    return this.http.get<PresupuestoItemBuscarDto[]>(`${this.base}/materiales/buscar-item-presupuesto${params}`, {
       headers: this.authHeaders(),
     });
   }
@@ -59,6 +80,10 @@ export class ActivosRotativosService {
 
   updateActivo(activoId: number, dto: ActivoRotativoUpsertDto): Observable<void> {
     return this.http.put<void>(`${this.base}/${activoId}`, dto, { headers: this.authHeaders() });
+  }
+
+  deleteActivo(activoId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${activoId}`, { headers: this.authHeaders() });
   }
 
   moverActivo(activoId: number, dto: ActivoRotativoMoverDto): Observable<ActivoRotativoDetalleDto> {

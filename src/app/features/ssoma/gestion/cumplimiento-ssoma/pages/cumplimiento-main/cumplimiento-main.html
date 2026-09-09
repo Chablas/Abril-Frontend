@@ -6,7 +6,110 @@
   (tabClick)="onTabClick($event)">
 </app-abril-page-header>
 
+<!-- Fila de acciones reutilizada por "Mi Checklist" y "Por Proyecto" -->
+<ng-template #itemRow let-item let-proyectoId="proyectoId" let-onMarcar="onMarcar">
+  <div class="cu-item"
+    [class.cu-item--completado]="item.estado === 'cumplido'"
+    [class.cu-item--no-aplica]="item.estado === 'no_aplica'">
+    <div class="cu-item-content">
+      <div class="cu-item-header-row">
+        <p class="cu-item-desc" [class.cu-item-desc--done]="item.estado !== 'pendiente'">{{ item.nombre }}</p>
+        <span class="cu-tag-rol">{{ rolLabel(item.rolResponsable) }}</span>
+      </div>
+      @if (item.descripcion) {
+        <p class="cu-item-subdesc">{{ item.descripcion }}</p>
+      }
+      @if (item.estado === 'cumplido' && item.cumplidoPor) {
+        <span class="cu-item-meta">
+          <i class="ti ti-user-check"></i> {{ item.cumplidoPor }}
+          @if (item.fechaCumplimiento) {
+            · {{ item.fechaCumplimiento | date:'dd/MM/yyyy HH:mm' }}
+          }
+        </span>
+      }
+      @if (item.estado === 'no_aplica' && item.motivoNoAplica) {
+        <span class="cu-item-meta"><i class="ti ti-info-circle"></i> {{ item.motivoNoAplica }}</span>
+      }
+      @if (item.estado === 'pendiente') {
+        <input
+          class="cu-item-obs"
+          type="text"
+          placeholder="Observación (opcional)"
+          [(ngModel)]="observacionTemp[item.actividadId]" />
+      }
+    </div>
+    <div class="cu-item-actions">
+      <button type="button" class="cu-btn-estado cu-btn-estado--cumplido"
+        [class.cu-btn-estado--active]="item.estado === 'cumplido'"
+        [disabled]="guardandoActividadId === item.actividadId"
+        (click)="onMarcar(proyectoId, item, 'cumplido')">
+        @if (guardandoActividadId === item.actividadId) {
+          <i class="ti ti-loader-2 spin"></i>
+        } @else {
+          <i class="ti ti-check"></i>
+        }
+        Cumplió
+      </button>
+      <button type="button" class="cu-btn-estado cu-btn-estado--no-aplica"
+        [class.cu-btn-estado--active]="item.estado === 'no_aplica'"
+        [disabled]="guardandoActividadId === item.actividadId"
+        (click)="onMarcar(proyectoId, item, 'no_aplica')">
+        <i class="ti ti-ban"></i> No aplica
+      </button>
+    </div>
+  </div>
+</ng-template>
+
 <div class="cu-wrap">
+
+  <!-- ── TAB: MI CHECKLIST ──────────────────────────────────────────────── -->
+  @if (tab === 'mio') {
+    @if (loadingMio) {
+      <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando tu checklist...</div>
+    } @else if (!miResumen?.proyectoId) {
+      <div class="empty-state">
+        <i class="ti ti-alert-circle" style="font-size:48px;color:#d1d5db"></i>
+        <p>No se encontró un proyecto asignado a tu usuario. Contacta a tu coordinador.</p>
+      </div>
+    } @else {
+      <div class="cu-mio-header">
+        <i class="ti ti-building"></i>
+        <span>{{ miResumen!.proyectoNombre }}</span>
+        @if (miResumen!.rol) {
+          <span class="cu-tag-rol">{{ rolLabel(miResumen!.rol!) }}</span>
+        }
+      </div>
+
+      <div class="cu-frecuencia-chips">
+        @for (chip of frecuenciaChipsMio; track chip.key) {
+          <button type="button" class="cu-frecuencia-chip"
+            [class.cu-frecuencia-chip--active]="frecuenciaActivaMio === chip.key"
+            (click)="setFrecuenciaMio(chip.key)">
+            <i class="ti" [ngClass]="chip.icono"></i>
+            {{ chip.label }}
+            <span class="cu-frecuencia-chip-count" [class.cu-frecuencia-chip-count--ok]="chip.cumplidas === chip.total && chip.total > 0">
+              {{ chip.cumplidas }}/{{ chip.total }}
+            </span>
+          </button>
+        }
+      </div>
+
+      @if (actividadesMioPorFrecuencia.length === 0) {
+        <div class="empty-state">
+          <i class="ti ti-clipboard-x" style="font-size:40px;color:#d1d5db"></i>
+          <p>No hay actividades para esta frecuencia.</p>
+        </div>
+      } @else {
+        <div class="cu-items-list cu-items-list--mio">
+          @for (item of actividadesMioPorFrecuencia; track item.actividadId) {
+            <ng-container [ngTemplateOutlet]="itemRow"
+              [ngTemplateOutletContext]="{ $implicit: item, proyectoId: miResumen!.proyectoId, onMarcar: marcarEstadoWrapper }">
+            </ng-container>
+          }
+        </div>
+      }
+    }
+  }
 
   <!-- ── TAB: POR PROYECTO ──────────────────────────────────────────────── -->
   @if (tab === 'resumen') {
@@ -55,47 +158,78 @@
       } @else {
         <div class="cu-items-list">
           @for (item of actividadesPorFrecuencia; track item.actividadId) {
-            <div class="cu-item" [class.cu-item--completado]="item.cumplido">
-              <div class="cu-item-check-col">
-                <button class="cu-checkbox"
-                  [class.cu-checkbox--checked]="item.cumplido"
-                  [disabled]="guardandoActividadId === item.actividadId"
-                  (click)="toggleActividad(item)">
-                  @if (guardandoActividadId === item.actividadId) {
-                    <i class="ti ti-loader-2 spin"></i>
-                  } @else if (item.cumplido) {
-                    <i class="ti ti-check"></i>
-                  }
-                </button>
-              </div>
-              <div class="cu-item-content">
-                <div class="cu-item-header-row">
-                  <p class="cu-item-desc" [class.cu-item-desc--done]="item.cumplido">{{ item.nombre }}</p>
-                  <span class="cu-tag-rol">{{ rolLabel(item.rolResponsable) }}</span>
-                </div>
-                @if (item.descripcion) {
-                  <p class="cu-item-subdesc">{{ item.descripcion }}</p>
-                }
-                @if (item.cumplido && item.cumplidoPor) {
-                  <span class="cu-item-meta">
-                    <i class="ti ti-user-check"></i> {{ item.cumplidoPor }}
-                    @if (item.fechaCumplimiento) {
-                      · {{ item.fechaCumplimiento | date:'dd/MM/yyyy HH:mm' }}
-                    }
-                  </span>
-                }
-                @if (!item.cumplido) {
-                  <input
-                    class="cu-item-obs"
-                    type="text"
-                    placeholder="Observación (opcional)"
-                    [(ngModel)]="observacionTemp[item.actividadId]" />
-                }
-              </div>
-            </div>
+            <ng-container [ngTemplateOutlet]="itemRow"
+              [ngTemplateOutletContext]="{ $implicit: item, proyectoId: proyectoId, onMarcar: marcarEstadoWrapper }">
+            </ng-container>
           }
         </div>
       }
+    }
+  }
+
+  <!-- ── TAB: HISTÓRICO ─────────────────────────────────────────────────── -->
+  @if (tab === 'historico') {
+    <div class="cu-toolbar cu-toolbar--historico">
+      <app-search-select
+        label="Proyecto"
+        [options]="proyectos"
+        valueField="projectId"
+        displayField="projectDescription"
+        [value]="historicoProyectoId"
+        placeholder="Buscar proyecto..."
+        (valueChange)="historicoProyectoId = $event; onHistoricoProyectoChange()">
+      </app-search-select>
+
+      <div class="cu-frecuencia-chips" style="margin:0;">
+        @for (f of frecuencias; track f.value) {
+          <button type="button" class="cu-frecuencia-chip"
+            [class.cu-frecuencia-chip--active]="historicoFrecuencia === f.value"
+            (click)="setHistoricoFrecuencia(f.value)">
+            <i class="ti" [ngClass]="f.icono"></i> {{ f.label }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (loadingHistorico) {
+      <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando histórico...</div>
+    } @else if (!historicoProyectoId) {
+      <div class="empty-state">
+        <i class="ti ti-chart-bar" style="font-size:48px;color:#d1d5db"></i>
+        <p>Selecciona un proyecto para ver su histórico de cumplimiento.</p>
+      </div>
+    } @else if (historicoDias.length === 0) {
+      <div class="empty-state">
+        <i class="ti ti-chart-bar-off" style="font-size:48px;color:#d1d5db"></i>
+        <p>No hay datos en el rango seleccionado.</p>
+      </div>
+    } @else {
+      <div class="cu-historico-resumen">
+        <span>Promedio del periodo</span>
+        <strong [class.cu-historico-alerta]="promedioHistorico < 80">{{ promedioHistorico }}%</strong>
+      </div>
+      <div class="cu-historico-list">
+        @for (dia of historicoDias; track dia.periodo) {
+          <div class="cu-historico-row">
+            <span class="cu-historico-fecha">
+              @if (historicoFrecuencia === 'semanal') {
+                Semana {{ dia.numeroSemana }}
+              } @else {
+                {{ dia.periodo | date:'dd/MM/yyyy' }}
+              }
+            </span>
+            <div class="cu-historico-bar-wrap">
+              <div class="cu-historico-bar" [style.width.%]="dia.porcentajeCumplimiento"
+                [class.cu-historico-bar--alerta]="dia.porcentajeCumplimiento < 80"></div>
+            </div>
+            <span class="cu-historico-pct">{{ dia.porcentajeCumplimiento }}%</span>
+            <span class="cu-historico-detalle">
+              {{ dia.cumplidas }}/{{ dia.total - dia.noAplica }} cumplidas
+              @if (dia.noAplica > 0) { · {{ dia.noAplica }} no aplica }
+            </span>
+          </div>
+        }
+      </div>
     }
   }
 

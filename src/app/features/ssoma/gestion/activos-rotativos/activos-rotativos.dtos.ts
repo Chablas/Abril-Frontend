@@ -1,16 +1,32 @@
-// ─── Categorías ──────────────────────────────────────────────────────────────
+// ─── Materiales (catálogo único: Tambor Retráctil, Freno de Cuerda, etc.) ─────
 
-export interface ActivoRotativoCategoriaDto {
+export interface ActivoRotativoMaterialDto {
   id: number;
   nombre: string;
   orden: number;
   activo: boolean;
   totalActivos: number;
+  presupuestoItemId?: number;
+  presupuestoItemNombre?: string;
+  cantidadCompradaS10?: number;
+  cantidadRegistrada: number;
 }
 
-export interface ActivoRotativoCategoriaUpsertDto {
+export interface ActivoRotativoMaterialUpsertDto {
   nombre: string;
   orden: number;
+  presupuestoItemId?: number | null;
+}
+
+export interface PresupuestoItemBuscarDto {
+  id: number;
+  nombre: string;
+  nombreFamilia?: string;
+}
+
+export interface ResponsableSsomaDto {
+  nombre: string;
+  email?: string;
 }
 
 // ─── Activos ─────────────────────────────────────────────────────────────────
@@ -19,9 +35,8 @@ export type ActivoRotativoEstado = 'disponible' | 'en_uso' | 'mantenimiento' | '
 
 export interface ActivoRotativoListDto {
   id: number;
-  nombre: string;
-  categoriaId: number;
-  categoriaNombre: string;
+  materialId: number;
+  materialNombre: string;
   codigo?: string;
   estado: ActivoRotativoEstado;
   proyectoActualId?: number;
@@ -46,8 +61,7 @@ export interface ActivoRotativoDetalleDto extends ActivoRotativoListDto {
 }
 
 export interface ActivoRotativoUpsertDto {
-  nombre: string;
-  categoriaId: number;
+  materialId: number;
   codigo?: string;
   estado: ActivoRotativoEstado;
   proyectoActualId?: number | null;

@@ -42,6 +42,7 @@ import {
   ActualizarFamiliaDto,
   MaterialPendienteGlobalDto,
   MaterialNoSsomaDto,
+  MaterialGlobalDto,
   TipoMaterialDto,
   TipoDriverRatio,
   RatioDriverComparacionDto,
@@ -579,6 +580,13 @@ export class PresupuestoMaterialesService {
 
   obtenerNoSsoma(): Observable<MaterialNoSsomaDto[]> {
     return this.http.get<MaterialNoSsomaDto[]>(`${this.base}/catalogo/no-ssoma`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  /** Todas las líneas de todos los proyectos, en cualquier estado — vista general consolidada. */
+  obtenerTodoGlobal(): Observable<MaterialGlobalDto[]> {
+    return this.http.get<MaterialGlobalDto[]>(`${this.base}/catalogo/todo`, {
       headers: this.authHeaders(),
     });
   }

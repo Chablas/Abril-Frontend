@@ -8,25 +8,25 @@
 
 .cu-wrap {
   padding: 16px;
-  max-width: 1200px;
+  max-width: none;
   background: #ffffff;
 }
 
-.cu-toolbar { margin-bottom: 20px; max-width: 360px; }
+.cu-toolbar { margin-bottom: 14px; max-width: 360px; }
 
 /* ── Chips de frecuencia ────────────────────────────────────────────────── */
 .cu-frecuencia-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: 6px;
+  margin-bottom: 14px;
 }
 .cu-frecuencia-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 36px;
-  padding: 0 16px;
+  height: 30px;
+  padding: 0 14px;
   background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 999px;
@@ -49,37 +49,27 @@
 .cu-frecuencia-chip--active .cu-frecuencia-chip-count--ok { color: #86efac; }
 
 /* ── Lista de actividades ───────────────────────────────────────────────── */
-.cu-items-list { display: flex; flex-direction: column; gap: 8px; }
+/* Grid (auto-fit) en vez de columna única de 820px: con pocas actividades, una
+   sola columna dejaba una franja vacía enorme a la derecha en pantallas anchas. */
+.cu-items-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 10px;
+  align-items: start;
+}
 .cu-item {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   background: #fff;
   border: 1px solid #e5e7eb;
+  border-left: 4px solid #2563eb;
   border-radius: 10px;
   padding: 12px 14px;
-  transition: background 0.15s;
-  max-width: 820px;
+  transition: background 0.15s, border-color 0.15s;
 }
-.cu-item--completado { background: #f0fdf4; border-color: #bbf7d0; }
-.cu-item-check-col { padding-top: 2px; }
-.cu-checkbox {
-  width: 24px;
-  height: 24px;
-  border: 2px solid #d1d5db;
-  border-radius: 6px;
-  background: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 14px;
-  color: #fff;
-  transition: all 0.15s;
-  flex-shrink: 0;
-}
-.cu-checkbox--checked { background: #16a34a; border-color: #16a34a; }
-.cu-checkbox:disabled { opacity: 0.6; cursor: not-allowed; }
+.cu-item--completado { background: #f0fdf4; border-color: #bbf7d0; border-left-color: #16a34a; }
+.cu-item--no-aplica { background: #f9fafb; border-color: #e5e7eb; border-left-color: #9ca3af; }
 .cu-item-content { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .cu-item-header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .cu-item-desc { font-size: 13.5px; font-weight: 500; color: #111827; margin: 0; line-height: 1.4; }
@@ -96,6 +86,73 @@
   max-width: 400px;
   background: #f9fafb;
 }
+
+/* ── Botones de estado (Cumplió / No aplica) ────────────────────────────── */
+.cu-item-actions { display: flex; gap: 8px; }
+.cu-btn-estado {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cu-btn-estado:disabled { opacity: 0.6; cursor: not-allowed; }
+.cu-btn-estado--cumplido:hover { border-color: #16a34a; color: #16a34a; }
+.cu-btn-estado--cumplido.cu-btn-estado--active { background: #16a34a; border-color: #16a34a; color: #fff; }
+.cu-btn-estado--no-aplica:hover { border-color: #6b7280; color: #374151; }
+.cu-btn-estado--no-aplica.cu-btn-estado--active { background: #6b7280; border-color: #6b7280; color: #fff; }
+
+/* ── Mi Checklist (mobile-first) ────────────────────────────────────────── */
+.cu-mio-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 14px;
+}
+.cu-mio-header i { color: #1e3a5f; }
+.cu-items-list--mio {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+/* ── Histórico ───────────────────────────────────────────────────────────── */
+.cu-toolbar--historico { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; max-width: none; }
+.cu-historico-resumen {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: #6b7280;
+}
+.cu-historico-resumen strong { font-size: 22px; color: #16a34a; }
+.cu-historico-resumen strong.cu-historico-alerta { color: #dc2626; }
+.cu-historico-list { display: flex; flex-direction: column; gap: 6px; }
+.cu-historico-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 50px minmax(140px, auto);
+  align-items: center;
+  gap: 12px;
+  font-size: 12.5px;
+  color: #374151;
+}
+.cu-historico-fecha { font-weight: 500; }
+.cu-historico-bar-wrap { height: 10px; background: #f3f4f6; border-radius: 999px; overflow: hidden; }
+.cu-historico-bar { height: 100%; background: #16a34a; border-radius: 999px; }
+.cu-historico-bar--alerta { background: #dc2626; }
+.cu-historico-pct { font-weight: 600; text-align: right; }
+.cu-historico-detalle { color: #9ca3af; white-space: nowrap; }
 
 .cu-tag-rol {
   font-size: 11px;

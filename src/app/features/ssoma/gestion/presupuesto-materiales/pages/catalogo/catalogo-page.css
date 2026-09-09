@@ -108,3 +108,19 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .empty-cell { text-align: center; color: #94A3B8; padding: 2rem; font-size: 0.85rem; }
+
+.pres-badge {
+  display: inline-block; padding: 3px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; white-space: nowrap;
+}
+.pres-badge-ok { background: #dcfce7; color: #1B6B3A; }
+.pres-badge-no { background: #fee2e2; color: #C0392B; }
+
+/* Vista general: filtros en fila (buscador + 3 comboboxes + refrescar) y tabla con más altura,
+   porque acumula TODAS las líneas de todos los proyectos (puede haber miles). */
+.pres-general-filtros { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+.pres-general-filtro-texto { width: 280px; margin-bottom: 0; }
+.pres-general-filtros app-search-select { width: 190px; }
+
+.pres-table-wrap--tall { max-height: calc(100vh - 400px); min-height: 320px; overflow-y: auto; }
+.pres-table-wrap--tall .pres-table thead { position: sticky; top: 0; background: #fff; z-index: 1; }

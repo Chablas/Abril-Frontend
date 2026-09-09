@@ -10,6 +10,7 @@ import {
   FamiliaCatalogoDto,
   MaterialPendienteGlobalDto,
   MaterialNoSsomaDto,
+  MaterialGlobalDto,
   BuscarItemDto,
   TipoMaterialDto,
   RevisionDecisionDto,
@@ -23,7 +24,7 @@ import { ClientPager } from '../../../../../../shared/utils/client-pager';
 import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
-type Seccion = 'normalizado' | 'sin-estandarizar' | 'no-ssoma';
+type Seccion = 'general' | 'normalizado' | 'sin-estandarizar' | 'no-ssoma';
 const VARIABLES_BASE = ['HH', 'AREATECHADA', 'TRABAJADORES', 'CALCULADO', 'FIJO', 'METRADO'];
 
 @Component({
@@ -94,15 +95,125 @@ export class CatalogoPage implements OnInit {
   filtroNoSsoma = '';
   private readonly noSsomaPager = new ClientPager<MaterialNoSsomaDto>();
 
+  // Sección 0: vista general (todo junto, todos los proyectos, cualquier estado)
+  general: MaterialGlobalDto[] = [];
+  filtroGeneral = '';
+  filtroGeneralSsoma: string | null = null;
+  filtroGeneralTipoId: number | null = null;
+  filtroGeneralFamiliaId: number | null = null;
+  readonly ssomaOpts: { id: string | null; label: string }[] = [
+    { id: null, label: 'Todos' },
+    { id: 'si', label: 'Pertenece a SSOMA' },
+    { id: 'no', label: 'No pertenece a SSOMA' },
+  ];
+  tiposGeneral: TipoMaterialDto[] = [];
+  familiasGeneral: FamiliaCatalogoDto[] = [];
+  private readonly generalPager = new ClientPager<MaterialGlobalDto>();
+
   ngOnInit(): void {
     this.cambiarSeccion('sin-estandarizar');
   }
 
   cambiarSeccion(s: Seccion): void {
     this.seccion = s;
+    if (s === 'general') this.cargarGeneral();
     if (s === 'normalizado') this.cargarNormalizado();
     if (s === 'sin-estandarizar') this.cargarSinEstandarizar();
     if (s === 'no-ssoma') this.cargarNoSsoma();
+  }
+
+  // ─── Sección 0: vista general ─────────────────────────────────────────────
+
+  /** Filtro por texto + tipo + familia (todo menos SSOMA sí/no) — sirve de base para el desglose de montos. */
+  private get generalPreFiltro(): MaterialGlobalDto[] {
+    let lista = this.general;
+    if (this.filtroGeneralTipoId != null) lista = lista.filter((g) => g.tipoId === this.filtroGeneralTipoId);
+    if (this.filtroGeneralFamiliaId != null) lista = lista.filter((g) => g.familiaId === this.filtroGeneralFamiliaId);
+    const q = this.filtroGeneral.trim().toLowerCase();
+    if (q) {
+      lista = lista.filter(
+        (g) =>
+          (g.projectDescription ?? '').toLowerCase().includes(q) ||
+          (g.recursoCrudo ?? '').toLowerCase().includes(q) ||
+          (g.nombreItem ?? '').toLowerCase().includes(q) ||
+          (g.nombreFamilia ?? '').toLowerCase().includes(q),
+      );
+    }
+    return lista;
+  }
+
+  get generalFiltrado(): MaterialGlobalDto[] {
+    let lista = this.generalPreFiltro;
+    if (this.filtroGeneralSsoma === 'si') lista = lista.filter((g) => g.perteneceSsoma);
+    if (this.filtroGeneralSsoma === 'no') lista = lista.filter((g) => !g.perteneceSsoma);
+    return lista;
+  }
+
+  onFiltroGeneralChange(): void {
+    this.generalPager.reset();
+  }
+
+  onFiltroGeneralTipoChange(tipoId: number | null): void {
+    this.filtroGeneralTipoId = tipoId;
+    // La família elegida puede no pertenecer al tipo nuevo — se limpia para no dejar un filtro imposible.
+    if (tipoId != null && this.filtroGeneralFamiliaId != null) {
+      const familiaSigueValida = this.familiasGeneralFiltradas.some((f) => f.id === this.filtroGeneralFamiliaId);
+      if (!familiaSigueValida) this.filtroGeneralFamiliaId = null;
+    }
+    this.onFiltroGeneralChange();
+  }
+
+  /** Opciones de família del combobox: si hay tipo elegido, solo las de ese tipo. */
+  get familiasGeneralFiltradas(): FamiliaCatalogoDto[] {
+    if (this.filtroGeneralTipoId == null) return this.familiasGeneral;
+    return this.familiasGeneral.filter((f) => f.tipoId === this.filtroGeneralTipoId);
+  }
+
+  get generalCurrentPage(): number { return this.generalPager.currentPage; }
+  get generalTotalPages(): number { return this.generalPager.totalPages(this.generalFiltrado); }
+  get generalPaged(): MaterialGlobalDto[] { return this.generalPager.page(this.generalFiltrado); }
+  changeGeneralPage(page: number): void { this.generalPager.goTo(page); }
+
+  get totalGeneralFiltrado(): number {
+    return this.generalFiltrado.reduce((acc, g) => acc + (g.precioTotal || 0), 0);
+  }
+
+  /** Monto SSOMA vs no-SSOMA del filtro de texto/tipo/família actual (sin aplicar el filtro SSOMA sí/no,
+   * para poder mostrar el desglose completo sin importar cuál esté seleccionado). */
+  get montoSsomaSi(): number {
+    return this.generalPreFiltro.filter((g) => g.perteneceSsoma).reduce((acc, g) => acc + (g.precioTotal || 0), 0);
+  }
+
+  get montoSsomaNo(): number {
+    return this.generalPreFiltro.filter((g) => !g.perteneceSsoma).reduce((acc, g) => acc + (g.precioTotal || 0), 0);
+  }
+
+  estadoSsomaLabel(g: MaterialGlobalDto): string {
+    if (!g.perteneceSsoma) return 'No SSOMA';
+    if (g.estadoRevision === 'PENDIENTE' || !g.estadoRevision) return 'SSOMA · pendiente';
+    if (g.estadoRevision === 'RECHAZADO') return 'No SSOMA';
+    return 'SSOMA · autorizado';
+  }
+
+  private cargarGeneral(): void {
+    this.loading = true;
+    this.loader.show();
+    this.svc.obtenerTodoGlobal().subscribe({
+      next: (lineas) => {
+        this.general = lineas;
+        this.generalPager.reset();
+        this.loading = false;
+        this.loader.hide();
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => this.onError(err),
+    });
+    if (this.tiposGeneral.length === 0) {
+      this.svc.listarTiposCatalogo().subscribe({ next: (t) => { this.tiposGeneral = t; this.cdr.detectChanges(); } });
+    }
+    if (this.familiasGeneral.length === 0) {
+      this.svc.listarFamiliasCatalogo().subscribe({ next: (f) => { this.familiasGeneral = f; this.cdr.detectChanges(); } });
+    }
   }
 
   // ─── Sección 1: catálogo normalizado ──────────────────────────────────────
