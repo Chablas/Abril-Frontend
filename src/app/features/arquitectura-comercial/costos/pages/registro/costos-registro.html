@@ -17,16 +17,20 @@
         (valueChange)="onProyectoChange($event)">
       </app-search-select>
     </div>
-    <select class="abril-field-input periodo-select" [(ngModel)]="mes" (ngModelChange)="onPeriodoChange()">
-      @for (m of nombresMes; track m; let i = $index) {
-        <option [ngValue]="i + 1">{{ m }}</option>
-      }
-    </select>
-    <input
-      type="number"
-      class="abril-field-input periodo-select periodo-select--anio"
-      [(ngModel)]="anio"
-      (ngModelChange)="onPeriodoChange()" />
+    <div class="periodo-pill">
+      <i class="ti ti-calendar-event"></i>
+      <select class="periodo-pill__select" [(ngModel)]="mes" (ngModelChange)="onPeriodoChange()">
+        @for (m of nombresMes; track m; let i = $index) {
+          <option [ngValue]="i + 1">{{ m }}</option>
+        }
+      </select>
+      <span class="periodo-pill__sep">/</span>
+      <input
+        type="number"
+        class="periodo-pill__anio"
+        [(ngModel)]="anio"
+        (ngModelChange)="onPeriodoChange()" />
+    </div>
   </div>
 </app-abril-page-header>
 
@@ -36,46 +40,117 @@
   }
 
   @if (loading) {
+    <div class="kpis-row">
+      <div class="skeleton-card skeleton-card--kpi"></div>
+      <div class="skeleton-card skeleton-card--kpi"></div>
+      <div class="skeleton-card skeleton-card--kpi"></div>
+    </div>
     <div class="skeleton-card skeleton-card--tall"></div>
   }
 
   @if (!loading && matriz) {
-    <div class="costos-layout">
-      <div class="matriz-card">
-        <div class="matriz-card__titulo">{{ matriz.proyectoNombre }}</div>
+    <!-- ── KPIs del periodo ─────────────────────────────────────────── -->
+    <div class="kpis-row">
+      <div class="kpi-card kpi-card--principal">
+        <div class="kpi-card__icono"><i class="ti ti-cash"></i></div>
+        <div>
+          <div class="kpi-card__label">Total {{ mesLabel(matriz.mes) }}</div>
+          <div class="kpi-card__valor">S/ {{ matriz.subtotalMes | number: '1.0-2' }}</div>
+        </div>
+      </div>
 
-        <div class="abril-table-wrap">
-          <table class="abril-table costos-table">
-            <thead>
+      <div class="kpi-card kpi-card--proyeccion">
+        <div class="kpi-card__icono"><i class="ti ti-trending-up"></i></div>
+        <div>
+          <div class="kpi-card__label">Proyección {{ mesProyeccionLabel() }}</div>
+          <div class="kpi-card__valor">S/ {{ matriz.subtotalProyeccion | number: '1.0-2' }}</div>
+        </div>
+        @if (variacionProyeccionPct !== null) {
+          <span class="kpi-card__badge" [class.badge-rojo]="variacionProyeccionPct! > 0" [class.badge-verde]="variacionProyeccionPct! <= 0">
+            <i class="ti" [ngClass]="variacionProyeccionPct! > 0 ? 'ti-arrow-up-right' : 'ti-arrow-down-right'"></i>
+            {{ variacionProyeccionPct! | number: '1.0-1' }}%
+          </span>
+        }
+      </div>
+
+      <div class="kpi-card kpi-card--partidas">
+        <div class="kpi-card__icono"><i class="ti ti-list-details"></i></div>
+        <div>
+          <div class="kpi-card__label">Partidas registradas</div>
+          <div class="kpi-card__valor">{{ matriz.partidas.length }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Matriz de costos ─────────────────────────────────────────── -->
+    <div class="matriz-card">
+      <div class="matriz-card__header">
+        <div class="matriz-card__titulo"><i class="ti ti-building-skyscraper"></i> {{ matriz.proyectoNombre }}</div>
+
+        @if (matriz.periodoCerrado) {
+          <span class="periodo-badge periodo-badge--cerrado" [title]="'Cerrado por ' + (matriz.cerradoPor || '—') + ' el ' + (matriz.cerradoEn | date: 'dd/MM/yyyy HH:mm')">
+            <i class="ti ti-lock"></i> Periodo cerrado
+          </span>
+        } @else {
+          <span class="matriz-card__hint"><i class="ti ti-info-circle"></i> Haz clic en una celda para editar el monto</span>
+        }
+
+        @if (puedeConfigurar) {
+          @if (matriz.periodoCerrado) {
+            <button type="button" class="btn-periodo" [disabled]="procesandoCierre" (click)="reabrirPeriodo()">
+              <i class="ti ti-lock-open"></i> Reabrir mes
+            </button>
+          } @else {
+            <button type="button" class="btn-periodo" [disabled]="procesandoCierre" (click)="cerrarPeriodo()">
+              <i class="ti ti-lock"></i> Cerrar mes
+            </button>
+          }
+        }
+      </div>
+
+      <div class="abril-table-wrap">
+        <table class="abril-table costos-table">
+          <thead>
+            <tr>
+              <th rowspan="2" class="col-partida">Partida</th>
+              <th [attr.colspan]="semanas().length + 1" class="grupo-actual">{{ mesLabel(matriz.mes) }}</th>
+              <th rowspan="2" class="grupo-proyeccion">
+                <i class="ti ti-chart-line"></i> Proyección {{ mesProyeccionLabel() }}
+              </th>
+            </tr>
+            <tr>
+              @for (s of semanas(); track s) {
+                <th class="col-semana">Sem. {{ s }}</th>
+              }
+              <th class="col-total">Total mes</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (partida of matriz.partidas; track partida.partida) {
               <tr>
-                <th rowspan="2" class="col-partida">Partidas</th>
-                <th [attr.colspan]="semanas().length + 1">{{ mesLabel(matriz.mes) }}</th>
-                <th rowspan="2">Total {{ mesProyeccionLabel() }}</th>
-              </tr>
-              <tr>
+                <td class="col-partida">
+                  <span class="partida-icono"><i class="ti" [ngClass]="iconoPartida(partida.partida)"></i></span>
+                  {{ partida.partida }}
+                </td>
                 @for (s of semanas(); track s) {
-                  <th class="col-semana">S{{ s }}</th>
-                }
-                <th class="col-total">Total mes</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (partida of matriz.partidas; track partida.partida) {
-                <tr>
-                  <td class="col-partida">{{ partida.partida }}</td>
-                  @for (s of semanas(); track s) {
-                    <td class="col-semana">
+                  <td class="col-semana">
+                    <div class="celda-monto" [class.celda-monto--bloqueada]="matriz.periodoCerrado">
+                      <span class="celda-monto__prefijo">S/</span>
                       <input
                         type="number"
                         min="0"
                         step="0.01"
                         class="celda-input"
+                        [disabled]="matriz.periodoCerrado"
                         [ngModel]="montoSemana(partida.partida, s)"
                         (change)="guardarRegistro(partida.partida, s, $any($event.target).value)" />
-                    </td>
-                  }
-                  <td class="col-total celda-calculada">{{ partida.totalMes | number: '1.0-2' }}</td>
-                  <td class="col-total celda-calculada">
+                    </div>
+                  </td>
+                }
+                <td class="col-total celda-calculada">S/ {{ partida.totalMes | number: '1.0-2' }}</td>
+                <td class="col-total celda-calculada celda-proyeccion">
+                  <div class="celda-monto">
+                    <span class="celda-monto__prefijo">S/</span>
                     <input
                       type="number"
                       min="0"
@@ -83,20 +158,20 @@
                       class="celda-input"
                       [ngModel]="montoProyeccion(partida.partida)"
                       (change)="guardarProyeccion(partida.partida, $any($event.target).value)" />
-                  </td>
-                </tr>
-              }
-              <tr class="fila-subtotal">
-                <td class="col-partida">Subtotal</td>
-                @for (s of semanas(); track s) {
-                  <td class="col-semana celda-calculada">{{ totalSemanaColumna(s) | number: '1.0-2' }}</td>
-                }
-                <td class="col-total celda-calculada">{{ matriz.subtotalMes | number: '1.0-2' }}</td>
-                <td class="col-total celda-calculada">{{ matriz.subtotalProyeccion | number: '1.0-2' }}</td>
+                  </div>
+                </td>
               </tr>
-            </tbody>
-          </table>
-        </div>
+            }
+            <tr class="fila-subtotal">
+              <td class="col-partida"><i class="ti ti-sum"></i> Subtotal</td>
+              @for (s of semanas(); track s) {
+                <td class="col-semana celda-calculada">S/ {{ totalSemanaColumna(s) | number: '1.0-2' }}</td>
+              }
+              <td class="col-total celda-calculada">S/ {{ matriz.subtotalMes | number: '1.0-2' }}</td>
+              <td class="col-total celda-calculada celda-proyeccion">S/ {{ matriz.subtotalProyeccion | number: '1.0-2' }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   }

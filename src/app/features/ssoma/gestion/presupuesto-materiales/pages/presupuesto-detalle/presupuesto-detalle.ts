@@ -12,7 +12,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import {
   PresupuestoDetalleDto, PresupuestoLineaDto, ActualizarLineaPresupuestoDto,
   PersonalHitoDto, VigilanciaHitoDto, ServicioFijoDto, KitProyectoGuardadoDto,
-  PresupuestoDestinatarioDto,
+  PresupuestoDestinatarioDto, AgregarFamiliaManualDto, TipoMaterialDto,
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import Swal from 'sweetalert2';
@@ -42,6 +42,20 @@ export class PresupuestoDetallePage implements OnInit {
   editandoLineaId: number | null = null;
   formLinea: ActualizarLineaPresupuestoDto = {};
 
+  // Alta de família nueva, inline dentro del acordeón de un tipo — para no tener que ir a
+  // Catálogo cuando el material simplemente no existe todavía (ej. un EPP nuevo).
+  tipos: TipoMaterialDto[] = [];
+  agregandoFamiliaTipoId: number | null = null;
+  guardandoFamilia = false;
+  formFamiliaNueva: AgregarFamiliaManualDto = this.formFamiliaVacio();
+
+  private formFamiliaVacio(): AgregarFamiliaManualDto {
+    return {
+      nombre: '', tipoId: 0, variableBase: 'FIJO', unidadMedida: null,
+      cantidadManual: 0, precioManual: 0, notasLinea: null,
+    };
+  }
+
   // Acordeón de tipos
   tipoAbierto: Set<number> = new Set();
 
@@ -68,6 +82,10 @@ export class PresupuestoDetallePage implements OnInit {
   ngOnInit(): void {
     this.presupuestoId = Number(this.route.snapshot.paramMap.get('presupuestoId'));
     this.load();
+    this.svc.listarTiposCatalogo().subscribe({
+      next: (tipos) => { this.tipos = tipos; this.cdr.markForCheck(); },
+      error: () => {},
+    });
   }
 
   load(): void {
@@ -148,6 +166,42 @@ export class PresupuestoDetallePage implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.loader.hide();
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  /** Abre el formulario de alta de família nueva dentro del acordeón de ese tipo (preselecciona el
+   * tipo — el material ya se está viendo agrupado ahí, no tiene sentido pedirlo de nuevo). */
+  agregarFamilia(tipoId: number): void {
+    this.formFamiliaNueva = this.formFamiliaVacio();
+    this.formFamiliaNueva.tipoId = tipoId;
+    this.agregandoFamiliaTipoId = tipoId;
+    this.cdr.markForCheck();
+  }
+
+  cancelarFamiliaNueva(): void {
+    this.agregandoFamiliaTipoId = null;
+    this.cdr.markForCheck();
+  }
+
+  guardarFamiliaNueva(): void {
+    if (!this.formFamiliaNueva.nombre.trim()) {
+      Swal.fire({ icon: 'warning', title: 'Falta el nombre de la família' });
+      return;
+    }
+    this.guardandoFamilia = true;
+    this.cdr.markForCheck();
+    this.svc.agregarFamiliaManual(this.presupuestoId, this.formFamiliaNueva).subscribe({
+      next: (d) => {
+        this.detalle = d;
+        this.agregandoFamiliaTipoId = null;
+        this.guardandoFamilia = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.guardandoFamilia = false;
         this.error.handleError(err);
         this.cdr.markForCheck();
       },

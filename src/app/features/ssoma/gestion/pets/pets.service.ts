@@ -47,6 +47,10 @@ export class PetsService {
     return this.http.put<void>(`${this.base}/${id}`, req, { headers: buildAuthHeaders() });
   }
 
+  duplicar(id: number): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(`${this.base}/${id}/duplicar`, {}, { headers: buildAuthHeaders() });
+  }
+
   agregarPaso(id: number, req: CrearPetPasoRequest): Observable<{ id: number }> {
     return this.http.post<{ id: number }>(`${this.base}/${id}/pasos`, req, { headers: buildAuthHeaders() });
   }

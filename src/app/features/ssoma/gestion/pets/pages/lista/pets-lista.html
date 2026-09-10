@@ -68,6 +68,9 @@
             <td class="text-center" (click)="$event.stopPropagation()">
               <div class="flex items-center justify-center gap-[8px]">
                 <button abrilBulkAction="default" (click)="irADetalle(p.id)">Ver / Editar</button>
+                <button abrilBulkAction="default" [disabled]="duplicando === p.id" (click)="duplicar(p)">
+                  {{ duplicando === p.id ? 'Duplicando…' : 'Duplicar' }}
+                </button>
                 <button [abrilBulkAction]="p.activo ? 'danger' : 'default'" (click)="toggleActivo(p)">
                   {{ p.activo ? 'Desactivar' : 'Activar' }}
                 </button>

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -15,11 +15,14 @@ import {
   CatalogoItemDto,
   PetFirmaDto,
   PetRolFirma,
+  AgregarItemPersonalizadoRequest,
+  PetSeccionTexto,
 } from '../../pets.dtos';
 import { forkJoin } from 'rxjs';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { environment } from '../../../../../../../environments/environment';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 
 interface ParrafoSeleccionable extends ImportParrafoDto {
   seleccionado: boolean;
@@ -28,6 +31,16 @@ interface ParrafoSeleccionable extends ImportParrafoDto {
 
 interface PasoPreviewNodo extends ImportPasoPreviewDto {
   profundidad: number;
+}
+
+// Un encabezado del Word que el importador no supo a qué pestaña pertenece (ver
+// SeccionesNoReconocidas en el backend) — el usuario elige el destino a mano en vez
+// de que el sistema adivine en silencio dentro de un documento de seguridad.
+interface SeccionNoReconocida {
+  titulo: string;
+  parrafos: PasoPreviewNodo[];
+  destino: string; // key de una pestaña (tabs), o '' si aún no se eligió
+  destinoTipo: string | null; // sub-tipo cuando destino es una pestaña de catálogo
 }
 
 // Calcula cuántos niveles de "padre" tiene cada elemento (para sangrarlo en la
@@ -78,23 +91,60 @@ interface TabDef {
   key: string;
   label: string;
   kind: TabKind;
+  ayuda: string;
 }
 
 // Procedimiento y Responsabilidades sí tienen estructura real (pasos/subtítulos) y
 // usan el árbol reusado. El resto de secciones narrativas son un solo bloque de
 // texto — no tiene sentido que cada oración sea su propia fila con tipo/controles.
 const TABS: TabDef[] = [
-  { key: 'procedimiento', label: 'Procedimiento', kind: 'arbol' },
-  { key: 'introduccion', label: 'Introducción', kind: 'texto' },
-  { key: 'alcance', label: 'Alcance', kind: 'texto' },
-  { key: 'objetivo', label: 'Objetivo', kind: 'texto' },
-  { key: 'marco_legal', label: 'Marco Legal', kind: 'catalogo' },
-  { key: 'definiciones', label: 'Definiciones', kind: 'texto' },
-  { key: 'responsabilidades', label: 'Responsabilidades', kind: 'arbol' },
-  { key: 'epp', label: 'EPP', kind: 'catalogo' },
-  { key: 'recurso', label: 'Recursos', kind: 'catalogo' },
-  { key: 'restricciones', label: 'Restricciones', kind: 'texto' },
-  { key: 'anexos', label: 'Anexos', kind: 'anexos' },
+  {
+    key: 'procedimiento',
+    label: 'Procedimiento',
+    kind: 'arbol',
+    ayuda:
+      'Estos pasos son los que OPT jala automáticamente al seleccionar este PETS. El número se calcula por posición — insertar uno en medio corre el resto sin que tengas que renumerar nada.',
+  },
+  { key: 'introduccion', label: 'Introducción', kind: 'texto', ayuda: 'Por qué existe este PETS y el contexto general de la actividad.' },
+  {
+    key: 'alcance',
+    label: 'Alcance',
+    kind: 'texto',
+    ayuda: 'A qué actividades, áreas o etapas del proyecto aplica este PETS (y qué queda fuera).',
+  },
+  { key: 'objetivo', label: 'Objetivo', kind: 'texto', ayuda: 'Qué se busca lograr al aplicar este procedimiento.' },
+  {
+    key: 'marco_legal',
+    label: 'Marco Legal',
+    kind: 'catalogo',
+    ayuda: 'Normas y estándares aplicables a esta actividad — elige del catálogo o agrega uno propio.',
+  },
+  { key: 'definiciones', label: 'Definiciones', kind: 'texto', ayuda: 'Términos técnicos usados en el documento que conviene aclarar.' },
+  {
+    key: 'responsabilidades',
+    label: 'Responsabilidades',
+    kind: 'arbol',
+    ayuda: 'Quién hace qué — normalmente un subtítulo por cargo con sus responsabilidades debajo.',
+  },
+  {
+    key: 'epp',
+    label: 'EPP',
+    kind: 'catalogo',
+    ayuda: 'Equipos de protección personal requeridos: básico, específico según la tarea, y de emergencia.',
+  },
+  {
+    key: 'recurso',
+    label: 'Recursos',
+    kind: 'catalogo',
+    ayuda: 'Equipos, herramientas y materiales necesarios para ejecutar la actividad.',
+  },
+  { key: 'restricciones', label: 'Restricciones', kind: 'texto', ayuda: 'Condiciones bajo las cuales NO se debe ejecutar esta actividad.' },
+  {
+    key: 'anexos',
+    label: 'Anexos',
+    kind: 'anexos',
+    ayuda: 'Documentos de respaldo (planos, fichas técnicas, permisos) adjuntos a este PETS.',
+  },
 ];
 
 // Sub-bloques dentro de una pestaña de catálogo: Marco Legal no distingue tipo,
@@ -127,7 +177,7 @@ const ROLES_FIRMA: { value: PetRolFirma; label: string }[] = [
   selector: 'app-pets-detalle',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelect],
   templateUrl: './pets-detalle.html',
   styleUrl: './pets-detalle.css',
 })
@@ -232,6 +282,26 @@ export class PetsDetalle implements OnInit {
     return this.tabs.find((t) => t.key === this.seccionActiva) ?? this.tabs[0];
   }
 
+  // Punto (indicador) en la pestaña cuando ya tiene contenido cargado — antes las
+  // 11 pestañas se veían todas iguales sin forma de saber cuáles faltaban.
+  tabTieneContenido(tab: TabDef): boolean {
+    if (!this.detalle) return false;
+    switch (tab.kind) {
+      case 'arbol':
+        return (this.arboles[tab.key]?.length ?? 0) > 0;
+      case 'texto':
+        return !!this.textoSecciones[tab.key]?.trim();
+      case 'catalogo': {
+        const lista = tab.key === 'marco_legal' ? this.detalle.marcoLegal : tab.key === 'epp' ? this.detalle.epp : this.detalle.recursos;
+        return (lista?.length ?? 0) > 0;
+      }
+      case 'anexos':
+        return this.detalle.anexos.length > 0;
+      default:
+        return false;
+    }
+  }
+
   // Árboles por sección (procedimiento + responsabilidades), reconstruidos cada
   // vez que se recarga. Solo se muestra el de la pestaña activa.
   arboles: Record<string, PasoNodo[]> = {};
@@ -251,6 +321,9 @@ export class PetsDetalle implements OnInit {
     this.petsService.actualizarSeccionTexto(this.id, seccion, contenido).subscribe({
       next: () => {
         this.guardandoTextoSeccion[seccion] = false;
+        // Actualiza el "guardado" contra el que se compara para detectar cambios sin
+        // guardar — si no, salir de la pestaña seguiría avisando aunque ya se guardó.
+        if (this.detalle) this.detalle.seccionesTexto[seccion as PetSeccionTexto] = contenido;
         Swal.fire({ icon: 'success', title: 'Guardado', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500 });
         this.cdr.markForCheck();
       },
@@ -296,6 +369,12 @@ export class PetsDetalle implements OnInit {
   importandoDocx = false;
   previewSeccionesArbol: Record<string, PasoPreviewNodo[]> | null = null;
   previewSeccionesTexto: Record<string, string> | null = null;
+  // Encabezados detectados que no calzaron con ningún marcador conocido — cada uno
+  // se queda acá hasta que el usuario elige a qué pestaña enviarlo (o descartarlo).
+  previewNoReconocidas: SeccionNoReconocida[] = [];
+  // Ítems de Marco Legal/EPP/Recursos que el usuario ya trió desde una sección no
+  // reconocida — se agregan como personalizados de este PETS al confirmar.
+  previewItemsCatalogo: AgregarItemPersonalizadoRequest[] = [];
   confirmandoImportacion = false;
 
   // true: reimportar una versión corregida — borra el Procedimiento vigente antes de
@@ -323,6 +402,26 @@ export class PetsDetalle implements OnInit {
   ngOnInit(): void {
     this.id = Number(this.route.snapshot.paramMap.get('id'));
     this.load();
+  }
+
+  // Cierre/recarga de la pestaña del navegador — el guard de ruta (canDeactivate)
+  // cubre navegar DENTRO de la app; esto cubre salir de la app por completo.
+  @HostListener('window:beforeunload', ['$event'])
+  avisarSalidaSinGuardar(event: BeforeUnloadEvent): void {
+    if (this.hayCambiosSinGuardar()) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+
+  // Editar una sección narrativa (Introducción/Alcance/...) y navegar fuera sin
+  // guardar perdía el cambio en silencio — se compara contra lo último cargado
+  // desde el backend (actualizado también al guardar, ver guardarTextoSeccion).
+  hayCambiosSinGuardar(): boolean {
+    if (!this.detalle) return false;
+    return this.tabs
+      .filter((t) => t.kind === 'texto')
+      .some((t) => (this.textoSecciones[t.key] ?? '') !== (this.detalle!.seccionesTexto[t.key as PetSeccionTexto] ?? ''));
   }
 
   imagenUrl(paso: PetPasoDto): string | null {
@@ -356,15 +455,11 @@ export class PetsDetalle implements OnInit {
     this.seccionActiva = key;
     // Cualquier edición/inserción a medias queda de la pestaña anterior — se
     // descarta al cambiar para no dejar un formulario abierto "flotando". La
-    // vista previa de importación (solo aplica a "Procedimiento") también se
-    // descarta: si no se cierra, bloquea el árbol normal de CUALQUIER pestaña
-    // porque ese estado es global, no por sección.
+    // vista previa de importación vive en su propia tarjeta (siempre visible,
+    // no depende de la pestaña activa), así que NO se toca acá — cambiar de
+    // pestaña ya no la interrumpe.
     this.cancelarInsertar();
     this.cancelarEdicion();
-    this.previewSeccionesArbol = null;
-    this.previewSeccionesTexto = null;
-    this.previewManual = null;
-    this.reemplazarAlConfirmar = false;
 
     const tab = this.tabs.find((t) => t.key === key);
     if (tab?.kind === 'catalogo') {
@@ -641,8 +736,14 @@ export class PetsDetalle implements OnInit {
 
         const huboArbol = Object.keys(preview.seccionesArbol).length > 0;
         const huboTexto = Object.keys(preview.seccionesTexto).length > 0;
+        const seccionesNoReconocidas = preview.seccionesNoReconocidas ?? {};
+        const huboNoReconocidas = Object.keys(seccionesNoReconocidas).length > 0;
 
-        if (preview.seccionEncontrada && (huboArbol || huboTexto)) {
+        // No depende de "seccionEncontrada" (eso solo indica si hubo algún marcador
+        // CONOCIDO): un documento que solo trae encabezados no reconocidos también
+        // debe mostrar la vista previa, para poder triar esos encabezados en vez de
+        // caer al modo manual (que los ignoraría por completo).
+        if (huboArbol || huboTexto || huboNoReconocidas) {
           const seccionesArbol: Record<string, PasoPreviewNodo[]> = {};
           for (const seccion of Object.keys(preview.seccionesArbol)) {
             const pasos = preview.seccionesArbol[seccion];
@@ -651,6 +752,17 @@ export class PetsDetalle implements OnInit {
           }
           this.previewSeccionesArbol = seccionesArbol;
           this.previewSeccionesTexto = { ...preview.seccionesTexto };
+          this.previewNoReconocidas = Object.keys(seccionesNoReconocidas).map((titulo) => {
+            const parrafos = seccionesNoReconocidas[titulo];
+            const profundidades = calcularProfundidades(parrafos);
+            return {
+              titulo,
+              parrafos: parrafos.map((p) => ({ ...p, profundidad: profundidades.get(p.indice) ?? 0 })),
+              destino: '',
+              destinoTipo: null,
+            };
+          });
+          this.previewItemsCatalogo = [];
           this.cdr.markForCheck();
           return;
         }
@@ -700,9 +812,59 @@ export class PetsDetalle implements OnInit {
     this.cdr.markForCheck();
   }
 
+  // ── IMPORTAR DESDE WORD: secciones no reconocidas (triage manual) ────────
+  // Opciones de destino para una sección no reconocida: cualquier pestaña real
+  // salvo Anexos (es un archivo, no texto que se pueda pegar en un catálogo).
+  readonly destinosNoReconocida = this.tabs.filter((t) => t.kind !== 'anexos');
+
+  subtiposDestino(destino: string): { value: string | null; label: string }[] {
+    return this.catalogoTipos[destino] ?? [];
+  }
+
+  onDestinoNoReconocidaChange(bloque: SeccionNoReconocida): void {
+    const tab = this.tabs.find((t) => t.key === bloque.destino);
+    bloque.destinoTipo = tab?.kind === 'catalogo' ? (this.subtiposDestino(bloque.destino)[0]?.value ?? null) : null;
+  }
+
+  aplicarNoReconocida(bloque: SeccionNoReconocida): void {
+    if (!bloque.destino) return;
+    const tab = this.tabs.find((t) => t.key === bloque.destino);
+    if (!tab) return;
+
+    if (tab.kind === 'arbol') {
+      const actual = this.previewSeccionesArbol ?? {};
+      this.previewSeccionesArbol = { ...actual, [tab.key]: [...(actual[tab.key] ?? []), ...bloque.parrafos] };
+    } else if (tab.kind === 'texto') {
+      const actual = this.previewSeccionesTexto ?? {};
+      const previo = actual[tab.key] ?? '';
+      const nuevo = bloque.parrafos.map((p) => p.texto).filter((t) => t.trim().length > 0);
+      this.previewSeccionesTexto = { ...actual, [tab.key]: [previo, ...nuevo].filter((t) => t.trim().length > 0).join('\n\n') };
+    } else if (tab.kind === 'catalogo') {
+      const nuevos = bloque.parrafos
+        .filter((p) => p.texto.trim().length > 0)
+        .map((p) => ({ grupo: tab.key, tipo: bloque.destinoTipo, descripcion: p.texto.trim(), agregarAlCatalogoGlobal: false }));
+      this.previewItemsCatalogo = [...this.previewItemsCatalogo, ...nuevos];
+    }
+
+    this.previewNoReconocidas = this.previewNoReconocidas.filter((b) => b !== bloque);
+    this.cdr.markForCheck();
+  }
+
+  descartarNoReconocida(bloque: SeccionNoReconocida): void {
+    this.previewNoReconocidas = this.previewNoReconocidas.filter((b) => b !== bloque);
+    this.cdr.markForCheck();
+  }
+
+  quitarItemCatalogoPreview(index: number): void {
+    this.previewItemsCatalogo = this.previewItemsCatalogo.filter((_, i) => i !== index);
+    this.cdr.markForCheck();
+  }
+
   cancelarImportacion(): void {
     this.previewSeccionesArbol = null;
     this.previewSeccionesTexto = null;
+    this.previewNoReconocidas = [];
+    this.previewItemsCatalogo = [];
     this.cdr.markForCheck();
   }
 
@@ -717,8 +879,25 @@ export class PetsDetalle implements OnInit {
   }
 
   confirmarImportacion(): void {
-    if (!this.previewSeccionesArbol && !this.previewSeccionesTexto) return;
+    if (!this.previewSeccionesArbol && !this.previewSeccionesTexto && this.previewItemsCatalogo.length === 0) return;
 
+    if (this.previewNoReconocidas.length > 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Hay secciones sin asignar',
+        text: `${this.previewNoReconocidas.length} encabezado(s) detectado(s) todavía no tienen un destino elegido — su contenido NO se va a importar si continúas.`,
+        showCancelButton: true,
+        confirmButtonText: 'Continuar de todos modos',
+        cancelButtonText: 'Volver a revisar',
+      }).then((res) => {
+        if (res.isConfirmed) this.continuarConfirmarImportacion();
+      });
+      return;
+    }
+    this.continuarConfirmarImportacion();
+  }
+
+  private continuarConfirmarImportacion(): void {
     if (this.reemplazarAlConfirmar && this.totalExistenteEnSeccionesDetectadas() > 0) {
       const totalActual = this.totalExistenteEnSeccionesDetectadas();
       Swal.fire({
@@ -754,12 +933,15 @@ export class PetsDetalle implements OnInit {
         seccionesArbol,
         seccionesTexto: this.previewSeccionesTexto ?? {},
         reemplazar: this.reemplazarAlConfirmar,
+        itemsCatalogo: this.previewItemsCatalogo,
       })
       .subscribe({
         next: () => {
           this.confirmandoImportacion = false;
           this.previewSeccionesArbol = null;
           this.previewSeccionesTexto = null;
+          this.previewNoReconocidas = [];
+          this.previewItemsCatalogo = [];
           Swal.fire({ icon: 'success', title: 'Documento importado', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
           this.load();
         },
@@ -838,6 +1020,7 @@ export class PetsDetalle implements OnInit {
         },
         seccionesTexto: {},
         reemplazar: this.reemplazarAlConfirmar,
+        itemsCatalogo: [],
       })
       .subscribe({
         next: () => {

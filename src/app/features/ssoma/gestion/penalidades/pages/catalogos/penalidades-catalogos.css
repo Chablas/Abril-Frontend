@@ -1,0 +1,37 @@
+.catalogos-root { display: flex; flex-direction: column; gap: 10px; height: 100%; }
+.catalogos-body { display: flex; flex-direction: column; gap: 28px; padding: 0 16px 24px; }
+
+.catalogo-seccion { display: flex; flex-direction: column; gap: 12px; }
+.catalogo-titulo { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; color: #1f2937; }
+
+.form-inline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.form-control {
+  border: 1px solid #e5e7eb;
+  border-radius: var(--radius-standard, 7px);
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  min-width: 120px;
+}
+.form-control--sm { width: 110px; min-width: 0; }
+
+.check-inline { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: #374151; white-space: nowrap; }
+
+.btn-primary {
+  height: 34px; padding: 0 16px;
+  border-radius: var(--radius-standard, 7px);
+  font-size: 13px; font-weight: 600;
+  border: none; cursor: pointer;
+  background: var(--color-abril-logo-blue); color: #fff;
+}
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+
+.btn-ghost {
+  height: 34px; padding: 0 14px;
+  border-radius: var(--radius-standard, 7px);
+  font-size: 13px; font-weight: 500;
+  border: 1px solid #e5e7eb; background: #fff; color: #374151;
+  cursor: pointer;
+}
+
+.empty-cell { text-align: center; color: #9CA3AF; padding: 20px 0; }

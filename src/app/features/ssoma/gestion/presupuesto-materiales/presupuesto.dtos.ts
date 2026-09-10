@@ -296,6 +296,16 @@ export interface ActualizarLineaPresupuestoDto {
   notasLinea?: string | null;
 }
 
+export interface AgregarFamiliaManualDto {
+  nombre: string;
+  tipoId: number;
+  variableBase: string;
+  unidadMedida?: string | null;
+  cantidadManual: number;
+  precioManual: number;
+  notasLinea?: string | null;
+}
+
 export interface PresupuestoResumenDto {
   id: number;
   projectId: number;
@@ -684,4 +694,26 @@ export interface MaterialNoSsomaDto {
   precioTotal: number;
   fechaGuia: string;
   estadoRevision?: string;
+}
+
+// ─── Vista general (todas las líneas, todos los proyectos, tal como llegan del S10) ──────────
+
+export interface MaterialGlobalDto {
+  lineaId: number;
+  projectId: number;
+  projectDescription: string;
+  recursoCrudo: string;
+  itemId?: number;
+  nombreItem?: string;
+  familiaId?: number;
+  nombreFamilia?: string;
+  tipoId?: number;
+  nombreTipo?: string;
+  cantidad: number;
+  precioUnitario: number;
+  precioTotal: number;
+  perteneceSsoma: boolean;
+  /** null | PENDIENTE | AUTORIZADO | RECHAZADO */
+  estadoRevision?: string;
+  fechaGuia: string;
 }

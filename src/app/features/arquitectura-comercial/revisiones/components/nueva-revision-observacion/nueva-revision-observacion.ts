@@ -181,7 +181,7 @@ export class NuevaRevisionObservacion implements OnInit {
         switchMap((res) => {
           if (!this.registrarLevantamiento) return of(res);
           return this.service
-            .levantarObservacion(res.id, this.comentarioLevantamiento.trim() || null, this.fotoLevantamientoSeleccionada, this.levantaPorWorkerId)
+            .levantarObservacion(res.id, this.comentarioLevantamiento.trim() || null, this.fotoLevantamientoSeleccionada, this.levantaPorWorkerId, null)
             .pipe(catchError(() => of(res)));
         }),
       )

@@ -12,6 +12,8 @@ import {
   AlmacenStockDTO,
   CreateAlmacenMaterialBody,
   CreateAlmacenMovimientoBody,
+  ImportarMovimientosResultDTO,
+  UpdateAlmacenMaterialBody,
 } from '../../dtos/almacen/almacen.model';
 
 @Injectable({ providedIn: 'root' })
@@ -31,8 +33,17 @@ export class AlmacenService {
     return this.http.get<AlmacenFiltrosDTO>(`${this.apiUrl}/materiales/filtros`, { headers: this.authHeaders() });
   }
 
+  getMateriales(soloActivos = false): Observable<AlmacenMaterialDTO[]> {
+    const params = new HttpParams().set('soloActivos', soloActivos);
+    return this.http.get<AlmacenMaterialDTO[]>(`${this.apiUrl}/materiales`, { params, headers: this.authHeaders() });
+  }
+
   crearMaterial(body: CreateAlmacenMaterialBody): Observable<AlmacenMaterialDTO> {
     return this.http.post<AlmacenMaterialDTO>(`${this.apiUrl}/materiales`, body, { headers: this.authHeaders() });
+  }
+
+  actualizarMaterial(id: number, body: UpdateAlmacenMaterialBody): Observable<AlmacenMaterialDTO> {
+    return this.http.put<AlmacenMaterialDTO>(`${this.apiUrl}/materiales/${id}`, body, { headers: this.authHeaders() });
   }
 
   getMovimientos(query: AlmacenMovimientosQueryParams): Observable<AlmacenMovimientoListResponseDTO> {
@@ -47,6 +58,12 @@ export class AlmacenService {
 
   crearMovimiento(body: CreateAlmacenMovimientoBody): Observable<AlmacenMovimientoListItemDTO> {
     return this.http.post<AlmacenMovimientoListItemDTO>(`${this.apiUrl}/movimientos`, body, { headers: this.authHeaders() });
+  }
+
+  importarMovimientos(archivo: File): Observable<ImportarMovimientosResultDTO> {
+    const form = new FormData();
+    form.append('archivo', archivo);
+    return this.http.post<ImportarMovimientosResultDTO>(`${this.apiUrl}/movimientos/importar`, form, { headers: this.authHeaders() });
   }
 
   getStock(proyectoId: number | null): Observable<AlmacenStockDTO> {

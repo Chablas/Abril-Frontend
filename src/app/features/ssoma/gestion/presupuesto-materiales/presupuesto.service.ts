@@ -16,6 +16,7 @@ import {
   ActualizarDriversResultDto,
   GenerarPresupuestoDto,
   ActualizarLineaPresupuestoDto,
+  AgregarFamiliaManualDto,
   PresupuestoResumenDto,
   PresupuestoDetalleDto,
   PresupuestoDestinatarioDto,
@@ -42,6 +43,7 @@ import {
   ActualizarFamiliaDto,
   MaterialPendienteGlobalDto,
   MaterialNoSsomaDto,
+  MaterialGlobalDto,
   TipoMaterialDto,
   TipoDriverRatio,
   RatioDriverComparacionDto,
@@ -322,6 +324,16 @@ export class PresupuestoMaterialesService {
     );
   }
 
+  /** Alta de família directo desde el detalle del presupuesto — crea (o reutiliza) la família en el
+   * catálogo y la agrega de una vez como línea manual, sin pasar primero por Catálogo. */
+  agregarFamiliaManual(presupuestoId: number, dto: AgregarFamiliaManualDto): Observable<PresupuestoDetalleDto> {
+    return this.http.post<PresupuestoDetalleDto>(
+      `${this.base}/presupuestos/${presupuestoId}/familias-manuales`,
+      dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
   eliminarPresupuesto(presupuestoId: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(
       `${this.base}/presupuestos/${presupuestoId}`,
@@ -579,6 +591,13 @@ export class PresupuestoMaterialesService {
 
   obtenerNoSsoma(): Observable<MaterialNoSsomaDto[]> {
     return this.http.get<MaterialNoSsomaDto[]>(`${this.base}/catalogo/no-ssoma`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  /** Todas las líneas de todos los proyectos, en cualquier estado — vista general consolidada. */
+  obtenerTodoGlobal(): Observable<MaterialGlobalDto[]> {
+    return this.http.get<MaterialGlobalDto[]>(`${this.base}/catalogo/todo`, {
       headers: this.authHeaders(),
     });
   }

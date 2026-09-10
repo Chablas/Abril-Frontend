@@ -1,0 +1,482 @@
+<div class="penalidades-root">
+
+  <app-abril-page-header
+    [badge]="'SSOMA · ' + anioActual"
+    titulo="Gestión de Penalidades"
+    subtitulo="Seguridad · Salud Ocupacional · Medio Ambiente"
+    [tabs]="tabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()">
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <div class="penalidades-body">
+
+    <div *ngIf="loading" class="skeleton-wrap">
+      <div *ngFor="let i of [1,2,3,4,5]" class="skeleton-row"></div>
+    </div>
+
+    <div *ngIf="!loading && (result?.items?.length ?? 0) > 0" class="abril-table-wrap">
+      <table class="abril-table">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th>Código</th>
+            <th>Origen</th>
+            <th>Proyecto</th>
+            <th>Empresa</th>
+            <th>Infracción</th>
+            <th>Monto</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of result!.items">
+            <td class="col-codigo">{{ item.codigo }}</td>
+            <td>{{ item.origenTipo === 'DIRECTO' ? 'Directo' : (item.origenTipo + ' #' + item.origenId) }}</td>
+            <td>{{ item.proyectoNombre ?? '—' }}</td>
+            <td>{{ item.empresaNombre ?? '—' }}</td>
+            <td>{{ item.infraccionNombre ?? '—' }}</td>
+            <td>S/ {{ (item.montoFinal ?? item.montoCalculado) | number:'1.2-2' }}</td>
+            <td><span class="chip-estado" [ngClass]="estadoClass(item.estado)">{{ estadoLabel(item.estado) }}</span></td>
+            <td>{{ item.createdAt | date:'dd/MM/yyyy' }}</td>
+            <td>
+              <button type="button" class="abril-action-btn" title="Ver detalle" (click)="abrirDetalle(item.id)">
+                <i class="ti ti-eye"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && (result?.items?.length ?? 0) === 0 && result !== null" class="empty-state">
+      <i class="ti ti-gavel empty-state__icon"></i>
+      <p class="empty-state__text">No se encontraron penalidades.</p>
+    </div>
+
+    <div *ngIf="result" class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="result.total"
+        [currentPage]="query.page ?? 1"
+        [totalPages]="result.totalPages"
+        (pageChange)="cambiarPagina($event)">
+      </app-paginator>
+    </div>
+
+  </div>
+
+  <app-fab *ngIf="!esContratista" label="Nueva Penalidad" (clicked)="abrirNueva()"></app-fab>
+</div>
+
+<!-- ── Filtros ────────────────────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="filtroEstado"
+      (valueChange)="filtroEstado = $event; load()">
+    </app-search-select>
+  </div>
+</app-filter-modal>
+
+<!-- ── Nueva Penalidad ────────────────────────────────────────────── -->
+<app-abril-modal-panel
+  *ngIf="mostrarNueva"
+  titulo="Nueva Penalidad"
+  icono="ti-gavel"
+  variant="blue"
+  width="620px"
+  (closeModal)="cerrarNueva()">
+
+  <div *ngIf="loadingCatalogos" class="loading-catalogos">
+    <i class="ti ti-loader spin"></i> Cargando catálogos…
+  </div>
+
+  <div *ngIf="!loadingCatalogos" class="paso-body">
+    <section class="abril-form-section">
+      <div class="form-grid">
+        <div class="col-2">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Origen"
+            [options]="ORIGEN_OPCIONES"
+            valueField="value"
+            displayField="label"
+            [value]="nuevaOrigenTipo"
+            [sortAlpha]="false"
+            placeholder="Selecciona origen"
+            (valueChange)="nuevaOrigenTipo = $event">
+          </app-search-select>
+        </div>
+
+        <div class="abril-field" *ngIf="nuevaOrigenTipo !== 'DIRECTO'">
+          <label class="abril-field-label">ID del {{ nuevaOrigenTipo === 'RAC' ? 'RAC' : 'la Amonestación' }} de origen</label>
+          <input type="number" class="abril-field-input" [(ngModel)]="nuevaOrigenId" />
+        </div>
+
+        <div class="col-2">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Proyecto *"
+            [options]="proyectos"
+            valueField="projectId"
+            displayField="projectDescription"
+            [value]="nuevaProyectoId"
+            placeholder="Buscar proyecto..."
+            (valueChange)="nuevaProyectoId = $event">
+          </app-search-select>
+        </div>
+
+        <div class="col-2">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Empresa contratista *"
+            [options]="empresas"
+            valueField="id"
+            displayField="nombre"
+            [value]="nuevaEmpresaId"
+            placeholder="Buscar empresa..."
+            (valueChange)="onEmpresaSeleccionada($event)">
+          </app-search-select>
+        </div>
+      </div>
+
+      <!-- ── Contexto previo de la empresa ─────────────────────────── -->
+      <div class="contexto-previo" *ngIf="nuevaEmpresaId">
+        <div *ngIf="loadingContexto" class="loading-catalogos"><i class="ti ti-loader spin"></i> Cargando contexto...</div>
+
+        <ng-container *ngIf="contexto && !loadingContexto">
+          <div class="contexto-stats">
+            <span class="contexto-stat">
+              <b>{{ contexto.penalidadesAplicadasUltimos12Meses }}</b> penalidad(es) aplicada(s) en los últimos 12 meses
+            </span>
+            <span class="contexto-stat">
+              <b>{{ contexto.penalidadesTotalHistorico }}</b> aplicada(s) en total (histórico)
+            </span>
+          </div>
+
+          <div class="gestion-previa-lista" *ngIf="contexto.gestionPrevia.length > 0">
+            <div class="gp-item" *ngFor="let g of contexto.gestionPrevia">
+              <span class="gp-tipo">{{ gpTipoLabel(g.tipo) }}</span>
+              <span class="gp-fecha">{{ g.fecha | date:'dd/MM/yyyy' }}</span>
+              <span class="gp-desc">{{ g.descripcion }}</span>
+            </div>
+          </div>
+          <p class="detalle-parrafo" *ngIf="contexto.gestionPrevia.length === 0" style="margin:0">
+            Sin gestión previa registrada (correos, cartas, reuniones) para esta empresa.
+          </p>
+
+          <button type="button" class="btn-ghost" style="margin-top:8px" (click)="abrirFormGestionPrevia()" *ngIf="!mostrarFormGestionPrevia">
+            <i class="ti ti-plus"></i> Registrar gestión previa
+          </button>
+
+          <div class="form-inline-gp" *ngIf="mostrarFormGestionPrevia">
+            <app-search-select
+              label="Tipo"
+              [options]="GP_TIPO_OPCIONES"
+              valueField="value" displayField="label" [sortAlpha]="false"
+              [value]="gpTipo"
+              (valueChange)="gpTipo = $event">
+            </app-search-select>
+            <input type="date" class="abril-field-input" [(ngModel)]="gpFecha" />
+            <textarea class="form-control" rows="2" placeholder="Descripción..." [(ngModel)]="gpDescripcion"></textarea>
+            <input type="file" class="form-control" (change)="seleccionarAdjuntoGestionPrevia($event)" />
+            <span class="doc-subiendo" *ngIf="gpSubiendoAdjunto"><i class="ti ti-loader-2 spin"></i> Subiendo...</span>
+            <div class="modal-acciones modal-acciones--gap">
+              <button type="button" class="btn-accion btn-accion--blue" [disabled]="!puedeGuardarGestionPrevia" (click)="guardarGestionPrevia()">
+                {{ guardandoGestionPrevia ? 'Guardando...' : 'Guardar' }}
+              </button>
+              <button type="button" class="btn-ghost" (click)="mostrarFormGestionPrevia = false">Cancelar</button>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="form-grid">
+        <div class="col-2">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Infracción *"
+            [options]="infracciones"
+            valueField="id"
+            displayField="nombre"
+            [value]="nuevaInfraccionId"
+            placeholder="Selecciona infracción"
+            (valueChange)="nuevaInfraccionId = $event">
+          </app-search-select>
+        </div>
+
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Severidad *"
+            [options]="SEVERIDAD_OPCIONES"
+            valueField="value"
+            displayField="label"
+            [value]="nuevaSeveridad"
+            placeholder="Selecciona severidad"
+            [sortAlpha]="false"
+            (valueChange)="nuevaSeveridad = $event">
+          </app-search-select>
+        </div>
+
+        <div class="col-2 abril-field">
+          <label class="abril-field-label">Descripción del ocurrido</label>
+          <textarea class="abril-field-input" rows="3" [(ngModel)]="nuevaDescripcion"></textarea>
+        </div>
+      </div>
+
+      <p class="form-hint" *ngIf="infracciones.length === 0">
+        No hay infracciones activas en el catálogo. Configúralas primero en la pestaña «Catálogos».
+      </p>
+    </section>
+  </div>
+
+  <div modalFooter *ngIf="!loadingCatalogos">
+    <button type="button" class="btn-ghost" (click)="cerrarNueva()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="!puedeGuardarNueva" (click)="guardarNueva()">
+      <i class="ti ti-device-floppy"></i>
+      {{ guardandoNueva ? 'Guardando…' : 'Registrar' }}
+    </button>
+  </div>
+</app-abril-modal-panel>
+
+<!-- ── Detalle ────────────────────────────────────────────────────── -->
+<app-abril-modal-panel
+  *ngIf="mostrarDetalle"
+  [titulo]="detalle?.codigo ?? 'Penalidad'"
+  icono="ti-gavel"
+  variant="blue"
+  width="760px"
+  (closeModal)="cerrarDetalle()">
+
+  <div *ngIf="loadingDetalle" class="loading-catalogos">
+    <i class="ti ti-loader spin"></i> Cargando…
+  </div>
+
+  <div *ngIf="detalle && !loadingDetalle" class="detalle-body">
+
+    <!-- Resumen -->
+    <div class="modal-grid">
+      <div class="modal-campo"><span class="modal-label">Empresa</span><span class="modal-valor">{{ detalle.empresaNombre ?? '—' }}</span></div>
+      <div class="modal-campo"><span class="modal-label">Proyecto</span><span class="modal-valor">{{ detalle.proyectoNombre ?? '—' }}</span></div>
+      <div class="modal-campo"><span class="modal-label">Infracción</span><span class="modal-valor">{{ detalle.infraccionNombre ?? '—' }}</span></div>
+      <div class="modal-campo"><span class="modal-label">Severidad</span><span class="modal-valor">{{ detalle.severidad }}</span></div>
+      <div class="modal-campo"><span class="modal-label">Monto</span><span class="modal-valor modal-monto">S/ {{ (detalle.montoFinal ?? detalle.montoCalculado) | number:'1.2-2' }}</span></div>
+      <div class="modal-campo"><span class="modal-label">Estado</span><span class="chip-estado" [ngClass]="estadoClass(detalle.estado)">{{ estadoLabel(detalle.estado) }}</span></div>
+    </div>
+
+    <p class="detalle-parrafo" *ngIf="detalle.descripcionOcurrido">{{ detalle.descripcionOcurrido }}</p>
+
+    <!-- Stepper de seguimiento -->
+    <div class="stepper-card">
+      <div class="stepper-titulo">Seguimiento del proceso</div>
+      <div class="stepper-col">
+        <div class="stepper-item" *ngFor="let h of detalle.historial; let last = last">
+          <div class="stepper-icon-col">
+            <div class="stepper-icon"><i class="ti ti-check"></i></div>
+            <div class="stepper-line" *ngIf="!last"></div>
+          </div>
+          <div class="stepper-texto">
+            <p class="stepper-estado">{{ estadoLabel(h.estadoNuevo) }}</p>
+            <p class="stepper-fecha">{{ h.cambioDateTime | date:'dd/MM/yyyy HH:mm' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Acciones según estado ──────────────────────────────────── -->
+
+    <ng-container *ngIf="detalle.estado === 'PendienteResidente' && !esContratista">
+      <div class="modal-seccion">
+        <div class="modal-seccion__titulo">Aprobación del Residente</div>
+        <textarea class="form-control" rows="2" placeholder="Motivo del rechazo (si aplica)" [(ngModel)]="motivoRechazo"></textarea>
+        <div class="modal-acciones modal-acciones--gap">
+          <button type="button" class="btn-accion btn-accion--blue" [disabled]="guardandoAccion" (click)="aprobarResidente()">
+            <i class="ti ti-check"></i> {{ guardandoAccion ? 'Procesando...' : 'Aprobar' }}
+          </button>
+          <button type="button" class="btn-accion btn-accion--red" [disabled]="guardandoAccion || !motivoRechazo.trim()" (click)="rechazarResidente()">
+            <i class="ti ti-x"></i> Rechazar
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="detalle.estado === 'PendienteGerenciaInmobiliaria' && !esContratista">
+      <div class="modal-seccion">
+        <div class="modal-seccion__titulo">Aprobación de Gerencia Inmobiliaria</div>
+        <textarea class="form-control" rows="2" placeholder="Motivo del rechazo (si aplica)" [(ngModel)]="motivoRechazo"></textarea>
+        <div class="modal-acciones modal-acciones--gap">
+          <button type="button" class="btn-accion btn-accion--blue" [disabled]="guardandoAccion" (click)="aprobarGerencia()">
+            <i class="ti ti-check"></i> {{ guardandoAccion ? 'Procesando...' : 'Aprobar' }}
+          </button>
+          <button type="button" class="btn-accion btn-accion--red" [disabled]="guardandoAccion || !motivoRechazo.trim()" (click)="rechazarGerencia()">
+            <i class="ti ti-x"></i> Rechazar
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="detalle.estado === 'NotificadaEnDescargo'">
+      <div class="modal-seccion" *ngIf="esContratista; else esperandoDescargo">
+        <div class="modal-seccion__titulo">
+          Presentar descargo — vence {{ detalle.plazoDescargoVenceEn | date:'dd/MM/yyyy HH:mm' }}
+        </div>
+        <textarea class="form-control" rows="4" maxlength="1000" placeholder="Describa el descargo o justificación..." [(ngModel)]="descargoTexto"></textarea>
+        <div class="descargo-doc">
+          <label class="doc-label">Documento de sustento *</label>
+          <input type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" (change)="seleccionarDocumento($event)" />
+          <span class="doc-subiendo" *ngIf="subiendoDocumento"><i class="ti ti-loader-2 spin"></i> Subiendo documento...</span>
+          <span class="doc-ok" *ngIf="documentoUrl && !subiendoDocumento"><i class="ti ti-circle-check"></i> Documento subido correctamente</span>
+        </div>
+        <div class="modal-acciones">
+          <button type="button" class="btn-accion btn-accion--blue" [disabled]="!puedeDescargar" (click)="presentarDescargo()">
+            <i class="ti ti-send"></i> {{ guardandoAccion ? 'Enviando...' : 'Presentar descargo' }}
+          </button>
+        </div>
+      </div>
+      <ng-template #esperandoDescargo>
+        <div class="modal-seccion">
+          <div class="modal-seccion__titulo">Esperando descargo del contratista</div>
+          <p class="detalle-parrafo">Vence el {{ detalle.plazoDescargoVenceEn | date:'dd/MM/yyyy HH:mm' }}. Si no responde, se dará por aceptada la observación y pasará a evaluación automáticamente.</p>
+        </div>
+      </ng-template>
+    </ng-container>
+
+    <ng-container *ngIf="detalle.estado === 'EnEvaluacionSsoma' && !esContratista">
+      <div class="modal-seccion">
+        <div class="modal-seccion__titulo">Evaluación del descargo</div>
+        <p class="detalle-parrafo" *ngIf="detalle.descargoPorIncomparecencia">El contratista no respondió en el plazo otorgado.</p>
+        <p class="detalle-parrafo" *ngIf="!detalle.descargoPorIncomparecencia">{{ detalle.descargoTexto }}</p>
+        <a *ngIf="detalle.documentoUrl" [href]="detalle.documentoUrl" target="_blank" rel="noopener" class="btn-ghost">
+          <i class="ti ti-paperclip"></i> Ver documento de sustento
+        </a>
+        <div class="form-grid" style="margin-top:10px">
+          <div class="abril-field">
+            <app-search-select
+              label="Recomendación *"
+              [options]="[{value:'Aprobar',label:'Aprobar descargo'},{value:'Rechazar',label:'Rechazar descargo'}]"
+              valueField="value" displayField="label" [sortAlpha]="false"
+              [value]="recomendacionSsoma"
+              (valueChange)="recomendacionSsoma = $event">
+            </app-search-select>
+          </div>
+        </div>
+        <textarea class="form-control" rows="3" placeholder="Argumento de la evaluación (mínimo 10 caracteres)..." [(ngModel)]="argumentoSsoma"></textarea>
+        <div class="modal-acciones">
+          <button type="button" class="btn-accion btn-accion--blue" [disabled]="!puedeEvaluar" (click)="evaluarDescargo()">
+            <i class="ti ti-send"></i> {{ guardandoAccion ? 'Enviando...' : 'Enviar a Gerencia' }}
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="detalle.estado === 'PendienteDecisionGerencia' && !esContratista">
+      <div class="modal-seccion">
+        <div class="modal-seccion__titulo">Decisión final</div>
+        <div class="form-grid">
+          <div class="abril-field">
+            <app-search-select
+              label="Resolución *"
+              [options]="[{value:'Aplicada',label:'Aplicar penalidad'},{value:'Anulada',label:'Anular penalidad'}]"
+              valueField="value" displayField="label" [sortAlpha]="false"
+              [value]="resolucionTipo"
+              (valueChange)="resolucionTipo = $event">
+            </app-search-select>
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Monto final (opcional, S/)</label>
+            <input type="number" class="abril-field-input" [(ngModel)]="montoFinal" [placeholder]="(detalle.montoCalculado | number:'1.2-2') ?? ''" />
+          </div>
+        </div>
+        <textarea class="form-control" rows="3" placeholder="Fundamento de la resolución..." [(ngModel)]="resolucionTexto"></textarea>
+        <input type="text" class="form-control" placeholder="Motivo del ajuste de monto (si aplica)" [(ngModel)]="motivoAjusteMonto" />
+        <div class="modal-acciones">
+          <button type="button" class="btn-accion" [ngClass]="resolucionTipo === 'Aplicada' ? 'btn-accion--red' : 'btn-accion--green'" [disabled]="!puedeDecidir" (click)="decidirGerencia()">
+            <i class="ti ti-currency-sol"></i> {{ guardandoAccion ? 'Procesando...' : 'Confirmar decisión' }}
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="detalle.estado === 'Aplicada' || detalle.estado === 'Anulada'">
+      <div class="modal-seccion">
+        <div class="modal-seccion__titulo">Resolución</div>
+        <p class="detalle-parrafo">{{ detalle.resolucionTexto || '—' }}</p>
+        <p class="detalle-parrafo" *ngIf="detalle.argumentoSsoma"><b>Evaluación SSOMA:</b> {{ detalle.argumentoSsoma }}</p>
+        <div class="modal-acciones modal-acciones--gap">
+          <a *ngIf="detalle.pdfNotificacionUrl" [href]="detalle.pdfNotificacionUrl" target="_blank" rel="noopener" class="btn-ghost"><i class="ti ti-file-type-pdf"></i> Notificación</a>
+          <a *ngIf="detalle.pdfResolucionUrl" [href]="detalle.pdfResolucionUrl" target="_blank" rel="noopener" class="btn-ghost"><i class="ti ti-file-type-pdf"></i> Resolución</a>
+        </div>
+      </div>
+
+      <!-- Apelación — solo si fue Aplicada, todavía no se usó y no venció el plazo -->
+      <div class="modal-seccion" *ngIf="detalle.estado === 'Aplicada' && !detalle.apelacionUsada && esContratista">
+        <div class="modal-seccion__titulo">
+          Apelar esta decisión — vence {{ detalle.plazoApelacionVenceEn | date:'dd/MM/yyyy HH:mm' }}
+        </div>
+        <p class="detalle-parrafo">Solo se admite una apelación, y exige evidencia nueva (no repetir el descargo original).</p>
+        <textarea class="form-control" rows="4" placeholder="Argumento de la apelación..." [(ngModel)]="apelacionTexto"></textarea>
+        <div class="descargo-doc">
+          <label class="doc-label">Evidencia nueva *</label>
+          <input type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" (change)="seleccionarDocumentoApelacion($event)" />
+          <span class="doc-subiendo" *ngIf="subiendoDocumentoApelacion"><i class="ti ti-loader-2 spin"></i> Subiendo documento...</span>
+          <span class="doc-ok" *ngIf="apelacionDocumentoUrl && !subiendoDocumentoApelacion"><i class="ti ti-circle-check"></i> Documento subido correctamente</span>
+        </div>
+        <div class="modal-acciones">
+          <button type="button" class="btn-accion btn-accion--blue" [disabled]="!puedeApelar" (click)="apelar()">
+            <i class="ti ti-send"></i> {{ guardandoAccion ? 'Enviando...' : 'Presentar apelación' }}
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="detalle.estado === 'EnApelacion'">
+      <div class="modal-seccion">
+        <div class="modal-seccion__titulo">Apelación presentada</div>
+        <p class="detalle-parrafo">{{ detalle.apelacionTexto }}</p>
+        <a *ngIf="detalle.apelacionDocumentoUrl" [href]="detalle.apelacionDocumentoUrl" target="_blank" rel="noopener" class="btn-ghost">
+          <i class="ti ti-paperclip"></i> Ver evidencia nueva
+        </a>
+      </div>
+
+      <div class="modal-seccion" *ngIf="!esContratista">
+        <div class="modal-seccion__titulo">Decisión final de la apelación</div>
+        <div class="form-grid">
+          <div class="abril-field">
+            <app-search-select
+              label="Resolución *"
+              [options]="[{value:'Aplicada',label:'Mantener aplicada'},{value:'Anulada',label:'Anular penalidad'}]"
+              valueField="value" displayField="label" [sortAlpha]="false"
+              [value]="decisionApelacionTipo"
+              (valueChange)="decisionApelacionTipo = $event">
+            </app-search-select>
+          </div>
+        </div>
+        <textarea class="form-control" rows="3" placeholder="Fundamento de la decisión..." [(ngModel)]="decisionApelacionTexto"></textarea>
+        <div class="modal-acciones">
+          <button type="button" class="btn-accion" [ngClass]="decisionApelacionTipo === 'Aplicada' ? 'btn-accion--red' : 'btn-accion--green'" [disabled]="!puedeDecidirApelacion" (click)="decidirApelacion()">
+            <i class="ti ti-currency-sol"></i> {{ guardandoAccion ? 'Procesando...' : 'Confirmar decisión' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="modal-seccion" *ngIf="esContratista">
+        <p class="detalle-parrafo">Tu apelación está en revisión por Gerencia Inmobiliaria.</p>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="detalle.estado === 'Rechazada'">
+      <div class="modal-seccion">
+        <div class="modal-seccion__titulo">Penalidad rechazada</div>
+        <p class="detalle-parrafo">{{ detalle.motivoRechazoResidente || detalle.motivoRechazoGerencia || '—' }}</p>
+      </div>
+    </ng-container>
+
+  </div>
+</app-abril-modal-panel>

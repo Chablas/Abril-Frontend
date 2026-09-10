@@ -227,6 +227,7 @@ export class NavigationService {
       items: [
         { label: 'Prog. Anual SSOMA', route: '/ssoma/gestion/paso/dashboard', featureKey: 'ssoma.gestion.paso' },
         { label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard', featureKey: 'ssoma.gestion.rac' },
+        { label: 'Penalidades', route: '/ssoma/gestion/penalidades', featureKey: 'ssoma.gestion.penalidades.lista' },
         { label: 'Obs. Planeada (OPT)', route: '/ssoma/gestion/opt/dashboard', featureKey: 'ssoma.gestion.opt' },
         { label: 'PETS', route: '/ssoma/gestion/pets', featureKey: 'ssoma.gestion.pets' },
         { label: 'Inspecciones', route: '/ssoma/gestion/inspeccion/dashboard', featureKey: 'ssoma.gestion.inspeccion' },
@@ -473,6 +474,7 @@ export class NavigationService {
             ...m,
             items: [
               { label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard' },
+              { label: 'Penalidades', route: '/ssoma/gestion/penalidades' },
               { label: 'Obs. Planeada (OPT)', route: '/ssoma/gestion/opt/dashboard' },
               { label: 'Inspecciones', route: '/ssoma/gestion/inspeccion/dashboard' },
               { label: 'Charlas & Capacitaciones', route: '/ssoma/gestion/charlas/contratista' },

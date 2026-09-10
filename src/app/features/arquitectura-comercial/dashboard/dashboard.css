@@ -460,6 +460,12 @@
   flex-direction: column;
   gap: 2px;
 }
+.rank-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 .rank-title-text {
   font-size: 13px;
   font-weight: 800;
@@ -467,6 +473,22 @@
   color: var(--color-status-info);
   text-transform: uppercase;
 }
+
+/* Semana en control — visible de un vistazo, no enterrada en el subtítulo. */
+.rank-semana-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #1B3A6B;
+  background: #EDF4FB;
+  border: 1px solid #C9DDF2;
+  border-radius: 6px;
+  padding: 2px 9px;
+  white-space: nowrap;
+}
+.rank-semana-badge .ti { font-size: 11px; }
 .rank-subtitle {
   font-size: 10px;
   color: var(--color-dash-text-faint);
@@ -534,20 +556,21 @@
   gap: 4px;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
-  justify-content: space-between;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-dash-border-strong) transparent;
 }
 
 .rank-item {
   background:#FAFBFE;
   border-radius: var(--radius-md);
-  padding: 3px 10px 3px 12px;
+  padding: 4px 10px 4px 12px;
   display:flex; align-items:center; gap:8px;
   border: 1.5px solid var(--color-dash-border-mid);
   position:relative; overflow:hidden;
   transition:border-color .2s;
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
 }
 .rank-item:hover { border-color:#A0AABC; }
 .rank-item-crit { background:#FBF7F7; border-color:#DBBEBE; }
@@ -584,7 +607,7 @@
 /* Info */
 .rank-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
 .rank-nombre-row { display:flex; align-items:center; justify-content:space-between; gap:6px; }
-.rank-nombre { font-size:11px; font-weight:700; color:#0F172A; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:165px; letter-spacing:.02em; }
+.rank-nombre { font-size:11px; font-weight:700; color:#0F172A; white-space:normal; word-break:break-word; line-height:1.25; letter-spacing:.02em; flex:1; min-width:0; }
 .rank-status-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; box-shadow:0 0 0 2px rgba(255,255,255,.6); }
 .rank-badge { font-size:8px; font-weight:600; padding:2px 8px; border-radius:20px; flex-shrink:0; }
 .rank-badges-right { display:flex; align-items:center; gap:5px; flex-shrink:0; }
@@ -765,6 +788,191 @@
   font-size:8px; font-weight:600; padding:2px 6px;
   border-radius:6px; white-space:nowrap;
 }
+
+/* ── Mini-Gantt (Hitos/Entregables, todos los proyectos, 3 meses) ── */
+.gantt-mini-card { display: flex; flex-direction: column; gap: 6px; }
+.gantt-legend-diamond {
+  width: 7px; height: 7px; flex-shrink: 0;
+  transform: rotate(45deg);
+  border-radius: 1px;
+}
+.gantt-mini-header {
+  display: flex;
+  border-bottom: 1px solid var(--color-dash-border-soft);
+  padding-bottom: 5px;
+  flex-shrink: 0;
+}
+.gantt-mini-label-col {
+  width: 212px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-right: 10px;
+}
+.gantt-mini-label-text { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.gantt-mini-proyecto-dot {
+  width: 4px;
+  align-self: stretch;
+  min-height: 20px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  opacity: .85;
+}
+.gantt-mini-timeline-col { flex: 1; min-width: 0; display: flex; position: relative; }
+.gantt-mini-month {
+  flex-shrink: 0;
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--color-dash-text-faint);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  border-right: 1px dashed var(--color-dash-border-soft);
+}
+.gantt-mini-month:last-child { border-right: none; }
+.gantt-mini-today-label {
+  position: absolute;
+  top: -1px;
+  transform: translateX(-50%);
+  font-size: 7.5px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: .06em;
+  background: #2563EB;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  z-index: 3;
+}
+.gantt-mini-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 270px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-dash-border-strong) transparent;
+}
+.gantt-mini-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--color-dash-border-soft);
+  transition: background .1s;
+}
+.gantt-mini-row:nth-child(even) { background: rgba(148,163,184,0.06); }
+.gantt-mini-row:hover { background: rgba(37,99,235,0.07); }
+.gantt-mini-row:last-child { border-bottom: none; }
+.gantt-mini-nombre {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--color-dash-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gantt-mini-proyecto {
+  display: block;
+  font-size: 9px;
+  color: var(--color-dash-text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gantt-mini-track {
+  position: relative;
+  height: 20px;
+  margin: 0 2px;
+}
+.gantt-mini-gridline {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 1px;
+  background: var(--color-dash-border-soft);
+}
+.gantt-mini-today-line {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: #2563EB;
+  opacity: .35;
+  z-index: 1;
+}
+.gantt-mini-bar {
+  position: absolute;
+  top: 4px;
+  height: 12px;
+  border-radius: 4px;
+  min-width: 5px;
+  z-index: 2;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 1px 2px rgba(0,0,0,.18);
+  transition: filter .1s;
+}
+.gantt-mini-bar:hover { filter: brightness(1.08); }
+.gantt-mini-milestone {
+  position: absolute;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  border: 2px solid #fff;
+  border-radius: 2px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  z-index: 2;
+  transition: transform .12s;
+}
+.gantt-mini-milestone:hover { transform: translate(-50%, -50%) rotate(45deg) scale(1.25); }
+
+/* ── Próximos Entregables/Hitos por proyecto ── */
+.proximos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-dash-border-strong) transparent;
+}
+.proximos-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 10px;
+  background: #FAFBFE;
+  border: 1.5px solid var(--color-dash-border-mid);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  flex-shrink: 0;
+}
+.proximos-row:hover { border-color: #A0AABC; }
+.proximos-row-active { background: #EDF4FB; border-color: #2E6DB4; }
+.proximos-nombre {
+  font-size: 11px;
+  font-weight: 700;
+  color: #0F172A;
+  white-space: normal;
+  word-break: break-word;
+  flex: 1;
+  min-width: 0;
+}
+.proximos-badges { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+.proximos-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.proximos-badge-ent  { background: #DBEAFE; color: #1E3A8A; }
+.proximos-badge-hito { background: #EDE9FE; color: #5B21B6; }
 
 /* ── Chart wraps ── */
 .chart-wrap-md { position:relative; height:110px; }
@@ -1070,7 +1278,7 @@
 
 /* Compactar contenido dentro de carga */
 .carga-item .sup-avatar    { width: 24px; height: 24px; font-size: 8.5px; }
-.carga-item .rank-nombre   { font-size: 10px; max-width: 130px; }
+.carga-item .rank-nombre   { font-size: 10px; }
 .carga-item .rank-badge    { font-size: 8px; padding: 1px 5px; }
 .carga-item .carga-total   { font-size: 9px; padding: 0 5px; }
 .carga-item .carga-hec     { font-size: 8.5px; min-width: 70px; }
@@ -1329,8 +1537,8 @@
 .modal-table tbody tr:hover { background: var(--color-dash-bg-alt); }
 .modal-table tbody tr.row-selected { background: #EFF6FF; }
 
-.td-nombre { font-weight:600; color:var(--color-dash-text); max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.td-muted  { color:#6B7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px; }
+.td-nombre { font-weight:600; color:var(--color-dash-text); max-width:280px; white-space:normal; word-break:break-word; }
+.td-muted  { color:#6B7280; max-width:180px; white-space:normal; word-break:break-word; }
 
 .tipo-badge {
   font-size:9px; font-weight:700; border-radius:5px;

@@ -11,8 +11,11 @@ import {
   AlmacenMaterialDTO,
   AlmacenMovimientoListItemDTO,
   AlmacenStockDTO,
+  ImportarMovimientosResultDTO,
+  MOTIVOS_DEVOLUCION,
   ProyectoAlmacenFiltroDTO,
   TIPOS_MOVIMIENTO_ALMACEN,
+  UpdateAlmacenMaterialBody,
 } from '../../../../core/dtos/almacen/almacen.model';
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { SearchSelect } from '../../../../shared/components/search-select/search-select';
@@ -34,6 +37,9 @@ import { ALMACEN_TABS } from '../../shared/almacen-tabs';
 export class AlmacenStock implements OnInit {
   readonly tabs = ALMACEN_TABS;
   readonly tiposMovimiento = TIPOS_MOVIMIENTO_ALMACEN;
+  readonly motivosDevolucion = MOTIVOS_DEVOLUCION;
+
+  importando = false;
 
   proyectos: ProyectoAlmacenFiltroDTO[] = [];
   materiales: AlmacenMaterialDTO[] = [];
@@ -53,7 +59,18 @@ export class AlmacenStock implements OnInit {
 
   showNuevoMovimiento = false;
   showNuevoMaterial = false;
+  showGestionMateriales = false;
   guardando = false;
+
+  materialesGestion: AlmacenMaterialDTO[] = [];
+  editandoMaterialId: number | null = null;
+  editMaterialForm = {
+    nombre: '',
+    unidadMedida: '',
+    puntoReorden: null as number | null,
+    stockSeguridad: null as number | null,
+    activo: true,
+  };
 
   nuevoMovimiento = {
     proyectoId: null as number | null,
@@ -62,6 +79,7 @@ export class AlmacenStock implements OnInit {
     fecha: this.hoyISO(),
     cantidad: null as number | null,
     origen: '',
+    motivoDevolucion: null as string | null,
     comentario: '',
   };
 
@@ -183,6 +201,7 @@ export class AlmacenStock implements OnInit {
       fecha: this.hoyISO(),
       cantidad: null,
       origen: '',
+      motivoDevolucion: null,
       comentario: '',
     };
     this.showNuevoMovimiento = true;
@@ -194,6 +213,10 @@ export class AlmacenStock implements OnInit {
       Swal.fire({ icon: 'warning', title: 'Completa proyecto, material y una cantidad mayor a 0.' });
       return;
     }
+    if (m.tipo === 'Devolucion' && !m.motivoDevolucion) {
+      Swal.fire({ icon: 'warning', title: 'Indica el motivo de la devolución (Error o Sobrante).' });
+      return;
+    }
     this.guardando = true;
     this.service
       .crearMovimiento({
@@ -203,6 +226,7 @@ export class AlmacenStock implements OnInit {
         tipo: m.tipo,
         cantidad: m.cantidad,
         origen: m.origen || null,
+        motivoDevolucion: m.tipo === 'Devolucion' ? m.motivoDevolucion : null,
         comentario: m.comentario || null,
       })
       .subscribe({
@@ -247,6 +271,126 @@ export class AlmacenStock implements OnInit {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  onArchivoImportar(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    input.value = '';
+    if (!file) return;
+
+    this.importando = true;
+    this.service.importarMovimientos(file).subscribe({
+      next: (resultado: ImportarMovimientosResultDTO) => {
+        this.importando = false;
+        this.mostrarResultadoImportacion(resultado);
+        this.loadStock();
+        this.pagina = 1;
+        this.loadMovimientos();
+        this.loadFiltros();
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.importando = false;
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  private mostrarResultadoImportacion(r: ImportarMovimientosResultDTO): void {
+    const detalle = [
+      `${r.importados} movimiento(s) importado(s) de ${r.totalFilas} fila(s).`,
+      r.duplicados > 0 ? `${r.duplicados} fila(s) ya existían y no se contaron dos veces.` : null,
+      r.materialesCreados > 0 ? `${r.materialesCreados} material(es) nuevo(s) se agregaron al catálogo.` : null,
+    ].filter(Boolean).join(' ');
+
+    const listaErrores = r.errores.length
+      ? `<div style="text-align:left;max-height:180px;overflow:auto;margin-top:8px;font-size:12px;color:#b91c1c;">${r.errores.map((e) => `• ${e}`).join('<br>')}</div>`
+      : '';
+
+    Swal.fire({
+      icon: r.errores.length ? 'warning' : 'success',
+      title: 'Importación completada',
+      html: `<p>${detalle}</p>${listaErrores}`,
+    });
+  }
+
+  abrirGestionMateriales(): void {
+    this.editandoMaterialId = null;
+    this.showGestionMateriales = true;
+    this.loadMaterialesGestion();
+  }
+
+  loadMaterialesGestion(): void {
+    this.service.getMateriales(false).subscribe({
+      next: (data) => {
+        this.materialesGestion = data;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  iniciarEdicionMaterial(m: AlmacenMaterialDTO): void {
+    this.editandoMaterialId = m.id;
+    this.editMaterialForm = {
+      nombre: m.nombre,
+      unidadMedida: m.unidadMedida,
+      puntoReorden: m.puntoReorden,
+      stockSeguridad: m.stockSeguridad,
+      activo: m.activo,
+    };
+  }
+
+  cancelarEdicionMaterial(): void {
+    this.editandoMaterialId = null;
+  }
+
+  guardarEdicionMaterial(m: AlmacenMaterialDTO): void {
+    if (!this.editMaterialForm.nombre.trim() || !this.editMaterialForm.unidadMedida.trim()) {
+      Swal.fire({ icon: 'warning', title: 'Nombre y unidad de medida son obligatorios.' });
+      return;
+    }
+    const body: UpdateAlmacenMaterialBody = {
+      nombre: this.editMaterialForm.nombre.trim(),
+      unidadMedida: this.editMaterialForm.unidadMedida.trim(),
+      puntoReorden: this.editMaterialForm.puntoReorden,
+      stockSeguridad: this.editMaterialForm.stockSeguridad,
+      activo: this.editMaterialForm.activo,
+    };
+    this.service.actualizarMaterial(m.id, body).subscribe({
+      next: (actualizado) => {
+        Object.assign(m, actualizado);
+        this.editandoMaterialId = null;
+        this.loadFiltros();
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  /** Alterna Activo/Inactivo directo desde el switch, sin pasar por el modo edición completo. */
+  toggleActivoMaterial(m: AlmacenMaterialDTO): void {
+    const body: UpdateAlmacenMaterialBody = {
+      nombre: m.nombre,
+      unidadMedida: m.unidadMedida,
+      puntoReorden: m.puntoReorden,
+      stockSeguridad: m.stockSeguridad,
+      activo: !m.activo,
+    };
+    this.service.actualizarMaterial(m.id, body).subscribe({
+      next: (actualizado) => {
+        Object.assign(m, actualizado);
+        this.loadFiltros();
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
+  trackByMaterialGestion(_: number, m: AlmacenMaterialDTO): number {
+    return m.id;
   }
 
   trackByMaterial(_: number, m: { materialId: number }): number {

@@ -15,4 +15,10 @@ export const COSTOS_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { titulo: 'ARQUITECTURA COMERCIAL - COSTOS - DASHBOARD', featureKey: 'arquitectura-comercial.costos' },
   },
+  {
+    path: 'presupuesto',
+    loadComponent: () => import('./pages/presupuesto/costos-presupuesto').then((m) => m.CostosPresupuesto),
+    canActivate: [roleGuard],
+    data: { titulo: 'ARQUITECTURA COMERCIAL - COSTOS - PRESUPUESTO', featureKey: 'arquitectura-comercial.costos' },
+  },
 ];

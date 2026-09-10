@@ -5,7 +5,7 @@ import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-
 import { FilterTriggerButton } from '../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../shared/components/filter-modal/filter-modal';
 import { SearchSelect } from '../../../shared/components/search-select/search-select';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import Swal from 'sweetalert2';
 import { ArquitecturaComercialService } from '../../../core/services/arquitectura-comercial.service';
 import {
@@ -72,6 +72,18 @@ export class Actividades implements OnInit {
 
   filtrosAbiertos = false;
 
+  /** Categoría/estado que llegaron por query param desde el dashboard (clicks en "Partidas de
+   * Control" o en las tarjetas KPI) — se aplican en cuanto hay un proyecto seleccionado, porque
+   * esta página siempre trabaja sobre UN proyecto a la vez. */
+  categoriaFiltroNav: string | null = null;
+  estadoFiltroNav: string | null = null;
+
+  limpiarFiltroNavegacion(): void {
+    this.categoriaFiltroNav = null;
+    this.estadoFiltroNav = null;
+    this.rebuildGroups();
+  }
+
   get filtrosActivos(): number {
     let n = 0;
     if (this.tipoFiltro) n++;
@@ -81,6 +93,8 @@ export class Actividades implements OnInit {
     if (this.excluirCulminadas) n++;
     if (this.filtroSupervisorId != null) n++;
     if (this.mostrarSinActividades) n++;
+    if (this.categoriaFiltroNav) n++;
+    if (this.estadoFiltroNav) n++;
     return n;
   }
 
@@ -107,11 +121,21 @@ export class Actividades implements OnInit {
   constructor(
     private service: ArquitecturaComercialService,
     private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
     this.loadProyectos();
     this.loadSupervisores();
+    // Query params ?categoria=...&estado=... que manda el dashboard (Partidas de Control, KPIs).
+    // Solo se guardan acá — se aplican en rebuildGroups() en cuanto haya actividades cargadas
+    // (o sea, en cuanto el usuario elija un proyecto, ya que esta vista es siempre por proyecto).
+    this.route.queryParamMap.subscribe(params => {
+      this.categoriaFiltroNav = params.get('categoria');
+      this.estadoFiltroNav = params.get('estado');
+      this.rebuildGroups();
+      this.cdr.detectChanges();
+    });
   }
 
   loadProyectos(): void {
@@ -158,6 +182,8 @@ export class Actividades implements OnInit {
   limpiarFiltros(): void {
     this.resetFilters();
     this.mostrarSinActividades = false;
+    this.categoriaFiltroNav = null;
+    this.estadoFiltroNav = null;
     this.onFiltroChange();
     this.rebuildGroups();
   }
@@ -206,6 +232,8 @@ export class Actividades implements OnInit {
       ? this.actividades.filter(a => a.etapaNombre === this.etapaNombreFiltro)
       : this.actividades;
     if (this.excluirCulminadas) filtered = filtered.filter(a => !a.finEfectivo);
+    if (this.categoriaFiltroNav) filtered = filtered.filter(a => a.categoriaNombre === this.categoriaFiltroNav);
+    if (this.estadoFiltroNav) filtered = filtered.filter(a => a.estado === this.estadoFiltroNav);
     const groups = new Map<string, ActividadListItemDTO[]>();
     for (const a of filtered) {
       const key = a.etapaNombre || 'SIN ETAPA';

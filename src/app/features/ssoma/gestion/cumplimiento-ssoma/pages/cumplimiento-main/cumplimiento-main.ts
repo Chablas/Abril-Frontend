@@ -9,6 +9,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import Swal from 'sweetalert2';
 import { CumplimientoSsomaService } from '../../cumplimiento-ssoma.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -19,6 +20,9 @@ import {
   CumplimientoItemDto,
   CumplimientoFrecuencia,
   CumplimientoRol,
+  CumplimientoEstado,
+  CumplimientoMiResumenDto,
+  CumplimientoHistoricoDiaDto,
 } from '../../cumplimiento-ssoma.dtos';
 import {
   AbrilPageHeaderComponent,
@@ -34,7 +38,7 @@ interface ProyectoSimple {
   projectDescription: string;
 }
 
-type Tab = 'resumen' | 'catalogo';
+type Tab = 'mio' | 'resumen' | 'historico' | 'catalogo';
 
 const FRECUENCIAS: { value: CumplimientoFrecuencia; label: string; icono: string }[] = [
   { value: 'diaria', label: 'Diaria', icono: 'ti-sun' },
@@ -47,6 +51,16 @@ const ROLES: { value: CumplimientoRol; label: string }[] = [
   { value: 'prevencionista', label: 'Prevencionista' },
   { value: 'ambos', label: 'Ambos' },
 ];
+
+function hoyIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function haceDiasIso(dias: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - dias);
+  return d.toISOString().slice(0, 10);
+}
 
 @Component({
   selector: 'app-cumplimiento-main',
@@ -73,7 +87,7 @@ export class CumplimientoMainComponent implements OnInit {
   readonly frecuencias = FRECUENCIAS;
   readonly roles = ROLES;
 
-  tab: Tab = 'resumen';
+  tab: Tab = 'mio';
 
   proyectos: ProyectoSimple[] = [];
   proyectoId: number | null = null;
@@ -87,14 +101,27 @@ export class CumplimientoMainComponent implements OnInit {
 
   get headerTabs(): AbrilPageTab[] {
     return [
+      { label: 'Mi Checklist', icono: 'ti-checkup-list', active: this.tab === 'mio' },
       { label: 'Por Proyecto', icono: 'ti-building', active: this.tab === 'resumen' },
+      { label: 'Histórico', icono: 'ti-chart-bar', active: this.tab === 'historico' },
       { label: 'Catálogo de Actividades', icono: 'ti-list-check', active: this.tab === 'catalogo' },
     ];
   }
 
   onTabClick(t: AbrilPageTab): void {
-    this.tab = t.label === 'Por Proyecto' ? 'resumen' : 'catalogo';
+    const map: { [k: string]: Tab } = {
+      'Mi Checklist': 'mio',
+      'Por Proyecto': 'resumen',
+      'Histórico': 'historico',
+      'Catálogo de Actividades': 'catalogo',
+    };
+    this.tab = map[t.label] ?? 'mio';
+    if (this.tab === 'mio' && !this.miResumen) this.loadMiResumen();
     if (this.tab === 'catalogo' && this.actividadesCatalogo.length === 0) this.loadCatalogo();
+    if (this.tab === 'historico' && this.proyectos.length > 0 && !this.historicoProyectoId) {
+      this.historicoProyectoId = this.proyectoId ?? this.proyectos[0].projectId;
+      this.loadHistorico();
+    }
     this.cdr.markForCheck();
   }
 
@@ -112,7 +139,7 @@ export class CumplimientoMainComponent implements OnInit {
         label: f.label,
         icono: f.icono,
         total: items.length,
-        cumplidas: items.filter((i) => i.cumplido).length,
+        cumplidas: items.filter((i) => i.estado === 'cumplido').length,
       };
     });
   }
@@ -128,6 +155,7 @@ export class CumplimientoMainComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProyectos();
+    this.loadMiResumen();
   }
 
   private loadProyectos(): void {
@@ -175,32 +203,152 @@ export class CumplimientoMainComponent implements OnInit {
     });
   }
 
-  toggleActividad(item: CumplimientoItemDto): void {
-    if (!this.proyectoId || this.guardandoActividadId === item.actividadId) return;
-    this.guardandoActividadId = item.actividadId;
-    this.cdr.markForCheck();
+  // Marca/desmarca una actividad: si ya estaba en ese estado, la regresa a "pendiente"
+  // (toggle) — así el mismo botón sirve para marcar y para deshacer un clic accidental.
+  marcarEstado(proyectoId: number, item: CumplimientoItemDto, estado: CumplimientoEstado): void {
+    if (this.guardandoActividadId === item.actividadId) return;
 
-    const nuevoEstado = !item.cumplido;
+    const aplicar = (nuevoEstado: CumplimientoEstado, motivo?: string) => {
+      this.guardandoActividadId = item.actividadId;
+      this.cdr.markForCheck();
+      this.svc
+        .marcar(proyectoId, item.actividadId, {
+          estado: nuevoEstado,
+          motivoNoAplica: motivo,
+          observacion: this.observacionTemp[item.actividadId] || undefined,
+        })
+        .subscribe({
+          next: (res) => {
+            item.estado = res.estado;
+            item.motivoNoAplica = res.motivoNoAplica;
+            item.fechaCumplimiento = res.fechaCumplimiento;
+            item.cumplidoPor = res.cumplidoPor;
+            item.observacion = res.observacion;
+            this.guardandoActividadId = null;
+            this.cdr.markForCheck();
+          },
+          error: (err: HttpErrorResponse) => {
+            this.guardandoActividadId = null;
+            this.errorSvc.handleError(err);
+            this.cdr.markForCheck();
+          },
+        });
+    };
+
+    const nuevoEstado: CumplimientoEstado = item.estado === estado ? 'pendiente' : estado;
+
+    if (nuevoEstado === 'no_aplica') {
+      Swal.fire({
+        icon: 'question',
+        title: 'No aplica',
+        input: 'text',
+        inputPlaceholder: 'Motivo (opcional, ej. etapa del proyecto aún no lo requiere)',
+        showCancelButton: true,
+        confirmButtonText: 'Marcar como no aplica',
+        cancelButtonText: 'Cancelar',
+      }).then((result) => {
+        if (!result.isConfirmed) return;
+        aplicar('no_aplica', (result.value as string | undefined)?.trim() || undefined);
+      });
+      return;
+    }
+
+    aplicar(nuevoEstado);
+  }
+
+  // Wrapper con `this` fijo, para usarlo como callback desde el ng-template compartido.
+  marcarEstadoWrapper = (proyectoId: number, item: CumplimientoItemDto, estado: CumplimientoEstado): void =>
+    this.marcarEstado(proyectoId, item, estado);
+
+  // ─── Mi Checklist (auto: rol + proyecto actual del usuario, pensado para celular) ──
+
+  miResumen: CumplimientoMiResumenDto | null = null;
+  loadingMio = false;
+  frecuenciaActivaMio: CumplimientoFrecuencia = 'diaria';
+
+  get actividadesMioPorFrecuencia(): CumplimientoItemDto[] {
+    return (this.miResumen?.actividades ?? []).filter((a) => a.frecuencia === this.frecuenciaActivaMio);
+  }
+
+  get frecuenciaChipsMio(): { key: CumplimientoFrecuencia; label: string; icono: string; total: number; cumplidas: number }[] {
+    const items = this.miResumen?.actividades ?? [];
+    return this.frecuencias.map((f) => {
+      const delGrupo = items.filter((a) => a.frecuencia === f.value);
+      return {
+        key: f.value,
+        label: f.label,
+        icono: f.icono,
+        total: delGrupo.length,
+        cumplidas: delGrupo.filter((i) => i.estado === 'cumplido').length,
+      };
+    });
+  }
+
+  setFrecuenciaMio(f: CumplimientoFrecuencia): void {
+    this.frecuenciaActivaMio = f;
+    this.cdr.markForCheck();
+  }
+
+  loadMiResumen(): void {
+    this.loadingMio = true;
+    this.cdr.markForCheck();
+    this.svc.getMiResumen().subscribe({
+      next: (res) => {
+        this.miResumen = res;
+        this.loadingMio = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingMio = false;
+        this.errorSvc.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  // ─── Histórico / indicadores ────────────────────────────────────────────────
+
+  historicoProyectoId: number | null = null;
+  historicoFrecuencia: CumplimientoFrecuencia = 'diaria';
+  historicoDesde = haceDiasIso(30);
+  historicoHasta = hoyIso();
+  historicoDias: CumplimientoHistoricoDiaDto[] = [];
+  loadingHistorico = false;
+
+  onHistoricoProyectoChange(): void {
+    this.loadHistorico();
+  }
+
+  setHistoricoFrecuencia(f: CumplimientoFrecuencia): void {
+    this.historicoFrecuencia = f;
+    this.historicoDesde = f === 'mensual' ? haceDiasIso(365) : f === 'semanal' ? haceDiasIso(90) : haceDiasIso(30);
+    this.loadHistorico();
+  }
+
+  loadHistorico(): void {
+    if (!this.historicoProyectoId) return;
+    this.loadingHistorico = true;
+    this.cdr.markForCheck();
     this.svc
-      .marcar(this.proyectoId, item.actividadId, {
-        cumplido: nuevoEstado,
-        observacion: this.observacionTemp[item.actividadId] || undefined,
-      })
+      .getHistorico(this.historicoProyectoId, this.historicoFrecuencia, this.historicoDesde, this.historicoHasta)
       .subscribe({
         next: (res) => {
-          item.cumplido = res.cumplido;
-          item.fechaCumplimiento = res.fechaCumplimiento;
-          item.cumplidoPor = res.cumplidoPor;
-          item.observacion = res.observacion;
-          this.guardandoActividadId = null;
+          this.historicoDias = [...res.dias].reverse();
+          this.loadingHistorico = false;
           this.cdr.markForCheck();
         },
         error: (err: HttpErrorResponse) => {
-          this.guardandoActividadId = null;
+          this.loadingHistorico = false;
           this.errorSvc.handleError(err);
           this.cdr.markForCheck();
         },
       });
+  }
+
+  get promedioHistorico(): number {
+    if (this.historicoDias.length === 0) return 0;
+    const suma = this.historicoDias.reduce((acc, d) => acc + d.porcentajeCumplimiento, 0);
+    return Math.round((suma / this.historicoDias.length) * 10) / 10;
   }
 
   // ─── Catálogo de actividades ────────────────────────────────────────────────
