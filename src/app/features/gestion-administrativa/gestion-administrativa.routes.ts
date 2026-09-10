@@ -7,7 +7,9 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
   { path: '', redirectTo: 'solicitud-salidas', pathMatch: 'full' },
   {
     // Configuración de Solicitud de Salidas: los correos que se ORIGINAN acá (el aviso al
-    // revisor y la confirmación al solicitante).
+    // revisor y la confirmación al solicitante), el plazo para rendir («Días reembolsables»)
+    // y los dos recordatorios de ese plazo. La única con tres secciones: el trabajador rinde
+    // desde esta pantalla, así que el plazo y sus avisos se administran junto a sus correos.
     // Va ANTES de 'solicitud-salidas' para que el segmento 'configuracion' no se lo coma
     // la pantalla.
     // Misma feature que ya protegía la sección Correos de Configuración: quien administra los
@@ -38,8 +40,8 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
   },
   {
     // Configuración de Mis Rendiciones: los correos que se ORIGINAN acá (enviar la planilla a
-    // primera revisión y avisar del S10) más el plazo para rendir («Días reembolsables»), que
-    // antes estaba hardcodeado en 7 días hábiles.
+    // primera revisión y avisar del S10). El plazo para rendir («Días reembolsables») estaba acá
+    // y se mudó a la configuración de Solicitud de Salidas, que es la pantalla donde se rinde.
     // Va ANTES de 'rendiciones' para que el segmento 'configuracion' no se lo coma
     // la pantalla.
     // Misma feature que ya protegía la sección Correos de Configuración: quien administra los

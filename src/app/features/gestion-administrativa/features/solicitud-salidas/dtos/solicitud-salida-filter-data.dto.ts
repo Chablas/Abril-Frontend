@@ -13,7 +13,7 @@ export interface MesRendicionDto {
   cantidad: number;
   /**
    * Último día para rendir ese mes (YYYY-MM-DD): el N.º día hábil del mes siguiente, con N
-   * configurable en Mis Rendiciones → Configuración → Días reembolsables. Solo se
+   * configurable en Solicitud de Salidas → Configuración → Días reembolsables. Solo se
    * ofrecen meses cuyo plazo sigue abierto, así que siempre es de hoy en adelante.
    */
   fechaLimite: string;

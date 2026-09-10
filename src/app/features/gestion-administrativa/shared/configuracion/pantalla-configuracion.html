@@ -8,8 +8,8 @@
 
 <section class="page-container px-3 py-4 flex flex-col gap-[16px] flex-1 min-h-0 overflow-auto">
 
-  <!-- Secciones exteriores. Solo Mis Rendiciones tiene más de una (Correos + Días
-       reembolsables); en el resto la tira no se dibuja. -->
+  <!-- Secciones exteriores. Solo Solicitud de Salidas tiene más de una (Correos + Días
+       reembolsables + Recordatorios); en el resto la tira no se dibuja. -->
   <app-section-tabs
     *ngIf="secciones.length > 1"
     class="shrink-0"
@@ -28,4 +28,13 @@
 
   <!-- SECCIÓN: Días reembolsables (el plazo para rendir un mes) -->
   <app-ga-dias-reembolsables *ngIf="mostrandoPlazo"></app-ga-dias-reembolsables>
+
+  <!-- SECCIÓN: Recordatorios (los dos avisos del plazo, con la misma matriz de destinatarios que
+       los correos: son correos, solo que los dispara el calendario y no una acción). -->
+  <app-ga-correos-config
+    *ngIf="mostrandoRecordatorios"
+    [pantalla]="pantalla"
+    [grupo]="'recordatorios'"
+    textoSinCorreos="No hay recordatorios configurados.">
+  </app-ga-correos-config>
 </section>

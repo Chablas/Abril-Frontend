@@ -3,18 +3,16 @@ import { Roles } from '../../../core/constants/roles';
 
 /** Pestañas del header de Gestión Administrativa — única fuente para todas sus páginas. */
 export const GESTION_ADMINISTRATIVA_TABS: AbrilPageTab[] = [
+  // Orden del flujo, alternando quién actúa en cada paso: el trabajador pide, el revisor decide,
+  // el trabajador rinde, el revisor revisa y firma, el ERP corrige lo observado y Tesorería paga.
+  // Delegación de Revisión va al final porque no es un paso del flujo sino quién lo atiende.
+  // Mismo orden que la lista del sidebar (NavigationService) — las dos barras no pueden discrepar.
   { label: 'Solicitud de Salidas',   icono: 'ti-file-text',  route: '/gestion-administrativa/solicitud-salidas',   featureKey: 'gestion-administrativa.solicitud-salidas' },
-  // Va justo después de Solicitud de Salidas porque es su continuación: la rendición se crea ahí
-  // y todo lo que sigue (Consolidado del S10, aviso al revisor, reembolso) se hace acá.
-  { label: 'Mis Rendiciones',        icono: 'ti-receipt',    route: '/gestion-administrativa/rendiciones',         featureKey: 'gestion-administrativa.rendiciones' },
   { label: 'Gestión de Salidas',     icono: 'ti-briefcase',  route: '/gestion-administrativa/gestion-salidas',     featureKey: 'gestion-administrativa.gestion-salidas' },
-  // El ciclo del revisor sigue el orden del flujo: Gestión de Salidas llega hasta rendir, Gestión
-  // de Rendiciones va del Consolidado del S10 a la firma, y Reembolsos es el pago de Tesorería.
+  { label: 'Mis Rendiciones',        icono: 'ti-receipt',    route: '/gestion-administrativa/rendiciones',         featureKey: 'gestion-administrativa.rendiciones' },
   { label: 'Gestión de Rendiciones', icono: 'ti-checklist',  route: '/gestion-administrativa/gestion-rendiciones', featureKey: 'gestion-administrativa.gestion-rendiciones' },
-  { label: 'Reembolsos',             icono: 'ti-cash',       route: '/gestion-administrativa/reembolsos',          featureKey: 'gestion-administrativa.reembolsos' },
-  // La bandeja del Coordinador ERP: el paso del medio de la subsanación. Va después de las tres
-  // del revisor porque solo aparece cuando algo volvió observado, no en el camino feliz.
   { label: 'Correcciones S10',       icono: 'ti-file-alert', route: '/gestion-administrativa/correcciones-s10',    featureKey: 'gestion-administrativa.correcciones-s10' },
+  { label: 'Reembolsos',             icono: 'ti-cash',       route: '/gestion-administrativa/reembolsos',          featureKey: 'gestion-administrativa.reembolsos' },
   { label: 'Delegación de Revisión', icono: 'ti-user-check', route: '/gestion-administrativa/delegacion-revision', featureKey: 'gestion-administrativa.delegacion-revision' },
   // La pestaña se abre también por ROL y no solo por featureKeys: desde que existe la sección
   // "Tu firma" (que es de todo USUARIO DE ABRIL, no de una funcionalidad) la pantalla siempre tiene
