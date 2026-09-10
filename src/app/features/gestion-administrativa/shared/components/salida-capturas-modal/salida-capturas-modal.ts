@@ -42,6 +42,11 @@ interface CapturaFila {
  * Las capturas de movilidad de una salida, trayecto por trayecto: las que ya están cargadas —con
  * su monto y su imagen editables en el sitio— y las filas para agregar nuevas.
  *
+ * Todo se guarda con UN solo botón al pie: el modal arma el sustento completo de la salida y lo
+ * manda en una sola llamada (una sola resolución de la carpeta de SharePoint y un solo
+ * SaveChanges), en vez de persistir fila por fila. La única excepción es quitar una captura, que
+ * es destructivo, se confirma aparte y por eso se aplica al toque.
+ *
  * Vive en el shared del módulo porque lo abren dos pantallas, en los dos momentos en que las
  * capturas se pueden tocar:
  *
@@ -87,8 +92,8 @@ export class SalidaCapturasModal implements OnInit, OnDestroy {
   /** Map trayectoId → filas nuevas (cada trayecto tiene su propio set de filas en edición). */
   pendientesByTrayecto = new Map<number, PendienteRow[]>();
 
-  /** id de la captura que se está guardando o quitando, para bloquear sus botones. */
-  guardandoCapturaId: number | null = null;
+  /** True mientras se está guardando el lote o quitando una captura: bloquea toda la edición. */
+  guardando = false;
 
   constructor(
     private service: SalidaDetalleService,
@@ -121,16 +126,7 @@ export class SalidaCapturasModal implements OnInit, OnDestroy {
     this.loader.show();
     this.service.getDetalle(this.solicitudId).subscribe({
       next: (data) => {
-        this.detalle = data;
-        this.revocarPreviews();
-
-        data.trayectos.forEach((t) => {
-          this.capturasByTrayecto.set(t.id, t.capturas.map((c) => this.filaDe(c)));
-          // Antes de rendir se arranca con una fila lista para cargar; al subsanar, con ninguna
-          // (las filas nuevas se piden con "Agregar otra captura").
-          this.pendientesByTrayecto.set(t.id, this.subsanacion ? [] : [this.filaVacia()]);
-        });
-
+        this.aplicarDetalle(data);
         this.loader.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -138,6 +134,19 @@ export class SalidaCapturasModal implements OnInit, OnDestroy {
         this.errorService.handleError(err);
         this.close.emit(this.algoCambio);
       },
+    });
+  }
+
+  /** Repinta el modal con el detalle que devolvió el backend y deja la edición en cero. */
+  private aplicarDetalle(data: SolicitudSalidaDetalleDto): void {
+    this.detalle = data;
+    this.revocarPreviews();
+
+    data.trayectos.forEach((t) => {
+      this.capturasByTrayecto.set(t.id, t.capturas.map((c) => this.filaDe(c)));
+      // Antes de rendir se arranca con una fila lista para cargar; al subsanar, con ninguna
+      // (las filas nuevas se piden con "Agregar otra captura").
+      this.pendientesByTrayecto.set(t.id, this.subsanacion ? [] : [this.filaVacia()]);
     });
   }
 
@@ -190,48 +199,12 @@ export class SalidaCapturasModal implements OnInit, OnDestroy {
     return fila.file !== null || fila.monto !== fila.captura.monto;
   }
 
-  puedeGuardarCaptura(fila: CapturaFila): boolean {
-    return this.guardandoCapturaId === null
-        && fila.monto !== null
-        && fila.monto >= 0
-        && this.hayCambios(fila);
-  }
-
   /**
-   * Guarda la fila: el monto y, si se eligió una, la imagen nueva. Se pinta sobre la captura que
-   * ya está en pantalla con lo que responde el backend, así el total del trayecto y la miniatura
-   * se actualizan sin recargar el detalle entero.
+   * Quitar una captura sí se aplica al toque: es destructivo, ya se confirma con su propio aviso
+   * y dejarlo pendiente del botón del pie obligaría a poder deshacerlo.
    */
-  guardarCaptura(fila: CapturaFila): void {
-    if (!this.puedeGuardarCaptura(fila)) return;
-
-    this.guardandoCapturaId = fila.captura.id;
-    this.service.actualizarCaptura(fila.captura.id, fila.monto as number, fila.file).subscribe({
-      next: (actualizada) => {
-        if (fila.preview) URL.revokeObjectURL(fila.preview);
-        fila.captura = actualizada;
-        fila.monto = actualizada.monto;
-        fila.file = null;
-        fila.preview = null;
-
-        this.algoCambio = true;
-        this.guardandoCapturaId = null;
-        Swal.fire({
-          icon: 'success',
-          title: 'Captura actualizada',
-          timer: 1400,
-          showConfirmButton: false,
-        });
-      },
-      error: (err: HttpErrorResponse) => {
-        this.guardandoCapturaId = null;
-        this.errorService.handleError(err);
-      },
-    });
-  }
-
   async quitarCaptura(trayectoId: number, fila: CapturaFila): Promise<void> {
-    if (this.guardandoCapturaId !== null) return;
+    if (this.guardando) return;
 
     const confirm = await Swal.fire({
       icon: 'question',
@@ -244,17 +217,17 @@ export class SalidaCapturasModal implements OnInit, OnDestroy {
     });
     if (!confirm.isConfirmed) return;
 
-    this.guardandoCapturaId = fila.captura.id;
+    this.guardando = true;
     this.service.eliminarCaptura(fila.captura.id).subscribe({
       next: () => {
         if (fila.preview) URL.revokeObjectURL(fila.preview);
         const filas = this.capturasDe(trayectoId).filter((f) => f !== fila);
         this.capturasByTrayecto.set(trayectoId, filas);
         this.algoCambio = true;
-        this.guardandoCapturaId = null;
+        this.guardando = false;
       },
       error: (err: HttpErrorResponse) => {
-        this.guardandoCapturaId = null;
+        this.guardando = false;
         this.errorService.handleError(err);
       },
     });
@@ -295,53 +268,123 @@ export class SalidaCapturasModal implements OnInit, OnDestroy {
     input.value = '';
   }
 
-  filasValidasDe(trayectoId: number): PendienteRow[] {
-    return this.pendientesDe(trayectoId).filter(
-      (r) => r.file !== null && r.monto !== null && r.monto >= 0,
-    );
-  }
-
-  puedeSubirTrayecto(trayectoId: number): boolean {
-    const rows = this.pendientesDe(trayectoId);
-    if (rows.length === 0) return false;
-    // Todas las filas deben estar completas (file + monto), AL MENOS UNA debe estar lista para subir
-    const completas = rows.filter((r) => r.file !== null && r.monto !== null && r.monto >= 0);
-    return completas.length === rows.length;
-  }
-
   /** Total del trayecto sobre los montos GUARDADOS: es lo que va a la planilla. */
   totalCapturasTrayecto(t: TrayectoDetalleDto): number {
     return this.capturasDe(t.id).reduce((acc, f) => acc + (f.captura.monto || 0), 0);
   }
 
-  subirTrayecto(trayectoId: number): void {
-    if (!this.puedeSubirTrayecto(trayectoId)) return;
-    const rows = this.pendientesDe(trayectoId);
-    const items = rows.map((r) => ({ file: r.file as File, monto: r.monto as number }));
+  // ── Guardar todo el modal de una vez ───────────────────────────────────
 
+  /** Fila nueva que el usuario nunca tocó: la que aparece sola en cada trayecto. Se ignora. */
+  private filaNuevaVacia(r: PendienteRow): boolean {
+    return r.file === null && r.monto === null;
+  }
+
+  /** Fila nueva lista para subir: tiene imagen y un monto válido. */
+  private filaNuevaCompleta(r: PendienteRow): boolean {
+    return r.file !== null && r.monto !== null && r.monto >= 0;
+  }
+
+  /** Capturas nuevas de todos los trayectos, listas para subir. */
+  private get nuevasParaSubir(): { trayectoId: number; file: File; monto: number }[] {
+    const out: { trayectoId: number; file: File; monto: number }[] = [];
+    this.pendientesByTrayecto.forEach((rows, trayectoId) => {
+      rows.forEach((r) => {
+        if (this.filaNuevaCompleta(r)) {
+          out.push({ trayectoId, file: r.file as File, monto: r.monto as number });
+        }
+      });
+    });
+    return out;
+  }
+
+  /** Capturas ya subidas con algo distinto de lo guardado (monto, imagen o las dos). */
+  private get edicionesParaGuardar(): { capturaId: number; monto: number; file: File | null }[] {
+    const out: { capturaId: number; monto: number; file: File | null }[] = [];
+    this.capturasByTrayecto.forEach((filas) => {
+      filas.forEach((f) => {
+        if (this.hayCambios(f)) {
+          out.push({ capturaId: f.captura.id, monto: f.monto as number, file: f.file });
+        }
+      });
+    });
+    return out;
+  }
+
+  /** Una fila nueva a medio llenar (imagen sin monto, o monto sin imagen) frena el guardado. */
+  private get hayFilasIncompletas(): boolean {
+    let incompleta = false;
+    this.pendientesByTrayecto.forEach((rows) => {
+      rows.forEach((r) => {
+        if (!this.filaNuevaVacia(r) && !this.filaNuevaCompleta(r)) incompleta = true;
+      });
+    });
+    return incompleta;
+  }
+
+  /** Una captura ya subida a la que le borraron el monto (o le pusieron uno negativo). */
+  private get hayMontoInvalido(): boolean {
+    let invalido = false;
+    this.capturasByTrayecto.forEach((filas) => {
+      filas.forEach((f) => {
+        if (this.hayCambios(f) && (f.monto === null || f.monto < 0)) invalido = true;
+      });
+    });
+    return invalido;
+  }
+
+  /** Cuántas cosas se van a escribir: capturas nuevas + capturas corregidas. */
+  get totalPendientes(): number {
+    return this.nuevasParaSubir.length + this.edicionesParaGuardar.length;
+  }
+
+  get puedeGuardar(): boolean {
+    if (this.guardando) return false;
+    if (this.hayFilasIncompletas || this.hayMontoInvalido) return false;
+    return this.totalPendientes > 0;
+  }
+
+  /** Por qué el botón está apagado, cuando el motivo no se ve solo. Null si no hay nada que decir. */
+  get aviso(): string | null {
+    if (this.hayFilasIncompletas) return 'Hay capturas nuevas sin imagen o sin monto.';
+    if (this.hayMontoInvalido) return 'Hay capturas sin monto.';
+    return null;
+  }
+
+  get textoBotonGuardar(): string {
+    const n = this.totalPendientes;
+    return n === 0 ? 'Guardar cambios' : `Guardar ${n} cambio${n === 1 ? '' : 's'}`;
+  }
+
+  /**
+   * Manda el modal entero en una sola llamada: las capturas nuevas de todos los trayectos y los
+   * montos e imágenes corregidos de las que ya estaban. El backend responde con el detalle ya
+   * actualizado, así que la pantalla se repinta sin volver a pedirlo.
+   */
+  guardarTodo(): void {
+    if (!this.puedeGuardar) return;
+
+    const nuevas = this.nuevasParaSubir;
+    const ediciones = this.edicionesParaGuardar;
+    const total = nuevas.length + ediciones.length;
+
+    this.guardando = true;
     this.loader.show();
-    this.service.uploadCapturasToTrayecto(trayectoId, items).subscribe({
-      next: (creadas) => {
+    this.service.guardarCapturas(this.solicitudId, nuevas, ediciones).subscribe({
+      next: (detalle) => {
         this.algoCambio = true;
-        // Las nuevas se suman a las que ya estaban, cada una con su edición lista.
-        this.capturasByTrayecto.set(trayectoId, [
-          ...this.capturasDe(trayectoId),
-          ...creadas.map((c) => this.filaDe(c)),
-        ]);
-
-        // Reset filas de ese trayecto: al subsanar queda sin filas, antes de rendir con una lista.
-        rows.forEach((r) => { if (r.preview) URL.revokeObjectURL(r.preview); });
-        this.pendientesByTrayecto.set(trayectoId, this.subsanacion ? [] : [this.filaVacia()]);
-
+        this.aplicarDetalle(detalle);
+        this.guardando = false;
         this.loader.hide();
         Swal.fire({
           icon: 'success',
-          title: `${creadas.length} captura(s) subida(s)`,
+          title: `${total} cambio${total === 1 ? '' : 's'} guardado${total === 1 ? '' : 's'}`,
           timer: 1800,
           showConfirmButton: false,
         });
       },
       error: (err: HttpErrorResponse) => {
+        this.guardando = false;
         this.loader.hide();
         this.errorService.handleError(err);
       },

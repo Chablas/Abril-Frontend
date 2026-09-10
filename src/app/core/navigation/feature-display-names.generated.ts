@@ -68,6 +68,7 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "evaluaciones.ver-contratistas": "Ver eval. contratistas",
   "evaluaciones.ver-supervisores-contratista": "Ver eval. supervisores SSOMA",
   "gestion-administrativa.config.carpeta-adjuntos": "Carpeta Adjuntos",
+  "gestion-administrativa.correcciones-s10": "Correcciones S10",
   "gestion-administrativa.config.correos": "Correos",
   "gestion-administrativa.config.lugares": "Lugares",
   "gestion-administrativa.config.motivos": "Motivos",

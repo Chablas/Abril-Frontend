@@ -132,13 +132,13 @@
             placeholder="nombre.apellido@abril.pe"
           />
           <span *ngIf="verificandoEmail" class="dni-status checking">Verificando en el directorio de Abril…</span>
-          <span *ngIf="!verificandoEmail && emailVerificadoNombre" class="dni-status verified">
-            ✓ {{ emailVerificadoNombre }}
+          <span *ngIf="!verificandoEmail && emailValido" class="dni-status verified">
+            ✓ {{ emailValidoTexto }}
           </span>
           <span *ngIf="!verificandoEmail && emailError" class="field-error">{{ emailError }}</span>
           <span
             class="field-hint"
-            *ngIf="!verificandoEmail && !emailError && !emailVerificadoNombre"
+            *ngIf="!verificandoEmail && !emailError && !emailValido"
           >
             Opcional: solo si el trabajador tiene cuenta de Abril.
           </span>
@@ -155,8 +155,8 @@
             placeholder="nombre.apellido@abril.pe"
           />
           <span *ngIf="verificandoEmail" class="dni-status checking">Verificando en el directorio de Abril…</span>
-          <span *ngIf="!verificandoEmail && emailVerificadoNombre" class="dni-status verified">
-            ✓ {{ emailVerificadoNombre }}
+          <span *ngIf="!verificandoEmail && emailValido" class="dni-status verified">
+            ✓ {{ emailValidoTexto }}
           </span>
           <span *ngIf="!verificandoEmail && emailError" class="field-error">{{ emailError }}</span>
         </div>

@@ -36,6 +36,12 @@
       <span class="resumen-card__value">{{ resumen.observadas }}</span>
       <span class="resumen-card__hint">Requieren subsanación</span>
     </div>
+    <!-- Va aparte de "Observadas" a propósito: acá no te toca nada, está en manos del ERP. -->
+    <div class="resumen-card resumen-card--erp">
+      <span class="resumen-card__label">En el ERP</span>
+      <span class="resumen-card__value">{{ resumen.enErp }}</span>
+      <span class="resumen-card__hint">Esperando la corrección del S10</span>
+    </div>
   </div>
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
@@ -260,6 +266,7 @@
   [subsanando]="detalleSubsanando"
   [correoPrimeraRevision]="correoPrimeraRevision"
   [correoS10Revisor]="correoS10Revisor"
+  [correoCorreccionS10]="correoCorreccionS10"
   (close)="cerrarDetalle($event)" />
 
 <!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->

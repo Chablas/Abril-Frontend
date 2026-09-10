@@ -65,10 +65,43 @@
     </div>
 
     <!-- Observación del rechazo: es lo único que hay que leer para saber qué corregir. -->
-    <div *ngIf="d.estadoReembolso === 'Rechazado' && d.observacionReembolso"
+    <div *ngIf="d.estadoReembolso === 'Observado' && d.observacionReembolso"
          class="border rounded-lg p-3 text-sm"
          style="border-color:#FCA5A5;background:#FEF2F2;color:#991B1B">
       <span class="font-semibold">Observación:</span> {{ d.observacionReembolso }}
+    </div>
+
+    <!-- Corrección con el ERP: dice de quién es la pelota. Solo aparece cuando hay una en curso,
+         que es el caso excepcional. -->
+    <div *ngIf="d.correccionS10 as c"
+         class="border rounded-lg p-3 text-sm flex flex-col gap-1.5"
+         [style.border-color]="correccionS10Colors(c.esperandoErp).bg"
+         [style.background]="correccionS10Colors(c.esperandoErp).bg + '55'">
+      <div class="flex flex-wrap items-center gap-2">
+        <app-status-badge
+          [text]="c.estado"
+          [bgColor]="correccionS10Colors(c.esperandoErp).bg"
+          [textColor]="correccionS10Colors(c.esperandoErp).text" />
+        <span class="text-[11px] text-gray-500">
+          Solicitada el {{ c.solicitadaAt | date:'dd/MM/yyyy HH:mm' }}
+          <ng-container *ngIf="c.numeroGuia"> · guía {{ c.numeroGuia }}</ng-container>
+        </span>
+      </div>
+
+      <div style="color:var(--color-abril-body)">
+        <span class="font-semibold">Lo que pediste:</span> {{ c.motivo }}
+      </div>
+
+      <div *ngIf="c.atendidaAt" style="color:var(--color-abril-body)">
+        <span class="font-semibold">Atendida</span>
+        <ng-container *ngIf="c.atendidaPor"> por {{ c.atendidaPor }}</ng-container>
+        el {{ c.atendidaAt | date:'dd/MM/yyyy HH:mm' }}<ng-container *ngIf="c.comentarioAtencion">:
+        {{ c.comentarioAtencion }}</ng-container>
+      </div>
+
+      <div *ngIf="c.guiaAnulada" class="font-semibold" style="color:#991B1B">
+        El registro se anuló: genera una guía nueva en el S10 — la anterior ya no se puede usar.
+      </div>
     </div>
 
     <!-- ── Documentos ───────────────────────────────────────────────────── -->
@@ -166,7 +199,7 @@
                   [text]="reembolsoTexto(s.estadoReembolso)"
                   [bgColor]="reembolsoColors(s.estadoReembolso).bg"
                   [textColor]="reembolsoColors(s.estadoReembolso).text"
-                  [title]="s.estadoReembolso === 'Rechazado' && s.observacionReembolso
+                  [title]="s.estadoReembolso === 'Observado' && s.observacionReembolso
                     ? 'Observación: ' + s.observacionReembolso
                     : null" />
               </td>
@@ -262,6 +295,23 @@
         onmouseover="this.style.background='var(--color-abril-standard-hover)'"
         onmouseout="this.style.background='var(--color-abril-standard)'">
         {{ d.consolidadoS10 ? 'Reemplazar Consolidado del S10' : 'Adjuntar Consolidado del S10' }}
+      </button>
+
+      <!-- El otro camino ante una observación: cuando el arreglo está dentro del S10 y no lo
+           puedes hacer tú. Solo con el reembolso observado y sin otra corrección en curso. -->
+      <button
+        *ngIf="d.puedeSolicitarCorreccion"
+        type="button"
+        (click)="solicitarCorreccion()"
+        title="Pídele al Coordinador ERP que corrija el registro en el S10"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors"
+        style="background:#FFFFFF;color:#C2410C;border:1px solid #C2410C">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M11.5 15h-5a4 4 0 0 1 0-8h1"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12.5 9h5a4 4 0 0 1 0 8h-1"/>
+          <path stroke-linecap="round" d="M8 11h8"/>
+        </svg>
+        Solicitar corrección al ERP
       </button>
     </div>
 

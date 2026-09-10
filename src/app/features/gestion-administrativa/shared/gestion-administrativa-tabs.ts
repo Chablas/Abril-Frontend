@@ -12,6 +12,9 @@ export const GESTION_ADMINISTRATIVA_TABS: AbrilPageTab[] = [
   // de Rendiciones va del Consolidado del S10 a la firma, y Reembolsos es el pago de Tesorería.
   { label: 'Gestión de Rendiciones', icono: 'ti-checklist',  route: '/gestion-administrativa/gestion-rendiciones', featureKey: 'gestion-administrativa.gestion-rendiciones' },
   { label: 'Reembolsos',             icono: 'ti-cash',       route: '/gestion-administrativa/reembolsos',          featureKey: 'gestion-administrativa.reembolsos' },
+  // La bandeja del Coordinador ERP: el paso del medio de la subsanación. Va después de las tres
+  // del revisor porque solo aparece cuando algo volvió observado, no en el camino feliz.
+  { label: 'Correcciones S10',       icono: 'ti-file-alert', route: '/gestion-administrativa/correcciones-s10',    featureKey: 'gestion-administrativa.correcciones-s10' },
   { label: 'Delegación de Revisión', icono: 'ti-user-check', route: '/gestion-administrativa/delegacion-revision', featureKey: 'gestion-administrativa.delegacion-revision' },
   // La pestaña se abre también por ROL y no solo por featureKeys: desde que existe la sección
   // "Tu firma" (que es de todo USUARIO DE ABRIL, no de una funcionalidad) la pantalla siempre tiene

@@ -176,7 +176,7 @@ export class GestionSalidas implements OnInit {
     { value: null,        label: 'Todos' },
     { value: 'Pendiente', label: 'Por revisar' },
     { value: 'Aprobado',  label: 'Aprobados' },
-    { value: 'Rechazado', label: 'Rechazados' },
+    { value: 'Observado', label: 'Observados' },
     { value: 'Firmado',   label: 'Firmados' },
     { value: 'Proceder con el reembolso', label: 'En Tesorería' },
     { value: 'Pagado',    label: 'Pagados' },

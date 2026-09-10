@@ -118,7 +118,7 @@ export class Reembolsos implements OnInit, OnDestroy {
   /** Las dos vistas de Tesorería: lo que hay por hacer y lo que ya se pagó. */
   readonly vistas: SectionTab[] = [
     { id: 'bandeja',     label: 'Reembolsos por pagar' },
-    { id: 'seguimiento', label: 'Seguimiento de pagos' },
+    { id: 'seguimiento', label: 'Seguimiento de Tesorería' },
   ];
   vista = 'bandeja';
 

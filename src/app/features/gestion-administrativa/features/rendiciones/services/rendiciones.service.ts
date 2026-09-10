@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import {
+  CorreccionS10Dto,
   RendicionDetalleDto,
   RendicionFilterDataDto,
   RendicionListResultDto,
@@ -102,6 +103,19 @@ export class RendicionesService {
     return this.http.patch<{ message: string }>(
       `${this.apiUrl}/${rendicionId}/notificar-revisor`,
       {},
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Le pide al Coordinador ERP que corrija el Consolidado del S10 (RG-21). Es el camino
+   * alternativo a recargarlo cuando el arreglo tiene que hacerse dentro del S10. El motivo es
+   * obligatorio: sin el, el backend responde 400.
+   */
+  solicitarCorreccionS10(rendicionId: number, motivo: string): Observable<CorreccionS10Dto> {
+    return this.http.post<CorreccionS10Dto>(
+      `${this.apiUrl}/${rendicionId}/correccion-s10`,
+      { motivo },
       { headers: this.headers },
     );
   }

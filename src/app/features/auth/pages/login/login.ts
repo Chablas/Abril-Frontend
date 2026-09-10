@@ -186,9 +186,16 @@ export class Login implements OnInit {
       // en un HttpErrorResponse el `message` de Angular es el genérico "Http failure response
       // for ...: 403 Forbidden", que no le dice nada al usuario. `err.message` cubre los errores
       // de MSAL, que sí llegan como Error con mensaje propio.
+      //
+      // El 403 del backend no es una falla del sistema: son las dos reglas de acceso del login
+      // (cuenta fuera del tenant @abril.pe y cuenta sin ficha de trabajador con el correo
+      // corporativo cargado). Las resuelve el propio trabajador pidiéndole el dato a GTH, así
+      // que sale con el ícono naranja de aviso y no con la equis roja, que acá haría pensar
+      // que la intranet se rompió.
+      const accesoDenegado = err?.status === 403;
       Swal.fire({
-        icon: 'error',
-        title: 'Error',
+        icon: accesoDenegado ? 'warning' : 'error',
+        title: accesoDenegado ? 'Acceso no habilitado' : 'Error',
         text:
           err?.error?.message ?? err?.message ?? 'No se pudo iniciar sesión con Microsoft.',
       });

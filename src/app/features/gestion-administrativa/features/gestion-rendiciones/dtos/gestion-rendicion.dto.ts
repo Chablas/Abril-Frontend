@@ -150,6 +150,6 @@ export interface PrimeraRevisionAccionDto {
 export interface ReembolsoAccionDto {
   rendicionIds: number[];
   solicitudIds: number[];
-  /** Obligatoria al rechazar: es lo único que el trabajador va a leer. */
+  /** Obligatoria al observar: es lo único que el trabajador va a leer. */
   observacion?: string | null;
 }

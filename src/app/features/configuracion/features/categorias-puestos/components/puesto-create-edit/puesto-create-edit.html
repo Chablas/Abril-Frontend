@@ -51,7 +51,7 @@
     <div class="flex flex-col gap-[12px]">
       <app-search-select
         *ngFor="let level of destino.levels; let i = index"
-        [label]="i === 0 ? 'Área a la que irá el postulante' : 'Subárea'"
+        [label]="i === 0 ? 'Área a la que pertenece el trabajador' : 'Subárea'"
         [options]="level.options"
         valueField="areaScopeId"
         displayField="name"

@@ -2,10 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
-import {
-  SolicitudSalidaCapturaDto,
-  SolicitudSalidaDetalleDto,
-} from '../dtos/salida-detalle.dto';
+import { SolicitudSalidaDetalleDto } from '../dtos/salida-detalle.dto';
 
 /**
  * El detalle de una salida y la edición de sus capturas de movilidad. Vive en el shared del módulo
@@ -33,37 +30,41 @@ export class SalidaDetalleService {
     });
   }
 
-  /** Sube capturas (imagen + monto) asociadas a un trayecto. */
-  uploadCapturasToTrayecto(
-    trayectoId: number,
-    items: { file: File; monto: number }[],
-  ): Observable<SolicitudSalidaCapturaDto[]> {
-    const formData = new FormData();
-    items.forEach((it) => {
-      formData.append('files', it.file, it.file.name);
-      formData.append('montos', it.monto.toString());
-    });
-    return this.http.post<SolicitudSalidaCapturaDto[]>(
-      `${this.apiUrl}/trayectos/${trayectoId}/capturas`,
-      formData,
-      { headers: this.headers },
-    );
-  }
-
   /**
-   * Guarda los cambios de una captura ya subida: su monto y, si se pasa `file`, además reemplaza
-   * su imagen. Es una sola llamada porque en la pantalla es un solo botón "Guardar": lo que el
-   * trabajador corrige es la fila, no un campo suelto. Devuelve la captura ya actualizada para
-   * repintar la miniatura sin recargar el detalle.
+   * Guarda de un saque todo lo que se tocó en el modal de capturas: las capturas nuevas de
+   * cualquiera de los trayectos de la salida y los montos e imágenes que se cambiaron en las que
+   * ya estaban. Va en una sola llamada porque en la pantalla es un solo botón "Guardar" — y así
+   * el backend resuelve la carpeta de SharePoint una vez para todo el lote en vez de una por fila.
+   *
+   * Las listas viajan en paralelo. La imagen de una edición es opcional, así que cada archivo de
+   * reemplazo lleva aparte su posición dentro de `ediciones`.
+   *
+   * Devuelve el detalle ya actualizado, para repintar el modal sin pedirlo de nuevo.
    */
-  actualizarCaptura(
-    capturaId: number, monto: number, file?: File | null,
-  ): Observable<SolicitudSalidaCapturaDto> {
+  guardarCapturas(
+    solicitudId: number,
+    nuevas: { trayectoId: number; file: File; monto: number }[],
+    ediciones: { capturaId: number; monto: number; file: File | null }[],
+  ): Observable<SolicitudSalidaDetalleDto> {
     const formData = new FormData();
-    formData.append('monto', String(monto));
-    if (file) formData.append('file', file, file.name);
-    return this.http.patch<SolicitudSalidaCapturaDto>(
-      `${this.apiUrl}/capturas/${capturaId}`,
+
+    nuevas.forEach((n) => {
+      formData.append('nuevasTrayectoIds', String(n.trayectoId));
+      formData.append('nuevasMontos', String(n.monto));
+      formData.append('nuevasFiles', n.file, n.file.name);
+    });
+
+    ediciones.forEach((e, i) => {
+      formData.append('editIds', String(e.capturaId));
+      formData.append('editMontos', String(e.monto));
+      if (e.file) {
+        formData.append('editFileIndices', String(i));
+        formData.append('editFiles', e.file, e.file.name);
+      }
+    });
+
+    return this.http.post<SolicitudSalidaDetalleDto>(
+      `${this.apiUrl}/${solicitudId}/capturas`,
       formData,
       { headers: this.headers },
     );

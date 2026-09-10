@@ -20,6 +20,7 @@ export class NavigationService {
         { label: 'Gestión de Salidas',   route: '/gestion-administrativa/gestion-salidas',   featureKey: 'gestion-administrativa.gestion-salidas' },
         { label: 'Gestión de Rendiciones', route: '/gestion-administrativa/gestion-rendiciones', featureKey: 'gestion-administrativa.gestion-rendiciones' },
         { label: 'Reembolsos',           route: '/gestion-administrativa/reembolsos',        featureKey: 'gestion-administrativa.reembolsos' },
+        { label: 'Correcciones S10',     route: '/gestion-administrativa/correcciones-s10',  featureKey: 'gestion-administrativa.correcciones-s10' },
         { label: 'Delegación de Revisión', route: '/gestion-administrativa/delegacion-revision', featureKey: 'gestion-administrativa.delegacion-revision' },
       ],
       groups: [

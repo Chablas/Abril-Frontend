@@ -87,15 +87,16 @@
     <button
       type="button"
       abrilBulkAction="danger"
-      (click)="rechazarBulk()"
+      (click)="observarBulk()"
       [disabled]="!puedeDecidir"
       [title]="decisionBloqueada
         ? 'No puedes decidir el reembolso de tus propias salidas — deselecciona esas planillas'
         : 'Se te pedirá una observación para que el trabajador sepa qué corregir'">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
-        <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
+        <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
       </svg>
-      Rechazar reembolso<span *ngIf="puedeDecidir"> ({{ selectedPorDecidir.length }})</span>
+      Observar reembolso<span *ngIf="puedeDecidir"> ({{ selectedPorDecidir.length }})</span>
     </button>
   </div>
 
@@ -274,7 +275,7 @@
                    puede. Solo con la primera revisión aprobada, y hasta que el reembolso se decida. -->
               <button
                 *ngIf="r.estadoPrimeraRevision === 'Aprobada'
-                    && (r.estadoReembolso === 'Pendiente' || r.estadoReembolso === 'Rechazado')"
+                    && (r.estadoReembolso === 'Pendiente' || r.estadoReembolso === 'Observado')"
                 type="button"
                 (click)="abrirConsolidado(r, $event)"
                 [title]="r.consolidadoS10 ? 'Reemplazar el Consolidado del S10' : 'Adjuntar el Consolidado del S10 en nombre del trabajador'"
@@ -291,7 +292,7 @@
 
               <span *ngIf="!r.porPrimeraRevision
                         && !(r.estadoPrimeraRevision === 'Aprobada'
-                             && (r.estadoReembolso === 'Pendiente' || r.estadoReembolso === 'Rechazado'))"
+                             && (r.estadoReembolso === 'Pendiente' || r.estadoReembolso === 'Observado'))"
                     class="text-gray-300">—</span>
             </div>
           </td>

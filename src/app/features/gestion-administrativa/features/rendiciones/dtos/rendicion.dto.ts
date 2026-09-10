@@ -1,9 +1,13 @@
 import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
-import { EstadoPrimeraRevision, EstadoReembolso } from '../../../shared/dtos/rendicion-shared.dto';
+import {
+  CorreccionS10Dto,
+  EstadoPrimeraRevision,
+  EstadoReembolso,
+} from '../../../shared/dtos/rendicion-shared.dto';
 
 // Los dos ejes de estado de una planilla salen del shared del módulo: son los mismos que muestran
 // Gestión de Rendiciones y Reembolsos, y repetir la unión acá la dejaba desactualizada.
-export type { EstadoPrimeraRevision, EstadoReembolso };
+export type { CorreccionS10Dto, EstadoPrimeraRevision, EstadoReembolso };
 
 /**
  * Una planilla de rendición del trabajador: un PDF que agrupa N salidas y equivale a un registro
@@ -66,12 +70,26 @@ export interface RendicionListItemDto {
   estadoReembolso: EstadoReembolso;
   /** True si las salidas propias no están todas en el mismo estado. */
   reembolsoMixto: boolean;
-  /** Lo que el jefe observó al rechazar: es lo que hay que subsanar. */
+  /** Lo que el jefe escribió al observar: es lo que hay que subsanar. */
   observacionReembolso: string | null;
   revisorNotificadoAt: string | null;
   /** True con la primera revisión aprobada y el reembolso abierto (RG-35). */
   puedeAdjuntarConsolidado: boolean;
   puedeNotificarRevisor: boolean;
+
+  // ── Corrección con el Coordinador ERP ──────────────────────────────────
+  // El camino alternativo cuando la jefatura observa y el arreglo tiene que hacerse dentro del S10.
+
+  /**
+   * La solicitud de corrección viva de esta planilla. Null en el caso normal: la mayoría nunca
+   * pasa por el ERP. Cuando está, su estado dice de quién es la pelota.
+   */
+  correccionS10: CorreccionS10Dto | null;
+  /**
+   * True cuando se le puede PEDIR la corrección al ERP: reembolso observado, con el Consolidado
+   * del S10 adjunto y sin otra corrección en curso. Es alternativo a recargar, no obligatorio.
+   */
+  puedeSolicitarCorreccion: boolean;
 }
 
 /** Una salida dentro de la planilla. */
@@ -106,6 +124,11 @@ export interface ResumenRendicionesDto {
   porAvisar: number;
   /** Observadas: la primera revisión o el reembolso volvieron con observaciones. */
   observadas: number;
+  /**
+   * Con una corrección del S10 en curso: la pelota está en el Coordinador ERP y no le toca nada al
+   * colaborador hasta que confirme. Va aparte de `observadas` justamente por eso.
+   */
+  enErp: number;
 }
 
 export interface RendicionListResultDto {
@@ -142,4 +165,9 @@ export interface RendicionFilterDataDto {
   correoPrimeraRevision: CorreoDestinatariosDto;
   /** A quién le llega el aviso del Consolidado del S10. Lo dispara "Avisar al revisor". */
   correoS10Revisor: CorreoDestinatariosDto;
+  /**
+   * A quién le llega la solicitud de corrección del S10. Su destinatario principal se resuelve por
+   * ROL (COORDINADOR ERP) y no por el organigrama del trabajador, a diferencia de los otros dos.
+   */
+  correoCorreccionS10: CorreoDestinatariosDto;
 }

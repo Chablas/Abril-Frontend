@@ -158,6 +158,39 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
     },
   },
   {
+    // Configuración de Correcciones S10: el único correo que se origina acá es el aviso al
+    // colaborador de que la corrección ya está hecha en el S10.
+    // Va ANTES de 'correcciones-s10' para que el segmento 'configuracion' no se lo coma
+    // la pantalla.
+    path: 'correcciones-s10/configuracion',
+    loadComponent: () =>
+      import('./shared/configuracion/pantalla-configuracion').then(
+        (m) => m.GaPantallaConfiguracion,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'CORRECCIONES S10 - CONFIGURACIÓN',
+      featureKey: 'gestion-administrativa.config.correos',
+      pantalla: 'correcciones-s10',
+    },
+  },
+  {
+    // La bandeja del Coordinador ERP. Además del featureKey se exige el ROL: el backend solo
+    // responde a COORDINADOR ERP, así que dejar entrar a otro rol le mostraría una pantalla que
+    // no le devuelve nada.
+    path: 'correcciones-s10',
+    loadComponent: () =>
+      import('./features/correcciones-s10/components/correcciones-s10').then(
+        (m) => m.CorreccionesS10,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'CORRECCIONES S10',
+      featureKey: 'gestion-administrativa.correcciones-s10',
+      roles: [Roles.COORDINADOR_ERP],
+    },
+  },
+  {
     path: 'delegacion-revision',
     loadComponent: () =>
       import('./features/delegacion-revision/components/delegacion-revision').then(
