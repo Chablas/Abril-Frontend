@@ -190,7 +190,8 @@ export class DesempenoSupervisorComponent implements OnInit {
 
   toggleOculto(s: DesempenoSupervisorDto): void {
     const accion = s.esOculto ? 'mostrar' : 'ocultar';
-    this.http.patch<void>(`${this.base}/${s.supervisorId}/${accion}`, {}, { headers: this.authHeaders() }).subscribe({
+    const params = new HttpParams().set('proyectoId', s.proyectoId);
+    this.http.patch<void>(`${this.base}/${s.supervisorId}/${accion}`, {}, { headers: this.authHeaders(), params }).subscribe({
       next: () => this.cargar(),
       error: err => this.errorSvc.handleError(err),
     });
