@@ -16,7 +16,7 @@ import {
 import { reembolsoColors } from '../../../../shared/dtos/rendicion-shared.dto';
 
 /**
- * "Seguimiento de pagos": la segunda vista de Tesorería (11.4 del requerimiento). No es una
+ * "Seguimiento de Tesorería": la segunda vista de Tesorería (11.4 del requerimiento). No es una
  * bandeja de trabajo —acá no se decide nada— sino la consulta de lo ya abonado, agrupada por
  * colaborador: cuánto se le pagó en total, en cuántas rendiciones y con qué guía cada una.
  *

@@ -80,6 +80,8 @@ import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrat
     .resumen-card--warn  .resumen-card__value { color: var(--color-abril-warning-dark); }
     .resumen-card--info  { border-left-color: var(--color-abril-standard); }
     .resumen-card--info  .resumen-card__value { color: var(--color-abril-standard); }
+    .resumen-card--erp   { border-left-color: #C2410C; }
+    .resumen-card--erp   .resumen-card__value { color: #C2410C; }
     .resumen-card--alert { border-left-color: var(--color-abril-danger); }
     .resumen-card--alert .resumen-card__value { color: var(--color-abril-danger-dark); }
 
@@ -133,7 +135,9 @@ export class Rendiciones implements OnInit {
    * Números de las tarjetas. Los cuenta el backend sobre el MISMO conjunto que muestra la tabla,
    * así que llegan con el listado y cambian con cada filtro.
    */
-  resumen: ResumenRendicionesDto = { porEnviar: 0, sinConsolidado: 0, porAvisar: 0, observadas: 0 };
+  resumen: ResumenRendicionesDto = {
+    porEnviar: 0, sinConsolidado: 0, porAvisar: 0, observadas: 0, enErp: 0,
+  };
 
   // ── Correos que dispara la pantalla ───────────────────────────────
   //
@@ -143,6 +147,7 @@ export class Rendiciones implements OnInit {
   // Se pasan también al modal de detalle, que dispara los mismos correos desde sus botones.
   correoPrimeraRevision: CorreoDestinatariosDto = { para: [], copia: [] };
   correoS10Revisor: CorreoDestinatariosDto = { para: [], copia: [] };
+  correoCorreccionS10: CorreoDestinatariosDto = { para: [], copia: [] };
 
   // ── Filtros ────────────────────────────────────────────────────────
   periodoOptions: { key: string | null; label: string }[] = [{ key: null, label: 'Todos los periodos' }];
@@ -159,7 +164,7 @@ export class Rendiciones implements OnInit {
   readonly estadoReembolsoOptions = [
     { value: null,         label: 'Todos' },
     { value: 'Pendiente',  label: 'Por revisar' },
-    { value: 'Rechazado',  label: 'Observadas' },
+    { value: 'Observado',  label: 'Observadas' },
     { value: 'Aprobado',   label: 'Aprobadas' },
     { value: 'Firmado',    label: 'Firmadas' },
     { value: 'Proceder con el reembolso', label: 'En Tesorería' },
@@ -244,6 +249,7 @@ export class Rendiciones implements OnInit {
         // (recargar() la vuelve a llamar) sin una petición aparte.
         this.correoPrimeraRevision = data.correoPrimeraRevision ?? { para: [], copia: [] };
         this.correoS10Revisor      = data.correoS10Revisor ?? { para: [], copia: [] };
+        this.correoCorreccionS10   = data.correoCorreccionS10 ?? { para: [], copia: [] };
         this.periodoOptions = [
           { key: null, label: 'Todos los periodos' },
           ...this.periodos.map((p) => ({ key: this.periodoKey(p.anio, p.mes), label: p.label })),
@@ -497,14 +503,14 @@ export class Rendiciones implements OnInit {
   // que verse igual en las cinco pantallas del ciclo.
   readonly reembolsoColors = reembolsoColors;
 
-  /** El badge dice "Observado" y no "Rechazado": lo que el trabajador tiene que hacer es subsanar. */
+  /** El estado ya se llama "Observado" en el backend: la fila lo imprime tal cual. */
   reembolsoTexto(r: RendicionListItemDto): string {
-    return r.estadoReembolso === 'Rechazado' ? 'Observado' : r.estadoReembolso;
+    return r.estadoReembolso;
   }
 
   reembolsoTitle(r: RendicionListItemDto): string | null {
     const partes: string[] = [];
-    if (r.estadoReembolso === 'Rechazado' && r.observacionReembolso) {
+    if (r.estadoReembolso === 'Observado' && r.observacionReembolso) {
       partes.push(`Observación: ${r.observacionReembolso}`);
     }
     if (r.reembolsoMixto) {

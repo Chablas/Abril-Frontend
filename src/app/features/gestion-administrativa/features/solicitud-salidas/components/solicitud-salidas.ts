@@ -638,7 +638,7 @@ export class SolicitudSalidas implements OnInit {
     this.loaderService.hide();
     Swal.fire({
       title: `${count} solicitud(es) rendida(s)`,
-      text: 'Se descargó la planilla de gasto por movilidad.',
+      text: 'Se descargó la planilla de gasto por movilidad. Podrás continuar con tu rendición desde el apartado Mis Rendiciones.',
       icon: 'success',
       confirmButtonColor: '#0F6E56',
     });

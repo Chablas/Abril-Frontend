@@ -106,9 +106,13 @@ export class GestionRendicionesService {
     });
   }
 
-  /** La observación es obligatoria: es lo que el trabajador subsana. */
-  rechazarReembolso(accion: ReembolsoAccionDto): Observable<ReembolsoBulkResultDto> {
-    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/rechazar`, accion, {
+  /**
+   * Observa el reembolso: la planilla vuelve al trabajador para que subsane. La observación es
+   * obligatoria — es lo que él lee para saber qué corregir, y lo que se le manda al Coordinador ERP
+   * si la corrección tiene que hacerse dentro del S10.
+   */
+  observarReembolso(accion: ReembolsoAccionDto): Observable<ReembolsoBulkResultDto> {
+    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/observar`, accion, {
       headers: this.headers,
     });
   }

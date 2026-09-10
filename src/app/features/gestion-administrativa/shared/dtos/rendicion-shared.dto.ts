@@ -3,7 +3,7 @@
  * Reembolsos), así que viven en el shared del módulo y no dentro de una de ellas.
  */
 
-/** Resultado de una acción en bloque sobre el reembolso (aprobar, rechazar, firmar, pagar). */
+/** Resultado de una acción en bloque sobre el reembolso (aprobar, observar, firmar, pagar). */
 export interface ReembolsoBulkResultDto {
   procesadas: number;
   /** Cuántas planillas distintas se firmaron. Solo lo llena la acción de firmar. */
@@ -19,7 +19,7 @@ export interface ReembolsoBulkResultDto {
 export type EstadoReembolso =
   | 'Pendiente'
   | 'Aprobado'
-  | 'Rechazado'
+  | 'Observado'
   | 'Firmado'
   | 'Proceder con el reembolso'
   | 'Pagado';
@@ -34,6 +34,50 @@ export type EstadoPrimeraRevision =
   | 'En primera revisión'
   | 'Aprobada'
   | 'Observada';
+
+/**
+ * Estados de una solicitud de corrección del Consolidado del S10 al Coordinador ERP. Describen
+ * QUIÉN tiene que actuar, no qué pasó: es lo que la pantalla muestra tal cual.
+ */
+export type EstadoCorreccionS10 = 'Pendiente de corrección S10' | 'Pendiente de recarga S10';
+
+/**
+ * La solicitud de corrección viva de una planilla. La muestran las dos pantallas del paso: Mis
+ * Rendiciones (el colaborador, para saber de quién es la pelota) y Correcciones S10 (el
+ * Coordinador ERP, que la atiende), así que vive en el shared del módulo.
+ */
+export interface CorreccionS10Dto {
+  id: number;
+  rendicionId: number;
+  estado: EstadoCorreccionS10;
+  /** El «MOTIVO *» que escribió el colaborador: qué necesita del ERP. */
+  motivo: string;
+  /** Con qué observó la jefatura el reembolso, copiada al solicitar. */
+  motivoJefatura: string | null;
+  /** Guía del consolidado observado — con esto el ERP lo encuentra en el S10. */
+  numeroGuia: string | null;
+  solicitadaPor: string;
+  solicitadaAt: string;
+  /** Coordinador ERP que confirmó. Null mientras esté por atender. */
+  atendidaPor: string | null;
+  atendidaAt: string | null;
+  comentarioAtencion: string | null;
+  /** True si el ERP anuló el registro: hace falta una guía NUEVA (CA-19). */
+  guiaAnulada: boolean;
+  /** True mientras el ERP no la haya atendido: la pelota está en el Coordinador. */
+  esperandoErp: boolean;
+}
+
+/**
+ * Colores del badge de la corrección del S10. Ámbar mientras espera al ERP (no le toca nada al
+ * colaborador) y azul cuando ya volvió a él: el azul es el mismo que usa "En primera revisión",
+ * el color de "hay algo que hacer".
+ */
+export function correccionS10Colors(esperandoErp: boolean): { bg: string; text: string } {
+  return esperandoErp
+    ? { bg: '#FFEDD5', text: '#C2410C' }
+    : { bg: '#DBEAFE', text: '#1D4ED8' };
+}
 
 export interface TrabajadorOptionDto {
   workerId: number;
@@ -66,7 +110,7 @@ export interface PeriodoOptionDto {
 export function reembolsoColors(estado: string): { bg: string; text: string } {
   switch (estado) {
     case 'Aprobado':  return { bg: '#D7FAF4', text: '#009C87' };
-    case 'Rechazado': return { bg: '#FAD5D4', text: '#D30000' };
+    case 'Observado': return { bg: '#FAD5D4', text: '#D30000' };
     case 'Firmado':   return { bg: '#E0E7FF', text: '#4338CA' };
     // Ya pasó por Tesorería pero todavía no se desembolsó: ámbar, no verde — sigue esperando.
     case 'Proceder con el reembolso': return { bg: '#FFEDD5', text: '#C2410C' };

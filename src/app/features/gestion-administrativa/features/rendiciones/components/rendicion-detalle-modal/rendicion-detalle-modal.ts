@@ -15,7 +15,11 @@ import { confirmarConCorreos } from '../../../../shared/confirmar-correos';
 import { ConsolidadoS10Modal } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
 import { ConsolidadoS10Dto } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { SalidaCapturasModal } from '../../../../shared/components/salida-capturas-modal/salida-capturas-modal';
-import { primeraRevisionColors, reembolsoColors } from '../../../../shared/dtos/rendicion-shared.dto';
+import {
+  correccionS10Colors,
+  primeraRevisionColors,
+  reembolsoColors,
+} from '../../../../shared/dtos/rendicion-shared.dto';
 
 /**
  * Detalle de una planilla: sus documentos, el estado de la primera revisión y del reembolso, y las
@@ -48,6 +52,7 @@ export class RendicionDetalleModal implements OnInit {
    */
   @Input() correoPrimeraRevision: CorreoDestinatariosDto = { para: [], copia: [] };
   @Input() correoS10Revisor: CorreoDestinatariosDto = { para: [], copia: [] };
+  @Input() correoCorreccionS10: CorreoDestinatariosDto = { para: [], copia: [] };
 
   /** Emite true si algo cambió (hay que recargar la tabla de atrás), false si solo se cerró. */
   @Output() close = new EventEmitter<boolean>();
@@ -192,6 +197,65 @@ export class RendicionDetalleModal implements OnInit {
     });
   }
 
+  // ── Corrección con el Coordinador ERP ────────────────────────────────
+
+  /**
+   * Le pide al Coordinador ERP que corrija el Consolidado del S10. Es el camino para cuando la
+   * observación de la jefatura no se puede resolver desde Abril One porque el arreglo está dentro
+   * del S10, donde el colaborador no tiene permiso.
+   *
+   * A diferencia del envío a primera revisión, este aviso ES el flujo: sin un Coordinador ERP a
+   * quien avisarle el backend responde 409, así que se corta acá y se dice por qué en vez de
+   * dejar registrar una solicitud que nadie va a ver.
+   */
+  async solicitarCorreccion(): Promise<void> {
+    const d = this.detalle;
+    if (!d?.puedeSolicitarCorreccion) return;
+
+    if (this.correoCorreccionS10.para.length === 0) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'Nadie recibiría la solicitud',
+        text: 'No hay ningún Coordinador ERP con correo registrado. Avisa al administrador del sistema.',
+        confirmButtonColor: '#0F6E56',
+      });
+      return;
+    }
+
+    const { value: motivo, isConfirmed } = await confirmarConCorreos({
+      icon: 'question',
+      titulo: '¿Solicitar la corrección al ERP?',
+      avisos: avisosDe('Al Coordinador ERP', this.correoCorreccionS10),
+      observacion: {
+        label: 'Motivo',
+        placeholder: 'Qué necesitas que corrija en el S10…',
+      },
+      confirmButtonText: 'Sí, solicitar',
+    });
+    if (!isConfirmed || !motivo) return;
+
+    this.loader.show();
+    this.service.solicitarCorreccionS10(d.id, motivo).subscribe({
+      next: () => {
+        this.loader.hide();
+        this.huboCambios = true;
+        Swal.fire({
+          icon: 'success',
+          title: 'Solicitud enviada',
+          text: 'El Coordinador ERP te avisará cuando la corrección esté hecha en el S10.',
+          timer: 2800,
+          showConfirmButton: false,
+        });
+        this.cargar();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loader.hide();
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
   // ── Volver a generar la planilla (subsanación) ───────────────────────
 
   /**
@@ -276,13 +340,14 @@ export class RendicionDetalleModal implements OnInit {
   // ── Colores de estado ────────────────────────────────────────────────
 
   readonly primeraRevisionColors = primeraRevisionColors;
+  readonly correccionS10Colors = correccionS10Colors;
 
   // Los colores del estado del reembolso viven en el shared del módulo: el mismo estado tiene
   // que verse igual en las cinco pantallas del ciclo.
   readonly reembolsoColors = reembolsoColors;
 
-  /** El badge dice "Observado" y no "Rechazado": lo que toca hacer es subsanar. */
+  /** El estado ya se llama "Observado" en el backend: el badge lo imprime tal cual. */
   reembolsoTexto(estado: string): string {
-    return estado === 'Rechazado' ? 'Observado' : estado;
+    return estado;
   }
 }

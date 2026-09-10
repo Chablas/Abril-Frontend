@@ -5,13 +5,14 @@ import {
   Input,
   OnChanges,
   OnDestroy,
+  OnInit,
   Output,
   SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
@@ -101,6 +102,16 @@ interface WorkerFormModel {
   aniosExperiencia: number | null;
 }
 
+/** Respuesta de la verificación de un correo corporativo, atada al correo que se consultó. */
+interface VerificacionEmail {
+  email: string;
+  valido: boolean;
+  /** Nombre del buzón en el directorio de Abril. Vacío si el correo no se contrastó contra él. */
+  nombre: string;
+  /** Mensaje a mostrar. Vacío cuando el correo es válido. */
+  mensaje: string;
+}
+
 @Component({
   selector: 'app-worker-create-edit',
   standalone: true,
@@ -108,7 +119,7 @@ interface WorkerFormModel {
   templateUrl: './worker-create-edit.html',
   styleUrl: './worker-create-edit.css',
 })
-export class WorkerCreateEdit implements OnChanges, OnDestroy {
+export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
   @Input() open = false;
   @Input() mode: 'create' | 'edit' = 'create';
   @Input() worker: WorkerHabilitacionListDto | null = null;
@@ -123,18 +134,26 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   dniRestringido = false;
   dniVerificado = false;
 
-  /** Verificación del correo corporativo contra el directorio de Abril (ver onEmailCorporativoBlur). */
+  /** Verificación del correo corporativo contra el directorio de Abril (ver verificarEmailCorporativo). */
   verificandoEmail = false;
-  emailError = '';
-  emailVerificadoNombre = '';
   /**
    * Correo con el que se abrió la edición. Se acepta sin verificar, igual que hace el backend:
    * hay fichas antiguas con correos que hoy no pasarían la validación y no deben bloquear la
    * corrección de otros campos.
    */
   private emailOriginal = '';
-  /** Último correo verificado con éxito, para no repetir la consulta en cada blur. */
-  private emailVerificado = '';
+  /**
+   * Resultado de la última consulta junto al correo al que corresponde. De aquí salen los mensajes
+   * que ve el usuario (`emailValido` / `emailVerificadoNombre` / `emailError`), que solo se muestran
+   * mientras el campo siga teniendo ese correo: al seguir escribiendo el resultado desaparece solo y
+   * reaparece si se vuelve a escribir el mismo correo, sin tener que limpiarlo en cada tecla. Sirve
+   * además para no repetir una consulta ya respondida.
+   */
+  private ultimaVerificacion: VerificacionEmail | null = null;
+  /** Correo con la consulta en curso, para que el blur no repita la que ya disparó la pausa. */
+  private emailEnVerificacion = '';
+  /** Cada tecleo del correo corporativo reprograma la verificación automática (ver ngOnInit). */
+  private emailInput$ = new Subject<void>();
   /**
    * Si la ficha ya traía algún correo al abrirla. Solo se exige "al menos un correo" cuando lo
    * tenía: hay miles de fichas legadas sin ninguno y no deben quedar imposibles de editar, pero
@@ -244,6 +263,18 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     private cdr: ChangeDetectorRef,
   ) {}
 
+  ngOnInit(): void {
+    // El correo corporativo se verifica solo tras una pausa al escribir, igual que el buscador de
+    // la lista de trabajadores. Solo se consulta cuando el texto ya parece un correo completo: así
+    // no se gasta una consulta al directorio por cada fragmento tecleado ("cal", "calvarez@") ni se
+    // marca en rojo un correo a medio escribir. El formato lo termina de comprobar el blur (y el
+    // backend al guardar).
+    this.emailInput$.pipe(debounceTime(600), takeUntil(this.destroy$)).subscribe(() => {
+      if (!this.open) return;
+      if (this.formatoEmailPlausible(this.model.emailCorporativo)) this.verificarEmailCorporativo();
+    });
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open) {
       this.resetAndLoad();
@@ -284,6 +315,39 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   get clasificacionEditable(): boolean {
     if (this.mode === 'create') return true;
     return !this.worker?.obraOficinaStaffId && !this.worker?.obraOficina;
+  }
+
+  /**
+   * Resultado de la verificación solo si sigue siendo el del correo escrito. Lo que llegó para un
+   * correo anterior no se muestra: al seguir tecleando el mensaje se va solo.
+   */
+  private get verificacionVigente(): VerificacionEmail | null {
+    const email = this.model.emailCorporativo.trim().toLowerCase();
+    return this.ultimaVerificacion?.email === email ? this.ultimaVerificacion : null;
+  }
+
+  /** True cuando la verificación confirmó que el correo escrito se puede usar. */
+  get emailValido(): boolean {
+    return this.verificacionVigente?.valido ?? false;
+  }
+
+  /** Nombre del buzón en el directorio de Abril. Vacío si el correo no se contrastó contra él. */
+  get emailVerificadoNombre(): string {
+    return this.verificacionVigente?.nombre ?? '';
+  }
+
+  /** Motivo por el que el correo escrito no se puede usar. Vacío mientras no haya uno. */
+  get emailError(): string {
+    return this.verificacionVigente?.mensaje ?? '';
+  }
+
+  /**
+   * Aviso en verde del correo corporativo. Al nombre del buzón en el directorio se le antepone que
+   * el correo se puede usar: el nombre solo confirma de quién es la cuenta, no que esté libre.
+   */
+  get emailValidoTexto(): string {
+    const base = 'Correo válido para ser usado';
+    return this.emailVerificadoNombre ? `${base} · ${this.emailVerificadoNombre}` : base;
   }
 
   /** Todo trabajador debe quedar con al menos un correo: el corporativo o el personal. */
@@ -1010,14 +1074,27 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     // exige tenant/unicidad si es del dominio de Abril), así que la verificación anterior deja
     // de ser válida y se rehace.
     this.resetEstadoEmail();
-    if (this.gestionaEmailCorporativo) this.onEmailCorporativoBlur();
+    if (this.gestionaEmailCorporativo) this.verificarEmailCorporativo();
   }
 
   private resetEstadoEmail(): void {
     this.verificandoEmail = false;
-    this.emailError = '';
-    this.emailVerificadoNombre = '';
-    this.emailVerificado = '';
+    this.ultimaVerificacion = null;
+    this.emailEnVerificacion = '';
+  }
+
+  /** Salir del campo adelanta la verificación, sin esperar a que venza la pausa al escribir. */
+  onEmailCorporativoBlur(): void {
+    this.verificarEmailCorporativo();
+  }
+
+  /**
+   * Formato mínimo de correo (algo@algo.algo), el mismo que exige el backend. Solo decide si vale
+   * la pena consultar mientras se escribe: el mensaje de formato mal escrito lo sigue dando el
+   * backend cuando se sale del campo.
+   */
+  private formatoEmailPlausible(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   }
 
   /**
@@ -1025,23 +1102,31 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
    * los correos ya asignados a otros trabajadores. No aplica a contratistas, que no capturan
    * corporativo.
    *
+   * Se dispara sola tras la pausa al escribir (ver ngOnInit) y también al salir del campo, para el
+   * caso de pegar el correo y hacer clic en otro lado antes de que venza la pausa. Como puede
+   * demorar (consulta al directorio de Microsoft), se muestra el loader global: es la referencia de
+   * que el sistema está buscando.
+   *
    * El flag `corporativo` que se manda es la clasificación real (true solo en Staff/Oficina
    * Central), la misma que usa el backend al guardar: así en Obra un correo @abril.pe se sigue
    * verificando contra el tenant y por unicidad, pero uno de otro dominio se acepta igual que al
    * guardar, en vez de marcarlo en rojo por algo que el backend sí dejaría pasar.
    */
-  onEmailCorporativoBlur(): void {
+  private verificarEmailCorporativo(): void {
     if (!this.gestionaEmailCorporativo) {
       this.resetEstadoEmail();
       return;
     }
 
     const email = this.model.emailCorporativo.trim().toLowerCase();
-    if (!email || email === this.emailVerificado || email === this.emailOriginal) return;
+    // Sin correo o con el que abrió la edición (que el backend acepta sin verificar) no hay nada
+    // que consultar; con una consulta en curso o ya respondida, tampoco hay que repetirla.
+    if (!email || email === this.emailOriginal) return;
+    if (email === this.emailEnVerificacion || email === this.ultimaVerificacion?.email) return;
 
-    this.emailError = '';
-    this.emailVerificadoNombre = '';
+    this.emailEnVerificacion = email;
     this.verificandoEmail = true;
+    this.loaderService.show();
 
     this.workerService
       .validarEmailCorporativo(
@@ -1051,23 +1136,35 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       )
       .subscribe({
         next: (res) => {
-          this.verificandoEmail = false;
-          if (res.valido) {
-            // Se guarda el correo canónico del directorio (así coincide con el del login SSO).
-            if (res.email) this.model.emailCorporativo = res.email;
-            this.emailVerificado = this.model.emailCorporativo.trim().toLowerCase();
-            this.emailVerificadoNombre = res.nombreEnTenant ?? '';
-          } else {
-            this.emailError = res.mensaje ?? 'El correo corporativo no es válido.';
+          this.terminarVerificacionEmail();
+          // La respuesta puede llegar cuando el usuario ya siguió escribiendo: se guarda junto al
+          // correo consultado y la pantalla la muestra solo si sigue siendo el del campo.
+          this.ultimaVerificacion = {
+            email,
+            valido: res.valido,
+            nombre: res.nombreEnTenant ?? '',
+            mensaje: res.valido ? '' : (res.mensaje ?? 'El correo corporativo no es válido.'),
+          };
+          // Se guarda el correo canónico del directorio (así coincide con el del login SSO), salvo
+          // que el usuario ya esté escribiendo otro: pisarle el campo a media escritura sería peor.
+          const esElDelCampo = email === this.model.emailCorporativo.trim().toLowerCase();
+          if (res.valido && res.email && esElDelCampo) {
+            this.model.emailCorporativo = res.email;
           }
           this.cdr.detectChanges();
         },
         error: () => {
           // Sin verificación no se bloquea el formulario: el backend vuelve a validar al guardar.
-          this.verificandoEmail = false;
+          this.terminarVerificacionEmail();
           this.cdr.detectChanges();
         },
       });
+  }
+
+  private terminarVerificacionEmail(): void {
+    this.emailEnVerificacion = '';
+    this.verificandoEmail = false;
+    this.loaderService.hide();
   }
 
   onTipoDocumentoChange(): void {
@@ -1235,10 +1332,13 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       });
   }
 
-  /** Al reescribir el correo se limpia el resultado de la verificación anterior. */
+  /**
+   * Al escribir se reprograma la verificación automática. No hace falta limpiar el resultado
+   * anterior: deja de mostrarse solo en cuanto el correo del campo deja de ser el consultado
+   * (ver `verificacionVigente`).
+   */
   onEmailCorporativoInput(): void {
-    this.emailError = '';
-    this.emailVerificadoNombre = '';
+    this.emailInput$.next();
   }
 
   submit(): void {

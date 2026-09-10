@@ -1,0 +1,255 @@
+<app-abril-page-header
+  [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
+  titulo="Correcciones S10"
+  subtitulo="Correcciones del Consolidado del S10 solicitadas por los colaboradores."
+  [tabs]="tabs"
+  [botonSecundario]="botonConfiguracion"
+  (secondaryClick)="abrirConfiguracion()">
+
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden pb-[24px]">
+
+  <!-- ── Tarjetas de resumen ───────────────────────────────────────────────
+       Los dos lados del paso: lo que espera al Coordinador y lo que ya devolvió al colaborador.
+       Se cuentan sobre el mismo conjunto que muestra la tabla. -->
+  <div class="resumen-cards">
+    <div class="resumen-card resumen-card--pend">
+      <span class="resumen-card__label">Por atender</span>
+      <span class="resumen-card__value">{{ resumen.porAtender }}</span>
+      <span class="resumen-card__hint">Falta corregirlas en el S10</span>
+    </div>
+    <div class="resumen-card resumen-card--lista">
+      <span class="resumen-card__label">Por recargar</span>
+      <span class="resumen-card__value">{{ resumen.porRecargar }}</span>
+      <span class="resumen-card__hint">Atendidas, esperan al colaborador</span>
+    </div>
+  </div>
+
+  <!-- ── Acción masiva ─────────────────────────────────────────────────── -->
+  <div class="flex flex-wrap items-center gap-2">
+    <button
+      type="button"
+      abrilBulkAction="primary"
+      (click)="atenderBulk()"
+      [disabled]="selectedPorAtender.length === 0"
+      title="Registra que ya corregiste en el S10 y le avisa al colaborador para que recargue el Consolidado">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+      </svg>
+      Marcar como atendida<span *ngIf="selectedPorAtender.length"> ({{ selectedPorAtender.length }})</span>
+    </button>
+  </div>
+
+  <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th class="w-[40px]">
+            <input type="checkbox" [checked]="allSelected" (change)="toggleSelectAll()"
+                   [disabled]="seleccionables.length === 0"
+                   title="Seleccionar todas las que están por atender"
+                   style="accent-color:var(--color-abril-standard);cursor:pointer">
+          </th>
+          <th>Rendición</th>
+          <th>Colaborador</th>
+          <th>N.º de guía</th>
+          <th>Qué corregir</th>
+          <th>Solicitada</th>
+          <th>Estado</th>
+          <th>Documentos</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="correcciones.length === 0">
+          <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
+            No hay correcciones del S10 pendientes.
+          </td>
+        </tr>
+
+        <tr
+          *ngFor="let c of pagedCorrecciones"
+          (click)="abrirDetalle(c)"
+          title="Ver el detalle de la corrección"
+          class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
+          style="border-color:var(--color-abril-border)">
+
+          <td (click)="$event.stopPropagation()">
+            <input type="checkbox"
+                   [checked]="selectedIds.has(c.id)"
+                   [disabled]="!esSeleccionable(c)"
+                   (click)="onSelectClick($event, c)"
+                   [title]="esSeleccionable(c) ? 'Seleccionar' : 'Ya está atendida'"
+                   style="accent-color:var(--color-abril-standard);cursor:pointer">
+          </td>
+
+          <td class="whitespace-nowrap">
+            <div class="flex flex-col leading-tight">
+              <span class="text-gray-700 font-medium">{{ c.codigo }}</span>
+              <span *ngIf="c.numeroPlanilla" class="text-[11px] text-gray-400">{{ c.numeroPlanilla }}</span>
+            </div>
+          </td>
+
+          <td class="whitespace-nowrap">
+            <div class="flex flex-col leading-tight">
+              <span class="text-gray-700">{{ c.trabajador | titleCase }}</span>
+              <span *ngIf="c.area" class="text-[11px] text-gray-400">{{ c.area | titleCase }}</span>
+            </div>
+          </td>
+
+          <!-- Es EL dato con el que se ubica el registro en el S10, así que va en columna propia
+               y sin recortar. -->
+          <td class="whitespace-nowrap">
+            <span *ngIf="c.numeroGuia; else sinGuia" class="text-gray-700 font-medium">
+              {{ c.numeroGuia }}
+            </span>
+            <ng-template #sinGuia>
+              <span class="text-[11px] text-gray-400 italic">sin guía</span>
+            </ng-template>
+          </td>
+
+          <td class="text-gray-700">
+            <div class="motivo-celda" [title]="c.motivo">{{ c.motivo }}</div>
+          </td>
+
+          <td class="text-gray-400 whitespace-nowrap">
+            <div class="flex flex-col leading-tight">
+              <span>{{ c.solicitadaAt | date:'dd/MM/yyyy HH:mm' }}</span>
+              <span class="text-[11px]">{{ c.periodo }}</span>
+            </div>
+          </td>
+
+          <td>
+            <app-status-badge
+              [text]="c.estado"
+              [bgColor]="correccionS10Colors(c.porAtender).bg"
+              [textColor]="correccionS10Colors(c.porAtender).text"
+              [title]="c.atendidaAt
+                ? 'Atendida el ' + (c.atendidaAt | date:'dd/MM/yyyy HH:mm')
+                : 'Esperando tu corrección en el S10'" />
+          </td>
+
+          <!-- Los dos papeles que el ERP puede necesitar contrastar. No cambian nada: se abren. -->
+          <td (click)="$event.stopPropagation()">
+            <div class="flex flex-wrap items-center gap-[6px]">
+              <a class="doc-chip" [href]="c.pdfUrl" target="_blank" rel="noopener noreferrer"
+                 [title]="c.pdfFilename">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                Planilla
+              </a>
+
+              <a *ngIf="c.consolidadoS10"
+                 class="doc-chip" [href]="c.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
+                 [title]="c.consolidadoS10.pdfFilename">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                S10 observado
+              </a>
+            </div>
+          </td>
+
+          <td (click)="$event.stopPropagation()">
+            <div class="flex flex-wrap items-center gap-2">
+              <button
+                *ngIf="c.porAtender"
+                type="button"
+                (click)="atenderUna(c, $event)"
+                title="Registra que ya corregiste en el S10 y le avisa al colaborador"
+                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
+                style="background:var(--color-abril-standard)"
+                onmouseover="this.style.background='var(--color-abril-standard-hover)'"
+                onmouseout="this.style.background='var(--color-abril-standard)'">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+                Marcar como atendida
+              </button>
+
+              <span *ngIf="!c.porAtender" class="text-[11px] text-gray-400 italic whitespace-nowrap">
+                Esperando la recarga del colaborador
+              </span>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="correcciones.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modal de detalle ──────────────────────────────────────────────── -->
+<app-correccion-s10-detalle-modal
+  *ngIf="detalleId !== null"
+  [correccionId]="detalleId"
+  (close)="cerrarDetalle($event)" />
+
+<!-- ── Modal de filtros ──────────────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por rendición, guía o colaborador..."
+      [(value)]="searchText"
+      (valueChange)="onSearchChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      placeholder="Selecciona el estado"
+      [options]="estadoOptions"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      [rawLabel]="true"
+      [value]="filters.estado"
+      (valueChange)="filters.estado = $event; load()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Colaborador"
+      placeholder="Buscar por nombre o DNI..."
+      [options]="trabajadorOptions"
+      valueField="workerId"
+      displayField="nombreCompleto"
+      [value]="filters.workerId"
+      (valueChange)="filters.workerId = $event; load()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Periodo"
+      placeholder="Selecciona el periodo"
+      [options]="periodoOptions"
+      valueField="key"
+      displayField="label"
+      [sortAlpha]="false"
+      [rawLabel]="true"
+      [value]="filters.periodoKey"
+      (valueChange)="filters.periodoKey = $event; load()">
+    </app-search-select>
+  </div>
+
+</app-filter-modal>

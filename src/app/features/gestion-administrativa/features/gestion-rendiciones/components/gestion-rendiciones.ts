@@ -150,7 +150,7 @@ export class GestionRendiciones implements OnInit {
   readonly estadoReembolsoOptions = [
     { value: null,        label: 'Todos' },
     { value: 'Pendiente', label: 'Por revisar' },
-    { value: 'Rechazado', label: 'Observadas' },
+    { value: 'Observado', label: 'Observadas' },
     { value: 'Aprobado',  label: 'Aprobadas' },
     { value: 'Firmado',   label: 'Firmadas' },
     { value: 'Proceder con el reembolso', label: 'En Tesorería' },
@@ -541,22 +541,27 @@ export class GestionRendiciones implements OnInit {
     this.aprobar(this.accionDe(items));
   }
 
-  async rechazarBulk(): Promise<void> {
+  async observarBulk(): Promise<void> {
     const items = this.selectedPorDecidir;
     if (items.length === 0) return;
 
     const { value: observacion, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
-      titulo: items.length === 1 ? '¿Rechazar este reembolso?' : `¿Rechazar ${items.length} planillas?`,
+      titulo: items.length === 1
+        ? '¿Observar este reembolso?'
+        : `¿Observar ${items.length} planillas?`,
       avisos: await this.avisos(items, 'REEMBOLSO', false),
-      observacion: { label: 'Observación', placeholder: 'Qué tiene que corregir el trabajador…' },
-      confirmButtonText: 'Rechazar',
+      observacion: {
+        label: 'Observación',
+        placeholder: 'Qué tiene que corregir el trabajador en el Consolidado del S10…',
+      },
+      confirmButtonText: 'Observar',
       confirmButtonColor: '#D30000',
     });
     if (!isConfirmed || !observacion) return;
 
     this.loaderService.show();
-    this.service.rechazarReembolso(this.accionDe(items, observacion)).subscribe({
+    this.service.observarReembolso(this.accionDe(items, observacion)).subscribe({
       next: (res) => this.trasAccion(res.message),
       error: (err: HttpErrorResponse) => this.errorAccion(err),
     });
@@ -659,14 +664,14 @@ export class GestionRendiciones implements OnInit {
     return null;
   }
 
-  /** El badge dice "Observado" y no "Rechazado": describe en qué quedó la planilla. */
+  /** El estado ya se llama "Observado" en el backend: el badge lo imprime tal cual. */
   reembolsoTexto(estado: string): string {
-    return estado === 'Rechazado' ? 'Observado' : estado;
+    return estado;
   }
 
   reembolsoTitle(r: GestionRendicionListItemDto): string | null {
     const partes: string[] = [];
-    if (r.estadoReembolso === 'Rechazado' && r.observacionReembolso) {
+    if (r.estadoReembolso === 'Observado' && r.observacionReembolso) {
       partes.push(`Observación: ${r.observacionReembolso}`);
     }
     if (r.reembolsoMixto) {

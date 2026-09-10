@@ -255,7 +255,7 @@
               [text]="s.estadoReembolso"
               [bgColor]="reembolsoColors(s.estadoReembolso).bg"
               [textColor]="reembolsoColors(s.estadoReembolso).text"
-              [title]="s.estadoReembolso === 'Rechazado' && s.observacionReembolso
+              [title]="s.estadoReembolso === 'Observado' && s.observacionReembolso
                 ? 'Observación: ' + s.observacionReembolso + ' · se subsana en Mis Rendiciones'
                 : null" />
             <ng-template #sinReembolso>

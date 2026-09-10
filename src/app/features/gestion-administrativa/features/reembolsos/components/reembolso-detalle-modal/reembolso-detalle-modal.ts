@@ -19,6 +19,19 @@ import {
 import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-correos';
 
 /**
+ * Un documento de la sección Respaldo: qué archivo se abre y cómo se nombra en la lista.
+ * Vive acá porque es puro armado de pantalla — el backend sirve las dos copias, original y
+ * firmada, y esta pantalla elige cuál enseñar.
+ */
+interface RespaldoDoc {
+  url: string;
+  nombre: string;
+  etiqueta: string;
+  /** false = la copia firmada no existe y se está mostrando el original; se dice en la etiqueta. */
+  firmado: boolean;
+}
+
+/**
  * El expediente de una planilla para Tesorería: qué se está pagando, a quién, con qué respaldo
  * y con qué firma. Es donde vive la revisión documental que el requerimiento pide antes de
  * proceder (11.1): planilla, Consolidado del S10 con su guía, firma de la jefatura y el detalle
@@ -43,6 +56,9 @@ export class ReembolsoDetalleModal implements OnInit {
   /** Salidas con el desglose de tramos abierto. Arranca cerrado: la tabla ya es larga. */
   expandidas = new Set<number>();
 
+  /** Planilla de Gasto y Consolidado del S10 firmados: la lista de la sección Respaldo. */
+  respaldo: RespaldoDoc[] = [];
+
   // Visor de PDF/imágenes: los vouchers se abren sin salir de la revisión (RF-TES-13).
   visorUrl = '';
   visorNombre = '';
@@ -63,6 +79,7 @@ export class ReembolsoDetalleModal implements OnInit {
     this.service.getDetalle(this.rendicionId).subscribe({
       next: (data) => {
         this.detalle = data;
+        this.respaldo = this.armarRespaldo(data);
         this.loader.hide();
         this.cdr.detectChanges();
       },
@@ -79,6 +96,47 @@ export class ReembolsoDetalleModal implements OnInit {
   }
 
   private huboCambios = false;
+
+  // ── Respaldo ─────────────────────────────────────────────────────────
+
+  /**
+   * Los dos únicos documentos que la revisión documental pide ver (11.1 del requerimiento:
+   * "mostrar únicamente la documentación consolidada necesaria"), y en su copia FIRMADA por la
+   * jefatura: es la que respalda el pago, y a Tesorería solo le llega lo ya firmado (RG-25).
+   *
+   * Si la firma no llegó a estamparse —rendiciones anteriores a que aprobar fuera firmar— se
+   * lista el original y la etiqueta lo dice, en vez de dejar a Tesorería sin nada que mirar.
+   */
+  private armarRespaldo(d: ReembolsoDetalleDto): RespaldoDoc[] {
+    const docs: RespaldoDoc[] = [
+      d.pdfFirmadoUrl
+        ? { url: d.pdfFirmadoUrl,
+            nombre: d.pdfFirmadoFilename ?? 'Planilla firmada',
+            etiqueta: 'planilla de gasto firmada',
+            firmado: true }
+        : { url: d.pdfUrl,
+            nombre: d.pdfFilename,
+            etiqueta: 'planilla de gasto — sin la firma de jefatura',
+            firmado: false },
+    ];
+
+    const s10 = d.consolidadoS10;
+    if (s10) {
+      docs.push(
+        s10.pdfFirmadoUrl
+          ? { url: s10.pdfFirmadoUrl,
+              nombre: s10.pdfFirmadoFilename ?? 'Consolidado del S10 firmado',
+              etiqueta: 'Consolidado del S10 firmado',
+              firmado: true }
+          : { url: s10.pdfUrl,
+              nombre: s10.pdfFilename,
+              etiqueta: 'Consolidado del S10 — sin la firma de jefatura',
+              firmado: false },
+      );
+    }
+
+    return docs;
+  }
 
   // ── Tramos ───────────────────────────────────────────────────────────
 

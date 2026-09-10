@@ -159,22 +159,25 @@ export class GestionRendicionDetalleModal implements OnInit {
     this.cdr.detectChanges();
   }
 
-  async rechazar(): Promise<void> {
+  async observar(): Promise<void> {
     const d = this.detalle;
     if (!d || d.porDecidirCount === 0 || !d.puedeDecidir) return;
 
     const { value: observacion, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
-      titulo: '¿Rechazar el reembolso de ' + d.codigo + '?',
+      titulo: '¿Observar el reembolso de ' + d.codigo + '?',
       avisos: await this.avisos('REEMBOLSO', false),
-      observacion: { label: 'Observación', placeholder: 'Qué tiene que corregir el trabajador…' },
-      confirmButtonText: 'Rechazar',
+      observacion: {
+        label: 'Observación',
+        placeholder: 'Qué tiene que corregir el trabajador en el Consolidado del S10…',
+      },
+      confirmButtonText: 'Observar',
       confirmButtonColor: '#D30000',
     });
     if (!isConfirmed || !observacion) return;
 
     this.loader.show();
-    this.service.rechazarReembolso(this.accion(observacion)).subscribe({
+    this.service.observarReembolso(this.accion(observacion)).subscribe({
       next: (res) => this.trasAccion(res.message),
       error: (err: HttpErrorResponse) => this.errorAccion(err),
     });
@@ -251,6 +254,6 @@ export class GestionRendicionDetalleModal implements OnInit {
   readonly reembolsoColors = reembolsoColors;
 
   reembolsoTexto(estado: string): string {
-    return estado === 'Rechazado' ? 'Observado' : estado;
+    return estado;
   }
 }

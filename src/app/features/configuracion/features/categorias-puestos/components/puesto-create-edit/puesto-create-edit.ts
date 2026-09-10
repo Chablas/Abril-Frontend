@@ -38,7 +38,7 @@ export class PuestoCreateEdit implements OnInit {
    * tienen ninguna.
    */
   solicitante = new AreaCascade();
-  /** Cascada del área a la que entra el postulante. Vacía = se cae al área del solicitante. */
+  /** Cascada del área a la que pertenece el trabajador del puesto. Vacía = se cae al área del solicitante. */
   destino = new AreaCascade();
   /**
    * El usuario ya eligió un destino a mano (o el puesto venía con uno guardado). Mientras sea

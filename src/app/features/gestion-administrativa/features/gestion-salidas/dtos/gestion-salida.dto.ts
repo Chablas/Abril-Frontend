@@ -78,7 +78,7 @@ export interface GestionSalidaListItemDto {
 
   /**
    * Eje aparte de la aprobación de la salida y de la rendición: es el visto bueno al GASTO.
-   * "Pendiente" | "Aprobado" | "Rechazado" | "Firmado" | "Pagado".
+   * "Pendiente" | "Aprobado" | "Observado" | "Firmado" | "Pagado".
    */
   estadoReembolso: EstadoReembolso;
   /**
