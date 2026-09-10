@@ -46,10 +46,6 @@
       <span class="chip chip-sev" [ngClass]="severidadClass(rac.severidad)">{{ rac.severidad }}</span>
       <span class="chip chip-tipo">{{ rac.tipo }}</span>
       <span class="chip chip-ambito">{{ rac.categoriaAmbito }}</span>
-      <span *ngIf="rac.aplicaPenalidad" class="chip chip-penalidad">
-        <i class="ti ti-currency-sol"></i>
-        Con penalidad{{ rac.penalidad ? ' · ' + rac.penalidad.estado : '' }}
-      </span>
     </div>
 
     <!-- DATOS GENERALES -->
@@ -155,31 +151,6 @@
       <p class="detalle-parrafo" style="margin-top:8px">
         {{ rac.cierreDescripcion || '—' }}
       </p>
-    </div>
-
-    <!-- PENALIDAD -->
-    <div class="detalle-seccion" *ngIf="rac.aplicaPenalidad && rac.penalidad">
-      <div class="detalle-seccion__titulo">Penalidad</div>
-      <div class="penalidad-card">
-        <div class="detalle-campo">
-          <span class="detalle-campo__label">Código</span>
-          <span class="detalle-campo__valor penalidad-codigo">{{ rac.penalidad.codigo }}</span>
-        </div>
-        <div class="detalle-campo">
-          <span class="detalle-campo__label">Estado</span>
-          <span class="detalle-campo__valor">{{ rac.penalidad.estado }}</span>
-        </div>
-        <div class="detalle-campo">
-          <span class="detalle-campo__label">Infracción</span>
-          <span class="detalle-campo__valor">{{ rac.penalidad.infraccionNombre ?? '—' }}</span>
-        </div>
-        <div class="detalle-campo">
-          <span class="detalle-campo__label">Monto</span>
-          <span class="detalle-campo__valor penalidad-monto">
-            S/ {{ rac.penalidad.montoCalculado | number:'1.2-2' }}
-          </span>
-        </div>
-      </div>
     </div>
 
     <!-- FOTOS -->

@@ -25,12 +25,14 @@ import {
   SupervisorProgresoDTO,
   HitoCriticoDTO,
   TareasPorArquitectoDTO,
-  AvanceSemanalDTO,
-  EficienciaSpiDTO,
+  ProximoPorProyectoDTO,
+  EficienciaConsultaSemanalDTO,
+  GanttMiniItemDTO,
   CategoriaItemDTO,
   CategoriaDashboardItemDTO,
   SemanaDashboardDTO,
   SupervisorHistoricoDTO,
+  CargaSemanalDTO,
 } from '../../../core/dtos/arquitectura-comercial/arquitectura-comercial-dashboard.model';
 import {
   ActividadListItemDTO,
@@ -103,8 +105,10 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   supervisores            : SupervisorProgresoDTO[]     = [];
   hitosCriticos           : HitoCriticoDTO[]            = [];
   tareasPorArquitecto     : TareasPorArquitectoDTO[]    = [];
-  avanceSemanal           : AvanceSemanalDTO[]          = [];
-  eficienciaSpi           : EficienciaSpiDTO[]          = [];
+  proximosPorProyecto     : ProximoPorProyectoDTO[]     = [];
+  eficienciaConsultas     : EficienciaConsultaSemanalDTO[] = [];
+  ganttHitos              : GanttMiniItemDTO[]          = [];
+  ganttEntregables        : GanttMiniItemDTO[]          = [];
   categorias              : CategoriaItemDTO[]          = [];
   distribucionPorCategoria: CategoriaDashboardItemDTO[] = [];
   semanaActual            : SemanaDashboardDTO | null   = null;
@@ -131,6 +135,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   modalCargaActividades        : ActividadListItemDTO[] = [];
   modalCargaExcluirCulminadas  = true;
   modalCargaFiltroEstado       = '';
+  modalCargaFiltroTipo         = '';
   modalCargaSoloSemanaControl  = false;
   modalCargaStats              = { hitos: 0, entregables: 0, consultas: 0, culminadas: 0, vencidas: 0 };
   readonly modalCargaEstadoOptions = [
@@ -143,6 +148,10 @@ export class Dashboard implements AfterViewInit, OnDestroy {
 
   toggleModalCargaFiltroEstado(estado: string): void {
     this.modalCargaFiltroEstado = this.modalCargaFiltroEstado === estado ? '' : estado;
+  }
+
+  toggleModalCargaFiltroTipo(tipo: string): void {
+    this.modalCargaFiltroTipo = this.modalCargaFiltroTipo === tipo ? '' : tipo;
   }
 
   private hoy(): Date { const d = new Date(); d.setHours(0,0,0,0); return d; }
@@ -185,9 +194,120 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     return map[this.estadoGantt(a)];
   }
 
+  // ─── mini-gantt (hitos/entregables, todos los proyectos, próximos 3 meses) ──────
+  // Ventana con 7 días de contexto hacia atrás (para que "HOY" no quede pegado al borde
+  // izquierdo y lo vencido reciente se vea en contexto) + 90 días hacia adelante.
+  readonly ganttPastDays   = 7;
+  readonly ganttFutureDays = 90;
+  get ganttWindowTotalDays(): number { return this.ganttPastDays + this.ganttFutureDays; }
+
+  private readonly ganttEstadoColorMap: Record<string, string> = {
+    CULMINADO: '#9CA3AF',
+    'EN PROCESO': '#3B82F6',
+    VENCIDO: '#EF4444',
+    PENDIENTE: '#93C5FD',
+    VACIO: '#CBD5E1',
+  };
+  private readonly ganttEstadoLabelMap: Record<string, string> = {
+    CULMINADO: '✓ Culminado',
+    'EN PROCESO': '▶ En proceso',
+    VENCIDO: '⚠ Vencido',
+    PENDIENTE: '○ Pendiente',
+    VACIO: '—',
+  };
+  // Misma paleta que la página de Gantt completa (features/arquitectura-comercial/gantt) —
+  // consistencia visual entre ambas vistas para el mismo concepto de "color = proyecto".
+  private readonly ganttProjectPalette = [
+    '#2563EB', '#DC2626', '#059669', '#D97706', '#7C3AED',
+    '#DB2777', '#0891B2', '#65A30D', '#9333EA', '#EA580C',
+  ];
+
+  ganttEstadoColor(estado: string): string { return this.ganttEstadoColorMap[estado] ?? '#CBD5E1'; }
+  ganttEstadoLabel(estado: string): string { return this.ganttEstadoLabelMap[estado] ?? estado; }
+
+  /** Color estable por nombre de proyecto (hash simple) — así cada proyecto siempre se ve del
+   * mismo color en toda la fila, sin depender de listas ordenadas por aparición. */
+  ganttProyectoColor(nombre: string): string {
+    let hash = 0;
+    for (let i = 0; i < nombre.length; i++) hash = (hash * 31 + nombre.charCodeAt(i)) >>> 0;
+    return this.ganttProjectPalette[hash % this.ganttProjectPalette.length];
+  }
+
+  private ganttWindowStart(): Date {
+    const d = this.hoy();
+    d.setDate(d.getDate() - this.ganttPastDays);
+    return d;
+  }
+
+  /** % de la ventana total en la que cae "hoy" — para dibujar la línea de HOY. */
+  get ganttTodayLeftPct(): number {
+    return this.ganttPastDays / this.ganttWindowTotalDays * 100;
+  }
+
+  /** Celdas de mes con ancho proporcional real (no tercios iguales) — calendario exacto dentro
+   * de la ventana [hoy-7d, hoy+90d], para que las líneas de mes caigan en el día 1 real. */
+  get ganttMonthCells(): { label: string; widthPct: number }[] {
+    const start = this.ganttWindowStart();
+    const totalDays = this.ganttWindowTotalDays;
+    const end = new Date(start); end.setDate(end.getDate() + totalDays);
+    const cells: { label: string; widthPct: number }[] = [];
+    let cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+    while (cursor < end) {
+      const nextMonth = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+      const cellStart = cursor < start ? start : cursor;
+      const cellEnd   = nextMonth < end ? nextMonth : end;
+      const days = (cellEnd.getTime() - cellStart.getTime()) / 86400000;
+      if (days > 0) {
+        const label = cursor.toLocaleDateString('es-PE', { month: 'short', year: '2-digit' });
+        cells.push({ label: label.charAt(0).toUpperCase() + label.slice(1), widthPct: days / totalDays * 100 });
+      }
+      cursor = nextMonth;
+    }
+    return cells;
+  }
+
+  /** Offsets (%) de cada límite de mes dentro de la ventana, para dibujar las líneas verticales. */
+  get ganttMonthBoundaries(): number[] {
+    const out: number[] = [];
+    let acc = 0;
+    const cells = this.ganttMonthCells;
+    for (let i = 0; i < cells.length - 1; i++) { acc += cells[i].widthPct; out.push(acc); }
+    return out;
+  }
+
+  /** Posición/ancho (%) de la barra de un Entregable (tiene rango inicio→fin) dentro de la
+   * ventana. Lo que empezó antes de la ventana se recorta al borde izquierdo. */
+  ganttBarStyle(item: GanttMiniItemDTO): { left: string; width: string } {
+    const windowStart = this.ganttWindowStart();
+    const totalMs = this.ganttWindowTotalDays * 86400000;
+    const itemStart = item.inicioProgramado ? this.pd(item.inicioProgramado)
+                     : item.finProgramado    ? this.pd(item.finProgramado)
+                     : this.hoy();
+    const itemEnd   = item.finProgramado ? this.pd(item.finProgramado) : itemStart;
+    const clampedStart = itemStart < windowStart ? windowStart : itemStart;
+    const leftMs  = Math.max(0, clampedStart.getTime() - windowStart.getTime());
+    const leftPct = Math.min(100, leftMs / totalMs * 100);
+    const rawEndMs = Math.max(itemEnd.getTime() - clampedStart.getTime(), 86400000);
+    const widthPct = Math.max(1.2, Math.min(100 - leftPct, rawEndMs / totalMs * 100));
+    return { left: `${leftPct}%`, width: `${widthPct}%` };
+  }
+
+  /** Posición (%) del diamante de un Hito (un hito es un punto en el tiempo, no un rango —
+   * convención estándar de Gantt: milestone = marca, no barra). */
+  ganttMilestoneLeftPct(item: GanttMiniItemDTO): number {
+    const windowStart = this.ganttWindowStart();
+    const totalMs = this.ganttWindowTotalDays * 86400000;
+    const due = item.finProgramado ? this.pd(item.finProgramado) : this.hoy();
+    const clamped = due < windowStart ? windowStart : due;
+    return Math.min(100, Math.max(0, (clamped.getTime() - windowStart.getTime()) / totalMs * 100));
+  }
+
   get modalCargaFiltradas(): ActividadListItemDTO[] {
     const bounds = this.modalCargaSoloSemanaControl ? this.semanaControlBounds() : null;
     return this.modalCargaActividades.filter(a => {
+      // Una CONSULTA no es lo mismo que un HITO/ENTREGABLE — se filtra antes que cualquier
+      // otro criterio para que aplique igual en la vista "semana en control" y en la general.
+      if (this.modalCargaFiltroTipo && a.partidaDeControl !== this.modalCargaFiltroTipo) return false;
       // Vista "vencenEstaSemana" (mismo criterio que usa el IES): solo las que su fin
       // programado cae dentro de la semana en control, sin importar su estado —
       // aquí SÍ se quiere ver PENDIENTE/EN_PROCESO junto a CULMINADO, para poder
@@ -214,6 +334,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     this.modalCargaActividades       = [];
     this.modalCargaExcluirCulminadas = true;
     this.modalCargaFiltroEstado      = '';
+    this.modalCargaFiltroTipo        = '';
     this.modalCargaSoloSemanaControl = false;
     this.service.getActividades({ filtroUserId: sup.userId, soloActivas: true, porPagina: 500 }).subscribe({
       next: res => {
@@ -264,15 +385,15 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   distribucionTipos: ChartItemDTO[] = [];
 
   // ─── charts ───────────────────────────────────────────────────
-  private avanceChart    ?: Chart;
-  private eficienciaChart?: Chart;
+  private consultasChart ?: Chart;
   private tiposChart     ?: Chart;
   private historicoChart ?: Chart;
+  private cargaHistoricoChart?: Chart;
 
-  @ViewChild('avanceCanvas')     avanceRef    !: ElementRef<HTMLCanvasElement>;
-  @ViewChild('eficienciaCanvas') eficienciaRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('consultasCanvas')  consultasRef !: ElementRef<HTMLCanvasElement>;
   @ViewChild('tiposCanvas')      tiposRef     !: ElementRef<HTMLCanvasElement>;
   @ViewChild('historicoCanvas')  historicoRef ?: ElementRef<HTMLCanvasElement>;
+  @ViewChild('cargaHistoricoCanvas') cargaHistoricoRef?: ElementRef<HTMLCanvasElement>;
 
   constructor(
     private service     : ArquitecturaComercialService,
@@ -331,8 +452,10 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     this.supervisores            = d.supervisores            ?? [];
     this.hitosCriticos           = d.hitosCriticos           ?? [];
     this.tareasPorArquitecto     = d.tareasPorArquitectoDetalle ?? [];
-    this.avanceSemanal           = d.avanceSemanal            ?? [];
-    this.eficienciaSpi           = d.eficienciaSpi            ?? [];
+    this.proximosPorProyecto     = d.proximosPorProyecto      ?? [];
+    this.eficienciaConsultas     = d.eficienciaConsultas       ?? [];
+    this.ganttHitos              = d.ganttHitos               ?? [];
+    this.ganttEntregables        = d.ganttEntregables          ?? [];
     this.distribucionPorCategoria= d.distribucionPorCategoria ?? [];
     this.distribucionTipos       = d.distribucionTipos        ?? [];
     this.semanaActual            = d.semanaActual             ?? null;
@@ -344,56 +467,47 @@ export class Dashboard implements AfterViewInit, OnDestroy {
 
   // ─── charts ──────────────────────────────────────────────────
   private destruirCharts() {
-    this.avanceChart?.destroy();
-    this.eficienciaChart?.destroy();
+    this.consultasChart?.destroy();
     this.tiposChart?.destroy();
     this.historicoChart?.destroy();
+    this.cargaHistoricoChart?.destroy();
   }
 
   private renderCharts() {
-    this.renderAvanceChart();
-    this.renderEficienciaChart();
+    this.renderConsultasChart();
     this.renderTiposChart();
   }
 
-  private renderAvanceChart() {
-    if (!this.avanceRef?.nativeElement) return;
-    const data = this.avanceSemanal;
-    this.avanceChart = new Chart(this.avanceRef.nativeElement, {
+  /** Tasa de cierre semanal SOLO de Consultas (últimas 8 semanas) — reemplaza a "Tendencia SPI",
+   * que en realidad mostraba el IES compuesto (Hitos+Entregables+Consultas mezclados), no un SPI
+   * real y no distinguía que una Consulta se cumple distinto que un Hito/Entregable. Semanas sin
+   * consultas venciendo quedan como hueco en la línea (null), no como una caída a 0%. */
+  private renderConsultasChart() {
+    if (!this.consultasRef?.nativeElement) return;
+    const data = this.eficienciaConsultas;
+    const vals = data.map(s => s.tasaCierre);
+    this.consultasChart = new Chart(this.consultasRef.nativeElement, {
       type: 'line',
       data: {
         labels: data.map(s => s.semana),
         datasets: [
           {
-            label: 'Programado',
-            data: data.map(s => s.programado),
-            borderColor: '#94A3B8',
-            backgroundColor: 'transparent',
-            borderWidth: 2,
-            borderDash: [5, 4],
-            pointRadius: 2.5,
-            pointBackgroundColor: '#94A3B8',
-            pointBorderColor: '#fff',
-            pointBorderWidth: 1.5,
-            cubicInterpolationMode: 'monotone' as const,
-            fill: false,
-          },
-          {
-            label: 'Real',
-            data: data.map(s => s.real),
-            borderColor: '#2563EB',
+            label: 'Tasa de cierre',
+            data: vals,
+            spanGaps: false,
+            borderColor: '#7C3AED',
             backgroundColor: (ctx: any) => {
               const { chart } = ctx;
               const { ctx: c, chartArea } = chart;
-              if (!chartArea) return 'rgba(37,99,235,0.08)';
+              if (!chartArea) return 'rgba(124,58,237,0.08)';
               const gradient = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-              gradient.addColorStop(0, 'rgba(37,99,235,0.22)');
-              gradient.addColorStop(1, 'rgba(37,99,235,0.01)');
+              gradient.addColorStop(0, 'rgba(124,58,237,0.20)');
+              gradient.addColorStop(1, 'rgba(124,58,237,0.01)');
               return gradient;
             },
             borderWidth: 2.5,
             pointRadius: 3.5,
-            pointBackgroundColor: '#2563EB',
+            pointBackgroundColor: vals.map(v => v == null ? 'transparent' : v >= 80 ? '#0F7A4E' : v >= 50 ? '#C4860A' : '#C94040'),
             pointBorderColor: '#fff',
             pointBorderWidth: 1.5,
             fill: true,
@@ -403,85 +517,23 @@ export class Dashboard implements AfterViewInit, OnDestroy {
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        interaction: { mode: 'index' as const, intersect: false },
         plugins: {
           datalabels: { display: false },
-          legend: { position: 'bottom' as const, labels: { boxWidth: 8, font: { size: 9 }, color: '#94A3B8', usePointStyle: true, pointStyle: 'circle' } },
+          legend: { display: false },
           tooltip: {
             backgroundColor: '#1E293B', cornerRadius: 6, padding: 8,
-            titleFont: { size: 10, weight: 'bold' as const }, bodyFont: { size: 10 },
-            callbacks: { label: (item: any) => ` ${item.dataset.label}: ${Number(item.raw).toFixed(1)}%` },
-          },
-        },
-        scales: {
-          // Sin max fijo: ahora son deltas semanales (avance de esa semana), no % acumulado 0-100.
-          y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.15)' }, border: { display: false }, ticks: { callback: (v: any) => `${v}%`, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
-          x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 }, color: '#94A3B8' } },
-        },
-      },
-    });
-  }
-
-  private renderEficienciaChart() {
-    if (!this.eficienciaRef?.nativeElement) return;
-    const data = this.eficienciaSpi.slice(-6);
-    const vals = data.map(s => Number((s.spi * 100).toFixed(1)));
-    const esperado = data.map(s => Number((s.esperado * 100).toFixed(1)));
-    this.eficienciaChart = new Chart(this.eficienciaRef.nativeElement, {
-      type: 'line',
-      data: {
-        labels: data.map(s => s.semana),
-        datasets: [
-          {
-            label: 'Esperado',
-            data: esperado,
-            borderColor: '#CBD5E1',
-            backgroundColor: 'transparent',
-            borderWidth: 1.5,
-            borderDash: [5, 4],
-            pointRadius: 0,
-            fill: false,
-            cubicInterpolationMode: 'monotone' as const,
-          },
-          {
-            label: 'Logrado',
-            data: vals,
-            borderColor: '#0EA36C',
-            backgroundColor: (ctx: any) => {
-              const { chart } = ctx;
-              const { ctx: c, chartArea } = chart;
-              if (!chartArea) return 'rgba(14,163,108,0.08)';
-              const gradient = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-              gradient.addColorStop(0, 'rgba(14,163,108,0.20)');
-              gradient.addColorStop(1, 'rgba(14,163,108,0.01)');
-              return gradient;
+            callbacks: {
+              label: (item: any) => {
+                const s = data[item.dataIndex];
+                if (s?.tasaCierre == null) return ' Sin consultas venciendo esta semana';
+                const spi = s.spiPromedio != null ? ` · SPI ${s.spiPromedio.toFixed(2)}` : '';
+                return ` Tasa de cierre: ${s.tasaCierre.toFixed(1)}%${spi}`;
+              },
             },
-            borderWidth: 2.5,
-            pointRadius: 3.5,
-            pointBackgroundColor: vals.map(v => v >= 95 ? '#0F7A4E' : v >= 80 ? '#C4860A' : '#C94040'),
-            pointBorderColor: '#fff',
-            pointBorderWidth: 1.5,
-            fill: true,
-            // 'monotone' evita que la curva "se pase" del valor real entre puntos cuando
-            // los datos suben y bajan fuerte semana a semana (con tension normal, el bezier
-            // sobrepasaba el pico/valle real y el gráfico se veía descuadrado).
-            cubicInterpolationMode: 'monotone' as const,
-          },
-        ],
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: {
-          datalabels: { display: (ctx) => ctx.datasetIndex === 1, anchor: 'end' as const, align: 'end' as const, offset: 6, color: '#64748B', font: { weight: 'bold' as const, size: 9 }, formatter: (v: number) => `${v}%` },
-          legend: { position: 'bottom' as const, labels: { boxWidth: 8, font: { size: 9 }, color: '#94A3B8', usePointStyle: true, pointStyle: 'circle' } },
-          tooltip: {
-            backgroundColor: '#1E293B', cornerRadius: 6, padding: 8,
-            titleFont: { size: 10, weight: 'bold' as const }, bodyFont: { size: 10 },
-            callbacks: { label: (item: any) => ` ${item.dataset.label}: ${Number(item.raw).toFixed(1)}%` },
           },
         },
         scales: {
-          y: { min: 0, max: 110, grid: { color: 'rgba(148,163,184,0.15)' }, border: { display: false }, ticks: { callback: (v: any) => `${v}%`, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
+          y: { min: 0, max: 100, grid: { color: 'rgba(148,163,184,0.15)' }, border: { display: false }, ticks: { callback: (v: any) => `${v}%`, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
           x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 }, color: '#94A3B8' } },
         },
       },
@@ -549,7 +601,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
 
   // ─── supervisor / carga helpers ──────────────────────────────
   get tareasPorArquitectoOrdenado(): TareasPorArquitectoDTO[] {
-    return [...this.tareasPorArquitecto].sort((a, b) => b.total - a.total);
+    return [...this.tareasPorArquitecto].sort((a, b) => b.totalPonderado - a.totalPonderado);
   }
 
   filtrarPorSupervisor(userId: number) {
@@ -557,43 +609,54 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     this.buscar();
   }
 
+  /** Filtra el dashboard entero por proyecto al hacer click en una fila de "Próximos
+   * Entregables/Hitos" — mismo patrón toggle que filtrarPorSupervisor. */
+  filtrarPorProyecto(proyectoId: number) {
+    this.filtro.proyectoId = this.filtro.proyectoId === proyectoId ? null : proyectoId;
+    this.buscar();
+  }
+
+  // Nota: la clasificación Sobrecargado/Normal/Disponible se basa en `totalPonderado`
+  // (Hito×3 + Entregable×2 + Consulta×1), no en el conteo crudo de `total` — una consulta
+  // puntual no implica la misma carga real que un hito o entregable. `total` se sigue
+  // mostrando en la tarjeta como dato informativo (cuántas partidas son en total).
   get cargaStats() {
     const d = this.tareasPorArquitectoOrdenado;
     if (!d.length) return null;
-    const totales = d.map(s => s.total);
-    const max  = Math.max(...totales);
-    const sum  = totales.reduce((a, b) => a + b, 0);
-    const avg  = Math.round(sum / d.length);
+    const ponderados = d.map(s => s.totalPonderado);
+    const max  = Math.max(...ponderados);
+    const sum  = ponderados.reduce((a, b) => a + b, 0);
+    const avg  = sum / d.length;
     const avgPct = max > 0 ? avg / max * 100 : 0;
-    return { max, avg, avgPct };
+    return { max, avg, avgRedondeado: Math.round(avg), avgPct };
   }
 
-  cargaBarPct(total: number): number {
+  cargaBarPct(totalPonderado: number): number {
     const s = this.cargaStats;
-    return s && s.max > 0 ? Math.round(total / s.max * 100) : 0;
+    return s && s.max > 0 ? Math.round(totalPonderado / s.max * 100) : 0;
   }
 
-  cargaTag(total: number): string {
+  cargaTag(totalPonderado: number): string {
     const s = this.cargaStats;
     if (!s) return '';
-    if (total > s.avg * 1.3) return 'Sobrecargado';
-    if (total < s.avg * 0.7) return 'Disponible';
+    if (totalPonderado > s.avg * 1.3) return 'Sobrecargado';
+    if (totalPonderado < s.avg * 0.7) return 'Disponible';
     return 'Normal';
   }
 
-  cargaTagStyle(total: number): { bg: string; color: string } {
+  cargaTagStyle(totalPonderado: number): { bg: string; color: string } {
     const s = this.cargaStats;
     if (!s) return { bg: '#F1F5F9', color: '#64748B' };
-    if (total > s.avg * 1.3) return { bg: '#FDF2F2', color: '#C0392B' };
-    if (total < s.avg * 0.7) return { bg: '#EAF3DE', color: '#1B6B3A' };
+    if (totalPonderado > s.avg * 1.3) return { bg: '#FDF2F2', color: '#C0392B' };
+    if (totalPonderado < s.avg * 0.7) return { bg: '#EAF3DE', color: '#1B6B3A' };
     return { bg: '#EDF4FB', color: '#2E6DB4' };
   }
 
-  cargaBarGradient(total: number): string {
+  cargaBarGradient(totalPonderado: number): string {
     const s = this.cargaStats;
     if (!s) return '#D6E4F0';
-    if (total > s.avg * 1.3) return 'linear-gradient(90deg,#E74C3C,#C0392B)';
-    if (total < s.avg * 0.7) return 'linear-gradient(90deg,#27AE60,#1B6B3A)';
+    if (totalPonderado > s.avg * 1.3) return 'linear-gradient(90deg,#E74C3C,#C0392B)';
+    if (totalPonderado < s.avg * 0.7) return 'linear-gradient(90deg,#27AE60,#1B6B3A)';
     return 'linear-gradient(90deg,#2E6DB4,#1B3A6B)';
   }
 
@@ -605,22 +668,22 @@ export class Dashboard implements AfterViewInit, OnDestroy {
 
     const masCargado   = d[0];
     const menosCargado = d[d.length - 1];
-    const sobrecargados = d.filter(x => x.total > s.avg * 1.3);
-    const disponibles   = d.filter(x => x.total < s.avg * 0.7);
+    const sobrecargados = d.filter(x => x.totalPonderado > s.avg * 1.3);
+    const disponibles   = d.filter(x => x.totalPonderado < s.avg * 0.7);
 
     sobrecargados.forEach(x => {
-      out.push(`🔴 ${this.primerApellido(x.nombre)} tiene ${x.total} act. (media ${s.avg}) — redistribuir urgente`);
+      out.push(`🔴 ${this.primerApellido(x.nombre)} tiene ${x.total} act. (carga ponderada ${x.totalPonderado} vs. media ${s.avgRedondeado}) — redistribuir urgente`);
     });
     disponibles.forEach(x => {
       out.push(`🟢 ${this.primerApellido(x.nombre)} tiene capacidad — asignar actividades`);
     });
 
-    const brecha = masCargado.total - menosCargado.total;
+    const brecha = masCargado.totalPonderado - menosCargado.totalPonderado;
     if (brecha > s.avg * 0.5) {
-      out.push(`⚖️ Brecha de ${brecha} act. entre ${this.primerApellido(masCargado.nombre)} y ${this.primerApellido(menosCargado.nombre)}`);
+      out.push(`⚖️ Brecha de carga entre ${this.primerApellido(masCargado.nombre)} y ${this.primerApellido(menosCargado.nombre)}`);
     }
     if (!out.length) {
-      out.push(`✅ Carga equilibrada (media ${s.avg} act. por supervisor)`);
+      out.push(`✅ Carga equilibrada (media ponderada ${s.avgRedondeado} por supervisor)`);
     }
     return out;
   }
@@ -692,7 +755,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   verDetalleSemanaSupervisor(sup: SupervisorProgresoDTO): void {
     const dto: TareasPorArquitectoDTO = {
       userId: sup.userId, nombre: sup.nombre,
-      hitos: 0, entregables: 0, consultas: 0, total: 0, avancePct: 0,
+      hitos: 0, entregables: 0, consultas: 0, total: 0, totalPonderado: 0, avancePct: 0,
     };
     this.abrirModalCarga(dto);
     this.modalCargaExcluirCulminadas = false;
@@ -700,7 +763,9 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   }
 
   // ─── modal histórico de supervisor ──────────────────────────
-  abrirHistoricoSupervisor(sup: SupervisorProgresoDTO): void {
+  // Se abre tanto desde Ranking Eficiencia (SupervisorProgresoDTO) como desde Distribución
+  // de Carga (TareasPorArquitectoDTO) — solo necesita userId + nombre de cualquiera de las dos.
+  abrirHistoricoSupervisor(sup: { userId: number; nombre: string }): void {
     this.modalHistoricoVisible   = true;
     this.historicoSupervisorNombre = sup.nombre;
     this.historicoSupervisorUserId = sup.userId;
@@ -711,7 +776,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
         this.historicoSupervisor = h;
         this.cargandoHistorico   = false;
         this.cdr.detectChanges();
-        setTimeout(() => this.renderHistoricoChart());
+        setTimeout(() => { this.renderHistoricoChart(); this.renderCargaHistoricoChart(); });
       },
       error: (err: HttpErrorResponse) => {
         this.cargandoHistorico = false;
@@ -724,20 +789,26 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     this.modalHistoricoVisible = false;
     this.historicoChart?.destroy();
     this.historicoChart = undefined;
+    this.cargaHistoricoChart?.destroy();
+    this.cargaHistoricoChart = undefined;
     this.historicoSupervisor = null;
   }
 
   /** Abre el modal de actividades (mismo que el ranking de carga) ya filtrado
-   * por estado, para ver el detalle de "vencidas"/"pendientes" del histórico. */
-  verActividadesHistorico(estado: 'VENCIDO' | 'PENDIENTE'): void {
+   * por estado, para ver el detalle de cualquiera de los 5 tiles del histórico
+   * (Total / Culminadas / En proceso / Pendientes / Vencidas). '' = sin filtro (Total). */
+  verActividadesHistorico(estado: '' | 'CULMINADO' | 'EN_PROCESO' | 'VENCIDO' | 'PENDIENTE'): void {
     if (this.historicoSupervisorUserId == null) return;
     const sup: TareasPorArquitectoDTO = {
       userId: this.historicoSupervisorUserId,
       nombre: this.historicoSupervisorNombre,
-      hitos: 0, entregables: 0, consultas: 0, total: 0, avancePct: 0,
+      hitos: 0, entregables: 0, consultas: 0, total: 0, totalPonderado: 0, avancePct: 0,
     };
     this.cerrarModalHistorico();
     this.abrirModalCarga(sup);
+    // abrirModalCarga excluye culminadas por defecto — acá se quiere ver Total/Culminadas
+    // también, así que se desactiva y se deja que modalCargaFiltroEstado haga todo el filtrado.
+    this.modalCargaExcluirCulminadas = false;
     this.modalCargaFiltroEstado = estado;
   }
 
@@ -783,6 +854,70 @@ export class Dashboard implements AfterViewInit, OnDestroy {
         },
         scales: {
           y: { min: 0, max: 100, grid: { color: 'rgba(148,163,184,0.15)' }, border: { display: false }, ticks: { callback: (v: any) => `${v}%`, font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
+          x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 }, color: '#94A3B8' } },
+        },
+      },
+    });
+  }
+
+  private readonly cargaTagColor: Record<string, string> = {
+    SOBRECARGADO: '#C0392B',
+    NORMAL: '#2E6DB4',
+    DISPONIBLE: '#1B6B3A',
+  };
+
+  /** Carga ponderada semana a semana (últimas 8 semanas) — para distinguir una sobrecarga
+   * puntual de un patrón que se repite (picos constantes). Color de cada barra = clasificación
+   * de esa semana (Sobrecargado/Normal/Disponible), línea punteada = media del equipo esa semana. */
+  private renderCargaHistoricoChart(): void {
+    if (!this.cargaHistoricoRef?.nativeElement || !this.historicoSupervisor) return;
+    this.cargaHistoricoChart?.destroy();
+    const data: CargaSemanalDTO[] = this.historicoSupervisor.tendenciaCarga ?? [];
+    this.cargaHistoricoChart = new Chart(this.cargaHistoricoRef.nativeElement, {
+      type: 'bar',
+      data: {
+        labels: data.map(s => s.semana),
+        datasets: [
+          {
+            label: 'Carga ponderada',
+            data: data.map(s => s.totalPonderado),
+            backgroundColor: data.map(s => this.cargaTagColor[s.tag] ?? '#94A3B8'),
+            borderRadius: 4,
+            maxBarThickness: 26,
+            order: 2,
+          },
+          {
+            label: 'Media del equipo',
+            type: 'line' as const,
+            data: data.map(s => s.promedioEquipo),
+            borderColor: '#94A3B8',
+            backgroundColor: 'transparent',
+            borderDash: [5, 4],
+            borderWidth: 1.5,
+            pointRadius: 0,
+            fill: false,
+            order: 1,
+          },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          datalabels: { display: false },
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1E293B', cornerRadius: 6, padding: 8,
+            callbacks: {
+              label: (item: any) => {
+                if (item.dataset.label === 'Media del equipo') return ` Media equipo: ${Number(item.raw).toFixed(1)}`;
+                const tag = data[item.dataIndex]?.tag ?? '';
+                return ` Carga ponderada: ${item.raw} (${tag.toLowerCase() || 'sin datos'})`;
+              },
+            },
+          },
+        },
+        scales: {
+          y: { beginAtZero: true, grid: { color: 'rgba(148,163,184,0.15)' }, border: { display: false }, ticks: { font: { size: 9 }, color: '#94A3B8', maxTicksLimit: 5 } },
           x: { grid: { display: false }, border: { display: false }, ticks: { font: { size: 9 }, color: '#94A3B8' } },
         },
       },
@@ -913,10 +1048,6 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     if (dias <= 7)             return '#D97706';
     return '#2E6DB4';
   }
-
-  get hitosUrgentesCnt()  { return this.hitosCriticos.filter(h => h.diasRestantes <= 3).length; }
-  get hitosEstaSemanaCnt(){ return this.hitosCriticos.filter(h => h.diasRestantes > 3 && h.diasRestantes <= 7).length; }
-  get hitosProximosCnt()  { return this.hitosCriticos.filter(h => h.diasRestantes > 7).length; }
 
   getSubtitulo(): string {
     if (this.semanaActual) return this.semanaActual.label;

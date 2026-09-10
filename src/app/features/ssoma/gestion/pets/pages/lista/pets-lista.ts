@@ -166,6 +166,35 @@ export class PetsLista implements OnInit {
     this.router.navigate(['/ssoma/gestion/pets', id]);
   }
 
+  duplicando: number | null = null;
+
+  // Clona un PETS existente como borrador nuevo (inactivo) para partir de él en
+  // vez de armar uno parecido desde cero.
+  duplicar(pet: PetListItemDto): void {
+    Swal.fire({
+      icon: 'question',
+      title: 'Duplicar PETS',
+      text: `Se creará "${pet.nombre} (copia)" con los mismos pasos, responsabilidades, secciones y catálogo — inactivo hasta que lo revises. No copia firmas ni anexos.`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, duplicar',
+      cancelButtonText: 'Cancelar',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.duplicando = pet.id;
+      this.petsService.duplicar(pet.id).subscribe({
+        next: ({ id }) => {
+          this.duplicando = null;
+          this.router.navigate(['/ssoma/gestion/pets', id]);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.duplicando = null;
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+    });
+  }
+
   toggleActivo(pet: PetListItemDto): void {
     Swal.fire({
       icon: 'question',

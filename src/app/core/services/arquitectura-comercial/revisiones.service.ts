@@ -96,11 +96,13 @@ export class RevisionesService {
     comentario: string | null,
     foto: File | null,
     levantaPorWorkerId: number | null,
+    fechaLevantamiento: string | null,
   ): Observable<RevisionObservacionListItemDTO> {
     const form = new FormData();
     if (comentario) form.append('comentario', comentario);
     if (foto) form.append('foto', foto);
     if (levantaPorWorkerId) form.append('levantaPorWorkerId', String(levantaPorWorkerId));
+    if (fechaLevantamiento) form.append('fechaLevantamiento', fechaLevantamiento);
 
     return this.http.post<RevisionObservacionListItemDTO>(`${this.apiUrl}/${id}/levantar`, form, { headers: this.authHeaders() });
   }

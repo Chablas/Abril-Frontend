@@ -63,7 +63,8 @@
         <tr>
           <th>Código</th>
           <th>Proyecto</th>
-          <th>Fecha</th>
+          <th>Fecha obs.</th>
+          <th>Fecha levant.</th>
           <th>Reportado por</th>
           <th>Partida</th>
           <th>Descripción</th>
@@ -75,7 +76,7 @@
       <tbody>
 
         <tr *ngIf="items.length === 0">
-          <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">
+          <td colspan="10" class="text-center py-[40px] text-gray-400 text-sm">
             {{ filtrosActivos ? 'Sin resultados.' : 'No hay observaciones registradas.' }}
           </td>
         </tr>
@@ -83,7 +84,18 @@
         <tr *ngFor="let o of items; trackBy: trackById" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
           <td data-label="Código" class="text-gray-700 font-medium whitespace-nowrap">{{ o.codigo }}</td>
           <td data-label="Proyecto" class="text-gray-700">{{ o.proyectoNombre }}</td>
-          <td data-label="Fecha" class="text-gray-700 whitespace-nowrap">{{ o.fecha | date: 'dd/MM/yyyy' }}</td>
+          <td data-label="Fecha obs." class="text-gray-700 whitespace-nowrap">{{ o.fecha | date: 'dd/MM/yyyy' }}</td>
+
+          <td data-label="Fecha levant." class="whitespace-nowrap" *ngIf="editandoId === o.id; else fechaLevSoloLectura">
+            <app-date-picker
+              [floatingLabel]="false"
+              [value]="editForm.fechaLevantamiento"
+              (valueChange)="editForm.fechaLevantamiento = $event">
+            </app-date-picker>
+          </td>
+          <ng-template #fechaLevSoloLectura>
+            <td data-label="Fecha levant." class="text-gray-700 whitespace-nowrap">{{ o.fechaLevantamiento ? (o.fechaLevantamiento | date: 'dd/MM/yyyy') : '—' }}</td>
+          </ng-template>
 
           <ng-container *ngIf="editandoId === o.id; else filaSoloLectura">
             <td data-label="Reportado por">
@@ -224,8 +236,12 @@
           <div class="text-[12px] text-gray-700 truncate">{{ o.proyectoNombre }}</div>
         </div>
         <div>
-          <div class="text-[9px] font-semibold uppercase text-gray-400">Fecha</div>
+          <div class="text-[9px] font-semibold uppercase text-gray-400">Fecha obs.</div>
           <div class="text-[12px] text-gray-700">{{ o.fecha | date: 'dd/MM/yyyy' }}</div>
+        </div>
+        <div>
+          <div class="text-[9px] font-semibold uppercase text-gray-400">Fecha levant.</div>
+          <div class="text-[12px] text-gray-700">{{ o.fechaLevantamiento ? (o.fechaLevantamiento | date: 'dd/MM/yyyy') : '—' }}</div>
         </div>
       </div>
 
@@ -235,6 +251,14 @@
           <input type="text" [(ngModel)]="editForm.personaReporta"
                  class="w-full border rounded-[6px] px-[6px] py-[5px] text-sm"
                  style="border-color:var(--color-abril-standard)" />
+        </div>
+        <div class="mb-[6px]">
+          <div class="text-[9px] font-semibold uppercase text-gray-400 mb-[2px]">Fecha de levantamiento</div>
+          <app-date-picker
+            [floatingLabel]="false"
+            [value]="editForm.fechaLevantamiento"
+            (valueChange)="editForm.fechaLevantamiento = $event">
+          </app-date-picker>
         </div>
         <div class="mb-[6px]">
           <div class="text-[9px] font-semibold uppercase text-gray-400 mb-[2px]">Partida</div>

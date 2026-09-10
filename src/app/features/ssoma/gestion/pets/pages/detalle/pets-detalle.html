@@ -80,31 +80,18 @@
       </div>
     </section>
 
-    <!-- ── PESTAÑAS ─────────────────────────────────────────────────────── -->
-    <div class="tabs-bar">
-      <button
-        type="button"
-        class="tab-btn"
-        *ngFor="let t of tabs"
-        [class.tab-btn--activo]="seccionActiva === t.key"
-        (click)="seleccionarTab(t.key)"
-      >
-        {{ t.label }}
-      </button>
-    </div>
-
-    <!-- ── SECCIONES EN ÁRBOL (Procedimiento + texto libre) ─────────────── -->
-    <section class="card" *ngIf="tabActiva.kind === 'arbol'">
+    <!-- ── IMPORTAR DESDE WORD (siempre visible — no depende de la pestaña activa) ── -->
+    <section class="card">
       <div class="card-titulo-row">
         <div>
-          <h2 class="card-titulo">{{ tabActiva.label }}</h2>
-          <p class="card-hint" *ngIf="seccionActiva === 'procedimiento'">
-            Estos pasos son los que OPT jala automáticamente al seleccionar este PETS. El número
-            se calcula por posición — insertar uno en medio corre el resto sin que tengas que
-            renumerar nada.
+          <h2 class="card-titulo">Importar desde Word</h2>
+          <p class="card-hint">
+            Sube un PETS ya existente y el sistema detecta automáticamente Introducción, Alcance,
+            Objetivo, Definiciones, Responsabilidades, Procedimiento y Restricciones. Nada se guarda
+            hasta que revises y confirmes cada sección.
           </p>
         </div>
-        <div class="import-actions" *ngIf="seccionActiva === 'procedimiento' && !previewSeccionesArbol && !previewSeccionesTexto && !previewManual">
+        <div class="import-actions" *ngIf="!previewSeccionesArbol && !previewSeccionesTexto && !previewManual">
           <a class="btn-plantilla" [href]="plantillaUrl" download title="Descargar un Word con la estructura y estilos que la plataforma reconoce">
             <i class="ti ti-file-download"></i> Descargar plantilla
           </a>
@@ -118,10 +105,11 @@
       <!-- ── VISTA PREVIA DE IMPORTACIÓN (nada se guarda hasta confirmar) ──
            Detecta TODAS las secciones conocidas del documento, no solo Procedimiento
            — cada una se revisa/edita aquí y al confirmar cae en su propia pestaña. -->
-      <div class="import-preview" *ngIf="seccionActiva === 'procedimiento' && (previewSeccionesArbol || previewSeccionesTexto)">
+      <div class="import-preview" *ngIf="previewSeccionesArbol || previewSeccionesTexto">
         <p class="import-preview-hint">
           <i class="ti ti-info-circle"></i>
           Detecté {{ objectKeys(previewSeccionesArbol).length + objectKeys(previewSeccionesTexto).length }} sección(es)
+          conocida(s){{ previewNoReconocidas.length > 0 ? ' y ' + previewNoReconocidas.length + ' encabezado(s) sin reconocer' : '' }}
           en el documento. Revisa cada una — nada se guarda todavía.
         </p>
 
@@ -147,6 +135,43 @@
           ></textarea>
         </div>
 
+        <!-- ── Encabezados que NO calzaron con ningún marcador conocido — antes se
+             colaban en silencio dentro de la sección anterior. Ahora el usuario
+             elige a qué pestaña enviarlos (o los descarta) antes de confirmar. ── -->
+        <div class="import-seccion-bloque import-no-reconocida" *ngFor="let bloque of previewNoReconocidas">
+          <h3 class="catalogo-bloque-titulo">
+            <i class="ti ti-help-circle"></i> "{{ bloque.titulo }}" — encabezado no reconocido
+          </h3>
+          <p class="card-hint">
+            No calzó con ninguna pestaña conocida — elige a dónde enviar este contenido (o descártalo).
+          </p>
+          <div class="preview-row" *ngFor="let p of bloque.parrafos" [style.marginLeft.px]="p.profundidad * 24">
+            <span class="manual-texto">{{ p.texto }}</span>
+          </div>
+          <div class="no-reconocida-destino">
+            <select class="abril-field-input" [(ngModel)]="bloque.destino" (ngModelChange)="onDestinoNoReconocidaChange(bloque)">
+              <option value="">Enviar a...</option>
+              <option *ngFor="let t of destinosNoReconocida" [value]="t.key">{{ t.label }}</option>
+            </select>
+            <select class="abril-field-input" *ngIf="subtiposDestino(bloque.destino).length > 0" [(ngModel)]="bloque.destinoTipo">
+              <option *ngFor="let st of subtiposDestino(bloque.destino)" [value]="st.value">{{ st.label }}</option>
+            </select>
+            <button class="btn-secondary" [disabled]="!bloque.destino" (click)="aplicarNoReconocida(bloque)">Enviar</button>
+            <button class="btn-secondary" (click)="descartarNoReconocida(bloque)">Descartar</button>
+          </div>
+        </div>
+
+        <div class="import-seccion-bloque" *ngIf="previewItemsCatalogo.length > 0">
+          <h3 class="catalogo-bloque-titulo">Ítems de catálogo triados ({{ previewItemsCatalogo.length }})</h3>
+          <ul class="catalogo-lista">
+            <li class="catalogo-item" *ngFor="let item of previewItemsCatalogo; let i = index">
+              <i class="ti ti-check catalogo-item-check"></i>
+              <span class="catalogo-item-texto">{{ labelDeSeccion(item.grupo) }}{{ item.tipo ? ' · ' + item.tipo : '' }}: {{ item.descripcion }}</span>
+              <button class="btn-icon btn-icon-danger" title="Quitar" (click)="quitarItemCatalogoPreview(i)"><i class="ti ti-trash"></i></button>
+            </li>
+          </ul>
+        </div>
+
         <label class="check-label" *ngIf="totalExistenteEnSeccionesDetectadas() > 0">
           <input type="checkbox" [(ngModel)]="reemplazarAlConfirmar" />
           Reemplazar Procedimiento/Responsabilidades existentes ({{ totalExistenteEnSeccionesDetectadas() }} paso(s) se eliminarán)
@@ -161,7 +186,7 @@
       </div>
 
       <!-- ── SELECCIÓN MANUAL (respaldo cuando no se detecta el encabezado) ── -->
-      <div class="import-preview" *ngIf="seccionActiva === 'procedimiento' && previewManual">
+      <div class="import-preview" *ngIf="previewManual">
         <p class="import-preview-hint">
           <i class="ti ti-info-circle"></i>
           No detecté el título automáticamente. Marca los párrafos que sí son pasos —
@@ -210,8 +235,27 @@
           </button>
         </div>
       </div>
+    </section>
 
-      <ng-container *ngIf="!previewSeccionesArbol && !previewSeccionesTexto && !previewManual">
+    <!-- ── PESTAÑAS ─────────────────────────────────────────────────────── -->
+    <div class="tabs-bar">
+      <button
+        type="button"
+        class="tab-btn"
+        *ngFor="let t of tabs"
+        [class.tab-btn--activo]="seccionActiva === t.key"
+        (click)="seleccionarTab(t.key)"
+      >
+        {{ t.label }}
+        <span class="tab-btn-dot" *ngIf="tabTieneContenido(t)" title="Esta pestaña tiene contenido"></span>
+      </button>
+    </div>
+
+    <!-- ── SECCIONES EN ÁRBOL (Procedimiento + texto libre) ─────────────── -->
+    <section class="card" *ngIf="tabActiva.kind === 'arbol'">
+      <h2 class="card-titulo">{{ tabActiva.label }}</h2>
+      <p class="card-hint">{{ tabActiva.ayuda }}</p>
+
       <div class="pasos-list" *ngIf="arbol.length > 0; else sinPasos">
         <ng-container *ngFor="let nodo of arbol; let i = index">
           <ng-container
@@ -221,7 +265,7 @@
       </div>
 
       <ng-template #sinPasos>
-        <p class="card-hint">Todavía no hay pasos. Agrega el primero abajo.</p>
+        <p class="card-hint">Todavía no hay pasos. Agrega el primero abajo, o usa "Importar desde Word" arriba.</p>
       </ng-template>
 
       <!-- Agregar al final (nivel superior) -->
@@ -234,7 +278,6 @@
           {{ agregando ? 'Agregando…' : 'Agregar al final' }}
         </button>
       </div>
-      </ng-container>
 
       <!-- ── PLANTILLA RECURSIVA: un nodo del árbol (subtítulo/paso/letra/guión) ── -->
       <ng-template #nodoTpl let-nodo let-hermanos="hermanos" let-index="index" let-parentId="parentId">
@@ -316,6 +359,7 @@
     <!-- ── SECCIÓN NARRATIVA (bloque de texto único) ────────────────────── -->
     <section class="card" *ngIf="tabActiva.kind === 'texto'">
       <h2 class="card-titulo">{{ tabActiva.label }}</h2>
+      <p class="card-hint">{{ tabActiva.ayuda }}</p>
       <textarea
         class="abril-field-input"
         rows="16"
@@ -333,6 +377,7 @@
     <!-- ── CATÁLOGO (Marco Legal / EPP / Recursos) ─────────────────────── -->
     <section class="card" *ngIf="tabActiva.kind === 'catalogo'">
       <h2 class="card-titulo">{{ tabActiva.label }}</h2>
+      <p class="card-hint">{{ tabActiva.ayuda }}</p>
 
       <div class="catalogo-bloque" *ngFor="let sub of catalogoTipos[tabActiva.key]">
         <h3 class="catalogo-bloque-titulo" *ngIf="sub.label">{{ sub.label }}</h3>
@@ -358,14 +403,16 @@
         </ul>
 
         <div class="catalogo-agregar">
-          <select
-            class="abril-field-input catalogo-select"
-            [ngModel]="seleccionEnCurso[claveCatalogo(tabActiva.key, sub.value)]"
-            (ngModelChange)="seleccionEnCurso[claveCatalogo(tabActiva.key, sub.value)] = $event"
-          >
-            <option [ngValue]="null">Elegir del catálogo...</option>
-            <option *ngFor="let op of opcionesDisponibles(tabActiva.key, sub.value)" [ngValue]="op.id">{{ op.descripcion }}</option>
-          </select>
+          <app-search-select
+            class="catalogo-select-wrap"
+            [options]="opcionesDisponibles(tabActiva.key, sub.value)"
+            valueField="id"
+            displayField="descripcion"
+            [showLabel]="false"
+            placeholder="Elegir del catálogo..."
+            [value]="seleccionEnCurso[claveCatalogo(tabActiva.key, sub.value)]"
+            (valueChange)="seleccionEnCurso[claveCatalogo(tabActiva.key, sub.value)] = $event"
+          ></app-search-select>
           <button
             class="btn-secondary"
             [disabled]="!seleccionEnCurso[claveCatalogo(tabActiva.key, sub.value)] || guardandoSeleccion[claveCatalogo(tabActiva.key, sub.value)]"
@@ -405,6 +452,7 @@
     <!-- ── ANEXOS ───────────────────────────────────────────────────────── -->
     <section class="card" *ngIf="tabActiva.kind === 'anexos'">
       <h2 class="card-titulo">Anexos</h2>
+      <p class="card-hint">{{ tabActiva.ayuda }}</p>
 
       <ul class="catalogo-lista">
         <li class="catalogo-item" *ngFor="let anexo of detalle.anexos">

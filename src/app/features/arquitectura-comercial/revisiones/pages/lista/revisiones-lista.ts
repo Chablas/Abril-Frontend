@@ -18,6 +18,7 @@ import { FilterTriggerButton } from '../../../../../shared/components/filter-tri
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { SearchInput } from '../../../../../shared/components/search-input/search-input';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { DatePicker } from '../../../../../shared/components/date-picker/date-picker';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
 import { NuevaRevisionObservacion } from '../../components/nueva-revision-observacion/nueva-revision-observacion';
 import { LevantarRevisionObservacion } from '../../components/levantar-revision-observacion/levantar-revision-observacion';
@@ -26,7 +27,7 @@ import { DEFAULT_PAGE_SIZE } from '../../../../../shared/constants/pagination';
 import { CatalogoService } from '../../../../../core/services/arquitectura-comercial/catalogo.service';
 import { CatalogoModal } from '../../../../../shared/components/catalogo-modal/catalogo-modal';
 import { ProyectosArquitecturaComercialModal } from '../../../../../shared/components/proyectos-arquitectura-comercial-modal/proyectos-arquitectura-comercial-modal';
-
+
 import { AC_REVISIONES_TABS } from '../../../shared/arquitectura-comercial-tabs';
 @Component({
   standalone: true,
@@ -40,6 +41,7 @@ import { AC_REVISIONES_TABS } from '../../../shared/arquitectura-comercial-tabs'
     FilterModal,
     SearchInput,
     SearchSelect,
+    DatePicker,
     AbrilBulkActionDirective,
     NuevaRevisionObservacion,
     LevantarRevisionObservacion,
@@ -98,7 +100,13 @@ export class RevisionesLista implements OnInit {
   partidasCatalogo: string[] = [];
 
   editandoId: number | null = null;
-  editForm = { personaReporta: '', partidaReportada: '' as string | null, descripcion: '', zonaAmbiente: '' };
+  editForm = {
+    personaReporta: '',
+    partidaReportada: '' as string | null,
+    descripcion: '',
+    zonaAmbiente: '',
+    fechaLevantamiento: '' as string | null,
+  };
   guardandoEdicion = false;
 
   get puedeEditar(): boolean {
@@ -409,6 +417,7 @@ export class RevisionesLista implements OnInit {
       partidaReportada: o.partidaReportada,
       descripcion: o.descripcion,
       zonaAmbiente: o.zonaAmbiente ?? '',
+      fechaLevantamiento: o.fechaLevantamiento ? o.fechaLevantamiento.substring(0, 10) : null,
     };
   }
 
@@ -423,6 +432,7 @@ export class RevisionesLista implements OnInit {
         partidaReportada: this.editForm.partidaReportada,
         descripcion: this.editForm.descripcion.trim(),
         zonaAmbiente: this.editForm.zonaAmbiente.trim() || null,
+        fechaLevantamiento: this.editForm.fechaLevantamiento || null,
       })
       .subscribe({
         next: (actualizado) => {

@@ -16,6 +16,7 @@ import {
   ActualizarDriversResultDto,
   GenerarPresupuestoDto,
   ActualizarLineaPresupuestoDto,
+  AgregarFamiliaManualDto,
   PresupuestoResumenDto,
   PresupuestoDetalleDto,
   PresupuestoDestinatarioDto,
@@ -319,6 +320,16 @@ export class PresupuestoMaterialesService {
     return this.http.put<{ message: string }>(
       `${this.base}/presupuestos/proyectos/${projectId}/familias/${familiaId}/cantidad-manual`,
       { cantidadManual },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Alta de família directo desde el detalle del presupuesto — crea (o reutiliza) la família en el
+   * catálogo y la agrega de una vez como línea manual, sin pasar primero por Catálogo. */
+  agregarFamiliaManual(presupuestoId: number, dto: AgregarFamiliaManualDto): Observable<PresupuestoDetalleDto> {
+    return this.http.post<PresupuestoDetalleDto>(
+      `${this.base}/presupuestos/${presupuestoId}/familias-manuales`,
+      dto,
       { headers: this.authHeaders() },
     );
   }

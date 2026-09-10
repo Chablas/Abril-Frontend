@@ -22,6 +22,20 @@
           (click)="showNuevoMaterial = true">
     <i class="ti ti-box"></i> <span>Nuevo material</span>
   </button>
+  <button tabsExtra type="button" title="Editar o desactivar materiales del catálogo"
+          class="flex items-center gap-[6px] px-[12px] py-[7px] rounded-[7px] border text-sm font-medium text-gray-700 hover:bg-gray-50"
+          style="border-color:var(--color-abril-border)"
+          (click)="abrirGestionMateriales()">
+    <i class="ti ti-list-details"></i> <span>Gestionar materiales</span>
+  </button>
+  <label tabsExtra title="Importar movimientos desde Excel"
+         class="flex items-center gap-[6px] px-[12px] py-[7px] rounded-[7px] border text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
+         style="border-color:var(--color-abril-border)"
+         [class.opacity-50]="importando">
+    <i class="ti" [ngClass]="importando ? 'ti-loader-2' : 'ti-file-import'"></i>
+    <span>{{ importando ? 'Importando…' : 'Importar Excel' }}</span>
+    <input type="file" accept=".xlsx,.xls" class="hidden" [disabled]="importando" (change)="onArchivoImportar($event)" />
+  </label>
   <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
 </app-abril-page-header>
 
@@ -84,7 +98,13 @@
               <td>{{ m.proyectoNombre }}</td>
               <td>{{ m.materialCodigo }} · {{ m.materialNombre }}</td>
               <td class="text-center">
-                <span class="badge-tipo" [class.badge-tipo--ingreso]="m.tipo === 'Ingreso'" [class.badge-tipo--salida]="m.tipo === 'Salida'">{{ m.tipo }}</span>
+                <span class="badge-tipo"
+                      [class.badge-tipo--ingreso]="m.tipo === 'Ingreso'"
+                      [class.badge-tipo--salida]="m.tipo === 'Salida'"
+                      [class.badge-tipo--devolucion]="m.tipo === 'Devolucion'">{{ m.tipo === 'Devolucion' ? 'Devolución' : m.tipo }}</span>
+                @if (m.motivoDevolucion) {
+                  <div class="motivo-devolucion">{{ m.motivoDevolucion }}</div>
+                }
               </td>
               <td class="text-center">{{ m.cantidad | number: '1.0-2' }} {{ m.unidadMedida }}</td>
               <td>{{ m.origen }}</td>
@@ -130,6 +150,14 @@
       </div>
 
       <input type="number" min="0.01" step="0.01" class="abril-field-input" placeholder="Cantidad" [(ngModel)]="nuevoMovimiento.cantidad" />
+
+      @if (nuevoMovimiento.tipo === 'Devolucion') {
+        <select class="abril-field-input" [(ngModel)]="nuevoMovimiento.motivoDevolucion">
+          <option [ngValue]="null">Selecciona el motivo de la devolución...</option>
+          @for (mo of motivosDevolucion; track mo) { <option [ngValue]="mo">{{ mo }}</option> }
+        </select>
+      }
+
       <input type="text" class="abril-field-input" placeholder="Origen (proveedor) o destino" [(ngModel)]="nuevoMovimiento.origen" />
       <textarea class="abril-field-input" placeholder="Comentario (opcional)" rows="2" [(ngModel)]="nuevoMovimiento.comentario"></textarea>
 
@@ -158,6 +186,75 @@
           <p class="text-white text-base font-medium text-center">Guardar</p>
         </button>
       </div>
+    </div>
+  </app-base-modal>
+}
+
+@if (showGestionMateriales) {
+  <app-base-modal title="GESTIONAR MATERIALES" width="w-[720px]" (closeModal)="showGestionMateriales = false">
+    <div class="flex flex-col gap-[10px] mt-[16px]">
+      <div class="abril-table-wrap">
+        <table class="abril-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Nombre</th>
+              <th>Unidad</th>
+              <th class="text-center">Punto reorden</th>
+              <th class="text-center">Stock seguridad</th>
+              <th class="text-center">Activo</th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (materialesGestion.length === 0) {
+              <tr><td colspan="7" class="text-center py-[24px] text-gray-400 text-sm">No hay materiales en el catálogo.</td></tr>
+            }
+            @for (m of materialesGestion; track trackByMaterialGestion($index, m)) {
+              <tr class="border-b" style="border-color:var(--color-abril-border)" [class.opacity-50]="!m.activo && editandoMaterialId !== m.id">
+                <td class="whitespace-nowrap">{{ m.codigo }}</td>
+
+                @if (editandoMaterialId === m.id) {
+                  <td><input type="text" class="abril-field-input" [(ngModel)]="editMaterialForm.nombre" /></td>
+                  <td><input type="text" class="abril-field-input" [(ngModel)]="editMaterialForm.unidadMedida" /></td>
+                  <td><input type="number" min="0" step="0.01" class="abril-field-input" [(ngModel)]="editMaterialForm.puntoReorden" /></td>
+                  <td><input type="number" min="0" step="0.01" class="abril-field-input" [(ngModel)]="editMaterialForm.stockSeguridad" /></td>
+                  <td class="text-center">
+                    <input type="checkbox" [(ngModel)]="editMaterialForm.activo" />
+                  </td>
+                  <td class="text-center">
+                    <div class="flex items-center justify-center gap-[8px]">
+                      <button type="button" (click)="guardarEdicionMaterial(m)" title="Guardar" class="text-sm" style="color:var(--color-abril-standard)">
+                        <i class="ti ti-check"></i>
+                      </button>
+                      <button type="button" (click)="cancelarEdicionMaterial()" title="Cancelar" class="text-sm text-gray-400">
+                        <i class="ti ti-x"></i>
+                      </button>
+                    </div>
+                  </td>
+                } @else {
+                  <td>{{ m.nombre }}</td>
+                  <td>{{ m.unidadMedida }}</td>
+                  <td class="text-center">{{ m.puntoReorden ?? '—' }}</td>
+                  <td class="text-center">{{ m.stockSeguridad ?? '—' }}</td>
+                  <td class="text-center">
+                    <button type="button" (click)="toggleActivoMaterial(m)"
+                            class="badge-tipo" [class.badge-tipo--ingreso]="m.activo" [class.badge-tipo--salida]="!m.activo">
+                      {{ m.activo ? 'Activo' : 'Inactivo' }}
+                    </button>
+                  </td>
+                  <td class="text-center">
+                    <button type="button" (click)="iniciarEdicionMaterial(m)" title="Editar" class="text-sm text-gray-400 hover:text-gray-600">
+                      <i class="ti ti-pencil"></i>
+                    </button>
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="hint-umbrales">Un material Inactivo desaparece de los combos de "Nuevo movimiento" e importación, pero su historial no se borra.</p>
     </div>
   </app-base-modal>
 }

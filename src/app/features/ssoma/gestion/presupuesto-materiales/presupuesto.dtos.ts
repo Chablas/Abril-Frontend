@@ -296,6 +296,16 @@ export interface ActualizarLineaPresupuestoDto {
   notasLinea?: string | null;
 }
 
+export interface AgregarFamiliaManualDto {
+  nombre: string;
+  tipoId: number;
+  variableBase: string;
+  unidadMedida?: string | null;
+  cantidadManual: number;
+  precioManual: number;
+  notasLinea?: string | null;
+}
+
 export interface PresupuestoResumenDto {
   id: number;
   projectId: number;

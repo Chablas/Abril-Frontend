@@ -62,6 +62,18 @@ export interface SupervisorHistoricoDTO {
   eficienciaHistorica: number;
   spiPromedio: number;
   tendenciaSemanal: EficienciaSemanalDTO[];
+  tendenciaCarga: CargaSemanalDTO[];
+}
+
+/** Carga ponderada de una semana puntual (+ promedio del equipo esa misma semana),
+ * para ver si la sobrecarga de un supervisor es puntual o un patrón repetido. */
+export interface CargaSemanalDTO {
+  semana: string;
+  total: number;
+  totalPonderado: number;
+  promedioEquipo: number;
+  /** SOBRECARGADO | NORMAL | DISPONIBLE */
+  tag: string;
 }
 
 export interface HitoCriticoDTO {
@@ -102,8 +114,10 @@ export interface ArqComercialDashboardDTO {
   supervisores: SupervisorProgresoDTO[];
   hitosCriticos: HitoCriticoDTO[];
   tareasPorArquitectoDetalle  : TareasPorArquitectoDTO[];
-  avanceSemanal               : AvanceSemanalDTO[];
-  eficienciaSpi               : EficienciaSpiDTO[];
+  proximosPorProyecto         : ProximoPorProyectoDTO[];
+  eficienciaConsultas         : EficienciaConsultaSemanalDTO[];
+  ganttHitos                  : GanttMiniItemDTO[];
+  ganttEntregables            : GanttMiniItemDTO[];
   categorias                  : CategoriaItemDTO[];
   distribucionPorCategoria    : CategoriaDashboardItemDTO[];
   distribucionTipos           : ChartItemDTO[];
@@ -118,24 +132,46 @@ export interface TareasPorArquitectoDTO {
   entregables : number;
   consultas   : number;
   total       : number;
+  /** Carga ponderada por tipo (Hito/Entregable pesan más que una Consulta) — esto, y no
+   * `total`, es lo que clasifica Sobrecargado/Normal/Disponible. */
+  totalPonderado: number;
   avancePct   : number;
 }
 
-export interface AvanceSemanalDTO {
-  semana     : string;
-  programado : number;
-  real       : number;
+/** Entregables e Hitos con vencimiento en los próximos 14 días, agrupados por proyecto —
+ * reemplaza a la antigua "Curva de Avance": qué vence, en qué proyecto, en 1-2 semanas. */
+export interface ProximoPorProyectoDTO {
+  proyectoId    : number;
+  proyectoNombre: string;
+  entregables   : number;
+  hitos         : number;
 }
 
-export interface EficienciaSpiDTO {
-  semana  : string;
-  spi     : number;
-  esperado: number;
+/** Tasa de cierre semanal (últimas 8 semanas) SOLO de Consultas — una Consulta no es lo mismo
+ * que un Hito/Entregable, se mide aparte en vez de mezclarse en un SPI general.
+ * null = no había consultas venciendo esa semana (no es 0%). */
+export interface EficienciaConsultaSemanalDTO {
+  semana     : string;
+  tasaCierre : number | null;
+  spiPromedio: number | null;
 }
 
 export interface CategoriaItemDTO {
   id    : number;
   nombre: string;
+}
+
+/** Fila de la mini-línea de tiempo de Hitos/Entregables (todos los proyectos, próximos 3
+ * meses) — reemplaza a la tarjeta plana de "Hitos Críticos". */
+export interface GanttMiniItemDTO {
+  id              : number;
+  nombre          : string;
+  proyecto        : string;
+  inicioProgramado: string | null;
+  finProgramado   : string | null;
+  inicioEfectivo  : string | null;
+  finEfectivo     : string | null;
+  estado          : string;
 }
 
 export interface ArqComercialFiltersDTO {

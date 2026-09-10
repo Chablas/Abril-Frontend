@@ -19,6 +19,11 @@ export const SSOMA_ROUTES: Routes = [
       import('./gestion/rac/rac.routes').then((m) => m.RAC_ROUTES),
   },
   {
+    path: 'gestion/penalidades',
+    loadChildren: () =>
+      import('./gestion/penalidades/penalidades.routes').then((m) => m.PENALIDADES_ROUTES),
+  },
+  {
     path: 'gestion/opt',
     loadChildren: () =>
       import('./gestion/opt/opt.routes').then((m) => m.OPT_ROUTES),

@@ -1,5 +1,8 @@
-export const TIPOS_MOVIMIENTO_ALMACEN = ['Ingreso', 'Salida'] as const;
+export const TIPOS_MOVIMIENTO_ALMACEN = ['Ingreso', 'Salida', 'Devolucion'] as const;
 export type TipoMovimientoAlmacen = (typeof TIPOS_MOVIMIENTO_ALMACEN)[number];
+
+export const MOTIVOS_DEVOLUCION = ['Error', 'Sobrante'] as const;
+export type MotivoDevolucion = (typeof MOTIVOS_DEVOLUCION)[number];
 
 export const TIPOS_DOCUMENTO_OC = ['Orden de Compra', 'Contrato'] as const;
 export type TipoDocumentoOC = (typeof TIPOS_DOCUMENTO_OC)[number];
@@ -15,6 +18,8 @@ export interface AlmacenMaterialDTO {
   nombre: string;
   unidadMedida: string;
   activo: boolean;
+  puntoReorden: number | null;
+  stockSeguridad: number | null;
 }
 
 export interface CreateAlmacenMaterialBody {
@@ -23,6 +28,14 @@ export interface CreateAlmacenMaterialBody {
   unidadMedida: string;
   puntoReorden?: number | null;
   stockSeguridad?: number | null;
+}
+
+export interface UpdateAlmacenMaterialBody {
+  nombre: string;
+  unidadMedida: string;
+  puntoReorden: number | null;
+  stockSeguridad: number | null;
+  activo: boolean;
 }
 
 export interface AlmacenFiltrosDTO {
@@ -37,6 +50,7 @@ export interface CreateAlmacenMovimientoBody {
   tipo: string;
   cantidad: number;
   origen?: string | null;
+  motivoDevolucion?: string | null;
   comentario?: string | null;
 }
 
@@ -52,6 +66,7 @@ export interface AlmacenMovimientoListItemDTO {
   tipo: string;
   cantidad: number;
   origen: string | null;
+  motivoDevolucion: string | null;
   comentario: string | null;
   creadoPor: string | null;
 }
@@ -165,4 +180,12 @@ export interface AlmacenDashboardDTO {
   materialesCriticos: AlmacenMaterialCriticoDTO[];
   cobertura: AlmacenCoberturaItemDTO[];
   limiteSeguridadDias: number;
+}
+
+export interface ImportarMovimientosResultDTO {
+  totalFilas: number;
+  importados: number;
+  duplicados: number;
+  materialesCreados: number;
+  errores: string[];
 }

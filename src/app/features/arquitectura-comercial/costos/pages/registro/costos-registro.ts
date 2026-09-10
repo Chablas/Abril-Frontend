@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import Swal from 'sweetalert2';
 import { CostosService } from '../../../../../core/services/arquitectura-comercial/costos.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { CostoFiltrosDTO, CostoMatrizDTO, ProyectoCostoFiltroDTO } from '../../../../../core/dtos/arquitectura-comercial/costos.model';
@@ -34,6 +35,13 @@ export class CostosRegistro implements OnInit {
   matriz: CostoMatrizDTO | null = null;
   loading = false;
   error = '';
+  procesandoCierre = false;
+
+  get puedeConfigurar(): boolean {
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem('allowed_features') : null;
+    const features: string[] = raw ? JSON.parse(raw) : [];
+    return features.includes('arquitectura-comercial.costos.configurar');
+  }
 
   constructor(
     private service: CostosService,
@@ -149,5 +157,72 @@ export class CostosRegistro implements OnInit {
   mesProyeccionLabel(): string {
     if (!this.matriz) return '';
     return `${(this.nombresMes[this.matriz.mesProyeccion - 1] || '').slice(0, 3)}-${String(this.matriz.anioProyeccion).slice(2)}`;
+  }
+
+  private readonly iconosPorPartida: Record<string, string> = {
+    'Mano de Obra': 'ti-user-cog',
+    'Materiales': 'ti-package',
+    'Subcontrata': 'ti-building-factory-2',
+  };
+
+  iconoPartida(partida: string): string {
+    return this.iconosPorPartida[partida] || 'ti-receipt';
+  }
+
+  /** Variación de la proyección al próximo mes respecto al subtotal del mes en curso —
+   * null si todavía no hay gasto registrado con qué comparar. */
+  get variacionProyeccionPct(): number | null {
+    if (!this.matriz || this.matriz.subtotalMes <= 0) return null;
+    return ((this.matriz.subtotalProyeccion - this.matriz.subtotalMes) / this.matriz.subtotalMes) * 100;
+  }
+
+  cerrarPeriodo(): void {
+    if (!this.matriz || !this.proyectoId || this.procesandoCierre) return;
+    Swal.fire({
+      icon: 'question',
+      title: `¿Cerrar ${this.mesLabel(this.matriz.mes)}?`,
+      text: 'Ya no se van a poder editar los montos semanales de este mes. Se puede reabrir después si hace falta corregir algo.',
+      showCancelButton: true,
+      confirmButtonText: 'Cerrar periodo',
+      cancelButtonText: 'Cancelar',
+    }).then((r) => {
+      if (!r.isConfirmed || !this.proyectoId) return;
+      this.procesandoCierre = true;
+      this.service.cerrarPeriodo({ proyectoId: this.proyectoId, anio: this.anio, mes: this.mes }).subscribe({
+        next: () => {
+          this.procesandoCierre = false;
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.procesandoCierre = false;
+          this.errorService.handleError(err);
+        },
+      });
+    });
+  }
+
+  reabrirPeriodo(): void {
+    if (!this.matriz || !this.proyectoId || this.procesandoCierre) return;
+    Swal.fire({
+      icon: 'warning',
+      title: `¿Reabrir ${this.mesLabel(this.matriz.mes)}?`,
+      text: 'Se va a poder volver a editar el registro semanal de este mes.',
+      showCancelButton: true,
+      confirmButtonText: 'Reabrir periodo',
+      cancelButtonText: 'Cancelar',
+    }).then((r) => {
+      if (!r.isConfirmed || !this.proyectoId) return;
+      this.procesandoCierre = true;
+      this.service.reabrirPeriodo({ proyectoId: this.proyectoId, anio: this.anio, mes: this.mes }).subscribe({
+        next: () => {
+          this.procesandoCierre = false;
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.procesandoCierre = false;
+          this.errorService.handleError(err);
+        },
+      });
+    });
   }
 }

@@ -1,0 +1,102 @@
+<app-abril-page-header
+  badge="COSTOS"
+  titulo="Presupuesto por Proyecto"
+  subtitulo="Presupuesto aprobado por partida vs. gasto real acumulado, con la desviación resultante."
+  [tabs]="tabs"
+  [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+  (secondaryClick)="load()">
+
+  <div tabsExtra class="filtros-row">
+    <div class="w-[240px]">
+      <app-search-select
+        [options]="proyectos"
+        valueField="id"
+        displayField="nombre"
+        placeholder="Buscar proyecto..."
+        [value]="proyectoId"
+        (valueChange)="onProyectoChange($event)">
+      </app-search-select>
+    </div>
+  </div>
+</app-abril-page-header>
+
+<div class="costos-root">
+  @if (error) {
+    <div class="alert-error"><i class="ti ti-alert-circle"></i> {{ error }}</div>
+  }
+
+  @if (loading) {
+    <div class="skeleton-card skeleton-card--tall"></div>
+  }
+
+  @if (!loading && resumen) {
+    <div class="matriz-card">
+      <div class="matriz-card__titulo">{{ resumen.proyectoNombre }}</div>
+
+      <div class="abril-table-wrap">
+        <table class="abril-table presupuesto-table">
+          <thead>
+            <tr>
+              <th class="col-partida">Partida</th>
+              <th>Presupuesto aprobado</th>
+              <th>Gasto real acumulado</th>
+              <th>Desviación</th>
+              <th>Desviación %</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (fila of resumen.partidas; track fila.partida) {
+              <tr>
+                <td class="col-partida">{{ fila.partida }}</td>
+                <td>
+                  @if (puedeConfigurar) {
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      class="celda-input"
+                      [ngModel]="fila.montoPresupuestado"
+                      (change)="guardarPresupuesto(fila.partida, $any($event.target).value)" />
+                  } @else {
+                    <span class="celda-calculada">{{ fila.montoPresupuestado | number: '1.0-2' }}</span>
+                  }
+                </td>
+                <td class="celda-calculada">{{ fila.montoEjecutado | number: '1.0-2' }}</td>
+                <td class="celda-calculada" [class.text-red-600]="fila.desviacion > 0">
+                  {{ fila.desviacion | number: '1.0-2' }}
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="desviacionClass(fila.desviacion, fila.montoPresupuestado)">
+                    {{ fila.montoPresupuestado > 0 ? (fila.desviacionPct | number: '1.0-1') + '%' : 'Sin presupuesto' }}
+                  </span>
+                </td>
+              </tr>
+            }
+            <tr class="fila-subtotal">
+              <td class="col-partida">Total</td>
+              <td>{{ resumen.totalPresupuestado | number: '1.0-2' }}</td>
+              <td>{{ resumen.totalEjecutado | number: '1.0-2' }}</td>
+              <td [class.text-red-600]="resumen.totalDesviacion > 0">{{ resumen.totalDesviacion | number: '1.0-2' }}</td>
+              <td>
+                <span class="badge" [ngClass]="desviacionClass(resumen.totalDesviacion, resumen.totalPresupuestado)">
+                  {{ resumen.totalPresupuestado > 0 ? (resumen.totalDesviacionPct | number: '1.0-1') + '%' : '—' }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      @if (!puedeConfigurar) {
+        <p class="nota-permiso"><i class="ti ti-lock"></i> Solo un administrador puede editar el presupuesto aprobado.</p>
+      }
+    </div>
+  }
+
+  @if (!loading && !resumen && !error) {
+    <div class="empty-state">
+      <i class="ti ti-mood-empty"></i>
+      <span>Selecciona un proyecto para ver su presupuesto.</span>
+    </div>
+  }
+</div>

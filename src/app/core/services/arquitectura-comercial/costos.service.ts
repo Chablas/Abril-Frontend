@@ -3,11 +3,14 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
+  CostoCierreBody,
   CostoDashboardDTO,
   CostoEvolucionDTO,
   CostoFiltrosDTO,
   CostoMatrizDTO,
+  CostoPresupuestoResumenDTO,
   UpsertCostoMetaBody,
+  UpsertCostoPresupuestoBody,
   UpsertCostoProyeccionBody,
   UpsertCostoRegistroBody,
 } from '../../dtos/arquitectura-comercial/costos.model';
@@ -54,5 +57,22 @@ export class CostosService {
 
   upsertMeta(body: UpsertCostoMetaBody): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.apiUrl}/meta`, body, { headers: this.authHeaders() });
+  }
+
+  getPresupuesto(proyectoId: number): Observable<CostoPresupuestoResumenDTO> {
+    const params = new HttpParams().set('proyectoId', proyectoId);
+    return this.http.get<CostoPresupuestoResumenDTO>(`${this.apiUrl}/presupuesto`, { params, headers: this.authHeaders() });
+  }
+
+  upsertPresupuesto(body: UpsertCostoPresupuestoBody): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/presupuesto`, body, { headers: this.authHeaders() });
+  }
+
+  cerrarPeriodo(body: CostoCierreBody): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/periodo/cerrar`, body, { headers: this.authHeaders() });
+  }
+
+  reabrirPeriodo(body: CostoCierreBody): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/periodo/reabrir`, body, { headers: this.authHeaders() });
   }
 }

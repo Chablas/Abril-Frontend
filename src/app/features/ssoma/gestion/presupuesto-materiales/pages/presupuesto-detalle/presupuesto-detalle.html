@@ -129,6 +129,50 @@
               </ng-container>
             </tbody>
           </table>
+
+          <!-- Alta de família nueva, inline — para materiales que aún no existen en el catálogo
+               (ej. un EPP nuevo) sin tener que ir primero a la pantalla de Catálogo. -->
+          <div *ngIf="detalle.estado === 'BORRADOR' && agregandoFamiliaTipoId !== tipo.tipoId" class="agregar-familia-row">
+            <button class="btn-outline btn-sm" (click)="agregarFamilia(tipo.tipoId)">
+              <i class="ti ti-plus"></i> Agregar família nueva a {{ tipo.nombreTipo }}
+            </button>
+          </div>
+
+          <div *ngIf="agregandoFamiliaTipoId === tipo.tipoId" class="linea-edit-form familia-nueva-form">
+            <strong>Nueva família en {{ tipo.nombreTipo }}</strong>
+            <div class="linea-fields">
+              <label class="full-w">Nombre
+                <input type="text" [(ngModel)]="formFamiliaNueva.nombre" placeholder="Ej. Guantes dieléctricos" />
+              </label>
+              <label>Se calcula por
+                <select [(ngModel)]="formFamiliaNueva.variableBase">
+                  <option value="FIJO">Monto fijo (100% manual)</option>
+                  <option value="HH">Horas-Hombre</option>
+                  <option value="AREATECHADA">Área Techada (m²)</option>
+                  <option value="TRABAJADORES">Trabajadores</option>
+                  <option value="METRADO">Metrado</option>
+                </select>
+              </label>
+              <label>Unidad de medida
+                <input type="text" [(ngModel)]="formFamiliaNueva.unidadMedida" placeholder="UND, PAR, KIT..." />
+              </label>
+              <label>Cantidad
+                <input type="number" [(ngModel)]="formFamiliaNueva.cantidadManual" min="0" step="0.0001" />
+              </label>
+              <label>Precio unitario
+                <input type="number" [(ngModel)]="formFamiliaNueva.precioManual" min="0" step="0.01" />
+              </label>
+              <label class="full-w">Notas
+                <input type="text" [(ngModel)]="formFamiliaNueva.notasLinea" placeholder="Motivo del alta..." />
+              </label>
+            </div>
+            <div class="linea-actions">
+              <button class="btn-save" [disabled]="guardandoFamilia" (click)="guardarFamiliaNueva()">
+                <i class="ti ti-check"></i> {{ guardandoFamilia ? 'Guardando...' : 'Guardar família' }}
+              </button>
+              <button class="btn-cancel" (click)="cancelarFamiliaNueva()">Cancelar</button>
+            </div>
+          </div>
         </div>
       </div>
 

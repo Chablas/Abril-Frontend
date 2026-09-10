@@ -27,6 +27,9 @@
           <path d="M3 7h18M3 12h18M3 17h18" stroke="currentColor" stroke-width="2"/>
         </svg>
         <p>Selecciona un proyecto desde "Filtros"</p>
+        <p *ngIf="categoriaFiltroNav || estadoFiltroNav" class="text-xs text-blue-500 mt-2">
+          Filtro pendiente desde el dashboard ({{ categoriaFiltroNav || estadoFiltroNav }}) — se aplicará apenas elijas el proyecto.
+        </p>
       </div>
     </div>
 
@@ -60,6 +63,19 @@
         </span>
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#DCFCE7] text-[#15803D] whitespace-nowrap">
           {{ selectedProyecto.activas }} {{ selectedProyecto.activas === 1 ? 'activa' : 'activas' }}
+        </span>
+
+        <!-- Filtro de categoría/estado que llegó por navegación desde el dashboard -->
+        <span *ngIf="categoriaFiltroNav || estadoFiltroNav"
+              class="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#EDF4FB] text-[#1B3A6B] whitespace-nowrap">
+          <i class="ti ti-filter" style="font-size:12px"></i>
+          Desde dashboard:
+          <span *ngIf="categoriaFiltroNav">{{ categoriaFiltroNav }}</span>
+          <span *ngIf="estadoFiltroNav">{{ estadoFiltroNav }}</span>
+          <button type="button" (click)="limpiarFiltroNavegacion()" title="Quitar este filtro"
+                  style="border:none;background:transparent;color:#1B3A6B;cursor:pointer;padding:0;display:flex;align-items:center">
+            <i class="ti ti-x" style="font-size:12px"></i>
+          </button>
         </span>
 
         <!-- Tabs tipo (pills) -->

@@ -159,6 +159,11 @@ export interface PetsImportPreviewDto {
   seccionesTexto: Record<string, string>;
   // Respaldo cuando no se detecta NINGÚN título de sección conocido.
   todosLosParrafos: ImportParrafoDto[];
+  // Encabezados con estilo de título que NO calzaron con ningún marcador conocido
+  // (clave = el título tal cual aparece en el documento) — antes su contenido se
+  // colaba en silencio dentro de la sección anterior; ahora se muestra aparte para
+  // que el usuario elija a qué pestaña enviarlo.
+  seccionesNoReconocidas: Record<string, ImportParrafoDto[]>;
 }
 
 export interface ImportPasoConfirmDto {
@@ -176,4 +181,7 @@ export interface ConfirmarImportacionRequest {
   // versión corregida). false/omitido: agrega al final, como hasta ahora. No aplica
   // a seccionesTexto: esas siempre se sobrescriben (es un solo bloque).
   reemplazar?: boolean;
+  // Ítems de Marco Legal/EPP/Recursos triados a mano desde una sección no
+  // reconocida — se agregan como personalizados de este PETS.
+  itemsCatalogo: AgregarItemPersonalizadoRequest[];
 }

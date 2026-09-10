@@ -563,6 +563,9 @@
 }
 
 .tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: #fff;
   color: #1a1a18;
   border: 0.5px solid var(--color-abril-border);
@@ -578,6 +581,42 @@
   background: var(--color-abril-logo-blue, #005d9d);
   color: #fff;
   border-color: var(--color-abril-logo-blue, #005d9d);
+}
+
+.tab-btn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-abril-logo-blue, #005d9d);
+  flex-shrink: 0;
+}
+
+.tab-btn--activo .tab-btn-dot {
+  background: #fff;
+}
+
+/* ── Encabezados no reconocidos del Word (triage manual) ────────────────── */
+
+.import-no-reconocida {
+  border: 0.5px dashed var(--color-abril-border);
+  background: #f8fafc;
+}
+
+.no-reconocida-destino {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.no-reconocida-destino select {
+  flex: 1;
+  min-width: 160px;
+}
+
+.catalogo-select-wrap {
+  flex: 1;
+  min-width: 200px;
 }
 
 /* ── CATÁLOGO (Marco Legal / EPP / Recursos) y ANEXOS ───────────────────── */
