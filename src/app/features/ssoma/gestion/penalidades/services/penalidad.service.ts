@@ -16,6 +16,7 @@ import {
   PenalidadApelarRequest,
   PenalidadDecidirApelacionRequest,
   PenalidadCreadaDto,
+  OrigenCandidatoDto,
   InfraccionAdminDto,
   InfraccionUpsertRequest,
   UitAnioAdminDto,
@@ -77,6 +78,13 @@ export class PenalidadService {
 
   registrar(req: PenalidadRegistrarRequest): Observable<PenalidadCreadaDto> {
     return this.http.post<PenalidadCreadaDto>(`${this.base}`, req, { headers: buildAuthHeaders() });
+  }
+
+  getOrigenesCandidatos(empresaId?: number, proyectoId?: number): Observable<OrigenCandidatoDto[]> {
+    let params = new HttpParams();
+    if (empresaId) params = params.set('empresaId', String(empresaId));
+    if (proyectoId) params = params.set('proyectoId', String(proyectoId));
+    return this.http.get<OrigenCandidatoDto[]>(`${this.base}/origenes-candidatos`, { params, headers: buildAuthHeaders() });
   }
 
   aprobarResidente(id: number): Observable<PenalidadDetalleDto> {

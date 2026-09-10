@@ -1,8 +1,10 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
+import { AbrilPageHeaderComponent, AbrilPageTabGroup } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { EvAsignacionesService } from '../services/ev-asignaciones.service';
+import { EvAccesoService } from '../services/ev-acceso.service';
+import { buildEvaluacionesTabGroups } from '../shared/evaluaciones-tabs';
 import { ProyectoAsignadoDto, SupervisorAsignacionDto } from '../dtos/ev-asignaciones.model';
 
 @Component({
@@ -22,13 +24,19 @@ export class Asignaciones implements OnInit {
   supervisorEditando: SupervisorAsignacionDto | null = null;
   seleccionados = new Set<number>();
   guardando = false;
+  tabGroups: AbrilPageTabGroup[] = buildEvaluacionesTabGroups(null);
 
   constructor(
     private asignacionesService: EvAsignacionesService,
     private cdr: ChangeDetectorRef,
+    private accesoSvc: EvAccesoService,
   ) {}
 
   ngOnInit(): void {
+    this.accesoSvc.getAcceso().subscribe((acceso) => {
+      this.tabGroups = buildEvaluacionesTabGroups(acceso);
+      this.cdr.detectChanges();
+    });
     this.loading = true;
     this.asignacionesService.getSupervisores().subscribe({
       next: (data) => {

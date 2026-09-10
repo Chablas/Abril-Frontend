@@ -2,9 +2,11 @@ import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, O
 import Chart from 'chart.js/auto';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
+import { AbrilPageHeaderComponent, AbrilPageTabGroup } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { EvDashboardService } from '../../services/ev-dashboard.service';
 import { EvPeriodoService } from '../../services/ev-periodo.service';
+import { EvAccesoService } from '../../services/ev-acceso.service';
+import { buildEvaluacionesTabGroups } from '../../shared/evaluaciones-tabs';
 import { EvDashboardGerenciaDto, EvResidenteResumenDto } from '../../dtos/ev-dashboard.model';
 import { EvEvaluacionResponseDto } from '../../dtos/ev-evaluacion.model';
 import { EvPeriodoDto } from '../../dtos/ev-periodo.model';
@@ -28,6 +30,7 @@ export class DashboardGerencia implements OnInit, AfterViewInit {
   chartBarrasId = 'chart-barras-ev';
   chartTendenciaId = 'chart-tendencia-ev';
   residenteActivoTendencia: number | null = null;
+  tabGroups: AbrilPageTabGroup[] = buildEvaluacionesTabGroups(null);
 
   private readonly COLORES = [
     { bg: '#DCFCE7', border: '#059669' },
@@ -44,6 +47,7 @@ export class DashboardGerencia implements OnInit, AfterViewInit {
     private dashService: EvDashboardService,
     private periodoService: EvPeriodoService,
     private cdr: ChangeDetectorRef,
+    private accesoSvc: EvAccesoService,
   ) {}
 
   ngAfterViewInit(): void {
@@ -53,6 +57,10 @@ export class DashboardGerencia implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
+    this.accesoSvc.getAcceso().subscribe((acceso) => {
+      this.tabGroups = buildEvaluacionesTabGroups(acceso);
+      this.cdr.markForCheck();
+    });
     // El dashboard es un resumen de solo lectura: usa el ÚLTIMO período registrado,
     // no el "activo" (que solo existe durante la ventana de evaluación, día 25 -> fin de mes).
     // Así se ve todo el mes, no solo esos días.

@@ -2,10 +2,12 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
+import { AbrilPageHeaderComponent, AbrilPageTabGroup } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { EvJefeSsomaService } from '../../services/ev-jefe-ssoma.service';
+import { EvAccesoService } from '../../services/ev-acceso.service';
+import { buildEvaluacionesTabGroups } from '../../shared/evaluaciones-tabs';
 import {
   EvJefeSsomaInicioDto,
   EvSupervisorContratistaCriterioDto,
@@ -39,6 +41,7 @@ export class EvaluarJefeSsoma implements OnInit {
   inicio: EvJefeSsomaInicioDto | null = null;
   loading = true;
   guardando = false;
+  tabGroups: AbrilPageTabGroup[] = buildEvaluacionesTabGroups(null);
 
   detalles: DetalleForm[] = [];
   comentario = '';
@@ -76,10 +79,15 @@ export class EvaluarJefeSsoma implements OnInit {
     private loader: LoaderService,
     private errorSvc: ErrorService,
     private cdr: ChangeDetectorRef,
+    private accesoSvc: EvAccesoService,
   ) {}
 
   ngOnInit(): void {
     this.cargarInicio();
+    this.accesoSvc.getAcceso().subscribe((acceso) => {
+      this.tabGroups = buildEvaluacionesTabGroups(acceso);
+      this.cdr.markForCheck();
+    });
   }
 
   cargarInicio(): void {

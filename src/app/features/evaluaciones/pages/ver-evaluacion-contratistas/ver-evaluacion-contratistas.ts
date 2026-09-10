@@ -3,10 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import Swal from 'sweetalert2';
-import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
+import { AbrilPageHeaderComponent, AbrilPageTabGroup } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { EvContratistaService } from '../../services/ev-contratista.service';
+import { EvAccesoService } from '../../services/ev-acceso.service';
+import { buildEvaluacionesTabGroups } from '../../shared/evaluaciones-tabs';
 import {
   EvContratistaVerInicioDto,
   EvContratistaResumenDto,
@@ -30,6 +32,7 @@ export class VerEvaluacionContratistas implements OnInit {
   busqueda = '';
   estadoFiltro: string = '';
   enviandoResultados = false;
+  tabGroups: AbrilPageTabGroup[] = buildEvaluacionesTabGroups(null);
 
   readonly areas = ['OF. TÉCNICA', 'SSOMA', 'RESIDENCIA', 'CALIDAD', 'PRODUCCIÓN'];
 
@@ -92,10 +95,15 @@ export class VerEvaluacionContratistas implements OnInit {
     private loader: LoaderService,
     private errorSvc: ErrorService,
     private cdr: ChangeDetectorRef,
+    private accesoSvc: EvAccesoService,
   ) {}
 
   ngOnInit(): void {
     this.cargar();
+    this.accesoSvc.getAcceso().subscribe((acceso) => {
+      this.tabGroups = buildEvaluacionesTabGroups(acceso);
+      this.cdr.markForCheck();
+    });
   }
 
   cargar(): void {

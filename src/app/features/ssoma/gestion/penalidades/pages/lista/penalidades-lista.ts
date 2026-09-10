@@ -13,6 +13,7 @@ import {
   PenalidadListQuery,
   InfraccionAdminDto,
   ContextoEmpresaDto,
+  OrigenCandidatoDto,
 } from '../../dtos/penalidad.dtos';
 import { PENALIDADES_TABS } from '../../penalidades-tabs';
 
@@ -87,6 +88,9 @@ export class PenalidadesLista implements OnInit {
   nuevaInfraccionId: number | null = null;
   nuevaSeveridad = '';
   nuevaDescripcion = '';
+
+  candidatosOrigen: OrigenCandidatoDto[] = [];
+  loadingCandidatosOrigen = false;
 
   readonly ORIGEN_OPCIONES = [
     { value: 'DIRECTO', label: 'Hallazgo directo (sin RAC/Amonestación previa)' },
@@ -191,6 +195,7 @@ export class PenalidadesLista implements OnInit {
     this.nuevaInfraccionId = null;
     this.nuevaSeveridad = '';
     this.nuevaDescripcion = '';
+    this.candidatosOrigen = [];
     this.contexto = null;
     this.mostrarFormGestionPrevia = false;
     this.mostrarNueva = true;
@@ -218,6 +223,41 @@ export class PenalidadesLista implements OnInit {
   }
 
   cerrarNueva(): void { this.mostrarNueva = false; this.cdr.markForCheck(); }
+
+  onOrigenTipoChange(tipo: 'RAC' | 'AMONESTACION' | 'DIRECTO'): void {
+    this.nuevaOrigenTipo = tipo;
+    this.nuevaOrigenId = null;
+    this.candidatosOrigen = [];
+    if (tipo === 'DIRECTO') { this.cdr.markForCheck(); return; }
+
+    this.loadingCandidatosOrigen = true;
+    this.cdr.markForCheck();
+    this.penalidadService.getOrigenesCandidatos().subscribe({
+      next: (candidatos) => {
+        this.candidatosOrigen = candidatos.filter((c) => c.origenTipo === tipo);
+        this.loadingCandidatosOrigen = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingCandidatosOrigen = false;
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  onOrigenCandidatoSeleccionado(id: number | null): void {
+    this.nuevaOrigenId = id;
+    const candidato = this.candidatosOrigen.find((c) => c.id === id);
+    if (!candidato) return;
+
+    this.nuevaProyectoId = candidato.proyectoId;
+    if (candidato.infraccionSugeridaId) this.nuevaInfraccionId = candidato.infraccionSugeridaId;
+    if (candidato.severidad) this.nuevaSeveridad = candidato.severidad;
+    this.nuevaDescripcion = candidato.descripcion;
+    if (candidato.empresaId) this.onEmpresaSeleccionada(candidato.empresaId);
+    this.cdr.markForCheck();
+  }
 
   onEmpresaSeleccionada(empresaId: number | null): void {
     this.nuevaEmpresaId = empresaId;

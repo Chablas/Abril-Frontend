@@ -2,9 +2,11 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
+import { AbrilPageHeaderComponent, AbrilPageTabGroup } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { EvEvaluacionService } from '../../services/ev-evaluacion.service';
 import { EvPeriodoService } from '../../services/ev-periodo.service';
+import { EvAccesoService } from '../../services/ev-acceso.service';
+import { buildEvaluacionesTabGroups } from '../../shared/evaluaciones-tabs';
 import { EvEvaluacionResponseDto } from '../../dtos/ev-evaluacion.model';
 import { EvPeriodoDto } from '../../dtos/ev-periodo.model';
 
@@ -22,14 +24,20 @@ export class Historial implements OnInit {
   loading = false;
   filtroArea = '';
   filtroResidente = '';
+  tabGroups: AbrilPageTabGroup[] = buildEvaluacionesTabGroups(null);
 
   constructor(
     private evalService: EvEvaluacionService,
     private periodoService: EvPeriodoService,
     private cdr: ChangeDetectorRef,
+    private accesoSvc: EvAccesoService,
   ) {}
 
   ngOnInit(): void {
+    this.accesoSvc.getAcceso().subscribe((acceso) => {
+      this.tabGroups = buildEvaluacionesTabGroups(acceso);
+      this.cdr.detectChanges();
+    });
     this.periodoService.getAll().subscribe({
       next: (ps) => {
         this.periodos = ps;

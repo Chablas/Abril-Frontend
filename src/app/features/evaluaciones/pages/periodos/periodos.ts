@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
+import { AbrilPageHeaderComponent, AbrilPageTabGroup } from '../../../../shared/components/abril-page-header/abril-page-header.component';
+import { EvAccesoService } from '../../services/ev-acceso.service';
+import { buildEvaluacionesTabGroups } from '../../shared/evaluaciones-tabs';
 import { StatusBadge } from '../../../../shared/components/status-badge/status-badge';
 import { AbrilBulkActionDirective } from '../../../../shared/directives/abril-bulk-action.directive';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
@@ -24,6 +26,7 @@ import { EvPeriodoDto } from '../../dtos/ev-periodo.model';
 export class EvPeriodos implements OnInit {
   periodos: EvPeriodoDto[] = [];
   loading = false;
+  tabGroups: AbrilPageTabGroup[] = buildEvaluacionesTabGroups(null);
 
   searchText = '';
   private readonly pager = new ClientPager<EvPeriodoDto>();
@@ -51,10 +54,14 @@ export class EvPeriodos implements OnInit {
     private periodoService: EvPeriodoService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
+    private accesoSvc: EvAccesoService,
   ) {}
 
   ngOnInit(): void {
     this.load();
+    this.accesoSvc.getAcceso().subscribe((acceso) => {
+      this.tabGroups = buildEvaluacionesTabGroups(acceso);
+    });
   }
 
   load(): void {

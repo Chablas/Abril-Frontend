@@ -65,6 +65,20 @@ export interface PenalidadDetalleDto extends PenalidadListItemDto {
   historial: PenalidadEstadoHistorialDto[];
 }
 
+export interface OrigenCandidatoDto {
+  origenTipo: 'RAC' | 'AMONESTACION';
+  id: number;
+  codigo: string;
+  descripcion: string;
+  empresaId: number;
+  proyectoId: number;
+  empresaNombre?: string;
+  proyectoNombre?: string;
+  severidad?: string;
+  infraccionSugeridaId?: number;
+  fecha: string;
+}
+
 export interface PenalidadRegistrarRequest {
   origenTipo: 'RAC' | 'AMONESTACION' | 'DIRECTO';
   origenId?: number;

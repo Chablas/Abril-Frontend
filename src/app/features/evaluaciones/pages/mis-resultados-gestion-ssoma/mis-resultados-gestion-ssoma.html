@@ -1,7 +1,7 @@
 <app-abril-page-header
   badge="EVALUACIONES"
-  titulo="Resultados — Evaluación al Jefe SSOMA"
-  subtitulo="Promedio y comentarios agregados. Anónimo: no se muestra quién evaluó ni qué nota puso cada persona."
+  titulo="Mis resultados"
+  subtitulo="Todo lo que te evaluaron, por fuente: contratistas y equipo SSOMA. Anónimo: no se muestra quién evaluó ni qué nota puso cada persona."
   [tabGroups]="tabGroups"
 ></app-abril-page-header>
 
@@ -11,29 +11,53 @@
     <div class="spinner"></div><span>Cargando resultados...</span>
   </div>
 
-  <div class="empty-state" *ngIf="!loading && !resultados?.periodo">
+  <div class="empty-state" *ngIf="!loading && !resultados?.periodo && !perfilContratistas">
     <i class="ti ti-calendar-off"></i>
-    <h3>Sin período activo</h3>
-    <p>No hay un período de evaluación abierto en este momento.</p>
+    <h3>Sin evaluaciones registradas</h3>
+    <p>Todavía no tienes evaluaciones registradas de ninguna fuente.</p>
   </div>
 
-  <div class="rj-content" *ngIf="!loading && resultados?.periodo">
+  <div class="rj-content" *ngIf="!loading && (resultados?.periodo || perfilContratistas)">
 
-    <!-- FILA SUPERIOR: 3 KPI cards -->
-    <div class="kpi-row">
+    <!-- FUENTE 1: CONTRATISTAS -->
+    <div class="fuente-block" *ngIf="perfilContratistas">
+      <div class="fuente-titulo"><i class="ti ti-building"></i> De contratistas</div>
+
+      <div class="kpi-row kpi-row-2">
+        <div class="kpi-card kpi-nota">
+          <div class="kpi-label">Promedio general</div>
+          <div class="kpi-num" [ngClass]="notaClase(perfilContratistas.promedioGeneral)">
+            {{ notaDisplay(perfilContratistas.promedioGeneral) }}
+          </div>
+          <div class="kpi-sub">{{ perfilContratistas.totalEvaluaciones }} evaluación(es) recibida(s)</div>
+        </div>
+      </div>
+
+      <div class="section-card section-comentarios" *ngIf="perfilContratistas.comentarios.length">
+        <div class="section-title">
+          <i class="ti ti-message-circle"></i> Comentarios recibidos
+          <span class="badge-count">{{ perfilContratistas.comentarios.length }}</span>
+        </div>
+        <div class="comentarios-scroll">
+          <div class="comentario-item" *ngFor="let c of perfilContratistas.comentarios">
+            <i class="ti ti-quote"></i> {{ c }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FUENTE 2: EQUIPO SSOMA (jefe/coordinador/compañero) -->
+    <div class="fuente-block" *ngIf="resultados?.periodo">
+    <div class="fuente-titulo"><i class="ti ti-users-group"></i> De mi Jefe / Coordinador SSOMA</div>
+
+    <!-- FILA SUPERIOR: 2 KPI cards -->
+    <div class="kpi-row kpi-row-2">
       <div class="kpi-card kpi-nota">
         <div class="kpi-label">Promedio general</div>
         <div class="kpi-num" [ngClass]="notaClase(resultados!.promedioGeneral)">
           {{ notaDisplay(resultados!.promedioGeneral) }}
         </div>
         <div class="kpi-sub">{{ resultados!.totalRespuestas }} respuesta(s) · {{ resultados!.periodo!.nombreMes }} {{ resultados!.periodo!.anio }}</div>
-      </div>
-
-      <div class="kpi-card kpi-cumplimiento" *ngIf="cumplimiento">
-        <div class="kpi-label">Cumplimiento del equipo SSOMA</div>
-        <div class="kpi-num kpi-num-azul">{{ porcentajeCompletado }}%</div>
-        <div class="kpi-sub">{{ cumplimiento.totalCompletaron }} de {{ cumplimiento.totalEvaluadores }} evaluadores respondieron este período</div>
-        <div class="progress-bar"><div class="progress-fill" [style.width.%]="porcentajeCompletado"></div></div>
       </div>
 
       <div class="kpi-card kpi-tendencia">
@@ -53,14 +77,14 @@
     </div>
 
     <!-- PLAN DE ACCIÓN: justo después de las KPI, para que no se pierda -->
-    <div class="section-card section-plan" *ngIf="puedeGestionarPlan || planAccion.length">
+    <div class="section-card section-plan">
       <div class="section-title-row">
         <div class="section-title"><i class="ti ti-target-arrow"></i> Plan de acción</div>
-        <button class="btn-plan-nuevo" *ngIf="puedeGestionarPlan && !mostrarFormPlan" (click)="abrirFormPlan()">
+        <button class="btn-plan-nuevo" *ngIf="!mostrarFormPlan" (click)="abrirFormPlan()">
           <i class="ti ti-plus"></i> Nueva acción
         </button>
       </div>
-      <p class="plan-subtitulo">Compromisos concretos y medibles del Jefe SSOMA sobre sus puntos de mejora, con seguimiento período a período.</p>
+      <p class="plan-subtitulo">Compromisos concretos y medibles sobre tus puntos de mejora, con seguimiento período a período.</p>
 
       <!-- Formulario nueva acción -->
       <div class="plan-form" *ngIf="mostrarFormPlan">
@@ -73,7 +97,7 @@
         <div class="plan-form-row">
           <label class="abril-field-label">¿Qué vas a hacer?</label>
           <textarea class="abril-field-input" rows="2" [(ngModel)]="planAccionTexto"
-            placeholder="Ej: Reunión semanal de 15 min con coordinadores para revisar pendientes de EPP"></textarea>
+            placeholder="Ej: Reunión semanal de 15 min con mi equipo para revisar pendientes de EPP"></textarea>
         </div>
         <div class="plan-form-row">
           <label class="abril-field-label">Meta medible</label>
@@ -103,11 +127,10 @@
           </div>
           <div class="plan-item-side">
             <select class="plan-estado-select" [ngClass]="estadoClase(item.estado)"
-              [ngModel]="item.estado" (ngModelChange)="cambiarEstadoPlan(item, $event)"
-              [disabled]="!puedeGestionarPlan">
+              [ngModel]="item.estado" (ngModelChange)="cambiarEstadoPlan(item, $event)">
               <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
             </select>
-            <button class="btn-icon-danger" *ngIf="puedeGestionarPlan" (click)="eliminarPlan(item)" title="Eliminar">
+            <button class="btn-icon-danger" (click)="eliminarPlan(item)" title="Eliminar">
               <i class="ti ti-trash"></i>
             </button>
           </div>
@@ -140,7 +163,7 @@
         <div class="section-card" *ngIf="resultados!.tendencia.length">
           <div class="section-title">Tendencia histórica</div>
           <div class="chart-box chart-box-compact" *ngIf="resultados!.tendencia.length > 1">
-            <canvas id="chart-tendencia-jefe"></canvas>
+            <canvas id="chart-tendencia-mis-resultados"></canvas>
           </div>
           <div class="tendencia-simple" *ngIf="resultados!.tendencia.length === 1">
             <div class="ts-mes">{{ resultados!.tendencia[0].nombreMes }} {{ resultados!.tendencia[0].anio }}</div>
@@ -152,11 +175,11 @@
         </div>
       </div>
 
-      <!-- COL 2: comentarios (prioridad de visibilidad) -->
+      <!-- COL 2: comentarios -->
       <div class="col-stack">
         <div class="section-card section-comentarios" *ngIf="resultados!.comentarios.length">
           <div class="section-title">
-            <i class="ti ti-message-circle"></i> Comentarios anónimos
+            <i class="ti ti-message-circle"></i> Comentarios recibidos
             <span class="badge-count">{{ resultados!.comentarios.length }}</span>
           </div>
           <div class="comentarios-scroll">
@@ -167,19 +190,8 @@
         </div>
 
         <div class="section-card" *ngIf="!resultados!.comentarios.length">
-          <div class="section-title">Comentarios anónimos</div>
+          <div class="section-title">Comentarios recibidos</div>
           <div class="empty-inline">Nadie dejó comentarios en este período.</div>
-        </div>
-
-        <div class="section-card" *ngIf="cumplimiento?.pendientes?.length">
-          <div class="section-title">Aún no han evaluado</div>
-          <div class="pendiente-item" *ngFor="let p of cumplimiento!.pendientes">
-            <div class="pe-avatar">{{ p.nombreCompleto.charAt(0) }}</div>
-            <div class="pe-info">
-              <div class="pe-nombre">{{ p.nombreCompleto }}</div>
-              <div class="pe-email">{{ p.emailCorporativo }}</div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -193,7 +205,7 @@
               <span class="rec-nota">{{ r.promedio.toFixed(2) }}/5</span>
             </div>
             <p class="rec-tip">{{ r.tip }}</p>
-            <button class="btn-rec-plan" *ngIf="puedeGestionarPlan" (click)="abrirFormPlan(r.criterio)">
+            <button class="btn-rec-plan" (click)="abrirFormPlan(r.criterio)">
               <i class="ti ti-plus"></i> Agregar al plan de acción
             </button>
           </div>
@@ -206,6 +218,9 @@
       </div>
 
     </div>
+
+    </div>
+    <!-- /fuente-block Gestión SSOMA -->
 
   </div>
 </div>

@@ -110,13 +110,25 @@
             [value]="nuevaOrigenTipo"
             [sortAlpha]="false"
             placeholder="Selecciona origen"
-            (valueChange)="nuevaOrigenTipo = $event">
+            (valueChange)="onOrigenTipoChange($event)">
           </app-search-select>
         </div>
 
-        <div class="abril-field" *ngIf="nuevaOrigenTipo !== 'DIRECTO'">
-          <label class="abril-field-label">ID del {{ nuevaOrigenTipo === 'RAC' ? 'RAC' : 'la Amonestación' }} de origen</label>
-          <input type="number" class="abril-field-input" [(ngModel)]="nuevaOrigenId" />
+        <div class="col-2" *ngIf="nuevaOrigenTipo !== 'DIRECTO'">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            [label]="nuevaOrigenTipo === 'RAC' ? 'RAC de origen *' : 'Amonestación de origen *'"
+            [options]="candidatosOrigen"
+            valueField="id"
+            displayField="codigo"
+            [value]="nuevaOrigenId"
+            [uppercase]="true"
+            [placeholder]="loadingCandidatosOrigen ? 'Cargando...' : 'Selecciona ' + (nuevaOrigenTipo === 'RAC' ? 'el RAC' : 'la amonestación')"
+            (valueChange)="onOrigenCandidatoSeleccionado($event)">
+          </app-search-select>
+          <p class="form-hint" *ngIf="!loadingCandidatosOrigen && candidatosOrigen.length === 0">
+            No hay {{ nuevaOrigenTipo === 'RAC' ? 'RAC' : 'amonestaciones' }} pendientes de penalidad.
+          </p>
         </div>
 
         <div class="col-2">

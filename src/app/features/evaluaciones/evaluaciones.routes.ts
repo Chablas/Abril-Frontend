@@ -97,13 +97,6 @@ export const EVALUACIONES_ROUTES: Routes = [
     data: { titulo: 'EVALUACIONES - RESULTADOS JEFE SSOMA', featureKey: 'evaluaciones.resultados-jefe-ssoma' },
   },
   {
-    path: 'mi-perfil-prevencionista',
-    loadComponent: () =>
-      import('./pages/mi-perfil-prevencionista/mi-perfil-prevencionista').then(m => m.MiPerfilPrevencionista),
-    canActivate: [roleGuard],
-    data: { titulo: 'EVALUACIONES - MI PERFIL PREVENCIONISTA', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
-  },
-  {
     path: 'dashboard-prevencionistas',
     loadComponent: () =>
       import('./pages/dashboard-prevencionistas/dashboard-prevencionistas').then(m => m.DashboardPrevencionistas),
@@ -123,6 +116,13 @@ export const EVALUACIONES_ROUTES: Routes = [
       import('./pages/resultados-gestion-ssoma/resultados-gestion-ssoma').then(m => m.ResultadosGestionSsoma),
     canActivate: [roleGuard],
     data: { titulo: 'EVALUACIONES - RESULTADOS GESTIÓN SSOMA', featureKey: 'evaluaciones.resultados-gestion-ssoma' },
+  },
+  {
+    path: 'mis-resultados-gestion-ssoma',
+    loadComponent: () =>
+      import('./pages/mis-resultados-gestion-ssoma/mis-resultados-gestion-ssoma').then(m => m.MisResultadosGestionSsoma),
+    canActivate: [roleGuard],
+    data: { titulo: 'EVALUACIONES - MIS RESULTADOS GESTIÓN SSOMA', featureKey: 'evaluaciones.mis-resultados-gestion-ssoma' },
   },
   {
     path: 'periodos',

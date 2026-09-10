@@ -5,6 +5,7 @@ import { environment } from '../../../../environments/environment';
 import {
   CostoCierreBody,
   CostoDashboardDTO,
+  CostoDesviacionResumenItemDTO,
   CostoEvolucionDTO,
   CostoFiltrosDTO,
   CostoMatrizDTO,
@@ -48,6 +49,10 @@ export class CostosService {
   getDashboard(anio: number, mes: number): Observable<CostoDashboardDTO> {
     const params = new HttpParams().set('anio', anio).set('mes', mes);
     return this.http.get<CostoDashboardDTO>(`${this.apiUrl}/dashboard`, { params, headers: this.authHeaders() });
+  }
+
+  getResumenDesviacion(): Observable<CostoDesviacionResumenItemDTO[]> {
+    return this.http.get<CostoDesviacionResumenItemDTO[]>(`${this.apiUrl}/desviacion-resumen`, { headers: this.authHeaders() });
   }
 
   getEvolucion(anioDesde: number, mesDesde: number, cantidadMeses = 12): Observable<CostoEvolucionDTO> {

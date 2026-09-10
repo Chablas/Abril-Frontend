@@ -7,7 +7,7 @@ import Swal from 'sweetalert2';
 import { CostosService } from '../../../../../core/services/arquitectura-comercial/costos.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
-import { CostoDashboardDTO, CostoEvolucionDTO } from '../../../../../core/dtos/arquitectura-comercial/costos.model';
+import { CostoDashboardDTO, CostoDesviacionResumenItemDTO, CostoEvolucionDTO } from '../../../../../core/dtos/arquitectura-comercial/costos.model';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { AC_COSTOS_TABS } from '../../../shared/arquitectura-comercial-tabs';
 
@@ -30,6 +30,7 @@ export class CostosDashboard implements AfterViewInit {
 
   dashboard: CostoDashboardDTO | null = null;
   evolucion: CostoEvolucionDTO | null = null;
+  resumenDesviacion: CostoDesviacionResumenItemDTO[] = [];
   error = '';
 
   metaMes = new Date().getMonth() + 1;
@@ -70,9 +71,19 @@ export class CostosDashboard implements AfterViewInit {
     this.load();
   }
 
+  desviacionClass(pct: number | null): string {
+    if (pct === null) return 'badge-neutro';
+    return pct > 0 ? 'badge-rojo' : 'badge-verde';
+  }
+
   load(): void {
     this.error = '';
     this.loaderService.show();
+
+    this.service.getResumenDesviacion().subscribe({
+      next: (resumen) => { this.resumenDesviacion = resumen; this.cdr.detectChanges(); },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
 
     const inicio = new Date(this.anioActual, this.mesActual - 1 - 11, 1);
     const anioInicioEvolucion = inicio.getFullYear();

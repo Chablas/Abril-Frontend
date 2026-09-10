@@ -78,5 +78,37 @@
         <canvas id="chart-costos-evolucion"></canvas>
       </div>
     </div>
+
+    <div class="dash-card dash-card--full">
+      <h2 class="dash-card__title"><i class="ti ti-alert-triangle"></i> Desviación % vs. presupuesto aprobado (todos los proyectos)</h2>
+      @if (resumenDesviacion.length === 0) {
+        <div class="empty-state empty-state--inline">Ningún proyecto tiene presupuesto cargado todavía.</div>
+      } @else {
+        <table class="abril-table">
+          <thead>
+            <tr>
+              <th>Proyecto</th>
+              <th>Presupuestado</th>
+              <th>Ejecutado</th>
+              <th>Desviación</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of resumenDesviacion; track r.proyectoId) {
+              <tr>
+                <td>{{ r.proyectoNombre }}</td>
+                <td>S/. {{ r.totalPresupuestado | number: '1.0-0' }}</td>
+                <td>S/. {{ r.totalEjecutado | number: '1.0-0' }}</td>
+                <td>
+                  <span class="badge" [ngClass]="desviacionClass(r.totalDesviacionPct)">
+                    {{ r.totalDesviacionPct !== null ? (r.totalDesviacionPct > 0 ? '+' : '') + r.totalDesviacionPct + '%' : '—' }}
+                  </span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
   </div>
 </div>

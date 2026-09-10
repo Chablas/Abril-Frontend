@@ -81,6 +81,15 @@ export interface CostoDashboardDTO {
   proyectos: CostoDashboardItemDTO[];
 }
 
+export interface CostoDesviacionResumenItemDTO {
+  proyectoId: number;
+  proyectoNombre: string;
+  totalPresupuestado: number;
+  totalEjecutado: number;
+  totalDesviacion: number;
+  totalDesviacionPct: number | null;
+}
+
 export interface CostoEvolucionPuntoDTO {
   anio: number;
   mes: number;

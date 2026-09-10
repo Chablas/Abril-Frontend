@@ -24,11 +24,24 @@
 .empty-state h3 { font-size: 18px; font-weight: 600; margin: 0; }
 .empty-state p { font-size: 14px; margin: 0; text-align: center; }
 
-.rj-content { display: flex; flex-direction: column; gap: 16px; }
+.rj-content { display: flex; flex-direction: column; gap: 28px; }
+
+/* ─── Bloques por fuente de evaluación (contratistas vs. equipo SSOMA) ──── */
+/* Nunca se promedian juntas — son evaluaciones de personas distintas con
+   criterios distintos, mezclarlas en un solo número no tendría sentido. */
+
+.fuente-block { display: flex; flex-direction: column; gap: 16px; }
+.fuente-titulo {
+  font-size: 14px; font-weight: 800; color: #1E293B;
+  display: flex; align-items: center; gap: 8px;
+  padding-bottom: 8px; border-bottom: 2px solid #E2E8F0;
+}
+.fuente-titulo i { font-size: 17px; color: #2E6DB4; }
 
 /* ─── KPI row ──────────────────────────────────────────────────────────── */
 
 .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.kpi-row-2 { grid-template-columns: repeat(2, 1fr); }
 
 .kpi-card {
   background: #ffffff; border: 0.5px solid #E2E8F0; border-radius: 10px;
@@ -113,19 +126,6 @@
 }
 .comentario-item:last-child { border-bottom: none; }
 .comentario-item i { color: #94A3B8; margin-top: 2px; flex-shrink: 0; }
-
-.pendiente-item {
-  display: flex; align-items: center; gap: 12px;
-  padding: 8px 0; border-bottom: 1px solid #F1F5F9;
-}
-.pendiente-item:last-child { border-bottom: none; }
-.pe-avatar {
-  width: 32px; height: 32px; border-radius: 8px; background: #F59E0B;
-  color: #fff; display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; flex-shrink: 0;
-}
-.pe-nombre { font-size: 13px; font-weight: 600; }
-.pe-email { font-size: 11px; color: var(--color-abril-muted); }
 
 /* ─── Recomendaciones ──────────────────────────────────────────────────── */
 

@@ -328,7 +328,7 @@ export class NavigationService {
         { label: 'Ver eval. supervisores SSOMA', route: '/evaluaciones/ver-supervisores-contratista', featureKey: 'evaluaciones.ver-supervisores-contratista' },
         { label: 'Evaluar Jefe SSOMA', route: '/evaluaciones/evaluar-jefe-ssoma', featureKey: 'evaluaciones.evaluar-jefe-ssoma' },
         { label: 'Resultados Jefe SSOMA', route: '/evaluaciones/resultados-jefe-ssoma', featureKey: 'evaluaciones.resultados-jefe-ssoma' },
-        { label: 'Mi perfil (Prev./Coord.)', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
+        { label: 'Mis resultados (Prev./Coord.)', route: '/evaluaciones/mis-resultados-gestion-ssoma', featureKey: 'evaluaciones.mis-resultados-gestion-ssoma' },
         { label: 'Dashboard Prev./Coord.', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' },
         { label: 'Gestión SSOMA', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
         { label: 'Períodos', route: '/evaluaciones/periodos', featureKey: 'evaluaciones.periodos' },

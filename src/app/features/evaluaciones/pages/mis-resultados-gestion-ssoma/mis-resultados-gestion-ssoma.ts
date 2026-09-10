@@ -7,17 +7,17 @@ import Swal from 'sweetalert2';
 import { AbrilPageHeaderComponent, AbrilPageTabGroup } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
-import { EvJefeSsomaService } from '../../services/ev-jefe-ssoma.service';
+import { EvGestionSsomaService } from '../../services/ev-gestion-ssoma.service';
+import { EvPrevencionistaService } from '../../services/ev-prevencionista.service';
 import { EvAccesoService } from '../../services/ev-acceso.service';
 import { buildEvaluacionesTabGroups } from '../../shared/evaluaciones-tabs';
 import {
-  EvJefeSsomaResultadosDto,
-  EvJefeSsomaCumplimientoDto,
-  EvJefeSsomaCriterioPromedioDto,
-  EvJefeSsomaPlanAccionDto,
-  EvJefeSsomaTendenciaDto,
-} from '../../dtos/ev-jefe-ssoma.model';
-import { EvAccesoDto } from '../../dtos/ev-acceso.model';
+  EvGestionSsomaMisResultadosDto,
+  EvGestionSsomaCriterioPromedioDto,
+  EvGestionSsomaPlanAccionDto,
+  EvGestionSsomaTendenciaDto,
+} from '../../dtos/ev-gestion-ssoma.model';
+import { EvPrevencionistaMiPerfilDto } from '../../dtos/ev-prevencionista.model';
 
 interface Recomendacion {
   criterio: string;
@@ -28,20 +28,19 @@ interface Recomendacion {
 const ESTADOS = ['Pendiente', 'En progreso', 'Completado'];
 
 @Component({
-  selector: 'app-resultados-jefe-ssoma',
+  selector: 'app-mis-resultados-gestion-ssoma',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule, AbrilPageHeaderComponent],
-  templateUrl: './resultados-jefe-ssoma.html',
-  styleUrl: './resultados-jefe-ssoma.css',
+  templateUrl: './mis-resultados-gestion-ssoma.html',
+  styleUrl: './mis-resultados-gestion-ssoma.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ResultadosJefeSsoma implements OnInit, AfterViewInit {
-  resultados: EvJefeSsomaResultadosDto | null = null;
-  cumplimiento: EvJefeSsomaCumplimientoDto | null = null;
-  planAccion: EvJefeSsomaPlanAccionDto[] = [];
+export class MisResultadosGestionSsoma implements OnInit, AfterViewInit {
+  resultados: EvGestionSsomaMisResultadosDto | null = null;
+  perfilContratistas: EvPrevencionistaMiPerfilDto | null = null;
+  planAccion: EvGestionSsomaPlanAccionDto[] = [];
   loading = true;
   tabGroups: AbrilPageTabGroup[] = buildEvaluacionesTabGroups(null);
-  acceso: EvAccesoDto | null = null;
   readonly estados = ESTADOS;
 
   // ─── Formulario de plan de acción ──────────────────────────────────────────
@@ -63,11 +62,6 @@ export class ResultadosJefeSsoma implements OnInit, AfterViewInit {
 
   notaDisplay(nota: number | null): string {
     return nota !== null ? nota.toFixed(1) : '—';
-  }
-
-  get porcentajeCompletado(): number {
-    if (!this.cumplimiento || !this.cumplimiento.totalEvaluadores) return 0;
-    return Math.round((this.cumplimiento.totalCompletaron / this.cumplimiento.totalEvaluadores) * 100);
   }
 
   /** Delta del promedio general vs. el mes anterior de la serie de tendencia. */
@@ -94,7 +88,7 @@ export class ResultadosJefeSsoma implements OnInit, AfterViewInit {
       }));
   }
 
-  private tipPara(c: EvJefeSsomaCriterioPromedioDto): string {
+  private tipPara(c: EvGestionSsomaCriterioPromedioDto): string {
     if (c.promedio < 3) {
       return 'Prioridad alta: define una acción concreta con fecha límite en tu plan de acción.';
     }
@@ -104,12 +98,9 @@ export class ResultadosJefeSsoma implements OnInit, AfterViewInit {
     return 'Bien calificado, pero es el más bajo de tus criterios — vale la pena reforzarlo.';
   }
 
-  get puedeGestionarPlan(): boolean {
-    return !!this.acceso?.esJefeSsoma;
-  }
-
   constructor(
-    private svc: EvJefeSsomaService,
+    private svc: EvGestionSsomaService,
+    private prevSvc: EvPrevencionistaService,
     private loader: LoaderService,
     private errorSvc: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -119,7 +110,6 @@ export class ResultadosJefeSsoma implements OnInit, AfterViewInit {
   ngOnInit(): void {
     this.cargar();
     this.accesoSvc.getAcceso().subscribe((acceso) => {
-      this.acceso = acceso;
       this.tabGroups = buildEvaluacionesTabGroups(acceso);
       this.cdr.markForCheck();
     });
@@ -132,7 +122,16 @@ export class ResultadosJefeSsoma implements OnInit, AfterViewInit {
   cargar(): void {
     this.loading = true;
     this.loader.show();
-    this.svc.getResultados().subscribe({
+
+    // Dos fuentes de evaluación completamente separadas (nunca se promedian
+    // juntas: mezclar la nota de un contratista con la de tu jefe/coordinador
+    // distorsionaría el número) que se muestran en la misma pantalla para no
+    // obligar a saltar entre "Mi perfil" y "Mis resultados" como antes.
+    this.prevSvc.getMiPerfil().subscribe({
+      next: (p) => { this.perfilContratistas = p; this.cdr.markForCheck(); },
+    });
+
+    this.svc.getMisResultados().subscribe({
       next: (resultados) => {
         this.resultados = resultados;
         this.loading = false;
@@ -140,16 +139,8 @@ export class ResultadosJefeSsoma implements OnInit, AfterViewInit {
         this.cdr.markForCheck();
         this.renderCharts();
 
-        // Cumplimiento y plan de acción se piden del MISMO período que se está
-        // mostrando en resultados (no del período activo) — antes se pedían por
-        // separado y podían no coincidir (p. ej. fuera de la ventana de evaluación,
-        // "Cumplimiento" quedaba en 0 de 0 mientras Resultados mostraba el mes
-        // anterior cerrado, lo cual no tenía sentido para quien lo veía).
         const periodoId = resultados.periodo?.id;
         if (periodoId) {
-          this.svc.getPendientes(periodoId).subscribe({
-            next: (c) => { this.cumplimiento = c; this.cdr.markForCheck(); },
-          });
           this.svc.getPlanAccion(periodoId).subscribe({
             next: (p) => { this.planAccion = p; this.cdr.markForCheck(); },
           });
@@ -165,24 +156,15 @@ export class ResultadosJefeSsoma implements OnInit, AfterViewInit {
   }
 
   // ─── Charts ──────────────────────────────────────────────────────────────
-  // Los criterios se muestran como barras HTML (ver .criterio-bars en el
-  // template): un canvas de Chart.js no deja suficiente ancho para el texto
-  // largo de cada criterio dentro de una columna de 3, y quedaba amontonado.
-  // La tendencia sí es un caso real de línea de tiempo, pero necesita ≥2
-  // puntos — con 1 solo dato Chart.js dibuja un eje sin ninguna línea visible
-  // (se ve "roto"), así que ese caso ni siquiera intenta el canvas (ver
-  // template: usa `tendencia-simple` en su lugar).
+  // Mismo criterio que resultados-jefe-ssoma: criterios como barras HTML (ver
+  // .criterio-bars) y tendencia solo como canvas con ≥2 puntos.
 
   private renderCharts(): void {
-    // Doble rAF: al montarse junto con el resto del layout (KPIs, columnas),
-    // el contenedor del canvas puede medir ancho 0 en el primer frame — sin
-    // esto el gráfico queda con el eje Y ocupando casi todo el espacio y la
-    // línea apretada en una esquina (bug real, no solo estético).
     requestAnimationFrame(() => requestAnimationFrame(() => this.renderTendencia()));
   }
 
   private renderTendencia(): void {
-    const canvas = document.getElementById('chart-tendencia-jefe') as HTMLCanvasElement | null;
+    const canvas = document.getElementById('chart-tendencia-mis-resultados') as HTMLCanvasElement | null;
     const tendencia = this.resultados?.tendencia ?? [];
     if (!canvas || tendencia.length < 2) return;
     this.chartTendencia?.destroy();
@@ -190,7 +172,7 @@ export class ResultadosJefeSsoma implements OnInit, AfterViewInit {
     this.chartTendencia = new Chart(canvas, {
       type: 'line',
       data: {
-        labels: tendencia.map((t: EvJefeSsomaTendenciaDto) => `${t.nombreMes} ${t.anio}`),
+        labels: tendencia.map((t: EvGestionSsomaTendenciaDto) => `${t.nombreMes} ${t.anio}`),
         datasets: [{
           data: tendencia.map((t) => t.promedio),
           borderColor: '#2E6DB4',
@@ -243,7 +225,6 @@ export class ResultadosJefeSsoma implements OnInit, AfterViewInit {
 
     this.guardandoPlan = true;
     this.svc.crearPlanAccion(periodoId, {
-      plantillaId: null,
       criterio: this.planCriterio,
       accion: this.planAccionTexto.trim(),
       meta: this.planMeta.trim(),
@@ -264,7 +245,7 @@ export class ResultadosJefeSsoma implements OnInit, AfterViewInit {
     });
   }
 
-  cambiarEstadoPlan(item: EvJefeSsomaPlanAccionDto, estado: string): void {
+  cambiarEstadoPlan(item: EvGestionSsomaPlanAccionDto, estado: string): void {
     this.svc.actualizarPlanAccion(item.id, {
       accion: item.accion,
       meta: item.meta,
@@ -279,7 +260,7 @@ export class ResultadosJefeSsoma implements OnInit, AfterViewInit {
     });
   }
 
-  eliminarPlan(item: EvJefeSsomaPlanAccionDto): void {
+  eliminarPlan(item: EvGestionSsomaPlanAccionDto): void {
     Swal.fire({
       icon: 'warning',
       title: '¿Eliminar esta acción del plan?',

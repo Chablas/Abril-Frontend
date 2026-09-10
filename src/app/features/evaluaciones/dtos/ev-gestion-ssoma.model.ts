@@ -79,3 +79,47 @@ export interface EvGestionSsomaPendienteDto {
   emailCorporativo: string;
   relacion: string;
 }
+
+// ─── MIS RESULTADOS (Coordinador SSOMA / Prevencionista sobre sí mismos) ─────
+export interface EvGestionSsomaMisResultadosDto {
+  periodo: EvPeriodoDto | null;
+  totalRespuestas: number;
+  promedioGeneral: number | null;
+  promediosPorCriterio: EvGestionSsomaCriterioPromedioDto[];
+  comentarios: string[];
+  tendencia: EvGestionSsomaTendenciaDto[];
+}
+
+export interface EvGestionSsomaTendenciaDto {
+  mes: number;
+  anio: number;
+  nombreMes: string;
+  promedio: number | null;
+}
+
+// ─── PLAN DE ACCIÓN (Coordinador SSOMA / Prevencionista) ────────────────────
+export interface EvGestionSsomaPlanAccionDto {
+  id: number;
+  periodoId: number;
+  criterio: string;
+  accion: string;
+  meta: string;
+  fechaLimite: string | null;
+  estado: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+export interface EvGestionSsomaPlanAccionCreateDto {
+  criterio: string;
+  accion: string;
+  meta: string;
+  fechaLimite: string | null;
+}
+
+export interface EvGestionSsomaPlanAccionUpdateDto {
+  accion: string;
+  meta: string;
+  fechaLimite: string | null;
+  estado: string;
+}

@@ -2,10 +2,12 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
+import { AbrilPageHeaderComponent, AbrilPageTabGroup } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { EvEvaluacionService } from '../../services/ev-evaluacion.service';
 import { EvPlantillaService } from '../../services/ev-plantilla.service';
 import { EvPeriodoService } from '../../services/ev-periodo.service';
+import { EvAccesoService } from '../../services/ev-acceso.service';
+import { buildEvaluacionesTabGroups } from '../../shared/evaluaciones-tabs';
 import { EvPeriodoDto } from '../../dtos/ev-periodo.model';
 import { EvEvaluacionResponseDto } from '../../dtos/ev-evaluacion.model';
 
@@ -53,6 +55,7 @@ export class EvaluarResidente implements OnInit {
   proyectoFiltroId: number | null = null;
   mostrarSelectProyecto = false;
   puntajes = [1, 2, 3, 4, 5];
+  tabGroups: AbrilPageTabGroup[] = buildEvaluacionesTabGroups(null);
   /** Evaluación ya guardada para el (residente, área) actual, si existe — el backend no
    * permite re-evaluar en el mismo período (409), así que en vez de mostrar un formulario
    * en blanco que va a fallar al guardar, se muestran los puntajes que ya se enviaron. */
@@ -130,9 +133,14 @@ export class EvaluarResidente implements OnInit {
     private plantillaService: EvPlantillaService,
     private periodoService: EvPeriodoService,
     private cdr: ChangeDetectorRef,
+    private accesoSvc: EvAccesoService,
   ) {}
 
   ngOnInit(): void {
+    this.accesoSvc.getAcceso().subscribe((acceso) => {
+      this.tabGroups = buildEvaluacionesTabGroups(acceso);
+      this.cdr.detectChanges();
+    });
     this.evalService.getMiSubarea().subscribe({
       next: (res) => { this.miSubarea = res.subarea ?? ''; },
       error: () => {},

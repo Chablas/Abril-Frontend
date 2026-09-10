@@ -23,6 +23,8 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { environment } from '../../../../../../../environments/environment';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { WorkerSearchInput } from '../../../../salud-ocupacional/shared/worker-search-input/worker-search-input';
+import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
 
 interface ParrafoSeleccionable extends ImportParrafoDto {
   seleccionado: boolean;
@@ -85,7 +87,7 @@ const TIPOS_PASO = [
   { value: 'subtitulo', label: 'Subtítulo' },
 ];
 
-type TabKind = 'arbol' | 'texto' | 'catalogo' | 'anexos';
+type TabKind = 'arbol' | 'texto' | 'catalogo' | 'anexos' | 'firmas' | 'importar';
 
 interface TabDef {
   key: string;
@@ -145,6 +147,18 @@ const TABS: TabDef[] = [
     kind: 'anexos',
     ayuda: 'Documentos de respaldo (planos, fichas técnicas, permisos) adjuntos a este PETS.',
   },
+  {
+    key: 'firmas',
+    label: 'Firmas',
+    kind: 'firmas',
+    ayuda: 'Elaborado / Revisado / Aprobado por — el nombre se busca del personal de Abril, el cargo se autocompleta.',
+  },
+  {
+    key: 'importar',
+    label: 'Importar Word',
+    kind: 'importar',
+    ayuda: 'Sube un PETS ya existente en Word y arma automáticamente el resto de las pestañas — nada se guarda hasta que confirmes.',
+  },
 ];
 
 // Sub-bloques dentro de una pestaña de catálogo: Marco Legal no distingue tipo,
@@ -177,7 +191,7 @@ const ROLES_FIRMA: { value: PetRolFirma; label: string }[] = [
   selector: 'app-pets-detalle',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, SearchSelect],
+  imports: [CommonModule, FormsModule, SearchSelect, WorkerSearchInput],
   templateUrl: './pets-detalle.html',
   styleUrl: './pets-detalle.css',
 })
@@ -196,6 +210,23 @@ export class PetsDetalle implements OnInit {
   guardandoFirmas = false;
   subiendoFirmaRol: string | null = null;
   exportandoPdf = false;
+
+  onFirmanteSeleccionado(rol: PetRolFirma, w: WorkerSearchItemDto | null): void {
+    if (!this.detalle) return;
+    const f = this.detalle.firmas[rol];
+    f.nombre = w?.apellidoNombre ?? '';
+    f.cargo = w?.cargo || w?.puesto || f.cargo;
+    this.cdr.markForCheck();
+  }
+
+  // El combo busca por texto, pero la firma ya guardada solo trae el nombre como string —
+  // se arma un WorkerSearchItemDto mínimo para que el combo lo muestre como "ya elegido" en
+  // vez de aparecer vacío cada vez que se recarga el PETS.
+  firmanteActual(rol: PetRolFirma): WorkerSearchItemDto | null {
+    const nombre = this.detalle?.firmas[rol]?.nombre;
+    if (!nombre) return null;
+    return { id: 0, apellidoNombre: nombre, dni: '', cargo: this.detalle?.firmas[rol]?.cargo ?? undefined, activo: true };
+  }
 
   firmaUrl(firma: PetFirmaDto): string | null {
     if (!firma.firmaUrl) return null;
@@ -297,6 +328,8 @@ export class PetsDetalle implements OnInit {
       }
       case 'anexos':
         return this.detalle.anexos.length > 0;
+      case 'firmas':
+        return this.rolesFirma.some((r) => !!this.detalle!.firmas[r.value]?.nombre?.trim());
       default:
         return false;
     }
@@ -434,6 +467,11 @@ export class PetsDetalle implements OnInit {
     this.petsService.getDetalle(this.id).subscribe({
       next: (d) => {
         this.detalle = d;
+        // Fecha default = hoy en cada rol de firma sin fecha todavía (editable después) —
+        // evita que el usuario tenga que teclearla a mano cada vez que arma un PETS nuevo.
+        const hoy = new Date().toISOString().slice(0, 10);
+        for (const r of this.rolesFirma)
+          if (!d.firmas[r.value].fecha) d.firmas[r.value].fecha = hoy;
         this.arboles = {
           procedimiento: this.construirArbol(d.pasos),
           responsabilidades: this.construirArbol(d.responsabilidades),
@@ -815,7 +853,7 @@ export class PetsDetalle implements OnInit {
   // ── IMPORTAR DESDE WORD: secciones no reconocidas (triage manual) ────────
   // Opciones de destino para una sección no reconocida: cualquier pestaña real
   // salvo Anexos (es un archivo, no texto que se pueda pegar en un catálogo).
-  readonly destinosNoReconocida = this.tabs.filter((t) => t.kind !== 'anexos');
+  readonly destinosNoReconocida = this.tabs.filter((t) => t.kind !== 'anexos' && t.kind !== 'firmas' && t.kind !== 'importar');
 
   subtiposDestino(destino: string): { value: string | null; label: string }[] {
     return this.catalogoTipos[destino] ?? [];
