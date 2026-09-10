@@ -5694,3 +5694,36 @@ Continuación directa de la sesión anterior. Arrancó como un pedido de redise�
 - Confirmar el espaciamiento real de parantes de Baranda vertical (hoy 1.0m aproximado, sin confirmar contra dato real de obra).
 - Corregir en Kardex la cantidad real de turnos por línea de Vigilancia (hoy siempre 1) — permitiría volver a calcular su precio desde Ratios en vez del valor fijo S/3,500 hardcodeado.
 - Regenerar los presupuestos que ya se generaron antes del fix de doble conteo del backend (quedan con líneas duplicadas viejas).
+
+## Sesión 2026-09-10 — Presupuesto/cierre de periodo en Costos, Devoluciones+import Excel en Almacén, sincronización con origin/master y auditoría de otras sesiones
+
+### Contexto
+Pedido explícito del usuario: reemplazar el control manual en Excel de Costos y Almacén (Arquitectura Comercial). Sobre la marcha, el usuario pidió compilar y auditar TODO el trabajo pendiente en el repo, no solo lo de esta sesión — incluyendo el de otras sesiones sin commitear (Penalidades/RAC, PETS, Dashboard AC, Presupuesto Materiales). También se detectó y corrigió que el checkout local estaba 24 commits detrás de `origin/master`.
+
+### Cambios — Costos
+- Nueva pestaña **Presupuesto** (`costos/pages/presupuesto/`): presupuesto aprobado por partida vs. gasto real acumulado histórico, con badge de desviación % (verde/rojo/gris).
+- **Registro**: badge "Periodo cerrado" + botón Cerrar/Reabrir mes (visible solo con el permiso `arquitectura-comercial.costos.configurar`), celdas del registro semanal deshabilitadas cuando el periodo está cerrado. Rediseño visual del registro (KPIs arriba, selector de periodo como pastilla, iconos por partida, columna de proyección diferenciada).
+
+### Cambios — Almacén
+- Tipo de movimiento **Devolución** (Error/Sobrante) en el modal de nuevo movimiento y en la tabla (badge ámbar).
+- Botón **Importar Excel** con resumen de resultado (importados/duplicados/materiales creados/errores por fila).
+- Modal **Gestionar materiales**: editar nombre/unidad/umbrales y alternar Activo/Inactivo.
+
+### Cambios — Observaciones/Revisiones
+- Fecha de levantamiento editable en el modal de "Levantar observación/revisión" (antes fija a la fecha de subida) y en la edición inline de la lista, para poder regularizar levantamientos hechos en campo antes de subir la evidencia.
+
+### Sincronización con origin/master
+El checkout local estaba **24 commits detrás** de `origin/master` (backend sí estaba sincronizado) — así se explicaba un bug reportado por el usuario en Solicitud de Salidas que en producción no ocurría. Se hizo `git fetch` + `git merge origin/master`: 4 archivos de otras sesiones en curso (`navigation.service.ts`, `presupuesto.dtos.ts`, `presupuesto.service.ts`, `ssoma.routes.ts`) tenían cambios sin commitear que hubieran chocado — se guardaron en un `git stash`, se hizo el merge (fast-forward limpio, 240 archivos), y se recuperó el stash (`git stash pop`, auto-merge limpio sin conflictos). Nada se perdió.
+
+### Bugs reales encontrados y corregidos en trabajo de OTRAS sesiones (no de esta sesión)
+- `rac-lista.ts`/`rac-nuevo.ts`/`rac.service.ts`: limpieza de 3 referencias colgantes a campos ya eliminados del desacople Penalidad/RAC (`filtroSoloConPenalidad` en filtros y `RacListFiltrosState`, `descripcionOcurrido` sin UI) — rompían el build.
+- `pets-detalle.ts`: dos sitios indexando `Record<PetSeccionTexto,string>` con `string` genérico — cast agregado (el código ya garantizaba en runtime que solo se accede con claves válidas, vía el filtro `kind === 'texto'`).
+- `dashboard.ts` (Arquitectura Comercial): dos objetos placeholder (solo usan `userId`/`nombre` para abrir el modal de carga) les faltaba el campo nuevo `totalPonderado` del DTO.
+- (Backend) Fixes correspondientes en Penalidades/RAC — ver `Abril_Backend/CONTEXT.md`.
+
+### Verificado
+`npm run build` → 0 errores, solo warnings preexistentes de terceros. Backend `dotnet build` → 0 errores (ver `Abril_Backend/CONTEXT.md`). No se probó en navegador — el usuario verifica visualmente él mismo.
+
+### Pendiente
+- Probar en navegador: cerrar/reabrir periodo y presupuesto en Costos, devoluciones e import Excel en Almacén.
+- RAC todavía no tiene ningún botón que llame al nuevo `PenalidadService` — el flujo "crear penalidad desde un RAC" no está conectado en la UI (no es un bug, es parte de la feature de Penalidades sin construir aún).
