@@ -1,3 +1,5 @@
+export type PetEstadoRevision = 'borrador' | 'aprobado';
+
 export interface PetListItemDto {
   id: number;
   nombre: string;
@@ -5,6 +7,8 @@ export interface PetListItemDto {
   activo: boolean;
   totalPasos: number;
   createdAt: string;
+  estadoRevision: PetEstadoRevision;
+  versionVigente: number;
 }
 
 export interface PetImagenDto {
@@ -63,12 +67,34 @@ export interface ActualizarFirmaRequest {
   fecha?: string | null;
 }
 
+export interface PetVersionDto {
+  numeroVersion: number;
+  motivo: string;
+  aprobadoPorNombre: string;
+  createdAt: string;
+}
+
+export interface AprobarVersionRequest {
+  motivo: string;
+  aprobadoPorNombre: string;
+}
+
+// Biblioteca pública (QR único) — solo PETS activos + aprobados.
+export interface PetPublicoListItemDto {
+  id: number;
+  nombre: string;
+  codigo?: string;
+  versionVigente: number;
+}
+
 export interface PetDetalleDto {
   id: number;
   nombre: string;
   codigo?: string;
   sharepointUrl?: string;
   activo: boolean;
+  estadoRevision: PetEstadoRevision;
+  versionVigente: number;
   pasos: PetPasoDto[];
   responsabilidades: PetPasoDto[];
   seccionesTexto: Record<PetSeccionTexto, string>;

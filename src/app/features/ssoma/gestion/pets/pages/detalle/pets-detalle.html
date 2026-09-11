@@ -7,6 +7,22 @@
     <div>
       <span class="pet-badge" *ngIf="detalle">{{ detalle.codigo || 'PETS' }}</span>
       <h1 class="pet-titulo">{{ detalle ? detalle.nombre : 'Cargando…' }}</h1>
+      <span
+        *ngIf="detalle"
+        class="pet-estado-badge"
+        [class.pet-estado-badge--aprobado]="detalle.estadoRevision === 'aprobado'"
+        [class.pet-estado-badge--borrador]="detalle.estadoRevision === 'borrador'"
+      >
+        <ng-container *ngIf="detalle.estadoRevision === 'aprobado'">
+          <i class="ti ti-circle-check"></i> Aprobado — versión {{ detalle.versionVigente }}
+        </ng-container>
+        <ng-container *ngIf="detalle.estadoRevision === 'borrador' && detalle.versionVigente === 0">
+          <i class="ti ti-alert-triangle"></i> Sin aprobar todavía
+        </ng-container>
+        <ng-container *ngIf="detalle.estadoRevision === 'borrador' && detalle.versionVigente > 0">
+          <i class="ti ti-alert-triangle"></i> Cambios sin aprobar desde v.{{ detalle.versionVigente }}
+        </ng-container>
+      </span>
     </div>
   </div>
 
@@ -36,15 +52,65 @@
           <input type="checkbox" [(ngModel)]="detalle.activo" /> Activo (visible para OPT y checklists)
         </label>
         <div class="cabecera-actions-botones">
+          <button class="btn-secondary" (click)="toggleHistorial()">
+            <i class="ti ti-history"></i> Historial de versiones
+          </button>
           <button class="btn-secondary" (click)="exportarPdf()" [disabled]="exportandoPdf" title="Genera un PDF de trabajo con el estado actual — no reemplaza el documento oficial">
             <i class="ti ti-file-download"></i> {{ exportandoPdf ? 'Generando…' : 'Vista previa PDF' }}
+          </button>
+          <button class="btn-secondary btn-aprobar" (click)="abrirAprobarVersion()">
+            <i class="ti ti-shield-check"></i> Aprobar versión
           </button>
           <button class="btn-primary" (click)="guardarCabecera()" [disabled]="guardandoCabecera">
             {{ guardandoCabecera ? 'Guardando…' : 'Guardar cambios' }}
           </button>
         </div>
       </div>
+
+      <!-- ── Historial de versiones aprobadas ─────────────────────────────── -->
+      <div class="historial-versiones" *ngIf="mostrarHistorial">
+        <p class="card-hint" *ngIf="cargandoVersiones">Cargando historial…</p>
+        <p class="card-hint" *ngIf="!cargandoVersiones && versiones.length === 0">
+          Todavía no se aprobó ninguna versión de este PETS.
+        </p>
+        <div class="version-row" *ngFor="let v of versiones">
+          <span class="version-numero">v.{{ v.numeroVersion }}</span>
+          <div class="version-info">
+            <span class="version-fecha">{{ v.createdAt | date: 'dd/MM/yyyy HH:mm' }} — {{ v.aprobadoPorNombre }}</span>
+            <span class="version-motivo">{{ v.motivo }}</span>
+          </div>
+          <button class="btn-secondary" (click)="descargarPdfVersion(v.numeroVersion)">
+            <i class="ti ti-file-download"></i> Ver PDF
+          </button>
+        </div>
+      </div>
     </section>
+
+    <!-- ── Modal: aprobar versión ──────────────────────────────────────────── -->
+    <div class="modal-overlay" *ngIf="mostrarModalAprobar" (click)="cancelarAprobarVersion()">
+      <div class="modal-aprobar" (click)="$event.stopPropagation()">
+        <h3>Aprobar nueva versión</h3>
+        <p class="card-hint">
+          Esto guarda una "foto" completa del PETS tal como está ahora mismo, como la versión oficial
+          {{ (detalle?.versionVigente ?? 0) + 1 }}. El motivo queda visible en el historial.
+        </p>
+        <div class="abril-field">
+          <label class="abril-field-label">Motivo *</label>
+          <textarea
+            class="abril-field-input"
+            rows="3"
+            [(ngModel)]="motivoAprobar"
+            placeholder="Ej: Revisión periódica, Corrección de redacción, Accidente #123..."
+          ></textarea>
+        </div>
+        <div class="modal-aprobar-actions">
+          <button class="btn-secondary" (click)="cancelarAprobarVersion()" [disabled]="aprobando">Cancelar</button>
+          <button class="btn-primary" (click)="confirmarAprobarVersion()" [disabled]="!motivoAprobar.trim() || aprobando">
+            {{ aprobando ? 'Aprobando…' : 'Aprobar versión' }}
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- ── PESTAÑAS ─────────────────────────────────────────────────────── -->
     <div class="tabs-bar">

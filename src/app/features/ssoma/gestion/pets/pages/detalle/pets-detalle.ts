@@ -17,6 +17,7 @@ import {
   PetRolFirma,
   AgregarItemPersonalizadoRequest,
   PetSeccionTexto,
+  PetVersionDto,
 } from '../../pets.dtos';
 import { forkJoin } from 'rxjs';
 import { LoaderService } from '../../../../../../core/services/loader.service';
@@ -486,6 +487,85 @@ export class PetsDetalle implements OnInit {
 
   cerrarImagenAmpliada(): void {
     this.imagenAmpliada = null;
+  }
+
+  // ── Versionado y aprobación ─────────────────────────────────────────────────
+  mostrarModalAprobar = false;
+  motivoAprobar = '';
+  aprobando = false;
+  mostrarHistorial = false;
+  versiones: PetVersionDto[] = [];
+  cargandoVersiones = false;
+
+  private nombreUsuarioActual(): string {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+      return user?.displayName ?? 'Usuario';
+    } catch {
+      return 'Usuario';
+    }
+  }
+
+  abrirAprobarVersion(): void {
+    this.motivoAprobar = '';
+    this.mostrarModalAprobar = true;
+  }
+
+  cancelarAprobarVersion(): void {
+    this.mostrarModalAprobar = false;
+  }
+
+  confirmarAprobarVersion(): void {
+    if (!this.motivoAprobar.trim() || !this.detalle) return;
+    this.aprobando = true;
+    this.petsService
+      .aprobarVersion(this.id, { motivo: this.motivoAprobar.trim(), aprobadoPorNombre: this.nombreUsuarioActual() })
+      .subscribe({
+        next: (v) => {
+          this.aprobando = false;
+          this.mostrarModalAprobar = false;
+          this.detalle!.estadoRevision = 'aprobado';
+          this.detalle!.versionVigente = v.numeroVersion;
+          Swal.fire({ icon: 'success', title: `Versión ${v.numeroVersion} aprobada`, toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+          this.cdr.markForCheck();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.aprobando = false;
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  toggleHistorial(): void {
+    this.mostrarHistorial = !this.mostrarHistorial;
+    if (this.mostrarHistorial && this.versiones.length === 0) this.cargarVersiones();
+  }
+
+  private cargarVersiones(): void {
+    this.cargandoVersiones = true;
+    this.petsService.getVersiones(this.id).subscribe({
+      next: (vs) => {
+        this.versiones = vs;
+        this.cargandoVersiones = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.cargandoVersiones = false;
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  descargarPdfVersion(numeroVersion: number): void {
+    this.petsService.exportarPdfVersion(this.id, numeroVersion).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
   }
 
   load(): void {

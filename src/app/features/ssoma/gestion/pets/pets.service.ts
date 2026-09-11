@@ -19,6 +19,9 @@ import {
   SeleccionarItemCatalogoRequest,
   AgregarItemPersonalizadoRequest,
   ActualizarFirmaRequest,
+  PetVersionDto,
+  AprobarVersionRequest,
+  PetPublicoListItemDto,
 } from './pets.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -179,5 +182,32 @@ export class PetsService {
       headers: buildAuthHeaders(),
       responseType: 'blob',
     });
+  }
+
+  // ── Versionado y aprobación ─────────────────────────────────────────────────
+
+  aprobarVersion(id: number, req: AprobarVersionRequest): Observable<PetVersionDto> {
+    return this.http.post<PetVersionDto>(`${this.base}/${id}/versiones/aprobar`, req, { headers: buildAuthHeaders() });
+  }
+
+  getVersiones(id: number): Observable<PetVersionDto[]> {
+    return this.http.get<PetVersionDto[]>(`${this.base}/${id}/versiones`, { headers: buildAuthHeaders() });
+  }
+
+  exportarPdfVersion(id: number, numeroVersion: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/versiones/${numeroVersion}/pdf`, {
+      headers: buildAuthHeaders(),
+      responseType: 'blob',
+    });
+  }
+
+  // ── Biblioteca pública (QR único) — sin token ──────────────────────────────
+
+  getListaPublica(): Observable<PetPublicoListItemDto[]> {
+    return this.http.get<PetPublicoListItemDto[]>(`${this.base}/publico`);
+  }
+
+  exportarPdfPublico(id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/publico/${id}/pdf`, { responseType: 'blob' });
   }
 }

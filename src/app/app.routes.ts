@@ -250,6 +250,14 @@ export const routes: Routes = [
   },
 
   {
+    // Biblioteca pública de PETS (acceso por el QR único, sin login).
+    path: 'pets',
+    loadComponent: () =>
+      import('./features/ssoma/gestion/pets/pages/publico/pets-publico')
+      .then(m => m.PetsPublico)
+  },
+
+  {
     path: 'paleta-demo',
     loadComponent: () =>
       import('./features/paleta-demo/paleta-demo')
