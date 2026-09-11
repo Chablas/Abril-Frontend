@@ -69,6 +69,9 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   // ─── categoría activa (pill principal) ─────────────────────────
   categoriaActiva: number | null = null;   // null = TODOS
 
+  // Desactivado temporalmente a pedido — el bloque queda en el código por si se reactiva.
+  mostrarPartidasControl = false;
+
   // ─── filtros secundarios ────────────────────────────────────────
   filtro: DashboardFiltroDTO = {
     categoriaId : null,
@@ -197,8 +200,8 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   // ─── mini-gantt (hitos/entregables, todos los proyectos, próximos 3 meses) ──────
   // Ventana con 7 días de contexto hacia atrás (para que "HOY" no quede pegado al borde
   // izquierdo y lo vencido reciente se vea en contexto) + 90 días hacia adelante.
-  readonly ganttPastDays   = 7;
-  readonly ganttFutureDays = 90;
+  readonly ganttPastDays   = 30;
+  readonly ganttFutureDays = 150;
   get ganttWindowTotalDays(): number { return this.ganttPastDays + this.ganttFutureDays; }
 
   private readonly ganttEstadoColorMap: Record<string, string> = {
@@ -374,6 +377,33 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   // ─── modal hitos ───────────────────────────────────────────────
   modalHitosVisible = false;
   tabHito           : TabHito = 'VENCER';
+
+  // ─── modales de gantt (se abren desde el botón del header, ya no están inline) ─
+  modalGanttHitosVisible       = false;
+  modalGanttEntregablesVisible = false;
+
+  // ─── modal detalle de item de gantt (hito o entregable individual) ─
+  modalGanttItemVisible = false;
+  ganttItemSeleccionado : GanttMiniItemDTO | null = null;
+  ganttItemTipo         : 'HITO' | 'ENTREGABLE' = 'HITO';
+
+  abrirGanttItem(item: GanttMiniItemDTO, tipo: 'HITO' | 'ENTREGABLE'): void {
+    this.ganttItemSeleccionado = item;
+    this.ganttItemTipo = tipo;
+    this.modalGanttItemVisible = true;
+  }
+
+  cerrarGanttItem(): void {
+    this.modalGanttItemVisible = false;
+    this.ganttItemSeleccionado = null;
+  }
+
+  /** Días restantes hasta finProgramado (negativo = vencido), para el modal de detalle. */
+  ganttItemDiasRestantes(item: GanttMiniItemDTO): number | null {
+    if (!item.finProgramado) return null;
+    const fin = this.pd(item.finProgramado);
+    return Math.round((fin.getTime() - this.hoy().getTime()) / 86400000);
+  }
 
   // ─── modal histórico de supervisor ──────────────────────────────
   modalHistoricoVisible   = false;
@@ -616,6 +646,35 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     this.buscar();
   }
 
+  // ─── modal simple: entregables/hitos de un proyecto (próximos 14 días) ─
+  modalProximoVisible = false;
+  modalProximoProyecto = '';
+  modalProximoItems: { nombre: string; tipo: 'Hito' | 'Entregable'; fecha: string | null; estado: string }[] = [];
+
+  /** true si vence dentro de los próximos 14 días (mismo criterio que el badge E/H de esta card) —
+   * el mini-gantt usa una ventana mucho más ancha (30 atrás/150 adelante), así que hay que
+   * filtrar aparte para que el modal no muestre más items de los que el badge anuncia. */
+  private venceEn14Dias(finProgramado: string | null): boolean {
+    if (!finProgramado) return false;
+    const dias = Math.round((this.pd(finProgramado).getTime() - this.hoy().getTime()) / 86400000);
+    return dias >= 0 && dias <= 14;
+  }
+
+  abrirProximoDetalle(p: ProximoPorProyectoDTO): void {
+    this.modalProximoProyecto = p.proyectoNombre;
+    this.modalProximoItems = [
+      ...this.ganttHitos
+        .filter(h => h.proyecto === p.proyectoNombre && this.venceEn14Dias(h.finProgramado))
+        .map(h => ({ nombre: h.nombre, tipo: 'Hito' as const, fecha: h.finProgramado, estado: h.estado })),
+      ...this.ganttEntregables
+        .filter(e => e.proyecto === p.proyectoNombre && this.venceEn14Dias(e.finProgramado))
+        .map(e => ({ nombre: e.nombre, tipo: 'Entregable' as const, fecha: e.finProgramado, estado: e.estado })),
+    ];
+    this.modalProximoVisible = true;
+  }
+
+  cerrarProximoDetalle(): void { this.modalProximoVisible = false; }
+
   // Nota: la clasificación Sobrecargado/Normal/Disponible se basa en `totalPonderado`
   // (Hito×3 + Entregable×2 + Consulta×1), no en el conteo crudo de `total` — una consulta
   // puntual no implica la misma carga real que un hito o entregable. `total` se sigue
@@ -748,6 +807,11 @@ export class Dashboard implements AfterViewInit, OnDestroy {
   // ─── modal hitos ────────────────────────────────────────────
   abrirModalHitos() { this.modalHitosVisible = true; }
   cerrarModalHitos() { this.modalHitosVisible = false; }
+
+  // ─── modal lista de entregables (gantt) ─────────────────────────
+  modalEntregablesVisible = false;
+  abrirModalEntregables() { this.modalEntregablesVisible = true; }
+  cerrarModalEntregables() { this.modalEntregablesVisible = false; }
 
   /** Abre el modal de carga mostrando solo las actividades cuyo fin programado cae
    * dentro de la semana en control (el mismo conjunto "N asignadas" que cuenta el
