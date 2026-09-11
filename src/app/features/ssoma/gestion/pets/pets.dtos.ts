@@ -7,12 +7,22 @@ export interface PetListItemDto {
   createdAt: string;
 }
 
+export interface PetImagenDto {
+  id: number;
+  url: string;
+}
+
 export interface PetPasoDto {
   id: number;
   parentId?: number | null;
   tipo: string; // subtitulo | paso | letra | guion
   descripcion: string;
+  // Se mantiene = imagenes[0]?.url (compatibilidad) — el dato real son varias
+  // imágenes por paso, en "imagenes".
   imagenUrl?: string;
+  imagenes: PetImagenDto[];
+  // "medio_ambiente" | null — etiqueta libre por tema transversal (ver backend).
+  categoria?: string | null;
   orden: number;
 }
 
@@ -140,6 +150,9 @@ export interface ImportPasoPreviewDto {
   tipo: string; // subtitulo | paso | letra | guion
   texto: string;
   imagenBase64?: string;
+  // "medio_ambiente" | null — se marca en el preview, antes de confirmar (ver
+  // Categoria en el backend). Solo aplica a filas de árbol.
+  categoria?: string | null;
 }
 
 export interface ImportParrafoDto {
@@ -172,6 +185,7 @@ export interface ImportPasoConfirmDto {
   tipo: string;
   texto: string;
   imagenBase64?: string;
+  categoria?: string | null;
 }
 
 export interface ConfirmarImportacionRequest {

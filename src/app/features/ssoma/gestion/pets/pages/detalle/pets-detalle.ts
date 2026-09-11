@@ -33,6 +33,12 @@ interface ParrafoSeleccionable extends ImportParrafoDto {
 
 interface PasoPreviewNodo extends ImportPasoPreviewDto {
   profundidad: number;
+  // Solo se usa cuando el bloque va a un destino de catálogo (Marco Legal/EPP/
+  // Recursos): permite elegir el sub-tipo POR FILA en vez de uno solo para todo el
+  // bloque — una tabla como Recursos trae Equipos/Herramientas/Materiales mezclados
+  // en un mismo encabezado "no reconocido", así que forzar un único tipo para todo el
+  // bloque mandaba, por ejemplo, los tornillos y los andamios al mismo sitio.
+  tipoOverride?: string | null;
 }
 
 // Un encabezado del Word que el importador no supo a qué pestaña pertenece (ver
@@ -462,6 +468,26 @@ export class PetsDetalle implements OnInit {
     return paso.imagenUrl.startsWith('http') ? paso.imagenUrl : `${this.apiOrigin}${paso.imagenUrl}`;
   }
 
+  private resolverUrl(url: string): string {
+    return url.startsWith('http') ? url : `${this.apiOrigin}${url}`;
+  }
+
+  // Todas las imágenes del paso (antes solo se mostraba/editaba una) — cada una con
+  // su propia URL resuelta y su Id, para poder borrarlas una por una.
+  imagenesPaso(paso: PetPasoDto): { id: number; url: string }[] {
+    return paso.imagenes.map((i) => ({ id: i.id, url: this.resolverUrl(i.url) }));
+  }
+
+  imagenAmpliada: string | null = null;
+
+  ampliarImagen(url: string): void {
+    this.imagenAmpliada = url;
+  }
+
+  cerrarImagenAmpliada(): void {
+    this.imagenAmpliada = null;
+  }
+
   load(): void {
     this.loading = true;
     this.petsService.getDetalle(this.id).subscribe({
@@ -735,6 +761,8 @@ export class PetsDetalle implements OnInit {
   }
 
   // ── PASOS: imagen ─────────────────────────────────────────────────────────
+  // Agrega una imagen MÁS al paso (ya no reemplaza la única que hubiera) — un paso
+  // puede tener varias fotos, cada una se borra por separado con eliminarImagenPaso.
   onFileSelected(event: Event, paso: PetPasoDto): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -742,11 +770,10 @@ export class PetsDetalle implements OnInit {
 
     this.subiendoImagenPasoId = paso.id;
     this.petsService.subirImagenPaso(this.id, paso.id, file).subscribe({
-      next: ({ imagenUrl }) => {
+      next: ({ id, imagenUrl }) => {
         this.subiendoImagenPasoId = null;
-        if (this.detalle) {
-          paso.imagenUrl = imagenUrl;
-        }
+        paso.imagenes = [...paso.imagenes, { id, url: imagenUrl }];
+        if (!paso.imagenUrl) paso.imagenUrl = imagenUrl;
         input.value = '';
         this.cdr.markForCheck();
       },
@@ -754,6 +781,35 @@ export class PetsDetalle implements OnInit {
         this.subiendoImagenPasoId = null;
         this.errorService.handleError(err);
         input.value = '';
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  eliminarImagenPaso(paso: PetPasoDto, imagen: { id: number; url: string }): void {
+    Swal.fire({ icon: 'question', title: '¿Eliminar esta imagen?', showCancelButton: true, confirmButtonText: 'Eliminar' }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.petsService.eliminarImagenPaso(this.id, paso.id, imagen.id).subscribe({
+        next: () => {
+          paso.imagenes = paso.imagenes.filter((i) => i.id !== imagen.id);
+          if (paso.imagenUrl === imagen.url) paso.imagenUrl = paso.imagenes[0]?.url;
+          this.cdr.markForCheck();
+        },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
+  }
+
+  // ── PASOS: categoría (hoy solo "medio_ambiente") ─────────────────────────
+  toggleMedioAmbiente(paso: PetPasoDto): void {
+    const nueva = paso.categoria === 'medio_ambiente' ? null : 'medio_ambiente';
+    const anterior = paso.categoria;
+    paso.categoria = nueva;
+    this.cdr.markForCheck();
+    this.petsService.actualizarCategoriaPaso(this.id, paso.id, nueva).subscribe({
+      error: (err: HttpErrorResponse) => {
+        paso.categoria = anterior;
+        this.errorService.handleError(err);
         this.cdr.markForCheck();
       },
     });
@@ -862,6 +918,9 @@ export class PetsDetalle implements OnInit {
   onDestinoNoReconocidaChange(bloque: SeccionNoReconocida): void {
     const tab = this.tabs.find((t) => t.key === bloque.destino);
     bloque.destinoTipo = tab?.kind === 'catalogo' ? (this.subtiposDestino(bloque.destino)[0]?.value ?? null) : null;
+    // Default por fila = el tipo del bloque, pero cada fila lo puede cambiar antes de
+    // enviar (ver comentario en PasoPreviewNodo.tipoOverride).
+    for (const p of bloque.parrafos) p.tipoOverride = bloque.destinoTipo;
   }
 
   aplicarNoReconocida(bloque: SeccionNoReconocida): void {
@@ -880,11 +939,20 @@ export class PetsDetalle implements OnInit {
     } else if (tab.kind === 'catalogo') {
       const nuevos = bloque.parrafos
         .filter((p) => p.texto.trim().length > 0)
-        .map((p) => ({ grupo: tab.key, tipo: bloque.destinoTipo, descripcion: p.texto.trim(), agregarAlCatalogoGlobal: false }));
+        .map((p) => ({ grupo: tab.key, tipo: p.tipoOverride ?? bloque.destinoTipo, descripcion: p.texto.trim(), agregarAlCatalogoGlobal: false }));
       this.previewItemsCatalogo = [...this.previewItemsCatalogo, ...nuevos];
     }
 
     this.previewNoReconocidas = this.previewNoReconocidas.filter((b) => b !== bloque);
+    this.cdr.markForCheck();
+  }
+
+  // Quita UNA fila del bloque (ej. "Equipos"/"Herramientas"/"Materiales" como
+  // encabezado de columna colado, que no es contenido real) sin descartar el resto —
+  // "Descartar" a nivel de bloque tira todo, esto es más quirúrgico.
+  quitarFilaNoReconocida(bloque: SeccionNoReconocida, p: PasoPreviewNodo): void {
+    bloque.parrafos = bloque.parrafos.filter((x) => x !== p);
+    if (bloque.parrafos.length === 0) this.previewNoReconocidas = this.previewNoReconocidas.filter((b) => b !== bloque);
     this.cdr.markForCheck();
   }
 
@@ -955,7 +1023,7 @@ export class PetsDetalle implements OnInit {
 
   private ejecutarConfirmarImportacion(): void {
     this.confirmandoImportacion = true;
-    const seccionesArbol: Record<string, { indice: number; parentIndice?: number | null; tipo: string; texto: string; imagenBase64?: string }[]> = {};
+    const seccionesArbol: Record<string, { indice: number; parentIndice?: number | null; tipo: string; texto: string; imagenBase64?: string; categoria?: string | null }[]> = {};
     for (const seccion of Object.keys(this.previewSeccionesArbol ?? {})) {
       seccionesArbol[seccion] = (this.previewSeccionesArbol ?? {})[seccion].map((p) => ({
         indice: p.indice,
@@ -963,6 +1031,7 @@ export class PetsDetalle implements OnInit {
         tipo: p.tipo,
         texto: p.texto,
         imagenBase64: p.imagenBase64,
+        categoria: p.categoria,
       }));
     }
 

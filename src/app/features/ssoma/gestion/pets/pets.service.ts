@@ -81,12 +81,24 @@ export class PetsService {
     });
   }
 
-  subirImagenPaso(id: number, pasoId: number, file: File): Observable<{ imagenUrl: string }> {
+  subirImagenPaso(id: number, pasoId: number, file: File): Observable<{ id: number; imagenUrl: string }> {
     const fd = new FormData();
     fd.append('file', file);
-    return this.http.post<{ imagenUrl: string }>(
+    return this.http.post<{ id: number; imagenUrl: string }>(
       `${this.base}/${id}/pasos/${pasoId}/imagen`,
       fd,
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  eliminarImagenPaso(id: number, pasoId: number, imagenId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}/pasos/${pasoId}/imagen/${imagenId}`, { headers: buildAuthHeaders() });
+  }
+
+  actualizarCategoriaPaso(id: number, pasoId: number, categoria: string | null): Observable<void> {
+    return this.http.put<void>(
+      `${this.base}/${id}/pasos/${pasoId}/categoria`,
+      { categoria },
       { headers: buildAuthHeaders() },
     );
   }

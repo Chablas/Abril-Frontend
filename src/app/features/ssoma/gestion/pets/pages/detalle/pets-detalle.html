@@ -103,20 +103,24 @@
           </div>
         </div>
 
-        <div class="paso-row" [class.paso-row--subtitulo]="nodo.tipo === 'subtitulo'">
+        <div class="paso-row" [class.paso-row--subtitulo]="nodo.tipo === 'subtitulo'" [class.paso-row--medio-ambiente]="nodo.categoria === 'medio_ambiente'">
           <div class="paso-marca" [class.paso-marca--circulo]="nodo.tipo === 'subtitulo' || nodo.tipo === 'letra'" [ngSwitch]="nodo.tipo">
             <span *ngSwitchCase="'subtitulo'">{{ nodo.numero }}</span>
             <span *ngSwitchCase="'letra'">{{ nodo.numero }}.</span>
             <span *ngSwitchCase="'guion'">-</span>
           </div>
 
+          <!-- Galería: miniaturas chicas en fila (crece a la derecha, no hacia abajo) — clic
+               en una miniatura la abre en grande; cada una con su propio botón de borrar. -->
           <div class="paso-imagen" *ngIf="tabActiva.key === 'procedimiento'">
-            <img *ngIf="imagenUrl(nodo)" [src]="imagenUrl(nodo)" alt="Imagen del paso" />
-            <div *ngIf="!imagenUrl(nodo)" class="paso-imagen-vacia">
-              <i class="ti ti-photo"></i>
+            <div class="paso-imagen-item" *ngFor="let img of imagenesPaso(nodo)">
+              <img [src]="img.url" alt="Imagen del paso" (click)="ampliarImagen(img.url)" />
+              <button class="btn-icon btn-icon-danger paso-imagen-borrar" title="Eliminar imagen" (click)="eliminarImagenPaso(nodo, img)">
+                <i class="ti ti-x"></i>
+              </button>
             </div>
-            <label class="btn-imagen">
-              {{ subiendoImagenPasoId === nodo.id ? 'Subiendo…' : (imagenUrl(nodo) ? 'Cambiar' : 'Subir imagen') }}
+            <label class="btn-imagen-add" title="Agregar imagen">
+              <i class="ti" [ngClass]="subiendoImagenPasoId === nodo.id ? 'ti-loader-2' : 'ti-plus'"></i>
               <input type="file" accept="image/*" hidden (change)="onFileSelected($event, nodo)" [disabled]="subiendoImagenPasoId === nodo.id" />
             </label>
           </div>
@@ -133,11 +137,22 @@
               </div>
             </ng-container>
             <ng-template #vistaPaso>
-              <p class="paso-texto" [class.paso-texto--subtitulo]="nodo.tipo === 'subtitulo'">{{ nodo.descripcion }}</p>
+              <p class="paso-texto" [class.paso-texto--subtitulo]="nodo.tipo === 'subtitulo'">
+                <i class="ti ti-leaf paso-icono-medio-ambiente" *ngIf="nodo.categoria === 'medio_ambiente'" title="Medio Ambiente"></i>
+                {{ nodo.descripcion }}
+              </p>
             </ng-template>
           </div>
 
           <div class="paso-acciones" *ngIf="editingPasoId !== nodo.id">
+            <button
+              class="btn-icon"
+              [class.btn-icon--activo]="nodo.categoria === 'medio_ambiente'"
+              title="Marcar como Medio Ambiente"
+              (click)="toggleMedioAmbiente(nodo)"
+            >
+              <i class="ti ti-leaf"></i>
+            </button>
             <button class="btn-icon" title="Insertar antes de este" (click)="abrirInsertarEn(parentId, index)"><i class="ti ti-plus"></i></button>
             <button class="btn-icon" title="Mover arriba" [disabled]="index === 0" (click)="moverArriba(hermanos, parentId, index)"><i class="ti ti-arrow-up"></i></button>
             <button class="btn-icon" title="Mover abajo" [disabled]="index === hermanos.length - 1" (click)="moverAbajo(hermanos, parentId, index)"><i class="ti ti-arrow-down"></i></button>
@@ -362,6 +377,14 @@
             </select>
             <img *ngIf="p.imagenBase64" [src]="p.imagenBase64" class="preview-img" alt="Imagen detectada" />
             <textarea class="abril-field-input preview-textarea" rows="2" [(ngModel)]="p.texto"></textarea>
+            <button
+              class="btn-icon"
+              [class.btn-icon--activo]="p.categoria === 'medio_ambiente'"
+              title="Marcar como Medio Ambiente"
+              (click)="p.categoria = p.categoria === 'medio_ambiente' ? null : 'medio_ambiente'"
+            >
+              <i class="ti ti-leaf"></i>
+            </button>
             <button class="btn-icon btn-icon-danger" title="Quitar" (click)="quitarPreviewPaso(seccion, i)"><i class="ti ti-trash"></i></button>
           </div>
         </div>
@@ -388,14 +411,24 @@
           </p>
           <div class="preview-row" *ngFor="let p of bloque.parrafos" [style.marginLeft.px]="p.profundidad * 24">
             <span class="manual-texto">{{ p.texto }}</span>
+            <!-- Solo si el destino es catálogo: cada fila puede llevar un sub-tipo distinto
+                 (ej. una tabla de Recursos trae Equipos/Herramientas/Materiales mezclados en
+                 este mismo bloque) — el default es el del bloque, pero se puede pisar acá. -->
+            <select
+              class="preview-row-tipo"
+              *ngIf="subtiposDestino(bloque.destino).length > 0"
+              [(ngModel)]="p.tipoOverride"
+            >
+              <option *ngFor="let st of subtiposDestino(bloque.destino)" [value]="st.value">{{ st.label }}</option>
+            </select>
+            <button class="btn-icon btn-icon-danger" title="Quitar esta fila (no es contenido real, ej. encabezado de columna)" (click)="quitarFilaNoReconocida(bloque, p)">
+              <i class="ti ti-x"></i>
+            </button>
           </div>
           <div class="no-reconocida-destino">
             <select class="abril-field-input" [(ngModel)]="bloque.destino" (ngModelChange)="onDestinoNoReconocidaChange(bloque)">
               <option value="">Enviar a...</option>
               <option *ngFor="let t of destinosNoReconocida" [value]="t.key">{{ t.label }}</option>
-            </select>
-            <select class="abril-field-input" *ngIf="subtiposDestino(bloque.destino).length > 0" [(ngModel)]="bloque.destinoTipo">
-              <option *ngFor="let st of subtiposDestino(bloque.destino)" [value]="st.value">{{ st.label }}</option>
             </select>
             <button class="btn-secondary" [disabled]="!bloque.destino" (click)="aplicarNoReconocida(bloque)">Enviar</button>
             <button class="btn-secondary" (click)="descartarNoReconocida(bloque)">Descartar</button>
@@ -413,9 +446,15 @@
           </ul>
         </div>
 
-        <label class="check-label" *ngIf="totalExistenteEnSeccionesDetectadas() > 0">
+        <label class="check-label" *ngIf="totalExistenteEnSeccionesDetectadas() > 0 || previewItemsCatalogo.length > 0">
           <input type="checkbox" [(ngModel)]="reemplazarAlConfirmar" />
-          Reemplazar Procedimiento/Responsabilidades existentes ({{ totalExistenteEnSeccionesDetectadas() }} paso(s) se eliminarán)
+          Reemplazar existentes antes de importar
+          <ng-container *ngIf="totalExistenteEnSeccionesDetectadas() > 0">
+            — Procedimiento/Responsabilidades ({{ totalExistenteEnSeccionesDetectadas() }} paso(s) se eliminarán)
+          </ng-container>
+          <ng-container *ngIf="previewItemsCatalogo.length > 0">
+            y Marco Legal/EPP/Recursos que ya tengas guardados en las secciones que estás enviando
+          </ng-container>
         </label>
 
         <div class="preview-actions">
@@ -478,5 +517,11 @@
       </div>
     </section>
 
+  </div>
+
+  <!-- Ver imagen en grande: clic en cualquier miniatura del árbol la abre acá, en vez de
+       mostrarla siempre grande en la fila (eso era lo que ocupaba tanto espacio vertical). -->
+  <div class="imagen-ampliada-overlay" *ngIf="imagenAmpliada" (click)="cerrarImagenAmpliada()">
+    <img [src]="imagenAmpliada" alt="Imagen ampliada" />
   </div>
 </div>
