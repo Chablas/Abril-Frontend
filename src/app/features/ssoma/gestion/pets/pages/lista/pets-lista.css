@@ -100,6 +100,15 @@
   color: #d30000;
 }
 
+.estado-revision-pendiente {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  background: #fff3cd;
+  color: #92610a;
+}
+
 .btn-secondary {
   background: #fff;
   color: #475569;

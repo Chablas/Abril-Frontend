@@ -53,6 +53,8 @@ export interface CrearOptRequest {
   seObtuvoCCompromiso: boolean;
   accionRequerida?: string;
   accionObservacion?: string;
+  requierePetModificacion?: boolean;
+  requierePetModificacionNota?: string;
   trabajadores: OptTrabajadorRequest[];
   verificaciones: OptVerificacionRequest[];
   pasos: OptPasoRequest[];
@@ -153,6 +155,8 @@ export interface OptDetalleDto {
   seObtuvoCCompromiso: boolean;
   accionRequerida?: string;
   accionObservacion?: string;
+  requierePetModificacion: boolean;
+  requierePetModificacionNota?: string;
   totalPasos: number;
   totalSeguros: number;
   totalInseguros: number;

@@ -67,6 +67,12 @@
               <span class="estado-badge" [class.estado-activo]="p.activo" [class.estado-inactivo]="!p.activo">
                 {{ p.activo ? 'Activo' : 'Inactivo' }}
               </span>
+              <span
+                *ngIf="p.revisionPendiente"
+                class="estado-badge estado-revision-pendiente"
+                [title]="p.revisionPendienteMotivo || 'Requiere revisión'">
+                <i class="ti ti-alert-triangle"></i> Revisar
+              </span>
             </td>
             <td class="text-center" (click)="$event.stopPropagation()">
               <div class="flex items-center justify-center gap-[8px]">

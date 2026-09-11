@@ -9,6 +9,11 @@ export interface PetListItemDto {
   createdAt: string;
   estadoRevision: PetEstadoRevision;
   versionVigente: number;
+  // Eje independiente de estadoRevision: un accidente/incidente reportado con este
+  // PETS asociado lo deja marcado para revisión, aunque esté "aprobado". Se limpia
+  // solo al aprobar una versión nueva.
+  revisionPendiente: boolean;
+  revisionPendienteMotivo?: string;
 }
 
 export interface PetImagenDto {
@@ -95,6 +100,8 @@ export interface PetDetalleDto {
   activo: boolean;
   estadoRevision: PetEstadoRevision;
   versionVigente: number;
+  revisionPendiente: boolean;
+  revisionPendienteMotivo?: string;
   pasos: PetPasoDto[];
   responsabilidades: PetPasoDto[];
   seccionesTexto: Record<PetSeccionTexto, string>;

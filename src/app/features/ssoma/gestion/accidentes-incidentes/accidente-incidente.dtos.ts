@@ -130,6 +130,9 @@ export interface FlashReportDetalleDto {
   partidaId?: number;
   partidaNombre?: string;
 
+  petId?: number;
+  petNombre?: string;
+
   workerId?: number;
   trabajadorNombre?: string;
   puestoTrabajo?: string;
@@ -192,6 +195,10 @@ export interface CrearFlashReportRequest {
 
   etapaProyectoId?: number;
   partidaId?: number;
+
+  // PETS asociado al evento (opcional): si viene, al confirmar el registro ese
+  // PETS queda marcado pendiente de revisión (ver flujo de accidentes → PETS).
+  petId?: number;
 
   workerId?: number;
   trabajadorNombre?: string;

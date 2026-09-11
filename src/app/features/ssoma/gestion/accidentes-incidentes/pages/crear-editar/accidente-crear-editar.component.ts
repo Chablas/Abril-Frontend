@@ -25,6 +25,8 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
+import { PetsService } from '../../../pets/pets.service';
+import { PetListItemDto } from '../../../pets/pets.dtos';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -54,6 +56,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
   contratistas: ContratistaCatalogoDto[] = [];
   trabajadores: TrabajadorCatalogoDto[] = [];
   proyectoContratistas: ProyectoContratistaDto[] = [];
+  pets: PetListItemDto[] = [];
 
   // estado local (no va al form)
   jefeInmediatoWorkerId?: number;
@@ -107,6 +110,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
     private router: Router,
     private service: AccidenteIncidenteService,
     private workerSearchService: WorkerSearchService,
+    private petsService: PetsService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -119,6 +123,15 @@ export class AccidenteCrearEditarComponent implements OnInit {
       this.modoEditar = true;
       this.id = Number(idParam);
     }
+
+    this.petsService.getList().subscribe({
+      next: (pets) => {
+        this.pets = pets
+          .filter((p) => p.activo)
+          .sort((a, b) => a.nombre.localeCompare(b.nombre));
+        this.cdr.markForCheck();
+      },
+    });
 
     this.loaderService.show();
     this.service.inicializar().subscribe({
@@ -174,6 +187,7 @@ export class AccidenteCrearEditarComponent implements OnInit {
           jefeInmediatoNombre: res.jefeInmediatoNombre,
           etapaProyectoId: res.etapaProyectoId,
           partidaId: res.partidaId,
+          petId: res.petId,
           workerId: res.workerId,
           trabajadorNombre: res.trabajadorNombre,
           puestoTrabajo: res.puestoTrabajo,

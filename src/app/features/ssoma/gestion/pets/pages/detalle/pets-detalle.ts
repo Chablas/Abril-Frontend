@@ -26,6 +26,8 @@ import { environment } from '../../../../../../../environments/environment';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { WorkerSearchInput } from '../../../../salud-ocupacional/shared/worker-search-input/worker-search-input';
 import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
+import { AuthService } from '../../../../../../core/services/auth.service';
+import { Roles } from '../../../../../../core/constants/roles';
 
 interface ParrafoSeleccionable extends ImportParrafoDto {
   seleccionado: boolean;
@@ -437,7 +439,15 @@ export class PetsDetalle implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
+    private authService: AuthService,
   ) {}
+
+  // Cualquier prevencionista/coordinador SSOMA edita el PETS; solo el Jefe SSOMA
+  // aprueba la publicación de una versión oficial (el backend también lo exige,
+  // esto solo evita mostrar un botón que va a devolver 403).
+  get puedeAprobar(): boolean {
+    return this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA);
+  }
 
   ngOnInit(): void {
     this.id = Number(this.route.snapshot.paramMap.get('id'));

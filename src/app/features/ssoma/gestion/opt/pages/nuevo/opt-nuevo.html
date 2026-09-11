@@ -107,6 +107,23 @@
               </button>
             </div>
           }
+          @if (petId) {
+            <label class="abril-field-label toggle-label pet-requiere-modificar">
+              <span>¿Este PET requiere modificarse?</span>
+              <div class="toggle" [class.toggle--on]="requierePetModificacion" (click)="requierePetModificacion = !requierePetModificacion">
+                <div class="toggle-thumb"></div>
+              </div>
+            </label>
+            @if (requierePetModificacion) {
+              <textarea
+                class="abril-field-input"
+                rows="2"
+                placeholder="¿Qué se debería modificar? SSOMA lo revisará — no lo modifiques tú directamente."
+                [(ngModel)]="requierePetModificacionNota"
+                name="requierePetModificacionNota">
+              </textarea>
+            }
+          }
         </div>
 
         <div class="form-row">

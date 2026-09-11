@@ -230,6 +230,10 @@
 .toggle--sm .toggle-thumb { width: 14px; height: 14px; }
 .toggle--sm.toggle--on .toggle-thumb { transform: translateX(16px); }
 
+.pet-requiere-modificar {
+  margin-top: 10px;
+}
+
 .toggle-label {
   display: flex;
   align-items: center;

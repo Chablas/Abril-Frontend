@@ -67,6 +67,12 @@
               <span class="meta-value">{{ data.petNombre }}</span>
             </div>
           }
+          @if (data.requierePetModificacion) {
+            <div class="meta-row">
+              <span class="meta-label"><i class="ti ti-alert-triangle"></i> PET a revisar</span>
+              <span class="meta-value">{{ data.requierePetModificacionNota || 'Se indicó que requiere modificarse.' }}</span>
+            </div>
+          }
           @if (data.area) {
             <div class="meta-row">
               <span class="meta-label"><i class="ti ti-map-pin"></i> Área</span>

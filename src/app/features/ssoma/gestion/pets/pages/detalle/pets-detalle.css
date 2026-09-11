@@ -811,6 +811,11 @@
   color: #b45309;
 }
 
+.pet-estado-badge--revision {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 .btn-aprobar {
   color: #15803d;
   border-color: #86efac;

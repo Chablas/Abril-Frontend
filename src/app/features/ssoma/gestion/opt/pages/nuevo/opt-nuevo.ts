@@ -92,6 +92,10 @@ export class OptNuevo implements OnInit, AfterViewInit {
   observadorCargo = '';
   petVisorUrl = '';
   petVisorNombre = '';
+  // El observador NO modifica el PETS directamente (es peligroso) — solo indica que
+  // hace falta revisarlo y por qué, para que SSOMA lo haga.
+  requierePetModificacion = false;
+  requierePetModificacionNota = '';
 
   // Observador — fijo, resuelto desde el usuario logueado (no editable)
   workersObservador: WorkerHabilitacionListDto[] = [];
@@ -214,6 +218,8 @@ export class OptNuevo implements OnInit, AfterViewInit {
     this.petSeleccionado = this.pets.find((p) => p.id === Number(this.petId)) ?? null;
     this.petVisorUrl = '';
     this.petVisorNombre = '';
+    this.requierePetModificacion = false;
+    this.requierePetModificacionNota = '';
     this.cdr.markForCheck();
 
     if (this.petSeleccionado) {
@@ -624,6 +630,8 @@ export class OptNuevo implements OnInit, AfterViewInit {
       seObtuvoCCompromiso: this.seObtuvoCCompromiso,
       accionRequerida: this.accionRequerida || undefined,
       accionObservacion: this.accionObservacion || undefined,
+      requierePetModificacion: this.petId ? this.requierePetModificacion : false,
+      requierePetModificacionNota: this.requierePetModificacionNota || undefined,
       trabajadores: trabajadoresReq,
       verificaciones: verificacionesReq,
       pasos: pasosReq,

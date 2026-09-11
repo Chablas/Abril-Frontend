@@ -23,6 +23,13 @@
           <i class="ti ti-alert-triangle"></i> Cambios sin aprobar desde v.{{ detalle.versionVigente }}
         </ng-container>
       </span>
+      <span
+        *ngIf="detalle && detalle.revisionPendiente"
+        class="pet-estado-badge pet-estado-badge--revision"
+        [title]="detalle.revisionPendienteMotivo || 'Requiere revisión'"
+      >
+        <i class="ti ti-alert-circle"></i> Requiere revisión — {{ detalle.revisionPendienteMotivo }}
+      </span>
     </div>
   </div>
 
@@ -58,7 +65,11 @@
           <button class="btn-secondary" (click)="exportarPdf()" [disabled]="exportandoPdf" title="Genera un PDF de trabajo con el estado actual — no reemplaza el documento oficial">
             <i class="ti ti-file-download"></i> {{ exportandoPdf ? 'Generando…' : 'Vista previa PDF' }}
           </button>
-          <button class="btn-secondary btn-aprobar" (click)="abrirAprobarVersion()">
+          <button
+            *ngIf="puedeAprobar"
+            class="btn-secondary btn-aprobar"
+            (click)="abrirAprobarVersion()"
+            title="Solo el Jefe SSOMA aprueba la publicación de una versión">
             <i class="ti ti-shield-check"></i> Aprobar versión
           </button>
           <button class="btn-primary" (click)="guardarCabecera()" [disabled]="guardandoCabecera">
