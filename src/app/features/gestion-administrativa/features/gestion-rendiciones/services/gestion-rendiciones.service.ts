@@ -62,19 +62,21 @@ export class GestionRendicionesService {
   }
 
   /**
-   * Adjunta (o reemplaza) el Consolidado del S10 de la planilla. Cubre todas sus salidas, así que
-   * `montoTotal` tiene que cuadrar con el monto de la planilla completa: el backend lo re-valida y
-   * responde 400 si no coincide.
+   * Adjunta (o reemplaza) UN Consolidado del S10 para las planillas indicadas: una o varias, de uno
+   * o de varios trabajadores de una misma razón social. Cubre todas sus salidas, así que
+   * `montoTotal` tiene que cuadrar con la suma de las planillas completas: el backend lo re-valida
+   * (junto con la razón social y el resto de las reglas) y responde 400/409 si algo no cuadra.
    */
   uploadConsolidadoS10(
-    rendicionId: number, file: File, montoTotal: number, numeroGuia: string,
+    rendicionIds: number[], file: File, montoTotal: number, numeroGuia: string,
   ): Observable<ConsolidadoS10Dto> {
     const formData = new FormData();
+    for (const id of rendicionIds) formData.append('rendicionIds', String(id));
     formData.append('file', file, file.name);
     formData.append('montoTotal', String(montoTotal));
     formData.append('numeroGuia', numeroGuia);
     return this.http.post<ConsolidadoS10Dto>(
-      `${this.apiUrl}/${rendicionId}/consolidado-s10`,
+      `${this.apiUrl}/consolidado-s10`,
       formData,
       { headers: this.headers },
     );

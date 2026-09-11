@@ -70,6 +70,23 @@
 
     <span class="w-px h-5 bg-[#E5E7EB] mx-1"></span>
 
+    <!-- Consolidado del S10: uno solo para todas las seleccionadas que ya pasaron la primera
+         revisión, aunque sean de trabajadores distintos (siempre de una misma razón social). -->
+    <button
+      type="button"
+      abrilBulkAction="default"
+      (click)="abrirConsolidadoSeleccion()"
+      [disabled]="consolidadoSeleccionBloqueo !== null"
+      [title]="consolidadoSeleccionBloqueo ?? 'Adjuntar un solo Consolidado del S10 para las rendiciones seleccionadas'">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+        <path d="M14 2v6h6" stroke-linejoin="round"/>
+      </svg>
+      Consolidado S10<span *ngIf="consolidadoSeleccionBloqueo === null"> ({{ selectedConsolidables.length }})</span>
+    </button>
+
+    <span class="w-px h-5 bg-[#E5E7EB] mx-1"></span>
+
     <button
       type="button"
       abrilBulkAction="default"
@@ -186,14 +203,16 @@
                 Planilla
               </a>
 
+              <!-- Un consolidado puede cubrir varias rendiciones: el "+N" dice con cuántas otras
+                   comparte el documento y el título cuáles son. -->
               <a *ngIf="r.consolidadoS10; else sinConsolidado"
                  class="doc-chip" [href]="r.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
-                 [title]="r.consolidadoS10.pdfFilename">
+                 [title]="consolidadoChipTitle(r)">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
                   <path d="M14 2v6h6" stroke-linejoin="round"/>
                 </svg>
-                S10 ✓
+                S10 ✓<span *ngIf="otrasDelConsolidado(r).length"> +{{ otrasDelConsolidado(r).length }}</span>
               </a>
               <ng-template #sinConsolidado>
                 <span class="doc-chip doc-chip--pendiente"
@@ -271,18 +290,18 @@
                 </button>
               </ng-container>
 
-              <!-- El revisor puede adjuntar el consolidado en nombre del trabajador cuando este no
-                   puede. Solo con la primera revisión aprobada, y hasta que el reembolso se decida. -->
+              <!-- Adjuntar el consolidado en nombre de los trabajadores. Solo con la primera revisión
+                   aprobada y hasta que el reembolso se decida, y solo para quien está habilitado a
+                   consolidar por esos trabajadores (Configuración → Consolidadores). Si ya hay uno
+                   compartido con otras rendiciones abiertas, se reemplaza para todas. -->
               <button
-                *ngIf="r.estadoPrimeraRevision === 'Aprobada'
-                    && (r.estadoReembolso === 'Pendiente' || r.estadoReembolso === 'Observado')"
+                *ngIf="r.puedeAdjuntarConsolidado"
                 type="button"
                 (click)="abrirConsolidado(r, $event)"
-                [title]="r.consolidadoS10 ? 'Reemplazar el Consolidado del S10' : 'Adjuntar el Consolidado del S10 en nombre del trabajador'"
-                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
-                style="background:var(--color-abril-standard)"
-                onmouseover="this.style.background='var(--color-abril-standard-hover)'"
-                onmouseout="this.style.background='var(--color-abril-standard)'">
+                [disabled]="!r.puedeConsolidar"
+                [title]="consolidadoTitle(r)"
+                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                style="background:var(--color-abril-standard)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
                   <path d="M14 2v6h6" stroke-linejoin="round"/>
@@ -290,9 +309,7 @@
                 {{ r.consolidadoS10 ? 'Consolidado S10 ✓' : 'Consolidado S10' }}
               </button>
 
-              <span *ngIf="!r.porPrimeraRevision
-                        && !(r.estadoPrimeraRevision === 'Aprobada'
-                             && (r.estadoReembolso === 'Pendiente' || r.estadoReembolso === 'Observado'))"
+              <span *ngIf="!r.porPrimeraRevision && !r.puedeAdjuntarConsolidado"
                     class="text-gray-300">—</span>
             </div>
           </td>
@@ -311,11 +328,13 @@
 
 <!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->
 <app-consolidado-s10-modal
-  *ngIf="consolidadoDe !== null"
+  *ngIf="consolidadoPara as objetivo"
   [upload]="subirConsolidado"
-  [actual]="consolidadoDe.consolidadoS10"
-  [referencia]="consolidadoReferencia"
-  [montoEsperado]="consolidadoDe.montoTotalPlanilla"
+  [actual]="objetivo.actual"
+  [referencia]="objetivo.referencia"
+  [rendiciones]="objetivo.codigos"
+  [razonSocial]="objetivo.razonSocial"
+  [montoEsperado]="objetivo.monto"
   (close)="cerrarConsolidado($event)" />
 
 <!-- ── Modal para registrar la firma la primera vez ────────────────────

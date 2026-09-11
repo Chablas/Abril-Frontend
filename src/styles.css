@@ -233,6 +233,27 @@
   min-height: 0;
   overflow-y: auto;
 }
+
+/* Modificador opt-in: la tabla con caja propia, para cuando el contenedor NO
+   es blanco y las filas se dibujarían directamente sobre el fondo de la página
+   (las secciones con tabla de la configuración de Gestión Administrativa, donde
+   el resto de secciones son tarjetas sueltas sobre ese fondo). Misma superficie
+   que `.config-card` y el paginador, para que las tres cosas se lean como una.
+   El overflow del wrapper recorta las esquinas, así que el thead sticky no se
+   sale del redondeo.
+   Uso: <div class="abril-table-wrap abril-table-wrap--card">...</div> */
+.abril-table-wrap--card {
+  background: var(--color-abril-surface);
+  border: 1px solid var(--color-abril-border);
+  border-radius: var(--radius-standard);
+}
+/* La última fila ya tiene el borde de la caja debajo: sin esto se ve una línea
+   doble pegada al filo inferior. Va sobre el <tr> y el <td> porque el separador
+   lo pone `.abril-table td` y además cada fila trae su propio `border-b`. */
+.abril-table-wrap--card .abril-table tbody tr:last-child,
+.abril-table-wrap--card .abril-table tbody tr:last-child > td {
+  border-bottom: 0;
+}
 .abril-table tbody tr:hover { background: var(--color-abril-bg-alt); }
 
 /* ── Input estándar ─────────────────────────────────────────── */

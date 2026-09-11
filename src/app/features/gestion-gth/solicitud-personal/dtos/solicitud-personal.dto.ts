@@ -25,6 +25,29 @@ export interface TipoRequerimientoOpcion extends OpcionDto {
 export const TIPO_REQUERIMIENTO_REEMPLAZO = 'REEMPLAZO';
 
 /**
+ * Cómo se pinta el tipo de requerimiento en la tabla y en el seguimiento: etiqueta con ícono y
+ * borde, no un badge relleno, para que no se confunda con el estado, que va en badge al lado. Se
+ * decide por el código —el nombre es presentación y se renombra desde Configuración— y cualquier
+ * código que no sea REEMPLAZO se pinta como una vacante nueva.
+ */
+export interface TipoRequerimientoEstilo {
+  color: string;
+  borde: string;
+  /** Clase del ícono de Tabler. */
+  icono: string;
+}
+
+export function tipoRequerimientoEstilo(codigo: string | null | undefined): TipoRequerimientoEstilo {
+  return codigo?.trim().toUpperCase() === TIPO_REQUERIMIENTO_REEMPLAZO
+    ? { color: 'var(--color-abril-logo-blue)', borde: '#a9c9e6', icono: 'ti-arrows-exchange' }
+    : {
+        color: 'var(--color-abril-standard)',
+        borde: 'var(--color-abril-standard-border)',
+        icono: 'ti-circle-plus',
+      };
+}
+
+/**
  * Opción del desplegable «Tipo de documento» del candidato de un ingreso directo (FFT). El
  * `codigo` estable es lo que decide cuántos dígitos admite el número, así que se compara por él
  * y nunca por el nombre.
@@ -209,6 +232,16 @@ export interface AprobacionGgReenvioResult {
   destinatarios: string[];
 }
 
+/**
+ * A quién le llegaría el reenvío del correo de aprobación de una vacante. Lo resuelve el backend
+ * con la misma llamada que el envío, así que la confirmación nombra exactamente lo que va a salir.
+ */
+export interface AprobacionGgReenvioPreview {
+  /** Quién firma la vacante ahora: «Gerencia General», «la Gerencia del Área» o «Gestión del Talento Humano». */
+  firmante: string;
+  destinatarios: SolicitudDestinatarios;
+}
+
 /** Una fase del pipeline dentro del seguimiento vertical del requerimiento. */
 export interface FaseSeguimiento {
   codigo: string;
@@ -264,12 +297,23 @@ export interface AprobacionGgResumen {
   ruta: 'GG' | 'AREA_GTH';
 }
 
+/** Otra vacante de la misma solicitud, para nombrarla en el seguimiento. */
+export interface VacanteDeLaSolicitud {
+  requerimientoId: number;
+  codigo: string;
+  puesto: string;
+}
+
 /** Detalle de seguimiento de un requerimiento (modal "Estado del reclutamiento"). */
 export interface Seguimiento {
   requerimientoId: number;
   codigo: string;
   puesto: string;
   tipoRequerimiento: string;
+  /** `NUEVO` | `REEMPLAZO`: decide cómo se pinta el tipo. Se compara por código, nunca por nombre. */
+  tipoRequerimientoCodigo: string;
+  /** Trabajador al que reemplaza la vacante. Null en las nuevas y en los reemplazos anteriores al dato. */
+  trabajadorReemplazado: string | null;
   /**
    * true = ingreso directo **FFT**. `fases` ya viene sin los pasos que este flujo no recorre; esto
    * es para poder explicar en pantalla por qué el proceso es más corto.
@@ -277,7 +321,16 @@ export interface Seguimiento {
   esFft: boolean;
   /** Nombre del candidato FFT que nombró el solicitante. Null cuando no es FFT. */
   fftCandidatoNombre: string | null;
+  /** Documento del candidato FFT como se muestra («DNI 12345678»). Null cuando no es FFT. */
+  fftDocumentoTexto: string | null;
+  /** Correo personal del candidato FFT. Null cuando no es FFT. */
+  fftCandidatoCorreo: string | null;
   area: string | null;
+  /**
+   * Área a la que entra quien ocupe el puesto. Null cuando el puesto no la tiene (los de obra):
+   * ahí el contratado entra al área del solicitante.
+   */
+  areaDestino: string | null;
   proyectoObra: string | null;
   justificacion: string | null;
   /**
@@ -287,6 +340,12 @@ export interface Seguimiento {
   salarioBrutoMensual: number | null;
   /** Fecha de envío (ISO, ya en hora Perú). */
   enviado: string;
+  /** Quién registró la solicitud. Null si no tiene ficha de persona. */
+  solicitante: string | null;
+  /** Responsable de GTH que lleva el proceso. Null mientras GTH no lo asigne. */
+  responsableGth: string | null;
+  /** Las otras vacantes de la misma solicitud (comparten justificación y sustento). */
+  otrasVacantes: VacanteDeLaSolicitud[];
   estadoCodigo: string;
   estadoNombre: string;
   estadoOrden: number;
@@ -326,6 +385,12 @@ export interface SolicitudVacanteListItem {
    * fila tiene que decir de quién es el pedido. Null si ese usuario no tiene ficha de trabajador.
    */
   solicitante: string | null;
+  /** Tipo de requerimiento como se muestra (Nuevo / Reemplazo): la columna «Tipo». */
+  tipoRequerimiento: string;
+  /** `NUEVO` | `REEMPLAZO`: decide cómo se pinta el tipo. Se compara por código, nunca por nombre. */
+  tipoRequerimientoCodigo: string;
+  /** true = ingreso directo FFT: no lo firma nadie y pasa derecho al EMO de ingreso. */
+  esFft: boolean;
 }
 
 /**

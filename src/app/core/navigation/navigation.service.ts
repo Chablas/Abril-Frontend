@@ -36,10 +36,10 @@ export class NavigationService {
             { label: 'Motivos',   route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
             { label: 'Trayectos', route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
             { label: 'Capturas', route: '/gestion-administrativa/configuracion/capturas', featureKey: 'gestion-administrativa.config.capturas' },
-            { label: 'Visibilidad de Salidas', route: '/gestion-administrativa/configuracion/visibilidad-salidas', featureKey: 'gestion-administrativa.config.visibilidad-salidas' },
             { label: 'Carpeta Adjuntos', route: '/gestion-administrativa/configuracion/carpeta-adjuntos', featureKey: 'gestion-administrativa.config.carpeta-adjuntos' },
-            // Los correos ya no están acá: cada pantalla del flujo administra los que se
-            // originan en ella desde su propio botón «Configuración»
+            // Los correos, la visibilidad de cada bandeja, los revisores y los
+            // consolidadores ya no están acá: cada pantalla del flujo administra lo que se
+            // origina en ella desde su propio botón «Configuración»
             // (/gestion-administrativa/<pantalla>/configuracion).
             // Por rol y no por featureKey: la firma es de la persona, no de una funcionalidad.
             // Mismo criterio que el roleGuard de su ruta (ver gestion-administrativa.routes.ts).
@@ -395,7 +395,8 @@ export class NavigationService {
         { label: 'Proyectos', route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },
         // 'Categorías y Puestos' se movió a Gestión GTH → Configuración
         // (/gestion-gth/configuracion/categorias-puestos).
-        { label: 'Revisores de Áreas', route: '/configuracion/revisores-areas', featureKey: 'configuracion.revisores-areas' },
+        // 'Revisores de Áreas' se movió a Gestión Administrativa → Solicitud de Salidas →
+        // Configuración: el revisor es a quien se le manda la solicitud que nace ahí.
         { label: 'Centro de aprendizaje', route: '/configuracion/aprendizaje', featureKey: 'configuracion.aprendizaje' },
       ],
     },

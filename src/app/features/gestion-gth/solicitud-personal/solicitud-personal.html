@@ -161,6 +161,7 @@
         <tr>
           <th>Código</th>
           <th>Puesto</th>
+          <th>Tipo</th>
           <th>Área</th>
           <th>Proyecto / Obra</th>
           <th>Enviado</th>
@@ -171,7 +172,7 @@
       <tbody>
 
         <tr *ngIf="filteredSolicitudes.length === 0">
-          <td colspan="7" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
+          <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
         </tr>
 
         <tr *ngFor="let s of pagedSolicitudes"
@@ -185,6 +186,20 @@
             <div *ngIf="s.justificacion" class="text-[11px] text-gray-400 max-w-[280px] truncate" [title]="s.justificacion">
               {{ s.justificacion }}
             </div>
+          </td>
+
+          <!-- Nuevo o reemplazo. Etiqueta con borde y no badge relleno, para que no se confunda con
+               el estado. El ingreso directo va debajo: es lo otro que cambia el camino de la
+               vacante (no la firma nadie). -->
+          <td class="text-center">
+            <ng-container *ngIf="tipoEstilo(s.tipoRequerimientoCodigo) as t">
+              <span class="inline-flex items-center gap-[4px] h-[22px] px-[8px] rounded-full border bg-white text-[11.5px] font-semibold whitespace-nowrap"
+                    [style.color]="t.color" [style.border-color]="t.borde">
+                <i class="ti text-[13px]" [ngClass]="t.icono"></i>
+                {{ s.tipoRequerimiento }}
+              </span>
+            </ng-container>
+            <div *ngIf="s.esFft" class="text-[11px] text-gray-400 mt-[2px] whitespace-nowrap">FFT · Ingreso directo</div>
           </td>
 
           <td class="text-gray-500">
@@ -279,6 +294,17 @@
           <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Enviado</div>
           <div class="text-[12px] text-gray-600">{{ s.enviado | date:'dd/MM/yyyy' }}</div>
         </div>
+        <div class="min-w-0">
+          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Tipo</div>
+          <ng-container *ngIf="tipoEstilo(s.tipoRequerimientoCodigo) as t">
+            <span class="inline-flex items-center gap-[4px] h-[20px] mt-[2px] px-[7px] rounded-full border bg-white text-[11px] font-semibold whitespace-nowrap"
+                  [style.color]="t.color" [style.border-color]="t.borde">
+              <i class="ti text-[12px]" [ngClass]="t.icono"></i>
+              {{ s.tipoRequerimiento }}
+            </span>
+          </ng-container>
+          <div *ngIf="s.esFft" class="text-[11px] text-gray-400">FFT · Ingreso directo</div>
+        </div>
       </div>
 
       <button type="button" (click)="abrirSeguimiento(s)"
@@ -354,7 +380,7 @@
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
   <div class="w-full">
     <app-search-input
-      placeholder="Buscar por código, puesto, área o proyecto..."
+      placeholder="Buscar por código, puesto, tipo, área o proyecto..."
       [(value)]="searchText"
       (valueChange)="onFilterChange()"
       width="100%">

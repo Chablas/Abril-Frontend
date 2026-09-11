@@ -8,7 +8,6 @@ import { NavigationService } from '../../../../core/navigation/navigation.servic
 import { GaLugares } from './lugares/pages/lugares';
 import { GaMotivos } from './motivos/pages/motivos';
 import { GaTrayectos } from '../trayectos/pages/trayectos';
-import { VisibilidadSalidas } from './visibilidad-salidas/pages/visibilidad-salidas';
 import { GaCarpetaAdjuntos } from './carpeta-adjuntos/pages/carpeta-adjuntos';
 import { GaCapturas } from './capturas/pages/capturas';
 import { Roles } from '../../../../core/constants/roles';
@@ -36,8 +35,8 @@ interface ConfigSectionDef {
  * Contenedor de configuración de Gestión Administrativa.
  *
  * Agrupa bajo `/gestion-administrativa/configuracion` las pantallas de
- * configuración propias de salidas (lugares, motivos, trayectos, capturas,
- * visibilidad y carpeta de adjuntos) conmutándolas con el componente
+ * configuración propias de salidas (lugares, motivos, trayectos, capturas y
+ * carpeta de adjuntos) conmutándolas con el componente
  * `app-section-tabs`, siguiendo el mismo patrón que `costs-configuration` de
  * Costos y Presupuestos.
  *
@@ -45,9 +44,10 @@ interface ConfigSectionDef {
  * pantallas donde se originan (`/gestion-administrativa/<pantalla>/configuracion`, con
  * `GaPantallaConfiguracion`), porque juntos no se sabía qué correo salía de dónde.
  *
- * Los revisores de áreas ya NO viven aquí: definen el jefe de cada área para toda
- * la organización, así que se movieron al módulo de configuración global
- * (`/configuracion/revisores-areas`). El jefe por trabajador se asigna en el
+ * Los revisores de áreas ya NO viven aquí: se movieron a Solicitud de Salidas →
+ * Configuración, que es la pantalla donde nace la solicitud que el revisor recibe.
+ * La visibilidad de salidas tampoco: pasó a Gestión de Salidas → Configuración,
+ * que es la bandeja que recorta. El jefe por trabajador se asigna en el
  * formulario de Gestión de Ingresos → Trabajadores ("Jefe personalizado").
  *
  * Cada sección sigue teniendo su propia ruta
@@ -68,7 +68,6 @@ interface ConfigSectionDef {
     GaLugares,
     GaMotivos,
     GaTrayectos,
-    VisibilidadSalidas,
     GaCarpetaAdjuntos,
     GaCapturas,
     FirmaPersonal,
@@ -113,14 +112,6 @@ export class GaConfiguracion implements OnInit {
         'Áreas que deben subir capturas de movilidad para rendir una salida. Por defecto, obligatorias.',
     },
     {
-      id: 'visibilidad-salidas',
-      label: 'Visibilidad',
-      route: '/gestion-administrativa/configuracion/visibilidad-salidas',
-      featureKey: 'gestion-administrativa.config.visibilidad-salidas',
-      subtitulo:
-        'Define qué áreas puede ver cada trabajador en la gestión de salidas. Sin asignación, la visibilidad se resuelve automáticamente (GTH ve todo, gerentes su gerencia, administración de obra su tipo de área).',
-    },
-    {
       id: 'carpeta-adjuntos',
       label: 'Carpeta Adjuntos',
       route: '/gestion-administrativa/configuracion/carpeta-adjuntos',
@@ -150,7 +141,6 @@ export class GaConfiguracion implements OnInit {
   @ViewChild(GaLugares) private lugaresCmp?: GaLugares;
   @ViewChild(GaMotivos) private motivosCmp?: GaMotivos;
   @ViewChild(GaTrayectos) private trayectosCmp?: GaTrayectos;
-  @ViewChild(VisibilidadSalidas) private visibilidadCmp?: VisibilidadSalidas;
   @ViewChild(GaCarpetaAdjuntos) private carpetaAdjuntosCmp?: GaCarpetaAdjuntos;
   @ViewChild(GaCapturas) private capturasCmp?: GaCapturas;
 
@@ -202,7 +192,6 @@ export class GaConfiguracion implements OnInit {
     | GaLugares
     | GaMotivos
     | GaTrayectos
-    | VisibilidadSalidas
     | GaCarpetaAdjuntos
     | GaCapturas
     | undefined {
@@ -210,7 +199,6 @@ export class GaConfiguracion implements OnInit {
       case 'lugares': return this.lugaresCmp;
       case 'motivos': return this.motivosCmp;
       case 'trayectos': return this.trayectosCmp;
-      case 'visibilidad-salidas': return this.visibilidadCmp;
       case 'carpeta-adjuntos': return this.carpetaAdjuntosCmp;
       case 'capturas': return this.capturasCmp;
       default: return undefined;

@@ -87,6 +87,12 @@ const mbTexto = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
  */
 const CORREO_VALIDO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+/**
+ * Resultados que cierran la participación de un candidato (espejo de `ResultadoCandidato.Cerrados`
+ * del backend): GTH lo descartó, el área lo eligió o lo rechazó, o no pasó el EMO de ingreso.
+ */
+const RESULTADOS_CERRADOS = ['NO_PASO', 'SELECCIONADO', 'RECHAZADO', 'NO_APTO_EMO'];
+
 /** Datos editables de la cita de un candidato en la sección de programación de entrevistas. */
 interface EntrevistaFormState {
   /** Fecha en formato `YYYY-MM-DD` (el que maneja `app-date-picker`). */
@@ -337,11 +343,14 @@ export class GthDetalleRequerimiento implements OnInit {
 
     // Long list aprobada, formulario del postulante y Multitest son el trabajo de la fase
     // "Long list aprobada": quedan atrás al pasar a entrevistas (o, en un ingreso directo FFT, al
-    // aprobarse el formulario, que lo manda derecho al EMO).
+    // aprobarse el formulario, que lo manda derecho al EMO). Salvo para los candidatos que se
+    // quedaron atrás: pasar a entrevistas ya no espera a toda la long list, así que el formulario y
+    // el Multitest siguen abiertos mientras alguno tenga algo por hacer ahí.
     const antesDeEntrevistas = !this.enEntrevistas;
+    const porRevisar = this.candidatosEnCarrera.some((c) => this.formularioPorRevisar(c));
     this.seccionLongListAprobada = antesDeEntrevistas;
-    this.seccionFormularioPostulante = antesDeEntrevistas;
-    this.seccionMultitest = antesDeEntrevistas;
+    this.seccionFormularioPostulante = antesDeEntrevistas || (this.sumaCandidatosTarde && porRevisar);
+    this.seccionMultitest = antesDeEntrevistas || this.multitestPendientes > 0;
 
     // La programación de entrevistas se completa cuando el finalista pasa a decisión del área.
     this.seccionEntrevistas =
@@ -1125,38 +1134,11 @@ export class GthDetalleRequerimiento implements OnInit {
     return !!this.detalle?.esFft;
   }
 
-  /**
-   * true si a un FFT le falta la razón social. En el flujo normal la exige el botón de publicar,
-   * pero el ingreso directo no publica nada: su ficha de pre-ingreso se abre al aprobarse la
-   * vacante, así que sin este aviso quedaría sin razón social y nadie se enteraría hasta el
-   * onboarding. Al asignarla, el backend se la baja a la ficha. Es un aviso, no un bloqueo — la
-   * decisión de asignarla antes o después es de GTH.
-   */
-  get faltaRazonSocialFft(): boolean {
-    return this.esFft && !this.detalle?.asignacion.contributorId;
-  }
-
   // ── Asignación interna (autosave optimista por cambio) ──────────────────
   onAsignacionChange(campo: keyof AsignacionGth, valor: number | null): void {
     if (!this.detalle) return;
     const asignacion = this.detalle.asignacion;
     if (asignacion[campo] === valor) return;
-
-    // Una razón social llena ni se guarda ni se queda elegida: esta sección se autoguarda con cada
-    // cambio y aceptarla en el modelo la mandaría igual en el próximo campo que se toque. Se corta
-    // antes de escribirla, así que el desplegable vuelve solo a lo que estaba.
-    if (campo === 'contributorId') {
-      const elegida = this.detalle.razonesSociales.find((r) => r.id === valor);
-      if (elegida && elegida.cuposDisponibles === 0) {
-        Swal.fire({
-          icon: 'warning',
-          title: 'Razón social sin cupos',
-          text: `${elegida.nombre} ya llegó al tope de 20 trabajadores: elige otra.`,
-          confirmButtonColor: '#005D9D',
-        });
-        return;
-      }
-    }
 
     const prev = asignacion[campo];
     asignacion[campo] = valor;
@@ -1175,33 +1157,6 @@ export class GthDetalleRequerimiento implements OnInit {
     return this.detalle?.tiposProceso.find((t) => t.id === this.detalle?.asignacion.tipoProcesoId) ?? null;
   }
 
-  /** Razón social seleccionada (para el hint de cupos y la advertencia). */
-  get razonSocialSeleccionada() {
-    return this.detalle?.razonesSociales.find((r) => r.id === this.detalle?.asignacion.contributorId) ?? null;
-  }
-
-  /** true si la razón social elegida no alcanza a cubrir las vacantes del requerimiento. */
-  get sinCupos(): boolean {
-    const razon = this.razonSocialSeleccionada;
-    return !!this.detalle && !!razon && razon.cuposDisponibles < this.detalle.vacantes;
-  }
-
-  /**
-   * true si la razón social del requerimiento ya llegó al tope de 20: no entra nadie más, así que
-   * el proceso no puede avanzar con ella.
-   *
-   * Es distinto de `sinCupos`, que avisa cuando quedan cupos pero no alcanzan para todas las
-   * vacantes: eso se sigue permitiendo (la razón social puede estar por ampliarse y las vacantes se
-   * cubren de a una). Con cero no hay nada que ampliar sobre la marcha.
-   *
-   * Se calcula sobre lo guardado, no sobre lo que se acaba de elegir: elegir una llena está
-   * cortado antes (`onAsignacionChange`). Esto cubre el otro caso — la razón social se asignó hace
-   * tiempo y se llenó después.
-   */
-  get razonSocialLlena(): boolean {
-    return this.razonSocialSeleccionada?.cuposDisponibles === 0;
-  }
-
   // ── Publicación en canales ──────────────────────────────────────────────
   toggleCanal(canalId: number): void {
     if (this.canalesSeleccionados.has(canalId)) this.canalesSeleccionados.delete(canalId);
@@ -1211,11 +1166,10 @@ export class GthDetalleRequerimiento implements OnInit {
   /**
    * true si se puede publicar: al menos un canal marcado y la asignación interna completa.
    * Publicar avanza la fase, y a partir de ahí el requerimiento ya se trabaja con responsable,
-   * SLA, prioridad y razón social definidos, así que los cuatro se exigen antes de continuar.
+   * SLA y prioridad definidos, así que los tres se exigen antes de continuar.
    *
-   * Y la razón social tiene que tener cupo: publicar arranca el proceso que termina metiendo a
-   * alguien en esa empresa, así que con el tope ya cubierto no se avanza (`razonSocialLlena`).
-   * Descubrirlo al final, con el candidato ya elegido, es lo que hay que evitar.
+   * La razón social no entra: se elige mucho después, al programarle el EMO de ingreso al
+   * finalista, y con ella el control de cupos.
    */
   get puedePublicar(): boolean {
     const a = this.detalle?.asignacion;
@@ -1223,9 +1177,7 @@ export class GthDetalleRequerimiento implements OnInit {
       this.canalesSeleccionados.size > 0 &&
       !!a?.responsableId &&
       !!a.tipoProcesoId &&
-      !!a.prioridadId &&
-      !!a.contributorId &&
-      !this.razonSocialLlena
+      !!a.prioridadId
     );
   }
 
@@ -1652,9 +1604,8 @@ export class GthDetalleRequerimiento implements OnInit {
 
   /**
    * true si el formulario se puede rechazar. Además del completado entra el que se envió y el
-   * postulante nunca llenó: rechazarlo es lo que destraba el paso a la programación de entrevistas
-   * cuando alguien no responde. El enlace no se toca — si lo completa después vuelve a aparecer
-   * como «Por revisar».
+   * postulante nunca llenó: es como se descarta a quien no responde. El enlace no se toca — si lo
+   * completa después vuelve a aparecer como «Por revisar».
    */
   formularioRechazable(c: CandidatoAprobado): boolean {
     const estado = c.formulario?.estadoCodigo;
@@ -1704,6 +1655,7 @@ export class GthDetalleRequerimiento implements OnInit {
     this.decidiendoFormulario[c.candidatoId] = false;
     if (res) {
       c.formulario = res.resumen;
+      this.abrirMultitestSiFalta(c);
       this.huboCambios = true;
 
       // En un ingreso directo FFT, aprobar el formulario NO solo cambia el estado del formulario:
@@ -1788,8 +1740,20 @@ export class GthDetalleRequerimiento implements OnInit {
   /** Al aprobar/rechazar desde el modal, refresca el estado del formulario del candidato. */
   onFormularioCambios(resumen: CandidatoFormularioResumen): void {
     const c = this.detalle?.candidatosAprobados.find((x) => x.candidatoId === this.formularioCandidatoId);
-    if (c) c.formulario = resumen;
+    if (c) {
+      c.formulario = resumen;
+      this.abrirMultitestSiFalta(c);
+    }
     this.huboCambios = true;
+  }
+
+  /**
+   * Con el proceso ya en entrevistas, al candidato recién aprobado solo le falta el Multitest para
+   * sumarse a ellas: esa sección se abre aunque hubiera quedado plegada.
+   */
+  private abrirMultitestSiFalta(c: CandidatoAprobado): void {
+    const aprobado = c.formulario?.estadoCodigo === 'APROBADO';
+    if (aprobado && !c.multitestRealizado && this.sumaCandidatosTarde) this.seccionMultitest = true;
   }
 
   // ── Control informativo del Multitest ───────────────────────────────────
@@ -1816,60 +1780,88 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
-   * true si tienen el Multitest marcado todos los candidatos a los que se les exige. Al que se le
-   * rechazó el formulario ya no se le va a entrevistar, así que pedirle el check dejaba trabado el
-   * paso a entrevistas por una prueba que ese postulante nunca va a rendir. El backend revalida
-   * lo mismo.
+   * true si el candidato ya puede pasar a la programación de entrevistas: formulario del
+   * postulante aprobado y Multitest marcado. Es por candidato y no de la long list entera: los que
+   * están listos no esperan a los que todavía no responden, y los que se quedan atrás se suman
+   * cuando lo cumplen. El backend revalida lo mismo al continuar y al programar la cita.
    */
-  get multitestCompleto(): boolean {
-    const candidatos = this.candidatosConMultitest;
-    return candidatos.length > 0 && candidatos.every((c) => c.multitestRealizado);
-  }
-
-  /** Candidatos a los que sí se les pide el Multitest (los que siguen en carrera). */
-  get candidatosConMultitest(): CandidatoAprobado[] {
-    return (this.detalle?.candidatosAprobados ?? []).filter((c) => !this.formularioRechazado(c));
-  }
-
-  /** true si ningún candidato quedó con el formulario pendiente (todos aprobados o rechazados). */
-  get formulariosDecididos(): boolean {
-    const candidatos = this.detalle?.candidatosAprobados ?? [];
+  private listoParaEntrevista(c: CandidatoAprobado): boolean {
     return (
-      candidatos.length > 0 &&
-      candidatos.every(
-        (c) => c.formulario?.estadoCodigo === 'APROBADO' || c.formulario?.estadoCodigo === 'RECHAZADO',
-      )
-    );
-  }
-
-  /** true si al menos un formulario del postulante quedó aprobado (habría a quién entrevistar). */
-  get hayFormularioAprobado(): boolean {
-    return (this.detalle?.candidatosAprobados ?? []).some(
-      (c) => c.formulario?.estadoCodigo === 'APROBADO',
+      c.formulario?.estadoCodigo === 'APROBADO' && c.multitestRealizado && !this.resultadoCerrado(c)
     );
   }
 
   /**
-   * Requisitos para pasar a entrevistas: Multitest marcado en todos los candidatos, todos los
-   * formularios ya revisados (aprobados o rechazados, ninguno pendiente de completar) y al menos
-   * uno aprobado. El backend revalida lo mismo.
+   * true si la participación del candidato ya se cerró (ver `RESULTADOS_CERRADOS`). Tras retomar a
+   * otro después de un EMO No Apto, estos siguen en la lista con su formulario y su Multitest, pero
+   * ya no cuentan para continuar.
    */
-  get puedeContinuarAEntrevistas(): boolean {
-    return (
-      this.multitestCompleto && this.formulariosDecididos && this.hayFormularioAprobado && !this.continuando
+  private resultadoCerrado(c: CandidatoAprobado): boolean {
+    return RESULTADOS_CERRADOS.includes(c.evaluacion?.resultadoCodigo ?? '');
+  }
+
+  /** Candidatos que siguen en carrera: ni con el formulario rechazado ni con su resultado cerrado. */
+  private get candidatosEnCarrera(): CandidatoAprobado[] {
+    return (this.detalle?.candidatosAprobados ?? []).filter(
+      (c) => !this.formularioRechazado(c) && !this.resultadoCerrado(c),
     );
   }
 
-  /** Qué falta para habilitar el paso a entrevistas (hint bajo el botón). Vacío si ya se puede. */
+  /** Candidatos que ya pueden pasar a entrevistas. */
+  private get candidatosListos(): CandidatoAprobado[] {
+    return (this.detalle?.candidatosAprobados ?? []).filter((c) => this.listoParaEntrevista(c));
+  }
+
+  /** Con un candidato listo ya se puede pasar a entrevistas. El backend revalida lo mismo. */
+  get puedeContinuarAEntrevistas(): boolean {
+    return this.candidatosListos.length > 0 && !this.continuando;
+  }
+
+  /**
+   * Línea bajo el botón de continuar: con el botón apagado, qué falta; encendido, cuántos
+   * continúan cuando no son todos. Vacío si no hay nada que decir.
+   */
   get requisitosContinuarTexto(): string {
-    if (this.puedeContinuarAEntrevistas) return '';
-    // El "ninguno quedó aprobado" espera a que todos los formularios estén decididos: con alguno
-    // aún pendiente de revisar no hay nada que avisar, y decirlo antes acusaría en falso.
-    if (this.formulariosDecididos && !this.hayFormularioAprobado)
-      return 'Ningún formulario quedó aprobado: no hay candidatos a quienes entrevistar.';
-    if (!this.multitestCompleto)
-      return 'Marca el Multitest de los candidatos que siguen en el proceso para continuar.';
-    return '';
+    const listos = this.candidatosListos.length;
+    const enCarrera = this.candidatosEnCarrera;
+    if (listos > 0)
+      return listos < enCarrera.length
+        ? `Continúan ${listos} de ${enCarrera.length} candidatos; el resto puede sumarse después.`
+        : '';
+    if (enCarrera.length === 0) return 'No quedan candidatos en carrera a quienes entrevistar.';
+    return enCarrera.some((c) => c.formulario?.estadoCodigo === 'APROBADO')
+      ? 'Falta el Multitest de los candidatos con el formulario aprobado.'
+      : 'Aún no hay formularios aprobados.';
+  }
+
+  /**
+   * true mientras el proceso todavía puede sumar a los candidatos que se quedaron atrás en el
+   * formulario o el Multitest: desde que pasa a entrevistas hasta que el área elige a alguien.
+   */
+  private get sumaCandidatosTarde(): boolean {
+    const codigo = this.detalle?.estadoCodigo;
+    return codigo === 'ENTREVISTAS' || codigo === 'SELECCION_JEFATURA';
+  }
+
+  /**
+   * Candidatos en carrera que todavía no tienen el formulario aprobado (sin enviar, esperando al
+   * postulante o por revisar) cuando el proceso ya pasó a entrevistas. 0 antes de eso: ahí la
+   * sección está abierta y cada ficha dice lo suyo.
+   */
+  get pendientesFormulario(): number {
+    if (!this.sumaCandidatosTarde) return 0;
+    return this.candidatosEnCarrera.filter((c) => c.formulario?.estadoCodigo !== 'APROBADO').length;
+  }
+
+  /**
+   * Candidatos con el formulario aprobado a los que solo les falta el Multitest para aparecer en la
+   * programación de entrevistas, cuando el proceso ya pasó a esa fase.
+   */
+  private get multitestPendientes(): number {
+    if (!this.sumaCandidatosTarde) return 0;
+    return this.candidatosEnCarrera.filter(
+      (c) => c.formulario?.estadoCodigo === 'APROBADO' && !c.multitestRealizado && !c.entrevista,
+    ).length;
   }
 
   /** Avanza el requerimiento a la fase ENTREVISTAS y muestra la sección de programación. */
@@ -1904,10 +1896,15 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   // ── Programación de entrevistas ─────────────────────────────────────────
-  /** Candidatos a entrevistar: los que tienen el formulario del postulante aprobado. */
+  /**
+   * Candidatos a entrevistar: formulario del postulante aprobado y Multitest marcado. Los que se
+   * quedaron atrás aparecen acá solos en cuanto lo cumplen, aunque el proceso ya esté en la
+   * decisión del área. Al que ya tiene cita no se le vuelve a pedir el Multitest: su entrevista
+   * existe igual.
+   */
   get candidatosParaEntrevista(): CandidatoAprobado[] {
     return (this.detalle?.candidatosAprobados ?? []).filter(
-      (c) => c.formulario?.estadoCodigo === 'APROBADO',
+      (c) => c.formulario?.estadoCodigo === 'APROBADO' && (c.multitestRealizado || !!c.entrevista),
     );
   }
 

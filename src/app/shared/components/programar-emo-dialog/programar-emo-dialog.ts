@@ -55,6 +55,12 @@ export class ProgramarEmoDialogComponent implements OnInit {
    */
   razonesSociales: RazonSocialCupo[] = [];
 
+  /**
+   * true = la vacante de la que sale este ingreso es un REEMPLAZO, así que el tope de 20 no corta.
+   * Lo resuelve el backend, que es el único que sabe de qué requerimiento viene la ficha.
+   */
+  sinTopePorReemplazo = false;
+
   form: {
     fechaProgramada: string;
     tipoEmoId: number | null;
@@ -134,22 +140,23 @@ export class ProgramarEmoDialogComponent implements OnInit {
 
   // ── Razón social ────────────────────────────────────────────────────────
   /**
-   * ¿Hay que elegirle la razón social? Solo cuando la ficha no tiene ninguna, que es el caso del
-   * ingreso directo FFT: su vacante no se aprueba ni se publica, así que nadie pasó por la
-   * asignación interna de Reclutamiento y llegó al EMO sin empresa. Sin ella la cita quedaría
-   * fuera de la pantalla de Programaciones y del correo a la clínica, así que es obligatoria.
+   * ¿Hay que elegirle la razón social? Solo cuando la ficha no tiene ninguna, que es el caso de
+   * toda ficha de pre-ingreso: programar el EMO de ingreso es el único punto del proceso donde se
+   * asigna. Sin ella la cita quedaría fuera de la pantalla de Programaciones y del correo a la
+   * clínica, así que es obligatoria.
    *
-   * En el resto de los casos la razón social es un dato de la ficha y no una decisión de quien
-   * programa, así que se sigue mostrando de solo lectura.
+   * En un trabajador que ya está adentro la razón social es un dato de su ficha y no una decisión
+   * de quien programa, así que se sigue mostrando de solo lectura.
    */
   get pideRazonSocial(): boolean {
     return !this.worker?.empresaId;
   }
 
   private cargarRazonesSociales(): void {
-    this.programacionService.getRazonesSociales().subscribe({
-      next: (list) => {
-        this.razonesSociales = list ?? [];
+    this.programacionService.getRazonesSociales(this.worker.workerId).subscribe({
+      next: (res) => {
+        this.razonesSociales = res?.razones ?? [];
+        this.sinTopePorReemplazo = res?.sinTopePorReemplazo ?? false;
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
@@ -168,9 +175,13 @@ export class ProgramarEmoDialogComponent implements OnInit {
    * true si la razón social elegida ya no tiene cupo para una persona más. Bloquea el guardado:
    * elegirla acá no es un dato de esta cita, es asignársela a la ficha (ver `enviar`), así que
    * dejar pasar una llena sería meter un trabajador por encima del tope de 20.
+   *
+   * Un REEMPLAZO es la excepción y no bloquea: el que entra y el que sale conviven un mes, así que
+   * esa razón social está prevista que llegue a 21 hasta que se dé de baja al reemplazado. El
+   * backend aplica la misma excepción al guardar.
    */
   get sinCupos(): boolean {
-    return this.razonSocialSeleccionada?.cuposDisponibles === 0;
+    return !this.sinTopePorReemplazo && this.razonSocialSeleccionada?.cuposDisponibles === 0;
   }
 
   private cargarDestinatarios(): void {

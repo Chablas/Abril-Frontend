@@ -1,19 +1,23 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { VisibilidadSalidasService } from '../services/visibilidad-salidas.service';
-import { LoaderService } from '../../../../../../core/services/loader.service';
-import { ErrorService } from '../../../../../../core/services/error.service';
-import { VisibilidadAreaNodeDTO, VisibilidadWorkerItemDTO } from '../dtos/visibilidadSalida.model';
-import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
-import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
-import { Paginator } from '../../../../../../shared/components/paginator/paginator';
-import { VisibilidadModal } from '../components/visibilidad-modal/visibilidad-modal';
-import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
-import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
-import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
-import { DEFAULT_PAGE_SIZE } from '../../../../../../shared/constants/pagination';
+import { VisibilidadService } from './services/visibilidad.service';
+import { LoaderService } from '../../../../../core/services/loader.service';
+import { ErrorService } from '../../../../../core/services/error.service';
+import {
+  VisibilidadAmbito,
+  VisibilidadAreaNodeDTO,
+  VisibilidadWorkerItemDTO,
+} from './dtos/visibilidad.dto';
+import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { SearchInput } from '../../../../../shared/components/search-input/search-input';
+import { Paginator } from '../../../../../shared/components/paginator/paginator';
+import { VisibilidadModal } from './components/visibilidad-modal/visibilidad-modal';
+import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
+import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
+import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
+import { DEFAULT_PAGE_SIZE } from '../../../../../shared/constants/pagination';
 
 /** Nodo del árbol de áreas para el desplegable en cascada del filtro. */
 interface AreaCascadeNode {
@@ -22,9 +26,17 @@ interface AreaCascadeNode {
   children: AreaCascadeNode[];
 }
 
+/**
+ * Sección "Visibilidad" de la configuración de una pantalla: qué áreas ve cada trabajador.
+ *
+ * Es la misma sección para Gestión de Salidas y Gestión de Rendiciones —el `ambito` dice cuál—
+ * porque son el mismo conjunto de trabajadores y el mismo árbol de áreas; lo que cambia es sobre
+ * qué bandeja aplica lo que se guarda. Sin asignación, la visibilidad la resuelve el algoritmo de
+ * jerarquía.
+ */
 @Component({
   standalone: true,
-  selector: 'app-visibilidad-salidas',
+  selector: 'app-ga-visibilidad',
   imports: [
     CommonModule,
     FormsModule,
@@ -36,10 +48,12 @@ interface AreaCascadeNode {
     AbrilBulkActionDirective,
     FilterModal,
   ],
-  templateUrl: './visibilidad-salidas.html',
+  templateUrl: './visibilidad.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
-export class VisibilidadSalidas implements OnInit {
+export class GaVisibilidad implements OnInit, OnChanges {
+  @Input({ required: true }) ambito!: VisibilidadAmbito;
+
   rows: VisibilidadWorkerItemDTO[] = [];
   searchText = '';
   categoriaFilter: number | null = null;
@@ -57,7 +71,7 @@ export class VisibilidadSalidas implements OnInit {
   /** Trabajador en edición (modal abierto). null = modal cerrado. */
   editing: VisibilidadWorkerItemDTO | null = null;
 
-  /** Modal de filtros (mismo patrón que Gestión de Salidas). */
+  /** Modal de filtros (lo abre el botón del contenedor). */
   filtrosAbiertos = false;
 
   get filtrosActivos(): number {
@@ -78,7 +92,7 @@ export class VisibilidadSalidas implements OnInit {
   }
 
   constructor(
-    private service: VisibilidadSalidasService,
+    private service: VisibilidadService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}
@@ -87,9 +101,14 @@ export class VisibilidadSalidas implements OnInit {
     this.load();
   }
 
+  /** El contenedor reusa la instancia al cambiar de pantalla, así que el ámbito puede cambiar. */
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['ambito'] && !changes['ambito'].firstChange) this.load();
+  }
+
   load(): void {
     this.loaderService.show();
-    this.service.getInitialData().subscribe({
+    this.service.getInitialData(this.ambito).subscribe({
       next: (data) => {
         this.rows = data.workers;
         this.buildAreaCascade(data.areaTree);

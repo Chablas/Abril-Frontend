@@ -7,13 +7,14 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
   { path: '', redirectTo: 'solicitud-salidas', pathMatch: 'full' },
   {
     // Configuración de Solicitud de Salidas: los correos que se ORIGINAN acá (el aviso al
-    // revisor y la confirmación al solicitante), el plazo para rendir («Días reembolsables»)
-    // y los dos recordatorios de ese plazo. La única con tres secciones: el trabajador rinde
-    // desde esta pantalla, así que el plazo y sus avisos se administran junto a sus correos.
+    // revisor y la confirmación al solicitante), el plazo para rendir («Días reembolsables»),
+    // los dos recordatorios de ese plazo y los REVISORES de cada área — el revisor es a quien
+    // se le manda la solicitud que nace en esta pantalla, así que se administra junto a ella
+    // (antes vivía en /configuracion/revisores-areas).
     // Va ANTES de 'solicitud-salidas' para que el segmento 'configuracion' no se lo coma
     // la pantalla.
-    // Misma feature que ya protegía la sección Correos de Configuración: quien administra los
-    // correos de salidas los administra todos.
+    // `featureKeys`: basta tener CUALQUIERA de las secciones para entrar; adentro cada una se
+    // filtra por la suya.
     path: 'solicitud-salidas/configuracion',
     loadComponent: () =>
       import('./shared/configuracion/pantalla-configuracion').then(
@@ -22,7 +23,10 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'SOLICITUD DE SALIDAS - CONFIGURACIÓN',
-      featureKey: 'gestion-administrativa.config.correos',
+      featureKeys: [
+        'gestion-administrativa.config.correos',
+        'configuracion.revisores-areas',
+      ],
       pantalla: 'solicitud-salidas',
     },
   },
@@ -70,11 +74,10 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
   },
   {
     // Configuración de Gestión de Salidas: los correos que se ORIGINAN acá (la solicitud
-    // aprobada y la rechazada, que salen de la decisión del revisor).
+    // aprobada y la rechazada, que salen de la decisión del revisor) y la VISIBILIDAD de esta
+    // bandeja, que antes estaba suelta en Configuración → Visibilidad de Salidas.
     // Va ANTES de 'gestion-salidas' para que el segmento 'configuracion' no se lo coma
     // la pantalla.
-    // Misma feature que ya protegía la sección Correos de Configuración: quien administra los
-    // correos de salidas los administra todos.
     path: 'gestion-salidas/configuracion',
     loadComponent: () =>
       import('./shared/configuracion/pantalla-configuracion').then(
@@ -83,7 +86,10 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'GESTIÓN DE SALIDAS - CONFIGURACIÓN',
-      featureKey: 'gestion-administrativa.config.correos',
+      featureKeys: [
+        'gestion-administrativa.config.correos',
+        'gestion-administrativa.config.visibilidad-salidas',
+      ],
       pantalla: 'gestion-salidas',
     },
   },
@@ -101,11 +107,11 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
   },
   {
     // Configuración de Gestión de Rendiciones: los correos que se ORIGINAN acá (las dos
-    // decisiones del revisor: primera revisión y reembolso).
+    // decisiones del revisor: primera revisión y reembolso), la VISIBILIDAD de esta bandeja
+    // —independiente de la de salidas— y los CONSOLIDADORES, que deciden quién puede adjuntar
+    // el Consolidado del S10 por cada trabajador.
     // Va ANTES de 'gestion-rendiciones' para que el segmento 'configuracion' no se lo coma
     // la pantalla.
-    // Misma feature que ya protegía la sección Correos de Configuración: quien administra los
-    // correos de salidas los administra todos.
     path: 'gestion-rendiciones/configuracion',
     loadComponent: () =>
       import('./shared/configuracion/pantalla-configuracion').then(
@@ -114,7 +120,11 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'GESTIÓN DE RENDICIONES - CONFIGURACIÓN',
-      featureKey: 'gestion-administrativa.config.correos',
+      featureKeys: [
+        'gestion-administrativa.config.correos',
+        'gestion-administrativa.config.visibilidad-rendiciones',
+        'gestion-administrativa.config.consolidadores-areas',
+      ],
       pantalla: 'gestion-rendiciones',
     },
   },
@@ -260,25 +270,21 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       seccion: 'capturas',
     },
   },
-  // Revisores de áreas se movió al módulo de configuración global (define el jefe de
-  // cada área, no solo para salidas). Se mantiene la ruta antigua como redirección para
-  // no romper enlaces. La de revisores por trabajador se retiró junto con su pantalla:
-  // ese jefe se asigna ahora en el formulario de trabajadores (Gestión de Ingresos).
+  // Revisores de áreas pasó a Solicitud de Salidas → Configuración (el revisor es a quien se le
+  // manda la solicitud que nace ahí). Se mantienen las rutas viejas como redirección para no
+  // romper enlaces. La de revisores por trabajador se retiró junto con su pantalla: ese jefe se
+  // asigna ahora en el formulario de trabajadores (Gestión de Ingresos).
   {
     path: 'configuracion/revisores-areas',
-    redirectTo: '/configuracion/revisores-areas',
+    redirectTo: 'solicitud-salidas/configuracion',
     pathMatch: 'full',
   },
+  // Visibilidad de salidas pasó a Gestión de Salidas → Configuración, que es la bandeja que
+  // recorta.
   {
     path: 'configuracion/visibilidad-salidas',
-    loadComponent: () =>
-      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
-    canActivate: [authGuard, roleGuard],
-    data: {
-      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
-      featureKey: 'gestion-administrativa.config.visibilidad-salidas',
-      seccion: 'visibilidad-salidas',
-    },
+    redirectTo: 'gestion-salidas/configuracion',
+    pathMatch: 'full',
   },
   {
     path: 'configuracion/carpeta-adjuntos',

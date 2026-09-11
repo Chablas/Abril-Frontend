@@ -8,6 +8,7 @@ import {
   ReembolsoDetalleDto,
   ReembolsoFilterDataDto,
   ReembolsoListResultDto,
+  ReembolsoObservacionDto,
   ReembolsoSeguimientoDto,
   ReembolsoSeleccionDto,
 } from '../dtos/reembolso.dto';
@@ -84,6 +85,17 @@ export class ReembolsosService {
     });
   }
 
+  /**
+   * El camino de vuelta (RG-49): devolver el consolidado con un motivo obligatorio. Deja la
+   * planilla Observada y vuelve al flujo de subsanación que ya existe — el consolidador recarga el
+   * Consolidado del S10 o le pide la corrección al Coordinador ERP.
+   */
+  observar(dto: ReembolsoObservacionDto): Observable<ReembolsoBulkResultDto> {
+    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/observar`, dto, {
+      headers: this.headers,
+    });
+  }
+
   /** Paso 2: registrar el pago y cerrar el ciclo. */
   marcarPagadas(dto: ReembolsoSeleccionDto): Observable<ReembolsoBulkResultDto> {
     return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/pagar`, dto, {
@@ -98,6 +110,13 @@ export class ReembolsosService {
    */
   correoPreviewPago(dto: ReembolsoSeleccionDto): Observable<CorreoAvisoDto[]> {
     return this.http.post<CorreoAvisoDto[]>(`${this.apiUrl}/pagar/correo-preview`, dto, {
+      headers: this.headers,
+    });
+  }
+
+  /** Lo mismo para el aviso de que Tesorería devolvió el reembolso. */
+  correoPreviewObservacion(dto: ReembolsoSeleccionDto): Observable<CorreoAvisoDto[]> {
+    return this.http.post<CorreoAvisoDto[]>(`${this.apiUrl}/observar/correo-preview`, dto, {
       headers: this.headers,
     });
   }

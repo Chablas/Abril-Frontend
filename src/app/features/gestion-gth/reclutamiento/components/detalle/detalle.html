@@ -68,21 +68,6 @@
         }
       </div>
 
-      <!-- El ingreso directo no pasa por «Confirmar publicación», que es donde el flujo normal
-           exige la razón social. Su ficha de pre-ingreso se abre en cuanto se aprueba la vacante,
-           así que sin este aviso nace sin razón social y nadie se entera. Va arriba de todo porque
-           es lo único que le falta al proceso; al asignarla se le baja a la ficha. -->
-      @if (faltaRazonSocialFft) {
-        <div class="flex items-start gap-[9px] rounded-[10px] border px-[14px] py-[11px]"
-             style="border-color:#FDE68A;background:#FEF9C3">
-          <i class="ti ti-alert-triangle text-[18px] shrink-0 mt-[1px]" style="color:#92400E"></i>
-          <p class="text-[12.5px]" style="color:#92400E">
-            Sin razón social asignada: la ficha del ingreso está sin ella. Asígnala en
-            «Asignación interna de GTH».
-          </p>
-        </div>
-      }
-
       <!-- ── Puesto cubierto: quién obtuvo el puesto ──────────────────────
            Va arriba de todo porque es el resultado del proceso: al abrir un
            requerimiento cerrado, lo primero es saber con quién se cerró. -->
@@ -708,7 +693,9 @@
         </button>
 
         @if (seccionAsignacion) {
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-x-[16px] gap-y-[14px] mt-[10px]">
+          <!-- Tres campos: la razón social se elige al programarle el EMO de ingreso al
+               finalista, que es el único punto del proceso donde se asigna. -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-x-[16px] gap-y-[14px] mt-[10px]">
 
             <!-- Responsable del proceso -->
             <div>
@@ -753,35 +740,6 @@
                 [sortAlpha]="false"
                 color="var(--color-abril-logo-blue)">
               </app-search-select>
-            </div>
-
-            <!-- Razón social activa -->
-            <div>
-              <app-search-select
-                label="Razón social activa *"
-                [options]="detalle.razonesSociales"
-                valueField="id"
-                displayField="nombre"
-                [value]="detalle.asignacion.contributorId"
-                (valueChange)="onAsignacionChange('contributorId', $event)"
-                placeholder="Selecciona razón social"
-                color="var(--color-abril-logo-blue)">
-              </app-search-select>
-              @if (razonSocialSeleccionada) {
-                <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
-                  Cupos disponibles: <b>{{ razonSocialSeleccionada.cuposDisponibles }}</b> de 20.
-                </p>
-              }
-              @if (razonSocialLlena) {
-                <p class="text-[11.5px] font-semibold text-red-600 mt-[6px] leading-snug">
-                  Ya llegó al tope de 20 trabajadores: elige otra para poder publicar la vacante.
-                </p>
-              } @else if (sinCupos) {
-                <p class="text-[11.5px] font-semibold text-red-600 mt-[6px] leading-snug">
-                  La razón social seleccionada no cuenta con cupos suficientes para las
-                  {{ detalle.vacantes }} vacantes.
-                </p>
-              }
             </div>
 
           </div>
@@ -833,14 +791,6 @@
               (click)="publicar()">
               Confirmar publicación de vacante
             </button>
-
-            <!-- La sección de asignación puede estar plegada, así que el motivo se repite acá: sin
-                 esto el botón queda apagado sin nada a la vista que lo explique. -->
-            @if (razonSocialLlena) {
-              <p class="text-[11.5px] font-semibold text-red-600 mt-[8px] leading-snug">
-                La razón social elegida ya llegó al tope de 20 trabajadores.
-              </p>
-            }
           }
         </div>
       }
@@ -1053,6 +1003,14 @@
             <i class="ti text-[15px] text-gray-500 transition-transform"
                [ngClass]="seccionFormularioPostulante ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
             <h3 class="text-[14px] font-bold text-gray-800">Formulario de información del postulante</h3>
+            <!-- Candidatos que se quedaron atrás cuando el proceso ya pasó a entrevistas: la sección
+                 puede estar plegada y sin esto no se ve que todavía hay a quién sumar. -->
+            @if (pendientesFormulario > 0) {
+              <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                    style="background:#FEF3C7;color:#B45309">
+                {{ pendientesFormulario }} {{ pendientesFormulario === 1 ? 'pendiente' : 'pendientes' }}
+              </span>
+            }
           </button>
 
           @if (seccionFormularioPostulante) {
@@ -1176,7 +1134,7 @@
                   </button>
 
                   <!-- Rechazar también se ofrece sobre un formulario enviado y nunca completado:
-                       es lo que destraba el paso a entrevistas si el postulante no responde. -->
+                       es como se descarta a un postulante que no responde. -->
                   @if (formularioRechazable(c)) {
                     <button type="button"
                       [disabled]="decidiendoFormulario[c.candidatoId]"
@@ -1275,9 +1233,11 @@
         ───────────────────────────────────────────────────────────────────── -->
 
         <!-- Control informativo del Multitest.
-             Al candidato con el formulario rechazado no se le pide: ya no se le va a entrevistar,
-             así que su fila queda como "No aplica" y no traba el paso a entrevistas. Se sigue
-             mostrando (no se oculta) para que la lista siga siendo la de la long list aprobada.
+             Es por candidato: con su formulario aprobado y el check marcado, el candidato pasa a la
+             programación de entrevistas sin esperar a los demás. Al candidato con el formulario
+             rechazado no se le pide: ya no se le va a entrevistar, así que su fila queda como
+             "No aplica". Se sigue mostrando (no se oculta) para que la lista siga siendo la de la
+             long list aprobada.
 
              El ingreso directo FFT no lo lleva: su flujo no tiene entrevista, así que un check
              informativo que solo existe para habilitarlas no aplica. -->
@@ -1323,8 +1283,10 @@
         }
 
         <!-- Continuar a programación de entrevistas: solo mientras el requerimiento no haya
-             pasado ya a esa fase (después el bloque de abajo toma el relevo). El ingreso directo
-             FFT no pasa por ahí: al aprobarle el formulario el proceso salta al EMO de ingreso. -->
+             pasado ya a esa fase (después el bloque de abajo toma el relevo). Se habilita con el
+             primer candidato listo: los demás se suman a las entrevistas cuando lo estén. El
+             ingreso directo FFT no pasa por ahí: al aprobarle el formulario el proceso salta al
+             EMO de ingreso. -->
         @if (!enEntrevistas && !esFft) {
           <div>
             <button type="button"
@@ -1591,7 +1553,7 @@
               </div>
             } @empty {
               <p class="text-[12.5px] text-gray-400 italic mt-[10px]">
-                No hay candidatos con el formulario del postulante aprobado.
+                No hay candidatos con el formulario aprobado y el Multitest marcado.
               </p>
             }
           }

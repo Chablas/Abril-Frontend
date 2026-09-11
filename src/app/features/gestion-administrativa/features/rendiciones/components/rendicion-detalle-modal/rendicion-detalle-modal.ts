@@ -13,7 +13,10 @@ import { CorreoDestinatariosDto, RendicionDetalleDto } from '../../dtos/rendicio
 import { avisosDe } from '../../../../shared/correo-aviso';
 import { confirmarConCorreos } from '../../../../shared/confirmar-correos';
 import { ConsolidadoS10Modal } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
-import { ConsolidadoS10Dto } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import {
+  ConsolidadoS10Dto,
+  otrasRendicionesDelConsolidado,
+} from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { SalidaCapturasModal } from '../../../../shared/components/salida-capturas-modal/salida-capturas-modal';
 import {
   correccionS10Colors,
@@ -116,6 +119,11 @@ export class RendicionDetalleModal implements OnInit {
     } else {
       this.cdr.detectChanges();
     }
+  }
+
+  /** Con qué otras rendiciones comparte el Consolidado del S10 (vacío si es solo suyo). */
+  otrasDelConsolidado(d: { id: number; consolidadoS10: ConsolidadoS10Dto | null }): string[] {
+    return otrasRendicionesDelConsolidado(d.consolidadoS10, d.id);
   }
 
   // ── Enviar a primera revisión ────────────────────────────────────────

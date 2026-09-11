@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
+  AprobacionGgReenvioPreview,
   AprobacionGgReenvioResult,
   CandidatoDecision,
   FinalistaDecisionResult,
@@ -125,8 +126,20 @@ export class SolicitudPersonalService {
   }
 
   /**
-   * Reenvía el correo de aprobación a Gerencia General (para cuando el envío automático falló o
-   * hubo que corregir los destinatarios). El enlace que recibe Gerencia no cambia.
+   * A quién le llegaría el reenvío del correo de aprobación de la vacante. Se pide al confirmar,
+   * para que el aviso nombre las direcciones reales antes de mandar nada.
+   */
+  getReenvioDestinatarios(requerimientoId: number): Observable<AprobacionGgReenvioPreview> {
+    return this.http.get<AprobacionGgReenvioPreview>(
+      `${this.aprobacionUrl}/requerimiento/${requerimientoId}/reenviar/destinatarios`,
+      { headers: this.headers },
+    );
+  }
+
+  /**
+   * Reenvía el correo que espera la firma de la vacante (para cuando el envío automático falló,
+   * hubo que corregir los destinatarios o la firma se demora): a Gerencia General en una nueva, y
+   * al gerente del área o a GTH en un reemplazo, según a quién le toque. El enlace no cambia.
    */
   reenviarAGerencia(requerimientoId: number): Observable<AprobacionGgReenvioResult> {
     return this.http.post<AprobacionGgReenvioResult>(

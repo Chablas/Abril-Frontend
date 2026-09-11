@@ -11,7 +11,8 @@ export const CONFIGURACION_TABS: AbrilPageTab[] = [
   // 'Categorías y Puestos' se movió a Gestión GTH → Configuración
   // (/gestion-gth/configuracion/categorias-puestos): los administra GTH, no Configuración
   // global.
-  { label: 'Revisores de Áreas',              icono: 'ti-users-group', route: '/configuracion/revisores-areas',  featureKey: 'configuracion.revisores-areas' },
+  // 'Revisores de Áreas' se movió a Gestión Administrativa → Solicitud de Salidas →
+  // Configuración (conserva su featureKey 'configuracion.revisores-areas').
   { label: 'Feriados y Días no Laborables',   icono: 'ti-calendar', route: '/configuracion/feriados',  featureKey: 'configuracion.feriados' },
   { label: 'Centro de aprendizaje',           icono: 'ti-player-play', route: '/configuracion/aprendizaje', featureKey: 'configuracion.aprendizaje' },
 ];

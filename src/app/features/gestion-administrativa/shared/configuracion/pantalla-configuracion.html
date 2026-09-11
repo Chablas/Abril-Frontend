@@ -3,13 +3,18 @@
   titulo="Configuración"
   [subtitulo]="subtitulo"
   [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
-  (secondaryClick)="volver()">
+  (secondaryClick)="volver()"
+  [hasExtra]="seccionConFiltros">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas y delega en el
+       modal de filtros de la sección activa (solo las que tienen tabla). -->
+  <app-filter-trigger *ngIf="seccionConFiltros" tabsExtra [count]="filtrosActivos" (open)="onOpenFilters()" />
 </app-abril-page-header>
 
 <section class="page-container px-3 py-4 flex flex-col gap-[16px] flex-1 min-h-0 overflow-auto">
 
-  <!-- Secciones exteriores. Solo Solicitud de Salidas tiene más de una (Correos + Días
-       reembolsables + Recordatorios); en el resto la tira no se dibuja. -->
+  <!-- Secciones exteriores. Con una sola no se dibuja la tira: sería una pestaña que no lleva a
+       ningún otro lado (mismo criterio que las subsecciones de cada correo). -->
   <app-section-tabs
     *ngIf="secciones.length > 1"
     class="shrink-0"
@@ -37,4 +42,11 @@
     [grupo]="'recordatorios'"
     textoSinCorreos="No hay recordatorios configurados.">
   </app-ga-correos-config>
+
+  <!-- SECCIÓN: Visibilidad (qué áreas ve cada trabajador en ESTA bandeja) -->
+  <app-ga-visibilidad *ngIf="mostrandoVisibilidad" [ambito]="visibilidadAmbito"></app-ga-visibilidad>
+
+  <!-- SECCIÓN: Revisores / Consolidadores (las dos asignan personas a áreas con el mismo
+       algoritmo; el modo dice cuál) -->
+  <app-ga-asignaciones-areas *ngIf="mostrandoAsignaciones" [modo]="asignacionModo"></app-ga-asignaciones-areas>
 </section>

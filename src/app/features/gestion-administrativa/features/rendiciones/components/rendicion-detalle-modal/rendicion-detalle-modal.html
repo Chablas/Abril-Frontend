@@ -64,11 +64,16 @@
       </span>
     </div>
 
-    <!-- Observación del rechazo: es lo único que hay que leer para saber qué corregir. -->
+    <!-- Observación: es lo único que hay que leer para saber qué corregir. El rótulo nombra a quien
+         la escribió — si fue Tesorería, la planilla ya estaba firmada y preguntarle al jefe no
+         lleva a ninguna parte. -->
     <div *ngIf="d.estadoReembolso === 'Observado' && d.observacionReembolso"
          class="border rounded-lg p-3 text-sm"
          style="border-color:#FCA5A5;background:#FEF2F2;color:#991B1B">
-      <span class="font-semibold">Observación:</span> {{ d.observacionReembolso }}
+      <span class="font-semibold">
+        {{ d.observacionReembolsoOrigen ? 'Observación de ' + d.observacionReembolsoOrigen : 'Observación' }}:
+      </span>
+      {{ d.observacionReembolso }}
     </div>
 
     <!-- Corrección con el ERP: dice de quién es la pelota. Solo aparece cuando hay una en curso,
@@ -129,6 +134,9 @@
         {{ d.consolidadoS10.pdfFilename }}
         <span class="text-xs text-gray-400 font-normal">· Consolidado del S10</span>
       </a>
+      <span *ngIf="otrasDelConsolidado(d).length" class="text-xs text-gray-500 pl-6">
+        También cubre {{ otrasDelConsolidado(d).join(', ') }}
+      </span>
       <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
         {{ d.estadoPrimeraRevision === 'Aprobada'
             ? 'Falta el Consolidado del S10.'
@@ -287,13 +295,17 @@
         {{ d.revisorNotificadoAt ? 'Volver a avisar al revisor' : 'Avisar al revisor' }}
       </button>
 
+      <!-- Uno compartido con otras rendiciones abiertas se reemplaza entero, desde Gestión de
+           Rendiciones: acá el botón queda apagado. -->
       <button
         type="button"
         (click)="consolidadoAbierto = true"
-        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
-        style="background:var(--color-abril-standard)"
-        onmouseover="this.style.background='var(--color-abril-standard-hover)'"
-        onmouseout="this.style.background='var(--color-abril-standard)'">
+        [disabled]="d.consolidadoCompartido"
+        [title]="d.consolidadoCompartido
+          ? 'Este Consolidado del S10 también cubre ' + otrasDelConsolidado(d).join(', ') + ': se reemplaza desde Gestión de Rendiciones'
+          : ''"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        style="background:var(--color-abril-standard)">
         {{ d.consolidadoS10 ? 'Reemplazar Consolidado del S10' : 'Adjuntar Consolidado del S10' }}
       </button>
 

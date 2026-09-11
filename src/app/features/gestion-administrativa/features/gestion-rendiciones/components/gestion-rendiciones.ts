@@ -26,7 +26,10 @@ import { FilterModal } from '../../../../../shared/components/filter-modal/filte
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
 import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { ConsolidadoS10Modal } from '../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
-import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import {
+  ConsolidadoS10Dto,
+  otrasRendicionesDelConsolidado,
+} from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { FirmaRegistrarModal } from '../../../../../shared/components/firma-personal/registrar-modal/firma-registrar-modal';
 import { GestionRendicionDetalleModal } from './gestion-rendicion-detalle-modal/gestion-rendicion-detalle-modal';
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
@@ -36,6 +39,19 @@ interface AreaCascadeNode {
   areaScopeId: number;
   name: string;
   children: AreaCascadeNode[];
+}
+
+/** Lo que va a cubrir el Consolidado del S10 que se está por adjuntar: una planilla o varias. */
+interface ConsolidadoObjetivo {
+  rendicionIds: number[];
+  codigos: string[];
+  /** Suma de los montos completos de esas planillas: lo que tiene que declarar el consolidado. */
+  monto: number;
+  /** El consolidado que se reemplaza, cuando todas comparten el mismo. */
+  actual: ConsolidadoS10Dto | null;
+  /** Número de planilla impreso cuando es una sola ("TI: 000123"). */
+  referencia: string | null;
+  razonSocial: string | null;
 }
 
 /**
@@ -123,7 +139,8 @@ export class GestionRendiciones implements OnInit {
   selectedIds = new Set<number>();
 
   detalleId: number | null = null;
-  consolidadoDe: GestionRendicionListItemDto | null = null;
+  /** Lo que va a cubrir el consolidado cuyo modal está abierto. null = cerrado. */
+  consolidadoPara: ConsolidadoObjetivo | null = null;
 
   /** Modal para registrar la firma en el momento (se abre con el 409 de aprobar). */
   firmaModalAbierto = false;
@@ -627,25 +644,110 @@ export class GestionRendiciones implements OnInit {
   }
 
   // ── Consolidado del S10 ──────────────────────────────────────────────
+  // Un consolidado es UN registro en el S10 y puede cubrir varias rendiciones, incluso de
+  // trabajadores distintos (siempre de una misma razón social). Se adjunta desde la fila —cubre esa
+  // planilla y, si ya tenía uno compartido, las demás que siguen abiertas: se reemplaza entero— o
+  // para toda la selección. El backend re-valida todo; acá solo se evita ofrecer lo que va a rechazar.
+
+  /** Seleccionadas a las que se les puede adjuntar el Consolidado del S10. */
+  get selectedConsolidables(): GestionRendicionListItemDto[] {
+    return this.seleccionadas.filter((r) => r.puedeAdjuntarConsolidado);
+  }
+
+  /** Por qué no se puede adjuntar un consolidado a la selección, o null si se puede. */
+  get consolidadoSeleccionBloqueo(): string | null {
+    const items = this.selectedConsolidables;
+    if (items.length === 0) {
+      return 'Selecciona rendiciones con la primera revisión aprobada y el reembolso por decidir';
+    }
+    const sinPermiso = items.filter((r) => !r.puedeConsolidar);
+    if (sinPermiso.length > 0) {
+      return 'No estás habilitado para consolidar por los trabajadores de '
+        + sinPermiso.map((r) => r.codigo).join(', ');
+    }
+    const razones = new Set(items.map((r) => r.razonSocialId).filter((id) => id != null));
+    if (razones.size > 1) {
+      return 'Un consolidado solo puede agrupar trabajadores de una misma razón social';
+    }
+    return null;
+  }
 
   abrirConsolidado(r: GestionRendicionListItemDto, ev: Event): void {
     ev.stopPropagation();
-    this.consolidadoDe = r;
+    this.consolidadoPara = this.objetivoConsolidado([r]);
+  }
+
+  abrirConsolidadoSeleccion(): void {
+    if (this.consolidadoSeleccionBloqueo !== null) return;
+    this.consolidadoPara = this.objetivoConsolidado(this.selectedConsolidables);
+  }
+
+  /**
+   * Lo que cubriría un consolidado adjuntado a estas filas: la unión de sus conjuntos (cada fila
+   * trae las planillas con las que comparte el consolidado actual) y la suma de sus montos
+   * completos, que es lo que el consolidado tiene que declarar.
+   */
+  private objetivoConsolidado(items: GestionRendicionListItemDto[]): ConsolidadoObjetivo {
+    const cubiertas = new Map<number, { codigo: string; monto: number }>();
+    for (const r of items) {
+      for (const c of r.consolidadoConjunto) {
+        cubiertas.set(c.id, { codigo: c.codigo, monto: c.montoTotalPlanilla });
+      }
+    }
+
+    // Es un reemplazo solo cuando todas comparten el mismo consolidado; si no, se juntan varios.
+    const actuales = new Set(items.map((r) => r.consolidadoS10?.id ?? null));
+    const actual = actuales.size === 1 ? (items[0].consolidadoS10 ?? null) : null;
+
+    const razones = new Set(items.map((r) => r.razonSocial).filter((nombre) => !!nombre));
+    const unaSola = cubiertas.size === 1 ? items[0] : null;
+
+    return {
+      rendicionIds: [...cubiertas.keys()],
+      codigos: [...cubiertas.values()].map((c) => c.codigo).sort(),
+      monto: [...cubiertas.values()].reduce((acc, c) => acc + c.monto, 0),
+      actual,
+      referencia: unaSola
+        ? (unaSola.numeroPlanilla
+            ?? `Rendición del ${new Date(unaSola.rendidoAt).toLocaleDateString('es-PE')}`)
+        : null,
+      razonSocial: razones.size === 1 ? [...razones][0] : null,
+    };
   }
 
   readonly subirConsolidado = (file: File, montoTotal: number, numeroGuia: string) =>
-    this.service.uploadConsolidadoS10(this.consolidadoDe!.id, file, montoTotal, numeroGuia);
-
-  get consolidadoReferencia(): string | null {
-    const r = this.consolidadoDe;
-    if (!r) return null;
-    return r.numeroPlanilla ?? `Rendición del ${new Date(r.rendidoAt).toLocaleDateString('es-PE')}`;
-  }
+    this.service.uploadConsolidadoS10(this.consolidadoPara!.rendicionIds, file, montoTotal, numeroGuia);
 
   cerrarConsolidado(subido: ConsolidadoS10Dto | null): void {
-    this.consolidadoDe = null;
+    this.consolidadoPara = null;
     if (subido) this.recargar();
     else        this.cdr.detectChanges();
+  }
+
+  /** Con qué otras rendiciones comparte el consolidado de la fila (vacío si es solo suyo). */
+  otrasDelConsolidado(r: GestionRendicionListItemDto): string[] {
+    return otrasRendicionesDelConsolidado(r.consolidadoS10, r.id);
+  }
+
+  /** Título del chip "S10 ✓": el archivo y, si es compartido, con qué rendiciones. */
+  consolidadoChipTitle(r: GestionRendicionListItemDto): string {
+    const otras = this.otrasDelConsolidado(r);
+    const archivo = r.consolidadoS10?.pdfFilename ?? '';
+    return otras.length ? `${archivo} · también cubre ${otras.join(', ')}` : archivo;
+  }
+
+  /** Título del botón "Consolidado S10" de la fila: qué va a cubrir, o por qué está apagado. */
+  consolidadoTitle(r: GestionRendicionListItemDto): string {
+    if (!r.puedeConsolidar) {
+      return 'No estás habilitado para consolidar por los trabajadores de esta planilla';
+    }
+    const otras = r.consolidadoConjunto.filter((c) => c.id !== r.id).map((c) => c.codigo);
+    if (otras.length) {
+      return 'Reemplazar el Consolidado del S10, también para ' + otras.join(', ');
+    }
+    return r.consolidadoS10
+      ? 'Reemplazar el Consolidado del S10'
+      : 'Adjuntar el Consolidado del S10 en nombre del trabajador';
   }
 
   // ── Presentación ─────────────────────────────────────────────────────
@@ -672,7 +774,8 @@ export class GestionRendiciones implements OnInit {
   reembolsoTitle(r: GestionRendicionListItemDto): string | null {
     const partes: string[] = [];
     if (r.estadoReembolso === 'Observado' && r.observacionReembolso) {
-      partes.push(`Observación: ${r.observacionReembolso}`);
+      const de = r.observacionReembolsoOrigen ? ` de ${r.observacionReembolsoOrigen}` : '';
+      partes.push(`Observación${de}: ${r.observacionReembolso}`);
     }
     if (r.reembolsoMixto) {
       partes.push('Las salidas visibles no están todas en el mismo estado: se muestra la más atrasada.');

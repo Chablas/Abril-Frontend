@@ -13,17 +13,18 @@ import { ErrorService } from '../../../../../core/services/error.service';
 import { ConsolidadoS10Dto } from './consolidado-s10.dto';
 
 /**
- * Adjunta el PDF "Consolidado del S10" de una planilla de rendición. Lo usan Mis Rendiciones (el
- * autoservicio, donde el trabajador lo sube) y Gestión de Rendiciones (el revisor, que puede
- * subirlo en su nombre); cada una le pasa su propia función de subida, que es lo único que cambia
+ * Adjunta el PDF "Consolidado del S10" de una o varias planillas de rendición. Lo usan Mis
+ * Rendiciones (el autoservicio, donde el trabajador sube el de una planilla propia) y Gestión de
+ * Rendiciones (los consolidadores, que lo suben en nombre de los trabajadores y pueden cubrir varias
+ * planillas con uno solo); cada una le pasa su propia función de subida, que es lo único que cambia
  * entre ambas (endpoint + guard de propiedad en el backend).
  *
- * Ya no hay ámbito que elegir: el archivo cubre siempre la planilla completa, porque una planilla
- * es un registro en el S10.
+ * El archivo cubre siempre planillas enteras: un registro en el S10 puede agrupar varias
+ * rendiciones, incluso de trabajadores distintos, siempre que sean de una misma razón social.
  *
  * Además del PDF se capturan los dos datos con los que el S10 lo registró: el monto total y el
- * número de guía. El monto tiene que CUADRAR con el de la planilla —el consolidado la cubre
- * entera—, así que el formulario no deja adjuntar si no coincide; el backend lo re-valida.
+ * número de guía. El monto tiene que CUADRAR con el de las planillas —el consolidado las cubre
+ * enteras—, así que el formulario no deja adjuntar si no coincide; el backend lo re-valida.
  */
 @Component({
   standalone: true,
@@ -39,18 +40,27 @@ export class ConsolidadoS10Modal implements OnDestroy {
   ) => Observable<ConsolidadoS10Dto>;
 
   /**
-   * Monto de la planilla COMPLETA — el que se registró en el S10. Es contra este que tiene que
-   * cuadrar el monto declarado, y no contra lo que la pantalla muestre en su columna de monto:
-   * esa está recortada a las salidas propias (o visibles) y una planilla puede agrupar a varias
-   * personas.
+   * Monto de las planillas COMPLETAS que va a cubrir —el que se registró en el S10—. Es contra este
+   * que tiene que cuadrar el monto declarado, y no contra lo que la pantalla muestre en su columna de
+   * monto: esa está recortada a las salidas propias (o visibles) y una planilla puede agrupar a
+   * varias personas.
    */
   @Input({ required: true }) montoEsperado!: number;
 
-  /** Consolidado vigente, si la planilla ya tenía uno. Se muestra para abrirlo o reemplazarlo. */
+  /** Consolidado vigente, si ya había uno. Se muestra para abrirlo o reemplazarlo. */
   @Input() actual: ConsolidadoS10Dto | null = null;
 
-  /** Referencia de la planilla ("TI: 000123") para que se vea a cuál se está adjuntando. */
+  /** Referencia de la planilla ("TI: 000123") cuando es una sola, para ver a cuál se adjunta. */
   @Input() referencia: string | null = null;
+
+  /**
+   * Códigos de las planillas que va a cubrir cuando son VARIAS. Con una sola se deja vacío: basta
+   * `referencia`.
+   */
+  @Input() rendiciones: string[] = [];
+
+  /** Razón social de las planillas agrupadas: bajo qué empresa queda el registro del S10. */
+  @Input() razonSocial: string | null = null;
 
   /** Emite al cerrar: el consolidado subido, o null si se cerró sin subir nada. */
   @Output() close = new EventEmitter<ConsolidadoS10Dto | null>();
@@ -74,6 +84,11 @@ export class ConsolidadoS10Modal implements OnDestroy {
 
   ngOnDestroy(): void {
     if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+  }
+
+  /** True si el consolidado va a cubrir más de una planilla. */
+  get varias(): boolean {
+    return this.rendiciones.length > 1;
   }
 
   /** ObjectURL del archivo elegido, solo para poder revocarlo al salir. */
@@ -107,7 +122,7 @@ export class ConsolidadoS10Modal implements OnDestroy {
     return Math.round(valor * 100) / 100;
   }
 
-  /** True cuando ya hay un monto escrito y NO cuadra con el de la planilla. */
+  /** True cuando ya hay un monto escrito y NO cuadra con el de las planillas. */
   get montoDescuadra(): boolean {
     if (this.montoTotal === null) return false;
     return ConsolidadoS10Modal.redondear(this.montoTotal)

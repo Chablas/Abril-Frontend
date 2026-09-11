@@ -19,6 +19,7 @@ import {
   reembolsoColors,
 } from '../../../../shared/dtos/rendicion-shared.dto';
 import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-correos';
+import { otrasRendicionesDelConsolidado } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 
 /**
  * Detalle de una planilla para el revisor: sus documentos y las salidas que agrupa.
@@ -255,5 +256,10 @@ export class GestionRendicionDetalleModal implements OnInit {
 
   reembolsoTexto(estado: string): string {
     return estado;
+  }
+
+  /** Con qué otras rendiciones comparte el Consolidado del S10 (vacío si es solo suyo). */
+  otrasDelConsolidado(d: GestionRendicionDetalleDto): string[] {
+    return otrasRendicionesDelConsolidado(d.consolidadoS10, d.id);
   }
 }

@@ -23,7 +23,10 @@ import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril
 import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { ConsolidadoS10Modal } from '../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
-import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import {
+  ConsolidadoS10Dto,
+  otrasRendicionesDelConsolidado,
+} from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { RendicionDetalleModal } from './rendicion-detalle-modal/rendicion-detalle-modal';
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 
@@ -438,6 +441,18 @@ export class Rendiciones implements OnInit {
     else        this.cdr.detectChanges();
   }
 
+  /** Tooltip del botón del Consolidado del S10: qué hace, o por qué está apagado. */
+  consolidadoTitle(r: RendicionListItemDto): string {
+    if (r.consolidadoCompartido) {
+      return 'Este Consolidado del S10 también cubre '
+        + otrasRendicionesDelConsolidado(r.consolidadoS10, r.id).join(', ')
+        + ': se reemplaza desde Gestión de Rendiciones';
+    }
+    return r.consolidadoS10
+      ? 'Reemplazar el Consolidado del S10 de esta planilla'
+      : 'Adjuntar el PDF Consolidado del S10 de esta planilla';
+  }
+
   // ── Aviso al revisor ─────────────────────────────────────────────────
 
   /**
@@ -511,7 +526,8 @@ export class Rendiciones implements OnInit {
   reembolsoTitle(r: RendicionListItemDto): string | null {
     const partes: string[] = [];
     if (r.estadoReembolso === 'Observado' && r.observacionReembolso) {
-      partes.push(`Observación: ${r.observacionReembolso}`);
+      const de = r.observacionReembolsoOrigen ? ` de ${r.observacionReembolsoOrigen}` : '';
+      partes.push(`Observación${de}: ${r.observacionReembolso}`);
     }
     if (r.reembolsoMixto) {
       partes.push('Tus salidas de esta planilla no están todas en el mismo estado: se muestra la más atrasada.');

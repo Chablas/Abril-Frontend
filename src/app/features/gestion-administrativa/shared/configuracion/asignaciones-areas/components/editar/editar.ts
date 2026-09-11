@@ -6,74 +6,86 @@ import { BaseModal } from '../../../../../../../shared/components/base-modal/bas
 import { SearchSelect } from '../../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../../core/services/error.service';
-import { RevisoresAreasService } from '../../services/revisores-areas.service';
+import { AsignacionesAreasService } from '../../services/asignaciones-areas.service';
 import {
-  AreaRevisorAsignadoDTO,
-  AreaRevisorItemDTO,
-  AreaRevisorOptionDTO,
-} from '../../dtos/areaRevisor.model';
+  AreaAsignacionItemDTO,
+  AreaAsignadoDTO,
+  AreaWorkerOptionDTO,
+  AsignacionAreaModo,
+} from '../../dtos/asignacion-area.dto';
 
 /** Fila editable: la posición en la lista define la prioridad (1 = primera). */
-interface RevisorRow {
-  revisorWorkerId: number | null;
+interface AsignadoRow {
+  workerId: number | null;
   active: boolean;
 }
 
 /**
- * Modal de edición de los n revisores de un área. El orden de las filas
- * define la prioridad (se puede subir/bajar); el toggle Activo permite
- * "pausar" a un revisor (ej. ausencia temporal) sin quitarlo de la lista.
+ * Modal de edición de las n personas asignadas a un área. El orden de las filas define la
+ * prioridad (se puede subir/bajar); el toggle Activo permite "pausar" a alguien (ej. ausencia
+ * temporal) sin quitarlo de la lista.
  */
 @Component({
   standalone: true,
-  selector: 'app-revisores-areas-editar',
+  selector: 'app-asignaciones-areas-editar',
   imports: [CommonModule, BaseModal, SearchSelect],
   templateUrl: './editar.html',
 })
-export class RevisoresAreasEditar implements OnInit {
-  @Input() area!: AreaRevisorItemDTO;
-  @Input() options: AreaRevisorOptionDTO[] = [];
-  /** null = revisores a nivel de área; con valor = revisores del proyecto dentro del área. */
+export class AsignacionesAreasEditar implements OnInit {
+  @Input({ required: true }) modo!: AsignacionAreaModo;
+  @Input() area!: AreaAsignacionItemDTO;
+  /** "Revisor" / "Consolidador". */
+  @Input() singular = 'Revisor';
+  /** "Revisores" / "Consolidadores". */
+  @Input() plural = 'Revisores';
+  /** true = de los activos solo cuenta el primero (revisores). */
+  @Input() ganaSoloUno = true;
+  @Input() options: AreaWorkerOptionDTO[] = [];
+  /** null = a nivel de área; con valor = del proyecto dentro del área. */
   @Input() projectId: number | null = null;
   /** Nombre del proyecto (para el título) cuando se edita el alcance de un proyecto. */
   @Input() projectName?: string;
-  /** Revisores iniciales del alcance editado. Por defecto los revisores de área. */
-  @Input() revisoresIniciales?: AreaRevisorAsignadoDTO[];
+  /** Asignados iniciales del alcance editado. Por defecto los del área. */
+  @Input() asignadosIniciales?: AreaAsignadoDTO[];
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
-  rows: RevisorRow[] = [];
+  rows: AsignadoRow[] = [];
 
   get titulo(): string {
-    return this.projectName
-      ? 'EDITAR REVISORES · ' + this.projectName
-      : 'EDITAR REVISORES · ' + (this.area.areaName || 'Área');
+    const alcance = this.projectName || this.area?.areaName || 'Área';
+    return `EDITAR ${this.plural.toUpperCase()} · ${alcance}`;
+  }
+
+  /** Aviso de estado de una línea: qué significa el orden en este modo. */
+  get avisoRegla(): string {
+    return this.ganaSoloUno
+      ? 'Se usa el primero activo; el resto queda de respaldo.'
+      : 'Todos los activos quedan habilitados para consolidar.';
   }
 
   constructor(
-    private service: RevisoresAreasService,
+    private service: AsignacionesAreasService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}
 
   ngOnInit(): void {
-    const iniciales = this.revisoresIniciales ?? this.area.revisores ?? [];
+    const iniciales = this.asignadosIniciales ?? this.area.asignados ?? [];
     this.rows = [...iniciales]
       .sort((a, b) => a.ordenPrioridad - b.ordenPrioridad)
-      .map((r) => ({ revisorWorkerId: r.revisorWorkerId, active: r.active }));
+      .map((a) => ({ workerId: a.workerId, active: a.active }));
     if (this.rows.length === 0) this.agregar();
   }
 
   /** Opciones de una fila: todos menos los ya elegidos en otras filas. */
-  opcionesFila(index: number): AreaRevisorOptionDTO[] {
-    const usados = new Set(
-      this.rows.filter((_, i) => i !== index).map((r) => r.revisorWorkerId),
-    );
+  opcionesFila(index: number): AreaWorkerOptionDTO[] {
+    const usados = new Set(this.rows.filter((_, i) => i !== index).map((r) => r.workerId));
     return this.options.filter((o) => !usados.has(o.workerId));
   }
 
   agregar(): void {
-    this.rows.push({ revisorWorkerId: null, active: true });
+    this.rows.push({ workerId: null, active: true });
   }
 
   quitar(index: number): void {
@@ -87,24 +99,24 @@ export class RevisoresAreasEditar implements OnInit {
   }
 
   guardar(): void {
-    const validas = this.rows.filter((r) => r.revisorWorkerId != null);
+    const validas = this.rows.filter((r) => r.workerId != null);
     if (validas.length !== this.rows.length) {
       Swal.fire({
         icon: 'warning',
         title: 'Filas incompletas',
-        text: 'Selecciona un revisor en cada fila o quita las filas vacías.',
-        confirmButtonColor: '#64BC04',
+        text: `Selecciona un ${this.singular.toLowerCase()} en cada fila o quita las filas vacías.`,
+        confirmButtonColor: '#0F6E56',
       });
       return;
     }
 
     this.loaderService.show();
     this.service
-      .updateRevisores(this.area.areaScopeId, {
+      .update(this.modo, this.area.areaScopeId, {
         projectId: this.projectId,
         // La posición define la prioridad: 1 = primera fila.
-        revisores: validas.map((r, i) => ({
-          revisorWorkerId: r.revisorWorkerId!,
+        asignados: validas.map((r, i) => ({
+          workerId: r.workerId!,
           ordenPrioridad: i + 1,
           active: r.active,
         })),

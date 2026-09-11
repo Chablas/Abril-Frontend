@@ -26,6 +26,18 @@
       </div>
     </div>
 
+    <!-- Observación vigente del reembolso. Va arriba de todo porque explica por qué la planilla
+         volvió: si la devolvió Tesorería, ya había pasado por la firma y lo que hay que mirar es
+         otra cosa (RG-49). -->
+    <div *ngIf="d.estadoReembolso === 'Observado' && d.observacionReembolso"
+         class="border rounded-lg p-3 text-sm"
+         style="border-color:#FCA5A5;background:#FEF2F2;color:#991B1B">
+      <span class="font-semibold">
+        {{ d.observacionReembolsoOrigen ? 'Observación de ' + d.observacionReembolsoOrigen : 'Observación del reembolso' }}:
+      </span>
+      {{ d.observacionReembolso }}
+    </div>
+
     <!-- ── Primera revisión ─────────────────────────────────────────────── -->
     <div class="flex items-center gap-3 border-t pt-3" style="border-color:var(--color-abril-border)">
       <span class="text-[11px] uppercase text-gray-400 font-semibold">1.ª revisión</span>
@@ -112,6 +124,9 @@
         {{ d.consolidadoS10.pdfFilename }}
         <span class="text-xs text-gray-400 font-normal">· Consolidado del S10</span>
       </a>
+      <span *ngIf="otrasDelConsolidado(d).length" class="text-xs text-gray-500 pl-6">
+        También cubre {{ otrasDelConsolidado(d).join(', ') }}
+      </span>
       <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
         {{ d.estadoPrimeraRevision === 'Aprobada'
             ? 'El trabajador todavía no adjuntó el Consolidado del S10.'
@@ -183,7 +198,8 @@
                   [bgColor]="reembolsoColors(s.estadoReembolso).bg"
                   [textColor]="reembolsoColors(s.estadoReembolso).text"
                   [title]="s.estadoReembolso === 'Observado' && s.observacionReembolso
-                    ? 'Observación: ' + s.observacionReembolso
+                    ? (d.observacionReembolsoOrigen ? 'Observación de ' + d.observacionReembolsoOrigen : 'Observación')
+                      + ': ' + s.observacionReembolso
                     : null" />
               </td>
             </tr>

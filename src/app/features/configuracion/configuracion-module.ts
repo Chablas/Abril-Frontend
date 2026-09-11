@@ -9,12 +9,6 @@ import { Workers } from './pages/workers/workers';
 import { Feriados } from './features/feriados/components/feriados';
 import { Aprendizaje } from './features/aprendizaje/components/aprendizaje';
 // Revisores de áreas: define el jefe de cada área para toda la organización, por lo que
-// es configuración global (antes vivía bajo Gestión Administrativa, solo para salidas).
-// Los archivos siguen físicamente en `gestion-administrativa/features/configuracion/`
-// hasta que se refactoricen.
-// El jefe por trabajador ya no se configura acá: se asigna con el checkbox
-// "Jefe personalizado" del formulario de Gestión de Ingresos → Trabajadores.
-import { RevisoresAreas } from '../gestion-administrativa/features/configuracion/revisores-areas/pages/revisores-areas';
 import { roleGuard } from '../../core/guards/role.guard';
 
 const routes: Routes = [
@@ -62,18 +56,19 @@ const routes: Routes = [
         redirectTo: '/gestion-gth/configuracion/categorias-puestos',
         pathMatch: 'full',
       },
-      // La antigua "Revisores de Trabajadores" (revisor-salidas) se retiró: el jefe
-      // personalizado se asigna ahora en el formulario de trabajadores. La ruta redirige a
-      // Revisores de Áreas para no dejar enlaces rotos.
-      { path: 'revisor-salidas', redirectTo: 'revisores-areas', pathMatch: 'full' },
+      // Revisores de Áreas se mudó a Gestión Administrativa → Solicitud de Salidas →
+      // Configuración: el revisor es a quien se le manda la solicitud que nace en esa pantalla.
+      // Las dos rutas viejas redirigen para no dejar enlaces rotos (la de "Revisores de
+      // Trabajadores" se retiró antes: ese jefe se asigna en el formulario de trabajadores).
+      {
+        path: 'revisor-salidas',
+        redirectTo: '/gestion-administrativa/solicitud-salidas/configuracion',
+        pathMatch: 'full',
+      },
       {
         path: 'revisores-areas',
-        component: RevisoresAreas,
-        canActivate: [roleGuard],
-        data: {
-          titulo: 'CONFIGURACIÓN - REVISORES DE ÁREAS',
-          featureKey: 'configuracion.revisores-areas',
-        },
+        redirectTo: '/gestion-administrativa/solicitud-salidas/configuracion',
+        pathMatch: 'full',
       },
       {
         path: 'feriados',

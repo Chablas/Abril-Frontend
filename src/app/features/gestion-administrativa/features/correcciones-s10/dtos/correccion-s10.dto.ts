@@ -32,8 +32,13 @@ export interface CorreccionS10ListItemDto {
 
   /** El «MOTIVO *» del colaborador: la corrección que necesita. */
   motivo: string;
-  /** Con qué observó la jefatura el reembolso, copiada al solicitar. */
+  /** Con qué se observó el reembolso, copiada al solicitar. */
   motivoJefatura: string | null;
+  /**
+   * Quién escribió esa observación: "Jefatura" o "Tesorería" (RG-49). Vacío en las correcciones
+   * anteriores a la columna, que son todas de jefatura.
+   */
+  motivoOrigen: string;
   /** Guía del consolidado observado. Es EL dato con el que el ERP lo ubica en el S10. */
   numeroGuia: string | null;
 

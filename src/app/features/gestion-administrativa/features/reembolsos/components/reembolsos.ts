@@ -90,6 +90,9 @@ interface AreaCascadeNode {
     .resumen-card--pend  .resumen-card__value { color: #C2410C; }
     .resumen-card--monto { border-left-color: var(--color-abril-warning); }
     .resumen-card--monto .resumen-card__value { color: var(--color-abril-warning-dark); font-size: 20px; }
+    /* El mismo rojo del badge "Observado", para que la tarjeta y la fila se lean como lo mismo. */
+    .resumen-card--obs   { border-left-color: #D30000; }
+    .resumen-card--obs   .resumen-card__value { color: #D30000; }
     .resumen-card--ok    { border-left-color: #15803D; }
     .resumen-card--ok    .resumen-card__value { color: #15803D; }
 
@@ -126,18 +129,25 @@ export class Reembolsos implements OnInit, OnDestroy {
   selectedIds = new Set<number>();
   detalleId: number | null = null;
 
-  resumen: ResumenReembolsosDto = { porRevisar: 0, porPagar: 0, montoPorPagar: 0, pagadas: 0 };
+  resumen: ResumenReembolsosDto = {
+    porRevisar: 0, porPagar: 0, montoPorPagar: 0, observadas: 0, pagadas: 0,
+  };
 
   // ── Filtros ────────────────────────────────────────────────────────
   trabajadorOptions: any[] = [{ workerId: null, nombreCompleto: 'Todos los trabajadores' }];
   periodoOptions: { key: string | null; label: string }[] = [{ key: null, label: 'Todos los periodos' }];
   private periodos: PeriodoOptionDto[] = [];
 
-  /** Tesorería solo ve estos tres estados: el backend recorta igual, ofrecer otro sería un filtro vacío. */
+  /**
+   * Tesorería solo ve estos cuatro estados: el backend recorta igual, ofrecer otro sería un filtro
+   * vacío. "Observadas" son las que devolvió ella misma — lo que observó la jefatura nunca llegó a
+   * esta pantalla.
+   */
   readonly estadoOptions = [
     { value: null,                        label: 'Todos los estados' },
     { value: 'Firmado',                   label: 'Firmadas · por revisar' },
     { value: 'Proceder con el reembolso', label: 'Por pagar' },
+    { value: 'Observado',                 label: 'Observadas por Tesorería' },
     { value: 'Pagado',                    label: 'Pagadas' },
   ];
 
@@ -405,17 +415,29 @@ export class Reembolsos implements OnInit, OnDestroy {
     else                            this.selectedIds.add(r.id);
   }
 
+  /**
+   * Devuelta por Tesorería y esperando la subsanación (RG-49). Se pregunta primero que las otras
+   * dos: una planilla observada no está ni por revisar ni por pagar aunque sus contadores de
+   * Tesorería queden en cero.
+   */
+  observada(r: ReembolsoListItemDto): boolean {
+    return r.observadasCount > 0;
+  }
+
   /** Espera la revisión documental de Tesorería. */
   porRevisar(r: ReembolsoListItemDto): boolean {
-    return r.porConfirmarCount > 0;
+    return !this.observada(r) && r.porConfirmarCount > 0;
   }
 
   /** Ya revisada y lista para desembolsar. */
   porPagar(r: ReembolsoListItemDto): boolean {
-    return r.porConfirmarCount === 0 && r.porPagarCount > 0;
+    return !this.observada(r) && r.porConfirmarCount === 0 && r.porPagarCount > 0;
   }
 
-  /** Todo lo que todavía tiene algo por hacer: lo ya pagado no se vuelve a tocar. */
+  /**
+   * Todo lo que todavía se puede accionar desde acá. Lo ya pagado no se vuelve a tocar, y lo
+   * observado tampoco: la pelota la tiene el consolidador hasta que recargue el Consolidado del S10.
+   */
   get accionables(): ReembolsoListItemDto[] {
     return this.planillas.filter((r) => this.porRevisar(r) || this.porPagar(r));
   }
@@ -435,6 +457,16 @@ export class Reembolsos implements OnInit, OnDestroy {
 
   get seleccionadasPorPagar(): ReembolsoListItemDto[] {
     return this.planillas.filter((r) => this.selectedIds.has(r.id) && this.porPagar(r));
+  }
+
+  /**
+   * Se puede observar tanto lo que está por revisar como lo ya confirmado para pagar (RG-49: "antes
+   * de autorizar el pago"), así que la acción toma toda la selección accionable.
+   */
+  get seleccionadasParaObservar(): ReembolsoListItemDto[] {
+    return this.planillas.filter(
+      (r) => this.selectedIds.has(r.id) && (this.porRevisar(r) || this.porPagar(r)),
+    );
   }
 
   get montoSeleccionado(): number {
@@ -471,6 +503,38 @@ export class Reembolsos implements OnInit, OnDestroy {
     this.ejecutar(
       this.service.confirmarRevision({ rendicionIds: items.map((r) => r.id), solicitudIds: [] }),
     );
+  }
+
+  /**
+   * El camino de vuelta (RG-49). La planilla no va directo al Coordinador ERP: vuelve al
+   * consolidador, que es quien decide si recarga el Consolidado del S10 corregido o le pide al ERP
+   * la corrección dentro del S10 con su propio «MOTIVO *» (RG-21). Por eso el texto de la
+   * confirmación nombra ese camino en vez de prometer que el ERP ya quedó avisado.
+   */
+  async observar(): Promise<void> {
+    const items = this.seleccionadasParaObservar;
+    if (items.length === 0) return;
+
+    const seleccion = { rendicionIds: items.map((r) => r.id), solicitudIds: [] };
+    const { value: observacion, isConfirmed } = await confirmarConCorreos({
+      icon: 'warning',
+      titulo: items.length === 1
+        ? '¿Observar este reembolso?'
+        : `¿Observar ${items.length} planillas?`,
+      nota:
+        'Vuelve al consolidador para que recargue el Consolidado del S10 o le pida la corrección ' +
+        'al Coordinador ERP. Al recargarlo pasa otra vez por la firma de la jefatura.',
+      avisos: await pedirAvisos(this.service.correoPreviewObservacion(seleccion)),
+      observacion: {
+        label: 'Motivo',
+        placeholder: 'Qué tiene que corregirse en el Consolidado del S10…',
+      },
+      confirmButtonText: 'Observar',
+      confirmButtonColor: '#D30000',
+    });
+    if (!isConfirmed || !observacion) return;
+
+    this.ejecutar(this.service.observar({ ...seleccion, observacion }));
   }
 
   /** Paso 2: registrar el pago. Cierra el ciclo y le avisa a cada colaborador. */
@@ -547,6 +611,13 @@ export class Reembolsos implements OnInit, OnDestroy {
   /** Por qué una fila no se puede marcar, para el tooltip del checkbox. */
   motivoNoAccionable(r: ReembolsoListItemDto): string | null {
     if (this.porRevisar(r) || this.porPagar(r)) return null;
+    if (this.observada(r)) return 'La observaste: espera a que vuelvan a adjuntar el Consolidado del S10';
     return 'Ya está pagada';
+  }
+
+  /** Lo que devolviste y sigue esperando, para el tooltip del badge. */
+  observacionTitle(r: ReembolsoListItemDto): string | null {
+    if (!this.observada(r) || !r.observacionReembolso) return this.estadoTitle(r);
+    return `Observado por Tesorería: ${r.observacionReembolso}`;
   }
 }

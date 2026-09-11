@@ -54,10 +54,14 @@
       <span class="font-semibold">Lo que pide el colaborador:</span> {{ c.motivo }}
     </div>
 
+    <!-- El rótulo nombra a quien devolvió el consolidado: con la jefatura y con Tesorería no se
+         coordina lo mismo. Sin origen (correcciones viejas) se dice "de la jefatura", que es de
+         donde venían todas. -->
     <div *ngIf="c.motivoJefatura"
          class="border rounded-lg p-3 text-sm"
          style="border-color:#FED7AA;background:#FFF7ED;color:#9A3412">
-      <span class="font-semibold">Observación de la jefatura:</span> {{ c.motivoJefatura }}
+      <span class="font-semibold">Observación de {{ c.motivoOrigen || 'la jefatura' }}:</span>
+      {{ c.motivoJefatura }}
     </div>
 
     <!-- ── Documentos, para contrastar ──────────────────────────────────── -->

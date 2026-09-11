@@ -1,30 +1,22 @@
-<app-abril-page-header
-  badge="CONFIGURACIÓN"
-  titulo="Revisores de Áreas"
-  subtitulo="Asigna los revisores (jefes/superiores directos) de cada gerencia y área estándar, en orden de prioridad. Aplican a los trabajadores del área que no tienen revisores propios; si el área no tiene revisores activos se usa la de su gerencia y, en última instancia, el área de GTH."
-  [tabs]="tabs">
-
-  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
-  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
-</app-abril-page-header>
-
-<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
+<!-- Sección embebida en la configuración de una pantalla: el header y el disparador de
+     filtros viven en el contenedor (`pantalla-configuracion`). -->
+<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
-  <div class="w-full flex-1 min-h-0 overflow-auto">
+  <div class="abril-table-wrap abril-table-wrap--card">
     <table class="abril-table abril-table--th-center">
       <thead class="sticky top-0 z-10">
         <tr>
           <th>Área</th>
           <th>Área padre</th>
           <th class="text-center w-[150px]">Filtrar por proyecto</th>
-          <th class="w-[320px]">Revisores</th>
+          <th class="w-[320px]">{{ columnaEfectivos }}</th>
           <th class="text-center w-[170px]">Acciones</th>
         </tr>
       </thead>
       <tbody>
         <ng-container *ngFor="let r of pagedRows">
-          <!-- Fila del área (revisores a nivel de área) -->
+          <!-- Fila del área (asignaciones a nivel de área) -->
           <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
             <td class="text-gray-700">
               {{ r.areaName }}
@@ -35,7 +27,7 @@
             </td>
             <td class="text-gray-700">{{ r.parentName || '—' }}</td>
             <td class="text-center">
-              <input type="checkbox" class="w-4 h-4 accent-[#64BC04]"
+              <input type="checkbox" class="w-4 h-4 accent-[var(--color-abril-standard)]"
                      [class.cursor-pointer]="puedeGestionar"
                      [checked]="r.filtraPorProyecto"
                      [disabled]="!puedeGestionar"
@@ -43,17 +35,17 @@
                      title="Si se activa, el área se subdivide por proyecto" />
             </td>
             <td class="text-gray-700">
-              <ng-container *ngIf="r.revisorEfectivoNombre; else sinRevisorArea">
-                <span>{{ r.revisorEfectivoNombre | titleCase }}</span>
+              <ng-container *ngIf="primero(r.efectivos) as e; else sinEfectivoArea">
+                <span>{{ e.nombre | titleCase }}</span>
                 <span class="ml-[6px] text-[12px] text-gray-500 whitespace-nowrap">
-                  ({{ origenLabel(r.revisorEfectivoOrigen) }})
+                  ({{ origenLabel(e.origen) }})
                 </span>
-                <span *ngIf="revisoresActivos(r.revisores) > 1"
-                      class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium whitespace-nowrap">
-                  +{{ revisoresActivos(r.revisores) - 1 }} más
+                <span *ngIf="restantes(r.efectivos) > 0"
+                      class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)] font-medium whitespace-nowrap">
+                  +{{ restantes(r.efectivos) }} más
                 </span>
               </ng-container>
-              <ng-template #sinRevisorArea><span class="text-gray-400">—</span></ng-template>
+              <ng-template #sinEfectivoArea><span class="text-gray-400">—</span></ng-template>
             </td>
             <td class="text-center">
               <div class="flex items-center justify-center gap-2">
@@ -66,24 +58,24 @@
           <!-- Subfilas por proyecto (solo si el área filtra por proyecto) -->
           <ng-container *ngIf="r.filtraPorProyecto">
             <tr *ngFor="let proj of proyectosDeArea(r)"
-                class="border-b bg-[#FafcF7] hover:bg-[#F1F7E8]" style="border-color:var(--color-abril-border)">
+                class="border-b bg-[var(--color-abril-standard-light)] hover:bg-[#E4F4EE]" style="border-color:var(--color-abril-border)">
               <td class="text-gray-600 pl-[28px]">
                 <span class="text-gray-400 mr-[6px]">└</span>{{ proj.projectName }}
               </td>
               <td class="text-gray-400 text-[12px]">Proyecto</td>
               <td></td>
               <td class="text-gray-700">
-                <ng-container *ngIf="proj.revisorEfectivoNombre; else sinRevisorProj">
-                  <span>{{ proj.revisorEfectivoNombre | titleCase }}</span>
+                <ng-container *ngIf="primero(proj.efectivos) as e; else sinEfectivoProj">
+                  <span>{{ e.nombre | titleCase }}</span>
                   <span class="ml-[6px] text-[12px] text-gray-500 whitespace-nowrap">
-                    ({{ origenLabel(proj.revisorEfectivoOrigen) }})
+                    ({{ origenLabel(e.origen) }})
                   </span>
-                  <span *ngIf="revisoresActivos(proj.revisores) > 1"
-                        class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium whitespace-nowrap">
-                    +{{ revisoresActivos(proj.revisores) - 1 }} más
+                  <span *ngIf="restantes(proj.efectivos) > 0"
+                        class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-white text-[var(--color-abril-standard)] font-medium whitespace-nowrap">
+                    +{{ restantes(proj.efectivos) }} más
                   </span>
                 </ng-container>
-                <ng-template #sinRevisorProj><span class="text-gray-400">—</span></ng-template>
+                <ng-template #sinEfectivoProj><span class="text-gray-400">—</span></ng-template>
               </td>
               <td class="text-center">
                 <div class="flex items-center justify-center gap-2">
@@ -102,7 +94,7 @@
                 ? 'Sin resultados.'
                 : puedeGestionar
                   ? 'No hay áreas configurables.'
-                  : 'No tienes áreas visibles. Solo los jefes, coordinadores y gerentes ven los revisores de su área.'
+                  : 'No tienes áreas visibles. Solo los jefes, coordinadores y gerentes ven la configuración de su área.'
             }}
           </td>
         </tr>
@@ -121,26 +113,32 @@
 
 </div>
 
-<!-- ── Modal detalle (n revisores del área o del proyecto) ───────────── -->
-<app-revisores-areas-detalle
+<!-- ── Modal detalle (n asignados del área o del proyecto) ───────────── -->
+<app-asignaciones-areas-detalle
   *ngIf="detalleDe"
   [area]="detalleDe"
+  [singular]="singular"
+  [plural]="plural"
   [projectName]="scopeProjectName"
-  [revisoresOverride]="scopeRevisores"
+  [asignadosOverride]="scopeAsignados"
   (closeModal)="closeModales()"
-></app-revisores-areas-detalle>
+></app-asignaciones-areas-detalle>
 
-<!-- ── Modal editar (agregar/quitar/priorizar/activar revisores) ────── -->
-<app-revisores-areas-editar
+<!-- ── Modal editar (agregar/quitar/priorizar/activar) ──────────────── -->
+<app-asignaciones-areas-editar
   *ngIf="editando"
+  [modo]="modo"
   [area]="editando"
+  [singular]="singular"
+  [plural]="plural"
+  [ganaSoloUno]="ganaSoloUno"
   [options]="options"
   [projectId]="scopeProjectId"
   [projectName]="scopeProjectName"
-  [revisoresIniciales]="scopeRevisores"
+  [asignadosIniciales]="scopeAsignados"
   (closeModal)="closeModales()"
   (saved)="onSaved()"
-></app-revisores-areas-editar>
+></app-asignaciones-areas-editar>
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
@@ -159,19 +157,19 @@
 
   <div class="w-full">
     <app-search-select
-      label="Revisor"
-      [options]="revisorFilterOptions"
+      [label]="singular"
+      [options]="personaFilterOptions"
       valueField="workerId"
       displayField="fullName"
-      [value]="revisorFilter"
-      (valueChange)="revisorFilter = $event; onFilterChange()"
-      placeholder="Todos los revisores"
+      [value]="personaFilter"
+      (valueChange)="personaFilter = $event; onFilterChange()"
+      [placeholder]="'Todos los ' + plural.toLowerCase()"
     ></app-search-select>
   </div>
 
   <div class="w-full">
     <app-search-input
-      placeholder="Buscar por área o revisor..."
+      [placeholder]="'Buscar por área o ' + singular.toLowerCase() + '...'"
       [(value)]="searchText"
       (valueChange)="onFilterChange()"
       width="100%"

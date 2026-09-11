@@ -22,8 +22,8 @@
   <ng-container *ngIf="vista === 'bandeja'">
 
     <!-- ── Tarjetas de resumen ─────────────────────────────────────────────
-         Los tres pasos de Tesorería en el orden del flujo. Se cuentan sobre el mismo conjunto
-         que muestra la tabla, así que acompañan a los filtros. -->
+         Los pasos de Tesorería en el orden del flujo, más lo que ella misma devolvió. Se cuentan
+         sobre el mismo conjunto que muestra la tabla, así que acompañan a los filtros. -->
     <div class="resumen-cards">
       <div class="resumen-card resumen-card--rev">
         <span class="resumen-card__label">Por revisar</span>
@@ -40,6 +40,11 @@
         <span class="resumen-card__value">S/ {{ resumen.montoPorPagar | number:'1.2-2' }}</span>
         <span class="resumen-card__hint">Suma a desembolsar</span>
       </div>
+      <div class="resumen-card resumen-card--obs">
+        <span class="resumen-card__label">Observadas</span>
+        <span class="resumen-card__value">{{ resumen.observadas }}</span>
+        <span class="resumen-card__hint">Devueltas, esperan subsanación</span>
+      </div>
       <div class="resumen-card resumen-card--ok">
         <span class="resumen-card__label">Pagadas</span>
         <span class="resumen-card__value">{{ resumen.pagadas }}</span>
@@ -49,7 +54,8 @@
 
     <!-- ── Acciones ─────────────────────────────────────────────────────────
          Dos pasos y no uno: primero se confirma la revisión documental y recién entonces se
-         puede pagar. Cada botón actúa sobre la parte de la selección que le corresponde. -->
+         puede pagar. Y un camino de vuelta (RG-49): observar devuelve el consolidado desde
+         cualquiera de los dos. Cada botón actúa sobre la parte de la selección que le toca. -->
     <div class="flex flex-wrap items-center gap-2">
       <span *ngIf="seleccionadasPorPagar.length > 0" class="text-[11px] text-gray-500 mr-1">
         {{ seleccionadasPorPagar.length }} por pagar · S/ {{ montoSeleccionado | number:'1.2-2' }}
@@ -66,6 +72,20 @@
           <circle cx="12" cy="12" r="9"/>
         </svg>
         Confirmar revisión<span *ngIf="seleccionadasPorRevisar.length > 0"> ({{ seleccionadasPorRevisar.length }})</span>
+      </button>
+
+      <button
+        type="button"
+        abrilBulkAction="danger"
+        (click)="observar()"
+        [disabled]="seleccionadasParaObservar.length === 0"
+        title="Devuelve el consolidado con un motivo. Vuelve al consolidador, que lo recarga o le pide la corrección al Coordinador ERP.">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <path stroke-linecap="round" d="M12 9v4M12 17h.01"/>
+        </svg>
+        Observar<span *ngIf="seleccionadasParaObservar.length > 0"> ({{ seleccionadasParaObservar.length }})</span>
       </button>
 
       <button
@@ -194,7 +214,13 @@
                 [text]="reembolsoLabelCorto(r.estadoReembolso)"
                 [bgColor]="reembolsoColors(r.estadoReembolso).bg"
                 [textColor]="reembolsoColors(r.estadoReembolso).text"
-                [title]="estadoTitle(r)" />
+                [title]="observacionTitle(r)" />
+              <!-- Recortado a una línea: el motivo completo está en el tooltip y en el detalle. -->
+              <div *ngIf="observada(r) && r.observacionReembolso"
+                   class="mt-0.5 text-[10px] leading-tight truncate max-w-[140px]"
+                   style="color:#D30000" [title]="r.observacionReembolso">
+                {{ r.observacionReembolso }}
+              </div>
             </td>
           </tr>
         </tbody>

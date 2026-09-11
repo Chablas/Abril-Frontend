@@ -36,6 +36,18 @@ const SRC_DIR = path.join(__dirname, '..', 'src', 'app');
 const NAV_SERVICE_FILE = path.join(SRC_DIR, 'core', 'navigation', 'navigation.service.ts');
 const OUT_FILE = path.join(SRC_DIR, 'core', 'navigation', 'feature-display-names.generated.ts');
 
+// ── Fuente 3: secciones sin ruta propia ─────────────────────────────────────
+// Features que NO tienen entrada de sidebar ni route.data.titulo porque son una
+// SECCIÓN dentro de la configuración de otra pantalla (app-section-tabs). Las dos
+// fuentes automáticas no pueden verlas, así que van acá a mano — son pocas y cambian
+// cuando cambia la estructura de pantallas, no cada vez que se agrega una.
+const SECCIONES_SIN_RUTA = {
+  'configuracion.revisores-areas': 'Revisores de Áreas',
+  'gestion-administrativa.config.visibilidad-salidas': 'Visibilidad de Salidas',
+  'gestion-administrativa.config.visibilidad-rendiciones': 'Visibilidad de Rendiciones',
+  'gestion-administrativa.config.consolidadores-areas': 'Consolidadores de Áreas',
+};
+
 function walk(dir, files = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
@@ -128,13 +140,23 @@ if (conflicts.length) {
   conflicts.forEach((c) => console.log(`    - ${c}`));
 }
 
+// ── Fuente 3: secciones sin ruta propia (solo llenan huecos) ───────────────
+let tier3Count = 0;
+for (const [featureKey, label] of Object.entries(SECCIONES_SIN_RUTA)) {
+  if (map.has(featureKey)) continue;
+  map.set(featureKey, label);
+  tier3Count++;
+}
+console.log(`Fuente 3 (secciones sin ruta propia): ${tier3Count} pares nuevos agregados.`);
+
 // ── Emitir ────────────────────────────────────────────────────────────────
 const sorted = [...map.entries()].sort(([a], [b]) => a.localeCompare(b));
 
 const body = `// ARCHIVO GENERADO — no editar a mano.
 // Fuente: node scripts/generate-feature-display-names.js (AST de TypeScript sobre
-// navigation.service.ts + route.data.titulo de toda la app). Re-generar con ese
-// comando cuando se agregue/renombre una pantalla con featureKey nuevo.
+// navigation.service.ts + route.data.titulo de toda la app, más el mapa
+// SECCIONES_SIN_RUTA de ese script). Re-generar con ese comando cuando se
+// agregue/renombre una pantalla con featureKey nuevo.
 //
 // Consumido por RoleEdit (security/roles) como fuente principal de nombres legibles
 // para los 156+ featureKey del modal "Editar Rol" — humanizeFeatureKey() ahí mismo

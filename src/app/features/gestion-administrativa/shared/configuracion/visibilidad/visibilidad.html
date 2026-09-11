@@ -1,9 +1,9 @@
-<!-- Sección embebida en GaConfiguracion: el header y el disparador de filtros
-     viven en el contenedor (`ga-configuracion`). -->
+<!-- Sección embebida en la configuración de una pantalla: el header y el disparador de
+     filtros viven en el contenedor (`pantalla-configuracion`). -->
 <div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
-  <div class="abril-table-wrap">
+  <div class="abril-table-wrap abril-table-wrap--card">
     <table class="abril-table abril-table--th-center">
       <thead class="sticky top-0 z-10">
         <tr>
@@ -21,7 +21,7 @@
           <td class="text-gray-700">{{ r.category || '—' }}</td>
           <td class="text-center">
             <span *ngIf="r.areasAsignadas > 0; else automatico"
-              class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium">
+              class="text-[11px] px-[10px] py-[3px] rounded-full bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)] font-medium">
               {{ r.areasAsignadas }} área(s) asignada(s)
             </span>
             <ng-template #automatico>
@@ -61,6 +61,7 @@
 
 <app-visibilidad-modal
   *ngIf="editing"
+  [ambito]="ambito"
   [workerId]="editing.workerId"
   [workerName]="editing.fullName || ''"
   (closeModal)="editing = null"

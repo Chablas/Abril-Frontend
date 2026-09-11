@@ -6,16 +6,21 @@ import { BaseModal } from '../../../../../../../shared/components/base-modal/bas
 import { SearchInput } from '../../../../../../../shared/components/search-input/search-input';
 import { LoaderService } from '../../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../../core/services/error.service';
-import { VisibilidadSalidasService } from '../../services/visibilidad-salidas.service';
-import { VisibilidadAreaNodeDTO } from '../../dtos/visibilidadSalida.model';
-
-type NodeSel = 'self' | 'subtree';
+import { VisibilidadService } from '../../services/visibilidad.service';
+import { VisibilidadAmbito, VisibilidadAreaNodeDTO } from '../../dtos/visibilidad.dto';
 
 interface OrderedNode {
   node: VisibilidadAreaNodeDTO;
   depth: number;
 }
 
+/**
+ * Elige las áreas que un trabajador puede ver.
+ *
+ * Una sola casilla por área: marcar un área marca también sus subáreas y desmarcarla las
+ * desmarca, así que lo que se guarda es exactamente la lista que se ve marcada. Antes había dos
+ * columnas ("solo esta área" y "con subáreas") y no se entendía cuál mandaba.
+ */
 @Component({
   standalone: true,
   selector: 'app-visibilidad-modal',
@@ -23,14 +28,17 @@ interface OrderedNode {
   templateUrl: './visibilidad-modal.html',
 })
 export class VisibilidadModal implements OnInit {
+  @Input({ required: true }) ambito!: VisibilidadAmbito;
   @Input() workerId!: number;
   @Input() workerName = '';
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
   ordered: OrderedNode[] = [];
-  /** areaScopeId -> tipo de selección. Ausente = no seleccionado. */
-  selection = new Map<number, NodeSel>();
+  /** areaScopeId de las áreas marcadas. */
+  selection = new Set<number>();
+  /** areaScopeId -> hijos directos, para propagar la marca al subárbol. */
+  private hijosDe = new Map<number, number[]>();
 
   /** Tipos de área disponibles (para los filtros). */
   tipos: { id: number; name: string }[] = [];
@@ -41,22 +49,25 @@ export class VisibilidadModal implements OnInit {
   loaded = false;
 
   constructor(
-    private service: VisibilidadSalidasService,
+    private service: VisibilidadService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}
 
   ngOnInit(): void {
     this.loaderService.show();
-    this.service.getAreaTree().subscribe({
+    this.service.getAreaTree(this.ambito).subscribe({
       next: (nodes) => {
         this.buildOrdered(nodes);
         this.buildTipos(nodes);
-        this.service.getWorkerAsignaciones(this.workerId).subscribe({
+        this.service.getWorkerAsignaciones(this.ambito, this.workerId).subscribe({
           next: (asigs) => {
             this.selection.clear();
             for (const a of asigs) {
-              this.selection.set(a.areaScopeId, a.incluyeDescendientes ? 'subtree' : 'self');
+              this.selection.add(a.areaScopeId);
+              // Compatibilidad con lo cargado antes: una fila "con subáreas" equivalía a tener
+              // marcado todo su subárbol, así que se abre acá para que se vea tal cual.
+              if (a.incluyeDescendientes) this.marcarSubarbol(a.areaScopeId, true);
             }
             this.loaded = true;
             this.loaderService.hide();
@@ -84,6 +95,12 @@ export class VisibilidadModal implements OnInit {
     for (const list of byParent.values()) {
       list.sort((a, b) => a.displayOrder - b.displayOrder || a.areaItemName.localeCompare(b.areaItemName));
     }
+
+    this.hijosDe = new Map();
+    for (const [parent, hijos] of byParent.entries()) {
+      if (parent != null) this.hijosDe.set(parent, hijos.map((h) => h.areaScopeId));
+    }
+
     const result: OrderedNode[] = [];
     const dfs = (parentKey: number | null, depth: number) => {
       const children = byParent.get(parentKey) ?? [];
@@ -108,6 +125,10 @@ export class VisibilidadModal implements OnInit {
     else this.tipoFilter.add(id);
   }
 
+  get filtrando(): boolean {
+    return this.tipoFilter.size > 0 || !!this.searchText.trim();
+  }
+
   get filtered(): OrderedNode[] {
     const q = this.searchText.trim();
     return this.ordered.filter((o) => {
@@ -119,39 +140,39 @@ export class VisibilidadModal implements OnInit {
 
   /** Cuando hay filtro/búsqueda la jerarquía se rompe → mostrar plano (sin sangría). */
   displayDepth(o: OrderedNode): number {
-    return this.tipoFilter.size > 0 || this.searchText.trim() ? 0 : o.depth;
+    return this.filtrando ? 0 : o.depth;
   }
 
-  // ── Selección por nodo ─────────────────────────────────────────────
-  isSelf(id: number): boolean {
+  // ── Selección ──────────────────────────────────────────────────────
+  isSelected(id: number): boolean {
     return this.selection.has(id);
   }
 
-  isSubtree(id: number): boolean {
-    return this.selection.get(id) === 'subtree';
+  /**
+   * Marcar/desmarcar un área arrastra a todas sus subáreas: quien ve una gerencia ve lo que
+   * cuelga de ella, y tenerlo que marcar área por área era el trabajo que hacía ilegible el modal.
+   */
+  toggle(id: number): void {
+    const marcar = !this.selection.has(id);
+    if (marcar) this.selection.add(id);
+    else this.selection.delete(id);
+    this.marcarSubarbol(id, marcar);
   }
 
-  toggleSelf(id: number): void {
-    if (this.selection.has(id)) this.selection.delete(id);
-    else this.selection.set(id, 'self');
-  }
-
-  toggleSubtree(id: number): void {
-    if (this.selection.get(id) === 'subtree') this.selection.set(id, 'self');
-    else this.selection.set(id, 'subtree');
-  }
-
-  // ── Acciones masivas ───────────────────────────────────────────────
-  /** Selecciona (solo el nodo) todas las áreas actualmente visibles según los filtros. */
-  seleccionarVisibles(): void {
-    for (const o of this.filtered) {
-      if (!this.selection.has(o.node.areaScopeId)) this.selection.set(o.node.areaScopeId, 'self');
+  private marcarSubarbol(id: number, marcar: boolean): void {
+    for (const hijo of this.hijosDe.get(id) ?? []) {
+      if (marcar) this.selection.add(hijo);
+      else this.selection.delete(hijo);
+      this.marcarSubarbol(hijo, marcar);
     }
   }
 
-  /** Selecciona las áreas visibles incluyendo sus subáreas (nodo + descendientes). */
-  seleccionarVisiblesConSubareas(): void {
-    for (const o of this.filtered) this.selection.set(o.node.areaScopeId, 'subtree');
+  /** Selecciona todas las áreas visibles según los filtros (con sus subáreas). */
+  seleccionarVisibles(): void {
+    for (const o of this.filtered) {
+      this.selection.add(o.node.areaScopeId);
+      this.marcarSubarbol(o.node.areaScopeId, true);
+    }
   }
 
   limpiar(): void {
@@ -163,13 +184,14 @@ export class VisibilidadModal implements OnInit {
   }
 
   save(): void {
-    const areas = [...this.selection.entries()].map(([areaScopeId, sel]) => ({
+    // Siempre sin `incluyeDescendientes`: el subárbol ya va marcado área por área.
+    const areas = [...this.selection].map((areaScopeId) => ({
       areaScopeId,
-      incluyeDescendientes: sel === 'subtree',
+      incluyeDescendientes: false,
     }));
 
     this.loaderService.show();
-    this.service.updateWorkerAsignaciones(this.workerId, areas).subscribe({
+    this.service.updateWorkerAsignaciones(this.ambito, this.workerId, areas).subscribe({
       next: (res) => {
         this.loaderService.hide();
         Swal.fire({ title: res.message, icon: 'success', timer: 1500, showConfirmButton: false });

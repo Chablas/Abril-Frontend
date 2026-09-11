@@ -69,14 +69,13 @@
         </app-search-select>
       </div>
 
-      <!-- Razón social del trabajador. Normalmente es un dato de la ficha y no una decisión de
-           quien programa, así que va de solo lectura; ocupa el lugar del antiguo desplegable de
-           médico — GTH pidió dejar de elegir médico y ver acá la empresa. El médico de la cita lo
-           pone el backend con el que esté marcado como por defecto en el catálogo.
+      <!-- Razón social del trabajador. En quien ya está adentro es un dato de su ficha y no una
+           decisión de quien programa, así que va de solo lectura; ocupa el lugar del antiguo
+           desplegable de médico — GTH pidió dejar de elegir médico y ver acá la empresa. El médico
+           de la cita lo pone el backend con el que esté marcado como por defecto en el catálogo.
 
-           La excepción es el ingreso directo FFT: llega al EMO sin razón social porque su vacante
-           no se aprueba ni se publica y nadie pasó por la asignación de Reclutamiento. Ahí sí hay
-           que elegirla, y es obligatoria: sin ella la cita queda fuera de Programaciones. -->
+           En una ficha de pre-ingreso sí hay que elegirla, y es obligatoria: este es el único
+           punto del proceso donde se asigna, y sin ella la cita queda fuera de Programaciones. -->
       <div class="abril-field" *ngIf="pideRazonSocial; else razonSocialFicha">
         <app-search-select
           label="Razón social *"
@@ -90,6 +89,11 @@
         </app-search-select>
         <p class="razon-hint" *ngIf="razonSocialSeleccionada">
           Cupos disponibles: <b>{{ razonSocialSeleccionada.cuposDisponibles }}</b> de 20.
+        </p>
+        <!-- El tope se puede pasar y hay que decirlo donde se elige: si no, una razón social en 0
+             cupos que igual deja guardar parece un error de la pantalla. -->
+        <p class="razon-hint" *ngIf="sinTopePorReemplazo">
+          Vacante de reemplazo: no aplica el tope de 20.
         </p>
         <p class="razon-hint razon-hint--warn" *ngIf="sinCupos">
           Ya llegó al tope de 20 trabajadores: elige otra para poder programar el EMO.

@@ -70,11 +70,22 @@ export interface RendicionListItemDto {
   estadoReembolso: EstadoReembolso;
   /** True si las salidas propias no están todas en el mismo estado. */
   reembolsoMixto: boolean;
-  /** Lo que el jefe escribió al observar: es lo que hay que subsanar. */
+  /** Lo que se escribió al observar: es lo que hay que subsanar. */
   observacionReembolso: string | null;
+  /**
+   * Quién la escribió: "Jefatura" o "Tesorería" (RG-49). Vacío si no hay observación. Importa
+   * decirlo: quien ya vio su planilla firmada va a preguntarle a su jefe si no se nombra a
+   * Tesorería.
+   */
+  observacionReembolsoOrigen: string;
   revisorNotificadoAt: string | null;
   /** True con la primera revisión aprobada y el reembolso abierto (RG-35). */
   puedeAdjuntarConsolidado: boolean;
+  /**
+   * True si el Consolidado del S10 es compartido con otras planillas todavía abiertas (lo adjuntó
+   * un consolidador para varias a la vez): se reemplaza entero, desde Gestión de Rendiciones.
+   */
+  consolidadoCompartido: boolean;
   puedeNotificarRevisor: boolean;
 
   // ── Corrección con el Coordinador ERP ──────────────────────────────────

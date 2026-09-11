@@ -1,7 +1,6 @@
 import { CandidatoFormularioResumen, FormularioCoincidencia } from './formulario-postulante.dto';
 import { CandidatoRechazado } from '../../shared/dtos/candidato-rechazado.dto';
 import { Seleccionado } from '../../shared/dtos/seleccionado.dto';
-import { RazonSocialCupo } from '../../../../shared/dtos/razon-social.dto';
 
 /** Opción genérica {id, nombre} para desplegables (p.ej. el catálogo de prioridades). */
 export interface Opcion {
@@ -76,8 +75,6 @@ export interface AsignacionGth {
   tipoProcesoId: number | null;
   /** Id de gth_prioridad (prioridad interna). */
   prioridadId: number | null;
-  /** Id de contributor (razón social activa). */
-  contributorId: number | null;
 }
 
 /** Opción del desplegable "Tipo de proceso y SLA". */
@@ -167,7 +164,6 @@ export interface DetalleRequerimientoGth {
   responsables: Opcion[];
   tiposProceso: TipoProcesoOpcion[];
   prioridades: Opcion[];
-  razonesSociales: RazonSocialCupo[];
   canales: CanalPublicacion[];
   /** Lugares donde se puede citar al candidato (desplegable de programación de entrevistas). */
   lugaresEntrevista: Opcion[];

@@ -158,13 +158,23 @@ export class ReembolsoDetalleModal implements OnInit {
 
   // ── Acciones ─────────────────────────────────────────────────────────
 
+  /** Devuelta por Tesorería y esperando la subsanación (RG-49): no se acciona nada más desde acá. */
+  get observada(): boolean {
+    return (this.detalle?.observadasCount ?? 0) > 0;
+  }
+
   get porRevisar(): boolean {
-    return (this.detalle?.porConfirmarCount ?? 0) > 0;
+    return !this.observada && (this.detalle?.porConfirmarCount ?? 0) > 0;
   }
 
   get porPagar(): boolean {
     const d = this.detalle;
-    return !!d && d.porConfirmarCount === 0 && d.porPagarCount > 0;
+    return !this.observada && !!d && d.porConfirmarCount === 0 && d.porPagarCount > 0;
+  }
+
+  /** Se puede observar desde los dos pasos previos al pago (RG-49). */
+  get puedeObservar(): boolean {
+    return this.porRevisar || this.porPagar;
   }
 
   async confirmarRevision(): Promise<void> {
@@ -184,6 +194,35 @@ export class ReembolsoDetalleModal implements OnInit {
     if (!result.isConfirmed) return;
 
     this.ejecutar(this.service.confirmarRevision({ rendicionIds: [d.id], solicitudIds: [] }));
+  }
+
+  /**
+   * Devuelve la planilla con un motivo. No va al Coordinador ERP directamente: vuelve al
+   * consolidador, que decide si recarga el Consolidado del S10 o le pide la corrección al ERP con
+   * su propio «MOTIVO *» (RG-21).
+   */
+  async observar(): Promise<void> {
+    const d = this.detalle;
+    if (!d || !this.puedeObservar) return;
+
+    const seleccion = { rendicionIds: [d.id], solicitudIds: [] };
+    const { value: observacion, isConfirmed } = await confirmarConCorreos({
+      icon: 'warning',
+      titulo: `¿Observar el reembolso de ${d.codigo}?`,
+      nota:
+        'Vuelve al consolidador para que recargue el Consolidado del S10 o le pida la corrección ' +
+        'al Coordinador ERP. Al recargarlo pasa otra vez por la firma de la jefatura.',
+      avisos: await pedirAvisos(this.service.correoPreviewObservacion(seleccion)),
+      observacion: {
+        label: 'Motivo',
+        placeholder: 'Qué tiene que corregirse en el Consolidado del S10…',
+      },
+      confirmButtonText: 'Observar',
+      confirmButtonColor: '#D30000',
+    });
+    if (!isConfirmed || !observacion) return;
+
+    this.ejecutar(this.service.observar({ ...seleccion, observacion }));
   }
 
   async marcarPagada(): Promise<void> {

@@ -46,6 +46,17 @@ export interface ReembolsoListItemDto {
   porConfirmarCount: number;
   /** Salidas ya confirmadas y sin pagar: es lo que se paga al marcar la planilla. */
   porPagarCount: number;
+  /**
+   * Salidas que la propia Tesorería devolvió y siguen esperando la subsanación (RG-49). Mientras
+   * sea > 0 la planilla no se toca desde acá: la pelota la tiene el consolidador.
+   */
+  observadasCount: number;
+
+  // ── Lo que Tesorería observó ────────────────────────────────────────────
+  /** Motivo con el que se devolvió la planilla. Null si no está observada. */
+  observacionReembolso: string | null;
+  observadoAt: string | null;
+  observadoPor: string | null;
 
   // ── Trazabilidad de Tesorería ───────────────────────────────────────────
   revisionTesoreriaAt: string | null;
@@ -109,6 +120,8 @@ export interface ResumenReembolsosDto {
   porRevisar: number;
   porPagar: number;
   montoPorPagar: number;
+  /** Planillas que Tesorería devolvió y esperan la subsanación (RG-49). */
+  observadas: number;
   pagadas: number;
 }
 
@@ -123,10 +136,15 @@ export interface ReembolsoFilterDataDto {
   periodos: PeriodoOptionDto[];
 }
 
-/** Planillas (o salidas sueltas) sobre las que actúan las dos acciones de Tesorería. */
+/** Planillas (o salidas sueltas) sobre las que actúan las tres acciones de Tesorería. */
 export interface ReembolsoSeleccionDto {
   rendicionIds: number[];
   solicitudIds: number[];
+}
+
+/** Lo mismo, con el motivo obligatorio con el que Tesorería devuelve el consolidado (RG-49). */
+export interface ReembolsoObservacionDto extends ReembolsoSeleccionDto {
+  observacion: string;
 }
 
 // ── Seguimiento (11.4 del requerimiento) ───────────────────────────────────

@@ -6,14 +6,10 @@
 
   <div class="flex flex-col gap-[14px] mt-[12px]">
 
-    <p class="text-xs text-gray-500 leading-relaxed">
-      El <b>orden</b> de la lista define la prioridad:
-      las solicitudes se envían al primer revisor <b>activo</b>. Desactiva a un revisor
-      (ej. durante su ausencia) para que se considere al siguiente. Sin revisores activos,
-      la solicitud se envía al área de <b>GTH</b>.
-    </p>
+    <!-- Aviso de estado, no explicación: el orden manda distinto en cada pantalla. -->
+    <p class="text-xs text-gray-500">{{ avisoRegla }}</p>
 
-    <!-- ── Filas de revisores (posición = prioridad) ───────────────────
+    <!-- ── Filas (posición = prioridad) ────────────────────────────────
          Sin overflow propio: el panel del app-search-select se posiciona con
          absolute y un contenedor con overflow-y-auto lo recortaría. Con muchas
          filas, el modal crece y el scroll lo hace el backdrop del base-modal. -->
@@ -21,7 +17,7 @@
       <div *ngFor="let row of rows; let i = index"
            class="flex items-center gap-[10px] border border-[#D6DEE5] rounded-lg px-[12px] py-[8px]">
 
-        <span class="shrink-0 w-[26px] h-[26px] rounded-full bg-[#E5F7D1] text-[#64BC04] text-xs font-bold flex items-center justify-center">
+        <span class="shrink-0 w-[26px] h-[26px] rounded-full bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)] text-xs font-bold flex items-center justify-center">
           {{ i + 1 }}
         </span>
 
@@ -30,15 +26,15 @@
             [options]="opcionesFila(i)"
             valueField="workerId"
             displayField="fullName"
-            [value]="row.revisorWorkerId"
-            (valueChange)="row.revisorWorkerId = $event"
-            placeholder="Seleccionar revisor...">
+            [value]="row.workerId"
+            (valueChange)="row.workerId = $event"
+            [placeholder]="'Seleccionar ' + singular.toLowerCase() + '...'">
           </app-search-select>
         </div>
 
         <!-- Activo / inactivo -->
         <label class="shrink-0 flex items-center gap-[6px] text-xs text-gray-600 cursor-pointer select-none">
-          <input type="checkbox" class="w-4 h-4 accent-[#64BC04] cursor-pointer"
+          <input type="checkbox" class="w-4 h-4 accent-[var(--color-abril-standard)] cursor-pointer"
                  [checked]="row.active"
                  (change)="row.active = !row.active" />
           Activo
@@ -56,28 +52,27 @@
 
         <button type="button" (click)="quitar(i)"
                 class="shrink-0 text-[#D30000] hover:bg-[#FAD5D4] rounded-full w-[26px] h-[26px] flex items-center justify-center cursor-pointer transition-colors"
-                title="Quitar revisor">
+                [title]="'Quitar ' + singular.toLowerCase()">
           ✕
         </button>
       </div>
 
       <p *ngIf="rows.length === 0" class="text-sm text-gray-400 text-center py-[16px]">
-        Sin revisores: las solicitudes de los trabajadores del área (sin revisores propios)
-        se enviarán al área de GTH.
+        Sin {{ plural.toLowerCase() }}: el área se resuelve por el algoritmo.
       </p>
     </div>
 
     <div>
       <button type="button" (click)="agregar()"
-        class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-[#64BC04] text-[#64BC04] hover:bg-[#E5F7D1] transition-colors cursor-pointer">
-        + Agregar revisor
+        class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-[var(--color-abril-standard)] text-[var(--color-abril-standard)] hover:bg-[var(--color-abril-standard-light)] transition-colors cursor-pointer">
+        + Agregar {{ singular.toLowerCase() }}
       </button>
     </div>
 
     <div class="flex justify-center mt-[6px]">
       <button (click)="guardar()"
         class="w-[180px] py-[9px] rounded-[10px] cursor-pointer transition-colors"
-        style="background:var(--color-abril-primary)">
+        style="background:var(--color-abril-standard)">
         <p class="text-white text-base font-medium text-center">Guardar</p>
       </button>
     </div>

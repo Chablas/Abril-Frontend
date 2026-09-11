@@ -1,0 +1,47 @@
+<app-base-modal
+  [title]="titulo"
+  width="w-[640px]"
+  (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[14px] mt-[12px]">
+
+    <div *ngIf="sinActivos"
+         class="text-xs text-[#92400E] bg-[#FEF9C3] px-[14px] py-[10px] rounded-lg">
+      {{ avisoSinActivos }}
+    </div>
+
+    <div class="w-full rounded-lg border border-[var(--color-abril-standard-border)] max-h-[52vh] overflow-y-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-[var(--color-abril-standard-light)] sticky top-0 z-10">
+          <tr class="text-[var(--color-abril-standard)]">
+            <th class="text-center px-[8px] py-[8px] font-semibold w-[80px]">Prioridad</th>
+            <th class="text-center px-[14px] py-[8px] font-semibold">{{ singular }}</th>
+            <th class="text-center px-[14px] py-[8px] font-semibold">Correo</th>
+            <th class="text-center px-[14px] py-[8px] font-semibold w-[130px]">Categoría</th>
+            <th class="text-center px-[8px] py-[8px] font-semibold w-[100px]">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let a of asignados" class="border-b" style="border-color:var(--color-abril-border)">
+            <td class="text-center py-[8px] font-semibold text-gray-600">{{ a.ordenPrioridad }}</td>
+            <td class="px-[14px] py-[8px] text-gray-700">{{ (a.fullName || '—') | titleCase }}</td>
+            <td class="px-[14px] py-[8px] text-gray-700">{{ a.email || '—' }}</td>
+            <td class="px-[14px] py-[8px] text-gray-700">{{ a.category || '—' }}</td>
+            <td class="text-center py-[8px]">
+              <app-status-badge
+                [text]="a.active ? 'ACTIVO' : 'INACTIVO'"
+                [bgColor]="a.active ? 'var(--color-abril-standard-light)' : '#FAD5D4'"
+                [textColor]="a.active ? 'var(--color-abril-standard)' : '#D30000'" />
+            </td>
+          </tr>
+          <tr *ngIf="asignados.length === 0">
+            <td colspan="5" class="text-center py-[24px] text-gray-400 text-sm">
+              Sin {{ plural.toLowerCase() }} asignados.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</app-base-modal>

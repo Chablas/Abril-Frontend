@@ -34,6 +34,22 @@
       </div>
     </div>
 
+    <!-- ── Lo que Tesorería devolvió (RG-49) ────────────────────────────────
+         Va arriba de todo el expediente: si la planilla está observada, eso es lo primero que hay
+         que leer, y explica por qué los botones de abajo no están. -->
+    <div *ngIf="observada && d.observacionReembolso"
+         class="border rounded-lg p-3 text-sm"
+         style="border-color:#FCA5A5;background:#FEF2F2;color:#991B1B">
+      <div class="flex flex-wrap items-baseline gap-x-2">
+        <span class="font-semibold">Observado por Tesorería:</span>
+        <span>{{ d.observacionReembolso }}</span>
+      </div>
+      <div *ngIf="d.observadoAt" class="mt-1 text-xs" style="color:#B91C1C">
+        {{ (d.observadoPor | titleCase) || 'Tesorería' }} · {{ d.observadoAt | date:'dd/MM/yyyy HH:mm' }}
+        · esperando que se vuelva a adjuntar el Consolidado del S10
+      </div>
+    </div>
+
     <!-- ── Firma de la jefatura ─────────────────────────────────────────────
          Es el requisito de RG-25: a Tesorería solo le llega lo firmado, y el nombre con la
          fecha/hora es lo que hace de esa aprobación una evidencia. -->
@@ -252,6 +268,21 @@
           <circle cx="12" cy="12" r="9"/>
         </svg>
         Confirmar revisión
+      </button>
+
+      <button
+        *ngIf="puedeObservar"
+        type="button"
+        (click)="observar()"
+        title="Devuelve el consolidado con un motivo. Vuelve al consolidador, que lo recarga o le pide la corrección al Coordinador ERP."
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors"
+        style="background:#FFFFFF;color:#D30000;border:1px solid #D30000">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <path stroke-linecap="round" d="M12 9v4M12 17h.01"/>
+        </svg>
+        Observar
       </button>
 
       <button

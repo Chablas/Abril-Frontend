@@ -66,6 +66,12 @@ export interface GestionRendicionListItemDto {
   estadoReembolso: EstadoReembolso;
   reembolsoMixto: boolean;
   observacionReembolso: string | null;
+  /**
+   * Quién la escribió: "Jefatura" o "Tesorería" (RG-49). Una planilla que devolvió Tesorería vuelve
+   * acá para que la jefatura la firme de nuevo, así que el revisor tiene que ver que no es su
+   * propia observación vieja.
+   */
+  observacionReembolsoOrigen: string;
   revisorNotificadoAt: string | null;
 
   // ── Qué se puede hacer con esta planilla ───────────────────────────────
@@ -77,6 +83,44 @@ export interface GestionRendicionListItemDto {
    * lo suyo, y la única excepción es tener el jefe personalizado apuntándose a sí mismo.
    */
   puedeDecidir: boolean;
+  /**
+   * True si el usuario puede adjuntar el Consolidado del S10 de esta planilla en nombre de sus
+   * trabajadores. Lo resuelve el backend con el mismo algoritmo que la pantalla de
+   * Consolidadores (lo asignado por área, o el Jefe/Gerente/residente que deduce), y hace falta
+   * poder por TODOS los trabajadores de `consolidadoConjunto`: el consolidado cubre esos
+   * documentos enteros.
+   *
+   * Ver la planilla no alcanza: alguien con visibilidad amplia la ve pero no necesariamente
+   * puede hacerle el trámite.
+   */
+  puedeConsolidar: boolean;
+  /**
+   * True si a esta planilla se le puede adjuntar (o cambiar) el Consolidado del S10: primera
+   * revisión aprobada y el reembolso de todas sus salidas por decidir. No mira permisos: para eso
+   * está `puedeConsolidar`.
+   */
+  puedeAdjuntarConsolidado: boolean;
+  /**
+   * Planillas que cubriría el consolidado adjuntado desde esta fila: ella primero y, si ya tiene uno
+   * compartido, las demás de ese consolidado que siguen abiertas (el documento se reemplaza entero),
+   * aunque la tabla no las muestre. Cada una con su monto completo.
+   */
+  consolidadoConjunto: ConsolidadoConjuntoItemDto[];
+  /**
+   * Razón social de los trabajadores de ese conjunto si es una sola y está cargada; null si se
+   * mezclan o si falta. Sirve para no ofrecer juntar planillas de razones sociales distintas.
+   */
+  razonSocialId: number | null;
+  razonSocial: string | null;
+}
+
+/** Una planilla que cubriría un Consolidado del S10, con su monto completo. */
+export interface ConsolidadoConjuntoItemDto {
+  id: number;
+  /** Código REN-AAAA-NNNN. */
+  codigo: string;
+  /** Monto de la planilla COMPLETA (todas sus salidas, de todos sus trabajadores). */
+  montoTotalPlanilla: number;
 }
 
 /**
