@@ -4,6 +4,7 @@
     badge="SSOMA · Gestión"
     titulo="PETS"
     subtitulo="Procedimientos Escritos de Trabajo Seguro — catálogo de pasos que jalan automáticamente OPT y otras herramientas."
+    [hasExtra]="true"
     [botonPrimario]="{ label: mostrarFormCrear ? 'Cancelar' : 'Nuevo PETS', icono: mostrarFormCrear ? 'ti-x' : 'ti-plus' }"
     (primaryClick)="toggleFormCrear()">
     <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
