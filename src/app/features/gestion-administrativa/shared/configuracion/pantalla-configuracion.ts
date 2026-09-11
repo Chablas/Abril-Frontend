@@ -18,6 +18,8 @@ interface PantallaDef {
   subtitulo: string;
   /** true = además de Correos, la pantalla tiene la sección «Días reembolsables». */
   conPlazo?: boolean;
+  /** true = además de Correos, la pantalla tiene la sección «Recordatorios». */
+  conRecordatorios?: boolean;
   /** Aviso para la pantalla que hoy no origina ningún correo. */
   textoSinCorreos?: string;
 }
@@ -26,16 +28,19 @@ interface PantallaDef {
  * Configuración de una pantalla de Gestión Administrativa.
  *
  * Reemplaza a la pantalla única `/gestion-administrativa/configuracion/correos`, donde convivían
- * los once correos del flujo sin decir de dónde salía cada uno. Ahora cada pantalla
- * —Solicitud de Salidas, Mis Rendiciones, Gestión de Salidas, Gestión de Rendiciones y
- * Reembolsos— tiene su botón «Configuración» y administra solo los correos que se originan en
- * ella; los que nacen de la decisión de un revisor (solicitud aprobada/rechazada, primera
- * revisión, reembolso) cuelgan de la pantalla del revisor que los dispara.
+ * los once correos del flujo sin decir de dónde salía cada uno. Ahora cada pantalla del flujo
+ * tiene su botón «Configuración» y administra solo los correos que se originan en ella; los que
+ * nacen de la decisión de un revisor (solicitud aprobada/rechazada, primera revisión, reembolso)
+ * cuelgan de la pantalla del revisor que los dispara.
  *
- * Es un solo componente para las cinco rutas (mismo patrón que el contenedor de Configuración del
- * módulo): la ruta dice qué pantalla es con `data.pantalla` y el resto sale de
- * <see cref="PANTALLAS"/>. Mis Rendiciones es la única con dos secciones, porque además de sus
- * correos administra el plazo para rendir («Días reembolsables»).
+ * Es un solo componente para todas esas rutas (mismo patrón que el contenedor de Configuración del
+ * módulo): la ruta dice qué pantalla es con `data.pantalla` y el resto sale de `PANTALLAS`.
+ *
+ * Solicitud de Salidas es la única con más de una sección, y las tres se acompañan: sus correos,
+ * el plazo para rendir («Días reembolsables») y los dos recordatorios que anuncian ese plazo. El
+ * plazo y los recordatorios vivían antes en Mis Rendiciones; se mudaron acá porque el trabajador
+ * rinde desde Solicitud de Salidas —es la pantalla con el botón «Rendir»— y es ahí donde el plazo
+ * se le aplica.
  *
  * El acceso lo restringe la feature 'gestion-administrativa.config.correos' (roleGuard en la
  * ruta), la misma que antes protegía la sección Correos y que sigue habilitando los botones.
@@ -57,19 +62,22 @@ export class GaPantallaConfiguracion implements OnInit {
   /** Ids de las secciones exteriores (las de arriba de las subsecciones de cada correo). */
   private static readonly SECCION_CORREOS = 'correos';
   private static readonly SECCION_PLAZO = 'dias-reembolsables';
+  private static readonly SECCION_RECORDATORIOS = 'recordatorios';
 
   private static readonly PANTALLAS: Record<CorreoPantalla, PantallaDef> = {
     'solicitud-salidas': {
       nombre: 'Solicitud de Salidas',
       volverA: '/gestion-administrativa/solicitud-salidas',
-      subtitulo: 'Los correos que salen al registrar una solicitud de salida y quién los recibe.',
+      subtitulo:
+        'Los correos que salen al registrar una solicitud, el plazo para rendir y los recordatorios de ese plazo.',
+      conPlazo: true,
+      conRecordatorios: true,
     },
     rendiciones: {
       nombre: 'Mis Rendiciones',
       volverA: '/gestion-administrativa/rendiciones',
       subtitulo:
-        'Los correos que el trabajador dispara sobre su planilla y el plazo que tiene para rendir.',
-      conPlazo: true,
+        'Los correos que el trabajador dispara sobre su planilla y quién los recibe.',
     },
     'gestion-salidas': {
       nombre: 'Gestión de Salidas',
@@ -88,6 +96,12 @@ export class GaPantallaConfiguracion implements OnInit {
       subtitulo: 'Los correos que se originan en la bandeja de Tesorería y quién los recibe.',
       textoSinCorreos:
         'Reembolsos no envía correos: marcar una planilla como pagada no avisa a nadie.',
+    },
+    'correcciones-s10': {
+      nombre: 'Correcciones S10',
+      volverA: '/gestion-administrativa/correcciones-s10',
+      subtitulo:
+        'El correo que el Coordinador ERP dispara al marcar una corrección como atendida, y quién lo recibe.',
     },
   };
 
@@ -131,11 +145,17 @@ export class GaPantallaConfiguracion implements OnInit {
    * ningún otro lado (mismo criterio que las subsecciones de cada correo).
    */
   get secciones(): SectionTab[] {
-    if (!this.def.conPlazo) return [];
-    return [
+    if (!this.def.conPlazo && !this.def.conRecordatorios) return [];
+
+    const tabs: SectionTab[] = [
       { id: GaPantallaConfiguracion.SECCION_CORREOS, label: 'Correos' },
-      { id: GaPantallaConfiguracion.SECCION_PLAZO, label: 'Días reembolsables' },
     ];
+    if (this.def.conPlazo)
+      tabs.push({ id: GaPantallaConfiguracion.SECCION_PLAZO, label: 'Días reembolsables' });
+    if (this.def.conRecordatorios)
+      tabs.push({ id: GaPantallaConfiguracion.SECCION_RECORDATORIOS, label: 'Recordatorios' });
+
+    return tabs;
   }
 
   get mostrandoCorreos(): boolean {
@@ -144,6 +164,13 @@ export class GaPantallaConfiguracion implements OnInit {
 
   get mostrandoPlazo(): boolean {
     return !!this.def.conPlazo && this.seccionActiva === GaPantallaConfiguracion.SECCION_PLAZO;
+  }
+
+  get mostrandoRecordatorios(): boolean {
+    return (
+      !!this.def.conRecordatorios &&
+      this.seccionActiva === GaPantallaConfiguracion.SECCION_RECORDATORIOS
+    );
   }
 
   onSeccionChange(id: string): void {

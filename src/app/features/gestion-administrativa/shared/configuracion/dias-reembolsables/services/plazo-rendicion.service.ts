@@ -5,13 +5,14 @@ import { environment } from '../../../../../../../environments/environment';
 import { PlazoRendicion, PlazoRendicionSaveResult } from '../dtos/plazo-rendicion.dto';
 
 /**
- * Plazo de rendición (sección "Días reembolsables"). Cuelga de la configuración de Mis
- * Rendiciones, igual que los correos de esa misma pantalla.
+ * Plazo de rendición (sección "Días reembolsables"). Cuelga de la configuración de Solicitud de
+ * Salidas, igual que los correos y los recordatorios de esa misma pantalla: el trabajador rinde
+ * desde ahí, así que es ahí donde se administra hasta cuándo puede hacerlo.
  */
 @Injectable({ providedIn: 'root' })
 export class PlazoRendicionService {
   private readonly apiUrl =
-    `${environment.apiUrl}api/v1/gestion-administrativa/rendiciones/configuracion/plazo`;
+    `${environment.apiUrl}api/v1/gestion-administrativa/solicitud-salidas/configuracion/plazo`;
 
   constructor(private http: HttpClient) {}
 

@@ -37,7 +37,7 @@ export interface GestionSalidaListItemDto {
   esReembolsable: boolean;
   /**
    * Último día para rendir esta salida (YYYY-MM-DD): el N.º día hábil del mes siguiente al de su (N sale de
-   * Mis Rendiciones → Configuración → Días reembolsables)
+   * Solicitud de Salidas → Configuración → Días reembolsables)
    * fecha de salida, sin sábados, domingos ni los feriados de Configuración → Feriados.
    */
   plazoRendicionHasta: string;
@@ -136,7 +136,7 @@ export interface MesRendicionDto {
   cantidad: number;
   /**
    * Último día para rendir ese mes (YYYY-MM-DD): el N.º día hábil del mes siguiente, con N
-   * configurable en Mis Rendiciones → Configuración → Días reembolsables. Solo se
+   * configurable en Solicitud de Salidas → Configuración → Días reembolsables. Solo se
    * ofrecen meses cuyo plazo sigue abierto, así que siempre es de hoy en adelante.
    */
   fechaLimite: string;

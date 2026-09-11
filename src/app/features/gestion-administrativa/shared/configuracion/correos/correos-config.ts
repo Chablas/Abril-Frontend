@@ -9,6 +9,7 @@ import {
   CorreoAreaOption,
   CorreoDestinatario,
   CorreoEvento,
+  CorreoGrupo,
   CorreoPantalla,
   CorreoTipoCodigo,
   CorreoWorkerOption,
@@ -22,11 +23,15 @@ import { SearchSelect } from '../../../../../shared/components/search-select/sea
 /**
  * Matriz de destinatarios de los correos de una pantalla del flujo de salidas.
  *
- * La comparten las cinco configuraciones del módulo (Solicitud de Salidas, Mis Rendiciones,
- * Gestión de Salidas, Gestión de Rendiciones y Reembolsos): el `pantalla` decide qué correos
- * administra cada una, y las subsecciones salen de lo que devuelve el backend, no de una lista
- * escrita acá. Reemplaza a la pantalla única Configuración → Correos, donde los once correos del
- * flujo estaban juntos sin decir de dónde salía cada uno.
+ * La comparten todas las configuraciones del módulo: el `pantalla` decide qué correos administra
+ * cada una, el `grupo` en qué sección aparecen, y las subsecciones salen de lo que devuelve el
+ * backend, no de una lista escrita acá. Reemplaza a la pantalla única Configuración → Correos,
+ * donde los once correos del flujo estaban juntos sin decir de dónde salía cada uno.
+ *
+ * La sección Recordatorios de Solicitud de Salidas monta este mismo componente con
+ * `grupo="recordatorios"`: los dos avisos del plazo se configuran igual que cualquier correo
+ * —interruptor maestro, destinatario principal y destinatarios extra— y lo único que cambia es
+ * cómo se los nombra (ver `labelMaestro` y `textoApagado`).
  *
  * Una subsección (`app-section-tabs`) por correo, con su interruptor maestro (apagado = ese correo
  * no se envía a nadie) y la matriz de sus destinatarios, cada uno con su propio interruptor —
@@ -72,6 +77,13 @@ import { SearchSelect } from '../../../../../shared/components/search-select/sea
 export class GaCorreosConfig implements OnChanges {
   /** Pantalla cuya configuración se está viendo: define qué correos trae y sobre cuáles escribe. */
   @Input({ required: true }) pantalla!: CorreoPantalla;
+
+  /**
+   * Sección de esa pantalla: los correos del flujo o los recordatorios del plazo de rendición.
+   * Son la misma matriz de destinatarios sobre datos distintos, así que la sección Recordatorios
+   * monta este mismo componente en vez de duplicarlo.
+   */
+  @Input() grupo: CorreoGrupo = 'correos';
 
   /**
    * Aviso de estado para la pantalla que hoy no origina ningún correo (Reembolsos). Se recibe de
@@ -131,6 +143,8 @@ export class GaCorreosConfig implements OnChanges {
     REEMBOLSO_RECHAZADO: 'Reembolso observado',
     TESORERIA_REEMBOLSO: 'Aviso a Tesorería',
     REEMBOLSO_PAGADO: 'Reembolso pagado',
+    RECORDATORIO_RENDICION_APERTURA: 'Primer día hábil',
+    RECORDATORIO_RENDICION_CIERRE: 'Último día para rendir',
   };
 
   constructor(
@@ -141,11 +155,12 @@ export class GaCorreosConfig implements OnChanges {
   ) {}
 
   /**
-   * Se recarga cuando cambia la pantalla y no solo al crearse: las cinco configuraciones montan
-   * el mismo contenedor, así que ir de una a otra puede reusar esta instancia con otro `pantalla`.
+   * Se recarga cuando cambia la pantalla o la sección y no solo al crearse: las configuraciones
+   * montan el mismo contenedor, así que ir de una a otra puede reusar esta instancia con otro
+   * `pantalla`.
    */
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['pantalla']) {
+    if (changes['pantalla'] || changes['grupo']) {
       this.eventoActivoCodigo = null;
       this.load();
     }
@@ -154,7 +169,7 @@ export class GaCorreosConfig implements OnChanges {
   load(): void {
     this.loading = true;
     this.loaderService.show();
-    this.service.getInicial(this.pantalla).subscribe({
+    this.service.getInicial(this.pantalla, this.grupo).subscribe({
       next: (data) => {
         this.eventos = data.eventos ?? [];
         this.trabajadores = (data.trabajadores ?? []).sort((a, b) =>
@@ -218,6 +233,37 @@ export class GaCorreosConfig implements OnChanges {
   /** La pantalla no origina ningún correo (hoy, solo Reembolsos). */
   get sinCorreos(): boolean {
     return !this.loading && this.eventos.length === 0;
+  }
+
+  // ── Vocabulario de la sección ────────────────────────────────────────────
+  // Los dos grupos usan la misma matriz pero no se llaman igual: en Recordatorios el interruptor
+  // maestro apaga un recordatorio, no un correo. Es lo único que cambia entre secciones.
+
+  private get esRecordatorio(): boolean {
+    return this.grupo === 'recordatorios';
+  }
+
+  /** Ícono del encabezado de la tarjeta. */
+  get iconoEvento(): string {
+    return this.esRecordatorio ? 'ti-bell' : 'ti-mail';
+  }
+
+  /** Ícono del aviso de "apagado". */
+  get iconoApagado(): string {
+    return this.esRecordatorio ? 'ti-bell-off' : 'ti-mail-off';
+  }
+
+  /** Etiqueta del interruptor maestro, según esté prendido o apagado. */
+  get labelMaestro(): string {
+    const sustantivo = this.esRecordatorio ? 'Recordatorio' : 'Correo';
+    return `${sustantivo} ${this.eventoActivo?.active ? 'activo' : 'desactivado'}`;
+  }
+
+  /** Aviso de estado cuando el interruptor maestro está apagado. */
+  get textoApagado(): string {
+    return this.esRecordatorio
+      ? 'Desactivado: este recordatorio no se envía a nadie.'
+      : 'Desactivado: este correo no se envía a nadie.';
   }
 
   onSectionChange(codigo: string): void {

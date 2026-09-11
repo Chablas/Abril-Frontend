@@ -9,7 +9,7 @@ import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 
 /**
- * Sección "Días reembolsables" de Mis Rendiciones → Configuración: cuántos días hábiles del mes
+ * Sección "Días reembolsables" de Solicitud de Salidas → Configuración: cuántos días hábiles del mes
  * siguiente dura el plazo para rendir un mes. Era un 7 escrito en el backend; ahora vive en
  * `ga_rendicion_config` y se cambia acá.
  *

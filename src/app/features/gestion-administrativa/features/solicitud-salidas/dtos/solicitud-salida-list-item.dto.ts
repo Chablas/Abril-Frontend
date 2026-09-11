@@ -28,7 +28,7 @@ export interface SolicitudSalidaListItemDto {
   esReembolsable: boolean;
   /**
    * Último día para rendir esta salida (YYYY-MM-DD): el N.º día hábil del mes siguiente al de su (N sale de
-   * Mis Rendiciones → Configuración → Días reembolsables)
+   * Solicitud de Salidas → Configuración → Días reembolsables)
    * fecha de salida, sin sábados, domingos ni los feriados de Configuración → Feriados.
    */
   plazoRendicionHasta: string;

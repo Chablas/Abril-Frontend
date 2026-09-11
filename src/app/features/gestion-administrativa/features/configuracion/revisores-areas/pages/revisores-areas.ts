@@ -11,7 +11,7 @@ import {
   AreaRevisorAsignadoDTO,
   AreaRevisorItemDTO,
   AreaRevisorOptionDTO,
-  ProyectoOptionDTO,
+  RevisorEfectivoOrigen,
 } from '../dtos/areaRevisor.model';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
@@ -53,9 +53,6 @@ export class RevisoresAreas implements OnInit {
 
   rows: AreaRevisorItemDTO[] = [];
   options: AreaRevisorOptionDTO[] = [];
-  /** Todos los proyectos activos (para armar las subfilas de las áreas filtradas por proyecto). */
-  proyectos: ProyectoOptionDTO[] = [];
-
   searchText = '';
   /** Filtro por revisor asignado: workerId del revisor o null = todos. */
   revisorFilter: number | null = null;
@@ -107,7 +104,6 @@ export class RevisoresAreas implements OnInit {
       next: (data) => {
         this.rows = data.areas;
         this.options = data.options;
-        this.proyectos = data.proyectos ?? [];
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -170,7 +166,10 @@ export class RevisoresAreas implements OnInit {
     this.service.setFiltroProyecto(item.areaScopeId, { filtraPorProyecto: nuevo }).subscribe({
       next: () => {
         item.filtraPorProyecto = nuevo;
-        this.loaderService.hide();
+        // Recargar y no solo marcar la casilla: las subfilas por proyecto las arma el backend
+        // (una por proyecto activo, con su revisor efectivo ya resuelto), así que al prender el
+        // flag no hay de dónde sacarlas sin volver a pedirlas. `load()` cierra el loader.
+        this.load();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -179,14 +178,12 @@ export class RevisoresAreas implements OnInit {
     });
   }
 
-  /** Subfilas de proyecto de un área filtrada: un proyecto por cada proyecto activo, con sus revisores. */
+  /**
+   * Subfilas de proyecto de un área filtrada. El backend ya manda una por cada proyecto activo,
+   * con su revisor efectivo resuelto; acá no se sintetiza ninguna.
+   */
   proyectosDeArea(item: AreaRevisorItemDTO): AreaProyectoRevisoresDTO[] {
-    const asignados = new Map<number, AreaProyectoRevisoresDTO>();
-    for (const p of item.proyectos ?? []) asignados.set(p.projectId, p);
-    return this.proyectos.map(
-      (p) =>
-        asignados.get(p.projectId) ?? { projectId: p.projectId, projectName: p.projectName, revisores: [] },
-    );
+    return item.proyectos ?? [];
   }
 
   /**
@@ -209,16 +206,38 @@ export class RevisoresAreas implements OnInit {
     return this.revisoresOrdenados(revisores).find((r) => r.active);
   }
 
+  /** Cuántos revisores asignados cuentan hoy, para el contador "+N más". */
+  revisoresActivos(revisores: AreaRevisorAsignadoDTO[]): number {
+    return (revisores ?? []).filter((r) => r.active).length;
+  }
+
+  /**
+   * Etiqueta entre paréntesis de la columna: si al revisor lo puso alguien a mano o lo dedujo el
+   * sistema. `Gth` es el último recurso, cuando el área no tiene ni asignación ni jefe/gerente en
+   * toda su rama.
+   */
+  origenLabel(origen?: RevisorEfectivoOrigen | null): string {
+    if (origen === 'Personalizado') return 'Personalizado';
+    if (origen === 'Gth') return 'Por defecto';
+    return 'Algoritmo';
+  }
+
   // ── Filtros ───────────────────────────────────────────────────────────
 
   get filteredRows(): AreaRevisorItemDTO[] {
     return this.rows.filter((r) => {
+      // Los filtros miran el revisor EFECTIVO (el del área y el de cada uno de sus proyectos),
+      // no solo lo asignado a mano: si no, buscar a alguien que el algoritmo puso como revisor
+      // no devolvería nada y la pantalla parecería vacía.
+      const efectivos = [r, ...(r.proyectos ?? [])];
       const matchesName =
         !this.searchText.trim() ||
         SearchInput.matches(r.areaName ?? '', this.searchText) ||
+        efectivos.some((e) => SearchInput.matches(e.revisorEfectivoNombre ?? '', this.searchText)) ||
         (r.revisores ?? []).some((rev) => SearchInput.matches(rev.revisorFullName ?? '', this.searchText));
       const matchesRevisor =
         this.revisorFilter == null ||
+        efectivos.some((e) => e.revisorEfectivoWorkerId === this.revisorFilter) ||
         (r.revisores ?? []).some((rev) => rev.revisorWorkerId === this.revisorFilter);
       const matchesParent = this.parentFilter == null || r.parentName === this.parentFilter;
       return matchesName && matchesRevisor && matchesParent;

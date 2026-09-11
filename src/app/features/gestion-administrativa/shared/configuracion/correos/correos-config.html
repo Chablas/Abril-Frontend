@@ -4,7 +4,7 @@
        tocar código, así que se dice qué pasa hoy y nada más. -->
   <div class="config-card" *ngIf="sinCorreos">
     <p class="config-warn">
-      <i class="ti ti-mail-off"></i>
+      <i class="ti" [ngClass]="iconoApagado"></i>
       <span>{{ textoSinCorreos }}</span>
     </p>
   </div>
@@ -24,7 +24,7 @@
       <div class="config-card__head config-card__head--row">
         <div class="config-card__headtext">
           <h3 class="config-card__title">
-            <i class="ti ti-mail"></i>
+            <i class="ti" [ngClass]="iconoEvento"></i>
             {{ evento.nombre }}
           </h3>
           <p class="config-card__sub" *ngIf="evento.descripcion">{{ evento.descripcion }}</p>
@@ -33,7 +33,7 @@
         <!-- Interruptor maestro: apaga el correo completo sin perder su configuración -->
         <div class="master" *ngIf="evento.permiteDesactivarEnvio">
           <span class="master__label" [class.master__label--off]="!evento.active">
-            {{ evento.active ? 'Correo activo' : 'Correo desactivado' }}
+            {{ labelMaestro }}
           </span>
           <button
             type="button"
@@ -51,8 +51,8 @@
 
       <!-- Avisos de estado, no explicaciones: uno solo y de una línea. -->
       <p class="config-warn config-warn--off" *ngIf="!evento.active">
-        <i class="ti ti-mail-off"></i>
-        <span>Desactivado: este correo no se envía a nadie.</span>
+        <i class="ti" [ngClass]="iconoApagado"></i>
+        <span>{{ textoApagado }}</span>
       </p>
 
       <p class="config-warn" *ngIf="sinDestinatarios">

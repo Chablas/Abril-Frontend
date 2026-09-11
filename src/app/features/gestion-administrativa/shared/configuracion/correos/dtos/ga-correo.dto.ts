@@ -27,13 +27,23 @@
  *  • `gestion-rendiciones` → las dos decisiones del revisor sobre la planilla (1.ª revisión y
  *                            reembolso).
  *  • `reembolsos`          → Tesorería: hoy ninguno (marcar pagado no envía correos).
+ *  • `correcciones-s10`    → la bandeja del Coordinador ERP: el aviso de que ya corrigió.
  */
 export type CorreoPantalla =
   | 'solicitud-salidas'
   | 'rendiciones'
   | 'gestion-salidas'
   | 'gestion-rendiciones'
-  | 'reembolsos';
+  | 'reembolsos'
+  | 'correcciones-s10';
+
+/**
+ * Sección de la pantalla en la que aparece el correo (`ga_correo_grupo`). Es ortogonal a
+ * `CorreoPantalla`: la pantalla dice DÓNDE se administra y el grupo EN QUÉ SECCIÓN aparece.
+ *  • `correos`       → los del flujo, que dispara la acción de alguien.
+ *  • `recordatorios` → los del plazo de rendición, que dispara el cron porque llegó el día.
+ */
+export type CorreoGrupo = 'correos' | 'recordatorios';
 
 /** Códigos estables del catálogo de tipos de destinatario. */
 export type CorreoTipoCodigo = 'TRABAJADOR' | 'AREA' | 'CORREO';

@@ -17,7 +17,28 @@ export interface AreaProyectoRevisoresDTO {
   projectId: number;
   projectName: string;
   revisores: AreaRevisorAsignadoDTO[];
+  /**
+   * El revisor que realmente le toca hoy a este proyecto: lo asignado al proyecto, si no lo
+   * asignado al área, y si no el residente de la obra. Lo resuelve el backend con el mismo
+   * algoritmo que decide a quién se le manda a aprobar una salida.
+   */
+  revisorEfectivoNombre?: string | null;
+  /** Ver `RevisorEfectivoOrigen`. */
+  revisorEfectivoOrigen?: RevisorEfectivoOrigen | null;
+  /** Ficha del revisor efectivo, para que el filtro por revisor lo encuentre. Null en el fallback GTH. */
+  revisorEfectivoWorkerId?: number | null;
 }
+
+/**
+ * De dónde salió el revisor efectivo, VISTO DESDE ESTA FILA:
+ * - `Personalizado`: alguien lo asignó a mano para esta área (o para esta área + este proyecto).
+ * - `Algoritmo`: lo resolvió el sistema — lo dedujo de la estructura (el residente de la obra, el
+ *   Jefe del área, el Gerente de la gerencia) o subió por el árbol hasta la configuración de OTRA
+ *   área. Un revisor puesto a mano en la gerencia es `Algoritmo` para las áreas de más abajo: esas
+ *   filas no tienen revisor propio y no deben leerse como si lo tuvieran.
+ * - `Gth`: último recurso, el correo del área de GTH.
+ */
+export type RevisorEfectivoOrigen = 'Personalizado' | 'Algoritmo' | 'Gth';
 
 /**
  * Una fila por área de tipo "Área de Gerencia" o "Área Estándar" que sea el primer
@@ -36,8 +57,17 @@ export interface AreaRevisorItemDTO {
   revisores: AreaRevisorAsignadoDTO[];
   /** true = el área se subdivide por proyecto (se muestran subfilas por proyecto). */
   filtraPorProyecto: boolean;
-  /** Proyectos del área que ya tienen revisores asignados (solo si filtraPorProyecto). */
+  /** TODOS los proyectos activos con su revisor efectivo (solo si filtraPorProyecto). */
   proyectos: AreaProyectoRevisoresDTO[];
+  /**
+   * El revisor que realmente le toca hoy a un trabajador de esta área: lo asignado acá si hay
+   * algo, y si no lo que deduce el algoritmo (el Jefe del área, o el Gerente si es una gerencia),
+   * subiendo por el árbol.
+   */
+  revisorEfectivoNombre?: string | null;
+  revisorEfectivoOrigen?: RevisorEfectivoOrigen | null;
+  /** Ficha del revisor efectivo, para que el filtro por revisor lo encuentre. Null en el fallback GTH. */
+  revisorEfectivoWorkerId?: number | null;
 }
 
 export interface AreaRevisorOptionDTO {
@@ -46,18 +76,10 @@ export interface AreaRevisorOptionDTO {
   email?: string;
 }
 
-/** Opción/subfila de proyecto. */
-export interface ProyectoOptionDTO {
-  projectId: number;
-  projectName: string;
-}
-
 /** Carga inicial de la página: áreas configurables con sus revisores + opciones del selector. */
 export interface AreaRevisorInicialDTO {
   areas: AreaRevisorItemDTO[];
   options: AreaRevisorOptionDTO[];
-  /** Todos los proyectos activos, para armar las subfilas y el selector de proyecto. */
-  proyectos: ProyectoOptionDTO[];
 }
 
 /** Una asignación de revisor dentro del PUT. */

@@ -5,6 +5,7 @@ import { environment } from '../../../../../../../environments/environment';
 import {
   CorreoConfigInicial,
   CorreoDestinatarioInput,
+  CorreoGrupo,
   CorreoPantalla,
 } from '../dtos/ga-correo.dto';
 
@@ -31,9 +32,14 @@ export class CorreosService {
     return { Authorization: `Bearer ${token}` };
   }
 
-  /** Carga inicial: correos con sus destinatarios + opciones de los desplegables (1 petición). */
-  getInicial(pantalla: CorreoPantalla): Observable<CorreoConfigInicial> {
-    return this.http.get<CorreoConfigInicial>(this.base(pantalla), { headers: this.headers });
+  /**
+   * Carga inicial de una sección: sus correos con destinatarios + opciones de los desplegables
+   * (1 petición). El `grupo` separa los correos del flujo de los recordatorios del plazo; se
+   * omite en la petición cuando es `correos` para no ensuciar la URL del caso normal.
+   */
+  getInicial(pantalla: CorreoPantalla, grupo: CorreoGrupo = 'correos'): Observable<CorreoConfigInicial> {
+    const url = grupo === 'correos' ? this.base(pantalla) : `${this.base(pantalla)}?grupo=${grupo}`;
+    return this.http.get<CorreoConfigInicial>(url, { headers: this.headers });
   }
 
   /** Prende o apaga un correo completo (interruptor maestro de la sección). */

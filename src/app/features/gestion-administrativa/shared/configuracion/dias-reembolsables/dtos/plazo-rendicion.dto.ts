@@ -1,5 +1,5 @@
 /**
- * Sección "Días reembolsables" de Mis Rendiciones → Configuración: cuántos días hábiles del mes
+ * Sección "Días reembolsables" de Solicitud de Salidas → Configuración: cuántos días hábiles del mes
  * siguiente dura el plazo para rendir un mes. Antes era un 7 escrito en el backend
  * (`CalendarioNoLaborable.DiasHabilesDePlazo`).
  */

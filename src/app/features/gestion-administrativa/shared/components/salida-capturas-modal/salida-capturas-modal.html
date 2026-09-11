@@ -7,14 +7,23 @@
 
   <div *ngIf="detalle" class="flex flex-col gap-4 pt-4">
 
-    <p class="text-xs text-gray-500">
-      <ng-container *ngIf="!subsanacion">
-        Cada trayecto debe tener al menos una captura (imagen + monto) antes de poder rendir la solicitud.
-      </ng-container>
-      <ng-container *ngIf="subsanacion">
-        Al terminar, vuelve a generar la rendición para que la planilla salga con estos montos.
-      </ng-container>
-    </p>
+    <!-- El tope es de CADA trayecto y por eso se pinta en la cabecera de cada uno, no acá
+         arriba: varios trayectos pueden sumar más que el tope entre todos, que es justamente lo
+         que la planilla resuelve repartiendo el exceso al día siguiente. -->
+    <div class="flex items-start justify-between gap-4">
+      <p class="text-xs text-gray-500">
+        <ng-container *ngIf="!subsanacion">
+          Cada trayecto debe tener al menos una captura (imagen + monto) antes de poder rendir la solicitud.
+        </ng-container>
+        <ng-container *ngIf="subsanacion">
+          Al terminar, vuelve a generar la rendición para que la planilla salga con estos montos.
+        </ng-container>
+      </p>
+      <div class="text-[11px] font-semibold whitespace-nowrap flex-shrink-0 rounded-md px-2 py-1"
+           style="color:var(--color-abril-standard);background:var(--color-abril-standard-light)">
+        Tope por trayecto: S/ {{ limiteTrayecto | number:'1.2-2' }}
+      </div>
+    </div>
 
     <div *ngFor="let t of detalle.trayectos"
          class="border rounded-lg p-4 flex flex-col gap-3" style="border-color:var(--color-abril-border)">
@@ -29,8 +38,14 @@
           </div>
           <div class="text-xs text-gray-400">{{ t.motivo }}</div>
         </div>
-        <div *ngIf="totalCapturasTrayecto(t) > 0" class="text-xs font-medium text-gray-700">
-          S/ {{ totalCapturasTrayecto(t) | number:'1.2-2' }}
+        <!-- Lo que va cargando el trayecto contra su tope, en vivo. Vira a ámbar al pasarse;
+             guardar se apaga solo si el lote EMPEORA el exceso, para que un trayecto que ya
+             venía por encima se pueda seguir corrigiendo hacia abajo (misma regla en backend). -->
+        <div *ngIf="importeEnPantalla(t) > 0"
+             class="text-xs font-semibold flex-shrink-0"
+             [style.color]="excedeTope(t) ? 'var(--color-abril-warning-dark)' : 'var(--color-abril-standard)'">
+          S/ {{ importeEnPantalla(t) | number:'1.2-2' }}
+          <span class="font-normal text-gray-400">/ {{ limiteTrayecto | number:'1.2-2' }}</span>
         </div>
       </div>
 

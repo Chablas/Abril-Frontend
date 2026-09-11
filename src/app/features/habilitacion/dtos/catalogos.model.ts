@@ -44,8 +44,13 @@ export interface SubareaCatDto {
 /**
  * Un nodo del árbol de áreas (`area_scope`) para los desplegables en cascada del formulario de
  * trabajadores. El backend ya resuelve por nodo la equivalencia legacy (`area`/`subarea`/`jefatura`,
- * lo que quedará guardado si se elige el nodo) y los revisores que le tocarían al trabajador, así
- * que el formulario no replica ninguna regla ni pide nada más al cambiar de área.
+ * lo que quedará guardado si se elige el nodo) y **el revisor ya elegido** que le tocaría al
+ * trabajador, así que el formulario no replica ninguna regla ni pide nada más al cambiar de área:
+ * lee `revisor`, o `revisorPorProyecto[proyecto]` si el área filtra por proyecto, y lo muestra.
+ *
+ * Elegir es parte del algoritmo y vive en el backend (`JefeRevisorResolver`), en el mismo lugar del
+ * que sale el revisor al que se le manda a aprobar una salida. Si acá se vuelve a decidir algo, las
+ * dos pantallas pueden volver a mostrar jefes distintos — que es el bug que esto cerró.
  */
 export interface AreaArbolNodoDto {
   areaScopeId: number;
@@ -58,20 +63,23 @@ export interface AreaArbolNodoDto {
   subarea?: string | null;
   jefatura?: string | null;
   /**
-   * Candidatos a revisor en orden de resolución: los de este nodo, después los de sus áreas
-   * superiores y al final el área de GTH. El formulario muestra el primero que no sea el propio
-   * trabajador — los jefes de área son el revisor de su área, así que sin descartarlo se verían
-   * como su propio jefe.
+   * El revisor que le toca a un trabajador de este nodo, ya elegido por el backend descartando al
+   * propio trabajador cuando el árbol se pidió con `workerId`. Null si la rama no tiene ninguno.
    */
-  revisores: AreaArbolRevisorDto[];
-  /** Revisores por proyecto, solo en áreas configuradas como "filtrar por proyecto". */
-  revisoresPorProyecto: AreaArbolRevisorProyectoDto[];
+  revisor?: AreaArbolRevisorDto | null;
+  /**
+   * True cuando el primer candidato de la rama era el propio trabajador y por eso `revisor` es el
+   * siguiente. Lo normal en los jefes de área, que son el revisor de su propia área: el formulario
+   * lo avisa para que no se lea como un error de configuración.
+   */
+  esRevisorDeSuPropiaArea: boolean;
+  /** El revisor por proyecto, solo en áreas configuradas como "filtrar por proyecto". */
+  revisorPorProyecto: AreaArbolRevisorProyectoDto[];
 }
 
 /**
- * Un candidato a revisor. `workerId`/`personId` son con lo que el formulario reconoce al propio
- * trabajador (por persona, porque un reingreso deja varias fichas para la misma persona); ambos
- * vienen en null cuando el candidato es el área de GTH.
+ * Un revisor. `workerId`/`personId` vienen en null cuando el revisor es el área de GTH (el
+ * fallback), que es un correo de área y no una persona.
  */
 export interface AreaArbolRevisorDto {
   workerId?: number | null;
@@ -82,7 +90,8 @@ export interface AreaArbolRevisorDto {
 
 export interface AreaArbolRevisorProyectoDto {
   proyectoId: number;
-  revisores: AreaArbolRevisorDto[];
+  revisor?: AreaArbolRevisorDto | null;
+  esRevisorDeSuPropiaArea: boolean;
 }
 
 /**
