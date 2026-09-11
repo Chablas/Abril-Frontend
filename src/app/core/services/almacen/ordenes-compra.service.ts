@@ -30,12 +30,15 @@ export class OrdenesCompraService {
     return this.http.get<AlmacenOrdenCompraListResponseDTO>(this.apiUrl, { params, headers: this.authHeaders() });
   }
 
-  crearOrdenCompra(body: CreateAlmacenOrdenCompraBody, archivo: File): Observable<AlmacenOrdenCompraListItemDTO> {
+  crearOrdenCompra(
+    body: CreateAlmacenOrdenCompraBody,
+    archivo: File | null,
+  ): Observable<AlmacenOrdenCompraListItemDTO> {
     const form = new FormData();
     Object.entries(body).forEach(([key, value]) => {
       if (value !== null && value !== undefined) form.append(key, String(value));
     });
-    form.append('archivo', archivo);
+    if (archivo) form.append('archivo', archivo);
     return this.http.post<AlmacenOrdenCompraListItemDTO>(this.apiUrl, form, { headers: this.authHeaders() });
   }
 

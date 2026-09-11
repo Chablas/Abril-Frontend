@@ -204,6 +204,10 @@
                         title="Editar observación" class="text-sm text-gray-400 hover:text-gray-600">
                   <i class="ti ti-pencil"></i>
                 </button>
+                <button *ngIf="puedeEliminar" type="button" (click)="eliminarObservacion(o)"
+                        title="Eliminar observación" class="text-sm text-red-400 hover:text-red-600">
+                  <i class="ti ti-trash"></i>
+                </button>
                 <button
                   *ngIf="o.estado !== 'Completado'"
                   (click)="abrirLevantar(o)"
@@ -362,9 +366,12 @@
         </div>
       </div>
 
-      <div class="flex justify-end mt-[8px]" *ngIf="puedeEditar && editandoId !== o.id">
-        <button type="button" (click)="iniciarEdicion(o)" class="text-[12px] text-gray-400 flex items-center gap-[4px]">
+      <div class="flex justify-end items-center gap-[12px] mt-[8px]" *ngIf="editandoId !== o.id">
+        <button *ngIf="puedeEditar" type="button" (click)="iniciarEdicion(o)" class="text-[12px] text-gray-400 flex items-center gap-[4px]">
           <i class="ti ti-pencil"></i> Editar
+        </button>
+        <button *ngIf="puedeEliminar" type="button" (click)="eliminarObservacion(o)" class="text-[12px] text-red-400 flex items-center gap-[4px]">
+          <i class="ti ti-trash"></i> Eliminar
         </button>
       </div>
     </div>

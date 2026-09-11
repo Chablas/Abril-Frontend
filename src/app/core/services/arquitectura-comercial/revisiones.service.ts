@@ -111,6 +111,10 @@ export class RevisionesService {
     return this.http.put<RevisionObservacionListItemDTO>(`${this.apiUrl}/${id}`, body, { headers: this.authHeaders() });
   }
 
+  eliminarObservacion(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers: this.authHeaders() });
+  }
+
   agregarFotoObservacion(revisionObservacionId: number, file: File): Observable<{ url: string }> {
     const form = new FormData();
     form.append('file', file);

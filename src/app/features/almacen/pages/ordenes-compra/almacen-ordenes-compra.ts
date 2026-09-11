@@ -174,10 +174,6 @@ export class AlmacenOrdenesCompra implements OnInit {
       Swal.fire({ icon: 'warning', title: 'Completa proyecto, número, proveedor y un monto mayor a 0.' });
       return;
     }
-    if (!this.archivoSeleccionado) {
-      Swal.fire({ icon: 'warning', title: 'Debes adjuntar el archivo de la orden de compra o contrato.' });
-      return;
-    }
 
     this.guardando = true;
     this.service

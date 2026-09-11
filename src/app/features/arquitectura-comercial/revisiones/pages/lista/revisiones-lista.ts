@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import Swal from 'sweetalert2';
 import { RevisionesService } from '../../../../../core/services/arquitectura-comercial/revisiones.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
@@ -111,6 +112,10 @@ export class RevisionesLista implements OnInit {
 
   get puedeEditar(): boolean {
     return this.navigationService.isFeatureAllowed('arquitectura-comercial.revisiones.editar');
+  }
+
+  get puedeEliminar(): boolean {
+    return this.navigationService.isFeatureAllowed('arquitectura-comercial.revisiones.eliminar');
   }
 
   stats: RevisionObservacionStatsDTO | null = null;
@@ -447,6 +452,33 @@ export class RevisionesLista implements OnInit {
           this.cdr.markForCheck();
         },
       });
+  }
+
+  eliminarObservacion(o: RevisionObservacionListItemDTO): void {
+    Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar observación?',
+      text: 'Esta acción no se puede deshacer.',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loaderService.show();
+      this.service.eliminarObservacion(o.id).subscribe({
+        next: () => {
+          this.loaderService.hide();
+          this.load();
+          this.loadStats();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+    });
   }
 
   onNuevaGuardada(): void {

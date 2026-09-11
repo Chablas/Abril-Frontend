@@ -50,9 +50,13 @@
             <td class="text-center whitespace-nowrap">{{ o.moneda }} {{ o.monto | number: '1.2-2' }}</td>
             <td>{{ o.subidoPor }}</td>
             <td class="text-center">
-              <button type="button" title="Ver archivo" class="btn-ver-archivo" (click)="verArchivo(o)">
-                <i class="ti ti-file-download"></i>
-              </button>
+              @if (o.archivoUrl) {
+                <button type="button" title="Ver archivo" class="btn-ver-archivo" (click)="verArchivo(o)">
+                  <i class="ti ti-file-download"></i>
+                </button>
+              } @else {
+                <span class="text-gray-400">—</span>
+              }
             </td>
           </tr>
         }
@@ -97,7 +101,7 @@
       <div class="archivo-picker">
         <label class="archivo-picker__label">
           <i class="ti ti-paperclip"></i>
-          {{ archivoSeleccionado?.name ?? 'Seleccionar archivo (PDF, Word, Excel)' }}
+          {{ archivoSeleccionado?.name ?? 'Seleccionar archivo (opcional, PDF, Word, Excel)' }}
           <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx" (change)="onArchivoSeleccionado($event)" hidden />
         </label>
       </div>
