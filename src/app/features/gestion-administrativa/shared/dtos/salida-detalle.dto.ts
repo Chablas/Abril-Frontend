@@ -59,5 +59,13 @@ export interface SolicitudSalidaDetalleDto {
   rendicion: SolicitudSalidaRendicionDto | null;
   /** Consolidado del S10 vigente (propio de la salida o heredado de su planilla). Null si no hay. */
   consolidadoS10: ConsolidadoS10Dto | null;
+
+  /**
+   * Tope de movilidad en soles de CADA trayecto. Varios trayectos pueden sumar más que esto
+   * entre todos: lo que un día no aguanta se reparte al imprimir la planilla (el trayecto que
+   * desborda sale con la fecha del día siguiente), no se bloquea al cargarlo.
+   */
+  limiteMovilidadTrayecto: number;
+
   trayectos: TrayectoDetalleDto[];
 }

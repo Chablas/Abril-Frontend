@@ -273,6 +273,63 @@ export class SalidaCapturasModal implements OnInit, OnDestroy {
     return this.capturasDe(t.id).reduce((acc, f) => acc + (f.captura.monto || 0), 0);
   }
 
+  // ── Tope de movilidad por trayecto ─────────────────────────────────────
+  // El tope es de CADA trayecto, no del día ni de la solicitud: varios trayectos pueden sumar
+  // más que el tope entre todos y eso está permitido — lo que un día no aguanta se reparte al
+  // imprimir la planilla, donde el trayecto que desborda sale con la fecha del día siguiente.
+  // El backend rehace la misma cuenta al guardar; esto es la ayuda, no el control.
+
+  /** Tope en soles de cada trayecto. */
+  get limiteTrayecto(): number {
+    return this.detalle?.limiteMovilidadTrayecto ?? 0;
+  }
+
+  /**
+   * Lo que este trayecto costaría con lo que hay escrito ahora (guardado o no). Misma
+   * precedencia que la planilla: mandan las capturas, y el monto de catálogo cuenta solo si el
+   * trayecto queda en cero.
+   */
+  importeEnPantalla(t: TrayectoDetalleDto): number {
+    const suma = this.capturasDe(t.id).reduce((acc, f) => acc + (f.monto ?? 0), 0)
+               + this.pendientesDe(t.id).reduce((acc, r) => acc + (r.monto ?? 0), 0);
+    return this.aCentimos(suma > 0 ? suma : (t.montoCatalogo ?? 0));
+  }
+
+  /** True si con lo que hay escrito ese trayecto se pasa del tope. */
+  excedeTope(t: TrayectoDetalleDto): boolean {
+    return this.importeEnPantalla(t) > this.limiteTrayecto;
+  }
+
+  /** Lo que el trayecto cuesta tal como está GUARDADO, sin lo que se acaba de escribir. */
+  private importeGuardado(t: TrayectoDetalleDto): number {
+    const suma = this.totalCapturasTrayecto(t);
+    return this.aCentimos(suma > 0 ? suma : (t.montoCatalogo ?? 0));
+  }
+
+  /** Los trayectos que con lo escrito quedarían por encima del tope y encima empeorados. */
+  private get trayectosQueBloquean(): TrayectoDetalleDto[] {
+    // Un trayecto que YA venía por encima —capturas anteriores a la regla, o un tope que se bajó
+    // después— se tiene que poder seguir corrigiendo hacia abajo, y bloquearlo lo dejaría trabado
+    // para siempre. Lo que se corta es empeorarlo. Misma regla que el backend
+    // (ValidarTopeMovilidad).
+    return (this.detalle?.trayectos ?? []).filter(
+      (t) => this.excedeTope(t) && this.importeEnPantalla(t) > this.importeGuardado(t),
+    );
+  }
+
+  /** True cuando algún trayecto pasado del tope es motivo para NO dejar guardar. */
+  get topeBloqueaGuardar(): boolean {
+    return this.trayectosQueBloquean.length > 0;
+  }
+
+  /**
+   * Redondeo a céntimos. Sin esto un 20.10 + 24.90 contra un tope de 45 da -0.0000000000001 en
+   * coma flotante y la pantalla bloquearía el guardado sin nada visible que corregir.
+   */
+  private aCentimos(monto: number): number {
+    return Math.round(monto * 100) / 100;
+  }
+
   // ── Guardar todo el modal de una vez ───────────────────────────────────
 
   /** Fila nueva que el usuario nunca tocó: la que aparece sola en cada trayecto. Se ignora. */
@@ -341,6 +398,7 @@ export class SalidaCapturasModal implements OnInit, OnDestroy {
   get puedeGuardar(): boolean {
     if (this.guardando) return false;
     if (this.hayFilasIncompletas || this.hayMontoInvalido) return false;
+    if (this.topeBloqueaGuardar) return false;
     return this.totalPendientes > 0;
   }
 
@@ -348,6 +406,14 @@ export class SalidaCapturasModal implements OnInit, OnDestroy {
   get aviso(): string | null {
     if (this.hayFilasIncompletas) return 'Hay capturas nuevas sin imagen o sin monto.';
     if (this.hayMontoInvalido) return 'Hay capturas sin monto.';
+
+    const excedidos = this.trayectosQueBloquean;
+    if (excedidos.length > 0) {
+      const cuales = excedidos.map((t) => t.orden + 1).join(', ');
+      return excedidos.length === 1
+        ? `El trayecto ${cuales} se pasa del tope de S/ ${this.limiteTrayecto.toFixed(2)}.`
+        : `Los trayectos ${cuales} se pasan del tope de S/ ${this.limiteTrayecto.toFixed(2)}.`;
+    }
     return null;
   }
 

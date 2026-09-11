@@ -65,10 +65,24 @@ export class CatalogosHabService {
 
   /**
    * Árbol de áreas para los desplegables de área del formulario de trabajadores, con la
-   * equivalencia legacy y el revisor ya resueltos por nodo. Una sola petición cubre toda la
+   * equivalencia legacy y el revisor ya elegido por nodo. Una sola petición cubre toda la
    * cascada y el campo de revisor (reemplaza a getAreas + getSubareas en ese formulario).
+   *
+   * Con `workerId` el revisor viene descartando a ese trabajador de sus propios candidatos
+   * ("nadie es su propio jefe"), así que la respuesta es distinta para cada uno y NO se cachea;
+   * sin él la respuesta sirve para toda la pantalla y se comparte, que es lo que necesitan las
+   * pantallas que solo usan el árbol para filtrar.
    */
-  getAreaArbol(): Observable<AreaArbolNodoDto[]> {
+  getAreaArbol(workerId?: number | null): Observable<AreaArbolNodoDto[]> {
+    if (workerId != null) {
+      return this.http
+        .get<AreaArbolNodoDto[]>(`${this.base}/areas-arbol`, {
+          headers: buildHabHeaders(),
+          params: { workerId },
+        })
+        .pipe(catchError(() => of([])));
+    }
+
     if (!this.areaArbol$) {
       this.areaArbol$ = this.http
         .get<AreaArbolNodoDto[]>(`${this.base}/areas-arbol`, { headers: buildHabHeaders() })

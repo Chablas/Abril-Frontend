@@ -43,25 +43,17 @@
                      title="Si se activa, el área se subdivide por proyecto" />
             </td>
             <td class="text-gray-700">
-              <ng-container *ngIf="r.revisores.length > 0; else fallbackGthArea">
-                <ng-container *ngIf="revisorPrincipal(r.revisores) as principal; else sinActivosArea">
-                  <span>{{ principal.revisorFullName | titleCase }}</span>
-                  <span *ngIf="r.revisores.length > 1"
-                        class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium whitespace-nowrap">
-                    +{{ r.revisores.length - 1 }} más
-                  </span>
-                </ng-container>
-                <ng-template #sinActivosArea>
-                  <span class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#FEF9C3] text-[#92400E] font-medium whitespace-nowrap">
-                    {{ r.revisores.length }} inactivo(s) → GTH
-                  </span>
-                </ng-template>
-              </ng-container>
-              <ng-template #fallbackGthArea>
-                <span class="text-gray-400 italic">
-                  {{ r.filtraPorProyecto ? 'Sin revisor de área (fallback)' : 'GTH (por defecto)' }}
+              <ng-container *ngIf="r.revisorEfectivoNombre; else sinRevisorArea">
+                <span>{{ r.revisorEfectivoNombre | titleCase }}</span>
+                <span class="ml-[6px] text-[12px] text-gray-500 whitespace-nowrap">
+                  ({{ origenLabel(r.revisorEfectivoOrigen) }})
                 </span>
-              </ng-template>
+                <span *ngIf="revisoresActivos(r.revisores) > 1"
+                      class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium whitespace-nowrap">
+                  +{{ revisoresActivos(r.revisores) - 1 }} más
+                </span>
+              </ng-container>
+              <ng-template #sinRevisorArea><span class="text-gray-400">—</span></ng-template>
             </td>
             <td class="text-center">
               <div class="flex items-center justify-center gap-2">
@@ -81,23 +73,17 @@
               <td class="text-gray-400 text-[12px]">Proyecto</td>
               <td></td>
               <td class="text-gray-700">
-                <ng-container *ngIf="proj.revisores.length > 0; else fallbackGthProj">
-                  <ng-container *ngIf="revisorPrincipal(proj.revisores) as principal; else sinActivosProj">
-                    <span>{{ principal.revisorFullName | titleCase }}</span>
-                    <span *ngIf="proj.revisores.length > 1"
-                          class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium whitespace-nowrap">
-                      +{{ proj.revisores.length - 1 }} más
-                    </span>
-                  </ng-container>
-                  <ng-template #sinActivosProj>
-                    <span class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#FEF9C3] text-[#92400E] font-medium whitespace-nowrap">
-                      {{ proj.revisores.length }} inactivo(s)
-                    </span>
-                  </ng-template>
+                <ng-container *ngIf="proj.revisorEfectivoNombre; else sinRevisorProj">
+                  <span>{{ proj.revisorEfectivoNombre | titleCase }}</span>
+                  <span class="ml-[6px] text-[12px] text-gray-500 whitespace-nowrap">
+                    ({{ origenLabel(proj.revisorEfectivoOrigen) }})
+                  </span>
+                  <span *ngIf="revisoresActivos(proj.revisores) > 1"
+                        class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-[#D7FAF4] text-[#009C87] font-medium whitespace-nowrap">
+                    +{{ revisoresActivos(proj.revisores) - 1 }} más
+                  </span>
                 </ng-container>
-                <ng-template #fallbackGthProj>
-                  <span class="text-gray-400 italic">Sin revisor</span>
-                </ng-template>
+                <ng-template #sinRevisorProj><span class="text-gray-400">—</span></ng-template>
               </td>
               <td class="text-center">
                 <div class="flex items-center justify-center gap-2">
