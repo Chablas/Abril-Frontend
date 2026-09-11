@@ -7,6 +7,9 @@
     [botonPrimario]="{ label: mostrarFormCrear ? 'Cancelar' : 'Nuevo PETS', icono: mostrarFormCrear ? 'ti-x' : 'ti-plus' }"
     (primaryClick)="toggleFormCrear()">
     <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+    <button tabsExtra class="btn-qr" (click)="abrirQr()">
+      <i class="ti ti-qrcode"></i> QR de la biblioteca
+    </button>
   </app-abril-page-header>
 
   <div class="lista-body">
@@ -92,6 +95,33 @@
 
   </div>
 </div>
+
+<app-abril-modal-panel
+  *ngIf="mostrarQr"
+  titulo="QR de la biblioteca de PETS"
+  icono="ti-qrcode"
+  [variant]="'blue'"
+  width="420px"
+  (closeModal)="cerrarQr()">
+  <div class="qr-modal-body">
+    <p class="qr-modal-hint">
+      Un solo QR para todos los PETS: al escanearlo, el trabajador ve la lista de PETS
+      activos y aprobados, y abre el PDF de la versión vigente de cada uno. No hay que
+      regenerarlo — cuando apruebes una versión nueva, el mismo QR ya muestra el cambio.
+    </p>
+    <div class="qr-image-wrap">
+      <img *ngIf="qrDataUrl" [src]="qrDataUrl" alt="QR biblioteca de PETS" class="qr-image" />
+      <span *ngIf="!qrDataUrl" class="qr-cargando">Generando…</span>
+    </div>
+    <p class="qr-url">{{ bibliotecaUrl }}</p>
+  </div>
+  <div modalFooter class="modal-footer-row">
+    <button class="btn-secondary" (click)="cerrarQr()">Cerrar</button>
+    <button class="btn-primary" [disabled]="!qrDataUrl" (click)="descargarQr()">
+      Descargar PNG
+    </button>
+  </div>
+</app-abril-modal-panel>
 
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
   <div class="w-full">

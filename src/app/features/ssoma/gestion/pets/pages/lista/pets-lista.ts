@@ -16,7 +16,9 @@ import { SearchSelect } from '../../../../../../shared/components/search-select/
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { ClientPager } from '../../../../../../shared/utils/client-pager';
 import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { environment } from '../../../../../../../environments/environment';
+import * as QRCode from 'qrcode';
 
 @Component({
   selector: 'app-pets-lista',
@@ -32,6 +34,7 @@ import { environment } from '../../../../../../../environments/environment';
     SearchSelect,
     Paginator,
     AbrilBulkActionDirective,
+    AbrilModalPanel,
   ],
   templateUrl: './pets-lista.html',
   styleUrl: './pets-lista.css',
@@ -57,6 +60,14 @@ export class PetsLista implements OnInit {
   private readonly pager = new ClientPager<PetListItemDto>();
 
   readonly plantillaUrl = `${environment.apiUrl.replace(/\/$/, '')}/templates/pets-plantilla.docx`;
+
+  // Biblioteca pública (QR único): URL FIJA a producción a propósito — no se arma
+  // con window.location.origin porque si alguien abre esta pantalla desde
+  // demo.abril.pe generaría un QR distinto (apuntando a demo). El QR que se
+  // imprime debe ser siempre el mismo, sin importar desde dónde se genere.
+  mostrarQr = false;
+  qrDataUrl: string | null = null;
+  readonly bibliotecaUrl = 'https://intranet.abril.pe/pets';
 
   constructor(
     private petsService: PetsService,
@@ -193,6 +204,27 @@ export class PetsLista implements OnInit {
         },
       });
     });
+  }
+
+  abrirQr(): void {
+    this.mostrarQr = true;
+    if (this.qrDataUrl || !this.bibliotecaUrl) return;
+    QRCode.toDataURL(this.bibliotecaUrl, { width: 480, margin: 2 }).then((dataUrl) => {
+      this.qrDataUrl = dataUrl;
+      this.cdr.markForCheck();
+    });
+  }
+
+  cerrarQr(): void {
+    this.mostrarQr = false;
+  }
+
+  descargarQr(): void {
+    if (!this.qrDataUrl) return;
+    const a = document.createElement('a');
+    a.href = this.qrDataUrl;
+    a.download = 'qr-biblioteca-pets.png';
+    a.click();
   }
 
   toggleActivo(pet: PetListItemDto): void {

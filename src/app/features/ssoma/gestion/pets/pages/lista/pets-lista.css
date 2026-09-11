@@ -99,3 +99,75 @@
   background: #fad5d4;
   color: #d30000;
 }
+
+.btn-secondary {
+  background: #fff;
+  color: #475569;
+  border: 1px solid var(--color-abril-border);
+  border-radius: var(--radius-standard);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-qr {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  color: var(--color-abril-logo-blue, #005d9d);
+  border: 1px solid var(--color-abril-logo-blue, #005d9d);
+  border-radius: var(--radius-standard);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-qr:hover {
+  background: #eef4fb;
+}
+
+.qr-modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.qr-modal-hint {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.qr-image-wrap {
+  width: 240px;
+  height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-abril-border);
+  border-radius: var(--radius-standard);
+  background: #fff;
+}
+
+.qr-image {
+  width: 100%;
+  height: 100%;
+}
+
+.qr-cargando {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.qr-url {
+  font-size: 12px;
+  color: #94a3b8;
+  word-break: break-all;
+  margin: 0;
+}
