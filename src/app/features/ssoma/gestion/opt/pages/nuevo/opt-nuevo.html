@@ -93,9 +93,9 @@
           <app-search-select
             color="var(--color-abril-logo-blue)"
             label="PET asociado"
-            [options]="pets"
+            [options]="petsDisponibles"
             valueField="id"
-            displayField="nombre"
+            displayField="nombreMostrado"
             [value]="petId"
             placeholder="Sin PET"
             (valueChange)="petId = $event ? +$event : null; onPetChange()">

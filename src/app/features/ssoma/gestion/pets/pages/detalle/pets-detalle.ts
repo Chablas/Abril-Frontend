@@ -28,6 +28,8 @@ import { WorkerSearchInput } from '../../../../salud-ocupacional/shared/worker-s
 import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
 import { AuthService } from '../../../../../../core/services/auth.service';
 import { Roles } from '../../../../../../core/constants/roles';
+import { AccidenteIncidenteService } from '../../../accidentes-incidentes/accidente-incidente.service';
+import { FlashProyectoDto, ContratistaCatalogoDto } from '../../../accidentes-incidentes/accidente-incidente.dtos';
 
 interface ParrafoSeleccionable extends ImportParrafoDto {
   seleccionado: boolean;
@@ -440,7 +442,11 @@ export class PetsDetalle implements OnInit {
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
     private authService: AuthService,
+    private accidenteIncidenteService: AccidenteIncidenteService,
   ) {}
+
+  proyectos: FlashProyectoDto[] = [];
+  contratistas: ContratistaCatalogoDto[] = [];
 
   // Cualquier prevencionista/coordinador SSOMA edita el PETS; solo el Jefe SSOMA
   // aprueba la publicación de una versión oficial (el backend también lo exige,
@@ -452,6 +458,13 @@ export class PetsDetalle implements OnInit {
   ngOnInit(): void {
     this.id = Number(this.route.snapshot.paramMap.get('id'));
     this.load();
+    this.accidenteIncidenteService.inicializar().subscribe({
+      next: (init) => {
+        this.proyectos = init.proyectos;
+        this.contratistas = init.contratistas;
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   // Cierre/recarga de la pestaña del navegador — el guard de ruta (canDeactivate)
@@ -681,6 +694,9 @@ export class PetsDetalle implements OnInit {
         codigo: this.detalle.codigo,
         sharepointUrl: this.detalle.sharepointUrl,
         activo: this.detalle.activo,
+        origen: this.detalle.origen,
+        contributorId: this.detalle.origen === 'Contratista' ? this.detalle.contributorId : undefined,
+        proyectoId: this.detalle.origen === 'Contratista' ? this.detalle.proyectoId : undefined,
       })
       .subscribe({
         next: () => {

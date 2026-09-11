@@ -19,6 +19,8 @@ import { AbrilBulkActionDirective } from '../../../../../../shared/directives/ab
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { environment } from '../../../../../../../environments/environment';
 import * as QRCode from 'qrcode';
+import { AccidenteIncidenteService } from '../../../accidentes-incidentes/accidente-incidente.service';
+import { FlashProyectoDto, ContratistaCatalogoDto } from '../../../accidentes-incidentes/accidente-incidente.dtos';
 
 @Component({
   selector: 'app-pets-lista',
@@ -47,6 +49,12 @@ export class PetsLista implements OnInit {
   creando = false;
   nuevoNombre = '';
   nuevoCodigo = '';
+  // "Abril" (default, catálogo global) | "Contratista" (atado a un proyecto).
+  nuevoOrigen: 'Abril' | 'Contratista' = 'Abril';
+  nuevoContributorId: number | null = null;
+  nuevoProyectoId: number | null = null;
+  proyectos: FlashProyectoDto[] = [];
+  contratistas: ContratistaCatalogoDto[] = [];
 
   searchText = '';
   estadoFilter: boolean | null = null;
@@ -75,10 +83,20 @@ export class PetsLista implements OnInit {
     private errorService: ErrorService,
     private router: Router,
     private cdr: ChangeDetectorRef,
+    private accidenteIncidenteService: AccidenteIncidenteService,
   ) {}
 
   ngOnInit(): void {
     this.load();
+    // Reutiliza el mismo catálogo de proyectos/contratistas que ya usa Flash
+    // Report — evita duplicar el endpoint solo para este selector.
+    this.accidenteIncidenteService.inicializar().subscribe({
+      next: (init) => {
+        this.proyectos = init.proyectos;
+        this.contratistas = init.contratistas;
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   load(): void {
@@ -148,18 +166,29 @@ export class PetsLista implements OnInit {
     this.mostrarFormCrear = !this.mostrarFormCrear;
     this.nuevoNombre = '';
     this.nuevoCodigo = '';
+    this.nuevoOrigen = 'Abril';
+    this.nuevoContributorId = null;
+    this.nuevoProyectoId = null;
     this.cdr.markForCheck();
   }
 
   get puedeCrear(): boolean {
-    return this.nuevoNombre.trim().length > 0 && !this.creando;
+    if (this.creando || !this.nuevoNombre.trim()) return false;
+    if (this.nuevoOrigen === 'Contratista' && !this.nuevoContributorId) return false;
+    return true;
   }
 
   crear(): void {
     if (!this.puedeCrear) return;
     this.creando = true;
     this.petsService
-      .crear({ nombre: this.nuevoNombre.trim(), codigo: this.nuevoCodigo.trim() || undefined })
+      .crear({
+        nombre: this.nuevoNombre.trim(),
+        codigo: this.nuevoCodigo.trim() || undefined,
+        origen: this.nuevoOrigen,
+        contributorId: this.nuevoOrigen === 'Contratista' ? this.nuevoContributorId ?? undefined : undefined,
+        proyectoId: this.nuevoOrigen === 'Contratista' ? this.nuevoProyectoId ?? undefined : undefined,
+      })
       .subscribe({
         next: ({ id }) => {
           this.creando = false;
@@ -241,7 +270,14 @@ export class PetsLista implements OnInit {
       if (!res.isConfirmed) return;
       this.loaderService.show();
       this.petsService
-        .actualizar(pet.id, { nombre: pet.nombre, codigo: pet.codigo, activo: !pet.activo })
+        .actualizar(pet.id, {
+          nombre: pet.nombre,
+          codigo: pet.codigo,
+          activo: !pet.activo,
+          origen: pet.origen,
+          contributorId: pet.contributorId,
+          proyectoId: pet.proyectoId,
+        })
         .subscribe({
           next: () => {
             this.loaderService.hide();

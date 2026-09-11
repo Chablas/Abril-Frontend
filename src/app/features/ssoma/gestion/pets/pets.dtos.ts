@@ -14,6 +14,12 @@ export interface PetListItemDto {
   // solo al aprobar una versión nueva.
   revisionPendiente: boolean;
   revisionPendienteMotivo?: string;
+  // "Abril" (global, cualquier proyecto) | "Contratista" (atado a un proyecto).
+  origen: 'Abril' | 'Contratista';
+  contributorId?: number;
+  contributorNombre?: string;
+  proyectoId?: number;
+  proyectoNombre?: string;
 }
 
 export interface PetImagenDto {
@@ -102,6 +108,11 @@ export interface PetDetalleDto {
   versionVigente: number;
   revisionPendiente: boolean;
   revisionPendienteMotivo?: string;
+  origen: 'Abril' | 'Contratista';
+  contributorId?: number;
+  contributorNombre?: string;
+  proyectoId?: number;
+  proyectoNombre?: string;
   pasos: PetPasoDto[];
   responsabilidades: PetPasoDto[];
   seccionesTexto: Record<PetSeccionTexto, string>;
@@ -116,6 +127,9 @@ export interface CrearPetRequest {
   nombre: string;
   codigo?: string;
   sharepointUrl?: string;
+  origen?: 'Abril' | 'Contratista';
+  contributorId?: number;
+  proyectoId?: number;
 }
 
 export interface ActualizarPetRequest {
@@ -123,6 +137,9 @@ export interface ActualizarPetRequest {
   codigo?: string;
   sharepointUrl?: string;
   activo: boolean;
+  origen: 'Abril' | 'Contratista';
+  contributorId?: number;
+  proyectoId?: number;
 }
 
 export interface CrearPetPasoRequest {

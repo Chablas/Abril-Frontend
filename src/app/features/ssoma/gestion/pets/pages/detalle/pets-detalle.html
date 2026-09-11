@@ -53,6 +53,47 @@
           <label class="abril-field-label">Enlace SharePoint (documento original, opcional)</label>
           <input type="text" class="abril-field-input" [(ngModel)]="detalle.sharepointUrl" placeholder="https://..." />
         </div>
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Origen"
+            [options]="[{ value: 'Abril', label: 'Abril (catálogo propio)' }, { value: 'Contratista', label: 'Contratista' }]"
+            valueField="value"
+            displayField="label"
+            [value]="detalle.origen"
+            [allowClear]="false"
+            (valueChange)="detalle.origen = $event">
+          </app-search-select>
+        </div>
+        @if (detalle.origen === 'Contratista') {
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Empresa contratista *"
+              [options]="contratistas"
+              valueField="id"
+              displayField="razonSocial"
+              placeholder="Buscar contratista..."
+              [value]="detalle.contributorId"
+              (valueChange)="detalle.contributorId = $event">
+            </app-search-select>
+          </div>
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Proyecto"
+              [options]="proyectos"
+              valueField="id"
+              displayField="nombre"
+              placeholder="Buscar proyecto..."
+              [value]="detalle.proyectoId"
+              (valueChange)="detalle.proyectoId = $event">
+            </app-search-select>
+            <span *ngIf="!detalle.proyectoId" class="proyecto-pendiente-hint">
+              Sin proyecto asignado — no aparecerá en OPT ni Accidentes hasta que lo asignes.
+            </span>
+          </div>
+        }
       </div>
       <div class="cabecera-actions">
         <label class="check-label">

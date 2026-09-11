@@ -214,6 +214,19 @@ export class OptNuevo implements OnInit, AfterViewInit {
   ngAfterViewInit(): void {}
 
   // ── PET ───────────────────────────────────────────────────────────────────
+
+  // Los PETS de Abril son globales (aparecen siempre); los de contratista solo se
+  // ofrecen si pertenecen al proyecto ya elegido — evita mezclar el PETS de un
+  // contratista con obras donde no aplica.
+  get petsDisponibles(): (OptPetDto & { nombreMostrado: string })[] {
+    return this.pets
+      .filter((p) => p.origen === 'Abril' || p.proyectoId === Number(this.proyectoId))
+      .map((p) => ({
+        ...p,
+        nombreMostrado: p.origen === 'Contratista' ? `${p.nombre} (${p.contributorNombre ?? 'Contratista'})` : p.nombre,
+      }));
+  }
+
   onPetChange(): void {
     this.petSeleccionado = this.pets.find((p) => p.id === Number(this.petId)) ?? null;
     this.petVisorUrl = '';

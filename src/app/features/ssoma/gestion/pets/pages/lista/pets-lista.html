@@ -27,6 +27,41 @@
             <label class="abril-field-label">Código</label>
             <input type="text" class="abril-field-input" [(ngModel)]="nuevoCodigo" placeholder="Ej. SSO-PETS-17" />
           </div>
+          <div class="abril-field">
+            <app-search-select
+              label="Origen"
+              [options]="[{ value: 'Abril', label: 'Abril (catálogo propio)' }, { value: 'Contratista', label: 'Contratista' }]"
+              valueField="value"
+              displayField="label"
+              [value]="nuevoOrigen"
+              [allowClear]="false"
+              (valueChange)="nuevoOrigen = $event">
+            </app-search-select>
+          </div>
+          @if (nuevoOrigen === 'Contratista') {
+            <div class="abril-field">
+              <app-search-select
+                label="Empresa contratista *"
+                [options]="contratistas"
+                valueField="id"
+                displayField="razonSocial"
+                placeholder="Buscar contratista..."
+                [value]="nuevoContributorId"
+                (valueChange)="nuevoContributorId = $event">
+              </app-search-select>
+            </div>
+            <div class="abril-field">
+              <app-search-select
+                label="Proyecto"
+                [options]="proyectos"
+                valueField="id"
+                displayField="nombre"
+                placeholder="Buscar proyecto... (puedes dejarlo pendiente)"
+                [value]="nuevoProyectoId"
+                (valueChange)="nuevoProyectoId = $event">
+              </app-search-select>
+            </div>
+          }
         </div>
         <p class="crear-hint">
           Después de crearlo pasas a la pantalla de detalle para armar los pasos.
@@ -49,6 +84,7 @@
           <tr>
             <th>Código</th>
             <th>Nombre</th>
+            <th>Origen</th>
             <th class="text-center">Pasos</th>
             <th class="text-center">Estado</th>
             <th class="text-center">Acciones</th>
@@ -56,13 +92,20 @@
         </thead>
         <tbody>
           <tr *ngIf="pagedPets.length === 0">
-            <td colspan="5" class="text-center py-[40px] text-gray-400 text-sm">
+            <td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">
               {{ filtrosActivos > 0 ? 'Sin resultados.' : 'No hay PETS registrados todavía.' }}
             </td>
           </tr>
           <tr *ngFor="let p of pagedPets" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border); cursor:pointer" (click)="irADetalle(p.id)">
             <td>{{ p.codigo || '—' }}</td>
             <td>{{ p.nombre }}</td>
+            <td>
+              <span *ngIf="p.origen === 'Abril'" class="origen-badge origen-abril">Abril</span>
+              <span *ngIf="p.origen === 'Contratista'" class="origen-badge origen-contratista" [title]="p.proyectoNombre || 'Sin proyecto asignado'">
+                {{ p.contributorNombre || 'Contratista' }}
+                <span *ngIf="!p.proyectoId" class="origen-sin-proyecto">(sin proyecto)</span>
+              </span>
+            </td>
             <td class="text-center">{{ p.totalPasos }}</td>
             <td class="text-center">
               <span class="estado-badge" [class.estado-activo]="p.activo" [class.estado-inactivo]="!p.activo">

@@ -4,6 +4,10 @@ export interface OptPetDto {
   nombre: string;
   codigo?: string;
   sharepointUrl?: string;
+  origen: 'Abril' | 'Contratista';
+  contributorId?: number;
+  contributorNombre?: string;
+  proyectoId?: number;
 }
 
 export interface OptCriterioVerificacionDto {

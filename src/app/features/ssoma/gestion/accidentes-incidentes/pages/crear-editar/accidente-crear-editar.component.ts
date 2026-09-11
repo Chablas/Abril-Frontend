@@ -509,6 +509,17 @@ export class AccidenteCrearEditarComponent implements OnInit {
     return this.proyectos.map((p) => ({ projectId: p.id, projectDescription: p.nombre }));
   }
 
+  // Los PETS de Abril son globales (siempre disponibles); los de contratista solo
+  // se ofrecen si pertenecen al proyecto ya elegido en el formulario.
+  get petsDisponibles() {
+    return this.pets
+      .filter((p) => p.origen === 'Abril' || p.proyectoId === this.form.proyectoId)
+      .map((p) => ({
+        ...p,
+        nombreMostrado: p.origen === 'Contratista' ? `${p.nombre} (${p.contributorNombre ?? 'Contratista'})` : p.nombre,
+      }));
+  }
+
   trabajadoresOpts() {
     return this.trabajadores.map((t) => ({ id: t.id, label: `${t.nombreCompleto}${t.cargo ? ' — ' + t.cargo : ''}` }));
   }
