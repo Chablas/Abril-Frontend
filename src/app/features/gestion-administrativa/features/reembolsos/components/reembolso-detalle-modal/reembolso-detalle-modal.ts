@@ -35,7 +35,7 @@ interface RespaldoDoc {
  * El expediente de una planilla para Tesorería: qué se está pagando, a quién, con qué respaldo
  * y con qué firma. Es donde vive la revisión documental que el requerimiento pide antes de
  * proceder (11.1): planilla, Consolidado del S10 con su número de reembolso, firma de la jefatura y el detalle
- * de cada tramo con sus vouchers.
+ * de cada trayecto con sus vouchers.
  *
  * Las dos acciones también están acá porque el pago individual es "esta planilla" (RF-TES-08);
  * la selección múltiple de la tabla resuelve el caso masivo.
@@ -53,7 +53,7 @@ export class ReembolsoDetalleModal implements OnInit {
 
   detalle: ReembolsoDetalleDto | null = null;
 
-  /** Salidas con el desglose de tramos abierto. Arranca cerrado: la tabla ya es larga. */
+  /** Salidas con el desglose de trayectos abierto. Arranca cerrado: la tabla ya es larga. */
   expandidas = new Set<number>();
 
   /** Planilla de Gasto y Consolidado del S10 firmados: la lista de la sección Respaldo. */
@@ -138,9 +138,9 @@ export class ReembolsoDetalleModal implements OnInit {
     return docs;
   }
 
-  // ── Tramos ───────────────────────────────────────────────────────────
+  // ── Trayectos ────────────────────────────────────────────────────────
 
-  toggleTramos(s: ReembolsoSalidaDto): void {
+  toggleTrayectos(s: ReembolsoSalidaDto): void {
     if (this.expandidas.has(s.id)) this.expandidas.delete(s.id);
     else                           this.expandidas.add(s.id);
   }

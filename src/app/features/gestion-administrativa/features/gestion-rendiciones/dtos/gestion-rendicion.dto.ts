@@ -48,7 +48,7 @@ export interface GestionRendicionListItemDto {
   consolidadoS10: ConsolidadoS10Dto | null;
 
   // ── Primera revisión ───────────────────────────────────────────────────
-  // El paso que va ANTES del Consolidado del S10: se miran tramos, montos y capturas y se decide.
+  // El paso que va ANTES del Consolidado del S10: se miran trayectos, montos y capturas y se decide.
   // Es de la planilla, así que no se resume de las salidas como el reembolso.
 
   estadoPrimeraRevision: EstadoPrimeraRevision;

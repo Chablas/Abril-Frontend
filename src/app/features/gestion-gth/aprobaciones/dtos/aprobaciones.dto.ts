@@ -8,8 +8,9 @@ import { SolicitudDestinatarios } from '../../shared/dtos/destinatarios.dto';
  *   sola las manda a Gestión de Talento Humano.
  * - `GERENTE_AREA`: ve las de su área hacia abajo y decide las de REEMPLAZO. Firma PRIMERO: su
  *   visto bueno es lo que le pasa la vacante a GTH, y su rechazo la cierra ahí mismo.
- * - `GTH`: cualquier trabajador del área de Gestión del Talento Humano. Pone la SEGUNDA firma de
- *   los reemplazos, de toda la empresa. Solo le aparecen los que el gerente del área ya aprobó.
+ * - `GTH`: la JEFATURA de Gestión del Talento Humano (ficha en esa área y categoría JEFE; estar en
+ *   el área no alcanza). Pone la SEGUNDA firma de los reemplazos, de toda la empresa. Solo le
+ *   aparecen los que el gerente del área ya aprobó.
  * - `NINGUNO`: entra a la pantalla, pero no hay solicitudes bajo su alcance.
  */
 export type AprobacionNivel = 'GERENTE_GENERAL' | 'GERENTE_AREA' | 'GTH' | 'NINGUNO';

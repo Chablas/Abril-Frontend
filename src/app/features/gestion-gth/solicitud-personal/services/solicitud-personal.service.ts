@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
+  AnularVacanteResult,
   AprobacionGgReenvioPreview,
   AprobacionGgReenvioResult,
   CandidatoDecision,
@@ -123,6 +124,18 @@ export class SolicitudPersonalService {
     return this.http.post<SolicitudPersonalCreateResult>(this.apiUrl, formData, {
       headers: this.headers,
     });
+  }
+
+  /**
+   * Anula una vacante registrada por error: la da de baja junto con su aprobación, su historial de
+   * fases y —si era la única de la solicitud— la solicitud y la campanita de quien tenía que
+   * firmar. Todo es soft delete. El backend solo lo permite mientras nadie haya decidido.
+   */
+  anularVacante(requerimientoId: number): Observable<AnularVacanteResult> {
+    return this.http.delete<AnularVacanteResult>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}`,
+      { headers: this.headers },
+    );
   }
 
   /**

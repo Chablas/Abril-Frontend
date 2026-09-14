@@ -138,7 +138,7 @@
           <tr
             *ngFor="let r of pagedPlanillas"
             (click)="abrirDetalle(r)"
-            title="Ver el desglose, los tramos y los vouchers de esta planilla"
+            title="Ver el desglose, los trayectos y los vouchers de esta planilla"
             class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
             [style.background]="selectedIds.has(r.id) ? '#EAF6FF' : null"
             style="border-color:var(--color-abril-border)">
@@ -243,7 +243,7 @@
 
 </div>
 
-<!-- ── Modal de detalle (salidas, tramos y vouchers de la planilla) ───── -->
+<!-- ── Modal de detalle (salidas, trayectos y vouchers de la planilla) ── -->
 <app-reembolso-detalle-modal
   *ngIf="detalleId !== null"
   [rendicionId]="detalleId"

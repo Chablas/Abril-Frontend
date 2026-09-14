@@ -241,6 +241,14 @@
                 title="Reenviar el correo de aprobación a quien todavía no ha decidido">
                 <i class="ti ti-mail-forward text-[15px]"></i>
               </button>
+
+              <!-- Anular: solo mientras NADIE decidió todavía. En cuanto alguien firma —aunque sea
+                   rechazando— desaparece: ya salieron correos y hay una decisión que auditar. -->
+              <button *ngIf="puedeAnular(s)" type="button" (click)="anular(s)"
+                class="inline-flex items-center justify-center w-[30px] h-[30px] rounded-[7px] cursor-pointer transition-colors border bg-white text-abril-danger border-abril-danger hover:bg-abril-danger-light"
+                title="Anular esta solicitud de vacante (nadie la ha aprobado todavía)">
+                <i class="ti ti-trash text-[15px]"></i>
+              </button>
             </div>
           </td>
 
@@ -321,6 +329,13 @@
         title="Reenviar el correo de aprobación a quien todavía no ha decidido">
         <i class="ti ti-mail-forward text-[15px]"></i>
         Reenviar aprobación
+      </button>
+
+      <button *ngIf="puedeAnular(s)" type="button" (click)="anular(s)"
+        class="w-full inline-flex items-center justify-center gap-[6px] h-[36px] mt-[7px] rounded-[7px] text-[12.5px] font-medium cursor-pointer transition-colors border bg-white text-abril-danger border-abril-danger hover:bg-abril-danger-light"
+        title="Anular esta solicitud de vacante (nadie la ha aprobado todavía)">
+        <i class="ti ti-trash text-[15px]"></i>
+        Anular solicitud
       </button>
 
     </div>

@@ -11,7 +11,7 @@ export type { EstadoCorreccionS10, TrabajadorOptionDto };
  * hacer su trabajo sin abrir nada más: el número de reembolso con el que ubica el registro en el S10, qué observó
  * la jefatura y qué le pide el colaborador.
  *
- * No trae los tramos ni las capturas: el ERP no revisa el gasto —eso ya lo hizo la jefatura—, solo
+ * No trae los trayectos ni las capturas: el ERP no revisa el gasto —eso ya lo hizo la jefatura—, solo
  * corrige el documento del S10. Sí trae los dos PDF por si necesita contrastarlos.
  */
 export interface CorreccionS10ListItemDto {

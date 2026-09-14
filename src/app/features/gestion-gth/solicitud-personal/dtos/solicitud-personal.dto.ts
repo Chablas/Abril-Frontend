@@ -225,6 +225,17 @@ export interface SolicitudPersonalCreateResult {
   message: string;
 }
 
+/** Resultado de anular una vacante registrada por error. */
+export interface AnularVacanteResult {
+  message: string;
+  /** Código de la vacante anulada (REQ-AAAA-NNNN). */
+  codigo: string;
+  /** true = era la última vacante viva, así que la solicitud entera se dio de baja con ella. */
+  solicitudDadaDeBaja: boolean;
+  /** Vacantes que le quedan vivas a la solicitud. */
+  vacantesRestantes: number;
+}
+
 /** Resultado de reenviar el correo de aprobación a Gerencia General. */
 export interface AprobacionGgReenvioResult {
   message: string;
@@ -391,6 +402,12 @@ export interface SolicitudVacanteListItem {
   tipoRequerimientoCodigo: string;
   /** true = ingreso directo FFT: no lo firma nadie y pasa derecho al EMO de ingreso. */
   esFft: boolean;
+  /**
+   * true cuando la vacante todavía se puede anular: sigue esperando su aprobación y NADIE decidió
+   * sobre ella (ni aprobando ni rechazando). Lo calcula el backend; el botón además pide
+   * `puedeGestionar`, y el backend revalida las dos cosas al anular.
+   */
+  puedeAnular: boolean;
 }
 
 /**

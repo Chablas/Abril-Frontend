@@ -344,6 +344,62 @@ export class GthSolicitudPersonal implements OnInit {
   /** Ícono y color de la columna «Tipo»: los mismos que en el modal de seguimiento. */
   readonly tipoEstilo = tipoRequerimientoEstilo;
 
+  // ── Anular una vacante registrada por error ────────────────────────────
+  /**
+   * La vacante todavía se puede dar de baja: sigue esperando su aprobación y nadie decidió sobre
+   * ella. La condición la calcula el backend (`puedeAnular`) y acá solo se suma el permiso de
+   * gestión, el mismo del reenvío; el backend revalida las dos cosas al anular.
+   */
+  puedeAnular(s: SolicitudVacanteListItem): boolean {
+    return this.puedeGestionar && s.puedeAnular;
+  }
+
+  /**
+   * Anula la vacante y recarga el panel. Se avisa que es sin vuelta atrás y que el correlativo REQ
+   * no se reutiliza: el código ya salió por correo y la siguiente solicitud salta ese número.
+   */
+  async anular(s: SolicitudVacanteListItem): Promise<void> {
+    const confirm = await Swal.fire({
+      icon: 'warning',
+      title: '¿Anular esta solicitud de vacante?',
+      html:
+        `<div style="text-align:left;color:#4B5563">` +
+        `Se dará de baja <b>${GthSolicitudPersonal.escapar(s.codigo)}</b> ` +
+        `(${GthSolicitudPersonal.escapar(s.puesto)}) y dejará de pedirse su aprobación. ` +
+        `No se puede deshacer y el código no se vuelve a usar.` +
+        `</div>`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, anular',
+      cancelButtonText: 'Volver',
+      confirmButtonColor: '#D30000',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.loaderService.show();
+    this.service.anularVacante(s.requerimientoId).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        Swal.fire({
+          // Se anula una vacante; la solicitud entera cae solo si era la última que le quedaba.
+          title: res.solicitudDadaDeBaja ? 'Solicitud anulada' : 'Vacante anulada',
+          text: res.message,
+          icon: 'success',
+          confirmButtonColor: 'var(--color-abril-standard)',
+        });
+        this.load();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        // Lo esperable acá es un 409: alguien firmó entre que se pintó la tabla y se apretó el
+        // botón. El mensaje del backend ya dice exactamente qué cambió, así que no se recarga
+        // encima del aviso — reintentar vuelve a dar el mismo mensaje, no un estado inconsistente.
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   // ── Reenvío del correo de aprobación ───────────────────────────────────
   /**
    * La vacante está esperando su aprobación: se puede reenviar el correo (sirve cuando el envío
