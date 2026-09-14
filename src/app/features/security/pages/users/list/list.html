@@ -51,6 +51,12 @@
             <div class="flex items-center justify-end gap-2">
               <button
                 type="button"
+                class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors bg-abril-standard-light border-abril-standard-border text-abril-standard hover:border-abril-standard"
+                title="Roles del usuario y funcionalidades a las que accede"
+                (click)="openDetail(item, $event)"
+              >Detalle</button>
+              <button
+                type="button"
                 class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer transition-colors bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
                 (click)="openEdit(item, $event)"
               >Editar</button>
@@ -107,6 +113,11 @@
           [ngClass]="item.active ? 'bg-green-100 text-green-800 border-green-200' : 'bg-gray-100 text-gray-500 border-gray-200'"
         >{{ item.active ? 'Activo' : 'Inactivo' }}</span>
         <div class="flex gap-2">
+          <button
+            type="button"
+            class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer bg-abril-standard-light border-abril-standard-border text-abril-standard"
+            (click)="openDetail(item, $event)"
+          >Detalle</button>
           <button
             type="button"
             class="px-3 py-1 rounded-full text-[0.72rem] font-semibold border cursor-pointer bg-blue-50 border-blue-200 text-blue-700"

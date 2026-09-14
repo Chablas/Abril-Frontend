@@ -384,6 +384,7 @@ export class NavigationService {
       items: [
         { label: 'Usuarios', route: '/security/users', featureKey: 'security.users' },
         { label: 'Roles',    route: '/security/roles', featureKey: 'security.roles' },
+        { label: 'Funcionalidades', route: '/security/features', featureKey: 'security.features' },
       ],
     },
     {

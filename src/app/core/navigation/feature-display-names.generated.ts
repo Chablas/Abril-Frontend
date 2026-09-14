@@ -4,9 +4,10 @@
 // SECCIONES_SIN_RUTA de ese script). Re-generar con ese comando cuando se
 // agregue/renombre una pantalla con featureKey nuevo.
 //
-// Consumido por RoleEdit (security/roles) como fuente principal de nombres legibles
-// para los 156+ featureKey del modal "Editar Rol" — humanizeFeatureKey() ahí mismo
-// es solo el fallback para featureKey que no aparecen en ningún lado del frontend.
+// Consumido por Seguridad (security/shared/utils/feature-display-name.ts) como fuente
+// principal de nombres legibles de los featureKey: modal "Editar Rol", pantalla
+// Funcionalidades y detalles de rol y usuario — humanizeFeatureKey() ahí mismo es solo
+// el fallback para featureKey que no aparecen en ningún lado del frontend.
 
 export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "accounting.configuration": "Configuración",
@@ -123,6 +124,7 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "projects.projects-dashboard": "Dashboard de Proyectos",
   "projects.report-response-control": "Control de respuesta de informes",
   "projects.resident-monitoring-measurement": "Seguimiento y medición de residentes",
+  "security.features": "Funcionalidades",
   "security.roles": "Roles",
   "security.users": "Usuarios",
   "ssoma.charlas.aprobar": "Revisión Charlas Contratistas",

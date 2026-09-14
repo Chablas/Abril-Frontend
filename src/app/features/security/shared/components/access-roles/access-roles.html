@@ -1,0 +1,18 @@
+<app-access-panel
+  icono="ti-shield"
+  [titulo]="titulo"
+  [total]="roles.length"
+  [visibles]="filtrados.length"
+  placeholder="Buscar rol..."
+  [vacio]="vacio"
+  [cargando]="cargando"
+  (busquedaChange)="buscar($event)">
+
+  <div *ngFor="let r of filtrados; trackBy: trackById" class="ar-row">
+    <span class="ar-name">{{ r.roleDescription }}</span>
+    <span class="ar-meta">
+      {{ r.usersCount }} {{ r.usersCount === 1 ? 'usuario' : 'usuarios' }}
+      · {{ r.featuresCount }} {{ r.featuresCount === 1 ? 'funcionalidad' : 'funcionalidades' }}
+    </span>
+  </div>
+</app-access-panel>

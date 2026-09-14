@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { Users } from './pages/users/users';
 import { Roles } from './pages/roles/roles';
+import { Funcionalidades } from './features/funcionalidades/components/funcionalidades';
 import { roleGuard } from '../../core/guards/role.guard';
 
 const routes: Routes = [
@@ -32,12 +33,24 @@ const routes: Routes = [
           },
         ],
       },
+      {
+        // Solo lectura: las funcionalidades se dan de alta por base de datos.
+        path: 'features',
+        children: [
+          {
+            path: '',
+            component: Funcionalidades,
+            canActivate: [roleGuard],
+            data: { titulo: 'FUNCIONALIDADES', featureKey: 'security.features' },
+          },
+        ],
+      },
     ],
   },
 ];
 
 @NgModule({
-  imports: [RouterModule.forChild(routes), CommonModule, Users, Roles],
+  imports: [RouterModule.forChild(routes), CommonModule, Users, Roles, Funcionalidades],
   exports: [RouterModule],
 })
 export class SeguridadModule {}

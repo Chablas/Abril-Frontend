@@ -1,0 +1,19 @@
+<app-base-modal
+  [title]="detalle?.roleDescription ?? role.roleDescription"
+  width="w-[980px]"
+  closeColor="var(--color-abril-standard)"
+  (closeModal)="closeModal.emit()">
+
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    <app-access-users
+      titulo="Usuarios con el rol"
+      [users]="detalle?.users ?? []"
+      [cargando]="!detalle"
+      vacio="Ningún usuario tiene este rol." />
+
+    <app-access-features
+      [features]="detalle?.features ?? []"
+      [cargando]="!detalle"
+      vacio="El rol no tiene funcionalidades." />
+  </div>
+</app-base-modal>

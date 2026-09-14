@@ -1,0 +1,120 @@
+<app-abril-page-header
+  badge="SEGURIDAD"
+  titulo="Funcionalidades"
+  subtitulo="Funcionalidades del sistema y quién tiene acceso a cada una."
+  [tabs]="tabs">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
+
+  <div class="abril-table-wrap">
+    <table class="abril-table">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Funcionalidad</th>
+          <th>Módulo</th>
+          <th class="th-center">Roles</th>
+          <th class="th-center">Usuarios</th>
+          <th class="th-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <ng-container *ngIf="loading">
+          <tr *ngFor="let i of filasSkeleton" class="fn-row-static">
+            <td colspan="5"><div class="fn-skeleton"></div></td>
+          </tr>
+        </ng-container>
+
+        <tr *ngIf="!loading && filtradas.length === 0" class="fn-row-static">
+          <td colspan="5">
+            <div class="fn-empty">
+              <i class="ti" [ngClass]="filtrosActivos ? 'ti-search-off' : 'ti-apps'"></i>
+              <span>
+                {{ filtrosActivos
+                   ? 'Ninguna funcionalidad coincide con los filtros.'
+                   : 'No hay funcionalidades registradas.' }}
+              </span>
+            </div>
+          </td>
+        </tr>
+
+        <tr *ngFor="let f of paginadas; trackBy: trackById" (click)="abrirDetalle(f)" title="Ver detalle">
+          <td>
+            <div class="fn-name">{{ f.label }}</div>
+            <div class="fn-key">{{ f.featureKey }}</div>
+          </td>
+          <td [ngClass]="f.moduleId === null ? 'fn-module fn-module--sin' : 'fn-module'">
+            {{ f.moduleLabel }}
+          </td>
+          <td class="td-center">
+            <span class="fn-count" [class.fn-count--cero]="f.rolesCount === 0">{{ f.rolesCount }}</span>
+          </td>
+          <td class="td-center">
+            <span class="fn-count" [class.fn-count--cero]="f.usersCount === 0">{{ f.usersCount }}</span>
+          </td>
+          <td class="td-center">
+            <button
+              type="button"
+              class="abril-action-btn"
+              title="Ver detalle"
+              (click)="$event.stopPropagation(); abrirDetalle(f)">
+              <i class="ti ti-eye"></i>
+            </button>
+          </td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Ancho limitado y alineado a la izquierda, igual que el resto de tablas estándar. -->
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filtradas.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Panel de filtros estándar ──────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por nombre, clave o módulo..."
+      width="100%"
+      [value]="searchText"
+      (valueChange)="onSearchChange($event)">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <!-- Nombres de módulo tal cual: ya vienen capitalizados y "SSOMA" es sigla. Sin ordenar acá
+         porque «Sin módulo asignado» va al final, no entre los demás. -->
+    <app-search-select
+      label="Módulo"
+      placeholder="Todos los módulos"
+      [options]="moduloOptions"
+      valueField="moduleId"
+      displayField="nombre"
+      [value]="moduloFilter"
+      [sortAlpha]="false"
+      [rawLabel]="true"
+      [fullText]="true"
+      (valueChange)="onModuloChange($event)">
+    </app-search-select>
+  </div>
+
+</app-filter-modal>
+
+<app-funcionalidad-detalle-modal
+  *ngIf="seleccionada"
+  [funcionalidad]="seleccionada"
+  (closeModal)="seleccionada = null" />

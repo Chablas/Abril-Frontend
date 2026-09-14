@@ -4,6 +4,7 @@ import { UserList } from './list/list';
 import { UserCreate } from './create/create';
 import { AbrilWorkerCreate } from './abril-worker-create/abril-worker-create';
 import { UserEditForm } from './components/user-edit-form/user-edit-form';
+import { UserDetail } from './components/user-detail/user-detail';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
 import { PagedResponseDTO } from '../../../../core/dtos/api/pagedResponse.model';
 import { UserListItemDto } from '../../../../core/dtos/user/userListItem.model';
@@ -22,6 +23,7 @@ import { SECURITY_TABS } from '../../shared/security-tabs';
     UserCreate,
     AbrilWorkerCreate,
     UserEditForm,
+    UserDetail,
     Paginator,
     AbrilPageHeaderComponent,
     FilterTriggerButton,
@@ -37,6 +39,7 @@ export class Users {
   showAbrilWorkerModal = false;
   formOpen = false;
   formUser: UserListItemDto | null = null;
+  detailUser: UserListItemDto | null = null;
   currentPage = 1;
   totalPages = 0;
   totalRecords = 0;

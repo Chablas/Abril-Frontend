@@ -1,6 +1,7 @@
 // Genera core/navigation/feature-display-names.generated.ts: un mapa
-// featureKey -> nombre real ya usado en la app, para mostrar en el modal
-// "Editar Rol" (security/roles) en vez de un nombre heurístico.
+// featureKey -> nombre real ya usado en la app, para mostrar en Seguridad (modal
+// "Editar Rol", pantalla Funcionalidades y los detalles de rol y usuario) en vez
+// de un nombre heurístico.
 //
 // Por qué existe: RoleEdit necesitaba traducir feature_key técnicos (ej.
 // "projects.ivt-control") a texto legible. La primera versión los generaba con una
@@ -158,9 +159,10 @@ const body = `// ARCHIVO GENERADO — no editar a mano.
 // SECCIONES_SIN_RUTA de ese script). Re-generar con ese comando cuando se
 // agregue/renombre una pantalla con featureKey nuevo.
 //
-// Consumido por RoleEdit (security/roles) como fuente principal de nombres legibles
-// para los 156+ featureKey del modal "Editar Rol" — humanizeFeatureKey() ahí mismo
-// es solo el fallback para featureKey que no aparecen en ningún lado del frontend.
+// Consumido por Seguridad (security/shared/utils/feature-display-name.ts) como fuente
+// principal de nombres legibles de los featureKey: modal "Editar Rol", pantalla
+// Funcionalidades y detalles de rol y usuario — humanizeFeatureKey() ahí mismo es solo
+// el fallback para featureKey que no aparecen en ningún lado del frontend.
 
 export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
 ${sorted.map(([k, v]) => `  ${JSON.stringify(k)}: ${JSON.stringify(v)},`).join('\n')}

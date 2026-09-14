@@ -4,4 +4,5 @@ import { AbrilPageTab } from '../../../shared/components/abril-page-header/abril
 export const SECURITY_TABS: AbrilPageTab[] = [
   { label: 'Usuarios', icono: 'ti-users',  route: '/security/users', featureKey: 'security.users' },
   { label: 'Roles',    icono: 'ti-shield', route: '/security/roles', featureKey: 'security.roles' },
+  { label: 'Funcionalidades', icono: 'ti-apps', route: '/security/features', featureKey: 'security.features' },
 ];
