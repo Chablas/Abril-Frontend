@@ -63,13 +63,13 @@
           </div>
           @if (data.petNombre) {
             <div class="meta-row">
-              <span class="meta-label"><i class="ti ti-file-text"></i> PET</span>
+              <span class="meta-label"><i class="ti ti-file-text"></i> PETS</span>
               <span class="meta-value">{{ data.petNombre }}</span>
             </div>
           }
           @if (data.requierePetModificacion) {
             <div class="meta-row">
-              <span class="meta-label"><i class="ti ti-alert-triangle"></i> PET a revisar</span>
+              <span class="meta-label"><i class="ti ti-alert-triangle"></i> PETS a revisar</span>
               <span class="meta-value">{{ data.requierePetModificacionNota || 'Se indicó que requiere modificarse.' }}</span>
             </div>
           }
@@ -86,7 +86,7 @@
             </div>
           }
           <div class="meta-row">
-            <span class="meta-label"><i class="ti ti-toggle-left"></i> ¿Cuenta con PET?</span>
+            <span class="meta-label"><i class="ti ti-toggle-left"></i> ¿Se cuenta con PETS?</span>
             <span class="meta-value">{{ data.cuentaConPet ? 'Sí' : 'No' }}</span>
           </div>
           <div class="meta-row">

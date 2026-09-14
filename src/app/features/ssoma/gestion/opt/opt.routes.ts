@@ -23,6 +23,13 @@ export const OPT_ROUTES: Routes = [
     data: { titulo: 'NUEVA OPT', featureKey: 'ssoma.gestion.opt.nuevo' },
   },
   {
+    // Continuar llenando un borrador ya creado — mismo componente, precargado.
+    path: 'nuevo/:id',
+    loadComponent: () => import('./pages/nuevo/opt-nuevo').then((m) => m.OptNuevo),
+    canActivate: [roleGuard],
+    data: { titulo: 'CONTINUAR OPT (BORRADOR)', featureKey: 'ssoma.gestion.opt.nuevo' },
+  },
+  {
     path: ':id',
     loadComponent: () => import('./pages/detalle/opt-detalle').then((m) => m.OptDetalle),
     canActivate: [roleGuard],

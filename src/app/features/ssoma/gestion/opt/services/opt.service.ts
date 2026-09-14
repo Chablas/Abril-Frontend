@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import {
   OptCatalogosDto,
@@ -42,5 +42,11 @@ export class OptService {
 
   crearOpt(request: CrearOptRequest): Observable<{ id: number }> {
     return this.http.post<{ id: number }>(`${this.base}`, request);
+  }
+
+  // Devuelve {id} igual que crearOpt (el PUT real responde 204 sin cuerpo) — así el
+  // wizard puede tratar ambas respuestas con la misma forma sin castear tipos.
+  actualizarOpt(id: number, request: CrearOptRequest): Observable<{ id: number }> {
+    return this.http.put<void>(`${this.base}/${id}`, request).pipe(map(() => ({ id })));
   }
 }

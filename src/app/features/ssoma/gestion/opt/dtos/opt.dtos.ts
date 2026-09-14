@@ -34,8 +34,11 @@ export interface OptPasoRequest {
   numeroDisplay: string;
   descripcion: string;
   nivel: number;
+  tipo: string;
   resultado?: string;
   desviacionObservada?: string;
+  esNoContemplado?: boolean;
+  esManual?: boolean;
   orden: number;
 }
 
@@ -63,6 +66,7 @@ export interface CrearOptRequest {
   verificaciones: OptVerificacionRequest[];
   pasos: OptPasoRequest[];
   fotosAreaBase64?: string[];
+  finalizar: boolean;
 }
 
 // ── Respuesta lista ────────────────────────────────────────────────────────────
@@ -130,8 +134,11 @@ export interface OptPasoDto {
   numeroDisplay: string;
   descripcion: string;
   nivel: number;
+  tipo: string;
   resultado?: string;
   desviacionObservada?: string;
+  esNoContemplado: boolean;
+  esManual: boolean;
   orden: number;
 }
 

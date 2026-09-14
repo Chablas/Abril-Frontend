@@ -46,12 +46,20 @@ export class PetsService {
     return this.http.post<{ id: number }>(this.base, req, { headers: buildAuthHeaders() });
   }
 
+  getSiguienteCodigo(): Observable<{ codigo: string }> {
+    return this.http.get<{ codigo: string }>(`${this.base}/siguiente-codigo`, { headers: buildAuthHeaders() });
+  }
+
   actualizar(id: number, req: ActualizarPetRequest): Observable<void> {
     return this.http.put<void>(`${this.base}/${id}`, req, { headers: buildAuthHeaders() });
   }
 
   duplicar(id: number): Observable<{ id: number }> {
     return this.http.post<{ id: number }>(`${this.base}/${id}/duplicar`, {}, { headers: buildAuthHeaders() });
+  }
+
+  eliminar(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}`, { headers: buildAuthHeaders() });
   }
 
   agregarPaso(id: number, req: CrearPetPasoRequest): Observable<{ id: number }> {
@@ -68,6 +76,10 @@ export class PetsService {
 
   reordenarPasos(id: number, req: ReordenarPasosRequest): Observable<void> {
     return this.http.put<void>(`${this.base}/${id}/pasos/reordenar`, req, { headers: buildAuthHeaders() });
+  }
+
+  cambiarNivelPaso(id: number, pasoId: number, nuevoParentId: number | null): Observable<void> {
+    return this.http.patch<void>(`${this.base}/${id}/pasos/${pasoId}/nivel`, { nuevoParentId }, { headers: buildAuthHeaders() });
   }
 
   previewImportarDocx(file: File): Observable<PetsImportPreviewDto> {

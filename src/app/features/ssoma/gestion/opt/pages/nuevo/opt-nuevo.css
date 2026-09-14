@@ -222,6 +222,19 @@
 
 .toggle--on .toggle-thumb { transform: translateX(18px); }
 
+/* Texto explícito "Sí"/"No" junto a cada toggle — el switch solo no siempre se lee
+   rápido a simple vista, sobre todo en la posición "apagado" (¿es No, o todavía no
+   se tocó?), así que se acompaña con la palabra. */
+.toggle-estado {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8a8880;
+  min-width: 16px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.toggle-estado--on { color: var(--color-abril-logo-blue); }
+
 .toggle--sm {
   width: 36px;
   height: 20px;
@@ -425,45 +438,183 @@
   padding-top: 10px;
 }
 
-.paso-fields { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.paso-fields { flex: 1; display: flex; flex-direction: column; gap: 8px; }
 
-.paso-top-row {
+.paso-desc-row {
   display: flex;
   gap: 6px;
   align-items: center;
   flex-wrap: wrap;
 }
 
-.paso-desc  { flex: 1; min-width: 0; }
+/* Textarea en vez de <input> de una sola línea: un párrafo largo de PETS real ya
+   no se corta ni obliga a hacer scroll horizontal para leerlo — crece con el
+   contenido (mismo truco que ya usa PETS: field-sizing: content). */
+.paso-desc {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  field-sizing: content;
+  min-height: 38px;
+  line-height: 1.35;
+  font-family: inherit;
+}
 .paso-nivel { width: 60px; flex-shrink: 0; }
 
+/* Fila propia y ANCHA para Cumple/No cumple/Mejor práctica/No aplica — es la
+   decisión que se toma en CADA fila, la más repetida de toda la pantalla, así que
+   se prioriza que sean grandes y fáciles de tocar (sobre todo en celular) antes
+   que compactas. 4 columnas iguales en vez de "lo que sobre" al lado del texto. */
 .resultado-group {
-  display: flex;
-  gap: 3px;
-  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
 }
 
 .resultado-btn {
-  min-width: 30px;
-  height: 32px;
-  padding: 0 8px;
+  height: 38px;
+  padding: 0 6px;
   border-radius: 7px;
   border: 0.5px solid #d4d0c8;
   background: #f5f3ef;
   color: #8a8880;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.12s;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-
-.res-full  { display: inline; }
-.res-short { display: none; }
 
 .resultado-btn--seguro   { background: var(--color-abril-logo-blue-light); color: var(--color-abril-logo-blue); border-color: #c1dac8; }
 .resultado-btn--inseguro { background: #fdecea; color: #b83030; border-color: #f5bebe; }
+.resultado-btn--mejor    { background: #fef9e7; color: #a1750a; border-color: #f0dfa8; }
 .resultado-btn--na       { background: #f0ede8; color: #5a5850; border-color: #d4d0c8; }
+
+@media (max-width: 379px) {
+  /* En pantallas muy angostas, 4 columnas ya no entran cómodas: 2x2. */
+  .resultado-group { grid-template-columns: repeat(2, 1fr); }
+  .resultado-btn { font-size: 11px; }
+}
+
+/* Subtítulo del árbol del PETS — agrupa lo que sigue debajo, colapsable con un
+   clic (mismo criterio visual que pets-detalle: pastilla/franja azul). */
+.subtitulo-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin: 10px 0 6px;
+  background: var(--color-abril-logo-blue-light, #eef6fc);
+  border-left: 3px solid var(--color-abril-logo-blue);
+  border-radius: 0 7px 7px 0;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--color-abril-logo-blue);
+  font-size: 13px;
+}
+
+.subtitulo-texto { flex: 1; }
+
+.paso-row--no-contemplado { border-color: #f0dfa8; background: #fefbf2; }
+
+.badge-no-contemplado {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  color: #a1750a;
+  background: #fef2cd;
+  border-radius: 5px;
+  padding: 3px 7px;
+  white-space: nowrap;
+}
+
+.paso-hint { font-size: 12px; color: #78716c; margin: 0 0 10px; }
+
+.paso-hint--sin-pets {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: #a1750a;
+  background: #fef9e7;
+  border: 0.5px solid #f0dfa8;
+  border-radius: 9px;
+  padding: 10px 12px;
+}
+.paso-hint--sin-pets .ti { margin-top: 1px; flex-shrink: 0; }
+
+.agregar-no-contemplado {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px;
+  border: 1px dashed #d4d0c8;
+  border-radius: 9px;
+}
+.agregar-no-contemplado .abril-field-input { flex: 1; }
+
+.fotos-existentes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.foto-existente-thumb {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 7px;
+  border: 0.5px solid #d4d0c8;
+}
+
+.accion-grupo-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #8a8880;
+  margin: 14px 0 6px;
+}
+.accion-grupo-label:first-of-type { margin-top: 8px; }
+
+.accion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.accion-chip {
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid #d4d0c8;
+  background: #f5f3ef;
+  color: #5a5850;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.accion-chip--activo {
+  background: var(--color-abril-logo-blue);
+  border-color: var(--color-abril-logo-blue);
+  color: #fff;
+}
+
+.firma-existente {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.firma-existente-img {
+  max-width: 240px;
+  max-height: 100px;
+  border: 0.5px solid #d4d0c8;
+  border-radius: 7px;
+  background: #fff;
+}
 
 .btn-remove-paso {
   width: 30px;
@@ -570,6 +721,57 @@
 .fotos-counter.fotos-ok { color: #16a34a; background: #f0fdf4; }
 .fotos-hint { font-size: 12px; color: #78716c; margin: 0 0 12px; }
 
+.borrador-indicador {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--color-abril-logo-blue);
+  background: var(--color-abril-logo-blue-light, #eef6fc);
+  padding: 8px 20px;
+  margin: 0;
+}
+
+.campo-aviso {
+  font-size: 11px;
+  color: #a1750a;
+  margin: 4px 0 0;
+}
+
+/* Aclaración informativa, no advertencia — ambas respuestas son legítimas, no se
+   quiere que el color de "aviso" (ámbar) dé a entender que una opción está mal. */
+.campo-aviso--neutro { color: #78716c; }
+
+/* "¿Se cuenta con PETS?" ya no es un toggle clickeable: se calcula sola a partir
+   del PETS elegido. Misma caja que .toggle-label (mismo borde/alto/tipografía que
+   el toggle de al lado), pero sin cursor de click ni fondo blanco puro — se nota
+   que es un dato de solo lectura, no una pregunta que se pueda tocar. */
+.dato-fijo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: #1a1a18;
+  padding: 10px 14px;
+  background: #faf9f7;
+  border: 0.5px solid #e8e5df;
+  border-radius: 9px;
+}
+
+.toggle-estado--fijo {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #f0ede8;
+  color: #8a8880;
+}
+.toggle-estado--fijo.toggle-estado--on {
+  background: var(--color-abril-logo-blue-light, #eef6fc);
+  color: var(--color-abril-logo-blue);
+}
+
 
 /* ── FOOTER ──────────────────────────────────────────────── */
 /* El chrome del footer (fondo, borde, padding) vive en el shared shell
@@ -626,9 +828,13 @@
 
 /* ── MOBILE <480px: resultado btn abreviado ───────────────── */
 @media (max-width: 479px) {
-  .res-full  { display: none; }
-  .res-short { display: inline; }
-  .resultado-btn { min-width: 30px; padding: 0; }
+  /* La descripción del paso va sola en su línea (ancho completo, legible), y el
+     tacho de eliminar (cuando aplica) queda debajo de ella. */
+  .paso-desc-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .paso-desc { width: 100%; }
 }
 
 /* ── RESPONSIVE ≥768px ────────────────────────────────────── */

@@ -31,18 +31,19 @@
             <tr>
               <th>Fecha</th>
               <th>Proyecto</th>
-              <th>PET</th>
+              <th>PETS</th>
               <th>Tipo</th>
               <th>Observador</th>
               <th>Trabajador(es)</th>
               <th>Score</th>
               <th>Acción</th>
+              <th>Estado</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             @for (item of result!.data; track item.id) {
-              <tr class="tabla-row" (click)="irADetalle(item.id)">
+              <tr class="tabla-row" (click)="abrirFila(item)">
                 <td class="col-fecha">{{ item.fecha | date:'dd/MM/yyyy' }}</td>
                 <td class="col-proyecto">{{ item.proyectoNombre }}</td>
                 <td class="col-pet">{{ item.petNombre ?? '—' }}</td>
@@ -73,13 +74,24 @@
                 </td>
                 <td>
                   <span class="accion-chip" [ngClass]="accionClass(item.accionRequerida)">
-                    {{ item.accionRequerida ?? 'Ninguna' }}
+                    {{ accionesDisplay(item.accionRequerida) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="chip-estado" [class.chip-estado--borrador]="esBorrador(item.estado)">
+                    {{ esBorrador(item.estado) ? 'Borrador' : 'Finalizado' }}
                   </span>
                 </td>
                 <td class="col-acciones" (click)="$event.stopPropagation()">
-                  <button type="button" class="btn-inline btn-inline--primary" (click)="irADetalle(item.id)">
-                    <i class="ti ti-eye"></i> Ver
-                  </button>
+                  @if (esBorrador(item.estado)) {
+                    <button type="button" class="btn-inline btn-inline--primary" (click)="continuarBorrador(item.id)">
+                      <i class="ti ti-edit"></i> Continuar llenando
+                    </button>
+                  } @else {
+                    <button type="button" class="btn-inline btn-inline--primary" (click)="irADetalle(item.id)">
+                      <i class="ti ti-eye"></i> Ver
+                    </button>
+                  }
                 </td>
               </tr>
             }
@@ -92,12 +104,16 @@
     @if (!loading && (result?.data?.length ?? 0) > 0) {
       <div class="cards-mobile">
         @for (item of result!.data; track item.id) {
-          <div class="opt-card" (click)="irADetalle(item.id)">
+          <div class="opt-card" (click)="abrirFila(item)">
             <div class="card-top">
               <div class="card-date"><i class="ti ti-calendar"></i> {{ item.fecha | date:'dd/MM/yyyy' }}</div>
-              <span class="score-badge score-badge--sm" [ngClass]="scoreClass(item.scorePct)">
-                {{ item.scorePct !== undefined && item.scorePct !== null ? (item.scorePct | number:'1.0-0') + '%' : '—' }}
-              </span>
+              @if (esBorrador(item.estado)) {
+                <span class="chip-estado chip-estado--borrador">Borrador</span>
+              } @else {
+                <span class="score-badge score-badge--sm" [ngClass]="scoreClass(item.scorePct)">
+                  {{ item.scorePct !== undefined && item.scorePct !== null ? (item.scorePct | number:'1.0-0') + '%' : '—' }}
+                </span>
+              }
             </div>
             <div class="card-proyecto">{{ item.proyectoNombre }}</div>
             <div class="card-meta">
@@ -121,9 +137,9 @@
                 }
               </div>
             }
-            @if (item.accionRequerida && item.accionRequerida !== 'Ninguna') {
+            @if (item.accionRequerida) {
               <div class="card-accion">
-                <i class="ti ti-alert-triangle"></i> {{ item.accionRequerida }}
+                <i class="ti ti-alert-triangle"></i> {{ accionesDisplay(item.accionRequerida) }}
               </div>
             }
           </div>
@@ -186,13 +202,13 @@
 
   <div class="w-full">
     <app-search-select
-      label="PET"
+      label="PETS"
       [options]="pets"
       valueField="id"
       displayField="nombre"
       [value]="filtroPetId"
       (valueChange)="filtroPetId = $event; load()"
-      placeholder="Todos los PET">
+      placeholder="Todos los PETS">
     </app-search-select>
   </div>
 

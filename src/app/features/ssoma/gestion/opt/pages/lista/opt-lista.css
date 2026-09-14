@@ -130,6 +130,17 @@
 
 .chip-tipo--planeada { background: #eef4ff; color: #2563a8; }
 
+.chip-estado {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--color-abril-standard-light);
+  color: var(--color-abril-standard);
+}
+.chip-estado--borrador { background: #fef5d0; color: #8a5a00; }
+
 .accion-chip {
   display: inline-block;
   padding: 2px 8px;

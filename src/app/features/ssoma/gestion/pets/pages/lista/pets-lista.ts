@@ -170,6 +170,34 @@ export class PetsLista implements OnInit {
     this.nuevoContributorId = null;
     this.nuevoProyectoId = null;
     this.cdr.markForCheck();
+    if (this.mostrarFormCrear) this.cargarSiguienteCodigo();
+  }
+
+  onOrigenChange(origen: 'Abril' | 'Contratista'): void {
+    this.nuevoOrigen = origen;
+    if (origen === 'Abril') {
+      this.cargarSiguienteCodigo();
+    } else {
+      this.nuevoCodigo = '';
+      this.cdr.markForCheck();
+    }
+  }
+
+  cargandoCodigo = false;
+
+  private cargarSiguienteCodigo(): void {
+    this.cargandoCodigo = true;
+    this.petsService.getSiguienteCodigo().subscribe({
+      next: ({ codigo }) => {
+        this.nuevoCodigo = codigo;
+        this.cargandoCodigo = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.cargandoCodigo = false;
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   get puedeCrear(): boolean {
@@ -181,6 +209,7 @@ export class PetsLista implements OnInit {
   crear(): void {
     if (!this.puedeCrear) return;
     this.creando = true;
+    this.loaderService.show();
     this.petsService
       .crear({
         nombre: this.nuevoNombre.trim(),
@@ -192,10 +221,12 @@ export class PetsLista implements OnInit {
       .subscribe({
         next: ({ id }) => {
           this.creando = false;
+          this.loaderService.hide();
           this.router.navigate(['/ssoma/gestion/pets', id]);
         },
         error: (err: HttpErrorResponse) => {
           this.creando = false;
+          this.loaderService.hide();
           this.errorService.handleError(err);
           this.cdr.markForCheck();
         },
@@ -221,13 +252,50 @@ export class PetsLista implements OnInit {
     }).then((res) => {
       if (!res.isConfirmed) return;
       this.duplicando = pet.id;
+      this.loaderService.show();
       this.petsService.duplicar(pet.id).subscribe({
         next: ({ id }) => {
           this.duplicando = null;
+          this.loaderService.hide();
           this.router.navigate(['/ssoma/gestion/pets', id]);
         },
         error: (err: HttpErrorResponse) => {
           this.duplicando = null;
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+    });
+  }
+
+  eliminando: number | null = null;
+
+  // Borrado real (distinto de Desactivar) — el backend lo rechaza con 409 si el
+  // PETS está en uso (OPT, Accidentes/Incidentes), y ese mensaje ya llega
+  // explicado vía ErrorService.
+  eliminar(pet: PetListItemDto): void {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Eliminar PETS',
+      text: `Se eliminará "${pet.nombre}" permanentemente, junto con todos sus pasos, imágenes, secciones y catálogo. Esta acción no se puede deshacer. Si solo quieres dejar de usarlo, usa "Desactivar" en su lugar.`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonText: 'Cancelar',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.eliminando = pet.id;
+      this.loaderService.show();
+      this.petsService.eliminar(pet.id).subscribe({
+        next: () => {
+          this.eliminando = null;
+          this.loaderService.hide();
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.eliminando = null;
+          this.loaderService.hide();
           this.errorService.handleError(err);
           this.cdr.markForCheck();
         },

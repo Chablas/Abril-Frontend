@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { forkJoin } from 'rxjs';
@@ -29,8 +29,6 @@ import { ProjectService } from '../../../../../../core/services/project.service'
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
-import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
-import { WorkerHabilitacionListDto } from '../../../../../../features/habilitacion/dtos/trabajador.model';
 import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
@@ -43,6 +41,11 @@ interface TrabajadorForm {
   tiempoEnObra: string;
   aniosExperiencia: string;
   firmaBase64: string;
+  // Si el trabajador ya venía de un borrador guardado, esta es la firma que ya
+  // subimos antes — se muestra tal cual hasta que el usuario decida "Volver a
+  // firmar" (recién ahí se habilita el canvas y se manda una nueva en base64).
+  firmaUrlExistente: string;
+  refirmar: boolean;
 }
 
 interface VerificacionForm {
@@ -52,12 +55,23 @@ interface VerificacionForm {
   resultado: boolean;
 }
 
+// Nodo del paso a paso observado — calca la jerarquía del PETS (subtitulo/paso) para
+// poder agrupar y colapsar por subtítulo, igual que ya se edita en PETS.
 interface PasoForm {
   id: number;
   numeroDisplay: string;
   descripcion: string;
-  resultado: string;
+  tipo: string; // 'subtitulo' | 'paso' (heredado del PETS)
+  nivel: number;
+  resultado: string; // '' | 'Seguro' | 'Inseguro' | 'MejorPractica' | 'NA'
   desviacionObservada: string;
+  // true = actividad real observada que el PETS no contemplaba (agregada a mano).
+  esNoContemplado: boolean;
+  // true = esta fila la agregó el observador a mano (paso suelto o "actividad no
+  // contemplada") — solo estas se pueden quitar. Un paso/subtítulo que vino del
+  // catálogo del PETS nunca se borra: si no aplica, se marca "No aplica" (así queda
+  // constancia de que sí se revisó, en vez de desaparecer del reporte).
+  esManual: boolean;
 }
 
 @Component({
@@ -70,10 +84,17 @@ interface PasoForm {
 })
 export class OptNuevo implements OnInit, AfterViewInit {
   paso = 1;
-  readonly totalPasos = 3;
-  readonly pasoLabels = ['Observación', 'Trabajadores', 'Retroalimentación'];
+  readonly totalPasos = 4;
+  readonly pasoLabels = ['Observación', 'Pasos observados', 'Retroalimentación', 'Trabajadores'];
   guardando = false;
+  guardandoBorrador = false;
   loadingCatalogos = false;
+
+  // Si viene un :id en la ruta, se está retomando un borrador ya creado — cada
+  // "Siguiente" y el guardado final pegan por PUT contra este id en vez de crear
+  // uno nuevo por POST.
+  optId: number | null = null;
+  cargandoBorrador = false;
 
   // Catálogos
   pets: OptPetDto[] = [];
@@ -85,49 +106,66 @@ export class OptNuevo implements OnInit, AfterViewInit {
   petId: number | null = null;
   fecha = new Date().toISOString().split('T')[0];
   tipoObservacion = '';
-  cuentaConPet = false;
   area = '';
   seInformaTrabajador = false;
   observadorNombre = '';
   observadorCargo = '';
   petVisorUrl = '';
   petVisorNombre = '';
-  // El observador NO modifica el PETS directamente (es peligroso) — solo indica que
-  // hace falta revisarlo y por qué, para que SSOMA lo haga.
-  requierePetModificacion = false;
-  requierePetModificacionNota = '';
 
-  // Observador — fijo, resuelto desde el usuario logueado (no editable)
-  workersObservador: WorkerHabilitacionListDto[] = [];
+  // Observador — fijo, resuelto desde el usuario logueado (no editable). En modo
+  // "retomar borrador" se respeta el observador que ya había quedado guardado.
+  workersObservador: WorkerSearchItemDto[] = [];
   observadorId: number | null = null;
   observadorActual: WorkerSearchItemDto | null = null;
   resolviendoObservador = true;
   sinWorkerVinculado = false;
 
-  // PASO 2
-  trabajadores: TrabajadorForm[] = [];
-  verificaciones: VerificacionForm[] = [];
+  // PASO 2 — pasos observados (+ fotos de la actividad, documentan lo observado)
   pasos: PasoForm[] = [];
-  trabajadorObservadoId: number | null = null;
   pasoNextId = 1;
+  subtitulosColapsados = new Set<number>();
+  nuevaActividadTexto = '';
+  fotosAreaBase64: string[] = [];
+  fotosAreaPreview: string[] = [];
+  // Fotos que ya estaban subidas de un guardado de borrador anterior (URLs, no
+  // base64) — se muestran de referencia, no se vuelven a mandar ni se pueden borrar
+  // desde acá todavía.
+  fotosAreaExistentes: string[] = [];
+  // Cuenta las que se subieron en ESTA sesión de edición pero cuya URL real no
+  // conocemos (crear/actualizar no la devuelve) — solo para el mínimo de 3, no se
+  // pueden mostrar como miniatura todavía.
+  private fotosNuevasYaGuardadas = 0;
 
-  // PASO 3
+  // PASO 3 — retroalimentación
   seFelicito = false;
   seRecibieronComentarios = false;
   seRetroalimento = false;
   seObtuvoCCompromiso = false;
-  accionRequerida = '';
+  // "Sobre el PETS" (Elaborar/Modificar/Mantener) es de UNA sola a la vez — o no hay
+  // PETS, o el que hay está bien, o necesita cambios; nunca dos a la vez. Entrenamiento
+  // es un eje aparte (sobre el TRABAJADOR, no sobre el documento) y puede darse junto
+  // con cualquiera de las tres — el PETS puede estar perfecto y aun así este
+  // trabajador puntual necesitar entrenamiento.
+  accionPetsSeleccionada: string | null = null;
+  requiereEntrenamiento = false;
   accionObservacion = '';
+  private sugerenciaYaAplicada = false;
 
-  // PASO 3 — fotos de la actividad
-  fotosAreaBase64: string[] = [];
-  fotosAreaPreview: string[] = [];
+  // PASO 4 — trabajadores + verificación de entrenamiento + firmas
+  trabajadores: TrabajadorForm[] = [];
+  verificaciones: VerificacionForm[] = [];
+  trabajadorObservadoId: number | null = null;
 
   // Canvas observador
   @ViewChild('canvasObs') canvasObs!: ElementRef<HTMLCanvasElement>;
   private ctxObs?: CanvasRenderingContext2D;
   private drawingObs = false;
   firmaObsBase64 = '';
+  // Firma que ya venía guardada del borrador — igual que con los trabajadores, se
+  // muestra tal cual hasta que se pide "Volver a firmar".
+  firmaObsUrlExistente = '';
+  refirmarObservador = false;
 
   // Canvases trabajadores
   @ViewChildren('canvasTrab') canvasTrabList!: QueryList<ElementRef<HTMLCanvasElement>>;
@@ -136,49 +174,156 @@ export class OptNuevo implements OnInit, AfterViewInit {
   firmasTrabBase64: Map<number, string> = new Map();
 
   readonly tiposTrabajador = ['Obrero', 'Operario', 'Capataz', 'Técnico', 'Ingeniero', 'Supervisor', 'Otro'];
-  readonly accionesRequeridas = ['Elaborar el PETS', 'Mantener el PETS', 'Modificar el PETS', 'Entrenamiento'];
+  // "Modificar el PETS" cubre tanto "ampliar con lo no contemplado" como "actualizar
+  // con una mejor práctica encontrada" — no hace falta separarlas, ambas terminan en
+  // la misma revisión de SSOMA.
+  readonly accionesPetsDisponibles = ['Elaborar el PETS', 'Modificar el PETS', 'Mantener el PETS'];
   readonly tiposObservacion = [
     { value: 'Planeada', label: 'Planeada' },
     { value: 'No Planeada', label: 'No Planeada' },
   ];
-  readonly accionesRequeridasOptions = this.accionesRequeridas.map((a) => ({ value: a, label: a }));
 
   constructor(
     private optService: OptService,
     private petsService: PetsService,
     private projectService: ProjectService,
-    private trabajadorHabService: TrabajadorHabService,
     private workerSearchService: WorkerSearchService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private router: Router,
+    private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
+    const idParam = this.route.snapshot.paramMap.get('id');
+    this.optId = idParam ? Number(idParam) : null;
+
     this.loadingCatalogos = true;
     forkJoin({
       catalogos: this.optService.getCatalogos(),
       proyectos: this.projectService.getProjectsPaged({ pageSize: 200, active: true }),
-      workers: this.trabajadorHabService.getTrabajadores({ pageSize: 9999, soloVerificacion: true }),
+      // Buscador LIVIANO (mismo que "Buscar por nombre o DNI..." en otras pantallas) —
+      // antes esto pegaba contra el endpoint de Habilitación con pageSize=9999, que
+      // calcula el estado de habilitación completo (EMO, SCTR, vigencias...) de CADA
+      // trabajador, una consulta pesadísima para solo llenar un combo de búsqueda.
+      // Acá no hace falta nada de eso, solo nombre/DNI/puesto/empresa.
+      workers: this.workerSearchService.search('', 3000),
     }).subscribe({
       next: ({ catalogos, proyectos, workers }) => {
         this.pets = catalogos.pets;
         this.criterios = catalogos.criterios;
         this.proyectos = proyectos.data;
-        this.workersObservador = workers.data;
-        this.verificaciones = catalogos.criterios.map((c) => ({
-          criterioId: c.id,
-          pregunta: c.pregunta,
-          orden: c.orden,
-          resultado: false,
-        }));
+        // Excluye retirados — el endpoint liviano no filtra por estado como sí hacía
+        // el de Habilitación (soloRetirados=false por defecto).
+        this.workersObservador = workers.filter((w) => w.activo);
         this.loadingCatalogos = false;
         this.cdr.markForCheck();
-        this.resolverObservadorActual();
+
+        if (this.optId) {
+          this.cargarBorrador(this.optId);
+        } else {
+          this.verificaciones = catalogos.criterios.map((c) => ({
+            criterioId: c.id,
+            pregunta: c.pregunta,
+            orden: c.orden,
+            resultado: false,
+          }));
+          this.resolverObservadorActual();
+        }
       },
       error: (err: HttpErrorResponse) => {
         this.loadingCatalogos = false;
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  // Trae un borrador ya creado y precarga los 4 pasos del wizard con lo que ya se
+  // había guardado — "Continuar llenando" desde la lista cae acá.
+  private cargarBorrador(id: number): void {
+    this.cargandoBorrador = true;
+    this.optService.getDetalle(id).subscribe({
+      next: (d) => {
+        if (d.estado !== 'borrador') {
+          Swal.fire({ icon: 'info', title: 'Esta OPT ya fue finalizada', text: 'Una OPT finalizada no se puede editar.' })
+            .then(() => this.router.navigate(['/ssoma/gestion/opt', id]));
+          return;
+        }
+
+        this.proyectoId = d.proyectoId;
+        this.petId = d.petId ?? null;
+        this.petSeleccionado = this.pets.find((p) => p.id === this.petId) ?? null;
+        this.fecha = d.fecha.split('T')[0];
+        this.tipoObservacion = d.tipoObservacion;
+        this.area = d.area ?? '';
+        this.seInformaTrabajador = d.seInformaTrabajador;
+
+        // El observador queda tal cual se guardó — no se vuelve a resolver desde el
+        // usuario logueado (puede que otra persona esté retomando el llenado).
+        this.observadorId = d.observadorId ?? null;
+        this.observadorNombre = d.observadorNombre ?? '';
+        this.observadorCargo = d.observadorCargo ?? '';
+        this.firmaObsUrlExistente = d.firmaObservadorUrl ?? '';
+        this.resolviendoObservador = false;
+        this.sinWorkerVinculado = false;
+
+        this.verificaciones = this.criterios.map((c) => {
+          const existente = d.verificaciones.find((v) => v.criterioId === c.id);
+          return { criterioId: c.id, pregunta: c.pregunta, orden: c.orden, resultado: existente?.resultado ?? false };
+        });
+
+        this.pasos = d.pasos.map((p) => ({
+          id: this.pasoNextId++,
+          numeroDisplay: p.numeroDisplay,
+          descripcion: p.descripcion,
+          tipo: p.tipo,
+          nivel: p.nivel,
+          resultado: p.resultado ?? '',
+          desviacionObservada: p.desviacionObservada ?? '',
+          esNoContemplado: p.esNoContemplado,
+          esManual: p.esManual,
+        }));
+        this.colapsarTodosLosSubtitulos();
+
+        this.fotosAreaExistentes = [...d.fotosArea];
+
+        this.seFelicito = d.seFelicito;
+        this.seRecibieronComentarios = d.seRecibieronComentarios;
+        this.seRetroalimento = d.seRetroalimento;
+        this.seObtuvoCCompromiso = d.seObtuvoCCompromiso;
+        const accionesGuardadas = d.accionRequerida
+          ? d.accionRequerida.split(',').map((a) => a.trim()).filter((a) => a)
+          : [];
+        this.requiereEntrenamiento = accionesGuardadas.includes('Entrenamiento');
+        this.accionPetsSeleccionada = accionesGuardadas.find((a) => a !== 'Entrenamiento') ?? null;
+        this.sugerenciaYaAplicada = accionesGuardadas.length > 0;
+        this.accionObservacion = d.accionObservacion ?? '';
+
+        this.trabajadores = d.trabajadores.map((t) => ({
+          trabajador: {
+            id: t.trabajadorId,
+            apellidoNombre: t.nombreTrabajador,
+            dni: t.dni ?? '',
+            puesto: t.tipoTrabajador,
+            empresaActual: t.empresaNombre,
+            activo: true,
+          },
+          tipoTrabajador: t.tipoTrabajador ?? '',
+          tiempoEnObra: t.tiempoEnObra ?? '',
+          aniosExperiencia: t.aniosExperiencia ?? '',
+          firmaBase64: '',
+          firmaUrlExistente: t.firmaTrabajadorUrl ?? '',
+          refirmar: false,
+        }));
+        for (const t of this.trabajadores) this.firmasTrabBase64.set(t.trabajador.id, '');
+
+        this.cargandoBorrador = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.cargandoBorrador = false;
         this.errorService.handleError(err);
         this.cdr.markForCheck();
       },
@@ -227,12 +372,18 @@ export class OptNuevo implements OnInit, AfterViewInit {
       }));
   }
 
+  // "¿Se cuenta con PETS?" ya no se toca a mano: se deriva 100% de si hay un PETS
+  // seleccionado arriba — no tiene sentido que alguien marque "Sí" sin haber elegido
+  // ninguno, ni "No" habiendo elegido uno.
+  get cuentaConPet(): boolean {
+    return !!this.petId;
+  }
+
   onPetChange(): void {
+    const anterior = this.petSeleccionado;
     this.petSeleccionado = this.pets.find((p) => p.id === Number(this.petId)) ?? null;
     this.petVisorUrl = '';
     this.petVisorNombre = '';
-    this.requierePetModificacion = false;
-    this.requierePetModificacionNota = '';
     this.cdr.markForCheck();
 
     if (this.petSeleccionado) {
@@ -250,12 +401,35 @@ export class OptNuevo implements OnInit, AfterViewInit {
       } else {
         this.cargarPasosDelPet(this.petSeleccionado.id);
       }
+      return;
+    }
+
+    // Se quitó el PETS (estaba elegido y ahora queda "Sin PETS registrado"): los
+    // pasos que se habían traído de SU catálogo ya no tienen sentido acá — dejarlos
+    // es justo lo que hacía parecer "el PETS sigue marcado" aunque ya no lo esté.
+    if (anterior && this.pasos.length > 0) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Quitaste el PETS asociado',
+        text: `Los ${this.pasos.length} paso(s) que trajiste de "${anterior.nombre}" ya no aplican — se van a borrar. Puedes seguir agregando pasos a mano.`,
+        showCancelButton: true,
+        confirmButtonText: 'Sí, borrarlos',
+        cancelButtonText: 'No, mantenerlos',
+      }).then((res) => {
+        if (res.isConfirmed) {
+          this.pasos = [];
+          this.subtitulosColapsados.clear();
+          this.cdr.markForCheck();
+        }
+      });
     }
   }
 
   // Trae automáticamente los pasos del catálogo del PETS seleccionado — así OPT
   // deja de requerir tipear a mano el "paso a paso" cada vez que se observa una
-  // tarea que ya tiene un PETS estructurado en la plataforma.
+  // tarea que ya tiene un PETS estructurado en la plataforma. Se conserva el tipo
+  // (subtitulo/paso) y el nivel de anidamiento para poder agrupar/colapsar igual
+  // que en la pantalla de PETS.
   private cargarPasosDelPet(petId: number): void {
     this.petsService.getPasos(petId).subscribe({
       next: (pasosPet) => {
@@ -264,9 +438,14 @@ export class OptNuevo implements OnInit, AfterViewInit {
           id: this.pasoNextId++,
           numeroDisplay: '',
           descripcion: p.descripcion,
+          tipo: p.tipo,
+          nivel: p.nivel,
           resultado: '',
           desviacionObservada: '',
+          esNoContemplado: false,
+          esManual: false,
         }));
+        this.colapsarTodosLosSubtitulos();
         this.renumerarPasos();
         this.cdr.markForCheck();
       },
@@ -296,23 +475,170 @@ export class OptNuevo implements OnInit, AfterViewInit {
     this.cdr.markForCheck();
   }
 
-  // ── TRABAJADORES ──────────────────────────────────────────────────────────
+  // ── PASOS OBSERVADOS (PASO 2) ─────────────────────────────────────────────
+  agregarPaso(): void {
+    this.pasos.push({
+      id: this.pasoNextId++,
+      numeroDisplay: '',
+      descripcion: '',
+      tipo: 'paso',
+      nivel: 0,
+      resultado: '',
+      desviacionObservada: '',
+      esNoContemplado: false,
+      esManual: true,
+    });
+    this.renumerarPasos();
+    this.cdr.markForCheck();
+  }
+
+  // Actividad real observada que el PETS no contempla — el gap inverso: no es una
+  // desviación de un paso existente, es un hueco del propio documento.
+  agregarActividadNoContemplada(): void {
+    const texto = this.nuevaActividadTexto.trim();
+    if (!texto) return;
+    this.pasos.push({
+      id: this.pasoNextId++,
+      numeroDisplay: '',
+      descripcion: texto,
+      tipo: 'paso',
+      nivel: 0,
+      resultado: '',
+      desviacionObservada: '',
+      esNoContemplado: true,
+      esManual: true,
+    });
+    this.nuevaActividadTexto = '';
+    this.renumerarPasos();
+    this.cdr.markForCheck();
+  }
+
+  quitarPaso(id: number): void {
+    this.pasos = this.pasos.filter((p) => p.id !== id);
+    this.renumerarPasos();
+    this.cdr.markForCheck();
+  }
+
+  // Los subtítulos y las actividades no contempladas no llevan número correlativo
+  // — solo los pasos "reales" del catálogo del PETS se numeran.
+  renumerarPasos(): void {
+    let contador = 0;
+    for (const p of this.pasos) {
+      if (p.tipo === 'subtitulo' || p.esNoContemplado) {
+        p.numeroDisplay = '';
+        continue;
+      }
+      contador++;
+      p.numeroDisplay = String(contador);
+    }
+  }
+
+  trackPasoId(_: number, p: PasoForm): number {
+    return p.id;
+  }
+
+  // Por defecto todos los subtítulos arrancan colapsados — en un PETS con muchas
+  // secciones, mostrarlas todas expandidas de entrada es una lista larguísima
+  // (peor aún en celular, que es como la mayoría va a llenar esto en campo). El
+  // observador expande solo la sección de la actividad que realmente está viendo.
+  private colapsarTodosLosSubtitulos(): void {
+    this.subtitulosColapsados = new Set(this.pasos.filter((p) => p.tipo === 'subtitulo').map((p) => p.id));
+  }
+
+  toggleColapso(id: number): void {
+    if (this.subtitulosColapsados.has(id)) this.subtitulosColapsados.delete(id);
+    else this.subtitulosColapsados.add(id);
+    this.cdr.markForCheck();
+  }
+
+  // Un paso queda oculto si CUALQUIER subtítulo ancestro (a cualquier nivel hacia
+  // arriba, no solo el padre inmediato) está colapsado — se camina hacia atrás en la
+  // lista plana buscando el siguiente nivel más superficial en cada paso.
+  esPasoVisible(index: number): boolean {
+    let techo = this.pasos[index].nivel;
+    if (techo === 0) return true;
+    for (let i = index - 1; i >= 0; i--) {
+      if (this.pasos[i].nivel < techo) {
+        if (this.pasos[i].tipo === 'subtitulo' && this.subtitulosColapsados.has(this.pasos[i].id)) return false;
+        techo = this.pasos[i].nivel;
+        if (techo === 0) break;
+      }
+    }
+    return true;
+  }
+
+  onFotoAreaChange(files: FileList): void {
+    for (let i = 0; i < files.length && this.fotosAreaBase64.length < 10; i++) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target!.result as string;
+        this.fotosAreaPreview.push(dataUrl);
+        this.fotosAreaBase64.push(dataUrl.split(',')[1]);
+        this.cdr.detectChanges();
+      };
+      reader.readAsDataURL(files[i]);
+    }
+  }
+
+  quitarFotoArea(idx: number): void {
+    this.fotosAreaBase64.splice(idx, 1);
+    this.fotosAreaPreview.splice(idx, 1);
+    this.cdr.markForCheck();
+  }
+
+  get totalFotos(): number {
+    return this.fotosAreaExistentes.length + this.fotosNuevasYaGuardadas + this.fotosAreaBase64.length;
+  }
+
+  // ── RETROALIMENTACIÓN (PASO 3) — acción sugerida automáticamente ─────────
+  // "Sobre el PETS": una sola a la vez — elegir otra reemplaza la anterior (clic en
+  // la ya elegida la deselecciona, dejando la conclusión "sin definir").
+  seleccionarAccionPets(a: string): void {
+    this.accionPetsSeleccionada = this.accionPetsSeleccionada === a ? null : a;
+    this.cdr.markForCheck();
+  }
+
+  toggleEntrenamiento(): void {
+    this.requiereEntrenamiento = !this.requiereEntrenamiento;
+    this.cdr.markForCheck();
+  }
+
+  // Se calcula UNA vez, al entrar por primera vez al paso 3 (si el usuario ya la
+  // había tocado — yendo y viniendo con Anterior/Siguiente, o retomando un borrador
+  // — no se le pisa la elección). El observador siempre puede ajustarla a mano.
+  private sugerirAcciones(): void {
+    if (this.sugerenciaYaAplicada) return;
+    this.sugerenciaYaAplicada = true;
+    const evaluables = this.pasos.filter((p) => p.tipo !== 'subtitulo');
+
+    if (!this.petId) {
+      this.accionPetsSeleccionada = 'Elaborar el PETS';
+    } else if (evaluables.some((p) => p.esNoContemplado || p.resultado === 'MejorPractica')) {
+      this.accionPetsSeleccionada = 'Modificar el PETS';
+    } else if (evaluables.some((p) => p.resultado === 'Seguro' || p.resultado === 'Inseguro')) {
+      this.accionPetsSeleccionada = 'Mantener el PETS';
+    } else {
+      this.accionPetsSeleccionada = null;
+    }
+
+    // Entrenamiento es específico: hay PETS, el paso SÍ está en su catálogo, y aun
+    // así el trabajador no lo cumple. Si no hay PETS (o el paso es uno "no
+    // contemplado", que por definición no viene del catálogo) no aplica — ahí el
+    // problema es el documento, no la persona.
+    this.requiereEntrenamiento =
+      !!this.petId && evaluables.some((p) => p.resultado === 'Inseguro' && !p.esNoContemplado);
+  }
+
+  get requierePetModificacionComputado(): boolean {
+    return !!this.petId && this.accionPetsSeleccionada === 'Modificar el PETS';
+  }
+
+  // ── TRABAJADORES (PASO 4) ─────────────────────────────────────────────────
   onTrabajadorObservadoChange(id: number | null): void {
     if (!id) return;
-    const w = this.workersObservador.find((x) => x.workerId === id);
+    const w = this.workersObservador.find((x) => x.id === id);
     if (!w) return;
-    const dto: WorkerSearchItemDto = {
-      id: w.workerId,
-      apellidoNombre: w.apellidoNombre,
-      dni: w.dni,
-      puesto: w.puesto,
-      categoria: w.categoria,
-      fechaIngreso: w.fechaIngreso,
-      empresaActual: w.empresaNombre,
-      activo: w.estadoWorker !== 'RETIRADO',
-      aniosExperiencia: w.aniosExperiencia,
-    };
-    this.agregarTrabajador(dto);
+    this.agregarTrabajador(w);
     setTimeout(() => {
       this.trabajadorObservadoId = null;
       this.cdr.markForCheck();
@@ -327,6 +653,8 @@ export class OptNuevo implements OnInit, AfterViewInit {
       tiempoEnObra: this.calcularTiempoEnObra(w.fechaIngreso),
       aniosExperiencia: w.aniosExperiencia?.toString() ?? '',
       firmaBase64: '',
+      firmaUrlExistente: '',
+      refirmar: false,
     });
     this.firmasTrabBase64.set(w.id, '');
     this.cdr.markForCheck();
@@ -353,29 +681,9 @@ export class OptNuevo implements OnInit, AfterViewInit {
     this.cdr.markForCheck();
   }
 
-  // ── PASOS ────────────────────────────────────────────────────────────────
-  agregarPaso(): void {
-    const orden = this.pasos.length + 1;
-    this.pasos.push({
-      id: this.pasoNextId++,
-      numeroDisplay: String(orden),
-      descripcion: '',
-      resultado: '',
-      desviacionObservada: '',
-    });
+  refirmarTrabajador(t: TrabajadorForm): void {
+    t.refirmar = true;
     this.cdr.markForCheck();
-  }
-
-  quitarPaso(id: number): void {
-    this.pasos = this.pasos.filter((p) => p.id !== id);
-    this.renumerarPasos();
-    this.cdr.markForCheck();
-  }
-
-  renumerarPasos(): void {
-    this.pasos.forEach((p, i) => {
-      p.numeroDisplay = String(i + 1);
-    });
   }
 
   // ── CANVAS OBSERVADOR ────────────────────────────────────────────────────
@@ -525,46 +833,28 @@ export class OptNuevo implements OnInit, AfterViewInit {
           !!this.area &&
           !!this.observadorNombre
         );
-      case 2:
-        return this.trabajadores.length >= 1;
       default:
         return true;
     }
   }
 
+  // Cada "Siguiente" guarda de inmediato como borrador — así nunca se pierde lo
+  // llenado si el usuario se queda a medias en campo (batería, interrupción, etc.).
   siguiente(): void {
     if (!this.validarPaso()) return;
-    this.paso++;
-    if (this.paso === 3) {
-      setTimeout(() => this.initCanvasObs(), 100);
-    }
-    this.cdr.markForCheck();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.guardarBorrador(() => {
+      this.paso++;
+      if (this.paso === 3) this.sugerirAcciones();
+      if (this.paso === 4) setTimeout(() => this.initCanvasObs(), 100);
+      this.cdr.markForCheck();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   }
 
   anterior(): void {
     this.paso--;
     this.cdr.markForCheck();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  onFotoAreaChange(files: FileList): void {
-    for (let i = 0; i < files.length && this.fotosAreaBase64.length < 10; i++) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target!.result as string;
-        this.fotosAreaPreview.push(dataUrl);
-        this.fotosAreaBase64.push(dataUrl.split(',')[1]);
-        this.cdr.detectChanges();
-      };
-      reader.readAsDataURL(files[i]);
-    }
-  }
-
-  quitarFotoArea(idx: number): void {
-    this.fotosAreaBase64.splice(idx, 1);
-    this.fotosAreaPreview.splice(idx, 1);
-    this.cdr.markForCheck();
   }
 
   validarPaso(): boolean {
@@ -582,27 +872,11 @@ export class OptNuevo implements OnInit, AfterViewInit {
         return false;
       }
     }
-    if (this.paso === 2) {
-      if (this.trabajadores.length === 0) {
-        Swal.fire({ icon: 'warning', title: 'Agrega al menos un trabajador', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
-        return false;
-      }
-    }
-    if (this.paso === 3) {
-      if (this.fotosAreaBase64.length < 3) {
-        Swal.fire({ icon: 'warning', title: 'Mínimo 3 fotos de la actividad', text: 'Agrega al menos 3 fotos de la actividad observada para continuar.', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
-        return false;
-      }
-    }
     return true;
   }
 
-  guardar(): void {
-    if (this.guardando) return;
-    if (!this.validarPaso()) return;
-    this.guardando = true;
-    this.loaderService.show();
-
+  // ── ARMAR REQUEST (compartido entre borrador y finalizar) ────────────────
+  private construirRequest(finalizar: boolean): CrearOptRequest {
     const trabajadoresReq: OptTrabajadorRequest[] = this.trabajadores.map((t) => ({
       trabajadorId: t.trabajador.id,
       tipoTrabajador: t.tipoTrabajador || undefined,
@@ -619,13 +893,16 @@ export class OptNuevo implements OnInit, AfterViewInit {
     const pasosReq: OptPasoRequest[] = this.pasos.map((p, i) => ({
       numeroDisplay: p.numeroDisplay,
       descripcion: p.descripcion,
-      nivel: 1,
+      nivel: p.nivel,
+      tipo: p.tipo,
       resultado: p.resultado || undefined,
       desviacionObservada: p.desviacionObservada || undefined,
+      esNoContemplado: p.esNoContemplado,
+      esManual: p.esManual,
       orden: i + 1,
     }));
 
-    const request: CrearOptRequest = {
+    return {
       proyectoId: Number(this.proyectoId ?? 0),
       petId: this.petId ? Number(this.petId) : undefined,
       fecha: this.fecha,
@@ -641,29 +918,88 @@ export class OptNuevo implements OnInit, AfterViewInit {
       seRecibieronComentarios: this.seRecibieronComentarios,
       seRetroalimento: this.seRetroalimento,
       seObtuvoCCompromiso: this.seObtuvoCCompromiso,
-      accionRequerida: this.accionRequerida || undefined,
+      accionRequerida:
+        [this.accionPetsSeleccionada, this.requiereEntrenamiento ? 'Entrenamiento' : null]
+          .filter((a): a is string => !!a)
+          .join(',') || undefined,
       accionObservacion: this.accionObservacion || undefined,
-      requierePetModificacion: this.petId ? this.requierePetModificacion : false,
-      requierePetModificacionNota: this.requierePetModificacionNota || undefined,
+      requierePetModificacion: this.requierePetModificacionComputado,
+      requierePetModificacionNota: this.accionObservacion || undefined,
       trabajadores: trabajadoresReq,
       verificaciones: verificacionesReq,
       pasos: pasosReq,
       fotosAreaBase64: this.fotosAreaBase64,
+      finalizar,
     };
+  }
 
-    this.optService.crearOpt(request).subscribe({
-      next: ({ id }) => {
+  // Guarda (crea o actualiza) como borrador, sin exigir mínimos — se puede llamar
+  // con lo poco que haya en el paso 1 nada más.
+  private guardarBorrador(onDone: () => void): void {
+    this.guardandoBorrador = true;
+    const request = this.construirRequest(false);
+    const obs = this.optId
+      ? this.optService.actualizarOpt(this.optId, request)
+      : this.optService.crearOpt(request);
+
+    obs.subscribe({
+      next: (res) => {
+        this.guardandoBorrador = false;
+        if (!this.optId) {
+          this.optId = res.id;
+          // Deja la URL en modo "continuar" sin recargar el wizard — así un refresh
+          // de la página no empieza una OPT nueva de cero.
+          this.router.navigate(['/ssoma/gestion/opt/nuevo', this.optId], { replaceUrl: true });
+        }
+        // Las fotos/firmas recién subidas ya quedaron persistidas — se limpian de la
+        // cola de "pendientes" para no reenviarlas en el próximo guardado (solo se
+        // cuentan para el mínimo, no se pueden mostrar como miniatura hasta recargar).
+        this.fotosNuevasYaGuardadas += this.fotosAreaBase64.length;
+        this.fotosAreaBase64 = [];
+        this.fotosAreaPreview = [];
+        onDone();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.guardandoBorrador = false;
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  // ── FINALIZAR ─────────────────────────────────────────────────────────────
+  guardar(): void {
+    if (this.guardando) return;
+    if (this.trabajadores.length === 0) {
+      Swal.fire({ icon: 'warning', title: 'Agrega al menos un trabajador', toast: true, position: 'top-end', showConfirmButton: false, timer: 2500 });
+      return;
+    }
+    if (this.totalFotos < 3) {
+      Swal.fire({ icon: 'warning', title: 'Mínimo 3 fotos de la actividad', text: 'Agrega al menos 3 fotos de la actividad observada para finalizar.', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000 });
+      return;
+    }
+
+    this.guardando = true;
+    this.loaderService.show();
+    const request = this.construirRequest(true);
+    const obs = this.optId
+      ? this.optService.actualizarOpt(this.optId, request)
+      : this.optService.crearOpt(request);
+
+    obs.subscribe({
+      next: (res) => {
         this.guardando = false;
         this.loaderService.hide();
+        const id = this.optId ?? res.id;
         Swal.fire({
           icon: 'success',
-          title: 'OPT registrada',
-          text: `OPT #${id} creada correctamente.`,
+          title: 'OPT finalizada',
+          text: id ? `OPT #${id} registrada correctamente.` : 'Registrada correctamente.',
           confirmButtonText: 'Ver detalle',
           showCancelButton: true,
           cancelButtonText: 'Nueva OPT',
-        }).then((res) => {
-          if (res.isConfirmed) {
+        }).then((r) => {
+          if (r.isConfirmed && id) {
             this.router.navigate(['/ssoma/gestion/opt', id]);
           } else {
             this.router.navigate(['/ssoma/gestion/opt/nuevo']);

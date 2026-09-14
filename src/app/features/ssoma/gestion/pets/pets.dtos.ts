@@ -31,6 +31,9 @@ export interface PetPasoDto {
   id: number;
   parentId?: number | null;
   tipo: string; // subtitulo | paso | letra | guion
+  // Profundidad en el árbol (0 = nivel superior) — solo viene calculada en
+  // GET /pets/{id}/pasos (consumido por OPT para agrupar/colapsar por subtítulo).
+  nivel: number;
   descripcion: string;
   // Se mantiene = imagenes[0]?.url (compatibilidad) — el dato real son varias
   // imágenes por paso, en "imagenes".
@@ -115,6 +118,7 @@ export interface PetDetalleDto {
   proyectoNombre?: string;
   pasos: PetPasoDto[];
   responsabilidades: PetPasoDto[];
+  gestionPersonal: PetPasoDto[];
   seccionesTexto: Record<PetSeccionTexto, string>;
   marcoLegal: PetItemSeleccionadoDto[];
   epp: PetItemSeleccionadoDto[];

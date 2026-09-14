@@ -25,7 +25,12 @@
           </div>
           <div class="abril-field">
             <label class="abril-field-label">Código</label>
-            <input type="text" class="abril-field-input" [(ngModel)]="nuevoCodigo" placeholder="Ej. SSO-PETS-17" />
+            <input
+              type="text"
+              class="abril-field-input"
+              [(ngModel)]="nuevoCodigo"
+              [readonly]="nuevoOrigen === 'Abril'"
+              [placeholder]="cargandoCodigo ? 'Calculando…' : 'Ej. SSO-PETS-17'" />
           </div>
           <div class="abril-field">
             <app-search-select
@@ -35,7 +40,7 @@
               displayField="label"
               [value]="nuevoOrigen"
               [allowClear]="false"
-              (valueChange)="nuevoOrigen = $event">
+              (valueChange)="onOrigenChange($event)">
             </app-search-select>
           </div>
           @if (nuevoOrigen === 'Contratista') {
@@ -126,6 +131,9 @@
                 </button>
                 <button [abrilBulkAction]="p.activo ? 'danger' : 'default'" (click)="toggleActivo(p)">
                   {{ p.activo ? 'Desactivar' : 'Activar' }}
+                </button>
+                <button abrilBulkAction="danger" [disabled]="eliminando === p.id" (click)="eliminar(p)">
+                  {{ eliminando === p.id ? 'Eliminando…' : 'Eliminar' }}
                 </button>
               </div>
             </td>
