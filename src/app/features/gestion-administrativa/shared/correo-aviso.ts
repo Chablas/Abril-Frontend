@@ -7,8 +7,6 @@
  * no manda ningún correo.
  */
 export interface CorreoAvisoDto {
-  /** Qué correo es ("Al solicitante", "A Tesorería"). Va delante de las direcciones. */
-  etiqueta: string;
   para: string[];
   copia: string[];
 }
@@ -35,11 +33,10 @@ export interface CorreoPreviewRequestDto {
  * el endpoint de preview.
  */
 export const avisosDe = (
-  etiqueta: string,
   destinatarios: { para: string[]; copia: string[] } | null,
 ): CorreoAvisoDto[] =>
   destinatarios?.para?.length
-    ? [{ etiqueta, para: destinatarios.para, copia: destinatarios.copia ?? [] }]
+    ? [{ para: destinatarios.para, copia: destinatarios.copia ?? [] }]
     : [];
 
 const escapar = (s: string) =>
@@ -47,6 +44,17 @@ const escapar = (s: string) =>
 
 const CAJA_AVISO =
   'text-align:left;background:#FEF9C3;border:1px solid #FDE68A;border-radius:8px;padding:10px 12px;color:#92400E';
+
+/** Quita repetidos sin mirar mayúsculas: la misma dirección puede venir en dos avisos de la acción. */
+const unicos = (correos: string[]): string[] => {
+  const vistos = new Set<string>();
+  return correos.filter((c) => {
+    const clave = (c ?? '').trim().toLowerCase();
+    if (!clave || vistos.has(clave)) return false;
+    vistos.add(clave);
+    return true;
+  });
+};
 
 /**
  * Cuerpo del SweetAlert de una acción que dispara correos: las direcciones a las que de verdad va
@@ -57,6 +65,11 @@ const CAJA_AVISO =
  * mano, o a nadie. El backend los resuelve con el MISMO cálculo que hace el envío, así que la
  * confirmación no puede prometer algo distinto de lo que va a pasar — por eso llegan resueltos y
  * no se recalcula nada acá.
+ *
+ * Una acción puede disparar más de un correo (aprobar el reembolso avisa al solicitante Y a
+ * Tesorería), pero la confirmación no los separa por público: lo único que se pregunta antes de
+ * apretar el botón es a quién le va a llegar. Por eso sale un solo "Se notificará a:" con todas
+ * las direcciones juntas y sin repetir a nadie.
  *
  * Sin `font-size` a propósito: hereda el del cuerpo de SweetAlert2 para salir del mismo tamaño que
  * los avisos que usan `text:`. Fijarlo en px lo deja más chico que el resto del módulo.
@@ -76,17 +89,17 @@ export function avisosCorreoHtml(
     return `<div style="${CAJA_AVISO}">${sinNadie}</div>`;
   }
 
-  const bloques = conDestinatarios.map((a, i) => {
-    const para = a.para.map(escapar).join(', ');
-    const copia = (a.copia ?? []).map(escapar).join(', ');
+  const para = unicos(conDestinatarios.flatMap((a) => a.para));
+  // Quien ya está nombrado como destinatario no se repite en la copia: para el que confirma es la
+  // misma persona avisada dos veces.
+  const enPara = new Set(para.map((p) => p.trim().toLowerCase()));
+  const copia = unicos(conDestinatarios.flatMap((a) => a.copia ?? []))
+    .filter((c) => !enPara.has(c.trim().toLowerCase()));
 
-    return `<div${i > 0 ? ' style="margin-top:8px"' : ''}>
-      ${escapar(a.etiqueta)}: <b style="color:var(--color-abril-logo-blue);word-break:break-all">${para}</b>
-      ${copia
-        ? `<div style="margin-top:2px;color:#6B7280">En copia: <span style="word-break:break-all">${copia}</span></div>`
-        : ''}
-    </div>`;
-  });
-
-  return `<div style="text-align:left;color:#4B5563">${bloques.join('')}</div>`;
+  return `<div style="text-align:left;color:#4B5563">
+    Se notificará a: <b style="color:var(--color-abril-logo-blue);word-break:break-all">${para.map(escapar).join(', ')}</b>
+    ${copia.length
+      ? `<div style="margin-top:2px;color:#6B7280">En copia: <span style="word-break:break-all">${copia.map(escapar).join(', ')}</span></div>`
+      : ''}
+  </div>`;
 }

@@ -59,16 +59,16 @@ export interface CorreccionS10Dto {
    * anteriores a la columna, que son todas de jefatura.
    */
   motivoOrigen: string;
-  /** Guía del consolidado observado — con esto el ERP lo encuentra en el S10. */
-  numeroGuia: string | null;
+  /** Número de reembolso del consolidado observado — con esto el ERP lo encuentra en el S10. */
+  numeroReembolso: string | null;
   solicitadaPor: string;
   solicitadaAt: string;
   /** Coordinador ERP que confirmó. Null mientras esté por atender. */
   atendidaPor: string | null;
   atendidaAt: string | null;
   comentarioAtencion: string | null;
-  /** True si el ERP anuló el registro: hace falta una guía NUEVA (CA-19). */
-  guiaAnulada: boolean;
+  /** True si el ERP anuló el registro: hace falta un número de reembolso NUEVO (CA-19). */
+  numeroReembolsoAnulado: boolean;
   /** True mientras el ERP no la haya atendido: la pelota está en el Coordinador. */
   esperandoErp: boolean;
 }

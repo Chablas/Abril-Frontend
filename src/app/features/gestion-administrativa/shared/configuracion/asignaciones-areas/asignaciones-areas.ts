@@ -31,7 +31,11 @@ interface ModoDef {
   singular: string;
   /** "Revisores" / "Consolidadores". */
   plural: string;
-  /** Encabezado de la columna de vigentes. */
+  /**
+   * Encabezado de la columna de vigentes. Dice solo "Revisor" / "Consolidadores" y no "…vigente":
+   * la columna es la respuesta a "¿quién es hoy?" y el matiz de lo vigente ya lo da la etiqueta de
+   * origen de cada nombre.
+   */
   columnaEfectivos: string;
   /**
    * true = de los asignados solo cuenta el primero activo (revisores). false = cuentan todos
@@ -73,13 +77,13 @@ export class GaAsignacionesAreas implements OnInit, OnChanges {
     revisores: {
       singular: 'Revisor',
       plural: 'Revisores',
-      columnaEfectivos: 'Revisor vigente',
+      columnaEfectivos: 'Revisor',
       ganaSoloUno: true,
     },
     consolidadores: {
       singular: 'Consolidador',
       plural: 'Consolidadores',
-      columnaEfectivos: 'Consolidadores vigentes',
+      columnaEfectivos: 'Consolidadores',
       ganaSoloUno: false,
     },
   };
@@ -108,6 +112,7 @@ export class GaAsignacionesAreas implements OnInit, OnChanges {
   scopeProjectId: number | null = null;
   scopeProjectName: string | undefined;
   scopeAsignados: AreaAsignadoDTO[] | undefined;
+  scopeEfectivos: AreaEfectivoDTO[] | undefined;
 
   /**
    * Quién configura esta pantalla: el ADMINISTRADOR DE SOLICITUD DE SALIDAS y el USUARIO DE GTH.
@@ -189,24 +194,28 @@ export class GaAsignacionesAreas implements OnInit, OnChanges {
 
   /** Abre el detalle de un proyecto dentro de un área filtrada por proyecto. */
   openDetalleProyecto(item: AreaAsignacionItemDTO, proj: AreaProyectoAsignacionesDTO): void {
-    this.scopeProjectId = proj.projectId;
-    this.scopeProjectName = proj.projectName;
-    this.scopeAsignados = proj.asignados;
+    this.setScope(proj);
     this.detalleDe = item;
   }
 
   /** Abre la edición de un proyecto dentro de un área filtrada por proyecto. */
   openEditProyecto(item: AreaAsignacionItemDTO, proj: AreaProyectoAsignacionesDTO): void {
+    this.setScope(proj);
+    this.editando = item;
+  }
+
+  private setScope(proj: AreaProyectoAsignacionesDTO): void {
     this.scopeProjectId = proj.projectId;
     this.scopeProjectName = proj.projectName;
     this.scopeAsignados = proj.asignados;
-    this.editando = item;
+    this.scopeEfectivos = proj.efectivos;
   }
 
   private clearScope(): void {
     this.scopeProjectId = null;
     this.scopeProjectName = undefined;
     this.scopeAsignados = undefined;
+    this.scopeEfectivos = undefined;
   }
 
   closeModales(): void {

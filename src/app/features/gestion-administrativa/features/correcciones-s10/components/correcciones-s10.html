@@ -55,7 +55,7 @@
           </th>
           <th>Rendición</th>
           <th>Colaborador</th>
-          <th>N.º de guía</th>
+          <th>N.º de reembolso</th>
           <th>Qué corregir</th>
           <th>Solicitada</th>
           <th>Estado</th>
@@ -103,11 +103,11 @@
           <!-- Es EL dato con el que se ubica el registro en el S10, así que va en columna propia
                y sin recortar. -->
           <td class="whitespace-nowrap">
-            <span *ngIf="c.numeroGuia; else sinGuia" class="text-gray-700 font-medium">
-              {{ c.numeroGuia }}
+            <span *ngIf="c.numeroReembolso; else sinReembolso" class="text-gray-700 font-medium">
+              {{ c.numeroReembolso }}
             </span>
-            <ng-template #sinGuia>
-              <span class="text-[11px] text-gray-400 italic">sin guía</span>
+            <ng-template #sinReembolso>
+              <span class="text-[11px] text-gray-400 italic">sin reembolso</span>
             </ng-template>
           </td>
 
@@ -205,7 +205,7 @@
 
   <div class="w-full">
     <app-search-input
-      placeholder="Buscar por rendición, guía o colaborador..."
+      placeholder="Buscar por rendición, reembolso o colaborador..."
       [(value)]="searchText"
       (valueChange)="onSearchChange()"
       width="100%">

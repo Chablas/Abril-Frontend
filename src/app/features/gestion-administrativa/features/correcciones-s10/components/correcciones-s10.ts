@@ -340,14 +340,14 @@ export class CorreccionesS10 implements OnInit, OnDestroy {
   /**
    * Marca la corrección como hecha en el S10 y le avisa al colaborador. Se pregunta aparte si el
    * registro se ANULÓ, porque eso cambia lo que él tiene que hacer después: con una anulación
-   * necesita una guía nueva y la anterior queda bloqueada al recargar el consolidado.
+   * necesita un número de reembolso nuevo y el anterior queda bloqueado al recargar el consolidado.
    */
   private async atender(items: CorreccionS10ListItemDto[]): Promise<void> {
     if (items.length === 0) return;
 
     const ids = items.map((c) => c.id);
-    const guias = items
-      .map((c) => c.numeroGuia)
+    const reembolsos = items
+      .map((c) => c.numeroReembolso)
       .filter((g): g is string => !!g);
 
     const { value, isConfirmed } = await Swal.fire<{ anulada: boolean; comentario: string }>({
@@ -358,10 +358,10 @@ export class CorreccionesS10 implements OnInit, OnDestroy {
       html: `
         <div style="text-align:left;color:#4B5563">
           <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin-bottom:10px">
-            <input type="checkbox" id="ga-guia-anulada" style="margin-top:3px;accent-color:#C2410C">
+            <input type="checkbox" id="ga-reembolso-anulado" style="margin-top:3px;accent-color:#C2410C">
             <span>
-              El registro del S10 se <b>anuló</b>: hace falta una guía nueva.
-              ${guias.length ? `<br><span style="font-size:12px;color:#6B7280">Guía actual: ${guias.join(', ')}</span>` : ''}
+              El registro del S10 se <b>anuló</b>: hace falta un número de reembolso nuevo.
+              ${reembolsos.length ? `<br><span style="font-size:12px;color:#6B7280">Reembolso actual: ${reembolsos.join(', ')}</span>` : ''}
             </span>
           </label>
           <label for="ga-comentario" style="display:block;font-size:13px;margin-bottom:4px">
@@ -375,7 +375,7 @@ export class CorreccionesS10 implements OnInit, OnDestroy {
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#0F6E56',
       preConfirm: () => ({
-        anulada: (document.getElementById('ga-guia-anulada') as HTMLInputElement)?.checked ?? false,
+        anulada: (document.getElementById('ga-reembolso-anulado') as HTMLInputElement)?.checked ?? false,
         comentario: (document.getElementById('ga-comentario') as HTMLTextAreaElement)?.value ?? '',
       }),
     });
@@ -396,7 +396,7 @@ export class CorreccionesS10 implements OnInit, OnDestroy {
     this.service.atender({
       correccionIds: ids,
       comentarioAtencion: value.comentario?.trim() || null,
-      guiaAnulada: value.anulada,
+      numeroReembolsoAnulado: value.anulada,
     }).subscribe({
       next: (res) => {
         this.loaderService.hide();

@@ -89,7 +89,7 @@
           [textColor]="correccionS10Colors(c.esperandoErp).text" />
         <span class="text-[11px] text-gray-500">
           Solicitada el {{ c.solicitadaAt | date:'dd/MM/yyyy HH:mm' }}
-          <ng-container *ngIf="c.numeroGuia"> · guía {{ c.numeroGuia }}</ng-container>
+          <ng-container *ngIf="c.numeroReembolso"> · reembolso {{ c.numeroReembolso }}</ng-container>
         </span>
       </div>
 
@@ -104,8 +104,8 @@
         {{ c.comentarioAtencion }}</ng-container>
       </div>
 
-      <div *ngIf="c.guiaAnulada" class="font-semibold" style="color:#991B1B">
-        El registro se anuló: genera una guía nueva en el S10 — la anterior ya no se puede usar.
+      <div *ngIf="c.numeroReembolsoAnulado" class="font-semibold" style="color:#991B1B">
+        El registro se anuló: genera un número de reembolso nuevo en el S10 — el anterior ya no se puede usar.
       </div>
     </div>
 
@@ -344,5 +344,4 @@
 <app-salida-capturas-modal
   *ngIf="capturasSolicitudId !== null"
   [solicitudId]="capturasSolicitudId"
-  [subsanacion]="true"
   (close)="cerrarCapturas($event)" />

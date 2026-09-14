@@ -715,8 +715,8 @@ export class GestionRendiciones implements OnInit {
     };
   }
 
-  readonly subirConsolidado = (file: File, montoTotal: number, numeroGuia: string) =>
-    this.service.uploadConsolidadoS10(this.consolidadoPara!.rendicionIds, file, montoTotal, numeroGuia);
+  readonly subirConsolidado = (file: File, montoTotal: number, numeroReembolso: string) =>
+    this.service.uploadConsolidadoS10(this.consolidadoPara!.rendicionIds, file, montoTotal, numeroReembolso);
 
   cerrarConsolidado(subido: ConsolidadoS10Dto | null): void {
     this.consolidadoPara = null;

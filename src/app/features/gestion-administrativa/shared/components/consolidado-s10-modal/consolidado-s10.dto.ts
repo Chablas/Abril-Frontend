@@ -28,8 +28,8 @@ export interface ConsolidadoS10Dto {
    * el formulario pidiera el dato.
    */
   montoTotal: number | null;
-  /** Número de guía del S10. Es texto (puede traer letras). Null en los consolidados viejos. */
-  numeroGuia: string | null;
+  /** Número del reembolso del S10. Es texto (puede traer letras). Null en los consolidados viejos. */
+  numeroReembolso: string | null;
   /**
    * Copia firmada por la jefatura (todas sus hojas). La genera la aprobación del reembolso
    * —aprobar ES firmar—, así que es null mientras no se haya aprobado.

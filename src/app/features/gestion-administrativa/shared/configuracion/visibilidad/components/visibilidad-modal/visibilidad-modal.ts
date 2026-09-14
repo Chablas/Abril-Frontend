@@ -14,12 +14,22 @@ interface OrderedNode {
   depth: number;
 }
 
+/** `ver` = solo lectura (qué ve hoy); `editar` = elegir qué verá. */
+export type VisibilidadModalModo = 'ver' | 'editar';
+
 /**
- * Elige las áreas que un trabajador puede ver.
+ * Las áreas que un trabajador puede ver, en los dos sentidos: consultarlas (`ver`) y elegirlas
+ * (`editar`). Es un solo componente porque la pregunta se responde con la misma cuadrícula de
+ * casillas; lo único que cambia es si se pueden tocar.
  *
  * Una sola casilla por área: marcar un área marca también sus subáreas y desmarcarla las
  * desmarca, así que lo que se guarda es exactamente la lista que se ve marcada. Antes había dos
  * columnas ("solo esta área" y "con subáreas") y no se entendía cuál mandaba.
+ *
+ * De qué se parte:
+ *  • `ver`    → siempre lo VIGENTE, venga de una configuración propia o del algoritmo de jerarquía.
+ *  • `editar` → la configuración propia si la hay y, si no, lo que hoy resuelve el algoritmo, para
+ *               no abrir en blanco un trabajador que sí está viendo cosas.
  */
 @Component({
   standalone: true,
@@ -29,8 +39,11 @@ interface OrderedNode {
 })
 export class VisibilidadModal implements OnInit {
   @Input({ required: true }) ambito!: VisibilidadAmbito;
+  @Input() modo: VisibilidadModalModo = 'editar';
   @Input() workerId!: number;
   @Input() workerName = '';
+  /** Árbol de áreas. Lo pasa la sección, que ya lo cargó: no se vuelve a pedir al servidor. */
+  @Input() areaTree: VisibilidadAreaNodeDTO[] = [];
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
@@ -46,6 +59,11 @@ export class VisibilidadModal implements OnInit {
   tipoFilter = new Set<number>();
   searchText = '';
 
+  /** true = el trabajador tiene configuración propia; false = lo resuelve el algoritmo. */
+  esPersonalizado = false;
+  /** true = ve todo sin recorte por área. */
+  veTodo = false;
+
   loaded = false;
 
   constructor(
@@ -54,29 +72,46 @@ export class VisibilidadModal implements OnInit {
     private errorService: ErrorService,
   ) {}
 
+  get soloLectura(): boolean {
+    return this.modo === 'ver';
+  }
+
+  get titulo(): string {
+    const quien = this.workerName || 'Trabajador';
+    return this.soloLectura ? `VISIBILIDAD · ${quien}` : `EDITAR VISIBILIDAD · ${quien}`;
+  }
+
+  /** Aviso de estado: de dónde salen las casillas que se están viendo. */
+  get avisoAlgoritmo(): string {
+    return 'Sin configuración propia: las áreas marcadas son las que resuelve el algoritmo.';
+  }
+
   ngOnInit(): void {
+    this.buildOrdered(this.areaTree);
+    this.buildTipos(this.areaTree);
+
     this.loaderService.show();
-    this.service.getAreaTree(this.ambito).subscribe({
-      next: (nodes) => {
-        this.buildOrdered(nodes);
-        this.buildTipos(nodes);
-        this.service.getWorkerAsignaciones(this.ambito, this.workerId).subscribe({
-          next: (asigs) => {
-            this.selection.clear();
-            for (const a of asigs) {
-              this.selection.add(a.areaScopeId);
-              // Compatibilidad con lo cargado antes: una fila "con subáreas" equivalía a tener
-              // marcado todo su subárbol, así que se abre acá para que se vea tal cual.
-              if (a.incluyeDescendientes) this.marcarSubarbol(a.areaScopeId, true);
-            }
-            this.loaded = true;
-            this.loaderService.hide();
-          },
-          error: (err: HttpErrorResponse) => {
-            this.loaderService.hide();
-            this.errorService.handleError(err);
-          },
-        });
+    this.service.getWorkerDetalle(this.ambito, this.workerId).subscribe({
+      next: (detalle) => {
+        this.esPersonalizado = detalle.esPersonalizado;
+        this.veTodo = detalle.veTodo;
+        this.selection.clear();
+
+        // En detalle siempre lo vigente. En edición, lo propio si lo hay; si no, lo que hoy
+        // resuelve el algoritmo, que es exactamente lo que el trabajador está viendo.
+        if (this.soloLectura || !detalle.esPersonalizado) {
+          for (const id of detalle.efectivas ?? []) this.selection.add(id);
+        } else {
+          for (const a of detalle.asignaciones ?? []) {
+            this.selection.add(a.areaScopeId);
+            // Compatibilidad con lo cargado antes: una fila "con subáreas" equivalía a tener
+            // marcado todo su subárbol, así que se abre acá para que se vea tal cual.
+            if (a.incluyeDescendientes) this.marcarSubarbol(a.areaScopeId, true);
+          }
+        }
+
+        this.loaded = true;
+        this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -153,6 +188,7 @@ export class VisibilidadModal implements OnInit {
    * cuelga de ella, y tenerlo que marcar área por área era el trabajo que hacía ilegible el modal.
    */
   toggle(id: number): void {
+    if (this.soloLectura) return;
     const marcar = !this.selection.has(id);
     if (marcar) this.selection.add(id);
     else this.selection.delete(id);

@@ -45,3 +45,26 @@ export interface VisibilidadAsignacionDTO {
   areaScopeId: number;
   incluyeDescendientes: boolean;
 }
+
+/**
+ * Lo que los dos modales de un trabajador necesitan, en una sola llamada: lo que tiene cargado a
+ * mano y lo que REALMENTE ve hoy.
+ *
+ * Van juntos porque cada modal los combina distinto: el de detalle muestra siempre `efectivas` (la
+ * pregunta es "¿qué ve?", no "¿qué le cargaron?") y el de edición parte de `asignaciones` si las
+ * hay y, si no, de `efectivas`, para que el trabajador sin configuración propia no abra el modal en
+ * blanco sino sobre lo que hoy resuelve el algoritmo.
+ */
+export interface VisibilidadWorkerDetalleDTO {
+  /** Override vivo del trabajador en este ámbito. Vacío = lo resuelve el algoritmo. */
+  asignaciones: VisibilidadAsignacionDTO[];
+  /**
+   * Nodos que el trabajador ve hoy: el override si lo tiene y, si no, lo que deduce el algoritmo de
+   * jerarquía. En los dos casos incluye las ramas donde es revisor o consolidador, que ve siempre.
+   */
+  efectivas: number[];
+  /** true = lo de `efectivas` nace de un override cargado a mano. */
+  esPersonalizado: boolean;
+  /** true = ve TODO sin recorte por área (hoy, el personal de GTH). */
+  veTodo: boolean;
+}

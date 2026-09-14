@@ -18,7 +18,7 @@ import { reembolsoColors } from '../../../../shared/dtos/rendicion-shared.dto';
 /**
  * "Seguimiento de Tesorería": la segunda vista de Tesorería (11.4 del requerimiento). No es una
  * bandeja de trabajo —acá no se decide nada— sino la consulta de lo ya abonado, agrupada por
- * colaborador: cuánto se le pagó en total, en cuántas rendiciones y con qué guía cada una.
+ * colaborador: cuánto se le pagó en total, en cuántas rendiciones y con qué número de reembolso cada una.
  *
  * Se agrupa por persona y no por planilla a propósito: una planilla puede cubrir a varios y lo
  * que Tesorería consulta acá es a quién le pagó cuánto.

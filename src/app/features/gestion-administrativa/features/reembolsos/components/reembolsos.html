@@ -122,7 +122,7 @@
             <th>Periodo</th>
             <th>Salidas</th>
             <th>Monto</th>
-            <th>Guía S10</th>
+            <th>N.º de reembolso</th>
             <th>Firma de jefatura</th>
             <th>Documentos</th>
             <th>Estado</th>
@@ -164,7 +164,7 @@
             <td class="text-gray-700 whitespace-nowrap font-medium">S/ {{ r.montoTotal | number:'1.2-2' }}</td>
 
             <td class="text-gray-700 whitespace-nowrap">
-              {{ r.consolidadoS10?.numeroGuia || '—' }}
+              {{ r.consolidadoS10?.numeroReembolso || '—' }}
             </td>
 
             <!-- La firma electrónica: nombre y fecha/hora es lo que la hace evidencia (RG-24). -->
@@ -254,7 +254,7 @@
 
   <div class="w-full">
     <app-search-input
-      placeholder="Buscar por planilla, trabajador o guía..."
+      placeholder="Buscar por planilla, trabajador o reembolso..."
       [(value)]="searchText"
       (valueChange)="onSearchChange()"
       width="100%">

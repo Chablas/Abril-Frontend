@@ -16,7 +16,6 @@ import {
 import { MesRendicionDto } from '../dtos/solicitud-salida-filter-data.dto';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SolicitudSalidaDetalleModal } from './solicitud-salida-detalle-modal/solicitud-salida-detalle-modal';
-import { SalidaCapturasModal } from '../../../shared/components/salida-capturas-modal/salida-capturas-modal';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FabButton } from '../../../../../shared/components/fab-button/fab-button';
@@ -31,7 +30,7 @@ import { reembolsoColors } from '../../../shared/dtos/rendicion-shared.dto';
 @Component({
   standalone: true,
   selector: 'app-solicitud-salidas',
-  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, StatusBadge, SolicitudSalidaDetalleModal, SalidaCapturasModal, SearchSelect, AbrilPageHeaderComponent, FabButton, TitleCasePipe, FilterTriggerButton, FilterModal, AbrilBulkActionDirective],
+  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, StatusBadge, SolicitudSalidaDetalleModal, SearchSelect, AbrilPageHeaderComponent, FabButton, TitleCasePipe, FilterTriggerButton, FilterModal, AbrilBulkActionDirective],
   templateUrl: './solicitud-salidas.html',
   styles: [`
     :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
@@ -108,11 +107,14 @@ export class SolicitudSalidas implements OnInit {
   /** true cuando el formulario se abrió desde el atajo del boletín (?nuevo=1) → pantalla completa. */
   modalFullScreen = false;
 
-  /** ID de la solicitud cuyo modal de detalle (read-only) está abierto. null = cerrado. */
+  /** ID de la solicitud cuyo modal de detalle está abierto. null = cerrado. */
   detalleId: number | null = null;
 
-  /** ID de la solicitud cuyo modal de subir capturas está abierto. null = cerrado. */
-  capturasId: number | null = null;
+  /**
+   * true = el detalle se abre ya en modo edición de capturas: lo pide el botón "Subir capturas" de
+   * la columna de acciones. El clic en la fila lo abre en lectura.
+   */
+  detalleEditando = false;
 
   /** IDs seleccionados para la acción bulk de rendición. */
   selectedIds = new Set<number>();
@@ -319,10 +321,17 @@ export class SolicitudSalidas implements OnInit {
 
   abrirDetalle(s: SolicitudSalidaListItemDto): void {
     this.detalleId = s.id;
+    this.detalleEditando = false;
   }
 
-  cerrarDetalle(): void {
+  /**
+   * Cierra el detalle. Si se guardó o quitó alguna captura, recarga el listado para refrescar
+   * `aptaParaRendir` y las tarjetas — de lo contrario el botón "Rendir" de la fila seguiría con
+   * datos viejos. No recarga si el modal solo se abrió y se cerró.
+   */
+  cerrarDetalle(cambio: boolean): void {
     this.detalleId = null;
+    if (cambio) this.recargar();
   }
 
   // ── Selección de filas (estilo Outlook: click abre detalle, shift+click selecciona) ──
@@ -514,13 +523,26 @@ export class SolicitudSalidas implements OnInit {
   }
 
   /** Cancela en bloque las solicitudes pendientes seleccionadas. */
-  async cancelarBulk(): Promise<void> {
-    const items = this.selectedCancelables;
-    if (items.length === 0) return;
+  cancelarBulk(): Promise<void> {
+    return this.cancelar(this.selectedCancelables.map((s) => s.id));
+  }
+
+  /**
+   * Lo mismo, pero desde el botón "Cancelar solicitud" del modal de detalle: el mismo camino que el
+   * de la tabla, para que las dos formas de cancelar no puedan comportarse distinto. El modal se
+   * cierra solo si la cancelación llega a hacerse: volver de la confirmación lo deja abierto.
+   */
+  cancelarDesdeDetalle(id: number): Promise<void> {
+    return this.cancelar([id]);
+  }
+
+  /** Confirma y cancela las solicitudes indicadas (el backend re-valida que sean propias y Pendientes). */
+  private async cancelar(ids: number[]): Promise<void> {
+    if (ids.length === 0) return;
 
     const result = await Swal.fire({
       icon: 'warning',
-      title: items.length === 1 ? '¿Cancelar esta solicitud?' : `¿Cancelar ${items.length} solicitudes?`,
+      title: ids.length === 1 ? '¿Cancelar esta solicitud?' : `¿Cancelar ${ids.length} solicitudes?`,
       text: 'No se puede deshacer.',
       showCancelButton: true,
       confirmButtonText: 'Sí, cancelar',
@@ -530,10 +552,18 @@ export class SolicitudSalidas implements OnInit {
     if (!result.isConfirmed) return;
 
     this.loaderService.show();
-    forkJoin(items.map((s) => this.service.cancelar(s.id))).subscribe({
+    forkJoin(ids.map((id) => this.service.cancelar(id))).subscribe({
       next: () => {
+        // Si se canceló desde el detalle, lo que muestra (estado Pendiente, el propio botón) ya
+        // quedó viejo: se cierra para que el aviso de éxito no aparezca sobre datos de antes.
+        this.detalleId = null;
         this.loaderService.hide();
-        Swal.fire({ title: `${items.length} solicitud(es) cancelada(s)`, icon: 'success', timer: 1500, showConfirmButton: false });
+        Swal.fire({
+          title: ids.length === 1 ? 'Solicitud cancelada' : `${ids.length} solicitudes canceladas`,
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false,
+        });
         this.recargar();
       },
       error: (err: HttpErrorResponse) => {
@@ -558,6 +588,16 @@ export class SolicitudSalidas implements OnInit {
   rendirUna(s: SolicitudSalidaListItemDto, ev: Event): Promise<void> {
     ev.stopPropagation(); // no abrir el modal de detalle
     return this.rendir([s.id]);
+  }
+
+  /**
+   * Lo mismo, pero disparado desde el botón "Rendir" del modal de detalle. Pasa por el mismo camino
+   * que el de la columna —confirmación, descarga de la planilla y recarga— para que las dos formas
+   * de rendir una salida no puedan comportarse distinto. El modal se cierra solo si la rendición
+   * llega a hacerse (lo hace `descargarPlanilla`): cancelar la confirmación lo deja abierto.
+   */
+  rendirDesdeDetalle(id: number): Promise<void> {
+    return this.rendir([id]);
   }
 
   /** Confirma, marca como rendidas las solicitudes indicadas y descarga la planilla. */
@@ -623,6 +663,10 @@ export class SolicitudSalidas implements OnInit {
     // y quedaría marcada sobre un conjunto distinto al que el usuario aceptó.
     this.todoElMes = false;
 
+    // Si la rendición salió del modal de detalle, lo que este muestra (estado, planilla) ya quedó
+    // viejo: se cierra para que el aviso de éxito no aparezca sobre datos de antes de rendir.
+    this.detalleId = null;
+
     const blob = response.body as Blob;
     const count = Number(response.headers.get('X-Rendidas-Count') ?? countFallback);
     const filename = this.extractFilename(response.headers.get('Content-Disposition'))
@@ -657,19 +701,14 @@ export class SolicitudSalidas implements OnInit {
     return s.estadoAprobacion === 'Aprobado' && s.estadoRendicion !== 'Rendido';
   }
 
-  abrirCapturas(s: SolicitudSalidaListItemDto, ev: Event): void {
-    ev.stopPropagation(); // no abrir el modal de detalle
-    this.capturasId = s.id;
-  }
-
   /**
-   * Cierra el modal de capturas. Si se subió al menos una captura (`recargar`), recarga el listado
-   * para refrescar `puedeRendirse` — de lo contrario el botón "Rendir" seguiría deshabilitado con
-   * datos viejos. No recarga si el usuario solo abrió y cerró sin subir nada.
+   * "Subir capturas" abre el mismo detalle, pero ya en modo edición: al guardar vuelve a la lectura
+   * y, si la salida quedó apta, "Rendir" aparece ahí mismo sin cerrar el modal.
    */
-  cerrarCapturas(recargar: boolean): void {
-    this.capturasId = null;
-    if (recargar) this.recargar();
+  abrirCapturas(s: SolicitudSalidaListItemDto, ev: Event): void {
+    ev.stopPropagation(); // que el clic no llegue a la fila, que lo abriría en lectura
+    this.detalleId = s.id;
+    this.detalleEditando = true;
   }
 
   aprobacionColors(estado: string): { bg: string; text: string } {

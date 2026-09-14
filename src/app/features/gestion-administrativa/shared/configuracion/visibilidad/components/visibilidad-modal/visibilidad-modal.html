@@ -1,10 +1,16 @@
 <app-base-modal
-  [title]="'VISIBILIDAD · ' + (workerName || 'Trabajador')"
+  [title]="titulo"
   width="w-[760px]"
-  [preventCloseWhenDirty]="true"
+  [preventCloseWhenDirty]="!soloLectura"
   (closeModal)="closeModal.emit()">
 
   <div class="flex flex-col gap-[14px] mt-[12px]">
+
+    <!-- ── Aviso de estado: de dónde salen las casillas marcadas ───── -->
+    <div *ngIf="loaded && !soloLectura && !esPersonalizado"
+         class="text-xs text-[#92400E] bg-[#FEF9C3] px-[14px] py-[10px] rounded-lg">
+      {{ avisoAlgoritmo }}
+    </div>
 
     <!-- ── Filtros por tipo de área + búsqueda ─────────────────────── -->
     <div class="flex items-center gap-2 flex-wrap">
@@ -27,17 +33,36 @@
       ></app-search-input>
     </div>
 
-    <!-- ── Acciones masivas ────────────────────────────────────────── -->
+    <!-- ── Acciones masivas (solo al editar) + contador ─────────────── -->
     <div class="flex items-center gap-2 flex-wrap">
-      <button type="button" (click)="seleccionarVisibles()"
-        class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-[var(--color-abril-standard)] text-[var(--color-abril-standard)] hover:bg-[var(--color-abril-standard-light)] transition-colors cursor-pointer">
-        Seleccionar todo{{ filtrando ? ' (visible)' : '' }}
-      </button>
-      <button type="button" (click)="limpiar()"
-        class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
-        Limpiar
-      </button>
-      <span class="text-xs text-gray-500 ml-auto">{{ seleccionadas }} área(s) seleccionada(s)</span>
+      <ng-container *ngIf="!soloLectura">
+        <button type="button" (click)="seleccionarVisibles()"
+          class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-[var(--color-abril-standard)] text-[var(--color-abril-standard)] hover:bg-[var(--color-abril-standard-light)] transition-colors cursor-pointer">
+          Seleccionar todo{{ filtrando ? ' (visible)' : '' }}
+        </button>
+        <button type="button" (click)="limpiar()"
+          class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
+          Limpiar
+        </button>
+      </ng-container>
+
+      <!-- En detalle, el origen de lo marcado es el dato que ordena la lectura. -->
+      <ng-container *ngIf="soloLectura && loaded">
+        <span class="text-[11px] px-[10px] py-[3px] rounded-full font-medium"
+          [ngClass]="esPersonalizado
+            ? 'bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)]'
+            : 'bg-[#F3F4F6] text-[#6B7280] italic'">
+          {{ esPersonalizado ? 'Personalizado' : 'Algoritmo' }}
+        </span>
+        <span *ngIf="veTodo"
+          class="text-[11px] px-[10px] py-[3px] rounded-full font-medium bg-[#E8F1FB] text-[var(--color-abril-logo-blue)]">
+          Ve todas las áreas
+        </span>
+      </ng-container>
+
+      <span class="text-xs text-gray-500 ml-auto">
+        {{ seleccionadas }} área(s) {{ soloLectura ? 'visible(s)' : 'seleccionada(s)' }}
+      </span>
     </div>
 
     <!-- ── Árbol de áreas ──────────────────────────────────────────── -->
@@ -67,8 +92,10 @@
               </span>
             </td>
             <td class="px-[8px] py-[7px] text-center">
-              <input type="checkbox" class="w-4 h-4 accent-[var(--color-abril-standard)] cursor-pointer"
+              <input type="checkbox" class="w-4 h-4 accent-[var(--color-abril-standard)]"
+                [class.cursor-pointer]="!soloLectura"
                 [checked]="isSelected(o.node.areaScopeId)"
+                [disabled]="soloLectura"
                 (change)="toggle(o.node.areaScopeId)" />
             </td>
           </tr>
@@ -80,7 +107,7 @@
       </table>
     </div>
 
-    <div class="flex justify-center mt-[6px]">
+    <div *ngIf="!soloLectura" class="flex justify-center mt-[6px]">
       <button (click)="save()"
         class="w-[180px] py-[9px] rounded-[10px] cursor-pointer transition-colors"
         style="background:var(--color-abril-standard)">

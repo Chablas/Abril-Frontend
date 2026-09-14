@@ -8,7 +8,7 @@ export type { EstadoCorreccionS10, TrabajadorOptionDto };
 
 /**
  * Una solicitud de corrección en la bandeja del Coordinador ERP. Trae todo lo que necesita para
- * hacer su trabajo sin abrir nada más: la guía con la que ubica el registro en el S10, qué observó
+ * hacer su trabajo sin abrir nada más: el número de reembolso con el que ubica el registro en el S10, qué observó
  * la jefatura y qué le pide el colaborador.
  *
  * No trae los tramos ni las capturas: el ERP no revisa el gasto —eso ya lo hizo la jefatura—, solo
@@ -39,8 +39,8 @@ export interface CorreccionS10ListItemDto {
    * anteriores a la columna, que son todas de jefatura.
    */
   motivoOrigen: string;
-  /** Guía del consolidado observado. Es EL dato con el que el ERP lo ubica en el S10. */
-  numeroGuia: string | null;
+  /** Número de reembolso del consolidado observado. Es EL dato con el que el ERP lo ubica en el S10. */
+  numeroReembolso: string | null;
 
   periodo: string;
   periodoAnio: number;
@@ -58,8 +58,8 @@ export interface CorreccionS10ListItemDto {
   atendidaPor: string | null;
   atendidaAt: string | null;
   comentarioAtencion: string | null;
-  /** True si el ERP anuló el registro y hace falta una guía nueva. */
-  guiaAnulada: boolean;
+  /** True si el ERP anuló el registro y hace falta un número de reembolso nuevo. */
+  numeroReembolsoAnulado: boolean;
 }
 
 /**
@@ -91,17 +91,17 @@ export interface CorreccionS10FilterDataDto {
 
 /**
  * El check de confirmación del Coordinador ERP. El comentario es opcional —el requerimiento solo
- * exige el check—, pero `guiaAnulada` cambia lo que el colaborador tiene que hacer después, así
+ * exige el check—, pero `numeroReembolsoAnulado` cambia lo que el colaborador tiene que hacer después, así
  * que se pregunta explícitamente.
  */
 export interface AtenderCorreccionS10Dto {
   correccionIds: number[];
   comentarioAtencion?: string | null;
   /**
-   * true = el registro del S10 se ANULÓ y el colaborador tiene que sacar una guía nueva; la
-   * anterior queda bloqueada. false = se corrigió conservando la guía.
+   * true = el registro del S10 se ANULÓ y el colaborador tiene que sacar un número de reembolso nuevo; la
+   * anterior queda bloqueado. false = se corrigió conservando el número de reembolso.
    */
-  guiaAnulada: boolean;
+  numeroReembolsoAnulado: boolean;
 }
 
 export interface CorreccionS10BulkResultDto {

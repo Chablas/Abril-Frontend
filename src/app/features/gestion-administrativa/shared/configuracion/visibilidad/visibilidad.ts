@@ -13,7 +13,7 @@ import {
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { SearchInput } from '../../../../../shared/components/search-input/search-input';
 import { Paginator } from '../../../../../shared/components/paginator/paginator';
-import { VisibilidadModal } from './components/visibilidad-modal/visibilidad-modal';
+import { VisibilidadModal, VisibilidadModalModo } from './components/visibilidad-modal/visibilidad-modal';
 import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
@@ -55,6 +55,11 @@ export class GaVisibilidad implements OnInit, OnChanges {
   @Input({ required: true }) ambito!: VisibilidadAmbito;
 
   rows: VisibilidadWorkerItemDTO[] = [];
+  /**
+   * Árbol de áreas tal como vino con la carga inicial. Lo usan el filtro en cascada y los dos
+   * modales: se les pasa por input en vez de que cada uno lo vuelva a pedir al abrirse.
+   */
+  areaTree: VisibilidadAreaNodeDTO[] = [];
   searchText = '';
   categoriaFilter: number | null = null;
   currentPage = 1;
@@ -68,8 +73,10 @@ export class GaVisibilidad implements OnInit, OnChanges {
   /** area_scope_id del subárbol del nodo seleccionado, aplicados al pulsar "Buscar". */
   private appliedAreaScopeIds = new Set<number>();
 
-  /** Trabajador en edición (modal abierto). null = modal cerrado. */
-  editing: VisibilidadWorkerItemDTO | null = null;
+  /** Trabajador con el modal abierto. null = cerrado. */
+  abierto: VisibilidadWorkerItemDTO | null = null;
+  /** Qué modal se abrió sobre ese trabajador. */
+  modoModal: VisibilidadModalModo = 'editar';
 
   /** Modal de filtros (lo abre el botón del contenedor). */
   filtrosAbiertos = false;
@@ -111,7 +118,8 @@ export class GaVisibilidad implements OnInit, OnChanges {
     this.service.getInitialData(this.ambito).subscribe({
       next: (data) => {
         this.rows = data.workers;
-        this.buildAreaCascade(data.areaTree);
+        this.areaTree = data.areaTree ?? [];
+        this.buildAreaCascade(this.areaTree);
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -189,8 +197,14 @@ export class GaVisibilidad implements OnInit, OnChanges {
     return !!this.searchText.trim() || this.categoriaFilter != null || this.appliedAreaScopeIds.size > 0;
   }
 
+  openDetalle(item: VisibilidadWorkerItemDTO): void {
+    this.modoModal = 'ver';
+    this.abierto = item;
+  }
+
   openEdit(item: VisibilidadWorkerItemDTO): void {
-    this.editing = item;
+    this.modoModal = 'editar';
+    this.abierto = item;
   }
 
   onSaved(): void {

@@ -14,7 +14,7 @@ import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-c
 import { correccionS10Colors } from '../../../../shared/dtos/rendicion-shared.dto';
 
 /**
- * Detalle de una corrección del S10 para el Coordinador ERP: la guía con la que ubica el registro,
+ * Detalle de una corrección del S10 para el Coordinador ERP: el número de reembolso con el que ubica el registro,
  * qué observó la jefatura, qué le pide el colaborador y los dos PDF para contrastar.
  *
  * Trae también el check de atención porque el correo abre directo acá: si el botón viviera solo en
@@ -70,7 +70,8 @@ export class CorreccionS10DetalleModal implements OnInit {
   /**
    * El check de confirmación (RG-22): la corrección ya se hizo en el S10. Se pregunta aparte si el
    * registro se ANULÓ, porque eso cambia lo que el colaborador tiene que hacer después — con una
-   * anulación necesita una guía nueva y la anterior queda bloqueada al recargar el consolidado.
+   * anulación necesita un número de reembolso nuevo y el anterior queda bloqueado al recargar el
+   * consolidado.
    */
   async atender(): Promise<void> {
     const d = this.detalle;
@@ -82,10 +83,10 @@ export class CorreccionS10DetalleModal implements OnInit {
       html: `
         <div style="text-align:left;color:#4B5563">
           <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin-bottom:10px">
-            <input type="checkbox" id="ga-guia-anulada" style="margin-top:3px;accent-color:#C2410C">
+            <input type="checkbox" id="ga-reembolso-anulado" style="margin-top:3px;accent-color:#C2410C">
             <span>
-              El registro del S10 se <b>anul&oacute;</b>: hace falta una gu&iacute;a nueva.
-              ${d.numeroGuia ? `<br><span style="font-size:12px;color:#6B7280">Gu&iacute;a actual: ${d.numeroGuia}</span>` : ''}
+              El registro del S10 se <b>anul&oacute;</b>: hace falta un n&uacute;mero de reembolso nuevo.
+              ${d.numeroReembolso ? `<br><span style="font-size:12px;color:#6B7280">Reembolso actual: ${d.numeroReembolso}</span>` : ''}
             </span>
           </label>
           <label for="ga-comentario" style="display:block;font-size:13px;margin-bottom:4px">
@@ -99,7 +100,7 @@ export class CorreccionS10DetalleModal implements OnInit {
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#0F6E56',
       preConfirm: () => ({
-        anulada: (document.getElementById('ga-guia-anulada') as HTMLInputElement)?.checked ?? false,
+        anulada: (document.getElementById('ga-reembolso-anulado') as HTMLInputElement)?.checked ?? false,
         comentario: (document.getElementById('ga-comentario') as HTMLTextAreaElement)?.value ?? '',
       }),
     });
@@ -120,7 +121,7 @@ export class CorreccionS10DetalleModal implements OnInit {
     this.service.atender({
       correccionIds: [d.id],
       comentarioAtencion: value.comentario?.trim() || null,
-      guiaAnulada: value.anulada,
+      numeroReembolsoAnulado: value.anulada,
     }).subscribe({
       next: (res) => {
         this.loader.hide();

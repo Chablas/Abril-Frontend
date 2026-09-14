@@ -343,7 +343,7 @@ export class Rendiciones implements OnInit {
 
     const result = await confirmarConCorreos({
       titulo: '¿Enviar ' + r.codigo + ' a revisión?',
-      avisos: avisosDe('Al revisor', this.correoPrimeraRevision),
+      avisos: avisosDe(this.correoPrimeraRevision),
       // Sin nadie a quien avisar el envío igual procede: la rendición pasa a revisión y el jefe la
       // ve en su bandeja. Es un aviso de estado, no un bloqueo.
       sinNadie: 'Pasa a revisión, pero sin aviso por correo: está apagado en Configuración → Correos.',
@@ -425,8 +425,8 @@ export class Rendiciones implements OnInit {
   }
 
   /** Función de subida que consume el modal compartido (ya sabe a qué endpoint pegarle). */
-  readonly subirConsolidado = (file: File, montoTotal: number, numeroGuia: string) =>
-    this.service.uploadConsolidadoS10(this.consolidadoDe!.id, file, montoTotal, numeroGuia);
+  readonly subirConsolidado = (file: File, montoTotal: number, numeroReembolso: string) =>
+    this.service.uploadConsolidadoS10(this.consolidadoDe!.id, file, montoTotal, numeroReembolso);
 
   /** Referencia que muestra el modal para que se vea a qué planilla se está adjuntando. */
   get consolidadoReferencia(): string | null {
@@ -479,7 +479,7 @@ export class Rendiciones implements OnInit {
       titulo: r.revisorNotificadoAt ? '¿Volver a avisar?' : '¿Avisar al revisor?',
       // Solo cuando es una repetición: el resto del tiempo el título ya lo dice todo.
       nota: r.revisorNotificadoAt ? 'Ya le avisaste por esta planilla.' : undefined,
-      avisos: avisosDe('Al revisor', this.correoS10Revisor),
+      avisos: avisosDe(this.correoS10Revisor),
       confirmButtonText: r.revisorNotificadoAt ? 'Sí, avisar de nuevo' : 'Sí, avisar',
     });
     if (!result.isConfirmed) return;

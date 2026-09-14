@@ -1,0 +1,74 @@
+<app-base-modal
+  title="Corregir capturas y montos"
+  width="w-[760px]"
+  closeColor="var(--color-abril-standard)"
+  [preventCloseWhenDirty]="true"
+  (closeModal)="cerrar()">
+
+  <div *ngIf="detalle && edicion" class="flex flex-col gap-4 pt-4">
+
+    <!-- El tope es de CADA trayecto y por eso se pinta en la cabecera de cada uno, no acá
+         arriba: varios trayectos pueden sumar más que el tope entre todos, que es justamente lo
+         que la planilla resuelve repartiendo el exceso al día siguiente. -->
+    <div class="flex items-start justify-between gap-4">
+      <p class="text-xs text-gray-500">
+        Al terminar, vuelve a generar la rendición para que la planilla salga con estos montos.
+      </p>
+      <div class="text-[11px] font-semibold whitespace-nowrap flex-shrink-0 rounded-md px-2 py-1"
+           style="color:var(--color-abril-standard);background:var(--color-abril-standard-light)">
+        Tope por trayecto: S/ {{ edicion.limiteTrayecto | number:'1.2-2' }}
+      </div>
+    </div>
+
+    <div *ngFor="let t of detalle.trayectos"
+         class="border rounded-lg p-4 flex flex-col gap-3" style="border-color:var(--color-abril-border)">
+
+      <!-- Cabecera del trayecto -->
+      <div class="flex items-center justify-between border-b border-[#F0F0F0] pb-2">
+        <div class="flex flex-col">
+          <div class="text-sm font-semibold uppercase" style="color:var(--color-abril-standard)">Trayecto {{ t.orden + 1 }}</div>
+          <div class="text-xs text-gray-500">
+            <span *ngIf="t.horaSalida">{{ t.horaSalida }} → {{ t.horaRetorno ?? 'sin retorno' }} · </span>
+            {{ t.lugarOrigen ?? '—' }} → {{ t.lugarDestino ?? '—' }}
+          </div>
+          <div class="text-xs text-gray-400">{{ t.motivo }}</div>
+        </div>
+        <!-- Lo que va cargando el trayecto contra su tope, en vivo. Vira a ámbar al pasarse;
+             guardar se apaga solo si el lote EMPEORA el exceso, para que un trayecto que ya
+             venía por encima se pueda seguir corrigiendo hacia abajo (misma regla en backend). -->
+        <div *ngIf="edicion.importeEnPantalla(t) > 0"
+             class="text-xs font-semibold flex-shrink-0"
+             [style.color]="edicion.excedeTope(t) ? 'var(--color-abril-warning-dark)' : 'var(--color-abril-standard)'">
+          S/ {{ edicion.importeEnPantalla(t) | number:'1.2-2' }}
+          <span class="font-normal text-gray-400">/ {{ edicion.limiteTrayecto | number:'1.2-2' }}</span>
+        </div>
+      </div>
+
+      <app-salida-capturas-editor
+        [edicion]="edicion"
+        [trayecto]="t"
+        (quitada)="onCapturaQuitada()" />
+
+    </div>
+
+    <!-- ── Guardar todo ─────────────────────────────────────────────────────
+         Un solo botón para el modal entero: sube las capturas nuevas de todos los trayectos y
+         escribe los montos e imágenes que se cambiaron en las que ya estaban, en una sola
+         llamada. Nada de la pantalla se persiste antes de tocarlo (salvo quitar una captura,
+         que se confirma aparte). -->
+    <div class="flex flex-col items-center gap-1.5 pt-2">
+      <div *ngIf="edicion.aviso" class="text-xs" style="color:var(--color-abril-warning)">{{ edicion.aviso }}</div>
+      <button type="button"
+              (click)="guardarTodo()"
+              [disabled]="!edicion.puedeGuardar"
+              class="h-[38px] px-5 text-white rounded-lg text-sm font-semibold transition-colors"
+              [class.cursor-pointer]="edicion.puedeGuardar"
+              [class.cursor-not-allowed]="!edicion.puedeGuardar"
+              [style.background]="edicion.puedeGuardar ? 'var(--color-abril-standard)' : '#D1D5DB'">
+        {{ edicion.textoBotonGuardar }}
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

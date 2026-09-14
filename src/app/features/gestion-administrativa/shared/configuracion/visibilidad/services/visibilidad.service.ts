@@ -4,9 +4,9 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../../../environments/environment';
 import {
   VisibilidadAmbito,
-  VisibilidadAreaNodeDTO,
   VisibilidadAsignacionDTO,
   VisibilidadInicialDTO,
+  VisibilidadWorkerDetalleDTO,
 } from '../dtos/visibilidad.dto';
 
 /**
@@ -31,17 +31,16 @@ export class VisibilidadService {
     return this.http.get<VisibilidadInicialDTO>(this.base(ambito), { headers: this.headers });
   }
 
-  getAreaTree(ambito: VisibilidadAmbito): Observable<VisibilidadAreaNodeDTO[]> {
-    return this.http.get<VisibilidadAreaNodeDTO[]>(`${this.base(ambito)}/area-scope-tree`, {
-      headers: this.headers,
-    });
-  }
-
-  getWorkerAsignaciones(
+  /**
+   * Lo cargado a mano del trabajador y lo que realmente ve hoy. Los dos modales salen de esta sola
+   * llamada; el árbol de áreas no se vuelve a pedir porque ya vino con la carga inicial de la
+   * sección y se les pasa por input.
+   */
+  getWorkerDetalle(
     ambito: VisibilidadAmbito,
     workerId: number,
-  ): Observable<VisibilidadAsignacionDTO[]> {
-    return this.http.get<VisibilidadAsignacionDTO[]>(`${this.base(ambito)}/worker/${workerId}`, {
+  ): Observable<VisibilidadWorkerDetalleDTO> {
+    return this.http.get<VisibilidadWorkerDetalleDTO>(`${this.base(ambito)}/worker/${workerId}`, {
       headers: this.headers,
     });
   }

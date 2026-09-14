@@ -157,7 +157,7 @@ export interface SeguimientoRendicionDto {
   periodo: string;
   periodoAnio: number;
   periodoMes: number;
-  numeroGuia: string | null;
+  numeroReembolso: string | null;
   salidasCount: number;
   /** Lo abonado a ESTE colaborador por esta planilla. */
   montoAbonado: number;

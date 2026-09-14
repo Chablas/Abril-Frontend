@@ -34,11 +34,20 @@ export interface AreaAsignadoDTO {
  */
 export type AreaEfectivoOrigen = 'Personalizado' | 'Algoritmo' | 'Gth' | 'Propio';
 
-/** Una persona vigente hoy para el área o el proyecto. */
+/**
+ * Una persona vigente hoy para el área o el proyecto. Trae los mismos datos de contacto que
+ * `AreaAsignadoDTO` porque el modal de detalle los lista a TODOS —vengan del algoritmo, de una
+ * asignación a mano o del fallback— y es el único lugar donde se ve quién es el "+N más" de la
+ * columna.
+ */
 export interface AreaEfectivoDTO {
   /** Ficha, para que el filtro por persona la encuentre. Null en el fallback GTH. */
   workerId?: number | null;
   nombre?: string | null;
+  /** Correo al que le llegaría. En el fallback GTH es el correo del área. */
+  email?: string | null;
+  /** Categoría del puesto. Null en el fallback GTH, que no es una persona. */
+  category?: string | null;
   origen?: AreaEfectivoOrigen | null;
 }
 

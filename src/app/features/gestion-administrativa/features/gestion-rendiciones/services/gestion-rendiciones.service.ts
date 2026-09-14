@@ -68,13 +68,13 @@ export class GestionRendicionesService {
    * (junto con la razón social y el resto de las reglas) y responde 400/409 si algo no cuadra.
    */
   uploadConsolidadoS10(
-    rendicionIds: number[], file: File, montoTotal: number, numeroGuia: string,
+    rendicionIds: number[], file: File, montoTotal: number, numeroReembolso: string,
   ): Observable<ConsolidadoS10Dto> {
     const formData = new FormData();
     for (const id of rendicionIds) formData.append('rendicionIds', String(id));
     formData.append('file', file, file.name);
     formData.append('montoTotal', String(montoTotal));
-    formData.append('numeroGuia', numeroGuia);
+    formData.append('numeroReembolso', numeroReembolso);
     return this.http.post<ConsolidadoS10Dto>(
       `${this.apiUrl}/consolidado-s10`,
       formData,

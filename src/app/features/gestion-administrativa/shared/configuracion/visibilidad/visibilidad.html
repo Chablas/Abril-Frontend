@@ -11,7 +11,7 @@
           <th>Correo</th>
           <th class="w-[180px]">Categoría</th>
           <th class="text-center w-[180px]">Visibilidad</th>
-          <th class="text-center w-[120px]">Acciones</th>
+          <th class="text-center w-[170px]">Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -20,21 +20,20 @@
           <td class="text-gray-700">{{ r.email }}</td>
           <td class="text-gray-700">{{ r.category || '—' }}</td>
           <td class="text-center">
-            <span *ngIf="r.areasAsignadas > 0; else automatico"
+            <span *ngIf="r.areasAsignadas > 0; else algoritmo"
               class="text-[11px] px-[10px] py-[3px] rounded-full bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)] font-medium">
               {{ r.areasAsignadas }} área(s) asignada(s)
             </span>
-            <ng-template #automatico>
+            <ng-template #algoritmo>
               <span class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#F3F4F6] text-[#6B7280] italic">
-                Automático (jerarquía)
+                Algoritmo
               </span>
             </ng-template>
           </td>
           <td class="text-center">
-            <div class="flex items-center justify-center">
-              <button (click)="openEdit(r)" abrilBulkAction="default">
-                Editar
-              </button>
+            <div class="flex items-center justify-center gap-2">
+              <button (click)="openDetalle(r)" abrilBulkAction="default">Ver</button>
+              <button (click)="openEdit(r)" abrilBulkAction="default">Editar</button>
             </div>
           </td>
         </tr>
@@ -59,12 +58,15 @@
 
 </div>
 
+<!-- ── Modal de visibilidad (detalle o edición, según el botón) ────── -->
 <app-visibilidad-modal
-  *ngIf="editing"
+  *ngIf="abierto"
   [ambito]="ambito"
-  [workerId]="editing.workerId"
-  [workerName]="editing.fullName || ''"
-  (closeModal)="editing = null"
+  [modo]="modoModal"
+  [workerId]="abierto.workerId"
+  [workerName]="abierto.fullName || ''"
+  [areaTree]="areaTree"
+  (closeModal)="abierto = null"
   (saved)="onSaved()"
 ></app-visibilidad-modal>
 

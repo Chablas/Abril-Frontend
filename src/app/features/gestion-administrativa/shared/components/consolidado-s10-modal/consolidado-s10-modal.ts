@@ -23,7 +23,7 @@ import { ConsolidadoS10Dto } from './consolidado-s10.dto';
  * rendiciones, incluso de trabajadores distintos, siempre que sean de una misma razón social.
  *
  * Además del PDF se capturan los dos datos con los que el S10 lo registró: el monto total y el
- * número de guía. El monto tiene que CUADRAR con el de las planillas —el consolidado las cubre
+ * número de reembolso. El monto tiene que CUADRAR con el de las planillas —el consolidado las cubre
  * enteras—, así que el formulario no deja adjuntar si no coincide; el backend lo re-valida.
  */
 @Component({
@@ -36,7 +36,7 @@ import { ConsolidadoS10Dto } from './consolidado-s10.dto';
 export class ConsolidadoS10Modal implements OnDestroy {
   /** Función de subida que inyecta la pantalla anfitriona (ya sabe a qué endpoint pegarle). */
   @Input({ required: true }) upload!: (
-    file: File, montoTotal: number, numeroGuia: string,
+    file: File, montoTotal: number, numeroReembolso: string,
   ) => Observable<ConsolidadoS10Dto>;
 
   /**
@@ -73,8 +73,8 @@ export class ConsolidadoS10Modal implements OnDestroy {
    */
   montoTotal: number | null = null;
 
-  /** Número de guía del S10: texto libre, no un correlativo nuestro. */
-  numeroGuia = '';
+  /** Número del reembolso del S10: texto libre, no un correlativo nuestro. */
+  numeroReembolso = '';
 
   constructor(
     private loader: LoaderService,
@@ -115,7 +115,7 @@ export class ConsolidadoS10Modal implements OnDestroy {
     this.close.emit(null);
   }
 
-  // ── Monto y número de guía ─────────────────────────────────────────
+  // ── Monto y número de reembolso ─────────────────────────────────────────
 
   /** Los dos montos se comparan a 2 decimales, la precisión con la que se guarda el importe. */
   private static redondear(valor: number): number {
@@ -134,14 +134,14 @@ export class ConsolidadoS10Modal implements OnDestroy {
         && this.montoTotal !== null
         && this.montoTotal > 0
         && !this.montoDescuadra
-        && this.numeroGuia.trim().length > 0;
+        && this.numeroReembolso.trim().length > 0;
   }
 
   guardar(): void {
     if (!this.puedeGuardar) return;
 
     this.loader.show();
-    this.upload(this.archivo!, this.montoTotal!, this.numeroGuia.trim()).subscribe({
+    this.upload(this.archivo!, this.montoTotal!, this.numeroReembolso.trim()).subscribe({
       next: (dto) => {
         this.loader.hide();
         Swal.fire({

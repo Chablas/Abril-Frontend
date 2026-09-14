@@ -11,6 +11,7 @@ import {
   CorreoEvento,
   CorreoGrupo,
   CorreoPantalla,
+  CorreoRolOption,
   CorreoTipoCodigo,
   CorreoWorkerOption,
 } from './dtos/ga-correo.dto';
@@ -40,7 +41,8 @@ import { SearchSelect } from '../../../../../shared/components/search-select/sea
  *
  * Es la misma pantalla que la configuración de correos de Gestión GTH y comparte su hoja de
  * estilos (`shared/styles/correos-config.css`). Lo que cambia es el dato: acá un destinatario
- * puede ser un trabajador, un área (se expande a sus miembros) o un correo escrito a mano.
+ * puede ser un trabajador, un área (se expande a sus miembros), un rol (se expande a quien lo
+ * tenga hoy) o un correo escrito a mano.
  *
  * Todo guarda al momento de tocarlo: los interruptores son optimistas y se revierten si el
  * guardado falla; el alta, la edición y la baja recargan la lista.
@@ -94,6 +96,7 @@ export class GaCorreosConfig implements OnChanges {
   eventos: CorreoEvento[] = [];
   trabajadores: CorreoWorkerOption[] = [];
   areas: CorreoAreaOption[] = [];
+  roles: CorreoRolOption[] = [];
   loading = false;
 
   /** Código del correo cuya subsección se está viendo. */
@@ -111,6 +114,7 @@ export class GaCorreosConfig implements OnChanges {
   formTipo: CorreoTipoCodigo = 'TRABAJADOR';
   formWorkerId: number | null = null;
   formAreaScopeId: number | null = null;
+  formRoleId: number | null = null;
   formCorreo = '';
   formIncluirDescendientes = true;
   formError: string | null = null;
@@ -120,6 +124,7 @@ export class GaCorreosConfig implements OnChanges {
   readonly tipoOptions: { id: CorreoTipoCodigo; label: string }[] = [
     { id: 'TRABAJADOR', label: 'Trabajador' },
     { id: 'AREA', label: 'Área' },
+    { id: 'ROL', label: 'Rol' },
     { id: 'CORREO', label: 'Correo escrito a mano' },
   ];
 
@@ -178,6 +183,16 @@ export class GaCorreosConfig implements OnChanges {
         this.areas = this.conEtiquetas(data.areas ?? []).sort((a, b) =>
           (a.label ?? a.nombre).localeCompare(b.label ?? b.nombre),
         );
+        // El conteo va en la etiqueta: elegir un rol sin nadie asignado es elegir un
+        // destinatario al que hoy no le llega el correo, y eso tiene que verse al elegirlo.
+        this.roles = (data.roles ?? [])
+          .map((r) => ({
+            ...r,
+            label: r.miembros === 0
+              ? `${r.nombre} — sin nadie asignado`
+              : `${r.nombre} — ${r.miembros} ${r.miembros === 1 ? 'persona' : 'personas'}`,
+          }))
+          .sort((a, b) => a.nombre.localeCompare(b.nombre));
 
         if (!this.eventos.some((e) => e.codigo === this.eventoActivoCodigo))
           this.eventoActivoCodigo = this.eventos[0]?.codigo ?? null;
@@ -359,6 +374,7 @@ export class GaCorreosConfig implements OnChanges {
     this.formTipo = 'TRABAJADOR';
     this.formWorkerId = null;
     this.formAreaScopeId = null;
+    this.formRoleId = null;
     this.formCorreo = '';
     this.formIncluirDescendientes = true;
     this.formError = null;
@@ -371,6 +387,7 @@ export class GaCorreosConfig implements OnChanges {
     this.formTipo = fila.tipoCodigo;
     this.formWorkerId = fila.workerId;
     this.formAreaScopeId = fila.areaScopeId;
+    this.formRoleId = fila.roleId;
     this.formCorreo = fila.tipoCodigo === 'CORREO' ? (fila.email ?? '') : '';
     this.formIncluirDescendientes = fila.incluirDescendientes;
     this.formError = null;
@@ -393,6 +410,7 @@ export class GaCorreosConfig implements OnChanges {
     this.formTipo = tipo;
     this.formWorkerId = null;
     this.formAreaScopeId = null;
+    this.formRoleId = null;
     this.formCorreo = '';
     this.formIncluirDescendientes = true;
     this.cdr.detectChanges();
@@ -401,6 +419,7 @@ export class GaCorreosConfig implements OnChanges {
   get formValido(): boolean {
     if (this.formTipo === 'TRABAJADOR') return this.formWorkerId != null;
     if (this.formTipo === 'AREA') return this.formAreaScopeId != null;
+    if (this.formTipo === 'ROL') return this.formRoleId != null;
     return GaCorreosConfig.EMAIL_RE.test(this.formCorreo.trim());
   }
 
@@ -416,6 +435,7 @@ export class GaCorreosConfig implements OnChanges {
       tipoCodigo: this.formTipo,
       workerId: this.formTipo === 'TRABAJADOR' ? this.formWorkerId : null,
       areaScopeId: this.formTipo === 'AREA' ? this.formAreaScopeId : null,
+      roleId: this.formTipo === 'ROL' ? this.formRoleId : null,
       correo: this.formTipo === 'CORREO' ? this.formCorreo.trim().toLowerCase() : null,
       incluirDescendientes: this.formTipo === 'AREA' ? this.formIncluirDescendientes : true,
     };
@@ -480,6 +500,7 @@ export class GaCorreosConfig implements OnChanges {
     switch (fila.tipoCodigo) {
       case 'TRABAJADOR': return 'Trabajador';
       case 'AREA': return 'Área';
+      case 'ROL': return 'Rol';
       default: return 'Correo';
     }
   }

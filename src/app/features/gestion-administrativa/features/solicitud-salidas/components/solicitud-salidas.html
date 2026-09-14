@@ -319,17 +319,15 @@
   (closeModal)="showModal = false"
   (saved)="onSaved()" />
 
-<!-- ── Modal de detalle (read-only) ──────────────────────────────────── -->
+<!-- ── Modal de detalle ──────────────────────────────────────────────────
+     También es donde se suben las capturas: "Subir capturas" lo abre ya en modo edición. -->
 <app-solicitud-salida-detalle-modal
   *ngIf="detalleId !== null"
   [solicitudId]="detalleId"
-  (close)="cerrarDetalle()" />
-
-<!-- ── Modal de subir capturas ───────────────────────────────────────── -->
-<app-salida-capturas-modal
-  *ngIf="capturasId !== null"
-  [solicitudId]="capturasId"
-  (close)="cerrarCapturas($event)" />
+  [iniciarEditando]="detalleEditando"
+  (rendir)="rendirDesdeDetalle($event)"
+  (cancelar)="cancelarDesdeDetalle($event)"
+  (close)="cerrarDetalle($event)" />
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">

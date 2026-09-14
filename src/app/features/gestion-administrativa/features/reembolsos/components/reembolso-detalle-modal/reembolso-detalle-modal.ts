@@ -34,7 +34,7 @@ interface RespaldoDoc {
 /**
  * El expediente de una planilla para Tesorería: qué se está pagando, a quién, con qué respaldo
  * y con qué firma. Es donde vive la revisión documental que el requerimiento pide antes de
- * proceder (11.1): planilla, Consolidado del S10 con su guía, firma de la jefatura y el detalle
+ * proceder (11.1): planilla, Consolidado del S10 con su número de reembolso, firma de la jefatura y el detalle
  * de cada tramo con sus vouchers.
  *
  * Las dos acciones también están acá porque el pago individual es "esta planilla" (RF-TES-08);

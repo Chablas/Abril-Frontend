@@ -131,6 +131,13 @@
                     <span class="dest__who">· {{ fila.incluirDescendientes ? 'con sub-áreas' : 'sin sub-áreas' }}</span>
                   </span>
 
+                  <!-- Rol: se resuelve al enviar a quien lo tenga ese día -->
+                  <span class="dest__email" *ngIf="fila.tipoCodigo === 'ROL' && !fila.sinCorreo">
+                    <i class="ti ti-wand"></i>
+                    {{ fila.miembros }} {{ fila.miembros === 1 ? 'persona' : 'personas' }}
+                    <span class="dest__who">· con este rol hoy</span>
+                  </span>
+
                   <span class="dest__email dest__email--warn" *ngIf="fila.sinCorreo">
                     <i class="ti ti-alert-circle"></i> Hoy no resuelve a ningún correo
                   </span>
@@ -241,6 +248,21 @@
         <span>Incluir sub-áreas</span>
       </label>
     </ng-container>
+
+    <div class="form-row" *ngIf="formTipo === 'ROL'">
+      <!-- rawLabel: los roles viven en MAYÚSCULA en la base y traen siglas ("COORDINADOR ERP");
+           el suavizado a nombre propio los dejaría en "Coordinador Erp". -->
+      <app-search-select
+        label="Rol"
+        [options]="roles"
+        valueField="roleId"
+        displayField="label"
+        [value]="formRoleId"
+        [rawLabel]="true"
+        placeholder="Selecciona rol..."
+        (valueChange)="formRoleId = $event">
+      </app-search-select>
+    </div>
 
     <div class="form-row" *ngIf="formTipo === 'CORREO'">
       <div class="abril-field">

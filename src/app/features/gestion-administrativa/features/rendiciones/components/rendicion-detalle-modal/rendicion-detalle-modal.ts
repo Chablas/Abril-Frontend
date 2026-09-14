@@ -17,7 +17,7 @@ import {
   ConsolidadoS10Dto,
   otrasRendicionesDelConsolidado,
 } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
-import { SalidaCapturasModal } from '../../../../shared/components/salida-capturas-modal/salida-capturas-modal';
+import { SalidaCapturasModal } from '../salida-capturas-modal/salida-capturas-modal';
 import {
   correccionS10Colors,
   primeraRevisionColors,
@@ -102,8 +102,8 @@ export class RendicionDetalleModal implements OnInit {
 
   // ── Consolidado del S10 ──────────────────────────────────────────────
 
-  readonly subirConsolidado = (file: File, montoTotal: number, numeroGuia: string) =>
-    this.service.uploadConsolidadoS10(this.rendicionId, file, montoTotal, numeroGuia);
+  readonly subirConsolidado = (file: File, montoTotal: number, numeroReembolso: string) =>
+    this.service.uploadConsolidadoS10(this.rendicionId, file, montoTotal, numeroReembolso);
 
   get consolidadoReferencia(): string | null {
     const d = this.detalle;
@@ -138,7 +138,7 @@ export class RendicionDetalleModal implements OnInit {
 
     const result = await confirmarConCorreos({
       titulo: '¿Enviar ' + d.codigo + ' a revisión?',
-      avisos: avisosDe('Al revisor', this.correoPrimeraRevision),
+      avisos: avisosDe(this.correoPrimeraRevision),
       // Sin nadie a quien avisar el envío igual procede: la rendición pasa a revisión y el jefe la
       // ve en su bandeja. Es un aviso de estado, no un bloqueo.
       sinNadie: 'Pasa a revisión, pero sin aviso por correo: está apagado en Configuración → Correos.',
@@ -184,7 +184,7 @@ export class RendicionDetalleModal implements OnInit {
       titulo: d.revisorNotificadoAt ? '¿Volver a avisar?' : '¿Avisar al revisor?',
       // Solo cuando es una repetición: el resto del tiempo el título ya lo dice todo.
       nota: d.revisorNotificadoAt ? 'Ya le avisaste por esta planilla.' : undefined,
-      avisos: avisosDe('Al revisor', this.correoS10Revisor),
+      avisos: avisosDe(this.correoS10Revisor),
       confirmButtonText: d.revisorNotificadoAt ? 'Sí, avisar de nuevo' : 'Sí, avisar',
     });
     if (!result.isConfirmed) return;
@@ -233,7 +233,7 @@ export class RendicionDetalleModal implements OnInit {
     const { value: motivo, isConfirmed } = await confirmarConCorreos({
       icon: 'question',
       titulo: '¿Solicitar la corrección al ERP?',
-      avisos: avisosDe('Al Coordinador ERP', this.correoCorreccionS10),
+      avisos: avisosDe(this.correoCorreccionS10),
       observacion: {
         label: 'Motivo',
         placeholder: 'Qué necesitas que corrija en el S10…',

@@ -3,11 +3,22 @@ import { CommonModule } from '@angular/common';
 import { BaseModal } from '../../../../../../../shared/components/base-modal/base-modal';
 import { StatusBadge } from '../../../../../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../../../../../shared/pipes/title-case.pipe';
-import { AreaAsignacionItemDTO, AreaAsignadoDTO } from '../../dtos/asignacion-area.dto';
+import {
+  AreaAsignacionItemDTO,
+  AreaAsignadoDTO,
+  AreaEfectivoDTO,
+  AreaEfectivoOrigen,
+} from '../../dtos/asignacion-area.dto';
 
 /**
- * Modal de solo lectura con las n personas asignadas a un área, por prioridad. Evita que la tabla
- * principal crezca cuando un área tiene muchas.
+ * Modal de solo lectura de un área (o de un proyecto dentro de un área).
+ *
+ * Muestra primero a los VIGENTES: las personas que hoy quedan a cargo, vengan del algoritmo, de una
+ * asignación a mano o del fallback por defecto. Es el único lugar donde se ve quiénes son: la
+ * columna de la tabla muestra al primero y cuenta al resto con un "+N más".
+ *
+ * Debajo, y solo si el área tiene algo cargado a mano, van los asignados con su prioridad y si
+ * están activos — que es lo que explica por qué los vigentes son los que son.
  */
 @Component({
   standalone: true,
@@ -25,6 +36,8 @@ export class AsignacionesAreasDetalle {
   @Input() projectName?: string;
   /** Asignados a mostrar. Por defecto los del área. */
   @Input() asignadosOverride?: AreaAsignadoDTO[];
+  /** Vigentes a mostrar. Por defecto los del área. */
+  @Input() efectivosOverride?: AreaEfectivoDTO[];
   @Output() closeModal = new EventEmitter<void>();
 
   get titulo(): string {
@@ -32,21 +45,39 @@ export class AsignacionesAreasDetalle {
     return `${this.plural.toUpperCase()} · ${alcance}`;
   }
 
+  get vigentes(): AreaEfectivoDTO[] {
+    return this.efectivosOverride ?? this.area?.efectivos ?? [];
+  }
+
   get asignados(): AreaAsignadoDTO[] {
     const base = this.asignadosOverride ?? this.area?.asignados ?? [];
     return [...base].sort((a, b) => a.ordenPrioridad - b.ordenPrioridad);
   }
 
-  /** true si ninguno está activo: el área queda resuelta por el algoritmo. */
+  /**
+   * Etiqueta de origen, igual que en la columna de la tabla: si a esa persona la puso alguien a
+   * mano, la dedujo el sistema o es el último recurso.
+   */
+  origenLabel(origen?: AreaEfectivoOrigen | null): string {
+    if (origen === 'Personalizado') return 'Personalizado';
+    if (origen === 'Gth') return 'Por defecto';
+    return 'Algoritmo';
+  }
+
+  /** Colores del badge de origen: lo cargado a mano se distingue de lo que resolvió el sistema. */
+  origenClases(origen?: AreaEfectivoOrigen | null): string {
+    if (origen === 'Personalizado') return 'bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)]';
+    if (origen === 'Gth') return 'bg-[#FEF9C3] text-[#92400E]';
+    return 'bg-[#E8F1FB] text-[var(--color-abril-logo-blue)]';
+  }
+
+  /** true si hay asignados a mano pero ninguno activo: el área la resuelve el algoritmo. */
   get sinActivos(): boolean {
-    return !this.asignados.some((a) => a.active);
+    return this.asignados.length > 0 && !this.asignados.some((a) => a.active);
   }
 
   /** Aviso de estado, no explicación: qué está pasando hoy con esta área. */
   get avisoSinActivos(): string {
-    const nada = this.asignados.length === 0
-      ? `Sin ${this.plural.toLowerCase()} asignados`
-      : `Ningún ${this.singular.toLowerCase()} está activo`;
-    return `${nada}: el área se resuelve por el algoritmo.`;
+    return `Ningún ${this.singular.toLowerCase()} asignado está activo: el área se resuelve por el algoritmo.`;
   }
 }

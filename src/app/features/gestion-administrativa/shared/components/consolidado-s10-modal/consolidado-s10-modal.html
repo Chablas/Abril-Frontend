@@ -41,10 +41,10 @@
         </svg>
         {{ actual.pdfFilename }}
       </a>
-      <div *ngIf="actual.montoTotal !== null || actual.numeroGuia" class="text-xs text-gray-500">
+      <div *ngIf="actual.montoTotal !== null || actual.numeroReembolso" class="text-xs text-gray-500">
         <span *ngIf="actual.montoTotal !== null">S/ {{ actual.montoTotal | number:'1.2-2' }}</span>
-        <span *ngIf="actual.montoTotal !== null && actual.numeroGuia"> · </span>
-        <span *ngIf="actual.numeroGuia">Guía {{ actual.numeroGuia }}</span>
+        <span *ngIf="actual.montoTotal !== null && actual.numeroReembolso"> · </span>
+        <span *ngIf="actual.numeroReembolso">Reembolso {{ actual.numeroReembolso }}</span>
       </div>
       <div class="text-xs text-gray-400">
         <span *ngIf="actual.uploadedAt">{{ actual.uploadedAt | date:'dd/MM/yyyy HH:mm' }} · </span>subir otro lo reemplaza
@@ -70,7 +70,7 @@
         (remove)="quitarArchivo()" />
     </div>
 
-    <!-- ── Monto total y número de guía ──────────────────────────────────
+    <!-- ── Monto total y número de reembolso ──────────────────────────────────
          Los dos datos con los que el S10 registró las planillas. El monto tiene que cuadrar con el
          de las planillas porque el consolidado las cubre enteras: si no, no se puede adjuntar. -->
     <div class="flex flex-col sm:flex-row gap-3">
@@ -88,14 +88,14 @@
       </div>
 
       <div class="abril-field flex-1">
-        <label class="abril-field-label" for="consolidado-guia">Número de guía</label>
+        <label class="abril-field-label" for="consolidado-reembolso">Número de reembolso</label>
         <input
-          id="consolidado-guia"
+          id="consolidado-reembolso"
           class="abril-field-input"
           type="text"
           maxlength="60"
-          placeholder="Número de guía del S10"
-          [(ngModel)]="numeroGuia" />
+          placeholder="Número del reembolso del S10"
+          [(ngModel)]="numeroReembolso" />
       </div>
     </div>
 

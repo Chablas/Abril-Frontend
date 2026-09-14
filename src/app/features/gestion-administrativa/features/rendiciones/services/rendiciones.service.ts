@@ -85,12 +85,12 @@ export class RendicionesService {
    * responde 400 si no coincide.
    */
   uploadConsolidadoS10(
-    rendicionId: number, file: File, montoTotal: number, numeroGuia: string,
+    rendicionId: number, file: File, montoTotal: number, numeroReembolso: string,
   ): Observable<ConsolidadoS10Dto> {
     const formData = new FormData();
     formData.append('file', file, file.name);
     formData.append('montoTotal', String(montoTotal));
-    formData.append('numeroGuia', numeroGuia);
+    formData.append('numeroReembolso', numeroReembolso);
     return this.http.post<ConsolidadoS10Dto>(
       `${this.apiUrl}/${rendicionId}/consolidado-s10`,
       formData,

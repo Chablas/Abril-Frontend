@@ -11,8 +11,9 @@
  *  • El **principal**, que resuelve el backend al enviar (el revisor de la solicitud, el
  *    solicitante). No es una fila de `ga_correo_regla` sino una propiedad del propio correo, así
  *    que su interruptor va por `setPrincipalActive` y la pantalla lo dibuja con `id` 0.
- *  • Los **configurados** (`ga_correo_regla`): un trabajador, un área (se expande a sus miembros)
- *    o un correo escrito a mano. Se agregan, editan, prenden/apagan y eliminan desde la pantalla.
+ *  • Los **configurados** (`ga_correo_regla`): un trabajador, un área (se expande a sus miembros),
+ *    un rol (se expande a quien lo tenga hoy) o un correo escrito a mano. Se agregan, editan,
+ *    prenden/apagan y eliminan desde la pantalla.
  */
 
 /**
@@ -45,8 +46,14 @@ export type CorreoPantalla =
  */
 export type CorreoGrupo = 'correos' | 'recordatorios';
 
-/** Códigos estables del catálogo de tipos de destinatario. */
-export type CorreoTipoCodigo = 'TRABAJADOR' | 'AREA' | 'CORREO';
+/**
+ * Códigos estables del catálogo de tipos de destinatario.
+ *
+ * `ROL` es el único que se resuelve por CARGO y no por persona: le llega a quien tenga ese rol el
+ * día que el correo sale. Es lo que hace falta para «Tesorería» o «el Coordinador ERP», que no se
+ * pueden fijar a un nombre porque ese nombre cambia sin que nadie venga a esta pantalla.
+ */
+export type CorreoTipoCodigo = 'TRABAJADOR' | 'AREA' | 'CORREO' | 'ROL';
 
 /** Un destinatario configurado, ya resuelto por el backend para mostrarlo. */
 export interface CorreoDestinatario {
@@ -55,12 +62,13 @@ export interface CorreoDestinatario {
   tipoCodigo: CorreoTipoCodigo;
   /** Nombre para mostrar: el del trabajador, el del área, o el propio correo. */
   nombre: string;
-  /** Dirección literal (CORREO) o el corporativo del trabajador. Null en AREA. */
+  /** Dirección literal (CORREO) o el corporativo del trabajador. Null en AREA y ROL. */
   email: string | null;
-  /** Solo en AREA: a cuántos correos se expande hoy. */
+  /** Solo en AREA y ROL: a cuántos correos se expande hoy. */
   miembros: number | null;
   workerId: number | null;
   areaScopeId: number | null;
+  roleId: number | null;
   incluirDescendientes: boolean;
   active: boolean;
   /** true = está activo pero hoy no resuelve a ningún correo. */
@@ -103,11 +111,22 @@ export interface CorreoAreaOption {
   label?: string;
 }
 
+/** Un rol para el desplegable del tipo ROL, con a cuánta gente alcanza hoy. */
+export interface CorreoRolOption {
+  roleId: number;
+  nombre: string;
+  /** A cuántos correos corporativos se expande hoy: en 0 no le llega a nadie. */
+  miembros: number;
+  /** Etiqueta del desplegable (nombre + cuánta gente); se calcula en el front. */
+  label?: string;
+}
+
 /** Carga inicial de la sección (1 sola petición). */
 export interface CorreoConfigInicial {
   eventos: CorreoEvento[];
   trabajadores: CorreoWorkerOption[];
   areas: CorreoAreaOption[];
+  roles: CorreoRolOption[];
 }
 
 /** Alta o edición de un destinatario configurado. */
@@ -116,6 +135,7 @@ export interface CorreoDestinatarioInput {
   workerId?: number | null;
   areaScopeId?: number | null;
   correo?: string | null;
+  roleId?: number | null;
   /** Solo aplica a AREA. */
   incluirDescendientes: boolean;
 }

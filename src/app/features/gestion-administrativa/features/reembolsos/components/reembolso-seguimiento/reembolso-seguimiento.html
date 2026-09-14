@@ -60,7 +60,7 @@
       </div>
     </div>
 
-    <!-- Detalle por rendición: periodo, guía, monto abonado, estado y última actualización. -->
+    <!-- Detalle por rendición: periodo, número de reembolso, monto abonado, estado y última actualización. -->
     <div *ngIf="expandidos.has(c.workerId)" class="abril-table-wrap border-t"
          style="border-color:var(--color-abril-border)">
       <table class="abril-table abril-table--th-center">
@@ -69,7 +69,7 @@
             <th>Rendición</th>
             <th>Planilla</th>
             <th>Periodo</th>
-            <th>Guía S10</th>
+            <th>N.º de reembolso</th>
             <th>Salidas</th>
             <th>Monto abonado</th>
             <th>Estado</th>
@@ -82,7 +82,7 @@
             <td class="text-gray-700 font-medium whitespace-nowrap">{{ r.codigo }}</td>
             <td class="text-gray-500 whitespace-nowrap">{{ r.numeroPlanilla ?? '—' }}</td>
             <td class="text-gray-700 whitespace-nowrap">{{ r.periodo }}</td>
-            <td class="text-gray-700 whitespace-nowrap">{{ r.numeroGuia || '—' }}</td>
+            <td class="text-gray-700 whitespace-nowrap">{{ r.numeroReembolso || '—' }}</td>
             <td class="text-gray-700 text-center">{{ r.salidasCount }}</td>
             <td class="text-gray-700 whitespace-nowrap font-medium">S/ {{ r.montoAbonado | number:'1.2-2' }}</td>
             <td>
