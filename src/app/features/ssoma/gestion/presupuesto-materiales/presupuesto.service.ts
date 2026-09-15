@@ -184,9 +184,10 @@ export class PresupuestoMaterialesService {
     );
   }
 
-  listarFamiliasConRatio(): Observable<FamiliaConRatioDto[]> {
+  listarFamiliasConRatio(soloActivos = true): Observable<FamiliaConRatioDto[]> {
     return this.http.get<FamiliaConRatioDto[]>(`${this.base}/ratios/familias`, {
       headers: this.authHeaders(),
+      params: { soloActivos },
     });
   }
 

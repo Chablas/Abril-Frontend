@@ -280,7 +280,7 @@ export class ProyectoPage implements OnInit {
             hitoFecha: hito.hitoFecha,
             hitoSalidaId: existente?.hitoSalidaId ?? null,
             cantidadPuntos: existente?.cantidadPuntos ?? 0,
-            semanas: existente?.semanas ?? 0,
+            semanas: existente?.semanas ?? this.semanasPropiasDelHito(hito),
             total: existente?.total ?? 0,
           };
         });
@@ -1097,6 +1097,10 @@ export class ProyectoPage implements OnInit {
       // aunque tenga cantidad y tarifa cargadas.
       const referenciaHito = existentes.find((e) => e.hitoId === hito.hitoId && e.hitoSalidaId != null)
         ?? existentes.find((e) => e.hitoId === hito.hitoId);
+      // Si nunca se guardó nada para este hito (típicamente el último, que no tiene un hito
+      // posterior para usar como "etapa de salida") se sugiere la duración propia del hito
+      // (Fin - Inicio) en vez de arrancar siempre en 0 — sigue siendo editable a mano igual.
+      const semanasSugeridas = this.semanasPropiasDelHito(hito);
       for (const cfg of ROLES_PERSONAL_CONFIG) {
         const existente = existentes.find((e) => e.hitoId === hito.hitoId && e.rol === cfg.rolKey);
         this.personalFilas.push({
@@ -1107,7 +1111,7 @@ export class ProyectoPage implements OnInit {
           rol: cfg.rolKey,
           categoria: cfg.categoria,
           cantidad: existente?.cantidad ?? 0,
-          semanas: referenciaHito?.semanas ?? 0,
+          semanas: referenciaHito?.semanas ?? semanasSugeridas,
           costoMensual: existente?.costoMensual ?? 0,
           total: existente?.total ?? 0,
         });
@@ -1161,6 +1165,23 @@ export class ProyectoPage implements OnInit {
    * pero no se restringe para no complicar la lista). */
   get etapasSalidaOpts(): HitoCriticoDisponibleDto[] {
     return this.hitosCriticos;
+  }
+
+  /** Semanas propias de un hito (Fin del proyecto - Inicio del hito) — se usa como sugerencia inicial
+   * de "Semanas" para un hito que nunca tuvo Personal/Vigilancia guardado, típicamente el último hito
+   * crítico del cronograma (no tiene un hito posterior para elegir como "etapa de salida", así que
+   * antes siempre arrancaba en 0 y había que tipear a mano). "Fin del proyecto" es la fecha fin MÁS
+   * LEJANA entre TODOS los hitos críticos — no la fecha fin propia de este hito en particular, porque
+   * el orden por fecha de inicio no garantiza que el hito que empieza último sea el que termina más
+   * tarde (podría haber otro hito corriendo en paralelo que termine después). Sigue siendo editable,
+   * esto es solo el valor inicial. */
+  private semanasPropiasDelHito(hito: HitoCriticoDisponibleDto): number {
+    const fechasFin = this.hitosCriticos
+      .map((h) => h.hitoFechaFin)
+      .filter((f): f is string => !!f);
+    if (fechasFin.length === 0) return 0;
+    const fechaFinProyecto = fechasFin.reduce((max, f) => (f > max ? f : max));
+    return semanasEntreFechas(hito.hitoFecha, fechaFinProyecto);
   }
 
   /** Al elegir/quitar la etapa de salida, recalcula "Semanas" desde las fechas reales del cronograma

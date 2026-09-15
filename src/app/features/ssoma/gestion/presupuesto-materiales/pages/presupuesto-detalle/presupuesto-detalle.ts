@@ -73,6 +73,22 @@ export class PresupuestoDetallePage implements OnInit {
   get totalServicios(): number { return this.serviciosFijos.reduce((a, s) => a + (s.total || 0), 0); }
   get totalKits(): number { return this.kitsGuardados.reduce((a, k) => a + (k.total || 0), 0); }
 
+  /** Barandas de Seguridad FRP (21mm/25mm) — familiaId 476/475 del Catálogo — van como su propia
+   * línea separada de EPC, igual que en el Excel Resumen exportado (ver PresupuestoResumenExportService). */
+  private readonly FAMILIAS_BARANDAS_FRP = [476, 475];
+
+  familiasFrp(tipo: { familias: PresupuestoLineaDto[] }): PresupuestoLineaDto[] {
+    return tipo.familias.filter((f) => this.FAMILIAS_BARANDAS_FRP.includes(f.familiaId));
+  }
+
+  familiasSinFrp(tipo: { familias: PresupuestoLineaDto[] }): PresupuestoLineaDto[] {
+    return tipo.familias.filter((f) => !this.FAMILIAS_BARANDAS_FRP.includes(f.familiaId));
+  }
+
+  totalFrp(tipo: { familias: PresupuestoLineaDto[] }): number {
+    return this.familiasFrp(tipo).reduce((a, f) => a + this.totalEfectivo(f), 0);
+  }
+
   toggleSeccion(id: string): void {
     if (this.otrasSeccionesAbierto.has(id)) this.otrasSeccionesAbierto.delete(id);
     else this.otrasSeccionesAbierto.add(id);

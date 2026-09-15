@@ -49,11 +49,46 @@
         </div>
       </div>
 
+      <!-- Barandas de Seguridad FRP — separadas de EPC, misma lógica que el Excel Resumen. -->
+      <ng-container *ngFor="let tipo of detalle.tipos">
+        <div *ngIf="tipo.nombreTipo === 'EPC' && familiasFrp(tipo).length > 0" class="tipo-bloque">
+          <button class="tipo-header" (click)="toggleTipo(-tipo.tipoId)">
+            <span class="tipo-nombre">Barandas de Seguridad con FRP</span>
+            <span class="tipo-total">S/ {{ totalFrp(tipo) | number:'1.2-2' }}</span>
+            <i class="ti" [class.ti-chevron-down]="!tipoAbierto.has(-tipo.tipoId)"
+                          [class.ti-chevron-up]="tipoAbierto.has(-tipo.tipoId)"></i>
+          </button>
+          <div *ngIf="tipoAbierto.has(-tipo.tipoId)" class="tipo-body">
+            <table class="abril-table lineas-table">
+              <thead>
+                <tr>
+                  <th>Familia</th><th>Se calcula por</th><th class="num">Ratio</th>
+                  <th class="num">Cant. base</th><th class="num">Cantidad</th>
+                  <th class="num">Precio unit.</th><th class="num">Total</th><th class="num">Proyt.</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let l of familiasFrp(tipo)">
+                  <td class="familia-cell">{{ l.nombreFamilia }}</td>
+                  <td class="base-cell">{{ baseLabel(l.variableBase) }}</td>
+                  <td class="num">{{ l.ratioRecomendado | number:'1.4-4' }}</td>
+                  <td class="num">{{ l.valorDriver | number:'1.0-0' }}</td>
+                  <td class="num">{{ (l.cantidadManual ?? l.cantidadEstimada) | number:'1.2-2' }}</td>
+                  <td class="num">{{ (l.precioManual ?? l.precioUnitario) | number:'1.2-2' }}</td>
+                  <td class="num total-cell">S/ {{ totalEfectivo(l) | number:'1.2-2' }}</td>
+                  <td class="num">{{ l.nProyectosBase }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </ng-container>
+
       <!-- Acordeón por tipo -->
       <div *ngFor="let tipo of detalle.tipos" class="tipo-bloque">
         <button class="tipo-header" (click)="toggleTipo(tipo.tipoId)">
           <span class="tipo-nombre">{{ tipo.nombreTipo }}</span>
-          <span class="tipo-total">S/ {{ tipo.totalEstimado | number:'1.2-2' }}</span>
+          <span class="tipo-total">S/ {{ (tipo.nombreTipo === 'EPC' ? tipo.totalEstimado - totalFrp(tipo) + totalKits : tipo.totalEstimado) | number:'1.2-2' }}</span>
           <i class="ti" [class.ti-chevron-down]="!tipoAbierto.has(tipo.tipoId)"
                         [class.ti-chevron-up]="tipoAbierto.has(tipo.tipoId)"></i>
         </button>
@@ -74,7 +109,7 @@
               </tr>
             </thead>
             <tbody>
-              <ng-container *ngFor="let l of tipo.familias">
+              <ng-container *ngFor="let l of (tipo.nombreTipo === 'EPC' ? familiasSinFrp(tipo) : tipo.familias)">
                 <!-- Fila normal -->
                 <tr *ngIf="editandoLineaId !== l.lineaId"
                     [class.no-hist]="!l.tieneHistoria"
@@ -129,6 +164,23 @@
               </ng-container>
             </tbody>
           </table>
+
+          <!-- Kits/BOM (Botiquín, Estación de Emergencia) van dentro de EPC — mismo criterio que
+               el Resumen exportado a Excel, no es su propia partida. -->
+          <ng-container *ngIf="tipo.nombreTipo === 'EPC' && kitsGuardados.length > 0">
+            <table class="abril-table lineas-table" *ngFor="let k of kitsGuardados">
+              <thead><tr><th colspan="3">{{ k.nombreKit }} — x{{ k.cantidadKits }} (S/ {{ k.total | number:'1.2-2' }})</th></tr>
+                <tr><th>Material</th><th class="num">Cantidad total</th><th class="num">Total</th></tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let l of k.lineas">
+                  <td>{{ l.nombreFamilia }}</td>
+                  <td class="num">{{ l.cantidadTotal | number:'1.0-2' }}</td>
+                  <td class="num total-cell">S/ {{ l.total | number:'1.2-2' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </ng-container>
 
           <!-- Alta de família nueva, inline — para materiales que aún no existen en el catálogo
                (ej. un EPP nuevo) sin tener que ir primero a la pantalla de Catálogo. -->
@@ -201,28 +253,8 @@
         </div>
       </div>
 
-      <div *ngIf="vigilanciaHitos.length > 0" class="tipo-bloque">
-        <button class="tipo-header" (click)="toggleSeccion('vigilancia')">
-          <span class="tipo-nombre">Vigilancia</span>
-          <span class="tipo-total">S/ {{ totalVigilancia | number:'1.2-2' }}</span>
-          <i class="ti" [class.ti-chevron-down]="!otrasSeccionesAbierto.has('vigilancia')"
-                        [class.ti-chevron-up]="otrasSeccionesAbierto.has('vigilancia')"></i>
-        </button>
-        <div *ngIf="otrasSeccionesAbierto.has('vigilancia')" class="tipo-body">
-          <table class="abril-table lineas-table">
-            <thead><tr><th>Etapa</th><th class="num">Puntos</th><th class="num">Semanas</th><th class="num">Precio unit.</th><th class="num">Total</th></tr></thead>
-            <tbody>
-              <tr *ngFor="let v of vigilanciaHitos">
-                <td>{{ v.hitoDescripcion }}</td>
-                <td class="num">{{ v.cantidadPuntos }}</td>
-                <td class="num">{{ v.semanas | number:'1.1-1' }}</td>
-                <td class="num">{{ v.precioUnitario | number:'1.2-2' }}</td>
-                <td class="num total-cell">S/ {{ v.total | number:'1.2-2' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <!-- Vigilancia no es parte del presupuesto oficial (no suma a totalEstimado) — se ve en su
+           propia pestaña de Datos Base del proyecto, no acá. -->
 
       <div *ngIf="serviciosFijos.length > 0" class="tipo-bloque">
         <button class="tipo-header" (click)="toggleSeccion('servicios')">
@@ -246,28 +278,7 @@
         </div>
       </div>
 
-      <div *ngIf="kitsGuardados.length > 0" class="tipo-bloque">
-        <button class="tipo-header" (click)="toggleSeccion('kits')">
-          <span class="tipo-nombre">Kits / BOM</span>
-          <span class="tipo-total">S/ {{ totalKits | number:'1.2-2' }}</span>
-          <i class="ti" [class.ti-chevron-down]="!otrasSeccionesAbierto.has('kits')"
-                        [class.ti-chevron-up]="otrasSeccionesAbierto.has('kits')"></i>
-        </button>
-        <div *ngIf="otrasSeccionesAbierto.has('kits')" class="tipo-body">
-          <table class="abril-table lineas-table" *ngFor="let k of kitsGuardados">
-            <thead><tr><th colspan="3">{{ k.nombreKit }} — x{{ k.cantidadKits }} (S/ {{ k.total | number:'1.2-2' }})</th></tr>
-              <tr><th>Material</th><th class="num">Cantidad total</th><th class="num">Total</th></tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let l of k.lineas">
-                <td>{{ l.nombreFamilia }}</td>
-                <td class="num">{{ l.cantidadTotal | number:'1.0-2' }}</td>
-                <td class="num total-cell">S/ {{ l.total | number:'1.2-2' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <!-- Kits/BOM ahora se muestran dentro del acordeón de EPC, más arriba. -->
     </ng-container>
   </div>
 </div>
