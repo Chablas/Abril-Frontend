@@ -275,6 +275,40 @@ export class PresupuestoDetallePage implements OnInit {
     });
   }
 
+  reenviandoNotificacion = false;
+
+  /** Reenvía el correo de aprobación — visible solo cuando el presupuesto ya está APROBADO (no
+   * llegó, o se corrigió algo en el Resumen después de aprobar). */
+  reenviarNotificacion(): void {
+    Swal.fire({
+      icon: 'question',
+      title: '¿Reenviar correo de aprobación?',
+      text: 'Se vuelve a mandar a Residente, Coordinador SSOMA, Jefe SSOMA, Oficina Técnica del proyecto y Costos y Presupuestos, con el Excel adjunto actualizado.',
+      showCancelButton: true,
+      confirmButtonText: 'Reenviar',
+      cancelButtonText: 'Cancelar',
+    }).then((r) => {
+      if (!r.isConfirmed) return;
+      this.reenviandoNotificacion = true;
+      this.loader.show();
+      this.cdr.markForCheck();
+      this.svc.reenviarNotificacionAprobacion(this.presupuestoId).subscribe({
+        next: () => {
+          this.reenviandoNotificacion = false;
+          this.loader.hide();
+          Swal.fire({ icon: 'success', title: 'Correo reenviado', timer: 1800, showConfirmButton: false });
+          this.cdr.markForCheck();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.reenviandoNotificacion = false;
+          this.loader.hide();
+          this.error.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+    });
+  }
+
   irAControl(): void {
     this.router.navigate(['/ssoma/gestion/presupuesto-materiales/presupuesto', this.presupuestoId, 'control']);
   }

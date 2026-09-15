@@ -101,6 +101,10 @@ export class CatalogoPage implements OnInit {
   filtroGeneralSsoma: string | null = null;
   filtroGeneralTipoId: number | null = null;
   filtroGeneralFamiliaId: number | null = null;
+  /** Por defecto arranca filtrado al proyecto vigente de quien entra (evita mostrar los ~88 mil
+   * registros de TODOS los proyectos de una — quien lo necesite lo quita a mano). */
+  filtroGeneralProyectoId: number | null = null;
+  private miProyectoActualId: number | null = null;
   readonly ssomaOpts: { id: string | null; label: string }[] = [
     { id: null, label: 'Todos' },
     { id: 'si', label: 'Pertenece a SSOMA' },
@@ -124,9 +128,22 @@ export class CatalogoPage implements OnInit {
 
   // ─── Sección 0: vista general ─────────────────────────────────────────────
 
-  /** Filtro por texto + tipo + familia (todo menos SSOMA sí/no) — sirve de base para el desglose de montos. */
+  /** Proyectos disponibles para el combobox — derivados de lo que ya llegó, ordenados alfabéticamente. */
+  get proyectosGeneral(): { id: number; nombre: string }[] {
+    const vistos = new Map<number, string>();
+    for (const g of this.general) if (!vistos.has(g.projectId)) vistos.set(g.projectId, g.projectDescription);
+    return Array.from(vistos, ([id, nombre]) => ({ id, nombre })).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }
+
+  onFiltroGeneralProyectoChange(proyectoId: number | null): void {
+    this.filtroGeneralProyectoId = proyectoId;
+    this.onFiltroGeneralChange();
+  }
+
+  /** Filtro por texto + tipo + familia + proyecto (todo menos SSOMA sí/no) — sirve de base para el desglose de montos. */
   private get generalPreFiltro(): MaterialGlobalDto[] {
     let lista = this.general;
+    if (this.filtroGeneralProyectoId != null) lista = lista.filter((g) => g.projectId === this.filtroGeneralProyectoId);
     if (this.filtroGeneralTipoId != null) lista = lista.filter((g) => g.tipoId === this.filtroGeneralTipoId);
     if (this.filtroGeneralFamiliaId != null) lista = lista.filter((g) => g.familiaId === this.filtroGeneralFamiliaId);
     const q = this.filtroGeneral.trim().toLowerCase();
@@ -201,6 +218,12 @@ export class CatalogoPage implements OnInit {
     this.svc.obtenerTodoGlobal().subscribe({
       next: (lineas) => {
         this.general = lineas;
+        // Primera carga: preseleccionar el proyecto vigente de quien entra, si existe entre los
+        // datos cargados — así no arranca mostrando los ~88 mil registros de todos los proyectos.
+        if (this.filtroGeneralProyectoId == null && this.miProyectoActualId != null
+            && this.general.some((g) => g.projectId === this.miProyectoActualId)) {
+          this.filtroGeneralProyectoId = this.miProyectoActualId;
+        }
         this.generalPager.reset();
         this.loading = false;
         this.loader.hide();
@@ -213,6 +236,18 @@ export class CatalogoPage implements OnInit {
     }
     if (this.familiasGeneral.length === 0) {
       this.svc.listarFamiliasCatalogo().subscribe({ next: (f) => { this.familiasGeneral = f; this.cdr.detectChanges(); } });
+    }
+    if (this.miProyectoActualId == null) {
+      this.svc.obtenerMiProyectoActual().subscribe({
+        next: (p) => {
+          this.miProyectoActualId = p.projectId;
+          if (this.filtroGeneralProyectoId == null && this.general.some((g) => g.projectId === p.projectId)) {
+            this.filtroGeneralProyectoId = p.projectId;
+            this.cdr.detectChanges();
+          }
+        },
+        error: () => {}, // sin proyecto vigente resuelto (ej. usuario de oficina central) — se queda sin filtrar, no bloquea la pantalla
+      });
     }
   }
 
