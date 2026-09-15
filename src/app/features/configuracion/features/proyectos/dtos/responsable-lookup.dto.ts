@@ -14,9 +14,6 @@ export interface ProjectLookupsDto {
   udp: ResponsableLookupDto[];
   /** Elegibles como coordinador administrativo: personal Casa no retirado con correo. */
   coordAdmins: ResponsableLookupDto[];
-  /**
-   * Subárea "Planeamiento BIM". Opcional hasta que el backend lo agregue a `GET
-   * project/lookups` (ver Abril_Backend) — mientras tanto llega `undefined`.
-   */
-  planeamientoUdp?: ResponsableLookupDto[];
+  /** Subárea "Planeamiento BIM". */
+  planeamientoUdp: ResponsableLookupDto[];
 }

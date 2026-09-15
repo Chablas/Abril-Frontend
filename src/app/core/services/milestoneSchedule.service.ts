@@ -48,4 +48,14 @@ export class MilestoneScheduleService {
       { headers: { Authorization: `Bearer ${token}` } },
     );
   }
+
+  /** fechaRealFin en formato yyyy-MM-dd, o null para desmarcar como culminado. */
+  culminar(milestoneScheduleId: number, fechaRealFin: string | null): Observable<{ message: string }> {
+    const token = localStorage.getItem('access_token');
+    return this.http.patch<{ message: string }>(
+      `${this.apiUrl}/${milestoneScheduleId}/culminar`,
+      { fechaRealFin },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
 }

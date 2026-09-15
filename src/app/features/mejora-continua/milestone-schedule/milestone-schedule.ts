@@ -30,6 +30,8 @@ import { AuthService } from '../../../core/services/auth.service';
 import { Roles } from '../../../core/constants/roles';
 import { MilestoneScheduleProjectsService } from './services/milestone-schedule-projects.service';
 import { ProjectGetDTO } from '../../../core/dtos/project/project.model';
+import { ProjectResidentService } from '../../../core/services/projectResident.service';
+import { ProjectSimpleDTO } from '../../../core/dtos/project/projectSimple.model';
 import { BaseModal } from '../../../shared/components/base-modal/base-modal';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
 import { ProyectoService } from '../../configuracion/features/proyectos/services/proyecto.service';
@@ -137,6 +139,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   private searchDebounce?: ReturnType<typeof setTimeout>;
 
   schedules: ProjectGetDTO[] = [];
+  /** true si `schedules` viene de ProjectResident (RESIDENTE no-admin, sin paginación/búsqueda de servidor). */
+  residenteScopedProjects = false;
   milestoneScheduleHistoryTableData: MilestoneScheduleHistoryGetDTO[] = [];
   milestoneScheduleTableData: MilestoneScheduleGetDTO[] = [];
 
@@ -175,13 +179,14 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   };
 
   get kpis() {
-    let total = 0, culminados = 0, enProceso = 0;
+    let total = 0, culminados = 0, enProceso = 0, criticos = 0;
     this.ganttTasks.forEach((task: any) => {
       total++;
       if (this.getEstado(task) === 'CULMINADO') culminados++;
       else enProceso++;
+      if (task['esHitoCritico']) criticos++;
     });
-    return { total, culminados, enProceso };
+    return { total, culminados, enProceso, criticos };
   }
 
   // ── Plantilla de hitos (noMilestones view) ────────────────────────────────
@@ -331,20 +336,46 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     return this.undatedTasks.filter((t: any) => t.esObligatorio && !this.tieneFecha(t));
   }
 
+  /**
+   * "Inicio de obra" es el único hito obligatorio/puntual cuya fecha única va en
+   * plannedStartDate en vez de plannedEndDate — conceptualmente es un inicio, no un fin.
+   * Detectado por descripción (igual que el backend: MilestoneScheduleService.BuildFakeSchedule
+   * y MilestoneScheduleHistoryRepository.ValidarHitosObligatoriosAsync usan el mismo match).
+   */
+  esInicioDeObra(hito: any): boolean {
+    return hito.text === 'Inicio de obra';
+  }
+
   /** Reconstruye el DTO de guardado completo a partir de undatedTasks (fuente de verdad de la plantilla). */
   private sincronizarDTODesdeUndatedTasks(): void {
     this.milestoneScheduleHistoryCreateDTO.milestoneSchedules = this.undatedTasks.map((t: any, i: number) => {
+      const startClean = t.startDate?.substring(0, 10) || '';
       const finClean = t.endDate?.substring(0, 10) || '';
-      // Puntual: la fecha real es plannedEndDate (confirmado con backend). plannedStartDate no
-      // admite null en el DTO ni sobrevive el filtro de buildSavePayload() si queda vacío, así
-      // que se espeja el mismo valor ahí solo para el payload — en pantalla sigue habiendo un
-      // único input, bajo la columna "Fin".
-      const inicioClean = t.esPuntual ? finClean : (t.startDate?.substring(0, 10) || '');
+
+      let plannedStartDate: string;
+      let plannedEndDate: string | null;
+
+      if (t.esPuntual && this.esInicioDeObra(t)) {
+        // Excepción: la fecha única va en plannedStartDate, plannedEndDate va null salvo que
+        // se haya tildado "rango" para convertirlo en un rango real inicio→fin.
+        plannedStartDate = startClean;
+        plannedEndDate = t.esRango ? finClean || null : null;
+      } else if (t.esPuntual) {
+        // Puntual: la fecha real es plannedEndDate (confirmado con backend). plannedStartDate no
+        // admite null en el DTO ni sobrevive el filtro de buildSavePayload() si queda vacío, así
+        // que se espeja el mismo valor ahí salvo que "rango" esté tildado (rango real inicio→fin).
+        plannedStartDate = t.esRango ? startClean : finClean;
+        plannedEndDate = finClean || null;
+      } else {
+        plannedStartDate = startClean;
+        plannedEndDate = finClean || null;
+      }
+
       return {
         milestoneId: t.milestoneId,
         customDescription: t.milestoneId == null ? t.customDescription : undefined,
-        plannedStartDate: inicioClean,
-        plannedEndDate: t.endDate?.substring(0, 10) || null,
+        plannedStartDate,
+        plannedEndDate,
         order: i + 1,
         esHitoCritico: !!t.esCritico,
       };
@@ -370,8 +401,16 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       : `${base} ms-en-proceso`;
   }
 
+  /** RESIDENTE (su propio proyecto) o ADMINISTRADOR DE RESIDENTES (cualquier proyecto). */
+  get puedeEditarCronograma(): boolean {
+    return this.authService.hasRole(Roles.RESIDENTE) || this.authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES);
+  }
+
   get projectsFiltered(): ProjectGetDTO[] {
-    return this.schedules;
+    if (!this.residenteScopedProjects) return this.schedules;
+    const search = this.searchQuery.trim().toLowerCase();
+    if (!search) return this.schedules;
+    return this.schedules.filter((p) => p.projectDescription.toLowerCase().includes(search));
   }
 
   getProjectColor(name: string): string {
@@ -473,6 +512,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private router: Router,
     private milestoneScheduleProjectsService: MilestoneScheduleProjectsService,
+    private projectResidentService: ProjectResidentService,
     private scheduleService: ScheduleService,
     private milestoneScheduleHistoryService: MilestoneScheduleHistoryService,
     private milestoneService: MilestoneService,
@@ -487,6 +527,13 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   }
 
   loadSchedules(page: number = 1, search?: string): void {
+    // RESIDENTE (no ADMINISTRADOR DE RESIDENTES) solo ve los proyectos donde está asignado como
+    // residente — evita elegir un proyecto ajeno para luego chocar con el 403 al guardar/editar.
+    if (this.authService.hasRole(Roles.RESIDENTE) && !this.authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES)) {
+      this.loadResidenteScopedSchedules();
+      return;
+    }
+    this.residenteScopedProjects = false;
     this.loader = true;
     this.cdr.detectChanges();
     this.milestoneScheduleProjectsService.getProjectPagedWithResidents(page, search, 12).subscribe({
@@ -506,6 +553,36 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
         this.error(err);
       },
     });
+  }
+
+  /** Lista completa (sin paginación de servidor) de los proyectos donde el usuario es residente. */
+  private loadResidenteScopedSchedules(): void {
+    this.residenteScopedProjects = true;
+    this.loader = true;
+    this.cdr.detectChanges();
+    this.projectResidentService.getWithResidentByUserId().subscribe({
+      next: (projects) => {
+        this.schedules = projects.map((p) => this.toProjectGetDTO(p));
+        this.currentPage = 1;
+        this.totalPages = 1;
+        this.pageSize = this.schedules.length;
+        this.totalRecords = this.schedules.length;
+        this.loader = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => this.error(err),
+    });
+  }
+
+  private toProjectGetDTO(p: ProjectSimpleDTO): ProjectGetDTO {
+    return {
+      projectId: p.projectId,
+      projectDescription: p.projectDescription,
+      residentFullNames: [],
+      createdDateTime: '',
+      createdUserId: 0,
+      active: true,
+    };
   }
 
   onSearchChange(): void {
@@ -563,6 +640,44 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
           this.error(err);
         },
       });
+  }
+
+  /**
+   * Solo ADMINISTRADOR DE RESIDENTES: elimina una versión completa de cronograma (con sus hitos).
+   * El endpoint está protegido con [Authorize(Roles=...)] puro, sin AbrilException — un 403 por
+   * rol insuficiente no trae body JSON, a diferencia de los demás endpoints del feature.
+   */
+  eliminarVersionCronograma(item: MilestoneScheduleHistoryGetDTO): void {
+    Swal.fire({
+      icon: 'question',
+      title: '¿Eliminar esta versión de cronograma?',
+      text: 'Se eliminará junto con todos sus hitos. Esta acción no se puede deshacer.',
+      showCancelButton: true,
+      confirmButtonText: 'Eliminar',
+      cancelButtonText: 'Cancelar',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loader = true;
+      this.cdr.detectChanges();
+      this.milestoneScheduleHistoryService
+        .deleteMilestoneScheduleHistory(item.milestoneScheduleHistoryId)
+        .subscribe({
+          next: (response) => {
+            this.loader = false;
+            Swal.fire({ title: response.message ?? 'Cronograma eliminado.', icon: 'success', draggable: true });
+            this.openMilestoneScheduleHistory(this.filtersScheduleId.projectId!, this.selectedProjectName);
+          },
+          error: (err: HttpErrorResponse) => {
+            if (err.status === 403 && err.error?.message == null) {
+              this.loader = false;
+              this.cdr.detectChanges();
+              Swal.fire({ icon: 'error', title: 'No tienes permiso', text: 'No tienes permiso para realizar esta acción.' });
+              return;
+            }
+            this.error(err);
+          },
+        });
+    });
   }
 
   // si se obtiene '2026-11-11' se obtendrá un Date que actúe como 11 de noviembre de 2026
@@ -921,14 +1036,64 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  private buildSavePayload(forceSave: boolean) {
+  private buildSavePayload(forceSave: boolean, confirmarHitosSinFecha: boolean = false) {
     return {
       ...this.milestoneScheduleHistoryCreateDTO,
       forceSave,
+      confirmarHitosSinFecha,
       milestoneSchedules: this.milestoneScheduleHistoryCreateDTO.milestoneSchedules.filter(
         (ms) => !!ms.plannedStartDate?.trim(),
       ),
     };
+  }
+
+  /** Prefijo del mensaje 400 que el backend usa cuando hay hitos sin plannedEndDate (no bloqueante, se puede confirmar). */
+  private readonly MSG_HITOS_SIN_FECHA = 'Los siguientes hitos no tienen fecha registrada';
+
+  /**
+   * Único punto de POST a MilestoneScheduleHistory. `forceSave` y `confirmarHitosSinFecha` son
+   * confirmaciones independientes entre sí (una es "el cronograma es igual al anterior", la otra
+   * "hay hitos sin plannedEndDate") y pueden viajar juntas en el mismo reenvío. Si el backend
+   * responde 400 con el mensaje de hitos sin fecha y todavía no se había confirmado, se muestra el
+   * diálogo con el texto exacto del backend (ya trae los nombres) y, al confirmar, se reenvía el
+   * mismo payload con confirmarHitosSinFecha:true preservando el forceSave original.
+   */
+  private submitMilestoneScheduleHistory(forceSave: boolean, confirmarHitosSinFecha: boolean = false) {
+    this.loader = true;
+    this.cdr.detectChanges();
+    this.milestoneScheduleHistoryService
+      .createMilestoneScheduleHistory(this.buildSavePayload(forceSave, confirmarHitosSinFecha))
+      .subscribe({
+        next: (response) => {
+          Swal.fire({
+            title: response.message ?? 'Cronograma creado exitosamente',
+            icon: 'success',
+            draggable: true,
+          });
+          this.loader = false;
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          const message: string | undefined = err.error?.message;
+          if (err.status === 400 && !confirmarHitosSinFecha && message?.startsWith(this.MSG_HITOS_SIN_FECHA)) {
+            this.loader = false;
+            this.cdr.detectChanges();
+            Swal.fire({
+              icon: 'warning',
+              title: 'Hitos sin fecha',
+              text: message,
+              showCancelButton: true,
+              confirmButtonText: 'Sí, guardar de todas formas',
+              cancelButtonText: 'Cancelar',
+            }).then((result) => {
+              if (!result.isConfirmed) return;
+              this.submitMilestoneScheduleHistory(forceSave, true);
+            });
+            return;
+          }
+          this.error(err);
+        },
+      });
   }
 
   addMilestoneScheduleOnMilestoneScheduleHistory() {
@@ -950,45 +1115,11 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     }
 
     this.promoteUndatedTasksToGantt();
-    this.loader = true;
-    this.cdr.detectChanges();
-    this.milestoneScheduleHistoryService
-      .createMilestoneScheduleHistory(this.buildSavePayload(false))
-      .subscribe({
-        next: (response) => {
-          Swal.fire({
-            title: response.message ?? 'Cronograma creado exitosamente',
-            icon: 'success',
-            draggable: true,
-          });
-          this.loader = false;
-          this.cdr.detectChanges();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.error(err);
-        },
-      });
+    this.submitMilestoneScheduleHistory(false);
   }
 
   forceAddMilestoneScheduleOnMilestoneScheduleHistory() {
-    this.loader = true;
-    this.cdr.detectChanges();
-    this.milestoneScheduleHistoryService
-      .createMilestoneScheduleHistory(this.buildSavePayload(true))
-      .subscribe({
-        next: (response) => {
-          Swal.fire({
-            title: response.message ?? 'Cronograma creado exitosamente',
-            icon: 'success',
-            draggable: true,
-          });
-          this.loader = false;
-          this.cdr.detectChanges();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.error(err);
-        },
-      });
+    this.submitMilestoneScheduleHistory(true);
   }
 
   saveSchedule() {
@@ -1131,7 +1262,12 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
         resize: true,
         template: (task: any) => {
           if (task['milestoneScheduleId'] == null) return '';
-          return task['esHitoCritico'] ? '<span title="Corta etapa constructiva">⭐</span>' : '';
+          if (!task['esHitoCritico']) return '';
+          return `<span title="Corta etapa constructiva" style="display:inline-flex;color:#D97706">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2.5l2.9 6.6 7.1.7-5.4 4.8 1.6 7-6.2-3.7-6.2 3.7 1.6-7-5.4-4.8 7.1-.7L12 2.5z"/>
+            </svg>
+          </span>`;
         },
       },
     );
@@ -1145,8 +1281,9 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
     gantt.templates.task_class = (_start: any, _end: any, task: any) => {
       const estadoClass = this.getGanttClass(task);
-      if (task.type === 'milestone') return `gantt_milestone ${estadoClass}`;
-      return estadoClass;
+      const criticoClass = task['esHitoCritico'] ? ' hito-critico' : '';
+      if (task.type === 'milestone') return `gantt_milestone ${estadoClass}${criticoClass}`;
+      return `${estadoClass}${criticoClass}`;
     };
     gantt.templates.task_text = () => '';
     gantt.templates.tooltip_text = (start: any, end: any, task: any) => {
@@ -1274,13 +1411,31 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * En modo "ver cronograma" (milestoneScheduleId real) persiste de inmediato contra el backend
+   * — mismo patrón que toggleCriticoGuardado, necesario para que el chequeo de permisos del PATCH
+   * .../culminar (403 si no sos el residente asignado, o ADMINISTRADOR DE RESIDENTES) aplique. En
+   * modo plantilla/creación (sin milestoneScheduleId todavía) sigue siendo solo local, a la espera
+   * del guardado completo del cronograma.
+   */
   toggleCulminar(taskId: number): void {
     const task = gantt.getTask(taskId);
-    if (task['fechaRealFin']) {
-      task['fechaRealFin'] = null;
-    } else {
-      task['fechaRealFin'] = this.parseDateToString(new Date());
+    const nuevaFecha: string | null = task['fechaRealFin'] ? null : this.parseDateToString(new Date());
+
+    if (task['milestoneScheduleId'] != null) {
+      this.milestoneScheduleService.culminar(taskId, nuevaFecha).subscribe({
+        next: () => this.aplicarCulminadoLocal(taskId, nuevaFecha),
+        error: (err: HttpErrorResponse) => this.error(err),
+      });
+      return;
     }
+
+    this.aplicarCulminadoLocal(taskId, nuevaFecha);
+  }
+
+  private aplicarCulminadoLocal(taskId: number, fechaRealFin: string | null): void {
+    const task = gantt.getTask(taskId);
+    task['fechaRealFin'] = fechaRealFin;
     if (!task.end_date || !(task.end_date instanceof Date)) {
       task.end_date = task.start_date;
       task.type = 'milestone';
@@ -1290,7 +1445,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     gantt.render();
     this.ganttTasks = gantt.getTaskByTime();
     if (this.selectedTask && this.selectedTask.id == taskId) {
-      this.selectedTask['fechaRealFin'] = task['fechaRealFin'];
+      this.selectedTask['fechaRealFin'] = fechaRealFin;
     }
     this.cdr.detectChanges();
 
@@ -1298,7 +1453,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       (x) => x.milestoneId == taskId,
     );
     if (dtoItem) {
-      (dtoItem as any).fechaRealFin = task['fechaRealFin'] ?? null;
+      (dtoItem as any).fechaRealFin = fechaRealFin;
     }
   }
 

@@ -6,74 +6,74 @@
   overflow-x: hidden;
 }
 
+/* ── KPI cards ────────────────────────────────────────────────────────── */
+
 .kpi-cards {
   display: flex;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 12px;
+  margin-bottom: 4px;
 }
 
 .kpi-card {
   flex: 1;
   background: #fff;
   border-radius: 10px;
-  padding: 10px 14px;
-  border: 1px solid #D6DEE5;
+  padding: 10px 16px;
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
   gap: 4px;
+  transition: box-shadow 0.2s ease;
 }
+.kpi-card:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12); }
 
 .kpi-label {
-  font-size: 0.65rem;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #6b7280;
+  color: #64748B;
 }
 
 .kpi-value {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 700;
   line-height: 1.1;
 }
 
 .kpi-sub {
   font-size: 0.68rem;
-  color: #9ca3af;
+  color: #94A3B8;
 }
 
-/* Barras normales */
-.gantt_task_line.gantt-task-future {
-  background-color: #64bc04;
-  border-color: #4fa003;
+/* ── Leyenda del Gantt ────────────────────────────────────────────────── */
+
+.gantt-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #64748B;
 }
 
-.gantt_task_line.gantt-task-inprogress {
-  background-color: #0086a5;
-  border-color: #006880;
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
-.gantt_task_line.gantt-task-overdue {
-  background-color: #d30000;
-  border-color: #a80000;
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
-
-/* Hitos (diamante) */
-.gantt_task_line.gantt_milestone.gantt-task-future,
-.gantt_task_line.gantt_milestone.gantt-task-future::before {
-  background-color: #64bc04;
-  border-color: #4fa003;
-}
-
-.gantt_task_line.gantt_milestone.gantt-task-inprogress,
-.gantt_task_line.gantt_milestone.gantt-task-inprogress::before {
-  background-color: #0086a5;
-  border-color: #006880;
-}
-
-.gantt_task_line.gantt_milestone.gantt-task-overdue,
-.gantt_task_line.gantt_milestone.gantt-task-overdue::before {
-  background-color: #d30000;
-  border-color: #a80000;
+.legend-dot-en-proceso { background: #2E6DB4; }
+.legend-dot-culminado  { background: #1B6B3A; }
+.legend-dot-critico {
+  background: transparent;
+  box-shadow: 0 0 0 2px #D97706;
 }
 
 /* ── Plantilla de hitos (noMilestones table view) ───────────────────────── */
@@ -82,9 +82,9 @@
 .chip-plantilla {
   font-size: 11px;
   padding: 2px 8px;
-  background: #E6F1FB;
-  color: #185FA5;
-  border: 0.5px solid #B5D4F4;
+  background: #dbeafe;
+  color: #1e40af;
+  border: 0.5px solid #bfdbfe;
   border-radius: 6px;
   font-weight: 500;
   white-space: nowrap;
@@ -102,12 +102,12 @@
   border: 1px solid #e2e8f0;
   flex-wrap: wrap;
 }
-.stat-text { font-size: 12px; color: #6b7280; }
+.stat-text { font-size: 12px; color: #64748B; }
 .stat-sep  { font-size: 12px; color: #cbd5e1; }
-.stat-pct  { font-size: 12px; font-weight: 600; color: #2563eb; }
+.stat-pct  { font-size: 12px; font-weight: 600; color: #2E6DB4; }
 
 .progress-bar-thin  { flex: 1; min-width: 60px; height: 3px; background: #e2e8f0; border-radius: 2px; overflow: hidden; }
-.progress-fill-thin { height: 100%; background: #2563eb; border-radius: 2px; transition: width .4s ease; }
+.progress-fill-thin { height: 100%; background: #2E6DB4; border-radius: 2px; transition: width .4s ease; }
 
 /* Toolbar: búsqueda + filtros */
 .plantilla-toolbar {
@@ -131,7 +131,7 @@
   background: #fafafa;
   transition: border-color .12s;
 }
-.plantilla-search:focus { border-color: #3b82f6; background: #fff; }
+.plantilla-search:focus { border-color: #2E6DB4; background: #fff; }
 
 .filtros-wrap { display: flex; gap: 4px; }
 
@@ -141,7 +141,7 @@
   border: 0.5px solid #e2e8f0;
   background: #fff;
   font-size: 0.78rem;
-  color: #6b7280;
+  color: #64748B;
   cursor: pointer;
   transition: background .1s, color .1s, border-color .1s;
 }
@@ -149,7 +149,7 @@
 
 .filtro-active-todos     { background: #f1f5f9 !important; color: #1e293b !important; border-color: #94a3b8 !important; font-weight: 600; }
 .filtro-active-sin-fecha { background: #f1f5f9 !important; color: #475569 !important; border-color: #94a3b8 !important; font-weight: 600; }
-.filtro-active-con-fecha { background: #E6F1FB !important; color: #185FA5 !important; border-color: #B5D4F4 !important; font-weight: 600; }
+.filtro-active-con-fecha { background: #dbeafe !important; color: #1e40af !important; border-color: #bfdbfe !important; font-weight: 600; }
 
 /* Tabla */
 .hitos-tabla { width: 100%; border-collapse: collapse; }
@@ -157,7 +157,7 @@
 .hitos-tabla th {
   font-size: 11px;
   font-weight: 500;
-  color: #94a3b8;
+  color: #64748B;
   text-transform: uppercase;
   letter-spacing: .04em;
   padding: 6px 10px;
@@ -189,13 +189,38 @@
   cursor: pointer;
   transition: border-color .15s;
 }
-.td-fecha input[type="date"]:hover { border-color: #93c5fd; }
-.td-fecha input[type="date"]:focus { outline: none; border-color: #3b82f6; }
+.td-fecha input[type="date"]:hover { border-color: #93b8dd; }
+.td-fecha input[type="date"]:focus { outline: none; border-color: #2E6DB4; }
 
 .badge { font-size: 11px; padding: 2px 8px; border-radius: 6px; font-weight: 500; }
 .badge-sin-fecha { background: #f1f5f9; color: #94a3b8; }
-.badge-con-fecha { background: #E6F1FB; color: #185FA5; }
+.badge-con-fecha { background: #dbeafe; color: #1e40af; }
 .badge-obligatorio { background: #FEF3C7; color: #D97706; margin-left: 6px; }
+.badge-critico {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #FEF3C7;
+  color: #D97706;
+  margin-left: 6px;
+}
+
+/* Botón ícono reutilizable: eliminar hito de plantilla, ver/eliminar versión de historial, editar característica */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #64748B;
+  transition: background-color .15s ease, color .15s ease;
+}
+.icon-btn:hover { background: #F1F5F9; color: #1E3A5F; }
+.icon-btn-danger:hover { background: #FEE2E2; color: #C0392B; }
 
 /* ── Modal "Ver historial de cronograma de hitos" ───────────────────────── */
 
@@ -226,6 +251,18 @@
 
 .historial-table tbody tr:hover { background: #F8FAFC; }
 
+.badge-vigente {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  margin-left: 6px;
+}
+
 /* BaseModal es compartido — se sobrescribe con ::ng-deep solo dentro de esta
    instancia (host de MilestoneSchedule) para no afectar otros usos del modal. */
 :host ::ng-deep app-base-modal .bg-white.rounded-lg.shadow-xl {
@@ -243,6 +280,74 @@
 
 :host ::ng-deep app-base-modal button.absolute svg path {
   stroke: #64748B;
+}
+
+/* ── Modal "Ver hito" — rediseño ─────────────────────────────────────────── */
+
+.btn-ghost-navy {
+  border-color: #1E3A5F;
+  color: #1E3A5F;
+  background: transparent;
+}
+.btn-ghost-navy:hover { background: #F1F5F9; }
+
+.hito-detail-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1E3A5F;
+  text-align: center;
+}
+
+.hito-detail-estado {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+.hito-detail-estado.estado-culminado  { background: #dcfce7; color: #166534; }
+.hito-detail-estado.estado-en-proceso { background: #dbeafe; color: #1e40af; }
+
+.hito-detail-badges {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hito-stats {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.hito-stat {
+  flex: 1;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.hito-stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748B;
+}
+
+.hito-stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1E3A5F;
 }
 
 /* ── Modal "Editar característica del proyecto" ─────────────────────────── */
@@ -263,4 +368,4 @@
   color: #94a3b8;
   transition: color .15s ease;
 }
-.edit-caracteristica-btn:hover { color: var(--color-abril-accent); }
+.edit-caracteristica-btn:hover { color: #2E6DB4; }

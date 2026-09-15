@@ -942,6 +942,9 @@ export class ProyectoPage implements OnInit {
     this.cdr.markForCheck();
   }
 
+  /** Prefijo del mensaje 400 que el backend usa cuando hay hitos sin plannedEndDate (no bloqueante, se puede confirmar). */
+  private readonly MSG_HITOS_SIN_FECHA = 'Los siguientes hitos no tienen fecha registrada';
+
   guardarSchedule(): void {
     // Solo se guardan los hitos que ya tienen fecha de inicio — los del catálogo que aún están
     // vacíos se quedan visibles en la tabla para llenarlos después, no bloquean el guardado.
@@ -951,8 +954,7 @@ export class ProyectoPage implements OnInit {
       return;
     }
     if (this.guardandoSchedule) return;
-    this.guardandoSchedule = true;
-    this.loader.show();
+
     const milestoneSchedules: MilestoneScheduleCreateDTO[] = conFecha.map((h, i) => ({
       milestoneId: h.milestoneId,
       customDescription: h.milestoneId == null ? h.customDescription : undefined,
@@ -961,10 +963,24 @@ export class ProyectoPage implements OnInit {
       order: i + 1,
       esHitoCritico: h.esHitoCritico,
     }));
+
+    this.enviarSchedule(milestoneSchedules, false);
+  }
+
+  /**
+   * `forceSave` siempre viaja en true acá (este flujo no distingue "cronograma igual al
+   * anterior"). `confirmarHitosSinFecha` es una confirmación independiente: si el backend
+   * responde 400 avisando que hay hitos sin plannedEndDate, se muestra ese mensaje (ya trae los
+   * nombres) y, al confirmar, se reenvía el mismo payload con confirmarHitosSinFecha:true.
+   */
+  private enviarSchedule(milestoneSchedules: MilestoneScheduleCreateDTO[], confirmarHitosSinFecha: boolean): void {
+    this.guardandoSchedule = true;
+    this.loader.show();
     this.milestoneScheduleHistorySvc.createMilestoneScheduleHistory({
       projectId: this.projectId,
       milestoneSchedules,
       forceSave: true,
+      confirmarHitosSinFecha,
     }).subscribe({
       next: () => {
         this.guardandoSchedule = false;
@@ -977,6 +993,22 @@ export class ProyectoPage implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.guardandoSchedule = false;
         this.loader.hide();
+        const message: string | undefined = err.error?.message;
+        if (err.status === 400 && !confirmarHitosSinFecha && message?.startsWith(this.MSG_HITOS_SIN_FECHA)) {
+          this.cdr.markForCheck();
+          Swal.fire({
+            icon: 'warning',
+            title: 'Hitos sin fecha',
+            text: message,
+            showCancelButton: true,
+            confirmButtonText: 'Sí, guardar de todas formas',
+            cancelButtonText: 'Cancelar',
+          }).then((result) => {
+            if (!result.isConfirmed) return;
+            this.enviarSchedule(milestoneSchedules, true);
+          });
+          return;
+        }
         this.error.handleError(err);
         this.cdr.markForCheck();
       },
