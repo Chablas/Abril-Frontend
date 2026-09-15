@@ -110,7 +110,7 @@ export class GthFormularioPostulanteModal implements OnInit {
 
   /**
    * Se puede rechazar tanto lo completado como lo que se envió y el postulante nunca llenó:
-   * rechazar ese último es lo que destraba el paso a la programación de entrevistas.
+   * rechazar ese último es como se descarta a quien no responde.
    */
   get puedeRechazar(): boolean {
     return this.completado || this.enviado;

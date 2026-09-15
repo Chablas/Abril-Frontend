@@ -74,6 +74,14 @@ export class SearchSelect implements OnDestroy {
    * casos — para nombres (proyectos, personas, empresas) el default es el correcto.
    */
   @Input() uppercase: boolean = false;
+  /**
+   * Muestra las etiquetas EXACTAMENTE como vienen, sin `formatLabel`. Para catálogos que ya
+   * están capitalizados en la base de datos y contienen siglas: el árbol de áreas tiene un
+   * nodo llamado "SSOMA", y como es una opción íntegramente en mayúscula el suavizado la
+   * convertía en "Ssoma". `uppercase` no sirve para ese caso porque gritaría también las
+   * áreas de nombre normal ("Gerencia de Proyectos" → "GERENCIA DE PROYECTOS").
+   */
+  @Input() rawLabel: boolean = false;
 
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
   /** Botón del combobox: es lo que se mide para colocar el desplegable (ver `panelTop`). */
@@ -213,6 +221,7 @@ export class SearchSelect implements OnDestroy {
 
   private formatLabel(text: string): string {
     if (!text) return text;
+    if (this.rawLabel) return text;
     if (this.uppercase) return text.toUpperCase();
     const isAllCaps = text === text.toUpperCase() && text !== text.toLowerCase();
     if (!isAllCaps) return text;

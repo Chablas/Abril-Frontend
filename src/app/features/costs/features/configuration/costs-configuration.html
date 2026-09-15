@@ -3,7 +3,7 @@
   titulo="Configuración"
   subtitulo="Correos, partidas, especialidades, planos y carpetas de adjudicaciones."
   [tabs]="tabs"
-  [botonPrimario]="{ label: createLabel, icono: 'ti-plus' }"
+  [botonPrimario]="createButton"
   (primaryClick)="onCreate()">
 </app-abril-page-header>
 
@@ -35,4 +35,7 @@
 
   <!-- SECCIÓN: Correos C. y Presupuestos -->
   <app-costos-presupuestos-email *ngIf="activeSection === 'costos-presupuestos-email'"></app-costos-presupuestos-email>
+
+  <!-- SECCIÓN: Pasos (opciones por paso del flujo de adjudicaciones) -->
+  <app-costs-pasos *ngIf="activeSection === 'pasos'"></app-costs-pasos>
 </div>

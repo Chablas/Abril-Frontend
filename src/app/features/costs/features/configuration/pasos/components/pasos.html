@@ -1,0 +1,42 @@
+<div class="flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto">
+
+  <!-- Una minisección por paso -->
+  <div *ngFor="let paso of pasos; trackBy: trackByStep"
+    class="border border-[#E2E2E2] rounded-lg p-[16px] flex flex-col gap-[12px] max-w-2xl">
+
+    <!-- Encabezado del paso -->
+    <div class="flex items-baseline gap-[8px]">
+      <span class="text-sm font-semibold text-gray-700">Paso {{ paso.stepNumber }}</span>
+      <span class="text-xs text-gray-400">{{ paso.stepDescription }}</span>
+    </div>
+
+    <!-- Opciones del paso -->
+    <div class="flex flex-col gap-[10px]">
+      <label *ngFor="let option of paso.options; trackBy: trackByOption"
+        class="inline-flex items-center gap-[8px] select-none w-fit"
+        [class.cursor-pointer]="savingOptionId === null"
+        [class.opacity-60]="savingOptionId === option.projectSubContractorStepOptionId">
+        <input type="checkbox"
+          [checked]="option.enabled"
+          [disabled]="savingOptionId !== null"
+          (change)="toggleOption(option)"
+          class="w-[16px] h-[16px] accent-[var(--color-abril-primary)] cursor-pointer disabled:cursor-not-allowed" />
+        <span class="text-sm text-gray-600">{{ option.optionDescription }}</span>
+
+        <!-- spinner mientras guarda esta opción -->
+        <svg *ngIf="savingOptionId === option.projectSubContractorStepOptionId"
+          class="w-3.5 h-3.5 shrink-0 animate-spin text-gray-400" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+      </label>
+    </div>
+
+  </div>
+
+  <!-- Sin pasos configurables -->
+  <p *ngIf="loaded && !pasos.length" class="text-sm italic text-gray-300">
+    No hay pasos con opciones configurables.
+  </p>
+
+</div>

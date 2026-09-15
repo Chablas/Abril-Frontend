@@ -1,0 +1,105 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.pi-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-abril-border);
+}
+
+.pi-tab {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.pi-tab--active {
+  color: var(--color-abril-logo-blue, #005d9d);
+  border-bottom-color: var(--color-abril-logo-blue, #005d9d);
+  font-weight: 600;
+}
+
+.pi-badge-manual {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.pi-link {
+  border: none;
+  background: none;
+  color: var(--color-abril-logo-blue, #005d9d);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.pi-link:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ph-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: #d1d5db;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ph-switch--on {
+  background: #16a34a;
+}
+
+.ph-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s;
+}
+
+.ph-switch--on .ph-switch-knob {
+  transform: translateX(18px);
+}
+
+.ic-mes-actual {
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+  min-width: 160px;
+  text-align: center;
+}
+
+.ic-anillo-block {
+  border: 1px solid var(--color-abril-border);
+  border-radius: var(--radius-standard);
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.ic-anillo-titulo {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-abril-logo-blue, #005d9d);
+  margin: 0 0 8px;
+}

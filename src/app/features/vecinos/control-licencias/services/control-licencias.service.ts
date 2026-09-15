@@ -15,6 +15,10 @@ import {
   VecinoLicenciaDestinatariosResponseDTO,
   VecinoLicenciaRecordatorioDTO,
   VecinoLicenciaRecordatorioCreateDTO,
+  VecinoLicenciaVisitaDTO,
+  VecinoLicenciaVisitaCreateDTO,
+  VecinoLicenciaFechasUpdateDTO,
+  VecinoLicenciaDashboardResponseDTO,
 } from '../dtos/control-licencias.dto';
 
 @Injectable({ providedIn: 'root' })
@@ -35,6 +39,14 @@ export class ControlLicenciasService {
   getPlantilla(projectId: number): Observable<VecinoLicenciaPlantillaResponseDTO> {
     return this.http.get<VecinoLicenciaPlantillaResponseDTO>(`${this.apiUrl}/proyectos/${projectId}`, {
       headers: this.authHeaders(),
+    });
+  }
+
+  /** Plantilla combinada de todos los proyectos (o los indicados), para la vista "todos" de Plantilla. */
+  getPlantillaTodos(projectIds: number[] | null): Observable<VecinoLicenciaPlantillaResponseDTO> {
+    return this.http.get<VecinoLicenciaPlantillaResponseDTO>(`${this.apiUrl}/plantilla`, {
+      headers: this.authHeaders(),
+      params: projectIds && projectIds.length ? { projectIds: projectIds.map(String) } : {},
     });
   }
 
@@ -132,6 +144,51 @@ export class ControlLicenciasService {
   deleteDestinatario(destinatarioId: number): Observable<ApiMessageDTO> {
     return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/destinatarios/${destinatarioId}`, {
       headers: this.authHeaders(),
+    });
+  }
+
+  addVisita(
+    projectId: number,
+    tipoId: number,
+    dto: VecinoLicenciaVisitaCreateDTO,
+  ): Observable<{ visita: VecinoLicenciaVisitaDTO; message: string }> {
+    return this.http.post<{ visita: VecinoLicenciaVisitaDTO; message: string }>(
+      `${this.apiUrl}/proyectos/${projectId}/tipos/${tipoId}/visitas`,
+      dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  deleteVisita(visitaId: number): Observable<ApiMessageDTO> {
+    return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/visitas/${visitaId}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  updateFechas(projectId: number, tipoId: number, dto: VecinoLicenciaFechasUpdateDTO): Observable<ApiMessageDTO> {
+    return this.http.patch<ApiMessageDTO>(
+      `${this.apiUrl}/proyectos/${projectId}/tipos/${tipoId}/fechas`,
+      dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  private projectIdsParams(projectIds: number[] | null): { [param: string]: string | string[] } {
+    return projectIds && projectIds.length ? { projectIds: projectIds.map(String) } : {};
+  }
+
+  getDashboard(projectIds: number[] | null): Observable<VecinoLicenciaDashboardResponseDTO> {
+    return this.http.get<VecinoLicenciaDashboardResponseDTO>(`${this.apiUrl}/dashboard`, {
+      headers: this.authHeaders(),
+      params: this.projectIdsParams(projectIds),
+    });
+  }
+
+  exportDashboard(projectIds: number[] | null): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/dashboard/export`, {
+      headers: this.authHeaders(),
+      params: this.projectIdsParams(projectIds),
+      responseType: 'blob',
     });
   }
 }

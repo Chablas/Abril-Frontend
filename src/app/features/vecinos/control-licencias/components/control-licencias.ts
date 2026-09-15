@@ -25,6 +25,10 @@ import {
 import { LicenciaUpload } from './licencia-upload/licencia-upload';
 import { LicenciaHistorial } from './licencia-historial/licencia-historial';
 import { LicenciaRecordatorios } from './licencia-recordatorios/licencia-recordatorios';
+import { LicenciaVisitas } from './licencia-visitas/licencia-visitas';
+import { LicenciaFechas } from './licencia-fechas/licencia-fechas';
+import { LicenciaDashboard } from './licencia-dashboard/licencia-dashboard';
+import { MultiSearchSelect } from '../../../../shared/components/multi-search-select/multi-search-select';
 import { TipoUpsert, TipoUpsertResult } from './tipo-upsert/tipo-upsert';
 
 import { VECINOS_TABS } from '../../shared/vecinos-tabs';
@@ -43,7 +47,8 @@ export const ROLES_DESTINATARIO_ADICIONAL = ['Jefe SSOMA', 'Residente', 'Coordin
   imports: [
     CommonModule, FormsModule, AbrilPageHeaderComponent, SearchSelect,
     FilterTriggerButton, FilterModal, SearchInput, Paginator,
-    LicenciaUpload, LicenciaHistorial, LicenciaRecordatorios, TipoUpsert,
+    LicenciaUpload, LicenciaHistorial, LicenciaRecordatorios, LicenciaVisitas, LicenciaFechas,
+    LicenciaDashboard, MultiSearchSelect, TipoUpsert,
   ],
   templateUrl: './control-licencias.html',
   styleUrl: './control-licencias.css',
@@ -58,12 +63,19 @@ export class ControlLicencias implements OnInit {
   activeSubTab = 'plantilla';
   readonly subTabs: SectionTab[] = [
     { id: 'plantilla', label: 'Plantilla' },
+    { id: 'dashboard', label: 'Dashboard' },
     { id: 'destinatarios', label: 'Destinatarios' },
     { id: 'catalogo', label: 'Catálogo base' },
   ];
 
   items: VecinoLicenciaItemDTO[] = [];
   plantillaLoaded = false;
+
+  /** Filtro de obras propio de Plantilla (independiente del selector "Proyecto" del header) — vacío = todas. */
+  plantillaProjectIds: number[] = [];
+
+  /** Proyecto de la fila cuyo modal está abierto (Subir/Historial/Recordatorios/Visitas/Fechas). */
+  activeProjectId: number | null = null;
 
   // Filtros + paginación de la Plantilla
   searchText = '';
@@ -121,6 +133,12 @@ export class ControlLicencias implements OnInit {
   // Modal de recordatorios
   recordatoriosItem: VecinoLicenciaItemDTO | null = null;
 
+  // Modal de visitas de Anexo H
+  visitasItem: VecinoLicenciaItemDTO | null = null;
+
+  // Modal de fechas ampliadas (dashboard gerencial)
+  fechasItem: VecinoLicenciaItemDTO | null = null;
+
   // Modal de alta/edición de tipo (catálogo base o propio de proyecto)
   showTipoUpsert = false;
   tipoUpsertEditing: VecinoLicenciaTipoDTO | null = null;
@@ -145,6 +163,7 @@ export class ControlLicencias implements OnInit {
         this.errorService.handleError(err);
       },
     });
+    this.loadPlantilla();
   }
 
   get botonPrimario(): SsomaHeaderBtn | undefined {
@@ -154,25 +173,26 @@ export class ControlLicencias implements OnInit {
   }
 
   onProjectChange(): void {
-    this.plantillaLoaded = false;
     this.destinatariosLoaded = false;
     if (!this.selectedProjectId) return;
-    if (this.activeSubTab === 'plantilla') this.loadPlantilla();
-    else if (this.activeSubTab === 'destinatarios') this.loadDestinatarios();
+    if (this.activeSubTab === 'destinatarios') this.loadDestinatarios();
   }
 
   onSubTabChange(id: string): void {
     this.activeSubTab = id;
     if (id === 'catalogo' && !this.catalogoLoaded) this.loadCatalogo();
-    if (!this.selectedProjectId) return;
     if (id === 'plantilla' && !this.plantillaLoaded) this.loadPlantilla();
-    if (id === 'destinatarios' && !this.destinatariosLoaded) this.loadDestinatarios();
+    if (id === 'destinatarios' && this.selectedProjectId && !this.destinatariosLoaded) this.loadDestinatarios();
+  }
+
+  onPlantillaFiltroChange(): void {
+    this.plantillaLoaded = false;
+    this.loadPlantilla();
   }
 
   private loadPlantilla(): void {
-    if (!this.selectedProjectId) return;
     this.loaderService.show();
-    this.service.getPlantilla(this.selectedProjectId).subscribe({
+    this.service.getPlantillaTodos(this.plantillaProjectIds.length ? this.plantillaProjectIds : null).subscribe({
       next: (res) => {
         this.items = res.items;
         this.plantillaLoaded = true;
@@ -244,6 +264,7 @@ export class ControlLicencias implements OnInit {
   }
 
   openUpload(item: VecinoLicenciaItemDTO): void {
+    this.activeProjectId = item.projectId ?? this.selectedProjectId;
     this.uploadItem = item;
   }
 
@@ -257,10 +278,11 @@ export class ControlLicencias implements OnInit {
   }
 
   toggleNoAplica(item: VecinoLicenciaItemDTO): void {
-    if (!this.selectedProjectId) return;
+    const projectId = item.projectId ?? this.selectedProjectId;
+    if (!projectId) return;
     const noAplica = !this.esNoAplica(item);
     this.loaderService.show();
-    this.service.setNoAplica(this.selectedProjectId, item.vecinoLicenciaControlTipoId, noAplica).subscribe({
+    this.service.setNoAplica(projectId, item.vecinoLicenciaControlTipoId, noAplica).subscribe({
       next: () => this.loadPlantilla(),
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -270,6 +292,7 @@ export class ControlLicencias implements OnInit {
   }
 
   openHistorial(item: VecinoLicenciaItemDTO): void {
+    this.activeProjectId = item.projectId ?? this.selectedProjectId;
     this.historialItem = item;
   }
 
@@ -278,6 +301,7 @@ export class ControlLicencias implements OnInit {
   }
 
   openRecordatorios(item: VecinoLicenciaItemDTO): void {
+    this.activeProjectId = item.projectId ?? this.selectedProjectId;
     this.recordatoriosItem = item;
   }
 
@@ -286,6 +310,48 @@ export class ControlLicencias implements OnInit {
   }
 
   onRecordatoriosChanged(): void {
+    this.loadPlantilla();
+  }
+
+  esAnexoH(item: VecinoLicenciaItemDTO): boolean {
+    return item.tipoDescripcion === 'Anexo H';
+  }
+
+  visitasTooltip(item: VecinoLicenciaItemDTO): string {
+    if (!item.visitas.length) return 'Sin visitas registradas';
+    return item.visitas
+      .map((v) => {
+        const fecha = new Date(v.fechaVisita + 'T00:00:00').toLocaleDateString('es-PE');
+        const obs = v.observacion ? ` — ${v.observacion}` : '';
+        const estado = v.enviado ? ' (recordatorio enviado)' : '';
+        return `${fecha}${obs}${estado}`;
+      })
+      .join('\n');
+  }
+
+  openVisitas(item: VecinoLicenciaItemDTO): void {
+    this.activeProjectId = item.projectId ?? this.selectedProjectId;
+    this.visitasItem = item;
+  }
+
+  closeVisitas(): void {
+    this.visitasItem = null;
+  }
+
+  onVisitasChanged(): void {
+    this.loadPlantilla();
+  }
+
+  openFechas(item: VecinoLicenciaItemDTO): void {
+    this.activeProjectId = item.projectId ?? this.selectedProjectId;
+    this.fechasItem = item;
+  }
+
+  closeFechas(): void {
+    this.fechasItem = null;
+  }
+
+  onFechasChanged(): void {
     this.loadPlantilla();
   }
 
@@ -340,8 +406,9 @@ export class ControlLicencias implements OnInit {
         next: () => {
           this.showTipoUpsert = false;
           this.loadCatalogo();
-          // La plantilla base afecta a todos los proyectos: si hay uno abierto, se refresca también.
-          if (this.selectedProjectId) { this.plantillaLoaded = false; this.loadPlantilla(); }
+          // La plantilla base afecta a todos los proyectos: la vista combinada siempre se refresca.
+          this.plantillaLoaded = false;
+          this.loadPlantilla();
         },
         error: (err: HttpErrorResponse) => {
           this.loaderService.hide();

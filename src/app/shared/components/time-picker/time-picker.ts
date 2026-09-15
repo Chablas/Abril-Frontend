@@ -49,6 +49,13 @@ export class TimePicker implements OnChanges, OnDestroy {
   /** Deshabilita el campo: no se puede escribir, ni abrir el desplegable, ni limpiar. */
   @Input() disabled = false;
   /**
+   * Hora mínima seleccionable en formato `HH:mm` (inclusive), igual que el `min` del input
+   * nativo y que el de `app-date-picker`. null/'' = sin límite inferior. Las horas y los minutos
+   * por debajo del mínimo se deshabilitan en el desplegable, y una hora escrita a mano por
+   * debajo del mínimo se rechaza.
+   */
+  @Input() min: string | null = null;
+  /**
    * Color de acento del componente (label, borde/anillo al enfocar y opción seleccionada).
    * Acepta cualquier valor CSS de color o variable de la paleta
    * (ej. 'var(--color-abril-logo-blue)'). Por defecto usa el teal estándar de la app.
@@ -281,30 +288,77 @@ export class TimePicker implements OnChanges, OnDestroy {
    * Centra la opción seleccionada scrolleando solo su columna (`scrollTop` directo).
    * No usar `scrollIntoView`: también scrollea contenedores ancestros de la página,
    * y ese scroll externo cerraría el panel vía `onAncestorScroll`.
+   *
+   * Sin valor elegido y con un mínimo se centra la primera opción elegible: de lo contrario la
+   * columna abriría en 00 con todo lo visible deshabilitado y habría que buscar el rango a mano.
    */
   private scrollSeleccionadoAlCentro() {
     if (typeof document === 'undefined') return;
-    const seleccionados = this.el.nativeElement.querySelectorAll('.tp-opt.tp-selected');
-    seleccionados.forEach((btn: Element) => {
-      const col = btn.parentElement;
-      if (!col) return;
-      const opt = btn as HTMLElement;
+    const columnas = this.el.nativeElement.querySelectorAll('.tp-col');
+    columnas.forEach((columna: Element) => {
+      const col = columna as HTMLElement;
+      const opt = (col.querySelector('.tp-opt.tp-selected') ??
+        (this.minimo ? col.querySelector('.tp-opt:not(:disabled)') : null)) as HTMLElement | null;
+      if (!opt) return;
       // offsetTop se mide contra el panel (offsetParent), no contra la columna (static).
       col.scrollTop = opt.offsetTop - col.offsetTop - (col.clientHeight - opt.offsetHeight) / 2;
     });
   }
 
   seleccionarHora(h: string) {
+    if (this.horaDeshabilitada(h)) return;
     const m = this.selMinuto ?? '00';
-    this.emitir(`${h}:${m}`);
+    // En la hora del mínimo, un minuto anterior a él dejaría la hora completa fuera de rango:
+    // se sube al primer minuto permitido en vez de emitir algo que el propio panel deshabilita.
+    const min = this.minimo;
+    this.emitir(`${h}:${min && h === min.h && m < min.m ? min.m : m}`);
     // Mantener abierto para que el usuario elija/ajuste los minutos a continuación.
   }
 
   seleccionarMinuto(m: string) {
-    const h = this.selHora ?? '00';
-    this.emitir(`${h}:${m}`);
+    if (this.minutoDeshabilitado(m)) return;
+    this.emitir(`${this.horaEfectiva}:${m}`);
     // Elegir el minuto confirma la hora completa; se cierra el panel.
     this.close();
+  }
+
+  // ── Rango permitido (min) ────────────────────────────────────────────
+
+  /** Hora mínima ya parseada, o null si no hay límite inferior. */
+  private get minimo(): { h: string; m: string } | null {
+    return this.parse(this.min);
+  }
+
+  /**
+   * Hora contra la que se resuelve la columna de minutos: la elegida o, si todavía no hay
+   * ninguna, la que usará `seleccionarMinuto` (la del mínimo cuando hay límite; '00' si no).
+   */
+  private get horaEfectiva(): string {
+    return this.selHora ?? this.minimo?.h ?? '00';
+  }
+
+  /** true si la hora entera queda por debajo del mínimo y por lo tanto no se puede elegir. */
+  horaDeshabilitada(h: string): boolean {
+    const min = this.minimo;
+    return !!min && h < min.h;
+  }
+
+  /** true si el minuto queda por debajo del mínimo dentro de la hora en curso. */
+  minutoDeshabilitado(m: string): boolean {
+    const min = this.minimo;
+    return !!min && this.horaEfectiva === min.h && m < min.m;
+  }
+
+  /** El botón "Ahora" se apaga si la hora actual queda por debajo del mínimo. */
+  get ahoraDeshabilitado(): boolean {
+    const t = this.horaActual();
+    return this.fueraDeRango(`${t.h}:${t.m}`);
+  }
+
+  /** true si la hora `HH:mm` queda por debajo del mínimo. Sin mínimo nunca está fuera de rango. */
+  private fueraDeRango(hhmm: string): boolean {
+    const min = this.minimo;
+    return !!min && hhmm < `${min.h}:${min.m}`;
   }
 
   esHoraActual(h: string): boolean {
@@ -351,13 +405,15 @@ export class TimePicker implements OnChanges, OnDestroy {
       const min = +m[2];
       if (hora >= 0 && hora <= 23 && min >= 0 && min <= 59) {
         const nuevo = `${String(hora).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-        if (nuevo !== this.value) this.emitir(nuevo);
-        else this.texto = this.formatoLegible(this.value);
-        return;
+        if (!this.fueraDeRango(nuevo)) {
+          if (nuevo !== this.value) this.emitir(nuevo);
+          else this.texto = this.formatoLegible(this.value);
+          return;
+        }
       }
     }
 
-    // Texto inválido: se revierte a la última hora válida (o vacío).
+    // Texto inválido o por debajo del mínimo: se revierte a la última hora válida (o vacío).
     this.texto = this.formatoLegible(this.value);
   }
 
@@ -372,6 +428,7 @@ export class TimePicker implements OnChanges, OnDestroy {
   }
 
   ahora() {
+    if (this.ahoraDeshabilitado) return;
     const t = this.horaActual();
     this.emitir(`${t.h}:${t.m}`);
     this.close();

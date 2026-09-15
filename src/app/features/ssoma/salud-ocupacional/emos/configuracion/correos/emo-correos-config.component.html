@@ -1,6 +1,6 @@
 <div class="config-stack">
 
-  <!-- Una pestaña por cada uno de los 4 correos de EMO -->
+  <!-- Una pestaña por cada correo de EMO -->
   <app-section-tabs
     *ngIf="eventos.length"
     [tabs]="sectionTabs"
@@ -182,7 +182,7 @@
 
   <p class="form-hint" *ngIf="formId === null">
     <i class="ti ti-info-circle"></i>
-    Se agrega activo en los 4 perfiles de <strong>{{ eventoActivo?.nombre }}</strong>. En los otros
+    Se agrega activo en todos los perfiles de <strong>{{ eventoActivo?.nombre }}</strong>. En los otros
     correos queda disponible pero apagado.
   </p>
 

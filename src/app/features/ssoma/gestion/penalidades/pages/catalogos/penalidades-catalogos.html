@@ -1,0 +1,76 @@
+<div class="catalogos-root">
+
+  <app-abril-page-header
+    titulo="Catálogos de Penalidades"
+    subtitulo="Infracciones y valor de la UIT"
+    [tabs]="tabs">
+  </app-abril-page-header>
+
+  <div class="catalogos-body">
+
+    <!-- ── Infracciones ─────────────────────────────────────────── -->
+    <section class="catalogo-seccion">
+      <h2 class="catalogo-titulo"><i class="ti ti-alert-triangle"></i> Infracciones</h2>
+
+      <div class="form-inline">
+        <input type="text" class="form-control" placeholder="Nombre de la infracción *" [(ngModel)]="infNombre" />
+        <input type="number" class="form-control form-control--sm" placeholder="Factor UIT" [(ngModel)]="infFactorUit" step="0.01" />
+        <input type="number" class="form-control form-control--sm" placeholder="Monto fijo (S/)" [(ngModel)]="infMontoFijo" step="0.01" />
+        <input type="text" class="form-control" placeholder="Descripción" [(ngModel)]="infDescripcion" />
+        <label class="check-inline"><input type="checkbox" [(ngModel)]="infActivo" /> Activo</label>
+        <button type="button" class="btn-primary" [disabled]="!puedeGuardarInfraccion" (click)="guardarInfraccion()">
+          {{ editandoInfraccionId ? 'Actualizar' : 'Agregar' }}
+        </button>
+        <button type="button" class="btn-ghost" *ngIf="editandoInfraccionId" (click)="nuevaInfraccion()">Cancelar</button>
+      </div>
+
+      <div class="abril-table-wrap">
+        <table class="abril-table">
+          <thead><tr><th>Nombre</th><th>Factor UIT</th><th>Monto fijo</th><th>Descripción</th><th>Activo</th><th></th></tr></thead>
+          <tbody>
+            <tr *ngFor="let i of infracciones">
+              <td>{{ i.nombre }}</td>
+              <td>{{ i.factorUit ?? '—' }}</td>
+              <td>{{ i.montoFijo != null ? ('S/ ' + (i.montoFijo | number:'1.2-2')) : '—' }}</td>
+              <td>{{ i.descripcion ?? '—' }}</td>
+              <td>{{ i.activo ? 'Sí' : 'No' }}</td>
+              <td><button type="button" class="abril-action-btn" (click)="editarInfraccion(i)"><i class="ti ti-edit"></i></button></td>
+            </tr>
+            <tr *ngIf="infracciones.length === 0"><td colspan="6" class="empty-cell">Sin infracciones registradas.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── UIT ──────────────────────────────────────────────────── -->
+    <section class="catalogo-seccion">
+      <h2 class="catalogo-titulo"><i class="ti ti-currency-sol"></i> Valor de la UIT por año</h2>
+
+      <div class="form-inline">
+        <input type="number" class="form-control form-control--sm" placeholder="Año *" [(ngModel)]="uitAnio" />
+        <input type="number" class="form-control form-control--sm" placeholder="Valor S/ *" [(ngModel)]="uitValor" step="0.01" />
+        <label class="check-inline"><input type="checkbox" [(ngModel)]="uitActivo" /> Activo</label>
+        <button type="button" class="btn-primary" [disabled]="!puedeGuardarUit" (click)="guardarUit()">
+          {{ editandoUitId ? 'Actualizar' : 'Agregar' }}
+        </button>
+        <button type="button" class="btn-ghost" *ngIf="editandoUitId" (click)="nuevoUit()">Cancelar</button>
+      </div>
+
+      <div class="abril-table-wrap">
+        <table class="abril-table">
+          <thead><tr><th>Año</th><th>Valor (S/)</th><th>Activo</th><th></th></tr></thead>
+          <tbody>
+            <tr *ngFor="let u of uitAnios">
+              <td>{{ u.anio }}</td>
+              <td>S/ {{ u.valor | number:'1.2-2' }}</td>
+              <td>{{ u.activo ? 'Sí' : 'No' }}</td>
+              <td><button type="button" class="abril-action-btn" (click)="editarUit(u)"><i class="ti ti-edit"></i></button></td>
+            </tr>
+            <tr *ngIf="uitAnios.length === 0"><td colspan="4" class="empty-cell">Sin valores de UIT registrados.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </div>
+</div>

@@ -1,8 +1,12 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
+import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
 import { ApiMessageDTO } from '../../../../../../core/dtos/api/ApiMessage.model';
 import { LoaderService } from '../../../../../../core/services/loader.service';
@@ -14,8 +18,17 @@ import { AreaTypeEdit } from './area-type-edit';
 @Component({
   selector: 'app-area-type-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, AreaTypeEdit],
+  imports: [
+    CommonModule,
+    SearchSelect,
+    SearchInput,
+    FilterModal,
+    StatusBadge,
+    AbrilBulkActionDirective,
+    AreaTypeEdit,
+  ],
   templateUrl: './area-type-list.html',
+  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class AreaTypeList implements OnInit {
   @Output() pagedData = new EventEmitter<PagedResponseDTO<AreaTypeDto>>();
@@ -28,6 +41,17 @@ export class AreaTypeList implements OnInit {
     totalPages: 0,
     data: [],
   };
+
+  // Filtros — viven en el modal de filtros estándar, que abre el contenedor.
+  filterActive: boolean | null = null;
+  searchText = '';
+  filtrosAbiertos = false;
+  private searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  readonly activeOptions = [
+    { id: true, name: 'ACTIVO' },
+    { id: false, name: 'INACTIVO' },
+  ];
 
   editDto: AreaTypeEditDto = { areaTypeId: 0, areaTypeName: '', active: true };
   showEditModal = false;
@@ -44,14 +68,47 @@ export class AreaTypeList implements OnInit {
 
   load(page: number = 1): void {
     this.loaderService.show();
-    this.service.getPaged(page, 10).subscribe({
-      next: (res) => {
-        this.paged = res;
-        this.pagedData.emit(res);
-        this.loaderService.hide();
-      },
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
-    });
+    this.service
+      .getPaged({
+        page,
+        pageSize: 10,
+        active: this.filterActive,
+        search: this.searchText.trim() || null,
+      })
+      .subscribe({
+        next: (res) => {
+          this.paged = res;
+          this.pagedData.emit(res);
+          this.loaderService.hide();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  /** Cantidad de filtros aplicados: la pinta el badge del botón "Filtros" del contenedor. */
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.searchText.trim()) n++;
+    if (this.filterActive !== null) n++;
+    return n;
+  }
+
+  limpiarFiltros(): void {
+    this.searchText = '';
+    this.filterActive = null;
+    this.onFilterChange();
+  }
+
+  onFilterChange(): void {
+    this.load(1);
+  }
+
+  onSearchChange(): void {
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
+    this.searchTimeout = setTimeout(() => this.load(1), 300);
   }
 
   openEdit(item: AreaTypeDto, event: MouseEvent): void {

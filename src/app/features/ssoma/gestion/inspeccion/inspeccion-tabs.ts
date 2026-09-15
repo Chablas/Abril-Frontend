@@ -5,4 +5,5 @@ export const INSPECCION_TABS: AbrilPageTab[] = [
   { label: 'Dashboard',    icono: 'ti-layout-dashboard', route: '/ssoma/gestion/inspeccion/dashboard' },
   { label: 'Inspecciones', icono: 'ti-list',             route: '/ssoma/gestion/inspeccion/lista' },
   { label: 'Abiertas',     icono: 'ti-users',            route: '/ssoma/gestion/inspeccion/abiertas' },
+  { label: 'Cruzadas',     icono: 'ti-repeat',           route: '/ssoma/gestion/inspeccion/cruzadas' },
 ];

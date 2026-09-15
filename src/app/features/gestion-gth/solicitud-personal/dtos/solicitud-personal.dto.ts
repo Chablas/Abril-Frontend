@@ -25,6 +25,29 @@ export interface TipoRequerimientoOpcion extends OpcionDto {
 export const TIPO_REQUERIMIENTO_REEMPLAZO = 'REEMPLAZO';
 
 /**
+ * Cómo se pinta el tipo de requerimiento en la tabla y en el seguimiento: etiqueta con ícono y
+ * borde, no un badge relleno, para que no se confunda con el estado, que va en badge al lado. Se
+ * decide por el código —el nombre es presentación y se renombra desde Configuración— y cualquier
+ * código que no sea REEMPLAZO se pinta como una vacante nueva.
+ */
+export interface TipoRequerimientoEstilo {
+  color: string;
+  borde: string;
+  /** Clase del ícono de Tabler. */
+  icono: string;
+}
+
+export function tipoRequerimientoEstilo(codigo: string | null | undefined): TipoRequerimientoEstilo {
+  return codigo?.trim().toUpperCase() === TIPO_REQUERIMIENTO_REEMPLAZO
+    ? { color: 'var(--color-abril-logo-blue)', borde: '#a9c9e6', icono: 'ti-arrows-exchange' }
+    : {
+        color: 'var(--color-abril-standard)',
+        borde: 'var(--color-abril-standard-border)',
+        icono: 'ti-circle-plus',
+      };
+}
+
+/**
  * Opción del desplegable «Tipo de documento» del candidato de un ingreso directo (FFT). El
  * `codigo` estable es lo que decide cuántos dígitos admite el número, así que se compara por él
  * y nunca por el nombre.
@@ -60,40 +83,75 @@ export interface ReclutamientoFormDataDto {
   areaNombre: string | null;
   areaScopeId: number | null;
   /**
-   * Puesto del propio solicitante, para el campo de solo lectura «Tu puesto». Sale de
+   * Puesto del propio solicitante, para el campo de solo lectura «Puesto» de la cabecera. Sale de
    * `workers.puesto_id → puesto.nombre`. null cuando el usuario no tiene ficha de trabajador o
    * su ficha todavía no tiene puesto.
    */
   puestoNombre: string | null;
   /**
-   * Categoría del propio solicitante, para el campo de solo lectura «Tu categoría». No se guarda
+   * Categoría del propio solicitante, para el campo de solo lectura «Categoría». No se guarda
    * en la ficha: se llega por el puesto (`puesto.categoria_id`), así que sin puesto tampoco hay
    * categoría.
    */
   categoriaNombre: string | null;
   maxVacantes: number;
+  /**
+   * Puestos que este solicitante puede pedir. Los de su área y sus áreas hijas; si es de GTH, el
+   * catálogo completo pero solo los activos y con área de destino («Va a»).
+   */
   puestos: PuestoOpcion[];
   tiposRequerimiento: TipoRequerimientoOpcion[];
   proyectos: OpcionDto[];
   /**
+   * ¿Puede marcar una vacante como ingreso directo **FFT**? Solo GTH: el FFT se salta el proceso
+   * entero, así que la casilla es del área dueña del proceso. Con false el bloque no se muestra y
+   * el backend rechaza igual cualquier vacante marcada.
+   */
+  puedePedirIngresoDirecto: boolean;
+  /**
    * Tipos de documento del candidato de un ingreso directo (DNI / CE), del mismo catálogo que usa
-   * el formulario del postulante.
+   * el formulario del postulante. Vacía cuando no se puede pedir un ingreso directo.
    */
   tiposDocumento: TipoDocumentoOpcion[];
   /**
    * Trabajadores entre los que se elige al reemplazado: los del área del solicitante y los de
    * cualquier área hija, incluido él mismo (pedir el reemplazo propio por renuncia o promoción es
-   * un caso real). Solo los que trabajan en Abril hoy — el backend descarta a los retirados y a
-   * las fichas de pre-ingreso de Reclutamiento. Vacía cuando el solicitante no tiene área
-   * registrada: en ese caso no hay de dónde elegir y el campo deja de ser obligatorio.
+   * un caso real). Si es de GTH llegan todos, sin recortar por área: pide puestos de toda la
+   * empresa. Solo los que trabajan en Abril hoy — el backend descarta a los retirados y a las
+   * fichas de pre-ingreso de Reclutamiento. Vacía cuando el solicitante no tiene área registrada:
+   * en ese caso no hay de dónde elegir y el campo deja de ser obligatorio.
    */
   trabajadoresArea: OpcionDto[];
-  destinatarios: SolicitudDestinatarios;
+
+  // ── A quién le llega la solicitud ──────────────────────────────────────
+  // Llegan todos los correos que el alta puede disparar, no uno solo: cada vacante sale por la
+  // ruta de su tipo y cada ruta tiene su propio correo con su propia configuración. Como el tipo
+  // se elige dentro del modal, el aviso se arma acá con lo que haya elegido en cada momento. Los
+  // resuelve el mismo servicio que hace el envío real, así que no pueden divergir; listas vacías
+  // = ese correo hoy no le llega a nadie.
+
+  /** Vacantes NUEVAS: la firma que se pide (a Gerencia General). */
+  destinatariosNuevas: SolicitudDestinatarios;
+  /**
+   * Vacantes NUEVAS: el aviso informativo que sale junto con el anterior. El gerente del área no
+   * las aprueba —eso es de Gerencia General— pero tiene que enterarse.
+   */
+  destinatariosNuevasAviso: SolicitudDestinatarios;
+  /**
+   * REEMPLAZOS: la primera de sus dos firmas (el gerente del área del solicitante). Es la única
+   * que sale al registrar: la de GTH se pide recién cuando el área aprueba.
+   */
+  destinatariosReemplazos: SolicitudDestinatarios;
+  /**
+   * REEMPLAZOS: la segunda firma. No sale ahora —la dispara la aprobación del gerente del área—
+   * pero el aviso la nombra para que se vea por dónde va a seguir el pedido.
+   */
+  destinatariosReemplazosGth: SolicitudDestinatarios;
   /**
    * A quién le llegaría el aviso a GTH de una vacante de ingreso directo **FFT**. A un ingreso
-   * directo no lo aprueba nadie —lo pida quien lo pida— así que su aviso reemplaza a
-   * `destinatarios` en esas vacantes, y una solicitud que mezcle las dos clases manda los dos
-   * correos.
+   * directo no lo aprueba nadie —lo pida quien lo pida— así que su aviso reemplaza al de
+   * aprobación en esas vacantes, y una solicitud que mezcle clases manda los correos de todas.
+   * `null` cuando el solicitante no puede pedir ingresos directos.
    */
   destinatariosFft: SolicitudDestinatarios | null;
 }
@@ -174,6 +232,16 @@ export interface AprobacionGgReenvioResult {
   destinatarios: string[];
 }
 
+/**
+ * A quién le llegaría el reenvío del correo de aprobación de una vacante. Lo resuelve el backend
+ * con la misma llamada que el envío, así que la confirmación nombra exactamente lo que va a salir.
+ */
+export interface AprobacionGgReenvioPreview {
+  /** Quién firma la vacante ahora: «Gerencia General», «la Gerencia del Área» o «Gestión del Talento Humano». */
+  firmante: string;
+  destinatarios: SolicitudDestinatarios;
+}
+
 /** Una fase del pipeline dentro del seguimiento vertical del requerimiento. */
 export interface FaseSeguimiento {
   codigo: string;
@@ -229,12 +297,23 @@ export interface AprobacionGgResumen {
   ruta: 'GG' | 'AREA_GTH';
 }
 
+/** Otra vacante de la misma solicitud, para nombrarla en el seguimiento. */
+export interface VacanteDeLaSolicitud {
+  requerimientoId: number;
+  codigo: string;
+  puesto: string;
+}
+
 /** Detalle de seguimiento de un requerimiento (modal "Estado del reclutamiento"). */
 export interface Seguimiento {
   requerimientoId: number;
   codigo: string;
   puesto: string;
   tipoRequerimiento: string;
+  /** `NUEVO` | `REEMPLAZO`: decide cómo se pinta el tipo. Se compara por código, nunca por nombre. */
+  tipoRequerimientoCodigo: string;
+  /** Trabajador al que reemplaza la vacante. Null en las nuevas y en los reemplazos anteriores al dato. */
+  trabajadorReemplazado: string | null;
   /**
    * true = ingreso directo **FFT**. `fases` ya viene sin los pasos que este flujo no recorre; esto
    * es para poder explicar en pantalla por qué el proceso es más corto.
@@ -242,7 +321,16 @@ export interface Seguimiento {
   esFft: boolean;
   /** Nombre del candidato FFT que nombró el solicitante. Null cuando no es FFT. */
   fftCandidatoNombre: string | null;
+  /** Documento del candidato FFT como se muestra («DNI 12345678»). Null cuando no es FFT. */
+  fftDocumentoTexto: string | null;
+  /** Correo personal del candidato FFT. Null cuando no es FFT. */
+  fftCandidatoCorreo: string | null;
   area: string | null;
+  /**
+   * Área a la que entra quien ocupe el puesto. Null cuando el puesto no la tiene (los de obra):
+   * ahí el contratado entra al área del solicitante.
+   */
+  areaDestino: string | null;
   proyectoObra: string | null;
   justificacion: string | null;
   /**
@@ -252,6 +340,12 @@ export interface Seguimiento {
   salarioBrutoMensual: number | null;
   /** Fecha de envío (ISO, ya en hora Perú). */
   enviado: string;
+  /** Quién registró la solicitud. Null si no tiene ficha de persona. */
+  solicitante: string | null;
+  /** Responsable de GTH que lleva el proceso. Null mientras GTH no lo asigne. */
+  responsableGth: string | null;
+  /** Las otras vacantes de la misma solicitud (comparten justificación y sustento). */
+  otrasVacantes: VacanteDeLaSolicitud[];
   estadoCodigo: string;
   estadoNombre: string;
   estadoOrden: number;
@@ -291,6 +385,12 @@ export interface SolicitudVacanteListItem {
    * fila tiene que decir de quién es el pedido. Null si ese usuario no tiene ficha de trabajador.
    */
   solicitante: string | null;
+  /** Tipo de requerimiento como se muestra (Nuevo / Reemplazo): la columna «Tipo». */
+  tipoRequerimiento: string;
+  /** `NUEVO` | `REEMPLAZO`: decide cómo se pinta el tipo. Se compara por código, nunca por nombre. */
+  tipoRequerimientoCodigo: string;
+  /** true = ingreso directo FFT: no lo firma nadie y pasa derecho al EMO de ingreso. */
+  esFft: boolean;
 }
 
 /**

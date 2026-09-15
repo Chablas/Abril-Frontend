@@ -1,17 +1,18 @@
 /** Tipo de destinatario: PRINCIPAL va en "Para", COPIA va en "CC". */
 export type EmoCorreoTipo = 'PRINCIPAL' | 'COPIA';
 
-/** Códigos de los 4 correos de EMO configurables (una sección por cada uno). */
+/** Códigos de los correos de EMO configurables (una sección por cada uno). */
 export type EmoCorreoEventoCodigo =
   | 'PROGRAMACION_AUTOMATICA'
   | 'PROGRAMACION_MANUAL'
   | 'ACEPTADA'
-  | 'RECHAZADA';
+  | 'RECHAZADA'
+  | 'RESULTADO';
 
 /** Una columna de la matriz: el perfil del trabajador. */
 export interface EmoCorreoPerfilDto {
   id: number;
-  codigo: 'OFICINA_CENTRAL' | 'STAFF' | 'OBRA' | 'CONTRATISTA';
+  codigo: 'OFICINA_CENTRAL' | 'STAFF' | 'OBRA';
   nombre: string;
   descripcion: string | null;
 }
@@ -56,14 +57,14 @@ export interface EmoCorreoEventoDto {
   destinatarios: EmoCorreoFilaDto[];
 }
 
-/** Respuesta única de la pantalla: columnas + los 4 correos con su matriz. */
+/** Respuesta única de la pantalla: columnas + los correos con su matriz. */
 export interface EmoCorreosConfigDto {
   perfiles: EmoCorreoPerfilDto[];
   eventos: EmoCorreoEventoDto[];
 }
 
 export interface EmoCorreoAdicionalCreateDto {
-  /** Correo desde cuya sección se agrega: nace activo en sus 4 perfiles. */
+  /** Correo desde cuya sección se agrega: nace activo en todos sus perfiles. */
   eventoCodigo: string;
   email: string;
   nombre?: string | null;

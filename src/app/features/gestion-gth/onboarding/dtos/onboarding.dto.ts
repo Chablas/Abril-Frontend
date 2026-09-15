@@ -1,19 +1,23 @@
 /**
  * DTOs de la feature Onboarding (Gestión GTH): la fase que sigue a Reclutamiento. Espejo de
  * `Features/GestionGthModule/Features/OnboardingFeature/Application/Dtos/OnboardingDtos.cs`.
+ *
+ * La carta oferta ya no está acá: pasó a ser el último paso de Reclutamiento y sus DTOs viven en
+ * `reclutamiento/dtos/reclutamiento.dto.ts`. Lo que el onboarding hereda de ella es el file digital
+ * del colaborador y la fecha de ingreso pactada.
  */
 
-/** Todo lo que la pantalla necesita al entrar, en una sola petición. */
+/**
+ * Todo lo que la pantalla necesita al entrar, en una sola petición.
+ *
+ * Ya no viajan «candidatos aptos»: el que termina reclutamiento entra solo a la lista, así que no
+ * hay desplegable que llenar ni alta manual que hacer.
+ */
 export interface BandejaOnboarding {
   resumen: ResumenOnboarding;
   /** Fases del catálogo en orden, con cuántos colaboradores hay parados en cada una. */
   fases: FaseOnboarding[];
   colaboradores: OnboardingListItem[];
-  /**
-   * Candidatos aptos para iniciar onboarding: seleccionados de requerimientos ya cerrados que
-   * todavía no tienen onboarding. Es el desplegable del modal «Nuevo ingreso».
-   */
-  candidatosAptos: CandidatoApto[];
 }
 
 export interface ResumenOnboarding {
@@ -21,7 +25,6 @@ export interface ResumenOnboarding {
   enProceso: number;
   completos: number;
   colaboradoresNuevos: number;
-  candidatosPorIngresar: number;
 }
 
 export interface FaseOnboarding {
@@ -77,77 +80,44 @@ export interface OnboardingListItem {
    * de los checks del detalle: la pantalla no deduce nada por su cuenta.
    */
   actividadesHechas: string[];
-  cartaOfertaNombre: string | null;
-  cartaOfertaUrl: string | null;
-  cartaOfertaEnviadaEn: string | null;
-
-  // ── Carta oferta firmada (la que devuelve el colaborador) ────────────────
-  cartaFirmadaNombre: string | null;
-  cartaFirmadaUrl: string | null;
-  cartaFirmadaSubidaEn: string | null;
-  /**
-   * Fecha en que el POSTULANTE firmó la carta desde el enlace público. Con valor, el documento vino
-   * de él y GTH solo revisa; en null con `cartaFirmadaUrl` llena, lo subió GTH a mano.
-   */
-  cartaFirmadaPostulanteEn: string | null;
-  /** Null = adjunta pero todavía sin revisar: es lo que bloquea el avance de la primera fase. */
-  cartaFirmadaAprobadaEn: string | null;
 
   /** Carpeta de SharePoint donde vive el file digital del colaborador. */
   fileDigitalCarpeta: string | null;
 
   observacion: string | null;
   iniciadoEn: string | null;
-}
 
-/** Una opción del desplegable del modal «Nuevo ingreso». */
-export interface CandidatoApto {
-  candidatoId: number;
-  requerimientoId: number;
-  personId: number | null;
-  nombre: string;
-  codigo: string;
-  puesto: string | null;
-  area: string | null;
-  empresa: string | null;
-  proyectoObra: string | null;
+  // ── Aviso al responsable de obra (fase «Correo de bienvenida») ─────────────
+
   /**
-   * Correo personal al que iría la carta oferta. Lo resuelve el backend desde la base de datos
-   * (`person.email`, lo que GTH validó al aprobar el formulario del postulante). Null = no hay a
-   * dónde enviar y el modal bloquea el envío.
+   * false cuando este ingreso no lleva ese aviso: a Oficina Central no hay obra que avisarle, y un
+   * proyecto sin coordinador administrativo no tiene a quién escribirle.
    */
-  correo: string | null;
+  avisoObraAplica: boolean;
+  /** Por qué no aplica; null cuando sí aplica. */
+  avisoObraMotivoNoAplica: string | null;
+  /** Coordinador administrativo del proyecto: el destinatario del aviso. */
+  avisoObraDestinatario: string | null;
+  avisoObraEmail: string | null;
+  /** Cuándo salió el aviso. null = todavía no. */
+  avisoObraEnviadoEn: string | null;
+
+  // ── Correo de bienvenida y formulario del colaborador ─────────────────────
+
+  /** Cuándo salió el correo de bienvenida. null = todavía no. */
+  bienvenidaEnviadaEn: string | null;
   /**
-   * DNI del colaborador, de la misma ficha que el correo. Con él se nombra su carpeta en el file
-   * de colaboradores de SharePoint («80508050 - NOMBRE»), así que null = no se puede abrir el
-   * onboarding y el modal bloquea el envío.
+   * Buzón al que salió (o al que saldría): el correo personal de su ficha maestra. null cuando esa
+   * ficha no tiene correo, que es lo único que impide mandar la bienvenida.
    */
-  dni: string | null;
-  jefeDirecto: string | null;
-  /**
-   * true si el candidato ya tiene ficha en `person`. La firma que va a dibujar en el enlace se
-   * guarda ahí, así que sin ficha el modal bloquea el envío. La ficha la crea la aprobación de su
-   * formulario de postulante en Reclutamiento.
-   */
-  tieneFichaMaestra: boolean;
+  bienvenidaEmail: string | null;
+  /** Hasta cuándo tiene el colaborador para completar su formulario. */
+  formularioFechaLimite: string | null;
+  /** Cuándo envió su formulario. null = todavía no lo mandó. */
+  formularioCompletadoEn: string | null;
 }
 
-/** Datos del modal «Nuevo ingreso» (van como JSON en el multipart; la carta va como archivo). */
-export interface OnboardingCreate {
-  candidatoId: number;
-  fechaIngreso: string | null;
-  /** Solo se manda si GTH corrigió a mano el correo que resolvió el backend. */
-  correo: string | null;
-  observacion: string | null;
-}
-
-export interface OnboardingCreateResult {
-  onboardingId: number;
-  message: string;
-  colaborador: OnboardingListItem | null;
-}
-
-/** Resultado de subir/aprobar la carta firmada o de avanzar de fase: la fila ya actualizada. */
+/** Resultado de avanzar de fase: la fila ya actualizada. */
 export interface OnboardingAccionResult {
   message: string;
   colaborador: OnboardingListItem | null;

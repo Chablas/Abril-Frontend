@@ -8,6 +8,9 @@
 
   <div class="page-body">
     <div class="tabs-internas">
+      <button class="tab-btn" [class.tab-activo]="seccion === 'general'" (click)="cambiarSeccion('general')">
+        General
+      </button>
       <button class="tab-btn" [class.tab-activo]="seccion === 'normalizado'" (click)="cambiarSeccion('normalizado')">
         Catálogo normalizado
       </button>
@@ -20,6 +23,124 @@
     </div>
 
     <div *ngIf="loading" class="loading-msg">Cargando...</div>
+
+    <!-- Sección 0: vista general (todo junto, todos los proyectos, cualquier estado) -->
+    <div *ngIf="!loading && seccion === 'general'">
+      <div class="pres-card">
+        <p class="nota-explicativa">
+          <i class="ti ti-info-circle"></i>
+          Todo lo cargado del S10 de todos los proyectos en una sola lista, con las cantidades y
+          precios tal como llegaron. Filtra por si pertenece o no a SSOMA para ver de un vistazo
+          qué se está contabilizando y qué no.
+        </p>
+
+        <div *ngIf="general.length === 0" class="empty-state">
+          <i class="ti ti-circle-check" style="font-size:48px;color:#16a34a"></i>
+          <p>Todavía no hay materiales cargados.</p>
+        </div>
+
+        <ng-container *ngIf="general.length > 0">
+          <div class="pres-general-filtros">
+            <input type="text" [(ngModel)]="filtroGeneral" (ngModelChange)="onFiltroGeneralChange()"
+              placeholder="Buscar por proyecto, recurso o ítem..." class="filtro-input pres-general-filtro-texto" />
+            <app-search-select
+              [options]="ssomaOpts"
+              valueField="id"
+              displayField="label"
+              [value]="filtroGeneralSsoma"
+              [sortAlpha]="false"
+              placeholder="Todos"
+              label="Pertenece a SSOMA"
+              (valueChange)="filtroGeneralSsoma = $event; onFiltroGeneralChange()">
+            </app-search-select>
+            <app-search-select
+              [options]="tiposGeneral"
+              valueField="id"
+              displayField="nombre"
+              [value]="filtroGeneralTipoId"
+              placeholder="Todos"
+              label="Tipo"
+              (valueChange)="onFiltroGeneralTipoChange($event)">
+            </app-search-select>
+            <app-search-select
+              [options]="familiasGeneralFiltradas"
+              valueField="id"
+              displayField="nombre"
+              [value]="filtroGeneralFamiliaId"
+              placeholder="Todas"
+              label="Familia"
+              (valueChange)="filtroGeneralFamiliaId = $event; onFiltroGeneralChange()">
+            </app-search-select>
+            <button class="pres-btn-icon" (click)="cambiarSeccion('general')" title="Refrescar">
+              <i class="ti ti-refresh"></i>
+            </button>
+          </div>
+
+          <div class="pres-result" style="margin-top:0">
+            <div class="pres-result-grid">
+              <div class="pres-result-item">
+                <span class="pres-result-val">{{ generalFiltrado.length }}</span>
+                <span class="pres-result-lbl">Líneas (filtro actual)</span>
+              </div>
+              <div class="pres-result-item">
+                <span class="pres-result-val">S/ {{ totalGeneralFiltrado | number:'1.2-2' }}</span>
+                <span class="pres-result-lbl">Total (filtro actual)</span>
+              </div>
+              <div class="pres-result-item" style="color:#1B6B3A">
+                <span class="pres-result-val" style="color:#1B6B3A">S/ {{ montoSsomaSi | number:'1.2-2' }}</span>
+                <span class="pres-result-lbl">Monto SSOMA</span>
+              </div>
+              <div class="pres-result-item pres-result-danger">
+                <span class="pres-result-val">S/ {{ montoSsomaNo | number:'1.2-2' }}</span>
+                <span class="pres-result-lbl">Monto No SSOMA</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pres-table-wrap pres-table-wrap--tall">
+            <table class="abril-table pres-table">
+              <thead>
+                <tr>
+                  <th>Proyecto</th>
+                  <th>Recurso (crudo)</th>
+                  <th>Ítem / Familia</th>
+                  <th>Cantidad</th>
+                  <th>Precio Unit.</th>
+                  <th>Precio Total</th>
+                  <th>Fecha guía</th>
+                  <th>Pertenece SSOMA</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="generalFiltrado.length === 0"><td colspan="8" class="empty-cell">Sin resultados.</td></tr>
+                <tr *ngFor="let g of generalPaged">
+                  <td>{{ g.projectDescription }}</td>
+                  <td class="pres-td-recurso">{{ g.recursoCrudo }}</td>
+                  <td class="pres-td-familia">{{ g.nombreItem ?? '—' }}<span *ngIf="g.nombreFamilia"> · {{ g.nombreFamilia }}</span></td>
+                  <td class="pres-td-num">{{ g.cantidad | number:'1.2-2' }}</td>
+                  <td class="pres-td-num">S/ {{ g.precioUnitario | number:'1.2-2' }}</td>
+                  <td class="pres-td-num">S/ {{ g.precioTotal | number:'1.2-2' }}</td>
+                  <td class="pres-td-date">{{ g.fechaGuia | date:'dd/MM/yyyy' }}</td>
+                  <td>
+                    <span [class.pres-badge-ok]="g.perteneceSsoma" [class.pres-badge-no]="!g.perteneceSsoma" class="pres-badge">
+                      {{ estadoSsomaLabel(g) }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="shrink-0 max-w-[440px]" style="margin-top:10px;">
+            <app-paginator
+              [totalRecords]="generalFiltrado.length"
+              [currentPage]="generalCurrentPage"
+              [totalPages]="generalTotalPages"
+              (pageChange)="changeGeneralPage($event)">
+            </app-paginator>
+          </div>
+        </ng-container>
+      </div>
+    </div>
 
     <!-- Sección 1: catálogo normalizado editable -->
     <div *ngIf="!loading && seccion === 'normalizado'">

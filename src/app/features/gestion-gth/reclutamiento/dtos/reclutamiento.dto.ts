@@ -1,7 +1,6 @@
 import { CandidatoFormularioResumen, FormularioCoincidencia } from './formulario-postulante.dto';
 import { CandidatoRechazado } from '../../shared/dtos/candidato-rechazado.dto';
 import { Seleccionado } from '../../shared/dtos/seleccionado.dto';
-import { RazonSocialCupo } from '../../../../shared/dtos/razon-social.dto';
 
 /** Opción genérica {id, nombre} para desplegables (p.ej. el catálogo de prioridades). */
 export interface Opcion {
@@ -76,8 +75,6 @@ export interface AsignacionGth {
   tipoProcesoId: number | null;
   /** Id de gth_prioridad (prioridad interna). */
   prioridadId: number | null;
-  /** Id de contributor (razón social activa). */
-  contributorId: number | null;
 }
 
 /** Opción del desplegable "Tipo de proceso y SLA". */
@@ -167,7 +164,6 @@ export interface DetalleRequerimientoGth {
   responsables: Opcion[];
   tiposProceso: TipoProcesoOpcion[];
   prioridades: Opcion[];
-  razonesSociales: RazonSocialCupo[];
   canales: CanalPublicacion[];
   /** Lugares donde se puede citar al candidato (desplegable de programación de entrevistas). */
   lugaresEntrevista: Opcion[];
@@ -186,6 +182,128 @@ export interface DetalleRequerimientoGth {
    * el frontend lo usa como bandera para mostrar el bloque "Puesto cubierto".
    */
   seleccionado: Seleccionado | null;
+  /**
+   * Carta oferta del seleccionado: el último paso del proceso, el que lo cierra. null mientras no
+   * haya seleccionado. Con seleccionado y sin generar ni enviar nada todavía (`cartaOfertaId` en
+   * null) trae solo los datos de destino, que es lo que la sección necesita para poder armarla.
+   */
+  cartaOferta: CartaOfertaRequerimiento | null;
+}
+
+/**
+ * La carta oferta del seleccionado tal como la ve GTH en el detalle. Espejo de
+ * `CartaOfertaRequerimientoDto`.
+ */
+export interface CartaOfertaRequerimiento {
+  // ── Destino: sale de la ficha de la base maestra del seleccionado ──────────
+  /** Nombre del colaborador (el de su ficha maestra, o el del candidato si aún no la tiene). */
+  nombre: string;
+  /**
+   * Correo personal al que iría la carta (`person.email`). null = su ficha no lo tiene y hay que
+   * escribirlo a mano en el modal.
+   */
+  correoSugerido: string | null;
+  /**
+   * Documento de identidad de esa misma ficha: es el que nombra su carpeta en el file de
+   * colaboradores, así que null bloquea el envío.
+   */
+  dni: string | null;
+  /** La firma que dibuja en el enlace se guarda en su ficha: sin ficha el envío queda bloqueado. */
+  tieneFichaMaestra: boolean;
+
+  // ── La carta: existe desde que se genera el borrador ───────────────────────
+  /**
+   * null = no hay carta ni borrador. Que tenga valor NO quiere decir que se haya enviado: para eso
+   * está `enviadaEn`.
+   */
+  cartaOfertaId: number | null;
+  /**
+   * Fecha de ingreso pactada (`YYYY-MM-DD`). Es también la fecha de inicio de labores que imprime
+   * la carta generada.
+   */
+  fechaIngreso: string | null;
+  /** Sueldo ofrecido, tal como salió impreso. null si la carta se adjuntó ya armada. */
+  sueldo: number | null;
+  /** Hasta cuándo puede aceptar (`YYYY-MM-DD`). null si la carta se adjuntó ya armada. */
+  fechaLimiteAceptacion: string | null;
+  /**
+   * Las condiciones de contrato que imprime la carta, una por viñeta y en orden. Vacía mientras no
+   * se haya generado ningún borrador, y también en las cartas anteriores a la plantilla nueva: esas
+   * llevan el bloque de condiciones escrito dentro del propio .docx.
+   */
+  condiciones: string[];
+
+  // ── Borrador generado desde la plantilla (.docx) ───────────────────────────
+  /** null = la carta no se generó acá. */
+  generadaNombre: string | null;
+  /** Enlace al Word en SharePoint: es lo que GTH abre para revisarlo (y corregirlo) antes de enviar. */
+  generadaUrl: string | null;
+  /** Momento de la última generación (ISO, ya en hora Perú). */
+  generadaEn: string | null;
+
+  // ── Envío: todo null mientras la carta no se haya enviado ──────────────────
+  cartaNombre: string | null;
+  cartaUrl: string | null;
+  /** Correo al que se envió el enlace (el histórico del envío). */
+  correo: string | null;
+  /** Momento del último envío del enlace (ISO, ya en hora Perú). */
+  enviadaEn: string | null;
+
+  // ── Carta firmada ──────────────────────────────────────────────────────────
+  firmadaNombre: string | null;
+  firmadaUrl: string | null;
+  firmadaSubidaEn: string | null;
+  /**
+   * Momento en que el CANDIDATO firmó desde el enlace público. Con valor, el documento vino de él y
+   * GTH solo revisa; en null con `firmadaUrl` llena, lo subió GTH a mano.
+   */
+  firmadaPostulanteEn: string | null;
+  /**
+   * Cuándo el colaborador pulsó «Finalizar» en su enlace. Con valor, el documento firmado es el
+   * DEFINITIVO: GTH ya no lo puede reemplazar, solo aprobarlo. Null en las cartas que se subieron
+   * firmadas a mano y en las anteriores a que ese paso existiera.
+   */
+  finalizadaEn: string | null;
+  /** Momento en que GTH la aprobó: es lo que cierra el requerimiento. */
+  aprobadaEn: string | null;
+
+  /** Carpeta de SharePoint donde vive el file digital del colaborador. */
+  fileDigitalCarpeta: string | null;
+}
+
+/**
+ * Lo que GTH pone a mano para que el sistema arme la carta oferta: las tres condiciones que el
+ * documento no puede sacar solo de la base de datos. El resto de los datos —nombre, puesto,
+ * jefatura, razón social— los resuelve el backend.
+ */
+export interface CartaOfertaGenerar {
+  /** Fecha de inicio de labores (`YYYY-MM-DD`). Es la misma fecha de ingreso que hereda el onboarding. */
+  fechaIngreso: string | null;
+  /** Sueldo básico bruto mensual en soles. Lo define GTH, no sale del requerimiento. */
+  sueldo: number | null;
+  /** Hasta cuándo el candidato puede aceptar (`YYYY-MM-DD`). */
+  fechaLimiteAceptacion: string | null;
+  /**
+   * Las condiciones de contrato, una por viñeta y en este orden. Las escribe GTH porque cambian con
+   * el cargo (la jornada de staff de obra no es la de oficina, ni la condición laboral de un puesto
+   * de confianza la de uno sin categoría). El backend descarta las vacías y exige al menos una.
+   */
+  condiciones: string[];
+}
+
+/** Datos del envío de la carta oferta (van como JSON en el multipart; la carta va como archivo). */
+export interface CartaOfertaEnviar {
+  fechaIngreso: string | null;
+  /** Solo se manda si GTH corrigió a mano el correo que resolvió el backend. */
+  correo: string | null;
+}
+
+/**
+ * Resultado de cualquier acción sobre la carta oferta: la carta ya actualizada y la fase en la que
+ * quedó el requerimiento. El modal repinta con esto sin volver a pedir el detalle entero.
+ */
+export interface CartaOfertaAccionResult extends EstadoTransicionResult {
+  cartaOferta: CartaOfertaRequerimiento | null;
 }
 
 /** Candidato aprobado por el solicitante, como lo ve GTH en la fase "Long list aprobada". */

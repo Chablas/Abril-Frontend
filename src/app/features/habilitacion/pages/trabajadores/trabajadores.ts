@@ -47,6 +47,7 @@ import { ProgramarEmoDialogComponent } from '../../../../shared/components/progr
 import { EmoPorTrabajadorDto } from '../../../ssoma/salud-ocupacional/dtos/emo.model';
 import { EmosProgramados } from './components/emos-programados/emos-programados';
 import { InterconsultasPendientes } from './components/interconsultas-pendientes/interconsultas-pendientes';
+import { RetirosAutomaticos } from './components/retiros-automaticos/retiros-automaticos';
 import { SctrVidaLeyService } from '../../services/sctr-vidaley.service';
 import { SctrVidaLeyDto } from '../../dtos/sctr.model';
 import { CatalogosHabService } from '../../services/catalogos-hab.service';
@@ -75,6 +76,7 @@ import { getGerencias, getHijos } from '../../../../shared/utils/area-arbol.util
     ProgramarEmoDialogComponent,
     EmosProgramados,
     InterconsultasPendientes,
+    RetirosAutomaticos,
   ],
   templateUrl: './trabajadores.html',
   styleUrl: './trabajadores.css',
@@ -216,6 +218,7 @@ export class Trabajadores implements OnInit, OnDestroy {
   workerParaProgramarEmo: WorkerHabilitacionListDto | null = null;
   mostrarEmosProgramados = false;
   mostrarInterconsultasPendientes = false;
+  mostrarRetirosAutomaticos = false;
   preselectedEmpresaId: number | null = null;
   workerParaAccion: WorkerHabilitacionListDto | null = null;
   workerParaReingreso: WorkerHabilitacionListDto | null = null;
@@ -651,9 +654,17 @@ export class Trabajadores implements OnInit, OnDestroy {
   estaVencido(estado: string, vigencia?: string | null): boolean {
     // "Renovando" conserva la vigencia aprobada anterior; si esa ya venció, cuenta como vencido.
     if ((estado !== 'Aprobado' && estado !== 'Renovando') || !vigencia) return false;
-    const vigenciaDate = new Date(vigencia);
-    if (isNaN(vigenciaDate.getTime())) return false;
-    return vigenciaDate.getTime() <= Date.now();
+    if (isNaN(new Date(vigencia).getTime())) return false;
+    // Comparación por FECHA (no por instante). Antes se comparaba new Date(vigencia).getTime()
+    // contra Date.now(): al parsear una fecha ISO sin hora como medianoche UTC, un documento
+    // vigente "hasta el 31" ya salía "Vencido" desde las 19:00 del día 30 en hora Lima (UTC-5),
+    // y seguía marcado vencido durante todo el día 31 en vez de recién el 1. Se toma el día
+    // calendario directo del string (sin pasar por Date, que reintroduciría el mismo corrimiento
+    // de zona horaria al convertir de vuelta) y se compara con "<" para que el documento siga
+    // vigente durante todo su último día.
+    const hoyStr = new Date().toLocaleDateString('en-CA');
+    const vigenciaStr = vigencia.slice(0, 10);
+    return vigenciaStr < hoyStr;
   }
 
   getEstadoLabel(estado: string, vigencia?: string | null): string {
@@ -1247,6 +1258,10 @@ export class Trabajadores implements OnInit, OnDestroy {
 
   abrirInterconsultasPendientes(): void {
     this.mostrarInterconsultasPendientes = true;
+  }
+
+  abrirRetirosAutomaticos(): void {
+    this.mostrarRetirosAutomaticos = true;
   }
 
   emoProgLabel(estado: string): string {

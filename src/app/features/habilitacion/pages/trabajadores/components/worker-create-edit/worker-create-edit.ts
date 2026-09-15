@@ -5,13 +5,14 @@ import {
   Input,
   OnChanges,
   OnDestroy,
+  OnInit,
   Output,
   SimpleChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
@@ -35,15 +36,9 @@ import {
   AreaArbolRevisorDto,
   JefeCandidatoDto,
   ObraOficinaStaffDto,
+  PuestoCatDto,
 } from '../../../../dtos/catalogos.model';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
-
-/** Un nivel de la cascada de áreas: los hermanos disponibles y el nodo elegido en ese nivel. */
-interface AreaLevel {
-  options: AreaArbolNodoDto[];
-  /** areaScopeId elegido, o null si el nivel está vacío. */
-  selected: number | null;
-}
 
 interface WorkerFormModel {
   tipoDocumento: 'DNI' | 'CE';
@@ -61,8 +56,10 @@ interface WorkerFormModel {
    */
   puestoId: number | null;
   /**
-   * Nodo del árbol de áreas (workers.area_scope_id): el único dato de área que captura el
-   * formulario. Los campos legacy area/subarea/jefatura los deriva el backend a partir de él.
+   * Nodo del árbol de áreas (workers.area_scope_id): el único dato de área que guarda el
+   * formulario. Ya no se elige a mano — sale del puesto (`puesto.area_destino_scope_id`) en las
+   * clasificaciones que gestionan el área. Los campos legacy area/subarea/jefatura los deriva el
+   * backend a partir de él.
    */
   areaScopeId: number | null;
   /**
@@ -105,6 +102,16 @@ interface WorkerFormModel {
   aniosExperiencia: number | null;
 }
 
+/** Respuesta de la verificación de un correo corporativo, atada al correo que se consultó. */
+interface VerificacionEmail {
+  email: string;
+  valido: boolean;
+  /** Nombre del buzón en el directorio de Abril. Vacío si el correo no se contrastó contra él. */
+  nombre: string;
+  /** Mensaje a mostrar. Vacío cuando el correo es válido. */
+  mensaje: string;
+}
+
 @Component({
   selector: 'app-worker-create-edit',
   standalone: true,
@@ -112,7 +119,7 @@ interface WorkerFormModel {
   templateUrl: './worker-create-edit.html',
   styleUrl: './worker-create-edit.css',
 })
-export class WorkerCreateEdit implements OnChanges, OnDestroy {
+export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
   @Input() open = false;
   @Input() mode: 'create' | 'edit' = 'create';
   @Input() worker: WorkerHabilitacionListDto | null = null;
@@ -127,18 +134,26 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   dniRestringido = false;
   dniVerificado = false;
 
-  /** Verificación del correo corporativo contra el directorio de Abril (ver onEmailCorporativoBlur). */
+  /** Verificación del correo corporativo contra el directorio de Abril (ver verificarEmailCorporativo). */
   verificandoEmail = false;
-  emailError = '';
-  emailVerificadoNombre = '';
   /**
    * Correo con el que se abrió la edición. Se acepta sin verificar, igual que hace el backend:
    * hay fichas antiguas con correos que hoy no pasarían la validación y no deben bloquear la
    * corrección de otros campos.
    */
   private emailOriginal = '';
-  /** Último correo verificado con éxito, para no repetir la consulta en cada blur. */
-  private emailVerificado = '';
+  /**
+   * Resultado de la última consulta junto al correo al que corresponde. De aquí salen los mensajes
+   * que ve el usuario (`emailValido` / `emailVerificadoNombre` / `emailError`), que solo se muestran
+   * mientras el campo siga teniendo ese correo: al seguir escribiendo el resultado desaparece solo y
+   * reaparece si se vuelve a escribir el mismo correo, sin tener que limpiarlo en cada tecla. Sirve
+   * además para no repetir una consulta ya respondida.
+   */
+  private ultimaVerificacion: VerificacionEmail | null = null;
+  /** Correo con la consulta en curso, para que el blur no repita la que ya disparó la pausa. */
+  private emailEnVerificacion = '';
+  /** Cada tecleo del correo corporativo reprograma la verificación automática (ver ngOnInit). */
+  private emailInput$ = new Subject<void>();
   /**
    * Si la ficha ya traía algún correo al abrirla. Solo se exige "al menos un correo" cuando lo
    * tenía: hay miles de fichas legadas sin ninguno y no deben quedar imposibles de editar, pero
@@ -155,19 +170,15 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   proyectos: ProjectGetDTO[] = [];
   categorias: { id: number; nombre: string }[] = [];
   /** Catálogo completo de puestos; el desplegable muestra `puestosFiltrados`. */
-  puestos: { id: number; nombre: string; categoriaId: number | null }[] = [];
+  puestos: PuestoCatDto[] = [];
   empresaContratistaNombre = '';
 
   /**
-   * Desplegables en cascada del árbol de áreas (uno por nivel), mismo patrón que
-   * Configuración → Trabajadores. Se guarda el último nodo elegido, sin obligar a llegar a una hoja.
+   * Árbol de áreas indexado por nodo. Ya no alimenta ningún desplegable: el área es de solo
+   * lectura y sale del puesto, así que el árbol solo sirve para pintar la ruta del nodo derivado
+   * y para leer su revisor.
    */
-  areaLevels: AreaLevel[] = [];
-  /** Nodos del árbol tal como los devuelve el backend (planos, con revisor ya resuelto). */
-  private areaNodos: AreaArbolNodoDto[] = [];
   private areaPorId = new Map<number, AreaArbolNodoDto>();
-  /** areaScopeParentId → hijos. La clave null son las raíces (gerencias). */
-  private areaHijos = new Map<number | null, AreaArbolNodoDto[]>();
   cargandoAreas = false;
 
   /**
@@ -204,13 +215,6 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
    */
   private jefeGuardadoNombre: string | null = null;
   private jefeGuardadoEmail: string | null = null;
-
-  /**
-   * Persona de la ficha que se está editando (`workers.person_id`), del detalle. Con ella se
-   * descarta al propio trabajador de los candidatos a jefe: la misma persona puede tener varias
-   * fichas en `workers` (reingreso), así que comparar solo `workerId` dejaría pasar el caso.
-   */
-  private workerPersonId: number | null = null;
 
   readonly tipoDocumentoOpciones = [
     { value: 'DNI', label: 'DNI — Documento de identidad' },
@@ -250,6 +254,18 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
   ) {}
+
+  ngOnInit(): void {
+    // El correo corporativo se verifica solo tras una pausa al escribir, igual que el buscador de
+    // la lista de trabajadores. Solo se consulta cuando el texto ya parece un correo completo: así
+    // no se gasta una consulta al directorio por cada fragmento tecleado ("cal", "calvarez@") ni se
+    // marca en rojo un correo a medio escribir. El formato lo termina de comprobar el blur (y el
+    // backend al guardar).
+    this.emailInput$.pipe(debounceTime(600), takeUntil(this.destroy$)).subscribe(() => {
+      if (!this.open) return;
+      if (this.formatoEmailPlausible(this.model.emailCorporativo)) this.verificarEmailCorporativo();
+    });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['open'] && this.open) {
@@ -291,6 +307,39 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   get clasificacionEditable(): boolean {
     if (this.mode === 'create') return true;
     return !this.worker?.obraOficinaStaffId && !this.worker?.obraOficina;
+  }
+
+  /**
+   * Resultado de la verificación solo si sigue siendo el del correo escrito. Lo que llegó para un
+   * correo anterior no se muestra: al seguir tecleando el mensaje se va solo.
+   */
+  private get verificacionVigente(): VerificacionEmail | null {
+    const email = this.model.emailCorporativo.trim().toLowerCase();
+    return this.ultimaVerificacion?.email === email ? this.ultimaVerificacion : null;
+  }
+
+  /** True cuando la verificación confirmó que el correo escrito se puede usar. */
+  get emailValido(): boolean {
+    return this.verificacionVigente?.valido ?? false;
+  }
+
+  /** Nombre del buzón en el directorio de Abril. Vacío si el correo no se contrastó contra él. */
+  get emailVerificadoNombre(): string {
+    return this.verificacionVigente?.nombre ?? '';
+  }
+
+  /** Motivo por el que el correo escrito no se puede usar. Vacío mientras no haya uno. */
+  get emailError(): string {
+    return this.verificacionVigente?.mensaje ?? '';
+  }
+
+  /**
+   * Aviso en verde del correo corporativo. Al nombre del buzón en el directorio se le antepone que
+   * el correo se puede usar: el nombre solo confirma de quién es la cuenta, no que esté libre.
+   */
+  get emailValidoTexto(): string {
+    const base = 'Correo válido para ser usado';
+    return this.emailVerificadoNombre ? `${base} · ${this.emailVerificadoNombre}` : base;
   }
 
   /** Todo trabajador debe quedar con al menos un correo: el corporativo o el personal. */
@@ -390,12 +439,44 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   }
 
   /**
-   * True cuando el formulario muestra (y por tanto es dueño de) los desplegables de área. En Obra
-   * y en contratistas no se capturan, así que ahí el área guardada se reenvía intacta en vez de
-   * mandar nulls que la borrarían.
+   * Personal Externo (vigilancia, mantenimiento, choferes). No se apoya en `esCasa` como las
+   * otras tres clasificaciones: estas fichas vienen de la Data Maestra de GTH con
+   * `contrata_casa` vacío, así que exigirlo las dejaría fuera de todas las ramas y la sección
+   * "Asignación" saldría en blanco — que es justo lo que pasaba antes de que existiera su rama.
+   */
+  get esPersonalExterno(): boolean {
+    return !this.esContratista && this.model.obraOficina === 'Personal Externo';
+  }
+
+  /**
+   * Si los desplegables de Categoría/Puesto se pueden tocar.
+   *
+   * Al crear siempre; al editar solo en Staff, Oficina Central y Personal Externo. En Obra
+   * sigue siendo de solo lectura: el cambio de puesto de un obrero pasa por "Cambiar obra /
+   * puesto de trabajo", que es el único camino que evalúa si el EMO vigente sigue valiendo
+   * para el puesto nuevo (mismo protocolo de riesgo alto) y deja auditoría del cambio.
+   *
+   * Se mira el modelo y no el trabajador que abrió el modal a propósito: la clasificación se
+   * puede estar asignando en este mismo formulario (ver `clasificacionEditable`), y ahí lo que
+   * manda es la que quedó elegida.
+   */
+  get puestoEditable(): boolean {
+    if (this.mode === 'create') return true;
+    return this.esStaffOOficina || this.esPersonalExterno;
+  }
+
+  /**
+   * True cuando el formulario es dueño del área del trabajador. Ya no significa "muestra los
+   * desplegables de área": el área no se elige a mano en ninguna parte, sale del puesto
+   * (`puesto.area_destino_scope_id`, el área a la que VA quien lo ejerce) y el formulario solo la
+   * muestra de solo lectura.
+   *
+   * Lo son Staff, Oficina Central y Personal Externo. En Obra y en contratistas no: el área
+   * guardada se reenvía intacta en vez de mandar nulls que la borrarían — un obrero no tiene área
+   * en el árbol y sus puestos tampoco tienen destino configurado.
    */
   get gestionaArea(): boolean {
-    return this.esStaffOOficina;
+    return this.esStaffOOficina || this.esPersonalExterno;
   }
 
   /**
@@ -465,7 +546,6 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     this.empresaContratistaNombre = '';
     this.jefeGuardadoNombre = null;
     this.jefeGuardadoEmail = null;
-    this.workerPersonId = null;
 
     // Token de carga: si el usuario cambia de trabajador antes de que responda
     // esta petición, la respuesta llega "vieja" y no debe pisar el formulario
@@ -488,7 +568,6 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       this.trabajadorHabService.getWorker(this.worker.workerId).subscribe({
         next: (det) => {
           if (loadToken !== this.loadToken) return;
-          this.workerPersonId = det.personId ?? null;
           this.model.celular = det.celular ?? '';
           this.model.sctr = det.sctr ?? true;
           this.model.areaScopeId = det.areaScopeId ?? null;
@@ -520,9 +599,9 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
           // desplegable muestre su nombre en vez de quedarse vacío.
           this.asegurarJefeGuardadoEnOpciones();
           this.loadingDetalle = false;
-          // El árbol puede haber llegado antes que el detalle: en ese caso hay que rearmar la
-          // cascada ahora que ya se sabe en qué nodo está el trabajador.
-          this.initAreaLevels();
+          // Recién ahora se sabe qué puesto tiene la ficha, así que su área ya se puede derivar.
+          // Si el catálogo de puestos todavía no llegó, se vuelve a intentar cuando llegue.
+          this.sincronizarAreaConPuesto(true);
           this.cdr.detectChanges();
         },
         error: () => {
@@ -537,11 +616,6 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
         this.model.contrataCasa = 'Casa';
       }
     }
-
-    // Cascada de áreas para el modelo ya reseteado. Si el árbol todavía no llegó queda solo el
-    // nivel raíz vacío (mostrando "Cargando…") y se vuelve a armar cuando llega, igual que cuando
-    // llega el detalle del trabajador con su nodo asignado.
-    this.initAreaLevels();
 
     if (this.esContratista) {
       const empresaId = this.authService.getEmpresaId();
@@ -592,7 +666,13 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       error: () => {},
     });
     this.catalogosHabService.getPuestos().subscribe({
-      next: (data) => { this.puestos = data; this.cdr.detectChanges(); },
+      next: (data) => {
+        this.puestos = data;
+        // El área sale del puesto y es este catálogo el que la trae, así que hasta acá no se
+        // puede derivar (el detalle del trabajador suele llegar antes).
+        this.sincronizarAreaConPuesto(true);
+        this.cdr.detectChanges();
+      },
       error: () => {},
     });
     this.catalogosHabService.getJefes().subscribe({
@@ -650,8 +730,11 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       });
 
     this.cargandoAreas = true;
+    // Con el workerId el backend devuelve el revisor de cada nodo ya descartando a este
+    // trabajador de sus propios candidatos ("nadie es su propio jefe"): esa decisión es del
+    // algoritmo y vive allá. Al crear uno nuevo no hay a quién descartar y no se manda.
     this.catalogosHabService
-      .getAreaArbol()
+      .getAreaArbol(this.mode === 'edit' ? this.worker?.workerId ?? null : null)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
@@ -665,24 +748,16 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       });
   }
 
-  // ── Árbol de áreas ───────────────────────────────────────────────────
+  // ── Área del trabajador ──────────────────────
+  //
+  // El área no se elige en el formulario: sale del puesto. Cada puesto declara el área a la
+  // que ENTRA quien lo ejerce (`puesto.area_destino_scope_id`, distinta de la que puede
+  // PEDIRLO), y es esa la que queda en `workers.area_scope_id`. Así que el árbol ya no alimenta
+  // ningún desplegable: solo sirve para pintar la ruta del nodo derivado y leer su revisor.
 
-  /** Indexa el árbol plano que devuelve el backend y arma la cascada inicial. */
+  /** Indexa el árbol plano que devuelve el backend. */
   private setAreaArbol(nodos: AreaArbolNodoDto[]): void {
-    this.areaNodos = nodos ?? [];
-    this.areaPorId = new Map(this.areaNodos.map((n) => [n.areaScopeId, n]));
-    this.areaHijos = new Map();
-    for (const nodo of this.areaNodos) {
-      const key = nodo.areaScopeParentId ?? null;
-      const hermanos = this.areaHijos.get(key);
-      if (hermanos) hermanos.push(nodo);
-      else this.areaHijos.set(key, [nodo]);
-    }
-    this.initAreaLevels();
-  }
-
-  private hijosDe(areaScopeId: number | null): AreaArbolNodoDto[] {
-    return this.areaHijos.get(areaScopeId) ?? [];
+    this.areaPorId = new Map((nodos ?? []).map((n) => [n.areaScopeId, n]));
   }
 
   /** Camino raíz → nodo, o null si el nodo no existe en el árbol vivo. */
@@ -701,66 +776,70 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   }
 
   /**
-   * Un desplegable por cada nivel del camino hasta el nodo asignado, más uno vacío con los hijos
-   * del último nodo (si tiene) para poder profundizar. No obliga a llegar a una hoja: se guarda
-   * el nodo más profundo que se haya elegido.
+   * El puesto elegido tal como viene del catálogo, o undefined si todavía no llegó (o si el
+   * puesto está inhabilitado y por eso no figura, que le pasa a fichas antiguas).
    */
-  private initAreaLevels(): void {
-    // Siempre queda al menos el nivel raíz, aunque el árbol no haya llegado todavía: así el campo
-    // de Área no aparece de golpe a mitad de la carga (muestra "Cargando…" y se llena solo).
-    const camino = this.model.areaScopeId ? this.caminoHasta(this.model.areaScopeId) : null;
-    this.areaLevels = [
-      { options: this.hijosDe(null), selected: camino?.[0]?.areaScopeId ?? null },
-    ];
-    if (!camino) return;
+  private get puestoElegido(): PuestoCatDto | undefined {
+    if (this.model.puestoId == null) return undefined;
+    return this.puestos.find((p) => p.id === this.model.puestoId);
+  }
 
-    for (let i = 0; i < camino.length; i++) {
-      const hijos = this.hijosDe(camino[i].areaScopeId);
-      if (!hijos.length) continue;
-      const siguiente = camino[i + 1] ?? null;
-      this.areaLevels.push({ options: hijos, selected: siguiente?.areaScopeId ?? null });
-    }
+  /** Área de destino del puesto elegido, o null si ese puesto no tiene ninguna configurada. */
+  private get areaDestinoDelPuesto(): number | null {
+    return this.puestoElegido?.areaDestinoScopeId ?? null;
   }
 
   /**
-   * Al elegir un nodo se descartan los niveles más profundos y, si el nodo tiene hijos, se agrega
-   * un desplegable vacío para el siguiente nivel (opcional).
+   * Sincroniza el área del modelo con el área de destino del puesto elegido. Se llama al elegir
+   * un puesto y también cuando llegan el detalle del trabajador o el catálogo de puestos, porque
+   * hasta que los dos no estén no se sabe qué área derivar.
+   *
+   * `conservarSiFalta` es lo que protege a las fichas ya guardadas: al abrir el formulario, un
+   * puesto sin área de destino conserva la que la ficha traía en vez de borrarla — no hay de
+   * dónde derivarla y el formulario avisa que al puesto le falta configurarla (ver
+   * `puestoSinAreaDestino`). Es el caso de los puestos que el padrón de GTH no alcanzó a mapear.
+   * Al cambiar el puesto a mano NO se conserva: el área quedaría contradiciendo al puesto que se
+   * está viendo en pantalla.
    */
-  onAreaLevelChange(index: number, value: number | null): void {
-    const level = this.areaLevels[index];
-    level.selected = value ?? null;
-    this.areaLevels = this.areaLevels.slice(0, index + 1);
-    if (value != null) {
-      const hijos = this.hijosDe(value);
-      if (hijos.length) this.areaLevels.push({ options: hijos, selected: null });
-    }
-    this.model.areaScopeId = this.areaScopeIdElegido;
+  private sincronizarAreaConPuesto(conservarSiFalta: boolean): void {
+    if (!this.gestionaArea) return;
+    const destino = this.areaDestinoDelPuesto;
+    if (destino == null && conservarSiFalta) return;
+    this.model.areaScopeId = destino;
   }
 
-  /** Nodo más profundo elegido en la cascada (lo que se guarda en workers.area_scope_id). */
-  get areaScopeIdElegido(): number | null {
-    for (let i = this.areaLevels.length - 1; i >= 0; i--) {
-      if (this.areaLevels[i].selected != null) return this.areaLevels[i].selected;
-    }
-    return null;
+  /**
+   * True cuando el puesto elegido está en el catálogo y no tiene área de destino configurada. Es
+   * lo que explica que el campo de Área salga vacío (o con la que ya traía la ficha) pese a haber
+   * puesto: se arregla en Configuración → Categorías y Puestos, no acá.
+   *
+   * Se exige que el puesto esté en el catálogo para no avisar de algo que todavía no se sabe: el
+   * detalle del trabajador llega antes que el catálogo y el aviso alcanzaba a parpadear.
+   */
+  get puestoSinAreaDestino(): boolean {
+    const puesto = this.puestoElegido;
+    return !!puesto && puesto.areaDestinoScopeId == null;
   }
 
-  /** Nodo elegido, para leer su equivalencia legacy y su revisor. */
+  /** Nodo del área guardada, para leer su equivalencia legacy y su revisor. */
   private get areaNodoElegido(): AreaArbolNodoDto | null {
-    const id = this.areaScopeIdElegido;
+    const id = this.model.areaScopeId;
     return id != null ? this.areaPorId.get(id) ?? null : null;
   }
 
-  /** Ruta legible de la selección (ej. "Gerencia de Proyectos › Unidad de Proyectos"). */
+  /** Ruta legible del área (ej. "Gerencia de Proyectos › Unidad de Proyectos"). */
   get areaPathLabel(): string {
-    const nombres: string[] = [];
-    for (const level of this.areaLevels) {
-      if (level.selected == null) break;
-      const nodo = level.options.find((o) => o.areaScopeId === level.selected);
-      if (!nodo) break;
-      nombres.push(nodo.areaItemName);
-    }
-    return nombres.join(' › ');
+    const id = this.model.areaScopeId;
+    if (id == null) return '';
+    return (this.caminoHasta(id) ?? []).map((n) => n.areaItemName).join(' › ');
+  }
+
+  /** Texto del campo de Área mientras no haya ninguna que mostrar. */
+  get areaPlaceholder(): string {
+    if (this.cargandoAreas) return 'Cargando…';
+    if (this.model.puestoId == null) return 'Selecciona un puesto';
+    if (this.puestoSinAreaDestino) return 'El puesto no tiene área de destino configurada';
+    return '';
   }
 
   /** Área/subárea legacy a las que va a caer el nodo elegido (las deriva el backend al guardar). */
@@ -772,14 +851,15 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
 
   /**
    * Revisor que le tocaría al trabajador por su área, según Configuración → Revisores de Áreas.
-   * Si el área está configurada para filtrar por proyecto, mandan los revisores del proyecto
-   * elegido en el formulario.
    *
-   * El backend manda los candidatos ya ordenados (los del nodo, después los de sus áreas
-   * superiores y al final el área de GTH); acá solo se descarta al propio trabajador. Eso importa
-   * porque los jefes de área son el revisor de su propia área: sin descartarlo, abrir la ficha del
-   * jefe de SSOMA lo mostraba como su propio jefe. Al descartarlo queda el siguiente candidato,
-   * normalmente el revisor de la gerencia de la que cuelga su área.
+   * **Acá no se decide nada.** El backend manda el revisor YA ELEGIDO por nodo —y por proyecto en
+   * las áreas que filtran por proyecto—, aplicando las mismas reglas con las que resuelve a quién
+   * se le manda a aprobar una salida (`JefeRevisorResolver`), el descarte del propio trabajador
+   * incluido. Este componente solo indexa por el nodo y el proyecto que tiene a la vista.
+   *
+   * Que el algoritmo esté en un solo lado es el punto: cuando esto elegía por su cuenta entre una
+   * lista de candidatos, la ficha y Gestión de Salidas terminaron mostrando jefes distintos para
+   * el mismo trabajador. Si hay que cambiar una regla, se cambia en el backend.
    */
   get revisorNombre(): string {
     return this.revisorDelArea?.nombre ?? '';
@@ -790,46 +870,33 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   }
 
   private get revisorDelArea(): AreaArbolRevisorDto | null {
-    return this.candidatosDelArea.find((r) => !this.esElPropioTrabajador(r)) ?? null;
+    return this.revisorDelNodo?.revisor ?? null;
   }
 
-  /** Candidatos del nodo elegido: los del proyecto si el área filtra por proyecto, o los del área. */
-  private get candidatosDelArea(): AreaArbolRevisorDto[] {
+  /**
+   * La respuesta del backend para lo que hay en el formulario: la del proyecto si el área filtra
+   * por proyecto y hay una para el suyo, o la del área.
+   */
+  private get revisorDelNodo(): {
+    revisor?: AreaArbolRevisorDto | null;
+    esRevisorDeSuPropiaArea: boolean;
+  } | null {
     const nodo = this.areaNodoElegido;
-    if (!nodo) return [];
+    if (!nodo) return null;
     const porProyecto =
       this.model.proyectoId != null
-        ? nodo.revisoresPorProyecto?.find((r) => r.proyectoId === this.model.proyectoId)
+        ? nodo.revisorPorProyecto?.find((r) => r.proyectoId === this.model.proyectoId)
         : undefined;
-    return porProyecto?.revisores ?? nodo.revisores ?? [];
+    return porProyecto ?? nodo;
   }
 
   /**
    * true cuando el trabajador es el revisor configurado de su propia área y por eso el campo
    * muestra al siguiente. Se avisa en el formulario para que no se lea como un error de
-   * configuración de Revisores de Áreas.
+   * configuración de Revisores de Áreas. Lo determina el backend, que es quien descarta.
    */
   get esRevisorDeSuPropiaArea(): boolean {
-    const candidatos = this.candidatosDelArea;
-    return candidatos.length > 0 && this.esElPropioTrabajador(candidatos[0]);
-  }
-
-  /**
-   * Nadie puede ser su propio jefe. Se compara por persona además de por ficha porque un
-   * reingreso deja varias filas en `workers` para la misma persona y el revisor puede estar
-   * configurado en cualquiera de ellas (misma regla que aplica el backend al notificar).
-   */
-  private esElPropioTrabajador(candidato: {
-    workerId?: number | null;
-    personId?: number | null;
-  }): boolean {
-    if (this.mode !== 'edit' || !this.worker) return false;
-    if (candidato.workerId != null && candidato.workerId === this.worker.workerId) return true;
-    return (
-      candidato.personId != null &&
-      this.workerPersonId != null &&
-      candidato.personId === this.workerPersonId
-    );
+    return this.revisorDelNodo?.esRevisorDeSuPropiaArea ?? false;
   }
 
   // ── Jefe personalizado ───────────────────────────────────────────────
@@ -839,10 +906,14 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
   // desplegable y lo que se elija ahí se sobrepone a ese revisor en todo el sistema (correos
   // de EMO, aprobación de salidas, recordatorios).
 
-  /** Opciones del desplegable, sin el propio trabajador: nadie puede ser su propio jefe. */
+  /**
+   * Opciones del desplegable: TODOS los candidatos, incluido el propio trabajador. Acá no rige
+   * "nadie puede ser su propio jefe" a propósito — marcar el checkbox es una elección explícita
+   * y el backend la respeta. Lo que sigue descartándolo es el revisor que se deriva del área
+   * (`revisorDelArea`), que nadie elige a mano.
+   */
   get jefesDisponibles(): JefeCandidatoDto[] {
-    if (this.mode !== 'edit' || !this.worker) return this.jefes;
-    return this.jefes.filter((j) => !this.esElPropioTrabajador(j));
+    return this.jefes;
   }
 
   /**
@@ -852,7 +923,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
    */
   get faltaJefePersonalizado(): boolean {
     return (
-      this.gestionaArea &&
+      this.esStaffOOficina &&
       this.model.jefePersonalizado &&
       this.model.jefePersonalizadoWorkerId == null
     );
@@ -907,25 +978,31 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
 
   /**
    * La categoría no se guarda en el trabajador: es un filtro para acotar el desplegable de
-   * puestos, que es el campo que sí se guarda (y de donde el sistema lee la categoría).
-   * Al cambiarla se descarta el puesto elegido si ya no pertenece a ella.
+   * puestos, que es el campo que sí se guarda (y de donde el sistema lee la categoría y el
+   * área). Al cambiarla se descarta el puesto elegido si ya no pertenece a ella, y con él el
+   * área que salía de ese puesto.
    */
   onCategoriaChange(categoriaId: number | null): void {
     this.model.categoriaId = categoriaId;
     const puesto = this.puestos.find((p) => p.id === this.model.puestoId);
     if (puesto && puesto.categoriaId !== categoriaId) this.model.puestoId = null;
+    // Si el puesto se descartó, el área que salía de él tiene que irse con él.
+    this.sincronizarAreaConPuesto(false);
   }
 
   /**
-   * Elegir un puesto fija la categoría, siempre: el puesto es el único campo que se guarda
-   * y la categoría del trabajador es la de su puesto. El desplegable de categoría es solo
-   * un filtro para encontrar el puesto, así que se sincroniza con lo elegido para que no
+   * Elegir un puesto fija la categoría Y el área, siempre: el puesto es el campo del que salen
+   * las dos (`puesto.categoria_id` y `puesto.area_destino_scope_id`). El desplegable de categoría
+   * es solo un filtro para encontrar el puesto, así que se sincroniza con lo elegido para que no
    * muestre una categoría que ya no es la del trabajador.
    */
   onPuestoChange(puestoId: number | null): void {
     this.model.puestoId = puestoId;
     const puesto = this.puestos.find((p) => p.id === puestoId);
     if (puesto) this.model.categoriaId = puesto.categoriaId;
+    // El área del trabajador es la de destino de su puesto, así que se arrastra con él —
+    // incluso cuando el puesto nuevo no tiene ninguna y la ficha se queda sin área.
+    this.sincronizarAreaConPuesto(false);
   }
 
   /**
@@ -935,7 +1012,7 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
    * Todo puesto pertenece a exactamente una categoría (la columna es NOT NULL), así que el
    * filtro es exacto: no hay puestos "sin categoría" que decidir si entran o no.
    */
-  get puestosFiltrados(): { id: number; nombre: string; categoriaId: number | null }[] {
+  get puestosFiltrados(): PuestoCatDto[] {
     if (this.model.categoriaId == null) return this.puestos;
     return this.puestos.filter(
       (p) =>
@@ -965,10 +1042,10 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     if (this.model.obraOficina !== 'Oficina Central') {
       this.model.sctr = true;
     }
-    // Cambiar de Obra/Staff/Oficina cambia si el formulario gestiona el área o no, así que la
-    // selección anterior se descarta y la cascada vuelve a empezar.
-    this.model.areaScopeId = null;
-    this.initAreaLevels();
+    // La clasificación ya no decide el área: donde el formulario la gestiona sale del puesto, y
+    // en Obra se reenvía intacta la que estuviera guardada. Solo hay que re-derivarla, porque
+    // pasar a Obra o venir de ella cambia si el formulario es dueño del área.
+    this.sincronizarAreaConPuesto(true);
     // El jefe elegido se conserva, pero cada clasificación lo muestra distinto (checkbox en
     // Staff/Oficina, desplegable suelto en Obra): se sincroniza el checkbox con lo que haya
     // elegido para que al pasar a Staff/Oficina el jefe no quede guardado pero invisible.
@@ -977,14 +1054,27 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
     // exige tenant/unicidad si es del dominio de Abril), así que la verificación anterior deja
     // de ser válida y se rehace.
     this.resetEstadoEmail();
-    if (this.gestionaEmailCorporativo) this.onEmailCorporativoBlur();
+    if (this.gestionaEmailCorporativo) this.verificarEmailCorporativo();
   }
 
   private resetEstadoEmail(): void {
     this.verificandoEmail = false;
-    this.emailError = '';
-    this.emailVerificadoNombre = '';
-    this.emailVerificado = '';
+    this.ultimaVerificacion = null;
+    this.emailEnVerificacion = '';
+  }
+
+  /** Salir del campo adelanta la verificación, sin esperar a que venza la pausa al escribir. */
+  onEmailCorporativoBlur(): void {
+    this.verificarEmailCorporativo();
+  }
+
+  /**
+   * Formato mínimo de correo (algo@algo.algo), el mismo que exige el backend. Solo decide si vale
+   * la pena consultar mientras se escribe: el mensaje de formato mal escrito lo sigue dando el
+   * backend cuando se sale del campo.
+   */
+  private formatoEmailPlausible(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   }
 
   /**
@@ -992,23 +1082,31 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
    * los correos ya asignados a otros trabajadores. No aplica a contratistas, que no capturan
    * corporativo.
    *
+   * Se dispara sola tras la pausa al escribir (ver ngOnInit) y también al salir del campo, para el
+   * caso de pegar el correo y hacer clic en otro lado antes de que venza la pausa. Como puede
+   * demorar (consulta al directorio de Microsoft), se muestra el loader global: es la referencia de
+   * que el sistema está buscando.
+   *
    * El flag `corporativo` que se manda es la clasificación real (true solo en Staff/Oficina
    * Central), la misma que usa el backend al guardar: así en Obra un correo @abril.pe se sigue
    * verificando contra el tenant y por unicidad, pero uno de otro dominio se acepta igual que al
    * guardar, en vez de marcarlo en rojo por algo que el backend sí dejaría pasar.
    */
-  onEmailCorporativoBlur(): void {
+  private verificarEmailCorporativo(): void {
     if (!this.gestionaEmailCorporativo) {
       this.resetEstadoEmail();
       return;
     }
 
     const email = this.model.emailCorporativo.trim().toLowerCase();
-    if (!email || email === this.emailVerificado || email === this.emailOriginal) return;
+    // Sin correo o con el que abrió la edición (que el backend acepta sin verificar) no hay nada
+    // que consultar; con una consulta en curso o ya respondida, tampoco hay que repetirla.
+    if (!email || email === this.emailOriginal) return;
+    if (email === this.emailEnVerificacion || email === this.ultimaVerificacion?.email) return;
 
-    this.emailError = '';
-    this.emailVerificadoNombre = '';
+    this.emailEnVerificacion = email;
     this.verificandoEmail = true;
+    this.loaderService.show();
 
     this.workerService
       .validarEmailCorporativo(
@@ -1018,23 +1116,35 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       )
       .subscribe({
         next: (res) => {
-          this.verificandoEmail = false;
-          if (res.valido) {
-            // Se guarda el correo canónico del directorio (así coincide con el del login SSO).
-            if (res.email) this.model.emailCorporativo = res.email;
-            this.emailVerificado = this.model.emailCorporativo.trim().toLowerCase();
-            this.emailVerificadoNombre = res.nombreEnTenant ?? '';
-          } else {
-            this.emailError = res.mensaje ?? 'El correo corporativo no es válido.';
+          this.terminarVerificacionEmail();
+          // La respuesta puede llegar cuando el usuario ya siguió escribiendo: se guarda junto al
+          // correo consultado y la pantalla la muestra solo si sigue siendo el del campo.
+          this.ultimaVerificacion = {
+            email,
+            valido: res.valido,
+            nombre: res.nombreEnTenant ?? '',
+            mensaje: res.valido ? '' : (res.mensaje ?? 'El correo corporativo no es válido.'),
+          };
+          // Se guarda el correo canónico del directorio (así coincide con el del login SSO), salvo
+          // que el usuario ya esté escribiendo otro: pisarle el campo a media escritura sería peor.
+          const esElDelCampo = email === this.model.emailCorporativo.trim().toLowerCase();
+          if (res.valido && res.email && esElDelCampo) {
+            this.model.emailCorporativo = res.email;
           }
           this.cdr.detectChanges();
         },
         error: () => {
           // Sin verificación no se bloquea el formulario: el backend vuelve a validar al guardar.
-          this.verificandoEmail = false;
+          this.terminarVerificacionEmail();
           this.cdr.detectChanges();
         },
       });
+  }
+
+  private terminarVerificacionEmail(): void {
+    this.emailEnVerificacion = '';
+    this.verificandoEmail = false;
+    this.loaderService.hide();
   }
 
   onTipoDocumentoChange(): void {
@@ -1202,10 +1312,13 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       });
   }
 
-  /** Al reescribir el correo se limpia el resultado de la verificación anterior. */
+  /**
+   * Al escribir se reprograma la verificación automática. No hace falta limpiar el resultado
+   * anterior: deja de mostrarse solo en cuanto el correo del campo deja de ser el consultado
+   * (ver `verificacionVigente`).
+   */
   onEmailCorporativoInput(): void {
-    this.emailError = '';
-    this.emailVerificadoNombre = '';
+    this.emailInput$.next();
   }
 
   submit(): void {
@@ -1273,11 +1386,10 @@ export class WorkerCreateEdit implements OnChanges, OnDestroy {
       condicionMedica: n(this.model.condicionMedica),
       // La categoría no se manda: el backend la lee del puesto.
       puestoId: this.model.puestoId ?? undefined,
-      // El área se manda como nodo del árbol y el backend deriva de ahí area/subarea/jefatura.
-      // Cuando el formulario sí gestiona el área se mandan los tres en null para que manden los
-      // derivados (y para que limpiar el desplegable realmente limpie el área); cuando no la
-      // gestiona se reenvían intactos para no borrar lo que ya estaba guardado.
-      areaScopeId: this.model.areaScopeId,
+      // El área ya no se manda: el backend la saca del puesto (puesto.area_destino_scope_id) y
+      // de ahí deriva area/subarea/jefatura. Cuando el formulario sí gestiona el área se mandan
+      // los tres textos en null para que manden los derivados; cuando no la gestiona se reenvían
+      // intactos para no borrar lo que ya estaba guardado.
       area: this.gestionaArea ? null : n(this.model.area),
       subarea: this.gestionaArea ? null : n(this.model.subarea),
       contrataCasa: this.esContratista ? 'Contratista' : n(this.model.contrataCasa),

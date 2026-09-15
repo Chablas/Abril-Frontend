@@ -1,0 +1,185 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.lista-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: #ffffff;
+}
+
+.lista-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── BUSCADOR ─────────────────────────────────────────── */
+.buscador-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.buscador-input { flex: 1; }
+
+.empty-hint {
+  text-align: center;
+  color: #a8a59e;
+  padding: 32px 16px;
+  font-size: 13px;
+}
+
+.empty-hint code {
+  background: #f0ede8;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* ── SKELETON ─────────────────────────────────────────── */
+.skeleton-list { display: flex; flex-direction: column; gap: 8px; }
+
+.skeleton-row {
+  height: 72px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #f0ede8 25%, #e8e5df 50%, #f0ede8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── BARRA DE RESULTADOS ──────────────────────────────── */
+.resultados-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.resultados-total {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5a5850;
+  margin-right: auto;
+}
+
+/* ── CÓDIGO / TIPO ─────────────────────────────────────── */
+.codigo-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background: #f0ede8;
+  border: 0.5px solid #d8d4ce;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-abril-standard);
+  font-family: monospace;
+}
+
+.tipo-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* ── CASOS (lista curable) ────────────────────────────── */
+.casos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.caso-card {
+  background: #fff;
+  border: 0.5px solid #e8e5df;
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.caso-card--sel {
+  border-color: var(--color-abril-standard);
+  background: var(--color-abril-standard-light);
+}
+
+.caso-card__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.caso-proyecto {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a18;
+}
+
+.caso-fecha {
+  margin-left: auto;
+  font-size: 11px;
+  color: #8a8880;
+  white-space: nowrap;
+}
+
+.caso-card__lugar {
+  font-size: 11px;
+  color: #8a8880;
+  margin-top: 4px;
+  padding-left: 26px;
+}
+
+.caso-card__desc {
+  font-size: 12px;
+  color: #5a5850;
+  margin-top: 2px;
+  padding-left: 26px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.caso-card__desc--full {
+  -webkit-line-clamp: unset;
+  display: block;
+}
+
+.caso-card__detalle {
+  margin-top: 8px;
+  padding: 8px 10px;
+  padding-left: 26px;
+  border-top: 0.5px solid #f0ede8;
+  font-size: 12px;
+  color: #1a1a18;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.empty-row { text-align: center; color: #a8a59e; padding: 32px; }
+
+/* ── RESPONSIVE ≥768px ────────────────────────────────── */
+@media (min-width: 768px) {
+  .lista-body { padding: 16px 24px; }
+}

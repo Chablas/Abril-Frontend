@@ -40,6 +40,7 @@ export class RoleList implements OnInit, OnDestroy {
 
   @Output() pagedData = new EventEmitter<PagedResponseDTO<RoleDto>>();
   @Output() editRole = new EventEmitter<RoleDto>();
+  @Output() viewRole = new EventEmitter<RoleDto>();
 
   constructor(
     private roleService: RoleFeatureService,

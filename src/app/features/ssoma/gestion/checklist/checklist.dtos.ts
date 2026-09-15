@@ -10,6 +10,14 @@ export interface ChecklistPlantillaListDto {
   orden: number;
   activo: boolean;
   totalItems: number;
+  partidaId?: number;
+  partidaNombre?: string;
+}
+
+export interface ChecklistItemImagenDto {
+  id: number;
+  url: string;
+  orden: number;
 }
 
 export interface ChecklistPlantillaItemDto {
@@ -18,6 +26,24 @@ export interface ChecklistPlantillaItemDto {
   orden: number;
   tieneAdjuntoRef: boolean;
   activo: boolean;
+  imagenesReferencia: ChecklistItemImagenDto[];
+}
+
+// ─── Partidas (etapas constructivas) ────────────────────────────────────────
+
+export interface ChecklistPartidaDto {
+  id: number;
+  nombre: string;
+  descripcion?: string;
+  orden: number;
+  activo: boolean;
+  totalPlantillas: number;
+}
+
+export interface ChecklistPartidaUpsertDto {
+  nombre: string;
+  descripcion?: string;
+  orden: number;
 }
 
 export interface ChecklistPlantillaItemCreateDto {
@@ -35,6 +61,16 @@ export interface ChecklistPlantillaDetalleDto extends ChecklistPlantillaListDto 
   items: ChecklistPlantillaItemDto[];
 }
 
+export interface ChecklistPlantillaUpsertDto {
+  nombre: string;
+  descripcion?: string;
+  tipoActivacion: string;
+  eventoActivacion?: string;
+  esObligatorio: boolean;
+  orden: number;
+  partidaId?: number;
+}
+
 // ─── Checklists de Proyecto ──────────────────────────────────────────────────
 
 export interface ChecklistProyectoCardDto {
@@ -42,13 +78,16 @@ export interface ChecklistProyectoCardDto {
   plantillaId: number;
   nombrePlantilla: string;
   esObligatorio: boolean;
-  estado: 'pendiente' | 'en_progreso' | 'completado';
+  partidaId?: number;
+  partidaNombre?: string;
+  estado: 'pendiente' | 'en_progreso' | 'completado' | 'no_aplica';
   porcentajeCompletado: number;
   totalItems: number;
   itemsCompletados: number;
   fechaActivacion: string;
   fechaCompletado?: string;
   activadoPor?: string;
+  noAplicaMotivo?: string;
 }
 
 export interface ChecklistProyectoResumenDto {
@@ -67,6 +106,7 @@ export interface ChecklistProyectoItemDto {
   completadoPor?: string;
   observacion?: string;
   urlAdjunto?: string;
+  imagenesReferencia: ChecklistItemImagenDto[];
 }
 
 export interface ChecklistProyectoDetalleDto {
@@ -80,6 +120,9 @@ export interface ChecklistProyectoDetalleDto {
   porcentajeCompletado: number;
   fechaActivacion: string;
   fechaCompletado?: string;
+  noAplicaMotivo?: string;
+  noAplicaPor?: string;
+  noAplicaFecha?: string;
   items: ChecklistProyectoItemDto[];
 }
 
@@ -91,4 +134,8 @@ export interface ChecklistItemToggleDto {
 
 export interface ChecklistActivarDto {
   plantillaId: number;
+}
+
+export interface ChecklistNoAplicaDto {
+  motivo: string;
 }

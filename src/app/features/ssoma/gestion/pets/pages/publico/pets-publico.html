@@ -1,0 +1,41 @@
+<div class="publico-page">
+  <div class="publico-header">
+    <img src="/logo-abril.png" alt="Abril" class="publico-logo" onerror="this.style.display='none'" />
+    <h1>Biblioteca de PETS</h1>
+    <p>Procedimientos Escritos de Trabajo Seguro — versión vigente y aprobada</p>
+  </div>
+
+  <div class="publico-buscador">
+    <input
+      type="text"
+      [(ngModel)]="busqueda"
+      placeholder="Buscar por nombre o código..."
+      class="publico-input"
+    />
+  </div>
+
+  <div *ngIf="cargando" class="publico-estado">Cargando...</div>
+  <div *ngIf="error" class="publico-estado publico-error">
+    No se pudo cargar la biblioteca. Intenta nuevamente.
+  </div>
+
+  <div *ngIf="!cargando && !error" class="publico-lista">
+    <div *ngIf="filtrada.length === 0" class="publico-estado">
+      No hay PETS que coincidan con la búsqueda.
+    </div>
+
+    <button
+      *ngFor="let pet of filtrada"
+      class="publico-item"
+      (click)="abrirPdf(pet)"
+      [disabled]="abriendoId === pet.id"
+    >
+      <div class="publico-item-info">
+        <span class="publico-item-nombre">{{ pet.nombre }}</span>
+        <span class="publico-item-codigo" *ngIf="pet.codigo">{{ pet.codigo }}</span>
+      </div>
+      <span class="publico-item-version">v{{ pet.versionVigente }}</span>
+      <span class="publico-item-accion">{{ abriendoId === pet.id ? '...' : '📄' }}</span>
+    </button>
+  </div>
+</div>

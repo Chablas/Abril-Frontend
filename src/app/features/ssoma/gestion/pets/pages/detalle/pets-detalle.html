@@ -7,15 +7,73 @@
     <div>
       <span class="pet-badge" *ngIf="detalle">{{ detalle.codigo || 'PETS' }}</span>
       <h1 class="pet-titulo">{{ detalle ? detalle.nombre : 'Cargando…' }}</h1>
+      <span
+        *ngIf="detalle"
+        class="pet-estado-badge"
+        [class.pet-estado-badge--aprobado]="detalle.estadoRevision === 'aprobado'"
+        [class.pet-estado-badge--borrador]="detalle.estadoRevision === 'borrador'"
+      >
+        <ng-container *ngIf="detalle.estadoRevision === 'aprobado'">
+          <i class="ti ti-circle-check"></i> Aprobado — versión {{ detalle.versionVigente }}
+        </ng-container>
+        <ng-container *ngIf="detalle.estadoRevision === 'borrador' && detalle.versionVigente === 0">
+          <i class="ti ti-alert-triangle"></i> Sin aprobar todavía
+        </ng-container>
+        <ng-container *ngIf="detalle.estadoRevision === 'borrador' && detalle.versionVigente > 0">
+          <i class="ti ti-alert-triangle"></i> Cambios sin aprobar desde v.{{ detalle.versionVigente }}
+        </ng-container>
+      </span>
+      <span
+        *ngIf="detalle && detalle.revisionPendiente"
+        class="pet-estado-badge pet-estado-badge--revision"
+        [title]="detalle.revisionPendienteMotivo || 'Requiere revisión'"
+      >
+        <i class="ti ti-alert-circle"></i> Requiere revisión — {{ detalle.revisionPendienteMotivo }}
+      </span>
     </div>
   </div>
 
   <div *ngIf="loading" class="loading-msg">Cargando PETS…</div>
 
-  <div *ngIf="!loading && detalle" class="detalle-body">
+  <div *ngIf="!loading && detalle" class="detalle-body" #detalleBody>
+
+    <!-- ── Modal: aprobar versión ──────────────────────────────────────────── -->
+    <div class="modal-overlay" *ngIf="mostrarModalAprobar" (click)="cancelarAprobarVersion()">
+      <div class="modal-aprobar" (click)="$event.stopPropagation()">
+        <h3>Aprobar nueva versión</h3>
+        <p class="card-hint">
+          Esto guarda una "foto" completa del PETS tal como está ahora mismo, como la versión oficial
+          {{ (detalle?.versionVigente ?? 0) + 1 }}. El motivo queda visible en el historial.
+        </p>
+        <div class="abril-field">
+          <label class="abril-field-label">Motivo *</label>
+          <textarea
+            class="abril-field-input"
+            rows="3"
+            [(ngModel)]="motivoAprobar"
+            placeholder="Ej: Revisión periódica, Corrección de redacción, Accidente #123..."
+          ></textarea>
+        </div>
+        <div class="modal-aprobar-actions">
+          <button class="btn-secondary" (click)="cancelarAprobarVersion()" [disabled]="aprobando">Cancelar</button>
+          <button class="btn-primary" (click)="confirmarAprobarVersion()" [disabled]="!motivoAprobar.trim() || aprobando">
+            {{ aprobando ? 'Aprobando…' : 'Aprobar versión' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PESTAÑAS + CONTENIDO ── en modo pantalla completa, este bloque entero pasa
+         a ocupar toda la pantalla (misma idea que el overlay de Importar) — para editar
+         Procedimiento (o cualquier otra pestaña) cómodo cuando hay muchos pasos. -->
+    <div class="tabs-area" [class.fullscreen-overlay]="pantallaCompleta && tabActiva.kind !== 'importar'">
 
     <!-- ── CABECERA ─────────────────────────────────────────────────────── -->
-    <section class="card">
+    <!-- Directamente editable (a diferencia del resto de pestañas, que necesitan
+         "Editar"): son 4-5 campos simples, no una tarea larga que justifique el paso
+         extra de entrar a modo edición. Pero desaparece por completo mientras se edita
+         OTRA pestaña (Procedimiento, etc.) — ahí no aporta nada y solo estorba. -->
+    <section class="card card-datos-generales" *ngIf="tabActiva.kind !== 'importar' && !modoEdicion">
       <h2 class="card-titulo">Datos generales</h2>
       <div class="cabecera-fields">
         <div class="abril-field">
@@ -30,80 +88,618 @@
           <label class="abril-field-label">Enlace SharePoint (documento original, opcional)</label>
           <input type="text" class="abril-field-input" [(ngModel)]="detalle.sharepointUrl" placeholder="https://..." />
         </div>
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Origen"
+            [options]="[{ value: 'Abril', label: 'Abril (catálogo propio)' }, { value: 'Contratista', label: 'Contratista' }]"
+            valueField="value"
+            displayField="label"
+            [value]="detalle.origen"
+            [allowClear]="false"
+            (valueChange)="detalle.origen = $event">
+          </app-search-select>
+        </div>
+        @if (detalle.origen === 'Contratista') {
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Empresa contratista *"
+              [options]="contratistas"
+              valueField="id"
+              displayField="razonSocial"
+              placeholder="Buscar contratista..."
+              [value]="detalle.contributorId"
+              (valueChange)="detalle.contributorId = $event">
+            </app-search-select>
+          </div>
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Proyecto"
+              [options]="proyectos"
+              valueField="id"
+              displayField="nombre"
+              placeholder="Buscar proyecto..."
+              [value]="detalle.proyectoId"
+              (valueChange)="detalle.proyectoId = $event">
+            </app-search-select>
+            <span *ngIf="!detalle.proyectoId" class="proyecto-pendiente-hint">
+              Sin proyecto asignado — no aparecerá en OPT ni Accidentes hasta que lo asignes.
+            </span>
+          </div>
+        }
       </div>
       <div class="cabecera-actions">
         <label class="check-label">
           <input type="checkbox" [(ngModel)]="detalle.activo" /> Activo (visible para OPT y checklists)
         </label>
-        <button class="btn-primary" (click)="guardarCabecera()" [disabled]="guardandoCabecera">
-          {{ guardandoCabecera ? 'Guardando…' : 'Guardar cambios' }}
-        </button>
+        <div class="cabecera-actions-botones">
+          <button class="btn-secondary" (click)="toggleHistorial()">
+            <i class="ti ti-history"></i> Historial de versiones
+          </button>
+          <button class="btn-secondary" (click)="exportarPdf()" [disabled]="exportandoPdf" title="Genera un PDF de trabajo con el estado actual — no reemplaza el documento oficial">
+            <i class="ti ti-file-download"></i> {{ exportandoPdf ? 'Generando…' : 'Vista previa PDF' }}
+          </button>
+          <button
+            *ngIf="puedeAprobar"
+            class="btn-secondary btn-aprobar"
+            (click)="abrirAprobarVersion()"
+            title="Solo el Jefe SSOMA aprueba la publicación de una versión">
+            <i class="ti ti-shield-check"></i> Aprobar versión
+          </button>
+          <button class="btn-secondary" (click)="guardarCabecera()" [disabled]="guardandoCabecera">
+            <i class="ti ti-device-floppy"></i> {{ guardandoCabecera ? 'Guardando…' : 'Guardar datos generales' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Historial de versiones aprobadas ─────────────────────────────── -->
+      <div class="historial-versiones" *ngIf="mostrarHistorial">
+        <p class="card-hint" *ngIf="cargandoVersiones">Cargando historial…</p>
+        <p class="card-hint" *ngIf="!cargandoVersiones && versiones.length === 0">
+          Todavía no se aprobó ninguna versión de este PETS.
+        </p>
+        <div class="version-row" *ngFor="let v of versiones">
+          <span class="version-numero">v.{{ v.numeroVersion }}</span>
+          <div class="version-info">
+            <span class="version-fecha">{{ v.createdAt | date: 'dd/MM/yyyy HH:mm' }} — {{ v.aprobadoPorNombre }}</span>
+            <span class="version-motivo">{{ v.motivo }}</span>
+          </div>
+          <button class="btn-secondary" (click)="descargarPdfVersion(v.numeroVersion)">
+            <i class="ti ti-file-download"></i> Ver PDF
+          </button>
+        </div>
       </div>
     </section>
 
-    <!-- ── PESTAÑAS ─────────────────────────────────────────────────────── -->
-    <div class="tabs-bar">
+    <div class="tabs-bar" *ngIf="tabActiva.kind !== 'importar'">
       <button
         type="button"
         class="tab-btn"
         *ngFor="let t of tabs"
         [class.tab-btn--activo]="seccionActiva === t.key"
-        (click)="seleccionarTab(t.key)"
+        (click)="onTabClick(t.key)"
       >
         {{ t.label }}
+        <span class="tab-btn-dot" *ngIf="tabTieneContenido(t)" title="Esta pestaña tiene contenido"></span>
+      </button>
+      <!-- UN solo botón para toda la pestaña activa — nunca uno repetido por sección. -->
+      <button
+        type="button"
+        class="btn-primary pantalla-completa-toggle"
+        *ngIf="!modoEdicion"
+        title="Editar esta pestaña"
+        (click)="entrarModoEdicion()"
+      >
+        <i class="ti ti-pencil"></i> Editar
+      </button>
+      <button
+        type="button"
+        class="btn-primary pantalla-completa-toggle"
+        *ngIf="modoEdicion"
+        [disabled]="guardandoTextoSeccion[seccionActiva] || guardandoFirmas"
+        title="Guarda si hace falta y sale de edición"
+        (click)="salirModoEdicion()"
+      >
+        <i class="ti ti-check"></i>
+        {{ (guardandoTextoSeccion[seccionActiva] || guardandoFirmas) ? 'Guardando…' : etiquetaSalirEdicion }}
       </button>
     </div>
 
     <!-- ── SECCIONES EN ÁRBOL (Procedimiento + texto libre) ─────────────── -->
     <section class="card" *ngIf="tabActiva.kind === 'arbol'">
+      <h2 class="card-titulo">{{ tabActiva.label }}</h2>
+      <p class="card-hint">{{ tabActiva.ayuda }}</p>
+
+      <!-- Selección múltiple: marca varios ítems (de cualquier nivel) y mándalos de
+           una a un subtítulo destino, sin tener que reordenar ni sangrar uno por uno. -->
+      <div class="bulk-mover-bar" *ngIf="modoEdicion && pasosSeleccionados.size > 0">
+        <span class="bulk-mover-count">{{ pasosSeleccionados.size }} seleccionado{{ pasosSeleccionados.size === 1 ? '' : 's' }}</span>
+        <select class="abril-field-input" [(ngModel)]="subtituloDestinoId">
+          <option [ngValue]="null" disabled>Mover a subtítulo…</option>
+          <option *ngFor="let s of subtitulosDisponibles" [ngValue]="s.id">{{ s.label }}</option>
+        </select>
+        <button class="btn-primary" [disabled]="!subtituloDestinoId" (click)="moverSeleccionAlSubtitulo()">Mover aquí</button>
+        <button class="btn-secondary" (click)="limpiarSeleccionPasos()">Cancelar</button>
+      </div>
+
+      <div class="pasos-list" *ngIf="arbol.length > 0; else sinPasos">
+        <ng-container *ngFor="let nodo of arbol; let i = index; trackBy: trackPasoId">
+          <ng-container
+            *ngTemplateOutlet="nodoTpl; context: { $implicit: nodo, hermanos: arbol, index: i, parentId: null, parentParentId: null }">
+          </ng-container>
+        </ng-container>
+      </div>
+
+      <ng-template #sinPasos>
+        <p class="card-hint">Todavía no hay pasos. Agrega el primero abajo, o usa "Importar desde Word" arriba.</p>
+      </ng-template>
+
+      <!-- Agregar al final (nivel superior) -->
+      <div class="agregar-final" *ngIf="modoEdicion">
+        <select class="abril-field-input agregar-final-tipo" [(ngModel)]="nuevoPasoTipo">
+          <option *ngFor="let t of tiposPaso" [value]="t.value">{{ t.label }}</option>
+        </select>
+        <textarea class="abril-field-input" rows="2" [(ngModel)]="nuevoPasoTexto" placeholder="Descripción del nuevo paso..."></textarea>
+        <button class="btn-primary" (click)="agregarPasoFinal()" [disabled]="!nuevoPasoTexto.trim() || agregando">
+          {{ agregando ? 'Agregando…' : 'Agregar al final' }}
+        </button>
+      </div>
+
+      <!-- ── PLANTILLA RECURSIVA: un nodo del árbol (subtítulo/paso/letra/guión) ── -->
+      <ng-template #nodoTpl let-nodo let-hermanos="hermanos" let-index="index" let-parentId="parentId" let-parentParentId="parentParentId">
+
+        <!-- Formulario "insertar aquí", antes de este nodo -->
+        <div class="insertar-form" *ngIf="insertarEnIndice === index && insertarEnPadre === parentId">
+          <select class="abril-field-input" [(ngModel)]="insertarTipo">
+            <option *ngFor="let t of tiposPaso" [value]="t.value">{{ t.label }}</option>
+          </select>
+          <textarea class="abril-field-input" rows="2" [(ngModel)]="insertarTexto" placeholder="Descripción..."></textarea>
+          <div class="insertar-actions">
+            <button class="btn-secondary" (click)="cancelarInsertar()">Cancelar</button>
+            <button class="btn-primary" (click)="confirmarInsertar()" [disabled]="!insertarTexto.trim()">Insertar aquí</button>
+          </div>
+        </div>
+
+        <div class="paso-row" [class.paso-row--subtitulo]="nodo.tipo === 'subtitulo'" [class.paso-row--medio-ambiente]="nodo.categoria === 'medio_ambiente'">
+          <input
+            *ngIf="modoEdicion"
+            type="checkbox"
+            class="paso-check"
+            title="Seleccionar para mover en bloque"
+            [checked]="estaSeleccionado(nodo.id)"
+            (change)="toggleSeleccionPaso(nodo.id)"
+          />
+          <div
+            class="paso-marca"
+            [class.paso-marca--circulo]="nodo.tipo === 'letra'"
+            [class.paso-marca--subtitulo]="nodo.tipo === 'subtitulo'"
+            [ngSwitch]="nodo.tipo"
+          >
+            <span *ngSwitchCase="'subtitulo'">{{ nodo.numero }}</span>
+            <span *ngSwitchCase="'letra'">{{ nodo.numero }}.</span>
+            <span *ngSwitchCase="'guion'">-</span>
+          </div>
+
+          <!-- Galería: miniaturas chicas en fila (crece a la derecha, no hacia abajo) — clic
+               en una miniatura la abre en grande; cada una con su propio botón de borrar. -->
+          <div class="paso-imagen" *ngIf="tabActiva.key === 'procedimiento'">
+            <div class="paso-imagen-item" *ngFor="let img of imagenesPaso(nodo); trackBy: trackImagenId">
+              <img [src]="img.url" alt="Imagen del paso" draggable="false" (click)="ampliarImagen(img.url)" />
+              <button *ngIf="modoEdicion" class="btn-icon btn-icon-danger paso-imagen-borrar" title="Eliminar imagen" (click)="eliminarImagenPaso(nodo, img)">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+            <label
+              *ngIf="modoEdicion"
+              class="btn-imagen-add"
+              title="Agregar imagen — también puedes hacer clic aquí y pegar (Ctrl+V) una imagen copiada"
+              tabindex="0"
+              (paste)="onPasteImagenPaso($event, nodo)">
+              <i class="ti" [ngClass]="subiendoImagenPasoId === nodo.id ? 'ti-loader-2' : 'ti-plus'"></i>
+              <input type="file" accept="image/*" hidden (change)="onFileSelected($event, nodo)" [disabled]="subiendoImagenPasoId === nodo.id" />
+            </label>
+          </div>
+
+          <div class="paso-contenido">
+            <!-- Edición directa: clic en el texto y ya se puede escribir, se guarda solo
+                 al salir del campo (onBlurTextoPaso) — sin lápiz ni Guardar/Cancelar de
+                 por medio, porque ya se está en modo edición global. Mientras el cursor
+                 sigue en el campo, Ctrl+Z deshace como en cualquier campo de texto (no se
+                 destruye el <textarea> en cada guardado, así que el navegador conserva su
+                 propio historial); después de guardar, aparece un toast con "Deshacer". -->
+            <ng-container *ngIf="modoEdicion; else vistaPaso">
+              <textarea
+                class="abril-field-input paso-texto-input"
+                [class.paso-texto-input--subtitulo]="nodo.tipo === 'subtitulo'"
+                rows="2"
+                spellcheck="true"
+                lang="es"
+                [(ngModel)]="nodo.descripcion"
+                (focus)="onFocoTextoPaso(nodo)"
+                (blur)="onBlurTextoPaso(nodo)"
+              ></textarea>
+              <p class="paso-aviso-sintaxis" *ngIf="tieneSimbolosDesbalanceados(nodo.descripcion)">
+                <i class="ti ti-alert-triangle"></i> Revisa: paréntesis o comillas sin cerrar
+              </p>
+            </ng-container>
+            <ng-template #vistaPaso>
+              <p class="paso-texto" [class.paso-texto--subtitulo]="nodo.tipo === 'subtitulo'">
+                <i class="ti ti-leaf paso-icono-medio-ambiente" *ngIf="nodo.categoria === 'medio_ambiente'" title="Medio Ambiente"></i>
+                {{ nodo.descripcion }}
+                <i
+                  class="ti ti-alert-triangle paso-icono-aviso"
+                  *ngIf="tieneSimbolosDesbalanceados(nodo.descripcion)"
+                  title="Revisa: paréntesis o comillas sin cerrar"
+                ></i>
+              </p>
+            </ng-template>
+          </div>
+
+          <div class="paso-acciones-col" *ngIf="modoEdicion">
+            <div class="paso-acciones">
+              <button
+                class="btn-icon"
+                [class.btn-icon--activo]="nodo.categoria === 'medio_ambiente'"
+                title="Marcar como Medio Ambiente"
+                (click)="toggleMedioAmbiente(nodo)"
+              >
+                <i class="ti ti-leaf"></i>
+              </button>
+              <button class="btn-icon" title="Insertar antes de este" (click)="abrirInsertarEn(parentId, index)"><i class="ti ti-plus"></i></button>
+              <button class="btn-icon" title="Mover arriba" [disabled]="index === 0" (click)="moverArriba(hermanos, parentId, index)"><i class="ti ti-arrow-up"></i></button>
+              <button class="btn-icon" title="Mover abajo" [disabled]="index === hermanos.length - 1" (click)="moverAbajo(hermanos, parentId, index)"><i class="ti ti-arrow-down"></i></button>
+              <button class="btn-icon" title="Sangrar (meter dentro del subtítulo anterior)" [disabled]="!puedeSangrar(hermanos, index)" (click)="sangrarPaso(nodo, hermanos, index)"><i class="ti ti-indent-increase"></i></button>
+              <button class="btn-icon" title="Quitar sangría (subir un nivel)" [disabled]="parentId === null" (click)="quitarSangriaPaso(nodo, parentParentId)"><i class="ti ti-indent-decrease"></i></button>
+              <button class="btn-icon btn-icon-danger" title="Eliminar" (click)="eliminarPaso(nodo)"><i class="ti ti-trash"></i></button>
+            </div>
+            <select
+              class="abril-field-input paso-tipo-select"
+              [ngModel]="nodo.tipo"
+              title="Cómo se numera/viñetea este texto"
+              (ngModelChange)="onChangeTipoPaso(nodo, $event, hermanos, index)"
+            >
+              <option *ngFor="let t of tiposPaso" [value]="t.value">{{ t.label }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Hijos (solo los subtítulos agrupan) — recursivo, sin límite de niveles -->
+        <div class="paso-hijos" *ngIf="nodo.tipo === 'subtitulo'">
+          <ng-container *ngFor="let hijo of nodo.hijos; let j = index; trackBy: trackPasoId">
+            <ng-container
+              *ngTemplateOutlet="nodoTpl; context: { $implicit: hijo, hermanos: nodo.hijos, index: j, parentId: nodo.id, parentParentId: parentId }">
+            </ng-container>
+          </ng-container>
+
+          <div class="agregar-hijo" *ngIf="modoEdicion">
+            <select class="abril-field-input agregar-final-tipo" [(ngModel)]="nodo.nuevoHijoTipo">
+              <option *ngFor="let t of tiposPaso" [value]="t.value">{{ t.label }}</option>
+            </select>
+            <textarea class="abril-field-input" rows="2" [(ngModel)]="nodo.nuevoHijoTexto" placeholder="Agregar dentro de este subtítulo..."></textarea>
+            <button class="btn-secondary" (click)="agregarHijo(nodo)" [disabled]="!nodo.nuevoHijoTexto.trim()">Agregar aquí dentro</button>
+          </div>
+        </div>
+      </ng-template>
+    </section>
+
+    <!-- ── SECCIÓN NARRATIVA (bloque de texto único) ────────────────────── -->
+    <section class="card" *ngIf="tabActiva.kind === 'texto'">
+      <h2 class="card-titulo">{{ tabActiva.label }}</h2>
+      <p class="card-hint">{{ tabActiva.ayuda }}</p>
+      <textarea
+        class="abril-field-input"
+        rows="16"
+        placeholder="Escribe el contenido de esta sección..."
+        [ngModel]="textoSecciones[seccionActiva]"
+        (ngModelChange)="textoSecciones[seccionActiva] = $event"
+        [readonly]="!modoEdicion"
+        spellcheck="true"
+        lang="es"
+      ></textarea>
+      <p class="paso-aviso-sintaxis" *ngIf="tieneSimbolosDesbalanceados(textoSecciones[seccionActiva])">
+        <i class="ti ti-alert-triangle"></i> Revisa: hay paréntesis o comillas sin cerrar en el texto
+      </p>
+      <div class="agregar-final" *ngIf="modoEdicion && guardandoTextoSeccion[seccionActiva]">
+        <span class="card-hint">Guardando…</span>
+      </div>
+    </section>
+
+    <!-- ── CATÁLOGO (Marco Legal / EPP / Recursos) ─────────────────────── -->
+    <section class="card" *ngIf="tabActiva.kind === 'catalogo'">
+      <h2 class="card-titulo">{{ tabActiva.label }}</h2>
+      <p class="card-hint">{{ tabActiva.ayuda }}</p>
+
+      <div class="catalogo-bloque" *ngFor="let sub of catalogoTipos[tabActiva.key]">
+        <h3 class="catalogo-bloque-titulo" *ngIf="sub.label">{{ sub.label }}</h3>
+
+        <ul class="catalogo-lista">
+          <li class="catalogo-item" *ngFor="let item of itemsPorTipo(tabActiva.key, sub.value)">
+            <i class="ti ti-check catalogo-item-check"></i>
+            <span class="catalogo-item-texto">{{ item.descripcion }}</span>
+            <span class="catalogo-item-badge" *ngIf="item.esPersonalizado">Propio de este PETS</span>
+            <button *ngIf="modoEdicion" class="btn-icon" title="Quitar de este PETS" (click)="quitarSeleccion(item)"><i class="ti ti-x"></i></button>
+            <button
+              class="btn-icon btn-icon-danger"
+              *ngIf="modoEdicion && !item.esPersonalizado"
+              title="Eliminar del catálogo global (afecta a todos los PETS)"
+              (click)="eliminarDeCatalogoGlobal(item)"
+            >
+              <i class="ti ti-trash"></i>
+            </button>
+          </li>
+          <li class="catalogo-vacio" *ngIf="itemsPorTipo(tabActiva.key, sub.value).length === 0">
+            Todavía no hay ítems seleccionados.
+          </li>
+        </ul>
+
+        <div class="catalogo-agregar" *ngIf="modoEdicion">
+          <app-search-select
+            class="catalogo-select-wrap"
+            [options]="opcionesDisponibles(tabActiva.key, sub.value)"
+            valueField="id"
+            displayField="descripcion"
+            [showLabel]="false"
+            placeholder="Elegir del catálogo..."
+            [value]="seleccionEnCurso[claveCatalogo(tabActiva.key, sub.value)]"
+            (valueChange)="seleccionEnCurso[claveCatalogo(tabActiva.key, sub.value)] = $event"
+          ></app-search-select>
+          <button
+            class="btn-secondary"
+            [disabled]="!seleccionEnCurso[claveCatalogo(tabActiva.key, sub.value)] || guardandoSeleccion[claveCatalogo(tabActiva.key, sub.value)]"
+            (click)="agregarDesdeCatalogo(tabActiva.key, sub.value)"
+          >
+            Agregar
+          </button>
+        </div>
+
+        <div class="catalogo-personalizado" *ngIf="modoEdicion">
+          <input
+            type="text"
+            class="abril-field-input"
+            placeholder="¿No está en la lista? Escríbelo aquí..."
+            [ngModel]="personalizadoTexto[claveCatalogo(tabActiva.key, sub.value)]"
+            (ngModelChange)="personalizadoTexto[claveCatalogo(tabActiva.key, sub.value)] = $event"
+          />
+          <label class="check-label">
+            <input
+              type="checkbox"
+              [ngModel]="personalizadoAlCatalogo[claveCatalogo(tabActiva.key, sub.value)]"
+              (ngModelChange)="personalizadoAlCatalogo[claveCatalogo(tabActiva.key, sub.value)] = $event"
+            />
+            Agregar también al catálogo global (disponible para otros PETS)
+          </label>
+          <button
+            class="btn-secondary"
+            [disabled]="!personalizadoTexto[claveCatalogo(tabActiva.key, sub.value)]?.trim() || guardandoSeleccion[claveCatalogo(tabActiva.key, sub.value)]"
+            (click)="agregarPersonalizado(tabActiva.key, sub.value)"
+          >
+            Agregar
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── ANEXOS ───────────────────────────────────────────────────────── -->
+    <section class="card" *ngIf="tabActiva.kind === 'anexos'">
+      <h2 class="card-titulo">Anexos</h2>
+      <p class="card-hint">{{ tabActiva.ayuda }}</p>
+
+      <ul class="catalogo-lista">
+        <li class="catalogo-item" *ngFor="let anexo of detalle.anexos">
+          <i class="ti ti-paperclip catalogo-item-check"></i>
+          <a class="catalogo-item-texto" [href]="anexoUrl(anexo)" target="_blank" rel="noopener">{{ anexo.nombre }}</a>
+          <button *ngIf="modoEdicion" class="btn-icon btn-icon-danger" title="Eliminar" (click)="eliminarAnexo(anexo)"><i class="ti ti-trash"></i></button>
+        </li>
+        <li class="catalogo-vacio" *ngIf="detalle.anexos.length === 0">Todavía no hay anexos.</li>
+      </ul>
+
+      <div class="catalogo-agregar" *ngIf="modoEdicion">
+        <input type="text" class="abril-field-input" placeholder="Nombre del anexo" [(ngModel)]="nuevoAnexoNombre" />
+        <label class="btn-secondary btn-importar">
+          {{ subiendoAnexo ? 'Subiendo…' : 'Subir archivo' }}
+          <input type="file" hidden (change)="onAnexoSeleccionado($event)" [disabled]="subiendoAnexo" />
+        </label>
+      </div>
+    </section>
+
+    <!-- ── FIRMAS ───────────────────────────────────────────────────────── -->
+    <section class="card" *ngIf="tabActiva.kind === 'firmas'">
+      <h2 class="card-titulo">Firmas</h2>
+      <p class="card-hint">{{ tabActiva.ayuda }}</p>
+      <div class="firmas-grid">
+        <div class="firma-col" *ngFor="let r of rolesFirma">
+          <h3 class="catalogo-bloque-titulo">{{ r.label }}</h3>
+          <div class="abril-field">
+            <label class="abril-field-label">Nombre</label>
+            <app-worker-search-input
+              *ngIf="modoEdicion; else firmanteSoloLectura"
+              [soloAbril]="true"
+              [selected]="firmanteActual(r.value)"
+              placeholder="Buscar por nombre o DNI (personal Abril)..."
+              (selectedChange)="onFirmanteSeleccionado(r.value, $event)">
+            </app-worker-search-input>
+            <ng-template #firmanteSoloLectura>
+              <input type="text" class="abril-field-input" [value]="firmanteActual(r.value)?.apellidoNombre ?? ''" disabled />
+            </ng-template>
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Cargo</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="detalle.firmas[r.value].cargo" [disabled]="!modoEdicion" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Fecha</label>
+            <input type="date" class="abril-field-input" [(ngModel)]="detalle.firmas[r.value].fecha" [disabled]="!modoEdicion" />
+          </div>
+          <div class="firma-imagen">
+            <img *ngIf="firmaUrl(detalle.firmas[r.value])" [src]="firmaUrl(detalle.firmas[r.value])" alt="Firma" />
+            <label class="btn-imagen" *ngIf="modoEdicion">
+              {{ subiendoFirmaRol === r.value ? 'Subiendo…' : (firmaUrl(detalle.firmas[r.value]) ? 'Cambiar firma' : 'Subir firma') }}
+              <input type="file" accept="image/*" hidden (change)="onFirmaImagenSeleccionada($event, r.value)" [disabled]="subiendoFirmaRol === r.value" />
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="agregar-final" *ngIf="modoEdicion && guardandoFirmas">
+        <span class="card-hint">Guardando…</span>
+      </div>
+    </section>
+    </div>
+
+    <!-- ── IMPORTAR DESDE WORD ── a pantalla completa: esta tarea (revisar/editar
+         decenas o cientos de filas detectadas) necesita todo el espacio posible, no
+         el ancho/alto acotado de una tarjeta más dentro de la página. -->
+    <div class="import-modal-overlay" *ngIf="tabActiva.kind === 'importar'">
+    <section class="card card-importar">
+      <div class="import-procesando-overlay" *ngIf="confirmandoImportacion">
+        <div class="import-procesando-spinner"></div>
+        <p class="import-procesando-texto">Importando documento… no cierres ni cambies de pestaña</p>
+      </div>
       <div class="card-titulo-row">
         <div>
-          <h2 class="card-titulo">{{ tabActiva.label }}</h2>
-          <p class="card-hint" *ngIf="seccionActiva === 'procedimiento'">
-            Estos pasos son los que OPT jala automáticamente al seleccionar este PETS. El número
-            se calcula por posición — insertar uno en medio corre el resto sin que tengas que
-            renumerar nada.
+          <h2 class="card-titulo">Importar desde Word</h2>
+          <p class="card-hint">
+            Sube un PETS ya existente y el sistema detecta automáticamente Introducción, Alcance,
+            Objetivo, Definiciones, Responsabilidades, Procedimiento y Restricciones. Nada se guarda
+            hasta que revises y confirmes cada sección.
           </p>
         </div>
-        <div class="import-actions" *ngIf="seccionActiva === 'procedimiento' && !previewPasos && !previewManual">
-          <a class="btn-plantilla" [href]="plantillaUrl" download title="Descargar un Word con la estructura y estilos que la plataforma reconoce">
-            <i class="ti ti-file-download"></i> Descargar plantilla
-          </a>
-          <label class="btn-secondary btn-importar">
-            {{ importandoDocx ? 'Leyendo documento…' : 'Importar desde Word' }}
-            <input type="file" accept=".docx" hidden (change)="onArchivoDocxSeleccionado($event)" [disabled]="importandoDocx" />
-          </label>
+        <div class="import-titulo-acciones">
+          <div class="import-actions" *ngIf="!previewSeccionesArbol && !previewSeccionesTexto && !previewManual">
+            <a class="btn-plantilla" [href]="plantillaUrl" download title="Descargar un Word con la estructura y estilos que la plataforma reconoce">
+              <i class="ti ti-file-download"></i> Descargar plantilla
+            </a>
+            <label class="btn-secondary btn-importar">
+              {{ importandoDocx ? 'Leyendo documento…' : 'Importar desde Word' }}
+              <input type="file" accept=".docx" hidden (change)="onArchivoDocxSeleccionado($event)" [disabled]="importandoDocx" />
+            </label>
+          </div>
+          <button type="button" class="btn-icon import-modal-cerrar" title="Cerrar" [disabled]="confirmandoImportacion" (click)="seleccionarTab('procedimiento')">
+            <i class="ti ti-x"></i>
+          </button>
         </div>
       </div>
 
-      <!-- ── VISTA PREVIA DE IMPORTACIÓN (nada se guarda hasta confirmar) ── -->
-      <div class="import-preview" *ngIf="seccionActiva === 'procedimiento' && previewPasos">
+      <!-- ── VISTA PREVIA DE IMPORTACIÓN (nada se guarda hasta confirmar) ──
+           Detecta TODAS las secciones conocidas del documento, no solo Procedimiento
+           — cada una se revisa/edita aquí y al confirmar cae en su propia pestaña. -->
+      <div class="import-preview" *ngIf="previewSeccionesArbol || previewSeccionesTexto">
         <p class="import-preview-hint">
           <i class="ti ti-info-circle"></i>
-          Detecté {{ previewPasos.length }} paso(s) en "PROCEDIMIENTO DE TRABAJO", con subtítulos
-          detectados automáticamente (sangría = nivel). Revisa el tipo, edita el texto o quita
-          los que no correspondan antes de confirmar — nada se guarda todavía.
+          Detecté {{ objectKeys(previewSeccionesArbol).length + objectKeys(previewSeccionesTexto).length }} sección(es)
+          conocida(s){{ previewNoReconocidas.length > 0 ? ' y ' + previewNoReconocidas.length + ' encabezado(s) sin reconocer' : '' }}
+          en el documento. Revisa cada una — nada se guarda todavía.
         </p>
 
-        <div class="preview-row" *ngFor="let p of previewPasos; let i = index" [style.marginLeft.px]="p.profundidad * 24">
-          <select class="abril-field-input preview-tipo" [(ngModel)]="p.tipo">
-            <option *ngFor="let t of tiposPaso" [value]="t.value">{{ t.label }}</option>
-          </select>
-          <img *ngIf="p.imagenBase64" [src]="p.imagenBase64" class="preview-img" alt="Imagen detectada" />
-          <textarea class="abril-field-input preview-textarea" rows="2" [(ngModel)]="p.texto"></textarea>
-          <button class="btn-icon btn-icon-danger" title="Quitar" (click)="quitarPreviewPaso(i)"><i class="ti ti-trash"></i></button>
+        <div class="import-seccion-bloque" *ngFor="let seccion of objectKeys(previewSeccionesArbol)">
+          <h3 class="catalogo-bloque-titulo">{{ labelDeSeccion(seccion) }}</h3>
+          <div class="preview-row" *ngFor="let p of previewSeccionesArbol![seccion]; let i = index" [style.marginLeft.px]="p.profundidad * 24">
+            <select class="abril-field-input preview-tipo" [(ngModel)]="p.tipo">
+              <option *ngFor="let t of tiposPaso" [value]="t.value">{{ t.label }}</option>
+            </select>
+            <img *ngIf="p.imagenBase64" [src]="p.imagenBase64" class="preview-img" alt="Imagen detectada" />
+            <textarea class="abril-field-input preview-textarea" rows="2" [(ngModel)]="p.texto"></textarea>
+            <button
+              class="btn-icon"
+              [class.btn-icon--activo]="p.categoria === 'medio_ambiente'"
+              title="Marcar como Medio Ambiente"
+              (click)="p.categoria = p.categoria === 'medio_ambiente' ? null : 'medio_ambiente'"
+            >
+              <i class="ti ti-leaf"></i>
+            </button>
+            <button class="btn-icon btn-icon-danger" title="Quitar" (click)="quitarPreviewPaso(seccion, i)"><i class="ti ti-trash"></i></button>
+          </div>
         </div>
+
+        <div class="import-seccion-bloque" *ngFor="let seccion of objectKeys(previewSeccionesTexto)">
+          <h3 class="catalogo-bloque-titulo">{{ labelDeSeccion(seccion) }}</h3>
+          <textarea
+            class="abril-field-input"
+            rows="6"
+            [ngModel]="previewSeccionesTexto![seccion]"
+            (ngModelChange)="previewSeccionesTexto![seccion] = $event"
+          ></textarea>
+        </div>
+
+        <!-- ── Encabezados que NO calzaron con ningún marcador conocido — antes se
+             colaban en silencio dentro de la sección anterior. Ahora el usuario
+             elige a qué pestaña enviarlos (o los descarta) antes de confirmar. ── -->
+        <div class="import-seccion-bloque import-no-reconocida" *ngFor="let bloque of previewNoReconocidas">
+          <h3 class="catalogo-bloque-titulo">
+            <i class="ti ti-help-circle"></i> "{{ bloque.titulo }}" — encabezado no reconocido
+          </h3>
+          <p class="card-hint">
+            No calzó con ninguna pestaña conocida — elige a dónde enviar este contenido (o descártalo).
+          </p>
+          <div class="no-reconocida-bulk" *ngIf="subtiposDestino(bloque.destino).length > 0">
+            <span class="card-hint">Cambiar todas las filas de este bloque a:</span>
+            <button
+              type="button"
+              class="btn-secondary"
+              *ngFor="let st of subtiposDestino(bloque.destino)"
+              (click)="marcarTodosTipo(bloque, st.value)">
+              {{ st.label }}
+            </button>
+          </div>
+          <!-- En grid, no en columna única: un bloque de catálogo (materiales, EPP...)
+               puede traer 100+ filas cortas — en una sola columna eso es una lista
+               kilométrica, mientras que la mayoría del ancho de pantalla (sobre todo ahora
+               que Importar es pantalla completa) queda vacío. -->
+          <div class="no-reconocida-filas" [class.no-reconocida-filas--con-tipo]="subtiposDestino(bloque.destino).length > 0">
+            <div class="preview-row" *ngFor="let p of bloque.parrafos" [style.marginLeft.px]="p.profundidad * 24">
+              <span class="manual-texto">{{ p.texto }}</span>
+              <!-- Solo si el destino es catálogo: cada fila puede llevar un sub-tipo distinto
+                   (ej. una tabla de Recursos trae Equipos/Herramientas/Materiales mezclados en
+                   este mismo bloque) — el default es el del bloque, pero se puede pisar acá. -->
+              <select
+                class="preview-row-tipo"
+                *ngIf="subtiposDestino(bloque.destino).length > 0"
+                [(ngModel)]="p.tipoOverride"
+              >
+                <option *ngFor="let st of subtiposDestino(bloque.destino)" [value]="st.value">{{ st.label }}</option>
+              </select>
+              <button class="btn-icon btn-icon-danger" title="Quitar esta fila (no es contenido real, ej. encabezado de columna)" (click)="quitarFilaNoReconocida(bloque, p)">
+                <i class="ti ti-x"></i>
+              </button>
+            </div>
+          </div>
+          <div class="no-reconocida-destino">
+            <select class="abril-field-input" [(ngModel)]="bloque.destino" (ngModelChange)="onDestinoNoReconocidaChange(bloque)">
+              <option value="">Enviar a...</option>
+              <option *ngFor="let t of destinosNoReconocida" [value]="t.key">{{ t.label }}</option>
+            </select>
+            <button class="btn-secondary" [disabled]="!bloque.destino" (click)="aplicarNoReconocida(bloque)">Enviar</button>
+            <button class="btn-secondary" (click)="descartarNoReconocida(bloque)">Descartar</button>
+          </div>
+        </div>
+
+        <div class="import-seccion-bloque" *ngIf="previewItemsCatalogo.length > 0">
+          <h3 class="catalogo-bloque-titulo">Ítems de catálogo triados ({{ previewItemsCatalogo.length }})</h3>
+          <ul class="catalogo-lista">
+            <li class="catalogo-item" *ngFor="let item of previewItemsCatalogo; let i = index">
+              <i class="ti ti-check catalogo-item-check"></i>
+              <span class="catalogo-item-texto">{{ labelDeSeccion(item.grupo) }}{{ item.tipo ? ' · ' + item.tipo : '' }}: {{ item.descripcion }}</span>
+              <button class="btn-icon btn-icon-danger" title="Quitar" (click)="quitarItemCatalogoPreview(i)"><i class="ti ti-trash"></i></button>
+            </li>
+          </ul>
+        </div>
+
+        <p class="card-hint" *ngIf="totalExistenteEnSeccionesDetectadas() > 0 || previewItemsCatalogo.length > 0">
+          <i class="ti ti-info-circle"></i>
+          Ya hay contenido guardado en algunas de estas secciones — al confirmar te preguntamos si quieres reemplazarlo o solo agregar.
+        </p>
 
         <div class="preview-actions">
           <button class="btn-secondary" (click)="cancelarImportacion()" [disabled]="confirmandoImportacion">Cancelar</button>
-          <button class="btn-primary" (click)="confirmarImportacion()" [disabled]="previewPasos.length === 0 || confirmandoImportacion">
-            {{ confirmandoImportacion ? 'Guardando…' : 'Confirmar importación (' + previewPasos.length + ' pasos)' }}
+          <button class="btn-primary" (click)="confirmarImportacion()" [disabled]="confirmandoImportacion">
+            {{ confirmandoImportacion ? 'Guardando…' : 'Confirmar importación' }}
           </button>
         </div>
       </div>
 
       <!-- ── SELECCIÓN MANUAL (respaldo cuando no se detecta el encabezado) ── -->
-      <div class="import-preview" *ngIf="seccionActiva === 'procedimiento' && previewManual">
+      <div class="import-preview" *ngIf="previewManual">
         <p class="import-preview-hint">
           <i class="ti ti-info-circle"></i>
           No detecté el título automáticamente. Marca los párrafos que sí son pasos —
@@ -139,6 +735,11 @@
           </div>
         </div>
 
+        <p class="card-hint" *ngIf="detalle.pasos.length > 0">
+          <i class="ti ti-info-circle"></i>
+          Ya hay {{ detalle.pasos.length }} paso(s) guardados — al confirmar te preguntamos si quieres reemplazarlos o solo agregar.
+        </p>
+
         <div class="preview-actions">
           <span class="manual-contador">{{ seleccionadosManual.length }} párrafo(s) seleccionado(s)</span>
           <button class="btn-secondary" (click)="cancelarImportacionManual()" [disabled]="confirmandoImportacion">Cancelar</button>
@@ -147,202 +748,14 @@
           </button>
         </div>
       </div>
-
-      <ng-container *ngIf="!previewPasos && !previewManual">
-      <div class="pasos-list" *ngIf="arbol.length > 0; else sinPasos">
-        <ng-container *ngFor="let nodo of arbol; let i = index">
-          <ng-container
-            *ngTemplateOutlet="nodoTpl; context: { $implicit: nodo, hermanos: arbol, index: i, parentId: null }">
-          </ng-container>
-        </ng-container>
-      </div>
-
-      <ng-template #sinPasos>
-        <p class="card-hint">Todavía no hay pasos. Agrega el primero abajo.</p>
-      </ng-template>
-
-      <!-- Agregar al final (nivel superior) -->
-      <div class="agregar-final">
-        <select class="abril-field-input agregar-final-tipo" [(ngModel)]="nuevoPasoTipo">
-          <option *ngFor="let t of tiposPaso" [value]="t.value">{{ t.label }}</option>
-        </select>
-        <textarea class="abril-field-input" rows="2" [(ngModel)]="nuevoPasoTexto" placeholder="Descripción del nuevo paso..."></textarea>
-        <button class="btn-primary" (click)="agregarPasoFinal()" [disabled]="!nuevoPasoTexto.trim() || agregando">
-          {{ agregando ? 'Agregando…' : 'Agregar al final' }}
-        </button>
-      </div>
-      </ng-container>
-
-      <!-- ── PLANTILLA RECURSIVA: un nodo del árbol (subtítulo/paso/letra/guión) ── -->
-      <ng-template #nodoTpl let-nodo let-hermanos="hermanos" let-index="index" let-parentId="parentId">
-
-        <!-- Formulario "insertar aquí", antes de este nodo -->
-        <div class="insertar-form" *ngIf="insertarEnIndice === index && insertarEnPadre === parentId">
-          <select class="abril-field-input" [(ngModel)]="insertarTipo">
-            <option *ngFor="let t of tiposPaso" [value]="t.value">{{ t.label }}</option>
-          </select>
-          <textarea class="abril-field-input" rows="2" [(ngModel)]="insertarTexto" placeholder="Descripción..."></textarea>
-          <div class="insertar-actions">
-            <button class="btn-secondary" (click)="cancelarInsertar()">Cancelar</button>
-            <button class="btn-primary" (click)="confirmarInsertar()" [disabled]="!insertarTexto.trim()">Insertar aquí</button>
-          </div>
-        </div>
-
-        <div class="paso-row" [class.paso-row--subtitulo]="nodo.tipo === 'subtitulo'">
-          <div class="paso-marca" [class.paso-marca--circulo]="nodo.tipo === 'subtitulo' || nodo.tipo === 'letra'" [ngSwitch]="nodo.tipo">
-            <span *ngSwitchCase="'subtitulo'">{{ nodo.numero }}</span>
-            <span *ngSwitchCase="'letra'">{{ nodo.numero }}.</span>
-            <span *ngSwitchCase="'guion'">-</span>
-          </div>
-
-          <div class="paso-imagen">
-            <img *ngIf="imagenUrl(nodo)" [src]="imagenUrl(nodo)" alt="Imagen del paso" />
-            <div *ngIf="!imagenUrl(nodo)" class="paso-imagen-vacia">
-              <i class="ti ti-photo"></i>
-            </div>
-            <label class="btn-imagen">
-              {{ subiendoImagenPasoId === nodo.id ? 'Subiendo…' : (imagenUrl(nodo) ? 'Cambiar' : 'Subir imagen') }}
-              <input type="file" accept="image/*" hidden (change)="onFileSelected($event, nodo)" [disabled]="subiendoImagenPasoId === nodo.id" />
-            </label>
-          </div>
-
-          <div class="paso-contenido">
-            <ng-container *ngIf="editingPasoId === nodo.id; else vistaPaso">
-              <select class="abril-field-input" [(ngModel)]="editingTipo">
-                <option *ngFor="let t of tiposPaso" [value]="t.value">{{ t.label }}</option>
-              </select>
-              <textarea class="abril-field-input" rows="2" [(ngModel)]="editingTexto"></textarea>
-              <div class="paso-edit-actions">
-                <button class="btn-secondary" (click)="cancelarEdicion()">Cancelar</button>
-                <button class="btn-primary" (click)="guardarEdicion(nodo)" [disabled]="!editingTexto.trim()">Guardar</button>
-              </div>
-            </ng-container>
-            <ng-template #vistaPaso>
-              <p class="paso-texto" [class.paso-texto--subtitulo]="nodo.tipo === 'subtitulo'">{{ nodo.descripcion }}</p>
-            </ng-template>
-          </div>
-
-          <div class="paso-acciones" *ngIf="editingPasoId !== nodo.id">
-            <button class="btn-icon" title="Insertar antes de este" (click)="abrirInsertarEn(parentId, index)"><i class="ti ti-plus"></i></button>
-            <button class="btn-icon" title="Mover arriba" [disabled]="index === 0" (click)="moverArriba(hermanos, parentId, index)"><i class="ti ti-arrow-up"></i></button>
-            <button class="btn-icon" title="Mover abajo" [disabled]="index === hermanos.length - 1" (click)="moverAbajo(hermanos, parentId, index)"><i class="ti ti-arrow-down"></i></button>
-            <button class="btn-icon" title="Editar" (click)="iniciarEdicion(nodo)"><i class="ti ti-edit"></i></button>
-            <button class="btn-icon btn-icon-danger" title="Eliminar" (click)="eliminarPaso(nodo)"><i class="ti ti-trash"></i></button>
-          </div>
-        </div>
-
-        <!-- Hijos (solo los subtítulos agrupan) — recursivo, sin límite de niveles -->
-        <div class="paso-hijos" *ngIf="nodo.tipo === 'subtitulo'">
-          <ng-container *ngFor="let hijo of nodo.hijos; let j = index">
-            <ng-container
-              *ngTemplateOutlet="nodoTpl; context: { $implicit: hijo, hermanos: nodo.hijos, index: j, parentId: nodo.id }">
-            </ng-container>
-          </ng-container>
-
-          <div class="agregar-hijo">
-            <select class="abril-field-input agregar-final-tipo" [(ngModel)]="nodo.nuevoHijoTipo">
-              <option *ngFor="let t of tiposPaso" [value]="t.value">{{ t.label }}</option>
-            </select>
-            <textarea class="abril-field-input" rows="2" [(ngModel)]="nodo.nuevoHijoTexto" placeholder="Agregar dentro de este subtítulo..."></textarea>
-            <button class="btn-secondary" (click)="agregarHijo(nodo)" [disabled]="!nodo.nuevoHijoTexto.trim()">Agregar aquí dentro</button>
-          </div>
-        </div>
-      </ng-template>
     </section>
+    </div>
 
-    <!-- ── CATÁLOGO (Marco Legal / EPP / Recursos) ─────────────────────── -->
-    <section class="card" *ngIf="tabActiva.kind === 'catalogo'">
-      <h2 class="card-titulo">{{ tabActiva.label }}</h2>
+  </div>
 
-      <div class="catalogo-bloque" *ngFor="let sub of catalogoTipos[tabActiva.key]">
-        <h3 class="catalogo-bloque-titulo" *ngIf="sub.label">{{ sub.label }}</h3>
-
-        <ul class="catalogo-lista">
-          <li class="catalogo-item" *ngFor="let item of itemsPorTipo(tabActiva.key, sub.value)">
-            <i class="ti ti-check catalogo-item-check"></i>
-            <span class="catalogo-item-texto">{{ item.descripcion }}</span>
-            <span class="catalogo-item-badge" *ngIf="item.esPersonalizado">Propio de este PETS</span>
-            <button class="btn-icon" title="Quitar de este PETS" (click)="quitarSeleccion(item)"><i class="ti ti-x"></i></button>
-            <button
-              class="btn-icon btn-icon-danger"
-              *ngIf="!item.esPersonalizado"
-              title="Eliminar del catálogo global (afecta a todos los PETS)"
-              (click)="eliminarDeCatalogoGlobal(item)"
-            >
-              <i class="ti ti-trash"></i>
-            </button>
-          </li>
-          <li class="catalogo-vacio" *ngIf="itemsPorTipo(tabActiva.key, sub.value).length === 0">
-            Todavía no hay ítems seleccionados.
-          </li>
-        </ul>
-
-        <div class="catalogo-agregar">
-          <select
-            class="abril-field-input catalogo-select"
-            [ngModel]="seleccionEnCurso[claveCatalogo(tabActiva.key, sub.value)]"
-            (ngModelChange)="seleccionEnCurso[claveCatalogo(tabActiva.key, sub.value)] = $event"
-          >
-            <option [ngValue]="null">Elegir del catálogo...</option>
-            <option *ngFor="let op of opcionesDisponibles(tabActiva.key, sub.value)" [ngValue]="op.id">{{ op.descripcion }}</option>
-          </select>
-          <button
-            class="btn-secondary"
-            [disabled]="!seleccionEnCurso[claveCatalogo(tabActiva.key, sub.value)] || guardandoSeleccion[claveCatalogo(tabActiva.key, sub.value)]"
-            (click)="agregarDesdeCatalogo(tabActiva.key, sub.value)"
-          >
-            Agregar
-          </button>
-        </div>
-
-        <div class="catalogo-personalizado">
-          <input
-            type="text"
-            class="abril-field-input"
-            placeholder="¿No está en la lista? Escríbelo aquí..."
-            [ngModel]="personalizadoTexto[claveCatalogo(tabActiva.key, sub.value)]"
-            (ngModelChange)="personalizadoTexto[claveCatalogo(tabActiva.key, sub.value)] = $event"
-          />
-          <label class="check-label">
-            <input
-              type="checkbox"
-              [ngModel]="personalizadoAlCatalogo[claveCatalogo(tabActiva.key, sub.value)]"
-              (ngModelChange)="personalizadoAlCatalogo[claveCatalogo(tabActiva.key, sub.value)] = $event"
-            />
-            Agregar también al catálogo global (disponible para otros PETS)
-          </label>
-          <button
-            class="btn-secondary"
-            [disabled]="!personalizadoTexto[claveCatalogo(tabActiva.key, sub.value)]?.trim() || guardandoSeleccion[claveCatalogo(tabActiva.key, sub.value)]"
-            (click)="agregarPersonalizado(tabActiva.key, sub.value)"
-          >
-            Agregar
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <!-- ── ANEXOS ───────────────────────────────────────────────────────── -->
-    <section class="card" *ngIf="tabActiva.kind === 'anexos'">
-      <h2 class="card-titulo">Anexos</h2>
-
-      <ul class="catalogo-lista">
-        <li class="catalogo-item" *ngFor="let anexo of detalle.anexos">
-          <i class="ti ti-paperclip catalogo-item-check"></i>
-          <a class="catalogo-item-texto" [href]="anexoUrl(anexo)" target="_blank" rel="noopener">{{ anexo.nombre }}</a>
-          <button class="btn-icon btn-icon-danger" title="Eliminar" (click)="eliminarAnexo(anexo)"><i class="ti ti-trash"></i></button>
-        </li>
-        <li class="catalogo-vacio" *ngIf="detalle.anexos.length === 0">Todavía no hay anexos.</li>
-      </ul>
-
-      <div class="catalogo-agregar">
-        <input type="text" class="abril-field-input" placeholder="Nombre del anexo" [(ngModel)]="nuevoAnexoNombre" />
-        <label class="btn-secondary btn-importar">
-          {{ subiendoAnexo ? 'Subiendo…' : 'Subir archivo' }}
-          <input type="file" hidden (change)="onAnexoSeleccionado($event)" [disabled]="subiendoAnexo" />
-        </label>
-      </div>
-    </section>
-
+  <!-- Ver imagen en grande: clic en cualquier miniatura del árbol la abre acá, en vez de
+       mostrarla siempre grande en la fila (eso era lo que ocupaba tanto espacio vertical). -->
+  <div class="imagen-ampliada-overlay" *ngIf="imagenAmpliada" (click)="cerrarImagenAmpliada()">
+    <img [src]="imagenAmpliada" alt="Imagen ampliada" />
   </div>
 </div>

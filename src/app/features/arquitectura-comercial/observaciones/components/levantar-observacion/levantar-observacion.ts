@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { AbrilModalPanel } from '../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { PhotoGridPicker } from '../../../../../shared/components/photo-grid-picker/photo-grid-picker';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { DatePicker } from '../../../../../shared/components/date-picker/date-picker';
 import { ObservacionesService } from '../../../../../core/services/arquitectura-comercial/observaciones.service';
 import { ArquitecturaComercialService } from '../../../../../core/services/arquitectura-comercial.service';
 import { LoaderService } from '../../../../../core/services/loader.service';
@@ -17,7 +18,7 @@ import { SupervisorAcDTO } from '../../../../../core/dtos/arquitectura-comercial
 @Component({
   standalone: true,
   selector: 'app-levantar-observacion',
-  imports: [AbrilModalPanel, PhotoGridPicker, CommonModule, FormsModule, SearchSelect],
+  imports: [AbrilModalPanel, PhotoGridPicker, CommonModule, FormsModule, SearchSelect, DatePicker],
   templateUrl: './levantar-observacion.html',
   styleUrl: './levantar-observacion.css',
 })
@@ -27,6 +28,7 @@ export class LevantarObservacion implements OnInit {
   @Output() saved = new EventEmitter<void>();
 
   comentario = '';
+  fechaLevantamiento: string | null = this.toDateInput(new Date());
   foto: File | null = null;
   fotoPreview: string[] = [];
   submitted = false;
@@ -67,6 +69,12 @@ export class LevantarObservacion implements OnInit {
     this.fotoPreview = [];
   }
 
+  private toDateInput(d: Date): string {
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${mm}-${dd}`;
+  }
+
   save(): void {
     this.submitted = true;
     if (!this.levantaPorWorkerId) return;
@@ -74,7 +82,13 @@ export class LevantarObservacion implements OnInit {
     this.guardando = true;
     this.loaderService.show();
     this.service
-      .levantarObservacion(this.observacion.id, this.comentario.trim() || null, this.foto, this.levantaPorWorkerId)
+      .levantarObservacion(
+        this.observacion.id,
+        this.comentario.trim() || null,
+        this.foto,
+        this.levantaPorWorkerId,
+        this.fechaLevantamiento || null,
+      )
       .subscribe({
         next: () => {
           this.loaderService.hide();

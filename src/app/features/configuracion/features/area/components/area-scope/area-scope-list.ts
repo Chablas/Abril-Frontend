@@ -1,8 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
+import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { Paginator } from '../../../../../../shared/components/paginator/paginator';
+import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
+import { ClientPager } from '../../../../../../shared/utils/client-pager';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AreaScopeService } from '../../../../shared/services/area-scope.service';
@@ -26,8 +31,19 @@ interface BranchRow {
 @Component({
   selector: 'app-area-scope-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, AreaScopeBranch, AreaScopeWorkers, AreaScopeEditParent],
+  imports: [
+    CommonModule,
+    SearchSelect,
+    SearchInput,
+    FilterModal,
+    Paginator,
+    AbrilBulkActionDirective,
+    AreaScopeBranch,
+    AreaScopeWorkers,
+    AreaScopeEditParent,
+  ],
   templateUrl: './area-scope-list.html',
+  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 10px; }`],
 })
 export class AreaScopeList implements OnInit {
   rows: BranchRow[] = [];
@@ -35,6 +51,20 @@ export class AreaScopeList implements OnInit {
   showBranchModal = false;
   workersRow: BranchRow | null = null;
   editParentRow: BranchRow | null = null;
+
+  // Filtros — viven en el modal de filtros estándar, que abre el contenedor. La lista es
+  // completa (el árbol llega en una sola petición), así que se filtra y pagina en el cliente.
+  searchText = '';
+  /** true = solo ramas con trabajadores, false = solo las que no tienen ninguno. */
+  usoFilter: boolean | null = null;
+  readonly usoFilterOptions = [
+    { value: null, label: 'Todos' },
+    { value: true, label: 'Con trabajadores' },
+    { value: false, label: 'Sin trabajadores' },
+  ];
+  filtrosAbiertos = false;
+
+  private readonly pager = new ClientPager<BranchRow>();
 
   constructor(
     private service: AreaScopeService,
@@ -78,6 +108,56 @@ export class AreaScopeList implements OnInit {
     for (const root of tree) walk(root, []);
     return result;
   }
+
+  // ── Filtros ───────────────────────────────────────────────────────────
+
+  /** Cantidad de filtros aplicados: la pinta el badge del botón "Filtros" del contenedor. */
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.searchText.trim()) n++;
+    if (this.usoFilter !== null) n++;
+    return n;
+  }
+
+  limpiarFiltros(): void {
+    this.searchText = '';
+    this.usoFilter = null;
+    this.onFilterChange();
+  }
+
+  onFilterChange(): void {
+    this.pager.reset();
+  }
+
+  /** La búsqueda mira la ruta completa: escribir la gerencia trae todas sus ramas. */
+  get filteredRows(): BranchRow[] {
+    return this.rows.filter((row) => {
+      const matchesTexto =
+        !this.searchText.trim() || SearchInput.matches(this.rutaRama(row), this.searchText);
+      const matchesUso = this.usoFilter === null || row.workersCount > 0 === this.usoFilter;
+      return matchesTexto && matchesUso;
+    });
+  }
+
+  // ── Paginación ────────────────────────────────────────────────────────
+
+  get currentPage(): number {
+    return this.pager.currentPage;
+  }
+
+  get totalPages(): number {
+    return this.pager.totalPages(this.filteredRows);
+  }
+
+  get pagedRows(): BranchRow[] {
+    return this.pager.page(this.filteredRows);
+  }
+
+  changePage(page: number): void {
+    this.pager.goTo(page);
+  }
+
+  // ── Acciones ──────────────────────────────────────────────────────────
 
   openCreateBranch(): void {
     this.showBranchModal = true;

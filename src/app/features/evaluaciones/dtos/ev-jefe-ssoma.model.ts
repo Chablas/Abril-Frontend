@@ -56,3 +56,32 @@ export interface EvJefeSsomaResultadosDto {
   comentarios: string[];
   tendencia: EvJefeSsomaTendenciaDto[];
 }
+
+// ─── PLAN DE ACCIÓN (redactado por el Jefe SSOMA sobre sus propios resultados) ──
+export interface EvJefeSsomaPlanAccionDto {
+  id: number;
+  periodoId: number;
+  plantillaId: number | null;
+  criterio: string;
+  accion: string;
+  meta: string;
+  fechaLimite: string | null;
+  estado: string;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
+export interface EvJefeSsomaPlanAccionCreateDto {
+  plantillaId: number | null;
+  criterio: string;
+  accion: string;
+  meta: string;
+  fechaLimite: string | null;
+}
+
+export interface EvJefeSsomaPlanAccionUpdateDto {
+  accion: string;
+  meta: string;
+  fechaLimite: string | null;
+  estado: string;
+}

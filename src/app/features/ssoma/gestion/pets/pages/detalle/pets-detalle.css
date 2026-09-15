@@ -16,8 +16,8 @@
 .pet-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px;
+  gap: 10px;
+  padding: 10px 16px;
   border-bottom: 0.5px solid var(--color-abril-border);
 }
 
@@ -62,14 +62,14 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 16px;
-  gap: 16px;
+  padding: 12px 16px;
+  gap: 10px;
 }
 
 .card {
   border: 0.5px solid var(--color-abril-border);
   border-radius: var(--radius-standard);
-  padding: 16px;
+  padding: 12px;
   background: #fff;
 }
 
@@ -77,7 +77,7 @@
   font-size: 14px;
   font-weight: 700;
   color: #1a1a18;
-  margin: 0 0 4px;
+  margin: 0 0 6px;
 }
 
 .card-hint {
@@ -89,14 +89,52 @@
 .cabecera-fields {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 8px 10px;
+  margin-bottom: 8px;
 }
 
 .cabecera-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.cabecera-actions-botones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.firmas-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.firma-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 0.5px solid var(--color-abril-border);
+  border-radius: 8px;
+}
+
+.firma-imagen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.firma-imagen img {
+  width: 100%;
+  max-height: 90px;
+  object-fit: contain;
+  border: 0.5px solid var(--color-abril-border);
+  border-radius: 6px;
+  background: #fff;
 }
 
 .check-label {
@@ -177,9 +215,44 @@
 
 .paso-row {
   display: flex;
-  gap: 12px;
-  padding: 12px 0;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
   border-bottom: 0.5px solid var(--color-abril-border);
+}
+
+.paso-check {
+  flex-shrink: 0;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+  accent-color: var(--color-abril-logo-blue, #005d9d);
+}
+
+.bulk-mover-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  background: #eef6fc;
+  border: 1px solid var(--color-abril-logo-blue, #005d9d);
+  border-radius: var(--radius-standard);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.bulk-mover-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-abril-logo-blue, #005d9d);
+  white-space: nowrap;
+}
+
+.bulk-mover-bar select {
+  flex: 1;
+  min-width: 160px;
 }
 
 /* Usado en la vista previa de importación (lista siempre plana, no es árbol) */
@@ -199,12 +272,51 @@
 
 .paso-row--subtitulo {
   border-bottom: none;
-  padding-top: 16px;
+  padding-top: 12px;
+  padding-bottom: 6px;
+  padding-left: 6px;
+  margin-left: -6px;
+  background: #eef6fc;
+  border-left: 3px solid var(--color-abril-logo-blue, #005d9d);
+  border-radius: 0 6px 6px 0;
+}
+
+/* "medio_ambiente" — única categoría por ahora (ver Categoria en el backend);
+   franja izquierda verde para que se note al pasar la vista rápido por la lista. */
+.paso-row--medio-ambiente {
+  border-left: 3px solid #16a34a;
+  padding-left: 9px;
+  background: #f0fdf4;
+}
+
+.paso-icono-medio-ambiente {
+  color: #16a34a;
+  margin-right: 4px;
+}
+
+.paso-icono-aviso {
+  color: #d97706;
+  margin-left: 6px;
+}
+
+.paso-aviso-sintaxis {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #d97706;
+}
+
+.btn-icon--activo {
+  background: #16a34a;
+  border-color: #16a34a;
+  color: #fff;
 }
 
 .paso-marca {
-  width: 26px;
-  height: 26px;
+  width: 22px;
+  height: 22px;
   font-size: 12px;
   font-weight: 700;
   color: #8a8880;
@@ -220,10 +332,33 @@
   color: #fff;
 }
 
+/* El número de un encabezado (1, 1.1, 1.1.1...) puede ser más largo que un círculo
+   chico — se muestra como una pastilla azul en vez de forzarlo en un círculo, para
+   que "1.1.1" siga siendo legible y no se vea igual que una letra (a, b, c). */
+.paso-marca--subtitulo {
+  width: auto;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  background: var(--color-abril-logo-blue, #005d9d);
+  color: #fff;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .paso-texto--subtitulo {
   font-weight: 700;
   font-size: 14px;
-  color: #1a1a18;
+  color: var(--color-abril-logo-blue, #005d9d);
+}
+
+/* Mismo tratamiento en modo edición: que un encabezado se note en negrita/azul aunque
+   esté dentro de un <textarea>, no solo cuando se está viendo de lejos. */
+.paso-texto-input--subtitulo {
+  font-weight: 700;
+  color: var(--color-abril-logo-blue, #005d9d);
+  border-color: var(--color-abril-logo-blue, #005d9d);
 }
 
 .paso-hijos {
@@ -250,46 +385,99 @@
   max-width: 220px;
 }
 
+/* Fila de miniaturas chicas — crece hacia la derecha (envuelve si no caben), nunca
+   fuerza una columna vacía y alta cuando el paso no tiene fotos todavía. */
 .paso-imagen {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-  width: 90px;
+  align-self: flex-start;
 }
 
-.paso-imagen img {
-  width: 90px;
-  height: 68px;
+.paso-imagen-item {
+  position: relative;
+  width: 34px;
+  height: 34px;
+}
+
+.paso-imagen-item img {
+  width: 34px;
+  height: 34px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 5px;
   border: 0.5px solid var(--color-abril-border);
+  display: block;
+  cursor: zoom-in;
+  /* El comportamiento nativo de "arrastrar la imagen" del navegador se comía el clic:
+     con el mouse físico, cualquier micro-movimiento entre bajar y soltar el botón
+     hacía que el navegador interpretara un drag en vez de un click, y cancelaba el
+     evento click por completo — el atributo draggable="false" del <img> ya lo evita,
+     esto es un refuerzo por si el navegador igual intenta iniciar la selección/drag. */
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
-.paso-imagen-vacia {
-  width: 90px;
-  height: 68px;
-  border-radius: 6px;
+.paso-imagen-borrar {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  font-size: 8px;
+}
+
+.btn-imagen-add {
+  width: 34px;
+  height: 34px;
+  border-radius: 5px;
   border: 1px dashed var(--color-abril-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #c4c1ba;
-  font-size: 20px;
+  color: #8a8880;
+  font-size: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
-.btn-imagen {
-  font-size: 10px;
-  font-weight: 600;
+.btn-imagen-add:hover {
+  border-color: var(--color-abril-logo-blue, #005d9d);
   color: var(--color-abril-logo-blue, #005d9d);
-  cursor: pointer;
-  text-align: center;
+}
+
+/* Ver imagen en grande (clic en una miniatura) */
+.imagen-ampliada-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  cursor: zoom-out;
+}
+
+.imagen-ampliada-overlay img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
 }
 
 .paso-contenido {
   flex: 1;
   min-width: 0;
+}
+
+/* Crece con el contenido en vez de recortar el párrafo con scroll interno — "rows=2"
+   sigue siendo el alto mínimo, pero un texto largo (párrafos importados del Word
+   original suelen ser largos) ya no queda cortado detrás de una barra de scroll. */
+.paso-texto-input {
+  field-sizing: content;
+  resize: vertical;
 }
 
 .paso-texto {
@@ -299,23 +487,44 @@
   white-space: pre-wrap;
 }
 
-.paso-edit-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-.paso-acciones {
+/* Horizontal, no columna — con 6 botones (insertar/mover/editar/eliminar +
+   Medio Ambiente) apilados en columna, esa columna sola forzaba la altura de TODA
+   la fila a ~180px aunque el texto fuera una sola línea. En fila, la altura de la
+   fila la marca el contenido de texto, que es lo que de verdad crece según haga falta. */
+.paso-acciones-col {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
   gap: 4px;
   flex-shrink: 0;
 }
 
+.paso-acciones {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+  width: auto;
+}
+
+/* Compacto y debajo de los íconos (no arriba del texto, donde competía con el
+   contenido real de la fila) — solo se toca de vez en cuando, no necesita el
+   mismo protagonismo que el párrafo. */
+.paso-tipo-select {
+  width: 132px;
+  padding: 4px 6px;
+  font-size: 11px;
+  border: 1px solid var(--color-abril-border-strong, #D1D5DB);
+  border-radius: var(--radius-standard, 7px);
+  background: #fff;
+  cursor: pointer;
+}
+
 .btn-icon {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 6px;
   border: 0.5px solid var(--color-abril-border);
   background: #fff;
@@ -391,6 +600,81 @@
   white-space: nowrap;
 }
 
+/* Importar desde Word ocupa toda la pantalla (por encima del sidebar también —
+   position:fixed es relativo al viewport, no al layout) mientras se revisan/editan
+   las filas detectadas: es una tarea que necesita todo el espacio posible, no el de
+   una tarjeta más entre otras. Se cierra con la ✕ (vuelve a la pestaña Procedimiento)
+   o solo termina de leer el documento sin necesidad de salir. */
+.import-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.card-importar {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: none;
+  padding: 0;
+  position: relative;
+}
+
+/* Bloquea toda interacción mientras se confirma la importación — antes solo se veía
+   el texto del botón cambiar a "Guardando…", fácil de no notar si el catálogo es
+   grande y demora; ahora cubre toda la tarjeta con un spinner visible. */
+.import-procesando-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: rgba(255, 255, 255, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.import-procesando-spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid var(--color-abril-border);
+  border-top-color: var(--color-abril-logo-blue, #005d9d);
+  border-radius: 50%;
+  animation: import-spin 0.8s linear infinite;
+}
+
+@keyframes import-spin {
+  to { transform: rotate(360deg); }
+}
+
+.import-procesando-texto {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-abril-logo-blue, #005d9d);
+}
+
+.import-titulo-acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.import-modal-cerrar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 0.5px solid var(--color-abril-border);
+  background: #fff;
+  flex-shrink: 0;
+}
+
 .import-preview {
   border: 1px dashed var(--color-abril-logo-blue, #005d9d);
   border-radius: var(--radius-standard);
@@ -400,6 +684,9 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .import-preview-hint {
@@ -409,6 +696,30 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.import-seccion-bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: #fff;
+  border: 0.5px solid var(--color-abril-border);
+  border-radius: 8px;
+}
+
+.no-reconocida-filas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 8px;
+}
+
+/* Cuando cada fila lleva además el <select> de sub-tipo (160px), 260px se queda sin
+   espacio real para el texto (una cita legal larga terminaba una palabra por línea).
+   Columnas más anchas — Marco Legal/Normas suelen ser oraciones largas, no nombres
+   cortos de catálogo como Materiales/EPP. */
+.no-reconocida-filas--con-tipo {
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
 }
 
 .preview-row {
@@ -427,6 +738,21 @@
   object-fit: cover;
   border-radius: 6px;
   flex-shrink: 0;
+}
+
+/* Selector de tipo POR FILA en un bloque "no reconocido" (ver .manual-texto) — clase
+   propia y NO .abril-field-input a propósito: esa clase global es width:100%, pensada
+   para un input de formulario solo en su fila; puesta junto a .manual-texto en la
+   misma fila flex, aplastaba el texto casi a 0 (cada palabra en su propia línea). */
+.preview-row-tipo {
+  flex-shrink: 0;
+  width: 160px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-abril-border-strong, #D1D5DB);
+  border-radius: var(--radius-standard, 7px);
+  font-size: 12px;
+  background: #fff;
+  cursor: pointer;
 }
 
 .preview-textarea {
@@ -508,13 +834,64 @@
 
 /* ── PESTAÑAS ────────────────────────────────────────────────────────── */
 
+.tabs-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+/* Mismo mecanismo que .import-modal-overlay: cubre toda la pantalla (por encima del
+   sidebar, position:fixed es relativo al viewport) para editar cómodo cuando hay
+   muchos pasos — Datos generales se oculta aparte (ver *ngIf en el html). */
+.tabs-area.fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #fff;
+  padding: 16px;
+  flex: unset;
+}
+
+.tabs-area.fullscreen-overlay {
+  overflow-y: auto;
+}
+
+.tabs-area.fullscreen-overlay > .card {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Datos generales es chico y fijo — el que debe crecer para llenar la pantalla es la
+   tarjeta de la pestaña activa (Procedimiento, Introducción...), no esta. */
+.tabs-area.fullscreen-overlay > .card-datos-generales {
+  flex: 0 0 auto;
+  overflow-y: visible;
+}
+
 .tabs-bar {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
 }
 
+.pantalla-completa-toggle {
+  margin-left: auto;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
 .tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: #fff;
   color: #1a1a18;
   border: 0.5px solid var(--color-abril-border);
@@ -530,6 +907,58 @@
   background: var(--color-abril-logo-blue, #005d9d);
   color: #fff;
   border-color: var(--color-abril-logo-blue, #005d9d);
+}
+
+.tab-btn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-abril-logo-blue, #005d9d);
+  flex-shrink: 0;
+}
+
+.tab-btn--activo .tab-btn-dot {
+  background: #fff;
+}
+
+/* ── Encabezados no reconocidos del Word (triage manual) ────────────────── */
+
+.import-no-reconocida {
+  border: 0.5px dashed var(--color-abril-border);
+  background: #f8fafc;
+}
+
+.no-reconocida-destino {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.no-reconocida-bulk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  background: #f8fafc;
+  border-radius: 6px;
+}
+
+.no-reconocida-bulk .btn-secondary {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.no-reconocida-destino select {
+  flex: 1;
+  min-width: 160px;
+}
+
+.catalogo-select-wrap {
+  flex: 1;
+  min-width: 200px;
 }
 
 /* ── CATÁLOGO (Marco Legal / EPP / Recursos) y ANEXOS ───────────────────── */
@@ -618,4 +1047,121 @@
 .catalogo-personalizado input[type='text'] {
   flex: 1;
   min-width: 200px;
+}
+
+/* ── Versionado y aprobación ────────────────────────────────────────────── */
+
+.pet-estado-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 10px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.pet-estado-badge--aprobado {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.pet-estado-badge--borrador {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.pet-estado-badge--revision {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.proyecto-pendiente-hint {
+  display: block;
+  font-size: 11px;
+  color: #b45309;
+  margin-top: 4px;
+}
+
+.btn-aprobar {
+  color: #15803d;
+  border-color: #86efac;
+}
+
+.btn-aprobar:hover {
+  background: #f0fdf4;
+}
+
+.historial-versiones {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 0.5px solid var(--color-abril-border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.version-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 0.5px solid var(--color-abril-border);
+  border-radius: var(--radius-standard, 7px);
+}
+
+.version-numero {
+  font-weight: 700;
+  color: var(--color-abril-logo-blue, #005d9d);
+  flex-shrink: 0;
+  width: 40px;
+}
+
+.version-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.version-fecha {
+  font-size: 11px;
+  color: #8a8880;
+}
+
+.version-motivo {
+  font-size: 13px;
+  color: #1a1a18;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-aprobar {
+  background: #fff;
+  border-radius: var(--radius-standard, 7px);
+  padding: 20px;
+  width: 440px;
+  max-width: 90vw;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+}
+
+.modal-aprobar h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.modal-aprobar-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
 }

@@ -1,4 +1,4 @@
-/** Un trabajador elegible como residente del proyecto. */
+/** Un trabajador elegible como residente o coordinador administrativo del proyecto. */
 export interface ResidenteOptionDTO {
   workerId: number;
   nombreCompleto: string;
@@ -8,17 +8,17 @@ export interface ResidenteOptionDTO {
 /**
  * Lo que se manda al guardar los correos SSOMA del proyecto.
  *
- * El residente ya no es un correo escrito a mano sino el id del trabajador: su correo
- * se lee de `workers.email_corporativo` al enviar, así no queda una segunda copia que
- * se desactualiza. En este campo null SÍ limpia el valor (el formulario manda siempre
- * el objeto completo); en los correos de texto, null es "no tocar".
+ * Ni el residente ni el coordinador administrativo son correos escritos a mano: son el id
+ * del trabajador. Su correo se lee de `workers.email_corporativo` al enviar, así no queda
+ * una segunda copia que se desactualiza. En esos dos campos null SÍ limpia el valor (el
+ * formulario manda siempre el objeto completo); en los correos de texto, null es "no tocar".
  */
 export interface ProjectEmailsDTO {
   residenteWorkersId?: number | null;
+  workersCoordAdminId?: number | null;
   emailResponsable?: string | null;
   emailRrhh?: string | null;
   emailCoordSsoma?: string | null;
-  emailCoordAdmin?: string | null;
 }
 
 /** Respuesta al abrir el formulario: valores actuales + trabajadores elegibles. */
@@ -27,5 +27,9 @@ export interface ProjectEmailsResponseDTO extends ProjectEmailsDTO {
   residenteNombre?: string | null;
   /** Correo corporativo del residente actual — el que realmente se va a usar. */
   residenteEmail?: string | null;
+  /** Nombre del coordinador administrativo actual. */
+  coordAdminNombre?: string | null;
+  /** Correo corporativo del coordinador administrativo actual. */
+  coordAdminEmail?: string | null;
   residentes: ResidenteOptionDTO[];
 }

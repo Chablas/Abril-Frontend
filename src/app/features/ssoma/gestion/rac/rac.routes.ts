@@ -22,13 +22,6 @@ export const RAC_ROUTES: Routes = [
     data: { featureKey: 'ssoma.gestion.rac.crear' },
   },
   {
-    path: 'penalidades',
-    loadComponent: () =>
-      import('./pages/penalidades/rac-penalidades').then((m) => m.RacPenalidades),
-    canActivate: [roleGuard],
-    data: { featureKey: 'ssoma.gestion.rac.penalidades' },
-  },
-  {
     path: ':id/cerrar',
     loadComponent: () => import('./pages/cerrar/rac-cerrar').then((m) => m.RacCerrar),
     canActivate: [roleGuard],

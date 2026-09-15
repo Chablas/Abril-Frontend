@@ -130,6 +130,9 @@ export interface FlashReportDetalleDto {
   partidaId?: number;
   partidaNombre?: string;
 
+  petId?: number;
+  petNombre?: string;
+
   workerId?: number;
   trabajadorNombre?: string;
   puestoTrabajo?: string;
@@ -192,6 +195,10 @@ export interface CrearFlashReportRequest {
 
   etapaProyectoId?: number;
   partidaId?: number;
+
+  // PETS asociado al evento (opcional): si viene, al confirmar el registro ese
+  // PETS queda marcado pendiente de revisión (ver flujo de accidentes → PETS).
+  petId?: number;
 
   workerId?: number;
   trabajadorNombre?: string;
@@ -385,3 +392,25 @@ export const TIPOS_CONTACTO = [
 ];
 
 export const NIVELES_CONSECUENCIA_INCIDENTE = [1, 2]; // Solo N1 y N2 para incidentes
+
+// ── Antecedentes de eventos (búsqueda temática) ───────────────────────────────
+
+export interface AntecedenteItemDto {
+  id: number;
+  codigo: string;
+  tipoNombre: string;
+  proyectoNombre: string;
+  fecha: string;
+  lugarExacto: string;
+  descripcion: string;
+  danoProceso?: string;
+  accionesInmediatas?: string;
+  mecanismo?: string;
+  agenteCausante?: string;
+}
+
+export interface ExportarAntecedentesRequest {
+  titulo: string;
+  palabraClave: string;
+  ids: number[];
+}

@@ -5,7 +5,6 @@ import { environment } from '../../../../../../environments/environment';
 import { buildAuthHeaders } from '../../../salud-ocupacional/services/http-base';
 import {
   RacCategoriaDto,
-  RacInfraccionDto,
   RacListQuery,
   RacPagedResult,
   RacListItemDto,
@@ -15,18 +14,12 @@ import {
   RacCreadoDto,
   RacCerrarRequest,
   RacFotoUploadResult,
-  PenalidadListQuery,
-  PenalidadListItemDto,
-  PenalidadDetalleDto,
-  PenalidadDescargaRequest,
-  PenalidadResolverRequest,
 } from '../dtos/rac.dtos';
 
 export interface RacListFiltrosState {
   filtroEstado: string;
   filtroSeveridad: string;
   filtroTipo: string;
-  filtroSoloConPenalidad: boolean;
   filtroProyectoId: number | null;
   filtroEmpresaReportadaId: number | null;
   filtroEmpresaReportanteId: number | null;
@@ -38,7 +31,6 @@ export interface RacListFiltrosState {
 @Injectable({ providedIn: 'root' })
 export class RacService {
   private base = `${environment.apiUrl}api/v1/ssoma-rac`;
-  private basePen = `${environment.apiUrl}api/v1/ssoma-rac-penalidad`;
 
   // Se mantiene en memoria mientras dura la sesión de la SPA para que, al volver
   // de cerrar/ver un RAC, la lista no pierda los filtros aplicados.
@@ -50,10 +42,6 @@ export class RacService {
 
   getCategorias(): Observable<RacCategoriaDto[]> {
     return this.http.get<RacCategoriaDto[]>(`${this.base}/categorias`, { headers: buildAuthHeaders() });
-  }
-
-  getInfracciones(): Observable<RacInfraccionDto[]> {
-    return this.http.get<RacInfraccionDto[]>(`${this.base}/infracciones`, { headers: buildAuthHeaders() });
   }
 
   getNiveles(projectId: number): Observable<string[]> {
@@ -96,25 +84,6 @@ export class RacService {
 
   getFoto(racId: number, fotoId: number): Observable<Blob> {
     return this.http.get(`${this.base}/${racId}/fotos/${fotoId}`, { responseType: 'blob', headers: buildAuthHeaders() });
-  }
-
-  // ── Penalidades ──────────────────────────────────────────────────
-
-  getPenalidadList(q: PenalidadListQuery): Observable<RacPagedResult<PenalidadListItemDto>> {
-    const params = this.buildParams(q);
-    return this.http.get<RacPagedResult<PenalidadListItemDto>>(`${this.basePen}`, { params, headers: buildAuthHeaders() });
-  }
-
-  getPenalidadDetalle(id: number): Observable<PenalidadDetalleDto> {
-    return this.http.get<PenalidadDetalleDto>(`${this.basePen}/${id}`, { headers: buildAuthHeaders() });
-  }
-
-  presentarDescargo(id: number, req: PenalidadDescargaRequest): Observable<void> {
-    return this.http.post<void>(`${this.basePen}/${id}/descargo`, req, { headers: buildAuthHeaders() });
-  }
-
-  resolverPenalidad(id: number, req: PenalidadResolverRequest): Observable<PenalidadDetalleDto> {
-    return this.http.patch<PenalidadDetalleDto>(`${this.basePen}/${id}/resolver`, req, { headers: buildAuthHeaders() });
   }
 
   // ── Helpers ──────────────────────────────────────────────────────

@@ -10,6 +10,7 @@ import { AbrilWorkerOptionDto } from '../../../../../core/dtos/user/abrilWorkerO
 import { AbrilWorkerUserCreateDto } from '../../../../../core/dtos/user/abrilWorkerUserCreate.model';
 import { AbrilManualUserCreateDto } from '../../../../../core/dtos/user/abrilManualUserCreate.model';
 import { UserListInitialDto } from '../dtos/user-filters.dto';
+import { UserDetailDto } from '../dtos/user-detail.dto';
 
 function buildAuthHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -48,6 +49,11 @@ export class UserFeatureService {
       `${this.apiUrl}/paged?${params.toString()}`,
       { headers: buildAuthHeaders() },
     );
+  }
+
+  /** Roles del usuario y funcionalidades a las que accede, en una sola petición (modal de detalle). */
+  getUserDetail(id: number): Observable<UserDetailDto> {
+    return this.http.get<UserDetailDto>(`${this.apiUrl}/${id}/detail`, { headers: buildAuthHeaders() });
   }
 
   createUser(dto: UserFeatureCreateDto): Observable<any> {

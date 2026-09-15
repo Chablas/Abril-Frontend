@@ -89,6 +89,7 @@
               *ngFor="let h of horas"
               type="button"
               (click)="seleccionarHora(h)"
+              [disabled]="horaDeshabilitada(h)"
               class="tp-opt"
               [class.tp-selected]="h === selHora"
               [class.tp-now]="esHoraActual(h)"
@@ -106,6 +107,7 @@
               *ngFor="let m of minutos"
               type="button"
               (click)="seleccionarMinuto(m)"
+              [disabled]="minutoDeshabilitado(m)"
               class="tp-opt"
               [class.tp-selected]="m === selMinuto"
               [class.tp-now]="esMinutoActual(m)"
@@ -121,7 +123,8 @@
         class="flex items-center justify-between mt-2 pt-2 border-t"
         style="border-color: var(--color-abril-border)"
       >
-        <button type="button" (click)="ahora()" class="tp-footer-btn text-[var(--tp-accent)]">
+        <button type="button" (click)="ahora()" [disabled]="ahoraDeshabilitado"
+          class="tp-footer-btn text-[var(--tp-accent)]">
           Ahora
         </button>
         <button

@@ -17,7 +17,7 @@ import { FilterTriggerButton } from '../../../../../../shared/components/filter-
 import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
-
+
 import { OPT_TABS } from '../../opt-tabs';
 @Component({
   selector: 'app-opt-lista',
@@ -157,6 +157,27 @@ export class OptLista implements OnInit {
 
   irANuevo(): void {
     this.router.navigate(['/ssoma/gestion/opt/nuevo']);
+  }
+
+  // Un borrador todavía se está llenando — clic en la fila retoma el wizard en vez
+  // de abrir el detalle de solo lectura.
+  abrirFila(item: { id: number; estado: string }): void {
+    if (item.estado === 'borrador') this.continuarBorrador(item.id);
+    else this.irADetalle(item.id);
+  }
+
+  continuarBorrador(id: number): void {
+    this.router.navigate(['/ssoma/gestion/opt/nuevo', id]);
+  }
+
+  esBorrador(estado: string): boolean {
+    return estado === 'borrador';
+  }
+
+  // AccionRequerida puede traer varias separadas por coma (ver multi-select en el
+  // wizard) — se muestran separadas por coma+espacio, más legible que pegadas.
+  accionesDisplay(accion?: string): string {
+    return accion ? accion.split(',').map((a) => a.trim()).join(', ') : 'Ninguna';
   }
 
   get hayFiltrosActivos(): number {

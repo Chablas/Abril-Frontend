@@ -16,7 +16,11 @@ import { SearchSelect } from '../../../../../../shared/components/search-select/
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { ClientPager } from '../../../../../../shared/utils/client-pager';
 import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
+import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { environment } from '../../../../../../../environments/environment';
+import * as QRCode from 'qrcode';
+import { AccidenteIncidenteService } from '../../../accidentes-incidentes/accidente-incidente.service';
+import { FlashProyectoDto, ContratistaCatalogoDto } from '../../../accidentes-incidentes/accidente-incidente.dtos';
 
 @Component({
   selector: 'app-pets-lista',
@@ -32,6 +36,7 @@ import { environment } from '../../../../../../../environments/environment';
     SearchSelect,
     Paginator,
     AbrilBulkActionDirective,
+    AbrilModalPanel,
   ],
   templateUrl: './pets-lista.html',
   styleUrl: './pets-lista.css',
@@ -44,6 +49,12 @@ export class PetsLista implements OnInit {
   creando = false;
   nuevoNombre = '';
   nuevoCodigo = '';
+  // "Abril" (default, catálogo global) | "Contratista" (atado a un proyecto).
+  nuevoOrigen: 'Abril' | 'Contratista' = 'Abril';
+  nuevoContributorId: number | null = null;
+  nuevoProyectoId: number | null = null;
+  proyectos: FlashProyectoDto[] = [];
+  contratistas: ContratistaCatalogoDto[] = [];
 
   searchText = '';
   estadoFilter: boolean | null = null;
@@ -58,16 +69,34 @@ export class PetsLista implements OnInit {
 
   readonly plantillaUrl = `${environment.apiUrl.replace(/\/$/, '')}/templates/pets-plantilla.docx`;
 
+  // Biblioteca pública (QR único): URL FIJA a producción a propósito — no se arma
+  // con window.location.origin porque si alguien abre esta pantalla desde
+  // demo.abril.pe generaría un QR distinto (apuntando a demo). El QR que se
+  // imprime debe ser siempre el mismo, sin importar desde dónde se genere.
+  mostrarQr = false;
+  qrDataUrl: string | null = null;
+  readonly bibliotecaUrl = 'https://intranet.abril.pe/pets';
+
   constructor(
     private petsService: PetsService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private router: Router,
     private cdr: ChangeDetectorRef,
+    private accidenteIncidenteService: AccidenteIncidenteService,
   ) {}
 
   ngOnInit(): void {
     this.load();
+    // Reutiliza el mismo catálogo de proyectos/contratistas que ya usa Flash
+    // Report — evita duplicar el endpoint solo para este selector.
+    this.accidenteIncidenteService.inicializar().subscribe({
+      next: (init) => {
+        this.proyectos = init.proyectos;
+        this.contratistas = init.contratistas;
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   load(): void {
@@ -137,25 +166,67 @@ export class PetsLista implements OnInit {
     this.mostrarFormCrear = !this.mostrarFormCrear;
     this.nuevoNombre = '';
     this.nuevoCodigo = '';
+    this.nuevoOrigen = 'Abril';
+    this.nuevoContributorId = null;
+    this.nuevoProyectoId = null;
     this.cdr.markForCheck();
+    if (this.mostrarFormCrear) this.cargarSiguienteCodigo();
+  }
+
+  onOrigenChange(origen: 'Abril' | 'Contratista'): void {
+    this.nuevoOrigen = origen;
+    if (origen === 'Abril') {
+      this.cargarSiguienteCodigo();
+    } else {
+      this.nuevoCodigo = '';
+      this.cdr.markForCheck();
+    }
+  }
+
+  cargandoCodigo = false;
+
+  private cargarSiguienteCodigo(): void {
+    this.cargandoCodigo = true;
+    this.petsService.getSiguienteCodigo().subscribe({
+      next: ({ codigo }) => {
+        this.nuevoCodigo = codigo;
+        this.cargandoCodigo = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.cargandoCodigo = false;
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   get puedeCrear(): boolean {
-    return this.nuevoNombre.trim().length > 0 && !this.creando;
+    if (this.creando || !this.nuevoNombre.trim()) return false;
+    if (this.nuevoOrigen === 'Contratista' && !this.nuevoContributorId) return false;
+    return true;
   }
 
   crear(): void {
     if (!this.puedeCrear) return;
     this.creando = true;
+    this.loaderService.show();
     this.petsService
-      .crear({ nombre: this.nuevoNombre.trim(), codigo: this.nuevoCodigo.trim() || undefined })
+      .crear({
+        nombre: this.nuevoNombre.trim(),
+        codigo: this.nuevoCodigo.trim() || undefined,
+        origen: this.nuevoOrigen,
+        contributorId: this.nuevoOrigen === 'Contratista' ? this.nuevoContributorId ?? undefined : undefined,
+        proyectoId: this.nuevoOrigen === 'Contratista' ? this.nuevoProyectoId ?? undefined : undefined,
+      })
       .subscribe({
         next: ({ id }) => {
           this.creando = false;
+          this.loaderService.hide();
           this.router.navigate(['/ssoma/gestion/pets', id]);
         },
         error: (err: HttpErrorResponse) => {
           this.creando = false;
+          this.loaderService.hide();
           this.errorService.handleError(err);
           this.cdr.markForCheck();
         },
@@ -164,6 +235,93 @@ export class PetsLista implements OnInit {
 
   irADetalle(id: number): void {
     this.router.navigate(['/ssoma/gestion/pets', id]);
+  }
+
+  duplicando: number | null = null;
+
+  // Clona un PETS existente como borrador nuevo (inactivo) para partir de él en
+  // vez de armar uno parecido desde cero.
+  duplicar(pet: PetListItemDto): void {
+    Swal.fire({
+      icon: 'question',
+      title: 'Duplicar PETS',
+      text: `Se creará "${pet.nombre} (copia)" con los mismos pasos, responsabilidades, secciones y catálogo — inactivo hasta que lo revises. No copia firmas ni anexos.`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, duplicar',
+      cancelButtonText: 'Cancelar',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.duplicando = pet.id;
+      this.loaderService.show();
+      this.petsService.duplicar(pet.id).subscribe({
+        next: ({ id }) => {
+          this.duplicando = null;
+          this.loaderService.hide();
+          this.router.navigate(['/ssoma/gestion/pets', id]);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.duplicando = null;
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+    });
+  }
+
+  eliminando: number | null = null;
+
+  // Borrado real (distinto de Desactivar) — el backend lo rechaza con 409 si el
+  // PETS está en uso (OPT, Accidentes/Incidentes), y ese mensaje ya llega
+  // explicado vía ErrorService.
+  eliminar(pet: PetListItemDto): void {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Eliminar PETS',
+      text: `Se eliminará "${pet.nombre}" permanentemente, junto con todos sus pasos, imágenes, secciones y catálogo. Esta acción no se puede deshacer. Si solo quieres dejar de usarlo, usa "Desactivar" en su lugar.`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonText: 'Cancelar',
+    }).then((res) => {
+      if (!res.isConfirmed) return;
+      this.eliminando = pet.id;
+      this.loaderService.show();
+      this.petsService.eliminar(pet.id).subscribe({
+        next: () => {
+          this.eliminando = null;
+          this.loaderService.hide();
+          this.load();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.eliminando = null;
+          this.loaderService.hide();
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+    });
+  }
+
+  abrirQr(): void {
+    this.mostrarQr = true;
+    if (this.qrDataUrl || !this.bibliotecaUrl) return;
+    QRCode.toDataURL(this.bibliotecaUrl, { width: 480, margin: 2 }).then((dataUrl) => {
+      this.qrDataUrl = dataUrl;
+      this.cdr.markForCheck();
+    });
+  }
+
+  cerrarQr(): void {
+    this.mostrarQr = false;
+  }
+
+  descargarQr(): void {
+    if (!this.qrDataUrl) return;
+    const a = document.createElement('a');
+    a.href = this.qrDataUrl;
+    a.download = 'qr-biblioteca-pets.png';
+    a.click();
   }
 
   toggleActivo(pet: PetListItemDto): void {
@@ -180,7 +338,14 @@ export class PetsLista implements OnInit {
       if (!res.isConfirmed) return;
       this.loaderService.show();
       this.petsService
-        .actualizar(pet.id, { nombre: pet.nombre, codigo: pet.codigo, activo: !pet.activo })
+        .actualizar(pet.id, {
+          nombre: pet.nombre,
+          codigo: pet.codigo,
+          activo: !pet.activo,
+          origen: pet.origen,
+          contributorId: pet.contributorId,
+          proyectoId: pet.proyectoId,
+        })
         .subscribe({
           next: () => {
             this.loaderService.hide();

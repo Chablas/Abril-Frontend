@@ -20,6 +20,15 @@
       <p *ngIf="submitted && !levantaPorWorkerId" class="text-xs text-red-600 mt-[4px]">Selecciona quién levanta la observación.</p>
     </div>
 
+    <div>
+      <app-date-picker
+        label="Fecha de levantamiento"
+        [floatingLabel]="true"
+        [value]="fechaLevantamiento"
+        (valueChange)="fechaLevantamiento = $event">
+      </app-date-picker>
+    </div>
+
     <div class="abril-field">
       <label class="abril-field-label">Comentario del levantamiento</label>
       <textarea class="abril-field-input" rows="3" [(ngModel)]="comentario" name="comentario"></textarea>

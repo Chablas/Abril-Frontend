@@ -26,15 +26,24 @@
   </div>
   }
 
-  <!-- LOADING CATÁLOGOS -->
-  @if (loadingCatalogos || resolviendoObservador) {
+  <!-- Aviso de que ya quedó guardada como borrador y dónde retomarla — la duda más
+       común es "¿y si me quedo a medias, dónde la encuentro después?" -->
+  @if (optId && !loadingCatalogos && !cargandoBorrador) {
+    <p class="borrador-indicador">
+      <i class="ti ti-device-floppy"></i>
+      Guardada como borrador (OPT #{{ optId }}). Si sales ahora, la retomas desde "Continuar llenando" en la lista de OPT.
+    </p>
+  }
+
+  <!-- LOADING CATÁLOGOS / BORRADOR -->
+  @if (loadingCatalogos || resolviendoObservador || cargandoBorrador) {
     <div class="loading-catalogos">
-      <i class="ti ti-loader-2 spin"></i> Cargando catálogos...
+      <i class="ti ti-loader-2 spin"></i> {{ cargandoBorrador ? 'Cargando borrador...' : 'Cargando catálogos...' }}
     </div>
   }
 
   <!-- BLOQUEO: usuario sin trabajador vinculado -->
-  @if (!loadingCatalogos && !resolviendoObservador && sinWorkerVinculado) {
+  @if (!loadingCatalogos && !resolviendoObservador && !cargandoBorrador && sinWorkerVinculado) {
     <div class="bloqueo-sin-worker">
       <i class="ti ti-alert-triangle"></i>
       <div>
@@ -48,14 +57,13 @@
     </div>
   }
 
-  @if (!loadingCatalogos && !resolviendoObservador && !sinWorkerVinculado) {
+  @if (!loadingCatalogos && !resolviendoObservador && !cargandoBorrador && !sinWorkerVinculado) {
 
-    <!-- ─────────────────── PASO 1 ─────────────────── -->
+    <!-- ─────────────────── PASO 1 — OBSERVACIÓN ─────────────────── -->
     @if (paso === 1) {
       <div class="paso-body">
         <h2 class="paso-title"><i class="ti ti-clipboard-text"></i> Datos de la observación</h2>
 
-        <!-- FIX 2: SearchSelect para proyecto -->
         <div class="abril-field">
           <app-search-select
             color="var(--color-abril-logo-blue)"
@@ -92,18 +100,18 @@
         <div class="abril-field">
           <app-search-select
             color="var(--color-abril-logo-blue)"
-            label="PET asociado"
-            [options]="pets"
+            label="PETS asociado"
+            [options]="petsDisponibles"
             valueField="id"
-            displayField="nombre"
+            displayField="nombreMostrado"
             [value]="petId"
-            placeholder="Sin PET"
+            placeholder="Sin PETS registrado"
             (valueChange)="petId = $event ? +$event : null; onPetChange()">
           </app-search-select>
           @if (petSeleccionado?.sharepointUrl) {
             <div class="pet-actions">
               <button type="button" class="btn-ver-pdf" (click)="abrirVisorPet()">
-                <i class="ti ti-file-text"></i> Ver PET
+                <i class="ti ti-file-text"></i> Ver PETS
               </button>
             </div>
           }
@@ -111,20 +119,21 @@
 
         <div class="form-row">
           <div class="abril-field">
-            <label class="abril-field-label toggle-label">
-              <span>¿Cuenta con PET?</span>
-              <div class="toggle" [class.toggle--on]="cuentaConPet" (click)="cuentaConPet = !cuentaConPet">
-                <div class="toggle-thumb"></div>
-              </div>
-            </label>
+            <div class="dato-fijo-row">
+              <span>¿Se cuenta con PETS?</span>
+              <span class="toggle-estado toggle-estado--fijo" [class.toggle-estado--on]="cuentaConPet">{{ cuentaConPet ? 'Sí' : 'No' }}</span>
+            </div>
+            <p class="campo-aviso campo-aviso--neutro">Se determina según el PETS elegido arriba.</p>
           </div>
           <div class="abril-field">
             <label class="abril-field-label toggle-label">
               <span>¿Se informó al trabajador?</span>
+              <span class="toggle-estado" [class.toggle-estado--on]="seInformaTrabajador">{{ seInformaTrabajador ? 'Sí' : 'No' }}</span>
               <div class="toggle" [class.toggle--on]="seInformaTrabajador" (click)="seInformaTrabajador = !seInformaTrabajador">
                 <div class="toggle-thumb"></div>
               </div>
             </label>
+            <p class="campo-aviso campo-aviso--neutro">Ambas respuestas son válidas según el tipo de observación.</p>
           </div>
         </div>
 
@@ -133,7 +142,7 @@
           <input type="text" class="abril-field-input" [(ngModel)]="area" placeholder="Área donde se realizó la observación" />
         </div>
 
-        <!-- Observador: fijo, resuelto del usuario logueado -->
+        <!-- Observador: fijo, resuelto del usuario logueado (o el que quedó guardado en el borrador) -->
         <div class="observador-fijo">
           <i class="ti ti-user-check"></i>
           <div>
@@ -145,11 +154,210 @@
       </div>
     }
 
-    <!-- ─────────────────── PASO 2 ─────────────────── -->
+    <!-- ─────────────────── PASO 2 — PASOS OBSERVADOS ─────────────────── -->
     @if (paso === 2) {
       <div class="paso-body">
 
-        <!-- TRABAJADORES -->
+        @if (petId) {
+          <div class="pasos-header">
+            <h2 class="paso-title"><i class="ti ti-list-numbers"></i> Pasos observados</h2>
+            <button type="button" class="btn-add-paso" (click)="agregarPaso()">
+              <i class="ti ti-plus"></i> Agregar paso
+            </button>
+          </div>
+          <p class="paso-hint">Subtítulos colapsados: haz clic en ellos para ver/ocultar sus pasos.</p>
+
+          @if (pasos.length === 0) {
+            <div class="pasos-empty">Sin pasos. Vuelve al paso anterior y elige un PETS, o agrega uno manualmente.</div>
+          }
+        } @else {
+          <div class="pasos-header">
+            <h2 class="paso-title"><i class="ti ti-list-numbers"></i> Actividad observada</h2>
+            <button type="button" class="btn-add-paso" (click)="agregarPaso()">
+              <i class="ti ti-plus"></i> Agregar paso
+            </button>
+          </div>
+          <p class="paso-hint paso-hint--sin-pets">
+            <i class="ti ti-alert-triangle"></i>
+            No hay un PETS registrado para esta actividad. Describe, paso por paso, qué está haciendo el trabajador
+            (usa "Agregar paso" abajo) — esto es lo que le va a llegar al coordinador de SSOMA para que elabore el
+            PETS correspondiente. No hace falta marcar Cumple/No cumple todavía, solo dejar constancia de la actividad.
+          </p>
+
+          @if (pasos.length === 0) {
+            <div class="pasos-empty">Aún no describes nada de la actividad. Usa "Agregar paso" para empezar.</div>
+          }
+        }
+
+        @for (p of pasos; track trackPasoId($index, p); let i = $index) {
+          @if (esPasoVisible(i)) {
+
+            @if (p.tipo === 'subtitulo') {
+              <div class="subtitulo-row" (click)="toggleColapso(p.id)">
+                <i class="ti" [ngClass]="subtitulosColapsados.has(p.id) ? 'ti-chevron-right' : 'ti-chevron-down'"></i>
+                <span class="subtitulo-texto">{{ p.descripcion }}</span>
+              </div>
+            } @else {
+              <div class="paso-row" [class.paso-row--inseguro]="p.resultado === 'Inseguro'" [class.paso-row--no-contemplado]="p.esNoContemplado"
+                   [style.marginLeft.px]="p.nivel * 16">
+                <div class="paso-num">{{ p.numeroDisplay || (p.esNoContemplado ? '+' : '') }}</div>
+                <div class="paso-fields">
+                  <div class="paso-desc-row">
+                    @if (p.esNoContemplado) {
+                      <span class="badge-no-contemplado" title="Actividad real observada que el PETS no contempla">No contemplado</span>
+                    }
+                    <textarea class="abril-field-input paso-desc" rows="1" [(ngModel)]="p.descripcion"
+                      placeholder="Descripción del paso..."></textarea>
+                    @if (p.esManual) {
+                      <button type="button" class="btn-remove-paso" (click)="quitarPaso(p.id)" title="Quitar de esta observación">
+                        <i class="ti ti-trash"></i>
+                      </button>
+                    }
+                  </div>
+                  @if (!p.esNoContemplado) {
+                    <div class="resultado-group">
+                      <button type="button" class="resultado-btn"
+                        [class.resultado-btn--seguro]="p.resultado === 'Seguro'"
+                        (click)="p.resultado = p.resultado === 'Seguro' ? '' : 'Seguro'">
+                        Cumple ✓
+                      </button>
+                      <button type="button" class="resultado-btn"
+                        [class.resultado-btn--inseguro]="p.resultado === 'Inseguro'"
+                        (click)="p.resultado = p.resultado === 'Inseguro' ? '' : 'Inseguro'">
+                        No cumple ✗
+                      </button>
+                      <button type="button" class="resultado-btn"
+                        [class.resultado-btn--mejor]="p.resultado === 'MejorPractica'"
+                        (click)="p.resultado = p.resultado === 'MejorPractica' ? '' : 'MejorPractica'">
+                        Mejor práctica ★
+                      </button>
+                      <button type="button" class="resultado-btn"
+                        [class.resultado-btn--na]="p.resultado === 'NA'"
+                        (click)="p.resultado = p.resultado === 'NA' ? '' : 'NA'">
+                        No aplica —
+                      </button>
+                    </div>
+                  }
+                  @if (p.resultado === 'Inseguro') {
+                    <input type="text" class="abril-field-input" [(ngModel)]="p.desviacionObservada"
+                      placeholder="Desviación observada (acto/condición inseguro)..." />
+                  }
+                </div>
+              </div>
+            }
+          }
+        }
+
+        @if (petId) {
+          <div class="agregar-no-contemplado">
+            <input type="text" class="abril-field-input" [(ngModel)]="nuevaActividadTexto"
+              placeholder="¿Viste una actividad que el PETS no contempla? Descríbela aquí..." />
+            <button type="button" class="btn-secondary" (click)="agregarActividadNoContemplada()" [disabled]="!nuevaActividadTexto.trim()">
+              <i class="ti ti-plus"></i> Actividad no contemplada
+            </button>
+          </div>
+        }
+
+        <h2 class="paso-title" style="margin-top: 2rem">
+          <i class="ti ti-camera"></i> Fotos de la actividad
+          <span class="fotos-counter" [class.fotos-ok]="totalFotos >= 3">
+            {{ totalFotos }} / mín. 3
+          </span>
+        </h2>
+        <p class="fotos-hint">Se requieren al menos 3 fotos de la actividad observada (se piden recién al finalizar). Máximo 10 por guardado.</p>
+
+        @if (fotosAreaExistentes.length > 0) {
+          <div class="fotos-existentes">
+            @for (url of fotosAreaExistentes; track url) {
+              <img [src]="url" class="foto-existente-thumb" alt="Foto ya guardada" />
+            }
+          </div>
+        }
+
+        <app-photo-grid-picker
+          color="var(--color-abril-logo-blue)"
+          [previews]="fotosAreaPreview"
+          [max]="10"
+          (filesSelected)="onFotoAreaChange($event)"
+          (remove)="quitarFotoArea($event)"
+        ></app-photo-grid-picker>
+
+      </div>
+    }
+
+    <!-- ─────────────────── PASO 3 — RETROALIMENTACIÓN ─────────────────── -->
+    @if (paso === 3) {
+      <div class="paso-body">
+
+        <h2 class="paso-title"><i class="ti ti-messages"></i> Retroalimentación</h2>
+
+        <div class="toggle-grid">
+          <label class="toggle-field">
+            <span>¿Se felicitó al trabajador?</span>
+            <span class="toggle-estado" [class.toggle-estado--on]="seFelicito">{{ seFelicito ? 'Sí' : 'No' }}</span>
+            <div class="toggle" [class.toggle--on]="seFelicito" (click)="seFelicito = !seFelicito">
+              <div class="toggle-thumb"></div>
+            </div>
+          </label>
+          <label class="toggle-field">
+            <span>¿Se recibieron comentarios?</span>
+            <span class="toggle-estado" [class.toggle-estado--on]="seRecibieronComentarios">{{ seRecibieronComentarios ? 'Sí' : 'No' }}</span>
+            <div class="toggle" [class.toggle--on]="seRecibieronComentarios" (click)="seRecibieronComentarios = !seRecibieronComentarios">
+              <div class="toggle-thumb"></div>
+            </div>
+          </label>
+          <label class="toggle-field">
+            <span>¿Se retroalimentó al trabajador?</span>
+            <span class="toggle-estado" [class.toggle-estado--on]="seRetroalimento">{{ seRetroalimento ? 'Sí' : 'No' }}</span>
+            <div class="toggle" [class.toggle--on]="seRetroalimento" (click)="seRetroalimento = !seRetroalimento">
+              <div class="toggle-thumb"></div>
+            </div>
+          </label>
+          <label class="toggle-field">
+            <span>¿Se obtuvo compromiso de mejora?</span>
+            <span class="toggle-estado" [class.toggle-estado--on]="seObtuvoCCompromiso">{{ seObtuvoCCompromiso ? 'Sí' : 'No' }}</span>
+            <div class="toggle" [class.toggle--on]="seObtuvoCCompromiso" (click)="seObtuvoCCompromiso = !seObtuvoCCompromiso">
+              <div class="toggle-thumb"></div>
+            </div>
+          </label>
+        </div>
+
+        <h2 class="paso-title" style="margin-top:20px"><i class="ti ti-target-arrow"></i> Acción requerida</h2>
+        <p class="paso-hint">Sugerida automáticamente según lo observado en el paso anterior — ajústala si hace falta.</p>
+
+        <p class="accion-grupo-label">Sobre el PETS (elige una)</p>
+        <div class="accion-chips">
+          @for (a of accionesPetsDisponibles; track a) {
+            <button type="button" class="accion-chip" [class.accion-chip--activo]="accionPetsSeleccionada === a" (click)="seleccionarAccionPets(a)">
+              @if (accionPetsSeleccionada === a) { <i class="ti ti-check"></i> }
+              {{ a }}
+            </button>
+          }
+        </div>
+
+        <p class="accion-grupo-label">Sobre el trabajador</p>
+        <div class="accion-chips">
+          <button type="button" class="accion-chip" [class.accion-chip--activo]="requiereEntrenamiento" (click)="toggleEntrenamiento()">
+            @if (requiereEntrenamiento) { <i class="ti ti-check"></i> }
+            Entrenamiento
+          </button>
+        </div>
+
+        @if (accionPetsSeleccionada || requiereEntrenamiento) {
+          <div class="abril-field" style="margin-top:10px">
+            <label class="abril-field-label">Observación sobre la acción</label>
+            <textarea class="abril-field-input" [(ngModel)]="accionObservacion" rows="3"
+              placeholder="Describe qué hace falta (SSOMA lo revisará, no se modifica el PETS directo desde acá)..."></textarea>
+          </div>
+        }
+
+      </div>
+    }
+
+    <!-- ─────────────────── PASO 4 — TRABAJADORES ─────────────────── -->
+    @if (paso === 4) {
+      <div class="paso-body">
+
         <h2 class="paso-title"><i class="ti ti-users"></i> Trabajadores observados</h2>
 
         <div class="abril-field">
@@ -157,7 +365,7 @@
             color="var(--color-abril-logo-blue)"
             label="Agregar trabajador observado"
             [options]="workersObservador"
-            valueField="workerId"
+            valueField="id"
             displayField="apellidoNombre"
             [value]="trabajadorObservadoId"
             [allowClear]="true"
@@ -198,13 +406,14 @@
           </div>
         }
 
-        <!-- VERIFICACIÓN ENTRENAMIENTO -->
+        <!-- VERIFICACIÓN ENTRENAMIENTO — se pregunta acá, ya con el paso a paso registrado -->
         @if (verificaciones.length > 0) {
           <h2 class="paso-title" style="margin-top:20px"><i class="ti ti-clipboard-check"></i> Verificación de entrenamiento</h2>
           <div class="verificaciones-list">
             @for (v of verificaciones; track v.criterioId) {
               <div class="verif-row">
                 <span class="verif-pregunta">{{ v.pregunta }}</span>
+                <span class="toggle-estado" [class.toggle-estado--on]="v.resultado">{{ v.resultado ? 'Sí' : 'No' }}</span>
                 <div class="toggle toggle--sm" [class.toggle--on]="v.resultado" (click)="v.resultado = !v.resultado">
                   <div class="toggle-thumb"></div>
                 </div>
@@ -213,153 +422,32 @@
           </div>
         }
 
-        <!-- PASOS OBSERVADOS -->
-        <div class="pasos-header">
-          <h2 class="paso-title"><i class="ti ti-list-numbers"></i> Pasos observados</h2>
-          <button type="button" class="btn-add-paso" (click)="agregarPaso()">
-            <i class="ti ti-plus"></i> Agregar paso
-          </button>
-        </div>
-
-        @if (pasos.length === 0) {
-          <div class="pasos-empty">Sin pasos. Agrega el primero.</div>
-        }
-
-        <!-- FIX 6+7: sin nivel, botones con texto completo -->
-        @for (p of pasos; track p.id; let i = $index) {
-          <div class="paso-row" [class.paso-row--inseguro]="p.resultado === 'Inseguro'">
-            <div class="paso-num">{{ p.numeroDisplay }}</div>
-            <div class="paso-fields">
-              <div class="paso-top-row">
-                <input type="text" class="abril-field-input paso-desc" [(ngModel)]="p.descripcion"
-                  placeholder="Descripción del paso..." />
-                <div class="resultado-group">
-                  <button type="button" class="resultado-btn"
-                    [class.resultado-btn--seguro]="p.resultado === 'Seguro'"
-                    (click)="p.resultado = p.resultado === 'Seguro' ? '' : 'Seguro'">
-                    <span class="res-full">Seguro ✓</span>
-                    <span class="res-short">S ✓</span>
-                  </button>
-                  <button type="button" class="resultado-btn"
-                    [class.resultado-btn--inseguro]="p.resultado === 'Inseguro'"
-                    (click)="p.resultado = p.resultado === 'Inseguro' ? '' : 'Inseguro'">
-                    <span class="res-full">Inseguro ✗</span>
-                    <span class="res-short">I ✗</span>
-                  </button>
-                  <button type="button" class="resultado-btn"
-                    [class.resultado-btn--na]="p.resultado === 'NA'"
-                    (click)="p.resultado = p.resultado === 'NA' ? '' : 'NA'">
-                    <span class="res-full">No aplica —</span>
-                    <span class="res-short">NA</span>
-                  </button>
-                </div>
-                <button type="button" class="btn-remove-paso" (click)="quitarPaso(p.id)" title="Quitar">
-                  <i class="ti ti-trash"></i>
-                </button>
-              </div>
-              @if (p.resultado === 'Inseguro') {
-                <input type="text" class="abril-field-input" [(ngModel)]="p.desviacionObservada"
-                  placeholder="Desviación observada (acto/condición inseguro)..." />
-              }
-            </div>
-          </div>
-        }
-
-      </div>
-    }
-
-    <!-- ─────────────────── PASO 3 ─────────────────── -->
-    @if (paso === 3) {
-      <div class="paso-body">
-
-        <h2 class="paso-title">
-          <i class="ti ti-camera"></i> Fotos de la actividad
-          <span class="fotos-counter" [class.fotos-ok]="fotosAreaBase64.length >= 3">
-            {{ fotosAreaBase64.length }} / mín. 3
-          </span>
-        </h2>
-        <p class="fotos-hint">Se requieren al menos 3 fotos de la actividad observada. Máximo 10.</p>
-
-        <app-photo-grid-picker
-          color="var(--color-abril-logo-blue)"
-          [previews]="fotosAreaPreview"
-          [max]="10"
-          (filesSelected)="onFotoAreaChange($event)"
-          (remove)="quitarFotoArea($event)"
-        ></app-photo-grid-picker>
-
-        <h2 class="paso-title" style="margin-top: 2rem"><i class="ti ti-messages"></i> Retroalimentación</h2>
-
-        <div class="toggle-grid">
-          <label class="toggle-field">
-            <span>¿Se felicitó al trabajador?</span>
-            <div class="toggle" [class.toggle--on]="seFelicito" (click)="seFelicito = !seFelicito">
-              <div class="toggle-thumb"></div>
-            </div>
-          </label>
-          <label class="toggle-field">
-            <span>¿Se recibieron comentarios?</span>
-            <div class="toggle" [class.toggle--on]="seRecibieronComentarios" (click)="seRecibieronComentarios = !seRecibieronComentarios">
-              <div class="toggle-thumb"></div>
-            </div>
-          </label>
-          <label class="toggle-field">
-            <span>¿Se retroalimentó al trabajador?</span>
-            <div class="toggle" [class.toggle--on]="seRetroalimento" (click)="seRetroalimento = !seRetroalimento">
-              <div class="toggle-thumb"></div>
-            </div>
-          </label>
-          <label class="toggle-field">
-            <span>¿Se obtuvo compromiso de mejora?</span>
-            <div class="toggle" [class.toggle--on]="seObtuvoCCompromiso" (click)="seObtuvoCCompromiso = !seObtuvoCCompromiso">
-              <div class="toggle-thumb"></div>
-            </div>
-          </label>
-        </div>
-
-        <div class="form-row" style="margin-top:16px">
-          <div class="abril-field">
-            <app-search-select
-              color="var(--color-abril-logo-blue)"
-              label="Acción requerida"
-              [options]="accionesRequeridasOptions"
-              valueField="value"
-              displayField="label"
-              [value]="accionRequerida"
-              placeholder="Sin acción requerida"
-              [allowClear]="true"
-              (valueChange)="accionRequerida = $event">
-            </app-search-select>
-          </div>
-        </div>
-
-        @if (accionRequerida) {
-          <div class="abril-field">
-            <label class="abril-field-label">Observación sobre la acción</label>
-            <textarea class="abril-field-input" [(ngModel)]="accionObservacion" rows="3"
-              placeholder="Describe la acción requerida..."></textarea>
-          </div>
-        }
-
         <!-- FIRMA OBSERVADOR -->
         <h2 class="paso-title" style="margin-top:20px"><i class="ti ti-signature"></i> Firma del observador</h2>
         <div class="firma-trab-name">{{ observadorNombre || 'Sin observador seleccionado' }}</div>
-        <div class="firma-wrap">
-          <canvas #canvasObs
-            class="firma-canvas"
-            width="360" height="140"
-            (mousedown)="startDrawObs($event)"
-            (mousemove)="drawObs($event)"
-            (mouseup)="stopDrawObs()"
-            (mouseleave)="stopDrawObs()"
-            (touchstart)="startDrawObsTouch($event)"
-            (touchmove)="drawObsTouch($event)"
-            (touchend)="stopDrawObs()">
-          </canvas>
-          <button type="button" class="btn-clear-canvas" (click)="clearCanvasObs()">
-            <i class="ti ti-trash"></i> Limpiar
-          </button>
-        </div>
+        @if (firmaObsUrlExistente && !refirmarObservador) {
+          <div class="firma-existente">
+            <img [src]="firmaObsUrlExistente" alt="Firma ya guardada" class="firma-existente-img" />
+            <button type="button" class="btn-secondary" (click)="refirmarObservador = true">Volver a firmar</button>
+          </div>
+        } @else {
+          <div class="firma-wrap">
+            <canvas #canvasObs
+              class="firma-canvas"
+              width="360" height="140"
+              (mousedown)="startDrawObs($event)"
+              (mousemove)="drawObs($event)"
+              (mouseup)="stopDrawObs()"
+              (mouseleave)="stopDrawObs()"
+              (touchstart)="startDrawObsTouch($event)"
+              (touchmove)="drawObsTouch($event)"
+              (touchend)="stopDrawObs()">
+            </canvas>
+            <button type="button" class="btn-clear-canvas" (click)="clearCanvasObs()">
+              <i class="ti ti-trash"></i> Limpiar
+            </button>
+          </div>
+        }
 
         <!-- FIRMAS TRABAJADORES -->
         @if (trabajadores.length > 0) {
@@ -367,22 +455,29 @@
           @for (t of trabajadores; track t.trabajador.id; let i = $index) {
             <div class="firma-trab-block">
               <div class="firma-trab-name">{{ t.trabajador.apellidoNombre }}</div>
-              <div class="firma-wrap">
-                <canvas #canvasTrab
-                  class="firma-canvas"
-                  width="360" height="120"
-                  (mousedown)="startDrawTrab($event, t.trabajador.id, i)"
-                  (mousemove)="drawTrab($event, t.trabajador.id)"
-                  (mouseup)="stopDrawTrab(t.trabajador.id, i)"
-                  (mouseleave)="stopDrawTrab(t.trabajador.id, i)"
-                  (touchstart)="startDrawTrabTouch($event, t.trabajador.id, i)"
-                  (touchmove)="drawTrabTouch($event, t.trabajador.id)"
-                  (touchend)="stopDrawTrab(t.trabajador.id, i)">
-                </canvas>
-                <button type="button" class="btn-clear-canvas" (click)="clearCanvasTrab(t.trabajador.id, i)">
-                  <i class="ti ti-trash"></i> Limpiar
-                </button>
-              </div>
+              @if (t.firmaUrlExistente && !t.refirmar) {
+                <div class="firma-existente">
+                  <img [src]="t.firmaUrlExistente" alt="Firma ya guardada" class="firma-existente-img" />
+                  <button type="button" class="btn-secondary" (click)="refirmarTrabajador(t)">Volver a firmar</button>
+                </div>
+              } @else {
+                <div class="firma-wrap">
+                  <canvas #canvasTrab
+                    class="firma-canvas"
+                    width="360" height="120"
+                    (mousedown)="startDrawTrab($event, t.trabajador.id, i)"
+                    (mousemove)="drawTrab($event, t.trabajador.id)"
+                    (mouseup)="stopDrawTrab(t.trabajador.id, i)"
+                    (mouseleave)="stopDrawTrab(t.trabajador.id, i)"
+                    (touchstart)="startDrawTrabTouch($event, t.trabajador.id, i)"
+                    (touchmove)="drawTrabTouch($event, t.trabajador.id)"
+                    (touchend)="stopDrawTrab(t.trabajador.id, i)">
+                  </canvas>
+                  <button type="button" class="btn-clear-canvas" (click)="clearCanvasTrab(t.trabajador.id, i)">
+                    <i class="ti ti-trash"></i> Limpiar
+                  </button>
+                </div>
+              }
             </div>
           }
         }
@@ -392,31 +487,30 @@
 
   }<!-- /!loadingCatalogos -->
 
-  <!-- FIX 1: Visor de documentos PET (modal overlay) -->
+  <!-- Visor de documentos PETS (modal overlay) -->
   <app-document-viewer
     [archivoUrl]="petVisorUrl"
     [nombre]="petVisorNombre"
     (closed)="cerrarVisorPet()">
   </app-document-viewer>
 
-  <div modalFooter *ngIf="!loadingCatalogos && !resolviendoObservador">
+  <div modalFooter *ngIf="!loadingCatalogos && !resolviendoObservador && !cargandoBorrador">
     <button type="button" class="btn-ghost" (click)="cancelar()">Cancelar</button>
     <div class="footer-nav" *ngIf="!sinWorkerVinculado">
       @if (paso > 1) {
-        <button type="button" class="btn-secondary" (click)="anterior()">
+        <button type="button" class="btn-secondary" (click)="anterior()" [disabled]="guardandoBorrador">
           <i class="ti ti-chevron-left"></i> Anterior
         </button>
       }
-      <!-- FIX 8+9: disabled hasta que puedeAvanzar sea true -->
       @if (paso < totalPasos) {
-        <button type="button" class="btn-primary" (click)="siguiente()" [disabled]="loadingCatalogos || !puedeAvanzar">
-          Siguiente <i class="ti ti-chevron-right"></i>
+        <button type="button" class="btn-primary" (click)="siguiente()" [disabled]="loadingCatalogos || !puedeAvanzar || guardandoBorrador">
+          @if (guardandoBorrador) { <i class="ti ti-loader-2 spin"></i> Guardando... } @else { Siguiente <i class="ti ti-chevron-right"></i> }
         </button>
       }
       @if (paso === totalPasos) {
-        <button type="button" class="btn-primary btn-guardar" (click)="guardar()" [disabled]="guardando || fotosAreaBase64.length < 3">
+        <button type="button" class="btn-primary btn-guardar" (click)="guardar()" [disabled]="guardando">
           @if (guardando) { <i class="ti ti-loader-2 spin"></i> } @else { <i class="ti ti-check"></i> }
-          Guardar OPT
+          Finalizar observación
         </button>
       }
     </div>

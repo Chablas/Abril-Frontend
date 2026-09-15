@@ -22,4 +22,9 @@ export interface ProjectSubContractorFormDataDTO {
     workItemCategories: WorkItemCategorySimpleDTO[];
     workSpecialties: WorkSpecialtySimpleDTO[];
     projectSubContractorStatuses: ProjectSubContractorStatusSimpleDTO[];
+    /**
+     * Opción "Permitir volver a generar el contrato completo" del paso 4
+     * (Configuración de Costos → Pasos).
+     */
+    allowRegenerateContractPackage: boolean;
 }

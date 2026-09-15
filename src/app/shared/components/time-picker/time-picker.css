@@ -29,7 +29,7 @@
   transition: background-color 0.15s, color 0.15s;
 }
 
-.tp-opt:hover:not(.tp-selected) {
+.tp-opt:hover:not(.tp-selected):not(:disabled) {
   background: #f3f4f6;
 }
 
@@ -55,6 +55,16 @@
   transition: background-color 0.15s;
 }
 
-.tp-footer-btn:hover {
+.tp-footer-btn:hover:not(:disabled) {
   background: #f3f4f6;
+}
+
+/* Por debajo del `min`: se ven apagadas y no responden al hover. Los `:not(:disabled)` de los
+   hover de arriba evitan el resaltado al pasar el mouse, y el `box-shadow: none` apaga también
+   el anillo de la hora/minuto actual cuando esa opción cae fuera del rango. */
+.tp-opt:disabled,
+.tp-footer-btn:disabled {
+  color: #d1d5db;
+  cursor: not-allowed;
+  box-shadow: none;
 }

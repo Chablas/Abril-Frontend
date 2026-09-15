@@ -2,6 +2,7 @@ import { Component, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Paginator } from '../../../../../shared/components/paginator/paginator';
 import { SectionTabs, SectionTab } from '../../../../../shared/components/section-tabs/section-tabs';
+import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
 import { PagedResponseDTO } from '../../../../../core/dtos/api/pagedResponse.model';
 import { AreaTypeDto } from '../dtos/areaType.model';
 import { AreaItemDto } from '../dtos/areaItem.model';
@@ -22,6 +23,7 @@ type AreaSection = 'items' | 'scope' | 'types';
     CommonModule,
     Paginator,
     SectionTabs,
+    FilterTriggerButton,
     AreaTypeList,
     AreaTypeCreate,
     AreaItemList,
@@ -64,21 +66,53 @@ export class Area {
     this.activeSection = id as AreaSection;
   }
 
-  openCreateType(event: MouseEvent) {
-    event.stopPropagation();
-    this.showCreateTypeModal = true;
-    this.cdr.detectChanges();
+  /** Etiqueta del botón flotante de crear, según la sección visible. */
+  get botonPrimario(): { label: string; icono: string } {
+    const label =
+      this.activeSection === 'items'
+        ? 'Nueva área'
+        : this.activeSection === 'scope'
+          ? 'Nueva relación'
+          : 'Nuevo tipo';
+    return { label, icono: 'ti-plus' };
   }
 
-  openCreateItem(event: MouseEvent) {
-    event.stopPropagation();
-    this.showCreateItemModal = true;
-    this.cdr.detectChanges();
+  onCreate(): void {
+    switch (this.activeSection) {
+      case 'items':
+        this.showCreateItemModal = true;
+        this.cdr.detectChanges();
+        break;
+      case 'scope':
+        this.scopeList?.openCreateBranch();
+        break;
+      case 'types':
+        this.showCreateTypeModal = true;
+        this.cdr.detectChanges();
+        break;
+    }
   }
 
-  openCreateScope(event: MouseEvent) {
-    event.stopPropagation();
-    this.scopeList?.openCreateBranch();
+  /** Componente de la sección visible (solo uno existe a la vez por el *ngIf). */
+  private get activeCmp(): AreaItemList | AreaScopeList | AreaTypeList | undefined {
+    switch (this.activeSection) {
+      case 'items': return this.itemList;
+      case 'scope': return this.scopeList;
+      case 'types': return this.typeList;
+      default: return undefined;
+    }
+  }
+
+  get filtrosActivos(): number {
+    return this.activeCmp?.filtrosActivos ?? 0;
+  }
+
+  /** Abre el modal de filtros de la sección visible (botón proyectado en el header). */
+  onOpenFilters(): void {
+    const cmp = this.activeCmp;
+    if (!cmp) return;
+    cmp.filtrosAbiertos = true;
+    this.cdr.detectChanges();
   }
 
   onTypePaged(data: PagedResponseDTO<AreaTypeDto>) {

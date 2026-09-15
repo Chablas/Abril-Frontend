@@ -26,6 +26,9 @@ export class WorkerSearchInput implements OnInit, OnDestroy {
   @Input() selected: WorkerSearchItemDto | null = null;
   @Input() limit = 20;
   @Input() color = 'var(--color-abril-standard)';
+  /** true: solo ofrece personal de Abril (esAbril=true) — ej. firmantes de un PETS, que
+   * siempre son staff interno, nunca personal de una contratista. */
+  @Input() soloAbril = false;
 
   @HostBinding('style.--ws-accent') get wsAccent(): string {
     return this.color;
@@ -71,7 +74,7 @@ export class WorkerSearchInput implements OnInit, OnDestroy {
   private runSearch(q: string): void {
     this.service.search(q, this.limit).subscribe({
       next: (res) => {
-        this.results = res;
+        this.results = this.soloAbril ? res.filter((w) => w.esAbril) : res;
         this.searching = false;
         this.cdr.detectChanges();
       },

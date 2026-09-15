@@ -25,7 +25,6 @@ import {
   standalone: true,
   imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
   templateUrl: './proyecto-emails.html',
-  styleUrl: './proyecto-emails.css',
 })
 export class ProyectoEmails implements OnChanges {
   @Input() open = false;
@@ -35,7 +34,7 @@ export class ProyectoEmails implements OnChanges {
   @Output() saved = new EventEmitter<void>();
 
   model: ProjectEmailsDTO = this.empty();
-  /** Trabajadores elegibles como residente; vienen en la misma respuesta del GET. */
+  /** Trabajadores elegibles como residente o coordinador; vienen en la misma respuesta del GET. */
   residentes: ResidenteOptionDTO[] = [];
   loadingInitial = false;
   saving = false;
@@ -57,10 +56,10 @@ export class ProyectoEmails implements OnChanges {
   private empty(): ProjectEmailsDTO {
     return {
       residenteWorkersId: null,
+      workersCoordAdminId: null,
       emailResponsable: '',
       emailRrhh: '',
       emailCoordSsoma: '',
-      emailCoordAdmin: '',
     };
   }
 
@@ -69,11 +68,11 @@ export class ProyectoEmails implements OnChanges {
     this.projectService.getProjectEmails(this.projectId).subscribe({
       next: (res) => {
         this.model = {
-          residenteWorkersId: res?.residenteWorkersId ?? null,
-          emailResponsable:   res?.emailResponsable   ?? '',
-          emailRrhh:          res?.emailRrhh          ?? '',
-          emailCoordSsoma:    res?.emailCoordSsoma    ?? '',
-          emailCoordAdmin:    res?.emailCoordAdmin    ?? '',
+          residenteWorkersId:  res?.residenteWorkersId  ?? null,
+          workersCoordAdminId: res?.workersCoordAdminId ?? null,
+          emailResponsable:    res?.emailResponsable    ?? '',
+          emailRrhh:           res?.emailRrhh           ?? '',
+          emailCoordSsoma:     res?.emailCoordSsoma     ?? '',
         };
         this.residentes = res?.residentes ?? [];
         this.loadingInitial = false;
@@ -88,20 +87,28 @@ export class ProyectoEmails implements OnChanges {
 
   /** Correo que realmente se va a usar, para mostrarlo bajo el desplegable. */
   get residenteEmail(): string | null {
-    const id = this.model.residenteWorkersId;
-    if (!id) return null;
-    return this.residentes.find((r) => r.workerId === id)?.email ?? null;
+    return this.emailDe(this.model.residenteWorkersId);
+  }
+
+  /** Idem para el coordinador administrativo: lo que se guarda es el workerId. */
+  get coordAdminEmail(): string | null {
+    return this.emailDe(this.model.workersCoordAdminId);
+  }
+
+  private emailDe(workerId: number | null | undefined): string | null {
+    if (!workerId) return null;
+    return this.residentes.find((r) => r.workerId === workerId)?.email ?? null;
   }
 
   submit(): void {
     if (this.saving) return;
 
     const payload: ProjectEmailsDTO = {
-      residenteWorkersId: this.model.residenteWorkersId ?? null,
-      emailResponsable:   this.normalize(this.model.emailResponsable),
-      emailRrhh:          this.normalize(this.model.emailRrhh),
-      emailCoordSsoma:    this.normalize(this.model.emailCoordSsoma),
-      emailCoordAdmin:    this.normalize(this.model.emailCoordAdmin),
+      residenteWorkersId:  this.model.residenteWorkersId  ?? null,
+      workersCoordAdminId: this.model.workersCoordAdminId ?? null,
+      emailResponsable:    this.normalize(this.model.emailResponsable),
+      emailRrhh:           this.normalize(this.model.emailRrhh),
+      emailCoordSsoma:     this.normalize(this.model.emailCoordSsoma),
     };
 
     this.saving = true;

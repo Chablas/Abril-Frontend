@@ -1,0 +1,134 @@
+<app-base-modal [title]="'Nueva razón social'" width="w-[720px]"
+                [preventCloseWhenDirty]="true" (closeModal)="close()">
+  <div class="rs-form">
+
+    <!-- ── Identidad: se resuelve por RUC ──────────────────────────────── -->
+    <section>
+      <h4 class="rs-seccion-titulo"><i class="ti ti-search"></i> Consulta por RUC</h4>
+
+      <div class="rs-ruc-row">
+        <div class="abril-field">
+          <label class="abril-field-label">RUC <span style="color:#b91c1c">*</span></label>
+          <input type="text" class="abril-field-input" [ngModel]="rucInput"
+                 (input)="onRucInput($event)" (keydown.enter)="consultarRuc()"
+                 name="ruc" autocomplete="off" inputmode="numeric" maxlength="11"
+                 placeholder="Los 11 dígitos del RUC" />
+        </div>
+        <button type="button" class="rs-btn-consultar"
+                [disabled]="rucInput.length !== 11" (click)="consultarRuc()">
+          Consultar
+        </button>
+      </div>
+
+      @if (!formularioVisible) {
+        <button type="button" class="rs-link" style="margin-top:10px" (click)="registrarManualmente()">
+          ¿La consulta no responde? Regístrala manualmente
+        </button>
+      }
+    </section>
+
+    @if (formularioVisible) {
+      <!-- ── Datos de la empresa ──────────────────────────────────────────
+           Con la consulta hecha, los datos de identidad quedan en solo lectura:
+           son los que devolvió SUNAT y corregirlos a mano sería registrar otra
+           empresa. En el alta manual sí se escriben. -->
+      <section>
+        <h4 class="rs-seccion-titulo"><i class="ti ti-building"></i> Datos de la empresa</h4>
+
+        <div class="rs-grid">
+          <div class="abril-field rs-col-2">
+            <label class="abril-field-label">Razón social <span style="color:#b91c1c">*</span></label>
+            <input type="text" class="abril-field-input" [class.rs-readonly]="lookupDone"
+                   [(ngModel)]="model.nombre" [readonly]="lookupDone"
+                   name="nombre" autocomplete="organization"
+                   placeholder="Nombre legal de la empresa" />
+          </div>
+
+          @if (manualEntry) {
+            <div class="abril-field">
+              <label class="abril-field-label">RUC <span style="color:#b91c1c">*</span></label>
+              <input type="text" class="abril-field-input" [(ngModel)]="model.ruc"
+                     name="rucManual" autocomplete="off" inputmode="numeric" maxlength="11" />
+            </div>
+          }
+
+          <div class="abril-field" [class.rs-col-2]="!manualEntry">
+            <label class="abril-field-label">Tipo de actividad <span style="color:#b91c1c">*</span></label>
+            <input type="text" class="abril-field-input" [(ngModel)]="model.tipoActividad"
+                   name="tipoActividad" autocomplete="off"
+                   placeholder="Ej. Actividades inmobiliarias" />
+          </div>
+
+          <div class="abril-field rs-col-2">
+            <label class="abril-field-label">Dirección <span style="color:#b91c1c">*</span></label>
+            <input type="text" class="abril-field-input" [(ngModel)]="model.direccion"
+                   name="direccion" autocomplete="street-address"
+                   placeholder="Dirección fiscal" />
+          </div>
+
+          <div class="abril-field">
+            <label class="abril-field-label">Departamento <span style="color:#b91c1c">*</span></label>
+            <input type="text" class="abril-field-input" [(ngModel)]="model.departamento"
+                   name="departamento" autocomplete="off" />
+          </div>
+
+          <div class="abril-field">
+            <label class="abril-field-label">Provincia <span style="color:#b91c1c">*</span></label>
+            <input type="text" class="abril-field-input" [(ngModel)]="model.provincia"
+                   name="provincia" autocomplete="off" />
+          </div>
+
+          <div class="abril-field">
+            <label class="abril-field-label">Distrito <span style="color:#b91c1c">*</span></label>
+            <input type="text" class="abril-field-input" [(ngModel)]="model.distrito"
+                   name="distrito" autocomplete="off" />
+          </div>
+
+          <div class="abril-field">
+            <label class="abril-field-label">Partida registral</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="model.partidaRegistral"
+                   name="partidaRegistral" autocomplete="off" placeholder="Opcional" />
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Grupo Abril + banco ──────────────────────────────────────────
+           Una sola decisión: el banco solo existe si la empresa es del grupo. -->
+      <section class="rs-abril" [class.rs-abril--on]="model.esAbril">
+        <label class="rs-check">
+          <input type="checkbox" [ngModel]="model.esAbril"
+                 (ngModelChange)="onEsAbrilChange($event)" name="esAbril" />
+          <span class="rs-check-texto">
+            <span class="rs-check-label">Es una razón social del grupo Abril</span>
+            <span class="rs-check-hint">
+              Márcala si con esta empresa se contrata personal propio. Solo estas aparecen en el
+              formulario de bienvenida del nuevo colaborador.
+            </span>
+          </span>
+        </label>
+
+        @if (model.esAbril) {
+          <div class="rs-banco">
+            <app-search-select label="Banco" [options]="bancos" valueField="id" displayField="nombre"
+              [value]="model.bancoId" (valueChange)="model.bancoId = $event"
+              placeholder="Selecciona el banco" [rawLabel]="true"></app-search-select>
+            <p class="rs-hint">
+              Es el banco en el que se le abre la cuenta sueldo a quien se contrate con esta razón
+              social. Se administra en Configuración → Bancos.
+            </p>
+          </div>
+        }
+      </section>
+
+      <footer class="rs-footer">
+        <button type="button" class="rs-btn rs-btn--ghost" [disabled]="guardando" (click)="close()">
+          Cancelar
+        </button>
+        <button type="button" class="rs-btn rs-btn--primary" [disabled]="guardando" (click)="guardar()">
+          {{ guardando ? 'Registrando…' : 'Registrar' }}
+        </button>
+      </footer>
+    }
+
+  </div>
+</app-base-modal>

@@ -8,6 +8,10 @@ import {
   EvGestionSsomaEvaluacionCreateDto,
   EvGestionSsomaResultadosDto,
   EvGestionSsomaCumplimientoDto,
+  EvGestionSsomaMisResultadosDto,
+  EvGestionSsomaPlanAccionDto,
+  EvGestionSsomaPlanAccionCreateDto,
+  EvGestionSsomaPlanAccionUpdateDto,
 } from '../dtos/ev-gestion-ssoma.model';
 
 @Injectable({ providedIn: 'root' })
@@ -36,5 +40,26 @@ export class EvGestionSsomaService {
   getPendientes(periodoId?: number): Observable<EvGestionSsomaCumplimientoDto> {
     const params: Record<string, string> = periodoId ? { periodoId: String(periodoId) } : {};
     return this.http.get<EvGestionSsomaCumplimientoDto>(`${this.base}/pendientes`, { headers: this.headers(), params });
+  }
+
+  getMisResultados(periodoId?: number): Observable<EvGestionSsomaMisResultadosDto> {
+    const params: Record<string, string> = periodoId ? { periodoId: String(periodoId) } : {};
+    return this.http.get<EvGestionSsomaMisResultadosDto>(`${this.base}/mis-resultados`, { headers: this.headers(), params });
+  }
+
+  getPlanAccion(periodoId: number): Observable<EvGestionSsomaPlanAccionDto[]> {
+    return this.http.get<EvGestionSsomaPlanAccionDto[]>(`${this.base}/plan-accion`, { headers: this.headers(), params: { periodoId: String(periodoId) } });
+  }
+
+  crearPlanAccion(periodoId: number, dto: EvGestionSsomaPlanAccionCreateDto): Observable<EvGestionSsomaPlanAccionDto> {
+    return this.http.post<EvGestionSsomaPlanAccionDto>(`${this.base}/plan-accion`, dto, { headers: this.headers(), params: { periodoId: String(periodoId) } });
+  }
+
+  actualizarPlanAccion(id: number, dto: EvGestionSsomaPlanAccionUpdateDto): Observable<EvGestionSsomaPlanAccionDto> {
+    return this.http.put<EvGestionSsomaPlanAccionDto>(`${this.base}/plan-accion/${id}`, dto, { headers: this.headers() });
+  }
+
+  eliminarPlanAccion(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/plan-accion/${id}`, { headers: this.headers() });
   }
 }

@@ -10,6 +10,12 @@ export interface DescansoTipoDto {
   nombreCorto: string;
 }
 
+/** Opción del catálogo workers_obra_oficina_staff: Obra / Staff / Oficina Central / Personal Externo. */
+export interface ObraOficinaStaffOpcionDto {
+  obraOficinaStaffId: number;
+  name: string;
+}
+
 export interface DescansoAdjuntoDto {
   /** Id del adjunto: el archivo se pide al backend por este id, no por su url de SharePoint. */
   id: number;
@@ -24,6 +30,10 @@ export interface DescansoMedicoListItemDto {
   workerNombre?: string;
   workerDni?: string;
   empresaNombre?: string;
+  /** Ubicación laboral del trabajador (workers.obra_oficina_staff_id). */
+  obraOficinaStaffId?: number;
+  /** Nombre del catálogo; undefined/null si la ficha del trabajador no lo tiene cargado. */
+  obraOficinaStaffNombre?: string;
   tipoId: number;
   /** Nombre del tipo resuelto en el backend desde el catálogo. */
   tipo: string;
@@ -200,6 +210,8 @@ export interface DescansoFilterDto {
   estado?: string;
   /** null = "Todos" (lo que emite el combobox al limpiar); toParams lo omite de la query. */
   tipoId?: number | null;
+  /** null = "Todos"; toParams lo omite de la query. */
+  obraOficinaStaffId?: number | null;
   empresaId?: number;
   fechaDesde?: string;
   fechaHasta?: string;
@@ -209,5 +221,6 @@ export interface DescansoFilterDto {
 /** Respuesta de la carga inicial: catálogo de tipos + primera página, en una sola petición. */
 export interface DescansosInicioDto {
   tipos: DescansoTipoDto[];
+  obraOficinaStaff: ObraOficinaStaffOpcionDto[];
   descansos: PagedResponseDTO<DescansoMedicoListItemDto>;
 }

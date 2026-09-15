@@ -1,0 +1,35 @@
+<app-base-modal
+  [title]="titulo"
+  width="w-[980px]"
+  closeColor="var(--color-abril-standard)"
+  (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-wrap items-center justify-center gap-2 text-[12px] text-gray-500">
+      <span *ngIf="subtitulo">{{ subtitulo }}</span>
+      <span class="text-[0.7rem] font-bold border rounded-full px-2 py-0.5" [ngClass]="tipoBadge">
+        {{ cabecera.userType }}
+      </span>
+      <span
+        class="text-[0.7rem] font-bold border rounded-full px-2 py-0.5"
+        [ngClass]="cabecera.active
+          ? 'bg-green-100 text-green-800 border-green-200'
+          : 'bg-gray-100 text-gray-500 border-gray-200'"
+        [attr.title]="cabecera.active ? null : 'No puede iniciar sesión mientras esté desactivado'">
+        {{ cabecera.active ? 'Activo' : 'Inactivo' }}
+      </span>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <app-access-roles
+        [roles]="detalle?.roles ?? []"
+        [cargando]="!detalle"
+        vacio="El usuario no tiene roles." />
+
+      <app-access-features
+        [features]="detalle?.features ?? []"
+        [cargando]="!detalle"
+        vacio="No accede a ninguna funcionalidad." />
+    </div>
+  </div>
+</app-base-modal>

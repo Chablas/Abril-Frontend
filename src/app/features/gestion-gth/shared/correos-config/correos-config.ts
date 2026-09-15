@@ -19,9 +19,10 @@ import {
 } from './dtos/correo-config.dto';
 
 /**
- * Configuración de los correos de Gestión GTH. Lo comparten las tres pantallas de configuración
- * (Solicitud de Personal, Aprobaciones y Reclutamiento): el `modulo` decide qué correos administra
- * cada una, las pestañas salen de lo que devuelve el backend y no de una lista escrita acá.
+ * Configuración de los correos de Gestión GTH. Lo comparten las cuatro pantallas de configuración
+ * (Solicitud de Personal, Aprobaciones, Reclutamiento y Onboarding): el `modulo` decide qué correos
+ * administra cada una, las pestañas salen de lo que devuelve el backend y no de una lista escrita
+ * acá.
  *
  * Una sección (`app-section-tabs`) por cada correo, con un interruptor maestro (apagado = ese
  * correo no se envía a nadie) y la lista de sus destinatarios, cada uno con su propio interruptor.
@@ -43,7 +44,9 @@ import {
   selector: 'app-gth-correos-config',
   imports: [CommonModule, FormsModule, AbrilModalPanel, SectionTabs, SearchSelect],
   templateUrl: './correos-config.html',
-  styleUrl: './correos-config.css',
+  // Hoja compartida con la configuración de correos de Gestión Administrativa: las dos pantallas
+  // son la misma matriz de destinatarios y tienen que verse igual (ver shared/styles).
+  styleUrl: '../../../../shared/styles/correos-config.css',
 })
 export class GthCorreosConfig implements OnInit {
   /** Pantalla que lo usa: define qué correos trae y sobre cuáles puede escribir. */

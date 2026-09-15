@@ -134,6 +134,10 @@
   background: #fafafa;
   transition: border-color 0.15s, background 0.15s;
   min-height: 2.5rem;
+  /* Sin esto la caja crece con el nombre del archivo: como ítem de flex/grid su ancho
+     mínimo es el del contenido, así que un nombre largo la estiraba más allá del modal
+     y `.emo-section { overflow: hidden }` cortaba el texto a la mitad. */
+  min-width: 0;
 }
 .file-zone:hover {
   border-color: #64BC04;
@@ -149,7 +153,20 @@
 }
 .file-zone-icon { font-size: 1rem; flex-shrink: 0; }
 .file-zone-hint { font-size: 0.8rem; color: #9ca3af; }
-.file-zone-name { font-size: 0.8rem; color: #16a34a; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* El nombre del archivo se parte en varias líneas en vez de cortarse: es la confirmación de
+   lo que se adjuntó, así que tiene que leerse completo. `min-width: 0` + `overflow-wrap`
+   permiten el corte incluso en nombres de una sola palabra (Planilla_Rendicion_2026…), que
+   es el caso real: sin ellos el ancho mínimo del ítem es la palabra entera. El `title` del
+   template lo muestra igual al pasar el cursor. */
+.file-zone-name {
+  font-size: 0.8rem;
+  color: #16a34a;
+  font-weight: 500;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
 
 /* ── Documentos: grid 2 columnas ─────────────────────────── */
 .docs-grid {
@@ -157,13 +174,20 @@
   grid-template-columns: 1fr 1fr;
   gap: 0.75rem;
 }
-.upload-card { display: flex; flex-direction: column; gap: 6px; }
+/* `min-width: 0` para que la columna se quede en su 1fr: por defecto un ítem de grid no baja
+   del ancho de su contenido y un nombre de archivo largo desbordaba la fila entera. */
+.upload-card { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .upload-card-label {
   font-size: 0.75rem;
   font-weight: 600;
   color: #374151;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+/* En pantallas angostas las dos tarjetas de Documentos quedaban en ~130px cada una. */
+@media (max-width: 560px) {
+  .docs-grid { grid-template-columns: 1fr; }
 }
 
 /* ── Restricciones ───────────────────────────────────────── */

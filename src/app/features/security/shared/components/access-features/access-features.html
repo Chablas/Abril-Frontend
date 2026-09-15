@@ -1,0 +1,30 @@
+<app-access-panel
+  icono="ti-apps"
+  [titulo]="titulo"
+  [total]="features.length"
+  [visibles]="visibles"
+  [placeholder]="conVia ? 'Buscar por funcionalidad, módulo o rol...' : 'Buscar por funcionalidad o módulo...'"
+  [vacio]="vacio"
+  [cargando]="cargando"
+  (busquedaChange)="buscar($event)">
+
+  <div *ngFor="let g of grupos; trackBy: trackByGrupo" class="af-group">
+    <div class="af-group__head">
+      <span class="af-group__name" [class.af-group__name--sin]="g.key === 'sin-modulo'">
+        {{ g.moduleName }}
+      </span>
+      <span class="af-group__count">{{ g.items.length }}</span>
+    </div>
+
+    <div *ngFor="let f of g.items; trackBy: trackById" class="af-row">
+      <span class="af-name">{{ f.label }}</span>
+      <span class="af-key">{{ f.featureKey }}</span>
+
+      <!-- Nombres de rol tal cual: en MAYÚSCULAS y con siglas que titleCase rompería. -->
+      <div *ngIf="f.viaRoles?.length" class="af-via" title="Roles que dan esta funcionalidad">
+        <i class="ti ti-shield"></i>
+        <span *ngFor="let r of f.viaRoles" class="af-via__chip">{{ r.roleDescription }}</span>
+      </div>
+    </div>
+  </div>
+</app-access-panel>

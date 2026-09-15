@@ -20,8 +20,15 @@ import {
   ResponsablesDTO,
 } from '../../../../core/dtos/habilitacion/responsables.model';
 
-/** Los 4 correos de proyecto que alimentan los avisos de EMOs (EmoAlertaService.BuildDestinatarios). */
-export type CampoProyecto = 'emailResponsable' | 'emailRrhh' | 'emailCoordSsoma' | 'emailCoordAdmin';
+/**
+ * Los correos de TEXTO del proyecto que alimentan los avisos de EMOs
+ * (EmoAlertaService.BuildDestinatarios). El Residente y el Coordinador Administrativo no
+ * estan aca: son FKs a workers y se manejan aparte (ver CAMPOS_WORKER).
+ */
+export type CampoProyecto = 'emailResponsable' | 'emailRrhh' | 'emailCoordSsoma';
+
+/** Los campos del proyecto que apuntan a un trabajador en vez de guardar su correo. */
+export type CampoWorker = 'residenteWorkersId' | 'workersCoordAdminId';
 
 /**
  * Sentinel para "dejar el campo en blanco" en el picker, distinto de `null` (que significa
@@ -33,7 +40,33 @@ export const CAMPOS_PROYECTO: { campo: CampoProyecto; label: string }[] = [
   { campo: 'emailResponsable', label: 'Responsable' },
   { campo: 'emailRrhh', label: 'RR.HH.' },
   { campo: 'emailCoordSsoma', label: 'Coord. SSOMA' },
-  { campo: 'emailCoordAdmin', label: 'Coord. Administración' },
+];
+
+/**
+ * Columnas de trabajador. `nombreKey`/`emailKey` son los campos donde el backend devuelve
+ * el nombre y el correo ya resueltos desde la ficha, para pintarlos sin buscarlos en la lista.
+ */
+export const CAMPOS_WORKER: {
+  campo: CampoWorker;
+  label: string;
+  nombreKey: 'residenteNombre' | 'coordAdminNombre';
+  emailKey: 'residenteEmail' | 'coordAdminEmail';
+  vacio: string;
+}[] = [
+  {
+    campo: 'residenteWorkersId',
+    label: 'Residente',
+    nombreKey: 'residenteNombre',
+    emailKey: 'residenteEmail',
+    vacio: 'Sin residente asignado.',
+  },
+  {
+    campo: 'workersCoordAdminId',
+    label: 'Coord. Administración',
+    nombreKey: 'coordAdminNombre',
+    emailKey: 'coordAdminEmail',
+    vacio: 'Sin coordinador asignado.',
+  },
 ];
 
 @Component({
@@ -62,14 +95,15 @@ export class Responsables implements OnInit {
   proyectosPager = new ClientPager<ResponsableProyectoDTO>();
 
   readonly camposProyecto = CAMPOS_PROYECTO;
+  readonly camposWorker = CAMPOS_WORKER;
   readonly campoLimpiar = CAMPO_PROYECTO_LIMPIAR;
 
   /** workerId elegido en el picker por fila, antes de guardar (contributorId -> workerId). */
   pendingRazonSocialWorker: Record<number, number | null> = {};
   /** Igual, pero por proyecto Y por campo: projectId -> campo -> workerId. */
   pendingProyectoWorker: Record<number, Partial<Record<CampoProyecto, number | null>>> = {};
-  /** Residente elegido en el picker por proyecto, antes de guardar: projectId -> workerId. */
-  pendingProyectoResidente: Record<number, number | null> = {};
+  /** Trabajador elegido en el picker, antes de guardar: projectId -> campo -> workerId. */
+  pendingProyectoWorkerFk: Record<number, Partial<Record<CampoWorker, number | null>>> = {};
   savingRazonSocial: Record<number, boolean> = {};
   savingProyecto: Record<number, boolean> = {};
 
@@ -179,44 +213,49 @@ export class Responsables implements OnInit {
     return this.esCorreoVigente(row[campo]) ? row[campo] : null;
   }
 
-  /** Residente: no es texto suelto, es la FK project.residente_workers_id — el correo ya viene
+  /** Residente y Coord. Administrativo: no son texto suelto, son FKs a workers
+   *  (project.residente_workers_id / project.workers_coord_admin_id). El correo ya viene
    *  resuelto en vivo desde la ficha del trabajador (ResponsablesRepository.GetAll), así que no
-   *  aplica el filtro de "vigente" que sí necesitan los otros 4 campos de texto. */
-  pendingProyectoResidenteFor(projectId: number): number | null {
-    return this.pendingProyectoResidente[projectId] ?? null;
+   *  aplica el filtro de "vigente" que sí necesitan los campos de texto. */
+  pendingProyectoWorkerFkFor(projectId: number, campo: CampoWorker): number | null {
+    return this.pendingProyectoWorkerFk[projectId]?.[campo] ?? null;
   }
 
-  setPendingProyectoResidente(projectId: number, workerId: number | null): void {
-    this.pendingProyectoResidente[projectId] = workerId;
+  setPendingProyectoWorkerFk(projectId: number, campo: CampoWorker, workerId: number | null): void {
+    this.pendingProyectoWorkerFk[projectId] ??= {};
+    this.pendingProyectoWorkerFk[projectId][campo] = workerId;
   }
 
-  limpiarPendingProyectoResidente(projectId: number): void {
-    this.setPendingProyectoResidente(projectId, CAMPO_PROYECTO_LIMPIAR);
+  limpiarPendingProyectoWorkerFk(projectId: number, campo: CampoWorker): void {
+    this.setPendingProyectoWorkerFk(projectId, campo, CAMPO_PROYECTO_LIMPIAR);
   }
 
-  residenteNombreProyecto(row: ResponsableProyectoDTO): string | null {
-    const pendingId = this.pendingProyectoResidenteFor(row.projectId);
+  workerFkNombre(row: ResponsableProyectoDTO, col: (typeof CAMPOS_WORKER)[number]): string | null {
+    const pendingId = this.pendingProyectoWorkerFkFor(row.projectId, col.campo);
     if (pendingId === CAMPO_PROYECTO_LIMPIAR) return null;
     if (pendingId != null) {
       return this.data.trabajadores.find((w) => w.workerId === pendingId)?.nombreCompleto ?? null;
     }
-    return row.residenteNombre;
+    return row[col.nombreKey];
   }
 
-  residenteEmailProyecto(row: ResponsableProyectoDTO): string | null {
-    const pendingId = this.pendingProyectoResidenteFor(row.projectId);
+  workerFkEmail(row: ResponsableProyectoDTO, col: (typeof CAMPOS_WORKER)[number]): string | null {
+    const pendingId = this.pendingProyectoWorkerFkFor(row.projectId, col.campo);
     if (pendingId === CAMPO_PROYECTO_LIMPIAR) return null;
     if (pendingId != null) {
       return this.data.trabajadores.find((w) => w.workerId === pendingId)?.email ?? null;
     }
-    return row.residenteEmail;
+    return row[col.emailKey];
   }
 
-  /** Hay algo sin guardar en el residente o en cualquiera de los 4 campos de este proyecto. */
+  /** Hay algo sin guardar en cualquiera de las columnas de este proyecto. */
   proyectoTienePendientes(projectId: number): boolean {
-    const pend = this.pendingProyectoWorker[projectId];
-    const pendResidente = this.pendingProyectoResidente[projectId];
-    return (!!pend && Object.values(pend).some((v) => v != null)) || pendResidente != null;
+    const pendTexto = this.pendingProyectoWorker[projectId];
+    const pendFk = this.pendingProyectoWorkerFk[projectId];
+    return (
+      (!!pendTexto && Object.values(pendTexto).some((v) => v != null)) ||
+      (!!pendFk && Object.values(pendFk).some((v) => v != null))
+    );
   }
 
   guardarRazonSocial(row: ResponsableRazonSocialDTO): void {
@@ -244,7 +283,7 @@ export class Responsables implements OnInit {
     if (!this.proyectoTienePendientes(row.projectId)) return;
 
     // Cada campo se resuelve al valor recién elegido (si lo hay) o se mantiene el que ya
-    // tenía guardado — el PUT reemplaza los 4 a la vez, así que hay que enviarlos completos.
+    // tenía guardado — el PUT reemplaza todos a la vez, así que hay que enviarlos completos.
     const valores = Object.fromEntries(
       this.camposProyecto.map(({ campo }) => [
         campo,
@@ -254,23 +293,34 @@ export class Responsables implements OnInit {
       ]),
     ) as Record<CampoProyecto, string | null>;
 
-    const pendResidente = this.pendingProyectoResidenteFor(row.projectId);
-    const residenteWorkersId =
-      pendResidente === CAMPO_PROYECTO_LIMPIAR
-        ? null
-        : pendResidente != null
-          ? pendResidente
-          : row.residenteWorkersId;
+    const fks = Object.fromEntries(
+      this.camposWorker.map(({ campo }) => {
+        const pend = this.pendingProyectoWorkerFkFor(row.projectId, campo);
+        return [
+          campo,
+          pend === CAMPO_PROYECTO_LIMPIAR ? null : pend != null ? pend : row[campo],
+        ];
+      }),
+    ) as Record<CampoWorker, number | null>;
 
     this.savingProyecto[row.projectId] = true;
-    this.service.updateProyecto(row.projectId, { ...valores, residenteWorkersId }).subscribe({
+    this.service.updateProyecto(row.projectId, { ...valores, ...fks }).subscribe({
       next: () => {
         this.camposProyecto.forEach(({ campo }) => (row[campo] = valores[campo]));
-        row.residenteWorkersId = residenteWorkersId;
-        row.residenteNombre = this.residenteNombreProyecto(row);
-        row.residenteEmail = this.residenteEmailProyecto(row);
+        // El nombre/correo se leen ANTES de pisar la FK: los getters miran el valor pendiente
+        // y, si ya no hay, caen al de la fila — que todavía es el viejo en este punto.
+        const resueltos = this.camposWorker.map((col) => ({
+          col,
+          nombre: this.workerFkNombre(row, col),
+          email: this.workerFkEmail(row, col),
+        }));
+        resueltos.forEach(({ col, nombre, email }) => {
+          row[col.campo] = fks[col.campo];
+          row[col.nombreKey] = nombre;
+          row[col.emailKey] = email;
+        });
         delete this.pendingProyectoWorker[row.projectId];
-        delete this.pendingProyectoResidente[row.projectId];
+        delete this.pendingProyectoWorkerFk[row.projectId];
         this.savingProyecto[row.projectId] = false;
         Swal.fire({ icon: 'success', title: 'Responsables actualizados', timer: 1200, showConfirmButton: false });
         this.cdr.detectChanges();

@@ -2,8 +2,10 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
+import { AbrilPageHeaderComponent, AbrilPageTabGroup } from '../../../../shared/components/abril-page-header/abril-page-header.component';
 import { EvPlantillaService } from '../../services/ev-plantilla.service';
+import { EvAccesoService } from '../../services/ev-acceso.service';
+import { buildEvaluacionesTabGroups } from '../../shared/evaluaciones-tabs';
 import { EvPlantillaDto } from '../../dtos/ev-plantilla.model';
 
 @Component({
@@ -19,13 +21,19 @@ export class ConfiguracionPlantilla implements OnInit {
   criterios: EvPlantillaDto[] = [];
   editandoId: number | null = null;
   editTexto = '';
+  tabGroups: AbrilPageTabGroup[] = buildEvaluacionesTabGroups(null);
 
   constructor(
     private plantillaService: EvPlantillaService,
     private cdr: ChangeDetectorRef,
+    private accesoSvc: EvAccesoService,
   ) {}
 
   ngOnInit(): void {
+    this.accesoSvc.getAcceso().subscribe((acceso) => {
+      this.tabGroups = buildEvaluacionesTabGroups(acceso);
+      this.cdr.detectChanges();
+    });
     this.plantillaService.getAreas().subscribe({
       next: (a) => {
         this.areas = a;

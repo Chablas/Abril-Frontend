@@ -1,0 +1,95 @@
+<app-abril-page-header
+  badge="CONFIGURACIÓN"
+  titulo="Bancos"
+  subtitulo="Bancos con los que trabajan las razones sociales del grupo."
+  [tabs]="tabs"
+  [botonPrimario]="{ label: 'Nuevo banco', icono: 'ti-plus' }"
+  (primaryClick)="openCreate()">
+</app-abril-page-header>
+
+<section class="p-6 space-y-4 flex-1 min-h-0">
+
+  <div class="filters-card">
+    <div class="filters-grid">
+      <div class="filter-search">
+        <label class="filter-label">Buscar</label>
+        <app-search-input
+          width="100%"
+          placeholder="Nombre o código"
+          [value]="filters.search"
+          (valueChange)="onSearchChange($event)">
+        </app-search-input>
+      </div>
+
+      <div>
+        <label class="filter-label">Estado</label>
+        <app-search-select
+          [options]="estadoOptions" valueField="value" displayField="label"
+          placeholder="Todos" [showLabel]="false" [allowClear]="false" [sortAlpha]="false"
+          [value]="filters.estado" (valueChange)="onEstadoChange($event)">
+        </app-search-select>
+      </div>
+    </div>
+
+    <div *ngIf="hasActiveFilters" class="pt-2">
+      <button type="button" class="btn-link" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Banco</th>
+            <th>Código</th>
+            <th class="text-center">Orden</th>
+            <th class="text-center">Razones sociales</th>
+            <th>Estado</th>
+            <th class="text-right">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filtered">
+            <td class="font-semibold text-gray-800">{{ item.nombre }}</td>
+            <td class="text-gray-600">{{ item.codigo }}</td>
+            <td class="text-center text-gray-600">{{ item.orden }}</td>
+            <td class="text-center text-gray-600">{{ item.razonesSociales }}</td>
+            <td>
+              <span class="badge border" [ngClass]="item.activo ? 'chip-green' : 'chip-gray'">
+                {{ item.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="text-right">
+              <div class="row-actions">
+                <button type="button" class="btn-chip chip-blue" (click)="openEdit(item)">
+                  Editar
+                </button>
+                <!-- El botón se deja visible aunque el banco esté en uso: al pulsarlo se explica
+                     por qué no se puede y cuál es la alternativa. Deshabilitarlo dejaría al
+                     usuario sin saber el motivo. -->
+                <button type="button" class="btn-chip chip-red" (click)="eliminar(item)">
+                  Eliminar
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!loading && filtered.length === 0">
+            <td colspan="6" class="empty-row">
+              {{ hasActiveFilters
+                 ? 'Ningún banco coincide con los filtros.'
+                 : 'Sin bancos registrados.' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<app-banco-form
+  *ngIf="modalOpen"
+  [banco]="editItem"
+  (closed)="closeModal()"
+  (saved)="onSaved($event)"
+></app-banco-form>

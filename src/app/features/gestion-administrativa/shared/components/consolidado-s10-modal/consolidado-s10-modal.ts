@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 import Swal from 'sweetalert2';
 
@@ -9,41 +10,71 @@ import { FileSelector, SelectedFile } from '../../../../../shared/components/fil
 import { FilePreview } from '../../../../../shared/components/file-preview/file-preview';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
-import { ConsolidadoS10Ambito, ConsolidadoS10Dto } from './consolidado-s10.dto';
+import { ConsolidadoS10Dto } from './consolidado-s10.dto';
 
 /**
- * Adjunta el PDF "Consolidado del S10" de una salida ya rendida. Lo usan las dos pantallas de
- * salidas (autoservicio y gestión); cada una le pasa su propia función de subida, que es lo único
- * que cambia entre ambas (endpoint + guard de propiedad en el backend).
+ * Adjunta el PDF "Consolidado del S10" de una o varias planillas de rendición. Lo usan Mis
+ * Rendiciones (el autoservicio, donde el trabajador sube el de una planilla propia) y Gestión de
+ * Rendiciones (los consolidadores, que lo suben en nombre de los trabajadores y pueden cubrir varias
+ * planillas con uno solo); cada una le pasa su propia función de subida, que es lo único que cambia
+ * entre ambas (endpoint + guard de propiedad en el backend).
  *
- * El ámbito lo elige el usuario: por defecto el archivo cubre toda la planilla de rendición —una
- * planilla es un registro en el S10— y como alternativa puede cubrir solo esa salida.
+ * El archivo cubre siempre planillas enteras: un registro en el S10 puede agrupar varias
+ * rendiciones, incluso de trabajadores distintos, siempre que sean de una misma razón social.
+ *
+ * Además del PDF se capturan los dos datos con los que el S10 lo registró: el monto total y el
+ * número de reembolso. El monto tiene que CUADRAR con el de las planillas —el consolidado las cubre
+ * enteras—, así que el formulario no deja adjuntar si no coincide; el backend lo re-valida.
  */
 @Component({
   standalone: true,
   selector: 'app-consolidado-s10-modal',
-  imports: [CommonModule, BaseModal, FileSelector, FilePreview],
+  imports: [CommonModule, FormsModule, BaseModal, FileSelector, FilePreview],
   templateUrl: './consolidado-s10-modal.html',
   styleUrl: './consolidado-s10-modal.css',
 })
-export class ConsolidadoS10Modal implements OnInit, OnDestroy {
+export class ConsolidadoS10Modal implements OnDestroy {
   /** Función de subida que inyecta la pantalla anfitriona (ya sabe a qué endpoint pegarle). */
-  @Input({ required: true }) upload!: (file: File, ambito: ConsolidadoS10Ambito) => Observable<ConsolidadoS10Dto>;
-
-  /** Consolidado vigente, si la salida ya tenía uno. Se muestra para poder abrirlo o reemplazarlo. */
-  @Input() actual: ConsolidadoS10Dto | null = null;
+  @Input({ required: true }) upload!: (
+    file: File, montoTotal: number, numeroReembolso: string,
+  ) => Observable<ConsolidadoS10Dto>;
 
   /**
-   * False cuando la salida está rendida pero sin planilla asociada: ahí el ámbito "toda la planilla"
-   * no aplica y solo se puede adjuntar a la salida.
+   * Monto de las planillas COMPLETAS que va a cubrir —el que se registró en el S10—. Es contra este
+   * que tiene que cuadrar el monto declarado, y no contra lo que la pantalla muestre en su columna de
+   * monto: esa está recortada a las salidas propias (o visibles) y una planilla puede agrupar a
+   * varias personas.
    */
-  @Input() tieneRendicion = true;
+  @Input({ required: true }) montoEsperado!: number;
+
+  /** Consolidado vigente, si ya había uno. Se muestra para abrirlo o reemplazarlo. */
+  @Input() actual: ConsolidadoS10Dto | null = null;
+
+  /** Referencia de la planilla ("TI: 000123") cuando es una sola, para ver a cuál se adjunta. */
+  @Input() referencia: string | null = null;
+
+  /**
+   * Códigos de las planillas que va a cubrir cuando son VARIAS. Con una sola se deja vacío: basta
+   * `referencia`.
+   */
+  @Input() rendiciones: string[] = [];
+
+  /** Razón social de las planillas agrupadas: bajo qué empresa queda el registro del S10. */
+  @Input() razonSocial: string | null = null;
 
   /** Emite al cerrar: el consolidado subido, o null si se cerró sin subir nada. */
   @Output() close = new EventEmitter<ConsolidadoS10Dto | null>();
 
-  ambito: ConsolidadoS10Ambito = 'Rendicion';
   archivo: File | null = null;
+
+  /**
+   * Monto total declarado. Es null —no 0— mientras el campo esté vacío: el input numérico ya
+   * entrega null, así que "sin escribir" y "escribió cero" no se confunden.
+   */
+  montoTotal: number | null = null;
+
+  /** Número del reembolso del S10: texto libre, no un correlativo nuestro. */
+  numeroReembolso = '';
 
   constructor(
     private loader: LoaderService,
@@ -51,12 +82,13 @@ export class ConsolidadoS10Modal implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
   ) {}
 
-  ngOnInit(): void {
-    if (!this.tieneRendicion) this.ambito = 'Solicitud';
-  }
-
   ngOnDestroy(): void {
     if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
+  }
+
+  /** True si el consolidado va a cubrir más de una planilla. */
+  get varias(): boolean {
+    return this.rendiciones.length > 1;
   }
 
   /** ObjectURL del archivo elegido, solo para poder revocarlo al salir. */
@@ -79,20 +111,37 @@ export class ConsolidadoS10Modal implements OnInit, OnDestroy {
     this.archivo = null;
   }
 
-  setAmbito(valor: ConsolidadoS10Ambito): void {
-    if (valor === 'Rendicion' && !this.tieneRendicion) return;
-    this.ambito = valor;
-  }
-
   cerrar(): void {
     this.close.emit(null);
   }
 
+  // ── Monto y número de reembolso ─────────────────────────────────────────
+
+  /** Los dos montos se comparan a 2 decimales, la precisión con la que se guarda el importe. */
+  private static redondear(valor: number): number {
+    return Math.round(valor * 100) / 100;
+  }
+
+  /** True cuando ya hay un monto escrito y NO cuadra con el de las planillas. */
+  get montoDescuadra(): boolean {
+    if (this.montoTotal === null) return false;
+    return ConsolidadoS10Modal.redondear(this.montoTotal)
+        !== ConsolidadoS10Modal.redondear(this.montoEsperado ?? 0);
+  }
+
+  get puedeGuardar(): boolean {
+    return !!this.archivo
+        && this.montoTotal !== null
+        && this.montoTotal > 0
+        && !this.montoDescuadra
+        && this.numeroReembolso.trim().length > 0;
+  }
+
   guardar(): void {
-    if (!this.archivo) return;
+    if (!this.puedeGuardar) return;
 
     this.loader.show();
-    this.upload(this.archivo, this.ambito).subscribe({
+    this.upload(this.archivo!, this.montoTotal!, this.numeroReembolso.trim()).subscribe({
       next: (dto) => {
         this.loader.hide();
         Swal.fire({

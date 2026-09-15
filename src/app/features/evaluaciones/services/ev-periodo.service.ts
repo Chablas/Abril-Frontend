@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/services/auth.service';
-import { EvPeriodoDto } from '../dtos/ev-periodo.model';
+import { EvPeriodoDto, EvPeriodoCreateDto } from '../dtos/ev-periodo.model';
 
 @Injectable({ providedIn: 'root' })
 export class EvPeriodoService {
@@ -31,7 +31,20 @@ export class EvPeriodoService {
     return this.http.put(`${this.base}/${id}/activar`, {}, { headers: this.headers() });
   }
 
-  crear(dto: any): Observable<any> {
-    return this.http.post(this.base, dto, { headers: this.headers() });
+  desactivar(id: number): Observable<any> {
+    return this.http.put(`${this.base}/${id}/desactivar`, {}, { headers: this.headers() });
+  }
+
+  /** Reabre puntualmente un período cerrado, moviendo su cierre a una fecha futura (debe ser posterior al cierre actual). */
+  extender(id: number, nuevaFechaCierre: string): Observable<any> {
+    return this.http.put(
+      `${this.base}/${id}/extender`,
+      { nuevaFechaCierre },
+      { headers: this.headers() },
+    );
+  }
+
+  crear(dto: EvPeriodoCreateDto): Observable<EvPeriodoDto> {
+    return this.http.post<EvPeriodoDto>(this.base, dto, { headers: this.headers() });
   }
 }

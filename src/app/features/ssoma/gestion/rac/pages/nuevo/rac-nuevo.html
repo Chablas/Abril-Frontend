@@ -246,33 +246,6 @@
       </div>
     </section>
 
-    <!-- ■ 6. PENALIDAD ───────────────────────────────────────────────── -->
-    <section class="abril-form-section">
-      <h2 class="abril-section-title">
-        <i class="ti ti-receipt-tax"></i> Penalidad
-      </h2>
-
-      <label class="check-label">
-        <input type="checkbox" [(ngModel)]="aplicaPenalidad" />
-        <span>Aplica penalidad económica</span>
-      </label>
-
-      <div *ngIf="aplicaPenalidad" class="form-grid">
-        <div class="col-2">
-          <app-search-select
-            color="var(--color-abril-logo-blue)"
-            label="Infracción"
-            [options]="infracciones"
-            valueField="id"
-            displayField="nombre"
-            [value]="infraccionId"
-            placeholder="Selecciona infracción"
-            (valueChange)="infraccionId = $event"
-          ></app-search-select>
-        </div>
-      </div>
-    </section>
-
   </div><!-- /paso-body -->
 
   <div modalFooter *ngIf="!loadingCatalogos && !resolviendoObservador">

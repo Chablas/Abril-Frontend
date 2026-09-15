@@ -2,6 +2,15 @@ export type ConvalidacionResultado = 'Aprobada' | 'Rechazada' | 'Pendiente' | st
 
 export type RiesgoEmo = 'Bajo' | 'Alto' | string;
 
+export interface ConvalidacionInterconsultaDto {
+  id: number;
+  especialidad: string;
+  estado: string;
+  fechaDerivacion: string;
+  fechaAtencion?: string | null;
+  urlInforme?: string | null;
+}
+
 export interface ConvalidacionListDto {
   id: number;
   emoOrigenId: number;
@@ -26,9 +35,8 @@ export interface ConvalidacionListDto {
   urlResultado?: string | null;
   urlAptitud?: string | null;
   urlEmoCompleto?: string | null;
-  interconsultaEstado?: string | null;
-  interconsultaEspecialidad?: string | null;
-  interconsultaUrlInforme?: string | null;
+  /** Todas las interconsultas del trabajador, de la más reciente a la más antigua. */
+  interconsultas?: ConvalidacionInterconsultaDto[] | null;
 
   // Cambio de puesto: datos y evaluación de riesgo.
   puestoOrigen?: string | null;

@@ -1,0 +1,114 @@
+<div class="flex flex-col gap-3 pt-3">
+
+  <div class="flex items-end justify-between gap-2 flex-wrap">
+    <div class="w-80">
+      <app-multi-search-select
+        [options]="proyectos"
+        valueField="projectId"
+        displayField="projectDescription"
+        label="Obras"
+        placeholder="Todas las obras"
+        [value]="selectedProjectIds"
+        (valueChange)="selectedProjectIds = $event; onFiltroChange()">
+      </app-multi-search-select>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button type="button" (click)="exportar()" [disabled]="exportando || !selectedProjectIds.length"
+        class="h-[38px] px-4 rounded-[var(--radius-standard)] bg-[var(--color-abril-standard)] text-white text-sm font-medium hover:bg-[var(--color-abril-standard-hover)] transition-colors inline-flex items-center gap-1.5 disabled:opacity-50">
+        <i class="ti ti-file-spreadsheet"></i> {{ exportando ? 'Exportando...' : 'Exportar a Excel' }}
+      </button>
+      <button type="button" (click)="exportarPdf()" [disabled]="!items.length"
+        class="h-[38px] px-4 rounded-[var(--radius-standard)] border border-[var(--color-abril-standard)] text-[var(--color-abril-standard)] text-sm font-medium hover:bg-[var(--color-abril-standard-light)] transition-colors inline-flex items-center gap-1.5 disabled:opacity-50"
+        title="PDF estilo organizador visual, una página por obra, para presentar en comité">
+        <i class="ti ti-file-type-pdf"></i> Exportar a PDF
+      </button>
+    </div>
+  </div>
+
+  <p *ngIf="!selectedProjectIds.length" class="text-center text-sm text-gray-400 italic py-10">
+    Selecciona una o más obras para ver su dashboard (por rendimiento, no se cargan todas a la vez).
+  </p>
+
+  <div class="flex flex-wrap gap-2" *ngIf="resumen">
+    <div class="flex-1 min-w-[120px] rounded-lg border border-gray-200 px-3 py-2 text-center">
+      <div class="text-lg font-semibold text-gray-700">{{ resumen.documentos }}</div>
+      <div class="text-[11px] text-gray-400">Documentos</div>
+    </div>
+    <div class="flex-1 min-w-[120px] rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-center">
+      <div class="text-lg font-semibold text-emerald-700">{{ resumen.activos }}</div>
+      <div class="text-[11px] text-emerald-600">Activos</div>
+    </div>
+    <div class="flex-1 min-w-[120px] rounded-lg border border-gray-200 px-3 py-2 text-center">
+      <div class="text-lg font-semibold text-gray-500">{{ resumen.pendientes }}</div>
+      <div class="text-[11px] text-gray-400">Pendientes</div>
+    </div>
+    <div class="flex-1 min-w-[120px] rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-center">
+      <div class="text-lg font-semibold text-amber-700">{{ resumen.noAplica }}</div>
+      <div class="text-[11px] text-amber-600">No aplica</div>
+    </div>
+    <div class="flex-1 min-w-[120px] rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-center">
+      <div class="text-lg font-semibold text-red-700">{{ resumen.noTiene }}</div>
+      <div class="text-[11px] text-red-600">No tiene (vencido)</div>
+    </div>
+  </div>
+
+  <div class="abril-table-wrap" *ngIf="selectedProjectIds.length">
+    <table class="abril-table">
+      <thead>
+        <tr>
+          <th>Obra</th>
+          <th>Documento</th>
+          <th class="text-center">Estado</th>
+          <th><i class="ti ti-circle-filled text-blue-500 text-[9px] mr-1"></i>Inscripción</th>
+          <th><i class="ti ti-circle-filled text-emerald-500 text-[9px] mr-1"></i>Inicio</th>
+          <th><i class="ti ti-circle-filled text-red-500 text-[9px] mr-1"></i>Vencimiento</th>
+          <th><i class="ti ti-circle-filled text-blue-500 text-[9px] mr-1"></i>Renovación</th>
+          <th class="text-center">Mes activo</th>
+          <th class="text-center">Días para vencer</th>
+          <th class="text-center">Criticidad</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="items.length === 0">
+          <td colspan="10" class="text-center py-10 text-gray-400 text-sm">
+            {{ loaded ? 'No hay documentos para las obras seleccionadas.' : 'Cargando...' }}
+          </td>
+        </tr>
+        <tr *ngFor="let item of items">
+          <td>{{ item.projectDescription }}</td>
+          <td class="font-medium text-gray-700">{{ item.tipoDescripcion }}</td>
+          <td class="text-center">
+            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border bg-gray-100 text-gray-600 border-gray-300">
+              {{ item.estadoDescripcion }}
+            </span>
+          </td>
+          <td [ngClass]="fechaCellClass(item.fechaInscripcion, item.fechaInscripcionEstado)">
+            {{ item.fechaInscripcion ? (item.fechaInscripcion | date: 'dd/MM/yyyy') : estadoFechaLabel(item.fechaInscripcionEstado) }}
+          </td>
+          <td [ngClass]="fechaCellClass(item.fechaInicio, item.fechaInicioEstado)">
+            {{ item.fechaInicio ? (item.fechaInicio | date: 'dd/MM/yyyy') : estadoFechaLabel(item.fechaInicioEstado) }}
+          </td>
+          <td [ngClass]="fechaCellClass(item.fechaVencimiento, item.fechaVencimientoEstado)">
+            {{ item.fechaVencimiento ? (item.fechaVencimiento | date: 'dd/MM/yyyy') : estadoFechaLabel(item.fechaVencimientoEstado) }}
+          </td>
+          <td [ngClass]="fechaCellClass(item.fechaRenovacion, item.fechaRenovacionEstado)">
+            {{ item.fechaRenovacion ? (item.fechaRenovacion | date: 'dd/MM/yyyy') : estadoFechaLabel(item.fechaRenovacionEstado) }}
+          </td>
+          <td class="text-center">
+            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+              [ngClass]="item.mesActivo ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'">
+              {{ item.mesActivo ? 'SI' : 'NO' }}
+            </span>
+          </td>
+          <td class="text-center">{{ item.diasParaVencer ?? '—' }}</td>
+          <td class="text-center">
+            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full border" [ngClass]="semaforoClass(item.semaforo)">
+              {{ semaforoLabel(item.semaforo) }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

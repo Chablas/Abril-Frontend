@@ -29,6 +29,9 @@
       <button class="btn-ghost-sm btn-induccion" (click)="abrirInterconsultasPendientes()">
         Interconsultas Pendientes
       </button>
+      <button class="btn-ghost-sm btn-induccion" (click)="abrirRetirosAutomaticos()">
+        Retiros Automáticos
+      </button>
       <button *ngIf="isAdmin() || isContratista()" class="btn-topbar-nuevo" (click)="abrirCrear()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path d="M12 5v14M5 12h14"/>
@@ -828,3 +831,7 @@
   *ngIf="mostrarInterconsultasPendientes"
   (closed)="mostrarInterconsultasPendientes = false">
 </app-interconsultas-pendientes>
+<app-retiros-automaticos
+  *ngIf="mostrarRetirosAutomaticos"
+  (closed)="mostrarRetirosAutomaticos = false">
+</app-retiros-automaticos>

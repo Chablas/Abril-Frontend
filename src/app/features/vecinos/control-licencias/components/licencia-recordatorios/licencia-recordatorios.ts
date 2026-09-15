@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -15,7 +15,7 @@ import { VecinoLicenciaItemDTO, VecinoLicenciaRecordatorioDTO } from '../../dtos
   imports: [CommonModule, FormsModule, AbrilModalPanel],
   templateUrl: './licencia-recordatorios.html',
 })
-export class LicenciaRecordatorios {
+export class LicenciaRecordatorios implements OnInit {
   @Input({ required: true }) projectId!: number;
   @Input({ required: true }) item!: VecinoLicenciaItemDTO;
   @Output() closeModal = new EventEmitter<void>();
@@ -23,11 +23,29 @@ export class LicenciaRecordatorios {
 
   nuevoDiasAntes: number | null = null;
 
+  /** Correos que efectivamente recibirán estos recordatorios, para que quien los configura los confirme. */
+  destinatariosResueltos: string[] = [];
+  destinatariosLoaded = false;
+
   constructor(
     private service: ControlLicenciasService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}
+
+  ngOnInit(): void {
+    this.service.getDestinatarios(this.projectId).subscribe({
+      next: (res) => {
+        const automaticos = res.automaticos.filter((a) => a.email).map((a) => `${a.rol}: ${a.email}`);
+        const adicionales = res.adicionales.map((d) => `${d.rol}: ${d.email}`);
+        this.destinatariosResueltos = [...automaticos, ...adicionales];
+        this.destinatariosLoaded = true;
+      },
+      error: () => {
+        this.destinatariosLoaded = true;
+      },
+    });
+  }
 
   close(): void {
     this.closeModal.emit();

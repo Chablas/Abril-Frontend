@@ -2,17 +2,12 @@
 import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
+import { CorreoAvisoDto } from '../../../shared/correo-aviso';
 import {
   GestionSalidaDetalleDto,
   GestionSalidaFilterDataDto,
-  GestionSalidaListItemDto,
-  PagedResponseDto,
-  ReembolsoBulkResultDto,
+  GestionSalidaPagedDto,
 } from '../dtos/gestion-salida.dto';
-import {
-  ConsolidadoS10Ambito,
-  ConsolidadoS10Dto,
-} from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 
 @Injectable({ providedIn: 'root' })
 export class GestionSalidasService {
@@ -36,8 +31,13 @@ export class GestionSalidasService {
     sortDir: 'asc' | 'desc' | null = null,
     areaScopeIds: number[] | null = null,
     soloHoy = false,
-  ): Observable<PagedResponseDto<GestionSalidaListItemDto>> {
+    rendicionAnio: number | null = null,
+    rendicionMes: number | null = null,
+  ): Observable<GestionSalidaPagedDto> {
     let params = new HttpParams().set('page', page);
+    if (rendicionAnio != null && rendicionMes != null) {
+      params = params.set('rendicionAnio', rendicionAnio).set('rendicionMes', rendicionMes);
+    }
     if (workerId != null)        params = params.set('workerId', workerId);
     if (lugarProyectoId != null) params = params.set('lugarProyectoId', lugarProyectoId);
     if (estadoRendicion)         params = params.set('estadoRendicion', estadoRendicion);
@@ -47,7 +47,7 @@ export class GestionSalidasService {
     if (sortDir)                 params = params.set('sortDir', sortDir);
     if (areaScopeIds)            for (const id of areaScopeIds) params = params.append('areaScopeIds', id);
     if (soloHoy)                 params = params.set('soloHoy', true);
-    return this.http.get<PagedResponseDto<GestionSalidaListItemDto>>(this.apiUrl, { headers: this.headers, params });
+    return this.http.get<GestionSalidaPagedDto>(this.apiUrl, { headers: this.headers, params });
   }
 
   getDetalle(id: number): Observable<GestionSalidaDetalleDto> {
@@ -86,8 +86,12 @@ export class GestionSalidasService {
     );
   }
 
-  rechazar(id: number): Observable<{ message: string }> {
-    return this.http.patch<{ message: string }>(`${this.apiUrl}/${id}/rechazar`, {}, {
+  /**
+   * Rechaza una solicitud. El motivo es opcional: el botón del detalle lo pide (se lo manda al
+   * solicitante en su correo de rechazo) y el botón bulk de la tabla rechaza sin pedirlo.
+   */
+  rechazar(id: number, motivoRechazo: string | null = null): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(`${this.apiUrl}/${id}/rechazar`, { motivoRechazo }, {
       headers: this.headers,
     });
   }
@@ -116,79 +120,29 @@ export class GestionSalidasService {
   }
 
   /**
-   * Rinde de una vez TODAS las salidas del mes anterior que estén listas (aprobadas, no rendidas y
-   * con las capturas de todos sus trayectos) dentro del alcance del usuario, respetando los filtros
-   * de trabajador/área/proyecto que se le pasen. El conteo real viene en X-Rendidas-Count.
+   * Rinde de una vez TODAS las salidas del mes indicado (sin año/mes, el anterior) que estén aptas
+   * —aprobadas, no rendidas, con las capturas de todos sus trayectos y con motivo reembolsable—
+   * dentro del alcance del usuario, respetando los filtros de trabajador/área/proyecto que se le
+   * pasen. Es lo que ejecuta "seleccionar todas las del mes": la selección vive en el servidor,
+   * no en los ids de la página. El conteo real viene en X-Rendidas-Count.
    */
-  rendirMesAnterior(
+  rendirMes(
     workerId: number | null,
     lugarProyectoId: number | null,
     areaScopeIds: number[] | null = null,
+    anio: number | null = null,
+    mes: number | null = null,
   ): Observable<HttpResponse<Blob>> {
     let params = new HttpParams();
     if (workerId != null)        params = params.set('workerId', workerId);
     if (lugarProyectoId != null) params = params.set('lugarProyectoId', lugarProyectoId);
     if (areaScopeIds)            for (const id of areaScopeIds) params = params.append('areaScopeIds', id);
-    return this.http.patch(`${this.apiUrl}/rendir-mes-anterior`, {}, {
+    if (anio != null && mes != null) params = params.set('anio', anio).set('mes', mes);
+    return this.http.patch(`${this.apiUrl}/rendir-mes`, {}, {
       headers: this.headers,
       params,
       responseType: 'blob',
       observe: 'response',
-    });
-  }
-
-  /**
-   * Adjunta (o reemplaza) el PDF Consolidado del S10 de una salida ya rendida.
-   * `ambito` decide si el archivo cubre toda la planilla de rendición o solo esa salida.
-   */
-  uploadConsolidadoS10(
-    solicitudId: number,
-    file: File,
-    ambito: ConsolidadoS10Ambito,
-  ): Observable<ConsolidadoS10Dto> {
-    const formData = new FormData();
-    formData.append('file', file, file.name);
-    formData.append('ambito', ambito);
-    return this.http.post<ConsolidadoS10Dto>(
-      `${this.apiUrl}/${solicitudId}/consolidado-s10`,
-      formData,
-      { headers: this.headers },
-    );
-  }
-
-  // ── Reembolso ────────────────────────────────────────────────────────
-
-  /** Aprueba el reembolso de las salidas indicadas (rendidas y con Consolidado del S10). */
-  aprobarReembolso(ids: number[]): Observable<ReembolsoBulkResultDto> {
-    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/aprobar`, { ids }, {
-      headers: this.headers,
-    });
-  }
-
-  /** Rechaza el reembolso con una observación (obligatoria: es lo que el trabajador subsana). */
-  rechazarReembolso(ids: number[], observacion: string): Observable<ReembolsoBulkResultDto> {
-    return this.http.patch<ReembolsoBulkResultDto>(
-      `${this.apiUrl}/reembolso/rechazar`,
-      { ids, observacion },
-      { headers: this.headers },
-    );
-  }
-
-  /**
-   * Firma la planilla de rendición de las salidas con reembolso aprobado. Responde 409 cuando el
-   * usuario todavía no registró su firma: la pantalla usa ese código para abrir el modal donde la
-   * dibuja y reintentar, en vez de mandarlo a Configuración.
-   */
-  firmarPlanillas(ids: number[]): Observable<ReembolsoBulkResultDto> {
-    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/firmar`, { ids }, {
-      headers: this.headers,
-    });
-  }
-
-  /** Tesorería marca como pagadas las salidas ya firmadas. */
-  marcarPagadas(ids: number[]): Observable<ReembolsoBulkResultDto> {
-    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/pagar`, { ids }, {
-      headers: this.headers,
     });
   }
 
@@ -214,5 +168,18 @@ export class GestionSalidasService {
       params,
       responseType: 'blob',
     });
+  }
+
+  /**
+   * A quién le llegaría el aviso al aprobar o rechazar las salidas indicadas. Se pide al apretar el
+   * botón porque depende de la selección, y lo resuelve el servidor para que la confirmación no
+   * pueda desalinearse de Configuración → Correos.
+   */
+  correoPreview(solicitudIds: number[], aprobar: boolean): Observable<CorreoAvisoDto[]> {
+    return this.http.post<CorreoAvisoDto[]>(
+      `${this.apiUrl}/correo-preview`,
+      { solicitudIds, aprobar },
+      { headers: this.headers },
+    );
   }
 }

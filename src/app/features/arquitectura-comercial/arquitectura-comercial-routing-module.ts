@@ -95,6 +95,11 @@ const routes: Routes = [
         loadChildren: () =>
           import('./revisiones/revisiones.routes').then((m) => m.REVISIONES_ROUTES),
       },
+      {
+        path: 'costos',
+        loadChildren: () =>
+          import('./costos/costos.routes').then((m) => m.COSTOS_ROUTES),
+      },
     ],
   },
 ];

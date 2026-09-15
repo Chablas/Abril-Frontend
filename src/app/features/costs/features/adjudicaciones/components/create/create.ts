@@ -33,7 +33,8 @@ export class Create implements OnInit {
     contributors: [],
     workItemCategories: [],
     workSpecialties: [],
-    projectSubContractorStatuses: []
+    projectSubContractorStatuses: [],
+    allowRegenerateContractPackage: false
   }
 
   createDto: ProjectSubContractorCreateDTO = {

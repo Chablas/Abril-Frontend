@@ -1,6 +1,7 @@
 ﻿<app-base-modal
-  [title]="'Detalle de la solicitud'"
+  [title]="detalle?.codigo ? 'Solicitud ' + detalle.codigo : 'Detalle de la solicitud'"
   width="w-[720px]"
+  closeColor="var(--color-abril-standard)"
   (closeModal)="cerrar()">
 
   <div class="flex flex-col gap-4 pt-4">
@@ -129,7 +130,7 @@
 
       <div *ngFor="let t of detalle.trayectos" class="border rounded-lg p-3 flex flex-col gap-2" style="border-color:var(--color-abril-border)">
         <div class="flex items-center justify-between">
-          <div class="text-xs font-semibold uppercase" style="color:var(--color-abril-primary)">Trayecto {{ t.orden + 1 }}</div>
+          <div class="text-xs font-semibold uppercase" style="color:var(--color-abril-standard)">Trayecto {{ t.orden + 1 }}</div>
           <div *ngIf="t.montoTotal > 0" class="text-xs font-medium text-gray-700">
             S/ {{ t.montoTotal | number:'1.2-2' }}
             <span *ngIf="totalCapturas(t) === 0 && t.montoCatalogo !== null"
@@ -141,14 +142,22 @@
         <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
           <div>
             <div class="text-xs text-gray-500 uppercase">Salida</div>
-            <div class="text-gray-800">{{ t.horaSalida }}</div>
+            <div class="text-gray-800">{{ t.horaSalida ?? '—' }}</div>
           </div>
           <div>
             <div class="text-xs text-gray-500 uppercase">Retorno</div>
             <div class="text-gray-800">{{ t.horaRetorno ?? '—' }}</div>
           </div>
           <div class="col-span-2">
-            <div class="text-xs text-gray-500 uppercase">Motivo</div>
+            <div class="flex items-center gap-[6px]">
+              <span class="text-xs text-gray-500 uppercase">Motivo</span>
+              <!-- Solo con motivo del catálogo: el motivo libre no tiene el flag configurado. -->
+              <span *ngIf="t.esReembolsable !== null"
+                    class="text-[10px] px-[8px] py-[2px] rounded-full font-semibold tracking-wide whitespace-nowrap"
+                    [ngClass]="t.esReembolsable ? 'bg-[#DCFCE7] text-[#14532D]' : 'bg-[#F3F4F6] text-[#6B7280]'">
+                {{ t.esReembolsable ? 'CON REEMBOLSO' : 'SIN REEMBOLSO' }}
+              </span>
+            </div>
             <div class="text-gray-800">{{ t.motivo }}</div>
           </div>
           <div *ngIf="t.motivoAdicional" class="col-span-2">
@@ -257,12 +266,36 @@
       </div>
     </div>
 
-    <div class="flex justify-end pt-2">
+    <!-- ── Decisión de la salida ──────────────────────────────────────
+         Solo aparece para el revisor de esta salida: es el mismo que recibe el correo, y el
+         botón del correo cae justamente en este detalle, así que decide sin volver a la tabla. -->
+    <div *ngIf="puedeAprobar || puedeRechazar"
+         class="flex flex-wrap items-center justify-center gap-3 border-t pt-3"
+         style="border-color:var(--color-abril-border)">
       <button
+        *ngIf="puedeAprobar"
         type="button"
-        (click)="cerrar()"
-        class="h-[36px] px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium cursor-pointer transition-colors">
-        Cerrar
+        (click)="aprobar.emit()"
+        title="Aprueba esta solicitud de salida y se le avisa al solicitante"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
+        style="background:var(--color-abril-standard)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        Aprobar
+      </button>
+
+      <button
+        *ngIf="puedeRechazar"
+        type="button"
+        (click)="rechazar.emit()"
+        title="Se te pedirá el motivo (opcional) que verá el solicitante en su correo"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors"
+        style="background:#FFFFFF;color:#D30000;border:1px solid #D30000">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+        Rechazar
       </button>
     </div>
 

@@ -1,0 +1,29 @@
+<app-base-modal
+  [title]="funcionalidad.label"
+  width="w-[980px]"
+  closeColor="var(--color-abril-standard)"
+  (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[12px] text-gray-500">
+      <span class="inline-flex items-center gap-1" [class.italic]="funcionalidad.moduleId === null">
+        <i class="ti ti-folder text-[14px]"></i>{{ funcionalidad.moduleLabel }}
+      </span>
+      <span class="text-gray-300">·</span>
+      <span class="font-mono text-[11px]">{{ funcionalidad.featureKey }}</span>
+    </div>
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <app-access-roles
+        [roles]="detalle?.roles ?? []"
+        [cargando]="!detalle"
+        vacio="Ningún rol tiene esta funcionalidad." />
+
+      <app-access-users
+        titulo="Usuarios con acceso"
+        [users]="detalle?.users ?? []"
+        [cargando]="!detalle"
+        vacio="Ningún usuario tiene acceso." />
+    </div>
+  </div>
+</app-base-modal>

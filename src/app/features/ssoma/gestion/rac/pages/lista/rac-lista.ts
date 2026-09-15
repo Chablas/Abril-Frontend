@@ -17,7 +17,7 @@ import { FilterTriggerButton } from '../../../../../../shared/components/filter-
 import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
-
+
 import { RAC_TABS } from '../../rac-tabs';
 @Component({
   selector: 'app-rac-lista',
@@ -36,7 +36,6 @@ export class RacLista implements OnInit {
   filtroEstado = '';
   filtroSeveridad = '';
   filtroTipo = '';
-  filtroSoloConPenalidad = false;
   filtroProyectoId: number | null = null;
   filtroEmpresaReportadaId: number | null = null;
   filtroEmpresaReportanteId: number | null = null;
@@ -116,7 +115,6 @@ export class RacLista implements OnInit {
       this.filtroEstado = previos.filtroEstado;
       this.filtroSeveridad = previos.filtroSeveridad;
       this.filtroTipo = previos.filtroTipo;
-      this.filtroSoloConPenalidad = previos.filtroSoloConPenalidad;
       this.filtroProyectoId = previos.filtroProyectoId;
       this.filtroEmpresaReportadaId = previos.filtroEmpresaReportadaId;
       this.filtroEmpresaReportanteId = previos.filtroEmpresaReportanteId;
@@ -144,7 +142,6 @@ export class RacLista implements OnInit {
       estado: this.filtroEstado || undefined,
       severidad: this.filtroSeveridad || undefined,
       tipo: this.filtroTipo || undefined,
-      soloConPenalidad: this.filtroSoloConPenalidad || undefined,
       proyectoId: this.filtroProyectoId ?? undefined,
       empresaReportadaId: this.filtroEmpresaReportadaId ?? undefined,
       empresaReportanteId: this.filtroEmpresaReportanteId ?? undefined,
@@ -155,7 +152,6 @@ export class RacLista implements OnInit {
       filtroEstado: this.filtroEstado,
       filtroSeveridad: this.filtroSeveridad,
       filtroTipo: this.filtroTipo,
-      filtroSoloConPenalidad: this.filtroSoloConPenalidad,
       filtroProyectoId: this.filtroProyectoId,
       filtroEmpresaReportadaId: this.filtroEmpresaReportadaId,
       filtroEmpresaReportanteId: this.filtroEmpresaReportanteId,
@@ -200,7 +196,6 @@ export class RacLista implements OnInit {
     this.filtroEstado = '';
     this.filtroSeveridad = '';
     this.filtroTipo = '';
-    this.filtroSoloConPenalidad = false;
     this.filtroProyectoId = null;
     this.filtroEmpresaReportadaId = null;
     this.filtroEmpresaReportanteId = null;
@@ -250,7 +245,7 @@ export class RacLista implements OnInit {
   }
 
   get hayFiltrosActivos(): boolean {
-    return !!(this.filtroEstado || this.filtroSeveridad || this.filtroTipo || this.filtroSoloConPenalidad
+    return !!(this.filtroEstado || this.filtroSeveridad || this.filtroTipo
       || this.filtroProyectoId || this.filtroEmpresaReportadaId || this.filtroEmpresaReportanteId
       || this.filtroMes || this.filtroAnio);
   }

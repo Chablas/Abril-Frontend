@@ -185,8 +185,4 @@ export class DescansosService {
       headers: authHeaders(),
     });
   }
-
-  delete(id: number): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(`${this.base}/${id}`, { headers: authHeaders() });
-  }
 }

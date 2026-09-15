@@ -297,6 +297,18 @@ export class AdjudicacionesService {
     );
   }
 
+  /**
+   * Quita el archivo de un documento del expediente. Es un soft delete: deja de verse en la
+   * pantalla pero el registro y el archivo en OneDrive se conservan.
+   */
+  deleteDocument(projectSubContractorId: number, documentType: string): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.delete<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/documents/${documentType}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
   uploadDocument(
     projectSubContractorId: number,
     documentType: string,

@@ -7,7 +7,6 @@ export interface RacListQuery {
   empresaReportanteId?: number;
   fechaDesde?: string;
   fechaHasta?: string;
-  soloConPenalidad?: boolean;
   page?: number;
   pageSize?: number;
 }
@@ -43,9 +42,6 @@ export interface RacCreateRequest {
   planAccion?: string;
   fechaReporte: string;
   plazoLevantamiento?: string;
-  aplicaPenalidad: boolean;
-  infraccionId?: number;
-  descripcionOcurrido?: string;
 }
 
 export interface RacCerrarRequest {
@@ -59,14 +55,6 @@ export interface RacFotoDto {
   tipo: string;
   nombreArchivo?: string;
   orden: number;
-}
-
-export interface RacPenalidadResumenDto {
-  id: number;
-  codigo: string;
-  estado: string;
-  montoCalculado: number;
-  infraccionNombre?: string;
 }
 
 export interface RacListItemDto {
@@ -122,17 +110,16 @@ export interface RacDetalleDto {
   cierreDescripcion?: string;
   cerradoPorNombre?: string;
   cerradoPorCargo?: string;
+  /** @deprecated Legacy previo al rediseño de Penalidades — ya no se escribe en RACs nuevos. */
   aplicaPenalidad: boolean;
   pdfUrl?: string;
   createdAt: string;
   fotos: RacFotoDto[];
-  penalidad?: RacPenalidadResumenDto;
 }
 
 export interface RacDashboardDto {
   totalAbiertos: number;
   totalCerrados: number;
-  totalConPenalidad: number;
   criticosAbiertos: number;
   altosAbiertos: number;
   vencidosAbiertos: number;
@@ -173,21 +160,9 @@ export interface RacCategoriaDto {
   orden: number;
 }
 
-export interface RacInfraccionDto {
-  id: number;
-  nombre: string;
-  tipo?: string;    // ACTO | CONDICION
-  ambito?: string;
-  orden: number;
-  montoFijo?: number;
-  factorUit?: number;
-}
-
 export interface RacCreadoDto {
   id: number;
   codigo: string;
-  penalidadId?: number;
-  penalidadCodigo?: string;
 }
 
 export interface RacFotoUploadResult {
@@ -197,46 +172,5 @@ export interface RacFotoUploadResult {
   nombreArchivo: string;
 }
 
-export interface PenalidadListQuery {
-  empresaId?: number;
-  proyectoId?: number;
-  estado?: string;
-  page?: number;
-  pageSize?: number;
-}
-
-export interface PenalidadListItemDto {
-  id: number;
-  codigo: string;
-  racCodigo: string;
-  racId: number;
-  proyectoNombre?: string;
-  empresaNombre?: string;
-  infraccionNombre?: string;
-  montoCalculado: number;
-  estado: string;
-  createdAt: string;
-  descargoFecha?: string;
-  resueltaEn?: string;
-}
-
-export interface PenalidadDetalleDto extends PenalidadListItemDto {
-  empresaId?: number;
-  proyectoId?: number;
-  infraccionId?: number;
-  descripcionOcurrido?: string;
-  descargoTexto?: string;
-  documentoUrl?: string;
-  resolucionTexto?: string;
-  pdfResolucionUrl?: string;
-}
-
-export interface PenalidadDescargaRequest {
-  descargoTexto: string;
-  documentoUrl: string;
-}
-
-export interface PenalidadResolverRequest {
-  tipo: string;
-  resolucionTexto?: string;
-}
+// Los DTOs de Penalidades viven en su propio módulo — ver
+// features/ssoma/gestion/penalidades/dtos/penalidad.dtos.ts — ya no en RAC.

@@ -68,21 +68,6 @@
         }
       </div>
 
-      <!-- El ingreso directo no pasa por «Confirmar publicación», que es donde el flujo normal
-           exige la razón social. Su ficha de pre-ingreso se abre en cuanto se aprueba la vacante,
-           así que sin este aviso nace sin razón social y nadie se entera. Va arriba de todo porque
-           es lo único que le falta al proceso; al asignarla se le baja a la ficha. -->
-      @if (faltaRazonSocialFft) {
-        <div class="flex items-start gap-[9px] rounded-[10px] border px-[14px] py-[11px]"
-             style="border-color:#FDE68A;background:#FEF9C3">
-          <i class="ti ti-alert-triangle text-[18px] shrink-0 mt-[1px]" style="color:#92400E"></i>
-          <p class="text-[12.5px]" style="color:#92400E">
-            Sin razón social asignada: la ficha del ingreso está sin ella. Asígnala en
-            «Asignación interna de GTH».
-          </p>
-        </div>
-      }
-
       <!-- ── Puesto cubierto: quién obtuvo el puesto ──────────────────────
            Va arriba de todo porque es el resultado del proceso: al abrir un
            requerimiento cerrado, lo primero es saber con quién se cerró. -->
@@ -232,9 +217,9 @@
       }
 
       <!-- ── EMO de ingreso Apto / Apto con Restricciones ──────────────────
-           Va junto a «Puesto cubierto» (el candidato sigue siendo el seleccionado) porque el
-           examen ya no cierra el proceso solo: lo deja acá y el cierre lo confirma GTH, que es
-           lo que hace aparecer al seleccionado en Onboarding. -->
+           Va junto a «Puesto cubierto» (el candidato sigue siendo el seleccionado). El examen no
+           cierra el proceso: lo deja listo para el último paso, que es la carta oferta de la
+           sección de abajo. -->
       @if (emoApto) {
         <div class="rounded-[10px] border px-[16px] py-[14px]"
              style="border-color:#a7f3d0;background:#F0FDF4">
@@ -248,19 +233,9 @@
                 Resultado: {{ emoAptitudNombre }}
               </h3>
               <p class="text-[12.5px] mt-[3px]" style="color:#166534">
-                El proceso de reclutamiento está listo para cerrarse. Al cerrarlo,
-                {{ (detalle.seleccionado?.nombre | titleCase) || 'el seleccionado' }} pasa a
-                Onboarding como candidato por ingresar.
+                {{ (detalle.seleccionado?.nombre | titleCase) || 'El seleccionado' }} puede entrar.
+                Queda el último paso: enviarle su <b>carta oferta</b> para que la firme.
               </p>
-
-              <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
-                <button type="button" (click)="cerrarProceso()" [disabled]="cerrandoProceso"
-                        class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                        style="background:#15803D">
-                  <i class="ti ti-circle-check text-[15px]"></i>
-                  {{ cerrandoProceso ? 'Cerrando…' : 'Cerrar proceso y continuar a Onboarding' }}
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -374,6 +349,338 @@
         </div>
       }
 
+      <!-- ── Carta oferta: el último paso del proceso ──────────────────────
+           Aparece en cuanto el EMO sale bien (es cuando GTH puede enviarla) y se queda para
+           siempre una vez enviada, también con el proceso cerrado: es el expediente de cómo se
+           aceptó la propuesta. Aprobar el documento firmado es lo que cierra el requerimiento. -->
+      @if (mostrarCartaOferta && carta; as co) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             [style.border-color]="cartaAprobada ? '#a7f3d0' : (cartaFirmada ? '#a7f3d0' : (cartaEnviada ? '#ddd6fe' : 'var(--color-abril-border)'))"
+             [style.background]="cartaAprobada || cartaFirmada ? '#F0FDF4' : (cartaEnviada ? '#F5F3FF' : '#fff')">
+
+          <button type="button"
+            class="flex items-center gap-[8px] cursor-pointer w-full text-left"
+            (click)="seccionCartaOferta = !seccionCartaOferta">
+            <i class="ti text-[15px] text-gray-500 transition-transform"
+               [ngClass]="seccionCartaOferta ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+            <i class="ti ti-file-certificate text-[18px]"
+               [style.color]="cartaFirmada ? '#15803D' : (cartaEnviada ? '#6D28D9' : 'var(--color-abril-logo-blue)')"></i>
+            <h3 class="text-[14px] font-bold text-gray-800">Carta oferta</h3>
+            @if (cartaAprobada) {
+              <app-status-badge text="Aprobada" bgColor="#DCFCE7" textColor="#15803D" />
+            } @else if (cartaFirmada) {
+              <app-status-badge text="Firmada · por revisar" bgColor="#FEF3C7" textColor="#B45309" />
+            } @else if (cartaEnviada) {
+              <app-status-badge text="Esperando firma" bgColor="#EDE9FE" textColor="#6D28D9" />
+            } @else if (cartaGenerada) {
+              <app-status-badge text="Generada · por enviar" bgColor="#DBEAFE" textColor="#1D4ED8" />
+            } @else {
+              <app-status-badge text="Por enviar" bgColor="#F3F4F6" textColor="#374151" />
+            }
+          </button>
+
+          @if (seccionCartaOferta) {
+
+            <!-- ── Todavía no se envió: el formulario de envío ──────────────── -->
+            @if (!cartaEnviada) {
+              @if (avisoFichaCarta) {
+                <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[9px] mt-[10px]"
+                     style="border-color:#FDE68A;background:#FEF9C3">
+                  <i class="ti ti-alert-triangle text-[16px] shrink-0 mt-[1px]" style="color:#92400E"></i>
+                  <p class="text-[12px]" style="color:#92400E">{{ avisoFichaCarta }}</p>
+                </div>
+              }
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-[16px] mt-[12px]">
+                <!-- .abril-field da el contenedor relativo que necesita el label flotante (sin él
+                     se escapaba del campo). El h-[34px] iguala el alto al de los date-picker
+                     `dense`, que miden 34px contra los 39px que da el padding de
+                     .abril-field-input. -->
+                <div class="abril-field">
+                  <label class="abril-field-label" for="carta-correo">Correo del colaborador *</label>
+                  <input id="carta-correo" type="email" class="abril-field-input h-[34px]"
+                    [(ngModel)]="cartaCorreo" name="cartaCorreo"
+                    placeholder="correo@ejemplo.com" autocomplete="off" />
+                </div>
+              </div>
+
+              <!-- ── Generar: el miniformulario con lo que la plantilla imprime ──
+                   Es la ÚNICA vía. Adjuntar un PDF propio dejó de ser posible cuando la plantilla
+                   pasó a llevar la fecha de conformidad del colaborador: ese dato solo lo pone el
+                   sistema al abrirse el enlace, y una carta traída de afuera saldría sin él. Para
+                   corregir el texto sigue estando «Ver y editar en Word» sobre el generado. -->
+              <div class="rounded-[9px] border px-[14px] py-[12px] mt-[12px]"
+                   style="border-color:var(--color-abril-border);background:#FAFAFA">
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-x-[16px]">
+                  <app-date-picker
+                    label="Fecha de ingreso *"
+                    [dense]="true"
+                    [floatingLabel]="true"
+                    [value]="cartaFechaIngreso"
+                    (valueChange)="cartaFechaIngreso = $event"
+                    color="var(--color-abril-logo-blue)">
+                  </app-date-picker>
+
+                  <div class="abril-field">
+                    <label class="abril-field-label" for="carta-sueldo">Sueldo mensual (S/) *</label>
+                    <input id="carta-sueldo" type="number" min="0" step="50"
+                      class="abril-field-input h-[34px]"
+                      [(ngModel)]="cartaSueldo" name="cartaSueldo"
+                      placeholder="0.00" autocomplete="off" />
+                  </div>
+
+                  <app-date-picker
+                    label="Aceptar hasta el *"
+                    [dense]="true"
+                    [floatingLabel]="true"
+                    [min]="hoyIso"
+                    [value]="cartaFechaLimite"
+                    (valueChange)="cartaFechaLimite = $event"
+                    color="var(--color-abril-logo-blue)">
+                  </app-date-picker>
+                </div>
+
+                <!-- ── Condiciones de contrato ──────────────────────────────
+                     Un campo por viñeta del documento, porque así se guardan y así se
+                     imprimen. Cambian con el cargo (la jornada de staff de obra no es la
+                     de oficina), por eso las escribe GTH y no salen de la vacante. -->
+                <div class="mt-[14px]">
+                  <div class="flex items-center justify-between gap-[10px] mb-[8px]">
+                    <span class="text-[12px] font-semibold" style="color:var(--color-abril-standard)">
+                      Condiciones de contrato *
+                    </span>
+                    <button type="button" (click)="agregarCondicion()"
+                      class="inline-flex items-center gap-[5px] h-[27px] px-[10px] rounded-[6px] text-[11.5px] font-semibold border cursor-pointer transition-colors hover:bg-gray-50"
+                      style="border-color:var(--color-abril-border);color:var(--color-abril-logo-blue);background:#fff">
+                      <i class="ti ti-plus text-[13px]"></i>
+                      Agregar condición
+                    </button>
+                  </div>
+
+                  <div class="flex flex-col gap-[7px]">
+                    <!-- track por índice y no por valor: el valor es justo lo que el usuario
+                         está editando, y dos condiciones vacías al agregar chocarían. -->
+                    @for (condicion of cartaCondiciones; track $index) {
+                      <div class="flex items-center gap-[8px]">
+                        <span class="w-[5px] h-[5px] rounded-full shrink-0"
+                              style="background:var(--color-abril-logo-blue)"></span>
+
+                        <div class="flex-1 min-w-0">
+                          <input type="text" class="abril-field-input h-[34px]"
+                            [ngModel]="cartaCondiciones[$index]"
+                            (ngModelChange)="cartaCondiciones[$index] = $event"
+                            [name]="'cartaCondicion' + $index"
+                            maxlength="500"
+                            placeholder="Contrato a plazo fijo renovable."
+                            autocomplete="off" />
+                        </div>
+
+                        <button type="button" (click)="quitarCondicion($index)"
+                          title="Quitar condición"
+                          class="inline-flex items-center justify-center w-[30px] h-[30px] shrink-0 rounded-[6px] border cursor-pointer transition-colors hover:bg-gray-50"
+                          style="border-color:var(--color-abril-border);color:#9CA3AF;background:#fff">
+                          <i class="ti ti-trash text-[14px]"></i>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-[10px] mt-[12px]">
+                  <button type="button" (click)="generarCartaOferta()" [disabled]="!puedeGenerarCarta"
+                    [title]="motivoBloqueoGenerar || ''"
+                    class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="background:var(--color-abril-logo-blue)">
+                    <i class="ti text-[15px] inline-block"
+                       [ngClass]="generandoCarta ? 'ti-loader-2 animate-spin' : 'ti-wand'"></i>
+                    {{ generandoCarta ? 'Generando…' : (cartaGenerada ? 'Regenerar' : 'Generar carta oferta') }}
+                  </button>
+
+                  @if (co.generadaUrl) {
+                    <a [href]="co.generadaUrl" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold border cursor-pointer transition-colors hover:bg-gray-50"
+                       style="border-color:var(--color-abril-border);color:var(--color-abril-standard);background:#fff"
+                       [title]="co.generadaNombre || ''">
+                      <i class="ti ti-file-type-docx text-[15px]"></i>
+                      Ver y editar en Word
+                    </a>
+                  }
+
+                  @if (motivoBloqueoGenerar && !cartaGenerada) {
+                    <span class="text-[11.5px] text-gray-500">{{ motivoBloqueoGenerar }}</span>
+                  }
+                </div>
+
+                @if (cartaGenerada) {
+                  <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[9px] mt-[11px]"
+                       style="border-color:#BFDBFE;background:#EFF6FF">
+                    <i class="ti ti-file-check text-[16px] shrink-0 mt-[1px]" style="color:#1D4ED8"></i>
+                    <p class="text-[12px]" style="color:#1E40AF">
+                      Documento generado el {{ co.generadaEn | date:'dd/MM/yyyy HH:mm' }}. Se
+                      envía convertido a PDF, con los cambios que le hagas en Word.
+                    </p>
+                  </div>
+                }
+              </div>
+
+              <div class="flex flex-wrap items-center gap-[10px] mt-[14px]">
+                <button type="button" (click)="enviarCartaOferta()" [disabled]="!puedeEnviarCarta"
+                  [title]="motivoBloqueoCarta || ''"
+                  class="inline-flex items-center gap-[6px] h-[36px] px-[16px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style="background:#15803D">
+                  <i class="ti ti-send text-[15px]"></i>
+                  {{ enviandoCarta ? 'Enviando…' : 'Enviar carta oferta' }}
+                </button>
+                @if (motivoBloqueoCarta) {
+                  <span class="text-[11.5px] text-gray-500">{{ motivoBloqueoCarta }}</span>
+                }
+              </div>
+            }
+
+            <!-- ── Ya enviada: documentos, estado y acciones ────────────────── -->
+            @else {
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-[16px] gap-y-[8px] mt-[12px]">
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-gray-500 uppercase">Enviada a</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px] break-all">{{ co.correo || '—' }}</p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-gray-500 uppercase">Enviada el</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                    {{ (co.enviadaEn | date:'dd/MM/yyyy HH:mm') || '—' }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-[10px] font-semibold tracking-wide text-gray-500 uppercase">Fecha de ingreso</p>
+                  <p class="text-[12.5px] text-gray-700 mt-[1px]">
+                    {{ (co.fechaIngreso | date:'dd/MM/yyyy') || 'Sin definir' }}
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                @if (co.cartaUrl) {
+                  <a [href]="co.cartaUrl" target="_blank" rel="noopener"
+                     class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold border cursor-pointer transition-colors hover:bg-gray-50"
+                     style="border-color:var(--color-abril-border);color:var(--color-abril-logo-blue);background:#fff"
+                     [title]="co.cartaNombre || ''">
+                    <i class="ti ti-file-type-pdf text-[15px]"></i>
+                    Ver carta enviada
+                  </a>
+                }
+                @if (co.firmadaUrl) {
+                  <a [href]="co.firmadaUrl" target="_blank" rel="noopener"
+                     class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                     style="background:#15803D"
+                     [title]="co.firmadaNombre || ''">
+                    <i class="ti ti-file-check text-[15px]"></i>
+                    Ver carta firmada
+                  </a>
+                }
+              </div>
+
+              <!-- Esperando la firma del candidato -->
+              @if (!cartaFirmada) {
+                <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[10px] mt-[12px]"
+                     style="border-color:#ddd6fe;background:#fff">
+                  <i class="ti ti-clock text-[17px] shrink-0 mt-[1px]" style="color:#6D28D9"></i>
+                  <p class="text-[12.5px]" style="color:#5B21B6">
+                    Esperando la firma de <b>{{ co.nombre | titleCase }}</b> desde su enlace.
+                  </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                  <button type="button" (click)="reenviarCartaOferta()" [disabled]="reenviandoCarta"
+                    class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="background:var(--color-abril-logo-blue)">
+                    <i class="ti ti-mail-forward text-[15px]"></i>
+                    {{ reenviandoCarta ? 'Reenviando…' : 'Reenviar enlace de firma' }}
+                  </button>
+
+                  <!-- Respaldo: para el que la firmó en papel en vez de usar el enlace. -->
+                  <input #firmadaInput type="file" class="hidden" [accept]="cartaFirmadaAccept"
+                    (change)="onCartaFirmadaSeleccionada($event)" />
+                  <button type="button" (click)="firmadaInput.click()" [disabled]="subiendoCartaFirmada"
+                    class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] border text-[12.5px] font-semibold cursor-pointer transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="border-color:var(--color-abril-border);color:var(--color-abril-standard);background:#fff">
+                    <i class="ti ti-paperclip text-[15px]"></i>
+                    {{ subiendoCartaFirmada ? 'Adjuntando…' : 'Adjuntar carta firmada en papel' }}
+                  </button>
+                </div>
+              }
+
+              <!-- Firmada: falta la revisión de GTH, que es la que cierra el proceso -->
+              @else if (!cartaAprobada) {
+                <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[10px] mt-[12px]"
+                     style="border-color:#FDE68A;background:#FEF9C3">
+                  <i class="ti ti-writing-sign text-[17px] shrink-0 mt-[1px]" style="color:#92400E"></i>
+                  <p class="text-[12.5px]" style="color:#92400E">
+                    @if (cartaFinalizadaPorColaborador) {
+                      <b>{{ co.nombre | titleCase }}</b> firmó y finalizó su carta el
+                      {{ co.finalizadaEn | date:'dd/MM/yyyy HH:mm' }} · pendiente de tu aprobación.
+                    } @else if (cartaFirmadaPorPostulante) {
+                      <b>{{ co.nombre | titleCase }}</b> firmó su carta el
+                      {{ co.firmadaPostulanteEn | date:'dd/MM/yyyy HH:mm' }} · pendiente de tu aprobación.
+                    } @else {
+                      Carta firmada adjuntada el
+                      {{ co.firmadaSubidaEn | date:'dd/MM/yyyy HH:mm' }} · pendiente de tu aprobación.
+                    }
+                  </p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                  <button type="button" (click)="aprobarCartaOferta()" [disabled]="aprobandoCarta"
+                    class="inline-flex items-center gap-[6px] h-[36px] px-[16px] rounded-[7px] text-[13px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="background:#15803D">
+                    <i class="ti ti-circle-check text-[15px]"></i>
+                    {{ aprobandoCarta ? 'Aprobando…' : 'Aprobar y cerrar el proceso' }}
+                  </button>
+
+                  <!-- Reemplazar el documento solo mientras el colaborador NO haya finalizado. Con
+                       su cierre, ese es el documento que él firmó y con el que se le avisó al
+                       solicitante: cambiarlo dejaría el expediente con una carta que nunca vio. -->
+                  @if (!cartaFinalizadaPorColaborador) {
+                    <input #reemplazoInput type="file" class="hidden" [accept]="cartaFirmadaAccept"
+                      (change)="onCartaFirmadaSeleccionada($event)" />
+                    <button type="button" (click)="reemplazoInput.click()" [disabled]="subiendoCartaFirmada"
+                      class="inline-flex items-center gap-[6px] h-[36px] px-[14px] rounded-[7px] border text-[12.5px] font-semibold cursor-pointer transition-colors hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      style="border-color:var(--color-abril-border);color:var(--color-abril-standard);background:#fff">
+                      <i class="ti ti-refresh text-[15px]"></i>
+                      {{ subiendoCartaFirmada ? 'Reemplazando…' : 'Reemplazar documento' }}
+                    </button>
+                  } @else {
+                    <span class="inline-flex items-center gap-[6px] text-[11.5px] text-gray-500">
+                      <i class="ti ti-lock text-[14px]"></i>
+                      Documento definitivo: el colaborador cerró su firma.
+                    </span>
+                  }
+                </div>
+              }
+
+              <!-- Aprobada: el proceso quedó cerrado -->
+              @else {
+                <div class="flex items-start gap-[9px] rounded-[8px] border px-[12px] py-[10px] mt-[12px]"
+                     style="border-color:#a7f3d0;background:#fff">
+                  <i class="ti ti-circle-check text-[17px] shrink-0 mt-[1px]" style="color:#15803D"></i>
+                  <p class="text-[12.5px]" style="color:#166534">
+                    Carta aprobada el {{ co.aprobadaEn | date:'dd/MM/yyyy HH:mm' }}: el proceso de
+                    reclutamiento quedó cerrado y el colaborador ya aparece en Onboarding.
+                  </p>
+                </div>
+              }
+
+              @if (co.fileDigitalCarpeta) {
+                <p class="text-[11.5px] text-gray-500 mt-[10px] flex items-start gap-[6px]">
+                  <i class="ti ti-folder text-[14px] shrink-0 mt-[1px]"></i>
+                  <span>File del colaborador: {{ co.fileDigitalCarpeta }}</span>
+                </p>
+              }
+            }
+          }
+        </div>
+      }
+
       <!-- ── Asignación interna de GTH ──────────────────────────────────── -->
       <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
 
@@ -386,7 +693,9 @@
         </button>
 
         @if (seccionAsignacion) {
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-x-[16px] gap-y-[14px] mt-[10px]">
+          <!-- Tres campos: la razón social se elige al programarle el EMO de ingreso al
+               finalista, que es el único punto del proceso donde se asigna. -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-x-[16px] gap-y-[14px] mt-[10px]">
 
             <!-- Responsable del proceso -->
             <div>
@@ -431,31 +740,6 @@
                 [sortAlpha]="false"
                 color="var(--color-abril-logo-blue)">
               </app-search-select>
-            </div>
-
-            <!-- Razón social activa -->
-            <div>
-              <app-search-select
-                label="Razón social activa *"
-                [options]="detalle.razonesSociales"
-                valueField="id"
-                displayField="nombre"
-                [value]="detalle.asignacion.contributorId"
-                (valueChange)="onAsignacionChange('contributorId', $event)"
-                placeholder="Selecciona razón social"
-                color="var(--color-abril-logo-blue)">
-              </app-search-select>
-              @if (razonSocialSeleccionada) {
-                <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
-                  Cupos disponibles: <b>{{ razonSocialSeleccionada.cuposDisponibles }}</b> de 20.
-                </p>
-              }
-              @if (sinCupos) {
-                <p class="text-[11.5px] font-semibold text-red-600 mt-[6px] leading-snug">
-                  La razón social seleccionada no cuenta con cupos suficientes para las
-                  {{ detalle.vacantes }} vacantes.
-                </p>
-              }
             </div>
 
           </div>
@@ -606,7 +890,7 @@
                 </div>
 
                 <!-- ── Portafolio/Anexos del candidato ─────────────────────
-                     Opcional y de cantidad libre: van adjuntos en el correo de la
+                     Opcional y de cantidad libre: van enlazados en el correo de la
                      long list y el solicitante los abre desde su revisión. -->
                 <div class="rounded-[8px] border px-[13px] py-[11px] mt-[12px]"
                      style="border-color:var(--color-abril-border);background:#FAFCFA">
@@ -644,7 +928,7 @@
                   }
 
                   <p class="text-[11.5px] text-gray-500 mt-[8px] leading-snug">
-                    PDF, Word, Excel, PPT o imágenes. Se envían adjuntos al solicitante junto con el CV.
+                    PDF, Word, Excel, PPT o imágenes. Máx. 20 MB por archivo.
                   </p>
                 </div>
               </div>
@@ -719,6 +1003,14 @@
             <i class="ti text-[15px] text-gray-500 transition-transform"
                [ngClass]="seccionFormularioPostulante ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
             <h3 class="text-[14px] font-bold text-gray-800">Formulario de información del postulante</h3>
+            <!-- Candidatos que se quedaron atrás cuando el proceso ya pasó a entrevistas: la sección
+                 puede estar plegada y sin esto no se ve que todavía hay a quién sumar. -->
+            @if (pendientesFormulario > 0) {
+              <span class="text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
+                    style="background:#FEF3C7;color:#B45309">
+                {{ pendientesFormulario }} {{ pendientesFormulario === 1 ? 'pendiente' : 'pendientes' }}
+              </span>
+            }
           </button>
 
           @if (seccionFormularioPostulante) {
@@ -842,7 +1134,7 @@
                   </button>
 
                   <!-- Rechazar también se ofrece sobre un formulario enviado y nunca completado:
-                       es lo que destraba el paso a entrevistas si el postulante no responde. -->
+                       es como se descarta a un postulante que no responde. -->
                   @if (formularioRechazable(c)) {
                     <button type="button"
                       [disabled]="decidiendoFormulario[c.candidatoId]"
@@ -941,9 +1233,11 @@
         ───────────────────────────────────────────────────────────────────── -->
 
         <!-- Control informativo del Multitest.
-             Al candidato con el formulario rechazado no se le pide: ya no se le va a entrevistar,
-             así que su fila queda como "No aplica" y no traba el paso a entrevistas. Se sigue
-             mostrando (no se oculta) para que la lista siga siendo la de la long list aprobada.
+             Es por candidato: con su formulario aprobado y el check marcado, el candidato pasa a la
+             programación de entrevistas sin esperar a los demás. Al candidato con el formulario
+             rechazado no se le pide: ya no se le va a entrevistar, así que su fila queda como
+             "No aplica". Se sigue mostrando (no se oculta) para que la lista siga siendo la de la
+             long list aprobada.
 
              El ingreso directo FFT no lo lleva: su flujo no tiene entrevista, así que un check
              informativo que solo existe para habilitarlas no aplica. -->
@@ -989,8 +1283,10 @@
         }
 
         <!-- Continuar a programación de entrevistas: solo mientras el requerimiento no haya
-             pasado ya a esa fase (después el bloque de abajo toma el relevo). El ingreso directo
-             FFT no pasa por ahí: al aprobarle el formulario el proceso salta al EMO de ingreso. -->
+             pasado ya a esa fase (después el bloque de abajo toma el relevo). Se habilita con el
+             primer candidato listo: los demás se suman a las entrevistas cuando lo estén. El
+             ingreso directo FFT no pasa por ahí: al aprobarle el formulario el proceso salta al
+             EMO de ingreso. -->
         @if (!enEntrevistas && !esFft) {
           <div>
             <button type="button"
@@ -1164,7 +1460,7 @@
                     </div>
 
                     <!-- ── Archivos del informe ────────────────────────────────
-                         Los dos son opcionales: van adjuntos en el correo al solicitante y
+                         Los dos son opcionales: van enlazados en el correo al solicitante y
                          quedan enlazados en su pantalla. -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-[10px] mt-[12px]">
                       @for (slot of slotsArchivoEvaluacion; track slot.codigo) {
@@ -1257,7 +1553,7 @@
               </div>
             } @empty {
               <p class="text-[12.5px] text-gray-400 italic mt-[10px]">
-                No hay candidatos con el formulario del postulante aprobado.
+                No hay candidatos con el formulario aprobado y el Multitest marcado.
               </p>
             }
           }

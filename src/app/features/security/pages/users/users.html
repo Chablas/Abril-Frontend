@@ -19,6 +19,7 @@
       (pagedData)="updatePagination($event)"
       (categoriasLoaded)="onCategoriasLoaded($event)"
       (editUser)="openEditForm($event)"
+      (viewUser)="detailUser = $event"
       (userToggled)="reloadUsers()"
       (userDeleted)="reloadUsers()"
     ></app-user-list>
@@ -72,3 +73,9 @@
   (closed)="formOpen = false"
   (saved)="onEditSaved()"
 ></app-user-edit-form>
+
+<app-user-detail
+  *ngIf="detailUser"
+  [user]="detailUser"
+  (closeModal)="detailUser = null"
+></app-user-detail>

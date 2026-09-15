@@ -1,0 +1,203 @@
+<app-abril-page-header
+  badge="SSOMA · Gestión"
+  titulo="Inspecciones"
+  subtitulo="Inspecciones cruzadas — rotación mensual entre proyectos"
+  [tabs]="tabs">
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[14px] bg-white flex-1 min-h-0 overflow-hidden">
+  <div class="pi-tabs">
+    <button class="pi-tab" [class.pi-tab--active]="vista === 'calendario'" (click)="cambiarVista('calendario')">
+      Calendario
+    </button>
+    <button class="pi-tab" [class.pi-tab--active]="vista === 'anillos'" (click)="cambiarVista('anillos')">
+      Anillos de rotación
+    </button>
+  </div>
+
+  <!-- ══════════════════════════ CALENDARIO ══════════════════════════ -->
+  @if (vista === 'calendario') {
+    <div class="flex items-center gap-[10px]">
+      <button class="pi-link" (click)="mesAnterior()">←</button>
+      <span class="ic-mes-actual">{{ nombreMesActual }}</span>
+      <button class="pi-link" (click)="mesSiguiente()">→</button>
+    </div>
+
+    @for (anillo of anillos; track anillo.id) {
+      <div class="ic-anillo-block">
+        <h3 class="ic-anillo-titulo">{{ anillo.nombre }}</h3>
+        <div class="abril-table-wrap">
+          <table class="abril-table">
+            <thead class="sticky top-0 z-10">
+              <tr>
+                <th>Inspecciona</th>
+                <th class="text-center" style="width:40px"></th>
+                <th>Es inspeccionado</th>
+                <th class="text-center" style="width:100px">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of calendarioDe(anillo.id); track item.id) {
+                <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+                  <td class="text-gray-700">{{ item.proyectoInspectorNombre }}</td>
+                  <td class="text-center text-gray-400">→</td>
+                  <td class="text-gray-700">
+                    {{ item.proyectoInspeccionadoNombre }}
+                    @if (item.esManual) {
+                      <span class="pi-badge-manual" title="Modificado manualmente">manual</span>
+                    }
+                  </td>
+                  <td class="text-center">
+                    <button class="pi-link" (click)="abrirReasignar(item)">Reasignar</button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="text-center py-[24px] text-gray-400 text-sm">
+                    Sin programación generada para este mes.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    } @empty {
+      <p class="text-sm text-gray-400 text-center py-[40px]">
+        Todavía no hay anillos de rotación creados. Ve a "Anillos de rotación" para crear el primero.
+      </p>
+    }
+  }
+
+  <!-- ══════════════════════════ ANILLOS ══════════════════════════ -->
+  @if (vista === 'anillos') {
+    <p class="text-sm text-gray-500">
+      Los proyectos de un mismo anillo se inspeccionan solo entre ellos. Cada mes el sistema
+      rota automáticamente quién inspecciona a quién, sin repetir pareja hasta agotar el anillo
+      completo. El orden se define una sola vez; agregar o quitar un proyecto no reinicia el
+      avance de los demás.
+    </p>
+
+    <div class="flex items-end gap-[12px] flex-wrap">
+      <div class="abril-field" style="max-width:280px">
+        <label class="abril-field-label">Nuevo anillo</label>
+        <input type="text" class="abril-field-input" placeholder="Ej. Anillo Norte" [(ngModel)]="nombreAnilloNuevo" />
+      </div>
+      <button class="btn btn-primary" [disabled]="!nombreAnilloNuevo.trim()" (click)="crearAnillo()">
+        Crear anillo
+      </button>
+    </div>
+
+    @for (anillo of anillos; track anillo.id) {
+      <div class="ic-anillo-block">
+        <h3 class="ic-anillo-titulo">{{ anillo.nombre }}</h3>
+
+        <div class="flex items-end gap-[12px] flex-wrap" style="margin-bottom:10px">
+          <div style="min-width:280px">
+            <app-search-select
+              label="Agregar proyecto a este anillo"
+              [options]="proyectosDisponibles"
+              valueField="proyectoId"
+              displayField="nombre"
+              [value]="anilloParaAgregarId === anillo.id ? proyectoNuevoId : null"
+              placeholder="Buscar proyecto..."
+              (valueChange)="anilloParaAgregarId = anillo.id; proyectoNuevoId = $event">
+            </app-search-select>
+          </div>
+          <button
+            class="btn btn-primary"
+            [disabled]="anilloParaAgregarId !== anillo.id || !proyectoNuevoId"
+            (click)="agregarMiembro(anillo)">
+            Agregar
+          </button>
+        </div>
+
+        <div class="abril-table-wrap">
+          <table class="abril-table">
+            <thead class="sticky top-0 z-10">
+              <tr>
+                <th class="text-center" style="width:60px">Orden</th>
+                <th>Proyecto</th>
+                <th class="text-center">Activo</th>
+                <th class="text-center" style="width:100px">Mover</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (m of anillo.miembros; track m.id; let i = $index) {
+                <tr class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+                  <td class="text-center">{{ m.orden }}</td>
+                  <td class="text-gray-700">{{ m.proyectoNombre }}</td>
+                  <td class="text-center">
+                    <button class="ph-switch" [class.ph-switch--on]="m.activo" (click)="toggleActivo(m)">
+                      <span class="ph-switch-knob"></span>
+                    </button>
+                  </td>
+                  <td class="text-center whitespace-nowrap">
+                    <button class="pi-link" [disabled]="i === 0" (click)="mover(anillo, m, -1)">↑</button>
+                    <button class="pi-link" [disabled]="i === anillo.miembros.length - 1" (click)="mover(anillo, m, 1)">↓</button>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="text-center py-[24px] text-gray-400 text-sm">
+                    Todavía no hay proyectos en este anillo.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    } @empty {
+      <p class="text-sm text-gray-400 text-center py-[40px]">Todavía no hay anillos creados.</p>
+    }
+  }
+</div>
+
+<!-- ── Modal: reasignar una pareja del mes ──────────────────────────── -->
+@if (editando) {
+  <app-abril-modal-panel
+    titulo="Reasignar inspección cruzada"
+    icono="ti-repeat"
+    variant="blue"
+    (closeModal)="cerrarModalReasignar()">
+
+    <p class="text-sm text-gray-500" style="margin-bottom:14px">
+      {{ editando.anilloNombre }} — {{ nombreMesActual }}
+    </p>
+
+    <app-search-select
+      color="var(--color-abril-logo-blue)"
+      label="Proyecto inspector"
+      [options]="todosLosProyectos"
+      valueField="proyectoId"
+      displayField="nombre"
+      [value]="formInspectorId"
+      placeholder="Buscar proyecto..."
+      (valueChange)="formInspectorId = $event">
+    </app-search-select>
+
+    <app-search-select
+      color="var(--color-abril-logo-blue)"
+      label="Proyecto inspeccionado"
+      [options]="todosLosProyectos"
+      valueField="proyectoId"
+      displayField="nombre"
+      [value]="formInspeccionadoId"
+      placeholder="Buscar proyecto..."
+      (valueChange)="formInspeccionadoId = $event">
+    </app-search-select>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Motivo (opcional)</label>
+      <textarea class="abril-field-input" rows="3" [(ngModel)]="formMotivo"></textarea>
+    </div>
+
+    <div modalFooter class="modal-footer-row">
+      <button class="btn btn-secondary" (click)="cerrarModalReasignar()" [disabled]="guardando">Cancelar</button>
+      <button class="btn btn-primary" (click)="confirmarReasignar()" [disabled]="guardando">
+        @if (guardando) { Guardando… } @else { Guardar }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}

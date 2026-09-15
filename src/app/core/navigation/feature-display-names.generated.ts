@@ -1,17 +1,22 @@
 // ARCHIVO GENERADO — no editar a mano.
 // Fuente: node scripts/generate-feature-display-names.js (AST de TypeScript sobre
-// navigation.service.ts + route.data.titulo de toda la app). Re-generar con ese
-// comando cuando se agregue/renombre una pantalla con featureKey nuevo.
+// navigation.service.ts + route.data.titulo de toda la app, más el mapa
+// SECCIONES_SIN_RUTA de ese script). Re-generar con ese comando cuando se
+// agregue/renombre una pantalla con featureKey nuevo.
 //
-// Consumido por RoleEdit (security/roles) como fuente principal de nombres legibles
-// para los 156+ featureKey del modal "Editar Rol" — humanizeFeatureKey() ahí mismo
-// es solo el fallback para featureKey que no aparecen en ningún lado del frontend.
+// Consumido por Seguridad (security/shared/utils/feature-display-name.ts) como fuente
+// principal de nombres legibles de los featureKey: modal "Editar Rol", pantalla
+// Funcionalidades y detalles de rol y usuario — humanizeFeatureKey() ahí mismo es solo
+// el fallback para featureKey que no aparecen en ningún lado del frontend.
 
 export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "accounting.configuration": "Configuración",
   "accounting.dashboard": "Dashboard",
   "accounting.invoices": "Facturas",
+  "almacen.materiales": "Stock y Movimientos",
+  "almacen.ordenes-compra": "Órdenes de Compra/Contratos",
   "arquitectura-comercial.actividades": "Arquitectura Comercial - Actividades",
+  "arquitectura-comercial.costos": "Costos",
   "arquitectura-comercial.dashboard": "Gestión de Actividades",
   "arquitectura-comercial.entregables": "Arquitectura Comercial - Entregables",
   "arquitectura-comercial.gantt": "Arquitectura Comercial - Gantt",
@@ -29,6 +34,7 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "clinica.programaciones": "Clínica - Programaciones",
   "configuracion.aprendizaje": "Centro de aprendizaje",
   "configuracion.area": "Configuración - Áreas",
+  "configuracion.bancos": "Configuración - Bancos",
   "configuracion.companies": "Configuración - Razones Sociales",
   "configuracion.feriados": "Configuración - Feriados Y Días No Laborables",
   "configuracion.proyectos": "Proyectos",
@@ -39,6 +45,7 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "costs.adjudicaciones": "Adjudicaciones",
   "costs.config.adjudicacion-folder": "Carpeta adjudicaciones",
   "costs.config.costos-presupuestos-email": "Correos C. y Ppto.",
+  "costs.config.pasos": "Pasos",
   "costs.config.project-link": "Planos por proyecto",
   "costs.config.staff-project-email": "Correos por Proyecto",
   "costs.config.work-item": "Partidas",
@@ -54,19 +61,29 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "evaluaciones.evaluar-contratista": "Evaluar contratista",
   "evaluaciones.evaluar-jefe-ssoma": "Evaluar Jefe SSOMA",
   "evaluaciones.evaluar-supervisor-contratista": "Evaluar supervisor SSOMA",
+  "evaluaciones.gestion-ssoma": "Gestión SSOMA",
   "evaluaciones.historial": "Historial",
-  "evaluaciones.mi-perfil-prevencionista": "Mi perfil (Prev./Coord.)",
+  "evaluaciones.mis-resultados-gestion-ssoma": "Mis resultados (Prev./Coord.)",
+  "evaluaciones.periodos": "Períodos",
+  "evaluaciones.resultados-gestion-ssoma": "Evaluaciones - Resultados Gestión Ssoma",
   "evaluaciones.resultados-jefe-ssoma": "Resultados Jefe SSOMA",
   "evaluaciones.ver-contratistas": "Ver eval. contratistas",
   "evaluaciones.ver-supervisores-contratista": "Ver eval. supervisores SSOMA",
+  "gestion-administrativa.config.capturas": "Capturas",
   "gestion-administrativa.config.carpeta-adjuntos": "Carpeta Adjuntos",
-  "gestion-administrativa.config.correos": "Correos",
+  "gestion-administrativa.config.consolidadores-areas": "Consolidadores de Áreas",
+  "gestion-administrativa.config.correos": "Mis Rendiciones - Configuración",
   "gestion-administrativa.config.lugares": "Lugares",
   "gestion-administrativa.config.motivos": "Motivos",
   "gestion-administrativa.config.trayectos": "Trayectos",
+  "gestion-administrativa.config.visibilidad-rendiciones": "Visibilidad de Rendiciones",
   "gestion-administrativa.config.visibilidad-salidas": "Visibilidad de Salidas",
+  "gestion-administrativa.correcciones-s10": "Correcciones S10",
   "gestion-administrativa.delegacion-revision": "Delegación de Revisión",
+  "gestion-administrativa.gestion-rendiciones": "Gestión de Rendiciones",
   "gestion-administrativa.gestion-salidas": "Gestión de Salidas",
+  "gestion-administrativa.reembolsos": "Reembolsos",
+  "gestion-administrativa.rendiciones": "Mis Rendiciones",
   "gestion-administrativa.solicitud-salidas": "Solicitud de Salidas",
   "gestion-gth.aprobaciones": "Aprobaciones",
   "gestion-gth.config.categorias-puestos": "Categorías y Puestos",
@@ -83,7 +100,6 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "habilitacion.equipos": "Habilitación - Equipos Y Máquinas",
   "habilitacion.evaluacion-supervisores": "Habilitación - Evaluación Supervisores",
   "habilitacion.inducciones": "Habilitación - Inducciones",
-  "habilitacion.registros-modelo": "Habilitación - Registros Modelo",
   "habilitacion.reglas": "Habilitación - Reglas De Entregables",
   "habilitacion.sctr-vidaley": "Habilitación - Sctr Y Vida Ley",
   "habilitacion.trabajadores": "Gestión de Ingresos",
@@ -108,14 +124,17 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "projects.projects-dashboard": "Dashboard de Proyectos",
   "projects.report-response-control": "Control de respuesta de informes",
   "projects.resident-monitoring-measurement": "Seguimiento y medición de residentes",
+  "security.features": "Funcionalidades",
   "security.roles": "Roles",
   "security.users": "Usuarios",
   "ssoma.charlas.aprobar": "Revisión Charlas Contratistas",
   "ssoma.gestion.accidentes-incidentes": "Accidentes e Incidentes",
+  "ssoma.gestion.activos-rotativos": "Activos Rotativos",
   "ssoma.gestion.amonestaciones": "Amonestaciones y Suspensiones",
   "ssoma.gestion.auditoria-ats": "Auditoría de ATS",
   "ssoma.gestion.charlas": "Charlas & Capacitaciones",
   "ssoma.gestion.checklist": "Checklists SSOMA",
+  "ssoma.gestion.cumplimiento": "Cumplimiento SSOMA",
   "ssoma.gestion.horas-hombre": "Horas Hombre",
   "ssoma.gestion.indicadores-proactivos": "Indicadores SSOMA",
   "ssoma.gestion.inspeccion": "Inspecciones",
@@ -124,6 +143,8 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "ssoma.gestion.opt.lista": "Opt — Lista",
   "ssoma.gestion.opt.nuevo": "Nueva Opt",
   "ssoma.gestion.paso": "Prog. Anual SSOMA",
+  "ssoma.gestion.penalidades.lista": "Penalidades",
+  "ssoma.gestion.pets": "PETS",
   "ssoma.gestion.presupuesto-materiales": "Presupuesto Materiales",
   "ssoma.gestion.programacion-inducciones": "Programación de Inducciones",
   "ssoma.gestion.proyectos-habilitados": "Proyectos Habilitados SSOMA",

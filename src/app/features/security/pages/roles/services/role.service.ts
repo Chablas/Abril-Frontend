@@ -6,6 +6,7 @@ import { PagedResponseDTO } from '../../../../../core/dtos/api/pagedResponse.mod
 import { RoleDto } from '../dtos/role.model';
 import { RoleCreateDto } from '../dtos/roleCreate.model';
 import { FeatureDto } from '../dtos/feature.model';
+import { RoleDetailDto } from '../dtos/role-detail.model';
 
 function buildAuthHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -36,6 +37,13 @@ export class RoleFeatureService {
 
   getAllFeatures(): Observable<FeatureDto[]> {
     return this.http.get<FeatureDto[]>(`${this.apiUrl}/features/all`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  /** Usuarios con el rol y funcionalidades que da, en una sola petición (modal de detalle). */
+  getRoleDetail(roleId: number): Observable<RoleDetailDto> {
+    return this.http.get<RoleDetailDto>(`${this.apiUrl}/${roleId}/detail`, {
       headers: buildAuthHeaders(),
     });
   }

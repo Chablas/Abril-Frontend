@@ -8,6 +8,12 @@ export interface GaMotivoSalidaConfigItemDto {
   esHoraEstimada: boolean;
   /** Si true, al elegir este motivo en una solicitud se exige escribir un motivo adicional. */
   requiereMotivoAdicional: boolean;
+  /** Si false, al elegir este motivo la solicitud no pide horas, ni lugares,
+   *  ni trayectos adicionales (ej. licencia sin goce de haber). */
+  pideHorasLugares: boolean;
+  /** Si true, una salida con este motivo genera reembolso de movilidad. El trayecto
+   *  elegido puede anularlo (ga_trayecto.esReembolsable), nunca al revés. */
+  esReembolsable: boolean;
   createdAt: string;
 }
 
@@ -16,6 +22,12 @@ export interface GaMotivoSalidaCreateDto {
   requiereAdjunto: boolean;
   esHoraEstimada: boolean;
   requiereMotivoAdicional: boolean;
+  /** Si false, al elegir este motivo la solicitud no pide horas, ni lugares,
+   *  ni trayectos adicionales (ej. licencia sin goce de haber). */
+  pideHorasLugares: boolean;
+  /** Si true, una salida con este motivo genera reembolso de movilidad. El trayecto
+   *  elegido puede anularlo (ga_trayecto.esReembolsable), nunca al revés. */
+  esReembolsable: boolean;
 }
 
 export interface GaMotivoSalidaEditDto {
@@ -23,4 +35,10 @@ export interface GaMotivoSalidaEditDto {
   requiereAdjunto: boolean;
   esHoraEstimada: boolean;
   requiereMotivoAdicional: boolean;
+  /** Si false, al elegir este motivo la solicitud no pide horas, ni lugares,
+   *  ni trayectos adicionales (ej. licencia sin goce de haber). */
+  pideHorasLugares: boolean;
+  /** Si true, una salida con este motivo genera reembolso de movilidad. El trayecto
+   *  elegido puede anularlo (ga_trayecto.esReembolsable), nunca al revés. */
+  esReembolsable: boolean;
 }

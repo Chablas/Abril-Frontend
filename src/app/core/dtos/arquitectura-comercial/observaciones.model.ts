@@ -24,6 +24,7 @@ export interface ObservacionListItemDTO {
   origen: string;
   levantaPorWorkerId: number | null;
   levantaPorNombre: string | null;
+  fechaLevantamiento: string | null;
   fotos: ObservacionFotoDTO[];
 }
 
@@ -77,6 +78,7 @@ export interface UpdateObservacionBody {
   partidaReportada?: string | null;
   areaResponsable?: string | null;
   personaReporta?: string | null;
+  fechaLevantamiento?: string | null;
 }
 
 export interface ObservacionPorPartidaDTO {

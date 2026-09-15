@@ -17,6 +17,7 @@ import { FilterTriggerButton } from '../../../../../shared/components/filter-tri
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
 import { SearchInput } from '../../../../../shared/components/search-input/search-input';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { DatePicker } from '../../../../../shared/components/date-picker/date-picker';
 import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril-bulk-action.directive';
 import { NuevaObservacion } from '../../components/nueva-observacion/nueva-observacion';
 import { LevantarObservacion } from '../../components/levantar-observacion/levantar-observacion';
@@ -24,7 +25,7 @@ import { DEFAULT_PAGE_SIZE } from '../../../../../shared/constants/pagination';
 import { CatalogoService } from '../../../../../core/services/arquitectura-comercial/catalogo.service';
 import { CatalogoModal } from '../../../../../shared/components/catalogo-modal/catalogo-modal';
 import { ProyectosArquitecturaComercialModal } from '../../../../../shared/components/proyectos-arquitectura-comercial-modal/proyectos-arquitectura-comercial-modal';
-
+
 import { AC_OBSERVACIONES_TABS } from '../../../shared/arquitectura-comercial-tabs';
 @Component({
   standalone: true,
@@ -38,6 +39,7 @@ import { AC_OBSERVACIONES_TABS } from '../../../shared/arquitectura-comercial-ta
     FilterModal,
     SearchInput,
     SearchSelect,
+    DatePicker,
     AbrilBulkActionDirective,
     NuevaObservacion,
     LevantarObservacion,
@@ -102,7 +104,12 @@ export class ObservacionesLista implements OnInit {
 
   /** Edición inline de una fila — solo disponible con el featureKey .editar. */
   editandoId: number | null = null;
-  editForm = { personaReporta: '', partidaReportada: '' as string | null, descripcion: '' };
+  editForm = {
+    personaReporta: '',
+    partidaReportada: '' as string | null,
+    descripcion: '',
+    fechaLevantamiento: '' as string | null,
+  };
   guardandoEdicion = false;
 
   get puedeEditar(): boolean {
@@ -406,6 +413,7 @@ export class ObservacionesLista implements OnInit {
       personaReporta: o.personaReporta ?? '',
       partidaReportada: o.partidaReportada,
       descripcion: o.descripcion,
+      fechaLevantamiento: o.fechaLevantamiento ? o.fechaLevantamiento.substring(0, 10) : null,
     };
   }
 
@@ -421,6 +429,7 @@ export class ObservacionesLista implements OnInit {
         personaReporta: this.editForm.personaReporta.trim() || null,
         partidaReportada: this.editForm.partidaReportada,
         descripcion: this.editForm.descripcion.trim(),
+        fechaLevantamiento: this.editForm.fechaLevantamiento || null,
       })
       .subscribe({
         next: (actualizado) => {

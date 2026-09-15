@@ -179,6 +179,19 @@ export interface RatioFamiliaComparacionDto {
   promedioPrecioUnitario: number;
 }
 
+export interface CalcularRatiosResultDto {
+  projectId: number;
+  projectDescription: string;
+  ratiosCalculados: number;
+  familiasSinDriver: number;
+  advertencias: string[];
+}
+
+export interface CalcularRatiosTodosResultDto {
+  totalProyectosProcesados: number;
+  proyectos: CalcularRatiosResultDto[];
+}
+
 export interface RatioProyectoDto {
   id: number;
   familiaId: number;
@@ -215,7 +228,7 @@ export interface ResumenRatiosDto {
 // (no consumos). No segmenta por tipo de proyecto; incluidoManual es la unica
 // autoridad real sobre que proyecto entra al calculo, "esOutlier" es solo informativo.
 
-export type TipoDriverRatio = 'HH' | 'TRABAJADORES';
+export type TipoDriverRatio = 'HH' | 'TRABAJADORES' | 'STAFF_CASCO' | 'STAFF_OREJERA';
 
 export interface RatioDriverProyectoDto {
   projectId: number;
@@ -224,8 +237,20 @@ export interface RatioDriverProyectoDto {
   cicloVida: string;
   diasRegistrados: number;
   areaTechada: number;
+  /** Valor "oficial" (manual si existe, si no el calculado) — el que entra a la mediana. */
   cantidad: number;
   ratio: number;
+  /** Acumulado real calculado desde Tareo/planilla (HH) o worker_vinculaciones (TRABAJADORES), "en vivo". */
+  cantidadCalculado: number;
+  /** Valor REAL final tipeado a mano en Datos Base — solo cuando hhFuente es HH_REAL. */
+  cantidadManual: number | null;
+  /** Valor PROYECTADO/estimado tipeado a mano en Datos Base — solo cuando hhFuente es
+   * HH_PROYECTADO o HH_CALCULADO_MEDIANA. Puramente informativo, no entra a la mediana. */
+  cantidadProyectado: number | null;
+  /** Cuál de los 3 valores eligió el responsable para Cantidad/Ratio: CALCULADO | MANUAL | PROYECTADO | null. */
+  fuenteCantidad: string | null;
+  /** Solo informativo para HH: HH_REAL | HH_PROYECTADO | HH_CALCULADO_MEDIANA. */
+  hhFuente: string | null;
   esOutlier: boolean;
   incluidoManual: boolean;
 }
@@ -254,6 +279,8 @@ export interface RatioDriverRecomendadoDto {
 export interface RatiosDriversRecomendadosDto {
   hh: RatioDriverRecomendadoDto | null;
   trabajadores: RatioDriverRecomendadoDto | null;
+  staffCasco: RatioDriverRecomendadoDto | null;
+  staffOrejera: RatioDriverRecomendadoDto | null;
 }
 
 // ─── Presupuesto ──────────────────────────────────────────────────────────────
@@ -268,6 +295,16 @@ export interface GenerarPresupuestoDto {
 export interface ActualizarLineaPresupuestoDto {
   cantidadManual?: number | null;
   precioManual?: number | null;
+  notasLinea?: string | null;
+}
+
+export interface AgregarFamiliaManualDto {
+  nombre: string;
+  tipoId: number;
+  variableBase: string;
+  unidadMedida?: string | null;
+  cantidadManual: number;
+  precioManual: number;
   notasLinea?: string | null;
 }
 
@@ -313,6 +350,11 @@ export interface PresupuestoTipoDto {
   nombreTipo: string;
   totalEstimado: number;
   familias: PresupuestoLineaDto[];
+}
+
+export interface PresupuestoDestinatarioDto {
+  rol: string;
+  email: string;
 }
 
 export interface PresupuestoDetalleDto extends PresupuestoResumenDto {
@@ -363,7 +405,7 @@ export interface ControlSemanaDto {
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
-export type Semaforo = 'OK' | 'ADVERTENCIA' | 'ALERTA' | 'SIN_PRESUPUESTO';
+export type Semaforo = 'OK' | 'ADVERTENCIA' | 'ALERTA' | 'SIN_PRESUPUESTO' | 'FUERA_DE_PRESUPUESTO';
 
 export interface DashboardLineaDto {
   familiaId: number;
@@ -379,6 +421,8 @@ export interface DashboardLineaDto {
   totalSaldo: number;
   pctConsumido: number;
   semaforo: Semaforo;
+  /** Hubo consumo real de esta família pero el presupuesto no tenía línea para ella. */
+  fueraDePresupuesto: boolean;
 }
 
 export interface DashboardTipoDto {
@@ -403,7 +447,35 @@ export interface DashboardPresupuestoDto {
   semanasRegistradas: number;
   familiasEnAlerta: number;
   familiasEnAdvertencia: number;
+  familiasFueraDePresupuesto: number;
   tipos: DashboardTipoDto[];
+}
+
+// ─── Dashboard acumulado (todos los proyectos con presupuesto) — vista gerencial ──────────────
+
+export interface DashboardAcumuladoProyectoDto {
+  presupuestoId: number;
+  projectId: number;
+  projectDescription: string;
+  version: number;
+  totalPresupuestado: number;
+  totalConsumido: number;
+  totalSaldo: number;
+  pctConsumido: number;
+  semaforo: Semaforo;
+  familiasFueraDePresupuesto: number;
+}
+
+export interface DashboardAcumuladoDto {
+  totalProyectos: number;
+  totalPresupuestado: number;
+  totalConsumido: number;
+  totalSaldo: number;
+  pctConsumido: number;
+  proyectosEnAlerta: number;
+  proyectosEnAdvertencia: number;
+  proyectosConFueraDePresupuesto: number;
+  proyectos: DashboardAcumuladoProyectoDto[];
 }
 
 // ─── Dotación de personal SSOMA por hito crítico ──────────────────────────────
@@ -420,6 +492,11 @@ export interface PersonalHitoDto {
   hitoDescripcion: string;
   hitoFecha: string | null;
   esHitoCritico: boolean;
+  /** Etapa de salida elegida (opcional) — si viene, `semanas` ya fue calculada por el backend
+   * a partir de las fechas reales del cronograma. Null = semanas manual (comportamiento anterior). */
+  hitoSalidaId: number | null;
+  hitoSalidaDescripcion: string | null;
+  hitoSalidaFecha: string | null;
   rol: string;
   cantidad: number;
   semanas: number;
@@ -429,6 +506,7 @@ export interface PersonalHitoDto {
 
 export interface PersonalHitoItemInputDto {
   hitoId: number;
+  hitoSalidaId?: number | null;
   rol: string;
   cantidad: number;
   semanas: number;
@@ -437,6 +515,115 @@ export interface PersonalHitoItemInputDto {
 
 export interface PersonalHitoGuardarDto {
   items: PersonalHitoItemInputDto[];
+}
+
+/** Tarifa "S/ mes" sugerida por categoría — punto de partida estimado desde otros proyectos, editable. */
+export interface PersonalTarifasSugeridasDto {
+  oficial: number;
+  peon: number;
+}
+
+// ─── EPI de Staff (config global de rotación + cálculo por proyecto) ────────────────────────
+
+export interface EpiStaffConfigDto {
+  arnesPorStaff: number;
+  rotacionLentesMeses: number;
+  rotacionBarbiquejoMeses: number;
+  rotacionGuantesMeses: number;
+}
+
+export interface EpiStaffLineaDto {
+  nombre: string;
+  familiaId: number | null;
+  requiereDescuento: boolean;
+  cantidadTotalConsumida: number;
+  cantidadStaff: number;
+  cantidadObrero: number;
+  precioUnitarioStaff: number;
+  precioUnitarioObrero: number;
+  costoStaff: number;
+  costoObrero: number;
+}
+
+// ─── Costo fijo manual (Malla Anticaída/Encapsulado/Malla Anillo Fenólico) ──────────────────
+
+export interface CostoFijoManualDto {
+  projectId: number;
+  mallaAnticaida: number;
+  encapsulado: number;
+  mallaAnilloFenolico: number;
+  notas: string | null;
+}
+
+export interface ActualizarCostoFijoManualDto {
+  mallaAnticaida: number;
+  encapsulado: number;
+  mallaAnilloFenolico: number;
+  notas: string | null;
+}
+
+export interface EpiStaffCalculoDto {
+  projectId: number;
+  staffHeadcountAplicado: number;
+  mesesProyecto: number;
+  config: EpiStaffConfigDto;
+  lineas: EpiStaffLineaDto[];
+}
+
+// ─── Vigilancia externa por hito (facturada por punto/turno, precio desde Ratios) ────────────
+
+export interface VigilanciaHitoDto {
+  id: number;
+  hitoId: number;
+  hitoDescripcion: string;
+  hitoFecha: string | null;
+  esHitoCritico: boolean;
+  hitoSalidaId: number | null;
+  hitoSalidaDescripcion: string | null;
+  hitoSalidaFecha: string | null;
+  cantidadPuntos: number;
+  semanas: number;
+  precioUnitario: number;
+  total: number;
+}
+
+export interface VigilanciaHitoItemInputDto {
+  hitoId: number;
+  hitoSalidaId?: number | null;
+  cantidadPuntos: number;
+  semanas: number;
+}
+
+export interface VigilanciaHitoGuardarDto {
+  items: VigilanciaHitoItemInputDto[];
+}
+
+// ─── Servicios de costo fijo (VariableBase = FIJO) — cantidad manual, precio desde Ratios ─────
+
+export interface FamiliaFijaDisponibleDto {
+  familiaId: number;
+  nombreFamilia: string;
+  unidadMedida: string | null;
+}
+
+export interface ServicioFijoDto {
+  familiaId: number;
+  nombreFamilia: string;
+  unidadMedida: string | null;
+  metrado: number;
+  precioUnitario: number;
+  total: number;
+  descripcion: string | null;
+}
+
+export interface ServicioFijoItemInputDto {
+  familiaId: number;
+  metrado: number;
+  descripcion?: string | null;
+}
+
+export interface ServiciosFijosGuardarDto {
+  items: ServicioFijoItemInputDto[];
 }
 
 // ─── Kits / BOM (Botiquín, Estación de Emergencia, etc.) ──────────────────────
@@ -470,6 +657,23 @@ export interface KitCalculoLineaDto {
   cantidadPorKit: number;
   cantidadTotal: number;
   esConsumible: boolean;
+  /** Ya vienen poblados tanto en la vista previa (calcularKit, precio en vivo desde Ratios) como en
+   * lo ya guardado (getKitsGuardados, snapshot al momento de guardar). */
+  precioUnitario: number;
+  total: number;
+}
+
+export interface KitProyectoGuardarDto {
+  kitId: number;
+  cantidadKits: number;
+}
+
+export interface KitProyectoGuardadoDto {
+  kitId: number;
+  nombreKit: string;
+  cantidadKits: number;
+  lineas: KitCalculoLineaDto[];
+  total: number;
 }
 
 export interface KitItemInputDto {
@@ -481,6 +685,10 @@ export interface KitItemInputDto {
 export interface KitCreateDto {
   nombre: string;
   tipoId: number;
+  items: KitItemInputDto[];
+}
+
+export interface KitEditarDto {
   items: KitItemInputDto[];
 }
 
@@ -535,4 +743,26 @@ export interface MaterialNoSsomaDto {
   precioTotal: number;
   fechaGuia: string;
   estadoRevision?: string;
+}
+
+// ─── Vista general (todas las líneas, todos los proyectos, tal como llegan del S10) ──────────
+
+export interface MaterialGlobalDto {
+  lineaId: number;
+  projectId: number;
+  projectDescription: string;
+  recursoCrudo: string;
+  itemId?: number;
+  nombreItem?: string;
+  familiaId?: number;
+  nombreFamilia?: string;
+  tipoId?: number;
+  nombreTipo?: string;
+  cantidad: number;
+  precioUnitario: number;
+  precioTotal: number;
+  perteneceSsoma: boolean;
+  /** null | PENDIENTE | AUTORIZADO | RECHAZADO */
+  estadoRevision?: string;
+  fechaGuia: string;
 }

@@ -1,0 +1,120 @@
+<app-base-modal
+  [title]="titulo"
+  width="w-[760px]"
+  [preventCloseWhenDirty]="!soloLectura"
+  (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[14px] mt-[12px]">
+
+    <!-- ── Aviso de estado: de dónde salen las casillas marcadas ───── -->
+    <div *ngIf="loaded && !soloLectura && !esPersonalizado"
+         class="text-xs text-[#92400E] bg-[#FEF9C3] px-[14px] py-[10px] rounded-lg">
+      {{ avisoAlgoritmo }}
+    </div>
+
+    <!-- ── Filtros por tipo de área + búsqueda ─────────────────────── -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <button
+        *ngFor="let t of tipos"
+        type="button"
+        (click)="toggleTipo(t.id)"
+        class="text-xs font-medium px-[10px] py-[5px] rounded-full border transition-colors cursor-pointer"
+        [ngClass]="tipoFilter.has(t.id)
+          ? 'bg-[var(--color-abril-standard)] text-white border-[var(--color-abril-standard)]'
+          : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'">
+        {{ t.name }}
+      </button>
+
+      <app-search-input
+        placeholder="Buscar área..."
+        [(value)]="searchText"
+        width="200px"
+        class="ml-auto"
+      ></app-search-input>
+    </div>
+
+    <!-- ── Acciones masivas (solo al editar) + contador ─────────────── -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <ng-container *ngIf="!soloLectura">
+        <button type="button" (click)="seleccionarVisibles()"
+          class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-[var(--color-abril-standard)] text-[var(--color-abril-standard)] hover:bg-[var(--color-abril-standard-light)] transition-colors cursor-pointer">
+          Seleccionar todo{{ filtrando ? ' (visible)' : '' }}
+        </button>
+        <button type="button" (click)="limpiar()"
+          class="text-xs font-medium px-[10px] py-[5px] rounded-[6px] border border-gray-300 text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer">
+          Limpiar
+        </button>
+      </ng-container>
+
+      <!-- En detalle, el origen de lo marcado es el dato que ordena la lectura. -->
+      <ng-container *ngIf="soloLectura && loaded">
+        <span class="text-[11px] px-[10px] py-[3px] rounded-full font-medium"
+          [ngClass]="esPersonalizado
+            ? 'bg-[var(--color-abril-standard-light)] text-[var(--color-abril-standard)]'
+            : 'bg-[#F3F4F6] text-[#6B7280] italic'">
+          {{ esPersonalizado ? 'Personalizado' : 'Algoritmo' }}
+        </span>
+        <span *ngIf="veTodo"
+          class="text-[11px] px-[10px] py-[3px] rounded-full font-medium bg-[#E8F1FB] text-[var(--color-abril-logo-blue)]">
+          Ve todas las áreas
+        </span>
+      </ng-container>
+
+      <span class="text-xs text-gray-500 ml-auto">
+        {{ seleccionadas }} área(s) {{ soloLectura ? 'visible(s)' : 'seleccionada(s)' }}
+      </span>
+    </div>
+
+    <!-- ── Árbol de áreas ──────────────────────────────────────────── -->
+    <div class="w-full rounded-lg border border-[var(--color-abril-standard-border)] max-h-[46vh] overflow-y-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-[var(--color-abril-standard-light)] sticky top-0 z-10">
+          <tr class="text-[var(--color-abril-standard)]">
+            <th class="text-center px-[14px] py-[8px] font-semibold">Área / Nodo</th>
+            <th class="text-center px-[8px] py-[8px] font-semibold w-[150px]">Tipo</th>
+            <th class="text-center px-[8px] py-[8px] font-semibold w-[90px]">Áreas</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let o of filtered" class="border-b border-[#EDF1F4] hover:bg-gray-50">
+            <td class="px-[14px] py-[7px] text-gray-700">
+              <span [style.padding-left.px]="displayDepth(o) * 18"></span>
+              <span [class.text-gray-400]="displayDepth(o) > 0">{{ displayDepth(o) > 0 ? '└ ' : '' }}</span>
+              {{ o.node.areaItemName }}
+            </td>
+            <td class="px-[8px] py-[7px] text-center">
+              <span class="text-[11px] px-[8px] py-[2px] rounded-full"
+                [ngClass]="{
+                  'bg-[#EDE9FE] text-[#6D28D9]': o.node.areaTypeName === 'Área de Gerencia',
+                  'bg-[#DBEAFE] text-[#1D4ED8]': o.node.areaTypeName === 'Área Estándar'
+                }">
+                {{ o.node.areaTypeName }}
+              </span>
+            </td>
+            <td class="px-[8px] py-[7px] text-center">
+              <input type="checkbox" class="w-4 h-4 accent-[var(--color-abril-standard)]"
+                [class.cursor-pointer]="!soloLectura"
+                [checked]="isSelected(o.node.areaScopeId)"
+                [disabled]="soloLectura"
+                (change)="toggle(o.node.areaScopeId)" />
+            </td>
+          </tr>
+
+          <tr *ngIf="loaded && filtered.length === 0">
+            <td colspan="3" class="px-[14px] py-[24px] text-center text-gray-400 text-sm">Sin áreas.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!soloLectura" class="flex justify-center mt-[6px]">
+      <button (click)="save()"
+        class="w-[180px] py-[9px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-standard)">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

@@ -16,8 +16,10 @@ import {
   ActualizarDriversResultDto,
   GenerarPresupuestoDto,
   ActualizarLineaPresupuestoDto,
+  AgregarFamiliaManualDto,
   PresupuestoResumenDto,
   PresupuestoDetalleDto,
+  PresupuestoDestinatarioDto,
   AbrirSemanaDto,
   RegistrarConsumoLineaDto,
   ControlSemanaDto,
@@ -29,14 +31,19 @@ import {
   HitoCriticoDisponibleDto,
   PersonalHitoDto,
   PersonalHitoGuardarDto,
+  PersonalTarifasSugeridasDto,
   KitResumenDto,
   KitDetalleDto,
   KitCalculoLineaDto,
+  KitProyectoGuardarDto,
+  KitProyectoGuardadoDto,
   KitCreateDto,
+  KitEditarDto,
   FamiliaCatalogoDto,
   ActualizarFamiliaDto,
   MaterialPendienteGlobalDto,
   MaterialNoSsomaDto,
+  MaterialGlobalDto,
   TipoMaterialDto,
   TipoDriverRatio,
   RatioDriverComparacionDto,
@@ -44,6 +51,17 @@ import {
   RatiosDriversRecomendadosDto,
   ImportHhResultDto,
   HhCargaResumenDto,
+  CalcularRatiosTodosResultDto,
+  VigilanciaHitoDto,
+  VigilanciaHitoGuardarDto,
+  FamiliaFijaDisponibleDto,
+  ServicioFijoDto,
+  ServiciosFijosGuardarDto,
+  DashboardAcumuladoDto,
+  EpiStaffConfigDto,
+  EpiStaffCalculoDto,
+  CostoFijoManualDto,
+  ActualizarCostoFijoManualDto,
 } from './presupuesto.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -77,6 +95,14 @@ export class PresupuestoMaterialesService {
     return this.http.post<ImportConsumoResultDto>(
       `${this.base}/cargas/${cargaId}/estandarizar`,
       {},
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Progreso en vivo de una estandarización en curso — para mostrar "línea X de Y" mientras dura. */
+  obtenerProgresoEstandarizacion(cargaId: number): Observable<{ enProceso: boolean; procesadas?: number; total?: number }> {
+    return this.http.get<{ enProceso: boolean; procesadas?: number; total?: number }>(
+      `${this.base}/cargas/${cargaId}/progreso`,
       { headers: this.authHeaders() },
     );
   }
@@ -149,6 +175,15 @@ export class PresupuestoMaterialesService {
     );
   }
 
+  /** Calcula ratios de todos los proyectos con consumo SSOMA estandarizado de una sola vez. */
+  calcularRatiosTodos(): Observable<CalcularRatiosTodosResultDto> {
+    return this.http.post<CalcularRatiosTodosResultDto>(
+      `${this.base}/ratios/proyectos/calcular-todos`,
+      {},
+      { headers: this.authHeaders() },
+    );
+  }
+
   listarFamiliasConRatio(): Observable<FamiliaConRatioDto[]> {
     return this.http.get<FamiliaConRatioDto[]>(`${this.base}/ratios/familias`, {
       headers: this.authHeaders(),
@@ -187,6 +222,15 @@ export class PresupuestoMaterialesService {
     );
   }
 
+  /** Activa/desactiva una familia directamente desde Ratios (mismo flag que "Activo" en Catálogo). */
+  actualizarActivoFamilia(familiaId: number, activo: boolean): Observable<unknown> {
+    return this.http.patch(
+      `${this.base}/ratios/familias/${familiaId}/activo`,
+      { activo },
+      { headers: this.authHeaders() },
+    );
+  }
+
   // ── Ratios de drivers (HH / N Trabajadores por m2) ─────────────────
 
   calcularRatiosDrivers(): Observable<CalcularRatiosDriversResultDto> {
@@ -211,6 +255,19 @@ export class PresupuestoMaterialesService {
     return this.http.patch(
       `${this.base}/ratios/drivers/${tipo}/proyectos/${projectId}/incluir`,
       { incluir },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** fuente: 'CALCULADO' | 'MANUAL' | 'PROYECTADO' | null (ninguno, excluye el proyecto). */
+  actualizarFuenteCantidadDriver(
+    tipo: TipoDriverRatio,
+    projectId: number,
+    fuente: string | null,
+  ): Observable<unknown> {
+    return this.http.patch(
+      `${this.base}/ratios/drivers/${tipo}/proyectos/${projectId}/fuente`,
+      { fuente },
       { headers: this.authHeaders() },
     );
   }
@@ -257,11 +314,58 @@ export class PresupuestoMaterialesService {
     );
   }
 
+  /** Override manual de cantidad por família del proyecto, sin conocer el lineaId — escribe directo
+   * en la línea real del presupuesto vigente (usado por Cálculo técnico, ej. Marcelinos). */
+  actualizarCantidadManualPorFamilia(
+    projectId: number,
+    familiaId: number,
+    cantidadManual: number | null,
+  ): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.base}/presupuestos/proyectos/${projectId}/familias/${familiaId}/cantidad-manual`,
+      { cantidadManual },
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Alta de família directo desde el detalle del presupuesto — crea (o reutiliza) la família en el
+   * catálogo y la agrega de una vez como línea manual, sin pasar primero por Catálogo. */
+  agregarFamiliaManual(presupuestoId: number, dto: AgregarFamiliaManualDto): Observable<PresupuestoDetalleDto> {
+    return this.http.post<PresupuestoDetalleDto>(
+      `${this.base}/presupuestos/${presupuestoId}/familias-manuales`,
+      dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  eliminarPresupuesto(presupuestoId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(
+      `${this.base}/presupuestos/${presupuestoId}`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  getDestinatariosAprobacion(presupuestoId: number): Observable<PresupuestoDestinatarioDto[]> {
+    return this.http.get<PresupuestoDestinatarioDto[]>(
+      `${this.base}/presupuestos/${presupuestoId}/destinatarios-aprobacion`,
+      { headers: this.authHeaders() },
+    );
+  }
+
   aprobarPresupuesto(presupuestoId: number): Observable<{ estado: string }> {
     return this.http.post<{ estado: string }>(
       `${this.base}/presupuestos/${presupuestoId}/aprobar`,
       {},
       { headers: this.authHeaders() },
+    );
+  }
+
+  /** Excel del "Desagregado de Recursos" (Materiales + Personal + Vigilancia + Servicios fijos +
+   * Kits del presupuesto vigente del proyecto) — mismo formato que usa Costos. */
+  exportarResumenRecursosExcel(projectId: number): Observable<Blob> {
+    return this.http.get(
+      `${this.base}/presupuestos/proyectos/${projectId}/resumen-recursos/exportar-excel`,
+      { headers: this.authHeaders(), responseType: 'blob' },
     );
   }
 
@@ -303,6 +407,51 @@ export class PresupuestoMaterialesService {
     );
   }
 
+  /** Mismo dashboard, resuelto por proyecto (toma automáticamente la versión más reciente del
+   * presupuesto) — para pantallas que solo conocen el proyecto seleccionado. */
+  getDashboardPorProyecto(projectId: number): Observable<DashboardPresupuestoDto> {
+    return this.http.get<DashboardPresupuestoDto>(
+      `${this.base}/control/proyectos/${projectId}/dashboard`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Vista gerencial acumulada: un renglón por proyecto (presupuesto más reciente) con total
+   * presupuestado vs. consumido real, para ver todos los proyectos de un vistazo. */
+  getDashboardAcumulado(): Observable<DashboardAcumuladoDto> {
+    return this.http.get<DashboardAcumuladoDto>(
+      `${this.base}/control/dashboard-acumulado`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Proyecto donde el usuario logueado está vinculado como trabajador (su obra actual) — para
+   * preseleccionarlo por defecto. `projectId` viene null si no tiene vinculación activa. */
+  getProyectoActual(): Observable<{ projectId: number | null }> {
+    return this.http.get<{ projectId: number | null }>(
+      `${this.base}/proyectos/mi-actual`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── Último proyecto elegido en este módulo (localStorage) ───────────────────
+  // Fallback para cuando el usuario no tiene una obra vinculada (personal de oficina/gerencia):
+  // sin esto, cada pantalla del módulo le pedía elegir proyecto desde cero. Se guarda cada vez
+  // que el usuario elige uno a mano en cualquier pantalla del módulo.
+  private readonly ULTIMO_PROYECTO_KEY = 'presupuesto_materiales_ultimo_proyecto';
+
+  getUltimoProyectoId(): number | null {
+    if (typeof localStorage === 'undefined') return null;
+    const raw = localStorage.getItem(this.ULTIMO_PROYECTO_KEY);
+    const id = raw ? Number(raw) : null;
+    return id && !isNaN(id) ? id : null;
+  }
+
+  setUltimoProyectoId(id: number): void {
+    if (typeof localStorage === 'undefined') return;
+    localStorage.setItem(this.ULTIMO_PROYECTO_KEY, String(id));
+  }
+
   // ── Dotación de personal por hito crítico ─────────────────────────
 
   getHitosCriticosDisponibles(projectId: number): Observable<HitoCriticoDisponibleDto[]> {
@@ -323,6 +472,15 @@ export class PresupuestoMaterialesService {
     return this.http.put<{ message: string }>(
       `${this.base}/proyectos/${projectId}/personal-hitos`,
       dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Tarifa "S/ mes" sugerida por categoría (Oficial/Peón), estimada desde lo cargado en otros
+   * proyectos recientemente — un punto de partida editable, no un valor fijo. */
+  getTarifasPersonalSugeridas(projectId: number): Observable<PersonalTarifasSugeridasDto> {
+    return this.http.get<PersonalTarifasSugeridasDto>(
+      `${this.base}/proyectos/${projectId}/personal-hitos/tarifas-sugeridas`,
       { headers: this.authHeaders() },
     );
   }
@@ -358,8 +516,39 @@ export class PresupuestoMaterialesService {
     });
   }
 
+  /** Todos los kits guardados en el presupuesto de este proyecto (puede haber varios tipos a la vez
+   * — ej. Botiquín y Estación de Emergencia simultáneamente). */
+  getKitsGuardados(projectId: number): Observable<KitProyectoGuardadoDto[]> {
+    return this.http.get<KitProyectoGuardadoDto[]>(
+      `${this.base}/proyectos/${projectId}/kits`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  guardarKit(projectId: number, dto: KitProyectoGuardarDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.base}/proyectos/${projectId}/kits`,
+      dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  eliminarKitGuardado(projectId: number, kitId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(
+      `${this.base}/proyectos/${projectId}/kits/${kitId}`,
+      { headers: this.authHeaders() },
+    );
+  }
+
   crearKit(dto: KitCreateDto): Observable<{ id: number }> {
     return this.http.post<{ id: number }>(`${this.base}/kits`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  /** Reemplaza el BOM completo de un kit ya existente (agregar/quitar materiales o cambiar cantidades). */
+  editarKit(kitId: number, dto: KitEditarDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/kits/${kitId}`, dto, {
       headers: this.authHeaders(),
     });
   }
@@ -417,5 +606,98 @@ export class PresupuestoMaterialesService {
     return this.http.get<MaterialNoSsomaDto[]>(`${this.base}/catalogo/no-ssoma`, {
       headers: this.authHeaders(),
     });
+  }
+
+  /** Todas las líneas de todos los proyectos, en cualquier estado — vista general consolidada. */
+  obtenerTodoGlobal(): Observable<MaterialGlobalDto[]> {
+    return this.http.get<MaterialGlobalDto[]>(`${this.base}/catalogo/todo`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  // ── Vigilancia externa por hito (facturada por punto/turno, precio desde Ratios) ──────────
+
+  getVigilanciaHitos(projectId: number): Observable<VigilanciaHitoDto[]> {
+    return this.http.get<VigilanciaHitoDto[]>(
+      `${this.base}/proyectos/${projectId}/vigilancia-hitos`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  getPrecioVigilanciaActual(): Observable<{ precioUnitario: number }> {
+    return this.http.get<{ precioUnitario: number }>(
+      `${this.base}/vigilancia/precio-actual`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  guardarVigilanciaHitos(projectId: number, dto: VigilanciaHitoGuardarDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.base}/proyectos/${projectId}/vigilancia-hitos`,
+      dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── Servicios de costo fijo (cantidad manual, precio desde Ratios) ─────────
+
+  getServiciosFijosDisponibles(projectId: number): Observable<FamiliaFijaDisponibleDto[]> {
+    return this.http.get<FamiliaFijaDisponibleDto[]>(
+      `${this.base}/proyectos/${projectId}/servicios/disponibles`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  getServiciosFijos(projectId: number): Observable<ServicioFijoDto[]> {
+    return this.http.get<ServicioFijoDto[]>(
+      `${this.base}/proyectos/${projectId}/servicios`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  guardarServiciosFijos(projectId: number, dto: ServiciosFijosGuardarDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.base}/proyectos/${projectId}/servicios`,
+      dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── EPI de Staff (config global + cálculo por proyecto) ────────────────────
+
+  getEpiStaffConfig(): Observable<EpiStaffConfigDto> {
+    return this.http.get<EpiStaffConfigDto>(`${this.base}/epi-staff/config`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  actualizarEpiStaffConfig(dto: EpiStaffConfigDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/epi-staff/config`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getEpiStaffCalculo(projectId: number): Observable<EpiStaffCalculoDto> {
+    return this.http.get<EpiStaffCalculoDto>(
+      `${this.base}/epi-staff/proyectos/${projectId}/calculo`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── Costo fijo manual (Malla Anticaída/Encapsulado/Malla Anillo Fenólico) ──────
+
+  getCostoFijoManual(projectId: number): Observable<CostoFijoManualDto> {
+    return this.http.get<CostoFijoManualDto>(
+      `${this.base}/proyectos/${projectId}/costo-fijo-manual`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  guardarCostoFijoManual(projectId: number, dto: ActualizarCostoFijoManualDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.base}/proyectos/${projectId}/costo-fijo-manual`,
+      dto,
+      { headers: this.authHeaders() },
+    );
   }
 }

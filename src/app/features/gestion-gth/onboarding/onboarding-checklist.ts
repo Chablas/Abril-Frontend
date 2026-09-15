@@ -9,10 +9,14 @@ import { ActividadOnboarding, FaseOnboarding, OnboardingListItem } from './dtos/
  * los checks del detalle podrían discrepar. Este archivo solo cuenta y agrupa.
  */
 
-/** Códigos estables de las fases (espejo de `gth_onboarding_fase.codigo`). */
+/**
+ * Códigos estables de las fases (espejo de `gth_onboarding_fase.codigo`).
+ *
+ * Se fueron dos: CARTA_OFERTA_FIRMADA, cuando la carta pasó a ser el último paso de Reclutamiento,
+ * y FILE_DIGITAL, cuyas actividades ya ocurrían antes de que el colaborador llegara acá — el aviso
+ * al responsable de obra, la única que quedaba viva, se mudó a CORREO_BIENVENIDA.
+ */
 export const FASE = {
-  cartaOfertaFirmada: 'CARTA_OFERTA_FIRMADA',
-  fileDigital: 'FILE_DIGITAL',
   correoBienvenida: 'CORREO_BIENVENIDA',
   formularioWeb: 'FORMULARIO_WEB',
   preinicio: 'PREINICIO',
@@ -22,8 +26,10 @@ export const FASE = {
 
 /** Códigos estables de las actividades con tarjeta propia en el detalle. */
 export const ACTIVIDAD = {
-  revisarAprobarCarta: 'REVISAR_APROBAR_CARTA',
-  avisoTi: 'AVISO_TI',
+  /** El correo que le abre al colaborador su formulario «Nuevos Talentos» y le manda el enlace. */
+  enviarBienvenida: 'ENVIAR_BIENVENIDA',
+  /** La vuelta del anterior: el colaborador ya envió ese formulario. */
+  recibirFormulario: 'RECIBIR_FORMULARIO',
   avisoObra: 'AVISO_OBRA',
 } as const;
 

@@ -96,17 +96,23 @@ export class RevisionesService {
     comentario: string | null,
     foto: File | null,
     levantaPorWorkerId: number | null,
+    fechaLevantamiento: string | null,
   ): Observable<RevisionObservacionListItemDTO> {
     const form = new FormData();
     if (comentario) form.append('comentario', comentario);
     if (foto) form.append('foto', foto);
     if (levantaPorWorkerId) form.append('levantaPorWorkerId', String(levantaPorWorkerId));
+    if (fechaLevantamiento) form.append('fechaLevantamiento', fechaLevantamiento);
 
     return this.http.post<RevisionObservacionListItemDTO>(`${this.apiUrl}/${id}/levantar`, form, { headers: this.authHeaders() });
   }
 
   updateObservacion(id: number, body: UpdateRevisionObservacionBody): Observable<RevisionObservacionListItemDTO> {
     return this.http.put<RevisionObservacionListItemDTO>(`${this.apiUrl}/${id}`, body, { headers: this.authHeaders() });
+  }
+
+  eliminarObservacion(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`, { headers: this.authHeaders() });
   }
 
   agregarFotoObservacion(revisionObservacionId: number, file: File): Observable<{ url: string }> {

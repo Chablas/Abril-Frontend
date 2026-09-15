@@ -233,6 +233,27 @@
   min-height: 0;
   overflow-y: auto;
 }
+
+/* Modificador opt-in: la tabla con caja propia, para cuando el contenedor NO
+   es blanco y las filas se dibujarían directamente sobre el fondo de la página
+   (las secciones con tabla de la configuración de Gestión Administrativa, donde
+   el resto de secciones son tarjetas sueltas sobre ese fondo). Misma superficie
+   que `.config-card` y el paginador, para que las tres cosas se lean como una.
+   El overflow del wrapper recorta las esquinas, así que el thead sticky no se
+   sale del redondeo.
+   Uso: <div class="abril-table-wrap abril-table-wrap--card">...</div> */
+.abril-table-wrap--card {
+  background: var(--color-abril-surface);
+  border: 1px solid var(--color-abril-border);
+  border-radius: var(--radius-standard);
+}
+/* La última fila ya tiene el borde de la caja debajo: sin esto se ve una línea
+   doble pegada al filo inferior. Va sobre el <tr> y el <td> porque el separador
+   lo pone `.abril-table td` y además cada fila trae su propio `border-b`. */
+.abril-table-wrap--card .abril-table tbody tr:last-child,
+.abril-table-wrap--card .abril-table tbody tr:last-child > td {
+  border-bottom: 0;
+}
 .abril-table tbody tr:hover { background: var(--color-abril-bg-alt); }
 
 /* ── Input estándar ─────────────────────────────────────────── */
@@ -745,6 +766,20 @@ app-layout .full-page-wrapper app-header a[routerlink],
 app-layout .full-page-wrapper app-header img[alt="Logo"],
 app-layout .full-page-wrapper app-header .sm\:hidden {
   display: none !important;
+}
+
+/* ── SweetAlert2: botón de confirmar por defecto ──────────────────────
+   SweetAlert2 trae #7066e0 (morado) como color del botón de confirmar y lo
+   sirve por esta variable, así que toda llamada a Swal.fire() que no pase
+   confirmButtonColor sale morada — hoy son ~450 en la app. Se cambia acá y
+   no en cada archivo: el color que pasa el llamador va inline y le gana a
+   esta variable, así que los botones con color propio (rojo de las acciones
+   destructivas, etc.) no se tocan.
+   El selector es html:root y no :root a propósito: la hoja de SweetAlert2 se
+   inyecta en runtime y puede quedar después de esta, y con la misma
+   especificidad ganaría la suya. */
+html:root {
+  --swal2-confirm-button-background-color: var(--color-abril-standard);
 }
 
 /* ── SweetAlert2 preset paleta UDP (DESIGN-VICTOR.md §6.9) ────────────

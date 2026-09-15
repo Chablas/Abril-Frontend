@@ -24,6 +24,14 @@
 
     @if (!loading && data) {
 
+      @if (data.estado !== 'Cerrada') {
+        <div class="acciones-row">
+          <button type="button" class="btn-toggle-na" (click)="abrirEditarInspeccion()">
+            <i class="ti ti-edit"></i> Editar inspección
+          </button>
+        </div>
+      }
+
       <!-- ── TOP ROW: GAUGE + META ── -->
       <div class="top-row">
 
@@ -177,14 +185,16 @@
                 <div class="hallazgo-top">
                   <span class="badge-tipo" [ngClass]="tipoClass(h.tipo)">{{ h.tipo }}</span>
                   <span class="hallazgo-estado" [ngClass]="estadoHallazgoClass(h.estado)">{{ h.estado }}</span>
-                  @if (h.estado === 'Abierto' && data.estado === 'Abierta') {
+                  @if (h.estado === 'Abierto' && data.estado !== 'Cerrada') {
                     <div class="hallazgo-actions">
-                      <button type="button" class="btn-editar-hallazgo" (click)="abrirEditar(h)">
-                        Editar
-                      </button>
-                      <button type="button" class="btn-eliminar-hallazgo" [disabled]="eliminandoId === h.id" (click)="eliminarHallazgo(h)">
-                        @if (eliminandoId === h.id) { <i class="ti ti-loader-2 spin"></i> } @else { Eliminar }
-                      </button>
+                      @if (puedeModificarHallazgo(h)) {
+                        <button type="button" class="btn-editar-hallazgo" (click)="abrirEditar(h)">
+                          Editar
+                        </button>
+                        <button type="button" class="btn-eliminar-hallazgo" [disabled]="eliminandoId === h.id" (click)="eliminarHallazgo(h)">
+                          @if (eliminandoId === h.id) { <i class="ti ti-loader-2 spin"></i> } @else { Eliminar }
+                        </button>
+                      }
                       <button type="button" class="btn-cerrar-hallazgo" (click)="abrirCierre(h)">
                         Cerrar
                       </button>
@@ -366,6 +376,109 @@
         </button>
       </div>
     </div>
+  }
+
+  <!-- MODAL: Editar inspección -->
+  @if (editarInspeccionAbierta) {
+    <app-abril-modal-panel
+      titulo="Editar inspección"
+      icono="ti-edit"
+      variant="blue"
+      width="620px"
+      (closeModal)="cerrarEditarInspeccion()">
+
+      @if (cargandoCatalogosEdicion) {
+        <div class="loading-catalogos">
+          <i class="ti ti-loader-2 spin"></i> Cargando catálogos...
+        </div>
+      } @else {
+        <div class="abril-form-section">
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Proyecto *"
+              [options]="proyectosCat"
+              valueField="projectId"
+              displayField="projectDescription"
+              placeholder="Buscar proyecto..."
+              [value]="edProyectoId"
+              (valueChange)="edProyectoId = $event">
+            </app-search-select>
+          </div>
+
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Tipo de inspección *"
+              [options]="edTiposOpts"
+              valueField="id"
+              displayField="label"
+              placeholder="Buscar tipo de inspección..."
+              [value]="edTipoId"
+              (valueChange)="edTipoId = $event">
+            </app-search-select>
+          </div>
+
+          <div class="form-row">
+            <div class="abril-field">
+              <label class="abril-field-label">Fecha <span class="required">*</span></label>
+              <input type="date" class="abril-field-input" [(ngModel)]="edFecha" />
+            </div>
+            <div class="abril-field">
+              <label class="abril-field-label">Hora inicio</label>
+              <input type="time" class="abril-field-input" [(ngModel)]="edHoraInicio" />
+            </div>
+            <div class="abril-field">
+              <label class="abril-field-label">Hora fin</label>
+              <input type="time" class="abril-field-input" [(ngModel)]="edHoraFin" />
+            </div>
+          </div>
+
+          <div class="abril-field">
+            <label class="abril-field-label">Área inspeccionada</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="edArea" />
+          </div>
+
+          <div class="abril-field">
+            <label class="abril-field-label">Responsable de área</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="edResponsableArea" />
+          </div>
+
+          <div class="form-row">
+            <div class="abril-field">
+              <label class="abril-field-label">Inspector</label>
+              <input type="text" class="abril-field-input" [(ngModel)]="edInspectorNombre" />
+            </div>
+            <div class="abril-field">
+              <label class="abril-field-label">Cargo inspector</label>
+              <input type="text" class="abril-field-input" [(ngModel)]="edInspectorCargo" />
+            </div>
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Empresa inspector</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="edInspectorEmpresa" />
+          </div>
+
+          <div class="form-row">
+            <div class="abril-field">
+              <label class="abril-field-label">Representante</label>
+              <input type="text" class="abril-field-input" [(ngModel)]="edRepresentanteNombre" />
+            </div>
+            <div class="abril-field">
+              <label class="abril-field-label">Cargo representante</label>
+              <input type="text" class="abril-field-input" [(ngModel)]="edRepresentanteCargo" />
+            </div>
+          </div>
+        </div>
+      }
+
+      <div modalFooter class="modal-footer-row">
+        <button type="button" class="btn-cancelar" (click)="cerrarEditarInspeccion()">Cancelar</button>
+        <button type="button" class="btn-confirmar" [disabled]="guardandoInspeccion || cargandoCatalogosEdicion" (click)="confirmarEditarInspeccion()">
+          @if (guardandoInspeccion) { <i class="ti ti-loader-2 spin"></i> } @else { Guardar cambios }
+        </button>
+      </div>
+    </app-abril-modal-panel>
   }
 
   <!-- LIGHTBOX -->

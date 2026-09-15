@@ -8,6 +8,9 @@ import {
   EvJefeSsomaEvaluacionCreateDto,
   EvJefeSsomaCumplimientoDto,
   EvJefeSsomaResultadosDto,
+  EvJefeSsomaPlanAccionDto,
+  EvJefeSsomaPlanAccionCreateDto,
+  EvJefeSsomaPlanAccionUpdateDto,
 } from '../dtos/ev-jefe-ssoma.model';
 
 @Injectable({ providedIn: 'root' })
@@ -38,5 +41,23 @@ export class EvJefeSsomaService {
     let params = new HttpParams();
     if (periodoId) params = params.set('periodoId', periodoId.toString());
     return this.http.get<EvJefeSsomaResultadosDto>(`${this.base}/resultados`, { headers: this.headers(), params });
+  }
+
+  getPlanAccion(periodoId: number): Observable<EvJefeSsomaPlanAccionDto[]> {
+    const params = new HttpParams().set('periodoId', periodoId.toString());
+    return this.http.get<EvJefeSsomaPlanAccionDto[]>(`${this.base}/plan-accion`, { headers: this.headers(), params });
+  }
+
+  crearPlanAccion(periodoId: number, dto: EvJefeSsomaPlanAccionCreateDto): Observable<EvJefeSsomaPlanAccionDto> {
+    const params = new HttpParams().set('periodoId', periodoId.toString());
+    return this.http.post<EvJefeSsomaPlanAccionDto>(`${this.base}/plan-accion`, dto, { headers: this.headers(), params });
+  }
+
+  actualizarPlanAccion(id: number, dto: EvJefeSsomaPlanAccionUpdateDto): Observable<EvJefeSsomaPlanAccionDto> {
+    return this.http.put<EvJefeSsomaPlanAccionDto>(`${this.base}/plan-accion/${id}`, dto, { headers: this.headers() });
+  }
+
+  eliminarPlanAccion(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/plan-accion/${id}`, { headers: this.headers() });
   }
 }

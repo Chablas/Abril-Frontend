@@ -139,6 +139,13 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/contabilidad/contabilidad.routes')
           .then(m => m.CONTABILIDAD_ROUTES)
+      },
+
+      {
+        path: 'almacen',
+        loadChildren: () =>
+          import('./features/almacen/almacen.routes')
+          .then(m => m.ALMACEN_ROUTES)
       }
     ]
   },
@@ -208,6 +215,15 @@ export const routes: Routes = [
   },
 
   {
+    // Formulario «Nuevos Talentos» del colaborador que entra (acceso por token, sin login): lo
+    // abre el correo de bienvenida del onboarding, ya con la persona contratada.
+    path: 'colaborador/formulario',
+    loadComponent: () =>
+      import('./features/gestion-gth/colaborador-formulario/colaborador-formulario')
+      .then(m => m.ColaboradorFormulario)
+  },
+
+  {
     // Respuesta del candidato a su entrevista (acceso por token, sin login): a esta página llegan
     // los botones «Confirmar» y «Rechazar» del correo de invitación.
     path: 'postulante/entrevista',
@@ -231,6 +247,14 @@ export const routes: Routes = [
       import('./features/habilitacion/pages/registros-modelo/registros-modelo')
       .then(m => m.RegistrosModelo),
     data: { publicMode: true }
+  },
+
+  {
+    // Biblioteca pública de PETS (acceso por el QR único, sin login).
+    path: 'pets',
+    loadComponent: () =>
+      import('./features/ssoma/gestion/pets/pages/publico/pets-publico')
+      .then(m => m.PetsPublico)
   },
 
   {

@@ -115,8 +115,19 @@
   color: var(--color-abril-standard);
 }
 
+/* Subtabs a la izquierda, selector de vista a la derecha. En pantallas angostas el
+   toggle baja debajo de los subtabs en vez de comprimirlos. */
+.list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .subtabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
@@ -148,10 +159,11 @@
   padding: 2.5rem 1rem;
 }
 
-/* ── Vista móvil (<md) ───────────────────────────────────────
-   Misma información que la fila de la tabla, apilada en tarjetas para que en un teléfono
-   se pueda leer y, sobre todo, llegar al botón de "Programar" (en la tabla queda fuera de
-   la pantalla). Se muestra/oculta con las utilidades md:hidden / hidden md:block. */
+/* ── Vista "Tabla extendida" ───────────────────────────────────────
+   Misma información que la fila de la tabla, desplegada en una ficha por trabajador: se
+   lee entera sin scroll horizontal y deja los botones a la vista. La elige el toggle de
+   arriba — antes se alternaba con md:hidden / hidden md:block, pero el `display: flex` de
+   .emo-cards le gana a esas utilidades (van en @layer) y las dos vistas salían a la vez. */
 .emo-cards {
   display: flex;
   flex-direction: column;
@@ -229,6 +241,18 @@
 
 .emo-card__item--wide {
   grid-column: 1 / -1;
+}
+
+/* Con el ancho de un escritorio, dos columnas dejaban la ficha medio vacía y muy alta:
+   los ocho datos entran en dos filas de cuatro y ya nada necesita la fila completa. */
+@media (min-width: 768px) {
+  .emo-card__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .emo-card__item--wide {
+    grid-column: auto;
+  }
 }
 
 .emo-card__item dt {

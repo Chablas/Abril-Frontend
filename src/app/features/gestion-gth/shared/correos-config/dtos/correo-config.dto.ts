@@ -14,10 +14,17 @@
  * (`api/v1/gestion-gth/{modulo}/configuracion`) y define qué correos administra cada una:
  *  • `solicitud-personal` → el flujo del solicitante (aprobación de GG, decisiones de candidatos).
  *  • `aprobaciones`       → los avisos a GTH y a TI que dispara la decisión de Gerencia.
- *  • `reclutamiento`      → los del proceso que maneja GTH (long list, formulario al postulante,
- *                           formulario completado, correcciones, entrevista y agradecimiento).
+ *  • `reclutamiento`      → los del proceso que maneja GTH de punta a punta (long list, formulario
+ *                           al postulante, formulario completado, correcciones, entrevista,
+ *                           agradecimiento y la carta oferta con la que cierra el proceso).
+ *  • `onboarding`         → los del checklist del colaborador ya contratado (hoy, el aviso al
+ *                           responsable de la obra donde entra).
  */
-export type CorreoConfigModulo = 'solicitud-personal' | 'aprobaciones' | 'reclutamiento';
+export type CorreoConfigModulo =
+  | 'solicitud-personal'
+  | 'aprobaciones'
+  | 'reclutamiento'
+  | 'onboarding';
 
 /** Una fila de la sección de un correo. */
 export interface CorreoDestinatarioFila {

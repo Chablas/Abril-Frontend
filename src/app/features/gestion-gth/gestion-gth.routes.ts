@@ -18,8 +18,9 @@ export const GESTION_GTH_ROUTES: Routes = [
   {
     // Configuración de los correos del proceso de reclutamiento: los que salen desde la bandeja
     // de GTH (long list, formulario al postulante, correcciones, invitación a entrevista,
-    // finalista al solicitante y fin de proceso) más los que GTH recibe (formulario completado y
-    // respuesta del candidato a la entrevista). Misma feature que el botón «Configuración».
+    // finalista al solicitante, fin de proceso y la carta oferta con la que cierra el proceso) más
+    // los que GTH recibe (formulario completado, respuesta del candidato a la entrevista y el aviso
+    // de que firmó su carta). Misma feature que el botón «Configuración».
     path: 'reclutamiento/configuracion',
     loadComponent: () =>
       import('./reclutamiento/configuracion/reclutamiento-configuracion').then(
@@ -46,8 +47,23 @@ export const GESTION_GTH_ROUTES: Routes = [
     },
   },
   {
-    // Onboarding: la fase que sigue a Reclutamiento. Solo entran los candidatos que el área
-    // solicitante seleccionó y cuyo requerimiento quedó cerrado.
+    // Va ANTES de 'onboarding' por lo mismo que las otras configuraciones del módulo: si no,
+    // una ruta con parámetro se quedaría con el segmento 'configuracion'. Misma feature que las
+    // otras tres: quien administra los correos de Gestión GTH los administra todos.
+    path: 'onboarding/configuracion',
+    loadComponent: () =>
+      import('./onboarding/configuracion/onboarding-configuracion').then(
+        (m) => m.GthOnboardingConfiguracion,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'ONBOARDING - CONFIGURACIÓN',
+      featureKey: 'gestion-gth.reclutamiento.configuracion',
+    },
+  },
+  {
+    // Onboarding: la fase que sigue a Reclutamiento. Entran solos los candidatos cuyo
+    // requerimiento quedó cerrado, o sea los que ya firmaron su carta oferta y GTH la aprobó.
     path: 'onboarding',
     loadComponent: () => import('./onboarding/onboarding').then((m) => m.GthOnboarding),
     canActivate: [authGuard, roleGuard],

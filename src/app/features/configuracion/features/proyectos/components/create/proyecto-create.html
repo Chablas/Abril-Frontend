@@ -3,211 +3,234 @@
   width="w-full sm:w-[820px]"
   (closeModal)="closeModal.emit()">
 
-  <div class="flex flex-col gap-[16px] mt-4">
+  <div class="flex flex-col gap-[18px] mt-4">
 
     <!-- =============== Datos básicos =============== -->
-    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest">Datos básicos</p>
+    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Datos básicos</p>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Descripción <span class="text-red-400">*</span></p>
-        <input type="text" [(ngModel)]="form.projectDescription" class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[12px] gap-y-[6px]">
+      <div class="abril-field">
+        <label class="abril-field-label">Descripción<span class="text-red-500"> *</span></label>
+        <input type="text" class="abril-field-input" [(ngModel)]="form.projectDescription"
+          placeholder="Nombre del proyecto" />
       </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Activo</p>
-        <select [(ngModel)]="form.active"
-          class="pl-[15px] pr-[25px] py-[10px] border border-[#D6DEE5] rounded-lg cursor-pointer">
-          <option [ngValue]="true">ACTIVO</option>
-          <option [ngValue]="false">INACTIVO</option>
-        </select>
-      </div>
-    </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Código <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="text" [(ngModel)]="form.codigo" placeholder="Ej: PROY-2025-001"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-      </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Estado del proyecto <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="text" [(ngModel)]="form.estado" placeholder="Ej: ACTIVO, FINALIZADO, PAUSADO"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-      </div>
-    </div>
+      <app-search-select
+        label="Activo"
+        placeholder="Selecciona estado"
+        [options]="opcionesActivo"
+        valueField="value"
+        displayField="label"
+        [value]="form.active"
+        [allowClear]="false"
+        [sortAlpha]="false"
+        (valueChange)="form.active = $event">
+      </app-search-select>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Abreviación <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="text" [(ngModel)]="form.abbreviation" placeholder="Ej: CDR33, KAU"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      <div class="abril-field">
+        <label class="abril-field-label">Código</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="form.codigo" placeholder="Ej: PROY-2025-001" />
       </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Desc. de pisos <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="text" [(ngModel)]="form.levelDescription" placeholder="Ej: Sótano + 10 pisos"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+
+      <div class="abril-field">
+        <label class="abril-field-label">Abreviación</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="form.abbreviation" placeholder="Ej: CDR33, KAU" />
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Estado del proyecto</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="form.estado"
+          placeholder="Ej: ACTIVO, FINALIZADO, PAUSADO" />
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Descripción de pisos</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="form.levelDescription"
+          placeholder="Ej: Sótano + 10 pisos" />
       </div>
     </div>
 
     <!-- =============== Razón social =============== -->
-    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-2">Razón social</p>
+    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Razón social</p>
 
     <div class="flex flex-col">
-      <p class="text-[#64BC04]">RUC <span class="text-gray-400 text-sm">(opcional)</span></p>
-      <div class="flex gap-[10px]">
-        <input type="text" [(ngModel)]="form.rucInput" maxlength="11" placeholder="Ej: 20123456789"
-          class="border border-[#E2E2E2] rounded-lg p-[10px] flex-1"
-          [disabled]="form.contributor !== null" />
+      <div class="flex gap-[10px] items-start">
+        <div class="abril-field flex-1">
+          <label class="abril-field-label">RUC</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="form.rucInput" maxlength="11"
+            placeholder="Ej: 20123456789" [disabled]="form.contributor !== null" />
+        </div>
         <button *ngIf="form.contributor === null" type="button" (click)="lookupRuc()"
           [disabled]="rucLookupLoading"
-          class="bg-[#64BC04] text-white px-[20px] rounded-lg cursor-pointer disabled:opacity-50">
+          class="mt-[9px] h-[36px] px-[18px] text-[13px] font-medium text-white bg-abril-lime rounded-[7px] cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50">
           {{ rucLookupLoading ? 'Buscando...' : 'Buscar' }}
         </button>
         <button *ngIf="form.contributor !== null" type="button" (click)="clearContributor()"
-          class="bg-[#D30000] text-white px-[20px] rounded-lg cursor-pointer">
+          class="mt-[9px] h-[36px] px-[18px] text-[13px] font-medium text-white bg-[#D30000] rounded-[7px] cursor-pointer transition-opacity hover:opacity-90">
           Limpiar
         </button>
       </div>
+
       <div *ngIf="form.contributor"
-        class="mt-[8px] bg-[#F4F8FB] border border-[#D6DEE5] rounded-lg p-[10px] text-sm flex flex-col gap-0.5">
-        <p><strong>Razón social:</strong> {{ form.contributor.contributorName }}</p>
-        <p><strong>Domicilio fiscal:</strong> {{ form.contributor.contributorAddress }}</p>
-        <p *ngIf="form.contributor.contributorDistrict"><strong>Distrito fiscal:</strong> {{ form.contributor.contributorDistrict }}</p>
-        <p *ngIf="form.contributor.contributorProvince"><strong>Provincia fiscal:</strong> {{ form.contributor.contributorProvince }}</p>
-        <p *ngIf="form.contributor.contributorDepartment"><strong>Departamento fiscal:</strong> {{ form.contributor.contributorDepartment }}</p>
+        class="mt-[10px] bg-abril-standard-light border border-abril-standard-border rounded-[7px] p-[10px] text-[12px] text-gray-700 flex flex-col gap-[3px]">
+        <p><span class="font-semibold text-gray-500">Razón social:</span> {{ form.contributor.contributorName }}</p>
+        <p><span class="font-semibold text-gray-500">Domicilio fiscal:</span> {{ form.contributor.contributorAddress }}</p>
+        <p *ngIf="form.contributor.contributorDistrict"><span class="font-semibold text-gray-500">Distrito fiscal:</span> {{ form.contributor.contributorDistrict }}</p>
+        <p *ngIf="form.contributor.contributorProvince"><span class="font-semibold text-gray-500">Provincia fiscal:</span> {{ form.contributor.contributorProvince }}</p>
+        <p *ngIf="form.contributor.contributorDepartment"><span class="font-semibold text-gray-500">Departamento fiscal:</span> {{ form.contributor.contributorDepartment }}</p>
       </div>
-      <div *ngIf="form.contributor" class="flex flex-col mt-[8px]">
-        <p class="text-[#64BC04]">N° Registro Persona Jurídica <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="text" [(ngModel)]="form.legalEntityRegistryNumber" placeholder="Ej: 11234567"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+
+      <div *ngIf="form.contributor" class="abril-field mt-[16px]">
+        <label class="abril-field-label">N° Registro Persona Jurídica</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="form.legalEntityRegistryNumber"
+          placeholder="Ej: 11234567" />
       </div>
     </div>
 
     <!-- =============== Ubicación del proyecto =============== -->
-    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-2">Ubicación del proyecto</p>
+    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Ubicación del proyecto</p>
 
-    <div class="grid grid-cols-3 gap-[12px]">
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Distrito <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="text" [(ngModel)]="form.projectDistrict" placeholder="Ej: Miraflores"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-[12px] gap-y-[6px]">
+      <div class="abril-field">
+        <label class="abril-field-label">Distrito</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="form.projectDistrict" placeholder="Ej: Miraflores" />
       </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Provincia <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="text" [(ngModel)]="form.projectProvince" placeholder="Ej: Lima"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      <div class="abril-field">
+        <label class="abril-field-label">Provincia</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="form.projectProvince" placeholder="Ej: Lima" />
       </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Departamento <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="text" [(ngModel)]="form.projectDepartment" placeholder="Ej: Lima"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      <div class="abril-field">
+        <label class="abril-field-label">Departamento</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="form.projectDepartment" placeholder="Ej: Lima" />
+      </div>
+      <div class="abril-field sm:col-span-3">
+        <label class="abril-field-label">Dirección</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="form.projectLocation"
+          placeholder="Ej: Av. Principal 123, Lima" />
       </div>
     </div>
 
-    <div class="flex flex-col">
-      <p class="text-[#64BC04]">Ubicación <span class="text-gray-400 text-sm">(opcional)</span></p>
-      <input type="text" [(ngModel)]="form.projectLocation" placeholder="Ej: Av. Principal 123, Lima"
-        class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-    </div>
+    <!-- =============== Responsables =============== -->
+    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Responsables</p>
 
-    <!-- =============== Responsable y Arq. Comercial =============== -->
-    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-2">Responsable</p>
+    <ng-container *ngIf="!loadingLookups; else lookupsSkeleton">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[12px] gap-y-[6px]">
+        <app-search-select
+          label="Responsable Arq. Comercial"
+          placeholder="Buscar por nombre o DNI..."
+          [options]="responsablesArqCom"
+          valueField="id"
+          displayField="apellidoNombre"
+          [value]="form.responsableArqComId"
+          [allowClear]="true"
+          [sortAlpha]="false"
+          (valueChange)="onResponsableArqComChange($event)">
+        </app-search-select>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Responsable Arq. Comercial <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="text" [(ngModel)]="form.responsableArqCom" placeholder="Nombre del responsable"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-      </div>
-      <div class="flex items-end">
-        <label class="flex items-center gap-[8px] cursor-pointer">
-          <input type="checkbox" [(ngModel)]="form.tieneArquitecturaComercial"
-            class="w-4 h-4 accent-[#64BC04]" />
-          <span class="text-sm text-gray-700">Tiene Arquitectura Comercial</span>
+        <app-search-select
+          label="Responsable UDP"
+          placeholder="Buscar por nombre o DNI..."
+          [options]="responsablesUdp"
+          valueField="id"
+          displayField="apellidoNombre"
+          [value]="form.responsableUdpId"
+          [allowClear]="true"
+          [sortAlpha]="false"
+          (valueChange)="onResponsableUdpChange($event)">
+        </app-search-select>
+
+        <div class="flex flex-col">
+          <app-search-select
+            label="Coordinador administrativo"
+            placeholder="Buscar por nombre o DNI..."
+            [options]="coordAdmins"
+            valueField="id"
+            displayField="apellidoNombre"
+            [value]="form.workersCoordAdminId"
+            [allowClear]="true"
+            [sortAlpha]="false"
+            (valueChange)="form.workersCoordAdminId = $event">
+          </app-search-select>
+          <p class="mt-[4px] text-[11px] leading-tight"
+            [ngClass]="coordAdminEmail ? 'text-gray-400' : 'text-amber-600'">
+            {{ coordAdminEmail ?? 'Sin coordinador: nadie recibe el aviso por ese rol.' }}
+          </p>
+        </div>
+
+        <label class="flex items-center gap-[8px] cursor-pointer mt-[9px] h-[36px]">
+          <input type="checkbox" [(ngModel)]="form.tieneArquitecturaComercial" class="w-4 h-4 accent-abril-lime" />
+          <span class="text-[13px] text-gray-700">Tiene Arquitectura Comercial</span>
         </label>
       </div>
-    </div>
+    </ng-container>
+
+    <ng-template #lookupsSkeleton>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[12px] gap-y-[6px]">
+        <div class="mt-[9px] h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
+        <div class="mt-[9px] h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
+        <div class="mt-[9px] h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
+        <div class="mt-[9px] h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
+      </div>
+    </ng-template>
+
+    <p *ngIf="lookupsError" class="text-[11px] text-red-500 -mt-[10px]">
+      No se pudo cargar la lista de trabajadores.
+      <button type="button" (click)="loadLookups()" class="underline cursor-pointer">Reintentar</button>
+    </p>
 
     <!-- =============== Fechas =============== -->
-    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-2">Fechas</p>
+    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Fechas</p>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Fecha inicio <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="date" [(ngModel)]="form.fechaInicio"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-      </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Fecha fin <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="date" [(ngModel)]="form.fechaFin"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-      </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Inicio de obra <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="date" [(ngModel)]="form.inicioObra"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-      </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Fin de obra <span class="text-gray-400 text-sm">(opcional)</span></p>
-        <input type="date" [(ngModel)]="form.finObra"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-      </div>
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-x-[12px] gap-y-[6px]">
+      <app-date-picker label="Fecha inicio"   [floatingLabel]="true" color="var(--color-abril-standard)" [(value)]="form.fechaInicio"></app-date-picker>
+      <app-date-picker label="Fecha fin"      [floatingLabel]="true" color="var(--color-abril-standard)" [(value)]="form.fechaFin"></app-date-picker>
+      <app-date-picker label="Inicio de obra" [floatingLabel]="true" color="var(--color-abril-standard)" [(value)]="form.inicioObra"></app-date-picker>
+      <app-date-picker label="Fin de obra"    [floatingLabel]="true" color="var(--color-abril-standard)" [(value)]="form.finObra"></app-date-picker>
     </div>
 
     <!-- =============== Métricas físicas =============== -->
-    <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mt-2">Métricas físicas</p>
+    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Métricas físicas</p>
 
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-[12px]">
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">N° niveles <span class="text-gray-400 text-sm">(opc.)</span></p>
-        <input type="text" [(ngModel)]="form.numNiveles"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-x-[12px] gap-y-[6px]">
+      <div class="abril-field">
+        <label class="abril-field-label">N° niveles</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="form.numNiveles" />
       </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">N° sótanos <span class="text-gray-400 text-sm">(opc.)</span></p>
-        <input type="text" [(ngModel)]="form.numSotanos"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      <div class="abril-field">
+        <label class="abril-field-label">N° sótanos</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="form.numSotanos" />
       </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Pisos <span class="text-gray-400 text-sm">(opc.)</span></p>
-        <input type="text" [(ngModel)]="form.pisos"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      <div class="abril-field">
+        <label class="abril-field-label">Pisos</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="form.pisos" />
       </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Tiempo construc. <span class="text-gray-400 text-sm">(días, opc.)</span></p>
-        <input type="number" [(ngModel)]="form.tiempoConstruccion" min="0"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      <div class="abril-field">
+        <label class="abril-field-label">Días de obra</label>
+        <input type="number" min="0" class="abril-field-input" [(ngModel)]="form.tiempoConstruccion" />
       </div>
-    </div>
-
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-[12px]">
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Área m² <span class="text-gray-400 text-sm">(opc.)</span></p>
-        <input type="number" [(ngModel)]="form.areaM2" min="0" step="0.01"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      <div class="abril-field">
+        <label class="abril-field-label">Área m²</label>
+        <input type="number" min="0" step="0.01" class="abril-field-input" [(ngModel)]="form.areaM2" />
       </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Área techada m² <span class="text-gray-400 text-sm">(opc.)</span></p>
-        <input type="number" [(ngModel)]="form.areaTechadaM2" min="0" step="0.01"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      <div class="abril-field">
+        <label class="abril-field-label">Área techada m²</label>
+        <input type="number" min="0" step="0.01" class="abril-field-input" [(ngModel)]="form.areaTechadaM2" />
       </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">HH total casa <span class="text-gray-400 text-sm">(opc.)</span></p>
-        <input type="number" [(ngModel)]="form.hhTotalCasa" min="0" step="0.01"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      <div class="abril-field">
+        <label class="abril-field-label">HH total casa</label>
+        <input type="number" min="0" step="0.01" class="abril-field-input" [(ngModel)]="form.hhTotalCasa" />
       </div>
-      <div class="flex flex-col">
-        <p class="text-[#64BC04]">Cant. trabajadores <span class="text-gray-400 text-sm">(opc.)</span></p>
-        <input type="text" [(ngModel)]="form.cantTrabajadoresCasa"
-          class="border border-[#E2E2E2] rounded-lg p-[10px]" />
+      <div class="abril-field">
+        <label class="abril-field-label">Trabajadores casa</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="form.cantTrabajadoresCasa" />
       </div>
     </div>
 
     <!-- =============== Botón guardar =============== -->
-    <div class="flex justify-center mt-2">
+    <div class="flex justify-center mt-[6px]">
       <button (click)="save()" [disabled]="saving"
-        class="w-[120px] bg-[#64BC04] py-[5px] rounded-[10px] cursor-pointer disabled:opacity-60">
-        <p class="text-white text-lg">{{ saving ? 'Guardando...' : 'Guardar' }}</p>
+        class="w-[140px] h-[38px] bg-abril-lime text-white text-[14px] font-medium rounded-[10px] cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-60">
+        {{ saving ? 'Guardando...' : 'Guardar' }}
       </button>
     </div>
 

@@ -1,0 +1,91 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* El encabezado del módulo queda pegado arriba mientras se recorre su lista. */
+.af-group__head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--color-abril-border);
+  background: #f8fafc;
+}
+
+.af-group__name {
+  flex: 1;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.af-group__name--sin {
+  font-style: italic;
+}
+
+.af-group__count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.af-row {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 150ms ease;
+}
+
+.af-group:last-child .af-row:last-child {
+  border-bottom: 0;
+}
+
+.af-row:hover {
+  background: #f8fafc;
+}
+
+.af-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-abril-ink);
+}
+
+.af-key {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 11px;
+  color: #94a3b8;
+  overflow-wrap: anywhere;
+}
+
+.af-via {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.af-via i {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.af-via__chip {
+  padding: 0 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  color: #475569;
+  background: #ffffff;
+}

@@ -191,6 +191,22 @@
   margin-top: 1px;
 }
 
+.inter-estado {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.inter-estado.pendiente {
+  background: #fffbeb;
+  color: #b45309;
+}
+
 .doc-card-sub.missing {
   color: #f59e0b;
 }

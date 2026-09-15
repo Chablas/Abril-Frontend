@@ -1,0 +1,33 @@
+<section class="ap-card">
+  <header class="ap-head">
+    <i class="ti {{ icono }} ap-head__icon"></i>
+    <h3 class="ap-head__title">{{ titulo }}</h3>
+    <span *ngIf="!cargando" class="ap-head__count">
+      {{ filtrando ? visibles + ' de ' + total : total }}
+    </span>
+  </header>
+
+  <div *ngIf="buscable" class="ap-search">
+    <app-search-input
+      width="100%"
+      [placeholder]="placeholder"
+      [value]="termino"
+      (valueChange)="onBuscar($event)">
+    </app-search-input>
+  </div>
+
+  <!-- Un solo ng-content fuera de todo *ngIf: mientras carga, la lista no tiene filas que
+       proyectar, así que el skeleton y el contenido nunca se ven a la vez. -->
+  <div class="ap-body">
+    <div *ngIf="cargando" class="ap-skeleton">
+      <div *ngFor="let i of lineasSkeleton" class="ap-skeleton__line"></div>
+    </div>
+
+    <ng-content></ng-content>
+
+    <div *ngIf="!cargando && (total === 0 || visibles === 0)" class="ap-empty">
+      <i class="ti" [ngClass]="total === 0 ? 'ti-circle-off' : 'ti-search-off'"></i>
+      <span>{{ total === 0 ? vacio : 'Sin resultados.' }}</span>
+    </div>
+  </div>
+</section>

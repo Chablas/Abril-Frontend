@@ -1,0 +1,33 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.ar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 150ms ease;
+}
+
+.ar-row:last-child {
+  border-bottom: 0;
+}
+
+.ar-row:hover {
+  background: #f8fafc;
+}
+
+.ar-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-abril-ink);
+}
+
+.ar-meta {
+  font-size: 12px;
+  color: #64748b;
+}

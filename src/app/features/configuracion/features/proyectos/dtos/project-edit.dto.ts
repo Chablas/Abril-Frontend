@@ -30,6 +30,9 @@ export interface ProjectEditDto {
   responsablePlaneamientoBim?: string;
   responsablePlaneamientoBimId?: number;
 
+  /** Coordinador administrativo: FK a workers (project.workers_coord_admin_id). */
+  workersCoordAdminId?: number | null;
+
   // Fechas (formato YYYY-MM-DD)
   fechaInicio?: string;
   fechaFin?: string;

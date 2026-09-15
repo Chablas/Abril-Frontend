@@ -21,10 +21,13 @@ import { GthRevisionLongList } from './components/revision-long-list/revision-lo
 import { GthRevisionFinalistas } from './components/revision-finalistas/revision-finalistas';
 import { SolicitudPersonalService } from './services/solicitud-personal.service';
 import { estadoColors } from '../shared/estado-colors';
+import { DestinatarioSolicitud } from '../shared/dtos/destinatarios.dto';
 import {
+  AprobacionGgReenvioPreview,
   GestionCandidatoCard,
   ResumenSolicitantePanel,
   SolicitudVacanteListItem,
+  tipoRequerimientoEstilo,
 } from './dtos/solicitud-personal.dto';
 
 @Component({
@@ -74,7 +77,7 @@ import {
     }
 
     /* ── Responsive ───────────────────────────────────────────────────────
-       Las 7 columnas de la tabla no entran por debajo de ~1024px y, como acá
+       Las 8 columnas de la tabla no entran por debajo de ~1024px y, como acá
        .abril-table-wrap no recorta (overflow:visible, ver arriba), ese
        desborde lo terminaba scrolleando .page-container: al desplazarse para
        ver la tabla se arrastraba de lado TODA la vista — tarjetas de resumen
@@ -299,7 +302,9 @@ export class GthSolicitudPersonal implements OnInit {
     if (!q) return this.solicitudes;
     return this.solicitudes.filter((s) =>
       SearchInput.matches(
-        [s.codigo, s.puesto, s.area, s.proyectoObra, s.estadoNombre].filter(Boolean).join(' '),
+        [s.codigo, s.puesto, s.tipoRequerimiento, s.area, s.proyectoObra, s.estadoNombre]
+          .filter(Boolean)
+          .join(' '),
         q,
       ),
     );
@@ -336,21 +341,79 @@ export class GthSolicitudPersonal implements OnInit {
   /** Mismo mapa que usa la bandeja de GTH: un estado se pinta igual en todo el módulo. */
   readonly estadoColors = estadoColors;
 
+  /** Ícono y color de la columna «Tipo»: los mismos que en el modal de seguimiento. */
+  readonly tipoEstilo = tipoRequerimientoEstilo;
+
   // ── Reenvío del correo de aprobación ───────────────────────────────────
   /**
-   * El requerimiento está esperando su aprobación: se puede reenviar el correo (sirve cuando el
-   * envío automático falló o hubo que corregir los destinatarios). A quién se le reenvía lo decide
-   * el backend por el tipo de la vacante — Gerencia General en las nuevas, el gerente del área y
-   * GTH en los reemplazos—, así que acá no se nombra a nadie.
+   * La vacante está esperando su aprobación: se puede reenviar el correo (sirve cuando el envío
+   * automático falló, hubo que corregir los destinatarios o la firma se demora). Cada fila reenvía
+   * solo el correo de SU firma pendiente —Gerencia General en una nueva; el gerente del área o GTH
+   * en un reemplazo, según a quién le toque—, nunca el aviso informativo al gerente del área.
    */
   esperandoGerencia(s: SolicitudVacanteListItem): boolean {
     return s.estadoCodigo === 'APROBACION_GG';
   }
 
-  async reenviarAGerencia(s: SolicitudVacanteListItem): Promise<void> {
+  /**
+   * Antes de confirmar se piden los destinatarios reales del reenvío, para que el aviso nombre las
+   * direcciones exactas. Si el correo no le llega a nadie, el backend responde 409 y se avisa sin
+   * pasar por la confirmación.
+   */
+  reenviarAGerencia(s: SolicitudVacanteListItem): void {
+    this.loaderService.show();
+    this.service.getReenvioDestinatarios(s.requerimientoId).subscribe({
+      next: (preview) => {
+        this.loaderService.hide();
+        this.confirmarReenvio(s, preview);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /**
+   * Cuerpo de la confirmación: a quién se le reenvía y sus direcciones (principales en negrita,
+   * copias debajo), como los demás avisos de correo. Sin font-size propio: hereda el de
+   * SweetAlert2. El nombre de cada destinatario va de tooltip, igual que en «Nueva solicitud».
+   */
+  private avisoReenvioHtml(s: SolicitudVacanteListItem, preview: AprobacionGgReenvioPreview): string {
+    const esc = GthSolicitudPersonal.escapar;
+    const correo = (d: DestinatarioSolicitud) =>
+      `<span title="${esc(d.nombre ? `${d.nombre} — ${d.origen}` : d.origen)}">${esc(d.email)}</span>`;
+    const para = preview.destinatarios.para.map(correo).join(', ');
+    const copias = preview.destinatarios.copias.map(correo).join(', ');
+
+    return (
+      `<div style="text-align:left;color:#4B5563">` +
+      `Se reenviará el correo de aprobación de <b>${esc(s.codigo)}</b> a ${esc(preview.firmante)}: ` +
+      `<b style="color:var(--color-abril-logo-blue);word-break:break-all">${para}</b>` +
+      (copias
+        ? `<div style="margin-top:4px;color:#6B7280">En copia: ` +
+          `<span style="word-break:break-all">${copias}</span></div>`
+        : '') +
+      `</div>`
+    );
+  }
+
+  private static escapar(v: string | null | undefined): string {
+    return (v ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  private async confirmarReenvio(
+    s: SolicitudVacanteListItem,
+    preview: AprobacionGgReenvioPreview,
+  ): Promise<void> {
     const confirm = await Swal.fire({
       title: '¿Reenviar la aprobación?',
-      text: `Se volverá a enviar el correo de aprobación de ${s.codigo} a quien todavía no ha decidido.`,
+      html: this.avisoReenvioHtml(s, preview),
       icon: 'question',
       showCancelButton: true,
       confirmButtonText: 'Sí, reenviar',

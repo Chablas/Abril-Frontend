@@ -1,6 +1,22 @@
 export interface ResponsableLookupDto {
   id: number;
   apellidoNombre: string;
+  /**
+   * Correo corporativo, solo para mostrarlo debajo del desplegable. Lo que se guarda es
+   * el `id`: el correo se vuelve a leer de la ficha del trabajador al enviar.
+   */
+  email?: string | null;
 }
 
-export type ResponsableTipo = 'ARQ_COMERCIAL' | 'UDP' | 'PLANEAMIENTO_UDP';
+/** Los cuatro desplegables del modal crear/editar proyecto, en una sola respuesta. */
+export interface ProjectLookupsDto {
+  arqCom: ResponsableLookupDto[];
+  udp: ResponsableLookupDto[];
+  /** Elegibles como coordinador administrativo: personal Casa no retirado con correo. */
+  coordAdmins: ResponsableLookupDto[];
+  /**
+   * Subárea "Planeamiento BIM". Opcional hasta que el backend lo agregue a `GET
+   * project/lookups` (ver Abril_Backend) — mientras tanto llega `undefined`.
+   */
+  planeamientoUdp?: ResponsableLookupDto[];
+}

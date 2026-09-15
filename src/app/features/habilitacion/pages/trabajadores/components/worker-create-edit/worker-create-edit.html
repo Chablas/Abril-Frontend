@@ -132,13 +132,13 @@
             placeholder="nombre.apellido@abril.pe"
           />
           <span *ngIf="verificandoEmail" class="dni-status checking">Verificando en el directorio de Abril…</span>
-          <span *ngIf="!verificandoEmail && emailVerificadoNombre" class="dni-status verified">
-            ✓ {{ emailVerificadoNombre }}
+          <span *ngIf="!verificandoEmail && emailValido" class="dni-status verified">
+            ✓ {{ emailValidoTexto }}
           </span>
           <span *ngIf="!verificandoEmail && emailError" class="field-error">{{ emailError }}</span>
           <span
             class="field-hint"
-            *ngIf="!verificandoEmail && !emailError && !emailVerificadoNombre"
+            *ngIf="!verificandoEmail && !emailError && !emailValido"
           >
             Opcional: solo si el trabajador tiene cuenta de Abril.
           </span>
@@ -155,8 +155,8 @@
             placeholder="nombre.apellido@abril.pe"
           />
           <span *ngIf="verificandoEmail" class="dni-status checking">Verificando en el directorio de Abril…</span>
-          <span *ngIf="!verificandoEmail && emailVerificadoNombre" class="dni-status verified">
-            ✓ {{ emailVerificadoNombre }}
+          <span *ngIf="!verificandoEmail && emailValido" class="dni-status verified">
+            ✓ {{ emailValidoTexto }}
           </span>
           <span *ngIf="!verificandoEmail && emailError" class="field-error">{{ emailError }}</span>
         </div>
@@ -225,14 +225,14 @@
             />
           </div>
           <div>
-            <label class="field-label">Categoría {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+            <label class="field-label">Categoría {{ puestoEditable ? '' : '(solo lectura)' }}</label>
             <app-search-select
               [options]="categorias"
               valueField="id"
               displayField="nombre"
               [value]="model.categoriaId"
               [showLabel]="false"
-              [disabled]="mode === 'edit'"
+              [disabled]="!puestoEditable"
               placeholder="Selecciona categoría"
               [allowClear]="true"
               (valueChange)="onCategoriaChange($event)"
@@ -240,21 +240,21 @@
             <span class="field-hint">Solo filtra los puestos. La categoría real la define el puesto.</span>
           </div>
           <div>
-            <label class="field-label">Puesto * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+            <label class="field-label">Puesto * {{ puestoEditable ? '' : '(solo lectura)' }}</label>
             <app-search-select
               [options]="puestosFiltrados"
               valueField="id"
               displayField="nombre"
               [value]="model.puestoId"
               [showLabel]="false"
-              [disabled]="mode === 'edit'"
+              [disabled]="!puestoEditable"
               placeholder="Selecciona puesto"
               [allowClear]="true"
               (valueChange)="onPuestoChange($event)"
             />
             <span class="field-hint">Es el cargo que se muestra, y de él salen los entregables, permisos y filtros internos.</span>
           </div>
-          <div class="col-span-2" *ngIf="mode === 'edit'">
+          <div class="col-span-2" *ngIf="mode === 'edit' && !puestoEditable">
             <p class="field-hint">
               Para cambiar el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
             </p>
@@ -333,14 +333,14 @@
             </div>
             <div></div>
             <div>
-              <label class="field-label">Categoría {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <label class="field-label">Categoría {{ puestoEditable ? '' : '(solo lectura)' }}</label>
               <app-search-select
                 [options]="categorias"
                 valueField="id"
                 displayField="nombre"
                 [value]="model.categoriaId"
                 [showLabel]="false"
-                [disabled]="mode === 'edit'"
+                [disabled]="!puestoEditable"
                 placeholder="Selecciona categoría"
                 [allowClear]="true"
                 (valueChange)="onCategoriaChange($event)"
@@ -348,21 +348,21 @@
               <span class="field-hint">Solo filtra los puestos. La categoría real la define el puesto.</span>
             </div>
             <div>
-              <label class="field-label">Puesto * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <label class="field-label">Puesto * {{ puestoEditable ? '' : '(solo lectura)' }}</label>
               <app-search-select
                 [options]="puestosFiltrados"
                 valueField="id"
                 displayField="nombre"
                 [value]="model.puestoId"
                 [showLabel]="false"
-                [disabled]="mode === 'edit'"
+                [disabled]="!puestoEditable"
                 placeholder="Selecciona puesto"
                 [allowClear]="true"
                 (valueChange)="onPuestoChange($event)"
               />
               <span class="field-hint">Es el cargo que se muestra, y de él salen los entregables, permisos y filtros internos.</span>
             </div>
-            <div class="col-span-2" *ngIf="mode === 'edit'">
+            <div class="col-span-2" *ngIf="mode === 'edit' && !puestoEditable">
               <p class="field-hint">
                 Para cambiar el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
               </p>
@@ -438,14 +438,14 @@
               </p>
             </div>
             <div>
-              <label class="field-label">Categoría {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <label class="field-label">Categoría {{ puestoEditable ? '' : '(solo lectura)' }}</label>
               <app-search-select
                 [options]="categorias"
                 valueField="id"
                 displayField="nombre"
                 [value]="model.categoriaId"
                 [showLabel]="false"
-                [disabled]="mode === 'edit'"
+                [disabled]="!puestoEditable"
                 placeholder="Selecciona categoría"
                 [allowClear]="true"
                 (valueChange)="onCategoriaChange($event)"
@@ -453,42 +453,40 @@
               <span class="field-hint">Solo filtra los puestos. La categoría real la define el puesto.</span>
             </div>
             <div>
-              <label class="field-label">Puesto * {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <label class="field-label">Puesto * {{ puestoEditable ? '' : '(solo lectura)' }}</label>
               <app-search-select
                 [options]="puestosFiltrados"
                 valueField="id"
                 displayField="nombre"
                 [value]="model.puestoId"
                 [showLabel]="false"
-                [disabled]="mode === 'edit'"
+                [disabled]="!puestoEditable"
                 placeholder="Selecciona puesto"
                 [allowClear]="true"
                 (valueChange)="onPuestoChange($event)"
               />
               <span class="field-hint">Es el cargo que se muestra, y de él salen los entregables, permisos y filtros internos.</span>
             </div>
-            <div class="col-span-2" *ngIf="mode === 'edit'">
+            <div class="col-span-2" *ngIf="mode === 'edit' && !puestoEditable">
               <p class="field-hint">
                 Para cambiar el puesto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
               </p>
             </div>
-            <!-- Área: desplegables en cascada sobre el árbol de áreas (workers.area_scope_id).
-                 Se guarda el nodo elegido y el backend deriva de ahí la área/subárea legacy. -->
-            <div class="col-span-2" *ngFor="let level of areaLevels; let i = index">
-              <label class="field-label">{{ i === 0 ? 'Área *' : 'Subárea' }}</label>
-              <app-search-select
-                [options]="level.options"
-                valueField="areaScopeId"
-                displayField="areaItemName"
-                [value]="level.selected"
-                [showLabel]="false"
-                [sortAlpha]="false"
-                [placeholder]="
-                  cargandoAreas ? 'Cargando…' : i === 0 ? 'Selecciona área' : 'Selecciona subárea'
-                "
-                [allowClear]="true"
-                (valueChange)="onAreaLevelChange(i, $event)"
+            <!-- Área (workers.area_scope_id): no se elige, sale del puesto de arriba — su área
+                 de destino, la que dice a dónde ENTRA quien lo ejerce. Se muestra la ruta
+                 completa del nodo y el backend deriva de él la área/subárea legacy. -->
+            <div class="col-span-2">
+              <label class="field-label">Área * (solo lectura)</label>
+              <input
+                type="text"
+                class="field-input field-readonly"
+                readonly
+                [value]="areaPathLabel"
+                [placeholder]="areaPlaceholder"
               />
+              <span class="field-hint" *ngIf="puestoSinAreaDestino">
+                El puesto no tiene área de destino: se asigna en Configuración → Categorías y Puestos.
+              </span>
             </div>
 
             <!-- Jefe del trabajador: por defecto el revisor que sugiere su área (solo lectura);
@@ -502,7 +500,7 @@
                 class="field-input field-readonly"
                 readonly
                 [value]="revisorNombre || ''"
-                [placeholder]="areaScopeIdElegido ? 'Sin revisor configurado para esta área' : 'Selecciona un área'"
+                [placeholder]="model.areaScopeId ? 'Sin revisor configurado para esta área' : 'Sin área asignada'"
               />
 
               <app-search-select
@@ -521,7 +519,7 @@
               <span class="field-hint" *ngIf="!model.jefePersonalizado && esRevisorDeSuPropiaArea">
                 Es el revisor de su propia área, así que le corresponde el siguiente revisor válido.
               </span>
-              <span class="field-hint" *ngIf="!model.jefePersonalizado && areaScopeIdElegido && !revisorNombre">
+              <span class="field-hint" *ngIf="!model.jefePersonalizado && model.areaScopeId && !revisorNombre">
                 Configúralo en Configuración → Revisores de Áreas.
               </span>
 
@@ -557,6 +555,112 @@
                 <input type="checkbox" [(ngModel)]="model.sctr" />
                 <span>Requiere SCTR</span>
               </label>
+            </div>
+          </ng-container>
+
+          <!-- PERSONAL EXTERNO -->
+          <!-- Vigilancia, mantenimiento y choferes. Solo se captura la asignación: su área sale
+               del puesto igual que en Staff / Oficina Central (gestionaArea), pero no tienen
+               correo corporativo ni jefe propio, así que el jefe guardado se reenvía intacto
+               (gestionaJefe queda en false). Antes esta clasificación no tenía rama y la sección
+               salía en blanco. -->
+          <ng-container *ngIf="esPersonalExterno">
+            <div class="col-span-2">
+              <label class="field-label">Proyecto {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <app-search-select
+                [options]="proyectos"
+                valueField="projectId"
+                displayField="projectDescription"
+                [value]="model.proyectoId"
+                [showLabel]="false"
+                [disabled]="mode === 'edit'"
+                placeholder="Buscar proyecto..."
+                [allowClear]="true"
+                (valueChange)="model.proyectoId = $event"
+              />
+              <p class="field-hint" *ngIf="mode === 'edit'">
+                Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              </p>
+            </div>
+            <div class="col-span-2">
+              <label class="field-label">Razón social {{ mode === 'edit' ? '(solo lectura)' : '' }}</label>
+              <app-search-select
+                [options]="empresas"
+                valueField="id"
+                displayField="razonSocial"
+                [value]="model.empresaId"
+                [showLabel]="false"
+                [disabled]="mode === 'edit'"
+                placeholder="Buscar empresa..."
+                [allowClear]="true"
+                (valueChange)="model.empresaId = $event"
+              />
+              <p class="field-hint" *ngIf="mode === 'edit'">
+                Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
+              </p>
+            </div>
+            <div>
+              <label class="field-label">Celular</label>
+              <input type="text" class="field-input" [(ngModel)]="model.celular" placeholder="999 999 999" />
+            </div>
+            <div></div>
+            <div>
+              <label class="field-label">Categoría {{ puestoEditable ? '' : '(solo lectura)' }}</label>
+              <app-search-select
+                [options]="categorias"
+                valueField="id"
+                displayField="nombre"
+                [value]="model.categoriaId"
+                [showLabel]="false"
+                [disabled]="!puestoEditable"
+                placeholder="Selecciona categoría"
+                [allowClear]="true"
+                (valueChange)="onCategoriaChange($event)"
+              />
+              <span class="field-hint">Solo filtra los puestos. La categoría real la define el puesto.</span>
+            </div>
+            <div>
+              <label class="field-label">Puesto * {{ puestoEditable ? '' : '(solo lectura)' }}</label>
+              <app-search-select
+                [options]="puestosFiltrados"
+                valueField="id"
+                displayField="nombre"
+                [value]="model.puestoId"
+                [showLabel]="false"
+                [disabled]="!puestoEditable"
+                placeholder="Selecciona puesto"
+                [allowClear]="true"
+                (valueChange)="onPuestoChange($event)"
+              />
+              <span class="field-hint">Es el cargo que se muestra, y de él salen los entregables, permisos y filtros internos.</span>
+            </div>
+            <!-- Misma área derivada del puesto que en Staff / Oficina Central, pero acá no es
+                 obligatoria: estas fichas vienen de la Data Maestra de GTH y muchas no la traen. -->
+            <div class="col-span-2">
+              <label class="field-label">Área (solo lectura)</label>
+              <input
+                type="text"
+                class="field-input field-readonly"
+                readonly
+                [value]="areaPathLabel"
+                [placeholder]="areaPlaceholder"
+              />
+              <span class="field-hint" *ngIf="puestoSinAreaDestino">
+                El puesto no tiene área de destino: se asigna en Configuración → Categorías y Puestos.
+              </span>
+            </div>
+            <div>
+              <label class="field-label">Fecha de ingreso</label>
+              <app-date-picker
+                [value]="model.fechaIngreso || null"
+                [showLabel]="false"
+                [color]="accentColor"
+                (valueChange)="model.fechaIngreso = $event ?? ''"
+              />
+            </div>
+            <div>
+              <label class="field-label">Años de experiencia *</label>
+              <input type="number" class="field-input" [(ngModel)]="model.aniosExperiencia" min="0" max="60" placeholder="Ej: 5" />
             </div>
           </ng-container>
 

@@ -1,0 +1,52 @@
+<app-abril-page-header
+  [badge]="badge"
+  titulo="Configuración"
+  [subtitulo]="subtitulo"
+  [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+  (secondaryClick)="volver()"
+  [hasExtra]="seccionConFiltros">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas y delega en el
+       modal de filtros de la sección activa (solo las que tienen tabla). -->
+  <app-filter-trigger *ngIf="seccionConFiltros" tabsExtra [count]="filtrosActivos" (open)="onOpenFilters()" />
+</app-abril-page-header>
+
+<section class="page-container px-3 py-4 flex flex-col gap-[16px] flex-1 min-h-0 overflow-auto">
+
+  <!-- Secciones exteriores. Con una sola no se dibuja la tira: sería una pestaña que no lleva a
+       ningún otro lado (mismo criterio que las subsecciones de cada correo). -->
+  <app-section-tabs
+    *ngIf="secciones.length > 1"
+    class="shrink-0"
+    [tabs]="secciones"
+    [value]="seccionActiva"
+    color="var(--color-abril-standard)"
+    (valueChange)="onSeccionChange($event)">
+  </app-section-tabs>
+
+  <!-- SECCIÓN: Correos (con una subsección por cada correo de esta pantalla) -->
+  <app-ga-correos-config
+    *ngIf="mostrandoCorreos"
+    [pantalla]="pantalla"
+    [textoSinCorreos]="textoSinCorreos">
+  </app-ga-correos-config>
+
+  <!-- SECCIÓN: Días reembolsables (el plazo para rendir un mes) -->
+  <app-ga-dias-reembolsables *ngIf="mostrandoPlazo"></app-ga-dias-reembolsables>
+
+  <!-- SECCIÓN: Recordatorios (los dos avisos del plazo, con la misma matriz de destinatarios que
+       los correos: son correos, solo que los dispara el calendario y no una acción). -->
+  <app-ga-correos-config
+    *ngIf="mostrandoRecordatorios"
+    [pantalla]="pantalla"
+    [grupo]="'recordatorios'"
+    textoSinCorreos="No hay recordatorios configurados.">
+  </app-ga-correos-config>
+
+  <!-- SECCIÓN: Visibilidad (qué áreas ve cada trabajador en ESTA bandeja) -->
+  <app-ga-visibilidad *ngIf="mostrandoVisibilidad" [ambito]="visibilidadAmbito"></app-ga-visibilidad>
+
+  <!-- SECCIÓN: Revisores / Consolidadores (las dos asignan personas a áreas con el mismo
+       algoritmo; el modo dice cuál) -->
+  <app-ga-asignaciones-areas *ngIf="mostrandoAsignaciones" [modo]="asignacionModo"></app-ga-asignaciones-areas>
+</section>

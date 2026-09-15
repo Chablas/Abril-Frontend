@@ -2,37 +2,8 @@
   badge="EVALUACIONES"
   titulo="Resultados — Evaluación al Jefe SSOMA"
   subtitulo="Promedio y comentarios agregados. Anónimo: no se muestra quién evaluó ni qué nota puso cada persona."
-  [tabGroups]="[
-    { label: 'Residentes',   icono: 'ti-user-check', tabs: [
-      { label: 'Dashboard',     icono: 'ti-layout-dashboard', route: '/evaluaciones/dashboard',      featureKey: 'evaluaciones.dashboard' },
-      { label: 'Evaluar',       icono: 'ti-pencil',           route: '/evaluaciones/evaluar',        featureKey: 'evaluaciones.evaluar' },
-      { label: 'Historial',     icono: 'ti-history',          route: '/evaluaciones/historial',      featureKey: 'evaluaciones.historial' },
-      { label: 'Configuración', icono: 'ti-settings',         route: '/evaluaciones/configuracion',  featureKey: 'evaluaciones.configuracion' },
-      { label: 'Asignaciones',  icono: 'ti-users',            route: '/evaluaciones/asignaciones',   featureKey: 'evaluaciones.asignaciones' }
-    ]},
-    { label: 'Contratistas', icono: 'ti-building', tabs: [
-      { label: 'Dashboard',        icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-contratistas', featureKey: 'evaluaciones.dashboard-contratistas' },
-      { label: 'Evaluar',          icono: 'ti-pencil',    route: '/evaluaciones/evaluar-contratista',    featureKey: 'evaluaciones.evaluar-contratista' },
-      { label: 'Ver evaluaciones', icono: 'ti-list',      route: '/evaluaciones/ver-contratistas',       featureKey: 'evaluaciones.ver-contratistas' }
-    ]},
-    { label: 'Superv. Contratista', icono: 'ti-shield-check', tabs: [
-      { label: 'Evaluar supervisor', icono: 'ti-pencil', route: '/evaluaciones/evaluar-supervisor-contratista', featureKey: 'evaluaciones.evaluar-supervisor-contratista' },
-      { label: 'Ver evaluaciones',   icono: 'ti-list',   route: '/evaluaciones/ver-supervisores-contratista',   featureKey: 'evaluaciones.ver-supervisores-contratista' }
-    ]},
-    { label: 'Jefe SSOMA', icono: 'ti-user-shield', tabs: [
-      { label: 'Evaluar Jefe SSOMA', icono: 'ti-pencil', route: '/evaluaciones/evaluar-jefe-ssoma', featureKey: 'evaluaciones.evaluar-jefe-ssoma' },
-      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-jefe-ssoma', featureKey: 'evaluaciones.resultados-jefe-ssoma' }
-    ]},
-    { label: 'Prevencionistas', icono: 'ti-vest', tabs: [
-      { label: 'Mi perfil', icono: 'ti-user', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
-      { label: 'Dashboard', icono: 'ti-chart-bar', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' }
-    ]},
-    { label: 'Gestión SSOMA', icono: 'ti-users-group', tabs: [
-      { label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
-      { label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-gestion-ssoma', featureKey: 'evaluaciones.resultados-gestion-ssoma' }
-    ]}
-  ]">
-</app-abril-page-header>
+  [tabGroups]="tabGroups"
+></app-abril-page-header>
 
 <div class="rj-root">
 
@@ -48,65 +19,192 @@
 
   <div class="rj-content" *ngIf="!loading && resultados?.periodo">
 
-    <!-- FILA SUPERIOR: promedio general + cumplimiento -->
-    <div class="top-row">
-      <div class="stat-card">
-        <div class="stat-label">Promedio general</div>
-        <div class="stat-num" [ngClass]="notaClase(resultados!.promedioGeneral)">
+    <!-- FILA SUPERIOR: 3 KPI cards -->
+    <div class="kpi-row">
+      <div class="kpi-card kpi-nota">
+        <div class="kpi-label">Promedio general</div>
+        <div class="kpi-num" [ngClass]="notaClase(resultados!.promedioGeneral)">
           {{ notaDisplay(resultados!.promedioGeneral) }}
         </div>
-        <div class="stat-sub">{{ resultados!.totalRespuestas }} respuesta(s) · {{ resultados!.periodo!.nombreMes }} {{ resultados!.periodo!.anio }}</div>
+        <div class="kpi-sub">{{ resultados!.totalRespuestas }} respuesta(s) · {{ resultados!.periodo!.nombreMes }} {{ resultados!.periodo!.anio }}</div>
       </div>
 
-      <div class="stat-card" *ngIf="cumplimiento">
-        <div class="stat-label">Cumplimiento</div>
-        <div class="stat-num stat-cumplimiento">{{ porcentajeCompletado }}%</div>
-        <div class="stat-sub">{{ cumplimiento.totalCompletaron }} de {{ cumplimiento.totalEvaluadores }} completaron</div>
+      <div class="kpi-card kpi-cumplimiento" *ngIf="cumplimiento">
+        <div class="kpi-label">Cumplimiento del equipo SSOMA</div>
+        <div class="kpi-num kpi-num-azul">{{ porcentajeCompletado }}%</div>
+        <div class="kpi-sub">{{ cumplimiento.totalCompletaron }} de {{ cumplimiento.totalEvaluadores }} evaluadores respondieron este período</div>
         <div class="progress-bar"><div class="progress-fill" [style.width.%]="porcentajeCompletado"></div></div>
       </div>
+
+      <div class="kpi-card kpi-tendencia">
+        <div class="kpi-label">Variación vs. mes anterior</div>
+        <ng-container *ngIf="tendenciaDelta !== null; else sinTendencia">
+          <div class="kpi-num" [ngClass]="tendenciaDelta! >= 0 ? 'nota-aprobado' : 'nota-desaprobado'">
+            <i class="ti" [ngClass]="tendenciaDelta! >= 0 ? 'ti-trending-up' : 'ti-trending-down'"></i>
+            {{ tendenciaDelta! >= 0 ? '+' : '' }}{{ tendenciaDelta }}
+          </div>
+          <div class="kpi-sub">puntos sobre 20, respecto al período previo</div>
+        </ng-container>
+        <ng-template #sinTendencia>
+          <div class="kpi-num nota-sin">—</div>
+          <div class="kpi-sub">Aún no hay suficiente historial</div>
+        </ng-template>
+      </div>
     </div>
 
-    <!-- PROMEDIO POR CRITERIO -->
-    <div class="section-card" *ngIf="resultados!.promediosPorCriterio.length">
-      <div class="section-title">Promedio por criterio</div>
-      <div class="criterio-row" *ngFor="let c of resultados!.promediosPorCriterio">
-        <div class="cr-nombre">{{ c.criterio }}</div>
-        <div class="cr-barra-wrap">
-          <div class="cr-barra" [style.width.%]="(c.promedio / 5) * 100" [ngClass]="notaClase(c.promedio * 4)"></div>
+    <!-- PLAN DE ACCIÓN: justo después de las KPI, para que no se pierda -->
+    <div class="section-card section-plan" *ngIf="puedeGestionarPlan || planAccion.length">
+      <div class="section-title-row">
+        <div class="section-title"><i class="ti ti-target-arrow"></i> Plan de acción</div>
+        <button class="btn-plan-nuevo" *ngIf="puedeGestionarPlan && !mostrarFormPlan" (click)="abrirFormPlan()">
+          <i class="ti ti-plus"></i> Nueva acción
+        </button>
+      </div>
+      <p class="plan-subtitulo">Compromisos concretos y medibles del Jefe SSOMA sobre sus puntos de mejora, con seguimiento período a período.</p>
+
+      <!-- Formulario nueva acción -->
+      <div class="plan-form" *ngIf="mostrarFormPlan">
+        <div class="plan-form-row">
+          <label class="abril-field-label">Criterio</label>
+          <select class="abril-field-input" [(ngModel)]="planCriterio">
+            <option *ngFor="let c of resultados!.promediosPorCriterio" [value]="c.criterio">{{ c.criterio }}</option>
+          </select>
         </div>
-        <div class="cr-valor">{{ c.promedio.toFixed(2) }} / 5</div>
-      </div>
-    </div>
-
-    <!-- TENDENCIA -->
-    <div class="section-card" *ngIf="resultados!.tendencia.length">
-      <div class="section-title">Tendencia histórica</div>
-      <div class="tendencia-row">
-        <div class="tendencia-item" *ngFor="let t of resultados!.tendencia">
-          <div class="ti-mes">{{ t.nombreMes }} {{ t.anio }}</div>
-          <div class="ti-valor" [ngClass]="notaClase(t.promedio)">{{ notaDisplay(t.promedio) }}</div>
+        <div class="plan-form-row">
+          <label class="abril-field-label">¿Qué vas a hacer?</label>
+          <textarea class="abril-field-input" rows="2" [(ngModel)]="planAccionTexto"
+            placeholder="Ej: Reunión semanal de 15 min con coordinadores para revisar pendientes de EPP"></textarea>
+        </div>
+        <div class="plan-form-row">
+          <label class="abril-field-label">Meta medible</label>
+          <textarea class="abril-field-input" rows="2" [(ngModel)]="planMeta"
+            placeholder="Ej: 0 solicitudes de EPP pendientes por más de 48h al cierre del próximo período"></textarea>
+        </div>
+        <div class="plan-form-row plan-form-row-fecha">
+          <label class="abril-field-label">Fecha límite (opcional)</label>
+          <input type="date" class="abril-field-input" [(ngModel)]="planFechaLimite" />
+        </div>
+        <div class="plan-form-actions">
+          <button class="btn-ghost" (click)="cerrarFormPlan()">Cancelar</button>
+          <button class="btn-primario" [disabled]="!puedeGuardarPlan || guardandoPlan" (click)="guardarPlan()">
+            {{ guardandoPlan ? 'Guardando...' : 'Guardar acción' }}
+          </button>
         </div>
       </div>
-    </div>
 
-    <!-- COMENTARIOS (sin autor) -->
-    <div class="section-card" *ngIf="resultados!.comentarios.length">
-      <div class="section-title">Comentarios (anónimos)</div>
-      <div class="comentario-item" *ngFor="let c of resultados!.comentarios">
-        <i class="ti ti-quote"></i> {{ c }}
-      </div>
-    </div>
-
-    <!-- PENDIENTES DE EVALUAR (sin notas) -->
-    <div class="section-card" *ngIf="cumplimiento?.pendientes?.length">
-      <div class="section-title">Aún no han evaluado</div>
-      <div class="pendiente-item" *ngFor="let p of cumplimiento!.pendientes">
-        <div class="pe-avatar">{{ p.nombreCompleto.charAt(0) }}</div>
-        <div class="pe-info">
-          <div class="pe-nombre">{{ p.nombreCompleto }}</div>
-          <div class="pe-email">{{ p.emailCorporativo }}</div>
+      <!-- Lista de acciones -->
+      <div class="plan-lista" *ngIf="planAccion.length">
+        <div class="plan-item" *ngFor="let item of planAccion">
+          <div class="plan-item-main">
+            <div class="plan-item-criterio">{{ item.criterio }}</div>
+            <div class="plan-item-accion">{{ item.accion }}</div>
+            <div class="plan-item-meta"><i class="ti ti-flag"></i> {{ item.meta }}</div>
+            <div class="plan-item-fecha" *ngIf="item.fechaLimite"><i class="ti ti-calendar"></i> Fecha límite: {{ item.fechaLimite }}</div>
+          </div>
+          <div class="plan-item-side">
+            <select class="plan-estado-select" [ngClass]="estadoClase(item.estado)"
+              [ngModel]="item.estado" (ngModelChange)="cambiarEstadoPlan(item, $event)"
+              [disabled]="!puedeGestionarPlan">
+              <option *ngFor="let e of estados" [value]="e">{{ e }}</option>
+            </select>
+            <button class="btn-icon-danger" *ngIf="puedeGestionarPlan" (click)="eliminarPlan(item)" title="Eliminar">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
         </div>
       </div>
+
+      <div class="empty-inline" *ngIf="!planAccion.length && !mostrarFormPlan">
+        Todavía no hay acciones registradas para este período.
+      </div>
+    </div>
+
+    <!-- CUERPO EN 3 COLUMNAS -->
+    <div class="cols-row">
+
+      <!-- COL 1: criterios + tendencia -->
+      <div class="col-stack">
+        <div class="section-card" *ngIf="resultados!.promediosPorCriterio.length">
+          <div class="section-title">Promedio por criterio</div>
+          <div class="criterio-bars">
+            <div class="criterio-bar-row" *ngFor="let c of resultados!.promediosPorCriterio">
+              <div class="cr-nombre" [title]="c.criterio">{{ c.criterio }}</div>
+              <div class="cr-barra-wrap">
+                <div class="cr-barra" [style.width.%]="(c.promedio / 5) * 100" [ngClass]="notaClase(c.promedio * 4)"></div>
+              </div>
+              <div class="cr-valor" [ngClass]="notaClase(c.promedio * 4)">{{ c.promedio.toFixed(2) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card" *ngIf="resultados!.tendencia.length">
+          <div class="section-title">Tendencia histórica</div>
+          <div class="chart-box chart-box-compact" *ngIf="resultados!.tendencia.length > 1">
+            <canvas id="chart-tendencia-jefe"></canvas>
+          </div>
+          <div class="tendencia-simple" *ngIf="resultados!.tendencia.length === 1">
+            <div class="ts-mes">{{ resultados!.tendencia[0].nombreMes }} {{ resultados!.tendencia[0].anio }}</div>
+            <div class="ts-valor" [ngClass]="notaClase(resultados!.tendencia[0].promedio)">{{ notaDisplay(resultados!.tendencia[0].promedio) }}</div>
+          </div>
+          <div class="empty-inline" *ngIf="resultados!.tendencia.length === 1">
+            Se necesitan al menos 2 períodos para graficar una tendencia.
+          </div>
+        </div>
+      </div>
+
+      <!-- COL 2: comentarios (prioridad de visibilidad) -->
+      <div class="col-stack">
+        <div class="section-card section-comentarios" *ngIf="resultados!.comentarios.length">
+          <div class="section-title">
+            <i class="ti ti-message-circle"></i> Comentarios anónimos
+            <span class="badge-count">{{ resultados!.comentarios.length }}</span>
+          </div>
+          <div class="comentarios-scroll">
+            <div class="comentario-item" *ngFor="let c of resultados!.comentarios">
+              <i class="ti ti-quote"></i> {{ c }}
+            </div>
+          </div>
+        </div>
+
+        <div class="section-card" *ngIf="!resultados!.comentarios.length">
+          <div class="section-title">Comentarios anónimos</div>
+          <div class="empty-inline">Nadie dejó comentarios en este período.</div>
+        </div>
+
+        <div class="section-card" *ngIf="cumplimiento?.pendientes?.length">
+          <div class="section-title">Aún no han evaluado</div>
+          <div class="pendiente-item" *ngFor="let p of cumplimiento!.pendientes">
+            <div class="pe-avatar">{{ p.nombreCompleto.charAt(0) }}</div>
+            <div class="pe-info">
+              <div class="pe-nombre">{{ p.nombreCompleto }}</div>
+              <div class="pe-email">{{ p.emailCorporativo }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COL 3: recomendaciones -->
+      <div class="col-stack">
+        <div class="section-card section-recomendaciones" *ngIf="recomendaciones.length">
+          <div class="section-title"><i class="ti ti-bulb"></i> Recomendaciones</div>
+          <div class="recomendacion-item" *ngFor="let r of recomendaciones">
+            <div class="rec-header">
+              <span class="rec-criterio">{{ r.criterio }}</span>
+              <span class="rec-nota">{{ r.promedio.toFixed(2) }}/5</span>
+            </div>
+            <p class="rec-tip">{{ r.tip }}</p>
+            <button class="btn-rec-plan" *ngIf="puedeGestionarPlan" (click)="abrirFormPlan(r.criterio)">
+              <i class="ti ti-plus"></i> Agregar al plan de acción
+            </button>
+          </div>
+        </div>
+
+        <div class="section-card" *ngIf="!recomendaciones.length">
+          <div class="section-title"><i class="ti ti-bulb"></i> Recomendaciones</div>
+          <div class="empty-inline">Todos los criterios están bien calificados este período.</div>
+        </div>
+      </div>
+
     </div>
 
   </div>

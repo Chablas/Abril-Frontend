@@ -15,8 +15,17 @@ export class NavigationService {
       behavior: 'expand',
       landing: '/gestion-administrativa/solicitud-salidas',
       items: [
+        // Orden del flujo, alternando quién actúa: el trabajador pide (Solicitud de Salidas), el
+        // revisor decide (Gestión de Salidas), el trabajador rinde (Mis Rendiciones), el revisor
+        // revisa y firma (Gestión de Rendiciones), el ERP corrige lo observado (Correcciones S10)
+        // y Tesorería paga (Reembolsos). Delegación de Revisión cierra: no es un paso del flujo.
+        // Mismo orden que GESTION_ADMINISTRATIVA_TABS — las dos barras no pueden discrepar.
         { label: 'Solicitud de Salidas', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
         { label: 'Gestión de Salidas',   route: '/gestion-administrativa/gestion-salidas',   featureKey: 'gestion-administrativa.gestion-salidas' },
+        { label: 'Mis Rendiciones',      route: '/gestion-administrativa/rendiciones',       featureKey: 'gestion-administrativa.rendiciones' },
+        { label: 'Gestión de Rendiciones', route: '/gestion-administrativa/gestion-rendiciones', featureKey: 'gestion-administrativa.gestion-rendiciones' },
+        { label: 'Correcciones S10',     route: '/gestion-administrativa/correcciones-s10',  featureKey: 'gestion-administrativa.correcciones-s10' },
+        { label: 'Reembolsos',           route: '/gestion-administrativa/reembolsos',        featureKey: 'gestion-administrativa.reembolsos' },
         { label: 'Delegación de Revisión', route: '/gestion-administrativa/delegacion-revision', featureKey: 'gestion-administrativa.delegacion-revision' },
       ],
       groups: [
@@ -26,9 +35,12 @@ export class NavigationService {
             { label: 'Lugares',   route: '/gestion-administrativa/configuracion/lugares',   featureKey: 'gestion-administrativa.config.lugares' },
             { label: 'Motivos',   route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
             { label: 'Trayectos', route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
-            { label: 'Visibilidad de Salidas', route: '/gestion-administrativa/configuracion/visibilidad-salidas', featureKey: 'gestion-administrativa.config.visibilidad-salidas' },
+            { label: 'Capturas', route: '/gestion-administrativa/configuracion/capturas', featureKey: 'gestion-administrativa.config.capturas' },
             { label: 'Carpeta Adjuntos', route: '/gestion-administrativa/configuracion/carpeta-adjuntos', featureKey: 'gestion-administrativa.config.carpeta-adjuntos' },
-            { label: 'Correos', route: '/gestion-administrativa/configuracion/correos', featureKey: 'gestion-administrativa.config.correos' },
+            // Los correos, la visibilidad de cada bandeja, los revisores y los
+            // consolidadores ya no están acá: cada pantalla del flujo administra lo que se
+            // origina en ella desde su propio botón «Configuración»
+            // (/gestion-administrativa/<pantalla>/configuracion).
             // Por rol y no por featureKey: la firma es de la persona, no de una funcionalidad.
             // Mismo criterio que el roleGuard de su ruta (ver gestion-administrativa.routes.ts).
             { label: 'Tu firma', route: '/gestion-administrativa/configuracion/firma', roles: [Roles.USUARIO_DE_ABRIL] },
@@ -135,6 +147,7 @@ export class NavigationService {
             { label: 'Planos por proyecto',  route: '/costs/configuration/project-link',         featureKey: 'costs.config.project-link' },
             { label: 'Carpeta adjudicaciones', route: '/costs/configuration/adjudicacion-folder', featureKey: 'costs.config.adjudicacion-folder' },
             { label: 'Correos C. y Ppto.',   route: '/costs/configuration/costos-presupuestos-email', featureKey: 'costs.config.costos-presupuestos-email' },
+            { label: 'Pasos',                route: '/costs/configuration/pasos',                    featureKey: 'costs.config.pasos' },
           ],
         },
       ],
@@ -150,6 +163,7 @@ export class NavigationService {
         { label: 'Gestión de Actividades',   route: '/arquitectura-comercial/dashboard', featureKey: 'arquitectura-comercial.dashboard' },
         { label: 'Gestión de Observaciones', route: '/arquitectura-comercial/observaciones/dashboard', featureKey: 'arquitectura-comercial.observaciones.dashboard' },
         { label: 'Gestión de Revisiones',    route: '/arquitectura-comercial/revisiones/dashboard', featureKey: 'arquitectura-comercial.revisiones.dashboard' },
+        { label: 'Costos',                   route: '/arquitectura-comercial/costos/registro',      featureKey: 'arquitectura-comercial.costos' },
         {
           label: 'Tareo',
           route: '/arquitectura-comercial/tareo/marcar',
@@ -162,7 +176,16 @@ export class NavigationService {
           ],
         },
       ],
-      groups: [],
+      groups: [
+        {
+          label: 'Almacén',
+          items: [
+            { label: 'Dashboard',                   route: '/almacen/dashboard',      featureKey: 'almacen.materiales' },
+            { label: 'Stock y Movimientos',         route: '/almacen/stock',          featureKey: 'almacen.materiales' },
+            { label: 'Órdenes de Compra/Contratos', route: '/almacen/ordenes-compra', featureKey: 'almacen.ordenes-compra' },
+          ],
+        },
+      ],
     },
     {
       key: 'ssoma',
@@ -209,6 +232,7 @@ export class NavigationService {
       items: [
         { label: 'Prog. Anual SSOMA', route: '/ssoma/gestion/paso/dashboard', featureKey: 'ssoma.gestion.paso' },
         { label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard', featureKey: 'ssoma.gestion.rac' },
+        { label: 'Penalidades', route: '/ssoma/gestion/penalidades', featureKey: 'ssoma.gestion.penalidades.lista' },
         { label: 'Obs. Planeada (OPT)', route: '/ssoma/gestion/opt/dashboard', featureKey: 'ssoma.gestion.opt' },
         { label: 'PETS', route: '/ssoma/gestion/pets', featureKey: 'ssoma.gestion.pets' },
         { label: 'Inspecciones', route: '/ssoma/gestion/inspeccion/dashboard', featureKey: 'ssoma.gestion.inspeccion' },
@@ -220,9 +244,12 @@ export class NavigationService {
         { label: 'Dossier', route: '/habilitacion/gestion/dossier', featureKey: 'habilitacion.dossier' },
         { label: 'Indicadores SSOMA', route: '/ssoma/gestion/indicadores-proactivos/indicadores-ssoma', featureKey: 'ssoma.gestion.indicadores-proactivos' },
         { label: 'Checklists SSOMA', route: '/ssoma/gestion/checklist', featureKey: 'ssoma.gestion.checklist' },
+        { label: 'Activos Rotativos', route: '/ssoma/gestion/activos-rotativos', featureKey: 'ssoma.gestion.activos-rotativos' },
+        { label: 'Cumplimiento SSOMA', route: '/ssoma/gestion/cumplimiento', featureKey: 'ssoma.gestion.cumplimiento' },
         { label: 'Proyectos Habilitados SSOMA', route: '/ssoma/gestion/proyectos-habilitados', featureKey: 'ssoma.gestion.proyectos-habilitados' },
         { label: 'Presupuesto Materiales', route: '/ssoma/gestion/presupuesto-materiales', featureKey: 'ssoma.gestion.presupuesto-materiales' },
         { label: 'Horas Hombre', route: '/ssoma/gestion/horas-hombre/dashboard', featureKey: 'ssoma.gestion.horas-hombre' },
+        { label: 'Registros Modelo', route: '/habilitacion/registros-modelo' },
       ],
     },
     {
@@ -306,9 +333,10 @@ export class NavigationService {
         { label: 'Ver eval. supervisores SSOMA', route: '/evaluaciones/ver-supervisores-contratista', featureKey: 'evaluaciones.ver-supervisores-contratista' },
         { label: 'Evaluar Jefe SSOMA', route: '/evaluaciones/evaluar-jefe-ssoma', featureKey: 'evaluaciones.evaluar-jefe-ssoma' },
         { label: 'Resultados Jefe SSOMA', route: '/evaluaciones/resultados-jefe-ssoma', featureKey: 'evaluaciones.resultados-jefe-ssoma' },
-        { label: 'Mi perfil (Prev./Coord.)', route: '/evaluaciones/mi-perfil-prevencionista', featureKey: 'evaluaciones.mi-perfil-prevencionista' },
+        { label: 'Mis resultados (Prev./Coord.)', route: '/evaluaciones/mis-resultados-gestion-ssoma', featureKey: 'evaluaciones.mis-resultados-gestion-ssoma' },
         { label: 'Dashboard Prev./Coord.', route: '/evaluaciones/dashboard-prevencionistas', featureKey: 'evaluaciones.dashboard-prevencionistas' },
         { label: 'Gestión SSOMA', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' },
+        { label: 'Períodos', route: '/evaluaciones/periodos', featureKey: 'evaluaciones.periodos' },
       ],
       groups: [],
     },
@@ -356,6 +384,7 @@ export class NavigationService {
       items: [
         { label: 'Usuarios', route: '/security/users', featureKey: 'security.users' },
         { label: 'Roles',    route: '/security/roles', featureKey: 'security.roles' },
+        { label: 'Funcionalidades', route: '/security/features', featureKey: 'security.features' },
       ],
     },
     {
@@ -367,7 +396,8 @@ export class NavigationService {
         { label: 'Proyectos', route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },
         // 'Categorías y Puestos' se movió a Gestión GTH → Configuración
         // (/gestion-gth/configuracion/categorias-puestos).
-        { label: 'Revisores de Áreas', route: '/configuracion/revisores-areas', featureKey: 'configuracion.revisores-areas' },
+        // 'Revisores de Áreas' se movió a Gestión Administrativa → Solicitud de Salidas →
+        // Configuración: el revisor es a quien se le manda la solicitud que nace ahí.
         { label: 'Centro de aprendizaje', route: '/configuracion/aprendizaje', featureKey: 'configuracion.aprendizaje' },
       ],
     },
@@ -451,6 +481,7 @@ export class NavigationService {
             ...m,
             items: [
               { label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard' },
+              { label: 'Penalidades', route: '/ssoma/gestion/penalidades' },
               { label: 'Obs. Planeada (OPT)', route: '/ssoma/gestion/opt/dashboard' },
               { label: 'Inspecciones', route: '/ssoma/gestion/inspeccion/dashboard' },
               { label: 'Charlas & Capacitaciones', route: '/ssoma/gestion/charlas/contratista' },
@@ -459,6 +490,7 @@ export class NavigationService {
               { label: 'Dossier', route: '/habilitacion/gestion/dossier' },
               { label: 'Evaluar SSOMA', route: '/habilitacion/evaluar-prevencionista' },
               { label: 'Mi Desempeño', route: '/habilitacion/mi-perfil-supervisor' },
+              { label: 'Registros Modelo', route: '/habilitacion/registros-modelo' },
             ],
             groups: [],
           };

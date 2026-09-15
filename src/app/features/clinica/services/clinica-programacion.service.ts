@@ -9,7 +9,7 @@ import {
   ProgramacionDestinatariosPreviewDto,
 } from '../dtos/clinica.model';
 import { hoyIsoLocal } from '../../../shared/utils/fecha-local.util';
-import { RazonSocialCupo } from '../../../shared/dtos/razon-social.dto';
+import { RazonesSocialesEmo } from '../../../shared/dtos/razon-social.dto';
 
 function buildClinicaHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -98,13 +98,14 @@ export class ClinicaProgramacionService {
   }
 
   /**
-   * Razones sociales del grupo con sus cupos. Solo se pide cuando el trabajador llegó SIN razón
-   * social (el ingreso directo FFT, que pasa de la solicitud al EMO sin tocar la asignación de
-   * Reclutamiento): en el caso normal el modal muestra la que ya tiene y no gasta esta petición.
+   * Razones sociales del grupo con sus cupos, y si a este trabajador le aplica el tope. Solo se
+   * pide cuando llegó SIN razón social —toda ficha de pre-ingreso, que es donde se asigna—: con un
+   * trabajador que ya la tiene el modal la muestra de solo lectura y no gasta esta petición.
    */
-  getRazonesSociales(): Observable<RazonSocialCupo[]> {
-    return this.http.get<RazonSocialCupo[]>(`${PROGRAMACIONES_BASE}/razones-sociales`, {
+  getRazonesSociales(workerId: number): Observable<RazonesSocialesEmo> {
+    return this.http.get<RazonesSocialesEmo>(`${PROGRAMACIONES_BASE}/razones-sociales`, {
       headers: buildClinicaHeaders(),
+      params: { workerId },
     });
   }
 

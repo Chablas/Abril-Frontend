@@ -36,8 +36,8 @@ export interface PuestoAdminDto {
   areaSolicitanteNombre: string | null;
 
   /**
-   * Área a la que ENTRA el postulante si lo aprueban como finalista: es la que queda en su
-   * ficha y con la que se resuelve su jefatura. No es la misma que la de arriba — la Gerencia
+   * Área a la que PERTENECE todo trabajador que ocupe el puesto — no solo el postulante que
+   * lo gane: es la que se lee en su ficha y con la que se resuelve su jefatura. No es la misma que la de arriba — la Gerencia
    * Inmobiliaria pide un Ingeniero Residente y el residente entra a Residencia. `null` = se
    * cae al área del solicitante.
    */
@@ -83,7 +83,7 @@ export interface PuestoUpsertRequest {
   categoriaId: number;
   /** Área que puede pedirlo. `null` = se queda sin área (válido: los de obra no tienen ninguna). */
   areaSolicitanteScopeId: number | null;
-  /** Área a la que entra el postulante. `null` = se cae al área del solicitante. */
+  /** Área a la que pertenece el trabajador del puesto. `null` = se cae al área del solicitante. */
   areaDestinoScopeId: number | null;
 }
 

@@ -13,6 +13,12 @@
   background: #ffffff;
 }
 
+.acciones-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px 0;
+}
+
 /* ── HEADER ──────────────────────────────────────────── */
 .det-header {
   display: flex;

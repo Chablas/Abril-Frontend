@@ -160,6 +160,20 @@
           />
         </div>
 
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="PETS asociado"
+            [options]="petsDisponibles"
+            valueField="id"
+            displayField="nombreMostrado"
+            placeholder="— Sin PETS —"
+            [allowClear]="true"
+            [value]="form.petId"
+            (valueChange)="form.petId = $event"
+          />
+        </div>
+
       </div>
     </section>
 

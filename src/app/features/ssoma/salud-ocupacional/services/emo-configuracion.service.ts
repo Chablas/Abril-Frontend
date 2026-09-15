@@ -9,7 +9,7 @@ import {
 } from '../dtos/emo-configuracion.model';
 
 /**
- * Configuración de EMOs → matriz de destinatarios de los 4 correos de EMO
+ * Configuración de EMOs → matriz de destinatarios de los correos de EMO
  * (programación automática, programación manual, aceptada y rechazada por la
  * clínica), donde cada destinatario se prende/apaga por perfil de trabajador.
  */
@@ -19,7 +19,7 @@ export class EmoConfiguracionService {
 
   constructor(private http: HttpClient) {}
 
-  /** Perfiles y los 4 correos con su matriz completa, en una sola petición. */
+  /** Perfiles y los correos con su matriz completa, en una sola petición. */
   getCorreos(): Observable<EmoCorreosConfigDto> {
     return this.http.get<EmoCorreosConfigDto>(`${this.base}/correos`, {
       headers: buildAuthHeaders(),

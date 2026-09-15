@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
+  CartaOfertaFinalizarResult,
   CartaOfertaFirmaGuardarResult,
   CartaOfertaFirmaPublico,
   CartaOfertaFirmarResult,
@@ -48,6 +49,18 @@ export class CartaOfertaFirmaService {
   firmar(token: string): Observable<CartaOfertaFirmarResult> {
     return this.http.post<CartaOfertaFirmarResult>(
       `${this.apiUrl}/publico/firmar`,
+      {},
+      { params: { token } },
+    );
+  }
+
+  /**
+   * Cierra el trámite después de firmar: deja la carta como finalizada y dispara el aviso al
+   * solicitante de la vacante. Idempotente del lado del backend.
+   */
+  finalizar(token: string): Observable<CartaOfertaFinalizarResult> {
+    return this.http.post<CartaOfertaFinalizarResult>(
+      `${this.apiUrl}/publico/finalizar`,
       {},
       { params: { token } },
     );

@@ -12,6 +12,7 @@ import { PagedResponseDTO } from '../../../../../core/dtos/api/pagedResponse.mod
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { UserCategoriaOptionDto } from '../dtos/user-filters.dto';
+import { userTypeBadgeClass } from '../utils/user-type-badge';
 import Swal from 'sweetalert2';
 
 @Component({
@@ -46,6 +47,7 @@ export class UserList implements OnInit, OnDestroy {
 
   @Output() pagedData = new EventEmitter<PagedResponseDTO<UserListItemDto>>();
   @Output() editUser = new EventEmitter<UserListItemDto>();
+  @Output() viewUser = new EventEmitter<UserListItemDto>();
   @Output() userToggled = new EventEmitter<void>();
   @Output() userDeleted = new EventEmitter<void>();
   /** Opciones del filtro de categoría, tal como llegaron en la carga inicial. */
@@ -146,6 +148,11 @@ export class UserList implements OnInit, OnDestroy {
     this.editUser.emit(user);
   }
 
+  openDetail(user: UserListItemDto, event: MouseEvent) {
+    event.stopPropagation();
+    this.viewUser.emit(user);
+  }
+
   toggleUser(user: UserListItemDto, event: MouseEvent) {
     event.stopPropagation();
     const label = user.displayName ?? user.email;
@@ -214,8 +221,6 @@ export class UserList implements OnInit, OnDestroy {
   }
 
   userTypeBadge(type: string): string {
-    if (type === 'PERSONA') return 'bg-blue-100 text-blue-800 border-blue-200';
-    if (type === 'COLABORADOR') return 'bg-purple-100 text-purple-800 border-purple-200';
-    return 'bg-orange-100 text-orange-800 border-orange-200';
+    return userTypeBadgeClass(type);
   }
 }

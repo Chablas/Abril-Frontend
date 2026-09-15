@@ -30,6 +30,11 @@ const PIPELINE: string[] = [
   'EMO_NO_APTO',
   'EMO_APTO',
   'EMO_APTO_RESTRICCIONES',
+  // Las dos fases de la carta oferta: el último paso del proceso. CARTA_OFERTA es «se la
+  // enviamos y esperamos su firma»; CARTA_OFERTA_FIRMADA, «ya firmó y falta que GTH la
+  // apruebe», que es lo que cierra el requerimiento.
+  'CARTA_OFERTA',
+  'CARTA_OFERTA_FIRMADA',
   'CERRADO',
   // El proceso terminó sin cubrir la vacante (ingreso directo FFT que salió No Apto en el EMO).
   // Va junto a CERRADO porque también recorrió todo el pipeline; es un estado aparte para que no
@@ -61,6 +66,8 @@ export function estadoColors(codigo: string): { bg: string; text: string } {
     case 'EMO_APTO_RESTRICCIONES': return { bg: '#DCFCE7', text: '#15803D' };
     case 'EMO_OBSERVADO':      return { bg: '#FFEDD5', text: '#C2410C' };
     case 'EMO_NO_APTO':        return { bg: '#FEE2E2', text: '#B91C1C' };
+    case 'CARTA_OFERTA':       return { bg: '#EDE9FE', text: '#6D28D9' };
+    case 'CARTA_OFERTA_FIRMADA': return { bg: '#DCFCE7', text: '#15803D' };
     case 'CERRADO':            return { bg: '#E0E7FF', text: '#3730A3' };
     case 'CERRADO_SIN_CUBRIR': return { bg: '#F3F4F6', text: '#4B5563' };
     default:                   return { bg: '#F3F4F6', text: '#374151' };

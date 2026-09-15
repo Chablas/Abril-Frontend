@@ -134,8 +134,8 @@ export class FormularioDecisionService {
    *  • Ya completado: las observaciones son obligatorias — se le envían por correo al postulante y
    *    se le muestran en cada página del formulario mientras corrige; sin ellas no sabría qué
    *    cambiar.
-   *  • Enviado pero nunca llenado: es un descarte interno para que el proceso siga sin él, así que
-   *    el motivo es opcional (queda como registro) y no se le escribe nada al postulante.
+   *  • Enviado pero nunca llenado: es un descarte interno, así que el motivo es opcional (queda
+   *    como registro) y no se le escribe nada al postulante.
    *
    * Devuelve null si GTH canceló el diálogo o si la operación falló.
    */
@@ -159,7 +159,7 @@ export class FormularioDecisionService {
           icon: 'question' as const,
           title: 'Rechazar formulario sin completar',
           text:
-            'El postulante todavía no llenó su formulario. Al rechazarlo el proceso puede continuar sin él, y no se le envía ningún correo. ' +
+            'El postulante todavía no llenó su formulario. Al rechazarlo no se le envía ningún correo. ' +
             'Su enlace sigue vigente: si lo completa más adelante volverá a aparecer como «Por revisar».',
           inputLabel: 'Motivo (opcional, queda como registro interno)',
           inputPlaceholder: 'Ej. No respondió tras dos recordatorios',

@@ -1,0 +1,28 @@
+<app-access-panel
+  icono="ti-users"
+  [titulo]="titulo"
+  [total]="users.length"
+  [visibles]="filtrados.length"
+  [placeholder]="conVia ? 'Buscar por nombre, correo o rol...' : 'Buscar por nombre o correo...'"
+  [vacio]="vacio"
+  [cargando]="cargando"
+  (busquedaChange)="buscar($event)">
+
+  <div *ngFor="let u of filtrados; trackBy: trackById" class="au-row">
+    <div class="au-main">
+      <!-- person.full_name viene en MAYÚSCULAS; sin person se muestra el correo. -->
+      <span class="au-name">{{ u.displayName ? (u.displayName | titleCase) : u.email }}</span>
+      <span *ngIf="u.displayName" class="au-email">{{ u.email }}</span>
+
+      <!-- Nombres de rol tal cual: en MAYÚSCULAS y con siglas que titleCase rompería. -->
+      <div *ngIf="u.viaRoles?.length" class="au-via" title="Roles que le dan el acceso">
+        <i class="ti ti-shield"></i>
+        <span *ngFor="let r of u.viaRoles" class="au-via__chip">{{ r.roleDescription }}</span>
+      </div>
+    </div>
+
+    <span *ngIf="!u.active" class="au-inactivo" title="No puede iniciar sesión mientras esté desactivado">
+      Inactivo
+    </span>
+  </div>
+</app-access-panel>

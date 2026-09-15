@@ -1,9 +1,12 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
+import { FilterModal } from '../../../../../../shared/components/filter-modal/filter-modal';
+import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
+import { AbrilBulkActionDirective } from '../../../../../../shared/directives/abril-bulk-action.directive';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
 import { ApiMessageDTO } from '../../../../../../core/dtos/api/ApiMessage.model';
 import { LoaderService } from '../../../../../../core/services/loader.service';
@@ -17,8 +20,17 @@ import { AreaItemEdit } from './area-item-edit';
 @Component({
   selector: 'app-area-item-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect, AreaItemEdit],
+  imports: [
+    CommonModule,
+    SearchSelect,
+    SearchInput,
+    FilterModal,
+    StatusBadge,
+    AbrilBulkActionDirective,
+    AreaItemEdit,
+  ],
   templateUrl: './area-item-list.html',
+  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class AreaItemList implements OnInit {
   @Output() pagedData = new EventEmitter<PagedResponseDTO<AreaItemDto>>();
@@ -31,10 +43,11 @@ export class AreaItemList implements OnInit {
     data: [],
   };
 
-  // Filtros
+  // Filtros — viven en el modal de filtros estándar, que abre el contenedor.
   filterTypeId: number | null = null;
   filterActive: boolean | null = null;
   searchText: string = '';
+  filtrosAbiertos = false;
   private searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
   areaTypes: AreaTypeSimpleDto[] = [];
@@ -99,6 +112,22 @@ export class AreaItemList implements OnInit {
           this.errorService.handleError(err);
         },
       });
+  }
+
+  /** Cantidad de filtros aplicados: la pinta el badge del botón "Filtros" del contenedor. */
+  get filtrosActivos(): number {
+    let n = 0;
+    if (this.searchText.trim()) n++;
+    if (this.filterTypeId !== null) n++;
+    if (this.filterActive !== null) n++;
+    return n;
+  }
+
+  limpiarFiltros(): void {
+    this.searchText = '';
+    this.filterTypeId = null;
+    this.filterActive = null;
+    this.onFilterChange();
   }
 
   onFilterChange(): void {

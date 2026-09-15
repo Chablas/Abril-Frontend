@@ -10,7 +10,11 @@ import { ClientPager } from '../../../../../shared/utils/client-pager';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { SolicitudPersonalService } from '../../services/solicitud-personal.service';
-import { Seguimiento } from '../../dtos/solicitud-personal.dto';
+import {
+  Seguimiento,
+  TipoRequerimientoEstilo,
+  tipoRequerimientoEstilo,
+} from '../../dtos/solicitud-personal.dto';
 import { CandidatoRechazado, etapaRechazoColors } from '../../../shared/dtos/candidato-rechazado.dto';
 
 /**
@@ -70,6 +74,22 @@ export class GthSeguimiento implements OnInit {
     if (!this.seguimiento) return '';
     const puesto = this.titleCase(this.seguimiento.puesto);
     return puesto ? `${this.seguimiento.codigo} · ${puesto}` : this.seguimiento.codigo;
+  }
+
+  /** Ícono y color del tipo de requerimiento: los mismos que la columna «Tipo» de la tabla. */
+  get tipoEstilo(): TipoRequerimientoEstilo {
+    return tipoRequerimientoEstilo(this.seguimiento?.tipoRequerimientoCodigo);
+  }
+
+  /**
+   * ¿Se dice a qué área entra el contratado? Solo cuando no es la de quien lo pidió: en la enorme
+   * mayoría de los puestos coinciden, y repetirla sería ruido (mismo criterio que el detalle de
+   * GTH).
+   */
+  get muestraAreaDestino(): boolean {
+    const s = this.seguimiento;
+    if (!s?.areaDestino) return false;
+    return s.areaDestino.trim().toLowerCase() !== (s.area ?? '').trim().toLowerCase();
   }
 
   /**

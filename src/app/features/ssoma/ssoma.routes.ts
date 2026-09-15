@@ -19,6 +19,11 @@ export const SSOMA_ROUTES: Routes = [
       import('./gestion/rac/rac.routes').then((m) => m.RAC_ROUTES),
   },
   {
+    path: 'gestion/penalidades',
+    loadChildren: () =>
+      import('./gestion/penalidades/penalidades.routes').then((m) => m.PENALIDADES_ROUTES),
+  },
+  {
     path: 'gestion/opt',
     loadChildren: () =>
       import('./gestion/opt/opt.routes').then((m) => m.OPT_ROUTES),
@@ -93,6 +98,20 @@ export const SSOMA_ROUTES: Routes = [
     loadChildren: () =>
       import('./gestion/presupuesto-materiales/presupuesto.routes').then(
         (m) => m.PRESUPUESTO_MATERIALES_ROUTES,
+      ),
+  },
+  {
+    path: 'gestion/activos-rotativos',
+    loadChildren: () =>
+      import('./gestion/activos-rotativos/activos-rotativos.routes').then(
+        (m) => m.ACTIVOS_ROTATIVOS_ROUTES,
+      ),
+  },
+  {
+    path: 'gestion/cumplimiento',
+    loadChildren: () =>
+      import('./gestion/cumplimiento-ssoma/cumplimiento-ssoma.routes').then(
+        (m) => m.CUMPLIMIENTO_SSOMA_ROUTES,
       ),
   },
   { path: '', redirectTo: 'salud-ocupacional', pathMatch: 'full' },

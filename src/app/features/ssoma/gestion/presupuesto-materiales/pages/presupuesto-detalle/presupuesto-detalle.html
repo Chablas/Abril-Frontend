@@ -63,9 +63,9 @@
             <thead>
               <tr>
                 <th>Familia</th>
-                <th>Base</th>
+                <th>Se calcula por</th>
                 <th class="num">Ratio</th>
-                <th class="num">Driver</th>
+                <th class="num">Cant. base</th>
                 <th class="num">Cantidad</th>
                 <th class="num">Precio unit.</th>
                 <th class="num">Total</th>
@@ -84,7 +84,7 @@
                     <span *ngIf="!l.tieneHistoria" class="sin-hist-badge" title="Sin datos históricos">!</span>
                     <span *ngIf="tieneOverride(l)" class="override-badge" title="Valor manual">M</span>
                   </td>
-                  <td class="base-cell">{{ l.variableBase }}</td>
+                  <td class="base-cell">{{ baseLabel(l.variableBase) }}</td>
                   <td class="num">{{ l.ratioRecomendado | number:'1.4-4' }}</td>
                   <td class="num">{{ l.valorDriver | number:'1.0-0' }}</td>
                   <td class="num">{{ (l.cantidadManual ?? l.cantidadEstimada) | number:'1.2-2' }}</td>
@@ -127,6 +127,143 @@
                   </td>
                 </tr>
               </ng-container>
+            </tbody>
+          </table>
+
+          <!-- Alta de família nueva, inline — para materiales que aún no existen en el catálogo
+               (ej. un EPP nuevo) sin tener que ir primero a la pantalla de Catálogo. -->
+          <div *ngIf="detalle.estado === 'BORRADOR' && agregandoFamiliaTipoId !== tipo.tipoId" class="agregar-familia-row">
+            <button class="btn-outline btn-sm" (click)="agregarFamilia(tipo.tipoId)">
+              <i class="ti ti-plus"></i> Agregar família nueva a {{ tipo.nombreTipo }}
+            </button>
+          </div>
+
+          <div *ngIf="agregandoFamiliaTipoId === tipo.tipoId" class="linea-edit-form familia-nueva-form">
+            <strong>Nueva família en {{ tipo.nombreTipo }}</strong>
+            <div class="linea-fields">
+              <label class="full-w">Nombre
+                <input type="text" [(ngModel)]="formFamiliaNueva.nombre" placeholder="Ej. Guantes dieléctricos" />
+              </label>
+              <label>Se calcula por
+                <select [(ngModel)]="formFamiliaNueva.variableBase">
+                  <option value="FIJO">Monto fijo (100% manual)</option>
+                  <option value="HH">Horas-Hombre</option>
+                  <option value="AREATECHADA">Área Techada (m²)</option>
+                  <option value="TRABAJADORES">Trabajadores</option>
+                  <option value="METRADO">Metrado</option>
+                </select>
+              </label>
+              <label>Unidad de medida
+                <input type="text" [(ngModel)]="formFamiliaNueva.unidadMedida" placeholder="UND, PAR, KIT..." />
+              </label>
+              <label>Cantidad
+                <input type="number" [(ngModel)]="formFamiliaNueva.cantidadManual" min="0" step="0.0001" />
+              </label>
+              <label>Precio unitario
+                <input type="number" [(ngModel)]="formFamiliaNueva.precioManual" min="0" step="0.01" />
+              </label>
+              <label class="full-w">Notas
+                <input type="text" [(ngModel)]="formFamiliaNueva.notasLinea" placeholder="Motivo del alta..." />
+              </label>
+            </div>
+            <div class="linea-actions">
+              <button class="btn-save" [disabled]="guardandoFamilia" (click)="guardarFamiliaNueva()">
+                <i class="ti ti-check"></i> {{ guardandoFamilia ? 'Guardando...' : 'Guardar família' }}
+              </button>
+              <button class="btn-cancel" (click)="cancelarFamiliaNueva()">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Otras secciones que ya suman al total pero viven en tablas aparte (100% manuales) -->
+      <div *ngIf="personalHitos.length > 0" class="tipo-bloque">
+        <button class="tipo-header" (click)="toggleSeccion('personal')">
+          <span class="tipo-nombre">Personal</span>
+          <span class="tipo-total">S/ {{ totalPersonal | number:'1.2-2' }}</span>
+          <i class="ti" [class.ti-chevron-down]="!otrasSeccionesAbierto.has('personal')"
+                        [class.ti-chevron-up]="otrasSeccionesAbierto.has('personal')"></i>
+        </button>
+        <div *ngIf="otrasSeccionesAbierto.has('personal')" class="tipo-body">
+          <table class="abril-table lineas-table">
+            <thead><tr><th>Etapa</th><th>Rol</th><th class="num">Cantidad</th><th class="num">Semanas</th><th class="num">S/ mes</th><th class="num">Total</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let p of personalHitos">
+                <td>{{ p.hitoDescripcion }}</td>
+                <td>{{ p.rol }}</td>
+                <td class="num">{{ p.cantidad }}</td>
+                <td class="num">{{ p.semanas | number:'1.1-1' }}</td>
+                <td class="num">{{ p.costoMensual | number:'1.2-2' }}</td>
+                <td class="num total-cell">S/ {{ p.total | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div *ngIf="vigilanciaHitos.length > 0" class="tipo-bloque">
+        <button class="tipo-header" (click)="toggleSeccion('vigilancia')">
+          <span class="tipo-nombre">Vigilancia</span>
+          <span class="tipo-total">S/ {{ totalVigilancia | number:'1.2-2' }}</span>
+          <i class="ti" [class.ti-chevron-down]="!otrasSeccionesAbierto.has('vigilancia')"
+                        [class.ti-chevron-up]="otrasSeccionesAbierto.has('vigilancia')"></i>
+        </button>
+        <div *ngIf="otrasSeccionesAbierto.has('vigilancia')" class="tipo-body">
+          <table class="abril-table lineas-table">
+            <thead><tr><th>Etapa</th><th class="num">Puntos</th><th class="num">Semanas</th><th class="num">Precio unit.</th><th class="num">Total</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let v of vigilanciaHitos">
+                <td>{{ v.hitoDescripcion }}</td>
+                <td class="num">{{ v.cantidadPuntos }}</td>
+                <td class="num">{{ v.semanas | number:'1.1-1' }}</td>
+                <td class="num">{{ v.precioUnitario | number:'1.2-2' }}</td>
+                <td class="num total-cell">S/ {{ v.total | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div *ngIf="serviciosFijos.length > 0" class="tipo-bloque">
+        <button class="tipo-header" (click)="toggleSeccion('servicios')">
+          <span class="tipo-nombre">Servicios y equipos</span>
+          <span class="tipo-total">S/ {{ totalServicios | number:'1.2-2' }}</span>
+          <i class="ti" [class.ti-chevron-down]="!otrasSeccionesAbierto.has('servicios')"
+                        [class.ti-chevron-up]="otrasSeccionesAbierto.has('servicios')"></i>
+        </button>
+        <div *ngIf="otrasSeccionesAbierto.has('servicios')" class="tipo-body">
+          <table class="abril-table lineas-table">
+            <thead><tr><th>Servicio</th><th class="num">Cantidad</th><th class="num">Precio unit.</th><th class="num">Total</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let s of serviciosFijos">
+                <td>{{ s.nombreFamilia }}</td>
+                <td class="num">{{ s.metrado | number:'1.0-2' }}</td>
+                <td class="num">{{ s.precioUnitario | number:'1.2-2' }}</td>
+                <td class="num total-cell">S/ {{ s.total | number:'1.2-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div *ngIf="kitsGuardados.length > 0" class="tipo-bloque">
+        <button class="tipo-header" (click)="toggleSeccion('kits')">
+          <span class="tipo-nombre">Kits / BOM</span>
+          <span class="tipo-total">S/ {{ totalKits | number:'1.2-2' }}</span>
+          <i class="ti" [class.ti-chevron-down]="!otrasSeccionesAbierto.has('kits')"
+                        [class.ti-chevron-up]="otrasSeccionesAbierto.has('kits')"></i>
+        </button>
+        <div *ngIf="otrasSeccionesAbierto.has('kits')" class="tipo-body">
+          <table class="abril-table lineas-table" *ngFor="let k of kitsGuardados">
+            <thead><tr><th colspan="3">{{ k.nombreKit }} — x{{ k.cantidadKits }} (S/ {{ k.total | number:'1.2-2' }})</th></tr>
+              <tr><th>Material</th><th class="num">Cantidad total</th><th class="num">Total</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let l of k.lineas">
+                <td>{{ l.nombreFamilia }}</td>
+                <td class="num">{{ l.cantidadTotal | number:'1.0-2' }}</td>
+                <td class="num total-cell">S/ {{ l.total | number:'1.2-2' }}</td>
+              </tr>
             </tbody>
           </table>
         </div>

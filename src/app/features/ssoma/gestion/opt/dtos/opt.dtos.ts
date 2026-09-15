@@ -4,6 +4,10 @@ export interface OptPetDto {
   nombre: string;
   codigo?: string;
   sharepointUrl?: string;
+  origen: 'Abril' | 'Contratista';
+  contributorId?: number;
+  contributorNombre?: string;
+  proyectoId?: number;
 }
 
 export interface OptCriterioVerificacionDto {
@@ -30,8 +34,11 @@ export interface OptPasoRequest {
   numeroDisplay: string;
   descripcion: string;
   nivel: number;
+  tipo: string;
   resultado?: string;
   desviacionObservada?: string;
+  esNoContemplado?: boolean;
+  esManual?: boolean;
   orden: number;
 }
 
@@ -53,10 +60,13 @@ export interface CrearOptRequest {
   seObtuvoCCompromiso: boolean;
   accionRequerida?: string;
   accionObservacion?: string;
+  requierePetModificacion?: boolean;
+  requierePetModificacionNota?: string;
   trabajadores: OptTrabajadorRequest[];
   verificaciones: OptVerificacionRequest[];
   pasos: OptPasoRequest[];
   fotosAreaBase64?: string[];
+  finalizar: boolean;
 }
 
 // ── Respuesta lista ────────────────────────────────────────────────────────────
@@ -124,8 +134,11 @@ export interface OptPasoDto {
   numeroDisplay: string;
   descripcion: string;
   nivel: number;
+  tipo: string;
   resultado?: string;
   desviacionObservada?: string;
+  esNoContemplado: boolean;
+  esManual: boolean;
   orden: number;
 }
 
@@ -153,6 +166,8 @@ export interface OptDetalleDto {
   seObtuvoCCompromiso: boolean;
   accionRequerida?: string;
   accionObservacion?: string;
+  requierePetModificacion: boolean;
+  requierePetModificacionNota?: string;
   totalPasos: number;
   totalSeguros: number;
   totalInseguros: number;

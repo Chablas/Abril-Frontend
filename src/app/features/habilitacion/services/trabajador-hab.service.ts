@@ -6,6 +6,7 @@ import {
   AgregarProyectoDto,
   DocumentoVersionDto,
   InterconsultaPendienteHabDto,
+  RetiroAutomaticoRecienteDto,
   WorkerDetalleDto,
   WorkerEditDto,
   WorkerEntregableDto,
@@ -36,6 +37,13 @@ export class TrabajadorHabService {
     return this.http.get<InterconsultaPendienteHabDto[]>(`${this.base}/interconsultas-pendientes`, {
       headers: buildHabHeaders(),
     });
+  }
+
+  getRetirosAutomaticosRecientes(dias = 7): Observable<RetiroAutomaticoRecienteDto[]> {
+    return this.http.get<RetiroAutomaticoRecienteDto[]>(
+      `${this.base}/retiros-automaticos-recientes`,
+      { headers: buildHabHeaders(), params: { dias } },
+    );
   }
 
   getWorker(workerId: number): Observable<WorkerDetalleDto> {

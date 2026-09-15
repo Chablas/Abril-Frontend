@@ -4,8 +4,20 @@
   subtitulo="Vista general de actividades, hitos y eficiencia por arquitecto."
   [tabs]="tabs">
 
-  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
-  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  <!-- Botones de Gantt (abren modal) + botón "Filtros" estándar: se proyectan a la altura de las pestañas. -->
+  <div tabsExtra style="display:flex;gap:8px;align-items:center">
+    <button type="button" (click)="modalGanttHitosVisible = true"
+            style="padding:6px 12px;font-size:12px;font-weight:600;border-radius:6px;border:1px solid #E0E8F0;
+                   color:#1B3A6B;background:#fff;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px">
+      <i class="ti ti-timeline-event"></i> Gantt de Hitos
+    </button>
+    <button type="button" (click)="modalGanttEntregablesVisible = true"
+            style="padding:6px 12px;font-size:12px;font-weight:600;border-radius:6px;border:1px solid #E0E8F0;
+                   color:#1B3A6B;background:#fff;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px">
+      <i class="ti ti-timeline-event"></i> Gantt de Entregables
+    </button>
+    <app-filter-trigger [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </div>
 </app-abril-page-header>
 
 <div class="dash-root">
@@ -151,8 +163,13 @@
       <div class="dash-card rank-card dash-row1-card">
         <div class="rank-header">
           <div class="rank-header-left">
-            <span class="rank-title-text">RANKING EFICIENCIA</span>
-            <span class="rank-subtitle">IES = cierre + ritmo (SPI) de lo que vencía en {{ semanaActual?.label }}, más puntualidad de lo que arrancaba esa semana</span>
+            <div class="rank-title-row">
+              <span class="rank-title-text">RANKING EFICIENCIA</span>
+              <span class="rank-semana-badge" *ngIf="semanaActual" [title]="'Semana en control: ' + semanaActual.label">
+                <i class="ti ti-calendar-week"></i> {{ semanaActual.label }}
+              </span>
+            </div>
+            <span class="rank-subtitle">IES = cierre + ritmo (SPI) de lo que vencía esta semana, más puntualidad de lo que arrancaba esa semana</span>
           </div>
           <div class="rank-prom-pill" title="Promedio de IES del equipo">
             <span class="rank-prom-value">{{ promedioEficiencia }}%</span>
@@ -243,29 +260,52 @@
 
       <!-- ── Col 2: Curva de Avance + Tendencia SPI ── -->
       <div class="dash-col-charts">
+        <!-- Próximos Entregables/Hitos por proyecto — reemplaza a "Curva de Avance": un %
+             acumulado abstracto no dice qué hacer esta semana; esto sí. -->
         <div class="dash-card dash-chart-card">
           <div class="card-header">
-            <span class="card-title" title="Curva S acumulada sobre el alcance activo actual: converge a 100% en la fecha de hoy">CURVA DE AVANCE</span>
+            <span class="card-title" title="Entregables e Hitos sin culminar, con vencimiento en los próximos 14 días">PRÓXIMOS 14 DÍAS · POR PROYECTO</span>
             <div class="chart-legend-inline">
-              <span class="cli-item"><span class="cli-line cli-line-dash"></span>Programado</span>
-              <span class="cli-item"><span class="cli-line cli-line-solid"></span>Real</span>
+              <span class="cli-item"><span class="cli-dot" style="background:#1E3A8A"></span>Entregables</span>
+              <span class="cli-item"><span class="cli-dot" style="background:#5B21B6"></span>Hitos</span>
             </div>
           </div>
-          <div class="db-chart-wrap"><canvas #avanceCanvas></canvas></div>
+          <div class="proximos-list" *ngIf="proximosPorProyecto.length; else sinProximos">
+            <div *ngFor="let p of proximosPorProyecto"
+                 class="proximos-row"
+                 [class.proximos-row-active]="filtro.proyectoId === p.proyectoId"
+                 (click)="abrirProximoDetalle(p)"
+                 [title]="p.proyectoNombre + ' — click para ver sus entregables e hitos'">
+              <span class="proximos-nombre">{{ p.proyectoNombre }}</span>
+              <div class="proximos-badges">
+                <span class="proximos-badge proximos-badge-ent" *ngIf="p.entregables">E {{ p.entregables }}</span>
+                <span class="proximos-badge proximos-badge-hito" *ngIf="p.hitos">H {{ p.hitos }}</span>
+              </div>
+            </div>
+          </div>
+          <ng-template #sinProximos>
+            <p class="empty-msg">Sin entregables ni hitos por vencer en los próximos 14 días</p>
+          </ng-template>
         </div>
+
+        <!-- Eficiencia en el cumplimiento de Consultas — reemplaza a "Tendencia SPI", que en
+             realidad mostraba el IES compuesto (Hitos+Entregables+Consultas mezclados). -->
         <div class="dash-card dash-chart-card">
           <div class="card-header">
             <div>
-              <span class="card-title">TENDENCIA SPI</span>
-              <span style="display:block;font-size:9px;color:#94A3B8;margin-top:1px">SPI = Schedule Performance Index · avance real ÷ avance planificado</span>
+              <span class="card-title">EFICIENCIA EN EL CUMPLIMIENTO DE CONSULTAS</span>
+              <span style="display:block;font-size:9px;color:#94A3B8;margin-top:1px"
+                    title="Una Consulta no es lo mismo que un Hito/Entregable, se mide sola">
+                Tasa de cierre semanal de Consultas · últimas 8 semanas
+              </span>
             </div>
             <div class="spi-ref-badges">
-              <span class="spi-ref-badge" style="background:#EAF5EF;color:#2D9E5F" title="En tiempo o adelantado">≥0.95 OK</span>
-              <span class="spi-ref-badge" style="background:#FBF3E4;color:#C4860A" title="Leve retraso">≥0.80</span>
-              <span class="spi-ref-badge" style="background:#FAE9E9;color:#C94040" title="Retraso crítico">&lt;0.80</span>
+              <span class="spi-ref-badge" style="background:#EAF5EF;color:#2D9E5F" title="Cierre saludable">≥80%</span>
+              <span class="spi-ref-badge" style="background:#FBF3E4;color:#C4860A" title="Leve rezago">≥50%</span>
+              <span class="spi-ref-badge" style="background:#FAE9E9;color:#C94040" title="Rezago crítico">&lt;50%</span>
             </div>
           </div>
-          <div class="db-chart-wrap"><canvas #eficienciaCanvas></canvas></div>
+          <div class="db-chart-wrap"><canvas #consultasCanvas></canvas></div>
         </div>
       </div>
 
@@ -273,38 +313,53 @@
       <div class="dash-card rank-card dash-row1-card">
         <div class="rank-header">
           <div class="rank-header-left">
-            <span class="rank-title-text">DISTRIBUCIÓN DE CARGA</span>
-            <span class="rank-subtitle">Actividades activas · {{ semanaActual?.label }} · línea = media del equipo</span>
-            <span class="rank-subtitle" style="font-size:10px;color:#94A3B8;margin-top:1px">H = Hitos · E = Entregables · C = Consultas</span>
+            <div class="rank-title-row">
+              <span class="rank-title-text">DISTRIBUCIÓN DE CARGA</span>
+              <span class="rank-semana-badge" *ngIf="semanaActual" [title]="'Semana en control: ' + semanaActual.label">
+                <i class="ti ti-calendar-week"></i> {{ semanaActual.label }}
+              </span>
+            </div>
+            <span class="rank-subtitle">Actividades activas · línea = media del equipo</span>
+            <span class="rank-subtitle" style="font-size:10px;color:#94A3B8;margin-top:1px"
+                  title="Un Hito o Entregable implica más trabajo real que una Consulta puntual, por eso la carga se pondera y no se cuenta 1 a 1">
+              Carga ponderada: H = Hitos ×3 · E = Entregables ×2 · C = Consultas ×1
+            </span>
           </div>
-          <div class="rank-prom-pill" *ngIf="cargaStats">
-            <span class="rank-prom-value">{{ cargaStats.avg }}</span>
+          <div class="rank-prom-pill" *ngIf="cargaStats"
+               title="Media de carga PONDERADA del equipo (Hito×3 + Entregable×2 + Consulta×1) — no es el conteo crudo de partidas">
+            <span class="rank-prom-value">{{ cargaStats.avgRedondeado }}</span>
             <span class="rank-prom-label">MEDIA</span>
           </div>
         </div>
         <div class="rank-list" *ngIf="cargaStats">
           <div *ngFor="let sup of tareasPorArquitectoOrdenado"
                class="rank-item carga-item"
-               [style.borderColor]="cargaTagStyle(sup.total).color + '44'"
-               [class.rank-item-crit]="cargaTag(sup.total) === 'Sobrecargado'"
+               [style.borderColor]="cargaTagStyle(sup.totalPonderado).color + '44'"
+               [class.rank-item-crit]="cargaTag(sup.totalPonderado) === 'Sobrecargado'"
                (click)="abrirModalCarga(sup)"
-               [title]="sup.nombre + ' — click para filtrar'">
-            <div class="rank-accent" [style.background]="cargaBarGradient(sup.total).replace('90deg','180deg')"></div>
-            <div class="sup-avatar" [style.background]="cargaTagStyle(sup.total).bg" [style.color]="cargaTagStyle(sup.total).color">
+               [title]="sup.nombre + ' — click para ver actividades · carga ponderada ' + sup.totalPonderado">
+            <div class="rank-accent" [style.background]="cargaBarGradient(sup.totalPonderado).replace('90deg','180deg')"></div>
+            <div class="sup-avatar" [style.background]="cargaTagStyle(sup.totalPonderado).bg" [style.color]="cargaTagStyle(sup.totalPonderado).color">
               {{ getInitials(sup.nombre) }}
             </div>
             <div class="rank-info carga-info">
               <div class="carga-top">
                 <span class="rank-nombre" [title]="sup.nombre">{{ sup.nombre }}</span>
                 <div style="display:flex;align-items:center;gap:5px;flex-shrink:0">
-                  <span class="rank-badge" [style.background]="cargaTagStyle(sup.total).bg" [style.color]="cargaTagStyle(sup.total).color">{{ cargaTag(sup.total) }}</span>
-                  <span class="carga-total">{{ sup.total }}</span>
+                  <span class="rank-badge" [style.background]="cargaTagStyle(sup.totalPonderado).bg" [style.color]="cargaTagStyle(sup.totalPonderado).color">{{ cargaTag(sup.totalPonderado) }}</span>
+                  <span class="carga-total" [title]="'Carga ponderada: ' + sup.totalPonderado + ' (H×3+E×2+C×1) · ' + sup.total + ' partidas en total'">{{ sup.total }}</span>
+                  <button type="button"
+                          (click)="$event.stopPropagation(); abrirHistoricoSupervisor(sup)"
+                          title="Ver cómo estuvo su carga semana a semana (picos de sobrecarga)"
+                          style="border:none;background:transparent;color:#94A3B8;cursor:pointer;padding:0;display:flex;align-items:center;flex-shrink:0">
+                    <i class="ti ti-chart-bar" style="font-size:13px"></i>
+                  </button>
                 </div>
               </div>
               <div class="rank-bar-row">
                 <div class="carga-bar-wrap">
                   <div class="carga-avg-line" [style.left.%]="cargaStats.avgPct"></div>
-                  <div class="carga-bar-fill" [style.width.%]="cargaBarPct(sup.total)" [style.background]="cargaBarGradient(sup.total)"></div>
+                  <div class="carga-bar-fill" [style.width.%]="cargaBarPct(sup.totalPonderado)" [style.background]="cargaBarGradient(sup.totalPonderado)"></div>
                 </div>
                 <span class="carga-hec">H{{ sup.hitos }}·E{{ sup.entregables }}·C{{ sup.consultas }}</span>
               </div>
@@ -319,8 +374,8 @@
 
     </div><!-- /dash-row-1 -->
 
-    <!-- ══ FILA 2: Partidas de Control (ancho completo) ══ -->
-    <div class="dash-card db-partidas-card">
+    <!-- ══ FILA 2: Partidas de Control (ancho completo) — desactivado temporalmente ══ -->
+    <div class="dash-card db-partidas-card" *ngIf="mostrarPartidasControl">
       <div class="card-header">
         <span class="card-title">PARTIDAS DE CONTROL</span>
         <div class="hbar-legend">
@@ -408,82 +463,6 @@
       </div> <!-- fin layout flex -->
     </div>
 
-    <!-- ══ HITOS CRÍTICOS ══ -->
-    <div class="dash-card" style="padding:0;overflow:hidden">
-
-      <div class="card-header">
-        <span class="card-title">HITOS CRÍTICOS</span>
-        <div style="display:flex;gap:6px;align-items:center">
-          <span class="spi-ref-badge" style="background:#FDF2F2;color:#C0392B">
-            {{ hitosUrgentesCnt }} urgente
-          </span>
-          <span class="spi-ref-badge" style="background:#FEF9E7;color:#D4A017">
-            {{ hitosEstaSemanaCnt }} esta sem.
-          </span>
-          <span class="spi-ref-badge" style="background:#EDF4FB;color:#2E6DB4">
-            {{ hitosProximosCnt }} próximo
-          </span>
-          <button *ngIf="hitosCriticos.length > 0"
-                  (click)="enviarAlertaHitos()"
-                  [disabled]="enviandoAlertaHitos"
-                  style="padding:4px 10px;font-size:11px;font-weight:600;border-radius:4px;border:1px solid #C0392B;
-                         color:#C0392B;background:#fff;cursor:pointer;white-space:nowrap">
-            {{ enviandoAlertaHitos ? 'Enviando...' : '📧 Enviar alerta' }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Empty state -->
-      <div *ngIf="hitosCriticos.length === 0"
-           style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:24px">
-        <div style="width:32px;height:32px;border-radius:50%;background:#EAF3DE;display:flex;align-items:center;justify-content:center">
-          <span style="font-size:16px;color:#1B6B3A">✓</span>
-        </div>
-        <span style="font-size:11px;font-weight:600;color:#1B6B3A">Sin hitos críticos pendientes</span>
-      </div>
-
-      <!-- Grid de hitos -->
-      <div *ngIf="hitosCriticos.length > 0"
-           style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1px;background:#E2E8F0">
-        <div *ngFor="let h of hitosCriticos"
-             style="display:flex;align-items:stretch;min-height:40px"
-             [title]="h.nombre">
-          <!-- Barra lateral de urgencia -->
-          <div style="width:4px;flex-shrink:0"
-               [style.background]="h.diasRestantes <= 3 ? '#C0392B' : h.diasRestantes <= 7 ? '#D4A017' : '#2E6DB4'">
-          </div>
-          <!-- Contenido -->
-          <div style="padding:10px 14px;flex:1;display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff">
-            <!-- Nombre + proyecto -->
-            <div style="flex:1;min-width:0">
-              <div style="font-size:11px;font-weight:600;color:#1B3A6B;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.4"
-                   [title]="h.nombre">{{ h.nombre }}</div>
-              <div style="font-size:10px;color:#64748B;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                {{ h.proyecto }} <span style="color:#94A3B8">· Sem {{ h.semana }}</span>
-              </div>
-            </div>
-            <!-- Fecha + días -->
-            <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;gap:2px">
-              <span style="font-size:12px;font-weight:700;font-variant-numeric:tabular-nums"
-                    [style.color]="h.diasRestantes <= 3 ? '#C0392B' : h.diasRestantes <= 7 ? '#D4A017' : '#2E6DB4'">
-                {{ h.fechaLimite | slice:0:5 }}
-              </span>
-              <span style="font-size:10px;font-weight:500"
-                    [style.color]="h.diasRestantes <= 3 ? '#C0392B' : h.diasRestantes <= 7 ? '#D4A017' : '#94A3B8'">
-                {{ diasLabel(h.diasRestantes) }}
-              </span>
-            </div>
-            <!-- Enviar alerta de este hito puntual -->
-            <button type="button" title="Enviar alerta de este hito" (click)="alertarHito(h)"
-                    style="flex-shrink:0;border:none;background:transparent;color:#94A3B8;cursor:pointer;padding:4px;font-size:13px">
-              <i class="ti ti-mail-forward"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
   </div><!-- /dash-body -->
 
 </div><!-- /dash-root -->
@@ -553,7 +532,7 @@
 
 <!-- ══ MODAL ALERTAS ══ -->
 <div *ngIf="modalAlertaVisible" class="modal-backdrop" (click)="cerrarModalAlerta()">
-  <div class="modal-box" (click)="$event.stopPropagation()">
+  <div class="modal-box modal-box-wide" (click)="$event.stopPropagation()">
 
     <div class="modal-header">
       <div class="modal-header-left">
@@ -690,9 +669,23 @@
            [style.outline]="modalCargaFiltroEstado === 'VENCIDO' ? '2px solid #C0392B' : 'none'">
         ⚠ {{ modalCargaStats.vencidas }} vencidas
       </div>
-      <div style="padding:4px 10px;background:#EDF4FB;border-radius:6px;font-size:11px;font-weight:600;color:#1B3A6B"
-           title="Hitos · Entregables · Consultas">
-        H {{ modalCargaStats.hitos }} · E {{ modalCargaStats.entregables }} · C {{ modalCargaStats.consultas }}
+      <div (click)="toggleModalCargaFiltroTipo('HITO')"
+           style="padding:4px 10px;background:#EDE9FE;border-radius:6px;font-size:11px;font-weight:600;color:#5B21B6;cursor:pointer"
+           [style.outline]="modalCargaFiltroTipo === 'HITO' ? '2px solid #5B21B6' : 'none'"
+           title="Filtrar solo Hitos — una consulta no cuenta como hito/entregable">
+        H {{ modalCargaStats.hitos }}
+      </div>
+      <div (click)="toggleModalCargaFiltroTipo('ENTREGABLE')"
+           style="padding:4px 10px;background:#DBEAFE;border-radius:6px;font-size:11px;font-weight:600;color:#1E3A8A;cursor:pointer"
+           [style.outline]="modalCargaFiltroTipo === 'ENTREGABLE' ? '2px solid #1E3A8A' : 'none'"
+           title="Filtrar solo Entregables">
+        E {{ modalCargaStats.entregables }}
+      </div>
+      <div (click)="toggleModalCargaFiltroTipo('CONSULTA')"
+           style="padding:4px 10px;background:#FEF9C3;border-radius:6px;font-size:11px;font-weight:600;color:#713F12;cursor:pointer"
+           [style.outline]="modalCargaFiltroTipo === 'CONSULTA' ? '2px solid #713F12' : 'none'"
+           title="Filtrar solo Consultas — no es lo mismo que una actividad/entregable">
+        C {{ modalCargaStats.consultas }}
       </div>
       <!-- Filtros inline -->
       <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -745,8 +738,8 @@
           </thead>
           <tbody>
             <tr *ngFor="let a of modalCargaFiltradas">
-              <td style="max-width:380px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="a.nombre">{{ a.nombre }}</td>
-              <td style="font-size:10px;color:#64748B;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" [title]="a.projectNombre ?? ''">{{ a.projectNombre ?? '—' }}</td>
+              <td style="max-width:380px;white-space:normal;word-break:break-word" [title]="a.nombre">{{ a.nombre }}</td>
+              <td style="font-size:10px;color:#64748B;max-width:220px;white-space:normal;word-break:break-word" [title]="a.projectNombre ?? ''">{{ a.projectNombre ?? '—' }}</td>
               <td>
                 <span style="font-size:10px;padding:2px 7px;border-radius:999px;font-weight:600"
                   [style.background]="a.partidaDeControl==='HITO'?'#EDE9FE':a.partidaDeControl==='ENTREGABLE'?'#DBEAFE':'#FEF9C3'"
@@ -918,21 +911,24 @@
       <button class="modal-close" (click)="cerrarModalHistorico()">✕</button>
     </div>
 
-    <div class="modal-body">
+    <div class="modal-body" style="overflow-y:auto">
       <p *ngIf="cargandoHistorico" class="empty-msg" style="padding:24px 0">Cargando...</p>
 
       <ng-container *ngIf="!cargandoHistorico && historicoSupervisor as h">
         <!-- KPIs históricos -->
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px">
-          <div style="background:#F8FAFC;border-radius:8px;padding:10px;text-align:center">
+          <div (click)="verActividadesHistorico('')"
+               style="background:#F8FAFC;border-radius:8px;padding:10px;text-align:center;cursor:pointer">
             <div style="font-size:18px;font-weight:700;color:#1E293B">{{ h.totalActividades }}</div>
             <div style="font-size:9px;color:#94A3B8;text-transform:uppercase;font-weight:600">Total histórico</div>
           </div>
-          <div style="background:#EAF3DE;border-radius:8px;padding:10px;text-align:center">
+          <div (click)="verActividadesHistorico('CULMINADO')"
+               style="background:#EAF3DE;border-radius:8px;padding:10px;text-align:center;cursor:pointer">
             <div style="font-size:18px;font-weight:700;color:#1B6B3A">{{ h.culminadas }}</div>
             <div style="font-size:9px;color:#4D7C0F;text-transform:uppercase;font-weight:600">Culminadas</div>
           </div>
-          <div style="background:#EDF4FB;border-radius:8px;padding:10px;text-align:center">
+          <div (click)="verActividadesHistorico('EN_PROCESO')"
+               style="background:#EDF4FB;border-radius:8px;padding:10px;text-align:center;cursor:pointer">
             <div style="font-size:18px;font-weight:700;color:#2E6DB4">{{ h.enProceso }}</div>
             <div style="font-size:9px;color:#2E6DB4;text-transform:uppercase;font-weight:600">En proceso</div>
           </div>
@@ -964,11 +960,350 @@
         <div style="height:180px">
           <canvas #historicoCanvas></canvas>
         </div>
+
+        <!-- Carga (ponderada) a lo largo del tiempo — para ver si la sobrecarga es puntual
+             o un patrón que se repite semana a semana. -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:18px;margin-bottom:6px;flex-wrap:wrap;gap:6px">
+          <span style="font-size:11px;font-weight:600;color:#374151"
+                title="Hito×3 + Entregable×2 + Consulta×1 — mismo criterio que Distribución de Carga">
+            Carga ponderada semana a semana (últimas 8 semanas)
+          </span>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="display:flex;align-items:center;gap:4px;font-size:9px;color:#64748B">
+              <span style="width:8px;height:8px;border-radius:2px;background:#C0392B;display:inline-block"></span>Sobrecargado
+            </span>
+            <span style="display:flex;align-items:center;gap:4px;font-size:9px;color:#64748B">
+              <span style="width:8px;height:8px;border-radius:2px;background:#2E6DB4;display:inline-block"></span>Normal
+            </span>
+            <span style="display:flex;align-items:center;gap:4px;font-size:9px;color:#64748B">
+              <span style="width:8px;height:8px;border-radius:2px;background:#1B6B3A;display:inline-block"></span>Disponible
+            </span>
+          </div>
+        </div>
+        <div *ngIf="h.tendenciaCarga?.length; else sinCarga">
+          <!-- Lectura simple semana a semana: "esta semana Sobrecargado, hace 3 Normal", etc. -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+            <div *ngFor="let s of h.tendenciaCarga; let i = index; let last = last"
+                 [title]="s.semana + ' · carga ponderada ' + s.totalPonderado + ' (media del equipo esa semana: ' + s.promedioEquipo + ')'"
+                 style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 8px;border-radius:6px;min-width:64px"
+                 [style.background]="s.tag==='SOBRECARGADO' ? '#FDF2F2' : s.tag==='DISPONIBLE' ? '#EAF3DE' : '#EDF4FB'"
+                 [style.border]="last ? '1.5px solid #1B3A6B' : '1px solid transparent'">
+              <span style="font-size:9px;color:#64748B;font-weight:600">{{ last ? 'ESTA SEMANA' : s.semana }}</span>
+              <span style="font-size:11px;font-weight:700"
+                    [style.color]="s.tag==='SOBRECARGADO' ? '#C0392B' : s.tag==='DISPONIBLE' ? '#1B6B3A' : '#2E6DB4'">
+                {{ s.tag==='SOBRECARGADO' ? 'Sobrecargado' : s.tag==='DISPONIBLE' ? 'Disponible' : 'Normal' }}
+              </span>
+              <span style="font-size:9px;color:#94A3B8">{{ s.totalPonderado }}</span>
+            </div>
+          </div>
+          <div style="height:180px">
+            <canvas #cargaHistoricoCanvas></canvas>
+          </div>
+        </div>
+        <ng-template #sinCarga>
+          <p class="empty-msg" style="padding:12px 0;font-size:11px">
+            Aún no hay suficientes semanas registradas para esta persona — el histórico de carga
+            se va acumulando semana a semana desde ahora.
+          </p>
+        </ng-template>
       </ng-container>
     </div>
 
     <div class="modal-footer">
       <button class="btn-cancelar" (click)="cerrarModalHistorico()">Cerrar</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL GANTT DE HITOS ══ -->
+<div *ngIf="modalGanttHitosVisible" class="modal-backdrop" (click)="modalGanttHitosVisible = false">
+  <div class="modal-box modal-box-wide" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon-wrap" style="background:#1E3A5F">
+          <i class="ti ti-timeline-event" style="color:#fff;font-size:16px"></i>
+        </div>
+        <div>
+          <h2 class="modal-title">Gantt de Hitos</h2>
+          <p class="modal-sub">Todos los proyectos · próximos 3 meses</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="chart-legend-inline">
+          <span class="cli-item"><span class="gantt-legend-diamond" style="background:#93C5FD"></span>Pendiente</span>
+          <span class="cli-item"><span class="gantt-legend-diamond" style="background:#3B82F6"></span>En proceso</span>
+          <span class="cli-item"><span class="gantt-legend-diamond" style="background:#EF4444"></span>Vencido</span>
+        </div>
+        <button *ngIf="hitosCriticos.length > 0"
+                (click)="enviarAlertaHitos()"
+                [disabled]="enviandoAlertaHitos"
+                style="padding:4px 10px;font-size:11px;font-weight:600;border-radius:4px;border:1px solid #C0392B;
+                       color:#C0392B;background:#fff;cursor:pointer;white-space:nowrap">
+          {{ enviandoAlertaHitos ? 'Enviando...' : '📧 Enviar alerta' }}
+        </button>
+        <button class="modal-close" (click)="modalGanttHitosVisible = false">✕</button>
+      </div>
+    </div>
+
+    <div class="modal-body" style="padding:12px 16px">
+      <div class="gantt-mini-scroll">
+      <div class="gantt-mini-header">
+        <div class="gantt-mini-label-col"></div>
+        <div class="gantt-mini-timeline-col">
+          <span *ngFor="let m of ganttMonthCells" class="gantt-mini-month" [style.width.%]="m.widthPct">{{ m.label }}</span>
+          <span class="gantt-mini-today-label" [style.left.%]="ganttTodayLeftPct">HOY</span>
+        </div>
+      </div>
+
+      <div class="gantt-mini-body" style="max-height:60vh" *ngIf="ganttHitos.length; else sinGanttHitos">
+        <div *ngFor="let item of ganttHitos" class="gantt-mini-row" [title]="item.nombre + ' · ' + item.proyecto" (click)="abrirGanttItem(item, 'HITO')">
+          <div class="gantt-mini-label-col">
+            <span class="gantt-mini-proyecto-dot" [style.background]="ganttProyectoColor(item.proyecto)"></span>
+            <div class="gantt-mini-label-text">
+              <span class="gantt-mini-nombre">{{ item.nombre }}</span>
+              <span class="gantt-mini-proyecto">{{ item.proyecto }}</span>
+            </div>
+          </div>
+          <div class="gantt-mini-timeline-col">
+            <div class="gantt-mini-track">
+              <div class="gantt-mini-gridline" *ngFor="let b of ganttMonthBoundaries" [style.left.%]="b"></div>
+              <div class="gantt-mini-today-line" [style.left.%]="ganttTodayLeftPct"></div>
+              <div class="gantt-mini-bar"
+                   [style.left]="ganttBarStyle(item).left"
+                   [style.width]="ganttBarStyle(item).width"
+                   [style.background]="ganttEstadoColor(item.estado)"
+                   [title]="item.nombre + ' · ' + ganttEstadoLabel(item.estado) + ' · ' + (item.inicioProgramado | date:'dd/MM/yyyy') + ' → ' + (item.finProgramado | date:'dd/MM/yyyy')">
+                <span class="gantt-mini-bar-label">{{ item.inicioProgramado | date:'dd/MM' }} → {{ item.finProgramado | date:'dd/MM' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ng-template #sinGanttHitos><p class="empty-msg">Sin hitos por vencer en los próximos 3 meses</p></ng-template>
+      </div><!-- /gantt-mini-scroll -->
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" (click)="abrirModalHitos()"
+              style="padding:6px 12px;font-size:12px;font-weight:600;border-radius:4px;border:1px solid #94A3B8;
+                     color:#475569;background:#fff;cursor:pointer;margin-right:auto">
+        Ver detalle en tabla
+      </button>
+      <button class="btn-cancelar" (click)="modalGanttHitosVisible = false">Cerrar</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL GANTT DE ENTREGABLES ══ -->
+<div *ngIf="modalGanttEntregablesVisible" class="modal-backdrop" (click)="modalGanttEntregablesVisible = false">
+  <div class="modal-box modal-box-wide" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon-wrap" style="background:#1E3A5F">
+          <i class="ti ti-timeline-event" style="color:#fff;font-size:16px"></i>
+        </div>
+        <div>
+          <h2 class="modal-title">Gantt de Entregables</h2>
+          <p class="modal-sub">Todos los proyectos · próximos 3 meses</p>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="chart-legend-inline">
+          <span class="cli-item"><span class="cli-dot" style="background:#93C5FD"></span>Pendiente</span>
+          <span class="cli-item"><span class="cli-dot" style="background:#3B82F6"></span>En proceso</span>
+          <span class="cli-item"><span class="cli-dot" style="background:#EF4444"></span>Vencido</span>
+        </div>
+        <button class="modal-close" (click)="modalGanttEntregablesVisible = false">✕</button>
+      </div>
+    </div>
+
+    <div class="modal-body" style="padding:12px 16px">
+      <div class="gantt-mini-scroll">
+      <div class="gantt-mini-header">
+        <div class="gantt-mini-label-col"></div>
+        <div class="gantt-mini-timeline-col">
+          <span *ngFor="let m of ganttMonthCells" class="gantt-mini-month" [style.width.%]="m.widthPct">{{ m.label }}</span>
+          <span class="gantt-mini-today-label" [style.left.%]="ganttTodayLeftPct">HOY</span>
+        </div>
+      </div>
+
+      <div class="gantt-mini-body" style="max-height:60vh" *ngIf="ganttEntregables.length; else sinGanttEntregables">
+        <div *ngFor="let item of ganttEntregables" class="gantt-mini-row" [title]="item.nombre + ' · ' + item.proyecto" (click)="abrirGanttItem(item, 'ENTREGABLE')">
+          <div class="gantt-mini-label-col">
+            <span class="gantt-mini-proyecto-dot" [style.background]="ganttProyectoColor(item.proyecto)"></span>
+            <div class="gantt-mini-label-text">
+              <span class="gantt-mini-nombre">{{ item.nombre }}</span>
+              <span class="gantt-mini-proyecto">{{ item.proyecto }}</span>
+            </div>
+          </div>
+          <div class="gantt-mini-timeline-col">
+            <div class="gantt-mini-track">
+              <div class="gantt-mini-gridline" *ngFor="let b of ganttMonthBoundaries" [style.left.%]="b"></div>
+              <div class="gantt-mini-today-line" [style.left.%]="ganttTodayLeftPct"></div>
+              <div class="gantt-mini-bar"
+                   [style.left]="ganttBarStyle(item).left"
+                   [style.width]="ganttBarStyle(item).width"
+                   [style.background]="ganttEstadoColor(item.estado)"
+                   [title]="item.nombre + ' · ' + ganttEstadoLabel(item.estado) + ' · ' + (item.inicioProgramado | date:'dd/MM/yyyy') + ' → ' + (item.finProgramado | date:'dd/MM/yyyy')">
+                <span class="gantt-mini-bar-label">{{ item.inicioProgramado | date:'dd/MM' }} → {{ item.finProgramado | date:'dd/MM' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <ng-template #sinGanttEntregables><p class="empty-msg">Sin entregables por vencer en los próximos 3 meses</p></ng-template>
+      </div><!-- /gantt-mini-scroll -->
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" (click)="abrirModalEntregables()"
+              style="padding:6px 12px;font-size:12px;font-weight:600;border-radius:4px;border:1px solid #94A3B8;
+                     color:#475569;background:#fff;cursor:pointer;margin-right:auto">
+        Ver detalle en tabla
+      </button>
+      <button class="btn-cancelar" (click)="modalGanttEntregablesVisible = false">Cerrar</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL SIMPLE: ENTREGABLES/HITOS DE UN PROYECTO (próximos 14 días) ══ -->
+<div *ngIf="modalProximoVisible" class="modal-backdrop" (click)="cerrarProximoDetalle()">
+  <div class="modal-box" style="max-width:560px" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title">{{ modalProximoProyecto }}</h2>
+        <p class="modal-sub">{{ modalProximoItems.length }} entregable(s)/hito(s) por vencer en 14 días</p>
+      </div>
+      <button class="modal-close" (click)="cerrarProximoDetalle()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-table-wrap">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Actividad</th>
+              <th>Tipo</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let it of modalProximoItems">
+              <td class="td-nombre">{{ it.nombre }}</td>
+              <td>
+                <span class="tipo-badge"
+                  [style.background]="it.tipo==='Hito' ? '#DBEAFE' : '#D1FAE5'"
+                  [style.color]="it.tipo==='Hito' ? '#2E6DB4' : '#1B6B3A'">
+                  {{ it.tipo }}
+                </span>
+              </td>
+              <td class="td-muted">{{ it.fecha ?? '—' }}</td>
+              <td><span class="estado-badge" [style.color]="ganttEstadoColor(it.estado)">{{ ganttEstadoLabel(it.estado) }}</span></td>
+            </tr>
+            <tr *ngIf="modalProximoItems.length === 0">
+              <td colspan="4" class="empty-msg" style="padding:24px;text-align:center">Sin entregables ni hitos para este proyecto</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarProximoDetalle()">Cerrar</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL DETALLE DE ITEM DE GANTT (hito o entregable individual) — sencillo ══ -->
+<div *ngIf="modalGanttItemVisible && ganttItemSeleccionado as item" class="modal-backdrop" (click)="cerrarGanttItem()">
+  <div class="modal-box" style="max-width:420px" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title">{{ item.nombre }}</h2>
+        <p class="modal-sub">{{ item.proyecto }}</p>
+      </div>
+      <button class="modal-close" (click)="cerrarGanttItem()">✕</button>
+    </div>
+
+    <div class="modal-body" style="padding:16px 16px 4px">
+      <p style="font-size:12px;color:#475569;margin:0 0 6px">
+        Fecha: <b>{{ item.finProgramado ?? '—' }}</b>
+      </p>
+      <p style="font-size:12px;color:#475569;margin:0">
+        Estado: <b [style.color]="ganttEstadoColor(item.estado)">{{ ganttEstadoLabel(item.estado) }}</b>
+      </p>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarGanttItem()">Cerrar</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ MODAL LISTA DE ENTREGABLES (gantt) ══ -->
+<div *ngIf="modalEntregablesVisible" class="modal-backdrop" (click)="cerrarModalEntregables()">
+  <div class="modal-box modal-box-wide" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-icon-wrap" style="background:#1E3A5F">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M3 3L21 3M3 3L7 8L3 13H21M3 3V13" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <h2 class="modal-title">Entregables</h2>
+          <p class="modal-sub">{{ ganttEntregables.length }} entregables en el gantt</p>
+        </div>
+      </div>
+      <button class="modal-close" (click)="cerrarModalEntregables()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="modal-table-wrap">
+        <table class="modal-table">
+          <thead>
+            <tr>
+              <th>Entregable</th>
+              <th>Proyecto</th>
+              <th>Estado</th>
+              <th>Inicio</th>
+              <th>Fin</th>
+              <th>Días</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of ganttEntregables" (click)="abrirGanttItem(item, 'ENTREGABLE')" style="cursor:pointer">
+              <td class="td-nombre">{{ item.nombre }}</td>
+              <td class="td-muted">{{ item.proyecto }}</td>
+              <td><span class="estado-badge" [style.color]="ganttEstadoColor(item.estado)">{{ ganttEstadoLabel(item.estado) }}</span></td>
+              <td class="td-muted">{{ item.inicioProgramado ?? '—' }}</td>
+              <td class="td-muted">{{ item.finProgramado ?? '—' }}</td>
+              <td>
+                <span *ngIf="ganttItemDiasRestantes(item) as dias; else sinDiasFila" class="dias-badge" [style.color]="getHitoColor(dias)">{{ diasLabel(dias) }}</span>
+                <ng-template #sinDiasFila>—</ng-template>
+              </td>
+            </tr>
+            <tr *ngIf="ganttEntregables.length === 0">
+              <td colspan="6" class="empty-msg" style="padding:24px;text-align:center">Sin entregables por vencer en los próximos 3 meses</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancelar" (click)="cerrarModalEntregables()">Cerrar</button>
     </div>
 
   </div>

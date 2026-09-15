@@ -25,6 +25,7 @@ export class ErrorService {
         icon: 'error',
         title: 'Sesión expirada',
         text: err.error?.message ?? '',
+        confirmButtonColor: '#64BC04',
       });
 
       localStorage.removeItem('access_token');
@@ -70,6 +71,7 @@ export class ErrorService {
         icon: 'error',
         title: 'Error del servidor',
         text: err.error?.message ?? 'Ocurrió un error.',
+        confirmButtonColor: '#64BC04',
       });
     }
   }

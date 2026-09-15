@@ -11,6 +11,7 @@ import { WorkSpecialty } from './workSpecialty/components/work-specialty';
 import { ProjectLink } from './projectLink/components/project-link';
 import { AdjudicacionFolder } from './adjudicacionFolder/components/adjudicacion-folder';
 import { CostosPresupuestosEmail } from './costosPresupuestosEmail/components/costos-presupuestos-email';
+import { CostsPasos } from './pasos/components/pasos';
 
 import { COSTS_TABS } from '../../shared/costs-tabs';
 /** Definición de una sección de configuración de costos. */
@@ -49,6 +50,7 @@ interface ConfigSectionDef {
     ProjectLink,
     AdjudicacionFolder,
     CostosPresupuestosEmail,
+    CostsPasos,
   ],
   templateUrl: './costs-configuration.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
@@ -64,6 +66,7 @@ export class CostsConfiguration implements OnInit {
     { id: 'project-link',              label: 'Planos Proyecto',  route: '/costs/configuration/project-link',              featureKey: 'costs.config.project-link' },
     { id: 'adjudicacion-folder',       label: 'Carpeta Adj.',     route: '/costs/configuration/adjudicacion-folder',       featureKey: 'costs.config.adjudicacion-folder' },
     { id: 'costos-presupuestos-email', label: 'Correos C. Ppto.', route: '/costs/configuration/costos-presupuestos-email', featureKey: 'costs.config.costos-presupuestos-email' },
+    { id: 'pasos',                     label: 'Pasos',            route: '/costs/configuration/pasos',                     featureKey: 'costs.config.pasos' },
   ];
 
   /** Secciones a las que el usuario tiene acceso (las que se muestran como pestañas). */
@@ -93,6 +96,15 @@ export class CostsConfiguration implements OnInit {
 
   get createLabel(): string {
     return (this.activeSection && this.createLabels[this.activeSection]) || 'Nuevo registro';
+  }
+
+  /**
+   * Botón "crear" del header. Las secciones que no crean registros (Pasos: solo prende y
+   * apaga opciones ya existentes) no lo declaran y el header lo oculta.
+   */
+  get createButton(): { label: string; icono: string } | undefined {
+    if (!this.activeSection || !this.createLabels[this.activeSection]) return undefined;
+    return { label: this.createLabel, icono: 'ti-plus' };
   }
 
   constructor(

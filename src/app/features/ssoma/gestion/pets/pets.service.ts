@@ -18,6 +18,10 @@ import {
   CrearCatalogoItemRequest,
   SeleccionarItemCatalogoRequest,
   AgregarItemPersonalizadoRequest,
+  ActualizarFirmaRequest,
+  PetVersionDto,
+  AprobarVersionRequest,
+  PetPublicoListItemDto,
 } from './pets.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -42,8 +46,20 @@ export class PetsService {
     return this.http.post<{ id: number }>(this.base, req, { headers: buildAuthHeaders() });
   }
 
+  getSiguienteCodigo(): Observable<{ codigo: string }> {
+    return this.http.get<{ codigo: string }>(`${this.base}/siguiente-codigo`, { headers: buildAuthHeaders() });
+  }
+
   actualizar(id: number, req: ActualizarPetRequest): Observable<void> {
     return this.http.put<void>(`${this.base}/${id}`, req, { headers: buildAuthHeaders() });
+  }
+
+  duplicar(id: number): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(`${this.base}/${id}/duplicar`, {}, { headers: buildAuthHeaders() });
+  }
+
+  eliminar(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}`, { headers: buildAuthHeaders() });
   }
 
   agregarPaso(id: number, req: CrearPetPasoRequest): Observable<{ id: number }> {
@@ -62,6 +78,10 @@ export class PetsService {
     return this.http.put<void>(`${this.base}/${id}/pasos/reordenar`, req, { headers: buildAuthHeaders() });
   }
 
+  cambiarNivelPaso(id: number, pasoId: number, nuevoParentId: number | null): Observable<void> {
+    return this.http.patch<void>(`${this.base}/${id}/pasos/${pasoId}/nivel`, { nuevoParentId }, { headers: buildAuthHeaders() });
+  }
+
   previewImportarDocx(file: File): Observable<PetsImportPreviewDto> {
     const fd = new FormData();
     fd.append('file', file);
@@ -76,12 +96,34 @@ export class PetsService {
     });
   }
 
-  subirImagenPaso(id: number, pasoId: number, file: File): Observable<{ imagenUrl: string }> {
+  subirImagenPaso(id: number, pasoId: number, file: File): Observable<{ id: number; imagenUrl: string }> {
     const fd = new FormData();
     fd.append('file', file);
-    return this.http.post<{ imagenUrl: string }>(
+    return this.http.post<{ id: number; imagenUrl: string }>(
       `${this.base}/${id}/pasos/${pasoId}/imagen`,
       fd,
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  eliminarImagenPaso(id: number, pasoId: number, imagenId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}/pasos/${pasoId}/imagen/${imagenId}`, { headers: buildAuthHeaders() });
+  }
+
+  actualizarCategoriaPaso(id: number, pasoId: number, categoria: string | null): Observable<void> {
+    return this.http.put<void>(
+      `${this.base}/${id}/pasos/${pasoId}/categoria`,
+      { categoria },
+      { headers: buildAuthHeaders() },
+    );
+  }
+
+  // ── Secciones de texto único (Introducción / Alcance / Objetivo / Definiciones / Restricciones) ──
+
+  actualizarSeccionTexto(id: number, seccion: string, contenido: string): Observable<void> {
+    return this.http.put<void>(
+      `${this.base}/${id}/secciones-texto/${seccion}`,
+      { contenido },
       { headers: buildAuthHeaders() },
     );
   }
@@ -129,5 +171,55 @@ export class PetsService {
 
   eliminarAnexo(id: number, anexoId: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/${id}/anexos/${anexoId}`, { headers: buildAuthHeaders() });
+  }
+
+  // ── Firmas (Elaborado por / Revisado por / Aprobado por) ────────────────────
+
+  actualizarFirma(id: number, rol: string, req: ActualizarFirmaRequest): Observable<void> {
+    return this.http.put<void>(`${this.base}/${id}/firmas/${rol}`, req, { headers: buildAuthHeaders() });
+  }
+
+  subirFirma(id: number, rol: string, file: File): Observable<{ firmaUrl: string }> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<{ firmaUrl: string }>(`${this.base}/${id}/firmas/${rol}/imagen`, fd, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  // ── Exportar ──────────────────────────────────────────────────────────────
+
+  exportarPdf(id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/exportar-pdf`, {
+      headers: buildAuthHeaders(),
+      responseType: 'blob',
+    });
+  }
+
+  // ── Versionado y aprobación ─────────────────────────────────────────────────
+
+  aprobarVersion(id: number, req: AprobarVersionRequest): Observable<PetVersionDto> {
+    return this.http.post<PetVersionDto>(`${this.base}/${id}/versiones/aprobar`, req, { headers: buildAuthHeaders() });
+  }
+
+  getVersiones(id: number): Observable<PetVersionDto[]> {
+    return this.http.get<PetVersionDto[]>(`${this.base}/${id}/versiones`, { headers: buildAuthHeaders() });
+  }
+
+  exportarPdfVersion(id: number, numeroVersion: number): Observable<Blob> {
+    return this.http.get(`${this.base}/${id}/versiones/${numeroVersion}/pdf`, {
+      headers: buildAuthHeaders(),
+      responseType: 'blob',
+    });
+  }
+
+  // ── Biblioteca pública (QR único) — sin token ──────────────────────────────
+
+  getListaPublica(): Observable<PetPublicoListItemDto[]> {
+    return this.http.get<PetPublicoListItemDto[]>(`${this.base}/publico`);
+  }
+
+  exportarPdfPublico(id: number): Observable<Blob> {
+    return this.http.get(`${this.base}/publico/${id}/pdf`, { responseType: 'blob' });
   }
 }

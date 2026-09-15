@@ -38,6 +38,8 @@ import {
 import {
   AsignacionGth,
   CandidatoAprobado,
+  CartaOfertaAccionResult,
+  CartaOfertaRequerimiento,
   DetalleRequerimientoGth,
   EVALUACION_ARCHIVO,
   EvaluacionArchivo,
@@ -67,18 +69,29 @@ interface CandidatoLongList {
 const ANEXOS_ACCEPT = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.webp';
 
 /**
- * Tope de lo que puede pesar el conjunto de archivos del envío (CVs + anexos). No es una regla
- * nuestra: es lo que acepta el proveedor de correo con los adjuntos adentro, y el backend lo
- * valida igual (`MaxLongListCorreoBytes`). Se comprueba también acá para avisar antes de subir
- * decenas de MB que el servidor va a rechazar.
+ * Topes de los archivos del envío (CVs y anexos de la long list, y los dos del informe del
+ * finalista). Son reglas NUESTRAS, no del proveedor de correo: desde que los archivos viajan
+ * enlazados a SharePoint y no adjuntos, el correo pesa lo mismo con 2 MB que con 20 MB. El
+ * backend valida los mismos números (`MaxLongListFileBytes` y `MaxLongListTotalBytes`); se
+ * comprueban también acá para avisar antes de subir algo que el servidor va a rechazar.
  */
-const MAX_LONG_LIST_CORREO_BYTES = 2_800_000;
+const MAX_ARCHIVO_BYTES = 20 * 1024 * 1024;
+const MAX_ARCHIVOS_TOTAL_BYTES = 60 * 1024 * 1024;
+
+/** Tamaño en MB con un decimal, para los mensajes de tope de archivos. */
+const mbTexto = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 
 /**
  * Correo válido para enviarle el formulario al postulante. Misma expresión que valida el backend
  * (`PostulanteFormularioService.EmailRegex`): la usan tanto el envío individual como el masivo.
  */
 const CORREO_VALIDO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+/**
+ * Resultados que cierran la participación de un candidato (espejo de `ResultadoCandidato.Cerrados`
+ * del backend): GTH lo descartó, el área lo eligió o lo rechazó, o no pasó el EMO de ingreso.
+ */
+const RESULTADOS_CERRADOS = ['NO_PASO', 'SELECCIONADO', 'RECHAZADO', 'NO_APTO_EMO'];
 
 /** Datos editables de la cita de un candidato en la sección de programación de entrevistas. */
 interface EntrevistaFormState {
@@ -178,6 +191,8 @@ export class GthDetalleRequerimiento implements OnInit {
   seccionFormularioPostulante = true;
   seccionMultitest = true;
   seccionEntrevistas = true;
+  /** Carta oferta: el último paso del proceso (envío, firma del candidato y aprobación de GTH). */
+  seccionCartaOferta = true;
   /**
    * "Historial de candidatos rechazados": arranca colapsada, al revés que el resto. Es una
    * consulta de respaldo (a quién ya se descartó), no un paso del proceso: abierta empujaría
@@ -291,6 +306,11 @@ export class GthDetalleRequerimiento implements OnInit {
           }
         }
         this.prepararFormulariosEntrevista();
+        // Correo destino de la carta oferta: el de su ficha de la base maestra (o el del último
+        // envío, si GTH lo había corregido a mano). GTH lo puede ajustar antes de enviarla.
+        this.cartaCorreo = data.cartaOferta?.correo ?? data.cartaOferta?.correoSugerido ?? '';
+        this.cartaFechaIngreso = data.cartaOferta?.fechaIngreso ?? null;
+        this.prepararFormularioCarta();
         this.abrirFormularioSolicitado();
         this.loaderService.hide();
         this.cdr.detectChanges();
@@ -323,11 +343,14 @@ export class GthDetalleRequerimiento implements OnInit {
 
     // Long list aprobada, formulario del postulante y Multitest son el trabajo de la fase
     // "Long list aprobada": quedan atrás al pasar a entrevistas (o, en un ingreso directo FFT, al
-    // aprobarse el formulario, que lo manda derecho al EMO).
+    // aprobarse el formulario, que lo manda derecho al EMO). Salvo para los candidatos que se
+    // quedaron atrás: pasar a entrevistas ya no espera a toda la long list, así que el formulario y
+    // el Multitest siguen abiertos mientras alguno tenga algo por hacer ahí.
     const antesDeEntrevistas = !this.enEntrevistas;
+    const porRevisar = this.candidatosEnCarrera.some((c) => this.formularioPorRevisar(c));
     this.seccionLongListAprobada = antesDeEntrevistas;
-    this.seccionFormularioPostulante = antesDeEntrevistas;
-    this.seccionMultitest = antesDeEntrevistas;
+    this.seccionFormularioPostulante = antesDeEntrevistas || (this.sumaCandidatosTarde && porRevisar);
+    this.seccionMultitest = antesDeEntrevistas || this.multitestPendientes > 0;
 
     // La programación de entrevistas se completa cuando el finalista pasa a decisión del área.
     this.seccionEntrevistas =
@@ -471,55 +494,503 @@ export class GthDetalleRequerimiento implements OnInit {
     return this.detalle?.seleccionado?.emoAptitud || this.detalle?.estadoNombre || '';
   }
 
-  /** true mientras se cierra el proceso (evita el doble clic). */
-  cerrandoProceso = false;
+  // ── Carta oferta: el último paso del proceso ─────────────────────────────
+  // Reemplaza al viejo botón «Cerrar proceso» del EMO apto. Ahora el reclutamiento no termina con
+  // el examen: GTH le manda la carta oferta al seleccionado, él la firma desde su enlace y recién
+  // cuando GTH aprueba ese documento el requerimiento pasa a CERRADO. La carta vivía como primer
+  // paso de Onboarding; se movió acá completa (envío, firma y aprobación).
+
+  /** Datos del envío, mientras la carta todavía no se haya mandado. */
+  cartaFechaIngreso: string | null = null;
+  cartaCorreo = '';
+
+  /** Condiciones que la plantilla imprime y que solo puede poner GTH. */
+  cartaSueldo: number | null = null;
+  cartaFechaLimite: string | null = null;
 
   /**
-   * Cierra el proceso y habilita el paso a onboarding. Es lo que antes hacía solo el EMO: ahora lo
-   * confirma GTH con el resultado del examen a la vista, porque cerrar es exactamente lo que pone
-   * al seleccionado en la bandeja de Onboarding.
+   * Las condiciones de contrato que imprime la carta: un campo de texto por viñeta. Es una lista y
+   * no un textarea porque cada elemento es una viñeta del documento —el backend las guarda así, una
+   * fila por condición— y partir un textarea por saltos de línea deja que un enter de más meta una
+   * viñeta vacía en la carta sin que nadie lo vea hasta abrirla.
+   *
+   * Arranca con una línea en blanco: el formulario tiene que mostrar dónde se escribe.
    */
-  async cerrarProceso(): Promise<void> {
-    if (this.cerrandoProceso || !this.detalle) return;
+  cartaCondiciones: string[] = [''];
 
+  generandoCarta = false;
+  enviandoCarta = false;
+  reenviandoCarta = false;
+  subiendoCartaFirmada = false;
+  aprobandoCarta = false;
+
+  /** Formatos del documento firmado que GTH puede adjuntar a mano (los mismos que valida el backend). */
+  readonly cartaFirmadaAccept = '.pdf,.doc,.docx';
+
+  get carta(): CartaOfertaRequerimiento | null {
+    return this.detalle?.cartaOferta ?? null;
+  }
+
+  /**
+   * La sección se dibuja desde que el examen salió bien —es cuando GTH puede mandar la carta— y se
+   * queda para siempre en cuanto hay una enviada, también con el proceso ya cerrado: es el
+   * expediente de cómo se aceptó la propuesta.
+   */
+  get mostrarCartaOferta(): boolean {
+    return !!this.carta && (this.emoApto || this.cartaEnviada);
+  }
+
+  /**
+   * La carta ya salió. Se mira `enviadaEn` y NO la existencia de la fila: desde que la carta se
+   * puede generar en el sistema, la fila existe también como borrador —documento listo, nada
+   * enviado— y confundir las dos cosas dejaría a GTH sin el botón de enviar.
+   */
+  get cartaEnviada(): boolean {
+    return !!this.carta?.enviadaEn;
+  }
+
+  /** Hay un Word generado esperando revisión (o esperando que se mande). */
+  get cartaGenerada(): boolean {
+    return !!this.carta?.generadaUrl;
+  }
+
+  get cartaFirmada(): boolean {
+    return !!this.carta?.firmadaUrl;
+  }
+
+  get cartaAprobada(): boolean {
+    return !!this.carta?.aprobadaEn;
+  }
+
+  /** true si el documento firmado lo produjo el propio candidato desde el enlace público. */
+  get cartaFirmadaPorPostulante(): boolean {
+    return !!this.carta?.firmadaPostulanteEn;
+  }
+
+  /**
+   * true si el colaborador cerró el trámite con «Finalizar» desde su enlace. Ese es el documento que
+   * él firmó y con el que se le avisó al solicitante que la oferta quedó aceptada: GTH ya no lo
+   * puede reemplazar por otro —solo revisarlo y aprobarlo—, y el backend lo corta igual.
+   */
+  get cartaFinalizadaPorColaborador(): boolean {
+    return !!this.carta?.finalizadaEn;
+  }
+
+  /**
+   * Aviso de estado de la ficha de la base maestra: qué le falta al seleccionado para poder
+   * mandarle la carta. Los tres casos salen de esa misma ficha, así que van en una sola línea. El
+   * correo se puede escribir a mano acá; el DNI y la ficha no (ver `motivoBloqueoCarta`).
+   */
+  get avisoFichaCarta(): string | null {
+    const c = this.carta;
+    if (!c) return null;
+    if (!c.tieneFichaMaestra) return 'Sin ficha en la base maestra.';
+
+    const falta: string[] = [];
+    if (!c.correoSugerido) falta.push('correo personal');
+    if (!c.dni) falta.push('documento de identidad');
+    if (!falta.length) return null;
+    return `Su ficha de la base maestra no tiene ${falta.join(' ni ')}.`;
+  }
+
+  /**
+   * Qué está mal, no qué toca hacer: solo avisa de lo que el usuario no ve en la pantalla. El correo
+   * se puede escribir a mano; el DNI no, porque es el que nombra la carpeta del colaborador en
+   * SharePoint y tiene que ser el mismo de su ficha; y la ficha tampoco, porque es donde se guarda
+   * la firma que va a registrar al abrir el enlace. Que todavía no haya carta generada se ve en la
+   * pantalla, así que bloquea el botón sin texto (ver `puedeEnviarCarta`).
+   */
+  get motivoBloqueoCarta(): string | null {
+    if (!this.cartaCorreo.trim()) return 'Falta el correo personal del colaborador.';
+    if (!this.carta?.dni) return 'Sin documento de identidad en la base maestra: con él se crea su carpeta en el file.';
+    if (!this.carta?.tieneFichaMaestra) return 'Sin ficha en la base maestra: ahí se guarda la firma que registrará en el enlace.';
+    if (this.cartaDatosDesfasados) {
+      return 'Cambiaste las condiciones: vuelve a generar la carta antes de enviarla.';
+    }
+    return null;
+  }
+
+  /**
+   * El formulario dice una cosa y el documento generado dice otra. Pasa cuando GTH toca el sueldo o
+   * una fecha después de generar: el Word sigue con los valores viejos y esos son los que leería el
+   * candidato. Se corta el envío en vez de guardar los nuevos, que dejaría la fila contradiciendo a
+   * su propio documento.
+   */
+  get cartaDatosDesfasados(): boolean {
+    const co = this.carta;
+    if (!co?.generadaUrl) return false;
+    // El sueldo se compara como número: el input lo entrega como number y el backend lo serializa
+    // con decimales («3500.00»), así que un !== de texto marcaría desfase donde no lo hay.
+    const sueldoIgual =
+      this.cartaSueldo == null || co.sueldo == null
+        ? this.cartaSueldo == null && co.sueldo == null
+        : Number(this.cartaSueldo) === Number(co.sueldo);
+
+    // Las condiciones se comparan ya limpias, que es como se mandan: agregar una fila y dejarla
+    // vacía —o borrar un espacio de más— no cambia lo que dice el documento.
+    const condicionesFormulario = this.condicionesLimpias;
+    const condicionesGeneradas = co.condiciones ?? [];
+    const condicionesIguales =
+      condicionesFormulario.length === condicionesGeneradas.length &&
+      condicionesFormulario.every((c, i) => c === condicionesGeneradas[i]);
+
+    return (
+      !sueldoIgual ||
+      !condicionesIguales ||
+      (this.cartaFechaIngreso ?? null) !== (co.fechaIngreso ?? null) ||
+      (this.cartaFechaLimite ?? null) !== (co.fechaLimiteAceptacion ?? null)
+    );
+  }
+
+  /** Las condiciones tal como se van a mandar: sin espacios de borde y sin las que quedaron vacías. */
+  private get condicionesLimpias(): string[] {
+    return this.cartaCondiciones.map((c) => (c ?? '').trim()).filter((c) => c.length > 0);
+  }
+
+  get puedeEnviarCarta(): boolean {
+    return (
+      !this.enviandoCarta &&
+      !this.generandoCarta &&
+      this.cartaGenerada &&
+      this.motivoBloqueoCarta === null
+    );
+  }
+
+  // ── Generación de la carta desde la plantilla ────────────────────────────────
+
+  /**
+   * Solo lo que no se ve en la pantalla: la ficha de la base maestra, que se consulta aparte, y una
+   * fecha límite que ya venció (el campo está lleno y parece correcto). Los campos vacíos no dicen
+   * nada acá — se ven solos en el formulario y bloquean el botón sin texto (ver
+   * `datosCartaCompletos`).
+   */
+  get motivoBloqueoGenerar(): string | null {
+    if (!this.carta?.dni) return 'Sin documento de identidad en la base maestra: con él se crea su carpeta en el file.';
+    if (!this.carta?.tieneFichaMaestra) return 'Sin ficha en la base maestra: de ahí sale el nombre de la carta.';
+    if (this.cartaFechaLimite && this.cartaFechaLimite < this.hoyIso) {
+      return 'La fecha límite de aceptación ya pasó.';
+    }
+    return null;
+  }
+
+  /**
+   * Los datos del miniformulario que se imprimen en el documento: ninguno puede ir vacío, porque el
+   * hueco lo ve el candidato y no nosotros.
+   */
+  private get datosCartaCompletos(): boolean {
+    return (
+      !!this.cartaFechaIngreso &&
+      this.cartaSueldo != null &&
+      this.cartaSueldo > 0 &&
+      !!this.cartaFechaLimite &&
+      this.condicionesLimpias.length > 0
+    );
+  }
+
+  // ── Condiciones de contrato: una viñeta de la carta por campo ────────────────
+
+  /** Agrega una viñeta más al final y deja el foco donde el usuario va a escribir. */
+  agregarCondicion(): void {
+    this.cartaCondiciones.push('');
+  }
+
+  /**
+   * Quita una viñeta. Nunca deja la lista sin campos: sin ninguno el formulario no muestra dónde
+   * escribir y la única salida sería recargar el detalle.
+   */
+  quitarCondicion(indice: number): void {
+    this.cartaCondiciones.splice(indice, 1);
+    if (this.cartaCondiciones.length === 0) this.cartaCondiciones = [''];
+  }
+
+  get puedeGenerarCarta(): boolean {
+    return (
+      !this.generandoCarta &&
+      !this.enviandoCarta &&
+      this.datosCartaCompletos &&
+      this.motivoBloqueoGenerar === null
+    );
+  }
+
+  /**
+   * Deja el formulario de la carta como corresponde al estado en que se abre el detalle: con lo que
+   * quedó guardado si ya hay borrador y, si es la primera vez, con la fecha límite propuesta
+   * (mañana). El archivo adjunto no sobrevive a una recarga: vive solo en el navegador.
+   */
+  private prepararFormularioCarta(): void {
+    const co = this.detalle?.cartaOferta ?? null;
+    this.cartaSueldo = co?.sueldo ?? null;
+    this.cartaFechaLimite = co?.fechaLimiteAceptacion ?? this.manianaIso();
+    // Las del borrador, o una línea en blanco si todavía no se generó nada. Se copia el arreglo en
+    // vez de referenciarlo: el formulario se edita, y editar el del DTO haría que
+    // `cartaDatosDesfasados` se compare contra sí mismo y nunca detecte el cambio.
+    this.cartaCondiciones = co?.condiciones?.length ? [...co.condiciones] : [''];
+  }
+
+  /**
+   * Mañana en `YYYY-MM-DD`: el plazo de aceptación que se propone por defecto. Se arma con la hora
+   * local y no con `toISOString()`, que en Perú devuelve el día siguiente desde las 19:00.
+   */
+  private manianaIso(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const mes = `${d.getMonth() + 1}`.padStart(2, '0');
+    const dia = `${d.getDate()}`.padStart(2, '0');
+    return `${d.getFullYear()}-${mes}-${dia}`;
+  }
+
+  /**
+   * Arma el Word desde la plantilla y lo deja en el file del colaborador. No manda nada: deja el
+   * documento para revisar. Se puede repetir; cada generación pisa a la anterior.
+   */
+  async generarCartaOferta(): Promise<void> {
+    if (!this.puedeGenerarCarta) return;
+
+    if (this.cartaGenerada) {
+      const confirm = await Swal.fire({
+        icon: 'question',
+        title: '¿Volver a generar la carta?',
+        html:
+          'Se reemplaza el documento actual por uno nuevo: <b>se pierde cualquier corrección</b> ' +
+          'que le hayas hecho en Word.',
+        showCancelButton: true,
+        confirmButtonText: 'Regenerar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: 'var(--color-abril-logo-blue)',
+      });
+      if (!confirm.isConfirmed) return;
+    }
+
+    this.generandoCarta = true;
+    this.loaderService.show();
+
+    this.service
+      .generarCartaOferta(this.requerimientoId, {
+        fechaIngreso: this.cartaFechaIngreso,
+        sueldo: this.cartaSueldo,
+        fechaLimiteAceptacion: this.cartaFechaLimite,
+        condiciones: this.condicionesLimpias,
+      })
+      .subscribe({
+        next: (res) => {
+          this.generandoCarta = false;
+          this.loaderService.hide();
+          this.aplicarCarta(res);
+          Swal.fire({ icon: 'success', title: 'Carta oferta generada', text: res.message });
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.generandoCarta = false;
+          this.loaderService.hide();
+          this.cdr.detectChanges();
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  // ── Envío de la carta al candidato ───────────────────────────────────────────
+
+  /**
+   * Manda la carta generada. La vía de adjuntar un PDF propio se retiró: la plantilla imprime la
+   * fecha de conformidad del colaborador, que solo pone el sistema al abrirse el enlace, así que una
+   * carta traída de afuera saldría sin ella. Para corregir el texto está «Ver y editar en Word»
+   * sobre el documento generado, que es lo que esa vía resolvía de verdad.
+   */
+  async enviarCartaOferta(): Promise<void> {
+    if (!this.puedeEnviarCarta || !this.detalle) return;
+
+    const correo = this.cartaCorreo.trim().toLowerCase();
     const confirm = await Swal.fire({
       icon: 'question',
-      title: '¿Cerrar el proceso?',
+      title: '¿Enviar la carta oferta?',
       html:
-        'El examen médico de ingreso salió <b>' +
-        this.emoAptitudNombre +
-        '</b>. Al cerrar, el proceso de reclutamiento termina y el seleccionado pasa a ' +
-        '<b>Onboarding</b> como candidato por ingresar.',
+        `Se le enviará a <b>${correo}</b> el enlace para firmar la carta generada, ` +
+        'convertida a <b>PDF</b> tal como está ahora en su file.',
       showCancelButton: true,
-      confirmButtonText: 'Cerrar proceso y continuar a Onboarding',
+      confirmButtonText: 'Enviar carta oferta',
       cancelButtonText: 'Cancelar',
       confirmButtonColor: '#15803D',
     });
     if (!confirm.isConfirmed) return;
 
-    this.cerrandoProceso = true;
+    this.enviandoCarta = true;
     this.loaderService.show();
-    this.service.cerrarProceso(this.requerimientoId).subscribe({
+
+    this.service
+      .enviarCartaOferta(
+        this.requerimientoId,
+        {
+          fechaIngreso: this.cartaFechaIngreso,
+          // Solo se manda si difiere del que resolvió el backend: así el correo de la base maestra
+          // sigue siendo la fuente de verdad y este campo es únicamente la corrección manual.
+          correo: correo === (this.carta?.correoSugerido ?? '').toLowerCase() ? null : correo,
+        },
+      )
+      .subscribe({
+        next: (res) => {
+          this.enviandoCarta = false;
+          this.loaderService.hide();
+          this.aplicarCarta(res);
+          Swal.fire({ icon: 'success', title: 'Carta oferta enviada', text: res.message, confirmButtonColor: '#15803D' });
+          this.cdr.detectChanges();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.enviandoCarta = false;
+          this.loaderService.hide();
+          this.cdr.detectChanges();
+          this.errorService.handleError(err);
+        },
+      });
+  }
+
+  async reenviarCartaOferta(): Promise<void> {
+    if (this.reenviandoCarta) return;
+
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: '¿Reenviar el enlace de firma?',
+      html: this.carta?.correo
+        ? `Se le volverá a enviar a <b>${this.carta.correo}</b> el correo con el enlace para leer y firmar su carta oferta.`
+        : 'Se le volverá a enviar el correo con el enlace para leer y firmar su carta oferta.',
+      showCancelButton: true,
+      confirmButtonText: 'Reenviar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: 'var(--color-abril-logo-blue)',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.reenviandoCarta = true;
+    this.loaderService.show();
+
+    this.service.reenviarCartaOferta(this.requerimientoId).subscribe({
       next: (res) => {
-        this.cerrandoProceso = false;
-        this.huboCambios = true;
-        // Cerrar cambia las secciones del modal (desaparece la tarjeta del resultado del EMO), así
-        // que se recarga el detalle entero. El loader lo apaga esa recarga.
-        this.cargarDetalle();
-        Swal.fire({
-          icon: 'success',
-          title: 'Proceso cerrado',
-          text: res.message,
-          confirmButtonColor: '#15803D',
-        });
+        this.reenviandoCarta = false;
+        this.loaderService.hide();
+        this.aplicarCarta(res);
+        Swal.fire({ icon: 'success', title: 'Enlace reenviado', text: res.message });
+        this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
-        this.cerrandoProceso = false;
+        this.reenviandoCarta = false;
         this.loaderService.hide();
         this.cdr.detectChanges();
         this.errorService.handleError(err);
       },
     });
+  }
+
+  /**
+   * Carga a mano del documento firmado: es la vía de RESPALDO, para el candidato que firmó en papel
+   * en vez de usar el enlace. Sirve también para reemplazar el que ya está mientras no se apruebe.
+   */
+  onCartaFirmadaSeleccionada(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    input.value = '';
+    if (!archivo) return;
+
+    // El `accept` del input solo filtra el diálogo de archivos, así que el formato y el peso se
+    // comprueban acá con los mismos topes que valida el backend (`AllowedCartaFirmadaExt` y
+    // `MaxCartaBytes`). Sin esto el archivo se sube completo y recién lo rechaza el servidor con
+    // un 400, después de toda la espera de la subida.
+    const ext = '.' + (archivo.name.split('.').pop() ?? '').toLowerCase();
+    if (!archivo.name.includes('.') || !this.cartaFirmadaAccept.split(',').includes(ext)) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Formato no permitido',
+        text: `«${archivo.name}» no es un formato permitido. Adjunta un PDF, DOC o DOCX.`,
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    if (archivo.size > MAX_ARCHIVO_BYTES) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'La carta pesa demasiado',
+        text:
+          `«${archivo.name}» pesa ${mbTexto(archivo.size)} y el máximo es ` +
+          `${mbTexto(MAX_ARCHIVO_BYTES)}.`,
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    this.subirCartaFirmada(archivo);
+  }
+
+  private subirCartaFirmada(archivo: File): void {
+    if (this.subiendoCartaFirmada) return;
+    this.subiendoCartaFirmada = true;
+    this.loaderService.show();
+
+    this.service.subirCartaOfertaFirmada(this.requerimientoId, archivo).subscribe({
+      next: (res) => {
+        this.subiendoCartaFirmada = false;
+        this.loaderService.hide();
+        this.aplicarCarta(res);
+        Swal.fire({ icon: 'success', title: 'Carta firmada adjuntada', text: res.message });
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subiendoCartaFirmada = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /** Aprobar la carta firmada es lo que cierra el proceso y pasa al colaborador a Onboarding. */
+  async aprobarCartaOferta(): Promise<void> {
+    if (this.aprobandoCarta || !this.cartaFirmada || this.cartaAprobada) return;
+
+    const confirm = await Swal.fire({
+      icon: 'question',
+      title: '¿Aprobar la carta oferta firmada?',
+      html:
+        'Confirma que revisaste el documento firmado y que las condiciones son correctas. Al ' +
+        'aprobarla, el proceso de reclutamiento queda <b>cerrado</b> y ' +
+        `${this.detalle?.seleccionado?.nombre ?? 'el seleccionado'} pasa a <b>Onboarding</b> como ` +
+        'candidato por ingresar.',
+      showCancelButton: true,
+      confirmButtonText: 'Aprobar y cerrar el proceso',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#15803D',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.aprobandoCarta = true;
+    this.loaderService.show();
+
+    this.service.aprobarCartaOferta(this.requerimientoId).subscribe({
+      next: (res) => {
+        this.aprobandoCarta = false;
+        this.loaderService.hide();
+        this.aplicarCarta(res);
+        Swal.fire({ icon: 'success', title: 'Proceso cerrado', text: res.message, confirmButtonColor: '#15803D' });
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.aprobandoCarta = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  /**
+   * Deja el modal con la carta y la fase que devolvió la acción. No se recarga el detalle entero:
+   * la respuesta ya trae las dos cosas que cambian, y las secciones que dependen de la fase (la
+   * tarjeta del EMO, esta misma sección) se recalculan solas al cambiar `estadoCodigo`.
+   */
+  private aplicarCarta(res: CartaOfertaAccionResult): void {
+    if (!this.detalle) return;
+    this.huboCambios = true;
+    this.detalle.cartaOferta = res.cartaOferta;
+    this.detalle.estadoCodigo = res.estadoCodigo;
+    this.detalle.estadoNombre = res.estadoNombre;
   }
 
   /**
@@ -663,17 +1134,6 @@ export class GthDetalleRequerimiento implements OnInit {
     return !!this.detalle?.esFft;
   }
 
-  /**
-   * true si a un FFT le falta la razón social. En el flujo normal la exige el botón de publicar,
-   * pero el ingreso directo no publica nada: su ficha de pre-ingreso se abre al aprobarse la
-   * vacante, así que sin este aviso quedaría sin razón social y nadie se enteraría hasta el
-   * onboarding. Al asignarla, el backend se la baja a la ficha. Es un aviso, no un bloqueo — la
-   * decisión de asignarla antes o después es de GTH.
-   */
-  get faltaRazonSocialFft(): boolean {
-    return this.esFft && !this.detalle?.asignacion.contributorId;
-  }
-
   // ── Asignación interna (autosave optimista por cambio) ──────────────────
   onAsignacionChange(campo: keyof AsignacionGth, valor: number | null): void {
     if (!this.detalle) return;
@@ -697,17 +1157,6 @@ export class GthDetalleRequerimiento implements OnInit {
     return this.detalle?.tiposProceso.find((t) => t.id === this.detalle?.asignacion.tipoProcesoId) ?? null;
   }
 
-  /** Razón social seleccionada (para el hint de cupos y la advertencia). */
-  get razonSocialSeleccionada() {
-    return this.detalle?.razonesSociales.find((r) => r.id === this.detalle?.asignacion.contributorId) ?? null;
-  }
-
-  /** true si la razón social elegida no alcanza a cubrir las vacantes del requerimiento. */
-  get sinCupos(): boolean {
-    const razon = this.razonSocialSeleccionada;
-    return !!this.detalle && !!razon && razon.cuposDisponibles < this.detalle.vacantes;
-  }
-
   // ── Publicación en canales ──────────────────────────────────────────────
   toggleCanal(canalId: number): void {
     if (this.canalesSeleccionados.has(canalId)) this.canalesSeleccionados.delete(canalId);
@@ -717,7 +1166,10 @@ export class GthDetalleRequerimiento implements OnInit {
   /**
    * true si se puede publicar: al menos un canal marcado y la asignación interna completa.
    * Publicar avanza la fase, y a partir de ahí el requerimiento ya se trabaja con responsable,
-   * SLA, prioridad y razón social definidos, así que los cuatro se exigen antes de continuar.
+   * SLA y prioridad definidos, así que los tres se exigen antes de continuar.
+   *
+   * La razón social no entra: se elige mucho después, al programarle el EMO de ingreso al
+   * finalista, y con ella el control de cupos.
    */
   get puedePublicar(): boolean {
     const a = this.detalle?.asignacion;
@@ -725,8 +1177,7 @@ export class GthDetalleRequerimiento implements OnInit {
       this.canalesSeleccionados.size > 0 &&
       !!a?.responsableId &&
       !!a.tipoProcesoId &&
-      !!a.prioridadId &&
-      !!a.contributorId
+      !!a.prioridadId
     );
   }
 
@@ -858,20 +1309,35 @@ export class GthDetalleRequerimiento implements OnInit {
       return;
     }
 
-    // Los CVs y los anexos viajan adjuntos en el correo al solicitante, que tiene un tope de
-    // tamaño (ver MAX_LONG_LIST_CORREO_BYTES): se avisa acá para no subirlo y que lo rechace.
+    // Los archivos se suben a SharePoint y el correo al solicitante lleva sus enlaces, así que
+    // el tope es el de la subida: por archivo y por peso de toda la petición.
+    const pesado = this.candidatos
+      .flatMap((c) => [c.cv, ...c.anexos])
+      .find((f) => f.size > MAX_ARCHIVO_BYTES);
+    if (pesado) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Un archivo pesa demasiado',
+        text:
+          `«${pesado.name}» pesa ${mbTexto(pesado.size)} y el máximo por archivo es ` +
+          `${mbTexto(MAX_ARCHIVO_BYTES)}.`,
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
     const pesoTotal = this.candidatos.reduce(
       (total, c) => total + c.cv.size + c.anexos.reduce((suma, a) => suma + a.size, 0),
       0,
     );
-    if (pesoTotal > MAX_LONG_LIST_CORREO_BYTES) {
-      const mb = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+    if (pesoTotal > MAX_ARCHIVOS_TOTAL_BYTES) {
       Swal.fire({
         icon: 'warning',
         title: 'Los archivos pesan demasiado',
         text:
-          `Los CVs y anexos suman ${mb(pesoTotal)} y el correo al solicitante admite hasta ` +
-          `${mb(MAX_LONG_LIST_CORREO_BYTES)}. Reduce o quita algún anexo del portafolio.`,
+          `Los CVs y anexos suman ${mbTexto(pesoTotal)} y el envío admite hasta ` +
+          `${mbTexto(MAX_ARCHIVOS_TOTAL_BYTES)}. Quita algún anexo del portafolio o envía la ` +
+          `long list en dos tandas.`,
         confirmButtonColor: '#005D9D',
       });
       return;
@@ -1138,9 +1604,8 @@ export class GthDetalleRequerimiento implements OnInit {
 
   /**
    * true si el formulario se puede rechazar. Además del completado entra el que se envió y el
-   * postulante nunca llenó: rechazarlo es lo que destraba el paso a la programación de entrevistas
-   * cuando alguien no responde. El enlace no se toca — si lo completa después vuelve a aparecer
-   * como «Por revisar».
+   * postulante nunca llenó: es como se descarta a quien no responde. El enlace no se toca — si lo
+   * completa después vuelve a aparecer como «Por revisar».
    */
   formularioRechazable(c: CandidatoAprobado): boolean {
     const estado = c.formulario?.estadoCodigo;
@@ -1190,6 +1655,7 @@ export class GthDetalleRequerimiento implements OnInit {
     this.decidiendoFormulario[c.candidatoId] = false;
     if (res) {
       c.formulario = res.resumen;
+      this.abrirMultitestSiFalta(c);
       this.huboCambios = true;
 
       // En un ingreso directo FFT, aprobar el formulario NO solo cambia el estado del formulario:
@@ -1274,8 +1740,20 @@ export class GthDetalleRequerimiento implements OnInit {
   /** Al aprobar/rechazar desde el modal, refresca el estado del formulario del candidato. */
   onFormularioCambios(resumen: CandidatoFormularioResumen): void {
     const c = this.detalle?.candidatosAprobados.find((x) => x.candidatoId === this.formularioCandidatoId);
-    if (c) c.formulario = resumen;
+    if (c) {
+      c.formulario = resumen;
+      this.abrirMultitestSiFalta(c);
+    }
     this.huboCambios = true;
+  }
+
+  /**
+   * Con el proceso ya en entrevistas, al candidato recién aprobado solo le falta el Multitest para
+   * sumarse a ellas: esa sección se abre aunque hubiera quedado plegada.
+   */
+  private abrirMultitestSiFalta(c: CandidatoAprobado): void {
+    const aprobado = c.formulario?.estadoCodigo === 'APROBADO';
+    if (aprobado && !c.multitestRealizado && this.sumaCandidatosTarde) this.seccionMultitest = true;
   }
 
   // ── Control informativo del Multitest ───────────────────────────────────
@@ -1302,60 +1780,88 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
-   * true si tienen el Multitest marcado todos los candidatos a los que se les exige. Al que se le
-   * rechazó el formulario ya no se le va a entrevistar, así que pedirle el check dejaba trabado el
-   * paso a entrevistas por una prueba que ese postulante nunca va a rendir. El backend revalida
-   * lo mismo.
+   * true si el candidato ya puede pasar a la programación de entrevistas: formulario del
+   * postulante aprobado y Multitest marcado. Es por candidato y no de la long list entera: los que
+   * están listos no esperan a los que todavía no responden, y los que se quedan atrás se suman
+   * cuando lo cumplen. El backend revalida lo mismo al continuar y al programar la cita.
    */
-  get multitestCompleto(): boolean {
-    const candidatos = this.candidatosConMultitest;
-    return candidatos.length > 0 && candidatos.every((c) => c.multitestRealizado);
-  }
-
-  /** Candidatos a los que sí se les pide el Multitest (los que siguen en carrera). */
-  get candidatosConMultitest(): CandidatoAprobado[] {
-    return (this.detalle?.candidatosAprobados ?? []).filter((c) => !this.formularioRechazado(c));
-  }
-
-  /** true si ningún candidato quedó con el formulario pendiente (todos aprobados o rechazados). */
-  get formulariosDecididos(): boolean {
-    const candidatos = this.detalle?.candidatosAprobados ?? [];
+  private listoParaEntrevista(c: CandidatoAprobado): boolean {
     return (
-      candidatos.length > 0 &&
-      candidatos.every(
-        (c) => c.formulario?.estadoCodigo === 'APROBADO' || c.formulario?.estadoCodigo === 'RECHAZADO',
-      )
-    );
-  }
-
-  /** true si al menos un formulario del postulante quedó aprobado (habría a quién entrevistar). */
-  get hayFormularioAprobado(): boolean {
-    return (this.detalle?.candidatosAprobados ?? []).some(
-      (c) => c.formulario?.estadoCodigo === 'APROBADO',
+      c.formulario?.estadoCodigo === 'APROBADO' && c.multitestRealizado && !this.resultadoCerrado(c)
     );
   }
 
   /**
-   * Requisitos para pasar a entrevistas: Multitest marcado en todos los candidatos, todos los
-   * formularios ya revisados (aprobados o rechazados, ninguno pendiente de completar) y al menos
-   * uno aprobado. El backend revalida lo mismo.
+   * true si la participación del candidato ya se cerró (ver `RESULTADOS_CERRADOS`). Tras retomar a
+   * otro después de un EMO No Apto, estos siguen en la lista con su formulario y su Multitest, pero
+   * ya no cuentan para continuar.
    */
-  get puedeContinuarAEntrevistas(): boolean {
-    return (
-      this.multitestCompleto && this.formulariosDecididos && this.hayFormularioAprobado && !this.continuando
+  private resultadoCerrado(c: CandidatoAprobado): boolean {
+    return RESULTADOS_CERRADOS.includes(c.evaluacion?.resultadoCodigo ?? '');
+  }
+
+  /** Candidatos que siguen en carrera: ni con el formulario rechazado ni con su resultado cerrado. */
+  private get candidatosEnCarrera(): CandidatoAprobado[] {
+    return (this.detalle?.candidatosAprobados ?? []).filter(
+      (c) => !this.formularioRechazado(c) && !this.resultadoCerrado(c),
     );
   }
 
-  /** Qué falta para habilitar el paso a entrevistas (hint bajo el botón). Vacío si ya se puede. */
+  /** Candidatos que ya pueden pasar a entrevistas. */
+  private get candidatosListos(): CandidatoAprobado[] {
+    return (this.detalle?.candidatosAprobados ?? []).filter((c) => this.listoParaEntrevista(c));
+  }
+
+  /** Con un candidato listo ya se puede pasar a entrevistas. El backend revalida lo mismo. */
+  get puedeContinuarAEntrevistas(): boolean {
+    return this.candidatosListos.length > 0 && !this.continuando;
+  }
+
+  /**
+   * Línea bajo el botón de continuar: con el botón apagado, qué falta; encendido, cuántos
+   * continúan cuando no son todos. Vacío si no hay nada que decir.
+   */
   get requisitosContinuarTexto(): string {
-    if (this.puedeContinuarAEntrevistas) return '';
-    // El "ninguno quedó aprobado" espera a que todos los formularios estén decididos: con alguno
-    // aún pendiente de revisar no hay nada que avisar, y decirlo antes acusaría en falso.
-    if (this.formulariosDecididos && !this.hayFormularioAprobado)
-      return 'Ningún formulario quedó aprobado: no hay candidatos a quienes entrevistar.';
-    if (!this.multitestCompleto)
-      return 'Marca el Multitest de los candidatos que siguen en el proceso para continuar.';
-    return '';
+    const listos = this.candidatosListos.length;
+    const enCarrera = this.candidatosEnCarrera;
+    if (listos > 0)
+      return listos < enCarrera.length
+        ? `Continúan ${listos} de ${enCarrera.length} candidatos; el resto puede sumarse después.`
+        : '';
+    if (enCarrera.length === 0) return 'No quedan candidatos en carrera a quienes entrevistar.';
+    return enCarrera.some((c) => c.formulario?.estadoCodigo === 'APROBADO')
+      ? 'Falta el Multitest de los candidatos con el formulario aprobado.'
+      : 'Aún no hay formularios aprobados.';
+  }
+
+  /**
+   * true mientras el proceso todavía puede sumar a los candidatos que se quedaron atrás en el
+   * formulario o el Multitest: desde que pasa a entrevistas hasta que el área elige a alguien.
+   */
+  private get sumaCandidatosTarde(): boolean {
+    const codigo = this.detalle?.estadoCodigo;
+    return codigo === 'ENTREVISTAS' || codigo === 'SELECCION_JEFATURA';
+  }
+
+  /**
+   * Candidatos en carrera que todavía no tienen el formulario aprobado (sin enviar, esperando al
+   * postulante o por revisar) cuando el proceso ya pasó a entrevistas. 0 antes de eso: ahí la
+   * sección está abierta y cada ficha dice lo suyo.
+   */
+  get pendientesFormulario(): number {
+    if (!this.sumaCandidatosTarde) return 0;
+    return this.candidatosEnCarrera.filter((c) => c.formulario?.estadoCodigo !== 'APROBADO').length;
+  }
+
+  /**
+   * Candidatos con el formulario aprobado a los que solo les falta el Multitest para aparecer en la
+   * programación de entrevistas, cuando el proceso ya pasó a esa fase.
+   */
+  private get multitestPendientes(): number {
+    if (!this.sumaCandidatosTarde) return 0;
+    return this.candidatosEnCarrera.filter(
+      (c) => c.formulario?.estadoCodigo === 'APROBADO' && !c.multitestRealizado && !c.entrevista,
+    ).length;
   }
 
   /** Avanza el requerimiento a la fase ENTREVISTAS y muestra la sección de programación. */
@@ -1390,14 +1896,22 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   // ── Programación de entrevistas ─────────────────────────────────────────
-  /** Candidatos a entrevistar: los que tienen el formulario del postulante aprobado. */
+  /**
+   * Candidatos a entrevistar: formulario del postulante aprobado y Multitest marcado. Los que se
+   * quedaron atrás aparecen acá solos en cuanto lo cumplen, aunque el proceso ya esté en la
+   * decisión del área. Al que ya tiene cita no se le vuelve a pedir el Multitest: su entrevista
+   * existe igual.
+   */
   get candidatosParaEntrevista(): CandidatoAprobado[] {
     return (this.detalle?.candidatosAprobados ?? []).filter(
-      (c) => c.formulario?.estadoCodigo === 'APROBADO',
+      (c) => c.formulario?.estadoCodigo === 'APROBADO' && (c.multitestRealizado || !!c.entrevista),
     );
   }
 
-  /** Fecha de hoy en `YYYY-MM-DD`: no se cita a un candidato en una fecha pasada. */
+  /**
+   * Fecha de hoy en `YYYY-MM-DD`. La usan la citación a entrevista (no se cita en una fecha pasada)
+   * y el plazo de aceptación de la carta oferta (no se ofrece un plazo ya vencido).
+   */
   get hoyIso(): string {
     const hoy = new Date();
     const mes = `${hoy.getMonth() + 1}`.padStart(2, '0');
@@ -1545,9 +2059,9 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
-   * Toma el archivo elegido para ese documento. Se valida el peso acá además del backend: los dos
-   * viajan adjuntos en el correo al solicitante y el proveedor rechaza el mensaje completo si se
-   * pasa, así que conviene avisarlo antes de subir nada.
+   * Toma el archivo elegido para ese documento. Se valida el peso acá además del backend para
+   * avisarlo antes de subir nada: los archivos se guardan en SharePoint y el correo al
+   * solicitante los enlaza, así que el tope es el de la subida y no el del correo.
    */
   onArchivoEvaluacion(event: Event, c: CandidatoAprobado, codigo: string): void {
     const input = event.target as HTMLInputElement;
@@ -1562,11 +2076,23 @@ export class GthDetalleRequerimiento implements OnInit {
       .filter(([k, f]) => k !== codigo && !!f)
       .reduce((total, [, f]) => total + (f as File).size, 0);
 
-    if (otros + file.size > MAX_LONG_LIST_CORREO_BYTES) {
+    if (file.size > MAX_ARCHIVO_BYTES) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'El archivo pesa demasiado',
+        text:
+          `«${file.name}» pesa ${mbTexto(file.size)} y el máximo por archivo es ` +
+          `${mbTexto(MAX_ARCHIVO_BYTES)}.`,
+        confirmButtonColor: '#005D9D',
+      });
+      return;
+    }
+
+    if (otros + file.size > MAX_ARCHIVOS_TOTAL_BYTES) {
       Swal.fire({
         icon: 'warning',
         title: 'Archivos demasiado pesados',
-        text: `Los archivos del informe no pueden superar los ${(MAX_LONG_LIST_CORREO_BYTES / 1024 / 1024).toFixed(1)} MB en total.`,
+        text: `Los archivos del informe no pueden superar los ${mbTexto(MAX_ARCHIVOS_TOTAL_BYTES)} en total.`,
         confirmButtonColor: '#005D9D',
       });
       return;

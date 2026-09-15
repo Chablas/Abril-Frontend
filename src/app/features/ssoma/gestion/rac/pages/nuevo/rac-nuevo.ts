@@ -11,7 +11,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { catchError, forkJoin, of } from 'rxjs';
 import Swal from 'sweetalert2';
 import { RacService } from '../../services/rac.service';
-import { RacCategoriaDto, RacCreateRequest, RacInfraccionDto } from '../../dtos/rac.dtos';
+import { RacCategoriaDto, RacCreateRequest } from '../../dtos/rac.dtos';
 import { CatalogosSaludService } from '../../../../salud-ocupacional/services/catalogos-salud.service';
 import { EmpresaSimpleDto } from '../../../../salud-ocupacional/dtos/catalogos.model';
 import { ProjectService } from '../../../../../../core/services/project.service';
@@ -48,7 +48,6 @@ export class RacNuevo implements OnInit {
   proyectoPiso = '';
   lugarDescripcion = '';
   descripcion = '';
-  descripcionOcurrido = '';
 
   // Observador (reportante) — fijo, resuelto desde el usuario logueado (no editable)
   esAnonimoReportante = false;
@@ -79,13 +78,8 @@ export class RacNuevo implements OnInit {
   planAccion = '';
   plazoLevantamiento = '';
 
-  // Penalidad
-  aplicaPenalidad = false;
-  infraccionId: number | null = null;
-
   // Catálogos
   categorias: RacCategoriaDto[] = [];
-  infracciones: RacInfraccionDto[] = [];
   empresas: EmpresaSimpleDto[] = [];
   proyectos: ProjectGetDTO[] = [];
 
@@ -120,15 +114,13 @@ export class RacNuevo implements OnInit {
   private loadCatalogos(): void {
     forkJoin({
       categorias: this.racService.getCategorias(),
-      infracciones: this.racService.getInfracciones(),
       empresas: this.catalogosSalud.getEmpresas(),
       proyectos: this.projectService.getProjectsPaged({ pageSize: 200, estado: 'ACTIVO' }),
       workers: this.trabajadorHabService.getTrabajadores({ pageSize: 9999, soloVerificacion: true }),
     }).subscribe({
-      next: ({ categorias, infracciones, empresas, proyectos, workers }) => {
+      next: ({ categorias, empresas, proyectos, workers }) => {
         this.categorias = categorias;
         this.workers = workers.data;
-        this.infracciones = infracciones;
         this.empresas = empresas;
         this.proyectos = proyectos.data;
         this.loadingCatalogos = false;
@@ -261,12 +253,9 @@ export class RacNuevo implements OnInit {
       proyectoPiso: this.proyectoPiso || undefined,
       lugarDescripcion: this.lugarDescripcion || undefined,
       descripcion: this.descripcion,
-      descripcionOcurrido: this.descripcionOcurrido || undefined,
       planAccion: this.planAccion || undefined,
       fechaReporte: this.fechaReporte,
       plazoLevantamiento: this.plazoLevantamiento || undefined,
-      aplicaPenalidad: this.aplicaPenalidad,
-      infraccionId: this.aplicaPenalidad && this.infraccionId ? this.infraccionId : undefined,
     };
 
     this.saving = true;

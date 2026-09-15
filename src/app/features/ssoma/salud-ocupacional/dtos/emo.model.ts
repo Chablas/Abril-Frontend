@@ -291,12 +291,8 @@ export interface WorkerUpsertDto {
    * cambiarle la categoría al puesto desde Configuración → Categorías y Puestos.
    */
   puestoId?: number | null;
-  /**
-   * Nodo del árbol de áreas elegido (workers.area_scope_id). Cuando se manda, es la fuente de
-   * verdad del área: el backend deriva de él `area`/`subarea`/`jefatura` e ignora lo que llegue
-   * en esos tres campos.
-   */
-  areaScopeId?: number | null;
+  // El área NO se manda: el backend la saca del puesto (`puesto.areaDestinoScopeId`) y de ahí
+  // deriva `area`/`subarea`/`jefatura` cuando llegan en null. Mandar el puesto es mandar el área.
   area?: string | null;
   subarea?: string | null;
   contrataCasa?: string | null;

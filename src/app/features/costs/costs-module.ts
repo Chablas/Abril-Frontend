@@ -80,6 +80,12 @@ const routes: Routes = [
             canActivate: [roleGuard],
             data: { titulo: 'CONFIGURACIÓN DE COSTOS', featureKey: 'costs.config.costos-presupuestos-email', seccion: 'costos-presupuestos-email' },
           },
+          {
+            path: 'pasos',
+            component: CostsConfiguration,
+            canActivate: [roleGuard],
+            data: { titulo: 'CONFIGURACIÓN DE COSTOS', featureKey: 'costs.config.pasos', seccion: 'pasos' },
+          },
         ],
       },
     ],

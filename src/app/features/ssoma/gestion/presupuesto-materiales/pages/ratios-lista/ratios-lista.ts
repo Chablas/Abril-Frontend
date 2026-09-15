@@ -2,8 +2,8 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
 import { PresupuestoMaterialesService } from '../../presupuesto.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -11,7 +11,6 @@ import {
   FamiliaConRatioDto,
   RatioFamiliaComparacionDto,
   RatioProyectoItemDto,
-  ResumenRatiosDto,
   TipoDriverRatio,
   RatioDriverComparacionDto,
   RatioDriverProyectoDto,
@@ -28,7 +27,7 @@ import { SearchSelect } from '../../../../../../shared/components/search-select/
   selector: 'app-ratios-lista',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, SearchInput, SearchSelect],
+  imports: [CommonModule, FormsModule, AbrilPageHeaderComponent, FilterTriggerButton, FilterModal, SearchInput, SearchSelect],
   templateUrl: './ratios-lista.html',
   styleUrl: './ratios-lista.css',
 })
@@ -38,7 +37,6 @@ export class RatiosListaPage implements OnInit {
   private loader = inject(LoaderService);
   private error = inject(ErrorService);
   private cdr = inject(ChangeDetectorRef);
-  private router = inject(Router);
 
   familias: FamiliaConRatioDto[] = [];
   loading = false;
@@ -65,34 +63,88 @@ export class RatiosListaPage implements OnInit {
   detalles: Map<number, RatioFamiliaComparacionDto> = new Map();
   cargandoDetalleIds: Set<number> = new Set();
   actualizandoProjectId: number | null = null;
+  desactivandoFamiliaId: number | null = null;
+  calculandoTodos = false;
 
-  // ── Resumen general ────────────────────────────────────────────────
-  resumen: ResumenRatiosDto | null = null;
-  loadingResumen = false;
-
-  // ── Ratios de dotación (HH / N Trabajadores por m2) ─────────────────
+  // ── Ratios de dotación (HH / N Trabajadores / Staff por m2) ─────────────────
   hhComparacion: RatioDriverComparacionDto | null = null;
   trabajadoresComparacion: RatioDriverComparacionDto | null = null;
+  staffCascoComparacion: RatioDriverComparacionDto | null = null;
+  staffOrejeraComparacion: RatioDriverComparacionDto | null = null;
   loadingDrivers = false;
   calculandoDrivers = false;
   actualizandoDriverProjectId: number | null = null;
 
+  /** Ratios de Materiales (por família) y Ratios de Dotación (HH/Trabajadores) son dos mesas de
+   * trabajo distintas — separadas en sub-tabs en vez de una encima de la otra en scroll. */
+  vistaRatios: 'materiales' | 'dotacion' = 'materiales';
+
+  cambiarVistaRatios(v: 'materiales' | 'dotacion'): void {
+    this.vistaRatios = v;
+    this.cdr.markForCheck();
+  }
+
   ngOnInit(): void {
     this.load();
-    this.loadResumen();
     this.loadDrivers();
   }
 
   loadDrivers(): void {
     this.loadingDrivers = true;
     this.cdr.markForCheck();
+    this.refrescarDriversSilencioso(() => { this.loadingDrivers = false; this.cdr.markForCheck(); });
+  }
+
+  /** Igual que loadDrivers(), pero sin tocar `loadingDrivers` — usado tras tildar "Incluir" o
+   * cambiar la fuente de un proyecto. loadDrivers() oculta toda la grilla (*ngIf="!loadingDrivers")
+   * mientras recarga, lo que la destruye y la vuelve a montar de cero: eso le hacía perder al
+   * navegador la posición de scroll justo donde el usuario estaba trabajando fila por fila. Acá la
+   * grilla nunca se desmonta — solo se reasignan los datos de cada tarjeta cuando llegan. */
+  private refrescarDriversSilencioso(onHhDone?: () => void): void {
     this.svc.getComparacionDriver('HH').subscribe({
-      next: (d) => { this.hhComparacion = d; this.loadingDrivers = false; this.cdr.markForCheck(); },
-      error: () => { this.loadingDrivers = false; this.cdr.markForCheck(); },
+      next: (d) => { this.hhComparacion = d; onHhDone?.(); this.cdr.markForCheck(); },
+      error: () => { onHhDone?.(); this.cdr.markForCheck(); },
     });
     this.svc.getComparacionDriver('TRABAJADORES').subscribe({
       next: (d) => { this.trabajadoresComparacion = d; this.cdr.markForCheck(); },
       error: () => {},
+    });
+    this.svc.getComparacionDriver('STAFF_CASCO').subscribe({
+      next: (d) => { this.staffCascoComparacion = d; this.cdr.markForCheck(); },
+      error: () => {},
+    });
+    this.svc.getComparacionDriver('STAFF_OREJERA').subscribe({
+      next: (d) => { this.staffOrejeraComparacion = d; this.cdr.markForCheck(); },
+      error: () => {},
+    });
+  }
+
+  /** Calcula ratios de TODOS los proyectos con consumo SSOMA estandarizado de una sola vez — evita
+   * tener que entrar a la ficha de cada proyecto y darle "Calcular ratios" uno por uno. Duplicado
+   * a propósito en Ratios y en Gasto SSOMA — es el mismo cálculo, dos puntos de entrada. */
+  calcularTodosLosRatios(): void {
+    if (this.calculandoTodos) return;
+    this.calculandoTodos = true;
+    this.loader.show();
+    this.svc.calcularRatiosTodos().subscribe({
+      next: (res) => {
+        this.calculandoTodos = false;
+        this.loader.hide();
+        const conAdvertencias = res.proyectos.filter((p) => p.advertencias.length > 0).length;
+        Swal.fire({
+          icon: 'success',
+          title: 'Ratios calculados',
+          text: `${res.totalProyectosProcesados} proyecto(s) procesados.` +
+            (conAdvertencias > 0 ? ` ${conAdvertencias} con alguna advertencia (revisa la consola/detalle).` : ''),
+        });
+        this.load();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.calculandoTodos = false;
+        this.loader.hide();
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
     });
   }
 
@@ -127,7 +179,26 @@ export class RatiosListaPage implements OnInit {
     this.svc.actualizarIncluidoManualDriver(tipo, p.projectId, !p.incluidoManual).subscribe({
       next: () => {
         this.actualizandoDriverProjectId = null;
-        this.loadDrivers();
+        this.refrescarDriversSilencioso();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.actualizandoDriverProjectId = null;
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  /** El responsable elige, por proyecto, cuál de los 3 valores usar (o "Ninguno" para excluirlo). */
+  cambiarFuenteDriver(tipo: TipoDriverRatio, p: RatioDriverProyectoDto, fuente: string): void {
+    if (this.actualizandoDriverProjectId === p.projectId) return;
+    const valor = fuente === '' ? null : fuente;
+    this.actualizandoDriverProjectId = p.projectId;
+    this.cdr.markForCheck();
+    this.svc.actualizarFuenteCantidadDriver(tipo, p.projectId, valor).subscribe({
+      next: () => {
+        this.actualizandoDriverProjectId = null;
+        this.refrescarDriversSilencioso();
       },
       error: (err: HttpErrorResponse) => {
         this.actualizandoDriverProjectId = null;
@@ -138,28 +209,53 @@ export class RatiosListaPage implements OnInit {
   }
 
   driverTipoLabel(tipo: TipoDriverRatio): string {
-    return tipo === 'HH'
-      ? 'Horas-Hombre por m² de área techada (desde Tareo real)'
-      : 'Trabajadores distintos por m² de área techada (total que pasó por la obra)';
+    switch (tipo) {
+      case 'HH': return 'Horas-Hombre por m² de área techada (desde Tareo real)';
+      case 'TRABAJADORES': return 'Trabajadores distintos por m² de área techada (total que pasó por la obra)';
+      case 'STAFF_CASCO': return 'Staff por m² — señal: casco blanco/ingeniero consumido';
+      case 'STAFF_OREJERA': return 'Staff por m² — señal: orejera 3M consumida';
+    }
   }
 
-  loadResumen(): void {
-    this.loadingResumen = true;
-    this.svc.getResumenRatios().subscribe({
-      next: (r) => {
-        this.resumen = r;
-        this.loadingResumen = false;
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.loadingResumen = false;
-        this.cdr.markForCheck();
-      },
+  /** Trabajadores/Staff son enteros (no se cuentan medias personas/medios EPP); HH admite decimales. */
+  formatoCantidad(tipo: TipoDriverRatio): string {
+    return tipo === 'HH' ? '1.0-2' : '1.0-0';
+  }
+
+  // ── Orden de la tabla de Ratios de dotación: cada panel (HH / Trabajadores / Staff) ordena
+  // aparte, así el responsable puede comparar por la columna que le interese antes de marcar
+  // "Incluir". ──
+  private driverSortState: Record<TipoDriverRatio, { col: string; dir: 'asc' | 'desc' }> = {
+    HH: { col: 'ratio', dir: 'asc' },
+    TRABAJADORES: { col: 'ratio', dir: 'asc' },
+    STAFF_CASCO: { col: 'ratio', dir: 'asc' },
+    STAFF_OREJERA: { col: 'ratio', dir: 'asc' },
+  };
+
+  driverSortCol(tipo: TipoDriverRatio): string { return this.driverSortState[tipo].col; }
+  driverSortDir(tipo: TipoDriverRatio): 'asc' | 'desc' { return this.driverSortState[tipo].dir; }
+
+  trackByProjectId(_index: number, p: RatioDriverProyectoDto): number { return p.projectId; }
+
+  ordenarDriver(tipo: TipoDriverRatio, col: string): void {
+    const estado = this.driverSortState[tipo];
+    estado.dir = estado.col === col && estado.dir === 'asc' ? 'desc' : 'asc';
+    estado.col = col;
+    this.cdr.markForCheck();
+  }
+
+  proyectosOrdenados(d: RatioDriverComparacionDto): RatioDriverProyectoDto[] {
+    const { col, dir } = this.driverSortState[d.tipoDriver];
+    const factor = dir === 'asc' ? 1 : -1;
+    return [...d.proyectos].sort((a, b) => {
+      const va = (a as any)[col];
+      const vb = (b as any)[col];
+      if (va === null || va === undefined) return vb === null || vb === undefined ? 0 : 1;
+      if (vb === null || vb === undefined) return -1;
+      if (typeof va === 'string') return va.localeCompare(vb) * factor;
+      if (typeof va === 'boolean') return (Number(va) - Number(vb)) * factor;
+      return (va - vb) * factor;
     });
-  }
-
-  irAProyecto(projectId: number): void {
-    this.router.navigate(['/ssoma/gestion/presupuesto-materiales/proyecto', projectId]);
   }
 
   load(): void {
@@ -187,8 +283,20 @@ export class RatiosListaPage implements OnInit {
     return Array.from(new Set(this.familias.map((f) => f.tipoMaterial))).sort();
   }
 
+  /** Valor sintético del filtro Tipo para el panel de Ratios de dotación (HH/Trabajadores) — no
+   * es un Tipo real de familia, así que se agrega a mano a las opciones del filtro. */
+  readonly TIPO_DOTACION = '__DOTACION__';
+
   get tiposFilterOptions(): { value: string; label: string }[] {
-    return this.tiposDisponibles.map((t) => ({ value: t, label: t }));
+    return [
+      { value: this.TIPO_DOTACION, label: 'Ratios de dotación (HH / Trabajadores)' },
+      ...this.tiposDisponibles.map((t) => ({ value: t, label: t })),
+    ];
+  }
+
+  /** El panel de dotación se ve cuando no hay filtro de Tipo, o cuando se elige explícitamente. */
+  get mostrarDotacion(): boolean {
+    return !this.tipoSeleccionado || this.tipoSeleccionado === this.TIPO_DOTACION;
   }
 
   get variableBasesFilterOptions(): { value: string; label: string }[] {
@@ -197,6 +305,26 @@ export class RatiosListaPage implements OnInit {
 
   get variableBasesDisponibles(): string[] {
     return Array.from(new Set(this.familias.map((f) => f.variableBase))).sort();
+  }
+
+  /** Agrupa las tarjetas por Tipo (Botiquín, EPC, EPP, etc.) para navegar más intuitivo — no
+   * reordena nada, el backend ya entrega las familias ordenadas por Tipo. */
+  get gruposPorTipo(): { tipo: string; familias: FamiliaConRatioDto[] }[] {
+    const grupos: { tipo: string; familias: FamiliaConRatioDto[] }[] = [];
+    for (const f of this.familiasFiltradas) {
+      const ultimo = grupos[grupos.length - 1];
+      if (ultimo && ultimo.tipo === f.tipoMaterial) ultimo.familias.push(f);
+      else grupos.push({ tipo: f.tipoMaterial, familias: [f] });
+    }
+    return grupos;
+  }
+
+  trackByTipo(_index: number, grupo: { tipo: string }): string {
+    return grupo.tipo;
+  }
+
+  trackByFamiliaId(_index: number, f: FamiliaConRatioDto): number {
+    return f.familiaId;
   }
 
   get familiasFiltradas(): FamiliaConRatioDto[] {
@@ -271,6 +399,36 @@ export class RatiosListaPage implements OnInit {
         this.error.handleError(err);
         this.cdr.markForCheck();
       },
+    });
+  }
+
+  /** Desactiva una familia (mismo flag "Activo" de Catálogo) desde su propia tarjeta de Ratios —
+   * la saca del cálculo/presupuesto de proyectos nuevos sin borrar su histórico. Pide confirmación
+   * porque afecta a todos los proyectos futuros, no solo al que se está revisando. */
+  desactivarFamilia(f: FamiliaConRatioDto): void {
+    Swal.fire({
+      icon: 'question',
+      title: `¿Desactivar "${f.nombreFamilia}"?`,
+      text: 'Deja de considerarse en el ratio y el presupuesto de proyectos nuevos. El histórico ya calculado no se toca. Puedes reactivarla luego desde Catálogo.',
+      showCancelButton: true,
+      confirmButtonText: 'Desactivar',
+      cancelButtonText: 'Cancelar',
+    }).then((r) => {
+      if (!r.isConfirmed) return;
+      this.desactivandoFamiliaId = f.familiaId;
+      this.cdr.markForCheck();
+      this.svc.actualizarActivoFamilia(f.familiaId, false).subscribe({
+        next: () => {
+          this.desactivandoFamiliaId = null;
+          this.familias = this.familias.filter((fam) => fam.familiaId !== f.familiaId);
+          this.cdr.markForCheck();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.desactivandoFamiliaId = null;
+          this.error.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
     });
   }
 

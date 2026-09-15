@@ -9,6 +9,7 @@ import {
   SsItemTrabajadorDto,
   SubareaCatDto,
   ObraOficinaStaffDto,
+  PuestoCatDto,
   TipoEquipoDto,
   TipoEquipoAdminDto,
   ItemEquipoAdminDto,
@@ -24,7 +25,7 @@ export class CatalogosHabService {
   private areas$?: Observable<AreaCatDto[]>;
   private areaArbol$?: Observable<AreaArbolNodoDto[]>;
   private categorias$?: Observable<{ id: number; nombre: string }[]>;
-  private puestos$?: Observable<{ id: number; nombre: string; categoriaId: number }[]>;
+  private puestos$?: Observable<PuestoCatDto[]>;
   private obraOficinaStaff$?: Observable<ObraOficinaStaffDto[]>;
   private jefes$?: Observable<JefeCandidatoDto[]>;
   private tiposEquipo$?: Observable<TipoEquipoDto[]>;
@@ -64,10 +65,24 @@ export class CatalogosHabService {
 
   /**
    * Árbol de áreas para los desplegables de área del formulario de trabajadores, con la
-   * equivalencia legacy y el revisor ya resueltos por nodo. Una sola petición cubre toda la
+   * equivalencia legacy y el revisor ya elegido por nodo. Una sola petición cubre toda la
    * cascada y el campo de revisor (reemplaza a getAreas + getSubareas en ese formulario).
+   *
+   * Con `workerId` el revisor viene descartando a ese trabajador de sus propios candidatos
+   * ("nadie es su propio jefe"), así que la respuesta es distinta para cada uno y NO se cachea;
+   * sin él la respuesta sirve para toda la pantalla y se comparte, que es lo que necesitan las
+   * pantallas que solo usan el árbol para filtrar.
    */
-  getAreaArbol(): Observable<AreaArbolNodoDto[]> {
+  getAreaArbol(workerId?: number | null): Observable<AreaArbolNodoDto[]> {
+    if (workerId != null) {
+      return this.http
+        .get<AreaArbolNodoDto[]>(`${this.base}/areas-arbol`, {
+          headers: buildHabHeaders(),
+          params: { workerId },
+        })
+        .pipe(catchError(() => of([])));
+    }
+
     if (!this.areaArbol$) {
       this.areaArbol$ = this.http
         .get<AreaArbolNodoDto[]>(`${this.base}/areas-arbol`, { headers: buildHabHeaders() })
@@ -90,12 +105,13 @@ export class CatalogosHabService {
   /**
    * Catálogo único de puestos. Reemplaza a getOcupaciones(): la ocupación dejó de
    * existir como campo aparte y su data se fusionó acá. Cada puesto trae su
-   * `categoriaId` (obligatoria) para poder filtrar el desplegable sin volver al servidor.
+   * `categoriaId` (obligatoria) y su `areaDestinoScopeId` para que el formulario pueda
+   * filtrar el desplegable y derivar el área del trabajador sin volver al servidor.
    */
-  getPuestos(): Observable<{ id: number; nombre: string; categoriaId: number }[]> {
+  getPuestos(): Observable<PuestoCatDto[]> {
     if (!this.puestos$) {
       this.puestos$ = this.http
-        .get<{ id: number; nombre: string; categoriaId: number }[]>(`${this.base}/puestos`, {
+        .get<PuestoCatDto[]>(`${this.base}/puestos`, {
           headers: buildHabHeaders(),
         })
         .pipe(shareReplay(1), catchError(() => of([])));

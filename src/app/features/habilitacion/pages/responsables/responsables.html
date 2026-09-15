@@ -90,7 +90,7 @@
         <thead>
           <tr>
             <th>Proyecto</th>
-            <th>Residente</th>
+            <th *ngFor="let c of camposWorker">{{ c.label }}</th>
             <th *ngFor="let c of camposProyecto">{{ c.label }}</th>
             <th class="text-right">Acción</th>
           </tr>
@@ -98,28 +98,25 @@
         <tbody>
           <tr *ngFor="let row of pagedProyectos">
             <td class="font-medium">{{ row.projectDescription | titleCase }}</td>
-            <td>
+            <td *ngFor="let c of camposWorker">
               <div class="flex flex-col gap-[4px] min-w-[220px]">
                 <app-search-select
                   [options]="trabajadorOptions()"
                   valueField="workerId"
                   displayField="nombreCompleto"
-                  [value]="pendingProyectoResidenteFor(row.projectId)"
-                  placeholder="Buscar por nombre o DNI..."
-                  (valueChange)="setPendingProyectoResidente(row.projectId, $event)">
+                  [value]="pendingProyectoWorkerFkFor(row.projectId, c.campo)"
+                  placeholder="Buscar por nombre..."
+                  (valueChange)="setPendingProyectoWorkerFk(row.projectId, c.campo, $event)">
                 </app-search-select>
                 <div class="flex items-center justify-between gap-[8px]">
-                  <span class="text-[11px] text-gray-500" *ngIf="residenteEmailProyecto(row); else sinResidenteProy">
-                    {{ residenteEmailProyecto(row) }}
+                  <span class="text-[11px]" [ngClass]="workerFkEmail(row, c) ? 'text-gray-500' : 'text-amber-600'">
+                    {{ workerFkEmail(row, c) ?? c.vacio }}
                   </span>
-                  <ng-template #sinResidenteProy>
-                    <span class="text-[11px] text-amber-600">Sin residente asignado.</span>
-                  </ng-template>
                   <button
                     type="button"
                     class="text-[11px] text-gray-400 hover:text-gray-600 underline shrink-0"
-                    *ngIf="pendingProyectoResidenteFor(row.projectId) !== campoLimpiar"
-                    (click)="limpiarPendingProyectoResidente(row.projectId)">
+                    *ngIf="pendingProyectoWorkerFkFor(row.projectId, c.campo) !== campoLimpiar"
+                    (click)="limpiarPendingProyectoWorkerFk(row.projectId, c.campo)">
                     Quitar
                   </button>
                 </div>
@@ -163,7 +160,7 @@
             </td>
           </tr>
           <tr *ngIf="!loading && filteredProyectos.length === 0">
-            <td [attr.colspan]="camposProyecto.length + 3" class="text-center py-[24px] text-gray-400 text-sm">Sin proyectos.</td>
+            <td [attr.colspan]="camposProyecto.length + camposWorker.length + 2" class="text-center py-[24px] text-gray-400 text-sm">Sin proyectos.</td>
           </tr>
         </tbody>
       </table>

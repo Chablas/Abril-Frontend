@@ -1,12 +1,22 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: #ffffff;
+}
+
 .cl-wrap {
   padding: 16px;
-  max-width: 1200px;
+  max-width: none;
+  background: #ffffff;
 }
 
 /* ── Toolbar ────────────────────────────────────────────────────────── */
 .cl-toolbar {
   display: flex;
   align-items: flex-end;
+  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -43,9 +53,13 @@
 .cl-btn-refresh:hover { border-color: #1e3a5f; color: #1e3a5f; }
 
 /* ── Cards grid ─────────────────────────────────────────────────────── */
+/* auto-fit (no auto-fill): con pocas tarjetas, auto-fill deja columnas
+   "fantasma" vacías y el 1fr no se reparte — las tarjetas quedan angostas con
+   un vacío enorme a la derecha. auto-fit colapsa las columnas vacías y deja
+   que las tarjetas reales se repartan todo el ancho disponible. */
 .cl-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 14px;
   margin-bottom: 28px;
 }
@@ -113,6 +127,62 @@
 .estado-completado { background: #dcfce7; color: #15803d; }
 .estado-en-progreso { background: #fef3c7; color: #92400e; }
 .estado-pendiente { background: #f3f4f6; color: #6b7280; }
+.estado-no-aplica { background: #f3f4f6; color: #9ca3af; }
+
+/* ── "No aplica" ────────────────────────────────────────────────────── */
+.cl-card--no-aplica { opacity: 0.85; border-left-color: #9ca3af !important; }
+.cl-no-aplica-motivo {
+  font-size: 12px;
+  color: #6b7280;
+  background: #f9fafb;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin: 0 0 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.cl-btn-no-aplica {
+  margin-top: 8px;
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+.cl-btn-no-aplica:hover { color: #6b7280; }
+.cl-btn-reactivar {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  font-size: 11.5px;
+  cursor: pointer;
+}
+.cl-btn-reactivar:hover { border-color: #1e3a5f; color: #1e3a5f; }
+.cl-no-aplica-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: #374151;
+}
+.cl-no-aplica-banner > div { flex: 1; }
 
 /* ── Sección activar ─────────────────────────────────────────────────── */
 .cl-activar-section {
@@ -130,6 +200,28 @@
   gap: 6px;
 }
 .cl-section-sub { font-size: 13px; color: #6b7280; margin: 0 0 14px; }
+
+/* Obligatorios: encabezado grande, primero en la página, sin ambigüedad de
+   que son lo prioritario. Opcionales: mismo componente pero deliberadamente
+   más chico/gris — sección secundaria, no al mismo nivel. */
+.cl-section-title--principal { font-size: 17px; color: #111827; margin-bottom: 12px; }
+.cl-section-title--principal i { color: #16a34a; }
+.cl-section-title--secundario { font-size: 13px; color: #6b7280; font-weight: 500; }
+.cl-activar-section--secundaria { opacity: 0.92; }
+
+.cl-nota-obligatorio {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 4px 0 12px;
+}
+.cl-nota-obligatorio i { margin-top: 1px; flex-shrink: 0; }
 .cl-btn-secondary {
   display: inline-flex;
   align-items: center;
@@ -144,44 +236,96 @@
   font-weight: 500;
   cursor: pointer;
 }
-.cl-plantillas-list { display: flex; flex-direction: column; gap: 8px; }
-.cl-plantilla-row {
+/* ── Otros checklists disponibles: cards, siempre visible cuál falta activar ── */
+.cl-plantillas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 190px));
+  gap: 10px;
+}
+.cl-plantilla-card {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 6px;
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 10px 14px;
+  border-left: 3px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  transition: border-color 0.15s, background 0.15s;
 }
-.cl-plantilla-info { display: flex; flex-direction: column; gap: 2px; }
-.cl-plantilla-nombre { font-size: 13px; font-weight: 500; color: #111827; }
-.cl-plantilla-items { font-size: 11px; color: #9ca3af; }
+.cl-plantilla-card--activa {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  border-left-color: #16a34a;
+}
+/* Columna, no fila: con nombres largos, ponerlo junto a la pastilla apretaba
+   el texto y lo cortaba raro — así el nombre siempre tiene el ancho completo
+   de la card y la pastilla queda debajo, alineada a la izquierda. */
+.cl-plantilla-card-header { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.cl-plantilla-nombre { font-size: 12px; font-weight: 600; color: #111827; line-height: 1.3; }
+.cl-plantilla-items { font-size: 10.5px; color: #9ca3af; }
 .cl-tag-activa {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font-size: 12px;
+  gap: 3px;
+  font-size: 10px;
   color: #15803d;
   background: #dcfce7;
   border-radius: 999px;
-  padding: 2px 10px;
-  font-weight: 500;
+  padding: 1px 7px;
+  font-weight: 600;
+  white-space: nowrap;
 }
+.cl-tag-inactiva {
+  font-size: 10px;
+  color: #92400e;
+  background: #fef3c7;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+/* Mismo estándar visual que app-fab ("+ Nuevo RAC" y demás "Nuevo X" de la
+   app): píldora verde oscuro, no rectángulo azul — para que todos los
+   botones primarios de acción se vean consistentes en toda la app. */
 .cl-btn-activar {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 32px;
-  padding: 0 14px;
-  background: #1e3a5f;
+  height: 36px;
+  padding: 0 16px;
+  background: #1b3a2d;
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 999px;
   font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
 }
+.cl-btn-activar:hover:not(:disabled) { background: #152e23; transform: scale(1.02); }
 .cl-btn-activar:disabled { opacity: 0.6; cursor: not-allowed; }
+.cl-btn-activar--full { justify-content: center; width: 100%; margin-top: 2px; height: 30px; padding: 0 10px; font-size: 11.5px; }
+
+.cl-btn-desactivar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 28px;
+  margin-top: 2px;
+  background: #fff;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cl-btn-desactivar:hover { background: #fef2f2; }
+.cl-btn-desactivar:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ── Detalle ────────────────────────────────────────────────────────── */
 .cl-detalle { animation: fadeIn 0.15s ease; }
@@ -193,6 +337,19 @@
   margin-bottom: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
+/* Header compacto: todo (volver, título, obligatorio, partida) en una sola
+   franja angosta en vez de 4 bloques apilados — el checklist es lo que
+   importa, no su encabezado. */
+.cl-detalle-header--compact { padding: 10px 16px; margin-bottom: 12px; }
+.cl-detalle-header--compact .cl-btn-back { margin-bottom: 6px; }
+.cl-detalle-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+}
+.cl-section-sub--compact { margin: 4px 0 0; font-size: 12px; }
 .cl-btn-back {
   display: inline-flex;
   align-items: center;
@@ -208,31 +365,36 @@
 }
 .cl-detalle-title-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  gap: 10px;
 }
 .cl-detalle-title { font-size: 18px; font-weight: 700; color: #111827; margin: 0; }
 .cl-detalle-pct-big { font-size: 28px; font-weight: 700; }
 .cl-detalle-progress { margin-top: 4px; }
 
-.cl-items-list { display: flex; flex-direction: column; gap: 6px; }
+/* Grid en vez de columna única: antes cada ítem topaba a 800px y en pantallas
+   anchas dejaba una franja vacía enorme a la derecha (una sola columna con
+   fotos de referencia al lado no alcanza a usar el ancho disponible). Con
+   auto-fill + minmax se acomodan 2-3 columnas según el ancho real, sin perder
+   legibilidad en pantallas angostas. */
+.cl-items-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 10px;
+  align-items: start;
+}
 .cl-item {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 10px;
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 12px 14px;
-  transition: background 0.15s;
-  /* Sin esto, la tarjeta se estira a los 1200px de .cl-wrap aunque su
-     contenido real (descripción corta + campo de observación de 400px) sea
-     mucho más angosto — dejaba un vacío enorme a la derecha en cada fila,
-     más notorio cuando había pocos ítems. Ancho de formulario, no de tabla. */
-  max-width: 800px;
+  border-left: 3px solid #2563eb;
+  border-radius: 8px;
+  padding: 9px 12px;
+  transition: background 0.15s, border-color 0.15s;
 }
-.cl-item--completado { background: #f0fdf4; border-color: #bbf7d0; }
+.cl-item--completado { background: #f0fdf4; border-color: #bbf7d0; border-left-color: #16a34a; }
 .cl-item-check-col { padding-top: 2px; }
 .cl-checkbox {
   width: 24px;
@@ -270,6 +432,12 @@
 
 /* ── Tabla de plantillas ─────────────────────────────────────────────── */
 .cl-plantillas-tabla { overflow-x: auto; }
+.cl-plantillas-tabla--partida {
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 2px;
+  background: #f0fdf4;
+}
 .cl-table {
   width: 100%;
   border-collapse: collapse;
@@ -314,6 +482,226 @@
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .spin { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Chips de partida (etapa constructiva) ─────────────────────────────── */
+.cl-partida-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cl-partida-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.cl-partida-chip:hover { border-color: #1e3a5f; color: #1e3a5f; }
+.cl-partida-chip--active { background: #1e3a5f; border-color: #1e3a5f; color: #fff; }
+.cl-partida-chip-count {
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.cl-tag-partida {
+  font-size: 11px;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-weight: 500;
+}
+.cl-tag-partida--lg { font-size: 12px; padding: 3px 10px; }
+.cl-tag-partida--lg em { font-style: normal; opacity: 0.7; }
+
+/* ── Gestor de partidas (Catálogo de plantillas) ───────────────────────── */
+.cl-partidas-manager {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+.cl-partidas-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 12px; }
+.cl-partidas-add { display: flex; align-items: center; gap: 8px; }
+
+/* Chips en fila (wrap), no una fila entera por partida — el orden de partidas
+   se usa poco comparado con el de ítems, no amerita tanto espacio vertical. */
+.cl-partidas-list { display: flex; flex-flow: row wrap; align-content: flex-start; gap: 6px; margin: 8px 0 14px; width: 100%; }
+.cl-partida-row {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: auto;
+  max-width: max-content;
+  align-items: center;
+  gap: 2px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  padding: 2px 4px 2px 8px;
+}
+.cl-partida-row .cl-tag-partida--lg { background: transparent; border: none; padding: 1px 2px; }
+.cl-partida-row-order { display: flex; flex-direction: row; gap: 0; }
+
+.cl-btn-icon-mini {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+}
+.cl-btn-icon-mini:hover:not(:disabled) { background: #dcfce7; color: #15803d; }
+.cl-btn-icon-mini:disabled { opacity: 0.3; cursor: not-allowed; }
+.cl-btn-icon-mini--danger { font-size: 13px; color: #9ca3af; }
+.cl-btn-icon-mini--danger:hover:not(:disabled) { background: #fee2e2; color: #dc2626; }
+
+.cl-item-order-col { display: flex; flex-direction: column; gap: 2px; padding-top: 2px; }
+
+.cl-partida-select-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  max-width: 260px;
+}
+.cl-partida-select-row--inline {
+  flex-direction: row;
+  align-items: center;
+  margin-top: 0;
+  max-width: none;
+  gap: 8px;
+}
+.cl-partida-select-row--inline .cl-label { white-space: nowrap; }
+.cl-select--sm { height: 32px; min-width: 200px; font-size: 13px; padding: 0 10px; }
+
+/* ── Galería de fotos de referencia ─────────────────────────────────────── */
+.cl-img-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+.cl-img-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cl-img-thumb--editable { position: relative; }
+/* Overlay al pasar el mouse (patrón estándar Trello/Google Photos/Drive):
+   más visible y a prueba de clics accidentales que el puntito rojo anterior,
+   que quedaba casi invisible sobre miniaturas de 96px. */
+.cl-img-thumb-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(17, 24, 39, 0);
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.cl-img-thumb--editable:hover .cl-img-thumb-overlay,
+.cl-img-thumb--editable:focus-within .cl-img-thumb-overlay {
+  opacity: 1;
+  background: rgba(17, 24, 39, 0.55);
+}
+.cl-img-thumb-action {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  color: #dc2626;
+  border: none;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+.cl-img-thumb-action:hover { background: #fee2e2; }
+.cl-img-add-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  border: 1.5px dashed #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 16px;
+  cursor: pointer;
+  background: #fff;
+  transition: border-color 0.15s, color 0.15s;
+}
+.cl-img-add-btn:hover { border-color: #1e3a5f; color: #1e3a5f; }
+.cl-img-add-btn--busy { pointer-events: none; }
+
+/* ── Evidencia de cumplimiento (adjunto opcional al marcar un ítem) ───────── */
+.cl-adjunto-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  height: 30px;
+  padding: 0 12px;
+  border: 1.5px dashed #d1d5db;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: #6b7280;
+  cursor: pointer;
+  background: #fff;
+  transition: border-color 0.15s, color 0.15s;
+}
+.cl-adjunto-btn:hover { border-color: #1e3a5f; color: #1e3a5f; }
+.cl-adjunto-btn--busy { pointer-events: none; }
+.cl-adjunto-listo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: #15803d;
+  background: #dcfce7;
+  max-width: 100%;
+}
+.cl-adjunto-nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.cl-adjunto-quitar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #15803d;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
 
 /* ── Catálogo de plantillas: fila clickeable + edición cooperativa ────── */
 .cl-row-clickable { cursor: pointer; transition: background 0.12s; }

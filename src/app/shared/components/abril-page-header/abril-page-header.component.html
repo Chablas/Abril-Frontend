@@ -6,7 +6,9 @@
     <div class="ssoma-hero__vline"></div>
     <div class="ssoma-hero__title-wrap">
       <h1 class="ssoma-hero__title">{{ titulo }}</h1>
-      <p class="ssoma-hero__sub" *ngIf="subtitulo">{{ subtitulo }}</p>
+      <!-- El subtítulo va recortado con elipsis (ver el CSS): el título del atributo deja el
+           texto completo a un hover de distancia. -->
+      <p class="ssoma-hero__sub" *ngIf="subtitulo" [title]="subtitulo">{{ subtitulo }}</p>
     </div>
   </div>
 
