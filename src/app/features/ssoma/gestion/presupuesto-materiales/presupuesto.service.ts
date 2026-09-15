@@ -58,6 +58,10 @@ import {
   ServicioFijoDto,
   ServiciosFijosGuardarDto,
   DashboardAcumuladoDto,
+  EpiStaffConfigDto,
+  EpiStaffCalculoDto,
+  CostoFijoManualDto,
+  ActualizarCostoFijoManualDto,
 } from './presupuesto.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -356,6 +360,15 @@ export class PresupuestoMaterialesService {
     );
   }
 
+  /** Excel del "Desagregado de Recursos" (Materiales + Personal + Vigilancia + Servicios fijos +
+   * Kits del presupuesto vigente del proyecto) — mismo formato que usa Costos. */
+  exportarResumenRecursosExcel(projectId: number): Observable<Blob> {
+    return this.http.get(
+      `${this.base}/presupuestos/proyectos/${projectId}/resumen-recursos/exportar-excel`,
+      { headers: this.authHeaders(), responseType: 'blob' },
+    );
+  }
+
   // ── Control semanal ───────────────────────────────────────────────
 
   abrirSemana(dto: AbrirSemanaDto): Observable<ControlSemanaDto> {
@@ -645,6 +658,44 @@ export class PresupuestoMaterialesService {
   guardarServiciosFijos(projectId: number, dto: ServiciosFijosGuardarDto): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(
       `${this.base}/proyectos/${projectId}/servicios`,
+      dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── EPI de Staff (config global + cálculo por proyecto) ────────────────────
+
+  getEpiStaffConfig(): Observable<EpiStaffConfigDto> {
+    return this.http.get<EpiStaffConfigDto>(`${this.base}/epi-staff/config`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  actualizarEpiStaffConfig(dto: EpiStaffConfigDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/epi-staff/config`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getEpiStaffCalculo(projectId: number): Observable<EpiStaffCalculoDto> {
+    return this.http.get<EpiStaffCalculoDto>(
+      `${this.base}/epi-staff/proyectos/${projectId}/calculo`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── Costo fijo manual (Malla Anticaída/Encapsulado/Malla Anillo Fenólico) ──────
+
+  getCostoFijoManual(projectId: number): Observable<CostoFijoManualDto> {
+    return this.http.get<CostoFijoManualDto>(
+      `${this.base}/proyectos/${projectId}/costo-fijo-manual`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  guardarCostoFijoManual(projectId: number, dto: ActualizarCostoFijoManualDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.base}/proyectos/${projectId}/costo-fijo-manual`,
       dto,
       { headers: this.authHeaders() },
     );

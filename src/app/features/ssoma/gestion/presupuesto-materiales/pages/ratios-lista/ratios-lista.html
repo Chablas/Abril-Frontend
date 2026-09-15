@@ -43,7 +43,7 @@
       <div *ngIf="loadingDrivers" class="loading-msg-small">Cargando ratios de dotación...</div>
 
       <div *ngIf="!loadingDrivers" class="driver-grid">
-        <ng-container *ngFor="let d of [hhComparacion, trabajadoresComparacion]">
+        <ng-container *ngFor="let d of [hhComparacion, trabajadoresComparacion, staffCascoComparacion, staffOrejeraComparacion]">
           <div class="familia-panel" *ngIf="d">
             <div class="familia-panel__header">
               <span class="familia-panel__nombre">{{ driverTipoLabel(d.tipoDriver) }}</span>
@@ -55,7 +55,9 @@
             </div>
             <div class="familia-panel__body">
               <div *ngIf="d.proyectos.length === 0" class="empty-cell">
-                {{ d.tipoDriver === 'HH' ? 'Sin proyectos con Tareo registrado todavía.' : 'Sin proyectos con trabajadores vinculados todavía.' }}
+                {{ d.tipoDriver === 'HH' ? 'Sin proyectos con Tareo registrado todavía.'
+                  : d.tipoDriver === 'TRABAJADORES' ? 'Sin proyectos con trabajadores vinculados todavía.'
+                  : 'Sin proyectos con consumo de este EPP registrado todavía.' }}
               </div>
               <div class="driver-tabla" *ngIf="d.proyectos.length > 0">
                 <div class="driver-tabla__header">
@@ -88,7 +90,7 @@
                   </div>
                 </div>
                 <div
-                  *ngFor="let p of proyectosOrdenados(d)"
+                  *ngFor="let p of proyectosOrdenados(d); trackBy: trackByProjectId"
                   class="driver-tabla__row"
                   [class.driver-tabla__row--outlier]="p.esOutlier">
                   <div class="tabla-cols__proyecto" [title]="p.projectDescription">

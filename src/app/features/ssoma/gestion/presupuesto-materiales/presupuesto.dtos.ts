@@ -228,7 +228,7 @@ export interface ResumenRatiosDto {
 // (no consumos). No segmenta por tipo de proyecto; incluidoManual es la unica
 // autoridad real sobre que proyecto entra al calculo, "esOutlier" es solo informativo.
 
-export type TipoDriverRatio = 'HH' | 'TRABAJADORES';
+export type TipoDriverRatio = 'HH' | 'TRABAJADORES' | 'STAFF_CASCO' | 'STAFF_OREJERA';
 
 export interface RatioDriverProyectoDto {
   projectId: number;
@@ -279,6 +279,8 @@ export interface RatioDriverRecomendadoDto {
 export interface RatiosDriversRecomendadosDto {
   hh: RatioDriverRecomendadoDto | null;
   trabajadores: RatioDriverRecomendadoDto | null;
+  staffCasco: RatioDriverRecomendadoDto | null;
+  staffOrejera: RatioDriverRecomendadoDto | null;
 }
 
 // ─── Presupuesto ──────────────────────────────────────────────────────────────
@@ -519,6 +521,53 @@ export interface PersonalHitoGuardarDto {
 export interface PersonalTarifasSugeridasDto {
   oficial: number;
   peon: number;
+}
+
+// ─── EPI de Staff (config global de rotación + cálculo por proyecto) ────────────────────────
+
+export interface EpiStaffConfigDto {
+  arnesPorStaff: number;
+  rotacionLentesMeses: number;
+  rotacionBarbiquejoMeses: number;
+  rotacionGuantesMeses: number;
+}
+
+export interface EpiStaffLineaDto {
+  nombre: string;
+  familiaId: number | null;
+  requiereDescuento: boolean;
+  cantidadTotalConsumida: number;
+  cantidadStaff: number;
+  cantidadObrero: number;
+  precioUnitarioStaff: number;
+  precioUnitarioObrero: number;
+  costoStaff: number;
+  costoObrero: number;
+}
+
+// ─── Costo fijo manual (Malla Anticaída/Encapsulado/Malla Anillo Fenólico) ──────────────────
+
+export interface CostoFijoManualDto {
+  projectId: number;
+  mallaAnticaida: number;
+  encapsulado: number;
+  mallaAnilloFenolico: number;
+  notas: string | null;
+}
+
+export interface ActualizarCostoFijoManualDto {
+  mallaAnticaida: number;
+  encapsulado: number;
+  mallaAnilloFenolico: number;
+  notas: string | null;
+}
+
+export interface EpiStaffCalculoDto {
+  projectId: number;
+  staffHeadcountAplicado: number;
+  mesesProyecto: number;
+  config: EpiStaffConfigDto;
+  lineas: EpiStaffLineaDto[];
 }
 
 // ─── Vigilancia externa por hito (facturada por punto/turno, precio desde Ratios) ────────────
