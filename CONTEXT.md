@@ -5856,3 +5856,35 @@ Pedido del usuario: exportar a Excel un "Desagregado de Recursos" para el área 
   - Definir si Monitores va como una sola línea agregada o separado en "Etapa 1"/"Etapa 2" (y con qué hito de corte).
   - Definir qué pasa con los materiales que no caen en ninguna de las ~14 partidas del modelo (alcohol, cintas, clavos, botiquín suelto, etc.) — ¿van a "Varios Seguridad", se omiten del Resumen, o catch-all nuevo?
 - Ver pendientes correspondientes del backend en `Abril_Backend/CONTEXT.md` (mismo día).
+
+## Sesión 2026-09-15 (cont.) — Cronograma de Hitos: culminar/crítico/eliminar versión + confirmación de hitos sin fecha
+
+### Contexto
+Continuación de trabajo ya en curso (sin commitear) sobre `milestone-schedule` (vista Gantt del cronograma de un proyecto): agregar acciones de gestión sobre hitos ya guardados, y replicar una validación nueva del backend (`Abril_Backend`, rama `victor-backend`) sobre `POST MilestoneScheduleHistory`.
+
+### Cambios — gestión de hitos guardados (ya en curso, se terminó y commiteó en esta sesión)
+- **Culminar hito** (`toggleCulminar`/`aplicarCulminadoLocal`): en modo "ver cronograma" (hito con `milestoneScheduleId` real) persiste de inmediato vía `PATCH .../{id}/culminar` (`MilestoneScheduleService.culminar`, nuevo); en modo plantilla/edición (sin id real todavía) solo actualiza el Gantt en memoria.
+- **Marcar crítico** (`toggleCriticoGuardado`) sobre hito ya guardado: mismo patrón de persistencia inmediata.
+- **Eliminar versión de cronograma** (`eliminarVersionCronograma`, solo ADMINISTRADOR DE RESIDENTES): `DELETE MilestoneScheduleHistory/{id}` (`MilestoneScheduleHistoryService.deleteMilestoneScheduleHistory`, nuevo). El endpoint es `[Authorize(Roles=...)]` puro sin `AbrilException`, por lo que un 403 por rol insuficiente no trae `body.message` — se maneja aparte del `error()` genérico.
+- **Vista de plantilla** (hitos sin fecha, antes de tener cronograma): buscador/filtro (con/sin fecha), stats de progreso, toggle "crítico"/"rango" por hito, agregar hito personalizado, quitar hito de la plantilla.
+- **Editar característica del proyecto** (`openEditProject`/`saveEditProjectLevelDescription`): modal para editar `levelDescription` desde la tarjeta de proyecto, vía `PUT project` (requiere leer el `ProjectDto` completo primero porque el PUT sobreescribe el DTO entero).
+- `responsable-lookup.dto.ts`: `planeamientoUdp` pasó de opcional a obligatorio en `ProjectLookupsDto` — el backend ya lo devuelve siempre en `GET project/lookups`.
+
+### Cambios — confirmación de hitos sin fecha (pedido explícito de esta sesión)
+Backend agregó al DTO de guardado un campo `confirmarHitosSinFecha?: boolean` (independiente del `forceSave` existente): si algún hito del envío no trae `plannedEndDate` (excepto "Inicio de obra", cuya única fecha vive en `plannedStartDate`), responde 400 con `message: "Los siguientes hitos no tienen fecha registrada: ..."`. Reenviar con `confirmarHitosSinFecha:true` fuerza el guardado. No afecta el bloqueo duro de hitos `esObligatorio` (mensaje "...son obligatorios y deben tener una fecha...", sigue sin opción de confirmar).
+
+- `milestoneScheduleHistoryCreate.model.ts`: agregado `confirmarHitosSinFecha?: boolean`.
+- `milestone-schedule.ts`: unificado el POST en `submitMilestoneScheduleHistory(forceSave, confirmarHitosSinFecha)` — si el 400 trae el mensaje de hitos sin fecha y todavía no se había confirmado, muestra un `Swal` con el texto exacto del backend (ya trae los nombres) y, al confirmar, reenvía el mismo payload con `confirmarHitosSinFecha:true` preservando el `forceSave` original (pueden viajar juntos: "cronograma igual" + "hitos sin fecha" a la vez). `addMilestoneScheduleOnMilestoneScheduleHistory()`/`forceAddMilestoneScheduleOnMilestoneScheduleHistory()` delegan ahí.
+  - Nota: el botón "Guardar sin cambios" (`forceSave:true`) es un botón siempre visible, no un diálogo reactivo sobre el mensaje "El cronograma es igual a la última versión subida." — ese mensaje no se lee del backend en ningún punto del código actual, a diferencia de lo que se asumía al pedir esta tarea.
+- `presupuesto-materiales/pages/proyecto/proyecto-page.ts` (`guardarSchedule`/`enviarSchedule`): mismo patrón — este flujo pega al mismo endpoint compartido y quedaba roto en falso por el nuevo 400 si no se tocaba.
+- Confirmado que el filtro local `buildSavePayload()` (`!!ms.plannedStartDate?.trim()`) solo descarta hitos completamente sin tocar, no bloquea el caso "tiene inicio pero no fin" — la fuente de verdad para eso ya era y sigue siendo la respuesta del backend.
+
+### Archivos clave
+- `src/app/features/mejora-continua/milestone-schedule/milestone-schedule.ts` / `.html` / `.css`
+- `src/app/features/ssoma/gestion/presupuesto-materiales/pages/proyecto/proyecto-page.ts`
+- `src/app/core/services/milestoneSchedule.service.ts`, `milestoneScheduleHistory.service.ts`
+- `src/app/core/dtos/milestoneScheduleHistory/milestoneScheduleHistoryCreate.model.ts`
+- `src/app/features/configuracion/features/proyectos/dtos/responsable-lookup.dto.ts`
+
+### Verificado
+`tsc --noEmit` y `ng build` (producción): 0 errores, solo warnings preexistentes. No se probó en navegador.
