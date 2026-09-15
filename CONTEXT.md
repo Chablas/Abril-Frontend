@@ -5727,3 +5727,30 @@ El checkout local estaba **24 commits detrás** de `origin/master` (backend sí 
 ### Pendiente
 - Probar en navegador: cerrar/reabrir periodo y presupuesto en Costos, devoluciones e import Excel en Almacén.
 - RAC todavía no tiene ningún botón que llame al nuevo `PenalidadService` — el flujo "crear penalidad desde un RAC" no está conectado en la UI (no es un bug, es parte de la feature de Penalidades sin construir aún).
+
+## Sesión 2026-09-15 — Desagregado de Recursos SSOMA (export a Excel) + EPI de Staff
+
+### Contexto
+Pedido del usuario: exportar a Excel un "Desagregado de Recursos" para el área de Costos, calcando el formato de un presupuesto de obra real que compartió como modelo. En el camino salió el bug original (500 en `personal-hitos`, ver `Abril_Backend/CONTEXT.md`) y luego una sesión larga de definición de negocio: cómo separar el costo de EPP entre personal Staff y Obrero cuando comparten el mismo SKU (casco, orejera, arnés, lentes, barbiquejo, guantes).
+
+### Cambios
+- **Rol Paletero/Paletero Montacarga** separados de Vígia en la matriz de Personal (antes se cargaban prestando cantidad del rol Vígia).
+- **Ratios de Dotación**: dos tarjetas nuevas (Staff-Casco, Staff-Orejera) — señal de cuántos miembros de Staff hubo en un proyecto histórico, contada desde el consumo real de casco blanco/ingeniero y orejera 3M (families que se entregan una sola vez por persona, a diferencia de zapato/guantes que rotan). Mismo checkbox "Incluir"/"Usar" que ya existía para HH/Trabajadores.
+- Bug corregido: tildar/destildar "Incluir" recargaba toda la grilla de Ratios de Dotación (`loadingDrivers=true` ocultaba y remontaba todo) — el navegador perdía la posición de scroll. Ahora hay un refresco silencioso que no desmonta la grilla.
+- **Pestaña "Cálculo EPP Staff"** nueva en la ficha de proyecto: muestra StaffHeadcount aplicado, meses de proyecto (desde cronograma), y el detalle Staff/Obrero de Casco/Orejera/Arnés/Lentes/Barbiquejo/Guantes con precios y cantidades separadas. Incluye editor de la rotación global (cada cuántos meses se repone lentes/barbiquejo/guantes, arnés por staff) — afecta a todos los proyectos, no solo al abierto.
+- **Card "Costo fijo manual"** en Servicios y equipos: Malla Anticaída/Encapsulado/Malla Anillo Fenólico, montos "glb" tipeados a mano (no tienen ratio histórico confiable, dependen de la geometría de cada obra).
+
+### Archivos clave
+- `pages/proyecto/proyecto-page.ts`/`.html` — rol Paletero, pestaña Cálculo EPP Staff, card Costo fijo manual.
+- `pages/ratios-lista/ratios-lista.ts`/`.html` — tarjetas Staff-Casco/Staff-Orejera, fix del scroll.
+- `presupuesto.dtos.ts`/`presupuesto.service.ts` — DTOs y endpoints nuevos (EpiStaff, CostoFijoManual, drivers Staff).
+
+### Verificado
+`ng build` → 0 errores, solo warnings preexistentes de terceros (canvg, flatpickr, tfjs, node-fetch). No se probó en navegador — el usuario verifica visualmente él mismo.
+
+### Pendiente
+- La hoja "Resumen" del Excel (las ~14 partidas agregadas del modelo de Costos) todavía no está construida — hoy solo existe la hoja "Desagregado" (detalle línea por línea). Falta:
+  - Confirmar Barandas FRP horizontal=476(21mm)/vertical=475(25mm) — identificadas, falta el mapeo final en el builder.
+  - Definir si Monitores va como una sola línea agregada o separado en "Etapa 1"/"Etapa 2" (y con qué hito de corte).
+  - Definir qué pasa con los materiales que no caen en ninguna de las ~14 partidas del modelo (alcohol, cintas, clavos, botiquín suelto, etc.) — ¿van a "Varios Seguridad", se omiten del Resumen, o catch-all nuevo?
+- Ver pendientes correspondientes del backend en `Abril_Backend/CONTEXT.md` (mismo día).
