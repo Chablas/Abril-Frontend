@@ -12,16 +12,16 @@ export interface CorreoAvisoDto {
 }
 
 /**
- * Selección sobre la que se pregunta qué correos saldrían. Repite la forma de los DTO de las
- * acciones (planillas y/o salidas sueltas) para poder pedir el preview con la MISMA selección con
- * la que después se va a escribir. Cada pantalla manda solo los campos que usa.
+ * Selección de planillas sobre la que se pregunta qué correos saldrían. Repite la forma del DTO de
+ * la acción para poder pedir el preview con la MISMA selección con la que después se va a escribir.
+ *
+ * Lo usa Gestión de Rendiciones, cuya única decisión es la primera revisión. Las otras pantallas
+ * del flujo mandan su propia forma: Consolidados por consolidado, Gestión de Salidas y Correcciones
+ * S10 por lista de ids.
  */
 export interface CorreoPreviewRequestDto {
-  rendicionIds?: number[];
-  solicitudIds?: number[];
-  /** De qué paso del flujo se pide el preview. Las pantallas con una sola decisión lo omiten. */
-  accion?: 'PRIMERA_REVISION' | 'REEMBOLSO';
-  /** true = la variante que aprueba; false = la que observa o rechaza. */
+  rendicionIds: number[];
+  /** true = la variante que aprueba; false = la que observa. */
   aprobar: boolean;
 }
 

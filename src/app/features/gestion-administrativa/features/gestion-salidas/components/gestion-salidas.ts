@@ -170,7 +170,7 @@ export class GestionSalidas implements OnInit {
 
   /**
    * Estados del reembolso para el desplegable. Acá es solo un filtro informativo: el reembolso se
-   * decide en Gestión de Rendiciones y se paga en Reembolsos.
+   * decide en Consolidados y se paga en Reembolsos.
    */
   readonly estadoReembolsoOptions = [
     { value: null,        label: 'Todos' },
@@ -411,7 +411,7 @@ export class GestionSalidas implements OnInit {
 
     // El botón del correo de aprobación de la salida entra por acá: abre directo el detalle de
     // esa solicitud sin que el revisor tenga que buscarla en la tabla. Los correos del reembolso
-    // ya no caen acá: llevan a Gestión de Rendiciones, que es donde se decide.
+    // ya no caen acá: llevan a Consolidados, que es donde se decide.
     const solicitudId = Number(this.route.snapshot.queryParamMap.get('solicitud'));
     if (solicitudId > 0) this.abrirDetallePorId(solicitudId);
   }

@@ -11,8 +11,8 @@ import {
 
 /**
  * Override manual de "qué áreas ve este trabajador". Todas las operaciones reciben el `ambito`
- * porque hay una configuración por pantalla —Gestión de Salidas y Gestión de Rendiciones— y cada
- * una se administra desde la Configuración de la suya.
+ * porque hay una configuración por pantalla —Gestión de Salidas, Gestión de Rendiciones y
+ * Consolidados— y cada una se administra desde la Configuración de la suya.
  */
 @Injectable({ providedIn: 'root' })
 export class VisibilidadService {

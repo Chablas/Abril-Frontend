@@ -62,9 +62,10 @@ interface PantallaDef {
  *    recordatorios de ese plazo y los REVISORES de cada área — el revisor es a quien se le manda la
  *    solicitud que nace acá.
  *  • Gestión de Salidas: los correos de la decisión del revisor y la VISIBILIDAD de esa bandeja.
- *  • Gestión de Rendiciones: los correos de las decisiones sobre la planilla, la VISIBILIDAD de esa
- *    bandeja (independiente de la de salidas) y los CONSOLIDADORES, que es quién puede adjuntar el
- *    Consolidado del S10 por cada trabajador.
+ *  • Gestión de Rendiciones: los correos de la primera revisión y la VISIBILIDAD de esa bandeja
+ *    (independiente de la de salidas).
+ *  • Consolidados: los correos de la decisión del reembolso, la VISIBILIDAD de esa bandeja y los
+ *    CONSOLIDADORES, que es quién puede adjuntar el Consolidado del S10 por cada trabajador.
  *
  * El acceso a la pantalla lo abre cualquiera de los featureKeys de sus secciones (`featureKeys` en
  * la ruta) y cada sección se filtra además por el suyo.
@@ -89,6 +90,7 @@ export class GaPantallaConfiguracion implements OnInit {
   /** Features de las secciones que no son "Correos". */
   private static readonly FEATURE_VISIBILIDAD_SALIDAS = 'gestion-administrativa.config.visibilidad-salidas';
   private static readonly FEATURE_VISIBILIDAD_RENDICIONES = 'gestion-administrativa.config.visibilidad-rendiciones';
+  private static readonly FEATURE_VISIBILIDAD_CONSOLIDADOS = 'gestion-administrativa.config.visibilidad-consolidados';
   private static readonly FEATURE_CONSOLIDADORES = 'gestion-administrativa.config.consolidadores-areas';
   /** Los revisores de áreas conservan su feature de cuando vivían en Configuración global. */
   private static readonly FEATURE_REVISORES = 'configuracion.revisores-areas';
@@ -150,7 +152,7 @@ export class GaPantallaConfiguracion implements OnInit {
     'gestion-rendiciones': {
       nombre: 'Gestión de Rendiciones',
       volverA: '/gestion-administrativa/gestion-rendiciones',
-      subtitulo: 'Correos de las decisiones, visibilidad de la bandeja y consolidadores por área.',
+      subtitulo: 'Correos de la primera revisión y visibilidad de la bandeja.',
       secciones: [
         GaPantallaConfiguracion.SECCION_CORREOS,
         {
@@ -158,13 +160,29 @@ export class GaPantallaConfiguracion implements OnInit {
           label: 'Visibilidad',
           featureKey: GaPantallaConfiguracion.FEATURE_VISIBILIDAD_RENDICIONES,
         },
+      ],
+      visibilidadAmbito: 'rendiciones',
+    },
+    consolidados: {
+      nombre: 'Consolidados',
+      volverA: '/gestion-administrativa/consolidados',
+      subtitulo: 'Correos de la decisión del reembolso, visibilidad de la bandeja y consolidadores por área.',
+      secciones: [
+        GaPantallaConfiguracion.SECCION_CORREOS,
+        {
+          id: 'visibilidad',
+          label: 'Visibilidad',
+          featureKey: GaPantallaConfiguracion.FEATURE_VISIBILIDAD_CONSOLIDADOS,
+        },
+        // Los Consolidadores viven acá y no en Gestión de Rendiciones: lo que administran es
+        // quién puede adjuntar el documento que esta pantalla muestra y firma.
         {
           id: 'consolidadores',
           label: 'Consolidadores',
           featureKey: GaPantallaConfiguracion.FEATURE_CONSOLIDADORES,
         },
       ],
-      visibilidadAmbito: 'rendiciones',
+      visibilidadAmbito: 'consolidados',
     },
     reembolsos: {
       nombre: 'Reembolsos',

@@ -106,10 +106,8 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
     },
   },
   {
-    // Configuración de Gestión de Rendiciones: los correos que se ORIGINAN acá (las dos
-    // decisiones del revisor: primera revisión y reembolso), la VISIBILIDAD de esta bandeja
-    // —independiente de la de salidas— y los CONSOLIDADORES, que deciden quién puede adjuntar
-    // el Consolidado del S10 por cada trabajador.
+    // Configuración de Gestión de Rendiciones: los correos que se ORIGINAN acá (la decisión de la
+    // primera revisión) y la VISIBILIDAD de esta bandeja, independiente de la de salidas.
     // Va ANTES de 'gestion-rendiciones' para que el segmento 'configuracion' no se lo coma
     // la pantalla.
     path: 'gestion-rendiciones/configuracion',
@@ -123,7 +121,6 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       featureKeys: [
         'gestion-administrativa.config.correos',
         'gestion-administrativa.config.visibilidad-rendiciones',
-        'gestion-administrativa.config.consolidadores-areas',
       ],
       pantalla: 'gestion-rendiciones',
     },
@@ -138,6 +135,38 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
     data: {
       titulo: 'GESTIÓN DE RENDICIONES',
       featureKey: 'gestion-administrativa.gestion-rendiciones',
+    },
+  },
+  {
+    // Configuración de Consolidados: los correos que se ORIGINAN acá (la decisión del reembolso y
+    // el aviso a Tesorería que dispara la firma), la VISIBILIDAD de esta bandeja —aparte de la de
+    // rendiciones: ver una planilla y ver su consolidado son dos permisos distintos— y los
+    // CONSOLIDADORES, que deciden quién puede adjuntar el documento por cada trabajador.
+    // Va ANTES de 'consolidados' para que el segmento 'configuracion' no se lo coma la pantalla.
+    path: 'consolidados/configuracion',
+    loadComponent: () =>
+      import('./shared/configuracion/pantalla-configuracion').then(
+        (m) => m.GaPantallaConfiguracion,
+      ),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'CONSOLIDADOS - CONFIGURACIÓN',
+      featureKeys: [
+        'gestion-administrativa.config.correos',
+        'gestion-administrativa.config.visibilidad-consolidados',
+        'gestion-administrativa.config.consolidadores-areas',
+      ],
+      pantalla: 'consolidados',
+    },
+  },
+  {
+    path: 'consolidados',
+    loadComponent: () =>
+      import('./features/consolidados/components/consolidados').then((m) => m.Consolidados),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'CONSOLIDADOS',
+      featureKey: 'gestion-administrativa.consolidados',
     },
   },
   {

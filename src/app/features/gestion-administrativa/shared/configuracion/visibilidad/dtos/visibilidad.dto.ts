@@ -2,10 +2,11 @@
  * Ámbito de la visibilidad que se está configurando. Es el segmento del backend
  * (`api/v1/gestion-administrativa/configuracion/visibilidad/{ambito}`) y define sobre qué pantalla
  * aplica lo que se guarda: las dos conviven en la misma tabla sin pisarse.
- *  • `salidas`     → qué solicitudes de salida ve el trabajador en Gestión de Salidas.
- *  • `rendiciones` → qué planillas ve en Gestión de Rendiciones.
+ *  • `salidas`      → qué solicitudes de salida ve el trabajador en Gestión de Salidas.
+ *  • `rendiciones`  → qué planillas ve en Gestión de Rendiciones.
+ *  • `consolidados` → qué Consolidados del S10 ve en Consolidados.
  */
-export type VisibilidadAmbito = 'salidas' | 'rendiciones';
+export type VisibilidadAmbito = 'salidas' | 'rendiciones' | 'consolidados';
 
 export interface VisibilidadWorkerItemDTO {
   workerId: number;

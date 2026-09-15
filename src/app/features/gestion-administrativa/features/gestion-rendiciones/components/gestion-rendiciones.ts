@@ -12,7 +12,6 @@ import {
   GestionRendicionListItemDto,
   PeriodoOptionDto,
   PrimeraRevisionAccionDto,
-  ReembolsoAccionDto,
   ResumenGestionRendicionesDto,
 } from '../dtos/gestion-rendicion.dto';
 import { primeraRevisionColors, reembolsoColors } from '../../../shared/dtos/rendicion-shared.dto';
@@ -30,7 +29,6 @@ import {
   ConsolidadoS10Dto,
   otrasRendicionesDelConsolidado,
 } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
-import { FirmaRegistrarModal } from '../../../../../shared/components/firma-personal/registrar-modal/firma-registrar-modal';
 import { GestionRendicionDetalleModal } from './gestion-rendicion-detalle-modal/gestion-rendicion-detalle-modal';
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 
@@ -55,12 +53,13 @@ interface ConsolidadoObjetivo {
 }
 
 /**
- * "Gestión de Rendiciones": las planillas del alcance del revisor y todo lo que va DESDE el
- * Consolidado del S10 en adelante — adjuntarlo, decidir el reembolso y firmar la planilla.
- * Gestión de Salidas llega hasta rendir; el pago es de Tesorería y vive en Reembolsos.
+ * "Gestión de Rendiciones": las planillas del alcance del revisor, su PRIMERA revisión y el
+ * Consolidado del S10 que se les adjunta. Gestión de Salidas llega hasta rendir; decidir y firmar
+ * el reembolso es de Consolidados —lo que se decide ahí es el documento del S10, que puede cubrir
+ * varias planillas— y el pago, de Tesorería (Reembolsos).
  *
  * La visibilidad es exactamente la de Gestión de Salidas: son las mismas salidas, agrupadas por
- * planilla, porque el consolidado y la firma son del documento y no de cada salida.
+ * planilla, porque la revisión y el consolidado son del documento y no de cada salida.
  */
 @Component({
   standalone: true,
@@ -68,7 +67,7 @@ interface ConsolidadoObjetivo {
   imports: [
     CommonModule, DatePipe, StatusBadge, SearchSelect, AbrilPageHeaderComponent,
     FilterTriggerButton, FilterModal, AbrilBulkActionDirective, TitleCasePipe,
-    ConsolidadoS10Modal, FirmaRegistrarModal, GestionRendicionDetalleModal,
+    ConsolidadoS10Modal, GestionRendicionDetalleModal,
   ],
   templateUrl: './gestion-rendiciones.html',
   styles: [`
@@ -142,14 +141,7 @@ export class GestionRendiciones implements OnInit {
   /** Lo que va a cubrir el consolidado cuyo modal está abierto. null = cerrado. */
   consolidadoPara: ConsolidadoObjetivo | null = null;
 
-  /** Modal para registrar la firma en el momento (se abre con el 409 de aprobar). */
-  firmaModalAbierto = false;
-  /** Selección que se estaba firmando cuando saltó el modal, para reintentar al guardarla. */
-  private accionPendienteDeFirma: ReembolsoAccionDto | null = null;
-
-  resumen: ResumenGestionRendicionesDto = {
-    primeraRevision: 0, sinConsolidado: 0, porRevisar: 0,
-  };
+  resumen: ResumenGestionRendicionesDto = { primeraRevision: 0, sinConsolidado: 0 };
 
   // ── Filtros ────────────────────────────────────────────────────────
   trabajadorOptions: any[] = [{ workerId: null, nombreCompleto: 'Todos los trabajadores' }];
@@ -238,6 +230,7 @@ export class GestionRendiciones implements OnInit {
   get botonConfiguracion() {
     return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
   }
+
 
   abrirConfiguracion(): void {
     if (!this.puedeConfigurar) return;
@@ -403,28 +396,6 @@ export class GestionRendiciones implements OnInit {
     return this.rendiciones.filter((r) => this.selectedIds.has(r.id));
   }
 
-  /** Seleccionadas con algún reembolso por decidir. */
-  get selectedPorDecidir(): GestionRendicionListItemDto[] {
-    return this.seleccionadas.filter((r) => r.porDecidirCount > 0);
-  }
-
-  /**
-   * True si alguna candidata a decidir tiene salidas propias que no le toca decidir: el backend
-   * las rechaza. Lo decide el backend por planilla (`puedeDecidir`), que solo deja pasar las
-   * propias cuando el usuario es su propio revisor (jefe personalizado apuntándose a sí mismo).
-   */
-  get decisionBloqueada(): boolean {
-    return this.selectedPorDecidir.some((r) => !r.puedeDecidir);
-  }
-
-  get puedeDecidir(): boolean {
-    return this.selectedPorDecidir.length > 0 && !this.decisionBloqueada;
-  }
-
-  private accionDe(items: GestionRendicionListItemDto[], observacion?: string): ReembolsoAccionDto {
-    return { rendicionIds: items.map((r) => r.id), solicitudIds: [], observacion: observacion ?? null };
-  }
-
   // ── Primera revisión ─────────────────────────────────────────────────
 
   /** Seleccionadas que están esperando la primera revisión. */
@@ -455,14 +426,9 @@ export class GestionRendiciones implements OnInit {
    * Se pide al apretar el botón y no al cargar la pantalla porque depende de qué está seleccionado:
    * los destinatarios principales son los solicitantes de esas planillas.
    */
-  private avisos(
-    items: GestionRendicionListItemDto[],
-    accion: 'PRIMERA_REVISION' | 'REEMBOLSO',
-    aprobar: boolean,
-  ) {
+  private avisos(items: GestionRendicionListItemDto[], aprobar: boolean) {
     return pedirAvisos(this.service.correoPreview({
       rendicionIds: items.map((r) => r.id),
-      accion,
       aprobar,
     }));
   }
@@ -475,7 +441,7 @@ export class GestionRendiciones implements OnInit {
         ? '¿Aprobar la rendición ' + items[0].codigo + '?'
         : '¿Aprobar ' + items.length + ' rendiciones?',
       nota: 'Habilita al trabajador a cargar el Consolidado del S10.',
-      avisos: await this.avisos(items, 'PRIMERA_REVISION', true),
+      avisos: await this.avisos(items, true),
       confirmButtonText: 'Sí, aprobar',
     });
     if (!result.isConfirmed) return;
@@ -495,7 +461,7 @@ export class GestionRendiciones implements OnInit {
       titulo: items.length === 1
         ? '¿Observar la rendición ' + items[0].codigo + '?'
         : '¿Observar ' + items.length + ' rendiciones?',
-      avisos: await this.avisos(items, 'PRIMERA_REVISION', false),
+      avisos: await this.avisos(items, false),
       observacion: {
         label: 'Observación',
         placeholder: 'Qué capturas o montos tiene que corregir el trabajador…',
@@ -535,88 +501,6 @@ export class GestionRendiciones implements OnInit {
 
     if (accion === 'aprobar')      void this.aprobarPrimeraRevision([planilla]);
     else if (accion === 'observar') void this.observarPrimeraRevision([planilla]);
-  }
-
-  // ── Acciones ─────────────────────────────────────────────────────────
-
-  async aprobarBulk(): Promise<void> {
-    const items = this.selectedPorDecidir;
-    if (items.length === 0) return;
-
-    const salidas = items.reduce((acc, r) => acc + r.porDecidirCount, 0);
-    const result = await confirmarConCorreos({
-      titulo: items.length === 1 ? '¿Aprobar este reembolso?' : `¿Aprobar ${items.length} planillas?`,
-      // El conteo no está en la tabla —una planilla puede traer varias salidas por decidir— y la
-      // firma es el efecto que no se ve.
-      nota: `${salidas} salida(s). Se firma la planilla y su Consolidado del S10.`,
-      avisos: await this.avisos(items, 'REEMBOLSO', true),
-      confirmButtonText: 'Sí, aprobar',
-    });
-    if (!result.isConfirmed) return;
-
-    // Aprobar firma: si el revisor no tiene firma registrada, el 409 abre el modal para dibujarla.
-    this.aprobar(this.accionDe(items));
-  }
-
-  async observarBulk(): Promise<void> {
-    const items = this.selectedPorDecidir;
-    if (items.length === 0) return;
-
-    const { value: observacion, isConfirmed } = await confirmarConCorreos({
-      icon: 'warning',
-      titulo: items.length === 1
-        ? '¿Observar este reembolso?'
-        : `¿Observar ${items.length} planillas?`,
-      avisos: await this.avisos(items, 'REEMBOLSO', false),
-      observacion: {
-        label: 'Observación',
-        placeholder: 'Qué tiene que corregir el trabajador en el Consolidado del S10…',
-      },
-      confirmButtonText: 'Observar',
-      confirmButtonColor: '#D30000',
-    });
-    if (!isConfirmed || !observacion) return;
-
-    this.loaderService.show();
-    this.service.observarReembolso(this.accionDe(items, observacion)).subscribe({
-      next: (res) => this.trasAccion(res.message),
-      error: (err: HttpErrorResponse) => this.errorAccion(err),
-    });
-  }
-
-  /**
-   * Ejecuta la aprobación, que ES la firma: estampa la firma del revisor en la planilla y en su
-   * Consolidado del S10. El 409 significa que todavía no registró su firma — en vez de mandarlo a
-   * Configuración se abre el modal donde la dibuja y la acción se reintenta sola.
-   */
-  private aprobar(accion: ReembolsoAccionDto): void {
-    this.loaderService.show();
-    this.service.aprobarReembolso(accion).subscribe({
-      next: (res) => this.trasAccion(res.message),
-      error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
-        if (err.status === 409) {
-          this.accionPendienteDeFirma = accion;
-          this.firmaModalAbierto = true;
-          this.cdr.detectChanges();
-          return;
-        }
-        this.errorAccion(err);
-      },
-    });
-  }
-
-  onFirmaRegistrada(): void {
-    this.firmaModalAbierto = false;
-    const accion = this.accionPendienteDeFirma;
-    this.accionPendienteDeFirma = null;
-    if (accion) this.aprobar(accion);
-  }
-
-  cerrarFirmaModal(): void {
-    this.firmaModalAbierto = false;
-    this.accionPendienteDeFirma = null;
-    this.cdr.detectChanges();
   }
 
   private trasAccion(message: string): void {

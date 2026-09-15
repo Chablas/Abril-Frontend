@@ -75,18 +75,17 @@ export interface GestionRendicionListItemDto {
   revisorNotificadoAt: string | null;
 
   // ── Qué se puede hacer con esta planilla ───────────────────────────────
-  /** Salidas con el reembolso listo para decidir (rendidas, con S10 y sin decidir). */
-  porDecidirCount: number;
   /**
-   * True si el usuario puede decidir sobre esta planilla (su primera revisión y el reembolso de
-   * sus salidas). False cuando incluye salidas SUYAS y él no es su propio revisor: nadie decide
-   * lo suyo, y la única excepción es tener el jefe personalizado apuntándose a sí mismo.
+   * True si el usuario puede decidir la primera revisión de esta planilla. False cuando incluye
+   * salidas SUYAS y él no es su propio revisor: nadie decide lo suyo, y la única excepción es
+   * tener el jefe personalizado apuntándose a sí mismo.
    */
   puedeDecidir: boolean;
   /**
    * True si el usuario puede adjuntar el Consolidado del S10 de esta planilla en nombre de sus
    * trabajadores. Lo resuelve el backend con el mismo algoritmo que la pantalla de
-   * Consolidadores (lo asignado por área, o el Jefe/Gerente/residente que deduce), y hace falta
+   * Consolidadores (Consolidados → Configuración: lo asignado por área, o el Jefe/Gerente/
+   * residente que deduce), y hace falta
    * poder por TODOS los trabajadores de `consolidadoConjunto`: el consolidado cubre esos
    * documentos enteros.
    *
@@ -124,9 +123,9 @@ export interface ConsolidadoConjuntoItemDto {
 }
 
 /**
- * Una salida de la planilla, para que el revisor vea qué agrupa el documento que está decidiendo.
- * Es solo lectura: el reembolso se decide por planilla entera (`puedeDecidir` + `porDecidirCount`
- * de la planilla), no salida por salida.
+ * Una salida de la planilla, para que el revisor vea qué agrupa el documento que está revisando.
+ * Es solo lectura: la primera revisión se decide por planilla entera (`puedeDecidir`), no salida
+ * por salida, y el reembolso se decide en Consolidados sobre el documento del S10.
  */
 export interface GestionRendicionSalidaDto {
   id: number;
@@ -152,17 +151,14 @@ export interface GestionRendicionDetalleDto extends GestionRendicionListItemDto 
 }
 
 /**
- * Números de las tarjetas del encabezado, contados sobre el conjunto ya filtrado: las tres cosas
- * que esperan al revisor, en el orden del flujo.
+ * Números de las tarjetas del encabezado, contados sobre el conjunto ya filtrado: los dos pasos que
+ * esta pantalla resuelve. Decidir el reembolso es de Consolidados y se cuenta allá.
  */
 export interface ResumenGestionRendicionesDto {
   /** Planillas esperando la PRIMERA revisión: el primer paso del revisor. */
   primeraRevision: number;
   /** Aprobadas en primera revisión y sin Consolidado del S10: la pelota está en el trabajador. */
   sinConsolidado: number;
-  /** Con reembolso por decidir (con S10 adjunto) — la segunda revisión. */
-  porRevisar: number;
-  /** Con reembolso aprobado esperando la firma. */
 }
 
 export interface GestionRendicionListResultDto {
@@ -177,11 +173,6 @@ export interface GestionRendicionFilterDataDto {
 }
 
 /**
- * Cuerpo de las acciones en bloque. Se manda una de las dos cosas: las planillas completas (lo
- * normal, desde la tabla) o salidas sueltas (desde el detalle, cuando el revisor decide una por
- * una).
- */
-/**
  * Cuerpo de la decisión de la PRIMERA revisión. Va por planilla y no por salida: lo que se revisa
  * es el documento entero y la decisión es total.
  */
@@ -191,9 +182,4 @@ export interface PrimeraRevisionAccionDto {
   observacion?: string | null;
 }
 
-export interface ReembolsoAccionDto {
-  rendicionIds: number[];
-  solicitudIds: number[];
-  /** Obligatoria al observar: es lo único que el trabajador va a leer. */
-  observacion?: string | null;
-}
+

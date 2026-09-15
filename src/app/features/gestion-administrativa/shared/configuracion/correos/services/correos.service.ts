@@ -12,8 +12,9 @@ import {
 /**
  * Configuración de los correos del flujo de salidas. Todas las operaciones reciben la `pantalla`
  * porque hay una configuración por pantalla del flujo —Solicitud de Salidas, Mis Rendiciones,
- * Gestión de Salidas, Gestión de Rendiciones y Reembolsos— y el backend acota cada una a los
- * correos que se originan ahí (mismo esquema que la configuración de correos de Gestión GTH).
+ * Gestión de Salidas, Gestión de Rendiciones, Consolidados, Reembolsos y Correcciones S10— y el
+ * backend acota cada una a los correos que se originan ahí (mismo esquema que la configuración de
+ * correos de Gestión GTH).
  *
  * Las escrituras son granulares (una por acción de la pantalla) y no un reemplazo de la lista
  * completa: los interruptores guardan al momento de tocarlos, así que mandar la lista entera

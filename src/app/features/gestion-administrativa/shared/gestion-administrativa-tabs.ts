@@ -4,13 +4,15 @@ import { Roles } from '../../../core/constants/roles';
 /** Pestañas del header de Gestión Administrativa — única fuente para todas sus páginas. */
 export const GESTION_ADMINISTRATIVA_TABS: AbrilPageTab[] = [
   // Orden del flujo, alternando quién actúa en cada paso: el trabajador pide, el revisor decide,
-  // el trabajador rinde, el revisor revisa y firma, el ERP corrige lo observado y Tesorería paga.
+  // el trabajador rinde, el revisor hace la primera revisión, decide y firma el reembolso sobre el
+  // Consolidado del S10, el ERP corrige lo observado y Tesorería paga.
   // Delegación de Revisión va al final porque no es un paso del flujo sino quién lo atiende.
   // Mismo orden que la lista del sidebar (NavigationService) — las dos barras no pueden discrepar.
   { label: 'Solicitud de Salidas',   icono: 'ti-file-text',  route: '/gestion-administrativa/solicitud-salidas',   featureKey: 'gestion-administrativa.solicitud-salidas' },
   { label: 'Gestión de Salidas',     icono: 'ti-briefcase',  route: '/gestion-administrativa/gestion-salidas',     featureKey: 'gestion-administrativa.gestion-salidas' },
   { label: 'Mis Rendiciones',        icono: 'ti-receipt',    route: '/gestion-administrativa/rendiciones',         featureKey: 'gestion-administrativa.rendiciones' },
   { label: 'Gestión de Rendiciones', icono: 'ti-checklist',  route: '/gestion-administrativa/gestion-rendiciones', featureKey: 'gestion-administrativa.gestion-rendiciones' },
+  { label: 'Consolidados',           icono: 'ti-file-stack', route: '/gestion-administrativa/consolidados',        featureKey: 'gestion-administrativa.consolidados' },
   { label: 'Correcciones S10',       icono: 'ti-file-alert', route: '/gestion-administrativa/correcciones-s10',    featureKey: 'gestion-administrativa.correcciones-s10' },
   { label: 'Reembolsos',             icono: 'ti-cash',       route: '/gestion-administrativa/reembolsos',          featureKey: 'gestion-administrativa.reembolsos' },
   { label: 'Delegación de Revisión', icono: 'ti-user-check', route: '/gestion-administrativa/delegacion-revision', featureKey: 'gestion-administrativa.delegacion-revision' },

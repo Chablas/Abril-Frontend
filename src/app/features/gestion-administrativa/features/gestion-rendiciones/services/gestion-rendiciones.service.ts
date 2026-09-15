@@ -10,7 +10,6 @@ import {
   GestionRendicionFilterDataDto,
   GestionRendicionListResultDto,
   PrimeraRevisionAccionDto,
-  ReembolsoAccionDto,
 } from '../dtos/gestion-rendicion.dto';
 
 @Injectable({ providedIn: 'root' })
@@ -102,27 +101,10 @@ export class GestionRendicionesService {
     );
   }
 
-  aprobarReembolso(accion: ReembolsoAccionDto): Observable<ReembolsoBulkResultDto> {
-    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/aprobar`, accion, {
-      headers: this.headers,
-    });
-  }
-
   /**
-   * Observa el reembolso: la planilla vuelve al trabajador para que subsane. La observación es
-   * obligatoria — es lo que él lee para saber qué corregir, y lo que se le manda al Coordinador ERP
-   * si la corrección tiene que hacerse dentro del S10.
-   */
-  observarReembolso(accion: ReembolsoAccionDto): Observable<ReembolsoBulkResultDto> {
-    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/observar`, accion, {
-      headers: this.headers,
-    });
-  }
-
-  /**
-   * Qué correos saldrían al tomar una de las cuatro decisiones sobre la selección, y a quién. Se
-   * pide al apretar el botón —no al cargar la pantalla— porque depende de qué está seleccionado, y
-   * lo resuelve el servidor para que la confirmación no pueda desalinearse de Configuración →
+   * Qué correos saldrían al decidir la primera revisión de la selección, y a quién. Se pide al
+   * apretar el botón —no al cargar la pantalla— porque depende de qué está seleccionado, y lo
+   * resuelve el servidor para que la confirmación no pueda desalinearse de Configuración →
    * Correos.
    */
   correoPreview(request: CorreoPreviewRequestDto): Observable<CorreoAvisoDto[]> {

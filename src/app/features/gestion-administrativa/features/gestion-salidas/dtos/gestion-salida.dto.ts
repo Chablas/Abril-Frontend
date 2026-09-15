@@ -73,8 +73,8 @@ export interface GestionSalidaListItemDto {
   esPropia: boolean;
 
   // ── Reembolso ────────────────────────────────────────────────────────
-  // Solo informativo acá: adjuntar el Consolidado del S10, decidir el reembolso y firmar la
-  // planilla son de Gestión de Rendiciones, y el pago de Reembolsos (Tesorería).
+  // Solo informativo acá: la primera revisión y el Consolidado del S10 son de Gestión de
+  // Rendiciones, decidir y firmar el reembolso de Consolidados, y el pago de Reembolsos.
 
   /**
    * Eje aparte de la aprobación de la salida y de la rendición: es el visto bueno al GASTO.

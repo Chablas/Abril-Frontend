@@ -3,7 +3,7 @@
  *  • `revisores`      → quién aprueba las salidas de los trabajadores del área (Solicitud de
  *                       Salidas · Configuración).
  *  • `consolidadores` → quién, además del propio trabajador, puede adjuntar el Consolidado del S10
- *                       de sus planillas (Gestión de Rendiciones · Configuración).
+ *                       de sus planillas (Consolidados · Configuración).
  *
  * Comparten tabla, árbol, modal y contrato. La única diferencia es cuántos de los asignados quedan
  * vigentes: en revisores gana el primer activo, en consolidadores quedan todos.

@@ -1,7 +1,7 @@
 <app-abril-page-header
   [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
   titulo="Gestión de Rendiciones"
-  subtitulo="Primera revisión, reembolso y firma de las planillas de rendición."
+  subtitulo="Primera revisión de las planillas y Consolidado del S10."
   [tabs]="tabs"
   [botonSecundario]="botonConfiguracion"
   (secondaryClick)="abrirConfiguracion()">
@@ -13,7 +13,7 @@
 
   <!-- ── Tarjetas de resumen ───────────────────────────────────────────────
        Se cuentan sobre el mismo conjunto que muestra la tabla, así que acompañan a los filtros.
-       Son los tres estados del flujo que esperan al revisor. -->
+       Son los dos pasos que esta pantalla resuelve; el reembolso se cuenta en Consolidados. -->
   <div class="resumen-cards">
     <div class="resumen-card resumen-card--primary">
       <span class="resumen-card__label">1.ª revisión</span>
@@ -24,11 +24,6 @@
       <span class="resumen-card__label">Sin consolidado</span>
       <span class="resumen-card__value">{{ resumen.sinConsolidado }}</span>
       <span class="resumen-card__hint">Aprobadas, esperan el S10</span>
-    </div>
-    <div class="resumen-card resumen-card--info">
-      <span class="resumen-card__label">2.ª revisión</span>
-      <span class="resumen-card__value">{{ resumen.porRevisar }}</span>
-      <span class="resumen-card__hint">Reembolsos por decidir</span>
     </div>
   </div>
 
@@ -85,36 +80,6 @@
       Consolidado S10<span *ngIf="consolidadoSeleccionBloqueo === null"> ({{ selectedConsolidables.length }})</span>
     </button>
 
-    <span class="w-px h-5 bg-[#E5E7EB] mx-1"></span>
-
-    <button
-      type="button"
-      abrilBulkAction="default"
-      (click)="aprobarBulk()"
-      [disabled]="!puedeDecidir"
-      [title]="decisionBloqueada
-        ? 'No puedes decidir el reembolso de tus propias salidas — deselecciona esas planillas'
-        : 'Aprobar estampa tu firma en la planilla y en su Consolidado del S10'">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-      </svg>
-      Aprobar reembolso<span *ngIf="puedeDecidir"> ({{ selectedPorDecidir.length }})</span>
-    </button>
-
-    <button
-      type="button"
-      abrilBulkAction="danger"
-      (click)="observarBulk()"
-      [disabled]="!puedeDecidir"
-      [title]="decisionBloqueada
-        ? 'No puedes decidir el reembolso de tus propias salidas — deselecciona esas planillas'
-        : 'Se te pedirá una observación para que el trabajador sepa qué corregir'">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
-        <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
-        <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
-      </svg>
-      Observar reembolso<span *ngIf="puedeDecidir"> ({{ selectedPorDecidir.length }})</span>
-    </button>
   </div>
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
@@ -336,14 +301,6 @@
   [razonSocial]="objetivo.razonSocial"
   [montoEsperado]="objetivo.monto"
   (close)="cerrarConsolidado($event)" />
-
-<!-- ── Modal para registrar la firma la primera vez ────────────────────
-     Salta con el 409 de "Firmar": el usuario dibuja su firma sin salir de la pantalla y la firma
-     que había pedido se reintenta sola. -->
-<app-firma-registrar-modal
-  *ngIf="firmaModalAbierto"
-  (guardada)="onFirmaRegistrada()"
-  (cerrar)="cerrarFirmaModal()" />
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">

@@ -25,8 +25,9 @@
  *  • `rendiciones`         → los que dispara el trabajador (enviar la planilla a 1.ª revisión y
  *                            avisar que adjuntó el Consolidado del S10).
  *  • `gestion-salidas`     → la decisión del revisor sobre la solicitud (aprobada / rechazada).
- *  • `gestion-rendiciones` → las dos decisiones del revisor sobre la planilla (1.ª revisión y
- *                            reembolso).
+ *  • `gestion-rendiciones` → la primera revisión de la planilla (aprobada / observada).
+ *  • `consolidados`        → la decisión del reembolso sobre el Consolidado del S10 y el aviso a
+ *                            Tesorería que dispara la firma.
  *  • `reembolsos`          → Tesorería: hoy ninguno (marcar pagado no envía correos).
  *  • `correcciones-s10`    → la bandeja del Coordinador ERP: el aviso de que ya corrigió.
  */
@@ -35,6 +36,7 @@ export type CorreoPantalla =
   | 'rendiciones'
   | 'gestion-salidas'
   | 'gestion-rendiciones'
+  | 'consolidados'
   | 'reembolsos'
   | 'correcciones-s10';
 

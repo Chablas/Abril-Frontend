@@ -17,13 +17,15 @@ export class NavigationService {
       items: [
         // Orden del flujo, alternando quién actúa: el trabajador pide (Solicitud de Salidas), el
         // revisor decide (Gestión de Salidas), el trabajador rinde (Mis Rendiciones), el revisor
-        // revisa y firma (Gestión de Rendiciones), el ERP corrige lo observado (Correcciones S10)
-        // y Tesorería paga (Reembolsos). Delegación de Revisión cierra: no es un paso del flujo.
+        // hace la primera revisión (Gestión de Rendiciones), decide y firma el reembolso
+        // (Consolidados), el ERP corrige lo observado (Correcciones S10) y Tesorería paga
+        // (Reembolsos). Delegación de Revisión cierra: no es un paso del flujo.
         // Mismo orden que GESTION_ADMINISTRATIVA_TABS — las dos barras no pueden discrepar.
         { label: 'Solicitud de Salidas', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
         { label: 'Gestión de Salidas',   route: '/gestion-administrativa/gestion-salidas',   featureKey: 'gestion-administrativa.gestion-salidas' },
         { label: 'Mis Rendiciones',      route: '/gestion-administrativa/rendiciones',       featureKey: 'gestion-administrativa.rendiciones' },
         { label: 'Gestión de Rendiciones', route: '/gestion-administrativa/gestion-rendiciones', featureKey: 'gestion-administrativa.gestion-rendiciones' },
+        { label: 'Consolidados',         route: '/gestion-administrativa/consolidados',      featureKey: 'gestion-administrativa.consolidados' },
         { label: 'Correcciones S10',     route: '/gestion-administrativa/correcciones-s10',  featureKey: 'gestion-administrativa.correcciones-s10' },
         { label: 'Reembolsos',           route: '/gestion-administrativa/reembolsos',        featureKey: 'gestion-administrativa.reembolsos' },
         { label: 'Delegación de Revisión', route: '/gestion-administrativa/delegacion-revision', featureKey: 'gestion-administrativa.delegacion-revision' },

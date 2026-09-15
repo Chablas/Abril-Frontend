@@ -46,6 +46,7 @@ const SECCIONES_SIN_RUTA = {
   'configuracion.revisores-areas': 'Revisores de Áreas',
   'gestion-administrativa.config.visibilidad-salidas': 'Visibilidad de Salidas',
   'gestion-administrativa.config.visibilidad-rendiciones': 'Visibilidad de Rendiciones',
+  'gestion-administrativa.config.visibilidad-consolidados': 'Visibilidad de Consolidados',
   'gestion-administrativa.config.consolidadores-areas': 'Consolidadores de Áreas',
 };
 

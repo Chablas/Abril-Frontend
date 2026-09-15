@@ -29,10 +29,10 @@ interface AreaCascadeNode {
 /**
  * Sección "Visibilidad" de la configuración de una pantalla: qué áreas ve cada trabajador.
  *
- * Es la misma sección para Gestión de Salidas y Gestión de Rendiciones —el `ambito` dice cuál—
- * porque son el mismo conjunto de trabajadores y el mismo árbol de áreas; lo que cambia es sobre
- * qué bandeja aplica lo que se guarda. Sin asignación, la visibilidad la resuelve el algoritmo de
- * jerarquía.
+ * Es la misma sección para Gestión de Salidas, Gestión de Rendiciones y Consolidados —el `ambito`
+ * dice cuál— porque son el mismo conjunto de trabajadores y el mismo árbol de áreas; lo que cambia
+ * es sobre qué bandeja aplica lo que se guarda. Sin asignación, la visibilidad la resuelve el
+ * algoritmo de jerarquía.
  */
 @Component({
   standalone: true,

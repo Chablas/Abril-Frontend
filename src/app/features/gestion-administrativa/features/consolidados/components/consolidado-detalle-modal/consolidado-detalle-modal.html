@@ -1,0 +1,221 @@
+<app-base-modal
+  [title]="titulo"
+  width="w-[1000px]"
+  closeColor="var(--color-abril-standard)"
+  (closeModal)="cerrar()">
+
+  <div *ngIf="detalle as d" class="flex flex-col gap-4 pt-4">
+
+    <!-- ── Cabecera ─────────────────────────────────────────────────────── -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Periodo</span>
+        <span class="text-sm text-gray-700">{{ d.periodo }}</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Monto declarado en el S10</span>
+        <span class="text-sm text-gray-700">S/ {{ d.montoTotal | number:'1.2-2' }}</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Razón social</span>
+        <span class="text-sm text-gray-700">{{ (d.razonSocial | titleCase) || '—' }}</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Adjuntado</span>
+        <span class="text-sm text-gray-700">{{ d.uploadedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+        <span *ngIf="d.subidoPor" class="text-[11px] text-gray-400">{{ d.subidoPor | titleCase }}</span>
+      </div>
+    </div>
+
+    <!-- Observación vigente del reembolso. Va arriba de todo porque explica por qué el consolidado
+         volvió: si lo devolvió Tesorería, ya había pasado por la firma y lo que hay que mirar es
+         otra cosa (RG-49). -->
+    <div *ngIf="d.estadoReembolso === 'Observado' && d.observacionReembolso"
+         class="border rounded-lg p-3 text-sm"
+         style="border-color:#FCA5A5;background:#FEF2F2;color:#991B1B">
+      <span class="font-semibold">
+        {{ d.observacionReembolsoOrigen ? 'Observación de ' + d.observacionReembolsoOrigen : 'Observación del reembolso' }}:
+      </span>
+      {{ d.observacionReembolso }}
+    </div>
+
+    <!-- ── Estado y documentos del consolidado ──────────────────────────── -->
+    <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
+      <div class="flex items-center gap-3">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Reembolso</span>
+        <app-status-badge
+          [text]="reembolsoLabelCorto(d.estadoReembolso)"
+          [bgColor]="reembolsoColors(d.estadoReembolso).bg"
+          [textColor]="reembolsoColors(d.estadoReembolso).text" />
+        <span *ngIf="d.reembolsoMixto" class="text-[11px] text-gray-400">
+          Las salidas que ves no están todas en el mismo estado: se muestra la más atrasada.
+        </span>
+        <span *ngIf="d.firmadoAt" class="text-[11px] text-gray-400 ml-auto">
+          Firmado el {{ d.firmadoAt | date:'dd/MM/yyyy HH:mm' }}
+        </span>
+      </div>
+
+      <a [href]="d.pdfUrl" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
+        </svg>
+        {{ d.pdfFilename }}
+        <span class="text-xs text-gray-400 font-normal">· Consolidado del S10</span>
+      </a>
+
+      <a *ngIf="d.pdfFirmadoUrl" [href]="d.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        {{ d.pdfFirmadoFilename ?? 'Consolidado firmado' }}
+        <span class="text-xs text-gray-400 font-normal">· firmado el {{ d.firmadoAt | date:'dd/MM/yyyy' }}</span>
+      </a>
+    </div>
+
+    <!-- ── Planillas que cubre ──────────────────────────────────────────── -->
+    <div *ngFor="let r of d.rendiciones" class="flex flex-col gap-2 border-t pt-3"
+         style="border-color:var(--color-abril-border)">
+
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="text-sm font-semibold text-gray-700">{{ r.codigo }}</span>
+        <span *ngIf="r.numeroPlanilla" class="text-[11px] text-gray-400">{{ r.numeroPlanilla }}</span>
+        <app-status-badge
+          *ngIf="r.estadoReembolso"
+          [text]="reembolsoLabelCorto(r.estadoReembolso)"
+          [bgColor]="reembolsoColors(r.estadoReembolso).bg"
+          [textColor]="reembolsoColors(r.estadoReembolso).text" />
+        <span class="text-[11px] text-gray-400 ml-auto">
+          Planilla completa: S/ {{ r.montoTotalPlanilla | number:'1.2-2' }}
+        </span>
+      </div>
+
+      <!-- Una planilla que el usuario no ve se lista igual: el importe declarado la incluye, así
+           que sin ella el total del documento no cuadraría con lo que muestra el modal. -->
+      <p *ngIf="!r.visible" class="text-sm text-gray-400 italic">
+        Esta rendición no está en tu alcance: se lista porque el monto del consolidado la incluye.
+      </p>
+
+      <ng-container *ngIf="r.visible">
+        <div class="flex flex-wrap items-center gap-3">
+          <a [href]="r.pdfUrl" target="_blank" rel="noopener noreferrer"
+             class="inline-flex items-center gap-2 hover:underline text-xs font-medium break-all"
+             style="color:var(--color-abril-accent)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+              <path d="M14 2v6h6" stroke-linejoin="round"/>
+            </svg>
+            Planilla de gasto
+          </a>
+
+          <a *ngIf="r.pdfFirmadoUrl" [href]="r.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
+             class="inline-flex items-center gap-2 hover:underline text-xs font-medium break-all"
+             style="color:var(--color-abril-accent)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+              <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Planilla firmada
+          </a>
+        </div>
+
+        <div class="abril-table-wrap">
+          <table class="abril-table abril-table--th-center">
+            <thead>
+              <tr>
+                <th>N° solicitud</th>
+                <th>Trabajador</th>
+                <th>Fecha</th>
+                <th>Motivo</th>
+                <th>Destino</th>
+                <th>Monto</th>
+                <th>Reembolso</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of salidasDe(r.id)"
+                  class="border-b"
+                  style="border-color:var(--color-abril-border)">
+                <td class="text-gray-700 font-medium whitespace-nowrap">{{ s.codigo ?? '—' }}</td>
+                <td class="text-gray-700">{{ s.trabajador | titleCase }}</td>
+                <td class="text-gray-700 whitespace-nowrap">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
+                <td class="text-gray-700">
+                  {{ s.motivo | titleCase }}
+                  <span *ngIf="s.trayectosCount > 1"
+                        class="ml-1 inline-block text-[10px] px-1.5 py-0.5 rounded font-semibold align-middle"
+                        style="background:var(--color-abril-standard-light);color:var(--color-abril-standard)"
+                        [title]="s.trayectosCount + ' trayectos'">
+                    +{{ s.trayectosCount - 1 }}
+                  </span>
+                </td>
+                <td class="text-gray-500">{{ (s.lugarDestino | titleCase) || '—' }}</td>
+                <td class="text-gray-700 whitespace-nowrap">S/ {{ s.monto | number:'1.2-2' }}</td>
+                <td>
+                  <app-status-badge
+                    [text]="reembolsoLabelCorto(s.estadoReembolso)"
+                    [bgColor]="reembolsoColors(s.estadoReembolso).bg"
+                    [textColor]="reembolsoColors(s.estadoReembolso).text" />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- ── Decisión del reembolso ─────────────────────────────────────────
+         Es del documento entero: no se aprueban unas planillas sí y otras no. Cubre las salidas que
+         todavía están por decidir; las ya decididas el backend las ignora. -->
+    <div *ngIf="d.porDecidirCount > 0"
+         class="flex flex-wrap items-center justify-center gap-3 border-t pt-3"
+         style="border-color:var(--color-abril-border)">
+      <button
+        type="button"
+        (click)="aprobar()"
+        [disabled]="!d.puedeDecidir"
+        [title]="d.puedeDecidir
+          ? 'Aprueba el reembolso y estampa tu firma en el consolidado y en las planillas que cubre'
+          : 'No puedes decidir el reembolso de tus propias salidas'"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+        style="background:var(--color-abril-standard)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        Aprobar el reembolso
+      </button>
+
+      <button
+        type="button"
+        (click)="observar()"
+        [disabled]="!d.puedeDecidir"
+        [title]="d.puedeDecidir
+          ? 'Se te pedirá la observación de qué tiene que corregir el trabajador'
+          : 'No puedes decidir el reembolso de tus propias salidas'"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        style="background:#FFFFFF;color:#D30000;border:1px solid #D30000">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+        </svg>
+        Observar
+      </button>
+
+      <span *ngIf="!d.puedeDecidir" class="text-[11px] text-gray-500 italic">
+        Este consolidado cubre salidas tuyas: lo tiene que decidir otro jefe.
+      </span>
+    </div>
+
+  </div>
+
+</app-base-modal>
+
+<!-- ── Modal para registrar la firma la primera vez ─────────────────────
+     Salta con el 409 de aprobar: la jefatura dibuja su firma sin salir de la pantalla y la
+     aprobación que había pedido se reintenta sola. -->
+<app-firma-registrar-modal
+  *ngIf="firmaModalAbierto"
+  (guardada)="onFirmaRegistrada()"
+  (cerrar)="cerrarFirmaModal()" />
