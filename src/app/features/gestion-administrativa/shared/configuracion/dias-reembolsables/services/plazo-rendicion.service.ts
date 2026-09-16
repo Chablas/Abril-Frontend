@@ -2,7 +2,11 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../../environments/environment';
-import { PlazoRendicion, PlazoRendicionSaveResult } from '../dtos/plazo-rendicion.dto';
+import {
+  PlazoRendicion,
+  PlazoRendicionSave,
+  PlazoRendicionSaveResult,
+} from '../dtos/plazo-rendicion.dto';
 
 /**
  * Plazo de rendición (sección "Días reembolsables"). Cuelga de la configuración de Solicitud de
@@ -25,12 +29,8 @@ export class PlazoRendicionService {
     return this.http.get<PlazoRendicion>(this.apiUrl, { headers: this.headers });
   }
 
-  /** Guarda el número. La respuesta trae el plazo recalculado (nueva fecha límite). */
-  guardar(diasHabilesPlazo: number): Observable<PlazoRendicionSaveResult> {
-    return this.http.put<PlazoRendicionSaveResult>(
-      this.apiUrl,
-      { diasHabilesPlazo },
-      { headers: this.headers },
-    );
+  /** Guarda el plazo y los dos alcances. La respuesta trae todo recalculado (nueva fecha límite). */
+  guardar(body: PlazoRendicionSave): Observable<PlazoRendicionSaveResult> {
+    return this.http.put<PlazoRendicionSaveResult>(this.apiUrl, body, { headers: this.headers });
   }
 }

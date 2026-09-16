@@ -8,7 +8,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { LearningService } from '../../../../core/learning/learning.service';
-import { LearningVideoDto } from '../../../../core/learning/learning.model';
+import { LearningVideoDto, esManual } from '../../../../core/learning/learning.model';
 import { RETURN_URL_PARAM, ReturnUrlService } from '../../../../core/auth/return-url.service';
 
 type LoginTab = 'abril' | 'contratistas' | 'clinica';
@@ -20,9 +20,9 @@ type LoginTab = 'abril' | 'contratistas' | 'clinica';
   styleUrl: './login.css',
 })
 export class Login implements OnInit {
-  /** Videos de contratistas del modal (se cargan del backend, superficie LOGIN). */
+  /** Videos y manuales de contratistas del modal (se cargan del backend, superficie LOGIN). */
   tutorialVideos: LearningVideoDto[] = [];
-  /** Evita volver a pedir los videos al backend cada vez que se reabre el modal. */
+  /** Evita volver a pedirlos al backend cada vez que se reabre el modal. */
   private tutorialesCargados = false;
 
   token!: string;
@@ -82,7 +82,7 @@ export class Login implements OnInit {
     }
   }
 
-  /** Carga los videos tutoriales bajo demanda al abrir el modal, con spinner global. */
+  /** Carga los videos y manuales bajo demanda al abrir el modal, con spinner global. */
   private cargarTutoriales(): void {
     this.loaderService.show();
     // Se aplanan los grupos: en el login solo existe la categoría de contratistas.
@@ -100,6 +100,11 @@ export class Login implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  /** Un manual lleva ícono de documento en su tarjeta; un video, el de play. */
+  esManual(v: LearningVideoDto): boolean {
+    return esManual(v.url);
   }
 
   toggleContratistaPassword(): void {

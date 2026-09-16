@@ -1,6 +1,7 @@
 <app-base-modal
-  [title]="esEdicion ? 'EDITAR VIDEO' : 'NUEVO VIDEO'"
+  [title]="esEdicion ? 'EDITAR VIDEO O MANUAL' : 'NUEVO VIDEO O MANUAL'"
   width="w-[460px]"
+  [preventCloseWhenDirty]="true"
   (closeModal)="closeModal.emit()">
 
   <div class="flex flex-col gap-[16px] mt-[20px]">
@@ -15,7 +16,7 @@
           valueField="id"
           displayField="nombre"
           [value]="categoriaId"
-          (valueChange)="categoriaId = $event">
+          (valueChange)="onCategoriaChange($event)">
         </app-search-select>
         <p *ngIf="submitted && categoriaId == null" class="text-xs text-red-500">Campo requerido</p>
       </ng-container>
@@ -25,7 +26,7 @@
         <div class="border border-[#E2E2E2] bg-gray-50 rounded-[8px] px-[12px] py-[10px] text-sm text-gray-500">
           {{ categoriaNombre || '—' }}
         </div>
-        <p class="text-xs text-gray-400">Para mover el video de grupo, elimínalo y créalo en el grupo destino.</p>
+        <p class="text-xs text-gray-400">Para moverlo de grupo, elimínalo y créalo en el grupo destino.</p>
       </ng-container>
     </div>
 
@@ -40,15 +41,57 @@
       <p *ngIf="submitted && !titulo.trim()" class="text-xs text-red-500">Campo requerido</p>
     </div>
 
-    <!-- URL -->
-    <div class="flex flex-col gap-[4px]">
-      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Enlace del video</label>
-      <input
-        type="text"
-        [(ngModel)]="url"
-        placeholder="https://www.loom.com/share/..."
-        class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
-      <p *ngIf="submitted && !url.trim()" class="text-xs text-red-500">Campo requerido</p>
+    <!-- Video o manual: enlace (normalmente un video) o archivo (normalmente un manual; el backend
+         lo sube a SharePoint) -->
+    <div class="flex flex-col gap-[8px]">
+      <label class="text-sm font-medium" style="color:var(--color-abril-primary)">Video o manual</label>
+
+      <div class="flex border border-[#E2E2E2] rounded-[8px] overflow-hidden">
+        <button
+          type="button"
+          class="flex-1 py-[8px] text-sm font-medium cursor-pointer transition-colors"
+          [ngClass]="!esArchivo ? 'bg-[var(--color-abril-primary-light)] text-[var(--color-abril-primary-dark)]' : 'bg-white text-gray-500 hover:bg-gray-50'"
+          [attr.aria-pressed]="!esArchivo"
+          (click)="setEsArchivo(false)">
+          Enlace
+        </button>
+        <button
+          type="button"
+          class="flex-1 py-[8px] text-sm font-medium border-l border-[#E2E2E2] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          [ngClass]="esArchivo ? 'bg-[var(--color-abril-primary-light)] text-[var(--color-abril-primary-dark)]' : 'bg-white text-gray-500 enabled:hover:bg-gray-50 enabled:cursor-pointer'"
+          [disabled]="esLogin"
+          [attr.aria-pressed]="esArchivo"
+          (click)="setEsArchivo(true)">
+          Archivo
+        </button>
+      </div>
+      <p *ngIf="esLogin" class="text-xs text-gray-400">Los grupos del login solo admiten enlaces.</p>
+
+      <ng-container *ngIf="!esArchivo">
+        <input
+          type="text"
+          [(ngModel)]="url"
+          placeholder="https://www.loom.com/share/..."
+          class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
+        <p *ngIf="submitted && !url.trim()" class="text-xs text-red-500">Campo requerido</p>
+      </ng-container>
+
+      <ng-container *ngIf="esArchivo">
+        <app-file-selector
+          *ngIf="!archivoPreview.length"
+          [accept]="accept"
+          label="Arrastra el archivo aquí o"
+          hint="PDF, imagen o video · hasta 500 MB"
+          color="var(--color-abril-primary)"
+          (fileSelected)="onArchivoSelected($event)" />
+        <app-file-preview
+          *ngIf="archivoPreview.length"
+          [files]="archivoPreview"
+          color="var(--color-abril-primary)"
+          iconColor="var(--color-abril-primary)"
+          (remove)="quitarArchivo()" />
+        <p *ngIf="submitted && !archivoPreview.length" class="text-xs text-red-500">Campo requerido</p>
+      </ng-container>
     </div>
 
     <!-- Miniatura (opcional) + orden -->

@@ -47,8 +47,16 @@ export class GestionSalidaDetalleModal {
       || (this.detalle.estadoAprobacion === 'Aprobado' && this.detalle.estadoRendicion === 'No rendido');
   }
 
+  /**
+   * Lo que esta salida va a rendir: suma SOLO los trayectos que generan reembolso. Los que no
+   * (motivo no reembolsable, motivo libre o recorrido excluido) no entran en la planilla, así que
+   * sumarlos acá anunciaría un monto que el PDF no va a traer. Cada trayecto sigue mostrando su
+   * propio monto en su fila, con el pill que dice si tiene reembolso o no.
+   */
   get totalGeneral(): number {
-    return this.detalle.trayectos.reduce((acc, t) => acc + (t.montoTotal || 0), 0);
+    return this.detalle.trayectos
+      .filter((t) => t.esReembolsable === true)
+      .reduce((acc, t) => acc + (t.montoTotal || 0), 0);
   }
 
   totalCapturas(t: GestionSalidaTrayectoDto): number {

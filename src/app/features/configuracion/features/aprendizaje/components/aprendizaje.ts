@@ -28,7 +28,7 @@ import {
   LearningVideoAdminDto,
 } from '../dtos/aprendizaje.dto';
 
-/** Video aplanado con su grupo/superficie, para la tabla de "Videos". */
+/** Video o manual aplanado con su grupo/superficie, para la tabla de «Videos y manuales». */
 interface VideoRow extends LearningVideoAdminDto {
   categoriaId: number;
   categoriaNombre: string;
@@ -126,11 +126,11 @@ export class Aprendizaje implements OnInit {
     });
   }
 
-  // ── Section tabs (Grupos / Videos) ────────────────────────────────────────
+  // ── Section tabs (Grupos / Videos y manuales) ─────────────────────────────
   get sectionTabs(): SectionTab[] {
     return [
       { id: 'grupos', label: 'Grupos', badge: this.categorias.length },
-      { id: 'videos', label: 'Videos', badge: this.videos.length },
+      { id: 'videos', label: 'Videos y manuales', badge: this.videos.length },
     ];
   }
 
@@ -142,7 +142,7 @@ export class Aprendizaje implements OnInit {
   get botonPrimario(): SsomaHeaderBtn {
     return this.vista === 'grupos'
       ? { label: 'Nuevo grupo', icono: 'ti-plus' }
-      : { label: 'Nuevo video', icono: 'ti-plus' };
+      : { label: 'Nuevo video o manual', icono: 'ti-plus' };
   }
 
   onPrimary(): void {
@@ -282,7 +282,7 @@ export class Aprendizaje implements OnInit {
     Swal.fire({
       icon: 'question',
       title: '¿Eliminar grupo?',
-      text: `Se eliminará "${c.nombre}" y sus videos. Esta acción no se puede deshacer.`,
+      text: `Se eliminará "${c.nombre}" con sus videos y manuales. Esta acción no se puede deshacer.`,
       showCancelButton: true,
       confirmButtonText: 'Eliminar',
       cancelButtonText: 'Cancelar',
@@ -319,7 +319,7 @@ export class Aprendizaje implements OnInit {
   deleteVideo(v: VideoRow): void {
     Swal.fire({
       icon: 'question',
-      title: '¿Eliminar video?',
+      title: '¿Eliminar video o manual?',
       text: `Se eliminará "${v.titulo}".`,
       showCancelButton: true,
       confirmButtonText: 'Eliminar',

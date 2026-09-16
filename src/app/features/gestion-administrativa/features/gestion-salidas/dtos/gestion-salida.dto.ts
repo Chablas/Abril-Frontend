@@ -44,8 +44,8 @@ export interface GestionSalidaListItemDto {
   /** True si el plazo ya pasó: la salida ya no se rinde, pero su detalle se sigue viendo. */
   plazoVencido: boolean;
   /**
-   * True si la salida está lista para rendirse: aprobada, no rendida, con los trayectos cubiertos
-   * (`puedeRendirse`), con motivo reembolsable (`esReembolsable`) y dentro del plazo. Lo calcula el
+   * True si la salida está lista para rendirse: aprobada, no rendida, con sus trayectos
+   * reembolsables cubiertos (`puedeRendirse`, `esReembolsable`) y dentro del plazo. Lo calcula el
    * backend: es la misma condición que usan el desplegable "Mes a rendir" y las tarjetas.
    */
   aptaParaRendir: boolean;

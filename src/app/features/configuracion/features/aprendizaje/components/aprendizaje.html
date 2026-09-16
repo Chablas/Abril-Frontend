@@ -1,7 +1,7 @@
 <app-abril-page-header
   badge="CONFIGURACIÓN"
   titulo="Centro de aprendizaje"
-  subtitulo="Videos-guía del login y del inicio, agrupados por área/módulo."
+  subtitulo="Videos y manuales del login y del inicio, agrupados por área/módulo."
   [tabs]="tabs"
   [hasExtra]="true"
   [botonPrimario]="botonPrimario"
@@ -28,7 +28,7 @@
             <th>Nombre</th>
             <th class="text-center">Superficie</th>
             <th class="text-center">Visibilidad</th>
-            <th class="text-center">Videos</th>
+            <th class="text-center">Videos y manuales</th>
             <th class="text-center">Orden</th>
             <th class="text-center">Estado</th>
             <th class="text-center">Acciones</th>
@@ -82,7 +82,7 @@
     </div>
   </ng-container>
 
-  <!-- ══════════════════════ VIDEOS ══════════════════════ -->
+  <!-- ══════════════════════ VIDEOS Y MANUALES ══════════════════════ -->
   <ng-container *ngIf="vista === 'videos'">
     <div class="abril-table-wrap">
       <table class="abril-table abril-table--th-center">
@@ -99,7 +99,7 @@
         <tbody>
           <tr *ngIf="filteredVideos.length === 0">
             <td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">
-              {{ filtrosActivos ? 'Sin resultados.' : 'No hay videos registrados.' }}
+              {{ filtrosActivos ? 'Sin resultados.' : 'No hay videos ni manuales registrados.' }}
             </td>
           </tr>
 
@@ -163,6 +163,7 @@
   [categorias]="categorias"
   [categoriaIdPreset]="videosCategoria"
   [categoriaNombre]="videoToEdit?.categoriaNombre || ''"
+  [categoriaSurfaceCode]="videoToEdit?.surfaceCode || ''"
   (closeModal)="closeVideoModal()"
   (saved)="load()" />
 

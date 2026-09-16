@@ -74,7 +74,7 @@ export interface SolicitudSalidaDetalleDto {
 
   /**
    * True si la salida está lista para rendirse: aprobada, no rendida, con todos sus trayectos
-   * cubiertos, con motivo reembolsable y dentro del plazo. Es el mismo `aptaParaRendir` de la fila
+   * reembolsables cubiertos y dentro del plazo. Es el mismo `aptaParaRendir` de la fila
    * del listado —lo calcula el backend— para que el botón "Rendir" del detalle y el de la columna
    * de acciones no puedan discrepar.
    */

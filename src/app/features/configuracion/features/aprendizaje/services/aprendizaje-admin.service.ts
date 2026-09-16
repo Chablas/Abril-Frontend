@@ -46,12 +46,25 @@ export class AprendizajeAdminService {
   }
 
   // ── Videos ──────────────────────────────────────────────────────────────
-  createVideo(dto: LearningVideoCreateDto): Observable<ApiMessageDTO> {
-    return this.http.post<ApiMessageDTO>(`${this.apiUrl}/video`, dto, { headers: this.authHeaders() });
+  /** Multipart: `data` = el dto y, si `esArchivo`, `archivo` = el video (el backend lo sube a SharePoint). */
+  createVideo(dto: LearningVideoCreateDto, archivo: File | null): Observable<ApiMessageDTO> {
+    return this.http.post<ApiMessageDTO>(`${this.apiUrl}/video`, this.videoForm(dto, archivo), {
+      headers: this.authHeaders(),
+    });
   }
 
-  editVideo(id: number, dto: LearningVideoEditDto): Observable<ApiMessageDTO> {
-    return this.http.put<ApiMessageDTO>(`${this.apiUrl}/video/${id}`, dto, { headers: this.authHeaders() });
+  /** Multipart como el alta; con `esArchivo` y sin `archivo` se conserva el archivo actual. */
+  editVideo(id: number, dto: LearningVideoEditDto, archivo: File | null): Observable<ApiMessageDTO> {
+    return this.http.put<ApiMessageDTO>(`${this.apiUrl}/video/${id}`, this.videoForm(dto, archivo), {
+      headers: this.authHeaders(),
+    });
+  }
+
+  private videoForm(dto: LearningVideoCreateDto | LearningVideoEditDto, archivo: File | null): FormData {
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(dto));
+    if (archivo) formData.append('archivo', archivo, archivo.name);
+    return formData;
   }
 
   toggleVideo(id: number): Observable<{ activo: boolean }> {

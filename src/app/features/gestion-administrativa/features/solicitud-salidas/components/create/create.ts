@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, NgZone, OnDestroy, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, ElementRef, EventEmitter, Input, NgZone, OnDestroy, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -96,6 +96,7 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
     private zone: NgZone,
+    private host: ElementRef<HTMLElement>,
   ) {}
 
   ngOnInit(): void {
@@ -292,6 +293,8 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
   razonSinReembolso(t: TrayectoForm): string {
     if (this.trayectoCorrespondeReembolso(t)) return '';
     if (this.trayectoExcluido(t)) return 'trayecto no reembolsable';
+    // "Otro motivo" no está en el catálogo: no tiene configuración que consultar y nunca concede.
+    if (t.motivoLibreOn) return 'motivo personalizado';
     return 'motivo no reembolsable';
   }
 
@@ -608,13 +611,36 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
     return errs;
   }
 
+  /**
+   * Sube el formulario hasta el primer campo que quedó en rojo. El aviso de SweetAlert dice QUÉ
+   * falta, pero con el formulario largo (varios trayectos, cada uno con motivo, horas, lugares y
+   * adjuntos) el campo suele quedar fuera de la vista y al cerrar el aviso no había a dónde
+   * mirar. Por eso corre recién cuando el aviso se cierra: con él abierto el scroll no se ve.
+   *
+   * `zonaSelector` acota la búsqueda al bloque del primer error (la fecha, o el trayecto que lo
+   * tiene). Dentro se busca la primera marca de error — `campo-error` en los desplegables y
+   * `campo-error-msg` en los "Campo requerido" —; si el error no pinta ningún campo (las reglas
+   * de horas, que solo viven en el aviso) se sube al bloque entero.
+   */
+  private scrollAlError(zonaSelector: string): void {
+    // Un tick para que el bloque exista en el DOM: un trayecto colapsado se acaba de reabrir y
+    // sus campos —con la marca de error— se montan en el repintado que todavía no ocurrió.
+    setTimeout(() => {
+      const zona = this.host.nativeElement.querySelector<HTMLElement>(zonaSelector);
+      if (!zona) return;
+      const campo = zona.querySelector<HTMLElement>('.campo-error, .campo-error-msg');
+      (campo ?? zona).scrollIntoView({ behavior: 'smooth', block: campo ? 'center' : 'start' });
+    });
+  }
+
   save(): void {
     this.submitted = true;
     // El reloj revisa una vez por segundo: si el minuto cambió justo antes del click, la salida del
     // primer trayecto se actualiza acá en vez de rebotar la solicitud por hora pasada.
     this.actualizarSalidaVencida();
     if (!this.fechaSalida) {
-      Swal.fire({ title: 'Falta la fecha', icon: 'warning', confirmButtonColor: '#0F6E56' });
+      Swal.fire({ title: 'Falta la fecha', icon: 'warning', confirmButtonColor: '#0F6E56' })
+        .then(() => this.scrollAlError('[data-campo="fecha"]'));
       return;
     }
     // Solo validación de frontend: la fecha de salida no puede ser anterior a hoy.
@@ -624,25 +650,30 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
         text: 'La fecha de salida no puede ser anterior a hoy.',
         icon: 'warning',
         confirmButtonColor: '#0F6E56',
-      });
+      }).then(() => this.scrollAlError('[data-campo="fecha"]'));
       return;
     }
 
     const errors: string[] = [];
-    this.trayectos.forEach((t, i) => {
-      const errs = this.validarTrayecto(t, i);
+    // Índice del primer trayecto con errores: es adonde sube el scroll al cerrar el aviso.
+    let primerTrayectoConError = -1;
+    for (let i = 0; i < this.trayectos.length; i++) {
+      const errs = this.validarTrayecto(this.trayectos[i], i);
       // Cerrado y con errores: se reabre. Si no, el aviso nombra un trayecto cuyos campos en
       // rojo están desmontados y el usuario no tiene qué corregir a la vista.
-      if (errs.length > 0) t.colapsado = false;
+      if (errs.length > 0) {
+        this.trayectos[i].colapsado = false;
+        if (primerTrayectoConError < 0) primerTrayectoConError = i;
+      }
       errors.push(...errs);
-    });
+    }
     if (errors.length > 0) {
       Swal.fire({
         title: 'Campos requeridos',
         html: `<ul class="text-left list-disc pl-4">${errors.map((e) => `<li>${e}</li>`).join('')}</ul>`,
         icon: 'warning',
         confirmButtonColor: '#0F6E56',
-      });
+      }).then(() => this.scrollAlError(`[data-trayecto="${primerTrayectoConError}"]`));
       return;
     }
 

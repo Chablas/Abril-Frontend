@@ -93,8 +93,8 @@ export class SolicitudSalidasService {
 
   /**
    * Rinde de una vez TODAS las solicitudes propias del mes indicado (sin año/mes, el anterior) que
-   * estén aptas —aprobadas, no rendidas, con las capturas de todos sus trayectos y con motivo
-   * reembolsable— y envía la planilla a primera revisión, igual que `marcarRendidasBulk`. Es lo que
+   * estén aptas —aprobadas, no rendidas y con las capturas de sus trayectos reembolsables— y envía
+   * la planilla a primera revisión, igual que `marcarRendidasBulk`. Es lo que
    * ejecuta "seleccionar todas las del mes": la selección vive en el servidor, no en los ids de la
    * página. El conteo real viene en `rendidas`.
    */

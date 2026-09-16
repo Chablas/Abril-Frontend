@@ -1068,7 +1068,7 @@ export class GestionSalidas implements OnInit {
   /**
    * Rinde TODAS las salidas aptas del periodo elegido dentro del alcance del usuario, respetando
    * los filtros de trabajador/área/proyecto. El servidor decide qué entra (aprobadas, no rendidas,
-   * con sus trayectos cubiertos y con motivo reembolsable) e ignora el resto.
+   * con sus trayectos reembolsables cubiertos) e ignora el resto.
    */
   private async rendirTodoElMes(): Promise<void> {
     const mes = this.mesSeleccionado;

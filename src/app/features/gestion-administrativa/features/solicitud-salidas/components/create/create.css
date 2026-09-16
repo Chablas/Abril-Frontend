@@ -5,8 +5,8 @@
    retorno quedaba desalineada respecto a la hora de salida (se notaba al elegir
    un motivo que pide documento adjunto, que son justo los de hora estimada).
    app-time-picker es compartido, así que el nowrap se limita a este formulario:
-   las columnas de la fila (130px / 200px) están dimensionadas para que el texto
-   más largo entre en una sola línea, y en móvil cada hora va a ancho completo. */
+   las dos columnas de la fila son media caja del modal, de sobra para el texto
+   más largo, y en móvil cada hora va a ancho completo. */
 :host ::ng-deep .horas-row app-time-picker label {
   white-space: nowrap;
 }
@@ -16,7 +16,11 @@
    (app-search-select) como si es el input de texto de "Otro motivo" / "Otro
    lugar", para que la obligatoriedad se vea idéntica en las dos vías. Al no ser
    una utilidad de Tailwind (que van en @layer utilities) le gana al color de
-   borde en reposo que trae el componente. */
+   borde en reposo que trae el componente.
+
+   La otra marca de error, `campo-error-msg` (los "Campo requerido" del
+   template), no lleva estilos a propósito: es solo el ancla que busca
+   scrollAlError para subir el formulario hasta el primer campo en rojo. */
 :host ::ng-deep .campo-error .ss-trigger,
 :host ::ng-deep .campo-error input[type='text'] {
   border-color: #EF4444;

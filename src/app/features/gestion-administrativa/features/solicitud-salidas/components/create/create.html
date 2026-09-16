@@ -3,18 +3,19 @@
   <div class="flex flex-col gap-[20px] mt-[16px]">
 
     <!-- ── Fecha ─────────────────────────────────────────────────────── -->
-    <div class="w-full sm:w-[170px]">
+    <div class="w-full sm:w-[170px]" data-campo="fecha">
       <app-date-picker
         label="Fecha de salida"
         color="var(--color-abril-standard)"
         [allowClear]="false"
         [required]="true"
         [(value)]="fechaSalida" />
-      <p *ngIf="submitted && !fechaSalida" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
+      <p *ngIf="submitted && !fechaSalida" class="campo-error-msg text-xs text-red-500 mt-[4px]">Campo requerido</p>
     </div>
 
     <!-- ── Trayectos ─────────────────────────────────────────────────── -->
     <div *ngFor="let t of trayectos; let i = index" class="flex flex-col gap-[12px]"
+         [attr.data-trayecto]="i"
          [ngClass]="i > 0 ? 'pt-[10px] border-t border-gray-100' : ''">
 
       <div class="flex items-center justify-between gap-[8px] border-b border-[#F0F0F0] pb-[6px]">
@@ -73,7 +74,7 @@
             <input type="checkbox" [ngModel]="t.motivoLibreOn" (ngModelChange)="onMotivoLibreChange(t, $event)" style="accent-color:var(--color-abril-primary)" />
             <span class="text-[12px] text-gray-600">Otro motivo</span>
           </label>
-          <p *ngIf="submitted && !motivoValido(t)" class="text-xs text-red-500">Campo requerido</p>
+          <p *ngIf="submitted && !motivoValido(t)" class="campo-error-msg text-xs text-red-500">Campo requerido</p>
         </div>
 
         <!-- Motivo adicional: lo pide el motivo elegido (Configuración → Motivos). Acompaña
@@ -88,15 +89,16 @@
               class="w-full border border-[#e2e8f0] rounded-[7px] h-[34px] px-[10px] text-[12px] text-gray-700 focus:outline-none" />
           </div>
           <span class="text-[11px] text-gray-400 self-end">{{ t.motivoAdicional?.length || 0 }}/{{ MOTIVO_ADICIONAL_MAX }}</span>
-          <p *ngIf="submitted && !motivoAdicionalValido(t)" class="text-xs text-red-500">Campo requerido</p>
+          <p *ngIf="submitted && !motivoAdicionalValido(t)" class="campo-error-msg text-xs text-red-500">Campo requerido</p>
         </div>
 
         <!-- Horas (habilitadas recién al elegir el motivo; la etiqueta del retorno depende de él).
-             En móvil cada hora toma el ancho completo: al 50% no cabe el label
-             "Hora de retorno estimada" sin partirse en dos líneas. -->
+             Misma grilla que los lugares de más abajo: media caja cada una en escritorio y ancho
+             completo en móvil, así las cuatro cajas del trayecto caen en las mismas dos columnas
+             en vez de dejar medio modal vacío a la derecha de las horas. -->
         <div *ngIf="motivoPideHorasLugares(t)" class="flex flex-col gap-[4px] horas-row">
-          <div class="flex flex-wrap gap-x-[24px] gap-y-[12px]">
-            <div class="w-full sm:w-[130px]">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[16px] gap-y-[12px]">
+            <div class="w-full">
               <!-- `min`: desde el trayecto 2, las horas hasta la última de los trayectos anteriores
                    quedan deshabilitadas (si el 1 va de 14:00 a 14:05, el 2 sale desde las 14:06). -->
               <app-time-picker
@@ -108,10 +110,10 @@
                 [min]="minHoraSalida(i)"
                 [value]="t.horaSalida"
                 (valueChange)="onHoraSalidaChange(t, $event)" />
-              <p *ngIf="submitted && !t.horaSalida" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
+              <p *ngIf="submitted && !t.horaSalida" class="campo-error-msg text-xs text-red-500 mt-[4px]">Campo requerido</p>
             </div>
 
-            <div class="w-full sm:w-[200px]">
+            <div class="w-full">
               <!-- `min`: el retorno no puede ser anterior a la salida del MISMO trayecto (ni, mientras
                    no tenga salida, a su mínimo), así que el desplegable deshabilita esas horas/minutos
                    en vez de dejar elegirlas y rebotarlas al enviar (ver validarTrayecto). -->
@@ -128,7 +130,7 @@
                   [disabled]="!motivoElegido(t)" style="accent-color:var(--color-abril-primary)" />
                 <span class="text-[12px] text-gray-600">Sin retorno</span>
               </label>
-              <p *ngIf="submitted && !t.sinRetorno && !t.horaRetorno" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
+              <p *ngIf="submitted && !t.sinRetorno && !t.horaRetorno" class="campo-error-msg text-xs text-red-500 mt-[4px]">Campo requerido</p>
             </div>
           </div>
           <p *ngIf="!motivoElegido(t)" class="text-[11px] text-gray-400 italic">
@@ -170,7 +172,7 @@
             color="var(--color-abril-standard)"
             (fileSelected)="onAdjuntoSelected(t, $event)" />
 
-          <p *ngIf="submitted && t.adjuntos.length === 0" class="text-xs text-red-500">Campo requerido</p>
+          <p *ngIf="submitted && t.adjuntos.length === 0" class="campo-error-msg text-xs text-red-500">Campo requerido</p>
         </div>
 
         <!-- Origen + Destino. Igual que el motivo, ambos son obligatorios tanto si
@@ -207,7 +209,7 @@
               <p class="text-[11px] text-gray-400 italic mt-[4px]">Encadenado al destino del trayecto anterior</p>
             </ng-container>
 
-            <p *ngIf="submitted && !origenValido(t, i)" class="text-xs text-red-500">Campo requerido</p>
+            <p *ngIf="submitted && !origenValido(t, i)" class="campo-error-msg text-xs text-red-500">Campo requerido</p>
           </div>
 
           <!-- Destino -->
@@ -230,15 +232,16 @@
               <input type="checkbox" [ngModel]="t.destinoLibre" (ngModelChange)="onDestinoLibreChange(t, $event)" style="accent-color:var(--color-abril-primary)" />
               <span class="text-[12px] text-gray-600">Otro lugar</span>
             </label>
-            <p *ngIf="submitted && !destinoValido(t)" class="text-xs text-red-500">Campo requerido</p>
+            <p *ngIf="submitted && !destinoValido(t)" class="campo-error-msg text-xs text-red-500">Campo requerido</p>
           </div>
         </div>
 
         <!-- ── Reembolso de este trayecto ────────────────────────────────
-             Solo aparece cuando el motivo elegido concede reembolso: en el resto de salidas no
-             hay nada que informar. Lo que dice acá lo deciden el motivo y el par de lugares en
+             Aparece en cuanto el trayecto tiene motivo y dice siempre a qué atenerse, conceda
+             reembolso o no: mostrarlo solo cuando lo concedía dejaba al resto de las salidas sin
+             respuesta a la vista. Lo que dice acá lo deciden el motivo y el par de lugares en
              Configuración, no el trabajador — el trayecto puede anular lo que el motivo concede. -->
-        <div *ngIf="motivoEsReembolsable(t)"
+        <div *ngIf="motivoElegido(t)"
              class="flex flex-wrap items-center gap-x-[10px] gap-y-[4px] rounded-[8px] border px-[12px] py-[8px]"
              [ngClass]="trayectoCorrespondeReembolso(t) ? 'bg-[#F0FDF4] border-[#BBF7D0]' : 'bg-[#F9FAFB] border-[#E5E7EB]'">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0"

@@ -349,8 +349,8 @@ export class SolicitudSalidas implements OnInit {
   // ── Selección de filas (estilo Outlook: click abre detalle, shift+click selecciona) ──
 
   /**
-   * Solo se rinde lo apto: aprobada, no rendida, con TODOS los trayectos cubiertos y con un motivo
-   * marcado como reembolsable en Configuración → Motivos. Lo resuelve el backend en `aptaParaRendir`
+   * Solo se rinde lo apto: aprobada, no rendida y con todos sus trayectos REEMBOLSABLES cubiertos
+   * (los que no generan reembolso no se rinden). Lo resuelve el backend en `aptaParaRendir`
    * para que la pantalla, el desplegable de mes y las tarjetas no puedan discrepar.
    */
   esSeleccionable(s: SolicitudSalidaListItemDto): boolean {
@@ -648,7 +648,7 @@ export class SolicitudSalidas implements OnInit {
 
   /**
    * Rinde TODAS las salidas propias aptas del periodo elegido. El backend resuelve qué entra
-   * (aprobadas, no rendidas, con sus trayectos cubiertos y con motivo reembolsable) e ignora el
+   * (aprobadas, no rendidas y con sus trayectos reembolsables cubiertos) e ignora el
    * resto, así que no depende de lo que esté cargado en la tabla.
    */
   private async rendirTodoElMes(): Promise<void> {

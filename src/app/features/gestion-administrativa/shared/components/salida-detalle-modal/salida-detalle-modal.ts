@@ -22,12 +22,14 @@ import {
  * El detalle de una solicitud de salida: cabecera, trayectos con sus capturas y montos, adjuntos,
  * planilla y Consolidado del S10.
  *
- * Lo abren cuatro pantallas y por eso vive en el shared del módulo:
+ * Lo abren cinco pantallas y por eso vive en el shared del módulo:
  *  • Solicitud de Salidas — la salida es del propio usuario. Arranca en lectura; "Editar" pasa
  *    TODOS los trayectos a edición a la vez y un solo botón al pie guarda el lote entero; guardar
  *    vuelve a la lectura con el detalle que responde el backend, así que si con esas capturas la
  *    salida quedó apta, "Rendir" aparece en el acto sin cerrar el modal. Mientras se edita,
  *    "Rendir" no se ofrece: rendiría lo guardado, no lo que está en pantalla.
+ *  • Mis Rendiciones — también la salida propia y en el mismo modo, desde el detalle de su
+ *    planilla. Ya está rendida, así que no ofrece editar, rendir ni cancelar.
  *  • Gestión de Rendiciones, Consolidados y Reembolsos — en CONSULTA (`[cargar]`): la jefatura, el
  *    consolidador y Tesorería miran la salida de otro para ver sus capturas y montos. Ahí no se
  *    edita, no se rinde ni se cancela nada, y se nombra al trabajador.
@@ -104,9 +106,17 @@ export class SalidaDetalleModal implements OnInit, OnDestroy {
     return this.cargar !== null;
   }
 
+  /**
+   * Lo que esta salida va a rendir: suma SOLO los trayectos que generan reembolso. Los que no
+   * (motivo no reembolsable, motivo libre o recorrido excluido) no entran en la planilla, así que
+   * sumarlos acá anunciaría un monto que el PDF no va a traer. Cada trayecto sigue mostrando su
+   * propio monto en su fila, con el pill que dice si tiene reembolso o no.
+   */
   get totalGeneral(): number {
     if (!this.detalle) return 0;
-    return this.detalle.trayectos.reduce((acc, t) => acc + (t.montoTotal || 0), 0);
+    return this.detalle.trayectos
+      .filter((t) => t.esReembolsable === true)
+      .reduce((acc, t) => acc + (t.montoTotal || 0), 0);
   }
 
   totalCapturas(t: TrayectoDetalleDto): number {

@@ -1,8 +1,34 @@
+<!-- ── Trayecto que no genera reembolso ───────────────────────────────────
+     Ni por su motivo ni por su recorrido —el motivo libre tampoco lo concede—, así que no entra
+     en la planilla: sus capturas no suman ni se exigen para rendir. Por eso no se cargan ni se
+     editan capturas acá; las que ya estén cargadas se muestran de solo lectura. -->
+<div *ngIf="!editable"
+     class="text-xs bg-[#F3F4F6] border border-[#E5E7EB] rounded px-2 py-1 flex items-center gap-1.5 text-gray-600">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0">
+    <circle cx="12" cy="12" r="10"/>
+    <path stroke-linecap="round" d="M12 8v4m0 4h.01"/>
+  </svg>
+  <span>Este trayecto no genera reembolso: <b>no entra en la rendición</b>.</span>
+</div>
+
+<!-- Lo que quedó cargado de antes en un trayecto no reembolsable: se sigue viendo, pero sin monto
+     editable, sin reemplazar la imagen y sin quitarla. -->
+<div *ngIf="!editable && edicion.capturasDe(trayecto.id).length > 0" class="flex flex-wrap gap-2">
+  <div *ngFor="let fila of edicion.capturasDe(trayecto.id)"
+       class="flex flex-col items-center gap-1" [title]="fila.captura.filename">
+    <div class="w-[80px] h-[80px] flex items-center justify-center rounded-lg overflow-hidden border"
+         style="border-color:var(--color-abril-border)">
+      <app-draggable-image [src]="fila.captura.imageUrl" />
+    </div>
+    <div class="text-xs font-medium text-gray-700">S/ {{ fila.captura.monto | number:'1.2-2' }}</div>
+  </div>
+</div>
+
 <!-- ── Capturas ya subidas ────────────────────────────────────────────────
      Una fila por captura, con el monto y la imagen editables de frente: el monto en un input que
      ya está abierto y la imagen con su botón de reemplazar. Nada se persiste acá — lo escrito
      viaja con el botón de guardar del modal, que manda todos los trayectos juntos. -->
-<div *ngIf="edicion.capturasDe(trayecto.id).length > 0" class="flex flex-col gap-2">
+<div *ngIf="editable && edicion.capturasDe(trayecto.id).length > 0" class="flex flex-col gap-2">
   <div *ngFor="let fila of edicion.capturasDe(trayecto.id)"
        class="flex items-center gap-3 p-2 border rounded-lg bg-white"
        style="border-color:var(--color-abril-border)">
@@ -77,10 +103,11 @@
   </div>
 </div>
 
-<div *ngIf="edicion.capturasDe(trayecto.id).length === 0 && trayecto.montoCatalogo === null" class="text-xs text-gray-400 italic">
+<div *ngIf="editable && edicion.capturasDe(trayecto.id).length === 0 && trayecto.montoCatalogo === null" class="text-xs text-gray-400 italic">
   Aún no hay capturas en este trayecto.
 </div>
-<div *ngIf="trayecto.montoCatalogo !== null"
+<!-- El monto de catálogo habla de qué subir, así que solo tiene sentido donde se puede subir. -->
+<div *ngIf="editable && trayecto.montoCatalogo !== null"
      class="text-xs bg-[#DBEAFE] border border-[#BFDBFE] rounded px-2 py-1 flex items-center gap-1.5" style="color:var(--color-abril-accent)">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
     <circle cx="12" cy="12" r="10"/>
@@ -93,7 +120,7 @@
 </div>
 
 <!-- ── Filas nuevas (imagen + monto) ────────────────────────────────────── -->
-<div class="flex flex-col gap-2 mt-1">
+<div *ngIf="editable" class="flex flex-col gap-2 mt-1">
   <div *ngFor="let row of edicion.pendientesDe(trayecto.id); let i = index"
        class="flex items-start gap-3 p-2 border border-[#E2E2E2] rounded-lg bg-[#FAFAFA]">
 

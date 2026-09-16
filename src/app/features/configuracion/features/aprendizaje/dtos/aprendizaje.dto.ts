@@ -1,4 +1,4 @@
-/** DTOs de administración del Centro de aprendizaje (grupos + videos). */
+/** DTOs de administración del Centro de aprendizaje (grupos + videos y manuales). */
 
 export interface LearningVideoAdminDto {
   id: number;
@@ -7,12 +7,13 @@ export interface LearningVideoAdminDto {
   img?: string | null;
   orden: number;
   activo: boolean;
+  /** Nombre del archivo subido a SharePoint; null = es un enlace. */
+  archivoNombre?: string | null;
 }
 
 export interface LearningCategoryAdminDto {
   id: number;
   nombre: string;
-  accentColor?: string | null;
   orden: number;
   surfaceId: number;
   surfaceCode: string;
@@ -44,7 +45,6 @@ export interface LearningAdminDataDto {
 export interface LearningCategoryCreateDto {
   nombre: string;
   surfaceId: number;
-  accentColor?: string | null;
   orden: number;
   esPublicoInterno: boolean;
   roleIds: number[];
@@ -58,6 +58,8 @@ export interface LearningVideoCreateDto {
   url: string;
   img?: string | null;
   orden: number;
+  /** true = va como archivo en el multipart y `url` se ignora. */
+  esArchivo: boolean;
 }
 
 export interface LearningVideoEditDto {
@@ -65,4 +67,6 @@ export interface LearningVideoEditDto {
   url: string;
   img?: string | null;
   orden: number;
+  /** true sin archivo nuevo = se conserva el archivo actual. */
+  esArchivo: boolean;
 }

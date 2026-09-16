@@ -17,6 +17,7 @@ import {
   otrasRendicionesDelConsolidado,
 } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { SalidaCapturasModal } from '../salida-capturas-modal/salida-capturas-modal';
+import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
 import {
   primeraRevisionColors,
   reembolsoColors,
@@ -24,14 +25,15 @@ import {
 
 /**
  * Detalle de una planilla: sus documentos, el estado de la primera revisión y del reembolso, y las
- * salidas propias que agrupa. Trae también las acciones del trabajador (enviar a primera revisión y
- * corregir las capturas al subsanar) porque los correos de la primera revisión abren directo acá.
+ * salidas propias que agrupa, cada una con su ojo para ver trayectos, capturas y montos. Trae
+ * también las acciones del trabajador (enviar a primera revisión y corregir las capturas al
+ * subsanar) porque los correos de la primera revisión abren directo acá.
  * El Consolidado del S10 se ve pero no se toca: lo adjunta el consolidador de su área.
  */
 @Component({
   standalone: true,
   selector: 'app-rendicion-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaCapturasModal],
+  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaCapturasModal, SalidaDetalleModal],
   templateUrl: './rendicion-detalle-modal.html',
 })
 export class RendicionDetalleModal implements OnInit {
@@ -58,6 +60,9 @@ export class RendicionDetalleModal implements OnInit {
 
   /** id de la salida cuyo modal de capturas está abierto. null = cerrado. */
   capturasSolicitudId: number | null = null;
+
+  /** Salida cuyo detalle (el ojo de la tabla) está abierto. null = cerrado. */
+  salidaId: number | null = null;
 
   /** Se enciende con la primera acción para avisarle al padre que su tabla quedó desfasada. */
   private huboCambios = false;
@@ -215,6 +220,22 @@ export class RendicionDetalleModal implements OnInit {
     } else {
       this.cdr.detectChanges();
     }
+  }
+
+  // ── Detalle de una salida ────────────────────────────────────────────
+
+  /**
+   * Abre el detalle de la salida en el modo del propio trabajador (sin `[cargar]`): es el mismo
+   * endpoint de Solicitud de Salidas, que ya la acota al usuario autenticado. Toda salida de una
+   * planilla está rendida, así que el modal no ofrece editar, rendir ni cancelar.
+   */
+  verSalida(solicitudId: number): void {
+    this.salidaId = solicitudId;
+  }
+
+  cerrarSalida(): void {
+    this.salidaId = null;
+    this.cdr.detectChanges();
   }
 
   // ── Colores de estado ────────────────────────────────────────────────

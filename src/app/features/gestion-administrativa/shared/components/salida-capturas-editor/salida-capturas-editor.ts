@@ -32,6 +32,16 @@ export class SalidaCapturasEditor {
   /** Se dio de baja una captura en el backend: lo guardado de la salida ya no es lo que se cargó. */
   @Output() quitada = new EventEmitter<void>();
 
+  /**
+   * Si este trayecto admite cargar y corregir capturas. Solo los que generan reembolso: el resto
+   * no entra en la rendición, así que lo que se cargara ahí no sumaría ni se exigiría para rendir
+   * — se veía editable y no servía de nada. Incluye al motivo libre (`esReembolsable` null), que
+   * al no estar en el catálogo tampoco concede reembolso.
+   */
+  get editable(): boolean {
+    return this.trayecto.esReembolsable === true;
+  }
+
   constructor(
     private service: SalidaDetalleService,
     private errorService: ErrorService,

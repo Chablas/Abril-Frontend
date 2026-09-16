@@ -132,7 +132,8 @@
       </a>
     </div>
 
-    <!-- ── Salidas de la planilla ───────────────────────────────────────── -->
+    <!-- ── Salidas de la planilla: el ojo abre el detalle de cada una (trayectos, capturas y
+         montos). ── -->
     <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
       <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas de esta planilla</span>
 
@@ -148,6 +149,7 @@
               <th>Monto</th>
               <th>Reembolso</th>
               <th *ngIf="subsanando">Capturas</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -189,6 +191,13 @@
                           d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5Z"/>
                   </svg>
                   Corregir
+                </button>
+              </td>
+
+              <td class="text-center">
+                <button type="button" (click)="verSalida(s.id)" title="Ver el detalle de la salida"
+                        class="text-gray-400 hover:text-gray-600 cursor-pointer">
+                  <i class="ti ti-eye text-[17px]"></i>
                 </button>
               </td>
             </tr>
@@ -252,3 +261,9 @@
   *ngIf="capturasSolicitudId !== null"
   [solicitudId]="capturasSolicitudId"
   (close)="cerrarCapturas($event)" />
+
+<!-- ── Detalle de una salida (el ojo de la tabla), en solo lectura ───── -->
+<app-salida-detalle-modal
+  *ngIf="salidaId !== null"
+  [solicitudId]="salidaId"
+  (close)="cerrarSalida()" />

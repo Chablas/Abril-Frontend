@@ -1,10 +1,10 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LearningCategoryDto } from '../../../core/learning/learning.model';
+import { LearningCategoryDto, LearningVideoDto, esManual } from '../../../core/learning/learning.model';
 
 /**
  * Centro de aprendizaje y guías: un solo panel con una subsección por grupo/área
- * (encabezado = nombre del área/módulo) y las tarjetas de video de cada grupo.
+ * (encabezado = nombre del área/módulo) y las tarjetas de videos y manuales de cada grupo.
  * Los datos vienen del backend ya filtrados por rol (ver LearningService.getInicio).
  */
 @Component({
@@ -17,8 +17,8 @@ import { LearningCategoryDto } from '../../../core/learning/learning.model';
 export class LearningCenter {
   @Input() titulo = 'Centro de aprendizaje y guías';
   @Input() categorias: LearningCategoryDto[] = [];
-  /** Acento por defecto cuando un grupo no define color propio (teal Abril). */
-  @Input() defaultAccent = '#0F6E56';
+  /** Color de acento del panel (teal Abril): es el mismo para todos los grupos. */
+  @Input() accentColor = '#0F6E56';
   /** Encabezado interno del panel. Se oculta cuando la página ya pone su propio título. */
   @Input() showHeading = true;
   /** Modo ampliado (página dedicada): tarjetas y miniaturas más grandes. */
@@ -29,8 +29,9 @@ export class LearningCenter {
   /** Ids de los grupos colapsados. Por defecto todos arrancan desplegados. */
   private readonly colapsados = new Set<number>();
 
-  accent(cat: LearningCategoryDto): string {
-    return cat.accentColor?.trim() || this.defaultAccent;
+  /** Un manual lleva ícono de documento; un video, el de play. */
+  esManual(v: LearningVideoDto): boolean {
+    return esManual(v.url);
   }
 
   isCollapsed(cat: LearningCategoryDto): boolean {
