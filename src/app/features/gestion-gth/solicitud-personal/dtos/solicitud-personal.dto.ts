@@ -610,8 +610,14 @@ export interface FinalistaDecisionResult {
   estadoCodigo: string;
   estadoNombre: string;
   aprobado: boolean;
-  /** true si ya no queda ningún finalista: el requerimiento vuelve a Long list / CVs. */
+  /** true si el requerimiento se quedó sin candidatos: vuelve a Long list / CVs. */
   todosRechazados: boolean;
+  /**
+   * true si ya no quedan finalistas por decidir pero el proceso sigue con candidatos que GTH
+   * todavía está evaluando: el requerimiento vuelve a Entrevistas y al área no le queda nada que
+   * revisar acá.
+   */
+  continuaConRezagados: boolean;
   candidatoNombre: string;
   /**
    * Ficha de pre-ingreso creada en workers para el seleccionado. Es el id con el que GTH abre
