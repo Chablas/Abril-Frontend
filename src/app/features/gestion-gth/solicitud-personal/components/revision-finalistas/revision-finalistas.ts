@@ -237,10 +237,12 @@ export class GthRevisionFinalistas implements OnInit {
           confirmButtonColor: '#005D9D',
         });
 
-        // Al aprobar (proceso cerrado) o al rechazar al último finalista ya no queda nada que
-        // revisar: se cierra el modal. Si aún quedan finalistas, se recarga para pintar el badge
-        // y se deja mostrado al siguiente pendiente, que es sobre el que toca decidir.
-        if (res.aprobado || res.todosRechazados) this.closeModal.emit();
+        // Al aprobar (el puesto queda cubierto) o al rechazar al último finalista ya no queda
+        // nada que revisar: se cierra el modal, tanto si el requerimiento volvió a long list como
+        // si siguió con los candidatos que GTH todavía evalúa. Si aún quedan finalistas, se
+        // recarga para pintar el badge y se deja mostrado al siguiente pendiente, que es sobre el
+        // que toca decidir.
+        if (res.aprobado || res.todosRechazados || res.continuaConRezagados) this.closeModal.emit();
         else this.cargar({ irAPendiente: true });
       },
       error: (err: HttpErrorResponse) => {
