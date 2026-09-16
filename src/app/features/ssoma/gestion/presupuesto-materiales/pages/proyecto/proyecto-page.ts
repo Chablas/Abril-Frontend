@@ -15,6 +15,8 @@ import {
   KitResumenDto, KitDetalleDto, KitCalculoLineaDto, KitProyectoGuardadoDto,
   VigilanciaHitoDto, VigilanciaHitoItemInputDto,
   FamiliaFijaDisponibleDto, ServicioFijoDto,
+  EpiStaffConfigDto, EpiStaffCalculoDto,
+  CostoFijoManualDto,
 } from '../../presupuesto.dtos';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { PRESUPUESTO_TABS } from '../../presupuesto.tabs';
@@ -66,7 +68,7 @@ type DriverEditable = DriverProyectoDto & {
 
 type ProyectoSubTab =
   | 'presupuesto' | 'cronograma' | 'personal' | 'vigilancia'
-  | 'servicios' | 'ratios' | 'kits' | 'calculo-tecnico';
+  | 'servicios' | 'ratios' | 'kits' | 'calculo-tecnico' | 'epi-staff';
 
 /** Diferencia en semanas entre dos fechas 'YYYY-MM-DD' (o lo que traiga el hito) — para prellenar
  * "Semanas" cuando el usuario elige etapa de salida en vez de tipearlas a mano. */
@@ -115,10 +117,15 @@ interface RolPersonalConfig {
 }
 
 /** Prevencionista: sin categoría, tarifa propia, una sola columna.
+ * Paletero/Paletero Montacarga: separados de Vígia (antes se cargaban como parte de su cantidad,
+ * pero sus fechas de etapa difieren) — una sola columna cada uno, tarifa Peón compartida (mismo
+ * pool que Vígia-Peón, no tienen tarifa propia).
  * Monitor/Vígia/Encapsulador: dos columnas propias (Oficial y Peón) cada uno — se puede cargar
  * cantidad en ambas a la vez para la misma etapa (ej. 2 monitores oficiales Y 3 monitores peones). */
 const ROLES_PERSONAL_CONFIG: RolPersonalConfig[] = [
   { rolKey: 'PREVENCIONISTA', rolBase: 'PREVENCIONISTA', categoria: null, label: '', esInicioGrupo: true },
+  { rolKey: 'PALETERO', rolBase: 'PALETERO', categoria: 'PEON', label: '', esInicioGrupo: true },
+  { rolKey: 'PALETERO-MONTACARGA', rolBase: 'PALETERO MONTACARGA', categoria: 'PEON', label: '', esInicioGrupo: true },
   { rolKey: 'MONITOR-OFICIAL', rolBase: 'MONITOR', categoria: 'OFICIAL', label: 'Oficial', esInicioGrupo: true },
   { rolKey: 'MONITOR-PEON', rolBase: 'MONITOR', categoria: 'PEON', label: 'Peón', esInicioGrupo: false },
   { rolKey: 'VIGIA-OFICIAL', rolBase: 'VIGIA', categoria: 'OFICIAL', label: 'Oficial', esInicioGrupo: true },
@@ -187,12 +194,14 @@ export class ProyectoPage implements OnInit {
     { id: 'ratios', label: 'Ratios', icon: 'ti-chart-bar' },
     { id: 'kits', label: 'Kits / BOM', icon: 'ti-package' },
     { id: 'calculo-tecnico', label: 'Cálculo técnico', icon: 'ti-calculator' },
+    { id: 'epi-staff', label: 'Cálculo EPP Staff', icon: 'ti-helmet' },
   ];
 
   cambiarSubTab(id: ProyectoSubTab): void {
     this.activeSubTab = id;
     if (id === 'kits' && !this.kitsCargados) this.cargarKits();
     if (id === 'servicios' && !this.serviciosCargados) this.loadServicios();
+    if (id === 'epi-staff' && !this.epiStaffCargado) this.loadEpiStaff();
     this.cdr.markForCheck();
   }
 
@@ -271,7 +280,7 @@ export class ProyectoPage implements OnInit {
             hitoFecha: hito.hitoFecha,
             hitoSalidaId: existente?.hitoSalidaId ?? null,
             cantidadPuntos: existente?.cantidadPuntos ?? 0,
-            semanas: existente?.semanas ?? 0,
+            semanas: existente?.semanas ?? this.semanasPropiasDelHito(hito),
             total: existente?.total ?? 0,
           };
         });
@@ -362,6 +371,41 @@ export class ProyectoPage implements OnInit {
       },
       error: () => { this.serviciosLoading = false; this.cdr.markForCheck(); },
     });
+    this.loadCostoFijoManual();
+  }
+
+  // ── Costo fijo manual (Malla Anticaída/Encapsulado/Malla Anillo Fenólico) — montos "glb"
+  // tipeados a mano, sin ratio ni driver: el costo real depende de la geometría/altura del
+  // edificio de cada obra, no hay forma confiable de estimarlo desde el histórico. ──
+  costoFijoManual: CostoFijoManualDto | null = null;
+  costoFijoManualGuardando = false;
+
+  private loadCostoFijoManual(): void {
+    this.svc.getCostoFijoManual(this.projectId).subscribe({
+      next: (c) => { this.costoFijoManual = c; this.cdr.markForCheck(); },
+      error: () => {},
+    });
+  }
+
+  guardarCostoFijoManual(): void {
+    if (this.costoFijoManualGuardando || !this.costoFijoManual) return;
+    this.costoFijoManualGuardando = true;
+    this.loader.show();
+    const { mallaAnticaida, encapsulado, mallaAnilloFenolico, notas } = this.costoFijoManual;
+    this.svc.guardarCostoFijoManual(this.projectId, { mallaAnticaida, encapsulado, mallaAnilloFenolico, notas }).subscribe({
+      next: () => {
+        this.costoFijoManualGuardando = false;
+        this.loader.hide();
+        Swal.fire({ icon: 'success', title: 'Costo fijo guardado', timer: 2000, showConfirmButton: false });
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.costoFijoManualGuardando = false;
+        this.loader.hide();
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   recalcularTotalServicio(fila: FilaServicio): void {
@@ -395,6 +439,64 @@ export class ProyectoPage implements OnInit {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  // ── EPI de Staff (Casco/Orejera/Arnés/Lentes/Barbiquejo/Guantes descontados de Obrero) ──────
+  epiStaffCargado = false;
+  epiStaffLoading = false;
+  epiStaffCalculo: EpiStaffCalculoDto | null = null;
+  /** Copia editable de la config global — separada del cálculo para no perder lo tipeado si el
+   * cálculo se vuelve a pedir en el medio. */
+  epiStaffConfig: EpiStaffConfigDto | null = null;
+  epiStaffGuardando = false;
+
+  private loadEpiStaff(): void {
+    this.epiStaffLoading = true;
+    this.cdr.markForCheck();
+    this.svc.getEpiStaffCalculo(this.projectId).subscribe({
+      next: (c) => {
+        this.epiStaffCalculo = c;
+        this.epiStaffConfig = { ...c.config };
+        this.epiStaffCargado = true;
+        this.epiStaffLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.epiStaffLoading = false;
+        this.epiStaffCargado = true;
+        this.cdr.markForCheck();
+        if (err.status !== 404) this.error.handleError(err);
+      },
+    });
+  }
+
+  guardarEpiStaffConfig(): void {
+    if (this.epiStaffGuardando || !this.epiStaffConfig) return;
+    this.epiStaffGuardando = true;
+    this.loader.show();
+    this.svc.actualizarEpiStaffConfig(this.epiStaffConfig).subscribe({
+      next: () => {
+        this.epiStaffGuardando = false;
+        this.loader.hide();
+        Swal.fire({
+          icon: 'success', title: 'Rotación actualizada',
+          text: 'Este cambio es global: afecta el cálculo de EPI Staff de todos los proyectos.',
+          timer: 2500, showConfirmButton: false,
+        });
+        this.loadEpiStaff();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.epiStaffGuardando = false;
+        this.loader.hide();
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  get epiStaffTotalGeneral(): number {
+    if (!this.epiStaffCalculo) return 0;
+    return this.epiStaffCalculo.lineas.reduce((acc, l) => acc + l.costoStaff, 0);
   }
 
   // ── Ratios calculados del proyecto ──────────────────────────────────
@@ -995,6 +1097,10 @@ export class ProyectoPage implements OnInit {
       // aunque tenga cantidad y tarifa cargadas.
       const referenciaHito = existentes.find((e) => e.hitoId === hito.hitoId && e.hitoSalidaId != null)
         ?? existentes.find((e) => e.hitoId === hito.hitoId);
+      // Si nunca se guardó nada para este hito (típicamente el último, que no tiene un hito
+      // posterior para usar como "etapa de salida") se sugiere la duración propia del hito
+      // (Fin - Inicio) en vez de arrancar siempre en 0 — sigue siendo editable a mano igual.
+      const semanasSugeridas = this.semanasPropiasDelHito(hito);
       for (const cfg of ROLES_PERSONAL_CONFIG) {
         const existente = existentes.find((e) => e.hitoId === hito.hitoId && e.rol === cfg.rolKey);
         this.personalFilas.push({
@@ -1005,7 +1111,7 @@ export class ProyectoPage implements OnInit {
           rol: cfg.rolKey,
           categoria: cfg.categoria,
           cantidad: existente?.cantidad ?? 0,
-          semanas: referenciaHito?.semanas ?? 0,
+          semanas: referenciaHito?.semanas ?? semanasSugeridas,
           costoMensual: existente?.costoMensual ?? 0,
           total: existente?.total ?? 0,
         });
@@ -1059,6 +1165,23 @@ export class ProyectoPage implements OnInit {
    * pero no se restringe para no complicar la lista). */
   get etapasSalidaOpts(): HitoCriticoDisponibleDto[] {
     return this.hitosCriticos;
+  }
+
+  /** Semanas propias de un hito (Fin del proyecto - Inicio del hito) — se usa como sugerencia inicial
+   * de "Semanas" para un hito que nunca tuvo Personal/Vigilancia guardado, típicamente el último hito
+   * crítico del cronograma (no tiene un hito posterior para elegir como "etapa de salida", así que
+   * antes siempre arrancaba en 0 y había que tipear a mano). "Fin del proyecto" es la fecha fin MÁS
+   * LEJANA entre TODOS los hitos críticos — no la fecha fin propia de este hito en particular, porque
+   * el orden por fecha de inicio no garantiza que el hito que empieza último sea el que termina más
+   * tarde (podría haber otro hito corriendo en paralelo que termine después). Sigue siendo editable,
+   * esto es solo el valor inicial. */
+  private semanasPropiasDelHito(hito: HitoCriticoDisponibleDto): number {
+    const fechasFin = this.hitosCriticos
+      .map((h) => h.hitoFechaFin)
+      .filter((f): f is string => !!f);
+    if (fechasFin.length === 0) return 0;
+    const fechaFinProyecto = fechasFin.reduce((max, f) => (f > max ? f : max));
+    return semanasEntreFechas(hito.hitoFecha, fechaFinProyecto);
   }
 
   /** Al elegir/quitar la etapa de salida, recalcula "Semanas" desde las fechas reales del cronograma
@@ -1461,6 +1584,32 @@ export class ProyectoPage implements OnInit {
 
   volver(): void {
     this.router.navigate(['/ssoma/gestion/presupuesto-materiales']);
+  }
+
+  // ── Exportar Desagregado de Recursos (Materiales + Personal + Vigilancia + Servicios + Kits) ──
+  exportandoResumen = false;
+
+  exportarResumenExcel(): void {
+    if (this.exportandoResumen) return;
+    this.exportandoResumen = true;
+    this.cdr.markForCheck();
+    this.svc.exportarResumenRecursosExcel(this.projectId).subscribe({
+      next: (blob) => {
+        this.exportandoResumen = false;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Desagregado_Recursos_SSOMA_Proyecto_${this.projectId}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.exportandoResumen = false;
+        Swal.fire({ icon: 'error', title: 'No se pudo exportar el resumen', text: err?.error?.message ?? 'Intenta de nuevo.' });
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   estadoClass(estado: string): string {
