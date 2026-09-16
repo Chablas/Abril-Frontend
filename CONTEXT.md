@@ -5917,3 +5917,29 @@ Pedido: fusionar "Dashboard de Proyectos" (`features/projects/projects-dashboard
 
 ### Verificado
 `ng build` (producción): 0 errores. Probado manualmente en Chrome contra backend local (`localhost:5236`): filtros, Ranking, panel de Gantt (tabs Gantt + Actividades críticas), navegación de fila sin interferencia del nuevo botón. Sin errores de consola. Heatmap no se pudo ver poblado con datos reales en este dataset de prueba (0 filas esa semana), pero el guard y el código son correctos.
+
+## Sesión 2026-09-16 (cont.) — Edición de fechas de un hito ya guardado (PUT milestoneSchedule/{id})
+
+### Contexto
+Backend agregó `PUT api/v1/milestoneSchedule/{id}` (`Editar`, `[Authorize(Roles=AdministradorResidentes)]` puro — más restrictivo que el resto del cronograma, que también permite RESIDENTE) para editar descripción/orden/fechas/crítico de un hito ya guardado sin subir una versión nueva completa. El modal de detalle de un hito (`openViewMilestoneSchedule` → clic en un hito del Gantt) solo mostraba Fecha inicio/fin en modo lectura; no había ningún consumidor frontend de este endpoint.
+
+### Cambios
+- Nuevo botón "Editar fechas" en el modal de detalle, gateado por `puedeEditarHitoGuardado` (getter nuevo: solo `ADMINISTRADOR_RESIDENTES`, **no** `puedeEditarCronograma` que también incluye RESIDENTE — confirmado con el controller del backend que un RESIDENTE recibiría 403 en este PUT específico).
+- **Qué campo (Inicio/Fin) se muestra editable depende de dónde está el dato real, no de `esPuntual`** — confirmado contra datos reales de producción (proyecto "9 NOGALES" y otros): los hitos puntuales históricos ("Nivel 0.00", "Fin de Obra", "Inicio de obra") siempre tienen su fecha real en `plannedStartDate` con `plannedEndDate` en null, nunca al revés — la convención "puntual = Fin" solo aplica a hitos nuevos creados desde la plantilla actual (que si el usuario llena el campo Fin y se guarda bien, sí queda con el dato en Fin). Nuevos getters `hitoDetalleMuestraInicio`/`hitoDetalleMuestraFin` deciden esto en base a `realPlannedStartDate`/`realPlannedEndDate` (campos nuevos, agregados al mapeo de `openViewMilestoneSchedule()`, con el valor crudo del backend, sin el ajuste visual de "inicio visual" que se aplica a barras críticas para dibujar el Gantt).
+- Al guardar, si el campo oculto (el que no tiene dato real) es requerido por el DTO (`plannedStartDate` no admite null) o por la validación de "hito obligatorio" del backend (`EditAsync`/`ValidarHitosObligatoriosAsync`: obligatorio y no "Inicio de obra" ⇒ exige `plannedEndDate`), se espeja desde el campo visible — dirección Inicio→Fin para hitos obligatorios históricos sin Fin, Fin→Inicio para hitos "solo Fin" nuevos. Bloqueo duro (sin opción de confirmar) si el hito es obligatorio y ninguno de los dos espejos resuelve el faltante — igual que el backend, sin excepción para "Inicio de obra".
+- **Bug encontrado y corregido de paso, no pedido explícitamente pero bloqueante para lo anterior**: `openViewMilestoneSchedule()` filtraba con `!!m.plannedStartDate` — cualquier hito "solo Fin" (los nuevos de plantilla) nunca llegaba a aparecer en el Gantt, ni se podía abrir su modal. Se cambió a "al menos una de las dos fechas" (`anchorDate()` nuevo, fecha ancla del hito para ordenar barras críticas), y se corrigió el chequeo de "rango real" (antes `plannedEndDate !== plannedStartDate`, que confundía un hito "solo Fin" con Inicio vacío con un rango real — ahora exige que las DOS tengan valor). Es la causa más probable (no confirmada al 100%, no se pudo reproducir en el dataset de prueba) del error "Invalid day index" reportado en una vuelta anterior de esta misma sesión.
+- `MilestoneScheduleGetDTO` (frontend) agrega `esObligatorio: boolean` — el backend ya lo devolvía en el GET, solo faltaba el tipado.
+- Nuevo método `editarHito()` en `MilestoneScheduleService`, reusando el DTO existente `MilestoneScheduleCreateDTO` (mismo shape que cada ítem del array del POST de versión completa, confirmado contra `MilestoneScheduleController.cs`/`MilestoneScheduleDtos.cs` del backend antes de implementar).
+
+### Archivos clave
+- `src/app/features/mejora-continua/milestone-schedule/milestone-schedule.ts` / `.html`
+- `src/app/core/services/milestoneSchedule.service.ts`
+- `src/app/core/dtos/milestoneSchedule/milestoneSchedule.model.ts`
+
+### Pendiente / bugs preexistentes encontrados sin corregir (fuera de alcance de esta tarea)
+- El manejador de error de 403 del backend en este mismo controller ya distingue "Sin permiso" (ver sesión anterior) — no hay nada nuevo pendiente en ese frente.
+- Al probar el guardado real en pantalla, el PUT devolvió 404 con body vacío (no el `{message:"Hito no encontrado."}` que tira `AbrilException`) — confirmado con `git log` en `Abril_Backend` que el método `Editar` se commiteó el mismo día (2026-09-16 15:54) sin cambios sin commitear: el proceso backend corriendo en `localhost:5236` necesitaba reiniciarse para cargar el endpoint nuevo. No es un bug de frontend. Pendiente de que el usuario confirme el guardado end-to-end tras reiniciar el backend.
+- No se pudo re-probar en navegador el fix del caso "solo Fin" (no existe todavía ningún hito así en datos reales) porque la sesión del navegador expiró a mitad de esta tarea — pendiente de verificación visual del usuario, en particular: caso 1 (Inicio con valor) sin regresión, y caso "solo Fin" con el próximo hito que se cree desde la plantilla nueva.
+
+### Verificado
+`ng build` (producción): 0 errores, en cada paso de esta sesión. Probado en Chrome contra backend local: apertura del modal, botón "Editar fechas", inputs, bloqueo de "hito obligatorio", edición y guardado (bloqueado por el 404 de backend desactualizado arriba mencionado, no por el frontend).
