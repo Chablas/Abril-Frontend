@@ -58,6 +58,10 @@ import {
   ServicioFijoDto,
   ServiciosFijosGuardarDto,
   DashboardAcumuladoDto,
+  EpiStaffConfigDto,
+  EpiStaffCalculoDto,
+  CostoFijoManualDto,
+  ActualizarCostoFijoManualDto,
 } from './presupuesto.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -180,9 +184,10 @@ export class PresupuestoMaterialesService {
     );
   }
 
-  listarFamiliasConRatio(): Observable<FamiliaConRatioDto[]> {
+  listarFamiliasConRatio(soloActivos = true): Observable<FamiliaConRatioDto[]> {
     return this.http.get<FamiliaConRatioDto[]>(`${this.base}/ratios/familias`, {
       headers: this.authHeaders(),
+      params: { soloActivos },
     });
   }
 
@@ -353,6 +358,25 @@ export class PresupuestoMaterialesService {
       `${this.base}/presupuestos/${presupuestoId}/aprobar`,
       {},
       { headers: this.authHeaders() },
+    );
+  }
+
+  /** Reenvía el correo de aprobación de un presupuesto YA aprobado (no llegó, o se corrigió algo
+   * en el Resumen después de aprobar). */
+  reenviarNotificacionAprobacion(presupuestoId: number): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.base}/presupuestos/${presupuestoId}/reenviar-notificacion`,
+      {},
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Excel del "Desagregado de Recursos" (Materiales + Personal + Vigilancia + Servicios fijos +
+   * Kits del presupuesto vigente del proyecto) — mismo formato que usa Costos. */
+  exportarResumenRecursosExcel(projectId: number): Observable<Blob> {
+    return this.http.get(
+      `${this.base}/presupuestos/proyectos/${projectId}/resumen-recursos/exportar-excel`,
+      { headers: this.authHeaders(), responseType: 'blob' },
     );
   }
 
@@ -602,6 +626,15 @@ export class PresupuestoMaterialesService {
     });
   }
 
+  /** Proyecto vigente del usuario logueado — para preseleccionar el filtro de Proyecto en la
+   * vista "General" del Catálogo. 404 si no se resuelve ningún proyecto para su usuario. */
+  obtenerMiProyectoActual(): Observable<{ projectId: number; projectDescription: string }> {
+    return this.http.get<{ projectId: number; projectDescription: string }>(
+      `${this.base}/catalogo/mi-proyecto-actual`,
+      { headers: this.authHeaders() },
+    );
+  }
+
   // ── Vigilancia externa por hito (facturada por punto/turno, precio desde Ratios) ──────────
 
   getVigilanciaHitos(projectId: number): Observable<VigilanciaHitoDto[]> {
@@ -645,6 +678,44 @@ export class PresupuestoMaterialesService {
   guardarServiciosFijos(projectId: number, dto: ServiciosFijosGuardarDto): Observable<{ message: string }> {
     return this.http.put<{ message: string }>(
       `${this.base}/proyectos/${projectId}/servicios`,
+      dto,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── EPI de Staff (config global + cálculo por proyecto) ────────────────────
+
+  getEpiStaffConfig(): Observable<EpiStaffConfigDto> {
+    return this.http.get<EpiStaffConfigDto>(`${this.base}/epi-staff/config`, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  actualizarEpiStaffConfig(dto: EpiStaffConfigDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/epi-staff/config`, dto, {
+      headers: this.authHeaders(),
+    });
+  }
+
+  getEpiStaffCalculo(projectId: number): Observable<EpiStaffCalculoDto> {
+    return this.http.get<EpiStaffCalculoDto>(
+      `${this.base}/epi-staff/proyectos/${projectId}/calculo`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  // ── Costo fijo manual (Malla Anticaída/Encapsulado/Malla Anillo Fenólico) ──────
+
+  getCostoFijoManual(projectId: number): Observable<CostoFijoManualDto> {
+    return this.http.get<CostoFijoManualDto>(
+      `${this.base}/proyectos/${projectId}/costo-fijo-manual`,
+      { headers: this.authHeaders() },
+    );
+  }
+
+  guardarCostoFijoManual(projectId: number, dto: ActualizarCostoFijoManualDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(
+      `${this.base}/proyectos/${projectId}/costo-fijo-manual`,
       dto,
       { headers: this.authHeaders() },
     );

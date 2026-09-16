@@ -92,6 +92,11 @@
       <button class="btn-primary" (click)="mostrarFormGenerar = !mostrarFormGenerar; cdr.markForCheck()">
         <i class="ti ti-plus"></i> Generar presupuesto
       </button>
+      <button class="btn-outline" [disabled]="exportandoResumen" (click)="exportarResumenExcel()"
+              title="Desagregado de Recursos: Materiales + Personal + Vigilancia + Servicios fijos + Kits">
+        <i class="ti ti-file-spreadsheet"></i>
+        {{ exportandoResumen ? 'Exportando...' : 'Exportar a Excel' }}
+      </button>
     </div>
 
     <!-- Formulario generar -->
@@ -448,6 +453,36 @@
         </button>
       </div>
     </div>
+
+    <!-- Costo fijo manual: monto "glb" tipeado a mano, sin ratio (el precio real depende de la
+         geometría/altura de cada obra, no hay forma confiable de estimarlo desde el histórico). -->
+    <div class="hitos-card" *ngIf="costoFijoManual as cfm">
+      <h3 class="form-titulo" style="margin:0 0 0.5rem;">Costo fijo manual</h3>
+      <p class="form-desc" style="margin-top:0;">
+        Malla Anticaída, Encapsulado y Malla Anillo Fenólico — montos "glb" tipeados a mano, no
+        escalan con ningún driver ni tienen ratio histórico confiable.
+      </p>
+      <div class="form-fields">
+        <label>Malla anticaída de protección (S/)
+          <input type="number" min="0" step="100" [(ngModel)]="cfm.mallaAnticaida" />
+        </label>
+        <label>Encapsulado en fachada (S/)
+          <input type="number" min="0" step="100" [(ngModel)]="cfm.encapsulado" />
+        </label>
+        <label>Malla anillo fenólico (S/)
+          <input type="number" min="0" step="100" [(ngModel)]="cfm.mallaAnilloFenolico" />
+        </label>
+        <label class="full-width">Notas
+          <textarea [(ngModel)]="cfm.notas" rows="2" placeholder="Opcional"></textarea>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" [disabled]="costoFijoManualGuardando" (click)="guardarCostoFijoManual()">
+          <i class="ti" [ngClass]="costoFijoManualGuardando ? 'ti-loader-2 spin' : 'ti-device-floppy'"></i>
+          {{ costoFijoManualGuardando ? 'Guardando...' : 'Guardar costo fijo' }}
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- ═══════════════════ RATIOS ═══════════════════ -->
@@ -709,6 +744,108 @@
         <i class="ti ti-info-circle"></i>
 Barandas/Ducto son solo resultado informativo (la cantidad final se sigue cargando a mano en Presupuesto → Detalle). Marcelinos es la excepción: su botón "Guardar en presupuesto" sí escribe directo en la línea real.
       </p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ EPI DE STAFF ═══════════════════ -->
+  <div class="page-body" *ngIf="activeSubTab === 'epi-staff'" style="padding-bottom: 0;">
+    <div class="hitos-card">
+      <h3 class="form-titulo" style="margin:0 0 0.5rem;">Cálculo EPP Staff</h3>
+      <p class="form-desc" style="margin-top:0;">
+        Casco/Orejera/Arnés/Lentes/Barbiquejo/Guantes se comparten con obrero — acá se calcula
+        cuánto de lo consumido corresponde a Staff (StaffHeadcount, desde el driver de Ratios de
+        Dotación) y se descuenta del total, para que el Desagregado de Recursos no duplique el
+        costo entre las dos líneas. Camisa/Blusa/Zapato son exclusivas de Staff en el Catálogo, no
+        necesitan descuento.
+      </p>
+
+      <div *ngIf="epiStaffLoading" class="loading-msg">Calculando EPI de Staff...</div>
+
+      <div *ngIf="!epiStaffLoading && !epiStaffCalculo" class="empty-cell">
+        Este proyecto todavía no tiene ningún presupuesto generado — genéralo primero en la pestaña "Presupuesto".
+      </div>
+
+      <ng-container *ngIf="!epiStaffLoading && epiStaffCalculo as calc">
+        <div class="datos-base-row" style="margin: 0 0 1rem;">
+          <span class="datos-base-row__titulo"><i class="ti ti-users"></i> StaffHeadcount aplicado</span>
+          <span class="datos-base-row__divider"></span>
+          <div class="datos-base-row__fields">
+            <span><strong>{{ calc.staffHeadcountAplicado | number:'1.0-1' }}</strong> personas</span>
+            <span>·</span>
+            <span><strong>{{ calc.mesesProyecto | number:'1.1-1' }}</strong> meses de proyecto (desde cronograma)</span>
+          </div>
+        </div>
+
+        <!-- Config global de rotación — afecta a TODOS los proyectos, no solo a este. -->
+        <div class="hitos-card" style="background:#fffbeb; border-color:#fde68a; margin-bottom:1rem;">
+          <h4 class="form-titulo" style="margin:0 0 0.5rem; font-size:0.95rem;">
+            <i class="ti ti-alert-triangle" style="color:#d97706;"></i> Rotación global de EPI compartido
+          </h4>
+          <p class="form-desc" style="margin-top:0;">Editar acá cambia el cálculo de EPI Staff de TODOS los proyectos, no solo este.</p>
+          <div class="form-fields" *ngIf="epiStaffConfig as cfg">
+            <label>Arnés por staff
+              <input type="number" min="0" step="0.5" [(ngModel)]="cfg.arnesPorStaff" />
+            </label>
+            <label>Lentes — repone cada (meses)
+              <input type="number" min="0.1" step="0.5" [(ngModel)]="cfg.rotacionLentesMeses" />
+            </label>
+            <label>Barbiquejo — repone cada (meses)
+              <input type="number" min="0.1" step="0.5" [(ngModel)]="cfg.rotacionBarbiquejoMeses" />
+            </label>
+            <label>Guantes — repone cada (meses)
+              <input type="number" min="0.1" step="0.5" [(ngModel)]="cfg.rotacionGuantesMeses" />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" [disabled]="epiStaffGuardando" (click)="guardarEpiStaffConfig()">
+              <i class="ti" [ngClass]="epiStaffGuardando ? 'ti-loader-2 spin' : 'ti-device-floppy'"></i>
+              {{ epiStaffGuardando ? 'Guardando...' : 'Guardar rotación global' }}
+            </button>
+          </div>
+        </div>
+
+        <div class="personal-tabla-scroll">
+          <table class="abril-table personal-tabla-matriz">
+            <thead>
+              <tr>
+                <th>Ítem</th>
+                <th>Cant. total consumida</th>
+                <th>Precio Staff</th>
+                <th>Cant. Staff</th>
+                <th>Costo Staff</th>
+                <th>Precio Obrero</th>
+                <th>Cant. Obrero</th>
+                <th>Costo Obrero</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let l of calc.lineas">
+                <td class="personal-rol">{{ l.nombre }}</td>
+                <td>{{ l.cantidadTotalConsumida | number:'1.0-2' }}</td>
+                <td>S/ {{ l.precioUnitarioStaff | number:'1.2-2' }}</td>
+                <td><strong>{{ l.cantidadStaff | number:'1.0-2' }}</strong></td>
+                <td class="personal-total-cell">{{ l.costoStaff | number:'1.2-2' }}</td>
+                <td>
+                  <span *ngIf="l.requiereDescuento">S/ {{ l.precioUnitarioObrero | number:'1.2-2' }}</span>
+                  <span *ngIf="!l.requiereDescuento" class="celda-vacia">—</span>
+                </td>
+                <td>
+                  <span *ngIf="l.requiereDescuento">{{ l.cantidadObrero | number:'1.0-2' }}</span>
+                  <span *ngIf="!l.requiereDescuento" class="celda-vacia" title="Exclusiva de Staff, nada que descontarle a Obrero">—</span>
+                </td>
+                <td>
+                  <span *ngIf="l.requiereDescuento">{{ l.costoObrero | number:'1.2-2' }}</span>
+                  <span *ngIf="!l.requiereDescuento" class="celda-vacia">—</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="personal-footer">
+          <span>Total costo Staff: S/ {{ epiStaffTotalGeneral | number:'1.2-2' }}</span>
+        </div>
+      </ng-container>
     </div>
   </div>
 </div>

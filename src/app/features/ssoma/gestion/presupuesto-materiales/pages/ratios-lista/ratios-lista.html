@@ -8,7 +8,15 @@
     (secondaryClick)="load()">
 
     <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas. -->
-    <app-filter-trigger *ngIf="vistaRatios === 'materiales'" tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+    <ng-container *ngIf="vistaRatios === 'materiales'" tabsExtra>
+      <div class="activos-toggle" role="group" aria-label="Filtrar por estado">
+        <button type="button" class="activos-toggle__btn" [class.activos-toggle__btn--activo]="soloActivos"
+          (click)="cambiarSoloActivos(true)">Activos</button>
+        <button type="button" class="activos-toggle__btn" [class.activos-toggle__btn--activo]="!soloActivos"
+          (click)="cambiarSoloActivos(false)">Todas</button>
+      </div>
+      <app-filter-trigger [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+    </ng-container>
   </app-abril-page-header>
 
   <div class="page-body">
@@ -43,7 +51,7 @@
       <div *ngIf="loadingDrivers" class="loading-msg-small">Cargando ratios de dotación...</div>
 
       <div *ngIf="!loadingDrivers" class="driver-grid">
-        <ng-container *ngFor="let d of [hhComparacion, trabajadoresComparacion]">
+        <ng-container *ngFor="let d of [hhComparacion, trabajadoresComparacion, staffCascoComparacion, staffOrejeraComparacion]">
           <div class="familia-panel" *ngIf="d">
             <div class="familia-panel__header">
               <span class="familia-panel__nombre">{{ driverTipoLabel(d.tipoDriver) }}</span>
@@ -55,7 +63,9 @@
             </div>
             <div class="familia-panel__body">
               <div *ngIf="d.proyectos.length === 0" class="empty-cell">
-                {{ d.tipoDriver === 'HH' ? 'Sin proyectos con Tareo registrado todavía.' : 'Sin proyectos con trabajadores vinculados todavía.' }}
+                {{ d.tipoDriver === 'HH' ? 'Sin proyectos con Tareo registrado todavía.'
+                  : d.tipoDriver === 'TRABAJADORES' ? 'Sin proyectos con trabajadores vinculados todavía.'
+                  : 'Sin proyectos con consumo de este EPP registrado todavía.' }}
               </div>
               <div class="driver-tabla" *ngIf="d.proyectos.length > 0">
                 <div class="driver-tabla__header">
@@ -88,7 +98,7 @@
                   </div>
                 </div>
                 <div
-                  *ngFor="let p of proyectosOrdenados(d)"
+                  *ngFor="let p of proyectosOrdenados(d); trackBy: trackByProjectId"
                   class="driver-tabla__row"
                   [class.driver-tabla__row--outlier]="p.esOutlier">
                   <div class="tabla-cols__proyecto" [title]="p.projectDescription">
@@ -153,7 +163,7 @@
     <div *ngIf="!loading" class="familias-lista">
       <ng-container *ngFor="let grupo of gruposPorTipo; trackBy: trackByTipo">
         <div class="familias-lista__tipo-header">{{ grupo.tipo }}</div>
-        <div *ngFor="let f of grupo.familias; trackBy: trackByFamiliaId" class="familia-panel">
+        <div *ngFor="let f of grupo.familias; trackBy: trackByFamiliaId" class="familia-panel" [class.familia-panel--inactivo]="!f.activo">
         <div class="familia-panel__header">
           <span class="familia-panel__nombre">{{ f.nombreFamilia }}</span>
           <span class="familia-panel__tipo">{{ f.tipoMaterial }}</span>
@@ -177,12 +187,12 @@
 
           <span *ngIf="f.nOutliers > 0" class="badge badge-warn">{{ f.nOutliers }} outlier(s)</span>
 
-          <label class="familia-panel__activo" title="Desactivar esta familia la saca del cálculo de ratio y del presupuesto de proyectos nuevos, sin borrar su histórico.">
+          <label class="familia-panel__activo" title="Desactivar esta familia la saca del cálculo de ratio y del presupuesto de proyectos nuevos, sin borrar su histórico. Reactívala tildándola de nuevo.">
             <input
               type="checkbox"
-              [checked]="true"
+              [checked]="f.activo"
               [disabled]="desactivandoFamiliaId === f.familiaId"
-              (change)="desactivarFamilia(f)"
+              (change)="f.activo ? desactivarFamilia(f) : reactivarFamilia(f)"
             />
             Activo
           </label>
