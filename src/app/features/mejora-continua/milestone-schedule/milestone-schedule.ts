@@ -326,7 +326,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     this.aplicarCambioFecha(hito, 'startDate', valor);
   }
 
-  /** También atiende el input "Fin" de hitos puntuales (esPuntual): ahí es su única fecha real. */
+  /** También atiende el input "Fin", que es el campo activo por defecto para todo hito salvo "Inicio de obra". */
   onFinChange(hito: any, valor: string): void {
     this.aplicarCambioFecha(hito, 'endDate', valor);
   }
@@ -355,19 +355,20 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       let plannedStartDate: string;
       let plannedEndDate: string | null;
 
-      if (t.esPuntual && this.esInicioDeObra(t)) {
+      if (this.esInicioDeObra(t)) {
         // Excepción: la fecha única va en plannedStartDate, plannedEndDate va null salvo que
         // se haya tildado "rango" para convertirlo en un rango real inicio→fin.
         plannedStartDate = startClean;
         plannedEndDate = t.esRango ? finClean || null : null;
-      } else if (t.esPuntual) {
-        // Puntual: la fecha real es plannedEndDate (confirmado con backend). plannedStartDate no
-        // admite null en el DTO ni sobrevive el filtro de buildSavePayload() si queda vacío, así
-        // que se espeja el mismo valor ahí salvo que "rango" esté tildado (rango real inicio→fin).
-        plannedStartDate = t.esRango ? startClean : finClean;
+      } else if (t.esRango) {
+        // Rango real inicio→fin: ambas fechas se guardan tal cual.
+        plannedStartDate = startClean;
         plannedEndDate = finClean || null;
       } else {
-        plannedStartDate = startClean;
+        // Default (todo hito salvo "Inicio de obra"): la fecha real es plannedEndDate (Fin).
+        // plannedStartDate no admite null en el DTO ni sobrevive el filtro de buildSavePayload()
+        // si queda vacío, así que se espeja el mismo valor ahí.
+        plannedStartDate = finClean;
         plannedEndDate = finClean || null;
       }
 
@@ -645,7 +646,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   /**
    * Solo ADMINISTRADOR DE RESIDENTES: elimina una versión completa de cronograma (con sus hitos).
    * El endpoint está protegido con [Authorize(Roles=...)] puro, sin AbrilException — un 403 por
-   * rol insuficiente no trae body JSON, a diferencia de los demás endpoints del feature.
+   * rol insuficiente no trae body JSON, a diferencia de los demás endpoints del feature. El
+   * manejador genérico `error()` ya cubre este caso (título "Sin permiso" + mensaje default).
    */
   eliminarVersionCronograma(item: MilestoneScheduleHistoryGetDTO): void {
     Swal.fire({
@@ -667,15 +669,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
             Swal.fire({ title: response.message ?? 'Cronograma eliminado.', icon: 'success', draggable: true });
             this.openMilestoneScheduleHistory(this.filtersScheduleId.projectId!, this.selectedProjectName);
           },
-          error: (err: HttpErrorResponse) => {
-            if (err.status === 403 && err.error?.message == null) {
-              this.loader = false;
-              this.cdr.detectChanges();
-              Swal.fire({ icon: 'error', title: 'No tienes permiso', text: 'No tienes permiso para realizar esta acción.' });
-              return;
-            }
-            this.error(err);
-          },
+          error: (err: HttpErrorResponse) => this.error(err),
         });
     });
   }
@@ -1627,6 +1621,15 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       });
       localStorage.clear();
       this.router.navigate(['/auth/login']);
+      return;
+    }
+
+    if (err.status === 403) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Sin permiso',
+        text: err.error?.message ?? 'No tienes permiso para realizar esta acción.',
+      });
       return;
     }
 

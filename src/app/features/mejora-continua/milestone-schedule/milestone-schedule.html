@@ -314,14 +314,14 @@
                         <input type="checkbox" [checked]="hito.esRango" (change)="toggleRango(hito)" [disabled]="hito.esCritico" />
                     </td>
                     <td class="td-fecha">
-                        <input *ngIf="!hito.esPuntual || hito.esRango || esInicioDeObra(hito)" type="date" [ngModel]="hito.startDate" (ngModelChange)="onInicioChange(hito, $event)"
+                        <input *ngIf="hito.esRango || esInicioDeObra(hito)" type="date" [ngModel]="hito.startDate" (ngModelChange)="onInicioChange(hito, $event)"
                             [title]="hito.esCritico ? 'Fecha real de este corte de etapa (ej. Fin de casco, Entrega final).' : ''" />
-                        <span *ngIf="hito.esPuntual && !hito.esRango && !esInicioDeObra(hito)" class="text-gray-300">—</span>
+                        <span *ngIf="!hito.esRango && !esInicioDeObra(hito)" class="text-gray-300">—</span>
                     </td>
                     <td class="td-fecha">
-                        <input *ngIf="hito.esRango || (hito.esPuntual && !esInicioDeObra(hito))" type="date"
+                        <input *ngIf="hito.esRango || !esInicioDeObra(hito)" type="date"
                             [ngModel]="hito.endDate" (ngModelChange)="onFinChange(hito, $event)" />
-                        <span *ngIf="!hito.esRango && (!hito.esPuntual || esInicioDeObra(hito))" class="text-gray-300">—</span>
+                        <span *ngIf="!hito.esRango && esInicioDeObra(hito)" class="text-gray-300">—</span>
                     </td>
                     <td class="td-badge">
                         <span class="badge" [ngClass]="tieneFecha(hito) ? 'badge-con-fecha' : 'badge-sin-fecha'">

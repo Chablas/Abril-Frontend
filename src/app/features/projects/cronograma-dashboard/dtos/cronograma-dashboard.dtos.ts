@@ -35,3 +35,70 @@ export interface CronogramaDashboardResponseDto {
   proyectos: CronogramaDashboardProyectoDto[];
   responsables: CronogramaDashboardResponsableDto[];
 }
+
+// ── Ranking + Heatmap (migrados de projects-dashboard, ver Fase 1 de la
+//    consolidación de dashboards de Unidad de Proyectos) ────────────────────
+
+export interface RankingResponsableDto {
+  posicion: number;
+  nombre: string;
+  proyectos: number;
+  completadas: number;
+  vencidas: number;
+  score: number;
+}
+
+export interface HeatmapSemanaDto {
+  semana: string;
+  cantidad: number;
+}
+
+export interface HeatmapResponsableDto {
+  responsable: string;
+  semanas: HeatmapSemanaDto[];
+}
+
+/**
+ * Subconjunto de la respuesta de GET api/v1/projects-dashboard: ese endpoint devuelve más campos
+ * (proyectos, filtros, distribucionPorEstado, etc.) que no se migran a Dashboard UDP porque ya
+ * están cubiertos por los KPI cards existentes — solo se tipan los dos campos que sí se consumen.
+ */
+export interface ProjectsDashboardOverviewDto {
+  rankingResponsables: RankingResponsableDto[];
+  heatmapCarga: HeatmapResponsableDto[];
+}
+
+// ── Detalle de proyecto para el panel lateral de Gantt ──────────────────────
+
+export interface ActividadCriticaDto {
+  nombre: string;
+  responsable: string | null;
+  fechaFin: string;
+  diasRetraso: number;
+}
+
+export interface GanttTareaDto {
+  id: number | string;
+  text: string;
+  start_date: string;
+  duration: number;
+  parent?: number | string;
+  progress?: number;
+  open?: boolean;
+}
+
+export interface ProyectoDetalleDto {
+  proyectoId: number;
+  proyectoNombre: string;
+  estado: string;
+  avanceProgramado: number;
+  avanceReal: number;
+  diasRetraso: number;
+  semaforo: 'verde' | 'amarillo' | 'rojo';
+  actividadesVencidas: ActividadCriticaDto[];
+  actividadesCriticas: ActividadCriticaDto[];
+  gantt: {
+    tasks: GanttTareaDto[];
+    links: { id: number; source: number; target: number; type: string }[];
+  };
+}

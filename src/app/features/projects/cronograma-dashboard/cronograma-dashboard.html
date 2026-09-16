@@ -172,6 +172,7 @@
             <th>ESTADO</th>
             <th>SEMÁFORO</th>
             <th class="w-10"></th>
+            <th class="w-10"></th>
           </tr>
         </thead>
         <tbody>
@@ -239,12 +240,18 @@
                 "
               ></span>
             </td>
+            <td class="col-gantt-action">
+              <button type="button" class="icon-btn-gantt" title="Ver Gantt del proyecto"
+                (click)="$event.stopPropagation(); abrirGantt(p)">
+                <i class="ti ti-timeline"></i>
+              </button>
+            </td>
             <td class="col-nav-arrow">
               <i class="ti ti-chevron-right row-arrow"></i>
             </td>
           </tr>
           <tr *ngIf="proyectos.length === 0">
-            <td colspan="9" class="empty-row">
+            <td colspan="10" class="empty-row">
               <i class="ti ti-search-off empty-icon"></i>
               No hay proyectos para los filtros seleccionados.
             </td>
@@ -261,6 +268,215 @@
         (pageChange)="changePage($event)">
       </app-paginator>
     </div>
+  </div>
+
+  <!-- RANKING + HEATMAP SKELETON -->
+  <div class="table-card" *ngIf="rankingHeatmapLoading">
+    <div class="skeleton-line sk-title" style="margin-bottom: 20px"></div>
+    <div class="skeleton-line sk-row" *ngFor="let i of [1,2,3]"></div>
+  </div>
+
+  <!-- HEATMAP: Carga por Responsable y Semana (migrado de Dashboard de Proyectos) -->
+  <div class="table-card" *ngIf="!rankingHeatmapLoading && heatmapCarga.length">
+    <div class="table-header-row">
+      <div class="table-header-left">
+        <span class="table-title">Carga por Responsable y Semana</span>
+      </div>
+      <span class="table-header-legend">ACTIVIDADES ASIGNADAS POR SEMANA</span>
+    </div>
+    <div class="heatmap-scroll">
+      <table class="heatmap-table">
+        <thead>
+          <tr>
+            <th class="hm-name-th">Responsable</th>
+            <th *ngFor="let sem of heatmapSemanas" class="hm-week-th">{{ sem }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of heatmapCarga">
+            <td class="hm-name-td">{{ row.responsable }}</td>
+            <td
+              *ngFor="let s of row.semanas"
+              class="hm-cell"
+              [style.background]="heatmapCellBg(s.cantidad)"
+              [style.color]="heatmapCellFg(s.cantidad)"
+              [title]="s.semana + ': ' + s.cantidad + ' actividades'"
+            >{{ s.cantidad || '' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RANKING DE RESPONSABLES (migrado de Dashboard de Proyectos) -->
+  <div class="table-card" *ngIf="!rankingHeatmapLoading && rankingResponsables.length">
+    <div class="table-header-row">
+      <div class="table-header-left">
+        <span class="table-title">Ranking de Responsables</span>
+        <span class="badge-count">{{ rankingResponsables.length }}</span>
+      </div>
+    </div>
+    <div class="abril-table-wrap">
+      <table class="abril-table ranking-table">
+        <thead>
+          <tr>
+            <th style="width: 36px;">#</th>
+            <th>RESPONSABLE</th>
+            <th style="text-align: center;">PROY.</th>
+            <th style="text-align: center;">COMPL.</th>
+            <th style="text-align: center;">VENC.</th>
+            <th style="text-align: center;">SCORE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of rankingResponsables">
+            <td>
+              <span
+                class="rank-badge"
+                [class.rank-gold]="r.posicion === 1"
+                [class.rank-silver]="r.posicion === 2"
+                [class.rank-bronze]="r.posicion === 3"
+              >{{ r.posicion }}</span>
+            </td>
+            <td class="resp-name">{{ r.nombre }}</td>
+            <td style="text-align: center;">{{ r.proyectos }}</td>
+            <td style="text-align: center;" class="num-verde">{{ r.completadas }}</td>
+            <td style="text-align: center;" class="num-rojo">{{ r.vencidas }}</td>
+            <td style="text-align: center;">
+              <span class="score-badge">{{ r.score }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Panel lateral de Gantt (migrado de Dashboard de Proyectos) ── -->
+<div class="panel-backdrop" [class.visible]="panelOpen" (click)="closePanel()"></div>
+
+<div class="side-panel" [class.panel-open]="panelOpen">
+
+  <div class="panel-head">
+    <div class="panel-head-info">
+      <h2 class="panel-title">{{ selectedProyectoGantt?.projectDescription || 'Gantt del Proyecto' }}</h2>
+      <span
+        *ngIf="detalle"
+        class="badge"
+        [class]="chipBySemaforo(detalle.semaforo)"
+      >{{ panelSemaforoLabel(detalle?.semaforo) }}</span>
+    </div>
+    <button class="btn-panel-close" (click)="closePanel()" title="Cerrar">✕</button>
+  </div>
+
+  <!-- KPIs del proyecto -->
+  <div class="panel-kpis" *ngIf="detalle && !panelLoading">
+    <div class="panel-kpi">
+      <span class="panel-kpi-label">Programado</span>
+      <span class="panel-kpi-value">{{ detalle.avanceProgramado | number:'1.0-1' }}%</span>
+    </div>
+    <div class="panel-kpi">
+      <span class="panel-kpi-label">Real</span>
+      <span
+        class="panel-kpi-value"
+        [class.pkv-verde]="detalle.semaforo === 'verde'"
+        [class.pkv-rojo]="detalle.semaforo === 'rojo'"
+        [class.pkv-naranja]="detalle.semaforo === 'amarillo'"
+      >{{ detalle.avanceReal | number:'1.0-1' }}%</span>
+    </div>
+    <div class="panel-kpi">
+      <span class="panel-kpi-label">Días retraso</span>
+      <span class="panel-kpi-value" [class.pkv-rojo]="(detalle.diasRetraso ?? 0) > 0">
+        {{ (detalle.diasRetraso ?? 0) > 0 ? detalle.diasRetraso + 'd' : '—' }}
+      </span>
+    </div>
+    <div class="panel-kpi">
+      <span class="panel-kpi-label">Act. vencidas</span>
+      <span
+        class="panel-kpi-value"
+        [class.pkv-rojo]="(detalle.actividadesVencidas?.length ?? 0) > 0"
+      >{{ detalle.actividadesVencidas?.length ?? 0 }}</span>
+    </div>
+  </div>
+
+  <!-- Estado de carga -->
+  <div class="panel-loading-state" *ngIf="panelLoading">
+    <div class="loader-dots"><span></span><span></span><span></span></div>
+    <p>Cargando detalle del proyecto...</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="panel-tabs" *ngIf="detalle && !panelLoading">
+    <button [class.active]="activeTab === 'gantt'" (click)="activeTab = 'gantt'">
+      Gantt
+    </button>
+    <button [class.active]="activeTab === 'actividades'" (click)="activeTab = 'actividades'">
+      Actividades críticas
+      <span
+        *ngIf="(detalle.actividadesVencidas?.length ?? 0) > 0"
+        class="tab-badge"
+      >{{ detalle.actividadesVencidas.length }}</span>
+    </button>
+  </div>
+
+  <!-- Gantt (siempre en DOM para evitar re-init) -->
+  <div
+    class="panel-tab-body"
+    *ngIf="detalle && !panelLoading"
+    [style.display]="activeTab === 'gantt' ? 'block' : 'none'"
+  >
+    <div #ganttPanel class="gantt-panel-container"></div>
+  </div>
+
+  <!-- Actividades críticas / vencidas -->
+  <div
+    class="panel-tab-body panel-tab-acts"
+    *ngIf="detalle && !panelLoading && activeTab === 'actividades'"
+  >
+    <!-- Vencidas -->
+    <div *ngIf="detalle.actividadesVencidas?.length">
+      <h4 class="act-section-title act-title-red">
+        <span class="act-dot act-dot-red"></span> Actividades Vencidas
+      </h4>
+      <div class="act-list">
+        <div class="act-item" *ngFor="let a of detalle.actividadesVencidas">
+          <div class="act-item-main">
+            <span class="act-nombre">{{ a.nombre }}</span>
+            <span class="act-resp">{{ a.responsable || '—' }}</span>
+          </div>
+          <div class="act-item-meta">
+            <span class="badge chip-red">{{ a.diasRetraso }}d</span>
+            <span class="act-fecha">{{ a.fechaFin }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Críticas -->
+    <div *ngIf="detalle.actividadesCriticas?.length" style="margin-top: 1rem;">
+      <h4 class="act-section-title act-title-orange">
+        <span class="act-dot act-dot-orange"></span> Actividades Críticas
+      </h4>
+      <div class="act-list">
+        <div class="act-item" *ngFor="let a of detalle.actividadesCriticas">
+          <div class="act-item-main">
+            <span class="act-nombre">{{ a.nombre }}</span>
+            <span class="act-resp">{{ a.responsable || '—' }}</span>
+          </div>
+          <div class="act-item-meta">
+            <span class="act-fecha">Fin: {{ a.fechaFin }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p
+      *ngIf="!detalle.actividadesVencidas?.length && !detalle.actividadesCriticas?.length"
+      class="empty-row"
+    >
+      Sin actividades vencidas ni críticas.
+    </p>
   </div>
 
 </div>
