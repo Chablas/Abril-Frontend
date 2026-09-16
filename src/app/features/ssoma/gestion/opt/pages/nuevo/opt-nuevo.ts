@@ -31,6 +31,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { WorkerSearchItemDto } from '../../../../salud-ocupacional/dtos/worker-search.model';
 import { WorkerSearchService } from '../../../../salud-ocupacional/services/worker-search.service';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { WorkerSearchInput } from '../../../../salud-ocupacional/shared/worker-search-input/worker-search-input';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { PhotoGridPicker } from '../../../../../../shared/components/photo-grid-picker/photo-grid-picker';
 import Swal from 'sweetalert2';
@@ -78,7 +79,15 @@ interface PasoForm {
   selector: 'app-opt-nuevo',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, SearchSelect, DocumentViewer, AbrilModalPanel, PhotoGridPicker],
+  imports: [
+    CommonModule,
+    FormsModule,
+    SearchSelect,
+    WorkerSearchInput,
+    DocumentViewer,
+    AbrilModalPanel,
+    PhotoGridPicker,
+  ],
   templateUrl: './opt-nuevo.html',
   styleUrl: './opt-nuevo.css',
 })
@@ -115,7 +124,6 @@ export class OptNuevo implements OnInit, AfterViewInit {
 
   // Observador — fijo, resuelto desde el usuario logueado (no editable). En modo
   // "retomar borrador" se respeta el observador que ya había quedado guardado.
-  workersObservador: WorkerSearchItemDto[] = [];
   observadorId: number | null = null;
   observadorActual: WorkerSearchItemDto | null = null;
   resolviendoObservador = true;
@@ -155,7 +163,7 @@ export class OptNuevo implements OnInit, AfterViewInit {
   // PASO 4 — trabajadores + verificación de entrenamiento + firmas
   trabajadores: TrabajadorForm[] = [];
   verificaciones: VerificacionForm[] = [];
-  trabajadorObservadoId: number | null = null;
+  @ViewChild('buscadorTrabajador') buscadorTrabajador?: WorkerSearchInput;
 
   // Canvas observador
   @ViewChild('canvasObs') canvasObs!: ElementRef<HTMLCanvasElement>;
@@ -203,20 +211,11 @@ export class OptNuevo implements OnInit, AfterViewInit {
     forkJoin({
       catalogos: this.optService.getCatalogos(),
       proyectos: this.projectService.getProjectsPaged({ pageSize: 200, active: true }),
-      // Buscador LIVIANO (mismo que "Buscar por nombre o DNI..." en otras pantallas) —
-      // antes esto pegaba contra el endpoint de Habilitación con pageSize=9999, que
-      // calcula el estado de habilitación completo (EMO, SCTR, vigencias...) de CADA
-      // trabajador, una consulta pesadísima para solo llenar un combo de búsqueda.
-      // Acá no hace falta nada de eso, solo nombre/DNI/puesto/empresa.
-      workers: this.workerSearchService.search('', 3000),
     }).subscribe({
-      next: ({ catalogos, proyectos, workers }) => {
+      next: ({ catalogos, proyectos }) => {
         this.pets = catalogos.pets;
         this.criterios = catalogos.criterios;
         this.proyectos = proyectos.data;
-        // Excluye retirados — el endpoint liviano no filtra por estado como sí hacía
-        // el de Habilitación (soloRetirados=false por defecto).
-        this.workersObservador = workers.filter((w) => w.activo);
         this.loadingCatalogos = false;
         this.cdr.markForCheck();
 
@@ -634,15 +633,13 @@ export class OptNuevo implements OnInit, AfterViewInit {
   }
 
   // ── TRABAJADORES (PASO 4) ─────────────────────────────────────────────────
-  onTrabajadorObservadoChange(id: number | null): void {
-    if (!id) return;
-    const w = this.workersObservador.find((x) => x.id === id);
+  // El buscador queda "pegado" mostrando la tarjeta del seleccionado hasta que se
+  // llama a su clear() — acá se limpia enseguida para volver al cuadro de búsqueda
+  // y poder agregar al siguiente trabajador sin un paso extra.
+  onTrabajadorObservadoSeleccionado(w: WorkerSearchItemDto | null): void {
     if (!w) return;
     this.agregarTrabajador(w);
-    setTimeout(() => {
-      this.trabajadorObservadoId = null;
-      this.cdr.markForCheck();
-    }, 50);
+    this.buscadorTrabajador?.clear();
   }
 
   agregarTrabajador(w: WorkerSearchItemDto): void {
