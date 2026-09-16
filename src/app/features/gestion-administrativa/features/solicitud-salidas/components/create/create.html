@@ -97,28 +97,31 @@
         <div *ngIf="motivoPideHorasLugares(t)" class="flex flex-col gap-[4px] horas-row">
           <div class="flex flex-wrap gap-x-[24px] gap-y-[12px]">
             <div class="w-full sm:w-[130px]">
+              <!-- `min`: desde el trayecto 2, las horas hasta la última de los trayectos anteriores
+                   quedan deshabilitadas (si el 1 va de 14:00 a 14:05, el 2 sale desde las 14:06). -->
               <app-time-picker
                 label="Hora de salida"
                 color="var(--color-abril-standard)"
                 [allowClear]="false"
                 [required]="true"
                 [disabled]="!motivoElegido(t)"
+                [min]="minHoraSalida(i)"
                 [value]="t.horaSalida"
                 (valueChange)="onHoraSalidaChange(t, $event)" />
               <p *ngIf="submitted && !t.horaSalida" class="text-xs text-red-500 mt-[4px]">Campo requerido</p>
             </div>
 
             <div class="w-full sm:w-[200px]">
-              <!-- `min`: el retorno no puede ser anterior a la salida del MISMO trayecto, así que
-                   el desplegable deshabilita esas horas/minutos en vez de dejar elegirlas y
-                   rebotarlas al enviar (ver validarTrayecto). -->
+              <!-- `min`: el retorno no puede ser anterior a la salida del MISMO trayecto (ni, mientras
+                   no tenga salida, a su mínimo), así que el desplegable deshabilita esas horas/minutos
+                   en vez de dejar elegirlas y rebotarlas al enviar (ver validarTrayecto). -->
               <app-time-picker
                 [label]="labelHoraRetorno(t)"
                 color="var(--color-abril-standard)"
                 [allowClear]="false"
                 [required]="!t.sinRetorno"
                 [disabled]="t.sinRetorno || !motivoElegido(t)"
-                [min]="t.horaSalida"
+                [min]="minHoraRetorno(i)"
                 [(value)]="t.horaRetorno" />
               <label class="flex items-center gap-[6px] mt-[4px] cursor-pointer w-fit">
                 <input type="checkbox" [ngModel]="t.sinRetorno" (ngModelChange)="onSinRetornoChange(t, $event)"

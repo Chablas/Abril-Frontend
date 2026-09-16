@@ -22,12 +22,12 @@
  * frontend, y define qué correos administra cada una — el criterio es dónde se ORIGINA el correo,
  * no a quién le llega:
  *  • `solicitud-salidas`   → los dos que salen al crear la solicitud.
- *  • `rendiciones`         → los que dispara el trabajador (enviar la planilla a 1.ª revisión y
- *                            avisar que adjuntó el Consolidado del S10).
+ *  • `rendiciones`         → los que dispara el trabajador (enviar la planilla a 1.ª revisión).
  *  • `gestion-salidas`     → la decisión del revisor sobre la solicitud (aprobada / rechazada).
  *  • `gestion-rendiciones` → la primera revisión de la planilla (aprobada / observada).
- *  • `consolidados`        → la decisión del reembolso sobre el Consolidado del S10 y el aviso a
- *                            Tesorería que dispara la firma.
+ *  • `consolidados`        → la decisión del reembolso sobre el Consolidado del S10, el aviso a
+ *                            Tesorería que dispara la firma y los trámites del consolidador
+ *                            (avisar a la jefatura, pedir la corrección al ERP).
  *  • `reembolsos`          → Tesorería: hoy ninguno (marcar pagado no envía correos).
  *  • `correcciones-s10`    → la bandeja del Coordinador ERP: el aviso de que ya corrigió.
  */

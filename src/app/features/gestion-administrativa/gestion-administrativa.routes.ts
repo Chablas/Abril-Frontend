@@ -140,8 +140,9 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
   {
     // Configuración de Consolidados: los correos que se ORIGINAN acá (la decisión del reembolso y
     // el aviso a Tesorería que dispara la firma), la VISIBILIDAD de esta bandeja —aparte de la de
-    // rendiciones: ver una planilla y ver su consolidado son dos permisos distintos— y los
-    // CONSOLIDADORES, que deciden quién puede adjuntar el documento por cada trabajador.
+    // rendiciones: ver una planilla y ver su consolidado son dos permisos distintos—, los
+    // CONSOLIDADORES, que deciden quién puede adjuntar el documento por cada trabajador, y las
+    // FIRMAS, que deciden cómo registra la suya quien aprueba acá.
     // Va ANTES de 'consolidados' para que el segmento 'configuracion' no se lo coma la pantalla.
     path: 'consolidados/configuracion',
     loadComponent: () =>
@@ -155,6 +156,7 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
         'gestion-administrativa.config.correos',
         'gestion-administrativa.config.visibilidad-consolidados',
         'gestion-administrativa.config.consolidadores-areas',
+        'gestion-administrativa.config.firmas',
       ],
       pantalla: 'consolidados',
     },

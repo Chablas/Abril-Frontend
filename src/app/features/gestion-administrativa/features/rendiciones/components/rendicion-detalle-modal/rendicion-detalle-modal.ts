@@ -9,33 +9,29 @@ import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { RendicionesService } from '../../services/rendiciones.service';
-import { CorreoDestinatariosDto, RendicionDetalleDto } from '../../dtos/rendicion.dto';
-import { avisosDe } from '../../../../shared/correo-aviso';
+import { RendicionDetalleDto } from '../../dtos/rendicion.dto';
+import { CorreoAvisoDto } from '../../../../shared/correo-aviso';
 import { confirmarConCorreos } from '../../../../shared/confirmar-correos';
-import { ConsolidadoS10Modal } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
 import {
   ConsolidadoS10Dto,
   otrasRendicionesDelConsolidado,
 } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { SalidaCapturasModal } from '../salida-capturas-modal/salida-capturas-modal';
 import {
-  correccionS10Colors,
   primeraRevisionColors,
   reembolsoColors,
 } from '../../../../shared/dtos/rendicion-shared.dto';
 
 /**
  * Detalle de una planilla: sus documentos, el estado de la primera revisión y del reembolso, y las
- * salidas propias que agrupa. Trae también las acciones de la pantalla (adjuntar el Consolidado
- * del S10, avisar al revisor y corregir las capturas al subsanar) porque los correos del flujo
- * abren directo acá.
+ * salidas propias que agrupa. Trae también las acciones del trabajador (enviar a primera revisión y
+ * corregir las capturas al subsanar) porque los correos de la primera revisión abren directo acá.
+ * El Consolidado del S10 se ve pero no se toca: lo adjunta el consolidador de su área.
  */
 @Component({
   standalone: true,
   selector: 'app-rendicion-detalle-modal',
-  imports: [
-    CommonModule, BaseModal, StatusBadge, TitleCasePipe, ConsolidadoS10Modal, SalidaCapturasModal,
-  ],
+  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaCapturasModal],
   templateUrl: './rendicion-detalle-modal.html',
 })
 export class RendicionDetalleModal implements OnInit {
@@ -48,20 +44,17 @@ export class RendicionDetalleModal implements OnInit {
   @Input() subsanando = false;
 
   /**
-   * A quién le llegan de verdad los dos correos que dispara este modal, ya resueltos con
-   * Configuración → Correos. Los pasa la pantalla, que los trae con sus datos de arranque: son
-   * los mismos para todas sus planillas (está acotada a un solo trabajador) y pedirlos otra vez
-   * acá sería una petición de más por cada planilla que se abre.
+   * A quién le llegan de verdad los correos que dispara este modal, ya resueltos con Configuración
+   * → Correos. Los pasa la pantalla, que los trae con sus datos de arranque: son los mismos para
+   * todas sus planillas (está acotada a un solo trabajador) y pedirlos otra vez acá sería una
+   * petición de más por cada planilla que se abre.
    */
-  @Input() correoPrimeraRevision: CorreoDestinatariosDto = { para: [], copia: [] };
-  @Input() correoS10Revisor: CorreoDestinatariosDto = { para: [], copia: [] };
-  @Input() correoCorreccionS10: CorreoDestinatariosDto = { para: [], copia: [] };
+  @Input() correosEnvioRevision: CorreoAvisoDto[] = [];
 
   /** Emite true si algo cambió (hay que recargar la tabla de atrás), false si solo se cerró. */
   @Output() close = new EventEmitter<boolean>();
 
   detalle: RendicionDetalleDto | null = null;
-  consolidadoAbierto = false;
 
   /** id de la salida cuyo modal de capturas está abierto. null = cerrado. */
   capturasSolicitudId: number | null = null;
@@ -100,26 +93,7 @@ export class RendicionDetalleModal implements OnInit {
     this.close.emit(this.huboCambios);
   }
 
-  // ── Consolidado del S10 ──────────────────────────────────────────────
-
-  readonly subirConsolidado = (file: File, montoTotal: number, numeroReembolso: string) =>
-    this.service.uploadConsolidadoS10(this.rendicionId, file, montoTotal, numeroReembolso);
-
-  get consolidadoReferencia(): string | null {
-    const d = this.detalle;
-    if (!d) return null;
-    return d.numeroPlanilla ?? `Rendición del ${new Date(d.rendidoAt).toLocaleDateString('es-PE')}`;
-  }
-
-  cerrarConsolidado(subido: ConsolidadoS10Dto | null): void {
-    this.consolidadoAbierto = false;
-    if (subido) {
-      this.huboCambios = true;
-      this.cargar();
-    } else {
-      this.cdr.detectChanges();
-    }
-  }
+  // ── Consolidado del S10 (solo lectura) ───────────────────────────────
 
   /** Con qué otras rendiciones comparte el Consolidado del S10 (vacío si es solo suyo). */
   otrasDelConsolidado(d: { id: number; consolidadoS10: ConsolidadoS10Dto | null }): string[] {
@@ -138,7 +112,7 @@ export class RendicionDetalleModal implements OnInit {
 
     const result = await confirmarConCorreos({
       titulo: '¿Enviar ' + d.codigo + ' a revisión?',
-      avisos: avisosDe(this.correoPrimeraRevision),
+      avisos: this.correosEnvioRevision,
       // Sin nadie a quien avisar el envío igual procede: la rendición pasa a revisión y el jefe la
       // ve en su bandeja. Es un aviso de estado, no un bloqueo.
       sinNadie: 'Pasa a revisión, pero sin aviso por correo: está apagado en Configuración → Correos.',
@@ -153,108 +127,6 @@ export class RendicionDetalleModal implements OnInit {
         Swal.fire({ icon: 'success', title: res.message, timer: 2400, showConfirmButton: false });
         // Se cierra: la planilla pasó a manos del jefe y ya no hay nada que hacerle desde acá.
         this.close.emit(true);
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loader.hide();
-        this.errorService.handleError(err);
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  // ── Aviso al revisor ─────────────────────────────────────────────────
-
-  async notificarRevisor(): Promise<void> {
-    const d = this.detalle;
-    if (!d) return;
-
-    // A diferencia del envío a primera revisión, este aviso ES el correo: sin destinatarios el
-    // backend responde 409, así que se corta acá y se dice por qué en vez de dejar intentarlo.
-    if (this.correoS10Revisor.para.length === 0) {
-      await Swal.fire({
-        icon: 'warning',
-        title: 'Nadie recibiría el aviso',
-        text: 'El correo «S10 al revisor» está apagado o sin destinatarios en Configuración → Correos.',
-        confirmButtonColor: '#0F6E56',
-      });
-      return;
-    }
-
-    const result = await confirmarConCorreos({
-      titulo: d.revisorNotificadoAt ? '¿Volver a avisar?' : '¿Avisar al revisor?',
-      // Solo cuando es una repetición: el resto del tiempo el título ya lo dice todo.
-      nota: d.revisorNotificadoAt ? 'Ya le avisaste por esta planilla.' : undefined,
-      avisos: avisosDe(this.correoS10Revisor),
-      confirmButtonText: d.revisorNotificadoAt ? 'Sí, avisar de nuevo' : 'Sí, avisar',
-    });
-    if (!result.isConfirmed) return;
-
-    this.loader.show();
-    this.service.notificarRevisor(d.id).subscribe({
-      next: (res) => {
-        this.loader.hide();
-        this.huboCambios = true;
-        Swal.fire({ icon: 'success', title: res.message, timer: 2000, showConfirmButton: false });
-        this.cargar();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loader.hide();
-        this.errorService.handleError(err);
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  // ── Corrección con el Coordinador ERP ────────────────────────────────
-
-  /**
-   * Le pide al Coordinador ERP que corrija el Consolidado del S10. Es el camino para cuando la
-   * observación de la jefatura no se puede resolver desde Abril One porque el arreglo está dentro
-   * del S10, donde el colaborador no tiene permiso.
-   *
-   * A diferencia del envío a primera revisión, este aviso ES el flujo: sin un Coordinador ERP a
-   * quien avisarle el backend responde 409, así que se corta acá y se dice por qué en vez de
-   * dejar registrar una solicitud que nadie va a ver.
-   */
-  async solicitarCorreccion(): Promise<void> {
-    const d = this.detalle;
-    if (!d?.puedeSolicitarCorreccion) return;
-
-    if (this.correoCorreccionS10.para.length === 0) {
-      await Swal.fire({
-        icon: 'warning',
-        title: 'Nadie recibiría la solicitud',
-        text: 'No hay ningún Coordinador ERP con correo registrado. Avisa al administrador del sistema.',
-        confirmButtonColor: '#0F6E56',
-      });
-      return;
-    }
-
-    const { value: motivo, isConfirmed } = await confirmarConCorreos({
-      icon: 'question',
-      titulo: '¿Solicitar la corrección al ERP?',
-      avisos: avisosDe(this.correoCorreccionS10),
-      observacion: {
-        label: 'Motivo',
-        placeholder: 'Qué necesitas que corrija en el S10…',
-      },
-      confirmButtonText: 'Sí, solicitar',
-    });
-    if (!isConfirmed || !motivo) return;
-
-    this.loader.show();
-    this.service.solicitarCorreccionS10(d.id, motivo).subscribe({
-      next: () => {
-        this.loader.hide();
-        this.huboCambios = true;
-        Swal.fire({
-          icon: 'success',
-          title: 'Solicitud enviada',
-          text: 'El Coordinador ERP te avisará cuando la corrección esté hecha en el S10.',
-          timer: 2800,
-          showConfirmButton: false,
-        });
-        this.cargar();
       },
       error: (err: HttpErrorResponse) => {
         this.loader.hide();
@@ -348,7 +220,6 @@ export class RendicionDetalleModal implements OnInit {
   // ── Colores de estado ────────────────────────────────────────────────
 
   readonly primeraRevisionColors = primeraRevisionColors;
-  readonly correccionS10Colors = correccionS10Colors;
 
   // Los colores del estado del reembolso viven en el shared del módulo: el mismo estado tiene
   // que verse igual en las cinco pantallas del ciclo.

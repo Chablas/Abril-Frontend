@@ -15,7 +15,7 @@ import { correccionS10Colors } from '../../../../shared/dtos/rendicion-shared.dt
 
 /**
  * Detalle de una corrección del S10 para el Coordinador ERP: el número de reembolso con el que ubica el registro,
- * qué observó la jefatura, qué le pide el colaborador y los dos PDF para contrastar.
+ * qué observó la jefatura, qué le pide el consolidador y los dos PDF para contrastar.
  *
  * Trae también el check de atención porque el correo abre directo acá: si el botón viviera solo en
  * la tabla, el enlace del correo dejaría al Coordinador mirando sin poder resolver.
@@ -69,7 +69,7 @@ export class CorreccionS10DetalleModal implements OnInit {
 
   /**
    * El check de confirmación (RG-22): la corrección ya se hizo en el S10. Se pregunta aparte si el
-   * registro se ANULÓ, porque eso cambia lo que el colaborador tiene que hacer después — con una
+   * registro se ANULÓ, porque eso cambia lo que el consolidador tiene que hacer después — con una
    * anulación necesita un número de reembolso nuevo y el anterior queda bloqueado al recargar el
    * consolidado.
    */
@@ -126,7 +126,7 @@ export class CorreccionS10DetalleModal implements OnInit {
       next: (res) => {
         this.loader.hide();
         Swal.fire({ icon: 'success', title: res.message, timer: 2600, showConfirmButton: false });
-        // Se cierra: la pelota pasó al colaborador y ya no hay nada que hacerle desde acá.
+        // Se cierra: la pelota pasó al consolidador y ya no hay nada que hacerle desde acá.
         this.close.emit(true);
       },
       error: (err: HttpErrorResponse) => {

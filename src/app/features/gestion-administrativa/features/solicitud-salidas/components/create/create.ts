@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, NgZone, OnDestroy, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -50,7 +50,7 @@ interface TrayectoForm {
   templateUrl: './create.html',
   styleUrl: './create.css',
 })
-export class SolicitudSalidaCreate implements OnInit {
+export class SolicitudSalidaCreate implements OnInit, OnDestroy {
   @Input() fullScreen = false;
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
@@ -87,17 +87,26 @@ export class SolicitudSalidaCreate implements OnInit {
 
   submitted = false;
 
+  /** Intervalo que mantiene al día la hora de salida del primer trayecto (ver iniciarRelojSalida). */
+  private relojSalida: ReturnType<typeof setInterval> | null = null;
+
   constructor(
     private service: SolicitudSalidasService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
+    private zone: NgZone,
   ) {}
 
   ngOnInit(): void {
     this.fechaSalida = this.todayStr;
     this.trayectos.push(this.nuevoTrayecto(true));
     setTimeout(() => this.loadFormData());
+    this.iniciarRelojSalida();
+  }
+
+  ngOnDestroy(): void {
+    if (this.relojSalida !== null) clearInterval(this.relojSalida);
   }
 
   loadFormData(): void {
@@ -287,16 +296,92 @@ export class SolicitudSalidaCreate implements OnInit {
   }
 
   // ── Manejo de horas ────────────────────────────────────────────────
+  //
+  // Los trayectos van uno detrás de otro: cada uno sale después de la última hora de los
+  // anteriores, y su retorno no es anterior a su salida. Los desplegables deshabilitan lo que
+  // queda fuera vía `min` (minHoraSalida / minHoraRetorno) y validarTrayecto lo repite al enviar.
 
   /**
-   * La hora de retorno no puede ser anterior a la de salida del mismo trayecto: su desplegable
-   * ya deshabilita esas opciones vía `min`. Al mover la salida hacia adelante, un retorno que ya
-   * estaba elegido y queda por debajo se descarta — dejarlo mostraría en el campo un valor que su
-   * propio panel marca como no elegible, y `validarTrayecto` lo rebotaría igual al enviar.
+   * Última hora ocupada por los trayectos anteriores a `idx`: el retorno más tardío o, en uno sin
+   * retorno, su salida. '' si ninguno tiene hora todavía (siempre, para el primer trayecto).
+   */
+  private ultimaHoraAnterior(idx: number): string {
+    let ultima = '';
+    for (const t of this.trayectos.slice(0, idx)) {
+      if (t.horaSalida > ultima) ultima = t.horaSalida;
+      if (t.horaRetorno > ultima) ultima = t.horaRetorno;
+    }
+    return ultima;
+  }
+
+  /**
+   * Hora mínima de salida del trayecto `idx`: el minuto siguiente a la última hora de los
+   * anteriores (si el 1 va de 14:00 a 14:05, el 2 sale desde las 14:06). '' = sin límite. Si los
+   * anteriores terminan a las 23:59 ya no queda minuto en el día: el mínimo se queda en 23:59 y
+   * validarTrayecto rebota esa hora.
+   */
+  minHoraSalida(idx: number): string {
+    const ultima = this.ultimaHoraAnterior(idx);
+    if (!ultima || ultima === '23:59') return ultima;
+    const [h, m] = ultima.split(':').map(Number);
+    const siguiente = h * 60 + m + 1;
+    return `${String(Math.floor(siguiente / 60)).padStart(2, '0')}:${String(siguiente % 60).padStart(2, '0')}`;
+  }
+
+  /** Hora mínima de retorno: la salida del trayecto o, mientras no la tenga, su mínimo de salida. */
+  minHoraRetorno(idx: number): string {
+    return this.trayectos[idx].horaSalida || this.minHoraSalida(idx);
+  }
+
+  /**
+   * Al mover la salida hacia adelante, un retorno del mismo trayecto que ya estaba elegido y queda
+   * por debajo se descarta — dejarlo mostraría en el campo un valor que su propio panel marca como
+   * no elegible, y `validarTrayecto` lo rebotaría igual al enviar.
+   *
+   * Las horas de los trayectos siguientes que quedan por debajo de su nuevo mínimo, en cambio, no se
+   * borran: el desplegable emite al elegir la hora y de nuevo al elegir los minutos, y en ese paso
+   * intermedio (retorno 14:50 → 15:50 → 15:05) se borraría una salida de las 15:10 que al final
+   * seguía siendo válida. Esas las rebota validarTrayecto al enviar.
    */
   onHoraSalidaChange(t: TrayectoForm, hora: string | null): void {
     t.horaSalida = hora ?? '';
     if (t.horaSalida && t.horaRetorno && t.horaRetorno < t.horaSalida) t.horaRetorno = '';
+  }
+
+  // ── Hora de salida al día ──────────────────────────────────────────
+  //
+  // La salida del primer trayecto nace con la hora actual, pero el formulario suele quedar abierto
+  // unos minutos y esa hora pasa a ser pasada: save() la rebotaba. Mientras la fecha sea hoy, en
+  // cuanto queda atrás sube sola a la hora actual. Solo el primer trayecto, y solo si quedó atrás:
+  // una hora futura no se toca.
+
+  /** Revisa cada segundo. Fuera de Angular: solo el tick que cambia la hora dispara la detección. */
+  private iniciarRelojSalida(): void {
+    if (typeof window === 'undefined') return;
+    this.zone.runOutsideAngular(() => {
+      this.relojSalida = setInterval(() => {
+        if (this.salidaVencida && !this.editandoHora) this.zone.run(() => this.actualizarSalidaVencida());
+      }, 1000);
+    });
+  }
+
+  /** true si la salida es hoy y la hora de salida del primer trayecto ya quedó atrás. */
+  private get salidaVencida(): boolean {
+    const t = this.trayectos[0];
+    return !!t?.horaSalida && this.fechaSalida === this.todayStr && t.horaSalida < this.nowStr;
+  }
+
+  /**
+   * true mientras el foco está en un campo de hora: lo escrito a mano recién se confirma al salir
+   * del campo, y actualizar la hora en ese momento pisaría lo que se está tecleando.
+   */
+  private get editandoHora(): boolean {
+    return !!document.activeElement?.closest('app-time-picker');
+  }
+
+  /** Pasa la salida del primer trayecto a la hora actual si quedó atrás, con las reglas de elegirla a mano. */
+  private actualizarSalidaVencida(): void {
+    if (this.salidaVencida) this.onHoraSalidaChange(this.trayectos[0], this.nowStr);
   }
 
   onSinRetornoChange(t: TrayectoForm, checked: boolean): void {
@@ -510,6 +595,10 @@ export class SolicitudSalidaCreate implements OnInit {
       if (t.horaSalida && t.horaSalida < ahora)
         errs.push(`${pref}: la hora de salida no puede ser anterior a la hora actual (${ahora})`);
     }
+    // Cada trayecto sale después de la última hora de los anteriores (ver minHoraSalida).
+    const ultimaAnterior = this.ultimaHoraAnterior(idx);
+    if (t.horaSalida && ultimaAnterior && t.horaSalida <= ultimaAnterior)
+      errs.push(`${pref}: la hora de salida debe ser posterior a la del trayecto anterior (${ultimaAnterior})`);
     if (!t.sinRetorno && t.horaRetorno && t.horaSalida && t.horaRetorno < t.horaSalida)
       errs.push(`${pref}: la hora de retorno debe ser igual o posterior a la de salida`);
     if (!this.origenValido(t, idx)) errs.push(`${pref}: lugar de origen`);
@@ -521,6 +610,9 @@ export class SolicitudSalidaCreate implements OnInit {
 
   save(): void {
     this.submitted = true;
+    // El reloj revisa una vez por segundo: si el minuto cambió justo antes del click, la salida del
+    // primer trayecto se actualiza acá en vez de rebotar la solicitud por hora pasada.
+    this.actualizarSalidaVencida();
     if (!this.fechaSalida) {
       Swal.fire({ title: 'Falta la fecha', icon: 'warning', confirmButtonColor: '#0F6E56' });
       return;

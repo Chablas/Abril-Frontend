@@ -5,6 +5,10 @@
  * Es una lista y no un objeto suelto porque una acción puede disparar más de un correo a públicos
  * distintos: aprobar el reembolso avisa al solicitante Y a Tesorería. Lista vacía = esa acción hoy
  * no manda ningún correo.
+ *
+ * Casi siempre llega del endpoint de preview de la pantalla, pedido al confirmar. Solicitud de
+ * Salidas («Rendir») y Mis Rendiciones («Enviar a revisión») la traen con sus datos de arranque:
+ * están acotadas a un solo trabajador y sus destinatarios no dependen de la selección.
  */
 export interface CorreoAvisoDto {
   para: string[];
@@ -24,20 +28,6 @@ export interface CorreoPreviewRequestDto {
   /** true = la variante que aprueba; false = la que observa. */
   aprobar: boolean;
 }
-
-/**
- * Adapta unos destinatarios sueltos al formato de la lista de avisos.
- *
- * Lo usa Mis Rendiciones, que resuelve sus dos correos una sola vez al cargar la pantalla —está
- * acotada a un trabajador y sus destinatarios no dependen de la selección— y por eso no pasa por
- * el endpoint de preview.
- */
-export const avisosDe = (
-  destinatarios: { para: string[]; copia: string[] } | null,
-): CorreoAvisoDto[] =>
-  destinatarios?.para?.length
-    ? [{ para: destinatarios.para, copia: destinatarios.copia ?? [] }]
-    : [];
 
 const escapar = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

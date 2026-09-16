@@ -14,8 +14,8 @@ export interface ConsolidadoS10RendicionDto {
 
 /**
  * Consolidado del S10 vigente de una planilla de rendición. Un consolidado puede cubrir varias
- * planillas (de uno o de varios trabajadores de una misma razón social): las que lo comparten
- * reciben el mismo.
+ * planillas (de uno o de varios trabajadores, de las razones sociales que sean): las que lo
+ * comparten reciben el mismo.
  */
 export interface ConsolidadoS10Dto {
   id: number;

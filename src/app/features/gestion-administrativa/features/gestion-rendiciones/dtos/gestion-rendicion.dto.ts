@@ -82,15 +82,14 @@ export interface GestionRendicionListItemDto {
    */
   puedeDecidir: boolean;
   /**
-   * True si el usuario puede adjuntar el Consolidado del S10 de esta planilla en nombre de sus
-   * trabajadores. Lo resuelve el backend con el mismo algoritmo que la pantalla de
-   * Consolidadores (Consolidados → Configuración: lo asignado por área, o el Jefe/Gerente/
-   * residente que deduce), y hace falta
-   * poder por TODOS los trabajadores de `consolidadoConjunto`: el consolidado cubre esos
-   * documentos enteros.
+   * True si el usuario es consolidador de esta planilla y puede adjuntarle el Consolidado del S10.
+   * Lo resuelve el backend con el mismo algoritmo que la pantalla de Consolidadores (Consolidados →
+   * Configuración: lo asignado por área, o el Jefe/Gerente/residente que deduce), y hace falta poder
+   * por TODOS los trabajadores de `consolidadoConjunto`: el consolidado cubre esos documentos
+   * enteros.
    *
-   * Ver la planilla no alcanza: alguien con visibilidad amplia la ve pero no necesariamente
-   * puede hacerle el trámite.
+   * Ver la planilla no alcanza, y ser el dueño de las salidas tampoco: el trámite del S10 es solo
+   * del consolidador.
    */
   puedeConsolidar: boolean;
   /**
@@ -105,12 +104,6 @@ export interface GestionRendicionListItemDto {
    * aunque la tabla no las muestre. Cada una con su monto completo.
    */
   consolidadoConjunto: ConsolidadoConjuntoItemDto[];
-  /**
-   * Razón social de los trabajadores de ese conjunto si es una sola y está cargada; null si se
-   * mezclan o si falta. Sirve para no ofrecer juntar planillas de razones sociales distintas.
-   */
-  razonSocialId: number | null;
-  razonSocial: string | null;
 }
 
 /** Una planilla que cubriría un Consolidado del S10, con su monto completo. */
@@ -157,7 +150,7 @@ export interface GestionRendicionDetalleDto extends GestionRendicionListItemDto 
 export interface ResumenGestionRendicionesDto {
   /** Planillas esperando la PRIMERA revisión: el primer paso del revisor. */
   primeraRevision: number;
-  /** Aprobadas en primera revisión y sin Consolidado del S10: la pelota está en el trabajador. */
+  /** Aprobadas en primera revisión y sin Consolidado del S10: la pelota está en el consolidador. */
   sinConsolidado: number;
 }
 
@@ -170,6 +163,11 @@ export interface GestionRendicionFilterDataDto {
   trabajadores: TrabajadorOptionDto[];
   areaTree: AreaNodeDto[];
   periodos: PeriodoOptionDto[];
+  /**
+   * Razón social del usuario: es bajo la que queda el Consolidado del S10 que suba (la del
+   * consolidador, no la de los trabajadores). Null si no la tiene cargada.
+   */
+  razonSocialConsolidador: string | null;
 }
 
 /**

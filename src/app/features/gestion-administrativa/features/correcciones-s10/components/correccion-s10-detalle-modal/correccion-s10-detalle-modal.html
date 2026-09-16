@@ -51,7 +51,7 @@
     <!-- ── Lo que hay que corregir ──────────────────────────────────────── -->
     <div class="border rounded-lg p-3 text-sm"
          style="border-color:#FCA5A5;background:#FEF2F2;color:#991B1B">
-      <span class="font-semibold">Lo que pide el colaborador:</span> {{ c.motivo }}
+      <span class="font-semibold">Lo que pide el consolidador:</span> {{ c.motivo }}
     </div>
 
     <!-- El rótulo nombra a quien devolvió el consolidado: con la jefatura y con Tesorería no se
@@ -107,7 +107,7 @@
         <span class="font-semibold">Comentario:</span> {{ c.comentarioAtencion }}
       </span>
       <span *ngIf="c.numeroReembolsoAnulado" class="font-semibold" style="color:#991B1B">
-        El registro se anuló: el colaborador tiene que generar un número de reembolso nuevo.
+        El registro se anuló: el consolidador tiene que generar un número de reembolso nuevo.
       </span>
     </div>
 
@@ -117,7 +117,7 @@
       <button
         type="button"
         (click)="atender()"
-        title="Registra que ya corregiste en el S10 y le avisa al colaborador para que recargue el Consolidado"
+        title="Registra que ya corregiste en el S10 y le avisa al consolidador para que recargue el Consolidado"
         class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
         style="background:var(--color-abril-standard)"
         onmouseover="this.style.background='var(--color-abril-standard-hover)'"

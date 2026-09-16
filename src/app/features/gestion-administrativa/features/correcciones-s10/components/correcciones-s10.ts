@@ -34,12 +34,12 @@ import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrat
  * "Correcciones S10": la bandeja del Coordinador ERP, el paso del medio de la subsanación
  * (§10.5 del requerimiento).
  *
- * Cuando la jefatura observa un reembolso, el colaborador tiene dos caminos: arreglar el S10 él
+ * Cuando la jefatura observa un reembolso, el consolidador tiene dos caminos: arreglar el S10 él
  * mismo y recargar el Consolidado, o pedirle la corrección al ERP cuando el arreglo está dentro
  * del S10, donde no tiene permiso. Esta pantalla es ese segundo camino visto del otro lado.
  *
  * La corrección se ejecuta EN EL S10, fuera de Abril One (§2.1). Acá solo se marca el check que le
- * devuelve la pelota al colaborador, y ese check es lo único que la pantalla escribe.
+ * devuelve la pelota al consolidador, y ese check es lo único que la pantalla escribe.
  *
  * Sin recorte por área: el responsable ERP es uno para toda la organización, igual que Tesorería.
  */
@@ -179,7 +179,7 @@ export class CorreccionesS10 implements OnInit, OnDestroy {
 
   // ── Botón "Configuración" del header ─────────────────────────────────
   // Lleva a la configuración de ESTA pantalla: el único correo que se origina acá es el aviso al
-  // colaborador de que la corrección ya está hecha.
+  // consolidador de que la corrección ya está hecha.
 
   private static readonly FEATURE_CONFIG_CORREOS = 'gestion-administrativa.config.correos';
 
@@ -289,7 +289,7 @@ export class CorreccionesS10 implements OnInit, OnDestroy {
   }
 
   // ── Selección ────────────────────────────────────────────────────────
-  // Solo se seleccionan las que están por atender: las ya atendidas esperan al colaborador y no
+  // Solo se seleccionan las que están por atender: las ya atendidas esperan al consolidador y no
   // hay nada que el ERP pueda hacerles.
 
   esSeleccionable(c: CorreccionS10ListItemDto): boolean {
@@ -338,7 +338,7 @@ export class CorreccionesS10 implements OnInit, OnDestroy {
   }
 
   /**
-   * Marca la corrección como hecha en el S10 y le avisa al colaborador. Se pregunta aparte si el
+   * Marca la corrección como hecha en el S10 y le avisa al consolidador. Se pregunta aparte si el
    * registro se ANULÓ, porque eso cambia lo que él tiene que hacer después: con una anulación
    * necesita un número de reembolso nuevo y el anterior queda bloqueado al recargar el consolidado.
    */

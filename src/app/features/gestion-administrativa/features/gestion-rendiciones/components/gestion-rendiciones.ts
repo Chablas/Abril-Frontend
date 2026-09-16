@@ -49,14 +49,13 @@ interface ConsolidadoObjetivo {
   actual: ConsolidadoS10Dto | null;
   /** Número de planilla impreso cuando es una sola ("TI: 000123"). */
   referencia: string | null;
-  razonSocial: string | null;
 }
 
 /**
- * "Gestión de Rendiciones": las planillas del alcance del revisor, su PRIMERA revisión y el
- * Consolidado del S10 que se les adjunta. Gestión de Salidas llega hasta rendir; decidir y firmar
- * el reembolso es de Consolidados —lo que se decide ahí es el documento del S10, que puede cubrir
- * varias planillas— y el pago, de Tesorería (Reembolsos).
+ * "Gestión de Rendiciones": las planillas del alcance, su PRIMERA revisión (la jefatura) y el
+ * Consolidado del S10 que se les adjunta (solo el consolidador del área). Gestión de Salidas llega
+ * hasta rendir; decidir y firmar el reembolso es de Consolidados —lo que se decide ahí es el
+ * documento del S10, que puede cubrir varias planillas— y el pago, de Tesorería (Reembolsos).
  *
  * La visibilidad es exactamente la de Gestión de Salidas: son las mismas salidas, agrupadas por
  * planilla, porque la revisión y el consolidado son del documento y no de cada salida.
@@ -147,6 +146,9 @@ export class GestionRendiciones implements OnInit {
   trabajadorOptions: any[] = [{ workerId: null, nombreCompleto: 'Todos los trabajadores' }];
   periodoOptions: { key: string | null; label: string }[] = [{ key: null, label: 'Todos los periodos' }];
   private periodos: PeriodoOptionDto[] = [];
+
+  /** Razón social del usuario: bajo la que queda el Consolidado del S10 que suba. */
+  razonSocialConsolidador: string | null = null;
 
   readonly estadoPrimeraRevisionOptions = [
     { value: null,                  label: 'Todas' },
@@ -266,6 +268,7 @@ export class GestionRendiciones implements OnInit {
           ...data.trabajadores,
         ];
         this.buildAreaCascade(data.areaTree);
+        this.razonSocialConsolidador = data.razonSocialConsolidador ?? null;
         this.periodos = data.periodos ?? [];
         this.periodoOptions = [
           { key: null, label: 'Todos los periodos' },
@@ -440,7 +443,7 @@ export class GestionRendiciones implements OnInit {
       titulo: items.length === 1
         ? '¿Aprobar la rendición ' + items[0].codigo + '?'
         : '¿Aprobar ' + items.length + ' rendiciones?',
-      nota: 'Habilita al trabajador a cargar el Consolidado del S10.',
+      nota: 'Habilita al consolidador a cargar el Consolidado del S10.',
       avisos: await this.avisos(items, true),
       confirmButtonText: 'Sí, aprobar',
     });
@@ -529,9 +532,18 @@ export class GestionRendiciones implements OnInit {
 
   // ── Consolidado del S10 ──────────────────────────────────────────────
   // Un consolidado es UN registro en el S10 y puede cubrir varias rendiciones, incluso de
-  // trabajadores distintos (siempre de una misma razón social). Se adjunta desde la fila —cubre esa
-  // planilla y, si ya tenía uno compartido, las demás que siguen abiertas: se reemplaza entero— o
-  // para toda la selección. El backend re-valida todo; acá solo se evita ofrecer lo que va a rechazar.
+  // trabajadores y razones sociales distintos: queda bajo la razón social del consolidador. Solo lo
+  // adjunta el consolidador de esos trabajadores. Se adjunta desde la fila —cubre esa planilla y, si
+  // ya tenía uno compartido, las demás que siguen abiertas: se reemplaza entero— o para toda la
+  // selección. El backend re-valida todo; acá solo se evita ofrecer lo que va a rechazar.
+
+  /**
+   * True si el usuario es consolidador de alguna planilla de la tabla. Sin eso los botones del
+   * Consolidado del S10 no se muestran: la jefatura revisa, no consolida.
+   */
+  get esConsolidador(): boolean {
+    return this.rendiciones.some((r) => r.puedeConsolidar);
+  }
 
   /** Seleccionadas a las que se les puede adjuntar el Consolidado del S10. */
   get selectedConsolidables(): GestionRendicionListItemDto[] {
@@ -546,12 +558,8 @@ export class GestionRendiciones implements OnInit {
     }
     const sinPermiso = items.filter((r) => !r.puedeConsolidar);
     if (sinPermiso.length > 0) {
-      return 'No estás habilitado para consolidar por los trabajadores de '
+      return 'No eres consolidador de los trabajadores de '
         + sinPermiso.map((r) => r.codigo).join(', ');
-    }
-    const razones = new Set(items.map((r) => r.razonSocialId).filter((id) => id != null));
-    if (razones.size > 1) {
-      return 'Un consolidado solo puede agrupar trabajadores de una misma razón social';
     }
     return null;
   }
@@ -564,6 +572,12 @@ export class GestionRendiciones implements OnInit {
   abrirConsolidadoSeleccion(): void {
     if (this.consolidadoSeleccionBloqueo !== null) return;
     this.consolidadoPara = this.objetivoConsolidado(this.selectedConsolidables);
+  }
+
+  /** El botón del pie del detalle: mismo objetivo que el de la fila. */
+  abrirConsolidadoDesdeDetalle(d: GestionRendicionListItemDto): void {
+    if (!d.puedeAdjuntarConsolidado || !d.puedeConsolidar) return;
+    this.consolidadoPara = this.objetivoConsolidado([d]);
   }
 
   /**
@@ -583,7 +597,6 @@ export class GestionRendiciones implements OnInit {
     const actuales = new Set(items.map((r) => r.consolidadoS10?.id ?? null));
     const actual = actuales.size === 1 ? (items[0].consolidadoS10 ?? null) : null;
 
-    const razones = new Set(items.map((r) => r.razonSocial).filter((nombre) => !!nombre));
     const unaSola = cubiertas.size === 1 ? items[0] : null;
 
     return {
@@ -595,7 +608,6 @@ export class GestionRendiciones implements OnInit {
         ? (unaSola.numeroPlanilla
             ?? `Rendición del ${new Date(unaSola.rendidoAt).toLocaleDateString('es-PE')}`)
         : null,
-      razonSocial: razones.size === 1 ? [...razones][0] : null,
     };
   }
 
@@ -604,8 +616,13 @@ export class GestionRendiciones implements OnInit {
 
   cerrarConsolidado(subido: ConsolidadoS10Dto | null): void {
     this.consolidadoPara = null;
-    if (subido) this.recargar();
-    else        this.cdr.detectChanges();
+    if (subido) {
+      // Si se adjuntó desde el detalle, lo que mostraba ya cambió: se cierra con la tabla recargada.
+      this.detalleId = null;
+      this.recargar();
+    } else {
+      this.cdr.detectChanges();
+    }
   }
 
   /** Con qué otras rendiciones comparte el consolidado de la fila (vacío si es solo suyo). */
@@ -623,7 +640,7 @@ export class GestionRendiciones implements OnInit {
   /** Título del botón "Consolidado S10" de la fila: qué va a cubrir, o por qué está apagado. */
   consolidadoTitle(r: GestionRendicionListItemDto): string {
     if (!r.puedeConsolidar) {
-      return 'No estás habilitado para consolidar por los trabajadores de esta planilla';
+      return 'No eres consolidador de todos los trabajadores que cubriría este consolidado';
     }
     const otras = r.consolidadoConjunto.filter((c) => c.id !== r.id).map((c) => c.codigo);
     if (otras.length) {
@@ -631,7 +648,7 @@ export class GestionRendiciones implements OnInit {
     }
     return r.consolidadoS10
       ? 'Reemplazar el Consolidado del S10'
-      : 'Adjuntar el Consolidado del S10 en nombre del trabajador';
+      : 'Adjuntar el Consolidado del S10';
   }
 
   // ── Presentación ─────────────────────────────────────────────────────

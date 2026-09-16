@@ -1,6 +1,6 @@
 <app-base-modal
-  [title]="detalle ? 'Rendición ' + detalle.codigo : 'Rendición'"
-  width="w-[980px]"
+  [title]="titulo"
+  width="w-[1000px]"
   closeColor="var(--color-abril-standard)"
   (closeModal)="cerrar()">
 
@@ -8,10 +8,6 @@
 
     <!-- ── Cabecera ─────────────────────────────────────────────────────── -->
     <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-      <div class="flex flex-col">
-        <span class="text-[11px] uppercase text-gray-400 font-semibold">Planilla</span>
-        <span class="text-sm text-gray-700">{{ d.numeroPlanilla ?? '—' }}</span>
-      </div>
       <div class="flex flex-col">
         <span class="text-[11px] uppercase text-gray-400 font-semibold">Periodo</span>
         <span class="text-sm text-gray-700">{{ d.periodo }}</span>
@@ -21,8 +17,13 @@
         <span class="text-sm text-gray-700">{{ d.salidasCount }}</span>
       </div>
       <div class="flex flex-col">
-        <span class="text-[11px] uppercase text-gray-400 font-semibold">Total Abril One</span>
-        <span class="text-sm text-gray-700 font-semibold">S/ {{ d.montoTotal | number:'1.2-2' }}</span>
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Razón social</span>
+        <span class="text-sm text-gray-700">{{ (d.razonSocial | titleCase) || '—' }}</span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Adjuntado</span>
+        <span class="text-sm text-gray-700">{{ d.uploadedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+        <span *ngIf="d.subidoPor" class="text-[11px] text-gray-400">{{ d.subidoPor | titleCase }}</span>
       </div>
       <div class="flex flex-col">
         <span class="text-[11px] uppercase text-gray-400 font-semibold">Estado</span>
@@ -35,9 +36,9 @@
     </div>
 
     <!-- ── Lo que Tesorería devolvió (RG-49) ────────────────────────────────
-         Va arriba de todo el expediente: si la planilla está observada, eso es lo primero que hay
-         que leer, y explica por qué los botones de abajo no están. -->
-    <div *ngIf="observada && d.observacionReembolso"
+         Va arriba de todo el expediente: si el consolidado está observado, eso es lo primero que
+         hay que leer, y explica por qué los botones de abajo no están. -->
+    <div *ngIf="observado && d.observacionReembolso"
          class="border rounded-lg p-3 text-sm"
          style="border-color:#FCA5A5;background:#FEF2F2;color:#991B1B">
       <div class="flex flex-wrap items-baseline gap-x-2">
@@ -52,46 +53,60 @@
 
     <!-- ── Firma de la jefatura ─────────────────────────────────────────────
          Es el requisito de RG-25: a Tesorería solo le llega lo firmado, y el nombre con la
-         fecha/hora es lo que hace de esa aprobación una evidencia. -->
-    <div class="flex flex-wrap items-center gap-x-6 gap-y-2 border rounded-lg px-3 py-2"
+         fecha/hora es lo que hace de esa aprobación una evidencia. Un consolidado compartido por
+         planillas de jefaturas distintas trae la firma de cada una. -->
+    <div *ngIf="d.firmas.length > 0"
+         class="flex flex-wrap items-center gap-x-6 gap-y-2 border rounded-lg px-3 py-2"
          style="border-color:#BBF7D0;background:#F0FDF4">
       <div class="flex items-center gap-2">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="2">
           <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <span class="text-[11px] uppercase font-semibold" style="color:#15803D">Firmada por jefatura</span>
+        <span class="text-[11px] uppercase font-semibold" style="color:#15803D">
+          {{ d.firmas.length > 1 ? 'Firmado por jefatura' : 'Firmada por jefatura' }}
+        </span>
       </div>
-      <span class="text-sm text-gray-700">{{ (d.firmadoPor | titleCase) || 'Jefatura' }}</span>
-      <span class="text-xs text-gray-500">{{ d.firmadoAt | date:'dd/MM/yyyy HH:mm' }}</span>
+      <div *ngFor="let f of d.firmas" class="flex items-baseline gap-2">
+        <span class="text-sm text-gray-700">{{ (f.nombre | titleCase) || 'Jefatura' }}</span>
+        <span class="text-xs text-gray-500">{{ f.firmadoAt | date:'dd/MM/yyyy HH:mm' }}</span>
+      </div>
     </div>
 
-    <!-- ── Consolidado del S10 ──────────────────────────────────────────── -->
+    <!-- ── Importes del documento ───────────────────────────────────────────
+         El del S10 es del consolidado entero, así que se contrasta contra la suma de las planillas
+         COMPLETAS que cubre y no contra una sola de ellas. -->
     <div class="flex flex-wrap items-center gap-x-6 gap-y-2 border rounded-lg px-3 py-2"
          style="border-color:var(--color-abril-border)">
       <div class="flex flex-col">
         <span class="text-[11px] uppercase text-gray-400 font-semibold">N.º de reembolso</span>
-        <span class="text-sm text-gray-700">{{ d.consolidadoS10?.numeroReembolso || '—' }}</span>
+        <span class="text-sm text-gray-700">{{ d.numeroReembolso || '—' }}</span>
       </div>
       <div class="flex flex-col">
         <span class="text-[11px] uppercase text-gray-400 font-semibold">Total del S10</span>
         <span class="text-sm text-gray-700">
-          {{ d.consolidadoS10?.montoTotal != null
-              ? ('S/ ' + (d.consolidadoS10!.montoTotal | number:'1.2-2'))
-              : '—' }}
+          {{ d.montoS10 != null ? ('S/ ' + (d.montoS10 | number:'1.2-2')) : '—' }}
+        </span>
+      </div>
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Total Abril One</span>
+        <span class="text-sm text-gray-700 font-semibold">S/ {{ d.montoPlanillas | number:'1.2-2' }}</span>
+      </div>
+      <div class="flex flex-col" *ngIf="pagoParcial">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Por pagar acá</span>
+        <span class="text-sm text-gray-700 font-semibold"
+              title="El resto del consolidado todavía espera la decisión de su jefatura">
+          S/ {{ d.montoTotal | number:'1.2-2' }}
         </span>
       </div>
       <div *ngIf="diferenciaS10 as dif" class="text-xs font-semibold" style="color:#D30000">
-        Diferencia contra Abril One: S/ {{ dif | number:'1.2-2' }}
+        Diferencia del S10 contra Abril One: S/ {{ dif | number:'1.2-2' }}
       </div>
-      <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
-        Esta planilla no tiene Consolidado del S10 adjunto.
-      </span>
     </div>
 
-    <!-- ── Documentos ──────────────────────────────────────────────────────────────
-         Solo los dos que el requerimiento manda mostrar en la revisión documental (11.1), y en su
-         copia firmada: es la que respalda el pago. El original sin firmar no se lista para no
-         ofrecer dos versiones del mismo papel —solo asoma, y se dice, si la firma no se estampó. -->
+    <!-- ── Respaldo ────────────────────────────────────────────────────────────────
+         El documento que se paga, en su copia firmada: es la que respalda el desembolso. El
+         original sin firmar no se lista para no ofrecer dos versiones del mismo papel —solo asoma,
+         y se dice, si la firma no se estampó. -->
     <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
       <span class="text-[11px] uppercase text-gray-400 font-semibold">Respaldo</span>
 
@@ -111,38 +126,80 @@
       </button>
     </div>
 
-    <!-- ── Desglose: salidas y sus trayectos ────────────────────────────── -->
-    <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
-      <span class="text-[11px] uppercase text-gray-400 font-semibold">Detalle de trayectos y vouchers</span>
+    <!-- ── Planillas que cubre, con sus salidas ─────────────────────────────
+         El ojo abre el detalle de cada salida: trayectos con origen, destino y horario, sus
+         vouchers con los montos y los adjuntos, que es lo que el requerimiento le pide ver a
+         Tesorería (RF-TES-05). -->
+    <div *ngFor="let r of d.rendiciones" class="flex flex-col gap-2 border-t pt-3"
+         style="border-color:var(--color-abril-border)">
 
-      <div class="abril-table-wrap">
-        <table class="abril-table abril-table--th-center">
-          <thead>
-            <tr>
-              <th></th>
-              <th>N° solicitud</th>
-              <th>Trabajador</th>
-              <th>Área</th>
-              <th>Fecha</th>
-              <th>Motivo</th>
-              <th>Trayectos</th>
-              <th>Monto</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            <ng-container *ngFor="let s of d.salidas">
-              <tr class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
-                  (click)="toggleTrayectos(s)"
-                  [title]="expandidas.has(s.id) ? 'Ocultar los trayectos' : 'Ver los trayectos y sus vouchers'"
-                  style="border-color:var(--color-abril-border)">
-                <td class="text-center">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.5"
-                       [style.transform]="expandidas.has(s.id) ? 'rotate(90deg)' : null"
-                       style="transition:transform .15s ease">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
-                  </svg>
-                </td>
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="text-sm font-semibold text-gray-700">{{ r.codigo }}</span>
+        <span *ngIf="r.numeroPlanilla" class="text-[11px] text-gray-400">{{ r.numeroPlanilla }}</span>
+        <app-status-badge
+          *ngIf="r.estadoReembolso"
+          [text]="reembolsoLabelCorto(r.estadoReembolso)"
+          [bgColor]="reembolsoColors(r.estadoReembolso).bg"
+          [textColor]="reembolsoColors(r.estadoReembolso).text" />
+        <span *ngIf="r.enBandeja && r.firmadoPor" class="text-[11px] text-gray-400">
+          Firmada por {{ r.firmadoPor | titleCase }}<ng-container *ngIf="r.firmadoAt">
+          el {{ r.firmadoAt | date:'dd/MM/yyyy HH:mm' }}</ng-container>
+        </span>
+        <span class="text-[11px] text-gray-400 ml-auto">
+          Planilla completa: S/ {{ r.montoTotalPlanilla | number:'1.2-2' }}
+        </span>
+      </div>
+
+      <!-- Una planilla que todavía espera a su jefatura se lista igual: el importe declarado en el
+           S10 la incluye, así que sin ella el total del documento no cuadraría. -->
+      <p *ngIf="!r.enBandeja" class="text-sm text-gray-400 italic">
+        Esta rendición todavía no llegó a Tesorería: espera la decisión de su jefatura. Se lista
+        porque el monto del consolidado la incluye.
+      </p>
+
+      <ng-container *ngIf="r.enBandeja">
+        <div class="flex flex-wrap items-center gap-3">
+          <button type="button" *ngIf="r.pdfFirmadoUrl"
+                  (click)="verArchivo(r.pdfFirmadoUrl, r.pdfFirmadoFilename ?? 'Planilla firmada')"
+                  class="inline-flex items-center gap-2 hover:underline text-xs font-medium break-all cursor-pointer"
+                  style="color:var(--color-abril-accent)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+              <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Planilla de gasto firmada
+          </button>
+
+          <button type="button" *ngIf="!r.pdfFirmadoUrl && r.pdfUrl"
+                  (click)="verArchivo(r.pdfUrl, r.pdfFilename ?? 'Planilla de gasto')"
+                  class="inline-flex items-center gap-2 hover:underline text-xs font-medium break-all cursor-pointer"
+                  style="color:var(--color-abril-accent)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+              <path d="M14 2v6h6" stroke-linejoin="round"/>
+            </svg>
+            Planilla de gasto
+            <span class="text-gray-400 font-normal">· sin la firma de jefatura</span>
+          </button>
+        </div>
+
+        <!-- Solo lectura: el reembolso se decide por documento entero. -->
+        <div class="abril-table-wrap">
+          <table class="abril-table abril-table--th-center">
+            <thead>
+              <tr>
+                <th>N° solicitud</th>
+                <th>Trabajador</th>
+                <th>Área</th>
+                <th>Fecha</th>
+                <th>Motivo</th>
+                <th>Trayectos</th>
+                <th>Monto</th>
+                <th>Estado</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let s of salidasDe(r.id)" class="border-b" style="border-color:var(--color-abril-border)">
                 <td class="text-gray-700 font-medium whitespace-nowrap">{{ s.codigo ?? '—' }}</td>
                 <td class="text-gray-700">{{ s.trabajador | titleCase }}</td>
                 <td class="text-gray-500">{{ (s.area | titleCase) || '—' }}</td>
@@ -156,88 +213,17 @@
                     [bgColor]="reembolsoColors(s.estadoReembolso).bg"
                     [textColor]="reembolsoColors(s.estadoReembolso).text" />
                 </td>
-              </tr>
-
-              <!-- Los trayectos de esa salida: fecha, motivo, origen, destino, horario, monto y
-                   voucher, que es lo que el requerimiento le pide ver a Tesorería (RF-TES-05). -->
-              <tr *ngIf="expandidas.has(s.id)" class="border-b" style="border-color:var(--color-abril-border)">
-                <td colspan="9" class="p-0">
-                  <div class="px-4 py-3 flex flex-col gap-2" style="background:#FAFAFA">
-                    <div *ngIf="s.trayectos.length === 0" class="text-xs text-gray-400 italic">
-                      Esta salida no tiene trayectos registrados.
-                    </div>
-
-                    <div *ngFor="let t of s.trayectos"
-                         class="flex flex-wrap items-center gap-x-4 gap-y-2 border rounded-lg bg-white px-3 py-2"
-                         style="border-color:var(--color-abril-border)">
-
-                      <span class="text-[11px] font-bold uppercase" style="color:var(--color-abril-primary)">
-                        Trayecto {{ t.orden + 1 }}
-                      </span>
-
-                      <span class="text-xs text-gray-700">
-                        {{ t.lugarOrigen ?? '—' }} → {{ t.lugarDestino ?? '—' }}
-                      </span>
-
-                      <span class="text-xs text-gray-500">{{ t.motivo | titleCase }}</span>
-
-                      <span *ngIf="t.horaSalida" class="text-xs text-gray-400">
-                        {{ t.horaSalida }} → {{ t.horaRetorno ?? 'sin retorno' }}
-                      </span>
-
-                      <span class="text-xs font-semibold text-gray-700 ml-auto">
-                        S/ {{ t.monto | number:'1.2-2' }}
-                      </span>
-
-                      <!-- Vouchers y adjuntos: se abren en el visor, sin salir de la revisión. -->
-                      <div class="flex flex-wrap items-center gap-[6px] basis-full">
-                        <button *ngFor="let c of t.capturas; let i = index" type="button"
-                                (click)="verArchivo(c.imageUrl, c.filename)"
-                                [title]="c.filename"
-                                class="inline-flex items-center gap-1 px-[6px] py-[2px] rounded border text-[11px] font-semibold cursor-pointer transition-colors hover:bg-[var(--color-abril-standard-light)]"
-                                style="border-color:var(--color-abril-border);color:var(--color-abril-standard)">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="18" height="18" rx="2"/>
-                            <circle cx="8.5" cy="8.5" r="1.5"/>
-                            <path d="m21 15-5-5L5 21" stroke-linejoin="round"/>
-                          </svg>
-                          Voucher {{ i + 1 }} · S/ {{ c.monto | number:'1.2-2' }}
-                        </button>
-
-                        <button *ngFor="let a of t.adjuntos" type="button"
-                                (click)="verArchivo(a.url, a.filename)"
-                                [title]="a.filename"
-                                class="inline-flex items-center gap-1 px-[6px] py-[2px] rounded border text-[11px] font-semibold cursor-pointer transition-colors hover:bg-[var(--color-abril-standard-light)]"
-                                style="border-color:var(--color-abril-border);color:#6B7280">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-                            <path d="M14 2v6h6" stroke-linejoin="round"/>
-                          </svg>
-                          Adjunto
-                        </button>
-
-                        <!-- Sin voucher y con importe: se dice por qué, para que no parezca sustento perdido. -->
-                        <span *ngIf="t.capturas.length === 0 && t.montoDeCatalogo"
-                              class="text-[11px] text-gray-400 italic">
-                          Monto del tarifario de trayectos (TI): no lleva captura.
-                        </span>
-                        <span *ngIf="t.capturas.length === 0 && !t.montoDeCatalogo && t.monto === 0"
-                              class="text-[11px] text-gray-400 italic">
-                          Trayecto sin monto rendido.
-                        </span>
-                        <span *ngIf="t.capturas.length === 0 && !t.montoDeCatalogo && t.monto > 0"
-                              class="text-[11px] italic" style="color:#B45309">
-                          Con monto y sin captura adjunta.
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                <td class="text-center">
+                  <button type="button" (click)="verSalida(s.id)" title="Ver los trayectos y vouchers de la salida"
+                          class="text-gray-400 hover:text-gray-600 cursor-pointer">
+                    <i class="ti ti-eye text-[17px]"></i>
+                  </button>
                 </td>
               </tr>
-            </ng-container>
-          </tbody>
-        </table>
-      </div>
+            </tbody>
+          </table>
+        </div>
+      </ng-container>
     </div>
 
     <!-- ── Rastro de Tesorería ──────────────────────────────────────────── -->
@@ -249,7 +235,7 @@
         el {{ d.revisionTesoreriaAt | date:'dd/MM/yyyy HH:mm' }}
       </span>
       <span *ngIf="d.pagadoAt">
-        Pagada por <b>{{ (d.pagadoPor | titleCase) || 'Tesorería' }}</b>
+        Pagado por <b>{{ (d.pagadoPor | titleCase) || 'Tesorería' }}</b>
         el {{ d.pagadoAt | date:'dd/MM/yyyy HH:mm' }}
       </span>
     </div>
@@ -260,7 +246,7 @@
         *ngIf="porRevisar"
         type="button"
         (click)="confirmarRevision()"
-        title="Confirma que la planilla, el Consolidado del S10 y la firma están conformes. Habilita el pago."
+        title="Confirma que el Consolidado del S10, las planillas que cubre y la firma están conformes. Habilita el pago."
         class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
         style="background:#C2410C">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -288,15 +274,15 @@
       <button
         *ngIf="porPagar"
         type="button"
-        (click)="marcarPagada()"
-        title="Registra el pago de esta planilla y le avisa al colaborador"
+        (click)="marcarPagado()"
+        title="Registra el pago de este consolidado y le avisa a cada colaborador"
         class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
         style="background:#15803D">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="2.5" y="5.5" width="19" height="13" rx="2"/>
           <path stroke-linecap="round" d="M2.5 10h19M6 15h4"/>
         </svg>
-        Marcar como pagada
+        Marcar como pagado
       </button>
     </div>
 
@@ -304,7 +290,14 @@
 
 </app-base-modal>
 
-<!-- Visor de la planilla, el consolidado y los vouchers: se abre encima del modal. -->
+<!-- ── Detalle de una salida (el ojo de la tabla), en consulta ───────── -->
+<app-salida-detalle-modal
+  *ngIf="salidaId !== null"
+  [solicitudId]="salidaId"
+  [cargar]="cargarSalida"
+  (close)="cerrarSalida()" />
+
+<!-- Visor del consolidado y de las planillas: se abre encima del modal. -->
 <app-document-viewer
   [archivoUrl]="visorUrl"
   [nombre]="visorNombre"

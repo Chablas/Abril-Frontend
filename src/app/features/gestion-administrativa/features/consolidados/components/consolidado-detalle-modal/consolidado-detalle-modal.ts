@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
@@ -11,22 +12,29 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { ConsolidadosService } from '../../services/consolidados.service';
 import { ConsolidadoDetalleDto, ConsolidadoSalidaDto } from '../../dtos/consolidado.dto';
-import { reembolsoColors, reembolsoLabelCorto } from '../../../../shared/dtos/rendicion-shared.dto';
+import {
+  correccionS10Colors,
+  reembolsoColors,
+  reembolsoLabelCorto,
+} from '../../../../shared/dtos/rendicion-shared.dto';
 import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-correos';
+import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
+import * as tramites from '../tramites-consolidador';
 
 /**
  * Detalle de un Consolidado del S10: el documento, las planillas que cubre y las salidas de cada
- * una, para que la jefatura vea qué gasto está por firmar.
+ * una —con su ojo para ver trayectos, capturas y montos—, para que la jefatura vea qué gasto está
+ * por firmar.
  *
  * La decisión es del documento entero —cubre todas esas planillas— así que sus dos botones van al
- * pie del modal y las tablas son solo lectura: aprobar media planilla dejaba al trabajador con un
- * reembolso partido, y la subsanación (volver a adjuntar el consolidado) siempre fue del documento
- * completo.
+ * pie del modal y las tablas son solo lectura. Al pie van también los trámites del consolidador:
+ * avisar a la jefatura, pedir la corrección al ERP y, con el reembolso observado, ir a reemplazar
+ * el consolidado a Gestión de Rendiciones, que es donde se adjunta.
  */
 @Component({
   standalone: true,
   selector: 'app-consolidado-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, FirmaRegistrarModal],
+  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, FirmaRegistrarModal, SalidaDetalleModal],
   templateUrl: './consolidado-detalle-modal.html',
 })
 export class ConsolidadoDetalleModal implements OnInit {
@@ -40,12 +48,19 @@ export class ConsolidadoDetalleModal implements OnInit {
   /** Modal para dibujar la firma en el momento. Lo abre el 409 de aprobar. */
   firmaModalAbierto = false;
 
+  /** Salida cuyo detalle (el ojo de la tabla) está abierto. null = cerrado. */
+  salidaId: number | null = null;
+
+  /** El detalle de la salida en consulta, con el endpoint y el alcance de esta pantalla. */
+  readonly cargarSalida = (id: number) => this.service.getSalidaDetalle(id);
+
   private huboCambios = false;
 
   constructor(
     private service: ConsolidadosService,
     private loader: LoaderService,
     private errorService: ErrorService,
+    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -78,7 +93,7 @@ export class ConsolidadoDetalleModal implements OnInit {
     return numero ? 'Consolidado del S10 N.° ' + numero : 'Consolidado del S10';
   }
 
-  // ── Decisión del reembolso (del documento entero) ────────────────────
+  // ── Decisión del reembolso (de la jefatura, sobre el documento entero) ──
 
   private accion(observacion?: string) {
     return { consolidadoIds: [this.consolidadoId], observacion: observacion ?? null };
@@ -98,7 +113,7 @@ export class ConsolidadoDetalleModal implements OnInit {
 
   async aprobar(): Promise<void> {
     const d = this.detalle;
-    if (!d || d.porDecidirCount === 0 || !d.puedeDecidir) return;
+    if (!d || d.porDecidirCount === 0) return;
 
     const result = await confirmarConCorreos({
       titulo: '¿Aprobar el reembolso de este consolidado?',
@@ -120,7 +135,7 @@ export class ConsolidadoDetalleModal implements OnInit {
   private ejecutarAprobacion(): void {
     this.loader.show();
     this.service.aprobarReembolso(this.accion()).subscribe({
-      next: (res) => this.trasAccion(res.message),
+      next: (res) => this.trasDecision(res.message),
       error: (err: HttpErrorResponse) => {
         this.loader.hide();
         if (err.status === 409) {
@@ -145,7 +160,7 @@ export class ConsolidadoDetalleModal implements OnInit {
 
   async observar(): Promise<void> {
     const d = this.detalle;
-    if (!d || d.porDecidirCount === 0 || !d.puedeDecidir) return;
+    if (!d || d.porDecidirCount === 0) return;
 
     const { value: observacion, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
@@ -153,7 +168,7 @@ export class ConsolidadoDetalleModal implements OnInit {
       avisos: await this.avisos(false),
       observacion: {
         label: 'Observación',
-        placeholder: 'Qué tiene que corregir el trabajador en el Consolidado del S10…',
+        placeholder: 'Qué tiene que corregir el consolidador en el Consolidado del S10…',
       },
       confirmButtonText: 'Observar',
       confirmButtonColor: '#D30000',
@@ -162,12 +177,12 @@ export class ConsolidadoDetalleModal implements OnInit {
 
     this.loader.show();
     this.service.observarReembolso(this.accion(observacion)).subscribe({
-      next: (res) => this.trasAccion(res.message),
+      next: (res) => this.trasDecision(res.message),
       error: (err: HttpErrorResponse) => this.errorAccion(err),
     });
   }
 
-  private trasAccion(message: string): void {
+  private trasDecision(message: string): void {
     this.loader.hide();
     Swal.fire({ title: message, icon: 'success', timer: 1800, showConfirmButton: false });
     // Decidido el reembolso ya no queda nada que hacer acá: se cierra y la tabla se recarga.
@@ -180,10 +195,64 @@ export class ConsolidadoDetalleModal implements OnInit {
     this.cdr.detectChanges();
   }
 
+  // ── Trámites del consolidador ────────────────────────────────────────
+  // Después de cada uno el detalle se recarga y queda abierto: lo que cambia (la fecha del aviso,
+  // la corrección en curso) se lee acá mismo.
+
+  private get tramitesDeps() {
+    return { service: this.service, loader: this.loader, errorService: this.errorService };
+  }
+
+  async avisarJefatura(): Promise<void> {
+    if (!this.detalle) return;
+    if (await tramites.avisarJefatura(this.tramitesDeps, this.detalle)) this.trasTramite();
+  }
+
+  async solicitarCorreccion(): Promise<void> {
+    if (!this.detalle) return;
+    if (await tramites.solicitarCorreccionErp(this.tramitesDeps, this.detalle)) this.trasTramite();
+  }
+
+  private trasTramite(): void {
+    this.huboCambios = true;
+    this.cargar();
+  }
+
+  /**
+   * Con el reembolso observado, el consolidado corregido se vuelve a adjuntar desde Gestión de
+   * Rendiciones: se abre ahí la primera planilla que cubre, cuyo detalle trae el botón para
+   * reemplazarlo (el reemplazo alcanza a todas las planillas del documento).
+   */
+  get planillaParaReemplazar(): number | null {
+    const d = this.detalle;
+    if (!d?.puedeConsolidar || d.estadoReembolso !== 'Observado') return null;
+    return d.rendiciones.find((r) => r.visible)?.id ?? null;
+  }
+
+  irAReemplazar(): void {
+    const rendicionId = this.planillaParaReemplazar;
+    if (rendicionId === null) return;
+    this.router.navigate(['/gestion-administrativa/gestion-rendiciones'], {
+      queryParams: { rendicion: rendicionId },
+    });
+  }
+
+  // ── Detalle de una salida ────────────────────────────────────────────
+
+  verSalida(solicitudId: number): void {
+    this.salidaId = solicitudId;
+  }
+
+  cerrarSalida(): void {
+    this.salidaId = null;
+    this.cdr.detectChanges();
+  }
+
   // ── Presentación ─────────────────────────────────────────────────────
 
   readonly reembolsoColors = reembolsoColors;
   readonly reembolsoLabelCorto = reembolsoLabelCorto;
+  readonly correccionS10Colors = correccionS10Colors;
 
   /** Salidas de una planilla: el detalle las trae todas juntas y se agrupan por documento. */
   salidasDe(rendicionId: number): ConsolidadoSalidaDto[] {

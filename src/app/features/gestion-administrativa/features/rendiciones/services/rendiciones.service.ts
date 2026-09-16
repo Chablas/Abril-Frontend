@@ -2,9 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
-import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import {
-  CorreccionS10Dto,
   RendicionDetalleDto,
   RendicionFilterDataDto,
   RendicionListResultDto,
@@ -76,47 +74,6 @@ export class RendicionesService {
       `${this.apiUrl}/${rendicionId}/regenerar-planilla`,
       {},
       { headers: this.headers, responseType: 'blob', observe: 'response' },
-    );
-  }
-
-  /**
-   * Adjunta (o reemplaza) el Consolidado del S10 de la planilla. Cubre todas sus salidas, así que
-   * `montoTotal` tiene que cuadrar con el monto de la planilla completa: el backend lo re-valida y
-   * responde 400 si no coincide.
-   */
-  uploadConsolidadoS10(
-    rendicionId: number, file: File, montoTotal: number, numeroReembolso: string,
-  ): Observable<ConsolidadoS10Dto> {
-    const formData = new FormData();
-    formData.append('file', file, file.name);
-    formData.append('montoTotal', String(montoTotal));
-    formData.append('numeroReembolso', numeroReembolso);
-    return this.http.post<ConsolidadoS10Dto>(
-      `${this.apiUrl}/${rendicionId}/consolidado-s10`,
-      formData,
-      { headers: this.headers },
-    );
-  }
-
-  /** Avisa al jefe/revisor que la planilla ya tiene su Consolidado del S10. */
-  notificarRevisor(rendicionId: number): Observable<{ message: string }> {
-    return this.http.patch<{ message: string }>(
-      `${this.apiUrl}/${rendicionId}/notificar-revisor`,
-      {},
-      { headers: this.headers },
-    );
-  }
-
-  /**
-   * Le pide al Coordinador ERP que corrija el Consolidado del S10 (RG-21). Es el camino
-   * alternativo a recargarlo cuando el arreglo tiene que hacerse dentro del S10. El motivo es
-   * obligatorio: sin el, el backend responde 400.
-   */
-  solicitarCorreccionS10(rendicionId: number, motivo: string): Observable<CorreccionS10Dto> {
-    return this.http.post<CorreccionS10Dto>(
-      `${this.apiUrl}/${rendicionId}/correccion-s10`,
-      { motivo },
-      { headers: this.headers },
     );
   }
 }

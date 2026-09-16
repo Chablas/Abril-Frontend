@@ -27,7 +27,7 @@ export type EstadoReembolso =
 /**
  * Estados de la PRIMERA revisión de una planilla, tal como los nombra el backend. Es el paso
  * anterior al Consolidado del S10: el jefe revisa trayectos, montos y capturas, y solo con su
- * aprobación el trabajador puede cargar el consolidado.
+ * aprobación el consolidador puede cargar el consolidado.
  */
 export type EstadoPrimeraRevision =
   | 'Lista para enviar'
@@ -42,15 +42,15 @@ export type EstadoPrimeraRevision =
 export type EstadoCorreccionS10 = 'Pendiente de corrección S10' | 'Pendiente de recarga S10';
 
 /**
- * La solicitud de corrección viva de una planilla. La muestran las dos pantallas del paso: Mis
- * Rendiciones (el colaborador, para saber de quién es la pelota) y Correcciones S10 (el
- * Coordinador ERP, que la atiende), así que vive en el shared del módulo.
+ * La solicitud de corrección viva de una planilla. La muestran las dos pantallas del paso:
+ * Consolidados (el consolidador que la pidió, para saber de quién es la pelota) y Correcciones S10
+ * (el Coordinador ERP, que la atiende), así que vive en el shared del módulo.
  */
 export interface CorreccionS10Dto {
   id: number;
   rendicionId: number;
   estado: EstadoCorreccionS10;
-  /** El «MOTIVO *» que escribió el colaborador: qué necesita del ERP. */
+  /** El «MOTIVO *» que escribió el consolidador: qué necesita del ERP. */
   motivo: string;
   /** Con qué se observó el reembolso, copiada al solicitar. */
   motivoJefatura: string | null;
@@ -75,7 +75,7 @@ export interface CorreccionS10Dto {
 
 /**
  * Colores del badge de la corrección del S10. Ámbar mientras espera al ERP (no le toca nada al
- * colaborador) y azul cuando ya volvió a él: el azul es el mismo que usa "En primera revisión",
+ * consolidador) y azul cuando ya volvió a él: el azul es el mismo que usa "En primera revisión",
  * el color de "hay algo que hacer".
  */
 export function correccionS10Colors(esperandoErp: boolean): { bg: string; text: string } {

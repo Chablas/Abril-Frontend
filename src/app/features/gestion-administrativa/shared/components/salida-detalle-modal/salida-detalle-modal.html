@@ -8,6 +8,11 @@
   <div *ngIf="detalle" class="flex flex-col gap-4 pt-4">
 
     <div class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+      <!-- En consulta la salida es de otro: se dice de quién. -->
+      <div *ngIf="consulta && detalle.trabajador" class="col-span-2">
+        <div class="text-xs text-gray-500 uppercase">Trabajador</div>
+        <div class="text-gray-800">{{ detalle.trabajador | titleCase }}</div>
+      </div>
       <div>
         <div class="text-xs text-gray-500 uppercase">Fecha</div>
         <div class="text-gray-800">{{ detalle.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</div>
@@ -183,7 +188,7 @@
           <div *ngIf="t.capturas.length === 0 && t.montoCatalogo !== null"
                class="text-xs bg-[#DBEAFE] border border-[#BFDBFE] rounded px-2 py-1 inline-block w-fit" style="color:var(--color-abril-accent)">
             Monto del catálogo: <b>S/ {{ t.montoCatalogo | number:'1.2-2' }}</b>
-            <span class="text-gray-500 ml-1">— no requieres subir captura.</span>
+            <span *ngIf="!consulta" class="text-gray-500 ml-1">— no requieres subir captura.</span>
           </div>
         </ng-container>
       </div>
@@ -253,12 +258,12 @@
          El mismo botón de la columna de acciones, para no tener que cerrar el detalle y volver a
          buscar la fila. Aparece con la misma condición (`aptaParaRendir`, que resuelve el backend):
          si acá no está, en la tabla tampoco. Al guardar capturas llega recalculado, así que aparece
-         apenas la salida queda completa. -->
-    <div *ngIf="!edicion && detalle.aptaParaRendir" class="border-t pt-4 flex justify-center" style="border-color:var(--color-abril-border)">
+         apenas la salida queda completa. En consulta nunca: la salida es de otro. -->
+    <div *ngIf="!consulta && !edicion && detalle.aptaParaRendir" class="border-t pt-4 flex justify-center" style="border-color:var(--color-abril-border)">
       <button
         type="button"
         (click)="rendirSolicitud()"
-        title="Rendir esta solicitud y descargar la planilla de gasto por movilidad"
+        title="Rendir esta solicitud y enviar la planilla a primera revisión"
         class="inline-flex items-center gap-[6px] h-[38px] px-5 rounded-lg text-sm font-semibold text-white cursor-pointer transition-colors"
         style="background:#0086A5"
         onmouseover="this.style.background='#006f8a'"

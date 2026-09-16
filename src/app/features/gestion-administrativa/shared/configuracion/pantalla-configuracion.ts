@@ -12,6 +12,7 @@ import { GaVisibilidad } from './visibilidad/visibilidad';
 import { VisibilidadAmbito } from './visibilidad/dtos/visibilidad.dto';
 import { GaAsignacionesAreas } from './asignaciones-areas/asignaciones-areas';
 import { AsignacionAreaModo } from './asignaciones-areas/dtos/asignacion-area.dto';
+import { GaFirmas } from './firmas/firmas';
 import { CorreoPantalla } from './correos/dtos/ga-correo.dto';
 
 /** Ids de las secciones exteriores (las de arriba de las subsecciones de cada correo). */
@@ -21,7 +22,8 @@ type SeccionId =
   | 'recordatorios'
   | 'visibilidad'
   | 'revisores'
-  | 'consolidadores';
+  | 'consolidadores'
+  | 'firmas';
 
 /** Una sección de la configuración de una pantalla. */
 interface SeccionDef {
@@ -64,8 +66,10 @@ interface PantallaDef {
  *  • Gestión de Salidas: los correos de la decisión del revisor y la VISIBILIDAD de esa bandeja.
  *  • Gestión de Rendiciones: los correos de la primera revisión y la VISIBILIDAD de esa bandeja
  *    (independiente de la de salidas).
- *  • Consolidados: los correos de la decisión del reembolso, la VISIBILIDAD de esa bandeja y los
- *    CONSOLIDADORES, que es quién puede adjuntar el Consolidado del S10 por cada trabajador.
+ *  • Consolidados: los correos de la decisión del reembolso y de los trámites del consolidador
+ *    (avisar a la jefatura, pedir la corrección al ERP), la VISIBILIDAD de esa bandeja, los
+ *    CONSOLIDADORES, que es quién adjunta el Consolidado del S10 de los trabajadores de cada área,
+ *    y las FIRMAS, o sea cómo registra su firma quien aprueba acá.
  *
  * El acceso a la pantalla lo abre cualquiera de los featureKeys de sus secciones (`featureKeys` en
  * la ruta) y cada sección se filtra además por el suyo.
@@ -82,6 +86,7 @@ interface PantallaDef {
     GaDiasReembolsables,
     GaVisibilidad,
     GaAsignacionesAreas,
+    GaFirmas,
   ],
   templateUrl: './pantalla-configuracion.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
@@ -92,6 +97,7 @@ export class GaPantallaConfiguracion implements OnInit {
   private static readonly FEATURE_VISIBILIDAD_RENDICIONES = 'gestion-administrativa.config.visibilidad-rendiciones';
   private static readonly FEATURE_VISIBILIDAD_CONSOLIDADOS = 'gestion-administrativa.config.visibilidad-consolidados';
   private static readonly FEATURE_CONSOLIDADORES = 'gestion-administrativa.config.consolidadores-areas';
+  private static readonly FEATURE_FIRMAS = 'gestion-administrativa.config.firmas';
   /** Los revisores de áreas conservan su feature de cuando vivían en Configuración global. */
   private static readonly FEATURE_REVISORES = 'configuracion.revisores-areas';
   /** La feature que ya protegía la sección Correos: quien administra un correo los administra todos. */
@@ -166,7 +172,8 @@ export class GaPantallaConfiguracion implements OnInit {
     consolidados: {
       nombre: 'Consolidados',
       volverA: '/gestion-administrativa/consolidados',
-      subtitulo: 'Correos de la decisión del reembolso, visibilidad de la bandeja y consolidadores por área.',
+      subtitulo:
+        'Correos del reembolso y del consolidador, visibilidad de la bandeja, consolidadores por área y cómo se registra la firma.',
       secciones: [
         GaPantallaConfiguracion.SECCION_CORREOS,
         {
@@ -175,11 +182,19 @@ export class GaPantallaConfiguracion implements OnInit {
           featureKey: GaPantallaConfiguracion.FEATURE_VISIBILIDAD_CONSOLIDADOS,
         },
         // Los Consolidadores viven acá y no en Gestión de Rendiciones: lo que administran es
-        // quién puede adjuntar el documento que esta pantalla muestra y firma.
+        // quién adjunta el documento que esta pantalla muestra y firma, y quién sigue su trámite.
         {
           id: 'consolidadores',
           label: 'Consolidadores',
           featureKey: GaPantallaConfiguracion.FEATURE_CONSOLIDADORES,
+        },
+        // Las Firmas viven acá porque es acá donde se firma: aprobar un consolidado ES estampar la
+        // firma, y lo que se marca decide qué se le exige registrar a quien aprueba. Contabilidad
+        // y "Tu firma" no lo miran: allá se sigue registrando solo la dibujada.
+        {
+          id: 'firmas',
+          label: 'Firmas',
+          featureKey: GaPantallaConfiguracion.FEATURE_FIRMAS,
         },
       ],
       visibilidadAmbito: 'consolidados',
@@ -273,6 +288,10 @@ export class GaPantallaConfiguracion implements OnInit {
 
   get mostrandoAsignaciones(): boolean {
     return this.seccionActiva === 'revisores' || this.seccionActiva === 'consolidadores';
+  }
+
+  get mostrandoFirmas(): boolean {
+    return this.seccionActiva === 'firmas';
   }
 
   // ── Filtros de la sección activa ────────────────────────────────────────

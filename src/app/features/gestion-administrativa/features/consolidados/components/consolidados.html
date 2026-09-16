@@ -22,7 +22,7 @@
     <div class="resumen-card resumen-card--warn">
       <span class="resumen-card__label">Observados</span>
       <span class="resumen-card__value">{{ resumen.observados }}</span>
-      <span class="resumen-card__hint">Devueltos al trabajador</span>
+      <span class="resumen-card__hint">Devueltos al consolidador</span>
     </div>
     <div class="resumen-card resumen-card--ok">
       <span class="resumen-card__label">Firmados</span>
@@ -31,8 +31,9 @@
     </div>
   </div>
 
-  <!-- ── Acciones bulk sobre la selección ────────────────────────────────── -->
-  <div class="flex flex-wrap items-center gap-2">
+  <!-- ── Acciones bulk sobre la selección ──────────────────────────────────
+       Solo para la jefatura: sin nada que le toque decidir no hay nada que seleccionar. -->
+  <div *ngIf="hayPorDecidir" class="flex flex-wrap items-center gap-2">
     <span *ngIf="selectedIds.size > 0" class="text-[11px] text-gray-500 mr-1">
       {{ selectedIds.size }} consolidado{{ selectedIds.size === 1 ? '' : 's' }} seleccionado{{ selectedIds.size === 1 ? '' : 's' }}
     </span>
@@ -42,9 +43,7 @@
       abrilBulkAction="default"
       (click)="aprobarBulk()"
       [disabled]="!puedeDecidir"
-      [title]="decisionBloqueada
-        ? 'No puedes decidir el reembolso de tus propias salidas — deselecciona esos consolidados'
-        : 'Aprobar estampa tu firma en el Consolidado del S10 y en las planillas que cubre'">
+      title="Aprobar estampa tu firma en el Consolidado del S10 y en las planillas que cubre">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
       </svg>
@@ -56,9 +55,7 @@
       abrilBulkAction="danger"
       (click)="observarBulk()"
       [disabled]="!puedeDecidir"
-      [title]="decisionBloqueada
-        ? 'No puedes decidir el reembolso de tus propias salidas — deselecciona esos consolidados'
-        : 'Se te pedirá una observación para que el trabajador sepa qué corregir'">
+      title="Se te pedirá una observación para que el consolidador sepa qué corregir">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
         <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
         <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
@@ -72,7 +69,7 @@
     <table class="abril-table abril-table--th-center">
       <thead class="sticky top-0 z-10">
         <tr>
-          <th>
+          <th *ngIf="hayPorDecidir">
             <input
               type="checkbox"
               [checked]="allSelected"
@@ -96,7 +93,7 @@
       </thead>
       <tbody>
         <tr *ngIf="consolidados.length === 0">
-          <td colspan="11" class="text-center py-[40px] text-gray-400 text-sm">
+          <td [attr.colspan]="hayPorDecidir ? 11 : 10" class="text-center py-[40px] text-gray-400 text-sm">
             No hay Consolidados del S10 en tu alcance.
           </td>
         </tr>
@@ -109,7 +106,7 @@
           [style.background]="selectedIds.has(c.id) ? '#EAF6FF' : null"
           style="border-color:var(--color-abril-border)">
 
-          <td class="select-none" (click)="onSelectClick($event, c)">
+          <td *ngIf="hayPorDecidir" class="select-none" (click)="onSelectClick($event, c)">
             <input
               type="checkbox"
               [checked]="selectedIds.has(c.id)"
@@ -190,25 +187,32 @@
             </div>
           </td>
 
+          <!-- Con una corrección en el ERP se dice de quién es la pelota, debajo del estado. -->
           <td>
-            <app-status-badge
-              [text]="reembolsoLabelCorto(c.estadoReembolso)"
-              [bgColor]="reembolsoColors(c.estadoReembolso).bg"
-              [textColor]="reembolsoColors(c.estadoReembolso).text"
-              [title]="reembolsoTitle(c)" />
+            <div class="flex flex-col items-center gap-[4px]">
+              <app-status-badge
+                [text]="reembolsoLabelCorto(c.estadoReembolso)"
+                [bgColor]="reembolsoColors(c.estadoReembolso).bg"
+                [textColor]="reembolsoColors(c.estadoReembolso).text"
+                [title]="reembolsoTitle(c)" />
+              <app-status-badge
+                *ngIf="c.correccionS10 as corr"
+                [text]="corr.esperandoErp ? 'En el ERP' : 'Por recargar'"
+                [bgColor]="correccionS10Colors(corr.esperandoErp).bg"
+                [textColor]="correccionS10Colors(corr.esperandoErp).text"
+                [title]="corr.estado" />
+            </div>
           </td>
 
           <td (click)="$event.stopPropagation()">
             <div class="flex flex-wrap items-center gap-2">
-              <ng-container *ngIf="c.porDecidirCount > 0; else sinAcciones">
+              <!-- La decisión: solo la jefatura de los trabajadores del consolidado. -->
+              <ng-container *ngIf="c.porDecidirCount > 0">
                 <button
                   type="button"
                   (click)="aprobarBulk([c])"
-                  [disabled]="!c.puedeDecidir"
-                  [title]="c.puedeDecidir
-                    ? 'Aprobar estampa tu firma en este consolidado y en las planillas que cubre'
-                    : 'No puedes decidir el reembolso de tus propias salidas'"
-                  class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  title="Aprobar estampa tu firma en este consolidado y en las planillas que cubre"
+                  class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
                   style="background:var(--color-abril-standard)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
@@ -219,11 +223,8 @@
                 <button
                   type="button"
                   (click)="observarBulk([c])"
-                  [disabled]="!c.puedeDecidir"
-                  [title]="c.puedeDecidir
-                    ? 'Se te pedirá una observación de qué corregir'
-                    : 'No puedes decidir el reembolso de tus propias salidas'"
-                  class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Se te pedirá una observación de qué corregir"
+                  class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold transition-colors"
                   style="background:#FFFFFF;color:#D30000;border:1px solid #D30000">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
@@ -233,7 +234,27 @@
                 </button>
               </ng-container>
 
-              <ng-template #sinAcciones><span class="text-gray-300">—</span></ng-template>
+              <!-- El trámite del consolidador: avisarle a la jefatura que el consolidado la espera.
+                   Pedir la corrección al ERP va en el detalle, junto a la observación. -->
+              <button
+                *ngIf="c.puedeAvisarJefatura"
+                type="button"
+                (click)="avisarJefatura(c, $event)"
+                [title]="c.jefaturaAvisadaAt
+                  ? 'Ya le avisaste el ' + (c.jefaturaAvisadaAt | date:'dd/MM/yyyy HH:mm') + ' — puedes volver a avisarle'
+                  : 'Avísale a la jefatura que el consolidado espera su aprobación'"
+                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold transition-colors"
+                [style.background]="c.jefaturaAvisadaAt ? '#FFFFFF' : '#005D9D'"
+                [style.color]="c.jefaturaAvisadaAt ? '#005D9D' : '#FFFFFF'"
+                style="border:1px solid #005D9D">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2.5" y="4.5" width="19" height="15" rx="2"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m3 6 9 6 9-6"/>
+                </svg>
+                {{ c.jefaturaAvisadaAt ? 'Jefatura avisada ✓' : 'Avisar a la jefatura' }}
+              </button>
+
+              <span *ngIf="c.porDecidirCount === 0 && !c.puedeAvisarJefatura" class="text-gray-300">—</span>
             </div>
           </td>
         </tr>
@@ -250,10 +271,12 @@
   (close)="cerrarDetalle($event)" />
 
 <!-- ── Modal para registrar la firma la primera vez ────────────────────
-     Salta con el 409 de "Aprobar": el usuario dibuja su firma sin salir de la pantalla y la
-     aprobación que había pedido se reintenta sola. -->
+     Salta con el 409 de "Aprobar": el usuario registra su firma sin salir de la pantalla y la
+     aprobación que había pedido se reintenta sola. Sin [tipos], el modal ofrece lo que digan los
+     checkboxes de Configuración → Firmas (subir imagen, dibujarla, o elegir entre las dos). -->
 <app-firma-registrar-modal
   *ngIf="firmaModalAbierto"
+  descripcion="Se estampará en el Consolidado del S10 y en las planillas que cubre"
   (guardada)="onFirmaRegistrada()"
   (cerrar)="cerrarFirmaModal()" />
 

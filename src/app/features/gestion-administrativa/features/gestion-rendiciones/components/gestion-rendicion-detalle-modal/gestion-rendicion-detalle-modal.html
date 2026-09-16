@@ -90,7 +90,7 @@
       </span>
       <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
         {{ d.estadoPrimeraRevision === 'Aprobada'
-            ? 'El trabajador todavía no adjuntó el Consolidado del S10.'
+            ? 'Consolidado del S10 pendiente.'
             : 'El Consolidado del S10 se habilita al aprobar la primera revisión.' }}
       </span>
 
@@ -118,7 +118,8 @@
       </a>
     </div>
 
-    <!-- ── Salidas: solo lectura. Lo que agrupa la planilla que se está decidiendo. ── -->
+    <!-- ── Salidas: solo lectura. Lo que agrupa la planilla que se está decidiendo; el ojo abre
+         el detalle de cada una (trayectos, capturas y montos). ── -->
     <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
       <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas de esta planilla</span>
 
@@ -133,6 +134,7 @@
               <th>Destino</th>
               <th>Monto</th>
               <th>Reembolso</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -163,6 +165,12 @@
                       + ': ' + s.observacionReembolso
                     : null" />
               </td>
+              <td class="text-center">
+                <button type="button" (click)="verSalida(s.id)" title="Ver el detalle de la salida"
+                        class="text-gray-400 hover:text-gray-600 cursor-pointer">
+                  <i class="ti ti-eye text-[17px]"></i>
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -179,7 +187,7 @@
         (click)="aprobarPrimeraRevision()"
         [disabled]="!d.puedeDecidir"
         [title]="d.puedeDecidir
-          ? 'Habilita al trabajador a cargar el Consolidado del S10'
+          ? 'Habilita al consolidador a cargar el Consolidado del S10'
           : 'No puedes revisar una rendición con tus propias salidas'"
         class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
         style="background:var(--color-abril-standard)">
@@ -210,6 +218,31 @@
       </span>
     </div>
 
+    <!-- El Consolidado del S10, para el consolidador: el mismo botón de la fila, al pie del
+         detalle, para que el enlace del correo del ERP lleve directo a recargarlo. -->
+    <div *ngIf="d.puedeAdjuntarConsolidado && d.puedeConsolidar"
+         class="flex justify-center border-t pt-3"
+         style="border-color:var(--color-abril-border)">
+      <button
+        type="button"
+        (click)="consolidarDesdeDetalle()"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
+        style="background:var(--color-abril-standard)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
+        </svg>
+        {{ d.consolidadoS10 ? 'Reemplazar Consolidado del S10' : 'Adjuntar Consolidado del S10' }}
+      </button>
+    </div>
+
   </div>
 
 </app-base-modal>
+
+<!-- ── Detalle de una salida (el ojo de la tabla), en consulta ───────── -->
+<app-salida-detalle-modal
+  *ngIf="salidaId !== null"
+  [solicitudId]="salidaId"
+  [cargar]="cargarSalida"
+  (close)="cerrarSalida()" />

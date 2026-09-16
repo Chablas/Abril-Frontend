@@ -16,19 +16,22 @@ import {
 } from '../../../../shared/dtos/rendicion-shared.dto';
 import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-correos';
 import { otrasRendicionesDelConsolidado } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
 
 /**
- * Detalle de una planilla para el revisor: sus documentos y las salidas que agrupa.
+ * Detalle de una planilla para la jefatura y el consolidador: sus documentos y las salidas que
+ * agrupa, cada una con su ojo para ver trayectos, capturas y montos.
  *
  * La decisión de la primera revisión es de la planilla entera, así que sus botones van al pie del
  * modal y la tabla de salidas es solo lectura: lo que se revisa es un documento, y aprobar media
- * planilla dejaría al trabajador con una rendición partida. El reembolso ya no se decide acá: se
- * decide en Consolidados, sobre el documento del S10 que puede cubrir varias planillas.
+ * planilla dejaría al trabajador con una rendición partida. Al pie va también el Consolidado del S10
+ * para el consolidador; el modal solo emite y la pantalla lo abre con el mismo camino que el botón
+ * de la fila. El reembolso ya no se decide acá: se decide en Consolidados.
  */
 @Component({
   standalone: true,
   selector: 'app-gestion-rendicion-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe],
+  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaDetalleModal],
   templateUrl: './gestion-rendicion-detalle-modal.html',
 })
 export class GestionRendicionDetalleModal implements OnInit {
@@ -37,7 +40,19 @@ export class GestionRendicionDetalleModal implements OnInit {
   /** Emite true si algo cambió (hay que recargar la tabla de atrás), false si solo se cerró. */
   @Output() close = new EventEmitter<boolean>();
 
+  /**
+   * "Consolidado S10" desde el pie del detalle. Solo avisa: la pantalla abre el mismo modal que el
+   * botón de la fila, con la planilla y su conjunto.
+   */
+  @Output() consolidar = new EventEmitter<GestionRendicionDetalleDto>();
+
   detalle: GestionRendicionDetalleDto | null = null;
+
+  /** Salida cuyo detalle (el ojo de la tabla) está abierto. null = cerrado. */
+  salidaId: number | null = null;
+
+  /** El detalle de la salida en consulta, con el endpoint y el alcance de esta pantalla. */
+  readonly cargarSalida = (id: number) => this.service.getSalidaDetalle(id);
 
   private huboCambios = false;
 
@@ -108,7 +123,7 @@ export class GestionRendicionDetalleModal implements OnInit {
 
     const result = await confirmarConCorreos({
       titulo: '¿Aprobar la rendición ' + d.codigo + '?',
-      nota: 'Habilita al trabajador a cargar el Consolidado del S10.',
+      nota: 'Habilita al consolidador a cargar el Consolidado del S10.',
       avisos: await this.avisos(true),
       confirmButtonText: 'Sí, aprobar',
     });
@@ -150,6 +165,25 @@ export class GestionRendicionDetalleModal implements OnInit {
     this.loader.hide();
     Swal.fire({ title: message, icon: 'success', timer: 2000, showConfirmButton: false });
     this.close.emit(true);
+  }
+
+  // ── Consolidado del S10 (consolidador) ───────────────────────────────
+
+  consolidarDesdeDetalle(): void {
+    const d = this.detalle;
+    if (!d?.puedeAdjuntarConsolidado || !d.puedeConsolidar) return;
+    this.consolidar.emit(d);
+  }
+
+  // ── Detalle de una salida ────────────────────────────────────────────
+
+  verSalida(solicitudId: number): void {
+    this.salidaId = solicitudId;
+  }
+
+  cerrarSalida(): void {
+    this.salidaId = null;
+    this.cdr.detectChanges();
   }
 
   // ── Presentación ─────────────────────────────────────────────────────

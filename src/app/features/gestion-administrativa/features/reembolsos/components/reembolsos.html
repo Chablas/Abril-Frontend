@@ -1,7 +1,7 @@
 <app-abril-page-header
   [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
   titulo="Reembolsos"
-  subtitulo="Planillas firmadas por la jefatura: revisión de Tesorería y pago."
+  subtitulo="Consolidados del S10 firmados por la jefatura: revisión de Tesorería y pago."
   [tabs]="tabs"
   [botonSecundario]="botonConfiguracion"
   (secondaryClick)="abrirConfiguracion()">
@@ -28,7 +28,7 @@
       <div class="resumen-card resumen-card--rev">
         <span class="resumen-card__label">Por revisar</span>
         <span class="resumen-card__value">{{ resumen.porRevisar }}</span>
-        <span class="resumen-card__hint">Firmadas, esperan tu revisión</span>
+        <span class="resumen-card__hint">Firmados, esperan tu revisión</span>
       </div>
       <div class="resumen-card resumen-card--pend">
         <span class="resumen-card__label">Por pagar</span>
@@ -41,14 +41,14 @@
         <span class="resumen-card__hint">Suma a desembolsar</span>
       </div>
       <div class="resumen-card resumen-card--obs">
-        <span class="resumen-card__label">Observadas</span>
+        <span class="resumen-card__label">Observados</span>
         <span class="resumen-card__value">{{ resumen.observadas }}</span>
-        <span class="resumen-card__hint">Devueltas, esperan subsanación</span>
+        <span class="resumen-card__hint">Devueltos, esperan subsanación</span>
       </div>
       <div class="resumen-card resumen-card--ok">
-        <span class="resumen-card__label">Pagadas</span>
+        <span class="resumen-card__label">Pagados</span>
         <span class="resumen-card__value">{{ resumen.pagadas }}</span>
-        <span class="resumen-card__hint">Ya cerradas</span>
+        <span class="resumen-card__hint">Ya cerrados</span>
       </div>
     </div>
 
@@ -57,48 +57,48 @@
          puede pagar. Y un camino de vuelta (RG-49): observar devuelve el consolidado desde
          cualquiera de los dos. Cada botón actúa sobre la parte de la selección que le toca. -->
     <div class="flex flex-wrap items-center gap-2">
-      <span *ngIf="seleccionadasPorPagar.length > 0" class="text-[11px] text-gray-500 mr-1">
-        {{ seleccionadasPorPagar.length }} por pagar · S/ {{ montoSeleccionado | number:'1.2-2' }}
+      <span *ngIf="seleccionadosPorPagar.length > 0" class="text-[11px] text-gray-500 mr-1">
+        {{ seleccionadosPorPagar.length }} por pagar · S/ {{ montoSeleccionado | number:'1.2-2' }}
       </span>
 
       <button
         type="button"
         abrilBulkAction="default"
         (click)="confirmarRevision()"
-        [disabled]="seleccionadasPorRevisar.length === 0"
-        title="Confirma que la planilla, el Consolidado del S10 y la firma están conformes. Habilita el pago.">
+        [disabled]="seleccionadosPorRevisar.length === 0"
+        title="Confirma que el Consolidado del S10, las planillas que cubre y la firma están conformes. Habilita el pago.">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4"/>
           <circle cx="12" cy="12" r="9"/>
         </svg>
-        Confirmar revisión<span *ngIf="seleccionadasPorRevisar.length > 0"> ({{ seleccionadasPorRevisar.length }})</span>
+        Confirmar revisión<span *ngIf="seleccionadosPorRevisar.length > 0"> ({{ seleccionadosPorRevisar.length }})</span>
       </button>
 
       <button
         type="button"
         abrilBulkAction="danger"
         (click)="observar()"
-        [disabled]="seleccionadasParaObservar.length === 0"
+        [disabled]="seleccionadosParaObservar.length === 0"
         title="Devuelve el consolidado con un motivo. Vuelve al consolidador, que lo recarga o le pide la corrección al Coordinador ERP.">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round"
                 d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
           <path stroke-linecap="round" d="M12 9v4M12 17h.01"/>
         </svg>
-        Observar<span *ngIf="seleccionadasParaObservar.length > 0"> ({{ seleccionadasParaObservar.length }})</span>
+        Observar<span *ngIf="seleccionadosParaObservar.length > 0"> ({{ seleccionadosParaObservar.length }})</span>
       </button>
 
       <button
         type="button"
         abrilBulkAction="primary"
         (click)="marcarPagadas()"
-        [disabled]="seleccionadasPorPagar.length === 0"
+        [disabled]="seleccionadosPorPagar.length === 0"
         title="Solo se puede pagar lo que ya tiene la revisión de Tesorería confirmada">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
           <rect x="2.5" y="5.5" width="19" height="13" rx="2"/>
           <path stroke-linecap="round" d="M2.5 10h19M6 15h4"/>
         </svg>
-        Marcar como pagadas<span *ngIf="seleccionadasPorPagar.length > 0"> ({{ seleccionadasPorPagar.length }})</span>
+        Marcar como pagados<span *ngIf="seleccionadosPorPagar.length > 0"> ({{ seleccionadosPorPagar.length }})</span>
       </button>
     </div>
 
@@ -117,89 +117,120 @@
                 style="accent-color:var(--color-abril-accent)"
                 title="Seleccionar / deseleccionar todo lo que falta revisar o pagar" />
             </th>
-            <th>Planilla</th>
+            <th>N.º de reembolso</th>
+            <th>Planillas</th>
             <th>Trabajador</th>
             <th>Periodo</th>
             <th>Salidas</th>
             <th>Monto</th>
-            <th>N.º de reembolso</th>
             <th>Firma de jefatura</th>
             <th>Documentos</th>
             <th>Estado</th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngIf="planillas.length === 0">
+          <tr *ngIf="consolidados.length === 0">
             <td colspan="10" class="text-center py-[40px] text-gray-400 text-sm">
-              No hay planillas firmadas por revisar ni pagar.
+              No hay Consolidados del S10 firmados por revisar ni pagar.
             </td>
           </tr>
 
           <tr
-            *ngFor="let r of pagedPlanillas"
-            (click)="abrirDetalle(r)"
-            title="Ver el desglose, los trayectos y los vouchers de esta planilla"
+            *ngFor="let c of pagedConsolidados"
+            (click)="abrirDetalle(c)"
+            title="Ver las planillas, las salidas y los vouchers que cubre este consolidado"
             class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
-            [style.background]="selectedIds.has(r.id) ? '#EAF6FF' : null"
+            [style.background]="selectedIds.has(c.id) ? '#EAF6FF' : null"
             style="border-color:var(--color-abril-border)">
 
-            <td class="select-none" (click)="onSelectClick($event, r)">
+            <td class="select-none" (click)="onSelectClick($event, c)">
               <input
                 type="checkbox"
-                [checked]="selectedIds.has(r.id)"
-                [disabled]="!!motivoNoAccionable(r)"
+                [checked]="selectedIds.has(c.id)"
+                [disabled]="!!motivoNoAccionable(c)"
                 class="cursor-pointer pointer-events-none disabled:cursor-not-allowed"
                 style="accent-color:var(--color-abril-accent)"
-                [title]="motivoNoAccionable(r)" />
+                [title]="motivoNoAccionable(c)" />
             </td>
 
-            <td class="text-gray-700 font-medium whitespace-nowrap" [title]="r.codigo">
-              {{ r.numeroPlanilla ?? r.codigo }}
-            </td>
-            <td class="text-gray-700" [title]="r.trabajadores.join(', ')">
-              {{ trabajadoresTexto(r) | titleCase }}
-            </td>
-            <td class="text-gray-700 whitespace-nowrap">{{ r.periodo }}</td>
-            <td class="text-gray-700 text-center">{{ r.salidasCount }}</td>
-            <td class="text-gray-700 whitespace-nowrap font-medium">S/ {{ r.montoTotal | number:'1.2-2' }}</td>
-
-            <td class="text-gray-700 whitespace-nowrap">
-              {{ r.consolidadoS10?.numeroReembolso || '—' }}
-            </td>
-
-            <!-- La firma electrónica: nombre y fecha/hora es lo que la hace evidencia (RG-24). -->
+            <!-- El número de reembolso es como el S10 nombra este registro: es el identificador de
+                 la fila. Los consolidados viejos no lo tienen. -->
             <td class="whitespace-nowrap">
-              <div *ngIf="r.firmadoAt; else sinFirma" class="flex flex-col leading-tight">
-                <span class="text-gray-700 text-[12px]">{{ (r.firmadoPor | titleCase) || 'Jefatura' }}</span>
-                <span class="text-gray-400 text-[11px]">{{ r.firmadoAt | date:'dd/MM/yyyy HH:mm' }}</span>
+              <span *ngIf="c.numeroReembolso; else sinNumero" class="text-gray-700 font-medium">
+                {{ c.numeroReembolso }}
+              </span>
+              <ng-template #sinNumero>
+                <span class="text-gray-300" title="Consolidado anterior al número de reembolso">—</span>
+              </ng-template>
+              <div *ngIf="c.razonSocial" class="text-[11px] text-gray-400 leading-tight">
+                {{ c.razonSocial | titleCase }}
+              </div>
+            </td>
+
+            <!-- Todo lo que cubre: las planillas que todavía esperan a su jefatura van apagadas,
+                 pero se listan porque el importe declarado en el S10 las incluye. -->
+            <td>
+              <div class="flex flex-wrap items-center gap-[4px]">
+                <span *ngFor="let r of c.rendiciones"
+                      class="ren-chip"
+                      [class.ren-chip--fuera]="!r.enBandeja"
+                      [title]="r.enBandeja ? (r.numeroPlanilla ?? r.codigo) : fueraDeBandejaTitle(r.codigo)">
+                  {{ r.codigo }}
+                </span>
+              </div>
+            </td>
+
+            <td class="text-gray-700" [title]="c.trabajadores.join(', ')">
+              {{ trabajadoresTexto(c) | titleCase }}
+            </td>
+            <td class="text-gray-700 whitespace-nowrap">{{ c.periodo }}</td>
+            <td class="text-gray-700 text-center">{{ c.salidasCount }}</td>
+
+            <!-- Lo que se desembolsa por este documento. Si una parte sigue esperando a otra
+                 jefatura, se dice cuánto es el documento entero. -->
+            <td class="whitespace-nowrap">
+              <div class="flex flex-col leading-tight">
+                <span class="text-gray-700 font-medium">S/ {{ c.montoTotal | number:'1.2-2' }}</span>
+                <span *ngIf="c.montoTotal !== c.montoPlanillas"
+                      class="text-[11px] text-gray-400"
+                      title="Lo demás del consolidado no entra en este recorte">
+                  de S/ {{ c.montoPlanillas | number:'1.2-2' }}
+                </span>
+                <span *ngIf="diferenciaS10(c) as dif"
+                      class="text-[11px] font-semibold" style="color:#D30000"
+                      [title]="'El S10 declara S/ ' + (c.montoS10 | number:'1.2-2') + ' para este consolidado'">
+                  S10: {{ dif > 0 ? '+' : '' }}{{ dif | number:'1.2-2' }}
+                </span>
+              </div>
+            </td>
+
+            <!-- La firma electrónica: nombre y fecha/hora es lo que la hace evidencia (RG-24). Un
+                 consolidado compartido acumula la firma de cada jefatura. -->
+            <td class="whitespace-nowrap">
+              <div *ngIf="c.firmas.length > 0; else sinFirma"
+                   class="flex flex-col leading-tight" [title]="firmasTitle(c)">
+                <span class="text-gray-700 text-[12px]">
+                  {{ (c.firmas[0].nombre | titleCase) || 'Jefatura' }}
+                  <span *ngIf="firmaExtra(c) > 0" class="text-gray-400">+{{ firmaExtra(c) }}</span>
+                </span>
+                <span class="text-gray-400 text-[11px]">{{ c.firmas[0].firmadoAt | date:'dd/MM/yyyy HH:mm' }}</span>
               </div>
               <ng-template #sinFirma><span class="text-gray-400">—</span></ng-template>
             </td>
 
             <td (click)="$event.stopPropagation()">
               <div class="flex flex-wrap items-center gap-[6px]">
-                <a *ngIf="r.pdfFirmadoUrl"
-                   class="doc-chip" [href]="r.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
-                   [title]="r.pdfFirmadoFilename ?? 'Planilla firmada'">
+                <a *ngIf="c.pdfFirmadoUrl"
+                   class="doc-chip" [href]="c.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
+                   [title]="c.pdfFirmadoFilename ?? 'Consolidado del S10 firmado'">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
-                  Firmada
+                  S10 firmado
                 </a>
 
-                <a class="doc-chip" [href]="r.pdfUrl" target="_blank" rel="noopener noreferrer"
-                   [title]="r.pdfFilename">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-                    <path d="M14 2v6h6" stroke-linejoin="round"/>
-                  </svg>
-                  Planilla
-                </a>
-
-                <a *ngIf="r.consolidadoS10"
-                   class="doc-chip" [href]="r.consolidadoS10.pdfFirmadoUrl ?? r.consolidadoS10.pdfUrl"
-                   target="_blank" rel="noopener noreferrer"
-                   [title]="r.consolidadoS10.pdfFilename">
+                <a class="doc-chip" [href]="c.pdfUrl" target="_blank" rel="noopener noreferrer"
+                   [title]="c.pdfFilename">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
                     <path d="M14 2v6h6" stroke-linejoin="round"/>
@@ -211,15 +242,15 @@
 
             <td>
               <app-status-badge
-                [text]="reembolsoLabelCorto(r.estadoReembolso)"
-                [bgColor]="reembolsoColors(r.estadoReembolso).bg"
-                [textColor]="reembolsoColors(r.estadoReembolso).text"
-                [title]="observacionTitle(r)" />
+                [text]="reembolsoLabelCorto(c.estadoReembolso)"
+                [bgColor]="reembolsoColors(c.estadoReembolso).bg"
+                [textColor]="reembolsoColors(c.estadoReembolso).text"
+                [title]="observacionTitle(c)" />
               <!-- Recortado a una línea: el motivo completo está en el tooltip y en el detalle. -->
-              <div *ngIf="observada(r) && r.observacionReembolso"
+              <div *ngIf="observado(c) && c.observacionReembolso"
                    class="mt-0.5 text-[10px] leading-tight truncate max-w-[140px]"
-                   style="color:#D30000" [title]="r.observacionReembolso">
-                {{ r.observacionReembolso }}
+                   style="color:#D30000" [title]="c.observacionReembolso">
+                {{ c.observacionReembolso }}
               </div>
             </td>
           </tr>
@@ -230,7 +261,7 @@
     <!-- Ancho limitado y a la izquierda: no invade la esquina del botón flotante. -->
     <div class="shrink-0 max-w-[440px]">
       <app-paginator
-        [totalRecords]="planillas.length"
+        [totalRecords]="consolidados.length"
         [currentPage]="currentPage"
         [totalPages]="totalPages"
         (pageChange)="changePage($event)">
@@ -243,10 +274,10 @@
 
 </div>
 
-<!-- ── Modal de detalle (salidas, trayectos y vouchers de la planilla) ── -->
+<!-- ── Modal de detalle (planillas, salidas, trayectos y vouchers) ── -->
 <app-reembolso-detalle-modal
   *ngIf="detalleId !== null"
-  [rendicionId]="detalleId"
+  [consolidadoId]="detalleId"
   (close)="cerrarDetalle($event)" />
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
@@ -254,7 +285,7 @@
 
   <div class="w-full">
     <app-search-input
-      placeholder="Buscar por planilla, trabajador o reembolso..."
+      placeholder="Buscar por reembolso, planilla o trabajador..."
       [(value)]="searchText"
       (valueChange)="onSearchChange()"
       width="100%">

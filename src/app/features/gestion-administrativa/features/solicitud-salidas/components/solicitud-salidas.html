@@ -84,7 +84,7 @@
       class="ml-auto"
       (click)="rendirBulk()"
       [disabled]="rendiblesCount === 0"
-      title="Rinde las solicitudes seleccionadas y descarga tu planilla de gasto por movilidad">
+      title="Rinde las solicitudes seleccionadas y envía la planilla a primera revisión">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
       </svg>
@@ -267,8 +267,8 @@
             {{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}
           </td>
           <td (click)="$event.stopPropagation()">
-            <!-- La columna llega hasta rendir. Lo que sigue (Consolidado del S10, aviso al
-                 revisor) es de la PLANILLA y vive en Mis Rendiciones. -->
+            <!-- La columna llega hasta rendir, que ya envía la planilla a primera revisión. Lo que
+                 sigue es de la PLANILLA y se sigue en Mis Rendiciones. -->
             <div *ngIf="puedeSubirCapturas(s) || esSeleccionable(s); else sinAcciones" class="flex items-center gap-2">
               <button
                 *ngIf="puedeSubirCapturas(s)"
@@ -288,7 +288,7 @@
                 *ngIf="esSeleccionable(s)"
                 type="button"
                 (click)="rendirUna(s, $event)"
-                title="Rendir esta solicitud y descargar la planilla de gasto por movilidad"
+                title="Rendir esta solicitud y enviar la planilla a primera revisión"
                 class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
                 style="background:#0086A5"
                 onmouseover="this.style.background='#006f8a'"
@@ -321,7 +321,7 @@
 
 <!-- ── Modal de detalle ──────────────────────────────────────────────────
      También es donde se suben las capturas: "Subir capturas" lo abre ya en modo edición. -->
-<app-solicitud-salida-detalle-modal
+<app-salida-detalle-modal
   *ngIf="detalleId !== null"
   [solicitudId]="detalleId"
   [iniciarEditando]="detalleEditando"

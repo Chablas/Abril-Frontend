@@ -13,14 +13,13 @@ import { ErrorService } from '../../../../../core/services/error.service';
 import { ConsolidadoS10Dto } from './consolidado-s10.dto';
 
 /**
- * Adjunta el PDF "Consolidado del S10" de una o varias planillas de rendición. Lo usan Mis
- * Rendiciones (el autoservicio, donde el trabajador sube el de una planilla propia) y Gestión de
- * Rendiciones (los consolidadores, que lo suben en nombre de los trabajadores y pueden cubrir varias
- * planillas con uno solo); cada una le pasa su propia función de subida, que es lo único que cambia
- * entre ambas (endpoint + guard de propiedad en el backend).
+ * Adjunta el PDF "Consolidado del S10" de una o varias planillas de rendición. Lo sube el
+ * consolidador desde Gestión de Rendiciones, que le pasa la función de subida (el endpoint y el
+ * control de quién puede consolidar viven en el backend).
  *
  * El archivo cubre siempre planillas enteras: un registro en el S10 puede agrupar varias
- * rendiciones, incluso de trabajadores distintos, siempre que sean de una misma razón social.
+ * rendiciones, incluso de trabajadores y razones sociales distintos. Queda bajo la razón social del
+ * consolidador.
  *
  * Además del PDF se capturan los dos datos con los que el S10 lo registró: el monto total y el
  * número de reembolso. El monto tiene que CUADRAR con el de las planillas —el consolidado las cubre
@@ -59,7 +58,7 @@ export class ConsolidadoS10Modal implements OnDestroy {
    */
   @Input() rendiciones: string[] = [];
 
-  /** Razón social de las planillas agrupadas: bajo qué empresa queda el registro del S10. */
+  /** Razón social del consolidador: bajo qué empresa queda el registro del S10. */
   @Input() razonSocial: string | null = null;
 
   /** Emite al cerrar: el consolidado subido, o null si se cerró sin subir nada. */

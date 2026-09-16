@@ -14,33 +14,17 @@
 
   <!-- ── Tarjetas de resumen ───────────────────────────────────────────────
        Se cuentan sobre el mismo conjunto que muestra la tabla, así que acompañan a los filtros.
-       Son los tres pasos que le pueden faltar al trabajador, en el orden del flujo. -->
+       Son los dos pasos que le pueden faltar al trabajador: lo demás es del consolidador. -->
   <div class="resumen-cards">
     <div class="resumen-card resumen-card--primary">
       <span class="resumen-card__label">Por enviar</span>
       <span class="resumen-card__value">{{ resumen.porEnviar }}</span>
       <span class="resumen-card__hint">Falta enviarlas a primera revisión</span>
     </div>
-    <div class="resumen-card resumen-card--warn">
-      <span class="resumen-card__label">Sin consolidado</span>
-      <span class="resumen-card__value">{{ resumen.sinConsolidado }}</span>
-      <span class="resumen-card__hint">Aprobadas, falta el PDF del S10</span>
-    </div>
-    <div class="resumen-card resumen-card--info">
-      <span class="resumen-card__label">Por avisar</span>
-      <span class="resumen-card__value">{{ resumen.porAvisar }}</span>
-      <span class="resumen-card__hint">Listas para la segunda revisión</span>
-    </div>
     <div class="resumen-card resumen-card--alert">
       <span class="resumen-card__label">Observadas</span>
       <span class="resumen-card__value">{{ resumen.observadas }}</span>
       <span class="resumen-card__hint">Requieren subsanación</span>
-    </div>
-    <!-- Va aparte de "Observadas" a propósito: acá no te toca nada, está en manos del ERP. -->
-    <div class="resumen-card resumen-card--erp">
-      <span class="resumen-card__label">En el ERP</span>
-      <span class="resumen-card__value">{{ resumen.enErp }}</span>
-      <span class="resumen-card__hint">Esperando la corrección del S10</span>
     </div>
   </div>
 
@@ -211,45 +195,7 @@
                 Volver a generar
               </button>
 
-              <!-- Consolidado del S10: se habilita con la primera revisión aprobada (RG-35). Uno
-                   compartido con otras rendiciones abiertas se reemplaza entero, y eso se hace
-                   desde Gestión de Rendiciones: acá el botón queda apagado. -->
-              <button
-                *ngIf="r.puedeAdjuntarConsolidado"
-                type="button"
-                (click)="abrirConsolidado(r, $event)"
-                [disabled]="r.consolidadoCompartido"
-                [title]="consolidadoTitle(r)"
-                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style="background:var(--color-abril-standard)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-                  <path d="M14 2v6h6" stroke-linejoin="round"/>
-                </svg>
-                {{ r.consolidadoS10 ? 'Consolidado S10 ✓' : 'Consolidado S10' }}
-              </button>
-
-              <!-- Se habilita recién con el S10 adjunto: antes de eso el revisor no tendría qué
-                   mirar. Después de aprobado (o firmado, o pagado) desaparece con la celda. -->
-              <button
-                *ngIf="r.puedeNotificarRevisor"
-                type="button"
-                (click)="notificarRevisor(r, $event)"
-                [title]="r.revisorNotificadoAt
-                  ? 'Ya le avisaste el ' + (r.revisorNotificadoAt | date:'dd/MM/yyyy HH:mm') + ' — puedes volver a avisarle'
-                  : 'Avísale a tu jefe/revisor que ya adjuntaste el Consolidado del S10'"
-                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold transition-colors"
-                [style.background]="r.revisorNotificadoAt ? '#FFFFFF' : '#005D9D'"
-                [style.color]="r.revisorNotificadoAt ? '#005D9D' : '#FFFFFF'"
-                style="border:1px solid #005D9D">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="2.5" y="4.5" width="19" height="15" rx="2"/>
-                  <path stroke-linecap="round" stroke-linejoin="round" d="m3 6 9 6 9-6"/>
-                </svg>
-                {{ r.revisorNotificadoAt ? 'Revisor avisado ✓' : 'Avisar al revisor' }}
-              </button>
-
-              <span *ngIf="!r.puedeEnviarPrimeraRevision && !r.puedeSubsanar && !r.puedeAdjuntarConsolidado"
+              <span *ngIf="!r.puedeEnviarPrimeraRevision && !r.puedeSubsanar"
                     class="text-gray-300">—</span>
             </div>
           </td>
@@ -265,19 +211,8 @@
   *ngIf="detalleId !== null"
   [rendicionId]="detalleId"
   [subsanando]="detalleSubsanando"
-  [correoPrimeraRevision]="correoPrimeraRevision"
-  [correoS10Revisor]="correoS10Revisor"
-  [correoCorreccionS10]="correoCorreccionS10"
+  [correosEnvioRevision]="correosEnvioRevision"
   (close)="cerrarDetalle($event)" />
-
-<!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->
-<app-consolidado-s10-modal
-  *ngIf="consolidadoDe !== null"
-  [upload]="subirConsolidado"
-  [actual]="consolidadoDe.consolidadoS10"
-  [referencia]="consolidadoReferencia"
-  [montoEsperado]="consolidadoDe.montoTotalPlanilla"
-  (close)="cerrarConsolidado($event)" />
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">

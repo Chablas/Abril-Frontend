@@ -5,12 +5,15 @@ import { environment } from '../../../../../environments/environment';
 import { SolicitudSalidaDetalleDto } from '../dtos/salida-detalle.dto';
 
 /**
- * El detalle de una salida y la edición de sus capturas de movilidad. Vive en el shared del módulo
- * porque lo usan dos pantallas: Solicitud de Salidas (el trabajador carga las capturas antes de
- * rendir) y Mis Rendiciones (las corrige al subsanar una rendición observada en primera revisión).
+ * El detalle de una salida y la edición de sus capturas de movilidad, para el PROPIO trabajador.
+ * Vive en el shared del módulo porque lo usan dos pantallas: Solicitud de Salidas (carga las
+ * capturas antes de rendir) y Mis Rendiciones (las corrige al subsanar una rendición observada en
+ * primera revisión).
  *
  * Los endpoints son los de Solicitud de Salidas: la captura es de un trayecto de la salida, no de
- * la planilla, y el backend acota todo al trabajador del usuario autenticado.
+ * la planilla, y el backend acota todo al trabajador del usuario autenticado. Las bandejas que
+ * miran la salida de otro (Gestión de Rendiciones, Consolidados y Reembolsos) piden el detalle a su
+ * propio endpoint, que valida su alcance: ver `SalidaDetalleModal.cargar`.
  */
 @Injectable({ providedIn: 'root' })
 export class SalidaDetalleService {

@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { CorreoAvisoDto } from '../../../shared/correo-aviso';
 import { ReembolsoBulkResultDto } from '../../../shared/dtos/rendicion-shared.dto';
+import { SolicitudSalidaDetalleDto } from '../../../shared/dtos/salida-detalle.dto';
 import {
   ConsolidadoAccionDto,
   ConsolidadoCorreoPreviewRequestDto,
@@ -59,9 +60,20 @@ export class ConsolidadosService {
   }
 
   /**
+   * El detalle de una salida de los consolidados del alcance, en consulta: trayectos, capturas con
+   * sus montos y adjuntos. Es lo que abre el ojo de la tabla de salidas del detalle.
+   */
+  getSalidaDetalle(solicitudId: number): Observable<SolicitudSalidaDetalleDto> {
+    return this.http.get<SolicitudSalidaDetalleDto>(`${this.apiUrl}/salidas/${solicitudId}/detalle`, {
+      headers: this.headers,
+    });
+  }
+
+  /**
    * Aprueba el reembolso, que ES firmarlo: estampa la firma en la planilla y en el Consolidado del
-   * S10 y lo manda a la bandeja de Tesorería. Responde 409 si el usuario todavía no registró su
-   * firma; la pantalla usa ese código para abrir el modal donde la dibuja.
+   * S10 y lo manda a la bandeja de Tesorería. Solo la jefatura de los trabajadores (403 si no).
+   * Responde 409 si el usuario todavía no registró su firma; la pantalla usa ese código para abrir
+   * el modal donde la dibuja.
    */
   aprobarReembolso(accion: ConsolidadoAccionDto): Observable<ReembolsoBulkResultDto> {
     return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/aprobar`, accion, {
@@ -70,7 +82,7 @@ export class ConsolidadosService {
   }
 
   /**
-   * Observa el reembolso: vuelve al trabajador para que subsane. La observación es obligatoria —
+   * Observa el reembolso: vuelve al consolidador para que subsane. La observación es obligatoria —
    * es lo que él lee para saber qué corregir, y lo que se le manda al Coordinador ERP si la
    * corrección tiene que hacerse dentro del S10.
    */
@@ -81,9 +93,29 @@ export class ConsolidadosService {
   }
 
   /**
-   * Qué correos saldrían al decidir el reembolso de la selección, y a quién. Se pide al apretar el
-   * botón —no al cargar la pantalla— porque depende de qué está seleccionado, y lo resuelve el
-   * servidor para que la confirmación no pueda desalinearse de Configuración → Correos.
+   * El consolidador le avisa a la jefatura que el consolidado tiene reembolsos esperando su visto
+   * bueno. Se puede repetir. Responde 409 si no hay a quién escribirle.
+   */
+  notificarJefatura(consolidadoId: number): Observable<{ message: string }> {
+    return this.http.patch<{ message: string }>(
+      `${this.apiUrl}/${consolidadoId}/notificar-jefatura`, {}, { headers: this.headers });
+  }
+
+  /**
+   * El consolidador le pide al Coordinador ERP que corrija el registro del S10 de un consolidado
+   * observado. El motivo es obligatorio: es lo que el ERP lee. Responde 409 si ya hay una corrección
+   * en curso o si no hay ningún Coordinador ERP a quien avisarle.
+   */
+  solicitarCorreccionS10(consolidadoId: number, motivo: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.apiUrl}/${consolidadoId}/correccion-s10`, { motivo }, { headers: this.headers });
+  }
+
+  /**
+   * Qué correos saldrían con la acción, y a quién: la decisión de la jefatura sobre la selección, o
+   * uno de los trámites del consolidador (`accion`). Se pide al apretar el botón —no al cargar la
+   * pantalla— porque depende de qué está seleccionado, y lo resuelve el servidor para que la
+   * confirmación no pueda desalinearse de Configuración → Correos.
    */
   correoPreview(request: ConsolidadoCorreoPreviewRequestDto): Observable<CorreoAvisoDto[]> {
     return this.http.post<CorreoAvisoDto[]>(`${this.apiUrl}/correo-preview`, request, {

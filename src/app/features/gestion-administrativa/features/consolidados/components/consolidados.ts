@@ -14,7 +14,11 @@ import {
   PeriodoOptionDto,
   ResumenConsolidadosDto,
 } from '../dtos/consolidado.dto';
-import { reembolsoColors, reembolsoLabelCorto } from '../../../shared/dtos/rendicion-shared.dto';
+import {
+  correccionS10Colors,
+  reembolsoColors,
+  reembolsoLabelCorto,
+} from '../../../shared/dtos/rendicion-shared.dto';
 import { confirmarConCorreos, pedirAvisos } from '../../../shared/confirmar-correos';
 import { AuthService } from '../../../../../core/services/auth.service';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
@@ -27,6 +31,7 @@ import { AbrilBulkActionDirective } from '../../../../../shared/directives/abril
 import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { FirmaRegistrarModal } from '../../../../../shared/components/firma-personal/registrar-modal/firma-registrar-modal';
 import { ConsolidadoDetalleModal } from './consolidado-detalle-modal/consolidado-detalle-modal';
+import * as tramites from './tramites-consolidador';
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 
 /** Nodo del árbol de áreas para el desplegable en cascada del filtro. */
@@ -37,8 +42,9 @@ interface AreaCascadeNode {
 }
 
 /**
- * "Consolidados": los Consolidados del S10 del alcance de la jefatura y la decisión del reembolso
- * sobre cada uno (aprobar —que ES firmar— u observar).
+ * "Consolidados": los Consolidados del S10 del alcance del usuario. La jefatura decide el reembolso
+ * sobre cada uno (aprobar —que ES firmar— u observar); el consolidador que lo adjuntó sigue su
+ * trámite: le avisa a la jefatura y, si vuelve observado, le pide la corrección al Coordinador ERP.
  *
  * Es su propia pantalla y no una parte de Gestión de Rendiciones porque lo que se decide es el
  * DOCUMENTO del S10: uno solo puede cubrir varias planillas, de uno o de varios trabajadores, y
@@ -375,22 +381,22 @@ export class Consolidados implements OnInit {
     return this.consolidados.filter((c) => this.selectedIds.has(c.id));
   }
 
-  /** Seleccionados con algún reembolso por decidir. */
+  /**
+   * True si en la tabla hay algo que le toca decidir a este usuario (es la jefatura de esos
+   * trabajadores). Sin eso la selección y las acciones en bloque no se muestran: el consolidador,
+   * un gerente o GTH ven los consolidados, pero no los aprueban.
+   */
+  get hayPorDecidir(): boolean {
+    return this.consolidados.some((c) => c.porDecidirCount > 0);
+  }
+
+  /** Seleccionados con algún reembolso que le toca decidir al usuario. */
   get selectedPorDecidir(): ConsolidadoListItemDto[] {
     return this.seleccionados.filter((c) => c.porDecidirCount > 0);
   }
 
-  /**
-   * True si algún candidato cubre salidas propias que no le toca decidir: el backend las rechaza.
-   * Lo decide el backend por consolidado (`puedeDecidir`), que solo deja pasar las propias cuando
-   * el usuario es su propio revisor (jefe personalizado apuntándose a sí mismo).
-   */
-  get decisionBloqueada(): boolean {
-    return this.selectedPorDecidir.some((c) => !c.puedeDecidir);
-  }
-
   get puedeDecidir(): boolean {
-    return this.selectedPorDecidir.length > 0 && !this.decisionBloqueada;
+    return this.selectedPorDecidir.length > 0;
   }
 
   private accionDe(items: ConsolidadoListItemDto[], observacion?: string): ConsolidadoAccionDto {
@@ -403,7 +409,7 @@ export class Consolidados implements OnInit {
    * promete un correo a alguien que la configuración dejó fuera.
    *
    * Se pide al apretar el botón y no al cargar la pantalla porque depende de qué está seleccionado:
-   * los destinatarios principales son los dueños de esas salidas.
+   * los destinatarios principales son los consolidadores de esos documentos.
    */
   private avisos(items: ConsolidadoListItemDto[], aprobar: boolean) {
     return pedirAvisos(this.service.correoPreview({
@@ -430,7 +436,8 @@ export class Consolidados implements OnInit {
     });
     if (!result.isConfirmed) return;
 
-    // Aprobar firma: si el revisor no tiene firma registrada, el 409 abre el modal para dibujarla.
+    // Aprobar firma: si al revisor le falta la firma del tipo configurado, el 409 abre el modal
+    // para registrarla.
     this.aprobar(this.accionDe(items));
   }
 
@@ -445,7 +452,7 @@ export class Consolidados implements OnInit {
       avisos: await this.avisos(items, false),
       observacion: {
         label: 'Observación',
-        placeholder: 'Qué tiene que corregir el trabajador en el Consolidado del S10…',
+        placeholder: 'Qué tiene que corregir el consolidador en el Consolidado del S10…',
       },
       confirmButtonText: 'Observar',
       confirmButtonColor: '#D30000',
@@ -461,8 +468,9 @@ export class Consolidados implements OnInit {
 
   /**
    * Ejecuta la aprobación, que ES la firma: estampa la firma de la jefatura en el consolidado y en
-   * las planillas que cubre. El 409 significa que todavía no registró su firma — en vez de mandarlo
-   * a Configuración se abre el modal donde la dibuja y la acción se reintenta sola.
+   * las planillas que cubre. El 409 significa que todavía no tiene una firma DEL TIPO que pide
+   * Configuración → Firmas (puede tener la dibujada y aun así faltarle la imagen, o al revés) — en
+   * vez de mandarlo a Configuración se abre el modal donde la registra y la acción se reintenta sola.
    */
   private aprobar(accion: ConsolidadoAccionDto): void {
     this.loaderService.show();
@@ -519,10 +527,23 @@ export class Consolidados implements OnInit {
     else        this.cdr.detectChanges();
   }
 
+  // ── Trámites del consolidador ────────────────────────────────────────
+
+  /**
+   * Le avisa a la jefatura que el consolidado espera su aprobación. Se puede repetir a propósito
+   * (un correo se pierde): la fecha del último aviso queda a la vista en el botón.
+   */
+  async avisarJefatura(c: ConsolidadoListItemDto, ev: Event): Promise<void> {
+    ev.stopPropagation(); // no abrir el detalle
+    const deps = { service: this.service, loader: this.loaderService, errorService: this.errorService };
+    if (await tramites.avisarJefatura(deps, c)) this.recargar();
+  }
+
   // ── Presentación ─────────────────────────────────────────────────────
 
   readonly reembolsoColors = reembolsoColors;
   readonly reembolsoLabelCorto = reembolsoLabelCorto;
+  readonly correccionS10Colors = correccionS10Colors;
 
   /** Cómo se nombra un consolidado en los diálogos: por su número de reembolso del S10. */
   referencia(c: ConsolidadoListItemDto): string {

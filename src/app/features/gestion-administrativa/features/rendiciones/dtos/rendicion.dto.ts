@@ -1,17 +1,21 @@
 import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { CorreoAvisoDto } from '../../../shared/correo-aviso';
 import {
-  CorreccionS10Dto,
   EstadoPrimeraRevision,
   EstadoReembolso,
 } from '../../../shared/dtos/rendicion-shared.dto';
 
 // Los dos ejes de estado de una planilla salen del shared del módulo: son los mismos que muestran
 // Gestión de Rendiciones y Reembolsos, y repetir la unión acá la dejaba desactualizada.
-export type { CorreccionS10Dto, EstadoPrimeraRevision, EstadoReembolso };
+export type { EstadoPrimeraRevision, EstadoReembolso };
 
 /**
  * Una planilla de rendición del trabajador: un PDF que agrupa N salidas y equivale a un registro
  * en el S10. Es la unidad de esta pantalla.
+ *
+ * Al trabajador le toca enviarla a la primera revisión y subsanarla si vuelve observada. Lo que
+ * sigue —el Consolidado del S10, el aviso a la jefatura y la corrección con el ERP— es del
+ * consolidador de su área: acá solo se sigue.
  *
  * Los conteos y el monto están acotados a las salidas PROPIAS (una planilla generada por el
  * revisor puede mezclar a varias personas); los documentos son de la planilla entera.
@@ -33,9 +37,8 @@ export interface RendicionListItemDto {
   salidasCount: number;
   montoTotal: number;
   /**
-   * Monto de la planilla COMPLETA (todas sus salidas, de todos sus trabajadores). Es el importe
-   * que se registró en el S10, así que es contra este —y no contra `montoTotal`, que viene
-   * recortado— que tiene que cuadrar el monto del Consolidado del S10.
+   * Monto de la planilla COMPLETA (todas sus salidas, de todos sus trabajadores): el importe que se
+   * registra en el S10. Coincide con `montoTotal` salvo en las planillas que agrupan a varios.
    */
   montoTotalPlanilla: number;
 
@@ -46,7 +49,7 @@ export interface RendicionListItemDto {
   pdfFirmadoUrl: string | null;
   pdfFirmadoFilename: string | null;
   firmadoAt: string | null;
-  /** Consolidado del S10 vigente de la planilla. Null si todavía no se adjuntó. */
+  /** Consolidado del S10 vigente de la planilla (lo adjunta el consolidador). Null si todavía no está. */
   consolidadoS10: ConsolidadoS10Dto | null;
 
   // ── Primera revisión ───────────────────────────────────────────────────
@@ -70,7 +73,7 @@ export interface RendicionListItemDto {
   estadoReembolso: EstadoReembolso;
   /** True si las salidas propias no están todas en el mismo estado. */
   reembolsoMixto: boolean;
-  /** Lo que se escribió al observar: es lo que hay que subsanar. */
+  /** Lo que se escribió al observar el reembolso. Lo subsana el consolidador. */
   observacionReembolso: string | null;
   /**
    * Quién la escribió: "Jefatura" o "Tesorería" (RG-49). Vacío si no hay observación. Importa
@@ -78,29 +81,6 @@ export interface RendicionListItemDto {
    * Tesorería.
    */
   observacionReembolsoOrigen: string;
-  revisorNotificadoAt: string | null;
-  /** True con la primera revisión aprobada y el reembolso abierto (RG-35). */
-  puedeAdjuntarConsolidado: boolean;
-  /**
-   * True si el Consolidado del S10 es compartido con otras planillas todavía abiertas (lo adjuntó
-   * un consolidador para varias a la vez): se reemplaza entero, desde Gestión de Rendiciones.
-   */
-  consolidadoCompartido: boolean;
-  puedeNotificarRevisor: boolean;
-
-  // ── Corrección con el Coordinador ERP ──────────────────────────────────
-  // El camino alternativo cuando la jefatura observa y el arreglo tiene que hacerse dentro del S10.
-
-  /**
-   * La solicitud de corrección viva de esta planilla. Null en el caso normal: la mayoría nunca
-   * pasa por el ERP. Cuando está, su estado dice de quién es la pelota.
-   */
-  correccionS10: CorreccionS10Dto | null;
-  /**
-   * True cuando se le puede PEDIR la corrección al ERP: reembolso observado, con el Consolidado
-   * del S10 adjunto y sin otra corrección en curso. Es alternativo a recargar, no obligatorio.
-   */
-  puedeSolicitarCorreccion: boolean;
 }
 
 /** Una salida dentro de la planilla. */
@@ -124,22 +104,16 @@ export interface RendicionDetalleDto extends RendicionListItemDto {
 /**
  * Números de las tarjetas del encabezado. Se cuentan sobre el MISMO conjunto que muestra la tabla
  * (con los filtros ya aplicados), así que acompañan a la búsqueda: por eso viajan con el listado y
- * no con los datos de los filtros.
+ * no con los datos de los filtros. Son las dos cosas que le pueden faltar al trabajador.
  */
 export interface ResumenRendicionesDto {
   /** Rendidas que todavía no se enviaron a primera revisión. */
   porEnviar: number;
-  /** Aprobadas en primera revisión y sin el Consolidado del S10 adjunto. */
-  sinConsolidado: number;
-  /** Con consolidado y reembolso abierto, pero sin avisarle todavía al revisor. */
-  porAvisar: number;
-  /** Observadas: la primera revisión o el reembolso volvieron con observaciones. */
-  observadas: number;
   /**
-   * Con una corrección del S10 en curso: la pelota está en el Coordinador ERP y no le toca nada al
-   * colaborador hasta que confirme. Va aparte de `observadas` justamente por eso.
+   * Observadas en la primera revisión: hay que corregir capturas y montos y volver a generarlas.
+   * Un reembolso observado no cuenta: lo subsana el consolidador.
    */
-  enErp: number;
+  observadas: number;
 }
 
 export interface RendicionListResultDto {
@@ -156,29 +130,16 @@ export interface PeriodoOptionDto {
 }
 
 /**
- * Destinatarios REALES de un correo del flujo, ya resueltos por el backend con la configuración
- * de Configuración → Correos. No es "tu jefe": el revisor puede estar apagado ahí y el correo
- * irse solo a los destinatarios configurados. `para` vacío = no le llega a nadie.
- */
-export interface CorreoDestinatariosDto {
-  para: string[];
-  copia: string[];
-}
-
-/**
  * Datos de arranque de la pantalla: lo que NO cambia al mover los filtros. Por eso las opciones
  * del filtro de periodo viajan junto a los destinatarios de los correos que dispara la pantalla,
  * que son los mismos para toda ella (está acotada a un solo trabajador).
  */
 export interface RendicionFilterDataDto {
   periodos: PeriodoOptionDto[];
-  /** A quién le llega el aviso de la primera revisión. Lo dispara "Enviar a revisión". */
-  correoPrimeraRevision: CorreoDestinatariosDto;
-  /** A quién le llega el aviso del Consolidado del S10. Lo dispara "Avisar al revisor". */
-  correoS10Revisor: CorreoDestinatariosDto;
   /**
-   * A quién le llega la solicitud de corrección del S10. Su destinatario principal se resuelve por
-   * ROL (COORDINADOR ERP) y no por el organigrama del trabajador, a diferencia de los otros dos.
+   * A quién le llegan los dos correos de "Enviar a revisión" (el aviso a la jefatura y el acuse al
+   * trabajador), ya resueltos por el backend con Configuración → Correos. Vacío = no sale ninguno.
+   * Son los mismos que anuncia «Rendir» en Solicitud de Salidas.
    */
-  correoCorreccionS10: CorreoDestinatariosDto;
+  correosEnvioRevision: CorreoAvisoDto[];
 }

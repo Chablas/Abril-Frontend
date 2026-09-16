@@ -48,6 +48,7 @@ const SECCIONES_SIN_RUTA = {
   'gestion-administrativa.config.visibilidad-rendiciones': 'Visibilidad de Rendiciones',
   'gestion-administrativa.config.visibilidad-consolidados': 'Visibilidad de Consolidados',
   'gestion-administrativa.config.consolidadores-areas': 'Consolidadores de Áreas',
+  'gestion-administrativa.config.firmas': 'Firmas de Consolidados',
 };
 
 function walk(dir, files = []) {

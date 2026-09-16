@@ -1,40 +1,52 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Observable } from 'rxjs';
 import Swal from 'sweetalert2';
 
-import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
-import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
-import { DraggableImage } from '../../../../../../shared/components/draggable-image/draggable-image';
-import { LoaderService } from '../../../../../../core/services/loader.service';
-import { ErrorService } from '../../../../../../core/services/error.service';
-import { SalidaDetalleService } from '../../../../shared/services/salida-detalle.service';
-import { SalidaCapturasEditor } from '../../../../shared/components/salida-capturas-editor/salida-capturas-editor';
-import { CapturasEdicion } from '../../../../shared/components/salida-capturas-editor/capturas-edicion';
+import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
+import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
+import { DraggableImage } from '../../../../../shared/components/draggable-image/draggable-image';
+import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
+import { LoaderService } from '../../../../../core/services/loader.service';
+import { ErrorService } from '../../../../../core/services/error.service';
+import { SalidaDetalleService } from '../../services/salida-detalle.service';
+import { SalidaCapturasEditor } from '../salida-capturas-editor/salida-capturas-editor';
+import { CapturasEdicion } from '../salida-capturas-editor/capturas-edicion';
 import {
   SolicitudSalidaDetalleDto,
   TrayectoDetalleDto,
-} from '../../../../shared/dtos/salida-detalle.dto';
+} from '../../dtos/salida-detalle.dto';
 
 /**
- * El detalle de una solicitud propia y, en el mismo modal, la carga de sus capturas de movilidad.
+ * El detalle de una solicitud de salida: cabecera, trayectos con sus capturas y montos, adjuntos,
+ * planilla y Consolidado del S10.
  *
- * Arranca en lectura. "Editar" pasa TODOS los trayectos a edición a la vez y un solo botón al pie
- * guarda el lote entero; guardar vuelve a la lectura con el detalle que responde el backend, así
- * que si con esas capturas la salida quedó apta, "Rendir" aparece en el acto sin cerrar el modal.
- * Mientras se edita, "Rendir" no se ofrece: rendiría lo guardado, no lo que está en pantalla.
- *
- * Se edita solo lo aprobado y todavía sin rendir, igual que el botón "Subir capturas" de la tabla
- * (que abre este mismo modal ya en edición).
+ * Lo abren cuatro pantallas y por eso vive en el shared del módulo:
+ *  • Solicitud de Salidas — la salida es del propio usuario. Arranca en lectura; "Editar" pasa
+ *    TODOS los trayectos a edición a la vez y un solo botón al pie guarda el lote entero; guardar
+ *    vuelve a la lectura con el detalle que responde el backend, así que si con esas capturas la
+ *    salida quedó apta, "Rendir" aparece en el acto sin cerrar el modal. Mientras se edita,
+ *    "Rendir" no se ofrece: rendiría lo guardado, no lo que está en pantalla.
+ *  • Gestión de Rendiciones, Consolidados y Reembolsos — en CONSULTA (`[cargar]`): la jefatura, el
+ *    consolidador y Tesorería miran la salida de otro para ver sus capturas y montos. Ahí no se
+ *    edita, no se rinde ni se cancela nada, y se nombra al trabajador.
  */
 @Component({
   standalone: true,
-  selector: 'app-solicitud-salida-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, DraggableImage, SalidaCapturasEditor],
-  templateUrl: './solicitud-salida-detalle-modal.html',
+  selector: 'app-salida-detalle-modal',
+  imports: [CommonModule, BaseModal, StatusBadge, DraggableImage, SalidaCapturasEditor, TitleCasePipe],
+  templateUrl: './salida-detalle-modal.html',
 })
-export class SolicitudSalidaDetalleModal implements OnInit, OnDestroy {
+export class SalidaDetalleModal implements OnInit, OnDestroy {
   @Input({ required: true }) solicitudId!: number;
+
+  /**
+   * De dónde sale el detalle en CONSULTA: el endpoint de la pantalla anfitriona, que valida que la
+   * salida esté en su alcance. Sin él, el modal es el del propio trabajador (Solicitud de Salidas),
+   * con edición de capturas, "Rendir" y "Cancelar solicitud".
+   */
+  @Input() cargar: ((id: number) => Observable<SolicitudSalidaDetalleDto>) | null = null;
 
   /**
    * true = abre directo en edición: es el botón "Subir capturas" de la columna de acciones. Si la
@@ -46,9 +58,9 @@ export class SolicitudSalidaDetalleModal implements OnInit, OnDestroy {
   @Output() close = new EventEmitter<boolean>();
 
   /**
-   * "Rendir" desde el detalle. Solo avisa: la rendición (confirmación, descarga de la planilla y
-   * recarga de la tabla) la resuelve la pantalla con el mismo camino que el botón de la columna de
-   * acciones, así que el modal no duplica nada de ese flujo.
+   * "Rendir" desde el detalle. Solo avisa: la rendición (confirmación con los correos, envío a
+   * primera revisión y recarga de la tabla) la resuelve la pantalla con el mismo camino que el botón
+   * de la columna de acciones, así que el modal no duplica nada de ese flujo.
    */
   @Output() rendir = new EventEmitter<number>();
 
@@ -80,11 +92,16 @@ export class SolicitudSalidaDetalleModal implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.cargar(this.iniciarEditando);
+    this.cargarDetalle(this.iniciarEditando);
   }
 
   ngOnDestroy(): void {
     this.edicion?.liberar();
+  }
+
+  /** true = la salida es de otro y se está mirando desde una bandeja de revisión. */
+  get consulta(): boolean {
+    return this.cargar !== null;
   }
 
   get totalGeneral(): number {
@@ -98,7 +115,8 @@ export class SolicitudSalidaDetalleModal implements OnInit, OnDestroy {
 
   /** Mismo criterio que "Subir capturas" en la tabla: aprobada y todavía sin rendir. */
   get puedeEditar(): boolean {
-    return this.detalle?.estadoAprobacion === 'Aprobado'
+    return !this.consulta
+        && this.detalle?.estadoAprobacion === 'Aprobado'
         && this.detalle.estadoRendicion !== 'Rendido';
   }
 
@@ -107,7 +125,7 @@ export class SolicitudSalidaDetalleModal implements OnInit, OnDestroy {
   }
 
   rendirSolicitud(): void {
-    if (this.edicion) return;
+    if (this.edicion || this.consulta) return;
     this.rendir.emit(this.solicitudId);
   }
 
@@ -116,7 +134,7 @@ export class SolicitudSalidaDetalleModal implements OnInit, OnDestroy {
    * convive con "Editar" ni con "Rendir", que son de lo aprobado. El backend re-valida.
    */
   get puedeCancelar(): boolean {
-    return this.detalle?.estadoAprobacion === 'Pendiente';
+    return !this.consulta && this.detalle?.estadoAprobacion === 'Pendiente';
   }
 
   cancelarSolicitud(): void {
@@ -125,9 +143,13 @@ export class SolicitudSalidaDetalleModal implements OnInit, OnDestroy {
   }
 
   /** @param editar true = al llegar el detalle entra en edición, si la salida todavía lo permite. */
-  private cargar(editar = false): void {
+  private cargarDetalle(editar = false): void {
     this.loader.show();
-    this.service.getDetalle(this.solicitudId).subscribe({
+    const peticion = this.cargar
+      ? this.cargar(this.solicitudId)
+      : this.service.getDetalle(this.solicitudId);
+
+    peticion.subscribe({
       next: (data) => {
         this.detalle = data;
         this.detalleDesactualizado = false;
@@ -172,7 +194,7 @@ export class SolicitudSalidaDetalleModal implements OnInit, OnDestroy {
 
     edicion.liberar();
     this.edicion = null;
-    if (this.detalleDesactualizado) this.cargar();
+    if (this.detalleDesactualizado) this.cargarDetalle();
   }
 
   onCapturaQuitada(): void {

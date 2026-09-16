@@ -60,7 +60,7 @@ export class CorreccionesS10Service {
   }
 
   /**
-   * A quién le llegaría el aviso al colaborador si se confirmara la selección. Se pide al apretar
+   * A quién le llegaría el aviso al consolidador si se confirmara la selección. Se pide al apretar
    * el botón —no al cargar la pantalla— porque depende de qué está seleccionado, y lo resuelve el
    * servidor para que la confirmación no pueda desalinearse de Configuración → Correos.
    */

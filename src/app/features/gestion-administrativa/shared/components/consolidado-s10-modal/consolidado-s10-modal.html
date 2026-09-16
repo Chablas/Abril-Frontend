@@ -9,7 +9,8 @@
 
     <!-- ── Qué planillas cubre ───────────────────────────────────────────
          El archivo cubre planillas enteras, así que decir cuáles es lo único que hace falta:
-         una sola se nombra; varias se listan, con la razón social bajo la que se registran. -->
+         una sola se nombra; varias se listan. En los dos casos, con la razón social bajo la que
+         queda el registro (la del consolidador). -->
     <div *ngIf="varias" class="flex flex-col gap-[6px]">
       <div class="text-xs text-gray-500">
         Cubre {{ rendiciones.length }} rendiciones<ng-container *ngIf="razonSocial"> ·
@@ -21,7 +22,8 @@
     </div>
 
     <div *ngIf="!varias && referencia" class="text-xs text-gray-500">
-      Cubre todas las salidas de la planilla <span class="font-semibold text-gray-700">{{ referencia }}</span>
+      Cubre todas las salidas de la planilla <span class="font-semibold text-gray-700">{{ referencia }}</span><ng-container *ngIf="razonSocial"> ·
+        <span class="font-semibold text-gray-700">{{ razonSocial }}</span></ng-container>
     </div>
 
     <!-- ── Consolidado ya adjunto: aviso de estado, no instrucción ───────── -->

@@ -73,6 +73,7 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "gestion-administrativa.config.carpeta-adjuntos": "Carpeta Adjuntos",
   "gestion-administrativa.config.consolidadores-areas": "Consolidadores de Áreas",
   "gestion-administrativa.config.correos": "Mis Rendiciones - Configuración",
+  "gestion-administrativa.config.firmas": "Firmas de Consolidados",
   "gestion-administrativa.config.lugares": "Lugares",
   "gestion-administrativa.config.motivos": "Motivos",
   "gestion-administrativa.config.trayectos": "Trayectos",

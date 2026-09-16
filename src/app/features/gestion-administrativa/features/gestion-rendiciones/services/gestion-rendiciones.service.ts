@@ -5,6 +5,7 @@ import { environment } from '../../../../../../environments/environment';
 import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { CorreoAvisoDto, CorreoPreviewRequestDto } from '../../../shared/correo-aviso';
 import { ReembolsoBulkResultDto } from '../../../shared/dtos/rendicion-shared.dto';
+import { SolicitudSalidaDetalleDto } from '../../../shared/dtos/salida-detalle.dto';
 import {
   GestionRendicionDetalleDto,
   GestionRendicionFilterDataDto,
@@ -61,10 +62,21 @@ export class GestionRendicionesService {
   }
 
   /**
+   * El detalle de una salida de las planillas del alcance, en consulta: trayectos, capturas con sus
+   * montos y adjuntos. Es lo que abre el ojo de la tabla de salidas del detalle de la planilla.
+   */
+  getSalidaDetalle(solicitudId: number): Observable<SolicitudSalidaDetalleDto> {
+    return this.http.get<SolicitudSalidaDetalleDto>(`${this.apiUrl}/salidas/${solicitudId}/detalle`, {
+      headers: this.headers,
+    });
+  }
+
+  /**
    * Adjunta (o reemplaza) UN Consolidado del S10 para las planillas indicadas: una o varias, de uno
-   * o de varios trabajadores de una misma razón social. Cubre todas sus salidas, así que
-   * `montoTotal` tiene que cuadrar con la suma de las planillas completas: el backend lo re-valida
-   * (junto con la razón social y el resto de las reglas) y responde 400/409 si algo no cuadra.
+   * o de varios trabajadores, de las razones sociales que sean. Solo lo sube el consolidador. Cubre
+   * todas sus salidas, así que `montoTotal` tiene que cuadrar con la suma de las planillas
+   * completas: el backend lo re-valida (junto con el resto de las reglas) y responde 400/403/409 si
+   * algo no cuadra.
    */
   uploadConsolidadoS10(
     rendicionIds: number[], file: File, montoTotal: number, numeroReembolso: string,
@@ -82,8 +94,8 @@ export class GestionRendicionesService {
   }
 
   /**
-   * Aprueba la primera revisión: habilita al trabajador a cargar el Consolidado del S10 y le avisa
-   * por correo.
+   * Aprueba la primera revisión: habilita al consolidador a cargar el Consolidado del S10 y le avisa
+   * al trabajador por correo.
    */
   aprobarPrimeraRevision(accion: PrimeraRevisionAccionDto): Observable<ReembolsoBulkResultDto> {
     return this.http.patch<ReembolsoBulkResultDto>(

@@ -50,6 +50,11 @@ export interface SolicitudSalidaDetalleDto {
   id: number;
   /** Código SOL-AAAA-NNNN. Null solo en solicitudes anteriores a la columna. */
   codigo: string | null;
+  /**
+   * Dueño de la salida. Lo muestra el modal en consulta (Gestión de Rendiciones, Consolidados y
+   * Reembolsos); en Solicitud de Salidas es el propio usuario y no se imprime.
+   */
+  trabajador: string | null;
   fechaSalida: string;
   estadoAprobacion: string;
   estadoRendicion: string;

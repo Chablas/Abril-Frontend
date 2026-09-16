@@ -39,6 +39,39 @@
       {{ d.observacionReembolso }}
     </div>
 
+    <!-- Corrección con el ERP: dice de quién es la pelota. Solo aparece cuando hay una en curso,
+         que es el caso excepcional. -->
+    <div *ngIf="d.correccionS10 as c"
+         class="border rounded-lg p-3 text-sm flex flex-col gap-1.5"
+         [style.border-color]="correccionS10Colors(c.esperandoErp).bg"
+         [style.background]="correccionS10Colors(c.esperandoErp).bg + '55'">
+      <div class="flex flex-wrap items-center gap-2">
+        <app-status-badge
+          [text]="c.estado"
+          [bgColor]="correccionS10Colors(c.esperandoErp).bg"
+          [textColor]="correccionS10Colors(c.esperandoErp).text" />
+        <span class="text-[11px] text-gray-500">
+          Solicitada<ng-container *ngIf="c.solicitadaPor"> por {{ c.solicitadaPor | titleCase }}</ng-container>
+          el {{ c.solicitadaAt | date:'dd/MM/yyyy HH:mm' }}
+        </span>
+      </div>
+
+      <div style="color:var(--color-abril-body)">
+        <span class="font-semibold">Motivo:</span> {{ c.motivo }}
+      </div>
+
+      <div *ngIf="c.atendidaAt" style="color:var(--color-abril-body)">
+        <span class="font-semibold">Atendida</span>
+        <ng-container *ngIf="c.atendidaPor"> por {{ c.atendidaPor }}</ng-container>
+        el {{ c.atendidaAt | date:'dd/MM/yyyy HH:mm' }}<ng-container *ngIf="c.comentarioAtencion">:
+        {{ c.comentarioAtencion }}</ng-container>
+      </div>
+
+      <div *ngIf="c.numeroReembolsoAnulado" class="font-semibold" style="color:#991B1B">
+        El registro se anuló: genera un número de reembolso nuevo en el S10 — el anterior ya no se puede usar.
+      </div>
+    </div>
+
     <!-- ── Estado y documentos del consolidado ──────────────────────────── -->
     <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
       <div class="flex items-center gap-3">
@@ -50,9 +83,14 @@
         <span *ngIf="d.reembolsoMixto" class="text-[11px] text-gray-400">
           Las salidas que ves no están todas en el mismo estado: se muestra la más atrasada.
         </span>
-        <span *ngIf="d.firmadoAt" class="text-[11px] text-gray-400 ml-auto">
+        <span *ngIf="d.firmadoAt; else avisada" class="text-[11px] text-gray-400 ml-auto">
           Firmado el {{ d.firmadoAt | date:'dd/MM/yyyy HH:mm' }}
         </span>
+        <ng-template #avisada>
+          <span *ngIf="d.jefaturaAvisadaAt" class="text-[11px] text-gray-400 ml-auto">
+            Jefatura avisada el {{ d.jefaturaAvisadaAt | date:'dd/MM/yyyy HH:mm' }}
+          </span>
+        </ng-template>
       </div>
 
       <a [href]="d.pdfUrl" target="_blank" rel="noopener noreferrer"
@@ -122,6 +160,7 @@
           </a>
         </div>
 
+        <!-- Solo lectura: el ojo abre el detalle de la salida (trayectos, capturas y montos). -->
         <div class="abril-table-wrap">
           <table class="abril-table abril-table--th-center">
             <thead>
@@ -133,6 +172,7 @@
                 <th>Destino</th>
                 <th>Monto</th>
                 <th>Reembolso</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -159,6 +199,12 @@
                     [bgColor]="reembolsoColors(s.estadoReembolso).bg"
                     [textColor]="reembolsoColors(s.estadoReembolso).text" />
                 </td>
+                <td class="text-center">
+                  <button type="button" (click)="verSalida(s.id)" title="Ver el detalle de la salida"
+                          class="text-gray-400 hover:text-gray-600 cursor-pointer">
+                    <i class="ti ti-eye text-[17px]"></i>
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -166,51 +212,103 @@
       </ng-container>
     </div>
 
-    <!-- ── Decisión del reembolso ─────────────────────────────────────────
-         Es del documento entero: no se aprueban unas planillas sí y otras no. Cubre las salidas que
-         todavía están por decidir; las ya decididas el backend las ignora. -->
-    <div *ngIf="d.porDecidirCount > 0"
+    <!-- ── Acciones ────────────────────────────────────────────────────────
+         La decisión es de la jefatura y del documento entero: no se aprueban unas planillas sí y
+         otras no, y cubre solo las salidas que le tocan (las firmas se acumulan). Los trámites que
+         siguen son del consolidador. -->
+    <div *ngIf="d.porDecidirCount > 0 || d.puedeAvisarJefatura || d.puedeSolicitarCorreccion || planillaParaReemplazar !== null"
          class="flex flex-wrap items-center justify-center gap-3 border-t pt-3"
          style="border-color:var(--color-abril-border)">
-      <button
-        type="button"
-        (click)="aprobar()"
-        [disabled]="!d.puedeDecidir"
-        [title]="d.puedeDecidir
-          ? 'Aprueba el reembolso y estampa tu firma en el consolidado y en las planillas que cubre'
-          : 'No puedes decidir el reembolso de tus propias salidas'"
-        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-        style="background:var(--color-abril-standard)">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-        </svg>
-        Aprobar el reembolso
-      </button>
+
+      <ng-container *ngIf="d.porDecidirCount > 0">
+        <button
+          type="button"
+          (click)="aprobar()"
+          title="Aprueba el reembolso y estampa tu firma en el consolidado y en las planillas que cubre"
+          class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
+          style="background:var(--color-abril-standard)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+          Aprobar el reembolso
+        </button>
+
+        <button
+          type="button"
+          (click)="observar()"
+          title="Se te pedirá la observación de qué tiene que corregir el consolidador"
+          class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors"
+          style="background:#FFFFFF;color:#D30000;border:1px solid #D30000">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+          </svg>
+          Observar
+        </button>
+      </ng-container>
 
       <button
+        *ngIf="d.puedeAvisarJefatura"
         type="button"
-        (click)="observar()"
-        [disabled]="!d.puedeDecidir"
-        [title]="d.puedeDecidir
-          ? 'Se te pedirá la observación de qué tiene que corregir el trabajador'
-          : 'No puedes decidir el reembolso de tus propias salidas'"
-        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        style="background:#FFFFFF;color:#D30000;border:1px solid #D30000">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+        (click)="avisarJefatura()"
+        [title]="d.jefaturaAvisadaAt
+          ? 'Ya le avisaste el ' + (d.jefaturaAvisadaAt | date:'dd/MM/yyyy HH:mm') + ' — puedes volver a avisarle'
+          : 'Avísale a la jefatura que el consolidado espera su aprobación'"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors"
+        [style.background]="d.jefaturaAvisadaAt ? '#FFFFFF' : '#005D9D'"
+        [style.color]="d.jefaturaAvisadaAt ? '#005D9D' : '#FFFFFF'"
+        style="border:1px solid #005D9D">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2.5" y="4.5" width="19" height="15" rx="2"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="m3 6 9 6 9-6"/>
         </svg>
-        Observar
+        {{ d.jefaturaAvisadaAt ? 'Volver a avisar a la jefatura' : 'Avisar a la jefatura' }}
       </button>
 
-      <span *ngIf="!d.puedeDecidir" class="text-[11px] text-gray-500 italic">
-        Este consolidado cubre salidas tuyas: lo tiene que decidir otro jefe.
-      </span>
+      <!-- Con el reembolso observado, el consolidado corregido se adjunta en Gestión de
+           Rendiciones. -->
+      <button
+        *ngIf="planillaParaReemplazar !== null"
+        type="button"
+        (click)="irAReemplazar()"
+        title="Adjuntar el Consolidado del S10 corregido desde Gestión de Rendiciones"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors"
+        style="background:#FFFFFF;color:var(--color-abril-standard);border:1px solid var(--color-abril-standard)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
+        </svg>
+        Reemplazar el consolidado
+      </button>
+
+      <!-- El otro camino ante una observación: cuando el arreglo está dentro del S10. Solo con el
+           reembolso observado y sin otra corrección en curso. -->
+      <button
+        *ngIf="d.puedeSolicitarCorreccion"
+        type="button"
+        (click)="solicitarCorreccion()"
+        title="Pídele al Coordinador ERP que corrija el registro en el S10"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors"
+        style="background:#FFFFFF;color:#C2410C;border:1px solid #C2410C">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M11.5 15h-5a4 4 0 0 1 0-8h1"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12.5 9h5a4 4 0 0 1 0 8h-1"/>
+          <path stroke-linecap="round" d="M8 11h8"/>
+        </svg>
+        Solicitar corrección al ERP
+      </button>
     </div>
 
   </div>
 
 </app-base-modal>
+
+<!-- ── Detalle de una salida (el ojo de la tabla), en consulta ───────── -->
+<app-salida-detalle-modal
+  *ngIf="salidaId !== null"
+  [solicitudId]="salidaId"
+  [cargar]="cargarSalida"
+  (close)="cerrarSalida()" />
 
 <!-- ── Modal para registrar la firma la primera vez ─────────────────────
      Salta con el 409 de aprobar: la jefatura dibuja su firma sin salir de la pantalla y la

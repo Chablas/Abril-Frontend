@@ -1,11 +1,12 @@
 ﻿import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { SolicitudSalidaFormDataDto } from '../dtos/solicitud-salida-form-data.dto';
 import { SolicitudSalidaCreateDto } from '../dtos/solicitud-salida-create.dto';
 import { SolicitudSalidaListResultDto } from '../dtos/solicitud-salida-list-item.dto';
 import { SolicitudSalidaFilterDataDto } from '../dtos/solicitud-salida-filter-data.dto';
+import { RendirResultDto } from '../dtos/solicitud-salida-rendir.dto';
 
 @Injectable({ providedIn: 'root' })
 export class SolicitudSalidasService {
@@ -79,40 +80,30 @@ export class SolicitudSalidasService {
   }
 
   /**
-   * El trabajador rinde sus propias solicitudes seleccionadas Y descarga la planilla de gasto
-   * por movilidad. El backend responde con un PDF; el conteo viene en el header X-Rendidas-Count.
+   * El trabajador rinde sus propias solicitudes seleccionadas: el backend genera la planilla de
+   * gasto por movilidad (la guarda, no la devuelve) y la envía a primera revisión con sus correos.
    */
-  marcarRendidasBulk(ids: number[]): Observable<HttpResponse<Blob>> {
-    return this.http.patch(
+  marcarRendidasBulk(ids: number[]): Observable<RendirResultDto> {
+    return this.http.patch<RendirResultDto>(
       `${this.apiUrl}/marcar-rendidas`,
       { ids },
-      {
-        headers: this.headers,
-        responseType: 'blob',
-        observe: 'response',
-      },
+      { headers: this.headers },
     );
   }
 
   /**
    * Rinde de una vez TODAS las solicitudes propias del mes indicado (sin año/mes, el anterior) que
    * estén aptas —aprobadas, no rendidas, con las capturas de todos sus trayectos y con motivo
-   * reembolsable— y descarga la planilla. Es lo que ejecuta "seleccionar todas las del mes": la
-   * selección vive en el servidor, no en los ids de la página. El conteo real viene en el header
-   * X-Rendidas-Count.
+   * reembolsable— y envía la planilla a primera revisión, igual que `marcarRendidasBulk`. Es lo que
+   * ejecuta "seleccionar todas las del mes": la selección vive en el servidor, no en los ids de la
+   * página. El conteo real viene en `rendidas`.
    */
-  rendirMes(anio: number | null = null, mes: number | null = null): Observable<HttpResponse<Blob>> {
+  rendirMes(anio: number | null = null, mes: number | null = null): Observable<RendirResultDto> {
     let params = new HttpParams();
     if (anio != null && mes != null) params = params.set('anio', anio).set('mes', mes);
-    return this.http.patch(
-      `${this.apiUrl}/rendir-mes`,
-      {},
-      {
-        headers: this.headers,
-        params,
-        responseType: 'blob',
-        observe: 'response',
-      },
-    );
+    return this.http.patch<RendirResultDto>(`${this.apiUrl}/rendir-mes`, {}, {
+      headers: this.headers,
+      params,
+    });
   }
 }

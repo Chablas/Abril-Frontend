@@ -2,8 +2,8 @@
  * Las dos pantallas que asignan PERSONAS A ÁREAS con el mismo algoritmo:
  *  • `revisores`      → quién aprueba las salidas de los trabajadores del área (Solicitud de
  *                       Salidas · Configuración).
- *  • `consolidadores` → quién, además del propio trabajador, puede adjuntar el Consolidado del S10
- *                       de sus planillas (Consolidados · Configuración).
+ *  • `consolidadores` → quién adjunta el Consolidado del S10 de las planillas de los trabajadores
+ *                       del área y sigue su trámite (Consolidados · Configuración).
  *
  * Comparten tabla, árbol, modal y contrato. La única diferencia es cuántos de los asignados quedan
  * vigentes: en revisores gana el primer activo, en consolidadores quedan todos.
@@ -30,9 +30,8 @@ export interface AreaAsignadoDTO {
  *   Jefe del área, el Gerente de la gerencia) o subió por el árbol hasta la configuración de OTRA
  *   área. Alguien puesto a mano en la gerencia es `Algoritmo` para las áreas de más abajo.
  * - `Gth`: último recurso, el correo del área de GTH (solo en revisores).
- * - `Propio`: el propio trabajador (solo en consolidadores, y no aparece en esta pantalla).
  */
-export type AreaEfectivoOrigen = 'Personalizado' | 'Algoritmo' | 'Gth' | 'Propio';
+export type AreaEfectivoOrigen = 'Personalizado' | 'Algoritmo' | 'Gth';
 
 /**
  * Una persona vigente hoy para el área o el proyecto. Trae los mismos datos de contacto que

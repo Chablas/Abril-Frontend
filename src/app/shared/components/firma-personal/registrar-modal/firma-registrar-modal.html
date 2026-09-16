@@ -5,11 +5,13 @@
   (closeModal)="cerrar.emit()">
 
   <p class="text-sm text-gray-500 mb-4">
-    Todavía no tienes una firma registrada. Dibújala una vez y podrás firmar.
+    Todavía no tienes registrada una firma que sirva para firmar acá. Regístrala una vez y podrás
+    firmar.
   </p>
 
   <app-firma-personal
-    descripcion="Se estampará en la planilla de rendición y en el resto de documentos que firmes"
+    [tipos]="tipos"
+    [descripcion]="descripcion"
     (guardada)="guardada.emit($event)" />
 
 </app-base-modal>

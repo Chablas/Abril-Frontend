@@ -9,7 +9,7 @@ export type { EstadoCorreccionS10, TrabajadorOptionDto };
 /**
  * Una solicitud de corrección en la bandeja del Coordinador ERP. Trae todo lo que necesita para
  * hacer su trabajo sin abrir nada más: el número de reembolso con el que ubica el registro en el S10, qué observó
- * la jefatura y qué le pide el colaborador.
+ * la jefatura y qué le pide el consolidador.
  *
  * No trae los trayectos ni las capturas: el ERP no revisa el gasto —eso ya lo hizo la jefatura—, solo
  * corrige el documento del S10. Sí trae los dos PDF por si necesita contrastarlos.
@@ -30,7 +30,7 @@ export interface CorreccionS10ListItemDto {
   solicitadaPor: string;
   solicitadaAt: string;
 
-  /** El «MOTIVO *» del colaborador: la corrección que necesita. */
+  /** El «MOTIVO *» del consolidador: la corrección que necesita. */
   motivo: string;
   /** Con qué se observó el reembolso, copiada al solicitar. */
   motivoJefatura: string | null;
@@ -64,7 +64,7 @@ export interface CorreccionS10ListItemDto {
 
 /**
  * Las dos tarjetas del encabezado, contadas sobre el conjunto ya filtrado: los dos lados del paso
- * — lo que espera al ERP y lo que ya devolvió al colaborador.
+ * — lo que espera al ERP y lo que ya devolvió al consolidador.
  */
 export interface ResumenCorreccionesS10Dto {
   porAtender: number;
@@ -91,14 +91,14 @@ export interface CorreccionS10FilterDataDto {
 
 /**
  * El check de confirmación del Coordinador ERP. El comentario es opcional —el requerimiento solo
- * exige el check—, pero `numeroReembolsoAnulado` cambia lo que el colaborador tiene que hacer después, así
+ * exige el check—, pero `numeroReembolsoAnulado` cambia lo que el consolidador tiene que hacer después, así
  * que se pregunta explícitamente.
  */
 export interface AtenderCorreccionS10Dto {
   correccionIds: number[];
   comentarioAtencion?: string | null;
   /**
-   * true = el registro del S10 se ANULÓ y el colaborador tiene que sacar un número de reembolso nuevo; la
+   * true = el registro del S10 se ANULÓ y el consolidador tiene que sacar un número de reembolso nuevo; la
    * anterior queda bloqueado. false = se corrigió conservando el número de reembolso.
    */
   numeroReembolsoAnulado: boolean;

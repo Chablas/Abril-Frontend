@@ -41,7 +41,7 @@
       [disabled]="!puedeDecidirPrimeraRevision"
       [title]="primeraRevisionBloqueada
         ? 'No puedes revisar una rendición con tus propias salidas — deselecciónala'
-        : 'Aprobar la primera revisión habilita al trabajador a cargar el Consolidado del S10'">
+        : 'Aprobar la primera revisión habilita al consolidador a cargar el Consolidado del S10'">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
       </svg>
@@ -63,11 +63,13 @@
       Observar 1.ª revisión<span *ngIf="puedeDecidirPrimeraRevision"> ({{ selectedPorPrimeraRevision.length }})</span>
     </button>
 
-    <span class="w-px h-5 bg-[#E5E7EB] mx-1"></span>
+    <span *ngIf="esConsolidador" class="w-px h-5 bg-[#E5E7EB] mx-1"></span>
 
     <!-- Consolidado del S10: uno solo para todas las seleccionadas que ya pasaron la primera
-         revisión, aunque sean de trabajadores distintos (siempre de una misma razón social). -->
+         revisión, aunque sean de trabajadores y razones sociales distintos. Solo para el
+         consolidador: la jefatura revisa, no consolida. -->
     <button
+      *ngIf="esConsolidador"
       type="button"
       abrilBulkAction="default"
       (click)="abrirConsolidadoSeleccion()"
@@ -182,7 +184,7 @@
               <ng-template #sinConsolidado>
                 <span class="doc-chip doc-chip--pendiente"
                       [title]="r.estadoPrimeraRevision === 'Aprobada'
-                        ? 'El trabajador todavía no adjuntó el Consolidado del S10'
+                        ? 'Todavía no se adjunta el Consolidado del S10'
                         : 'El Consolidado del S10 se habilita al aprobar la primera revisión'">
                   {{ r.estadoPrimeraRevision === 'Aprobada' ? 'S10 pendiente' : 'S10 no habilitado' }}
                 </span>
@@ -255,12 +257,12 @@
                 </button>
               </ng-container>
 
-              <!-- Adjuntar el consolidado en nombre de los trabajadores. Solo con la primera revisión
-                   aprobada y hasta que el reembolso se decida, y solo para quien está habilitado a
-                   consolidar por esos trabajadores (Configuración → Consolidadores). Si ya hay uno
-                   compartido con otras rendiciones abiertas, se reemplaza para todas. -->
+              <!-- Adjuntar el consolidado. Solo con la primera revisión aprobada y hasta que el
+                   reembolso se decida, y solo para el consolidador de esos trabajadores
+                   (Consolidados → Configuración → Consolidadores). Si ya hay uno compartido con
+                   otras rendiciones abiertas, se reemplaza para todas. -->
               <button
-                *ngIf="r.puedeAdjuntarConsolidado"
+                *ngIf="r.puedeAdjuntarConsolidado && esConsolidador"
                 type="button"
                 (click)="abrirConsolidado(r, $event)"
                 [disabled]="!r.puedeConsolidar"
@@ -274,7 +276,7 @@
                 {{ r.consolidadoS10 ? 'Consolidado S10 ✓' : 'Consolidado S10' }}
               </button>
 
-              <span *ngIf="!r.porPrimeraRevision && !r.puedeAdjuntarConsolidado"
+              <span *ngIf="!r.porPrimeraRevision && !(r.puedeAdjuntarConsolidado && esConsolidador)"
                     class="text-gray-300">—</span>
             </div>
           </td>
@@ -289,6 +291,7 @@
 <app-gestion-rendicion-detalle-modal
   *ngIf="detalleId !== null"
   [rendicionId]="detalleId"
+  (consolidar)="abrirConsolidadoDesdeDetalle($event)"
   (close)="cerrarDetalle($event)" />
 
 <!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->
@@ -298,7 +301,7 @@
   [actual]="objetivo.actual"
   [referencia]="objetivo.referencia"
   [rendiciones]="objetivo.codigos"
-  [razonSocial]="objetivo.razonSocial"
+  [razonSocial]="razonSocialConsolidador"
   [montoEsperado]="objetivo.monto"
   (close)="cerrarConsolidado($event)" />
 
