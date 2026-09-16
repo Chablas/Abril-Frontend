@@ -5888,3 +5888,32 @@ Backend agregó al DTO de guardado un campo `confirmarHitosSinFecha?: boolean` (
 
 ### Verificado
 `tsc --noEmit` y `ng build` (producción): 0 errores, solo warnings preexistentes. No se probó en navegador.
+
+## Sesión 2026-09-16 — 403 en error(), default "Fin" en plantilla de hitos, y Fase 1 de consolidación Dashboard de Proyectos → Dashboard UDP
+
+### Cambios — Cronograma de Hitos (`milestone-schedule`)
+- **Manejo de 403 distinto de 400**: el `error()` genérico ahora muestra título "Sin permiso" (en vez del genérico "Error") cuando `err.status === 403`, para los endpoints que ya respetan el status real (crear cronograma, `culminar`, `marcar-critico`) tras un cambio de backend que antes devolvía siempre 400. Se simplificó `eliminarVersionCronograma()`, cuyo caso especial para 403 sin body quedó redundante con el manejo genérico.
+- **Default de fecha en la plantilla de hitos sin fecha**: el campo activo por defecto (sin marcar "Rango") pasa de depender de `esPuntual` a ser **Fin para todos los hitos**, con la única excepción de "Inicio de obra" (`esInicioDeObra()`), que sigue mostrando Inicio. Se generalizó el espejo de fecha en `sincronizarDTODesdeUndatedTasks()` (antes solo aplicaba a `esPuntual`, ahora aplica a cualquier hito sin Rango que no sea Inicio de obra) para que `buildSavePayload()` no descarte el hito por `plannedStartDate` vacío. El checkbox "Rango" (preexistente desde antes del trabajo de `esObligatorio`/`esPuntual`, commit `53e58fcd`) no se tocó — sigue mostrando ambos inputs al marcarlo, mutuamente excluyente con "Crítico", y sigue sin persistirse (puro estado visual de `undatedTasks`).
+
+### Cambios — Fase 1 de consolidación de dashboards de Unidad de Proyectos
+Pedido: fusionar "Dashboard de Proyectos" (`features/projects/projects-dashboard/`) dentro de "Dashboard UDP" (`features/projects/cronograma-dashboard/`) y luego eliminar el primero, en dos fases. Esta sesión solo hizo la **Fase 1** (migrar capacidades); la Fase 2 (borrar `projects-dashboard/`, actualizar rutas/navigation/tabs, avisar de fila huérfana en BD) queda pendiente de confirmación explícita del usuario tras probar la Fase 1.
+
+- **Ranking de Responsables + Heatmap "Carga por Responsable y Semana"**: nuevos métodos `getRankingYHeatmap()` / `getProyectoDetalle(proyectoId)` en `CronogramaDashboardService`, pegando directo a `GET api/v1/projects-dashboard` y `GET api/v1/projects-dashboard/{id}` — deliberadamente **sin** reusar `ProjectsDashboardService` ni sus DTOs (viven en `projects-dashboard/`, carpeta que la Fase 2 va a borrar). DTOs propios copiados en `cronograma-dashboard/dtos/cronograma-dashboard.dtos.ts` (`RankingResponsableDto`, `HeatmapResponsableDto`, `ProyectoDetalleDto`, etc.).
+- Ranking/Heatmap se piden **una sola vez** en `ngOnInit`, sin refiltrar por `selectedResponsableId`/`selectedEstado` de la página (decisión deliberada: filtrar un ranking comparativo por un solo responsable no tiene sentido). Es una violación documentada de la regla "1 acción = 1 HTTP" (memoria `arch-1-accion-1-http`), aceptada porque la corrección de fondo (que `cronograma-actividades/dashboard` devuelva también esos campos) requiere tocar el backend, fuera de alcance de esta sesión.
+- **Panel lateral de Gantt por proyecto**: nuevo botón "Ver Gantt" (ícono `ti-timeline`) por fila de la tabla, independiente del click de fila existente (que sigue navegando a `cronograma-actividades` para editar). Copiado de `projects-dashboard.ts` (`openPanel`/`closePanel`/`initGantt`), usando `import { gantt } from 'dhtmlx-gantt'` (import propio, no el `declare const gantt: any` del original) para no depender de que otro componente ya haya cargado la librería como global.
+- No se migraron el donut "Distribución por Estado", las barras "Programado vs Real" (redundantes con los KPI cards ya existentes de Dashboard UDP) ni el filtro "Especialidad" (código muerto, nunca se enviaba al backend) — decisión explícita del pedido.
+- **Bug preexistente encontrado, no introducido acá**: el número de posición del ranking (`#`, círculo `rank-badge`) no se renderiza porque el backend de `GET api/v1/projects-dashboard` devuelve `responsableId`, no `posicion` — confirmado que el mismo bug ya existe en la página vieja `projects-dashboard`. No se corrigió por estar fuera de alcance; pendiente de decisión del usuario.
+
+### Archivos clave
+- `src/app/features/mejora-continua/milestone-schedule/milestone-schedule.ts` / `.html`
+- `src/app/features/projects/cronograma-dashboard/cronograma-dashboard.ts` / `.html` / `.css`
+- `src/app/features/projects/cronograma-dashboard/dtos/cronograma-dashboard.dtos.ts`
+- `src/app/features/projects/cronograma-dashboard/services/cronograma-dashboard.service.ts`
+
+### Pendiente
+- **Fase 2** de la consolidación (no iniciada, requiere confirmación del usuario primero): borrar `src/app/features/projects/projects-dashboard/` completo; actualizar `proyectos.routes.ts` (quitar ruta, redirect a `cronograma-dashboard`), `navigation.service.ts` (landing + menú), `shared/projects-tabs.ts` y el array de tabs hardcodeado en `cronograma-dashboard.html`, y `feature-display-names.generated.ts`; avisar (sin ejecutar) sobre la fila huérfana `projects.projects-dashboard` (feature_id=93) en `role_feature` de Aiven.
+- Decidir si se corrige el bug de `posicion`/`responsableId` en el ranking (afecta a ambas páginas, vieja y nueva).
+- Confirmado con el usuario: las reglas D1-D5 de base de datos (mencionadas de pasada en este mismo archivo, sección de 2026-09-15 anterior, "regla D4") **no** están duplicadas en este repo — solo viven en `Abril_Backend/CLAUDE.md`.
+
+### Verificado
+`ng build` (producción): 0 errores. Probado manualmente en Chrome contra backend local (`localhost:5236`): filtros, Ranking, panel de Gantt (tabs Gantt + Actividades críticas), navegación de fila sin interferencia del nuevo botón. Sin errores de consola. Heatmap no se pudo ver poblado con datos reales en este dataset de prueba (0 filas esa semana), pero el guard y el código son correctos.
