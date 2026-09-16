@@ -322,6 +322,48 @@
         </div>
       }
 
+      <!-- ── Proceso sin candidatos ────────────────────────────────────────
+           A todos los de la long list se los descartó (GTH en el formulario o tras la
+           entrevista, o el área en la decisión final): no hay a quién entrevistar ni a quién
+           enviar como finalista. Las dos salidas son las mismas que las del EMO No Apto y las
+           decide GTH acá. -->
+      @if (procesoSinCandidatos) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             style="border-color:#fed7aa;background:#FFF7ED">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-users-minus text-[20px] shrink-0 mt-[1px]" style="color:#C2410C"></i>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#C2410C">
+                Long list
+              </p>
+              <h3 class="text-[16px] font-bold mt-[2px] leading-tight" style="color:#7C2D12">
+                No quedan candidatos en el proceso
+              </h3>
+              <p class="text-[12.5px] mt-[3px]" style="color:#9A3412">
+                Todos los de esta long list quedaron descartados.
+              </p>
+
+              <div class="flex flex-wrap items-center gap-[8px] mt-[12px]">
+                @if (rechazadosRetomables.length > 0) {
+                  <button type="button" (click)="verHistorialRechazados()"
+                          class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
+                          style="background:#005D9D">
+                    <i class="ti ti-user-search text-[15px]"></i>
+                    Continuar con un rechazado ({{ rechazadosRetomables.length }})
+                  </button>
+                }
+                <button type="button" (click)="volverALongList()" [disabled]="volviendoALongList"
+                        class="inline-flex items-center gap-[6px] h-[34px] px-[14px] rounded-[7px] text-[12.5px] font-semibold border cursor-pointer transition-colors hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        style="border-color:#fed7aa;color:#C2410C;background:#fff">
+                  <i class="ti ti-list-search text-[15px]"></i>
+                  {{ volviendoALongList ? 'Volviendo…' : 'Preparar nueva long list' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- ── Proceso cerrado sin cubrir la vacante ─────────────────────────
            Un ingreso directo (FFT) que salió No Apto en el EMO: no tiene rechazados que retomar
            ni long list a la que volver, así que no hay ninguna acción que ofrecer. Se dice para
@@ -1608,7 +1650,7 @@
                     <th>CV</th>
                     <!-- La columna solo existe mientras haya algo que decidir: en el resto del
                          proceso el historial es de consulta y una columna vacía sobra. -->
-                    @if (emoNoApto) {
+                    @if (puedeRehacerProceso) {
                       <th>Acción</th>
                     }
                   </tr>
@@ -1646,7 +1688,7 @@
                           <span class="text-gray-400">—</span>
                         }
                       </td>
-                      @if (emoNoApto) {
+                      @if (puedeRehacerProceso) {
                         <td class="whitespace-nowrap">
                           @if (c.puedeRetomar) {
                             <button type="button" (click)="retomarCandidato(c)"
@@ -1664,7 +1706,7 @@
                     </tr>
                   } @empty {
                     <tr>
-                      <td [attr.colspan]="emoNoApto ? 6 : 5" class="text-center py-[28px] text-gray-400">Sin resultados.</td>
+                      <td [attr.colspan]="puedeRehacerProceso ? 6 : 5" class="text-center py-[28px] text-gray-400">Sin resultados.</td>
                     </tr>
                   }
                 </tbody>

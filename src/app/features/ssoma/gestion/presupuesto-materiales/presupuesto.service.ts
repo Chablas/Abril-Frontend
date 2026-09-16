@@ -184,9 +184,10 @@ export class PresupuestoMaterialesService {
     );
   }
 
-  listarFamiliasConRatio(): Observable<FamiliaConRatioDto[]> {
+  listarFamiliasConRatio(soloActivos = true): Observable<FamiliaConRatioDto[]> {
     return this.http.get<FamiliaConRatioDto[]>(`${this.base}/ratios/familias`, {
       headers: this.authHeaders(),
+      params: { soloActivos },
     });
   }
 
@@ -355,6 +356,16 @@ export class PresupuestoMaterialesService {
   aprobarPresupuesto(presupuestoId: number): Observable<{ estado: string }> {
     return this.http.post<{ estado: string }>(
       `${this.base}/presupuestos/${presupuestoId}/aprobar`,
+      {},
+      { headers: this.authHeaders() },
+    );
+  }
+
+  /** Reenvía el correo de aprobación de un presupuesto YA aprobado (no llegó, o se corrigió algo
+   * en el Resumen después de aprobar). */
+  reenviarNotificacionAprobacion(presupuestoId: number): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.base}/presupuestos/${presupuestoId}/reenviar-notificacion`,
       {},
       { headers: this.authHeaders() },
     );
@@ -613,6 +624,15 @@ export class PresupuestoMaterialesService {
     return this.http.get<MaterialGlobalDto[]>(`${this.base}/catalogo/todo`, {
       headers: this.authHeaders(),
     });
+  }
+
+  /** Proyecto vigente del usuario logueado — para preseleccionar el filtro de Proyecto en la
+   * vista "General" del Catálogo. 404 si no se resuelve ningún proyecto para su usuario. */
+  obtenerMiProyectoActual(): Observable<{ projectId: number; projectDescription: string }> {
+    return this.http.get<{ projectId: number; projectDescription: string }>(
+      `${this.base}/catalogo/mi-proyecto-actual`,
+      { headers: this.authHeaders() },
+    );
   }
 
   // ── Vigilancia externa por hito (facturada por punto/turno, precio desde Ratios) ──────────

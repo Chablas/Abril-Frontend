@@ -43,7 +43,7 @@ interface AreaCascadeNode {
  * "Reembolsos": la bandeja de Tesorería, último paso del ciclo. Muestra las planillas que la
  * jefatura ya firmó —de TODA la organización, porque Tesorería paga a todos— y son DOS pasos, no
  * uno (RG-26): primero se confirma la revisión documental (planilla, Consolidado del S10, firma y
- * tramos con sus vouchers) y recién entonces se puede pagar.
+ * trayectos con sus vouchers) y recién entonces se puede pagar.
  *
  * La pantalla tiene dos vistas: la bandeja de trabajo y el Seguimiento, que es la consulta de lo
  * ya abonado por colaborador (11.4 del requerimiento).

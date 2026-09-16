@@ -152,6 +152,7 @@ export interface FamiliaConRatioDto {
   variableBase: string;
   nProyectos: number;
   nOutliers: number;
+  activo: boolean;
 }
 
 export interface RatioProyectoItemDto {
@@ -484,6 +485,7 @@ export interface HitoCriticoDisponibleDto {
   hitoId: number;
   hitoDescripcion: string;
   hitoFecha: string | null;
+  hitoFechaFin: string | null;
 }
 
 export interface PersonalHitoDto {

@@ -44,6 +44,15 @@ export class RatiosListaPage implements OnInit {
   tipoSeleccionado = '';
   variableBaseSeleccionada = '';
   filtrosAbiertos = false;
+  /** Por defecto solo se ven las famílias activas — "Todas" trae también las desactivadas, para
+   * poder ubicarlas y reactivarlas si se desactivaron por error. */
+  soloActivos = true;
+
+  cambiarSoloActivos(valor: boolean): void {
+    if (this.soloActivos === valor) return;
+    this.soloActivos = valor;
+    this.load();
+  }
 
   get filtrosActivos(): number {
     let n = 0;
@@ -261,7 +270,7 @@ export class RatiosListaPage implements OnInit {
   load(): void {
     this.loading = true;
     this.loader.show();
-    this.svc.listarFamiliasConRatio().subscribe({
+    this.svc.listarFamiliasConRatio(this.soloActivos).subscribe({
       next: (f) => {
         this.familias = f;
         this.loading = false;
@@ -420,7 +429,8 @@ export class RatiosListaPage implements OnInit {
       this.svc.actualizarActivoFamilia(f.familiaId, false).subscribe({
         next: () => {
           this.desactivandoFamiliaId = null;
-          this.familias = this.familias.filter((fam) => fam.familiaId !== f.familiaId);
+          if (this.soloActivos) this.familias = this.familias.filter((fam) => fam.familiaId !== f.familiaId);
+          else f.activo = false;
           this.cdr.markForCheck();
         },
         error: (err: HttpErrorResponse) => {
@@ -429,6 +439,24 @@ export class RatiosListaPage implements OnInit {
           this.cdr.markForCheck();
         },
       });
+    });
+  }
+
+  /** Reactiva una família desactivada por error — visible solo en la vista "Todas". */
+  reactivarFamilia(f: FamiliaConRatioDto): void {
+    this.desactivandoFamiliaId = f.familiaId;
+    this.cdr.markForCheck();
+    this.svc.actualizarActivoFamilia(f.familiaId, true).subscribe({
+      next: () => {
+        this.desactivandoFamiliaId = null;
+        f.activo = true;
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.desactivandoFamiliaId = null;
+        this.error.handleError(err);
+        this.cdr.markForCheck();
+      },
     });
   }
 

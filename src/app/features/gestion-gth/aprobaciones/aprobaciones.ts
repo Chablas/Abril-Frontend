@@ -335,7 +335,7 @@ export class GthAprobaciones implements OnInit {
     }
     return (
       'No hay solicitudes bajo tu alcance: tu ficha no es de Gerencia General, ni de gerente de ' +
-      'área, ni del área de Gestión del Talento Humano. Pide a Gestión del Talento Humano que ' +
+      'área, ni de jefatura de Gestión del Talento Humano. Pide a Gestión del Talento Humano que ' +
       'revise tu ficha.'
     );
   }

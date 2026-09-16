@@ -65,7 +65,7 @@ export interface ReembolsoListItemDto {
   pagadoPor: string | null;
 }
 
-/** Una captura de movilidad (el voucher) de un tramo. */
+/** Una captura de movilidad (el voucher) de un trayecto. */
 export interface ReembolsoCapturaDto {
   id: number;
   imageUrl: string;
@@ -73,14 +73,14 @@ export interface ReembolsoCapturaDto {
   monto: number;
 }
 
-/** Documento adjunto de un tramo (los motivos que exigen sustento documental). */
+/** Documento adjunto de un trayecto (los motivos que exigen sustento documental). */
 export interface ReembolsoAdjuntoDto {
   url: string;
   filename: string;
 }
 
-/** Un tramo de una salida rendida, con su monto y sus sustentos (RF-TES-05). */
-export interface ReembolsoTramoDto {
+/** Un trayecto de una salida rendida, con su monto y sus sustentos (RF-TES-05). */
+export interface ReembolsoTrayectoDto {
   id: number;
   orden: number;
   horaSalida: string | null;
@@ -108,7 +108,7 @@ export interface ReembolsoSalidaDto {
   trayectosCount: number;
   monto: number;
   estadoReembolso: EstadoReembolso;
-  tramos: ReembolsoTramoDto[];
+  trayectos: ReembolsoTrayectoDto[];
 }
 
 export interface ReembolsoDetalleDto extends ReembolsoListItemDto {

@@ -26,7 +26,7 @@ export type EstadoReembolso =
 
 /**
  * Estados de la PRIMERA revisión de una planilla, tal como los nombra el backend. Es el paso
- * anterior al Consolidado del S10: el jefe revisa tramos, montos y capturas, y solo con su
+ * anterior al Consolidado del S10: el jefe revisa trayectos, montos y capturas, y solo con su
  * aprobación el trabajador puede cargar el consolidado.
  */
 export type EstadoPrimeraRevision =

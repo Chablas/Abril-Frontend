@@ -73,6 +73,22 @@ export class PresupuestoDetallePage implements OnInit {
   get totalServicios(): number { return this.serviciosFijos.reduce((a, s) => a + (s.total || 0), 0); }
   get totalKits(): number { return this.kitsGuardados.reduce((a, k) => a + (k.total || 0), 0); }
 
+  /** Barandas de Seguridad FRP (21mm/25mm) — familiaId 476/475 del Catálogo — van como su propia
+   * línea separada de EPC, igual que en el Excel Resumen exportado (ver PresupuestoResumenExportService). */
+  private readonly FAMILIAS_BARANDAS_FRP = [476, 475];
+
+  familiasFrp(tipo: { familias: PresupuestoLineaDto[] }): PresupuestoLineaDto[] {
+    return tipo.familias.filter((f) => this.FAMILIAS_BARANDAS_FRP.includes(f.familiaId));
+  }
+
+  familiasSinFrp(tipo: { familias: PresupuestoLineaDto[] }): PresupuestoLineaDto[] {
+    return tipo.familias.filter((f) => !this.FAMILIAS_BARANDAS_FRP.includes(f.familiaId));
+  }
+
+  totalFrp(tipo: { familias: PresupuestoLineaDto[] }): number {
+    return this.familiasFrp(tipo).reduce((a, f) => a + this.totalEfectivo(f), 0);
+  }
+
   toggleSeccion(id: string): void {
     if (this.otrasSeccionesAbierto.has(id)) this.otrasSeccionesAbierto.delete(id);
     else this.otrasSeccionesAbierto.add(id);
@@ -251,6 +267,40 @@ export class PresupuestoDetallePage implements OnInit {
         },
         error: (err: HttpErrorResponse) => {
           this.aprobando = false;
+          this.loader.hide();
+          this.error.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+    });
+  }
+
+  reenviandoNotificacion = false;
+
+  /** Reenvía el correo de aprobación — visible solo cuando el presupuesto ya está APROBADO (no
+   * llegó, o se corrigió algo en el Resumen después de aprobar). */
+  reenviarNotificacion(): void {
+    Swal.fire({
+      icon: 'question',
+      title: '¿Reenviar correo de aprobación?',
+      text: 'Se vuelve a mandar a Residente, Coordinador SSOMA, Jefe SSOMA, Oficina Técnica del proyecto y Costos y Presupuestos, con el Excel adjunto actualizado.',
+      showCancelButton: true,
+      confirmButtonText: 'Reenviar',
+      cancelButtonText: 'Cancelar',
+    }).then((r) => {
+      if (!r.isConfirmed) return;
+      this.reenviandoNotificacion = true;
+      this.loader.show();
+      this.cdr.markForCheck();
+      this.svc.reenviarNotificacionAprobacion(this.presupuestoId).subscribe({
+        next: () => {
+          this.reenviandoNotificacion = false;
+          this.loader.hide();
+          Swal.fire({ icon: 'success', title: 'Correo reenviado', timer: 1800, showConfirmButton: false });
+          this.cdr.markForCheck();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.reenviandoNotificacion = false;
           this.loader.hide();
           this.error.handleError(err);
           this.cdr.markForCheck();

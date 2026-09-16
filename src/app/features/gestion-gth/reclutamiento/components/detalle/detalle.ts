@@ -486,6 +486,43 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
+   * true si el proceso se quedó sin candidatos: a todos los que el área aprobó en la long list se
+   * los descartó (GTH en el formulario o tras la entrevista, o el área en la decisión final) y no
+   * queda ninguno con quien continuar. Sin esto el requerimiento se traba: no hay a quién
+   * entrevistar ni a quién enviar como finalista, y la long list vigente ya no da más.
+   *
+   * A diferencia de `candidatosEnCarrera`, el formulario rechazado no saca a nadie de la cuenta:
+   * mientras GTH no le mande el correo de fin de proceso el postulante todavía puede corregirlo,
+   * así que sigue contando como candidato vivo (el backend valida lo mismo).
+   */
+  get procesoSinCandidatos(): boolean {
+    const codigo = this.detalle?.estadoCodigo;
+    const enFase = codigo === 'LONG_LIST_APROBADA' || codigo === 'ENTREVISTAS' || codigo === 'SELECCION_JEFATURA';
+    return enFase && !this.esFft && this.sinCandidatosVivos;
+  }
+
+  /** true si ninguno de los candidatos de la long list vigente sigue en juego. */
+  private get sinCandidatosVivos(): boolean {
+    return (this.detalle?.candidatosAprobados ?? []).every((c) => this.resultadoCerrado(c));
+  }
+
+  /**
+   * true si al proceso no le queda con quién seguir y GTH tiene que decidir cómo sigue: retomar a
+   * alguien del historial de rechazados o preparar una long list nueva. Es lo que enciende la
+   * columna «Acción» del historial, que en el resto del proceso es de solo consulta. El backend
+   * acepta las dos acciones exactamente en estos mismos casos.
+   *
+   * En Long list entra también, pero ahí la tarjeta no aparece: la long list nueva ya es el paso
+   * de la fase (la sección de carga está arriba) y lo único que se suma es poder recuperar a
+   * alguien del historial en vez de empezar de cero. Es el caso en el que el área rechazó a todos
+   * los candidatos y el requerimiento volvió solo a esta fase.
+   */
+  get puedeRehacerProceso(): boolean {
+    const enLongListVacia = this.detalle?.estadoCodigo === 'LONG_LIST' && !this.esFft && this.sinCandidatosVivos;
+    return this.emoNoApto || this.procesoSinCandidatos || enLongListVacia;
+  }
+
+  /**
    * Aptitud que registró la clínica, para nombrarla en la tarjeta del resultado. Sale del propio
    * examen del seleccionado; si por lo que sea no viniera, se cae al nombre de la fase, que dice
    * lo mismo.

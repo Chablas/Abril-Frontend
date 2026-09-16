@@ -41,8 +41,17 @@
 
         <ng-container *ngIf="general.length > 0">
           <div class="pres-general-filtros">
+            <app-search-select
+              [options]="proyectosGeneral"
+              valueField="id"
+              displayField="nombre"
+              [value]="filtroGeneralProyectoId"
+              placeholder="Todos los proyectos"
+              label="Proyecto"
+              (valueChange)="onFiltroGeneralProyectoChange($event)">
+            </app-search-select>
             <input type="text" [(ngModel)]="filtroGeneral" (ngModelChange)="onFiltroGeneralChange()"
-              placeholder="Buscar por proyecto, recurso o ítem..." class="filtro-input pres-general-filtro-texto" />
+              placeholder="Buscar por recurso o ítem..." class="filtro-input pres-general-filtro-texto" />
             <app-search-select
               [options]="ssomaOpts"
               valueField="id"

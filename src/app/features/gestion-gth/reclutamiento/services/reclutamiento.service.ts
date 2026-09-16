@@ -152,8 +152,9 @@ export class ReclutamientoService {
     );
   }
 
-  // ── Salidas de la fase «EMO no apto» ─────────────────────────────────────
-  // Las dos formas de continuar cuando el EMO de ingreso del seleccionado salió No Apto. Son
+  // ── Salidas de un proceso que se quedó sin candidatos ────────────────────
+  // Las dos formas de continuar cuando ya no hay con quién seguir: el EMO de ingreso del
+  // seleccionado salió No Apto, o se descartó a todos los candidatos de la long list. Son
   // excluyentes: o se sigue con alguien ya descartado, o se arma una long list nueva.
 
   /**

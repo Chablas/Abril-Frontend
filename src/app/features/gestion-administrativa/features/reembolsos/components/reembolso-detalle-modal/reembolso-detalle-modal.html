@@ -111,9 +111,9 @@
       </button>
     </div>
 
-    <!-- ── Desglose: salidas y sus tramos ───────────────────────────────── -->
+    <!-- ── Desglose: salidas y sus trayectos ────────────────────────────── -->
     <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
-      <span class="text-[11px] uppercase text-gray-400 font-semibold">Detalle de tramos y vouchers</span>
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">Detalle de trayectos y vouchers</span>
 
       <div class="abril-table-wrap">
         <table class="abril-table abril-table--th-center">
@@ -125,7 +125,7 @@
               <th>Área</th>
               <th>Fecha</th>
               <th>Motivo</th>
-              <th>Tramos</th>
+              <th>Trayectos</th>
               <th>Monto</th>
               <th>Estado</th>
             </tr>
@@ -133,8 +133,8 @@
           <tbody>
             <ng-container *ngFor="let s of d.salidas">
               <tr class="border-b hover:bg-[#FAFAFA] transition-colors cursor-pointer"
-                  (click)="toggleTramos(s)"
-                  [title]="expandidas.has(s.id) ? 'Ocultar los tramos' : 'Ver los tramos y sus vouchers'"
+                  (click)="toggleTrayectos(s)"
+                  [title]="expandidas.has(s.id) ? 'Ocultar los trayectos' : 'Ver los trayectos y sus vouchers'"
                   style="border-color:var(--color-abril-border)">
                 <td class="text-center">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2.5"
@@ -158,21 +158,21 @@
                 </td>
               </tr>
 
-              <!-- Los tramos de esa salida: fecha, motivo, origen, destino, horario, monto y
+              <!-- Los trayectos de esa salida: fecha, motivo, origen, destino, horario, monto y
                    voucher, que es lo que el requerimiento le pide ver a Tesorería (RF-TES-05). -->
               <tr *ngIf="expandidas.has(s.id)" class="border-b" style="border-color:var(--color-abril-border)">
                 <td colspan="9" class="p-0">
                   <div class="px-4 py-3 flex flex-col gap-2" style="background:#FAFAFA">
-                    <div *ngIf="s.tramos.length === 0" class="text-xs text-gray-400 italic">
-                      Esta salida no tiene tramos registrados.
+                    <div *ngIf="s.trayectos.length === 0" class="text-xs text-gray-400 italic">
+                      Esta salida no tiene trayectos registrados.
                     </div>
 
-                    <div *ngFor="let t of s.tramos"
+                    <div *ngFor="let t of s.trayectos"
                          class="flex flex-wrap items-center gap-x-4 gap-y-2 border rounded-lg bg-white px-3 py-2"
                          style="border-color:var(--color-abril-border)">
 
                       <span class="text-[11px] font-bold uppercase" style="color:var(--color-abril-primary)">
-                        Tramo {{ t.orden + 1 }}
+                        Trayecto {{ t.orden + 1 }}
                       </span>
 
                       <span class="text-xs text-gray-700">
@@ -223,7 +223,7 @@
                         </span>
                         <span *ngIf="t.capturas.length === 0 && !t.montoDeCatalogo && t.monto === 0"
                               class="text-[11px] text-gray-400 italic">
-                          Tramo sin monto rendido.
+                          Trayecto sin monto rendido.
                         </span>
                         <span *ngIf="t.capturas.length === 0 && !t.montoDeCatalogo && t.monto > 0"
                               class="text-[11px] italic" style="color:#B45309">
