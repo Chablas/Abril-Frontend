@@ -24,6 +24,7 @@ import { ScheduleFormData } from '../../../core/dtos/schedule/scheduleFormData.m
 import { MilestoneScheduleHistoryService } from '../../../core/services/milestoneScheduleHistory.service';
 import { MilestoneScheduleHistoryGetDTO } from '../../../core/dtos/milestoneScheduleHistory/milestoneScheduleHistory.model';
 import { MilestoneScheduleGetDTO } from '../../../core/dtos/milestoneSchedule/milestoneSchedule.model';
+import { MilestoneScheduleCreateDTO } from '../../../core/dtos/milestoneSchedule/milestoneScheduleCreate.model';
 import { MilestoneService } from '../../../core/services/milestone.service';
 import { MilestoneScheduleHistoryCreateDTO } from '../../../core/dtos/milestoneScheduleHistory/milestoneScheduleHistoryCreate.model';
 import { AuthService } from '../../../core/services/auth.service';
@@ -133,6 +134,12 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   milestoneOptions: [] = [];
   selectedTask: any;
   searchQuery: string = '';
+
+  // ── Edición inline de un hito ya guardado (modal de detalle, PUT milestoneSchedule/{id}) ──
+  editandoHitoDetalle = false;
+  savingHitoDetalle = false;
+  editHitoStartDate = '';
+  editHitoEndDate: string | null = null;
   projectImages: Record<number, string> = {};
 
   private mouseDownOnBackdrop = false;
@@ -405,6 +412,36 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   /** RESIDENTE (su propio proyecto) o ADMINISTRADOR DE RESIDENTES (cualquier proyecto). */
   get puedeEditarCronograma(): boolean {
     return this.authService.hasRole(Roles.RESIDENTE) || this.authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES);
+  }
+
+  /**
+   * Editar un hito ya guardado (PUT milestoneSchedule/{id}) es más restrictivo que el resto del
+   * cronograma: el backend lo protege con [Authorize(Roles=AdministradorResidentes)] puro (sin
+   * RESIDENTE), mismo alcance que eliminarVersionCronograma. No usar puedeEditarCronograma acá —
+   * mostraría el botón a un RESIDENTE que siempre recibiría 403 al guardar.
+   */
+  get puedeEditarHitoGuardado(): boolean {
+    return this.authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES);
+  }
+
+  /**
+   * Qué campo de fecha mostrar/editar en el modal de detalle de un hito YA GUARDADO: depende de
+   * DÓNDE ESTÁ EL DATO (realPlannedStartDate/realPlannedEndDate), no del flag esPuntual — a
+   * diferencia de la plantilla (donde no hay dato todavía y esPuntual sí decide el default).
+   * Confirmado con datos reales de producción: los hitos puntuales históricos (de antes de que
+   * existiera esta convención) siempre tienen la fecha real en Inicio, nunca en Fin; los hitos
+   * nuevos creados desde la plantilla actual sí pueden tenerla solo en Fin.
+   * - Solo Inicio con valor → Inicio (caso histórico, incluye "Inicio de obra").
+   * - Solo Fin con valor → Fin (hitos nuevos de plantilla ya guardados).
+   * - Ambas con valor → las dos (rango real, o legacy con las dos cargadas) — sin cambios.
+   * - Ninguna (no debería ocurrir en un hito ya guardado) → se comporta como el primer caso.
+   */
+  get hitoDetalleMuestraInicio(): boolean {
+    return !!this.selectedTask?.realPlannedStartDate || !this.selectedTask?.realPlannedEndDate;
+  }
+
+  get hitoDetalleMuestraFin(): boolean {
+    return !!this.selectedTask?.realPlannedEndDate;
   }
 
   get projectsFiltered(): ProjectGetDTO[] {
@@ -703,38 +740,60 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       .getByMilestoneScheduleHistoryId(this.filtersMilestoneScheduleHistoryId)
       .pipe(
         map((items) => {
-          // Un hito sin fecha (ej. "2da instalación de bandera" aún sin coordinar) no se puede
-          // dibujar en el Gantt — se omite aquí, no rompe el render de los que sí tienen fecha.
-          const activos = items.filter((m) => m.active && !!m.plannedStartDate);
+          // Un hito sin NINGUNA fecha (ej. "2da instalación de bandera" aún sin coordinar) no se
+          // puede dibujar en el Gantt — se omite acá. Antes exigía específicamente
+          // plannedStartDate, lo que dejaba afuera (sin ni siquiera aparecer en el Gantt) a los
+          // hitos cuya única fecha real vive en plannedEndDate — ver anchorDate() más abajo.
+          const activos = items.filter((m) => m.active && (!!m.plannedStartDate || !!m.plannedEndDate));
+
+          // Fecha "ancla" de un hito: la que tiene valor. Confirmado contra datos reales de
+          // producción que esto puede estar en cualquiera de los dos campos según cuándo/cómo se
+          // creó el hito (ver hitoDetalleMuestraInicio/Fin) — plannedStartDate ya no es siempre
+          // la fuente de verdad como asumía este código antes.
+          const anchorDate = (m: MilestoneScheduleGetDTO): string => m.plannedStartDate || m.plannedEndDate;
 
           // Solo para VISUALIZAR duración de fase en el Gantt: a los críticos se les deriva un
-          // "inicio visual" = fecha del crítico cronológicamente anterior (NO por orden de ítem,
-          // que no es cronológico). Esto no se guarda ni se envía al backend — la fecha real de
-          // cada hito (usada para repartir consumo/personal por fase) sigue siendo la propia.
+          // "inicio visual" = fecha ancla del crítico cronológicamente anterior (NO por orden de
+          // ítem, que no es cronológico). Esto no se guarda ni se envía al backend — la fecha real
+          // de cada hito (usada para repartir consumo/personal por fase) sigue siendo la propia.
           const criticosOrdenados = activos
             .filter((m) => m.esHitoCritico)
             .slice()
-            .sort((a, b) => (a.plannedStartDate < b.plannedStartDate ? -1 : a.plannedStartDate > b.plannedStartDate ? 1 : 0));
+            .sort((a, b) => (anchorDate(a) < anchorDate(b) ? -1 : anchorDate(a) > anchorDate(b) ? 1 : 0));
           const inicioVisualPorHito = new Map<number, string>();
           criticosOrdenados.forEach((m, i) => {
-            inicioVisualPorHito.set(m.milestoneScheduleId, i === 0 ? m.plannedStartDate : criticosOrdenados[i - 1].plannedStartDate);
+            inicioVisualPorHito.set(m.milestoneScheduleId, i === 0 ? anchorDate(m) : anchorDate(criticosOrdenados[i - 1]));
           });
 
           return activos.map((m) => {
+            const propia = anchorDate(m);
             const inicioVisual = inicioVisualPorHito.get(m.milestoneScheduleId);
-            const esBarraCritica = m.esHitoCritico && !!inicioVisual && inicioVisual !== m.plannedStartDate;
+            const esBarraCritica = m.esHitoCritico && !!inicioVisual && inicioVisual !== propia;
+            // Rango real: ambas fechas presentes y distintas. Antes solo chequeaba
+            // plannedEndDate !== plannedStartDate, lo que confundía un hito "solo Fin" (Inicio
+            // vacío) con un rango real — acá exige que las DOS tengan valor.
+            const esRangoReal = !!m.plannedStartDate && !!m.plannedEndDate && m.plannedEndDate !== m.plannedStartDate;
 
             return {
               id: m.milestoneScheduleId,
               milestoneScheduleId: m.milestoneScheduleId,
+              milestoneId: m.milestoneId,
+              order: m.order,
               esHitoCritico: m.esHitoCritico,
+              esObligatorio: m.esObligatorio,
               text: m.milestoneDescription,
-              start_date: this.parseStringToDate(esBarraCritica ? inicioVisual! : m.plannedStartDate),
+              // Fechas reales, tal cual llegan del backend (sin el ajuste visual de "inicio
+              // visual" para barras críticas de más abajo) — son las que decide qué campo mostrar
+              // en el modal de detalle (hitoDetalleMuestraInicio/Fin) y las que se editan/envían
+              // al PUT. start_date/end_date (abajo) pueden no coincidir cuando esBarraCritica.
+              realPlannedStartDate: m.plannedStartDate,
+              realPlannedEndDate: m.plannedEndDate,
+              start_date: this.parseStringToDate(esBarraCritica ? inicioVisual! : propia),
               ...(esBarraCritica
-                ? { end_date: this.parseStringToDate(m.plannedStartDate) }
-                : (m.plannedEndDate && m.plannedEndDate !== m.plannedStartDate
+                ? { end_date: this.parseStringToDate(propia) }
+                : (esRangoReal
                     ? { end_date: this.parseStringToDate(m.plannedEndDate) }
-                    : { type: 'milestone', duration: 0, end_date: this.parseStringToDate(m.plannedStartDate) })),
+                    : { type: 'milestone', duration: 0, end_date: this.parseStringToDate(propia) })),
             };
           });
         }),
@@ -1475,6 +1534,121 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * Mismo bloqueo duro que aplica el backend en MilestoneScheduleRepository.EditAsync: un hito
+   * esObligatorio (salvo "Inicio de obra") no puede quedar sin Fecha Fin. Sin opción de confirmar
+   * "de todas formas" — a diferencia del guardado de plantilla, acá el backend nunca lo aceptaría.
+   */
+  private hitoObligatorioSinFechaFin(hito: any, plannedEndDate: string | null): boolean {
+    return !!hito.esObligatorio && !this.esInicioDeObra(hito) && !plannedEndDate;
+  }
+
+  /** Habilita los inputs de Fecha inicio/fin dentro del modal de detalle (solo ADMINISTRADOR DE RESIDENTES). */
+  iniciarEdicionHitoDetalle(): void {
+    this.editHitoStartDate = this.selectedTask?.realPlannedStartDate ?? '';
+    this.editHitoEndDate = this.selectedTask?.realPlannedEndDate ?? null;
+    this.editandoHitoDetalle = true;
+  }
+
+  cancelarEdicionHitoDetalle(): void {
+    this.editandoHitoDetalle = false;
+  }
+
+  /** Persiste la edición vía PUT milestoneSchedule/{id} y refleja el resultado en el Gantt en memoria. */
+  guardarEdicionHitoDetalle(): void {
+    const hito = this.selectedTask;
+    if (!hito || this.savingHitoDetalle) return;
+
+    // Qué campo es el visible/obligatorio en pantalla depende de dónde vive el dato real de ESTE
+    // hito (ver hitoDetalleMuestraInicio/Fin) — para un hito "solo Fin" (nuevo, de plantilla),
+    // Fecha inicio ni siquiera se muestra, así que no puede exigirse acá.
+    if (this.hitoDetalleMuestraInicio && !this.editHitoStartDate) {
+      Swal.fire({ icon: 'warning', title: 'Validación', text: 'La fecha de inicio es obligatoria.' });
+      return;
+    }
+    if (!this.hitoDetalleMuestraInicio && this.hitoDetalleMuestraFin && !this.editHitoEndDate) {
+      Swal.fire({ icon: 'warning', title: 'Validación', text: 'La fecha fin es obligatoria.' });
+      return;
+    }
+
+    // plannedStartDate no admite null en el DTO. Si Fecha inicio está oculta (el dato real de este
+    // hito vive en Fin), se espeja Fin→Inicio para el body del PUT sin mostrárselo al usuario.
+    const plannedStartDateEfectiva: string =
+      this.hitoDetalleMuestraInicio ? this.editHitoStartDate : (this.editHitoEndDate ?? '');
+
+    // Confirmado contra datos reales (no solo el código): en los hitos obligatorios/puntuales
+    // históricos ya guardados ("Nivel 0.00", "Fin de Obra", etc.), la fecha real vive en Fecha
+    // inicio y Fecha fin queda en null — al revés de lo que asume la plantilla para hitos nuevos
+    // (sincronizarDTODesdeUndatedTasks espeja Fin→Inicio). Por eso, si el usuario no llenó Fecha
+    // fin (y no es un hito "solo Fin", que ya la trae puesta), se espeja Inicio→Fin acá para que
+    // la validación de obligatorio (igual a MilestoneScheduleRepository.EditAsync) no bloquee un
+    // hito que ya tiene una fecha real válida, sin esconder ni tocar el campo Fecha inicio.
+    const plannedEndDateEfectiva: string | null =
+      this.editHitoEndDate ||
+      (hito.esObligatorio && !this.esInicioDeObra(hito) ? plannedStartDateEfectiva : null);
+
+    if (this.hitoObligatorioSinFechaFin(hito, plannedEndDateEfectiva)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Hito obligatorio',
+        text: `"${hito.text}" es un hito obligatorio y debe tener una fecha fin.`,
+      });
+      return;
+    }
+
+    const dto: MilestoneScheduleCreateDTO = {
+      milestoneId: hito.milestoneId,
+      customDescription: hito.milestoneId == null ? hito.text : undefined,
+      order: hito.order,
+      plannedStartDate: plannedStartDateEfectiva,
+      plannedEndDate: plannedEndDateEfectiva,
+      esHitoCritico: !!hito.esHitoCritico,
+    };
+
+    this.savingHitoDetalle = true;
+    this.milestoneScheduleService.editarHito(hito.milestoneScheduleId, dto).subscribe({
+      next: (response) => {
+        hito.realPlannedStartDate = dto.plannedStartDate;
+        hito.realPlannedEndDate = dto.plannedEndDate;
+
+        const startDate = this.parseStringToDate(dto.plannedStartDate);
+        const endDate = dto.plannedEndDate ? this.parseStringToDate(dto.plannedEndDate) : null;
+        // Mismo criterio que al cargar el Gantt (openViewMilestoneSchedule): un plannedEndDate
+        // igual a plannedStartDate (caso del espejo de arriba) sigue siendo un hito puntual, no
+        // un rango — comparar por igualdad de string, no solo "¿hay endDate?".
+        const esRangoReal = !!endDate && dto.plannedEndDate !== dto.plannedStartDate;
+        const ganttTask = gantt.getTask(hito.id);
+        ganttTask.start_date = startDate ?? undefined;
+        if (esRangoReal) {
+          ganttTask.end_date = endDate!;
+          ganttTask.type = undefined;
+          ganttTask.duration = undefined;
+        } else {
+          ganttTask.end_date = startDate ?? undefined;
+          ganttTask.type = 'milestone';
+          ganttTask.duration = 0;
+        }
+        gantt.updateTask(hito.id);
+        gantt.render();
+        this.ganttTasks = gantt.getTaskByTime();
+
+        hito.start_date = ganttTask.start_date;
+        hito.end_date = ganttTask.end_date;
+        hito.type = ganttTask.type;
+
+        this.savingHitoDetalle = false;
+        this.editandoHitoDetalle = false;
+        this.cdr.detectChanges();
+        Swal.fire({ title: response.message ?? 'Hito actualizado exitosamente.', icon: 'success', draggable: true });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.savingHitoDetalle = false;
+        this.cdr.detectChanges();
+        this.error(err);
+      },
+    });
+  }
+
   saveEditTask() {
     const item = this.editMilestoneScheduleItem;
 
@@ -1536,6 +1710,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   openTaskDetail(task: any): void {
     this.selectedTask = task;
     this.showDetailModal = true;
+    this.editandoHitoDetalle = false;
     if (task.type === 'milestone') {
       this.selectedTask.end_date = '-';
     }

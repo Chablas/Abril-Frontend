@@ -12,4 +12,6 @@ export interface MilestoneScheduleGetDTO {
     updatedUserId?: number;
     active: boolean;
     esHitoCritico: boolean;
+    /** Del catálogo Milestone: true si el hito exige sí o sí PlannedEndDate (salvo "Inicio de obra"). */
+    esObligatorio: boolean;
 }

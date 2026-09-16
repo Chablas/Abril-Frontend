@@ -409,19 +409,40 @@
         </div>
 
         <div class="hito-stats">
-            <div class="hito-stat">
+            <!-- Fecha inicio: solo se muestra si el hito tiene dato real ahí (hitoDetalleMuestraInicio) -->
+            <div class="hito-stat" *ngIf="!editandoHitoDetalle">
                 <span class="hito-stat-label">Fecha inicio</span>
-                <span class="hito-stat-value">{{ selectedTask.start_date | date:'dd-MM-yyyy' }}</span>
+                <span class="hito-stat-value">{{ hitoDetalleMuestraInicio ? (selectedTask.start_date | date:'dd-MM-yyyy') : '—' }}</span>
             </div>
-            <div class="hito-stat">
+            <div class="hito-stat" *ngIf="!editandoHitoDetalle">
                 <span class="hito-stat-label">Fecha fin</span>
-                <span class="hito-stat-value">
-                    {{
-                    selectedTask?.type === 'milestone' || !selectedTask?.end_date
-                    ? '—'
-                    : (selectedTask.end_date | date:'dd-MM-yyyy')
-                    }}
-                </span>
+                <span class="hito-stat-value">{{ hitoDetalleMuestraFin ? (selectedTask.end_date | date:'dd-MM-yyyy') : '—' }}</span>
+            </div>
+            <div class="hito-stat" *ngIf="editandoHitoDetalle">
+                <ng-container *ngIf="hitoDetalleMuestraInicio; else hitoInicioOculto">
+                    <p class="text-sm mb-[4px]" style="color:#1E3A5F">Fecha inicio <span class="text-red-500">*</span></p>
+                    <input type="date" [(ngModel)]="editHitoStartDate"
+                        class="border rounded-lg p-[8px] w-full"
+                        [ngClass]="{'border-red-400': !editHitoStartDate, 'border-[#E2E2E2]': editHitoStartDate}" />
+                </ng-container>
+                <ng-template #hitoInicioOculto>
+                    <span class="hito-stat-label">Fecha inicio</span>
+                    <span class="hito-stat-value">—</span>
+                </ng-template>
+            </div>
+            <div class="hito-stat" *ngIf="editandoHitoDetalle">
+                <ng-container *ngIf="hitoDetalleMuestraFin; else hitoFinOculto">
+                    <p class="text-sm mb-[4px]" style="color:#1E3A5F">
+                        Fecha fin <span class="text-red-500" *ngIf="!hitoDetalleMuestraInicio">*</span>
+                    </p>
+                    <input type="date" [(ngModel)]="editHitoEndDate"
+                        class="border rounded-lg p-[8px] w-full"
+                        [ngClass]="{'border-red-400': !hitoDetalleMuestraInicio && !editHitoEndDate, 'border-[#E2E2E2]': hitoDetalleMuestraInicio || editHitoEndDate}" />
+                </ng-container>
+                <ng-template #hitoFinOculto>
+                    <span class="hito-stat-label">Fecha fin</span>
+                    <span class="hito-stat-value">—</span>
+                </ng-template>
             </div>
         </div>
 
@@ -444,7 +465,31 @@
                 Eliminar
             </button>
         </div>
-        <div *ngIf="selectedTask?.milestoneScheduleId != null && puedeEditarCronograma" class="flex gap-[10px] justify-center">
+        <div *ngIf="selectedTask?.milestoneScheduleId != null && puedeEditarHitoGuardado" class="flex gap-[10px] justify-center">
+            <ng-container *ngIf="!editandoHitoDetalle; else editandoHitoAcciones">
+                <button
+                    (click)="iniciarEdicionHitoDetalle()"
+                    class="btn-ghost-navy px-5 py-2 rounded-lg border cursor-pointer transition-colors">
+                    Editar fechas
+                </button>
+            </ng-container>
+            <ng-template #editandoHitoAcciones>
+                <button
+                    (click)="cancelarEdicionHitoDetalle()"
+                    [disabled]="savingHitoDetalle"
+                    class="px-5 py-2 rounded-lg border border-[#E2E2E2] text-[#64748B] cursor-pointer hover:bg-[#F8FAFC] transition-colors disabled:opacity-50">
+                    Cancelar
+                </button>
+                <button
+                    (click)="guardarEdicionHitoDetalle()"
+                    [disabled]="savingHitoDetalle || !editHitoStartDate"
+                    class="px-5 py-2 rounded-lg cursor-pointer text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    style="background:#1E3A5F">
+                    {{ savingHitoDetalle ? 'Guardando...' : 'Guardar' }}
+                </button>
+            </ng-template>
+        </div>
+        <div *ngIf="selectedTask?.milestoneScheduleId != null && puedeEditarCronograma && !editandoHitoDetalle" class="flex gap-[10px] justify-center">
             <button
                 (click)="toggleCriticoGuardado(selectedTask.id)"
                 [class]="selectedTask['esHitoCritico']
@@ -454,7 +499,7 @@
                 {{ selectedTask['esHitoCritico'] ? 'Quitar hito crítico' : 'Marcar como hito crítico' }}
             </button>
         </div>
-        <p *ngIf="selectedTask?.milestoneScheduleId != null" class="text-xs text-center text-gray-500">
+        <p *ngIf="selectedTask?.milestoneScheduleId != null && !editandoHitoDetalle" class="text-xs text-center text-gray-500">
             Los hitos críticos son los que cortan una etapa constructiva real: SSOMA los usa para
             segmentar el consumo de materiales y la dotación de personal por fase.
         </p>

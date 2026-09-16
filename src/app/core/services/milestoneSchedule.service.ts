@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { MilestoneScheduleGetDTO } from "../dtos/milestoneSchedule/milestoneSchedule.model";
 import { MilestoneScheduleFakeDataDTO } from '../dtos/milestoneSchedule/milestoneScheduleFakeData.model';
+import { MilestoneScheduleCreateDTO } from '../dtos/milestoneSchedule/milestoneScheduleCreate.model';
 
 @Injectable({
   providedIn: 'root',
@@ -55,6 +56,20 @@ export class MilestoneScheduleService {
     return this.http.patch<{ message: string }>(
       `${this.apiUrl}/${milestoneScheduleId}/culminar`,
       { fechaRealFin },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
+  /**
+   * Edita un hito ya guardado (descripción/orden/fechas/crítico) sin subir una versión nueva
+   * completa del cronograma. Solo ADMINISTRADOR DE RESIDENTES ([Authorize(Roles=...)] puro en
+   * backend, mismo alcance que deleteMilestoneScheduleHistory).
+   */
+  editarHito(milestoneScheduleId: number, dto: MilestoneScheduleCreateDTO): Observable<{ message: string }> {
+    const token = localStorage.getItem('access_token');
+    return this.http.put<{ message: string }>(
+      `${this.apiUrl}/${milestoneScheduleId}`,
+      dto,
       { headers: { Authorization: `Bearer ${token}` } },
     );
   }
