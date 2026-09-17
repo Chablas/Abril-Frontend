@@ -46,6 +46,14 @@ export interface SolicitudSalidaFormDataDto {
   /** Los que van en copia de ese mismo aviso. */
   correoRevisorCopia: string[];
   /**
+   * Lo mismo para el aviso informativo al jefe del área, que solo sale cuando el revisor de
+   * este trabajador es un residente: la salida la aprueba el residente de la obra y el jefe
+   * del área se entera. Vacío en el caso normal.
+   */
+  correoJefeAreaPara: string[];
+  /** Los que van en copia de ese aviso informativo. */
+  correoJefeAreaCopia: string[];
+  /**
    * Lo mismo para la confirmación informativa (Configuración → Correos → Confirmación), que
    * sale junto con la anterior pero sin botones. Vacío = no se envía a nadie.
    */

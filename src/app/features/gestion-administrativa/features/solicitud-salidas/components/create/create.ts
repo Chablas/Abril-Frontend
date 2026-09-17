@@ -75,6 +75,8 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
     lugares: [],
     correoRevisorPara: [],
     correoRevisorCopia: [],
+    correoJefeAreaPara: [],
+    correoJefeAreaCopia: [],
     correoConfirmacionPara: [],
     correoConfirmacionCopia: [],
     esTI: false,
@@ -143,15 +145,45 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
   }
 
   /**
+   * Destinatarios del aviso informativo al jefe del área. Solo tiene algo cuando quien aprueba es
+   * un residente; vacío el resto de las veces y cuando ese correo está apagado.
+   *
+   * No se muestra en su propia línea: se suma a la de "para su conocimiento" (ver
+   * `correoConfirmacion`), que es donde el solicitante busca a quién más le llega su solicitud.
+   * Separarlas obligaba a leer dos frases para responder una sola pregunta.
+   */
+  private get correoJefeArea(): string[] {
+    return [
+      ...(this.formData.correoJefeAreaPara ?? []),
+      ...(this.formData.correoJefeAreaCopia ?? []),
+    ];
+  }
+
+  /**
    * Destinatarios de la confirmación informativa, "Para" y copias en UNA sola lista: a todos
    * les llega el mismo correo y separarlos solo agregaba ruido a un aviso que no pide ninguna
    * acción (quién es Para y quién CC se ve en Configuración → Correos). '' = no se envía a nadie.
    */
   get correoConfirmacion(): string {
-    return [
+    // El jefe del área se suma acá: normalmente ya viene dentro de la confirmación (su fila en
+    // Configuración → Correos), pero se agrega igual porque también recibe su propio aviso
+    // informativo, que puede estar prendido con esa fila apagada. Sin duplicados y respetando el
+    // orden: primero el solicitante y sus copias, después el jefe.
+    const todos = [
       ...(this.formData.correoConfirmacionPara ?? []),
       ...(this.formData.correoConfirmacionCopia ?? []),
-    ].join(', ');
+      ...this.correoJefeArea,
+    ].filter((c) => !!c?.trim());
+
+    const vistos = new Set<string>();
+    const unicos: string[] = [];
+    for (const correo of todos) {
+      const clave = correo.trim().toLowerCase();
+      if (vistos.has(clave)) continue;
+      vistos.add(clave);
+      unicos.push(correo.trim());
+    }
+    return unicos.join(', ');
   }
 
   // ── Helpers ────────────────────────────────────────────────────────

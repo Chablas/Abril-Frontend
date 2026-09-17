@@ -293,9 +293,12 @@
     </div>
 
     <!-- ── Correos que salen al registrar ────────────────────────────────
-         Los destinatarios REALES de los dos correos del alta, no a quién le tocaría: se
-         configuran uno por uno en Configuración → Correos (secciones Revisor y Confirmación),
-         donde hasta el revisor puede estar apagado. -->
+         Los destinatarios REALES de los correos del alta, no a quién le tocaría: se configuran
+         uno por uno en Configuración → Correos (secciones Revisor, Jefe del área y Confirmación),
+         donde hasta el revisor puede estar apagado.
+
+         Son dos avisos y no tres: quien decide arriba, y abajo TODOS los que se enteran —el
+         solicitante, sus copias y, cuando la aprueba un residente, el jefe del área. -->
     <div *ngIf="correoRevisorPara" class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[10px]" style="background:var(--color-abril-standard-light);border:1px solid var(--color-abril-standard-border)">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]" style="color:var(--color-abril-standard)">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/>
