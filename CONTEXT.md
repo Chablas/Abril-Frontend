@@ -5754,3 +5754,24 @@ Pedido del usuario: exportar a Excel un "Desagregado de Recursos" para el área 
   - Definir si Monitores va como una sola línea agregada o separado en "Etapa 1"/"Etapa 2" (y con qué hito de corte).
   - Definir qué pasa con los materiales que no caen en ninguna de las ~14 partidas del modelo (alcohol, cintas, clavos, botiquín suelto, etc.) — ¿van a "Varios Seguridad", se omiten del Resumen, o catch-all nuevo?
 - Ver pendientes correspondientes del backend en `Abril_Backend/CONTEXT.md` (mismo día).
+
+## Sesión 2026-09-16 — Filtros de Bandeja pasan a ser server-side
+
+### Contexto
+Reporte del usuario: al aprobar un entregable de Warayana, la empresa dejó de aparecer en el filtro de empresas de Bandeja aunque le quedaban pendientes de tipo trabajador. Investigación completa (incluyendo bugs de backend y de datos) en `Abril_Backend/CONTEXT.md`, sesión del mismo día. Acá solo los cambios de este repo.
+
+### Cambios
+- **Combobox de empresa** (`bandeja.html`/`.ts`): reemplazado el `<select>` nativo por `app-search-select`, filtrando por `empresaId` (antes filtraba en memoria por substring de `empresaNombre` sobre solo los 20 registros de la página cargada — con "Todos" seleccionado y 854 registros totales, casi nunca coincidía).
+- **Filtro de entregable** (`filtroEntregable`): dejó de derivarse de `this.items` (getter `entregablesDisponibles` eliminado) y ahora carga su catálogo del backend (`getEntregablesDisponibles()`, nuevo endpoint) al iniciar; el `<select>` dispara `loadItems(1)` en vez de filtrar en memoria.
+- `bandeja.service.ts`: `getEmpresasDisponibles()` ahora tipa `{id, nombre}[]` (antes `string[]`); nuevo `getEntregablesDisponibles()`.
+- Agregado dato "ENVIADO" (fecha de envío) al costado de "VIGENCIA" en el panel de detalle del entregable seleccionado — pedido explícito del usuario para poder priorizar qué llevaba más tiempo sin revisarse.
+
+### Archivos clave
+- `features/habilitacion/pages/bandeja/bandeja.ts`, `bandeja.html`
+- `features/habilitacion/services/bandeja.service.ts`
+
+### Verificado
+No se corrió `ng build` en esta sesión (regla del proyecto). No se probó en navegador — el usuario verifica visualmente él mismo.
+
+### Pendiente
+- Nada de este repo. Ver `Abril_Backend/CONTEXT.md` (mismo día) por los 4 casos de ficha duplicada pendientes de revisión de GTH/SSOMA.
