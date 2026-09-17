@@ -176,20 +176,26 @@ export class GthSolicitudPersonal implements OnInit {
     private cdr: ChangeDetectorRef,
   ) {}
 
-  /** feature_key que habilita la configuración (dinámico vía role_feature en BD). */
-  private static readonly FEATURE_CONFIG = 'gestion-gth.reclutamiento.configuracion';
+  /**
+   * feature_keys de las secciones de la configuración (dinámicos vía role_feature en BD): los
+   * correos y la visibilidad. Mismos que los `featureKeys` de su ruta.
+   */
+  private static readonly FEATURES_CONFIG = [
+    'gestion-gth.reclutamiento.configuracion',
+    'gestion-gth.config.visibilidad-solicitud-personal',
+  ];
 
-  /** ¿El usuario tiene acceso a la configuración? (según los roles asignados a la feature). */
+  /** ¿El usuario tiene acceso a alguna sección de la configuración? */
   get puedeConfigurar(): boolean {
-    return this.authService.hasFeature(GthSolicitudPersonal.FEATURE_CONFIG);
+    return GthSolicitudPersonal.FEATURES_CONFIG.some((k) => this.authService.hasFeature(k));
   }
 
-  /** Botón "Configuración" del header: solo si el rol del usuario tiene la feature. */
+  /** Botón "Configuración" del header: solo si el rol del usuario tiene alguna de las features. */
   get botonConfiguracion() {
     return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
   }
 
-  /** Lleva a la pantalla de configuración de correos (ya no es un modal). */
+  /** Lleva a la pantalla de configuración (correos y visibilidad). */
   abrirConfiguracion(): void {
     if (!this.puedeConfigurar) return;
     this.router.navigate(['/gestion-gth/solicitud-personal/configuracion']);

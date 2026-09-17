@@ -44,7 +44,7 @@
   </app-ga-correos-config>
 
   <!-- SECCIÓN: Visibilidad (qué áreas ve cada trabajador en ESTA bandeja) -->
-  <app-ga-visibilidad *ngIf="mostrandoVisibilidad" [ambito]="visibilidadAmbito"></app-ga-visibilidad>
+  <app-visibilidad-areas *ngIf="mostrandoVisibilidad" [endpoint]="visibilidadEndpoint"></app-visibilidad-areas>
 
   <!-- SECCIÓN: Revisores / Consolidadores (las dos asignan personas a áreas con el mismo
        algoritmo; el modo dice cuál) -->

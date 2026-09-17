@@ -91,6 +91,7 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "gestion-gth.aprobaciones": "Aprobaciones",
   "gestion-gth.config.categorias-puestos": "Categorías y Puestos",
   "gestion-gth.config.reclutadores": "Reclutadores",
+  "gestion-gth.config.visibilidad-solicitud-personal": "Visibilidad de Solicitud de Personal",
   "gestion-gth.onboarding": "Onboarding",
   "gestion-gth.reclutamiento": "Reclutamiento",
   "gestion-gth.reclutamiento.configuracion": "Reclutamiento - Configuración",

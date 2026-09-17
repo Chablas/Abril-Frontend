@@ -1,5 +1,5 @@
 <!-- Sección embebida en la configuración de una pantalla: el header y el disparador de
-     filtros viven en el contenedor (`pantalla-configuracion`). -->
+     filtros viven en el contenedor de esa configuración. -->
 <div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
@@ -59,16 +59,16 @@
 </div>
 
 <!-- ── Modal de visibilidad (detalle o edición, según el botón) ────── -->
-<app-visibilidad-modal
+<app-visibilidad-areas-modal
   *ngIf="abierto"
-  [ambito]="ambito"
+  [endpoint]="endpoint"
   [modo]="modoModal"
   [workerId]="abierto.workerId"
   [workerName]="abierto.fullName || ''"
   [areaTree]="areaTree"
   (closeModal)="abierto = null"
   (saved)="onSaved()"
-></app-visibilidad-modal>
+></app-visibilidad-areas-modal>
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
