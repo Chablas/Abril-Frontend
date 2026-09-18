@@ -5775,3 +5775,32 @@ No se corrió `ng build` en esta sesión (regla del proyecto). No se probó en n
 
 ### Pendiente
 - Nada de este repo. Ver `Abril_Backend/CONTEXT.md` (mismo día) por los 4 casos de ficha duplicada pendientes de revisión de GTH/SSOMA.
+
+## Sesión 2026-09-18 — Nuevo módulo Catálogo de EPP (SSOMA + Logística)
+
+### Contexto
+Pedido de SSOMA: catálogo autorizado de Equipo de Protección Personal, visible también para Logística, para estandarizar qué EPP/marca/modelo se puede comprar y agilizar la generación de pedidos.
+
+### Cambios
+- **Nuevo módulo** `features/ssoma/gestion/epp/` en `/ssoma/gestion/epp`, feature-permiso `ssoma.gestion.epp` (mismo permiso para SSOMA y Logística, asignable por rol desde Seguridad/Roles).
+- Jerarquía del catálogo: Categoría → Familia → Ítem (ficha técnica propia) → Modelo/Marca. Cada ítem tiene nombre técnico + nombre comercial, imagen, ficha técnica en PDF (visor inline, no descarga directa), y auditoría de quién/cuándo creó o editó.
+- Dos vistas: **Tabla** (árbol colapsable por Categoría → Familia, una fila por modelo/marca, con acciones inline: agregar, duplicar, editar, activar/desactivar) y **Tarjetas**.
+- Edición inline de Categorías, Familias, Ítems y Modelos sin salir de la pantalla; alta rápida de modelo directo desde la tabla (botón "+" o "duplicar y modificar").
+- Zoom de imagen (clic en cualquier miniatura) y visor de PDF embebido (iframe en modal, con botón de descarga).
+- **Pestaña "Generar Pedido"**: arma un pedido con talla+cantidad por línea (solo ítems activos), lo guarda con código correlativo (`PED-EPP-{año}-{id}`), proyecto y usuario que lo generó, descarga el Excel automático, y queda en un historial navegable desde la misma pestaña.
+- Carga inicial: 54 EPP con 43 modelos/marcas importados desde el Excel "EPPS AUTORIZADO SSOMA ACTUALIZADO ACTUAL.xls" (hoja "EPP Aprobado"), reorganizados en Familias reales (ver `Abril_Backend/_sql_prod/ssoma_epp_seed_excel.sql`).
+- Rediseño visual: acento de color + ícono por categoría (Cabeza/Ojos/Auditiva/Manos/Pies/Cuerpo/Altura/Respiratoria), filtros en una sola línea con íconos, fondo `#F8FAFC`.
+
+### Archivos clave
+- `features/ssoma/gestion/epp/pages/lista/epp-lista.ts`/`.html`/`.css` — toda la pantalla (catálogo + pedido).
+- `features/ssoma/gestion/epp/epp.service.ts`/`.dtos.ts` — HTTP + tipos.
+- `core/navigation/navigation.service.ts`, `feature-display-names.generated.ts`, `features/ssoma/ssoma.routes.ts` — alta del módulo en menú/rutas.
+- Backend: `Abril_Backend/Features/SsomaModule/EppFeature/**` (ver `Abril_Backend/CONTEXT.md`, mismo día).
+
+### Verificado
+`ng build` → 0 errores, solo warnings preexistentes de terceros. No se corrió el visor en navegador desde esta sesión — el usuario lo probó en vivo durante toda la sesión y confirmó que el catálogo, las imágenes, la ficha técnica y el pedido funcionan.
+
+### Pendiente
+- Cargar las imágenes reales de cada EPP (hoy la mayoría está sin foto).
+- Completar modelos/marcas de los ítems que quedaron "Sin modelo/marca registrado" (los que en el Excel decían "Según estándar de logística").
+- Evaluar si conviene un flujo de aprobación sobre el Pedido (hoy el estado "Generado" es solo informativo, sin aprobar/rechazar).
