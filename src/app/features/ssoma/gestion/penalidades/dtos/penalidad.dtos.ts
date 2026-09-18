@@ -28,7 +28,7 @@ export interface PenalidadListItemDto {
   proyectoNombre?: string;
   empresaNombre?: string;
   infraccionNombre?: string;
-  severidad: string;
+  categoria?: string;
   montoCalculado: number;
   montoFinal?: number;
   estado: string;
@@ -38,10 +38,18 @@ export interface PenalidadListItemDto {
   resolucionTipo?: string;
 }
 
+export interface DestinatariosNotificacionDto {
+  para: string[];
+  cc: string[];
+  motivo: string;
+}
+
 export interface PenalidadDetalleDto extends PenalidadListItemDto {
+  proximaNotificacion?: DestinatariosNotificacionDto;
   empresaId: number;
   proyectoId: number;
   infraccionId: number;
+  motivo?: string;
   descripcionOcurrido?: string;
   uitReferencia: number;
   motivoAjusteMonto?: string;
@@ -79,13 +87,19 @@ export interface OrigenCandidatoDto {
   fecha: string;
 }
 
+export interface EmpresaProyectoDto {
+  id: number;
+  nombre: string;
+  emailAdministrador?: string;
+}
+
 export interface PenalidadRegistrarRequest {
   origenTipo: 'RAC' | 'AMONESTACION' | 'DIRECTO';
   origenId?: number;
   empresaId: number;
   proyectoId: number;
   infraccionId: number;
-  severidad: string;
+  motivo?: string;
   descripcionOcurrido?: string;
 }
 
@@ -157,6 +171,7 @@ export interface ContextoEmpresaDto {
 export interface InfraccionAdminDto {
   id: number;
   nombre: string;
+  categoria?: string;
   factorUit?: number;
   montoFijo?: number;
   descripcion?: string;
@@ -165,6 +180,7 @@ export interface InfraccionAdminDto {
 
 export interface InfraccionUpsertRequest {
   nombre: string;
+  categoria?: string;
   factorUit?: number;
   montoFijo?: number;
   descripcion?: string;

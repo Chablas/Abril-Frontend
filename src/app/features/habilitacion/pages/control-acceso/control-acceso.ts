@@ -177,11 +177,7 @@ export class ControlAcceso implements OnInit {
   confirmarIngreso(ind: InduccionHoyDto): void {
     if (ind.ingresoConfirmado) return;
     this.controlAccesoService.confirmarIngreso(ind.induccionId).subscribe({
-      next: () => {
-        const idx = this.inducciones.findIndex(i => i.induccionId === ind.induccionId);
-        if (idx >= 0) this.inducciones[idx] = { ...this.inducciones[idx], ingresoConfirmado: true };
-        this.cdr.detectChanges();
-      },
+      next: () => this.loadInducciones(),
       error: err => {
         Swal.fire({
           icon: 'error',
@@ -189,6 +185,35 @@ export class ControlAcceso implements OnInit {
           text: err?.error?.message ?? 'No se pudo confirmar el ingreso.',
         });
       },
+    });
+  }
+
+  desconfirmarIngreso(ind: InduccionHoyDto): void {
+    if (!ind.ingresoConfirmado) return;
+    Swal.fire({
+      icon: 'question',
+      title: '¿Desmarcar asistencia?',
+      html: `<div style="text-align:left;font-size:0.9rem">
+              <strong>${ind.apellidoNombre}</strong><br/>
+              <span style="color:#6b7280">Quedará como no asistido y podrá volver a programarse.</span>
+            </div>`,
+      showCancelButton: true,
+      confirmButtonText: 'Desmarcar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#6b7280',
+    }).then(res => {
+      if (!res.isConfirmed) return;
+      this.controlAccesoService.desconfirmarIngreso(ind.induccionId).subscribe({
+        next: () => this.loadInducciones(),
+        error: err => {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: err?.error?.message ?? 'No se pudo desmarcar la asistencia.',
+          });
+        },
+      });
     });
   }
 

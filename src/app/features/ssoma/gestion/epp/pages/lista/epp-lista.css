@@ -1,0 +1,922 @@
+.epp-wrap {
+  padding: 8px 18px 20px;
+  background: #F8FAFC;
+}
+
+/* ── Filtros ──────────────────────────────────────────────────────────────── */
+
+.epp-filtros {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  padding: 7px 10px;
+  background: #fff;
+  border: 1px solid #eef1f5;
+  border-radius: 10px;
+}
+
+.epp-icon-toggle {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.epp-icon-toggle:hover {
+  background: #f8fafc;
+  color: var(--color-abril-logo-blue);
+}
+
+.epp-icon-toggle--activo {
+  background: #eaf3fb;
+  border-color: var(--color-abril-logo-blue);
+  color: var(--color-abril-logo-blue);
+}
+
+.epp-select {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #374151;
+  background: #fff;
+  transition: border-color 0.15s ease;
+  flex-shrink: 1;
+  min-width: 130px;
+}
+
+.epp-select:hover,
+.epp-select:focus {
+  border-color: var(--color-abril-logo-blue);
+  outline: none;
+}
+
+.epp-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.epp-btn-link {
+  background: none;
+  border: none;
+  color: var(--color-abril-logo-blue);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0 4px;
+  border-radius: 6px;
+  transition: opacity 0.15s ease;
+}
+
+.epp-btn-link:hover {
+  opacity: 0.7;
+}
+
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 56px 0;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.epp-filtros-spacer {
+  flex: 1;
+}
+
+.epp-vista-toggle {
+  display: flex;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #f8fafc;
+  padding: 2px;
+}
+
+.epp-vista-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 32px;
+  height: 30px;
+  justify-content: center;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.epp-vista-btn--activo {
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(0, 93, 157, 0.25);
+}
+
+/* ── Vista tarjetas ───────────────────────────────────────────────────────── */
+
+.epp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 16px;
+}
+
+.epp-card {
+  position: relative;
+  border: 1px solid #eef1f5;
+  border-radius: 14px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.epp-card:hover {
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+  border-color: #dbeafe;
+  transform: translateY(-2px);
+}
+
+.epp-card--inactivo {
+  opacity: 0.55;
+}
+
+.epp-card-img {
+  height: 132px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, #f8fafc, #eef2f7);
+  color: #cbd5e1;
+  font-size: 32px;
+}
+
+.epp-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.epp-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px 14px;
+}
+
+.epp-card-categoria {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.epp-card-tecnico {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.epp-card-comercial {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.epp-card-modelos {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 5px;
+}
+
+.epp-card-badge-inactivo {
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.epp-card-toggle {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.95);
+  color: #374151;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  transition: transform 0.15s ease;
+}
+
+.epp-card-toggle:hover {
+  transform: scale(1.08);
+}
+
+/* ── Vista árbol / tabla ──────────────────────────────────────────────────── */
+
+.epp-tree {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.epp-categoria-grupo {
+  --epp-accent: var(--color-abril-logo-blue);
+  border: 1px solid #eef1f5;
+  border-left: 3px solid var(--epp-accent);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  transition: border-color 0.15s ease;
+}
+
+.epp-categoria-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.epp-categoria-toggle:hover {
+  background: #fafbfd;
+}
+
+.epp-categoria-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+}
+
+.epp-categoria-chevron {
+  color: #cbd5e1;
+  font-size: 15px;
+  transition: transform 0.15s ease;
+}
+
+.epp-categoria-toggle-nombre {
+  font-size: 13px;
+  font-weight: 650;
+  color: #1e293b;
+  flex: 1;
+  letter-spacing: 0.01em;
+}
+
+.epp-categoria-toggle-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.epp-table .abril-table-wrap {
+  border-top: 1px solid #eef1f5;
+}
+
+.epp-familia-row td {
+  background: #f8fafc;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--color-abril-logo-blue);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 8px 14px;
+  border-top: 1px solid #eef1f5;
+}
+
+.epp-item-row {
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.epp-item-row:hover {
+  background: #f8fbff;
+}
+
+.epp-th-img {
+  width: 44px;
+}
+
+.epp-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #eef1f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+  font-size: 16px;
+  overflow: hidden;
+}
+
+.epp-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.epp-td-nombre {
+  font-weight: 650;
+  color: #0f172a;
+}
+
+.epp-td-center {
+  text-align: center;
+}
+
+.epp-td-acciones {
+  width: 70px;
+  display: flex;
+  gap: 4px;
+}
+
+.epp-badge-inactivo {
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+/* ── Formulario del ítem ──────────────────────────────────────────────────── */
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.epp-field-block {
+  margin-top: 18px;
+}
+
+.epp-imagen-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.epp-imagen-preview {
+  width: 92px;
+  height: 92px;
+  border-radius: 12px;
+  background: linear-gradient(160deg, #f8fafc, #eef2f7);
+  border: 1px solid #eef1f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+  font-size: 24px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.epp-imagen-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.epp-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 15px;
+  border-radius: 9px;
+  border: 1px solid var(--color-abril-logo-blue);
+  color: var(--color-abril-logo-blue);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.epp-upload-btn:hover {
+  background: #eaf3fb;
+}
+
+.epp-upload-btn--small {
+  padding: 6px;
+}
+
+.epp-section-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+.epp-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 20px 0 10px;
+}
+
+.epp-modelos-section,
+.epp-auditoria-section {
+  margin-top: 12px;
+}
+
+.epp-td-img {
+  width: 40px;
+}
+
+.epp-td-img img {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.epp-td-img i {
+  color: #d1d5db;
+}
+
+.epp-row--inactivo {
+  opacity: 0.5;
+}
+
+.epp-nuevo-modelo {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.epp-nueva-categoria {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.epp-agregar-fijo {
+  position: sticky;
+  top: -20px;
+  z-index: 5;
+  background: #fff;
+  padding: 4px 0 14px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #eef1f5;
+}
+
+.epp-agregar-fijo .epp-nueva-categoria:first-child {
+  margin-top: 0;
+}
+
+.epp-lista-scroll {
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.epp-categoria-bloque {
+  border: 1px solid #eef1f5;
+  border-radius: 10px;
+  padding: 11px 13px;
+  margin-bottom: 10px;
+  transition: border-color 0.15s ease;
+}
+
+.epp-categoria-bloque:hover {
+  border-color: #dbeafe;
+}
+
+.epp-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.epp-edit-row .abril-field-input {
+  height: 32px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.epp-input-orden {
+  width: 60px;
+  flex: none;
+}
+
+.epp-input-tabla {
+  height: 34px;
+  padding: 0 9px;
+  font-size: 12.5px;
+  min-width: 90px;
+  border-radius: 8px;
+}
+
+.epp-td-acciones-modelo {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+/* ── Ficha técnica ────────────────────────────────────────────────────────── */
+
+.epp-ficha-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 0;
+}
+
+.epp-ficha-icon-box {
+  width: 92px;
+  height: 92px;
+  border-radius: 12px;
+  background: linear-gradient(160deg, #f8fafc, #eef2f7);
+  border: 1px solid #eef1f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #cbd5e1;
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.epp-ficha-icon-box--activa {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.epp-ficha-col {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.epp-ficha-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border-radius: 9px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.epp-ficha-link:hover {
+  background: #fee2e2;
+}
+
+.epp-ficha-icon {
+  color: #dc2626;
+  margin-left: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.epp-ficha-icon:hover {
+  color: #b91c1c;
+}
+
+.epp-item-row--nueva {
+  background: #eff8ff;
+  cursor: default;
+}
+
+.epp-item-row--nueva:hover {
+  background: #eff8ff;
+}
+
+.epp-categoria-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.epp-categoria-nombre {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  flex: 1;
+}
+
+.epp-familia-list {
+  list-style: none;
+  margin: 9px 0 0;
+  padding: 0 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border-left: 2px solid #eef1f5;
+}
+
+.epp-familia-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #374151;
+  padding-left: 8px;
+}
+
+.epp-familia-list li span:first-child {
+  flex: 1;
+}
+
+.epp-btn-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: #f1f5f9;
+  color: #475569;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.epp-btn-icon:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.epp-btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.epp-btn-icon--danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.epp-btn-icon--danger:hover:not(:disabled) {
+  background: #fecaca;
+}
+
+.epp-auditoria-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.epp-sin-modelo {
+  color: #9ca3af;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.epp-thumb--clickable,
+.epp-imagen-preview.epp-thumb--clickable,
+.epp-card-img.epp-thumb--clickable {
+  cursor: zoom-in;
+}
+
+.epp-zoom-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 25, 0.85);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  cursor: zoom-out;
+}
+
+.epp-zoom-img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 10px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+
+.epp-zoom-close {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.epp-zoom-close:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.epp-pdf-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 25, 0.75);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 30px;
+}
+
+.epp-pdf-modal {
+  width: 100%;
+  max-width: 900px;
+  height: 90vh;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.epp-pdf-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #eef1f5;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.epp-pdf-modal-header span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #dc2626;
+}
+
+.epp-pdf-modal-acciones {
+  display: flex;
+  gap: 6px;
+}
+
+.epp-pdf-iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+}
+
+/* ── Generar Pedido ───────────────────────────────────────────────────────── */
+
+.epp-pedido-layout {
+  display: grid;
+  grid-template-columns: 1fr 370px;
+  gap: 22px;
+  align-items: start;
+}
+
+.epp-pedido-catalogo {
+  min-width: 0;
+}
+
+.epp-input-cantidad {
+  width: 74px;
+}
+
+.epp-pedido-resumen {
+  position: sticky;
+  top: 12px;
+  border: 1px solid #eef1f5;
+  border-radius: 14px;
+  padding: 18px;
+  background: #fff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+}
+
+.epp-pedido-resumen-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #eef1f5;
+  padding-bottom: 12px;
+}
+
+.epp-historial-link {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.epp-pedido-resumen-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.epp-pedido-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.epp-pedido-lista li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 9px;
+}
+
+.epp-pedido-linea-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.epp-pedido-acciones {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+}

@@ -6,6 +6,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Subject, debounceTime, forkJoin, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { Paginator } from '../../../../shared/components/paginator/paginator';
+import { SearchSelect } from '../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -37,7 +38,7 @@ interface InduccionGrupo {
 @Component({
   selector: 'app-hab-bandeja',
   standalone: true,
-  imports: [CommonModule, FormsModule, Paginator],
+  imports: [CommonModule, FormsModule, Paginator, SearchSelect],
   templateUrl: './bandeja.html',
   styleUrl: './bandeja.css',
 })
@@ -53,7 +54,7 @@ export class Bandeja implements OnInit, OnDestroy {
   filtroTipo = '';
   filtroResponsable = '';
   filtroTexto = '';
-  filtroEmpresa = '';
+  filtroEmpresaId: number | null = null;
   filtroProyectoId: number | null = null;
   filtroEntregable = '';
   areaArbolNodos: AreaArbolNodoDto[] = [];
@@ -87,28 +88,11 @@ export class Bandeja implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   catalogoProyectos: { id: number; nombre: string }[] = [];
-  empresasList: string[] = [];
-
-  get empresasDisponibles(): string[] { return this.empresasList; }
-
-  get entregablesDisponibles(): string[] {
-    const names = new Set<string>();
-    for (const item of this.items) {
-      if (item.nombreEntregable) names.add(item.nombreEntregable);
-    }
-    return Array.from(names).sort((a, b) => a.localeCompare(b, 'es'));
-  }
+  empresasList: { id: number; nombre: string }[] = [];
+  entregablesList: string[] = [];
 
   get filteredItems(): BandejaItemDto[] {
-    const empresa = this.filtroEmpresa.trim().toLowerCase();
-    let result = this.items;
-    if (empresa) {
-      result = result.filter((i) => i.empresaNombre?.toLowerCase().includes(empresa));
-    }
-    if (this.filtroEntregable) {
-      result = result.filter((i) => i.nombreEntregable === this.filtroEntregable);
-    }
-    return result.slice().sort((a, b) =>
+    return this.items.slice().sort((a, b) =>
       (a.entidadNombre ?? '').localeCompare(b.entidadNombre ?? '', 'es'),
     );
   }
@@ -183,6 +167,13 @@ export class Bandeja implements OnInit, OnDestroy {
       },
       error: (err) => console.error('error empresas:', err),
     });
+    this.bandejaService.getEntregablesDisponibles().subscribe({
+      next: (list) => {
+        this.entregablesList = list;
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('error entregables:', err),
+    });
     this.http.get<{ id: number; nombre: string }[]>(`${environment.apiUrl}api/v1/habilitacion/bandeja/proyectos`, { headers: buildHabHeaders() }).subscribe({
       next: (res) => { this.catalogoProyectos = res; this.cdr.detectChanges(); },
       error: (err) => console.error('error proyectos bandeja:', err),
@@ -225,6 +216,8 @@ export class Bandeja implements OnInit, OnDestroy {
       responsable: this.filtroResponsable || undefined,
       search: this.filtroTexto.trim() || undefined,
       proyectoId: this.filtroProyectoId ?? undefined,
+      empresaId: this.filtroEmpresaId ?? undefined,
+      entregable: this.filtroEntregable || undefined,
       areaScopeId: this.filtroAreaEfectivo ?? undefined,
     };
     this.bandejaService.getPendientes(params).subscribe({

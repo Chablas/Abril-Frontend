@@ -5754,3 +5754,53 @@ Pedido del usuario: exportar a Excel un "Desagregado de Recursos" para el área 
   - Definir si Monitores va como una sola línea agregada o separado en "Etapa 1"/"Etapa 2" (y con qué hito de corte).
   - Definir qué pasa con los materiales que no caen en ninguna de las ~14 partidas del modelo (alcohol, cintas, clavos, botiquín suelto, etc.) — ¿van a "Varios Seguridad", se omiten del Resumen, o catch-all nuevo?
 - Ver pendientes correspondientes del backend en `Abril_Backend/CONTEXT.md` (mismo día).
+
+## Sesión 2026-09-16 — Filtros de Bandeja pasan a ser server-side
+
+### Contexto
+Reporte del usuario: al aprobar un entregable de Warayana, la empresa dejó de aparecer en el filtro de empresas de Bandeja aunque le quedaban pendientes de tipo trabajador. Investigación completa (incluyendo bugs de backend y de datos) en `Abril_Backend/CONTEXT.md`, sesión del mismo día. Acá solo los cambios de este repo.
+
+### Cambios
+- **Combobox de empresa** (`bandeja.html`/`.ts`): reemplazado el `<select>` nativo por `app-search-select`, filtrando por `empresaId` (antes filtraba en memoria por substring de `empresaNombre` sobre solo los 20 registros de la página cargada — con "Todos" seleccionado y 854 registros totales, casi nunca coincidía).
+- **Filtro de entregable** (`filtroEntregable`): dejó de derivarse de `this.items` (getter `entregablesDisponibles` eliminado) y ahora carga su catálogo del backend (`getEntregablesDisponibles()`, nuevo endpoint) al iniciar; el `<select>` dispara `loadItems(1)` en vez de filtrar en memoria.
+- `bandeja.service.ts`: `getEmpresasDisponibles()` ahora tipa `{id, nombre}[]` (antes `string[]`); nuevo `getEntregablesDisponibles()`.
+- Agregado dato "ENVIADO" (fecha de envío) al costado de "VIGENCIA" en el panel de detalle del entregable seleccionado — pedido explícito del usuario para poder priorizar qué llevaba más tiempo sin revisarse.
+
+### Archivos clave
+- `features/habilitacion/pages/bandeja/bandeja.ts`, `bandeja.html`
+- `features/habilitacion/services/bandeja.service.ts`
+
+### Verificado
+No se corrió `ng build` en esta sesión (regla del proyecto). No se probó en navegador — el usuario verifica visualmente él mismo.
+
+### Pendiente
+- Nada de este repo. Ver `Abril_Backend/CONTEXT.md` (mismo día) por los 4 casos de ficha duplicada pendientes de revisión de GTH/SSOMA.
+
+## Sesión 2026-09-18 — Nuevo módulo Catálogo de EPP (SSOMA + Logística)
+
+### Contexto
+Pedido de SSOMA: catálogo autorizado de Equipo de Protección Personal, visible también para Logística, para estandarizar qué EPP/marca/modelo se puede comprar y agilizar la generación de pedidos.
+
+### Cambios
+- **Nuevo módulo** `features/ssoma/gestion/epp/` en `/ssoma/gestion/epp`, feature-permiso `ssoma.gestion.epp` (mismo permiso para SSOMA y Logística, asignable por rol desde Seguridad/Roles).
+- Jerarquía del catálogo: Categoría → Familia → Ítem (ficha técnica propia) → Modelo/Marca. Cada ítem tiene nombre técnico + nombre comercial, imagen, ficha técnica en PDF (visor inline, no descarga directa), y auditoría de quién/cuándo creó o editó.
+- Dos vistas: **Tabla** (árbol colapsable por Categoría → Familia, una fila por modelo/marca, con acciones inline: agregar, duplicar, editar, activar/desactivar) y **Tarjetas**.
+- Edición inline de Categorías, Familias, Ítems y Modelos sin salir de la pantalla; alta rápida de modelo directo desde la tabla (botón "+" o "duplicar y modificar").
+- Zoom de imagen (clic en cualquier miniatura) y visor de PDF embebido (iframe en modal, con botón de descarga).
+- **Pestaña "Generar Pedido"**: arma un pedido con talla+cantidad por línea (solo ítems activos), lo guarda con código correlativo (`PED-EPP-{año}-{id}`), proyecto y usuario que lo generó, descarga el Excel automático, y queda en un historial navegable desde la misma pestaña.
+- Carga inicial: 54 EPP con 43 modelos/marcas importados desde el Excel "EPPS AUTORIZADO SSOMA ACTUALIZADO ACTUAL.xls" (hoja "EPP Aprobado"), reorganizados en Familias reales (ver `Abril_Backend/_sql_prod/ssoma_epp_seed_excel.sql`).
+- Rediseño visual: acento de color + ícono por categoría (Cabeza/Ojos/Auditiva/Manos/Pies/Cuerpo/Altura/Respiratoria), filtros en una sola línea con íconos, fondo `#F8FAFC`.
+
+### Archivos clave
+- `features/ssoma/gestion/epp/pages/lista/epp-lista.ts`/`.html`/`.css` — toda la pantalla (catálogo + pedido).
+- `features/ssoma/gestion/epp/epp.service.ts`/`.dtos.ts` — HTTP + tipos.
+- `core/navigation/navigation.service.ts`, `feature-display-names.generated.ts`, `features/ssoma/ssoma.routes.ts` — alta del módulo en menú/rutas.
+- Backend: `Abril_Backend/Features/SsomaModule/EppFeature/**` (ver `Abril_Backend/CONTEXT.md`, mismo día).
+
+### Verificado
+`ng build` → 0 errores, solo warnings preexistentes de terceros. No se corrió el visor en navegador desde esta sesión — el usuario lo probó en vivo durante toda la sesión y confirmó que el catálogo, las imágenes, la ficha técnica y el pedido funcionan.
+
+### Pendiente
+- Cargar las imágenes reales de cada EPP (hoy la mayoría está sin foto).
+- Completar modelos/marcas de los ítems que quedaron "Sin modelo/marca registrado" (los que en el Excel decían "Según estándar de logística").
+- Evaluar si conviene un flujo de aprobación sobre el Pedido (hoy el estado "Generado" es solo informativo, sin aprobar/rechazar).

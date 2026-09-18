@@ -35,6 +35,7 @@ export interface InduccionHoyDto {
   equipoElectrico: boolean;
   estado: string;
   ingresoConfirmado: boolean;
+  confirmadoPorNombre: string | null;
 }
 
 export interface NoAutorizadoDto {
@@ -98,6 +99,14 @@ export class ControlAccesoService {
   confirmarIngreso(id: number): Observable<InduccionHoyDto> {
     return this.http.post<InduccionHoyDto>(
       `${this.base}/inducciones/${id}/confirmar-ingreso`,
+      {},
+      { headers: buildHabHeaders() },
+    );
+  }
+
+  desconfirmarIngreso(id: number): Observable<void> {
+    return this.http.post<void>(
+      `${this.base}/inducciones/${id}/desconfirmar-ingreso`,
       {},
       { headers: buildHabHeaders() },
     );

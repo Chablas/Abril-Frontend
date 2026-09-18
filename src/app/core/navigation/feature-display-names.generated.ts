@@ -136,6 +136,7 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "ssoma.gestion.activos-rotativos": "Activos Rotativos",
   "ssoma.gestion.amonestaciones": "Amonestaciones y Suspensiones",
   "ssoma.gestion.auditoria-ats": "Auditoría de ATS",
+  "ssoma.gestion.epp": "Catálogo de EPP",
   "ssoma.gestion.charlas": "Charlas & Capacitaciones",
   "ssoma.gestion.checklist": "Checklists SSOMA",
   "ssoma.gestion.cumplimiento": "Cumplimiento SSOMA",
