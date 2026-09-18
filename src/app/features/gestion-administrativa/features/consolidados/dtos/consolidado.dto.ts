@@ -20,7 +20,7 @@ export type { AreaNodeDto, EstadoReembolso, PeriodoOptionDto, TrabajadorOptionDt
 export interface ConsolidadoListItemDto {
   id: number;
   /**
-   * Código de la rendición grupal, `CON-AAAA-NNNN`. Es el nombre de la fila: lo que agrupa a las
+   * Código de la rendición grupal, `CONS-ÁREA-AAAA-NNN`. Es el nombre de la fila: lo que agrupa a las
    * planillas de abajo. Null en los consolidados anteriores a la columna.
    */
   codigo: string | null;
@@ -41,6 +41,12 @@ export interface ConsolidadoListItemDto {
    */
   planillaGrupalUrl: string | null;
   planillaGrupalFilename: string | null;
+  /**
+   * Copia de la planilla grupal con la firma de la jefatura: se firma junto con el consolidado al
+   * aprobar el reembolso. Null mientras no se apruebe, y en los aprobados antes de que se firmara.
+   */
+  planillaGrupalFirmadoUrl: string | null;
+  planillaGrupalFirmadoFilename: string | null;
 
   pdfFirmadoUrl: string | null;
   pdfFirmadoFilename: string | null;
@@ -107,6 +113,12 @@ export interface ConsolidadoListItemDto {
    */
   puedeSolicitarCorreccion: boolean;
   /**
+   * El consolidador puede reemplazar el documento: alguna de sus planillas sigue con el reembolso
+   * por decidir. Es el ÚNICO lugar donde se reemplaza —Gestión de Rendiciones solo adjunta el
+   * primero— y es lo que destraba un reembolso observado.
+   */
+  puedeReemplazar: boolean;
+  /**
    * La corrección con el Coordinador ERP que está viva en alguna de sus planillas. Null en el caso
    * normal: casi ningún consolidado pasa por el ERP.
    */
@@ -122,6 +134,11 @@ export interface ConsolidadoPlanillaDto {
   visible: boolean;
   /** Monto de la planilla COMPLETA: es lo que suma contra el importe del consolidado. */
   montoTotalPlanilla: number;
+  /**
+   * El reembolso de todas sus salidas sigue por decidir: pasa al consolidado de reemplazo. Las ya
+   * decididas se quedan con el actual, que es el que se firmó.
+   */
+  reembolsoAbierto: boolean;
 
   // Lo de abajo solo viene en las visibles.
   numeroPlanilla: string | null;
@@ -199,7 +216,7 @@ export interface ConsolidadoAccionDto {
  * Qué acción se está por confirmar, y por eso de qué correo se pregunta. `REEMBOLSO` (o nada) es la
  * decisión de la jefatura; las otras dos son trámites del consolidador sobre UN consolidado.
  */
-export type ConsolidadoCorreoAccion = 'REEMBOLSO' | 'AVISO_JEFATURA' | 'CORRECCION_ERP';
+export type ConsolidadoCorreoAccion = 'REEMBOLSO' | 'AVISO_JEFATURA' | 'CORRECCION_ERP' | 'REEMPLAZO';
 
 /** Selección sobre la que se pregunta qué correos saldrían. */
 export interface ConsolidadoCorreoPreviewRequestDto {

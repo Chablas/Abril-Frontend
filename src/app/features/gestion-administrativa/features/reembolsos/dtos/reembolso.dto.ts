@@ -19,7 +19,7 @@ export interface ReembolsoListItemDto {
   /** Id del Consolidado del S10. */
   id: number;
   /**
-   * Código de la rendición grupal, `CON-AAAA-NNNN`: el nombre del conjunto que Tesorería paga de
+   * Código de la rendición grupal, `CONS-ÁREA-AAAA-NNN`: el nombre del conjunto que Tesorería paga de
    * una sola vez. Null en los consolidados anteriores a la columna.
    */
   codigo: string | null;
@@ -32,6 +32,12 @@ export interface ReembolsoListItemDto {
    */
   planillaGrupalUrl: string | null;
   planillaGrupalFilename: string | null;
+  /**
+   * Copia de la planilla grupal con la firma de la jefatura: se firma junto con el consolidado al
+   * aprobar el reembolso. Null mientras no se apruebe, y en los aprobados antes de que se firmara.
+   */
+  planillaGrupalFirmadoUrl: string | null;
+  planillaGrupalFirmadoFilename: string | null;
 
 
   /** Importe declarado en el S10 para el documento entero. Null en los consolidados viejos. */

@@ -8,7 +8,6 @@
         <th>Motivo</th>
         <th>Origen</th>
         <th>Destino</th>
-        <th *ngIf="hayAdjuntos">Adjuntos</th>
         <th>Capturas</th>
         <th>Monto</th>
       </tr>
@@ -37,21 +36,6 @@
 
         <td class="text-center text-gray-500">{{ t.lugarOrigen ?? '—' }}</td>
         <td class="text-center text-gray-500">{{ t.lugarDestino ?? '—' }}</td>
-
-        <td *ngIf="hayAdjuntos" class="text-center">
-          <div *ngIf="t.adjuntos.length > 0; else sinAdjuntos" class="flex flex-col items-center gap-1">
-            <a *ngFor="let a of t.adjuntos" [href]="a.url" target="_blank" rel="noopener noreferrer"
-               class="inline-flex items-center gap-1.5 hover:underline text-xs font-medium break-all"
-               style="color:var(--color-abril-standard)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0">
-                <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6" />
-              </svg>
-              {{ a.filename || 'Ver documento' }}
-            </a>
-          </div>
-          <ng-template #sinAdjuntos><span class="text-gray-300">—</span></ng-template>
-        </td>
 
         <!-- Todas las capturas del trayecto, con su monto debajo. Si son varias, la fila crece:
              cada voucher tiene que poder contrastarse contra su importe. -->
@@ -92,4 +76,17 @@
       </tr>
     </tbody>
   </table>
+</div>
+
+<!-- Los documentos adjuntos (solo los motivos que los piden) van debajo de la tabla, cada uno con su
+     enlace y el archivo a la vista: dentro de una celda no hay lugar para mostrarlos. La etiqueta
+     dice de qué trayecto son. -->
+<div *ngIf="hayAdjuntos" class="flex flex-col gap-3 mt-3">
+  <ng-container *ngFor="let t of trayectos">
+    <app-documento-embebido
+      *ngFor="let a of t.adjuntos"
+      [etiqueta]="'Documento adjunto · trayecto ' + (t.orden + 1)"
+      [nombre]="a.filename || null"
+      [url]="a.url" />
+  </ng-container>
 </div>

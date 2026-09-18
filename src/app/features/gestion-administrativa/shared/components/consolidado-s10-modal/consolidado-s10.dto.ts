@@ -20,7 +20,7 @@ export interface ConsolidadoS10RendicionDto {
 export interface ConsolidadoS10Dto {
   id: number;
   /**
-   * Código de la rendición grupal, `CON-AAAA-NNNN`: el nombre del conjunto de planillas que se
+   * Código de la rendición grupal, `CONS-ÁREA-AAAA-NNN`: el nombre del conjunto de planillas que se
    * consolidaron juntas. Sobrevive al reemplazo del archivo —el grupo es el mismo—, así que es el
    * identificador con el que se sigue al consolidado por las cuatro pantallas de su ciclo. Null en
    * los consolidados anteriores a la columna.
@@ -44,6 +44,12 @@ export interface ConsolidadoS10Dto {
    */
   planillaGrupalUrl: string | null;
   planillaGrupalFilename: string | null;
+  /**
+   * Copia de la planilla grupal con la firma de la jefatura: se firma junto con el consolidado al
+   * aprobar el reembolso. Null mientras no se apruebe, y en los aprobados antes de que se firmara.
+   */
+  planillaGrupalFirmadoUrl: string | null;
+  planillaGrupalFirmadoFilename: string | null;
 
   /**
    * Copia firmada por la jefatura (todas sus hojas). La genera la aprobación del reembolso

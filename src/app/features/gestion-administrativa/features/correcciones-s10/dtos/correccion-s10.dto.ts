@@ -1,18 +1,19 @@
 import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import {
   EstadoCorreccionS10,
+  EstadoReembolso,
   TrabajadorOptionDto,
 } from '../../../shared/dtos/rendicion-shared.dto';
 
-export type { EstadoCorreccionS10, TrabajadorOptionDto };
+export type { EstadoCorreccionS10, EstadoReembolso, TrabajadorOptionDto };
 
 /**
  * Una solicitud de corrección en la bandeja del Coordinador ERP. Trae todo lo que necesita para
  * hacer su trabajo sin abrir nada más: el número de reembolso con el que ubica el registro en el S10, qué observó
  * la jefatura y qué le pide el consolidador.
  *
- * No trae los trayectos ni las capturas: el ERP no revisa el gasto —eso ya lo hizo la jefatura—, solo
- * corrige el documento del S10. Sí trae los dos PDF por si necesita contrastarlos.
+ * La fila no trae las salidas: las trae el detalle (`CorreccionS10DetalleDto`), con el ojo de cada
+ * una para ver sus trayectos. Sí trae los documentos por si necesita contrastarlos.
  */
 export interface CorreccionS10ListItemDto {
   id: number;
@@ -58,6 +59,40 @@ export interface CorreccionS10ListItemDto {
   atendidaPor: string | null;
   atendidaAt: string | null;
   comentarioAtencion: string | null;
+}
+
+/**
+ * El detalle de una corrección: la fila más las rendiciones que cubre el consolidado observado
+ * —todas: el registro del S10 que se corrige es uno solo— con sus salidas, cuyo ojo abre los
+ * trayectos.
+ */
+export interface CorreccionS10DetalleDto extends CorreccionS10ListItemDto {
+  rendiciones: CorreccionS10PlanillaDto[];
+  salidas: CorreccionS10SalidaDto[];
+}
+
+export interface CorreccionS10PlanillaDto {
+  id: number;
+  /** Código REN-AAAA-NNNN. */
+  codigo: string;
+  numeroPlanilla: string | null;
+  estadoReembolso: EstadoReembolso;
+  /** Monto de la planilla completa: lo que suma contra el importe del S10. */
+  montoTotalPlanilla: number;
+}
+
+export interface CorreccionS10SalidaDto {
+  id: number;
+  codigo: string | null;
+  /** Planilla a la que pertenece: es como se agrupan las salidas en el detalle. */
+  rendicionId: number;
+  trabajador: string;
+  area: string | null;
+  fechaSalida: string;
+  motivo: string;
+  trayectosCount: number;
+  monto: number;
+  estadoReembolso: EstadoReembolso;
 }
 
 /**

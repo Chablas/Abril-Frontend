@@ -81,11 +81,13 @@
           </td>
 
           <!-- Los papeles de la planilla en una sola celda: se abren, no cambian nada.
-               El consolidado y la copia firmada se muestran también cuando faltan, para que se
-               vea qué le queda al expediente. -->
+               De cada documento se muestra UNA sola copia: la firmada apenas existe, y el original
+               solo mientras no haya firma. El consolidado se muestra también cuando falta, para que
+               se vea qué le queda al expediente. -->
           <td (click)="$event.stopPropagation()">
             <div class="flex flex-wrap items-center gap-[6px]">
-              <a class="doc-chip" [href]="r.pdfUrl" target="_blank" rel="noopener noreferrer"
+              <a *ngIf="!r.pdfFirmadoUrl"
+                 class="doc-chip" [href]="r.pdfUrl" target="_blank" rel="noopener noreferrer"
                  [title]="r.pdfFilename">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
@@ -94,15 +96,19 @@
                 Planilla
               </a>
 
-              <a *ngIf="r.consolidadoS10; else sinConsolidado"
-                 class="doc-chip" [href]="r.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
-                 [title]="r.consolidadoS10.pdfFilename">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-                  <path d="M14 2v6h6" stroke-linejoin="round"/>
-                </svg>
-                S10 ✓
-              </a>
+              <!-- El `else` es de "no hay consolidado", no de "no se muestra este chip": con el
+                   consolidado ya firmado el chip de abajo ocupa su lugar. -->
+              <ng-container *ngIf="r.consolidadoS10 as c; else sinConsolidado">
+                <a *ngIf="!c.pdfFirmadoUrl"
+                   class="doc-chip" [href]="c.pdfUrl" target="_blank" rel="noopener noreferrer"
+                   [title]="c.pdfFilename">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                    <path d="M14 2v6h6" stroke-linejoin="round"/>
+                  </svg>
+                  S10 ✓
+                </a>
+              </ng-container>
               <ng-template #sinConsolidado>
                 <span class="doc-chip doc-chip--pendiente"
                       [title]="r.estadoPrimeraRevision === 'Aprobada'
@@ -113,7 +119,7 @@
               </ng-template>
 
               <!-- Las dos copias que deja la aprobación del reembolso: aprobar firma los dos
-                   documentos. -->
+                   documentos, y cada una reemplaza en la celda a su original. -->
               <a *ngIf="r.pdfFirmadoUrl"
                  class="doc-chip" [href]="r.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
                  [title]="'Planilla firmada por la jefatura el ' + (r.firmadoAt | date:'dd/MM/yyyy HH:mm')">

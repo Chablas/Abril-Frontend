@@ -3,6 +3,7 @@ import { Component, Input } from '@angular/core';
 
 import { DraggableImage } from '../../../../../shared/components/draggable-image/draggable-image';
 import { TrayectoDetalleDto } from '../../dtos/salida-detalle.dto';
+import { DocumentoEmbebido } from '../documento-embebido/documento-embebido';
 
 /**
  * Los trayectos de una solicitud de salida, en tabla: una fila por trayecto con su horario, su
@@ -26,7 +27,7 @@ import { TrayectoDetalleDto } from '../../dtos/salida-detalle.dto';
 @Component({
   standalone: true,
   selector: 'app-salida-trayectos-tabla',
-  imports: [CommonModule, DraggableImage],
+  imports: [CommonModule, DraggableImage, DocumentoEmbebido],
   templateUrl: './salida-trayectos-tabla.html',
   styles: [`
     :host { display: block; }
@@ -58,9 +59,8 @@ export class SalidaTrayectosTabla {
   @Input() catalogoNota = '';
 
   /**
-   * La columna de adjuntos solo existe si algún trayecto trae documentos. Son la excepción (solo
-   * los motivos que piden documento), así que dejarla fija llenaba la tabla de guiones y le robaba
-   * ancho a lo que sí se mira.
+   * Los documentos adjuntos son la excepción (solo los motivos que piden documento): van debajo de
+   * la tabla, con el archivo a la vista, y solo si algún trayecto trae alguno.
    */
   get hayAdjuntos(): boolean {
     return this.trayectos.some((t) => t.adjuntos.length > 0);

@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatDate } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import Swal from 'sweetalert2';
@@ -18,6 +18,7 @@ import {
 } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { SalidaCapturasModal } from '../salida-capturas-modal/salida-capturas-modal';
 import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
+import { DocumentoEmbebido } from '../../../../shared/components/documento-embebido/documento-embebido';
 import {
   primeraRevisionColors,
   reembolsoColors,
@@ -33,7 +34,10 @@ import {
 @Component({
   standalone: true,
   selector: 'app-rendicion-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaCapturasModal, SalidaDetalleModal],
+  imports: [
+    CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaCapturasModal, SalidaDetalleModal,
+    DocumentoEmbebido,
+  ],
   templateUrl: './rendicion-detalle-modal.html',
 })
 export class RendicionDetalleModal implements OnInit {
@@ -111,6 +115,24 @@ export class RendicionDetalleModal implements OnInit {
   /** Con qué otras rendiciones comparte el Consolidado del S10 (vacío si es solo suyo). */
   otrasDelConsolidado(d: { id: number; consolidadoS10: ConsolidadoS10Dto | null }): string[] {
     return otrasRendicionesDelConsolidado(d.consolidadoS10, d.id);
+  }
+
+  /**
+   * Nota al lado de la etiqueta del Consolidado del S10: cuándo se firmó —solo en la copia
+   * firmada— y con qué otras planillas comparte el documento.
+   *
+   * Se arma acá porque de las dos copias se muestra una sola: cuando llega la firma, la original
+   * desaparece, y con ella desaparecía el «También cubre» que era su única nota.
+   */
+  notaConsolidado(d: RendicionDetalleDto, firmado: boolean): string | null {
+    const partes: string[] = [];
+    const firmadoAt = d.consolidadoS10?.firmadoAt;
+    if (firmado && firmadoAt) {
+      partes.push('Firmado el ' + formatDate(firmadoAt, 'dd/MM/yyyy', 'es-PE'));
+    }
+    const otras = this.otrasDelConsolidado(d);
+    if (otras.length) partes.push('También cubre ' + otras.join(', '));
+    return partes.length ? partes.join(' · ') : null;
   }
 
   // ── Enviar a primera revisión ────────────────────────────────────────

@@ -430,7 +430,7 @@ export class Consolidados implements OnInit {
         : `¿Aprobar ${items.length} consolidados?`,
       // El conteo no está en la tabla —un consolidado cubre varias salidas— y la firma es el
       // efecto que no se ve.
-      nota: `${salidas} salida(s). Se firma el Consolidado del S10 y las planillas que cubre.`,
+      nota: `${salidas} salida(s). Se firman el Consolidado del S10, la planilla grupal y las planillas que cubre.`,
       avisos: await this.avisos(items, true),
       confirmButtonText: 'Sí, aprobar',
     });

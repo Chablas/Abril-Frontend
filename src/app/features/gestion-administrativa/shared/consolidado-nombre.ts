@@ -4,7 +4,7 @@
  * porque el mismo documento tiene que leerse igual en las cuatro — que en una se llame de una forma
  * y en otra de otra es justo lo que hacía difícil seguirlo.
  *
- * Son dos nombres y no uno: el código `CON-AAAA-NNNN` es el nuestro y sobrevive a reemplazar el
+ * Son dos nombres y no uno: el código `CONS-ÁREA-AAAA-NNN` es el nuestro y sobrevive a reemplazar el
  * archivo, mientras que el N.° de reembolso es el que le puso el S10 y cambia cuando el ERP anula
  * el registro. Por eso se imprimen juntos donde hay sitio.
  */
@@ -16,7 +16,7 @@ export interface ConsolidadoNombrable {
 }
 
 /**
- * Nombre completo: `CON-2026-0001 · N.° 12345`. Se cae con elegancia a lo que haya —los
+ * Nombre completo: `CONS-GTH-2026-001 · N.° 12345`. Se cae con elegancia a lo que haya —los
  * consolidados viejos no tienen ninguno de los dos— y nunca devuelve vacío.
  */
 export function nombreConsolidado(c: ConsolidadoNombrable | null | undefined): string {

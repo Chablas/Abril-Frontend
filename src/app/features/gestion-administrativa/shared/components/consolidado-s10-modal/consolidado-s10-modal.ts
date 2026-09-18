@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatDate, formatNumber } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -14,11 +14,13 @@ import { ConsolidadoS10Dto, ConsolidadoS10UploadResultDto } from './consolidado-
 import { CorreoAvisoDto } from '../../correo-aviso';
 import { confirmarConCorreos, pedirAvisos } from '../../confirmar-correos';
 import { NoWheelNumberDirective } from '../../../../../shared/directives/no-wheel-number.directive';
+import { DocumentoEmbebido } from '../documento-embebido/documento-embebido';
 
 /**
  * Adjunta el PDF "Consolidado del S10" de una o varias planillas de rendición. Lo sube el
- * consolidador desde Gestión de Rendiciones, que le pasa la función de subida (el endpoint y el
- * control de quién puede consolidar viven en el backend).
+ * consolidador: el primero desde Gestión de Rendiciones y el reemplazo desde Consolidados. Cada
+ * anfitrión le pasa la función de subida (el endpoint y el control de quién puede consolidar viven
+ * en el backend).
  *
  * El archivo cubre siempre planillas enteras: un registro en el S10 puede agrupar varias
  * rendiciones, incluso de trabajadores y razones sociales distintos. Queda bajo la razón social del
@@ -31,7 +33,10 @@ import { NoWheelNumberDirective } from '../../../../../shared/directives/no-whee
 @Component({
   standalone: true,
   selector: 'app-consolidado-s10-modal',
-  imports: [CommonModule, FormsModule, BaseModal, FileSelector, FilePreview, NoWheelNumberDirective],
+  imports: [
+    CommonModule, FormsModule, BaseModal, FileSelector, FilePreview, NoWheelNumberDirective,
+    DocumentoEmbebido,
+  ],
   templateUrl: './consolidado-s10-modal.html',
   styleUrl: './consolidado-s10-modal.css',
 })
@@ -98,6 +103,18 @@ export class ConsolidadoS10Modal implements OnDestroy {
   /** True si el consolidado va a cubrir más de una planilla. */
   get varias(): boolean {
     return this.rendiciones.length > 1;
+  }
+
+  /** Lo que declara el consolidado ya adjunto, junto a su etiqueta: monto, reembolso y fecha. */
+  get notaActual(): string | null {
+    const a = this.actual;
+    if (!a) return null;
+    const partes: string[] = [];
+    if (a.montoTotal !== null) partes.push(`S/ ${formatNumber(a.montoTotal, 'es-PE', '1.2-2')}`);
+    if (a.numeroReembolso) partes.push(`Reembolso ${a.numeroReembolso}`);
+    if (a.uploadedAt) partes.push(formatDate(a.uploadedAt, 'dd/MM/yyyy HH:mm', 'es-PE'));
+    partes.push('subir otro lo reemplaza');
+    return partes.join(' · ');
   }
 
   /** ObjectURL del archivo elegido, solo para poder revocarlo al salir. */
@@ -177,7 +194,7 @@ export class ConsolidadoS10Modal implements OnDestroy {
         // que nadie pidió.
         Swal.fire({
           icon: res.jefaturaAvisada ? 'success' : 'warning',
-          title: 'Consolidado del S10 adjuntado',
+          title: this.actual ? 'Consolidado del S10 reemplazado' : 'Consolidado del S10 adjuntado',
           text: [this.resumenGrupal(res.consolidado), res.avisoJefatura]
             .filter(Boolean)
             .join(' '),

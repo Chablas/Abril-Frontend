@@ -41,6 +41,14 @@
             · {{ rutaLabel(t) }}
           </span>
         </button>
+        <!-- Estado del reembolso, también en la cabecera: es lo único del trayecto que queda a la
+             vista cuando está cerrado, y con varios cerrados evita abrirlos de a uno para saber
+             cuáles reembolsan. -->
+        <span *ngIf="motivoElegido(t)"
+              class="shrink-0 text-[10px] px-[9px] py-[3px] rounded-full font-bold tracking-wide whitespace-nowrap text-white"
+              [ngClass]="trayectoCorrespondeReembolso(t) ? 'bg-[#15803D]' : 'bg-[#B45309]'">
+          {{ trayectoCorrespondeReembolso(t) ? 'CON REEMBOLSO' : 'SIN REEMBOLSO' }}
+        </span>
         <button
           *ngIf="i > 0"
           type="button"
@@ -242,27 +250,32 @@
              Aparece en cuanto el trayecto tiene motivo y dice siempre a qué atenerse, conceda
              reembolso o no: mostrarlo solo cuando lo concedía dejaba al resto de las salidas sin
              respuesta a la vista. Lo que dice acá lo deciden el motivo y el par de lugares en
-             Configuración, no el trabajador — el trayecto puede anular lo que el motivo concede. -->
+             Configuración, no el trabajador — el trayecto puede anular lo que el motivo concede.
+
+             Del tamaño de los avisos de correo de más abajo, pero con dos colores francos
+             (verde / ámbar) y un ícono por estado: como franja gris pasaba desapercibido y se
+             llegaba a rendir creyendo que el trayecto reembolsaba. El mismo estado se repite en
+             la cabecera, que es lo único que se ve con el trayecto cerrado. -->
         <div *ngIf="motivoElegido(t)"
-             class="flex flex-wrap items-center gap-x-[10px] gap-y-[4px] rounded-[8px] border px-[12px] py-[8px]"
-             [ngClass]="trayectoCorrespondeReembolso(t) ? 'bg-[#F0FDF4] border-[#BBF7D0]' : 'bg-[#F9FAFB] border-[#E5E7EB]'">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0"
-               [attr.stroke]="trayectoCorrespondeReembolso(t) ? '#15803D' : '#6B7280'" stroke-width="2">
+             class="flex items-start gap-[10px] rounded-[8px] border px-[14px] py-[10px]"
+             [ngClass]="trayectoCorrespondeReembolso(t) ? 'bg-[#DCFCE7] border-[#16A34A]' : 'bg-[#FEF3C7] border-[#D97706]'">
+          <!-- Ícono distinto por estado (visto bueno o aspa) y no el mismo con otro color: de un
+               vistazo la forma se distingue antes que el tono. -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0 mt-[1px]"
+               [attr.stroke]="trayectoCorrespondeReembolso(t) ? '#15803D' : '#B45309'"
+               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="9" />
-            <path stroke-linecap="round" stroke-linejoin="round"
-                  d="M14.5 9.5a2.5 2.5 0 0 0-2.5-1.5c-1.4 0-2.5.7-2.5 1.9 0 2.4 5 1.3 5 3.7 0 1.2-1.1 1.9-2.5 1.9a2.5 2.5 0 0 1-2.5-1.5M12 6.5v11" />
+            <path [attr.d]="trayectoCorrespondeReembolso(t) ? 'm7.8 12.2 2.9 2.9L16.2 9' : 'm8.6 8.6 6.8 6.8m0-6.8-6.8 6.8'" />
           </svg>
-          <p class="text-[12px] font-semibold"
-             [ngClass]="trayectoCorrespondeReembolso(t) ? 'text-[#14532D]' : 'text-[#4B5563]'">
-            Reembolso de movilidad
+          <p class="text-[13px] min-w-0"
+             [ngClass]="trayectoCorrespondeReembolso(t) ? 'text-[#14532D]' : 'text-[#92400E]'">
+            <span class="font-bold uppercase tracking-wide">
+              {{ trayectoCorrespondeReembolso(t) ? 'Con reembolso de movilidad' : 'Sin reembolso de movilidad' }}
+            </span>
+            <span *ngIf="razonSinReembolso(t)" class="text-[12px] break-words">
+              — {{ razonSinReembolso(t) }}
+            </span>
           </p>
-          <span class="text-[10px] px-[8px] py-[2px] rounded-full font-semibold tracking-wide whitespace-nowrap"
-                [ngClass]="trayectoCorrespondeReembolso(t) ? 'bg-[#DCFCE7] text-[#14532D]' : 'bg-[#F3F4F6] text-[#6B7280]'">
-            {{ trayectoCorrespondeReembolso(t) ? 'CON REEMBOLSO' : 'SIN REEMBOLSO' }}
-          </span>
-          <span *ngIf="razonSinReembolso(t)" class="text-[11px] text-gray-500 break-words">
-            — {{ razonSinReembolso(t) }}
-          </span>
         </div>
 
         <!-- Indicador de monto del catálogo (solo trabajadores TI con match origen+destino) -->

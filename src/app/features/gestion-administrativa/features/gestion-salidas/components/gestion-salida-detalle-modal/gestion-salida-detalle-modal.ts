@@ -4,13 +4,14 @@ import { BaseModal } from '../../../../../../shared/components/base-modal/base-m
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { SalidaTrayectosTabla } from '../../../../shared/components/salida-trayectos-tabla/salida-trayectos-tabla';
+import { DocumentoEmbebido } from '../../../../shared/components/documento-embebido/documento-embebido';
 import { reembolsoColors } from '../../../../shared/dtos/rendicion-shared.dto';
 import { GestionSalidaDetalleDto } from '../../dtos/gestion-salida.dto';
 
 @Component({
   standalone: true,
   selector: 'app-gestion-salida-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, SalidaTrayectosTabla, TitleCasePipe],
+  imports: [CommonModule, BaseModal, StatusBadge, SalidaTrayectosTabla, TitleCasePipe, DocumentoEmbebido],
   templateUrl: './gestion-salida-detalle-modal.html',
 })
 export class GestionSalidaDetalleModal {

@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule, DatePipe, formatDate } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
@@ -46,8 +46,6 @@ interface ConsolidadoObjetivo {
   codigos: string[];
   /** Suma de los montos completos de esas planillas: lo que tiene que declarar el consolidado. */
   monto: number;
-  /** El consolidado que se reemplaza, cuando todas comparten el mismo. */
-  actual: ConsolidadoS10Dto | null;
   /** Número de planilla impreso cuando es una sola ("TI: 000123"). */
   referencia: string | null;
 }
@@ -537,8 +535,8 @@ export class GestionRendiciones implements OnInit {
   // adjunta el consolidador de esos trabajadores. Se adjunta para toda la selección desde la barra
   // de arriba —o desde el detalle de una planilla, que es la misma acción sobre una sola—, nunca
   // desde la fila: ofrecerlo fila por fila invitaba a cargar un consolidado por planilla cuando lo
-  // que corresponde es uno solo. El backend re-valida todo; acá solo se evita ofrecer lo que va a
-  // rechazar.
+  // que corresponde es uno solo. Acá solo se adjunta el PRIMERO: reemplazarlo es de Consolidados.
+  // El backend re-valida todo; acá solo se evita ofrecer lo que va a rechazar.
 
   /**
    * True si el usuario es consolidador de alguna planilla de la tabla. Sin eso los botones del
@@ -557,7 +555,7 @@ export class GestionRendiciones implements OnInit {
   get consolidadoSeleccionBloqueo(): string | null {
     const items = this.selectedConsolidables;
     if (items.length === 0) {
-      return 'Selecciona rendiciones con la primera revisión aprobada y el reembolso por decidir';
+      return 'Selecciona rendiciones con la primera revisión aprobada y sin Consolidado del S10';
     }
     const sinPermiso = items.filter((r) => !r.puedeConsolidar);
     if (sinPermiso.length > 0) {
@@ -579,9 +577,9 @@ export class GestionRendiciones implements OnInit {
   }
 
   /**
-   * Lo que cubriría un consolidado adjuntado a estas filas: la unión de sus conjuntos (cada fila
-   * trae las planillas con las que comparte el consolidado actual) y la suma de sus montos
-   * completos, que es lo que el consolidado tiene que declarar.
+   * Lo que cubriría un consolidado adjuntado a estas filas: la unión de sus conjuntos (sin
+   * consolidado previo, cada conjunto es la propia planilla) y la suma de sus montos completos, que
+   * es lo que el consolidado tiene que declarar.
    */
   private objetivoConsolidado(items: GestionRendicionListItemDto[]): ConsolidadoObjetivo {
     const cubiertas = new Map<number, { codigo: string; monto: number }>();
@@ -591,17 +589,12 @@ export class GestionRendiciones implements OnInit {
       }
     }
 
-    // Es un reemplazo solo cuando todas comparten el mismo consolidado; si no, se juntan varios.
-    const actuales = new Set(items.map((r) => r.consolidadoS10?.id ?? null));
-    const actual = actuales.size === 1 ? (items[0].consolidadoS10 ?? null) : null;
-
     const unaSola = cubiertas.size === 1 ? items[0] : null;
 
     return {
       rendicionIds: [...cubiertas.keys()],
       codigos: [...cubiertas.values()].map((c) => c.codigo).sort(),
       monto: [...cubiertas.values()].reduce((acc, c) => acc + c.monto, 0),
-      actual,
       referencia: unaSola
         ? (unaSola.numeroPlanilla
             ?? `Rendición del ${new Date(unaSola.rendidoAt).toLocaleDateString('es-PE')}`)
@@ -648,15 +641,35 @@ export class GestionRendiciones implements OnInit {
     return r.consolidadoS10?.codigo ?? 'S10 ✓';
   }
 
-  /** Título del chip del consolidado: sus dos nombres, el archivo y con qué rendiciones se comparte. */
+  /**
+   * Título del chip del consolidado: sus dos nombres, el archivo que se abre y con qué rendiciones
+   * se comparte. El chip es uno solo —firmado el documento, abre esa copia y la original ya no se
+   * ofrece—, así que el título tiene que decir cuál de las dos está enseñando.
+   */
   consolidadoChipTitle(r: GestionRendicionListItemDto): string {
-    const partes = [nombreConsolidado(r.consolidadoS10)];
-    if (r.consolidadoS10?.pdfFilename) partes.push(r.consolidadoS10.pdfFilename);
+    const c = r.consolidadoS10;
+    const partes = [nombreConsolidado(c)];
+
+    if (c?.pdfFirmadoUrl) {
+      partes.push(c.pdfFirmadoFilename ?? 'copia firmada');
+      if (c.firmadoAt) partes.push(`firmado el ${formatDate(c.firmadoAt, 'dd/MM/yyyy HH:mm', 'es-PE')}`);
+    } else if (c?.pdfFilename) {
+      partes.push(c.pdfFilename);
+    }
 
     const otras = this.otrasDelConsolidado(r);
     if (otras.length) partes.push(`también cubre ${otras.join(', ')}`);
 
     return partes.join(' · ');
+  }
+
+  /** Título del chip de la planilla: qué copia abre, y desde cuándo está firmada si ya lo está. */
+  planillaChipTitle(r: GestionRendicionListItemDto): string {
+    if (!r.pdfFirmadoUrl) return r.pdfFilename;
+    const nombre = r.pdfFirmadoFilename ?? 'Planilla firmada';
+    return r.firmadoAt
+      ? `${nombre} · firmada el ${formatDate(r.firmadoAt, 'dd/MM/yyyy HH:mm', 'es-PE')}`
+      : nombre;
   }
 
   // ── Presentación ─────────────────────────────────────────────────────

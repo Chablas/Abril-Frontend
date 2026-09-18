@@ -1,6 +1,6 @@
 <app-base-modal
   [title]="titulo"
-  width="w-[1000px]"
+  width="w-[1100px]"
   closeColor="var(--color-abril-standard)"
   (closeModal)="cerrar()">
 
@@ -103,30 +103,20 @@
       </div>
     </div>
 
-    <!-- ── Respaldo ────────────────────────────────────────────────────────────────
-         El documento que se paga, en su copia firmada: es la que respalda el desembolso. El
-         original sin firmar no se lista para no ofrecer dos versiones del mismo papel —solo asoma,
-         y se dice, si la firma no se estampó. -->
-    <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
-      <span class="text-[11px] uppercase text-gray-400 font-semibold">Respaldo</span>
-
-      <button *ngFor="let doc of respaldo" type="button"
-              (click)="verArchivo(doc.url, doc.nombre)"
-              class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all text-left cursor-pointer"
-              style="color:var(--color-abril-accent)">
-        <svg *ngIf="doc.firmado" width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
-          <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <svg *ngIf="!doc.firmado" width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-          <path d="M14 2v6h6" stroke-linejoin="round"/>
-        </svg>
-        {{ doc.nombre }}
-        <span class="text-xs text-gray-400 font-normal">· {{ doc.etiqueta }}</span>
-      </button>
+    <!-- ── Documentos ──────────────────────────────────────────────────────────────
+         La planilla grupal y el Consolidado del S10 en su copia firmada, cada uno con su enlace y
+         el PDF debajo. Solo esos dos: las planillas de gasto de cada rendición no se listan. -->
+    <div *ngFor="let doc of documentos; trackBy: porClave" class="border-t pt-3"
+         style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        [etiqueta]="doc.etiqueta"
+        [nombre]="doc.nombre"
+        [url]="doc.url"
+        [firmado]="doc.firmado"
+        [marca]="doc.firmado ? null : 'Sin firma'" />
     </div>
 
-    <!-- ── Planillas que cubre, con sus salidas ─────────────────────────────
+    <!-- ── Rendiciones que cubre, con sus salidas ───────────────────────────
          El ojo abre el detalle de cada salida: trayectos con origen, destino y horario, sus
          vouchers con los montos y los adjuntos, que es lo que el requerimiento le pide ver a
          Tesorería (RF-TES-05). -->
@@ -153,35 +143,10 @@
       <!-- Una planilla que todavía espera a su jefatura se lista igual: el importe declarado en el
            S10 la incluye, así que sin ella el total del documento no cuadraría. -->
       <p *ngIf="!r.enBandeja" class="text-sm text-gray-400 italic">
-        Esta rendición todavía no llegó a Tesorería: espera la decisión de su jefatura. Se lista
-        porque el monto del consolidado la incluye.
+        Pendiente de la firma de su jefatura.
       </p>
 
       <ng-container *ngIf="r.enBandeja">
-        <div class="flex flex-wrap items-center gap-3">
-          <button type="button" *ngIf="r.pdfFirmadoUrl"
-                  (click)="verArchivo(r.pdfFirmadoUrl, r.pdfFirmadoFilename ?? 'Planilla firmada')"
-                  class="inline-flex items-center gap-2 hover:underline text-xs font-medium break-all cursor-pointer"
-                  style="color:var(--color-abril-accent)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
-              <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Planilla de gasto firmada
-          </button>
-
-          <button type="button" *ngIf="!r.pdfFirmadoUrl && r.pdfUrl"
-                  (click)="verArchivo(r.pdfUrl, r.pdfFilename ?? 'Planilla de gasto')"
-                  class="inline-flex items-center gap-2 hover:underline text-xs font-medium break-all cursor-pointer"
-                  style="color:var(--color-abril-accent)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-              <path d="M14 2v6h6" stroke-linejoin="round"/>
-            </svg>
-            Planilla de gasto
-            <span class="text-gray-400 font-normal">· sin la firma de jefatura</span>
-          </button>
-        </div>
-
         <!-- Solo lectura: el reembolso se decide por documento entero. -->
         <div class="abril-table-wrap">
           <table class="abril-table abril-table--th-center">
@@ -240,8 +205,12 @@
       </span>
     </div>
 
-    <!-- ── Acciones ─────────────────────────────────────────────────────── -->
-    <div *ngIf="porRevisar || porPagar" class="flex flex-wrap items-center justify-center gap-3">
+    <!-- ── Acciones ─────────────────────────────────────────────────────────
+         Pegadas al borde de abajo: con los dos PDF a la vista el modal es largo y los botones no
+         pueden quedar al final del scroll. -->
+    <div *ngIf="porRevisar || porPagar"
+         class="sticky bottom-0 z-10 -mx-[20px] -mb-[20px] px-[20px] py-3 rounded-b-lg bg-white border-t flex flex-wrap items-center justify-center gap-3"
+         style="border-color:var(--color-abril-border)">
       <button
         *ngIf="porRevisar"
         type="button"
@@ -294,12 +263,6 @@
 <app-salida-detalle-modal
   *ngIf="salidaId !== null"
   [solicitudId]="salidaId"
+  [mostrarDocumentos]="false"
   [cargar]="cargarSalida"
   (close)="cerrarSalida()" />
-
-<!-- Visor del consolidado y de las planillas: se abre encima del modal. -->
-<app-document-viewer
-  [archivoUrl]="visorUrl"
-  [nombre]="visorNombre"
-  (closed)="onVisorClosed()">
-</app-document-viewer>

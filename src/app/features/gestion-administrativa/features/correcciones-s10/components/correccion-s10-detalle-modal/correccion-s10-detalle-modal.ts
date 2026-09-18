@@ -9,13 +9,21 @@ import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { CorreccionesS10Service } from '../../services/correcciones-s10.service';
-import { CorreccionS10ListItemDto } from '../../dtos/correccion-s10.dto';
+import { CorreccionS10DetalleDto, CorreccionS10SalidaDto } from '../../dtos/correccion-s10.dto';
 import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-correos';
-import { correccionS10Colors } from '../../../../shared/dtos/rendicion-shared.dto';
+import {
+  correccionS10Colors,
+  reembolsoColors,
+  reembolsoLabelCorto,
+} from '../../../../shared/dtos/rendicion-shared.dto';
+import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
+import { DocumentoEmbebido } from '../../../../shared/components/documento-embebido/documento-embebido';
 
 /**
- * Detalle de una corrección del S10 para el Coordinador ERP: el número de reembolso con el que ubica el registro,
- * qué observó la jefatura, qué le pide el consolidador y los dos PDF para contrastar.
+ * Detalle de una corrección del S10 para el Coordinador ERP: el número de reembolso con el que ubica
+ * el registro, qué observó la jefatura, qué le pide el consolidador, los documentos a la vista para
+ * contrastar y las rendiciones que cubre el consolidado, con el ojo de cada salida para ver sus
+ * trayectos.
  *
  * Trae también el check de atención porque el correo abre directo acá: si el botón viviera solo en
  * la tabla, el enlace del correo dejaría al Coordinador mirando sin poder resolver.
@@ -23,7 +31,7 @@ import { correccionS10Colors } from '../../../../shared/dtos/rendicion-shared.dt
 @Component({
   standalone: true,
   selector: 'app-correccion-s10-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe],
+  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaDetalleModal, DocumentoEmbebido],
   templateUrl: './correccion-s10-detalle-modal.html',
 })
 export class CorreccionS10DetalleModal implements OnInit {
@@ -32,7 +40,13 @@ export class CorreccionS10DetalleModal implements OnInit {
   /** Emite true si algo cambió (hay que recargar la tabla de atrás), false si solo se cerró. */
   @Output() close = new EventEmitter<boolean>();
 
-  detalle: CorreccionS10ListItemDto | null = null;
+  detalle: CorreccionS10DetalleDto | null = null;
+
+  /** Salida cuyo detalle (el ojo de la tabla) está abierto. null = cerrado. */
+  salidaId: number | null = null;
+
+  /** El detalle de la salida en consulta, con el endpoint y el alcance de esta bandeja. */
+  readonly cargarSalida = (id: number) => this.service.getSalidaDetalle(id);
 
   private huboCambios = false;
 
@@ -65,6 +79,20 @@ export class CorreccionS10DetalleModal implements OnInit {
 
   cerrar(): void {
     this.close.emit(this.huboCambios);
+  }
+
+  /** Las salidas de una de las rendiciones que cubre el consolidado. */
+  salidasDe(rendicionId: number): CorreccionS10SalidaDto[] {
+    return this.detalle?.salidas.filter((s) => s.rendicionId === rendicionId) ?? [];
+  }
+
+  verSalida(solicitudId: number): void {
+    this.salidaId = solicitudId;
+  }
+
+  cerrarSalida(): void {
+    this.salidaId = null;
+    this.cdr.detectChanges();
   }
 
   /**
@@ -109,4 +137,6 @@ export class CorreccionS10DetalleModal implements OnInit {
   }
 
   readonly correccionS10Colors = correccionS10Colors;
+  readonly reembolsoColors = reembolsoColors;
+  readonly reembolsoLabelCorto = reembolsoLabelCorto;
 }

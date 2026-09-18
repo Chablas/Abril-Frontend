@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
 
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
@@ -20,6 +19,9 @@ import {
 import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-correos';
 import { nombreConsolidado } from '../../../../shared/consolidado-nombre';
 import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
+import { ConsolidadoS10Modal } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
+import { ConsolidadoS10Dto } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { DocumentoEmbebido } from '../../../../shared/components/documento-embebido/documento-embebido';
 import * as tramites from '../tramites-consolidador';
 
 /**
@@ -29,13 +31,16 @@ import * as tramites from '../tramites-consolidador';
  *
  * La decisión es del documento entero —cubre todas esas planillas— así que sus dos botones van al
  * pie del modal y las tablas son solo lectura. Al pie van también los trámites del consolidador:
- * avisar a la jefatura, pedir la corrección al ERP y, con el reembolso observado, ir a reemplazar
- * el consolidado a Gestión de Rendiciones, que es donde se adjunta.
+ * avisar a la jefatura, pedir la corrección al ERP y reemplazar el consolidado, que se hace acá
+ * mismo (Gestión de Rendiciones solo adjunta el primero).
  */
 @Component({
   standalone: true,
   selector: 'app-consolidado-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, FirmaRegistrarModal, SalidaDetalleModal],
+  imports: [
+    CommonModule, BaseModal, StatusBadge, TitleCasePipe, FirmaRegistrarModal, SalidaDetalleModal,
+    ConsolidadoS10Modal, DocumentoEmbebido,
+  ],
   templateUrl: './consolidado-detalle-modal.html',
 })
 export class ConsolidadoDetalleModal implements OnInit {
@@ -61,7 +66,6 @@ export class ConsolidadoDetalleModal implements OnInit {
     private service: ConsolidadosService,
     private loader: LoaderService,
     private errorService: ErrorService,
-    private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -89,7 +93,7 @@ export class ConsolidadoDetalleModal implements OnInit {
     this.close.emit(this.huboCambios);
   }
 
-  /** "CON-2026-0001 · N.° 12345": los dos nombres del documento, el nuestro y el del S10. */
+  /** "CONS-GTH-2026-001 · N.° 12345": los dos nombres del documento, el nuestro y el del S10. */
   get titulo(): string {
     return nombreConsolidado(this.detalle);
   }
@@ -119,7 +123,7 @@ export class ConsolidadoDetalleModal implements OnInit {
     const result = await confirmarConCorreos({
       titulo: '¿Aprobar el reembolso de este consolidado?',
       // Lo único que el modal no muestra: que aprobar ES firmar todos esos documentos.
-      nota: 'Se firma el Consolidado del S10 y las planillas que cubre.',
+      nota: 'Se firman el Consolidado del S10, la planilla grupal y las planillas que cubre.',
       avisos: await this.avisos(true),
       confirmButtonText: 'Sí, aprobar',
     });
@@ -219,23 +223,71 @@ export class ConsolidadoDetalleModal implements OnInit {
     this.cargar();
   }
 
-  /**
-   * Con el reembolso observado, el consolidado corregido se vuelve a adjuntar desde Gestión de
-   * Rendiciones: se abre ahí la primera planilla que cubre, cuyo detalle trae el botón para
-   * reemplazarlo (el reemplazo alcanza a todas las planillas del documento).
-   */
-  get planillaParaReemplazar(): number | null {
+  // ── Reemplazo del consolidado ────────────────────────────────────────
+  // Se reemplaza ACÁ y en ningún otro lado: Gestión de Rendiciones solo adjunta el primero. El
+  // documento nuevo cubre las planillas que siguen con el reembolso abierto; las ya decididas se
+  // quedan con el actual, que es el que se firmó.
+
+  /** Lo que va a cubrir el consolidado de reemplazo. null = modal cerrado. */
+  reemplazo: {
+    actual: ConsolidadoS10Dto;
+    codigos: string[];
+    monto: number;
+    referencia: string | null;
+  } | null = null;
+
+  abrirReemplazo(): void {
     const d = this.detalle;
-    if (!d?.puedeConsolidar || d.estadoReembolso !== 'Observado') return null;
-    return d.rendiciones.find((r) => r.visible)?.id ?? null;
+    if (!d?.puedeReemplazar) return;
+
+    const abiertas = d.rendiciones.filter((r) => r.reembolsoAbierto);
+    const una = abiertas.length === 1 ? abiertas[0] : null;
+
+    this.reemplazo = {
+      // El modal solo muestra el archivo, el monto, el número y la fecha del documento actual.
+      actual: {
+        id: d.id,
+        codigo: d.codigo,
+        ambito: 'Rendicion',
+        pdfUrl: d.pdfUrl,
+        pdfFilename: d.pdfFilename,
+        montoTotal: d.montoTotal,
+        numeroReembolso: d.numeroReembolso,
+        planillaGrupalUrl: d.planillaGrupalUrl,
+        planillaGrupalFilename: d.planillaGrupalFilename,
+        planillaGrupalFirmadoUrl: d.planillaGrupalFirmadoUrl,
+        planillaGrupalFirmadoFilename: d.planillaGrupalFirmadoFilename,
+        pdfFirmadoUrl: d.pdfFirmadoUrl,
+        pdfFirmadoFilename: d.pdfFirmadoFilename,
+        firmadoAt: d.firmadoAt,
+        uploadedAt: d.uploadedAt,
+        rendiciones: d.rendiciones.map((r) => ({ id: r.id, codigo: r.codigo })),
+      },
+      codigos: abiertas.map((r) => r.codigo),
+      monto: abiertas.reduce((acc, r) => acc + r.montoTotalPlanilla, 0),
+      referencia: una ? (una.numeroPlanilla ?? una.codigo) : null,
+    };
   }
 
-  irAReemplazar(): void {
-    const rendicionId = this.planillaParaReemplazar;
-    if (rendicionId === null) return;
-    this.router.navigate(['/gestion-administrativa/gestion-rendiciones'], {
-      queryParams: { rendicion: rendicionId },
+  readonly subirReemplazo = (file: File, montoTotal: number, numeroReembolso: string) =>
+    this.service.reemplazarConsolidado(this.consolidadoId, file, montoTotal, numeroReembolso);
+
+  /** A quién le llega el aviso que dispara reemplazar: la jefatura de esas planillas. */
+  readonly avisosReemplazo = () =>
+    this.service.correoPreview({
+      consolidadoIds: [this.consolidadoId],
+      aprobar: true,
+      accion: 'REEMPLAZO',
     });
+
+  cerrarReemplazo(subido: ConsolidadoS10Dto | null): void {
+    this.reemplazo = null;
+    if (subido) {
+      // El documento reemplazado se da de baja y el nuevo es otra fila: este detalle ya no existe.
+      this.close.emit(true);
+    } else {
+      this.cdr.detectChanges();
+    }
   }
 
   // ── Detalle de una salida ────────────────────────────────────────────

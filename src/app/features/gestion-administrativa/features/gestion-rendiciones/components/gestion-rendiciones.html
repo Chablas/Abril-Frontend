@@ -163,34 +163,47 @@
               [title]="primeraRevisionTitle(r)" />
           </td>
 
+          <!-- Un chip por documento, no dos: apenas llega la firma, la copia firmada ocupa el
+               lugar del original —el check la distingue— y es la única que se abre. -->
           <td (click)="$event.stopPropagation()">
             <div class="flex flex-wrap items-center gap-[6px]">
-              <a class="doc-chip" [href]="r.pdfUrl" target="_blank" rel="noopener noreferrer"
-                 [title]="r.pdfFilename">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <a class="doc-chip" [href]="r.pdfFirmadoUrl ?? r.pdfUrl" target="_blank" rel="noopener noreferrer"
+                 [title]="planillaChipTitle(r)">
+                <svg *ngIf="r.pdfFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg *ngIf="!r.pdfFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
                   <path d="M14 2v6h6" stroke-linejoin="round"/>
                 </svg>
-                Planilla
+                {{ r.pdfFirmadoUrl ? 'Planilla firmada' : 'Planilla' }}
               </a>
 
               <!-- Un consolidado puede cubrir varias rendiciones: el "+N" dice con cuántas otras
                    comparte el documento y el título cuáles son. -->
-              <a *ngIf="r.consolidadoS10; else sinConsolidado"
-                 class="doc-chip" [href]="r.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
+              <a *ngIf="r.consolidadoS10 as c; else sinConsolidado"
+                 class="doc-chip" [href]="c.pdfFirmadoUrl ?? c.pdfUrl" target="_blank" rel="noopener noreferrer"
                  [title]="consolidadoChipTitle(r)">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg *ngIf="c.pdfFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg *ngIf="!c.pdfFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
                   <path d="M14 2v6h6" stroke-linejoin="round"/>
                 </svg>
                 {{ consolidadoChipLabel(r) }}<span *ngIf="otrasDelConsolidado(r).length"> +{{ otrasDelConsolidado(r).length }}</span>
               </a>
               <!-- La planilla grupal del consolidado: el gasto de todas sus planillas en un solo
-                   documento. La arma Abril One al adjuntarse el S10. -->
-              <a *ngIf="r.consolidadoS10?.planillaGrupalUrl as grupal"
+                   documento. La arma Abril One al adjuntarse el S10; ya firmada, abre esa copia. -->
+              <a *ngIf="r.consolidadoS10?.planillaGrupalFirmadoUrl ?? r.consolidadoS10?.planillaGrupalUrl as grupal"
                  class="doc-chip" [href]="grupal" target="_blank" rel="noopener noreferrer"
-                 [title]="r.consolidadoS10?.planillaGrupalFilename ?? 'Planilla grupal'">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                 [title]="r.consolidadoS10?.planillaGrupalFirmadoUrl
+                   ? (r.consolidadoS10?.planillaGrupalFirmadoFilename ?? 'Planilla grupal firmada')
+                   : (r.consolidadoS10?.planillaGrupalFilename ?? 'Planilla grupal')">
+                <svg *ngIf="r.consolidadoS10?.planillaGrupalFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg *ngIf="!r.consolidadoS10?.planillaGrupalFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
                   <path d="M14 2v6h6" stroke-linejoin="round"/>
                 </svg>
@@ -206,24 +219,6 @@
                 </span>
               </ng-template>
 
-              <!-- Las dos copias que deja la aprobación: aprobar firma los dos documentos. -->
-              <a *ngIf="r.pdfFirmadoUrl"
-                 class="doc-chip" [href]="r.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
-                 [title]="'Planilla firmada el ' + (r.firmadoAt | date:'dd/MM/yyyy HH:mm')">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Planilla firmada
-              </a>
-
-              <a *ngIf="r.consolidadoS10?.pdfFirmadoUrl as firmado"
-                 class="doc-chip" [href]="firmado" target="_blank" rel="noopener noreferrer"
-                 [title]="'Consolidado del S10 firmado el ' + (r.consolidadoS10?.firmadoAt | date:'dd/MM/yyyy HH:mm')">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                S10 firmado
-              </a>
             </div>
           </td>
 
@@ -298,7 +293,6 @@
 <app-consolidado-s10-modal
   *ngIf="consolidadoPara as objetivo"
   [upload]="subirConsolidado"
-  [actual]="objetivo.actual"
   [referencia]="objetivo.referencia"
   [rendiciones]="objetivo.codigos"
   [razonSocial]="razonSocialConsolidador"
