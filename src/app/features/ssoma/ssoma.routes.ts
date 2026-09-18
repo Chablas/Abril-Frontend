@@ -108,6 +108,11 @@ export const SSOMA_ROUTES: Routes = [
       ),
   },
   {
+    path: 'gestion/epp',
+    loadChildren: () =>
+      import('./gestion/epp/epp.routes').then((m) => m.EPP_ROUTES),
+  },
+  {
     path: 'gestion/cumplimiento',
     loadChildren: () =>
       import('./gestion/cumplimiento-ssoma/cumplimiento-ssoma.routes').then(
