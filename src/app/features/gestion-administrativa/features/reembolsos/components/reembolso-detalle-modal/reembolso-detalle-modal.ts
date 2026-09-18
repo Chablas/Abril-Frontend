@@ -17,6 +17,7 @@ import {
   reembolsoLabelCorto,
 } from '../../../../shared/dtos/rendicion-shared.dto';
 import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-correos';
+import { nombreConsolidado } from '../../../../shared/consolidado-nombre';
 import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
 
 /**
@@ -101,9 +102,9 @@ export class ReembolsoDetalleModal implements OnInit {
 
   private huboCambios = false;
 
+  /** "CON-2026-0001 · N.° 12345": los dos nombres del documento, el nuestro y el del S10. */
   get titulo(): string {
-    const numero = this.detalle?.numeroReembolso;
-    return numero ? `Consolidado del S10 N.° ${numero}` : 'Consolidado del S10';
+    return nombreConsolidado(this.detalle);
   }
 
   // ── Respaldo ─────────────────────────────────────────────────────────
@@ -117,17 +118,35 @@ export class ReembolsoDetalleModal implements OnInit {
    * lista el original y la etiqueta lo dice, en vez de dejar a Tesorería sin nada que mirar.
    */
   private armarRespaldo(d: ReembolsoDetalleDto): RespaldoDoc[] {
-    return [
+    // La etiqueta nombra la rendición grupal cuando la tiene: es el documento que Tesorería paga
+    // de una sola vez, y es con ese código que aparece en las otras tres pantallas del ciclo.
+    const consolidado = d.codigo ? `Consolidado ${d.codigo}` : 'Consolidado del S10';
+
+    const docs: RespaldoDoc[] = [
       d.pdfFirmadoUrl
         ? { url: d.pdfFirmadoUrl,
             nombre: d.pdfFirmadoFilename ?? 'Consolidado del S10 firmado',
-            etiqueta: 'Consolidado del S10 firmado',
+            etiqueta: `${consolidado} firmado`,
             firmado: true }
         : { url: d.pdfUrl,
             nombre: d.pdfFilename,
-            etiqueta: 'Consolidado del S10 — sin la firma de jefatura',
+            etiqueta: `${consolidado} — sin la firma de jefatura`,
             firmado: false },
     ];
+
+    // La planilla grupal va con el consolidado y no con las planillas de abajo: es el gasto de
+    // TODO lo que se paga acá en un solo documento, que es contra lo que se contrasta el importe
+    // declarado en el S10 sin tener que sumar planilla por planilla.
+    if (d.planillaGrupalUrl) {
+      docs.push({
+        url: d.planillaGrupalUrl,
+        nombre: d.planillaGrupalFilename ?? 'Planilla grupal',
+        etiqueta: 'Planilla grupal',
+        firmado: false,
+      });
+    }
+
+    return docs;
   }
 
   /** Las salidas de una de las planillas que cubre el consolidado. */
@@ -210,9 +229,7 @@ export class ReembolsoDetalleModal implements OnInit {
     const { value: observacion, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
       titulo: '¿Observar este reembolso?',
-      nota:
-        'Vuelve al consolidador para que recargue el Consolidado del S10 o le pida la corrección ' +
-        'al Coordinador ERP. Al recargarlo pasa otra vez por la firma de la jefatura.',
+      nota: 'Vuelve al consolidador.',
       avisos: await pedirAvisos(this.service.correoPreviewObservacion(seleccion)),
       observacion: {
         label: 'Motivo',

@@ -19,6 +19,11 @@ export type { AreaNodeDto, EstadoReembolso, PeriodoOptionDto, TrabajadorOptionDt
  */
 export interface ConsolidadoListItemDto {
   id: number;
+  /**
+   * Código de la rendición grupal, `CON-AAAA-NNNN`. Es el nombre de la fila: lo que agrupa a las
+   * planillas de abajo. Null en los consolidados anteriores a la columna.
+   */
+  codigo: string | null;
   /** Número de reembolso que devolvió el S10. Null en los consolidados viejos. */
   numeroReembolso: string | null;
   /** Importe declarado en el S10: cubre las planillas completas, sin recortar por visibilidad. */
@@ -29,6 +34,14 @@ export interface ConsolidadoListItemDto {
   // ── Documentos ─────────────────────────────────────────────────────────
   pdfUrl: string;
   pdfFilename: string;
+  /**
+   * La PLANILLA GRUPAL: el PDF que junta en un solo documento las planillas de gasto de todo lo que
+   * cubre el consolidado. La genera Abril One al adjuntarse el S10 —no se sube— y se rehace si el
+   * consolidado se reemplaza. Null en los consolidados anteriores a la columna.
+   */
+  planillaGrupalUrl: string | null;
+  planillaGrupalFilename: string | null;
+
   pdfFirmadoUrl: string | null;
   pdfFirmadoFilename: string | null;
   firmadoAt: string | null;

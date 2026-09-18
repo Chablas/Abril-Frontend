@@ -63,15 +63,19 @@
       Observar 1.ª revisión<span *ngIf="puedeDecidirPrimeraRevision"> ({{ selectedPorPrimeraRevision.length }})</span>
     </button>
 
-    <span *ngIf="esConsolidador" class="w-px h-5 bg-[#E5E7EB] mx-1"></span>
-
     <!-- Consolidado del S10: uno solo para todas las seleccionadas que ya pasaron la primera
          revisión, aunque sean de trabajadores y razones sociales distintos. Solo para el
-         consolidador: la jefatura revisa, no consolida. -->
+         consolidador: la jefatura revisa, no consolida.
+
+         Va a la derecha (`ml-auto`), separado de los dos botones de la primera revisión: es el
+         paso siguiente del flujo y el ÚNICO lugar desde donde se adjunta, porque un consolidado
+         puede cubrir varias planillas y ofrecerlo además fila por fila invitaba a cargar uno por
+         cada una. -->
     <button
       *ngIf="esConsolidador"
       type="button"
       abrilBulkAction="default"
+      class="ml-auto"
       (click)="abrirConsolidadoSeleccion()"
       [disabled]="consolidadoSeleccionBloqueo !== null"
       [title]="consolidadoSeleccionBloqueo ?? 'Adjuntar un solo Consolidado del S10 para las rendiciones seleccionadas'">
@@ -179,8 +183,20 @@
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
                   <path d="M14 2v6h6" stroke-linejoin="round"/>
                 </svg>
-                S10 ✓<span *ngIf="otrasDelConsolidado(r).length"> +{{ otrasDelConsolidado(r).length }}</span>
+                {{ consolidadoChipLabel(r) }}<span *ngIf="otrasDelConsolidado(r).length"> +{{ otrasDelConsolidado(r).length }}</span>
               </a>
+              <!-- La planilla grupal del consolidado: el gasto de todas sus planillas en un solo
+                   documento. La arma Abril One al adjuntarse el S10. -->
+              <a *ngIf="r.consolidadoS10?.planillaGrupalUrl as grupal"
+                 class="doc-chip" [href]="grupal" target="_blank" rel="noopener noreferrer"
+                 [title]="r.consolidadoS10?.planillaGrupalFilename ?? 'Planilla grupal'">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                Planilla grupal
+              </a>
+
               <ng-template #sinConsolidado>
                 <span class="doc-chip doc-chip--pendiente"
                       [title]="r.estadoPrimeraRevision === 'Aprobada'
@@ -257,27 +273,11 @@
                 </button>
               </ng-container>
 
-              <!-- Adjuntar el consolidado. Solo con la primera revisión aprobada y hasta que el
-                   reembolso se decida, y solo para el consolidador de esos trabajadores
-                   (Consolidados → Configuración → Consolidadores). Si ya hay uno compartido con
-                   otras rendiciones abiertas, se reemplaza para todas. -->
-              <button
-                *ngIf="r.puedeAdjuntarConsolidado && esConsolidador"
-                type="button"
-                (click)="abrirConsolidado(r, $event)"
-                [disabled]="!r.puedeConsolidar"
-                [title]="consolidadoTitle(r)"
-                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style="background:var(--color-abril-standard)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-                  <path d="M14 2v6h6" stroke-linejoin="round"/>
-                </svg>
-                {{ r.consolidadoS10 ? 'Consolidado S10 ✓' : 'Consolidado S10' }}
-              </button>
+              <!-- El Consolidado del S10 NO se adjunta desde la fila: cubre a todas las planillas
+                   seleccionadas de una vez y vive en la barra de arriba. Repetirlo acá hacía que
+                   se cargara uno por planilla cuando lo que corresponde es uno solo. -->
 
-              <span *ngIf="!r.porPrimeraRevision && !(r.puedeAdjuntarConsolidado && esConsolidador)"
-                    class="text-gray-300">—</span>
+              <span *ngIf="!r.porPrimeraRevision" class="text-gray-300">—</span>
             </div>
           </td>
         </tr>
@@ -302,6 +302,7 @@
   [referencia]="objetivo.referencia"
   [rendiciones]="objetivo.codigos"
   [razonSocial]="razonSocialConsolidador"
+  [avisosJefatura]="avisosConsolidado"
   [montoEsperado]="objetivo.monto"
   (close)="cerrarConsolidado($event)" />
 

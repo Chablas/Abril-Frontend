@@ -101,12 +101,6 @@
       <span *ngIf="otrasDelConsolidado(d).length" class="text-xs text-gray-500 pl-6">
         También cubre {{ otrasDelConsolidado(d).join(', ') }}
       </span>
-      <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
-        {{ d.estadoPrimeraRevision === 'Aprobada'
-            ? 'Consolidado del S10 pendiente.'
-            : 'El Consolidado del S10 se habilita cuando tu jefe apruebe la primera revisión.' }}
-      </span>
-
       <!-- Las dos copias que deja la aprobación del reembolso: aprobar ES firmar, y firma los
            dos documentos. -->
       <a *ngIf="d.pdfFirmadoUrl" [href]="d.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
@@ -206,20 +200,15 @@
       </div>
     </div>
 
-    <!-- Cierre de la subsanación: el aviso de estado y el último paso, juntos. La acción es de
-         la planilla entera (no de una salida), así que va acá abajo y no en la tabla de arriba. -->
-    <div *ngIf="subsanando"
-         class="border rounded-lg p-3 flex flex-col items-center gap-3 text-sm text-center"
-         style="border-color:#FDE68A;background:#FFFBEB;color:#92400E">
-      <span>
-        Al terminar de corregir, vuelve a generar la rendición: conserva el código
-        <b>{{ d.codigo }}</b>.
-      </span>
-
+    <!-- Cierre de la subsanación. La acción es de la planilla entera (no de una salida), así que
+         va acá abajo y no en la tabla de arriba: rehace el PDF con los montos corregidos y lo
+         reenvía a la primera revisión en el mismo paso. -->
+    <div *ngIf="subsanando" class="flex justify-center border-t pt-3"
+         style="border-color:var(--color-abril-border)">
       <button
         type="button"
         (click)="regenerarPlanilla()"
-        title="Rehace la planilla con los montos actuales y la deja lista para reenviar a revisión"
+        title="Rehace la planilla con los montos actuales y la reenvía a la primera revisión"
         class="inline-flex items-center gap-[6px] h-[34px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors flex-shrink-0"
         style="background:var(--color-abril-standard)"
         onmouseover="this.style.background='var(--color-abril-standard-hover)'"

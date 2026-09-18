@@ -29,6 +29,7 @@ import {
   ConsolidadoS10Dto,
   otrasRendicionesDelConsolidado,
 } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { nombreConsolidado } from '../../../shared/consolidado-nombre';
 import { GestionRendicionDetalleModal } from './gestion-rendicion-detalle-modal/gestion-rendicion-detalle-modal';
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 
@@ -533,9 +534,11 @@ export class GestionRendiciones implements OnInit {
   // ── Consolidado del S10 ──────────────────────────────────────────────
   // Un consolidado es UN registro en el S10 y puede cubrir varias rendiciones, incluso de
   // trabajadores y razones sociales distintos: queda bajo la razón social del consolidador. Solo lo
-  // adjunta el consolidador de esos trabajadores. Se adjunta desde la fila —cubre esa planilla y, si
-  // ya tenía uno compartido, las demás que siguen abiertas: se reemplaza entero— o para toda la
-  // selección. El backend re-valida todo; acá solo se evita ofrecer lo que va a rechazar.
+  // adjunta el consolidador de esos trabajadores. Se adjunta para toda la selección desde la barra
+  // de arriba —o desde el detalle de una planilla, que es la misma acción sobre una sola—, nunca
+  // desde la fila: ofrecerlo fila por fila invitaba a cargar un consolidado por planilla cuando lo
+  // que corresponde es uno solo. El backend re-valida todo; acá solo se evita ofrecer lo que va a
+  // rechazar.
 
   /**
    * True si el usuario es consolidador de alguna planilla de la tabla. Sin eso los botones del
@@ -564,17 +567,12 @@ export class GestionRendiciones implements OnInit {
     return null;
   }
 
-  abrirConsolidado(r: GestionRendicionListItemDto, ev: Event): void {
-    ev.stopPropagation();
-    this.consolidadoPara = this.objetivoConsolidado([r]);
-  }
-
   abrirConsolidadoSeleccion(): void {
     if (this.consolidadoSeleccionBloqueo !== null) return;
     this.consolidadoPara = this.objetivoConsolidado(this.selectedConsolidables);
   }
 
-  /** El botón del pie del detalle: mismo objetivo que el de la fila. */
+  /** El botón del pie del detalle: el consolidado de esa sola planilla y las que comparta con ella. */
   abrirConsolidadoDesdeDetalle(d: GestionRendicionListItemDto): void {
     if (!d.puedeAdjuntarConsolidado || !d.puedeConsolidar) return;
     this.consolidadoPara = this.objetivoConsolidado([d]);
@@ -614,6 +612,17 @@ export class GestionRendiciones implements OnInit {
   readonly subirConsolidado = (file: File, montoTotal: number, numeroReembolso: string) =>
     this.service.uploadConsolidadoS10(this.consolidadoPara!.rendicionIds, file, montoTotal, numeroReembolso);
 
+  /**
+   * A quién le llega el aviso que dispara adjuntar: la jefatura de los trabajadores de esas
+   * planillas. Lo resuelve el backend con el mismo cálculo que hace el envío.
+   */
+  readonly avisosConsolidado = () =>
+    this.service.correoPreview({
+      rendicionIds: this.consolidadoPara!.rendicionIds,
+      aprobar: true,
+      accion: 'CONSOLIDADO_S10',
+    });
+
   cerrarConsolidado(subido: ConsolidadoS10Dto | null): void {
     this.consolidadoPara = null;
     if (subido) {
@@ -630,25 +639,24 @@ export class GestionRendiciones implements OnInit {
     return otrasRendicionesDelConsolidado(r.consolidadoS10, r.id);
   }
 
-  /** Título del chip "S10 ✓": el archivo y, si es compartido, con qué rendiciones. */
-  consolidadoChipTitle(r: GestionRendicionListItemDto): string {
-    const otras = this.otrasDelConsolidado(r);
-    const archivo = r.consolidadoS10?.pdfFilename ?? '';
-    return otras.length ? `${archivo} · también cubre ${otras.join(', ')}` : archivo;
+  /**
+   * Etiqueta del chip del consolidado: el código de la rendición grupal, que es como se la nombra
+   * en las otras tres pantallas de su ciclo. Los consolidados anteriores al código se quedan con el
+   * "S10 ✓" de siempre: ahí lo único que hay que decir es que el documento está.
+   */
+  consolidadoChipLabel(r: GestionRendicionListItemDto): string {
+    return r.consolidadoS10?.codigo ?? 'S10 ✓';
   }
 
-  /** Título del botón "Consolidado S10" de la fila: qué va a cubrir, o por qué está apagado. */
-  consolidadoTitle(r: GestionRendicionListItemDto): string {
-    if (!r.puedeConsolidar) {
-      return 'No eres consolidador de todos los trabajadores que cubriría este consolidado';
-    }
-    const otras = r.consolidadoConjunto.filter((c) => c.id !== r.id).map((c) => c.codigo);
-    if (otras.length) {
-      return 'Reemplazar el Consolidado del S10, también para ' + otras.join(', ');
-    }
-    return r.consolidadoS10
-      ? 'Reemplazar el Consolidado del S10'
-      : 'Adjuntar el Consolidado del S10';
+  /** Título del chip del consolidado: sus dos nombres, el archivo y con qué rendiciones se comparte. */
+  consolidadoChipTitle(r: GestionRendicionListItemDto): string {
+    const partes = [nombreConsolidado(r.consolidadoS10)];
+    if (r.consolidadoS10?.pdfFilename) partes.push(r.consolidadoS10.pdfFilename);
+
+    const otras = this.otrasDelConsolidado(r);
+    if (otras.length) partes.push(`también cubre ${otras.join(', ')}`);
+
+    return partes.join(' · ');
   }
 
   // ── Presentación ─────────────────────────────────────────────────────

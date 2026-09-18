@@ -36,6 +36,15 @@
         </span>
       </div>
 
+      <!-- De qué rendición grupal viene el pedido: el ERP corrige el registro del S10, pero lo que
+           vuelve corregido es este consolidado. -->
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Consolidado</span>
+        <span class="text-base font-semibold" style="color:var(--color-abril-ink)">
+          {{ c.consolidadoS10?.codigo ?? '—' }}
+        </span>
+      </div>
+
       <div class="flex flex-col ml-auto items-end gap-1">
         <app-status-badge
           [text]="c.estado"
@@ -89,6 +98,21 @@
         {{ c.consolidadoS10.pdfFilename }}
         <span class="text-xs text-gray-400 font-normal">· Consolidado del S10 observado</span>
       </a>
+
+      <!-- La planilla grupal del consolidado observado: el gasto que el ERP tiene que cuadrar
+           contra el registro del S10, ya sumado en un solo documento. -->
+      <a *ngIf="c.consolidadoS10?.planillaGrupalUrl as grupal" [href]="grupal"
+         target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
+        </svg>
+        {{ c.consolidadoS10?.planillaGrupalFilename }}
+        <span class="text-xs text-gray-400 font-normal">· Planilla grupal</span>
+      </a>
+
       <span *ngIf="!c.consolidadoS10" class="text-sm text-gray-400 italic">
         La planilla no tiene un Consolidado del S10 vigente.
       </span>
@@ -105,9 +129,6 @@
       </span>
       <span *ngIf="c.comentarioAtencion">
         <span class="font-semibold">Comentario:</span> {{ c.comentarioAtencion }}
-      </span>
-      <span *ngIf="c.numeroReembolsoAnulado" class="font-semibold" style="color:#991B1B">
-        El registro se anuló: el consolidador tiene que generar un número de reembolso nuevo.
       </span>
     </div>
 

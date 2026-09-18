@@ -55,7 +55,16 @@
 
         <tr *ngFor="let m of pagedMotivos" class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
 
-          <td class="text-gray-700">{{ m.descripcion | titleCase }}</td>
+          <!-- «Otro motivo» no es una opción del desplegable: es la vía de texto libre del
+               formulario. Se lista acá porque sus opciones se configuran igual que las demás. -->
+          <td class="text-gray-700">
+            {{ m.descripcion | titleCase }}
+            <span *ngIf="m.esMotivoLibre"
+                  class="ml-[6px] text-[10px] px-[8px] py-[2px] rounded-full bg-[#E0F2FE] text-[#075985] font-semibold tracking-wide whitespace-nowrap"
+                  title="Es el motivo que el trabajador escribe a mano en Solicitud de Salidas. No aparece en el desplegable de motivos y su descripción no se muestra en las salidas.">
+              TEXTO LIBRE
+            </span>
+          </td>
 
           <td class="text-center">
             <span *ngIf="m.requiereAdjunto"
@@ -75,12 +84,14 @@
           </td>
 
           <td class="text-center">
-            <span *ngIf="m.requiereMotivoAdicional"
+            <span *ngIf="m.requiereMotivoAdicional && !m.esMotivoLibre"
                   class="text-[11px] px-[10px] py-[3px] rounded-full bg-[#EDE9FE] text-[#6D28D9] font-medium whitespace-nowrap"
                   title="Al elegir este motivo se exige escribir un detalle obligatorio">
               Requerido
             </span>
-            <span *ngIf="!m.requiereMotivoAdicional" class="text-gray-300">—</span>
+            <span *ngIf="m.esMotivoLibre" class="text-gray-300"
+                  title="No aplica: el texto que escribe el trabajador ya es ese detalle">No aplica</span>
+            <span *ngIf="!m.requiereMotivoAdicional && !m.esMotivoLibre" class="text-gray-300">—</span>
           </td>
 
           <td class="text-center">

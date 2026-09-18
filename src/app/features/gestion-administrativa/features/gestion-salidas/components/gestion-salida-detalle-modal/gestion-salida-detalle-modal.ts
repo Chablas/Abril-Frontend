@@ -2,18 +2,15 @@
 import { CommonModule } from '@angular/common';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
-import { DraggableImage } from '../../../../../../shared/components/draggable-image/draggable-image';
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
+import { SalidaTrayectosTabla } from '../../../../shared/components/salida-trayectos-tabla/salida-trayectos-tabla';
 import { reembolsoColors } from '../../../../shared/dtos/rendicion-shared.dto';
-import {
-  GestionSalidaDetalleDto,
-  GestionSalidaTrayectoDto,
-} from '../../dtos/gestion-salida.dto';
+import { GestionSalidaDetalleDto } from '../../dtos/gestion-salida.dto';
 
 @Component({
   standalone: true,
   selector: 'app-gestion-salida-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, DraggableImage, TitleCasePipe],
+  imports: [CommonModule, BaseModal, StatusBadge, SalidaTrayectosTabla, TitleCasePipe],
   templateUrl: './gestion-salida-detalle-modal.html',
 })
 export class GestionSalidaDetalleModal {
@@ -57,10 +54,6 @@ export class GestionSalidaDetalleModal {
     return this.detalle.trayectos
       .filter((t) => t.esReembolsable === true)
       .reduce((acc, t) => acc + (t.montoTotal || 0), 0);
-  }
-
-  totalCapturas(t: GestionSalidaTrayectoDto): number {
-    return t.capturas.reduce((acc, c) => acc + (c.monto || 0), 0);
   }
 
   cerrar(): void {

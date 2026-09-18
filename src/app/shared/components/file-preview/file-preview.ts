@@ -33,6 +33,17 @@ export class FilePreview {
 
   @Output() remove = new EventEmitter<number>();
 
+  /**
+   * Se sigue la POSICIÓN y no la identidad del objeto. Sin esto, un consumidor que arma `files` en
+   * un getter —y devuelve un array nuevo en cada ciclo de detección de cambios— hace que el *ngFor
+   * destruya y vuelva a crear la tarjeta todo el tiempo, incluso entre el mousedown y el mouseup de
+   * un clic: el navegador solo dispara `click` si los dos caen en el mismo elemento, así que el
+   * botón «Quitar» quedaba muerto sin ningún error a la vista.
+   */
+  trackByIndex(index: number): number {
+    return index;
+  }
+
   removeFile(index: number) {
     this.remove.emit(index);
   }

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import Swal from 'sweetalert2';
 
@@ -38,12 +38,6 @@ import {
 })
 export class RendicionDetalleModal implements OnInit {
   @Input({ required: true }) rendicionId!: number;
-
-  /**
-   * true = se abrió para subsanar una rendición observada: cada salida muestra su botón de
-   * corregir capturas y montos. Lo decide la pantalla, que es la que conoce el estado de la fila.
-   */
-  @Input() subsanando = false;
 
   /**
    * A quién le llegan de verdad los correos que dispara este modal, ya resueltos con Configuración
@@ -98,6 +92,20 @@ export class RendicionDetalleModal implements OnInit {
     this.close.emit(this.huboCambios);
   }
 
+  /**
+   * true = la planilla está observada en primera revisión, así que toca subsanarla: cada salida
+   * muestra su botón de corregir capturas y montos y al pie aparece "Volver a generar".
+   *
+   * Sale del detalle que carga este mismo modal y NO de un input de la pantalla. Cuando lo pasaba
+   * la fila, el modal salía completo al clickear la tabla pero recortado al entrar por el enlace
+   * del correo ("Resolver la observación", `?rendicion=N`), que abre el modal sin pasar por la
+   * fila: el trabajador llegaba desde el correo a subsanar y no encontraba ni "Corregir" ni
+   * "Volver a generar". Derivándolo del detalle, todas las puertas de entrada muestran lo mismo.
+   */
+  get subsanando(): boolean {
+    return this.detalle?.puedeSubsanar === true;
+  }
+
   // ── Consolidado del S10 (solo lectura) ───────────────────────────────
 
   /** Con qué otras rendiciones comparte el Consolidado del S10 (vacío si es solo suyo). */
@@ -144,23 +152,28 @@ export class RendicionDetalleModal implements OnInit {
   // ── Volver a generar la planilla (subsanación) ───────────────────────
 
   /**
-   * Vuelve a generar el PDF de la planilla con los montos ya corregidos. Vive también acá —y no
-   * solo en la tabla— porque corregir las capturas se hace desde este modal: tener que cerrarlo
-   * para dar el último paso era el hueco del flujo. La planilla conserva su código y queda lista
-   * para reenviar a primera revisión.
+   * Vuelve a generar el PDF de la planilla con los montos ya corregidos y la reenvía a la primera
+   * revisión en el mismo paso: una planilla se subsana justamente para que el jefe la vuelva a
+   * mirar, y el envío aparte se quedaba sin dar. Vive también acá —y no solo en la tabla— porque
+   * corregir las capturas se hace desde este modal. La planilla conserva su código.
+   *
+   * El PDF nuevo no se descarga: queda guardado y la planilla ya apunta a él, así que se ve con el
+   * botón «Planilla» de la fila. Bajarlo sin que nadie lo pida era ruido en cada subsanación.
+   *
+   * Por eso la confirmación imprime los destinatarios: es la misma acción que antes disparaba
+   * "Enviar a revisión", así que tiene que decir a quién le va a llegar.
    */
   async regenerarPlanilla(): Promise<void> {
     const d = this.detalle;
     if (!d) return;
 
-    const result = await Swal.fire({
-      icon: 'question',
-      title: '¿Volver a generar ' + d.codigo + '?',
-      text: 'Queda lista para reenviar a revisión.',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, generar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0F6E56',
+    const result = await confirmarConCorreos({
+      titulo: '¿Volver a generar ' + d.codigo + '?',
+      avisos: this.correosEnvioRevision,
+      // Sin nadie a quien avisar igual procede: la planilla se regenera y pasa a revisión, y el
+      // jefe la ve en su bandeja. Es un aviso de estado, no un bloqueo.
+      sinNadie: 'Se regenera y pasa a revisión, pero sin aviso por correo: está apagado en Configuración → Correos.',
+      confirmButtonText: 'Generar y avisar al revisor',
     });
     if (!result.isConfirmed) return;
 
@@ -168,17 +181,18 @@ export class RendicionDetalleModal implements OnInit {
     this.service.regenerarPlanilla(d.id).subscribe({
       next: (res) => {
         this.loader.hide();
-        this.descargar(res, d.codigo + '.pdf');
         this.huboCambios = true;
+        // El reenvío es best-effort en el backend: si el correo no salió, el aviso lo dice en vez
+        // de anunciar una revisión que nadie pidió.
         Swal.fire({
-          icon: 'success',
+          icon: res.enviadaARevision ? 'success' : 'warning',
           title: 'Planilla regenerada',
-          text: d.codigo + ' quedó lista para enviar de nuevo a revisión.',
-          timer: 2800,
-          showConfirmButton: false,
+          text: res.message || d.codigo + ' se volvió a generar y se envió a revisión.',
+          // El caso "no salió el correo" se queda hasta que lo cierren: es lo que hay que leer.
+          ...(res.enviadaARevision ? { timer: 2800, showConfirmButton: false } : {}),
         });
-        // Se cierra: la planilla salió de "Observada" y lo que sigue —enviarla a revisión— es de
-        // la tabla. Dejar el modal abierto mostrando un estado que ya cambió confunde más.
+        // Se cierra: la planilla salió de "Observada" y ya está en manos del jefe. Dejar el modal
+        // abierto mostrando un estado que ya cambió confunde más.
         this.close.emit(true);
       },
       error: (err: HttpErrorResponse) => {
@@ -187,17 +201,6 @@ export class RendicionDetalleModal implements OnInit {
         this.cdr.detectChanges();
       },
     });
-  }
-
-  /** Dispara la descarga del PDF que devuelve el backend. */
-  private descargar(response: HttpResponse<Blob>, filename: string): void {
-    if (!response.body) return;
-    const url = URL.createObjectURL(response.body);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
   }
 
   // ── Capturas de una salida (subsanación) ─────────────────────────────

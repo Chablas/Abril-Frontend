@@ -7,9 +7,14 @@
       <input
         type="text"
         [(ngModel)]="descripcion"
+        [disabled]="esMotivoLibre"
         placeholder="Ej. Trámite bancario"
-        class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none" />
-      <p *ngIf="submitted && !descripcion.trim()" class="text-xs text-red-500">Campo requerido</p>
+        class="border border-[#E2E2E2] rounded-[8px] px-[12px] py-[10px] text-sm text-gray-700 focus:outline-none"
+        [ngClass]="esMotivoLibre ? 'bg-gray-50 text-gray-500' : ''" />
+      <p *ngIf="esMotivoLibre" class="text-xs text-gray-400">
+        Es el motivo que el trabajador escribe a mano: en la salida se muestra ese texto, no esta descripción.
+      </p>
+      <p *ngIf="!esMotivoLibre && submitted && !descripcion.trim()" class="text-xs text-red-500">Campo requerido</p>
     </div>
 
     <label class="flex items-start gap-[8px] cursor-pointer select-none w-fit">
@@ -33,7 +38,7 @@
       </span>
     </label>
 
-    <label class="flex items-start gap-[8px] cursor-pointer select-none w-fit">
+    <label *ngIf="!esMotivoLibre" class="flex items-start gap-[8px] cursor-pointer select-none w-fit">
       <input
         type="checkbox"
         class="w-4 h-4 mt-[2px] cursor-pointer"

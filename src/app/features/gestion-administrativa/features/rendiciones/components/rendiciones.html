@@ -183,7 +183,7 @@
                 *ngIf="r.puedeSubsanar"
                 type="button"
                 (click)="regenerarPlanilla(r, $event)"
-                [title]="'Volver a generar la planilla con los montos actuales, conservando el código ' + r.codigo"
+                [title]="'Volver a generar la planilla con los montos actuales y reenviarla a revisión, conservando el código ' + r.codigo"
                 class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
                 style="background:var(--color-abril-standard)"
                 onmouseover="this.style.background='var(--color-abril-standard-hover)'"
@@ -210,7 +210,6 @@
 <app-rendicion-detalle-modal
   *ngIf="detalleId !== null"
   [rendicionId]="detalleId"
-  [subsanando]="detalleSubsanando"
   [correosEnvioRevision]="correosEnvioRevision"
   (close)="cerrarDetalle($event)" />
 

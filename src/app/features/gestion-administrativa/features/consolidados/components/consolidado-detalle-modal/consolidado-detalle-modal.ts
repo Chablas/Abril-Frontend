@@ -18,6 +18,7 @@ import {
   reembolsoLabelCorto,
 } from '../../../../shared/dtos/rendicion-shared.dto';
 import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-correos';
+import { nombreConsolidado } from '../../../../shared/consolidado-nombre';
 import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
 import * as tramites from '../tramites-consolidador';
 
@@ -88,9 +89,9 @@ export class ConsolidadoDetalleModal implements OnInit {
     this.close.emit(this.huboCambios);
   }
 
+  /** "CON-2026-0001 · N.° 12345": los dos nombres del documento, el nuestro y el del S10. */
   get titulo(): string {
-    const numero = this.detalle?.numeroReembolso;
-    return numero ? 'Consolidado del S10 N.° ' + numero : 'Consolidado del S10';
+    return nombreConsolidado(this.detalle);
   }
 
   // ── Decisión del reembolso (de la jefatura, sobre el documento entero) ──

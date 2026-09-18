@@ -117,7 +117,7 @@
                 style="accent-color:var(--color-abril-accent)"
                 title="Seleccionar / deseleccionar todo lo que falta revisar o pagar" />
             </th>
-            <th>N.º de reembolso</th>
+            <th>Consolidado</th>
             <th>Planillas</th>
             <th>Trabajador</th>
             <th>Periodo</th>
@@ -153,17 +153,21 @@
                 [title]="motivoNoAccionable(c)" />
             </td>
 
-            <!-- El número de reembolso es como el S10 nombra este registro: es el identificador de
-                 la fila. Los consolidados viejos no lo tienen. -->
+            <!-- Los dos nombres del documento que se paga de una sola vez: el CON-AAAA-NNNN de la
+                 rendición grupal y, debajo, el N.° con el que lo nombra el S10. Los consolidados
+                 viejos no tienen ninguno de los dos. -->
             <td class="whitespace-nowrap">
-              <span *ngIf="c.numeroReembolso; else sinNumero" class="text-gray-700 font-medium">
-                {{ c.numeroReembolso }}
-              </span>
-              <ng-template #sinNumero>
-                <span class="text-gray-300" title="Consolidado anterior al número de reembolso">—</span>
-              </ng-template>
-              <div *ngIf="c.razonSocial" class="text-[11px] text-gray-400 leading-tight">
-                {{ c.razonSocial | titleCase }}
+              <div class="flex flex-col leading-tight">
+                <span *ngIf="c.codigo; else sinCodigo" class="text-gray-700 font-medium">{{ c.codigo }}</span>
+                <ng-template #sinCodigo>
+                  <span class="text-gray-300" title="Consolidado anterior al código de rendición grupal">—</span>
+                </ng-template>
+                <span *ngIf="c.numeroReembolso" class="text-[11px] text-gray-400">
+                  N.° {{ c.numeroReembolso }}
+                </span>
+                <span *ngIf="c.razonSocial" class="text-[11px] text-gray-400">
+                  {{ c.razonSocial | titleCase }}
+                </span>
               </div>
             </td>
 
@@ -236,6 +240,18 @@
                     <path d="M14 2v6h6" stroke-linejoin="round"/>
                   </svg>
                   S10
+                </a>
+
+                <!-- La planilla grupal: el gasto de todas las planillas que se pagan con este
+                     consolidado, en un solo documento. -->
+                <a *ngIf="c.planillaGrupalUrl"
+                   class="doc-chip" [href]="c.planillaGrupalUrl" target="_blank" rel="noopener noreferrer"
+                   [title]="c.planillaGrupalFilename ?? 'Planilla grupal'">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                    <path d="M14 2v6h6" stroke-linejoin="round"/>
+                  </svg>
+                  Planilla grupal
                 </a>
               </div>
             </td>

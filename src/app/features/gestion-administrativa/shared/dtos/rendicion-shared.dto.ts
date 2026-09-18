@@ -67,8 +67,6 @@ export interface CorreccionS10Dto {
   atendidaPor: string | null;
   atendidaAt: string | null;
   comentarioAtencion: string | null;
-  /** True si el ERP anuló el registro: hace falta un número de reembolso NUEVO (CA-19). */
-  numeroReembolsoAnulado: boolean;
   /** True mientras el ERP no la haya atendido: la pelota está en el Coordinador. */
   esperandoErp: boolean;
 }

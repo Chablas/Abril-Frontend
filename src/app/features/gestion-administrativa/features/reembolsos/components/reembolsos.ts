@@ -563,9 +563,7 @@ export class Reembolsos implements OnInit, OnDestroy {
       titulo: items.length === 1
         ? '¿Observar este reembolso?'
         : `¿Observar ${items.length} consolidados?`,
-      nota:
-        'Vuelve al consolidador para que recargue el Consolidado del S10 o le pida la corrección ' +
-        'al Coordinador ERP. Al recargarlo pasa otra vez por la firma de la jefatura.',
+      nota: 'Vuelve al consolidador.',
       avisos: await pedirAvisos(this.service.correoPreviewObservacion(seleccion)),
       observacion: {
         label: 'Motivo',

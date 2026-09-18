@@ -11,7 +11,7 @@ import { FileSelector, SelectedFile } from '../../../../../../shared/components/
 import { SolicitudSalidasService } from '../../services/solicitud-salidas.service';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
-import { SolicitudSalidaFormDataDto } from '../../dtos/solicitud-salida-form-data.dto';
+import { MotivoSalidaDto, SolicitudSalidaFormDataDto } from '../../dtos/solicitud-salida-form-data.dto';
 import { SolicitudSalidaCreateDto, TrayectoCreateDto } from '../../dtos/solicitud-salida-create.dto';
 
 /** Estado en memoria de un trayecto en el form. Horas en formato nativo "HH:mm". */
@@ -84,6 +84,26 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
     trayectosNoReembolsables: [],
   };
 
+  /**
+   * Opciones del desplegable de motivos: `formData.motivos` SIN la fila de «Otro motivo».
+   * Esa fila existe para configurar la vía de texto libre (si pide adjunto, si es reembolsable,
+   * etc.), no para elegirse del desplegable — ahí la elige el checkbox. Se calcula una sola vez
+   * al cargar y no en un getter: el desplegable compara la referencia del array.
+   */
+  motivosCatalogo: MotivoSalidaDto[] = [];
+
+  /**
+   * Id de la fila que configura «Otro motivo». Es el `motivoId` que llevan los trayectos
+   * escritos a mano, y por eso el formulario les consulta las mismas exigencias que a
+   * cualquier otro motivo. null = está desactivada y no se ofrece escribir un motivo.
+   */
+  motivoLibreId: number | null = null;
+
+  /** true si Configuración → Motivos tiene «Otro motivo» activo. */
+  get permiteMotivoLibre(): boolean {
+    return this.motivoLibreId !== null;
+  }
+
   fechaSalida = '';
   trayectos: TrayectoForm[] = [];
 
@@ -117,6 +137,8 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
     this.service.getFormData().subscribe({
       next: (data) => {
         this.formData = data;
+        this.motivosCatalogo = data.motivos.filter((m) => !m.esMotivoLibre);
+        this.motivoLibreId = data.motivos.find((m) => m.esMotivoLibre)?.id ?? null;
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
@@ -300,8 +322,9 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
   }
 
   /**
-   * true si el motivo elegido concede reembolso. "Otro motivo" nunca lo concede:
-   * un motivo fuera del catálogo no tiene configuración que consultar.
+   * true si el motivo elegido concede reembolso. Incluye a «Otro motivo»: su fila de
+   * Configuración → Motivos lleva el mismo flag, así que el texto libre también puede
+   * declararse reembolsable.
    */
   motivoEsReembolsable(t: TrayectoForm): boolean {
     if (t.motivoId == null) return false;
@@ -325,8 +348,8 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
   razonSinReembolso(t: TrayectoForm): string {
     if (this.trayectoCorrespondeReembolso(t)) return '';
     if (this.trayectoExcluido(t)) return 'trayecto no reembolsable';
-    // "Otro motivo" no está en el catálogo: no tiene configuración que consultar y nunca concede.
-    if (t.motivoLibreOn) return 'motivo personalizado';
+    // Sin fila de configuración detrás («Otro motivo» desactivado), no hay flag que consultar.
+    if (t.motivoLibreOn && t.motivoId == null) return 'motivo personalizado';
     return 'motivo no reembolsable';
   }
 
@@ -350,15 +373,32 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
   }
 
   /**
-   * Hora mínima de salida del trayecto `idx`: el minuto siguiente a la última hora de los
-   * anteriores (si el 1 va de 14:00 a 14:05, el 2 sale desde las 14:06). '' = sin límite. Si los
-   * anteriores terminan a las 23:59 ya no queda minuto en el día: el mínimo se queda en 23:59 y
-   * validarTrayecto rebota esa hora.
+   * Hora mínima de salida del trayecto `idx`: la más tardía de sus dos cotas.
+   *
+   * 1. Los trayectos anteriores: el minuto siguiente a su última hora (si el 1 va de 14:00 a
+   *    14:05, el 2 sale desde las 14:06). Si terminan a las 23:59 ya no queda minuto en el día:
+   *    el mínimo se queda en 23:59 y validarTrayecto rebota esa hora.
+   * 2. La hora actual, mientras la salida sea HOY: una salida no se pide para un momento que ya
+   *    pasó. Es la misma regla que valida validarTrayecto, y es la que alcanza al PRIMER trayecto,
+   *    que no tiene anteriores de los que colgarse. Para una fecha futura no aplica: ahí sirve
+   *    cualquier hora del día.
+   *
+   * '' = sin límite (solo pasa en el primer trayecto de una fecha futura).
    */
   minHoraSalida(idx: number): string {
+    const cotas: string[] = [];
+
     const ultima = this.ultimaHoraAnterior(idx);
-    if (!ultima || ultima === '23:59') return ultima;
-    const [h, m] = ultima.split(':').map(Number);
+    if (ultima) cotas.push(ultima === '23:59' ? ultima : this.unMinutoDespues(ultima));
+
+    if (this.fechaSalida === this.todayStr) cotas.push(this.nowStr);
+
+    return cotas.reduce((mayor, hora) => (hora > mayor ? hora : mayor), '');
+  }
+
+  /** "HH:mm" + 1 minuto. Solo se llama por debajo de las 23:59, así que no cruza el día. */
+  private unMinutoDespues(hora: string): string {
+    const [h, m] = hora.split(':').map(Number);
     const siguiente = h * 60 + m + 1;
     return `${String(Math.floor(siguiente / 60)).padStart(2, '0')}:${String(siguiente % 60).padStart(2, '0')}`;
   }
@@ -424,15 +464,24 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
     if (checked) { t.horaRetorno = ''; }
   }
 
-  onMotivoLibreChange(t: TrayectoForm, checked: boolean): void {
+  /**
+   * Marcar «Otro motivo» es elegir el motivo que configura esa vía (`motivoLibreId`): el texto
+   * que escriba el trabajador viaja aparte, pero el trayecto queda apuntando a una fila con sus
+   * exigencias (adjunto, horario, reembolso). Por eso pasa por el mismo `onMotivoChange` que el
+   * desplegable y no repite sus reglas.
+   */
+  async onMotivoLibreChange(t: TrayectoForm, checked: boolean): Promise<void> {
+    const antesOn = t.motivoLibreOn;
+    const antesTexto = t.motivoLibre;
     t.motivoLibreOn = checked;
-    t.motivoId = null;
     t.motivoLibre = null;
-    t.motivoAdicional = null;
-    t.adjuntos = [];
-    // "Otro motivo" siempre pide horario: si venía de un motivo que no lo pedía, el primer
-    // trayecto recupera su hora de salida por defecto.
-    if (!t.horaSalida && t === this.trayectos[0]) t.horaSalida = this.nowStr;
+
+    // Si el cambio se dio de baja (el motivo no admitía varios trayectos y se prefirió no
+    // perderlos), el checkbox también vuelve a como estaba: su binding es de una vía.
+    if (await this.onMotivoChange(t, checked ? this.motivoLibreId : null)) return;
+    t.motivoLibreOn = antesOn;
+    t.motivoLibre = antesTexto;
+    this.cdr.detectChanges();
   }
 
   // ── Documento adjunto por motivo ───────────────────────────────────
@@ -445,7 +494,7 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
 
   /**
    * true si el motivo elegido del trayecto exige escribir un motivo adicional.
-   * Solo aplica a los motivos del catálogo: "Otro motivo" ya es texto libre.
+   * «Otro motivo» nunca lo pide: su texto libre ya es ese detalle.
    */
   motivoRequiereMotivoAdicional(t: TrayectoForm): boolean {
     if (t.motivoId == null) return false;
@@ -460,17 +509,17 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
     return t.motivoId != null || t.motivoLibreOn;
   }
 
-  /** true si el motivo elegido es de hora estimada. Motivo libre cuenta como hora exacta. */
+  /** true si el motivo elegido es de hora estimada — «Otro motivo» incluido, según su fila. */
   motivoEsHoraEstimada(t: TrayectoForm): boolean {
     if (t.motivoId == null) return false;
     return this.formData.motivos.find((m) => m.id === t.motivoId)?.esHoraEstimada ?? false;
   }
 
   /**
-   * El recordatorio de recuperación de horas solo aplica a motivos del catálogo de
-   * hora exacta: aparece cuando al menos un trayecto tiene un motivo del catálogo que
-   * NO es de hora estimada. El motivo libre (personalizado) queda excluido a propósito
-   * y nunca dispara el recordatorio. El backend replica la regla para omitirlo en los correos.
+   * El recordatorio de recuperación de horas solo aplica a los motivos de hora exacta que
+   * declaran horario: aparece cuando al menos un trayecto tiene uno así. «Otro motivo»
+   * entra en la regla como cualquier otro, según los flags de su fila. El backend replica
+   * la regla para omitirlo en los correos.
    */
   get mostrarRecordatorioRecuperacion(): boolean {
     return this.trayectos.some(
@@ -484,7 +533,11 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
     return this.motivoEsHoraEstimada(t) ? 'Hora de retorno estimada' : 'Hora de retorno exacta';
   }
 
-  async onMotivoChange(t: TrayectoForm, motivoId: number | null): Promise<void> {
+  /**
+   * Aplica el motivo elegido al trayecto. Devuelve false si el cambio se dio de baja: el motivo
+   * no admitía varios trayectos y el trabajador prefirió elegir otro antes que perderlos.
+   */
+  async onMotivoChange(t: TrayectoForm, motivoId: number | null): Promise<boolean> {
     const anterior = t.motivoId;
     t.motivoId = motivoId;
     // Los adjuntos y el motivo adicional pertenecen al motivo elegido: al cambiarlo se descartan.
@@ -495,7 +548,7 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
       // Al volver a un motivo normal, el primer trayecto recupera la hora de salida por
       // defecto que se le había limpiado.
       if (!t.horaSalida && t === this.trayectos[0]) t.horaSalida = this.nowStr;
-      return;
+      return true;
     }
 
     // El motivo no admite varios trayectos: se descartan los demás, previa confirmación
@@ -513,13 +566,14 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
       if (!result.isConfirmed) {
         t.motivoId = anterior;
         this.cdr.detectChanges();
-        return;
+        return false;
       }
       this.trayectos = [t];
     }
 
     this.limpiarHorasYLugares(t);
     this.cdr.detectChanges();
+    return true;
   }
 
   /** Descarta horario y lugares del trayecto: su motivo no los pide. */
@@ -540,7 +594,7 @@ export class SolicitudSalidaCreate implements OnInit, OnDestroy {
    * true si el motivo elegido pide horas, lugares y trayectos — lo normal. Los motivos con
    * pideHorasLugares = false describen una ausencia de día completo (ej. licencia sin goce de
    * haber): no llevan horario ni lugares y la solicitud queda con un solo trayecto. Sin motivo
-   * elegido, y con "Otro motivo", se pide todo.
+   * elegido se pide todo; «Otro motivo» sigue lo que diga su propia fila.
    */
   motivoPideHorasLugares(t: TrayectoForm): boolean {
     if (t.motivoId == null) return true;

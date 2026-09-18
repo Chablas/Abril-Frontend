@@ -66,10 +66,6 @@
         el {{ c.atendidaAt | date:'dd/MM/yyyy HH:mm' }}<ng-container *ngIf="c.comentarioAtencion">:
         {{ c.comentarioAtencion }}</ng-container>
       </div>
-
-      <div *ngIf="c.numeroReembolsoAnulado" class="font-semibold" style="color:#991B1B">
-        El registro se anuló: genera un número de reembolso nuevo en el S10 — el anterior ya no se puede usar.
-      </div>
     </div>
 
     <!-- ── Estado y documentos del consolidado ──────────────────────────── -->
@@ -101,7 +97,22 @@
           <path d="M14 2v6h6" stroke-linejoin="round"/>
         </svg>
         {{ d.pdfFilename }}
-        <span class="text-xs text-gray-400 font-normal">· Consolidado del S10</span>
+        <span class="text-xs text-gray-400 font-normal">
+          · {{ d.codigo ? 'Consolidado ' + d.codigo : 'Consolidado del S10' }}
+        </span>
+      </a>
+
+      <!-- La planilla grupal: el gasto de todas las planillas que cubre, en un solo documento.
+           La arma Abril One al adjuntarse el S10, así que va pegada a él. -->
+      <a *ngIf="d.planillaGrupalUrl" [href]="d.planillaGrupalUrl" target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
+        </svg>
+        {{ d.planillaGrupalFilename }}
+        <span class="text-xs text-gray-400 font-normal">· Planilla grupal</span>
       </a>
 
       <a *ngIf="d.pdfFirmadoUrl" [href]="d.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"

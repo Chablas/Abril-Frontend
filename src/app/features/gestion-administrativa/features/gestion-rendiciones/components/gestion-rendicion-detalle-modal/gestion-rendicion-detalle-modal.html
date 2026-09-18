@@ -24,6 +24,16 @@
         <span class="text-[11px] uppercase text-gray-400 font-semibold">Rendida</span>
         <span class="text-sm text-gray-700">{{ d.rendidoAt | date:'dd/MM/yyyy HH:mm' }}</span>
       </div>
+
+      <!-- La rendición grupal a la que entró esta planilla: es con ese código que se la sigue en
+           Consolidados, en Correcciones S10 y en Reembolsos. -->
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Consolidado</span>
+        <span class="text-sm text-gray-700">{{ d.consolidadoS10?.codigo ?? '—' }}</span>
+        <span *ngIf="otrasDelConsolidado(d).length" class="text-[11px] text-gray-400">
+          con {{ otrasDelConsolidado(d).length }} planilla{{ otrasDelConsolidado(d).length > 1 ? 's' : '' }} más
+        </span>
+      </div>
     </div>
 
     <!-- Observación vigente del reembolso. Va arriba de todo porque explica por qué la planilla
@@ -83,11 +93,24 @@
           <path d="M14 2v6h6" stroke-linejoin="round"/>
         </svg>
         {{ d.consolidadoS10.pdfFilename }}
-        <span class="text-xs text-gray-400 font-normal">· Consolidado del S10</span>
+        <span class="text-xs text-gray-400 font-normal">
+          · {{ d.consolidadoS10.codigo ? 'Consolidado ' + d.consolidadoS10.codigo : 'Consolidado del S10' }}
+        </span>
       </a>
-      <span *ngIf="otrasDelConsolidado(d).length" class="text-xs text-gray-500 pl-6">
-        También cubre {{ otrasDelConsolidado(d).join(', ') }}
-      </span>
+      <!-- La planilla grupal del consolidado: el gasto de todas sus planillas en un solo
+           documento, esta incluida. -->
+      <a *ngIf="d.consolidadoS10?.planillaGrupalUrl as grupal" [href]="grupal"
+         target="_blank" rel="noopener noreferrer"
+         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+         style="color:var(--color-abril-accent)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
+        </svg>
+        {{ d.consolidadoS10?.planillaGrupalFilename }}
+        <span class="text-xs text-gray-400 font-normal">· Planilla grupal</span>
+      </a>
+
       <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
         {{ d.estadoPrimeraRevision === 'Aprobada'
             ? 'Consolidado del S10 pendiente.'

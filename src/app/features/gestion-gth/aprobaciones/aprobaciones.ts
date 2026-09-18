@@ -19,6 +19,8 @@ import { ErrorService } from '../../../core/services/error.service';
 import { GthAprobacionDecision } from './components/decision/decision';
 import { AprobacionesService } from './services/aprobaciones.service';
 import { estadoAprobacionColors } from './estado-aprobacion-colors';
+import { contarFiltrosActivos, FiltroDesplegable, opcionesDe } from '../shared/filtros-opciones';
+import { coincideTipo, opcionesTipo, tipoRequerimientoEstilo } from '../shared/tipo-requerimiento';
 import {
   AprobacionDecisionOmitida,
   AprobacionListItem,
@@ -103,13 +105,17 @@ import {
     .ap-scope--empty i { color: #B45309; }
 
     /* ── Responsive ───────────────────────────────────────────────────────
-       Las 8 columnas no entran por debajo de ~1100px y, como acá el wrapper no
+       Las 9 columnas no entran por debajo de ~1220px y, como acá el wrapper no
        recorta, el desborde lo terminaba scrolleando toda la página de lado.
        Debajo de ese ancho la tabla se cambia por tarjetas: misma lista, mismo
-       filtro, misma paginación y misma acción. */
+       filtro, misma paginación y misma acción.
+
+       El corte subió de 1100px a 1220px al agregarse la columna «Tipo»: el badge
+       más la línea «FFT · Ingreso directo» (nowrap, como en las otras dos
+       pantallas) suman ~120px de ancho mínimo que antes no estaban. */
     .ap-cards { display: none; }
 
-    @media (max-width: 1099.98px) {
+    @media (max-width: 1219.98px) {
       .abril-table-wrap { display: none; }
       /* 'minmax(0, 1fr)' y no '1fr': '1fr' es 'minmax(auto, 1fr)', o sea que la columna
          se estira hasta el min-content de la tarjeta, y el min-content de la tarjeta lo
@@ -131,7 +137,7 @@ import {
        sigue siendo su min-content: sin esto se desborda igual de su propia columna. */
     .ap-cards > * { min-width: 0; }
 
-    @media (min-width: 640px) and (max-width: 1099.98px) {
+    @media (min-width: 640px) and (max-width: 1219.98px) {
       /* 'min(320px, 100%)' en vez de '320px' fijo: si el área útil llegara a ser menor
          que 320px (sidebar + padding en el borde bajo de este rango), la columna rígida
          desbordaría en lugar de encogerse. */
@@ -206,6 +212,19 @@ export class GthAprobaciones implements OnInit {
     { codigo: 'RECHAZADA', nombre: 'Rechazada (todas)' },
   ];
 
+  /**
+   * Los otros tres desplegables del panel. Sus opciones se arman con lo que ya está en la bandeja
+   * (ver `armarOpcionesFiltro`) y se recalculan al cargar, no en un getter: `options` es un @Input
+   * de `app-search-select` y un getter le entregaría un array nuevo en cada ciclo de detección de
+   * cambios.
+   *
+   * «Mi decisión» sigue con su lista fija (`estados`) porque es un catálogo cerrado del flujo y se
+   * ofrece completo aunque la bandeja no tenga todavía ninguna solicitud en ese estado.
+   */
+  readonly fTipo = new FiltroDesplegable();
+  readonly fArea = new FiltroDesplegable();
+  readonly fSolicitante = new FiltroDesplegable();
+
   private readonly pager = new ClientPager<AprobacionListItem>();
 
   constructor(
@@ -255,6 +274,7 @@ export class GthAprobaciones implements OnInit {
         this.areaAlcance = data.areaAlcance;
         this.resumen = data.resumen;
         this.aprobaciones = data.aprobaciones;
+        this.armarOpcionesFiltro();
         this.pager.reset();
         // La lista es nueva: una selección hecha sobre la anterior ya no representa nada.
         this.selectedIds.clear();
@@ -376,13 +396,33 @@ export class GthAprobaciones implements OnInit {
   }
 
   // ── Filtros ────────────────────────────────────────────────────────────
+  /** Opciones de los desplegables, sacadas de las solicitudes que ya están en la bandeja. */
+  private armarOpcionesFiltro(): void {
+    this.fArea.actualizar(opcionesDe(this.aprobaciones, (a) => a.area));
+    this.fSolicitante.actualizar(opcionesDe(this.aprobaciones, (a) => a.solicitanteNombre));
+    // Una fila puede traer más de un tipo: es una solicitud entera y sus vacantes no tienen por
+    // qué ser todas del mismo (ver `AprobacionListItem.tipos`).
+    this.fTipo.actualizar(
+      opcionesTipo(
+        this.aprobaciones.flatMap((a) =>
+          a.tipos.map((t) => ({ codigo: t.codigo, nombre: t.nombre, esFft: a.esFft })),
+        ),
+      ),
+    );
+  }
+
   get filtrosActivos(): number {
-    return (this.searchText.trim() ? 1 : 0) + (this.estadoCodigo ? 1 : 0);
+    return (
+      (this.searchText.trim() ? 1 : 0) +
+      (this.estadoCodigo ? 1 : 0) +
+      contarFiltrosActivos(this.fTipo, this.fArea, this.fSolicitante)
+    );
   }
 
   limpiarFiltros(): void {
     this.searchText = '';
     this.estadoCodigo = '';
+    for (const f of [this.fTipo, this.fArea, this.fSolicitante]) f.limpiar();
     this.onFilterChange();
   }
 
@@ -400,9 +440,15 @@ export class GthAprobaciones implements OnInit {
       // El filtro de estado va contra la casilla del usuario: es su decisión la que le
       // interesa rastrear, no la del otro nivel.
       if (this.estadoCodigo && this.miCasilla(a).estadoCodigo !== this.estadoCodigo) return false;
+      if (!this.fArea.coincide(a.area)) return false;
+      if (!this.fSolicitante.coincide(a.solicitanteNombre)) return false;
+      // Basta con que UNA de las vacantes que el usuario ve sea del tipo elegido: la fila es la
+      // solicitud entera y la decisión en bloque también aplica a todas sus vacantes.
+      if (!coincideTipo(this.fTipo.valor, a.tipos.map((t) => t.codigo), a.esFft)) return false;
       if (!q) return true;
       return SearchInput.matches(
-        [a.codigos, a.area, a.solicitanteNombre, this.miCasilla(a).estadoNombre]
+        [a.codigos, a.area, a.solicitanteNombre, this.miCasilla(a).estadoNombre,
+         ...a.tipos.map((t) => t.nombre)]
           .filter(Boolean)
           .join(' '),
         q,
@@ -501,6 +547,9 @@ export class GthAprobaciones implements OnInit {
       case 'area':           return a.area ?? '';
       case 'solicitante':    return a.solicitanteNombre ?? '';
       case 'vacantes':       return a.totalVacantes;
+      // Por los nombres de los tipos, que es lo que se lee en la columna. El ingreso directo
+      // desempata dentro del mismo tipo: es la otra cosa que la columna dice de la vacante.
+      case 'tipo':           return a.tipos.map((t) => t.nombre).join(', ') + (a.esFft ? ' FFT' : '');
       // Una sola columna «Aprobaciones» que muestra las firmas que la solicitud necesita: se
       // ordena por la del propio usuario, que es la que le interesa rastrear.
       case 'aprobaciones':   return this.miCasilla(a).estadoNombre ?? '';
@@ -730,6 +779,9 @@ export class GthAprobaciones implements OnInit {
 
   // ── Presentación ───────────────────────────────────────────────────────
   readonly estadoColors = estadoAprobacionColors;
+
+  /** Ícono y color de la columna «Tipo»: los mismos que en Solicitud de Personal y Reclutamiento. */
+  readonly tipoEstilo = tipoRequerimientoEstilo;
 
   /**
    * Resumen "3 de 4 aprobadas" bajo el total de vacantes, según la casilla del usuario; en las

@@ -54,10 +54,12 @@
       <ng-container *ngIf="!t.colapsado">
         <!-- Motivo (se elige primero: define la etiqueta y habilita las horas).
              Obligatorio en los dos modos — elegido del desplegable o escrito en
-             "Otro motivo" (la regla única vive en motivoValido del componente). -->
+             "Otro motivo" (la regla única vive en motivoValido del componente).
+             El desplegable ofrece `motivosCatalogo`, que deja fuera la fila de "Otro motivo":
+             esa se elige con el checkbox y solo aporta su configuración. -->
         <div class="flex flex-col gap-[4px]" [class.campo-error]="submitted && !motivoValido(t)">
           <ng-container *ngIf="!t.motivoLibreOn">
-            <app-search-select label="Motivo" placeholder="Selecciona el motivo" [options]="formData.motivos"
+            <app-search-select label="Motivo" placeholder="Selecciona el motivo" [options]="motivosCatalogo"
               valueField="id" displayField="descripcion" [value]="t.motivoId" [required]="true"
               (valueChange)="onMotivoChange(t, $event)" />
           </ng-container>
@@ -70,7 +72,7 @@
             </div>
             <span class="text-[11px] text-gray-400 self-end">{{ t.motivoLibre?.length || 0 }}/{{ MOTIVO_LIBRE_MAX }}</span>
           </ng-container>
-          <label class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
+          <label *ngIf="permiteMotivoLibre" class="flex items-center gap-[6px] mt-[2px] cursor-pointer w-fit">
             <input type="checkbox" [ngModel]="t.motivoLibreOn" (ngModelChange)="onMotivoLibreChange(t, $event)" style="accent-color:var(--color-abril-primary)" />
             <span class="text-[12px] text-gray-600">Otro motivo</span>
           </label>

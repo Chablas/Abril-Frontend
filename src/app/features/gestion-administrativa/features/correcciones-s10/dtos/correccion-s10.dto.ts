@@ -58,8 +58,6 @@ export interface CorreccionS10ListItemDto {
   atendidaPor: string | null;
   atendidaAt: string | null;
   comentarioAtencion: string | null;
-  /** True si el ERP anuló el registro y hace falta un número de reembolso nuevo. */
-  numeroReembolsoAnulado: boolean;
 }
 
 /**
@@ -90,18 +88,13 @@ export interface CorreccionS10FilterDataDto {
 }
 
 /**
- * El check de confirmación del Coordinador ERP. El comentario es opcional —el requerimiento solo
- * exige el check—, pero `numeroReembolsoAnulado` cambia lo que el consolidador tiene que hacer después, así
- * que se pregunta explícitamente.
+ * El check de confirmación del Coordinador ERP (RG-22). El comentario es opcional: el requerimiento
+ * solo exige el check, y lo que sigue siempre es lo mismo —el consolidador recarga el Consolidado
+ * del S10 corregido—, así que no hay nada más que preguntar.
  */
 export interface AtenderCorreccionS10Dto {
   correccionIds: number[];
   comentarioAtencion?: string | null;
-  /**
-   * true = el registro del S10 se ANULÓ y el consolidador tiene que sacar un número de reembolso nuevo; la
-   * anterior queda bloqueado. false = se corrigió conservando el número de reembolso.
-   */
-  numeroReembolsoAnulado: boolean;
 }
 
 export interface CorreccionS10BulkResultDto {

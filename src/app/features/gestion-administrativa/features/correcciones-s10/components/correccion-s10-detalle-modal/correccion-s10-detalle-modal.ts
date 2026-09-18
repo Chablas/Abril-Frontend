@@ -68,60 +68,31 @@ export class CorreccionS10DetalleModal implements OnInit {
   }
 
   /**
-   * El check de confirmación (RG-22): la corrección ya se hizo en el S10. Se pregunta aparte si el
-   * registro se ANULÓ, porque eso cambia lo que el consolidador tiene que hacer después — con una
-   * anulación necesita un número de reembolso nuevo y el anterior queda bloqueado al recargar el
-   * consolidado.
+   * El check de confirmación (RG-22): la corrección ya se hizo en el S10, y el consolidador queda
+   * avisado para recargar el consolidado. Lo único que se pide es un comentario opcional, así que
+   * va en la MISMA confirmación que los correos.
    */
   async atender(): Promise<void> {
     const d = this.detalle;
     if (!d?.porAtender) return;
 
-    const { value, isConfirmed } = await Swal.fire<{ anulada: boolean; comentario: string }>({
-      icon: 'question',
-      title: '¿Marcar como atendida?',
-      html: `
-        <div style="text-align:left;color:#4B5563">
-          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin-bottom:10px">
-            <input type="checkbox" id="ga-reembolso-anulado" style="margin-top:3px;accent-color:#C2410C">
-            <span>
-              El registro del S10 se <b>anul&oacute;</b>: hace falta un n&uacute;mero de reembolso nuevo.
-              ${d.numeroReembolso ? `<br><span style="font-size:12px;color:#6B7280">Reembolso actual: ${d.numeroReembolso}</span>` : ''}
-            </span>
-          </label>
-          <label for="ga-comentario" style="display:block;font-size:13px;margin-bottom:4px">
-            Comentario (opcional)
-          </label>
-          <textarea id="ga-comentario" class="swal2-textarea" style="margin:0;width:100%"
-                    placeholder="Qu&eacute; hiciste en el S10&hellip;"></textarea>
-        </div>`,
-      showCancelButton: true,
-      confirmButtonText: 'Sí, marcar como atendida',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0F6E56',
-      preConfirm: () => ({
-        anulada: (document.getElementById('ga-reembolso-anulado') as HTMLInputElement)?.checked ?? false,
-        comentario: (document.getElementById('ga-comentario') as HTMLTextAreaElement)?.value ?? '',
-      }),
-    });
-    if (!isConfirmed || !value) return;
-
-    // El preview va después del formulario: el diálogo anterior ya pide dos datos y meterle
-    // además la lista de correos lo volvía ilegible.
-    const avisos = await pedirAvisos(this.service.correoPreview([d.id]));
-    const { isConfirmed: confirmado } = await confirmarConCorreos({
-      titulo: 'Confirmar',
-      avisos,
+    const { isConfirmed, value } = await confirmarConCorreos({
+      titulo: '¿Marcar como atendida?',
+      avisos: await pedirAvisos(this.service.correoPreview([d.id])),
       sinNadie: 'Se marca igual, pero sin aviso por correo: está apagado en Configuración → Correos.',
-      confirmButtonText: 'Confirmar',
+      confirmButtonText: 'Sí, marcar como atendida',
+      observacion: {
+        label: 'Comentario (opcional)',
+        placeholder: 'Qué hiciste en el S10…',
+        obligatoria: false,
+      },
     });
-    if (!confirmado) return;
+    if (!isConfirmed) return;
 
     this.loader.show();
     this.service.atender({
       correccionIds: [d.id],
-      comentarioAtencion: value.comentario?.trim() || null,
-      numeroReembolsoAnulado: value.anulada,
+      comentarioAtencion: (value as string)?.trim() || null,
     }).subscribe({
       next: (res) => {
         this.loader.hide();
