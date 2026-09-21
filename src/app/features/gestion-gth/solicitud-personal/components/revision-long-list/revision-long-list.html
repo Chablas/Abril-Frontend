@@ -21,13 +21,24 @@
       </div>
 
       <!-- ── Instrucción ──────────────────────────────────────────────── -->
-      <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[11px]"
-           style="background:var(--color-abril-logo-blue-light);border:1px solid #a9c9e6">
-        <i class="ti ti-info-circle text-[18px] shrink-0 mt-[1px]" style="color:var(--color-abril-logo-blue)"></i>
-        <p class="text-[13px] text-gray-700">
-          Marca <b>Aprobar</b> o <b>Rechazar</b> por candidato y envía tu decisión a GTH.
-        </p>
-      </div>
+      @if (soloConsulta) {
+        <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[11px]"
+             style="background:#F0FDF4;border:1px solid #a7f3d0">
+          <i class="ti ti-check text-[18px] shrink-0 mt-[1px]" style="color:#15803D"></i>
+          <p class="text-[13px] text-gray-700">
+            Ya decidiste sobre estos CVs. Si GTH te envía candidatos nuevos, te llegarán por correo
+            y aparecerán acá para revisarlos.
+          </p>
+        </div>
+      } @else {
+        <div class="flex items-start gap-[10px] rounded-[8px] px-[14px] py-[11px]"
+             style="background:var(--color-abril-logo-blue-light);border:1px solid #a9c9e6">
+          <i class="ti ti-info-circle text-[18px] shrink-0 mt-[1px]" style="color:var(--color-abril-logo-blue)"></i>
+          <p class="text-[13px] text-gray-700">
+            Marca <b>Aprobar</b> o <b>Rechazar</b> por candidato y envía tu decisión a GTH.
+          </p>
+        </div>
+      }
 
       @if (revision.candidatos.length === 0) {
         <div class="rounded-[10px] border border-dashed py-[40px] text-center text-gray-400 text-[13px]"
@@ -82,7 +93,7 @@
 
                   <!-- Aprobar / Rechazar: funcionan como toggle (checkbox) por candidato.
                        En modo consulta no se dibujan: no hay nada que decidir. -->
-                  <div *ngIf="puedeGestionar" class="grid grid-cols-2 gap-[10px] mt-[11px]">
+                  <div *ngIf="puedeGestionar && !soloConsulta" class="grid grid-cols-2 gap-[10px] mt-[11px]">
                     <button type="button" (click)="$event.stopPropagation(); aprobar(c)"
                       class="h-[34px] rounded-[7px] border text-[12.5px] font-semibold cursor-pointer transition-colors flex items-center justify-center gap-[6px]"
                       [ngClass]="esAprobado(c)
@@ -198,7 +209,7 @@
       class="h-[36px] px-[22px] rounded-[7px] text-[13px] font-medium text-gray-600 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
       Cerrar
     </button>
-    <button *ngIf="puedeGestionar" type="button"
+    <button *ngIf="puedeGestionar && !soloConsulta" type="button"
       class="h-[38px] px-[20px] rounded-[7px] text-[13px] font-semibold text-white transition-opacity"
       [ngClass]="puedeEnviar ? 'cursor-pointer hover:opacity-90' : 'opacity-50 cursor-not-allowed'"
       style="background:var(--color-abril-logo-blue)"

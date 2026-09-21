@@ -860,8 +860,12 @@
         </div>
       }
 
-      <!-- ── Long list: CVs seleccionados (solo mientras no se haya enviado) ─ -->
-      @if (enLongList && !longListEnviada) {
+      <!-- ── Long list: CVs seleccionados ───────────────────────────────────
+           Disponible durante todo el proceso, no solo antes del primer envío: GTH puede
+           seguir mandando CVs aunque ya haya candidatos en entrevistas o finalistas
+           esperando la decisión del área. Los que llegan tarde se suman a los que ya
+           están y cada uno avanza por su cuenta. -->
+      @if (puedeEnviarCvs) {
         <div class="rounded-[10px] border px-[16px] py-[14px]" style="border-color:var(--color-abril-border)">
 
           <button type="button"
@@ -869,15 +873,52 @@
             (click)="seccionLongList = !seccionLongList">
             <i class="ti text-[15px] text-gray-500 transition-transform"
                [ngClass]="seccionLongList ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
-            <h3 class="text-[14px] font-bold text-gray-800">Long list: CVs seleccionados</h3>
+            <h3 class="text-[14px] font-bold text-gray-800">
+              {{ envioAdicionalDeCvs ? 'Long list: enviar más CVs' : 'Long list: CVs seleccionados' }}
+            </h3>
+            @if (candidatosPendientes.length > 0) {
+              <span class="text-[10.5px] font-semibold px-[8px] py-[2px] rounded-full"
+                    style="background:#FEF3C7;color:#B45309">
+                {{ candidatosPendientes.length }} esperando al área
+              </span>
+            }
           </button>
 
           @if (seccionLongList) {
             <div class="rounded-[8px] bg-[#EFF6FF] px-[14px] py-[11px] mt-[12px]">
               <p class="text-[13px] font-semibold" style="color:var(--color-abril-logo-blue)">
-                Carga de candidatos para long list
+                {{ envioAdicionalDeCvs
+                    ? 'Puedes enviar más CVs en cualquier momento del proceso'
+                    : 'Carga de candidatos para long list' }}
               </p>
             </div>
+
+            <!-- CVs ya enviados que esperan la decisión del área. Se listan acá para que GTH sepa
+                 qué mandó y no vuelva a subir al mismo candidato mientras le responden. -->
+            @if (candidatosPendientes.length > 0) {
+              <p class="text-[13px] font-semibold text-gray-700 mt-[14px]">
+                Enviados · esperando la decisión del solicitante
+              </p>
+              @for (p of candidatosPendientes; track p.candidatoId) {
+                <div class="flex items-center justify-between gap-[10px] rounded-[8px] border px-[12px] py-[9px] mt-[8px]"
+                     style="border-color:var(--color-abril-border);background:#FFFBEB">
+                  <div class="min-w-0">
+                    <p class="text-[13px] font-semibold text-gray-800 truncate">{{ p.nombre | titleCase }}</p>
+                    <p class="text-[11.5px] text-gray-500 mt-[2px]">
+                      Enviado el {{ p.enviadoEn | date:'dd/MM/yyyy HH:mm' }}
+                    </p>
+                  </div>
+                  @if (p.cvUrl) {
+                    <a [href]="p.cvUrl" target="_blank" rel="noopener"
+                      class="inline-flex items-center gap-[6px] text-[12.5px] font-semibold shrink-0 hover:underline"
+                      style="color:var(--color-abril-logo-blue)">
+                      <i class="ti ti-file-text text-[15px]"></i>
+                      Ver CV
+                    </a>
+                  }
+                </div>
+              }
+            }
 
             <p class="text-[13px] font-semibold text-gray-700 mt-[14px]">CVs seleccionados</p>
 
@@ -976,19 +1017,26 @@
               </div>
             }
 
-            <!-- Envío de la long list: sube los CVs, dispara el correo al solicitante
-                 y avanza el requerimiento a "Long list enviada". -->
+            <!-- Envío: sube los CVs y dispara el correo al solicitante. Antes del primer envío
+                 avanza el requerimiento a "Long list enviada"; después no lo mueve de fase —los
+                 candidatos nuevos se suman al proceso donde esté. -->
             <button type="button"
               class="w-full h-[42px] mt-[14px] rounded-[7px] text-[13.5px] font-semibold text-white transition-opacity"
               [ngClass]="puedeEnviarLongList ? 'cursor-pointer hover:opacity-90' : 'opacity-50 cursor-not-allowed'"
               style="background:var(--color-abril-logo-blue)"
               [disabled]="!puedeEnviarLongList"
               (click)="enviarLongList()">
-              {{ enviando ? 'Enviando…' : 'Enviar long list y notificar por correo al solicitante' }}
+              {{ enviando
+                  ? 'Enviando…'
+                  : envioAdicionalDeCvs
+                    ? 'Enviar estos CVs y notificar por correo al solicitante'
+                    : 'Enviar long list y notificar por correo al solicitante' }}
             </button>
             @if (candidatos.length === 0) {
               <p class="text-[11.5px] text-gray-500 mt-[6px] text-center">
-                Sube al menos un CV para habilitar el envío de la long list.
+                {{ envioAdicionalDeCvs
+                    ? 'Sube al menos un CV para enviarlo al solicitante.'
+                    : 'Sube al menos un CV para habilitar el envío de la long list.' }}
               </p>
             }
           }

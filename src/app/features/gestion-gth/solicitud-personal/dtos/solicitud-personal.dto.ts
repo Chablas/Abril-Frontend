@@ -484,7 +484,17 @@ export interface RevisionLongList {
   proyectoObra: string | null;
   estadoCodigo: string;
   estadoNombre: string;
+  /**
+   * Los CVs que hay que decidir: los pendientes. GTH puede enviar más CVs en cualquier fase del
+   * proceso, así que una misma long list mezcla candidatos de varios envíos y solo llegan acá los
+   * que todavía no tienen decisión. Con `yaDecidida` llegan todos, en modo consulta.
+   */
   candidatos: CandidatoRevision[];
+  /**
+   * true si no queda ningún CV por decidir: la pantalla es de solo lectura y muestra lo que ya se
+   * decidió. Es lo que ve quien vuelve a abrir el enlace del correo después de haber respondido.
+   */
+  yaDecidida: boolean;
 }
 
 /** Evaluación que GTH registró tras la entrevista de un finalista. */
