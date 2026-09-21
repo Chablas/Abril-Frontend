@@ -1,11 +1,31 @@
 <app-abril-page-header
-  badge="GESTIÓN GTH · CONFIGURACIÓN"
-  titulo="Configuración de correos"
-  subtitulo="Qué correos de la solicitud de personal se envían y quién los recibe."
+  badge="GESTIÓN GTH · SOLICITUD DE PERSONAL"
+  titulo="Configuración"
+  subtitulo="Correos y visibilidad de la solicitud de personal."
   [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
-  (secondaryClick)="volver()">
+  (secondaryClick)="volver()"
+  [hasExtra]="mostrandoVisibilidad">
+
+  <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas y delega en el modal de
+       filtros de la sección Visibilidad (la única con tabla). -->
+  <app-filter-trigger *ngIf="mostrandoVisibilidad" tabsExtra [count]="filtrosActivos" (open)="onOpenFilters()" />
 </app-abril-page-header>
 
 <section class="page-container px-3 py-4 flex flex-col gap-[16px] flex-1 min-h-0 overflow-auto">
-  <app-gth-correos-config modulo="solicitud-personal"></app-gth-correos-config>
+
+  <!-- Con una sola sección no se dibuja la tira: sería una pestaña que no lleva a ningún lado. -->
+  <app-section-tabs
+    *ngIf="secciones.length > 1"
+    class="shrink-0"
+    [tabs]="secciones"
+    [value]="seccionActiva"
+    color="var(--color-abril-standard)"
+    (valueChange)="onSeccionChange($event)">
+  </app-section-tabs>
+
+  <!-- SECCIÓN: Correos (una subsección por cada correo del flujo) -->
+  <app-gth-correos-config *ngIf="mostrandoCorreos" modulo="solicitud-personal"></app-gth-correos-config>
+
+  <!-- SECCIÓN: Visibilidad (qué áreas ve cada trabajador en Solicitud de Personal) -->
+  <app-visibilidad-areas *ngIf="mostrandoVisibilidad" [endpoint]="visibilidadEndpoint"></app-visibilidad-areas>
 </section>

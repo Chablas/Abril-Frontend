@@ -137,6 +137,18 @@ export interface AprobacionDetalle {
   destinatarios: SolicitudDestinatarios | null;
 }
 
+/**
+ * Un tipo de requerimiento presente en las vacantes que el usuario ve de una solicitud, con
+ * cuántas son. Se compara por `codigo`; el `nombre` es presentación y se renombra desde
+ * Configuración.
+ */
+export interface AprobacionTipo {
+  /** `NUEVO` | `REEMPLAZO`. */
+  codigo: string;
+  nombre: string;
+  total: number;
+}
+
 /** Una solicitud en la lista de «Aprobaciones» (una fila = una solicitud de personal). */
 export interface AprobacionListItem {
   aprobacionId: number;
@@ -155,6 +167,18 @@ export interface AprobacionListItem {
    * backend no manda las de la otra ruta. El total real lo ve el solicitante en su seguimiento.
    */
   totalVacantes: number;
+  /**
+   * Tipos de las vacantes que este usuario ve, sin repetir y en el orden del catálogo: la columna
+   * «Tipo». Sigue el mismo recorte que `codigos` y `totalVacantes`.
+   *
+   * Casi siempre trae uno solo, porque la ruta de aprobación ya reparte los tipos (al Gerente
+   * General le llegan las nuevas; al gerente del área y a GTH, los reemplazos). Las mixtas son las
+   * vacantes FFT que quedaron enganchadas a una aprobación antes de que el ingreso directo dejara
+   * de firmarse.
+   */
+  tipos: AprobacionTipo[];
+  /** true si alguna de las vacantes que el usuario ve es un ingreso directo FFT. */
+  esFft: boolean;
   gerenteArea: AprobacionNivelResumen;
   gerenteGeneral: AprobacionNivelResumen;
   gth: AprobacionNivelResumen;

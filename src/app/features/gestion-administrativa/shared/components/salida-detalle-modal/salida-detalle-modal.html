@@ -1,6 +1,6 @@
 ﻿<app-base-modal
   [title]="detalle?.codigo ? 'Solicitud ' + detalle!.codigo : 'Detalle de la solicitud'"
-  width="w-[720px]"
+  [width]="edicion ? 'w-[760px]' : 'w-[1000px]'"
   closeColor="var(--color-abril-standard)"
   [preventCloseWhenDirty]="edicion !== null"
   (closeModal)="cerrar()">
@@ -93,155 +93,112 @@
         </div>
       </div>
 
-      <div *ngFor="let t of detalle.trayectos" class="border rounded-lg p-3 flex flex-col gap-2" style="border-color:var(--color-abril-border)">
-        <div class="flex items-center justify-between">
-          <div class="text-xs font-semibold uppercase" style="color:var(--color-abril-standard)">Trayecto {{ t.orden + 1 }}</div>
-          <div *ngIf="!edicion && t.montoTotal > 0" class="text-xs font-medium text-gray-700">
-            S/ {{ t.montoTotal | number:'1.2-2' }}
-            <span *ngIf="totalCapturas(t) === 0 && t.montoCatalogo !== null"
-                  class="ml-1 text-[10px] font-semibold uppercase tracking-wider" style="color:var(--color-abril-accent)">
-              catálogo
-            </span>
-          </div>
-          <!-- En edición: lo que va cargando el trayecto contra su tope, en vivo. Vira a ámbar al
-               pasarse; guardar se apaga solo si el lote EMPEORA el exceso, para que un trayecto que
-               ya venía por encima se pueda seguir corrigiendo hacia abajo (misma regla en backend). -->
-          <div *ngIf="edicion && edicion.importeEnPantalla(t) > 0"
-               class="text-xs font-semibold flex-shrink-0"
-               [style.color]="edicion.excedeTope(t) ? 'var(--color-abril-warning-dark)' : 'var(--color-abril-standard)'">
-            S/ {{ edicion.importeEnPantalla(t) | number:'1.2-2' }}
-            <span class="font-normal text-gray-400">/ {{ edicion.limiteTrayecto | number:'1.2-2' }}</span>
-          </div>
-        </div>
-        <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-          <div>
-            <div class="text-xs text-gray-500 uppercase">Salida</div>
-            <div class="text-gray-800">{{ t.horaSalida ?? '—' }}</div>
-          </div>
-          <div>
-            <div class="text-xs text-gray-500 uppercase">Retorno</div>
-            <div class="text-gray-800">{{ t.horaRetorno ?? '—' }}</div>
-          </div>
-          <div class="col-span-2">
-            <div class="flex items-center gap-[6px]">
-              <span class="text-xs text-gray-500 uppercase">Motivo</span>
-              <!-- Solo con motivo del catálogo: el motivo libre no tiene el flag configurado. -->
-              <span *ngIf="t.esReembolsable !== null"
-                    class="text-[10px] px-[8px] py-[2px] rounded-full font-semibold tracking-wide whitespace-nowrap"
-                    [ngClass]="t.esReembolsable ? 'bg-[#DCFCE7] text-[#14532D]' : 'bg-[#F3F4F6] text-[#6B7280]'">
-                {{ t.esReembolsable ? 'CON REEMBOLSO' : 'SIN REEMBOLSO' }}
-              </span>
-            </div>
-            <div class="text-gray-800">{{ t.motivo }}</div>
-          </div>
-          <div *ngIf="t.motivoAdicional" class="col-span-2">
-            <div class="text-xs text-gray-500 uppercase">Motivo adicional</div>
-            <div class="text-gray-800">{{ t.motivoAdicional }}</div>
-          </div>
-          <div>
-            <div class="text-xs text-gray-500 uppercase">Origen</div>
-            <div class="text-gray-800">{{ t.lugarOrigen ?? '—' }}</div>
-          </div>
-          <div>
-            <div class="text-xs text-gray-500 uppercase">Destino</div>
-            <div class="text-gray-800">{{ t.lugarDestino ?? '—' }}</div>
-          </div>
-          <div *ngIf="t.adjuntos.length > 0" class="col-span-2">
-            <div class="text-xs text-gray-500 uppercase">
-              {{ t.adjuntos.length > 1 ? 'Documentos adjuntos' : 'Documento adjunto' }}
-            </div>
-            <div class="flex flex-col gap-1 mt-0.5">
-              <a *ngFor="let a of t.adjuntos" [href]="a.url" target="_blank" rel="noopener noreferrer"
-                 class="inline-flex items-center gap-1.5 hover:underline text-sm font-medium break-all"
-                 style="color:var(--color-abril-standard)">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                    d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zM14 2v6h6" />
-                </svg>
-                {{ a.filename || 'Ver documento' }}
-              </a>
-            </div>
-          </div>
-        </div>
+      <!-- LECTURA — los trayectos en tabla: una fila cada uno, con TODAS sus capturas dentro de su
+           propia fila. Con varios trayectos las tarjetas apiladas obligaban a bajar por toda la
+           pantalla para comparar dos recorridos o dos montos. -->
+      <app-salida-trayectos-tabla
+        *ngIf="!edicion"
+        [trayectos]="detalle.trayectos"
+        [catalogoNota]="consulta ? '' : '— no requieres subir captura.'" />
 
-        <!-- Capturas: en edición, editables (se guardan con el botón del pie); en lectura, las
-             miniaturas de lo guardado. -->
-        <app-salida-capturas-editor
-          *ngIf="edicion"
-          class="mt-1"
-          [edicion]="edicion"
-          [trayecto]="t"
-          (quitada)="onCapturaQuitada()" />
-
-        <ng-container *ngIf="!edicion">
-          <div *ngIf="t.capturas.length > 0" class="mt-1 flex flex-wrap gap-2">
-            <div *ngFor="let c of t.capturas" class="flex flex-col items-center gap-1" [title]="c.filename">
-              <div class="w-[110px] h-[110px] flex items-center justify-center">
-                <app-draggable-image [src]="c.imageUrl" />
+      <!-- EDICIÓN — acá NO va la tabla: cada trayecto pasa a ser un formulario (una imagen y un
+           monto por captura, filas nuevas y el tope en vivo) y eso necesita el alto de una
+           tarjeta. La tabla es la vista de lectura. -->
+      <ng-container *ngIf="edicion as ed">
+        <div *ngFor="let t of detalle.trayectos" class="border rounded-lg p-3 flex flex-col gap-2" style="border-color:var(--color-abril-border)">
+          <div class="flex items-center justify-between">
+            <div class="text-xs font-semibold uppercase" style="color:var(--color-abril-standard)">Trayecto {{ t.orden + 1 }}</div>
+            <!-- Lo que va cargando el trayecto contra su tope, en vivo. Vira a ámbar al pasarse;
+                 guardar se apaga solo si el lote EMPEORA el exceso, para que un trayecto que
+                 ya venía por encima se pueda seguir corrigiendo hacia abajo (misma regla en backend). -->
+            <div *ngIf="ed.importeEnPantalla(t) > 0"
+                 class="text-xs font-semibold flex-shrink-0"
+                 [style.color]="ed.excedeTope(t) ? 'var(--color-abril-warning-dark)' : 'var(--color-abril-standard)'">
+              S/ {{ ed.importeEnPantalla(t) | number:'1.2-2' }}
+              <span class="font-normal text-gray-400">/ {{ ed.limiteTrayecto | number:'1.2-2' }}</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            <div>
+              <div class="text-xs text-gray-500 uppercase">Salida</div>
+              <div class="text-gray-800">{{ t.horaSalida ?? '—' }}</div>
+            </div>
+            <div>
+              <div class="text-xs text-gray-500 uppercase">Retorno</div>
+              <div class="text-gray-800">{{ t.horaRetorno ?? '—' }}</div>
+            </div>
+            <div class="col-span-2">
+              <div class="flex items-center gap-[6px]">
+                <span class="text-xs text-gray-500 uppercase">Motivo</span>
+                <!-- Solo con motivo del catálogo: el motivo libre no tiene el flag configurado. -->
+                <span *ngIf="t.esReembolsable !== null"
+                      class="text-[10px] px-[8px] py-[2px] rounded-full font-semibold tracking-wide whitespace-nowrap"
+                      [ngClass]="t.esReembolsable ? 'bg-[#DCFCE7] text-[#14532D]' : 'bg-[#F3F4F6] text-[#6B7280]'">
+                  {{ t.esReembolsable ? 'CON REEMBOLSO' : 'SIN REEMBOLSO' }}
+                </span>
               </div>
-              <div class="text-xs font-medium text-gray-700">S/ {{ c.monto | number:'1.2-2' }}</div>
+              <div class="text-gray-800">{{ t.motivo }}</div>
+            </div>
+            <div *ngIf="t.motivoAdicional" class="col-span-2">
+              <div class="text-xs text-gray-500 uppercase">Motivo adicional</div>
+              <div class="text-gray-800">{{ t.motivoAdicional }}</div>
+            </div>
+            <div>
+              <div class="text-xs text-gray-500 uppercase">Origen</div>
+              <div class="text-gray-800">{{ t.lugarOrigen ?? '—' }}</div>
+            </div>
+            <div>
+              <div class="text-xs text-gray-500 uppercase">Destino</div>
+              <div class="text-gray-800">{{ t.lugarDestino ?? '—' }}</div>
+            </div>
+            <div *ngIf="t.adjuntos.length > 0" class="col-span-2 flex flex-col gap-3">
+              <app-documento-embebido
+                *ngFor="let a of t.adjuntos"
+                etiqueta="Documento adjunto"
+                [nombre]="a.filename || null"
+                [url]="a.url" />
             </div>
           </div>
-          <div *ngIf="t.capturas.length === 0 && t.montoCatalogo === null" class="text-xs text-gray-400 italic">
-            Sin capturas en este trayecto.
-          </div>
-          <div *ngIf="t.capturas.length === 0 && t.montoCatalogo !== null"
-               class="text-xs bg-[#DBEAFE] border border-[#BFDBFE] rounded px-2 py-1 inline-block w-fit" style="color:var(--color-abril-accent)">
-            Monto del catálogo: <b>S/ {{ t.montoCatalogo | number:'1.2-2' }}</b>
-            <span *ngIf="!consulta" class="text-gray-500 ml-1">— no requieres subir captura.</span>
-          </div>
-        </ng-container>
-      </div>
+
+          <!-- Capturas editables: se guardan todas juntas con el botón del pie del modal. -->
+          <app-salida-capturas-editor
+            class="mt-1"
+            [edicion]="ed"
+            [trayecto]="t"
+            (quitada)="onCapturaQuitada()" />
+        </div>
+      </ng-container>
     </div>
 
     <!-- ── Planilla rendida ──────────────────────────────────────────── -->
-    <div *ngIf="detalle.rendicion" class="border-t pt-4 flex flex-col gap-2" style="border-color:var(--color-abril-border)">
-      <div class="text-xs text-gray-500 uppercase">Planilla de rendición</div>
-      <a
-        [href]="detalle.rendicion.pdfUrl"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all" style="color:var(--color-abril-accent)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M14 2v6h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        </svg>
-        {{ detalle.rendicion.pdfFilename }}
-      </a>
-      <div class="text-xs text-gray-400">
-        Rendido el {{ detalle.rendicion.rendidoAt | date:'dd/MM/yyyy HH:mm' }}
-      </div>
+    <div *ngIf="mostrarDocumentos && detalle.rendicion as r" class="border-t pt-4" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Planilla de rendición"
+        [nota]="'Rendido el ' + (r.rendidoAt | date:'dd/MM/yyyy HH:mm')"
+        [nombre]="r.pdfFilename"
+        [url]="r.pdfUrl" />
     </div>
 
     <!-- ── Consolidado del S10 ───────────────────────────────────────── -->
-    <div *ngIf="detalle.consolidadoS10" class="border-t pt-4 flex flex-col gap-2" style="border-color:var(--color-abril-border)">
-      <div class="text-xs text-gray-500 uppercase">
-        Consolidado del S10
-        <span class="normal-case text-gray-400">
-          ({{ detalle.consolidadoS10.ambito === 'Rendicion' ? 'toda la planilla' : 'solo esta salida' }})
-        </span>
-      </div>
-      <a
-        [href]="detalle.consolidadoS10.pdfUrl"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all" style="color:var(--color-abril-accent)">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="flex-shrink-0">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-          <path d="M14 2v6h6" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
-        </svg>
-        {{ detalle.consolidadoS10.pdfFilename }}
-      </a>
-      <div class="text-xs text-gray-400">
-        Adjuntado el {{ detalle.consolidadoS10.uploadedAt | date:'dd/MM/yyyy HH:mm' }}
-      </div>
+    <div *ngIf="mostrarDocumentos && detalle.consolidadoS10 as c" class="border-t pt-4" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Consolidado del S10"
+        [nota]="(c.ambito === 'Rendicion' ? 'Toda la planilla' : 'Solo esta salida')
+          + ' · adjuntado el ' + (c.uploadedAt | date:'dd/MM/yyyy HH:mm')"
+        [nombre]="c.pdfFilename"
+        [url]="c.pdfUrl" />
     </div>
+
+    <!-- Los pies de abajo nunca coinciden (guardar y rendir son de lo aprobado; cancelar, de lo
+         pendiente) y van pegados al borde de abajo: con los archivos a la vista el modal es largo. -->
 
     <!-- ── Guardar (edición) ──────────────────────────────────────────────
          Un solo botón para todos los trayectos: sube las capturas nuevas y escribe los montos e
          imágenes cambiados, en una sola llamada. Ocupa el lugar de "Rendir", que no se ofrece
          mientras se edita: rendiría lo guardado y no lo que está en pantalla. -->
-    <div *ngIf="edicion" class="border-t pt-4 flex flex-col items-center gap-1.5" style="border-color:var(--color-abril-border)">
+    <div *ngIf="edicion"
+         class="sticky bottom-0 z-10 -mx-[20px] -mb-[20px] px-[20px] py-3 rounded-b-lg bg-white border-t flex flex-col items-center gap-1.5"
+         style="border-color:var(--color-abril-border)">
       <div *ngIf="edicion.aviso" class="text-xs" style="color:var(--color-abril-warning)">{{ edicion.aviso }}</div>
       <button type="button"
               (click)="guardarTodo()"
@@ -259,7 +216,9 @@
          buscar la fila. Aparece con la misma condición (`aptaParaRendir`, que resuelve el backend):
          si acá no está, en la tabla tampoco. Al guardar capturas llega recalculado, así que aparece
          apenas la salida queda completa. En consulta nunca: la salida es de otro. -->
-    <div *ngIf="!consulta && !edicion && detalle.aptaParaRendir" class="border-t pt-4 flex justify-center" style="border-color:var(--color-abril-border)">
+    <div *ngIf="!consulta && !edicion && detalle.aptaParaRendir"
+         class="sticky bottom-0 z-10 -mx-[20px] -mb-[20px] px-[20px] py-3 rounded-b-lg bg-white border-t flex justify-center"
+         style="border-color:var(--color-abril-border)">
       <button
         type="button"
         (click)="rendirSolicitud()"
@@ -278,7 +237,9 @@
     <!-- ── Cancelar (pendiente) ──────────────────────────────────────────
          El mismo "Cancelar" de la tabla y con la misma condición: solo mientras la salida no fue
          aprobada ni rechazada. Por eso nunca comparte el pie con "Rendir" ni con el guardado. -->
-    <div *ngIf="puedeCancelar" class="border-t pt-4 flex justify-center" style="border-color:var(--color-abril-border)">
+    <div *ngIf="puedeCancelar"
+         class="sticky bottom-0 z-10 -mx-[20px] -mb-[20px] px-[20px] py-3 rounded-b-lg bg-white border-t flex justify-center"
+         style="border-color:var(--color-abril-border)">
       <button
         type="button"
         (click)="cancelarSolicitud()"

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
-import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { ConsolidadoS10UploadResultDto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { CorreoAvisoDto, CorreoPreviewRequestDto } from '../../../shared/correo-aviso';
 import { ReembolsoBulkResultDto } from '../../../shared/dtos/rendicion-shared.dto';
 import { SolicitudSalidaDetalleDto } from '../../../shared/dtos/salida-detalle.dto';
@@ -80,13 +80,13 @@ export class GestionRendicionesService {
    */
   uploadConsolidadoS10(
     rendicionIds: number[], file: File, montoTotal: number, numeroReembolso: string,
-  ): Observable<ConsolidadoS10Dto> {
+  ): Observable<ConsolidadoS10UploadResultDto> {
     const formData = new FormData();
     for (const id of rendicionIds) formData.append('rendicionIds', String(id));
     formData.append('file', file, file.name);
     formData.append('montoTotal', String(montoTotal));
     formData.append('numeroReembolso', numeroReembolso);
-    return this.http.post<ConsolidadoS10Dto>(
+    return this.http.post<ConsolidadoS10UploadResultDto>(
       `${this.apiUrl}/consolidado-s10`,
       formData,
       { headers: this.headers },

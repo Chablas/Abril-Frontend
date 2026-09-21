@@ -22,10 +22,11 @@ export interface SolicitudSalidaListItemDto {
   /** True si los trayectos reembolsables tienen capturas (o catálogo TI) — habilita la rendición. */
   puedeRendirse: boolean;
   /**
-   * True si al menos un trayecto genera reembolso: su motivo está marcado como reembolsable en
-   * Configuración → Motivos y su recorrido no está excluido en Configuración → Trayectos. Sin eso
-   * la salida no genera gasto de movilidad y no hay qué rendir. Los trayectos que no lo generan no
-   * entran en la planilla ni se les exige captura.
+   * True si al menos un trayecto deja gasto que rendir: su motivo está marcado como reembolsable
+   * en Configuración → Motivos, su recorrido no está excluido en Configuración → Trayectos y su
+   * importe es mayor a S/ 0.00 (el tarifario de TI en cero no cuenta). Sin eso la planilla no
+   * tendría ni una fila de la salida. Los trayectos que no lo dejan no entran en ella ni se les
+   * exige captura.
    */
   esReembolsable: boolean;
   /**

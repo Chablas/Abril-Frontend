@@ -5,6 +5,7 @@ import { environment } from '../../../../../../environments/environment';
 import { CorreoAvisoDto } from '../../../shared/correo-aviso';
 import { ReembolsoBulkResultDto } from '../../../shared/dtos/rendicion-shared.dto';
 import { SolicitudSalidaDetalleDto } from '../../../shared/dtos/salida-detalle.dto';
+import { ConsolidadoS10UploadResultDto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import {
   ConsolidadoAccionDto,
   ConsolidadoCorreoPreviewRequestDto,
@@ -109,6 +110,23 @@ export class ConsolidadosService {
   solicitarCorreccionS10(consolidadoId: number, motivo: string): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(
       `${this.apiUrl}/${consolidadoId}/correccion-s10`, { motivo }, { headers: this.headers });
+  }
+
+  /**
+   * El consolidador reemplaza el Consolidado del S10 —normalmente por una observación—. Es el único
+   * lugar donde se reemplaza: Gestión de Rendiciones solo adjunta el primero. El documento nuevo
+   * cubre las planillas que siguen con el reembolso abierto y, en el mismo paso, se le avisa a la
+   * jefatura.
+   */
+  reemplazarConsolidado(
+    consolidadoId: number, file: File, montoTotal: number, numeroReembolso: string,
+  ): Observable<ConsolidadoS10UploadResultDto> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('montoTotal', String(montoTotal));
+    formData.append('numeroReembolso', numeroReembolso);
+    return this.http.post<ConsolidadoS10UploadResultDto>(
+      `${this.apiUrl}/${consolidadoId}/reemplazar`, formData, { headers: this.headers });
   }
 
   /**

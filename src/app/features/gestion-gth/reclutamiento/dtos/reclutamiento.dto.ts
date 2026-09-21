@@ -45,6 +45,12 @@ export interface RequerimientoGthListItem {
   puesto: string;
   /** Proyecto/obra destino de la vacante. */
   proyectoObra: string | null;
+  /** Tipo de requerimiento como se muestra (Nuevo / Reemplazo): la columna «Tipo». */
+  tipoRequerimiento: string;
+  /** `NUEVO` | `REEMPLAZO`: decide cómo se pinta el tipo y por dónde filtra. Nunca por nombre. */
+  tipoRequerimientoCodigo: string;
+  /** true = ingreso directo FFT: no lo firma nadie y arranca en el EMO de ingreso. */
+  esFft: boolean;
   /** Fecha en que llegó la solicitud (ISO, ya en hora Perú). Columna "Fecha llegada". */
   fechaLlegada: string;
   /** Prioridad asignada (id del catálogo). Null si no tiene. Columna "Prioridad". */

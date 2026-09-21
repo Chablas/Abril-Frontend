@@ -79,7 +79,7 @@
               style="accent-color:var(--color-abril-accent)"
               title="Seleccionar / deseleccionar todo" />
           </th>
-          <th>N.° reembolso</th>
+          <th>Consolidado</th>
           <th>Rendiciones</th>
           <th>Trabajador</th>
           <th>Periodo</th>
@@ -114,15 +114,19 @@
               style="accent-color:var(--color-abril-accent)" />
           </td>
 
-          <!-- El número de reembolso es como el S10 nombra este registro: es el identificador de
-               la fila. Los consolidados viejos no lo tienen. -->
+          <!-- Los dos nombres del documento, uno debajo del otro: el CONS-ÁREA-AAAA-NNN es el de acá
+               —el de la rendición grupal, el que sobrevive a reemplazar el archivo— y el N.° de
+               reembolso es el que le puso el S10. Los consolidados viejos no tienen ninguno. -->
           <td class="whitespace-nowrap">
-            <span *ngIf="c.numeroReembolso; else sinNumero" class="text-gray-700 font-medium">
-              {{ c.numeroReembolso }}
-            </span>
-            <ng-template #sinNumero>
-              <span class="text-gray-300" title="Consolidado anterior al número de reembolso">—</span>
-            </ng-template>
+            <div class="flex flex-col leading-tight">
+              <span *ngIf="c.codigo; else sinCodigo" class="text-gray-700 font-medium">{{ c.codigo }}</span>
+              <ng-template #sinCodigo>
+                <span class="text-gray-300" title="Consolidado anterior al código de rendición grupal">—</span>
+              </ng-template>
+              <span *ngIf="c.numeroReembolso" class="text-[11px] text-gray-400">
+                N.° {{ c.numeroReembolso }}
+              </span>
+            </div>
           </td>
 
           <!-- Todo lo que cubre: las que el usuario no ve van apagadas, pero se listan porque el
@@ -165,24 +169,40 @@
             </div>
           </td>
 
+          <!-- Un chip por documento, no dos: firmado, la copia firmada ocupa el lugar del original
+               —el check la distingue— y es la única que se abre, acá y en el detalle. -->
           <td (click)="$event.stopPropagation()">
             <div class="flex flex-wrap items-center gap-[6px]">
-              <a class="doc-chip" [href]="c.pdfUrl" target="_blank" rel="noopener noreferrer"
-                 [title]="c.pdfFilename">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <a class="doc-chip" [href]="c.pdfFirmadoUrl ?? c.pdfUrl" target="_blank" rel="noopener noreferrer"
+                 [title]="c.pdfFirmadoUrl
+                   ? 'Consolidado firmado el ' + (c.firmadoAt | date:'dd/MM/yyyy HH:mm')
+                   : c.pdfFilename">
+                <svg *ngIf="c.pdfFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg *ngIf="!c.pdfFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
                   <path d="M14 2v6h6" stroke-linejoin="round"/>
                 </svg>
-                Consolidado
+                {{ c.pdfFirmadoUrl ? 'Consolidado firmado' : 'Consolidado' }}
               </a>
 
-              <a *ngIf="c.pdfFirmadoUrl"
-                 class="doc-chip" [href]="c.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
-                 [title]="'Firmado el ' + (c.firmadoAt | date:'dd/MM/yyyy HH:mm')">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <!-- La planilla grupal: el gasto de todo lo que cubre el consolidado en un solo
+                   documento. La arma Abril One al adjuntarse el S10 y se firma con el consolidado:
+                   ya firmada, el chip abre esa copia. -->
+              <a *ngIf="c.planillaGrupalFirmadoUrl ?? c.planillaGrupalUrl as grupal"
+                 class="doc-chip" [href]="grupal" target="_blank" rel="noopener noreferrer"
+                 [title]="c.planillaGrupalFirmadoUrl
+                   ? 'Planilla grupal firmada el ' + (c.firmadoAt | date:'dd/MM/yyyy HH:mm')
+                   : (c.planillaGrupalFilename ?? 'Planilla grupal')">
+                <svg *ngIf="c.planillaGrupalFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
-                Firmado
+                <svg *ngIf="!c.planillaGrupalFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                Planilla grupal
               </a>
             </div>
           </td>
@@ -254,7 +274,13 @@
                 {{ c.jefaturaAvisadaAt ? 'Jefatura avisada ✓' : 'Avisar a la jefatura' }}
               </button>
 
-              <span *ngIf="c.porDecidirCount === 0 && !c.puedeAvisarJefatura" class="text-gray-300">—</span>
+              <!-- Observado no es "sin acciones": el documento está en manos del consolidador y no
+                   vuelve a la jefatura hasta que adjunte el S10 corregido. Decirlo evita que la
+                   jefatura busque un botón que no está. -->
+              <span *ngIf="c.porDecidirCount === 0 && !c.puedeAvisarJefatura"
+                    [class]="c.estadoReembolso === 'Observado' ? 'text-[11px] text-gray-400' : 'text-gray-300'">
+                {{ c.estadoReembolso === 'Observado' ? 'Espera al consolidador' : '—' }}
+              </span>
             </div>
           </td>
         </tr>

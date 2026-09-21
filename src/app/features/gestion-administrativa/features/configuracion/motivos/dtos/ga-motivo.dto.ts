@@ -14,6 +14,10 @@ export interface GaMotivoSalidaConfigItemDto {
   /** Si true, una salida con este motivo genera reembolso de movilidad. El trayecto
    *  elegido puede anularlo (ga_trayecto.esReembolsable), nunca al revés. */
   esReembolsable: boolean;
+  /** true en la fila que configura «Otro motivo», la vía de texto libre del formulario:
+   *  no se ofrece en el desplegable, no se renombra y no pide motivo adicional (el texto
+   *  libre YA es ese detalle). Sus demás opciones se editan como en cualquier motivo. */
+  esMotivoLibre: boolean;
   createdAt: string;
 }
 

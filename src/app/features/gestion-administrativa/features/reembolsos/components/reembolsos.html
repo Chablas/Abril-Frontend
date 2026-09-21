@@ -117,7 +117,7 @@
                 style="accent-color:var(--color-abril-accent)"
                 title="Seleccionar / deseleccionar todo lo que falta revisar o pagar" />
             </th>
-            <th>N.º de reembolso</th>
+            <th>Consolidado</th>
             <th>Planillas</th>
             <th>Trabajador</th>
             <th>Periodo</th>
@@ -153,17 +153,21 @@
                 [title]="motivoNoAccionable(c)" />
             </td>
 
-            <!-- El número de reembolso es como el S10 nombra este registro: es el identificador de
-                 la fila. Los consolidados viejos no lo tienen. -->
+            <!-- Los dos nombres del documento que se paga de una sola vez: el CONS-ÁREA-AAAA-NNN de la
+                 rendición grupal y, debajo, el N.° con el que lo nombra el S10. Los consolidados
+                 viejos no tienen ninguno de los dos. -->
             <td class="whitespace-nowrap">
-              <span *ngIf="c.numeroReembolso; else sinNumero" class="text-gray-700 font-medium">
-                {{ c.numeroReembolso }}
-              </span>
-              <ng-template #sinNumero>
-                <span class="text-gray-300" title="Consolidado anterior al número de reembolso">—</span>
-              </ng-template>
-              <div *ngIf="c.razonSocial" class="text-[11px] text-gray-400 leading-tight">
-                {{ c.razonSocial | titleCase }}
+              <div class="flex flex-col leading-tight">
+                <span *ngIf="c.codigo; else sinCodigo" class="text-gray-700 font-medium">{{ c.codigo }}</span>
+                <ng-template #sinCodigo>
+                  <span class="text-gray-300" title="Consolidado anterior al código de rendición grupal">—</span>
+                </ng-template>
+                <span *ngIf="c.numeroReembolso" class="text-[11px] text-gray-400">
+                  N.° {{ c.numeroReembolso }}
+                </span>
+                <span *ngIf="c.razonSocial" class="text-[11px] text-gray-400">
+                  {{ c.razonSocial | titleCase }}
+                </span>
               </div>
             </td>
 
@@ -218,24 +222,37 @@
               <ng-template #sinFirma><span class="text-gray-400">—</span></ng-template>
             </td>
 
+            <!-- Los dos documentos del consolidado, en su copia firmada. El original solo aparece si
+                 la firma no se estampó (consolidados anteriores a que ese documento se firmara). -->
             <td (click)="$event.stopPropagation()">
               <div class="flex flex-wrap items-center gap-[6px]">
-                <a *ngIf="c.pdfFirmadoUrl"
-                   class="doc-chip" [href]="c.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
-                   [title]="c.pdfFirmadoFilename ?? 'Consolidado del S10 firmado'">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <a class="doc-chip" [href]="c.pdfFirmadoUrl ?? c.pdfUrl" target="_blank" rel="noopener noreferrer"
+                   [title]="c.pdfFirmadoUrl ? (c.pdfFirmadoFilename ?? 'Consolidado del S10 firmado') : c.pdfFilename">
+                  <svg *ngIf="c.pdfFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
-                  S10 firmado
-                </a>
-
-                <a class="doc-chip" [href]="c.pdfUrl" target="_blank" rel="noopener noreferrer"
-                   [title]="c.pdfFilename">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg *ngIf="!c.pdfFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
                     <path d="M14 2v6h6" stroke-linejoin="round"/>
                   </svg>
-                  S10
+                  {{ c.pdfFirmadoUrl ? 'S10 firmado' : 'S10' }}
+                </a>
+
+                <!-- La planilla grupal: el gasto de todas las planillas que se pagan con este
+                     consolidado, en un solo documento. Ya firmada, el chip abre esa copia. -->
+                <a *ngIf="c.planillaGrupalFirmadoUrl ?? c.planillaGrupalUrl as grupal"
+                   class="doc-chip" [href]="grupal" target="_blank" rel="noopener noreferrer"
+                   [title]="c.planillaGrupalFirmadoUrl
+                     ? (c.planillaGrupalFirmadoFilename ?? 'Planilla grupal firmada')
+                     : (c.planillaGrupalFilename ?? 'Planilla grupal')">
+                  <svg *ngIf="c.planillaGrupalFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <svg *ngIf="!c.planillaGrupalFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                    <path d="M14 2v6h6" stroke-linejoin="round"/>
+                  </svg>
+                  Planilla grupal
                 </a>
               </div>
             </td>

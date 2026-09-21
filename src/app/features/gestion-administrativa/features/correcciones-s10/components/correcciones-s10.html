@@ -55,7 +55,7 @@
           </th>
           <th>Rendición</th>
           <th>Colaborador</th>
-          <th>N.º de reembolso</th>
+          <th>Consolidado</th>
           <th>Qué corregir</th>
           <th>Solicitada</th>
           <th>Estado</th>
@@ -100,15 +100,21 @@
             </div>
           </td>
 
-          <!-- Es EL dato con el que se ubica el registro en el S10, así que va en columna propia
-               y sin recortar. -->
+          <!-- Acá manda el N.° de reembolso y no el código: es EL dato con el que el ERP ubica el
+               registro en el S10, así que va en columna propia, primero y sin recortar. El
+               CONS-ÁREA-AAAA-NNN va debajo, para saber de qué rendición grupal viene el pedido. -->
           <td class="whitespace-nowrap">
-            <span *ngIf="c.numeroReembolso; else sinReembolso" class="text-gray-700 font-medium">
-              {{ c.numeroReembolso }}
-            </span>
-            <ng-template #sinReembolso>
-              <span class="text-[11px] text-gray-400 italic">sin reembolso</span>
-            </ng-template>
+            <div class="flex flex-col leading-tight">
+              <span *ngIf="c.numeroReembolso; else sinReembolso" class="text-gray-700 font-medium">
+                {{ c.numeroReembolso }}
+              </span>
+              <ng-template #sinReembolso>
+                <span class="text-[11px] text-gray-400 italic">sin reembolso</span>
+              </ng-template>
+              <span *ngIf="c.consolidadoS10?.codigo as codigo" class="text-[11px] text-gray-400">
+                {{ codigo }}
+              </span>
+            </div>
           </td>
 
           <td class="text-gray-700">
@@ -152,6 +158,18 @@
                   <path d="M14 2v6h6" stroke-linejoin="round"/>
                 </svg>
                 S10 observado
+              </a>
+
+              <!-- La planilla grupal del consolidado observado: es el gasto que el ERP tiene que
+                   cuadrar contra el registro del S10. -->
+              <a *ngIf="c.consolidadoS10?.planillaGrupalUrl as grupal"
+                 class="doc-chip" [href]="grupal" target="_blank" rel="noopener noreferrer"
+                 [title]="c.consolidadoS10?.planillaGrupalFilename ?? 'Planilla grupal'">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                Planilla grupal
               </a>
             </div>
           </td>

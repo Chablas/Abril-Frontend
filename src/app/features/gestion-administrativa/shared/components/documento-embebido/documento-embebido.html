@@ -1,0 +1,39 @@
+<div class="flex flex-col gap-2">
+  <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+    <span class="text-[11px] uppercase text-gray-400 font-semibold">{{ etiqueta }}</span>
+    <span *ngIf="marca" class="doc-marca">{{ marca }}</span>
+    <span *ngIf="nota" class="text-[11px] text-gray-400">{{ nota }}</span>
+  </div>
+
+  <a [href]="url" target="_blank" rel="noopener noreferrer"
+     class="self-start inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
+     style="color:var(--color-abril-accent)">
+    <svg *ngIf="firmado" width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+      <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <svg *ngIf="!firmado" width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+      <path d="M14 2v6h6" stroke-linejoin="round"/>
+    </svg>
+    {{ nombreVisible }}
+  </a>
+
+  <div #marco class="doc-marco">
+    <div *ngIf="estado === 'cargando'" class="doc-skeleton" [class.doc-skeleton--imagen]="tipo === 'imagen'"></div>
+
+    <div *ngIf="estado === 'error'" class="doc-aviso">
+      <i class="ti ti-file-x"></i>
+      <span>No se pudo cargar el archivo.</span>
+    </div>
+
+    <div *ngIf="estado === 'sin-vista'" class="doc-aviso">
+      <i class="ti ti-file-unknown"></i>
+      <span>Sin vista previa para este tipo de archivo.</span>
+    </div>
+
+    <img *ngIf="estado === 'listo' && imagenUrl" [src]="imagenUrl" [alt]="nombreVisible" class="doc-imagen" />
+
+    <!-- Las hojas del PDF las agrega el componente: son lienzos dibujados por pdf.js. -->
+    <div #paginas class="doc-paginas" [class.doc-paginas--oculto]="estado !== 'listo' || tipo !== 'pdf'"></div>
+  </div>
+</div>

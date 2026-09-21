@@ -169,6 +169,14 @@
                 <span class="text-[10px]" [class.opacity-30]="!sortDirOf('solicitante')">{{ sortDirOf('solicitante') === 'desc' ? '▼' : '▲' }}</span>
               </span>
             </th>
+            <!-- Qué se está aprobando: vacantes nuevas o reemplazos. Casi siempre dirá lo mismo en
+                 toda la columna —la ruta de aprobación reparte los tipos por nivel—, pero una
+                 solicitud puede traer más de uno y el ingreso directo se lee acá. -->
+            <th class="cursor-pointer select-none" (click)="toggleSort('tipo')" title="Ordenar por tipo">
+              <span class="inline-flex items-center gap-1">Tipo
+                <span class="text-[10px]" [class.opacity-30]="!sortDirOf('tipo')">{{ sortDirOf('tipo') === 'desc' ? '▼' : '▲' }}</span>
+              </span>
+            </th>
             <th class="cursor-pointer select-none" (click)="toggleSort('enviado')" title="Ordenar por fecha de envío">
               <span class="inline-flex items-center gap-1">Enviado
                 <span class="text-[10px]" [class.opacity-30]="!sortDirOf('enviado')">{{ sortDirOf('enviado') === 'desc' ? '▼' : '▲' }}</span>
@@ -193,7 +201,7 @@
         <tbody>
 
           <tr *ngIf="filteredAprobaciones.length === 0">
-            <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
+            <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
           </tr>
 
           <tr *ngFor="let a of pagedAprobaciones; let i = index"
@@ -221,6 +229,24 @@
             <td class="text-gray-500">{{ (a.area | titleCase) || '—' }}</td>
 
             <td class="text-gray-500">{{ (a.solicitanteNombre | titleCase) || '—' }}</td>
+
+            <!-- Un badge por tipo presente (casi siempre uno), con el mismo formato que en
+                 Solicitud de Personal y Reclutamiento. El conteo solo aparece cuando hay más de
+                 uno: con uno solo ya lo dice la columna «Vacantes». -->
+            <td class="text-center">
+              <div class="inline-flex flex-col items-center gap-[4px]">
+                <ng-container *ngFor="let tipo of a.tipos">
+                  <span *ngIf="tipoEstilo(tipo.codigo) as t"
+                        class="inline-flex items-center gap-[4px] h-[22px] px-[8px] rounded-full border bg-white text-[11.5px] font-semibold whitespace-nowrap"
+                        [style.color]="t.color" [style.border-color]="t.borde">
+                    <i class="ti text-[13px]" [ngClass]="t.icono"></i>
+                    {{ tipo.nombre }}<span *ngIf="a.tipos.length > 1" class="font-normal opacity-70">· {{ tipo.total }}</span>
+                  </span>
+                </ng-container>
+                <span *ngIf="a.tipos.length === 0" class="text-gray-400">—</span>
+              </div>
+              <div *ngIf="a.esFft" class="text-[11px] text-gray-400 mt-[2px] whitespace-nowrap">FFT · Ingreso directo</div>
+            </td>
 
             <td class="text-gray-500 whitespace-nowrap">{{ a.enviado | date:'dd/MM/yyyy' }}</td>
 
@@ -306,6 +332,22 @@
             <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Solicitante</div>
             <div class="text-[12px] text-gray-600 truncate">{{ (a.solicitanteNombre | titleCase) || '—' }}</div>
           </div>
+          <!-- La misma columna «Tipo» de la tabla. Ocupa el ancho completo: con más de un tipo los
+               badges se apilan y media tarjeta se queda corta. -->
+          <div class="col-span-2 min-w-0">
+            <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Tipo</div>
+            <div class="flex flex-wrap items-center gap-[6px] mt-[2px]">
+              <ng-container *ngFor="let tipo of a.tipos">
+                <span *ngIf="tipoEstilo(tipo.codigo) as t"
+                      class="inline-flex items-center gap-[4px] h-[20px] px-[7px] rounded-full border bg-white text-[11px] font-semibold whitespace-nowrap"
+                      [style.color]="t.color" [style.border-color]="t.borde">
+                  <i class="ti text-[12px]" [ngClass]="t.icono"></i>
+                  {{ tipo.nombre }}<span *ngIf="a.tipos.length > 1" class="font-normal opacity-70">· {{ tipo.total }}</span>
+                </span>
+              </ng-container>
+              <span *ngIf="a.esFft" class="text-[11px] text-gray-400">FFT · Ingreso directo</span>
+            </div>
+          </div>
         </div>
 
         <!-- Las firmas que la solicitud necesita, igual que la columna de la tabla.
@@ -381,6 +423,48 @@
       [sortAlpha]="false"
       [value]="estadoCodigo"
       (valueChange)="estadoCodigo = $event; onFilterChange()">
+    </app-search-select>
+
+    <!-- Los tres de abajo se arman con lo que ya está en la bandeja (ver `armarOpcionesFiltro`),
+         así que ninguna opción deja la tabla vacía y los que no pueden partir la lista no se
+         muestran. En la mayoría de casos «Tipo» no aparece: la ruta de aprobación le manda un solo
+         tipo a cada nivel —las vacantes nuevas al Gerente General y los reemplazos al gerente del
+         área y a GTH—, y un desplegable de una sola opción no filtra nada.
+
+         `rawLabel` en Tipo por la sigla de «Ingreso directo (FFT)». -->
+    <app-search-select
+      *ngIf="fTipo.visible"
+      label="Tipo"
+      placeholder="Todos los tipos"
+      [options]="fTipo.opciones"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      [rawLabel]="true"
+      [value]="fTipo.valor"
+      (valueChange)="fTipo.valor = $event; onFilterChange()">
+    </app-search-select>
+
+    <app-search-select
+      *ngIf="fArea.visible"
+      label="Área"
+      placeholder="Todas las áreas"
+      [options]="fArea.opciones"
+      valueField="value"
+      displayField="label"
+      [value]="fArea.valor"
+      (valueChange)="fArea.valor = $event; onFilterChange()">
+    </app-search-select>
+
+    <app-search-select
+      *ngIf="fSolicitante.visible"
+      label="Solicitante"
+      placeholder="Todos los solicitantes"
+      [options]="fSolicitante.opciones"
+      valueField="value"
+      displayField="label"
+      [value]="fSolicitante.valor"
+      (valueChange)="fSolicitante.valor = $event; onFilterChange()">
     </app-search-select>
   </div>
 </app-filter-modal>

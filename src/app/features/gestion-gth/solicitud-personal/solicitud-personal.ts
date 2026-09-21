@@ -11,6 +11,7 @@ import { Paginator } from '../../../shared/components/paginator/paginator';
 import { FilterTriggerButton } from '../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../shared/components/filter-modal/filter-modal';
 import { SearchInput } from '../../../shared/components/search-input/search-input';
+import { SearchSelect } from '../../../shared/components/search-select/search-select';
 import { ClientPager } from '../../../shared/utils/client-pager';
 import { LoaderService } from '../../../core/services/loader.service';
 import { ErrorService } from '../../../core/services/error.service';
@@ -22,12 +23,13 @@ import { GthRevisionFinalistas } from './components/revision-finalistas/revision
 import { SolicitudPersonalService } from './services/solicitud-personal.service';
 import { estadoColors } from '../shared/estado-colors';
 import { DestinatarioSolicitud } from '../shared/dtos/destinatarios.dto';
+import { contarFiltrosActivos, FiltroDesplegable, opcionesDe } from '../shared/filtros-opciones';
+import { coincideTipo, opcionesTipo, tipoRequerimientoEstilo } from '../shared/tipo-requerimiento';
 import {
   AprobacionGgReenvioPreview,
   GestionCandidatoCard,
   ResumenSolicitantePanel,
   SolicitudVacanteListItem,
-  tipoRequerimientoEstilo,
 } from './dtos/solicitud-personal.dto';
 
 @Component({
@@ -43,6 +45,7 @@ import {
     FilterTriggerButton,
     FilterModal,
     SearchInput,
+    SearchSelect,
     GthNuevaSolicitud,
     GthSeguimiento,
     GthRevisionLongList,
@@ -164,6 +167,20 @@ export class GthSolicitudPersonal implements OnInit {
   searchText = '';
   filtrosAbiertos = false;
 
+  /**
+   * Los cinco desplegables del panel. Sus opciones se arman con lo que ya está en la tabla y se
+   * recalculan al cargar (no en un getter: `options` es un @Input de `app-search-select` y un
+   * getter le entregaría un array nuevo en cada ciclo de detección de cambios).
+   *
+   * Filtran por lo que se LEE en la columna y no por el id: la lista llega entera con el panel y
+   * no hay catálogos que traer en una segunda petición (ver `filtros-opciones`).
+   */
+  readonly fEstado = new FiltroDesplegable();
+  readonly fTipo = new FiltroDesplegable();
+  readonly fArea = new FiltroDesplegable();
+  readonly fProyecto = new FiltroDesplegable();
+  readonly fSolicitante = new FiltroDesplegable();
+
   private readonly pager = new ClientPager<SolicitudVacanteListItem>();
 
   constructor(
@@ -176,20 +193,26 @@ export class GthSolicitudPersonal implements OnInit {
     private cdr: ChangeDetectorRef,
   ) {}
 
-  /** feature_key que habilita la configuración (dinámico vía role_feature en BD). */
-  private static readonly FEATURE_CONFIG = 'gestion-gth.reclutamiento.configuracion';
+  /**
+   * feature_keys de las secciones de la configuración (dinámicos vía role_feature en BD): los
+   * correos y la visibilidad. Mismos que los `featureKeys` de su ruta.
+   */
+  private static readonly FEATURES_CONFIG = [
+    'gestion-gth.reclutamiento.configuracion',
+    'gestion-gth.config.visibilidad-solicitud-personal',
+  ];
 
-  /** ¿El usuario tiene acceso a la configuración? (según los roles asignados a la feature). */
+  /** ¿El usuario tiene acceso a alguna sección de la configuración? */
   get puedeConfigurar(): boolean {
-    return this.authService.hasFeature(GthSolicitudPersonal.FEATURE_CONFIG);
+    return GthSolicitudPersonal.FEATURES_CONFIG.some((k) => this.authService.hasFeature(k));
   }
 
-  /** Botón "Configuración" del header: solo si el rol del usuario tiene la feature. */
+  /** Botón "Configuración" del header: solo si el rol del usuario tiene alguna de las features. */
   get botonConfiguracion() {
     return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
   }
 
-  /** Lleva a la pantalla de configuración de correos (ya no es un modal). */
+  /** Lleva a la pantalla de configuración (correos y visibilidad). */
   abrirConfiguracion(): void {
     if (!this.puedeConfigurar) return;
     this.router.navigate(['/gestion-gth/solicitud-personal/configuracion']);
@@ -221,6 +244,7 @@ export class GthSolicitudPersonal implements OnInit {
         this.gestionCandidatos = data.gestionCandidatos;
         this.solicitudes = data.misSolicitudes;
         this.puedeGestionar = data.puedeGestionar;
+        this.armarOpcionesFiltro();
         this.pager.reset();
         this.loaderService.hide();
       },
@@ -283,13 +307,41 @@ export class GthSolicitudPersonal implements OnInit {
     this.cdr.detectChanges();
   }
 
-  // ── Filtro de texto ────────────────────────────────────────────────────
+  // ── Filtros ────────────────────────────────────────────────────────────
+  /**
+   * Opciones de los desplegables, sacadas de las solicitudes que ya están en pantalla. El estado
+   * se ofrece por su RÓTULO y no por su código: una vacante en aprobación se rotula según a quién
+   * se está esperando («Aprobación Gerencia del Área» / «Aprobación GTH»), así que filtrar por el
+   * código juntaría en una sola opción badges que en la tabla se leen distinto.
+   */
+  private armarOpcionesFiltro(): void {
+    this.fEstado.actualizar(opcionesDe(this.solicitudes, (s) => s.estadoNombre));
+    this.fArea.actualizar(opcionesDe(this.solicitudes, (s) => s.area));
+    this.fProyecto.actualizar(opcionesDe(this.solicitudes, (s) => s.proyectoObra));
+    this.fSolicitante.actualizar(opcionesDe(this.solicitudes, (s) => s.solicitante));
+    this.fTipo.actualizar(
+      opcionesTipo(
+        this.solicitudes.map((s) => ({
+          codigo: s.tipoRequerimientoCodigo,
+          nombre: s.tipoRequerimiento,
+          esFft: s.esFft,
+        })),
+      ),
+    );
+  }
+
   get filtrosActivos(): number {
-    return this.searchText.trim() ? 1 : 0;
+    return (
+      (this.searchText.trim() ? 1 : 0) +
+      contarFiltrosActivos(this.fEstado, this.fTipo, this.fArea, this.fProyecto, this.fSolicitante)
+    );
   }
 
   limpiarFiltros(): void {
     this.searchText = '';
+    for (const f of [this.fEstado, this.fTipo, this.fArea, this.fProyecto, this.fSolicitante]) {
+      f.limpiar();
+    }
     this.onFilterChange();
   }
 
@@ -299,20 +351,27 @@ export class GthSolicitudPersonal implements OnInit {
 
   get filteredSolicitudes(): SolicitudVacanteListItem[] {
     const q = this.searchText.trim();
-    if (!q) return this.solicitudes;
-    return this.solicitudes.filter((s) =>
-      SearchInput.matches(
-        [s.codigo, s.puesto, s.tipoRequerimiento, s.area, s.proyectoObra, s.estadoNombre]
+    return this.solicitudes.filter((s) => {
+      if (!this.fEstado.coincide(s.estadoNombre)) return false;
+      if (!this.fArea.coincide(s.area)) return false;
+      if (!this.fProyecto.coincide(s.proyectoObra)) return false;
+      if (!this.fSolicitante.coincide(s.solicitante)) return false;
+      // El tipo tiene su propia regla: el ingreso directo es una opción más del mismo desplegable
+      // y se cruza con el tipo en vez de excluirlo (ver `coincideTipo`).
+      if (!coincideTipo(this.fTipo.valor, [s.tipoRequerimientoCodigo], s.esFft)) return false;
+      if (!q) return true;
+      return SearchInput.matches(
+        [s.codigo, s.puesto, s.tipoRequerimiento, s.area, s.proyectoObra, s.estadoNombre, s.solicitante]
           .filter(Boolean)
           .join(' '),
         q,
-      ),
-    );
+      );
+    });
   }
 
   /** Mensaje de lista vacía, compartido por la tabla (desktop) y las tarjetas (móvil). */
   get mensajeVacio(): string {
-    if (this.searchText.trim()) return 'Sin resultados para la búsqueda.';
+    if (this.filtrosActivos > 0) return 'Sin resultados para los filtros aplicados.';
     // La lista es del área, no del usuario: quien no puede registrar tampoco tiene que leer una
     // instrucción para hacerlo.
     return this.puedeGestionar

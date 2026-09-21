@@ -28,6 +28,15 @@ export class GaMotivoEdit implements OnInit {
   esReembolsable = false;
   submitted = false;
 
+  /**
+   * «Otro motivo»: la vía de texto libre del formulario. Su descripción no se edita —no se
+   * muestra en ninguna salida, ahí va lo que escribió el trabajador— y no pide motivo
+   * adicional, porque ese texto ya es el detalle. El resto de opciones son las mismas.
+   */
+  get esMotivoLibre(): boolean {
+    return this.motivo.esMotivoLibre;
+  }
+
   constructor(
     private service: GaMotivoSalidaService,
     private loaderService: LoaderService,
@@ -45,7 +54,7 @@ export class GaMotivoEdit implements OnInit {
 
   save(): void {
     this.submitted = true;
-    if (!this.descripcion.trim()) return;
+    if (!this.esMotivoLibre && !this.descripcion.trim()) return;
 
     this.loaderService.show();
     this.service

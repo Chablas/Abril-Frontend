@@ -17,6 +17,7 @@ import {
 import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-correos';
 import { otrasRendicionesDelConsolidado } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
+import { DocumentoEmbebido } from '../../../../shared/components/documento-embebido/documento-embebido';
 
 /**
  * Detalle de una planilla para la jefatura y el consolidador: sus documentos y las salidas que
@@ -31,7 +32,7 @@ import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle
 @Component({
   standalone: true,
   selector: 'app-gestion-rendicion-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaDetalleModal],
+  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaDetalleModal, DocumentoEmbebido],
   templateUrl: './gestion-rendicion-detalle-modal.html',
 })
 export class GestionRendicionDetalleModal implements OnInit {

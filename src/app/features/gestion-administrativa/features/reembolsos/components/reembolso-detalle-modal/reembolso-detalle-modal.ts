@@ -6,7 +6,6 @@ import Swal from 'sweetalert2';
 
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
-import { DocumentViewer } from '../../../../../../shared/components/document-viewer/document-viewer';
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -17,26 +16,30 @@ import {
   reembolsoLabelCorto,
 } from '../../../../shared/dtos/rendicion-shared.dto';
 import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-correos';
+import { nombreConsolidado } from '../../../../shared/consolidado-nombre';
 import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
+import { DocumentoEmbebido } from '../../../../shared/components/documento-embebido/documento-embebido';
 
 /**
- * Un documento de la sección Respaldo: qué archivo se abre y cómo se nombra en la lista.
- * Vive acá porque es puro armado de pantalla — el backend sirve las dos copias, original y
- * firmada, y esta pantalla elige cuál enseñar.
+ * Uno de los dos documentos que se muestran embebidos: cuál copia se enseña. Vive acá porque es
+ * puro armado de pantalla — el backend sirve las dos copias, original y firmada, y esta pantalla
+ * elige cuál enseñar.
  */
-interface RespaldoDoc {
-  url: string;
-  nombre: string;
+interface DocumentoRespaldo {
+  clave: 'planilla-grupal' | 'consolidado';
   etiqueta: string;
-  /** false = la copia firmada no existe y se está mostrando el original; se dice en la etiqueta. */
+  nombre: string;
+  url: string;
+  /** false = la copia firmada no existe y se está mostrando el original. */
   firmado: boolean;
 }
 
 /**
  * El expediente de un Consolidado del S10 para Tesorería: qué se está pagando, a quién, con qué
  * respaldo y con qué firma. Es donde vive la revisión documental que el requerimiento pide antes
- * de proceder (11.1): el Consolidado del S10 con su número de reembolso, las planillas de gasto
- * que cubre con su firma de jefatura y, con el ojo de cada salida, sus trayectos con los vouchers.
+ * de proceder (11.1): la planilla grupal y el Consolidado del S10 firmados, a la vista sin salir de
+ * la revisión (RF-TES-13), y las rendiciones que cubre con, en el ojo de cada salida, sus
+ * trayectos con los vouchers.
  *
  * La unidad es el documento entero y no una de sus planillas: es lo que la jefatura firmó y lo que
  * el S10 registró con un solo importe, así que también es lo que se confirma, se observa y se paga.
@@ -44,7 +47,7 @@ interface RespaldoDoc {
 @Component({
   standalone: true,
   selector: 'app-reembolso-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, DocumentViewer, TitleCasePipe, SalidaDetalleModal],
+  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaDetalleModal, DocumentoEmbebido],
   templateUrl: './reembolso-detalle-modal.html',
 })
 export class ReembolsoDetalleModal implements OnInit {
@@ -60,12 +63,8 @@ export class ReembolsoDetalleModal implements OnInit {
   /** El detalle de la salida en consulta, con el endpoint de la bandeja de Tesorería. */
   readonly cargarSalida = (id: number) => this.service.getSalidaDetalle(id);
 
-  /** El Consolidado del S10 firmado: la sección Respaldo del documento. */
-  respaldo: RespaldoDoc[] = [];
-
-  // Visor de PDF: el consolidado y las planillas se abren sin salir de la revisión (RF-TES-13).
-  visorUrl = '';
-  visorNombre = '';
+  /** La planilla grupal y el Consolidado del S10, cada uno con su PDF embebido debajo del enlace. */
+  documentos: DocumentoRespaldo[] = [];
 
   constructor(
     private service: ReembolsosService,
@@ -83,7 +82,7 @@ export class ReembolsoDetalleModal implements OnInit {
     this.service.getDetalle(this.consolidadoId).subscribe({
       next: (data) => {
         this.detalle = data;
-        this.respaldo = this.armarRespaldo(data);
+        this.documentos = this.armarDocumentos(data);
         this.loader.hide();
         this.cdr.detectChanges();
       },
@@ -101,41 +100,63 @@ export class ReembolsoDetalleModal implements OnInit {
 
   private huboCambios = false;
 
+  /** "CONS-GTH-2026-001 · N.° 12345": los dos nombres del documento, el nuestro y el del S10. */
   get titulo(): string {
-    const numero = this.detalle?.numeroReembolso;
-    return numero ? `Consolidado del S10 N.° ${numero}` : 'Consolidado del S10';
+    return nombreConsolidado(this.detalle);
   }
 
-  // ── Respaldo ─────────────────────────────────────────────────────────
+  // ── Documentos ───────────────────────────────────────────────────────
 
   /**
-   * El Consolidado del S10 en su copia FIRMADA por la jefatura: es la que respalda el pago, y a
-   * Tesorería solo le llega lo ya firmado (RG-25). Las planillas de gasto que cubre van en su
-   * propio bloque, cada una con su firma.
+   * Los dos documentos del consolidado en su copia FIRMADA por la jefatura, que es la que respalda
+   * el pago (RG-25): primero la planilla grupal —el gasto de todo lo que se paga acá en un solo
+   * documento— y después el Consolidado del S10. Las planillas de gasto de cada rendición no se
+   * muestran: la grupal ya las junta.
    *
-   * Si la firma no llegó a estamparse —consolidados anteriores a que aprobar fuera firmar— se
-   * lista el original y la etiqueta lo dice, en vez de dejar a Tesorería sin nada que mirar.
+   * Si la firma no llegó a estamparse —consolidados aprobados antes de que ese documento se
+   * firmara— se muestra el original marcado «Sin firma», en vez de dejar a Tesorería sin nada que
+   * mirar.
    */
-  private armarRespaldo(d: ReembolsoDetalleDto): RespaldoDoc[] {
-    return [
-      d.pdfFirmadoUrl
-        ? { url: d.pdfFirmadoUrl,
-            nombre: d.pdfFirmadoFilename ?? 'Consolidado del S10 firmado',
-            etiqueta: 'Consolidado del S10 firmado',
-            firmado: true }
-        : { url: d.pdfUrl,
-            nombre: d.pdfFilename,
-            etiqueta: 'Consolidado del S10 — sin la firma de jefatura',
-            firmado: false },
-    ];
+  private armarDocumentos(d: ReembolsoDetalleDto): DocumentoRespaldo[] {
+    const docs: DocumentoRespaldo[] = [];
+
+    const grupalFirmada = !!d.planillaGrupalFirmadoUrl;
+    const grupalUrl = d.planillaGrupalFirmadoUrl ?? d.planillaGrupalUrl;
+    if (grupalUrl) {
+      docs.push({
+        clave: 'planilla-grupal',
+        etiqueta: grupalFirmada ? 'Planilla grupal firmada' : 'Planilla grupal',
+        nombre: (grupalFirmada ? d.planillaGrupalFirmadoFilename : d.planillaGrupalFilename)
+          ?? 'Planilla grupal',
+        url: grupalUrl,
+        firmado: grupalFirmada,
+      });
+    }
+
+    const s10Firmado = !!d.pdfFirmadoUrl;
+    docs.push({
+      clave: 'consolidado',
+      etiqueta: s10Firmado ? 'Consolidado del S10 firmado' : 'Consolidado del S10',
+      nombre: (s10Firmado ? d.pdfFirmadoFilename : d.pdfFilename) ?? 'Consolidado del S10',
+      url: d.pdfFirmadoUrl ?? d.pdfUrl,
+      firmado: s10Firmado,
+    });
+
+    return docs;
   }
+
+  /**
+   * Al recargar el detalle después de una acción, el documento que no cambió conserva sus hojas
+   * dibujadas en vez de volver a bajarse.
+   */
+  readonly porClave = (_: number, doc: DocumentoRespaldo) => doc.clave;
 
   /** Las salidas de una de las planillas que cubre el consolidado. */
   salidasDe(rendicionId: number): ReembolsoSalidaDto[] {
     return this.detalle?.salidas.filter((s) => s.rendicionId === rendicionId) ?? [];
   }
 
-  // ── Detalle de una salida y visor ────────────────────────────────────
+  // ── Detalle de una salida ────────────────────────────────────────────
 
   verSalida(solicitudId: number): void {
     this.salidaId = solicitudId;
@@ -144,17 +165,6 @@ export class ReembolsoDetalleModal implements OnInit {
   cerrarSalida(): void {
     this.salidaId = null;
     this.cdr.detectChanges();
-  }
-
-  verArchivo(url: string | null | undefined, nombre: string): void {
-    if (!url) return;
-    this.visorUrl = url;
-    this.visorNombre = nombre;
-  }
-
-  onVisorClosed(): void {
-    this.visorUrl = '';
-    this.visorNombre = '';
   }
 
   // ── Acciones ─────────────────────────────────────────────────────────
@@ -210,9 +220,7 @@ export class ReembolsoDetalleModal implements OnInit {
     const { value: observacion, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
       titulo: '¿Observar este reembolso?',
-      nota:
-        'Vuelve al consolidador para que recargue el Consolidado del S10 o le pida la corrección ' +
-        'al Coordinador ERP. Al recargarlo pasa otra vez por la firma de la jefatura.',
+      nota: 'Vuelve al consolidador.',
       avisos: await pedirAvisos(this.service.correoPreviewObservacion(seleccion)),
       observacion: {
         label: 'Motivo',

@@ -8,6 +8,7 @@ import { AlcanceRendicionOpcion, PlazoRendicion } from './dtos/plazo-rendicion.d
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
+import { NoWheelNumberDirective } from '../../../../../shared/directives/no-wheel-number.directive';
 
 /**
  * Sección "Días reembolsables" de Solicitud de Salidas → Configuración: cuántos días hábiles del mes
@@ -32,7 +33,7 @@ import { ErrorService } from '../../../../../core/services/error.service';
 @Component({
   selector: 'app-ga-dias-reembolsables',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchSelect],
+  imports: [CommonModule, FormsModule, SearchSelect, NoWheelNumberDirective],
   templateUrl: './dias-reembolsables.html',
   // Misma tarjeta y mismos botones que la matriz de correos: las dos secciones se ven igual.
   styleUrl: '../../../../../shared/styles/correos-config.css',
