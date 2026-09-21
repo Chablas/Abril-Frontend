@@ -1,0 +1,148 @@
+:host {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.hr-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  background: #ffffff;
+}
+
+.hr-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 24px 24px;
+}
+
+/* ── FILTROS EN UNA FILA ─────────────────────────────────── */
+.hr-filtros-fila {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.hr-filtro-campo {
+  min-width: 220px;
+  flex: 1 1 220px;
+}
+
+.hr-filtro-campo--chico {
+  min-width: 130px;
+  flex: 0 0 130px;
+}
+
+/* ── ALERT / SKELETON / EMPTY ────────────────────────────── */
+.alert-error {
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: #b91c1c;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-body {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 10px;
+  height: 220px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  color: #9ca3af;
+}
+
+.empty-state__icon { font-size: 48px; color: #d1d5db; }
+.empty-state__text { font-size: 14px; margin: 0; text-align: center; }
+
+/* ── STAT CARDS ──────────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.stat-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  background: var(--color-abril-standard-light);
+  color: var(--color-abril-standard);
+}
+
+.stat-card__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat-card__val  { font-size: 18px; font-weight: 700; color: #111827; line-height: 1.3; }
+.stat-card__lbl  { font-size: 12px; color: #6b7280; }
+
+/* ── ÍTEMS ───────────────────────────────────────────────── */
+.dash-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dash-card__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── BADGES DE ESTADO ────────────────────────────────────── */
+.hr-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.hr-badge--cumple      { background: #dcfce7; color: #166534; }
+.hr-badge--pendiente   { background: #fef3c7; color: #92400e; }
+.hr-badge--noaplica    { background: #e2e8f0; color: #475569; }
+.hr-badge--informativo { background: #dbeafe; color: #1e40af; }
+.hr-badge--manual      { background: #ede9fe; color: #5b21b6; }
