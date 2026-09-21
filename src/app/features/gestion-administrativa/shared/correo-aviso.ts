@@ -27,6 +27,12 @@ export interface CorreoPreviewRequestDto {
   rendicionIds: number[];
   /** true = la variante que aprueba; false = la que observa. */
   aprobar: boolean;
+  /**
+   * De qué paso se pregunta, cuando la pantalla dispara más de una familia de correos. Sin valor
+   * es la primera revisión, que es su decisión de siempre; `CONSOLIDADO_S10` es el aviso a la
+   * jefatura que sale al adjuntar el consolidado.
+   */
+  accion?: 'CONSOLIDADO_S10';
 }
 
 const escapar = (s: string) =>

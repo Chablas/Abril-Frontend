@@ -1,12 +1,9 @@
 /**
- * Ámbito de la visibilidad que se está configurando. Es el segmento del backend
- * (`api/v1/gestion-administrativa/configuracion/visibilidad/{ambito}`) y define sobre qué pantalla
- * aplica lo que se guarda: las dos conviven en la misma tabla sin pisarse.
- *  • `salidas`      → qué solicitudes de salida ve el trabajador en Gestión de Salidas.
- *  • `rendiciones`  → qué planillas ve en Gestión de Rendiciones.
- *  • `consolidados` → qué Consolidados del S10 ve en Consolidados.
+ * Contrato de la sección «Visibilidad»: qué áreas ve cada trabajador en una pantalla. Lo comparten
+ * todas las pantallas que la tienen (Gestión de Salidas, Gestión de Rendiciones, Consolidados y
+ * Solicitud de Personal): cada una expone los mismos tres endpoints bajo su propia URL, que es el
+ * `endpoint` que recibe la sección.
  */
-export type VisibilidadAmbito = 'salidas' | 'rendiciones' | 'consolidados';
 
 export interface VisibilidadWorkerItemDTO {
   workerId: number;
@@ -37,14 +34,14 @@ export interface VisibilidadAreaNodeDTO {
 }
 
 /**
- * Un área concedida. `incluyeDescendientes` va siempre en false: el modal marca el subárbol
- * completo casilla por casilla, así que lo que se guarda es la lista de áreas tal como se ve. El
- * campo sigue en el contrato porque las filas cargadas antes lo tienen en true y el backend las
- * sigue expandiendo.
+ * Un área concedida. `incluyeDescendientes` solo lo trae Gestión Administrativa, donde las filas
+ * cargadas antes lo tienen en true y su backend las sigue expandiendo. Al guardar va siempre en
+ * false: el modal marca el subárbol completo casilla por casilla, así que lo que se guarda es la
+ * lista de áreas tal como se ve.
  */
 export interface VisibilidadAsignacionDTO {
   areaScopeId: number;
-  incluyeDescendientes: boolean;
+  incluyeDescendientes?: boolean;
 }
 
 /**
@@ -57,15 +54,16 @@ export interface VisibilidadAsignacionDTO {
  * blanco sino sobre lo que hoy resuelve el algoritmo.
  */
 export interface VisibilidadWorkerDetalleDTO {
-  /** Override vivo del trabajador en este ámbito. Vacío = lo resuelve el algoritmo. */
+  /** Override vivo del trabajador en esta pantalla. Vacío = lo resuelve el algoritmo. */
   asignaciones: VisibilidadAsignacionDTO[];
   /**
    * Nodos que el trabajador ve hoy: el override si lo tiene y, si no, lo que deduce el algoritmo de
-   * jerarquía. En los dos casos incluye las ramas donde es revisor o consolidador, que ve siempre.
+   * la pantalla (en Gestión Administrativa incluye además las ramas donde es revisor o
+   * consolidador, que ve siempre).
    */
   efectivas: number[];
   /** true = lo de `efectivas` nace de un override cargado a mano. */
   esPersonalizado: boolean;
-  /** true = ve TODO sin recorte por área (hoy, el personal de GTH). */
+  /** true = ve TODO, sin recorte por área. */
   veTodo: boolean;
 }

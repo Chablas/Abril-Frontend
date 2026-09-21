@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams, HttpResponse } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import {
@@ -65,15 +65,29 @@ export class RendicionesService {
   }
 
   /**
-   * Vuelve a generar el PDF de una rendición observada y lo descarga. La rendición conserva su
-   * código y su número de planilla, y queda lista para reenviar a revisión. Responde el archivo,
-   * igual que rendir: por eso va como blob.
+   * Vuelve a generar el PDF de una rendición observada y la reenvía en el acto a la primera
+   * revisión (con los dos correos del paso). La rendición conserva su código y su número de
+   * planilla.
+   *
+   * El archivo no vuelve: queda guardado y la planilla ya apunta al nuevo, así que se abre con el
+   * botón «Planilla» de la fila. Lo único que responde es cómo salió el reenvío.
    */
-  regenerarPlanilla(rendicionId: number): Observable<HttpResponse<Blob>> {
-    return this.http.patch(
+  regenerarPlanilla(rendicionId: number): Observable<RegenerarPlanillaRespuesta> {
+    return this.http.patch<RegenerarPlanillaRespuesta>(
       `${this.apiUrl}/${rendicionId}/regenerar-planilla`,
       {},
-      { headers: this.headers, responseType: 'blob', observe: 'response' },
+      { headers: this.headers },
     );
   }
+}
+
+/**
+ * Cómo salió el reenvío a revisión que va pegado a «Volver a generar». Regenerar y enviar son dos
+ * escrituras: si la segunda falla, el PDF nuevo igual quedó guardado y la planilla espera en
+ * «Lista para enviar», así que el aviso tiene que poder decirlo.
+ */
+export interface RegenerarPlanillaRespuesta {
+  message: string;
+  /** false = se regeneró pero no salió a revisión: hay que enviarla a mano desde la tabla. */
+  enviadaARevision: boolean;
 }

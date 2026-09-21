@@ -1,0 +1,92 @@
+<div class="abril-table-wrap">
+  <table class="abril-table abril-table--th-center">
+    <thead>
+      <tr>
+        <th>N°</th>
+        <th>Salida</th>
+        <th>Retorno</th>
+        <th>Motivo</th>
+        <th>Origen</th>
+        <th>Destino</th>
+        <th>Capturas</th>
+        <th>Monto</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let t of trayectos">
+
+        <td class="text-center font-semibold whitespace-nowrap" style="color:var(--color-abril-standard)">
+          {{ t.orden + 1 }}
+        </td>
+
+        <td class="text-center text-gray-800 whitespace-nowrap">{{ t.horaSalida ?? '—' }}</td>
+        <td class="text-center text-gray-800 whitespace-nowrap">{{ t.horaRetorno ?? '—' }}</td>
+
+        <td class="text-center text-gray-800">
+          {{ t.motivo }}
+          <!-- Solo con motivo del catálogo: el motivo libre no tiene el flag configurado. -->
+          <div *ngIf="t.esReembolsable !== null" class="mt-1">
+            <span class="text-[10px] px-[8px] py-[2px] rounded-full font-semibold tracking-wide whitespace-nowrap"
+                  [ngClass]="t.esReembolsable ? 'bg-[#DCFCE7] text-[#14532D]' : 'bg-[#F3F4F6] text-[#6B7280]'">
+              {{ t.esReembolsable ? 'CON REEMBOLSO' : 'SIN REEMBOLSO' }}
+            </span>
+          </div>
+          <div *ngIf="t.motivoAdicional" class="mt-1 text-xs text-gray-500">{{ t.motivoAdicional }}</div>
+        </td>
+
+        <td class="text-center text-gray-500">{{ t.lugarOrigen ?? '—' }}</td>
+        <td class="text-center text-gray-500">{{ t.lugarDestino ?? '—' }}</td>
+
+        <!-- Todas las capturas del trayecto, con su monto debajo. Si son varias, la fila crece:
+             cada voucher tiene que poder contrastarse contra su importe. -->
+        <td class="col-capturas text-center">
+          <div *ngIf="t.capturas.length > 0" class="flex flex-wrap justify-center gap-2">
+            <div *ngFor="let c of t.capturas" class="flex flex-col items-center gap-1" [title]="c.filename">
+              <div class="w-[92px] h-[92px] flex items-center justify-center rounded-lg overflow-hidden border"
+                   style="border-color:var(--color-abril-border)">
+                <app-draggable-image [src]="c.imageUrl" />
+              </div>
+              <div class="text-xs font-medium text-gray-700">S/ {{ c.monto | number:'1.2-2' }}</div>
+            </div>
+          </div>
+
+          <div *ngIf="t.capturas.length === 0 && t.montoCatalogo === null" class="text-xs text-gray-400 italic">
+            Sin capturas
+          </div>
+
+          <div *ngIf="t.capturas.length === 0 && t.montoCatalogo !== null"
+               class="text-xs bg-[#DBEAFE] border border-[#BFDBFE] rounded px-2 py-1 inline-block w-fit"
+               style="color:var(--color-abril-accent)">
+            Monto del catálogo: <b>S/ {{ t.montoCatalogo | number:'1.2-2' }}</b>
+            <span *ngIf="catalogoNota" class="text-gray-500 ml-1">{{ catalogoNota }}</span>
+          </div>
+        </td>
+
+        <td class="text-center text-gray-700 font-medium whitespace-nowrap">
+          <ng-container *ngIf="t.montoTotal > 0; else sinMonto">
+            S/ {{ t.montoTotal | number:'1.2-2' }}
+            <div *ngIf="esMontoDeCatalogo(t)"
+                 class="text-[10px] font-semibold uppercase tracking-wider" style="color:var(--color-abril-accent)">
+              catálogo
+            </div>
+          </ng-container>
+          <ng-template #sinMonto><span class="text-gray-300">—</span></ng-template>
+        </td>
+
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Los documentos adjuntos (solo los motivos que los piden) van debajo de la tabla, cada uno con su
+     enlace y el archivo a la vista: dentro de una celda no hay lugar para mostrarlos. La etiqueta
+     dice de qué trayecto son. -->
+<div *ngIf="hayAdjuntos" class="flex flex-col gap-3 mt-3">
+  <ng-container *ngFor="let t of trayectos">
+    <app-documento-embebido
+      *ngFor="let a of t.adjuntos"
+      [etiqueta]="'Documento adjunto · trayecto ' + (t.orden + 1)"
+      [nombre]="a.filename || null"
+      [url]="a.url" />
+  </ng-container>
+</div>

@@ -1,6 +1,6 @@
 <app-base-modal
   [title]="detalle ? 'Corrección del S10 · ' + detalle.codigo : 'Corrección del S10'"
-  width="w-[760px]"
+  width="w-[1000px]"
   closeColor="var(--color-abril-standard)"
   (closeModal)="cerrar()">
 
@@ -36,6 +36,15 @@
         </span>
       </div>
 
+      <!-- De qué rendición grupal viene el pedido: el ERP corrige el registro del S10, pero lo que
+           vuelve corregido es este consolidado. -->
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Consolidado</span>
+        <span class="text-base font-semibold" style="color:var(--color-abril-ink)">
+          {{ c.consolidadoS10?.codigo ?? '—' }}
+        </span>
+      </div>
+
       <div class="flex flex-col ml-auto items-end gap-1">
         <app-status-badge
           [text]="c.estado"
@@ -64,37 +73,7 @@
       {{ c.motivoJefatura }}
     </div>
 
-    <!-- ── Documentos, para contrastar ──────────────────────────────────── -->
-    <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
-      <span class="text-[11px] uppercase text-gray-400 font-semibold">Documentos</span>
-
-      <a [href]="c.pdfUrl" target="_blank" rel="noopener noreferrer"
-         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
-         style="color:var(--color-abril-accent)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-          <path d="M14 2v6h6" stroke-linejoin="round"/>
-        </svg>
-        {{ c.pdfFilename }}
-        <span class="text-xs text-gray-400 font-normal">· Planilla de gasto</span>
-      </a>
-
-      <a *ngIf="c.consolidadoS10" [href]="c.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
-         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
-         style="color:var(--color-abril-accent)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-          <path d="M14 2v6h6" stroke-linejoin="round"/>
-        </svg>
-        {{ c.consolidadoS10.pdfFilename }}
-        <span class="text-xs text-gray-400 font-normal">· Consolidado del S10 observado</span>
-      </a>
-      <span *ngIf="!c.consolidadoS10" class="text-sm text-gray-400 italic">
-        La planilla no tiene un Consolidado del S10 vigente.
-      </span>
-    </div>
-
-    <!-- ── Atención ya registrada ───────────────────────────────────────── -->
+    <!-- ── Atención ya registrada: va con los demás estados, arriba de los documentos ── -->
     <div *ngIf="c.atendidaAt"
          class="border rounded-lg p-3 text-sm flex flex-col gap-1"
          style="border-color:#BFDBFE;background:#EFF6FF;color:#1E40AF">
@@ -106,13 +85,99 @@
       <span *ngIf="c.comentarioAtencion">
         <span class="font-semibold">Comentario:</span> {{ c.comentarioAtencion }}
       </span>
-      <span *ngIf="c.numeroReembolsoAnulado" class="font-semibold" style="color:#991B1B">
-        El registro se anuló: el consolidador tiene que generar un número de reembolso nuevo.
-      </span>
     </div>
 
-    <!-- ── Acción ───────────────────────────────────────────────────────── -->
-    <div *ngIf="c.porAtender" class="flex justify-center border-t pt-3"
+    <!-- ── Documentos, cada uno a la vista ──────────────────────────────── -->
+    <div class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Planilla de gasto"
+        [nombre]="c.pdfFilename"
+        [url]="c.pdfUrl" />
+    </div>
+
+    <div *ngIf="c.consolidadoS10 as s10" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Consolidado del S10 observado"
+        [nombre]="s10.pdfFilename"
+        [url]="s10.pdfUrl" />
+    </div>
+
+    <!-- La planilla grupal del consolidado observado: el gasto que el ERP tiene que cuadrar
+         contra el registro del S10, ya sumado en un solo documento. -->
+    <div *ngIf="c.consolidadoS10?.planillaGrupalUrl as grupal" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Planilla grupal"
+        [nombre]="c.consolidadoS10?.planillaGrupalFilename ?? 'Planilla grupal'"
+        [url]="grupal" />
+    </div>
+
+    <span *ngIf="!c.consolidadoS10" class="text-sm text-gray-400 italic">
+      La planilla no tiene un Consolidado del S10 vigente.
+    </span>
+
+    <!-- ── Rendiciones que cubre el consolidado, con sus salidas ────────────
+         Solo lectura: el ojo abre el detalle de cada salida (trayectos, capturas y adjuntos). -->
+    <div *ngFor="let r of c.rendiciones" class="flex flex-col gap-2 border-t pt-3"
+         style="border-color:var(--color-abril-border)">
+
+      <div class="flex flex-wrap items-center gap-3">
+        <span class="text-sm font-semibold text-gray-700">{{ r.codigo }}</span>
+        <span *ngIf="r.numeroPlanilla" class="text-[11px] text-gray-400">{{ r.numeroPlanilla }}</span>
+        <app-status-badge
+          [text]="reembolsoLabelCorto(r.estadoReembolso)"
+          [bgColor]="reembolsoColors(r.estadoReembolso).bg"
+          [textColor]="reembolsoColors(r.estadoReembolso).text" />
+        <span class="text-[11px] text-gray-400 ml-auto">
+          Planilla completa: S/ {{ r.montoTotalPlanilla | number:'1.2-2' }}
+        </span>
+      </div>
+
+      <div class="abril-table-wrap">
+        <table class="abril-table abril-table--th-center">
+          <thead>
+            <tr>
+              <th>N° solicitud</th>
+              <th>Trabajador</th>
+              <th>Área</th>
+              <th>Fecha</th>
+              <th>Motivo</th>
+              <th>Trayectos</th>
+              <th>Monto</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of salidasDe(r.id)" class="border-b" style="border-color:var(--color-abril-border)">
+              <td class="text-gray-700 font-medium whitespace-nowrap">{{ s.codigo ?? '—' }}</td>
+              <td class="text-gray-700">{{ s.trabajador | titleCase }}</td>
+              <td class="text-gray-500">{{ (s.area | titleCase) || '—' }}</td>
+              <td class="text-gray-700 whitespace-nowrap">{{ s.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</td>
+              <td class="text-gray-700">{{ s.motivo | titleCase }}</td>
+              <td class="text-gray-700 text-center">{{ s.trayectosCount }}</td>
+              <td class="text-gray-700 whitespace-nowrap">S/ {{ s.monto | number:'1.2-2' }}</td>
+              <td>
+                <app-status-badge
+                  [text]="reembolsoLabelCorto(s.estadoReembolso)"
+                  [bgColor]="reembolsoColors(s.estadoReembolso).bg"
+                  [textColor]="reembolsoColors(s.estadoReembolso).text" />
+              </td>
+              <td class="text-center">
+                <button type="button" (click)="verSalida(s.id)" title="Ver los trayectos de la salida"
+                        class="text-gray-400 hover:text-gray-600 cursor-pointer">
+                  <i class="ti ti-eye text-[17px]"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Acción ───────────────────────────────────────────────────────────
+         Pegada al borde de abajo: con los documentos a la vista el modal es largo. -->
+    <div *ngIf="c.porAtender"
+         class="sticky bottom-0 z-10 -mx-[20px] -mb-[20px] px-[20px] py-3 rounded-b-lg bg-white border-t flex justify-center"
          style="border-color:var(--color-abril-border)">
       <button
         type="button"
@@ -132,3 +197,11 @@
   </div>
 
 </app-base-modal>
+
+<!-- ── Detalle de una salida (el ojo de la tabla), en consulta ───────── -->
+<app-salida-detalle-modal
+  *ngIf="salidaId !== null"
+  [solicitudId]="salidaId"
+  [mostrarDocumentos]="false"
+  [cargar]="cargarSalida"
+  (close)="cerrarSalida()" />

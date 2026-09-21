@@ -2,12 +2,12 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { BaseModal } from '../../../../../../../shared/components/base-modal/base-modal';
-import { SearchInput } from '../../../../../../../shared/components/search-input/search-input';
-import { LoaderService } from '../../../../../../../core/services/loader.service';
-import { ErrorService } from '../../../../../../../core/services/error.service';
-import { VisibilidadService } from '../../services/visibilidad.service';
-import { VisibilidadAmbito, VisibilidadAreaNodeDTO } from '../../dtos/visibilidad.dto';
+import { BaseModal } from '../../base-modal/base-modal';
+import { SearchInput } from '../../search-input/search-input';
+import { LoaderService } from '../../../../core/services/loader.service';
+import { ErrorService } from '../../../../core/services/error.service';
+import { VisibilidadAreasService } from '../visibilidad-areas.service';
+import { VisibilidadAreaNodeDTO } from '../visibilidad-areas.dto';
 
 interface OrderedNode {
   node: VisibilidadAreaNodeDTO;
@@ -27,18 +27,19 @@ export type VisibilidadModalModo = 'ver' | 'editar';
  * columnas ("solo esta área" y "con subáreas") y no se entendía cuál mandaba.
  *
  * De qué se parte:
- *  • `ver`    → siempre lo VIGENTE, venga de una configuración propia o del algoritmo de jerarquía.
+ *  • `ver`    → siempre lo VIGENTE, venga de una configuración propia o del algoritmo.
  *  • `editar` → la configuración propia si la hay y, si no, lo que hoy resuelve el algoritmo, para
  *               no abrir en blanco un trabajador que sí está viendo cosas.
  */
 @Component({
   standalone: true,
-  selector: 'app-visibilidad-modal',
+  selector: 'app-visibilidad-areas-modal',
   imports: [CommonModule, BaseModal, SearchInput],
-  templateUrl: './visibilidad-modal.html',
+  templateUrl: './visibilidad-areas-modal.html',
 })
-export class VisibilidadModal implements OnInit {
-  @Input({ required: true }) ambito!: VisibilidadAmbito;
+export class VisibilidadAreasModal implements OnInit {
+  /** Ruta del backend de la pantalla, sin `apiUrl` (ver `VisibilidadAreasService`). */
+  @Input({ required: true }) endpoint!: string;
   @Input() modo: VisibilidadModalModo = 'editar';
   @Input() workerId!: number;
   @Input() workerName = '';
@@ -67,7 +68,7 @@ export class VisibilidadModal implements OnInit {
   loaded = false;
 
   constructor(
-    private service: VisibilidadService,
+    private service: VisibilidadAreasService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
   ) {}
@@ -81,17 +82,12 @@ export class VisibilidadModal implements OnInit {
     return this.soloLectura ? `VISIBILIDAD · ${quien}` : `EDITAR VISIBILIDAD · ${quien}`;
   }
 
-  /** Aviso de estado: de dónde salen las casillas que se están viendo. */
-  get avisoAlgoritmo(): string {
-    return 'Sin configuración propia: las áreas marcadas son las que resuelve el algoritmo.';
-  }
-
   ngOnInit(): void {
     this.buildOrdered(this.areaTree);
     this.buildTipos(this.areaTree);
 
     this.loaderService.show();
-    this.service.getWorkerDetalle(this.ambito, this.workerId).subscribe({
+    this.service.getWorkerDetalle(this.endpoint, this.workerId).subscribe({
       next: (detalle) => {
         this.esPersonalizado = detalle.esPersonalizado;
         this.veTodo = detalle.veTodo;
@@ -227,7 +223,7 @@ export class VisibilidadModal implements OnInit {
     }));
 
     this.loaderService.show();
-    this.service.updateWorkerAsignaciones(this.ambito, this.workerId, areas).subscribe({
+    this.service.updateWorkerAsignaciones(this.endpoint, this.workerId, areas).subscribe({
       next: (res) => {
         this.loaderService.hide();
         Swal.fire({ title: res.message, icon: 'success', timer: 1500, showConfirmButton: false });

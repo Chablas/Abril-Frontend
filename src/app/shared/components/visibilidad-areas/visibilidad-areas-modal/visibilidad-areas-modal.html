@@ -6,12 +6,6 @@
 
   <div class="flex flex-col gap-[14px] mt-[12px]">
 
-    <!-- ── Aviso de estado: de dónde salen las casillas marcadas ───── -->
-    <div *ngIf="loaded && !soloLectura && !esPersonalizado"
-         class="text-xs text-[#92400E] bg-[#FEF9C3] px-[14px] py-[10px] rounded-lg">
-      {{ avisoAlgoritmo }}
-    </div>
-
     <!-- ── Filtros por tipo de área + búsqueda ─────────────────────── -->
     <div class="flex items-center gap-2 flex-wrap">
       <button

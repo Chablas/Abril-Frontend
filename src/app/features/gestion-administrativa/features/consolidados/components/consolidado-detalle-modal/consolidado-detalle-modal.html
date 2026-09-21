@@ -1,6 +1,6 @@
 <app-base-modal
   [title]="titulo"
-  width="w-[1000px]"
+  width="w-[1100px]"
   closeColor="var(--color-abril-standard)"
   (closeModal)="cerrar()">
 
@@ -66,53 +66,65 @@
         el {{ c.atendidaAt | date:'dd/MM/yyyy HH:mm' }}<ng-container *ngIf="c.comentarioAtencion">:
         {{ c.comentarioAtencion }}</ng-container>
       </div>
-
-      <div *ngIf="c.numeroReembolsoAnulado" class="font-semibold" style="color:#991B1B">
-        El registro se anuló: genera un número de reembolso nuevo en el S10 — el anterior ya no se puede usar.
-      </div>
     </div>
 
-    <!-- ── Estado y documentos del consolidado ──────────────────────────── -->
-    <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
-      <div class="flex items-center gap-3">
-        <span class="text-[11px] uppercase text-gray-400 font-semibold">Reembolso</span>
-        <app-status-badge
-          [text]="reembolsoLabelCorto(d.estadoReembolso)"
-          [bgColor]="reembolsoColors(d.estadoReembolso).bg"
-          [textColor]="reembolsoColors(d.estadoReembolso).text" />
-        <span *ngIf="d.reembolsoMixto" class="text-[11px] text-gray-400">
-          Las salidas que ves no están todas en el mismo estado: se muestra la más atrasada.
+    <!-- ── Estado del consolidado ───────────────────────────────────────── -->
+    <div class="flex items-center gap-3 border-t pt-3" style="border-color:var(--color-abril-border)">
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">Reembolso</span>
+      <app-status-badge
+        [text]="reembolsoLabelCorto(d.estadoReembolso)"
+        [bgColor]="reembolsoColors(d.estadoReembolso).bg"
+        [textColor]="reembolsoColors(d.estadoReembolso).text" />
+      <span *ngIf="d.reembolsoMixto" class="text-[11px] text-gray-400">
+        Las salidas que ves no están todas en el mismo estado: se muestra la más atrasada.
+      </span>
+      <span *ngIf="d.firmadoAt; else avisada" class="text-[11px] text-gray-400 ml-auto">
+        Firmado el {{ d.firmadoAt | date:'dd/MM/yyyy HH:mm' }}
+      </span>
+      <ng-template #avisada>
+        <span *ngIf="d.jefaturaAvisadaAt" class="text-[11px] text-gray-400 ml-auto">
+          Jefatura avisada el {{ d.jefaturaAvisadaAt | date:'dd/MM/yyyy HH:mm' }}
         </span>
-        <span *ngIf="d.firmadoAt; else avisada" class="text-[11px] text-gray-400 ml-auto">
-          Firmado el {{ d.firmadoAt | date:'dd/MM/yyyy HH:mm' }}
-        </span>
-        <ng-template #avisada>
-          <span *ngIf="d.jefaturaAvisadaAt" class="text-[11px] text-gray-400 ml-auto">
-            Jefatura avisada el {{ d.jefaturaAvisadaAt | date:'dd/MM/yyyy HH:mm' }}
-          </span>
-        </ng-template>
+      </ng-template>
+    </div>
+
+    <!-- ── Documentos del consolidado, cada uno a la vista ──────────────────
+         La planilla grupal es el gasto de todas las planillas que cubre en un solo documento: la
+         arma Abril One al adjuntarse el S10, así que va pegada a él.
+
+         De cada uno se enseña UNA sola copia: la original mientras no haya firma, y la firmada
+         apenas existe —es el mismo papel, y verlo dos veces solo alarga el modal—. -->
+    <div *ngIf="!d.pdfFirmadoUrl" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        [etiqueta]="d.codigo ? 'Consolidado ' + d.codigo : 'Consolidado del S10'"
+        [nombre]="d.pdfFilename"
+        [url]="d.pdfUrl" />
+    </div>
+
+    <ng-container *ngIf="!d.planillaGrupalFirmadoUrl">
+      <div *ngIf="d.planillaGrupalUrl as grupal" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+        <app-documento-embebido
+          etiqueta="Planilla grupal"
+          [nombre]="d.planillaGrupalFilename ?? 'Planilla grupal'"
+          [url]="grupal" />
       </div>
+    </ng-container>
 
-      <a [href]="d.pdfUrl" target="_blank" rel="noopener noreferrer"
-         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
-         style="color:var(--color-abril-accent)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-          <path d="M14 2v6h6" stroke-linejoin="round"/>
-        </svg>
-        {{ d.pdfFilename }}
-        <span class="text-xs text-gray-400 font-normal">· Consolidado del S10</span>
-      </a>
+    <div *ngIf="d.pdfFirmadoUrl as firmado" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Consolidado firmado"
+        [nota]="d.firmadoAt ? 'Firmado el ' + (d.firmadoAt | date:'dd/MM/yyyy') : null"
+        [nombre]="d.pdfFirmadoFilename ?? 'Consolidado firmado'"
+        [url]="firmado"
+        [firmado]="true" />
+    </div>
 
-      <a *ngIf="d.pdfFirmadoUrl" [href]="d.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
-         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
-         style="color:var(--color-abril-accent)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
-          <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        {{ d.pdfFirmadoFilename ?? 'Consolidado firmado' }}
-        <span class="text-xs text-gray-400 font-normal">· firmado el {{ d.firmadoAt | date:'dd/MM/yyyy' }}</span>
-      </a>
+    <div *ngIf="d.planillaGrupalFirmadoUrl as grupalFirmada" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Planilla grupal firmada"
+        [nombre]="d.planillaGrupalFirmadoFilename ?? 'Planilla grupal firmada'"
+        [url]="grupalFirmada"
+        [firmado]="true" />
     </div>
 
     <!-- ── Planillas que cubre ──────────────────────────────────────────── -->
@@ -135,30 +147,25 @@
       <!-- Una planilla que el usuario no ve se lista igual: el importe declarado la incluye, así
            que sin ella el total del documento no cuadraría con lo que muestra el modal. -->
       <p *ngIf="!r.visible" class="text-sm text-gray-400 italic">
-        Esta rendición no está en tu alcance: se lista porque el monto del consolidado la incluye.
+        Fuera de tu alcance.
       </p>
 
       <ng-container *ngIf="r.visible">
-        <div class="flex flex-wrap items-center gap-3">
-          <a [href]="r.pdfUrl" target="_blank" rel="noopener noreferrer"
-             class="inline-flex items-center gap-2 hover:underline text-xs font-medium break-all"
-             style="color:var(--color-abril-accent)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-              <path d="M14 2v6h6" stroke-linejoin="round"/>
-            </svg>
-            Planilla de gasto
-          </a>
+        <!-- Una sola copia: firmada la planilla, la original ya no se ofrece. -->
+        <ng-container *ngIf="!r.pdfFirmadoUrl">
+          <app-documento-embebido
+            *ngIf="r.pdfUrl as planilla"
+            etiqueta="Planilla de gasto"
+            [nombre]="r.pdfFilename ?? 'Planilla de gasto'"
+            [url]="planilla" />
+        </ng-container>
 
-          <a *ngIf="r.pdfFirmadoUrl" [href]="r.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
-             class="inline-flex items-center gap-2 hover:underline text-xs font-medium break-all"
-             style="color:var(--color-abril-accent)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
-              <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Planilla firmada
-          </a>
-        </div>
+        <app-documento-embebido
+          *ngIf="r.pdfFirmadoUrl as planillaFirmada"
+          etiqueta="Planilla firmada"
+          [nombre]="r.pdfFirmadoFilename ?? 'Planilla firmada'"
+          [url]="planillaFirmada"
+          [firmado]="true" />
 
         <!-- Solo lectura: el ojo abre el detalle de la salida (trayectos, capturas y montos). -->
         <div class="abril-table-wrap">
@@ -215,9 +222,10 @@
     <!-- ── Acciones ────────────────────────────────────────────────────────
          La decisión es de la jefatura y del documento entero: no se aprueban unas planillas sí y
          otras no, y cubre solo las salidas que le tocan (las firmas se acumulan). Los trámites que
-         siguen son del consolidador. -->
-    <div *ngIf="d.porDecidirCount > 0 || d.puedeAvisarJefatura || d.puedeSolicitarCorreccion || planillaParaReemplazar !== null"
-         class="flex flex-wrap items-center justify-center gap-3 border-t pt-3"
+         siguen son del consolidador. Pegadas al borde de abajo: con los documentos a la vista el
+         modal es largo. -->
+    <div *ngIf="d.porDecidirCount > 0 || d.puedeAvisarJefatura || d.puedeSolicitarCorreccion || d.puedeReemplazar"
+         class="sticky bottom-0 z-10 -mx-[20px] -mb-[20px] px-[20px] py-3 rounded-b-lg bg-white border-t flex flex-wrap items-center justify-center gap-3"
          style="border-color:var(--color-abril-border)">
 
       <ng-container *ngIf="d.porDecidirCount > 0">
@@ -265,13 +273,12 @@
         {{ d.jefaturaAvisadaAt ? 'Volver a avisar a la jefatura' : 'Avisar a la jefatura' }}
       </button>
 
-      <!-- Con el reembolso observado, el consolidado corregido se adjunta en Gestión de
-           Rendiciones. -->
+      <!-- El reemplazo se sube acá mismo: es lo que destraba un reembolso observado. -->
       <button
-        *ngIf="planillaParaReemplazar !== null"
+        *ngIf="d.puedeReemplazar"
         type="button"
-        (click)="irAReemplazar()"
-        title="Adjuntar el Consolidado del S10 corregido desde Gestión de Rendiciones"
+        (click)="abrirReemplazo()"
+        title="Subir el Consolidado del S10 corregido en lugar del actual"
         class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors"
         style="background:#FFFFFF;color:var(--color-abril-standard);border:1px solid var(--color-abril-standard)">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -307,8 +314,21 @@
 <app-salida-detalle-modal
   *ngIf="salidaId !== null"
   [solicitudId]="salidaId"
+  [mostrarDocumentos]="false"
   [cargar]="cargarSalida"
   (close)="cerrarSalida()" />
+
+<!-- ── Reemplazo del Consolidado del S10 ─────────────────────────────── -->
+<app-consolidado-s10-modal
+  *ngIf="reemplazo as r"
+  [upload]="subirReemplazo"
+  [actual]="r.actual"
+  [referencia]="r.referencia"
+  [rendiciones]="r.codigos"
+  [razonSocial]="detalle?.razonSocial ?? null"
+  [avisosJefatura]="avisosReemplazo"
+  [montoEsperado]="r.monto"
+  (close)="cerrarReemplazo($event)" />
 
 <!-- ── Modal para registrar la firma la primera vez ─────────────────────
      Salta con el 409 de aprobar: la jefatura dibuja su firma sin salir de la pantalla y la

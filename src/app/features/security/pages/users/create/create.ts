@@ -11,6 +11,7 @@ import { RoleSimpleDTO } from '../../../../../core/dtos/role/RoleSimpleDTO.model
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
+import { SearchInput } from '../../../../../shared/components/search-input/search-input';
 import Swal from 'sweetalert2';
 
 interface RoleItem extends RoleSimpleDTO {
@@ -62,9 +63,8 @@ export class UserCreate implements OnInit {
   }
 
   get filteredRoles(): RoleItem[] {
-    const term = this.searchTerm.trim().toLowerCase();
-    if (!term) return this.roles;
-    return this.roles.filter((r) => r.roleDescription.toLowerCase().includes(term));
+    if (!this.searchTerm.trim()) return this.roles;
+    return this.roles.filter((r) => SearchInput.matches(r.roleDescription, this.searchTerm));
   }
 
   get checkedCount(): number {

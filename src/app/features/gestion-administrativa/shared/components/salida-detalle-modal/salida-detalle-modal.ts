@@ -6,17 +6,15 @@ import Swal from 'sweetalert2';
 
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
-import { DraggableImage } from '../../../../../shared/components/draggable-image/draggable-image';
 import { TitleCasePipe } from '../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { SalidaDetalleService } from '../../services/salida-detalle.service';
 import { SalidaCapturasEditor } from '../salida-capturas-editor/salida-capturas-editor';
+import { SalidaTrayectosTabla } from '../salida-trayectos-tabla/salida-trayectos-tabla';
 import { CapturasEdicion } from '../salida-capturas-editor/capturas-edicion';
-import {
-  SolicitudSalidaDetalleDto,
-  TrayectoDetalleDto,
-} from '../../dtos/salida-detalle.dto';
+import { DocumentoEmbebido } from '../documento-embebido/documento-embebido';
+import { SolicitudSalidaDetalleDto } from '../../dtos/salida-detalle.dto';
 
 /**
  * El detalle de una solicitud de salida: cabecera, trayectos con sus capturas y montos, adjuntos,
@@ -33,11 +31,18 @@ import {
  *  • Gestión de Rendiciones, Consolidados y Reembolsos — en CONSULTA (`[cargar]`): la jefatura, el
  *    consolidador y Tesorería miran la salida de otro para ver sus capturas y montos. Ahí no se
  *    edita, no se rinde ni se cancela nada, y se nombra al trabajador.
+ *
+ * En lectura los trayectos van en TABLA (`app-salida-trayectos-tabla`): una fila por trayecto con
+ * todas sus capturas dentro. En edición siguen siendo tarjetas, porque ahí cada trayecto es un
+ * formulario de imágenes y montos.
  */
 @Component({
   standalone: true,
   selector: 'app-salida-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, DraggableImage, SalidaCapturasEditor, TitleCasePipe],
+  imports: [
+    CommonModule, BaseModal, StatusBadge, SalidaCapturasEditor, SalidaTrayectosTabla, TitleCasePipe,
+    DocumentoEmbebido,
+  ],
   templateUrl: './salida-detalle-modal.html',
 })
 export class SalidaDetalleModal implements OnInit, OnDestroy {
@@ -55,6 +60,13 @@ export class SalidaDetalleModal implements OnInit, OnDestroy {
    * salida ya no se puede editar (la tabla estaba desactualizada), abre en lectura.
    */
   @Input() iniciarEditando = false;
+
+  /**
+   * false = oculta la planilla de rendición y el Consolidado del S10 del pie. Las pantallas que abren
+   * este modal desde el detalle de una planilla o de un consolidado ya muestran esos documentos, así
+   * que repetirlos acá solo suma ruido. Solo Solicitud de Salidas los muestra.
+   */
+  @Input() mostrarDocumentos = true;
 
   /** Emite al cerrar: `true` si se guardó o quitó alguna captura (el padre debe recargar el listado). */
   @Output() close = new EventEmitter<boolean>();
@@ -117,10 +129,6 @@ export class SalidaDetalleModal implements OnInit, OnDestroy {
     return this.detalle.trayectos
       .filter((t) => t.esReembolsable === true)
       .reduce((acc, t) => acc + (t.montoTotal || 0), 0);
-  }
-
-  totalCapturas(t: TrayectoDetalleDto): number {
-    return t.capturas.reduce((acc, c) => acc + (c.monto || 0), 0);
   }
 
   /** Mismo criterio que "Subir capturas" en la tabla: aprobada y todavía sin rendir. */

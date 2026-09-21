@@ -93,9 +93,9 @@ export interface GestionRendicionListItemDto {
    */
   puedeConsolidar: boolean;
   /**
-   * True si a esta planilla se le puede adjuntar (o cambiar) el Consolidado del S10: primera
-   * revisión aprobada y el reembolso de todas sus salidas por decidir. No mira permisos: para eso
-   * está `puedeConsolidar`.
+   * True si a esta planilla se le puede adjuntar su PRIMER Consolidado del S10: primera revisión
+   * aprobada, el reembolso de todas sus salidas por decidir y todavía sin consolidado (reemplazarlo
+   * es de Consolidados). No mira permisos: para eso está `puedeConsolidar`.
    */
   puedeAdjuntarConsolidado: boolean;
   /**

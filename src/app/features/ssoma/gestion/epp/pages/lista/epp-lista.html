@@ -1,0 +1,776 @@
+<app-abril-page-header
+  badge="SSOMA · Gestión"
+  titulo="Catálogo de EPP"
+  subtitulo="Equipo de Protección Personal autorizado: nombre técnico, nombre comercial, imagen y modelos/marcas — visible también para Logística"
+  [tabs]="headerTabs"
+  (tabClick)="onTabClick($event)"
+  [botonPrimario]="tab === 'catalogo' ? { label: 'Nuevo EPP', icono: 'ti-plus' } : undefined"
+  (primaryClick)="abrirNuevo()">
+</app-abril-page-header>
+
+<div class="epp-wrap">
+
+@if (tab === 'catalogo') {
+
+  <!-- Filtros -->
+  <div class="epp-filtros">
+    <app-search-input
+      placeholder="Buscar EPP..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="220px">
+    </app-search-input>
+
+    <select class="epp-select" [(ngModel)]="filtroCategoriaId" (ngModelChange)="onFiltroCategoriaChange()">
+      <option [ngValue]="null">Todas las categorías</option>
+      @for (c of categorias; track c.id) {
+        <option [ngValue]="c.id">{{ c.nombre }}</option>
+      }
+    </select>
+
+    <select class="epp-select" [(ngModel)]="filtroFamiliaId" (ngModelChange)="onFilterChange()">
+      <option [ngValue]="null">Todas las familias</option>
+      @for (f of familiasFiltradasPorCategoria; track f.id) {
+        <option [ngValue]="f.id">{{ f.nombre }}</option>
+      }
+    </select>
+
+    <button class="epp-icon-toggle" [class.epp-icon-toggle--activo]="mostrarInactivos" title="Mostrar inactivos" (click)="mostrarInactivos = !mostrarInactivos; onFilterChange()">
+      <i class="ti" [ngClass]="mostrarInactivos ? 'ti-eye' : 'ti-eye-off'"></i>
+    </button>
+
+    @if (filtrosActivos) {
+      <button class="epp-icon-toggle" title="Limpiar filtros" (click)="limpiarFiltros()">
+        <i class="ti ti-filter-x"></i>
+      </button>
+    }
+
+    <button class="epp-icon-toggle" title="Categorías y familias" (click)="abrirCategorias()">
+      <i class="ti ti-category"></i>
+    </button>
+
+    <span class="epp-filtros-spacer"></span>
+
+    @if (vista === 'tabla') {
+      <button class="epp-icon-toggle" title="Expandir todo" (click)="expandirTodo()">
+        <i class="ti ti-arrows-maximize"></i>
+      </button>
+      <button class="epp-icon-toggle" title="Colapsar todo" (click)="colapsarTodo()">
+        <i class="ti ti-arrows-minimize"></i>
+      </button>
+    }
+
+    <div class="epp-vista-toggle">
+      <button class="epp-vista-btn" [class.epp-vista-btn--activo]="vista === 'tabla'" title="Vista tabla" (click)="cambiarVista('tabla')">
+        <i class="ti ti-list-tree"></i>
+      </button>
+      <button class="epp-vista-btn" [class.epp-vista-btn--activo]="vista === 'tarjetas'" title="Vista tarjetas" (click)="cambiarVista('tarjetas')">
+        <i class="ti ti-layout-grid"></i>
+      </button>
+    </div>
+  </div>
+
+  @if (loading) {
+    <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando catálogo...</div>
+  } @else if (itemsFiltrados.length === 0) {
+    <div class="empty-state">
+      <i class="ti ti-shield-off" style="font-size:48px;color:#d1d5db"></i>
+      <p>No hay EPP registrado{{ filtrosActivos ? ' con estos filtros' : '' }}.</p>
+    </div>
+  } @else if (vista === 'tarjetas') {
+    <div class="epp-grid">
+      @for (i of itemsFiltrados; track i.id) {
+        <div class="epp-card" [class.epp-card--inactivo]="!i.activo" (click)="abrirEditar(i)">
+          <div class="epp-card-img" [class.epp-thumb--clickable]="i.imagenUrl" (click)="abrirZoomImagen(i.imagenUrl, $event)">
+            @if (i.imagenUrl) {
+              <img [src]="i.imagenUrl" [alt]="i.nombreTecnico" />
+            } @else {
+              <i class="ti ti-photo-off"></i>
+            }
+          </div>
+          <div class="epp-card-body">
+            <span class="epp-card-categoria" [style.color]="categoriaMeta(i.categoriaNombre).color">
+              <i class="ti" [ngClass]="categoriaMeta(i.categoriaNombre).icon"></i> {{ i.categoriaNombre }} · {{ i.familiaNombre }}
+            </span>
+            <span class="epp-card-tecnico">
+              {{ i.nombreTecnico }}
+              @if (i.fichaTecnicaUrl) {
+                <i class="ti ti-file-type-pdf epp-ficha-icon" title="Ver ficha técnica" (click)="abrirFichaTecnica(i.fichaTecnicaUrl, i.fichaTecnicaNombreArchivo, $event)"></i>
+              }
+            </span>
+            <span class="epp-card-comercial">{{ i.nombreComercial }}</span>
+            <span class="epp-card-modelos">{{ i.totalModelos }} modelo(s)/marca(s)</span>
+          </div>
+          @if (!i.activo) {
+            <span class="epp-card-badge-inactivo">Inactivo</span>
+          }
+          <button class="epp-card-toggle" [title]="i.activo ? 'Desactivar' : 'Activar'"
+            (click)="$event.stopPropagation(); toggleItemActivo(i)">
+            <i class="ti" [ngClass]="i.activo ? 'ti-eye-off' : 'ti-eye'"></i>
+          </button>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="epp-tree">
+      @for (g of gruposFiltrados; track g.categoriaId) {
+        <div class="epp-categoria-grupo" [style.--epp-accent]="categoriaMeta(g.categoriaNombre).color">
+          <button class="epp-categoria-toggle" (click)="toggleCategoriaExpandida(g.categoriaId)">
+            <span class="epp-categoria-icon" [style.background]="categoriaMeta(g.categoriaNombre).color + '1a'" [style.color]="categoriaMeta(g.categoriaNombre).color">
+              <i class="ti" [ngClass]="categoriaMeta(g.categoriaNombre).icon"></i>
+            </span>
+            <span class="epp-categoria-toggle-nombre">{{ g.categoriaNombre }}</span>
+            <span class="epp-categoria-toggle-count">{{ g.totalItems }} ítem(s)</span>
+            <i class="ti epp-categoria-chevron" [ngClass]="isCategoriaExpandida(g.categoriaId) ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+          </button>
+
+          @if (isCategoriaExpandida(g.categoriaId)) {
+            <div class="abril-table-wrap">
+              <table class="abril-table epp-table">
+                <thead>
+                  <tr>
+                    <th class="epp-th-img"></th>
+                    <th>Nombre técnico</th>
+                    <th>Nombre comercial</th>
+                    <th>Marca</th>
+                    <th>Modelo</th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (f of g.familias; track f.familiaId) {
+                    <tr class="epp-familia-row">
+                      <td colspan="8">{{ f.familiaNombre }}</td>
+                    </tr>
+                    @for (i of f.items; track i.id) {
+                      @for (m of filasDeItem(i); track m?.id ?? 0; let esPrimera = $first) {
+                        <tr class="epp-item-row" [class.epp-row--inactivo]="!i.activo" (click)="abrirEditar(i)">
+                          @if (esPrimera) {
+                            <td class="epp-th-img" [attr.rowspan]="totalFilasDeItem(i)">
+                              <div class="epp-thumb" (click)="abrirZoomImagen(i.imagenUrl, $event)" [class.epp-thumb--clickable]="i.imagenUrl">
+                                @if (i.imagenUrl) {
+                                  <img [src]="i.imagenUrl" [alt]="i.nombreTecnico" />
+                                } @else {
+                                  <i class="ti ti-photo-off"></i>
+                                }
+                              </div>
+                            </td>
+                            <td class="epp-td-nombre" [attr.rowspan]="totalFilasDeItem(i)">
+                              {{ i.nombreTecnico }}
+                              @if (i.fichaTecnicaUrl) {
+                                <i class="ti ti-file-type-pdf epp-ficha-icon" title="Ver ficha técnica" (click)="abrirFichaTecnica(i.fichaTecnicaUrl, i.fichaTecnicaNombreArchivo, $event)"></i>
+                              }
+                            </td>
+                            <td [attr.rowspan]="totalFilasDeItem(i)">{{ i.nombreComercial }}</td>
+                          }
+                          @if (m) {
+                            <td>{{ m.marca }}</td>
+                            <td>{{ m.modelo }}</td>
+                            <td class="epp-td-acciones-modelo">
+                              <button class="epp-btn-icon" title="Duplicar y modificar" (click)="iniciarAgregarModeloInline(i, m, $event)">
+                                <i class="ti ti-copy"></i>
+                              </button>
+                            </td>
+                          } @else {
+                            <td colspan="3" class="epp-sin-modelo">Sin modelo/marca registrado</td>
+                          }
+                          @if (esPrimera) {
+                            <td class="epp-td-center" [attr.rowspan]="totalFilasDeItem(i)">
+                              @if (!i.activo) {
+                                <span class="epp-badge-inactivo">Inactivo</span>
+                              }
+                            </td>
+                            <td class="epp-td-acciones" [attr.rowspan]="totalFilasDeItem(i)">
+                              <button class="epp-btn-icon" title="Agregar modelo/marca" (click)="iniciarAgregarModeloInline(i, null, $event)">
+                                <i class="ti ti-plus"></i>
+                              </button>
+                              <button class="epp-btn-icon" [class.epp-btn-icon--danger]="i.activo" [title]="i.activo ? 'Desactivar' : 'Activar'"
+                                (click)="$event.stopPropagation(); toggleItemActivo(i)">
+                                <i class="ti" [ngClass]="i.activo ? 'ti-eye-off' : 'ti-eye'"></i>
+                              </button>
+                            </td>
+                          }
+                        </tr>
+                      }
+                      @if (agregandoModeloParaItemId === i.id) {
+                        <tr class="epp-item-row epp-item-row--nueva" (click)="$event.stopPropagation()">
+                          <td><input class="abril-field-input epp-input-tabla" type="text" [(ngModel)]="nuevoModeloInlineForm.marca" placeholder="Marca" /></td>
+                          <td><input class="abril-field-input epp-input-tabla" type="text" [(ngModel)]="nuevoModeloInlineForm.modelo" placeholder="Modelo" /></td>
+                          <td class="epp-td-acciones-modelo">
+                            <input class="abril-field-input epp-input-tabla" type="text" [(ngModel)]="nuevoModeloInlineForm.codigoReferencia" placeholder="Código" />
+                            <button class="epp-btn-icon" title="Guardar" [disabled]="!canGuardarModeloInline" (click)="guardarModeloInline(i.id, $event)"><i class="ti ti-check"></i></button>
+                            <button class="epp-btn-icon" title="Cancelar" (click)="cancelarAgregarModeloInline($event)"><i class="ti ti-x"></i></button>
+                          </td>
+                        </tr>
+                      }
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+} @else {
+
+  <!-- ── GENERAR PEDIDO ──────────────────────────────────────────────────── -->
+  <div class="epp-pedido-layout">
+    <div class="epp-pedido-catalogo">
+      <div class="epp-filtros">
+        <app-search-input
+          placeholder="Buscar EPP para agregar al pedido..."
+          [(value)]="searchText"
+          (valueChange)="onFilterChange()"
+          width="280px">
+        </app-search-input>
+
+        <select class="epp-select" [(ngModel)]="filtroCategoriaId" (ngModelChange)="onFiltroCategoriaChange()">
+          <option [ngValue]="null">Todas las categorías</option>
+          @for (c of categorias; track c.id) {
+            <option [ngValue]="c.id">{{ c.nombre }}</option>
+          }
+        </select>
+
+        <select class="epp-select" [(ngModel)]="filtroFamiliaId" (ngModelChange)="onFilterChange()">
+          <option [ngValue]="null">Todas las familias</option>
+          @for (f of familiasFiltradasPorCategoria; track f.id) {
+            <option [ngValue]="f.id">{{ f.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <p class="epp-section-sub">Solo se listan los EPP activos/aprobados del catálogo. Ingresa talla (si aplica) y cantidad, y agrégalos al pedido.</p>
+
+      @if (gruposPedido.length === 0) {
+        <div class="empty-state">
+          <i class="ti ti-shield-off" style="font-size:48px;color:#d1d5db"></i>
+          <p>No hay EPP activo que coincida con la búsqueda.</p>
+        </div>
+      } @else {
+        <div class="epp-tree">
+          @for (g of gruposPedido; track g.categoriaId) {
+            <div class="epp-categoria-grupo" [style.--epp-accent]="categoriaMeta(g.categoriaNombre).color">
+              <button class="epp-categoria-toggle" (click)="toggleCategoriaExpandida(g.categoriaId)">
+                <span class="epp-categoria-icon" [style.background]="categoriaMeta(g.categoriaNombre).color + '1a'" [style.color]="categoriaMeta(g.categoriaNombre).color">
+                  <i class="ti" [ngClass]="categoriaMeta(g.categoriaNombre).icon"></i>
+                </span>
+                <span class="epp-categoria-toggle-nombre">{{ g.categoriaNombre }}</span>
+                <span class="epp-categoria-toggle-count">{{ g.totalItems }} ítem(s)</span>
+                <i class="ti epp-categoria-chevron" [ngClass]="isCategoriaExpandida(g.categoriaId) ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+              </button>
+
+              @if (isCategoriaExpandida(g.categoriaId)) {
+                <div class="abril-table-wrap">
+                  <table class="abril-table epp-table">
+                    <thead>
+                      <tr>
+                        <th>EPP</th>
+                        <th>Marca / Modelo</th>
+                        <th>Talla</th>
+                        <th>Cantidad</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (f of g.familias; track f.familiaId) {
+                        <tr class="epp-familia-row">
+                          <td colspan="5">{{ f.familiaNombre }}</td>
+                        </tr>
+                        @for (i of f.items; track i.id) {
+                          @for (m of filasDeItem(i); track m?.id ?? 0) {
+                            <tr>
+                              <td>
+                                <div class="epp-td-nombre">{{ i.nombreTecnico }}</div>
+                                <div class="epp-section-sub">{{ i.nombreComercial }}</div>
+                              </td>
+                              <td>
+                                @if (m) {
+                                  {{ m.marca }} — {{ m.modelo }}
+                                } @else {
+                                  <span class="epp-sin-modelo">Sin modelo/marca</span>
+                                }
+                              </td>
+                              <td>
+                                <input class="abril-field-input epp-input-tabla" type="text" [ngModel]="pedidoDraft(i, m).talla" (ngModelChange)="pedidoDraft(i, m).talla = $event" placeholder="Ej. M, 42" />
+                              </td>
+                              <td>
+                                <input class="abril-field-input epp-input-tabla epp-input-cantidad" type="number" min="1" [ngModel]="pedidoDraft(i, m).cantidad" (ngModelChange)="pedidoDraft(i, m).cantidad = $event" placeholder="0" />
+                              </td>
+                              <td>
+                                <button class="epp-btn-icon" title="Agregar al pedido" [disabled]="!puedeAgregarAlPedido(i, m)" (click)="agregarLineaPedido(i, m, $event)">
+                                  <i class="ti ti-plus"></i>
+                                </button>
+                              </td>
+                            </tr>
+                          }
+                        }
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="epp-pedido-resumen">
+      <div class="epp-pedido-resumen-header">
+        <h3>Pedido en construcción</h3>
+        <span class="epp-section-sub">{{ pedidoLineas.length }} línea(s) · {{ totalUnidadesPedido }} unidad(es)</span>
+        <button class="epp-btn-link epp-historial-link" (click)="abrirHistorial()">
+          <i class="ti ti-history"></i> Ver pedidos anteriores
+        </button>
+      </div>
+
+      @if (pedidoLineas.length === 0) {
+        <p class="epp-section-sub">Agrega EPP desde la izquierda para armar el pedido.</p>
+      } @else {
+        <ul class="epp-pedido-lista">
+          @for (l of pedidoLineas; track $index) {
+            <li>
+              <div class="epp-pedido-linea-info">
+                <strong>{{ l.nombreTecnico }}</strong>
+                <span class="epp-section-sub">
+                  {{ l.marca ? (l.marca + ' — ' + l.modelo) : 'Sin modelo/marca' }}
+                  @if (l.talla) { · Talla {{ l.talla }} }
+                  · Cant. {{ l.cantidad }}
+                </span>
+              </div>
+              <button class="epp-btn-icon epp-btn-icon--danger" title="Quitar" (click)="quitarLineaPedido($index)">
+                <i class="ti ti-x"></i>
+              </button>
+            </li>
+          }
+        </ul>
+
+        <div class="epp-pedido-acciones">
+          <button class="btn btn-secondary" (click)="vaciarPedido()">Vaciar</button>
+          <button class="btn btn-primary" (click)="abrirGuardarPedido()">
+            <i class="ti ti-device-floppy"></i> Guardar pedido
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+
+}
+</div>
+
+<!-- Modal crear/editar ítem -->
+@if (showFormModal) {
+  <app-abril-modal-panel
+    [titulo]="editando ? 'Editar EPP' : 'Nuevo EPP'"
+    icono="ti-shield-check"
+    variant="blue"
+    width="820px"
+    (closeModal)="cerrarFormModal()">
+
+    <div class="form-row">
+      <div class="abril-field">
+        <label class="abril-field-label">Nombre técnico *</label>
+        <input class="abril-field-input" type="text" [(ngModel)]="form.nombreTecnico" placeholder="Ej. Casco de seguridad dieléctrico clase E" />
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Nombre comercial *</label>
+        <input class="abril-field-input" type="text" [(ngModel)]="form.nombreComercial" placeholder="Ej. Casco 3M H-700" />
+      </div>
+    </div>
+
+    <div class="epp-field-block">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Familia *"
+        [options]="familiasParaForm"
+        valueField="id"
+        displayField="nombre"
+        [value]="form.familiaId || null"
+        placeholder="Ej. Barbiquejo, Casco de seguridad..."
+        (valueChange)="form.familiaId = $event">
+      </app-search-select>
+      <p class="epp-section-sub">La familia agrupa las variantes de este EPP (ej. "Barbiquejo" agrupa "2 puntas" y "4 puntas"). Si no existe, créala desde "Categorías".</p>
+    </div>
+
+    <div class="abril-field epp-field-block">
+      <label class="abril-field-label">Descripción</label>
+      <textarea class="abril-field-input" rows="2" [(ngModel)]="form.descripcion" placeholder="Opcional"></textarea>
+    </div>
+
+    @if (editando) {
+      <div class="epp-imagen-row epp-field-block">
+        <div class="epp-imagen-preview" [class.epp-thumb--clickable]="editando.imagenUrl" (click)="abrirZoomImagen(editando.imagenUrl, $event)">
+          @if (editando.imagenUrl) {
+            <img [src]="editando.imagenUrl" alt="Imagen del EPP" />
+          } @else {
+            <i class="ti ti-photo-off"></i>
+          }
+        </div>
+        <div>
+          <label class="epp-upload-btn">
+            @if (subiendoImagen) { Subiendo… } @else { <i class="ti ti-upload"></i> Subir imagen del EPP }
+            <input type="file" accept="image/*" (change)="onImagenItemSeleccionada($event)" [disabled]="subiendoImagen" hidden />
+          </label>
+          <p class="epp-section-sub">Foto real del EPP para que Logística sepa exactamente a qué se refiere.</p>
+        </div>
+      </div>
+
+      <!-- Ficha técnica (PDF) -->
+      <div class="epp-ficha-row epp-field-block">
+        <div class="epp-ficha-icon-box" [class.epp-ficha-icon-box--activa]="editando.fichaTecnicaUrl">
+          <i class="ti ti-file-type-pdf"></i>
+        </div>
+        @if (editando.fichaTecnicaUrl) {
+          <div class="epp-ficha-col">
+            <button class="epp-ficha-link" (click)="abrirFichaTecnica(editando.fichaTecnicaUrl, editando.fichaTecnicaNombreArchivo, $event)">
+              <span>{{ editando.fichaTecnicaNombreArchivo || 'Ficha técnica.pdf' }}</span>
+            </button>
+            <button class="epp-btn-icon epp-btn-icon--danger" title="Quitar ficha técnica" (click)="quitarFichaTecnica()">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        } @else {
+          <div class="epp-ficha-col">
+            <label class="epp-upload-btn">
+              @if (subiendoFicha) { Subiendo… } @else { <i class="ti ti-file-upload"></i> Subir ficha técnica (PDF) }
+              <input type="file" accept="application/pdf" (change)="onFichaTecnicaSeleccionada($event)" [disabled]="subiendoFicha" hidden />
+            </label>
+            <p class="epp-section-sub">Ficha técnica del proveedor en PDF, descargable desde el catálogo.</p>
+          </div>
+        }
+      </div>
+
+      <!-- Modelos / marcas -->
+      <div class="epp-modelos-section">
+        <h4 class="epp-section-title">Modelos y marcas autorizadas</h4>
+
+        @if (editando.modelos.length === 0) {
+          <p class="epp-section-sub">Aún no hay modelos/marcas registrados para este EPP.</p>
+        } @else {
+          <div class="abril-table-wrap">
+            <table class="abril-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Marca</th>
+                  <th>Modelo</th>
+                  <th>Código</th>
+                  <th></th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of editando.modelos; track m.id) {
+                  @if (editandoModeloId === m.id) {
+                    <tr>
+                      <td class="epp-td-img">
+                        @if (m.imagenUrl) {
+                          <img [src]="m.imagenUrl" alt="" />
+                        } @else {
+                          <i class="ti ti-photo-off"></i>
+                        }
+                      </td>
+                      <td><input class="abril-field-input epp-input-tabla" type="text" [(ngModel)]="editModeloForm.marca" placeholder="Marca" /></td>
+                      <td><input class="abril-field-input epp-input-tabla" type="text" [(ngModel)]="editModeloForm.modelo" placeholder="Modelo" /></td>
+                      <td><input class="abril-field-input epp-input-tabla" type="text" [(ngModel)]="editModeloForm.codigoReferencia" placeholder="Código" /></td>
+                      <td></td>
+                      <td class="epp-td-acciones-modelo">
+                        <button class="epp-btn-icon" title="Guardar" [disabled]="!canGuardarEditarModelo" (click)="guardarEditarModelo()"><i class="ti ti-check"></i></button>
+                        <button class="epp-btn-icon" title="Cancelar" (click)="cancelarEditarModelo()"><i class="ti ti-x"></i></button>
+                      </td>
+                    </tr>
+                  } @else {
+                    <tr [class.epp-row--inactivo]="!m.activo">
+                      <td class="epp-td-img" [class.epp-thumb--clickable]="m.imagenUrl" (click)="abrirZoomImagen(m.imagenUrl, $event)">
+                        @if (m.imagenUrl) {
+                          <img [src]="m.imagenUrl" alt="" />
+                        } @else {
+                          <i class="ti ti-photo-off"></i>
+                        }
+                      </td>
+                      <td>{{ m.marca }}</td>
+                      <td>{{ m.modelo }}</td>
+                      <td>{{ m.codigoReferencia || '—' }}</td>
+                      <td>
+                        <label class="epp-upload-btn epp-upload-btn--small">
+                          <i class="ti ti-upload"></i>
+                          <input type="file" accept="image/*" (change)="onImagenModeloSeleccionada($event, m.id)" hidden />
+                        </label>
+                      </td>
+                      <td class="epp-td-acciones-modelo">
+                        <button class="epp-btn-icon" title="Editar" (click)="abrirEditarModelo(m)">
+                          <i class="ti ti-pencil"></i>
+                        </button>
+                        <button class="epp-btn-icon" [class.epp-btn-icon--danger]="m.activo" (click)="toggleModeloActivo(m)" [title]="m.activo ? 'Desactivar' : 'Activar'">
+                          <i class="ti" [ngClass]="m.activo ? 'ti-eye-off' : 'ti-eye'"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+
+        <div class="epp-nuevo-modelo">
+          <input class="abril-field-input" type="text" [(ngModel)]="nuevoModeloForm.marca" placeholder="Marca" />
+          <input class="abril-field-input" type="text" [(ngModel)]="nuevoModeloForm.modelo" placeholder="Modelo" />
+          <input class="abril-field-input" type="text" [(ngModel)]="nuevoModeloForm.codigoReferencia" placeholder="Código (opcional)" />
+          <button class="btn btn-secondary" (click)="agregarModelo()" [disabled]="!canAgregarModelo">
+            <i class="ti ti-plus"></i> Agregar
+          </button>
+        </div>
+      </div>
+
+      @if (editando.auditoria.length > 0) {
+        <div class="epp-auditoria-section">
+          <h4 class="epp-section-title">Historial de cambios</h4>
+          <ul class="epp-auditoria-list">
+            @for (a of editando.auditoria; track $index) {
+              <li>
+                <strong>{{ a.accion }}</strong> — {{ a.entidadTipo }}
+                @if (a.detalle) { ({{ a.detalle }}) }
+                · {{ a.usuarioNombre || 'Sistema' }} · {{ a.fecha | date: 'dd/MM/yyyy HH:mm' }}
+              </li>
+            }
+          </ul>
+        </div>
+      }
+    }
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarFormModal()" [disabled]="saving">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardarItem()" [disabled]="!canSubmitForm">
+        @if (saving) { Guardando… } @else { Guardar }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}
+
+<!-- Modal categorías -->
+@if (showCategoriasModal) {
+  <app-abril-modal-panel
+    titulo="Categorías y Familias de EPP"
+    icono="ti-category"
+    variant="blue"
+    width="720px"
+    (closeModal)="cerrarCategorias()">
+
+    <!-- Agregar, siempre visible arriba: no hace falta scrollear la lista para crear -->
+    <div class="epp-agregar-fijo">
+      <div class="epp-nueva-categoria">
+        <input class="abril-field-input" type="text" [(ngModel)]="nuevaCategoriaForm.nombre" placeholder="Nueva categoría" (keyup.enter)="crearCategoria()" />
+        <button class="btn btn-secondary" (click)="crearCategoria()" [disabled]="!nuevaCategoriaForm.nombre.trim()">
+          <i class="ti ti-plus"></i> Categoría
+        </button>
+      </div>
+
+      <div class="epp-nueva-categoria">
+        <input class="abril-field-input" type="text" [(ngModel)]="nuevaFamiliaForm.nombre" placeholder="Nueva familia (ej. Barbiquejo)" (keyup.enter)="crearFamilia()" />
+        <select class="epp-select" [(ngModel)]="nuevaFamiliaForm.categoriaId">
+          <option [ngValue]="0">Categoría...</option>
+          @for (c of categorias; track c.id) {
+            <option [ngValue]="c.id">{{ c.nombre }}</option>
+          }
+        </select>
+        <button class="btn btn-secondary" (click)="crearFamilia()" [disabled]="!canCrearFamilia">
+          <i class="ti ti-plus"></i> Familia
+        </button>
+      </div>
+    </div>
+
+    <div class="epp-lista-scroll">
+      @for (c of categorias; track c.id) {
+        <div class="epp-categoria-bloque" [class.epp-row--inactivo]="!c.activo">
+          @if (editandoCategoriaId === c.id) {
+            <div class="epp-edit-row">
+              <input class="abril-field-input" type="text" [(ngModel)]="editCategoriaForm.nombre" placeholder="Nombre" (keyup.enter)="guardarEditarCategoria()" />
+              <input class="abril-field-input epp-input-orden" type="number" [(ngModel)]="editCategoriaForm.orden" placeholder="Orden" />
+              <button class="epp-btn-icon" title="Guardar" (click)="guardarEditarCategoria()"><i class="ti ti-check"></i></button>
+              <button class="epp-btn-icon" title="Cancelar" (click)="cancelarEditarCategoria()"><i class="ti ti-x"></i></button>
+            </div>
+          } @else {
+            <div class="epp-categoria-header">
+              <span class="epp-categoria-nombre">{{ c.nombre }}</span>
+              <span class="epp-section-sub">{{ c.totalItems }} ítem(s)</span>
+              <button class="epp-btn-icon" title="Editar" (click)="abrirEditarCategoria(c)">
+                <i class="ti ti-pencil"></i>
+              </button>
+              <button class="epp-btn-icon" [class.epp-btn-icon--danger]="c.activo" (click)="toggleCategoriaActivo(c)" [title]="c.activo ? 'Desactivar' : 'Activar'">
+                <i class="ti" [ngClass]="c.activo ? 'ti-eye-off' : 'ti-eye'"></i>
+              </button>
+              @if (c.totalItems === 0 && familiasDeCategoria(c.id).length === 0) {
+                <button class="epp-btn-icon epp-btn-icon--danger" title="Eliminar (solo si no tiene familias)" (click)="eliminarCategoria(c)">
+                  <i class="ti ti-trash"></i>
+                </button>
+              }
+            </div>
+          }
+
+          @if (familiasDeCategoria(c.id).length > 0) {
+            <ul class="epp-familia-list">
+              @for (f of familiasDeCategoria(c.id); track f.id) {
+                @if (editandoFamiliaId === f.id) {
+                  <li class="epp-edit-row">
+                    <input class="abril-field-input" type="text" [(ngModel)]="editFamiliaForm.nombre" placeholder="Nombre" (keyup.enter)="guardarEditarFamilia()" />
+                    <select class="epp-select" [(ngModel)]="editFamiliaForm.categoriaId">
+                      @for (c2 of categorias; track c2.id) {
+                        <option [ngValue]="c2.id">{{ c2.nombre }}</option>
+                      }
+                    </select>
+                    <input class="abril-field-input epp-input-orden" type="number" [(ngModel)]="editFamiliaForm.orden" placeholder="Orden" />
+                    <button class="epp-btn-icon" title="Guardar" [disabled]="!canGuardarEditarFamilia" (click)="guardarEditarFamilia()"><i class="ti ti-check"></i></button>
+                    <button class="epp-btn-icon" title="Cancelar" (click)="cancelarEditarFamilia()"><i class="ti ti-x"></i></button>
+                  </li>
+                } @else {
+                  <li [class.epp-row--inactivo]="!f.activo">
+                    <span>{{ f.nombre }}</span>
+                    <span class="epp-section-sub">{{ f.totalItems }} ítem(s)</span>
+                    <button class="epp-btn-icon" title="Editar" (click)="abrirEditarFamilia(f)">
+                      <i class="ti ti-pencil"></i>
+                    </button>
+                    <button class="epp-btn-icon" [class.epp-btn-icon--danger]="f.activo" (click)="toggleFamiliaActivo(f)" [title]="f.activo ? 'Desactivar' : 'Activar'">
+                      <i class="ti" [ngClass]="f.activo ? 'ti-eye-off' : 'ti-eye'"></i>
+                    </button>
+                    @if (f.totalItems === 0) {
+                      <button class="epp-btn-icon epp-btn-icon--danger" title="Eliminar (solo si no tiene ítems)" (click)="eliminarFamilia(f)">
+                        <i class="ti ti-trash"></i>
+                      </button>
+                    }
+                  </li>
+                }
+              }
+            </ul>
+          }
+        </div>
+      }
+    </div>
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarCategorias()">Cerrar</button>
+    </div>
+  </app-abril-modal-panel>
+}
+
+<!-- Modal: guardar pedido (proyecto + observaciones) -->
+@if (showGuardarPedidoModal) {
+  <app-abril-modal-panel
+    titulo="Guardar pedido"
+    icono="ti-device-floppy"
+    variant="blue"
+    (closeModal)="cerrarGuardarPedido()">
+
+    <p class="epp-section-sub">{{ pedidoLineas.length }} línea(s) · {{ totalUnidadesPedido }} unidad(es). Se le asignará un código correlativo y quedará en el historial, con tu usuario y la fecha de hoy.</p>
+
+    <div>
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Proyecto *"
+        [options]="proyectos"
+        valueField="id"
+        displayField="nombre"
+        [value]="guardarPedidoProjectId"
+        placeholder="Buscar proyecto..."
+        (valueChange)="guardarPedidoProjectId = $event">
+      </app-search-select>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Observaciones</label>
+      <textarea class="abril-field-input" rows="2" [(ngModel)]="guardarPedidoObservaciones" placeholder="Opcional"></textarea>
+    </div>
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarGuardarPedido()" [disabled]="guardandoPedido">Cancelar</button>
+      <button class="btn btn-primary" (click)="confirmarGuardarPedido()" [disabled]="!canGuardarPedido">
+        @if (guardandoPedido) { Guardando… } @else { Guardar y exportar }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}
+
+<!-- Modal: historial de pedidos -->
+@if (showHistorialModal) {
+  <app-abril-modal-panel
+    titulo="Pedidos de EPP generados"
+    icono="ti-history"
+    variant="blue"
+    width="820px"
+    (closeModal)="cerrarHistorial()">
+
+    @if (cargandoHistorial) {
+      <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando historial...</div>
+    } @else if (pedidosHistorial.length === 0) {
+      <p class="epp-section-sub">Todavía no se ha guardado ningún pedido.</p>
+    } @else {
+      <div class="abril-table-wrap">
+        <table class="abril-table">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Proyecto</th>
+              <th>Generado por</th>
+              <th>Fecha</th>
+              <th>Líneas</th>
+              <th>Unidades</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (p of pedidosHistorial; track p.id) {
+              <tr>
+                <td class="epp-td-nombre">{{ p.codigo }}</td>
+                <td>{{ p.projectDescription }}</td>
+                <td>{{ p.generadoPorNombre || '—' }}</td>
+                <td>{{ p.fecha | date: 'dd/MM/yyyy HH:mm' }}</td>
+                <td class="epp-td-center">{{ p.totalLineas }}</td>
+                <td class="epp-td-center">{{ p.totalUnidades }}</td>
+                <td>
+                  <button class="epp-btn-icon" title="Descargar Excel" (click)="reexportarPedido(p)">
+                    <i class="ti ti-file-spreadsheet"></i>
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarHistorial()">Cerrar</button>
+    </div>
+  </app-abril-modal-panel>
+}
+
+<!-- Zoom de imagen: clic en cualquier miniatura la abre en grande, sin entrar al formulario -->
+@if (imagenZoom) {
+  <div class="epp-zoom-overlay" (click)="cerrarZoomImagen()">
+    <button class="epp-zoom-close" (click)="cerrarZoomImagen()"><i class="ti ti-x"></i></button>
+    <img [src]="imagenZoom" alt="Vista ampliada" class="epp-zoom-img" (click)="$event.stopPropagation()" />
+  </div>
+}
+
+<!-- Visor inline de ficha técnica (PDF): clic en el ícono PDF la muestra ahí mismo, sin descargar -->
+@if (fichaTecnicaModalUrl) {
+  <div class="epp-pdf-overlay" (click)="cerrarFichaTecnicaModal()">
+    <div class="epp-pdf-modal" (click)="$event.stopPropagation()">
+      <div class="epp-pdf-modal-header">
+        <span><i class="ti ti-file-type-pdf"></i> {{ fichaTecnicaModalNombre }}</span>
+        <div class="epp-pdf-modal-acciones">
+          <a class="epp-btn-icon" title="Descargar" [href]="fichaTecnicaModalUrlDescarga" target="_blank" rel="noopener" download>
+            <i class="ti ti-download"></i>
+          </a>
+          <button class="epp-btn-icon" title="Cerrar" (click)="cerrarFichaTecnicaModal()"><i class="ti ti-x"></i></button>
+        </div>
+      </div>
+      <iframe [src]="fichaTecnicaModalUrl" class="epp-pdf-iframe" title="Ficha técnica"></iframe>
+    </div>
+  </div>
+}

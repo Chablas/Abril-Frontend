@@ -9,11 +9,12 @@ import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { GaTrayectoService } from '../../services/trayectos.service';
 import { GaTrayectoLugarOptionDto } from '../../dtos/ga-trayecto.dto';
+import { NoWheelNumberDirective } from '../../../../../../shared/directives/no-wheel-number.directive';
 
 @Component({
   standalone: true,
   selector: 'app-ga-trayecto-create',
-  imports: [BaseModal, CommonModule, FormsModule, SearchSelect],
+  imports: [BaseModal, CommonModule, FormsModule, SearchSelect, NoWheelNumberDirective],
   templateUrl: './create.html',
 })
 export class GaTrayectoCreate implements OnInit {

@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule, DatePipe } from '@angular/common';
-import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
 import { RendicionesService } from '../services/rendiciones.service';
@@ -110,15 +110,14 @@ export class Rendiciones implements OnInit {
 
   rendiciones: RendicionListItemDto[] = [];
 
-  /** ID de la planilla cuyo modal de detalle está abierto. null = cerrado. */
-  detalleId: number | null = null;
-
   /**
-   * True cuando el detalle se abre para subsanar: cada salida muestra ahí su botón de corregir
-   * capturas y montos. Se resuelve acá y no en el modal porque es la fila la que sabe si su
-   * rendición volvió observada.
+   * ID de la planilla cuyo modal de detalle está abierto. null = cerrado.
+   *
+   * Es lo ÚNICO que necesita el modal: si toca subsanar lo resuelve él con el detalle que carga,
+   * no la fila. Pasárselo desde acá dejaba el modal recortado cuando se abría por el enlace del
+   * correo, que entra sin pasar por la tabla.
    */
-  detalleSubsanando = false;
+  detalleId: number | null = null;
 
   /**
    * Números de las tarjetas. Los cuenta el backend sobre el MISMO conjunto que muestra la tabla,
@@ -296,19 +295,19 @@ export class Rendiciones implements OnInit {
 
   abrirDetalle(r: RendicionListItemDto): void {
     this.detalleId = r.id;
-    this.detalleSubsanando = r.puedeSubsanar;
   }
 
-  /** Abre el detalle en modo subsanación desde el botón de la fila. */
+  /**
+   * "Corregir capturas" de la fila. Abre el mismo detalle que el click en la fila: el modal ya
+   * muestra los botones de subsanar por su cuenta cuando la planilla está observada.
+   */
   corregirCapturas(r: RendicionListItemDto, ev: Event): void {
     ev.stopPropagation();
     this.detalleId = r.id;
-    this.detalleSubsanando = true;
   }
 
   cerrarDetalle(cambio: boolean): void {
     this.detalleId = null;
-    this.detalleSubsanando = false;
     if (cambio) this.recargar();
     else        this.cdr.detectChanges();
   }
@@ -349,19 +348,25 @@ export class Rendiciones implements OnInit {
 
   /**
    * Vuelve a generar la planilla de una rendición observada, ya con las capturas y los montos
-   * corregidos. Conserva el código, descarga el PDF nuevo y la deja lista para reenviar.
+   * corregidos, y la reenvía a la primera revisión en el mismo paso: se subsana para que el jefe la
+   * vuelva a mirar, así que generar y avisarle son una sola acción. Conserva el código.
+   *
+   * El PDF nuevo no se descarga: queda guardado y la planilla ya apunta a él, así que se ve con el
+   * botón «Planilla» de la fila. Bajarlo sin que nadie lo pida era ruido en cada subsanación.
+   *
+   * Por eso la confirmación imprime los destinatarios: es la misma acción que antes disparaba
+   * "Enviar a revisión", así que tiene que decir a quién le va a llegar.
    */
   async regenerarPlanilla(r: RendicionListItemDto, ev: Event): Promise<void> {
     ev.stopPropagation();
 
-    const result = await Swal.fire({
-      icon: 'question',
-      title: '¿Volver a generar ' + r.codigo + '?',
-      text: 'Queda lista para reenviar a revisión.',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, generar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0F6E56',
+    const result = await confirmarConCorreos({
+      titulo: '¿Volver a generar ' + r.codigo + '?',
+      avisos: this.correosEnvioRevision,
+      // Sin nadie a quien avisar igual procede: la planilla se regenera y pasa a revisión, y el
+      // jefe la ve en su bandeja. Es un aviso de estado, no un bloqueo.
+      sinNadie: 'Se regenera y pasa a revisión, pero sin aviso por correo: está apagado en Configuración → Correos.',
+      confirmButtonText: 'Generar y avisar al revisor',
     });
     if (!result.isConfirmed) return;
 
@@ -369,13 +374,14 @@ export class Rendiciones implements OnInit {
     this.service.regenerarPlanilla(r.id).subscribe({
       next: (res) => {
         this.loaderService.hide();
-        this.descargar(res, r.codigo + '.pdf');
+        // El reenvío es best-effort en el backend: si el correo no salió, el aviso lo dice en vez
+        // de anunciar una revisión que nadie pidió.
         Swal.fire({
-          icon: 'success',
+          icon: res.enviadaARevision ? 'success' : 'warning',
           title: 'Planilla regenerada',
-          text: r.codigo + ' quedó lista para enviar de nuevo a revisión.',
-          timer: 2800,
-          showConfirmButton: false,
+          text: res.message || r.codigo + ' se volvió a generar y se envió a revisión.',
+          // El caso "no salió el correo" se queda hasta que lo cierren: es lo que hay que leer.
+          ...(res.enviadaARevision ? { timer: 2800, showConfirmButton: false } : {}),
         });
         this.recargar();
       },
@@ -385,17 +391,6 @@ export class Rendiciones implements OnInit {
         this.cdr.detectChanges();
       },
     });
-  }
-
-  /** Dispara la descarga del PDF que devuelve el backend. */
-  private descargar(response: HttpResponse<Blob>, filename: string): void {
-    if (!response.body) return;
-    const url = URL.createObjectURL(response.body);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
   }
 
   // ── Colores de estado ────────────────────────────────────────────────

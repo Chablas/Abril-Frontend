@@ -8,6 +8,7 @@ import { SearchSelect } from '../../../../../../shared/components/search-select/
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { GaTrayectoService } from '../../services/trayectos.service';
+import { NoWheelNumberDirective } from '../../../../../../shared/directives/no-wheel-number.directive';
 import {
   GaTrayectoListItemDto,
   GaTrayectoLugarOptionDto,
@@ -16,7 +17,7 @@ import {
 @Component({
   standalone: true,
   selector: 'app-ga-trayecto-edit',
-  imports: [BaseModal, CommonModule, FormsModule, SearchSelect],
+  imports: [BaseModal, CommonModule, FormsModule, SearchSelect, NoWheelNumberDirective],
   templateUrl: './edit.html',
 })
 export class GaTrayectoEdit implements OnInit {

@@ -9,6 +9,7 @@ import { ErrorService } from '../../../../../core/services/error.service';
 import { SalidaDetalleService } from '../../services/salida-detalle.service';
 import { TrayectoDetalleDto } from '../../dtos/salida-detalle.dto';
 import { CapturaFila, CapturaNuevaFila, CapturasEdicion } from './capturas-edicion';
+import { NoWheelNumberDirective } from '../../../../../shared/directives/no-wheel-number.directive';
 
 /**
  * Las capturas de movilidad de UN trayecto en edición: las ya subidas —con el monto y la imagen
@@ -21,7 +22,7 @@ import { CapturaFila, CapturaNuevaFila, CapturasEdicion } from './capturas-edici
 @Component({
   standalone: true,
   selector: 'app-salida-capturas-editor',
-  imports: [CommonModule, FormsModule, DraggableImage],
+  imports: [CommonModule, FormsModule, DraggableImage, NoWheelNumberDirective],
   templateUrl: './salida-capturas-editor.html',
   styles: [`:host { display: flex; flex-direction: column; gap: 12px; }`],
 })
@@ -35,8 +36,9 @@ export class SalidaCapturasEditor {
   /**
    * Si este trayecto admite cargar y corregir capturas. Solo los que generan reembolso: el resto
    * no entra en la rendición, así que lo que se cargara ahí no sumaría ni se exigiría para rendir
-   * — se veía editable y no servía de nada. Incluye al motivo libre (`esReembolsable` null), que
-   * al no estar en el catálogo tampoco concede reembolso.
+   * — se veía editable y no servía de nada. «Otro motivo» entra o queda fuera según su fila de
+   * Configuración → Motivos; `esReembolsable` null son las salidas anteriores a esa fila, que
+   * nunca concedían.
    */
   get editable(): boolean {
     return this.trayecto.esReembolsable === true;

@@ -138,6 +138,13 @@
                     <span class="dest__who">· con este rol hoy</span>
                   </span>
 
+                  <!-- Jefe del área: no hay a cuántos llega, depende de cada solicitud -->
+                  <span class="dest__email" *ngIf="fila.tipoCodigo === 'JEFE_AREA'">
+                    <i class="ti ti-wand"></i>
+                    Lo resuelve el sistema al enviar
+                    <span class="dest__who">· solo si el revisor es un residente</span>
+                  </span>
+
                   <span class="dest__email dest__email--warn" *ngIf="fila.sinCorreo">
                     <i class="ti ti-alert-circle"></i> Hoy no resuelve a ningún correo
                   </span>
@@ -164,9 +171,11 @@
               </td>
 
               <td class="matriz__acciones">
+                <!-- El jefe del área no se edita: la fila no guarda a quién apunta. -->
                 <button
                   type="button"
                   class="btn-icon"
+                  *ngIf="fila.tipoCodigo !== 'JEFE_AREA'"
                   [disabled]="savingDestinatarioId === fila.id"
                   title="Editar destinatario"
                   (click)="abrirEdicion(fila)">
@@ -275,6 +284,14 @@
           [(ngModel)]="formCorreo" />
       </div>
     </div>
+
+    <p class="form-hint" *ngIf="formTipo === 'JEFE_AREA'">
+      <i class="ti ti-info-circle"></i>
+      <span>
+        No hay a quién elegir: se resuelve en cada solicitud y solo tiene destinatario cuando el
+        revisor de quien la registra es un residente.
+      </span>
+    </p>
 
     <p class="form-hint" *ngIf="formId === null">
       <i class="ti ti-info-circle"></i>

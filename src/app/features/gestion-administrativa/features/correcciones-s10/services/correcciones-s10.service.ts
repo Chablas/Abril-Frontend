@@ -3,11 +3,12 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { CorreoAvisoDto } from '../../../shared/correo-aviso';
+import { SolicitudSalidaDetalleDto } from '../../../shared/dtos/salida-detalle.dto';
 import {
   AtenderCorreccionS10Dto,
   CorreccionS10BulkResultDto,
+  CorreccionS10DetalleDto,
   CorreccionS10FilterDataDto,
-  CorreccionS10ListItemDto,
   CorreccionS10ListResultDto,
 } from '../dtos/correccion-s10.dto';
 
@@ -53,8 +54,19 @@ export class CorreccionesS10Service {
     });
   }
 
-  getDetalle(id: number): Observable<CorreccionS10ListItemDto> {
-    return this.http.get<CorreccionS10ListItemDto>(`${this.apiUrl}/${id}/detalle`, {
+  /** Una corrección con las rendiciones de su consolidado y sus salidas. */
+  getDetalle(id: number): Observable<CorreccionS10DetalleDto> {
+    return this.http.get<CorreccionS10DetalleDto>(`${this.apiUrl}/${id}/detalle`, {
+      headers: this.headers,
+    });
+  }
+
+  /**
+   * El detalle de una salida de la bandeja, en consulta: trayectos, capturas y adjuntos. Es lo que
+   * abre el ojo de la tabla de salidas del detalle de la corrección.
+   */
+  getSalidaDetalle(solicitudId: number): Observable<SolicitudSalidaDetalleDto> {
+    return this.http.get<SolicitudSalidaDetalleDto>(`${this.apiUrl}/salidas/${solicitudId}/detalle`, {
       headers: this.headers,
     });
   }

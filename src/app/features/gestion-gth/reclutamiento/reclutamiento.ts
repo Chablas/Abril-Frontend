@@ -23,6 +23,8 @@ import {
 } from './dtos/reclutamiento.dto';
 import { GthDetalleRequerimiento } from './components/detalle/detalle';
 import { estadoColors } from '../shared/estado-colors';
+import { contarFiltrosActivos, FiltroDesplegable, opcionesDe } from '../shared/filtros-opciones';
+import { coincideTipo, opcionesTipo, tipoRequerimientoEstilo } from '../shared/tipo-requerimiento';
 
 /**
  * Vista de GTH del módulo Reclutamiento: bandeja con las tarjetas de resumen, el aviso de
@@ -82,7 +84,7 @@ import { estadoColors } from '../shared/estado-colors';
     }
 
     /* ── Responsive ───────────────────────────────────────────────────────
-       Las 9 columnas de la tabla no entran por debajo de ~1024px y, como acá
+       Las 9 columnas de la tabla no entran por debajo de ~1144px y, como acá
        .abril-table-wrap no recorta (overflow:visible, ver arriba), ese
        desborde lo terminaba scrolleando .page-container: al desplazarse para
        ver la tabla se arrastraba de lado TODA la vista — tarjetas, aviso y
@@ -90,10 +92,14 @@ import { estadoColors } from '../shared/estado-colors';
        se veía el contenido cortado por la izquierda). Debajo de ese ancho la
        tabla se cambia por tarjetas, mismo patrón que Revisiones y
        Observaciones de Arquitectura Comercial. La lista es la misma: comparten
-       filtros, paginación y acciones, solo cambia cómo se dibuja. */
+       filtros, paginación y acciones, solo cambia cómo se dibuja.
+
+       El corte subió de 1024px a 1144px al agregarse la columna «Tipo»: el badge
+       más la línea «FFT · Ingreso directo» (nowrap, como en Solicitud de Personal)
+       suman ~120px de ancho mínimo que antes no estaban. */
     .rec-cards { display: none; }
 
-    @media (max-width: 1023.98px) {
+    @media (max-width: 1143.98px) {
       .abril-table-wrap { display: none; }
       .rec-cards { display: grid; grid-template-columns: 1fr; gap: 10px; }
       /* Objetivo táctil: 28px del estándar es cómodo con mouse, corto con el dedo. */
@@ -102,7 +108,7 @@ import { estadoColors } from '../shared/estado-colors';
 
     /* Tablet: una sola columna de tarjetas queda enorme y vacía; con auto-fill
        entran dos por fila sin cambiar nada del layout del teléfono. */
-    @media (min-width: 640px) and (max-width: 1023.98px) {
+    @media (min-width: 640px) and (max-width: 1143.98px) {
       .rec-cards { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
     }
 
@@ -171,6 +177,18 @@ export class GthReclutamiento implements OnInit {
    */
   soloNuevas = false;
 
+  /**
+   * Desplegables del panel de filtros. Sus opciones se arman con lo que ya está en la bandeja
+   * (ver `armarOpcionesFiltro`): la lista llega entera en la misma petición y así ninguna opción
+   * puede dejar la tabla vacía. Se recalculan al cargar y no en un getter, que le entregaría un
+   * array nuevo al @Input `options` en cada ciclo de detección de cambios.
+   */
+  readonly fTipo = new FiltroDesplegable();
+  readonly fEstado = new FiltroDesplegable();
+  readonly fArea = new FiltroDesplegable();
+  readonly fProyecto = new FiltroDesplegable();
+  readonly fPrioridad = new FiltroDesplegable();
+
   /** Requerimiento abierto en el modal de detalle (null = modal cerrado). */
   detalleId: number | null = null;
 
@@ -235,6 +253,7 @@ export class GthReclutamiento implements OnInit {
         this.pipeline = data.pipeline;
         this.solicitudes = data.solicitudes;
         this.prioridades = data.prioridades;
+        this.armarOpcionesFiltro();
         this.pager.reset();
         this.loaderService.hide();
       },
@@ -259,6 +278,9 @@ export class GthReclutamiento implements OnInit {
     s.prioridadNombre = this.prioridades.find((p) => p.id === prioridadId)?.nombre ?? s.prioridadNombre;
 
     this.service.updatePrioridad(s.requerimientoId, prioridadId).subscribe({
+      // La prioridad es lo único que se edita desde la propia tabla, así que es lo único que puede
+      // dejar desfasadas las opciones de su filtro (p. ej. quedarse sin ninguna «Sin prioridad»).
+      next: () => this.armarOpcionesFiltro(),
       error: (err: HttpErrorResponse) => {
         s.prioridadId = prevId;
         s.prioridadNombre = prevNombre;
@@ -275,13 +297,55 @@ export class GthReclutamiento implements OnInit {
   }
 
   // ── Filtros ────────────────────────────────────────────────────────────
+  /**
+   * Valor con el que el filtro «Prioridad» representa a las que todavía no tienen ninguna. La
+   * prioridad la asigna GTH desde la propia tabla, así que "las que faltan por priorizar" es
+   * justamente lo que hay que poder aislar.
+   */
+  private static readonly SIN_PRIORIDAD = 'Sin prioridad';
+
+  /** Opciones de los desplegables, sacadas de la bandeja que ya está en pantalla. */
+  private armarOpcionesFiltro(): void {
+    this.fEstado.actualizar(opcionesDe(this.solicitudes, (s) => s.estadoNombre));
+    this.fArea.actualizar(opcionesDe(this.solicitudes, (s) => s.area));
+    this.fProyecto.actualizar(opcionesDe(this.solicitudes, (s) => s.proyectoObra));
+    this.fTipo.actualizar(
+      opcionesTipo(
+        this.solicitudes.map((s) => ({
+          codigo: s.tipoRequerimientoCodigo,
+          nombre: s.tipoRequerimiento,
+          esFft: s.esFft,
+        })),
+      ),
+    );
+
+    // La prioridad no va por `opcionesDe`: se ordena como el catálogo (Alta → Media → Baja) y no
+    // alfabéticamente, y las que no tienen ninguna necesitan su propia opción.
+    const presentes = new Set(this.solicitudes.map((s) => s.prioridadNombre).filter(Boolean));
+    this.fPrioridad.actualizar([
+      ...this.prioridades
+        .filter((p) => presentes.has(p.nombre))
+        .map((p) => ({ value: p.nombre, label: p.nombre })),
+      ...(this.solicitudes.some((s) => !s.prioridadNombre)
+        ? [{ value: GthReclutamiento.SIN_PRIORIDAD, label: GthReclutamiento.SIN_PRIORIDAD }]
+        : []),
+    ]);
+  }
+
   get filtrosActivos(): number {
-    return (this.searchText.trim() ? 1 : 0) + (this.soloNuevas ? 1 : 0);
+    return (
+      (this.searchText.trim() ? 1 : 0) +
+      (this.soloNuevas ? 1 : 0) +
+      contarFiltrosActivos(this.fTipo, this.fEstado, this.fArea, this.fProyecto, this.fPrioridad)
+    );
   }
 
   limpiarFiltros(): void {
     this.searchText = '';
     this.soloNuevas = false;
+    for (const f of [this.fTipo, this.fEstado, this.fArea, this.fProyecto, this.fPrioridad]) {
+      f.limpiar();
+    }
     this.onFilterChange();
   }
 
@@ -291,28 +355,33 @@ export class GthReclutamiento implements OnInit {
 
   get filteredSolicitudes(): RequerimientoGthListItem[] {
     const q = this.searchText.trim();
-    let filtradas = this.solicitudes;
 
-    // "Solicitudes nuevas" = las que acaban de llegar a GTH. Con el paso previo de Gerencia
-    // General eso es VALIDACION_GTH; se sigue incluyendo NUEVO por los requerimientos anteriores
-    // a ese cambio (mismo criterio que el contador que calcula el backend).
-    if (this.soloNuevas)
-      filtradas = filtradas.filter(
-        (s) => s.estadoCodigo === 'NUEVO' || s.estadoCodigo === 'VALIDACION_GTH',
-      );
-
-    if (!q) return filtradas;
-    return filtradas.filter((s) =>
-      SearchInput.matches(
-        [s.codigo, s.puesto, s.area, s.proyectoObra, s.estadoNombre].filter(Boolean).join(' '),
+    return this.solicitudes.filter((s) => {
+      // "Solicitudes nuevas" = las que acaban de llegar a GTH. Con el paso previo de Gerencia
+      // General eso es VALIDACION_GTH; se sigue incluyendo NUEVO por los requerimientos anteriores
+      // a ese cambio (mismo criterio que el contador que calcula el backend).
+      if (this.soloNuevas && s.estadoCodigo !== 'NUEVO' && s.estadoCodigo !== 'VALIDACION_GTH')
+        return false;
+      if (!this.fEstado.coincide(s.estadoNombre)) return false;
+      if (!this.fArea.coincide(s.area)) return false;
+      if (!this.fProyecto.coincide(s.proyectoObra)) return false;
+      if (!this.fPrioridad.coincide(s.prioridadNombre ?? GthReclutamiento.SIN_PRIORIDAD)) return false;
+      // El ingreso directo es una opción más del mismo desplegable y se cruza con el tipo en vez
+      // de excluirlo, igual que la columna los muestra juntos (ver `coincideTipo`).
+      if (!coincideTipo(this.fTipo.valor, [s.tipoRequerimientoCodigo], s.esFft)) return false;
+      if (!q) return true;
+      return SearchInput.matches(
+        [s.codigo, s.puesto, s.area, s.proyectoObra, s.estadoNombre, s.tipoRequerimiento]
+          .filter(Boolean)
+          .join(' '),
         q,
-      ),
-    );
+      );
+    });
   }
 
   /** Mensaje de lista vacía, compartido por la tabla (desktop) y las tarjetas (móvil). */
   get mensajeVacio(): string {
-    return this.searchText.trim() || this.soloNuevas
+    return this.filtrosActivos > 0
       ? 'Sin resultados para los filtros aplicados.'
       : 'Aún no hay solicitudes de contratación registradas.';
   }
@@ -354,4 +423,7 @@ export class GthReclutamiento implements OnInit {
 
   // ── Colores del badge de estado (compartidos con el modal de detalle) ───
   estadoColors = estadoColors;
+
+  /** Ícono y color de la columna «Tipo»: los mismos que en Solicitud de Personal y Aprobaciones. */
+  readonly tipoEstilo = tipoRequerimientoEstilo;
 }

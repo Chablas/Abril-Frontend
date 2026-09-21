@@ -8,12 +8,21 @@ import { SectionTab, SectionTabs } from '../../../../shared/components/section-t
 import { NavigationService } from '../../../../core/navigation/navigation.service';
 import { GaCorreosConfig } from './correos/correos-config';
 import { GaDiasReembolsables } from './dias-reembolsables/dias-reembolsables';
-import { GaVisibilidad } from './visibilidad/visibilidad';
-import { VisibilidadAmbito } from './visibilidad/dtos/visibilidad.dto';
+import { VisibilidadAreas } from '../../../../shared/components/visibilidad-areas/visibilidad-areas';
 import { GaAsignacionesAreas } from './asignaciones-areas/asignaciones-areas';
 import { AsignacionAreaModo } from './asignaciones-areas/dtos/asignacion-area.dto';
 import { GaFirmas } from './firmas/firmas';
 import { CorreoPantalla } from './correos/dtos/ga-correo.dto';
+
+/**
+ * Ámbito de la sección Visibilidad: el segmento del backend
+ * (`api/v1/gestion-administrativa/configuracion/visibilidad/{ambito}`) que dice sobre qué pantalla
+ * aplica lo que se guarda. Las tres conviven en la misma tabla sin pisarse.
+ *  • `salidas`      → qué solicitudes de salida ve el trabajador en Gestión de Salidas.
+ *  • `rendiciones`  → qué planillas ve en Gestión de Rendiciones.
+ *  • `consolidados` → qué Consolidados del S10 ve en Consolidados.
+ */
+type VisibilidadAmbito = 'salidas' | 'rendiciones' | 'consolidados';
 
 /** Ids de las secciones exteriores (las de arriba de las subsecciones de cada correo). */
 type SeccionId =
@@ -84,7 +93,7 @@ interface PantallaDef {
     SectionTabs,
     GaCorreosConfig,
     GaDiasReembolsables,
-    GaVisibilidad,
+    VisibilidadAreas,
     GaAsignacionesAreas,
     GaFirmas,
   ],
@@ -130,7 +139,7 @@ export class GaPantallaConfiguracion implements OnInit {
         },
         {
           id: 'revisores',
-          label: 'Revisores',
+          label: 'Revisores de Áreas',
           featureKey: GaPantallaConfiguracion.FEATURE_REVISORES,
         },
       ],
@@ -221,7 +230,7 @@ export class GaPantallaConfiguracion implements OnInit {
   secciones: SectionTab[] = [];
 
   // Referencias a la sección activa (solo una existe a la vez por el *ngIf).
-  @ViewChild(GaVisibilidad) private visibilidadCmp?: GaVisibilidad;
+  @ViewChild(VisibilidadAreas) private visibilidadCmp?: VisibilidadAreas;
   @ViewChild(GaAsignacionesAreas) private asignacionesCmp?: GaAsignacionesAreas;
 
   constructor(
@@ -261,8 +270,9 @@ export class GaPantallaConfiguracion implements OnInit {
     return this.def.textoSinCorreos ?? 'Esta pantalla no origina correos.';
   }
 
-  get visibilidadAmbito(): VisibilidadAmbito {
-    return this.def.visibilidadAmbito ?? 'salidas';
+  /** Backend de la sección Visibilidad de esta pantalla (la sección es compartida). */
+  get visibilidadEndpoint(): string {
+    return `api/v1/gestion-administrativa/configuracion/visibilidad/${this.def.visibilidadAmbito ?? 'salidas'}`;
   }
 
   /** Modo de la sección de asignaciones por área que está activa. */
@@ -297,7 +307,7 @@ export class GaPantallaConfiguracion implements OnInit {
   // ── Filtros de la sección activa ────────────────────────────────────────
   // Solo las secciones con tabla los tienen; en el resto el botón no se dibuja.
 
-  private get cmpConFiltros(): GaVisibilidad | GaAsignacionesAreas | undefined {
+  private get cmpConFiltros(): VisibilidadAreas | GaAsignacionesAreas | undefined {
     if (this.mostrandoVisibilidad) return this.visibilidadCmp;
     if (this.mostrandoAsignaciones) return this.asignacionesCmp;
     return undefined;

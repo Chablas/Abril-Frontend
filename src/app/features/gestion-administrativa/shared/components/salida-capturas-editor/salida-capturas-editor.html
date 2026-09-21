@@ -49,7 +49,7 @@
           class="abril-field-input"
           type="number"
           step="0.01"
-          min="0"
+          min="0.01"
           placeholder="0.00"
           [disabled]="edicion.guardando"
           [(ngModel)]="fila.monto" />
@@ -107,7 +107,7 @@
   Aún no hay capturas en este trayecto.
 </div>
 <!-- El monto de catálogo habla de qué subir, así que solo tiene sentido donde se puede subir. -->
-<div *ngIf="editable && trayecto.montoCatalogo !== null"
+<div *ngIf="editable && trayecto.montoCatalogo !== null && trayecto.montoCatalogo > 0"
      class="text-xs bg-[#DBEAFE] border border-[#BFDBFE] rounded px-2 py-1 flex items-center gap-1.5" style="color:var(--color-abril-accent)">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
     <circle cx="12" cy="12" r="10"/>
@@ -117,6 +117,17 @@
     Este trayecto tiene <b>monto de catálogo S/ {{ trayecto.montoCatalogo | number:'1.2-2' }}</b> —
     subir capturas es opcional.
   </span>
+</div>
+
+<!-- Tarifario en S/ 0.00: el recorrido no cuesta movilidad, así que el trayecto no deja fila en
+     la planilla. Se puede rendir igual subiendo una captura, que manda sobre el tarifario. -->
+<div *ngIf="editable && trayecto.montoCatalogo === 0 && edicion.capturasDe(trayecto.id).length === 0"
+     class="text-xs bg-[#F3F4F6] border border-[#E5E7EB] rounded px-2 py-1 flex items-center gap-1.5 text-gray-600">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0">
+    <circle cx="12" cy="12" r="10"/>
+    <path stroke-linecap="round" d="M12 8v4m0 4h.01"/>
+  </svg>
+  <span>Monto de catálogo S/ 0.00: sin capturas, <b>no entra en la rendición</b>.</span>
 </div>
 
 <!-- ── Filas nuevas (imagen + monto) ────────────────────────────────────── -->
@@ -147,7 +158,7 @@
         <label class="abril-field-label">Monto (S/)</label>
         <input type="number"
                step="0.01"
-               min="0"
+               min="0.01"
                placeholder="0.00"
                class="abril-field-input"
                [disabled]="edicion.guardando"
