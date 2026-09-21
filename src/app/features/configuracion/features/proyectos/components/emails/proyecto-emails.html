@@ -1,4 +1,4 @@
-<app-base-modal *ngIf="open" [title]="'Emails SSOMA'" width="w-full sm:w-[640px]" (closeModal)="close()">
+﻿<app-base-modal *ngIf="open" [title]="'Emails SSOMA'" width="w-full sm:w-[640px]" (closeModal)="close()">
 
   <div class="flex flex-col gap-[14px] mt-2">
 
@@ -28,7 +28,7 @@
 
       <div class="flex flex-col">
         <app-search-select
-          label="Coordinador administrativo"
+          label="Administrador de obra"
           [options]="residentes"
           valueField="workerId"
           displayField="nombreCompleto"

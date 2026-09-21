@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+﻿import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -31,6 +31,7 @@ type SeccionId =
   | 'recordatorios'
   | 'visibilidad'
   | 'revisores'
+  | 'revisores-rendicion'
   | 'consolidadores'
   | 'firmas';
 
@@ -147,8 +148,19 @@ export class GaPantallaConfiguracion implements OnInit {
     rendiciones: {
       nombre: 'Mis Rendiciones',
       volverA: '/gestion-administrativa/rendiciones',
-      subtitulo: 'Los correos que el trabajador dispara sobre su planilla.',
-      secciones: [GaPantallaConfiguracion.SECCION_CORREOS],
+      subtitulo:
+        'Los correos que el trabajador dispara sobre su planilla y quién aprueba y firma lo que sigue.',
+      secciones: [
+        GaPantallaConfiguracion.SECCION_CORREOS,
+        // Gemela de la de Solicitud de Salidas, pero para lo que pasa DESPUÉS de rendir: la
+        // primera revisión y la firma del consolidado. Comparte su featureKey porque es la misma
+        // clase de configuración y no valía la pena un permiso nuevo para separarlas.
+        {
+          id: 'revisores-rendicion',
+          label: 'Revisores de Áreas',
+          featureKey: GaPantallaConfiguracion.FEATURE_REVISORES,
+        },
+      ],
     },
     'gestion-salidas': {
       nombre: 'Gestión de Salidas',
@@ -277,7 +289,9 @@ export class GaPantallaConfiguracion implements OnInit {
 
   /** Modo de la sección de asignaciones por área que está activa. */
   get asignacionModo(): AsignacionAreaModo {
-    return this.seccionActiva === 'consolidadores' ? 'consolidadores' : 'revisores';
+    if (this.seccionActiva === 'consolidadores') return 'consolidadores';
+    if (this.seccionActiva === 'revisores-rendicion') return 'revisoresRendicion';
+    return 'revisores';
   }
 
   get mostrandoCorreos(): boolean {
@@ -297,7 +311,9 @@ export class GaPantallaConfiguracion implements OnInit {
   }
 
   get mostrandoAsignaciones(): boolean {
-    return this.seccionActiva === 'revisores' || this.seccionActiva === 'consolidadores';
+    return this.seccionActiva === 'revisores'
+      || this.seccionActiva === 'revisores-rendicion'
+      || this.seccionActiva === 'consolidadores';
   }
 
   get mostrandoFirmas(): boolean {

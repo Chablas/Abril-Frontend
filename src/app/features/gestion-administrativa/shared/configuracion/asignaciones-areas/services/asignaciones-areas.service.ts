@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../../environments/environment';
@@ -10,14 +10,16 @@ import {
 } from '../dtos/asignacion-area.dto';
 
 /**
- * Asignaciones de personas por área. Todas las operaciones reciben el `modo` porque hay dos
- * pantallas con el mismo contrato —Revisores de Áreas y Consolidadores de Áreas— y cada una tiene
- * su propio endpoint.
+ * Asignaciones de personas por área. Todas las operaciones reciben el `modo` porque hay TRES
+ * pantallas con el mismo contrato —Revisores de Áreas (quién aprueba la salida), Revisores de
+ * Rendiciones (quién aprueba la primera revisión y firma el consolidado) y Consolidadores de
+ * Áreas— y cada una tiene su propio endpoint.
  */
 @Injectable({ providedIn: 'root' })
 export class AsignacionesAreasService {
   private static readonly SEGMENTO: Record<AsignacionAreaModo, string> = {
     revisores: 'revisores-areas',
+    revisoresRendicion: 'revisores-areas-rendicion',
     consolidadores: 'consolidadores-areas',
   };
 

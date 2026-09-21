@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+﻿import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
@@ -18,6 +18,9 @@ import {
 interface AsignadoRow {
   workerId: number | null;
   active: boolean;
+  /** Solo se usan en Revisores de Rendiciones; en las otras pantallas viajan en true. */
+  apruebaPrimeraRevision: boolean;
+  apruebaConsolidado: boolean;
 }
 
 /**
@@ -59,9 +62,17 @@ export class AsignacionesAreasEditar implements OnInit {
 
   /** Aviso de estado de una línea: qué significa el orden en este modo. */
   get avisoRegla(): string {
+    if (this.esModoRendicion) {
+      return 'Todos los marcados tienen que aprobar, en el orden de la lista.';
+    }
     return this.ganaSoloUno
       ? 'Se usa el primero activo; el resto queda de respaldo.'
       : 'Todos los activos quedan habilitados para consolidar.';
+  }
+
+  /** Las dos casillas por persona solo existen en Revisores de Rendiciones. */
+  get esModoRendicion(): boolean {
+    return this.modo === 'revisoresRendicion';
   }
 
   constructor(
@@ -74,7 +85,14 @@ export class AsignacionesAreasEditar implements OnInit {
     const iniciales = this.asignadosIniciales ?? this.area.asignados ?? [];
     this.rows = [...iniciales]
       .sort((a, b) => a.ordenPrioridad - b.ordenPrioridad)
-      .map((a) => ({ workerId: a.workerId, active: a.active }));
+      .map((a) => ({
+        workerId: a.workerId,
+        active: a.active,
+        // Los asignados que vienen de las otras dos pantallas no traen las banderas: por defecto
+        // interviene en los dos pasos, que es lo que la columna de la BD ya asume.
+        apruebaPrimeraRevision: a.apruebaPrimeraRevision ?? true,
+        apruebaConsolidado: a.apruebaConsolidado ?? true,
+      }));
     if (this.rows.length === 0) this.agregar();
   }
 
@@ -85,7 +103,7 @@ export class AsignacionesAreasEditar implements OnInit {
   }
 
   agregar(): void {
-    this.rows.push({ workerId: null, active: true });
+    this.rows.push({ workerId: null, active: true, apruebaPrimeraRevision: true, apruebaConsolidado: true });
   }
 
   quitar(index: number): void {
@@ -119,6 +137,8 @@ export class AsignacionesAreasEditar implements OnInit {
           workerId: r.workerId!,
           ordenPrioridad: i + 1,
           active: r.active,
+          apruebaPrimeraRevision: r.apruebaPrimeraRevision,
+          apruebaConsolidado: r.apruebaConsolidado,
         })),
       })
       .subscribe({

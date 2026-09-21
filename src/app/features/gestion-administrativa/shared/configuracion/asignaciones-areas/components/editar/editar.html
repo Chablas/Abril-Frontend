@@ -1,4 +1,4 @@
-<app-base-modal
+﻿<app-base-modal
   [title]="titulo"
   width="w-[680px]"
   [preventCloseWhenDirty]="true"
@@ -39,6 +39,26 @@
                  (change)="row.active = !row.active" />
           Activo
         </label>
+
+        <!-- En qué paso interviene. Solo en Revisores de Rendiciones: en obra el administrador
+             revisa la planilla y firma, y el residente solo firma. -->
+        <ng-container *ngIf="esModoRendicion">
+          <label class="shrink-0 flex items-center gap-[6px] text-xs text-gray-600 cursor-pointer select-none"
+                 title="Su aprobación hace falta en la primera revisión de la planilla">
+            <input type="checkbox" class="w-4 h-4 accent-[var(--color-abril-standard)] cursor-pointer"
+                   [checked]="row.apruebaPrimeraRevision"
+                   (change)="row.apruebaPrimeraRevision = !row.apruebaPrimeraRevision" />
+            1.ª revisión
+          </label>
+
+          <label class="shrink-0 flex items-center gap-[6px] text-xs text-gray-600 cursor-pointer select-none"
+                 title="Su firma hace falta en el consolidado y su planilla grupal">
+            <input type="checkbox" class="w-4 h-4 accent-[var(--color-abril-standard)] cursor-pointer"
+                   [checked]="row.apruebaConsolidado"
+                   (change)="row.apruebaConsolidado = !row.apruebaConsolidado" />
+            Consolidado
+          </label>
+        </ng-container>
 
         <!-- Subir / bajar prioridad -->
         <div class="shrink-0 flex flex-col">

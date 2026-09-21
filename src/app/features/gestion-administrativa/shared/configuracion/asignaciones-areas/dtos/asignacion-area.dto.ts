@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Las dos pantallas que asignan PERSONAS A ÁREAS con el mismo algoritmo:
  *  • `revisores`      → quién aprueba las salidas de los trabajadores del área (Solicitud de
  *                       Salidas · Configuración).
@@ -8,7 +8,7 @@
  * Comparten tabla, árbol, modal y contrato. La única diferencia es cuántos de los asignados quedan
  * vigentes: en revisores gana el primer activo, en consolidadores quedan todos.
  */
-export type AsignacionAreaModo = 'revisores' | 'consolidadores';
+export type AsignacionAreaModo = 'revisores' | 'revisoresRendicion' | 'consolidadores';
 
 /** Una persona asignada a mano a un área (fila viva de la tabla de asignaciones). */
 export interface AreaAsignadoDTO {
@@ -21,6 +21,13 @@ export interface AreaAsignadoDTO {
   ordenPrioridad: number;
   /** false = no se considera (ej. ausencia temporal). */
   active: boolean;
+  /**
+   * Solo en Revisores de Rendiciones: su visto bueno hace falta en la PRIMERA REVISIÓN. Con varias
+   * personas marcadas, todas tienen que aprobar.
+   */
+  apruebaPrimeraRevision: boolean;
+  /** Solo en Revisores de Rendiciones: su firma hace falta en el CONSOLIDADO. */
+  apruebaConsolidado: boolean;
 }
 
 /**
@@ -75,6 +82,12 @@ export interface AreaAsignacionItemDTO {
   efectivos: AreaEfectivoDTO[];
   /** true = el área se subdivide por proyecto (se muestran subfilas por proyecto). */
   filtraPorProyecto: boolean;
+  /**
+   * Solo con `filtraPorProyecto` en true: el consolidado y la planilla grupal los firma el revisor
+   * de la OBRA (el mismo que aprueba las salidas) en vez del revisor del área. Con obras mezcladas
+   * en un mismo documento no hay revisor de obra único y firma igual el del área.
+   */
+  firmaConsolidadoPorProyecto: boolean;
   /** TODOS los proyectos activos con lo suyo resuelto (solo si filtraPorProyecto). */
   proyectos: AreaProyectoAsignacionesDTO[];
 }
@@ -110,4 +123,6 @@ export interface AreaAsignacionUpdateDTO {
 /** Cuerpo del PUT del flag "filtrar por proyecto". */
 export interface AreaFiltroProyectoUpdateDTO {
   filtraPorProyecto: boolean;
+  /** Se ignora (se guarda en false) si `filtraPorProyecto` viene en false. */
+  firmaConsolidadoPorProyecto: boolean;
 }

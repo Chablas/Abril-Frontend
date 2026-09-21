@@ -1,4 +1,4 @@
-<!-- Sección embebida en la configuración de una pantalla: el header y el disparador de
+﻿<!-- Sección embebida en la configuración de una pantalla: el header y el disparador de
      filtros viven en el contenedor (`pantalla-configuracion`). -->
 <div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
 
@@ -10,6 +10,7 @@
           <th>Área</th>
           <th>Área padre</th>
           <th class="text-center w-[150px]">Filtrar por proyecto</th>
+          <th class="text-center w-[130px]" *ngIf="esModoRevisores">Firma por obra</th>
           <th class="w-[320px]">{{ columnaEfectivos }}</th>
           <th class="text-center w-[170px]">Acciones</th>
         </tr>
@@ -33,6 +34,18 @@
                      [disabled]="!puedeGestionar"
                      (change)="toggleFiltroProyecto(r)"
                      title="Si se activa, el área se subdivide por proyecto" />
+            </td>
+            <!-- Solo tiene sentido en un área subdividida: sin obras no hay revisor de obra al
+                 que bajarle la firma, así que en el resto la celda queda vacía. -->
+            <td class="text-center" *ngIf="esModoRevisores">
+              <input *ngIf="r.filtraPorProyecto; else sinFirmaPorObra"
+                     type="checkbox" class="w-4 h-4 accent-[var(--color-abril-standard)]"
+                     [class.cursor-pointer]="puedeGestionar"
+                     [checked]="r.firmaConsolidadoPorProyecto"
+                     [disabled]="!puedeGestionar"
+                     (change)="toggleFirmaPorProyecto(r)"
+                     title="Si se activa, el consolidado y la planilla grupal los firma el revisor de la obra, el mismo que aprueba las salidas. Con obras mezcladas firma el revisor del área." />
+              <ng-template #sinFirmaPorObra><span class="text-gray-300">—</span></ng-template>
             </td>
             <td class="text-gray-700">
               <ng-container *ngIf="primero(r.efectivos) as e; else sinEfectivoArea">
@@ -64,6 +77,7 @@
               </td>
               <td class="text-gray-400 text-[12px]">Proyecto</td>
               <td></td>
+              <td *ngIf="esModoRevisores"></td>
               <td class="text-gray-700">
                 <ng-container *ngIf="primero(proj.efectivos) as e; else sinEfectivoProj">
                   <span>{{ e.nombre | titleCase }}</span>
@@ -88,7 +102,7 @@
         </ng-container>
 
         <tr *ngIf="filteredRows.length === 0">
-          <td colspan="5" class="text-center py-[40px] text-gray-400 text-sm">
+          <td [attr.colspan]="esModoRevisores ? 6 : 5" class="text-center py-[40px] text-gray-400 text-sm">
             {{
               filtrosActivos > 0
                 ? 'Sin resultados.'
