@@ -179,6 +179,12 @@ export interface DetalleRequerimientoGth {
    */
   candidatosAprobados: CandidatoAprobado[];
   /**
+   * CVs ya enviados que esperan la decisión del área solicitante. GTH puede mandar CVs en
+   * cualquier fase del proceso, así que un requerimiento en entrevistas o en decisión de
+   * finalistas puede tener a la vez candidatos recién enviados: son estos.
+   */
+  candidatosPendientes: CandidatoPendiente[];
+  /**
    * Candidatos rechazados en cualquier etapa del proceso, incluidos los de long lists anteriores.
    * Alimentan la sección "Historial de candidatos rechazados".
    */
@@ -310,6 +316,19 @@ export interface CartaOfertaEnviar {
  */
 export interface CartaOfertaAccionResult extends EstadoTransicionResult {
   cartaOferta: CartaOfertaRequerimiento | null;
+}
+
+/**
+ * CV enviado que espera la decisión del área solicitante. Hasta que la tenga no hay nada más que
+ * hacer con él: no tiene formulario, ni Multitest, ni entrevista.
+ */
+export interface CandidatoPendiente {
+  candidatoId: number;
+  nombre: string;
+  cvNombre: string | null;
+  cvUrl: string | null;
+  /** Cuándo se le envió al solicitante (ISO, hora Perú). */
+  enviadoEn: string;
 }
 
 /** Candidato aprobado por el solicitante, como lo ve GTH en la fase "Long list aprobada". */
