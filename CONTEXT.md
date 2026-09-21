@@ -5775,3 +5775,20 @@ No se corrió `ng build` en esta sesión (regla del proyecto). No se probó en n
 
 ### Pendiente
 - Nada de este repo. Ver `Abril_Backend/CONTEXT.md` (mismo día) por los 4 casos de ficha duplicada pendientes de revisión de GTH/SSOMA.
+
+## Sesión 2026-09-21 — Investigación EMO "Falta" pese a vigente + fecha de subida en tarjetas de Bandeja
+
+### Contexto
+Reporte del usuario: en Control de Acceso, varios trabajadores de contratistas aparecen "No Autorizado" con el Certificado de Aptitud (EMO) como documento faltante, aunque la empresa dice haber subido el certificado con fecha vigente. Investigación (con agentes) en ambos repos; hallazgos completos en `Abril_Backend/CONTEXT.md` (mismo día). Resumen: no es un bug de cálculo de fechas — el ítem EMO de contratistas queda en `estado = "Enviado"` (pendiente de aprobación manual) y el catálogo `ss_item_trabajador` lo marca `responsable = "SSOMA"`, por lo que solo usuarios con rol `ADMINISTRADOR_SSOMA`/`ADMINISTRADOR_UDP` pueden aprobarlo desde Bandeja/Trabajadores — si nadie con ese rol revisa la cola, se acumula (confirmado con SQL: 20+ EMOs "Enviado" sin aprobar, algunos de semanas).
+
+### Cambios (este repo)
+- Tarjetas de la lista de Bandeja ahora muestran "Subido: DD/MM/YYYY" bajo el nombre del entregable (`bandeja.html`), usando el campo `fechaEnvio` que el DTO ya traía del backend pero no se pintaba en la lista (solo existía en el panel de detalle, agregado en la sesión 2026-09-16). Estilo nuevo `.bc-fecha-envio` en `bandeja.css`.
+
+### Archivos clave
+- `features/habilitacion/pages/bandeja/bandeja.html`, `bandeja.css`
+
+### Verificado
+`ng build` → 0 errores, solo warnings preexistentes de terceros. No se probó en navegador — el usuario verifica visualmente él mismo.
+
+### Pendiente
+- Confirmar con el equipo si hay usuarios con rol `ADMINISTRADOR_SSOMA`/`ADMINISTRADOR_UDP` cubriendo la revisión de EMOs de contratistas — si no, ese es el cuello de botella real del backlog, no un bug de código.
