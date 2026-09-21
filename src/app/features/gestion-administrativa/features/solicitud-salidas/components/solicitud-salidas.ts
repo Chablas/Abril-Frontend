@@ -15,8 +15,6 @@ import {
 } from '../dtos/solicitud-salida-list-item.dto';
 import { MesRendicionDto } from '../dtos/solicitud-salida-filter-data.dto';
 import { RendirResultDto } from '../dtos/solicitud-salida-rendir.dto';
-import { CorreoAvisoDto } from '../../../shared/correo-aviso';
-import { confirmarConCorreos } from '../../../shared/confirmar-correos';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SalidaDetalleModal } from '../../../shared/components/salida-detalle-modal/salida-detalle-modal';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
@@ -172,14 +170,6 @@ export class SolicitudSalidas implements OnInit {
    */
   resumen: ResumenRendicionDto = { aptasParaRendir: 0, capturasIncompletas: 0, observadas: 0 };
 
-  /**
-   * A quién le llegan los correos de «Rendir» (el aviso a la jefatura y el acuse al trabajador), ya
-   * resueltos por el backend con Configuración → Correos. Son los mismos para toda la pantalla
-   * —está acotada a un solo trabajador—, así que llegan con filter-data y los usan los tres
-   * botones de rendir (barra, fila y detalle) sin pedirlos otra vez.
-   */
-  correosRendir: CorreoAvisoDto[] = [];
-
   get filtrosActivos(): number {
     let n = 0;
     if (this.filters.lugarProyectoId != null)  n++;
@@ -245,7 +235,6 @@ export class SolicitudSalidas implements OnInit {
           { id: null, nombreDisplay: 'Todos los proyectos' },
           ...[...data.lugaresProyecto].sort((a, b) => a.nombreDisplay.localeCompare(b.nombreDisplay)),
         ];
-        this.correosRendir = data.correosRendir ?? [];
         this.aplicarPeriodos(data.mesesRendicion ?? []);
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
@@ -604,7 +593,7 @@ export class SolicitudSalidas implements OnInit {
 
   /**
    * Lo mismo, pero disparado desde el botón "Rendir" del modal de detalle. Pasa por el mismo camino
-   * que el de la columna —confirmación con los correos, envío a primera revisión y recarga— para
+   * que el de la columna —misma confirmación, mismo envío y misma recarga— para
    * que las dos formas de rendir una salida no puedan comportarse distinto. El modal se cierra solo
    * si la rendición llega a hacerse (lo hace `trasRendir`): cancelar la confirmación lo deja abierto.
    */
@@ -613,25 +602,25 @@ export class SolicitudSalidas implements OnInit {
   }
 
   /**
-   * Qué decir cuando no sale ningún correo. Rendir igual envía la planilla a revisión (la jefatura
-   * la ve en su bandeja), y los correos se administran donde se reenvía una planilla subsanada.
-   */
-  private static readonly SIN_CORREOS_RENDIR =
-    'No sale ningún correo: está apagado en Mis Rendiciones → Configuración → Correos.';
-
-  /**
    * Confirma y rinde las solicitudes indicadas: el backend genera la planilla —sin descargarla— y
-   * la envía a primera revisión con sus correos, cuyos destinatarios se nombran acá.
+   * la envía a primera revisión con sus correos.
+   *
+   * La confirmación es a propósito GENÉRICA: para el usuario de producción rendir es el final del
+   * camino, porque lo que viene después (primera revisión, consolidado, corrección del S10 y
+   * reembolso) todavía no está aprobado. Por eso no nombra a la jefatura, ni la revisión, ni
+   * anticipa los correos que salen. Cuando el flujo se apruebe, esto vuelve a `confirmarConCorreos`
+   * con los destinatarios, como el resto de las pantallas.
    */
   private async rendir(ids: number[]): Promise<void> {
     if (ids.length === 0) return;
 
-    const result = await confirmarConCorreos({
-      titulo: ids.length === 1 ? '¿Rendir esta solicitud?' : `¿Rendir ${ids.length} solicitudes?`,
-      nota: 'La planilla pasa a la primera revisión de tu jefatura.',
-      avisos: this.correosRendir,
-      sinNadie: SolicitudSalidas.SIN_CORREOS_RENDIR,
+    const result = await Swal.fire({
+      icon: 'question',
+      title: ids.length === 1 ? '¿Rendir esta solicitud?' : `¿Rendir ${ids.length} solicitudes?`,
+      showCancelButton: true,
       confirmButtonText: 'Sí, rendir',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0F6E56',
     });
     if (!result.isConfirmed) return;
 
@@ -655,12 +644,14 @@ export class SolicitudSalidas implements OnInit {
     const mes = this.mesSeleccionado;
     if (!mes) return;
 
-    const result = await confirmarConCorreos({
-      titulo: `¿Rendir tus salidas de ${mes.label}?`,
-      nota: 'Entran solo las salidas aptas y la planilla pasa a la primera revisión de tu jefatura.',
-      avisos: this.correosRendir,
-      sinNadie: SolicitudSalidas.SIN_CORREOS_RENDIR,
+    const result = await Swal.fire({
+      icon: 'question',
+      title: `¿Rendir tus salidas de ${mes.label}?`,
+      text: 'Entran solo las salidas aptas del mes.',
+      showCancelButton: true,
       confirmButtonText: 'Sí, rendir',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#0F6E56',
     });
     if (!result.isConfirmed) return;
 
@@ -677,8 +668,10 @@ export class SolicitudSalidas implements OnInit {
 
   /**
    * Avisa cómo quedó la rendición y refresca la tabla. Si la planilla se generó pero no se pudo
-   * enviar a revisión, el aviso va en naranja con el motivo: lo rendido ya está hecho y se envía
-   * desde Mis Rendiciones.
+   * enviar a revisión, el aviso va en naranja: lo rendido ya está hecho igual.
+   *
+   * El texto no usa el `message` del backend porque nombra al revisor y la primera revisión; por
+   * la misma razón que la confirmación (ver `rendir`), acá solo se dice qué pasó con la planilla.
    */
   private trasRendir(res: RendirResultDto): void {
     // Lo que se acaba de rendir ya no está pendiente: la selección del mes deja de tener sentido
@@ -693,7 +686,9 @@ export class SolicitudSalidas implements OnInit {
     Swal.fire({
       icon: res.enviadaARevision ? 'success' : 'warning',
       title: res.rendidas === 1 ? '1 solicitud rendida' : `${res.rendidas} solicitudes rendidas`,
-      text: res.message,
+      text: res.enviadaARevision
+        ? `La planilla ${res.codigo} quedó registrada en Mis Rendiciones.`
+        : `La planilla ${res.codigo} quedó registrada en Mis Rendiciones, pero incompleta.`,
     });
     this.recargar();
   }
