@@ -5804,3 +5804,26 @@ Pedido de SSOMA: catálogo autorizado de Equipo de Protección Personal, visible
 - Cargar las imágenes reales de cada EPP (hoy la mayoría está sin foto).
 - Completar modelos/marcas de los ítems que quedaron "Sin modelo/marca registrado" (los que en el Excel decían "Según estándar de logística").
 - Evaluar si conviene un flujo de aprobación sobre el Pedido (hoy el estado "Generado" es solo informativo, sin aprobar/rechazar).
+
+## Sesión 2026-09-20 — Pantalla Hoja de Ruta de Contratistas (SSOMA)
+
+### Contexto
+Consumo del nuevo backend de cumplimiento semanal por contratista (ver `Abril_Backend/CONTEXT.md`, mismo día).
+
+### Cambios
+- Nuevo feature `features/ssoma/gestion/hoja-ruta/` en `/ssoma/gestion/hoja-ruta`, permiso `ssoma.gestion.hoja-ruta` (registrado en `feature`/`role_feature` vía SQL manual, mismos roles que `ssoma.gestion.cumplimiento`).
+- Filtros (Proyecto, Contratista, Año, Semana) en una sola fila bajo el header — a pedido explícito, en vez del patrón estándar `app-filter-trigger`/`app-filter-modal` usado en el resto de SSOMA.
+- Proyecto se precarga con `CharlasService.getMiProyecto()` (mismo criterio que "Charlas y Capacitaciones": resuelve por `WorkerProyecto` del usuario logueado — si el usuario no tiene una asignación de proyecto única, como un Jefe SSOMA corporativo, queda sin precargar y hay que elegirlo a mano).
+- Combo de Contratista se recarga en cada cambio de Proyecto contra `GET /api/v1/ssoma/hoja-ruta/contratistas?proyectoId=`, que solo trae contratistas con trabajador activo en ese proyecto (excluye Abril) — no el catálogo completo de empresas.
+- Cada cambio de filtro regenera el resumen automáticamente (sin botón "Buscar" aparte); "Actualizar" del header refresca.
+
+### Archivos clave
+- `features/ssoma/gestion/hoja-ruta/hoja-ruta.dtos.ts`/`.service.ts`/`.routes.ts`.
+- `features/ssoma/gestion/hoja-ruta/pages/resumen/hoja-ruta-resumen.ts`/`.html`/`.css`.
+- `core/navigation/navigation.service.ts`, `features/ssoma/ssoma.routes.ts` — alta en menú/rutas.
+
+### Verificado
+`ng build` → 0 errores, solo warnings preexistentes de terceros (canvg, flatpickr, tfjs). Probado en vivo por el usuario durante la sesión (filtros, autoselección de proyecto, generación del resumen).
+
+### Pendiente
+- No hay forma de precargar el contratista por defecto (no existe un "contratista actual" para un usuario de Abril) — queda siempre manual, por diseño.
