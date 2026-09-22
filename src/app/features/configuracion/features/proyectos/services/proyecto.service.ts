@@ -24,9 +24,13 @@ export class ProyectoService {
 
   getPaged(filter: ProjectFilterDto): Observable<PagedResponseDTO<ProjectDto>> {
     let params = new HttpParams().set('page', filter.page.toString());
+    if (filter.pageSize) params = params.set('pageSize', filter.pageSize.toString());
     if (filter.ruc) params = params.set('ruc', filter.ruc);
     if (filter.razonSocial) params = params.set('razonSocial', filter.razonSocial);
     if (filter.projectDescription) params = params.set('projectDescription', filter.projectDescription);
+    // null/undefined = todos: solo se manda cuando el filtro de estado está puesto.
+    if (filter.active !== null && filter.active !== undefined)
+      params = params.set('active', filter.active.toString());
     return this.http.get<PagedResponseDTO<ProjectDto>>(`${this.apiUrl}/paged`, {
       headers: this.headers,
       params,
