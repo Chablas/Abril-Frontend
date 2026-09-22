@@ -1,0 +1,124 @@
+<div class="lista-root">
+
+  <app-abril-page-header
+    badge="SSOMA · Residuos"
+    titulo="Gestión de Residuos"
+    subtitulo="Constancias finales de manejo de residuos"
+    [tabs]="tabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()"
+    [hasExtra]="true">
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <div class="lista-body">
+    <div *ngIf="!loading" class="resultados-contador">
+      {{ items.length }} {{ items.length === 1 ? 'constancia final encontrada' : 'constancias finales encontradas' }}
+    </div>
+
+    <div *ngIf="loading" class="skeleton-wrap">
+      <div *ngFor="let i of [1,2,3,4,5]" class="skeleton-row"></div>
+    </div>
+
+    <div *ngIf="!loading && pagedItems.length > 0" class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Proyecto</th>
+            <th>Fecha emisión</th>
+            <th>Observaciones</th>
+            <th>Archivo</th>
+            <th class="th-acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of pagedItems">
+            <td>{{ item.projectId }}</td>
+            <td>{{ item.fechaEmision | date:'dd/MM/yyyy' }}</td>
+            <td>{{ item.observaciones || '—' }}</td>
+            <td>
+              <a *ngIf="item.archivoUrl" [href]="item.archivoUrl" target="_blank" rel="noopener">
+                <i class="ti ti-file-download"></i> Ver
+              </a>
+              <span *ngIf="!item.archivoUrl">—</span>
+            </td>
+            <td class="col-acciones">
+              <button type="button" class="abril-action-btn abril-action-btn--danger" title="Eliminar" (click)="eliminar(item)">
+                <i class="ti ti-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && pagedItems.length === 0" class="empty-state">
+      <i class="ti ti-inbox empty-state__icon"></i>
+      <p class="empty-state__text">No se encontraron constancias finales registradas.</p>
+    </div>
+
+    <div class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="items.length"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="cambiarPagina($event)">
+      </app-paginator>
+    </div>
+  </div>
+
+  <app-fab label="Nueva constancia final" (clicked)="abrirNuevo()"></app-fab>
+</div>
+
+<app-abril-modal-panel
+  *ngIf="modalAbierto"
+  titulo="Nueva constancia final"
+  icono="ti-file-invoice"
+  variant="blue"
+  (closeModal)="cerrarModal()">
+  <form id="form-constancia-final" (ngSubmit)="guardar()">
+    <div class="abril-field">
+      <label class="abril-field-label">Proyecto</label>
+      <app-search-select
+        [options]="proyectos"
+        valueField="projectId"
+        displayField="projectDescription"
+        placeholder="Buscar proyecto..."
+        [value]="form.projectId"
+        (valueChange)="form.projectId = $event">
+      </app-search-select>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Fecha de emisión</label>
+      <input class="abril-field-input" type="date" [(ngModel)]="form.fechaEmision" name="fechaEmision" required />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Observaciones</label>
+      <textarea class="abril-field-input" rows="3" [(ngModel)]="form.observaciones" name="observaciones"></textarea>
+    </div>
+    <div class="abril-field" *ngIf="!editando">
+      <label class="abril-field-label">Archivo (requerido)</label>
+      <input type="file" (change)="onArchivoChange($event)" />
+    </div>
+  </form>
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+    <button type="submit" form="form-constancia-final" class="btn-guardar" [disabled]="guardando">
+      {{ guardando ? 'Guardando...' : 'Guardar' }}
+    </button>
+  </div>
+</app-abril-modal-panel>
+
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      valueField="projectId"
+      displayField="projectDescription"
+      placeholder="Buscar proyecto..."
+      [value]="filtroProjectId"
+      (valueChange)="filtroProjectId = $event; load()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

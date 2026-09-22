@@ -1,0 +1,234 @@
+<div class="detalle-root" *ngIf="declaracion as d">
+
+  <div class="detalle-header">
+    <button type="button" class="btn-volver" (click)="volver()"><i class="ti ti-arrow-left"></i> Declaraciones</button>
+    <div class="header-info">
+      <h2>{{ d.nombreContributor || ('Contributor #' + d.contributorId) }} — Periodo {{ d.periodoAnio }}</h2>
+      <span class="chip-estado" [ngClass]="d.estado === 'PRESENTADA' ? 'chip-estado--activo' : 'chip-estado--inactivo'">{{ d.estado }}</span>
+    </div>
+    <div class="header-acciones">
+      <button type="button" class="btn-secundario" (click)="recalcular(false)"><i class="ti ti-refresh"></i> Recalcular desde viajes</button>
+      <button type="button" class="btn-secundario" *ngIf="!esBorrador" (click)="recalcular(true)"><i class="ti ti-refresh-alert"></i> Forzar recálculo</button>
+      <button type="button" class="btn-guardar" *ngIf="esBorrador" (click)="abrirModalPresentar()"><i class="ti ti-send"></i> Marcar como presentada</button>
+      <button type="button" class="btn-secundario" *ngIf="!esBorrador" (click)="reabrir()"><i class="ti ti-lock-open"></i> Reabrir</button>
+    </div>
+  </div>
+
+  <div class="tabs-row">
+    <button type="button" class="tab-btn" [class.tab-btn--activo]="tab === 'cantidad'" (click)="cambiarTab('cantidad')">Cantidad de Residuos</button>
+    <button type="button" class="tab-btn" [class.tab-btn--activo]="tab === 'manejo'" (click)="cambiarTab('manejo')">Manejo del Residuo</button>
+    <button type="button" class="tab-btn" [class.tab-btn--activo]="tab === 'eo-rs'" (click)="cambiarTab('eo-rs')">EO-RS Intervinientes</button>
+  </div>
+
+  <!-- TAB: Cantidad de Residuos -->
+  <div class="tab-panel" *ngIf="tab === 'cantidad'">
+    <div class="panel-toolbar">
+      <p class="nota-ayuda">Acumulado del periodo anterior + generación mensual, por tipo de residuo (toneladas/año).</p>
+      <button type="button" class="btn-guardar btn-sm" *ngIf="esBorrador" (click)="abrirNuevoDetalle()"><i class="ti ti-plus"></i> Agregar tipo</button>
+    </div>
+    <div class="abril-table-wrap" *ngIf="d.detalles.length > 0">
+      <table class="abril-table tabla-mensual">
+        <thead>
+          <tr>
+            <th>Tipo de residuo</th>
+            <th>Acum. anterior</th>
+            <th *ngFor="let m of meses">{{ m.label }}</th>
+            <th>Total generado</th>
+            <th class="th-acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let det of d.detalles">
+            <td>{{ det.nombreResiduoTipo || nombreTipo(det.residuoTipoId) }}</td>
+            <td>{{ det.cantidadAcumuladaAnterior | number:'1.2-2' }}</td>
+            <td *ngFor="let m of meses">{{ det[m.key] | number:'1.2-2' }}</td>
+            <td class="col-total">{{ totalGenerado(det) | number:'1.2-2' }}</td>
+            <td class="col-acciones" *ngIf="esBorrador">
+              <button type="button" class="abril-action-btn" title="Editar" (click)="editarDetalle(det)"><i class="ti ti-pencil"></i></button>
+              <button type="button" class="abril-action-btn abril-action-btn--danger" title="Eliminar" (click)="eliminarDetalle(det)"><i class="ti ti-trash"></i></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="empty-state" *ngIf="d.detalles.length === 0">
+      <i class="ti ti-inbox empty-state__icon"></i>
+      <p>Sin tipos de residuo registrados aún. Usa "Recalcular desde viajes" o agrega uno manualmente.</p>
+    </div>
+  </div>
+
+  <!-- TAB: Manejo del Residuo -->
+  <div class="tab-panel" *ngIf="tab === 'manejo'">
+    <p class="nota-ayuda">La suma de las 6 categorías debe cuadrar contra el total generado del periodo.</p>
+    <div class="abril-table-wrap" *ngIf="d.detalles.length > 0">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Tipo de residuo</th>
+            <th *ngFor="let m of manejoCols">{{ m.label }}</th>
+            <th>Suma manejo</th>
+            <th>Total generado</th>
+            <th>Cuadre</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let det of d.detalles">
+            <td>{{ det.nombreResiduoTipo || nombreTipo(det.residuoTipoId) }}</td>
+            <td *ngFor="let m of manejoCols">{{ det[m.key] | number:'1.2-2' }}</td>
+            <td class="col-total">{{ totalManejo(det) | number:'1.2-2' }}</td>
+            <td>{{ totalGenerado(det) | number:'1.2-2' }}</td>
+            <td>
+              <span class="chip-estado" [ngClass]="manejoCuadra(det) ? 'chip-estado--activo' : 'chip-estado--vencido'">
+                {{ manejoCuadra(det) ? 'Cuadra' : 'No cuadra' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="empty-state" *ngIf="d.detalles.length === 0">
+      <i class="ti ti-inbox empty-state__icon"></i>
+      <p>Sin tipos de residuo registrados aún.</p>
+    </div>
+  </div>
+
+  <!-- TAB: EO-RS intervinientes -->
+  <div class="tab-panel" *ngIf="tab === 'eo-rs'">
+    <div class="panel-toolbar">
+      <p class="nota-ayuda">EO-RS que intervienen en cada etapa, con su N° de servicios y total transportado al año.</p>
+      <button type="button" class="btn-guardar btn-sm" *ngIf="esBorrador" (click)="abrirNuevoEoRs()"><i class="ti ti-plus"></i> Agregar EO-RS</button>
+    </div>
+    <div class="abril-table-wrap" *ngIf="d.eoRsIntervinientes.length > 0">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>EO-RS</th>
+            <th>Etapa</th>
+            <th>N° servicios/año</th>
+            <th>Total transportado (t)</th>
+            <th class="th-acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of d.eoRsIntervinientes">
+            <td>{{ item.nombreEoRs || ('EO-RS #' + item.eoRsId) }}</td>
+            <td>{{ etiquetaEtapa(item.etapa) }}</td>
+            <td>{{ item.numeroServiciosAnio }}</td>
+            <td>{{ item.totalResiduoTon | number:'1.2-2' }}</td>
+            <td class="col-acciones" *ngIf="esBorrador">
+              <button type="button" class="abril-action-btn" title="Editar" (click)="editarEoRs(item)"><i class="ti ti-pencil"></i></button>
+              <button type="button" class="abril-action-btn abril-action-btn--danger" title="Eliminar" (click)="eliminarEoRs(item)"><i class="ti ti-trash"></i></button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="empty-state" *ngIf="d.eoRsIntervinientes.length === 0">
+      <i class="ti ti-inbox empty-state__icon"></i>
+      <p>Sin EO-RS intervinientes registrados aún.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: detalle por tipo de residuo -->
+<app-abril-modal-panel
+  *ngIf="modalDetalleAbierto"
+  [titulo]="detalleEditandoId ? 'Editar detalle' : 'Agregar tipo de residuo'"
+  icono="ti-recycle"
+  variant="blue"
+  width="820px"
+  (closeModal)="cerrarModalDetalle()">
+  <form id="form-detalle" (ngSubmit)="guardarDetalle()">
+    <div class="abril-field">
+      <label class="abril-field-label">Tipo de residuo</label>
+      <select class="abril-field-input" [(ngModel)]="detalleForm.residuoTipoId" name="residuoTipoId" required [disabled]="!!detalleEditandoId">
+        <option [value]="0" disabled>Selecciona un tipo</option>
+        <option *ngFor="let t of tiposResiduo" [value]="t.id">{{ t.nombre }}</option>
+      </select>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Acumulado periodo anterior (t)</label>
+      <input class="abril-field-input" type="number" step="0.01" [(ngModel)]="detalleForm.cantidadAcumuladaAnterior" name="cantidadAcumuladaAnterior" />
+    </div>
+    <p class="seccion-titulo">Generación mensual (t)</p>
+    <div class="grid-meses">
+      <div class="abril-field" *ngFor="let m of meses">
+        <label class="abril-field-label">{{ m.label }}</label>
+        <input class="abril-field-input" type="number" step="0.01" [(ngModel)]="detalleForm[m.key]" [name]="m.key" />
+      </div>
+    </div>
+    <p class="seccion-titulo">Manejo del residuo (t)</p>
+    <div class="grid-meses">
+      <div class="abril-field" *ngFor="let m of manejoCols">
+        <label class="abril-field-label">{{ m.label }}</label>
+        <input class="abril-field-input" type="number" step="0.01" [(ngModel)]="detalleForm[m.key]" [name]="m.key" />
+      </div>
+    </div>
+  </form>
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-cancelar" (click)="cerrarModalDetalle()">Cancelar</button>
+    <button type="submit" form="form-detalle" class="btn-guardar" [disabled]="guardandoDetalle">
+      {{ guardandoDetalle ? 'Guardando...' : 'Guardar' }}
+    </button>
+  </div>
+</app-abril-modal-panel>
+
+<!-- Modal: EO-RS interviniente -->
+<app-abril-modal-panel
+  *ngIf="modalEoRsAbierto"
+  [titulo]="eoRsEditandoId ? 'Editar EO-RS interviniente' : 'Agregar EO-RS interviniente'"
+  icono="ti-truck"
+  variant="blue"
+  (closeModal)="cerrarModalEoRs()">
+  <form id="form-eo-rs" (ngSubmit)="guardarEoRs()">
+    <div class="abril-field">
+      <label class="abril-field-label">EO-RS</label>
+      <select class="abril-field-input" [(ngModel)]="eoRsForm.eoRsId" name="eoRsId" required>
+        <option [value]="0" disabled>Selecciona un EO-RS</option>
+        <option *ngFor="let e of eoRsCatalogo" [value]="e.id">{{ e.razonSocial }}</option>
+      </select>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Etapa</label>
+      <select class="abril-field-input" [(ngModel)]="eoRsForm.etapa" name="etapa" required>
+        <option value="RECOLECCION_TRANSPORTE">Recolección y transporte</option>
+        <option value="TRATAMIENTO">Tratamiento</option>
+        <option value="VALORIZACION">Valorización</option>
+      </select>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">N° de servicios al año</label>
+      <input class="abril-field-input" type="number" min="0" [(ngModel)]="eoRsForm.numeroServiciosAnio" name="numeroServiciosAnio" />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Total transportado (t/año)</label>
+      <input class="abril-field-input" type="number" step="0.01" min="0" [(ngModel)]="eoRsForm.totalResiduoTon" name="totalResiduoTon" />
+    </div>
+  </form>
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-cancelar" (click)="cerrarModalEoRs()">Cancelar</button>
+    <button type="submit" form="form-eo-rs" class="btn-guardar" [disabled]="guardandoEoRs">
+      {{ guardandoEoRs ? 'Guardando...' : 'Guardar' }}
+    </button>
+  </div>
+</app-abril-modal-panel>
+
+<!-- Modal: marcar presentada -->
+<app-abril-modal-panel
+  *ngIf="modalPresentarAbierto"
+  titulo="Marcar declaración como presentada"
+  icono="ti-send"
+  variant="blue"
+  (closeModal)="cerrarModalPresentar()">
+  <form id="form-presentar" (ngSubmit)="confirmarPresentar()">
+    <div class="abril-field">
+      <label class="abril-field-label">Fecha de presentación</label>
+      <input class="abril-field-input" type="date" [(ngModel)]="fechaPresentacion" name="fechaPresentacion" required />
+    </div>
+    <p class="nota-ayuda">Una vez presentada, la declaración no se puede recalcular ni editar sin reabrirla primero.</p>
+  </form>
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-cancelar" (click)="cerrarModalPresentar()">Cancelar</button>
+    <button type="submit" form="form-presentar" class="btn-guardar">Confirmar</button>
+  </div>
+</app-abril-modal-panel>

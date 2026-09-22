@@ -124,5 +124,10 @@ export const SSOMA_ROUTES: Routes = [
     loadChildren: () =>
       import('./gestion/hoja-ruta/hoja-ruta.routes').then((m) => m.HOJA_RUTA_ROUTES),
   },
+  {
+    path: 'gestion/residuos',
+    loadChildren: () =>
+      import('./gestion/residuos/residuos.routes').then((m) => m.RESIDUOS_ROUTES),
+  },
   { path: '', redirectTo: 'salud-ocupacional', pathMatch: 'full' },
 ];

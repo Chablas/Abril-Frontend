@@ -1,0 +1,180 @@
+<div class="lista-root">
+
+  <app-abril-page-header
+    badge="SSOMA · Residuos"
+    titulo="Gestión de Residuos"
+    subtitulo="Tipos de residuos"
+    [tabs]="tabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()"
+    [hasExtra]="true">
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <div class="lista-body">
+    <div *ngIf="!loading" class="resultados-contador">
+      {{ filteredItems.length }} {{ filteredItems.length === 1 ? 'tipo encontrado' : 'tipos encontrados' }}
+    </div>
+
+    <div *ngIf="loading" class="skeleton-wrap">
+      <div *ngFor="let i of [1,2,3,4,5]" class="skeleton-row"></div>
+    </div>
+
+    <div *ngIf="!loading && pagedItems.length > 0" class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Código Sigersol</th>
+            <th>Nombre</th>
+            <th>Peligrosidad</th>
+            <th>Factor vigente (m³ a Ton)</th>
+            <th>Estado</th>
+            <th class="th-acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of pagedItems">
+            <td>{{ item.codigoSigersol || '—' }}</td>
+            <td>{{ item.nombre }}</td>
+            <td>{{ item.esPeligroso ? 'Peligroso' : 'No peligroso' }}</td>
+            <td>{{ item.factorVigente ?? '—' }}</td>
+            <td>
+              <span class="chip-estado" [class.chip-estado--activo]="item.activo" [class.chip-estado--inactivo]="!item.activo">
+                {{ item.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="col-acciones">
+              <button type="button" class="abril-action-btn" title="Editar" (click)="abrirEditar(item)">
+                <i class="ti ti-pencil"></i>
+              </button>
+              <button type="button" class="abril-action-btn abril-action-btn--danger" title="Desactivar" (click)="eliminar(item)">
+                <i class="ti ti-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && pagedItems.length === 0" class="empty-state">
+      <i class="ti ti-inbox empty-state__icon"></i>
+      <p class="empty-state__text">No se encontraron tipos de residuos registrados.</p>
+    </div>
+
+    <div class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="filteredItems.length"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="cambiarPagina($event)">
+      </app-paginator>
+    </div>
+  </div>
+
+  <app-fab label="Nuevo tipo" (clicked)="abrirNuevo()"></app-fab>
+</div>
+
+<app-abril-modal-panel
+  *ngIf="modalAbierto"
+  [titulo]="editando ? 'Editar tipo de residuo' : 'Nuevo tipo de residuo'"
+  icono="ti-recycle"
+  variant="blue"
+  (closeModal)="cerrarModal()">
+  <form id="form-tipo-residuo" (ngSubmit)="guardar()">
+    <div class="abril-field">
+      <label class="abril-field-label">Código Sigersol</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.codigoSigersol" name="codigoSigersol" />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Nombre</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.nombre" name="nombre" required />
+    </div>
+    <label class="checkbox-label">
+      <input type="checkbox" [(ngModel)]="form.esPeligroso" name="esPeligroso" />
+      Es peligroso
+    </label>
+    <label class="checkbox-label">
+      <input type="checkbox" [(ngModel)]="form.activo" name="activo" />
+      Activo
+    </label>
+  </form>
+
+  <div *ngIf="editando" class="factores-panel">
+    <h4>Factores vigentes</h4>
+    <div *ngIf="cargandoFactores" class="text-sm text-gray-400">Cargando...</div>
+    <table *ngIf="!cargandoFactores" class="abril-table">
+      <thead>
+        <tr>
+          <th>Factor (m³ a Ton)</th>
+          <th>Vigencia desde</th>
+          <th>Vigencia hasta</th>
+          <th class="th-acciones">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let f of factores">
+          <td>{{ f.factorM3aTon }}</td>
+          <td>{{ f.vigenciaDesde | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ f.vigenciaHasta ? (f.vigenciaHasta | date: 'dd/MM/yyyy') : '—' }}</td>
+          <td class="col-acciones">
+            <button type="button" class="abril-action-btn" title="Editar" (click)="editarFactor(f)">
+              <i class="ti ti-pencil"></i>
+            </button>
+            <button type="button" class="abril-action-btn abril-action-btn--danger" title="Eliminar" (click)="eliminarFactor(f)">
+              <i class="ti ti-trash"></i>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="factores.length === 0">
+          <td colspan="4" class="text-center text-gray-400">Sin factores registrados.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <form id="form-factor" class="factor-form" (ngSubmit)="guardarFactor()">
+      <div class="abril-field">
+        <label class="abril-field-label">Factor (m³ a Ton)</label>
+        <input class="abril-field-input" type="number" step="0.0001" [(ngModel)]="factorForm.factorM3aTon" name="factorM3aTon" required />
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Vigencia desde</label>
+        <input class="abril-field-input" type="date" [(ngModel)]="factorForm.vigenciaDesde" name="vigenciaDesde" required />
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Vigencia hasta</label>
+        <input class="abril-field-input" type="date" [(ngModel)]="factorForm.vigenciaHasta" name="vigenciaHasta" />
+      </div>
+      <button type="submit" form="form-factor" class="btn-guardar">
+        {{ factorEditandoId ? 'Actualizar factor' : 'Agregar factor' }}
+      </button>
+    </form>
+  </div>
+
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+    <button type="submit" form="form-tipo-residuo" class="btn-guardar" [disabled]="guardando">
+      {{ guardando ? 'Guardando...' : 'Guardar' }}
+    </button>
+  </div>
+</app-abril-modal-panel>
+
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por nombre o código..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="activoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="activoFilter"
+      (valueChange)="activoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

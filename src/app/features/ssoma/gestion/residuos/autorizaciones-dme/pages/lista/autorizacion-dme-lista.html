@@ -1,0 +1,182 @@
+<div class="lista-root">
+
+  <app-abril-page-header
+    badge="SSOMA · Residuos"
+    titulo="Gestión de Residuos"
+    subtitulo="Autorizaciones de Disposición de Materiales de Excedente (DME)"
+    [tabs]="tabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()"
+    [hasExtra]="true">
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <div class="lista-body">
+    <div *ngIf="!loading" class="resultados-contador">
+      {{ filteredItems.length }} {{ filteredItems.length === 1 ? 'autorización encontrada' : 'autorizaciones encontradas' }}
+    </div>
+
+    <div *ngIf="loading" class="skeleton-wrap">
+      <div *ngFor="let i of [1,2,3,4,5]" class="skeleton-row"></div>
+    </div>
+
+    <div *ngIf="!loading && pagedItems.length > 0" class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>N° resolución</th>
+            <th>Municipalidad</th>
+            <th>Escombrera destino</th>
+            <th>Vigencia</th>
+            <th>Placas</th>
+            <th>Estado</th>
+            <th class="th-acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of pagedItems">
+            <td>{{ item.numeroResolucion }}</td>
+            <td>{{ item.municipalidad }}</td>
+            <td>{{ item.nombreEscombreraDestino || '—' }}</td>
+            <td>
+              {{ item.vigenciaDesde | date:'dd/MM/yyyy' }} — {{ item.vigenciaHasta | date:'dd/MM/yyyy' }}
+              <span *ngIf="esVencidaOProxima(item)" class="badge-alerta" [ngClass]="claseAlerta(item)" title="Vigencia próxima a vencer o vencida">
+                <i class="ti ti-alert-triangle"></i>
+              </span>
+            </td>
+            <td>{{ item.placasAutorizadas || '—' }}</td>
+            <td>
+              <span class="chip-estado" [class.chip-estado--activo]="item.estado === 'VIGENTE'" [class.chip-estado--inactivo]="item.estado === 'ANULADA'" [class.chip-estado--vencido]="item.estado === 'VENCIDA'">
+                {{ item.estado }}
+              </span>
+            </td>
+            <td class="col-acciones">
+              <button type="button" class="abril-action-btn" title="Editar" (click)="abrirEditar(item)">
+                <i class="ti ti-pencil"></i>
+              </button>
+              <button type="button" class="abril-action-btn abril-action-btn--danger" title="Anular" (click)="eliminar(item)">
+                <i class="ti ti-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && pagedItems.length === 0" class="empty-state">
+      <i class="ti ti-inbox empty-state__icon"></i>
+      <p class="empty-state__text">No se encontraron autorizaciones DME registradas.</p>
+    </div>
+
+    <div class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="filteredItems.length"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="cambiarPagina($event)">
+      </app-paginator>
+    </div>
+  </div>
+
+  <app-fab label="Nueva autorización" (clicked)="abrirNuevo()"></app-fab>
+</div>
+
+<app-abril-modal-panel
+  *ngIf="modalAbierto"
+  [titulo]="editando ? 'Editar autorización DME' : 'Nueva autorización DME'"
+  icono="ti-certificate"
+  variant="blue"
+  (closeModal)="cerrarModal()">
+  <form id="form-autorizacion-dme" (ngSubmit)="guardar()">
+    <div class="abril-field">
+      <label class="abril-field-label">Proyecto</label>
+      <app-search-select
+        [options]="proyectos"
+        valueField="projectId"
+        displayField="projectDescription"
+        placeholder="Buscar proyecto..."
+        [value]="form.projectId"
+        (valueChange)="form.projectId = $event">
+      </app-search-select>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Municipalidad</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.municipalidad" name="municipalidad" required />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">N° de resolución</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.numeroResolucion" name="numeroResolucion" required />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Escombrera destino</label>
+      <app-search-select
+        [options]="escombreras"
+        valueField="id"
+        displayField="razonSocial"
+        placeholder="Buscar empresa..."
+        [value]="form.escombreraDestinoId"
+        (valueChange)="form.escombreraDestinoId = $event">
+      </app-search-select>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Vigencia desde</label>
+      <input class="abril-field-input" type="date" [(ngModel)]="form.vigenciaDesde" name="vigenciaDesde" required />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Vigencia hasta</label>
+      <input class="abril-field-input" type="date" [(ngModel)]="form.vigenciaHasta" name="vigenciaHasta" required />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Placas autorizadas</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.placasAutorizadas" name="placasAutorizadas" />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Estado</label>
+      <select class="abril-field-input" [(ngModel)]="form.estado" name="estado">
+        <option *ngFor="let o of estadoOptions" [value]="o.value">{{ o.label }}</option>
+      </select>
+    </div>
+    <div class="abril-field" *ngIf="!editando">
+      <label class="abril-field-label">Archivo (resolución)</label>
+      <input type="file" (change)="onArchivoChange($event)" />
+    </div>
+  </form>
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+    <button type="submit" form="form-autorizacion-dme" class="btn-guardar" [disabled]="guardando">
+      {{ guardando ? 'Guardando...' : 'Guardar' }}
+    </button>
+  </div>
+</app-abril-modal-panel>
+
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por resolución o municipalidad..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="estadoOptions"
+      valueField="value"
+      displayField="label"
+      [value]="estadoFilter"
+      (valueChange)="estadoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      valueField="projectId"
+      displayField="projectDescription"
+      placeholder="Buscar proyecto..."
+      [value]="proyectoFilter"
+      (valueChange)="proyectoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>

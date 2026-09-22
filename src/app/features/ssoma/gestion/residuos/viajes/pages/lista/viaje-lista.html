@@ -1,0 +1,221 @@
+<div class="lista-root">
+
+  <app-abril-page-header
+    badge="SSOMA · Residuos"
+    titulo="Gestión de Residuos"
+    subtitulo="Viajes de disposición de residuos"
+    [tabs]="tabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()"
+    [hasExtra]="true">
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <div class="lista-body">
+    <div *ngIf="!loading && result" class="resultados-contador">
+      {{ result.total }} {{ result.total === 1 ? 'viaje encontrado' : 'viajes encontrados' }}
+    </div>
+
+    <div *ngIf="loading" class="skeleton-wrap">
+      <div *ngFor="let i of [1,2,3,4,5]" class="skeleton-row"></div>
+    </div>
+
+    <div *ngIf="!loading && (result?.items?.length ?? 0) > 0" class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Tipo de residuo</th>
+            <th>EO-RS</th>
+            <th>Origen</th>
+            <th>Cantidad (m³)</th>
+            <th>Cantidad (Ton)</th>
+            <th>Manejo</th>
+            <th class="th-acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of result!.items">
+            <td>{{ item.fecha | date:'dd/MM/yyyy' }}</td>
+            <td>{{ item.nombreResiduoTipo || '—' }}</td>
+            <td>{{ item.nombreEoRs || '—' }}</td>
+            <td>{{ item.origen || '—' }}</td>
+            <td>{{ item.cantidadM3 }}</td>
+            <td>{{ item.cantidadTon ?? '—' }}</td>
+            <td>{{ item.tipoManejo }}</td>
+            <td class="col-acciones">
+              <button type="button" class="abril-action-btn" title="Editar" (click)="abrirEditar(item)">
+                <i class="ti ti-pencil"></i>
+              </button>
+              <button type="button" class="abril-action-btn abril-action-btn--danger" title="Desactivar" (click)="eliminar(item)">
+                <i class="ti ti-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && (result?.items?.length ?? 0) === 0 && result !== null" class="empty-state">
+      <i class="ti ti-inbox empty-state__icon"></i>
+      <p class="empty-state__text">No se encontraron viajes registrados.</p>
+    </div>
+
+    <div *ngIf="result" class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="result.total"
+        [currentPage]="pagina"
+        [totalPages]="totalPages"
+        (pageChange)="cambiarPagina($event)">
+      </app-paginator>
+    </div>
+  </div>
+
+  <app-fab label="Nuevo viaje" (clicked)="abrirNuevo()"></app-fab>
+</div>
+
+<app-abril-modal-panel
+  *ngIf="modalAbierto"
+  [titulo]="editando ? 'Editar viaje' : 'Nuevo viaje'"
+  icono="ti-truck"
+  variant="blue"
+  width="820px"
+  (closeModal)="cerrarModal()">
+  <form id="form-viaje" (ngSubmit)="guardar()">
+    <div class="abril-field">
+      <label class="abril-field-label">Proyecto</label>
+      <app-search-select
+        [options]="proyectos"
+        valueField="projectId"
+        displayField="projectDescription"
+        placeholder="Buscar proyecto..."
+        [value]="form.projectId"
+        (valueChange)="form.projectId = $event">
+      </app-search-select>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Tipo de residuo</label>
+      <app-search-select
+        [options]="tiposResiduo"
+        valueField="id"
+        displayField="nombre"
+        placeholder="Selecciona tipo de residuo"
+        [value]="form.residuoTipoId"
+        (valueChange)="form.residuoTipoId = $event">
+      </app-search-select>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">EO-RS</label>
+      <app-search-select
+        [options]="eoRsList"
+        valueField="id"
+        displayField="razonSocial"
+        placeholder="Buscar empresa..."
+        [value]="form.eoRsId"
+        (valueChange)="form.eoRsId = $event">
+      </app-search-select>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Contratista</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.contratista" name="contratista" />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Origen</label>
+      <select class="abril-field-input" [(ngModel)]="form.origen" name="origen">
+        <option [ngValue]="null">—</option>
+        <option *ngFor="let o of origenOptions" [value]="o.value">{{ o.label }}</option>
+      </select>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Fecha</label>
+      <input class="abril-field-input" type="date" [(ngModel)]="form.fecha" name="fecha" required />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Cantidad (m³)</label>
+      <input class="abril-field-input" type="number" step="0.01" min="0" [(ngModel)]="form.cantidadM3" name="cantidadM3" required />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Cantidad (Ton)</label>
+      <input class="abril-field-input" type="number" step="0.01" min="0" [(ngModel)]="form.cantidadTon" name="cantidadTon" />
+      <small class="hint-text">Se calcula automáticamente si se deja en blanco.</small>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Tipo de manejo</label>
+      <select class="abril-field-input" [(ngModel)]="form.tipoManejo" name="tipoManejo">
+        <option *ngFor="let o of tipoManejoOptions" [value]="o.value">{{ o.label }}</option>
+      </select>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Gestor receptor</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.gestorReceptor" name="gestorReceptor" />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Destino final</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.destinoFinal" name="destinoFinal" />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">N° de registro</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.numeroRegistro" name="numeroRegistro" />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">N° de certificado</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.numeroCertificado" name="numeroCertificado" />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Archivo</label>
+      <input type="file" (change)="onArchivoChange($event)" />
+    </div>
+  </form>
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+    <button type="submit" form="form-viaje" class="btn-guardar" [disabled]="guardando">
+      {{ guardando ? 'Guardando...' : 'Guardar' }}
+    </button>
+  </div>
+</app-abril-modal-panel>
+
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      [options]="proyectos"
+      valueField="projectId"
+      displayField="projectDescription"
+      placeholder="Buscar proyecto..."
+      [value]="filtroProjectId"
+      (valueChange)="filtroProjectId = $event; buscar()">
+    </app-search-select>
+  </div>
+  <div class="w-full">
+    <app-search-select
+      label="Tipo de residuo"
+      [options]="tiposResiduo"
+      valueField="id"
+      displayField="nombre"
+      placeholder="Selecciona tipo de residuo"
+      [value]="filtroResiduoTipoId"
+      (valueChange)="filtroResiduoTipoId = $event; buscar()">
+    </app-search-select>
+  </div>
+  <div class="w-full">
+    <app-search-select
+      label="EO-RS"
+      [options]="eoRsList"
+      valueField="id"
+      displayField="razonSocial"
+      placeholder="Buscar empresa..."
+      [value]="filtroEoRsId"
+      (valueChange)="filtroEoRsId = $event; buscar()">
+    </app-search-select>
+  </div>
+  <div class="w-full flex gap-[10px]">
+    <div class="abril-field flex-1">
+      <label class="abril-field-label">Desde</label>
+      <input class="abril-field-input" type="date" [(ngModel)]="filtroFechaDesde" (change)="buscar()" name="fechaDesde" />
+    </div>
+    <div class="abril-field flex-1">
+      <label class="abril-field-label">Hasta</label>
+      <input class="abril-field-input" type="date" [(ngModel)]="filtroFechaHasta" (change)="buscar()" name="fechaHasta" />
+    </div>
+  </div>
+</app-filter-modal>

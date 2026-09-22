@@ -1,0 +1,153 @@
+<div class="lista-root">
+
+  <app-abril-page-header
+    badge="SSOMA · Residuos"
+    titulo="Gestión de Residuos"
+    subtitulo="Documentos de referencia"
+    [tabs]="tabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()"
+    [hasExtra]="true">
+    <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+  </app-abril-page-header>
+
+  <div class="lista-body">
+    <div *ngIf="!loading" class="resultados-contador">
+      {{ filteredItems.length }} {{ filteredItems.length === 1 ? 'documento encontrado' : 'documentos encontrados' }}
+    </div>
+
+    <div *ngIf="loading" class="skeleton-wrap">
+      <div *ngFor="let i of [1,2,3,4,5]" class="skeleton-row"></div>
+    </div>
+
+    <div *ngIf="!loading && pagedItems.length > 0" class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Tipo</th>
+            <th>Versión</th>
+            <th>Estado</th>
+            <th>Archivo</th>
+            <th class="th-acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of pagedItems">
+            <td>{{ item.nombre }}</td>
+            <td>{{ item.tipo }}</td>
+            <td>{{ item.version || '—' }}</td>
+            <td>
+              <span class="chip-estado" [class.chip-estado--activo]="item.activo" [class.chip-estado--inactivo]="!item.activo">
+                {{ item.activo ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>
+              <a *ngIf="item.archivoUrl" [href]="item.archivoUrl" target="_blank" rel="noopener">
+                <i class="ti ti-file-download"></i> Ver
+              </a>
+              <span *ngIf="!item.archivoUrl">—</span>
+            </td>
+            <td class="col-acciones">
+              <button type="button" class="abril-action-btn" title="Editar" (click)="abrirEditar(item)">
+                <i class="ti ti-pencil"></i>
+              </button>
+              <button type="button" class="abril-action-btn abril-action-btn--danger" title="Desactivar" (click)="eliminar(item)">
+                <i class="ti ti-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && pagedItems.length === 0" class="empty-state">
+      <i class="ti ti-inbox empty-state__icon"></i>
+      <p class="empty-state__text">No se encontraron documentos de referencia registrados.</p>
+    </div>
+
+    <div class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="filteredItems.length"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="cambiarPagina($event)">
+      </app-paginator>
+    </div>
+  </div>
+
+  <app-fab label="Nuevo documento" (clicked)="abrirNuevo()"></app-fab>
+</div>
+
+<app-abril-modal-panel
+  *ngIf="modalAbierto"
+  [titulo]="editando ? 'Editar documento de referencia' : 'Nuevo documento de referencia'"
+  icono="ti-folder"
+  variant="blue"
+  (closeModal)="cerrarModal()">
+  <form id="form-documento-referencia" (ngSubmit)="guardar()">
+    <div class="abril-field">
+      <label class="abril-field-label">Nombre</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.nombre" name="nombre" required />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Tipo de documento</label>
+      <select class="abril-field-input" [(ngModel)]="form.tipo" name="tipo">
+        <option *ngFor="let o of tipoOptions" [value]="o.value">{{ o.label }}</option>
+      </select>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Descripción</label>
+      <textarea class="abril-field-input" rows="3" [(ngModel)]="form.descripcion" name="descripcion"></textarea>
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Versión</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.version" name="version" />
+    </div>
+    <label class="checkbox-label">
+      <input type="checkbox" [(ngModel)]="form.activo" name="activo" />
+      Activo
+    </label>
+    <div class="abril-field">
+      <label class="abril-field-label">{{ editando ? 'Reemplazar archivo (opcional)' : 'Archivo (requerido)' }}</label>
+      <input type="file" (change)="onArchivoChange($event)" />
+    </div>
+  </form>
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+    <button type="submit" form="form-documento-referencia" class="btn-guardar" [disabled]="guardando">
+      {{ guardando ? 'Guardando...' : 'Guardar' }}
+    </button>
+  </div>
+</app-abril-modal-panel>
+
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por nombre..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+  <div class="w-full">
+    <app-search-select
+      label="Tipo"
+      [options]="tipoOptions"
+      valueField="value"
+      displayField="label"
+      [value]="tipoFilter"
+      (valueChange)="tipoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      [options]="activoFilterOptions"
+      valueField="value"
+      displayField="label"
+      [value]="activoFilter"
+      (valueChange)="activoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>
