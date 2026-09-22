@@ -307,6 +307,14 @@
             <span class="kg-dot kg-dot-y"></span><span class="kg-row-lbl">EMOs vencidos</span>
             <span class="kg-row-val kg-val-y">{{ kpis?.emosVencidos ?? 0 }}</span>
           </a>
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Casa', emoPorVencerDias: '14' }">
+            <span class="kg-dot kg-dot-o"></span><span class="kg-row-lbl">EMO por vencer (14 días)</span>
+            <span class="kg-row-val kg-val-o">{{ kpis?.emosPorVencer14 ?? 0 }}</span>
+          </a>
+          <a class="kg-row kg-row-link" routerLink="/habilitacion/gestion/trabajadores" [queryParams]="{ proyectoId: selectedProyectoId, contrataCasa: 'Casa', emoPorVencerDias: '5' }">
+            <span class="kg-dot kg-dot-r"></span><span class="kg-row-lbl">EMO por vencer (5 días)</span>
+            <span class="kg-row-val kg-val-r">{{ kpis?.emosPorVencer5 ?? 0 }}</span>
+          </a>
           <span class="kg-row">
             <span class="kg-dot kg-dot-o"></span><span class="kg-row-lbl">Interconsultas pend.</span>
             <span class="kg-row-val kg-val-o">{{ kpis?.interconsultasPendientes ?? 0 }}</span>
