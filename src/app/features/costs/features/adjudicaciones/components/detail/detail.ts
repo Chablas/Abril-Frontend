@@ -196,6 +196,9 @@ export class Detail implements OnInit {
   /** Paso 4 — indica que el paquete PDF se está generando */
   generatingPackage = false;
 
+  /** Paso 4 — se está omitiendo el envío al SC */
+  skippingScNotification = false;
+
   /** Paso 7 — clave de doc de escaneados siendo subido en este momento */
   currentScannedDocType: string | null = null;
 
@@ -1101,6 +1104,54 @@ export class Detail implements OnInit {
     this.step4Dragging = false;
     const file = event.dataTransfer?.files?.[0];
     if (file) this.step4File = file;
+  }
+
+  /**
+   * Habilita omitir el envío al SC: solo mientras el paso 4 sigue abierto y solo para quien
+   * puede avanzarlo (Oficina Técnica o el Administrador).
+   */
+  get canSkipScNotification(): boolean {
+    return this.actualStatus === 4 && this.canSendToSc;
+  }
+
+  /**
+   * Salta del paso 4 al 5 sin enviar nada al subcontratista: se usa cuando el contrato
+   * completo ya se mandó por correo fuera del sistema. No genera ni adjunta el paquete.
+   */
+  async skipScNotification(): Promise<void> {
+    if (!this.canSkipScNotification || this.skippingScNotification) return;
+
+    const confirm = await Swal.fire({
+      icon: 'warning',
+      title: '¿Omitir el envío al SC?',
+      text: 'No se enviará ningún correo al subcontratista y la adjudicación pasará al paso 5.',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, omitir',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#64BC04',
+      draggable: true,
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.skippingScNotification = true;
+    this.loaderService.show();
+    this.adjudicacionesService.skipScNotification(this.item.projectSubContractorId).subscribe({
+      next: (res) => {
+        this.loaderService.hide();
+        this.skippingScNotification = false;
+        this.item.projectSubContractorStatusId = 5;
+        this.item.scNotificationSkipped = true;
+        this.viewStep = 5;
+        this.step4File = null;
+        this.statusChanged.emit();
+        Swal.fire({ icon: 'success', title: res.message ?? 'Envío al subcontratista omitido', draggable: true });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.skippingScNotification = false;
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   private async sendScNotification(): Promise<void> {

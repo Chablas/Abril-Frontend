@@ -62,6 +62,8 @@ export interface ProjectSubContractorDTO {
   guaranteeValidityDays?: number | null;
   /** Forma de pago en días hábiles (paso 2) — "pago a x días hábiles" en la hoja resumen */
   paymentDays?: number | null;
+  /** Paso 4 — true si se omitió el envío al SC porque el contrato ya salió por correo fuera del sistema. */
+  scNotificationSkipped?: boolean;
   arrivedWithObservations?: boolean | null;
   arrivalObservation?: string | null;
   // Procesos de firma (paso 6)
