@@ -1,5 +1,5 @@
 ﻿import { Injectable } from '@angular/core';
-import { NavModule, NavItem, NavGroup } from './nav.model';
+import { NavModule, NavItem, NavGroup, NavSeccionPerfil } from './nav.model';
 import { AuthService } from '../services/auth.service';
 import { Roles } from '../constants/roles';
 
@@ -43,9 +43,8 @@ export class NavigationService {
             // consolidadores ya no están acá: cada pantalla del flujo administra lo que se
             // origina en ella desde su propio botón «Configuración»
             // (/gestion-administrativa/<pantalla>/configuracion).
-            // Por rol y no por featureKey: la firma es de la persona, no de una funcionalidad.
-            // Mismo criterio que el roleGuard de su ruta (ver gestion-administrativa.routes.ts).
-            { label: 'Tu firma', route: '/gestion-administrativa/configuracion/firma', roles: [Roles.USUARIO_DE_ABRIL] },
+            // «Tu firma» tampoco: la firma es de la persona, así que pasó a Mi Perfil → Mi Firma
+            // (ver `miPerfil` más abajo).
           ],
         },
       ],
@@ -407,7 +406,27 @@ export class NavigationService {
     },
   ];
 
+  /**
+   * Secciones de Mi Perfil, en el orden de su barra lateral. No es un módulo del sidebar: se abre
+   * desde el nombre del usuario, arriba a la izquierda, y cada sección es de la persona y no de
+   * una funcionalidad — por eso se filtran por rol y no por featureKey. Cada una declara los
+   * MISMOS roles que el roleGuard de su ruta (ver mi-perfil.routes.ts).
+   */
+  private readonly miPerfil: NavSeccionPerfil[] = [
+    // Todo USUARIO DE ABRIL, que es el rol base de cualquier empleado: deja fuera solo a las
+    // sesiones que no son de Abril (contratistas y clínica, con su propio flujo de auth).
+    { label: 'Mi Firma', route: '/mi-perfil/mi-firma', icono: 'ti-signature', roles: [Roles.USUARIO_DE_ABRIL] },
+  ];
+
   constructor(private authService: AuthService) {}
+
+  /**
+   * Las secciones de Mi Perfil que el usuario puede abrir. Vacío = no se le ofrece Mi Perfil (el
+   * menú de su nombre muestra solo «Cerrar sesión»).
+   */
+  getSeccionesMiPerfil(): NavSeccionPerfil[] {
+    return this.miPerfil.filter((s) => this.isNavEntryAllowed(s));
+  }
 
   private getAllowedFeatures(): string[] {
     if (typeof localStorage === 'undefined') return [];

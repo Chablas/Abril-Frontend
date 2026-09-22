@@ -30,6 +30,10 @@ const EXT_IMAGEN = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'];
  * El archivo lo trae el backend (`ArchivoSalidasService`) y no el navegador desde SharePoint: el
  * webUrl no se puede leer desde otra página (CORS y sesión de Microsoft 365). Se pide recién cuando
  * el marco se acerca a la vista, así un modal con varios documentos no los baja todos de golpe.
+ *
+ * Con `soloEnlace` queda la etiqueta y el enlace, sin el archivo (ni se baja): lo usan las
+ * planillas de gasto, cuyo contenido ya está en la tabla de salidas que va junto a ellas. La
+ * planilla grupal, el Consolidado del S10 y los adjuntos siguen a la vista.
  */
 @Component({
   standalone: true,
@@ -50,9 +54,15 @@ export class DocumentoEmbebido implements OnChanges, AfterViewInit, OnDestroy {
   @Input() nota: string | null = null;
   /** Marca de estado junto a la etiqueta ("Sin firma"). */
   @Input() marca: string | null = null;
+  /**
+   * true = solo la etiqueta y el enlace: el archivo no se muestra ni se baja. Es fijo por uso (no
+   * se alterna en vivo): el marco directamente no se crea.
+   */
+  @Input() soloEnlace = false;
 
-  @ViewChild('marco', { static: true }) private marco!: ElementRef<HTMLElement>;
-  @ViewChild('paginas', { static: true }) private paginas!: ElementRef<HTMLElement>;
+  // Dinámicos y no `static`: con `soloEnlace` el marco no existe.
+  @ViewChild('marco') private marco?: ElementRef<HTMLElement>;
+  @ViewChild('paginas') private paginas?: ElementRef<HTMLElement>;
 
   estado: 'cargando' | 'listo' | 'error' | 'sin-vista' = 'cargando';
   tipo: TipoArchivo = 'otro';
@@ -83,7 +93,7 @@ export class DocumentoEmbebido implements OnChanges, AfterViewInit, OnDestroy {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (!changes['url']) return;
+    if (!changes['url'] || this.soloEnlace) return;
     this.tipo = this.tipoDe(this.url) ?? this.tipoDe(this.nombre) ?? 'otro';
     if (this.visible) {
       this.traer();
@@ -94,6 +104,9 @@ export class DocumentoEmbebido implements OnChanges, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    // Solo el enlace: no hay marco que observar ni archivo que traer.
+    if (this.soloEnlace || !this.marco) return;
+
     if (typeof IntersectionObserver === 'undefined') {
       this.visible = true;
       this.traer();
@@ -112,7 +125,7 @@ export class DocumentoEmbebido implements OnChanges, AfterViewInit, OnDestroy {
         },
         { rootMargin: '400px 0px' },
       );
-      this.observer.observe(this.marco.nativeElement);
+      this.observer.observe(this.marco!.nativeElement);
     });
   }
 
@@ -194,7 +207,7 @@ export class DocumentoEmbebido implements OnChanges, AfterViewInit, OnDestroy {
         await hoja.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
         if (carga !== this.carga) return;
 
-        this.paginas.nativeElement.appendChild(canvas);
+        this.paginas?.nativeElement.appendChild(canvas);
         hoja.cleanup();
 
         // Se muestra apenas está la primera hoja; las demás se van sumando debajo.
@@ -210,7 +223,8 @@ export class DocumentoEmbebido implements OnChanges, AfterViewInit, OnDestroy {
 
   /** Ancho útil del marco, sin su padding: es el tope de cada hoja. */
   private anchoDisponible(): number {
-    const el = this.marco.nativeElement;
+    const el = this.marco?.nativeElement;
+    if (!el) return 900;
     const estilo = getComputedStyle(el);
     const ancho = el.clientWidth - parseFloat(estilo.paddingLeft) - parseFloat(estilo.paddingRight);
     return ancho > 0 ? ancho : 900;

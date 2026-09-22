@@ -31,7 +31,6 @@ export class Sidebar implements OnInit, OnDestroy {
   expandedModule: string | null = null;
   expandedGroup: string | null = null;
   userName: string | null = null;
-  userEmail: string | null = null;
   userInitials = '';
   userRole: string | null = null;
 
@@ -52,7 +51,6 @@ export class Sidebar implements OnInit, OnDestroy {
       this.collapsed = localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
       const user = JSON.parse(localStorage.getItem('user') ?? '{}');
       this.userName = user?.displayName ?? null;
-      this.userEmail = user?.email ?? null;
       this.userRole = user?.jobTitle ?? null;
       this.userInitials = this.computeInitials(this.userName);
     }
@@ -95,6 +93,17 @@ export class Sidebar implements OnInit, OnDestroy {
   toggleAccountMenu(event: MouseEvent): void {
     event.stopPropagation();
     this.accountMenuOpen = !this.accountMenuOpen;
+  }
+
+  /** A dónde lleva «Mi Perfil»: su primera sección accesible. null = no se ofrece. */
+  get miPerfilRoute(): string | null {
+    return this.navService.getSeccionesMiPerfil()[0]?.route ?? null;
+  }
+
+  abrirMiPerfil(): void {
+    const route = this.miPerfilRoute;
+    this.accountMenuOpen = false;
+    if (route) this.router.navigate([route]);
   }
 
   toggleSidebarGroup(label: string, event: MouseEvent): void {

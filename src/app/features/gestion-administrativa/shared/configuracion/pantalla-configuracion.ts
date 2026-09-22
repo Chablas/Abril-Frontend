@@ -210,8 +210,9 @@ export class GaPantallaConfiguracion implements OnInit {
           featureKey: GaPantallaConfiguracion.FEATURE_CONSOLIDADORES,
         },
         // Las Firmas viven acá porque es acá donde se firma: aprobar un consolidado ES estampar la
-        // firma, y lo que se marca decide qué se le exige registrar a quien aprueba. Contabilidad
-        // y "Tu firma" no lo miran: allá se sigue registrando solo la dibujada.
+        // firma, y lo que se marca decide qué se le exige registrar a quien aprueba. Lo miran
+        // también Mi Perfil → Mi Firma y el modal que salta al firmar sin firma; Contabilidad no:
+        // allá se sigue registrando solo la dibujada.
         {
           id: 'firmas',
           label: 'Firmas',

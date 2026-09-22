@@ -87,14 +87,9 @@
       </span>
     </div>
 
-    <!-- ── Documentos, cada uno a la vista ──────────────────────────────── -->
-    <div class="border-t pt-3" style="border-color:var(--color-abril-border)">
-      <app-documento-embebido
-        etiqueta="Planilla de gasto"
-        [nombre]="c.pdfFilename"
-        [url]="c.pdfUrl" />
-    </div>
-
+    <!-- ── Documentos, cada uno a la vista ────────────────────────────────
+         Las planillas de gasto no van acá: el consolidado puede cubrir varias, y cada una va como
+         enlace junto a su tabla de salidas, más abajo. -->
     <div *ngIf="c.consolidadoS10 as s10" class="border-t pt-3" style="border-color:var(--color-abril-border)">
       <app-documento-embebido
         etiqueta="Consolidado del S10 observado"
@@ -131,6 +126,15 @@
           Planilla completa: S/ {{ r.montoTotalPlanilla | number:'1.2-2' }}
         </span>
       </div>
+
+      <!-- La planilla de ESTA rendición, junto a su tabla y solo como enlace: su contenido es la
+           tabla misma. Es la original: la que miró la jefatura al observar. -->
+      <app-documento-embebido
+        *ngIf="r.pdfUrl as planilla"
+        etiqueta="Planilla de gasto"
+        [nombre]="r.pdfFilename"
+        [url]="planilla"
+        [soloEnlace]="true" />
 
       <div class="abril-table-wrap">
         <table class="abril-table abril-table--th-center">

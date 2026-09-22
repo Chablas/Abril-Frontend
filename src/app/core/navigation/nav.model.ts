@@ -14,6 +14,16 @@ export interface NavGroup {
   items: NavItem[];
 }
 
+/**
+ * Una sección de Mi Perfil (se abre desde el nombre del usuario, arriba a la izquierda). Se filtra
+ * con la misma regla que cualquier entrada de navegación (featureKey / roles) y lleva además el
+ * ícono de su barra lateral.
+ */
+export interface NavSeccionPerfil extends NavItem {
+  /** Clase de Tabler Icons (`ti-*`). */
+  icono: string;
+}
+
 export interface NavModule {
   key: string;
   label: string;

@@ -79,13 +79,8 @@
 
     <!-- ── Documentos, cada uno a la vista ──────────────────────────────────
          De cada documento se enseña UNA sola copia: la original mientras no haya firma, y la
-         firmada apenas existe —es la misma planilla, y verla dos veces solo alarga el modal—. -->
-    <div *ngIf="!d.pdfFirmadoUrl" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-      <app-documento-embebido
-        etiqueta="Planilla de gasto"
-        [nombre]="d.pdfFilename"
-        [url]="d.pdfUrl" />
-    </div>
+         firmada apenas existe —es el mismo papel, y verlo dos veces solo alarga el modal—. La
+         planilla de gasto no va acá: va como enlace junto a su tabla de salidas, más abajo. -->
 
     <!-- ng-container y no un div: el contenedor de arriba es un flex column con gap. -->
     <ng-container *ngIf="d.consolidadoS10 as c">
@@ -98,17 +93,9 @@
       </div>
     </ng-container>
 
-    <!-- Las dos copias que deja la aprobación del reembolso: aprobar ES firmar, y firma los dos
-         documentos. Cada una ocupa el lugar de su original. -->
-    <div *ngIf="d.pdfFirmadoUrl as planillaFirmada" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-      <app-documento-embebido
-        etiqueta="Planilla firmada"
-        [nota]="d.firmadoAt ? 'Firmada el ' + (d.firmadoAt | date:'dd/MM/yyyy') : null"
-        [nombre]="d.pdfFirmadoFilename ?? 'Planilla firmada'"
-        [url]="planillaFirmada"
-        [firmado]="true" />
-    </div>
-
+    <!-- Las copias que deja la aprobación del reembolso: aprobar ES firmar, y firma los dos
+         documentos. Cada una ocupa el lugar de su original (la planilla firmada, junto a su
+         tabla). -->
     <div *ngIf="d.consolidadoS10?.pdfFirmadoUrl as consolidadoFirmado" class="border-t pt-3" style="border-color:var(--color-abril-border)">
       <app-documento-embebido
         etiqueta="Consolidado del S10 firmado"
@@ -122,6 +109,24 @@
          montos). ── -->
     <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
       <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas de esta planilla</span>
+
+      <!-- La planilla, junto a su tabla y solo como enlace: su contenido es la tabla misma. Una
+           sola copia: firmada, la original ya no se ofrece. -->
+      <app-documento-embebido
+        *ngIf="!d.pdfFirmadoUrl"
+        etiqueta="Planilla de gasto"
+        [nombre]="d.pdfFilename"
+        [url]="d.pdfUrl"
+        [soloEnlace]="true" />
+
+      <app-documento-embebido
+        *ngIf="d.pdfFirmadoUrl as planillaFirmada"
+        etiqueta="Planilla firmada"
+        [nota]="d.firmadoAt ? 'Firmada el ' + (d.firmadoAt | date:'dd/MM/yyyy') : null"
+        [nombre]="d.pdfFirmadoFilename ?? 'Planilla firmada'"
+        [url]="planillaFirmada"
+        [firmado]="true"
+        [soloEnlace]="true" />
 
       <div class="abril-table-wrap">
         <table class="abril-table abril-table--th-center">

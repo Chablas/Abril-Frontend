@@ -1,5 +1,4 @@
 ﻿import { AbrilPageTab } from '../../../shared/components/abril-page-header/abril-page-header.component';
-import { Roles } from '../../../core/constants/roles';
 
 /** Pestañas del header de Gestión Administrativa — única fuente para todas sus páginas. */
 export const GESTION_ADMINISTRATIVA_TABS: AbrilPageTab[] = [
@@ -16,9 +15,8 @@ export const GESTION_ADMINISTRATIVA_TABS: AbrilPageTab[] = [
   { label: 'Correcciones S10',       icono: 'ti-file-alert', route: '/gestion-administrativa/correcciones-s10',    featureKey: 'gestion-administrativa.correcciones-s10' },
   { label: 'Reembolsos',             icono: 'ti-cash',       route: '/gestion-administrativa/reembolsos',          featureKey: 'gestion-administrativa.reembolsos' },
   { label: 'Delegación de Revisión', icono: 'ti-user-check', route: '/gestion-administrativa/delegacion-revision', featureKey: 'gestion-administrativa.delegacion-revision' },
-  // La pestaña se abre también por ROL y no solo por featureKeys: desde que existe la sección
-  // "Tu firma" (que es de todo USUARIO DE ABRIL, no de una funcionalidad) la pantalla siempre tiene
-  // al menos una sección que mostrar, así que dejarla solo con los featureKeys de configuración
-  // habría escondido la firma de la mayoría. El acceso a cada sección sigue filtrado adentro.
-  { label: 'Configuración',          icono: 'ti-settings',   route: '/gestion-administrativa/configuracion',       featureKeys: ['gestion-administrativa.config.lugares','gestion-administrativa.config.motivos','gestion-administrativa.config.trayectos','gestion-administrativa.config.capturas','gestion-administrativa.config.carpeta-adjuntos'], roles: [Roles.USUARIO_DE_ABRIL] },
+  // Solo por featureKeys: hasta el 2026-09-22 se abría también por rol (USUARIO DE ABRIL) para que
+  // todos llegaran a "Tu firma", que se mudó a Mi Perfil → Mi Firma. El acceso a cada sección
+  // sigue filtrado adentro.
+  { label: 'Configuración',          icono: 'ti-settings',   route: '/gestion-administrativa/configuracion',       featureKeys: ['gestion-administrativa.config.lugares','gestion-administrativa.config.motivos','gestion-administrativa.config.trayectos','gestion-administrativa.config.capturas','gestion-administrativa.config.carpeta-adjuntos'] },
 ];

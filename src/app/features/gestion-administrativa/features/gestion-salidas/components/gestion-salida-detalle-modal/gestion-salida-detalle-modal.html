@@ -141,14 +141,16 @@
 
     <!-- ── Planilla rendida ────────────────────────────────────────────
          Una sola copia: la original mientras no haya firma, y la firmada apenas existe. La firma
-         va sobre una copia, así que el PDF original nunca se toca —solo deja de ofrecerse—. -->
+         va sobre una copia, así que el PDF original nunca se toca —solo deja de ofrecerse—. Solo
+         el enlace: lo que dice de esta salida ya está en la tabla de trayectos de arriba. -->
     <ng-container *ngIf="detalle.rendicion as r">
       <div *ngIf="!r.pdfFirmadoUrl" class="border-t pt-4" style="border-color:var(--color-abril-border)">
         <app-documento-embebido
           etiqueta="Planilla de rendición"
           [nota]="'Rendido el ' + (r.rendidoAt | date:'dd/MM/yyyy HH:mm')"
           [nombre]="r.pdfFilename"
-          [url]="r.pdfUrl" />
+          [url]="r.pdfUrl"
+          [soloEnlace]="true" />
       </div>
 
       <div *ngIf="r.pdfFirmadoUrl as planillaFirmada" class="border-t pt-4" style="border-color:var(--color-abril-border)">
@@ -156,7 +158,8 @@
           etiqueta="Planilla firmada"
           [nota]="'Rendido el ' + (r.rendidoAt | date:'dd/MM/yyyy HH:mm')"
           [url]="planillaFirmada"
-          [firmado]="true" />
+          [firmado]="true"
+          [soloEnlace]="true" />
       </div>
     </ng-container>
 

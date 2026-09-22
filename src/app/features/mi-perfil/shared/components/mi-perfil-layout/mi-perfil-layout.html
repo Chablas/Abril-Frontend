@@ -1,0 +1,21 @@
+<app-abril-page-header titulo="Mi Perfil" [subtitulo]="subtitulo"></app-abril-page-header>
+
+<div class="page-container perfil-body bg-white">
+
+  <!-- Barra lateral de secciones. En pantallas chicas pasa arriba, como una fila. -->
+  <nav class="perfil-nav" aria-label="Secciones de Mi Perfil">
+    <a
+      *ngFor="let s of secciones"
+      class="perfil-nav__item"
+      [routerLink]="s.route"
+      routerLinkActive="perfil-nav__item--activo">
+      <i class="ti {{ s.icono }}" aria-hidden="true"></i>
+      <span>{{ s.label }}</span>
+    </a>
+  </nav>
+
+  <section class="perfil-contenido">
+    <router-outlet></router-outlet>
+  </section>
+
+</div>

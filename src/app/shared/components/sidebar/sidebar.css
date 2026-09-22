@@ -161,17 +161,24 @@
   z-index: 50;
   overflow: hidden;
 }
-.account-info {
-  padding: 10px 12px 6px;
+.account-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--color-abril-body);
+  cursor: pointer;
+  background: transparent;
+  border: none;
   border-bottom: 1px solid var(--color-abril-border);
+  text-align: left;
+  transition: background 0.15s;
+  font-family: inherit;
 }
-.account-email {
-  font-size: 11px;
-  color: var(--color-abril-muted);
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.account-item:hover {
+  background: var(--color-abril-bg);
 }
 .account-logout {
   display: flex;

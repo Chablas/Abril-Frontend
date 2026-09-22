@@ -79,6 +79,9 @@ export interface CorreccionS10PlanillaDto {
   estadoReembolso: EstadoReembolso;
   /** Monto de la planilla completa: lo que suma contra el importe del S10. */
   montoTotalPlanilla: number;
+  /** PDF original de ESTA planilla: el modal lo enlaza junto a su tabla. */
+  pdfUrl: string | null;
+  pdfFilename: string | null;
 }
 
 export interface CorreccionS10SalidaDto {

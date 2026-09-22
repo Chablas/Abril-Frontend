@@ -36,6 +36,15 @@ export const routes: Routes = [
           .then(m => m.CentroAprendizaje)
       },
 
+      // Mi Perfil: se abre desde el nombre del usuario (arriba a la izquierda). Cada sección se
+      // restringe por rol en su propia ruta; ver mi-perfil.routes.ts.
+      {
+        path: 'mi-perfil',
+        loadChildren: () =>
+          import('./features/mi-perfil/mi-perfil.routes')
+          .then(m => m.MI_PERFIL_ROUTES)
+      },
+
       {
         path: 'security',
         loadChildren: () =>

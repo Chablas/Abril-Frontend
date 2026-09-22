@@ -328,22 +328,10 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       seccion: 'carpeta-adjuntos',
     },
   },
-  // "Tu firma" no se restringe por featureKey sino por rol: la firma es de la persona, no de una
-  // funcionalidad, y la necesita cualquier trabajador de Abril que vaya a firmar algo (el jefe que
-  // firma una planilla de rendición, pero también quien firme en otro módulo). USUARIO DE ABRIL
-  // (12) es el rol base de todo empleado, así que deja fuera solo a las sesiones que no son de
-  // Abril (contratistas y clínica, que tienen su propio flujo de auth).
-  {
-    path: 'configuracion/firma',
-    loadComponent: () =>
-      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
-    canActivate: [authGuard, roleGuard],
-    data: {
-      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
-      seccion: 'firma',
-      roles: [Roles.USUARIO_DE_ABRIL],
-    },
-  },
+  // "Tu firma" se mudó a Mi Perfil → Mi Firma (2026-09-22): la firma es de la persona, no de una
+  // funcionalidad de este módulo. La ruta se conserva como redirección para no romper enlaces
+  // viejos; el acceso por rol lo sigue cuidando la ruta de destino.
+  { path: 'configuracion/firma', redirectTo: '/mi-perfil/mi-firma' },
   // La sección Correos de Configuración se dio de baja: los once correos del flujo estaban
   // juntos sin decir de dónde salía cada uno. La ruta se conserva como redirección para no
   // romper enlaces viejos y cae en la primera pantalla del flujo.

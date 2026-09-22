@@ -21,8 +21,8 @@ export interface FirmaTipoDto {
   codigo: FirmaTipoCodigo;
   nombre: string;
   /**
-   * Los checkboxes de Consolidados → Configuración → Firmas. Solo esa pantalla los honra:
-   * Contabilidad y "Tu firma" siguen ofreciendo únicamente el dibujo.
+   * Los checkboxes de Consolidados → Configuración → Firmas. Los honran Mi Perfil → Mi Firma y el
+   * modal que salta al firmar sin firma; Contabilidad sigue ofreciendo únicamente el dibujo.
    */
   activo: boolean;
 }

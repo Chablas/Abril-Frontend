@@ -176,13 +176,15 @@
       </ng-container>
     </div>
 
-    <!-- ── Planilla rendida ──────────────────────────────────────────── -->
+    <!-- ── Planilla rendida ──────────────────────────────────────────────
+         Solo el enlace: lo que dice de esta salida ya está en los trayectos de arriba. -->
     <div *ngIf="mostrarDocumentos && detalle.rendicion as r" class="border-t pt-4" style="border-color:var(--color-abril-border)">
       <app-documento-embebido
         etiqueta="Planilla de rendición"
         [nota]="'Rendido el ' + (r.rendidoAt | date:'dd/MM/yyyy HH:mm')"
         [nombre]="r.pdfFilename"
-        [url]="r.pdfUrl" />
+        [url]="r.pdfUrl"
+        [soloEnlace]="true" />
     </div>
 
     <!-- ── Consolidado del S10 ───────────────────────────────────────── -->
@@ -228,7 +230,7 @@
       <button
         type="button"
         (click)="rendirSolicitud()"
-        title="Rendir esta solicitud"
+        title="Rendir esta solicitud y enviar la planilla a primera revisión"
         class="inline-flex items-center gap-[6px] h-[38px] px-5 rounded-lg text-sm font-semibold text-white cursor-pointer transition-colors"
         style="background:#0086A5"
         onmouseover="this.style.background='#006f8a'"

@@ -174,13 +174,15 @@
       </p>
 
       <ng-container *ngIf="r.visible">
-        <!-- Una sola copia: firmada la planilla, la original ya no se ofrece. -->
+        <!-- Una sola copia: firmada la planilla, la original ya no se ofrece. Solo el enlace: su
+             contenido es la tabla de abajo. -->
         <ng-container *ngIf="!r.pdfFirmadoUrl">
           <app-documento-embebido
             *ngIf="r.pdfUrl as planilla"
             etiqueta="Planilla de gasto"
             [nombre]="r.pdfFilename ?? 'Planilla de gasto'"
-            [url]="planilla" />
+            [url]="planilla"
+            [soloEnlace]="true" />
         </ng-container>
 
         <app-documento-embebido
@@ -188,7 +190,8 @@
           etiqueta="Planilla firmada"
           [nombre]="r.pdfFirmadoFilename ?? 'Planilla firmada'"
           [url]="planillaFirmada"
-          [firmado]="true" />
+          [firmado]="true"
+          [soloEnlace]="true" />
 
         <!-- Solo lectura: el ojo abre el detalle de la salida (trayectos, capturas y montos). -->
         <div class="abril-table-wrap">

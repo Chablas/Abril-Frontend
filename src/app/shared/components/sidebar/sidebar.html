@@ -21,11 +21,13 @@
       <i class="ti ti-chevron-down chev" [class.rotated]="accountMenuOpen"></i>
     </ng-container>
 
-    <!-- Account dropdown -->
+    <!-- Account dropdown. «Mi Perfil» solo si tiene alguna sección que abrir (ver
+         NavigationService.getSeccionesMiPerfil). -->
     <div class="account-menu" *ngIf="accountMenuOpen && !collapsed" (click)="$event.stopPropagation()">
-      <div class="account-info" *ngIf="userEmail">
-        <span class="account-email">{{ userEmail }}</span>
-      </div>
+      <button class="account-item" *ngIf="miPerfilRoute" (click)="abrirMiPerfil()">
+        <i class="ti ti-user-circle"></i>
+        Mi Perfil
+      </button>
       <button class="account-logout" (click)="logout()">
         <i class="ti ti-logout"></i>
         Cerrar sesión

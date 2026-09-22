@@ -17,9 +17,9 @@
     <app-invoice-folder></app-invoice-folder>
   </div>
 
-  <!-- SECCIÓN: Firma. Es la MISMA firma de la persona (person.signature_*) que se registra
-       en Gestión Administrativa → Tu firma: por eso el panel es el componente compartido y no
-       uno propio de Contabilidad. -->
+  <!-- SECCIÓN: Firma. Es la MISMA firma de la persona (person_firma) que se registra en
+       Mi Perfil → Mi Firma: por eso el panel es el componente compartido y no uno propio de
+       Contabilidad. -->
   <div *ngIf="activeSection === 'firma-gg'">
     <app-firma-personal
       descripcion="Se estampa en las facturas que visas y en el resto de documentos que firmes" />
