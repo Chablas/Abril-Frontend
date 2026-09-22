@@ -1,4 +1,5 @@
 import { ConsolidadoS10Dto } from '../components/consolidado-s10-modal/consolidado-s10.dto';
+import { ReembolsoPipelineDto } from './reembolso-pipeline.dto';
 
 export interface SolicitudSalidaCapturaDto {
   id: number;
@@ -79,6 +80,12 @@ export interface SolicitudSalidaDetalleDto {
    * de acciones no puedan discrepar.
    */
   aptaParaRendir: boolean;
+
+  /**
+   * El recorrido del reembolso de esta salida, para el pipeline del modal de detalle. Lo arma el
+   * backend y viaja acá dentro: no cuesta una petición aparte.
+   */
+  pipeline: ReembolsoPipelineDto;
 
   trayectos: TrayectoDetalleDto[];
 }

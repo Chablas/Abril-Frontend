@@ -8,6 +8,7 @@ import {
   AreaAsignadoDTO,
   AreaEfectivoDTO,
   AreaEfectivoOrigen,
+  AsignacionAreaModo,
 } from '../../dtos/asignacion-area.dto';
 
 /**
@@ -19,6 +20,10 @@ import {
  *
  * Debajo, y solo si el área tiene algo cargado a mano, van los asignados con su prioridad y si
  * están activos — que es lo que explica por qué los vigentes son los que son.
+ *
+ * En Revisores de Rendiciones cada fila trae además las dos casillas del modal de edición en solo
+ * lectura: en una obra intervienen dos —el administrador revisa la planilla y firma, el residente
+ * solo firma— y sin ellas la lista no diría en qué paso entra cada uno.
  */
 @Component({
   standalone: true,
@@ -28,6 +33,8 @@ import {
 })
 export class AsignacionesAreasDetalle {
   @Input() area!: AreaAsignacionItemDTO;
+  /** Pantalla que abrió el modal: decide si se muestran las casillas por paso. */
+  @Input() modo: AsignacionAreaModo = 'revisores';
   /** "Revisor" / "Consolidador". */
   @Input() singular = 'Revisor';
   /** "Revisores" / "Consolidadores". */
@@ -47,6 +54,11 @@ export class AsignacionesAreasDetalle {
 
   get vigentes(): AreaEfectivoDTO[] {
     return this.efectivosOverride ?? this.area?.efectivos ?? [];
+  }
+
+  /** Las dos casillas por persona (1.ª revisión / consolidado) solo existen en Rendiciones. */
+  get esModoRendicion(): boolean {
+    return this.modo === 'revisoresRendicion';
   }
 
   get asignados(): AreaAsignadoDTO[] {

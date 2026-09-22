@@ -1,4 +1,5 @@
 import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { ReembolsoPipelineDto } from '../../../shared/dtos/reembolso-pipeline.dto';
 import {
   AreaNodeDto,
   EstadoPrimeraRevision,
@@ -76,9 +77,10 @@ export interface GestionRendicionListItemDto {
 
   // ── Qué se puede hacer con esta planilla ───────────────────────────────
   /**
-   * True si el usuario puede decidir la primera revisión de esta planilla. False cuando incluye
-   * salidas SUYAS y él no es su propio revisor: nadie decide lo suyo, y la única excepción es
-   * tener el jefe personalizado apuntándose a sí mismo.
+   * True si al usuario le toca decidir la primera revisión de esta planilla: está entre sus
+   * aprobadores (en obra, el administrador). False para cualquier otro que la vea, incluido quien
+   * la ve porque incluye salidas suyas. Con false NO se muestran Aprobar/Observar: ni en la fila
+   * ni en el pie del detalle.
    */
   puedeDecidir: boolean;
   /**
@@ -137,6 +139,13 @@ export interface GestionRendicionSalidaDto {
 
 export interface GestionRendicionDetalleDto extends GestionRendicionListItemDto {
   salidas: GestionRendicionSalidaDto[];
+
+  /**
+   * El recorrido del reembolso de esta planilla, para el pipeline del modal de detalle. Lo arma el
+   * backend y viaja acá dentro: no cuesta una petición aparte.
+   */
+  pipeline: ReembolsoPipelineDto;
+
   // Los destinatarios de los correos de las decisiones NO vienen acá: se piden aparte con
   // `correoPreview` al apretar el botón. Antes había un `correoReembolsoAprobado` que el backend
   // nunca llenaba, así que el modal decía siempre "nadie recibirá el aviso" aunque el correo

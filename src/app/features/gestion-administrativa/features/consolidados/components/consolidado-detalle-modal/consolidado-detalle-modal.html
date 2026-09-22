@@ -6,6 +6,10 @@
 
   <div *ngIf="detalle as d" class="flex flex-col gap-4 pt-4">
 
+    <!-- ── En qué va el reembolso ───────────────────────────────────────
+         Primero de todo: es la pregunta con la que se abre el modal. -->
+    <app-reembolso-pipeline [pipeline]="d.pipeline" />
+
     <!-- ── Cabecera ─────────────────────────────────────────────────────── -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div class="flex flex-col">
@@ -78,7 +82,8 @@
       <span *ngIf="d.reembolsoMixto" class="text-[11px] text-gray-400">
         Las salidas que ves no están todas en el mismo estado: se muestra la más atrasada.
       </span>
-      <span *ngIf="d.firmadoAt; else avisada" class="text-[11px] text-gray-400 ml-auto">
+      <span *ngIf="d.firmadoAt && !d.firmasPendientes.length; else avisada"
+            class="text-[11px] text-gray-400 ml-auto">
         Firmado el {{ d.firmadoAt | date:'dd/MM/yyyy HH:mm' }}
       </span>
       <ng-template #avisada>
@@ -86,6 +91,24 @@
           Jefatura avisada el {{ d.jefaturaAvisadaAt | date:'dd/MM/yyyy HH:mm' }}
         </span>
       </ng-template>
+    </div>
+
+    <!-- ── Las firmas del documento ──────────────────────────────────────
+         En obra el consolidado lo firman dos (el administrador y detrás el residente) y el estado
+         no se mueve hasta la última: sin esto, un reembolso con una firma puesta solo dice
+         "Pendiente" y no se entiende a quién está esperando. -->
+    <div *ngIf="d.firmas.length || d.firmasPendientes.length"
+         class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-gray-500">
+      <span *ngFor="let f of d.firmas" class="inline-flex items-center gap-1">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        Firmó {{ f.nombre }}<ng-container *ngIf="f.yo"> (tú)</ng-container><ng-container *ngIf="f.puesto">, {{ f.puesto }}</ng-container>,
+        el {{ f.firmadoAt | date:'dd/MM/yyyy HH:mm' }}
+      </span>
+      <span *ngIf="firmasFaltantesTexto" style="color:#92400E">
+        Falta la firma de {{ firmasFaltantesTexto }}
+      </span>
     </div>
 
     <!-- ── Documentos del consolidado, cada uno a la vista ──────────────────
@@ -228,8 +251,12 @@
          class="sticky bottom-0 z-10 -mx-[20px] -mb-[20px] px-[20px] py-3 rounded-b-lg bg-white border-t flex flex-wrap items-center justify-center gap-3"
          style="border-color:var(--color-abril-border)">
 
+      <!-- Aprobar desaparece apenas este usuario firma —firmar dos veces no completa el
+           documento— y en su lugar queda «Volver a firmar», mientras el que viene detrás no haya
+           firmado. -->
       <ng-container *ngIf="d.porDecidirCount > 0">
         <button
+          *ngIf="puedeAprobar"
           type="button"
           (click)="aprobar()"
           title="Aprueba el reembolso y estampa tu firma en el consolidado y en las planillas que cubre"
@@ -239,6 +266,22 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
           </svg>
           Aprobar el reembolso
+        </button>
+
+        <button
+          *ngIf="d.puedeVolverAFirmar"
+          type="button"
+          (click)="volverAFirmar()"
+          title="Reemplaza tu firma por una nueva, con la fecha de hoy. El reembolso sigue esperando la firma que falta"
+          class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors"
+          style="background:#FFFFFF;color:var(--color-abril-standard);border:1px solid var(--color-abril-standard)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 0 1 15.3-6.4L21 8"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 3v5h-5"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 0 1-15.3 6.4L3 16"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-5h5"/>
+          </svg>
+          Volver a firmar
         </button>
 
         <button
@@ -315,6 +358,7 @@
   *ngIf="salidaId !== null"
   [solicitudId]="salidaId"
   [mostrarDocumentos]="false"
+  [mostrarPipeline]="false"
   [cargar]="cargarSalida"
   (close)="cerrarSalida()" />
 

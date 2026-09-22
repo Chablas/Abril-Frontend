@@ -22,6 +22,7 @@ import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle
 import { ConsolidadoS10Modal } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
 import { ConsolidadoS10Dto } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { DocumentoEmbebido } from '../../../../shared/components/documento-embebido/documento-embebido';
+import { ReembolsoPipeline } from '../../../../shared/components/reembolso-pipeline/reembolso-pipeline';
 import * as tramites from '../tramites-consolidador';
 
 /**
@@ -39,7 +40,7 @@ import * as tramites from '../tramites-consolidador';
   selector: 'app-consolidado-detalle-modal',
   imports: [
     CommonModule, BaseModal, StatusBadge, TitleCasePipe, FirmaRegistrarModal, SalidaDetalleModal,
-    ConsolidadoS10Modal, DocumentoEmbebido,
+    ConsolidadoS10Modal, DocumentoEmbebido, ReembolsoPipeline,
   ],
   templateUrl: './consolidado-detalle-modal.html',
 })
@@ -116,20 +117,79 @@ export class ConsolidadoDetalleModal implements OnInit {
     }));
   }
 
-  async aprobar(): Promise<void> {
+  /**
+   * Puede aprobar (que es firmar) HOY: le toca decidir, todavía no firmó y no está esperando a
+   * quien va antes que él. Un consolidado de obra lo firman DOS —el administrador y detrás el
+   * residente—, así que «ya firmé» no es «ya está aprobado»: con una sola firma el documento sigue
+   * esperando, y volver a apretar Aprobar no lo completa.
+   */
+  get puedeAprobar(): boolean {
     const d = this.detalle;
-    if (!d || d.porDecidirCount === 0) return;
+    return !!d && d.porDecidirCount > 0 && !d.yaFirme && !d.esperaFirmaPrevia;
+  }
 
+  /**
+   * Las firmas que faltan, sin contar la propia: cuando le toca firmar y no lo hizo, él mismo
+   * encabeza la lista, y nombrarse ahí se lee como si el documento estuviera esperando a otro.
+   * Vacío cuando el único que falta es él (ahí habla el botón «Aprobar el reembolso»).
+   */
+  get firmasFaltantesTexto(): string {
+    const d = this.detalle;
+    if (!d?.firmasPendientes.length) return '';
+    return (this.puedeAprobar ? d.firmasPendientes.slice(1) : d.firmasPendientes).join(', ');
+  }
+
+  async aprobar(): Promise<void> {
+    if (!this.puedeAprobar) return;
+    const d = this.detalle!;
+
+    // Con dos firmas, la primera no cierra nada: decirlo evita que el jefe crea que el reembolso
+    // ya pasó a Tesorería.
+    const despues = d.firmasPendientes.slice(1);
     const result = await confirmarConCorreos({
       titulo: '¿Aprobar el reembolso de este consolidado?',
       // Lo único que el modal no muestra: que aprobar ES firmar todos esos documentos.
-      nota: 'Se firman el Consolidado del S10, la planilla grupal y las planillas que cubre.',
+      nota: 'Firma el consolidado, la planilla grupal y sus planillas.'
+          + (despues.length ? ` Después falta la firma de ${despues.join(', ')}.` : ''),
       avisos: await this.avisos(true),
       confirmButtonText: 'Sí, aprobar',
     });
     if (!result.isConfirmed) return;
 
     this.ejecutarAprobacion();
+  }
+
+  /**
+   * Vuelve a estampar su firma sobre un consolidado que ya firmó. No es una segunda firma: la copia
+   * firmada se rehace desde el original con la suya al día, así que el documento sigue esperando
+   * exactamente lo que esperaba. Solo se ofrece mientras el que viene detrás no haya firmado.
+   */
+  async volverAFirmar(): Promise<void> {
+    const d = this.detalle;
+    if (!d?.puedeVolverAFirmar) return;
+
+    const result = await confirmarConCorreos({
+      titulo: '¿Volver a firmar este consolidado?',
+      nota: 'Reemplaza tu firma con la fecha de hoy.'
+          + (d.firmasPendientes.length
+              ? ` Sigue faltando la firma de ${d.firmasPendientes.join(', ')}.`
+              : ''),
+      avisos: [],
+      sinNadie: 'No sale ningún correo.',
+      confirmButtonText: 'Sí, volver a firmar',
+    });
+    if (!result.isConfirmed) return;
+
+    this.loader.show();
+    this.service.volverAFirmar(this.accion()).subscribe({
+      next: (res) => {
+        this.loader.hide();
+        Swal.fire({ title: res.message, icon: 'success', timer: 1800, showConfirmButton: false });
+        // No se decidió nada: el modal se queda abierto con el documento nuevo a la vista.
+        this.trasTramite();
+      },
+      error: (err: HttpErrorResponse) => this.errorAccion(err),
+    });
   }
 
   /**

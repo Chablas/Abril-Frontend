@@ -490,8 +490,10 @@ export class GestionRendiciones implements OnInit {
   }
 
   /**
-   * Abre el diálogo que pedía el botón del correo. Si la planilla ya no está esperando la primera
-   * revisión (otro jefe decidió antes), no se plantea nada: la pantalla ya muestra en qué quedó.
+   * Abre el diálogo que pedía el botón del correo. No se plantea nada si la planilla ya no está
+   * esperando la primera revisión (otro jefe decidió antes) ni si al que abrió el enlace no le
+   * toca revisarla —el correo pudo reenviarse, o pudo cambiar el revisor—: la pantalla ya muestra
+   * en qué quedó, y mostrarle el diálogo solo lo llevaría al 403 del servidor.
    */
   private resolverAccionDelCorreo(): void {
     const accion = this.accionPendiente;
@@ -499,7 +501,7 @@ export class GestionRendiciones implements OnInit {
     this.accionPendiente = null;
 
     const planilla = this.rendiciones.find((r) => r.id === this.detalleId);
-    if (!planilla?.porPrimeraRevision) return;
+    if (!planilla?.porPrimeraRevision || !planilla.puedeDecidir) return;
 
     if (accion === 'aprobar')      void this.aprobarPrimeraRevision([planilla]);
     else if (accion === 'observar') void this.observarPrimeraRevision([planilla]);

@@ -1,6 +1,6 @@
 <app-base-modal
   [title]="titulo"
-  width="w-[720px]"
+  [width]="esModoRendicion ? 'w-[880px]' : 'w-[720px]'"
   (closeModal)="closeModal.emit()">
 
   <div class="flex flex-col gap-[14px] mt-[12px]">
@@ -22,6 +22,10 @@
               <th class="text-center px-[14px] py-[8px] font-semibold">{{ singular }}</th>
               <th class="text-center px-[14px] py-[8px] font-semibold">Correo</th>
               <th class="text-center px-[14px] py-[8px] font-semibold w-[130px]">Categoría</th>
+              <ng-container *ngIf="esModoRendicion">
+                <th class="text-center px-[8px] py-[8px] font-semibold w-[100px]">1.ª revisión</th>
+                <th class="text-center px-[8px] py-[8px] font-semibold w-[100px]">Consolidado</th>
+              </ng-container>
               <th class="text-center px-[8px] py-[8px] font-semibold w-[120px]">Origen</th>
             </tr>
           </thead>
@@ -31,6 +35,20 @@
               <td class="px-[14px] py-[8px] text-gray-700">{{ (e.nombre || '—') | titleCase }}</td>
               <td class="px-[14px] py-[8px] text-gray-700">{{ e.email || '—' }}</td>
               <td class="px-[14px] py-[8px] text-gray-700">{{ e.category || '—' }}</td>
+              <!-- En qué paso interviene: las mismas casillas del modal de edición, sin poder
+                   tocarlas. Acá no salen de una fila cargada sino de resolver cada paso. -->
+              <ng-container *ngIf="esModoRendicion">
+                <td class="text-center py-[8px]">
+                  <input type="checkbox" class="w-4 h-4 accent-[var(--color-abril-standard)]"
+                         [checked]="e.apruebaPrimeraRevision" disabled
+                         title="Su aprobación hace falta en la primera revisión de la planilla" />
+                </td>
+                <td class="text-center py-[8px]">
+                  <input type="checkbox" class="w-4 h-4 accent-[var(--color-abril-standard)]"
+                         [checked]="e.apruebaConsolidado" disabled
+                         title="Su firma hace falta en el consolidado y su planilla grupal" />
+                </td>
+              </ng-container>
               <td class="text-center py-[8px]">
                 <span class="text-[11px] px-[8px] py-[2px] rounded-full font-medium whitespace-nowrap"
                       [ngClass]="origenClases(e.origen)">
@@ -39,7 +57,7 @@
               </td>
             </tr>
             <tr *ngIf="vigentes.length === 0">
-              <td colspan="5" class="text-center py-[24px] text-gray-400 text-sm">
+              <td [attr.colspan]="esModoRendicion ? 7 : 5" class="text-center py-[24px] text-gray-400 text-sm">
                 Sin {{ plural.toLowerCase() }} vigentes.
               </td>
             </tr>
@@ -60,6 +78,10 @@
               <th class="text-center px-[14px] py-[8px] font-semibold">{{ singular }}</th>
               <th class="text-center px-[14px] py-[8px] font-semibold">Correo</th>
               <th class="text-center px-[14px] py-[8px] font-semibold w-[130px]">Categoría</th>
+              <ng-container *ngIf="esModoRendicion">
+                <th class="text-center px-[8px] py-[8px] font-semibold w-[100px]">1.ª revisión</th>
+                <th class="text-center px-[8px] py-[8px] font-semibold w-[100px]">Consolidado</th>
+              </ng-container>
               <th class="text-center px-[8px] py-[8px] font-semibold w-[100px]">Estado</th>
             </tr>
           </thead>
@@ -69,6 +91,18 @@
               <td class="px-[14px] py-[8px] text-gray-700">{{ (a.fullName || '—') | titleCase }}</td>
               <td class="px-[14px] py-[8px] text-gray-700">{{ a.email || '—' }}</td>
               <td class="px-[14px] py-[8px] text-gray-700">{{ a.category || '—' }}</td>
+              <ng-container *ngIf="esModoRendicion">
+                <td class="text-center py-[8px]">
+                  <input type="checkbox" class="w-4 h-4 accent-[var(--color-abril-standard)]"
+                         [checked]="a.apruebaPrimeraRevision" disabled
+                         title="Su aprobación hace falta en la primera revisión de la planilla" />
+                </td>
+                <td class="text-center py-[8px]">
+                  <input type="checkbox" class="w-4 h-4 accent-[var(--color-abril-standard)]"
+                         [checked]="a.apruebaConsolidado" disabled
+                         title="Su firma hace falta en el consolidado y su planilla grupal" />
+                </td>
+              </ng-container>
               <td class="text-center py-[8px]">
                 <app-status-badge
                   [text]="a.active ? 'ACTIVO' : 'INACTIVO'"

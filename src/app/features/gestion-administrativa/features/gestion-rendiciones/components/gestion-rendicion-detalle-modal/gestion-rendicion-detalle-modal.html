@@ -6,6 +6,10 @@
 
   <div *ngIf="detalle as d" class="flex flex-col gap-4 pt-4">
 
+    <!-- ── En qué va el reembolso ───────────────────────────────────────
+         Primero de todo: es la pregunta con la que se abre el modal. -->
+    <app-reembolso-pipeline [pipeline]="d.pipeline" />
+
     <!-- ── Cabecera ─────────────────────────────────────────────────────── -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div class="flex flex-col">
@@ -200,18 +204,16 @@
          al pie del modal y no en la tabla de más arriba— y, para el consolidador, el primer
          Consolidado del S10 (reemplazarlo es de Consolidados). Pegadas al borde de abajo: con los
          documentos a la vista el modal es largo. -->
-    <div *ngIf="d.porPrimeraRevision || (d.puedeAdjuntarConsolidado && d.puedeConsolidar)"
+    <div *ngIf="(d.porPrimeraRevision && d.puedeDecidir) || (d.puedeAdjuntarConsolidado && d.puedeConsolidar)"
          class="sticky bottom-0 z-10 -mx-[20px] -mb-[20px] px-[20px] py-3 rounded-b-lg bg-white border-t flex flex-wrap items-center justify-center gap-3"
          style="border-color:var(--color-abril-border)">
-      <ng-container *ngIf="d.porPrimeraRevision">
+      <!-- Solo para quien la tiene que revisar: al resto el modal le queda de lectura. -->
+      <ng-container *ngIf="d.porPrimeraRevision && d.puedeDecidir">
         <button
           type="button"
           (click)="aprobarPrimeraRevision()"
-          [disabled]="!d.puedeDecidir"
-          [title]="d.puedeDecidir
-            ? 'Habilita al consolidador a cargar el Consolidado del S10'
-            : 'No puedes revisar una rendición con tus propias salidas'"
-          class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+          title="Habilita al consolidador a cargar el Consolidado del S10"
+          class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
           style="background:var(--color-abril-standard)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
@@ -222,11 +224,8 @@
         <button
           type="button"
           (click)="observarPrimeraRevision()"
-          [disabled]="!d.puedeDecidir"
-          [title]="d.puedeDecidir
-            ? 'Se te pedirá el comentario de qué tiene que corregir'
-            : 'No puedes revisar una rendición con tus propias salidas'"
-          class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Se te pedirá el comentario de qué tiene que corregir"
+          class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors"
           style="background:#FFFFFF;color:#D30000;border:1px solid #D30000">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
@@ -234,10 +233,6 @@
           </svg>
           Observar
         </button>
-
-        <span *ngIf="!d.puedeDecidir" class="text-[11px] text-gray-500 italic">
-          Esta rendición incluye salidas tuyas: la tiene que revisar otro jefe.
-        </span>
       </ng-container>
 
       <button
@@ -263,5 +258,6 @@
   *ngIf="salidaId !== null"
   [solicitudId]="salidaId"
   [mostrarDocumentos]="false"
+  [mostrarPipeline]="false"
   [cargar]="cargarSalida"
   (close)="cerrarSalida()" />

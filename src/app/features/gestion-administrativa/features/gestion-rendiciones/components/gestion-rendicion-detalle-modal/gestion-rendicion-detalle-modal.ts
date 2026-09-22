@@ -18,6 +18,7 @@ import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-c
 import { otrasRendicionesDelConsolidado } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
 import { DocumentoEmbebido } from '../../../../shared/components/documento-embebido/documento-embebido';
+import { ReembolsoPipeline } from '../../../../shared/components/reembolso-pipeline/reembolso-pipeline';
 
 /**
  * Detalle de una planilla para la jefatura y el consolidador: sus documentos y las salidas que
@@ -32,7 +33,10 @@ import { DocumentoEmbebido } from '../../../../shared/components/documento-embeb
 @Component({
   standalone: true,
   selector: 'app-gestion-rendicion-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaDetalleModal, DocumentoEmbebido],
+  imports: [
+    CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaDetalleModal, DocumentoEmbebido,
+    ReembolsoPipeline,
+  ],
   templateUrl: './gestion-rendicion-detalle-modal.html',
 })
 export class GestionRendicionDetalleModal implements OnInit {

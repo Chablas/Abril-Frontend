@@ -94,6 +94,18 @@ export class ConsolidadosService {
   }
 
   /**
+   * Vuelve a estampar la firma de quien ya firmó, mientras el consolidado siga esperando la del que
+   * viene detrás. No agrega una segunda estampa: rehace las copias firmadas desde el original con
+   * las mismas firmas y la suya al día. Responde 409 si ya no corresponde (no lo firmó, o el
+   * siguiente ya firmó) y, como aprobar, si todavía no registró su firma.
+   */
+  volverAFirmar(accion: ConsolidadoAccionDto): Observable<ReembolsoBulkResultDto> {
+    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/volver-a-firmar`, accion, {
+      headers: this.headers,
+    });
+  }
+
+  /**
    * El consolidador le avisa a la jefatura que el consolidado tiene reembolsos esperando su visto
    * bueno. Se puede repetir. Responde 409 si no hay a quién escribirle.
    */

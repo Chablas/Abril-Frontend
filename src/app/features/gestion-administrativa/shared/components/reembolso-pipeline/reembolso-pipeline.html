@@ -1,0 +1,113 @@
+<div *ngIf="datos as p" class="rp">
+
+  <!-- ── Encabezado ──────────────────────────────────────────────────────
+       Nombra el ítem porque el mismo recorrido se mira sobre tres cosas distintas: una salida,
+       una planilla o una rendición grupal. -->
+  <div class="rp__head">
+    <span class="rp__label">
+      Seguimiento del reembolso
+      <span *ngIf="p.itemCodigo" class="rp__code">· {{ p.itemTipo }} {{ p.itemCodigo }}</span>
+    </span>
+    <span class="rp__count">Paso {{ p.pasoActual }} de {{ p.totalPasos }}</span>
+  </div>
+
+  <!-- ── La tira de fases ────────────────────────────────────────────────
+       Cada fase lleva su tooltip con lo que pasa en ella y quién la resuelve: el título tiene que
+       entrar en dos líneas y no alcanza para explicarlo. -->
+  <div class="rp__track">
+    <ng-container *ngFor="let paso of p.pasos; let i = index; let first = first">
+
+      <div *ngIf="!first"
+           class="rp__link"
+           [class.rp__link--done]="conectorCumplido(i)"></div>
+
+      <div class="rp__step" [title]="paso.titulo + ' — ' + paso.descripcion">
+        <div class="rp__dot"
+             [style.border-color]="colores(paso.estado).borde"
+             [style.background]="colores(paso.estado).fondo"
+             [style.color]="colores(paso.estado).texto"
+             [class.rp__dot--now]="paso.estado === 'actual'">
+
+          <svg *ngIf="icono(paso.estado) === 'check'" width="13" height="13" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="3">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+
+          <svg *ngIf="icono(paso.estado) === 'alerta'" width="13" height="13" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="3">
+            <path stroke-linecap="round" d="M12 6v8" />
+            <circle cx="12" cy="18" r="1.1" fill="currentColor" stroke="none" />
+          </svg>
+
+          <svg *ngIf="icono(paso.estado) === 'equis'" width="12" height="12" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="3">
+            <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18" />
+          </svg>
+
+          <span *ngIf="icono(paso.estado) === 'numero'">{{ i + 1 }}</span>
+        </div>
+
+        <span class="rp__title"
+              [class.rp__title--now]="paso.estado !== 'completado' && paso.estado !== 'pendiente'"
+              [style.color]="paso.estado === 'pendiente' ? '#9CA3AF'
+                           : paso.estado === 'completado' ? '#4B5563'
+                           : colores(paso.estado).borde">
+          {{ paso.titulo }}
+        </span>
+
+        <span class="rp__date">{{ (paso.fecha | date:'dd/MM/yy') || '' }}</span>
+      </div>
+
+    </ng-container>
+  </div>
+
+  <!-- ── Vista angosta ───────────────────────────────────────────────────
+       En una pantalla chica nueve círculos no entran sin achicarlos hasta volverlos ilegibles: se
+       cambia por la barra de avance, que dice lo mismo. -->
+  <div class="rp__compact">
+    <div class="rp__bar">
+      <div class="rp__bar-fill"
+           [style.width.%]="progreso"
+           [style.background]="colores(p.estadoActual).borde"></div>
+    </div>
+    <span class="rp__compact-text" [style.color]="colores(p.estadoActual).borde">
+      Paso {{ p.pasoActual }}/{{ p.totalPasos }} · {{ tituloActual }}
+    </span>
+  </div>
+
+  <!-- ── En qué punto está ───────────────────────────────────────────────
+       Una línea y nada más: lo que haya que ampliar (la observación, el motivo del rechazo, las
+       firmas que faltan) ya vive en su propio bloque del modal. -->
+  <div class="rp__summary"
+       [style.border-color]="colores(p.estadoActual).borde + '55'"
+       [style.background]="p.estadoActual === 'completado' ? 'var(--color-abril-standard-light)' : colores(p.estadoActual).fondo">
+    <div class="rp__summary-icon" [style.color]="colores(p.estadoActual).borde">
+      <svg *ngIf="p.estadoActual === 'completado'" width="16" height="16" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+      </svg>
+      <svg *ngIf="p.estadoActual === 'actual'" width="16" height="16" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9" />
+        <path stroke-linecap="round" d="M12 7v5l3 2" />
+      </svg>
+      <svg *ngIf="p.estadoActual === 'observado'" width="16" height="16" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2.2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+        <path stroke-linecap="round" d="M12 9v4" />
+        <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />
+      </svg>
+      <svg *ngIf="p.estadoActual === 'cancelado'" width="16" height="16" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2.2">
+        <circle cx="12" cy="12" r="9" />
+        <path stroke-linecap="round" d="M6.3 6.3l11.4 11.4" />
+      </svg>
+    </div>
+
+    <div class="rp__summary-title" [style.color]="colores(p.estadoActual).borde">{{ p.resumen }}</div>
+  </div>
+
+  <div *ngIf="p.nota" class="rp__note">{{ p.nota }}</div>
+
+</div>

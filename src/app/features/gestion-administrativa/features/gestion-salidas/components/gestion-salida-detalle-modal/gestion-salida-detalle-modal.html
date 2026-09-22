@@ -6,6 +6,10 @@
 
   <div class="flex flex-col gap-4 pt-4">
 
+    <!-- ── En qué va el reembolso ───────────────────────────────────────
+         Primero de todo: es la pregunta con la que se abre el modal. -->
+    <app-reembolso-pipeline [pipeline]="detalle.pipeline" />
+
     <!-- ── Cabecera ──────────────────────────────────────────────────── -->
     <div class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
       <div>

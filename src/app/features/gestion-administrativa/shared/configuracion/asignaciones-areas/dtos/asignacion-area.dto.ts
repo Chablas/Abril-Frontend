@@ -55,6 +55,13 @@ export interface AreaEfectivoDTO {
   /** Categoría del puesto. Null en el fallback GTH, que no es una persona. */
   category?: string | null;
   origen?: AreaEfectivoOrigen | null;
+  /**
+   * Solo en Revisores de Rendiciones: en cuál de los dos pasos interviene. Lo resuelve el backend,
+   * así que en una obra sin nada cargado el administrador viene con los dos en true y el residente
+   * solo con `apruebaConsolidado`. En las otras pantallas llegan en true y no se muestran.
+   */
+  apruebaPrimeraRevision?: boolean;
+  apruebaConsolidado?: boolean;
 }
 
 /** Asignaciones de un proyecto dentro de un área "filtrada por proyecto". */
@@ -82,12 +89,6 @@ export interface AreaAsignacionItemDTO {
   efectivos: AreaEfectivoDTO[];
   /** true = el área se subdivide por proyecto (se muestran subfilas por proyecto). */
   filtraPorProyecto: boolean;
-  /**
-   * Solo con `filtraPorProyecto` en true: el consolidado y la planilla grupal los firma el revisor
-   * de la OBRA (el mismo que aprueba las salidas) en vez del revisor del área. Con obras mezcladas
-   * en un mismo documento no hay revisor de obra único y firma igual el del área.
-   */
-  firmaConsolidadoPorProyecto: boolean;
   /** TODOS los proyectos activos con lo suyo resuelto (solo si filtraPorProyecto). */
   proyectos: AreaProyectoAsignacionesDTO[];
 }
@@ -123,6 +124,4 @@ export interface AreaAsignacionUpdateDTO {
 /** Cuerpo del PUT del flag "filtrar por proyecto". */
 export interface AreaFiltroProyectoUpdateDTO {
   filtraPorProyecto: boolean;
-  /** Se ignora (se guarda en false) si `filtraPorProyecto` viene en false. */
-  firmaConsolidadoPorProyecto: boolean;
 }

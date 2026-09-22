@@ -15,6 +15,19 @@ export interface VisibilidadWorkerItemDTO {
   areaScopeId?: number | null;
   /** Cuántos nodos area_scope tiene asignados (override). 0 = usa el algoritmo automático. */
   areasAsignadas: number;
+  /**
+   * Obras de las que es hoy residente o administrador de obra: ve a todos sus trabajadores, con o
+   * sin configuración propia. Solo lo manda Gestión Administrativa.
+   */
+  obras?: string[];
+}
+
+/** Una obra que el trabajador ve entera por estar a cargo de ella. */
+export interface VisibilidadObraDTO {
+  projectId: number;
+  nombre: string;
+  /** "Residente", "Administrador de obra" o los dos. */
+  rol: string;
 }
 
 /** Carga inicial de la sección: trabajadores (tabla) + árbol de áreas (filtro en cascada). */
@@ -66,4 +79,10 @@ export interface VisibilidadWorkerDetalleDTO {
   esPersonalizado: boolean;
   /** true = ve TODO, sin recorte por área. */
   veTodo: boolean;
+  /**
+   * Obras de las que es residente o administrador de obra (solo Gestión Administrativa). Se suman a
+   * `efectivas` y la configuración propia no las quita: salen del proyecto, así que pasan solas a
+   * quien ocupe el puesto.
+   */
+  obras?: VisibilidadObraDTO[];
 }

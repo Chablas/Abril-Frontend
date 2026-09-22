@@ -7,7 +7,7 @@ import { SearchInput } from '../../search-input/search-input';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
 import { VisibilidadAreasService } from '../visibilidad-areas.service';
-import { VisibilidadAreaNodeDTO } from '../visibilidad-areas.dto';
+import { VisibilidadAreaNodeDTO, VisibilidadObraDTO } from '../visibilidad-areas.dto';
 
 interface OrderedNode {
   node: VisibilidadAreaNodeDTO;
@@ -64,6 +64,11 @@ export class VisibilidadAreasModal implements OnInit {
   esPersonalizado = false;
   /** true = ve todo sin recorte por área. */
   veTodo = false;
+  /**
+   * Obras que ve enteras por ser su residente o administrador. No se eligen acá: salen del
+   * proyecto y se suman a lo marcado, así que en los dos modos se muestran sin casilla.
+   */
+  obras: VisibilidadObraDTO[] = [];
 
   loaded = false;
 
@@ -91,6 +96,7 @@ export class VisibilidadAreasModal implements OnInit {
       next: (detalle) => {
         this.esPersonalizado = detalle.esPersonalizado;
         this.veTodo = detalle.veTodo;
+        this.obras = detalle.obras ?? [];
         this.selection.clear();
 
         // En detalle siempre lo vigente. En edición, lo propio si lo hay; si no, lo que hoy

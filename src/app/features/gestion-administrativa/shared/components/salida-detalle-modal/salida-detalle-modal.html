@@ -7,6 +7,12 @@
 
   <div *ngIf="detalle" class="flex flex-col gap-4 pt-4">
 
+    <!-- ── En qué va el reembolso ───────────────────────────────────────
+         Primero de todo: es la pregunta con la que se abre el modal. Mientras se editan capturas
+         no se muestra: ahí el modal se angosta y lo que importa son los montos que se están
+         escribiendo, no el seguimiento. -->
+    <app-reembolso-pipeline *ngIf="mostrarPipeline && !edicion" [pipeline]="detalle.pipeline" />
+
     <div class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
       <!-- En consulta la salida es de otro: se dice de quién. -->
       <div *ngIf="consulta && detalle.trabajador" class="col-span-2">
@@ -222,7 +228,7 @@
       <button
         type="button"
         (click)="rendirSolicitud()"
-        title="Rendir esta solicitud"
+        title="Rendir esta solicitud y enviar la planilla a primera revisión"
         class="inline-flex items-center gap-[6px] h-[38px] px-5 rounded-lg text-sm font-semibold text-white cursor-pointer transition-colors"
         style="background:#0086A5"
         onmouseover="this.style.background='#006f8a'"

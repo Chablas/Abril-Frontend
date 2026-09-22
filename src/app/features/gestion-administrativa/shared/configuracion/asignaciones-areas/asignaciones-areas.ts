@@ -170,15 +170,6 @@ export class GaAsignacionesAreas implements OnInit, OnChanges {
   }
 
   /**
-   * La firma del consolidado la decide el REVISOR del área, así que su casilla solo aparece en esa
-   * sección. En Consolidadores la columna no existe: quién consolida y quién firma son cosas
-   * distintas.
-   */
-  get esModoRevisores(): boolean {
-    return this.modo === 'revisores';
-  }
-
-  /**
    * Las dos casillas por persona (primera revisión / consolidado) solo existen en Revisores de
    * Rendiciones: son las que dicen en cuál de los dos pasos interviene cada uno.
    */
@@ -259,13 +250,8 @@ export class GaAsignacionesAreas implements OnInit, OnChanges {
   toggleFiltroProyecto(item: AreaAsignacionItemDTO): void {
     const nuevo = !item.filtraPorProyecto;
     this.loaderService.show();
-    // Apagar el filtro apaga la firma por obra: sin subdividir el área no hay revisor de obra al
-    // que bajarle la firma. El backend hace lo mismo, esto es solo para no mandar un estado raro.
     this.service
-      .setFiltroProyecto(this.modo, item.areaScopeId, {
-        filtraPorProyecto: nuevo,
-        firmaConsolidadoPorProyecto: nuevo && item.firmaConsolidadoPorProyecto,
-      })
+      .setFiltroProyecto(this.modo, item.areaScopeId, { filtraPorProyecto: nuevo })
       .subscribe({
       next: () => {
         item.filtraPorProyecto = nuevo;
@@ -278,30 +264,6 @@ export class GaAsignacionesAreas implements OnInit, OnChanges {
         this.errorService.handleError(err);
       },
     });
-  }
-
-  /**
-   * Baja (o sube) la firma del consolidado al revisor de la obra. No recarga la tabla: no cambia
-   * ninguna fila ni subfila, solo a quién le va a tocar firmar.
-   */
-  toggleFirmaPorProyecto(item: AreaAsignacionItemDTO): void {
-    const nuevo = !item.firmaConsolidadoPorProyecto;
-    this.loaderService.show();
-    this.service
-      .setFiltroProyecto(this.modo, item.areaScopeId, {
-        filtraPorProyecto: item.filtraPorProyecto,
-        firmaConsolidadoPorProyecto: nuevo,
-      })
-      .subscribe({
-        next: () => {
-          item.firmaConsolidadoPorProyecto = nuevo;
-          this.loaderService.hide();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.loaderService.hide();
-          this.errorService.handleError(err);
-        },
-      });
   }
 
   /** Subfilas de proyecto de un área filtrada, tal como las manda el backend. */

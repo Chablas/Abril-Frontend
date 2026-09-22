@@ -1,6 +1,7 @@
 ﻿import { EstadoReembolso } from '../../../shared/dtos/rendicion-shared.dto';
 
 import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { ReembolsoPipelineDto } from '../../../shared/dtos/reembolso-pipeline.dto';
 
 export interface GestionSalidaListItemDto {
   id: number;
@@ -263,5 +264,12 @@ export interface GestionSalidaDetalleDto {
   rendicion: GestionSalidaRendicionDto | null;
   /** Consolidado del S10 vigente (propio de la salida o heredado de su planilla). Null si no hay. */
   consolidadoS10: ConsolidadoS10Dto | null;
+
+  /**
+   * El recorrido del reembolso de esta salida, para el pipeline del modal de detalle. Lo arma el
+   * backend y viaja acá dentro: no cuesta una petición aparte.
+   */
+  pipeline: ReembolsoPipelineDto;
+
   trayectos: GestionSalidaTrayectoDto[];
 }

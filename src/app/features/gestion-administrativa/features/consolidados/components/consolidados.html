@@ -38,29 +38,31 @@
       {{ selectedIds.size }} consolidado{{ selectedIds.size === 1 ? '' : 's' }} seleccionado{{ selectedIds.size === 1 ? '' : 's' }}
     </span>
 
+    <!-- Aprobar cuenta menos que observar: los que este usuario ya firmó, y los que todavía
+         esperan la firma de quien va antes que él, no se pueden aprobar. -->
     <button
       type="button"
       abrilBulkAction="default"
       (click)="aprobarBulk()"
-      [disabled]="!puedeDecidir"
+      [disabled]="selectedParaAprobar.length === 0"
       title="Aprobar estampa tu firma en el Consolidado del S10 y en las planillas que cubre">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
       </svg>
-      Aprobar reembolso<span *ngIf="puedeDecidir"> ({{ selectedPorDecidir.length }})</span>
+      Aprobar reembolso<span *ngIf="selectedParaAprobar.length"> ({{ selectedParaAprobar.length }})</span>
     </button>
 
     <button
       type="button"
       abrilBulkAction="danger"
       (click)="observarBulk()"
-      [disabled]="!puedeDecidir"
+      [disabled]="selectedParaObservar.length === 0"
       title="Se te pedirá una observación para que el consolidador sepa qué corregir">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
         <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
         <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
       </svg>
-      Observar reembolso<span *ngIf="puedeDecidir"> ({{ selectedPorDecidir.length }})</span>
+      Observar reembolso<span *ngIf="selectedParaObservar.length"> ({{ selectedParaObservar.length }})</span>
     </button>
   </div>
 
@@ -215,6 +217,14 @@
                 [bgColor]="reembolsoColors(c.estadoReembolso).bg"
                 [textColor]="reembolsoColors(c.estadoReembolso).text"
                 [title]="reembolsoTitle(c)" />
+              <!-- Por qué sigue "Pendiente" con una firma ya puesta: el consolidado de obra lo
+                   firman dos y el estado solo cambia con la última. -->
+              <app-status-badge
+                *ngIf="firmaBadge(c) as firma"
+                [text]="firma.text"
+                [bgColor]="firma.bg"
+                [textColor]="firma.textColor"
+                [title]="firmaTitle(c)" />
               <app-status-badge
                 *ngIf="c.correccionS10 as corr"
                 [text]="corr.esperandoErp ? 'En el ERP' : 'Por recargar'"
@@ -226,9 +236,13 @@
 
           <td (click)="$event.stopPropagation()">
             <div class="flex flex-wrap items-center gap-2">
-              <!-- La decisión: solo la jefatura de los trabajadores del consolidado. -->
+              <!-- La decisión: solo la jefatura de los trabajadores del consolidado. Aprobar
+                   desaparece apenas este usuario firma —firmar dos veces no completa el
+                   documento— y en su lugar queda «Volver a firmar», mientras el que viene detrás
+                   no haya firmado. -->
               <ng-container *ngIf="c.porDecidirCount > 0">
                 <button
+                  *ngIf="puedeAprobar(c)"
                   type="button"
                   (click)="aprobarBulk([c])"
                   title="Aprobar estampa tu firma en este consolidado y en las planillas que cubre"
@@ -238,6 +252,22 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
                   </svg>
                   Aprobar
+                </button>
+
+                <button
+                  *ngIf="c.puedeVolverAFirmar"
+                  type="button"
+                  (click)="volverAFirmar(c, $event)"
+                  [title]="firmaTitle(c)"
+                  class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold transition-colors"
+                  style="background:#FFFFFF;color:var(--color-abril-standard);border:1px solid var(--color-abril-standard)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 0 1 15.3-6.4L21 8"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 3v5h-5"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 0 1-15.3 6.4L3 16"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-5h5"/>
+                  </svg>
+                  Volver a firmar
                 </button>
 
                 <button

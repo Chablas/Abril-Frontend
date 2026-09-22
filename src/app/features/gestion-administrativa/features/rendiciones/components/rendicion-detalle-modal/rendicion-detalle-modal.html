@@ -6,6 +6,10 @@
 
   <div *ngIf="detalle as d" class="flex flex-col gap-4 pt-4">
 
+    <!-- ── En qué va el reembolso ───────────────────────────────────────
+         Primero de todo: es la pregunta con la que se abre el modal. -->
+    <app-reembolso-pipeline [pipeline]="d.pipeline" />
+
     <!-- ── Cabecera: de qué planilla se trata ───────────────────────────── -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div class="flex flex-col">
@@ -244,4 +248,5 @@
   *ngIf="salidaId !== null"
   [solicitudId]="salidaId"
   [mostrarDocumentos]="false"
+  [mostrarPipeline]="false"
   (close)="cerrarSalida()" />
