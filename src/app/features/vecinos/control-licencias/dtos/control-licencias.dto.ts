@@ -1,6 +1,13 @@
 export interface ProjectOptionDTO {
   projectId: number;
   projectDescription: string;
+  /** Null si el proyecto todavía no tiene logo cargado para el PDF de Control de Licencias. */
+  logoUrl: string | null;
+}
+
+/** Resultado de subir el logo de un proyecto. */
+export interface VecinoLicenciaLogoDTO {
+  logoUrl: string;
 }
 
 export interface CatalogOptionDTO {
@@ -73,6 +80,8 @@ export interface VecinoLicenciaDashboardItemDTO {
   /** Razón social y RUC del proyecto (vía Project.ContributorId), para el encabezado del PDF del comité. */
   razonSocial: string | null;
   ruc: string | null;
+  /** Logo del proyecto, para el encabezado del PDF. Null si aún no lo subieron. */
+  logoUrl: string | null;
   tipoDescripcion: string;
   estadoDescripcion: string;
   fechaInscripcion: string | null;
