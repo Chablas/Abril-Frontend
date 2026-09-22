@@ -1,0 +1,28 @@
+<div class="slide-vf">
+  <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+
+  <img *ngIf="config.imagenUrl" [src]="config.imagenUrl" class="media-imagen anim-cascada-titulo" alt="" />
+
+  <h2 class="enunciado anim-cascada-titulo">{{ config.enunciado }}</h2>
+
+  <div class="opciones anim-cascada-cuerpo">
+    <button
+      type="button"
+      class="btn-vf btn-verdadero"
+      [class.seleccionado]="seleccion === true"
+      [disabled]="seleccion !== null"
+      (click)="elegir(true)"
+    >
+      VERDADERO
+    </button>
+    <button
+      type="button"
+      class="btn-vf btn-falso"
+      [class.seleccionado]="seleccion === false"
+      [disabled]="seleccion !== null"
+      (click)="elegir(false)"
+    >
+      FALSO
+    </button>
+  </div>
+</div>

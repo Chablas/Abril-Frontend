@@ -1,0 +1,34 @@
+<div class="slide-mi">
+  <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+
+  <h2 class="enunciado anim-cascada-titulo">{{ config.enunciado }}</h2>
+
+  <div class="grid-imagenes anim-cascada-cuerpo">
+    <button
+      type="button"
+      class="tarjeta-imagen"
+      *ngFor="let img of config.imagenes"
+      [class.seleccionada]="seleccionId === img.id"
+      [class.confirmado]="confirmado"
+      (click)="elegir(img.id)"
+    >
+      <img [src]="img.imagenUrl" [alt]="img.texto" />
+      <span *ngIf="img.texto" class="etiqueta">{{ img.texto }}</span>
+      <span
+        class="btn-ampliar"
+        title="Ampliar imagen"
+        (click)="ampliar($event, img.imagenUrl!)"
+      >
+        <i class="ti ti-zoom-in"></i>
+      </span>
+    </button>
+  </div>
+
+  <!-- Modal de zoom: solo visual, no cuenta como respuesta -->
+  <div class="overlay-zoom" *ngIf="imagenZoomUrl" (click)="cerrarZoom()">
+    <img [src]="imagenZoomUrl" class="imagen-zoom" alt="" (click)="$event.stopPropagation()" />
+    <button type="button" class="btn-cerrar-zoom" (click)="cerrarZoom()">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+</div>

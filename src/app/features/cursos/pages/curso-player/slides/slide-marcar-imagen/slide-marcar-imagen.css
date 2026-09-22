@@ -1,0 +1,132 @@
+.slide-mi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 16px 8px;
+}
+
+.enunciado {
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-align: center;
+  color: #222;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.grid-imagenes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 18px;
+  width: 100%;
+}
+
+.tarjeta-imagen {
+  position: relative;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: var(--radius-standard, 7px);
+  overflow: hidden;
+  cursor: pointer;
+  background: #fff;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tarjeta-imagen:not(.confirmado):hover {
+  transform: scale(1.03);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+}
+
+.tarjeta-imagen.confirmado {
+  cursor: default;
+}
+
+.tarjeta-imagen.seleccionada {
+  border-color: var(--color-abril-standard, #0f6e56);
+}
+
+.tarjeta-imagen img {
+  width: 100%;
+  height: 170px;
+  object-fit: cover;
+  display: block;
+}
+
+.etiqueta {
+  display: block;
+  padding: 8px;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+.btn-ampliar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-ampliar:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.overlay-zoom {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: zoomFadeIn 0.2s ease;
+  cursor: zoom-out;
+}
+
+.imagen-zoom {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: var(--radius-standard, 7px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  cursor: default;
+}
+
+.btn-cerrar-zoom {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.btn-cerrar-zoom:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+@keyframes zoomFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

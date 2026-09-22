@@ -318,6 +318,15 @@ export class NavigationService {
       ],
     },
     {
+      key: 'cursos',
+      label: 'Cursos',
+      iconKey: 'school',
+      baseRoute: '/cursos',
+      items: [
+        { label: 'Cursos', route: '/cursos', featureKey: 'cursos.lista' },
+      ],
+    },
+    {
       key: 'evaluaciones',
       label: 'Evaluaciones',
       iconKey: 'clipboard-check',

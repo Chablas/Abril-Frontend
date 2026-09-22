@@ -1,0 +1,24 @@
+<div class="slide-contenido" [class.texto-oscuro]="!textoClaro">
+  <div class="col-texto">
+    <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+
+    <h2 *ngIf="config.titulo" class="titulo anim-cascada-titulo">{{ config.titulo }}</h2>
+
+    <img *ngIf="config.imagenUrl" [src]="config.imagenUrl" class="media-imagen anim-cascada-cuerpo" alt="" />
+
+    <video *ngIf="config.videoUrl" [src]="config.videoUrl" controls class="media-video anim-cascada-cuerpo"></video>
+
+    <p *ngIf="config.texto" class="texto anim-cascada-cuerpo">{{ config.texto }}</p>
+
+    <button type="button" class="btn-primario btn-siguiente anim-cascada-control" (click)="siguiente()">
+      Siguiente
+      <i class="ti ti-arrow-right"></i>
+    </button>
+  </div>
+
+  <div class="col-icono anim-cascada-cuerpo">
+    <div class="blob-decorativo">
+      <i class="ti" [ngClass]="iconoDecorativo"></i>
+    </div>
+  </div>
+</div>
