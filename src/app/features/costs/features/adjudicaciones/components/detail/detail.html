@@ -1078,6 +1078,18 @@
         Envío al subcontratista
       </p>
 
+      <!-- Aviso: el envío se omitió, el sistema nunca mandó el correo al SC -->
+      <div *ngIf="item.scNotificationSkipped"
+        class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+        <svg class="w-4 h-4 text-amber-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none">
+          <path d="M13 5l7 7-7 7M5 5l7 7-7 7"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <p class="text-xs text-amber-700 font-medium leading-relaxed">
+          El envío al SC se omitió: el sistema no envió ningún correo al subcontratista en este paso.
+        </p>
+      </div>
+
       <!-- Aviso: solo Oficina Técnica puede enviar al SC -->
       <div *ngIf="actualStatus === 4 && !canSendToSc"
         class="mb-[14px] flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
@@ -1192,6 +1204,22 @@
         </p>
 
       </div>
+
+      <!-- Omitir el envío: el contrato completo ya salió por correo fuera del sistema -->
+      <div *ngIf="canSkipScNotification" class="mt-[14px] max-w-sm flex flex-col gap-[8px]">
+        <button (click)="skipScNotification()"
+          [disabled]="skippingScNotification"
+          class="self-start flex items-center gap-1.5 px-[10px] py-[7px] text-xs font-medium rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed">
+          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7"/>
+          </svg>
+          {{ skippingScNotification ? 'Omitiendo...' : 'Omitir envío al SC' }}
+        </button>
+        <p class="text-xs text-gray-400 leading-relaxed">
+          Si el contrato ya se envió por correo fuera del sistema, no se enviará nada y la adjudicación pasará al paso 5.
+        </p>
+      </div>
+
     </div>
 
     <!-- PASO 5: Llegada a Of. Central -->

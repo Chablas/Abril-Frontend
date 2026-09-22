@@ -224,6 +224,19 @@ export class AdjudicacionesService {
     );
   }
 
+  /**
+   * Paso 4 → 5 sin enviar el correo al subcontratista: el contrato completo ya se mandó
+   * por fuera del sistema.
+   */
+  skipScNotification(projectSubContractorId: number): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<ApiMessageDTO>(
+      `${this.apiUrl}/${projectSubContractorId}/skip-sc-notification`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
   generateContractPackage(projectSubContractorId: number): Observable<{
     bytes: ArrayBuffer;
     fileUrl: string;
