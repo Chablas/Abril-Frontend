@@ -1,12 +1,14 @@
 ﻿<app-base-modal
   [title]="'EDITAR PROYECTO'"
   width="w-full sm:w-[820px]"
+  closeColor="var(--color-abril-standard)"
+  [preventCloseWhenDirty]="true"
   (closeModal)="closeModal.emit()">
 
   <div class="flex flex-col gap-[18px] mt-4">
 
     <!-- =============== Datos básicos =============== -->
-    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Datos básicos</p>
+    <p class="text-[11px] font-semibold text-abril-standard uppercase tracking-widest">Datos básicos</p>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[12px] gap-y-[6px]">
       <div class="abril-field">
@@ -63,7 +65,7 @@
     </div>
 
     <!-- =============== Razón social =============== -->
-    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Razón social</p>
+    <p class="text-[11px] font-semibold text-abril-standard uppercase tracking-widest">Razón social</p>
 
     <div class="flex flex-col">
       <div class="flex gap-[10px] items-start">
@@ -74,7 +76,7 @@
         </div>
         <button *ngIf="form.contributor === null" type="button" (click)="lookupRuc()"
           [disabled]="rucLookupLoading"
-          class="mt-[9px] h-[36px] px-[18px] text-[13px] font-medium text-white bg-abril-lime rounded-[7px] cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50">
+          class="mt-[9px] h-[36px] px-[18px] text-[13px] font-medium text-white bg-abril-standard hover:bg-abril-standard-hover rounded-[7px] cursor-pointer transition-colors disabled:opacity-50">
           {{ rucLookupLoading ? 'Buscando...' : 'Buscar' }}
         </button>
         <button *ngIf="form.contributor !== null" type="button" (click)="clearContributor()"
@@ -100,7 +102,7 @@
     </div>
 
     <!-- =============== Ubicación del proyecto =============== -->
-    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Ubicación del proyecto</p>
+    <p class="text-[11px] font-semibold text-abril-standard uppercase tracking-widest">Ubicación del proyecto</p>
 
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-[12px] gap-y-[6px]">
       <div class="abril-field">
@@ -123,7 +125,7 @@
     </div>
 
     <!-- =============== Responsables =============== -->
-    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Responsables</p>
+    <p class="text-[11px] font-semibold text-abril-standard uppercase tracking-widest">Responsables</p>
 
     <ng-container *ngIf="!loadingLookups; else lookupsSkeleton">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[12px] gap-y-[6px]">
@@ -170,7 +172,7 @@
         </div>
 
         <label class="flex items-center gap-[8px] cursor-pointer mt-[9px] h-[36px]">
-          <input type="checkbox" [(ngModel)]="form.tieneArquitecturaComercial" class="w-4 h-4 accent-abril-lime" />
+          <input type="checkbox" [(ngModel)]="form.tieneArquitecturaComercial" class="w-4 h-4 accent-abril-standard" />
           <span class="text-[13px] text-gray-700">Tiene Arquitectura Comercial</span>
         </label>
       </div>
@@ -191,7 +193,7 @@
     </p>
 
     <!-- =============== Geolocalización (geofencing de Tareo) =============== -->
-    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">
+    <p class="text-[11px] font-semibold text-abril-standard uppercase tracking-widest">
       Geolocalización <span class="normal-case font-normal">(geofencing de Marcar Tareo)</span>
     </p>
 
@@ -214,7 +216,7 @@
     </div>
 
     <!-- =============== Fechas =============== -->
-    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Fechas</p>
+    <p class="text-[11px] font-semibold text-abril-standard uppercase tracking-widest">Fechas</p>
 
     <div class="grid grid-cols-1 sm:grid-cols-4 gap-x-[12px] gap-y-[6px]">
       <app-date-picker label="Fecha inicio"   [floatingLabel]="true" color="var(--color-abril-standard)" [(value)]="form.fechaInicio"></app-date-picker>
@@ -224,7 +226,7 @@
     </div>
 
     <!-- =============== Métricas físicas =============== -->
-    <p class="text-[11px] font-semibold text-gray-400 uppercase tracking-widest">Métricas físicas</p>
+    <p class="text-[11px] font-semibold text-abril-standard uppercase tracking-widest">Métricas físicas</p>
 
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-x-[12px] gap-y-[6px]">
       <div class="abril-field">
@@ -264,7 +266,7 @@
     <!-- =============== Botón guardar =============== -->
     <div class="flex justify-center mt-[6px]">
       <button (click)="save()" [disabled]="saving"
-        class="w-[140px] h-[38px] bg-abril-lime text-white text-[14px] font-medium rounded-[10px] cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-60">
+        class="w-[140px] h-[38px] bg-abril-standard hover:bg-abril-standard-hover text-white text-[14px] font-medium rounded-[10px] cursor-pointer transition-colors disabled:opacity-60">
         {{ saving ? 'Guardando...' : 'Guardar' }}
       </button>
     </div>
