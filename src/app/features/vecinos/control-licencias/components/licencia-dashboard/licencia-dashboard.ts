@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import Swal from 'sweetalert2';
+import { environment } from '../../../../../../environments/environment';
 import { MultiSearchSelect } from '../../../../../shared/components/multi-search-select/multi-search-select';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
@@ -127,6 +128,9 @@ export class LicenciaDashboard implements OnInit {
     this.service.uploadLogo(proyecto.projectId, file).subscribe({
       next: (res) => {
         proyecto.logoUrl = res.logoUrl;
+        this.items
+          .filter((i) => i.projectId === proyecto.projectId)
+          .forEach((i) => (i.logoUrl = res.logoUrl));
         this.subiendoLogo = false;
         Swal.fire({ icon: 'success', title: 'Logo actualizado', confirmButtonColor: '#0F6E56', timer: 1500, showConfirmButton: false });
       },
@@ -203,6 +207,11 @@ export class LicenciaDashboard implements OnInit {
     if (!estado) return [249, 250, 251];
     if (estado === 'Indeterminado') return [219, 234, 254];
     return [254, 226, 226];
+  }
+
+  /** URL del logo del proyecto servida por el propio backend (no la URL directa del storage: Azure Blob no tiene CORS habilitado y bloquea la carga en el navegador). */
+  private logoProyectoUrl(projectId: number): string {
+    return `${environment.apiUrl.replace(/\/$/, '')}/api/v1/ControlLicencias/proyectos/${projectId}/logo`;
   }
 
   /** Carga una imagen (misma URL de la app o remota) como data URI + su relación de aspecto. Si falla (CORS, 404), resuelve null. */
@@ -313,7 +322,7 @@ export class LicenciaDashboard implements OnInit {
       const logosProyecto = new Map<number, ImagenPdf | null>();
       for (const [projectId, itemsObra] of porObra) {
         const url = itemsObra[0].logoUrl;
-        logosProyecto.set(projectId, url ? await this.cargarImagenPdf(url) : null);
+        logosProyecto.set(projectId, url ? await this.cargarImagenPdf(this.logoProyectoUrl(projectId)) : null);
       }
 
       let primera = true;
