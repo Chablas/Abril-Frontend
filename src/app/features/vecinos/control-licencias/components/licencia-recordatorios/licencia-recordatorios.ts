@@ -37,7 +37,9 @@ export class LicenciaRecordatorios implements OnInit {
     this.service.getDestinatarios(this.projectId).subscribe({
       next: (res) => {
         const automaticos = res.automaticos.filter((a) => a.email).map((a) => `${a.rol}: ${a.email}`);
-        const adicionales = res.adicionales.map((d) => `${d.rol}: ${d.email}`);
+        // Los adicionales retirados se quedan en la pestaña Destinatarios (el admin decide si los
+        // borra), pero acá no: este listado es "a quién le va a llegar" y el cron ya los filtra.
+        const adicionales = res.adicionales.filter((d) => !d.retirado).map((d) => `${d.rol}: ${d.email}`);
         this.destinatariosResueltos = [...automaticos, ...adicionales];
         this.destinatariosLoaded = true;
       },

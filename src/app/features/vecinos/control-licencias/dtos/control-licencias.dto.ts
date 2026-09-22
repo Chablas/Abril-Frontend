@@ -182,6 +182,8 @@ export interface VecinoLicenciaDestinatarioDTO {
   vecinoLicenciaControlDestinatarioId: number;
   rol: string;
   email: string;
+  /** true si coincide con un trabajador ya retirado: el cron ya no le envía nada aunque siga en la lista. */
+  retirado: boolean;
 }
 
 export interface VecinoLicenciaDestinatariosResponseDTO {
