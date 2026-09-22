@@ -5804,3 +5804,94 @@ Pedido de SSOMA: catálogo autorizado de Equipo de Protección Personal, visible
 - Cargar las imágenes reales de cada EPP (hoy la mayoría está sin foto).
 - Completar modelos/marcas de los ítems que quedaron "Sin modelo/marca registrado" (los que en el Excel decían "Según estándar de logística").
 - Evaluar si conviene un flujo de aprobación sobre el Pedido (hoy el estado "Generado" es solo informativo, sin aprobar/rechazar).
+
+## Sesión 2026-09-20 — Pantalla Hoja de Ruta de Contratistas (SSOMA)
+
+### Contexto
+Consumo del nuevo backend de cumplimiento semanal por contratista (ver `Abril_Backend/CONTEXT.md`, mismo día).
+
+### Cambios
+- Nuevo feature `features/ssoma/gestion/hoja-ruta/` en `/ssoma/gestion/hoja-ruta`, permiso `ssoma.gestion.hoja-ruta` (registrado en `feature`/`role_feature` vía SQL manual, mismos roles que `ssoma.gestion.cumplimiento`).
+- Filtros (Proyecto, Contratista, Año, Semana) en una sola fila bajo el header — a pedido explícito, en vez del patrón estándar `app-filter-trigger`/`app-filter-modal` usado en el resto de SSOMA.
+- Proyecto se precarga con `CharlasService.getMiProyecto()` (mismo criterio que "Charlas y Capacitaciones": resuelve por `WorkerProyecto` del usuario logueado — si el usuario no tiene una asignación de proyecto única, como un Jefe SSOMA corporativo, queda sin precargar y hay que elegirlo a mano).
+- Combo de Contratista se recarga en cada cambio de Proyecto contra `GET /api/v1/ssoma/hoja-ruta/contratistas?proyectoId=`, que solo trae contratistas con trabajador activo en ese proyecto (excluye Abril) — no el catálogo completo de empresas.
+- Cada cambio de filtro regenera el resumen automáticamente (sin botón "Buscar" aparte); "Actualizar" del header refresca.
+
+### Archivos clave
+- `features/ssoma/gestion/hoja-ruta/hoja-ruta.dtos.ts`/`.service.ts`/`.routes.ts`.
+- `features/ssoma/gestion/hoja-ruta/pages/resumen/hoja-ruta-resumen.ts`/`.html`/`.css`.
+- `core/navigation/navigation.service.ts`, `features/ssoma/ssoma.routes.ts` — alta en menú/rutas.
+
+### Verificado
+`ng build` → 0 errores, solo warnings preexistentes de terceros (canvg, flatpickr, tfjs). Probado en vivo por el usuario durante la sesión (filtros, autoselección de proyecto, generación del resumen).
+
+### Pendiente
+- No hay forma de precargar el contratista por defecto (no existe un "contratista actual" para un usuario de Abril) — queda siempre manual, por diseño.
+
+## Sesión 2026-09-21 — Investigación EMO "Falta" pese a vigente + fecha de subida en tarjetas de Bandeja
+
+### Contexto
+Reporte del usuario: en Control de Acceso, varios trabajadores de contratistas aparecen "No Autorizado" con el Certificado de Aptitud (EMO) como documento faltante, aunque la empresa dice haber subido el certificado con fecha vigente. Investigación (con agentes) en ambos repos; hallazgos completos en `Abril_Backend/CONTEXT.md` (mismo día). Resumen: no es un bug de cálculo de fechas — el ítem EMO de contratistas queda en `estado = "Enviado"` (pendiente de aprobación manual) y el catálogo `ss_item_trabajador` lo marca `responsable = "SSOMA"`, por lo que solo usuarios con rol `ADMINISTRADOR_SSOMA`/`ADMINISTRADOR_UDP` pueden aprobarlo desde Bandeja/Trabajadores — si nadie con ese rol revisa la cola, se acumula (confirmado con SQL: 20+ EMOs "Enviado" sin aprobar, algunos de semanas).
+
+### Cambios (este repo)
+- Tarjetas de la lista de Bandeja ahora muestran "Subido: DD/MM/YYYY" bajo el nombre del entregable (`bandeja.html`), usando el campo `fechaEnvio` que el DTO ya traía del backend pero no se pintaba en la lista (solo existía en el panel de detalle, agregado en la sesión 2026-09-16). Estilo nuevo `.bc-fecha-envio` en `bandeja.css`.
+
+### Archivos clave
+- `features/habilitacion/pages/bandeja/bandeja.html`, `bandeja.css`
+
+### Verificado
+`ng build` → 0 errores, solo warnings preexistentes de terceros. No se probó en navegador — el usuario verifica visualmente él mismo.
+
+### Pendiente
+- Confirmar con el equipo si hay usuarios con rol `ADMINISTRADOR_SSOMA`/`ADMINISTRADOR_UDP` cubriendo la revisión de EMOs de contratistas — si no, ese es el cuello de botella real del backlog, no un bug de código.
+## Sesión 2026-09-18 — Nuevo módulo Catálogo de EPP (SSOMA + Logística)
+
+### Contexto
+Pedido de SSOMA: catálogo autorizado de Equipo de Protección Personal, visible también para Logística, para estandarizar qué EPP/marca/modelo se puede comprar y agilizar la generación de pedidos.
+
+### Cambios
+- **Nuevo módulo** `features/ssoma/gestion/epp/` en `/ssoma/gestion/epp`, feature-permiso `ssoma.gestion.epp` (mismo permiso para SSOMA y Logística, asignable por rol desde Seguridad/Roles).
+- Jerarquía del catálogo: Categoría → Familia → Ítem (ficha técnica propia) → Modelo/Marca. Cada ítem tiene nombre técnico + nombre comercial, imagen, ficha técnica en PDF (visor inline, no descarga directa), y auditoría de quién/cuándo creó o editó.
+- Dos vistas: **Tabla** (árbol colapsable por Categoría → Familia, una fila por modelo/marca, con acciones inline: agregar, duplicar, editar, activar/desactivar) y **Tarjetas**.
+- Edición inline de Categorías, Familias, Ítems y Modelos sin salir de la pantalla; alta rápida de modelo directo desde la tabla (botón "+" o "duplicar y modificar").
+- Zoom de imagen (clic en cualquier miniatura) y visor de PDF embebido (iframe en modal, con botón de descarga).
+- **Pestaña "Generar Pedido"**: arma un pedido con talla+cantidad por línea (solo ítems activos), lo guarda con código correlativo (`PED-EPP-{año}-{id}`), proyecto y usuario que lo generó, descarga el Excel automático, y queda en un historial navegable desde la misma pestaña.
+- Carga inicial: 54 EPP con 43 modelos/marcas importados desde el Excel "EPPS AUTORIZADO SSOMA ACTUALIZADO ACTUAL.xls" (hoja "EPP Aprobado"), reorganizados en Familias reales (ver `Abril_Backend/_sql_prod/ssoma_epp_seed_excel.sql`).
+- Rediseño visual: acento de color + ícono por categoría (Cabeza/Ojos/Auditiva/Manos/Pies/Cuerpo/Altura/Respiratoria), filtros en una sola línea con íconos, fondo `#F8FAFC`.
+
+### Archivos clave
+- `features/ssoma/gestion/epp/pages/lista/epp-lista.ts`/`.html`/`.css` — toda la pantalla (catálogo + pedido).
+- `features/ssoma/gestion/epp/epp.service.ts`/`.dtos.ts` — HTTP + tipos.
+- `core/navigation/navigation.service.ts`, `feature-display-names.generated.ts`, `features/ssoma/ssoma.routes.ts` — alta del módulo en menú/rutas.
+- Backend: `Abril_Backend/Features/SsomaModule/EppFeature/**` (ver `Abril_Backend/CONTEXT.md`, mismo día).
+
+### Verificado
+`ng build` → 0 errores, solo warnings preexistentes de terceros. No se corrió el visor en navegador desde esta sesión — el usuario lo probó en vivo durante toda la sesión y confirmó que el catálogo, las imágenes, la ficha técnica y el pedido funcionan.
+
+### Pendiente
+- Cargar las imágenes reales de cada EPP (hoy la mayoría está sin foto).
+- Completar modelos/marcas de los ítems que quedaron "Sin modelo/marca registrado" (los que en el Excel decían "Según estándar de logística").
+- Evaluar si conviene un flujo de aprobación sobre el Pedido (hoy el estado "Generado" es solo informativo, sin aprobar/rechazar).
+
+## Sesión 2026-09-20 — Pantalla Hoja de Ruta de Contratistas (SSOMA)
+
+### Contexto
+Consumo del nuevo backend de cumplimiento semanal por contratista (ver `Abril_Backend/CONTEXT.md`, mismo día).
+
+### Cambios
+- Nuevo feature `features/ssoma/gestion/hoja-ruta/` en `/ssoma/gestion/hoja-ruta`, permiso `ssoma.gestion.hoja-ruta` (registrado en `feature`/`role_feature` vía SQL manual, mismos roles que `ssoma.gestion.cumplimiento`).
+- Filtros (Proyecto, Contratista, Año, Semana) en una sola fila bajo el header — a pedido explícito, en vez del patrón estándar `app-filter-trigger`/`app-filter-modal` usado en el resto de SSOMA.
+- Proyecto se precarga con `CharlasService.getMiProyecto()` (mismo criterio que "Charlas y Capacitaciones": resuelve por `WorkerProyecto` del usuario logueado — si el usuario no tiene una asignación de proyecto única, como un Jefe SSOMA corporativo, queda sin precargar y hay que elegirlo a mano).
+- Combo de Contratista se recarga en cada cambio de Proyecto contra `GET /api/v1/ssoma/hoja-ruta/contratistas?proyectoId=`, que solo trae contratistas con trabajador activo en ese proyecto (excluye Abril) — no el catálogo completo de empresas.
+- Cada cambio de filtro regenera el resumen automáticamente (sin botón "Buscar" aparte); "Actualizar" del header refresca.
+
+### Archivos clave
+- `features/ssoma/gestion/hoja-ruta/hoja-ruta.dtos.ts`/`.service.ts`/`.routes.ts`.
+- `features/ssoma/gestion/hoja-ruta/pages/resumen/hoja-ruta-resumen.ts`/`.html`/`.css`.
+- `core/navigation/navigation.service.ts`, `features/ssoma/ssoma.routes.ts` — alta en menú/rutas.
+
+### Verificado
+`ng build` → 0 errores, solo warnings preexistentes de terceros (canvg, flatpickr, tfjs). Probado en vivo por el usuario durante la sesión (filtros, autoselección de proyecto, generación del resumen).
+
+### Pendiente
+- No hay forma de precargar el contratista por defecto (no existe un "contratista actual" para un usuario de Abril) — queda siempre manual, por diseño.

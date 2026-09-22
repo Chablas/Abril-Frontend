@@ -306,6 +306,22 @@
           EMO Vencido
         </label>
         <label class="flex items-center gap-2 text-[12px] text-gray-700">
+          <input
+            type="checkbox"
+            [checked]="emoPorVencerDias === 14"
+            (change)="emoPorVencerDias = emoPorVencerDias === 14 ? null : 14; loadWorkers(1)"
+          />
+          EMO por vencer (14 días)
+        </label>
+        <label class="flex items-center gap-2 text-[12px] text-gray-700">
+          <input
+            type="checkbox"
+            [checked]="emoPorVencerDias === 5"
+            (change)="emoPorVencerDias = emoPorVencerDias === 5 ? null : 5; loadWorkers(1)"
+          />
+          EMO por vencer (5 días)
+        </label>
+        <label class="flex items-center gap-2 text-[12px] text-gray-700">
           <input type="checkbox" [(ngModel)]="soloSinVidaLey" (change)="loadWorkers(1)" />
           Sin Vida Ley
         </label>

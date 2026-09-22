@@ -107,6 +107,8 @@ export class Trabajadores implements OnInit, OnDestroy {
   soloRetirados = false;
   soloSinEmo = false;
   soloEmoVencido = false;
+  /** Rango de días para "EMO por vencer" (14 o 5); null = filtro apagado. */
+  emoPorVencerDias: number | null = null;
   soloSinVidaLey = false;
   /** Filtros de evidencia (SSOMA/Salud confidencial): solo filtran, no exponen datos clínicos en la tabla. */
   soloSinLectura = false;
@@ -124,6 +126,7 @@ export class Trabajadores implements OnInit, OnDestroy {
     if (this.filtroAreaEfectivo) n++;
     if (this.soloSinEmo) n++;
     if (this.soloEmoVencido) n++;
+    if (this.emoPorVencerDias) n++;
     if (this.soloSinVidaLey) n++;
     if (this.soloSinLectura) n++;
     if (this.soloSinCertificado) n++;
@@ -141,6 +144,7 @@ export class Trabajadores implements OnInit, OnDestroy {
     this.areaScopeOptions = [];
     this.soloSinEmo = false;
     this.soloEmoVencido = false;
+    this.emoPorVencerDias = null;
     this.soloSinVidaLey = false;
     this.soloSinLectura = false;
     this.soloSinCertificado = false;
@@ -253,10 +257,12 @@ export class Trabajadores implements OnInit, OnDestroy {
     const contrataCasa = qp.get('contrataCasa');
     const proyectoId = qp.get('proyectoId');
     const soloEmoVencido = qp.get('soloEmoVencido');
+    const emoPorVencerDias = qp.get('emoPorVencerDias');
     if (estado) this.filtroEstado = estado;
     if (contrataCasa) this.filtroContratistaCasa = contrataCasa;
     if (proyectoId) this.filtroProyectoId = Number(proyectoId);
     if (soloEmoVencido === 'true') this.soloEmoVencido = true;
+    if (emoPorVencerDias) this.emoPorVencerDias = Number(emoPorVencerDias);
 
     this.loadWorkers(1);
     this.loadCatalogos();
@@ -355,6 +361,7 @@ export class Trabajadores implements OnInit, OnDestroy {
       soloRetirados: this.soloRetirados || undefined,
       soloSinEmo: this.soloSinEmo || undefined,
       soloEmoVencido: this.soloEmoVencido || undefined,
+      emoPorVencerDias: this.emoPorVencerDias ?? undefined,
       soloSinVidaLey: this.soloSinVidaLey || undefined,
       soloSinLectura: this.soloSinLectura || undefined,
       soloSinCertificado: this.soloSinCertificado || undefined,

@@ -119,5 +119,10 @@ export const SSOMA_ROUTES: Routes = [
         (m) => m.CUMPLIMIENTO_SSOMA_ROUTES,
       ),
   },
+  {
+    path: 'gestion/hoja-ruta',
+    loadChildren: () =>
+      import('./gestion/hoja-ruta/hoja-ruta.routes').then((m) => m.HOJA_RUTA_ROUTES),
+  },
   { path: '', redirectTo: 'salud-ocupacional', pathMatch: 'full' },
 ];
