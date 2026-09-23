@@ -1,0 +1,129 @@
+.curso-lista-page {
+  background: #fff;
+  min-height: 100%;
+  width: 100%;
+}
+
+.curso-lista-contenido {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.titulo-pagina {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-abril-standard, #0f6e56);
+  margin-bottom: 24px;
+}
+
+.estado-centro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #64748b;
+  padding: 48px 0;
+}
+
+.icono-spin {
+  font-size: 32px;
+  animation: girar 1.2s linear infinite;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
+}
+
+.icono-error {
+  font-size: 32px;
+  color: #dc2626;
+}
+
+.grid-cursos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.tarjeta-curso {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: var(--radius-standard, 7px);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.tarjeta-curso:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+}
+
+.tarjeta-header {
+  background: linear-gradient(135deg, var(--color-abril-standard, #0f6e56), #0a5642);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 90px;
+}
+
+.tarjeta-header i {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.tarjeta-body {
+  padding: 16px;
+  flex: 1;
+}
+
+.tarjeta-body h3 {
+  margin: 0 0 8px;
+  color: #222;
+  font-size: 1.05rem;
+}
+
+.descripcion {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0 0 10px;
+}
+
+.categoria {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-abril-standard, #0f6e56);
+  background: var(--color-abril-standard-light, #e6f4f0);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.tarjeta-footer {
+  padding: 0 16px 16px;
+}
+
+.btn-primario {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--color-abril-standard, #0f6e56);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-standard, 7px);
+  height: 42px;
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-primario:hover {
+  background: var(--color-abril-standard-hover, #0a5642);
+}

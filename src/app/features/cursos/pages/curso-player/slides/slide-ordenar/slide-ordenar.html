@@ -1,0 +1,22 @@
+<div class="slide-ordenar">
+  <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+
+  <h2 class="enunciado anim-cascada-titulo">{{ config.enunciado }}</h2>
+
+  <div cdkDropList class="lista-ordenable anim-cascada-cuerpo" (cdkDropListDropped)="drop($event)">
+    <div class="item-ordenable" *ngFor="let item of items; let i = index" cdkDrag>
+      <i class="ti ti-grip-vertical drag-handle" cdkDragHandle></i>
+      <span class="numero">{{ i + 1 }}</span>
+      <span class="texto">{{ item.texto }}</span>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    class="btn-primario btn-confirmar anim-cascada-control"
+    [disabled]="confirmado"
+    (click)="confirmar()"
+  >
+    Confirmar orden
+  </button>
+</div>

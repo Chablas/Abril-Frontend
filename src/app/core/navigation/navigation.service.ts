@@ -252,6 +252,20 @@ export class NavigationService {
         { label: 'Proyectos Habilitados SSOMA', route: '/ssoma/gestion/proyectos-habilitados', featureKey: 'ssoma.gestion.proyectos-habilitados' },
         { label: 'Presupuesto Materiales', route: '/ssoma/gestion/presupuesto-materiales', featureKey: 'ssoma.gestion.presupuesto-materiales' },
         { label: 'Horas Hombre', route: '/ssoma/gestion/horas-hombre/dashboard', featureKey: 'ssoma.gestion.horas-hombre' },
+        {
+          label: 'Gestión de Residuos',
+          route: '/ssoma/gestion/residuos/tipos',
+          featureKeys: [
+            'ssoma.gestion.residuos.tipos',
+            'ssoma.gestion.residuos.eo-rs',
+            'ssoma.gestion.residuos.autorizaciones-dme',
+            'ssoma.gestion.residuos.viajes',
+            'ssoma.gestion.residuos.declaraciones',
+            'ssoma.gestion.residuos.constancias',
+            'ssoma.gestion.residuos.constancias-finales',
+            'ssoma.gestion.residuos.documentos-referencia',
+          ],
+        },
         { label: 'Registros Modelo', route: '/habilitacion/registros-modelo' },
       ],
     },
@@ -314,6 +328,15 @@ export class NavigationService {
       baseRoute: '/clinica',
       items: [
         { label: 'Clínica', route: '/clinica/dashboard', featureKey: 'clinica.agenda', roles: ['CLINICA'] },
+      ],
+    },
+    {
+      key: 'cursos',
+      label: 'Cursos',
+      iconKey: 'school',
+      baseRoute: '/cursos',
+      items: [
+        { label: 'Cursos', route: '/cursos', featureKey: 'cursos.lista' },
       ],
     },
     {

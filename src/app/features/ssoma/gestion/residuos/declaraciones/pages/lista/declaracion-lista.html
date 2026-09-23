@@ -1,0 +1,99 @@
+<div class="lista-root">
+
+  <app-abril-page-header
+    badge="SSOMA · Residuos"
+    titulo="Gestión de Residuos"
+    subtitulo="Declaraciones anuales (DAMRS / SIGERSOL) por razón social"
+    [tabs]="tabs"
+    [botonSecundario]="{ label: 'Actualizar', icono: 'ti-refresh' }"
+    (secondaryClick)="load()"
+    [hasExtra]="true">
+    <div tabsExtra class="buscador">
+      <i class="ti ti-search"></i>
+      <input type="text" placeholder="Buscar por razón social, periodo o estado..." [(ngModel)]="search" (keyup.enter)="buscar()" (ngModelChange)="buscar()" />
+    </div>
+  </app-abril-page-header>
+
+  <div class="lista-body">
+    <div *ngIf="!loading" class="resultados-contador">
+      {{ filteredItems.length }} {{ filteredItems.length === 1 ? 'declaración encontrada' : 'declaraciones encontradas' }}
+    </div>
+
+    <div *ngIf="loading" class="skeleton-wrap">
+      <div *ngFor="let i of [1,2,3,4,5]" class="skeleton-row"></div>
+    </div>
+
+    <div *ngIf="!loading && pageItems.length > 0" class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Razón social</th>
+            <th>Periodo</th>
+            <th>Fecha presentación</th>
+            <th>Estado</th>
+            <th class="th-acciones">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of pageItems" class="fila-clickable" (click)="abrir(item)">
+            <td>{{ item.nombreContributor || ('Contributor #' + item.contributorId) }}</td>
+            <td>{{ item.periodoAnio }}</td>
+            <td>{{ item.fechaPresentacion ? (item.fechaPresentacion | date:'dd/MM/yyyy') : '—' }}</td>
+            <td>
+              <span class="chip-estado" [ngClass]="estadoClass(item.estado)">{{ item.estado }}</span>
+            </td>
+            <td class="col-acciones" (click)="$event.stopPropagation()">
+              <button type="button" class="abril-action-btn" title="Abrir" (click)="abrir(item)">
+                <i class="ti ti-arrow-right"></i>
+              </button>
+              <button type="button" class="abril-action-btn abril-action-btn--danger" title="Eliminar" (click)="eliminar(item)">
+                <i class="ti ti-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="!loading && pageItems.length === 0" class="empty-state">
+      <i class="ti ti-inbox empty-state__icon"></i>
+      <p class="empty-state__text">No se encontraron declaraciones registradas.</p>
+    </div>
+
+    <div *ngIf="!loading && filteredItems.length > 0" class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="filteredItems.length"
+        [currentPage]="pager.currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="cambiarPagina($event)">
+      </app-paginator>
+    </div>
+  </div>
+
+  <app-fab label="Nueva declaración" (clicked)="abrirNuevo()"></app-fab>
+</div>
+
+<app-abril-modal-panel
+  *ngIf="modalAbierto"
+  titulo="Nueva declaración"
+  icono="ti-file-text"
+  variant="blue"
+  (closeModal)="cerrarModal()">
+  <form id="form-declaracion" (ngSubmit)="guardar()">
+    <div class="abril-field">
+      <label class="abril-field-label">ID de razón social (Contributor)</label>
+      <input class="abril-field-input" type="number" min="1" [(ngModel)]="form.contributorId" name="contributorId" required />
+    </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Año / periodo</label>
+      <input class="abril-field-input" type="number" min="2000" max="2100" [(ngModel)]="form.periodoAnio" name="periodoAnio" required />
+    </div>
+    <p class="nota-ayuda">Se crea la declaración en borrador; dentro podrás recalcular el detalle automáticamente desde los viajes registrados de esa razón social y ese año.</p>
+  </form>
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-cancelar" (click)="cerrarModal()">Cancelar</button>
+    <button type="submit" form="form-declaracion" class="btn-guardar" [disabled]="guardando">
+      {{ guardando ? 'Guardando...' : 'Crear' }}
+    </button>
+  </div>
+</app-abril-modal-panel>

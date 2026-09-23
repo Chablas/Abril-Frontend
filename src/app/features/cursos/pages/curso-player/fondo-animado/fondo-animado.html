@@ -1,0 +1,16 @@
+<div class="fondo-animado">
+  <div class="capa-fondo capa-clara" [style.background]="fondoClaro"></div>
+  <div class="capa-fondo capa-oscura" [style.background]="fondoOscuro"></div>
+
+  <div
+    class="burbuja"
+    *ngFor="let b of burbujas"
+    [style.top.%]="b.top"
+    [style.left.%]="b.left"
+    [style.width.px]="b.size"
+    [style.height.px]="b.size"
+    [style.animation-delay.s]="b.delay"
+    [style.animation-duration.s]="b.duracion"
+    [style.background]="'radial-gradient(circle at 30% 30%, ' + b.colorInterno + ', ' + b.colorExterno + ')'"
+  ></div>
+</div>

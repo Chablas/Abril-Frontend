@@ -1,0 +1,46 @@
+<div class="slide-as">
+  <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+
+  <h2 class="enunciado anim-cascada-titulo">{{ config.enunciado }}</h2>
+
+  <div cdkDropListGroup class="tablero anim-cascada-cuerpo">
+    <div class="bandeja">
+      <p class="titulo-zona">Arrastra desde aquí</p>
+      <div
+        cdkDropList
+        id="bandeja"
+        [cdkDropListData]="bandeja"
+        [cdkDropListConnectedTo]="dropListIds()"
+        class="lista lista-bandeja"
+        (cdkDropListDropped)="drop($event)"
+      >
+        <div class="item" *ngFor="let item of bandeja" cdkDrag>{{ item.texto }}</div>
+      </div>
+    </div>
+
+    <div class="zonas">
+      <div class="zona" *ngFor="let zona of zonas">
+        <p class="titulo-zona">{{ zona.texto }}</p>
+        <div
+          cdkDropList
+          [id]="zona.id"
+          [cdkDropListData]="zona.items"
+          [cdkDropListConnectedTo]="dropListIds()"
+          class="lista lista-zona"
+          (cdkDropListDropped)="drop($event)"
+        >
+          <div class="item" *ngFor="let item of zona.items" cdkDrag>{{ item.texto }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    class="btn-primario btn-confirmar anim-cascada-control"
+    [disabled]="!todoAsignado || confirmado"
+    (click)="confirmar()"
+  >
+    Confirmar respuesta
+  </button>
+</div>

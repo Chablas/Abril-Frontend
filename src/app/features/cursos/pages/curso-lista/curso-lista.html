@@ -1,0 +1,39 @@
+<div class="curso-lista-page">
+<div class="curso-lista-contenido">
+  <h1 class="titulo-pagina">Cursos disponibles</h1>
+
+  <div class="estado-centro" *ngIf="cargando">
+    <i class="ti ti-loader-2 icono-spin"></i>
+    <p>Cargando cursos...</p>
+  </div>
+
+  <div class="estado-centro" *ngIf="!cargando && errorMensaje">
+    <i class="ti ti-alert-triangle icono-error"></i>
+    <p>{{ errorMensaje }}</p>
+  </div>
+
+  <div class="estado-centro" *ngIf="!cargando && !errorMensaje && cursos.length === 0">
+    <i class="ti ti-school"></i>
+    <p>No hay cursos disponibles por el momento.</p>
+  </div>
+
+  <div class="grid-cursos" *ngIf="!cargando && cursos.length > 0">
+    <div class="tarjeta-curso" *ngFor="let curso of cursos" (click)="tomarCurso(curso)">
+      <div class="tarjeta-header">
+        <i class="ti ti-book-2"></i>
+      </div>
+      <div class="tarjeta-body">
+        <h3>{{ curso.titulo }}</h3>
+        <p class="descripcion" *ngIf="curso.descripcion">{{ curso.descripcion }}</p>
+        <span class="categoria" *ngIf="curso.categoriaNombre">{{ curso.categoriaNombre }}</span>
+      </div>
+      <div class="tarjeta-footer">
+        <button type="button" class="btn-primario" (click)="tomarCurso(curso)">
+          Tomar curso
+          <i class="ti ti-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>

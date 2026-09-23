@@ -1,0 +1,70 @@
+/*
+ * Utilidades compartidas de animación "en cascada" para el módulo de cursos (player Genially-like).
+ * Cualquier slide (pages/curso-player/slides/*) puede aplicar estas clases a su título, cuerpo y
+ * control/botón para que el contenido entre escalonado en vez de aparecer de golpe.
+ * Puro CSS/@keyframes nativo, sin librerías externas.
+ */
+
+@keyframes cursoCascadaEntrada {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cursoCascadaEntradaSubida {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.anim-cascada-titulo {
+  animation: cursoCascadaEntrada 0.5s ease both;
+  animation-delay: 0s;
+}
+
+.anim-cascada-cuerpo {
+  animation: cursoCascadaEntradaSubida 0.5s ease both;
+  animation-delay: 0.25s;
+}
+
+.anim-cascada-control {
+  animation: cursoCascadaEntradaSubida 0.5s ease both;
+  animation-delay: 0.45s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-cascada-titulo,
+  .anim-cascada-cuerpo,
+  .anim-cascada-control {
+    animation: none;
+  }
+}
+
+/*
+ * Kicker compartido: etiqueta pequeña tipo "pill" sobre el enunciado/título de una slide,
+ * para dar contexto rápido antes del contenido grande (ej. "VERDADERO O FALSO"). Pensado para
+ * usarse dentro de una tarjeta blanca (slides de pregunta); slide-contenido define su propia
+ * variante (texto blanco sobre el fondo animado) porque no usa tarjeta.
+ */
+.kicker {
+  display: inline-block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--color-abril-standard, #0f6e56);
+  background: var(--color-abril-standard-light, #e6f4f0);
+  border: 1px solid var(--color-abril-standard-border, #bfe0d6);
+  border-radius: 999px;
+  padding: 6px 16px;
+}
