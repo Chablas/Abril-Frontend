@@ -172,6 +172,7 @@ export class GaCorreosConfig implements OnChanges {
     REEMBOLSO_APROBADO: 'Consolidado OK',
     REEMBOLSO_RECHAZADO: 'Consolidado observado',
     TESORERIA_REEMBOLSO: 'Aviso a Tesorería',
+    TESORERIA_SUBSANADA: 'Observación subsanada',
     CORRECCION_S10_SOLICITADA: 'Corrección al ERP',
     REEMBOLSO_PAGADO: 'Reembolso pagado',
     RECORDATORIO_RENDICION_APERTURA: 'Primer día hábil',
