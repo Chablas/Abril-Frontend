@@ -99,8 +99,9 @@ export class ClinicaProgramacionService {
 
   /**
    * Razones sociales del grupo con sus cupos, y si a este trabajador le aplica el tope. Solo se
-   * pide cuando llegó SIN razón social —toda ficha de pre-ingreso, que es donde se asigna—: con un
-   * trabajador que ya la tiene el modal la muestra de solo lectura y no gasta esta petición.
+   * pide cuando hay que elegirla —ficha sin razón social o de pre-ingreso, que es donde se
+   * asigna—: con un trabajador que ya está adentro el modal la muestra de solo lectura y no gasta
+   * esta petición.
    */
   getRazonesSociales(workerId: number): Observable<RazonesSocialesEmo> {
     return this.http.get<RazonesSocialesEmo>(`${PROGRAMACIONES_BASE}/razones-sociales`, {
