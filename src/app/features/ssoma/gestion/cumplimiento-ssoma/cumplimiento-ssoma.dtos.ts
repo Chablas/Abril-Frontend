@@ -6,6 +6,7 @@ export interface CumplimientoActividadDto {
   id: number;
   nombre: string;
   descripcion?: string;
+  categoria?: string;
   rolResponsable: CumplimientoRol;
   frecuencia: CumplimientoFrecuencia;
   orden: number;
@@ -15,6 +16,7 @@ export interface CumplimientoActividadDto {
 export interface CumplimientoActividadUpsertDto {
   nombre: string;
   descripcion?: string;
+  categoria?: string;
   rolResponsable: CumplimientoRol;
   frecuencia: CumplimientoFrecuencia;
   orden: number;
@@ -24,6 +26,7 @@ export interface CumplimientoItemDto {
   actividadId: number;
   nombre: string;
   descripcion?: string;
+  categoria?: string;
   rolResponsable: CumplimientoRol;
   frecuencia: CumplimientoFrecuencia;
   periodo: string;
