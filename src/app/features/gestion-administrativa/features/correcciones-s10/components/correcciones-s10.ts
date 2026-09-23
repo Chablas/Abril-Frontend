@@ -119,7 +119,7 @@ export class CorreccionesS10 implements OnInit, OnDestroy {
   anioActual = new Date().getFullYear();
 
   correcciones: CorreccionS10ListItemDto[] = [];
-  resumen: ResumenCorreccionesS10Dto = { porAtender: 0, porRecargar: 0 };
+  resumen: ResumenCorreccionesS10Dto = { porAtender: 0, atendidas: 0 };
 
   /** id de la corrección cuyo modal de detalle está abierto. null = cerrado. */
   detalleId: number | null = null;
@@ -131,7 +131,7 @@ export class CorreccionesS10 implements OnInit, OnDestroy {
   readonly estadoOptions = [
     { value: null, label: 'Todas' },
     { value: 'Pendiente de corrección S10', label: 'Por atender' },
-    { value: 'Pendiente de recarga S10', label: 'Ya atendidas' },
+    { value: 'Atendido', label: 'Atendidas' },
   ];
 
   trabajadorOptions: TrabajadorOptionDto[] = [];

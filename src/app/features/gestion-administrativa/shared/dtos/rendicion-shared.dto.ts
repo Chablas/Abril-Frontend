@@ -36,10 +36,11 @@ export type EstadoPrimeraRevision =
   | 'Observada';
 
 /**
- * Estados de una solicitud de corrección del Consolidado del S10 al Coordinador ERP. Describen
- * QUIÉN tiene que actuar, no qué pasó: es lo que la pantalla muestra tal cual.
+ * Estados de una solicitud de corrección del Consolidado del S10 al Coordinador ERP, tal como los
+ * nombra el backend. «Atendido» es el nombre para el ERP: su parte terminó. Lo que falta, la
+ * recarga, es del consolidador, y Consolidados lo rotula aparte («Por recargar»).
  */
-export type EstadoCorreccionS10 = 'Pendiente de corrección S10' | 'Pendiente de recarga S10';
+export type EstadoCorreccionS10 = 'Pendiente de corrección S10' | 'Atendido';
 
 /**
  * La solicitud de corrección viva de una planilla. La muestran las dos pantallas del paso:

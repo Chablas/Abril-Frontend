@@ -104,7 +104,7 @@ export interface CorreccionS10SalidaDto {
  */
 export interface ResumenCorreccionesS10Dto {
   porAtender: number;
-  porRecargar: number;
+  atendidas: number;
 }
 
 export interface CorreccionS10ListResultDto {
