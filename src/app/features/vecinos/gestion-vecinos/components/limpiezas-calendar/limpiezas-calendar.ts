@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { environment } from '../../../../../../environments/environment';
 import { BaseModal } from '../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { TimePicker } from '../../../../../shared/components/time-picker/time-picker';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { GestionVecinosService } from '../../services/gestion-vecinos.service';
@@ -24,10 +25,18 @@ interface DayCell {
   inMonth: boolean;
 }
 
+/** Orden del día: por hora de inicio (las que no tienen hora, al final) y luego por registro. */
+function porHorario(a: VecinoLimpiezaDTO, b: VecinoLimpiezaDTO): number {
+  const ha = a.horaInicio ?? '99';
+  const hb = b.horaInicio ?? '99';
+  if (ha !== hb) return ha < hb ? -1 : 1;
+  return a.vecinoLimpiezaId - b.vecinoLimpiezaId;
+}
+
 @Component({
   selector: 'app-limpiezas-calendar',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, TimePicker],
   templateUrl: './limpiezas-calendar.html',
 })
 export class LimpiezasCalendar implements OnChanges {
@@ -51,7 +60,7 @@ export class LimpiezasCalendar implements OnChanges {
   // Modal de día.
   selectedIso: string | null = null;
   showAddForm = false;
-  nuevo = { vecinoLimpiezaTipoId: null as number | null, vecinoId: null as number | null, descripcion: '' };
+  nuevo = this.formVacio();
 
   // Atención de limpieza: compromisos por vecino + compromiso seleccionado por limpieza.
   compromisosByVecino: Record<number, VecinoCompromisoSelectDTO[]> = {};
@@ -169,8 +178,16 @@ export class LimpiezasCalendar implements OnChanges {
     return `${d} de ${this.monthNames[m - 1]} de ${y}`;
   }
 
+  /** Ordenadas por horario, igual que las devuelve el backend: una recién creada entra en su lugar. */
   get selectedLimpiezas(): VecinoLimpiezaDTO[] {
-    return this.limpiezasDe(this.selectedIso);
+    return this.limpiezasDe(this.selectedIso).sort(porHorario);
+  }
+
+  /** «09:00 – 10:00», solo el inicio si no tiene fin, o '' si no tiene hora. */
+  horario(l: VecinoLimpiezaDTO): string {
+    if (!l.horaInicio) return '';
+    const inicio = l.horaInicio.slice(0, 5);
+    return l.horaFin ? `${inicio} – ${l.horaFin.slice(0, 5)}` : inicio;
   }
 
   /** ISO de hoy (local), para gatear la subida de atención (hoy y días pasados). */
@@ -268,14 +285,39 @@ export class LimpiezasCalendar implements OnChanges {
     return t?.descripcion === 'Departamento';
   }
 
+  /** La hora de fin tiene que ser posterior al inicio: el desplegable arranca un minuto después. */
+  get minHoraFin(): string | null {
+    const inicio = this.nuevo.horaInicio;
+    if (!inicio) return null;
+    const [h, m] = inicio.split(':').map(Number);
+    const t = Math.min(h * 60 + m + 1, 23 * 60 + 59);
+    return `${this.pad(Math.floor(t / 60))}:${this.pad(t % 60)}`;
+  }
+
+  onHoraInicioChange(value: string | null): void {
+    this.nuevo.horaInicio = value;
+    // Sin inicio no hay fin, y un fin que ya no es posterior al inicio se limpia.
+    if (this.nuevo.horaFin && (!value || this.nuevo.horaFin <= value)) this.nuevo.horaFin = null;
+  }
+
+  private formVacio() {
+    return {
+      vecinoLimpiezaTipoId: null as number | null,
+      vecinoId: null as number | null,
+      horaInicio: null as string | null,
+      horaFin: null as string | null,
+      descripcion: '',
+    };
+  }
+
   private resetForm(): void {
     this.showAddForm = false;
-    this.nuevo = { vecinoLimpiezaTipoId: null, vecinoId: null, descripcion: '' };
+    this.nuevo = this.formVacio();
   }
 
   startAdd(): void {
     this.showAddForm = true;
-    this.nuevo = { vecinoLimpiezaTipoId: null, vecinoId: null, descripcion: '' };
+    this.nuevo = this.formVacio();
   }
 
   guardar(): void {
@@ -287,11 +329,18 @@ export class LimpiezasCalendar implements OnChanges {
       Swal.fire({ icon: 'warning', title: 'Selecciona el vecino del departamento', confirmButtonColor: '#4CAF50' });
       return;
     }
+    const { horaInicio, horaFin } = this.nuevo;
+    if (horaFin && (!horaInicio || horaFin <= horaInicio)) {
+      Swal.fire({ icon: 'warning', title: 'La hora de fin debe ser posterior a la de inicio', confirmButtonColor: '#4CAF50' });
+      return;
+    }
 
     this.loaderService.show();
     this.service
       .createLimpieza(this.projectId, {
         fecha: this.selectedIso!,
+        horaInicio,
+        horaFin,
         vecinoLimpiezaTipoId: this.nuevo.vecinoLimpiezaTipoId,
         vecinoId: this.tipoSeleccionadoEsDepartamento ? this.nuevo.vecinoId : null,
         descripcion: this.nuevo.descripcion.trim() || null,
