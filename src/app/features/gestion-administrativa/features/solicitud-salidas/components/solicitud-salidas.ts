@@ -1,7 +1,7 @@
 ﻿import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule, DatePipe } from '@angular/common';
-import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { forkJoin } from 'rxjs';
 import Swal from 'sweetalert2';
 import { SolicitudSalidaCreate } from './create/create';
@@ -14,8 +14,9 @@ import {
   SolicitudSalidaListItemDto,
 } from '../dtos/solicitud-salida-list-item.dto';
 import { MesRendicionDto } from '../dtos/solicitud-salida-filter-data.dto';
+import { RendirResultDto } from '../dtos/solicitud-salida-rendir.dto';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
-import { SolicitudSalidaDetalleModal } from './solicitud-salida-detalle-modal/solicitud-salida-detalle-modal';
+import { SalidaDetalleModal } from '../../../shared/components/salida-detalle-modal/salida-detalle-modal';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FabButton } from '../../../../../shared/components/fab-button/fab-button';
@@ -30,7 +31,7 @@ import { reembolsoColors } from '../../../shared/dtos/rendicion-shared.dto';
 @Component({
   standalone: true,
   selector: 'app-solicitud-salidas',
-  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, StatusBadge, SolicitudSalidaDetalleModal, SearchSelect, AbrilPageHeaderComponent, FabButton, TitleCasePipe, FilterTriggerButton, FilterModal, AbrilBulkActionDirective],
+  imports: [CommonModule, DatePipe, SolicitudSalidaCreate, StatusBadge, SalidaDetalleModal, SearchSelect, AbrilPageHeaderComponent, FabButton, TitleCasePipe, FilterTriggerButton, FilterModal, AbrilBulkActionDirective],
   templateUrl: './solicitud-salidas.html',
   styles: [`
     :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
@@ -337,8 +338,8 @@ export class SolicitudSalidas implements OnInit {
   // ── Selección de filas (estilo Outlook: click abre detalle, shift+click selecciona) ──
 
   /**
-   * Solo se rinde lo apto: aprobada, no rendida, con TODOS los trayectos cubiertos y con un motivo
-   * marcado como reembolsable en Configuración → Motivos. Lo resuelve el backend en `aptaParaRendir`
+   * Solo se rinde lo apto: aprobada, no rendida y con todos sus trayectos REEMBOLSABLES cubiertos
+   * (los que no generan reembolso no se rinden). Lo resuelve el backend en `aptaParaRendir`
    * para que la pantalla, el desplegable de mes y las tarjetas no puedan discrepar.
    */
   esSeleccionable(s: SolicitudSalidaListItemDto): boolean {
@@ -573,7 +574,7 @@ export class SolicitudSalidas implements OnInit {
     });
   }
 
-  // ── Acción bulk: rendir + descargar planilla ─────────────────────────
+  // ── Acción bulk: rendir y enviar a primera revisión ──────────────────
   /**
    * Rinde lo seleccionado. Hay dos caminos según cómo se hizo la selección, y por eso es un solo
    * botón y no dos: por ids cuando se eligieron filas, y por periodo cuando está marcado "todas
@@ -592,32 +593,40 @@ export class SolicitudSalidas implements OnInit {
 
   /**
    * Lo mismo, pero disparado desde el botón "Rendir" del modal de detalle. Pasa por el mismo camino
-   * que el de la columna —confirmación, descarga de la planilla y recarga— para que las dos formas
-   * de rendir una salida no puedan comportarse distinto. El modal se cierra solo si la rendición
-   * llega a hacerse (lo hace `descargarPlanilla`): cancelar la confirmación lo deja abierto.
+   * que el de la columna —misma confirmación, mismo envío y misma recarga— para
+   * que las dos formas de rendir una salida no puedan comportarse distinto. El modal se cierra solo
+   * si la rendición llega a hacerse (lo hace `trasRendir`): cancelar la confirmación lo deja abierto.
    */
   rendirDesdeDetalle(id: number): Promise<void> {
     return this.rendir([id]);
   }
 
-  /** Confirma, marca como rendidas las solicitudes indicadas y descarga la planilla. */
+  /**
+   * Confirma y rinde las solicitudes indicadas: el backend genera la planilla —sin descargarla— y
+   * la envía a primera revisión con sus correos.
+   *
+   * La confirmación es a propósito GENÉRICA: para el usuario de producción rendir es el final del
+   * camino, porque lo que viene después (primera revisión, consolidado, corrección del S10 y
+   * reembolso) todavía no está aprobado. Por eso no nombra a la jefatura, ni la revisión, ni
+   * anticipa los correos que salen. Cuando el flujo se apruebe, esto vuelve a `confirmarConCorreos`
+   * con los destinatarios, como el resto de las pantallas.
+   */
   private async rendir(ids: number[]): Promise<void> {
     if (ids.length === 0) return;
 
     const result = await Swal.fire({
       icon: 'question',
       title: ids.length === 1 ? '¿Rendir esta solicitud?' : `¿Rendir ${ids.length} solicitudes?`,
-      text: 'Se descarga tu planilla de gasto por movilidad.',
       showCancelButton: true,
       confirmButtonText: 'Sí, rendir',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0086A5',
+      confirmButtonColor: '#0F6E56',
     });
     if (!result.isConfirmed) return;
 
     this.loaderService.show();
     this.service.marcarRendidasBulk(ids).subscribe({
-      next: (response) => this.descargarPlanilla(response, ids.length),
+      next: (res) => this.trasRendir(res),
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         this.errorService.handleError(err);
@@ -628,7 +637,7 @@ export class SolicitudSalidas implements OnInit {
 
   /**
    * Rinde TODAS las salidas propias aptas del periodo elegido. El backend resuelve qué entra
-   * (aprobadas, no rendidas, con sus trayectos cubiertos y con motivo reembolsable) e ignora el
+   * (aprobadas, no rendidas y con sus trayectos reembolsables cubiertos) e ignora el
    * resto, así que no depende de lo que esté cargado en la tabla.
    */
   private async rendirTodoElMes(): Promise<void> {
@@ -638,17 +647,17 @@ export class SolicitudSalidas implements OnInit {
     const result = await Swal.fire({
       icon: 'question',
       title: `¿Rendir tus salidas de ${mes.label}?`,
-      text: 'Entran solo las salidas aptas para rendir.',
+      text: 'Entran solo las salidas aptas del mes.',
       showCancelButton: true,
       confirmButtonText: 'Sí, rendir',
       cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0086A5',
+      confirmButtonColor: '#0F6E56',
     });
     if (!result.isConfirmed) return;
 
     this.loaderService.show();
     this.service.rendirMes(mes.anio, mes.mes).subscribe({
-      next: (response) => this.descargarPlanilla(response),
+      next: (res) => this.trasRendir(res),
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         this.errorService.handleError(err);
@@ -657,43 +666,31 @@ export class SolicitudSalidas implements OnInit {
     });
   }
 
-  /** Descarga el PDF devuelto por una rendición y refresca la tabla. */
-  private descargarPlanilla(response: HttpResponse<Blob>, countFallback = 0): void {
+  /**
+   * Avisa cómo quedó la rendición y refresca la tabla. Si la planilla se generó pero no se pudo
+   * enviar a revisión, el aviso va en naranja: lo rendido ya está hecho igual.
+   *
+   * El texto no usa el `message` del backend porque nombra al revisor y la primera revisión; por
+   * la misma razón que la confirmación (ver `rendir`), acá solo se dice qué pasó con la planilla.
+   */
+  private trasRendir(res: RendirResultDto): void {
     // Lo que se acaba de rendir ya no está pendiente: la selección del mes deja de tener sentido
     // y quedaría marcada sobre un conjunto distinto al que el usuario aceptó.
     this.todoElMes = false;
 
-    // Si la rendición salió del modal de detalle, lo que este muestra (estado, planilla) ya quedó
-    // viejo: se cierra para que el aviso de éxito no aparezca sobre datos de antes de rendir.
+    // Si la rendición salió del modal de detalle, lo que este muestra (estado, botón Rendir) ya
+    // quedó viejo: se cierra para que el aviso no aparezca sobre datos de antes de rendir.
     this.detalleId = null;
-
-    const blob = response.body as Blob;
-    const count = Number(response.headers.get('X-Rendidas-Count') ?? countFallback);
-    const filename = this.extractFilename(response.headers.get('Content-Disposition'))
-                  ?? `Planilla_Rendicion_${new Date().toISOString().slice(0, 10)}.pdf`;
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
 
     this.loaderService.hide();
     Swal.fire({
-      title: `${count} solicitud(es) rendida(s)`,
-      text: 'Se descargó la planilla de gasto por movilidad. Podrás continuar con tu rendición desde el apartado Mis Rendiciones.',
-      icon: 'success',
-      confirmButtonColor: '#0F6E56',
+      icon: res.enviadaARevision ? 'success' : 'warning',
+      title: res.rendidas === 1 ? '1 solicitud rendida' : `${res.rendidas} solicitudes rendidas`,
+      text: res.enviadaARevision
+        ? `La planilla ${res.codigo} quedó registrada en Mis Rendiciones.`
+        : `La planilla ${res.codigo} quedó registrada en Mis Rendiciones, pero incompleta.`,
     });
     this.recargar();
-  }
-
-
-  private extractFilename(contentDisposition: string | null): string | null {
-    if (!contentDisposition) return null;
-    const m = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(contentDisposition);
-    return m ? decodeURIComponent(m[1]) : null;
   }
 
   /** Visible solo cuando la solicitud está Aprobada y aún no rendida. */

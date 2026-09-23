@@ -6,36 +6,33 @@ import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
-import { FirmaRegistrarModal } from '../../../../../../shared/components/firma-personal/registrar-modal/firma-registrar-modal';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { GestionRendicionesService } from '../../services/gestion-rendiciones.service';
-import {
-  GestionRendicionDetalleDto,
-  ReembolsoAccionDto,
-} from '../../dtos/gestion-rendicion.dto';
+import { GestionRendicionDetalleDto } from '../../dtos/gestion-rendicion.dto';
 import {
   primeraRevisionColors,
   reembolsoColors,
 } from '../../../../shared/dtos/rendicion-shared.dto';
 import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-correos';
 import { otrasRendicionesDelConsolidado } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
+import { DocumentoEmbebido } from '../../../../shared/components/documento-embebido/documento-embebido';
 
 /**
- * Detalle de una planilla para el revisor: sus documentos y las salidas que agrupa.
+ * Detalle de una planilla para la jefatura y el consolidador: sus documentos y las salidas que
+ * agrupa, cada una con su ojo para ver trayectos, capturas y montos.
  *
- * Los DOS momentos de decisión son de la planilla entera —la primera revisión y el reembolso—, así
- * que sus botones van al pie del modal y la tabla de salidas es solo lectura. El reembolso se
- * decidía salida por salida con checkboxes; ya no: lo que se revisa es un documento (la planilla,
- * su Consolidado del S10) y aprobar media planilla dejaba al trabajador con un reembolso partido.
- * Además la subsanación ya era por planilla —volver a adjuntar el consolidado reabre TODAS sus
- * salidas rechazadas—, así que decidir por partes nunca tuvo una vuelta atrás a la misma
- * granularidad.
+ * La decisión de la primera revisión es de la planilla entera, así que sus botones van al pie del
+ * modal y la tabla de salidas es solo lectura: lo que se revisa es un documento, y aprobar media
+ * planilla dejaría al trabajador con una rendición partida. Al pie va también el Consolidado del S10
+ * para el consolidador; el modal solo emite y la pantalla lo abre con el mismo camino que el botón
+ * de la fila. El reembolso ya no se decide acá: se decide en Consolidados.
  */
 @Component({
   standalone: true,
   selector: 'app-gestion-rendicion-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, FirmaRegistrarModal],
+  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaDetalleModal, DocumentoEmbebido],
   templateUrl: './gestion-rendicion-detalle-modal.html',
 })
 export class GestionRendicionDetalleModal implements OnInit {
@@ -44,10 +41,19 @@ export class GestionRendicionDetalleModal implements OnInit {
   /** Emite true si algo cambió (hay que recargar la tabla de atrás), false si solo se cerró. */
   @Output() close = new EventEmitter<boolean>();
 
+  /**
+   * "Consolidado S10" desde el pie del detalle. Solo avisa: la pantalla abre el mismo modal que el
+   * botón de la fila, con la planilla y su conjunto.
+   */
+  @Output() consolidar = new EventEmitter<GestionRendicionDetalleDto>();
+
   detalle: GestionRendicionDetalleDto | null = null;
 
-  /** Modal para dibujar la firma en el momento. Lo abre el 409 de aprobar. */
-  firmaModalAbierto = false;
+  /** Salida cuyo detalle (el ojo de la tabla) está abierto. null = cerrado. */
+  salidaId: number | null = null;
+
+  /** El detalle de la salida en consulta, con el endpoint y el alcance de esta pantalla. */
+  readonly cargarSalida = (id: number) => this.service.getSalidaDetalle(id);
 
   private huboCambios = false;
 
@@ -82,106 +88,19 @@ export class GestionRendicionDetalleModal implements OnInit {
     this.close.emit(this.huboCambios);
   }
 
-  // ── Reembolso (por planilla: el revisor decide el documento entero) ───
-
-  /**
-   * La decisión va por `rendicionIds`: el backend resuelve las salidas de la planilla que están
-   * dentro del alcance del revisor y se queda solo con las que tienen el reembolso por decidir —
-   * las ya decididas las ignora en silencio, así que reaprobar no las pisa.
-   */
-  private accion(observacion?: string): ReembolsoAccionDto {
-    return {
-      rendicionIds: this.detalle ? [this.detalle.id] : [],
-      solicitudIds: [],
-      observacion: observacion ?? null,
-    };
-  }
-
-  async aprobar(): Promise<void> {
-    const d = this.detalle;
-    if (!d || d.porDecidirCount === 0 || !d.puedeDecidir) return;
-
-    const result = await confirmarConCorreos({
-      titulo: '¿Aprobar el reembolso de ' + d.codigo + '?',
-      // Lo único que el modal no muestra: que aprobar ES firmar los dos documentos.
-      nota: 'Se firma la planilla y su Consolidado del S10.',
-      avisos: await this.avisos('REEMBOLSO', true),
-      confirmButtonText: 'Sí, aprobar',
-    });
-    if (!result.isConfirmed) return;
-
-    this.ejecutarAprobacion();
-  }
-
   /**
    * A quién le va a llegar el aviso de la decisión. Lo resuelve el backend con el MISMO cálculo
    * que hace el envío (Configuración → Correos), así que la confirmación no promete un correo a
    * alguien que la configuración dejó fuera ni dice que no le llega a nadie cuando sí está activo.
    *
-   * Se pide al apretar el botón y no al abrir el detalle: son cuatro decisiones con cuatro correos
-   * distintos y resolver las cuatro cada vez que se abre el modal es trabajo que casi nunca se usa.
+   * Se pide al apretar el botón y no al abrir el detalle: son dos decisiones con dos correos
+   * distintos y resolver los dos cada vez que se abre el modal es trabajo que casi nunca se usa.
    */
-  private avisos(accion: 'PRIMERA_REVISION' | 'REEMBOLSO', aprobar: boolean) {
+  private avisos(aprobar: boolean) {
     return pedirAvisos(this.service.correoPreview({
       rendicionIds: [this.detalle!.id],
-      accion,
       aprobar,
     }));
-  }
-
-  /**
-   * Aprueba, que es lo mismo que firmar. El 409 significa que el revisor todavía no registró su
-   * firma: en vez de mandarlo a Configuración se abre el modal donde la dibuja y la aprobación se
-   * reintenta sola.
-   */
-  private ejecutarAprobacion(): void {
-    this.loader.show();
-    this.service.aprobarReembolso(this.accion()).subscribe({
-      next: (res) => this.trasAccion(res.message),
-      error: (err: HttpErrorResponse) => {
-        this.loader.hide();
-        if (err.status === 409) {
-          this.firmaModalAbierto = true;
-          this.cdr.detectChanges();
-          return;
-        }
-        this.errorAccion(err);
-      },
-    });
-  }
-
-  onFirmaRegistrada(): void {
-    this.firmaModalAbierto = false;
-    this.ejecutarAprobacion();
-  }
-
-  cerrarFirmaModal(): void {
-    this.firmaModalAbierto = false;
-    this.cdr.detectChanges();
-  }
-
-  async observar(): Promise<void> {
-    const d = this.detalle;
-    if (!d || d.porDecidirCount === 0 || !d.puedeDecidir) return;
-
-    const { value: observacion, isConfirmed } = await confirmarConCorreos({
-      icon: 'warning',
-      titulo: '¿Observar el reembolso de ' + d.codigo + '?',
-      avisos: await this.avisos('REEMBOLSO', false),
-      observacion: {
-        label: 'Observación',
-        placeholder: 'Qué tiene que corregir el trabajador en el Consolidado del S10…',
-      },
-      confirmButtonText: 'Observar',
-      confirmButtonColor: '#D30000',
-    });
-    if (!isConfirmed || !observacion) return;
-
-    this.loader.show();
-    this.service.observarReembolso(this.accion(observacion)).subscribe({
-      next: (res) => this.trasAccion(res.message),
-      error: (err: HttpErrorResponse) => this.errorAccion(err),
-    });
   }
 
   private trasAccion(message: string): void {
@@ -205,8 +124,8 @@ export class GestionRendicionDetalleModal implements OnInit {
 
     const result = await confirmarConCorreos({
       titulo: '¿Aprobar la rendición ' + d.codigo + '?',
-      nota: 'Habilita al trabajador a cargar el Consolidado del S10.',
-      avisos: await this.avisos('PRIMERA_REVISION', true),
+      nota: 'Habilita al consolidador a cargar el Consolidado del S10.',
+      avisos: await this.avisos(true),
       confirmButtonText: 'Sí, aprobar',
     });
     if (!result.isConfirmed) return;
@@ -225,7 +144,7 @@ export class GestionRendicionDetalleModal implements OnInit {
     const { value: observacion, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
       titulo: '¿Observar la rendición ' + d.codigo + '?',
-      avisos: await this.avisos('PRIMERA_REVISION', false),
+      avisos: await this.avisos(false),
       observacion: {
         label: 'Observación',
         placeholder: 'Qué capturas o montos tiene que corregir el trabajador…',
@@ -247,6 +166,25 @@ export class GestionRendicionDetalleModal implements OnInit {
     this.loader.hide();
     Swal.fire({ title: message, icon: 'success', timer: 2000, showConfirmButton: false });
     this.close.emit(true);
+  }
+
+  // ── Consolidado del S10 (consolidador) ───────────────────────────────
+
+  consolidarDesdeDetalle(): void {
+    const d = this.detalle;
+    if (!d?.puedeAdjuntarConsolidado || !d.puedeConsolidar) return;
+    this.consolidar.emit(d);
+  }
+
+  // ── Detalle de una salida ────────────────────────────────────────────
+
+  verSalida(solicitudId: number): void {
+    this.salidaId = solicitudId;
+  }
+
+  cerrarSalida(): void {
+    this.salidaId = null;
+    this.cdr.detectChanges();
   }
 
   // ── Presentación ─────────────────────────────────────────────────────

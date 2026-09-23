@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { CommonModule, formatDate } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import Swal from 'sweetalert2';
 
@@ -9,32 +9,34 @@ import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { RendicionesService } from '../../services/rendiciones.service';
-import { CorreoDestinatariosDto, RendicionDetalleDto } from '../../dtos/rendicion.dto';
-import { avisosDe } from '../../../../shared/correo-aviso';
+import { RendicionDetalleDto } from '../../dtos/rendicion.dto';
+import { CorreoAvisoDto } from '../../../../shared/correo-aviso';
 import { confirmarConCorreos } from '../../../../shared/confirmar-correos';
-import { ConsolidadoS10Modal } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
 import {
   ConsolidadoS10Dto,
   otrasRendicionesDelConsolidado,
 } from '../../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { SalidaCapturasModal } from '../salida-capturas-modal/salida-capturas-modal';
+import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
+import { DocumentoEmbebido } from '../../../../shared/components/documento-embebido/documento-embebido';
 import {
-  correccionS10Colors,
   primeraRevisionColors,
   reembolsoColors,
 } from '../../../../shared/dtos/rendicion-shared.dto';
 
 /**
  * Detalle de una planilla: sus documentos, el estado de la primera revisión y del reembolso, y las
- * salidas propias que agrupa. Trae también las acciones de la pantalla (adjuntar el Consolidado
- * del S10, avisar al revisor y corregir las capturas al subsanar) porque los correos del flujo
- * abren directo acá.
+ * salidas propias que agrupa, cada una con su ojo para ver trayectos, capturas y montos. Trae
+ * también las acciones del trabajador (enviar a primera revisión y corregir las capturas al
+ * subsanar) porque los correos de la primera revisión abren directo acá.
+ * El Consolidado del S10 se ve pero no se toca: lo adjunta el consolidador de su área.
  */
 @Component({
   standalone: true,
   selector: 'app-rendicion-detalle-modal',
   imports: [
-    CommonModule, BaseModal, StatusBadge, TitleCasePipe, ConsolidadoS10Modal, SalidaCapturasModal,
+    CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaCapturasModal, SalidaDetalleModal,
+    DocumentoEmbebido,
   ],
   templateUrl: './rendicion-detalle-modal.html',
 })
@@ -42,29 +44,23 @@ export class RendicionDetalleModal implements OnInit {
   @Input({ required: true }) rendicionId!: number;
 
   /**
-   * true = se abrió para subsanar una rendición observada: cada salida muestra su botón de
-   * corregir capturas y montos. Lo decide la pantalla, que es la que conoce el estado de la fila.
+   * A quién le llegan de verdad los correos que dispara este modal, ya resueltos con Configuración
+   * → Correos. Los pasa la pantalla, que los trae con sus datos de arranque: son los mismos para
+   * todas sus planillas (está acotada a un solo trabajador) y pedirlos otra vez acá sería una
+   * petición de más por cada planilla que se abre.
    */
-  @Input() subsanando = false;
-
-  /**
-   * A quién le llegan de verdad los dos correos que dispara este modal, ya resueltos con
-   * Configuración → Correos. Los pasa la pantalla, que los trae con sus datos de arranque: son
-   * los mismos para todas sus planillas (está acotada a un solo trabajador) y pedirlos otra vez
-   * acá sería una petición de más por cada planilla que se abre.
-   */
-  @Input() correoPrimeraRevision: CorreoDestinatariosDto = { para: [], copia: [] };
-  @Input() correoS10Revisor: CorreoDestinatariosDto = { para: [], copia: [] };
-  @Input() correoCorreccionS10: CorreoDestinatariosDto = { para: [], copia: [] };
+  @Input() correosEnvioRevision: CorreoAvisoDto[] = [];
 
   /** Emite true si algo cambió (hay que recargar la tabla de atrás), false si solo se cerró. */
   @Output() close = new EventEmitter<boolean>();
 
   detalle: RendicionDetalleDto | null = null;
-  consolidadoAbierto = false;
 
   /** id de la salida cuyo modal de capturas está abierto. null = cerrado. */
   capturasSolicitudId: number | null = null;
+
+  /** Salida cuyo detalle (el ojo de la tabla) está abierto. null = cerrado. */
+  salidaId: number | null = null;
 
   /** Se enciende con la primera acción para avisarle al padre que su tabla quedó desfasada. */
   private huboCambios = false;
@@ -100,30 +96,43 @@ export class RendicionDetalleModal implements OnInit {
     this.close.emit(this.huboCambios);
   }
 
-  // ── Consolidado del S10 ──────────────────────────────────────────────
-
-  readonly subirConsolidado = (file: File, montoTotal: number, numeroReembolso: string) =>
-    this.service.uploadConsolidadoS10(this.rendicionId, file, montoTotal, numeroReembolso);
-
-  get consolidadoReferencia(): string | null {
-    const d = this.detalle;
-    if (!d) return null;
-    return d.numeroPlanilla ?? `Rendición del ${new Date(d.rendidoAt).toLocaleDateString('es-PE')}`;
+  /**
+   * true = la planilla está observada en primera revisión, así que toca subsanarla: cada salida
+   * muestra su botón de corregir capturas y montos y al pie aparece "Volver a generar".
+   *
+   * Sale del detalle que carga este mismo modal y NO de un input de la pantalla. Cuando lo pasaba
+   * la fila, el modal salía completo al clickear la tabla pero recortado al entrar por el enlace
+   * del correo ("Resolver la observación", `?rendicion=N`), que abre el modal sin pasar por la
+   * fila: el trabajador llegaba desde el correo a subsanar y no encontraba ni "Corregir" ni
+   * "Volver a generar". Derivándolo del detalle, todas las puertas de entrada muestran lo mismo.
+   */
+  get subsanando(): boolean {
+    return this.detalle?.puedeSubsanar === true;
   }
 
-  cerrarConsolidado(subido: ConsolidadoS10Dto | null): void {
-    this.consolidadoAbierto = false;
-    if (subido) {
-      this.huboCambios = true;
-      this.cargar();
-    } else {
-      this.cdr.detectChanges();
-    }
-  }
+  // ── Consolidado del S10 (solo lectura) ───────────────────────────────
 
   /** Con qué otras rendiciones comparte el Consolidado del S10 (vacío si es solo suyo). */
   otrasDelConsolidado(d: { id: number; consolidadoS10: ConsolidadoS10Dto | null }): string[] {
     return otrasRendicionesDelConsolidado(d.consolidadoS10, d.id);
+  }
+
+  /**
+   * Nota al lado de la etiqueta del Consolidado del S10: cuándo se firmó —solo en la copia
+   * firmada— y con qué otras planillas comparte el documento.
+   *
+   * Se arma acá porque de las dos copias se muestra una sola: cuando llega la firma, la original
+   * desaparece, y con ella desaparecía el «También cubre» que era su única nota.
+   */
+  notaConsolidado(d: RendicionDetalleDto, firmado: boolean): string | null {
+    const partes: string[] = [];
+    const firmadoAt = d.consolidadoS10?.firmadoAt;
+    if (firmado && firmadoAt) {
+      partes.push('Firmado el ' + formatDate(firmadoAt, 'dd/MM/yyyy', 'es-PE'));
+    }
+    const otras = this.otrasDelConsolidado(d);
+    if (otras.length) partes.push('También cubre ' + otras.join(', '));
+    return partes.length ? partes.join(' · ') : null;
   }
 
   // ── Enviar a primera revisión ────────────────────────────────────────
@@ -138,7 +147,7 @@ export class RendicionDetalleModal implements OnInit {
 
     const result = await confirmarConCorreos({
       titulo: '¿Enviar ' + d.codigo + ' a revisión?',
-      avisos: avisosDe(this.correoPrimeraRevision),
+      avisos: this.correosEnvioRevision,
       // Sin nadie a quien avisar el envío igual procede: la rendición pasa a revisión y el jefe la
       // ve en su bandeja. Es un aviso de estado, no un bloqueo.
       sinNadie: 'Pasa a revisión, pero sin aviso por correo: está apagado en Configuración → Correos.',
@@ -162,128 +171,31 @@ export class RendicionDetalleModal implements OnInit {
     });
   }
 
-  // ── Aviso al revisor ─────────────────────────────────────────────────
-
-  async notificarRevisor(): Promise<void> {
-    const d = this.detalle;
-    if (!d) return;
-
-    // A diferencia del envío a primera revisión, este aviso ES el correo: sin destinatarios el
-    // backend responde 409, así que se corta acá y se dice por qué en vez de dejar intentarlo.
-    if (this.correoS10Revisor.para.length === 0) {
-      await Swal.fire({
-        icon: 'warning',
-        title: 'Nadie recibiría el aviso',
-        text: 'El correo «S10 al revisor» está apagado o sin destinatarios en Configuración → Correos.',
-        confirmButtonColor: '#0F6E56',
-      });
-      return;
-    }
-
-    const result = await confirmarConCorreos({
-      titulo: d.revisorNotificadoAt ? '¿Volver a avisar?' : '¿Avisar al revisor?',
-      // Solo cuando es una repetición: el resto del tiempo el título ya lo dice todo.
-      nota: d.revisorNotificadoAt ? 'Ya le avisaste por esta planilla.' : undefined,
-      avisos: avisosDe(this.correoS10Revisor),
-      confirmButtonText: d.revisorNotificadoAt ? 'Sí, avisar de nuevo' : 'Sí, avisar',
-    });
-    if (!result.isConfirmed) return;
-
-    this.loader.show();
-    this.service.notificarRevisor(d.id).subscribe({
-      next: (res) => {
-        this.loader.hide();
-        this.huboCambios = true;
-        Swal.fire({ icon: 'success', title: res.message, timer: 2000, showConfirmButton: false });
-        this.cargar();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loader.hide();
-        this.errorService.handleError(err);
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  // ── Corrección con el Coordinador ERP ────────────────────────────────
-
-  /**
-   * Le pide al Coordinador ERP que corrija el Consolidado del S10. Es el camino para cuando la
-   * observación de la jefatura no se puede resolver desde Abril One porque el arreglo está dentro
-   * del S10, donde el colaborador no tiene permiso.
-   *
-   * A diferencia del envío a primera revisión, este aviso ES el flujo: sin un Coordinador ERP a
-   * quien avisarle el backend responde 409, así que se corta acá y se dice por qué en vez de
-   * dejar registrar una solicitud que nadie va a ver.
-   */
-  async solicitarCorreccion(): Promise<void> {
-    const d = this.detalle;
-    if (!d?.puedeSolicitarCorreccion) return;
-
-    if (this.correoCorreccionS10.para.length === 0) {
-      await Swal.fire({
-        icon: 'warning',
-        title: 'Nadie recibiría la solicitud',
-        text: 'No hay ningún Coordinador ERP con correo registrado. Avisa al administrador del sistema.',
-        confirmButtonColor: '#0F6E56',
-      });
-      return;
-    }
-
-    const { value: motivo, isConfirmed } = await confirmarConCorreos({
-      icon: 'question',
-      titulo: '¿Solicitar la corrección al ERP?',
-      avisos: avisosDe(this.correoCorreccionS10),
-      observacion: {
-        label: 'Motivo',
-        placeholder: 'Qué necesitas que corrija en el S10…',
-      },
-      confirmButtonText: 'Sí, solicitar',
-    });
-    if (!isConfirmed || !motivo) return;
-
-    this.loader.show();
-    this.service.solicitarCorreccionS10(d.id, motivo).subscribe({
-      next: () => {
-        this.loader.hide();
-        this.huboCambios = true;
-        Swal.fire({
-          icon: 'success',
-          title: 'Solicitud enviada',
-          text: 'El Coordinador ERP te avisará cuando la corrección esté hecha en el S10.',
-          timer: 2800,
-          showConfirmButton: false,
-        });
-        this.cargar();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loader.hide();
-        this.errorService.handleError(err);
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
   // ── Volver a generar la planilla (subsanación) ───────────────────────
 
   /**
-   * Vuelve a generar el PDF de la planilla con los montos ya corregidos. Vive también acá —y no
-   * solo en la tabla— porque corregir las capturas se hace desde este modal: tener que cerrarlo
-   * para dar el último paso era el hueco del flujo. La planilla conserva su código y queda lista
-   * para reenviar a primera revisión.
+   * Vuelve a generar el PDF de la planilla con los montos ya corregidos y la reenvía a la primera
+   * revisión en el mismo paso: una planilla se subsana justamente para que el jefe la vuelva a
+   * mirar, y el envío aparte se quedaba sin dar. Vive también acá —y no solo en la tabla— porque
+   * corregir las capturas se hace desde este modal. La planilla conserva su código.
+   *
+   * El PDF nuevo no se descarga: queda guardado y la planilla ya apunta a él, así que se ve con el
+   * botón «Planilla» de la fila. Bajarlo sin que nadie lo pida era ruido en cada subsanación.
+   *
+   * Por eso la confirmación imprime los destinatarios: es la misma acción que antes disparaba
+   * "Enviar a revisión", así que tiene que decir a quién le va a llegar.
    */
   async regenerarPlanilla(): Promise<void> {
     const d = this.detalle;
     if (!d) return;
 
-    const result = await Swal.fire({
-      icon: 'question',
-      title: '¿Volver a generar ' + d.codigo + '?',
-      text: 'Queda lista para reenviar a revisión.',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, generar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0F6E56',
+    const result = await confirmarConCorreos({
+      titulo: '¿Volver a generar ' + d.codigo + '?',
+      avisos: this.correosEnvioRevision,
+      // Sin nadie a quien avisar igual procede: la planilla se regenera y pasa a revisión, y el
+      // jefe la ve en su bandeja. Es un aviso de estado, no un bloqueo.
+      sinNadie: 'Se regenera y pasa a revisión, pero sin aviso por correo: está apagado en Configuración → Correos.',
+      confirmButtonText: 'Generar y avisar al revisor',
     });
     if (!result.isConfirmed) return;
 
@@ -291,17 +203,18 @@ export class RendicionDetalleModal implements OnInit {
     this.service.regenerarPlanilla(d.id).subscribe({
       next: (res) => {
         this.loader.hide();
-        this.descargar(res, d.codigo + '.pdf');
         this.huboCambios = true;
+        // El reenvío es best-effort en el backend: si el correo no salió, el aviso lo dice en vez
+        // de anunciar una revisión que nadie pidió.
         Swal.fire({
-          icon: 'success',
+          icon: res.enviadaARevision ? 'success' : 'warning',
           title: 'Planilla regenerada',
-          text: d.codigo + ' quedó lista para enviar de nuevo a revisión.',
-          timer: 2800,
-          showConfirmButton: false,
+          text: res.message || d.codigo + ' se volvió a generar y se envió a revisión.',
+          // El caso "no salió el correo" se queda hasta que lo cierren: es lo que hay que leer.
+          ...(res.enviadaARevision ? { timer: 2800, showConfirmButton: false } : {}),
         });
-        // Se cierra: la planilla salió de "Observada" y lo que sigue —enviarla a revisión— es de
-        // la tabla. Dejar el modal abierto mostrando un estado que ya cambió confunde más.
+        // Se cierra: la planilla salió de "Observada" y ya está en manos del jefe. Dejar el modal
+        // abierto mostrando un estado que ya cambió confunde más.
         this.close.emit(true);
       },
       error: (err: HttpErrorResponse) => {
@@ -310,17 +223,6 @@ export class RendicionDetalleModal implements OnInit {
         this.cdr.detectChanges();
       },
     });
-  }
-
-  /** Dispara la descarga del PDF que devuelve el backend. */
-  private descargar(response: HttpResponse<Blob>, filename: string): void {
-    if (!response.body) return;
-    const url = URL.createObjectURL(response.body);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
   }
 
   // ── Capturas de una salida (subsanación) ─────────────────────────────
@@ -345,10 +247,25 @@ export class RendicionDetalleModal implements OnInit {
     }
   }
 
+  // ── Detalle de una salida ────────────────────────────────────────────
+
+  /**
+   * Abre el detalle de la salida en el modo del propio trabajador (sin `[cargar]`): es el mismo
+   * endpoint de Solicitud de Salidas, que ya la acota al usuario autenticado. Toda salida de una
+   * planilla está rendida, así que el modal no ofrece editar, rendir ni cancelar.
+   */
+  verSalida(solicitudId: number): void {
+    this.salidaId = solicitudId;
+  }
+
+  cerrarSalida(): void {
+    this.salidaId = null;
+    this.cdr.detectChanges();
+  }
+
   // ── Colores de estado ────────────────────────────────────────────────
 
   readonly primeraRevisionColors = primeraRevisionColors;
-  readonly correccionS10Colors = correccionS10Colors;
 
   // Los colores del estado del reembolso viven en el shared del módulo: el mismo estado tiene
   // que verse igual en las cinco pantallas del ciclo.

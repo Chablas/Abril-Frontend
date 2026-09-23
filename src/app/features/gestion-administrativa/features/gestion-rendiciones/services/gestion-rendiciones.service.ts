@@ -2,15 +2,15 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
-import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { ConsolidadoS10UploadResultDto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { CorreoAvisoDto, CorreoPreviewRequestDto } from '../../../shared/correo-aviso';
 import { ReembolsoBulkResultDto } from '../../../shared/dtos/rendicion-shared.dto';
+import { SolicitudSalidaDetalleDto } from '../../../shared/dtos/salida-detalle.dto';
 import {
   GestionRendicionDetalleDto,
   GestionRendicionFilterDataDto,
   GestionRendicionListResultDto,
   PrimeraRevisionAccionDto,
-  ReembolsoAccionDto,
 } from '../dtos/gestion-rendicion.dto';
 
 @Injectable({ providedIn: 'root' })
@@ -62,20 +62,31 @@ export class GestionRendicionesService {
   }
 
   /**
+   * El detalle de una salida de las planillas del alcance, en consulta: trayectos, capturas con sus
+   * montos y adjuntos. Es lo que abre el ojo de la tabla de salidas del detalle de la planilla.
+   */
+  getSalidaDetalle(solicitudId: number): Observable<SolicitudSalidaDetalleDto> {
+    return this.http.get<SolicitudSalidaDetalleDto>(`${this.apiUrl}/salidas/${solicitudId}/detalle`, {
+      headers: this.headers,
+    });
+  }
+
+  /**
    * Adjunta (o reemplaza) UN Consolidado del S10 para las planillas indicadas: una o varias, de uno
-   * o de varios trabajadores de una misma razón social. Cubre todas sus salidas, así que
-   * `montoTotal` tiene que cuadrar con la suma de las planillas completas: el backend lo re-valida
-   * (junto con la razón social y el resto de las reglas) y responde 400/409 si algo no cuadra.
+   * o de varios trabajadores, de las razones sociales que sean. Solo lo sube el consolidador. Cubre
+   * todas sus salidas, así que `montoTotal` tiene que cuadrar con la suma de las planillas
+   * completas: el backend lo re-valida (junto con el resto de las reglas) y responde 400/403/409 si
+   * algo no cuadra.
    */
   uploadConsolidadoS10(
     rendicionIds: number[], file: File, montoTotal: number, numeroReembolso: string,
-  ): Observable<ConsolidadoS10Dto> {
+  ): Observable<ConsolidadoS10UploadResultDto> {
     const formData = new FormData();
     for (const id of rendicionIds) formData.append('rendicionIds', String(id));
     formData.append('file', file, file.name);
     formData.append('montoTotal', String(montoTotal));
     formData.append('numeroReembolso', numeroReembolso);
-    return this.http.post<ConsolidadoS10Dto>(
+    return this.http.post<ConsolidadoS10UploadResultDto>(
       `${this.apiUrl}/consolidado-s10`,
       formData,
       { headers: this.headers },
@@ -83,8 +94,8 @@ export class GestionRendicionesService {
   }
 
   /**
-   * Aprueba la primera revisión: habilita al trabajador a cargar el Consolidado del S10 y le avisa
-   * por correo.
+   * Aprueba la primera revisión: habilita al consolidador a cargar el Consolidado del S10 y le avisa
+   * al trabajador por correo.
    */
   aprobarPrimeraRevision(accion: PrimeraRevisionAccionDto): Observable<ReembolsoBulkResultDto> {
     return this.http.patch<ReembolsoBulkResultDto>(
@@ -102,27 +113,10 @@ export class GestionRendicionesService {
     );
   }
 
-  aprobarReembolso(accion: ReembolsoAccionDto): Observable<ReembolsoBulkResultDto> {
-    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/aprobar`, accion, {
-      headers: this.headers,
-    });
-  }
-
   /**
-   * Observa el reembolso: la planilla vuelve al trabajador para que subsane. La observación es
-   * obligatoria — es lo que él lee para saber qué corregir, y lo que se le manda al Coordinador ERP
-   * si la corrección tiene que hacerse dentro del S10.
-   */
-  observarReembolso(accion: ReembolsoAccionDto): Observable<ReembolsoBulkResultDto> {
-    return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/observar`, accion, {
-      headers: this.headers,
-    });
-  }
-
-  /**
-   * Qué correos saldrían al tomar una de las cuatro decisiones sobre la selección, y a quién. Se
-   * pide al apretar el botón —no al cargar la pantalla— porque depende de qué está seleccionado, y
-   * lo resuelve el servidor para que la confirmación no pueda desalinearse de Configuración →
+   * Qué correos saldrían al decidir la primera revisión de la selección, y a quién. Se pide al
+   * apretar el botón —no al cargar la pantalla— porque depende de qué está seleccionado, y lo
+   * resuelve el servidor para que la confirmación no pueda desalinearse de Configuración →
    * Correos.
    */
   correoPreview(request: CorreoPreviewRequestDto): Observable<CorreoAvisoDto[]> {

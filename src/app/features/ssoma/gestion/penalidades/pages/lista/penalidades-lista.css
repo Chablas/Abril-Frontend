@@ -159,3 +159,44 @@
 .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
 .col-2 { grid-column: span 2; }
 .paso-body { display: flex; flex-direction: column; gap: 16px; }
+
+.infraccion-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #374151;
+}
+.chip-categoria {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--color-abril-logo-blue);
+  color: #fff;
+}
+.chip-referencia {
+  font-size: 11px;
+  color: #9CA3AF;
+  font-style: italic;
+}
+
+.notificacion-preview {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  border-radius: var(--radius-standard, 7px);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #1e3a5f;
+}
+.notificacion-preview i { font-size: 16px; margin-top: 1px; color: #1d4ed8; }
+.notificacion-preview__motivo { margin: 0 0 4px; font-weight: 600; }
+.notificacion-preview__linea { margin: 0; word-break: break-word; }

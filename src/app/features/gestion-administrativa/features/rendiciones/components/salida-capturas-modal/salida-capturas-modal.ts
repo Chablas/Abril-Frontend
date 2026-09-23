@@ -92,8 +92,12 @@ export class SalidaCapturasModal implements OnInit, OnDestroy {
 
   /**
    * Manda el modal entero en una sola llamada: las capturas nuevas de todos los trayectos y los
-   * montos e imágenes corregidos de las que ya estaban. El backend responde con el detalle ya
-   * actualizado, así que la pantalla se repinta sin volver a pedirlo.
+   * montos e imágenes corregidos de las que ya estaban.
+   *
+   * Guardar CIERRA el modal: lo que sigue al corregir una salida es corregir la siguiente o volver
+   * a generar la planilla, y las dos cosas están en el detalle de la rendición que quedó detrás.
+   * Dejarlo abierto obligaba a cerrarlo a mano para ver si los montos de la planilla ya cuadraban.
+   * El padre recibe el aviso de cambio y recarga ese detalle.
    */
   guardarTodo(): void {
     const edicion = this.edicion;
@@ -106,9 +110,8 @@ export class SalidaCapturasModal implements OnInit, OnDestroy {
     this.service
       .guardarCapturas(this.solicitudId, edicion.nuevasParaSubir, edicion.edicionesParaGuardar)
       .subscribe({
-        next: (detalle) => {
+        next: () => {
           this.algoCambio = true;
-          this.aplicarDetalle(detalle);
           this.loader.hide();
           Swal.fire({
             icon: 'success',
@@ -116,6 +119,7 @@ export class SalidaCapturasModal implements OnInit, OnDestroy {
             timer: 1800,
             showConfirmButton: false,
           });
+          this.close.emit(true);
         },
         error: (err: HttpErrorResponse) => {
           edicion.guardando = false;

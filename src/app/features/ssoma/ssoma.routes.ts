@@ -108,11 +108,26 @@ export const SSOMA_ROUTES: Routes = [
       ),
   },
   {
+    path: 'gestion/epp',
+    loadChildren: () =>
+      import('./gestion/epp/epp.routes').then((m) => m.EPP_ROUTES),
+  },
+  {
     path: 'gestion/cumplimiento',
     loadChildren: () =>
       import('./gestion/cumplimiento-ssoma/cumplimiento-ssoma.routes').then(
         (m) => m.CUMPLIMIENTO_SSOMA_ROUTES,
       ),
+  },
+  {
+    path: 'gestion/hoja-ruta',
+    loadChildren: () =>
+      import('./gestion/hoja-ruta/hoja-ruta.routes').then((m) => m.HOJA_RUTA_ROUTES),
+  },
+  {
+    path: 'gestion/residuos',
+    loadChildren: () =>
+      import('./gestion/residuos/residuos.routes').then((m) => m.RESIDUOS_ROUTES),
   },
   { path: '', redirectTo: 'salud-ocupacional', pathMatch: 'full' },
 ];

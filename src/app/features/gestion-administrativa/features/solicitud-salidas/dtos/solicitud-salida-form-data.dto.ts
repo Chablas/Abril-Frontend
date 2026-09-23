@@ -13,6 +13,10 @@ export interface MotivoSalidaDto {
   /** Si true, una salida con este motivo genera reembolso de movilidad. Los pares de
    *  `trayectosNoReembolsables` lo anulan; un trayecto nunca lo concede por su cuenta. */
   esReembolsable: boolean;
+  /** true en la fila que configura «Otro motivo»: el formulario la saca del desplegable
+   *  —la elige el checkbox de texto libre— pero consulta sus exigencias como las de
+   *  cualquier otro motivo. Si no viene, no se ofrece escribir un motivo a mano. */
+  esMotivoLibre: boolean;
 }
 
 export interface LugarSalidaDto {
@@ -45,6 +49,14 @@ export interface SolicitudSalidaFormDataDto {
   correoRevisorPara: string[];
   /** Los que van en copia de ese mismo aviso. */
   correoRevisorCopia: string[];
+  /**
+   * Lo mismo para el aviso informativo al jefe del área, que solo sale cuando el revisor de
+   * este trabajador es un residente: la salida la aprueba el residente de la obra y el jefe
+   * del área se entera. Vacío en el caso normal.
+   */
+  correoJefeAreaPara: string[];
+  /** Los que van en copia de ese aviso informativo. */
+  correoJefeAreaCopia: string[];
   /**
    * Lo mismo para la confirmación informativa (Configuración → Correos → Confirmación), que
    * sale junto con la anterior pero sin botones. Vacío = no se envía a nadie.

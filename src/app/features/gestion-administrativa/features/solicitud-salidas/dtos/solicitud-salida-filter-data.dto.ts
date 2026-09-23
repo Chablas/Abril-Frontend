@@ -1,3 +1,5 @@
+import { CorreoAvisoDto } from '../../../shared/correo-aviso';
+
 export interface LugarProyectoOptionDto {
   id: number;
   nombreDisplay: string;
@@ -23,4 +25,10 @@ export interface SolicitudSalidaFilterDataDto {
   lugaresProyecto: LugarProyectoOptionDto[];
   /** Meses que ofrece el desplegable "Mes a rendir" (los que tienen algo apto). */
   mesesRendicion: MesRendicionDto[];
+  /**
+   * A quién le llegan los correos de «Rendir», que envía la planilla a primera revisión: el aviso a
+   * la jefatura y el acuse al trabajador, ya resueltos por el backend con Configuración → Correos.
+   * Vacío = no sale ninguno.
+   */
+  correosRendir: CorreoAvisoDto[];
 }

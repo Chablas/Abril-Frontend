@@ -14,14 +14,20 @@
     </div>
 
     <div class="flex items-center gap-2">
+      <button *ngIf="proyectoUnico as proyecto" type="button" (click)="logoFileInput.click()" [disabled]="subiendoLogo"
+        class="h-[38px] px-4 rounded-[var(--radius-standard)] border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5 disabled:opacity-50"
+        title="Logo del proyecto para el encabezado del PDF de Control de Licencias">
+        <i class="ti" [ngClass]="subiendoLogo ? 'ti-loader-2 animate-spin' : 'ti-photo-up'"></i>
+        {{ subiendoLogo ? 'Subiendo...' : (proyecto.logoUrl ? 'Cambiar logo' : 'Subir logo') }}
+      </button>
       <button type="button" (click)="exportar()" [disabled]="exportando || !selectedProjectIds.length"
         class="h-[38px] px-4 rounded-[var(--radius-standard)] bg-[var(--color-abril-standard)] text-white text-sm font-medium hover:bg-[var(--color-abril-standard-hover)] transition-colors inline-flex items-center gap-1.5 disabled:opacity-50">
         <i class="ti ti-file-spreadsheet"></i> {{ exportando ? 'Exportando...' : 'Exportar a Excel' }}
       </button>
-      <button type="button" (click)="exportarPdf()" [disabled]="!items.length"
+      <button type="button" (click)="exportarPdf()" [disabled]="!items.length || exportandoPdf"
         class="h-[38px] px-4 rounded-[var(--radius-standard)] border border-[var(--color-abril-standard)] text-[var(--color-abril-standard)] text-sm font-medium hover:bg-[var(--color-abril-standard-light)] transition-colors inline-flex items-center gap-1.5 disabled:opacity-50"
         title="PDF estilo organizador visual, una página por obra, para presentar en comité">
-        <i class="ti ti-file-type-pdf"></i> Exportar a PDF
+        <i class="ti ti-file-type-pdf"></i> {{ exportandoPdf ? 'Generando...' : 'Exportar a PDF' }}
       </button>
     </div>
   </div>
@@ -29,6 +35,9 @@
   <p *ngIf="!selectedProjectIds.length" class="text-center text-sm text-gray-400 italic py-10">
     Selecciona una o más obras para ver su dashboard (por rendimiento, no se cargan todas a la vez).
   </p>
+
+  <!-- Disparado por el modal de "falta el logo" (avisarSiFaltaLogo en el .ts); no hay widget visible. -->
+  <input #logoFileInput type="file" accept=".png,.jpg,.jpeg,.webp" class="hidden" (change)="onLogoFileSelected($event)" />
 
   <div class="flex flex-wrap gap-2" *ngIf="resumen">
     <div class="flex-1 min-w-[120px] rounded-lg border border-gray-200 px-3 py-2 text-center">

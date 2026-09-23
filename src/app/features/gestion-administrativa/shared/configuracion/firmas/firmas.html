@@ -1,0 +1,60 @@
+<div class="config-stack">
+  <div class="config-card">
+
+    <div class="config-card__head">
+      <div class="config-card__headtext">
+        <h3 class="config-card__title">
+          <i class="ti ti-signature"></i>
+          Cómo se registra la firma
+        </h3>
+        <p class="config-card__sub">
+          Formas admitidas para registrar la firma que se estampa al aprobar un consolidado. Quien
+          no tenga registrada una firma de alguna de las formas marcadas, la registra en el momento
+          de firmar.
+        </p>
+      </div>
+    </div>
+
+    <div class="firma-checks">
+      <label *ngFor="let t of tipos"
+        class="firma-check"
+        [class.firma-check--bloqueado]="bloqueado(t)">
+        <input
+          type="checkbox"
+          [checked]="t.activo"
+          [disabled]="bloqueado(t)"
+          (change)="onToggle(t, $any($event.target).checked)" />
+        <span class="firma-check__text">
+          <span class="firma-check__label">{{ label(t) }}</span>
+          <span class="firma-check__hint">{{ hint(t) }}</span>
+        </span>
+      </label>
+    </div>
+
+    <!-- Avisos de estado: qué implica hoy lo marcado, no instrucciones. -->
+    <p class="config-warn" *ngIf="!loading && activos.length === 2">
+      <i class="ti ti-info-circle"></i>
+      <span>
+        Al firmar se puede elegir entre subir una imagen o dibujarla, y basta tener registrada
+        cualquiera de las dos. Si hay ambas, se estampa la imagen.
+      </span>
+    </p>
+
+    <p class="config-warn" *ngIf="!loading && activos.length === 1">
+      <i class="ti ti-info-circle"></i>
+      <span>
+        Solo se acepta «{{ label(activos[0]) }}». A quien tenga registrada únicamente la otra forma
+        se le pedirá esta la primera vez que firme.
+      </span>
+    </p>
+
+    <p class="config-warn" *ngIf="!loading && activos.length === 1">
+      <i class="ti ti-lock"></i>
+      <span>Tiene que quedar al menos una marcada: por eso la última no se puede desmarcar.</span>
+    </p>
+
+    <span class="firma-ok" *ngIf="guardado && !saving">
+      <i class="ti ti-circle-check"></i> Guardado
+    </span>
+  </div>
+</div>

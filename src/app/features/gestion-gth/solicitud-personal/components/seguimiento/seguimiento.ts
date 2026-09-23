@@ -10,11 +10,11 @@ import { ClientPager } from '../../../../../shared/utils/client-pager';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { SolicitudPersonalService } from '../../services/solicitud-personal.service';
+import { Seguimiento } from '../../dtos/solicitud-personal.dto';
 import {
-  Seguimiento,
   TipoRequerimientoEstilo,
   tipoRequerimientoEstilo,
-} from '../../dtos/solicitud-personal.dto';
+} from '../../../shared/tipo-requerimiento';
 import { CandidatoRechazado, etapaRechazoColors } from '../../../shared/dtos/candidato-rechazado.dto';
 
 /**

@@ -38,6 +38,7 @@ import {
 import {
   AsignacionGth,
   CandidatoAprobado,
+  CandidatoPendiente,
   CartaOfertaAccionResult,
   CartaOfertaRequerimiento,
   DetalleRequerimientoGth,
@@ -352,9 +353,18 @@ export class GthDetalleRequerimiento implements OnInit {
     this.seccionFormularioPostulante = antesDeEntrevistas || (this.sumaCandidatosTarde && porRevisar);
     this.seccionMultitest = antesDeEntrevistas || this.multitestPendientes > 0;
 
-    // La programación de entrevistas se completa cuando el finalista pasa a decisión del área.
+    // La carga de CVs sigue disponible todo el proceso (GTH puede mandar más en cualquier fase),
+    // pero deja de ser el paso actual: arranca cerrada salvo que todavía sea el trabajo de la fase
+    // o que haya CVs esperando la decisión del área, que es información viva.
+    this.seccionLongList = !this.longListEnviada || this.candidatosPendientes.length > 0;
+
+    // La programación de entrevistas se completa cuando el finalista pasa a decisión del área,
+    // salvo que quede alguien listo sin citar: un candidato que se sumó tarde aparece ahí solo.
+    const citasPendientes = this.candidatosParaEntrevista.some((c) => !c.entrevista);
     this.seccionEntrevistas =
-      !this.detalle || !faseAlcanzada(this.detalle.estadoCodigo, 'SELECCION_JEFATURA');
+      !this.detalle
+      || !faseAlcanzada(this.detalle.estadoCodigo, 'SELECCION_JEFATURA')
+      || (this.sumaCandidatosTarde && citasPendientes);
   }
 
   /**
@@ -448,6 +458,39 @@ export class GthDetalleRequerimiento implements OnInit {
     return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'ENTREVISTAS');
   }
 
+  /**
+   * true si GTH todavía puede mandarle CVs al solicitante. Es casi todo el proceso: desde que la
+   * revisión de CV inició hasta que el requerimiento termina. Enviar una long list dejó de ser el
+   * paso de una sola fase — GTH puede seguir sumando candidatos aunque ya haya finalistas, y cada
+   * uno avanza por su cuenta (mismas fases que valida `FasesEnvioLongList` en el backend).
+   *
+   * Un ingreso directo (FFT) queda fuera: su candidato lo nombró el área y no tiene long list.
+   */
+  get puedeEnviarCvs(): boolean {
+    const codigo = this.detalle?.estadoCodigo;
+    if (!codigo || this.esFft) return false;
+    return faseAlcanzada(codigo, 'LONG_LIST') && !this.procesoTerminado;
+  }
+
+  /** CVs ya enviados que esperan la decisión del solicitante. */
+  get candidatosPendientes(): CandidatoPendiente[] {
+    return this.detalle?.candidatosPendientes ?? [];
+  }
+
+  /**
+   * true si el envío que se está preparando se suma a candidatos que ya están en el proceso (y no
+   * abre la long list). Cambia los textos de la sección: lo que GTH hace en ese caso es "mandar
+   * más CVs", no "armar la long list".
+   *
+   * Las dos fases en las que la long list arranca de cero son las mismas que valida el backend
+   * (`FasesLongListDeCero`): Long list —donde se llega cuando el área rechazó a todos— y EMO No
+   * Apto. En el resto del proceso siempre hay candidatos antes que estos.
+   */
+  get envioAdicionalDeCvs(): boolean {
+    const codigo = this.detalle?.estadoCodigo;
+    return codigo !== 'LONG_LIST' && codigo !== 'EMO_NO_APTO';
+  }
+
   // ── Resultado del EMO de ingreso ─────────────────────────────────────────
   // El examen ya no cierra el proceso: lo deja en la fase que dice cómo salió, y de ahí sale un
   // camino distinto por resultado. Apto (con o sin restricciones) lo cierra GTH; No Apto abre la
@@ -501,9 +544,16 @@ export class GthDetalleRequerimiento implements OnInit {
     return enFase && !this.esFft && this.sinCandidatosVivos;
   }
 
-  /** true si ninguno de los candidatos de la long list vigente sigue en juego. */
+  /**
+   * true si ninguno de los candidatos de la long list vigente sigue en juego. Los CVs que esperan
+   * la decisión del área cuentan como vivos: el proceso no está trabado, está esperando una
+   * respuesta (el backend valida lo mismo en `ContarCandidatosEnCarrera`).
+   */
   private get sinCandidatosVivos(): boolean {
-    return (this.detalle?.candidatosAprobados ?? []).every((c) => this.resultadoCerrado(c));
+    return (
+      this.candidatosPendientes.length === 0 &&
+      (this.detalle?.candidatosAprobados ?? []).every((c) => this.resultadoCerrado(c))
+    );
   }
 
   /**
@@ -1388,19 +1438,23 @@ export class GthDetalleRequerimiento implements OnInit {
       anexos: c.anexos,
     }));
 
+    const adicional = this.envioAdicionalDeCvs;
+
     this.enviando = true;
     this.loaderService.show();
     this.service.enviarLongList(this.requerimientoId, candidatos).subscribe({
       next: (res) => {
         this.huboCambios = true;
-        this.detalle!.estadoCodigo = res.estadoCodigo;
-        this.detalle!.estadoNombre = res.estadoNombre;
         this.candidatos = [];
         this.enviando = false;
-        this.loaderService.hide();
+        // Se recarga el detalle entero y no solo la fase: los CVs recién enviados pasan a ser
+        // «pendientes de decisión del área» y esa lista la arma el backend. Sin recargar, GTH
+        // vería la sección vacía después de enviar, como si no hubiera pasado nada.
+        // El loader lo apaga la recarga (ver retomarCandidato).
+        this.cargarDetalle();
         Swal.fire({
           icon: 'success',
-          title: 'Long list enviada',
+          title: adicional ? 'CVs enviados' : 'Long list enviada',
           text: res.message,
           confirmButtonColor: '#005D9D',
         });
@@ -1872,12 +1926,23 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   /**
-   * true mientras el proceso todavía puede sumar a los candidatos que se quedaron atrás en el
-   * formulario o el Multitest: desde que pasa a entrevistas hasta que el área elige a alguien.
+   * true mientras el proceso todavía puede sumar candidatos que se quedaron atrás en el formulario
+   * o el Multitest: desde que pasa a entrevistas y hasta que termina.
+   *
+   * Antes se cortaba en la decisión del área (ENTREVISTAS / SELECCION_JEFATURA), cuando lo único
+   * que llegaba tarde eran los rezagados de la misma long list. Ahora GTH puede mandar CVs en
+   * cualquier fase, así que un candidato nuevo puede aparecer con el proceso en el EMO o en la
+   * carta oferta —si el seleccionado se cae, es con quien sigue— y su formulario y su Multitest
+   * tienen que quedar a la vista igual.
    */
   private get sumaCandidatosTarde(): boolean {
+    return this.enEntrevistas && !this.procesoTerminado;
+  }
+
+  /** true si el requerimiento ya terminó (con la vacante cubierta o sin cubrir). */
+  private get procesoTerminado(): boolean {
     const codigo = this.detalle?.estadoCodigo;
-    return codigo === 'ENTREVISTAS' || codigo === 'SELECCION_JEFATURA';
+    return codigo === 'CERRADO' || codigo === 'CERRADO_SIN_CUBRIR' || codigo === 'RECHAZADO_GG';
   }
 
   /**

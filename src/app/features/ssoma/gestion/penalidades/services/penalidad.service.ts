@@ -24,6 +24,8 @@ import {
   GestionPreviaDto,
   GestionPreviaRegistrarRequest,
   ContextoEmpresaDto,
+  EmpresaProyectoDto,
+  DestinatariosNotificacionDto,
 } from '../dtos/penalidad.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -85,6 +87,14 @@ export class PenalidadService {
     if (empresaId) params = params.set('empresaId', String(empresaId));
     if (proyectoId) params = params.set('proyectoId', String(proyectoId));
     return this.http.get<OrigenCandidatoDto[]>(`${this.base}/origenes-candidatos`, { params, headers: buildAuthHeaders() });
+  }
+
+  getEmpresasPorProyecto(proyectoId: number): Observable<EmpresaProyectoDto[]> {
+    return this.http.get<EmpresaProyectoDto[]>(`${this.base}/proyectos/${proyectoId}/empresas`, { headers: buildAuthHeaders() });
+  }
+
+  getNotificacionInicial(proyectoId: number): Observable<DestinatariosNotificacionDto> {
+    return this.http.get<DestinatariosNotificacionDto>(`${this.base}/proyectos/${proyectoId}/notificacion-inicial`, { headers: buildAuthHeaders() });
   }
 
   aprobarResidente(id: number): Observable<PenalidadDetalleDto> {

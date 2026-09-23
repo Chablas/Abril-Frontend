@@ -44,8 +44,8 @@ export interface GestionSalidaListItemDto {
   /** True si el plazo ya pasó: la salida ya no se rinde, pero su detalle se sigue viendo. */
   plazoVencido: boolean;
   /**
-   * True si la salida está lista para rendirse: aprobada, no rendida, con los trayectos cubiertos
-   * (`puedeRendirse`), con motivo reembolsable (`esReembolsable`) y dentro del plazo. Lo calcula el
+   * True si la salida está lista para rendirse: aprobada, no rendida, con sus trayectos
+   * reembolsables cubiertos (`puedeRendirse`, `esReembolsable`) y dentro del plazo. Lo calcula el
    * backend: es la misma condición que usan el desplegable "Mes a rendir" y las tarjetas.
    */
   aptaParaRendir: boolean;
@@ -73,8 +73,8 @@ export interface GestionSalidaListItemDto {
   esPropia: boolean;
 
   // ── Reembolso ────────────────────────────────────────────────────────
-  // Solo informativo acá: adjuntar el Consolidado del S10, decidir el reembolso y firmar la
-  // planilla son de Gestión de Rendiciones, y el pago de Reembolsos (Tesorería).
+  // Solo informativo acá: la primera revisión y el Consolidado del S10 son de Gestión de
+  // Rendiciones, decidir y firmar el reembolso de Consolidados, y el pago de Reembolsos.
 
   /**
    * Eje aparte de la aprobación de la salida y de la rendición: es el visto bueno al GASTO.

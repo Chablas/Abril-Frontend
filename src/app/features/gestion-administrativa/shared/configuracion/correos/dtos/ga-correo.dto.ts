@@ -22,11 +22,12 @@
  * frontend, y define qué correos administra cada una — el criterio es dónde se ORIGINA el correo,
  * no a quién le llega:
  *  • `solicitud-salidas`   → los dos que salen al crear la solicitud.
- *  • `rendiciones`         → los que dispara el trabajador (enviar la planilla a 1.ª revisión y
- *                            avisar que adjuntó el Consolidado del S10).
+ *  • `rendiciones`         → los que dispara el trabajador (enviar la planilla a 1.ª revisión).
  *  • `gestion-salidas`     → la decisión del revisor sobre la solicitud (aprobada / rechazada).
- *  • `gestion-rendiciones` → las dos decisiones del revisor sobre la planilla (1.ª revisión y
- *                            reembolso).
+ *  • `gestion-rendiciones` → la primera revisión de la planilla (aprobada / observada).
+ *  • `consolidados`        → la decisión del reembolso sobre el Consolidado del S10, el aviso a
+ *                            Tesorería que dispara la firma y los trámites del consolidador
+ *                            (avisar a la jefatura, pedir la corrección al ERP).
  *  • `reembolsos`          → Tesorería: hoy ninguno (marcar pagado no envía correos).
  *  • `correcciones-s10`    → la bandeja del Coordinador ERP: el aviso de que ya corrigió.
  */
@@ -35,6 +36,7 @@ export type CorreoPantalla =
   | 'rendiciones'
   | 'gestion-salidas'
   | 'gestion-rendiciones'
+  | 'consolidados'
   | 'reembolsos'
   | 'correcciones-s10';
 
@@ -52,8 +54,13 @@ export type CorreoGrupo = 'correos' | 'recordatorios';
  * `ROL` es el único que se resuelve por CARGO y no por persona: le llega a quien tenga ese rol el
  * día que el correo sale. Es lo que hace falta para «Tesorería» o «el Coordinador ERP», que no se
  * pueden fijar a un nombre porque ese nombre cambia sin que nadie venga a esta pantalla.
+ *
+ * `JEFE_AREA` va un paso más allá: no se resuelve con una consulta sino con el CONTEXTO de cada
+ * envío —quién registró la solicitud—, así que la fila no guarda a quién apunta y solo le llega a
+ * alguien cuando el revisor de ese trabajador es un residente. Por eso el backend lo admite
+ * únicamente en la confirmación al solicitante, que es el correo que se manda sabiendo de quién es.
  */
-export type CorreoTipoCodigo = 'TRABAJADOR' | 'AREA' | 'CORREO' | 'ROL';
+export type CorreoTipoCodigo = 'TRABAJADOR' | 'AREA' | 'CORREO' | 'ROL' | 'JEFE_AREA';
 
 /** Un destinatario configurado, ya resuelto por el backend para mostrarlo. */
 export interface CorreoDestinatario {
@@ -62,9 +69,9 @@ export interface CorreoDestinatario {
   tipoCodigo: CorreoTipoCodigo;
   /** Nombre para mostrar: el del trabajador, el del área, o el propio correo. */
   nombre: string;
-  /** Dirección literal (CORREO) o el corporativo del trabajador. Null en AREA y ROL. */
+  /** Dirección literal (CORREO) o el corporativo del trabajador. Null en AREA, ROL y JEFE_AREA. */
   email: string | null;
-  /** Solo en AREA y ROL: a cuántos correos se expande hoy. */
+  /** Solo en AREA y ROL: a cuántos correos se expande hoy. Null en JEFE_AREA: depende del envío. */
   miembros: number | null;
   workerId: number | null;
   areaScopeId: number | null;

@@ -140,7 +140,7 @@
             displayField="projectDescription"
             [value]="nuevaProyectoId"
             placeholder="Buscar proyecto..."
-            (valueChange)="nuevaProyectoId = $event">
+            (valueChange)="onProyectoSeleccionado($event)">
           </app-search-select>
         </div>
 
@@ -152,9 +152,13 @@
             valueField="id"
             displayField="nombre"
             [value]="nuevaEmpresaId"
-            placeholder="Buscar empresa..."
+            [disabled]="!nuevaProyectoId"
+            [placeholder]="!nuevaProyectoId ? 'Selecciona un proyecto primero' : (loadingEmpresas ? 'Cargando...' : 'Buscar empresa...')"
             (valueChange)="onEmpresaSeleccionada($event)">
           </app-search-select>
+          <p class="form-hint" *ngIf="nuevaProyectoId && !loadingEmpresas && empresas.length === 0">
+            Este proyecto no tiene empresas contratistas activas registradas.
+          </p>
         </div>
       </div>
 
@@ -214,32 +218,54 @@
           <app-search-select
             color="var(--color-abril-logo-blue)"
             label="Infracción *"
-            [options]="infracciones"
+            [options]="infraccionesOptions"
             valueField="id"
             displayField="nombre"
             [value]="nuevaInfraccionId"
             placeholder="Selecciona infracción"
-            (valueChange)="nuevaInfraccionId = $event">
+            (valueChange)="onInfraccionSeleccionada($event)">
           </app-search-select>
+
+          <div class="infraccion-chip" *ngIf="infraccionSeleccionada as sel">
+            <span class="chip-categoria">{{ categoriaLabel(sel.categoria) }}</span>
+            <span class="chip-referencia">{{ ANEXO4_REFERENCIA }}</span>
+            <span *ngIf="sel.categoria === 'MuyGrave'">Sin monto — corresponde evaluar rescisión de contrato.</span>
+            <span *ngIf="sel.categoria !== 'MuyGrave' && sel.montoFijo != null">Monto fijo: S/ {{ sel.montoFijo | number:'1.2-2' }}</span>
+            <span *ngIf="sel.categoria !== 'MuyGrave' && sel.montoFijo == null && sel.factorUit != null">{{ sel.factorUit! * 100 | number:'1.0-0' }}% de 1 UIT (monto final lo calcula el sistema con la UIT vigente).</span>
+          </div>
         </div>
 
-        <div class="abril-field">
+        <div class="col-2" *ngIf="motivosDisponibles.length > 0">
           <app-search-select
             color="var(--color-abril-logo-blue)"
-            label="Severidad *"
-            [options]="SEVERIDAD_OPCIONES"
+            label="Motivo (Anexo 4)"
+            [options]="motivosDisponibles"
             valueField="value"
             displayField="label"
-            [value]="nuevaSeveridad"
-            placeholder="Selecciona severidad"
+            [value]="nuevoMotivo"
+            placeholder="Selecciona el motivo específico"
             [sortAlpha]="false"
-            (valueChange)="nuevaSeveridad = $event">
+            (valueChange)="nuevoMotivo = $event">
           </app-search-select>
         </div>
 
         <div class="col-2 abril-field">
-          <label class="abril-field-label">Descripción del ocurrido</label>
-          <textarea class="abril-field-input" rows="3" [(ngModel)]="nuevaDescripcion"></textarea>
+          <label class="abril-field-label">Descripción del ocurrido *</label>
+          <textarea class="abril-field-input" rows="3" [(ngModel)]="nuevaDescripcion" placeholder="Describe qué pasó, cuándo y quién estuvo involucrado"></textarea>
+        </div>
+      </div>
+
+      <div class="notificacion-preview" *ngIf="nuevaEmpresaId">
+        <i class="ti ti-mail"></i>
+        <div>
+          <p class="notificacion-preview__motivo">Correos a los que llegarán las notificaciones de esta penalidad</p>
+          <p class="notificacion-preview__linea">
+            <b>Empresa contratista</b> (cuando Gerencia Inmobiliaria apruebe, se le notifica el plazo de descargo):
+            {{ empresaSeleccionada?.emailAdministrador || '— sin correo de administrador registrado para esta empresa, verifícalo antes de continuar —' }}
+          </p>
+          <p class="notificacion-preview__linea" *ngIf="notificacionInicial as noti">
+            <b>Residencia</b> (al registrar, para su aprobación): {{ noti.para.length ? noti.para.join(', ') : '— sin correo de Residente registrado para este proyecto —' }}
+          </p>
         </div>
       </div>
 
@@ -278,7 +304,8 @@
       <div class="modal-campo"><span class="modal-label">Empresa</span><span class="modal-valor">{{ detalle.empresaNombre ?? '—' }}</span></div>
       <div class="modal-campo"><span class="modal-label">Proyecto</span><span class="modal-valor">{{ detalle.proyectoNombre ?? '—' }}</span></div>
       <div class="modal-campo"><span class="modal-label">Infracción</span><span class="modal-valor">{{ detalle.infraccionNombre ?? '—' }}</span></div>
-      <div class="modal-campo"><span class="modal-label">Severidad</span><span class="modal-valor">{{ detalle.severidad }}</span></div>
+      <div class="modal-campo"><span class="modal-label">Categoría</span><span class="modal-valor">{{ categoriaLabel(detalle.categoria) }}</span></div>
+      <div class="modal-campo" *ngIf="detalle.motivo"><span class="modal-label">Motivo (Anexo 4)</span><span class="modal-valor">{{ detalle.motivo }}</span></div>
       <div class="modal-campo"><span class="modal-label">Monto</span><span class="modal-valor modal-monto">S/ {{ (detalle.montoFinal ?? detalle.montoCalculado) | number:'1.2-2' }}</span></div>
       <div class="modal-campo"><span class="modal-label">Estado</span><span class="chip-estado" [ngClass]="estadoClass(detalle.estado)">{{ estadoLabel(detalle.estado) }}</span></div>
     </div>
@@ -322,6 +349,14 @@
     <ng-container *ngIf="detalle.estado === 'PendienteGerenciaInmobiliaria' && !esContratista">
       <div class="modal-seccion">
         <div class="modal-seccion__titulo">Aprobación de Gerencia Inmobiliaria</div>
+        <div class="notificacion-preview" *ngIf="detalle.proximaNotificacion as noti">
+          <i class="ti ti-mail"></i>
+          <div>
+            <p class="notificacion-preview__motivo">{{ noti.motivo }}</p>
+            <p class="notificacion-preview__linea"><b>Para:</b> {{ noti.para.length ? noti.para.join(', ') : '— sin correo de administrador registrado para esta empresa —' }}</p>
+            <p class="notificacion-preview__linea" *ngIf="noti.cc.length"><b>CC:</b> {{ noti.cc.join(', ') }}</p>
+          </div>
+        </div>
         <textarea class="form-control" rows="2" placeholder="Motivo del rechazo (si aplica)" [(ngModel)]="motivoRechazo"></textarea>
         <div class="modal-acciones modal-acciones--gap">
           <button type="button" class="btn-accion btn-accion--blue" [disabled]="guardandoAccion" (click)="aprobarGerencia()">
@@ -391,6 +426,14 @@
     <ng-container *ngIf="detalle.estado === 'PendienteDecisionGerencia' && !esContratista">
       <div class="modal-seccion">
         <div class="modal-seccion__titulo">Decisión final</div>
+        <div class="notificacion-preview" *ngIf="detalle.proximaNotificacion as noti">
+          <i class="ti ti-mail"></i>
+          <div>
+            <p class="notificacion-preview__motivo">{{ noti.motivo }}</p>
+            <p class="notificacion-preview__linea"><b>Para:</b> {{ noti.para.length ? noti.para.join(', ') : '— sin correo de administrador registrado para esta empresa —' }}</p>
+            <p class="notificacion-preview__linea" *ngIf="noti.cc.length"><b>CC:</b> {{ noti.cc.join(', ') }}</p>
+          </div>
+        </div>
         <div class="form-grid">
           <div class="abril-field">
             <app-search-select

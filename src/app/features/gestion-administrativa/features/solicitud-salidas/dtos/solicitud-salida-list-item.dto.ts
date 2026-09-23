@@ -19,11 +19,14 @@ export interface SolicitudSalidaListItemDto {
   estadoAprobacion: string;
   estadoRendicion: string;
   createdAt: string;
-  /** True si todos los trayectos tienen capturas (o catálogo TI) — habilita la rendición. */
+  /** True si los trayectos reembolsables tienen capturas (o catálogo TI) — habilita la rendición. */
   puedeRendirse: boolean;
   /**
-   * True si al menos un trayecto lleva un motivo marcado como reembolsable en
-   * Configuración → Motivos. Sin eso la salida no genera gasto de movilidad y no hay qué rendir.
+   * True si al menos un trayecto deja gasto que rendir: su motivo está marcado como reembolsable
+   * en Configuración → Motivos, su recorrido no está excluido en Configuración → Trayectos y su
+   * importe es mayor a S/ 0.00 (el tarifario de TI en cero no cuenta). Sin eso la planilla no
+   * tendría ni una fila de la salida. Los trayectos que no lo dejan no entran en ella ni se les
+   * exige captura.
    */
   esReembolsable: boolean;
   /**
@@ -35,8 +38,8 @@ export interface SolicitudSalidaListItemDto {
   /** True si el plazo ya pasó: la salida ya no se rinde, pero su detalle se sigue viendo. */
   plazoVencido: boolean;
   /**
-   * True si la salida está lista para rendirse: aprobada, no rendida, con los trayectos cubiertos,
-   * con motivo reembolsable y dentro del plazo. Lo calcula el backend: es la misma condición que
+   * True si la salida está lista para rendirse: aprobada, no rendida, con sus trayectos
+   * reembolsables cubiertos y dentro del plazo. Lo calcula el backend: es la misma condición que
    * usan el desplegable "Mes a rendir" y las tarjetas del encabezado.
    */
   aptaParaRendir: boolean;

@@ -13,6 +13,8 @@ export interface DashboardKpisDto {
   entregablesCasaVencidos: number;
   entregablesCasaFalta: number;
   emosVencidos: number;
+  emosPorVencer14: number;
+  emosPorVencer5: number;
   interconsultasPendientes: number;
   personalCasaTotal: number;
   personalCasaHabilitado: number;

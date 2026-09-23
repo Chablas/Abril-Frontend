@@ -280,6 +280,11 @@
   color: #111827;
 }
 
+.bc-fecha-envio {
+  font-size: 0.68rem;
+  color: #94a3b8;
+}
+
 .bc-entidad {
   font-size: 0.78rem;
   color: #374151;

@@ -45,6 +45,12 @@ export interface RequerimientoGthListItem {
   puesto: string;
   /** Proyecto/obra destino de la vacante. */
   proyectoObra: string | null;
+  /** Tipo de requerimiento como se muestra (Nuevo / Reemplazo): la columna «Tipo». */
+  tipoRequerimiento: string;
+  /** `NUEVO` | `REEMPLAZO`: decide cómo se pinta el tipo y por dónde filtra. Nunca por nombre. */
+  tipoRequerimientoCodigo: string;
+  /** true = ingreso directo FFT: no lo firma nadie y arranca en el EMO de ingreso. */
+  esFft: boolean;
   /** Fecha en que llegó la solicitud (ISO, ya en hora Perú). Columna "Fecha llegada". */
   fechaLlegada: string;
   /** Prioridad asignada (id del catálogo). Null si no tiene. Columna "Prioridad". */
@@ -172,6 +178,12 @@ export interface DetalleRequerimientoGth {
    * Alimentan la vista "Long list aprobada" de GTH. Vacío en fases anteriores.
    */
   candidatosAprobados: CandidatoAprobado[];
+  /**
+   * CVs ya enviados que esperan la decisión del área solicitante. GTH puede mandar CVs en
+   * cualquier fase del proceso, así que un requerimiento en entrevistas o en decisión de
+   * finalistas puede tener a la vez candidatos recién enviados: son estos.
+   */
+  candidatosPendientes: CandidatoPendiente[];
   /**
    * Candidatos rechazados en cualquier etapa del proceso, incluidos los de long lists anteriores.
    * Alimentan la sección "Historial de candidatos rechazados".
@@ -304,6 +316,19 @@ export interface CartaOfertaEnviar {
  */
 export interface CartaOfertaAccionResult extends EstadoTransicionResult {
   cartaOferta: CartaOfertaRequerimiento | null;
+}
+
+/**
+ * CV enviado que espera la decisión del área solicitante. Hasta que la tenga no hay nada más que
+ * hacer con él: no tiene formulario, ni Multitest, ni entrevista.
+ */
+export interface CandidatoPendiente {
+  candidatoId: number;
+  nombre: string;
+  cvNombre: string | null;
+  cvUrl: string | null;
+  /** Cuándo se le envió al solicitante (ISO, hora Perú). */
+  enviadoEn: string;
 }
 
 /** Candidato aprobado por el solicitante, como lo ve GTH en la fase "Long list aprobada". */

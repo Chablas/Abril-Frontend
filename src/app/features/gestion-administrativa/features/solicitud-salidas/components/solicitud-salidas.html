@@ -19,7 +19,7 @@
     <div class="resumen-card resumen-card--ok">
       <span class="resumen-card__label">Aptas para rendir</span>
       <span class="resumen-card__value">{{ resumen.aptasParaRendir }}</span>
-      <span class="resumen-card__hint">Con capturas y motivo reembolsable</span>
+      <span class="resumen-card__hint">Con capturas y trayectos reembolsables</span>
     </div>
     <div class="resumen-card resumen-card--warn">
       <span class="resumen-card__label">Capturas incompletas</span>
@@ -84,7 +84,7 @@
       class="ml-auto"
       (click)="rendirBulk()"
       [disabled]="rendiblesCount === 0"
-      title="Rinde las solicitudes seleccionadas y descarga tu planilla de gasto por movilidad">
+      title="Rinde las solicitudes seleccionadas">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
       </svg>
@@ -219,28 +219,30 @@
                 [bgColor]="rendicionColors(s.estadoRendicion).bg"
                 [textColor]="rendicionColors(s.estadoRendicion).text" />
 
-              <!-- No rendida, con sus capturas, pero el motivo no es reembolsable: no genera gasto
-                   de movilidad, así que no hay nada que rendir. Se dice acá para que el botón
-                   "Rendir" no falte sin explicación. -->
+              <!-- No rendida, con sus capturas, pero ningún trayecto deja gasto que rendir —ni por
+                   su motivo, ni por su recorrido, ni por su importe—: no hay nada que reembolsar.
+                   Se dice acá para que el botón "Rendir" no falte sin explicación. -->
               <span
                 *ngIf="s.estadoRendicion === 'No rendido'
                     && s.puedeRendirse
                     && !s.esReembolsable
                     && !s.plazoVencido"
-                title="No se rinde: el motivo de esta salida no está marcado como reembolsable"
+                title="No se rinde: ningún trayecto de esta salida deja gasto que reembolsar"
                 class="text-[11px] text-gray-500 italic whitespace-nowrap">
                 No reembolsable
               </span>
 
-              <!-- Plazo cerrado: pasó el último día hábil del plazo configurado. Ya no se rinde,
-                   pero el detalle se sigue viendo con un clic en la fila. -->
+              <!-- Plazo cerrado: pasó el último día en que este mes se podía rendir con el plazo y
+                   el alcance configurados. Ya no se rinde, pero el detalle se sigue viendo con un
+                   clic en la fila. Dice "cerró" y no "venció" porque con un alcance de varios meses
+                   el plazo se vuelve a abrir con la ventana del mes que viene. -->
               <span
                 *ngIf="s.estadoRendicion === 'No rendido' && s.plazoVencido"
-                [title]="'El plazo para rendir esta salida venció el '
+                [title]="'El plazo para rendir esta salida cerró el '
                   + (s.plazoRendicionHasta + 'T00:00:00' | date:'dd/MM/yyyy')"
                 class="text-[11px] italic whitespace-nowrap"
                 style="color:var(--color-abril-danger-dark)">
-                Plazo vencido
+                Fuera de plazo
               </span>
             </div>
             <ng-template #sinRendicion>
@@ -267,8 +269,8 @@
             {{ s.createdAt | date:'dd/MM/yyyy HH:mm' }}
           </td>
           <td (click)="$event.stopPropagation()">
-            <!-- La columna llega hasta rendir. Lo que sigue (Consolidado del S10, aviso al
-                 revisor) es de la PLANILLA y vive en Mis Rendiciones. -->
+            <!-- La columna llega hasta rendir, que ya envía la planilla a primera revisión. Lo que
+                 sigue es de la PLANILLA y se sigue en Mis Rendiciones. -->
             <div *ngIf="puedeSubirCapturas(s) || esSeleccionable(s); else sinAcciones" class="flex items-center gap-2">
               <button
                 *ngIf="puedeSubirCapturas(s)"
@@ -288,7 +290,7 @@
                 *ngIf="esSeleccionable(s)"
                 type="button"
                 (click)="rendirUna(s, $event)"
-                title="Rendir esta solicitud y descargar la planilla de gasto por movilidad"
+                title="Rendir esta solicitud"
                 class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
                 style="background:#0086A5"
                 onmouseover="this.style.background='#006f8a'"
@@ -321,7 +323,7 @@
 
 <!-- ── Modal de detalle ──────────────────────────────────────────────────
      También es donde se suben las capturas: "Subir capturas" lo abre ya en modo edición. -->
-<app-solicitud-salida-detalle-modal
+<app-salida-detalle-modal
   *ngIf="detalleId !== null"
   [solicitudId]="detalleId"
   [iniciarEditando]="detalleEditando"

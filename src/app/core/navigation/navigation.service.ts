@@ -17,13 +17,15 @@ export class NavigationService {
       items: [
         // Orden del flujo, alternando quién actúa: el trabajador pide (Solicitud de Salidas), el
         // revisor decide (Gestión de Salidas), el trabajador rinde (Mis Rendiciones), el revisor
-        // revisa y firma (Gestión de Rendiciones), el ERP corrige lo observado (Correcciones S10)
-        // y Tesorería paga (Reembolsos). Delegación de Revisión cierra: no es un paso del flujo.
+        // hace la primera revisión (Gestión de Rendiciones), decide y firma el reembolso
+        // (Consolidados), el ERP corrige lo observado (Correcciones S10) y Tesorería paga
+        // (Reembolsos). Delegación de Revisión cierra: no es un paso del flujo.
         // Mismo orden que GESTION_ADMINISTRATIVA_TABS — las dos barras no pueden discrepar.
         { label: 'Solicitud de Salidas', route: '/gestion-administrativa/solicitud-salidas', featureKey: 'gestion-administrativa.solicitud-salidas' },
         { label: 'Gestión de Salidas',   route: '/gestion-administrativa/gestion-salidas',   featureKey: 'gestion-administrativa.gestion-salidas' },
         { label: 'Mis Rendiciones',      route: '/gestion-administrativa/rendiciones',       featureKey: 'gestion-administrativa.rendiciones' },
         { label: 'Gestión de Rendiciones', route: '/gestion-administrativa/gestion-rendiciones', featureKey: 'gestion-administrativa.gestion-rendiciones' },
+        { label: 'Consolidados',         route: '/gestion-administrativa/consolidados',      featureKey: 'gestion-administrativa.consolidados' },
         { label: 'Correcciones S10',     route: '/gestion-administrativa/correcciones-s10',  featureKey: 'gestion-administrativa.correcciones-s10' },
         { label: 'Reembolsos',           route: '/gestion-administrativa/reembolsos',        featureKey: 'gestion-administrativa.reembolsos' },
         { label: 'Delegación de Revisión', route: '/gestion-administrativa/delegacion-revision', featureKey: 'gestion-administrativa.delegacion-revision' },
@@ -245,10 +247,26 @@ export class NavigationService {
         { label: 'Indicadores SSOMA', route: '/ssoma/gestion/indicadores-proactivos/indicadores-ssoma', featureKey: 'ssoma.gestion.indicadores-proactivos' },
         { label: 'Checklists SSOMA', route: '/ssoma/gestion/checklist', featureKey: 'ssoma.gestion.checklist' },
         { label: 'Activos Rotativos', route: '/ssoma/gestion/activos-rotativos', featureKey: 'ssoma.gestion.activos-rotativos' },
+        { label: 'Catálogo de EPP', route: '/ssoma/gestion/epp', featureKey: 'ssoma.gestion.epp' },
         { label: 'Cumplimiento SSOMA', route: '/ssoma/gestion/cumplimiento', featureKey: 'ssoma.gestion.cumplimiento' },
+        { label: 'Hoja de Ruta Contratistas', route: '/ssoma/gestion/hoja-ruta', featureKey: 'ssoma.gestion.hoja-ruta' },
         { label: 'Proyectos Habilitados SSOMA', route: '/ssoma/gestion/proyectos-habilitados', featureKey: 'ssoma.gestion.proyectos-habilitados' },
         { label: 'Presupuesto Materiales', route: '/ssoma/gestion/presupuesto-materiales', featureKey: 'ssoma.gestion.presupuesto-materiales' },
         { label: 'Horas Hombre', route: '/ssoma/gestion/horas-hombre/dashboard', featureKey: 'ssoma.gestion.horas-hombre' },
+        {
+          label: 'Gestión de Residuos',
+          route: '/ssoma/gestion/residuos/tipos',
+          featureKeys: [
+            'ssoma.gestion.residuos.tipos',
+            'ssoma.gestion.residuos.eo-rs',
+            'ssoma.gestion.residuos.autorizaciones-dme',
+            'ssoma.gestion.residuos.viajes',
+            'ssoma.gestion.residuos.declaraciones',
+            'ssoma.gestion.residuos.constancias',
+            'ssoma.gestion.residuos.constancias-finales',
+            'ssoma.gestion.residuos.documentos-referencia',
+          ],
+        },
         { label: 'Registros Modelo', route: '/habilitacion/registros-modelo' },
       ],
     },
@@ -311,6 +329,15 @@ export class NavigationService {
       baseRoute: '/clinica',
       items: [
         { label: 'Clínica', route: '/clinica/dashboard', featureKey: 'clinica.agenda', roles: ['CLINICA'] },
+      ],
+    },
+    {
+      key: 'cursos',
+      label: 'Cursos',
+      iconKey: 'school',
+      baseRoute: '/cursos',
+      items: [
+        { label: 'Cursos', route: '/cursos', featureKey: 'cursos.lista' },
       ],
     },
     {

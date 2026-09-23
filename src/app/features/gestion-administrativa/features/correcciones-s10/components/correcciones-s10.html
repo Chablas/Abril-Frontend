@@ -1,7 +1,7 @@
 <app-abril-page-header
   [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
   titulo="Correcciones S10"
-  subtitulo="Correcciones del Consolidado del S10 solicitadas por los colaboradores."
+  subtitulo="Correcciones del Consolidado del S10 solicitadas por los consolidadores."
   [tabs]="tabs"
   [botonSecundario]="botonConfiguracion"
   (secondaryClick)="abrirConfiguracion()">
@@ -12,7 +12,7 @@
 <div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden pb-[24px]">
 
   <!-- ── Tarjetas de resumen ───────────────────────────────────────────────
-       Los dos lados del paso: lo que espera al Coordinador y lo que ya devolvió al colaborador.
+       Los dos lados del paso: lo que espera al Coordinador y lo que ya devolvió al consolidador.
        Se cuentan sobre el mismo conjunto que muestra la tabla. -->
   <div class="resumen-cards">
     <div class="resumen-card resumen-card--pend">
@@ -23,7 +23,7 @@
     <div class="resumen-card resumen-card--lista">
       <span class="resumen-card__label">Por recargar</span>
       <span class="resumen-card__value">{{ resumen.porRecargar }}</span>
-      <span class="resumen-card__hint">Atendidas, esperan al colaborador</span>
+      <span class="resumen-card__hint">Atendidas, esperan al consolidador</span>
     </div>
   </div>
 
@@ -34,7 +34,7 @@
       abrilBulkAction="primary"
       (click)="atenderBulk()"
       [disabled]="selectedPorAtender.length === 0"
-      title="Registra que ya corregiste en el S10 y le avisa al colaborador para que recargue el Consolidado">
+      title="Registra que ya corregiste en el S10 y le avisa al consolidador para que recargue el Consolidado">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
       </svg>
@@ -55,7 +55,7 @@
           </th>
           <th>Rendición</th>
           <th>Colaborador</th>
-          <th>N.º de reembolso</th>
+          <th>Consolidado</th>
           <th>Qué corregir</th>
           <th>Solicitada</th>
           <th>Estado</th>
@@ -100,15 +100,21 @@
             </div>
           </td>
 
-          <!-- Es EL dato con el que se ubica el registro en el S10, así que va en columna propia
-               y sin recortar. -->
+          <!-- Acá manda el N.° de reembolso y no el código: es EL dato con el que el ERP ubica el
+               registro en el S10, así que va en columna propia, primero y sin recortar. El
+               CONS-ÁREA-AAAA-NNN va debajo, para saber de qué rendición grupal viene el pedido. -->
           <td class="whitespace-nowrap">
-            <span *ngIf="c.numeroReembolso; else sinReembolso" class="text-gray-700 font-medium">
-              {{ c.numeroReembolso }}
-            </span>
-            <ng-template #sinReembolso>
-              <span class="text-[11px] text-gray-400 italic">sin reembolso</span>
-            </ng-template>
+            <div class="flex flex-col leading-tight">
+              <span *ngIf="c.numeroReembolso; else sinReembolso" class="text-gray-700 font-medium">
+                {{ c.numeroReembolso }}
+              </span>
+              <ng-template #sinReembolso>
+                <span class="text-[11px] text-gray-400 italic">sin reembolso</span>
+              </ng-template>
+              <span *ngIf="c.consolidadoS10?.codigo as codigo" class="text-[11px] text-gray-400">
+                {{ codigo }}
+              </span>
+            </div>
           </td>
 
           <td class="text-gray-700">
@@ -153,6 +159,18 @@
                 </svg>
                 S10 observado
               </a>
+
+              <!-- La planilla grupal del consolidado observado: es el gasto que el ERP tiene que
+                   cuadrar contra el registro del S10. -->
+              <a *ngIf="c.consolidadoS10?.planillaGrupalUrl as grupal"
+                 class="doc-chip" [href]="grupal" target="_blank" rel="noopener noreferrer"
+                 [title]="c.consolidadoS10?.planillaGrupalFilename ?? 'Planilla grupal'">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                Planilla grupal
+              </a>
             </div>
           </td>
 
@@ -162,7 +180,7 @@
                 *ngIf="c.porAtender"
                 type="button"
                 (click)="atenderUna(c, $event)"
-                title="Registra que ya corregiste en el S10 y le avisa al colaborador"
+                title="Registra que ya corregiste en el S10 y le avisa al consolidador"
                 class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors"
                 style="background:var(--color-abril-standard)"
                 onmouseover="this.style.background='var(--color-abril-standard-hover)'"
@@ -174,7 +192,7 @@
               </button>
 
               <span *ngIf="!c.porAtender" class="text-[11px] text-gray-400 italic whitespace-nowrap">
-                Esperando la recarga del colaborador
+                Esperando la recarga del consolidador
               </span>
             </div>
           </td>

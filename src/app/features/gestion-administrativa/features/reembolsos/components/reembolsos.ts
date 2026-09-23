@@ -40,10 +40,14 @@ interface AreaCascadeNode {
 }
 
 /**
- * "Reembolsos": la bandeja de Tesorería, último paso del ciclo. Muestra las planillas que la
- * jefatura ya firmó —de TODA la organización, porque Tesorería paga a todos— y son DOS pasos, no
- * uno (RG-26): primero se confirma la revisión documental (planilla, Consolidado del S10, firma y
- * trayectos con sus vouchers) y recién entonces se puede pagar.
+ * "Reembolsos": la bandeja de Tesorería, último paso del ciclo. Muestra los Consolidados del S10
+ * que la jefatura ya firmó —de TODA la organización, porque Tesorería paga a todos— y son DOS
+ * pasos, no uno (RG-26): primero se confirma la revisión documental (planillas, Consolidado del
+ * S10, firma y trayectos con sus vouchers) y recién entonces se puede pagar.
+ *
+ * La unidad es el CONSOLIDADO y no la planilla, igual que en la pantalla donde la jefatura lo
+ * firma: un mismo registro del S10 puede cubrir varias planillas, y es ese documento —con su
+ * número de reembolso y su importe— el que se revisa y se desembolsa.
  *
  * La pantalla tiene dos vistas: la bandeja de trabajo y el Seguimiento, que es la consulta de lo
  * ya abonado por colaborador (11.4 del requerimiento).
@@ -112,6 +116,21 @@ interface AreaCascadeNode {
       transition: background-color .15s ease, border-color .15s ease, color .15s ease;
     }
     .doc-chip:hover { border-color: var(--color-abril-standard); color: var(--color-abril-standard); }
+
+    /* Código de una planilla cubierta. Las que todavía esperan a su jefatura van apagadas: se
+       listan porque el importe declarado en el S10 las incluye, pero no se pagan todavía. */
+    .ren-chip {
+      display: inline-block;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: var(--color-abril-standard-light);
+      color: var(--color-abril-standard);
+      font-size: 10px;
+      font-weight: 700;
+      line-height: 1.5;
+      white-space: nowrap;
+    }
+    .ren-chip--fuera { background: #F3F4F6; color: #9CA3AF; }
   `],
 })
 export class Reembolsos implements OnInit, OnDestroy {
@@ -125,9 +144,15 @@ export class Reembolsos implements OnInit, OnDestroy {
   ];
   vista = 'bandeja';
 
-  planillas: ReembolsoListItemDto[] = [];
+  consolidados: ReembolsoListItemDto[] = [];
   selectedIds = new Set<number>();
   detalleId: number | null = null;
+
+  /**
+   * Planilla que pidió abrir el enlace de un correo viejo (`?rendicion=`). Se resuelve al terminar
+   * la carga: lo que se abre es el consolidado que la cubre, que es la unidad de esta pantalla.
+   */
+  private rendicionPendiente: number | null = null;
 
   resumen: ResumenReembolsosDto = {
     porRevisar: 0, porPagar: 0, montoPorPagar: 0, observadas: 0, pagadas: 0,
@@ -145,10 +170,10 @@ export class Reembolsos implements OnInit, OnDestroy {
    */
   readonly estadoOptions = [
     { value: null,                        label: 'Todos los estados' },
-    { value: 'Firmado',                   label: 'Firmadas · por revisar' },
+    { value: 'Firmado',                   label: 'Firmados · por revisar' },
     { value: 'Proceder con el reembolso', label: 'Por pagar' },
-    { value: 'Observado',                 label: 'Observadas por Tesorería' },
-    { value: 'Pagado',                    label: 'Pagadas' },
+    { value: 'Observado',                 label: 'Observados por Tesorería' },
+    { value: 'Pagado',                    label: 'Pagados' },
   ];
 
   filters = {
@@ -227,12 +252,17 @@ export class Reembolsos implements OnInit, OnDestroy {
       .pipe(debounceTime(300), takeUntil(this.destroy$))
       .subscribe(() => this.load());
 
+    // Enlace directo del correo "Reembolso por pagar". Se lee ANTES de cargar: los correos nuevos
+    // traen el consolidado y abren solos; los que salieron antes traen la planilla y se resuelven
+    // cuando llega el listado.
+    const consolidadoId = Number(this.route.snapshot.queryParamMap.get('consolidado'));
+    if (consolidadoId > 0) this.detalleId = consolidadoId;
+
+    const rendicionId = Number(this.route.snapshot.queryParamMap.get('rendicion'));
+    if (consolidadoId <= 0 && rendicionId > 0) this.rendicionPendiente = rendicionId;
+
     this.loadFilterData();
     this.load();
-
-    // Enlace directo del correo "Reembolso por pagar": abre esa planilla.
-    const rendicionId = Number(this.route.snapshot.queryParamMap.get('rendicion'));
-    if (rendicionId > 0) this.detalleId = rendicionId;
   }
 
   ngOnDestroy(): void {
@@ -315,9 +345,10 @@ export class Reembolsos implements OnInit, OnDestroy {
     this.pager.reset();
     this.service.getAll(this.query).subscribe({
       next: (res) => {
-        this.planillas = res.data;
+        this.consolidados = res.data;
         // Las tarjetas se cuentan sobre este mismo conjunto filtrado: llegan con el listado.
         this.resumen = res.resumen;
+        this.abrirPendientePorRendicion();
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {
@@ -325,6 +356,19 @@ export class Reembolsos implements OnInit, OnDestroy {
         this.errorService.handleError(err);
       },
     });
+  }
+
+  /**
+   * Abre el consolidado que cubre la planilla del enlace viejo. Si no aparece en el listado (los
+   * filtros pudieron dejarla fuera) no se fuerza nada: la pantalla queda como está.
+   */
+  private abrirPendientePorRendicion(): void {
+    if (this.rendicionPendiente == null) return;
+    const rendicionId = this.rendicionPendiente;
+    this.rendicionPendiente = null;
+
+    const fila = this.consolidados.find((c) => c.rendiciones.some((r) => r.id === rendicionId));
+    if (fila) this.detalleId = fila.id;
   }
 
   private recargar(): void {
@@ -394,11 +438,11 @@ export class Reembolsos implements OnInit, OnDestroy {
   }
 
   get totalPages(): number {
-    return this.pager.totalPages(this.planillas);
+    return this.pager.totalPages(this.consolidados);
   }
 
-  get pagedPlanillas(): ReembolsoListItemDto[] {
-    return this.pager.page(this.planillas);
+  get pagedConsolidados(): ReembolsoListItemDto[] {
+    return this.pager.page(this.consolidados);
   }
 
   changePage(page: number): void {
@@ -406,32 +450,32 @@ export class Reembolsos implements OnInit, OnDestroy {
   }
 
   // ── Selección ────────────────────────────────────────────────────────
-  // Una planilla puede estar esperando la revisión de Tesorería o el pago, nunca las dos: por eso
-  // la selección es una sola y cada botón actúa sobre la parte que le toca.
+  // Un consolidado puede estar esperando la revisión de Tesorería o el pago, nunca las dos: por
+  // eso la selección es una sola y cada botón actúa sobre la parte que le toca.
 
-  onSelectClick(event: MouseEvent, r: ReembolsoListItemDto): void {
+  onSelectClick(event: MouseEvent, c: ReembolsoListItemDto): void {
     event.stopPropagation();
-    if (this.selectedIds.has(r.id)) this.selectedIds.delete(r.id);
-    else                            this.selectedIds.add(r.id);
+    if (this.selectedIds.has(c.id)) this.selectedIds.delete(c.id);
+    else                            this.selectedIds.add(c.id);
   }
 
   /**
-   * Devuelta por Tesorería y esperando la subsanación (RG-49). Se pregunta primero que las otras
-   * dos: una planilla observada no está ni por revisar ni por pagar aunque sus contadores de
+   * Devuelto por Tesorería y esperando la subsanación (RG-49). Se pregunta primero que las otras
+   * dos: un consolidado observado no está ni por revisar ni por pagar aunque sus contadores de
    * Tesorería queden en cero.
    */
-  observada(r: ReembolsoListItemDto): boolean {
-    return r.observadasCount > 0;
+  observado(c: ReembolsoListItemDto): boolean {
+    return c.observadasCount > 0;
   }
 
   /** Espera la revisión documental de Tesorería. */
-  porRevisar(r: ReembolsoListItemDto): boolean {
-    return !this.observada(r) && r.porConfirmarCount > 0;
+  porRevisar(c: ReembolsoListItemDto): boolean {
+    return !this.observado(c) && c.porConfirmarCount > 0;
   }
 
-  /** Ya revisada y lista para desembolsar. */
-  porPagar(r: ReembolsoListItemDto): boolean {
-    return !this.observada(r) && r.porConfirmarCount === 0 && r.porPagarCount > 0;
+  /** Ya revisado y listo para desembolsar. */
+  porPagar(c: ReembolsoListItemDto): boolean {
+    return !this.observado(c) && c.porConfirmarCount === 0 && c.porPagarCount > 0;
   }
 
   /**
@@ -439,59 +483,59 @@ export class Reembolsos implements OnInit, OnDestroy {
    * observado tampoco: la pelota la tiene el consolidador hasta que recargue el Consolidado del S10.
    */
   get accionables(): ReembolsoListItemDto[] {
-    return this.planillas.filter((r) => this.porRevisar(r) || this.porPagar(r));
+    return this.consolidados.filter((c) => this.porRevisar(c) || this.porPagar(c));
   }
 
   get allSelected(): boolean {
-    return this.accionables.length > 0 && this.accionables.every((r) => this.selectedIds.has(r.id));
+    return this.accionables.length > 0 && this.accionables.every((c) => this.selectedIds.has(c.id));
   }
 
   toggleSelectAll(): void {
     if (this.allSelected) this.selectedIds.clear();
-    else this.selectedIds = new Set(this.accionables.map((r) => r.id));
+    else this.selectedIds = new Set(this.accionables.map((c) => c.id));
   }
 
-  get seleccionadasPorRevisar(): ReembolsoListItemDto[] {
-    return this.planillas.filter((r) => this.selectedIds.has(r.id) && this.porRevisar(r));
+  get seleccionadosPorRevisar(): ReembolsoListItemDto[] {
+    return this.consolidados.filter((c) => this.selectedIds.has(c.id) && this.porRevisar(c));
   }
 
-  get seleccionadasPorPagar(): ReembolsoListItemDto[] {
-    return this.planillas.filter((r) => this.selectedIds.has(r.id) && this.porPagar(r));
+  get seleccionadosPorPagar(): ReembolsoListItemDto[] {
+    return this.consolidados.filter((c) => this.selectedIds.has(c.id) && this.porPagar(c));
   }
 
   /**
    * Se puede observar tanto lo que está por revisar como lo ya confirmado para pagar (RG-49: "antes
    * de autorizar el pago"), así que la acción toma toda la selección accionable.
    */
-  get seleccionadasParaObservar(): ReembolsoListItemDto[] {
-    return this.planillas.filter(
-      (r) => this.selectedIds.has(r.id) && (this.porRevisar(r) || this.porPagar(r)),
+  get seleccionadosParaObservar(): ReembolsoListItemDto[] {
+    return this.consolidados.filter(
+      (c) => this.selectedIds.has(c.id) && (this.porRevisar(c) || this.porPagar(c)),
     );
   }
 
   get montoSeleccionado(): number {
-    return this.seleccionadasPorPagar.reduce((acc, r) => acc + r.montoTotal, 0);
+    return this.seleccionadosPorPagar.reduce((acc, c) => acc + c.montoTotal, 0);
   }
 
   // ── Acciones ─────────────────────────────────────────────────────────
 
   /**
-   * Paso 1: confirmar que la documentación está completa. No mueve plata — deja las planillas
-   * habilitadas para el desembolso, que es el paso siguiente.
+   * Paso 1: confirmar que la documentación está completa. No mueve plata — deja los consolidados
+   * habilitados para el desembolso, que es el paso siguiente.
    */
   async confirmarRevision(): Promise<void> {
-    const items = this.seleccionadasPorRevisar;
+    const items = this.seleccionadosPorRevisar;
     if (items.length === 0) return;
 
-    const salidas = items.reduce((acc, r) => acc + r.porConfirmarCount, 0);
+    const salidas = items.reduce((acc, c) => acc + c.porConfirmarCount, 0);
 
     // Sin preview de correos: confirmar la revisión es un paso interno de Tesorería y no avisa a
     // nadie. Se dice, porque el resto de las acciones del ciclo sí mandan correo.
     const result = await Swal.fire({
       icon: 'question',
       title: items.length === 1
-        ? '¿Confirmar la revisión de esta planilla?'
-        : `¿Confirmar la revisión de ${items.length} planillas?`,
+        ? '¿Confirmar la revisión de este consolidado?'
+        : `¿Confirmar la revisión de ${items.length} consolidados?`,
       text: `${salidas} salida(s). Quedan habilitadas para el pago. No se avisa a nadie todavía.`,
       showCancelButton: true,
       confirmButtonText: 'Sí, confirmar revisión',
@@ -500,30 +544,26 @@ export class Reembolsos implements OnInit, OnDestroy {
     });
     if (!result.isConfirmed) return;
 
-    this.ejecutar(
-      this.service.confirmarRevision({ rendicionIds: items.map((r) => r.id), solicitudIds: [] }),
-    );
+    this.ejecutar(this.service.confirmarRevision({ consolidadoIds: items.map((c) => c.id) }));
   }
 
   /**
-   * El camino de vuelta (RG-49). La planilla no va directo al Coordinador ERP: vuelve al
+   * El camino de vuelta (RG-49). El consolidado no va directo al Coordinador ERP: vuelve al
    * consolidador, que es quien decide si recarga el Consolidado del S10 corregido o le pide al ERP
    * la corrección dentro del S10 con su propio «MOTIVO *» (RG-21). Por eso el texto de la
    * confirmación nombra ese camino en vez de prometer que el ERP ya quedó avisado.
    */
   async observar(): Promise<void> {
-    const items = this.seleccionadasParaObservar;
+    const items = this.seleccionadosParaObservar;
     if (items.length === 0) return;
 
-    const seleccion = { rendicionIds: items.map((r) => r.id), solicitudIds: [] };
+    const seleccion = { consolidadoIds: items.map((c) => c.id) };
     const { value: observacion, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
       titulo: items.length === 1
         ? '¿Observar este reembolso?'
-        : `¿Observar ${items.length} planillas?`,
-      nota:
-        'Vuelve al consolidador para que recargue el Consolidado del S10 o le pida la corrección ' +
-        'al Coordinador ERP. Al recargarlo pasa otra vez por la firma de la jefatura.',
+        : `¿Observar ${items.length} consolidados?`,
+      nota: 'Vuelve al consolidador.',
       avisos: await pedirAvisos(this.service.correoPreviewObservacion(seleccion)),
       observacion: {
         label: 'Motivo',
@@ -539,21 +579,23 @@ export class Reembolsos implements OnInit, OnDestroy {
 
   /** Paso 2: registrar el pago. Cierra el ciclo y le avisa a cada colaborador. */
   async marcarPagadas(): Promise<void> {
-    const items = this.seleccionadasPorPagar;
+    const items = this.seleccionadosPorPagar;
     if (items.length === 0) return;
 
-    const salidas = items.reduce((acc, r) => acc + r.porPagarCount, 0);
+    const salidas = items.reduce((acc, c) => acc + c.porPagarCount, 0);
     const monto = this.montoSeleccionado.toLocaleString('es-PE', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
 
-    const seleccion = { rendicionIds: items.map((r) => r.id), solicitudIds: [] };
+    const seleccion = { consolidadoIds: items.map((c) => c.id) };
     const result = await confirmarConCorreos({
-      titulo: items.length === 1 ? '¿Marcar esta planilla como pagada?' : `¿Marcar ${items.length} planillas como pagadas?`,
+      titulo: items.length === 1
+        ? '¿Marcar este consolidado como pagado?'
+        : `¿Marcar ${items.length} consolidados como pagados?`,
       nota: `${salidas} salida(s) por S/ ${monto}.`,
       avisos: await pedirAvisos(this.service.correoPreviewPago(seleccion)),
-      confirmButtonText: 'Sí, marcar como pagadas',
+      confirmButtonText: 'Sí, marcar como pagados',
       confirmButtonColor: '#15803D',
     });
     if (!result.isConfirmed) return;
@@ -561,7 +603,7 @@ export class Reembolsos implements OnInit, OnDestroy {
     this.ejecutar(this.service.marcarPagadas(seleccion));
   }
 
-  /** Las dos acciones terminan igual: aviso, recarga y el error a la pantalla. */
+  /** Las tres acciones terminan igual: aviso, recarga y el error a la pantalla. */
   private ejecutar(peticion: Observable<{ message: string }>): void {
     this.loaderService.show();
     peticion.subscribe({
@@ -580,8 +622,8 @@ export class Reembolsos implements OnInit, OnDestroy {
 
   // ── Detalle ──────────────────────────────────────────────────────────
 
-  abrirDetalle(r: ReembolsoListItemDto): void {
-    this.detalleId = r.id;
+  abrirDetalle(c: ReembolsoListItemDto): void {
+    this.detalleId = c.id;
   }
 
   cerrarDetalle(recargar = false): void {
@@ -595,29 +637,59 @@ export class Reembolsos implements OnInit, OnDestroy {
   readonly reembolsoColors = reembolsoColors;
   readonly reembolsoLabelCorto = reembolsoLabelCorto;
 
-  /** "Ana Pérez" o "Ana Pérez +2" — la planilla puede agrupar a varios. */
-  trabajadoresTexto(r: ReembolsoListItemDto): string {
-    if (r.trabajadores.length === 0) return '—';
-    const [primero, ...resto] = r.trabajadores;
+  /** "Ana Pérez" o "Ana Pérez +2" — un consolidado puede cubrir a varios. */
+  trabajadoresTexto(c: ReembolsoListItemDto): string {
+    if (c.trabajadores.length === 0) return '—';
+    const [primero, ...resto] = c.trabajadores;
     return resto.length ? `${primero} +${resto.length}` : primero;
   }
 
-  estadoTitle(r: ReembolsoListItemDto): string | null {
-    return r.reembolsoMixto
-      ? 'Esta planilla tiene salidas en distinto estado: se muestra la más atrasada.'
+  /**
+   * Descuadre entre lo que declara el Consolidado del S10 y lo que suman las planillas COMPLETAS
+   * que cubre. Se compara documento contra documento —no contra el pedacito que Tesorería tenga
+   * accionable— porque el importe del S10 es de todo lo que cubre. Null cuando cuadra o cuando el
+   * consolidado es de los viejos, que no traen el monto: ahí no hay nada que afirmar.
+   */
+  diferenciaS10(c: ReembolsoListItemDto): number | null {
+    if (c.montoS10 == null) return null;
+    const dif = Math.round((c.montoS10 - c.montoPlanillas) * 100) / 100;
+    return dif === 0 ? null : dif;
+  }
+
+  /** La firma que se muestra en la fila: la primera, y cuántas más hay. */
+  firmaExtra(c: ReembolsoListItemDto): number {
+    return Math.max(c.firmas.length - 1, 0);
+  }
+
+  firmasTitle(c: ReembolsoListItemDto): string | null {
+    if (c.firmas.length === 0) return null;
+    return c.firmas.map((f) => f.nombre).join(', ');
+  }
+
+  /**
+   * Por qué una planilla del consolidado se muestra apagada. Son dos motivos y no se puede
+   * distinguir desde la fila: o todavía espera a su jefatura, o un filtro la dejó fuera.
+   */
+  fueraDeBandejaTitle(codigo: string): string {
+    return `${codigo}: el consolidado la cubre, pero no entra en este recorte (espera a su jefatura o la dejaron fuera los filtros)`;
+  }
+
+  estadoTitle(c: ReembolsoListItemDto): string | null {
+    return c.reembolsoMixto
+      ? 'Este consolidado tiene salidas en distinto estado: se muestra la más atrasada.'
       : null;
   }
 
   /** Por qué una fila no se puede marcar, para el tooltip del checkbox. */
-  motivoNoAccionable(r: ReembolsoListItemDto): string | null {
-    if (this.porRevisar(r) || this.porPagar(r)) return null;
-    if (this.observada(r)) return 'La observaste: espera a que vuelvan a adjuntar el Consolidado del S10';
-    return 'Ya está pagada';
+  motivoNoAccionable(c: ReembolsoListItemDto): string | null {
+    if (this.porRevisar(c) || this.porPagar(c)) return null;
+    if (this.observado(c)) return 'Lo observaste: espera a que vuelvan a adjuntar el Consolidado del S10';
+    return 'Ya está pagado';
   }
 
   /** Lo que devolviste y sigue esperando, para el tooltip del badge. */
-  observacionTitle(r: ReembolsoListItemDto): string | null {
-    if (!this.observada(r) || !r.observacionReembolso) return this.estadoTitle(r);
-    return `Observado por Tesorería: ${r.observacionReembolso}`;
+  observacionTitle(c: ReembolsoListItemDto): string | null {
+    if (!this.observado(c) || !c.observacionReembolso) return this.estadoTitle(c);
+    return `Observado por Tesorería: ${c.observacionReembolso}`;
   }
 }

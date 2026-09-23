@@ -16,7 +16,7 @@ import {
 
 /**
  * Alta/edición de un grupo del Centro de aprendizaje. La superficie (login/inicio) y
- * la visibilidad (público interno / roles) definen dónde y a quién se muestran sus videos.
+ * la visibilidad (público interno / roles) definen dónde y a quién se muestran sus videos y manuales.
  */
 @Component({
   standalone: true,
@@ -35,8 +35,8 @@ export class CategoryModal implements OnInit {
   nombre = '';
   surfaceId: number | null = null;
   orden = 0;
-  accentColor = '';
-  esPublicoInterno = false;
+  /** Un grupo nuevo arranca visible para todo Abril; al editar manda lo guardado. */
+  esPublicoInterno = true;
   selectedRoleIds: number[] = [];
   submitted = false;
 
@@ -51,7 +51,6 @@ export class CategoryModal implements OnInit {
       this.nombre = this.categoria.nombre;
       this.surfaceId = this.categoria.surfaceId;
       this.orden = this.categoria.orden;
-      this.accentColor = this.categoria.accentColor ?? '';
       this.esPublicoInterno = this.categoria.esPublicoInterno;
       this.selectedRoleIds = [...this.categoria.roleIds];
     } else {
@@ -95,7 +94,6 @@ export class CategoryModal implements OnInit {
     const dto = {
       nombre: this.nombre.trim(),
       surfaceId: this.surfaceId,
-      accentColor: this.accentColor.trim() || null,
       orden: this.orden ?? 0,
       esPublicoInterno: esPublico,
       roleIds,

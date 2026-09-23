@@ -200,9 +200,13 @@ export class CapturasEdicion {
     return r.file === null && r.monto === null;
   }
 
-  /** Fila nueva lista para subir: tiene imagen y un monto válido. */
+  /**
+   * Fila nueva lista para subir: tiene imagen y un monto mayor a 0. El 0 no pasa —y el
+   * negativo tampoco— porque una captura de S/ 0.00 no es un gasto: no hay nada que
+   * reembolsar. El backend corta igual (GuardarCapturas).
+   */
   private filaNuevaCompleta(r: CapturaNuevaFila): boolean {
-    return r.file !== null && r.monto !== null && r.monto >= 0;
+    return r.file !== null && r.monto !== null && r.monto > 0;
   }
 
   /** Capturas nuevas de todos los trayectos, listas para subir. */
@@ -242,12 +246,12 @@ export class CapturasEdicion {
     return incompleta;
   }
 
-  /** Una captura ya subida a la que le borraron el monto (o le pusieron uno negativo). */
+  /** Una captura ya subida a la que le borraron el monto (o la dejaron en 0 o en negativo). */
   private get hayMontoInvalido(): boolean {
     let invalido = false;
     this.capturasByTrayecto.forEach((filas) => {
       filas.forEach((f) => {
-        if (this.hayCambios(f) && (f.monto === null || f.monto < 0)) invalido = true;
+        if (this.hayCambios(f) && (f.monto === null || f.monto <= 0)) invalido = true;
       });
     });
     return invalido;
@@ -272,8 +276,8 @@ export class CapturasEdicion {
 
   /** Por qué el botón está apagado, cuando el motivo no se ve solo. Null si no hay nada que decir. */
   get aviso(): string | null {
-    if (this.hayFilasIncompletas) return 'Hay capturas nuevas sin imagen o sin monto.';
-    if (this.hayMontoInvalido) return 'Hay capturas sin monto.';
+    if (this.hayFilasIncompletas) return 'Cada captura nueva necesita imagen y un monto mayor a 0.';
+    if (this.hayMontoInvalido) return 'El monto de una captura tiene que ser mayor a 0.';
 
     const excedidos = this.trayectosQueBloquean;
     if (excedidos.length > 0) {

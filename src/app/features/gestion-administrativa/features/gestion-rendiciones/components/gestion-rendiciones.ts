@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule, DatePipe, formatDate } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
@@ -12,7 +12,6 @@ import {
   GestionRendicionListItemDto,
   PeriodoOptionDto,
   PrimeraRevisionAccionDto,
-  ReembolsoAccionDto,
   ResumenGestionRendicionesDto,
 } from '../dtos/gestion-rendicion.dto';
 import { primeraRevisionColors, reembolsoColors } from '../../../shared/dtos/rendicion-shared.dto';
@@ -30,7 +29,7 @@ import {
   ConsolidadoS10Dto,
   otrasRendicionesDelConsolidado,
 } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
-import { FirmaRegistrarModal } from '../../../../../shared/components/firma-personal/registrar-modal/firma-registrar-modal';
+import { nombreConsolidado } from '../../../shared/consolidado-nombre';
 import { GestionRendicionDetalleModal } from './gestion-rendicion-detalle-modal/gestion-rendicion-detalle-modal';
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 
@@ -47,20 +46,18 @@ interface ConsolidadoObjetivo {
   codigos: string[];
   /** Suma de los montos completos de esas planillas: lo que tiene que declarar el consolidado. */
   monto: number;
-  /** El consolidado que se reemplaza, cuando todas comparten el mismo. */
-  actual: ConsolidadoS10Dto | null;
   /** Número de planilla impreso cuando es una sola ("TI: 000123"). */
   referencia: string | null;
-  razonSocial: string | null;
 }
 
 /**
- * "Gestión de Rendiciones": las planillas del alcance del revisor y todo lo que va DESDE el
- * Consolidado del S10 en adelante — adjuntarlo, decidir el reembolso y firmar la planilla.
- * Gestión de Salidas llega hasta rendir; el pago es de Tesorería y vive en Reembolsos.
+ * "Gestión de Rendiciones": las planillas del alcance, su PRIMERA revisión (la jefatura) y el
+ * Consolidado del S10 que se les adjunta (solo el consolidador del área). Gestión de Salidas llega
+ * hasta rendir; decidir y firmar el reembolso es de Consolidados —lo que se decide ahí es el
+ * documento del S10, que puede cubrir varias planillas— y el pago, de Tesorería (Reembolsos).
  *
  * La visibilidad es exactamente la de Gestión de Salidas: son las mismas salidas, agrupadas por
- * planilla, porque el consolidado y la firma son del documento y no de cada salida.
+ * planilla, porque la revisión y el consolidado son del documento y no de cada salida.
  */
 @Component({
   standalone: true,
@@ -68,7 +65,7 @@ interface ConsolidadoObjetivo {
   imports: [
     CommonModule, DatePipe, StatusBadge, SearchSelect, AbrilPageHeaderComponent,
     FilterTriggerButton, FilterModal, AbrilBulkActionDirective, TitleCasePipe,
-    ConsolidadoS10Modal, FirmaRegistrarModal, GestionRendicionDetalleModal,
+    ConsolidadoS10Modal, GestionRendicionDetalleModal,
   ],
   templateUrl: './gestion-rendiciones.html',
   styles: [`
@@ -142,19 +139,15 @@ export class GestionRendiciones implements OnInit {
   /** Lo que va a cubrir el consolidado cuyo modal está abierto. null = cerrado. */
   consolidadoPara: ConsolidadoObjetivo | null = null;
 
-  /** Modal para registrar la firma en el momento (se abre con el 409 de aprobar). */
-  firmaModalAbierto = false;
-  /** Selección que se estaba firmando cuando saltó el modal, para reintentar al guardarla. */
-  private accionPendienteDeFirma: ReembolsoAccionDto | null = null;
-
-  resumen: ResumenGestionRendicionesDto = {
-    primeraRevision: 0, sinConsolidado: 0, porRevisar: 0,
-  };
+  resumen: ResumenGestionRendicionesDto = { primeraRevision: 0, sinConsolidado: 0 };
 
   // ── Filtros ────────────────────────────────────────────────────────
   trabajadorOptions: any[] = [{ workerId: null, nombreCompleto: 'Todos los trabajadores' }];
   periodoOptions: { key: string | null; label: string }[] = [{ key: null, label: 'Todos los periodos' }];
   private periodos: PeriodoOptionDto[] = [];
+
+  /** Razón social del usuario: bajo la que queda el Consolidado del S10 que suba. */
+  razonSocialConsolidador: string | null = null;
 
   readonly estadoPrimeraRevisionOptions = [
     { value: null,                  label: 'Todas' },
@@ -239,6 +232,7 @@ export class GestionRendiciones implements OnInit {
     return this.puedeConfigurar ? { label: 'Configuración', icono: 'ti-settings' } : undefined;
   }
 
+
   abrirConfiguracion(): void {
     if (!this.puedeConfigurar) return;
     this.router.navigate(['/gestion-administrativa/gestion-rendiciones/configuracion']);
@@ -273,6 +267,7 @@ export class GestionRendiciones implements OnInit {
           ...data.trabajadores,
         ];
         this.buildAreaCascade(data.areaTree);
+        this.razonSocialConsolidador = data.razonSocialConsolidador ?? null;
         this.periodos = data.periodos ?? [];
         this.periodoOptions = [
           { key: null, label: 'Todos los periodos' },
@@ -403,28 +398,6 @@ export class GestionRendiciones implements OnInit {
     return this.rendiciones.filter((r) => this.selectedIds.has(r.id));
   }
 
-  /** Seleccionadas con algún reembolso por decidir. */
-  get selectedPorDecidir(): GestionRendicionListItemDto[] {
-    return this.seleccionadas.filter((r) => r.porDecidirCount > 0);
-  }
-
-  /**
-   * True si alguna candidata a decidir tiene salidas propias que no le toca decidir: el backend
-   * las rechaza. Lo decide el backend por planilla (`puedeDecidir`), que solo deja pasar las
-   * propias cuando el usuario es su propio revisor (jefe personalizado apuntándose a sí mismo).
-   */
-  get decisionBloqueada(): boolean {
-    return this.selectedPorDecidir.some((r) => !r.puedeDecidir);
-  }
-
-  get puedeDecidir(): boolean {
-    return this.selectedPorDecidir.length > 0 && !this.decisionBloqueada;
-  }
-
-  private accionDe(items: GestionRendicionListItemDto[], observacion?: string): ReembolsoAccionDto {
-    return { rendicionIds: items.map((r) => r.id), solicitudIds: [], observacion: observacion ?? null };
-  }
-
   // ── Primera revisión ─────────────────────────────────────────────────
 
   /** Seleccionadas que están esperando la primera revisión. */
@@ -455,14 +428,9 @@ export class GestionRendiciones implements OnInit {
    * Se pide al apretar el botón y no al cargar la pantalla porque depende de qué está seleccionado:
    * los destinatarios principales son los solicitantes de esas planillas.
    */
-  private avisos(
-    items: GestionRendicionListItemDto[],
-    accion: 'PRIMERA_REVISION' | 'REEMBOLSO',
-    aprobar: boolean,
-  ) {
+  private avisos(items: GestionRendicionListItemDto[], aprobar: boolean) {
     return pedirAvisos(this.service.correoPreview({
       rendicionIds: items.map((r) => r.id),
-      accion,
       aprobar,
     }));
   }
@@ -474,8 +442,8 @@ export class GestionRendiciones implements OnInit {
       titulo: items.length === 1
         ? '¿Aprobar la rendición ' + items[0].codigo + '?'
         : '¿Aprobar ' + items.length + ' rendiciones?',
-      nota: 'Habilita al trabajador a cargar el Consolidado del S10.',
-      avisos: await this.avisos(items, 'PRIMERA_REVISION', true),
+      nota: 'Habilita al consolidador a cargar el Consolidado del S10.',
+      avisos: await this.avisos(items, true),
       confirmButtonText: 'Sí, aprobar',
     });
     if (!result.isConfirmed) return;
@@ -495,7 +463,7 @@ export class GestionRendiciones implements OnInit {
       titulo: items.length === 1
         ? '¿Observar la rendición ' + items[0].codigo + '?'
         : '¿Observar ' + items.length + ' rendiciones?',
-      avisos: await this.avisos(items, 'PRIMERA_REVISION', false),
+      avisos: await this.avisos(items, false),
       observacion: {
         label: 'Observación',
         placeholder: 'Qué capturas o montos tiene que corregir el trabajador…',
@@ -537,88 +505,6 @@ export class GestionRendiciones implements OnInit {
     else if (accion === 'observar') void this.observarPrimeraRevision([planilla]);
   }
 
-  // ── Acciones ─────────────────────────────────────────────────────────
-
-  async aprobarBulk(): Promise<void> {
-    const items = this.selectedPorDecidir;
-    if (items.length === 0) return;
-
-    const salidas = items.reduce((acc, r) => acc + r.porDecidirCount, 0);
-    const result = await confirmarConCorreos({
-      titulo: items.length === 1 ? '¿Aprobar este reembolso?' : `¿Aprobar ${items.length} planillas?`,
-      // El conteo no está en la tabla —una planilla puede traer varias salidas por decidir— y la
-      // firma es el efecto que no se ve.
-      nota: `${salidas} salida(s). Se firma la planilla y su Consolidado del S10.`,
-      avisos: await this.avisos(items, 'REEMBOLSO', true),
-      confirmButtonText: 'Sí, aprobar',
-    });
-    if (!result.isConfirmed) return;
-
-    // Aprobar firma: si el revisor no tiene firma registrada, el 409 abre el modal para dibujarla.
-    this.aprobar(this.accionDe(items));
-  }
-
-  async observarBulk(): Promise<void> {
-    const items = this.selectedPorDecidir;
-    if (items.length === 0) return;
-
-    const { value: observacion, isConfirmed } = await confirmarConCorreos({
-      icon: 'warning',
-      titulo: items.length === 1
-        ? '¿Observar este reembolso?'
-        : `¿Observar ${items.length} planillas?`,
-      avisos: await this.avisos(items, 'REEMBOLSO', false),
-      observacion: {
-        label: 'Observación',
-        placeholder: 'Qué tiene que corregir el trabajador en el Consolidado del S10…',
-      },
-      confirmButtonText: 'Observar',
-      confirmButtonColor: '#D30000',
-    });
-    if (!isConfirmed || !observacion) return;
-
-    this.loaderService.show();
-    this.service.observarReembolso(this.accionDe(items, observacion)).subscribe({
-      next: (res) => this.trasAccion(res.message),
-      error: (err: HttpErrorResponse) => this.errorAccion(err),
-    });
-  }
-
-  /**
-   * Ejecuta la aprobación, que ES la firma: estampa la firma del revisor en la planilla y en su
-   * Consolidado del S10. El 409 significa que todavía no registró su firma — en vez de mandarlo a
-   * Configuración se abre el modal donde la dibuja y la acción se reintenta sola.
-   */
-  private aprobar(accion: ReembolsoAccionDto): void {
-    this.loaderService.show();
-    this.service.aprobarReembolso(accion).subscribe({
-      next: (res) => this.trasAccion(res.message),
-      error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
-        if (err.status === 409) {
-          this.accionPendienteDeFirma = accion;
-          this.firmaModalAbierto = true;
-          this.cdr.detectChanges();
-          return;
-        }
-        this.errorAccion(err);
-      },
-    });
-  }
-
-  onFirmaRegistrada(): void {
-    this.firmaModalAbierto = false;
-    const accion = this.accionPendienteDeFirma;
-    this.accionPendienteDeFirma = null;
-    if (accion) this.aprobar(accion);
-  }
-
-  cerrarFirmaModal(): void {
-    this.firmaModalAbierto = false;
-    this.accionPendienteDeFirma = null;
-    this.cdr.detectChanges();
-  }
-
   private trasAccion(message: string): void {
     this.loaderService.hide();
     Swal.fire({ title: message, icon: 'success', timer: 1800, showConfirmButton: false });
@@ -645,9 +531,20 @@ export class GestionRendiciones implements OnInit {
 
   // ── Consolidado del S10 ──────────────────────────────────────────────
   // Un consolidado es UN registro en el S10 y puede cubrir varias rendiciones, incluso de
-  // trabajadores distintos (siempre de una misma razón social). Se adjunta desde la fila —cubre esa
-  // planilla y, si ya tenía uno compartido, las demás que siguen abiertas: se reemplaza entero— o
-  // para toda la selección. El backend re-valida todo; acá solo se evita ofrecer lo que va a rechazar.
+  // trabajadores y razones sociales distintos: queda bajo la razón social del consolidador. Solo lo
+  // adjunta el consolidador de esos trabajadores. Se adjunta para toda la selección desde la barra
+  // de arriba —o desde el detalle de una planilla, que es la misma acción sobre una sola—, nunca
+  // desde la fila: ofrecerlo fila por fila invitaba a cargar un consolidado por planilla cuando lo
+  // que corresponde es uno solo. Acá solo se adjunta el PRIMERO: reemplazarlo es de Consolidados.
+  // El backend re-valida todo; acá solo se evita ofrecer lo que va a rechazar.
+
+  /**
+   * True si el usuario es consolidador de alguna planilla de la tabla. Sin eso los botones del
+   * Consolidado del S10 no se muestran: la jefatura revisa, no consolida.
+   */
+  get esConsolidador(): boolean {
+    return this.rendiciones.some((r) => r.puedeConsolidar);
+  }
 
   /** Seleccionadas a las que se les puede adjuntar el Consolidado del S10. */
   get selectedConsolidables(): GestionRendicionListItemDto[] {
@@ -658,23 +555,14 @@ export class GestionRendiciones implements OnInit {
   get consolidadoSeleccionBloqueo(): string | null {
     const items = this.selectedConsolidables;
     if (items.length === 0) {
-      return 'Selecciona rendiciones con la primera revisión aprobada y el reembolso por decidir';
+      return 'Selecciona rendiciones con la primera revisión aprobada y sin Consolidado del S10';
     }
     const sinPermiso = items.filter((r) => !r.puedeConsolidar);
     if (sinPermiso.length > 0) {
-      return 'No estás habilitado para consolidar por los trabajadores de '
+      return 'No eres consolidador de los trabajadores de '
         + sinPermiso.map((r) => r.codigo).join(', ');
     }
-    const razones = new Set(items.map((r) => r.razonSocialId).filter((id) => id != null));
-    if (razones.size > 1) {
-      return 'Un consolidado solo puede agrupar trabajadores de una misma razón social';
-    }
     return null;
-  }
-
-  abrirConsolidado(r: GestionRendicionListItemDto, ev: Event): void {
-    ev.stopPropagation();
-    this.consolidadoPara = this.objetivoConsolidado([r]);
   }
 
   abrirConsolidadoSeleccion(): void {
@@ -682,10 +570,16 @@ export class GestionRendiciones implements OnInit {
     this.consolidadoPara = this.objetivoConsolidado(this.selectedConsolidables);
   }
 
+  /** El botón del pie del detalle: el consolidado de esa sola planilla y las que comparta con ella. */
+  abrirConsolidadoDesdeDetalle(d: GestionRendicionListItemDto): void {
+    if (!d.puedeAdjuntarConsolidado || !d.puedeConsolidar) return;
+    this.consolidadoPara = this.objetivoConsolidado([d]);
+  }
+
   /**
-   * Lo que cubriría un consolidado adjuntado a estas filas: la unión de sus conjuntos (cada fila
-   * trae las planillas con las que comparte el consolidado actual) y la suma de sus montos
-   * completos, que es lo que el consolidado tiene que declarar.
+   * Lo que cubriría un consolidado adjuntado a estas filas: la unión de sus conjuntos (sin
+   * consolidado previo, cada conjunto es la propia planilla) y la suma de sus montos completos, que
+   * es lo que el consolidado tiene que declarar.
    */
   private objetivoConsolidado(items: GestionRendicionListItemDto[]): ConsolidadoObjetivo {
     const cubiertas = new Map<number, { codigo: string; monto: number }>();
@@ -695,33 +589,42 @@ export class GestionRendiciones implements OnInit {
       }
     }
 
-    // Es un reemplazo solo cuando todas comparten el mismo consolidado; si no, se juntan varios.
-    const actuales = new Set(items.map((r) => r.consolidadoS10?.id ?? null));
-    const actual = actuales.size === 1 ? (items[0].consolidadoS10 ?? null) : null;
-
-    const razones = new Set(items.map((r) => r.razonSocial).filter((nombre) => !!nombre));
     const unaSola = cubiertas.size === 1 ? items[0] : null;
 
     return {
       rendicionIds: [...cubiertas.keys()],
       codigos: [...cubiertas.values()].map((c) => c.codigo).sort(),
       monto: [...cubiertas.values()].reduce((acc, c) => acc + c.monto, 0),
-      actual,
       referencia: unaSola
         ? (unaSola.numeroPlanilla
             ?? `Rendición del ${new Date(unaSola.rendidoAt).toLocaleDateString('es-PE')}`)
         : null,
-      razonSocial: razones.size === 1 ? [...razones][0] : null,
     };
   }
 
   readonly subirConsolidado = (file: File, montoTotal: number, numeroReembolso: string) =>
     this.service.uploadConsolidadoS10(this.consolidadoPara!.rendicionIds, file, montoTotal, numeroReembolso);
 
+  /**
+   * A quién le llega el aviso que dispara adjuntar: la jefatura de los trabajadores de esas
+   * planillas. Lo resuelve el backend con el mismo cálculo que hace el envío.
+   */
+  readonly avisosConsolidado = () =>
+    this.service.correoPreview({
+      rendicionIds: this.consolidadoPara!.rendicionIds,
+      aprobar: true,
+      accion: 'CONSOLIDADO_S10',
+    });
+
   cerrarConsolidado(subido: ConsolidadoS10Dto | null): void {
     this.consolidadoPara = null;
-    if (subido) this.recargar();
-    else        this.cdr.detectChanges();
+    if (subido) {
+      // Si se adjuntó desde el detalle, lo que mostraba ya cambió: se cierra con la tabla recargada.
+      this.detalleId = null;
+      this.recargar();
+    } else {
+      this.cdr.detectChanges();
+    }
   }
 
   /** Con qué otras rendiciones comparte el consolidado de la fila (vacío si es solo suyo). */
@@ -729,25 +632,44 @@ export class GestionRendiciones implements OnInit {
     return otrasRendicionesDelConsolidado(r.consolidadoS10, r.id);
   }
 
-  /** Título del chip "S10 ✓": el archivo y, si es compartido, con qué rendiciones. */
-  consolidadoChipTitle(r: GestionRendicionListItemDto): string {
-    const otras = this.otrasDelConsolidado(r);
-    const archivo = r.consolidadoS10?.pdfFilename ?? '';
-    return otras.length ? `${archivo} · también cubre ${otras.join(', ')}` : archivo;
+  /**
+   * Etiqueta del chip del consolidado: el código de la rendición grupal, que es como se la nombra
+   * en las otras tres pantallas de su ciclo. Los consolidados anteriores al código se quedan con el
+   * "S10 ✓" de siempre: ahí lo único que hay que decir es que el documento está.
+   */
+  consolidadoChipLabel(r: GestionRendicionListItemDto): string {
+    return r.consolidadoS10?.codigo ?? 'S10 ✓';
   }
 
-  /** Título del botón "Consolidado S10" de la fila: qué va a cubrir, o por qué está apagado. */
-  consolidadoTitle(r: GestionRendicionListItemDto): string {
-    if (!r.puedeConsolidar) {
-      return 'No estás habilitado para consolidar por los trabajadores de esta planilla';
+  /**
+   * Título del chip del consolidado: sus dos nombres, el archivo que se abre y con qué rendiciones
+   * se comparte. El chip es uno solo —firmado el documento, abre esa copia y la original ya no se
+   * ofrece—, así que el título tiene que decir cuál de las dos está enseñando.
+   */
+  consolidadoChipTitle(r: GestionRendicionListItemDto): string {
+    const c = r.consolidadoS10;
+    const partes = [nombreConsolidado(c)];
+
+    if (c?.pdfFirmadoUrl) {
+      partes.push(c.pdfFirmadoFilename ?? 'copia firmada');
+      if (c.firmadoAt) partes.push(`firmado el ${formatDate(c.firmadoAt, 'dd/MM/yyyy HH:mm', 'es-PE')}`);
+    } else if (c?.pdfFilename) {
+      partes.push(c.pdfFilename);
     }
-    const otras = r.consolidadoConjunto.filter((c) => c.id !== r.id).map((c) => c.codigo);
-    if (otras.length) {
-      return 'Reemplazar el Consolidado del S10, también para ' + otras.join(', ');
-    }
-    return r.consolidadoS10
-      ? 'Reemplazar el Consolidado del S10'
-      : 'Adjuntar el Consolidado del S10 en nombre del trabajador';
+
+    const otras = this.otrasDelConsolidado(r);
+    if (otras.length) partes.push(`también cubre ${otras.join(', ')}`);
+
+    return partes.join(' · ');
+  }
+
+  /** Título del chip de la planilla: qué copia abre, y desde cuándo está firmada si ya lo está. */
+  planillaChipTitle(r: GestionRendicionListItemDto): string {
+    if (!r.pdfFirmadoUrl) return r.pdfFilename;
+    const nombre = r.pdfFirmadoFilename ?? 'Planilla firmada';
+    return r.firmadoAt
+      ? `${nombre} · firmada el ${formatDate(r.firmadoAt, 'dd/MM/yyyy HH:mm', 'es-PE')}`
+      : nombre;
   }
 
   // ── Presentación ─────────────────────────────────────────────────────

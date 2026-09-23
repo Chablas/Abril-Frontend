@@ -223,6 +223,9 @@ export interface VecinoLimpiezaDTO {
   vecinoLimpiezaId: number;
   /** Fecha ISO (yyyy-MM-dd). */
   fecha: string;
+  /** Horario de la visita, `HH:mm:ss` (opcional: las limpiezas antiguas no lo tienen). */
+  horaInicio?: string | null;
+  horaFin?: string | null;
   vecinoLimpiezaTipoId: number;
   tipoDescripcion: string;
   vecinoId?: number | null;
@@ -249,6 +252,9 @@ export interface VecinoLimpiezasResponseDTO {
 
 export interface VecinoLimpiezaCreateDTO {
   fecha: string;
+  /** `HH:mm` (24h) o null. */
+  horaInicio?: string | null;
+  horaFin?: string | null;
   vecinoLimpiezaTipoId: number | null;
   vecinoId?: number | null;
   descripcion?: string | null;

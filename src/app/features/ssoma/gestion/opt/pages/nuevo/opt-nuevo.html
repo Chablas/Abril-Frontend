@@ -16,6 +16,11 @@
           } @else {
             {{ $index + 1 }}
           }
+          @if ($index + 1 === 2 && paso <= 2) {
+            <span class="step-badge-fotos" [class.step-badge-fotos--ok]="totalFotos >= 3" title="Fotos de la actividad">
+              <i class="ti ti-camera"></i>{{ totalFotos }}
+            </span>
+          }
         </div>
         <span class="step-label">{{ label }}</span>
       </div>
@@ -158,8 +163,34 @@
     @if (paso === 2) {
       <div class="paso-body">
 
+        <!-- Fotos primero: si quedaran al final de una lista larga de pasos, era fácil no
+             encontrarlas hasta el momento de finalizar (se piden recién ahí). -->
+        <h2 class="paso-title">
+          <i class="ti ti-camera"></i> Fotos de la actividad
+          <span class="fotos-counter" [class.fotos-ok]="totalFotos >= 3">
+            {{ totalFotos }} / mín. 3
+          </span>
+        </h2>
+        <p class="fotos-hint">Se requieren al menos 3 fotos de la actividad observada (se piden recién al finalizar). Máximo 10 por guardado.</p>
+
+        @if (fotosAreaExistentes.length > 0) {
+          <div class="fotos-existentes">
+            @for (url of fotosAreaExistentes; track url) {
+              <img [src]="url" class="foto-existente-thumb" alt="Foto ya guardada" />
+            }
+          </div>
+        }
+
+        <app-photo-grid-picker
+          color="var(--color-abril-logo-blue)"
+          [previews]="fotosAreaPreview"
+          [max]="10"
+          (filesSelected)="onFotoAreaChange($event)"
+          (remove)="quitarFotoArea($event)"
+        ></app-photo-grid-picker>
+
         @if (petId) {
-          <div class="pasos-header">
+          <div class="pasos-header" style="margin-top: 2rem">
             <h2 class="paso-title"><i class="ti ti-list-numbers"></i> Pasos observados</h2>
             <button type="button" class="btn-add-paso" (click)="agregarPaso()">
               <i class="ti ti-plus"></i> Agregar paso
@@ -171,7 +202,7 @@
             <div class="pasos-empty">Sin pasos. Vuelve al paso anterior y elige un PETS, o agrega uno manualmente.</div>
           }
         } @else {
-          <div class="pasos-header">
+          <div class="pasos-header" style="margin-top: 2rem">
             <h2 class="paso-title"><i class="ti ti-list-numbers"></i> Actividad observada</h2>
             <button type="button" class="btn-add-paso" (click)="agregarPaso()">
               <i class="ti ti-plus"></i> Agregar paso
@@ -258,30 +289,6 @@
           </div>
         }
 
-        <h2 class="paso-title" style="margin-top: 2rem">
-          <i class="ti ti-camera"></i> Fotos de la actividad
-          <span class="fotos-counter" [class.fotos-ok]="totalFotos >= 3">
-            {{ totalFotos }} / mín. 3
-          </span>
-        </h2>
-        <p class="fotos-hint">Se requieren al menos 3 fotos de la actividad observada (se piden recién al finalizar). Máximo 10 por guardado.</p>
-
-        @if (fotosAreaExistentes.length > 0) {
-          <div class="fotos-existentes">
-            @for (url of fotosAreaExistentes; track url) {
-              <img [src]="url" class="foto-existente-thumb" alt="Foto ya guardada" />
-            }
-          </div>
-        }
-
-        <app-photo-grid-picker
-          color="var(--color-abril-logo-blue)"
-          [previews]="fotosAreaPreview"
-          [max]="10"
-          (filesSelected)="onFotoAreaChange($event)"
-          (remove)="quitarFotoArea($event)"
-        ></app-photo-grid-picker>
-
       </div>
     }
 
@@ -361,17 +368,14 @@
         <h2 class="paso-title"><i class="ti ti-users"></i> Trabajadores observados</h2>
 
         <div class="abril-field">
-          <app-search-select
+          <label class="abril-field-label">Agregar trabajador observado</label>
+          <app-worker-search-input
+            #buscadorTrabajador
             color="var(--color-abril-logo-blue)"
-            label="Agregar trabajador observado"
-            [options]="workersObservador"
-            valueField="id"
-            displayField="apellidoNombre"
-            [value]="trabajadorObservadoId"
-            [allowClear]="true"
+            [soloActivos]="true"
             placeholder="Buscar por nombre o DNI..."
-            (valueChange)="onTrabajadorObservadoChange($event)">
-          </app-search-select>
+            (selectedChange)="onTrabajadorObservadoSeleccionado($event)">
+          </app-worker-search-input>
         </div>
 
         @if (trabajadores.length > 0) {

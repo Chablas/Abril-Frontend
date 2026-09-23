@@ -362,9 +362,10 @@
   (saved)="onSaved()">
 </app-gth-nueva-solicitud>
 
-<!-- La configuración de correos ya no es un modal: vive en su propia pantalla
+<!-- La configuración (correos y visibilidad) vive en su propia pantalla
      (/gestion-gth/solicitud-personal/configuracion), a la que lleva el botón «Configuración»
-     del header. Feature: gestion-gth.reclutamiento.configuracion. -->
+     del header. Features: gestion-gth.reclutamiento.configuracion y
+     gestion-gth.config.visibilidad-solicitud-personal. -->
 
 <!-- Modal de seguimiento del requerimiento ("Hacer seguimiento") -->
 <app-gth-seguimiento
@@ -391,7 +392,15 @@
   (closeModal)="cerrarFinalistas()">
 </app-gth-revision-finalistas>
 
-<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<!-- ── Modal de filtros estándar ──────────────────────────────────────
+     Los desplegables se arman con lo que ya está en la tabla (ver `armarOpcionesFiltro`): la
+     lista llega entera con el panel, así que no hay una segunda petición para traer catálogos
+     y ninguna opción deja la tabla vacía. Los que no tienen nada que ofrecer no se muestran
+     —una sola área, un solo solicitante— para no llenar el panel de combos de una opción.
+
+     `rawLabel` en Estado y Tipo: sus etiquetas traen siglas («Aprobación GTH», «Ingreso directo
+     (FFT)») y el suavizado que hace el combo por defecto las convertiría en «Gth» y «Fft». En
+     Área, Proyecto y Solicitante va sin él, que es como los muestra la tabla. -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
   <div class="w-full">
     <app-search-input
@@ -400,5 +409,70 @@
       (valueChange)="onFilterChange()"
       width="100%">
     </app-search-input>
+  </div>
+
+  <div class="w-full" *ngIf="fEstado.visible">
+    <app-search-select
+      label="Estado"
+      placeholder="Todos los estados"
+      [options]="fEstado.opciones"
+      valueField="value"
+      displayField="label"
+      [rawLabel]="true"
+      [value]="fEstado.valor"
+      (valueChange)="fEstado.valor = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full" *ngIf="fTipo.visible">
+    <app-search-select
+      label="Tipo"
+      placeholder="Todos los tipos"
+      [options]="fTipo.opciones"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      [rawLabel]="true"
+      [value]="fTipo.valor"
+      (valueChange)="fTipo.valor = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full" *ngIf="fArea.visible">
+    <app-search-select
+      label="Área"
+      placeholder="Todas las áreas"
+      [options]="fArea.opciones"
+      valueField="value"
+      displayField="label"
+      [value]="fArea.valor"
+      (valueChange)="fArea.valor = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full" *ngIf="fProyecto.visible">
+    <app-search-select
+      label="Proyecto / Obra"
+      placeholder="Todos los proyectos"
+      [options]="fProyecto.opciones"
+      valueField="value"
+      displayField="label"
+      [value]="fProyecto.valor"
+      (valueChange)="fProyecto.valor = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <!-- La tabla es de toda el área, no del usuario: es el filtro que separa el pedido de uno
+       del pedido del vecino. -->
+  <div class="w-full" *ngIf="fSolicitante.visible">
+    <app-search-select
+      label="Solicitante"
+      placeholder="Todos los solicitantes"
+      [options]="fSolicitante.opciones"
+      valueField="value"
+      displayField="label"
+      [value]="fSolicitante.valor"
+      (valueChange)="fSolicitante.valor = $event; onFilterChange()">
+    </app-search-select>
   </div>
 </app-filter-modal>

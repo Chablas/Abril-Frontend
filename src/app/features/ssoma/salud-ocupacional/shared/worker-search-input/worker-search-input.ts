@@ -29,6 +29,10 @@ export class WorkerSearchInput implements OnInit, OnDestroy {
   /** true: solo ofrece personal de Abril (esAbril=true) — ej. firmantes de un PETS, que
    * siempre son staff interno, nunca personal de una contratista. */
   @Input() soloAbril = false;
+  /** true: excluye trabajadores retirados. El endpoint liviano no filtra por estado como
+   * sí hacía el de Habilitación (soloRetirados=false por defecto), así que hay que hacerlo
+   * acá para pantallas donde no tiene sentido observar/registrar a alguien ya retirado. */
+  @Input() soloActivos = false;
 
   @HostBinding('style.--ws-accent') get wsAccent(): string {
     return this.color;
@@ -74,7 +78,10 @@ export class WorkerSearchInput implements OnInit, OnDestroy {
   private runSearch(q: string): void {
     this.service.search(q, this.limit).subscribe({
       next: (res) => {
-        this.results = this.soloAbril ? res.filter((w) => w.esAbril) : res;
+        let filtered = res;
+        if (this.soloAbril) filtered = filtered.filter((w) => w.esAbril);
+        if (this.soloActivos) filtered = filtered.filter((w) => w.activo);
+        this.results = filtered;
         this.searching = false;
         this.cdr.detectChanges();
       },

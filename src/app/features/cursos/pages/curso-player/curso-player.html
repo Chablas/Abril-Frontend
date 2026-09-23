@@ -1,0 +1,153 @@
+<div class="curso-player">
+
+  <app-fondo-animado
+    *ngIf="fase === 'jugando' || fase === 'feedback'"
+    [estilo]="estiloSlideActual"
+    [slideIndex]="currentIndex"
+  />
+
+  <!-- Barra de progreso -->
+  <div class="header-progreso" *ngIf="fase !== 'error'">
+    <button type="button" class="btn-salir" (click)="volverALista()" title="Salir">
+      <i class="ti ti-x"></i>
+    </button>
+    <div class="progreso-wrap">
+      <div class="progreso-bar">
+        <div class="progreso-fill" [style.width.%]="progresoPorcentaje"></div>
+      </div>
+      <span class="progreso-texto" *ngIf="fase === 'jugando' || fase === 'feedback'">{{ progresoTexto }}</span>
+    </div>
+  </div>
+
+  <div class="contenido">
+
+    <!-- Cargando -->
+    <div class="estado-centro" *ngIf="fase === 'cargando'">
+      <i class="ti ti-loader-2 icono-spin"></i>
+      <p>Preparando tu evaluación...</p>
+    </div>
+
+    <!-- Error -->
+    <div class="estado-centro" *ngIf="fase === 'error'">
+      <i class="ti ti-alert-triangle icono-error"></i>
+      <p>{{ errorMensaje }}</p>
+      <button type="button" class="btn-primario" (click)="volverALista()">Volver a cursos</button>
+    </div>
+
+    <!-- Slide activa -->
+    <ng-container *ngIf="(fase === 'jugando' || fase === 'feedback') && slideActual as slide">
+      <div
+        class="slide-host"
+        [class.slide-host--full]="slide.tipoCodigo === 'contenido_texto'"
+        [class.deshabilitado]="fase === 'feedback'"
+      >
+        <!--
+          Este @switch debe reflejar exactamente los tipoCodigo registrados en
+          SLIDE_TIPOS (ver ./slide-tipo-registro.ts). Al agregar un tipo nuevo:
+          1) agrega su entrada en SLIDE_TIPOS, 2) agrega aquí su @case.
+          Ver checklist completo en ../../AGREGAR-TIPO-DE-SLIDE.md.
+        -->
+        @switch (slide.tipoCodigo) {
+          @case ('contenido_texto') {
+            <app-slide-contenido [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('pregunta_vf') {
+            <app-slide-verdadero-falso [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('pregunta_opcion_multiple') {
+            <app-slide-opcion-multiple [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('pregunta_imagen') {
+            <app-slide-marcar-imagen [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('pregunta_arrastrar') {
+            <app-slide-arrastrar-soltar [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('pregunta_ordenar') {
+            <app-slide-ordenar [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @default {
+            <div class="tipo-no-soportado">
+              <i class="ti ti-help-circle"></i>
+              <p>Este tipo de pregunta ("{{ slide.tipoCodigo }}") aún no es compatible con esta versión de la app.</p>
+              <button type="button" class="btn-primario" (click)="onRespuesta({ omitido: true })">Continuar</button>
+            </div>
+          }
+        }
+      </div>
+
+      <!-- Overlay de feedback -->
+      <div class="overlay-feedback" *ngIf="fase === 'feedback'">
+        <div class="feedback-box" [class.correcto]="ultimaEsCorrecta === true" [class.incorrecto]="ultimaEsCorrecta === false">
+          <i class="ti ti-circle-check" *ngIf="ultimaEsCorrecta === true"></i>
+          <i class="ti ti-circle-x" *ngIf="ultimaEsCorrecta === false"></i>
+          <span>{{ ultimaEsCorrecta === true ? '¡Correcto!' : (ultimaEsCorrecta === false ? 'Incorrecto' : '') }}</span>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Declaración jurada -->
+    <div class="declaracion-wrap" *ngIf="fase === 'declaracion' || fase === 'finalizando'">
+      <div class="declaracion-card">
+        <i class="ti ti-gavel icono-declaracion"></i>
+        <h2>Declaración jurada</h2>
+        <p class="texto-declaracion">{{ declaracionTexto }}</p>
+
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            class="checkbox-nativo"
+            [(ngModel)]="declaracionAceptada"
+            [disabled]="fase === 'finalizando'"
+          />
+          <span>Acepto la declaración jurada anterior.</span>
+        </label>
+
+        <button
+          type="button"
+          class="btn-primario btn-finalizar"
+          [disabled]="!declaracionAceptada || fase === 'finalizando'"
+          (click)="finalizarEvaluacion()"
+        >
+          @if (fase === 'finalizando') {
+            Finalizando...
+          } @else {
+            Finalizar evaluación
+          }
+        </button>
+      </div>
+    </div>
+
+    <!-- Resultado final -->
+    <div class="resultado-wrap" *ngIf="fase === 'resultado' && resultado as res">
+      <div class="resultado-card" [class.aprobado]="res.aprobado" [class.desaprobado]="!res.aprobado">
+        <i class="ti icono-resultado" [class.ti-trophy]="res.aprobado" [class.ti-mood-sad]="!res.aprobado"></i>
+        <h2>{{ res.aprobado ? '¡Aprobado!' : 'No aprobado' }}</h2>
+        <p class="nota-final">Nota final: <strong>{{ res.notaFinal }}</strong></p>
+
+        <div class="evidencia">
+          <p class="evidencia-titulo">Datos de evidencia registrados</p>
+          <ul>
+            <li><strong>Inicio:</strong> {{ res.fechaInicio | date: 'dd/MM/yyyy HH:mm' }}</li>
+            <li><strong>Fin:</strong> {{ res.fechaFin | date: 'dd/MM/yyyy HH:mm' }}</li>
+            <li *ngIf="res.evidencia?.latitud != null">
+              <strong>Ubicación aproximada:</strong>
+              {{ res.evidencia?.latitud }}, {{ res.evidencia?.longitud }}
+              <span *ngIf="res.evidencia?.precisionGpsMetros != null">
+                (±{{ res.evidencia?.precisionGpsMetros }} m)
+              </span>
+            </li>
+            <li *ngIf="res.evidencia?.latitud == null">
+              <strong>Ubicación:</strong> no capturada (permiso no otorgado)
+            </li>
+          </ul>
+        </div>
+
+        <button type="button" class="btn-primario btn-volver" (click)="volverALista()">
+          Volver a cursos
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

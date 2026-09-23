@@ -1,47 +1,105 @@
 <div class="flex flex-col gap-5 max-w-[760px]">
 
-  <!-- Firma actual -->
+  <!-- Firmas registradas. El badge mira si hay ALGUNA; que la que hay no sirva acá es otra cosa y
+       se dice aparte, porque si no el badge y la imagen de abajo se contradicen. -->
   <div class="rounded-lg border p-4 flex flex-col gap-3" style="border-color:var(--color-abril-border)">
     <div class="flex items-center gap-2">
       <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap"
         [ngClass]="{
-          'bg-[#D7FAF4] text-[#009C87]': current,
-          'bg-[#FAD5D4] text-[#D30000]': !current
+          'bg-[#D7FAF4] text-[#009C87]': registrada,
+          'bg-[#FAD5D4] text-[#D30000]': !registrada
         }">
-        {{ current ? 'REGISTRADA' : 'SIN REGISTRAR' }}
+        {{ registrada ? 'REGISTRADA' : 'SIN REGISTRAR' }}
       </span>
       <span class="text-sm text-gray-500">{{ descripcion }}</span>
     </div>
 
-    <div *ngIf="current" class="flex items-center gap-3">
-      <img [src]="current.imageDataUrl" alt="Firma actual"
-        class="h-[90px] w-auto rounded-md border bg-[repeating-conic-gradient(#f3f4f6_0%_25%,#ffffff_0%_50%)] bg-[length:16px_16px]"
-        style="border-color:var(--color-abril-border)" />
+    <p *ngIf="faltaLaQueSePide"
+      class="flex items-start gap-2 text-sm text-[#B45309] bg-[#FEF3C7] rounded-md px-3 py-2">
+      <i class="ti ti-alert-triangle mt-0.5"></i>
+      <span>Acá se pide {{ loQueSePide }}: la que ya tienes registrada no sirve para firmar acá.</span>
+    </p>
+
+    <div *ngIf="firmas.length" class="flex flex-wrap items-start gap-4">
+      <div *ngFor="let f of firmas" class="flex flex-col gap-1">
+        <img [src]="f.imageDataUrl" [alt]="'Firma: ' + etiqueta(f.tipo)"
+          class="h-[90px] w-auto rounded-md border bg-[repeating-conic-gradient(#f3f4f6_0%_25%,#ffffff_0%_50%)] bg-[length:16px_16px]"
+          style="border-color:var(--color-abril-border)" />
+        <span class="text-xs text-gray-500">{{ etiqueta(f.tipo) }}</span>
+      </div>
     </div>
   </div>
 
-  <!-- Dibujar nueva firma -->
-  <div class="flex flex-col gap-2">
+  <!-- Registrar una nueva -->
+  <div *ngIf="tiposOfrecidos.length" class="flex flex-col gap-3">
+
+    <!-- Con una sola forma disponible no se dibuja la tira: sería una pestaña que no lleva a
+         ningún otro lado (mismo criterio que el resto de secciones de la app). -->
+    <app-section-tabs
+      *ngIf="modoTabs.length > 1"
+      [tabs]="modoTabs"
+      [value]="modo"
+      color="var(--color-abril-standard)"
+      (valueChange)="onModoChange($event)">
+    </app-section-tabs>
+
     <label class="text-sm font-medium" style="color:var(--color-abril-standard)">
-      {{ current ? 'Dibujar una nueva firma (reemplaza la actual)' : 'Dibuja tu firma' }}
+      {{ firmaDe(modo)
+          ? (modo === 'IMAGEN'
+              ? 'Subir otra imagen (reemplaza la actual)'
+              : 'Dibujar una nueva firma (reemplaza la actual)')
+          : (modo === 'IMAGEN' ? 'Sube la imagen de tu firma' : 'Dibuja tu firma') }}
     </label>
 
-    <div class="max-w-[600px]">
-      <app-signature-pad #pad (drawingChange)="hasDrawing = $event" />
-    </div>
+    <!-- MODO: subir imagen -->
+    <ng-container *ngIf="modo === 'IMAGEN'">
+      <div class="max-w-[600px]">
+        <app-file-selector
+          *ngIf="!imagenElegida"
+          accept=".png,.jpg,.jpeg,.webp"
+          hint="PNG, JPG o WEBP · máximo 12 MB"
+          color="var(--color-abril-standard)"
+          background="var(--color-abril-standard-light)"
+          (fileSelected)="onImagenSeleccionada($event)" />
 
-    <div class="flex items-center gap-3">
-      <button type="button" (click)="clear()"
+        <div *ngIf="imagenElegida" class="flex items-start gap-3">
+          <img [src]="imagenElegida" alt="Vista previa de la firma"
+            class="h-[90px] w-auto rounded-md border bg-[repeating-conic-gradient(#f3f4f6_0%_25%,#ffffff_0%_50%)] bg-[length:16px_16px]"
+            style="border-color:var(--color-abril-border)" />
+          <div class="flex flex-col gap-1">
+            <span class="text-sm text-gray-600 break-all">{{ imagenNombre }}</span>
+            <button type="button" (click)="quitarImagen()"
+              class="self-start text-xs font-medium text-[#D30000] cursor-pointer hover:underline">
+              Quitar
+            </button>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- MODO: dibujar con el mouse -->
+    <ng-container *ngIf="modo === 'DIBUJO'">
+      <div class="max-w-[600px]">
+        <app-signature-pad #pad (drawingChange)="hasDrawing = $event" />
+      </div>
+    </ng-container>
+
+    <div class="flex items-center gap-3 flex-wrap">
+      <button type="button" (click)="limpiar()"
         class="px-4 py-2 rounded-lg border text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50"
         style="border-color:var(--color-abril-border)">
         Limpiar
       </button>
-      <button type="button" (click)="save()" [disabled]="!hasDrawing"
+      <button type="button" (click)="guardar()" [disabled]="!puedeGuardar"
         class="px-5 py-2 rounded-lg text-white text-sm font-medium cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         style="background:var(--color-abril-standard)">
         Guardar
       </button>
-      <span class="text-xs text-gray-400">Dibuja con el mouse manteniendo presionado el botón izquierdo.</span>
+      <span class="text-xs text-gray-400">
+        {{ modo === 'IMAGEN'
+            ? 'Se ve mejor un PNG con fondo transparente: una foto con fondo blanco se estampa como un recuadro.'
+            : 'Dibuja con el mouse manteniendo presionado el botón izquierdo.' }}
+      </span>
     </div>
   </div>
 

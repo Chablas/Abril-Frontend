@@ -164,6 +164,7 @@
           <th>Área</th>
           <th>Fecha llegada</th>
           <th>Puesto</th>
+          <th>Tipo</th>
           <th>Proyecto / Obra</th>
           <th>Prioridad</th>
           <th>Estado</th>
@@ -173,7 +174,7 @@
       <tbody>
 
         <tr *ngIf="filteredSolicitudes.length === 0">
-          <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
+          <td colspan="9" class="text-center py-[40px] text-gray-400 text-sm">{{ mensajeVacio }}</td>
         </tr>
 
         <tr *ngFor="let s of pagedSolicitudes"
@@ -187,6 +188,21 @@
           <td class="text-gray-500 whitespace-nowrap">{{ s.fechaLlegada | date:'dd/MM/yyyy' }}</td>
 
           <td class="text-gray-700 font-medium">{{ s.puesto | titleCase }}</td>
+
+          <!-- Nuevo o reemplazo, con el mismo formato que en Solicitud de Personal: etiqueta con
+               borde y no badge relleno, para que no se confunda con el estado. El ingreso directo
+               va debajo — es lo otro que cambia el camino de la vacante (se salta la publicación,
+               la long list y las entrevistas). -->
+          <td class="text-center">
+            <ng-container *ngIf="tipoEstilo(s.tipoRequerimientoCodigo) as t">
+              <span class="inline-flex items-center gap-[4px] h-[22px] px-[8px] rounded-full border bg-white text-[11.5px] font-semibold whitespace-nowrap"
+                    [style.color]="t.color" [style.border-color]="t.borde">
+                <i class="ti text-[13px]" [ngClass]="t.icono"></i>
+                {{ s.tipoRequerimiento }}
+              </span>
+            </ng-container>
+            <div *ngIf="s.esFft" class="text-[11px] text-gray-400 mt-[2px] whitespace-nowrap">FFT · Ingreso directo</div>
+          </td>
 
           <td class="text-gray-500">{{ (s.proyectoObra | titleCase) || '—' }}</td>
 
@@ -260,10 +276,23 @@
         {{ (s.area | titleCase) || 'Sin área' }} · {{ (s.proyectoObra | titleCase) || 'Sin proyecto' }}
       </p>
 
-      <!-- Fecha de llegada de la solicitud -->
-      <div class="mt-[9px]">
-        <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Fecha llegada</div>
-        <div class="text-[12px] text-gray-600">{{ s.fechaLlegada | date:'dd/MM/yyyy' }}</div>
+      <!-- Fecha de llegada + tipo (las mismas columnas de la tabla) -->
+      <div class="grid grid-cols-2 gap-x-[10px] gap-y-[7px] mt-[9px]">
+        <div>
+          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Fecha llegada</div>
+          <div class="text-[12px] text-gray-600">{{ s.fechaLlegada | date:'dd/MM/yyyy' }}</div>
+        </div>
+        <div class="min-w-0">
+          <div class="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Tipo</div>
+          <ng-container *ngIf="tipoEstilo(s.tipoRequerimientoCodigo) as t">
+            <span class="inline-flex items-center gap-[4px] h-[20px] mt-[2px] px-[7px] rounded-full border bg-white text-[11px] font-semibold whitespace-nowrap"
+                  [style.color]="t.color" [style.border-color]="t.borde">
+              <i class="ti text-[12px]" [ngClass]="t.icono"></i>
+              {{ s.tipoRequerimiento }}
+            </span>
+          </ng-container>
+          <div *ngIf="s.esFft" class="text-[11px] text-gray-400">FFT · Ingreso directo</div>
+        </div>
       </div>
 
       <!-- Prioridad + acciones (mismas que la columna "Acciones" de la tabla) -->
@@ -314,14 +343,88 @@
   [abrirFormularioCandidatoId]="detalleFormularioCandidatoId"
   (closeModal)="onDetalleCerrado($event)" />
 
-<!-- ── Modal de filtros estándar ────────────────────────────────────────── -->
+<!-- ── Modal de filtros estándar ──────────────────────────────────────────
+     Los desplegables se arman con lo que ya está en la bandeja (ver `armarOpcionesFiltro`): la
+     lista llega entera en la misma petición, así que no hay una segunda llamada para traer
+     catálogos y ninguna opción deja la tabla vacía. Los que no pueden partir la lista no se
+     muestran.
+
+     `rawLabel` en Estado y Tipo: sus etiquetas traen siglas («Ingreso directo (FFT)») y el
+     suavizado que hace el combo por defecto las convertiría en «Fft». -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
   <div class="w-full">
     <app-search-input
-      placeholder="Buscar por código, puesto, área o proyecto..."
+      placeholder="Buscar por código, puesto, tipo, área o proyecto..."
       [(value)]="searchText"
       (valueChange)="onFilterChange()"
       width="100%">
     </app-search-input>
+  </div>
+
+  <div class="w-full" *ngIf="fTipo.visible">
+    <app-search-select
+      label="Tipo"
+      placeholder="Todos los tipos"
+      [options]="fTipo.opciones"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      [rawLabel]="true"
+      [value]="fTipo.valor"
+      (valueChange)="fTipo.valor = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <!-- Estado = la fase del pipeline en la que está parado el requerimiento. -->
+  <div class="w-full" *ngIf="fEstado.visible">
+    <app-search-select
+      label="Estado"
+      placeholder="Todos los estados"
+      [options]="fEstado.opciones"
+      valueField="value"
+      displayField="label"
+      [rawLabel]="true"
+      [value]="fEstado.valor"
+      (valueChange)="fEstado.valor = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full" *ngIf="fArea.visible">
+    <app-search-select
+      label="Área"
+      placeholder="Todas las áreas"
+      [options]="fArea.opciones"
+      valueField="value"
+      displayField="label"
+      [value]="fArea.valor"
+      (valueChange)="fArea.valor = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full" *ngIf="fProyecto.visible">
+    <app-search-select
+      label="Proyecto / Obra"
+      placeholder="Todos los proyectos"
+      [options]="fProyecto.opciones"
+      valueField="value"
+      displayField="label"
+      [value]="fProyecto.valor"
+      (valueChange)="fProyecto.valor = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <!-- Orden del catálogo (Alta → Media → Baja), no alfabético, y con «Sin prioridad» al final:
+       la prioridad la asigna GTH desde la tabla y lo que falta por priorizar se aísla acá. -->
+  <div class="w-full" *ngIf="fPrioridad.visible">
+    <app-search-select
+      label="Prioridad"
+      placeholder="Todas las prioridades"
+      [options]="fPrioridad.opciones"
+      valueField="value"
+      displayField="label"
+      [sortAlpha]="false"
+      [value]="fPrioridad.valor"
+      (valueChange)="fPrioridad.valor = $event; onFilterChange()">
+    </app-search-select>
   </div>
 </app-filter-modal>

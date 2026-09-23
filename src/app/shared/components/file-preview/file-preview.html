@@ -1,7 +1,7 @@
 <!-- Los colores van por [style] y no por clase de Tailwind: `color`/`background`/`iconColor` son
      opcionales y, cuando no se pasan, el binding queda en null y mandan las clases de abajo
      (bg-white + text-red-500), que son el look histórico. -->
-<div *ngFor="let file of files; let i = index"
+<div *ngFor="let file of files; let i = index; trackBy: trackByIndex"
     class="w-full bg-white border rounded-lg p-3 flex items-center justify-between shadow-sm mt-3"
     [style.borderColor]="color"
     [style.background]="background">

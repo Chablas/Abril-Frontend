@@ -2,18 +2,16 @@
 import { CommonModule } from '@angular/common';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { StatusBadge } from '../../../../../../shared/components/status-badge/status-badge';
-import { DraggableImage } from '../../../../../../shared/components/draggable-image/draggable-image';
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
+import { SalidaTrayectosTabla } from '../../../../shared/components/salida-trayectos-tabla/salida-trayectos-tabla';
+import { DocumentoEmbebido } from '../../../../shared/components/documento-embebido/documento-embebido';
 import { reembolsoColors } from '../../../../shared/dtos/rendicion-shared.dto';
-import {
-  GestionSalidaDetalleDto,
-  GestionSalidaTrayectoDto,
-} from '../../dtos/gestion-salida.dto';
+import { GestionSalidaDetalleDto } from '../../dtos/gestion-salida.dto';
 
 @Component({
   standalone: true,
   selector: 'app-gestion-salida-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, DraggableImage, TitleCasePipe],
+  imports: [CommonModule, BaseModal, StatusBadge, SalidaTrayectosTabla, TitleCasePipe, DocumentoEmbebido],
   templateUrl: './gestion-salida-detalle-modal.html',
 })
 export class GestionSalidaDetalleModal {
@@ -47,12 +45,16 @@ export class GestionSalidaDetalleModal {
       || (this.detalle.estadoAprobacion === 'Aprobado' && this.detalle.estadoRendicion === 'No rendido');
   }
 
+  /**
+   * Lo que esta salida va a rendir: suma SOLO los trayectos que generan reembolso. Los que no
+   * (motivo no reembolsable, motivo libre o recorrido excluido) no entran en la planilla, así que
+   * sumarlos acá anunciaría un monto que el PDF no va a traer. Cada trayecto sigue mostrando su
+   * propio monto en su fila, con el pill que dice si tiene reembolso o no.
+   */
   get totalGeneral(): number {
-    return this.detalle.trayectos.reduce((acc, t) => acc + (t.montoTotal || 0), 0);
-  }
-
-  totalCapturas(t: GestionSalidaTrayectoDto): number {
-    return t.capturas.reduce((acc, c) => acc + (c.monto || 0), 0);
+    return this.detalle.trayectos
+      .filter((t) => t.esReembolsable === true)
+      .reduce((acc, t) => acc + (t.montoTotal || 0), 0);
   }
 
   cerrar(): void {

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
+import { SearchInput } from '../../../../../../shared/components/search-input/search-input';
 import { RoleFeatureService } from '../../services/role.service';
 import { RoleDto } from '../../dtos/role.model';
 import { FeatureDto } from '../../dtos/feature.model';
@@ -131,15 +132,13 @@ export class RoleEdit implements OnInit {
    *  o por featureKey crudo). El contador de cada header usa `allItems` (estable, no
    *  afectado por la búsqueda); las filas renderizadas usan `items` (filtradas). */
   get visibleGroups(): ModuleGroup[] {
-    const term = this.searchTerm.trim().toLowerCase();
+    const term = this.searchTerm.trim();
     return this.groups
       .filter((g) => this.selectedModuleId === null || g.moduleId === this.selectedModuleId)
       .map((g) => ({
         ...g,
         items: term
-          ? g.allItems.filter(
-              (f) => f.label.toLowerCase().includes(term) || f.featureKey.toLowerCase().includes(term),
-            )
+          ? g.allItems.filter((f) => SearchInput.matches(`${f.label} ${f.featureKey}`, term))
           : g.allItems,
       }))
       .filter((g) => g.items.length > 0);

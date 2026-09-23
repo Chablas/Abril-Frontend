@@ -31,6 +31,7 @@ export class PenalidadesCatalogos implements OnInit {
   // ── Formulario de infracción (crear/editar) ─────────────────────
   editandoInfraccionId: number | null = null;
   infNombre = '';
+  infCategoria = '';
   infFactorUit: number | null = null;
   infMontoFijo: number | null = null;
   infDescripcion = '';
@@ -75,9 +76,22 @@ export class PenalidadesCatalogos implements OnInit {
 
   // ── Infracciones ─────────────────────────────────────────────────
 
+  readonly CATEGORIA_OPCIONES = [
+    { value: 'Falta', label: 'Falta leve — 5% UIT' },
+    { value: 'Menor', label: 'Infracción menor — 89% UIT' },
+    { value: 'Moderada', label: 'Infracción moderada — 392% UIT' },
+    { value: 'Grave', label: 'Infracción grave — 525% UIT' },
+    { value: 'MuyGrave', label: 'Infracción muy grave — sin monto (rescisión de contrato)' },
+  ];
+
+  categoriaLabel(categoria?: string): string {
+    return this.CATEGORIA_OPCIONES.find((o) => o.value === categoria)?.label ?? (categoria ?? '—');
+  }
+
   nuevaInfraccion(): void {
     this.editandoInfraccionId = null;
     this.infNombre = '';
+    this.infCategoria = '';
     this.infFactorUit = null;
     this.infMontoFijo = null;
     this.infDescripcion = '';
@@ -88,6 +102,7 @@ export class PenalidadesCatalogos implements OnInit {
   editarInfraccion(i: InfraccionAdminDto): void {
     this.editandoInfraccionId = i.id;
     this.infNombre = i.nombre;
+    this.infCategoria = i.categoria ?? '';
     this.infFactorUit = i.factorUit ?? null;
     this.infMontoFijo = i.montoFijo ?? null;
     this.infDescripcion = i.descripcion ?? '';
@@ -104,6 +119,7 @@ export class PenalidadesCatalogos implements OnInit {
     this.guardandoInfraccion = true;
     const req = {
       nombre: this.infNombre.trim(),
+      categoria: this.infCategoria || undefined,
       factorUit: this.infFactorUit ?? undefined,
       montoFijo: this.infMontoFijo ?? undefined,
       descripcion: this.infDescripcion || undefined,

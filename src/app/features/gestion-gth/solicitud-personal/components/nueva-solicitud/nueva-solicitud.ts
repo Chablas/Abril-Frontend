@@ -31,9 +31,9 @@ import {
   ReclutamientoFormDataDto,
   SolicitudPersonalCreateDto,
   TIPO_DOCUMENTO_DNI,
-  TIPO_REQUERIMIENTO_REEMPLAZO,
   VacanteCreateDto,
 } from '../../dtos/solicitud-personal.dto';
+import { TIPO_REQUERIMIENTO_REEMPLAZO } from '../../../shared/tipo-requerimiento';
 
 /** Estado en memoria de una vacante del formulario. */
 interface VacanteForm {

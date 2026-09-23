@@ -52,7 +52,11 @@
 .paginator-wrapper { padding:.75rem 1rem; border-top:1px solid #f3f4f6; }
 
 /* Row actions */
+/* Celda de adjuntos: puede haber varios certificados por descanso, así que se le quita el
+   overflow:hidden/nowrap heredado de .abril-table td y se permite envolver en varias líneas. */
+.col-adjuntos    { overflow:visible; white-space:normal; }
+.adjuntos-row    { display:flex; flex-wrap:wrap; gap:2px; }
 /* Es un <button> (el certificado lo pide al backend, no es un enlace) sin chrome nativo. */
-.row-action      { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:5px; color:#6b7280; background:none; border:0; padding:0; cursor:pointer; transition:background .12s, color .12s; }
+.row-action      { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:5px; color:#6b7280; background:none; border:0; padding:0; cursor:pointer; transition:background .12s, color .12s; flex-shrink:0; }
 .btn-link-icon:hover { background:#eff6ff; color:#2563eb; }
 .row-action:disabled { opacity:.5; cursor:default; background:none; }

@@ -13,17 +13,22 @@
   <div class="filters-card" *ngIf="filtroTipo !== 'INDUCCION'">
     <input class="filter-input" type="text" placeholder="Nombre…"
       [(ngModel)]="filtroTexto" (ngModelChange)="onFilter()" />
-    <select class="filter-input" [(ngModel)]="filtroEmpresa">
-      <option value="">Todas las empresas</option>
-      <option *ngFor="let e of empresasDisponibles" [value]="e">{{ e }}</option>
-    </select>
+    <app-search-select
+      [options]="empresasList"
+      valueField="id"
+      displayField="nombre"
+      [showLabel]="false"
+      placeholder="Buscar empresa..."
+      [value]="filtroEmpresaId"
+      (valueChange)="filtroEmpresaId = $event; loadItems(1)"
+    ></app-search-select>
     <select class="filter-input" [(ngModel)]="filtroProyectoId" (change)="loadItems(1)">
       <option [ngValue]="null">Todos los proyectos</option>
       <option *ngFor="let p of catalogoProyectos" [ngValue]="p.id">{{ p.nombre }}</option>
     </select>
-    <select class="filter-input" [(ngModel)]="filtroEntregable">
+    <select class="filter-input" [(ngModel)]="filtroEntregable" (change)="loadItems(1)">
       <option value="">Todos los entregables</option>
-      <option *ngFor="let e of entregablesDisponibles" [value]="e">{{ e }}</option>
+      <option *ngFor="let e of entregablesList" [value]="e">{{ e }}</option>
     </select>
     <select class="filter-input" [(ngModel)]="filtroResponsable" (change)="onFilter()">
       <option value="">Todos los responsables</option>
@@ -87,6 +92,7 @@
               <span class="bc-fecha" *ngIf="item.vigencia">Vence: {{ item.vigencia | date:'dd/MM/yyyy' }}</span>
             </div>
             <div class="bc-entregable">{{ item.nombreEntregable }}</div>
+            <span class="bc-fecha-envio" *ngIf="item.fechaEnvio">Subido: {{ item.fechaEnvio | date:'dd/MM/yyyy' }}</span>
             <span *ngIf="item.esMensual && item.mesesPendientes && item.mesesPendientes > 1"
               class="btn-chip chip-orange"
               style="font-size:0.68rem;margin-top:2px">
@@ -158,6 +164,14 @@
             <span *ngIf="!puedeAprobarItemActual"
               style="font-size:0.82rem;color:#374151">
               {{ vigenciaEditable ? (vigenciaEditable | date:'dd/MM/yyyy') : '—' }}
+            </span>
+          </div>
+
+          <!-- Fecha de envío (informativa) -->
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <label style="font-size:0.78rem;color:#6b7280;font-weight:600">ENVIADO</label>
+            <span style="font-size:0.82rem;color:#374151">
+              {{ selectedItem.fechaEnvio ? (selectedItem.fechaEnvio | date:'dd/MM/yyyy') : '—' }}
             </span>
           </div>
 

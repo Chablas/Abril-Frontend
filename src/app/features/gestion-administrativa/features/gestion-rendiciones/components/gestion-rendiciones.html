@@ -1,7 +1,7 @@
 <app-abril-page-header
   [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
   titulo="Gestión de Rendiciones"
-  subtitulo="Primera revisión, reembolso y firma de las planillas de rendición."
+  subtitulo="Primera revisión de las planillas y Consolidado del S10."
   [tabs]="tabs"
   [botonSecundario]="botonConfiguracion"
   (secondaryClick)="abrirConfiguracion()">
@@ -13,7 +13,7 @@
 
   <!-- ── Tarjetas de resumen ───────────────────────────────────────────────
        Se cuentan sobre el mismo conjunto que muestra la tabla, así que acompañan a los filtros.
-       Son los tres estados del flujo que esperan al revisor. -->
+       Son los dos pasos que esta pantalla resuelve; el reembolso se cuenta en Consolidados. -->
   <div class="resumen-cards">
     <div class="resumen-card resumen-card--primary">
       <span class="resumen-card__label">1.ª revisión</span>
@@ -24,11 +24,6 @@
       <span class="resumen-card__label">Sin consolidado</span>
       <span class="resumen-card__value">{{ resumen.sinConsolidado }}</span>
       <span class="resumen-card__hint">Aprobadas, esperan el S10</span>
-    </div>
-    <div class="resumen-card resumen-card--info">
-      <span class="resumen-card__label">2.ª revisión</span>
-      <span class="resumen-card__value">{{ resumen.porRevisar }}</span>
-      <span class="resumen-card__hint">Reembolsos por decidir</span>
     </div>
   </div>
 
@@ -46,7 +41,7 @@
       [disabled]="!puedeDecidirPrimeraRevision"
       [title]="primeraRevisionBloqueada
         ? 'No puedes revisar una rendición con tus propias salidas — deselecciónala'
-        : 'Aprobar la primera revisión habilita al trabajador a cargar el Consolidado del S10'">
+        : 'Aprobar la primera revisión habilita al consolidador a cargar el Consolidado del S10'">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
       </svg>
@@ -68,13 +63,19 @@
       Observar 1.ª revisión<span *ngIf="puedeDecidirPrimeraRevision"> ({{ selectedPorPrimeraRevision.length }})</span>
     </button>
 
-    <span class="w-px h-5 bg-[#E5E7EB] mx-1"></span>
-
     <!-- Consolidado del S10: uno solo para todas las seleccionadas que ya pasaron la primera
-         revisión, aunque sean de trabajadores distintos (siempre de una misma razón social). -->
+         revisión, aunque sean de trabajadores y razones sociales distintos. Solo para el
+         consolidador: la jefatura revisa, no consolida.
+
+         Va a la derecha (`ml-auto`), separado de los dos botones de la primera revisión: es el
+         paso siguiente del flujo y el ÚNICO lugar desde donde se adjunta, porque un consolidado
+         puede cubrir varias planillas y ofrecerlo además fila por fila invitaba a cargar uno por
+         cada una. -->
     <button
+      *ngIf="esConsolidador"
       type="button"
       abrilBulkAction="default"
+      class="ml-auto"
       (click)="abrirConsolidadoSeleccion()"
       [disabled]="consolidadoSeleccionBloqueo !== null"
       [title]="consolidadoSeleccionBloqueo ?? 'Adjuntar un solo Consolidado del S10 para las rendiciones seleccionadas'">
@@ -85,36 +86,6 @@
       Consolidado S10<span *ngIf="consolidadoSeleccionBloqueo === null"> ({{ selectedConsolidables.length }})</span>
     </button>
 
-    <span class="w-px h-5 bg-[#E5E7EB] mx-1"></span>
-
-    <button
-      type="button"
-      abrilBulkAction="default"
-      (click)="aprobarBulk()"
-      [disabled]="!puedeDecidir"
-      [title]="decisionBloqueada
-        ? 'No puedes decidir el reembolso de tus propias salidas — deselecciona esas planillas'
-        : 'Aprobar estampa tu firma en la planilla y en su Consolidado del S10'">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-      </svg>
-      Aprobar reembolso<span *ngIf="puedeDecidir"> ({{ selectedPorDecidir.length }})</span>
-    </button>
-
-    <button
-      type="button"
-      abrilBulkAction="danger"
-      (click)="observarBulk()"
-      [disabled]="!puedeDecidir"
-      [title]="decisionBloqueada
-        ? 'No puedes decidir el reembolso de tus propias salidas — deselecciona esas planillas'
-        : 'Se te pedirá una observación para que el trabajador sepa qué corregir'">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5">
-        <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
-        <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
-      </svg>
-      Observar reembolso<span *ngIf="puedeDecidir"> ({{ selectedPorDecidir.length }})</span>
-    </button>
   </div>
 
   <!-- ── Tabla ─────────────────────────────────────────────────────────── -->
@@ -192,55 +163,62 @@
               [title]="primeraRevisionTitle(r)" />
           </td>
 
+          <!-- Un chip por documento, no dos: apenas llega la firma, la copia firmada ocupa el
+               lugar del original —el check la distingue— y es la única que se abre. -->
           <td (click)="$event.stopPropagation()">
             <div class="flex flex-wrap items-center gap-[6px]">
-              <a class="doc-chip" [href]="r.pdfUrl" target="_blank" rel="noopener noreferrer"
-                 [title]="r.pdfFilename">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <a class="doc-chip" [href]="r.pdfFirmadoUrl ?? r.pdfUrl" target="_blank" rel="noopener noreferrer"
+                 [title]="planillaChipTitle(r)">
+                <svg *ngIf="r.pdfFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg *ngIf="!r.pdfFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
                   <path d="M14 2v6h6" stroke-linejoin="round"/>
                 </svg>
-                Planilla
+                {{ r.pdfFirmadoUrl ? 'Planilla firmada' : 'Planilla' }}
               </a>
 
               <!-- Un consolidado puede cubrir varias rendiciones: el "+N" dice con cuántas otras
                    comparte el documento y el título cuáles son. -->
-              <a *ngIf="r.consolidadoS10; else sinConsolidado"
-                 class="doc-chip" [href]="r.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
+              <a *ngIf="r.consolidadoS10 as c; else sinConsolidado"
+                 class="doc-chip" [href]="c.pdfFirmadoUrl ?? c.pdfUrl" target="_blank" rel="noopener noreferrer"
                  [title]="consolidadoChipTitle(r)">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg *ngIf="c.pdfFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg *ngIf="!c.pdfFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
                   <path d="M14 2v6h6" stroke-linejoin="round"/>
                 </svg>
-                S10 ✓<span *ngIf="otrasDelConsolidado(r).length"> +{{ otrasDelConsolidado(r).length }}</span>
+                {{ consolidadoChipLabel(r) }}<span *ngIf="otrasDelConsolidado(r).length"> +{{ otrasDelConsolidado(r).length }}</span>
               </a>
+              <!-- La planilla grupal del consolidado: el gasto de todas sus planillas en un solo
+                   documento. La arma Abril One al adjuntarse el S10; ya firmada, abre esa copia. -->
+              <a *ngIf="r.consolidadoS10?.planillaGrupalFirmadoUrl ?? r.consolidadoS10?.planillaGrupalUrl as grupal"
+                 class="doc-chip" [href]="grupal" target="_blank" rel="noopener noreferrer"
+                 [title]="r.consolidadoS10?.planillaGrupalFirmadoUrl
+                   ? (r.consolidadoS10?.planillaGrupalFirmadoFilename ?? 'Planilla grupal firmada')
+                   : (r.consolidadoS10?.planillaGrupalFilename ?? 'Planilla grupal')">
+                <svg *ngIf="r.consolidadoS10?.planillaGrupalFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <svg *ngIf="!r.consolidadoS10?.planillaGrupalFirmadoUrl" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                  <path d="M14 2v6h6" stroke-linejoin="round"/>
+                </svg>
+                Planilla grupal
+              </a>
+
               <ng-template #sinConsolidado>
                 <span class="doc-chip doc-chip--pendiente"
                       [title]="r.estadoPrimeraRevision === 'Aprobada'
-                        ? 'El trabajador todavía no adjuntó el Consolidado del S10'
+                        ? 'Todavía no se adjunta el Consolidado del S10'
                         : 'El Consolidado del S10 se habilita al aprobar la primera revisión'">
                   {{ r.estadoPrimeraRevision === 'Aprobada' ? 'S10 pendiente' : 'S10 no habilitado' }}
                 </span>
               </ng-template>
 
-              <!-- Las dos copias que deja la aprobación: aprobar firma los dos documentos. -->
-              <a *ngIf="r.pdfFirmadoUrl"
-                 class="doc-chip" [href]="r.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
-                 [title]="'Planilla firmada el ' + (r.firmadoAt | date:'dd/MM/yyyy HH:mm')">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Planilla firmada
-              </a>
-
-              <a *ngIf="r.consolidadoS10?.pdfFirmadoUrl as firmado"
-                 class="doc-chip" [href]="firmado" target="_blank" rel="noopener noreferrer"
-                 [title]="'Consolidado del S10 firmado el ' + (r.consolidadoS10?.firmadoAt | date:'dd/MM/yyyy HH:mm')">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                S10 firmado
-              </a>
             </div>
           </td>
 
@@ -290,27 +268,11 @@
                 </button>
               </ng-container>
 
-              <!-- Adjuntar el consolidado en nombre de los trabajadores. Solo con la primera revisión
-                   aprobada y hasta que el reembolso se decida, y solo para quien está habilitado a
-                   consolidar por esos trabajadores (Configuración → Consolidadores). Si ya hay uno
-                   compartido con otras rendiciones abiertas, se reemplaza para todas. -->
-              <button
-                *ngIf="r.puedeAdjuntarConsolidado"
-                type="button"
-                (click)="abrirConsolidado(r, $event)"
-                [disabled]="!r.puedeConsolidar"
-                [title]="consolidadoTitle(r)"
-                class="inline-flex items-center gap-[6px] whitespace-nowrap cursor-pointer rounded-[7px] px-3 py-1.5 text-xs font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style="background:var(--color-abril-standard)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-                  <path d="M14 2v6h6" stroke-linejoin="round"/>
-                </svg>
-                {{ r.consolidadoS10 ? 'Consolidado S10 ✓' : 'Consolidado S10' }}
-              </button>
+              <!-- El Consolidado del S10 NO se adjunta desde la fila: cubre a todas las planillas
+                   seleccionadas de una vez y vive en la barra de arriba. Repetirlo acá hacía que
+                   se cargara uno por planilla cuando lo que corresponde es uno solo. -->
 
-              <span *ngIf="!r.porPrimeraRevision && !r.puedeAdjuntarConsolidado"
-                    class="text-gray-300">—</span>
+              <span *ngIf="!r.porPrimeraRevision" class="text-gray-300">—</span>
             </div>
           </td>
         </tr>
@@ -324,26 +286,19 @@
 <app-gestion-rendicion-detalle-modal
   *ngIf="detalleId !== null"
   [rendicionId]="detalleId"
+  (consolidar)="abrirConsolidadoDesdeDetalle($event)"
   (close)="cerrarDetalle($event)" />
 
 <!-- ── Modal del Consolidado del S10 ─────────────────────────────────── -->
 <app-consolidado-s10-modal
   *ngIf="consolidadoPara as objetivo"
   [upload]="subirConsolidado"
-  [actual]="objetivo.actual"
   [referencia]="objetivo.referencia"
   [rendiciones]="objetivo.codigos"
-  [razonSocial]="objetivo.razonSocial"
+  [razonSocial]="razonSocialConsolidador"
+  [avisosJefatura]="avisosConsolidado"
   [montoEsperado]="objetivo.monto"
   (close)="cerrarConsolidado($event)" />
-
-<!-- ── Modal para registrar la firma la primera vez ────────────────────
-     Salta con el 409 de "Firmar": el usuario dibuja su firma sin salir de la pantalla y la firma
-     que había pedido se reintenta sola. -->
-<app-firma-registrar-modal
-  *ngIf="firmaModalAbierto"
-  (guardada)="onFirmaRegistrada()"
-  (cerrar)="cerrarFirmaModal()" />
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">

@@ -50,6 +50,11 @@ export interface SolicitudSalidaDetalleDto {
   id: number;
   /** Código SOL-AAAA-NNNN. Null solo en solicitudes anteriores a la columna. */
   codigo: string | null;
+  /**
+   * Dueño de la salida. Lo muestra el modal en consulta (Gestión de Rendiciones, Consolidados y
+   * Reembolsos); en Solicitud de Salidas es el propio usuario y no se imprime.
+   */
+  trabajador: string | null;
   fechaSalida: string;
   estadoAprobacion: string;
   estadoRendicion: string;
@@ -69,7 +74,7 @@ export interface SolicitudSalidaDetalleDto {
 
   /**
    * True si la salida está lista para rendirse: aprobada, no rendida, con todos sus trayectos
-   * cubiertos, con motivo reembolsable y dentro del plazo. Es el mismo `aptaParaRendir` de la fila
+   * reembolsables cubiertos y dentro del plazo. Es el mismo `aptaParaRendir` de la fila
    * del listado —lo calcula el backend— para que el botón "Rendir" del detalle y el de la columna
    * de acciones no puedan discrepar.
    */

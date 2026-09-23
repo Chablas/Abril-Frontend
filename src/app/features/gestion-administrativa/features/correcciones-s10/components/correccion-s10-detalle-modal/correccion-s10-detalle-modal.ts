@@ -9,13 +9,21 @@ import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { CorreccionesS10Service } from '../../services/correcciones-s10.service';
-import { CorreccionS10ListItemDto } from '../../dtos/correccion-s10.dto';
+import { CorreccionS10DetalleDto, CorreccionS10SalidaDto } from '../../dtos/correccion-s10.dto';
 import { confirmarConCorreos, pedirAvisos } from '../../../../shared/confirmar-correos';
-import { correccionS10Colors } from '../../../../shared/dtos/rendicion-shared.dto';
+import {
+  correccionS10Colors,
+  reembolsoColors,
+  reembolsoLabelCorto,
+} from '../../../../shared/dtos/rendicion-shared.dto';
+import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
+import { DocumentoEmbebido } from '../../../../shared/components/documento-embebido/documento-embebido';
 
 /**
- * Detalle de una corrección del S10 para el Coordinador ERP: el número de reembolso con el que ubica el registro,
- * qué observó la jefatura, qué le pide el colaborador y los dos PDF para contrastar.
+ * Detalle de una corrección del S10 para el Coordinador ERP: el número de reembolso con el que ubica
+ * el registro, qué observó la jefatura, qué le pide el consolidador, los documentos a la vista para
+ * contrastar y las rendiciones que cubre el consolidado, con el ojo de cada salida para ver sus
+ * trayectos.
  *
  * Trae también el check de atención porque el correo abre directo acá: si el botón viviera solo en
  * la tabla, el enlace del correo dejaría al Coordinador mirando sin poder resolver.
@@ -23,7 +31,7 @@ import { correccionS10Colors } from '../../../../shared/dtos/rendicion-shared.dt
 @Component({
   standalone: true,
   selector: 'app-correccion-s10-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe],
+  imports: [CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaDetalleModal, DocumentoEmbebido],
   templateUrl: './correccion-s10-detalle-modal.html',
 })
 export class CorreccionS10DetalleModal implements OnInit {
@@ -32,7 +40,13 @@ export class CorreccionS10DetalleModal implements OnInit {
   /** Emite true si algo cambió (hay que recargar la tabla de atrás), false si solo se cerró. */
   @Output() close = new EventEmitter<boolean>();
 
-  detalle: CorreccionS10ListItemDto | null = null;
+  detalle: CorreccionS10DetalleDto | null = null;
+
+  /** Salida cuyo detalle (el ojo de la tabla) está abierto. null = cerrado. */
+  salidaId: number | null = null;
+
+  /** El detalle de la salida en consulta, con el endpoint y el alcance de esta bandeja. */
+  readonly cargarSalida = (id: number) => this.service.getSalidaDetalle(id);
 
   private huboCambios = false;
 
@@ -67,66 +81,51 @@ export class CorreccionS10DetalleModal implements OnInit {
     this.close.emit(this.huboCambios);
   }
 
+  /** Las salidas de una de las rendiciones que cubre el consolidado. */
+  salidasDe(rendicionId: number): CorreccionS10SalidaDto[] {
+    return this.detalle?.salidas.filter((s) => s.rendicionId === rendicionId) ?? [];
+  }
+
+  verSalida(solicitudId: number): void {
+    this.salidaId = solicitudId;
+  }
+
+  cerrarSalida(): void {
+    this.salidaId = null;
+    this.cdr.detectChanges();
+  }
+
   /**
-   * El check de confirmación (RG-22): la corrección ya se hizo en el S10. Se pregunta aparte si el
-   * registro se ANULÓ, porque eso cambia lo que el colaborador tiene que hacer después — con una
-   * anulación necesita un número de reembolso nuevo y el anterior queda bloqueado al recargar el
-   * consolidado.
+   * El check de confirmación (RG-22): la corrección ya se hizo en el S10, y el consolidador queda
+   * avisado para recargar el consolidado. Lo único que se pide es un comentario opcional, así que
+   * va en la MISMA confirmación que los correos.
    */
   async atender(): Promise<void> {
     const d = this.detalle;
     if (!d?.porAtender) return;
 
-    const { value, isConfirmed } = await Swal.fire<{ anulada: boolean; comentario: string }>({
-      icon: 'question',
-      title: '¿Marcar como atendida?',
-      html: `
-        <div style="text-align:left;color:#4B5563">
-          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin-bottom:10px">
-            <input type="checkbox" id="ga-reembolso-anulado" style="margin-top:3px;accent-color:#C2410C">
-            <span>
-              El registro del S10 se <b>anul&oacute;</b>: hace falta un n&uacute;mero de reembolso nuevo.
-              ${d.numeroReembolso ? `<br><span style="font-size:12px;color:#6B7280">Reembolso actual: ${d.numeroReembolso}</span>` : ''}
-            </span>
-          </label>
-          <label for="ga-comentario" style="display:block;font-size:13px;margin-bottom:4px">
-            Comentario (opcional)
-          </label>
-          <textarea id="ga-comentario" class="swal2-textarea" style="margin:0;width:100%"
-                    placeholder="Qu&eacute; hiciste en el S10&hellip;"></textarea>
-        </div>`,
-      showCancelButton: true,
-      confirmButtonText: 'Sí, marcar como atendida',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0F6E56',
-      preConfirm: () => ({
-        anulada: (document.getElementById('ga-reembolso-anulado') as HTMLInputElement)?.checked ?? false,
-        comentario: (document.getElementById('ga-comentario') as HTMLTextAreaElement)?.value ?? '',
-      }),
-    });
-    if (!isConfirmed || !value) return;
-
-    // El preview va después del formulario: el diálogo anterior ya pide dos datos y meterle
-    // además la lista de correos lo volvía ilegible.
-    const avisos = await pedirAvisos(this.service.correoPreview([d.id]));
-    const { isConfirmed: confirmado } = await confirmarConCorreos({
-      titulo: 'Confirmar',
-      avisos,
+    const { isConfirmed, value } = await confirmarConCorreos({
+      titulo: '¿Marcar como atendida?',
+      avisos: await pedirAvisos(this.service.correoPreview([d.id])),
       sinNadie: 'Se marca igual, pero sin aviso por correo: está apagado en Configuración → Correos.',
-      confirmButtonText: 'Confirmar',
+      confirmButtonText: 'Sí, marcar como atendida',
+      observacion: {
+        label: 'Comentario (opcional)',
+        placeholder: 'Qué hiciste en el S10…',
+        obligatoria: false,
+      },
     });
-    if (!confirmado) return;
+    if (!isConfirmed) return;
 
     this.loader.show();
     this.service.atender({
       correccionIds: [d.id],
-      comentarioAtencion: value.comentario?.trim() || null,
-      numeroReembolsoAnulado: value.anulada,
+      comentarioAtencion: (value as string)?.trim() || null,
     }).subscribe({
       next: (res) => {
         this.loader.hide();
         Swal.fire({ icon: 'success', title: res.message, timer: 2600, showConfirmButton: false });
-        // Se cierra: la pelota pasó al colaborador y ya no hay nada que hacerle desde acá.
+        // Se cierra: la pelota pasó al consolidador y ya no hay nada que hacerle desde acá.
         this.close.emit(true);
       },
       error: (err: HttpErrorResponse) => {
@@ -138,4 +137,6 @@ export class CorreccionS10DetalleModal implements OnInit {
   }
 
   readonly correccionS10Colors = correccionS10Colors;
+  readonly reembolsoColors = reembolsoColors;
+  readonly reembolsoLabelCorto = reembolsoLabelCorto;
 }

@@ -47,7 +47,7 @@ export class Dashboard implements OnInit {
    */
   readonly centroAprendizaje: Highlight = {
     titulo: 'CENTRO DE APRENDIZAJE',
-    descripcion: '<strong>Videos y guías</strong> para dominar cada módulo a tu ritmo.',
+    descripcion: '<strong>Videos y manuales</strong> para dominar cada módulo a tu ritmo.',
     img: '/images/inicio/perro-centro-de-aprendizaje.png',
   };
 

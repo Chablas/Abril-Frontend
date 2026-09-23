@@ -109,7 +109,16 @@ export class GthRevisionLongList implements OnInit {
   }
 
   get puedeEnviar(): boolean {
-    return this.todosDecididos && !this.enviando;
+    return this.todosDecididos && !this.enviando && !this.soloConsulta;
+  }
+
+  /**
+   * true cuando ya no queda nada por decidir: la long list llega entera y de solo lectura. Pasa al
+   * volver a abrir el enlace del correo después de haber respondido. También lo es para quien
+   * pertenece al área sin ser jefatura (`puedeGestionar`).
+   */
+  get soloConsulta(): boolean {
+    return this.revision?.yaDecidida === true;
   }
 
   seleccionar(c: CandidatoRevision): void {
@@ -126,6 +135,7 @@ export class GthRevisionLongList implements OnInit {
   }
 
   aprobar(c: CandidatoRevision): void {
+    if (this.soloConsulta) return;
     // Toggle: si ya estaba aprobado, vuelve a pendiente; si no, queda aprobado.
     if (this.esAprobado(c)) this.decisiones.delete(c.candidatoId);
     else this.decisiones.set(c.candidatoId, true);
@@ -133,6 +143,7 @@ export class GthRevisionLongList implements OnInit {
   }
 
   rechazar(c: CandidatoRevision): void {
+    if (this.soloConsulta) return;
     if (this.esRechazado(c)) this.decisiones.delete(c.candidatoId);
     else this.decisiones.set(c.candidatoId, false);
     this.marcarModalModificado();
@@ -201,13 +212,25 @@ export class GthRevisionLongList implements OnInit {
             confirmButtonText: 'Entendido',
             confirmButtonColor: '#005D9D',
           });
+        } else if (res.aprobados === 0) {
+          // Rechazó a todos estos CVs pero el proceso sigue: eran un envío adicional y quedan
+          // candidatos de antes en evaluación. GTH no tiene que preparar nada nuevo.
+          Swal.fire({
+            icon: 'info',
+            title: 'Decisión registrada',
+            text:
+              'Rechazaste a los candidatos de este envío. El proceso continúa con los que ya ' +
+              'estaban en evaluación.',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#005D9D',
+          });
         } else {
           Swal.fire({
             icon: 'success',
-            title: 'Long list enviada',
+            title: 'Decisión enviada',
             text:
-              'La long list ha sido enviada a GTH. El estado cambió de Pendiente a Enviado y ' +
-              'GTH continuará con la evaluación de los candidatos aprobados.',
+              'Tu decisión ha sido enviada a GTH, que continuará con la evaluación de los ' +
+              'candidatos aprobados.',
             confirmButtonText: 'Entendido',
             confirmButtonColor: '#005D9D',
           });

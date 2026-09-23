@@ -1,0 +1,28 @@
+<div class="slide-om">
+  <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+
+  <h2 class="enunciado anim-cascada-titulo">{{ config.enunciado }}</h2>
+
+  <div class="opciones anim-cascada-cuerpo">
+    <button
+      type="button"
+      class="opcion"
+      *ngFor="let op of config.opciones"
+      [class.seleccionada]="seleccionId === op.id"
+      [disabled]="confirmado"
+      (click)="elegir(op.id)"
+    >
+      <img *ngIf="op.imagenUrl" [src]="op.imagenUrl" class="opcion-img" alt="" />
+      <span class="opcion-texto">{{ op.texto }}</span>
+    </button>
+  </div>
+
+  <button
+    type="button"
+    class="btn-primario btn-confirmar anim-cascada-control"
+    [disabled]="seleccionId === null || confirmado"
+    (click)="confirmar()"
+  >
+    Confirmar respuesta
+  </button>
+</div>

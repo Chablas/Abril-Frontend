@@ -19,6 +19,7 @@ import {
   VecinoLicenciaVisitaCreateDTO,
   VecinoLicenciaFechasUpdateDTO,
   VecinoLicenciaDashboardResponseDTO,
+  VecinoLicenciaLogoDTO,
 } from '../dtos/control-licencias.dto';
 
 @Injectable({ providedIn: 'root' })
@@ -181,6 +182,15 @@ export class ControlLicenciasService {
     return this.http.get<VecinoLicenciaDashboardResponseDTO>(`${this.apiUrl}/dashboard`, {
       headers: this.authHeaders(),
       params: this.projectIdsParams(projectIds),
+    });
+  }
+
+  /** Sube/reemplaza el logo del proyecto, para el encabezado del PDF de Control de Licencias. */
+  uploadLogo(projectId: number, file: File): Observable<VecinoLicenciaLogoDTO> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<VecinoLicenciaLogoDTO>(`${this.apiUrl}/proyectos/${projectId}/logo`, formData, {
+      headers: this.authHeaders(),
     });
   }
 

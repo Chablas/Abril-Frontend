@@ -194,6 +194,18 @@
   display: flex;
   gap: 0;
   padding: 0;
+  /* Cuando las pestañas no entran en el ancho disponible se pasan a una SEGUNDA FILA, en vez de
+     partir cada etiqueta en dos renglones. Eso último era el comportamiento por defecto —la nav
+     no envolvía, así que las pestañas se encogían y el texto se partía adentro— y dejaba la barra
+     al doble de alto con las pestañas cortas ("Consolidados", "Reembolsos") flotando en el medio
+     y hueco en blanco arriba y abajo. Con el wrap la barra ocupa lo mismo, pero lleno de
+     pestañas legibles y con cada etiqueta de corrido.
+
+     El ancho disponible no depende solo de la pantalla: con el sidebar desplegado la misma
+     ventana deja ~200px menos, y por eso la misma página envuelve o no según el sidebar. */
+  flex-wrap: wrap;
+  min-width: 0;
+  row-gap: 2px;
 }
 .abril-tabs__extra {
   display: flex;
@@ -215,6 +227,9 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  /* La etiqueta entera en una línea: partirla es justo lo que evita el wrap de la nav. */
+  white-space: nowrap;
+  flex-shrink: 0;
   padding: 0.4rem 0.85rem;
   font-size: 12px;
   font-weight: 500;

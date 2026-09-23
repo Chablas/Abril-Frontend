@@ -17,35 +17,9 @@ export interface TipoRequerimientoOpcion extends OpcionDto {
   codigo: string;
 }
 
-/**
- * Código del tipo de requerimiento que obliga a decir a quién se reemplaza. Es también el que
- * NO pide sueldo: el puesto que se cubre ya existe con su banda, así que el formulario no lo
- * muestra y el backend descarta lo que llegue.
- */
-export const TIPO_REQUERIMIENTO_REEMPLAZO = 'REEMPLAZO';
-
-/**
- * Cómo se pinta el tipo de requerimiento en la tabla y en el seguimiento: etiqueta con ícono y
- * borde, no un badge relleno, para que no se confunda con el estado, que va en badge al lado. Se
- * decide por el código —el nombre es presentación y se renombra desde Configuración— y cualquier
- * código que no sea REEMPLAZO se pinta como una vacante nueva.
- */
-export interface TipoRequerimientoEstilo {
-  color: string;
-  borde: string;
-  /** Clase del ícono de Tabler. */
-  icono: string;
-}
-
-export function tipoRequerimientoEstilo(codigo: string | null | undefined): TipoRequerimientoEstilo {
-  return codigo?.trim().toUpperCase() === TIPO_REQUERIMIENTO_REEMPLAZO
-    ? { color: 'var(--color-abril-logo-blue)', borde: '#a9c9e6', icono: 'ti-arrows-exchange' }
-    : {
-        color: 'var(--color-abril-standard)',
-        borde: 'var(--color-abril-standard-border)',
-        icono: 'ti-circle-plus',
-      };
-}
+// El código del tipo, su estilo y el filtro viven en `../../shared/tipo-requerimiento`: desde que
+// «Reclutamiento» y «Aprobaciones» también tienen columna «Tipo», los usan las tres features del
+// módulo.
 
 /**
  * Opción del desplegable «Tipo de documento» del candidato de un ingreso directo (FFT). El
@@ -510,7 +484,17 @@ export interface RevisionLongList {
   proyectoObra: string | null;
   estadoCodigo: string;
   estadoNombre: string;
+  /**
+   * Los CVs que hay que decidir: los pendientes. GTH puede enviar más CVs en cualquier fase del
+   * proceso, así que una misma long list mezcla candidatos de varios envíos y solo llegan acá los
+   * que todavía no tienen decisión. Con `yaDecidida` llegan todos, en modo consulta.
+   */
   candidatos: CandidatoRevision[];
+  /**
+   * true si no queda ningún CV por decidir: la pantalla es de solo lectura y muestra lo que ya se
+   * decidió. Es lo que ve quien vuelve a abrir el enlace del correo después de haber respondido.
+   */
+  yaDecidida: boolean;
 }
 
 /** Evaluación que GTH registró tras la entrevista de un finalista. */

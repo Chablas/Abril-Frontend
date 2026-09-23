@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule, DatePipe } from '@angular/common';
-import { HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
 import { RendicionesService } from '../services/rendiciones.service';
@@ -9,12 +9,11 @@ import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { AuthService } from '../../../../../core/services/auth.service';
 import {
-  CorreoDestinatariosDto,
   PeriodoOptionDto,
   RendicionListItemDto,
   ResumenRendicionesDto,
 } from '../dtos/rendicion.dto';
-import { avisosDe } from '../../../shared/correo-aviso';
+import { CorreoAvisoDto } from '../../../shared/correo-aviso';
 import { confirmarConCorreos } from '../../../shared/confirmar-correos';
 import { primeraRevisionColors, reembolsoColors } from '../../../shared/dtos/rendicion-shared.dto';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
@@ -22,18 +21,14 @@ import { SearchSelect } from '../../../../../shared/components/search-select/sea
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
-import { ConsolidadoS10Modal } from '../../../shared/components/consolidado-s10-modal/consolidado-s10-modal';
-import {
-  ConsolidadoS10Dto,
-  otrasRendicionesDelConsolidado,
-} from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { RendicionDetalleModal } from './rendicion-detalle-modal/rendicion-detalle-modal';
 import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrativa-tabs';
 
 /**
- * "Mis Rendiciones": las planillas que el trabajador ya rindió y todo lo que viene DESPUÉS de
- * rendir — adjuntar el Consolidado del S10, avisarle al revisor y seguir el reembolso hasta la
- * copia firmada.
+ * "Mis Rendiciones": las planillas que el trabajador ya rindió. Lo que le toca es enviarlas a la
+ * primera revisión de su jefatura y subsanarlas si vuelven observadas. Después de esa aprobación el
+ * trámite del S10 —adjuntar el consolidado, avisar a la jefatura, pedir la corrección al ERP— es del
+ * consolidador de su área (Gestión de Rendiciones y Consolidados): acá solo se sigue hasta el pago.
  *
  * Existe como pantalla aparte de Solicitud de Salidas porque una planilla puede agrupar varias
  * salidas: repetir esos botones fila por fila hacía que el mismo documento se pidiera N veces.
@@ -43,16 +38,16 @@ import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrat
   selector: 'app-rendiciones',
   imports: [
     CommonModule, DatePipe, StatusBadge, SearchSelect, AbrilPageHeaderComponent,
-    FilterTriggerButton, FilterModal, ConsolidadoS10Modal, RendicionDetalleModal,
+    FilterTriggerButton, FilterModal, RendicionDetalleModal,
   ],
   templateUrl: './rendiciones.html',
   styles: [`
     :host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 
     /* ── Tarjetas de resumen ────────────────────────────────────────────────
-       Mismo lenguaje visual que las otras dos pantallas de salidas, y con el mismo criterio:
-       cuentan el conjunto que muestra la tabla, así que se mueven con los filtros. Acá las tres
-       son los pasos que le pueden faltar al trabajador, en el orden del flujo. */
+       Mismo lenguaje visual que las otras pantallas de salidas, y con el mismo criterio: cuentan
+       el conjunto que muestra la tabla, así que se mueven con los filtros. Acá son los dos pasos
+       que le pueden faltar al trabajador. */
     .resumen-cards {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -79,12 +74,6 @@ import { GESTION_ADMINISTRATIVA_TABS } from '../../../shared/gestion-administrat
     .resumen-card__hint  { font-size: 11px; color: #9CA3AF; }
     .resumen-card--primary { border-left-color: #005D9D; }
     .resumen-card--primary .resumen-card__value { color: #005D9D; }
-    .resumen-card--warn  { border-left-color: var(--color-abril-warning); }
-    .resumen-card--warn  .resumen-card__value { color: var(--color-abril-warning-dark); }
-    .resumen-card--info  { border-left-color: var(--color-abril-standard); }
-    .resumen-card--info  .resumen-card__value { color: var(--color-abril-standard); }
-    .resumen-card--erp   { border-left-color: #C2410C; }
-    .resumen-card--erp   .resumen-card__value { color: #C2410C; }
     .resumen-card--alert { border-left-color: var(--color-abril-danger); }
     .resumen-card--alert .resumen-card__value { color: var(--color-abril-danger-dark); }
 
@@ -121,36 +110,29 @@ export class Rendiciones implements OnInit {
 
   rendiciones: RendicionListItemDto[] = [];
 
-  /** ID de la planilla cuyo modal de detalle está abierto. null = cerrado. */
-  detalleId: number | null = null;
-
   /**
-   * True cuando el detalle se abre para subsanar: cada salida muestra ahí su botón de corregir
-   * capturas y montos. Se resuelve acá y no en el modal porque es la fila la que sabe si su
-   * rendición volvió observada.
+   * ID de la planilla cuyo modal de detalle está abierto. null = cerrado.
+   *
+   * Es lo ÚNICO que necesita el modal: si toca subsanar lo resuelve él con el detalle que carga,
+   * no la fila. Pasárselo desde acá dejaba el modal recortado cuando se abría por el enlace del
+   * correo, que entra sin pasar por la tabla.
    */
-  detalleSubsanando = false;
-
-  /** Planilla cuyo modal de Consolidado del S10 está abierto. null = cerrado. */
-  consolidadoDe: RendicionListItemDto | null = null;
+  detalleId: number | null = null;
 
   /**
    * Números de las tarjetas. Los cuenta el backend sobre el MISMO conjunto que muestra la tabla,
    * así que llegan con el listado y cambian con cada filtro.
    */
-  resumen: ResumenRendicionesDto = {
-    porEnviar: 0, sinConsolidado: 0, porAvisar: 0, observadas: 0, enErp: 0,
-  };
+  resumen: ResumenRendicionesDto = { porEnviar: 0, observadas: 0 };
 
   // ── Correos que dispara la pantalla ───────────────────────────────
   //
-  // Los destinatarios REALES de los dos avisos, ya resueltos por el backend aplicando
-  // Configuración → Correos. Son los mismos para toda la pantalla —está acotada a un solo
-  // trabajador—, así que llegan con los datos de arranque y no con cada fila ni con cada filtro.
-  // Se pasan también al modal de detalle, que dispara los mismos correos desde sus botones.
-  correoPrimeraRevision: CorreoDestinatariosDto = { para: [], copia: [] };
-  correoS10Revisor: CorreoDestinatariosDto = { para: [], copia: [] };
-  correoCorreccionS10: CorreoDestinatariosDto = { para: [], copia: [] };
+  // Los destinatarios REALES de "Enviar a revisión" (aviso a la jefatura y acuse al trabajador), ya
+  // resueltos por el backend aplicando Configuración → Correos. Son los mismos para toda la
+  // pantalla —está acotada a un solo trabajador—, así que llegan con los datos de arranque y no con
+  // cada fila ni con cada filtro. Se pasan también al modal de detalle, que dispara los mismos
+  // correos desde su botón.
+  correosEnvioRevision: CorreoAvisoDto[] = [];
 
   // ── Filtros ────────────────────────────────────────────────────────
   periodoOptions: { key: string | null; label: string }[] = [{ key: null, label: 'Todos los periodos' }];
@@ -215,9 +197,9 @@ export class Rendiciones implements OnInit {
   ) {}
 
   // ── Botón "Configuración" del header ─────────────────────────────────
-  // Lleva a la configuración de ESTA pantalla: sus correos (enviar la planilla a primera revisión
-  // y avisar del S10) y el plazo para rendir ("Días reembolsables"). Se restringe con la misma
-  // feature que antes protegía la sección Correos: quien no la tiene no ve el botón.
+  // Lleva a la configuración de ESTA pantalla: el correo de enviar la planilla a primera revisión.
+  // Se restringe con la misma feature que antes protegía la sección Correos: quien no la tiene no
+  // ve el botón.
 
   private static readonly FEATURE_CONFIG_CORREOS = 'gestion-administrativa.config.correos';
 
@@ -238,7 +220,7 @@ export class Rendiciones implements OnInit {
     this.loadFilterData();
     this.load();
 
-    // Enlace directo de los correos del reembolso ("Subsanar observaciones" / "Ver mi
+    // Enlace directo de los correos de la primera revisión ("Subsanar observaciones" / "Ver mi
     // rendición"): abre esa planilla sin que el trabajador tenga que buscarla.
     const rendicionId = Number(this.route.snapshot.queryParamMap.get('rendicion'));
     if (rendicionId > 0) this.detalleId = rendicionId;
@@ -248,11 +230,9 @@ export class Rendiciones implements OnInit {
     this.service.getFilterData().subscribe({
       next: (data) => {
         this.periodos = data.periodos ?? [];
-        // Los correos vienen en esta misma carga: se refrescan después de cada acción
-        // (recargar() la vuelve a llamar) sin una petición aparte.
-        this.correoPrimeraRevision = data.correoPrimeraRevision ?? { para: [], copia: [] };
-        this.correoS10Revisor      = data.correoS10Revisor ?? { para: [], copia: [] };
-        this.correoCorreccionS10   = data.correoCorreccionS10 ?? { para: [], copia: [] };
+        // Los correos vienen en esta misma carga: se refrescan después de cada acción (recargar()
+        // la vuelve a llamar) sin una petición aparte.
+        this.correosEnvioRevision = data.correosEnvioRevision ?? [];
         this.periodoOptions = [
           { key: null, label: 'Todos los periodos' },
           ...this.periodos.map((p) => ({ key: this.periodoKey(p.anio, p.mes), label: p.label })),
@@ -315,19 +295,19 @@ export class Rendiciones implements OnInit {
 
   abrirDetalle(r: RendicionListItemDto): void {
     this.detalleId = r.id;
-    this.detalleSubsanando = r.puedeSubsanar;
   }
 
-  /** Abre el detalle en modo subsanación desde el botón de la fila. */
+  /**
+   * "Corregir capturas" de la fila. Abre el mismo detalle que el click en la fila: el modal ya
+   * muestra los botones de subsanar por su cuenta cuando la planilla está observada.
+   */
   corregirCapturas(r: RendicionListItemDto, ev: Event): void {
     ev.stopPropagation();
     this.detalleId = r.id;
-    this.detalleSubsanando = true;
   }
 
   cerrarDetalle(cambio: boolean): void {
     this.detalleId = null;
-    this.detalleSubsanando = false;
     if (cambio) this.recargar();
     else        this.cdr.detectChanges();
   }
@@ -343,7 +323,7 @@ export class Rendiciones implements OnInit {
 
     const result = await confirmarConCorreos({
       titulo: '¿Enviar ' + r.codigo + ' a revisión?',
-      avisos: avisosDe(this.correoPrimeraRevision),
+      avisos: this.correosEnvioRevision,
       // Sin nadie a quien avisar el envío igual procede: la rendición pasa a revisión y el jefe la
       // ve en su bandeja. Es un aviso de estado, no un bloqueo.
       sinNadie: 'Pasa a revisión, pero sin aviso por correo: está apagado en Configuración → Correos.',
@@ -368,19 +348,25 @@ export class Rendiciones implements OnInit {
 
   /**
    * Vuelve a generar la planilla de una rendición observada, ya con las capturas y los montos
-   * corregidos. Conserva el código, descarga el PDF nuevo y la deja lista para reenviar.
+   * corregidos, y la reenvía a la primera revisión en el mismo paso: se subsana para que el jefe la
+   * vuelva a mirar, así que generar y avisarle son una sola acción. Conserva el código.
+   *
+   * El PDF nuevo no se descarga: queda guardado y la planilla ya apunta a él, así que se ve con el
+   * botón «Planilla» de la fila. Bajarlo sin que nadie lo pida era ruido en cada subsanación.
+   *
+   * Por eso la confirmación imprime los destinatarios: es la misma acción que antes disparaba
+   * "Enviar a revisión", así que tiene que decir a quién le va a llegar.
    */
   async regenerarPlanilla(r: RendicionListItemDto, ev: Event): Promise<void> {
     ev.stopPropagation();
 
-    const result = await Swal.fire({
-      icon: 'question',
-      title: '¿Volver a generar ' + r.codigo + '?',
-      text: 'Queda lista para reenviar a revisión.',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, generar',
-      cancelButtonText: 'Cancelar',
-      confirmButtonColor: '#0F6E56',
+    const result = await confirmarConCorreos({
+      titulo: '¿Volver a generar ' + r.codigo + '?',
+      avisos: this.correosEnvioRevision,
+      // Sin nadie a quien avisar igual procede: la planilla se regenera y pasa a revisión, y el
+      // jefe la ve en su bandeja. Es un aviso de estado, no un bloqueo.
+      sinNadie: 'Se regenera y pasa a revisión, pero sin aviso por correo: está apagado en Configuración → Correos.',
+      confirmButtonText: 'Generar y avisar al revisor',
     });
     if (!result.isConfirmed) return;
 
@@ -388,107 +374,15 @@ export class Rendiciones implements OnInit {
     this.service.regenerarPlanilla(r.id).subscribe({
       next: (res) => {
         this.loaderService.hide();
-        this.descargar(res, r.codigo + '.pdf');
+        // El reenvío es best-effort en el backend: si el correo no salió, el aviso lo dice en vez
+        // de anunciar una revisión que nadie pidió.
         Swal.fire({
-          icon: 'success',
+          icon: res.enviadaARevision ? 'success' : 'warning',
           title: 'Planilla regenerada',
-          text: r.codigo + ' quedó lista para enviar de nuevo a revisión.',
-          timer: 2800,
-          showConfirmButton: false,
+          text: res.message || r.codigo + ' se volvió a generar y se envió a revisión.',
+          // El caso "no salió el correo" se queda hasta que lo cierren: es lo que hay que leer.
+          ...(res.enviadaARevision ? { timer: 2800, showConfirmButton: false } : {}),
         });
-        this.recargar();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loaderService.hide();
-        this.errorService.handleError(err);
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  /** Dispara la descarga del PDF que devuelve el backend. */
-  private descargar(response: HttpResponse<Blob>, filename: string): void {
-    if (!response.body) return;
-    const url = URL.createObjectURL(response.body);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // ── Consolidado del S10 ──────────────────────────────────────────────
-
-  abrirConsolidado(r: RendicionListItemDto, ev: Event): void {
-    ev.stopPropagation(); // no abrir el detalle
-    this.consolidadoDe = r;
-  }
-
-  /** Función de subida que consume el modal compartido (ya sabe a qué endpoint pegarle). */
-  readonly subirConsolidado = (file: File, montoTotal: number, numeroReembolso: string) =>
-    this.service.uploadConsolidadoS10(this.consolidadoDe!.id, file, montoTotal, numeroReembolso);
-
-  /** Referencia que muestra el modal para que se vea a qué planilla se está adjuntando. */
-  get consolidadoReferencia(): string | null {
-    const r = this.consolidadoDe;
-    if (!r) return null;
-    return r.numeroPlanilla ?? `Rendición del ${new Date(r.rendidoAt).toLocaleDateString('es-PE')}`;
-  }
-
-  cerrarConsolidado(subido: ConsolidadoS10Dto | null): void {
-    this.consolidadoDe = null;
-    if (subido) this.recargar();
-    else        this.cdr.detectChanges();
-  }
-
-  /** Tooltip del botón del Consolidado del S10: qué hace, o por qué está apagado. */
-  consolidadoTitle(r: RendicionListItemDto): string {
-    if (r.consolidadoCompartido) {
-      return 'Este Consolidado del S10 también cubre '
-        + otrasRendicionesDelConsolidado(r.consolidadoS10, r.id).join(', ')
-        + ': se reemplaza desde Gestión de Rendiciones';
-    }
-    return r.consolidadoS10
-      ? 'Reemplazar el Consolidado del S10 de esta planilla'
-      : 'Adjuntar el PDF Consolidado del S10 de esta planilla';
-  }
-
-  // ── Aviso al revisor ─────────────────────────────────────────────────
-
-  /**
-   * Avisa al jefe/revisor que el Consolidado del S10 de la planilla ya está adjunto. Se puede
-   * repetir a propósito (un correo se pierde, el jefe lo archiva sin leer): la fecha del último
-   * aviso queda a la vista en el botón para que no se convierta en insistencia a ciegas.
-   */
-  async notificarRevisor(r: RendicionListItemDto, ev: Event): Promise<void> {
-    ev.stopPropagation(); // no abrir el detalle
-
-    // A diferencia del envío a primera revisión, este aviso ES el correo: sin destinatarios el
-    // backend responde 409, así que se corta acá y se dice por qué en vez de dejar intentarlo.
-    if (this.correoS10Revisor.para.length === 0) {
-      await Swal.fire({
-        icon: 'warning',
-        title: 'Nadie recibiría el aviso',
-        text: 'El correo «S10 al revisor» está apagado o sin destinatarios en Configuración → Correos.',
-        confirmButtonColor: '#0F6E56',
-      });
-      return;
-    }
-
-    const result = await confirmarConCorreos({
-      titulo: r.revisorNotificadoAt ? '¿Volver a avisar?' : '¿Avisar al revisor?',
-      // Solo cuando es una repetición: el resto del tiempo el título ya lo dice todo.
-      nota: r.revisorNotificadoAt ? 'Ya le avisaste por esta planilla.' : undefined,
-      avisos: avisosDe(this.correoS10Revisor),
-      confirmButtonText: r.revisorNotificadoAt ? 'Sí, avisar de nuevo' : 'Sí, avisar',
-    });
-    if (!result.isConfirmed) return;
-
-    this.loaderService.show();
-    this.service.notificarRevisor(r.id).subscribe({
-      next: (res) => {
-        this.loaderService.hide();
-        Swal.fire({ icon: 'success', title: res.message, timer: 2000, showConfirmButton: false });
         this.recargar();
       },
       error: (err: HttpErrorResponse) => {

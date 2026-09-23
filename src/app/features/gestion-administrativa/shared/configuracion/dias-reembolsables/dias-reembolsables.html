@@ -7,16 +7,12 @@
           <i class="ti ti-calendar-clock"></i>
           Plazo para rendir
         </h3>
-        <p class="config-card__sub">
-          Días hábiles del mes siguiente durante los que se pueden rendir las salidas de un mes.
-          No cuentan sábados, domingos ni los feriados de Configuración → Feriados.
-        </p>
       </div>
     </div>
 
     <div class="form-row plazo-field">
       <div class="abril-field">
-        <label class="abril-field-label">Días hábiles *</label>
+        <label class="abril-field-label">Días hábiles del mes siguiente *</label>
         <input
           type="number"
           class="abril-field-input"
@@ -31,29 +27,53 @@
       </div>
     </div>
 
-    <!-- Avisos de estado: qué significa hoy el número guardado, no instrucciones. -->
-    <p class="config-warn" *ngIf="plazo && !hayCambios && !plazo.mesAnteriorVencido">
-      <i class="ti ti-info-circle"></i>
-      <span>
-        Las salidas de {{ periodoAnterior }} se rinden hasta el
-        {{ limiteFecha | date:'dd/MM/yyyy' }}.
-      </span>
-    </p>
+    <!-- Hasta qué mes hacia atrás llega el permiso. Son dos ajustes y no uno porque se preguntan
+         cosas distintas: cuánto abre la ventana de arriba, y cuánto queda abierto todo el mes. -->
+    <div class="plazo-sub">
+      <h4 class="plazo-sub__title">Meses que se pueden rendir</h4>
 
-    <p class="config-warn config-warn--off" *ngIf="plazo && !hayCambios && plazo.mesAnteriorVencido">
-      <i class="ti ti-clock-off"></i>
-      <span>
-        El plazo de {{ periodoAnterior }} venció el {{ limiteFecha | date:'dd/MM/yyyy' }}: ese mes
-        ya no se puede rendir.
-      </span>
+      <div class="plazo-alcances">
+        <app-search-select
+          label="Dentro del plazo"
+          [options]="alcances"
+          valueField="id"
+          displayField="nombre"
+          [rawLabel]="true"
+          [sortAlpha]="false"
+          [allowClear]="false"
+          [required]="true"
+          [disabled]="loading || saving"
+          [value]="alcancePlazoId"
+          (valueChange)="onAlcancePlazoChange($event)"
+          placeholder="Selecciona">
+        </app-search-select>
+
+        <app-search-select
+          label="En cualquier momento"
+          [options]="alcances"
+          valueField="id"
+          displayField="nombre"
+          [rawLabel]="true"
+          [sortAlpha]="false"
+          [allowClear]="true"
+          [disabled]="loading || saving"
+          [value]="alcancePermanenteId"
+          (valueChange)="onAlcancePermanenteChange($event)"
+          placeholder="No aplica">
+        </app-search-select>
+      </div>
+    </div>
+
+    <!-- Único aviso de estado: desde qué mes se rinde HOY con lo guardado. Es el efecto de los tres
+         campos juntos, que es lo que no se puede leer de los campos mirándolos. -->
+    <p class="config-warn" *ngIf="rendibleDesde && !hayCambios">
+      <i class="ti ti-info-circle"></i>
+      <span>Hoy se pueden rendir salidas desde {{ rendibleDesde }}.</span>
     </p>
 
     <p class="config-warn" *ngIf="hayCambios">
       <i class="ti ti-alert-triangle"></i>
-      <span>
-        Sin guardar. El plazo vigente sigue siendo de
-        {{ plazo?.diasHabilesPlazo }} día{{ plazo?.diasHabilesPlazo === 1 ? '' : 's' }} hábil{{ plazo?.diasHabilesPlazo === 1 ? '' : 'es' }}.
-      </span>
+      <span>Sin guardar. Sigue rigiendo la configuración anterior.</span>
     </p>
 
     <p class="form-error" *ngIf="error">

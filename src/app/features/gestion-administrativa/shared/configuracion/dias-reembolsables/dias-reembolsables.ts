@@ -4,23 +4,36 @@ import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { PlazoRendicionService } from './services/plazo-rendicion.service';
-import { PlazoRendicion } from './dtos/plazo-rendicion.dto';
+import { AlcanceRendicionOpcion, PlazoRendicion } from './dtos/plazo-rendicion.dto';
+import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
+import { NoWheelNumberDirective } from '../../../../../shared/directives/no-wheel-number.directive';
 
 /**
  * Sección "Días reembolsables" de Solicitud de Salidas → Configuración: cuántos días hábiles del mes
- * siguiente dura el plazo para rendir un mes. Era un 7 escrito en el backend; ahora vive en
+ * siguiente dura el plazo para rendir un mes, y hasta qué mes hacia atrás alcanza ese permiso. Era
+ * un 7 escrito en el backend con "solo el mes anterior" a mano; ahora todo vive en
  * `ga_rendicion_config` y se cambia acá.
  *
- * A diferencia de los correos —que guardan al momento de tocar cada control— este campo tiene su
- * botón "Guardar": es un número que se escribe de a dígitos y guardar en cada tecla mandaría
- * plazos intermedios (un 1 camino al 15) que cierran periodos de verdad.
+ * Los dos alcances contestan preguntas distintas y por eso son dos campos:
+ *  • "Dentro del plazo" — cuánto abre la ventana de días hábiles del mes siguiente.
+ *  • "En cualquier momento" — cuánto queda abierto todo el mes, con ventana o sin ella. Vacío = no
+ *    aplica; puesto, MANDA sobre el anterior. Es el interruptor para dejar rendir lo atrasado
+ *    mientras se capacita a los trabajadores.
+ *
+ * A diferencia de los correos —que guardan al momento de tocar cada control— esta sección tiene su
+ * botón "Guardar": los días se escriben de a dígitos y guardar en cada tecla mandaría plazos
+ * intermedios (un 1 camino al 15) que cierran periodos de verdad. Los tres campos son una sola
+ * regla, así que van en el mismo guardado.
+ *
+ * El único aviso de estado es DESDE QUÉ MES se puede rendir hoy: es lo que no se deduce mirando los
+ * tres campos, y lo que importa es lo que queda abierto hacia atrás, no hasta cuándo dura.
  */
 @Component({
   selector: 'app-ga-dias-reembolsables',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, SearchSelect, NoWheelNumberDirective],
   templateUrl: './dias-reembolsables.html',
   // Misma tarjeta y mismos botones que la matriz de correos: las dos secciones se ven igual.
   styleUrl: '../../../../../shared/styles/correos-config.css',
@@ -29,6 +42,27 @@ import { ErrorService } from '../../../../../core/services/error.service';
 
     /* El campo es un número de dos dígitos: a ancho completo se leería como un cuadro vacío. */
     .plazo-field { max-width: 220px; }
+
+    .plazo-sub {
+      margin-top: 4px;
+      padding-top: 16px;
+      border-top: 1px solid var(--color-abril-border, #e5e7eb);
+    }
+
+    .plazo-sub__title {
+      margin: 0 0 12px;
+      font-size: 0.86rem;
+      font-weight: 700;
+      color: var(--color-abril-text, #111827);
+    }
+
+    /* Los dos desplegables uno al lado del otro mientras entren; apilados en pantalla angosta. */
+    .plazo-alcances {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      max-width: 720px;
+    }
 
     .plazo-actions {
       display: flex;
@@ -55,14 +89,18 @@ export class GaDiasReembolsables implements OnInit {
   /** Lo que hay escrito en el campo. Se separa del dato guardado para poder comparar. */
   dias: number | null = null;
 
+  /** Lo elegido en los desplegables, también antes de guardar. */
+  alcancePlazoId: number | null = null;
+  alcancePermanenteId: number | null = null;
+
   /** Mensaje de validación del propio campo (el backend valida igual). */
   error: string | null = null;
   /** Se prende un momento después de guardar bien: aviso de estado, no un alert. */
   guardado = false;
 
   private readonly meses = [
-    'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-    'julio', 'agosto', 'setiembre', 'octubre', 'noviembre', 'diciembre',
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Setiembre', 'Octubre', 'Noviembre', 'Diciembre',
   ];
 
   constructor(
@@ -98,6 +136,8 @@ export class GaDiasReembolsables implements OnInit {
   private aplicar(data: PlazoRendicion): void {
     this.plazo = data;
     this.dias = data.diasHabilesPlazo;
+    this.alcancePlazoId = data.alcancePlazoId;
+    this.alcancePermanenteId = data.alcancePermanenteId;
     this.error = null;
   }
 
@@ -109,26 +149,48 @@ export class GaDiasReembolsables implements OnInit {
     return this.plazo?.diasMaximo ?? 28;
   }
 
-  /** El mes anterior en palabras ("agosto 2026"), para el aviso del plazo vigente. */
-  get periodoAnterior(): string {
-    if (!this.plazo) return '';
-    const nombre = this.meses[this.plazo.mesAnteriorMes - 1] ?? '';
-    return `${nombre} ${this.plazo.mesAnteriorAnio}`;
+  /** Opciones de los dos desplegables: las mismas para ambos. */
+  get alcances(): AlcanceRendicionOpcion[] {
+    return this.plazo?.alcances ?? [];
   }
 
-  /** Fecha límite como Date, para el pipe (el backend la manda como YYYY-MM-DD, sin zona). */
-  get limiteFecha(): Date | null {
-    return this.plazo ? new Date(`${this.plazo.limiteMesAnterior}T00:00:00`) : null;
+  /**
+   * Mes más viejo que HOY se puede rendir, en palabras ("Marzo 2026"). Lo resuelve el backend —
+   * necesita los feriados— y es lo único que se muestra: el efecto de los tres campos juntos, que
+   * es justo lo que no se lee mirándolos.
+   */
+  get rendibleDesde(): string {
+    if (!this.plazo) return '';
+    const nombre = this.meses[this.plazo.rendibleDesdeMes - 1] ?? '';
+    return `${nombre} ${this.plazo.rendibleDesdeAnio}`;
   }
 
   onDiasChange(valor: number | null): void {
     this.dias = valor;
+    this.tocado();
+  }
+
+  onAlcancePlazoChange(valor: number | null): void {
+    this.alcancePlazoId = valor;
+    this.tocado();
+  }
+
+  onAlcancePermanenteChange(valor: number | null): void {
+    // El desplegable emite null al limpiarlo, que es justo "no aplica": se guarda tal cual.
+    this.alcancePermanenteId = valor;
+    this.tocado();
+  }
+
+  private tocado(): void {
     this.error = null;
     this.guardado = false;
   }
 
   get hayCambios(): boolean {
-    return this.plazo != null && this.dias != null && this.dias !== this.plazo.diasHabilesPlazo;
+    if (!this.plazo) return false;
+    return (this.dias != null && this.dias !== this.plazo.diasHabilesPlazo)
+        || this.alcancePlazoId !== this.plazo.alcancePlazoId
+        || (this.alcancePermanenteId ?? null) !== this.plazo.alcancePermanenteId;
   }
 
   get puedeGuardar(): boolean {
@@ -145,11 +207,21 @@ export class GaDiasReembolsables implements OnInit {
       return;
     }
 
+    if (!this.alcancePlazoId) {
+      this.error = 'Elige hasta qué mes alcanza el plazo.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.saving = true;
     this.error = null;
     this.guardado = false;
 
-    this.service.guardar(valor).subscribe({
+    this.service.guardar({
+      diasHabilesPlazo: valor,
+      alcancePlazoId: this.alcancePlazoId,
+      alcancePermanenteId: this.alcancePermanenteId ?? null,
+    }).subscribe({
       next: (res) => {
         this.saving = false;
         this.guardado = true;

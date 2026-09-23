@@ -14,16 +14,17 @@ import {
   InfraccionAdminDto,
   ContextoEmpresaDto,
   OrigenCandidatoDto,
+  EmpresaProyectoDto,
+  DestinatariosNotificacionDto,
 } from '../../dtos/penalidad.dtos';
 import { PENALIDADES_TABS } from '../../penalidades-tabs';
+import { MOTIVOS_ANEXO4 } from '../../penalidades-motivos-anexo4';
 
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
-import { CatalogosSaludService } from '../../../../salud-ocupacional/services/catalogos-salud.service';
-import { EmpresaSimpleDto } from '../../../../salud-ocupacional/dtos/catalogos.model';
 
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
@@ -77,16 +78,20 @@ export class PenalidadesLista implements OnInit {
   mostrarNueva = false;
   guardandoNueva = false;
   proyectos: ProjectGetDTO[] = [];
-  empresas: EmpresaSimpleDto[] = [];
+  empresas: EmpresaProyectoDto[] = [];
+  loadingEmpresas = false;
   infracciones: InfraccionAdminDto[] = [];
   loadingCatalogos = false;
+  notificacionInicial: DestinatariosNotificacionDto | null = null;
+
+  readonly ANEXO4_REFERENCIA = 'Anexo 4 · Cláusula 10';
 
   nuevaOrigenTipo: 'RAC' | 'AMONESTACION' | 'DIRECTO' = 'DIRECTO';
   nuevaOrigenId: number | null = null;
   nuevaEmpresaId: number | null = null;
   nuevaProyectoId: number | null = null;
   nuevaInfraccionId: number | null = null;
-  nuevaSeveridad = '';
+  nuevoMotivo = '';
   nuevaDescripcion = '';
 
   candidatosOrigen: OrigenCandidatoDto[] = [];
@@ -98,12 +103,13 @@ export class PenalidadesLista implements OnInit {
     { value: 'AMONESTACION', label: 'Viene de una Amonestación' },
   ];
 
-  readonly SEVERIDAD_OPCIONES = [
-    { value: 'CRITICO', label: 'Crítico' },
-    { value: 'ALTO', label: 'Alto' },
-    { value: 'MEDIO', label: 'Medio' },
-    { value: 'BAJO', label: 'Bajo' },
-  ];
+  readonly CATEGORIA_LABELS: Record<string, string> = {
+    Falta: 'Falta leve',
+    Menor: 'Infracción menor',
+    Moderada: 'Infracción moderada',
+    Grave: 'Infracción grave',
+    MuyGrave: 'Infracción muy grave',
+  };
 
   // ── Contexto previo de la empresa (reincidencia + gestión previa) ─
   contexto: ContextoEmpresaDto | null = null;
@@ -157,7 +163,6 @@ export class PenalidadesLista implements OnInit {
     private errorService: ErrorService,
     private authService: AuthService,
     private projectService: ProjectService,
-    private catalogosSalud: CatalogosSaludService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -193,10 +198,11 @@ export class PenalidadesLista implements OnInit {
     this.nuevaEmpresaId = null;
     this.nuevaProyectoId = null;
     this.nuevaInfraccionId = null;
-    this.nuevaSeveridad = '';
+    this.nuevoMotivo = '';
     this.nuevaDescripcion = '';
     this.candidatosOrigen = [];
     this.contexto = null;
+    this.empresas = [];
     this.mostrarFormGestionPrevia = false;
     this.mostrarNueva = true;
     this.loadingCatalogos = true;
@@ -204,12 +210,10 @@ export class PenalidadesLista implements OnInit {
 
     forkJoin({
       proyectos: this.projectService.getProjectsPaged({ pageSize: 200, estado: 'ACTIVO' }),
-      empresas: this.catalogosSalud.getEmpresas(),
       infracciones: this.penalidadService.getInfracciones(),
     }).subscribe({
-      next: ({ proyectos, empresas, infracciones }) => {
+      next: ({ proyectos, infracciones }) => {
         this.proyectos = proyectos.data;
-        this.empresas = empresas;
         this.infracciones = infracciones;
         this.loadingCatalogos = false;
         this.cdr.markForCheck();
@@ -219,6 +223,29 @@ export class PenalidadesLista implements OnInit {
         this.errorService.handleError(err);
         this.cdr.markForCheck();
       },
+    });
+  }
+
+  // El selector de Empresa depende del Proyecto elegido: solo muestra empresas con presencia
+  // activa en ese proyecto (ss_empresa_proyecto), no todas las contratistas del sistema.
+  onProyectoSeleccionado(proyectoId: number | null): void {
+    this.nuevaProyectoId = proyectoId;
+    this.nuevaEmpresaId = null;
+    this.empresas = [];
+    this.contexto = null;
+    this.notificacionInicial = null;
+    if (!proyectoId) { this.cdr.markForCheck(); return; }
+
+    this.loadingEmpresas = true;
+    this.cdr.markForCheck();
+    this.penalidadService.getEmpresasPorProyecto(proyectoId).subscribe({
+      next: (empresas) => { this.empresas = empresas; this.loadingEmpresas = false; this.cdr.markForCheck(); },
+      error: (err: HttpErrorResponse) => { this.loadingEmpresas = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
+    });
+
+    this.penalidadService.getNotificacionInicial(proyectoId).subscribe({
+      next: (noti) => { this.notificacionInicial = noti; this.cdr.markForCheck(); },
+      error: () => { this.notificacionInicial = null; this.cdr.markForCheck(); },
     });
   }
 
@@ -251,10 +278,9 @@ export class PenalidadesLista implements OnInit {
     const candidato = this.candidatosOrigen.find((c) => c.id === id);
     if (!candidato) return;
 
-    this.nuevaProyectoId = candidato.proyectoId;
     if (candidato.infraccionSugeridaId) this.nuevaInfraccionId = candidato.infraccionSugeridaId;
-    if (candidato.severidad) this.nuevaSeveridad = candidato.severidad;
     this.nuevaDescripcion = candidato.descripcion;
+    this.onProyectoSeleccionado(candidato.proyectoId);
     if (candidato.empresaId) this.onEmpresaSeleccionada(candidato.empresaId);
     this.cdr.markForCheck();
   }
@@ -322,9 +348,44 @@ export class PenalidadesLista implements OnInit {
     return this.GP_TIPO_OPCIONES.find((o) => o.value === tipo)?.label ?? tipo;
   }
 
+  get infraccionesOptions(): InfraccionAdminDto[] {
+    return this.infracciones.map((i) => ({ ...i, nombre: this.infraccionEtiqueta(i) }));
+  }
+
+  infraccionEtiqueta(i: InfraccionAdminDto): string {
+    if (i.categoria === 'MuyGrave') return `${i.nombre} — Rescisión de contrato`;
+    if (i.montoFijo != null) return `${i.nombre} — S/ ${i.montoFijo.toFixed(2)}`;
+    if (i.factorUit != null) return `${i.nombre} — ${Math.round(i.factorUit * 100)}% UIT`;
+    return i.nombre;
+  }
+
+  get infraccionSeleccionada(): InfraccionAdminDto | undefined {
+    return this.infracciones.find((i) => i.id === this.nuevaInfraccionId);
+  }
+
+  get empresaSeleccionada(): EmpresaProyectoDto | undefined {
+    return this.empresas.find((e) => e.id === this.nuevaEmpresaId);
+  }
+
+  categoriaLabel(categoria?: string): string {
+    return categoria ? (this.CATEGORIA_LABELS[categoria] ?? categoria) : '—';
+  }
+
+  get motivosDisponibles(): { value: string; label: string }[] {
+    const categoria = this.infraccionSeleccionada?.categoria;
+    const motivos = categoria ? (MOTIVOS_ANEXO4[categoria] ?? []) : [];
+    return motivos.map((m) => ({ value: m, label: m }));
+  }
+
+  onInfraccionSeleccionada(infraccionId: number | null): void {
+    this.nuevaInfraccionId = infraccionId;
+    this.nuevoMotivo = '';
+    this.cdr.markForCheck();
+  }
+
   get puedeGuardarNueva(): boolean {
     return !!(this.nuevaEmpresaId && this.nuevaProyectoId && this.nuevaInfraccionId
-      && this.nuevaSeveridad && !this.guardandoNueva);
+      && this.nuevaDescripcion.trim() && !this.guardandoNueva);
   }
 
   guardarNueva(): void {
@@ -336,7 +397,7 @@ export class PenalidadesLista implements OnInit {
       empresaId: this.nuevaEmpresaId!,
       proyectoId: this.nuevaProyectoId!,
       infraccionId: this.nuevaInfraccionId!,
-      severidad: this.nuevaSeveridad,
+      motivo: this.nuevoMotivo || undefined,
       descripcionOcurrido: this.nuevaDescripcion || undefined,
     }).subscribe({
       next: (res) => {

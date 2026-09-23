@@ -34,7 +34,7 @@
     <div class="resumen-card resumen-card--ok">
       <span class="resumen-card__label">Aptas para rendir</span>
       <span class="resumen-card__value">{{ resumen.aptasParaRendir }}</span>
-      <span class="resumen-card__hint">Con capturas y motivo reembolsable</span>
+      <span class="resumen-card__hint">Con capturas y trayectos reembolsables</span>
     </div>
     <div class="resumen-card resumen-card--warn">
       <span class="resumen-card__label">Capturas incompletas</span>
@@ -387,7 +387,7 @@
                   && s.puedeRendirse
                   && !s.esReembolsable
                   && !s.plazoVencido"
-              title="No se rinde: el motivo de esta salida no está marcado como reembolsable en Configuración → Motivos"
+              title="No se rinde: ningún trayecto de esta salida genera reembolso (ver Configuración → Motivos y → Trayectos)"
               class="inline-flex items-center gap-[6px] text-xs text-gray-500 italic">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
@@ -396,15 +396,17 @@
               No reembolsable
             </span>
 
-            <!-- Plazo cerrado: pasó el último día hábil del plazo (Mis Rendiciones →
-                 Configuración → Días reembolsables). La salida ya no se rinde; la fila sigue
-                 clickeable y su detalle se ve igual que siempre. El tooltip solo dice la fecha:
-                 el número de días es configurable y quedaría desactualizado escrito acá. -->
+            <!-- Plazo cerrado: pasó el último día en que este mes se podía rendir (Mis Rendiciones
+                 → Configuración → Días reembolsables). La salida ya no se rinde; la fila sigue
+                 clickeable y su detalle se ve igual que siempre. El tooltip solo dice la fecha: el
+                 plazo y su alcance son configurables y quedarían desactualizados escritos acá.
+                 Dice "cerró" y no "venció" porque con un alcance de varios meses el plazo se abre
+                 de nuevo con la ventana del mes que viene. -->
             <span
               *ngIf="s.estadoAprobacion === 'Aprobado'
                   && s.estadoRendicion === 'No rendido'
                   && s.plazoVencido"
-              [title]="'El plazo para rendir esta salida venció el '
+              [title]="'El plazo para rendir esta salida cerró el '
                 + (s.plazoRendicionHasta + 'T00:00:00' | date:'dd/MM/yyyy')"
               class="inline-flex items-center gap-[6px] text-xs italic"
               style="color:var(--color-abril-danger-dark)">
@@ -412,7 +414,7 @@
                 <circle cx="12" cy="12" r="9"/>
                 <path stroke-linecap="round" d="M12 7v5l3 2"/>
               </svg>
-              Plazo vencido
+              Fuera de plazo
             </span>
           </td>
 

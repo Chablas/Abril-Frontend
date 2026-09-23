@@ -1,0 +1,258 @@
+﻿<app-base-modal
+  [title]="detalle?.codigo ? 'Solicitud ' + detalle!.codigo : 'Detalle de la solicitud'"
+  [width]="edicion ? 'w-[760px]' : 'w-[1000px]'"
+  closeColor="var(--color-abril-standard)"
+  [preventCloseWhenDirty]="edicion !== null"
+  (closeModal)="cerrar()">
+
+  <div *ngIf="detalle" class="flex flex-col gap-4 pt-4">
+
+    <div class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+      <!-- En consulta la salida es de otro: se dice de quién. -->
+      <div *ngIf="consulta && detalle.trabajador" class="col-span-2">
+        <div class="text-xs text-gray-500 uppercase">Trabajador</div>
+        <div class="text-gray-800">{{ detalle.trabajador | titleCase }}</div>
+      </div>
+      <div>
+        <div class="text-xs text-gray-500 uppercase">Fecha</div>
+        <div class="text-gray-800">{{ detalle.fechaSalida + 'T00:00:00' | date:'dd/MM/yyyy' }}</div>
+      </div>
+      <div>
+        <div class="text-xs text-gray-500 uppercase">Registrada</div>
+        <div class="text-gray-800">{{ detalle.createdAt | date:'dd/MM/yyyy HH:mm' }}</div>
+      </div>
+      <div>
+        <div class="text-xs text-gray-500 uppercase">Estado</div>
+        <app-status-badge
+          [text]="detalle.estadoAprobacion"
+          [bgColor]="aprobacionColors(detalle.estadoAprobacion).bg"
+          [textColor]="aprobacionColors(detalle.estadoAprobacion).text" />
+      </div>
+      <div>
+        <div class="text-xs text-gray-500 uppercase">Rendición</div>
+        <app-status-badge
+          *ngIf="detalle.estadoAprobacion === 'Aprobado'; else sinRendicion"
+          [text]="detalle.estadoRendicion"
+          [bgColor]="rendicionColors(detalle.estadoRendicion).bg"
+          [textColor]="rendicionColors(detalle.estadoRendicion).text" />
+        <ng-template #sinRendicion>
+          <span class="text-gray-300">—</span>
+        </ng-template>
+      </div>
+      <div *ngIf="detalle.motivoRechazo" class="col-span-2">
+        <div class="text-xs text-gray-500 uppercase">Motivo de rechazo</div>
+        <div class="text-gray-800">{{ detalle.motivoRechazo }}</div>
+      </div>
+    </div>
+
+    <!-- ── Trayectos ──────────────────────────────────────────────────── -->
+    <div class="border-t pt-4 flex flex-col gap-3" style="border-color:var(--color-abril-border)">
+      <div class="flex items-center justify-between gap-3">
+        <h3 class="text-sm font-semibold text-gray-700">
+          Trayectos
+          <span class="text-xs text-gray-400 font-normal">({{ detalle.trayectos.length }})</span>
+        </h3>
+
+        <div class="flex items-center gap-3">
+          <div *ngIf="!edicion && totalGeneral > 0" class="text-xs font-medium text-gray-700">
+            Total: S/ {{ totalGeneral | number:'1.2-2' }}
+          </div>
+          <!-- En edición, el tope contra el que se mide cada trayecto (es de CADA uno, no del total). -->
+          <div *ngIf="edicion"
+               class="text-[11px] font-semibold whitespace-nowrap rounded-md px-2 py-1"
+               style="color:var(--color-abril-standard);background:var(--color-abril-standard-light)">
+            Tope por trayecto: S/ {{ edicion.limiteTrayecto | number:'1.2-2' }}
+          </div>
+
+          <!-- Un solo botón para todos los trayectos: la edición y su guardado son de la salida
+               entera, no de cada trayecto. Una salida rendida ya no lo ofrece. -->
+          <button
+            *ngIf="puedeEditar && !edicion"
+            type="button"
+            (click)="editar()"
+            title="Editar las capturas (imagen + monto) de todos los trayectos"
+            class="inline-flex items-center gap-[5px] h-[28px] px-2.5 rounded-[6px] text-[11px] font-semibold cursor-pointer transition-colors border bg-white text-abril-standard border-abril-standard-border hover:bg-abril-standard-light">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M21.17 6.81a2.82 2.82 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5zM15 5l4 4"/>
+            </svg>
+            Editar
+          </button>
+          <button
+            *ngIf="edicion"
+            type="button"
+            (click)="cancelarEdicion()"
+            [disabled]="edicion.guardando"
+            title="Salir de la edición sin guardar"
+            class="inline-flex items-center gap-[5px] h-[28px] px-2.5 rounded-[6px] text-[11px] font-semibold cursor-pointer transition-colors border bg-white text-gray-600 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
+            </svg>
+            Cancelar edición
+          </button>
+        </div>
+      </div>
+
+      <!-- LECTURA — los trayectos en tabla: una fila cada uno, con TODAS sus capturas dentro de su
+           propia fila. Con varios trayectos las tarjetas apiladas obligaban a bajar por toda la
+           pantalla para comparar dos recorridos o dos montos. -->
+      <app-salida-trayectos-tabla
+        *ngIf="!edicion"
+        [trayectos]="detalle.trayectos"
+        [catalogoNota]="consulta ? '' : '— no requieres subir captura.'" />
+
+      <!-- EDICIÓN — acá NO va la tabla: cada trayecto pasa a ser un formulario (una imagen y un
+           monto por captura, filas nuevas y el tope en vivo) y eso necesita el alto de una
+           tarjeta. La tabla es la vista de lectura. -->
+      <ng-container *ngIf="edicion as ed">
+        <div *ngFor="let t of detalle.trayectos" class="border rounded-lg p-3 flex flex-col gap-2" style="border-color:var(--color-abril-border)">
+          <div class="flex items-center justify-between">
+            <div class="text-xs font-semibold uppercase" style="color:var(--color-abril-standard)">Trayecto {{ t.orden + 1 }}</div>
+            <!-- Lo que va cargando el trayecto contra su tope, en vivo. Vira a ámbar al pasarse;
+                 guardar se apaga solo si el lote EMPEORA el exceso, para que un trayecto que
+                 ya venía por encima se pueda seguir corrigiendo hacia abajo (misma regla en backend). -->
+            <div *ngIf="ed.importeEnPantalla(t) > 0"
+                 class="text-xs font-semibold flex-shrink-0"
+                 [style.color]="ed.excedeTope(t) ? 'var(--color-abril-warning-dark)' : 'var(--color-abril-standard)'">
+              S/ {{ ed.importeEnPantalla(t) | number:'1.2-2' }}
+              <span class="font-normal text-gray-400">/ {{ ed.limiteTrayecto | number:'1.2-2' }}</span>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            <div>
+              <div class="text-xs text-gray-500 uppercase">Salida</div>
+              <div class="text-gray-800">{{ t.horaSalida ?? '—' }}</div>
+            </div>
+            <div>
+              <div class="text-xs text-gray-500 uppercase">Retorno</div>
+              <div class="text-gray-800">{{ t.horaRetorno ?? '—' }}</div>
+            </div>
+            <div class="col-span-2">
+              <div class="flex items-center gap-[6px]">
+                <span class="text-xs text-gray-500 uppercase">Motivo</span>
+                <!-- Solo con motivo del catálogo: el motivo libre no tiene el flag configurado. -->
+                <span *ngIf="t.esReembolsable !== null"
+                      class="text-[10px] px-[8px] py-[2px] rounded-full font-semibold tracking-wide whitespace-nowrap"
+                      [ngClass]="t.esReembolsable ? 'bg-[#DCFCE7] text-[#14532D]' : 'bg-[#F3F4F6] text-[#6B7280]'">
+                  {{ t.esReembolsable ? 'CON REEMBOLSO' : 'SIN REEMBOLSO' }}
+                </span>
+              </div>
+              <div class="text-gray-800">{{ t.motivo }}</div>
+            </div>
+            <div *ngIf="t.motivoAdicional" class="col-span-2">
+              <div class="text-xs text-gray-500 uppercase">Motivo adicional</div>
+              <div class="text-gray-800">{{ t.motivoAdicional }}</div>
+            </div>
+            <div>
+              <div class="text-xs text-gray-500 uppercase">Origen</div>
+              <div class="text-gray-800">{{ t.lugarOrigen ?? '—' }}</div>
+            </div>
+            <div>
+              <div class="text-xs text-gray-500 uppercase">Destino</div>
+              <div class="text-gray-800">{{ t.lugarDestino ?? '—' }}</div>
+            </div>
+            <div *ngIf="t.adjuntos.length > 0" class="col-span-2 flex flex-col gap-3">
+              <app-documento-embebido
+                *ngFor="let a of t.adjuntos"
+                etiqueta="Documento adjunto"
+                [nombre]="a.filename || null"
+                [url]="a.url" />
+            </div>
+          </div>
+
+          <!-- Capturas editables: se guardan todas juntas con el botón del pie del modal. -->
+          <app-salida-capturas-editor
+            class="mt-1"
+            [edicion]="ed"
+            [trayecto]="t"
+            (quitada)="onCapturaQuitada()" />
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- ── Planilla rendida ──────────────────────────────────────────── -->
+    <div *ngIf="mostrarDocumentos && detalle.rendicion as r" class="border-t pt-4" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Planilla de rendición"
+        [nota]="'Rendido el ' + (r.rendidoAt | date:'dd/MM/yyyy HH:mm')"
+        [nombre]="r.pdfFilename"
+        [url]="r.pdfUrl" />
+    </div>
+
+    <!-- ── Consolidado del S10 ───────────────────────────────────────── -->
+    <div *ngIf="mostrarDocumentos && detalle.consolidadoS10 as c" class="border-t pt-4" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Consolidado del S10"
+        [nota]="(c.ambito === 'Rendicion' ? 'Toda la planilla' : 'Solo esta salida')
+          + ' · adjuntado el ' + (c.uploadedAt | date:'dd/MM/yyyy HH:mm')"
+        [nombre]="c.pdfFilename"
+        [url]="c.pdfUrl" />
+    </div>
+
+    <!-- Los pies de abajo nunca coinciden (guardar y rendir son de lo aprobado; cancelar, de lo
+         pendiente) y van pegados al borde de abajo: con los archivos a la vista el modal es largo. -->
+
+    <!-- ── Guardar (edición) ──────────────────────────────────────────────
+         Un solo botón para todos los trayectos: sube las capturas nuevas y escribe los montos e
+         imágenes cambiados, en una sola llamada. Ocupa el lugar de "Rendir", que no se ofrece
+         mientras se edita: rendiría lo guardado y no lo que está en pantalla. -->
+    <div *ngIf="edicion"
+         class="sticky bottom-0 z-10 -mx-[20px] -mb-[20px] px-[20px] py-3 rounded-b-lg bg-white border-t flex flex-col items-center gap-1.5"
+         style="border-color:var(--color-abril-border)">
+      <div *ngIf="edicion.aviso" class="text-xs" style="color:var(--color-abril-warning)">{{ edicion.aviso }}</div>
+      <button type="button"
+              (click)="guardarTodo()"
+              [disabled]="!edicion.puedeGuardar"
+              class="h-[38px] px-5 text-white rounded-lg text-sm font-semibold transition-colors"
+              [class.cursor-pointer]="edicion.puedeGuardar"
+              [class.cursor-not-allowed]="!edicion.puedeGuardar"
+              [style.background]="edicion.puedeGuardar ? 'var(--color-abril-standard)' : '#D1D5DB'">
+        {{ edicion.textoBotonGuardar }}
+      </button>
+    </div>
+
+    <!-- ── Rendir (lectura) ──────────────────────────────────────────────
+         El mismo botón de la columna de acciones, para no tener que cerrar el detalle y volver a
+         buscar la fila. Aparece con la misma condición (`aptaParaRendir`, que resuelve el backend):
+         si acá no está, en la tabla tampoco. Al guardar capturas llega recalculado, así que aparece
+         apenas la salida queda completa. En consulta nunca: la salida es de otro. -->
+    <div *ngIf="!consulta && !edicion && detalle.aptaParaRendir"
+         class="sticky bottom-0 z-10 -mx-[20px] -mb-[20px] px-[20px] py-3 rounded-b-lg bg-white border-t flex justify-center"
+         style="border-color:var(--color-abril-border)">
+      <button
+        type="button"
+        (click)="rendirSolicitud()"
+        title="Rendir esta solicitud"
+        class="inline-flex items-center gap-[6px] h-[38px] px-5 rounded-lg text-sm font-semibold text-white cursor-pointer transition-colors"
+        style="background:#0086A5"
+        onmouseover="this.style.background='#006f8a'"
+        onmouseout="this.style.background='#0086A5'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17Z" fill="white"/>
+        </svg>
+        Rendir
+      </button>
+    </div>
+
+    <!-- ── Cancelar (pendiente) ──────────────────────────────────────────
+         El mismo "Cancelar" de la tabla y con la misma condición: solo mientras la salida no fue
+         aprobada ni rechazada. Por eso nunca comparte el pie con "Rendir" ni con el guardado. -->
+    <div *ngIf="puedeCancelar"
+         class="sticky bottom-0 z-10 -mx-[20px] -mb-[20px] px-[20px] py-3 rounded-b-lg bg-white border-t flex justify-center"
+         style="border-color:var(--color-abril-border)">
+      <button
+        type="button"
+        (click)="cancelarSolicitud()"
+        title="Cancelar esta solicitud de salida"
+        class="inline-flex items-center gap-[6px] h-[38px] px-5 rounded-lg text-sm font-semibold cursor-pointer transition-colors border bg-white text-abril-danger border-abril-danger hover:bg-abril-danger-light">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="9"/>
+          <path stroke-linecap="round" d="M6.3 6.3l11.4 11.4"/>
+        </svg>
+        Cancelar solicitud
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

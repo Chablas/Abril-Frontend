@@ -14,11 +14,18 @@ export interface ConsolidadoS10RendicionDto {
 
 /**
  * Consolidado del S10 vigente de una planilla de rendición. Un consolidado puede cubrir varias
- * planillas (de uno o de varios trabajadores de una misma razón social): las que lo comparten
- * reciben el mismo.
+ * planillas (de uno o de varios trabajadores, de las razones sociales que sean): las que lo
+ * comparten reciben el mismo.
  */
 export interface ConsolidadoS10Dto {
   id: number;
+  /**
+   * Código de la rendición grupal, `CONS-ÁREA-AAAA-NNN`: el nombre del conjunto de planillas que se
+   * consolidaron juntas. Sobrevive al reemplazo del archivo —el grupo es el mismo—, así que es el
+   * identificador con el que se sigue al consolidado por las cuatro pantallas de su ciclo. Null en
+   * los consolidados anteriores a la columna.
+   */
+  codigo: string | null;
   ambito: ConsolidadoS10Ambito;
   pdfUrl: string;
   pdfFilename: string;
@@ -31,6 +38,20 @@ export interface ConsolidadoS10Dto {
   /** Número del reembolso del S10. Es texto (puede traer letras). Null en los consolidados viejos. */
   numeroReembolso: string | null;
   /**
+   * La PLANILLA GRUPAL: el PDF que junta en un solo documento las planillas de gasto de todo lo que
+   * cubre el consolidado. La genera Abril One al adjuntarse el S10 —no se sube— y se rehace si el
+   * consolidado se reemplaza. Null en los consolidados anteriores a la columna.
+   */
+  planillaGrupalUrl: string | null;
+  planillaGrupalFilename: string | null;
+  /**
+   * Copia de la planilla grupal con la firma de la jefatura: se firma junto con el consolidado al
+   * aprobar el reembolso. Null mientras no se apruebe, y en los aprobados antes de que se firmara.
+   */
+  planillaGrupalFirmadoUrl: string | null;
+  planillaGrupalFirmadoFilename: string | null;
+
+  /**
    * Copia firmada por la jefatura (todas sus hojas). La genera la aprobación del reembolso
    * —aprobar ES firmar—, así que es null mientras no se haya aprobado.
    */
@@ -40,6 +61,21 @@ export interface ConsolidadoS10Dto {
   uploadedAt: string;
   /** Planillas que cubre, ordenadas por código. Vacía en los consolidados antiguos por salida. */
   rendiciones: ConsolidadoS10RendicionDto[];
+}
+
+/**
+ * Lo que deja adjuntar el Consolidado del S10: el documento que quedó y cómo salió el aviso a la
+ * jefatura, que va pegado al mismo paso —consolidar es lo que deja el reembolso esperando su firma—.
+ *
+ * El aviso es best-effort: si no salió, el consolidado igual quedó adjunto y `avisoJefatura` dice
+ * por qué. Desde Consolidados se puede volver a mandar a mano.
+ */
+export interface ConsolidadoS10UploadResultDto {
+  consolidado: ConsolidadoS10Dto;
+  /** true = el correo salió y la jefatura ya lo tiene en su bandeja. */
+  jefaturaAvisada: boolean;
+  /** Qué pasó con el aviso, ya redactado por el backend para imprimirlo tal cual. */
+  avisoJefatura: string;
 }
 
 /**

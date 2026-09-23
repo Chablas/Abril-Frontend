@@ -20,8 +20,14 @@ export class BandejaService {
     });
   }
 
-  getEmpresasDisponibles(): Observable<string[]> {
-    return this.http.get<string[]>(`${this.base}/empresas`, {
+  getEmpresasDisponibles(): Observable<{ id: number; nombre: string }[]> {
+    return this.http.get<{ id: number; nombre: string }[]>(`${this.base}/empresas`, {
+      headers: buildHabHeaders(),
+    });
+  }
+
+  getEntregablesDisponibles(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.base}/entregables`, {
       headers: buildHabHeaders(),
     });
   }

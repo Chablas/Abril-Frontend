@@ -121,12 +121,34 @@ export class GaCorreosConfig implements OnChanges {
   saving = false;
 
   /** Opciones de "Tipo de destinatario". Orden deliberado → `sortAlpha` en false. */
-  readonly tipoOptions: { id: CorreoTipoCodigo; label: string }[] = [
+  private readonly tipoOptionsTodos: { id: CorreoTipoCodigo; label: string }[] = [
     { id: 'TRABAJADOR', label: 'Trabajador' },
     { id: 'AREA', label: 'Área' },
     { id: 'ROL', label: 'Rol' },
+    { id: 'JEFE_AREA', label: 'Jefe del área del solicitante' },
     { id: 'CORREO', label: 'Correo escrito a mano' },
   ];
+
+  /**
+   * Correos que se envían con el jefe del área ya resuelto y por eso admiten ese tipo. Espeja
+   * `CorreoTipoCodigos.CorreosConJefeArea` del backend, que es quien lo valida de verdad (400): acá
+   * solo se oculta la opción para no ofrecer algo que se va a rechazar.
+   */
+  private static readonly CORREOS_CON_JEFE_AREA = ['CONFIRMACION'];
+
+  /**
+   * Las opciones que aplican al correo abierto. «Jefe del área» no se ofrece donde el envío no lo
+   * resuelve: ahí la fila quedaría prendida sin mandarle nada a nadie.
+   */
+  get tipoOptions(): { id: CorreoTipoCodigo; label: string }[] {
+    return this.tipoOptionsTodos.filter(
+      (t) => t.id !== 'JEFE_AREA' || this.admiteJefeArea,
+    );
+  }
+
+  get admiteJefeArea(): boolean {
+    return GaCorreosConfig.CORREOS_CON_JEFE_AREA.includes(this.eventoActivoCodigo ?? '');
+  }
 
   private static readonly EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -136,17 +158,20 @@ export class GaCorreosConfig implements OnChanges {
    */
   private readonly labelCorto: Record<string, string> = {
     REVISOR: 'Revisor',
+    REVISOR_JEFE_AREA: 'Jefe del área',
     CONFIRMACION: 'Confirmación',
     APROBADA: 'Aprobada',
     RECHAZADA: 'Rechazada',
     REN_PRIMERA_REVISION: '1.ª revisión al revisor',
     REN_ENVIADA: 'Rendición enviada',
     REN_PRIMERA_APROBADA: '1.ª revisión OK',
+    REN_PRIMERA_APROBADA_CONSOLIDADOR: 'Aviso al consolidador',
     REN_PRIMERA_OBSERVADA: '1.ª revisión observada',
-    S10_REVISOR: 'S10 al revisor',
+    S10_REVISOR: 'Aviso a la jefatura',
     REEMBOLSO_APROBADO: 'Reembolso OK',
     REEMBOLSO_RECHAZADO: 'Reembolso observado',
     TESORERIA_REEMBOLSO: 'Aviso a Tesorería',
+    CORRECCION_S10_SOLICITADA: 'Corrección al ERP',
     REEMBOLSO_PAGADO: 'Reembolso pagado',
     RECORDATORIO_RENDICION_APERTURA: 'Primer día hábil',
     RECORDATORIO_RENDICION_CIERRE: 'Último día para rendir',
@@ -420,6 +445,8 @@ export class GaCorreosConfig implements OnChanges {
     if (this.formTipo === 'TRABAJADOR') return this.formWorkerId != null;
     if (this.formTipo === 'AREA') return this.formAreaScopeId != null;
     if (this.formTipo === 'ROL') return this.formRoleId != null;
+    // El jefe del área no tiene nada que elegir: a quién apunta lo decide cada envío.
+    if (this.formTipo === 'JEFE_AREA') return true;
     return GaCorreosConfig.EMAIL_RE.test(this.formCorreo.trim());
   }
 
@@ -501,6 +528,7 @@ export class GaCorreosConfig implements OnChanges {
       case 'TRABAJADOR': return 'Trabajador';
       case 'AREA': return 'Área';
       case 'ROL': return 'Rol';
+      case 'JEFE_AREA': return 'Jefe del área';
       default: return 'Correo';
     }
   }

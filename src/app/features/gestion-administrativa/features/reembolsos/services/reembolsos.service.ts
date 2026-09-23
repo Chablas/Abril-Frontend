@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { CorreoAvisoDto } from '../../../shared/correo-aviso';
 import { ReembolsoBulkResultDto } from '../../../shared/dtos/rendicion-shared.dto';
+import { SolicitudSalidaDetalleDto } from '../../../shared/dtos/salida-detalle.dto';
 import {
   ReembolsoDetalleDto,
   ReembolsoFilterDataDto,
@@ -48,8 +49,9 @@ export class ReembolsosService {
   }
 
   /**
-   * Planillas firmadas, confirmadas y pagadas + los números de las tarjetas, contados sobre ese
-   * mismo conjunto. Vienen juntos para que un cambio de filtro se resuelva en una sola petición.
+   * Consolidados del S10 firmados, confirmados y pagados + los números de las tarjetas, contados
+   * sobre ese mismo conjunto. Vienen juntos para que un cambio de filtro se resuelva en una sola
+   * petición.
    */
   getAll(q: ReembolsoQuery): Observable<ReembolsoListResultDto> {
     return this.http.get<ReembolsoListResultDto>(this.apiUrl, {
@@ -64,8 +66,19 @@ export class ReembolsosService {
     });
   }
 
-  getDetalle(id: number): Observable<ReembolsoDetalleDto> {
-    return this.http.get<ReembolsoDetalleDto>(`${this.apiUrl}/${id}/detalle`, {
+  /** Un consolidado con las planillas que cubre y el desglose de sus salidas. */
+  getDetalle(consolidadoId: number): Observable<ReembolsoDetalleDto> {
+    return this.http.get<ReembolsoDetalleDto>(`${this.apiUrl}/${consolidadoId}/detalle`, {
+      headers: this.headers,
+    });
+  }
+
+  /**
+   * El detalle de una salida de la bandeja, en consulta: trayectos, vouchers con sus montos y
+   * adjuntos. Es lo que abre el ojo de la tabla de salidas del detalle del consolidado.
+   */
+  getSalidaDetalle(solicitudId: number): Observable<SolicitudSalidaDetalleDto> {
+    return this.http.get<SolicitudSalidaDetalleDto>(`${this.apiUrl}/salidas/${solicitudId}/detalle`, {
       headers: this.headers,
     });
   }
@@ -86,8 +99,8 @@ export class ReembolsosService {
   }
 
   /**
-   * El camino de vuelta (RG-49): devolver el consolidado con un motivo obligatorio. Deja la
-   * planilla Observada y vuelve al flujo de subsanación que ya existe — el consolidador recarga el
+   * El camino de vuelta (RG-49): devolver el consolidado con un motivo obligatorio. Deja sus
+   * salidas Observadas y vuelve al flujo de subsanación que ya existe — el consolidador recarga el
    * Consolidado del S10 o le pide la corrección al Coordinador ERP.
    */
   observar(dto: ReembolsoObservacionDto): Observable<ReembolsoBulkResultDto> {

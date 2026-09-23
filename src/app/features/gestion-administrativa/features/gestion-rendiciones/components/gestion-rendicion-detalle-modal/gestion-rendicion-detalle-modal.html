@@ -1,6 +1,6 @@
 <app-base-modal
   [title]="detalle ? 'Rendición ' + detalle.codigo : 'Rendición'"
-  width="w-[900px]"
+  width="w-[1000px]"
   closeColor="var(--color-abril-standard)"
   (closeModal)="cerrar()">
 
@@ -23,6 +23,16 @@
       <div class="flex flex-col">
         <span class="text-[11px] uppercase text-gray-400 font-semibold">Rendida</span>
         <span class="text-sm text-gray-700">{{ d.rendidoAt | date:'dd/MM/yyyy HH:mm' }}</span>
+      </div>
+
+      <!-- La rendición grupal a la que entró esta planilla: es con ese código que se la sigue en
+           Consolidados, en Correcciones S10 y en Reembolsos. -->
+      <div class="flex flex-col">
+        <span class="text-[11px] uppercase text-gray-400 font-semibold">Consolidado</span>
+        <span class="text-sm text-gray-700">{{ d.consolidadoS10?.codigo ?? '—' }}</span>
+        <span *ngIf="otrasDelConsolidado(d).length" class="text-[11px] text-gray-400">
+          con {{ otrasDelConsolidado(d).length }} planilla{{ otrasDelConsolidado(d).length > 1 ? 's' : '' }} más
+        </span>
       </div>
     </div>
 
@@ -60,65 +70,74 @@
       {{ d.primeraRevisionObservacion }}
     </div>
 
-    <!-- ── Documentos ───────────────────────────────────────────────────── -->
-    <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
-      <span class="text-[11px] uppercase text-gray-400 font-semibold">Documentos</span>
-
-      <a [href]="d.pdfUrl" target="_blank" rel="noopener noreferrer"
-         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
-         style="color:var(--color-abril-accent)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-          <path d="M14 2v6h6" stroke-linejoin="round"/>
-        </svg>
-        {{ d.pdfFilename }}
-        <span class="text-xs text-gray-400 font-normal">· Planilla de gasto</span>
-      </a>
-
-      <a *ngIf="d.consolidadoS10" [href]="d.consolidadoS10.pdfUrl" target="_blank" rel="noopener noreferrer"
-         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
-         style="color:var(--color-abril-accent)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-          <path d="M14 2v6h6" stroke-linejoin="round"/>
-        </svg>
-        {{ d.consolidadoS10.pdfFilename }}
-        <span class="text-xs text-gray-400 font-normal">· Consolidado del S10</span>
-      </a>
-      <span *ngIf="otrasDelConsolidado(d).length" class="text-xs text-gray-500 pl-6">
-        También cubre {{ otrasDelConsolidado(d).join(', ') }}
-      </span>
-      <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
-        {{ d.estadoPrimeraRevision === 'Aprobada'
-            ? 'El trabajador todavía no adjuntó el Consolidado del S10.'
-            : 'El Consolidado del S10 se habilita al aprobar la primera revisión.' }}
-      </span>
-
-      <!-- Las dos copias que deja la aprobación: aprobar ES firmar, y firma los dos documentos. -->
-      <a *ngIf="d.pdfFirmadoUrl" [href]="d.pdfFirmadoUrl" target="_blank" rel="noopener noreferrer"
-         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
-         style="color:var(--color-abril-accent)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
-          <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        {{ d.pdfFirmadoFilename ?? 'Planilla firmada' }}
-        <span class="text-xs text-gray-400 font-normal">· firmada el {{ d.firmadoAt | date:'dd/MM/yyyy' }}</span>
-      </a>
-
-      <a *ngIf="d.consolidadoS10?.pdfFirmadoUrl as firmado" [href]="firmado" target="_blank" rel="noopener noreferrer"
-         class="inline-flex items-center gap-2 hover:underline text-sm font-medium break-all"
-         style="color:var(--color-abril-accent)">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" class="flex-shrink-0" stroke="currentColor" stroke-width="2">
-          <path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        {{ d.consolidadoS10?.pdfFirmadoFilename ?? 'Consolidado del S10 firmado' }}
-        <span class="text-xs text-gray-400 font-normal">
-          · firmado el {{ d.consolidadoS10?.firmadoAt | date:'dd/MM/yyyy' }}
-        </span>
-      </a>
+    <!-- ── Documentos, cada uno a la vista ──────────────────────────────────
+         De cada documento se enseña UNA sola copia: la original mientras no haya firma, y la
+         firmada apenas existe —es el mismo papel, y verlo dos veces solo alarga el modal—. -->
+    <div *ngIf="!d.pdfFirmadoUrl" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Planilla de gasto"
+        [nombre]="d.pdfFilename"
+        [url]="d.pdfUrl" />
     </div>
 
-    <!-- ── Salidas: solo lectura. Lo que agrupa la planilla que se está decidiendo. ── -->
+    <!-- ng-container y no un div: el contenedor de arriba es un flex column con gap y un div de
+         más metería sus dos documentos dentro de un mismo hueco. -->
+    <ng-container *ngIf="d.consolidadoS10 as c">
+      <div *ngIf="!c.pdfFirmadoUrl" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+        <app-documento-embebido
+          [etiqueta]="c.codigo ? 'Consolidado ' + c.codigo : 'Consolidado del S10'"
+          [nombre]="c.pdfFilename"
+          [url]="c.pdfUrl" />
+      </div>
+
+      <!-- La planilla grupal del consolidado: el gasto de todas sus planillas en un solo
+           documento, esta incluida. -->
+      <ng-container *ngIf="!c.planillaGrupalFirmadoUrl">
+        <div *ngIf="c.planillaGrupalUrl as grupal" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+          <app-documento-embebido
+            etiqueta="Planilla grupal"
+            [nombre]="c.planillaGrupalFilename ?? 'Planilla grupal'"
+            [url]="grupal" />
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
+      {{ d.estadoPrimeraRevision === 'Aprobada'
+          ? 'Consolidado del S10 pendiente.'
+          : 'El Consolidado del S10 se habilita al aprobar la primera revisión.' }}
+    </span>
+
+    <!-- Las copias que deja la aprobación: aprobar ES firmar, y firma la planilla, el
+         consolidado y su planilla grupal. -->
+    <div *ngIf="d.pdfFirmadoUrl as planillaFirmada" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Planilla firmada"
+        [nota]="d.firmadoAt ? 'Firmada el ' + (d.firmadoAt | date:'dd/MM/yyyy') : null"
+        [nombre]="d.pdfFirmadoFilename ?? 'Planilla firmada'"
+        [url]="planillaFirmada"
+        [firmado]="true" />
+    </div>
+
+    <div *ngIf="d.consolidadoS10?.pdfFirmadoUrl as consolidadoFirmado" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Consolidado del S10 firmado"
+        [nota]="d.consolidadoS10?.firmadoAt ? 'Firmado el ' + (d.consolidadoS10?.firmadoAt | date:'dd/MM/yyyy') : null"
+        [nombre]="d.consolidadoS10?.pdfFirmadoFilename ?? 'Consolidado del S10 firmado'"
+        [url]="consolidadoFirmado"
+        [firmado]="true" />
+    </div>
+
+    <div *ngIf="d.consolidadoS10?.planillaGrupalFirmadoUrl as grupalFirmada" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Planilla grupal firmada"
+        [nombre]="d.consolidadoS10?.planillaGrupalFirmadoFilename ?? 'Planilla grupal firmada'"
+        [url]="grupalFirmada"
+        [firmado]="true" />
+    </div>
+
+    <!-- ── Salidas: solo lectura. Lo que agrupa la planilla que se está decidiendo; el ojo abre
+         el detalle de cada una (trayectos, capturas y montos). ── -->
     <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
       <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas de esta planilla</span>
 
@@ -133,6 +152,7 @@
               <th>Destino</th>
               <th>Monto</th>
               <th>Reembolso</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
@@ -163,103 +183,85 @@
                       + ': ' + s.observacionReembolso
                     : null" />
               </td>
+              <td class="text-center">
+                <button type="button" (click)="verSalida(s.id)" title="Ver el detalle de la salida"
+                        class="text-gray-400 hover:text-gray-600 cursor-pointer">
+                  <i class="ti ti-eye text-[17px]"></i>
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Los dos botones de la primera revisión: la decisión es de la planilla entera, así que van
-         al pie del modal —después de la planilla y sus salidas— y no en la tabla de más arriba. -->
-    <div *ngIf="d.porPrimeraRevision"
-         class="flex flex-wrap items-center justify-center gap-3 border-t pt-3"
+    <!-- ── Acciones ────────────────────────────────────────────────────────
+         Los dos botones de la primera revisión —la decisión es de la planilla entera, así que van
+         al pie del modal y no en la tabla de más arriba— y, para el consolidador, el primer
+         Consolidado del S10 (reemplazarlo es de Consolidados). Pegadas al borde de abajo: con los
+         documentos a la vista el modal es largo. -->
+    <div *ngIf="d.porPrimeraRevision || (d.puedeAdjuntarConsolidado && d.puedeConsolidar)"
+         class="sticky bottom-0 z-10 -mx-[20px] -mb-[20px] px-[20px] py-3 rounded-b-lg bg-white border-t flex flex-wrap items-center justify-center gap-3"
          style="border-color:var(--color-abril-border)">
-      <button
-        type="button"
-        (click)="aprobarPrimeraRevision()"
-        [disabled]="!d.puedeDecidir"
-        [title]="d.puedeDecidir
-          ? 'Habilita al trabajador a cargar el Consolidado del S10'
-          : 'No puedes revisar una rendición con tus propias salidas'"
-        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-        style="background:var(--color-abril-standard)">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-        </svg>
-        Aprobar la primera revisión
-      </button>
+      <ng-container *ngIf="d.porPrimeraRevision">
+        <button
+          type="button"
+          (click)="aprobarPrimeraRevision()"
+          [disabled]="!d.puedeDecidir"
+          [title]="d.puedeDecidir
+            ? 'Habilita al consolidador a cargar el Consolidado del S10'
+            : 'No puedes revisar una rendición con tus propias salidas'"
+          class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+          style="background:var(--color-abril-standard)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+          Aprobar la primera revisión
+        </button>
+
+        <button
+          type="button"
+          (click)="observarPrimeraRevision()"
+          [disabled]="!d.puedeDecidir"
+          [title]="d.puedeDecidir
+            ? 'Se te pedirá el comentario de qué tiene que corregir'
+            : 'No puedes revisar una rendición con tus propias salidas'"
+          class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          style="background:#FFFFFF;color:#D30000;border:1px solid #D30000">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+          </svg>
+          Observar
+        </button>
+
+        <span *ngIf="!d.puedeDecidir" class="text-[11px] text-gray-500 italic">
+          Esta rendición incluye salidas tuyas: la tiene que revisar otro jefe.
+        </span>
+      </ng-container>
 
       <button
+        *ngIf="d.puedeAdjuntarConsolidado && d.puedeConsolidar"
         type="button"
-        (click)="observarPrimeraRevision()"
-        [disabled]="!d.puedeDecidir"
-        [title]="d.puedeDecidir
-          ? 'Se te pedirá el comentario de qué tiene que corregir'
-          : 'No puedes revisar una rendición con tus propias salidas'"
-        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        style="background:#FFFFFF;color:#D30000;border:1px solid #D30000">
+        (click)="consolidarDesdeDetalle()"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
+        style="background:var(--color-abril-standard)">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
         </svg>
-        Observar
+        Adjuntar Consolidado del S10
       </button>
-
-      <span *ngIf="!d.puedeDecidir" class="text-[11px] text-gray-500 italic">
-        Esta rendición incluye salidas tuyas: la tiene que revisar otro jefe.
-      </span>
-    </div>
-
-    <!-- ── Decisión del reembolso ─────────────────────────────────────────
-         Es de la planilla entera, igual que la primera revisión: no se aprueban unas salidas sí y
-         otras no. Cubre las que todavía están por decidir; las ya decididas el backend las ignora. -->
-    <div *ngIf="d.porDecidirCount > 0"
-         class="flex flex-wrap items-center justify-center gap-3 border-t pt-3"
-         style="border-color:var(--color-abril-border)">
-      <button
-        type="button"
-        (click)="aprobar()"
-        [disabled]="!d.puedeDecidir"
-        [title]="d.puedeDecidir
-          ? 'Aprueba el reembolso y estampa tu firma en la planilla y en su Consolidado del S10'
-          : 'No puedes decidir el reembolso de tus propias salidas'"
-        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-        style="background:var(--color-abril-standard)">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-        </svg>
-        Aprobar el reembolso
-      </button>
-
-      <button
-        type="button"
-        (click)="observar()"
-        [disabled]="!d.puedeDecidir"
-        [title]="d.puedeDecidir
-          ? 'Se te pedirá la observación de qué tiene que corregir el trabajador'
-          : 'No puedes decidir el reembolso de tus propias salidas'"
-        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        style="background:#FFFFFF;color:#D30000;border:1px solid #D30000">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
-        </svg>
-        Observar
-      </button>
-
-      <span *ngIf="!d.puedeDecidir" class="text-[11px] text-gray-500 italic">
-        Esta rendición incluye salidas tuyas: la tiene que revisar otro jefe.
-      </span>
     </div>
 
   </div>
 
 </app-base-modal>
 
-<!-- ── Modal para registrar la firma la primera vez ─────────────────────
-     Salta con el 409 de aprobar: el revisor dibuja su firma sin salir de la pantalla y la
-     aprobación que había pedido se reintenta sola. -->
-<app-firma-registrar-modal
-  *ngIf="firmaModalAbierto"
-  (guardada)="onFirmaRegistrada()"
-  (cerrar)="cerrarFirmaModal()" />
+<!-- ── Detalle de una salida (el ojo de la tabla), en consulta ───────── -->
+<app-salida-detalle-modal
+  *ngIf="salidaId !== null"
+  [solicitudId]="salidaId"
+  [mostrarDocumentos]="false"
+  [cargar]="cargarSalida"
+  (close)="cerrarSalida()" />
