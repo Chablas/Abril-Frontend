@@ -107,14 +107,15 @@
 </div>
 
 <!-- ── Modal detalle del día ───────────────────────────────────────────── -->
+<!-- Sin `height` a propósito: con alto fijo el base-modal no scrollea, y un día con varias
+     limpiezas quedaba cortado arriba y abajo. Así scrollea entero, como el de Consolidados. -->
 <app-base-modal
   *ngIf="selectedIso"
   [title]="'Limpiezas · ' + selectedLabel"
   width="w-[560px]"
-  height="h-auto"
   (closeModal)="closeDay()">
 
-  <div class="flex flex-col gap-3 p-1 pb-5">
+  <div class="flex flex-col gap-3 p-1">
 
     <!-- Lista de limpiezas del día -->
     <div *ngIf="selectedLimpiezas.length; else sinLimpiezas" class="flex flex-col gap-2">
@@ -127,6 +128,9 @@
               [ngClass]="esDepartamento(l) ? 'text-[#2E7D32]' : 'text-[#0086A5]'">
               <span class="w-2.5 h-2.5 rounded-full shrink-0" [ngClass]="esDepartamento(l) ? 'bg-[#4CAF50]' : 'bg-[#0086A5]'"></span>
               {{ l.tipoDescripcion }}
+              <span *ngIf="l.horaInicio" class="ml-1 inline-flex items-center gap-1 text-xs font-normal text-gray-600">
+                <i class="ti ti-clock"></i>{{ horario(l) }}
+              </span>
             </span>
             <span *ngIf="esDepartamento(l)" class="text-xs text-gray-600 truncate">
               {{ l.vecinoDireccion || 'Sin dirección' }}<span *ngIf="l.vecinoInterior"> · {{ l.vecinoInterior }}</span><span *ngIf="l.vecinoNombre"> — {{ l.vecinoNombre }}</span>
@@ -222,7 +226,32 @@
         </div>
 
         <div class="flex flex-col gap-[6px]">
-          <label class="text-xs text-[#4CAF50] font-medium">Detalle (opcional)</label>
+          <label class="text-xs text-[#4CAF50] font-medium">Horario · opcional</label>
+          <div class="flex items-center gap-2">
+            <app-time-picker
+              class="flex-1 min-w-0"
+              [showLabel]="false"
+              placeholder="Inicio"
+              [minuteStep]="5"
+              [value]="nuevo.horaInicio"
+              (valueChange)="onHoraInicioChange($event)">
+            </app-time-picker>
+            <span class="text-xs text-gray-400">a</span>
+            <app-time-picker
+              class="flex-1 min-w-0"
+              [showLabel]="false"
+              placeholder="Fin"
+              [minuteStep]="5"
+              [min]="minHoraFin"
+              [disabled]="!nuevo.horaInicio"
+              [value]="nuevo.horaFin"
+              (valueChange)="nuevo.horaFin = $event">
+            </app-time-picker>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-[6px]">
+          <label class="text-xs text-[#4CAF50] font-medium">Detalle · opcional</label>
           <textarea
             [(ngModel)]="nuevo.descripcion"
             rows="2"
