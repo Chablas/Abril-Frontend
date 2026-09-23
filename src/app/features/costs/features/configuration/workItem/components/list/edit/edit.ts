@@ -69,13 +69,18 @@ export class WorkItemEdit implements OnInit {
   }
 
   get formsTotal(): number {
-    return this.forms.reduce((acc, f) => acc + (Number(f.percentage) || 0), 0);
+    return this.round2(this.forms.reduce((acc, f) => acc + (Number(f.percentage) || 0), 0));
   }
 
   addForm(): void {
     const concept = this.newForm.concept.trim();
     const percentage = Number(this.newForm.percentage);
     if (!concept || !percentage || percentage <= 0) return;
+    const total = this.round2(this.formsTotal + percentage);
+    if (total > 100) {
+      this.warnOverLimit(total);
+      return;
+    }
     this.forms.push({ concept, percentage, sortOrder: this.forms.length });
     this.newForm = { percentage: null, concept: '' };
   }
@@ -101,18 +106,43 @@ export class WorkItemEdit implements OnInit {
     this.forms.forEach((f, i) => (f.sortOrder = i));
   }
 
+  /** Suma con 2 decimales: 33.33 + 33.33 + 33.34 da 100 y no 100.00000000000001. */
+  private round2(value: number): number {
+    return Math.round(value * 100) / 100;
+  }
+
+  private warnOverLimit(total: number): void {
+    Swal.fire({ icon: 'warning', title: 'Supera el 100%', text: `El total quedaría en ${total}%.` });
+  }
+
   save(): void {
     if (!this.dto.workItemDescription.trim()) {
-      Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Ingresa una descripción.' });
+      Swal.fire({ icon: 'warning', title: 'Campo requerido', text: 'Ingresa una descripción.' });
       return;
     }
     if (!this.dto.workItemCategoryId) {
-      Swal.fire({ icon: 'error', title: 'Campo requerido', text: 'Selecciona la partida de control.' });
+      Swal.fire({ icon: 'warning', title: 'Campo requerido', text: 'Selecciona la partida de control.' });
+      return;
+    }
+    if (this.forms.some((f) => !(Number(f.percentage) > 0))) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Campo requerido',
+        text: 'Cada forma de valorización debe tener un porcentaje mayor a 0.',
+      });
       return;
     }
 
-    // Agregar la fila pendiente si el usuario olvidó pulsar "Agregar".
-    if (this.newForm.concept.trim() && Number(this.newForm.percentage) > 0) this.addForm();
+    // Agregar la fila pendiente si el usuario olvidó pulsar "Agregar". El tope se mide con ella
+    // incluida: si no entrara, se guardaría sin la fila que el usuario ve escrita.
+    const pending =
+      this.newForm.concept.trim() && Number(this.newForm.percentage) > 0 ? Number(this.newForm.percentage) : 0;
+    const total = this.round2(this.formsTotal + pending);
+    if (total > 100) {
+      this.warnOverLimit(total);
+      return;
+    }
+    if (pending) this.addForm();
 
     const payload: WorkItemEditDto = {
       ...this.dto,

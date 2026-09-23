@@ -39,7 +39,7 @@
           Formas de valorización (cláusula 5.1)
         </label>
         <span class="text-xs font-medium"
-          [ngClass]="formsTotal === 100 ? 'text-[#009C87]' : 'text-gray-400'">
+          [ngClass]="formsTotal > 100 ? 'text-red-500' : formsTotal === 100 ? 'text-[#009C87]' : 'text-gray-400'">
           Total: {{ formsTotal }}%
         </span>
       </div>
