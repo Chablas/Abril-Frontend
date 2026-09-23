@@ -34,6 +34,12 @@ export class ReembolsoPipeline {
   @Input() pipeline: ReembolsoPipelineDto | null = null;
 
   /**
+   * Título del encabezado. Consolidados pasa «Seguimiento» a secas: ahí se habla del consolidado,
+   * no del reembolso, y el encabezado ya lo nombra («· Consolidado CONS-…»).
+   */
+  @Input() titulo = 'Seguimiento del reembolso';
+
+  /**
    * El recorrido, solo si tiene fases. Un detalle viejo o un DTO sin llenar dejaría una tarjeta
    * vacía en lo primero que se lee del modal, y eso se ve como un error.
    */

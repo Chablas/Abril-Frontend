@@ -435,12 +435,12 @@ export class Consolidados implements OnInit {
     if (items.length === 0) return;
 
     const salidas = items.reduce((acc, c) => acc + c.porDecidirCount, 0);
-    // Con dos firmas, la primera no cierra nada: decirlo evita que el jefe crea que el reembolso
+    // Con dos firmas, la primera no cierra nada: decirlo evita que el jefe crea que el consolidado
     // ya pasó a Tesorería (y que vuelva a apretar Aprobar creyendo que no funcionó).
     const despues = items.length === 1 ? items[0].firmasPendientes.slice(1) : [];
     const result = await confirmarConCorreos({
       titulo: items.length === 1
-        ? '¿Aprobar el reembolso de ' + this.referencia(items[0]) + '?'
+        ? `¿Aprobar ${this.referencia(items[0])}?`
         : `¿Aprobar ${items.length} consolidados?`,
       // El conteo no está en la tabla —un consolidado cubre varias salidas— y la firma es el
       // efecto que no se ve.
@@ -462,7 +462,7 @@ export class Consolidados implements OnInit {
     const { value: observacion, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
       titulo: items.length === 1
-        ? '¿Observar el reembolso de ' + this.referencia(items[0]) + '?'
+        ? `¿Observar ${this.referencia(items[0])}?`
         : `¿Observar ${items.length} consolidados?`,
       avisos: await this.avisos(items, false),
       observacion: {
@@ -515,7 +515,7 @@ export class Consolidados implements OnInit {
 
     const faltan = c.firmasPendientes;
     const result = await confirmarConCorreos({
-      titulo: '¿Volver a firmar ' + this.referencia(c) + '?',
+      titulo: `¿Volver a firmar ${this.referencia(c)}?`,
       nota: 'Reemplaza tu firma con la fecha de hoy.'
           + (faltan.length ? ` Sigue faltando la firma de ${faltan.join(', ')}.` : ''),
       avisos: [],
@@ -587,9 +587,12 @@ export class Consolidados implements OnInit {
   readonly reembolsoLabelCorto = reembolsoLabelCorto;
   readonly correccionS10Colors = correccionS10Colors;
 
-  /** Cómo se nombra un consolidado en los diálogos: por su número de reembolso del S10. */
+  /**
+   * Cómo se nombra un consolidado en los diálogos: por su número de reembolso del S10 («el
+   * consolidado N.° 12345»), o «este consolidado» en los viejos que no lo tienen.
+   */
   referencia(c: ConsolidadoListItemDto): string {
-    return c.numeroReembolso ? 'N.° ' + c.numeroReembolso : 'este consolidado';
+    return c.numeroReembolso ? 'el consolidado N.° ' + c.numeroReembolso : 'este consolidado';
   }
 
   /** "Ana Pérez" o "Ana Pérez +2" — un consolidado puede cubrir a varios. */

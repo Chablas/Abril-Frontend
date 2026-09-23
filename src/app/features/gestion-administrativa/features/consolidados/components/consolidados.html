@@ -1,7 +1,7 @@
 <app-abril-page-header
   [badge]="'GESTIÓN ADMINISTRATIVA · ' + anioActual"
   titulo="Consolidados"
-  subtitulo="Decisión y firma del reembolso sobre el Consolidado del S10."
+  subtitulo="Decisión y firma del Consolidado del S10."
   [tabs]="tabs"
   [botonSecundario]="botonConfiguracion"
   (secondaryClick)="abrirConfiguracion()">
@@ -49,7 +49,7 @@
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
       </svg>
-      Aprobar reembolso<span *ngIf="selectedParaAprobar.length"> ({{ selectedParaAprobar.length }})</span>
+      Aprobar consolidado<span *ngIf="selectedParaAprobar.length"> ({{ selectedParaAprobar.length }})</span>
     </button>
 
     <button
@@ -62,7 +62,7 @@
         <path stroke-linecap="round" d="M12 9v4m0 4h.01"/>
         <path stroke-linecap="round" stroke-linejoin="round" d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
       </svg>
-      Observar reembolso<span *ngIf="selectedParaObservar.length"> ({{ selectedParaObservar.length }})</span>
+      Observar consolidado<span *ngIf="selectedParaObservar.length"> ({{ selectedParaObservar.length }})</span>
     </button>
   </div>
 
@@ -89,7 +89,7 @@
           <th>Razón social</th>
           <th>Adjuntado</th>
           <th>Documentos</th>
-          <th>Reembolso</th>
+          <th>Estado</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -342,7 +342,7 @@
   <div class="w-full">
     <label class="block text-[11px] font-semibold uppercase text-gray-400 mb-1">Buscar</label>
     <app-search-input
-      placeholder="N.° de reembolso o código de rendición..."
+      placeholder="Consolidado, N.° de reembolso o rendición..."
       width="100%"
       [value]="filters.texto"
       (valueChange)="onTextoChange($event)">
@@ -392,7 +392,7 @@
 
   <div class="w-full">
     <app-search-select
-      label="Reembolso"
+      label="Estado"
       [options]="estadoReembolsoOptions"
       valueField="value"
       displayField="label"

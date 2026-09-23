@@ -5,7 +5,7 @@
        una planilla o una rendición grupal. -->
   <div class="rp__head">
     <span class="rp__label">
-      Seguimiento del reembolso
+      {{ titulo }}
       <span *ngIf="p.itemCodigo" class="rp__code">· {{ p.itemTipo }} {{ p.itemCodigo }}</span>
     </span>
     <span class="rp__count">Paso {{ p.pasoActual }} de {{ p.totalPasos }}</span>

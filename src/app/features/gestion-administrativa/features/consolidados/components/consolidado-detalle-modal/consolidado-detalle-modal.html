@@ -6,9 +6,10 @@
 
   <div *ngIf="detalle as d" class="flex flex-col gap-4 pt-4">
 
-    <!-- ── En qué va el reembolso ───────────────────────────────────────
-         Primero de todo: es la pregunta con la que se abre el modal. -->
-    <app-reembolso-pipeline [pipeline]="d.pipeline" />
+    <!-- ── En qué va el consolidado ─────────────────────────────────────
+         Primero de todo: es la pregunta con la que se abre el modal. El encabezado ya nombra al
+         consolidado («· Consolidado CONS-…»), así que el título va sin «del reembolso». -->
+    <app-reembolso-pipeline [pipeline]="d.pipeline" titulo="Seguimiento" />
 
     <!-- ── Cabecera ─────────────────────────────────────────────────────── -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -38,7 +39,7 @@
          class="border rounded-lg p-3 text-sm"
          style="border-color:#FCA5A5;background:#FEF2F2;color:#991B1B">
       <span class="font-semibold">
-        {{ d.observacionReembolsoOrigen ? 'Observación de ' + d.observacionReembolsoOrigen : 'Observación del reembolso' }}:
+        {{ d.observacionReembolsoOrigen ? 'Observación de ' + d.observacionReembolsoOrigen : 'Observación del consolidado' }}:
       </span>
       {{ d.observacionReembolso }}
     </div>
@@ -74,7 +75,7 @@
 
     <!-- ── Estado del consolidado ───────────────────────────────────────── -->
     <div class="flex items-center gap-3 border-t pt-3" style="border-color:var(--color-abril-border)">
-      <span class="text-[11px] uppercase text-gray-400 font-semibold">Reembolso</span>
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">Estado</span>
       <app-status-badge
         [text]="reembolsoLabelCorto(d.estadoReembolso)"
         [bgColor]="reembolsoColors(d.estadoReembolso).bg"
@@ -204,7 +205,7 @@
                 <th>Motivo</th>
                 <th>Destino</th>
                 <th>Monto</th>
-                <th>Reembolso</th>
+                <th>Estado</th>
                 <th></th>
               </tr>
             </thead>
@@ -262,20 +263,20 @@
           *ngIf="puedeAprobar"
           type="button"
           (click)="aprobar()"
-          title="Aprueba el reembolso y estampa tu firma en el consolidado y en las planillas que cubre"
+          title="Aprueba el consolidado y estampa tu firma en él y en las planillas que cubre"
           class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
           style="background:var(--color-abril-standard)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
           </svg>
-          Aprobar el reembolso
+          Aprobar el consolidado
         </button>
 
         <button
           *ngIf="d.puedeVolverAFirmar"
           type="button"
           (click)="volverAFirmar()"
-          title="Reemplaza tu firma por una nueva, con la fecha de hoy. El reembolso sigue esperando la firma que falta"
+          title="Reemplaza tu firma por una nueva, con la fecha de hoy. El consolidado sigue esperando la firma que falta"
           class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold cursor-pointer transition-colors"
           style="background:#FFFFFF;color:var(--color-abril-standard);border:1px solid var(--color-abril-standard)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

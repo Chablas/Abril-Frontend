@@ -29,8 +29,8 @@ export interface CorreoPreviewRequestDto {
   aprobar: boolean;
   /**
    * De qué paso se pregunta, cuando la pantalla dispara más de una familia de correos. Sin valor
-   * es la primera revisión, que es su decisión de siempre; `CONSOLIDADO_S10` es el aviso a la
-   * jefatura que sale al adjuntar el consolidado.
+   * es la primera revisión, que es su decisión de siempre; `CONSOLIDADO_S10` son los avisos que
+   * salen al adjuntar el consolidado (a la jefatura y a los trabajadores de sus rendiciones).
    */
   accion?: 'CONSOLIDADO_S10';
 }

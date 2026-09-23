@@ -70,9 +70,10 @@ export class ConsolidadoS10Modal implements OnDestroy {
   @Input() razonSocial: string | null = null;
 
   /**
-   * Preview de a quién le va a llegar el aviso de la jefatura, que la pantalla anfitriona sabe
-   * pedir (es su endpoint). Se pide al confirmar y no al abrir: es una petición que solo hace falta
-   * si de verdad se va a adjuntar.
+   * Preview de a quién le van a llegar los avisos de adjuntar, que la pantalla anfitriona sabe pedir
+   * (es su endpoint): la jefatura y, al adjuntar el primero, los trabajadores de las rendiciones que
+   * incluye. Se pide al confirmar y no al abrir: es una petición que solo hace falta si de verdad se
+   * va a adjuntar.
    */
   @Input() avisosJefatura?: () => Observable<CorreoAvisoDto[]>;
 
@@ -111,7 +112,7 @@ export class ConsolidadoS10Modal implements OnDestroy {
     if (!a) return null;
     const partes: string[] = [];
     if (a.montoTotal !== null) partes.push(`S/ ${formatNumber(a.montoTotal, 'es-PE', '1.2-2')}`);
-    if (a.numeroReembolso) partes.push(`Reembolso ${a.numeroReembolso}`);
+    if (a.numeroReembolso) partes.push(`N.° ${a.numeroReembolso}`);
     if (a.uploadedAt) partes.push(formatDate(a.uploadedAt, 'dd/MM/yyyy HH:mm', 'es-PE'));
     partes.push('subir otro lo reemplaza');
     return partes.join(' · ');
@@ -171,8 +172,9 @@ export class ConsolidadoS10Modal implements OnDestroy {
   async guardar(): Promise<void> {
     if (!this.puedeGuardar) return;
 
-    // Adjuntar dispara el aviso a la jefatura en el mismo paso, así que la confirmación imprime a
-    // quién le va a llegar: es la misma regla que el resto de las acciones del flujo.
+    // Adjuntar dispara los avisos en el mismo paso (a la jefatura y, el primero, a los trabajadores),
+    // así que la confirmación imprime a quién le van a llegar: es la misma regla que el resto de las
+    // acciones del flujo.
     if (this.avisosJefatura) {
       const result = await confirmarConCorreos({
         titulo: this.actual ? '¿Reemplazar el Consolidado del S10?' : '¿Adjuntar el Consolidado del S10?',

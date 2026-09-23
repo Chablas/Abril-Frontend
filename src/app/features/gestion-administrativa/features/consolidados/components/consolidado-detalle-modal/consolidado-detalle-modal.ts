@@ -131,7 +131,7 @@ export class ConsolidadoDetalleModal implements OnInit {
   /**
    * Las firmas que faltan, sin contar la propia: cuando le toca firmar y no lo hizo, él mismo
    * encabeza la lista, y nombrarse ahí se lee como si el documento estuviera esperando a otro.
-   * Vacío cuando el único que falta es él (ahí habla el botón «Aprobar el reembolso»).
+   * Vacío cuando el único que falta es él (ahí habla el botón «Aprobar el consolidado»).
    */
   get firmasFaltantesTexto(): string {
     const d = this.detalle;
@@ -143,11 +143,11 @@ export class ConsolidadoDetalleModal implements OnInit {
     if (!this.puedeAprobar) return;
     const d = this.detalle!;
 
-    // Con dos firmas, la primera no cierra nada: decirlo evita que el jefe crea que el reembolso
+    // Con dos firmas, la primera no cierra nada: decirlo evita que el jefe crea que el consolidado
     // ya pasó a Tesorería.
     const despues = d.firmasPendientes.slice(1);
     const result = await confirmarConCorreos({
-      titulo: '¿Aprobar el reembolso de este consolidado?',
+      titulo: '¿Aprobar este consolidado?',
       // Lo único que el modal no muestra: que aprobar ES firmar todos esos documentos.
       nota: 'Firma el consolidado, la planilla grupal y sus planillas.'
           + (despues.length ? ` Después falta la firma de ${despues.join(', ')}.` : ''),
@@ -229,7 +229,7 @@ export class ConsolidadoDetalleModal implements OnInit {
 
     const { value: observacion, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
-      titulo: '¿Observar el reembolso de este consolidado?',
+      titulo: '¿Observar este consolidado?',
       avisos: await this.avisos(false),
       observacion: {
         label: 'Observación',

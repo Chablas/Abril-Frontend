@@ -74,9 +74,9 @@ interface PantallaDef {
  *    recordatorios de ese plazo y los REVISORES de cada área — el revisor es a quien se le manda la
  *    solicitud que nace acá.
  *  • Gestión de Salidas: los correos de la decisión del revisor y la VISIBILIDAD de esa bandeja.
- *  • Gestión de Rendiciones: los correos de la primera revisión y la VISIBILIDAD de esa bandeja
- *    (independiente de la de salidas).
- *  • Consolidados: los correos de la decisión del reembolso y de los trámites del consolidador
+ *  • Gestión de Rendiciones: los correos de la primera revisión y el que avisa a los trabajadores al
+ *    adjuntar el consolidado, y la VISIBILIDAD de esa bandeja (independiente de la de salidas).
+ *  • Consolidados: los correos de la decisión del consolidado y de los trámites del consolidador
  *    (avisar a la jefatura, pedir la corrección al ERP), la VISIBILIDAD de esa bandeja, los
  *    CONSOLIDADORES, que es quién adjunta el Consolidado del S10 de los trabajadores de cada área,
  *    y las FIRMAS, o sea cómo registra su firma quien aprueba acá.
@@ -194,7 +194,7 @@ export class GaPantallaConfiguracion implements OnInit {
       nombre: 'Consolidados',
       volverA: '/gestion-administrativa/consolidados',
       subtitulo:
-        'Correos del reembolso y del consolidador, visibilidad de la bandeja, consolidadores por área y cómo se registra la firma.',
+        'Correos del consolidado, visibilidad de la bandeja, consolidadores por área y cómo se registra la firma.',
       secciones: [
         GaPantallaConfiguracion.SECCION_CORREOS,
         {
