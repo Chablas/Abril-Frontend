@@ -1,0 +1,149 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Evaluar al Staff"
+  subtitulo="Evaluación 360° identificada: como Residente, calificas a todo el staff de tu proyecto."
+  [tabGroups]="tabGroups"
+></app-abril-page-header>
+
+<div class="ec-root">
+
+  <!-- LOADING -->
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div>
+    <span>Cargando...</span>
+  </div>
+
+  <!-- SIN PENDIENTES -->
+  <div class="empty-state" *ngIf="!loading && !pendientes.length">
+    <i class="ti ti-check"></i>
+    <h3>No hay staff pendiente</h3>
+    <p>Ya evaluaste a todo el staff de tu proyecto en este período, o no hay un período activo.</p>
+  </div>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div class="ec-content" *ngIf="!loading && pendientes.length">
+
+    <!-- PANEL IZQUIERDO: lista de staff -->
+    <div class="panel-left">
+      <div class="panel-header">
+        <div class="panel-title">Staff pendiente</div>
+        <div class="panel-badge">{{ pendientes.length }}</div>
+      </div>
+
+      <div class="contractor-list">
+        <div class="contractor-card"
+          *ngFor="let t of pendientes"
+          [class.active]="trabajadorSeleccionado?.workerId === t.workerId"
+          (click)="seleccionarTrabajador(t)">
+          <div class="cc-header">
+            <div class="cc-avatar">{{ t.nombreCompleto.charAt(0) }}</div>
+            <div class="cc-info">
+              <div class="cc-name">{{ t.nombreCompleto }}</div>
+              <div class="cc-project"><i class="ti ti-id-badge-2"></i> {{ t.puesto }}</div>
+            </div>
+          </div>
+          <div class="cc-footer">
+            <span class="cc-pendiente">Pendiente</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL DERECHO: formulario de evaluación -->
+    <div class="panel-right">
+      <!-- Sin selección -->
+      <div class="empty-form" *ngIf="!trabajadorSeleccionado">
+        <i class="ti ti-arrow-left"></i>
+        <p>Selecciona a un trabajador para evaluarlo</p>
+      </div>
+
+      <!-- Cargando plantilla -->
+      <div class="empty-form" *ngIf="trabajadorSeleccionado && cargandoPlantilla">
+        <div class="spinner"></div>
+        <p>Cargando criterios...</p>
+      </div>
+
+      <!-- Formulario activo -->
+      <div class="eval-form" *ngIf="trabajadorSeleccionado && !cargandoPlantilla">
+        <div class="ef-header">
+          <div>
+            <div class="ef-title">{{ trabajadorSeleccionado.nombreCompleto }}</div>
+            <div class="ef-sub">{{ trabajadorSeleccionado.puesto }}</div>
+          </div>
+          <div class="ef-header-actions">
+            <button class="btn-cambiar" (click)="cambiarTrabajador()">
+              <i class="ti ti-x"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Escala de referencia -->
+        <div class="scale-ref">
+          <span *ngFor="let p of puntajes" class="scale-chip" [ngClass]="'scale-' + p">
+            {{ p }}: {{ puntajeLabel[p] }}
+          </span>
+        </div>
+
+        <!-- Criterios -->
+        <div class="criteria-list">
+
+          <div class="criterio-grupo" *ngIf="detallesFuncionales.length">
+            <div class="criterio-grupo-titulo">Criterios funcionales</div>
+            <div class="criterion-row" *ngFor="let d of detallesFuncionales; let i = index">
+              <div class="cr-num">{{ i + 1 }}</div>
+              <div class="cr-text">{{ d.criterio }}</div>
+              <div class="cr-puntaje">
+                <button *ngFor="let p of puntajes"
+                  class="puntaje-btn"
+                  [class.selected]="d.puntaje === p"
+                  [ngClass]="d.puntaje === p ? 'puntaje-' + p : ''"
+                  (click)="setPuntaje(d, p)">
+                  {{ p }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="criterio-grupo" *ngIf="detallesTransversales.length">
+            <div class="criterio-grupo-titulo">Criterios transversales</div>
+            <div class="criterion-row" *ngFor="let d of detallesTransversales; let i = index">
+              <div class="cr-num">{{ i + 1 }}</div>
+              <div class="cr-text">{{ d.criterio }}</div>
+              <div class="cr-puntaje">
+                <button *ngFor="let p of puntajes"
+                  class="puntaje-btn"
+                  [class.selected]="d.puntaje === p"
+                  [ngClass]="d.puntaje === p ? 'puntaje-' + p : ''"
+                  (click)="setPuntaje(d, p)">
+                  {{ p }}
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Comentario + Guardar -->
+        <div class="bottom-bar">
+          <div class="bottom-comentario">
+            <label class="cmt-label">Comentario (opcional)</label>
+            <textarea class="cmt-input" rows="2" [(ngModel)]="comentario"
+              placeholder="Observaciones adicionales sobre el desempeño..."></textarea>
+          </div>
+          <div class="bottom-actions">
+            <div class="nota-preview" *ngIf="notaCalculada > 0">
+              <span class="np-label">Nota:</span>
+              <span class="np-num" [ngClass]="estadoClase(notaCalculada)">{{ notaCalculada }}</span>
+              <span class="np-estado" [ngClass]="estadoClase(notaCalculada)">{{ estadoLabel(notaCalculada) }}</span>
+            </div>
+            <button class="btn-guardar" [disabled]="!puedeGuardar || guardando" (click)="guardar()">
+              <i class="ti ti-device-floppy"></i>
+              {{ guardando ? 'Guardando...' : 'Registrar evaluación' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

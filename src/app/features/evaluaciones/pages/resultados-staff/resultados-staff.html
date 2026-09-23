@@ -1,0 +1,48 @@
+<app-abril-page-header
+  badge="EVALUACIONES"
+  titulo="Resultados — Evaluación 360° de Staff"
+  subtitulo="Promedios por trabajador y puesto para el período activo."
+  [tabGroups]="tabGroups"
+></app-abril-page-header>
+
+<div class="rs-root">
+
+  <div class="loading-state" *ngIf="loading">
+    <div class="spinner"></div><span>Cargando resultados...</span>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && !resultados.length">
+    <i class="ti ti-calendar-off"></i>
+    <h3>Sin resultados</h3>
+    <p>No hay evaluaciones registradas para el período activo.</p>
+  </div>
+
+  <div class="rs-content" *ngIf="!loading && resultados.length">
+    <div class="rs-toolbar">
+      <input class="rs-buscador" type="text" [(ngModel)]="busqueda" placeholder="Buscar por nombre o puesto..." />
+    </div>
+
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Trabajador</th>
+            <th>Puesto</th>
+            <th>Prom. funcional</th>
+            <th>Prom. transversal</th>
+            <th>Prom. general</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let r of resultadosFiltrados">
+            <td>{{ r.nombreCompleto | titleCase }}</td>
+            <td>{{ r.puesto | titleCase }}</td>
+            <td [ngClass]="notaClase(r.promedioFuncional)">{{ notaDisplay(r.promedioFuncional) }}</td>
+            <td [ngClass]="notaClase(r.promedioTransversal)">{{ notaDisplay(r.promedioTransversal) }}</td>
+            <td [ngClass]="notaClase(r.promedioGeneral)"><strong>{{ notaDisplay(r.promedioGeneral) }}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

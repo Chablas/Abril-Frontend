@@ -24,6 +24,10 @@ export function buildEvaluacionesTabGroups(acceso: EvAccesoDto | null): AbrilPag
   const puedeVerResultadosGestionSsoma = !!acceso?.esJefeSsoma;
   const puedeVerMisResultadosGestionSsoma = !!acceso?.esEquipoSsoma;
   const puedeVerDashboardPrevencionistas = !!acceso?.esJefeSsoma;
+  // Evaluación 360°: el Residente evalúa (identificado) a todo el staff de su
+  // propio proyecto — el backend ya restringe el alcance por proyecto, este
+  // flag solo decide si se ofrece la pestaña.
+  const esResidente = !!acceso?.esResidente;
 
   return [
     { label: 'Residentes',   icono: 'ti-user-check', tabs: [
@@ -53,6 +57,10 @@ export function buildEvaluacionesTabGroups(acceso: EvAccesoDto | null): AbrilPag
       ...(puedeEvaluarGestionSsoma ? [{ label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/gestion-ssoma', featureKey: 'evaluaciones.gestion-ssoma' }] : []),
       ...(puedeVerResultadosGestionSsoma ? [{ label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-gestion-ssoma', featureKey: 'evaluaciones.resultados-gestion-ssoma' }] : []),
       ...(puedeVerMisResultadosGestionSsoma ? [{ label: 'Mis resultados', icono: 'ti-chart-bar', route: '/evaluaciones/mis-resultados-gestion-ssoma', featureKey: 'evaluaciones.mis-resultados-gestion-ssoma' }] : []),
+    ]},
+    { label: 'Staff 360°', icono: 'ti-user-star', tabs: [
+      ...(esResidente ? [{ label: 'Evaluar', icono: 'ti-pencil', route: '/evaluaciones/evaluar-staff', featureKey: 'evaluaciones.evaluar-staff' }] : []),
+      ...(esResidente ? [{ label: 'Resultados', icono: 'ti-report', route: '/evaluaciones/resultados-staff', featureKey: 'evaluaciones.resultados-staff' }] : []),
     ]},
     { label: 'Administración', icono: 'ti-settings-automation', tabs: [
       ...(!!acceso?.esJefeSsoma ? [{ label: 'Períodos', icono: 'ti-calendar-time', route: '/evaluaciones/periodos', featureKey: 'evaluaciones.periodos' }] : []),
