@@ -140,16 +140,18 @@ export class ProgramarEmoDialogComponent implements OnInit {
 
   // ── Razón social ────────────────────────────────────────────────────────
   /**
-   * ¿Hay que elegirle la razón social? Solo cuando la ficha no tiene ninguna, que es el caso de
-   * toda ficha de pre-ingreso: programar el EMO de ingreso es el único punto del proceso donde se
-   * asigna. Sin ella la cita quedaría fuera de la pantalla de Programaciones y del correo a la
-   * clínica, así que es obligatoria.
+   * ¿Hay que elegirle la razón social? Cuando la ficha no tiene ninguna, y siempre en una ficha de
+   * pre-ingreso: programar el EMO de ingreso es el único punto del proceso donde se asigna, y
+   * hasta que la persona firme se puede corregir (los requerimientos de antes del 11-09 la traen
+   * de Reclutamiento, elegida con un tope que no dejaba pasar a los reemplazos). Sin ella la cita
+   * quedaría fuera de la pantalla de Programaciones y del correo a la clínica, así que es
+   * obligatoria.
    *
-   * En un trabajador que ya está adentro la razón social es un dato de su ficha y no una decisión
+   * En un trabajador que ya está adentro la razón social es la de su vinculación y no una decisión
    * de quien programa, así que se sigue mostrando de solo lectura.
    */
   get pideRazonSocial(): boolean {
-    return !this.worker?.empresaId;
+    return !!this.worker?.esFinalistaAprobado || !this.worker?.empresaId;
   }
 
   private cargarRazonesSociales(): void {
@@ -157,6 +159,12 @@ export class ProgramarEmoDialogComponent implements OnInit {
       next: (res) => {
         this.razonesSociales = res?.razones ?? [];
         this.sinTopePorReemplazo = res?.sinTopePorReemplazo ?? false;
+        // La que la ficha ya trae queda elegida, con sus cupos a la vista. Solo si está en la
+        // lista: una que ya no se ofrece el backend tampoco la acepta, y preseleccionarla dejaría
+        // guardar algo que va a rebotar.
+        const actual = this.worker.empresaId;
+        const ofrecida = this.razonesSociales.some((r) => r.id === actual);
+        if (actual && ofrecida && this.form.empresaId == null) this.form.empresaId = actual;
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
@@ -174,7 +182,9 @@ export class ProgramarEmoDialogComponent implements OnInit {
   /**
    * true si la razón social elegida ya no tiene cupo para una persona más. Bloquea el guardado:
    * elegirla acá no es un dato de esta cita, es asignársela a la ficha (ver `enviar`), así que
-   * dejar pasar una llena sería meter un trabajador por encima del tope de 20.
+   * dejar pasar una llena sería meter un trabajador por encima del tope de 20. Vale también para
+   * la que la ficha ya traía: la de pre-ingreso no ocupa cupo, así que si esa razón social se
+   * llenó después, tampoco tiene lugar para ella.
    *
    * Un REEMPLAZO es la excepción y no bloquea: el que entra y el que sale conviven un mes, así que
    * esa razón social está prevista que llegue a 21 hasta que se dé de baja al reemplazado. El
@@ -182,6 +192,11 @@ export class ProgramarEmoDialogComponent implements OnInit {
    */
   get sinCupos(): boolean {
     return !this.sinTopePorReemplazo && this.razonSocialSeleccionada?.cuposDisponibles === 0;
+  }
+
+  /** true si la elegida está llena y se deja pasar igual porque la vacante es un REEMPLAZO. */
+  get excedePorReemplazo(): boolean {
+    return this.sinTopePorReemplazo && this.razonSocialSeleccionada?.cuposDisponibles === 0;
   }
 
   private cargarDestinatarios(): void {
@@ -276,8 +291,8 @@ export class ProgramarEmoDialogComponent implements OnInit {
       .programarEmo({
         workerId: this.worker.workerId,
         tipoEmoId: this.form.tipoEmoId!,
-        // La elegida en el modal cuando la ficha no traía ninguna: el backend se la asigna al
-        // trabajador (y al requerimiento del que salió), no la usa solo para esta cita.
+        // La elegida en el modal (ficha sin razón social o de pre-ingreso): el backend se la
+        // asigna al trabajador y al requerimiento del que salió, no la usa solo para esta cita.
         empresaId: this.form.empresaId ?? this.worker.empresaId ?? null,
         fechaProgramada: this.form.fechaProgramada,
         horaProgramada: null,

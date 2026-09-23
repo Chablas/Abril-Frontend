@@ -69,13 +69,14 @@
         </app-search-select>
       </div>
 
-      <!-- Razón social del trabajador. En quien ya está adentro es un dato de su ficha y no una
+      <!-- Razón social del trabajador. En quien ya está adentro es la de su vinculación y no una
            decisión de quien programa, así que va de solo lectura; ocupa el lugar del antiguo
            desplegable de médico — GTH pidió dejar de elegir médico y ver acá la empresa. El médico
            de la cita lo pone el backend con el que esté marcado como por defecto en el catálogo.
 
-           En una ficha de pre-ingreso sí hay que elegirla, y es obligatoria: este es el único
-           punto del proceso donde se asigna, y sin ella la cita queda fuera de Programaciones. -->
+           En una ficha de pre-ingreso sí se elige, y es obligatoria: este es el único punto del
+           proceso donde se asigna, y sin ella la cita queda fuera de Programaciones. Si la ficha
+           ya trae una, viene elegida y se puede cambiar. -->
       <div class="abril-field" *ngIf="pideRazonSocial; else razonSocialFicha">
         <app-search-select
           label="Razón social *"
@@ -92,7 +93,10 @@
         </p>
         <!-- El tope se puede pasar y hay que decirlo donde se elige: si no, una razón social en 0
              cupos que igual deja guardar parece un error de la pantalla. -->
-        <p class="razon-hint" *ngIf="sinTopePorReemplazo">
+        <p class="razon-hint razon-hint--aviso" *ngIf="excedePorReemplazo">
+          Sin cupos: se pasa del tope de 20 por ser vacante de reemplazo.
+        </p>
+        <p class="razon-hint" *ngIf="sinTopePorReemplazo && !excedePorReemplazo">
           Vacante de reemplazo: no aplica el tope de 20.
         </p>
         <p class="razon-hint razon-hint--warn" *ngIf="sinCupos">

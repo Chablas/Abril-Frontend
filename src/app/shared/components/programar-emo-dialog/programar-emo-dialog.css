@@ -94,6 +94,14 @@
   font-weight: 600;
 }
 
+/* Llena pero es un reemplazo: se puede guardar, así que no va en rojo sino en el ámbar de los
+   avisos que no bloquean. */
+.razon-hint--aviso {
+  margin-top: 6px;
+  color: #92400e;
+  font-weight: 600;
+}
+
 /* Aviso de destinatarios: mismo patrón que el de Solicitud de Salidas ("será notificada a …"),
    pero en el azul de SSOMA. Los correos van resaltados porque son el dato que importa. */
 .aviso {
