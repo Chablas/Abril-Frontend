@@ -327,17 +327,41 @@
 @media (max-width: 768px) {
   .cu-wrap { padding: 12px; }
 
-  .cu-item { padding: 7px 8px; gap: 8px; }
-  .cu-item-dot { width: 24px; height: 24px; font-size: 12px; }
-  .cu-item-nombre { font-size: 12.5px; }
+  /* La fila completa (dot + nombre + obs) se alinea arriba, no al centro, porque
+     el nombre ahora puede ocupar 2-3 líneas — center lo dejaría descolgado. */
+  .cu-item { padding: 7px 8px; gap: 8px; align-items: flex-start; }
+  .cu-item-dot { width: 22px; height: 22px; font-size: 11px; margin-top: 1px; }
+  .cu-item-obs-btn { width: 22px; height: 22px; font-size: 13px; margin-top: 1px; }
+
+  /* El nombre completo importa más que la compacidad: se lee entero, con salto
+     de línea, en vez de cortarse con "…" como en la fila de escritorio. */
+  .cu-item-nombre {
+    font-size: 12.5px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.35;
+  }
   .cu-tag-rol--compact { display: none; }
-  .cu-item-obs-btn { width: 24px; height: 24px; font-size: 14px; }
 
   .cu-categoria-header { height: 36px; }
   .cu-categoria-nombre { font-size: 12.5px; }
 
-  .cu-frecuencia-chip { flex: 1; justify-content: center; padding: 0 8px; }
+  /* Los 3 chips (Diaria/Semanal/Mensual) siempre en una sola fila: sin wrap, sin
+     ícono (el texto solo ya deja claro cuál es cuál) y con relleno más chico. */
+  .cu-frecuencia-chips { flex-wrap: nowrap; gap: 4px; }
+  .cu-frecuencia-chip {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+    gap: 4px;
+    padding: 0 4px;
+    font-size: 11.5px;
+  }
+  .cu-frecuencia-chip i { display: none; }
+  .cu-frecuencia-chip-count { font-size: 10.5px; padding: 1px 5px; }
 
-  .cu-catalogo-filtros { flex-direction: column; }
+  .cu-catalogo-filtros { flex-direction: column; align-items: stretch; }
+  .cu-catalogo-filtros app-search-select { width: 100%; }
   .cu-catalogo-buscar { max-width: none; }
 }
