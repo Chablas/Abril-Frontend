@@ -229,8 +229,9 @@ export class Reembolsos implements OnInit, OnDestroy {
 
   // ── Botón "Configuración" del header ─────────────────────────────────
   // Lleva a la configuración de ESTA pantalla: los correos que se originan en la bandeja de
-  // Tesorería (hoy uno: el aviso de pago al colaborador). Se restringe con la misma feature que
-  // antes protegía la sección Correos de Configuración: quien no la tiene no ve el botón.
+  // Tesorería (la revisión confirmada a Tesorería, la observación al consolidador y el pago al
+  // colaborador). Se restringe con la misma feature que antes protegía la sección Correos de
+  // Configuración: quien no la tiene no ve el botón.
 
   private static readonly FEATURE_CONFIG_CORREOS = 'gestion-administrativa.config.correos';
 
@@ -521,7 +522,8 @@ export class Reembolsos implements OnInit, OnDestroy {
 
   /**
    * Paso 1: confirmar que la documentación está completa. No mueve plata — deja los consolidados
-   * habilitados para el desembolso, que es el paso siguiente.
+   * habilitados para el desembolso, que es el paso siguiente, y le avisa a Tesorería (uno por
+   * consolidado) que ya se puede programar el pago.
    */
   async confirmarRevision(): Promise<void> {
     const items = this.seleccionadosPorRevisar;
@@ -529,22 +531,19 @@ export class Reembolsos implements OnInit, OnDestroy {
 
     const salidas = items.reduce((acc, c) => acc + c.porConfirmarCount, 0);
 
-    // Sin preview de correos: confirmar la revisión es un paso interno de Tesorería y no avisa a
-    // nadie. Se dice, porque el resto de las acciones del ciclo sí mandan correo.
-    const result = await Swal.fire({
-      icon: 'question',
-      title: items.length === 1
+    const seleccion = { consolidadoIds: items.map((c) => c.id) };
+    const result = await confirmarConCorreos({
+      titulo: items.length === 1
         ? '¿Confirmar la revisión de este consolidado?'
         : `¿Confirmar la revisión de ${items.length} consolidados?`,
-      text: `${salidas} salida(s). Quedan habilitadas para el pago. No se avisa a nadie todavía.`,
-      showCancelButton: true,
+      nota: `${salidas} salida(s). Quedan habilitadas para el pago.`,
+      avisos: await pedirAvisos(this.service.correoPreviewConfirmacion(seleccion)),
       confirmButtonText: 'Sí, confirmar revisión',
-      cancelButtonText: 'Cancelar',
       confirmButtonColor: '#C2410C',
     });
     if (!result.isConfirmed) return;
 
-    this.ejecutar(this.service.confirmarRevision({ consolidadoIds: items.map((c) => c.id) }));
+    this.ejecutar(this.service.confirmarRevision(seleccion));
   }
 
   /**

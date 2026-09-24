@@ -188,23 +188,22 @@ export class ReembolsoDetalleModal implements OnInit {
     return this.porRevisar || this.porPagar;
   }
 
+  /** Habilita el pago y le avisa a Tesorería que ya se puede programar. */
   async confirmarRevision(): Promise<void> {
     const d = this.detalle;
     if (!d || !this.porRevisar) return;
 
-    // Sin preview de correos: confirmar la revisión es un paso interno y no avisa a nadie.
-    const result = await Swal.fire({
-      icon: 'question',
-      title: '¿Confirmar la revisión de este consolidado?',
-      text: 'Queda habilitado para el pago. No se avisa a nadie todavía.',
-      showCancelButton: true,
+    const seleccion = { consolidadoIds: [d.id] };
+    const result = await confirmarConCorreos({
+      titulo: '¿Confirmar la revisión de este consolidado?',
+      nota: 'Queda habilitado para el pago.',
+      avisos: await pedirAvisos(this.service.correoPreviewConfirmacion(seleccion)),
       confirmButtonText: 'Sí, confirmar revisión',
-      cancelButtonText: 'Cancelar',
       confirmButtonColor: '#C2410C',
     });
     if (!result.isConfirmed) return;
 
-    this.ejecutar(this.service.confirmarRevision({ consolidadoIds: [d.id] }));
+    this.ejecutar(this.service.confirmarRevision(seleccion));
   }
 
   /**

@@ -226,8 +226,6 @@ export class GaPantallaConfiguracion implements OnInit {
       volverA: '/gestion-administrativa/reembolsos',
       subtitulo: 'Los correos que se originan en la bandeja de Tesorería.',
       secciones: [GaPantallaConfiguracion.SECCION_CORREOS],
-      textoSinCorreos:
-        'Reembolsos no envía correos: marcar una planilla como pagada no avisa a nadie.',
     },
     'correcciones-s10': {
       nombre: 'Correcciones S10',
