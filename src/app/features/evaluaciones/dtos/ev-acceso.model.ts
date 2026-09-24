@@ -4,4 +4,5 @@ export interface EvAccesoDto {
   esCoordinadorSsoma: boolean;
   esPrevencionista: boolean;
   esEquipoSsoma: boolean;
+  esResidente: boolean;
 }

@@ -41,6 +41,12 @@ export class CumplimientoSsomaService {
     });
   }
 
+  deleteActividad(actividadId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/actividades/${actividadId}`, {
+      headers: this.authHeaders(),
+    });
+  }
+
   getResumen(proyectoId: number, rol?: string): Observable<CumplimientoResumenDto> {
     const params = rol ? `?rol=${encodeURIComponent(rol)}` : '';
     return this.http.get<CumplimientoResumenDto>(`${this.base}/proyecto/${proyectoId}/resumen${params}`, {
