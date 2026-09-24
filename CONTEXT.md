@@ -5895,3 +5895,24 @@ Consumo del nuevo backend de cumplimiento semanal por contratista (ver `Abril_Ba
 
 ### Pendiente
 - No hay forma de precargar el contratista por defecto (no existe un "contratista actual" para un usuario de Abril) — queda siempre manual, por diseño.
+
+## Sesión 2026-09-24 — Deploy a master: merge de victor-frontend (evaluaciones staff, milestone-schedule, planeamiento BIM, cumplimiento SSOMA, hoja de ruta, EPP, config. proyectos)
+
+### Contexto
+Cierre de ciclo: se trae a `master`/producción el acumulado de trabajo hecho en la rama `victor-frontend` desde la última vez que se guardó a master, más lo último de `origin/master` (mejoras en reclutamiento).
+
+### Cambios
+Merge de `victor-frontend` a `master`, incluyendo (cada uno documentado en su propia sección de sesión más arriba en este mismo archivo, ya incorporada por el merge):
+- Nuevo módulo de evaluaciones de staff (`evaluar-staff`, `resultados-staff`).
+- Milestone-schedule: edición de fechas de hito ya guardado, mover fecha Inicio/Fin y agregar hito al cronograma guardado, culminar/marcar crítico/eliminar versión, confirmación de hitos sin fecha, hitos obligatorios/puntuales en plantilla, default Fin en plantilla, migración de Ranking/Heatmap/Gantt a Dashboard UDP.
+- Planeamiento BIM: filtro de selector de proyecto por rol/asignación, campo Responsable Planeamiento BIM, migración a modelo de torres/sectores con soporte tri-state en carga diaria.
+- Configuración de proyectos: toggle "Pertenece a UDP" con filtro y fix de revert optimista.
+- Ajustes en `workItem` (edición) y en `proyectos` (dto/service).
+- Cumplimiento SSOMA: ajustes en `cumplimiento-main` y `cumplimiento-ssoma.dtos/service`.
+- Reclutamiento (venía de `origin/master`): rediseño de `detalle`, ajustes en `formulario-postulante-modal` y `reclutamiento`.
+
+### Verificado
+`ng build` sobre `master` (antes del merge) → exit code 0. El merge en sí no se rebuildeó por separado dentro de este flujo — cada feature ya fue verificada con `ng build` en su propia sesión (ver secciones arriba); no se detectaron conflictos al mergear.
+
+### Pendiente
+Los pendientes puntuales de cada feature quedan listados en sus respectivas secciones de sesión más arriba.
