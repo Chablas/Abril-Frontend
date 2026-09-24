@@ -6033,3 +6033,26 @@ Reporte del usuario: en Control de Acceso, varios trabajadores de contratistas a
 
 ### Pendiente
 - Confirmar con el equipo si hay usuarios con rol `ADMINISTRADOR_SSOMA`/`ADMINISTRADOR_UDP` cubriendo la revisión de EMOs de contratistas — si no, ese es el cuello de botella real del backlog, no un bug de código.
+
+## Sesión 2026-09-23 — Mover fecha Inicio/Fin y agregar hito a cronograma guardado (Milestone Schedule)
+
+### Contexto
+Dos features sobre la vista de cronograma YA GUARDADO (`openViewMilestoneSchedule()`), ambas gateadas a `puedeEditarHitoGuardado` (rol `ADMINISTRADOR_RESIDENTES`). Antes de implementar se confirmó el shape exacto contra `Abril_Backend` (`MilestoneScheduleController.cs`, `MilestoneScheduleRepository.cs`): ambos endpoints (`PUT /{id}` con `MilestoneScheduleEditDTO`, `GET /faltantes`, `POST /{historyId}/hito` con `MilestoneScheduleAddDTO`) ya existían en el backend.
+
+### Cambios
+- **Mover fecha Inicio↔Fin** (modal "Editar fechas"): link "Usar esta fecha en su lugar" bajo el campo oculto por la lógica data-driven, con SweetAlert2 de confirmación si el campo origen tiene valor. Al guardar, PUT `milestoneSchedule/{id}` manda **null explícito** para el campo vaciado — esto requirió reemplazar `MilestoneScheduleCreateDTO` (no admite null en `plannedStartDate`) por un `MilestoneScheduleEditDTO` nuevo que sí lo admite, igual que el DTO real del backend (`MilestoneScheduleEditDTO.PlannedStartDate` es `DateOnly?`). El flujo sin mover fecha (default) quedó bit a bit igual al de antes — mismo mirror, misma validación de obligatorio/"Inicio de obra".
+  - Efecto lateral necesario: el cálculo de `esRangoReal`/fecha ancla del Gantt al guardar asumía que Inicio siempre tenía valor (cierto en el flujo viejo); se corrigió para usar la misma fecha ancla que `openViewMilestoneSchedule` (la que efectivamente tiene valor, sea Inicio o Fin).
+- **Botón "Agregar hito"** en el header de la vista de cronograma guardado (visible solo si `!showEditButton && puedeEditarHitoGuardado`, para no mezclarse con el flujo de edición/creación de una versión completa que ya tenía su propio "Nuevo hito"). Modal (`app-base-modal`) con lista de hitos faltantes del catálogo (`GET milestoneSchedule/faltantes?projectId=`, selección única) + input de hito personalizado. Confirmar dispara `POST milestoneSchedule/{historyId}/hito` (siempre con fechas null — el hito se agrega sin fecha y se completa después vía "Editar fechas") y la respuesta se inserta directo en el Gantt en memoria sin GET adicional (R1) — el backend siempre asigna `order = maxOrder + 1`, así que `gantt.addTask()` ya lo deja en la posición correcta.
+- 3 DTOs nuevos: `core/dtos/milestoneSchedule/milestoneScheduleEdit.model.ts`, `milestoneScheduleAdd.model.ts`, `core/dtos/milestone/milestoneSimple.model.ts` (`MilestoneSimpleDTO`, shape de `/faltantes`).
+- De paso: `milestoneSimple.model.ts` ya existía en el repo con casing roto (`milestoneSImple.model.ts`, con I mayúscula) y una interfaz `MilestoneSimple` sin ninguna referencia en el código — un `Write` a la ruta con casing correcto casi lo pisó por case-insensitivity de Windows; se corrigió el casing con `git mv` (dos pasos) y se renombró/completó la interfaz a `MilestoneSimpleDTO`.
+
+### Archivos clave
+- `features/mejora-continua/milestone-schedule/milestone-schedule.ts`/`.html`/`.css`
+- `core/services/milestoneSchedule.service.ts` (`editarHito` ahora tipado con `MilestoneScheduleEditDTO`; nuevos `getFaltantes()`/`agregarHito()`)
+- `core/dtos/milestoneSchedule/milestoneSchedule.model.ts` (agregado `esPuntual?`/`fechaRealFin?` — ya venían del backend pero no estaban tipados)
+
+### Verificado
+`ng build` → 0 errores, solo warnings preexistentes de terceros. No se probó en navegador en esta sesión.
+
+### Pendiente
+- Probar en vivo el flujo completo: mover fecha en un hito "Inicio de obra" (el backend debe rechazarlo con su propio mensaje, vía el `error()` genérico — no hay guardia duplicada en el frontend, es intencional) y agregar un hito personalizado/de catálogo y confirmarlo visualmente en el Gantt.
