@@ -51,6 +51,23 @@ export class ProyectoService {
     });
   }
 
+  /**
+   * PATCH puntual del flag `TieneUnidadDeProyectos`, sin pasar por el PUT completo
+   * de edición (evita el riesgo de sobreescribir campos no enviados). El backend
+   * espera el valor explícito en el body (`UpdateTieneUnidadDeProyectosDto.Value`)
+   * y devuelve el valor persistido — no es un toggle ciego server-side.
+   */
+  toggleUnidadDeProyectos(
+    projectId: number,
+    value: boolean,
+  ): Observable<{ tieneUnidadDeProyectos: boolean }> {
+    return this.http.patch<{ tieneUnidadDeProyectos: boolean }>(
+      `${this.apiUrl}/${projectId}/tiene-unidad-de-proyectos`,
+      { value },
+      { headers: this.headers },
+    );
+  }
+
   getCompanyByRuc(ruc: string): Observable<ContributorLookupDto> {
     return this.http.get<ContributorLookupDto>(`${this.apiUrl}/company-lookup/${ruc}`, {
       headers: this.headers,

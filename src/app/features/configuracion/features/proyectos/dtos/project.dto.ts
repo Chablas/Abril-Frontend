@@ -59,6 +59,14 @@ export interface ProjectDto {
 
   // Flags
   tieneArquitecturaComercial?: boolean;
+  /**
+   * Si el proyecto participa del módulo Unidad de Proyectos (filtra Cronograma de
+   * Actividades, Projects Dashboard y Milestone Schedule en backend). Se actualiza
+   * vía `ProyectoService.toggleUnidadDeProyectos()`:
+   * PATCH `{apiUrl}api/v1/project/{id}/tiene-unidad-de-proyectos`,
+   * respuesta `{ tieneUnidadDeProyectos: boolean }`.
+   */
+  tieneUnidadDeProyectos?: boolean;
 
   // Geolocalización (geofencing de Tareo — Arquitectura Comercial)
   lat?: number | null;

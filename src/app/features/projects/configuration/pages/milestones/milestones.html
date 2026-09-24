@@ -111,14 +111,22 @@
     </div>
 
     <div *ngIf="activeTab === 'proyectos'" class="flex flex-col justify-center items-center">
+        <div class="w-full flex justify-end mb-[10px]">
+            <label class="flex items-center gap-[6px] text-[13px] cursor-pointer" style="color:#475569">
+                <input type="checkbox" [(ngModel)]="soloSinUdp" class="cursor-pointer" />
+                Mostrar solo sin UDP asignado
+            </label>
+        </div>
+
         <div class="w-full rounded-[10px] overflow-auto border" style="border-color:#E2E8F0">
 
             <table class="w-full table-fixed">
                 <thead>
                     <tr>
-                        <th class="milestones-th milestones-th--left w-[300px]">Proyecto</th>
-                        <th class="milestones-th w-[150px]">Estado</th>
-                        <th class="milestones-th w-[100px]">Activo</th>
+                        <th class="milestones-th milestones-th--left w-[260px]">Proyecto</th>
+                        <th class="milestones-th w-[130px]">Estado</th>
+                        <th class="milestones-th w-[90px]">Activo</th>
+                        <th class="milestones-th w-[120px]">Pertenece a UDP</th>
                     </tr>
                 </thead>
 
@@ -128,11 +136,12 @@
                             <td class="pl-[12px]"><div class="skeleton-line" style="width:70%;height:12px;"></div></td>
                             <td class="text-center"><div class="skeleton-line" style="width:60px;height:18px;margin:0 auto;"></div></td>
                             <td class="text-center"><div class="skeleton-line" style="width:36px;height:18px;margin:0 auto;"></div></td>
+                            <td class="text-center"><div class="skeleton-line" style="width:36px;height:18px;margin:0 auto;"></div></td>
                         </tr>
                     </ng-container>
 
                     <ng-container *ngIf="!proyectosLoading">
-                        <tr *ngFor="let item of proyectos.data" class="milestones-row border-b h-[40px]" style="border-color:#E2E8F0">
+                        <tr *ngFor="let item of proyectosVisibles" class="milestones-row border-b h-[40px]" style="border-color:#E2E8F0">
                             <td class="pl-[12px]">
                                 <span [title]="item.projectDescription"
                                     class="block line-clamp-1 text-ellipsis overflow-hidden">{{ item.projectDescription }}</span>
@@ -152,9 +161,19 @@
                                     <span class="proyecto-switch__slider"></span>
                                 </label>
                             </td>
+                            <td class="text-center">
+                                <label class="proyecto-switch" [class.proyecto-switch--disabled]="togglingUdpProjectId === item.projectId">
+                                    <input type="checkbox" [checked]="item.tieneUnidadDeProyectos"
+                                        [disabled]="togglingUdpProjectId === item.projectId"
+                                        (change)="toggleProyectoUdp(item)" />
+                                    <span class="proyecto-switch__slider"></span>
+                                </label>
+                            </td>
                         </tr>
-                        <tr *ngIf="proyectos.data.length === 0">
-                            <td colspan="3" class="text-center py-[20px]" style="color:#94A3B8">No hay proyectos registrados.</td>
+                        <tr *ngIf="proyectosVisibles.length === 0">
+                            <td colspan="4" class="text-center py-[20px]" style="color:#94A3B8">
+                                {{ soloSinUdp ? 'No hay proyectos sin UDP asignado.' : 'No hay proyectos registrados.' }}
+                            </td>
                         </tr>
                     </ng-container>
                 </tbody>
