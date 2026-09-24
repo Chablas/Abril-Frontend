@@ -71,6 +71,10 @@ export class Milestones implements OnInit {
   proyectosTotalPages = 0;
   proyectosTotalRecords = 0;
   togglingProjectId: number | null = null;
+  /** Lock independiente del de "Activo": son dos toggles distintos, no deben bloquearse entre sí. */
+  togglingUdpProjectId: number | null = null;
+  /** Filtro en memoria sobre `proyectos.data` (la página ya trae hasta 200 registros, ver loadProyectos). */
+  soloSinUdp = false;
 
   constructor(
     private milestoneService: MilestoneService,
@@ -115,13 +119,18 @@ export class Milestones implements OnInit {
   toggleProyectoActive(item: ProjectDto): void {
     if (this.togglingProjectId != null) return;
 
-    this.togglingProjectId = item.projectId;
-    const nuevoEstado = !item.active;
+    const anterior = item.active;
+    const nuevoEstado = !anterior;
     const dto: ProjectEditDto = { ...item, active: nuevoEstado };
+
+    // Optimista, mismo motivo que toggleProyectoUdp: [checked]="item.active" es
+    // unidireccional y no repinta el DOM si el modelo nunca cambia de valor ante
+    // un fallo del PUT. Guardamos "anterior" para poder revertir de verdad.
+    item.active = nuevoEstado;
+    this.togglingProjectId = item.projectId;
 
     this.proyectoService.edit(dto).subscribe({
       next: () => {
-        item.active = nuevoEstado;
         this.togglingProjectId = null;
         this.cdr.detectChanges();
         Swal.fire({
@@ -134,7 +143,51 @@ export class Milestones implements OnInit {
         });
       },
       error: (err: HttpErrorResponse) => {
+        item.active = anterior;
         this.togglingProjectId = null;
+        this.cdr.detectChanges();
+        this.error(err);
+      },
+    });
+  }
+
+  /** Solo filtra lo ya cargado — no re-pagina contra backend (no hay parámetro de filtro por UDP hoy). */
+  get proyectosVisibles(): ProjectDto[] {
+    if (!this.soloSinUdp) return this.proyectos.data;
+    return this.proyectos.data.filter((p) => !p.tieneUnidadDeProyectos);
+  }
+
+  toggleProyectoUdp(item: ProjectDto): void {
+    if (this.togglingUdpProjectId != null) return;
+
+    // Optimista: el click nativo ya cambió el checkbox en el DOM. Si no tocamos el
+    // modelo, `[checked]="item.tieneUnidadDeProyectos"` nunca ve un valor distinto
+    // y Angular no vuelve a escribir el DOM cuando falla — el checkbox queda marcado
+    // aunque el backend haya rechazado el cambio. Guardamos el valor previo para
+    // poder revertir de verdad (un cambio real de valor) si el PATCH falla.
+    const anterior = item.tieneUnidadDeProyectos ?? false;
+    const nuevoValor = !anterior;
+    item.tieneUnidadDeProyectos = nuevoValor;
+    this.togglingUdpProjectId = item.projectId;
+
+    this.proyectoService.toggleUnidadDeProyectos(item.projectId, nuevoValor).subscribe({
+      next: (res) => {
+        item.tieneUnidadDeProyectos = res.tieneUnidadDeProyectos;
+        this.togglingUdpProjectId = null;
+        this.cdr.detectChanges();
+        Swal.fire({
+          icon: 'success',
+          title: res.tieneUnidadDeProyectos ? 'Proyecto asignado a UDP' : 'Proyecto desasignado de UDP',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 2000,
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        item.tieneUnidadDeProyectos = anterior;
+        this.togglingUdpProjectId = null;
+        this.cdr.detectChanges();
         this.error(err);
       },
     });

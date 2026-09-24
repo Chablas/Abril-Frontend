@@ -32,6 +32,10 @@ export interface ProjectDto {
   responsableUdp?: string;
   responsableUdpId?: number;
 
+  // Responsable Planeamiento BIM
+  responsablePlaneamientoBim?: string;
+  responsablePlaneamientoBimId?: number;
+
   /** Coordinador administrativo: FK a workers. El correo se resuelve en vivo desde su ficha. */
   workersCoordAdminId?: number | null;
   /** Nombre del coordinador administrativo, para pintarlo sin buscarlo en la lista. */
@@ -55,6 +59,14 @@ export interface ProjectDto {
 
   // Flags
   tieneArquitecturaComercial?: boolean;
+  /**
+   * Si el proyecto participa del módulo Unidad de Proyectos (filtra Cronograma de
+   * Actividades, Projects Dashboard y Milestone Schedule en backend). Se actualiza
+   * vía `ProyectoService.toggleUnidadDeProyectos()`:
+   * PATCH `{apiUrl}api/v1/project/{id}/tiene-unidad-de-proyectos`,
+   * respuesta `{ tieneUnidadDeProyectos: boolean }`.
+   */
+  tieneUnidadDeProyectos?: boolean;
 
   // Geolocalización (geofencing de Tareo — Arquitectura Comercial)
   lat?: number | null;

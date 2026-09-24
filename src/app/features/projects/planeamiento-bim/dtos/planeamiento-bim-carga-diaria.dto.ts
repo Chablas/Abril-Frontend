@@ -1,4 +1,4 @@
-import { ZonaConfigDTO } from './planeamiento-bim-config.dto';
+import { TorreConfigDTO } from './planeamiento-bim-config.dto';
 import { RestriccionDto } from './planeamiento-bim-restriccion.dto';
 
 export interface ActividadCatalogoDto {
@@ -17,11 +17,13 @@ export interface CausaCatalogoDto {
 }
 
 export interface CeldaDto {
-  zonaId: number;
+  torreId: number;
   nivelId: number;
+  /** Número plano de sector (1..N), derivado de la clasificación del nivel y el conteo de
+   *  la torre — ya no es el id de una entidad "sector" con nombre libre. */
   sectorId: number;
   actividadId: number;
-  cumplida: boolean;
+  cumplida: boolean | null;
   causaId: number | null;
   causaNombre: string | null;
   causaDetalle: string | null;
@@ -39,7 +41,7 @@ export interface CargaDiariaDto {
    *  del payload (grid, catálogos, bloqueos) no está scoped por categoría. */
   categoria: string;
   esEditable: boolean;
-  zonas: ZonaConfigDTO[];
+  torres: TorreConfigDTO[];
   actividades: ActividadCatalogoDto[];
   causas: CausaCatalogoDto[];
   celdas: CeldaDto[];
@@ -48,7 +50,7 @@ export interface CargaDiariaDto {
 }
 
 export interface CeldaUpdateDto {
-  zonaId: number;
+  torreId: number;
   nivelId: number;
   sectorId: number;
   actividadId: number;

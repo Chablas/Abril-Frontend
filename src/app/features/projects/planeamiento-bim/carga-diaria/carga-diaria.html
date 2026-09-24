@@ -2,7 +2,7 @@
   <!-- Encabezado Estándar Abril -->
   <app-abril-page-header
     titulo="PLANEAMIENTO"
-    subtitulo="Registro diario de cumplimiento de actividades por zonas, niveles y sectores"
+    subtitulo="Registro diario de cumplimiento de actividades por torres, niveles y sectores"
     [tabs]="tabs"
     [botonPrimario]="btnGuardarHeader"
     [botonPrimarioDeshabilitado]="savingCarga || loadingCarga || !selectedProjectId || !cargaDiariaData?.esEditable"
@@ -106,37 +106,74 @@
         </div>
       </div>
 
-      <!-- Estado Vacío cuando el Proyecto NO tiene Zonas configuradas -->
-      <div *ngIf="zonas.length === 0" class="empty-state">
+      <!-- Estado Vacío cuando el Proyecto NO tiene Torres configuradas -->
+      <div *ngIf="torres.length === 0" class="empty-state">
         <i class="ti ti-folder-off empty-icon"></i>
-        <p class="empty-title">Sin zonas configuradas en el proyecto</p>
+        <p class="empty-title">Sin torres configuradas en el proyecto</p>
         <p class="empty-sub">
-          Este proyecto no tiene zonas espaciales configuradas aún. 
-          Por favor, diríjase a la pestaña <strong>"Configuración Inicial"</strong> para definir las zonas, niveles y sectores del proyecto.
+          Este proyecto no tiene torres configuradas aún.
+          Por favor, diríjase a la pestaña <strong>"Configuración Inicial"</strong> para definir las torres, niveles y sectores del proyecto.
         </p>
       </div>
 
-      <!-- Matrix Grilla de Zonas y Actividades (los sectores cuelgan de cada Nivel, no de la Zona) -->
-      <div *ngFor="let zona of zonas" class="bim-card zona-grid-card">
+      <!-- Selector de captura: Torre → Nivel (el Sector ya no se elige acá: se ve toda la grilla 1..N) -->
+      <div *ngIf="torres.length > 0" class="bim-card selector-card">
+        <div class="filters-grid">
+          <div class="filter-item">
+            <label class="project-label" for="torreSelect">TORRE:</label>
+            <select
+              id="torreSelect"
+              class="bim-select project-select"
+              [ngModel]="selectedTorreId"
+              (ngModelChange)="onTorreSeleccionada($event)"
+            >
+              <option [ngValue]="null" disabled>-- Seleccione una torre --</option>
+              <option *ngFor="let t of torres" [ngValue]="t.id">{{ t.nombre }}</option>
+            </select>
+          </div>
+
+          <div class="filter-item" *ngIf="selectedTorreId">
+            <label class="project-label" for="nivelSelect">NIVEL:</label>
+            <select
+              id="nivelSelect"
+              class="bim-select project-select"
+              [ngModel]="selectedNivelId"
+              (ngModelChange)="onNivelSeleccionado($event)"
+            >
+              <option [ngValue]="null" disabled>-- Seleccione un nivel --</option>
+              <option *ngFor="let n of nivelesDisponibles" [ngValue]="n.id">{{ n.nombre }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensaje cuando falta completar el selector -->
+      <div *ngIf="torres.length > 0 && (!selectedTorreId || !selectedNivelId)" class="empty-state">
+        <i class="ti ti-click empty-icon"></i>
+        <p class="empty-title">Seleccione Torre y Nivel</p>
+        <p class="empty-sub">Elija una torre y un nivel para registrar el avance de sus sectores.</p>
+      </div>
+
+      <!-- Matrix Grilla de Sectores (1..N derivados) × Actividades, para la Torre/Nivel elegidos -->
+      <div *ngIf="nivelSeleccionado" class="bim-card zona-grid-card">
         <div class="card-header">
           <h3 class="card-title">
-            <i class="ti ti-layout-grid title-icon"></i> {{ zona.nombre }}
+            <i class="ti ti-layout-grid title-icon"></i> {{ torreSeleccionada?.nombre }} — {{ nivelSeleccionado.nombre }}
           </h3>
           <span class="card-badge">
-            {{ zona.niveles.length }} NIVELES × {{ totalSectoresZona(zona) }} REGISTROS DE SECTOR
+            {{ sectoresDelNivel.length }} SECTORES × {{ actividades.length }} ACTIVIDADES
           </span>
         </div>
 
         <div class="card-body">
-          <div *ngIf="zona.niveles.length === 0" class="empty-sub-list">
-            Sin niveles definidos para esta zona. (Configúrela en "Configuración Inicial").
+          <div *ngIf="sectoresDelNivel.length === 0" class="empty-sub-list">
+            Este nivel no tiene sectores configurados. Defina su clasificación y el conteo de sectores de la torre en "Configuración Inicial".
           </div>
 
-          <div *ngIf="zona.niveles.length > 0" class="table-responsive">
+          <div *ngIf="sectoresDelNivel.length > 0" class="table-responsive">
             <table class="bim-grid-table">
               <thead>
                 <tr>
-                  <th style="width: 120px;">NIVEL</th>
                   <th style="width: 120px;">SECTOR</th>
                   <th *ngFor="let act of actividades" class="act-col-header">
                     <span class="macro-tag">{{ act.macroActividadNombre }}</span>
@@ -145,44 +182,33 @@
                 </tr>
               </thead>
               <tbody>
-                <ng-container *ngFor="let nivel of zona.niveles">
-                  <tr *ngIf="nivel.sectores.length === 0">
-                    <td class="nivel-cell font-bold text-navy">{{ nivel.nombre }}</td>
-                    <td class="sector-cell sector-cell--empty" [attr.colspan]="1 + actividades.length">
-                      Sin sectores configurados para este nivel.
-                    </td>
-                  </tr>
-                  <tr *ngFor="let sector of nivel.sectores; let sIdx = index">
-                    <td *ngIf="sIdx === 0" [attr.rowspan]="nivel.sectores.length" class="nivel-cell font-bold text-navy">
-                      {{ nivel.nombre }}
-                    </td>
-                    <td class="sector-cell">
-                      {{ sector.nombre }}
-                    </td>
+                <tr *ngFor="let sectorNum of sectoresDelNivel">
+                  <td class="sector-cell font-bold text-navy">
+                    Sector {{ sectorNum }}
+                  </td>
 
-                    <!-- Celdas Interactivas de Avance (Evaluación directa sin *let custom) -->
-                    <td *ngFor="let act of actividades" class="cell-td">
-                      <button
-                        type="button"
-                        class="grid-cell-btn"
-                        [class.grid-cell-btn--cumplida]="getCelda(zona.id!, nivel.id!, sector.id!, act.id)?.cumplida"
-                        [class.grid-cell-btn--incumplida]="getCelda(zona.id!, nivel.id!, sector.id!, act.id) && !getCelda(zona.id!, nivel.id!, sector.id!, act.id)!.cumplida"
-                        [class.grid-cell-btn--vacia]="!getCelda(zona.id!, nivel.id!, sector.id!, act.id)"
-                        [disabled]="!cargaDiariaData.esEditable || savingCarga"
-                        (click)="toggleCumplimiento(zona.id!, nivel.id!, sector.id!, act.id)"
-                        [title]="getCellTitle(zona.id!, nivel.id!, sector.id!, act.id)"
-                      >
-                        <i *ngIf="getCelda(zona.id!, nivel.id!, sector.id!, act.id)?.cumplida" class="ti ti-check cell-icon"></i>
-                        <i *ngIf="getCelda(zona.id!, nivel.id!, sector.id!, act.id) && !getCelda(zona.id!, nivel.id!, sector.id!, act.id)!.cumplida" class="ti ti-x cell-icon"></i>
-                        <span *ngIf="!getCelda(zona.id!, nivel.id!, sector.id!, act.id)" class="cell-dash">—</span>
-                      </button>
+                  <!-- Celdas Interactivas de Avance (Evaluación directa sin *let custom) -->
+                  <td *ngFor="let act of actividades" class="cell-td">
+                    <button
+                      type="button"
+                      class="grid-cell-btn"
+                      [class.grid-cell-btn--cumplida]="getCelda(selectedTorreId!, selectedNivelId!, sectorNum, act.id)?.cumplida === true"
+                      [class.grid-cell-btn--incumplida]="getCelda(selectedTorreId!, selectedNivelId!, sectorNum, act.id)?.cumplida === false"
+                      [class.grid-cell-btn--vacia]="!getCelda(selectedTorreId!, selectedNivelId!, sectorNum, act.id) || getCelda(selectedTorreId!, selectedNivelId!, sectorNum, act.id)?.cumplida === null"
+                      [disabled]="!cargaDiariaData.esEditable || savingCarga"
+                      (click)="toggleCumplimiento(selectedTorreId!, selectedNivelId!, sectorNum, act.id)"
+                      [title]="getCellTitle(selectedTorreId!, selectedNivelId!, sectorNum, act.id)"
+                    >
+                      <i *ngIf="getCelda(selectedTorreId!, selectedNivelId!, sectorNum, act.id)?.cumplida === true" class="ti ti-check cell-icon"></i>
+                      <i *ngIf="getCelda(selectedTorreId!, selectedNivelId!, sectorNum, act.id)?.cumplida === false" class="ti ti-x cell-icon"></i>
+                      <span *ngIf="!getCelda(selectedTorreId!, selectedNivelId!, sectorNum, act.id) || getCelda(selectedTorreId!, selectedNivelId!, sectorNum, act.id)?.cumplida === null" class="cell-dash">—</span>
+                    </button>
 
-                      <div *ngIf="getCelda(zona.id!, nivel.id!, sector.id!, act.id) && !getCelda(zona.id!, nivel.id!, sector.id!, act.id)!.cumplida && getCelda(zona.id!, nivel.id!, sector.id!, act.id)!.causaNombre" class="causa-subtext">
-                        {{ getCelda(zona.id!, nivel.id!, sector.id!, act.id)!.causaNombre }}
-                      </div>
-                    </td>
-                  </tr>
-                </ng-container>
+                    <div *ngIf="getCelda(selectedTorreId!, selectedNivelId!, sectorNum, act.id)?.cumplida === false && getCelda(selectedTorreId!, selectedNivelId!, sectorNum, act.id)!.causaNombre" class="causa-subtext">
+                      {{ getCelda(selectedTorreId!, selectedNivelId!, sectorNum, act.id)!.causaNombre }}
+                    </div>
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>

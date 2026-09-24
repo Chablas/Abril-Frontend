@@ -39,9 +39,10 @@ const OUT_FILE = path.join(SRC_DIR, 'core', 'navigation', 'feature-display-names
 
 // ── Fuente 3: secciones sin ruta propia ─────────────────────────────────────
 // Features que NO tienen entrada de sidebar ni route.data.titulo porque son una
-// SECCIÓN dentro de la configuración de otra pantalla (app-section-tabs). Las dos
-// fuentes automáticas no pueden verlas, así que van acá a mano — son pocas y cambian
-// cuando cambia la estructura de pantallas, no cada vez que se agrega una.
+// SECCIÓN dentro de la configuración de otra pantalla (app-section-tabs), o un permiso
+// dentro de una pantalla (ej. gestionar vs. solo ver). Las dos fuentes automáticas no
+// pueden verlas, así que van acá a mano — son pocas y cambian cuando cambia la
+// estructura de pantallas, no cada vez que se agrega una.
 const SECCIONES_SIN_RUTA = {
   'configuracion.revisores-areas': 'Revisores de Áreas',
   'gestion-administrativa.config.visibilidad-salidas': 'Visibilidad de Salidas',
@@ -50,6 +51,7 @@ const SECCIONES_SIN_RUTA = {
   'gestion-administrativa.config.consolidadores-areas': 'Consolidadores de Áreas',
   'gestion-administrativa.config.firmas': 'Firmas de Consolidados',
   'gestion-gth.config.visibilidad-solicitud-personal': 'Visibilidad de Solicitud de Personal',
+  'gestion-gth.reclutamiento.gestionar': 'Reclutamiento - Gestionar procesos',
 };
 
 function walk(dir, files = []) {

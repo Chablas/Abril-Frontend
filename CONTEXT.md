@@ -5567,6 +5567,108 @@ Causa raíz identificada en `configuracion-inicial.ts:153-166` (`derivarZonaEdic
 - Confirmar con backend el nombre real de los campos donde hice supuestos: `RestriccionDto` (`fechaLevantamientoPrevista`, `zonaId/nivelId/sectorId/actividadId` + `...Nombre`) y `CargaDiariaDto.restriccionesActivas`.
 - **No mergear a `master`** hasta coordinar el deploy simultáneo con backend (rompe contrato JSON de configuración).
 
+## Sesión 2026-08-29 — Planeamiento BIM: Migración a Torres en Restricciones y Soporte Tri-State en Carga Diaria
+
+### Contexto
+Se actualizó el flujo de Restricciones para integrarse al nuevo modelo de Torre -> Nivel -> Sector derivado (1..N) -> Actividad, y se corrigió el manejo de estados en la matriz de Carga Diaria implementando un ciclo Tri-state limpio (null -> true -> false -> null) para evitar falsos errores de causa de no cumplimiento.
+
+### Cambios
+1. **Restricciones — Modelo de Torres y Sectores Derivados**:
+   - DTOs (`planeamiento-bim-restriccion.dto.ts`): Reemplazados `zonaId`, `zonaNombre`, `sectorId` y `sectorNombre` por `torreId: number | null`, `torreNombre: string | null` y `sector: number | null` (número entero opcional derivado 1..N). Aliases `RestriccionDTO`, `CrearRestriccionDTO`, `ActualizarRestriccionDTO`.
+   - Cascada en modal (`restricciones.ts`, `restricciones.html`): Torre (`torresCatalogo`) -> Nivel (`nivelesDisponibles`) -> Sector derivado (`sectoresDisponibles` `[1..N]` calculado según `tipoEstructura` y conteo de la torre) -> Actividad (`actividadesCatalogo`).
+   - Tabla (`restricciones.html`): Columna de Ubicación formateada como `Torre / Nivel / Sector X / Actividad`.
+2. **Carga Diaria — Soporte Tri-State y Manejo de Causas**:
+   - DTOs (`planeamiento-bim-carga-diaria.dto.ts`): `CeldaDto.cumplida` tipado como `boolean | null`.
+   - Ciclo Tri-State (`carga-diaria.ts`, `carga-diaria.html`):
+     - `null` (Neutro / '—'): Celda no tocada / no programada.
+     - `true` (Cumplido / '✓'): Actividad completada.
+     - `false` (No Cumplido / '✕'): Actividad no completada con causa de incumplimiento obligatoria.
+     - Al hacer clic en una celda `false`, vuelve a `null` limpiando la causa.
+     - Si se cancela el modal de causa sin seleccionar, se revierte al estado previo.
+   - Filtrado y validación al guardar (`onGuardar`): Solo se envían las celdas evaluadas (`cumplida !== null`). Las celdas neutras no viajan como incumplidas. Validación `celdasSinCausa` verifica estrictamente `c.cumplida === false && !c.causaId`.
+   - Separación de errores: `handleError` no contamina `loadError` al guardar o subir fotos, evitando falsos banners de "Error de Carga".
+
+### Archivos clave
+- `src/app/features/projects/planeamiento-bim/dtos/planeamiento-bim-restriccion.dto.ts`
+- `src/app/features/projects/planeamiento-bim/dtos/planeamiento-bim-carga-diaria.dto.ts`
+- `src/app/features/projects/planeamiento-bim/restricciones/restricciones.ts` / `restricciones.html`
+- `src/app/features/projects/planeamiento-bim/carga-diaria/carga-diaria.ts` / `carga-diaria.html`
+
+### Verificado
+`npm run build`: 0 errores.
+
+## Sesión 2026-08-30 — Configuración de Proyectos: campo Responsable Planeamiento BIM
+
+### Contexto
+Se agregó un tercer autocomplete de responsable en la sección "RESPONSABLE" del formulario de edición de proyecto (`Configuración → Proyectos`), junto a los ya existentes "Responsable Arq. Comercial" y "Responsable UDP". Además se auditó el estado de sincronización de la rama `victor-frontend` contra `origin` a pedido del usuario y se revisó en detalle el commit `fb944101` (soporte tri-state en Carga Diaria de Planeamiento BIM) para confirmar que el diseño no requería revertirse.
+
+### Cambios
+1. **Nuevo campo "Responsable Planeamiento UDP" (label) / `responsablePlaneamientoBim` (dato)**:
+   - `dtos/responsable-lookup.dto.ts`: `ResponsableTipo` ahora incluye `'PLANEAMIENTO_UDP'` (el parámetro `tipo` del query string, confirmado por backend y sin renombrar).
+   - `dtos/project.dto.ts` y `dtos/project-edit.dto.ts`: nuevos campos `responsablePlaneamientoBim?` / `responsablePlaneamientoBimId?` — nombre alineado al DTO real de backend (`ResponsablePlaneamientoBim`/`Id`, no "Udp") tras corrección pedida por el usuario.
+   - `components/edit/proyecto-edit.ts`: tercer `app-search-select` cableado igual que los otros dos — array `responsablesPlaneamientoBim`, tercera llamada en el `forkJoin` de `loadResponsables()` (`getResponsables('PLANEAMIENTO_UDP')`), handler `onResponsablePlaneamientoBimChange()`, incluido en `save()` y en `emptyForm()`.
+   - `components/edit/proyecto-edit.html`: layout de la sección Responsable cambiado de `sm:grid-cols-2` a `sm:grid-cols-3` (una sola fila, mismo patrón que "Ubicación del proyecto"). **El label visible se dejó intencionalmente como "Responsable Planeamiento UDP"** — decisión explícita del usuario, aunque el campo de datos interno reutiliza el nombre "Planeamiento BIM" ya definido por backend. No tocar este texto sin pedido explícito.
+   - Solo se tocó el formulario de **edición**; el formulario de creación de proyecto no tiene sección "Responsable" y no fue modificado.
+
+### Diagnóstico de sincronización de rama (sin cambios de código)
+- Confirmado que `fb944101` (tri-state en Carga Diaria) ya estaba pusheado a `origin/victor-frontend` antes de esta sesión — no era un commit solo-local.
+- El ciclo tri-state (`cumplida: boolean | null`) fuerza causa obligatoria en dos capas (modal + validación al guardar) y **no** crea fila en `bim_registro_diario` para el estado Neutro (`null` se filtra del payload antes de enviarlo) — confirmado no afecta el acuerdo de `PorcentajeAvance` con backend. Con esto el usuario decidió mantener el diseño tal cual, sin revertir a binario puro.
+
+### Archivos clave
+- `src/app/features/configuracion/features/proyectos/dtos/responsable-lookup.dto.ts`
+- `src/app/features/configuracion/features/proyectos/dtos/project.dto.ts`
+- `src/app/features/configuracion/features/proyectos/dtos/project-edit.dto.ts`
+- `src/app/features/configuracion/features/proyectos/components/edit/proyecto-edit.ts` / `.html`
+
+### Verificado
+`ng build`: 0 errores (antes y después del rename de "Udp" a "Bim" en los campos de datos).
+
+## Sesión 2026-08-30 (cont.) — Planeamiento BIM: rol PLANEAMIENTO_UDP y selector de proyecto filtrado por backend
+
+### Contexto
+Continuación de la sesión anterior. Backend cerró y ya implementó localmente (commit `3c9b4d5d`, sin push) el contrato de 2 endpoints nuevos: `GET api/v1/project/me/worker` (resuelve el Worker del usuario logueado, 404 si no tiene ficha) y `GET api/v1/planeamiento-bim/proyectos` (lista de proyectos ya filtrada por rol/asignación: admin ve todo, `PLANEAMIENTO_UDP` (rol 80) ve solo donde es responsable, cualquier otro caso `[]`). Esta sesión consumió el segundo endpoint; el primero (`me/worker`) queda para una tarea futura, no implementado todavía.
+
+### Cambios
+1. **`core/constants/roles.ts`**: agregado `PLANEAMIENTO_UDP: '80'` (faltaba, el archivo saltaba de 78 a 83).
+2. **Selector de proyecto de las 4 pestañas de Planeamiento BIM** (`configuracion-inicial.ts`, `carga-diaria.ts`, `restricciones.ts`, `dashboard.ts`): reemplazado `ProjectResidentService.getProjectsDescription()` por `PlaneamientoBimService.getProyectos()` (nuevo método → `GET api/v1/planeamiento-bim/proyectos`, nuevo DTO `ProyectoBimSimpleDto` en `dtos/planeamiento-bim-proyecto.dto.ts`). Sin filtro adicional en frontend — se consume y muestra tal cual, el backend ya resuelve el rol/asignación. Se eliminó la inyección de `ProjectResidentService` en los 4 componentes (sin otro uso). **Portafolio no se tocó** (ruta ya tenía `roles: [ADMINISTRADOR_SISTEMA, ADMINISTRADOR_UDP]` hardcodeado y no usa selector de proyecto).
+3. **Configuración Inicial** (`configuracion-inicial.html`/`.ts`): quitado el selector "RESPONSABLE PLANEAMIENTO BIM" de la card "RESPONSABLE Y META PPC" — el campo se gestiona ahora desde Configuración de Proyectos (ver sesión anterior). Card renombrada a "META PPC DEL PROYECTO" (ícono `ti-target-arrow`), única con "META PPC DEL PROYECTO (%)" de solo lectura. Se limpió el catálogo local `responsables[]` y la llamada a `bimService.getResponsables()` (quedaban sin consumidor). **Se dejó intacto** `config.responsableId` en el modelo TS y en el payload de `saveConfiguracion()` — no se tocó el contrato de `PlaneamientoBimConfigUpdateDto` por falta de confirmación explícita de que backend lo haya quitado; viaja sin editarse desde acá. Tampoco se tocó el método compartido `PlaneamientoBimService.getResponsables()` ni el DTO `ResponsableBimWorkerDTO` (quedan sin consumidor en este componente, pero no se asumió que estén muertos a nivel de servicio compartido).
+
+### Decisión de diseño (sin cambios de código) — guard de las 4 rutas
+Se discutió si agregar `roles: [ADMINISTRADOR_SISTEMA, ADMINISTRADOR_UDP, PLANEAMIENTO_UDP]` al `data` de las 4 rutas (`configuracion-inicial`, `carga-diaria`, `restricciones`, `dashboard`), que hoy solo usan `featureKey`. **Decisión: no tocar el guard.** `roleGuard` es un OR (`featureKey` O `roles`) que retorna `true` en cuanto el `featureKey` matchea, sin llegar a evaluar `roles` — agregar `roles` ahí no restringe nada (cualquiera con el featureKey ya entra), solo abriría una vía extra de entrada para alguien con uno de esos 3 roles pero sin el featureKey asignado. Portafolio es la excepción justificada: no comparte featureKey con el resto del módulo porque backend tiene `[Authorize]` duro restringido a esos 2 roles en `PlaneamientoBimPortafolioController`, así que el frontend espeja esa restricción con `roles` en vez de `featureKey`. El caso "usuario con featureKey pero sin rol legítimo" ya queda cubierto por el contrato del endpoint (`[]` → dropdown vacío, sin bloqueo de pantalla). **Pendiente de verificar con backend** (fuera de alcance frontend): si los endpoints de escritura de estas 4 pantallas (`saveConfiguracion`, `saveCargaDiaria`, `createRestriccion`, etc.) validan que el `projectId` recibido pertenece al usuario, o si confían en que el frontend solo mande IDs que el usuario vio en su propio dropdown — si no lo validan, ahí hay un hueco real de autorización de backend, no de frontend.
+
+### Archivos clave
+- `src/app/core/constants/roles.ts`
+- `src/app/features/projects/planeamiento-bim/dtos/planeamiento-bim-proyecto.dto.ts` (nuevo)
+- `src/app/features/projects/planeamiento-bim/services/planeamiento-bim.service.ts`
+- `src/app/features/projects/planeamiento-bim/{configuracion-inicial,carga-diaria,restricciones,dashboard}/*.ts`
+
+### Pendiente
+- Implementar `GET api/v1/project/me/worker` (`MyWorkerDto { workerId, apellidoNombre }`) cuando se defina su uso concreto en el frontend — no se tocó en esta sesión.
+- Confirmar con backend si `config.responsableId` sigue vigente en `PlaneamientoBimConfigUpdateDto` (se dejó intacto por precaución, ver arriba).
+
+### Verificado
+`ng build`: 0 errores.
+
+## Sesión 2026-09-04 (cont.) — Cronograma de Hitos: soporte para hitos obligatorios y puntuales en la plantilla
+
+### Contexto
+Backend agregó dos campos nuevos a cada hito del catálogo (`esObligatorio`, `esPuntual`). Se pidió que la vista de plantilla de `milestone-schedule` (tabla `#/Hito/Inicio/Fin/Estado` con chip "PLANTILLA") los consuma: marcar visualmente los obligatorios, impedir que queden sin fecha sin confirmación explícita, y mostrar un solo input de fecha (bajo "Fin") para los puntuales.
+
+### Cambios
+1. **DTO**: `core/dtos/milestoneSchedule/milestoneScheduleFakeData.model.ts` — agregado `esObligatorio: boolean` y `esPuntual: boolean` a `MilestoneScheduleFakeDataDTO` (fuente de `GET /fake-data`, la que arma la plantilla).
+2. **`milestone-schedule.ts`**: los dos flags se propagan a cada `undatedTask` en el mapeo de `getFakeData()`; los hitos personalizados (`agregarHitoPersonalizado()`) los reciben en `false`/`false` (no existen en el catálogo).
+   - Los inputs de fecha pasaron de `[(ngModel)]` + `(change)="onFechaChange(hito)"` a `[ngModel]` (unidireccional) + `(ngModelChange)="onInicioChange/onFinChange"`, que delegan en `aplicarCambioFecha()`: si el hito es obligatorio y el cambio lo dejaría sin ninguna fecha, confirma con SweetAlert2 antes de aplicar — si cancela, no se reasigna nada y el binding unidireccional revierte solo el input al valor anterior.
+   - Nueva `hitosObligatoriosSinFecha()` bloquea `addMilestoneScheduleOnMilestoneScheduleHistory()` (primer click "Guardar" en la vista plantilla) con un `Swal` de error que lista los hitos afectados por nombre, antes de transicionar al Gantt o de tocar el backend.
+   - **Hitos puntuales**: confirmado con backend que el campo canónico es `plannedEndDate` (`plannedStartDate` no admite `null` en el DTO). En pantalla el único input visible va bajo la columna "Fin" (`hito.endDate`); `sincronizarDTODesdeUndatedTasks()` espeja ese mismo valor en `plannedStartDate` **solo al armar el payload de guardado**, para que `buildSavePayload()` no lo descarte por `plannedStartDate` vacío.
+3. **`milestone-schedule.html`**: badge "Obligatorio" junto al nombre del hito; columna "Inicio" oculta (`—`) y columna "Fin" habilitada cuando `hito.esPuntual` (comparte input/handler con `esRango`).
+4. **`milestone-schedule.css`**: `.badge-obligatorio` (fondo `#FEF3C7`, texto `#D97706`, paleta warning de DESIGN-VICTOR.md).
+
+### Archivos clave
+- `src/app/core/dtos/milestoneSchedule/milestoneScheduleFakeData.model.ts`
+- `src/app/features/mejora-continua/milestone-schedule/milestone-schedule.ts` / `.html` / `.css`
+
+### Verificado
+`ng build` (producción): 0 errores.
 ## Sesión 2026-08-30 — PETS: estructura completa, Firmas, exportación PDF + Presupuesto Materiales: progreso de estandarización
 
 ### PETS
@@ -5755,6 +5857,93 @@ Pedido del usuario: exportar a Excel un "Desagregado de Recursos" para el área 
   - Definir qué pasa con los materiales que no caen en ninguna de las ~14 partidas del modelo (alcohol, cintas, clavos, botiquín suelto, etc.) — ¿van a "Varios Seguridad", se omiten del Resumen, o catch-all nuevo?
 - Ver pendientes correspondientes del backend en `Abril_Backend/CONTEXT.md` (mismo día).
 
+## Sesión 2026-09-15 (cont.) — Cronograma de Hitos: culminar/crítico/eliminar versión + confirmación de hitos sin fecha
+
+### Contexto
+Continuación de trabajo ya en curso (sin commitear) sobre `milestone-schedule` (vista Gantt del cronograma de un proyecto): agregar acciones de gestión sobre hitos ya guardados, y replicar una validación nueva del backend (`Abril_Backend`, rama `victor-backend`) sobre `POST MilestoneScheduleHistory`.
+
+### Cambios — gestión de hitos guardados (ya en curso, se terminó y commiteó en esta sesión)
+- **Culminar hito** (`toggleCulminar`/`aplicarCulminadoLocal`): en modo "ver cronograma" (hito con `milestoneScheduleId` real) persiste de inmediato vía `PATCH .../{id}/culminar` (`MilestoneScheduleService.culminar`, nuevo); en modo plantilla/edición (sin id real todavía) solo actualiza el Gantt en memoria.
+- **Marcar crítico** (`toggleCriticoGuardado`) sobre hito ya guardado: mismo patrón de persistencia inmediata.
+- **Eliminar versión de cronograma** (`eliminarVersionCronograma`, solo ADMINISTRADOR DE RESIDENTES): `DELETE MilestoneScheduleHistory/{id}` (`MilestoneScheduleHistoryService.deleteMilestoneScheduleHistory`, nuevo). El endpoint es `[Authorize(Roles=...)]` puro sin `AbrilException`, por lo que un 403 por rol insuficiente no trae `body.message` — se maneja aparte del `error()` genérico.
+- **Vista de plantilla** (hitos sin fecha, antes de tener cronograma): buscador/filtro (con/sin fecha), stats de progreso, toggle "crítico"/"rango" por hito, agregar hito personalizado, quitar hito de la plantilla.
+- **Editar característica del proyecto** (`openEditProject`/`saveEditProjectLevelDescription`): modal para editar `levelDescription` desde la tarjeta de proyecto, vía `PUT project` (requiere leer el `ProjectDto` completo primero porque el PUT sobreescribe el DTO entero).
+- `responsable-lookup.dto.ts`: `planeamientoUdp` pasó de opcional a obligatorio en `ProjectLookupsDto` — el backend ya lo devuelve siempre en `GET project/lookups`.
+
+### Cambios — confirmación de hitos sin fecha (pedido explícito de esta sesión)
+Backend agregó al DTO de guardado un campo `confirmarHitosSinFecha?: boolean` (independiente del `forceSave` existente): si algún hito del envío no trae `plannedEndDate` (excepto "Inicio de obra", cuya única fecha vive en `plannedStartDate`), responde 400 con `message: "Los siguientes hitos no tienen fecha registrada: ..."`. Reenviar con `confirmarHitosSinFecha:true` fuerza el guardado. No afecta el bloqueo duro de hitos `esObligatorio` (mensaje "...son obligatorios y deben tener una fecha...", sigue sin opción de confirmar).
+
+- `milestoneScheduleHistoryCreate.model.ts`: agregado `confirmarHitosSinFecha?: boolean`.
+- `milestone-schedule.ts`: unificado el POST en `submitMilestoneScheduleHistory(forceSave, confirmarHitosSinFecha)` — si el 400 trae el mensaje de hitos sin fecha y todavía no se había confirmado, muestra un `Swal` con el texto exacto del backend (ya trae los nombres) y, al confirmar, reenvía el mismo payload con `confirmarHitosSinFecha:true` preservando el `forceSave` original (pueden viajar juntos: "cronograma igual" + "hitos sin fecha" a la vez). `addMilestoneScheduleOnMilestoneScheduleHistory()`/`forceAddMilestoneScheduleOnMilestoneScheduleHistory()` delegan ahí.
+  - Nota: el botón "Guardar sin cambios" (`forceSave:true`) es un botón siempre visible, no un diálogo reactivo sobre el mensaje "El cronograma es igual a la última versión subida." — ese mensaje no se lee del backend en ningún punto del código actual, a diferencia de lo que se asumía al pedir esta tarea.
+- `presupuesto-materiales/pages/proyecto/proyecto-page.ts` (`guardarSchedule`/`enviarSchedule`): mismo patrón — este flujo pega al mismo endpoint compartido y quedaba roto en falso por el nuevo 400 si no se tocaba.
+- Confirmado que el filtro local `buildSavePayload()` (`!!ms.plannedStartDate?.trim()`) solo descarta hitos completamente sin tocar, no bloquea el caso "tiene inicio pero no fin" — la fuente de verdad para eso ya era y sigue siendo la respuesta del backend.
+
+### Archivos clave
+- `src/app/features/mejora-continua/milestone-schedule/milestone-schedule.ts` / `.html` / `.css`
+- `src/app/features/ssoma/gestion/presupuesto-materiales/pages/proyecto/proyecto-page.ts`
+- `src/app/core/services/milestoneSchedule.service.ts`, `milestoneScheduleHistory.service.ts`
+- `src/app/core/dtos/milestoneScheduleHistory/milestoneScheduleHistoryCreate.model.ts`
+- `src/app/features/configuracion/features/proyectos/dtos/responsable-lookup.dto.ts`
+
+### Verificado
+`tsc --noEmit` y `ng build` (producción): 0 errores, solo warnings preexistentes. No se probó en navegador.
+
+## Sesión 2026-09-16 — 403 en error(), default "Fin" en plantilla de hitos, y Fase 1 de consolidación Dashboard de Proyectos → Dashboard UDP
+
+### Cambios — Cronograma de Hitos (`milestone-schedule`)
+- **Manejo de 403 distinto de 400**: el `error()` genérico ahora muestra título "Sin permiso" (en vez del genérico "Error") cuando `err.status === 403`, para los endpoints que ya respetan el status real (crear cronograma, `culminar`, `marcar-critico`) tras un cambio de backend que antes devolvía siempre 400. Se simplificó `eliminarVersionCronograma()`, cuyo caso especial para 403 sin body quedó redundante con el manejo genérico.
+- **Default de fecha en la plantilla de hitos sin fecha**: el campo activo por defecto (sin marcar "Rango") pasa de depender de `esPuntual` a ser **Fin para todos los hitos**, con la única excepción de "Inicio de obra" (`esInicioDeObra()`), que sigue mostrando Inicio. Se generalizó el espejo de fecha en `sincronizarDTODesdeUndatedTasks()` (antes solo aplicaba a `esPuntual`, ahora aplica a cualquier hito sin Rango que no sea Inicio de obra) para que `buildSavePayload()` no descarte el hito por `plannedStartDate` vacío. El checkbox "Rango" (preexistente desde antes del trabajo de `esObligatorio`/`esPuntual`, commit `53e58fcd`) no se tocó — sigue mostrando ambos inputs al marcarlo, mutuamente excluyente con "Crítico", y sigue sin persistirse (puro estado visual de `undatedTasks`).
+
+### Cambios — Fase 1 de consolidación de dashboards de Unidad de Proyectos
+Pedido: fusionar "Dashboard de Proyectos" (`features/projects/projects-dashboard/`) dentro de "Dashboard UDP" (`features/projects/cronograma-dashboard/`) y luego eliminar el primero, en dos fases. Esta sesión solo hizo la **Fase 1** (migrar capacidades); la Fase 2 (borrar `projects-dashboard/`, actualizar rutas/navigation/tabs, avisar de fila huérfana en BD) queda pendiente de confirmación explícita del usuario tras probar la Fase 1.
+
+- **Ranking de Responsables + Heatmap "Carga por Responsable y Semana"**: nuevos métodos `getRankingYHeatmap()` / `getProyectoDetalle(proyectoId)` en `CronogramaDashboardService`, pegando directo a `GET api/v1/projects-dashboard` y `GET api/v1/projects-dashboard/{id}` — deliberadamente **sin** reusar `ProjectsDashboardService` ni sus DTOs (viven en `projects-dashboard/`, carpeta que la Fase 2 va a borrar). DTOs propios copiados en `cronograma-dashboard/dtos/cronograma-dashboard.dtos.ts` (`RankingResponsableDto`, `HeatmapResponsableDto`, `ProyectoDetalleDto`, etc.).
+- Ranking/Heatmap se piden **una sola vez** en `ngOnInit`, sin refiltrar por `selectedResponsableId`/`selectedEstado` de la página (decisión deliberada: filtrar un ranking comparativo por un solo responsable no tiene sentido). Es una violación documentada de la regla "1 acción = 1 HTTP" (memoria `arch-1-accion-1-http`), aceptada porque la corrección de fondo (que `cronograma-actividades/dashboard` devuelva también esos campos) requiere tocar el backend, fuera de alcance de esta sesión.
+- **Panel lateral de Gantt por proyecto**: nuevo botón "Ver Gantt" (ícono `ti-timeline`) por fila de la tabla, independiente del click de fila existente (que sigue navegando a `cronograma-actividades` para editar). Copiado de `projects-dashboard.ts` (`openPanel`/`closePanel`/`initGantt`), usando `import { gantt } from 'dhtmlx-gantt'` (import propio, no el `declare const gantt: any` del original) para no depender de que otro componente ya haya cargado la librería como global.
+- No se migraron el donut "Distribución por Estado", las barras "Programado vs Real" (redundantes con los KPI cards ya existentes de Dashboard UDP) ni el filtro "Especialidad" (código muerto, nunca se enviaba al backend) — decisión explícita del pedido.
+- **Bug preexistente encontrado, no introducido acá**: el número de posición del ranking (`#`, círculo `rank-badge`) no se renderiza porque el backend de `GET api/v1/projects-dashboard` devuelve `responsableId`, no `posicion` — confirmado que el mismo bug ya existe en la página vieja `projects-dashboard`. No se corrigió por estar fuera de alcance; pendiente de decisión del usuario.
+
+### Archivos clave
+- `src/app/features/mejora-continua/milestone-schedule/milestone-schedule.ts` / `.html`
+- `src/app/features/projects/cronograma-dashboard/cronograma-dashboard.ts` / `.html` / `.css`
+- `src/app/features/projects/cronograma-dashboard/dtos/cronograma-dashboard.dtos.ts`
+- `src/app/features/projects/cronograma-dashboard/services/cronograma-dashboard.service.ts`
+
+### Pendiente
+- **Fase 2** de la consolidación (no iniciada, requiere confirmación del usuario primero): borrar `src/app/features/projects/projects-dashboard/` completo; actualizar `proyectos.routes.ts` (quitar ruta, redirect a `cronograma-dashboard`), `navigation.service.ts` (landing + menú), `shared/projects-tabs.ts` y el array de tabs hardcodeado en `cronograma-dashboard.html`, y `feature-display-names.generated.ts`; avisar (sin ejecutar) sobre la fila huérfana `projects.projects-dashboard` (feature_id=93) en `role_feature` de Aiven.
+- Decidir si se corrige el bug de `posicion`/`responsableId` en el ranking (afecta a ambas páginas, vieja y nueva).
+- Confirmado con el usuario: las reglas D1-D5 de base de datos (mencionadas de pasada en este mismo archivo, sección de 2026-09-15 anterior, "regla D4") **no** están duplicadas en este repo — solo viven en `Abril_Backend/CLAUDE.md`.
+
+### Verificado
+`ng build` (producción): 0 errores. Probado manualmente en Chrome contra backend local (`localhost:5236`): filtros, Ranking, panel de Gantt (tabs Gantt + Actividades críticas), navegación de fila sin interferencia del nuevo botón. Sin errores de consola. Heatmap no se pudo ver poblado con datos reales en este dataset de prueba (0 filas esa semana), pero el guard y el código son correctos.
+
+## Sesión 2026-09-16 (cont.) — Edición de fechas de un hito ya guardado (PUT milestoneSchedule/{id})
+
+### Contexto
+Backend agregó `PUT api/v1/milestoneSchedule/{id}` (`Editar`, `[Authorize(Roles=AdministradorResidentes)]` puro — más restrictivo que el resto del cronograma, que también permite RESIDENTE) para editar descripción/orden/fechas/crítico de un hito ya guardado sin subir una versión nueva completa. El modal de detalle de un hito (`openViewMilestoneSchedule` → clic en un hito del Gantt) solo mostraba Fecha inicio/fin en modo lectura; no había ningún consumidor frontend de este endpoint.
+
+### Cambios
+- Nuevo botón "Editar fechas" en el modal de detalle, gateado por `puedeEditarHitoGuardado` (getter nuevo: solo `ADMINISTRADOR_RESIDENTES`, **no** `puedeEditarCronograma` que también incluye RESIDENTE — confirmado con el controller del backend que un RESIDENTE recibiría 403 en este PUT específico).
+- **Qué campo (Inicio/Fin) se muestra editable depende de dónde está el dato real, no de `esPuntual`** — confirmado contra datos reales de producción (proyecto "9 NOGALES" y otros): los hitos puntuales históricos ("Nivel 0.00", "Fin de Obra", "Inicio de obra") siempre tienen su fecha real en `plannedStartDate` con `plannedEndDate` en null, nunca al revés — la convención "puntual = Fin" solo aplica a hitos nuevos creados desde la plantilla actual (que si el usuario llena el campo Fin y se guarda bien, sí queda con el dato en Fin). Nuevos getters `hitoDetalleMuestraInicio`/`hitoDetalleMuestraFin` deciden esto en base a `realPlannedStartDate`/`realPlannedEndDate` (campos nuevos, agregados al mapeo de `openViewMilestoneSchedule()`, con el valor crudo del backend, sin el ajuste visual de "inicio visual" que se aplica a barras críticas para dibujar el Gantt).
+- Al guardar, si el campo oculto (el que no tiene dato real) es requerido por el DTO (`plannedStartDate` no admite null) o por la validación de "hito obligatorio" del backend (`EditAsync`/`ValidarHitosObligatoriosAsync`: obligatorio y no "Inicio de obra" ⇒ exige `plannedEndDate`), se espeja desde el campo visible — dirección Inicio→Fin para hitos obligatorios históricos sin Fin, Fin→Inicio para hitos "solo Fin" nuevos. Bloqueo duro (sin opción de confirmar) si el hito es obligatorio y ninguno de los dos espejos resuelve el faltante — igual que el backend, sin excepción para "Inicio de obra".
+- **Bug encontrado y corregido de paso, no pedido explícitamente pero bloqueante para lo anterior**: `openViewMilestoneSchedule()` filtraba con `!!m.plannedStartDate` — cualquier hito "solo Fin" (los nuevos de plantilla) nunca llegaba a aparecer en el Gantt, ni se podía abrir su modal. Se cambió a "al menos una de las dos fechas" (`anchorDate()` nuevo, fecha ancla del hito para ordenar barras críticas), y se corrigió el chequeo de "rango real" (antes `plannedEndDate !== plannedStartDate`, que confundía un hito "solo Fin" con Inicio vacío con un rango real — ahora exige que las DOS tengan valor). Es la causa más probable (no confirmada al 100%, no se pudo reproducir en el dataset de prueba) del error "Invalid day index" reportado en una vuelta anterior de esta misma sesión.
+- `MilestoneScheduleGetDTO` (frontend) agrega `esObligatorio: boolean` — el backend ya lo devolvía en el GET, solo faltaba el tipado.
+- Nuevo método `editarHito()` en `MilestoneScheduleService`, reusando el DTO existente `MilestoneScheduleCreateDTO` (mismo shape que cada ítem del array del POST de versión completa, confirmado contra `MilestoneScheduleController.cs`/`MilestoneScheduleDtos.cs` del backend antes de implementar).
+
+### Archivos clave
+- `src/app/features/mejora-continua/milestone-schedule/milestone-schedule.ts` / `.html`
+- `src/app/core/services/milestoneSchedule.service.ts`
+- `src/app/core/dtos/milestoneSchedule/milestoneSchedule.model.ts`
+
+### Pendiente / bugs preexistentes encontrados sin corregir (fuera de alcance de esta tarea)
+- El manejador de error de 403 del backend en este mismo controller ya distingue "Sin permiso" (ver sesión anterior) — no hay nada nuevo pendiente en ese frente.
+- Al probar el guardado real en pantalla, el PUT devolvió 404 con body vacío (no el `{message:"Hito no encontrado."}` que tira `AbrilException`) — confirmado con `git log` en `Abril_Backend` que el método `Editar` se commiteó el mismo día (2026-09-16 15:54) sin cambios sin commitear: el proceso backend corriendo en `localhost:5236` necesitaba reiniciarse para cargar el endpoint nuevo. No es un bug de frontend. Pendiente de que el usuario confirme el guardado end-to-end tras reiniciar el backend.
+- No se pudo re-probar en navegador el fix del caso "solo Fin" (no existe todavía ningún hito así en datos reales) porque la sesión del navegador expiró a mitad de esta tarea — pendiente de verificación visual del usuario, en particular: caso 1 (Inicio con valor) sin regresión, y caso "solo Fin" con el próximo hito que se cree desde la plantilla nueva.
+
+### Verificado
+`ng build` (producción): 0 errores, en cada paso de esta sesión. Probado en Chrome contra backend local: apertura del modal, botón "Editar fechas", inputs, bloqueo de "hito obligatorio", edición y guardado (bloqueado por el 404 de backend desactualizado arriba mencionado, no por el frontend).
+
 ## Sesión 2026-09-16 — Filtros de Bandeja pasan a ser server-side
 
 ### Contexto
@@ -5844,54 +6033,73 @@ Reporte del usuario: en Control de Acceso, varios trabajadores de contratistas a
 
 ### Pendiente
 - Confirmar con el equipo si hay usuarios con rol `ADMINISTRADOR_SSOMA`/`ADMINISTRADOR_UDP` cubriendo la revisión de EMOs de contratistas — si no, ese es el cuello de botella real del backlog, no un bug de código.
-## Sesión 2026-09-18 — Nuevo módulo Catálogo de EPP (SSOMA + Logística)
+
+## Sesión 2026-09-23 — Mover fecha Inicio/Fin y agregar hito a cronograma guardado (Milestone Schedule)
 
 ### Contexto
-Pedido de SSOMA: catálogo autorizado de Equipo de Protección Personal, visible también para Logística, para estandarizar qué EPP/marca/modelo se puede comprar y agilizar la generación de pedidos.
+Dos features sobre la vista de cronograma YA GUARDADO (`openViewMilestoneSchedule()`), ambas gateadas a `puedeEditarHitoGuardado` (rol `ADMINISTRADOR_RESIDENTES`). Antes de implementar se confirmó el shape exacto contra `Abril_Backend` (`MilestoneScheduleController.cs`, `MilestoneScheduleRepository.cs`): ambos endpoints (`PUT /{id}` con `MilestoneScheduleEditDTO`, `GET /faltantes`, `POST /{historyId}/hito` con `MilestoneScheduleAddDTO`) ya existían en el backend.
 
 ### Cambios
-- **Nuevo módulo** `features/ssoma/gestion/epp/` en `/ssoma/gestion/epp`, feature-permiso `ssoma.gestion.epp` (mismo permiso para SSOMA y Logística, asignable por rol desde Seguridad/Roles).
-- Jerarquía del catálogo: Categoría → Familia → Ítem (ficha técnica propia) → Modelo/Marca. Cada ítem tiene nombre técnico + nombre comercial, imagen, ficha técnica en PDF (visor inline, no descarga directa), y auditoría de quién/cuándo creó o editó.
-- Dos vistas: **Tabla** (árbol colapsable por Categoría → Familia, una fila por modelo/marca, con acciones inline: agregar, duplicar, editar, activar/desactivar) y **Tarjetas**.
-- Edición inline de Categorías, Familias, Ítems y Modelos sin salir de la pantalla; alta rápida de modelo directo desde la tabla (botón "+" o "duplicar y modificar").
-- Zoom de imagen (clic en cualquier miniatura) y visor de PDF embebido (iframe en modal, con botón de descarga).
-- **Pestaña "Generar Pedido"**: arma un pedido con talla+cantidad por línea (solo ítems activos), lo guarda con código correlativo (`PED-EPP-{año}-{id}`), proyecto y usuario que lo generó, descarga el Excel automático, y queda en un historial navegable desde la misma pestaña.
-- Carga inicial: 54 EPP con 43 modelos/marcas importados desde el Excel "EPPS AUTORIZADO SSOMA ACTUALIZADO ACTUAL.xls" (hoja "EPP Aprobado"), reorganizados en Familias reales (ver `Abril_Backend/_sql_prod/ssoma_epp_seed_excel.sql`).
-- Rediseño visual: acento de color + ícono por categoría (Cabeza/Ojos/Auditiva/Manos/Pies/Cuerpo/Altura/Respiratoria), filtros en una sola línea con íconos, fondo `#F8FAFC`.
+- **Mover fecha Inicio↔Fin** (modal "Editar fechas"): link "Usar esta fecha en su lugar" bajo el campo oculto por la lógica data-driven, con SweetAlert2 de confirmación si el campo origen tiene valor. Al guardar, PUT `milestoneSchedule/{id}` manda **null explícito** para el campo vaciado — esto requirió reemplazar `MilestoneScheduleCreateDTO` (no admite null en `plannedStartDate`) por un `MilestoneScheduleEditDTO` nuevo que sí lo admite, igual que el DTO real del backend (`MilestoneScheduleEditDTO.PlannedStartDate` es `DateOnly?`). El flujo sin mover fecha (default) quedó bit a bit igual al de antes — mismo mirror, misma validación de obligatorio/"Inicio de obra".
+  - Efecto lateral necesario: el cálculo de `esRangoReal`/fecha ancla del Gantt al guardar asumía que Inicio siempre tenía valor (cierto en el flujo viejo); se corrigió para usar la misma fecha ancla que `openViewMilestoneSchedule` (la que efectivamente tiene valor, sea Inicio o Fin).
+- **Botón "Agregar hito"** en el header de la vista de cronograma guardado (visible solo si `!showEditButton && puedeEditarHitoGuardado`, para no mezclarse con el flujo de edición/creación de una versión completa que ya tenía su propio "Nuevo hito"). Modal (`app-base-modal`) con lista de hitos faltantes del catálogo (`GET milestoneSchedule/faltantes?projectId=`, selección única) + input de hito personalizado. Confirmar dispara `POST milestoneSchedule/{historyId}/hito` (siempre con fechas null — el hito se agrega sin fecha y se completa después vía "Editar fechas") y la respuesta se inserta directo en el Gantt en memoria sin GET adicional (R1) — el backend siempre asigna `order = maxOrder + 1`, así que `gantt.addTask()` ya lo deja en la posición correcta.
+- 3 DTOs nuevos: `core/dtos/milestoneSchedule/milestoneScheduleEdit.model.ts`, `milestoneScheduleAdd.model.ts`, `core/dtos/milestone/milestoneSimple.model.ts` (`MilestoneSimpleDTO`, shape de `/faltantes`).
+- De paso: `milestoneSimple.model.ts` ya existía en el repo con casing roto (`milestoneSImple.model.ts`, con I mayúscula) y una interfaz `MilestoneSimple` sin ninguna referencia en el código — un `Write` a la ruta con casing correcto casi lo pisó por case-insensitivity de Windows; se corrigió el casing con `git mv` (dos pasos) y se renombró/completó la interfaz a `MilestoneSimpleDTO`.
 
 ### Archivos clave
-- `features/ssoma/gestion/epp/pages/lista/epp-lista.ts`/`.html`/`.css` — toda la pantalla (catálogo + pedido).
-- `features/ssoma/gestion/epp/epp.service.ts`/`.dtos.ts` — HTTP + tipos.
-- `core/navigation/navigation.service.ts`, `feature-display-names.generated.ts`, `features/ssoma/ssoma.routes.ts` — alta del módulo en menú/rutas.
-- Backend: `Abril_Backend/Features/SsomaModule/EppFeature/**` (ver `Abril_Backend/CONTEXT.md`, mismo día).
+- `features/mejora-continua/milestone-schedule/milestone-schedule.ts`/`.html`/`.css`
+- `core/services/milestoneSchedule.service.ts` (`editarHito` ahora tipado con `MilestoneScheduleEditDTO`; nuevos `getFaltantes()`/`agregarHito()`)
+- `core/dtos/milestoneSchedule/milestoneSchedule.model.ts` (agregado `esPuntual?`/`fechaRealFin?` — ya venían del backend pero no estaban tipados)
 
 ### Verificado
-`ng build` → 0 errores, solo warnings preexistentes de terceros. No se corrió el visor en navegador desde esta sesión — el usuario lo probó en vivo durante toda la sesión y confirmó que el catálogo, las imágenes, la ficha técnica y el pedido funcionan.
+`ng build` → 0 errores, solo warnings preexistentes de terceros. No se probó en navegador en esta sesión.
 
 ### Pendiente
-- Cargar las imágenes reales de cada EPP (hoy la mayoría está sin foto).
-- Completar modelos/marcas de los ítems que quedaron "Sin modelo/marca registrado" (los que en el Excel decían "Según estándar de logística").
-- Evaluar si conviene un flujo de aprobación sobre el Pedido (hoy el estado "Generado" es solo informativo, sin aprobar/rechazar).
+- Probar en vivo el flujo completo: mover fecha en un hito "Inicio de obra" (el backend debe rechazarlo con su propio mensaje, vía el `error()` genérico — no hay guardia duplicada en el frontend, es intencional) y agregar un hito personalizado/de catálogo y confirmarlo visualmente en el Gantt.
 
-## Sesión 2026-09-20 — Pantalla Hoja de Ruta de Contratistas (SSOMA)
+## Sesión 2026-09-23 (continuación) — Investigación de proyectos faltantes en UDP + toggle "Pertenece a UDP"
 
 ### Contexto
-Consumo del nuevo backend de cumplimiento semanal por contratista (ver `Abril_Backend/CONTEXT.md`, mismo día).
+Punto de partida: reporte de que algunos proyectos activos no aparecen en Cronograma de Actividades. La investigación (varias rondas, incluyendo una pantalla equivocada al principio — `Configuración → Proyectos`, que solo tiene un badge de solo lectura) llevó a la pantalla real: **Configuraciones → pestaña "Proyectos Activos"** dentro de `milestones.ts` (sub-tab `activeTab === 'proyectos'`), la única con un toggle "Activo" de verdad interactivo. Investigando esa pantalla se encontró la causa raíz del reporte original: `Project.TieneUnidadDeProyectos` (columna ya existente en backend desde antes, migración `20260526203642_AddFechaRealFinAndTieneUnidadDeProyectos`) es el flag que filtra las queries de Cronograma de Actividades, Projects Dashboard y Milestone Schedule (`p.TieneUnidadDeProyectos` en los `.Where()` de esos tres repos de `Abril_Backend`) — pero no había ningún control de UI para gestionarlo, así que un proyecto activo con ese flag en `false` simplemente no aparecía en ningún lado y nadie podía corregirlo sin tocar la base directamente.
 
 ### Cambios
-- Nuevo feature `features/ssoma/gestion/hoja-ruta/` en `/ssoma/gestion/hoja-ruta`, permiso `ssoma.gestion.hoja-ruta` (registrado en `feature`/`role_feature` vía SQL manual, mismos roles que `ssoma.gestion.cumplimiento`).
-- Filtros (Proyecto, Contratista, Año, Semana) en una sola fila bajo el header — a pedido explícito, en vez del patrón estándar `app-filter-trigger`/`app-filter-modal` usado en el resto de SSOMA.
-- Proyecto se precarga con `CharlasService.getMiProyecto()` (mismo criterio que "Charlas y Capacitaciones": resuelve por `WorkerProyecto` del usuario logueado — si el usuario no tiene una asignación de proyecto única, como un Jefe SSOMA corporativo, queda sin precargar y hay que elegirlo a mano).
-- Combo de Contratista se recarga en cada cambio de Proyecto contra `GET /api/v1/ssoma/hoja-ruta/contratistas?proyectoId=`, que solo trae contratistas con trabajador activo en ese proyecto (excluye Abril) — no el catálogo completo de empresas.
-- Cada cambio de filtro regenera el resumen automáticamente (sin botón "Buscar" aparte); "Actualizar" del header refresca.
+- **Nuevo toggle "Pertenece a UDP"** en la tabla de "Proyectos Activos" (`milestones.html`), columna separada del toggle "Activo" existente (no se tocó su lógica). Llama a `ProyectoService.toggleUnidadDeProyectos(projectId, value)` → `PATCH api/v1/project/{id}/tiene-unidad-de-proyectos`, body `{ value }`, respuesta `{ tieneUnidadDeProyectos }` — endpoint puntual ya existente en backend (`ProjectController.cs:295`, `UpdateTieneUnidadDeProyectosDto`), evita el riesgo de sobreescritura del PUT completo que sí tiene `toggleProyectoActive()`.
+- **Filtro "Mostrar solo sin UDP asignado"**: checkbox sobre la tabla, filtro 100% en memoria (`proyectosVisibles` getter) — no hace falta re-paginar contra backend porque `loadProyectos()` ya trae hasta 200 registros en una sola llamada (sin `pageSize` explícito, el backend default es 200, y hay ~44 proyectos en total).
+- **Bug encontrado y corregido dos veces sobre el mismo toggle nuevo**, ambos también aplicados/revisados en `toggleProyectoActive()`:
+  1. *Checkbox no revierte visualmente ante error*: `[checked]="item.x"` es un binding unidireccional — si el modelo nunca cambia de valor tras un fallo, Angular no vuelve a escribir el DOM (dirty-check contra el último valor evaluado, no contra el DOM real) y el checkbox queda marcado aunque el guardado haya fallado. Fix: actualización optimista del modelo al click + revert explícito (a un valor genuinamente distinto) en el callback de error. Aplicado a `toggleProyectoUdp()` y, a pedido explícito, también a `toggleProyectoActive()` (mismo patrón, mismo motivo).
+  2. *Contrato de endpoint mal asumido*: la primera implementación de `toggleUnidadDeProyectos()` asumía un "toggle ciego" server-side (PATCH sin body, mirror de `PATCH .../arquitectura-comercial` que sí es así) — pero el endpoint real que backend expuso recibe `{ value: boolean }` explícito en el body. Se corrigió el service para mandar el valor calculado (`!anterior`), confirmando el shape exacto leyendo directamente `Abril_Backend` (`UpdateTieneUnidadDeProyectosDto.cs`, `ProjectController.cs`) en vez de asumir.
+- Se confirmó además, leyendo el backend, que `getPaged()` **sí** trae `tieneUnidadDeProyectos` con el valor real desde la carga inicial (nunca `undefined`) — se había planteado como sospechosa una segunda causa de desincronización y se descartó.
 
 ### Archivos clave
-- `features/ssoma/gestion/hoja-ruta/hoja-ruta.dtos.ts`/`.service.ts`/`.routes.ts`.
-- `features/ssoma/gestion/hoja-ruta/pages/resumen/hoja-ruta-resumen.ts`/`.html`/`.css`.
-- `core/navigation/navigation.service.ts`, `features/ssoma/ssoma.routes.ts` — alta en menú/rutas.
+- `features/projects/configuration/pages/milestones/milestones.ts`/`.html` (`toggleProyectoUdp`, `toggleProyectoActive`, `proyectosVisibles`, `soloSinUdp`)
+- `features/configuracion/features/proyectos/services/proyecto.service.ts` (`toggleUnidadDeProyectos`)
+- `features/configuracion/features/proyectos/dtos/project.dto.ts` (`tieneUnidadDeProyectos?: boolean`)
 
 ### Verificado
-`ng build` → 0 errores, solo warnings preexistentes de terceros (canvg, flatpickr, tfjs). Probado en vivo por el usuario durante la sesión (filtros, autoselección de proyecto, generación del resumen).
+`ng build` → 0 errores en cada paso, solo warnings preexistentes de terceros. No se probó en navegador contra el backend real en esta sesión (el endpoint fue confirmado leyendo el código de `Abril_Backend`, no probado end-to-end desde la UI).
 
 ### Pendiente
-- No hay forma de precargar el contratista por defecto (no existe un "contratista actual" para un usuario de Abril) — queda siempre manual, por diseño.
+- El endpoint `PATCH .../tiene-unidad-de-proyectos` lleva `[RequireFeature("projects.config.milestones")]` en backend — si el rol del usuario no tiene ese `feature_key` asignado en `role_feature`, el toggle devolverá 403 aunque el body esté bien armado. No se tocó (es config de base de datos), pero conviene confirmarlo antes de dar el toggle por probado en producción.
+- Probar en vivo el toggle "Pertenece a UDP" (éxito y error real) y el filtro "Mostrar solo sin UDP asignado" contra el backend desplegado.
+- El toggle "Activo" (`toggleProyectoActive`) construye el PUT con `{...item, active: nuevoEstado}` — sigue mandando el objeto completo del listado (con el riesgo de sobreescritura de campos desactualizados ya documentado en una sesión anterior); no se resolvió, solo se le aplicó el fix de revert optimista.
+
+## Sesión 2026-09-24 — Deploy a master: merge de victor-frontend (evaluaciones staff, milestone-schedule, planeamiento BIM, cumplimiento SSOMA, hoja de ruta, EPP, config. proyectos)
+
+### Contexto
+Cierre de ciclo: se trae a `master`/producción el acumulado de trabajo hecho en la rama `victor-frontend` desde la última vez que se guardó a master, más lo último de `origin/master` (mejoras en reclutamiento).
+
+### Cambios
+Merge de `victor-frontend` a `master`, incluyendo (cada uno documentado en su propia sección de sesión más arriba en este mismo archivo, ya incorporada por el merge):
+- Nuevo módulo de evaluaciones de staff (`evaluar-staff`, `resultados-staff`).
+- Milestone-schedule: edición de fechas de hito ya guardado, mover fecha Inicio/Fin y agregar hito al cronograma guardado, culminar/marcar crítico/eliminar versión, confirmación de hitos sin fecha, hitos obligatorios/puntuales en plantilla, default Fin en plantilla, migración de Ranking/Heatmap/Gantt a Dashboard UDP.
+- Planeamiento BIM: filtro de selector de proyecto por rol/asignación, campo Responsable Planeamiento BIM, migración a modelo de torres/sectores con soporte tri-state en carga diaria.
+- Configuración de proyectos: toggle "Pertenece a UDP" con filtro y fix de revert optimista.
+- Ajustes en `workItem` (edición) y en `proyectos` (dto/service).
+- Cumplimiento SSOMA: ajustes en `cumplimiento-main` y `cumplimiento-ssoma.dtos/service`.
+- Reclutamiento (venía de `origin/master`): rediseño de `detalle`, ajustes en `formulario-postulante-modal` y `reclutamiento`.
+
+### Verificado
+`ng build` sobre `master` (antes del merge) → exit code 0. El merge en sí no se rebuildeó por separado dentro de este flujo — cada feature ya fue verificada con `ng build` en su propia sesión (ver secciones arriba); no se detectaron conflictos al mergear.
+
+### Pendiente
+Los pendientes puntuales de cada feature quedan listados en sus respectivas secciones de sesión más arriba.

@@ -559,8 +559,8 @@ select.abril-field-input { cursor: pointer; }
 }
 
 .custom-task .gantt_task_content {
-  background-color: #64BC04;
-  border-color: #64BC04;
+  background-color: #1E3A5F;
+  border-color: #1E3A5F;
   border-radius: 10px;
 }
 
@@ -587,15 +587,20 @@ select.abril-field-input { cursor: pointer; }
 .gantt_task_content { color: #fff !important; font-size: 11px !important; }
 
 /* Milestone-schedule — colores por estado (ms-*) */
-.gantt_task_line.ms-culminado { background-color: #16a34a !important; border-color: #15803d !important; }
-.gantt_task_line.ms-culminado .gantt_task_progress { background-color: #15803d !important; }
+.gantt_task_line.ms-culminado { background-color: #1B6B3A !important; border-color: #145A2F !important; }
+.gantt_task_line.ms-culminado .gantt_task_progress { background-color: #145A2F !important; }
 
-.gantt_task_line.ms-en-proceso { background-color: #2563eb !important; border-color: #1d4ed8 !important; }
-.gantt_task_line.ms-en-proceso .gantt_task_progress { background-color: #1d4ed8 !important; }
+.gantt_task_line.ms-en-proceso { background-color: #2E6DB4 !important; border-color: #255A93 !important; }
+.gantt_task_line.ms-en-proceso .gantt_task_progress { background-color: #255A93 !important; }
 
 /* Task bar content (gantt_task_content sits on top of gantt_task_line and needs its own override) */
-.custom-task.ms-culminado .gantt_task_content  { background-color: #16a34a !important; border-color: #15803d !important; }
-.custom-task.ms-en-proceso .gantt_task_content { background-color: #2563eb !important; border-color: #1d4ed8 !important; }
+.custom-task.ms-culminado .gantt_task_content  { background-color: #1B6B3A !important; border-color: #145A2F !important; }
+.custom-task.ms-en-proceso .gantt_task_content { background-color: #2E6DB4 !important; border-color: #255A93 !important; }
+
+/* Milestone-schedule - anillo ambar para hitos marcados como criticos (corte real de etapa),
+   independiente del color de estado. */
+.gantt_task_line.hito-critico { box-shadow: 0 0 0 2px #D97706 !important; }
+.custom-task.hito-critico .gantt_task_content { box-shadow: 0 0 0 2px #D97706 !important; }
 
 
 /* Today marker */
@@ -617,8 +622,8 @@ select.abril-field-input { cursor: pointer; }
   font-weight: 600;
   white-space: nowrap;
 }
-.estado-culminado  { background: #dcfce7; color: #16a34a; }
-.estado-en-proceso { background: #dbeafe; color: #2563eb; }
+.estado-culminado  { background: #dcfce7; color: #166534; }
+.estado-en-proceso { background: #dbeafe; color: #1e40af; }
 
 /* Ensure dhtmlx shows its native horizontal scrollbar */
 .gantt_layout_root { overflow-x: auto !important; }
@@ -672,8 +677,9 @@ app-milestone-schedule .estado-badge { font-size: 0.62rem; padding: 1px 6px; }
   left: 50% !important;
   transform: translate(-50%, -50%) !important;
 }
-.gantt_task_line.gantt_milestone.ms-en-proceso .gantt_task_content { background: #2563eb !important; }
-.gantt_task_line.gantt_milestone.ms-culminado .gantt_task_content { background: #16a34a !important; }
+.gantt_task_line.gantt_milestone.ms-en-proceso .gantt_task_content { background: #2E6DB4 !important; }
+.gantt_task_line.gantt_milestone.ms-culminado .gantt_task_content { background: #1B6B3A !important; }
+.gantt_task_line.gantt_milestone.hito-critico .gantt_task_content { box-shadow: 0 0 0 2px #D97706 !important; }
 .gantt_tree_content {
   white-space: nowrap !important;
   overflow: hidden !important;

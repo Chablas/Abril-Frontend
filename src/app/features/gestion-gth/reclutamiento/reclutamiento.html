@@ -2,6 +2,7 @@
   [badge]="'GESTIÓN DE TALENTO · ' + anioActual"
   titulo="Reclutamiento"
   subtitulo="Gestiona los procesos de contratación y los procesos de selección de forma ágil."
+  [pills]="soloLectura ? [{ icono: 'ti-lock', texto: 'Solo lectura' }] : []"
   [botonSecundario]="botonConfiguracion"
   (secondaryClick)="abrirConfiguracion()"
   [hasExtra]="true">
@@ -218,6 +219,7 @@
                 [allowClear]="false"
                 [compact]="true"
                 [sortAlpha]="false"
+                [disabled]="soloLectura"
                 placeholder="Prioridad">
               </app-search-select>
             </div>
@@ -310,6 +312,7 @@
             [allowClear]="false"
             [compact]="true"
             [sortAlpha]="false"
+            [disabled]="soloLectura"
             placeholder="Prioridad">
           </app-search-select>
         </div>
@@ -341,6 +344,7 @@
   *ngIf="detalleId !== null"
   [requerimientoId]="detalleId"
   [abrirFormularioCandidatoId]="detalleFormularioCandidatoId"
+  [soloLectura]="soloLectura"
   (closeModal)="onDetalleCerrado($event)" />
 
 <!-- ── Modal de filtros estándar ──────────────────────────────────────────
