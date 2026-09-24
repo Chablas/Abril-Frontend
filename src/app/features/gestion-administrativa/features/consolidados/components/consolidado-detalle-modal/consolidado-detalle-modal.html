@@ -112,47 +112,8 @@
       </span>
     </div>
 
-    <!-- ── Documentos del consolidado, cada uno a la vista ──────────────────
-         La planilla grupal es el gasto de todas las planillas que cubre en un solo documento: la
-         prepara el consolidador antes de subir el S10 —es lo que registra en el S10—, así que va
-         pegada a él. Acá solo se firma.
-
-         De cada uno se enseña UNA sola copia: la original mientras no haya firma, y la firmada
-         apenas existe —es el mismo papel, y verlo dos veces solo alarga el modal—. -->
-    <div *ngIf="!d.pdfFirmadoUrl" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-      <app-documento-embebido
-        [etiqueta]="d.codigo ? 'Consolidado ' + d.codigo : 'Consolidado del S10'"
-        [nombre]="d.pdfFilename"
-        [url]="d.pdfUrl" />
-    </div>
-
-    <ng-container *ngIf="!d.planillaGrupalFirmadoUrl">
-      <div *ngIf="d.planillaGrupalUrl as grupal" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-        <app-documento-embebido
-          etiqueta="Planilla grupal"
-          [nombre]="d.planillaGrupalFilename ?? 'Planilla grupal'"
-          [url]="grupal" />
-      </div>
-    </ng-container>
-
-    <div *ngIf="d.pdfFirmadoUrl as firmado" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-      <app-documento-embebido
-        etiqueta="Consolidado firmado"
-        [nota]="d.firmadoAt ? 'Firmado el ' + (d.firmadoAt | date:'dd/MM/yyyy') : null"
-        [nombre]="d.pdfFirmadoFilename ?? 'Consolidado firmado'"
-        [url]="firmado"
-        [firmado]="true" />
-    </div>
-
-    <div *ngIf="d.planillaGrupalFirmadoUrl as grupalFirmada" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-      <app-documento-embebido
-        etiqueta="Planilla grupal firmada"
-        [nombre]="d.planillaGrupalFirmadoFilename ?? 'Planilla grupal firmada'"
-        [url]="grupalFirmada"
-        [firmado]="true" />
-    </div>
-
-    <!-- ── Planillas que cubre ──────────────────────────────────────────── -->
+    <!-- ── Planillas que cubre ────────────────────────────────────────────
+         Antes de los documentos: con los PDF a la vista quedaban al fondo del modal. -->
     <div *ngFor="let r of d.rendiciones" class="flex flex-col gap-2 border-t pt-3"
          style="border-color:var(--color-abril-border)">
 
@@ -245,6 +206,46 @@
           </table>
         </div>
       </ng-container>
+    </div>
+
+    <!-- ── Documentos del consolidado, cada uno a la vista ──────────────────
+         La planilla grupal es el gasto de todas las planillas que cubre en un solo documento: la
+         prepara el consolidador antes de subir el S10 —es lo que registra en el S10—, así que va
+         pegada a él. Acá solo se firma.
+
+         De cada uno se enseña UNA sola copia: la original mientras no haya firma, y la firmada
+         apenas existe —es el mismo papel, y verlo dos veces solo alarga el modal—. -->
+    <div *ngIf="!d.pdfFirmadoUrl" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        [etiqueta]="d.codigo ? 'Consolidado ' + d.codigo : 'Consolidado del S10'"
+        [nombre]="d.pdfFilename"
+        [url]="d.pdfUrl" />
+    </div>
+
+    <ng-container *ngIf="!d.planillaGrupalFirmadoUrl">
+      <div *ngIf="d.planillaGrupalUrl as grupal" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+        <app-documento-embebido
+          etiqueta="Planilla grupal"
+          [nombre]="d.planillaGrupalFilename ?? 'Planilla grupal'"
+          [url]="grupal" />
+      </div>
+    </ng-container>
+
+    <div *ngIf="d.pdfFirmadoUrl as firmado" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Consolidado firmado"
+        [nota]="d.firmadoAt ? 'Firmado el ' + (d.firmadoAt | date:'dd/MM/yyyy') : null"
+        [nombre]="d.pdfFirmadoFilename ?? 'Consolidado firmado'"
+        [url]="firmado"
+        [firmado]="true" />
+    </div>
+
+    <div *ngIf="d.planillaGrupalFirmadoUrl as grupalFirmada" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Planilla grupal firmada"
+        [nombre]="d.planillaGrupalFirmadoFilename ?? 'Planilla grupal firmada'"
+        [url]="grupalFirmada"
+        [firmado]="true" />
     </div>
 
     <!-- ── Acciones ────────────────────────────────────────────────────────

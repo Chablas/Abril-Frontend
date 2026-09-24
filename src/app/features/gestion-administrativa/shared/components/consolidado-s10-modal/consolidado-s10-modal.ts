@@ -185,15 +185,16 @@ export class ConsolidadoS10Modal implements OnDestroy {
 
     // Adjuntar dispara los avisos en el mismo paso (a la jefatura y, el primero, a los trabajadores),
     // así que la confirmación imprime a quién le van a llegar: es la misma regla que el resto de las
-    // acciones del flujo.
+    // acciones del flujo. Por eso el botón dice solo el verbo, igual que el del modal: el aviso ya
+    // está escrito arriba, con las direcciones.
     if (this.avisosJefatura) {
       const result = await confirmarConCorreos({
-        titulo: this.actual ? '¿Reemplazar el Consolidado del S10?' : '¿Enviar el Consolidado del S10?',
+        titulo: this.actual ? '¿Reenviar el Consolidado del S10?' : '¿Enviar el Consolidado del S10?',
         avisos: await pedirAvisos(this.avisosJefatura()),
         // Sin nadie a quien avisar igual procede: el consolidado queda adjunto y la jefatura lo ve
         // en su bandeja de Consolidados. Es un aviso de estado, no un bloqueo.
         sinNadie: 'El consolidado queda adjunto, pero sin aviso por correo: está apagado en Configuración → Correos.',
-        confirmButtonText: this.actual ? 'Reemplazar y avisar' : 'Enviar y avisar',
+        confirmButtonText: this.actual ? 'Reenviar' : 'Enviar',
       });
       if (!result.isConfirmed) return;
     }
@@ -207,7 +208,7 @@ export class ConsolidadoS10Modal implements OnDestroy {
         // que nadie pidió.
         Swal.fire({
           icon: res.jefaturaAvisada ? 'success' : 'warning',
-          title: this.actual ? 'Consolidado del S10 reemplazado' : 'Consolidado del S10 enviado',
+          title: this.actual ? 'Consolidado del S10 reenviado' : 'Consolidado del S10 enviado',
           text: [this.resumenGrupal(res.consolidado), res.avisoJefatura]
             .filter(Boolean)
             .join(' '),

@@ -75,73 +75,9 @@
       {{ d.primeraRevisionObservacion }}
     </div>
 
-    <!-- ── Documentos, cada uno a la vista ──────────────────────────────────
-         De cada documento se enseña UNA sola copia: la original mientras no haya firma, y la
-         firmada apenas existe —es el mismo papel, y verlo dos veces solo alarga el modal—. La
-         planilla de gasto no va acá: va como enlace junto a su tabla de salidas, más abajo. -->
-
-    <!-- ng-container y no un div: el contenedor de arriba es un flex column con gap y un div de
-         más metería sus dos documentos dentro de un mismo hueco. -->
-    <ng-container *ngIf="d.consolidadoS10 as c">
-      <div *ngIf="!c.pdfFirmadoUrl" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-        <app-documento-embebido
-          [etiqueta]="c.codigo ? 'Consolidado ' + c.codigo : 'Consolidado del S10'"
-          [nombre]="c.pdfFilename"
-          [url]="c.pdfUrl" />
-      </div>
-
-      <!-- La planilla grupal del consolidado: el gasto de todas sus planillas en un solo
-           documento, esta incluida. -->
-      <ng-container *ngIf="!c.planillaGrupalFirmadoUrl">
-        <div *ngIf="c.planillaGrupalUrl as grupal" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-          <app-documento-embebido
-            etiqueta="Planilla grupal"
-            [nombre]="c.planillaGrupalFilename ?? 'Planilla grupal'"
-            [url]="grupal" />
-        </div>
-      </ng-container>
-    </ng-container>
-
-    <!-- La planilla grupal ya preparada, mientras espera su S10: es el papel que el consolidador
-         registra en el S10, y el consolidado se sube sobre ella. Con el S10 subido viaja dentro del
-         consolidado (arriba), así que el backend deja este campo vacío. -->
-    <div *ngIf="d.planillaGrupal as pg" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-      <app-documento-embebido
-        [etiqueta]="'Planilla grupal ' + pg.codigo"
-        [nota]="'Preparada el ' + (pg.preparadaAt | date:'dd/MM/yyyy')"
-        [nombre]="pg.pdfFilename"
-        [url]="pg.pdfUrl" />
-    </div>
-
-    <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
-      {{ d.estadoPrimeraRevision !== 'Aprobada'
-          ? 'El Consolidado del S10 se habilita al aprobar la primera revisión.'
-          : d.planillaGrupal
-            ? 'Consolidado del S10 pendiente.'
-            : 'Planilla grupal pendiente.' }}
-    </span>
-
-    <!-- Las copias que deja la aprobación: aprobar ES firmar, y firma la planilla, el
-         consolidado y su planilla grupal (la planilla firmada va junto a su tabla, abajo). -->
-    <div *ngIf="d.consolidadoS10?.pdfFirmadoUrl as consolidadoFirmado" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-      <app-documento-embebido
-        etiqueta="Consolidado del S10 firmado"
-        [nota]="d.consolidadoS10?.firmadoAt ? 'Firmado el ' + (d.consolidadoS10?.firmadoAt | date:'dd/MM/yyyy') : null"
-        [nombre]="d.consolidadoS10?.pdfFirmadoFilename ?? 'Consolidado del S10 firmado'"
-        [url]="consolidadoFirmado"
-        [firmado]="true" />
-    </div>
-
-    <div *ngIf="d.consolidadoS10?.planillaGrupalFirmadoUrl as grupalFirmada" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-      <app-documento-embebido
-        etiqueta="Planilla grupal firmada"
-        [nombre]="d.consolidadoS10?.planillaGrupalFirmadoFilename ?? 'Planilla grupal firmada'"
-        [url]="grupalFirmada"
-        [firmado]="true" />
-    </div>
-
     <!-- ── Salidas: solo lectura. Lo que agrupa la planilla que se está decidiendo; el ojo abre
-         el detalle de cada una (trayectos, capturas y montos). ── -->
+         el detalle de cada una (trayectos, capturas y montos). Van antes de los documentos: con
+         los PDF a la vista quedaban al fondo del modal. ── -->
     <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
       <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas de esta planilla</span>
 
@@ -215,6 +151,72 @@
           </tbody>
         </table>
       </div>
+    </div>
+
+    <!-- ── Documentos, cada uno a la vista ──────────────────────────────────
+         De cada documento se enseña UNA sola copia: la original mientras no haya firma, y la
+         firmada apenas existe —es el mismo papel, y verlo dos veces solo alarga el modal—. La
+         planilla de gasto no va acá: va como enlace junto a su tabla de salidas, más arriba. -->
+
+    <!-- ng-container y no un div: el contenedor de arriba es un flex column con gap y un div de
+         más metería sus dos documentos dentro de un mismo hueco. -->
+    <ng-container *ngIf="d.consolidadoS10 as c">
+      <div *ngIf="!c.pdfFirmadoUrl" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+        <app-documento-embebido
+          [etiqueta]="c.codigo ? 'Consolidado ' + c.codigo : 'Consolidado del S10'"
+          [nombre]="c.pdfFilename"
+          [url]="c.pdfUrl" />
+      </div>
+
+      <!-- La planilla grupal del consolidado: el gasto de todas sus planillas en un solo
+           documento, esta incluida. -->
+      <ng-container *ngIf="!c.planillaGrupalFirmadoUrl">
+        <div *ngIf="c.planillaGrupalUrl as grupal" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+          <app-documento-embebido
+            etiqueta="Planilla grupal"
+            [nombre]="c.planillaGrupalFilename ?? 'Planilla grupal'"
+            [url]="grupal" />
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <!-- La planilla grupal ya preparada, mientras espera su S10: es el papel que el consolidador
+         registra en el S10, y el consolidado se sube sobre ella. Con el S10 subido viaja dentro del
+         consolidado (arriba), así que el backend deja este campo vacío. -->
+    <div *ngIf="d.planillaGrupal as pg" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        [etiqueta]="'Planilla grupal ' + pg.codigo"
+        [nota]="'Preparada el ' + (pg.preparadaAt | date:'dd/MM/yyyy')"
+        [nombre]="pg.pdfFilename"
+        [url]="pg.pdfUrl" />
+    </div>
+
+    <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic border-t pt-3"
+          style="border-color:var(--color-abril-border)">
+      {{ d.estadoPrimeraRevision !== 'Aprobada'
+          ? 'El Consolidado del S10 se habilita al aprobar la primera revisión.'
+          : d.planillaGrupal
+            ? 'Consolidado del S10 pendiente.'
+            : 'Planilla grupal pendiente.' }}
+    </span>
+
+    <!-- Las copias que deja la aprobación: aprobar ES firmar, y firma la planilla, el
+         consolidado y su planilla grupal (la planilla firmada va junto a su tabla, arriba). -->
+    <div *ngIf="d.consolidadoS10?.pdfFirmadoUrl as consolidadoFirmado" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Consolidado del S10 firmado"
+        [nota]="d.consolidadoS10?.firmadoAt ? 'Firmado el ' + (d.consolidadoS10?.firmadoAt | date:'dd/MM/yyyy') : null"
+        [nombre]="d.consolidadoS10?.pdfFirmadoFilename ?? 'Consolidado del S10 firmado'"
+        [url]="consolidadoFirmado"
+        [firmado]="true" />
+    </div>
+
+    <div *ngIf="d.consolidadoS10?.planillaGrupalFirmadoUrl as grupalFirmada" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Planilla grupal firmada"
+        [nombre]="d.consolidadoS10?.planillaGrupalFirmadoFilename ?? 'Planilla grupal firmada'"
+        [url]="grupalFirmada"
+        [firmado]="true" />
     </div>
 
     <!-- ── Acciones ────────────────────────────────────────────────────────

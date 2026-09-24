@@ -87,31 +87,9 @@
       </span>
     </div>
 
-    <!-- ── Documentos, cada uno a la vista ────────────────────────────────
-         Las planillas de gasto no van acá: el consolidado puede cubrir varias, y cada una va como
-         enlace junto a su tabla de salidas, más abajo. -->
-    <div *ngIf="c.consolidadoS10 as s10" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-      <app-documento-embebido
-        etiqueta="Consolidado del S10 observado"
-        [nombre]="s10.pdfFilename"
-        [url]="s10.pdfUrl" />
-    </div>
-
-    <!-- La planilla grupal del consolidado observado: el gasto que el ERP tiene que cuadrar
-         contra el registro del S10, ya sumado en un solo documento. -->
-    <div *ngIf="c.consolidadoS10?.planillaGrupalUrl as grupal" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-      <app-documento-embebido
-        etiqueta="Planilla grupal"
-        [nombre]="c.consolidadoS10?.planillaGrupalFilename ?? 'Planilla grupal'"
-        [url]="grupal" />
-    </div>
-
-    <span *ngIf="!c.consolidadoS10" class="text-sm text-gray-400 italic">
-      La planilla no tiene un Consolidado del S10 vigente.
-    </span>
-
     <!-- ── Rendiciones que cubre el consolidado, con sus salidas ────────────
-         Solo lectura: el ojo abre el detalle de cada salida (trayectos, capturas y adjuntos). -->
+         Antes de los documentos: con los PDF a la vista quedaban al fondo del modal. Solo
+         lectura: el ojo abre el detalle de cada salida (trayectos, capturas y adjuntos). -->
     <div *ngFor="let r of c.rendiciones" class="flex flex-col gap-2 border-t pt-3"
          style="border-color:var(--color-abril-border)">
 
@@ -177,6 +155,30 @@
         </table>
       </div>
     </div>
+
+    <!-- ── Documentos, cada uno a la vista ────────────────────────────────
+         Las planillas de gasto no van acá: el consolidado puede cubrir varias, y cada una va como
+         enlace junto a su tabla de salidas, más arriba. -->
+    <div *ngIf="c.consolidadoS10 as s10" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Consolidado del S10 observado"
+        [nombre]="s10.pdfFilename"
+        [url]="s10.pdfUrl" />
+    </div>
+
+    <!-- La planilla grupal del consolidado observado: el gasto que el ERP tiene que cuadrar
+         contra el registro del S10, ya sumado en un solo documento. -->
+    <div *ngIf="c.consolidadoS10?.planillaGrupalUrl as grupal" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Planilla grupal"
+        [nombre]="c.consolidadoS10?.planillaGrupalFilename ?? 'Planilla grupal'"
+        [url]="grupal" />
+    </div>
+
+    <span *ngIf="!c.consolidadoS10" class="text-sm text-gray-400 italic border-t pt-3"
+          style="border-color:var(--color-abril-border)">
+      La planilla no tiene un Consolidado del S10 vigente.
+    </span>
 
     <!-- ── Acción ───────────────────────────────────────────────────────────
          Pegada al borde de abajo: con los documentos a la vista el modal es largo. -->

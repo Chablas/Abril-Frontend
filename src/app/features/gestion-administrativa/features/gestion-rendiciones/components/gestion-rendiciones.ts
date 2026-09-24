@@ -672,7 +672,7 @@ export class GestionRendiciones implements OnInit {
       })),
       // Sin nadie a quien avisar igual se prepara: el aviso es informativo.
       sinNadie: 'La planilla grupal se prepara igual, pero sin aviso por correo: está apagado en Configuración → Correos.',
-      confirmButtonText: 'Preparar y avisar',
+      confirmButtonText: 'Preparar',
     });
     if (!result.isConfirmed) return;
 
