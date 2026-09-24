@@ -1,8 +1,8 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { Observable, catchError, switchMap, throwError } from 'rxjs';
 import { AuthService } from '../services/auth.service';
+import { ReturnUrlService } from '../auth/return-url.service';
 import { RefreshResponseDTO } from '../dtos/auth/login-response.model';
 
 /** Endpoints de autenticación: no se les intenta refresh (evita bucles). */
@@ -23,7 +23,7 @@ let refreshInFlight$: Observable<RefreshResponseDTO> | null = null;
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
-  const router = inject(Router);
+  const returnUrlService = inject(ReturnUrlService);
 
   const token =
     typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -60,11 +60,15 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
           });
           return next(retried);
         }),
-        catchError((refreshErr) => {
+        catchError((refreshErr: HttpErrorResponse) => {
           refreshInFlight$ = null;
-          // El refresh falló: sesión inválida/expirada → cerrar sesión.
-          authService.logout();
-          router.navigate(['/auth/login']);
+          // Solo un rechazo del backend (4xx: session token vencido o revocado) prueba que la
+          // sesión terminó. Sin red o con el backend reiniciándose en un deploy (0/5xx) la sesión
+          // sigue viva: antes se cerraba igual y sacaba a la gente justo al subir cambios.
+          if (refreshErr.status >= 400 && refreshErr.status < 500) {
+            authService.logout();
+            returnUrlService.goToLogin();
+          }
           return throwError(() => refreshErr);
         }),
       );

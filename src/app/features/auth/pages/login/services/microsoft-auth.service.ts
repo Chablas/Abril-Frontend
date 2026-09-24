@@ -1,10 +1,55 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DOCUMENT } from '@angular/common';
-import { PublicClientApplication, PopupRequest, BrowserCacheLocation } from '@azure/msal-browser';
+import {
+  PublicClientApplication,
+  PopupRequest,
+  BrowserCacheLocation,
+  BrowserAuthError,
+  BrowserAuthErrorCodes,
+} from '@azure/msal-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { MicrosoftLoginResponseDTO } from '../dtos/microsoft-login-response.model';
+
+/**
+ * MSAL v5 ya no se entera de que el usuario cerró la ventana de Microsoft: espera la respuesta
+ * de `auth-redirect.html` (por BroadcastChannel) hasta `popupBridgeTimeout` y recién ahí falla
+ * con `timed_out`. Esta subclase vigila la ventana mientras dura esa espera y corta con
+ * `user_cancelled` apenas se cierra, así el timeout puede ser largo sin dejar el loader colgado.
+ *
+ * El cierre cuenta solo si la intranet recuperó el foco. Cuando Microsoft active COOP en su login
+ * (hoy lo manda en modo Report-Only) la referencia a la ventana se corta y `closed` pasa a true
+ * aunque siga abierta; mientras el usuario esté escribiendo en ella, la intranet no tiene el foco
+ * y el login no se interrumpe.
+ */
+class MsalConCierreDePopup extends PublicClientApplication {
+  protected override waitForPopupResponse(
+    ...args: Parameters<PublicClientApplication['waitForPopupResponse']>
+  ): Promise<string> {
+    const popup = args[1];
+    let dejarDeVigilar = () => {};
+    const cerrado = new Promise<never>((_, reject) => {
+      let lecturas = 0;
+      const vigilancia = window.setInterval(() => {
+        lecturas = popup.closed && document.hasFocus() ? lecturas + 1 : 0;
+        // Dos lecturas seguidas (~1 s) dan margen a que llegue la respuesta cuando es la
+        // propia ventana la que se cierra al terminar el login.
+        if (lecturas >= 2) reject(new BrowserAuthError(BrowserAuthErrorCodes.userCancelled));
+      }, 500);
+      // Si la ventana quedó detrás de la intranet, un click en la intranet la trae al frente.
+      const traerAlFrente = () => {
+        if (!popup.closed) popup.focus();
+      };
+      document.addEventListener('pointerdown', traerAlFrente, true);
+      dejarDeVigilar = () => {
+        window.clearInterval(vigilancia);
+        document.removeEventListener('pointerdown', traerAlFrente, true);
+      };
+    });
+    return Promise.race([super.waitForPopupResponse(...args), cerrado]).finally(dejarDeVigilar);
+  }
+}
 
 @Injectable({ providedIn: 'root' })
 export class MicrosoftAuthService {
@@ -31,7 +76,7 @@ export class MicrosoftAuthService {
       // que bloquea futuros intentos con el error "interaction_in_progress".
       this.clearStaleInteractionState();
 
-      this.msalInstance = new PublicClientApplication({
+      this.msalInstance = new MsalConCierreDePopup({
         auth: {
           clientId: environment.azure.clientId,
           authority: `https://login.microsoftonline.com/${environment.azure.tenantId}`,
@@ -41,7 +86,11 @@ export class MicrosoftAuthService {
           cacheLocation: BrowserCacheLocation.LocalStorage  // sobrevive recargas de página
         },
         system: {
-          popupBridgeTimeout: 9000  // ms antes de lanzar timed_out si el popup se cierra sin responder
+          // Tiempo TOTAL que se espera la respuesta del popup, contado desde que se abre (no
+          // desde que se cierra). Con 9 s se cortaba el login de quien demoraba en elegir la
+          // cuenta, escribir la clave o aprobar el MFA. El cierre del popup lo detecta
+          // MsalConCierreDePopup, así que este límite solo aplica a una ventana abandonada.
+          popupBridgeTimeout: 10 * 60 * 1000
         }
       });
       await this.msalInstance.initialize();
@@ -162,18 +211,10 @@ export class MicrosoftAuthService {
   async login(): Promise<void> {
     const msal = await this.getMsalInstance();
     try {
-      // Si por alguna razón sigue habiendo estado residual, lo limpiamos y reintentamos.
-      let result;
-      try {
-        result = await msal.loginPopup(this.scopes);
-      } catch (innerErr: any) {
-        if (innerErr?.errorCode === 'interaction_in_progress') {
-          this.clearStaleInteractionState();
-          result = await msal.loginPopup(this.scopes);
-        } else {
-          throw innerErr;
-        }
-      }
+      // Lo dispara el click del usuario: si quedó una interacción a medias (un popup que nunca
+      // respondió), la nueva la reemplaza en vez de fallar con interaction_in_progress. Es el
+      // uso que la documentación de MSAL recomienda para este flag.
+      const result = await msal.loginPopup({ ...this.scopes, overrideInteractionInProgress: true });
       const microsoftToken = result.accessToken;
 
       const response = await firstValueFrom(

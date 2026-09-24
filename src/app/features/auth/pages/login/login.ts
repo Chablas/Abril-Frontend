@@ -43,6 +43,9 @@ export class Login implements OnInit {
   clinicaLoading = false;
   clinicaError = '';
 
+  /** Un doble click no debe abrir dos popups de Microsoft: el segundo cancelaría al primero. */
+  private microsoftEnCurso = false;
+
   constructor(
     private route: ActivatedRoute,
     private fb: FormBuilder,
@@ -167,6 +170,8 @@ export class Login implements OnInit {
   }
 
   async submitMicrosoft() {
+    if (this.microsoftEnCurso) return;
+    this.microsoftEnCurso = true;
     this.loaderService.show();
     this.cdr.detectChanges();
     try {
@@ -204,6 +209,8 @@ export class Login implements OnInit {
         text:
           err?.error?.message ?? err?.message ?? 'No se pudo iniciar sesión con Microsoft.',
       });
+    } finally {
+      this.microsoftEnCurso = false;
     }
   }
 
