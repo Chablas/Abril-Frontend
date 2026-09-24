@@ -60,6 +60,7 @@ export const Roles = {
   ADMINISTRADOR_SOLICITUD_SALIDAS:  '76', // ADMINISTRADOR DE SOLICITUD DE SALIDAS
   USUARIO_GTH:                      '77', // USUARIO DE GTH
   USUARIO_REVISOR_SALIDAS:          '78', // USUARIO REVISOR DE SALIDAS
+  PLANEAMIENTO_UDP:                 '80', // PLANEAMIENTO UDP
   // TESORERO: concede sus features con solo tenerlo, como cualquier otro rol. Antes el backend
   // exigía además un puesto de categoría TESORERO (46) y esa condición se quitó, así que ya no
   // hay forma de tener el rol y no ver la pantalla.

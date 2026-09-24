@@ -35,6 +35,8 @@ interface ProjectFormModel {
   responsableArqComId: number | null;
   responsableUdp: string;
   responsableUdpId: number | null;
+  responsablePlaneamientoBim: string;
+  responsablePlaneamientoBimId: number | null;
 
   /** FK a workers: el correo del coordinador se resuelve al enviar, no se guarda copia. */
   workersCoordAdminId: number | null;
@@ -79,6 +81,7 @@ export class ProyectoEdit implements OnInit {
 
   responsablesArqCom: ResponsableLookupDto[] = [];
   responsablesUdp: ResponsableLookupDto[] = [];
+  responsablesPlaneamientoBim: ResponsableLookupDto[] = [];
   coordAdmins: ResponsableLookupDto[] = [];
   loadingLookups = true;
   lookupsError = false;
@@ -138,6 +141,8 @@ export class ProyectoEdit implements OnInit {
       responsableArqComId: this.project.responsableArqComId ?? null,
       responsableUdp:      this.project.responsableUdp      ?? '',
       responsableUdpId:    this.project.responsableUdpId    ?? null,
+      responsablePlaneamientoBim:   this.project.responsablePlaneamientoBim   ?? '',
+      responsablePlaneamientoBimId: this.project.responsablePlaneamientoBimId ?? null,
 
       workersCoordAdminId: this.project.workersCoordAdminId ?? null,
 
@@ -209,9 +214,10 @@ export class ProyectoEdit implements OnInit {
     this.loadingLookups = true;
     this.lookupsError = false;
     this.proyectoService.getLookups().subscribe({
-      next: ({ arqCom, udp, coordAdmins }) => {
+      next: ({ arqCom, udp, coordAdmins, planeamientoUdp }) => {
         this.responsablesArqCom = arqCom;
         this.responsablesUdp = udp;
+        this.responsablesPlaneamientoBim = planeamientoUdp ?? [];
         this.coordAdmins = this.conCoordAdminActual(coordAdmins);
         this.loadingLookups = false;
         this.cdr.detectChanges();
@@ -251,6 +257,12 @@ export class ProyectoEdit implements OnInit {
     this.form.responsableUdp = this.responsablesUdp.find((r) => r.id === id)?.apellidoNombre ?? '';
   }
 
+  onResponsablePlaneamientoBimChange(id: number | null): void {
+    this.form.responsablePlaneamientoBimId = id;
+    const found = this.responsablesPlaneamientoBim.find((r) => r.id === id);
+    this.form.responsablePlaneamientoBim = found ? found.apellidoNombre : '';
+  }
+
   save(): void {
     if (!this.form.projectDescription.trim() || this.saving) return;
     this.saving = true;
@@ -278,6 +290,8 @@ export class ProyectoEdit implements OnInit {
       responsableArqComId: this.form.responsableArqComId ?? undefined,
       responsableUdp:      this.form.responsableUdp.trim() || undefined,
       responsableUdpId:    this.form.responsableUdpId ?? undefined,
+      responsablePlaneamientoBim:   this.form.responsablePlaneamientoBim.trim() || undefined,
+      responsablePlaneamientoBimId: this.form.responsablePlaneamientoBimId ?? undefined,
 
       // Null explicito, no undefined: es una FK, "sin coordinador" es un valor valido.
       workersCoordAdminId: this.form.workersCoordAdminId,
@@ -340,6 +354,8 @@ export class ProyectoEdit implements OnInit {
       responsableArqComId: null,
       responsableUdp: '',
       responsableUdpId: null,
+      responsablePlaneamientoBim: '',
+      responsablePlaneamientoBimId: null,
 
       workersCoordAdminId: null,
 

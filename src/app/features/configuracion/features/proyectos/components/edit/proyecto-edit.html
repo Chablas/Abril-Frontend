@@ -153,6 +153,18 @@
           (valueChange)="onResponsableUdpChange($event)">
         </app-search-select>
 
+        <app-search-select
+          label="Responsable Planeamiento UDP"
+          placeholder="Buscar por nombre o DNI..."
+          [options]="responsablesPlaneamientoBim"
+          valueField="id"
+          displayField="apellidoNombre"
+          [value]="form.responsablePlaneamientoBimId"
+          [allowClear]="true"
+          [sortAlpha]="false"
+          (valueChange)="onResponsablePlaneamientoBimChange($event)">
+        </app-search-select>
+
         <div class="flex flex-col">
           <app-search-select
             label="Coordinador administrativo"

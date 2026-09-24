@@ -29,6 +29,7 @@ import {
   PortafolioKpisDto,
   ProyectoPortafolioDto,
 } from '../dtos/planeamiento-bim-portafolio.dto';
+import { ProyectoBimSimpleDto } from '../dtos/planeamiento-bim-proyecto.dto';
 
 @Injectable({
   providedIn: 'root',
@@ -41,6 +42,13 @@ export class PlaneamientoBimService {
   private get headers() {
     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
     return { Authorization: `Bearer ${token}` };
+  }
+
+  // ── Selector de proyecto (ya filtrado por rol/asignación en backend) ──
+  getProyectos(): Observable<ProyectoBimSimpleDto[]> {
+    return this.http.get<ProyectoBimSimpleDto[]>(`${this.baseUrl}/proyectos`, {
+      headers: this.headers,
+    });
   }
 
   // ── Configuración Inicial ────────────────────────────────────
