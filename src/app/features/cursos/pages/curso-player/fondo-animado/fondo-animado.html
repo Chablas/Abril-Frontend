@@ -2,8 +2,11 @@
   <div class="capa-fondo capa-clara" [style.background]="fondoClaro"></div>
   <div class="capa-fondo capa-oscura" [style.background]="fondoOscuro"></div>
 
+  <div class="grilla" *ngIf="burbujas.length"></div>
+  <div class="barrido" *ngIf="burbujas.length"></div>
+
   <div
-    class="burbuja"
+    class="blob"
     *ngFor="let b of burbujas"
     [style.top.%]="b.top"
     [style.left.%]="b.left"
@@ -11,6 +14,6 @@
     [style.height.px]="b.size"
     [style.animation-delay.s]="b.delay"
     [style.animation-duration.s]="b.duracion"
-    [style.background]="'radial-gradient(circle at 30% 30%, ' + b.colorInterno + ', ' + b.colorExterno + ')'"
+    [style.background]="'radial-gradient(circle at 35% 35%, ' + b.colorInterno + ', ' + b.colorExterno + ')'"
   ></div>
 </div>

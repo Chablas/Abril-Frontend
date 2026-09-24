@@ -8,11 +8,33 @@ export interface CursoDto {
   rolDestino?: string | null;
   notaMinimaAprobacion: number;
   activo: boolean;
+  colorTema?: string | null;
 }
 
 export interface CursoSlideDto {
   id: number;
   cursoId: number;
+  orden: number;
+  tipoCodigo: string;
+  esEvaluable: boolean;
+  puntaje?: number | null;
+  modoCorreccion?: string | null;
+  configuracionJson: string;
+}
+
+// ---- DTOs de administración (crear/editar curso y slides) ----
+
+export interface CursoUpsertDto {
+  titulo: string;
+  descripcion?: string | null;
+  categoriaNombre?: string | null;
+  rolDestino?: string | null;
+  notaMinimaAprobacion: number;
+  activo: boolean;
+  colorTema?: string | null;
+}
+
+export interface CursoSlideUpsertDto {
   orden: number;
   tipoCodigo: string;
   esEvaluable: boolean;
@@ -166,6 +188,37 @@ export interface ArrastrarSoltarConfig {
 export interface OrdenarConfig {
   enunciado: string;
   items: { id: string; texto: string }[];
+  estilo?: SlideEstilo;
+  kicker?: string;
+}
+
+// tipoCodigo: "contenido_tarjetas". No evaluable (modo_correccion: "sin_calificar").
+// Grid de N tarjetas con imagen + texto corto; cada una despliega una descripción larga
+// en un overlay al hacer clic. Reutilizable en cualquier curso (peligros, controles, etc.).
+export interface TarjetaItem {
+  id: string;
+  titulo: string;
+  texto: string;
+  imagenUrl?: string;
+  descripcion?: string; // texto largo mostrado en el overlay al expandir
+}
+export interface TarjetasConfig {
+  titulo?: string;
+  tarjetas: TarjetaItem[];
+  estilo?: SlideEstilo;
+  kicker?: string;
+}
+
+// tipoCodigo: "contenido_galeria_zoom". No evaluable (modo_correccion: "sin_calificar").
+// Grid de imágenes; clic para ampliar a pantalla completa.
+export interface GaleriaImagen {
+  id: string;
+  imagenUrl: string;
+  caption?: string;
+}
+export interface GaleriaZoomConfig {
+  titulo?: string;
+  imagenes: GaleriaImagen[];
   estilo?: SlideEstilo;
   kicker?: string;
 }

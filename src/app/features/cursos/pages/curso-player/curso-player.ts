@@ -19,6 +19,8 @@ import { SlideOpcionMultiple } from './slides/slide-opcion-multiple/slide-opcion
 import { SlideMarcarImagen } from './slides/slide-marcar-imagen/slide-marcar-imagen';
 import { SlideArrastrarSoltar } from './slides/slide-arrastrar-soltar/slide-arrastrar-soltar';
 import { SlideOrdenar } from './slides/slide-ordenar/slide-ordenar';
+import { SlideTarjetas } from './slides/slide-tarjetas/slide-tarjetas';
+import { SlideGaleriaZoom } from './slides/slide-galeria-zoom/slide-galeria-zoom';
 import { FondoAnimado } from './fondo-animado/fondo-animado';
 
 const DECLARACION_TEXTO =
@@ -40,6 +42,8 @@ type Fase = 'cargando' | 'jugando' | 'feedback' | 'declaracion' | 'finalizando' 
     SlideMarcarImagen,
     SlideArrastrarSoltar,
     SlideOrdenar,
+    SlideTarjetas,
+    SlideGaleriaZoom,
     FondoAnimado,
   ],
   templateUrl: './curso-player.html',

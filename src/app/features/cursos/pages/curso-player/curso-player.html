@@ -66,6 +66,12 @@
           @case ('pregunta_ordenar') {
             <app-slide-ordenar [slide]="slide" (respuesta)="onRespuesta($event)" />
           }
+          @case ('contenido_tarjetas') {
+            <app-slide-tarjetas [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('contenido_galeria_zoom') {
+            <app-slide-galeria-zoom [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
           @default {
             <div class="tipo-no-soportado">
               <i class="ti ti-help-circle"></i>

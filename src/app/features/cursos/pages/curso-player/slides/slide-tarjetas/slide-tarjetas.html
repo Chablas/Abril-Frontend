@@ -1,0 +1,43 @@
+<div class="slide-tarjetas" [class.texto-oscuro]="!textoClaro">
+  <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+  <h2 *ngIf="config.titulo" class="titulo anim-cascada-titulo">{{ config.titulo }}</h2>
+
+  <div class="grid-tarjetas anim-cascada-cuerpo">
+    <div class="tarjeta" *ngFor="let t of config.tarjetas; let i = index">
+      <div class="tarjeta-imagen-wrap" *ngIf="t.imagenUrl || editable" [class.editable]="editable" (click)="editable && imagenClick.emit(i)">
+        <img *ngIf="t.imagenUrl" [src]="t.imagenUrl" class="tarjeta-imagen" alt="" />
+        <div class="media-imagen-vacia" *ngIf="!t.imagenUrl && editable"><i class="ti ti-photo"></i></div>
+        <div class="media-imagen-overlay" *ngIf="editable"><i class="ti ti-camera"></i> {{ t.imagenUrl ? 'Cambiar' : 'Subir' }}</div>
+      </div>
+      <div class="tarjeta-cuerpo">
+        <h3 class="tarjeta-titulo">{{ t.titulo }}</h3>
+        <p class="tarjeta-texto">{{ t.texto }}</p>
+      </div>
+      <button
+        type="button"
+        class="tarjeta-boton"
+        *ngIf="t.descripcion"
+        (click)="abrir(t)"
+        [attr.aria-label]="'Ver más sobre ' + t.titulo"
+      >
+        <i class="ti ti-info-circle"></i>
+      </button>
+    </div>
+  </div>
+
+  <button type="button" class="btn-primario btn-siguiente anim-cascada-control" (click)="siguiente()">
+    Siguiente
+    <i class="ti ti-arrow-right"></i>
+  </button>
+
+  <div class="overlay-detalle" *ngIf="tarjetaAbierta" (click)="cerrar()">
+    <div class="overlay-card" (click)="$event.stopPropagation()">
+      <button type="button" class="overlay-cerrar" (click)="cerrar()" aria-label="Cerrar">
+        <i class="ti ti-x"></i>
+      </button>
+      <img *ngIf="tarjetaAbierta.imagenUrl" [src]="tarjetaAbierta.imagenUrl" alt="" />
+      <h3>{{ tarjetaAbierta.titulo }}</h3>
+      <p>{{ tarjetaAbierta.descripcion }}</p>
+    </div>
+  </div>
+</div>

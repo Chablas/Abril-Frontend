@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: linear-gradient(180deg, #f7f9f8 0%, #eef3f1 100%);
+  background: #0b0d10;
   overflow: hidden;
 }
 
@@ -12,57 +12,59 @@
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 20px;
-  background: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  gap: 14px;
+  padding: 14px 22px;
+  background: rgba(11, 13, 16, 0.6);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .btn-salir {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: transparent;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 50%;
-  color: #64748b;
-  font-size: 1.2rem;
+  color: #fff;
+  font-size: 1.1rem;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .btn-salir:hover {
-  background: #f1f5f4;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .progreso-wrap {
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .progreso-bar {
   flex: 1;
-  height: 8px;
+  height: 6px;
   border-radius: 4px;
-  background: var(--color-abril-standard-light, #e6f4f0);
+  background: rgba(255, 255, 255, 0.12);
   overflow: hidden;
 }
 
 .progreso-fill {
   height: 100%;
-  background: var(--color-abril-standard, #0f6e56);
+  background: linear-gradient(90deg, #f5a623, #ff7847);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
 
 .progreso-texto {
   font-size: 0.85rem;
-  font-weight: 600;
-  color: #64748b;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
   min-width: 48px;
   text-align: right;
 }
@@ -81,14 +83,25 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  color: #64748b;
+  gap: 16px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.estado-centro p {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
 }
 
 .icono-spin {
-  animation: girar 1.2s linear infinite;
-  font-size: 40px;
-  color: var(--color-abril-standard, #0f6e56);
+  position: relative;
+  width: 56px;
+  height: 56px;
+  font-size: 0;
+  border-radius: 50%;
+  border: 3px solid rgba(245, 166, 35, 0.18);
+  border-top-color: #f5a623;
+  animation: girar 0.9s cubic-bezier(0.5, 0, 0.5, 1) infinite;
 }
 
 @keyframes girar {
@@ -97,7 +110,7 @@
 
 .icono-error {
   font-size: 40px;
-  color: #dc2626;
+  color: #ff7847;
 }
 
 .btn-primario {
@@ -105,20 +118,22 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--color-abril-standard, #0f6e56);
-  color: #fff;
+  background: #f5a623;
+  color: #14100b;
   border: none;
-  border-radius: var(--radius-standard, 7px);
-  height: 46px;
-  padding: 0 28px;
-  font-weight: 600;
+  border-radius: 999px;
+  height: 48px;
+  padding: 0 30px;
+  font-weight: 700;
   font-size: 0.95rem;
   cursor: pointer;
-  transition: background 0.15s ease;
+  box-shadow: 0 10px 24px rgba(245, 166, 35, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .btn-primario:hover:not(:disabled) {
-  background: var(--color-abril-standard-hover, #0a5642);
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(245, 166, 35, 0.4);
 }
 
 .btn-primario:disabled {
@@ -130,10 +145,12 @@
   position: relative;
   width: 100%;
   max-width: 1080px;
-  background: #fff;
-  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
   padding: 48px 40px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
   transition: opacity 0.2s ease;
 }
 
@@ -157,7 +174,7 @@
   align-items: center;
   gap: 12px;
   text-align: center;
-  color: #64748b;
+  color: rgba(255, 255, 255, 0.75);
   padding: 24px;
 }
 
@@ -214,34 +231,37 @@
 .resultado-card {
   width: 100%;
   max-width: 560px;
-  background: #fff;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
   padding: 36px 32px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 14px;
+  color: #fff;
 }
 
 .icono-declaracion {
   font-size: 40px;
-  color: var(--color-abril-standard, #0f6e56);
+  color: #f5a623;
 }
 
 .declaracion-card h2 {
   margin: 0;
-  color: #222;
+  color: #fff;
 }
 
 .texto-declaracion {
   font-size: 0.95rem;
   line-height: 1.6;
-  color: #444;
+  color: rgba(255, 255, 255, 0.78);
   text-align: left;
-  background: #f7f9f8;
-  border-radius: var(--radius-standard, 7px);
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
   padding: 16px;
 }
 
@@ -252,14 +272,14 @@
   width: 100%;
   cursor: pointer;
   font-size: 0.9rem;
-  color: #333;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .checkbox-nativo {
   width: 20px;
   height: 20px;
   min-width: 20px;
-  accent-color: var(--color-abril-standard, #0f6e56);
+  accent-color: #f5a623;
   cursor: pointer;
 }
 
@@ -275,33 +295,34 @@
 }
 
 .resultado-card.aprobado .icono-resultado {
-  color: #16794d;
+  color: #4ade80;
 }
 
 .resultado-card.desaprobado .icono-resultado {
-  color: #b5352f;
+  color: #ff7847;
 }
 
 .resultado-card h2 {
   margin: 0;
+  color: #fff;
 }
 
 .nota-final {
   font-size: 1.1rem;
-  color: #333;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .evidencia {
   width: 100%;
   text-align: left;
-  background: #f7f9f8;
-  border-radius: var(--radius-standard, 7px);
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
   padding: 16px;
 }
 
 .evidencia-titulo {
   font-weight: 700;
-  color: var(--color-abril-standard, #0f6e56);
+  color: #f5a623;
   margin: 0 0 8px;
   font-size: 0.9rem;
 }
@@ -310,6 +331,6 @@
   margin: 0;
   padding-left: 18px;
   font-size: 0.88rem;
-  color: #444;
+  color: rgba(255, 255, 255, 0.75);
   line-height: 1.7;
 }

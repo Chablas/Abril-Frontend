@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { CursoService } from '../../services/curso.service';
@@ -9,7 +9,7 @@ import { CursoDto } from '../../dtos/curso.dtos';
 @Component({
   selector: 'app-curso-lista',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   templateUrl: './curso-lista.html',
   styleUrl: './curso-lista.css',
 })
@@ -46,5 +46,10 @@ export class CursoLista implements OnInit {
 
   tomarCurso(curso: CursoDto): void {
     this.router.navigate(['/cursos', curso.id, 'tomar']);
+  }
+
+  editarCurso(curso: CursoDto, event: Event): void {
+    event.stopPropagation();
+    this.router.navigate(['/cursos/editor', curso.id]);
   }
 }

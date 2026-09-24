@@ -19,6 +19,8 @@ import { SlideOpcionMultiple } from './slides/slide-opcion-multiple/slide-opcion
 import { SlideMarcarImagen } from './slides/slide-marcar-imagen/slide-marcar-imagen';
 import { SlideArrastrarSoltar } from './slides/slide-arrastrar-soltar/slide-arrastrar-soltar';
 import { SlideOrdenar } from './slides/slide-ordenar/slide-ordenar';
+import { SlideTarjetas } from './slides/slide-tarjetas/slide-tarjetas';
+import { SlideGaleriaZoom } from './slides/slide-galeria-zoom/slide-galeria-zoom';
 
 export interface SlideTipoDef {
   tipoCodigo: string;
@@ -41,6 +43,8 @@ export const SLIDE_TIPOS: SlideTipoDef[] = [
     etiqueta: 'Arrastrar y soltar',
   },
   { tipoCodigo: 'pregunta_ordenar', component: SlideOrdenar, etiqueta: 'Ordenar' },
+  { tipoCodigo: 'contenido_tarjetas', component: SlideTarjetas, etiqueta: 'Tarjetas' },
+  { tipoCodigo: 'contenido_galeria_zoom', component: SlideGaleriaZoom, etiqueta: 'Galería con zoom' },
 ];
 
 export function resolverComponenteSlide(tipoCodigo: string): Type<any> | null {

@@ -6,6 +6,8 @@ import { AuthService } from '../../../core/services/auth.service';
 import {
   CursoDto,
   CursoSlideDto,
+  CursoUpsertDto,
+  CursoSlideUpsertDto,
   IniciarIntentoDto,
   IniciarIntentoResultDto,
   ResponderSlideDto,
@@ -60,6 +62,58 @@ export class CursoService {
 
   getDetalle(intentoId: number): Observable<CursoIntentoDetalleDto> {
     return this.http.get<CursoIntentoDetalleDto>(`${this.baseIntento}/${intentoId}`, {
+      headers: this.headers(),
+    });
+  }
+
+  // ---- Administración de cursos/slides (editor) ----
+
+  getCursosAdmin(): Observable<CursoDto[]> {
+    return this.http.get<CursoDto[]>(`${this.base}/admin`, { headers: this.headers() });
+  }
+
+  getSlidesAdmin(cursoId: number): Observable<CursoSlideDto[]> {
+    return this.http.get<CursoSlideDto[]>(`${this.base}/${cursoId}/slides/admin`, {
+      headers: this.headers(),
+    });
+  }
+
+  crearCurso(dto: CursoUpsertDto): Observable<CursoDto> {
+    return this.http.post<CursoDto>(this.base, dto, { headers: this.headers() });
+  }
+
+  actualizarCurso(cursoId: number, dto: CursoUpsertDto): Observable<void> {
+    return this.http.put<void>(`${this.base}/${cursoId}`, dto, { headers: this.headers() });
+  }
+
+  crearSlide(cursoId: number, dto: CursoSlideUpsertDto): Observable<CursoSlideDto> {
+    return this.http.post<CursoSlideDto>(`${this.base}/${cursoId}/slides`, dto, {
+      headers: this.headers(),
+    });
+  }
+
+  actualizarSlide(slideId: number, dto: CursoSlideUpsertDto): Observable<void> {
+    return this.http.put<void>(`${this.base}/slides/${slideId}`, dto, {
+      headers: this.headers(),
+    });
+  }
+
+  duplicarSlide(slideId: number, cursoDestinoId?: number): Observable<CursoSlideDto> {
+    const params = cursoDestinoId ? `?cursoDestinoId=${cursoDestinoId}` : '';
+    return this.http.post<CursoSlideDto>(`${this.base}/slides/${slideId}/duplicar${params}`, {}, {
+      headers: this.headers(),
+    });
+  }
+
+  eliminarSlide(slideId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/slides/${slideId}`, { headers: this.headers() });
+  }
+
+  /** Sube una imagen (portada, tarjeta, galería, etc.) y devuelve su URL pública. */
+  subirImagen(archivo: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    return this.http.post<{ url: string }>(`${this.base}/imagenes`, formData, {
       headers: this.headers(),
     });
   }

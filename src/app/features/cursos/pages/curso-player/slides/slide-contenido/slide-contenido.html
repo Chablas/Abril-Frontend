@@ -4,7 +4,11 @@
 
     <h2 *ngIf="config.titulo" class="titulo anim-cascada-titulo">{{ config.titulo }}</h2>
 
-    <img *ngIf="config.imagenUrl" [src]="config.imagenUrl" class="media-imagen anim-cascada-cuerpo" alt="" />
+    <div class="media-imagen-wrap anim-cascada-cuerpo" *ngIf="config.imagenUrl || editable" [class.editable]="editable" (click)="editable && imagenClick.emit()">
+      <img *ngIf="config.imagenUrl" [src]="config.imagenUrl" class="media-imagen" alt="" />
+      <div class="media-imagen-vacia" *ngIf="!config.imagenUrl && editable"><i class="ti ti-photo"></i></div>
+      <div class="media-imagen-overlay" *ngIf="editable"><i class="ti ti-camera"></i> {{ config.imagenUrl ? 'Cambiar' : 'Subir imagen' }}</div>
+    </div>
 
     <video *ngIf="config.videoUrl" [src]="config.videoUrl" controls class="media-video anim-cascada-cuerpo"></video>
 

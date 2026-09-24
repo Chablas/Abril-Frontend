@@ -10,6 +10,20 @@ export const CURSOS_ROUTES: Routes = [
     data: { titulo: 'CURSOS', featureKey: 'cursos.lista' },
   },
   {
+    path: 'editor',
+    loadComponent: () =>
+      import('./pages/curso-editor/curso-editor').then((m) => m.CursoEditor),
+    canActivate: [roleGuard],
+    data: { titulo: 'CURSOS - EDITOR', featureKey: 'cursos.lista' },
+  },
+  {
+    path: 'editor/:id',
+    loadComponent: () =>
+      import('./pages/curso-editor/curso-editor').then((m) => m.CursoEditor),
+    canActivate: [roleGuard],
+    data: { titulo: 'CURSOS - EDITOR', featureKey: 'cursos.lista' },
+  },
+  {
     path: ':id/tomar',
     loadComponent: () =>
       import('./pages/curso-player/curso-player').then((m) => m.CursoPlayer),

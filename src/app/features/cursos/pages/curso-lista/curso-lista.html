@@ -1,39 +1,71 @@
 <div class="curso-lista-page">
-<div class="curso-lista-contenido">
-  <h1 class="titulo-pagina">Cursos disponibles</h1>
 
-  <div class="estado-centro" *ngIf="cargando">
-    <i class="ti ti-loader-2 icono-spin"></i>
-    <p>Cargando cursos...</p>
-  </div>
-
-  <div class="estado-centro" *ngIf="!cargando && errorMensaje">
-    <i class="ti ti-alert-triangle icono-error"></i>
-    <p>{{ errorMensaje }}</p>
-  </div>
-
-  <div class="estado-centro" *ngIf="!cargando && !errorMensaje && cursos.length === 0">
-    <i class="ti ti-school"></i>
-    <p>No hay cursos disponibles por el momento.</p>
-  </div>
-
-  <div class="grid-cursos" *ngIf="!cargando && cursos.length > 0">
-    <div class="tarjeta-curso" *ngFor="let curso of cursos" (click)="tomarCurso(curso)">
-      <div class="tarjeta-header">
-        <i class="ti ti-book-2"></i>
-      </div>
-      <div class="tarjeta-body">
-        <h3>{{ curso.titulo }}</h3>
-        <p class="descripcion" *ngIf="curso.descripcion">{{ curso.descripcion }}</p>
-        <span class="categoria" *ngIf="curso.categoriaNombre">{{ curso.categoriaNombre }}</span>
-      </div>
-      <div class="tarjeta-footer">
-        <button type="button" class="btn-primario" (click)="tomarCurso(curso)">
-          Tomar curso
-          <i class="ti ti-arrow-right"></i>
-        </button>
+  <div class="hero-cursos">
+    <div class="hero-glow"></div>
+    <div class="hero-contenido">
+      <span class="hero-kicker">Campus de formación · SST</span>
+      <div class="hero-fila">
+        <div>
+          <h1 class="hero-titulo">Aprende a prevenir,<br />no a lamentar.</h1>
+          <p class="hero-subtitulo">Cursos interactivos de seguridad y salud en el trabajo, pensados para obra y oficina.</p>
+        </div>
+        <a class="btn-nuevo" routerLink="/cursos/editor">
+          <i class="ti ti-tool"></i>
+          Administrar cursos
+        </a>
       </div>
     </div>
   </div>
-</div>
+
+  <div class="curso-lista-contenido">
+
+    <div class="estado-centro" *ngIf="cargando">
+      <i class="ti ti-loader-2 icono-spin"></i>
+      <p>Cargando cursos...</p>
+    </div>
+
+    <div class="estado-centro" *ngIf="!cargando && errorMensaje">
+      <i class="ti ti-alert-triangle icono-error"></i>
+      <p>{{ errorMensaje }}</p>
+    </div>
+
+    <div class="estado-centro" *ngIf="!cargando && !errorMensaje && cursos.length === 0">
+      <i class="ti ti-school"></i>
+      <p>No hay cursos disponibles por el momento.</p>
+    </div>
+
+    <div class="grid-cursos" *ngIf="!cargando && cursos.length > 0">
+      <div class="tarjeta-curso" *ngFor="let curso of cursos" (click)="tomarCurso(curso)">
+        <div
+          class="tarjeta-header"
+          [style.background]="'linear-gradient(125deg, ' + (curso.colorTema || '#f5a623') + ' 0%, #14100b 115%)'"
+        >
+          <span class="tarjeta-patron"></span>
+          <div class="tarjeta-icono">
+            <i class="ti ti-stairs-up"></i>
+          </div>
+          <span class="tarjeta-badge" *ngIf="curso.categoriaNombre">{{ curso.categoriaNombre }}</span>
+          <button
+            type="button"
+            class="btn-editar-tarjeta"
+            (click)="editarCurso(curso, $event)"
+            aria-label="Editar este curso"
+            title="Editar este curso"
+          >
+            <i class="ti ti-pencil"></i>
+          </button>
+        </div>
+        <div class="tarjeta-body">
+          <h3>{{ curso.titulo }}</h3>
+          <p class="descripcion" *ngIf="curso.descripcion">{{ curso.descripcion }}</p>
+        </div>
+        <div class="tarjeta-footer">
+          <span class="meta-nota"><i class="ti ti-target-arrow"></i> Nota mínima {{ curso.notaMinimaAprobacion }}</span>
+          <button type="button" class="btn-play" (click)="tomarCurso(curso)" aria-label="Tomar curso">
+            <i class="ti ti-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
