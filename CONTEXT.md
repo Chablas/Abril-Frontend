@@ -6056,3 +6056,29 @@ Dos features sobre la vista de cronograma YA GUARDADO (`openViewMilestoneSchedul
 
 ### Pendiente
 - Probar en vivo el flujo completo: mover fecha en un hito "Inicio de obra" (el backend debe rechazarlo con su propio mensaje, vía el `error()` genérico — no hay guardia duplicada en el frontend, es intencional) y agregar un hito personalizado/de catálogo y confirmarlo visualmente en el Gantt.
+
+## Sesión 2026-09-23 (continuación) — Investigación de proyectos faltantes en UDP + toggle "Pertenece a UDP"
+
+### Contexto
+Punto de partida: reporte de que algunos proyectos activos no aparecen en Cronograma de Actividades. La investigación (varias rondas, incluyendo una pantalla equivocada al principio — `Configuración → Proyectos`, que solo tiene un badge de solo lectura) llevó a la pantalla real: **Configuraciones → pestaña "Proyectos Activos"** dentro de `milestones.ts` (sub-tab `activeTab === 'proyectos'`), la única con un toggle "Activo" de verdad interactivo. Investigando esa pantalla se encontró la causa raíz del reporte original: `Project.TieneUnidadDeProyectos` (columna ya existente en backend desde antes, migración `20260526203642_AddFechaRealFinAndTieneUnidadDeProyectos`) es el flag que filtra las queries de Cronograma de Actividades, Projects Dashboard y Milestone Schedule (`p.TieneUnidadDeProyectos` en los `.Where()` de esos tres repos de `Abril_Backend`) — pero no había ningún control de UI para gestionarlo, así que un proyecto activo con ese flag en `false` simplemente no aparecía en ningún lado y nadie podía corregirlo sin tocar la base directamente.
+
+### Cambios
+- **Nuevo toggle "Pertenece a UDP"** en la tabla de "Proyectos Activos" (`milestones.html`), columna separada del toggle "Activo" existente (no se tocó su lógica). Llama a `ProyectoService.toggleUnidadDeProyectos(projectId, value)` → `PATCH api/v1/project/{id}/tiene-unidad-de-proyectos`, body `{ value }`, respuesta `{ tieneUnidadDeProyectos }` — endpoint puntual ya existente en backend (`ProjectController.cs:295`, `UpdateTieneUnidadDeProyectosDto`), evita el riesgo de sobreescritura del PUT completo que sí tiene `toggleProyectoActive()`.
+- **Filtro "Mostrar solo sin UDP asignado"**: checkbox sobre la tabla, filtro 100% en memoria (`proyectosVisibles` getter) — no hace falta re-paginar contra backend porque `loadProyectos()` ya trae hasta 200 registros en una sola llamada (sin `pageSize` explícito, el backend default es 200, y hay ~44 proyectos en total).
+- **Bug encontrado y corregido dos veces sobre el mismo toggle nuevo**, ambos también aplicados/revisados en `toggleProyectoActive()`:
+  1. *Checkbox no revierte visualmente ante error*: `[checked]="item.x"` es un binding unidireccional — si el modelo nunca cambia de valor tras un fallo, Angular no vuelve a escribir el DOM (dirty-check contra el último valor evaluado, no contra el DOM real) y el checkbox queda marcado aunque el guardado haya fallado. Fix: actualización optimista del modelo al click + revert explícito (a un valor genuinamente distinto) en el callback de error. Aplicado a `toggleProyectoUdp()` y, a pedido explícito, también a `toggleProyectoActive()` (mismo patrón, mismo motivo).
+  2. *Contrato de endpoint mal asumido*: la primera implementación de `toggleUnidadDeProyectos()` asumía un "toggle ciego" server-side (PATCH sin body, mirror de `PATCH .../arquitectura-comercial` que sí es así) — pero el endpoint real que backend expuso recibe `{ value: boolean }` explícito en el body. Se corrigió el service para mandar el valor calculado (`!anterior`), confirmando el shape exacto leyendo directamente `Abril_Backend` (`UpdateTieneUnidadDeProyectosDto.cs`, `ProjectController.cs`) en vez de asumir.
+- Se confirmó además, leyendo el backend, que `getPaged()` **sí** trae `tieneUnidadDeProyectos` con el valor real desde la carga inicial (nunca `undefined`) — se había planteado como sospechosa una segunda causa de desincronización y se descartó.
+
+### Archivos clave
+- `features/projects/configuration/pages/milestones/milestones.ts`/`.html` (`toggleProyectoUdp`, `toggleProyectoActive`, `proyectosVisibles`, `soloSinUdp`)
+- `features/configuracion/features/proyectos/services/proyecto.service.ts` (`toggleUnidadDeProyectos`)
+- `features/configuracion/features/proyectos/dtos/project.dto.ts` (`tieneUnidadDeProyectos?: boolean`)
+
+### Verificado
+`ng build` → 0 errores en cada paso, solo warnings preexistentes de terceros. No se probó en navegador contra el backend real en esta sesión (el endpoint fue confirmado leyendo el código de `Abril_Backend`, no probado end-to-end desde la UI).
+
+### Pendiente
+- El endpoint `PATCH .../tiene-unidad-de-proyectos` lleva `[RequireFeature("projects.config.milestones")]` en backend — si el rol del usuario no tiene ese `feature_key` asignado en `role_feature`, el toggle devolverá 403 aunque el body esté bien armado. No se tocó (es config de base de datos), pero conviene confirmarlo antes de dar el toggle por probado en producción.
+- Probar en vivo el toggle "Pertenece a UDP" (éxito y error real) y el filtro "Mostrar solo sin UDP asignado" contra el backend desplegado.
+- El toggle "Activo" (`toggleProyectoActive`) construye el PUT con `{...item, active: nuevoEstado}` — sigue mandando el objeto completo del listado (con el riesgo de sobreescritura de campos desactualizados ya documentado en una sesión anterior); no se resolvió, solo se le aplicó el fix de revert optimista.
