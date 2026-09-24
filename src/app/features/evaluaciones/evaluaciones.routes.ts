@@ -125,6 +125,20 @@ export const EVALUACIONES_ROUTES: Routes = [
     data: { titulo: 'EVALUACIONES - MIS RESULTADOS GESTIÓN SSOMA', featureKey: 'evaluaciones.mis-resultados-gestion-ssoma' },
   },
   {
+    path: 'evaluar-staff',
+    loadComponent: () =>
+      import('./pages/evaluar-staff/evaluar-staff').then(m => m.EvaluarStaff),
+    canActivate: [roleGuard],
+    data: { titulo: 'EVALUACIONES - EVALUAR STAFF', featureKey: 'evaluaciones.evaluar-staff' },
+  },
+  {
+    path: 'resultados-staff',
+    loadComponent: () =>
+      import('./pages/resultados-staff/resultados-staff').then(m => m.ResultadosStaff),
+    canActivate: [roleGuard],
+    data: { titulo: 'EVALUACIONES - RESULTADOS STAFF', featureKey: 'evaluaciones.resultados-staff' },
+  },
+  {
     path: 'periodos',
     loadComponent: () =>
       import('./pages/periodos/periodos').then(m => m.EvPeriodos),

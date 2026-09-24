@@ -6,58 +6,68 @@
   (tabClick)="onTabClick($event)">
 </app-abril-page-header>
 
-<!-- Fila de acciones reutilizada por "Mi Checklist" y "Por Proyecto" -->
-<ng-template #itemRow let-item let-proyectoId="proyectoId" let-onMarcar="onMarcar">
+<!-- Fila compacta (una línea) reutilizada por "Mi Checklist" y "Por Proyecto".
+     Tap en el círculo de estado = ciclo pendiente → cumplido → no_aplica → pendiente.
+     El ícono de observación abre un modal en vez de ocupar espacio con un input
+     siempre visible (casi nunca hay algo que escribir ahí). -->
+<ng-template #itemRow let-item let-proyectoId="proyectoId" let-onCiclo="onCiclo" let-onObs="onObs">
   <div class="cu-item"
     [class.cu-item--completado]="item.estado === 'cumplido'"
     [class.cu-item--no-aplica]="item.estado === 'no_aplica'">
-    <div class="cu-item-content">
-      <div class="cu-item-header-row">
-        <p class="cu-item-desc" [class.cu-item-desc--done]="item.estado !== 'pendiente'">{{ item.nombre }}</p>
-        <span class="cu-tag-rol">{{ rolLabel(item.rolResponsable) }}</span>
-      </div>
-      @if (item.descripcion) {
-        <p class="cu-item-subdesc">{{ item.descripcion }}</p>
+    <button type="button" class="cu-item-dot" [ngClass]="'cu-item-dot--' + item.estado"
+      [disabled]="guardandoActividadId === item.actividadId"
+      (click)="onCiclo(proyectoId, item)"
+      [attr.aria-label]="item.estado">
+      @if (guardandoActividadId === item.actividadId) {
+        <i class="ti ti-loader-2 spin"></i>
+      } @else {
+        <i class="ti" [ngClass]="iconoEstado(item.estado)"></i>
       }
+    </button>
+
+    <div class="cu-item-main">
+      <span class="cu-item-nombre" [class.cu-item-nombre--done]="item.estado !== 'pendiente'">{{ item.nombre }}</span>
       @if (item.estado === 'cumplido' && item.cumplidoPor) {
         <span class="cu-item-meta">
-          <i class="ti ti-user-check"></i> {{ item.cumplidoPor }}
-          @if (item.fechaCumplimiento) {
-            · {{ item.fechaCumplimiento | date:'dd/MM/yyyy HH:mm' }}
-          }
+          {{ item.cumplidoPor }}
+          @if (item.fechaCumplimiento) { · {{ item.fechaCumplimiento | date:'dd/MM HH:mm' }} }
         </span>
-      }
-      @if (item.estado === 'no_aplica' && item.motivoNoAplica) {
-        <span class="cu-item-meta"><i class="ti ti-info-circle"></i> {{ item.motivoNoAplica }}</span>
-      }
-      @if (item.estado === 'pendiente') {
-        <input
-          class="cu-item-obs"
-          type="text"
-          placeholder="Observación (opcional)"
-          [(ngModel)]="observacionTemp[item.actividadId]" />
+      } @else if (item.estado === 'no_aplica' && item.motivoNoAplica) {
+        <span class="cu-item-meta">{{ item.motivoNoAplica }}</span>
       }
     </div>
-    <div class="cu-item-actions">
-      <button type="button" class="cu-btn-estado cu-btn-estado--cumplido"
-        [class.cu-btn-estado--active]="item.estado === 'cumplido'"
-        [disabled]="guardandoActividadId === item.actividadId"
-        (click)="onMarcar(proyectoId, item, 'cumplido')">
-        @if (guardandoActividadId === item.actividadId) {
-          <i class="ti ti-loader-2 spin"></i>
-        } @else {
-          <i class="ti ti-check"></i>
-        }
-        Cumplió
-      </button>
-      <button type="button" class="cu-btn-estado cu-btn-estado--no-aplica"
-        [class.cu-btn-estado--active]="item.estado === 'no_aplica'"
-        [disabled]="guardandoActividadId === item.actividadId"
-        (click)="onMarcar(proyectoId, item, 'no_aplica')">
-        <i class="ti ti-ban"></i> No aplica
-      </button>
-    </div>
+
+    <span class="cu-tag-rol cu-tag-rol--compact">{{ rolLabel(item.rolResponsable) }}</span>
+
+    <button type="button" class="cu-item-obs-btn" [class.cu-item-obs-btn--activo]="!!item.observacion"
+      (click)="onObs(proyectoId, item)" title="Observación">
+      <i class="ti ti-message-circle"></i>
+    </button>
   </div>
+</ng-template>
+
+<!-- Grupo de categoría (acordeón) reutilizado por "Mi Checklist" y "Por Proyecto" -->
+<ng-template #categoriaGrupo let-grupos let-contexto="contexto" let-proyectoId="proyectoId">
+  @for (grupo of grupos; track grupo.categoria) {
+    <div class="cu-categoria">
+      <button type="button" class="cu-categoria-header" (click)="toggleCategoria(contexto, grupo.categoria)">
+        <i class="ti cu-categoria-chevron" [ngClass]="categoriaAbierta(contexto, grupo.categoria) ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
+        <span class="cu-categoria-nombre">{{ grupo.categoria }}</span>
+        <span class="cu-categoria-count" [class.cu-categoria-count--ok]="grupo.cumplidas === grupo.total">
+          {{ grupo.cumplidas }}/{{ grupo.total }}
+        </span>
+      </button>
+      @if (categoriaAbierta(contexto, grupo.categoria)) {
+        <div class="cu-categoria-items">
+          @for (item of grupo.items; track item.actividadId) {
+            <ng-container [ngTemplateOutlet]="itemRow"
+              [ngTemplateOutletContext]="{ $implicit: item, proyectoId: proyectoId, onCiclo: cicloEstadoWrapper, onObs: abrirObsModalWrapper }">
+            </ng-container>
+          }
+        </div>
+      }
+    </div>
+  }
 </ng-template>
 
 <div class="cu-wrap">
@@ -100,19 +110,21 @@
           <p>No hay actividades para esta frecuencia.</p>
         </div>
       } @else {
-        <div class="cu-items-list cu-items-list--mio">
-          @for (item of actividadesMioPorFrecuencia; track item.actividadId) {
-            <ng-container [ngTemplateOutlet]="itemRow"
-              [ngTemplateOutletContext]="{ $implicit: item, proyectoId: miResumen!.proyectoId, onMarcar: marcarEstadoWrapper }">
-            </ng-container>
-          }
-        </div>
+        <ng-container [ngTemplateOutlet]="categoriaGrupo"
+          [ngTemplateOutletContext]="{ $implicit: gruposMio, contexto: 'mio|' + frecuenciaActivaMio, proyectoId: miResumen!.proyectoId }">
+        </ng-container>
       }
     }
   }
 
   <!-- ── TAB: POR PROYECTO ──────────────────────────────────────────────── -->
   @if (tab === 'resumen') {
+
+    <p class="cu-tab-hint">
+      Vista para el Coordinador SSOMA: revisa el checklist de <strong>cualquier proyecto</strong>
+      (no solo el tuyo), útil si supervisas varias obras. Si solo gestionas tu propio proyecto,
+      usa "Mi Checklist".
+    </p>
 
     <div class="cu-toolbar">
       <app-search-select
@@ -156,19 +168,20 @@
           <p>No hay actividades configuradas para esta frecuencia.</p>
         </div>
       } @else {
-        <div class="cu-items-list">
-          @for (item of actividadesPorFrecuencia; track item.actividadId) {
-            <ng-container [ngTemplateOutlet]="itemRow"
-              [ngTemplateOutletContext]="{ $implicit: item, proyectoId: proyectoId, onMarcar: marcarEstadoWrapper }">
-            </ng-container>
-          }
-        </div>
+        <ng-container [ngTemplateOutlet]="categoriaGrupo"
+          [ngTemplateOutletContext]="{ $implicit: gruposResumen, contexto: 'resumen|' + frecuenciaActiva, proyectoId: proyectoId }">
+        </ng-container>
       }
     }
   }
 
   <!-- ── TAB: HISTÓRICO ─────────────────────────────────────────────────── -->
   @if (tab === 'historico') {
+    <p class="cu-tab-hint">
+      Indicador de cumplimiento: por cada día/semana/mes ya cerrado, muestra qué % de las
+      actividades del catálogo se marcaron "Cumplido" (excluye las "No aplica" del cálculo).
+      Sirve para ver la tendencia de un proyecto en el tiempo, no para marcar nada.
+    </p>
     <div class="cu-toolbar cu-toolbar--historico">
       <app-search-select
         label="Proyecto"
@@ -241,6 +254,38 @@
       </button>
     </div>
 
+    <div class="cu-catalogo-filtros">
+      <input class="cu-catalogo-buscar" type="text" placeholder="Buscar por nombre o categoría..."
+        [(ngModel)]="filtroCatalogoTexto" (ngModelChange)="onFiltroCatalogoChange()" />
+      <app-search-select
+        [showLabel]="false"
+        [options]="opcionesFiltroFrecuencia"
+        valueField="value"
+        displayField="label"
+        [sortAlpha]="false"
+        [allowClear]="false"
+        [value]="filtroCatalogoFrecuencia"
+        placeholder="Todas las frecuencias"
+        (valueChange)="filtroCatalogoFrecuencia = $event; onFiltroCatalogoChange()">
+      </app-search-select>
+      <app-search-select
+        [showLabel]="false"
+        [options]="opcionesFiltroRol"
+        valueField="value"
+        displayField="label"
+        [sortAlpha]="false"
+        [allowClear]="false"
+        [value]="filtroCatalogoRol"
+        placeholder="Todos los responsables"
+        (valueChange)="filtroCatalogoRol = $event; onFiltroCatalogoChange()">
+      </app-search-select>
+      @if (filtrosCatalogoActivos) {
+        <button type="button" class="cu-catalogo-limpiar" (click)="limpiarFiltrosCatalogo()">
+          <i class="ti ti-x"></i> Limpiar
+        </button>
+      }
+    </div>
+
     @if (loadingCatalogo) {
       <div class="loading-state"><i class="ti ti-loader-2 spin"></i> Cargando catálogo...</div>
     } @else {
@@ -257,31 +302,42 @@
             </tr>
           </thead>
           <tbody>
-            @if (actividadesCatalogo.length === 0) {
-              <tr><td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">Sin actividades registradas.</td></tr>
+            @if (actividadesCatalogoFiltradas.length === 0) {
+              <tr><td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">Sin actividades que coincidan con el filtro.</td></tr>
             }
-            @for (a of catalogoPaged; track a.id) {
-              <tr class="cu-row-clickable" (click)="abrirEditarActividad(a)">
-                <td class="cu-td-num">{{ a.orden }}</td>
-                <td class="cu-td-nombre">{{ a.nombre }}</td>
-                <td><span class="cu-tag-frecuencia">{{ frecuenciaLabel(a.frecuencia) }}</span></td>
-                <td>{{ rolLabel(a.rolResponsable) }}</td>
-                <td>
-                  @if (a.activo) {
-                    <span class="cu-badge cu-badge--activo">Activo</span>
-                  } @else {
-                    <span class="cu-badge cu-badge--inactivo">Inactivo</span>
-                  }
-                </td>
-                <td><i class="ti ti-pencil" style="color:#9ca3af"></i></td>
-              </tr>
+            @for (fila of catalogoFilas; track (fila.tipo === 'categoria' ? 'cat-' + fila.categoria : 'a-' + fila.actividad.id)) {
+              @if (fila.tipo === 'categoria') {
+                <tr class="cu-tr-categoria">
+                  <td colspan="6">{{ fila.categoria }}</td>
+                </tr>
+              } @else {
+                <tr class="cu-row-clickable" (click)="abrirEditarActividad(fila.actividad)">
+                  <td class="cu-td-num">{{ fila.actividad.orden }}</td>
+                  <td class="cu-td-nombre">{{ fila.actividad.nombre }}</td>
+                  <td><span class="cu-tag-frecuencia">{{ frecuenciaLabel(fila.actividad.frecuencia) }}</span></td>
+                  <td>{{ rolLabel(fila.actividad.rolResponsable) }}</td>
+                  <td>
+                    @if (fila.actividad.activo) {
+                      <span class="cu-badge cu-badge--activo">Activo</span>
+                    } @else {
+                      <span class="cu-badge cu-badge--inactivo">Inactivo</span>
+                    }
+                  </td>
+                  <td class="cu-td-acciones">
+                    <i class="ti ti-pencil" style="color:#9ca3af"></i>
+                    <button type="button" class="cu-btn-icono-danger" title="Eliminar" (click)="eliminarActividad(fila.actividad, $event)">
+                      <i class="ti ti-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              }
             }
           </tbody>
         </table>
       </div>
       <div class="shrink-0 max-w-[440px]" style="margin-top:12px;">
         <app-paginator
-          [totalRecords]="actividadesCatalogo.length"
+          [totalRecords]="actividadesCatalogoFiltradas.length"
           [currentPage]="catalogoCurrentPage"
           [totalPages]="catalogoTotalPages"
           (pageChange)="changeCatalogoPage($event)">
@@ -308,6 +364,17 @@
     <div class="abril-field">
       <label class="abril-field-label">Descripción</label>
       <textarea class="abril-field-input" rows="2" [(ngModel)]="form.descripcion"></textarea>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Categoría</label>
+      <input class="abril-field-input" type="text" [(ngModel)]="form.categoria" list="cu-categorias-existentes"
+        placeholder="Elige una existente o escribe una nueva (agrupa el acordeón del celular)" />
+      <datalist id="cu-categorias-existentes">
+        @for (c of categoriasExistentes; track c) {
+          <option [value]="c"></option>
+        }
+      </datalist>
     </div>
 
     <div class="form-row">
@@ -338,6 +405,33 @@
       <button class="btn btn-secondary" (click)="cerrarFormModal()" [disabled]="saving">Cancelar</button>
       <button class="btn btn-primary" (click)="guardarActividad()" [disabled]="!canSubmitForm">
         @if (saving) { Guardando… } @else { Guardar }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}
+
+<!-- Modal de observación: se abre desde el icono de la fila, en vez de un input
+     siempre visible que casi nunca se usa. -->
+@if (obsModalItem) {
+  <app-abril-modal-panel
+    titulo="Observación"
+    icono="ti-message-circle"
+    variant="blue"
+    width="480px"
+    (closeModal)="cerrarObsModal()">
+
+    <p class="cu-obs-modal-nombre">{{ obsModalItem.nombre }}</p>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Observación (opcional)</label>
+      <textarea class="abril-field-input" rows="4" [(ngModel)]="obsModalTexto"
+        placeholder="Ej. Pendiente por lluvia, se retoma mañana..."></textarea>
+    </div>
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarObsModal()" [disabled]="guardandoObs">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardarObs()" [disabled]="guardandoObs">
+        @if (guardandoObs) { Guardando… } @else { Guardar }
       </button>
     </div>
   </app-abril-modal-panel>
