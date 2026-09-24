@@ -162,6 +162,11 @@ export class GthDetalleRequerimiento implements OnInit {
    * aprueba o rechaza. null (lo normal) = el detalle abre sin nada encima.
    */
   @Input() abrirFormularioCandidatoId: number | null = null;
+  /**
+   * Solo consulta (sin la feature de gestionar el proceso; lo decide la bandeja): el modal muestra
+   * los mismos datos, documentos y estados, pero ninguna acción que cambie el proceso.
+   */
+  @Input() soloLectura = false;
   /** Emite al cerrar; true si hubo cambios guardados (para refrescar la bandeja). */
   @Output() closeModal = new EventEmitter<boolean>();
 
@@ -570,6 +575,11 @@ export class GthDetalleRequerimiento implements OnInit {
   get puedeRehacerProceso(): boolean {
     const enLongListVacia = this.detalle?.estadoCodigo === 'LONG_LIST' && !this.esFft && this.sinCandidatosVivos;
     return this.emoNoApto || this.procesoSinCandidatos || enLongListVacia;
+  }
+
+  /** Columna «Acción» del historial: cuando hay que decidir con quién sigue y el usuario gestiona. */
+  get accionesRechazados(): boolean {
+    return this.puedeRehacerProceso && !this.soloLectura;
   }
 
   /**

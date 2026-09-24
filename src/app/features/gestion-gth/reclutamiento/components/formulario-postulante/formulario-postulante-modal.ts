@@ -51,6 +51,8 @@ import { CandidatoFormularioResumen, FormularioRevision } from '../../dtos/formu
 })
 export class GthFormularioPostulanteModal implements OnInit {
   @Input({ required: true }) candidatoId!: number;
+  /** Sin la feature de gestionar el proceso (lo decide la bandeja): se ve igual, sin Aprobar/Rechazar. */
+  @Input() soloLectura = false;
   @Output() closeModal = new EventEmitter<void>();
   /** Emite el nuevo estado del formulario tras aprobar/rechazar (para refrescar la bandeja). */
   @Output() cambios = new EventEmitter<CandidatoFormularioResumen>();
