@@ -10,6 +10,7 @@ import {
   GestionRendicionDetalleDto,
   GestionRendicionFilterDataDto,
   GestionRendicionListResultDto,
+  PlanillaGrupalDto,
   PrimeraRevisionAccionDto,
 } from '../dtos/gestion-rendicion.dto';
 
@@ -72,9 +73,21 @@ export class GestionRendicionesService {
   }
 
   /**
-   * Adjunta (o reemplaza) UN Consolidado del S10 para las planillas indicadas: una o varias, de uno
-   * o de varios trabajadores, de las razones sociales que sean. Solo lo sube el consolidador. Cubre
-   * todas sus salidas, así que `montoTotal` tiene que cuadrar con la suma de las planillas
+   * Prepara UNA planilla grupal para las planillas indicadas: el papel sin firmar con el que el
+   * consolidador las registra en el S10. Ninguna puede tener ya una (no se rehace). Les avisa a sus
+   * trabajadores por correo. Solo la prepara el consolidador; el backend responde 403/409 si algo
+   * no cuadra.
+   */
+  prepararPlanillaGrupal(rendicionIds: number[]): Observable<PlanillaGrupalDto> {
+    return this.http.post<PlanillaGrupalDto>(
+      `${this.apiUrl}/planilla-grupal`, { rendicionIds }, { headers: this.headers },
+    );
+  }
+
+  /**
+   * Adjunta el PRIMER Consolidado del S10 de las planillas de UNA planilla grupal ya preparada: de
+   * uno o de varios trabajadores, de las razones sociales que sean. Solo lo sube el consolidador.
+   * Cubre todas sus salidas, así que `montoTotal` tiene que cuadrar con la suma de las planillas
    * completas: el backend lo re-valida (junto con el resto de las reglas) y responde 400/403/409 si
    * algo no cuadra.
    */
@@ -94,7 +107,7 @@ export class GestionRendicionesService {
   }
 
   /**
-   * Aprueba la primera revisión: habilita al consolidador a cargar el Consolidado del S10 y le avisa
+   * Aprueba la primera revisión: habilita al consolidador a preparar la planilla grupal y le avisa
    * al trabajador por correo.
    */
   aprobarPrimeraRevision(accion: PrimeraRevisionAccionDto): Observable<ReembolsoBulkResultDto> {

@@ -41,7 +41,7 @@
       [disabled]="!puedeDecidirPrimeraRevision"
       [title]="primeraRevisionBloqueada
         ? 'Hay rendiciones que no te toca revisar: deselecciónalas'
-        : 'Aprobar la primera revisión habilita al consolidador a cargar el Consolidado del S10'">
+        : 'Aprobar la primera revisión habilita al consolidador a preparar la planilla grupal'">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
       </svg>
@@ -63,28 +63,47 @@
       Observar 1.ª revisión<span *ngIf="puedeDecidirPrimeraRevision"> ({{ selectedPorPrimeraRevision.length }})</span>
     </button>
 
-    <!-- Consolidado del S10: uno solo para todas las seleccionadas que ya pasaron la primera
-         revisión, aunque sean de trabajadores y razones sociales distintos. Solo para el
-         consolidador: la jefatura revisa, no consolida.
+    <!-- Los dos pasos del consolidador, en el orden en que se hacen: primero la planilla grupal
+         (el papel con el que registra las rendiciones en el S10) y después el Consolidado del S10,
+         que se sube sobre ella. Cada uno cubre a todas las seleccionadas que corresponden, aunque
+         sean de trabajadores y razones sociales distintos. Solo para el consolidador: la jefatura
+         revisa, no consolida.
 
-         Va a la derecha (`ml-auto`), separado de los dos botones de la primera revisión: es el
-         paso siguiente del flujo y el ÚNICO lugar desde donde se adjunta, porque un consolidado
-         puede cubrir varias planillas y ofrecerlo además fila por fila invitaba a cargar uno por
-         cada una. -->
-    <button
-      *ngIf="esConsolidador"
-      type="button"
-      abrilBulkAction="default"
-      class="ml-auto"
-      (click)="abrirConsolidadoSeleccion()"
-      [disabled]="consolidadoSeleccionBloqueo !== null"
-      [title]="consolidadoSeleccionBloqueo ?? 'Adjuntar un solo Consolidado del S10 para las rendiciones seleccionadas'">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-abril-standard)" stroke-width="2.5">
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-        <path d="M14 2v6h6" stroke-linejoin="round"/>
-      </svg>
-      Consolidado S10<span *ngIf="consolidadoSeleccionBloqueo === null"> ({{ selectedConsolidables.length }})</span>
-    </button>
+         Van a la derecha (`ml-auto`), separados de los dos botones de la primera revisión, y más
+         grandes que ellos: son la acción principal de quien consolida. Es el ÚNICO lugar desde
+         donde se piden para varias planillas: ofrecerlos además fila por fila invitaba a armar un
+         documento por cada una. -->
+    <div *ngIf="esConsolidador" class="ml-auto flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        abrilBulkAction="primary"
+        abrilBulkActionSize="lg"
+        (click)="prepararPlanillaSeleccion()"
+        [disabled]="planillaSeleccionBloqueo !== null"
+        [title]="planillaSeleccionBloqueo ?? 'Preparar una sola planilla grupal para las rendiciones seleccionadas'">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
+          <path d="M12 18v-6M9 15h6" stroke-linecap="round"/>
+        </svg>
+        Preparar planilla<span *ngIf="planillaSeleccionBloqueo === null"> ({{ selectedPreparables.length }})</span>
+      </button>
+
+      <button
+        type="button"
+        abrilBulkAction="primary"
+        abrilBulkActionSize="lg"
+        (click)="abrirConsolidadoSeleccion()"
+        [disabled]="consolidadoSeleccionBloqueo !== null"
+        [title]="consolidadoSeleccionBloqueo ?? 'Subir el Consolidado del S10 de la planilla grupal seleccionada'">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M17 8l-5-5-5 5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 3v12" stroke-linecap="round"/>
+        </svg>
+        Subir consolidado del S10<span *ngIf="consolidadoSeleccionBloqueo === null"> ({{ consolidadoSeleccionCuenta }})</span>
+      </button>
+    </div>
 
   </div>
 
@@ -194,7 +213,7 @@
                 {{ consolidadoChipLabel(r) }}<span *ngIf="otrasDelConsolidado(r).length"> +{{ otrasDelConsolidado(r).length }}</span>
               </a>
               <!-- La planilla grupal del consolidado: el gasto de todas sus planillas en un solo
-                   documento. La arma Abril One al adjuntarse el S10; ya firmada, abre esa copia. -->
+                   documento. La prepara el consolidador antes del S10; ya firmada, abre esa copia. -->
               <a *ngIf="r.consolidadoS10?.planillaGrupalFirmadoUrl ?? r.consolidadoS10?.planillaGrupalUrl as grupal"
                  class="doc-chip" [href]="grupal" target="_blank" rel="noopener noreferrer"
                  [title]="r.consolidadoS10?.planillaGrupalFirmadoUrl
@@ -211,10 +230,20 @@
               </a>
 
               <ng-template #sinConsolidado>
-                <span class="doc-chip doc-chip--pendiente"
-                      [title]="r.estadoPrimeraRevision === 'Aprobada'
-                        ? 'Todavía no se adjunta el Consolidado del S10'
-                        : 'El Consolidado del S10 se habilita al aprobar la primera revisión'">
+                <!-- La planilla grupal ya preparada, esperando su S10: va antes del chip del S10
+                     porque es el paso anterior. El "+N" dice con cuántas otras rendiciones va, y el
+                     título cuáles son: el S10 se sube para todas a la vez. -->
+                <a *ngIf="r.planillaGrupal as pg"
+                   class="doc-chip" [href]="pg.pdfUrl" target="_blank" rel="noopener noreferrer"
+                   [title]="planillaGrupalChipTitle(r)">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+                    <path d="M14 2v6h6" stroke-linejoin="round"/>
+                  </svg>
+                  Planilla grupal<span *ngIf="otrasDeLaPlanillaGrupal(r).length"> +{{ otrasDeLaPlanillaGrupal(r).length }}</span>
+                </a>
+
+                <span class="doc-chip doc-chip--pendiente" [title]="s10PendienteTitle(r)">
                   {{ r.estadoPrimeraRevision === 'Aprobada' ? 'S10 pendiente' : 'S10 no habilitado' }}
                 </span>
               </ng-template>
@@ -263,9 +292,10 @@
                 </button>
               </ng-container>
 
-              <!-- El Consolidado del S10 NO se adjunta desde la fila: cubre a todas las planillas
-                   seleccionadas de una vez y vive en la barra de arriba. Repetirlo acá hacía que
-                   se cargara uno por planilla cuando lo que corresponde es uno solo. -->
+              <!-- La planilla grupal y el Consolidado del S10 NO se piden desde la fila: cubren a
+                   todas las planillas seleccionadas de una vez y viven en la barra de arriba.
+                   Repetirlos acá hacía que se armara uno por planilla cuando lo que corresponde es
+                   uno solo. -->
 
               <span *ngIf="!r.porPrimeraRevision || !r.puedeDecidir" class="text-gray-300">—</span>
             </div>
@@ -281,6 +311,7 @@
 <app-gestion-rendicion-detalle-modal
   *ngIf="detalleId !== null"
   [rendicionId]="detalleId"
+  (prepararPlanilla)="prepararPlanillaDesdeDetalle($event)"
   (consolidar)="abrirConsolidadoDesdeDetalle($event)"
   (close)="cerrarDetalle($event)" />
 
@@ -291,6 +322,7 @@
   [referencia]="objetivo.referencia"
   [rendiciones]="objetivo.codigos"
   [razonSocial]="razonSocialConsolidador"
+  [codigoGrupal]="objetivo.codigoGrupal"
   [avisosJefatura]="avisosConsolidado"
   [montoEsperado]="objetivo.monto"
   (close)="cerrarConsolidado($event)" />

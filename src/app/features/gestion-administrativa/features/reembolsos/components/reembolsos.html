@@ -54,8 +54,9 @@
 
     <!-- ── Acciones ─────────────────────────────────────────────────────────
          Dos pasos y no uno: primero se confirma la revisión documental y recién entonces se
-         puede pagar. Y un camino de vuelta (RG-49): observar devuelve el consolidado desde
-         cualquiera de los dos. Cada botón actúa sobre la parte de la selección que le toca. -->
+         puede pagar. Y un camino de vuelta (RG-49): observar devuelve el consolidado, pero solo
+         mientras la revisión no esté confirmada — lo confirmado sigue al pago. Cada botón actúa
+         sobre la parte de la selección que le toca. -->
     <div class="flex flex-wrap items-center gap-2">
       <span *ngIf="seleccionadosPorPagar.length > 0" class="text-[11px] text-gray-500 mr-1">
         {{ seleccionadosPorPagar.length }} por pagar · S/ {{ montoSeleccionado | number:'1.2-2' }}
@@ -79,7 +80,7 @@
         abrilBulkAction="danger"
         (click)="observar()"
         [disabled]="seleccionadosParaObservar.length === 0"
-        title="Devuelve el consolidado con un motivo. Vuelve al consolidador, que lo recarga o le pide la corrección al Coordinador ERP.">
+        title="Solo se puede observar lo que todavía no tiene la revisión de Tesorería confirmada. Vuelve al consolidador, que lo recarga o le pide la corrección al Coordinador ERP.">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round"
                 d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
@@ -118,7 +119,7 @@
                 title="Seleccionar / deseleccionar todo lo que falta revisar o pagar" />
             </th>
             <th>Consolidado</th>
-            <th>Planillas</th>
+            <th>Área</th>
             <th>Trabajador</th>
             <th>Periodo</th>
             <th>Salidas</th>
@@ -171,18 +172,9 @@
               </div>
             </td>
 
-            <!-- Todo lo que cubre: las planillas que todavía esperan a su jefatura van apagadas,
-                 pero se listan porque el importe declarado en el S10 las incluye. -->
-            <td>
-              <div class="flex flex-wrap items-center gap-[4px]">
-                <span *ngFor="let r of c.rendiciones"
-                      class="ren-chip"
-                      [class.ren-chip--fuera]="!r.enBandeja"
-                      [title]="r.enBandeja ? (r.numeroPlanilla ?? r.codigo) : fueraDeBandejaTitle(r.codigo)">
-                  {{ r.codigo }}
-                </span>
-              </div>
-            </td>
+            <!-- El área del consolidado es la de su consolidador: la de la sigla del código y la que
+                 imprime la planilla grupal. Sale del catálogo tal cual: el titleCase rompería «SSOMA». -->
+            <td class="text-gray-700">{{ c.area || '—' }}</td>
 
             <td class="text-gray-700" [title]="c.trabajadores.join(', ')">
               {{ trabajadoresTexto(c) | titleCase }}

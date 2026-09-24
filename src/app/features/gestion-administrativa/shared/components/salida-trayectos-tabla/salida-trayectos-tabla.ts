@@ -52,13 +52,6 @@ export class SalidaTrayectosTabla {
   @Input({ required: true }) trayectos: TrayectoDetalleDto[] = [];
 
   /**
-   * Coletilla que acompaña al monto del catálogo, porque no dice lo mismo en cada pantalla: al
-   * dueño de la salida le importa que no tiene que subir captura; a quien revisa, de dónde salió
-   * ese monto. Vacío = solo se imprime el monto.
-   */
-  @Input() catalogoNota = '';
-
-  /**
    * Los documentos adjuntos son la excepción (solo los motivos que piden documento): van debajo de
    * la tabla, con el archivo a la vista, y solo si algún trayecto trae alguno.
    */

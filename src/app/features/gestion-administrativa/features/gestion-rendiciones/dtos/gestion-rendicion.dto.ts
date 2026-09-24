@@ -1,4 +1,7 @@
-import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import {
+  ConsolidadoS10Dto,
+  ConsolidadoS10RendicionDto,
+} from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
 import { ReembolsoPipelineDto } from '../../../shared/dtos/reembolso-pipeline.dto';
 import {
   AreaNodeDto,
@@ -47,6 +50,12 @@ export interface GestionRendicionListItemDto {
   pdfFirmadoFilename: string | null;
   firmadoAt: string | null;
   consolidadoS10: ConsolidadoS10Dto | null;
+  /**
+   * La planilla grupal que preparó el consolidador y que todavía espera su Consolidado del S10.
+   * Null si no se preparó y también cuando ya tiene consolidado: desde ahí la planilla grupal viaja
+   * dentro de `consolidadoS10`, junto con su copia firmada.
+   */
+  planillaGrupal: PlanillaGrupalDto | null;
 
   // ── Primera revisión ───────────────────────────────────────────────────
   // El paso que va ANTES del Consolidado del S10: se miran trayectos, montos y capturas y se decide.
@@ -95,17 +104,41 @@ export interface GestionRendicionListItemDto {
    */
   puedeConsolidar: boolean;
   /**
+   * True si a esta planilla se le puede preparar la planilla grupal: primera revisión aprobada, el
+   * reembolso de todas sus salidas por decidir y todavía sin planilla grupal ni Consolidado del S10.
+   * Una planilla grupal ya preparada no se rehace ni se reemplaza. No mira permisos: para eso está
+   * `puedeConsolidar`.
+   */
+  puedePrepararPlanilla: boolean;
+  /**
    * True si a esta planilla se le puede adjuntar su PRIMER Consolidado del S10: primera revisión
-   * aprobada, el reembolso de todas sus salidas por decidir y todavía sin consolidado (reemplazarlo
-   * es de Consolidados). No mira permisos: para eso está `puedeConsolidar`.
+   * aprobada, el reembolso por decidir, sin consolidado y con la planilla grupal ya preparada —el
+   * S10 se sube sobre ella—. Reemplazarlo es de Consolidados. No mira permisos: para eso está
+   * `puedeConsolidar`.
    */
   puedeAdjuntarConsolidado: boolean;
   /**
-   * Planillas que cubriría el consolidado adjuntado desde esta fila: ella primero y, si ya tiene uno
-   * compartido, las demás de ese consolidado que siguen abiertas (el documento se reemplaza entero),
-   * aunque la tabla no las muestre. Cada una con su monto completo.
+   * Planillas que cubriría el consolidado adjuntado desde esta fila: ella primero y, si ya tiene
+   * planilla grupal, las demás de esa planilla (el S10 se sube para toda la planilla grupal a la
+   * vez), aunque la tabla no las muestre. Cada una con su monto completo.
    */
   consolidadoConjunto: ConsolidadoConjuntoItemDto[];
+}
+
+/**
+ * La planilla grupal que preparó el consolidador: el papel sin firmar con el que registra las
+ * planillas en el S10, y sobre el que después sube el consolidado. Las rendiciones que la comparten
+ * reciben la misma.
+ */
+export interface PlanillaGrupalDto {
+  id: number;
+  /** `CONS-ÁREA-AAAA-NNN`: va impreso en la planilla y lo hereda el consolidado. */
+  codigo: string;
+  pdfUrl: string;
+  pdfFilename: string;
+  preparadaAt: string;
+  /** Rendiciones que cubre, ordenadas por código. */
+  rendiciones: ConsolidadoS10RendicionDto[];
 }
 
 /** Una planilla que cubriría un Consolidado del S10, con su monto completo. */

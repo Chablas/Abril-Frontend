@@ -183,12 +183,15 @@ export class ReembolsoDetalleModal implements OnInit {
     return !this.observado && !!d && d.porConfirmarCount === 0 && d.porPagarCount > 0;
   }
 
-  /** Se puede observar desde los dos pasos previos al pago (RG-49). */
+  /**
+   * Solo se observa lo que todavía está por revisar (RG-49): con la revisión confirmada el
+   * consolidado ya no vuelve y sigue al pago.
+   */
   get puedeObservar(): boolean {
-    return this.porRevisar || this.porPagar;
+    return this.porRevisar;
   }
 
-  /** Habilita el pago y le avisa a Tesorería que ya se puede programar. */
+  /** Habilita el pago y le avisa a Tesorería que ya se puede programar. Desde ahí no se observa. */
   async confirmarRevision(): Promise<void> {
     const d = this.detalle;
     if (!d || !this.porRevisar) return;
@@ -196,7 +199,7 @@ export class ReembolsoDetalleModal implements OnInit {
     const seleccion = { consolidadoIds: [d.id] };
     const result = await confirmarConCorreos({
       titulo: '¿Confirmar la revisión de este consolidado?',
-      nota: 'Queda habilitado para el pago.',
+      nota: 'Queda habilitado para el pago y ya no se podrá observar.',
       avisos: await pedirAvisos(this.service.correoPreviewConfirmacion(seleccion)),
       confirmButtonText: 'Sí, confirmar revisión',
       confirmButtonColor: '#C2410C',

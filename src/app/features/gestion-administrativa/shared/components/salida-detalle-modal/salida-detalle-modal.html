@@ -104,8 +104,7 @@
            pantalla para comparar dos recorridos o dos montos. -->
       <app-salida-trayectos-tabla
         *ngIf="!edicion"
-        [trayectos]="detalle.trayectos"
-        [catalogoNota]="consulta ? '' : '— no requieres subir captura.'" />
+        [trayectos]="detalle.trayectos" />
 
       <!-- EDICIÓN — acá NO va la tabla: cada trayecto pasa a ser un formulario (una imagen y un
            monto por captura, filas nuevas y el tope en vivo) y eso necesita el alto de una

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule, DatePipe, formatDate } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -11,6 +11,7 @@ import {
   AreaNodeDto,
   GestionRendicionListItemDto,
   PeriodoOptionDto,
+  PlanillaGrupalDto,
   PrimeraRevisionAccionDto,
   ResumenGestionRendicionesDto,
 } from '../dtos/gestion-rendicion.dto';
@@ -48,13 +49,22 @@ interface ConsolidadoObjetivo {
   monto: number;
   /** Número de planilla impreso cuando es una sola ("TI: 000123"). */
   referencia: string | null;
+  /** Código de la planilla grupal sobre la que se sube: es lo que se registró en el S10. */
+  codigoGrupal: string | null;
 }
 
+/** "A", "A y B", "A, B y C". */
+const enumerar = (partes: string[]): string =>
+  partes.length <= 1
+    ? (partes[0] ?? '')
+    : partes.slice(0, -1).join(', ') + ' y ' + partes[partes.length - 1];
+
 /**
- * "Gestión de Rendiciones": las planillas del alcance, su PRIMERA revisión (la jefatura) y el
- * Consolidado del S10 que se les adjunta (solo el consolidador del área). Gestión de Salidas llega
- * hasta rendir; decidir y firmar el reembolso es de Consolidados —lo que se decide ahí es el
- * documento del S10, que puede cubrir varias planillas— y el pago, de Tesorería (Reembolsos).
+ * "Gestión de Rendiciones": las planillas del alcance, su PRIMERA revisión (la jefatura), y la
+ * planilla grupal y el Consolidado del S10 que se les adjunta después (solo el consolidador del
+ * área, en ese orden: el S10 se sube sobre la planilla grupal). Gestión de Salidas llega hasta
+ * rendir; decidir y firmar el reembolso es de Consolidados —lo que se decide ahí es el documento del
+ * S10, que puede cubrir varias planillas— y el pago, de Tesorería (Reembolsos).
  *
  * La visibilidad es exactamente la de Gestión de Salidas: son las mismas salidas, agrupadas por
  * planilla, porque la revisión y el consolidado son del documento y no de cada salida.
@@ -136,6 +146,8 @@ export class GestionRendiciones implements OnInit {
   selectedIds = new Set<number>();
 
   detalleId: number | null = null;
+  /** El detalle abierto, para que muestre la planilla grupal apenas se prepara desde su pie. */
+  @ViewChild(GestionRendicionDetalleModal) private detalleModal?: GestionRendicionDetalleModal;
   /** Lo que va a cubrir el consolidado cuyo modal está abierto. null = cerrado. */
   consolidadoPara: ConsolidadoObjetivo | null = null;
 
@@ -442,7 +454,7 @@ export class GestionRendiciones implements OnInit {
       titulo: items.length === 1
         ? '¿Aprobar la rendición ' + items[0].codigo + '?'
         : '¿Aprobar ' + items.length + ' rendiciones?',
-      nota: 'Habilita al consolidador a cargar el Consolidado del S10.',
+      nota: 'Habilita al consolidador a preparar la planilla grupal.',
       avisos: await this.avisos(items, true),
       confirmButtonText: 'Sí, aprobar',
     });
@@ -531,40 +543,218 @@ export class GestionRendiciones implements OnInit {
     else        this.cdr.detectChanges();
   }
 
-  // ── Consolidado del S10 ──────────────────────────────────────────────
-  // Un consolidado es UN registro en el S10 y puede cubrir varias rendiciones, incluso de
-  // trabajadores y razones sociales distintos: queda bajo la razón social del consolidador. Solo lo
-  // adjunta el consolidador de esos trabajadores. Se adjunta para toda la selección desde la barra
-  // de arriba —o desde el detalle de una planilla, que es la misma acción sobre una sola—, nunca
-  // desde la fila: ofrecerlo fila por fila invitaba a cargar un consolidado por planilla cuando lo
-  // que corresponde es uno solo. Acá solo se adjunta el PRIMERO: reemplazarlo es de Consolidados.
-  // El backend re-valida todo; acá solo se evita ofrecer lo que va a rechazar.
+  // ── Planilla grupal y Consolidado del S10 ────────────────────────────
+  // Son dos pasos del consolidador, en este orden: primero prepara la PLANILLA GRUPAL —el papel
+  // sin firmar con el que registra las rendiciones en el S10— y después sube el Consolidado del S10
+  // que le devuelve el S10, sobre esa misma planilla. La jefatura la firma en Consolidados.
+  //
+  // Los dos cubren varias rendiciones, incluso de trabajadores y razones sociales distintos, y se
+  // piden para toda la selección desde la barra de arriba —o desde el detalle de una planilla, que
+  // es la misma acción sobre una sola—, nunca desde la fila: ofrecerlo fila por fila invitaba a
+  // armar un documento por planilla cuando lo que corresponde es uno solo. Acá solo se adjunta el
+  // PRIMER consolidado: reemplazarlo es de Consolidados. El backend re-valida todo; acá solo se
+  // evita ofrecer lo que va a rechazar.
 
   /**
-   * True si el usuario es consolidador de alguna planilla de la tabla. Sin eso los botones del
-   * Consolidado del S10 no se muestran: la jefatura revisa, no consolida.
+   * True si el usuario es consolidador de alguna planilla de la tabla. Sin eso los botones de la
+   * planilla grupal y del Consolidado del S10 no se muestran: la jefatura revisa, no consolida.
    */
   get esConsolidador(): boolean {
     return this.rendiciones.some((r) => r.puedeConsolidar);
   }
 
-  /** Seleccionadas a las que se les puede adjuntar el Consolidado del S10. */
+  /** Las planillas grupales (sin repetir) de estas filas. */
+  private planillasGrupalesDe(items: GestionRendicionListItemDto[]): PlanillaGrupalDto[] {
+    const porId = new Map<number, PlanillaGrupalDto>();
+    for (const r of items) if (r.planillaGrupal) porId.set(r.planillaGrupal.id, r.planillaGrupal);
+    return [...porId.values()];
+  }
+
+  /**
+   * "REN-1 ya tiene…" / "REN-1 y REN-2 ya tienen…": el motivo por el que un botón no sirve para la
+   * selección, nombrando a las rendiciones que lo tienen.
+   */
+  private static motivo(
+    filas: GestionRendicionListItemDto[], singular: string, plural: string,
+  ): string {
+    return enumerar(filas.map((r) => r.codigo)) + ' ' + (filas.length === 1 ? singular : plural);
+  }
+
+  /**
+   * Por qué el usuario no puede hacerle el trámite del S10 a la selección, o null si puede: tiene
+   * que ser consolidador de los trabajadores de todas.
+   */
+  private static sinPermisoDe(items: GestionRendicionListItemDto[]): string | null {
+    const sinPermiso = items.filter((r) => !r.puedeConsolidar);
+    return sinPermiso.length
+      ? 'No eres consolidador de los trabajadores de ' + sinPermiso.map((r) => r.codigo).join(', ')
+      : null;
+  }
+
+  // ── Planilla grupal ──
+
+  /** Seleccionadas a las que se les puede preparar la planilla grupal. */
+  get selectedPreparables(): GestionRendicionListItemDto[] {
+    return this.seleccionadas.filter((r) => r.puedePrepararPlanilla);
+  }
+
+  /**
+   * Por qué no se puede preparar una planilla grupal con la selección, o null si se puede.
+   *
+   * Tienen que servir TODAS las seleccionadas —no se prepara solo con las que sirven—: una planilla
+   * grupal no se rehace ni se reemplaza, así que una que saliera sin alguna de las rendiciones
+   * marcadas se quedaría así. Por lo mismo, una rendición que ya tiene planilla grupal (o su
+   * consolidado) no activa el botón.
+   */
+  get planillaSeleccionBloqueo(): string | null {
+    const items = this.seleccionadas;
+    if (items.length === 0) {
+      return 'Selecciona rendiciones con la primera revisión aprobada y sin planilla grupal';
+    }
+
+    const conS10 = items.filter((r) => r.consolidadoS10);
+    if (conS10.length) {
+      return GestionRendiciones.motivo(
+        conS10, 'ya tiene su Consolidado del S10', 'ya tienen su Consolidado del S10');
+    }
+    const conPlanilla = items.filter((r) => r.planillaGrupal);
+    if (conPlanilla.length) {
+      return GestionRendiciones.motivo(
+        conPlanilla, 'ya tiene su planilla grupal', 'ya tienen su planilla grupal');
+    }
+    const sinAprobar = items.filter((r) => r.estadoPrimeraRevision !== 'Aprobada');
+    if (sinAprobar.length) {
+      return GestionRendiciones.motivo(
+        sinAprobar,
+        'todavía no tiene la primera revisión aprobada',
+        'todavía no tienen la primera revisión aprobada');
+    }
+    // Lo que queda (aprobada, sin planilla ni S10, pero con el reembolso ya decidido) solo pasa en
+    // registros viejos con un consolidado por salida.
+    const otras = items.filter((r) => !r.puedePrepararPlanilla);
+    if (otras.length) {
+      return GestionRendiciones.motivo(otras, 'no admite planilla grupal', 'no admiten planilla grupal');
+    }
+    return GestionRendiciones.sinPermisoDe(items);
+  }
+
+  prepararPlanillaSeleccion(): void {
+    if (this.planillaSeleccionBloqueo !== null) return;
+    void this.prepararPlanilla(this.selectedPreparables);
+  }
+
+  /** El botón del pie del detalle: la planilla grupal de esa sola rendición. */
+  prepararPlanillaDesdeDetalle(d: GestionRendicionListItemDto): void {
+    if (!d.puedePrepararPlanilla || !d.puedeConsolidar) return;
+    void this.prepararPlanilla([d]);
+  }
+
+  /**
+   * Prepara UNA planilla grupal para estas rendiciones y les avisa a sus trabajadores que quedaron
+   * incluidas. La confirmación nombra a quién le llega el correo —lo resuelve el backend con el
+   * mismo cálculo que el envío— y advierte que no se puede rehacer.
+   */
+  private async prepararPlanilla(items: GestionRendicionListItemDto[]): Promise<void> {
+    if (items.length === 0) return;
+
+    const rendicionIds = items.map((r) => r.id);
+
+    const result = await confirmarConCorreos({
+      titulo: items.length === 1
+        ? '¿Preparar la planilla grupal de ' + items[0].codigo + '?'
+        : '¿Preparar una planilla grupal con ' + items.length + ' rendiciones?',
+      // Es lo único que no dice ni el título ni la pantalla: la planilla grupal no se rehace.
+      nota: 'Una vez preparada, no se puede rehacer.',
+      avisos: await pedirAvisos(this.service.correoPreview({
+        rendicionIds,
+        aprobar: true,
+        accion: 'PLANILLA_GRUPAL',
+      })),
+      // Sin nadie a quien avisar igual se prepara: el aviso es informativo.
+      sinNadie: 'La planilla grupal se prepara igual, pero sin aviso por correo: está apagado en Configuración → Correos.',
+      confirmButtonText: 'Preparar y avisar',
+    });
+    if (!result.isConfirmed) return;
+
+    this.loaderService.show();
+    this.service.prepararPlanillaGrupal(rendicionIds).subscribe({
+      next: (planilla) => void this.trasPrepararPlanilla(planilla),
+      error: (err: HttpErrorResponse) => this.errorAccion(err),
+    });
+  }
+
+  /**
+   * La planilla recién preparada se ofrece para abrir en el acto: es el papel que el consolidador
+   * tiene que registrar en el S10. La tabla —y el detalle, si se preparó desde ahí— se recargan al
+   * cerrar el aviso, para que el loader no tape sus botones.
+   */
+  private async trasPrepararPlanilla(planilla: PlanillaGrupalDto): Promise<void> {
+    this.loaderService.hide();
+
+    const cuantas = planilla.rendiciones.length;
+    const result = await Swal.fire({
+      icon: 'success',
+      title: 'Planilla grupal preparada',
+      text: cuantas > 1
+        ? `${planilla.codigo} agrupa ${cuantas} rendiciones.`
+        : `${planilla.codigo} quedó lista.`,
+      showCancelButton: true,
+      confirmButtonText: 'Abrir la planilla',
+      cancelButtonText: 'Cerrar',
+    });
+    if (result.isConfirmed) window.open(planilla.pdfUrl, '_blank', 'noopener');
+
+    this.load();
+    this.detalleModal?.cargar();
+  }
+
+  // ── Consolidado del S10 ──
+
+  /** Seleccionadas a las que se les puede adjuntar el Consolidado del S10: con planilla grupal. */
   get selectedConsolidables(): GestionRendicionListItemDto[] {
     return this.seleccionadas.filter((r) => r.puedeAdjuntarConsolidado);
   }
 
-  /** Por qué no se puede adjuntar un consolidado a la selección, o null si se puede. */
+  /**
+   * Por qué no se puede adjuntar un consolidado a la selección, o null si se puede. Solo se pueden
+   * seleccionar rendiciones con planilla grupal —de una sola— y sin S10: el consolidado se sube
+   * sobre esa planilla, para todas sus rendiciones a la vez.
+   */
   get consolidadoSeleccionBloqueo(): string | null {
-    const items = this.selectedConsolidables;
+    const items = this.seleccionadas;
     if (items.length === 0) {
-      return 'Selecciona rendiciones con la primera revisión aprobada y sin Consolidado del S10';
+      return 'Selecciona las rendiciones de una planilla grupal';
     }
-    const sinPermiso = items.filter((r) => !r.puedeConsolidar);
-    if (sinPermiso.length > 0) {
-      return 'No eres consolidador de los trabajadores de '
-        + sinPermiso.map((r) => r.codigo).join(', ');
+
+    const conS10 = items.filter((r) => r.consolidadoS10);
+    if (conS10.length) {
+      return GestionRendiciones.motivo(
+        conS10, 'ya tiene su Consolidado del S10', 'ya tienen su Consolidado del S10');
     }
-    return null;
+    const sinPlanilla = items.filter((r) => !r.planillaGrupal);
+    if (sinPlanilla.length) {
+      return GestionRendiciones.motivo(
+        sinPlanilla,
+        'todavía no tiene planilla grupal: prepárala primero',
+        'todavía no tienen planilla grupal: prepárala primero');
+    }
+    if (this.planillasGrupalesDe(items).length > 1) {
+      return 'Son de planillas grupales distintas: sube un consolidado por planilla grupal';
+    }
+    const otras = items.filter((r) => !r.puedeAdjuntarConsolidado);
+    if (otras.length) {
+      return GestionRendiciones.motivo(
+        otras, 'no admite el Consolidado del S10', 'no admiten el Consolidado del S10');
+    }
+    return GestionRendiciones.sinPermisoDe(items);
+  }
+
+  /**
+   * Cuántas rendiciones cubriría el consolidado de la selección: toda su planilla grupal, aunque no
+   * estén todas seleccionadas (o visibles).
+   */
+  get consolidadoSeleccionCuenta(): number {
+    return this.objetivoConsolidado(this.selectedConsolidables).rendicionIds.length;
   }
 
   abrirConsolidadoSeleccion(): void {
@@ -572,16 +762,16 @@ export class GestionRendiciones implements OnInit {
     this.consolidadoPara = this.objetivoConsolidado(this.selectedConsolidables);
   }
 
-  /** El botón del pie del detalle: el consolidado de esa sola planilla y las que comparta con ella. */
+  /** El botón del pie del detalle: el consolidado de su planilla grupal entera. */
   abrirConsolidadoDesdeDetalle(d: GestionRendicionListItemDto): void {
     if (!d.puedeAdjuntarConsolidado || !d.puedeConsolidar) return;
     this.consolidadoPara = this.objetivoConsolidado([d]);
   }
 
   /**
-   * Lo que cubriría un consolidado adjuntado a estas filas: la unión de sus conjuntos (sin
-   * consolidado previo, cada conjunto es la propia planilla) y la suma de sus montos completos, que
-   * es lo que el consolidado tiene que declarar.
+   * Lo que cubriría un consolidado adjuntado a estas filas: la unión de sus conjuntos —su planilla
+   * grupal entera— y la suma de sus montos completos, que es lo que el consolidado tiene que
+   * declarar.
    */
   private objetivoConsolidado(items: GestionRendicionListItemDto[]): ConsolidadoObjetivo {
     const cubiertas = new Map<number, { codigo: string; monto: number }>();
@@ -601,6 +791,7 @@ export class GestionRendiciones implements OnInit {
         ? (unaSola.numeroPlanilla
             ?? `Rendición del ${new Date(unaSola.rendidoAt).toLocaleDateString('es-PE')}`)
         : null,
+      codigoGrupal: items[0]?.planillaGrupal?.codigo ?? null,
     };
   }
 
@@ -663,6 +854,38 @@ export class GestionRendiciones implements OnInit {
     if (otras.length) partes.push(`también cubre ${otras.join(', ')}`);
 
     return partes.join(' · ');
+  }
+
+  /** Con qué otras rendiciones comparte la planilla grupal preparada (vacío si es solo suya). */
+  otrasDeLaPlanillaGrupal(r: GestionRendicionListItemDto): string[] {
+    return (r.planillaGrupal?.rendiciones ?? []).filter((x) => x.id !== r.id).map((x) => x.codigo);
+  }
+
+  /**
+   * Título del chip de la planilla grupal que todavía espera su S10: su código —el que va a heredar
+   * el consolidado—, el archivo, cuándo se preparó y con qué otras rendiciones va.
+   */
+  planillaGrupalChipTitle(r: GestionRendicionListItemDto): string {
+    const g = r.planillaGrupal;
+    if (!g) return '';
+    const partes = [
+      g.codigo,
+      g.pdfFilename,
+      `preparada el ${formatDate(g.preparadaAt, 'dd/MM/yyyy HH:mm', 'es-PE')}`,
+    ];
+    const otras = this.otrasDeLaPlanillaGrupal(r);
+    if (otras.length) partes.push(`también cubre ${otras.join(', ')}`);
+    return partes.join(' · ');
+  }
+
+  /** Título del chip «S10 pendiente»: cuál de los dos pasos del consolidador falta. */
+  s10PendienteTitle(r: GestionRendicionListItemDto): string {
+    if (r.estadoPrimeraRevision !== 'Aprobada') {
+      return 'El Consolidado del S10 se habilita al aprobar la primera revisión';
+    }
+    return r.planillaGrupal
+      ? 'Todavía no se sube el Consolidado del S10'
+      : 'Todavía no se prepara la planilla grupal';
   }
 
   /** Título del chip de la planilla: qué copia abre, y desde cuándo está firmada si ya lo está. */

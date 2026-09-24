@@ -167,6 +167,7 @@ export class GaCorreosConfig implements OnChanges {
     REN_PRIMERA_APROBADA: '1.ª revisión OK',
     REN_PRIMERA_APROBADA_CONSOLIDADOR: 'Aviso al consolidador',
     REN_PRIMERA_OBSERVADA: '1.ª revisión observada',
+    REN_INCLUIDA_PLANILLA_GRUPAL: 'Rendición en planilla grupal',
     REN_INCLUIDA_CONSOLIDADO: 'Rendición consolidada',
     S10_REVISOR: 'Aviso a la jefatura',
     REEMBOLSO_APROBADO: 'Consolidado OK',

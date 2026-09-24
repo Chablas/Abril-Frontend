@@ -50,15 +50,10 @@
             </div>
           </div>
 
-          <div *ngIf="t.capturas.length === 0 && t.montoCatalogo === null" class="text-xs text-gray-400 italic">
+          <!-- También el trayecto TI que se rinde con el monto del catálogo: no tiene capturas, y de
+               dónde sale su monto ya lo dice la columna Monto. -->
+          <div *ngIf="t.capturas.length === 0" class="text-xs text-gray-400 italic">
             Sin capturas
-          </div>
-
-          <div *ngIf="t.capturas.length === 0 && t.montoCatalogo !== null"
-               class="text-xs bg-[#DBEAFE] border border-[#BFDBFE] rounded px-2 py-1 inline-block w-fit"
-               style="color:var(--color-abril-accent)">
-            Monto del catálogo: <b>S/ {{ t.montoCatalogo | number:'1.2-2' }}</b>
-            <span *ngIf="catalogoNota" class="text-gray-500 ml-1">{{ catalogoNota }}</span>
           </div>
         </td>
 

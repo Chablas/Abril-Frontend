@@ -26,9 +26,10 @@ import { ReembolsoPipeline } from '../../../../shared/components/reembolso-pipel
  *
  * La decisión de la primera revisión es de la planilla entera, así que sus botones van al pie del
  * modal y la tabla de salidas es solo lectura: lo que se revisa es un documento, y aprobar media
- * planilla dejaría al trabajador con una rendición partida. Al pie va también el Consolidado del S10
- * para el consolidador; el modal solo emite y la pantalla lo abre con el mismo camino que el botón
- * de la fila. El reembolso ya no se decide acá: se decide en Consolidados.
+ * planilla dejaría al trabajador con una rendición partida. Al pie van también los dos pasos del
+ * consolidador —preparar la planilla grupal y, sobre ella, subir el Consolidado del S10—; el modal
+ * solo emite y la pantalla los ejecuta con el mismo camino que los botones de la barra. El reembolso
+ * ya no se decide acá: se decide en Consolidados.
  */
 @Component({
   standalone: true,
@@ -46,8 +47,14 @@ export class GestionRendicionDetalleModal implements OnInit {
   @Output() close = new EventEmitter<boolean>();
 
   /**
-   * "Consolidado S10" desde el pie del detalle. Solo avisa: la pantalla abre el mismo modal que el
-   * botón de la fila, con la planilla y su conjunto.
+   * "Preparar planilla grupal" desde el pie del detalle: la de esta sola planilla. Solo avisa: la
+   * pantalla la prepara con el mismo camino que el botón de la barra y después recarga este detalle.
+   */
+  @Output() prepararPlanilla = new EventEmitter<GestionRendicionDetalleDto>();
+
+  /**
+   * "Subir consolidado del S10" desde el pie del detalle. Solo avisa: la pantalla abre el mismo
+   * modal que el botón de la barra, con la planilla grupal entera.
    */
   @Output() consolidar = new EventEmitter<GestionRendicionDetalleDto>();
 
@@ -128,7 +135,7 @@ export class GestionRendicionDetalleModal implements OnInit {
 
     const result = await confirmarConCorreos({
       titulo: '¿Aprobar la rendición ' + d.codigo + '?',
-      nota: 'Habilita al consolidador a cargar el Consolidado del S10.',
+      nota: 'Habilita al consolidador a preparar la planilla grupal.',
       avisos: await this.avisos(true),
       confirmButtonText: 'Sí, aprobar',
     });
@@ -172,7 +179,22 @@ export class GestionRendicionDetalleModal implements OnInit {
     this.close.emit(true);
   }
 
-  // ── Consolidado del S10 (consolidador) ───────────────────────────────
+  // ── Planilla grupal y Consolidado del S10 (consolidador) ─────────────
+
+  /**
+   * Solo mientras no tenga planilla grupal: una vez preparada no se rehace ni se reemplaza. El
+   * backend ya lo trae resuelto en `puedePrepararPlanilla`; la planilla se vuelve a mirar acá para
+   * que el botón no aparezca ni un instante sobre una que ya la tiene.
+   */
+  get puedePrepararPlanilla(): boolean {
+    const d = this.detalle;
+    return !!d && d.puedePrepararPlanilla && d.puedeConsolidar && !d.planillaGrupal;
+  }
+
+  prepararPlanillaDesdeDetalle(): void {
+    if (!this.puedePrepararPlanilla) return;
+    this.prepararPlanilla.emit(this.detalle!);
+  }
 
   consolidarDesdeDetalle(): void {
     const d = this.detalle;
@@ -200,8 +222,13 @@ export class GestionRendicionDetalleModal implements OnInit {
     return estado;
   }
 
-  /** Con qué otras rendiciones comparte el Consolidado del S10 (vacío si es solo suyo). */
-  otrasDelConsolidado(d: GestionRendicionDetalleDto): string[] {
-    return otrasRendicionesDelConsolidado(d.consolidadoS10, d.id);
+  /**
+   * Con qué otras rendiciones comparte el Consolidado del S10 o, mientras no lo tenga, la planilla
+   * grupal (vacío si es solo suyo).
+   */
+  otrasDelGrupo(d: GestionRendicionDetalleDto): string[] {
+    return d.consolidadoS10
+      ? otrasRendicionesDelConsolidado(d.consolidadoS10, d.id)
+      : (d.planillaGrupal?.rendiciones ?? []).filter((x) => x.id !== d.id).map((x) => x.codigo);
   }
 }

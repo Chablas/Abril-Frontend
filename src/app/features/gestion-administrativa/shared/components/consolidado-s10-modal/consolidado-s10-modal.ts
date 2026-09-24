@@ -54,7 +54,11 @@ export class ConsolidadoS10Modal implements OnDestroy {
    */
   @Input({ required: true }) montoEsperado!: number;
 
-  /** Consolidado vigente, si ya había uno. Se muestra para abrirlo o reemplazarlo. */
+  /**
+   * Consolidado vigente, si ya había uno (el reemplazo, desde Consolidados). Se muestra solo como
+   * enlace, debajo del campo del archivo nuevo: verlo embebido alargaba el modal con un papel que
+   * se abre de un clic.
+   */
   @Input() actual: ConsolidadoS10Dto | null = null;
 
   /** Referencia de la planilla ("TI: 000123") cuando es una sola, para ver a cuál se adjunta. */
@@ -68,6 +72,13 @@ export class ConsolidadoS10Modal implements OnDestroy {
 
   /** Razón social del consolidador: bajo qué empresa queda el registro del S10. */
   @Input() razonSocial: string | null = null;
+
+  /**
+   * Código de la planilla grupal sobre la que se sube el consolidado (el primero, desde Gestión de
+   * Rendiciones): es el papel que se registró en el S10. Sin valor al reemplazar, donde ya lo dice
+   * el consolidado vigente.
+   */
+  @Input() codigoGrupal: string | null = null;
 
   /**
    * Preview de a quién le van a llegar los avisos de adjuntar, que la pantalla anfitriona sabe pedir
@@ -177,12 +188,12 @@ export class ConsolidadoS10Modal implements OnDestroy {
     // acciones del flujo.
     if (this.avisosJefatura) {
       const result = await confirmarConCorreos({
-        titulo: this.actual ? '¿Reemplazar el Consolidado del S10?' : '¿Adjuntar el Consolidado del S10?',
+        titulo: this.actual ? '¿Reemplazar el Consolidado del S10?' : '¿Enviar el Consolidado del S10?',
         avisos: await pedirAvisos(this.avisosJefatura()),
         // Sin nadie a quien avisar igual procede: el consolidado queda adjunto y la jefatura lo ve
         // en su bandeja de Consolidados. Es un aviso de estado, no un bloqueo.
         sinNadie: 'El consolidado queda adjunto, pero sin aviso por correo: está apagado en Configuración → Correos.',
-        confirmButtonText: this.actual ? 'Reemplazar y avisar' : 'Adjuntar y avisar',
+        confirmButtonText: this.actual ? 'Reemplazar y avisar' : 'Enviar y avisar',
       });
       if (!result.isConfirmed) return;
     }
@@ -196,7 +207,7 @@ export class ConsolidadoS10Modal implements OnDestroy {
         // que nadie pidió.
         Swal.fire({
           icon: res.jefaturaAvisada ? 'success' : 'warning',
-          title: this.actual ? 'Consolidado del S10 reemplazado' : 'Consolidado del S10 adjuntado',
+          title: this.actual ? 'Consolidado del S10 reemplazado' : 'Consolidado del S10 enviado',
           text: [this.resumenGrupal(res.consolidado), res.avisoJefatura]
             .filter(Boolean)
             .join(' '),

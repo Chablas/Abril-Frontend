@@ -1,11 +1,18 @@
 <app-base-modal
-  [title]="'Consolidado del S10'"
+  [title]="'Subir consolidado del S10'"
   width="w-[560px]"
   closeColor="var(--color-abril-standard)"
   [preventCloseWhenDirty]="true"
   (closeModal)="cerrar()">
 
   <div class="flex flex-col gap-4 pt-4">
+
+    <!-- ── La planilla grupal sobre la que se sube ──────────────────────────
+         Es el papel que el consolidador registró en el S10, así que va primero: el consolidado
+         cubre exactamente lo mismo. -->
+    <div *ngIf="codigoGrupal" class="text-xs text-gray-500">
+      Planilla grupal <span class="font-semibold text-gray-700">{{ codigoGrupal }}</span>
+    </div>
 
     <!-- ── Qué planillas cubre ───────────────────────────────────────────
          El archivo cubre planillas enteras, así que decir cuáles es lo único que hace falta:
@@ -26,14 +33,6 @@
         <span class="font-semibold text-gray-700">{{ razonSocial }}</span></ng-container>
     </div>
 
-    <!-- ── Consolidado ya adjunto, a la vista: aviso de estado, no instrucción ── -->
-    <app-documento-embebido
-      *ngIf="actual as a"
-      etiqueta="Adjunto"
-      [nota]="notaActual"
-      [nombre]="a.pdfFilename"
-      [url]="a.pdfUrl" />
-
     <!-- ── Archivo ──────────────────────────────────────────────────────── -->
     <div>
       <app-file-selector
@@ -52,6 +51,16 @@
         iconColor="var(--color-abril-standard)"
         (remove)="quitarArchivo()" />
     </div>
+
+    <!-- ── Al reemplazar, el consolidado vigente: solo el enlace, sin el archivo a la vista, y
+         debajo del campo del archivo nuevo, que es lo que se viene a hacer. ── -->
+    <app-documento-embebido
+      *ngIf="actual as a"
+      etiqueta="Consolidado actual"
+      [nota]="notaActual"
+      [nombre]="a.pdfFilename"
+      [url]="a.pdfUrl"
+      [soloEnlace]="true" />
 
     <!-- ── Monto total y número de reembolso ──────────────────────────────────
          Los dos datos con los que el S10 registró las planillas. El monto tiene que cuadrar con el
@@ -110,7 +119,7 @@
         (click)="guardar()"
         [disabled]="!puedeGuardar"
         class="consolidado-guardar">
-        {{ actual ? 'Reemplazar' : 'Adjuntar' }}
+        {{ actual ? 'Reemplazar' : 'Enviar' }}
       </button>
     </div>
 

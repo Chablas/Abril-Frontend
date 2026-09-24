@@ -116,21 +116,6 @@ interface AreaCascadeNode {
       transition: background-color .15s ease, border-color .15s ease, color .15s ease;
     }
     .doc-chip:hover { border-color: var(--color-abril-standard); color: var(--color-abril-standard); }
-
-    /* Código de una planilla cubierta. Las que todavía esperan a su jefatura van apagadas: se
-       listan porque el importe declarado en el S10 las incluye, pero no se pagan todavía. */
-    .ren-chip {
-      display: inline-block;
-      padding: 1px 5px;
-      border-radius: 4px;
-      background: var(--color-abril-standard-light);
-      color: var(--color-abril-standard);
-      font-size: 10px;
-      font-weight: 700;
-      line-height: 1.5;
-      white-space: nowrap;
-    }
-    .ren-chip--fuera { background: #F3F4F6; color: #9CA3AF; }
   `],
 })
 export class Reembolsos implements OnInit, OnDestroy {
@@ -505,13 +490,11 @@ export class Reembolsos implements OnInit, OnDestroy {
   }
 
   /**
-   * Se puede observar tanto lo que está por revisar como lo ya confirmado para pagar (RG-49: "antes
-   * de autorizar el pago"), así que la acción toma toda la selección accionable.
+   * Solo se observa lo que todavía está por revisar (RG-49): con la revisión confirmada el
+   * consolidado ya no vuelve y sigue al pago. El servidor recorta igual.
    */
   get seleccionadosParaObservar(): ReembolsoListItemDto[] {
-    return this.consolidados.filter(
-      (c) => this.selectedIds.has(c.id) && (this.porRevisar(c) || this.porPagar(c)),
-    );
+    return this.seleccionadosPorRevisar;
   }
 
   get montoSeleccionado(): number {
@@ -523,7 +506,8 @@ export class Reembolsos implements OnInit, OnDestroy {
   /**
    * Paso 1: confirmar que la documentación está completa. No mueve plata — deja los consolidados
    * habilitados para el desembolso, que es el paso siguiente, y le avisa a Tesorería (uno por
-   * consolidado) que ya se puede programar el pago.
+   * consolidado) que ya se puede programar el pago. Lo confirmado ya no se puede observar: la
+   * confirmación lo avisa.
    */
   async confirmarRevision(): Promise<void> {
     const items = this.seleccionadosPorRevisar;
@@ -536,7 +520,7 @@ export class Reembolsos implements OnInit, OnDestroy {
       titulo: items.length === 1
         ? '¿Confirmar la revisión de este consolidado?'
         : `¿Confirmar la revisión de ${items.length} consolidados?`,
-      nota: `${salidas} salida(s). Quedan habilitadas para el pago.`,
+      nota: `${salidas} salida(s). Quedan habilitadas para el pago y ya no se podrán observar.`,
       avisos: await pedirAvisos(this.service.correoPreviewConfirmacion(seleccion)),
       confirmButtonText: 'Sí, confirmar revisión',
       confirmButtonColor: '#C2410C',
@@ -547,10 +531,11 @@ export class Reembolsos implements OnInit, OnDestroy {
   }
 
   /**
-   * El camino de vuelta (RG-49). El consolidado no va directo al Coordinador ERP: vuelve al
-   * consolidador, que es quien decide si recarga el Consolidado del S10 corregido o le pide al ERP
-   * la corrección dentro del S10 con su propio «MOTIVO *» (RG-21). Por eso el texto de la
-   * confirmación nombra ese camino en vez de prometer que el ERP ya quedó avisado.
+   * El camino de vuelta (RG-49), solo antes de confirmar la revisión. El consolidado no va directo
+   * al Coordinador ERP: vuelve al consolidador, que es quien decide si recarga el Consolidado del
+   * S10 corregido o le pide al ERP la corrección dentro del S10 con su propio «MOTIVO *» (RG-21).
+   * Por eso el texto de la confirmación nombra ese camino en vez de prometer que el ERP ya quedó
+   * avisado.
    */
   async observar(): Promise<void> {
     const items = this.seleccionadosParaObservar;
@@ -663,14 +648,6 @@ export class Reembolsos implements OnInit, OnDestroy {
   firmasTitle(c: ReembolsoListItemDto): string | null {
     if (c.firmas.length === 0) return null;
     return c.firmas.map((f) => f.nombre).join(', ');
-  }
-
-  /**
-   * Por qué una planilla del consolidado se muestra apagada. Son dos motivos y no se puede
-   * distinguir desde la fila: o todavía espera a su jefatura, o un filtro la dejó fuera.
-   */
-  fueraDeBandejaTitle(codigo: string): string {
-    return `${codigo}: el consolidado la cubre, pero no entra en este recorte (espera a su jefatura o la dejaron fuera los filtros)`;
   }
 
   estadoTitle(c: ReembolsoListItemDto): string | null {

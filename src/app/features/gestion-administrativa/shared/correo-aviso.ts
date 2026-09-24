@@ -29,10 +29,11 @@ export interface CorreoPreviewRequestDto {
   aprobar: boolean;
   /**
    * De qué paso se pregunta, cuando la pantalla dispara más de una familia de correos. Sin valor
-   * es la primera revisión, que es su decisión de siempre; `CONSOLIDADO_S10` son los avisos que
-   * salen al adjuntar el consolidado (a la jefatura y a los trabajadores de sus rendiciones).
+   * es la primera revisión, que es su decisión de siempre; `PLANILLA_GRUPAL` es el aviso que sale
+   * al preparar la planilla grupal (a los trabajadores de sus rendiciones), y `CONSOLIDADO_S10` los
+   * que salen al adjuntar el consolidado (a la jefatura y a esos mismos trabajadores).
    */
-  accion?: 'CONSOLIDADO_S10';
+  accion?: 'PLANILLA_GRUPAL' | 'CONSOLIDADO_S10';
 }
 
 const escapar = (s: string) =>

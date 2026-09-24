@@ -30,12 +30,13 @@
       </div>
 
       <!-- La rendición grupal a la que entró esta planilla: es con ese código que se la sigue en
-           Consolidados, en Correcciones S10 y en Reembolsos. -->
+           Consolidados, en Correcciones S10 y en Reembolsos. Nace con la planilla grupal, así que
+           ya se muestra mientras espera el S10. -->
       <div class="flex flex-col">
         <span class="text-[11px] uppercase text-gray-400 font-semibold">Consolidado</span>
-        <span class="text-sm text-gray-700">{{ d.consolidadoS10?.codigo ?? '—' }}</span>
-        <span *ngIf="otrasDelConsolidado(d).length" class="text-[11px] text-gray-400">
-          con {{ otrasDelConsolidado(d).length }} planilla{{ otrasDelConsolidado(d).length > 1 ? 's' : '' }} más
+        <span class="text-sm text-gray-700">{{ d.consolidadoS10?.codigo ?? d.planillaGrupal?.codigo ?? '—' }}</span>
+        <span *ngIf="otrasDelGrupo(d).length" class="text-[11px] text-gray-400">
+          con {{ otrasDelGrupo(d).length }} planilla{{ otrasDelGrupo(d).length > 1 ? 's' : '' }} más
         </span>
       </div>
     </div>
@@ -101,10 +102,23 @@
       </ng-container>
     </ng-container>
 
+    <!-- La planilla grupal ya preparada, mientras espera su S10: es el papel que el consolidador
+         registra en el S10, y el consolidado se sube sobre ella. Con el S10 subido viaja dentro del
+         consolidado (arriba), así que el backend deja este campo vacío. -->
+    <div *ngIf="d.planillaGrupal as pg" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        [etiqueta]="'Planilla grupal ' + pg.codigo"
+        [nota]="'Preparada el ' + (pg.preparadaAt | date:'dd/MM/yyyy')"
+        [nombre]="pg.pdfFilename"
+        [url]="pg.pdfUrl" />
+    </div>
+
     <span *ngIf="!d.consolidadoS10" class="text-sm text-gray-400 italic">
-      {{ d.estadoPrimeraRevision === 'Aprobada'
-          ? 'Consolidado del S10 pendiente.'
-          : 'El Consolidado del S10 se habilita al aprobar la primera revisión.' }}
+      {{ d.estadoPrimeraRevision !== 'Aprobada'
+          ? 'El Consolidado del S10 se habilita al aprobar la primera revisión.'
+          : d.planillaGrupal
+            ? 'Consolidado del S10 pendiente.'
+            : 'Planilla grupal pendiente.' }}
     </span>
 
     <!-- Las copias que deja la aprobación: aprobar ES firmar, y firma la planilla, el
@@ -205,10 +219,11 @@
 
     <!-- ── Acciones ────────────────────────────────────────────────────────
          Los dos botones de la primera revisión —la decisión es de la planilla entera, así que van
-         al pie del modal y no en la tabla de más arriba— y, para el consolidador, el primer
-         Consolidado del S10 (reemplazarlo es de Consolidados). Pegadas al borde de abajo: con los
-         documentos a la vista el modal es largo. -->
-    <div *ngIf="(d.porPrimeraRevision && d.puedeDecidir) || (d.puedeAdjuntarConsolidado && d.puedeConsolidar)"
+         al pie del modal y no en la tabla de más arriba— y, para el consolidador, sus dos pasos:
+         preparar la planilla grupal y, sobre ella, subir el primer Consolidado del S10
+         (reemplazarlo es de Consolidados). Cada uno aparece solo cuando toca, así que casi siempre
+         se ve uno solo. Pegadas al borde de abajo: con los documentos a la vista el modal es largo. -->
+    <div *ngIf="(d.porPrimeraRevision && d.puedeDecidir) || puedePrepararPlanilla || (d.puedeAdjuntarConsolidado && d.puedeConsolidar)"
          class="sticky bottom-0 z-10 -mx-[20px] -mb-[20px] px-[20px] py-3 rounded-b-lg bg-white border-t flex flex-wrap items-center justify-center gap-3"
          style="border-color:var(--color-abril-border)">
       <!-- Solo para quien la tiene que revisar: al resto el modal le queda de lectura. -->
@@ -216,7 +231,7 @@
         <button
           type="button"
           (click)="aprobarPrimeraRevision()"
-          title="Habilita al consolidador a cargar el Consolidado del S10"
+          title="Habilita al consolidador a preparar la planilla grupal"
           class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
           style="background:var(--color-abril-standard)">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -240,16 +255,31 @@
       </ng-container>
 
       <button
+        *ngIf="puedePrepararPlanilla"
+        type="button"
+        (click)="prepararPlanillaDesdeDetalle()"
+        class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
+        style="background:var(--color-abril-standard)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
+          <path d="M14 2v6h6" stroke-linejoin="round"/>
+          <path d="M12 18v-6M9 15h6" stroke-linecap="round"/>
+        </svg>
+        Preparar planilla grupal
+      </button>
+
+      <button
         *ngIf="d.puedeAdjuntarConsolidado && d.puedeConsolidar"
         type="button"
         (click)="consolidarDesdeDetalle()"
         class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
         style="background:var(--color-abril-standard)">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z" stroke-linejoin="round"/>
-          <path d="M14 2v6h6" stroke-linejoin="round"/>
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M17 8l-5-5-5 5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M12 3v12" stroke-linecap="round"/>
         </svg>
-        Adjuntar Consolidado del S10
+        Subir consolidado del S10
       </button>
     </div>
 
