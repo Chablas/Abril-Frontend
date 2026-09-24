@@ -229,6 +229,19 @@ export class GthReclutamiento implements OnInit {
     this.router.navigate(['/gestion-gth/reclutamiento/configuracion']);
   }
 
+  /**
+   * feature_key que habilita GESTIONAR el proceso: prioridad, asignación, publicación, long list,
+   * formularios, entrevistas y carta oferta. Entrar a la pantalla pide solo la de ver
+   * (`gestion-gth.reclutamiento`); sin esta, la bandeja y el detalle quedan en solo lectura. Las
+   * features se suman entre los roles del usuario: con cualquier rol que la traiga, gestiona.
+   */
+  private static readonly FEATURE_GESTIONAR = 'gestion-gth.reclutamiento.gestionar';
+
+  /** ¿El usuario solo consulta? Ve todo, pero sin ninguna acción que cambie el proceso. */
+  get soloLectura(): boolean {
+    return !this.authService.hasFeature(GthReclutamiento.FEATURE_GESTIONAR);
+  }
+
   ngOnInit(): void {
     // `/gestion-gth/reclutamiento/requerimiento/:id` es la URL del botón del correo de decisión
     // de long list: abre ese requerimiento directamente. Sin id, la pantalla es solo la bandeja.
@@ -270,7 +283,7 @@ export class GthReclutamiento implements OnInit {
    * nunca llega null desde el combo, pero se protege igual.)
    */
   onPrioridadChange(s: RequerimientoGthListItem, prioridadId: number | null): void {
-    if (prioridadId == null || prioridadId === s.prioridadId) return;
+    if (this.soloLectura || prioridadId == null || prioridadId === s.prioridadId) return;
 
     const prevId = s.prioridadId;
     const prevNombre = s.prioridadNombre;
