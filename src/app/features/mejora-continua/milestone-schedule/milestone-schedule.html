@@ -200,6 +200,21 @@
                 <p class="text-white text-sm">Guardar</p>
             </button>
         </div>
+
+        <!-- "Agregar hito" — solo en vista de un cronograma YA GUARDADO (openViewMilestoneSchedule), no en modo edición/creación de versión -->
+        <div *ngIf="!showEditButton && puedeEditarHitoGuardado" class="flex gap-[8px] shrink-0">
+            <button (click)="openAddHitoGuardadoModal()" [disabled]="loader"
+                class="py-[5px] px-[14px] rounded-lg border cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity" style="background:#EFF6FF;border-color:#BFDBFE;color:#2E6DB4">
+                <div class="flex items-center gap-[6px]">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:currentColor">
+                        <path
+                            d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+                            fill="currentColor" />
+                    </svg>
+                    <p class="text-sm">Agregar hito</p>
+                </div>
+            </button>
+        </div>
     </div>
 
     <!-- Subheader stats — solo en vista plantilla -->
@@ -419,7 +434,7 @@
                 <span class="hito-stat-value">{{ hitoDetalleMuestraFin ? (selectedTask.end_date | date:'dd-MM-yyyy') : '—' }}</span>
             </div>
             <div class="hito-stat" *ngIf="editandoHitoDetalle">
-                <ng-container *ngIf="hitoDetalleMuestraInicio; else hitoInicioOculto">
+                <ng-container *ngIf="editMuestraInicio; else hitoInicioOculto">
                     <p class="text-sm mb-[4px]" style="color:#1E3A5F">Fecha inicio <span class="text-red-500">*</span></p>
                     <input type="date" [(ngModel)]="editHitoStartDate"
                         class="border rounded-lg p-[8px] w-full"
@@ -428,20 +443,22 @@
                 <ng-template #hitoInicioOculto>
                     <span class="hito-stat-label">Fecha inicio</span>
                     <span class="hito-stat-value">—</span>
+                    <button type="button" class="hito-stat-link" (click)="moverFechaAHito('inicio')">Usar esta fecha en su lugar</button>
                 </ng-template>
             </div>
             <div class="hito-stat" *ngIf="editandoHitoDetalle">
-                <ng-container *ngIf="hitoDetalleMuestraFin; else hitoFinOculto">
+                <ng-container *ngIf="editMuestraFin; else hitoFinOculto">
                     <p class="text-sm mb-[4px]" style="color:#1E3A5F">
-                        Fecha fin <span class="text-red-500" *ngIf="!hitoDetalleMuestraInicio">*</span>
+                        Fecha fin <span class="text-red-500" *ngIf="!editMuestraInicio">*</span>
                     </p>
                     <input type="date" [(ngModel)]="editHitoEndDate"
                         class="border rounded-lg p-[8px] w-full"
-                        [ngClass]="{'border-red-400': !hitoDetalleMuestraInicio && !editHitoEndDate, 'border-[#E2E2E2]': hitoDetalleMuestraInicio || editHitoEndDate}" />
+                        [ngClass]="{'border-red-400': !editMuestraInicio && !editHitoEndDate, 'border-[#E2E2E2]': editMuestraInicio || editHitoEndDate}" />
                 </ng-container>
                 <ng-template #hitoFinOculto>
                     <span class="hito-stat-label">Fecha fin</span>
                     <span class="hito-stat-value">—</span>
+                    <button type="button" class="hito-stat-link" (click)="moverFechaAHito('fin')">Usar esta fecha en su lugar</button>
                 </ng-template>
             </div>
         </div>
@@ -482,7 +499,7 @@
                 </button>
                 <button
                     (click)="guardarEdicionHitoDetalle()"
-                    [disabled]="savingHitoDetalle || !editHitoStartDate"
+                    [disabled]="editHitoGuardarDeshabilitado"
                     class="px-5 py-2 rounded-lg cursor-pointer text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     style="background:#1E3A5F">
                     {{ savingHitoDetalle ? 'Guardando...' : 'Guardar' }}
@@ -570,6 +587,58 @@
                 <button type="button" (click)="saveEditProjectLevelDescription()" [disabled]="editProjectSaving"
                     class="py-[6px] px-[16px] rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style="background:#1E3A5F">
                     <span class="text-white text-sm">{{ editProjectSaving ? 'Guardando...' : 'Guardar' }}</span>
+                </button>
+            </div>
+        </ng-template>
+    </div>
+</app-base-modal>
+
+<!-- Modal: agregar hito a un cronograma YA GUARDADO -->
+<app-base-modal *ngIf="showAddHitoGuardadoModal" title="AGREGAR HITO AL CRONOGRAMA"
+    width="w-[480px]" (closeModal)="closeAddHitoGuardadoModal()">
+    <div class="flex flex-col gap-[15px]">
+        <ng-container *ngIf="loadingHitosFaltantes; else addHitoGuardadoForm">
+            <div class="skeleton-line" style="width:40%;height:12px;"></div>
+            <div class="skeleton-line" style="width:100%;height:120px;"></div>
+        </ng-container>
+        <ng-template #addHitoGuardadoForm>
+            <div class="flex flex-col gap-[6px]" *ngIf="hitosFaltantes.length > 0">
+                <p class="text-sm" style="color:#1E3A5F">Hito del catálogo</p>
+                <div class="flex flex-col gap-[6px]" style="max-height:220px;overflow-y:auto">
+                    <label *ngFor="let h of hitosFaltantes"
+                        class="flex items-center gap-[8px] border rounded-lg p-[8px] cursor-pointer"
+                        style="border-color:var(--color-abril-border)">
+                        <input type="radio" name="hitoFaltanteSeleccionado" [value]="h.milestoneId"
+                            [(ngModel)]="hitoGuardadoSeleccionadoId"
+                            (ngModelChange)="hitoGuardadoTextoPersonalizado = ''" />
+                        <span class="text-sm flex-1">{{ h.milestoneDescription }}</span>
+                        <span *ngIf="h.esObligatorio" class="badge badge-obligatorio" title="No puede quedar sin fecha">Obligatorio</span>
+                    </label>
+                </div>
+            </div>
+            <p *ngIf="hitosFaltantes.length === 0" class="text-sm text-gray-400">
+                Todos los hitos del catálogo ya están en este cronograma.
+            </p>
+            <div class="flex items-center gap-[10px]">
+                <div class="flex-1 h-px" style="background:var(--color-abril-border)"></div>
+                <span class="text-xs text-gray-400">o</span>
+                <div class="flex-1 h-px" style="background:var(--color-abril-border)"></div>
+            </div>
+            <div class="flex flex-col">
+                <p class="text-sm mb-[4px]" style="color:#1E3A5F">Hito personalizado</p>
+                <input type="text" [(ngModel)]="hitoGuardadoTextoPersonalizado"
+                    (ngModelChange)="hitoGuardadoSeleccionadoId = null"
+                    placeholder="Ej. Instalación de torre grúa 3era..."
+                    class="border rounded-lg p-[8px]" style="border-color:var(--color-abril-border)" />
+            </div>
+            <div class="flex justify-end gap-[10px]">
+                <button type="button" (click)="closeAddHitoGuardadoModal()" [disabled]="savingHitoGuardado"
+                    class="py-[6px] px-[16px] rounded-lg border cursor-pointer disabled:opacity-50" style="border-color:var(--color-abril-border);color:var(--color-abril-body)">
+                    Cancelar
+                </button>
+                <button type="button" (click)="confirmarAgregarHitoGuardado()" [disabled]="!agregarHitoGuardadoValido || savingHitoGuardado"
+                    class="py-[6px] px-[16px] rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style="background:#1E3A5F">
+                    <span class="text-white text-sm">{{ savingHitoGuardado ? 'Agregando...' : 'Agregar' }}</span>
                 </button>
             </div>
         </ng-template>

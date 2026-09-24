@@ -4,7 +4,9 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { MilestoneScheduleGetDTO } from "../dtos/milestoneSchedule/milestoneSchedule.model";
 import { MilestoneScheduleFakeDataDTO } from '../dtos/milestoneSchedule/milestoneScheduleFakeData.model';
-import { MilestoneScheduleCreateDTO } from '../dtos/milestoneSchedule/milestoneScheduleCreate.model';
+import { MilestoneScheduleEditDTO } from '../dtos/milestoneSchedule/milestoneScheduleEdit.model';
+import { MilestoneScheduleAddDTO } from '../dtos/milestoneSchedule/milestoneScheduleAdd.model';
+import { MilestoneSimpleDTO } from '../dtos/milestone/milestoneSimple.model';
 
 @Injectable({
   providedIn: 'root',
@@ -65,10 +67,33 @@ export class MilestoneScheduleService {
    * completa del cronograma. Solo ADMINISTRADOR DE RESIDENTES ([Authorize(Roles=...)] puro en
    * backend, mismo alcance que deleteMilestoneScheduleHistory).
    */
-  editarHito(milestoneScheduleId: number, dto: MilestoneScheduleCreateDTO): Observable<{ message: string }> {
+  editarHito(milestoneScheduleId: number, dto: MilestoneScheduleEditDTO): Observable<{ message: string }> {
     const token = localStorage.getItem('access_token');
     return this.http.put<{ message: string }>(
       `${this.apiUrl}/${milestoneScheduleId}`,
+      dto,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+  }
+
+  /** Hitos del catálogo que todavía no están en la versión vigente del cronograma del proyecto. */
+  getFaltantes(projectId: number): Observable<MilestoneSimpleDTO[]> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<MilestoneSimpleDTO[]>(`${this.apiUrl}/faltantes`, {
+      params: { projectId },
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
+
+  /**
+   * Agrega un único hito (de catálogo o personalizado) a una MilestoneScheduleHistory ya
+   * guardada, sin subir una versión completa nueva. Devuelve el hito ya resuelto (mismo shape
+   * que getByMilestoneScheduleHistoryId) para insertarlo en el Gantt en memoria sin un GET extra.
+   */
+  agregarHito(milestoneScheduleHistoryId: number, dto: MilestoneScheduleAddDTO): Observable<MilestoneScheduleGetDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.post<MilestoneScheduleGetDTO>(
+      `${this.apiUrl}/${milestoneScheduleHistoryId}/hito`,
       dto,
       { headers: { Authorization: `Bearer ${token}` } },
     );
