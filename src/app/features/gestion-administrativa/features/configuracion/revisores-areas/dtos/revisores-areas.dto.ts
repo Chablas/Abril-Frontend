@@ -3,8 +3,8 @@
  *
  * Los cinco ACTORES del ciclo de una salida (ids de `ga_actor`): quién aprueba la salida, qué jefe
  * se entera, quién aprueba la 1.ª revisión de la planilla, quiénes la consolidan y quiénes firman el
- * consolidado. Se resuelven por CASO (ids de `ga_actor_caso`): oficina central, staff, jefe,
- * residente y subgerente.
+ * consolidado. Se resuelven por CASO (ids de `ga_actor_caso`): oficina central, staff,
+ * administrador de obra, jefe, residente y subgerente.
  */
 
 /** Ids de `ga_actor` (idénticos en dev y prod). */
@@ -23,6 +23,7 @@ export const ActorCasoIds = {
   Jefe: 3,
   Residente: 4,
   Subgerente: 5,
+  AdministradorObra: 6,
 } as const;
 
 /**
