@@ -34,7 +34,7 @@
                 </thead>
 
                 <tbody>
-                    <tr *ngFor="let item of milestones.data" class="milestones-row border-b h-[30px]" style="border-color:#E2E8F0">
+                    <tr *ngFor="let item of milestones" class="milestones-row border-b h-[30px]" style="border-color:#E2E8F0">
                         <td class="text-center">
                             <div class="flex items-center justify-center">
                                 <button class="cursor-pointer" (click)="openEditModal(item, $event)">
@@ -89,24 +89,8 @@
                 </tbody>
             </table>
         </div>
-        <div class="flex gap-2 mt-4 justify-around w-full border rounded-[10px] h-[30px]" style="border-color:#E2E8F0">
+        <div class="flex gap-2 mt-4 justify-center w-full border rounded-[10px] h-[30px]" style="border-color:#E2E8F0">
             <span class="text-[13px]" style="color:#64748B"># Registros: {{totalRecords}}</span>
-            <div class="flex gap-[10px] items-center">
-                <button class="cursor-pointer" style="color:#2E6DB4" (click)="prevPage()" [disabled]="currentPage === 1">
-                    «
-                </button>
-
-                <button class="cursor-pointer py-1 px-2 rounded-[6px] transition-colors" *ngFor="let page of pages"
-                    (click)="goToPage(page)"
-                    [ngClass]="{'bg-[#2E6DB4] text-white': page === currentPage, 'text-black hover:bg-gray-100': page !== currentPage }">
-                    {{ page }}
-                </button>
-
-                <button class="cursor-pointer" style="color:#2E6DB4" (click)="nextPage()"
-                    [disabled]="currentPage === totalPages">
-                    »
-                </button>
-            </div>
         </div>
     </div>
 

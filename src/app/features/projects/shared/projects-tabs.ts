@@ -5,7 +5,6 @@ import { AbrilPageTab } from '../../../shared/components/abril-page-header/abril
  *  solo aparecía en su propia página e 'Hitos' faltaba en ella.
  *  Cada featureKey coincide con el del roleGuard de su ruta (proyectos.routes.ts). */
 export const PROJECTS_TABS: AbrilPageTab[] = [
-  { label: 'Dashboard de Proyectos', icono: 'ti-layout-dashboard', route: '/projects/projects-dashboard',            featureKey: 'projects.projects-dashboard' },
   { label: 'Cronograma Actividades', icono: 'ti-calendar',         route: '/projects/cronograma-actividades',        featureKey: 'projects.cronograma-actividades' },
   { label: 'Dashboard UDP',          icono: 'ti-chart-bar',        route: '/projects/cronograma-dashboard',          featureKey: 'projects.cronograma-dashboard' },
   { label: 'Control de IVTs',        icono: 'ti-clipboard',        route: '/projects/technical-inspection-visit',    featureKey: 'projects.ivt-control' },

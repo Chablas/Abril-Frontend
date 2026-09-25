@@ -31,13 +31,7 @@ export class Milestones implements OnInit {
 
   activeTab: MilestonesTab = 'hitos';
 
-  milestones: PagedResponseDTO<MilestoneGetDTO> = {
-    page: 0,
-    pageSize: 0,
-    totalRecords: 0,
-    totalPages: 0,
-    data: [],
-  };
+  milestones: MilestoneGetDTO[] = [];
   createDto: MilestoneCreateDTO = {
     milestoneDescription: '',
     active: true,
@@ -48,9 +42,6 @@ export class Milestones implements OnInit {
     active: true,
   };
 
-  currentPage = 1;
-  totalPages = 0;
-  pageSize = 10;
   totalRecords = 0;
 
   loader = false;
@@ -84,7 +75,7 @@ export class Milestones implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadMilestones(1);
+    this.loadMilestones();
   }
 
   setTab(tab: MilestonesTab): void {
@@ -240,17 +231,14 @@ export class Milestones implements OnInit {
     }
   }
 
-  loadMilestones(page: number = 1) {
+  loadMilestones() {
     this.loader = true;
     this.cdr.detectChanges();
 
-    this.milestoneService.getMilestonePaged(page).subscribe({
-      next: (response) => {
-        this.milestones = response;
-        this.currentPage = response.page;
-        this.totalPages = response.totalPages;
-        this.pageSize = response.pageSize;
-        this.totalRecords = response.totalRecords;
+    this.milestoneService.getAllMilestone().subscribe({
+      next: (data) => {
+        this.milestones = data;
+        this.totalRecords = data.length;
 
         this.loader = false;
         this.cdr.detectChanges();
@@ -259,31 +247,6 @@ export class Milestones implements OnInit {
         this.error(err);
       },
     });
-  }
-
-  nextPage() {
-    if (this.currentPage < this.totalPages) {
-      this.loadMilestones(this.currentPage + 1);
-      this.cdr.detectChanges();
-    }
-  }
-
-  prevPage() {
-    if (this.currentPage > 1) {
-      this.loadMilestones(this.currentPage - 1);
-      this.cdr.detectChanges();
-    }
-  }
-
-  goToPage(page: number) {
-    if (page >= 1 && page <= this.totalPages) {
-      this.loadMilestones(page);
-      this.cdr.detectChanges();
-    }
-  }
-
-  get pages(): number[] {
-    return this.computePages(this.currentPage, this.totalPages);
   }
 
   private computePages(currentPage: number, totalPages: number): number[] {
