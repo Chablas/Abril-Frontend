@@ -7,14 +7,11 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
   { path: '', redirectTo: 'solicitud-salidas', pathMatch: 'full' },
   {
     // Configuración de Solicitud de Salidas: los correos que se ORIGINAN acá (el aviso al
-    // revisor y la confirmación al solicitante), el plazo para rendir («Días reembolsables»),
-    // los dos recordatorios de ese plazo y los REVISORES de cada área — el revisor es a quien
-    // se le manda la solicitud que nace en esta pantalla, así que se administra junto a ella
-    // (antes vivía en /configuracion/revisores-areas).
+    // revisor y la confirmación al solicitante), el plazo para rendir («Días reembolsables») y
+    // los dos recordatorios de ese plazo. Los revisores de cada área ya no viven acá: están en
+    // Configuración → Revisores de Áreas, junto con los otros cuatro actores.
     // Va ANTES de 'solicitud-salidas' para que el segmento 'configuracion' no se lo coma
     // la pantalla.
-    // `featureKeys`: basta tener CUALQUIERA de las secciones para entrar; adentro cada una se
-    // filtra por la suya.
     path: 'solicitud-salidas/configuracion',
     loadComponent: () =>
       import('./shared/configuracion/pantalla-configuracion').then(
@@ -23,10 +20,9 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
     canActivate: [authGuard, roleGuard],
     data: {
       titulo: 'SOLICITUD DE SALIDAS - CONFIGURACIÓN',
-      featureKeys: [
-        'gestion-administrativa.config.correos',
-        'configuracion.revisores-areas',
-      ],
+      // `featureKeys` (y no `featureKey`) a propósito: el nombre que Seguridad le da a esta feature
+      // sale de la ruta de Mis Rendiciones, que es la que la declara sola.
+      featureKeys: ['gestion-administrativa.config.correos'],
       pantalla: 'solicitud-salidas',
     },
   },
@@ -140,9 +136,9 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
   {
     // Configuración de Consolidados: los correos que se ORIGINAN acá (la decisión del reembolso y
     // el aviso a Tesorería que dispara la firma), la VISIBILIDAD de esta bandeja —aparte de la de
-    // rendiciones: ver una planilla y ver su consolidado son dos permisos distintos—, los
-    // CONSOLIDADORES, que deciden quién puede adjuntar el documento por cada trabajador, y las
-    // FIRMAS, que deciden cómo registra la suya quien aprueba acá.
+    // rendiciones: ver una planilla y ver su consolidado son dos permisos distintos— y las
+    // FIRMAS, que deciden cómo registra la suya quien aprueba acá. Los consolidadores pasaron a
+    // Configuración → Revisores de Áreas.
     // Va ANTES de 'consolidados' para que el segmento 'configuracion' no se lo coma la pantalla.
     path: 'consolidados/configuracion',
     loadComponent: () =>
@@ -155,7 +151,6 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       featureKeys: [
         'gestion-administrativa.config.correos',
         'gestion-administrativa.config.visibilidad-consolidados',
-        'gestion-administrativa.config.consolidadores-areas',
         'gestion-administrativa.config.firmas',
       ],
       pantalla: 'consolidados',
@@ -301,14 +296,20 @@ export const GESTION_ADMINISTRATIVA_ROUTES: Routes = [
       seccion: 'capturas',
     },
   },
-  // Revisores de áreas pasó a Solicitud de Salidas → Configuración (el revisor es a quien se le
-  // manda la solicitud que nace ahí). Se mantienen las rutas viejas como redirección para no
-  // romper enlaces. La de revisores por trabajador se retiró junto con su pantalla: ese jefe se
-  // asigna ahora en el formulario de trabajadores (Gestión de Ingresos).
+  // Revisores de Áreas: los cinco actores (aprobar la salida, jefe notificado, 1.ª revisión,
+  // consolidar, firmar el consolidado) por área y tipo de trabajador. Junta lo que estaba repartido
+  // en la configuración de Solicitud de Salidas, Mis Rendiciones y Consolidados. Lo personalizado
+  // para UN trabajador se asigna en su ficha (Gestión de Ingresos → Trabajadores).
   {
     path: 'configuracion/revisores-areas',
-    redirectTo: 'solicitud-salidas/configuracion',
-    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/configuracion/ga-configuracion').then((m) => m.GaConfiguracion),
+    canActivate: [authGuard, roleGuard],
+    data: {
+      titulo: 'CONFIGURACIÓN ADMINISTRATIVA',
+      featureKey: 'gestion-administrativa.config.revisores-areas',
+      seccion: 'revisores-areas',
+    },
   },
   // Visibilidad de salidas pasó a Gestión de Salidas → Configuración, que es la bandeja que
   // recorta.

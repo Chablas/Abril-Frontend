@@ -32,6 +32,9 @@
   <!-- SECCIÓN: Capturas (obligatorias/opcionales por área) -->
   <app-ga-capturas *ngIf="activeSection === 'capturas'"></app-ga-capturas>
 
+  <!-- SECCIÓN: Revisores de Áreas (los cinco actores por área y tipo de trabajador) -->
+  <app-ga-revisores-areas *ngIf="activeSection === 'revisores-areas'"></app-ga-revisores-areas>
+
   <!-- SECCIÓN: Carpeta Adjuntos -->
   <app-ga-carpeta-adjuntos *ngIf="activeSection === 'carpeta-adjuntos'"></app-ga-carpeta-adjuntos>
 </div>

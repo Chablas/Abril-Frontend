@@ -38,10 +38,12 @@ export class NavigationService {
             { label: 'Motivos',   route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
             { label: 'Trayectos', route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
             { label: 'Capturas', route: '/gestion-administrativa/configuracion/capturas', featureKey: 'gestion-administrativa.config.capturas' },
+            // Quién aprueba, se entera, revisa, consolida y firma por cada área: junta lo que
+            // estaba repartido en la configuración de tres pantallas del flujo.
+            { label: 'Revisores de Áreas', route: '/gestion-administrativa/configuracion/revisores-areas', featureKey: 'gestion-administrativa.config.revisores-areas' },
             { label: 'Carpeta Adjuntos', route: '/gestion-administrativa/configuracion/carpeta-adjuntos', featureKey: 'gestion-administrativa.config.carpeta-adjuntos' },
-            // Los correos, la visibilidad de cada bandeja, los revisores y los
-            // consolidadores ya no están acá: cada pantalla del flujo administra lo que se
-            // origina en ella desde su propio botón «Configuración»
+            // Los correos y la visibilidad de cada bandeja no están acá: cada pantalla del flujo
+            // administra lo que se origina en ella desde su propio botón «Configuración»
             // (/gestion-administrativa/<pantalla>/configuracion).
             // «Tu firma» tampoco: la firma es de la persona, así que pasó a Mi Perfil → Mi Firma
             // (ver `miPerfil` más abajo).
@@ -422,8 +424,8 @@ export class NavigationService {
         { label: 'Proyectos', route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },
         // 'Categorías y Puestos' se movió a Gestión GTH → Configuración
         // (/gestion-gth/configuracion/categorias-puestos).
-        // 'Revisores de Áreas' se movió a Gestión Administrativa → Solicitud de Salidas →
-        // Configuración: el revisor es a quien se le manda la solicitud que nace ahí.
+        // 'Revisores de Áreas' se movió a Gestión Administrativa → Configuración → Revisores de
+        // Áreas, donde se juntaron los cinco actores del ciclo de una salida.
         { label: 'Centro de aprendizaje', route: '/configuracion/aprendizaje', featureKey: 'configuracion.aprendizaje' },
       ],
     },

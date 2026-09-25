@@ -304,7 +304,7 @@
                 [disabled]="mode === 'edit'"
                 placeholder="Buscar proyecto..."
                 [allowClear]="true"
-                (valueChange)="model.proyectoId = $event"
+                (valueChange)="onProyectoChange($event)"
               />
               <p class="field-hint" *ngIf="mode === 'edit'">
                 Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
@@ -368,24 +368,9 @@
               </p>
             </div>
 
-            <!-- Jefe del obrero. A diferencia de Staff/Oficina Central acá no hay checkbox: un
-                 obrero no tiene área en el árbol, así que no existe revisor de área que mostrar
-                 por defecto y el desplegable ES el campo. Es opcional; sin jefe elegido el
-                 trabajador cae en el fallback de GTH (ver JefeRevisorResolver en el backend). -->
-            <div class="col-span-2">
-              <label class="field-label">Jefe personalizado</label>
-              <app-search-select
-                [options]="jefesDisponibles"
-                valueField="workerId"
-                displayField="fullName"
-                [value]="model.jefePersonalizadoWorkerId"
-                [showLabel]="false"
-                placeholder="Buscar por nombre o DNI..."
-                [allowClear]="true"
-                (valueChange)="onJefePersonalizadoChange($event)"
-              />
-              <span class="field-hint" *ngIf="jefeSeleccionadoEmail">{{ jefeSeleccionadoEmail }}</span>
-            </div>
+            <!-- Actores del obrero: un obrero no suele tener área en el árbol, así que lo que le
+                 toca por su área casi siempre es el último recurso; se le personaliza igual. -->
+            <ng-container *ngTemplateOutlet="actoresTpl"></ng-container>
             <div>
               <label class="field-label">Fecha de ingreso</label>
               <app-date-picker
@@ -414,7 +399,7 @@
                 [disabled]="mode === 'edit'"
                 placeholder="Buscar proyecto..."
                 [allowClear]="true"
-                (valueChange)="model.proyectoId = $event"
+                (valueChange)="onProyectoChange($event)"
               />
               <p class="field-hint" *ngIf="mode === 'edit'">
                 Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
@@ -489,54 +474,10 @@
               </span>
             </div>
 
-            <!-- Jefe del trabajador: por defecto el revisor que sugiere su área (solo lectura);
-                 con el checkbox se pasa a elegir uno a mano, que se sobrepone a ese. -->
-            <div class="col-span-2">
-              <label class="field-label">{{ model.jefePersonalizado ? 'Jefe personalizado' : 'Jefe / Revisor del área' }}</label>
-
-              <input
-                *ngIf="!model.jefePersonalizado"
-                type="text"
-                class="field-input field-readonly"
-                readonly
-                [value]="revisorNombre || ''"
-                [placeholder]="model.areaScopeId ? 'Sin revisor configurado para esta área' : 'Sin área asignada'"
-              />
-
-              <app-search-select
-                *ngIf="model.jefePersonalizado"
-                [options]="jefesDisponibles"
-                valueField="workerId"
-                displayField="fullName"
-                [value]="model.jefePersonalizadoWorkerId"
-                [showLabel]="false"
-                placeholder="Buscar por nombre o DNI..."
-                [allowClear]="true"
-                (valueChange)="onJefePersonalizadoChange($event)"
-              />
-
-              <span class="field-hint" *ngIf="jefeEfectivoEmail">{{ jefeEfectivoEmail }}</span>
-              <span class="field-hint" *ngIf="!model.jefePersonalizado && esRevisorDeSuPropiaArea">
-                Es el revisor de su propia área, así que le corresponde el siguiente revisor válido.
-              </span>
-              <span class="field-hint" *ngIf="!model.jefePersonalizado && model.areaScopeId && !revisorNombre">
-                Configúralo en Configuración → Revisores de Áreas.
-              </span>
-
-              <label class="check-row">
-                <input
-                  type="checkbox"
-                  [ngModel]="model.jefePersonalizado"
-                  (ngModelChange)="onJefePersonalizadoToggle($event)"
-                />
-                <span>Jefe personalizado</span>
-              </label>
-              <span class="field-hint">
-                {{ model.jefePersonalizado
-                  ? 'Este jefe se sobrepone al revisor del área en los correos y aprobaciones.'
-                  : 'Márcalo para asignarle un jefe distinto al revisor de su área.' }}
-              </span>
-            </div>
+            <!-- Actores del trabajador: el aprobador de la salida a la vista y los otros cuatro
+                 detrás de "Ver más actores". Cada uno muestra lo que le toca por su área y con
+                 "Personalizado" se elige a mano (le gana a todo). -->
+            <ng-container *ngTemplateOutlet="actoresTpl"></ng-container>
             <div>
               <label class="field-label">Fecha de ingreso</label>
               <app-date-picker
@@ -576,7 +517,7 @@
                 [disabled]="mode === 'edit'"
                 placeholder="Buscar proyecto..."
                 [allowClear]="true"
-                (valueChange)="model.proyectoId = $event"
+                (valueChange)="onProyectoChange($event)"
               />
               <p class="field-hint" *ngIf="mode === 'edit'">
                 Para cambiar esto usa "Cambiar obra / puesto de trabajo" en la lista de trabajadores.
@@ -700,6 +641,92 @@
       </div>
 
     </ng-container>
+
+    <!-- ── Actores del trabajador (lo usan Obra y Staff / Oficina Central) ── -->
+    <ng-template #actoresTpl>
+      <div class="col-span-2 actores">
+        <ng-container *ngIf="actorPrincipal as principal; else actoresCargando">
+          <ng-container *ngTemplateOutlet="actorTpl; context: { $implicit: principal, principal: true }"></ng-container>
+        </ng-container>
+        <ng-template #actoresCargando>
+          <div>
+            <label class="field-label">Aprobador de la salida</label>
+            <input type="text" class="field-input field-readonly" readonly
+                   [placeholder]="cargandoActores ? 'Cargando…' : '—'" />
+          </div>
+        </ng-template>
+
+        <button *ngIf="actoresResto.length" type="button" class="ver-mas" (click)="actoresExpandido = !actoresExpandido">
+          {{ actoresExpandido ? 'Ver menos' : 'Ver más actores' }}
+          <span *ngIf="!actoresExpandido && personalizadosOcultos > 0" class="ver-mas-badge">
+            {{ personalizadosOcultos }} personalizado{{ personalizadosOcultos === 1 ? '' : 's' }}
+          </span>
+        </button>
+
+        <div *ngIf="actoresExpandido" class="grid-2 actores-resto">
+          <ng-container *ngFor="let a of actoresResto; trackBy: porActor">
+            <ng-container *ngTemplateOutlet="actorTpl; context: { $implicit: a, principal: false }"></ng-container>
+          </ng-container>
+        </div>
+      </div>
+    </ng-template>
+
+    <!-- Un actor: lo que le toca por su área (solo lectura) o, con "Personalizado", lo elegido a
+         mano. Los de varias personas (consolidadores, aprobadores del consolidado) usan el
+         desplegable múltiple: el orden en que se eligen es el orden. -->
+    <ng-template #actorTpl let-a let-principal="principal">
+      <div>
+        <div class="actor-cabecera">
+          <label class="field-label">{{ a.nombre }}</label>
+          <span *ngIf="principal && casoNombre" class="caso-chip">{{ casoNombre }}</span>
+        </div>
+
+        <ng-container *ngIf="a.aplica; else actorNoAplica">
+          <input *ngIf="!a.personalizado" type="text" class="field-input field-readonly" readonly
+                 [value]="nombresGrupo(a) | titleCase"
+                 [placeholder]="cargandoActores ? 'Cargando…' : 'Sin asignar'" />
+
+          <app-search-select
+            *ngIf="a.personalizado && !a.multiple"
+            [options]="jefes"
+            valueField="workerId"
+            displayField="fullName"
+            [value]="a.seleccion[0] ?? null"
+            [showLabel]="false"
+            placeholder="Buscar por nombre o DNI..."
+            [allowClear]="true"
+            (valueChange)="onActorElegido(a, $event)"
+          />
+
+          <app-multi-search-select
+            *ngIf="a.personalizado && a.multiple"
+            [options]="jefes"
+            valueField="workerId"
+            displayField="fullName"
+            [value]="a.seleccion"
+            [showLabel]="false"
+            color="var(--color-abril-standard)"
+            colorClaro="var(--color-abril-standard-light)"
+            placeholder="Buscar por nombre o DNI..."
+            (valueChange)="onActoresElegidos(a, $event)"
+          />
+
+          <span class="field-hint" *ngIf="hintActor(a) as hint">{{ hint }}</span>
+          <span class="field-hint" *ngIf="a.personalizado && nombresGrupo(a)">
+            Recomendado: {{ nombresGrupo(a) | titleCase }}
+          </span>
+
+          <label class="check-row">
+            <input type="checkbox" [ngModel]="a.personalizado" (ngModelChange)="onActorPersonalizadoToggle(a, $event)" />
+            <span>Personalizado</span>
+          </label>
+        </ng-container>
+
+        <ng-template #actorNoAplica>
+          <input type="text" class="field-input field-readonly" readonly value="No aplica" />
+        </ng-template>
+      </div>
+    </ng-template>
 
     <footer class="form-footer">
       <button type="button" class="btn-ghost" (click)="close()">Cancelar</button>

@@ -10,6 +10,7 @@ import { GaMotivos } from './motivos/pages/motivos';
 import { GaTrayectos } from '../trayectos/pages/trayectos';
 import { GaCarpetaAdjuntos } from './carpeta-adjuntos/pages/carpeta-adjuntos';
 import { GaCapturas } from './capturas/pages/capturas';
+import { GaRevisoresAreas } from './revisores-areas/pages/revisores-areas';
 
 import { GESTION_ADMINISTRATIVA_TABS } from '../../shared/gestion-administrativa-tabs';
 /** Definición de una sección de configuración de Gestión Administrativa. */
@@ -40,11 +41,13 @@ interface ConfigSectionDef {
  * La firma personal ("Tu firma") tampoco: desde el 2026-09-22 vive en Mi Perfil → Mi Firma,
  * porque es de la persona y no de una funcionalidad de este módulo.
  *
- * Los revisores de áreas ya NO viven aquí: se movieron a Solicitud de Salidas →
- * Configuración, que es la pantalla donde nace la solicitud que el revisor recibe.
- * La visibilidad de salidas tampoco: pasó a Gestión de Salidas → Configuración,
- * que es la bandeja que recorta. El jefe por trabajador se asigna en el
- * formulario de Gestión de Ingresos → Trabajadores ("Jefe personalizado").
+ * Los Revisores de Áreas volvieron acá el 2026-09-25, unificados: juntan lo que estaba repartido
+ * en la configuración de Solicitud de Salidas (quién aprueba la salida), de Mis Rendiciones (quién
+ * revisa la planilla y firma el consolidado) y de Consolidados (quién consolida), más el jefe que se
+ * entera de las salidas del staff. Lo personalizado para UN trabajador se asigna en su ficha
+ * (Gestión de Ingresos → Trabajadores).
+ * La visibilidad de salidas no vive acá: pasó a Gestión de Salidas → Configuración,
+ * que es la bandeja que recorta.
  *
  * Cada sección sigue teniendo su propia ruta
  * (`/gestion-administrativa/configuracion/<seccion>`) con su `featureKey` +
@@ -66,6 +69,7 @@ interface ConfigSectionDef {
     GaTrayectos,
     GaCarpetaAdjuntos,
     GaCapturas,
+    GaRevisoresAreas,
   ],
   templateUrl: './ga-configuracion.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
@@ -107,6 +111,13 @@ export class GaConfiguracion implements OnInit {
         'Áreas que deben subir capturas de movilidad para rendir una salida. Por defecto, obligatorias.',
     },
     {
+      id: 'revisores-areas',
+      label: 'Revisores de Áreas',
+      route: '/gestion-administrativa/configuracion/revisores-areas',
+      featureKey: 'gestion-administrativa.config.revisores-areas',
+      subtitulo: 'Quién aprueba, se entera, revisa, consolida y firma por cada área.',
+    },
+    {
       id: 'carpeta-adjuntos',
       label: 'Carpeta Adjuntos',
       route: '/gestion-administrativa/configuracion/carpeta-adjuntos',
@@ -127,6 +138,7 @@ export class GaConfiguracion implements OnInit {
   @ViewChild(GaTrayectos) private trayectosCmp?: GaTrayectos;
   @ViewChild(GaCarpetaAdjuntos) private carpetaAdjuntosCmp?: GaCarpetaAdjuntos;
   @ViewChild(GaCapturas) private capturasCmp?: GaCapturas;
+  @ViewChild(GaRevisoresAreas) private revisoresAreasCmp?: GaRevisoresAreas;
 
   constructor(
     private route: ActivatedRoute,
@@ -178,6 +190,7 @@ export class GaConfiguracion implements OnInit {
     | GaTrayectos
     | GaCarpetaAdjuntos
     | GaCapturas
+    | GaRevisoresAreas
     | undefined {
     switch (this.activeSection) {
       case 'lugares': return this.lugaresCmp;
@@ -185,6 +198,7 @@ export class GaConfiguracion implements OnInit {
       case 'trayectos': return this.trayectosCmp;
       case 'carpeta-adjuntos': return this.carpetaAdjuntosCmp;
       case 'capturas': return this.capturasCmp;
+      case 'revisores-areas': return this.revisoresAreasCmp;
       default: return undefined;
     }
   }

@@ -16,7 +16,9 @@ import { Subject, debounceTime, takeUntil } from 'rxjs';
 import Swal from 'sweetalert2';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
+import { MultiSearchSelect } from '../../../../../../shared/components/multi-search-select/multi-search-select';
 import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
+import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { AuthService } from '../../../../../../core/services/auth.service';
@@ -32,8 +34,9 @@ import { WorkerUpsertDto } from '../../../../../ssoma/salud-ocupacional/dtos/emo
 import { WorkerHabilitacionListDto } from '../../../../dtos/trabajador.model';
 import { EmpresaContratistaListDto } from '../../../../dtos/empresa.model';
 import {
+  ActorPersonaTrabajadorDto,
+  ActoresTrabajadorDto,
   AreaArbolNodoDto,
-  AreaArbolRevisorDto,
   JefeCandidatoDto,
   ObraOficinaStaffDto,
   PuestoCatDto,
@@ -75,14 +78,6 @@ interface WorkerFormModel {
   /** Nombre del catálogo; solo lo usa el propio formulario para decidir qué campos mostrar. */
   obraOficina: string;
   jefatura: string;
-  /**
-   * true = el trabajador tiene un jefe elegido a mano, que se sobrepone al revisor de su área.
-   * Es lo que prende el checkbox "Jefe personalizado" y convierte el campo de solo lectura en
-   * un desplegable.
-   */
-  jefePersonalizado: boolean;
-  /** Jefe elegido a mano (workers.id). Solo cuenta cuando `jefePersonalizado` es true. */
-  jefePersonalizadoWorkerId: number | null;
   sctr: boolean;
   habilitadoObra: boolean;
   notas: string;
@@ -102,6 +97,29 @@ interface WorkerFormModel {
   aniosExperiencia: number | null;
 }
 
+/**
+ * Uno de los cinco actores del trabajador en el formulario: lo que le toca por su área (lo que
+ * muestra el campo de solo lectura) y lo que se le personaliza en la ficha (el checkbox y el
+ * desplegable).
+ */
+interface ActorEstado {
+  /** Ids de `ga_actor`: 1 = aprobador de la salida. */
+  actorId: number;
+  nombre: string;
+  /** true = admite varias personas (consolidadores, aprobadores del consolidado). */
+  multiple: boolean;
+  /** false = no existe para este trabajador (el jefe notificado fuera del staff). */
+  aplica: boolean;
+  /** Lo que le toca sin lo personalizado de su ficha (Revisores de Áreas o el algoritmo). */
+  grupo: ActorPersonaTrabajadorDto[];
+  /** De dónde sale `grupo`: 'Area', 'Algoritmo' o 'Gth'. */
+  grupoOrigen: string;
+  /** El checkbox "Personalizado". */
+  personalizado: boolean;
+  /** workers.id elegidos a mano, en orden. Uno solo en los actores de uno solo. */
+  seleccion: number[];
+}
+
 /** Respuesta de la verificación de un correo corporativo, atada al correo que se consultó. */
 interface VerificacionEmail {
   email: string;
@@ -115,7 +133,7 @@ interface VerificacionEmail {
 @Component({
   selector: 'app-worker-create-edit',
   standalone: true,
-  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, DatePicker],
+  imports: [CommonModule, FormsModule, BaseModal, SearchSelect, MultiSearchSelect, DatePicker, TitleCasePipe],
   templateUrl: './worker-create-edit.html',
   styleUrl: './worker-create-edit.css',
 })
@@ -202,19 +220,35 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
   obraOficinaOpciones: ObraOficinaStaffDto[] = [];
 
   /**
-   * Trabajadores con correo corporativo @abril.pe: las opciones del desplegable que reemplaza al
-   * campo de solo lectura cuando se marca "Jefe personalizado". Reemplaza a la pantalla
-   * Configuración → Revisores de Trabajadores, retirada.
+   * Trabajadores con correo corporativo @abril.pe: las opciones de los desplegables de la sección
+   * de actores cuando se marca "Personalizado".
    */
   jefes: JefeCandidatoDto[] = [];
 
   /**
-   * Nombre y correo del jefe personalizado tal como vinieron en el detalle. Se guardan aparte
-   * porque el catálogo puede no incluirlo (trabajador retirado) y llega en cualquier orden
-   * respecto del detalle: sin esto el desplegable se vería vacío en ese caso.
+   * Los cinco actores del trabajador (quién aprueba su salida, qué jefe se entera, quién revisa su
+   * planilla, quiénes la consolidan y quiénes firman su consolidado). Los resuelve el backend
+   * (`GET catalogos/actores`) con el puesto y la obra que el formulario tiene a la vista.
    */
-  private jefeGuardadoNombre: string | null = null;
-  private jefeGuardadoEmail: string | null = null;
+  actores: ActorEstado[] = [];
+  /** Qué tipo de trabajador es para esos actores (oficina central, staff, jefe…). */
+  casoNombre = '';
+  cargandoActores = false;
+  /**
+   * true cuando llegó al menos una respuesta de actores para esta apertura del formulario. Sin eso
+   * no se manda nada al guardar: mandar una lista vacía borraría lo personalizado que ya tenía.
+   */
+  private actoresCargados = false;
+  private actoresToken = 0;
+  /** true = se ven los cinco actores; false = solo el aprobador de la salida. */
+  actoresExpandido = false;
+
+  /**
+   * Las personas personalizadas tal como vinieron del backend. Se guardan aparte porque el catálogo
+   * de personas puede no incluirlas (trabajador retirado) y llega en cualquier orden respecto de los
+   * actores: sin esto el desplegable se vería vacío en ese caso.
+   */
+  private personasGuardadas: JefeCandidatoDto[] = [];
 
   readonly tipoDocumentoOpciones = [
     { value: 'DNI', label: 'DNI — Documento de identidad' },
@@ -372,7 +406,7 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
       !this.verificandoEmail &&
       !this.emailError &&
       !this.faltaCorreo &&
-      !this.faltaJefePersonalizado &&
+      !this.faltaActorPersonalizado &&
       !!this.model.apellidoNombre.trim() &&
       (this.mode === 'edit' || !!this.model.dni.trim());
 
@@ -480,14 +514,11 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
-   * True cuando el formulario muestra (y por tanto es dueño de) el jefe del trabajador. Lo
-   * gestionan las tres clasificaciones de personal de casa, con dos presentaciones distintas:
-   * Staff/Oficina Central detrás del checkbox "Jefe personalizado" (el campo muestra por defecto
-   * el revisor que sugiere su área), y Obra como un desplegable opcional suelto — un obrero no
-   * tiene área en el árbol, así que no hay revisor de área que sugerirle y sin jefe elegido cae
-   * al fallback de GTH. En contratistas no se captura y el backend deja intacto lo guardado.
+   * True cuando el formulario muestra (y por tanto es dueño de) los actores del trabajador. Los
+   * gestionan las tres clasificaciones de personal de casa; en contratistas y personal externo no
+   * se capturan y el backend deja intacto lo guardado.
    */
-  get gestionaJefe(): boolean {
+  get gestionaActores(): boolean {
     return this.esStaffOOficina || this.esObrero;
   }
 
@@ -515,8 +546,6 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
       obraOficinaStaffId: null,
       obraOficina: '',
       jefatura: '',
-      jefePersonalizado: false,
-      jefePersonalizadoWorkerId: null,
       sctr: true,
       habilitadoObra: false,
       notas: '',
@@ -544,8 +573,11 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
     this.teniaAlgunCorreo = false;
     this.teniaEmailPersonal = false;
     this.empresaContratistaNombre = '';
-    this.jefeGuardadoNombre = null;
-    this.jefeGuardadoEmail = null;
+    this.actores = [];
+    this.casoNombre = '';
+    this.actoresCargados = false;
+    this.actoresExpandido = false;
+    this.personasGuardadas = [];
 
     // Token de carga: si el usuario cambia de trabajador antes de que responda
     // esta petición, la respuesta llega "vieja" y no debe pisar el formulario
@@ -589,19 +621,12 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
           this.model.categoriaId = det.categoriaId ?? null;
           this.model.puestoId = det.puestoId ?? null;
           this.model.aniosExperiencia = det.aniosExperiencia ?? null;
-          // Si ya tiene un jefe elegido a mano, el checkbox abre marcado con ese jefe: es el
-          // que manda de verdad, no el revisor del área que muestra el campo por defecto.
-          this.model.jefePersonalizadoWorkerId = det.jefePersonalizadoWorkerId ?? null;
-          this.model.jefePersonalizado = this.model.jefePersonalizadoWorkerId != null;
-          this.jefeGuardadoNombre = det.jefePersonalizadoNombre ?? null;
-          this.jefeGuardadoEmail = det.jefePersonalizadoEmail ?? null;
-          // El jefe puede no estar en el catálogo (p. ej. retirado): se agrega para que el
-          // desplegable muestre su nombre en vez de quedarse vacío.
-          this.asegurarJefeGuardadoEnOpciones();
           this.loadingDetalle = false;
           // Recién ahora se sabe qué puesto tiene la ficha, así que su área ya se puede derivar.
           // Si el catálogo de puestos todavía no llegó, se vuelve a intentar cuando llegue.
           this.sincronizarAreaConPuesto(true);
+          // Y también sus actores, que dependen del puesto (área y categoría) y de la obra.
+          this.recargarActores();
           this.cdr.detectChanges();
         },
         error: () => {
@@ -615,6 +640,9 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
       if (!this.esContratista) {
         this.model.contrataCasa = 'Casa';
       }
+      // Sin puesto ni obra todavía: lo que le tocaría a un trabajador sin área (se refresca al
+      // elegirlos).
+      this.recargarActores();
     }
 
     if (this.esContratista) {
@@ -679,8 +707,8 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
       next: (data) => {
         // El orden lo pone `app-search-select` (sortAlpha por defecto); acá basta con la lista.
         this.jefes = data;
-        // El detalle pudo llegar antes que el catálogo y traer un jefe que no está en él.
-        this.asegurarJefeGuardadoEnOpciones();
+        // Los actores pudieron llegar antes que el catálogo y traer a alguien que no está en él.
+        this.asegurarPersonasGuardadasEnOpciones();
         this.cdr.detectChanges();
       },
       error: () => {},
@@ -688,18 +716,13 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
-   * Garantiza que el jefe guardado aparezca entre las opciones aunque el catálogo no lo traiga
-   * (trabajador retirado, persona dada de baja): sin esto el desplegable se vería vacío y
-   * parecería que el trabajador nunca tuvo jefe personalizado.
+   * Garantiza que las personas personalizadas aparezcan entre las opciones aunque el catálogo no
+   * las traiga (trabajador retirado, persona dada de baja): sin esto el desplegable se vería vacío
+   * y parecería que el trabajador nunca tuvo ese actor personalizado.
    */
-  private asegurarJefeGuardadoEnOpciones(): void {
-    const workerId = this.model.jefePersonalizadoWorkerId;
-    if (workerId == null) return;
-    if (this.jefes.some((j) => j.workerId === workerId)) return;
-    this.jefes = [
-      ...this.jefes,
-      { workerId, fullName: this.jefeGuardadoNombre, email: this.jefeGuardadoEmail },
-    ];
+  private asegurarPersonasGuardadasEnOpciones(): void {
+    const faltan = this.personasGuardadas.filter((p) => !this.jefes.some((j) => j.workerId === p.workerId));
+    if (faltan.length) this.jefes = [...this.jefes, ...faltan];
   }
 
   private loadCatalogos(): void {
@@ -730,11 +753,8 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
       });
 
     this.cargandoAreas = true;
-    // Con el workerId el backend devuelve el revisor de cada nodo ya descartando a este
-    // trabajador de sus propios candidatos ("nadie es su propio jefe"): esa decisión es del
-    // algoritmo y vive allá. Al crear uno nuevo no hay a quién descartar y no se manda.
     this.catalogosHabService
-      .getAreaArbol(this.mode === 'edit' ? this.worker?.workerId ?? null : null)
+      .getAreaArbol()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (data) => {
@@ -849,128 +869,155 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
     return nodo.area ? `${nodo.area} / ${nodo.subarea}` : nodo.subarea;
   }
 
-  /**
-   * Revisor que le tocaría al trabajador por su área, según Configuración → Revisores de Áreas.
-   *
-   * **Acá no se decide nada.** El backend manda el revisor YA ELEGIDO por nodo —y por proyecto en
-   * las áreas que filtran por proyecto—, aplicando las mismas reglas con las que resuelve a quién
-   * se le manda a aprobar una salida (`JefeRevisorResolver`), el descarte del propio trabajador
-   * incluido. Este componente solo indexa por el nodo y el proyecto que tiene a la vista.
-   *
-   * Que el algoritmo esté en un solo lado es el punto: cuando esto elegía por su cuenta entre una
-   * lista de candidatos, la ficha y Gestión de Salidas terminaron mostrando jefes distintos para
-   * el mismo trabajador. Si hay que cambiar una regla, se cambia en el backend.
-   */
-  get revisorNombre(): string {
-    return this.revisorDelArea?.nombre ?? '';
-  }
-
-  get revisorEmail(): string {
-    return this.revisorDelArea?.email ?? '';
-  }
-
-  private get revisorDelArea(): AreaArbolRevisorDto | null {
-    return this.revisorDelNodo?.revisor ?? null;
-  }
-
-  /**
-   * La respuesta del backend para lo que hay en el formulario: la del proyecto si el área filtra
-   * por proyecto y hay una para el suyo, o la del área.
-   */
-  private get revisorDelNodo(): {
-    revisor?: AreaArbolRevisorDto | null;
-    esRevisorDeSuPropiaArea: boolean;
-  } | null {
-    const nodo = this.areaNodoElegido;
-    if (!nodo) return null;
-    const porProyecto =
-      this.model.proyectoId != null
-        ? nodo.revisorPorProyecto?.find((r) => r.proyectoId === this.model.proyectoId)
-        : undefined;
-    return porProyecto ?? nodo;
-  }
-
-  /**
-   * true cuando el trabajador es el revisor configurado de su propia área y por eso el campo
-   * muestra al siguiente. Se avisa en el formulario para que no se lea como un error de
-   * configuración de Revisores de Áreas. Lo determina el backend, que es quien descarta.
-   */
-  get esRevisorDeSuPropiaArea(): boolean {
-    return this.revisorDelNodo?.esRevisorDeSuPropiaArea ?? false;
-  }
-
-  // ── Jefe personalizado ───────────────────────────────────────────────
+  // ── Actores del trabajador ───────────────────────────────────────────
   //
-  // Reemplaza a la pantalla Configuración → Revisores de Trabajadores. El campo muestra por
-  // defecto el revisor que sugiere el área; al marcar el checkbox se convierte en un
-  // desplegable y lo que se elija ahí se sobrepone a ese revisor en todo el sistema (correos
-  // de EMO, aprobación de salidas, recordatorios).
+  // Reemplaza al campo "Jefe / Revisor del área" + "Jefe personalizado". Son cinco: quién aprueba
+  // su salida, qué jefe se entera (solo staff), quién aprueba la 1.ª revisión de su planilla,
+  // quiénes la consolidan y quiénes firman su consolidado. Cada uno muestra por defecto lo que le
+  // toca por su área —Revisores de Áreas o el algoritmo— y con "Personalizado" se elige a mano; lo
+  // elegido acá le gana a todo en el sistema (correos, aprobaciones, consolidación).
+  //
+  // **Acá no se decide nada**: lo que le toca lo resuelve el backend con el mismo núcleo que manda
+  // los correos (IActoresResolver), con el puesto y la obra que el formulario tiene a la vista.
+
+  /** El aprobador de la salida: siempre visible. */
+  get actorPrincipal(): ActorEstado | undefined {
+    return this.actores.find((a) => a.actorId === 1);
+  }
+
+  /** Los otros cuatro: detrás de "Ver más actores". */
+  get actoresResto(): ActorEstado[] {
+    return this.actores.filter((a) => a.actorId !== 1);
+  }
+
+  /** Cuántos de los ocultos están personalizados, para que no pase desapercibido. */
+  get personalizadosOcultos(): number {
+    return this.actoresResto.filter((a) => a.aplica && a.personalizado).length;
+  }
+
+  porActor = (_: number, a: ActorEstado) => a.actorId;
 
   /**
-   * Opciones del desplegable: TODOS los candidatos, incluido el propio trabajador. Acá no rige
-   * "nadie puede ser su propio jefe" a propósito — marcar el checkbox es una elección explícita
-   * y el backend la respeta. Lo que sigue descartándolo es el revisor que se deriva del área
-   * (`revisorDelArea`), que nadie elige a mano.
+   * Pide los actores para lo que el formulario tiene a la vista (puesto y obra). La primera
+   * respuesta trae además lo personalizado guardado; las siguientes —cambió el puesto o la obra—
+   * solo refrescan lo que le toca por su área: lo que el usuario marcó en pantalla se respeta.
    */
-  get jefesDisponibles(): JefeCandidatoDto[] {
-    return this.jefes;
+  private recargarActores(): void {
+    if (this.esContratista) return;
+
+    const token = ++this.actoresToken;
+    this.cargandoActores = true;
+    this.catalogosHabService
+      .getActores(
+        this.mode === 'edit' ? this.worker?.workerId ?? null : null,
+        this.model.puestoId,
+        this.model.proyectoId,
+      )
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          if (token !== this.actoresToken) return;
+          this.aplicarActores(res);
+          this.cargandoActores = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          if (token !== this.actoresToken) return;
+          this.cargandoActores = false;
+          this.cdr.detectChanges();
+        },
+      });
+  }
+
+  private aplicarActores(res: ActoresTrabajadorDto): void {
+    const previos = new Map(this.actores.map((a) => [a.actorId, a]));
+    const primeraVez = !this.actoresCargados;
+
+    this.casoNombre = res.casoNombre;
+    this.actores = res.actores.map((a) => {
+      const previo = previos.get(a.actorId);
+      const guardados = a.personalizados
+        .map((p) => p.workerId)
+        .filter((id): id is number => id != null);
+      return {
+        actorId: a.actorId,
+        nombre: a.nombre,
+        multiple: a.multiple,
+        aplica: a.aplica,
+        grupo: a.grupo,
+        grupoOrigen: a.grupoOrigen,
+        personalizado: !primeraVez && previo ? previo.personalizado : guardados.length > 0,
+        seleccion: !primeraVez && previo ? previo.seleccion : guardados,
+      };
+    });
+
+    if (primeraVez) {
+      this.personasGuardadas = res.actores
+        .flatMap((a) => a.personalizados)
+        .filter((p) => p.workerId != null)
+        .map((p) => ({ workerId: p.workerId!, personId: p.personId, fullName: p.nombre, email: p.email }));
+      this.asegurarPersonasGuardadasEnOpciones();
+      // Si hay algo personalizado fuera del aprobador de la salida, se abre la sección: que se vea.
+      this.actoresExpandido = this.personalizadosOcultos > 0;
+    }
+    this.actoresCargados = true;
+  }
+
+  /** Los nombres de lo que le toca por su área, en una línea. */
+  nombresGrupo(a: ActorEstado): string {
+    return a.grupo.map((p) => p.nombre ?? '').filter(Boolean).join(', ');
+  }
+
+  /** La línea de ayuda de cada actor: el correo (si es uno) y de dónde sale. */
+  hintActor(a: ActorEstado): string {
+    if (!a.aplica) return '';
+    if (a.personalizado) {
+      if (a.multiple) return this.nombresSeleccion(a);
+      return this.jefes.find((j) => j.workerId === a.seleccion[0])?.email ?? '';
+    }
+    const origen = a.grupoOrigen === 'Area'
+      ? 'Personalizado del área'
+      : a.grupoOrigen === 'Gth' ? 'Por defecto' : 'Algoritmo';
+    const email = a.grupo.length === 1 ? a.grupo[0].email ?? '' : '';
+    return a.grupo.length ? [email, origen].filter(Boolean).join(' · ') : '';
+  }
+
+  /** Los elegidos de un actor de varios, numerados: el orden es el de las firmas. */
+  private nombresSeleccion(a: ActorEstado): string {
+    return a.seleccion
+      .map((id, i) => `${i + 1}. ${this.jefes.find((j) => j.workerId === id)?.fullName ?? ''}`)
+      .join(' · ');
+  }
+
+  onActorPersonalizadoToggle(a: ActorEstado, activo: boolean): void {
+    a.personalizado = activo;
+    // Al desmarcar se limpia la elección: guardar en ese estado da de baja lo personalizado y el
+    // actor vuelve a salir de su área.
+    if (!activo) a.seleccion = [];
+  }
+
+  onActorElegido(a: ActorEstado, workerId: number | null): void {
+    a.seleccion = workerId != null ? [workerId] : [];
+  }
+
+  onActoresElegidos(a: ActorEstado, workerIds: number[] | null): void {
+    a.seleccion = [...(workerIds ?? [])];
   }
 
   /**
-   * Checkbox marcado pero sin elegir a nadie: no se puede guardar en ese estado a medias. Solo
-   * aplica a Staff/Oficina Central, que son las que tienen checkbox; en Obra el desplegable es
-   * opcional y dejarlo vacío es una respuesta válida (el trabajador cae al fallback).
+   * Un actor marcado "Personalizado" sin nadie elegido: no se puede guardar en ese estado a medias
+   * (desmarcarlo es la forma de volver a lo que le toca por su área).
    */
-  get faltaJefePersonalizado(): boolean {
-    return (
-      this.esStaffOOficina &&
-      this.model.jefePersonalizado &&
-      this.model.jefePersonalizadoWorkerId == null
-    );
+  get faltaActorPersonalizado(): ActorEstado | undefined {
+    if (!this.gestionaActores) return undefined;
+    return this.actores.find((a) => a.aplica && a.personalizado && a.seleccion.length === 0);
   }
 
-  /**
-   * Jefe que se manda al backend. En Staff/Oficina Central manda el checkbox: desmarcado se
-   * manda null y el trabajador vuelve a depender del revisor de su área. En Obra el desplegable
-   * ES el campo, así que se manda tal cual y vacío significa lo mismo. Fuera de esas
-   * clasificaciones no se manda nada porque `gestionaJefe` es false.
-   */
-  private get jefePersonalizadoAEnviar(): number | null {
-    if (this.esObrero) return this.model.jefePersonalizadoWorkerId;
-    return this.model.jefePersonalizado ? this.model.jefePersonalizadoWorkerId : null;
-  }
-
-  private get jefeSeleccionado(): JefeCandidatoDto | null {
-    const id = this.model.jefePersonalizadoWorkerId;
-    return id != null ? this.jefes.find((j) => j.workerId === id) ?? null : null;
-  }
-
-  get jefeSeleccionadoNombre(): string {
-    return this.jefeSeleccionado?.fullName ?? '';
-  }
-
-  get jefeSeleccionadoEmail(): string {
-    return this.jefeSeleccionado?.email ?? '';
-  }
-
-  /** Nombre a mostrar bajo el campo: el jefe elegido a mano o, si no hay, el del área. */
-  get jefeEfectivoNombre(): string {
-    return this.model.jefePersonalizado ? this.jefeSeleccionadoNombre : this.revisorNombre;
-  }
-
-  get jefeEfectivoEmail(): string {
-    return this.model.jefePersonalizado ? this.jefeSeleccionadoEmail : this.revisorEmail;
-  }
-
-  onJefePersonalizadoToggle(activo: boolean): void {
-    this.model.jefePersonalizado = activo;
-    // Al desmarcar se limpia la elección: el trabajador vuelve a depender del revisor de su
-    // área y guardar en ese estado da de baja el jefe personalizado que tuviera.
-    if (!activo) this.model.jefePersonalizadoWorkerId = null;
-  }
-
-  onJefePersonalizadoChange(workerId: number | null): void {
-    this.model.jefePersonalizadoWorkerId = workerId;
+  /** Lo personalizado que se manda al backend: solo los actores marcados y con alguien elegido. */
+  private get actoresAEnviar(): { actorId: number; workerIds: number[] }[] {
+    return this.actores
+      .filter((a) => a.aplica && a.personalizado && a.seleccion.length > 0)
+      .map((a) => ({ actorId: a.actorId, workerIds: a.seleccion }));
   }
 
   // Los desplegables emiten `null` al limpiarse; los campos del modelo son strings, así que
@@ -985,9 +1032,11 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
   onCategoriaChange(categoriaId: number | null): void {
     this.model.categoriaId = categoriaId;
     const puesto = this.puestos.find((p) => p.id === this.model.puestoId);
-    if (puesto && puesto.categoriaId !== categoriaId) this.model.puestoId = null;
-    // Si el puesto se descartó, el área que salía de él tiene que irse con él.
+    const descartado = !!puesto && puesto.categoriaId !== categoriaId;
+    if (descartado) this.model.puestoId = null;
+    // Si el puesto se descartó, el área que salía de él tiene que irse con él (y sus actores).
     this.sincronizarAreaConPuesto(false);
+    if (descartado) this.recargarActores();
   }
 
   /**
@@ -1001,8 +1050,16 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
     const puesto = this.puestos.find((p) => p.id === puestoId);
     if (puesto) this.model.categoriaId = puesto.categoriaId;
     // El área del trabajador es la de destino de su puesto, así que se arrastra con él —
-    // incluso cuando el puesto nuevo no tiene ninguna y la ficha se queda sin área.
+    // incluso cuando el puesto nuevo no tiene ninguna y la ficha se queda sin área—, y con el
+    // área y la categoría cambian sus actores.
     this.sincronizarAreaConPuesto(false);
+    this.recargarActores();
+  }
+
+  /** La obra decide si es staff y, con eso, quiénes son sus actores. */
+  onProyectoChange(proyectoId: number | null): void {
+    this.model.proyectoId = proyectoId;
+    this.recargarActores();
   }
 
   /**
@@ -1046,10 +1103,6 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
     // en Obra se reenvía intacta la que estuviera guardada. Solo hay que re-derivarla, porque
     // pasar a Obra o venir de ella cambia si el formulario es dueño del área.
     this.sincronizarAreaConPuesto(true);
-    // El jefe elegido se conserva, pero cada clasificación lo muestra distinto (checkbox en
-    // Staff/Oficina, desplegable suelto en Obra): se sincroniza el checkbox con lo que haya
-    // elegido para que al pasar a Staff/Oficina el jefe no quede guardado pero invisible.
-    this.model.jefePersonalizado = this.model.jefePersonalizadoWorkerId != null;
     // Cambiar de clasificación cambia con qué reglas se valida el corporativo (en Obra solo se
     // exige tenant/unicidad si es del dominio de Abril), así que la verificación anterior deja
     // de ser válida y se rehace.
@@ -1354,11 +1407,12 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
-    if (this.faltaJefePersonalizado) {
+    const falta = this.faltaActorPersonalizado;
+    if (falta) {
       Swal.fire({
         icon: 'warning',
-        title: 'Falta el jefe personalizado',
-        text: 'Elige al jefe o desmarca la casilla para usar el revisor del área.',
+        title: `Falta: ${falta.nombre}`,
+        text: 'Elige a alguien o desmarca «Personalizado».',
         confirmButtonColor: '#64BC04',
       });
       return;
@@ -1395,10 +1449,11 @@ export class WorkerCreateEdit implements OnInit, OnChanges, OnDestroy {
       contrataCasa: this.esContratista ? 'Contratista' : n(this.model.contrataCasa),
       obraOficinaStaffId: this.model.obraOficinaStaffId,
       jefatura: this.gestionaArea ? null : n(this.model.jefatura),
-      // El jefe solo se manda cuando el formulario muestra el campo (las tres clasificaciones de
-      // personal de casa); en contratistas el backend no toca lo que ya estuviera guardado.
-      gestionaJefe: this.gestionaJefe,
-      jefePersonalizadoWorkerId: this.jefePersonalizadoAEnviar,
+      // Los actores solo se mandan cuando el formulario muestra la sección (las tres
+      // clasificaciones de personal de casa) y ya los cargó: con la respuesta de actores fallida,
+      // mandar la lista vacía borraría lo personalizado que ya tenía.
+      gestionaActores: this.gestionaActores && this.actoresCargados,
+      actoresPersonalizados: this.actoresAEnviar,
       sctr: !!this.model.sctr,
       habilitadoObra: false,
       notas: n(this.model.notas),

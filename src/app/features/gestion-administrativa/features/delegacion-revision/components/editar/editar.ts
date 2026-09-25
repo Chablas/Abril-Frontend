@@ -68,9 +68,8 @@ export class DelegacionEditar implements OnInit {
   }
 
   get titulo(): string {
-    return this.asignacion.projectName
-      ? 'REVISORES · ' + this.asignacion.projectName
-      : 'REVISORES · ' + (this.asignacion.areaName || 'Área');
+    const alcance = this.asignacion.projectName || this.asignacion.areaName || 'Área';
+    return ['REVISORES', alcance, this.asignacion.casoNombre].filter(Boolean).join(' · ');
   }
 
   nombreDe(workerId: number | null): string {
@@ -117,6 +116,7 @@ export class DelegacionEditar implements OnInit {
     this.service
       .update(this.asignacion.areaScopeId, {
         projectId: this.asignacion.projectId ?? null,
+        casoId: this.asignacion.casoId,
         // La posición define la prioridad: 1 = primera fila.
         revisores: validas.map((r, i) => ({
           revisorWorkerId: r.revisorWorkerId!,

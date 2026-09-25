@@ -46,10 +46,6 @@
   <!-- SECCIÓN: Visibilidad (qué áreas ve cada trabajador en ESTA bandeja) -->
   <app-visibilidad-areas *ngIf="mostrandoVisibilidad" [endpoint]="visibilidadEndpoint"></app-visibilidad-areas>
 
-  <!-- SECCIÓN: Revisores / Consolidadores (las dos asignan personas a áreas con el mismo
-       algoritmo; el modo dice cuál) -->
-  <app-ga-asignaciones-areas *ngIf="mostrandoAsignaciones" [modo]="asignacionModo"></app-ga-asignaciones-areas>
-
   <!-- SECCIÓN: Firmas (cómo registra su firma quien aprueba un consolidado) -->
   <app-ga-firmas *ngIf="mostrandoFirmas"></app-ga-firmas>
 </section>

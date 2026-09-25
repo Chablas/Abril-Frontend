@@ -25,6 +25,14 @@ export class MultiSearchSelect {
   @Input() placeholder: string = 'Selecciona';
   @Input() allowClear: boolean = true;
   @Input() compact: boolean = false;
+  /**
+   * Color de acento (borde al abrir, casillas y opción marcada). El default es el verde lima con el
+   * que nació el componente, para que las pantallas que ya lo usan se vean igual; una pantalla del
+   * estándar teal pasa `var(--color-abril-standard)` (y su claro en `colorClaro`).
+   */
+  @Input() color: string = '#64BC04';
+  /** Fondo de la opción marcada. */
+  @Input() colorClaro: string = '#E5F7D1';
 
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
 

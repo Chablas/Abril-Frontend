@@ -320,14 +320,15 @@ export interface WorkerUpsertDto {
   sexo?: string | null;
   aniosExperiencia?: number | null;
   /**
-   * true = el formulario gestiona el jefe del trabajador y `jefePersonalizadoWorkerId` manda
-   * (se guarda ese jefe o, con null, se quita el que tuviera y vuelve a mandar el revisor de
-   * su área). false = el formulario no muestra el campo (obreros y contratistas) y el backend
-   * no toca lo que ya estuviera guardado.
+   * true = el formulario gestiona los actores del trabajador (quién aprueba su salida, qué jefe se
+   * entera, quién revisa su planilla, quiénes la consolidan y quiénes firman su consolidado) y
+   * `actoresPersonalizados` manda: lo que viene se guarda y lo que no viene se quita, para que ese
+   * actor vuelva a salir de su área. false = el formulario no muestra la sección (contratistas) y
+   * el backend no toca lo guardado.
    */
-  gestionaJefe?: boolean;
-  /** Jefe elegido a mano (workers.id), que se sobrepone al revisor del área. */
-  jefePersonalizadoWorkerId?: number | null;
+  gestionaActores?: boolean;
+  /** Lo personalizado en la ficha, por actor (ids de `ga_actor`) y en orden. */
+  actoresPersonalizados?: { actorId: number; workerIds: number[] }[];
 }
 
 export interface InterconsultaInlineCreateDto {
