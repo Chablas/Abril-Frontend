@@ -6103,3 +6103,32 @@ Merge de `victor-frontend` a `master`, incluyendo (cada uno documentado en su pr
 
 ### Pendiente
 Los pendientes puntuales de cada feature quedan listados en sus respectivas secciones de sesión más arriba.
+
+## Sesión 2026-09-25 — Fase 2 consolidación Dashboard UDP (elimina Dashboard de Proyectos), catálogo de Hitos sin paginar, investigación de Plantillas de Cronograma
+
+### Contexto
+Continuación de la consolidación "Dashboard de Proyectos → Dashboard UDP" iniciada el 2026-09-16 (memoria `project-dashboards-udp-consolidation`, Fase 1 completa esa sesión). El usuario confirmó Fase 1 probada y pidió ejecutar la Fase 2: eliminar `projects-dashboard` del routing/menú/tabs sin borrar la carpeta física ni el endpoint backend, que `cronograma-dashboard.service.ts` sigue usando directo (`GET api/v1/projects-dashboard`).
+
+### Cambios
+- **Fase 2 Dashboard UDP**: sacado `projects-dashboard` de `proyectos.routes.ts` (ruta + import del componente), `navigation.service.ts` (ítem de menú + `landing`) y `projects-tabs.ts`. El redirect por defecto de `/projects` (`path: ''`) ahora apunta a `cronograma-dashboard` en vez de `projects-dashboard`. Regenerado `feature-display-names.generated.ts` (`node scripts/generate-feature-display-names.js`) — ya no lista `projects.projects-dashboard`. Carpeta física `features/projects/projects-dashboard/` y el endpoint backend intactos, como se pidió. **FeatureKey a revisar en BD (`feature`/`role_feature`) por el usuario, no tocado desde acá: `projects.projects-dashboard`** (memoria previa de 9 días marcaba `feature_id=93` como fila huérfana, sin re-verificar en esta sesión por falta de acceso a BD desde esta terminal).
+- **Bug encontrado durante la verificación post-Fase 2** (no introducido por ella, pero destapado por ella): `cronograma-dashboard.html` tenía su propio array de tabs hardcodeado en vez de usar el `PROJECTS_TABS` compartido — única página de las 16 del feature Proyectos con esa duplicación. Ese array muerto seguía apuntando a `/projects/projects-dashboard` (ruta ya eliminada) y también le faltaba el tab "Planeamiento" y le sobraba "Actas de Reunión" (que ya se había independizado como módulo propio en otra sesión, `projects-tabs.ts` ya lo reflejaba pero este archivo no). Corregido: `cronograma-dashboard.ts` ahora importa y expone `PROJECTS_TABS`, el HTML usa `[tabs]="tabs"`.
+- **Plantilla de Hitos ya no pagina**: `milestones.ts` cambió de `getMilestonePaged(page)` (backend con `pageSize` hardcodeado en 10, sin parámetro configurable — confirmado en `Abril_Backend/Infrastructure/Repositories/MilestoneRepository.cs:72`) a `getAllMilestone()`, método que ya existía en `MilestoneService` y ya se usaba en otras dos pantallas (`milestone-schedule.ts`, `proyecto-page.ts` de presupuesto-materiales) sin paginar. Cero cambios de backend — mismo filtro (`State == true`), mismo DTO, solo cambia el orden (antes por `MilestoneId desc`, ahora alfabético por `MilestoneDescription`, confirmado con el usuario como aceptable). Se sacaron los controles de paginación de `milestones.html` (prev/next/números) y el contador `# Registros` ahora usa `milestones.length` en vez de `totalRecords` del response paginado.
+- **Investigación (sin aplicar) de "Plantillas de Cronograma"**: el usuario pidió evaluar administrar desde Configuración las 3 plantillas de actividades por etapa (Anteproyecto/Proyecto/Proyecto de Actualización) que hoy se aplican vía "usar plantilla" en `cronograma-actividades`. Hallazgos clave para cuando se retome:
+  - No hay tabla/entidad en BD — son 2 archivos JSON estáticos en el backend (`Features/UnidadDeProyectosModule/Features/CronogramaActividades/Seeds/plantilla_anteproyecto_seed.json` y `plantilla_proyecto_seed.json`), leídos en caliente por `CronogramaActividadesRepository.AplicarPlantillaAsync()`. No hay ningún GET que exponga su contenido — haría falta migrar a tabla real antes de poder armar un CRUD.
+  - **Solo existen 2 plantillas físicas, no 3**: `PROYECTO` y `PROYECTO_ACTUALIZACION` comparten el mismo archivo (`plantilla_proyecto_seed.json`) — no hay ningún branch que los distinga en el repository. Probablemente nadie lo notó porque el modal de confirmación del frontend también los trata igual.
+  - Estructura de cada ítem de plantilla es jerárquica (WBS con `codigo`/`parentCodigo`/`predecesoraCodigo`, referencias por string), mucho más compleja que el catálogo plano de Hitos — un editor tipo árbol, no una tabla simple.
+  - `Milestone` (backend) no sigue el patrón `Controller → Service → Repository` del resto del proyecto (es `Controller → Repository` directo, arquitectura vieja/plana), mientras que `CronogramaActividades` sí sigue el patrón moderno por feature — si se calca "el mismo patrón que Hitos" a nivel backend, sería meter arquitectura vieja dentro de un feature que ya tiene la nueva.
+  - Pendiente de decisión del usuario antes de programar: (a) tercer sub-tab dentro del mismo componente `Milestones` vs. ruta nueva en `configuracion-routing-module.ts`, (b) si se aprovecha para separar de una vez "Proyecto de Actualización" en su propio archivo/registro, (c) confirmar que el backend nuevo siga el patrón Controller→Service→Repository.
+
+### Archivos clave
+- `features/projects/proyectos.routes.ts`, `core/navigation/navigation.service.ts`, `features/projects/shared/projects-tabs.ts`, `core/navigation/feature-display-names.generated.ts` (Fase 2)
+- `features/projects/cronograma-dashboard/cronograma-dashboard.ts`/`.html` (tabs unificados)
+- `features/projects/configuration/pages/milestones/milestones.ts`/`.html` (catálogo sin paginar)
+
+### Verificado
+`ng build` limpio (0 errores) después de cada cambio. No se probó en navegador contra backend real en esta sesión.
+
+### Pendiente
+- Confirmar en BD si desactivar/borrar la fila de `projects.projects-dashboard` en `feature`/`role_feature` (dato de sesión anterior sin re-verificar: `feature_id=93`).
+- Diseño de "Plantillas de Cronograma" en Configuración: ver puntos (a)/(b)/(c) arriba, nada programado todavía.
+- Borrar físicamente `features/projects/projects-dashboard/` cuando se confirme que ya no hace falta ni siquiera como referencia (hoy `cronograma-dashboard.service.ts` sigue pegándole directo a su endpoint backend `api/v1/projects-dashboard`, así que borrar la carpeta frontend no rompe nada, pero no se hizo en esta sesión a pedido explícito del usuario).
