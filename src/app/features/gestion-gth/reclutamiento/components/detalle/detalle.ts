@@ -94,6 +94,30 @@ const CORREO_VALIDO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
  */
 const RESULTADOS_CERRADOS = ['NO_PASO', 'SELECCIONADO', 'RECHAZADO', 'NO_APTO_EMO'];
 
+/**
+ * Fases desde las que GTH puede cancelar el proceso: todas las suyas, hasta el resultado del EMO de
+ * ingreso (espejo de `EstadoReclutamiento.FasesCancelables` del backend). La carta oferta es el
+ * límite: en cuanto sale, el proceso ya no se cancela.
+ */
+const FASES_CANCELABLES = [
+  'NUEVO',
+  'VALIDACION_GTH',
+  'PUBLICACION',
+  'LONG_LIST',
+  'LONG_LIST_ENVIADA',
+  'LONG_LIST_APROBADA',
+  'ENTREVISTAS',
+  'SELECCION_JEFATURA',
+  'EMO_INGRESO',
+  'EMO_APTO',
+  'EMO_APTO_RESTRICCIONES',
+  'EMO_OBSERVADO',
+  'EMO_NO_APTO',
+];
+
+/** Estados de una cita de EMO que ya no va a ocurrir: atendida, cancelada, rechazada o sin asistencia. */
+const CITAS_EMO_CERRADAS = ['Completado', 'Cancelado', 'Rechazado por Clínica', 'No se presentó'];
+
 /** Datos editables de la cita de un candidato en la sección de programación de entrevistas. */
 interface EntrevistaFormState {
   /** Fecha en formato `YYYY-MM-DD` (el que maneja `app-date-picker`). */
@@ -163,10 +187,21 @@ export class GthDetalleRequerimiento implements OnInit {
    */
   @Input() abrirFormularioCandidatoId: number | null = null;
   /**
-   * Solo consulta (sin la feature de gestionar el proceso; lo decide la bandeja): el modal muestra
-   * los mismos datos, documentos y estados, pero ninguna acción que cambie el proceso.
+   * Solo consulta: el modal muestra los mismos datos, documentos y estados, pero ninguna acción que
+   * cambie el proceso. Pasa por dos motivos: el usuario no tiene la feature de gestionar (lo decide
+   * la bandeja y llega por este input) o el proceso está cancelado, que ya no admite nada. Un solo
+   * getter para los dos, así cada acción del modal se esconde con la misma condición de siempre.
    */
-  @Input() soloLectura = false;
+  @Input()
+  get soloLectura(): boolean {
+    return this.sinPermisoDeGestion || this.cancelado;
+  }
+  set soloLectura(valor: boolean) {
+    this.sinPermisoDeGestion = valor;
+  }
+
+  /** Sin la feature de gestionar: es lo único que pinta la etiqueta «Solo lectura» de la cabecera. */
+  sinPermisoDeGestion = false;
   /** Emite al cerrar; true si hubo cambios guardados (para refrescar la bandeja). */
   @Output() closeModal = new EventEmitter<boolean>();
 
@@ -368,7 +403,7 @@ export class GthDetalleRequerimiento implements OnInit {
     const citasPendientes = this.candidatosParaEntrevista.some((c) => !c.entrevista);
     this.seccionEntrevistas =
       !this.detalle
-      || !faseAlcanzada(this.detalle.estadoCodigo, 'SELECCION_JEFATURA')
+      || !faseAlcanzada(this.faseEfectiva, 'SELECCION_JEFATURA')
       || (this.sumaCandidatosTarde && citasPendientes);
   }
 
@@ -438,29 +473,40 @@ export class GthDetalleRequerimiento implements OnInit {
   }
 
   // ── Fases del pipeline (controlan qué secciones se muestran) ────────────
+  /**
+   * Fase con la que se deciden las secciones del modal. Es la del requerimiento, salvo en uno
+   * cancelado: ese se dibuja como quedó en la fase en la que se lo canceló, para que lo ya hecho
+   * (long list, formularios, entrevistas) siga a la vista. Vacía si el backend no pudo decir cuál
+   * fue: el modal queda sin las secciones de las fases.
+   */
+  get faseEfectiva(): string {
+    if (!this.detalle) return '';
+    return this.cancelado ? (this.detalle.cancelacion?.faseCodigo ?? '') : this.detalle.estadoCodigo;
+  }
+
   /** true si la vacante ya fue publicada (fase PUBLICACION o posterior). */
   get vacantePublicada(): boolean {
-    return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'PUBLICACION');
+    return faseAlcanzada(this.faseEfectiva, 'PUBLICACION');
   }
 
   /** true si ya se inició la revisión de CV (fase LONG_LIST o posterior). */
   get enLongList(): boolean {
-    return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'LONG_LIST');
+    return faseAlcanzada(this.faseEfectiva, 'LONG_LIST');
   }
 
   /** true si la long list ya fue enviada al solicitante (fase LONG_LIST_ENVIADA o posterior). */
   get longListEnviada(): boolean {
-    return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'LONG_LIST_ENVIADA');
+    return faseAlcanzada(this.faseEfectiva, 'LONG_LIST_ENVIADA');
   }
 
   /** true si el solicitante ya aprobó la long list (fase LONG_LIST_APROBADA o posterior). */
   get longListAprobada(): boolean {
-    return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'LONG_LIST_APROBADA');
+    return faseAlcanzada(this.faseEfectiva, 'LONG_LIST_APROBADA');
   }
 
   /** true si el requerimiento ya pasó a la programación de entrevistas (fase ENTREVISTAS o posterior). */
   get enEntrevistas(): boolean {
-    return !!this.detalle && faseAlcanzada(this.detalle.estadoCodigo, 'ENTREVISTAS');
+    return faseAlcanzada(this.faseEfectiva, 'ENTREVISTAS');
   }
 
   /**
@@ -589,6 +635,89 @@ export class GthDetalleRequerimiento implements OnInit {
    */
   get emoAptitudNombre(): string {
     return this.detalle?.seleccionado?.emoAptitud || this.detalle?.estadoNombre || '';
+  }
+
+  // ── Cancelar el proceso ──────────────────────────────────────────────────
+  // GTH lo puede cancelar en cualquier fase suya hasta que le manda la carta oferta al seleccionado.
+  // Cancelado es terminal: el modal pasa a solo lectura y se dibuja como quedó en la fase en la que
+  // se lo canceló (ver `faseEfectiva` y `soloLectura`).
+
+  /** true si GTH canceló el proceso. */
+  get cancelado(): boolean {
+    return this.detalle?.estadoCodigo === 'CANCELADO';
+  }
+
+  /** true mientras se cancela (evita el doble clic). */
+  cancelando = false;
+
+  /**
+   * «Cancelar proceso»: en cualquier fase de GTH mientras la carta oferta no haya salido. Es el
+   * mismo corte que valida el backend (sus `FasesCancelables` y ninguna carta enviada), que lo
+   * vuelve a revisar al cancelar.
+   */
+  get puedeCancelar(): boolean {
+    const codigo = this.detalle?.estadoCodigo;
+    return !!codigo && !this.soloLectura && FASES_CANCELABLES.includes(codigo) && !this.cartaEnviada;
+  }
+
+  /**
+   * El seleccionado cuya cita del EMO de ingreso sigue en pie. Cancelar el proceso no la cancela
+   * —la cita es de SSOMA—, así que la confirmación la nombra. null si no hay ninguna por atender.
+   */
+  private get citaEmoVigente(): Seleccionado | null {
+    const sel = this.detalle?.seleccionado;
+    if (this.detalle?.estadoCodigo !== 'EMO_INGRESO' || !sel?.emoProgramacionEstado) return null;
+    return CITAS_EMO_CERRADAS.includes(sel.emoProgramacionEstado) ? null : sel;
+  }
+
+  async cancelarProceso(): Promise<void> {
+    if (!this.puedeCancelar || this.cancelando || !this.detalle) return;
+
+    // La fecha viene como `YYYY-MM-DD…` en hora de Perú: se corta el texto en vez de pasarla por
+    // `Date`, que la correría un día según la zona del navegador.
+    const cita = this.citaEmoVigente;
+    const fechaCita = cita?.emoFechaProgramada?.slice(0, 10).split('-').reverse().join('/');
+    const avisoCita = cita
+      ? `<br><br>El EMO de ingreso de <b>${new TitleCasePipe().transform(cita.nombre)}</b> sigue ` +
+        `programado${fechaCita ? ` para el <b>${fechaCita}</b>` : ''}: la cita no se cancela con el proceso.`
+      : '';
+
+    const confirm = await Swal.fire({
+      icon: 'warning',
+      title: '¿Cancelar este proceso?',
+      html:
+        `El requerimiento <b>${this.detalle.codigo}</b> pasará a <b>Cancelado</b> y no se podrá ` +
+        `retomar. No se envía ningún correo.${avisoCita}`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, cancelar',
+      cancelButtonText: 'Volver',
+      confirmButtonColor: '#D30000',
+    });
+    if (!confirm.isConfirmed) return;
+
+    this.cancelando = true;
+    this.loaderService.show();
+    this.service.cancelarRequerimiento(this.requerimientoId).subscribe({
+      next: (res) => {
+        this.cancelando = false;
+        this.huboCambios = true;
+        // Se recarga entero: el modal cambia de forma (queda en solo lectura y en la fase en la
+        // que se lo canceló). El loader lo apaga la recarga (ver retomarCandidato).
+        this.cargarDetalle();
+        Swal.fire({
+          icon: 'success',
+          title: 'Proceso cancelado',
+          text: res.message,
+          confirmButtonColor: '#005D9D',
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.cancelando = false;
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        this.errorService.handleError(err);
+      },
+    });
   }
 
   // ── Carta oferta: el último paso del proceso ─────────────────────────────
@@ -1949,10 +2078,15 @@ export class GthDetalleRequerimiento implements OnInit {
     return this.enEntrevistas && !this.procesoTerminado;
   }
 
-  /** true si el requerimiento ya terminó (con la vacante cubierta o sin cubrir). */
+  /** true si el requerimiento ya terminó (con la vacante cubierta, sin cubrir o cancelado). */
   private get procesoTerminado(): boolean {
     const codigo = this.detalle?.estadoCodigo;
-    return codigo === 'CERRADO' || codigo === 'CERRADO_SIN_CUBRIR' || codigo === 'RECHAZADO_GG';
+    return (
+      codigo === 'CERRADO' ||
+      codigo === 'CERRADO_SIN_CUBRIR' ||
+      codigo === 'RECHAZADO_GG' ||
+      codigo === 'CANCELADO'
+    );
   }
 
   /**

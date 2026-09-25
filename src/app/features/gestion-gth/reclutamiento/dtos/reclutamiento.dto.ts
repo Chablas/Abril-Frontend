@@ -200,6 +200,22 @@ export interface DetalleRequerimientoGth {
    * null) trae solo los datos de destino, que es lo que la sección necesita para poder armarla.
    */
   cartaOferta: CartaOfertaRequerimiento | null;
+  /**
+   * Cuándo, quién y desde qué fase GTH canceló el proceso. null mientras no esté cancelado. Con
+   * él el modal se dibuja como quedó en esa fase, en solo lectura.
+   */
+  cancelacion: CancelacionRequerimiento | null;
+}
+
+/** La cancelación de un proceso. Espejo de `CancelacionRequerimientoDto`. */
+export interface CancelacionRequerimiento {
+  /** Fase en la que estaba el proceso al cancelarse (código del catálogo). */
+  faseCodigo: string | null;
+  faseNombre: string | null;
+  /** Momento de la cancelación (ISO, ya en hora Perú). */
+  canceladoEn: string;
+  /** Quién lo canceló. null si su usuario no tiene ficha de persona. */
+  canceladoPor: string | null;
 }
 
 /**
