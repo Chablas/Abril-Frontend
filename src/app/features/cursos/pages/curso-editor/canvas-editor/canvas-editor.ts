@@ -84,6 +84,7 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
 
   @ViewChild('lienzo') private lienzoRef?: ElementRef<HTMLDivElement>;
   @ViewChild('lienzoEnvoltorio') private envoltorioRef?: ElementRef<HTMLDivElement>;
+  @ViewChild('canvasCuerpo') private cuerpoRef?: ElementRef<HTMLDivElement>;
 
   // ---- Zoom: por defecto el lienzo se ajusta (escala) al espacio disponible sin
   // deformarse; el usuario puede fijar un zoom manual que ignora ese ajuste automático. ----
@@ -102,14 +103,44 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
 
   zoomIn(): void {
     this.zoomManual = Math.min(2, Math.round((this.escalaFinal + 0.1) * 10) / 10);
+    this.fijarScrollArribaTrasZoom();
   }
 
   zoomOut(): void {
     this.zoomManual = Math.max(0.2, Math.round((this.escalaFinal - 0.1) * 10) / 10);
+    this.fijarScrollArribaTrasZoom();
   }
 
   zoomAjustar(): void {
     this.zoomManual = null;
+    this.fijarScrollArribaTrasZoom();
+  }
+
+  /** Al cambiar el zoom el lienzo cambia de tamaño y el navegador reacomoda el scroll del
+   *  envoltorio a su cuenta, dejando visible cualquier parte del lienzo (a veces tapando el
+   *  título, que suele estar arriba). Forzamos volver a la esquina superior izquierda, que es
+   *  el punto de referencia esperado (igual que al abrir la pantalla por primera vez). */
+  private fijarScrollArribaTrasZoom(): void {
+    this.cdr.detectChanges();
+    const reset = () => {
+      const wrap = this.envoltorioRef?.nativeElement;
+      const cuerpo = this.cuerpoRef?.nativeElement;
+      if (wrap) {
+        wrap.scrollTop = 0;
+        wrap.scrollLeft = 0;
+      }
+      if (cuerpo) {
+        cuerpo.scrollTop = 0;
+        cuerpo.scrollLeft = 0;
+      }
+    };
+    // Doble rAF: el primero solo garantiza que ya pasamos el frame donde se aplicaron
+    // los nuevos estilos; el layout final (scrollHeight real) puede no estar listo hasta
+    // el siguiente, así que reseteamos en ambos por si acaso.
+    requestAnimationFrame(() => {
+      reset();
+      requestAnimationFrame(reset);
+    });
   }
 
   ngAfterViewInit(): void {

@@ -74,8 +74,12 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  align-items: center;
-  justify-content: center;
+  /* "safe center": centra cuando el lienzo entra completo, pero si se desborda (zoom
+     manual grande) ancla arriba-izquierda en vez de repartir el desborde simétricamente
+     — con "center" a secas, ese sobrante queda inalcanzable con scroll en algunos
+     navegadores (el punto "de arriba" del lienzo nunca llega a scrollTop 0 real). */
+  align-items: safe center;
+  justify-content: safe center;
   overflow: auto;
 }
 
