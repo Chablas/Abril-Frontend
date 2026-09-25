@@ -30,4 +30,9 @@ export interface RazonesSocialesEmo {
    * tope a propósito hasta que se dé de baja al reemplazado.
    */
   sinTopePorReemplazo: boolean;
+  /**
+   * La razón social que la ficha de pre-ingreso ya tiene, para traerla elegida. Null si no tiene
+   * ninguna o si el trabajador ya está adentro (ahí es la de su vinculación y no se elige).
+   */
+  razonSocialActualId?: number | null;
 }

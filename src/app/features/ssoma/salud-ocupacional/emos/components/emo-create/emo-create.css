@@ -196,6 +196,26 @@
   padding: 0.25rem 0;
 }
 
+/* Avisos de cupo de la razón social: los mismos del modal "Programar EMO con clínica". */
+.razon-hint {
+  margin: 8px 0 0;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: #6b7280;
+}
+
+.razon-hint--warn {
+  margin-top: 6px;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.razon-hint--aviso {
+  margin-top: 6px;
+  color: #92400e;
+  font-weight: 600;
+}
+
 .examenes-table-wrapper {
   max-height: 340px;
   overflow-y: auto;

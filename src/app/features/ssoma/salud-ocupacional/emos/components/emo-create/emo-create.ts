@@ -33,6 +33,8 @@ import {
 } from '../../../dtos/emo.model';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { ClinicaProgramacionService } from '../../../../../clinica/services/clinica-programacion.service';
+import { RazonSocialCupo } from '../../../../../../shared/dtos/razon-social.dto';
 import { APTITUD_CHART_ORDER } from '../../../shared/aptitud.utils';
 
 type StepKey = 1 | 2 | 3;
@@ -68,6 +70,16 @@ export class EmoCreate implements OnInit, OnDestroy {
   numeroInforme = '';
   urlResultado = '';
 
+  /**
+   * Razón social con la que entra una ficha de pre-ingreso. Registrar su EMO de Ingreso sin
+   * haberlo programado es, como programarlo, el punto donde se elige: sin ella llegaba sin ninguna
+   * a la carta oferta. Solo se cargan las opciones cuando el trabajador elegido es de pre-ingreso.
+   */
+  razonesSociales: RazonSocialCupo[] = [];
+  /** true = la vacante de la que sale es un REEMPLAZO, así que el tope de 20 no corta. */
+  sinTopePorReemplazo = false;
+  razonSocialId: number | null = null;
+
   // Paso 2
   aptitud: AptitudEmo = 'Apto';
   requiereInterconsulta = false;
@@ -91,6 +103,7 @@ export class EmoCreate implements OnInit, OnDestroy {
   constructor(
     private service: EmoService,
     private catalogos: CatalogosSaludService,
+    private programacionService: ClinicaProgramacionService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
@@ -166,6 +179,54 @@ export class EmoCreate implements OnInit, OnDestroy {
     if (!w) {
       this.empresaOrigenId = 0;
     }
+    this.razonesSociales = [];
+    this.sinTopePorReemplazo = false;
+    this.razonSocialId = null;
+    if (w?.esFinalistaAprobado) this.cargarRazonesSociales(w.id);
+  }
+
+  // Razón social (ficha de pre-ingreso)
+  private cargarRazonesSociales(workerId: number): void {
+    this.programacionService.getRazonesSociales(workerId).subscribe({
+      next: (res) => {
+        // Otro trabajador elegido mientras llegaba la respuesta: no es la suya.
+        if (this.workerSelected?.id !== workerId) return;
+        this.razonesSociales = res?.razones ?? [];
+        this.sinTopePorReemplazo = res?.sinTopePorReemplazo ?? false;
+        // La que la ficha ya trae (se la eligieron al programarle el EMO) queda elegida. Solo si
+        // está en la lista: una que ya no se ofrece el backend tampoco la acepta.
+        const actual = res?.razonSocialActualId;
+        if (actual && this.razonesSociales.some((r) => r.id === actual)) this.razonSocialId = actual;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private get esIngreso(): boolean {
+    return this.emoTipos.find((t) => t.id === this.tipoEmoId)?.nombre?.trim().toLowerCase() === 'ingreso';
+  }
+
+  /** Solo en el EMO de Ingreso de una ficha de pre-ingreso: es el que la hace entrar. */
+  get pideRazonSocial(): boolean {
+    return !!this.workerSelected?.esFinalistaAprobado && this.esIngreso;
+  }
+
+  get razonSocialSeleccionada(): RazonSocialCupo | null {
+    return this.razonesSociales.find((r) => r.id === this.razonSocialId) ?? null;
+  }
+
+  /** Llena y sin excepción de reemplazo: no se puede guardar (el backend tampoco la acepta). */
+  get sinCupos(): boolean {
+    return !this.sinTopePorReemplazo && this.razonSocialSeleccionada?.cuposDisponibles === 0;
+  }
+
+  /** Llena, pero se deja pasar porque la vacante es un REEMPLAZO. */
+  get excedePorReemplazo(): boolean {
+    return this.sinTopePorReemplazo && this.razonSocialSeleccionada?.cuposDisponibles === 0;
   }
 
   // Restricciones
@@ -212,6 +273,7 @@ export class EmoCreate implements OnInit, OnDestroy {
 
   // Navegación pasos
   get canAdvanceStep1(): boolean {
+    if (this.pideRazonSocial && (!this.razonSocialId || this.sinCupos)) return false;
     return !!(
       this.workerSelected &&
       this.tipoEmoId &&
@@ -233,7 +295,9 @@ export class EmoCreate implements OnInit, OnDestroy {
       Swal.fire({
         icon: 'warning',
         title: 'Datos incompletos',
-        text: 'Selecciona trabajador, tipo de EMO, empresa y fecha antes de continuar.',
+        text: this.pideRazonSocial
+          ? 'Selecciona trabajador, tipo de EMO, empresa, razón social con cupo y fecha antes de continuar.'
+          : 'Selecciona trabajador, tipo de EMO, empresa y fecha antes de continuar.',
       });
       return;
     }
@@ -264,6 +328,7 @@ export class EmoCreate implements OnInit, OnDestroy {
       workerId: this.workerSelected.id,
       tipoEmoId: this.tipoEmoId,
       empresaOrigenId: this.empresaOrigenId,
+      razonSocialId: this.pideRazonSocial ? (this.razonSocialId ?? undefined) : undefined,
       fechaEmo: this.fechaEmo,
       clinicaId: this.clinicaId || undefined,
       medicoId: this.medicoId || undefined,

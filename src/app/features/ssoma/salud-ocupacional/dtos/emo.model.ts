@@ -89,6 +89,11 @@ export interface EmoCreateDto {
   workerId: number;
   tipoEmoId: number;
   empresaOrigenId?: number;
+  /**
+   * Razón social elegida para una ficha de pre-ingreso al registrar su EMO de Ingreso: el backend
+   * se la asigna a la ficha y al requerimiento, igual que al programarlo. No es la empresa origen.
+   */
+  razonSocialId?: number;
   fechaEmo: string;
   clinicaId?: number;
   medicoId?: number;

@@ -43,6 +43,28 @@
         </select>
       </div>
 
+      <!-- EMO de Ingreso de una ficha de pre-ingreso: se elige con qué razón social entra, igual que
+           al programarlo con clínica. Mismos avisos de cupo que ese modal. -->
+      <div *ngIf="pideRazonSocial">
+        <label class="field-label">Razón social *</label>
+        <select class="field-input" [(ngModel)]="razonSocialId" name="razonSocialId" required>
+          <option [ngValue]="null" disabled>Seleccionar…</option>
+          <option *ngFor="let r of razonesSociales" [ngValue]="r.id">{{ r.nombre }}</option>
+        </select>
+        <p class="razon-hint" *ngIf="razonSocialSeleccionada">
+          Cupos disponibles: <b>{{ razonSocialSeleccionada.cuposDisponibles }}</b> de 20.
+        </p>
+        <p class="razon-hint razon-hint--aviso" *ngIf="excedePorReemplazo">
+          Sin cupos: se pasa del tope de 20 por ser vacante de reemplazo.
+        </p>
+        <p class="razon-hint" *ngIf="sinTopePorReemplazo && !excedePorReemplazo">
+          Vacante de reemplazo: no aplica el tope de 20.
+        </p>
+        <p class="razon-hint razon-hint--warn" *ngIf="sinCupos">
+          Ya llegó al tope de 20 trabajadores: elige otra para poder registrar el EMO.
+        </p>
+      </div>
+
       <div class="col-span-2">
         <label class="checkbox-row">
           <input type="checkbox" [(ngModel)]="requiereLecturaAbril" name="requiereLecturaAbril" />

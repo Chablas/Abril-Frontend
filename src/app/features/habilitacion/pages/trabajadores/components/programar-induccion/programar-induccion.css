@@ -237,6 +237,19 @@
   background: #f0fce4;
 }
 
+.pi-worker-row--off {
+  cursor: default;
+}
+
+.pi-worker-row--off:hover {
+  background: transparent;
+}
+
+.pi-worker-row--off .pi-worker-name,
+.pi-worker-row--off .pi-worker-meta {
+  opacity: 0.6;
+}
+
 .pi-worker-row input[type='checkbox'] {
   accent-color: #64bc04;
   width: 15px;
@@ -276,6 +289,19 @@
   font-weight: 600;
   background: #fef3c7;
   color: #b45309;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pi-badge-sin-rs {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: #fef2f2;
+  color: #dc2626;
   white-space: nowrap;
   flex-shrink: 0;
 }
