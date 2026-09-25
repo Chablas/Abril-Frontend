@@ -178,6 +178,18 @@ export class ReclutamientoService {
     );
   }
 
+  /**
+   * Cancela el proceso: el requerimiento pasa a Cancelado y ya no continúa. Solo hasta que al
+   * seleccionado se le envía la carta oferta. No manda correos.
+   */
+  cancelarRequerimiento(requerimientoId: number): Observable<EstadoTransicionResult> {
+    return this.http.post<EstadoTransicionResult>(
+      `${this.apiUrl}/requerimiento/${requerimientoId}/cancelar`,
+      {},
+      { headers: this.headers },
+    );
+  }
+
   // ── Carta oferta: el último paso del proceso ─────────────────────────────
   // Reemplaza al viejo «cerrar proceso» del EMO apto: ahora el requerimiento no se cierra hasta
   // que el candidato firma su carta y GTH la aprueba.

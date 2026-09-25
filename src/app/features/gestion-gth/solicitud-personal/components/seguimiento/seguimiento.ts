@@ -69,6 +69,14 @@ export class GthSeguimiento implements OnInit {
     });
   }
 
+  /**
+   * true si GTH canceló el proceso. La línea de tiempo ya viene parada en la fase en la que se lo
+   * canceló (el backend la marca como la vigente); acá solo cambia cómo se rotula.
+   */
+  get cancelado(): boolean {
+    return this.seguimiento?.estadoCodigo === 'CANCELADO';
+  }
+
   /** Subtítulo del header: "REQ-AAAA-NNNN · Puesto". */
   get subtitulo(): string {
     if (!this.seguimiento) return '';
