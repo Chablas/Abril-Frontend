@@ -84,7 +84,7 @@
           [(ngModel)]="workerSearch"
         />
       </div>
-      <label class="pi-toggle" *ngIf="!loadingWorkers && workersFiltrados.length > 0">
+      <label class="pi-toggle" *ngIf="!loadingWorkers && seleccionables.length > 0">
         <input type="checkbox" [checked]="todosSeleccionados" (change)="toggleTodos()" />
         <span>Seleccionar todos</span>
       </label>
@@ -100,16 +100,19 @@
         *ngFor="let w of workersFiltrados"
         class="pi-worker-row"
         [class.pi-worker-row--sel]="selectedWorkerIds.includes(w.workerId)"
+        [class.pi-worker-row--off]="!w.empresaId"
       >
         <input
           type="checkbox"
           [checked]="selectedWorkerIds.includes(w.workerId)"
+          [disabled]="!w.empresaId"
           (change)="toggleWorker(w.workerId)"
         />
         <div class="pi-worker-info">
           <div class="pi-worker-name-row">
             <span class="pi-worker-name">{{ w.apellidoNombre }}</span>
             <span class="pi-badge-homologa" *ngIf="w.yaIndujo">Ya indujo · puede homologar</span>
+            <span class="pi-badge-sin-rs" *ngIf="!w.empresaId">Sin razón social</span>
           </div>
           <span class="pi-worker-meta">{{ w.dni }}<ng-container *ngIf="w.empresaNombre"> · {{ w.empresaNombre }}</ng-container></span>
         </div>

@@ -18,4 +18,6 @@ export interface WorkerSearchItemDto {
   fechaIngreso?: string;
   inhabilitadoSsoma?: boolean;
   esAbril?: boolean;
+  /** true = ficha de pre-ingreso (finalista aprobado, aún sin contrato). */
+  esFinalistaAprobado?: boolean;
 }

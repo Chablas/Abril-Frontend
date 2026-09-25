@@ -160,8 +160,13 @@ export class ProgramarInduccion implements OnChanges {
     return list;
   }
 
+  /** Los visibles que se pueden marcar: sin razón social el backend no programa la inducción. */
+  get seleccionables(): InduccionTrabajadorDto[] {
+    return this.workersFiltrados.filter((w) => !!w.empresaId);
+  }
+
   get todosSeleccionados(): boolean {
-    const visible = this.workersFiltrados;
+    const visible = this.seleccionables;
     return visible.length > 0 && visible.every((w) => this.selectedWorkerIds.includes(w.workerId));
   }
 
@@ -201,7 +206,7 @@ export class ProgramarInduccion implements OnChanges {
   }
 
   toggleTodos(): void {
-    const ids = this.workersFiltrados.map((w) => w.workerId);
+    const ids = this.seleccionables.map((w) => w.workerId);
     if (this.todosSeleccionados) {
       this.selectedWorkerIds = this.selectedWorkerIds.filter((id) => !ids.includes(id));
     } else {

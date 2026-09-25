@@ -63,6 +63,7 @@ export class EmoService {
     fd.append('workerId', dto.workerId.toString());
     fd.append('tipoEmoId', dto.tipoEmoId.toString());
     if (dto.empresaOrigenId != null) fd.append('empresaOrigenId', dto.empresaOrigenId.toString());
+    if (dto.razonSocialId != null) fd.append('razonSocialId', dto.razonSocialId.toString());
     fd.append('fechaEmo', dto.fechaEmo);
     fd.append('aptitud', dto.aptitud);
     fd.append('requiereInterconsulta', dto.requiereInterconsulta.toString());

@@ -69,6 +69,35 @@
       </div>
     </div>
 
+    <!-- EMO de Ingreso de una ficha de pre-ingreso: se elige con qué razón social entra, igual que
+         al programarlo con clínica. Mismos avisos de cupo que ese modal. -->
+    <div class="form-row" *ngIf="pideRazonSocial">
+      <div class="abril-field">
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Razón social *"
+          [options]="razonesSociales"
+          valueField="id"
+          displayField="nombre"
+          [value]="razonSocialId"
+          placeholder="Selecciona razón social"
+          (valueChange)="razonSocialId = $event">
+        </app-search-select>
+        <p class="razon-hint" *ngIf="razonSocialSeleccionada">
+          Cupos disponibles: <b>{{ razonSocialSeleccionada.cuposDisponibles }}</b> de 20.
+        </p>
+        <p class="razon-hint razon-hint--aviso" *ngIf="excedePorReemplazo">
+          Sin cupos: se pasa del tope de 20 por ser vacante de reemplazo.
+        </p>
+        <p class="razon-hint" *ngIf="sinTopePorReemplazo && !excedePorReemplazo">
+          Vacante de reemplazo: no aplica el tope de 20.
+        </p>
+        <p class="razon-hint razon-hint--warn" *ngIf="sinCupos">
+          Ya llegó al tope de 20 trabajadores: elige otra para poder registrar el EMO.
+        </p>
+      </div>
+    </div>
+
     <div class="form-row">
       <div class="abril-field">
         <label class="abril-field-label">Fecha EMO *</label>
