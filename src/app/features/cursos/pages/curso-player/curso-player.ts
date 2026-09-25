@@ -21,6 +21,7 @@ import { SlideArrastrarSoltar } from './slides/slide-arrastrar-soltar/slide-arra
 import { SlideOrdenar } from './slides/slide-ordenar/slide-ordenar';
 import { SlideTarjetas } from './slides/slide-tarjetas/slide-tarjetas';
 import { SlideGaleriaZoom } from './slides/slide-galeria-zoom/slide-galeria-zoom';
+import { SlideContenidoLibre } from './slides/slide-contenido-libre/slide-contenido-libre';
 import { FondoAnimado } from './fondo-animado/fondo-animado';
 
 const DECLARACION_TEXTO =
@@ -44,6 +45,7 @@ type Fase = 'cargando' | 'jugando' | 'feedback' | 'declaracion' | 'finalizando' 
     SlideOrdenar,
     SlideTarjetas,
     SlideGaleriaZoom,
+    SlideContenidoLibre,
     FondoAnimado,
   ],
   templateUrl: './curso-player.html',

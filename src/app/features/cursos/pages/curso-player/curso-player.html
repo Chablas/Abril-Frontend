@@ -72,6 +72,9 @@
           @case ('contenido_galeria_zoom') {
             <app-slide-galeria-zoom [slide]="slide" (respuesta)="onRespuesta($event)" />
           }
+          @case ('contenido_libre') {
+            <app-slide-contenido-libre [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
           @default {
             <div class="tipo-no-soportado">
               <i class="ti ti-help-circle"></i>

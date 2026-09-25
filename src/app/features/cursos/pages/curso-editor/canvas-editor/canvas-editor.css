@@ -1,0 +1,350 @@
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
+.canvas-editor {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  background: #f8fafc;
+  color: #14100b;
+}
+
+/* ---- Riel de herramientas (estilo Genially): íconos apilados a la izquierda ---- */
+
+.canvas-rail {
+  flex-shrink: 0;
+  width: 84px;
+  background: #ffffff;
+  border-right: 1px solid #ece7d9;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 14px 0;
+  overflow-y: auto;
+}
+
+.rail-btn {
+  background: none;
+  border: none;
+  color: #6b6455;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.rail-btn i {
+  font-size: 20px;
+}
+
+.rail-btn:hover {
+  background: #fdf1dc;
+  color: #d9860a;
+}
+
+/* ---- Cuerpo: lienzo grande centrado + panel de propiedades flotante ---- */
+
+.canvas-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+  padding: 16px;
+  overflow: auto;
+}
+
+.canvas-lienzo-wrap {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+.btn-icono {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b6455;
+}
+
+.btn-icono:hover:not(:disabled) {
+  background: #ece7d9;
+  color: #14100b;
+}
+
+.btn-icono:disabled {
+  color: #cfc9b8;
+  cursor: default;
+}
+
+.canvas-lienzo {
+  position: relative;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  touch-action: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.canvas-elemento {
+  position: absolute;
+  cursor: move;
+  border: 1px dashed transparent;
+}
+
+.canvas-elemento.seleccionado {
+  border-color: #f5a623;
+}
+
+.canvas-texto {
+  width: 100%;
+  height: 100%;
+  overflow-wrap: break-word;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.canvas-imagen {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.canvas-forma {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.canvas-icono {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80%;
+  pointer-events: none;
+}
+
+.canvas-boton {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.canvas-video-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #ece7d9;
+  color: #6b6455;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  text-align: center;
+  padding: 6px;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.canvas-elemento.bloqueado {
+  cursor: default;
+}
+
+.icono-bloqueado {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  color: #f5a623;
+  background: rgba(20, 16, 11, 0.7);
+  border-radius: 4px;
+  padding: 2px;
+  font-size: 12px;
+}
+
+.banda-seleccion {
+  position: absolute;
+  border: 1px dashed #f5a623;
+  background: rgba(245, 166, 35, 0.12);
+  pointer-events: none;
+  z-index: 8;
+}
+
+.guia-alineacion {
+  position: absolute;
+  background: #ff2fb0;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.guia-alineacion.guia-v {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.guia-alineacion.guia-h {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.menu-contextual {
+  position: absolute;
+  z-index: 20;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.menu-contextual button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #14100b;
+  font-size: 13px;
+}
+
+.menu-contextual button:hover {
+  background: #f2ede0;
+}
+
+.menu-contextual .opcion-danger {
+  color: #b3261e;
+}
+
+.menu-contextual .opcion-danger:hover {
+  background: #fdeceb;
+}
+
+.handle-resize {
+  position: absolute;
+  display: none;
+  width: 12px;
+  height: 12px;
+  background: #f5a623;
+  border: 2px solid #14100b;
+  border-radius: 50%;
+  z-index: 5;
+}
+
+.handle-resize.visible {
+  display: block;
+}
+
+.handle-n { top: -6px; left: calc(50% - 6px); cursor: ns-resize; }
+.handle-s { bottom: -6px; left: calc(50% - 6px); cursor: ns-resize; }
+.handle-e { right: -6px; top: calc(50% - 6px); cursor: ew-resize; }
+.handle-o { left: -6px; top: calc(50% - 6px); cursor: ew-resize; }
+.handle-ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.handle-so { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.handle-no { top: -6px; left: -6px; cursor: nwse-resize; }
+.handle-se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+.canvas-panel {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fff;
+  color: #14100b;
+  border-radius: 10px;
+  padding: 16px;
+  overflow-y: auto;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Pantallas angostas: el panel de propiedades flota sobre el lienzo en vez de robarle
+   ancho — así el lienzo nunca se ve achicado por culpa del panel, igual que el ancho
+   fijo del riel ya no compite tanto por espacio. */
+@media (max-width: 900px) {
+  .canvas-rail {
+    width: 64px;
+  }
+
+  .rail-btn span {
+    display: none;
+  }
+
+  .canvas-cuerpo {
+    position: relative;
+  }
+
+  .canvas-panel {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: min(280px, calc(100% - 32px));
+    z-index: 10;
+  }
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+}
+
+.campo-corto {
+  width: 100px;
+}
+
+.fila-capas {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.separador {
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 4px 0;
+}

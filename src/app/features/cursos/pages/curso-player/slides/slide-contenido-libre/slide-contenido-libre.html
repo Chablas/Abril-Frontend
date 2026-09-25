@@ -1,0 +1,85 @@
+<div class="libre-wrap">
+  <div #lienzo class="libre-lienzo" [style.aspect-ratio]="canvasAncho + ' / ' + canvasAlto">
+    <div
+      *ngFor="let el of elementosOrdenados"
+      class="libre-elemento"
+      [class.interactivo]="esInteractivo(el)"
+      [ngClass]="claseAnimacion(el)"
+      [style.left.%]="(el.x / canvasAncho) * 100"
+      [style.top.%]="(el.y / canvasAlto) * 100"
+      [style.width.%]="(el.ancho / canvasAncho) * 100"
+      [style.height.%]="(el.alto / canvasAlto) * 100"
+      [style.z-index]="el.zIndex ?? 0"
+      [style.transform]="el.rotacion ? 'rotate(' + el.rotacion + 'deg)' : null"
+      [style.animation-delay.ms]="el.animacionDelayMs ?? 0"
+      [style.animation-duration.ms]="el.animacionDuracionMs ?? 600"
+      [style.animation-timing-function]="easingCss(el.animacionEasing)"
+      (click)="alClicElemento(el)"
+    >
+      <ng-container [ngSwitch]="el.tipo">
+        <div
+          *ngSwitchCase="'texto'"
+          class="libre-texto"
+          [style.color]="el.colorTexto || '#ffffff'"
+          [style.font-size.px]="(el.tamanoFuente || 24) * escala"
+          [style.text-align]="el.alineacion || 'left'"
+          [style.font-weight]="el.negrita ? 700 : 400"
+        >{{ el.texto }}</div>
+
+        <img
+          *ngSwitchCase="'imagen'"
+          class="libre-imagen"
+          [src]="el.imagenUrl"
+          [style.border-radius.px]="(el.bordeRedondeado || 0) * escala"
+          alt=""
+        />
+
+        <div
+          *ngSwitchCase="'forma'"
+          class="libre-forma"
+          [style.background]="el.colorFondo || '#f5a623'"
+          [style.border-radius]="el.formaTipo === 'circulo' ? '50%' : (el.bordeRedondeado || 0) * escala + 'px'"
+        ></div>
+
+        <i
+          *ngSwitchCase="'icono'"
+          class="ti libre-icono"
+          [ngClass]="el.iconoClase || 'ti-star'"
+          [style.color]="el.colorTexto || '#ffffff'"
+          [style.font-size.px]="el.ancho * 0.8 * escala"
+        ></i>
+
+        <button
+          *ngSwitchCase="'boton'"
+          type="button"
+          class="libre-boton"
+          [style.background]="el.colorFondo || '#f5a623'"
+          [style.color]="el.colorTexto || '#14100b'"
+          [style.font-size.px]="16 * escala"
+        >{{ el.botonTexto || 'Botón' }}</button>
+
+        <iframe
+          *ngSwitchCase="'video'"
+          class="libre-video"
+          [src]="urlVideoEmbebido(el.videoUrl)"
+          frameborder="0"
+          allowfullscreen
+        ></iframe>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Overlay interactivo: clic sobre un elemento con "overlay.activo" -->
+  <div class="overlay-libre-backdrop" *ngIf="overlayAbierto" (click)="cerrarOverlay()">
+    <div class="overlay-libre-panel" (click)="$event.stopPropagation()">
+      <button type="button" class="overlay-libre-cerrar" (click)="cerrarOverlay()"><i class="ti ti-x"></i></button>
+      <h3 *ngIf="overlayAbierto.overlay?.titulo">{{ overlayAbierto.overlay?.titulo }}</h3>
+      <img *ngIf="overlayAbierto.overlay?.imagenUrl" [src]="overlayAbierto.overlay?.imagenUrl" alt="" />
+      <p *ngIf="overlayAbierto.overlay?.texto">{{ overlayAbierto.overlay?.texto }}</p>
+    </div>
+  </div>
+
+  <button type="button" class="btn-primario btn-continuar-libre" (click)="siguiente()">
+    Continuar
+  </button>
+</div>

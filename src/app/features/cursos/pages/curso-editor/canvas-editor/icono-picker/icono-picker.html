@@ -1,0 +1,36 @@
+<button type="button" class="btn-subir btn-abrir-picker" (click)="abrir()">
+  <i class="ti" [ngClass]="claseActual || 'ti-star'"></i>
+  Cambiar ícono
+</button>
+
+<div class="picker-backdrop" *ngIf="abierto" (click)="cerrarPicker()">
+  <div class="picker-panel" (click)="$event.stopPropagation()">
+    <div class="picker-header">
+      <input
+        class="abril-field-input picker-buscador"
+        type="text"
+        [(ngModel)]="busqueda"
+        placeholder="Buscar ícono (ej. star, alert, user)..."
+        autofocus
+      />
+      <button type="button" class="btn-link" (click)="cerrarPicker()"><i class="ti ti-x"></i></button>
+    </div>
+
+    <p class="picker-contador">{{ totalCoincidencias }} ícono(s) — mostrando hasta 120</p>
+
+    <div class="picker-grid">
+      <button
+        type="button"
+        class="picker-item"
+        *ngFor="let nombre of resultados"
+        [class.activo]="nombre === claseActual"
+        (click)="elegir(nombre)"
+        [title]="nombre"
+      >
+        <i class="ti" [ngClass]="nombre"></i>
+      </button>
+    </div>
+
+    <p class="picker-vacio" *ngIf="!resultados.length">Sin resultados para "{{ busqueda }}".</p>
+  </div>
+</div>

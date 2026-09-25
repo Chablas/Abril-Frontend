@@ -1,0 +1,47 @@
+<div class="timeline" [class.colapsado]="!expandido">
+  <button type="button" class="timeline-header" (click)="toggleExpandido()">
+    <i class="ti" [ngClass]="expandido ? 'ti-chevron-down' : 'ti-chevron-up'"></i>
+    <span>Animaciones{{ filas.length ? ' (' + filas.length + ')' : '' }}</span>
+  </button>
+
+  <ng-container *ngIf="expandido">
+    <div class="timeline-ruler">
+      <span *ngFor="let marca of marcasRuler" class="ruler-marca" [style.left.%]="(marca / escalaMs) * 100">
+        {{ marca }}ms
+      </span>
+    </div>
+
+    <div #pista class="timeline-pista">
+    <div
+      *ngFor="let marca of marcasRuler"
+      class="ruler-linea"
+      [style.left.%]="(marca / escalaMs) * 100"
+    ></div>
+
+    <div class="timeline-fila" *ngFor="let el of filas">
+      <div class="fila-etiqueta" [class.activa]="el.id === seleccionadoId" (click)="seleccionarFila(el.id)">
+        <span class="fila-orden">
+          <button type="button" (click)="reordenarAntes(el)" title="Antes"><i class="ti ti-chevron-up"></i></button>
+          <button type="button" (click)="reordenarDespues(el)" title="Después"><i class="ti ti-chevron-down"></i></button>
+        </span>
+        <span class="fila-texto" [title]="etiqueta(el)">{{ etiqueta(el) }}</span>
+      </div>
+
+      <div class="fila-pista">
+        <div
+          class="barra-animacion"
+          [class.activa]="el.id === seleccionadoId"
+          [style.left.%]="((el.animacionDelayMs ?? 0) / escalaMs) * 100"
+          [style.width.%]="((el.animacionDuracionMs ?? 600) / escalaMs) * 100"
+          (pointerdown)="iniciarArrastreBarra(el, $event)"
+        >
+          <span class="barra-texto">{{ el.animacionDelayMs ?? 0 }}ms</span>
+          <span class="handle-duracion" (pointerdown)="iniciarArrastreDuracion(el, $event)"></span>
+        </div>
+      </div>
+    </div>
+
+    <p class="timeline-vacio" *ngIf="!filas.length">Ningún elemento tiene animación de entrada configurada.</p>
+    </div>
+  </ng-container>
+</div>

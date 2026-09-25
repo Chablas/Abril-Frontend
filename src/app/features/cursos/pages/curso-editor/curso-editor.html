@@ -1,4 +1,6 @@
 <div class="curso-editor" [class.modo-slide]="!!slideEditando">
+  <input type="file" accept="image/*" #fiPreview style="display:none" (change)="onArchivoPreviewSeleccionado($event)" />
+
   <div class="admin-topbar">
     <span class="admin-kicker"><i class="ti ti-tool"></i> Panel de administración de cursos</span>
     <a class="admin-link" routerLink="/cursos">Ver catálogo público <i class="ti ti-external-link"></i></a>
@@ -29,281 +31,232 @@
     <p class="sin-cursos" *ngIf="!todosLosCursos.length && !cargando">Aún no hay cursos creados.</p>
   </div>
 
-  <h1 class="titulo-pagina" *ngIf="cursoId || mostrarFormularioNuevo">
-    {{ cursoId ? 'Editar curso' : 'Nuevo curso' }}
-  </h1>
+  <!-- Encabezado compacto (estilo Genially: el nombre es un campito arriba, no una
+       pantalla de configuración aparte). Un curso nuevo sí necesita un título mínimo
+       antes de poder crear pantallas, así que ese caso conserva el formulario simple. -->
+  <div class="encabezado-curso" *ngIf="cursoId">
+    <input
+      class="titulo-curso-input"
+      type="text"
+      [(ngModel)]="curso.titulo"
+      placeholder="Título del curso"
+      (blur)="guardarCurso()"
+    />
+    <button type="button" class="btn-link" (click)="abrirConfiguracionCurso()" title="Configuración del curso">
+      <i class="ti ti-settings"></i> Configuración
+    </button>
+  </div>
 
-  <section class="panel" *ngIf="cursoId || mostrarFormularioNuevo">
+  <section class="panel" *ngIf="mostrarFormularioNuevo && !cursoId">
     <h2><i class="ti ti-file-description"></i> Datos del curso</h2>
-    <div class="fila-campos">
-      <div class="abril-field">
-        <input class="abril-field-input" type="text" id="titulo" [(ngModel)]="curso.titulo" placeholder=" " />
-        <label class="abril-field-label" for="titulo">Título</label>
+    <div class="abril-field">
+      <input class="abril-field-input" type="text" id="titulo" [(ngModel)]="curso.titulo" placeholder=" " />
+      <label class="abril-field-label" for="titulo">Título</label>
+    </div>
+    <button type="button" class="btn-primario" (click)="guardarCurso()">Crear curso</button>
+  </section>
+
+  <!-- Configuración del curso: modal, no pantalla completa -->
+  <div class="historial-backdrop" *ngIf="mostrarConfiguracionCurso" (click)="cerrarConfiguracionCurso()">
+    <div class="historial-panel" (click)="$event.stopPropagation()">
+      <div class="historial-header">
+        <span><i class="ti ti-settings"></i> Configuración del curso</span>
+        <button type="button" class="btn-link" (click)="cerrarConfiguracionCurso()"><i class="ti ti-x"></i></button>
       </div>
-      <div class="abril-field">
-        <input class="abril-field-input" type="text" id="categoria" [(ngModel)]="curso.categoriaNombre" placeholder=" " />
-        <label class="abril-field-label" for="categoria">Categoría</label>
-      </div>
-      <div class="abril-field">
-        <input class="abril-field-input" type="number" id="nota" [(ngModel)]="curso.notaMinimaAprobacion" placeholder=" " />
-        <label class="abril-field-label" for="nota">Nota mínima de aprobación</label>
+
+      <div class="fila-campos">
+        <div class="abril-field">
+          <input class="abril-field-input" type="text" [(ngModel)]="curso.categoriaNombre" placeholder=" " />
+          <label class="abril-field-label">Categoría</label>
+        </div>
+        <div class="abril-field">
+          <input class="abril-field-input" type="number" [(ngModel)]="curso.notaMinimaAprobacion" placeholder=" " />
+          <label class="abril-field-label">Nota mínima de aprobación</label>
+        </div>
       </div>
       <div class="campo-color">
         <label>Color del tema</label>
         <input type="color" [(ngModel)]="curso.colorTema" />
         <span>{{ curso.colorTema }}</span>
       </div>
-    </div>
-    <div class="abril-field">
-      <textarea class="abril-field-input" id="descripcion" rows="2" [(ngModel)]="curso.descripcion" placeholder=" "></textarea>
-      <label class="abril-field-label" for="descripcion">Descripción</label>
-    </div>
+      <div class="abril-field">
+        <textarea class="abril-field-input" rows="2" [(ngModel)]="curso.descripcion" placeholder=" "></textarea>
+        <label class="abril-field-label">Descripción</label>
+      </div>
 
-    <button type="button" class="btn-primario" (click)="guardarCurso()">
-      {{ cursoId ? 'Guardar cambios' : 'Crear curso' }}
-    </button>
-  </section>
+      <button type="button" class="btn-primario" (click)="guardarCurso()">Guardar cambios</button>
+    </div>
+  </div>
 
   <section class="panel" *ngIf="cursoId">
     <h2><i class="ti ti-layout-grid"></i> Pantallas del curso ({{ slides.length }})</h2>
 
-    <div class="lista-slides" *ngIf="slides.length">
-      <div class="fila-slide" *ngFor="let s of slides">
+    <div class="grilla-slides" *ngIf="slides.length">
+      <div
+        class="miniatura-slide"
+        *ngFor="let s of slides"
+        (click)="editarSlide(s)"
+        [style.background]="'linear-gradient(135deg, ' + (curso.colorTema || '#f5a623') + ' 0%, #14100b 130%)'"
+      >
         <span class="orden-badge">{{ s.orden }}</span>
-        <span class="tipo-chip">{{ resolverEtiqueta(s.tipoCodigo) }}</span>
-        <div class="acciones-fila">
-          <button type="button" class="btn-link" (click)="editarSlide(s)" title="Editar"><i class="ti ti-edit"></i></button>
-          <button type="button" class="btn-link" (click)="duplicarSlide(s)" title="Duplicar"><i class="ti ti-copy"></i></button>
-          <button type="button" class="btn-link btn-link-danger" (click)="eliminarSlide(s)" title="Eliminar"><i class="ti ti-trash"></i></button>
+        <div class="acciones-miniatura">
+          <button type="button" class="btn-mini" (click)="duplicarSlide(s); $event.stopPropagation()" title="Duplicar"><i class="ti ti-copy"></i></button>
+          <button type="button" class="btn-mini btn-mini-danger" (click)="eliminarSlide(s); $event.stopPropagation()" title="Eliminar"><i class="ti ti-trash"></i></button>
+        </div>
+        <div class="miniatura-cuerpo">
+          <i class="ti miniatura-icono" [ngClass]="iconoParaTipo(s.tipoCodigo)"></i>
+          <span class="miniatura-titulo">{{ tituloSlide(s) }}</span>
         </div>
       </div>
     </div>
 
     <div class="agregar-slide">
-      <span>Agregar pantalla:</span>
-      <button type="button" class="chip-tipo" *ngFor="let t of tiposDisponibles" (click)="nuevaSlide(t.tipoCodigo)">
-        {{ t.etiqueta }}
+      <button type="button" class="btn-primario" (click)="abrirSelectorPlantilla()">
+        <i class="ti ti-plus"></i> Agregar pantalla
       </button>
     </div>
   </section>
 
-  <div class="editor-slide-layout" *ngIf="slideEditando">
-  <section class="panel panel-slide">
-    <h2>
-      <i class="ti ti-wand"></i>
-      {{ slideEditando.id ? 'Editar pantalla' : 'Nueva pantalla' }} —
-      {{ resolverEtiqueta(slideEditando.tipoCodigo) }}
-    </h2>
+  <!-- Editor: siempre el lienzo a pantalla completa, sin panel dividido ni vista previa
+       aparte — lo que ves en el lienzo ES lo que se guarda (igual que Genially). -->
+  <div class="lienzo-fullscreen" *ngIf="slideEditando as slide">
+    <div class="lienzo-topbar">
+      <button type="button" class="btn-volver" (click)="cancelarEdicionSlide()" title="Cerrar sin guardar">
+        <i class="ti ti-arrow-left"></i>
+      </button>
 
-    <div class="fila-campos">
-      <div class="abril-field campo-orden">
-        <input class="abril-field-input" type="number" id="orden" [(ngModel)]="slideEditando.orden" placeholder=" " />
-        <label class="abril-field-label" for="orden">Orden</label>
+      <div class="lienzo-topbar-campos">
+        <input
+          class="lienzo-titulo-input"
+          type="text"
+          [(ngModel)]="slide.campos.titulo"
+          placeholder="Título de la pantalla (opcional)"
+        />
+        <input
+          class="lienzo-kicker-input"
+          type="text"
+          [(ngModel)]="slide.campos.kicker"
+          placeholder="Etiqueta (kicker)"
+        />
+        <span class="lienzo-orden">
+          Orden
+          <input type="number" [(ngModel)]="slide.orden" />
+        </span>
       </div>
-      <label class="checkbox-row" *ngIf="slideEditando.tipoCodigo.startsWith('pregunta_')">
-        <input type="checkbox" [(ngModel)]="slideEditando.esEvaluable" />
-        <span>Se califica</span>
-      </label>
-      <div class="abril-field campo-puntaje" *ngIf="slideEditando.esEvaluable">
-        <input class="abril-field-input" type="number" id="puntaje" [(ngModel)]="slideEditando.puntaje" placeholder=" " />
-        <label class="abril-field-label" for="puntaje">Puntaje</label>
+
+      <div class="lienzo-topbar-undo">
+        <button type="button" class="btn-icono" [disabled]="!ce.puedeDeshacer" (click)="ce.deshacer()" title="Deshacer (Ctrl+Z)"><i class="ti ti-arrow-back-up"></i></button>
+        <button type="button" class="btn-icono" [disabled]="!ce.puedeRehacer" (click)="ce.rehacer()" title="Rehacer (Ctrl+Shift+Z)"><i class="ti ti-arrow-forward-up"></i></button>
       </div>
-    </div>
 
-    <!-- ===== Formularios por tipo ===== -->
-    <ng-container [ngSwitch]="slideEditando.tipoCodigo">
+      <span class="autoguardado-indicador" *ngIf="ultimoAutoguardadoEn">
+        <i class="ti ti-device-floppy"></i> Guardado
+      </span>
 
-      <!-- contenido_texto -->
-      <ng-container *ngSwitchCase="'contenido_texto'">
-        <div class="fila-campos">
-          <div class="abril-field">
-            <input class="abril-field-input" type="text" id="kicker" [(ngModel)]="slideEditando.campos.kicker" placeholder=" " />
-            <label class="abril-field-label" for="kicker">Etiqueta pequeña (kicker)</label>
-          </div>
-        </div>
-        <div class="abril-field">
-          <input class="abril-field-input" type="text" id="titulo-c" [(ngModel)]="slideEditando.campos.titulo" placeholder=" " />
-          <label class="abril-field-label" for="titulo-c">Título</label>
-        </div>
-        <div class="abril-field">
-          <textarea class="abril-field-input" id="texto-c" rows="4" [(ngModel)]="slideEditando.campos.texto" placeholder=" "></textarea>
-          <label class="abril-field-label" for="texto-c">Texto</label>
-        </div>
-        <div class="campo-imagen">
-          <img *ngIf="slideEditando.campos.imagenUrl" [src]="slideEditando.campos.imagenUrl" class="preview-campo" alt="" />
-          <input type="file" accept="image/*" #fi1 style="display:none" (change)="subirImagenA(slideEditando.campos, 'imagenUrl', $event)" />
-          <button type="button" class="btn-subir" (click)="fi1.click()"><i class="ti ti-upload"></i> {{ slideEditando.campos.imagenUrl ? 'Cambiar imagen' : 'Subir imagen' }}</button>
-        </div>
-      </ng-container>
-
-      <!-- contenido_tarjetas -->
-      <ng-container *ngSwitchCase="'contenido_tarjetas'">
-        <div class="fila-campos">
-          <div class="abril-field">
-            <input class="abril-field-input" type="text" [(ngModel)]="slideEditando.campos.kicker" placeholder=" " />
-            <label class="abril-field-label">Etiqueta pequeña (kicker)</label>
-          </div>
-          <div class="abril-field">
-            <input class="abril-field-input" type="text" [(ngModel)]="slideEditando.campos.titulo" placeholder=" " />
-            <label class="abril-field-label">Título de la pantalla</label>
-          </div>
-        </div>
-
-        <div class="bloque-repetible" *ngFor="let t of slideEditando.campos.tarjetas; let i = index">
-          <div class="bloque-repetible-header">
-            <span>Tarjeta {{ i + 1 }}</span>
-            <button type="button" class="btn-quitar" (click)="quitarTarjeta(i)" title="Quitar"><i class="ti ti-x"></i></button>
-          </div>
-          <div class="fila-campos">
-            <div class="abril-field"><input class="abril-field-input" type="text" [(ngModel)]="t.titulo" placeholder=" " /><label class="abril-field-label">Título</label></div>
-          </div>
-          <div class="abril-field"><textarea class="abril-field-input" rows="2" [(ngModel)]="t.texto" placeholder=" "></textarea><label class="abril-field-label">Texto corto</label></div>
-          <div class="abril-field"><textarea class="abril-field-input" rows="3" [(ngModel)]="t.descripcion" placeholder=" "></textarea><label class="abril-field-label">Descripción (se muestra al hacer clic en "+")</label></div>
-          <div class="campo-imagen">
-            <img *ngIf="t.imagenUrl" [src]="t.imagenUrl" class="preview-campo" alt="" />
-            <input type="file" accept="image/*" #fiT style="display:none" (change)="subirImagenA(t, 'imagenUrl', $event)" />
-            <button type="button" class="btn-subir" (click)="fiT.click()"><i class="ti ti-upload"></i> {{ t.imagenUrl ? 'Cambiar imagen' : 'Subir imagen' }}</button>
-          </div>
-        </div>
-
-        <button type="button" class="btn-agregar" (click)="agregarTarjeta()"><i class="ti ti-plus"></i> Agregar tarjeta</button>
-      </ng-container>
-
-      <!-- contenido_galeria_zoom -->
-      <ng-container *ngSwitchCase="'contenido_galeria_zoom'">
-        <div class="fila-campos">
-          <div class="abril-field">
-            <input class="abril-field-input" type="text" [(ngModel)]="slideEditando.campos.kicker" placeholder=" " />
-            <label class="abril-field-label">Etiqueta pequeña (kicker)</label>
-          </div>
-          <div class="abril-field">
-            <input class="abril-field-input" type="text" [(ngModel)]="slideEditando.campos.titulo" placeholder=" " />
-            <label class="abril-field-label">Título de la pantalla</label>
-          </div>
-        </div>
-
-        <div class="bloque-repetible" *ngFor="let img of slideEditando.campos.imagenes; let i = index">
-          <div class="bloque-repetible-header">
-            <span>Foto {{ i + 1 }}</span>
-            <button type="button" class="btn-quitar" (click)="quitarImagenGaleria(i)" title="Quitar"><i class="ti ti-x"></i></button>
-          </div>
-          <div class="abril-field"><input class="abril-field-input" type="text" [(ngModel)]="img.caption" placeholder=" " /><label class="abril-field-label">Descripción corta (caption)</label></div>
-          <div class="campo-imagen">
-            <img *ngIf="img.imagenUrl" [src]="img.imagenUrl" class="preview-campo" alt="" />
-            <input type="file" accept="image/*" #fiG style="display:none" (change)="subirImagenA(img, 'imagenUrl', $event)" />
-            <button type="button" class="btn-subir" (click)="fiG.click()"><i class="ti ti-upload"></i> {{ img.imagenUrl ? 'Cambiar imagen' : 'Subir imagen' }}</button>
-          </div>
-        </div>
-
-        <button type="button" class="btn-agregar" (click)="agregarImagenGaleria()"><i class="ti ti-plus"></i> Agregar foto</button>
-      </ng-container>
-
-      <!-- pregunta_vf -->
-      <ng-container *ngSwitchCase="'pregunta_vf'">
-        <div class="abril-field">
-          <textarea class="abril-field-input" rows="3" [(ngModel)]="slideEditando.campos.enunciado" placeholder=" "></textarea>
-          <label class="abril-field-label">Enunciado</label>
-        </div>
-        <div class="campo-imagen">
-          <img *ngIf="slideEditando.campos.imagenUrl" [src]="slideEditando.campos.imagenUrl" class="preview-campo" alt="" />
-          <input type="file" accept="image/*" #fi2 style="display:none" (change)="subirImagenA(slideEditando.campos, 'imagenUrl', $event)" />
-          <button type="button" class="btn-subir" (click)="fi2.click()"><i class="ti ti-upload"></i> {{ slideEditando.campos.imagenUrl ? 'Cambiar imagen' : 'Subir imagen (opcional)' }}</button>
-        </div>
-        <div class="respuesta-vf">
-          <span>Respuesta correcta:</span>
-          <button type="button" class="chip-toggle" [class.activo]="slideEditando.campos.respuestaCorrecta === true" (click)="slideEditando.campos.respuestaCorrecta = true">Verdadero</button>
-          <button type="button" class="chip-toggle" [class.activo]="slideEditando.campos.respuestaCorrecta === false" (click)="slideEditando.campos.respuestaCorrecta = false">Falso</button>
-        </div>
-      </ng-container>
-
-      <!-- pregunta_opcion_multiple -->
-      <ng-container *ngSwitchCase="'pregunta_opcion_multiple'">
-        <div class="abril-field">
-          <textarea class="abril-field-input" rows="3" [(ngModel)]="slideEditando.campos.enunciado" placeholder=" "></textarea>
-          <label class="abril-field-label">Enunciado</label>
-        </div>
-
-        <div class="fila-opcion" *ngFor="let o of slideEditando.campos.opciones; let i = index">
-          <button
-            type="button"
-            class="radio-correcta"
-            [class.activo]="slideEditando.campos.respuestaCorrecta === o.id"
-            (click)="slideEditando.campos.respuestaCorrecta = o.id"
-            title="Marcar como correcta"
-          >
-            <i class="ti ti-check" *ngIf="slideEditando.campos.respuestaCorrecta === o.id"></i>
-          </button>
-          <input class="abril-field-input campo-opcion-texto" type="text" [(ngModel)]="o.texto" placeholder="Texto de la opción" />
-          <button type="button" class="btn-quitar" (click)="quitarOpcion(i)" title="Quitar"><i class="ti ti-x"></i></button>
-        </div>
-        <button type="button" class="btn-agregar" (click)="agregarOpcion()"><i class="ti ti-plus"></i> Agregar opción</button>
-        <p class="ayuda">Haz clic en el círculo de la izquierda para marcar cuál es la respuesta correcta.</p>
-      </ng-container>
-
-      <!-- pregunta_ordenar -->
-      <ng-container *ngSwitchCase="'pregunta_ordenar'">
-        <div class="abril-field">
-          <textarea class="abril-field-input" rows="3" [(ngModel)]="slideEditando.campos.enunciado" placeholder=" "></textarea>
-          <label class="abril-field-label">Enunciado</label>
-        </div>
-
-        <div class="fila-opcion" *ngFor="let it of slideEditando.campos.items; let i = index">
-          <span class="orden-badge">{{ i + 1 }}</span>
-          <input class="abril-field-input campo-opcion-texto" type="text" [(ngModel)]="it.texto" placeholder="Paso" />
-          <button type="button" class="btn-flecha" (click)="moverItemOrdenar(i, -1)" [disabled]="i === 0" title="Subir"><i class="ti ti-chevron-up"></i></button>
-          <button type="button" class="btn-flecha" (click)="moverItemOrdenar(i, 1)" [disabled]="i === slideEditando.campos.items.length - 1" title="Bajar"><i class="ti ti-chevron-down"></i></button>
-          <button type="button" class="btn-quitar" (click)="quitarItemOrdenar(i)" title="Quitar"><i class="ti ti-x"></i></button>
-        </div>
-        <button type="button" class="btn-agregar" (click)="agregarItemOrdenar()"><i class="ti ti-plus"></i> Agregar paso</button>
-        <p class="ayuda">El orden en que quedan los pasos aquí (de arriba hacia abajo) es la respuesta correcta.</p>
-      </ng-container>
-
-      <!-- Fallback: tipo sin formulario dedicado todavía -->
-      <ng-container *ngSwitchDefault>
-        <p class="ayuda">Este tipo de pantalla todavía no tiene formulario dedicado — edítalo como JSON.</p>
-        <label class="etiqueta-json">Configuración (JSON)</label>
-        <textarea class="json-editor" rows="14" [(ngModel)]="slideEditando.configuracionJson"></textarea>
-      </ng-container>
-
-    </ng-container>
-
-    <div class="acciones-slide">
-      <button type="button" class="btn-secundario" (click)="cancelarEdicionSlide()">Cancelar</button>
-      <button type="button" class="btn-primario" (click)="guardarSlide()">Guardar pantalla</button>
-    </div>
-  </section>
-
-  <aside class="preview-panel">
-    <span class="preview-kicker"><i class="ti ti-eye"></i> Vista previa en tiempo real — clic en la imagen para subirla</span>
-    <input type="file" accept="image/*" #fiPreview style="display:none" (change)="onArchivoPreviewSeleccionado($event)" />
-    <div class="preview-lienzo">
-      <app-fondo-animado [estilo]="undefined" [slideIndex]="slideEditando.orden" />
-      <div class="preview-slide-host" [class.preview-slide-host--full]="slideEditando.tipoCodigo === 'contenido_texto'">
-        @switch (slideEditando.tipoCodigo) {
-          @case ('contenido_texto') {
-            <app-slide-contenido [slide]="previewSlide!" [editable]="true" (imagenClick)="clicImagenContenido()" (respuesta)="onRespuestaPreview()" />
-          }
-          @case ('contenido_tarjetas') {
-            <app-slide-tarjetas [slide]="previewSlide!" [editable]="true" (imagenClick)="clicImagenTarjeta($event)" (respuesta)="onRespuestaPreview()" />
-          }
-          @case ('contenido_galeria_zoom') {
-            <app-slide-galeria-zoom [slide]="previewSlide!" [editable]="true" (imagenClick)="clicImagenGaleria($event)" (respuesta)="onRespuestaPreview()" />
-          }
-          @case ('pregunta_vf') {
-            <app-slide-verdadero-falso [slide]="previewSlide!" (respuesta)="onRespuestaPreview()" />
-          }
-          @case ('pregunta_opcion_multiple') {
-            <app-slide-opcion-multiple [slide]="previewSlide!" (respuesta)="onRespuestaPreview()" />
-          }
-          @case ('pregunta_ordenar') {
-            <app-slide-ordenar [slide]="previewSlide!" (respuesta)="onRespuestaPreview()" />
-          }
-          @default {
-            <p class="preview-sin-soporte">Este tipo aún no tiene vista previa en vivo.</p>
-          }
-        }
+      <div class="lienzo-topbar-acciones">
+        <button type="button" class="btn-link" *ngIf="slide.id" (click)="abrirHistorial()">
+          <i class="ti ti-history"></i> Historial
+        </button>
+        <button type="button" class="btn-secundario" (click)="cancelarEdicionSlide()">Cancelar</button>
+        <button type="button" class="btn-primario" (click)="guardarSlide()">Guardar pantalla</button>
       </div>
     </div>
-  </aside>
+
+    <app-canvas-editor
+      #ce
+      class="lienzo-fullscreen-cuerpo"
+      [elementos]="slide.campos.elementos"
+      (elementosChange)="slide.campos.elementos = $event"
+      (subirImagen)="subirImagenElementoLibre($event)"
+    />
+
+    <!-- Barra de páginas, estilo Genially: agregar página + flechas para moverte entre
+         pantallas sin salir del lienzo (guarda la actual antes de cambiar). -->
+    <div class="lienzo-bottombar">
+      <button type="button" class="btn-secundario" (click)="abrirSelectorPlantilla()">
+        <i class="ti ti-plus"></i> Añadir página
+      </button>
+      <div class="zoom-control">
+        <button type="button" class="btn-icono" (click)="ce.zoomOut()" title="Alejar"><i class="ti ti-zoom-out"></i></button>
+        <button type="button" class="zoom-porcentaje" (click)="ce.zoomAjustar()" title="Ajustar al espacio disponible">{{ ce.porcentajeZoom }}%</button>
+        <button type="button" class="btn-icono" (click)="ce.zoomIn()" title="Acercar"><i class="ti ti-zoom-in"></i></button>
+      </div>
+      <div class="paginador">
+        <button type="button" class="btn-icono" [disabled]="!puedeIrAnterior" (click)="irAPagina(-1)" title="Página anterior">
+          <i class="ti ti-chevron-left"></i>
+        </button>
+        <span>{{ indicePaginaActual + 1 }} / {{ slides.length }}</span>
+        <button type="button" class="btn-icono" [disabled]="!puedeIrSiguiente" (click)="irAPagina(1)" title="Página siguiente">
+          <i class="ti ti-chevron-right"></i>
+        </button>
+      </div>
+      <button type="button" class="btn-secundario" (click)="verGrilla()" title="Guarda esta pantalla y muestra todas">
+        <i class="ti ti-layout-grid"></i> Ver grilla
+      </button>
+    </div>
+  </div>
+
+  <!-- Selector de plantillas para una pantalla nueva (estilo galería de Genially) -->
+  <div class="historial-backdrop" *ngIf="mostrarSelectorPlantilla" (click)="cerrarSelectorPlantilla()">
+    <div class="historial-panel plantillas-panel" (click)="$event.stopPropagation()">
+      <div class="historial-header">
+        <span><i class="ti ti-layout-grid-add"></i> Elige una plantilla</span>
+        <button type="button" class="btn-link" (click)="cerrarSelectorPlantilla()"><i class="ti ti-x"></i></button>
+      </div>
+
+      <div class="grilla-plantillas">
+        <button
+          type="button"
+          class="tarjeta-plantilla"
+          *ngFor="let p of plantillasDisponibles"
+          (click)="elegirPlantilla(p)"
+        >
+          <div class="previa-plantilla" [style.aspect-ratio]="canvasAncho + ' / ' + canvasAlto">
+            <i class="ti previa-plantilla-vacia" [ngClass]="p.icono" *ngIf="!elementosPreviaPlantilla(p).length"></i>
+            <div
+              class="previa-elemento"
+              *ngFor="let el of elementosPreviaPlantilla(p)"
+              [style.left.%]="(el.x / canvasAncho) * 100"
+              [style.top.%]="(el.y / canvasAlto) * 100"
+              [style.width.%]="(el.ancho / canvasAncho) * 100"
+              [style.height.%]="(el.alto / canvasAlto) * 100"
+              [style.background]="el.tipo === 'forma' ? (el.colorFondo || '#f5a623') : el.tipo === 'boton' ? (el.colorFondo || '#f5a623') : el.tipo === 'imagen' || el.tipo === 'video' ? '#d8d2c2' : 'transparent'"
+              [style.border-radius]="el.tipo === 'forma' && el.formaTipo === 'circulo' ? '50%' : '2px'"
+            >
+              <span
+                *ngIf="el.tipo === 'texto'"
+                class="previa-texto-linea"
+                [style.background]="el.colorTexto || '#14100b'"
+                [style.width.%]="el.alineacion === 'center' ? 60 : 90"
+                [style.margin]="el.alineacion === 'center' ? '0 auto' : '0'"
+              ></span>
+            </div>
+          </div>
+          <span>{{ p.nombre }}</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historial de versiones (local, ver ../historial-local.ts) -->
+  <div class="historial-backdrop" *ngIf="mostrarHistorial" (click)="cerrarHistorial()">
+    <div class="historial-panel" (click)="$event.stopPropagation()">
+      <div class="historial-header">
+        <span><i class="ti ti-history"></i> Historial de versiones</span>
+        <button type="button" class="btn-link" (click)="cerrarHistorial()"><i class="ti ti-x"></i></button>
+      </div>
+
+      <p class="ayuda">Se guarda una versión cada vez que presionas "Guardar pantalla" (hasta las últimas 20, solo en este navegador).</p>
+
+      <div class="historial-lista" *ngIf="versionesDisponibles.length; else sinVersiones">
+        <div class="historial-item" *ngFor="let v of versionesDisponibles">
+          <span>{{ formatearFechaVersion(v.guardadoEn) }}</span>
+          <button type="button" class="btn-secundario" (click)="restaurarVersion(v)">Restaurar</button>
+        </div>
+      </div>
+      <ng-template #sinVersiones>
+        <p class="ayuda">Todavía no hay versiones anteriores guardadas de esta pantalla.</p>
+      </ng-template>
+    </div>
   </div>
 </div>

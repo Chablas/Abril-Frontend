@@ -1,0 +1,342 @@
+<div class="canvas-editor">
+  <!-- Riel de herramientas, estilo Genially: íconos apilados a la izquierda -->
+  <aside class="canvas-rail">
+    <button type="button" class="rail-btn" (click)="agregarElemento('texto')"><i class="ti ti-typography"></i><span>Texto</span></button>
+    <button type="button" class="rail-btn" (click)="agregarElemento('imagen')"><i class="ti ti-photo"></i><span>Imagen</span></button>
+    <button type="button" class="rail-btn" (click)="agregarElemento('forma')"><i class="ti ti-shape"></i><span>Forma</span></button>
+    <button type="button" class="rail-btn" (click)="agregarElemento('icono')"><i class="ti ti-icons"></i><span>Ícono</span></button>
+    <button type="button" class="rail-btn" (click)="agregarElemento('boton')"><i class="ti ti-hand-click"></i><span>Botón</span></button>
+    <button type="button" class="rail-btn" (click)="agregarElemento('video')"><i class="ti ti-video"></i><span>Video</span></button>
+  </aside>
+
+  <div class="canvas-main">
+  <div class="canvas-cuerpo">
+    <div class="canvas-lienzo-wrap" #lienzoEnvoltorio>
+      <div
+        #lienzo
+        class="canvas-lienzo"
+        [style.width.px]="canvasAncho * escalaFinal"
+        [style.height.px]="canvasAlto * escalaFinal"
+        (pointerdown)="iniciarBandaSeleccion($event)"
+        (contextmenu)="abrirMenuContextualFondo($event)"
+      >
+      <div
+        *ngFor="let el of elementos"
+        class="canvas-elemento"
+        [class.seleccionado]="estaSeleccionado(el.id)"
+        [class.bloqueado]="el.bloqueado"
+        [style.left.%]="(el.x / canvasAncho) * 100"
+        [style.top.%]="(el.y / canvasAlto) * 100"
+        [style.width.%]="(el.ancho / canvasAncho) * 100"
+        [style.height.%]="(el.alto / canvasAlto) * 100"
+        [style.z-index]="el.zIndex ?? 0"
+        [style.transform]="el.rotacion ? 'rotate(' + el.rotacion + 'deg)' : null"
+        (pointerdown)="iniciarMover(el, $event)"
+        (click)="seleccionar(el.id, $event)"
+        (contextmenu)="abrirMenuContextual(el, $event)"
+      >
+        <ng-container [ngSwitch]="el.tipo">
+          <div
+            *ngSwitchCase="'texto'"
+            class="canvas-texto"
+            [style.color]="el.colorTexto || '#ffffff'"
+            [style.font-size.px]="(el.tamanoFuente || 24) * escalaFinal"
+            [style.text-align]="el.alineacion || 'left'"
+            [style.font-weight]="el.negrita ? 700 : 400"
+          >{{ el.texto }}</div>
+
+          <img
+            *ngSwitchCase="'imagen'"
+            class="canvas-imagen"
+            [src]="el.imagenUrl || 'https://placehold.co/320x240?text=Imagen'"
+            [style.border-radius.px]="(el.bordeRedondeado || 0) * escalaFinal"
+            alt=""
+          />
+
+          <div
+            *ngSwitchCase="'forma'"
+            class="canvas-forma"
+            [style.background]="el.colorFondo || '#f5a623'"
+            [style.border-radius]="el.formaTipo === 'circulo' ? '50%' : (el.bordeRedondeado || 0) * escalaFinal + 'px'"
+          ></div>
+
+          <i
+            *ngSwitchCase="'icono'"
+            class="ti canvas-icono"
+            [ngClass]="el.iconoClase || 'ti-star'"
+            [style.color]="el.colorTexto || '#ffffff'"
+            [style.font-size.px]="el.ancho * 0.8 * escalaFinal"
+          ></i>
+
+          <button
+            *ngSwitchCase="'boton'"
+            type="button"
+            class="canvas-boton"
+            [style.background]="el.colorFondo || '#f5a623'"
+            [style.color]="el.colorTexto || '#14100b'"
+            [style.font-size.px]="16 * escalaFinal"
+          >{{ el.botonTexto || 'Botón' }}</button>
+
+          <div *ngSwitchCase="'video'" class="canvas-video-placeholder">
+            <i class="ti ti-video"></i>
+            <span>{{ el.videoUrl || 'Sin URL de video' }}</span>
+          </div>
+        </ng-container>
+
+        <span
+          *ngFor="let dir of direccionesResize"
+          class="handle-resize handle-{{ dir }}"
+          [class.visible]="el.id === seleccionadoId && !el.bloqueado"
+          (pointerdown)="iniciarRedimensionar(el, dir, $event)"
+        ></span>
+
+        <i *ngIf="el.bloqueado" class="ti ti-lock icono-bloqueado"></i>
+      </div>
+
+      <!-- Rectángulo de selección por arrastre (rubber-band) -->
+      <div
+        class="banda-seleccion"
+        *ngIf="bandaSeleccion as b"
+        [style.left.%]="(b.x / canvasAncho) * 100"
+        [style.top.%]="(b.y / canvasAlto) * 100"
+        [style.width.%]="(b.ancho / canvasAncho) * 100"
+        [style.height.%]="(b.alto / canvasAlto) * 100"
+      ></div>
+
+      <!-- Guías de alineación (snapping) mientras se arrastra/redimensiona -->
+      <div
+        *ngFor="let g of guiasActivas"
+        class="guia-alineacion"
+        [class.guia-v]="g.eje === 'v'"
+        [class.guia-h]="g.eje === 'h'"
+        [style.left.%]="g.eje === 'v' ? (g.posicion / canvasAncho) * 100 : null"
+        [style.top.%]="g.eje === 'h' ? (g.posicion / canvasAlto) * 100 : null"
+      ></div>
+
+      <!-- Menú contextual (clic derecho sobre un elemento) -->
+      <div
+        class="menu-contextual"
+        *ngIf="menuContextualId"
+        [style.left.px]="menuContextualPos.x"
+        [style.top.px]="menuContextualPos.y"
+        (pointerdown)="$event.stopPropagation()"
+      >
+        <button type="button" (click)="duplicarElemento()"><i class="ti ti-copy"></i> Duplicar</button>
+        <button type="button" (click)="copiarSeleccion()"><i class="ti ti-clipboard"></i> Copiar</button>
+        <button type="button" (click)="cortarSeleccion()"><i class="ti ti-scissors"></i> Cortar</button>
+        <button type="button" *ngIf="hayPortapapeles" (click)="pegar()"><i class="ti ti-clipboard-text"></i> Pegar</button>
+        <button type="button" (click)="traerAlFrente()"><i class="ti ti-square-arrow-up"></i> Traer al frente</button>
+        <button type="button" (click)="enviarAtras()"><i class="ti ti-square-arrow-down"></i> Enviar atrás</button>
+        <button type="button" (click)="toggleBloqueado()">
+          <i class="ti" [ngClass]="seleccionado?.bloqueado ? 'ti-lock-open' : 'ti-lock'"></i>
+          {{ seleccionado?.bloqueado ? 'Desbloquear' : 'Bloquear' }}
+        </button>
+        <button type="button" class="opcion-danger" (click)="eliminarDesdeMenu()"><i class="ti ti-trash"></i> Eliminar</button>
+      </div>
+
+      <!-- Menú contextual sobre el fondo vacío: solo "Pegar" -->
+      <div
+        class="menu-contextual"
+        *ngIf="menuContextualFondo"
+        [style.left.px]="menuContextualPos.x"
+        [style.top.px]="menuContextualPos.y"
+        (pointerdown)="$event.stopPropagation()"
+      >
+        <button type="button" *ngIf="hayPortapapeles" (click)="pegar()"><i class="ti ti-clipboard-text"></i> Pegar</button>
+        <p class="ayuda" *ngIf="!hayPortapapeles">Nada para pegar todavía.</p>
+      </div>
+    </div>
+    </div>
+
+    <aside class="canvas-panel" *ngIf="haySeleccionMultiple">
+      <div class="panel-header">
+        <span>{{ elementosSeleccionados.length }} elementos seleccionados</span>
+        <button type="button" class="btn-link btn-link-danger" (click)="eliminarSeleccionado()" title="Eliminar todos"><i class="ti ti-trash"></i></button>
+      </div>
+      <p class="ayuda">Arrástralos juntos desde el lienzo, o usa las acciones en bloque:</p>
+      <div class="fila-campos">
+        <button type="button" class="btn-secundario" (click)="duplicarElemento()"><i class="ti ti-copy"></i> Duplicar</button>
+        <button type="button" class="btn-secundario" (click)="toggleBloqueado()"><i class="ti ti-lock"></i> Bloquear/Desbloquear</button>
+      </div>
+      <div class="fila-campos">
+        <button type="button" class="btn-secundario" (click)="enviarAtras()"><i class="ti ti-square-arrow-down"></i> Enviar atrás</button>
+        <button type="button" class="btn-secundario" (click)="traerAlFrente()"><i class="ti ti-square-arrow-up"></i> Traer al frente</button>
+      </div>
+      <p class="ayuda">Shift/Ctrl + clic agrega o quita elementos de la selección. Arrastra sobre el fondo del lienzo para seleccionar por área. Ctrl+C/Ctrl+V copian y pegan, incluso entre pantallas distintas.</p>
+    </aside>
+
+    <aside class="canvas-panel" *ngIf="!haySeleccionMultiple && seleccionado as el" (focusout)="guardarHistorial()">
+      <div class="panel-header">
+        <span>{{ el.tipo }}</span>
+        <button type="button" class="btn-link btn-link-danger" (click)="eliminarSeleccionado()" title="Eliminar"><i class="ti ti-trash"></i></button>
+      </div>
+
+      <ng-container *ngIf="el.tipo === 'texto'">
+        <div class="abril-field">
+          <textarea class="abril-field-input" rows="3" [(ngModel)]="el.texto" placeholder=" "></textarea>
+          <label class="abril-field-label">Contenido</label>
+        </div>
+        <div class="fila-campos">
+          <div class="campo-color">
+            <label>Color</label>
+            <input type="color" [(ngModel)]="el.colorTexto" />
+          </div>
+          <div class="abril-field campo-corto">
+            <input class="abril-field-input" type="number" [(ngModel)]="el.tamanoFuente" placeholder=" " />
+            <label class="abril-field-label">Tamaño (px)</label>
+          </div>
+        </div>
+        <div class="fila-campos">
+          <select class="abril-field-input" [(ngModel)]="el.alineacion">
+            <option value="left">Izquierda</option>
+            <option value="center">Centro</option>
+            <option value="right">Derecha</option>
+          </select>
+          <label class="checkbox-row">
+            <input type="checkbox" [(ngModel)]="el.negrita" />
+            <span>Negrita</span>
+          </label>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="el.tipo === 'imagen'">
+        <img *ngIf="el.imagenUrl" [src]="el.imagenUrl" class="preview-campo" alt="" />
+        <button type="button" class="btn-subir" (click)="pedirSubirImagen()">
+          <i class="ti ti-upload"></i> {{ el.imagenUrl ? 'Cambiar imagen' : 'Subir imagen' }}
+        </button>
+        <div class="abril-field campo-corto">
+          <input class="abril-field-input" type="number" [(ngModel)]="el.bordeRedondeado" placeholder=" " />
+          <label class="abril-field-label">Borde redondeado (px)</label>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="el.tipo === 'forma'">
+        <div class="fila-campos">
+          <select class="abril-field-input" [(ngModel)]="el.formaTipo">
+            <option value="rectangulo">Rectángulo</option>
+            <option value="circulo">Círculo</option>
+          </select>
+          <div class="campo-color">
+            <label>Color</label>
+            <input type="color" [(ngModel)]="el.colorFondo" />
+          </div>
+        </div>
+        <div class="abril-field campo-corto" *ngIf="el.formaTipo !== 'circulo'">
+          <input class="abril-field-input" type="number" [(ngModel)]="el.bordeRedondeado" placeholder=" " />
+          <label class="abril-field-label">Borde redondeado (px)</label>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="el.tipo === 'icono'">
+        <div class="fila-campos">
+          <app-icono-picker [claseActual]="el.iconoClase || ''" (seleccionar)="el.iconoClase = $event; guardarHistorial()" />
+          <div class="campo-color">
+            <label>Color</label>
+            <input type="color" [(ngModel)]="el.colorTexto" />
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="el.tipo === 'boton'">
+        <div class="abril-field">
+          <input class="abril-field-input" type="text" [(ngModel)]="el.botonTexto" placeholder=" " />
+          <label class="abril-field-label">Texto del botón</label>
+        </div>
+        <div class="abril-field">
+          <input class="abril-field-input" type="text" [(ngModel)]="el.botonUrl" placeholder=" " />
+          <label class="abril-field-label">Enlace (opcional, se ignora si hay overlay)</label>
+        </div>
+        <div class="fila-campos">
+          <div class="campo-color">
+            <label>Fondo</label>
+            <input type="color" [(ngModel)]="el.colorFondo" />
+          </div>
+          <div class="campo-color">
+            <label>Texto</label>
+            <input type="color" [(ngModel)]="el.colorTexto" />
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="el.tipo === 'video'">
+        <div class="abril-field">
+          <input class="abril-field-input" type="text" [(ngModel)]="el.videoUrl" placeholder=" " />
+          <label class="abril-field-label">URL de YouTube/Vimeo</label>
+        </div>
+      </ng-container>
+
+      <hr class="separador" />
+
+      <!-- Overlay interactivo: clic → panel emergente (patrón Genially) -->
+      <label class="checkbox-row">
+        <input type="checkbox" [ngModel]="el.overlay?.activo" (ngModelChange)="toggleOverlay($event)" />
+        <span>Interactivo: mostrar panel al hacer clic</span>
+      </label>
+      <ng-container *ngIf="el.overlay?.activo">
+        <div class="abril-field">
+          <input class="abril-field-input" type="text" [(ngModel)]="el.overlay!.titulo" placeholder=" " />
+          <label class="abril-field-label">Título del panel</label>
+        </div>
+        <div class="abril-field">
+          <textarea class="abril-field-input" rows="3" [(ngModel)]="el.overlay!.texto" placeholder=" "></textarea>
+          <label class="abril-field-label">Texto del panel</label>
+        </div>
+        <div class="abril-field">
+          <input class="abril-field-input" type="text" [(ngModel)]="el.overlay!.imagenUrl" placeholder=" " />
+          <label class="abril-field-label">Imagen del panel (URL, opcional)</label>
+        </div>
+      </ng-container>
+
+      <hr class="separador" />
+
+      <div class="fila-campos">
+        <div class="abril-field campo-corto">
+          <input class="abril-field-input" type="number" [(ngModel)]="el.rotacion" placeholder=" " />
+          <label class="abril-field-label">Rotación (°)</label>
+        </div>
+        <div class="fila-capas">
+          <button type="button" class="btn-secundario" (click)="moverCapa(-1)" title="Enviar atrás"><i class="ti ti-square-arrow-down"></i></button>
+          <button type="button" class="btn-secundario" (click)="moverCapa(1)" title="Traer al frente"><i class="ti ti-square-arrow-up"></i></button>
+          <button type="button" class="btn-secundario" (click)="toggleBloqueado()" [title]="el.bloqueado ? 'Desbloquear' : 'Bloquear'">
+            <i class="ti" [ngClass]="el.bloqueado ? 'ti-lock' : 'ti-lock-open'"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="fila-campos">
+        <select class="abril-field-input" [(ngModel)]="el.animacionEntrada">
+          <option value="ninguna">Sin animación</option>
+          <option value="fade">Aparecer (fade)</option>
+          <option value="slide-up">Subir</option>
+          <option value="slide-left">Deslizar</option>
+          <option value="zoom">Zoom</option>
+        </select>
+        <div class="abril-field campo-corto">
+          <input class="abril-field-input" type="number" [(ngModel)]="el.animacionDelayMs" placeholder=" " />
+          <label class="abril-field-label">Retraso (ms)</label>
+        </div>
+      </div>
+      <div class="fila-campos">
+        <div class="abril-field campo-corto">
+          <input class="abril-field-input" type="number" [(ngModel)]="el.animacionDuracionMs" placeholder=" " />
+          <label class="abril-field-label">Duración (ms)</label>
+        </div>
+        <select class="abril-field-input" [(ngModel)]="el.animacionEasing">
+          <option value="ease">Suave</option>
+          <option value="ease-in">Entrada lenta</option>
+          <option value="ease-out">Salida lenta</option>
+          <option value="linear">Lineal</option>
+          <option value="bounce">Rebote</option>
+        </select>
+      </div>
+    </aside>
+  </div>
+
+  <app-timeline-animaciones
+    [elementos]="elementos"
+    [seleccionadoId]="seleccionadoId"
+    (elementosChange)="confirmarCambioTimeline()"
+    (seleccionar)="seleccionarDesdeTimeline($event)"
+  />
+  </div>
+</div>

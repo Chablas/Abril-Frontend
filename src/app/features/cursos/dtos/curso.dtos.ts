@@ -222,3 +222,64 @@ export interface GaleriaZoomConfig {
   estilo?: SlideEstilo;
   kicker?: string;
 }
+
+// tipoCodigo: "contenido_libre". No evaluable (modo_correccion: "sin_calificar").
+// Lienzo libre: elementos posicionados a mano dentro de un canvas de tamaño fijo
+// CANVAS_ANCHO x CANVAS_ALTO (ver canvas-editor.ts), que se escala responsive en el
+// editor y en el player. x/y/ancho/alto están en píxeles de ese sistema de coordenadas.
+export type ElementoTipo = 'texto' | 'imagen' | 'forma' | 'icono' | 'boton' | 'video';
+export type AnimacionEntrada = 'ninguna' | 'fade' | 'slide-up' | 'slide-left' | 'zoom';
+export type AnimacionEasing = 'ease' | 'ease-in' | 'ease-out' | 'linear' | 'bounce';
+export type FormaTipo = 'rectangulo' | 'circulo';
+
+// Overlay interactivo: al hacer clic sobre el elemento en el player, se muestra un
+// panel encima con este contenido (mismo patrón que "¿Sabías que...?" / "Haz clic para
+// explorar" de Genially). Es opcional — un elemento sin overlay se comporta como hoy.
+export interface ElementoOverlay {
+  activo: boolean;
+  titulo?: string;
+  texto?: string;
+  imagenUrl?: string;
+}
+
+export interface ElementoLibre {
+  id: string;
+  tipo: ElementoTipo;
+  x: number;
+  y: number;
+  ancho: number;
+  alto: number;
+  rotacion?: number; // grados
+  zIndex?: number;
+  bloqueado?: boolean; // no se puede mover/redimensionar en el canvas hasta desbloquear
+  animacionEntrada?: AnimacionEntrada;
+  animacionDelayMs?: number;
+  animacionDuracionMs?: number;
+  animacionEasing?: AnimacionEasing;
+  overlay?: ElementoOverlay;
+  // Propiedades de texto
+  texto?: string;
+  colorTexto?: string;
+  tamanoFuente?: number; // px
+  alineacion?: 'left' | 'center' | 'right';
+  negrita?: boolean;
+  // Propiedades de imagen / video
+  imagenUrl?: string;
+  videoUrl?: string; // URL embebible (YouTube/Vimeo)
+  bordeRedondeado?: number; // px
+  // Propiedades de forma
+  formaTipo?: FormaTipo;
+  colorFondo?: string;
+  // Propiedades de ícono (clase Tabler, ej. "ti-star")
+  iconoClase?: string;
+  // Propiedades de botón
+  botonTexto?: string;
+  botonUrl?: string; // navega/abre en nueva pestaña al hacer clic (si no tiene overlay)
+}
+
+export interface ContenidoLibreConfig {
+  titulo?: string;
+  elementos: ElementoLibre[];
+  estilo?: SlideEstilo;
+  kicker?: string;
+}

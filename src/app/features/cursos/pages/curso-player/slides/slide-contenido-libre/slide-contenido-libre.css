@@ -1,0 +1,135 @@
+.libre-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+}
+
+.libre-lienzo {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  max-height: 78vh;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.libre-elemento {
+  position: absolute;
+  opacity: 0;
+  animation-fill-mode: forwards;
+  animation-duration: 0.6s;
+}
+
+.libre-texto {
+  width: 100%;
+  height: 100%;
+  overflow-wrap: break-word;
+  display: flex;
+  align-items: center;
+}
+
+.libre-imagen {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.libre-forma {
+  width: 100%;
+  height: 100%;
+}
+
+.libre-icono {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80%;
+}
+
+.libre-boton {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.libre-video {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.libre-elemento.interactivo {
+  cursor: pointer;
+}
+
+.overlay-libre-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 20px;
+}
+
+.overlay-libre-panel {
+  position: relative;
+  background: #fff;
+  color: #14100b;
+  border-radius: 12px;
+  max-width: 520px;
+  width: 100%;
+  padding: 28px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.overlay-libre-panel h3 {
+  margin: 0 0 12px;
+}
+
+.overlay-libre-panel img {
+  width: 100%;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.overlay-libre-cerrar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #948d7c;
+}
+
+.anim-fade {
+  animation-name: cursoCascadaEntrada;
+}
+.anim-slide-up {
+  animation-name: cursoCascadaEntradaSubida;
+}
+.anim-slide-left {
+  animation-name: cursoCascadaEntrada;
+}
+.anim-zoom {
+  animation-name: cursoCascadaEntrada;
+}
+
+.btn-continuar-libre {
+  align-self: center;
+}
