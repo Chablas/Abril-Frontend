@@ -9,6 +9,7 @@ import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { FirmaRegistrarModal } from '../../../../../../shared/components/firma-personal/registrar-modal/firma-registrar-modal';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { FirmaMfaService } from '../../../../../../core/services/firma-mfa.service';
 import { ConsolidadosService } from '../../services/consolidados.service';
 import { ConsolidadoDetalleDto, ConsolidadoSalidaDto } from '../../dtos/consolidado.dto';
 import {
@@ -67,6 +68,7 @@ export class ConsolidadoDetalleModal implements OnInit {
     private service: ConsolidadosService,
     private loader: LoaderService,
     private errorService: ErrorService,
+    private firmaMfa: FirmaMfaService,
     private cdr: ChangeDetectorRef,
   ) {}
 
@@ -180,15 +182,22 @@ export class ConsolidadoDetalleModal implements OnInit {
     });
     if (!result.isConfirmed) return;
 
+    const firmaMfa = await this.firmaMfa.obtener();
+    if (firmaMfa === null) return;
+
     this.loader.show();
-    this.service.volverAFirmar(this.accion()).subscribe({
+    this.service.volverAFirmar(this.accion(), firmaMfa).subscribe({
       next: (res) => {
         this.loader.hide();
         Swal.fire({ title: res.message, icon: 'success', timer: 1800, showConfirmButton: false });
         // No se decidió nada: el modal se queda abierto con el documento nuevo a la vista.
         this.trasTramite();
       },
-      error: (err: HttpErrorResponse) => this.errorAccion(err),
+      error: (err: HttpErrorResponse) => {
+        this.loader.hide();
+        if (this.firmaMfa.avisarSiFalto(err, firmaMfa)) return;
+        this.errorAccion(err);
+      },
     });
   }
 
@@ -197,9 +206,13 @@ export class ConsolidadoDetalleModal implements OnInit {
    * firma: en vez de mandarla a Configuración se abre el modal donde la dibuja y la aprobación se
    * reintenta sola.
    */
-  private ejecutarAprobacion(): void {
+  private async ejecutarAprobacion(): Promise<void> {
+    // Firmar pide la verificación de Microsoft; el reintento tras registrar la firma reusa la misma.
+    const firmaMfa = await this.firmaMfa.obtener();
+    if (firmaMfa === null) return;
+
     this.loader.show();
-    this.service.aprobarReembolso(this.accion()).subscribe({
+    this.service.aprobarReembolso(this.accion(), firmaMfa).subscribe({
       next: (res) => this.trasDecision(res.message),
       error: (err: HttpErrorResponse) => {
         this.loader.hide();
@@ -208,6 +221,7 @@ export class ConsolidadoDetalleModal implements OnInit {
           this.cdr.detectChanges();
           return;
         }
+        if (this.firmaMfa.avisarSiFalto(err, firmaMfa)) return;
         this.errorAccion(err);
       },
     });

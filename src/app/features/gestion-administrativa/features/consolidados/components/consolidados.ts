@@ -21,6 +21,7 @@ import {
 } from '../../../shared/dtos/rendicion-shared.dto';
 import { confirmarConCorreos, pedirAvisos } from '../../../shared/confirmar-correos';
 import { AuthService } from '../../../../../core/services/auth.service';
+import { FirmaMfaService } from '../../../../../core/services/firma-mfa.service';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { SearchInput } from '../../../../../shared/components/search-input/search-input';
@@ -198,6 +199,7 @@ export class Consolidados implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private authService: AuthService,
+    private firmaMfa: FirmaMfaService,
     private route: ActivatedRoute,
     private router: Router,
     private cdr: ChangeDetectorRef,
@@ -487,9 +489,14 @@ export class Consolidados implements OnInit {
    * Configuración → Firmas (puede tener la dibujada y aun así faltarle la imagen, o al revés) — en
    * vez de mandarlo a Configuración se abre el modal donde la registra y la acción se reintenta sola.
    */
-  private aprobar(accion: ConsolidadoAccionDto): void {
+  private async aprobar(accion: ConsolidadoAccionDto): Promise<void> {
+    // Firmar pide la verificación de Microsoft. En el reintento tras registrar la firma se reusa la
+    // del primer intento, así que no vuelve a abrir Microsoft.
+    const firmaMfa = await this.firmaMfa.obtener();
+    if (firmaMfa === null) return;
+
     this.loaderService.show();
-    this.service.aprobarReembolso(accion).subscribe({
+    this.service.aprobarReembolso(accion, firmaMfa).subscribe({
       next: (res) => this.trasAccion(res.message),
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
@@ -499,6 +506,7 @@ export class Consolidados implements OnInit {
           this.cdr.detectChanges();
           return;
         }
+        if (this.firmaMfa.avisarSiFalto(err, firmaMfa)) return;
         this.errorAccion(err);
       },
     });
@@ -524,10 +532,17 @@ export class Consolidados implements OnInit {
     });
     if (!result.isConfirmed) return;
 
+    const firmaMfa = await this.firmaMfa.obtener();
+    if (firmaMfa === null) return;
+
     this.loaderService.show();
-    this.service.volverAFirmar(this.accionDe([c])).subscribe({
+    this.service.volverAFirmar(this.accionDe([c]), firmaMfa).subscribe({
       next: (res) => this.trasAccion(res.message),
-      error: (err: HttpErrorResponse) => this.errorAccion(err),
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        if (this.firmaMfa.avisarSiFalto(err, firmaMfa)) return;
+        this.errorAccion(err);
+      },
     });
   }
 

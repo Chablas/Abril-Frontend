@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
+import { FIRMA_MFA_HEADER } from '../../../../../core/services/firma-mfa.service';
 import {
   InvoiceInitDto,
   InvoiceFilterDto,
@@ -111,10 +112,13 @@ export class InvoiceService {
     return this.http.get<SunatContributorDTO>(`${this.apiUrl}/ruc/${ruc}`, { headers: this.headers });
   }
 
-  /** Genera el documento firmado (PDF con la firma) de una factura y devuelve su URL. */
-  sign(invoiceId: number): Observable<{ message: string; signedDocumentUrl: string }> {
+  /**
+   * Genera el documento firmado (PDF con la firma) de una factura y devuelve su URL. `firmaMfa` es
+   * la verificación de Microsoft (FirmaMfaService): sin ella, o vencida, responde 403.
+   */
+  sign(invoiceId: number, firmaMfa: string): Observable<{ message: string; signedDocumentUrl: string }> {
     return this.http.post<{ message: string; signedDocumentUrl: string }>(
-      `${this.apiUrl}/${invoiceId}/sign`, {}, { headers: this.headers });
+      `${this.apiUrl}/${invoiceId}/sign`, {}, { headers: firmaMfa ? { ...this.headers, [FIRMA_MFA_HEADER]: firmaMfa } : this.headers });
   }
 
   createSupplier(dto: InvoiceSupplierCreateDto): Observable<InvoiceSupplierDto> {

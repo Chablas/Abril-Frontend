@@ -14,6 +14,7 @@ import { DatePicker } from '../../../../../shared/components/date-picker/date-pi
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { AuthService } from '../../../../../core/services/auth.service';
+import { FirmaMfaService } from '../../../../../core/services/firma-mfa.service';
 import { Roles } from '../../../../../core/constants/roles';
 
 import { InvoiceService } from '../services/invoice.service';
@@ -198,10 +199,13 @@ export class Facturas implements OnInit {
       cancelButtonColor: '#d33',
       cancelButtonText: 'Cancelar',
       confirmButtonText: 'Firmar',
-    }).then((result) => {
+    }).then(async (result) => {
       if (!result.isConfirmed) return;
+      // Firmar pide la verificación de Microsoft (contraseña + Authenticator).
+      const firmaMfa = await this.firmaMfa.obtener();
+      if (firmaMfa === null) return;
       this.loaderService.show();
-      this.service.sign(inv.invoiceId).subscribe({
+      this.service.sign(inv.invoiceId, firmaMfa).subscribe({
         next: (res) => {
           this.loaderService.hide();
           inv.signedDocumentUrl = res.signedDocumentUrl;
@@ -216,6 +220,7 @@ export class Facturas implements OnInit {
         },
         error: (err: HttpErrorResponse) => {
           this.loaderService.hide();
+          if (this.firmaMfa.avisarSiFalto(err, firmaMfa)) return;
           this.errorService.handleError(err);
         },
       });
@@ -259,6 +264,7 @@ export class Facturas implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private authService: AuthService,
+    private firmaMfa: FirmaMfaService,
   ) {
     this.canSign = this.authService.hasRole(Roles.CONTABILIDAD_FIRMANTE);
   }

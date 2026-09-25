@@ -195,6 +195,36 @@ export class MicrosoftAuthService {
     }
   }
 
+  /**
+   * Token para estampar la firma en Consolidados y Facturas: access token del ámbito `Firmar` de la
+   * propia app, que el backend sí puede validar (uno de Graph no). `prompt=login` pide la contraseña
+   * y el claims request exige el segundo factor si la última MFA tiene más de 10 minutos; el
+   * backend comprueba en el token que ese inicio de sesión es reciente (`auth_time`) y trae `mfa`.
+   *
+   * Los errores de MSAL suben tal cual (con su `errorCode`): los traduce FirmaMfaService.
+   */
+  async getFirmaMfaToken(email: string | null): Promise<string> {
+    const msal = await this.getMsalInstance();
+    const cuentas = msal.getAllAccounts();
+    // `email` es el mail de Graph; `username` de MSAL es el UPN. Si no coinciden (mail ≠ UPN), la
+    // cuenta es la única que dejó el login de la intranet (el logout borra las demás).
+    const cuenta =
+      (email ? cuentas.find(a => a.username?.toLowerCase() === email.toLowerCase()) : undefined)
+      ?? (cuentas.length === 1 ? cuentas[0] : undefined);
+    const result = await msal.acquireTokenPopup({
+      scopes: [`api://${environment.azure.clientId}/Firmar`],
+      prompt: 'login',
+      claims: JSON.stringify({ access_token: { amr: { essential: true, values: ['ngcmfa'] } } }),
+      account: cuenta,
+      // MSAL prefiere loginHint a la cuenta: el mail solo si no hay cuenta, porque puede no ser el
+      // nombre con que se inicia sesión.
+      loginHint: cuenta?.username ?? email ?? undefined,
+      // Lo dispara el click en «Sí, aprobar»: si quedó un popup a medias, este lo reemplaza.
+      overrideInteractionInProgress: true,
+    });
+    return result.accessToken;
+  }
+
   async logout(): Promise<void> {
     // Limpiar cache de MSAL del localStorage (claves propias de la librería)
     Object.keys(localStorage)

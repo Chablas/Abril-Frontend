@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
+import { FIRMA_MFA_HEADER } from '../../../../../core/services/firma-mfa.service';
 import { CorreoAvisoDto } from '../../../shared/correo-aviso';
 import { ReembolsoBulkResultDto } from '../../../shared/dtos/rendicion-shared.dto';
 import { SolicitudSalidaDetalleDto } from '../../../shared/dtos/salida-detalle.dto';
@@ -23,6 +24,11 @@ export class ConsolidadosService {
   private get headers() {
     const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
     return { Authorization: `Bearer ${token}` };
+  }
+
+  /** Headers de una firma: con la verificación de Microsoft si se consiguió (FirmaMfaService). */
+  private conFirmaMfa(firmaMfa: string): Record<string, string> {
+    return firmaMfa ? { ...this.headers, [FIRMA_MFA_HEADER]: firmaMfa } : this.headers;
   }
 
   /**
@@ -74,11 +80,12 @@ export class ConsolidadosService {
    * Aprueba el reembolso, que ES firmarlo: estampa la firma en la planilla y en el Consolidado del
    * S10 y lo manda a la bandeja de Tesorería. Solo la jefatura de los trabajadores (403 si no).
    * Responde 409 si el usuario todavía no registró su firma; la pantalla usa ese código para abrir
-   * el modal donde la dibuja.
+   * el modal donde la dibuja. `firmaMfa` es la verificación de Microsoft (FirmaMfaService): sin
+   * ella, o vencida, responde 403.
    */
-  aprobarReembolso(accion: ConsolidadoAccionDto): Observable<ReembolsoBulkResultDto> {
+  aprobarReembolso(accion: ConsolidadoAccionDto, firmaMfa: string): Observable<ReembolsoBulkResultDto> {
     return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/aprobar`, accion, {
-      headers: this.headers,
+      headers: this.conFirmaMfa(firmaMfa),
     });
   }
 
@@ -97,11 +104,11 @@ export class ConsolidadosService {
    * Vuelve a estampar la firma de quien ya firmó, mientras el consolidado siga esperando la del que
    * viene detrás. No agrega una segunda estampa: rehace las copias firmadas desde el original con
    * las mismas firmas y la suya al día. Responde 409 si ya no corresponde (no lo firmó, o el
-   * siguiente ya firmó) y, como aprobar, si todavía no registró su firma.
+   * siguiente ya firmó) y, como aprobar, si todavía no registró su firma. También pide `firmaMfa`.
    */
-  volverAFirmar(accion: ConsolidadoAccionDto): Observable<ReembolsoBulkResultDto> {
+  volverAFirmar(accion: ConsolidadoAccionDto, firmaMfa: string): Observable<ReembolsoBulkResultDto> {
     return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/reembolso/volver-a-firmar`, accion, {
-      headers: this.headers,
+      headers: this.conFirmaMfa(firmaMfa),
     });
   }
 
