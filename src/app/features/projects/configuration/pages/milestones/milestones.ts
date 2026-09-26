@@ -15,8 +15,10 @@ import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril
 import { ProyectoService } from '../../../../configuracion/features/proyectos/services/proyecto.service';
 import { ProjectDto } from '../../../../configuracion/features/proyectos/dtos/project.dto';
 import { ProjectEditDto } from '../../../../configuracion/features/proyectos/dtos/project-edit.dto';
+import { PlantillaCronogramaService } from '../../services/plantilla-cronograma.service';
+import { PlantillaItemDto, TipoCronogramaPlantilla } from '../../dtos/plantilla-cronograma.dtos';
 
-type MilestonesTab = 'hitos' | 'proyectos';
+type MilestonesTab = 'hitos' | 'proyectos' | 'plantillas';
 
 import { PROJECTS_TABS } from '../../../shared/projects-tabs';
 @Component({
@@ -67,11 +69,34 @@ export class Milestones implements OnInit {
   /** Filtro en memoria sobre `proyectos.data` (la página ya trae hasta 200 registros, ver loadProyectos). */
   soloSinUdp = false;
 
+  // ── Pestaña "Plantillas de Cronograma" ───────────────────────────────────
+  readonly etapasPlantilla: { value: TipoCronogramaPlantilla; label: string }[] = [
+    { value: 'ANTEPROYECTO', label: 'Anteproyecto' },
+    { value: 'PROYECTO', label: 'Proyecto' },
+    { value: 'PROYECTO_ACTUALIZACION', label: 'Proyecto de Actualización' },
+  ];
+  etapaPlantillaActiva: TipoCronogramaPlantilla = 'ANTEPROYECTO';
+  plantillaItems: PlantillaItemDto[] = [];
+  plantillaLoading = false;
+
+  showPlantillaModal = false;
+  plantillaModalMode: 'crear' | 'editar' = 'crear';
+  plantillaForm: { id: number | null; codigo: string; nombre: string; predecesoraCodigo: string | null } = {
+    id: null,
+    codigo: '',
+    nombre: '',
+    predecesoraCodigo: null,
+  };
+  private plantillaParentContextCodigo: string | null = null;
+  private plantillaParentContextNivel = -1;
+  private plantillaEditandoItem: PlantillaItemDto | null = null;
+
   constructor(
     private milestoneService: MilestoneService,
     private cdr: ChangeDetectorRef,
     private router: Router,
     private proyectoService: ProyectoService,
+    private plantillaCronogramaService: PlantillaCronogramaService,
   ) {}
 
   ngOnInit(): void {
@@ -83,6 +108,363 @@ export class Milestones implements OnInit {
     if (tab === 'proyectos' && this.proyectos.data.length === 0 && !this.proyectosLoading) {
       this.loadProyectos(1);
     }
+    if (tab === 'plantillas' && this.plantillaItems.length === 0 && !this.plantillaLoading) {
+      this.loadPlantillaItems();
+    }
+  }
+
+  selectEtapaPlantilla(etapa: TipoCronogramaPlantilla): void {
+    if (etapa === this.etapaPlantillaActiva) return;
+    this.etapaPlantillaActiva = etapa;
+    this.loadPlantillaItems();
+  }
+
+  loadPlantillaItems(): void {
+    this.plantillaLoading = true;
+    this.cdr.detectChanges();
+
+    this.plantillaCronogramaService.getByTipo(this.etapaPlantillaActiva).subscribe({
+      next: (response) => {
+        this.plantillaItems = response.items;
+        this.plantillaLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.plantillaLoading = false;
+        this.error(err);
+      },
+    });
+  }
+
+  // ── Árbol de plantilla: navegación por rangos de subárbol ────────────────
+  // `plantillaItems` ya llega ordenado por `orden` desde el backend, así que es
+  // un outline plano válido: el subárbol de un ítem es él mismo + la corrida
+  // contigua de ítems siguientes con `nivel` mayor, hasta el primero que no lo sea.
+  private indexOfPlantillaItem(item: PlantillaItemDto): number {
+    return this.plantillaItems.findIndex((i) => i.id === item.id);
+  }
+
+  private subtreeRange(item: PlantillaItemDto): { start: number; end: number } {
+    const start = this.indexOfPlantillaItem(item);
+    let end = start;
+    for (let i = start + 1; i < this.plantillaItems.length; i++) {
+      if (this.plantillaItems[i].nivel <= item.nivel) break;
+      end = i;
+    }
+    return { start, end };
+  }
+
+  private buscarSiblingAnterior(item: PlantillaItemDto): PlantillaItemDto | null {
+    const start = this.indexOfPlantillaItem(item);
+    for (let i = start - 1; i >= 0; i--) {
+      const cur = this.plantillaItems[i];
+      if (cur.nivel < item.nivel) break;
+      if (cur.nivel === item.nivel && cur.parentCodigo === item.parentCodigo) return cur;
+    }
+    return null;
+  }
+
+  private buscarSiblingSiguiente(item: PlantillaItemDto): PlantillaItemDto | null {
+    const { end } = this.subtreeRange(item);
+    const candidato = this.plantillaItems[end + 1];
+    if (candidato && candidato.nivel === item.nivel && candidato.parentCodigo === item.parentCodigo) {
+      return candidato;
+    }
+    return null;
+  }
+
+  /** Reordena el array [start,end] a la posición `destinoOriginal` (índice en el array actual). Solo mueve, no persiste. */
+  private reposicionarBloque(start: number, end: number, destinoOriginal: number): void {
+    const bloque = this.plantillaItems.slice(start, end + 1);
+    const resto = [...this.plantillaItems.slice(0, start), ...this.plantillaItems.slice(end + 1)];
+    let destino = destinoOriginal;
+    if (destino > end) destino -= bloque.length;
+    this.plantillaItems = [...resto.slice(0, destino), ...bloque, ...resto.slice(destino)];
+  }
+
+  canMoverArriba(item: PlantillaItemDto): boolean {
+    return this.buscarSiblingAnterior(item) !== null;
+  }
+
+  canMoverAbajo(item: PlantillaItemDto): boolean {
+    return this.buscarSiblingSiguiente(item) !== null;
+  }
+
+  canSubirNivelPlantilla(item: PlantillaItemDto): boolean {
+    return item.nivel > 0;
+  }
+
+  canBajarNivelPlantilla(item: PlantillaItemDto): boolean {
+    return this.buscarSiblingAnterior(item) !== null;
+  }
+
+  moverArribaPlantilla(item: PlantillaItemDto): void {
+    const prevSibling = this.buscarSiblingAnterior(item);
+    if (!prevSibling) return;
+    const antes = this.plantillaItems.map((i) => ({ ...i }));
+    const { start, end } = this.subtreeRange(item);
+    const { start: prevStart } = this.subtreeRange(prevSibling);
+    this.reposicionarBloque(start, end, prevStart);
+    this.persistirCambiosEstructura(antes);
+  }
+
+  moverAbajoPlantilla(item: PlantillaItemDto): void {
+    const nextSibling = this.buscarSiblingSiguiente(item);
+    if (!nextSibling) return;
+    const antes = this.plantillaItems.map((i) => ({ ...i }));
+    const { start, end } = this.subtreeRange(item);
+    const { end: nextEnd } = this.subtreeRange(nextSibling);
+    this.reposicionarBloque(start, end, nextEnd + 1);
+    this.persistirCambiosEstructura(antes);
+  }
+
+  /** Sube de nivel (outdent): pasa a ser hermano de su padre actual, justo después de todo el subárbol de ese padre. */
+  subirNivelPlantilla(item: PlantillaItemDto): void {
+    if (item.nivel <= 0) return;
+    const parent = this.plantillaItems.find((p) => p.codigo === item.parentCodigo);
+    if (!parent) return;
+
+    const antes = this.plantillaItems.map((i) => ({ ...i }));
+    const { start, end } = this.subtreeRange(item);
+    const { end: parentEnd } = this.subtreeRange(parent);
+    const nuevoParentCodigo = parent.parentCodigo;
+
+    for (let i = start; i <= end; i++) {
+      this.plantillaItems[i].nivel -= 1;
+    }
+    this.plantillaItems[start].parentCodigo = nuevoParentCodigo;
+
+    this.reposicionarBloque(start, end, parentEnd + 1);
+    this.persistirCambiosEstructura(antes);
+  }
+
+  /** Baja de nivel (indent): pasa a ser el último hijo de su hermano anterior. Al ser adyacentes, no cambia de posición. */
+  bajarNivelPlantilla(item: PlantillaItemDto): void {
+    const prevSibling = this.buscarSiblingAnterior(item);
+    if (!prevSibling) return;
+
+    const antes = this.plantillaItems.map((i) => ({ ...i }));
+    const { start, end } = this.subtreeRange(item);
+
+    for (let i = start; i <= end; i++) {
+      this.plantillaItems[i].nivel += 1;
+    }
+    this.plantillaItems[start].parentCodigo = prevSibling.codigo;
+
+    this.persistirCambiosEstructura(antes);
+  }
+
+  private recomputeEsPadre(items: PlantillaItemDto[]): void {
+    for (const it of items) {
+      it.esPadre = items.some((x) => x.parentCodigo === it.codigo);
+    }
+  }
+
+  /**
+   * Recalcula `orden` (según la posición actual del array) y `esPadre`, compara contra el
+   * estado previo y solo hace PUT de los ítems que realmente cambiaron. No hay endpoint de
+   * reorden masivo en plantillas (a diferencia de cronograma-actividades), así que cada
+   * cambio estructural (mover, subir/bajar nivel, crear) se resuelve con varios PUT en batch.
+   */
+  private persistirCambiosEstructura(antes: PlantillaItemDto[]): void {
+    const antesPorId = new Map(antes.map((i) => [i.id, i]));
+
+    this.plantillaItems.forEach((item, index) => {
+      item.orden = index + 1;
+    });
+    this.recomputeEsPadre(this.plantillaItems);
+    this.cdr.detectChanges();
+
+    const cambios = this.plantillaItems.filter((item) => {
+      const prev = antesPorId.get(item.id);
+      if (!prev) return true;
+      return (
+        prev.orden !== item.orden ||
+        prev.nivel !== item.nivel ||
+        prev.parentCodigo !== item.parentCodigo ||
+        prev.esPadre !== item.esPadre
+      );
+    });
+
+    if (cambios.length === 0) return;
+
+    this.loader = true;
+    this.cdr.detectChanges();
+
+    const requests = cambios.map((item) =>
+      this.plantillaCronogramaService.editarItem(item.id, {
+        codigo: item.codigo,
+        nombre: item.nombre,
+        nivel: item.nivel,
+        esPadre: item.esPadre,
+        parentCodigo: item.parentCodigo,
+        predecesoraCodigo: item.predecesoraCodigo,
+        orden: item.orden,
+      }),
+    );
+
+    forkJoin(requests).subscribe({
+      next: () => {
+        this.loader = false;
+        this.loadPlantillaItems();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.error(err);
+        this.loadPlantillaItems();
+      },
+    });
+  }
+
+  // ── Modal crear/editar ítem de plantilla ─────────────────────────────────
+  get predecesoraOpciones(): PlantillaItemDto[] {
+    return this.plantillaItems.filter((i) => i.id !== this.plantillaForm.id);
+  }
+
+  abrirModalAgregarRaiz(): void {
+    this.plantillaModalMode = 'crear';
+    this.plantillaParentContextCodigo = null;
+    this.plantillaParentContextNivel = -1;
+    this.plantillaForm = { id: null, codigo: '', nombre: '', predecesoraCodigo: null };
+    this.showPlantillaModal = true;
+  }
+
+  abrirModalAgregarHijo(parent: PlantillaItemDto): void {
+    this.plantillaModalMode = 'crear';
+    this.plantillaParentContextCodigo = parent.codigo;
+    this.plantillaParentContextNivel = parent.nivel;
+    this.plantillaForm = { id: null, codigo: '', nombre: '', predecesoraCodigo: null };
+    this.showPlantillaModal = true;
+  }
+
+  abrirModalEditarPlantilla(item: PlantillaItemDto): void {
+    this.plantillaModalMode = 'editar';
+    this.plantillaEditandoItem = item;
+    this.plantillaForm = {
+      id: item.id,
+      codigo: item.codigo,
+      nombre: item.nombre,
+      predecesoraCodigo: item.predecesoraCodigo,
+    };
+    this.showPlantillaModal = true;
+  }
+
+  cerrarModalPlantilla(): void {
+    this.showPlantillaModal = false;
+  }
+
+  guardarPlantillaItem(): void {
+    if (!this.plantillaForm.codigo.trim() || !this.plantillaForm.nombre.trim()) return;
+
+    if (this.plantillaModalMode === 'crear') {
+      this.crearPlantillaItem();
+    } else {
+      this.editarPlantillaItem();
+    }
+  }
+
+  private crearPlantillaItem(): void {
+    const nivel = this.plantillaParentContextNivel + 1;
+    this.loader = true;
+    this.cdr.detectChanges();
+
+    this.plantillaCronogramaService
+      .crearItem({
+        tipoCronograma: this.etapaPlantillaActiva,
+        codigo: this.plantillaForm.codigo.trim(),
+        nombre: this.plantillaForm.nombre.trim(),
+        nivel,
+        esPadre: false,
+        parentCodigo: this.plantillaParentContextCodigo,
+        predecesoraCodigo: this.plantillaForm.predecesoraCodigo,
+        orden: this.plantillaItems.length + 1,
+      })
+      .subscribe({
+        next: (nuevo) => {
+          const antes = this.plantillaItems.map((i) => ({ ...i }));
+
+          let destino = this.plantillaItems.length;
+          if (this.plantillaParentContextCodigo) {
+            const parent = this.plantillaItems.find((p) => p.codigo === this.plantillaParentContextCodigo);
+            if (parent) destino = this.subtreeRange(parent).end + 1;
+          }
+          this.plantillaItems = [
+            ...this.plantillaItems.slice(0, destino),
+            nuevo,
+            ...this.plantillaItems.slice(destino),
+          ];
+          antes.push({ ...nuevo });
+
+          this.showPlantillaModal = false;
+          this.loader = false;
+          this.persistirCambiosEstructura(antes);
+        },
+        error: (err: HttpErrorResponse) => {
+          this.error(err);
+        },
+      });
+  }
+
+  private editarPlantillaItem(): void {
+    if (!this.plantillaEditandoItem) return;
+    const item = this.plantillaEditandoItem;
+    this.loader = true;
+    this.cdr.detectChanges();
+
+    this.plantillaCronogramaService
+      .editarItem(item.id, {
+        codigo: this.plantillaForm.codigo.trim(),
+        nombre: this.plantillaForm.nombre.trim(),
+        nivel: item.nivel,
+        esPadre: item.esPadre,
+        parentCodigo: item.parentCodigo,
+        predecesoraCodigo: this.plantillaForm.predecesoraCodigo,
+        orden: item.orden,
+      })
+      .subscribe({
+        next: () => {
+          this.showPlantillaModal = false;
+          this.loader = false;
+          this.loadPlantillaItems();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.error(err);
+        },
+      });
+  }
+
+  eliminarPlantillaItem(item: PlantillaItemDto): void {
+    const tieneHijos = this.plantillaItems.some((i) => i.parentCodigo === item.codigo);
+    if (tieneHijos) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'No se puede eliminar',
+        text: 'Este ítem tiene sub-ítems debajo. Elimínalos o reubícalos primero.',
+      });
+      return;
+    }
+
+    Swal.fire({
+      title: '¿Estás seguro/a?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#64BC04',
+      cancelButtonColor: '#d33',
+      cancelButtonText: 'Cancelar',
+      confirmButtonText: '¡Sí, elimínalo!',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.loader = true;
+      this.cdr.detectChanges();
+      this.plantillaCronogramaService.eliminarItem(item.id).subscribe({
+        next: () => {
+          this.loader = false;
+          this.loadPlantillaItems();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.error(err);
+        },
+      });
+    });
   }
 
   loadProyectos(page: number = 1): void {

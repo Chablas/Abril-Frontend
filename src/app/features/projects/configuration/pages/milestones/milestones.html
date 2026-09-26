@@ -19,6 +19,10 @@
             (click)="setTab('proyectos')">
             Proyectos Activos
         </button>
+        <button type="button" class="subtab-btn" [class.subtab-btn--active]="activeTab === 'plantillas'"
+            (click)="setTab('plantillas')">
+            Plantillas de Cronograma
+        </button>
     </div>
 
     <div *ngIf="activeTab === 'hitos'" class="flex flex-col justify-center items-center">
@@ -179,6 +183,142 @@
                 <button class="cursor-pointer" style="color:#2E6DB4" (click)="nextProyectosPage()"
                     [disabled]="proyectosCurrentPage === proyectosTotalPages">
                     »
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="activeTab === 'plantillas'" class="flex flex-col justify-center items-center">
+        <div class="w-full flex items-center justify-between mb-[16px] flex-wrap gap-[10px]">
+            <div class="flex gap-[8px]">
+                <button type="button" class="etapa-btn" *ngFor="let etapa of etapasPlantilla"
+                    [class.etapa-btn--active]="etapaPlantillaActiva === etapa.value"
+                    (click)="selectEtapaPlantilla(etapa.value)">
+                    {{ etapa.label }}
+                </button>
+            </div>
+            <button type="button" class="btn-udp-primary px-[14px] py-[8px] cursor-pointer text-sm flex items-center gap-[6px]"
+                (click)="abrirModalAgregarRaiz()">
+                <i class="ti ti-plus"></i>
+                Agregar ítem raíz
+            </button>
+        </div>
+
+        <div class="w-full rounded-[10px] overflow-auto border" style="border-color:#E2E8F0">
+            <div *ngIf="plantillaLoading" class="p-[16px] flex flex-col gap-[10px]">
+                <div class="skeleton-line" *ngFor="let i of [1,2,3,4,5]" style="width:100%;height:16px;"></div>
+            </div>
+
+            <table class="w-full table-fixed" *ngIf="!plantillaLoading">
+                <thead>
+                    <tr>
+                        <th class="milestones-th w-[140px]"></th>
+                        <th class="milestones-th milestones-th--left w-[130px]">Código</th>
+                        <th class="milestones-th milestones-th--left">Nombre</th>
+                        <th class="milestones-th w-[130px]">Predecesora</th>
+                        <th class="milestones-th w-[110px]">Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr *ngFor="let item of plantillaItems" class="milestones-row border-b h-[38px]" style="border-color:#E2E8F0">
+                        <td class="text-center">
+                            <div class="flex items-center justify-center gap-[4px]">
+                                <button type="button" class="plantilla-nivel-btn" [disabled]="!canBajarNivelPlantilla(item)"
+                                    (click)="bajarNivelPlantilla(item)" title="Bajar nivel (indentar bajo el ítem anterior)">
+                                    <i class="ti ti-indent-increase"></i>
+                                </button>
+                                <button type="button" class="plantilla-nivel-btn" [disabled]="!canSubirNivelPlantilla(item)"
+                                    (click)="subirNivelPlantilla(item)" title="Subir nivel">
+                                    <i class="ti ti-indent-decrease"></i>
+                                </button>
+                                <button type="button" class="plantilla-nivel-btn" [disabled]="!canMoverArriba(item)"
+                                    (click)="moverArribaPlantilla(item)" title="Mover arriba">
+                                    <i class="ti ti-arrow-up"></i>
+                                </button>
+                                <button type="button" class="plantilla-nivel-btn" [disabled]="!canMoverAbajo(item)"
+                                    (click)="moverAbajoPlantilla(item)" title="Mover abajo">
+                                    <i class="ti ti-arrow-down"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="pl-[8px] plantilla-codigo-cell">
+                            <span [title]="item.codigo">{{ item.codigo }}</span>
+                        </td>
+                        <td>
+                            <div class="flex items-center gap-[6px] min-w-0" [style.padding-left.px]="item.nivel * 18">
+                                <span *ngIf="item.esPadre" class="plantilla-parent-dot" title="Tiene sub-ítems"></span>
+                                <span [title]="item.nombre" class="block min-w-0 flex-1 line-clamp-1 text-ellipsis overflow-hidden">{{ item.nombre }}</span>
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <span *ngIf="item.predecesoraCodigo">{{ item.predecesoraCodigo }}</span>
+                            <span *ngIf="!item.predecesoraCodigo" style="color:#CBD5E1">—</span>
+                        </td>
+                        <td class="text-center">
+                            <div class="flex items-center justify-center gap-[10px]">
+                                <button type="button" class="cursor-pointer" title="Agregar sub-ítem"
+                                    (click)="abrirModalAgregarHijo(item)" style="color:#1B6B3A">
+                                    <i class="ti ti-plus"></i>
+                                </button>
+                                <button type="button" class="cursor-pointer" title="Editar"
+                                    (click)="abrirModalEditarPlantilla(item)" style="color:#1E3A5F">
+                                    <i class="ti ti-pencil"></i>
+                                </button>
+                                <button type="button" class="cursor-pointer" title="Eliminar"
+                                    (click)="eliminarPlantillaItem(item)" style="color:#B91C1C">
+                                    <i class="ti ti-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr *ngIf="plantillaItems.length === 0">
+                        <td colspan="5" class="text-center py-[20px]" style="color:#94A3B8">
+                            No hay ítems en la plantilla de esta etapa.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div *ngIf="showPlantillaModal" class="fixed inset-0 z-50 overflow-y-auto" style="background:rgba(13,27,42,0.4)">
+        <div class="absolute inset-0" (click)="cerrarModalPlantilla()"></div>
+        <div class="min-h-screen flex items-center justify-center py-10">
+            <div class="bg-white w-[500px] rounded-[10px] relative"
+                style="box-shadow:0 4px 12px rgba(0,0,0,0.08)"
+                (click)="$event.stopPropagation()">
+                <div class="py-[24px] px-[24px] flex flex-col gap-[16px] items-center">
+                    <h1 class="text-2xl font-bold text-center" style="color:#1E3A5F">
+                        {{ plantillaModalMode === 'crear' ? 'AGREGAR ÍTEM DE PLANTILLA' : 'EDITAR ÍTEM DE PLANTILLA' }}
+                    </h1>
+                    <div class="flex flex-col gap-[12px] w-full">
+                        <div class="flex flex-col">
+                            <p class="milestones-field-label">Código</p>
+                            <input type="text" [(ngModel)]="plantillaForm.codigo" class="milestones-input" />
+                        </div>
+                        <div class="flex flex-col">
+                            <p class="milestones-field-label">Nombre</p>
+                            <input type="text" [(ngModel)]="plantillaForm.nombre" class="milestones-input" />
+                        </div>
+                        <div class="flex flex-col">
+                            <p class="milestones-field-label">Predecesora (opcional)</p>
+                            <select [(ngModel)]="plantillaForm.predecesoraCodigo" class="milestones-input cursor-pointer">
+                                <option [ngValue]="null">Ninguna</option>
+                                <option *ngFor="let op of predecesoraOpciones" [ngValue]="op.codigo">
+                                    {{ op.codigo }} — {{ op.nombre }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                    <button (click)="guardarPlantillaItem()" class="btn-udp-primary w-[120px] py-[5px] cursor-pointer">
+                        <p class="text-lg">Guardar</p>
+                    </button>
+                </div>
+                <button class="modal-close-btn absolute top-6 right-6 cursor-pointer" (click)="cerrarModalPlantilla()">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 20L4 4M20 4L4 20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
                 </button>
             </div>
         </div>
