@@ -6103,3 +6103,21 @@ Merge de `victor-frontend` a `master`, incluyendo (cada uno documentado en su pr
 
 ### Pendiente
 Los pendientes puntuales de cada feature quedan listados en sus respectivas secciones de sesión más arriba.
+
+## Sesión 2026-09-26 — Deploy a master: merge de victor-frontend (Fase 2 Dashboard UDP, sub-tab Plantillas de Cronograma)
+
+### Contexto
+Cierre de ciclo: se trae a `master`/producción el acumulado de `victor-frontend` desde el deploy del 2026-09-24.
+
+### Cambios
+Merge de `victor-frontend` a `master` (cada uno documentado en su propia sección de sesión más arriba, ya incorporada por el merge):
+- Fase 2 de consolidación Dashboard UDP: elimina `projects-dashboard` del routing/menú/tabs (carpeta física y endpoint backend intactos), unifica tabs de `cronograma-dashboard` con `PROJECTS_TABS`, catálogo de Hitos sin paginar.
+- Nuevo sub-tab "Plantillas de Cronograma" en Configuración → Milestones: selector de etapa (Anteproyecto/Proyecto/Actualización), service y DTOs nuevos (`features/projects/configuration/{services,dtos}/plantilla-cronograma.*`), editor tipo árbol/outline con indent/outdent y mover arriba/abajo (sin drag&drop — el backend no tiene endpoint de reorden masivo). Incluye fix de un bug visual de overlap entre las columnas de código y nombre en ítems anidados.
+- Investigación (sin cambio de código) del bug "Responsable Planeamiento UDP" siempre en blanco en el modal Editar Proyecto: causa raíz identificada en backend (`ProjectRepository.cs:334`, `SubareaPlaneamientoUdp = "Planeamiento BIM"` no coincide con el valor real del catálogo `"Ingeniería BIM"`) — pendiente de fix en `Abril_Backend`, no en este repo.
+
+### Verificado
+`ng build` sobre `master` (antes del merge) → exit code 0. No se detectaron conflictos al mergear `victor-frontend`. El sub-tab de Plantillas de Cronograma no se probó contra backend real en navegador (sin credenciales/backend local disponibles durante su desarrollo) — usuario a cargo de esa verificación.
+
+### Pendiente
+- Fix del bug "Responsable Planeamiento UDP" en `Abril_Backend` (ver investigación arriba) — no es de este repo.
+- Los pendientes puntuales de Plantillas de Cronograma (endpoint de reorden masivo si el batch de PUTs resulta lento en la práctica, protección contra ciclos en `PredecesoraCodigo`) quedan en la sección de sesión 2026-09-26 de Plantillas de Cronograma más arriba.
