@@ -73,7 +73,26 @@
             <app-slide-galeria-zoom [slide]="slide" (respuesta)="onRespuesta($event)" />
           }
           @case ('contenido_libre') {
-            <app-slide-contenido-libre [slide]="slide" (respuesta)="onRespuesta($event)" />
+            <app-slide-contenido-libre
+              [slide]="slide"
+              (respuesta)="onRespuesta($event)"
+              (irAPagina)="onIrAPagina($event)"
+            />
+          }
+          @case ('pregunta_respuesta_corta') {
+            <app-slide-respuesta-corta [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('pregunta_completar_huecos') {
+            <app-slide-completar-huecos [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('pregunta_emparejar') {
+            <app-slide-emparejar-conceptos [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('pregunta_eleccion_multiple') {
+            <app-slide-eleccion-multiple [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('pregunta_desliza_acierta') {
+            <app-slide-desliza-acierta [slide]="slide" (respuesta)="onRespuesta($event)" />
           }
           @default {
             <div class="tipo-no-soportado">

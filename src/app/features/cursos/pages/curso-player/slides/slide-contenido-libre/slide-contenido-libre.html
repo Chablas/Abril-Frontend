@@ -1,24 +1,32 @@
 <div class="libre-wrap">
-  <div #lienzo class="libre-lienzo" [style.aspect-ratio]="canvasAncho + ' / ' + canvasAlto">
+  <div
+    #lienzo
+    class="libre-lienzo"
+    [style.aspect-ratio]="canvasAncho + ' / ' + canvasAlto"
+    [style.background]="config.estilo?.fondoClaro || '#ffffff'"
+  >
     <div
       *ngFor="let el of elementosOrdenados"
       class="libre-elemento"
       [class.interactivo]="esInteractivo(el)"
-      [ngClass]="claseAnimacion(el)"
+      [class.con-animacion-interaccion]="!!el.animacionInteraccion"
+      [ngClass]="clasesAnimacion(el)"
       [style.left.%]="(el.x / canvasAncho) * 100"
       [style.top.%]="(el.y / canvasAlto) * 100"
       [style.width.%]="(el.ancho / canvasAncho) * 100"
       [style.height.%]="(el.alto / canvasAlto) * 100"
       [style.z-index]="el.zIndex ?? 0"
       [style.transform]="el.rotacion ? 'rotate(' + el.rotacion + 'deg)' : null"
-      [style.animation-delay.ms]="el.animacionDelayMs ?? 0"
-      [style.animation-duration.ms]="el.animacionDuracionMs ?? 600"
-      [style.animation-timing-function]="easingCss(el.animacionEasing)"
+      [style.animation-delay.ms]="(claseAnimacionInteraccion(el) || claseSalida(el)) ? null : (el.animacionDelayMs ?? 0)"
+      [style.animation-duration.ms]="(claseAnimacionInteraccion(el) || claseSalida(el)) ? null : (el.animacionDuracionMs ?? 600)"
+      [style.animation-timing-function]="(claseAnimacionInteraccion(el) || claseSalida(el)) ? null : easingCss(el.animacionEasing)"
       (click)="alClicElemento(el)"
+      (mouseenter)="alPasarMouseElemento(el)"
     >
       <ng-container [ngSwitch]="el.tipo">
         <div
           *ngSwitchCase="'texto'"
+          [ngClass]="claseContinua(el)"
           class="libre-texto"
           [style.color]="el.colorTexto || '#ffffff'"
           [style.font-size.px]="(el.tamanoFuente || 24) * escala"
@@ -29,6 +37,7 @@
         <img
           *ngSwitchCase="'imagen'"
           class="libre-imagen"
+          [ngClass]="claseContinua(el)"
           [src]="el.imagenUrl"
           [style.border-radius.px]="(el.bordeRedondeado || 0) * escala"
           alt=""
@@ -37,6 +46,7 @@
         <div
           *ngSwitchCase="'forma'"
           class="libre-forma"
+          [ngClass]="claseContinua(el)"
           [style.background]="el.colorFondo || '#f5a623'"
           [style.border-radius]="el.formaTipo === 'circulo' ? '50%' : (el.bordeRedondeado || 0) * escala + 'px'"
         ></div>
@@ -44,7 +54,7 @@
         <i
           *ngSwitchCase="'icono'"
           class="ti libre-icono"
-          [ngClass]="el.iconoClase || 'ti-star'"
+          [ngClass]="(el.iconoClase || 'ti-star') + ' ' + claseContinua(el)"
           [style.color]="el.colorTexto || '#ffffff'"
           [style.font-size.px]="el.ancho * 0.8 * escala"
         ></i>
@@ -53,6 +63,7 @@
           *ngSwitchCase="'boton'"
           type="button"
           class="libre-boton"
+          [ngClass]="claseContinua(el)"
           [style.background]="el.colorFondo || '#f5a623'"
           [style.color]="el.colorTexto || '#14100b'"
           [style.font-size.px]="16 * escala"
@@ -65,6 +76,29 @@
           frameborder="0"
           allowfullscreen
         ></iframe>
+
+        <audio
+          *ngSwitchCase="'audio'"
+          class="libre-audio"
+          [src]="el.audioUrl"
+          [autoplay]="!!el.audioAutoplay"
+          controls
+        ></audio>
+
+        <!-- Pregunta evaluable embebida: el MISMO componente real que se usa cuando la
+             pregunta es pantalla completa, nunca un renderizador aparte. -->
+        <div *ngSwitchCase="'pregunta'" class="libre-pregunta" [style.background]="el.colorFondo || null" [style.color]="el.colorTexto || null" (pointerdown)="$event.stopPropagation()" (click)="$event.stopPropagation()">
+          <ng-container [ngSwitch]="el.pregunta?.tipoCodigo">
+            <app-slide-verdadero-falso *ngSwitchCase="'pregunta_vf'" [slide]="previewPreguntaSlide(el)" (respuesta)="alResponderPregunta($event)" />
+            <app-slide-opcion-multiple *ngSwitchCase="'pregunta_opcion_multiple'" [slide]="previewPreguntaSlide(el)" (respuesta)="alResponderPregunta($event)" />
+            <app-slide-eleccion-multiple *ngSwitchCase="'pregunta_eleccion_multiple'" [slide]="previewPreguntaSlide(el)" (respuesta)="alResponderPregunta($event)" />
+            <app-slide-ordenar *ngSwitchCase="'pregunta_ordenar'" [slide]="previewPreguntaSlide(el)" (respuesta)="alResponderPregunta($event)" />
+            <app-slide-respuesta-corta *ngSwitchCase="'pregunta_respuesta_corta'" [slide]="previewPreguntaSlide(el)" (respuesta)="alResponderPregunta($event)" />
+            <app-slide-completar-huecos *ngSwitchCase="'pregunta_completar_huecos'" [slide]="previewPreguntaSlide(el)" (respuesta)="alResponderPregunta($event)" />
+            <app-slide-emparejar-conceptos *ngSwitchCase="'pregunta_emparejar'" [slide]="previewPreguntaSlide(el)" (respuesta)="alResponderPregunta($event)" />
+            <app-slide-desliza-acierta *ngSwitchCase="'pregunta_desliza_acierta'" [slide]="previewPreguntaSlide(el)" (respuesta)="alResponderPregunta($event)" />
+          </ng-container>
+        </div>
       </ng-container>
     </div>
   </div>
@@ -79,7 +113,7 @@
     </div>
   </div>
 
-  <button type="button" class="btn-primario btn-continuar-libre" (click)="siguiente()">
+  <button type="button" class="btn-primario btn-continuar-libre" *ngIf="!elementoPregunta" (click)="siguiente()">
     Continuar
   </button>
 </div>

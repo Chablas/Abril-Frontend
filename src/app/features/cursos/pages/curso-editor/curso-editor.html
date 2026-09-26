@@ -1,5 +1,7 @@
 <div class="curso-editor" [class.modo-slide]="!!slideEditando">
-  <input type="file" accept="image/*" #fiPreview style="display:none" (change)="onArchivoPreviewSeleccionado($event)" />
+  <input type="file" [attr.accept]="campoSubidaPreview === 'audioUrl' ? 'audio/*' : 'image/*'" #fiPreview style="display:none" (change)="onArchivoPreviewSeleccionado($event)" />
+  <input type="file" accept="image/*" #fiLogo style="display:none" (change)="subirImagenA(curso, 'logoUrl', $event)" />
+  <input type="file" accept="image/*" #fiFondo style="display:none" (change)="subirImagenFondo($event)" />
 
   <div class="admin-topbar">
     <span class="admin-kicker"><i class="ti ti-tool"></i> Panel de administración de cursos</span>
@@ -76,9 +78,19 @@
       </div>
       <div class="campo-color">
         <label>Color del tema</label>
-        <input type="color" [(ngModel)]="curso.colorTema" />
-        <span>{{ curso.colorTema }}</span>
+        <app-color-hex-input [valor]="curso.colorTema" (valorChange)="curso.colorTema = $event" />
       </div>
+
+      <div class="campo-logo">
+        <label>Logo de marca (para insertar rápido en cualquier pantalla)</label>
+        <div class="campo-logo-fila">
+          <img *ngIf="curso.logoUrl" [src]="curso.logoUrl" class="logo-preview" alt="" />
+          <button type="button" class="btn-subir" (click)="abrirSubidaLogo()">
+            <i class="ti ti-upload"></i> {{ curso.logoUrl ? 'Cambiar logo' : 'Subir logo' }}
+          </button>
+        </div>
+      </div>
+
       <div class="abril-field">
         <textarea class="abril-field-input" rows="2" [(ngModel)]="curso.descripcion" placeholder=" "></textarea>
         <label class="abril-field-label">Descripción</label>
@@ -95,16 +107,43 @@
       <div
         class="miniatura-slide"
         *ngFor="let s of slides"
-        (click)="editarSlide(s)"
+        (click)="confirmarAbrirSlide(s)"
         [style.background]="'linear-gradient(135deg, ' + (curso.colorTema || '#f5a623') + ' 0%, #14100b 130%)'"
       >
         <span class="orden-badge">{{ s.orden }}</span>
         <div class="acciones-miniatura">
+          <button
+            type="button"
+            class="btn-mini"
+            *ngIf="TIPOS_EVALUABLES.includes(s.tipoCodigo)"
+            (click)="guardarSlideEnBanco(s); $event.stopPropagation()"
+            title="Guardar en el banco de preguntas"
+          ><i class="ti ti-bookmark"></i></button>
           <button type="button" class="btn-mini" (click)="duplicarSlide(s); $event.stopPropagation()" title="Duplicar"><i class="ti ti-copy"></i></button>
           <button type="button" class="btn-mini btn-mini-danger" (click)="eliminarSlide(s); $event.stopPropagation()" title="Eliminar"><i class="ti ti-trash"></i></button>
         </div>
         <div class="miniatura-cuerpo">
-          <i class="ti miniatura-icono" [ngClass]="iconoParaTipo(s.tipoCodigo)"></i>
+          <ng-container *ngIf="elementosPreviaSlide(s) as previaEls">
+            <i class="ti miniatura-icono" [ngClass]="iconoParaTipo(s.tipoCodigo)" *ngIf="!previaEls.length"></i>
+            <div
+              class="previa-elemento"
+              *ngFor="let el of previaEls"
+              [style.left.%]="(el.x / canvasAncho) * 100"
+              [style.top.%]="(el.y / canvasAlto) * 100"
+              [style.width.%]="(el.ancho / canvasAncho) * 100"
+              [style.height.%]="(el.alto / canvasAlto) * 100"
+              [style.background]="el.tipo === 'forma' || el.tipo === 'boton' ? (el.colorFondo || '#f5a623') : el.tipo === 'imagen' || el.tipo === 'video' ? '#d8d2c2' : 'transparent'"
+              [style.border-radius]="el.tipo === 'forma' && el.formaTipo === 'circulo' ? '50%' : '2px'"
+            >
+              <span
+                *ngIf="el.tipo === 'texto'"
+                class="previa-texto-linea"
+                [style.background]="el.colorTexto || '#14100b'"
+                [style.width.%]="el.alineacion === 'center' ? 60 : 90"
+                [style.margin]="el.alineacion === 'center' ? '0 auto' : '0'"
+              ></span>
+            </div>
+          </ng-container>
           <span class="miniatura-titulo">{{ tituloSlide(s) }}</span>
         </div>
       </div>
@@ -157,42 +196,142 @@
         <button type="button" class="btn-link" *ngIf="slide.id" (click)="abrirHistorial()">
           <i class="ti ti-history"></i> Historial
         </button>
+        <button type="button" class="btn-secundario" (click)="abrirSelectorFondo()">
+          <i class="ti ti-color-swatch"></i> Fondo
+        </button>
+        <button type="button" class="btn-secundario" *ngIf="curso.logoUrl" (click)="agregarLogoAlLienzo()" title="Insertar el logo de marca del curso">
+          <i class="ti ti-photo-plus"></i> Logo
+        </button>
         <button type="button" class="btn-secundario" (click)="cancelarEdicionSlide()">Cancelar</button>
         <button type="button" class="btn-primario" (click)="guardarSlide()">Guardar pantalla</button>
       </div>
     </div>
 
-    <app-canvas-editor
-      #ce
-      class="lienzo-fullscreen-cuerpo"
-      [elementos]="slide.campos.elementos"
-      (elementosChange)="slide.campos.elementos = $event"
-      (subirImagen)="subirImagenElementoLibre($event)"
-    />
+    <div class="lienzo-fullscreen-fila">
+      <!-- Riel de páginas, estilo Genially: lista vertical de miniaturas siempre visible
+           mientras se edita, para saltar de pantalla sin salir del lienzo. Reemplaza la
+           vista de "grilla" separada — todo pasa por aquí. -->
+      <aside class="paginas-rail" [class.colapsado]="paginasRailColapsado">
+        <div class="paginas-rail-header">
+          <span *ngIf="!paginasRailColapsado">Páginas</span>
+          <button type="button" class="btn-icono" (click)="toggleRailPaginas()" [title]="paginasRailColapsado ? 'Mostrar páginas' : 'Ocultar páginas'">
+            <i class="ti" [ngClass]="paginasRailColapsado ? 'ti-layout-sidebar-right-expand' : 'ti-layout-sidebar-left-expand'"></i>
+          </button>
+        </div>
+        <ng-container *ngIf="!paginasRailColapsado">
+          <div class="paginas-rail-lista">
+            <div
+              class="paginas-rail-item"
+              *ngFor="let s of slides"
+              [class.activa]="s.id === slide.id"
+              (click)="irAPaginaDesde(s)"
+            >
+              <span class="orden-badge">{{ s.orden }}</span>
+              <div
+                class="paginas-rail-miniatura"
+                [style.background]="'linear-gradient(135deg, ' + (curso.colorTema || '#f5a623') + ' 0%, #14100b 130%)'"
+              >
+                <ng-container *ngIf="elementosPreviaSlide(s) as previaEls">
+                  <i class="ti" [ngClass]="iconoParaTipo(s.tipoCodigo)" *ngIf="!previaEls.length"></i>
+                  <div
+                    class="previa-elemento"
+                    *ngFor="let el of previaEls"
+                    [style.left.%]="(el.x / canvasAncho) * 100"
+                    [style.top.%]="(el.y / canvasAlto) * 100"
+                    [style.width.%]="(el.ancho / canvasAncho) * 100"
+                    [style.height.%]="(el.alto / canvasAlto) * 100"
+                    [style.background]="el.tipo === 'forma' || el.tipo === 'boton' ? (el.colorFondo || '#f5a623') : el.tipo === 'imagen' || el.tipo === 'video' ? '#d8d2c2' : 'transparent'"
+                    [style.border-radius]="el.tipo === 'forma' && el.formaTipo === 'circulo' ? '50%' : '2px'"
+                  >
+                    <span
+                      *ngIf="el.tipo === 'texto'"
+                      class="previa-texto-linea"
+                      [style.background]="el.colorTexto || '#14100b'"
+                      [style.width.%]="el.alineacion === 'center' ? 60 : 90"
+                      [style.margin]="el.alineacion === 'center' ? '0 auto' : '0'"
+                    ></span>
+                  </div>
+                </ng-container>
+              </div>
+              <span class="paginas-rail-titulo">{{ tituloSlide(s) }}</span>
+            </div>
+          </div>
+          <button type="button" class="btn-secundario paginas-rail-agregar" (click)="abrirSelectorPlantilla()">
+            <i class="ti ti-plus"></i> Añadir página
+          </button>
+        </ng-container>
+      </aside>
 
-    <!-- Barra de páginas, estilo Genially: agregar página + flechas para moverte entre
-         pantallas sin salir del lienzo (guarda la actual antes de cambiar). -->
-    <div class="lienzo-bottombar">
-      <button type="button" class="btn-secundario" (click)="abrirSelectorPlantilla()">
-        <i class="ti ti-plus"></i> Añadir página
-      </button>
-      <div class="zoom-control">
-        <button type="button" class="btn-icono" (click)="ce.zoomOut()" title="Alejar"><i class="ti ti-zoom-out"></i></button>
-        <button type="button" class="zoom-porcentaje" (click)="ce.zoomAjustar()" title="Ajustar al espacio disponible">{{ ce.porcentajeZoom }}%</button>
-        <button type="button" class="btn-icono" (click)="ce.zoomIn()" title="Acercar"><i class="ti ti-zoom-in"></i></button>
+      <div class="lienzo-fullscreen-cuerpo-wrap">
+        <app-canvas-editor
+          #ce
+          class="lienzo-fullscreen-cuerpo"
+          [elementos]="slide.campos.elementos"
+          [fondoCss]="fondoLienzoActual"
+          [paginasDisponibles]="paginasParaBoton"
+          [colorTema]="curso.colorTema"
+          (elementosChange)="slide.campos.elementos = $event"
+          (subirImagen)="subirImagenElementoLibre($event)"
+          (subirAudio)="subirAudioElementoLibre($event)"
+          (abrirBancoPreguntas)="abrirSelectorPlantillaEnBanco()"
+        />
+
+        <!-- Barra inferior: zoom + flechas prev/siguiente (la lista de páginas ya vive en el riel). -->
+        <div class="lienzo-bottombar">
+          <div class="zoom-control">
+            <button type="button" class="btn-icono" (click)="ce.zoomOut()" title="Alejar"><i class="ti ti-zoom-out"></i></button>
+            <button type="button" class="zoom-porcentaje" (click)="ce.zoomAjustar()" title="Ajustar al espacio disponible">{{ ce.porcentajeZoom }}%</button>
+            <button type="button" class="btn-icono" (click)="ce.zoomIn()" title="Acercar"><i class="ti ti-zoom-in"></i></button>
+          </div>
+          <div class="paginador">
+            <button type="button" class="btn-icono" [disabled]="!puedeIrAnterior" (click)="irAPagina(-1)" title="Página anterior">
+              <i class="ti ti-chevron-left"></i>
+            </button>
+            <span>{{ indicePaginaActual + 1 }} / {{ slides.length }}</span>
+            <button type="button" class="btn-icono" [disabled]="!puedeIrSiguiente" (click)="irAPagina(1)" title="Página siguiente">
+              <i class="ti ti-chevron-right"></i>
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="paginador">
-        <button type="button" class="btn-icono" [disabled]="!puedeIrAnterior" (click)="irAPagina(-1)" title="Página anterior">
-          <i class="ti ti-chevron-left"></i>
+    </div>
+
+    <!-- Selector de fondo: color sólido (más adelante: gradiente/imagen) -->
+    <div class="historial-backdrop" *ngIf="mostrarSelectorFondo" (click)="cerrarSelectorFondo()">
+      <div class="historial-panel" (click)="$event.stopPropagation()">
+        <div class="historial-header">
+          <span><i class="ti ti-color-swatch"></i> Fondo de la pantalla</span>
+          <button type="button" class="btn-link" (click)="cerrarSelectorFondo()"><i class="ti ti-x"></i></button>
+        </div>
+        <div class="campo-color">
+          <label>Color de fondo</label>
+          <app-color-hex-input [valor]="fondoLienzoActual || '#ffffff'" (valorChange)="fijarColorFondo($event)" />
+          <span class="swatches-rapidos">
+            <button
+              type="button"
+              *ngFor="let c of [curso.colorTema, '#f5a623', '#14100b', '#ffffff']"
+              class="swatch"
+              [style.background]="c"
+              [title]="c"
+              (click)="fijarColorFondo(c!)"
+            ></button>
+          </span>
+        </div>
+
+        <p class="ayuda">o, si prefieres una imagen:</p>
+        <button type="button" class="btn-subir" (click)="abrirSubidaFondoImagen()">
+          <i class="ti ti-upload"></i> Subir imagen de fondo
         </button>
-        <span>{{ indicePaginaActual + 1 }} / {{ slides.length }}</span>
-        <button type="button" class="btn-icono" [disabled]="!puedeIrSiguiente" (click)="irAPagina(1)" title="Página siguiente">
-          <i class="ti ti-chevron-right"></i>
+
+        <hr class="separador" />
+
+        <button type="button" class="btn-secundario" *ngIf="fondoLienzoActual" (click)="quitarFondo()">
+          <i class="ti ti-x"></i> Quitar fondo
+        </button>
+        <button type="button" class="btn-secundario" *ngIf="fondoLienzoActual" (click)="aplicarFondoATodasLasPaginas()">
+          <i class="ti ti-copy"></i> Aplicar a todas las páginas
         </button>
       </div>
-      <button type="button" class="btn-secundario" (click)="verGrilla()" title="Guarda esta pantalla y muestra todas">
-        <i class="ti ti-layout-grid"></i> Ver grilla
-      </button>
     </div>
   </div>
 
@@ -204,7 +343,16 @@
         <button type="button" class="btn-link" (click)="cerrarSelectorPlantilla()"><i class="ti ti-x"></i></button>
       </div>
 
-      <div class="grilla-plantillas">
+      <div class="pestanas-propiedades">
+        <button type="button" [class.pestana-activa]="pestanaSelectorPlantilla === 'plantillas'" (click)="pestanaSelectorPlantilla = 'plantillas'">
+          <i class="ti ti-layout-grid-add"></i> Plantillas
+        </button>
+        <button type="button" [class.pestana-activa]="pestanaSelectorPlantilla === 'banco'" (click)="abrirPestanaBanco()">
+          <i class="ti ti-list-check"></i> Banco de preguntas
+        </button>
+      </div>
+
+      <div class="grilla-plantillas" *ngIf="pestanaSelectorPlantilla === 'plantillas'">
         <button
           type="button"
           class="tarjeta-plantilla"
@@ -235,6 +383,263 @@
           <span>{{ p.nombre }}</span>
         </button>
       </div>
+
+      <div class="banco-preguntas-panel" *ngIf="pestanaSelectorPlantilla === 'banco'">
+        <select class="abril-field-input" [(ngModel)]="filtroTipoBanco" (ngModelChange)="cargarBancoPreguntas()">
+          <option value="">Todos los tipos</option>
+          <option value="pregunta_vf">Verdadero / Falso</option>
+          <option value="pregunta_opcion_multiple">Opción múltiple</option>
+          <option value="pregunta_ordenar">Ordenar</option>
+          <option value="pregunta_respuesta_corta">Respuesta corta</option>
+          <option value="pregunta_completar_huecos">Completar huecos</option>
+          <option value="pregunta_emparejar">Emparejar conceptos</option>
+          <option value="pregunta_eleccion_multiple">Elección múltiple</option>
+          <option value="pregunta_desliza_acierta">Desliza y acierta</option>
+        </select>
+
+        <div class="lista-banco-preguntas" *ngIf="bancoPreguntas.length; else sinBanco">
+          <button type="button" class="fila-pregunta-banco" *ngFor="let p of bancoPreguntas" (click)="elegirPreguntaBanco(p)">
+            <i class="ti" [ngClass]="iconoParaTipo(p.tipoCodigo)"></i>
+            <div class="fila-pregunta-banco-info">
+              <strong>{{ p.titulo }}</strong>
+              <span>{{ resolverEtiqueta(p.tipoCodigo) }}{{ p.categoria ? ' · ' + p.categoria : '' }}</span>
+            </div>
+            <i class="ti ti-plus"></i>
+          </button>
+        </div>
+        <ng-template #sinBanco>
+          <p class="ayuda">
+            Todavía no hay preguntas guardadas en el banco{{ filtroTipoBanco ? ' de este tipo' : '' }}.
+            Para agregar una, ábrela desde "Pantallas del curso" y usa el botón <i class="ti ti-bookmark"></i> de su miniatura.
+          </p>
+        </ng-template>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Formulario propio de preguntas evaluables — NUNCA pasa por el lienzo libre, así que
+       nunca pierde la evaluación (a diferencia de abrir una en canvas-editor). -->
+  <div class="lienzo-fullscreen" *ngIf="preguntaEditando as p">
+    <div class="lienzo-topbar">
+      <button type="button" class="btn-volver" (click)="cerrarPreguntaEditor()" title="Cerrar sin guardar">
+        <i class="ti ti-arrow-left"></i>
+      </button>
+      <div class="lienzo-topbar-campos">
+        <span class="lienzo-titulo-pregunta"><i class="ti" [ngClass]="iconoParaTipo(p.tipoCodigo)"></i> {{ resolverEtiqueta(p.tipoCodigo) }}</span>
+      </div>
+      <div class="lienzo-topbar-acciones">
+        <button type="button" class="btn-secundario" (click)="cerrarPreguntaEditor()">Cancelar</button>
+        <button type="button" class="btn-primario" (click)="guardarPregunta()">Guardar pregunta</button>
+      </div>
+    </div>
+
+    <div class="lienzo-fullscreen-fila">
+      <div class="lienzo-fullscreen-cuerpo-wrap">
+        <div class="pregunta-preview-lienzo" [style.background]="'linear-gradient(135deg, ' + (curso.colorTema || '#f5a623') + ' 0%, #14100b 130%)'">
+          <div class="pregunta-preview-interior">
+            <ng-container [ngSwitch]="p.tipoCodigo">
+              <app-slide-verdadero-falso *ngSwitchCase="'pregunta_vf'" [slide]="previewPreguntaSlide!" />
+              <app-slide-opcion-multiple *ngSwitchCase="'pregunta_opcion_multiple'" [slide]="previewPreguntaSlide!" />
+              <app-slide-ordenar *ngSwitchCase="'pregunta_ordenar'" [slide]="previewPreguntaSlide!" />
+              <app-slide-respuesta-corta *ngSwitchCase="'pregunta_respuesta_corta'" [slide]="previewPreguntaSlide!" />
+              <app-slide-completar-huecos *ngSwitchCase="'pregunta_completar_huecos'" [slide]="previewPreguntaSlide!" />
+              <app-slide-emparejar-conceptos *ngSwitchCase="'pregunta_emparejar'" [slide]="previewPreguntaSlide!" />
+              <app-slide-eleccion-multiple *ngSwitchCase="'pregunta_eleccion_multiple'" [slide]="previewPreguntaSlide!" />
+              <app-slide-desliza-acierta *ngSwitchCase="'pregunta_desliza_acierta'" [slide]="previewPreguntaSlide!" />
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <aside class="canvas-panel">
+      <div class="panel-header">
+        <span>Contenido</span>
+      </div>
+
+      <div class="fila-campos" *ngIf="p.tipoCodigo !== 'pregunta_completar_huecos'">
+        <div class="abril-field">
+          <input class="abril-field-input" type="text" [(ngModel)]="p.kicker" placeholder=" " />
+          <label class="abril-field-label">Etiqueta (opcional, ej. "EJERCICIO")</label>
+        </div>
+        <div class="abril-field campo-corto">
+          <input class="abril-field-input" type="number" [(ngModel)]="p.puntaje" placeholder=" " />
+          <label class="abril-field-label">Puntaje</label>
+        </div>
+      </div>
+      <div class="fila-campos" *ngIf="p.tipoCodigo === 'pregunta_completar_huecos'">
+        <div class="abril-field campo-corto">
+          <input class="abril-field-input" type="number" [(ngModel)]="p.puntaje" placeholder=" " />
+          <label class="abril-field-label">Puntaje</label>
+        </div>
+      </div>
+
+      <label class="checkbox-row">
+        <input type="checkbox" [(ngModel)]="p.contarParaNota" />
+        <span>Cuenta para la nota final (si lo desmarcas, sigue mostrando si acertó o no, pero solo es práctica)</span>
+      </label>
+
+      <!-- Verdadero / Falso -->
+      <ng-container *ngIf="p.tipoCodigo === 'pregunta_vf'">
+        <div class="abril-field">
+          <textarea class="abril-field-input" rows="2" [(ngModel)]="p.enunciado" placeholder=" "></textarea>
+          <label class="abril-field-label">Enunciado</label>
+        </div>
+        <p class="ayuda">Marca cuál es la respuesta correcta:</p>
+        <div class="fila-campos">
+          <button
+            type="button"
+            class="segmento-btn opcion-vf"
+            [class.segmento-activo]="p.opciones[0]?.correcta"
+            (click)="marcarOpcionCorrecta(0)"
+          >Verdadero</button>
+          <button
+            type="button"
+            class="segmento-btn opcion-vf"
+            [class.segmento-activo]="p.opciones[1]?.correcta"
+            (click)="marcarOpcionCorrecta(1)"
+          >Falso</button>
+        </div>
+      </ng-container>
+
+      <!-- Opción múltiple (elección única; con imagenUrl por opción funciona como "elección de imagen") -->
+      <ng-container *ngIf="p.tipoCodigo === 'pregunta_opcion_multiple'">
+        <div class="abril-field">
+          <textarea class="abril-field-input" rows="2" [(ngModel)]="p.enunciado" placeholder=" "></textarea>
+          <label class="abril-field-label">Enunciado</label>
+        </div>
+        <p class="ayuda">Marca cuál opción es la correcta con el círculo de la izquierda:</p>
+        <div class="fila-opcion-editable" *ngFor="let o of p.opciones; let i = index">
+          <button type="button" class="radio-correcta" [class.radio-activo]="o.correcta" (click)="marcarOpcionCorrecta(i)" title="Marcar como correcta">
+            <i class="ti" [ngClass]="o.correcta ? 'ti-circle-check-filled' : 'ti-circle'"></i>
+          </button>
+          <input class="abril-field-input" type="text" [(ngModel)]="o.texto" placeholder="Texto de la opción" />
+          <input class="abril-field-input campo-corto" type="text" [(ngModel)]="o.imagenUrl" placeholder="URL imagen (opcional)" />
+          <button type="button" class="btn-link btn-link-danger" (click)="quitarOpcion(i)" title="Quitar"><i class="ti ti-trash"></i></button>
+        </div>
+        <button type="button" class="btn-secundario" (click)="agregarOpcion()"><i class="ti ti-plus"></i> Agregar opción</button>
+      </ng-container>
+
+      <!-- Elección múltiple (varias opciones pueden ser correctas a la vez) -->
+      <ng-container *ngIf="p.tipoCodigo === 'pregunta_eleccion_multiple'">
+        <div class="abril-field">
+          <textarea class="abril-field-input" rows="2" [(ngModel)]="p.enunciado" placeholder=" "></textarea>
+          <label class="abril-field-label">Enunciado</label>
+        </div>
+        <p class="ayuda">Marca TODAS las opciones correctas (puede ser más de una):</p>
+        <div class="fila-opcion-editable" *ngFor="let o of p.opciones; let i = index">
+          <button type="button" class="radio-correcta" [class.radio-activo]="o.correcta" (click)="toggleOpcionCorrecta(i)" title="Marcar/desmarcar como correcta">
+            <i class="ti" [ngClass]="o.correcta ? 'ti-square-check-filled' : 'ti-square'"></i>
+          </button>
+          <input class="abril-field-input" type="text" [(ngModel)]="o.texto" placeholder="Texto de la opción" />
+          <input class="abril-field-input campo-corto" type="text" [(ngModel)]="o.imagenUrl" placeholder="URL imagen (opcional)" />
+          <button type="button" class="btn-link btn-link-danger" (click)="quitarOpcion(i)" title="Quitar"><i class="ti ti-trash"></i></button>
+        </div>
+        <button type="button" class="btn-secundario" (click)="agregarOpcion()"><i class="ti ti-plus"></i> Agregar opción</button>
+      </ng-container>
+
+      <!-- Desliza y acierta (misma lógica que V/F, otra piel: tarjeta + botones ✗/✓) -->
+      <ng-container *ngIf="p.tipoCodigo === 'pregunta_desliza_acierta'">
+        <div class="abril-field">
+          <textarea class="abril-field-input" rows="2" [(ngModel)]="p.enunciado" placeholder=" "></textarea>
+          <label class="abril-field-label">Afirmación</label>
+        </div>
+        <div class="abril-field">
+          <input class="abril-field-input" type="text" [(ngModel)]="p.imagenUrl" placeholder=" " />
+          <label class="abril-field-label">Imagen de la tarjeta (URL, opcional)</label>
+        </div>
+        <p class="ayuda">Marca cuál es la respuesta correcta:</p>
+        <div class="fila-campos">
+          <button type="button" class="segmento-btn opcion-vf" [class.segmento-activo]="p.opciones[0]?.correcta" (click)="marcarOpcionCorrecta(0)">✓ Correcta</button>
+          <button type="button" class="segmento-btn opcion-vf" [class.segmento-activo]="p.opciones[1]?.correcta" (click)="marcarOpcionCorrecta(1)">✗ Incorrecta</button>
+        </div>
+      </ng-container>
+
+      <!-- Ordenar -->
+      <ng-container *ngIf="p.tipoCodigo === 'pregunta_ordenar'">
+        <div class="abril-field">
+          <textarea class="abril-field-input" rows="2" [(ngModel)]="p.enunciado" placeholder=" "></textarea>
+          <label class="abril-field-label">Enunciado</label>
+        </div>
+        <p class="ayuda">Escribe los pasos/elementos en el orden CORRECTO (el jugador los verá desordenados):</p>
+        <div class="fila-opcion-editable" *ngFor="let it of p.items; let i = index">
+          <span class="orden-badge orden-badge-inline">{{ i + 1 }}</span>
+          <input class="abril-field-input" type="text" [(ngModel)]="it.texto" placeholder="Paso/elemento" />
+          <button type="button" class="btn-link btn-link-danger" (click)="quitarItemOrdenar(i)" title="Quitar"><i class="ti ti-trash"></i></button>
+        </div>
+        <button type="button" class="btn-secundario" (click)="agregarItemOrdenar()"><i class="ti ti-plus"></i> Agregar paso</button>
+      </ng-container>
+
+      <!-- Respuesta corta -->
+      <ng-container *ngIf="p.tipoCodigo === 'pregunta_respuesta_corta'">
+        <div class="abril-field">
+          <textarea class="abril-field-input" rows="2" [(ngModel)]="p.enunciado" placeholder=" "></textarea>
+          <label class="abril-field-label">Enunciado</label>
+        </div>
+        <div class="abril-field">
+          <input class="abril-field-input" type="text" [(ngModel)]="p.respuestaTexto" placeholder=" " />
+          <label class="abril-field-label">Respuesta correcta</label>
+        </div>
+        <div class="abril-field">
+          <input class="abril-field-input" type="text" [(ngModel)]="p.variantes" placeholder=" " />
+          <label class="abril-field-label">Otras variantes válidas (separadas por coma, opcional)</label>
+        </div>
+      </ng-container>
+
+      <!-- Completar huecos -->
+      <ng-container *ngIf="p.tipoCodigo === 'pregunta_completar_huecos'">
+        <div class="abril-field">
+          <textarea
+            class="abril-field-input"
+            rows="3"
+            [(ngModel)]="p.textoHuecos"
+            (ngModelChange)="onCambioTextoHuecos()"
+            placeholder=" "
+          ></textarea>
+          <label class="abril-field-label">Texto (usa ___ para marcar cada hueco)</label>
+        </div>
+        <div class="abril-field" *ngFor="let r of p.respuestasHuecos; let i = index">
+          <input class="abril-field-input" type="text" [(ngModel)]="p.respuestasHuecos[i]" placeholder=" " />
+          <label class="abril-field-label">Respuesta correcta del hueco {{ i + 1 }}</label>
+        </div>
+        <p class="ayuda" *ngIf="!p.respuestasHuecos.length">Escribe el texto de arriba con "___" para que aparezcan los campos de respuesta.</p>
+      </ng-container>
+
+      <!-- Emparejar conceptos -->
+      <ng-container *ngIf="p.tipoCodigo === 'pregunta_emparejar'">
+        <div class="abril-field">
+          <textarea class="abril-field-input" rows="2" [(ngModel)]="p.enunciado" placeholder=" "></textarea>
+          <label class="abril-field-label">Enunciado</label>
+        </div>
+        <div class="fila-campos-emparejar">
+          <div class="columna-emparejar">
+            <p class="ayuda"><strong>Columna izquierda</strong></p>
+            <div class="fila-opcion-editable" *ngFor="let izq of p.izquierda; let i = index">
+              <input class="abril-field-input" type="text" [(ngModel)]="izq.texto" placeholder="Concepto" />
+              <button type="button" class="btn-link btn-link-danger" (click)="quitarConcepto('izquierda', i)"><i class="ti ti-trash"></i></button>
+            </div>
+            <button type="button" class="btn-secundario" (click)="agregarConcepto('izquierda')"><i class="ti ti-plus"></i></button>
+          </div>
+          <div class="columna-emparejar">
+            <p class="ayuda"><strong>Columna derecha</strong></p>
+            <div class="fila-opcion-editable" *ngFor="let der of p.derecha; let i = index">
+              <input class="abril-field-input" type="text" [(ngModel)]="der.texto" placeholder="Concepto" />
+              <button type="button" class="btn-link btn-link-danger" (click)="quitarConcepto('derecha', i)"><i class="ti ti-trash"></i></button>
+            </div>
+            <button type="button" class="btn-secundario" (click)="agregarConcepto('derecha')"><i class="ti ti-plus"></i></button>
+          </div>
+        </div>
+
+        <p class="ayuda"><strong>Pareja correcta</strong> para cada concepto de la izquierda:</p>
+        <div class="fila-opcion-editable" *ngFor="let izq of p.izquierda">
+          <span class="concepto-emparejar-label">{{ izq.texto || '(sin texto)' }}</span>
+          <select class="abril-field-input" [(ngModel)]="p.parejas[izq.id]">
+            <option [ngValue]="undefined">Selecciona...</option>
+            <option *ngFor="let der of p.derecha" [value]="der.id">{{ der.texto || '(sin texto)' }}</option>
+          </select>
+        </div>
+      </ng-container>
+      </aside>
     </div>
   </div>
 

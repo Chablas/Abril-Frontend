@@ -6,9 +6,18 @@ import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 
 import { CursoService } from '../../services/curso.service';
-import { CursoDto, CursoSlideDto, CursoUpsertDto, CursoSlideUpsertDto, ElementoLibre } from '../../dtos/curso.dtos';
+import {
+  CursoDto,
+  CursoSlideDto,
+  CursoUpsertDto,
+  CursoSlideUpsertDto,
+  ElementoLibre,
+  SlideEstilo,
+  CursoPreguntaBancoDto,
+} from '../../dtos/curso.dtos';
 import { resolverEtiquetaSlide } from '../curso-player/slide-tipo-registro';
 import { CanvasEditor } from './canvas-editor/canvas-editor';
+import { ColorHexInput } from '../../shared/color-hex-input/color-hex-input';
 import {
   VersionGuardada,
   agregarVersion,
@@ -20,7 +29,16 @@ import {
   listarVersiones,
 } from './historial-local';
 import { PLANTILLAS_LIBRE, PlantillaLibre } from './plantillas-libre';
+import { construirConfiguracionPlanaDesdePregunta } from '../../pregunta-config-builder';
 import { CANVAS_ANCHO, CANVAS_ALTO } from '../curso-player/slides/slide-contenido-libre/slide-contenido-libre';
+import { SlideVerdaderoFalso } from '../curso-player/slides/slide-verdadero-falso/slide-verdadero-falso';
+import { SlideOpcionMultiple } from '../curso-player/slides/slide-opcion-multiple/slide-opcion-multiple';
+import { SlideOrdenar } from '../curso-player/slides/slide-ordenar/slide-ordenar';
+import { SlideRespuestaCorta } from '../curso-player/slides/slide-respuesta-corta/slide-respuesta-corta';
+import { SlideCompletarHuecos } from '../curso-player/slides/slide-completar-huecos/slide-completar-huecos';
+import { SlideEmparejarConceptos } from '../curso-player/slides/slide-emparejar-conceptos/slide-emparejar-conceptos';
+import { SlideEleccionMultiple } from '../curso-player/slides/slide-eleccion-multiple/slide-eleccion-multiple';
+import { SlideDeslizaAcierta } from '../curso-player/slides/slide-desliza-acierta/slide-desliza-acierta';
 
 const INTERVALO_AUTOGUARDADO_MS = 5000;
 
@@ -145,7 +163,21 @@ function convertirCamposAElementos(tipoCodigo: string, campos: any): ElementoLib
 @Component({
   selector: 'app-curso-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CanvasEditor],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    CanvasEditor,
+    ColorHexInput,
+    SlideVerdaderoFalso,
+    SlideOpcionMultiple,
+    SlideOrdenar,
+    SlideRespuestaCorta,
+    SlideCompletarHuecos,
+    SlideEmparejarConceptos,
+    SlideEleccionMultiple,
+    SlideDeslizaAcierta,
+  ],
   templateUrl: './curso-editor.html',
   styleUrl: './curso-editor.css',
 })
@@ -159,6 +191,7 @@ export class CursoEditor implements OnInit, OnDestroy {
     notaMinimaAprobacion: 14,
     activo: true,
     colorTema: '#0f6e56',
+    logoUrl: null,
   };
 
   slides: CursoSlideDto[] = [];
@@ -173,11 +206,60 @@ export class CursoEditor implements OnInit, OnDestroy {
   slideEditando: {
     id: number | null;
     orden: number;
-    campos: { titulo: string; kicker?: string; elementos: ElementoLibre[] };
+    campos: { titulo: string; kicker?: string; elementos: ElementoLibre[]; estilo?: SlideEstilo };
   } | null = null;
+
+  mostrarSelectorFondo = false;
+  paginasRailColapsado = true;
+
+  toggleRailPaginas(): void {
+    this.paginasRailColapsado = !this.paginasRailColapsado;
+  }
 
   mostrarSelectorPlantilla = false;
   plantillasDisponibles = PLANTILLAS_LIBRE;
+
+  // ---- Banco de preguntas reutilizable entre cursos ----
+  // Tipos evaluables reales (con corrección automática): a diferencia de "contenido_libre",
+  // NUNCA se abren en el lienzo (guardarSlide() convertiría el tipo y perderían la
+  // evaluación) — se insertan o se guardan al banco directo desde su fila en la grilla.
+  readonly TIPOS_EVALUABLES = [
+    'pregunta_vf',
+    'pregunta_opcion_multiple',
+    'pregunta_ordenar',
+    'pregunta_respuesta_corta',
+    'pregunta_completar_huecos',
+    'pregunta_emparejar',
+    'pregunta_eleccion_multiple',
+    'pregunta_desliza_acierta',
+  ];
+  pestanaSelectorPlantilla: 'plantillas' | 'banco' = 'plantillas';
+  bancoPreguntas: CursoPreguntaBancoDto[] = [];
+  filtroTipoBanco = '';
+
+  // ---- Editor de preguntas evaluables (formulario propio, nunca pasa por el lienzo) ----
+  mostrarPreguntaEditor = false;
+  preguntaEditando: {
+    id: number | null;
+    orden: number;
+    tipoCodigo: string;
+    puntaje: number;
+    /** false = solo práctica (esEvaluable/modoCorreccion se guardan como no calificado,
+     *  pero el reproductor sigue mostrando si acertó o no — ver curso-player.onRespuesta). */
+    contarParaNota: boolean;
+    kicker: string;
+    enunciado: string;
+    imagenUrl: string;
+    opciones: { id: string; texto: string; imagenUrl: string; correcta: boolean }[];
+    items: { id: string; texto: string }[];
+    respuestaTexto: string;
+    variantes: string;
+    textoHuecos: string;
+    respuestasHuecos: string[];
+    izquierda: { id: string; texto: string }[];
+    derecha: { id: string; texto: string }[];
+    parejas: Record<string, string>;
+  } | null = null;
   mostrarConfiguracionCurso = false;
   readonly canvasAncho = CANVAS_ANCHO;
   readonly canvasAlto = CANVAS_ALTO;
@@ -190,6 +272,21 @@ export class CursoEditor implements OnInit, OnDestroy {
   elementosPreviaPlantilla(plantilla: PlantillaLibre): ElementoLibre[] {
     return this.previasPlantillas.get(plantilla.id) ?? [];
   }
+
+  /** Igual que elementosPreviaPlantilla, pero para una pantalla real ya guardada — mismo
+   *  renderizado en miniatura (bloques de color, sin texto/imagen real) tanto en la grilla
+   *  de "Pantallas del curso" como en el riel lateral "Páginas". Solo lienzo libre trae
+   *  elementos posicionables; los tipos heredados muestran el ícono genérico de siempre. */
+  elementosPreviaSlide(slide: CursoSlideDto): ElementoLibre[] {
+    if (slide.tipoCodigo !== 'contenido_libre') return [];
+    try {
+      const campos = JSON.parse(slide.configuracionJson || '{}');
+      return campos.elementos || [];
+    } catch {
+      return [];
+    }
+  }
+
   private primerCargaSlides = true;
 
   // ---- Autoguardado + historial de versiones (ver ../historial-local.ts) ----
@@ -201,7 +298,11 @@ export class CursoEditor implements OnInit, OnDestroy {
   private intervaloAutoguardado: ReturnType<typeof setInterval> | null = null;
 
   @ViewChild('fiPreview') private fiPreview?: ElementRef<HTMLInputElement>;
+  @ViewChild('fiLogo') private fiLogo?: ElementRef<HTMLInputElement>;
+  @ViewChild('fiFondo') private fiFondo?: ElementRef<HTMLInputElement>;
+  @ViewChild('ce') private canvasEditorRef?: CanvasEditor;
   private objetivoSubidaPreview: any = null;
+  campoSubidaPreview = 'imagenUrl';
 
   constructor(
     private route: ActivatedRoute,
@@ -264,6 +365,11 @@ export class CursoEditor implements OnInit, OnDestroy {
       pregunta_imagen: 'ti-click',
       pregunta_arrastrar: 'ti-drag-drop',
       pregunta_ordenar: 'ti-arrows-sort',
+      pregunta_respuesta_corta: 'ti-forms',
+      pregunta_completar_huecos: 'ti-text-size',
+      pregunta_emparejar: 'ti-arrows-right-left',
+      pregunta_eleccion_multiple: 'ti-checkbox',
+      pregunta_desliza_acierta: 'ti-swipe',
     };
     return iconos[tipoCodigo] ?? 'ti-file';
   }
@@ -279,14 +385,29 @@ export class CursoEditor implements OnInit, OnDestroy {
     }
   }
 
+  /** Páginas del curso a las que un botón puede saltar (todas menos la que se está editando). */
+  get paginasParaBoton(): { id: number; titulo: string }[] {
+    if (!this.slideEditando) return [];
+    return this.slides
+      .filter((s) => s.id != null && s.id !== this.slideEditando!.id)
+      .map((s) => ({ id: s.id as number, titulo: `${s.orden} · ${this.tituloSlide(s)}` }));
+  }
+
   subirImagenElementoLibre(el: ElementoLibre): void {
     this.objetivoSubidaPreview = el;
+    this.campoSubidaPreview = 'imagenUrl';
+    this.fiPreview?.nativeElement.click();
+  }
+
+  subirAudioElementoLibre(el: ElementoLibre): void {
+    this.objetivoSubidaPreview = el;
+    this.campoSubidaPreview = 'audioUrl';
     this.fiPreview?.nativeElement.click();
   }
 
   onArchivoPreviewSeleccionado(event: Event): void {
     if (this.objetivoSubidaPreview) {
-      this.subirImagenA(this.objetivoSubidaPreview, 'imagenUrl', event);
+      this.subirImagenA(this.objetivoSubidaPreview, this.campoSubidaPreview, event);
     }
     this.objetivoSubidaPreview = null;
   }
@@ -307,6 +428,7 @@ export class CursoEditor implements OnInit, OnDestroy {
             notaMinimaAprobacion: encontrado.notaMinimaAprobacion,
             activo: encontrado.activo,
             colorTema: encontrado.colorTema ?? '#0f6e56',
+            logoUrl: encontrado.logoUrl ?? null,
           };
         }
         this.cargarSlides();
@@ -389,6 +511,7 @@ export class CursoEditor implements OnInit, OnDestroy {
 
   abrirSelectorPlantilla(): void {
     this.mostrarSelectorPlantilla = true;
+    this.pestanaSelectorPlantilla = 'plantillas';
   }
 
   cerrarSelectorPlantilla(): void {
@@ -406,6 +529,276 @@ export class CursoEditor implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  /** Atajo desde el riel del lienzo (botón "Preguntas", estilo Genially): abre el mismo
+   *  selector de "Añadir página" pero directo en la pestaña del banco. */
+  abrirSelectorPlantillaEnBanco(): void {
+    this.mostrarSelectorPlantilla = true;
+    this.abrirPestanaBanco();
+  }
+
+  /** Abre una pregunta evaluable YA GUARDADA en su formulario propio — reconstruye los
+   *  campos editables a partir del configuracionJson real, tal como está en la base. */
+  abrirPreguntaEditor(slide: CursoSlideDto): void {
+    let c: any = {};
+    try {
+      c = JSON.parse(slide.configuracionJson || '{}');
+    } catch {
+      c = {};
+    }
+    const rc = c.respuestaCorrecta ?? {};
+
+    this.preguntaEditando = {
+      id: slide.id,
+      orden: slide.orden,
+      tipoCodigo: slide.tipoCodigo,
+      puntaje: slide.puntaje ?? 10,
+      contarParaNota: slide.contarParaNota ?? true,
+      kicker: c.kicker || '',
+      enunciado: c.enunciado || '',
+      imagenUrl: c.imagenUrl || '',
+      opciones: (c.opciones || []).map((o: any) => ({
+        id: o.id,
+        texto: o.texto || '',
+        imagenUrl: o.imagenUrl || '',
+        correcta:
+          slide.tipoCodigo === 'pregunta_eleccion_multiple'
+            ? (rc.opcionIds || []).includes(o.id)
+            : o.id === rc.opcionId,
+      })),
+      items: c.items || [],
+      respuestaTexto: rc.texto || '',
+      variantes: (c.variantesAceptadas || []).join(', '),
+      textoHuecos: c.texto || '',
+      respuestasHuecos: rc.textos || [],
+      izquierda: c.izquierda || [],
+      derecha: c.derecha || [],
+      parejas: rc || {},
+    };
+
+    if (slide.tipoCodigo === 'pregunta_vf' || slide.tipoCodigo === 'pregunta_desliza_acierta') {
+      this.preguntaEditando!.opciones = [
+        { id: 'true', texto: 'Verdadero', imagenUrl: '', correcta: rc.valor === true },
+        { id: 'false', texto: 'Falso', imagenUrl: '', correcta: rc.valor === false },
+      ];
+    }
+
+    this.mostrarPreguntaEditor = true;
+  }
+
+  cerrarPreguntaEditor(): void {
+    this.mostrarPreguntaEditor = false;
+    this.preguntaEditando = null;
+  }
+
+  // ---- CRUD de listas dentro del formulario de pregunta ----
+
+  agregarOpcion(): void {
+    if (!this.preguntaEditando) return;
+    const letra = String.fromCharCode(97 + this.preguntaEditando.opciones.length);
+    this.preguntaEditando.opciones.push({ id: letra, texto: '', imagenUrl: '', correcta: false });
+  }
+
+  quitarOpcion(i: number): void {
+    this.preguntaEditando?.opciones.splice(i, 1);
+  }
+
+  marcarOpcionCorrecta(i: number): void {
+    if (!this.preguntaEditando) return;
+    this.preguntaEditando.opciones.forEach((o, idx) => (o.correcta = idx === i));
+  }
+
+  /** A diferencia de marcarOpcionCorrecta (exclusiva, una sola), esta es para "Elección
+   *  múltiple": cada opción se marca/desmarca de forma independiente. */
+  toggleOpcionCorrecta(i: number): void {
+    const o = this.preguntaEditando?.opciones[i];
+    if (o) o.correcta = !o.correcta;
+  }
+
+  agregarItemOrdenar(): void {
+    if (!this.preguntaEditando) return;
+    const id = String(this.preguntaEditando.items.length + 1);
+    this.preguntaEditando.items.push({ id, texto: '' });
+  }
+
+  quitarItemOrdenar(i: number): void {
+    this.preguntaEditando?.items.splice(i, 1);
+  }
+
+  /** El número de huecos se deriva de cuántas veces aparece "___" en el texto — se
+   *  resincroniza el arreglo de respuestas cada vez que el texto cambia. */
+  onCambioTextoHuecos(): void {
+    if (!this.preguntaEditando) return;
+    const cantidad = (this.preguntaEditando.textoHuecos.match(/___/g) || []).length;
+    const actuales = this.preguntaEditando.respuestasHuecos;
+    this.preguntaEditando.respuestasHuecos =
+      cantidad > actuales.length
+        ? [...actuales, ...Array(cantidad - actuales.length).fill('')]
+        : actuales.slice(0, cantidad);
+  }
+
+  agregarConcepto(lado: 'izquierda' | 'derecha'): void {
+    if (!this.preguntaEditando) return;
+    const lista = this.preguntaEditando[lado];
+    const id = (lado === 'izquierda' ? 'i' : 'd') + (lista.length + 1);
+    lista.push({ id, texto: '' });
+  }
+
+  quitarConcepto(lado: 'izquierda' | 'derecha', i: number): void {
+    if (!this.preguntaEditando) return;
+    const quitado = this.preguntaEditando[lado].splice(i, 1)[0];
+    if (quitado && lado === 'izquierda') delete this.preguntaEditando.parejas[quitado.id];
+  }
+
+  /** Arma exactamente el configuracionJson que el reproductor real espera para el tipo
+   *  actual — respuestaCorrecta siempre en la MISMA forma que emite cada componente del
+   *  reproductor (ver notas en curso.dtos.ts), para que la corrección genérica del
+   *  backend (igualdad exacta de JSON) funcione. */
+  private construirConfiguracionPregunta(): string {
+    return JSON.stringify(construirConfiguracionPlanaDesdePregunta(this.preguntaEditando!));
+  }
+
+  /** La vista previa ES el reproductor real (mismo patrón que el lienzo libre): se
+   *  reconstruye un CursoSlideDto descartable a partir del formulario en progreso y se le
+   *  pasa al mismo componente que usa curso-player — así preview y render real nunca se
+   *  desincronizan. El botón "Confirmar respuesta" funciona de verdad (nadie escucha su
+   *  evento aquí), lo que de paso deja probar la pregunta antes de guardarla. */
+  get previewPreguntaSlide(): CursoSlideDto | null {
+    if (!this.preguntaEditando) return null;
+    return {
+      id: 0,
+      cursoId: this.cursoId ?? 0,
+      orden: this.preguntaEditando.orden,
+      tipoCodigo: this.preguntaEditando.tipoCodigo,
+      esEvaluable: true,
+      puntaje: this.preguntaEditando.puntaje,
+      modoCorreccion: 'igualdad_exacta',
+      configuracionJson: this.construirConfiguracionPregunta(),
+    };
+  }
+
+  guardarPregunta(): void {
+    if (!this.preguntaEditando || !this.cursoId) return;
+    const p = this.preguntaEditando;
+    const dto: CursoSlideUpsertDto = {
+      orden: p.orden,
+      tipoCodigo: p.tipoCodigo,
+      esEvaluable: true,
+      puntaje: p.puntaje,
+      contarParaNota: p.contarParaNota,
+      modoCorreccion: 'igualdad_exacta',
+      configuracionJson: this.construirConfiguracionPregunta(),
+    };
+
+    const alGuardar = () => {
+      this.cerrarPreguntaEditor();
+      this.cargarSlides();
+    };
+    const alFallar = (err: HttpErrorResponse) => {
+      Swal.fire({ icon: 'error', title: 'No se pudo guardar la pregunta', text: err.error?.message });
+    };
+
+    if (p.id) {
+      this.cursoService.actualizarSlide(p.id, dto).subscribe({ next: alGuardar, error: alFallar });
+    } else {
+      this.cursoService.crearSlide(this.cursoId, dto).subscribe({ next: alGuardar, error: alFallar });
+    }
+  }
+
+  abrirPestanaBanco(): void {
+    this.pestanaSelectorPlantilla = 'banco';
+    this.cargarBancoPreguntas();
+  }
+
+  cargarBancoPreguntas(): void {
+    this.cursoService.getPreguntasBanco(this.filtroTipoBanco || undefined).subscribe({
+      next: (res) => {
+        this.bancoPreguntas = res;
+        this.cdr.detectChanges();
+      },
+      error: () => this.cdr.detectChanges(),
+    });
+  }
+
+  /** Elegir del banco INSERTA la pregunta directo en el curso (crearSlide), sin pasar por
+   *  el lienzo libre — abrirla ahí la convertiría a contenido_libre y perdería la
+   *  evaluación (ver TIPOS_EVALUABLES arriba). Si luego quieres ajustar el enunciado,
+   *  edítala por SQL/backend, no desde este editor. */
+  elegirPreguntaBanco(p: CursoPreguntaBancoDto): void {
+    if (!this.cursoId) return;
+    const dto: CursoSlideUpsertDto = {
+      orden: this.slides.length + 1,
+      tipoCodigo: p.tipoCodigo,
+      esEvaluable: true,
+      puntaje: p.puntajeSugerido ?? null,
+      modoCorreccion: 'igualdad_exacta',
+      configuracionJson: p.configuracionJson,
+    };
+    this.cursoService.crearSlide(this.cursoId, dto).subscribe({
+      next: () => {
+        this.mostrarSelectorPlantilla = false;
+        Swal.fire({ icon: 'success', title: 'Pregunta agregada', timer: 1400, showConfirmButton: false });
+        this.cargarSlides();
+      },
+      error: (err: HttpErrorResponse) => {
+        Swal.fire({ icon: 'error', title: 'No se pudo agregar la pregunta', text: err.error?.message });
+      },
+    });
+  }
+
+  /** Guarda una pregunta evaluable YA GUARDADA en el curso (fila real de `slides`, con su
+   *  configuracionJson tal cual está en la base) como plantilla reutilizable en el banco. */
+  async guardarSlideEnBanco(s: CursoSlideDto): Promise<void> {
+    const { value: titulo } = await Swal.fire({
+      title: 'Guardar en el banco de preguntas',
+      input: 'text',
+      inputLabel: 'Título para identificarla después',
+      inputValue: this.tituloSlide(s),
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+    });
+    if (!titulo) return;
+
+    this.cursoService
+      .crearPreguntaBanco({
+        tipoCodigo: s.tipoCodigo,
+        titulo,
+        categoria: null,
+        puntajeSugerido: s.puntaje ?? null,
+        configuracionJson: s.configuracionJson,
+      })
+      .subscribe({
+        next: () => Swal.fire({ icon: 'success', title: 'Guardada en el banco', timer: 1400, showConfirmButton: false }),
+        error: (err: HttpErrorResponse) =>
+          Swal.fire({ icon: 'error', title: 'No se pudo guardar en el banco', text: err.error?.message }),
+      });
+  }
+
+  /** Punto de entrada seguro para abrir una slide en el lienzo: si es de un tipo evaluable
+   *  real (ver TIPOS_EVALUABLES), advierte antes — guardarSlide() la convertiría para
+   *  siempre a "contenido_libre" sin evaluación en cuanto se presione "Guardar pantalla". */
+  confirmarAbrirSlide(slide: CursoSlideDto): void {
+    // Una pregunta insertada como elemento del lienzo libre (estilo Genially) se guarda con
+    // tipoCodigo = el tipo de la pregunta (para que el banco/confirmarAbrirSlide la traten
+    // como evaluable), pero SÍ trae "elementos" en su configuracionJson — a diferencia de
+    // una pregunta heredada/legacy de pantalla completa, que nunca tiene "elementos". Esa
+    // es la señal para decidir qué editor abrir sin romper ninguno de los dos casos.
+    const tieneElementos = this.slideTraeElementos(slide);
+    if (this.TIPOS_EVALUABLES.includes(slide.tipoCodigo) && !tieneElementos) {
+      this.abrirPreguntaEditor(slide);
+    } else {
+      this.editarSlide(slide);
+    }
+  }
+
+  private slideTraeElementos(slide: CursoSlideDto): boolean {
+    try {
+      const campos = JSON.parse(slide.configuracionJson || '{}');
+      return Array.isArray(campos.elementos);
+    } catch {
+      return false;
+    }
+  }
+
   editarSlide(slide: CursoSlideDto): void {
     let campos: any = {};
     try {
@@ -414,13 +807,17 @@ export class CursoEditor implements OnInit, OnDestroy {
       campos = {};
     }
 
-    const elementos: ElementoLibre[] =
-      slide.tipoCodigo === 'contenido_libre' ? campos.elementos || [] : convertirCamposAElementos(slide.tipoCodigo, campos);
+    // Array.isArray(campos.elementos), no el tipoCodigo, decide si ya viene en formato
+    // lienzo libre — una pregunta insertada como elemento (ver guardarSlide) se guarda con
+    // tipoCodigo = el tipo de la pregunta, pero SÍ trae "elementos" ya armado.
+    const elementos: ElementoLibre[] = Array.isArray(campos.elementos)
+      ? campos.elementos
+      : convertirCamposAElementos(slide.tipoCodigo, campos);
 
     this.slideEditando = {
       id: slide.id,
       orden: slide.orden,
-      campos: { titulo: campos.titulo || '', kicker: campos.kicker || '', elementos },
+      campos: { titulo: campos.titulo || '', kicker: campos.kicker || '', elementos, estilo: campos.estilo },
     };
     this.iniciarAutoguardadoParaSlideActual();
     // Puede llegar desde un clic directo (ya repinta solo) o desde el encadenado
@@ -450,12 +847,6 @@ export class CursoEditor implements OnInit, OnDestroy {
     return this.indicePaginaActual >= 0 && this.indicePaginaActual < this.slides.length - 1;
   }
 
-  /** Guarda la pantalla actual y muestra la grilla completa — a diferencia de "Cancelar"
-   *  (que descarta), esto es una vista deliberada de todas las pantallas, no una salida. */
-  verGrilla(): void {
-    this.guardarSlide();
-  }
-
   irAPagina(delta: -1 | 1): void {
     if (!this.slideEditando) return;
     const indiceDestino = this.indicePaginaActual + delta;
@@ -465,8 +856,115 @@ export class CursoEditor implements OnInit, OnDestroy {
     // no perder cambios al cambiar de página con las flechas.
     this.guardarSlide(() => {
       const destino = this.slides[indiceDestino];
-      if (destino) this.editarSlide(destino);
+      if (destino) this.confirmarAbrirSlide(destino);
     });
+  }
+
+  /** Clic sobre una miniatura del riel lateral "Páginas" — igual que las flechas, guarda
+   *  antes de cambiar. No hace nada si ya es la pantalla abierta. */
+  irAPaginaDesde(destino: CursoSlideDto): void {
+    if (!this.slideEditando || destino.id === this.slideEditando.id) return;
+    this.guardarSlide(() => this.confirmarAbrirSlide(destino));
+  }
+
+  // ---- Fondo de la pantalla actual (estilo Genially: color/gradiente detrás de todo) ----
+
+  get fondoLienzoActual(): string | null {
+    return this.slideEditando?.campos.estilo?.fondoClaro || null;
+  }
+
+  abrirSelectorFondo(): void {
+    this.mostrarSelectorFondo = true;
+  }
+
+  cerrarSelectorFondo(): void {
+    this.mostrarSelectorFondo = false;
+  }
+
+  fijarColorFondo(color: string): void {
+    if (!this.slideEditando) return;
+    const estilo: SlideEstilo = { ...(this.slideEditando.campos.estilo || {}), fondoClaro: color };
+    this.slideEditando.campos.estilo = estilo;
+  }
+
+  quitarFondo(): void {
+    if (!this.slideEditando) return;
+    this.slideEditando.campos.estilo = undefined;
+  }
+
+  subirImagenFondo(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    input.value = '';
+    if (!archivo || !this.slideEditando) return;
+
+    this.cursoService.subirImagen(archivo).subscribe({
+      next: (res) => {
+        const estilo: SlideEstilo = {
+          ...(this.slideEditando!.campos.estilo || {}),
+          fondoClaro: `url('${res.url}') center / cover no-repeat`,
+        };
+        this.slideEditando!.campos.estilo = estilo;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        Swal.fire({ icon: 'error', title: 'No se pudo subir la imagen', text: err.error?.message });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** Solo afecta a otras pantallas de tipo "contenido_libre": las heredadas (V/F, etc.)
+   *  necesitarían pasar antes por la conversión a elementos que hace editarSlide(). */
+  aplicarFondoATodasLasPaginas(): void {
+    if (!this.slideEditando?.id || !this.slideEditando.campos.estilo) return;
+    const estilo = this.slideEditando.campos.estilo;
+    const destino = this.slides.filter(
+      (s) => s.id !== this.slideEditando!.id && s.tipoCodigo === 'contenido_libre',
+    );
+    if (!destino.length) {
+      Swal.fire({ icon: 'info', title: 'No hay otras pantallas de lienzo libre todavía', timer: 2000, showConfirmButton: false });
+      return;
+    }
+    destino.forEach((s) => {
+      let campos: any = {};
+      try {
+        campos = JSON.parse(s.configuracionJson || '{}');
+      } catch {
+        campos = {};
+      }
+      campos.estilo = estilo;
+      const dto: CursoSlideUpsertDto = {
+        orden: s.orden,
+        tipoCodigo: s.tipoCodigo,
+        esEvaluable: s.esEvaluable,
+        puntaje: s.puntaje ?? null,
+        modoCorreccion: s.modoCorreccion ?? 'sin_calificar',
+        configuracionJson: JSON.stringify(campos),
+      };
+      this.cursoService.actualizarSlide(s.id, dto).subscribe();
+    });
+    Swal.fire({
+      icon: 'success',
+      title: `Fondo aplicado a ${destino.length} pantalla(s)`,
+      timer: 1800,
+      showConfirmButton: false,
+    });
+  }
+
+  // ---- Logo de marca del curso: insertarlo rápido como elemento en el lienzo ----
+
+  abrirSubidaLogo(): void {
+    this.fiLogo?.nativeElement.click();
+  }
+
+  abrirSubidaFondoImagen(): void {
+    this.fiFondo?.nativeElement.click();
+  }
+
+  agregarLogoAlLienzo(): void {
+    if (!this.curso.logoUrl || !this.slideEditando || !this.canvasEditorRef) return;
+    this.canvasEditorRef.agregarElementoImagen(this.curso.logoUrl);
   }
 
   // ---------------------------------------------------------------------
@@ -571,13 +1069,24 @@ export class CursoEditor implements OnInit, OnDestroy {
   guardarSlide(alTerminar?: () => void): void {
     if (!this.cursoId || !this.slideEditando) return;
 
-    const configuracionJson = JSON.stringify(this.slideEditando.campos);
+    // Estilo Genially: si hay un elemento tipo 'pregunta' en el lienzo (máximo uno, ver
+    // canvas-editor.agregarElementoPregunta), esta pantalla SÍ es evaluable — se guarda
+    // "elementos" completo (para poder renderizar todo el lienzo libre) PERO además, al
+    // nivel raíz del JSON, la forma plana que CorregirGenerico espera (enunciado/opciones/
+    // respuestaCorrecta/etc.), calculada con el mismo builder que usa el formulario de
+    // pantalla completa. Sin pregunta embebida, se comporta exactamente igual que antes.
+    const elPregunta = this.slideEditando.campos.elementos.find((e) => e.tipo === 'pregunta' && e.pregunta);
+    const camposPlanos = elPregunta?.pregunta ? construirConfiguracionPlanaDesdePregunta(elPregunta.pregunta) : {};
+
+    const configuracionJson = JSON.stringify({ ...this.slideEditando.campos, ...camposPlanos });
+    const tipoCodigo = elPregunta?.pregunta?.tipoCodigo ?? 'contenido_libre';
     const dto: CursoSlideUpsertDto = {
       orden: this.slideEditando.orden,
-      tipoCodigo: 'contenido_libre',
-      esEvaluable: false,
-      puntaje: null,
-      modoCorreccion: 'sin_calificar',
+      tipoCodigo,
+      esEvaluable: !!elPregunta,
+      puntaje: elPregunta?.pregunta?.puntaje ?? null,
+      contarParaNota: elPregunta?.pregunta?.contarParaNota ?? true,
+      modoCorreccion: elPregunta ? 'igualdad_exacta' : 'sin_calificar',
       configuracionJson,
     };
 
@@ -590,7 +1099,7 @@ export class CursoEditor implements OnInit, OnDestroy {
       if (this.cursoId != null && idParaHistorial != null) {
         agregarVersion(claveHistorial(this.cursoId, idParaHistorial), {
           configuracionJson,
-          tipoCodigo: 'contenido_libre',
+          tipoCodigo,
         });
       }
       if (this.claveBorradorActual) borrarBorrador(this.claveBorradorActual);

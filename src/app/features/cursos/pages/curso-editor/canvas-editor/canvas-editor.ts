@@ -14,10 +14,13 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ElementoLibre, ElementoTipo } from '../../../dtos/curso.dtos';
+import { ElementoLibre, ElementoTipo, ElementoPreguntaConfig } from '../../../dtos/curso.dtos';
+import Swal from 'sweetalert2';
 import { CANVAS_ANCHO, CANVAS_ALTO } from '../../curso-player/slides/slide-contenido-libre/slide-contenido-libre';
+import { resolverEtiquetaSlide } from '../../curso-player/slide-tipo-registro';
 import { IconoPicker } from './icono-picker/icono-picker';
 import { TimelineAnimaciones } from './timeline-animaciones/timeline-animaciones';
+import { ColorHexInput } from '../../../shared/color-hex-input/color-hex-input';
 
 let idCorrelativo = 1;
 function nuevoId(): string {
@@ -31,7 +34,96 @@ const ANCHO_INICIAL: Record<ElementoTipo, { ancho: number; alto: number }> = {
   icono: { ancho: 80, alto: 80 },
   boton: { ancho: 220, alto: 60 },
   video: { ancho: 480, alto: 270 },
+  audio: { ancho: 280, alto: 56 },
+  // No se usa en la práctica: las preguntas se insertan vía agregarElementoPregunta(), que
+  // arma el elemento completo directo (ver ahí el tamaño real, 600x320). Solo existe para
+  // que este Record<ElementoTipo, ...> sea exhaustivo.
+  pregunta: { ancho: 600, alto: 320 },
 };
+
+export interface EstiloTextoPreset {
+  id: string;
+  etiqueta: string;
+  texto: string;
+  tamanoFuente: number;
+  negrita: boolean;
+  ancho: number;
+  alto: number;
+}
+
+// Estilos rápidos de texto, estilo Genially (Título 1/2, Subtítulo, Párrafo, listas) — a
+// diferencia de la galería de "estilos de texto" decorativos de Genially (fuentes/adornos
+// de stock), estos son solo presets de tamaño/peso: no aportaría valor real copiar esa parte.
+export const ESTILOS_TEXTO: EstiloTextoPreset[] = [
+  { id: 'titulo1', etiqueta: 'Título 1', texto: 'Título 1', tamanoFuente: 48, negrita: true, ancho: 520, alto: 90 },
+  { id: 'titulo2', etiqueta: 'Título 2', texto: 'Título 2', tamanoFuente: 34, negrita: true, ancho: 480, alto: 70 },
+  { id: 'subtitulo', etiqueta: 'Subtítulo', texto: 'Subtítulo', tamanoFuente: 22, negrita: false, ancho: 420, alto: 50 },
+  {
+    id: 'parrafo',
+    etiqueta: 'Párrafo',
+    texto: 'Escribe aquí tu texto.',
+    tamanoFuente: 16,
+    negrita: false,
+    ancho: 380,
+    alto: 100,
+  },
+  {
+    id: 'lista-vinetas',
+    etiqueta: 'Lista con viñetas',
+    texto: '• Punto uno\n• Punto dos\n• Punto tres',
+    tamanoFuente: 18,
+    negrita: false,
+    ancho: 380,
+    alto: 120,
+  },
+  {
+    id: 'lista-numerada',
+    etiqueta: 'Lista numerada',
+    texto: '1. Punto uno\n2. Punto dos\n3. Punto tres',
+    tamanoFuente: 18,
+    negrita: false,
+    ancho: 380,
+    alto: 120,
+  },
+];
+
+export interface EfectoDef {
+  valor: string;
+  etiqueta: string;
+}
+
+// Un solo catálogo de efectos para Entrada/Continuo/Ratón encima/Hacer clic — en Genially
+// la galería de efectos es la misma sin importar el disparador (ver EfectoAnimacion en
+// curso.dtos.ts). 'fade'/'slide-up'/'slide-left' no se ofrecen aquí a propósito: son
+// valores heredados de slides ya guardadas, el picker nuevo usa 'aparecer'/'deslizar'.
+export const EFECTOS_ANIMACION: EfectoDef[] = [
+  { valor: 'ninguna', etiqueta: 'Ninguno' },
+  { valor: 'aparecer', etiqueta: 'Aparecer' },
+  { valor: 'enfocar', etiqueta: 'Enfocar' },
+  { valor: 'zoom', etiqueta: 'Zoom' },
+  { valor: 'encender', etiqueta: 'Encender' },
+  { valor: 'deslizar', etiqueta: 'Deslizar' },
+  { valor: 'bote', etiqueta: 'Bote' },
+  { valor: 'remolino', etiqueta: 'Remolino' },
+  { valor: 'rotar', etiqueta: 'Rotar' },
+  { valor: 'rodar', etiqueta: 'Rodar' },
+];
+
+type SubTabAnimacion = 'entrada' | 'continuo' | 'salida' | 'hover' | 'clic';
+
+// Panel "Preguntas interactivas" (riel), estilo Genially: lista agrupada de tipos de
+// pregunta evaluable con su ícono — clic abre el formulario propio de ese tipo en el
+// padre (curso-editor), nunca el lienzo libre.
+export const PREGUNTAS_INTERACTIVAS: { tipoCodigo: string; etiqueta: string; icono: string }[] = [
+  { tipoCodigo: 'pregunta_opcion_multiple', etiqueta: 'Elección única', icono: 'ti-list-check' },
+  { tipoCodigo: 'pregunta_eleccion_multiple', etiqueta: 'Elección múltiple', icono: 'ti-checkbox' },
+  { tipoCodigo: 'pregunta_vf', etiqueta: 'Verdadero o falso', icono: 'ti-check' },
+  { tipoCodigo: 'pregunta_ordenar', etiqueta: 'Ordenar', icono: 'ti-arrows-sort' },
+  { tipoCodigo: 'pregunta_completar_huecos', etiqueta: 'Completar huecos', icono: 'ti-text-size' },
+  { tipoCodigo: 'pregunta_respuesta_corta', etiqueta: 'Respuesta corta', icono: 'ti-forms' },
+  { tipoCodigo: 'pregunta_emparejar', etiqueta: 'Emparejar conceptos', icono: 'ti-arrows-right-left' },
+  { tipoCodigo: 'pregunta_desliza_acierta', etiqueta: 'Desliza y acierta', icono: 'ti-swipe' },
+];
 
 type ModoArrastre = 'mover' | 'redimensionar' | null;
 export type DireccionResize = 'n' | 's' | 'e' | 'o' | 'ne' | 'no' | 'se' | 'so';
@@ -66,7 +158,7 @@ let portapapeles: ElementoLibre[] | null = null;
 @Component({
   selector: 'app-canvas-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconoPicker, TimelineAnimaciones],
+  imports: [CommonModule, FormsModule, IconoPicker, TimelineAnimaciones, ColorHexInput],
   templateUrl: './canvas-editor.html',
   styleUrl: './canvas-editor.css',
 })
@@ -74,13 +166,32 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
   readonly canvasAncho = CANVAS_ANCHO;
   readonly canvasAlto = CANVAS_ALTO;
 
+  readonly Math = Math;
+
   constructor(private cdr: ChangeDetectorRef) {}
 
   @Input() elementos: ElementoLibre[] = [];
+  /** Fondo (color/gradiente CSS) de la pantalla actual; lo gestiona curso-editor. */
+  @Input() fondoCss: string | null = null;
+  /** Otras pantallas del curso a las que un botón puede saltar ("Ir a página"). */
+  @Input() paginasDisponibles: { id: number; titulo: string }[] = [];
+  /** Color de tema del curso (curso.colorTema); se ofrece como swatch rápido en los
+   *  selectores de color, junto a un par de colores de marca fijos. */
+  @Input() colorTema: string | null | undefined = null;
+
+  get swatchesColor(): string[] {
+    const base = [this.colorTema, '#f5a623', '#14100b', '#ffffff'].filter((c): c is string => !!c);
+    return [...new Set(base)];
+  }
   @Output() elementosChange = new EventEmitter<ElementoLibre[]>();
 
   /** Pide al padre subir una imagen para este elemento (el padre conoce el servicio de subida). */
   @Output() subirImagen = new EventEmitter<ElementoLibre>();
+  /** Pide al padre subir un archivo de audio para este elemento. */
+  @Output() subirAudio = new EventEmitter<ElementoLibre>();
+  /** Pide al padre abrir el selector de "Añadir página" directo en la pestaña del banco
+   *  de preguntas — se dispara desde la pastilla "Banco de preguntas" del panel de abajo. */
+  @Output() abrirBancoPreguntas = new EventEmitter<void>();
 
   @ViewChild('lienzo') private lienzoRef?: ElementRef<HTMLDivElement>;
   @ViewChild('lienzoEnvoltorio') private envoltorioRef?: ElementRef<HTMLDivElement>;
@@ -168,6 +279,77 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
 
   /** Fuente de verdad de la selección. Puede tener 0, 1 o varios ids. */
   seleccionadosIds = new Set<string>();
+  /** Id del elemento en edición de texto in-situ (doble clic sobre texto/botón). */
+  editandoTextoId: string | null = null;
+
+  readonly estilosTexto = ESTILOS_TEXTO;
+  mostrarEstilosTexto = false;
+  posicionPopoverTexto = { left: 0, top: 0 };
+
+  toggleEstilosTexto(boton: HTMLElement): void {
+    this.mostrarEstilosTexto = !this.mostrarEstilosTexto;
+    if (this.mostrarEstilosTexto) {
+      const rect = boton.getBoundingClientRect();
+      this.posicionPopoverTexto = { left: rect.right + 6, top: rect.top };
+    }
+  }
+
+  readonly preguntasInteractivas = PREGUNTAS_INTERACTIVAS;
+  mostrarPanelPreguntas = false;
+  /** null = ancla por arriba (top), definido = ancla por abajo (bottom) — este botón vive
+   *  pegado al fondo del riel, así que casi siempre se abre hacia arriba para no salirse
+   *  de la pantalla (ver togglePanelPreguntas). */
+  posicionPanelPreguntas: { left: number; top: number | null; bottom: number | null } = {
+    left: 0,
+    top: 0,
+    bottom: null,
+  };
+
+  togglePanelPreguntas(boton: HTMLElement): void {
+    this.mostrarPanelPreguntas = !this.mostrarPanelPreguntas;
+    if (this.mostrarPanelPreguntas) {
+      const rect = boton.getBoundingClientRect();
+      const espacioAbajo = window.innerHeight - rect.top;
+      if (espacioAbajo < 400) {
+        // No entra hacia abajo (botón pegado al fondo del riel): ancla desde abajo hacia arriba.
+        this.posicionPanelPreguntas = { left: rect.right + 6, top: null, bottom: window.innerHeight - rect.bottom };
+      } else {
+        this.posicionPanelPreguntas = { left: rect.right + 6, top: rect.top, bottom: null };
+      }
+    }
+  }
+
+  @HostListener('document:click')
+  alHacerClicFuera(): void {
+    this.mostrarEstilosTexto = false;
+    this.mostrarPanelPreguntas = false;
+  }
+
+  agregarTextoConEstilo(preset: EstiloTextoPreset): void {
+    const el: ElementoLibre = {
+      id: nuevoId(),
+      tipo: 'texto',
+      x: Math.round(this.canvasAncho / 2 - preset.ancho / 2),
+      y: Math.round(this.canvasAlto / 2 - preset.alto / 2),
+      ancho: preset.ancho,
+      alto: preset.alto,
+      rotacion: 0,
+      zIndex: this.elementos.length,
+      animacionEntrada: 'fade',
+      animacionDelayMs: 0,
+      animacionDuracionMs: 600,
+      animacionEasing: 'ease',
+      texto: preset.texto,
+      colorTexto: '#14100b',
+      tamanoFuente: preset.tamanoFuente,
+      alineacion: 'left',
+      negrita: preset.negrita,
+    };
+    this.elementos = [...this.elementos, el];
+    this.emitir();
+    this.seleccionadosIds = new Set([el.id]);
+    this.mostrarEstilosTexto = false;
+  }
   menuContextualId: string | null = null;
   menuContextualFondo = false;
   menuContextualPos = { x: 0, y: 0 };
@@ -240,8 +422,16 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
 
   @HostListener('window:keydown', ['$event'])
   alPresionarTecla(event: KeyboardEvent): void {
-    const enCampoDeTexto = ['INPUT', 'TEXTAREA', 'SELECT'].includes((event.target as HTMLElement)?.tagName);
-    if (enCampoDeTexto) return; // se deja el undo nativo del campo de texto
+    const objetivo = event.target as HTMLElement;
+    const enCampoDeTexto =
+      ['INPUT', 'TEXTAREA', 'SELECT'].includes(objetivo?.tagName) || objetivo?.isContentEditable;
+    if (enCampoDeTexto) return; // se deja el comportamiento nativo del campo de texto/edición in-situ
+
+    if ((event.key === 'Delete' || event.key === 'Backspace') && this.seleccionadosIds.size) {
+      event.preventDefault();
+      this.eliminarSeleccionado();
+      return;
+    }
 
     const modificador = event.ctrlKey || event.metaKey;
     if (!modificador) return;
@@ -373,6 +563,162 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
     this.seleccionadosIds = new Set([el.id]);
   }
 
+  /** Inserta el logo de marca del curso como elemento de imagen ya cargado, arriba a la
+   *  derecha (posición habitual de un logo, estilo Genially/marca de agua). */
+  agregarElementoImagen(url: string): void {
+    const ancho = 140;
+    const alto = 70;
+    const el: ElementoLibre = {
+      id: nuevoId(),
+      tipo: 'imagen',
+      x: this.canvasAncho - ancho - 24,
+      y: 24,
+      ancho,
+      alto,
+      rotacion: 0,
+      zIndex: this.elementos.length,
+      animacionEntrada: 'fade',
+      animacionDelayMs: 0,
+      animacionDuracionMs: 600,
+      animacionEasing: 'ease',
+      imagenUrl: url,
+      bordeRedondeado: 0,
+    };
+    this.elementos = [...this.elementos, el];
+    this.emitir();
+    this.seleccionadosIds = new Set([el.id]);
+  }
+
+  /** Inserta una pregunta evaluable como elemento del lienzo libre (estilo Genially: la
+   *  pregunta convive con el resto del contenido de la pantalla). Solo se permite UNA por
+   *  pantalla — el backend asume una sola respuestaCorrecta por CursoSlide. */
+  agregarElementoPregunta(tipoCodigo: string): void {
+    if (this.elementos.some((e) => e.tipo === 'pregunta')) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Ya hay una pregunta en esta pantalla',
+        text: 'Solo se permite una pregunta evaluable por pantalla. Bórrala primero si quieres cambiarla de tipo.',
+      });
+      return;
+    }
+
+    const esBinaria = tipoCodigo === 'pregunta_vf' || tipoCodigo === 'pregunta_desliza_acierta';
+    const pregunta: ElementoPreguntaConfig = {
+      tipoCodigo,
+      puntaje: 10,
+      contarParaNota: true,
+      kicker: '',
+      enunciado: '',
+      imagenUrl: '',
+      opciones: esBinaria
+        ? [
+            { id: 'true', texto: 'Verdadero', imagenUrl: '', correcta: true },
+            { id: 'false', texto: 'Falso', imagenUrl: '', correcta: false },
+          ]
+        : [
+            { id: 'a', texto: '', imagenUrl: '', correcta: true },
+            { id: 'b', texto: '', imagenUrl: '', correcta: false },
+          ],
+      items: [
+        { id: '1', texto: '' },
+        { id: '2', texto: '' },
+      ],
+      respuestaTexto: '',
+      variantes: '',
+      textoHuecos: '',
+      respuestasHuecos: [],
+      izquierda: [{ id: 'i1', texto: '' }],
+      derecha: [{ id: 'd1', texto: '' }],
+      parejas: {},
+    };
+
+    const ancho = 600;
+    const alto = 320;
+    const el: ElementoLibre = {
+      id: nuevoId(),
+      tipo: 'pregunta',
+      x: Math.round(this.canvasAncho / 2 - ancho / 2),
+      y: Math.round(this.canvasAlto / 2 - alto / 2),
+      ancho,
+      alto,
+      rotacion: 0,
+      zIndex: this.elementos.length,
+      pregunta,
+    };
+    this.elementos = [...this.elementos, el];
+    this.emitir();
+    this.seleccionadosIds = new Set([el.id]);
+    this.pestanaPropiedades = 'contenido';
+  }
+
+  // ---- Edición de los campos de una pregunta embebida (el.pregunta) ----
+
+  marcarOpcionCorrectaPregunta(i: number): void {
+    const opciones = this.seleccionado?.pregunta?.opciones;
+    if (!opciones) return;
+    opciones.forEach((o, idx) => (o.correcta = idx === i));
+  }
+
+  toggleOpcionCorrectaPregunta(i: number): void {
+    const o = this.seleccionado?.pregunta?.opciones[i];
+    if (o) o.correcta = !o.correcta;
+  }
+
+  agregarOpcionPregunta(): void {
+    const p = this.seleccionado?.pregunta;
+    if (!p) return;
+    const letra = String.fromCharCode(97 + p.opciones.length);
+    p.opciones.push({ id: letra, texto: '', imagenUrl: '', correcta: false });
+  }
+
+  quitarOpcionPregunta(i: number): void {
+    this.seleccionado?.pregunta?.opciones.splice(i, 1);
+  }
+
+  agregarItemOrdenarPregunta(): void {
+    const p = this.seleccionado?.pregunta;
+    if (!p) return;
+    p.items.push({ id: String(p.items.length + 1), texto: '' });
+  }
+
+  quitarItemOrdenarPregunta(i: number): void {
+    this.seleccionado?.pregunta?.items.splice(i, 1);
+  }
+
+  onCambioTextoHuecosPregunta(): void {
+    const p = this.seleccionado?.pregunta;
+    if (!p) return;
+    const cantidad = (p.textoHuecos.match(/___/g) || []).length;
+    const actuales = p.respuestasHuecos;
+    p.respuestasHuecos =
+      cantidad > actuales.length
+        ? [...actuales, ...Array(cantidad - actuales.length).fill('')]
+        : actuales.slice(0, cantidad);
+  }
+
+  agregarConceptoPregunta(lado: 'izquierda' | 'derecha'): void {
+    const p = this.seleccionado?.pregunta;
+    if (!p) return;
+    const lista = p[lado];
+    lista.push({ id: (lado === 'izquierda' ? 'i' : 'd') + (lista.length + 1), texto: '' });
+  }
+
+  quitarConceptoPregunta(lado: 'izquierda' | 'derecha', i: number): void {
+    const p = this.seleccionado?.pregunta;
+    if (!p) return;
+    const quitado = p[lado].splice(i, 1)[0];
+    if (quitado && lado === 'izquierda') delete p.parejas[quitado.id];
+  }
+
+  iconoPreguntaTipo(tipoCodigo: string | undefined): string {
+    const preset = this.preguntasInteractivas.find((t) => t.tipoCodigo === tipoCodigo);
+    return preset?.icono ?? 'ti-help-circle';
+  }
+
+  etiquetaPreguntaTipo(tipoCodigo: string | undefined): string {
+    return resolverEtiquetaSlide(tipoCodigo ?? '') ?? 'Pregunta';
+  }
+
   private camposIniciales(tipo: ElementoTipo): Partial<ElementoLibre> {
     switch (tipo) {
       case 'texto':
@@ -387,6 +733,12 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
         return { botonTexto: 'Ver más', botonUrl: '', colorFondo: '#f5a623', colorTexto: '#14100b' };
       case 'video':
         return { videoUrl: '' };
+      case 'audio':
+        return { audioUrl: '', audioAutoplay: false };
+      case 'pregunta':
+        // No se usa: agregarElementoPregunta() arma el elemento completo directo, con
+        // valores por defecto propios de cada tipo de pregunta (opciones, puntaje, etc.).
+        return {};
     }
   }
 
@@ -424,6 +776,50 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
 
   pedirSubirImagen(): void {
     if (this.seleccionado) this.subirImagen.emit(this.seleccionado);
+  }
+
+  pedirSubirAudio(): void {
+    if (this.seleccionado) this.subirAudio.emit(this.seleccionado);
+  }
+
+  // ---- Panel con pestañas Interactividad / Animación (estilo Genially) ----
+
+  readonly efectosAnimacion = EFECTOS_ANIMACION;
+  pestanaPropiedades: 'interactividad' | 'animacion' | 'contenido' | 'diseno' = 'animacion';
+  subTabAnimacion: SubTabAnimacion = 'entrada';
+
+  efectoActual(el: ElementoLibre): string {
+    switch (this.subTabAnimacion) {
+      case 'entrada':
+        return el.animacionEntrada || 'ninguna';
+      case 'continuo':
+        return el.animacionContinua || 'ninguna';
+      case 'salida':
+        return el.animacionSalida || 'ninguna';
+      case 'hover':
+        return el.animacionInteraccion?.disparador === 'hover' ? el.animacionInteraccion.efecto : 'ninguna';
+      case 'clic':
+        return el.animacionInteraccion?.disparador === 'clic' ? el.animacionInteraccion.efecto : 'ninguna';
+    }
+  }
+
+  fijarEfecto(el: ElementoLibre, valor: string): void {
+    switch (this.subTabAnimacion) {
+      case 'entrada':
+        el.animacionEntrada = valor as any;
+        break;
+      case 'continuo':
+        el.animacionContinua = valor === 'ninguna' ? undefined : (valor as any);
+        break;
+      case 'salida':
+        el.animacionSalida = valor === 'ninguna' ? undefined : (valor as any);
+        break;
+      case 'hover':
+      case 'clic':
+        el.animacionInteraccion = valor === 'ninguna' ? null : { disparador: this.subTabAnimacion, efecto: valor as any };
+        break;
+    }
+    this.guardarHistorial();
   }
 
   toggleOverlay(activo: boolean): void {
@@ -513,6 +909,86 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
   eliminarDesdeMenu(): void {
     this.menuContextualId = null;
     this.eliminarSeleccionado();
+  }
+
+  // ---- Edición de texto in-situ (doble clic sobre texto/botón, como Genially) ----
+
+  iniciarEdicionTexto(el: ElementoLibre, event: MouseEvent): void {
+    if (el.bloqueado || (el.tipo !== 'texto' && el.tipo !== 'boton')) return;
+    event.preventDefault();
+    event.stopPropagation();
+    this.seleccionadosIds = new Set([el.id]);
+    this.editandoTextoId = el.id;
+    this.cdr.detectChanges();
+    // El elemento contenteditable recién aparece en este mismo ciclo (*ngIf); se enfoca
+    // en el siguiente frame para poder seleccionar todo el texto de una.
+    requestAnimationFrame(() => {
+      const nodo = document.querySelector<HTMLElement>(`[data-editable-id="${el.id}"]`);
+      if (!nodo) return;
+      nodo.focus();
+      const rango = document.createRange();
+      rango.selectNodeContents(nodo);
+      const seleccion = window.getSelection();
+      seleccion?.removeAllRanges();
+      seleccion?.addRange(rango);
+    });
+  }
+
+  confirmarEdicionTexto(el: ElementoLibre, event: FocusEvent): void {
+    const texto = (event.target as HTMLElement).innerText.trim();
+    if (el.tipo === 'texto') el.texto = texto;
+    else if (el.tipo === 'boton') el.botonTexto = texto;
+    this.editandoTextoId = null;
+    this.guardarHistorial();
+  }
+
+  /** Enter confirma (sin salto de línea); Escape cancela sin guardar cambios de texto. */
+  alTeclearEnEdicion(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      (event.target as HTMLElement).blur();
+    } else if (event.key === 'Escape') {
+      this.editandoTextoId = null;
+      (event.target as HTMLElement).blur();
+    }
+  }
+
+  // ---- Rotación (handle circular sobre el elemento) ----
+
+  iniciarRotar(el: ElementoLibre, event: PointerEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (el.bloqueado || !this.lienzoRef) return;
+    this.seleccionadosIds = new Set([el.id]);
+
+    const calcularCentro = () => {
+      const rectLienzo = this.lienzoRef!.nativeElement.getBoundingClientRect();
+      const escala = rectLienzo.width / this.canvasAncho;
+      return {
+        x: rectLienzo.left + (el.x + el.ancho / 2) * escala,
+        y: rectLienzo.top + (el.y + el.alto / 2) * escala,
+      };
+    };
+    const centro = calcularCentro();
+    const anguloInicialPuntero = (Math.atan2(event.clientY - centro.y, event.clientX - centro.x) * 180) / Math.PI;
+    const rotacionInicial = el.rotacion || 0;
+
+    const onMove = (e: PointerEvent) => {
+      const anguloActual = (Math.atan2(e.clientY - centro.y, e.clientX - centro.x) * 180) / Math.PI;
+      let nuevaRotacion = rotacionInicial + (anguloActual - anguloInicialPuntero);
+      // Snap cada 15° si se mantiene shift, como en Genially/PowerPoint.
+      if (e.shiftKey) nuevaRotacion = Math.round(nuevaRotacion / 15) * 15;
+      el.rotacion = Math.round(((nuevaRotacion % 360) + 360) % 360);
+      this.cdr.detectChanges();
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      this.emitir();
+      this.cdr.detectChanges();
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
   }
 
   // ---- Arrastre (mover / redimensionar) ----

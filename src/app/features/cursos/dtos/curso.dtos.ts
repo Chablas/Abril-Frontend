@@ -9,6 +9,7 @@ export interface CursoDto {
   notaMinimaAprobacion: number;
   activo: boolean;
   colorTema?: string | null;
+  logoUrl?: string | null;
 }
 
 export interface CursoSlideDto {
@@ -18,6 +19,8 @@ export interface CursoSlideDto {
   tipoCodigo: string;
   esEvaluable: boolean;
   puntaje?: number | null;
+  /** false = "solo práctica": sigue mostrando acierto/error, pero no suma a la nota final. */
+  contarParaNota?: boolean;
   modoCorreccion?: string | null;
   configuracionJson: string;
 }
@@ -32,6 +35,26 @@ export interface CursoUpsertDto {
   notaMinimaAprobacion: number;
   activo: boolean;
   colorTema?: string | null;
+  logoUrl?: string | null;
+}
+
+/** Entrada del banco de preguntas reutilizable entre cursos — elegirla CLONA su
+ *  configuracionJson dentro de una nueva CursoSlide; no queda enlazada al original. */
+export interface CursoPreguntaBancoDto {
+  id: number;
+  tipoCodigo: string;
+  titulo: string;
+  categoria?: string | null;
+  puntajeSugerido?: number | null;
+  configuracionJson: string;
+}
+
+export interface CursoPreguntaBancoUpsertDto {
+  tipoCodigo: string;
+  titulo: string;
+  categoria?: string | null;
+  puntajeSugerido?: number | null;
+  configuracionJson: string;
 }
 
 export interface CursoSlideUpsertDto {
@@ -39,6 +62,7 @@ export interface CursoSlideUpsertDto {
   tipoCodigo: string;
   esEvaluable: boolean;
   puntaje?: number | null;
+  contarParaNota?: boolean;
   modoCorreccion?: string | null;
   configuracionJson: string;
 }
@@ -162,6 +186,30 @@ export interface OpcionMultipleConfig {
   kicker?: string;
 }
 
+// tipoCodigo: "pregunta_eleccion_multiple" — a diferencia de "pregunta_opcion_multiple"
+// (una sola correcta), aquí puede haber VARIAS opciones correctas a la vez (checkboxes).
+// respuestaCorrecta.opcionIds va en el MISMO orden que `opciones` (no el orden en que el
+// alumno las marcó) para que la igualdad exacta de JSON sea determinística — el player
+// arma su respuesta filtrando `opciones` en ese mismo orden, nunca por orden de clic.
+export interface EleccionMultipleConfig {
+  enunciado: string;
+  opciones: OpcionSimple[];
+  respuestaCorrecta: { opcionIds: (string | number)[] };
+  estilo?: SlideEstilo;
+  kicker?: string;
+}
+
+// tipoCodigo: "pregunta_desliza_acierta" — mismo modelo que Verdadero/Falso (una
+// afirmación, correcta = sí/no) pero con otra piel: tarjeta con imagen y botones ✗/✓
+// estilo "swipe" (Genially), en vez de dos botones de texto.
+export interface DeslizaAciertaConfig {
+  enunciado: string;
+  imagenUrl?: string;
+  respuestaCorrecta: { valor: boolean };
+  estilo?: SlideEstilo;
+  kicker?: string;
+}
+
 export interface MarcarImagenConfig {
   enunciado: string;
   imagenes: OpcionSimple[];
@@ -188,6 +236,47 @@ export interface ArrastrarSoltarConfig {
 export interface OrdenarConfig {
   enunciado: string;
   items: { id: string; texto: string }[];
+  estilo?: SlideEstilo;
+  kicker?: string;
+}
+
+// tipoCodigo: "pregunta_respuesta_corta". Evaluable, modo_correccion: "igualdad_exacta".
+// OJO: la corrección genérica del backend (CorregirGenerico) compara el ConfiguracionJson
+// completo bajo la clave "respuestaCorrecta" contra el ENTERO objeto RespuestaJson que
+// emite el player — por eso respuestaCorrecta va envuelto como { texto: "..." }, igual
+// forma que emite el player, y no como un string suelto. Para tolerar variantes de
+// escritura ("fotosíntesis" vs "fotosintesis"), el frontend normaliza (trim/minúsculas/sin
+// tildes) lo que escribió el usuario contra respuestaCorrecta.texto y variantesAceptadas,
+// y si coincide emite el valor CANÓNICO para que el backend lo reconozca; si no, emite lo
+// que el usuario realmente escribió (para la evidencia/auditoría).
+export interface RespuestaCortaConfig {
+  enunciado: string;
+  respuestaCorrecta: { texto: string };
+  variantesAceptadas?: string[];
+  estilo?: SlideEstilo;
+  kicker?: string;
+}
+
+// tipoCodigo: "pregunta_completar_huecos". Mismo patrón de normalización y misma razón de
+// envolver la respuesta ({ textos: [...] }, un elemento por hueco en orden) que respuesta
+// corta. `texto` usa "___" (tres guiones bajos) como marcador de cada hueco, en orden.
+export interface CompletarHuecosConfig {
+  texto: string;
+  respuestaCorrecta: { textos: string[] };
+  variantesAceptadas?: (string[] | undefined)[];
+  estilo?: SlideEstilo;
+  kicker?: string;
+}
+
+// tipoCodigo: "pregunta_emparejar". Evaluable, modo_correccion: "igualdad_exacta" — a
+// diferencia de los dos anteriores, aquí SÍ se emite el mapa {idIzquierda: idDerecha} tal
+// cual, sin envolver en otra clave, porque ambos lados ya son objetos planos comparables
+// directo. Se califica todo-o-nada (un solo par mal emparejado invalida la pregunta).
+export interface EmparejarConceptosConfig {
+  enunciado: string;
+  izquierda: { id: string; texto: string }[];
+  derecha: { id: string; texto: string }[];
+  respuestaCorrecta: Record<string, string>;
   estilo?: SlideEstilo;
   kicker?: string;
 }
@@ -227,10 +316,41 @@ export interface GaleriaZoomConfig {
 // Lienzo libre: elementos posicionados a mano dentro de un canvas de tamaño fijo
 // CANVAS_ANCHO x CANVAS_ALTO (ver canvas-editor.ts), que se escala responsive en el
 // editor y en el player. x/y/ancho/alto están en píxeles de ese sistema de coordenadas.
-export type ElementoTipo = 'texto' | 'imagen' | 'forma' | 'icono' | 'boton' | 'video';
-export type AnimacionEntrada = 'ninguna' | 'fade' | 'slide-up' | 'slide-left' | 'zoom';
+export type ElementoTipo = 'texto' | 'imagen' | 'forma' | 'icono' | 'boton' | 'video' | 'audio' | 'pregunta';
+// Un solo catálogo de efectos, compartido por Entrada / Continuo / Interactiva (estilo
+// Genially: la galería de efectos es la misma sin importar el disparador, solo cambia
+// cuándo se dispara). 'fade'/'slide-up'/'slide-left' se conservan solo por compatibilidad
+// con slides ya guardadas — el picker nuevo ya no los ofrece, usa 'aparecer'/'deslizar'.
+export type EfectoAnimacion =
+  | 'ninguna'
+  | 'fade'
+  | 'slide-up'
+  | 'slide-left'
+  | 'aparecer'
+  | 'enfocar'
+  | 'zoom'
+  | 'encender'
+  | 'deslizar'
+  | 'bote'
+  | 'remolino'
+  | 'rotar'
+  | 'rodar';
+export type AnimacionEntrada = EfectoAnimacion;
+export type EfectoInteraccion = EfectoAnimacion;
 export type AnimacionEasing = 'ease' | 'ease-in' | 'ease-out' | 'linear' | 'bounce';
 export type FormaTipo = 'rectangulo' | 'circulo';
+
+// Animación de interacción (estilo Genially: "Ratón encima" / "Hacer clic" + galería de
+// efectos) — a diferencia de animacionEntrada (automática, una vez, al mostrarse la
+// pantalla), esta se dispara por acción del usuario y puede repetirse cada vez que
+// vuelve a pasar el mouse o hace clic. Convive con overlay/botonAccion: no los reemplaza,
+// solo agrega el efecto visual antes/junto a esa acción.
+export type DisparadorInteraccion = 'hover' | 'clic';
+
+export interface AnimacionInteraccion {
+  disparador: DisparadorInteraccion;
+  efecto: EfectoInteraccion;
+}
 
 // Overlay interactivo: al hacer clic sobre el elemento en el player, se muestra un
 // panel encima con este contenido (mismo patrón que "¿Sabías que...?" / "Haz clic para
@@ -257,6 +377,12 @@ export interface ElementoLibre {
   animacionDuracionMs?: number;
   animacionEasing?: AnimacionEasing;
   overlay?: ElementoOverlay;
+  animacionInteraccion?: AnimacionInteraccion | null;
+  /** Animación que se repite en bucle mientras la pantalla está visible (Genially: "Continuo"). */
+  animacionContinua?: EfectoAnimacion;
+  /** Animación al salir de la pantalla (Genially: "Salida") — el reproductor espera a que
+   *  termine antes de avanzar realmente a la siguiente slide. Ver CursoPlayer.avanzar(). */
+  animacionSalida?: EfectoAnimacion;
   // Propiedades de texto
   texto?: string;
   colorTexto?: string;
@@ -266,6 +392,8 @@ export interface ElementoLibre {
   // Propiedades de imagen / video
   imagenUrl?: string;
   videoUrl?: string; // URL embebible (YouTube/Vimeo)
+  audioUrl?: string; // archivo subido (mp3/ogg/wav) — locuciones, efectos, etc.
+  audioAutoplay?: boolean; // reproduce solo al entrar a la pantalla (default false)
   bordeRedondeado?: number; // px
   // Propiedades de forma
   formaTipo?: FormaTipo;
@@ -274,7 +402,37 @@ export interface ElementoLibre {
   iconoClase?: string;
   // Propiedades de botón
   botonTexto?: string;
-  botonUrl?: string; // navega/abre en nueva pestaña al hacer clic (si no tiene overlay)
+  botonAccion?: 'url' | 'pagina'; // default 'url' (compatibilidad con botones ya guardados)
+  botonUrl?: string; // navega/abre en nueva pestaña al hacer clic (si botonAccion es 'url' y no hay overlay)
+  botonSlideId?: number | null; // id de otra CursoSlide del mismo curso, si botonAccion es 'pagina'
+  // Propiedades de pregunta evaluable embebida (tipo 'pregunta', estilo Genially: la
+  // pregunta convive con el resto del lienzo libre en la misma pantalla). Solo se permite
+  // UNA por pantalla — ver notas en curso-editor.ts (guardarSlide) y CorregirGenerico en
+  // el backend, que asumen una sola respuestaCorrecta por CursoSlide.
+  pregunta?: ElementoPreguntaConfig;
+}
+
+/** Mismos campos editables que preguntaEditando en curso-editor.ts — se reutiliza tal
+ *  cual para no duplicar otro modelo. OJO seguridad: a diferencia de una pregunta como
+ *  pantalla separada (donde el backend nunca envía la respuesta correcta al reproductor),
+ *  aquí vive dentro de "elementos", que SÍ viaja completo al reproductor real — la
+ *  respuesta correcta queda visible en el HTML/JSON servido (ver aviso en el chat). */
+export interface ElementoPreguntaConfig {
+  tipoCodigo: string; // uno de TIPOS_EVALUABLES (curso-editor.ts)
+  puntaje: number;
+  contarParaNota: boolean;
+  kicker?: string;
+  enunciado: string;
+  imagenUrl?: string;
+  opciones: (OpcionSimple & { correcta?: boolean })[];
+  items: { id: string; texto: string }[];
+  respuestaTexto: string;
+  variantes: string;
+  textoHuecos: string;
+  respuestasHuecos: string[];
+  izquierda: { id: string; texto: string }[];
+  derecha: { id: string; texto: string }[];
+  parejas: Record<string, string>;
 }
 
 export interface ContenidoLibreConfig {

@@ -15,6 +15,8 @@ import {
   FinalizarIntentoDto,
   FinalizarIntentoResultDto,
   CursoIntentoDetalleDto,
+  CursoPreguntaBancoDto,
+  CursoPreguntaBancoUpsertDto,
 } from '../dtos/curso.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -116,5 +118,24 @@ export class CursoService {
     return this.http.post<{ url: string }>(`${this.base}/imagenes`, formData, {
       headers: this.headers(),
     });
+  }
+
+  // ---- Banco de preguntas reutilizable entre cursos ----
+
+  getPreguntasBanco(tipoCodigo?: string): Observable<CursoPreguntaBancoDto[]> {
+    const params = tipoCodigo ? `?tipoCodigo=${encodeURIComponent(tipoCodigo)}` : '';
+    return this.http.get<CursoPreguntaBancoDto[]>(`${this.base}/preguntas-banco${params}`, {
+      headers: this.headers(),
+    });
+  }
+
+  crearPreguntaBanco(dto: CursoPreguntaBancoUpsertDto): Observable<CursoPreguntaBancoDto> {
+    return this.http.post<CursoPreguntaBancoDto>(`${this.base}/preguntas-banco`, dto, {
+      headers: this.headers(),
+    });
+  }
+
+  eliminarPreguntaBanco(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/preguntas-banco/${id}`, { headers: this.headers() });
   }
 }

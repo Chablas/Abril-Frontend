@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -22,6 +22,11 @@ import { SlideOrdenar } from './slides/slide-ordenar/slide-ordenar';
 import { SlideTarjetas } from './slides/slide-tarjetas/slide-tarjetas';
 import { SlideGaleriaZoom } from './slides/slide-galeria-zoom/slide-galeria-zoom';
 import { SlideContenidoLibre } from './slides/slide-contenido-libre/slide-contenido-libre';
+import { SlideRespuestaCorta } from './slides/slide-respuesta-corta/slide-respuesta-corta';
+import { SlideCompletarHuecos } from './slides/slide-completar-huecos/slide-completar-huecos';
+import { SlideEmparejarConceptos } from './slides/slide-emparejar-conceptos/slide-emparejar-conceptos';
+import { SlideEleccionMultiple } from './slides/slide-eleccion-multiple/slide-eleccion-multiple';
+import { SlideDeslizaAcierta } from './slides/slide-desliza-acierta/slide-desliza-acierta';
 import { FondoAnimado } from './fondo-animado/fondo-animado';
 
 const DECLARACION_TEXTO =
@@ -46,6 +51,11 @@ type Fase = 'cargando' | 'jugando' | 'feedback' | 'declaracion' | 'finalizando' 
     SlideTarjetas,
     SlideGaleriaZoom,
     SlideContenidoLibre,
+    SlideRespuestaCorta,
+    SlideCompletarHuecos,
+    SlideEmparejarConceptos,
+    SlideEleccionMultiple,
+    SlideDeslizaAcierta,
     FondoAnimado,
   ],
   templateUrl: './curso-player.html',
@@ -70,6 +80,8 @@ export class CursoPlayer implements OnInit {
   private tiempoInicioSlide = Date.now();
 
   declaracionTexto = DECLARACION_TEXTO;
+
+  @ViewChild(SlideContenidoLibre) private slideLibreRef?: SlideContenidoLibre;
 
   constructor(
     private route: ActivatedRoute,
@@ -232,7 +244,6 @@ export class CursoPlayer implements OnInit {
           if (!slide.esEvaluable) {
             // Slide de contenido: avanza directo, sin overlay de feedback.
             this.avanzar();
-            this.cdr.detectChanges();
             return;
           }
 
@@ -240,7 +251,6 @@ export class CursoPlayer implements OnInit {
           this.cdr.detectChanges();
           setTimeout(() => {
             this.avanzar();
-            this.cdr.detectChanges();
           }, 1400);
         },
         error: (err: HttpErrorResponse) => {
@@ -253,14 +263,29 @@ export class CursoPlayer implements OnInit {
       });
   }
 
-  private avanzar(): void {
-    if (this.esUltimaSlide) {
-      this.fase = 'declaracion';
-      return;
-    }
-    this.currentIndex++;
+  /** Botón "Ir a página" de una slide de lienzo libre: salto directo, sin registrar
+   *  respuesta (es navegación, no una pregunta evaluada). */
+  async onIrAPagina(slideId: number): Promise<void> {
+    const indice = this.slides.findIndex((s) => s.id === slideId);
+    if (indice < 0) return;
+    await this.slideLibreRef?.dispararSalida();
+    this.currentIndex = indice;
     this.tiempoInicioSlide = Date.now();
     this.fase = 'jugando';
+    this.cdr.detectChanges();
+  }
+
+  private async avanzar(): Promise<void> {
+    await this.slideLibreRef?.dispararSalida();
+
+    if (this.esUltimaSlide) {
+      this.fase = 'declaracion';
+    } else {
+      this.currentIndex++;
+      this.tiempoInicioSlide = Date.now();
+      this.fase = 'jugando';
+    }
+    this.cdr.detectChanges();
   }
 
   // ---------------------------------------------------------------------
