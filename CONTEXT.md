@@ -6132,3 +6132,29 @@ Continuación de la consolidación "Dashboard de Proyectos → Dashboard UDP" in
 - Confirmar en BD si desactivar/borrar la fila de `projects.projects-dashboard` en `feature`/`role_feature` (dato de sesión anterior sin re-verificar: `feature_id=93`).
 - Diseño de "Plantillas de Cronograma" en Configuración: ver puntos (a)/(b)/(c) arriba, nada programado todavía.
 - Borrar físicamente `features/projects/projects-dashboard/` cuando se confirme que ya no hace falta ni siquiera como referencia (hoy `cronograma-dashboard.service.ts` sigue pegándole directo a su endpoint backend `api/v1/projects-dashboard`, así que borrar la carpeta frontend no rompe nada, pero no se hizo en esta sesión a pedido explícito del usuario).
+
+## Sesión 2026-09-26 — Implementado el tercer sub-tab "Plantillas de Cronograma" (editor de árbol)
+
+### Contexto
+Resuelve el punto pendiente de la sesión 2026-09-25. El prerequisito que esa sesión marcaba como bloqueante (backend con patrón moderno Controller→Service→Repository sobre tabla real, no JSON seeds) ya estaba resuelto en `Abril_Backend` al momento de esta sesión — el usuario pidió implementar el sub-tab directo, con los 4 endpoints ya confirmados en producción. Decisión (a) de la sesión anterior: mismo componente `Milestones` con un tercer sub-tab, no ruta nueva.
+
+### Cambios
+- **Backend verificado, no tocado** (`Abril_Backend/Features/UnidadDeProyectosModule/Features/CronogramaActividades/`): `PlantillaCronogramaController` (`api/v1/cronograma-actividades/plantillas`, GET por tipo / POST / PUT / DELETE), `PlantillaItemDto` con `Id/TipoCronograma/Codigo/Nombre/Nivel/EsPadre/ParentCodigo/PredecesoraCodigo/Orden`. Confirmado: **no hay endpoint de reorden masivo** (a diferencia de `cronograma-actividades`, que sí tiene `subir-nivel`/`bajar-nivel`/`reordenar`/cascada) — solo CRUD por ítem, `Orden` es un entero global sin scope por padre. `EliminarItemAsync` es soft-delete sin cascada a hijos (si se borra un padre con hijos activos, quedan huérfanos).
+- **Service + DTOs nuevos** (F1: en `features/`, no en `core/`): `features/projects/configuration/services/plantilla-cronograma.service.ts` y `.../dtos/plantilla-cronograma.dtos.ts`, alineados campo a campo con el backend.
+- **Editor de árbol en `milestones.ts`/`.html`/`.css`**: selector de etapa (Anteproyecto/Proyecto/Proyecto de Actualización), tabla outline con indentación por `nivel`. Como el backend no tiene reorden masivo, se descartó drag&drop (confirmado con el usuario) a favor de botones ⇤/⇥ (subir/bajar nivel) y ↑/↓ (mover entre hermanos). El árbol se resuelve tratando el array plano (ya viene ordenado por `Orden` desde el backend) como un outline válido: el subárbol de un ítem es la corrida contigua de ítems siguientes con `nivel` mayor. Cada operación estructural (mover, indentar, crear) recalcula `orden`/`nivel`/`parentCodigo`/`esPadre` localmente, compara contra el estado previo y dispara un PUT en batch (`forkJoin`) solo por los ítems que cambiaron, luego recarga desde el backend.
+- Crear ítem raíz / agregar sub-ítem / editar (código, nombre, predecesora) / eliminar (bloqueado en frontend si el ítem tiene hijos, ya que el backend no valida eso).
+- **Fix de bug visual**: el indentado por nivel estaba aplicado en la celda de "Código" (ancho fijo 130px) junto al texto del código; en niveles profundos (código largo + mucho padding) el contenido se salía de la celda y se pintaba encima de "Nombre" (sin `overflow:hidden`). Se movió el indentado a la celda de "Nombre" (que es donde corresponde visualizar la jerarquía) y se le dio a "Código" `white-space:nowrap; overflow:hidden; text-overflow:ellipsis` como resguardo.
+- Cumple F8 (skeleton), F9 (errores vía el `error()` ya existente del componente), F12 (sin `<form>`), F3 (sin `console.log`), F11 (títulos de modal en mayúsculas). No se tocaron los sub-tabs de Hitos ni Proyectos Activos.
+
+### Archivos clave
+- `features/projects/configuration/dtos/plantilla-cronograma.dtos.ts` (nuevo)
+- `features/projects/configuration/services/plantilla-cronograma.service.ts` (nuevo)
+- `features/projects/configuration/pages/milestones/milestones.ts`/`.html`/`.css`
+
+### Verificado
+`ng build` limpio (0 errores) después de cada cambio. **No se probó en navegador contra backend real** — el entorno dev apunta a `localhost:5236` y requiere login real; no había backend corriendo ni credenciales disponibles en esta sesión. Usuario a cargo de la verificación visual final (confirmar que el árbol y el fix de overlap se ven bien con datos reales).
+
+### Pendiente
+- Confirmación del usuario tras probar en navegador: crear ítems anidados 4-5 niveles y validar que código/nombre ya no se superponen, y que indentar/mover/crear/editar/eliminar funcionan contra el backend real.
+- Sin endpoint de reorden masivo, cada movimiento de un ítem con muchos hermanos/hijos puede disparar varios PUT en batch — vigilar si en la práctica (plantillas con muchos ítems) esto se siente lento; si es un problema, la solución de fondo sería agregar un endpoint de reorden masivo al backend (mismo patrón que `cronograma-actividades`).
+- No se implementó protección contra ciclos en `PredecesoraCodigo` (el selector permite elegir cualquier ítem de la misma etapa, incluyendo uno que dependa transitivamente del ítem editado) — el backend tampoco lo valida.
