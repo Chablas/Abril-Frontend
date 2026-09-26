@@ -33,6 +33,78 @@
   color: #ffffff;
 }
 
+/* ── Selector de etapa (plantillas de cronograma) ────────────────────────── */
+.etapa-btn {
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1px solid #E2E8F0;
+  background: #ffffff;
+  color: #64748B;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.etapa-btn:hover {
+  background: #F8FAFC;
+}
+
+.etapa-btn:focus-visible {
+  outline: 2px solid #2E6DB4;
+  outline-offset: 2px;
+}
+
+.etapa-btn--active {
+  background: #2E6DB4;
+  border-color: #2E6DB4;
+  color: #ffffff;
+}
+
+/* ── Botones de nivel/orden del árbol de plantillas ──────────────────────── */
+.plantilla-nivel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #64748B;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.plantilla-nivel-btn:hover:not(:disabled) {
+  background: #F1F5F9;
+  color: #1E3A5F;
+}
+
+.plantilla-nivel-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Ancho fijo + sin wrap: evita que un código largo (ej. "2.4.2.1.6.4") se
+   desborde de su columna y se pinte encima del nombre en la celda siguiente. */
+.plantilla-codigo-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
+
+.plantilla-parent-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2E6DB4;
+  flex-shrink: 0;
+}
+
 /* ── Tabla (DESIGN-VICTOR.md §6.7) ───────────────────────────────────────── */
 .milestones-th {
   padding: 10px 12px;
