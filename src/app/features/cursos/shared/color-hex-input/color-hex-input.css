@@ -1,0 +1,37 @@
+:host {
+  display: inline-flex;
+}
+
+.color-hex-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chi-picker {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0;
+}
+
+.chi-texto {
+  width: 76px;
+  height: 28px;
+  border: 1px solid #e9e3d3;
+  border-radius: 6px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-family: monospace;
+  color: #37342c;
+  background: #fff;
+}
+
+.chi-texto:focus {
+  outline: none;
+  border-color: #f5a623;
+}

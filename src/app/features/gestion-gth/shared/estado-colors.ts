@@ -10,6 +10,10 @@
  *
  * RECHAZADO_GG queda FUERA a propósito: no es una fase del pipeline sino la salida terminal de una
  * vacante que Gerencia General no aprobó (nunca llega a GTH), así que no "alcanza" ninguna fase.
+ *
+ * CANCELADO también queda fuera: se llega desde cualquier fase de GTH, así que no tiene un lugar
+ * en la fila. Hasta dónde llegó un proceso cancelado lo dice la fase en la que se lo canceló (el
+ * detalle la trae aparte), no su estado.
  */
 const PIPELINE: string[] = [
   'NUEVO',
@@ -70,6 +74,7 @@ export function estadoColors(codigo: string): { bg: string; text: string } {
     case 'CARTA_OFERTA_FIRMADA': return { bg: '#DCFCE7', text: '#15803D' };
     case 'CERRADO':            return { bg: '#E0E7FF', text: '#3730A3' };
     case 'CERRADO_SIN_CUBRIR': return { bg: '#F3F4F6', text: '#4B5563' };
+    case 'CANCELADO':          return { bg: '#FFE4E6', text: '#BE123C' };
     default:                   return { bg: '#F3F4F6', text: '#374151' };
   }
 }

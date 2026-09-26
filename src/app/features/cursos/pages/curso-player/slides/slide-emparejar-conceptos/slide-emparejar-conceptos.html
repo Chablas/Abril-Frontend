@@ -1,0 +1,24 @@
+<div class="slide-ec">
+  <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+
+  <h2 class="enunciado anim-cascada-titulo">{{ config.enunciado }}</h2>
+
+  <div class="filas-emparejar anim-cascada-cuerpo">
+    <div class="fila-emparejar" *ngFor="let izq of config.izquierda">
+      <span class="concepto-izquierda">{{ izq.texto }}</span>
+      <select class="select-derecha" [(ngModel)]="selecciones[izq.id]" [disabled]="confirmado">
+        <option value="" disabled>Selecciona...</option>
+        <option *ngFor="let der of config.derecha" [value]="der.id">{{ der.texto }}</option>
+      </select>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    class="btn-primario btn-confirmar anim-cascada-control"
+    [disabled]="faltanSelecciones || confirmado"
+    (click)="confirmar()"
+  >
+    Confirmar respuesta
+  </button>
+</div>

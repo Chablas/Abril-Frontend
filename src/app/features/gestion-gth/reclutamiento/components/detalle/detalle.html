@@ -24,8 +24,9 @@
           @if (esFft) {
             <app-status-badge text="FFT · Ingreso directo" bgColor="#DCFCE7" textColor="#166534" />
           }
-          <!-- Mismo gris y candado que la etiqueta del header de la bandeja. -->
-          @if (soloLectura) {
+          <!-- Mismo gris y candado que la etiqueta del header de la bandeja. Es la del permiso: un
+               proceso cancelado también queda en solo lectura, pero eso ya lo dice su estado. -->
+          @if (sinPermisoDeGestion) {
             <span class="inline-flex items-center gap-[4px] text-[11px] font-semibold px-[9px] py-[2px] rounded-full"
                   style="background:#F1F5F9;color:#475569">
               <i class="ti ti-lock text-[12px]"></i>
@@ -76,9 +77,45 @@
         }
       </div>
 
+      <!-- ── Proceso cancelado ──────────────────────────────────────────────
+           Cómo terminó el proceso, arriba de todo. Debajo el modal sigue como quedó en
+           la fase en la que se lo canceló, en solo lectura. -->
+      @if (cancelado) {
+        <div class="rounded-[10px] border px-[16px] py-[14px]"
+             style="border-color:#fecdd3;background:#FFF1F2">
+          <div class="flex items-start gap-[10px]">
+            <i class="ti ti-ban text-[20px] shrink-0 mt-[1px]" style="color:#BE123C"></i>
+            <div class="min-w-0 flex-1">
+              <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#BE123C">
+                Proceso cancelado
+              </p>
+              @if (detalle.cancelacion; as can) {
+                <h3 class="text-[16px] font-bold mt-[2px] leading-tight" style="color:#881337">
+                  Cancelado el {{ can.canceladoEn | date:'dd/MM/yyyy' }} a las {{ can.canceladoEn | date:'HH:mm' }}
+                </h3>
+                @if (can.canceladoPor || can.faseNombre) {
+                  <p class="text-[12.5px] mt-[3px]" style="color:#9F1239">
+                    @if (can.canceladoPor) {
+                      <span>Por {{ can.canceladoPor | titleCase }}</span>
+                    }
+                    @if (can.canceladoPor && can.faseNombre) {
+                      <span> · </span>
+                    }
+                    @if (can.faseNombre) {
+                      <span>{{ can.canceladoPor ? 'en' : 'En' }} la fase «{{ can.faseNombre }}»</span>
+                    }
+                  </p>
+                }
+              }
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- ── Puesto cubierto: quién obtuvo el puesto ──────────────────────
            Va arriba de todo porque es el resultado del proceso: al abrir un
-           requerimiento cerrado, lo primero es saber con quién se cerró. -->
+           requerimiento cerrado, lo primero es saber con quién se cerró. En uno
+           cancelado el puesto no se cubrió: queda como el finalista que eligió el área. -->
       @if (detalle.seleccionado; as sel) {
         <div class="rounded-[10px] border px-[16px] py-[14px]"
              style="border-color:#a7f3d0;background:#F0FDF4">
@@ -92,7 +129,7 @@
                    [ngClass]="seccionPuestoCubierto ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
                 <div class="min-w-0">
                   <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#15803D">
-                    Puesto cubierto
+                    {{ cancelado ? 'Finalista seleccionado' : 'Puesto cubierto' }}
                   </p>
                   <h3 class="text-[17px] font-bold text-emerald-900 mt-[2px] leading-tight">
                     {{ sel.nombre | titleCase }}
@@ -172,8 +209,9 @@
 
                 <!-- Con la cita ya creada el proceso sigue abierto hasta que la clínica califique
                      el examen: sin esta línea la fase «EMO de ingreso» se queda sin botón y sin nada
-                     que diga qué falta. -->
-                @if (sel.emoProgramacionEstado && detalle.estadoCodigo === 'EMO_INGRESO') {
+                     que diga qué falta. En un proceso cancelado en esa fase se sigue viendo: la cita
+                     no se cancela con él y GTH tiene que saber si quedó alguna en pie. -->
+                @if (sel.emoProgramacionEstado && faseEfectiva === 'EMO_INGRESO') {
                   <div class="flex flex-wrap items-center gap-x-[16px] gap-y-[4px] mt-[12px] text-[12px] text-gray-600">
                     <span class="inline-flex items-center gap-[6px]">
                       <i class="ti ti-stethoscope text-[14px]" style="color:#A16207"></i>
@@ -1873,13 +1911,18 @@
     </div>
   }
 
-  <!-- Footer: un solo botón "Cerrar" a la derecha. -->
-  <div modalFooter class="w-full flex justify-end">
-    <button type="button" (click)="cerrar()"
-      class="h-[36px] px-[22px] rounded-[7px] text-[13px] font-medium text-gray-600 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
-      Cerrar
-    </button>
-  </div>
+  <!-- Pie: la acción del detalle que no es de ninguna sección —cancelar el proceso—, centrada y
+       solo mientras se puede. Sin «Cerrar»: la X del encabezado ya cierra, y un pie sin nada que
+       hacer no se dibuja. -->
+  @if (puedeCancelar) {
+    <div modalFooter class="w-full flex justify-center">
+      <button type="button" (click)="cancelarProceso()" [disabled]="cancelando"
+        class="inline-flex items-center gap-[6px] h-[36px] px-[18px] rounded-[7px] border bg-white text-[13px] font-semibold cursor-pointer transition-colors text-abril-danger border-abril-danger hover:bg-abril-danger-light disabled:opacity-50 disabled:cursor-not-allowed">
+        <i class="ti ti-ban text-[15px]"></i>
+        {{ cancelando ? 'Cancelando…' : 'Cancelar proceso' }}
+      </button>
+    </div>
+  }
 
 </app-abril-modal-panel>
 

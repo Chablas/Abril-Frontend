@@ -1,12 +1,19 @@
 <div class="canvas-editor">
   <!-- Riel de herramientas, estilo Genially: íconos apilados a la izquierda -->
   <aside class="canvas-rail">
-    <button type="button" class="rail-btn" (click)="agregarElemento('texto')"><i class="ti ti-typography"></i><span>Texto</span></button>
+    <button #btnTexto type="button" class="rail-btn" [class.activo]="mostrarEstilosTexto" (click)="toggleEstilosTexto(btnTexto); $event.stopPropagation()">
+      <i class="ti ti-typography"></i><span>Texto</span>
+    </button>
     <button type="button" class="rail-btn" (click)="agregarElemento('imagen')"><i class="ti ti-photo"></i><span>Imagen</span></button>
     <button type="button" class="rail-btn" (click)="agregarElemento('forma')"><i class="ti ti-shape"></i><span>Forma</span></button>
     <button type="button" class="rail-btn" (click)="agregarElemento('icono')"><i class="ti ti-icons"></i><span>Ícono</span></button>
     <button type="button" class="rail-btn" (click)="agregarElemento('boton')"><i class="ti ti-hand-click"></i><span>Botón</span></button>
     <button type="button" class="rail-btn" (click)="agregarElemento('video')"><i class="ti ti-video"></i><span>Video</span></button>
+    <button type="button" class="rail-btn" (click)="agregarElemento('audio')"><i class="ti ti-music"></i><span>Audio</span></button>
+    <div class="rail-espaciador"></div>
+    <button #btnPreguntas type="button" class="rail-btn rail-btn-destacado" [class.activo]="mostrarPanelPreguntas" (click)="togglePanelPreguntas(btnPreguntas); $event.stopPropagation()">
+      <i class="ti ti-list-check"></i><span>Preguntas</span>
+    </button>
   </aside>
 
   <div class="canvas-main">
@@ -17,6 +24,7 @@
         class="canvas-lienzo"
         [style.width.px]="canvasAncho * escalaFinal"
         [style.height.px]="canvasAlto * escalaFinal"
+        [style.background]="fondoCss || '#ffffff'"
         (pointerdown)="iniciarBandaSeleccion($event)"
         (contextmenu)="abrirMenuContextualFondo($event)"
       >
@@ -33,16 +41,23 @@
         [style.transform]="el.rotacion ? 'rotate(' + el.rotacion + 'deg)' : null"
         (pointerdown)="iniciarMover(el, $event)"
         (click)="seleccionar(el.id, $event)"
+        (dblclick)="iniciarEdicionTexto(el, $event)"
         (contextmenu)="abrirMenuContextual(el, $event)"
       >
         <ng-container [ngSwitch]="el.tipo">
           <div
             *ngSwitchCase="'texto'"
             class="canvas-texto"
+            [class.en-edicion]="editandoTextoId === el.id"
+            [attr.contenteditable]="editandoTextoId === el.id ? 'true' : null"
+            [attr.data-editable-id]="editandoTextoId === el.id ? el.id : null"
             [style.color]="el.colorTexto || '#ffffff'"
             [style.font-size.px]="(el.tamanoFuente || 24) * escalaFinal"
             [style.text-align]="el.alineacion || 'left'"
             [style.font-weight]="el.negrita ? 700 : 400"
+            (pointerdown)="editandoTextoId === el.id && $event.stopPropagation()"
+            (blur)="editandoTextoId === el.id && confirmarEdicionTexto(el, $event)"
+            (keydown)="editandoTextoId === el.id && alTeclearEnEdicion($event)"
           >{{ el.texto }}</div>
 
           <img
@@ -68,18 +83,65 @@
             [style.font-size.px]="el.ancho * 0.8 * escalaFinal"
           ></i>
 
-          <button
+          <div
             *ngSwitchCase="'boton'"
-            type="button"
             class="canvas-boton"
+            [class.en-edicion]="editandoTextoId === el.id"
+            [attr.contenteditable]="editandoTextoId === el.id ? 'true' : null"
+            [attr.data-editable-id]="editandoTextoId === el.id ? el.id : null"
             [style.background]="el.colorFondo || '#f5a623'"
             [style.color]="el.colorTexto || '#14100b'"
             [style.font-size.px]="16 * escalaFinal"
-          >{{ el.botonTexto || 'Botón' }}</button>
+            (pointerdown)="editandoTextoId === el.id && $event.stopPropagation()"
+            (blur)="editandoTextoId === el.id && confirmarEdicionTexto(el, $event)"
+            (keydown)="editandoTextoId === el.id && alTeclearEnEdicion($event)"
+          >{{ el.botonTexto || 'Botón' }}</div>
 
           <div *ngSwitchCase="'video'" class="canvas-video-placeholder">
             <i class="ti ti-video"></i>
             <span>{{ el.videoUrl || 'Sin URL de video' }}</span>
+          </div>
+
+          <div *ngSwitchCase="'audio'" class="canvas-audio-placeholder">
+            <i class="ti ti-music"></i>
+            <span>{{ el.audioUrl ? 'Audio cargado' : 'Sin audio' }}</span>
+          </div>
+
+          <div *ngSwitchCase="'pregunta'" class="canvas-pregunta-render" [style.background]="el.colorFondo || null" [style.color]="el.colorTexto || null">
+            <div class="canvas-pregunta-cabecera">
+              <span class="canvas-pregunta-kicker" *ngIf="el.pregunta?.kicker">{{ el.pregunta?.kicker }}</span>
+              <strong class="canvas-pregunta-enunciado">{{ el.pregunta?.enunciado || 'Escribe el enunciado en el panel de la derecha...' }}</strong>
+              <span class="canvas-pregunta-subtitulo" *ngIf="el.pregunta?.tipoCodigo === 'pregunta_eleccion_multiple'">Puedes seleccionar más de una respuesta</span>
+            </div>
+
+            <ng-container [ngSwitch]="el.pregunta?.tipoCodigo">
+              <div class="canvas-pregunta-pildoras" *ngSwitchCase="'pregunta_vf'">
+                <span class="canvas-pregunta-pildora" *ngFor="let o of el.pregunta?.opciones"><i class="ti" [ngClass]="o.correcta ? 'ti-check' : 'ti-x'" [class.icono-correcto]="o.correcta" [class.icono-incorrecto]="!o.correcta"></i>{{ o.texto }}</span>
+              </div>
+              <div class="canvas-pregunta-pildoras" *ngSwitchCase="'pregunta_desliza_acierta'">
+                <span class="canvas-pregunta-pildora" *ngFor="let o of el.pregunta?.opciones"><i class="ti" [ngClass]="o.correcta ? 'ti-check' : 'ti-x'" [class.icono-correcto]="o.correcta" [class.icono-incorrecto]="!o.correcta"></i>{{ o.texto }}</span>
+              </div>
+              <div class="canvas-pregunta-pildoras" *ngSwitchCase="'pregunta_opcion_multiple'">
+                <span class="canvas-pregunta-pildora" *ngFor="let o of el.pregunta?.opciones"><i class="ti" [ngClass]="o.correcta ? 'ti-check' : 'ti-x'" [class.icono-correcto]="o.correcta" [class.icono-incorrecto]="!o.correcta"></i>{{ o.texto || '(opción vacía)' }}</span>
+              </div>
+              <div class="canvas-pregunta-pildoras" *ngSwitchCase="'pregunta_eleccion_multiple'">
+                <span class="canvas-pregunta-pildora" *ngFor="let o of el.pregunta?.opciones"><i class="ti" [ngClass]="o.correcta ? 'ti-check' : 'ti-x'" [class.icono-correcto]="o.correcta" [class.icono-incorrecto]="!o.correcta"></i>{{ o.texto || '(opción vacía)' }}</span>
+              </div>
+              <div class="canvas-pregunta-pildoras canvas-pregunta-pildoras-col" *ngSwitchCase="'pregunta_ordenar'">
+                <span class="canvas-pregunta-pildora" *ngFor="let it of el.pregunta?.items; let i = index">{{ i + 1 }}. {{ it.texto || '(paso vacío)' }}</span>
+              </div>
+              <div class="canvas-pregunta-pildoras canvas-pregunta-pildoras-col" *ngSwitchCase="'pregunta_respuesta_corta'">
+                <span class="canvas-pregunta-pildora"><i class="ti ti-check icono-correcto"></i>{{ el.pregunta?.respuestaTexto || '(sin respuesta todavía)' }}</span>
+              </div>
+              <div class="canvas-pregunta-pildoras canvas-pregunta-pildoras-col" *ngSwitchCase="'pregunta_completar_huecos'">
+                <span class="canvas-pregunta-pildora">{{ el.pregunta?.textoHuecos || '(sin texto todavía)' }}</span>
+              </div>
+              <div class="canvas-pregunta-pildoras canvas-pregunta-pildoras-col" *ngSwitchCase="'pregunta_emparejar'">
+                <span class="canvas-pregunta-pildora" *ngFor="let izq of el.pregunta?.izquierda">{{ izq.texto || '(concepto vacío)' }}</span>
+              </div>
+            </ng-container>
+
+            <span class="canvas-pregunta-boton-enviar">Enviar</span>
           </div>
         </ng-container>
 
@@ -90,7 +152,95 @@
           (pointerdown)="iniciarRedimensionar(el, dir, $event)"
         ></span>
 
+        <span
+          class="handle-rotar"
+          [class.visible]="el.id === seleccionadoId && !el.bloqueado"
+          (pointerdown)="iniciarRotar(el, $event)"
+          title="Arrastra para rotar (Shift = 15°)"
+        >
+          <i class="ti ti-rotate-clockwise-2"></i>
+        </span>
+
         <i *ngIf="el.bloqueado" class="ti ti-lock icono-bloqueado"></i>
+
+        <!-- Barra contextual flotante, estilo Genially: cambia según el tipo de elemento
+             seleccionado, para no tener que bajar al panel lateral para lo más frecuente. -->
+        <div
+          class="toolbar-contextual"
+          *ngIf="el.id === seleccionadoId && !el.bloqueado && editandoTextoId !== el.id && el.tipo !== 'video' && el.tipo !== 'audio'"
+          (pointerdown)="$event.stopPropagation()"
+          (click)="$event.stopPropagation()"
+        >
+          <ng-container [ngSwitch]="el.tipo">
+            <ng-container *ngSwitchCase="'texto'">
+              <button type="button" class="tb-btn" [class.tb-activo]="el.negrita" (click)="el.negrita = !el.negrita; guardarHistorial()" title="Negrita">
+                <i class="ti ti-bold"></i>
+              </button>
+              <span class="tb-sep"></span>
+              <button type="button" class="tb-btn" [class.tb-activo]="(el.alineacion || 'left') === 'left'" (click)="el.alineacion = 'left'; guardarHistorial()" title="Izquierda">
+                <i class="ti ti-align-left"></i>
+              </button>
+              <button type="button" class="tb-btn" [class.tb-activo]="el.alineacion === 'center'" (click)="el.alineacion = 'center'; guardarHistorial()" title="Centro">
+                <i class="ti ti-align-center"></i>
+              </button>
+              <button type="button" class="tb-btn" [class.tb-activo]="el.alineacion === 'right'" (click)="el.alineacion = 'right'; guardarHistorial()" title="Derecha">
+                <i class="ti ti-align-right"></i>
+              </button>
+              <span class="tb-sep"></span>
+              <button type="button" class="tb-btn" (click)="el.tamanoFuente = Math.max(8, (el.tamanoFuente || 24) - 2); guardarHistorial()" title="Reducir tamaño">
+                <i class="ti ti-minus"></i>
+              </button>
+              <span class="tb-valor">{{ el.tamanoFuente || 24 }}</span>
+              <button type="button" class="tb-btn" (click)="el.tamanoFuente = (el.tamanoFuente || 24) + 2; guardarHistorial()" title="Aumentar tamaño">
+                <i class="ti ti-plus"></i>
+              </button>
+              <span class="tb-sep"></span>
+              <app-color-hex-input [valor]="el.colorTexto" (valorChange)="el.colorTexto = $event" (confirmado)="guardarHistorial()" />
+              <button type="button" class="tb-swatch" *ngFor="let c of swatchesColor" [style.background]="c" (click)="el.colorTexto = c; guardarHistorial()"></button>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'imagen'">
+              <button type="button" class="tb-btn tb-ancho" (click)="pedirSubirImagen()" title="Cambiar imagen">
+                <i class="ti ti-upload"></i> Cambiar imagen
+              </button>
+              <span class="tb-sep"></span>
+              <button type="button" class="tb-btn" (click)="el.bordeRedondeado = Math.max(0, (el.bordeRedondeado || 0) - 4); guardarHistorial()" title="Menos borde">
+                <i class="ti ti-minus"></i>
+              </button>
+              <span class="tb-valor">{{ el.bordeRedondeado || 0 }}</span>
+              <button type="button" class="tb-btn" (click)="el.bordeRedondeado = (el.bordeRedondeado || 0) + 4; guardarHistorial()" title="Más borde">
+                <i class="ti ti-plus"></i>
+              </button>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'forma'">
+              <button type="button" class="tb-btn" [class.tb-activo]="el.formaTipo !== 'circulo'" (click)="el.formaTipo = 'rectangulo'; guardarHistorial()" title="Rectángulo">
+                <i class="ti ti-square"></i>
+              </button>
+              <button type="button" class="tb-btn" [class.tb-activo]="el.formaTipo === 'circulo'" (click)="el.formaTipo = 'circulo'; guardarHistorial()" title="Círculo">
+                <i class="ti ti-circle"></i>
+              </button>
+              <span class="tb-sep"></span>
+              <app-color-hex-input [valor]="el.colorFondo" (valorChange)="el.colorFondo = $event" (confirmado)="guardarHistorial()" />
+              <button type="button" class="tb-swatch" *ngFor="let c of swatchesColor" [style.background]="c" (click)="el.colorFondo = c; guardarHistorial()"></button>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'icono'">
+              <app-color-hex-input [valor]="el.colorTexto" (valorChange)="el.colorTexto = $event" (confirmado)="guardarHistorial()" />
+              <button type="button" class="tb-swatch" *ngFor="let c of swatchesColor" [style.background]="c" (click)="el.colorTexto = c; guardarHistorial()"></button>
+            </ng-container>
+
+            <ng-container *ngSwitchCase="'boton'">
+              <span class="tb-label">Fondo</span>
+              <app-color-hex-input [valor]="el.colorFondo" (valorChange)="el.colorFondo = $event" (confirmado)="guardarHistorial()" />
+              <button type="button" class="tb-swatch" *ngFor="let c of swatchesColor" [style.background]="c" (click)="el.colorFondo = c; guardarHistorial()"></button>
+              <span class="tb-sep"></span>
+              <span class="tb-label">Texto</span>
+              <app-color-hex-input [valor]="el.colorTexto" (valorChange)="el.colorTexto = $event" (confirmado)="guardarHistorial()" />
+              <button type="button" class="tb-swatch" *ngFor="let c of swatchesColor" [style.background]="c" (click)="el.colorTexto = c; guardarHistorial()"></button>
+            </ng-container>
+          </ng-container>
+        </div>
       </div>
 
       <!-- Rectángulo de selección por arrastre (rubber-band) -->
@@ -176,27 +326,41 @@
           <textarea class="abril-field-input" rows="3" [(ngModel)]="el.texto" placeholder=" "></textarea>
           <label class="abril-field-label">Contenido</label>
         </div>
+        <div class="campo-color">
+          <label>Color</label>
+          <app-color-hex-input [valor]="el.colorTexto" (valorChange)="el.colorTexto = $event" (confirmado)="guardarHistorial()" />
+          <span class="swatches-rapidos">
+            <button
+              type="button"
+              *ngFor="let c of swatchesColor"
+              class="swatch"
+              [style.background]="c"
+              [title]="c"
+              (click)="el.colorTexto = c; guardarHistorial()"
+            ></button>
+          </span>
+        </div>
         <div class="fila-campos">
-          <div class="campo-color">
-            <label>Color</label>
-            <input type="color" [(ngModel)]="el.colorTexto" />
-          </div>
           <div class="abril-field campo-corto">
             <input class="abril-field-input" type="number" [(ngModel)]="el.tamanoFuente" placeholder=" " />
             <label class="abril-field-label">Tamaño (px)</label>
           </div>
+          <div class="segmentado">
+            <button type="button" class="segmento-btn" [class.segmento-activo]="(el.alineacion || 'left') === 'left'" (click)="el.alineacion = 'left'; guardarHistorial()" title="Izquierda">
+              <i class="ti ti-align-left"></i>
+            </button>
+            <button type="button" class="segmento-btn" [class.segmento-activo]="el.alineacion === 'center'" (click)="el.alineacion = 'center'; guardarHistorial()" title="Centro">
+              <i class="ti ti-align-center"></i>
+            </button>
+            <button type="button" class="segmento-btn" [class.segmento-activo]="el.alineacion === 'right'" (click)="el.alineacion = 'right'; guardarHistorial()" title="Derecha">
+              <i class="ti ti-align-right"></i>
+            </button>
+          </div>
         </div>
-        <div class="fila-campos">
-          <select class="abril-field-input" [(ngModel)]="el.alineacion">
-            <option value="left">Izquierda</option>
-            <option value="center">Centro</option>
-            <option value="right">Derecha</option>
-          </select>
-          <label class="checkbox-row">
-            <input type="checkbox" [(ngModel)]="el.negrita" />
-            <span>Negrita</span>
-          </label>
-        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="el.negrita" (change)="guardarHistorial()" />
+          <span>Negrita</span>
+        </label>
       </ng-container>
 
       <ng-container *ngIf="el.tipo === 'imagen'">
@@ -218,7 +382,17 @@
           </select>
           <div class="campo-color">
             <label>Color</label>
-            <input type="color" [(ngModel)]="el.colorFondo" />
+            <app-color-hex-input [valor]="el.colorFondo" (valorChange)="el.colorFondo = $event" (confirmado)="guardarHistorial()" />
+            <span class="swatches-rapidos">
+              <button
+                type="button"
+                *ngFor="let c of swatchesColor"
+                class="swatch"
+                [style.background]="c"
+                [title]="c"
+                (click)="el.colorFondo = c; guardarHistorial()"
+              ></button>
+            </span>
           </div>
         </div>
         <div class="abril-field campo-corto" *ngIf="el.formaTipo !== 'circulo'">
@@ -232,7 +406,17 @@
           <app-icono-picker [claseActual]="el.iconoClase || ''" (seleccionar)="el.iconoClase = $event; guardarHistorial()" />
           <div class="campo-color">
             <label>Color</label>
-            <input type="color" [(ngModel)]="el.colorTexto" />
+            <app-color-hex-input [valor]="el.colorTexto" (valorChange)="el.colorTexto = $event" (confirmado)="guardarHistorial()" />
+            <span class="swatches-rapidos">
+              <button
+                type="button"
+                *ngFor="let c of swatchesColor"
+                class="swatch"
+                [style.background]="c"
+                [title]="c"
+                (click)="el.colorTexto = c; guardarHistorial()"
+              ></button>
+            </span>
           </div>
         </div>
       </ng-container>
@@ -242,18 +426,59 @@
           <input class="abril-field-input" type="text" [(ngModel)]="el.botonTexto" placeholder=" " />
           <label class="abril-field-label">Texto del botón</label>
         </div>
-        <div class="abril-field">
+
+        <select class="abril-field-input" [ngModel]="el.botonAccion || 'url'" (ngModelChange)="el.botonAccion = $event; guardarHistorial()">
+          <option value="url">Abrir enlace externo</option>
+          <option value="pagina">Ir a página del curso</option>
+        </select>
+
+        <div class="abril-field" *ngIf="(el.botonAccion || 'url') === 'url'">
           <input class="abril-field-input" type="text" [(ngModel)]="el.botonUrl" placeholder=" " />
           <label class="abril-field-label">Enlace (opcional, se ignora si hay overlay)</label>
         </div>
+
+        <ng-container *ngIf="el.botonAccion === 'pagina'">
+          <select
+            class="abril-field-input"
+            [ngModel]="el.botonSlideId"
+            (ngModelChange)="el.botonSlideId = $event; guardarHistorial()"
+          >
+            <option [ngValue]="null">Selecciona una página...</option>
+            <option *ngFor="let p of paginasDisponibles" [ngValue]="p.id">{{ p.titulo }}</option>
+          </select>
+          <p class="ayuda" *ngIf="!paginasDisponibles.length">
+            Guarda esta pantalla y crea otras para poder enlazarlas aquí.
+          </p>
+        </ng-container>
+
         <div class="fila-campos">
           <div class="campo-color">
             <label>Fondo</label>
-            <input type="color" [(ngModel)]="el.colorFondo" />
+            <app-color-hex-input [valor]="el.colorFondo" (valorChange)="el.colorFondo = $event" (confirmado)="guardarHistorial()" />
+            <span class="swatches-rapidos">
+              <button
+                type="button"
+                *ngFor="let c of swatchesColor"
+                class="swatch"
+                [style.background]="c"
+                [title]="c"
+                (click)="el.colorFondo = c; guardarHistorial()"
+              ></button>
+            </span>
           </div>
           <div class="campo-color">
             <label>Texto</label>
-            <input type="color" [(ngModel)]="el.colorTexto" />
+            <app-color-hex-input [valor]="el.colorTexto" (valorChange)="el.colorTexto = $event" (confirmado)="guardarHistorial()" />
+            <span class="swatches-rapidos">
+              <button
+                type="button"
+                *ngFor="let c of swatchesColor"
+                class="swatch"
+                [style.background]="c"
+                [title]="c"
+                (click)="el.colorTexto = c; guardarHistorial()"
+              ></button>
+            </span>
           </div>
         </div>
       </ng-container>
@@ -265,26 +490,175 @@
         </div>
       </ng-container>
 
-      <hr class="separador" />
+      <ng-container *ngIf="el.tipo === 'audio'">
+        <audio *ngIf="el.audioUrl" [src]="el.audioUrl" controls class="preview-audio"></audio>
+        <button type="button" class="btn-subir" (click)="pedirSubirAudio()">
+          <i class="ti ti-upload"></i> {{ el.audioUrl ? 'Cambiar audio' : 'Subir audio (mp3/wav)' }}
+        </button>
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="el.audioAutoplay" />
+          <span>Reproducir automáticamente al entrar a esta pantalla</span>
+        </label>
+      </ng-container>
 
-      <!-- Overlay interactivo: clic → panel emergente (patrón Genially) -->
-      <label class="checkbox-row">
-        <input type="checkbox" [ngModel]="el.overlay?.activo" (ngModelChange)="toggleOverlay($event)" />
-        <span>Interactivo: mostrar panel al hacer clic</span>
-      </label>
-      <ng-container *ngIf="el.overlay?.activo">
-        <div class="abril-field">
-          <input class="abril-field-input" type="text" [(ngModel)]="el.overlay!.titulo" placeholder=" " />
-          <label class="abril-field-label">Título del panel</label>
+      <!-- Pregunta evaluable embebida — mismos campos que el editor de preguntas de pantalla
+           completa, pero editando el.pregunta.* directo (ver ElementoPreguntaConfig). Va en su
+           propia pestaña "Contenido", estilo Genially, para no mezclarse con Animación. -->
+      <div class="pestanas-propiedades" *ngIf="el.tipo === 'pregunta'">
+        <button type="button" [class.pestana-activa]="pestanaPropiedades === 'contenido'" (click)="pestanaPropiedades = 'contenido'">
+          <i class="ti ti-forms"></i> Contenido
+        </button>
+        <button type="button" [class.pestana-activa]="pestanaPropiedades === 'interactividad'" (click)="pestanaPropiedades = 'interactividad'">
+          <i class="ti ti-hand-click"></i> Acciones
+        </button>
+        <button type="button" [class.pestana-activa]="pestanaPropiedades === 'animacion'" (click)="pestanaPropiedades = 'animacion'">
+          <i class="ti ti-wand"></i> Animación
+        </button>
+        <button type="button" [class.pestana-activa]="pestanaPropiedades === 'diseno'" (click)="pestanaPropiedades = 'diseno'">
+          <i class="ti ti-palette"></i> Diseño
+        </button>
+      </div>
+
+      <ng-container *ngIf="el.tipo === 'pregunta' && pestanaPropiedades === 'diseno'">
+        <div class="fila-campos">
+          <div class="campo-color">
+            <label>Fondo del recuadro</label>
+            <app-color-hex-input [valor]="el.colorFondo" (valorChange)="el.colorFondo = $event" (confirmado)="guardarHistorial()" />
+          </div>
+          <div class="campo-color">
+            <label>Texto</label>
+            <app-color-hex-input [valor]="el.colorTexto" (valorChange)="el.colorTexto = $event" (confirmado)="guardarHistorial()" />
+          </div>
         </div>
-        <div class="abril-field">
-          <textarea class="abril-field-input" rows="3" [(ngModel)]="el.overlay!.texto" placeholder=" "></textarea>
-          <label class="abril-field-label">Texto del panel</label>
+        <p class="ayuda">Estos colores se usarán como fondo/texto del recuadro cuando el alumno vea la pregunta.</p>
+      </ng-container>
+
+      <ng-container *ngIf="el.tipo === 'pregunta' && pestanaPropiedades === 'contenido' && el.pregunta as preg">
+        <div class="fila-campos">
+          <div class="abril-field">
+            <input class="abril-field-input" type="text" [(ngModel)]="preg.kicker" placeholder=" " />
+            <label class="abril-field-label">Etiqueta (opcional)</label>
+          </div>
+          <div class="abril-field campo-corto">
+            <input class="abril-field-input" type="number" [(ngModel)]="preg.puntaje" placeholder=" " />
+            <label class="abril-field-label">Puntaje</label>
+          </div>
         </div>
-        <div class="abril-field">
-          <input class="abril-field-input" type="text" [(ngModel)]="el.overlay!.imagenUrl" placeholder=" " />
-          <label class="abril-field-label">Imagen del panel (URL, opcional)</label>
-        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="preg.contarParaNota" />
+          <span>Cuenta para la nota final (si lo desmarcas, es solo práctica)</span>
+        </label>
+
+        <ng-container *ngIf="preg.tipoCodigo === 'pregunta_vf' || preg.tipoCodigo === 'pregunta_desliza_acierta'">
+          <div class="abril-field">
+            <textarea class="abril-field-input" rows="2" [(ngModel)]="preg.enunciado" placeholder=" "></textarea>
+            <label class="abril-field-label">{{ preg.tipoCodigo === 'pregunta_desliza_acierta' ? 'Afirmación' : 'Enunciado' }}</label>
+          </div>
+          <div class="abril-field" *ngIf="preg.tipoCodigo === 'pregunta_desliza_acierta'">
+            <input class="abril-field-input" type="text" [(ngModel)]="preg.imagenUrl" placeholder=" " />
+            <label class="abril-field-label">Imagen de la tarjeta (URL, opcional)</label>
+          </div>
+          <p class="ayuda">Marca cuál es la respuesta correcta:</p>
+          <div class="fila-campos">
+            <button type="button" class="segmento-btn" [class.segmento-activo]="preg.opciones[0]?.correcta" (click)="marcarOpcionCorrectaPregunta(0)">{{ preg.tipoCodigo === 'pregunta_desliza_acierta' ? '✓ Correcta' : 'Verdadero' }}</button>
+            <button type="button" class="segmento-btn" [class.segmento-activo]="preg.opciones[1]?.correcta" (click)="marcarOpcionCorrectaPregunta(1)">{{ preg.tipoCodigo === 'pregunta_desliza_acierta' ? '✗ Incorrecta' : 'Falso' }}</button>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="preg.tipoCodigo === 'pregunta_opcion_multiple' || preg.tipoCodigo === 'pregunta_eleccion_multiple'">
+          <div class="abril-field">
+            <textarea class="abril-field-input" rows="2" [(ngModel)]="preg.enunciado" placeholder=" "></textarea>
+            <label class="abril-field-label">Enunciado</label>
+          </div>
+          <p class="ayuda">{{ preg.tipoCodigo === 'pregunta_eleccion_multiple' ? 'Marca TODAS las opciones correctas:' : 'Marca cuál opción es la correcta:' }}</p>
+          <div class="fila-opcion-editable" *ngFor="let o of preg.opciones; let i = index">
+            <button
+              type="button"
+              class="radio-correcta"
+              [class.radio-activo]="o.correcta"
+              (click)="preg.tipoCodigo === 'pregunta_eleccion_multiple' ? toggleOpcionCorrectaPregunta(i) : marcarOpcionCorrectaPregunta(i)"
+            >
+              <i class="ti" [ngClass]="o.correcta ? (preg.tipoCodigo === 'pregunta_eleccion_multiple' ? 'ti-square-check-filled' : 'ti-circle-check-filled') : (preg.tipoCodigo === 'pregunta_eleccion_multiple' ? 'ti-square' : 'ti-circle')"></i>
+            </button>
+            <input class="abril-field-input" type="text" [(ngModel)]="o.texto" placeholder="Texto de la opción" />
+            <input class="abril-field-input campo-corto" type="text" [(ngModel)]="o.imagenUrl" placeholder="URL imagen (opcional)" />
+            <button type="button" class="btn-link btn-link-danger" (click)="quitarOpcionPregunta(i)"><i class="ti ti-trash"></i></button>
+          </div>
+          <button type="button" class="btn-secundario" (click)="agregarOpcionPregunta()"><i class="ti ti-plus"></i> Agregar opción</button>
+        </ng-container>
+
+        <ng-container *ngIf="preg.tipoCodigo === 'pregunta_ordenar'">
+          <div class="abril-field">
+            <textarea class="abril-field-input" rows="2" [(ngModel)]="preg.enunciado" placeholder=" "></textarea>
+            <label class="abril-field-label">Enunciado</label>
+          </div>
+          <p class="ayuda">Escribe los pasos en el orden CORRECTO:</p>
+          <div class="fila-opcion-editable" *ngFor="let it of preg.items; let i = index">
+            <span class="orden-badge orden-badge-inline">{{ i + 1 }}</span>
+            <input class="abril-field-input" type="text" [(ngModel)]="it.texto" placeholder="Paso/elemento" />
+            <button type="button" class="btn-link btn-link-danger" (click)="quitarItemOrdenarPregunta(i)"><i class="ti ti-trash"></i></button>
+          </div>
+          <button type="button" class="btn-secundario" (click)="agregarItemOrdenarPregunta()"><i class="ti ti-plus"></i> Agregar paso</button>
+        </ng-container>
+
+        <ng-container *ngIf="preg.tipoCodigo === 'pregunta_respuesta_corta'">
+          <div class="abril-field">
+            <textarea class="abril-field-input" rows="2" [(ngModel)]="preg.enunciado" placeholder=" "></textarea>
+            <label class="abril-field-label">Enunciado</label>
+          </div>
+          <div class="abril-field">
+            <input class="abril-field-input" type="text" [(ngModel)]="preg.respuestaTexto" placeholder=" " />
+            <label class="abril-field-label">Respuesta correcta</label>
+          </div>
+          <div class="abril-field">
+            <input class="abril-field-input" type="text" [(ngModel)]="preg.variantes" placeholder=" " />
+            <label class="abril-field-label">Otras variantes válidas (coma, opcional)</label>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="preg.tipoCodigo === 'pregunta_completar_huecos'">
+          <div class="abril-field">
+            <textarea class="abril-field-input" rows="3" [(ngModel)]="preg.textoHuecos" (ngModelChange)="onCambioTextoHuecosPregunta()" placeholder=" "></textarea>
+            <label class="abril-field-label">Texto (usa ___ para cada hueco)</label>
+          </div>
+          <div class="abril-field" *ngFor="let r of preg.respuestasHuecos; let i = index">
+            <input class="abril-field-input" type="text" [(ngModel)]="preg.respuestasHuecos[i]" placeholder=" " />
+            <label class="abril-field-label">Respuesta del hueco {{ i + 1 }}</label>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="preg.tipoCodigo === 'pregunta_emparejar'">
+          <div class="abril-field">
+            <textarea class="abril-field-input" rows="2" [(ngModel)]="preg.enunciado" placeholder=" "></textarea>
+            <label class="abril-field-label">Enunciado</label>
+          </div>
+          <div class="fila-campos-emparejar">
+            <div class="columna-emparejar">
+              <p class="ayuda"><strong>Izquierda</strong></p>
+              <div class="fila-opcion-editable" *ngFor="let izq of preg.izquierda; let i = index">
+                <input class="abril-field-input" type="text" [(ngModel)]="izq.texto" placeholder="Concepto" />
+                <button type="button" class="btn-link btn-link-danger" (click)="quitarConceptoPregunta('izquierda', i)"><i class="ti ti-trash"></i></button>
+              </div>
+              <button type="button" class="btn-secundario" (click)="agregarConceptoPregunta('izquierda')"><i class="ti ti-plus"></i></button>
+            </div>
+            <div class="columna-emparejar">
+              <p class="ayuda"><strong>Derecha</strong></p>
+              <div class="fila-opcion-editable" *ngFor="let der of preg.derecha; let i = index">
+                <input class="abril-field-input" type="text" [(ngModel)]="der.texto" placeholder="Concepto" />
+                <button type="button" class="btn-link btn-link-danger" (click)="quitarConceptoPregunta('derecha', i)"><i class="ti ti-trash"></i></button>
+              </div>
+              <button type="button" class="btn-secundario" (click)="agregarConceptoPregunta('derecha')"><i class="ti ti-plus"></i></button>
+            </div>
+          </div>
+          <p class="ayuda"><strong>Pareja correcta</strong>:</p>
+          <div class="fila-opcion-editable" *ngFor="let izq of preg.izquierda">
+            <span class="concepto-emparejar-label">{{ izq.texto || '(sin texto)' }}</span>
+            <select class="abril-field-input" [(ngModel)]="preg.parejas[izq.id]">
+              <option [ngValue]="undefined">Selecciona...</option>
+              <option *ngFor="let der of preg.derecha" [value]="der.id">{{ der.texto || '(sin texto)' }}</option>
+            </select>
+          </div>
+        </ng-container>
       </ng-container>
 
       <hr class="separador" />
@@ -303,32 +677,90 @@
         </div>
       </div>
 
-      <div class="fila-campos">
-        <select class="abril-field-input" [(ngModel)]="el.animacionEntrada">
-          <option value="ninguna">Sin animación</option>
-          <option value="fade">Aparecer (fade)</option>
-          <option value="slide-up">Subir</option>
-          <option value="slide-left">Deslizar</option>
-          <option value="zoom">Zoom</option>
-        </select>
-        <div class="abril-field campo-corto">
-          <input class="abril-field-input" type="number" [(ngModel)]="el.animacionDelayMs" placeholder=" " />
-          <label class="abril-field-label">Retraso (ms)</label>
-        </div>
+      <hr class="separador" />
+
+      <!-- Pestañas Interactividad / Animación, estilo Genially. Una pregunta no tiene
+           overlay/interactividad propia (ya es interactiva por sí misma al responder). -->
+      <div class="pestanas-propiedades" *ngIf="el.tipo !== 'pregunta'">
+        <button type="button" [class.pestana-activa]="pestanaPropiedades === 'interactividad'" (click)="pestanaPropiedades = 'interactividad'">
+          <i class="ti ti-hand-click"></i> Interactividad
+        </button>
+        <button type="button" [class.pestana-activa]="pestanaPropiedades === 'animacion'" (click)="pestanaPropiedades = 'animacion'">
+          <i class="ti ti-wand"></i> Animación
+        </button>
       </div>
-      <div class="fila-campos">
-        <div class="abril-field campo-corto">
-          <input class="abril-field-input" type="number" [(ngModel)]="el.animacionDuracionMs" placeholder=" " />
-          <label class="abril-field-label">Duración (ms)</label>
+      <ng-container *ngIf="pestanaPropiedades === 'interactividad'">
+        <label class="checkbox-row">
+          <input type="checkbox" [ngModel]="el.overlay?.activo" (ngModelChange)="toggleOverlay($event)" />
+          <span>Mostrar panel al hacer clic</span>
+        </label>
+        <ng-container *ngIf="el.overlay?.activo">
+          <div class="abril-field">
+            <input class="abril-field-input" type="text" [(ngModel)]="el.overlay!.titulo" placeholder=" " />
+            <label class="abril-field-label">Título del panel</label>
+          </div>
+          <div class="abril-field">
+            <textarea class="abril-field-input" rows="3" [(ngModel)]="el.overlay!.texto" placeholder=" "></textarea>
+            <label class="abril-field-label">Texto del panel</label>
+          </div>
+          <div class="abril-field">
+            <input class="abril-field-input" type="text" [(ngModel)]="el.overlay!.imagenUrl" placeholder=" " />
+            <label class="abril-field-label">Imagen del panel (URL, opcional)</label>
+          </div>
+        </ng-container>
+        <p class="ayuda" *ngIf="el.tipo === 'boton'">
+          El botón también puede abrir un enlace o ir a otra página — configúralo arriba, en "Ir a página del curso" / "Abrir enlace externo".
+        </p>
+      </ng-container>
+
+      <ng-container *ngIf="pestanaPropiedades === 'animacion'">
+        <p class="ayuda ayuda-grupo">Automática</p>
+        <div class="pestanas-sub">
+          <button type="button" [class.sub-activa]="subTabAnimacion === 'entrada'" (click)="subTabAnimacion = 'entrada'">Entrada</button>
+          <button type="button" [class.sub-activa]="subTabAnimacion === 'continuo'" (click)="subTabAnimacion = 'continuo'">Continuo</button>
+          <button type="button" [class.sub-activa]="subTabAnimacion === 'salida'" (click)="subTabAnimacion = 'salida'">Salida</button>
         </div>
-        <select class="abril-field-input" [(ngModel)]="el.animacionEasing">
-          <option value="ease">Suave</option>
-          <option value="ease-in">Entrada lenta</option>
-          <option value="ease-out">Salida lenta</option>
-          <option value="linear">Lineal</option>
-          <option value="bounce">Rebote</option>
-        </select>
-      </div>
+        <p class="ayuda ayuda-grupo">Interactiva</p>
+        <div class="pestanas-sub">
+          <button type="button" [class.sub-activa]="subTabAnimacion === 'hover'" (click)="subTabAnimacion = 'hover'">Ratón encima</button>
+          <button type="button" [class.sub-activa]="subTabAnimacion === 'clic'" (click)="subTabAnimacion = 'clic'">Hacer clic</button>
+        </div>
+
+        <div class="grid-efectos">
+          <button
+            type="button"
+            class="efecto-btn"
+            *ngFor="let ef of efectosAnimacion"
+            [class.efecto-activo]="efectoActual(el) === ef.valor"
+            (click)="fijarEfecto(el, ef.valor)"
+          >{{ ef.etiqueta }}</button>
+        </div>
+
+        <ng-container *ngIf="subTabAnimacion === 'entrada' && efectoActual(el) !== 'ninguna'">
+          <div class="fila-campos">
+            <div class="abril-field campo-corto">
+              <input class="abril-field-input" type="number" [(ngModel)]="el.animacionDelayMs" placeholder=" " />
+              <label class="abril-field-label">Retraso (ms)</label>
+            </div>
+            <div class="abril-field campo-corto">
+              <input class="abril-field-input" type="number" [(ngModel)]="el.animacionDuracionMs" placeholder=" " />
+              <label class="abril-field-label">Duración (ms)</label>
+            </div>
+          </div>
+          <select class="abril-field-input" [(ngModel)]="el.animacionEasing">
+            <option value="ease">Suave</option>
+            <option value="ease-in">Entrada lenta</option>
+            <option value="ease-out">Salida lenta</option>
+            <option value="linear">Lineal</option>
+            <option value="bounce">Rebote</option>
+          </select>
+        </ng-container>
+        <p class="ayuda" *ngIf="subTabAnimacion !== 'entrada'">
+          Este efecto tiene una duración fija pensada para
+          {{ subTabAnimacion === 'continuo' ? 'repetirse en bucle mientras la pantalla está visible' : subTabAnimacion === 'salida' ? 'reproducirse justo antes de avanzar a la siguiente pantalla' : 'una interacción puntual' }};
+          no usa retraso/duración/suavizado.
+        </p>
+      </ng-container>
     </aside>
   </div>
 
@@ -338,5 +770,54 @@
     (elementosChange)="confirmarCambioTimeline()"
     (seleccionar)="seleccionarDesdeTimeline($event)"
   />
+  </div>
+
+  <!-- Fuera del riel a propósito: .canvas-rail tiene overflow-y auto, que recorta
+       cualquier hijo absoluto que sobresalga (el popover quedaba cortado). Como overlay
+       fixed posicionado por JS, no depende del contenedor que lo abrió. -->
+  <div
+    class="popover-estilos-texto"
+    *ngIf="mostrarEstilosTexto"
+    [style.left.px]="posicionPopoverTexto.left"
+    [style.top.px]="posicionPopoverTexto.top"
+    (pointerdown)="$event.stopPropagation()"
+    (click)="$event.stopPropagation()"
+  >
+    <button
+      type="button"
+      class="opcion-estilo-texto"
+      *ngFor="let preset of estilosTexto"
+      [class.grande]="preset.tamanoFuente >= 34"
+      [style.font-weight]="preset.negrita ? 700 : 400"
+      (click)="agregarTextoConEstilo(preset)"
+    >{{ preset.etiqueta }}</button>
+  </div>
+
+  <!-- Panel "Preguntas interactivas", estilo Genially: pastilla de banco arriba + lista
+       agrupada de tipos con ícono. Mismo mecanismo de overlay fixed que el popover de
+       texto (ver nota arriba: .canvas-rail recorta con overflow-y auto). -->
+  <div
+    class="panel-preguntas-interactivas"
+    *ngIf="mostrarPanelPreguntas"
+    [style.left.px]="posicionPanelPreguntas.left"
+    [style.top.px]="posicionPanelPreguntas.top"
+    [style.bottom.px]="posicionPanelPreguntas.bottom"
+    (pointerdown)="$event.stopPropagation()"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="pastilla-banco-preguntas" (click)="abrirBancoPreguntas.emit(); mostrarPanelPreguntas = false">
+      <i class="ti ti-list-check"></i> Bancos de preguntas
+    </button>
+
+    <p class="grupo-preguntas-titulo">Evaluación</p>
+    <button
+      type="button"
+      class="fila-pregunta-tipo"
+      *ngFor="let t of preguntasInteractivas"
+      (click)="agregarElementoPregunta(t.tipoCodigo); mostrarPanelPreguntas = false"
+    >
+      <i class="ti" [ngClass]="t.icono"></i>
+      <span>{{ t.etiqueta }}</span>
+    </button>
   </div>
 </div>

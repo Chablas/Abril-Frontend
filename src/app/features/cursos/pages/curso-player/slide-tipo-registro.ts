@@ -22,6 +22,11 @@ import { SlideOrdenar } from './slides/slide-ordenar/slide-ordenar';
 import { SlideTarjetas } from './slides/slide-tarjetas/slide-tarjetas';
 import { SlideGaleriaZoom } from './slides/slide-galeria-zoom/slide-galeria-zoom';
 import { SlideContenidoLibre } from './slides/slide-contenido-libre/slide-contenido-libre';
+import { SlideRespuestaCorta } from './slides/slide-respuesta-corta/slide-respuesta-corta';
+import { SlideCompletarHuecos } from './slides/slide-completar-huecos/slide-completar-huecos';
+import { SlideEmparejarConceptos } from './slides/slide-emparejar-conceptos/slide-emparejar-conceptos';
+import { SlideEleccionMultiple } from './slides/slide-eleccion-multiple/slide-eleccion-multiple';
+import { SlideDeslizaAcierta } from './slides/slide-desliza-acierta/slide-desliza-acierta';
 
 export interface SlideTipoDef {
   tipoCodigo: string;
@@ -47,6 +52,31 @@ export const SLIDE_TIPOS: SlideTipoDef[] = [
   { tipoCodigo: 'contenido_tarjetas', component: SlideTarjetas, etiqueta: 'Tarjetas' },
   { tipoCodigo: 'contenido_galeria_zoom', component: SlideGaleriaZoom, etiqueta: 'Galería con zoom' },
   { tipoCodigo: 'contenido_libre', component: SlideContenidoLibre, etiqueta: 'Lienzo libre' },
+  {
+    tipoCodigo: 'pregunta_respuesta_corta',
+    component: SlideRespuestaCorta,
+    etiqueta: 'Respuesta corta',
+  },
+  {
+    tipoCodigo: 'pregunta_completar_huecos',
+    component: SlideCompletarHuecos,
+    etiqueta: 'Completar huecos',
+  },
+  {
+    tipoCodigo: 'pregunta_emparejar',
+    component: SlideEmparejarConceptos,
+    etiqueta: 'Emparejar conceptos',
+  },
+  {
+    tipoCodigo: 'pregunta_eleccion_multiple',
+    component: SlideEleccionMultiple,
+    etiqueta: 'Elección múltiple',
+  },
+  {
+    tipoCodigo: 'pregunta_desliza_acierta',
+    component: SlideDeslizaAcierta,
+    etiqueta: 'Desliza y acierta',
+  },
 ];
 
 export function resolverComponenteSlide(tipoCodigo: string): Type<any> | null {

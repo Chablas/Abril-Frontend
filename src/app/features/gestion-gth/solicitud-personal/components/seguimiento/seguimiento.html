@@ -78,7 +78,8 @@
 
       <!-- ── Puesto cubierto: quién obtuvo el puesto ───────────────────
            El resultado del proceso queda registrado acá; antes solo existía en el
-           momento de decidir y en el correo. -->
+           momento de decidir y en el correo. En un proceso cancelado el puesto no se
+           cubrió: queda como el finalista que eligió el área. -->
       @if (seguimiento.seleccionado; as sel) {
         <div class="rounded-[10px] border px-[16px] py-[14px]"
              style="border-color:#a7f3d0;background:#F0FDF4">
@@ -86,7 +87,7 @@
             <i class="ti ti-user-check text-[20px] shrink-0 mt-[1px]" style="color:#15803D"></i>
             <div class="min-w-0 flex-1">
               <p class="text-[10.5px] font-semibold tracking-wide uppercase" style="color:#15803D">
-                Puesto cubierto
+                {{ cancelado ? 'Finalista seleccionado' : 'Puesto cubierto' }}
               </p>
               <h3 class="text-[17px] font-bold text-emerald-900 mt-[2px] leading-tight">
                 {{ sel.nombre | titleCase }}
@@ -294,7 +295,14 @@
                      [style.color]="fase.estado === 'pending' ? '' : 'var(--color-abril-logo-blue)'">
                     {{ fase.nombre }}
                   </p>
-                  @if (fase.estado === 'current') {
+                  <!-- En un proceso cancelado la fase vigente es aquella en la que se lo canceló:
+                       ahí se detuvo, no es la que está en curso. -->
+                  @if (fase.estado === 'current' && cancelado) {
+                    <span class="text-[10px] font-semibold px-[8px] py-[2px] rounded-full"
+                          style="background:#FFE4E6;color:#BE123C">
+                      Cancelado
+                    </span>
+                  } @else if (fase.estado === 'current') {
                     <span class="text-[10px] font-semibold px-[8px] py-[2px] rounded-full"
                           style="background:var(--color-abril-logo-blue-light);color:var(--color-abril-logo-blue)">
                       Fase actual

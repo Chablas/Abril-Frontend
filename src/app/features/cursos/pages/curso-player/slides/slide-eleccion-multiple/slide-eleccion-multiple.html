@@ -1,0 +1,29 @@
+<div class="slide-em">
+  <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+
+  <h2 class="enunciado anim-cascada-titulo">{{ config.enunciado }}</h2>
+
+  <div class="opciones anim-cascada-cuerpo">
+    <button
+      type="button"
+      class="opcion"
+      *ngFor="let op of config.opciones"
+      [class.seleccionada]="seleccionIds.has(op.id)"
+      [disabled]="confirmado"
+      (click)="toggle(op.id)"
+    >
+      <i class="ti icono-check" [ngClass]="seleccionIds.has(op.id) ? 'ti-square-check-filled' : 'ti-square'"></i>
+      <img *ngIf="op.imagenUrl" [src]="op.imagenUrl" class="opcion-img" alt="" />
+      <span class="opcion-texto">{{ op.texto }}</span>
+    </button>
+  </div>
+
+  <button
+    type="button"
+    class="btn-primario btn-confirmar anim-cascada-control"
+    [disabled]="!seleccionIds.size || confirmado"
+    (click)="confirmar()"
+  >
+    Confirmar respuesta
+  </button>
+</div>

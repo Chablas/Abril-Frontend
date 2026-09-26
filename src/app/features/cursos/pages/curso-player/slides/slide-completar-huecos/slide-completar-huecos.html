@@ -1,0 +1,26 @@
+<div class="slide-ch">
+  <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+
+  <p class="parrafo-huecos anim-cascada-cuerpo">
+    <ng-container *ngFor="let seg of segmentos; let i = index; let last = last">
+      <span>{{ seg }}</span>
+      <input
+        *ngIf="!last"
+        type="text"
+        class="input-hueco"
+        [(ngModel)]="respuestas[i]"
+        [disabled]="confirmado"
+        [style.width.ch]="(respuestas[i]?.length || (config.respuestaCorrecta.textos[i] || '').length || 8) + 2"
+      />
+    </ng-container>
+  </p>
+
+  <button
+    type="button"
+    class="btn-primario btn-confirmar anim-cascada-control"
+    [disabled]="faltanRespuestas || confirmado"
+    (click)="confirmar()"
+  >
+    Confirmar respuesta
+  </button>
+</div>

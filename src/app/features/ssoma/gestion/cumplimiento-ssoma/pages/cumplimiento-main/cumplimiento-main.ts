@@ -53,6 +53,7 @@ const FRECUENCIAS: { value: CumplimientoFrecuencia; label: string; icono: string
   { value: 'diaria', label: 'Diaria', icono: 'ti-sun' },
   { value: 'semanal', label: 'Semanal', icono: 'ti-calendar-week' },
   { value: 'mensual', label: 'Mensual', icono: 'ti-calendar-month' },
+  { value: 'anual', label: 'Anual', icono: 'ti-calendar-stats' },
 ];
 
 const ROLES: { value: CumplimientoRol; label: string }[] = [
@@ -439,7 +440,8 @@ export class CumplimientoMainComponent implements OnInit {
 
   setHistoricoFrecuencia(f: CumplimientoFrecuencia): void {
     this.historicoFrecuencia = f;
-    this.historicoDesde = f === 'mensual' ? haceDiasIso(365) : f === 'semanal' ? haceDiasIso(90) : haceDiasIso(30);
+    this.historicoDesde =
+      f === 'anual' ? haceDiasIso(1825) : f === 'mensual' ? haceDiasIso(365) : f === 'semanal' ? haceDiasIso(90) : haceDiasIso(30);
     this.loadHistorico();
   }
 

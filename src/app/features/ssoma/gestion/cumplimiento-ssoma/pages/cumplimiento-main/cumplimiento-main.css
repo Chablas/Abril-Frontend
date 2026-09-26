@@ -347,7 +347,7 @@
   .cu-categoria-header { height: 36px; }
   .cu-categoria-nombre { font-size: 12.5px; }
 
-  /* Los 3 chips (Diaria/Semanal/Mensual) siempre en una sola fila: sin wrap, sin
+  /* Los 4 chips (Diaria/Semanal/Mensual/Anual) siempre en una sola fila: sin wrap, sin
      ícono (el texto solo ya deja claro cuál es cuál) y con relleno más chico. */
   .cu-frecuencia-chips { flex-wrap: nowrap; gap: 4px; }
   .cu-frecuencia-chip {

@@ -1,0 +1,25 @@
+<div class="slide-rc">
+  <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+
+  <h2 class="enunciado anim-cascada-titulo">{{ config.enunciado }}</h2>
+
+  <div class="campo-respuesta anim-cascada-cuerpo">
+    <input
+      type="text"
+      class="input-respuesta"
+      [(ngModel)]="texto"
+      [disabled]="confirmado"
+      placeholder="Escribe tu respuesta..."
+      (keydown.enter)="confirmar()"
+    />
+  </div>
+
+  <button
+    type="button"
+    class="btn-primario btn-confirmar anim-cascada-control"
+    [disabled]="!texto.trim() || confirmado"
+    (click)="confirmar()"
+  >
+    Confirmar respuesta
+  </button>
+</div>

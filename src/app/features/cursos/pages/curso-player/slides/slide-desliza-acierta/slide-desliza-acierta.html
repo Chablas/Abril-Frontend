@@ -1,0 +1,17 @@
+<div class="slide-da">
+  <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+
+  <div class="tarjeta anim-cascada-cuerpo" [class.deshabilitada]="confirmado">
+    <img *ngIf="config.imagenUrl" [src]="config.imagenUrl" class="tarjeta-img" alt="" />
+    <p class="tarjeta-enunciado">{{ config.enunciado }}</p>
+  </div>
+
+  <div class="botones-swipe anim-cascada-control">
+    <button type="button" class="btn-swipe btn-swipe-no" [class.elegido]="elegido === 'no'" [disabled]="confirmado" (click)="elegir(false)">
+      <i class="ti ti-x"></i>
+    </button>
+    <button type="button" class="btn-swipe btn-swipe-si" [class.elegido]="elegido === 'si'" [disabled]="confirmado" (click)="elegir(true)">
+      <i class="ti ti-check"></i>
+    </button>
+  </div>
+</div>
