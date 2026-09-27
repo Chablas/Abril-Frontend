@@ -1,4 +1,4 @@
-<div class="slide-rc">
+<div class="slide-rc" [ngClass]="'slide-rc-estilo-' + estilo">
   <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
 
   <h2 class="enunciado anim-cascada-titulo">{{ config.enunciado }}</h2>
@@ -12,14 +12,15 @@
       placeholder="Escribe tu respuesta..."
       (keydown.enter)="confirmar()"
     />
+    <button
+      type="button"
+      class="btn-enviar anim-cascada-control"
+      [disabled]="!texto.trim() || confirmado"
+      (click)="confirmar()"
+      aria-label="Enviar respuesta"
+      title="Enviar"
+    >
+      <i class="ti ti-send-2"></i>
+    </button>
   </div>
-
-  <button
-    type="button"
-    class="btn-primario btn-confirmar anim-cascada-control"
-    [disabled]="!texto.trim() || confirmado"
-    (click)="confirmar()"
-  >
-    Confirmar respuesta
-  </button>
 </div>

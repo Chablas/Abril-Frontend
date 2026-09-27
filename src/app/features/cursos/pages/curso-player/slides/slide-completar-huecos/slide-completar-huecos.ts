@@ -37,6 +37,7 @@ export class SlideCompletarHuecos {
   }
 
   @Output() respuesta = new EventEmitter<any>();
+  @Input() estilo: 'oscuro' | 'claro' | 'adaptado-oscuro' | 'adaptado-claro' = 'claro';
 
   get kicker(): string {
     return this.config.kicker || 'COMPLETAR HUECOS';

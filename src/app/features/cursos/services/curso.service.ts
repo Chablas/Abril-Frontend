@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/services/auth.service';
@@ -17,6 +17,8 @@ import {
   CursoIntentoDetalleDto,
   CursoPreguntaBancoDto,
   CursoPreguntaBancoUpsertDto,
+  MiCursoProgresoDto,
+  CursoIntentoHistorialDto,
 } from '../dtos/curso.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -68,6 +70,25 @@ export class CursoService {
     });
   }
 
+  /** Cursos visibles para el usuario logueado + su progreso real (dashboard "Mis cursos"). */
+  getMisCursos(): Observable<MiCursoProgresoDto[]> {
+    return this.http.get<MiCursoProgresoDto[]>(`${this.baseIntento}/mis-cursos`, {
+      headers: this.headers(),
+    });
+  }
+
+  /** Historial de evaluaciones para auditoría SUNAFIL (filtros opcionales). */
+  getHistorialIntentos(filtros?: { cursoId?: number; desde?: string; hasta?: string }): Observable<CursoIntentoHistorialDto[]> {
+    let params = new HttpParams();
+    if (filtros?.cursoId) params = params.set('cursoId', filtros.cursoId);
+    if (filtros?.desde) params = params.set('desde', filtros.desde);
+    if (filtros?.hasta) params = params.set('hasta', filtros.hasta);
+    return this.http.get<CursoIntentoHistorialDto[]>(`${this.baseIntento}/historial`, {
+      headers: this.headers(),
+      params,
+    });
+  }
+
   // ---- Administración de cursos/slides (editor) ----
 
   getCursosAdmin(): Observable<CursoDto[]> {
@@ -86,6 +107,16 @@ export class CursoService {
 
   actualizarCurso(cursoId: number, dto: CursoUpsertDto): Observable<void> {
     return this.http.put<void>(`${this.base}/${cursoId}`, dto, { headers: this.headers() });
+  }
+
+  getTieneEvaluaciones(cursoId: number): Observable<{ tieneEvaluaciones: boolean }> {
+    return this.http.get<{ tieneEvaluaciones: boolean }>(`${this.base}/${cursoId}/tiene-evaluaciones`, {
+      headers: this.headers(),
+    });
+  }
+
+  eliminarCurso(cursoId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${cursoId}`, { headers: this.headers() });
   }
 
   crearSlide(cursoId: number, dto: CursoSlideUpsertDto): Observable<CursoSlideDto> {

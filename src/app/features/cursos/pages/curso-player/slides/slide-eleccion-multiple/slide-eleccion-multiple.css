@@ -24,6 +24,10 @@
   width: 100%;
 }
 
+.opciones-vertical {
+  grid-template-columns: 1fr;
+}
+
 .opcion {
   position: relative;
   display: flex;
@@ -84,4 +88,28 @@
   height: 46px;
   padding: 0 28px;
   font-weight: 600;
+}
+
+/* ---- Estilo de la pregunta embebida (Diseño > Estilo), estilo Genially — oscuro/
+   adaptado-oscuro invierten a texto claro; claro/adaptado-claro usan el default de arriba. ---- */
+
+.slide-em-estilo-oscuro .enunciado,
+.slide-em-estilo-adaptado-oscuro .enunciado {
+  color: #fff;
+}
+
+.slide-em-estilo-oscuro .opcion,
+.slide-em-estilo-adaptado-oscuro .opcion {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.slide-em-estilo-oscuro .opcion-texto,
+.slide-em-estilo-adaptado-oscuro .opcion-texto {
+  color: #fff;
+}
+
+.slide-em-estilo-oscuro .icono-check,
+.slide-em-estilo-adaptado-oscuro .icono-check {
+  color: rgba(255, 255, 255, 0.5);
 }

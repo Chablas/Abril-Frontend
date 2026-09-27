@@ -1,0 +1,161 @@
+/* ── STEPPER (mismo patrón que ATS/OPT/Inspección) ────────────────── */
+.stepper {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  background: #fff;
+  border-bottom: 0.5px solid #e8e5df;
+  flex-shrink: 0;
+  gap: 0;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.step-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #d4d0c8;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #a8a59e;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.step--active .step-circle {
+  background: var(--color-abril-logo-blue);
+  border-color: var(--color-abril-logo-blue);
+  color: #fff;
+}
+
+.step--done .step-circle {
+  background: var(--color-abril-logo-blue-light);
+  border-color: var(--color-abril-logo-blue);
+  color: var(--color-abril-logo-blue);
+}
+
+.step-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a8a59e;
+  white-space: nowrap;
+}
+
+.step--active .step-label { color: var(--color-abril-logo-blue); }
+.step--done   .step-label { color: #5a5850; }
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: #e8e5df;
+  margin: 0 6px;
+  margin-bottom: 14px;
+}
+
+.step-line--done { background: var(--color-abril-logo-blue); }
+
+.panel-loading {
+  padding: 32px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.origen-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 10px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.iperc-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 8px;
+}
+
+/* ── Checklist ─────────────────────────────────────────────────────── */
+.item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #e8e5df;
+  border-radius: var(--radius-standard, 7px);
+  margin-bottom: 6px;
+}
+
+.item-texto {
+  font-size: 13px;
+  flex: 1;
+}
+
+.item-opciones {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.opt-btn {
+  border: 1px solid #d4d0c8;
+  background: #fff;
+  border-radius: 5px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.opt-si.opt-btn--sel { background: #dcfce7; border-color: #16a34a; color: #166534; }
+.opt-no.opt-btn--sel { background: #fee2e2; border-color: #dc2626; color: #991b1b; }
+.opt-na.opt-btn--sel { background: #f3f4f6; border-color: #9ca3af; color: #4b5563; }
+
+/* ── Firma ─────────────────────────────────────────────────────────── */
+.firmar-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 10px;
+}
+
+.firmar-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.camara-col, .firma-col {
+  flex: 1;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gps-estado {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.btn-sm {
+  align-self: flex-start;
+  font-size: 12px;
+  padding: 4px 10px;
+}

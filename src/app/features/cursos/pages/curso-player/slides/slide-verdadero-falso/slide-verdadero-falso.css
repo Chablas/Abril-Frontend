@@ -30,6 +30,14 @@
   width: 100%;
 }
 
+.opciones-vertical {
+  flex-direction: column;
+}
+
+.opciones-vertical .btn-vf {
+  height: 64px;
+}
+
 .btn-vf {
   flex: 1;
   height: 116px;
@@ -66,4 +74,13 @@
 
 .btn-falso {
   background: linear-gradient(135deg, #e6473f, #b5352f);
+}
+
+/* ---- Estilo de la pregunta embebida (Diseño > Estilo), estilo Genially — los botones
+   Verdadero/Falso mantienen su color fijo verde/rojo en cualquier estilo; solo cambia el
+   color del enunciado para que se lea sobre fondo oscuro. ---- */
+
+.slide-vf-estilo-oscuro .enunciado,
+.slide-vf-estilo-adaptado-oscuro .enunciado {
+  color: #fff;
 }

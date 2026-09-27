@@ -1,6 +1,7 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CursoSlideDto, EleccionMultipleConfig, OpcionSimple } from '../../../../dtos/curso.dtos';
+import { barajar } from '../../../../shuffle-util';
 
 @Component({
   selector: 'app-slide-eleccion-multiple',
@@ -24,12 +25,29 @@ export class SlideEleccionMultiple {
     } catch {
       this.config = { enunciado: '', opciones: [], respuestaCorrecta: { opcionIds: [] } };
     }
+    this.opcionesBarajadas = this.config.ordenAleatorio ? barajar(this.config.opciones) : [];
+  }
+
+  private opcionesBarajadas: OpcionSimple[] = [];
+
+  get opcionesMostradas(): OpcionSimple[] {
+    return this.config.ordenAleatorio ? this.opcionesBarajadas : this.config.opciones;
+  }
+
+  /** A diferencia de VF/opción única/desliza-acierta, aquí SIEMPRE se requiere el botón
+   *  "Confirmar respuesta": son checkboxes, el primer clic no puede disparar el envío o
+   *  nunca se podría marcar una segunda opción. "Activar botón para enviar" no aplica a
+   *  este tipo — por eso el editor no ofrece ese toggle para pregunta_eleccion_multiple. */
+  get requiereConfirmar(): boolean {
+    return true;
   }
   get slide(): CursoSlideDto {
     return this._slide;
   }
 
   @Output() respuesta = new EventEmitter<any>();
+  @Input() disposicion: 'horizontal' | 'vertical' = 'horizontal';
+  @Input() estilo: 'oscuro' | 'claro' | 'adaptado-oscuro' | 'adaptado-claro' = 'claro';
 
   get kicker(): string {
     return this.config.kicker || 'ELECCIÓN MÚLTIPLE — PUEDES MARCAR VARIAS';

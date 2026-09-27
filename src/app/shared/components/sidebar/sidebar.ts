@@ -9,7 +9,8 @@ import {
   inject,
 } from '@angular/core';
 import { isPlatformBrowser, CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { NavigationEnd, Router, RouterModule } from '@angular/router';
+import { filter } from 'rxjs';
 import { NavigationService } from '../../../core/navigation/navigation.service';
 import { NavIcon } from '../nav-icon/nav-icon';
 import { NavModule, NavGroup, NavItem } from '../../../core/navigation/nav.model';
@@ -27,6 +28,12 @@ const SIDEBAR_COLLAPSED_KEY = 'sidebar_collapsed';
 })
 export class Sidebar implements OnInit, OnDestroy {
   collapsed = false;
+  private enModuloCursos = false;
+  /** true justo al ENTRAR a /cursos (desde otro módulo): fuerza el sidebar retraído una
+   *  sola vez sin tocar la preferencia manual guardada en localStorage. Un clic del usuario
+   *  en el botón de colapsar/expandir lo apaga de inmediato — dentro de Cursos el sidebar
+   *  sigue siendo desplegable a voluntad, solo arranca retraído por defecto. */
+  private colapsoForzadoPorCursos = false;
   accountMenuOpen = false;
   expandedModule: string | null = null;
   expandedGroup: string | null = null;
@@ -48,6 +55,21 @@ export class Sidebar implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.alertaSvc.checkRechazados();
     setInterval(() => this.alertaSvc.checkRechazados(), 5 * 60 * 1000);
+    this.enModuloCursos = this.router.url.startsWith('/cursos');
+    this.colapsoForzadoPorCursos = this.enModuloCursos;
+    this.router.events
+      .pipe(filter((e): e is NavigationEnd => e instanceof NavigationEnd))
+      .subscribe((e) => {
+        const yaEstabaEnCursos = this.enModuloCursos;
+        this.enModuloCursos = e.urlAfterRedirects.startsWith('/cursos');
+        if (this.enModuloCursos && !yaEstabaEnCursos) {
+          // Recién se entra a Cursos desde otro módulo: retraer una vez.
+          this.colapsoForzadoPorCursos = true;
+        } else if (!this.enModuloCursos) {
+          // Se salió de Cursos: ya no aplica, se restaura la preferencia manual normal.
+          this.colapsoForzadoPorCursos = false;
+        }
+      });
     if (isPlatformBrowser(this.platformId)) {
       this.collapsed = localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === 'true';
       const user = JSON.parse(localStorage.getItem('user') ?? '{}');
@@ -62,7 +84,7 @@ export class Sidebar implements OnInit, OnDestroy {
 
   @HostBinding('class.collapsed')
   get isCollapsed(): boolean {
-    return this.collapsed;
+    return this.colapsoForzadoPorCursos ? true : this.collapsed;
   }
 
   /**
@@ -84,6 +106,8 @@ export class Sidebar implements OnInit, OnDestroy {
   }
 
   toggleCollapsed(): void {
+    // Un clic manual siempre gana sobre el retraído automático de entrar a Cursos.
+    this.colapsoForzadoPorCursos = false;
     this.collapsed = !this.collapsed;
     this.expandedModule = null;
     this.expandedGroup = null;

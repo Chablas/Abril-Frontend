@@ -2,10 +2,10 @@
   display: flex;
   flex-direction: column;
   gap: 22px;
-  padding: 28px clamp(16px, 4vw, 40px) 64px;
-  max-width: 960px;
+  padding: 28px clamp(16px, 2.5vw, 32px) 64px;
+  max-width: 1600px;
   margin: 0 auto;
-  background: #f2f0ea;
+  background: #f7f8fa;
   min-height: 100%;
   transition: max-width 0.15s ease;
 }
@@ -103,6 +103,12 @@
   color: #f5a623;
 }
 
+.admin-links-derecha {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .admin-link {
   display: flex;
   align-items: center;
@@ -160,67 +166,173 @@
   background: #e2941a;
 }
 
-.fila-cursos-existentes {
+.grilla-cursos-admin {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 22px;
+}
+
+.tarjeta-curso-admin {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.fila-curso {
-  display: flex;
-  align-items: center;
-  gap: 16px;
   background: #fff;
-  border: 1px solid #eae6da;
-  border-radius: 16px;
-  padding: 14px 18px;
+  border-radius: 18px;
+  overflow: hidden;
   cursor: pointer;
-  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 10px 28px rgba(20, 16, 11, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.fila-curso:hover {
-  box-shadow: 0 14px 30px rgba(20, 16, 11, 0.12);
-  transform: translateY(-2px);
-  border-color: #e3d9c2;
+.tarjeta-curso-admin:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 22px 44px rgba(20, 16, 11, 0.18);
 }
 
-.punto-color {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  border-radius: 12px;
-  flex-shrink: 0;
+.tarjeta-curso-admin-cover {
+  position: relative;
+  height: 120px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px;
+  overflow: hidden;
+}
+
+.tarjeta-curso-admin-patron {
+  position: absolute;
+  inset: 0;
   background-image: repeating-linear-gradient(
     135deg,
-    rgba(0, 0, 0, 0.1) 0px,
-    rgba(0, 0, 0, 0.1) 6px,
-    transparent 6px,
-    transparent 12px
+    rgba(0, 0, 0, 0.12) 0px,
+    rgba(0, 0, 0, 0.12) 14px,
+    transparent 14px,
+    transparent 28px
   );
-  position: relative;
+  opacity: 0.5;
 }
 
-.fila-curso-info {
+.tarjeta-curso-admin-badge {
+  position: relative;
+  z-index: 1;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #14100b;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 4px 10px;
+  border-radius: 999px;
+  height: fit-content;
+}
+
+.tarjeta-curso-admin-badge--plantilla {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #14100b;
+  color: #f5a623;
+}
+
+.tarjeta-curso-admin-icono {
+  position: relative;
+  z-index: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 19px;
+  margin-top: auto;
+}
+
+.tarjeta-curso-admin-body {
+  padding: 16px 18px 4px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 8px;
   flex: 1;
 }
 
-.fila-curso-info strong {
+.tarjeta-curso-admin-body strong {
   font-size: 1rem;
+  font-weight: 800;
+  color: #14100b;
+  line-height: 1.3;
+}
+
+.tarjeta-curso-admin-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #948d7c;
+}
+
+.tarjeta-curso-admin-meta i {
+  color: #f5a623;
+  font-size: 14px;
+}
+
+.punto-estado {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0f6e56;
+  margin-left: 6px;
+}
+
+.punto-estado--inactivo {
+  background: #c7bda4;
+}
+
+.tarjeta-curso-admin-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px 16px;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #14100b;
 }
 
-.fila-curso-info span {
-  font-size: 0.8rem;
-  color: #948d7c;
+.tarjeta-curso-admin-footer i {
+  color: #c7bda4;
+  transition: transform 0.15s ease;
 }
 
-.fila-curso > i {
+.tarjeta-curso-admin:hover .tarjeta-curso-admin-footer i {
+  transform: translateX(3px);
+  color: #f5a623;
+}
+
+.tarjeta-curso-admin-footer-derecha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-eliminar-tarjeta-admin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: none;
   color: #c7bda4;
-  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.btn-eliminar-tarjeta-admin:hover {
+  background: #fbe4e2;
+  color: #b3261e;
 }
 
 .sin-cursos {
@@ -234,7 +346,7 @@
 }
 
 .titulo-pagina {
-  font-size: 1.55rem;
+  font-size: 1.25rem;
   font-weight: 800;
   letter-spacing: -0.01em;
   margin: 0;
@@ -358,32 +470,8 @@ input[type='file']::file-selector-button:hover {
   object-fit: cover;
 }
 
-/* ---- Lista de slides ---- */
-/* Grilla de miniaturas visuales (estilo Genially: clic en la miniatura abre la pantalla) */
-.grilla-slides {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 14px;
-}
-
-.miniatura-slide {
-  position: relative;
-  aspect-ratio: 16 / 9;
-  border-radius: 10px;
-  color: #fff;
-  cursor: pointer;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 10px;
-  transition: transform 0.15s;
-}
-
-.miniatura-slide:hover {
-  transform: scale(1.03);
-}
-
+/* ---- Riel "Páginas" (la antigua grilla de miniaturas separada se eliminó — ver nota
+   26-sep-2026 en curso-editor.html: el riel del lienzo ya cumplía la misma función) ---- */
 .orden-badge {
   width: 26px;
   height: 26px;
@@ -396,25 +484,6 @@ input[type='file']::file-selector-button:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.miniatura-slide .orden-badge {
-  background: rgba(20, 16, 11, 0.6);
-  align-self: flex-start;
-}
-
-.acciones-miniatura {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  display: flex;
-  gap: 4px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.miniatura-slide:hover .acciones-miniatura {
-  opacity: 1;
 }
 
 .btn-mini {
@@ -437,41 +506,6 @@ input[type='file']::file-selector-button:hover {
 
 .btn-mini-danger:hover {
   background: #b3261e;
-}
-
-.miniatura-cuerpo {
-  position: relative;
-  flex: 1;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  text-align: center;
-}
-
-.miniatura-icono {
-  font-size: 22px;
-  opacity: 0.9;
-}
-
-.miniatura-titulo {
-  position: relative;
-  font-size: 0.8rem;
-  font-weight: 600;
-  line-height: 1.2;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-}
-
-.miniatura-tipo {
-  font-size: 0.65rem;
-  opacity: 0.75;
-  align-self: flex-start;
 }
 
 .btn-link {
@@ -555,6 +589,128 @@ input[type='file']::file-selector-button:hover {
   max-height: 70vh;
   overflow-y: auto;
   padding: 20px;
+}
+
+/* Vista previa estilo Genially: UNA sola superficie a pantalla completa (barra superior +
+   lienzo + pie), sin apilar tarjeta-sobre-tarjeta-sobre-tarjeta como antes. */
+.vp-pantalla {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #1c1a17;
+  display: flex;
+  flex-direction: column;
+}
+
+.vp-topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid #ece7d9;
+  color: #14100b;
+}
+
+.vp-aviso {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #6b6455;
+}
+
+.vp-dispositivo {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+  background: #f2ede0;
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.vp-dispositivo button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6b6455;
+  cursor: pointer;
+}
+
+.vp-dispositivo button.activo {
+  background: #fff;
+  color: #14100b;
+  box-shadow: 0 1px 4px rgba(20, 16, 11, 0.15);
+}
+
+.vp-cerrar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #eae6da;
+  background: #fff;
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #14100b;
+  cursor: pointer;
+}
+
+.vp-cerrar:hover {
+  background: #f7f5ef;
+}
+
+.vp-cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: auto;
+}
+
+/* Proporción 16:9 vía el truco clásico de padding-top (porcentaje SIEMPRE relativo al
+   ancho, nunca al alto) — el alto se deriva exclusivamente del ancho, sin ninguna
+   dependencia del alto del contenedor ni interacción con flexbox que pueda salir mal. */
+.vp-lienzo-caja {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  height: 0;
+  padding-top: 56.25%;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  transition: max-width 0.2s ease;
+}
+
+.vp-lienzo-caja--movil {
+  max-width: 360px;
+}
+
+.vp-lienzo-caja > app-slide-contenido-libre {
+  position: absolute;
+  inset: 0;
+}
+
+.vp-pie {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fff;
+  border-top: 1px solid #ece7d9;
 }
 
 .historial-header {
@@ -857,6 +1013,28 @@ input[type='file']::file-selector-button:hover {
   font-size: 18px;
 }
 
+.paginas-rail-acciones {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  display: flex;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.paginas-rail-item:hover .paginas-rail-acciones {
+  opacity: 1;
+}
+
+.paginas-rail-acciones .btn-mini {
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
+  border-radius: 4px;
+}
+
 .paginas-rail-titulo {
   font-size: 11px;
   color: #6b6455;
@@ -913,17 +1091,37 @@ input[type='file']::file-selector-button:hover {
   gap: 4px;
 }
 
-.zoom-porcentaje {
-  background: none;
-  border: none;
+.zoom-porcentaje-campo {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   color: #6b6455;
   font-size: 12px;
-  width: 42px;
-  cursor: pointer;
 }
 
-.zoom-porcentaje:hover {
+.zoom-porcentaje-input {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #6b6455;
+  font-size: 12px;
+  width: 34px;
+  padding: 3px 2px;
+  text-align: right;
+  -moz-appearance: textfield;
+}
+
+.zoom-porcentaje-input::-webkit-outer-spin-button,
+.zoom-porcentaje-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.zoom-porcentaje-input:hover,
+.zoom-porcentaje-input:focus {
+  border-color: #eae6da;
   color: #14100b;
+  outline: none;
 }
 
 .lienzo-bottombar .btn-icono {
@@ -1035,6 +1233,224 @@ input[type='file']::file-selector-button:hover {
   color: #6f6a61;
 }
 
+@keyframes girar {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ti-loader-2 {
+  display: inline-block;
+  animation: girar 0.7s linear infinite;
+}
+
+/* ---- Galería "Elige cómo crear" (estilo Genially) ---- */
+
+.galeria-nuevo-curso {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.galeria-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.btn-volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: #6f6a61;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.btn-volver:hover {
+  color: #14100b;
+}
+
+.buscador-galeria {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid #eae6da;
+  border-radius: 12px;
+  padding: 0 16px;
+  height: 40px;
+}
+
+.buscador-galeria > .ti-search {
+  color: #948d7c;
+  font-size: 18px;
+}
+
+.buscador-galeria input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 0.9rem;
+  color: #14100b;
+  height: 100%;
+}
+
+.buscador-galeria input::placeholder {
+  color: #b5ac97;
+}
+
+.buscador-galeria button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #948d7c;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.buscador-galeria button:hover {
+  color: #14100b;
+}
+
+.tarjeta-en-blanco {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  border: 1px dashed #d9d2bf;
+  border-radius: 16px;
+  padding: 10px 18px;
+  box-shadow: 0 4px 18px rgba(20, 16, 11, 0.04);
+}
+
+.tarjeta-en-blanco > .ti {
+  font-size: 26px;
+  color: #f5a623;
+  flex-shrink: 0;
+}
+
+.tarjeta-en-blanco .abril-field {
+  flex: 1;
+  min-width: 220px;
+}
+
+.tarjeta-en-blanco .btn-primario {
+  flex-shrink: 0;
+  background: #f5a623;
+  color: #14100b;
+}
+
+.tarjeta-en-blanco .btn-primario:hover {
+  background: #e2941a;
+}
+
+.seccion-galeria {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.seccion-galeria > h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #14100b;
+}
+
+.grilla-plantillas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.tarjeta-galeria {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #eae6da;
+  border-radius: 16px;
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 4px 18px rgba(20, 16, 11, 0.05);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.tarjeta-galeria:hover {
+  box-shadow: 0 16px 34px rgba(20, 16, 11, 0.16);
+  transform: translateY(-3px);
+}
+
+.tarjeta-galeria-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 110px;
+  color: #fff;
+  font-size: 32px;
+}
+
+.tarjeta-galeria-cover--icono {
+  background: linear-gradient(135deg, #f5a623 0%, #14100b 130%);
+}
+
+.tarjeta-galeria-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 16px 18px;
+}
+
+.tarjeta-galeria-body strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #14100b;
+}
+
+.tarjeta-galeria-body span {
+  font-size: 0.78rem;
+  color: #948d7c;
+  line-height: 1.35;
+}
+
+.tarjeta-galeria-cta {
+  position: absolute;
+  inset: 0;
+  bottom: auto;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(20, 16, 11, 0.62);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.tarjeta-galeria:hover .tarjeta-galeria-cta {
+  opacity: 1;
+}
+
 /* ---- Formulario de preguntas evaluables ---- */
 
 .segmento-btn {
@@ -1066,6 +1482,20 @@ input[type='file']::file-selector-button:hover {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-bottom: 8px;
+}
+
+.tarjeta-desliza-editable {
+  border: 1px solid #ece7d9;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.tarjeta-desliza-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 8px;
 }
 
@@ -1174,19 +1604,6 @@ input[type='file']::file-selector-button:hover {
   border: 1px solid #ece7d9;
   border-radius: 8px;
   font-size: 13px;
-}
-
-.agregar-slide {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
-.agregar-slide > span {
-  font-size: 0.85rem;
-  color: #6f6a61;
-  font-weight: 600;
 }
 
 .chip-tipo {

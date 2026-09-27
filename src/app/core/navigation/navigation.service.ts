@@ -232,6 +232,8 @@ export class NavigationService {
       behavior: 'expand',
       landing: '/ssoma/gestion/paso/dashboard',
       items: [
+        { label: 'ATS Digital', route: '/ssoma/gestion/ats', featureKey: 'ssoma.gestion.ats' },
+        { label: 'PETAR (Alto Riesgo)', route: '/ssoma/gestion/petar', featureKey: 'ssoma.gestion.ats' },
         { label: 'Prog. Anual SSOMA', route: '/ssoma/gestion/paso/dashboard', featureKey: 'ssoma.gestion.paso' },
         { label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard', featureKey: 'ssoma.gestion.rac' },
         { label: 'Penalidades', route: '/ssoma/gestion/penalidades', featureKey: 'ssoma.gestion.penalidades.lista' },

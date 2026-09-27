@@ -3,9 +3,18 @@
   <input type="file" accept="image/*" #fiLogo style="display:none" (change)="subirImagenA(curso, 'logoUrl', $event)" />
   <input type="file" accept="image/*" #fiFondo style="display:none" (change)="subirImagenFondo($event)" />
 
+  <app-audio-picker-modal
+    [abierto]="mostrarModalAudio"
+    (cerrar)="mostrarModalAudio = false"
+    (resultado)="onResultadoAudio($event)"
+  ></app-audio-picker-modal>
+
   <div class="admin-topbar">
     <span class="admin-kicker"><i class="ti ti-tool"></i> Panel de administración de cursos</span>
-    <a class="admin-link" routerLink="/cursos">Ver catálogo público <i class="ti ti-external-link"></i></a>
+    <div class="admin-links-derecha">
+      <a class="admin-link" routerLink="/cursos/historial"><i class="ti ti-shield-check"></i> Historial de evaluaciones</a>
+      <a class="admin-link" routerLink="/cursos">Ver catálogo público <i class="ti ti-external-link"></i></a>
+    </div>
   </div>
 
   <div class="lista-cursos-admin" *ngIf="!cursoId && !mostrarFormularioNuevo">
@@ -16,17 +25,41 @@
       </button>
     </div>
 
-    <div class="fila-cursos-existentes" *ngIf="todosLosCursos.length">
-      <div class="fila-curso" *ngFor="let c of todosLosCursos" (click)="irAEditar(c)">
-        <span
-          class="punto-color"
-          [style.background]="'linear-gradient(135deg, ' + (c.colorTema || '#f5a623') + ' 0%, #14100b 130%)'"
-        ></span>
-        <div class="fila-curso-info">
-          <strong>{{ c.titulo }}</strong>
-          <span>{{ c.categoriaNombre || 'Sin categoría' }} · Nota mínima {{ c.notaMinimaAprobacion }}</span>
+    <div class="grilla-cursos-admin" *ngIf="todosLosCursos.length">
+      <div class="tarjeta-curso-admin" *ngFor="let c of todosLosCursos" (click)="irAEditar(c)">
+        <div
+          class="tarjeta-curso-admin-cover"
+          [style.background]="'linear-gradient(125deg, ' + (c.colorTema || '#f5a623') + ' 0%, #14100b 115%)'"
+        >
+          <span class="tarjeta-curso-admin-patron"></span>
+          <span class="tarjeta-curso-admin-badge tarjeta-curso-admin-badge--plantilla" *ngIf="c.esPlantilla">
+            <i class="ti ti-stack-2"></i> Plantilla
+          </span>
+          <span class="tarjeta-curso-admin-badge" *ngIf="!c.esPlantilla && c.categoriaNombre">{{ c.categoriaNombre }}</span>
+          <div class="tarjeta-curso-admin-icono"><i class="ti ti-school"></i></div>
         </div>
-        <i class="ti ti-chevron-right"></i>
+        <div class="tarjeta-curso-admin-body">
+          <strong>{{ c.titulo }}</strong>
+          <span class="tarjeta-curso-admin-meta">
+            <i class="ti ti-target-arrow"></i> Nota mínima {{ c.notaMinimaAprobacion }}
+            <span class="punto-estado" [class.punto-estado--inactivo]="!c.activo"></span>
+            {{ c.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+        </div>
+        <div class="tarjeta-curso-admin-footer">
+          <span>Editar curso</span>
+          <div class="tarjeta-curso-admin-footer-derecha">
+            <button
+              type="button"
+              class="btn-eliminar-tarjeta-admin"
+              (click)="eliminarCurso(c, $event)"
+              title="Eliminar curso"
+            >
+              <i class="ti ti-trash"></i>
+            </button>
+            <i class="ti ti-arrow-right"></i>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -44,19 +77,149 @@
       placeholder="Título del curso"
       (blur)="guardarCurso()"
     />
+    <button type="button" class="btn-link" (click)="guardarComoPlantilla()" title="Guardar una copia como plantilla reutilizable">
+      <i class="ti ti-stack-2"></i> Guardar como plantilla
+    </button>
     <button type="button" class="btn-link" (click)="abrirConfiguracionCurso()" title="Configuración del curso">
       <i class="ti ti-settings"></i> Configuración
     </button>
   </div>
 
-  <section class="panel" *ngIf="mostrarFormularioNuevo && !cursoId">
-    <h2><i class="ti ti-file-description"></i> Datos del curso</h2>
-    <div class="abril-field">
-      <input class="abril-field-input" type="text" id="titulo" [(ngModel)]="curso.titulo" placeholder=" " />
-      <label class="abril-field-label" for="titulo">Título</label>
+  <div class="galeria-nuevo-curso" *ngIf="mostrarFormularioNuevo && !cursoId">
+    <div class="galeria-header">
+      <button type="button" class="btn-volver" (click)="mostrarFormularioNuevo = false">
+        <i class="ti ti-arrow-left"></i> Volver
+      </button>
+      <h1 class="titulo-pagina">Elige cómo crear tu curso</h1>
     </div>
-    <button type="button" class="btn-primario" (click)="guardarCurso()">Crear curso</button>
-  </section>
+
+    <div class="buscador-galeria">
+      <i class="ti ti-search"></i>
+      <input
+        type="text"
+        [(ngModel)]="filtroGaleria"
+        placeholder="Buscar plantilla por nombre o categoría..."
+      />
+      <button type="button" *ngIf="filtroGaleria" (click)="filtroGaleria = ''" title="Limpiar búsqueda">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+
+    <div class="tarjeta-en-blanco" *ngIf="!filtroGaleria">
+      <i class="ti ti-file-plus"></i>
+      <div class="abril-field">
+        <input class="abril-field-input" type="text" id="titulo" [(ngModel)]="curso.titulo" placeholder=" " />
+        <label class="abril-field-label" for="titulo">Título del curso</label>
+      </div>
+      <button type="button" class="btn-primario" (click)="guardarCurso()">
+        <i class="ti ti-plus"></i> Crear en blanco
+      </button>
+    </div>
+
+    <div class="seccion-galeria" *ngIf="plantillasGuardadasFiltradas.length">
+      <h3><i class="ti ti-stack-2"></i> Tus plantillas</h3>
+      <div class="grilla-plantillas">
+        <button
+          type="button"
+          class="tarjeta-galeria"
+          *ngFor="let pl of plantillasGuardadasFiltradas"
+          (click)="previsualizarPlantillaGuardada(pl)"
+        >
+          <span
+            class="tarjeta-galeria-cover"
+            [style.background]="'linear-gradient(135deg, ' + (pl.colorTema || '#f5a623') + ' 0%, #14100b 130%)'"
+          >
+            <i class="ti ti-school"></i>
+          </span>
+          <span class="tarjeta-galeria-body">
+            <strong>{{ pl.titulo }}</strong>
+            <span>{{ pl.categoriaNombre || 'Plantilla' }}</span>
+          </span>
+          <span class="tarjeta-galeria-cta"><i class="ti ti-eye"></i> Ver plantilla</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="seccion-galeria" *ngIf="plantillasCursoFiltradas.length">
+      <h3><i class="ti ti-sparkles"></i> Plantillas rápidas</h3>
+      <div class="grilla-plantillas">
+        <button
+          type="button"
+          class="tarjeta-galeria"
+          *ngFor="let pl of plantillasCursoFiltradas"
+          (click)="previsualizarPlantillaRapida(pl)"
+        >
+          <span class="tarjeta-galeria-cover tarjeta-galeria-cover--icono">
+            <i class="ti" [ngClass]="pl.icono"></i>
+          </span>
+          <span class="tarjeta-galeria-body">
+            <strong>{{ pl.nombre }}</strong>
+            <span>{{ pl.descripcion }}</span>
+          </span>
+          <span class="tarjeta-galeria-cta"><i class="ti ti-eye"></i> Ver plantilla</span>
+        </button>
+      </div>
+    </div>
+
+    <p
+      class="sin-cursos"
+      *ngIf="filtroGaleria && !plantillasGuardadasFiltradas.length && !plantillasCursoFiltradas.length"
+    >
+      Ninguna plantilla coincide con "{{ filtroGaleria }}".
+    </p>
+  </div>
+
+  <!-- Vista previa de una plantilla ANTES de crear el curso: navega pantalla por
+       pantalla con el mismo componente del reproductor real (animaciones incluidas), y
+       recién desde acá se decide "Usar esta plantilla". -->
+  <div class="vp-pantalla" *ngIf="previewSlides as slides">
+    <div class="vp-topbar">
+      <span class="vp-aviso"><i class="ti ti-eye"></i> Esto es una vista previa — {{ previewTitulo }}</span>
+      <div class="vp-dispositivo">
+        <button type="button" [class.activo]="previewDispositivo === 'escritorio'" (click)="previewDispositivo = 'escritorio'">
+          <i class="ti ti-device-desktop"></i> Escritorio
+        </button>
+        <button type="button" [class.activo]="previewDispositivo === 'movil'" (click)="previewDispositivo = 'movil'">
+          <i class="ti ti-device-mobile"></i> Móvil
+        </button>
+      </div>
+      <button type="button" class="vp-cerrar" (click)="cerrarPreviewPlantilla()"><i class="ti ti-x"></i> Cerrar</button>
+    </div>
+
+    <div class="vp-cuerpo" (click)="cerrarPreviewPlantilla()">
+      <div class="vp-lienzo-caja" [class.vp-lienzo-caja--movil]="previewDispositivo === 'movil'" (click)="$event.stopPropagation()">
+        <app-slide-contenido-libre
+          *ngIf="slides[previewIndice] as s"
+          [slide]="s"
+          (irAPagina)="avanzarPreviewPorClic()"
+        ></app-slide-contenido-libre>
+      </div>
+    </div>
+
+    <div class="vp-pie">
+      <div class="paginador">
+        <button type="button" class="btn-icono" [disabled]="previewIndice === 0" (click)="previewIndice = previewIndice - 1" title="Pantalla anterior">
+          <i class="ti ti-chevron-left"></i>
+        </button>
+        <span>{{ previewIndice + 1 }} / {{ slides.length }}</span>
+        <button type="button" class="btn-icono" [disabled]="previewIndice === slides.length - 1" (click)="previewIndice = previewIndice + 1" title="Pantalla siguiente">
+          <i class="ti ti-chevron-right"></i>
+        </button>
+      </div>
+      <button
+        type="button"
+        class="btn-secundario"
+        *ngIf="previewEsRapida"
+        (click)="convertirPlantillaRapidaEnEditable()"
+        title="Crea una copia editable de esta plantilla en 'Tus plantillas', para modificarla desde la interfaz"
+      >
+        <i class="ti ti-edit"></i> Convertir en plantilla editable
+      </button>
+      <button type="button" class="btn-primario" (click)="confirmarUsarPreview()">
+        <i class="ti ti-wand"></i> Usar esta plantilla
+      </button>
+    </div>
+  </div>
 
   <!-- Configuración del curso: modal, no pantalla completa -->
   <div class="historial-backdrop" *ngIf="mostrarConfiguracionCurso" (click)="cerrarConfiguracionCurso()">
@@ -76,10 +239,8 @@
           <label class="abril-field-label">Nota mínima de aprobación</label>
         </div>
       </div>
-      <div class="campo-color">
-        <label>Color del tema</label>
-        <app-color-hex-input [valor]="curso.colorTema" (valorChange)="curso.colorTema = $event" />
-      </div>
+      <hr class="separador" />
+      <p class="ayuda">El Kit de marca (colores + color de texto) se edita ahora desde el botón <i class="ti ti-palette"></i> "Estilo" del riel de herramientas, dentro del lienzo de cada pantalla.</p>
 
       <div class="campo-logo">
         <label>Logo de marca (para insertar rápido en cualquier pantalla)</label>
@@ -100,60 +261,15 @@
     </div>
   </div>
 
-  <section class="panel" *ngIf="cursoId">
-    <h2><i class="ti ti-layout-grid"></i> Pantallas del curso ({{ slides.length }})</h2>
-
-    <div class="grilla-slides" *ngIf="slides.length">
-      <div
-        class="miniatura-slide"
-        *ngFor="let s of slides"
-        (click)="confirmarAbrirSlide(s)"
-        [style.background]="'linear-gradient(135deg, ' + (curso.colorTema || '#f5a623') + ' 0%, #14100b 130%)'"
-      >
-        <span class="orden-badge">{{ s.orden }}</span>
-        <div class="acciones-miniatura">
-          <button
-            type="button"
-            class="btn-mini"
-            *ngIf="TIPOS_EVALUABLES.includes(s.tipoCodigo)"
-            (click)="guardarSlideEnBanco(s); $event.stopPropagation()"
-            title="Guardar en el banco de preguntas"
-          ><i class="ti ti-bookmark"></i></button>
-          <button type="button" class="btn-mini" (click)="duplicarSlide(s); $event.stopPropagation()" title="Duplicar"><i class="ti ti-copy"></i></button>
-          <button type="button" class="btn-mini btn-mini-danger" (click)="eliminarSlide(s); $event.stopPropagation()" title="Eliminar"><i class="ti ti-trash"></i></button>
-        </div>
-        <div class="miniatura-cuerpo">
-          <ng-container *ngIf="elementosPreviaSlide(s) as previaEls">
-            <i class="ti miniatura-icono" [ngClass]="iconoParaTipo(s.tipoCodigo)" *ngIf="!previaEls.length"></i>
-            <div
-              class="previa-elemento"
-              *ngFor="let el of previaEls"
-              [style.left.%]="(el.x / canvasAncho) * 100"
-              [style.top.%]="(el.y / canvasAlto) * 100"
-              [style.width.%]="(el.ancho / canvasAncho) * 100"
-              [style.height.%]="(el.alto / canvasAlto) * 100"
-              [style.background]="el.tipo === 'forma' || el.tipo === 'boton' ? (el.colorFondo || '#f5a623') : el.tipo === 'imagen' || el.tipo === 'video' ? '#d8d2c2' : 'transparent'"
-              [style.border-radius]="el.tipo === 'forma' && el.formaTipo === 'circulo' ? '50%' : '2px'"
-            >
-              <span
-                *ngIf="el.tipo === 'texto'"
-                class="previa-texto-linea"
-                [style.background]="el.colorTexto || '#14100b'"
-                [style.width.%]="el.alineacion === 'center' ? 60 : 90"
-                [style.margin]="el.alineacion === 'center' ? '0 auto' : '0'"
-              ></span>
-            </div>
-          </ng-container>
-          <span class="miniatura-titulo">{{ tituloSlide(s) }}</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="agregar-slide">
-      <button type="button" class="btn-primario" (click)="abrirSelectorPlantilla()">
-        <i class="ti ti-plus"></i> Agregar pantalla
-      </button>
-    </div>
+  <!-- Solo aparece en el caso borde de un curso recién creado sin ninguna pantalla — el
+       riel "Páginas" del propio lienzo ya reemplaza la antigua grilla de miniaturas para
+       cualquier otro caso (ver Pantallas del curso, ronda 26-sep-2026). -->
+  <section class="panel" *ngIf="cursoId && !slideEditando && !slides.length">
+    <h2><i class="ti ti-layout-grid"></i> Este curso todavía no tiene pantallas</h2>
+    <p class="ayuda">Agrega la primera para empezar a armar el contenido.</p>
+    <button type="button" class="btn-primario" (click)="abrirSelectorPlantilla()">
+      <i class="ti ti-plus"></i> Agregar primera pantalla
+    </button>
   </section>
 
   <!-- Editor: siempre el lienzo a pantalla completa, sin panel dividido ni vista previa
@@ -202,8 +318,35 @@
         <button type="button" class="btn-secundario" *ngIf="curso.logoUrl" (click)="agregarLogoAlLienzo()" title="Insertar el logo de marca del curso">
           <i class="ti ti-photo-plus"></i> Logo
         </button>
+        <button type="button" class="btn-secundario" (click)="mostrarVistaPrevia = true" title="Ver esta pantalla como la verá el trabajador, con animaciones reales">
+          <i class="ti ti-player-play"></i> Vista previa
+        </button>
         <button type="button" class="btn-secundario" (click)="cancelarEdicionSlide()">Cancelar</button>
         <button type="button" class="btn-primario" (click)="guardarSlide()">Guardar pantalla</button>
+      </div>
+    </div>
+
+    <!-- Vista previa: la MISMA slide que se está editando (elementos, animaciones,
+         temporización), renderizada con el componente real del reproductor — no una
+         maqueta aparte, para que lo que se ve aquí sea exactamente lo que verá el
+         trabajador. Solo lectura: no crea intentos ni guarda nada. -->
+    <div class="vp-pantalla" *ngIf="mostrarVistaPrevia">
+      <div class="vp-topbar">
+        <span class="vp-aviso"><i class="ti ti-eye"></i> Esto es una vista previa.</span>
+        <div class="vp-dispositivo">
+          <button type="button" [class.activo]="previewDispositivo === 'escritorio'" (click)="previewDispositivo = 'escritorio'">
+            <i class="ti ti-device-desktop"></i> Escritorio
+          </button>
+          <button type="button" [class.activo]="previewDispositivo === 'movil'" (click)="previewDispositivo = 'movil'">
+            <i class="ti ti-device-mobile"></i> Móvil
+          </button>
+        </div>
+        <button type="button" class="vp-cerrar" (click)="mostrarVistaPrevia = false"><i class="ti ti-x"></i> Cerrar</button>
+      </div>
+      <div class="vp-cuerpo" (click)="mostrarVistaPrevia = false">
+        <div class="vp-lienzo-caja" [class.vp-lienzo-caja--movil]="previewDispositivo === 'movil'" (click)="$event.stopPropagation()">
+          <app-slide-contenido-libre *ngIf="slideParaVistaPrevia as vp" [slide]="vp"></app-slide-contenido-libre>
+        </div>
       </div>
     </div>
 
@@ -231,6 +374,17 @@
                 class="paginas-rail-miniatura"
                 [style.background]="'linear-gradient(135deg, ' + (curso.colorTema || '#f5a623') + ' 0%, #14100b 130%)'"
               >
+                <div class="paginas-rail-acciones">
+                  <button
+                    type="button"
+                    class="btn-mini"
+                    *ngIf="TIPOS_EVALUABLES.includes(s.tipoCodigo)"
+                    (click)="guardarSlideEnBanco(s); $event.stopPropagation()"
+                    title="Guardar en el banco de preguntas"
+                  ><i class="ti ti-bookmark"></i></button>
+                  <button type="button" class="btn-mini" (click)="duplicarSlide(s); $event.stopPropagation()" title="Duplicar"><i class="ti ti-copy"></i></button>
+                  <button type="button" class="btn-mini btn-mini-danger" (click)="eliminarSlide(s); $event.stopPropagation()" title="Eliminar"><i class="ti ti-trash"></i></button>
+                </div>
                 <ng-container *ngIf="elementosPreviaSlide(s) as previaEls">
                   <i class="ti" [ngClass]="iconoParaTipo(s.tipoCodigo)" *ngIf="!previaEls.length"></i>
                   <div
@@ -269,10 +423,15 @@
           [elementos]="slide.campos.elementos"
           [fondoCss]="fondoLienzoActual"
           [paginasDisponibles]="paginasParaBoton"
-          [colorTema]="curso.colorTema"
+          [(colorTema)]="curso.colorTema"
+          [(colorMarcaSecundario)]="curso.colorMarcaSecundario"
+          [(colorMarcaTerciario)]="curso.colorMarcaTerciario"
+          [(colorTextoMarca)]="curso.colorTextoMarca"
+          [(estilosTextoMarcaJson)]="curso.estilosTextoMarcaJson"
           (elementosChange)="slide.campos.elementos = $event"
           (subirImagen)="subirImagenElementoLibre($event)"
           (subirAudio)="subirAudioElementoLibre($event)"
+          (subirAudioPregunta)="subirAudioPreguntaElementoLibre($event)"
           (abrirBancoPreguntas)="abrirSelectorPlantillaEnBanco()"
         />
 
@@ -280,8 +439,19 @@
         <div class="lienzo-bottombar">
           <div class="zoom-control">
             <button type="button" class="btn-icono" (click)="ce.zoomOut()" title="Alejar"><i class="ti ti-zoom-out"></i></button>
-            <button type="button" class="zoom-porcentaje" (click)="ce.zoomAjustar()" title="Ajustar al espacio disponible">{{ ce.porcentajeZoom }}%</button>
+            <span class="zoom-porcentaje-campo">
+              <input
+                type="number"
+                class="zoom-porcentaje-input"
+                min="20"
+                max="200"
+                [ngModel]="ce.porcentajeZoom"
+                (change)="ce.zoomFijar($any($event.target).valueAsNumber)"
+                title="Escribe un porcentaje de zoom exacto"
+              />%
+            </span>
             <button type="button" class="btn-icono" (click)="ce.zoomIn()" title="Acercar"><i class="ti ti-zoom-in"></i></button>
+            <button type="button" class="btn-icono" (click)="ce.zoomAjustar()" title="Ajustar al espacio disponible"><i class="ti ti-arrows-maximize"></i></button>
           </div>
           <div class="paginador">
             <button type="button" class="btn-icono" [disabled]="!puedeIrAnterior" (click)="irAPagina(-1)" title="Página anterior">
@@ -538,20 +708,35 @@
         <button type="button" class="btn-secundario" (click)="agregarOpcion()"><i class="ti ti-plus"></i> Agregar opción</button>
       </ng-container>
 
-      <!-- Desliza y acierta (misma lógica que V/F, otra piel: tarjeta + botones ✗/✓) -->
+      <!-- Desliza y acierta: mazo de varias tarjetas, estilo Genially — cada una su propia
+           afirmación + imagen opcional + si es verdadera o falsa. -->
       <ng-container *ngIf="p.tipoCodigo === 'pregunta_desliza_acierta'">
-        <div class="abril-field">
-          <textarea class="abril-field-input" rows="2" [(ngModel)]="p.enunciado" placeholder=" "></textarea>
-          <label class="abril-field-label">Afirmación</label>
+        <p class="ayuda">Cada tarjeta es una afirmación que el alumno desliza a la izquierda (Falso) o a la derecha (Verdadero):</p>
+        <div class="tarjeta-desliza-editable" *ngFor="let t of p.deslizaTarjetas; let i = index">
+          <div class="tarjeta-desliza-header">
+            <span class="orden-badge orden-badge-inline">{{ i + 1 }}</span>
+            <button type="button" class="btn-link btn-link-danger" *ngIf="p.deslizaTarjetas.length > 1" (click)="quitarTarjetaDesliza(i)"><i class="ti ti-trash"></i></button>
+          </div>
+          <div class="abril-field">
+            <textarea class="abril-field-input" rows="2" [(ngModel)]="t.texto" placeholder=" "></textarea>
+            <label class="abril-field-label">Afirmación</label>
+          </div>
+          <div class="abril-field">
+            <input class="abril-field-input" type="text" [(ngModel)]="t.imagenUrl" placeholder=" " />
+            <label class="abril-field-label">Imagen de la tarjeta (URL, opcional)</label>
+          </div>
+          <div class="fila-campos">
+            <button type="button" class="segmento-btn" [class.segmento-activo]="t.correcta" (click)="t.correcta = true">✓ Verdadera</button>
+            <button type="button" class="segmento-btn" [class.segmento-activo]="!t.correcta" (click)="t.correcta = false">✗ Falsa</button>
+          </div>
         </div>
-        <div class="abril-field">
-          <input class="abril-field-input" type="text" [(ngModel)]="p.imagenUrl" placeholder=" " />
-          <label class="abril-field-label">Imagen de la tarjeta (URL, opcional)</label>
-        </div>
-        <p class="ayuda">Marca cuál es la respuesta correcta:</p>
-        <div class="fila-campos">
-          <button type="button" class="segmento-btn opcion-vf" [class.segmento-activo]="p.opciones[0]?.correcta" (click)="marcarOpcionCorrecta(0)">✓ Correcta</button>
-          <button type="button" class="segmento-btn opcion-vf" [class.segmento-activo]="p.opciones[1]?.correcta" (click)="marcarOpcionCorrecta(1)">✗ Incorrecta</button>
+        <button type="button" class="btn-secundario" (click)="agregarTarjetaDesliza()"><i class="ti ti-plus"></i> Tarjeta</button>
+
+        <hr class="separador" />
+
+        <div class="abril-field campo-corto">
+          <input class="abril-field-input" type="number" min="0" max="100" [(ngModel)]="p.deslizaUmbralAprobarPct" placeholder=" " />
+          <label class="abril-field-label">% de aciertos para superar la actividad</label>
         </div>
       </ng-container>
 

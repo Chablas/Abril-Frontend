@@ -18,9 +18,16 @@
   overflow: hidden;
 }
 
+/* opacity:1 por defecto — cada @keyframes de entrada define su propio "from { opacity: 0 }",
+   así que el fade-in visual no depende de esta regla base. Antes esto era opacity:0 aquí y
+   se confiaba en que la animación llegara a completarse para mostrar el elemento: si por
+   cualquier motivo la animación no corre (prefers-reduced-motion, timing, un contenedor que
+   se midió en 0 en el primer frame, etc.) el elemento quedaba invisible PARA SIEMPRE, sin
+   ningún respaldo. Con la base en opacity:1, en el peor caso un elemento con animación de
+   entrada aparece de golpe en vez de con fade — nunca invisible. */
 .libre-elemento {
   position: absolute;
-  opacity: 0;
+  opacity: 1;
   animation-fill-mode: forwards;
   animation-duration: 0.6s;
 }
@@ -78,14 +85,71 @@
 .libre-pregunta {
   width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow: hidden;
   background: #fff;
-  border-radius: 12px;
+  border-radius: 0;
   padding: 20px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+/* ---- Estilos de la pregunta embebida (pestaña Diseño > Estilo, estilo Genially) ----
+   Los colores personalizados (el.colorFondo/colorTexto, aplicados vía [style.*] en el html)
+   siempre ganan por encima de estas reglas de clase — ver canvas-editor.css, mismo criterio. */
+
+.libre-pregunta-oscuro {
+  background: #1c1c1e;
+  color: #fff;
+}
+
+.libre-pregunta-adaptado-oscuro {
+  background: transparent;
+  color: #fff;
+  box-shadow: none;
+}
+
+.libre-pregunta-adaptado-claro {
+  background: transparent;
+  color: #1c1c1c;
+  box-shadow: none;
+}
+
+.libre-pregunta-temporizador {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.libre-pregunta-oscuro .libre-pregunta-temporizador,
+.libre-pregunta-adaptado-oscuro .libre-pregunta-temporizador {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.libre-pregunta-temporizador-critico {
+  background: #fdeceb;
+  color: #c0392b;
+}
+
+.libre-pregunta-mensaje-temporizador {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fdeceb;
+  color: #c0392b;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 8px;
+  text-align: center;
 }
 
 .libre-elemento.interactivo {

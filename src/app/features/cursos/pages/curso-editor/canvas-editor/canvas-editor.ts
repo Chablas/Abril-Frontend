@@ -14,13 +14,29 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ElementoLibre, ElementoTipo, ElementoPreguntaConfig } from '../../../dtos/curso.dtos';
+import {
+  ElementoLibre,
+  ElementoTipo,
+  ElementoPreguntaConfig,
+  PreguntaAccionItem,
+  PreguntaAccionTipo,
+} from '../../../dtos/curso.dtos';
 import Swal from 'sweetalert2';
 import { CANVAS_ANCHO, CANVAS_ALTO } from '../../curso-player/slides/slide-contenido-libre/slide-contenido-libre';
 import { resolverEtiquetaSlide } from '../../curso-player/slide-tipo-registro';
 import { IconoPicker } from './icono-picker/icono-picker';
 import { TimelineAnimaciones } from './timeline-animaciones/timeline-animaciones';
 import { ColorHexInput } from '../../../shared/color-hex-input/color-hex-input';
+import { cargarGoogleFont } from '../../../google-font-loader';
+
+/** Los 4 campos de ElementoLibre que guardan una PreguntaAccionResultado — "Si acierta"/
+ *  "Si falla" (tipos con un único clic de respuesta) y, para pregunta_emparejar, también
+ *  "Al finalizar el temporizador"/"Al finalizar la actividad" (ver canvas-editor.html). */
+type RamaAccionPregunta =
+  | 'preguntaAccionAcierto'
+  | 'preguntaAccionError'
+  | 'preguntaAccionTemporizador'
+  | 'preguntaAccionFinActividad';
 
 let idCorrelativo = 1;
 function nuevoId(): string {
@@ -85,6 +101,59 @@ export const ESTILOS_TEXTO: EstiloTextoPreset[] = [
     ancho: 380,
     alto: 120,
   },
+];
+
+/** Fuentes de Google Fonts para el selector de cada rol de "Estilos de texto" — mismo
+ *  catálogo curado de antes (skill ui-ux-pro-max), aplanado a una lista de nombres
+ *  individuales en vez de pares fijos: acá cada rol (Título 1, Título 2, etc.) elige SU
+ *  PROPIA fuente, estilo Genially real (no una pareja única para todo el kit). */
+export const FUENTES_DISPONIBLES: string[] = [
+  'Poppins',
+  'Open Sans',
+  'Lexend',
+  'Source Sans 3',
+  'IBM Plex Sans',
+  'Plus Jakarta Sans',
+  'Playfair Display',
+  'Inter',
+  'Bodoni Moda',
+  'Jost',
+  'DM Sans',
+];
+
+export interface EstiloTextoMarca {
+  fuente: string;
+  tamanoFuente: number;
+  color: string;
+  negrita: boolean;
+  cursiva: boolean;
+  subrayado: boolean;
+}
+
+export type RolTextoMarca = 'titulo1' | 'titulo2' | 'subtitulo' | 'parrafo';
+
+/** Default de cada rol si el curso todavía no personalizó nada — mismos tamaños que
+ *  ESTILOS_TEXTO, fuente de la app y color oscuro neutro. */
+export const ESTILOS_TEXTO_MARCA_DEFAULT: Record<RolTextoMarca, EstiloTextoMarca> = {
+  titulo1: { fuente: '', tamanoFuente: 48, color: '#14100b', negrita: true, cursiva: false, subrayado: false },
+  titulo2: { fuente: '', tamanoFuente: 34, color: '#14100b', negrita: true, cursiva: false, subrayado: false },
+  subtitulo: { fuente: '', tamanoFuente: 22, color: '#14100b', negrita: false, cursiva: false, subrayado: false },
+  parrafo: { fuente: '', tamanoFuente: 16, color: '#14100b', negrita: false, cursiva: false, subrayado: false },
+};
+
+export interface PaletaMarca {
+  id: string;
+  colores: [string, string, string];
+}
+
+// Paletas curadas (fuente: skill ui-ux-pro-max, base de datos de colores por tipo de
+// producto — no inventadas a mano), pensadas para capacitación corporativa: profesionales,
+// no estridentes.
+export const PALETAS_MARCA: PaletaMarca[] = [
+  { id: 'b2b', colores: ['#0F172A', '#334155', '#0369A1'] },
+  { id: 'inmobiliaria', colores: ['#0F766E', '#14B8A6', '#0369A1'] },
+  { id: 'crm', colores: ['#2563EB', '#3B82F6', '#059669'] },
+  { id: 'facturacion', colores: ['#1E3A5F', '#2563EB', '#059669'] },
 ];
 
 export interface EfectoDef {
@@ -175,12 +244,214 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
   @Input() fondoCss: string | null = null;
   /** Otras pantallas del curso a las que un botón puede saltar ("Ir a página"). */
   @Input() paginasDisponibles: { id: number; titulo: string }[] = [];
-  /** Color de tema del curso (curso.colorTema); se ofrece como swatch rápido en los
-   *  selectores de color, junto a un par de colores de marca fijos. */
+  /** Kit de marca del curso (Configuración del curso > Kit de marca) — se ofrece como
+   *  swatch rápido en los selectores de color de todo el editor. colorMarcaSecundario/
+   *  Terciario/colorTextoMarca son PENDIENTES DE BACKEND (ver nota en curso.dtos.ts): no
+   *  persisten todavía entre recargas, pero ya funcionan dentro de esta misma sesión. */
   @Input() colorTema: string | null | undefined = null;
+  @Output() colorTemaChange = new EventEmitter<string | null>();
+  @Input() colorMarcaSecundario: string | null | undefined = null;
+  @Output() colorMarcaSecundarioChange = new EventEmitter<string | null>();
+  @Input() colorMarcaTerciario: string | null | undefined = null;
+  @Output() colorMarcaTerciarioChange = new EventEmitter<string | null>();
+  @Input() colorTextoMarca: string | null | undefined = null;
+  @Output() colorTextoMarcaChange = new EventEmitter<string | null>();
+
+  /** Campos de color (de cualquier tipo de elemento) que participan en el recoloreo en
+   *  vivo del Kit de marca — ver onCambiarColorMarca. */
+  private static readonly CAMPOS_COLOR_RECOLOREABLES: (keyof ElementoLibre)[] = [
+    'colorFondo',
+    'colorTexto',
+    'emparejarColorFondo',
+    'emparejarColorSeleccion',
+    'emparejarColorBordeCorrecto',
+    'emparejarColorBordeIncorrecto',
+    'emparejarColorLinea',
+    'deslizaColorFondo',
+    'deslizaColorTexto',
+    'deslizaColorProgreso',
+    'deslizaColorDegradado',
+    'deslizaColorIconoFalso',
+    'deslizaColorFondoBotonFalso',
+    'deslizaColorIconoVerdadero',
+    'deslizaColorFondoBotonVerdadero',
+    'deslizaFeedbackCorrectoColor',
+    'deslizaFeedbackIncorrectoColor',
+    'deslizaResultadoColorFondo',
+    'deslizaResultadoFondoTarjeta',
+    'deslizaResultadoColorEtiquetas',
+    'deslizaResultadoColorValorCorrecto',
+    'deslizaResultadoColorValorIncorrecto',
+  ];
+
+  /** Cambiar un color del Kit de marca recolorea EN VIVO cualquier elemento de ESTA
+   *  pantalla que use ese mismo color exacto (sustitución de valor, no una referencia de
+   *  "tema" — más simple y suficiente: si dos elementos comparten el mismo hex por
+   *  coincidencia, también se recolorean juntos, caso borde aceptado). Deliberadamente
+   *  NO toca las demás pantallas del curso — hacerlo requeriría cargar y guardar cada slide
+   *  en silencio mientras el autor edita otra, demasiado riesgoso para hacerlo solo. */
+  private recolorearElementos(anterior: string | null | undefined, nuevo: string): void {
+    if (!anterior || anterior === nuevo) return;
+    let cambiado = false;
+    const nuevosElementos = this.elementos.map((el) => {
+      const copia: any = { ...el };
+      for (const campo of CanvasEditor.CAMPOS_COLOR_RECOLOREABLES) {
+        if (copia[campo] === anterior) {
+          copia[campo] = nuevo;
+          cambiado = true;
+        }
+      }
+      return copia as ElementoLibre;
+    });
+    if (cambiado) {
+      this.elementos = nuevosElementos;
+      this.emitir();
+      this.guardarHistorial();
+    }
+  }
+
+  onCambiarColorMarca(slot: 'principal' | 'secundario' | 'terciario', nuevo: string): void {
+    const anterior = slot === 'principal' ? this.colorTema : slot === 'secundario' ? this.colorMarcaSecundario : this.colorMarcaTerciario;
+    this.recolorearElementos(anterior, nuevo);
+    if (slot === 'principal') this.colorTemaChange.emit(nuevo);
+    else if (slot === 'secundario') this.colorMarcaSecundarioChange.emit(nuevo);
+    else this.colorMarcaTerciarioChange.emit(nuevo);
+  }
+
+  /** "Estilos de texto" del Kit de marca — a diferencia de la primera versión (un solo par
+   *  de fuentes para todo), acá CADA rol (Título 1/2, Subtítulo, Párrafo) tiene su propia
+   *  fuente/tamaño/color editable, igual que el panel real de Genially. Se guarda como un
+   *  único JSON opaco (PENDIENTE DE BACKEND, ver curso.dtos.ts) para no necesitar 12
+   *  columnas nuevas — el frontend arma/parsea el objeto. */
+  @Input() set estilosTextoMarcaJson(value: string | null | undefined) {
+    this._estilosTextoMarcaJson = value;
+    try {
+      const guardado = value ? JSON.parse(value) : {};
+      this.estilosTextoMarca = {
+        titulo1: { ...ESTILOS_TEXTO_MARCA_DEFAULT.titulo1, ...guardado.titulo1 },
+        titulo2: { ...ESTILOS_TEXTO_MARCA_DEFAULT.titulo2, ...guardado.titulo2 },
+        subtitulo: { ...ESTILOS_TEXTO_MARCA_DEFAULT.subtitulo, ...guardado.subtitulo },
+        parrafo: { ...ESTILOS_TEXTO_MARCA_DEFAULT.parrafo, ...guardado.parrafo },
+      };
+    } catch {
+      this.estilosTextoMarca = { ...ESTILOS_TEXTO_MARCA_DEFAULT };
+    }
+    for (const rol of Object.values(this.estilosTextoMarca)) cargarGoogleFont(rol.fuente);
+  }
+  get estilosTextoMarcaJson(): string | null | undefined {
+    return this._estilosTextoMarcaJson;
+  }
+  private _estilosTextoMarcaJson: string | null | undefined = null;
+  @Output() estilosTextoMarcaJsonChange = new EventEmitter<string | null>();
+
+  estilosTextoMarca: Record<RolTextoMarca, EstiloTextoMarca> = { ...ESTILOS_TEXTO_MARCA_DEFAULT };
+  readonly fuentesDisponibles = FUENTES_DISPONIBLES;
+  readonly rolesTexto: RolTextoMarca[] = ['titulo1', 'titulo2', 'subtitulo', 'parrafo'];
+  rolTextoEnEdicion: RolTextoMarca | null = null;
+
+  private static readonly ETIQUETAS_ROL: Record<RolTextoMarca, string> = {
+    titulo1: 'Título 1',
+    titulo2: 'Título 2',
+    subtitulo: 'Subtítulo',
+    parrafo: 'Párrafo',
+  };
+  private static readonly TAMANOS_PREVIEW_ROL: Record<RolTextoMarca, number> = {
+    titulo1: 26,
+    titulo2: 22,
+    subtitulo: 17,
+    parrafo: 14,
+  };
+
+  etiquetaRolTexto(rol: RolTextoMarca): string {
+    return CanvasEditor.ETIQUETAS_ROL[rol];
+  }
+
+  tamanoPreviewRolTexto(rol: RolTextoMarca): number {
+    return CanvasEditor.TAMANOS_PREVIEW_ROL[rol];
+  }
+
+  esRolTitulo(rol: RolTextoMarca): boolean {
+    return rol === 'titulo1' || rol === 'titulo2';
+  }
+
+  toggleEditarRolTexto(rol: RolTextoMarca): void {
+    this.rolTextoEnEdicion = this.rolTextoEnEdicion === rol ? null : rol;
+  }
+
+  actualizarEstiloTextoMarca(rol: RolTextoMarca, cambios: Partial<EstiloTextoMarca>): void {
+    this.estilosTextoMarca = { ...this.estilosTextoMarca, [rol]: { ...this.estilosTextoMarca[rol], ...cambios } };
+    if (cambios.fuente) cargarGoogleFont(cambios.fuente);
+    this.estilosTextoMarcaJsonChange.emit(JSON.stringify(this.estilosTextoMarca));
+
+    // En vivo, igual que los colores: cualquier texto de ESTA pantalla creado con este rol
+    // (ver rolTexto/agregarTextoConEstilo) se re-pinta al toque con el estilo nuevo.
+    let cambiado = false;
+    const nuevosElementos = this.elementos.map((el) => {
+      if (el.tipo !== 'texto' || el.rolTexto !== rol) return el;
+      cambiado = true;
+      return {
+        ...el,
+        fontFamily: cambios.fuente !== undefined ? cambios.fuente || undefined : el.fontFamily,
+        tamanoFuente: cambios.tamanoFuente ?? el.tamanoFuente,
+        colorTexto: cambios.color ?? el.colorTexto,
+        negrita: cambios.negrita ?? el.negrita,
+        cursiva: cambios.cursiva ?? el.cursiva,
+        subrayado: cambios.subrayado ?? el.subrayado,
+      };
+    });
+    if (cambiado) {
+      this.elementos = nuevosElementos;
+      this.emitir();
+      this.guardarHistorial();
+    }
+  }
+
+  // ---- Paletas de color del Kit de marca ("Otras opciones" / "Opciones con tu marca") ----
+
+  readonly paletasMarca = PALETAS_MARCA;
+  /** Solo dura esta sesión de edición (no hay dónde persistirlas todavía — ver nota
+   *  PENDIENTE DE BACKEND). Aun así sirve para armar varias paletas mientras se edita. */
+  paletasPersonalizadas: PaletaMarca[] = [];
+  mostrarFormularioPaleta = false;
+  nuevaPaletaColores: [string, string, string] = ['#f5a623', '#14100b', '#ffffff'];
+
+  elegirPaleta(p: PaletaMarca): void {
+    this.onCambiarColorMarca('principal', p.colores[0]);
+    this.onCambiarColorMarca('secundario', p.colores[1]);
+    this.onCambiarColorMarca('terciario', p.colores[2]);
+  }
+
+  /** Rol de "Estilos de texto" que le corresponde a un preset del picker de Texto — los
+   *  4 roles principales calzan 1 a 1 (mismos ids); las 2 listas usan el estilo de Párrafo,
+   *  no tienen rol propio en el Kit de marca. */
+  rolParaPreset(preset: EstiloTextoPreset): RolTextoMarca {
+    return (['titulo1', 'titulo2', 'subtitulo', 'parrafo'] as const).includes(preset.id as RolTextoMarca)
+      ? (preset.id as RolTextoMarca)
+      : 'parrafo';
+  }
+
+  estiloParaPreset(preset: EstiloTextoPreset): EstiloTextoMarca {
+    return this.estilosTextoMarca[this.rolParaPreset(preset)];
+  }
+
+  guardarPaletaPersonalizada(): void {
+    this.paletasPersonalizadas = [
+      ...this.paletasPersonalizadas,
+      { id: 'custom-' + Date.now(), colores: [...this.nuevaPaletaColores] },
+    ];
+    this.mostrarFormularioPaleta = false;
+    this.nuevaPaletaColores = ['#f5a623', '#14100b', '#ffffff'];
+  }
 
   get swatchesColor(): string[] {
-    const base = [this.colorTema, '#f5a623', '#14100b', '#ffffff'].filter((c): c is string => !!c);
+    const base = [
+      this.colorTema,
+      this.colorMarcaSecundario,
+      this.colorMarcaTerciario,
+      '#f5a623',
+      '#14100b',
+      '#ffffff',
+    ].filter((c): c is string => !!c);
     return [...new Set(base)];
   }
   @Output() elementosChange = new EventEmitter<ElementoLibre[]>();
@@ -189,6 +460,7 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
   @Output() subirImagen = new EventEmitter<ElementoLibre>();
   /** Pide al padre subir un archivo de audio para este elemento. */
   @Output() subirAudio = new EventEmitter<ElementoLibre>();
+  @Output() subirAudioPregunta = new EventEmitter<ElementoLibre>();
   /** Pide al padre abrir el selector de "Añadir página" directo en la pestaña del banco
    *  de preguntas — se dispara desde la pastilla "Banco de preguntas" del panel de abajo. */
   @Output() abrirBancoPreguntas = new EventEmitter<void>();
@@ -202,7 +474,7 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
   private escalaAjuste = 1;
   private zoomManual: number | null = null;
   private resizeObserver?: ResizeObserver;
-  private readonly MARGEN_ENVOLTORIO = 20; // padding visual alrededor del lienzo
+  private readonly MARGEN_ENVOLTORIO = 10; // padding visual alrededor del lienzo
 
   get escalaFinal(): number {
     return this.zoomManual ?? this.escalaAjuste;
@@ -224,6 +496,13 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
 
   zoomAjustar(): void {
     this.zoomManual = null;
+    this.fijarScrollArribaTrasZoom();
+  }
+
+  /** Permite escribir un porcentaje exacto de zoom (input numérico junto al %). */
+  zoomFijar(porcentaje: number): void {
+    if (!Number.isFinite(porcentaje)) return;
+    this.zoomManual = Math.max(0.2, Math.min(2, Math.round(porcentaje) / 100));
     this.fijarScrollArribaTrasZoom();
   }
 
@@ -319,10 +598,146 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
     }
   }
 
+  // ---- Paneles "Insertar" (Imagen/Video/Audio) y "Elementos" (Forma/Ícono), estilo
+  // Genially: antes cada uno era su propio botón del riel que agregaba un elemento en
+  // blanco directo; ahora se agrupan en un popover compartido (mismo mecanismo de overlay
+  // fixed que "Preguntas") — menos botones sueltos en el riel, mejor organizados. ----
+
+  mostrarPanelInsertar = false;
+  posicionPanelInsertar = { left: 0, top: 0 };
+
+  togglePanelInsertar(boton: HTMLElement): void {
+    this.mostrarPanelInsertar = !this.mostrarPanelInsertar;
+    if (this.mostrarPanelInsertar) {
+      const rect = boton.getBoundingClientRect();
+      this.posicionPanelInsertar = { left: rect.right + 6, top: rect.top };
+    }
+  }
+
+  mostrarPanelElementos = false;
+  posicionPanelElementos = { left: 0, top: 0 };
+
+  togglePanelElementos(boton: HTMLElement): void {
+    this.mostrarPanelElementos = !this.mostrarPanelElementos;
+    if (this.mostrarPanelElementos) {
+      const rect = boton.getBoundingClientRect();
+      this.posicionPanelElementos = { left: rect.right + 6, top: rect.top };
+    }
+  }
+
+  /** Panel "Estilo" (Kit de marca), estilo Genially — 100% opcional: si no se toca nada
+   *  acá, todo sigue con los colores por defecto de siempre (naranja/negro/blanco). No hay
+   *  botón "Aplicar a todo"/retroactivo a propósito (decisión del usuario): el kit solo
+   *  queda disponible como acceso rápido para elementos NUEVOS que se inserten de ahora en
+   *  adelante, nunca reescribe lo que ya existe en el curso. */
+  mostrarPanelEstilo = false;
+  posicionPanelEstilo: { left: number; top: number | null; bottom: number | null } = {
+    left: 0,
+    top: 0,
+    bottom: null,
+  };
+
+  togglePanelEstilo(boton: HTMLElement): void {
+    this.mostrarPanelEstilo = !this.mostrarPanelEstilo;
+    if (this.mostrarPanelEstilo) {
+      const rect = boton.getBoundingClientRect();
+      const espacioAbajo = window.innerHeight - rect.top;
+      if (espacioAbajo < 420) {
+        this.posicionPanelEstilo = { left: rect.right + 6, top: null, bottom: window.innerHeight - rect.bottom };
+      } else {
+        this.posicionPanelEstilo = { left: rect.right + 6, top: rect.top, bottom: null };
+      }
+    }
+  }
+
+  /** Imagen/Audio: agrega el elemento en blanco Y de inmediato abre el selector de
+   *  archivo — en Genially "Insertar > Subir imagen" es un solo paso, no dos. */
+  agregarImagenDesdeRail(): void {
+    this.agregarElemento('imagen');
+    this.pedirSubirImagen();
+    this.mostrarPanelInsertar = false;
+  }
+
+  agregarAudioDesdeRail(): void {
+    this.agregarElemento('audio');
+    this.pedirSubirAudio();
+    this.mostrarPanelInsertar = false;
+  }
+
+  agregarVideoDesdeRail(): void {
+    this.agregarElemento('video');
+    this.mostrarPanelInsertar = false;
+  }
+
+  /** "Ventana": un ícono con overlay ya activado (clic → se abre un panel con
+   *  título/texto/imagen), listo para que el autor solo escriba el contenido. */
+  agregarVentanaDesdeRail(): void {
+    this.agregarElemento('icono');
+    const el = this.seleccionado;
+    if (el) {
+      el.iconoClase = 'ti-frame';
+      el.overlay = { activo: true, titulo: '', texto: '', imagenUrl: '' };
+    }
+    this.mostrarPanelInsertar = false;
+  }
+
+  /** "Etiqueta": una píldora chica de texto, decorativa (sin acción de clic). */
+  agregarEtiquetaDesdeRail(): void {
+    this.agregarElemento('boton');
+    const el = this.seleccionado;
+    if (el) {
+      el.botonTexto = 'Etiqueta';
+      el.ancho = 140;
+      el.alto = 40;
+      el.bordeRedondeado = 999;
+    }
+    this.mostrarPanelInsertar = false;
+  }
+
+  /** "Enlace": botón preconfigurado para abrir una URL externa. */
+  agregarEnlaceDesdeRail(): void {
+    this.agregarElemento('boton');
+    const el = this.seleccionado;
+    if (el) {
+      el.botonTexto = 'Enlace';
+      el.botonAccion = 'url';
+    }
+    this.mostrarPanelInsertar = false;
+  }
+
+  /** "Ir a página": botón preconfigurado para saltar a otra pantalla del curso. */
+  agregarIrAPaginaDesdeRail(): void {
+    this.agregarElemento('boton');
+    const el = this.seleccionado;
+    if (el) {
+      el.botonTexto = 'Ir a página';
+      el.botonAccion = 'pagina';
+    }
+    this.mostrarPanelInsertar = false;
+  }
+
+  agregarFormaDesdeRail(): void {
+    this.agregarElemento('forma');
+    this.mostrarPanelElementos = false;
+  }
+
+  agregarIconoDesdeRail(): void {
+    this.agregarElemento('icono');
+    this.mostrarPanelElementos = false;
+  }
+
+  agregarBotonDesdeRail(): void {
+    this.agregarElemento('boton');
+    this.mostrarPanelElementos = false;
+  }
+
   @HostListener('document:click')
   alHacerClicFuera(): void {
     this.mostrarEstilosTexto = false;
     this.mostrarPanelPreguntas = false;
+    this.mostrarPanelInsertar = false;
+    this.mostrarPanelElementos = false;
+    this.mostrarPanelEstilo = false;
   }
 
   agregarTextoConEstilo(preset: EstiloTextoPreset): void {
@@ -340,10 +755,18 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
       animacionDuracionMs: 600,
       animacionEasing: 'ease',
       texto: preset.texto,
-      colorTexto: '#14100b',
+      // Kit de marca: si el rol (Título 1/2, Subtítulo, Párrafo) tiene fuente/color
+      // personalizados, se usan acá — "lista-vinetas"/"lista-numerada" toman el estilo de
+      // Párrafo (no son un rol propio del kit). Sin nada personalizado, cae en los mismos
+      // valores de siempre (preset.tamanoFuente/negrita, color #14100b).
+      colorTexto: this.estiloParaPreset(preset).color,
       tamanoFuente: preset.tamanoFuente,
       alineacion: 'left',
-      negrita: preset.negrita,
+      negrita: this.estiloParaPreset(preset).negrita,
+      cursiva: this.estiloParaPreset(preset).cursiva,
+      subrayado: this.estiloParaPreset(preset).subrayado,
+      fontFamily: this.estiloParaPreset(preset).fuente || undefined,
+      rolTexto: this.rolParaPreset(preset),
     };
     this.elementos = [...this.elementos, el];
     this.emitir();
@@ -602,7 +1025,7 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
       return;
     }
 
-    const esBinaria = tipoCodigo === 'pregunta_vf' || tipoCodigo === 'pregunta_desliza_acierta';
+    const esBinaria = tipoCodigo === 'pregunta_vf';
     const pregunta: ElementoPreguntaConfig = {
       tipoCodigo,
       puntaje: 10,
@@ -630,6 +1053,16 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
       izquierda: [{ id: 'i1', texto: '' }],
       derecha: [{ id: 'd1', texto: '' }],
       parejas: {},
+      deslizaTarjetas: [
+        { id: nuevoId(), texto: '', imagenUrl: '', correcta: true },
+        { id: nuevoId(), texto: '', imagenUrl: '', correcta: false },
+      ],
+      deslizaUmbralAprobarPct: 100,
+      ordenAleatorio: false,
+      // Default explícito (no undefined) para que el checkbox del editor coincida con el
+      // comportamiento real: opción única/eleccion múltiple siempre pedían confirmar antes
+      // de este cambio, VF/desliza-acierta siempre respondían al primer clic.
+      botonEnviarActivo: tipoCodigo === 'pregunta_opcion_multiple',
     };
 
     const ancho = 600;
@@ -644,6 +1077,9 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
       rotacion: 0,
       zIndex: this.elementos.length,
       pregunta,
+      // Default Genially: el recuadro nace transparente sobre el fondo de la pantalla, no
+      // en una caja blanca opaca (eso solo pasa si el autor elige el estilo "Claro" a mano).
+      preguntaEstilo: 'adaptado-claro',
     };
     this.elementos = [...this.elementos, el];
     this.emitir();
@@ -673,6 +1109,20 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
 
   quitarOpcionPregunta(i: number): void {
     this.seleccionado?.pregunta?.opciones.splice(i, 1);
+  }
+
+  // ---- Tarjetas de "Desliza y acierta" (mazo, estilo Genially) ----
+
+  agregarTarjetaDesliza(): void {
+    const p = this.seleccionado?.pregunta;
+    if (!p) return;
+    p.deslizaTarjetas.push({ id: nuevoId(), texto: '', imagenUrl: '', correcta: true });
+  }
+
+  quitarTarjetaDesliza(i: number): void {
+    const p = this.seleccionado?.pregunta;
+    if (!p || p.deslizaTarjetas.length <= 1) return;
+    p.deslizaTarjetas.splice(i, 1);
   }
 
   agregarItemOrdenarPregunta(): void {
@@ -722,7 +1172,14 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
   private camposIniciales(tipo: ElementoTipo): Partial<ElementoLibre> {
     switch (tipo) {
       case 'texto':
-        return { texto: 'Texto nuevo', colorTexto: '#14100b', tamanoFuente: 28, alineacion: 'left', negrita: false };
+        return {
+          texto: 'Texto nuevo',
+          colorTexto: this.colorTextoMarca || '#14100b',
+          tamanoFuente: 28,
+          alineacion: 'left',
+          negrita: false,
+          fontFamily: this.estilosTextoMarca.parrafo.fuente || undefined,
+        };
       case 'imagen':
         return { imagenUrl: '', bordeRedondeado: 8 };
       case 'forma':
@@ -780,6 +1237,137 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
 
   pedirSubirAudio(): void {
     if (this.seleccionado) this.subirAudio.emit(this.seleccionado);
+  }
+
+  pedirSubirAudioPregunta(): void {
+    if (this.seleccionado) this.subirAudioPregunta.emit(this.seleccionado);
+  }
+
+  /** Tipos donde "Disposición horizontal/vertical" tiene efecto real en el reproductor
+   *  (ver slide-contenido-libre.html): una fila de opciones/píldoras. Ordenar, respuesta
+   *  corta, completar huecos y emparejar tienen su propio layout fijo (lista arrastrable,
+   *  input de texto, texto con huecos, dos columnas) y no lo respetan. */
+  // ---- Acciones de la pregunta embebida, ramas Acierto/Error (estilo Genially: lista de
+  // acciones apiladas por rama, con un menú "+ Añadir acción" — ver ReportFindings del
+  // 25-sep-2026 en memoria del proyecto). ----
+
+  readonly tiposAccionPregunta: { tipo: PreguntaAccionTipo; etiqueta: string; icono: string }[] = [
+    { tipo: 'abrir_ventana', etiqueta: 'Abrir ventana', icono: 'ti-frame' },
+    { tipo: 'audio', etiqueta: 'Reproducir audio', icono: 'ti-volume' },
+    { tipo: 'pagina', etiqueta: 'Ir a página', icono: 'ti-arrow-right' },
+    { tipo: 'scroll_elemento', etiqueta: 'Scroll hasta elemento', icono: 'ti-arrows-vertical' },
+    { tipo: 'efecto', etiqueta: 'Efecto', icono: 'ti-sparkles' },
+    { tipo: 'mostrar_elemento', etiqueta: 'Mostrar elemento', icono: 'ti-eye' },
+    { tipo: 'ocultar_elemento', etiqueta: 'Ocultar elemento', icono: 'ti-eye-off' },
+  ];
+
+  menuAccionAbiertoPara: string | null = null;
+  accionEditandoId: string | null = null;
+
+  toggleMenuAccionPregunta(clave: string): void {
+    this.menuAccionAbiertoPara = this.menuAccionAbiertoPara === clave ? null : clave;
+  }
+
+  agregarAccionPregunta(el: ElementoLibre, rama: RamaAccionPregunta, tipo: PreguntaAccionTipo): void {
+    if (!el[rama]) el[rama] = { acciones: [] };
+    const item: PreguntaAccionItem = { id: 'acc' + Date.now() + Math.round(Math.random() * 9999), tipo };
+    el[rama]!.acciones.push(item);
+    this.menuAccionAbiertoPara = null;
+    this.accionEditandoId = item.id;
+    this.guardarHistorial();
+  }
+
+  quitarAccionPregunta(el: ElementoLibre, rama: RamaAccionPregunta, index: number): void {
+    el[rama]?.acciones.splice(index, 1);
+    this.guardarHistorial();
+  }
+
+  toggleEditarAccionPregunta(id: string): void {
+    this.accionEditandoId = this.accionEditandoId === id ? null : id;
+  }
+
+  iconoAccionPregunta(tipo: PreguntaAccionTipo): string {
+    return this.tiposAccionPregunta.find((t) => t.tipo === tipo)?.icono ?? 'ti-bolt';
+  }
+
+  etiquetaAccionPregunta(item: PreguntaAccionItem): string {
+    const base = this.tiposAccionPregunta.find((t) => t.tipo === item.tipo)?.etiqueta ?? 'Acción';
+    switch (item.tipo) {
+      case 'pagina': {
+        const pagina = this.paginasDisponibles.find((p) => p.id === item.slideId);
+        return pagina ? `Ir a página: ${pagina.titulo}` : base;
+      }
+      case 'mostrar_elemento':
+      case 'ocultar_elemento':
+      case 'scroll_elemento': {
+        const objetivo = this.elementos.find((e) => e.id === item.elementoId);
+        return objetivo ? `${base}: ${this.etiquetaElementoCanvas(objetivo)}` : base;
+      }
+      default:
+        return base;
+    }
+  }
+
+  /** Otros elementos del mismo lienzo a los que puede apuntar una acción de
+   *  scroll/mostrar/ocultar (nunca a sí misma). */
+  elementosParaAccion(actual: ElementoLibre): ElementoLibre[] {
+    return this.elementos.filter((e) => e.id !== actual.id);
+  }
+
+  etiquetaElementoCanvas(el: ElementoLibre): string {
+    switch (el.tipo) {
+      case 'texto':
+        return 'Texto: ' + (el.texto || '(vacío)').slice(0, 24);
+      case 'imagen':
+        return 'Imagen';
+      case 'forma':
+        return 'Forma';
+      case 'icono':
+        return 'Ícono';
+      case 'boton':
+        return 'Botón: ' + (el.botonTexto || '(sin texto)');
+      case 'video':
+        return 'Video';
+      case 'audio':
+        return 'Audio';
+      case 'pregunta':
+        return 'Pregunta';
+      default:
+        return 'Elemento';
+    }
+  }
+
+  temporizadorMinutos(el: ElementoLibre): number {
+    return Math.floor((el.preguntaTemporizadorSeg ?? 0) / 60);
+  }
+
+  temporizadorSegundos(el: ElementoLibre): number {
+    return (el.preguntaTemporizadorSeg ?? 0) % 60;
+  }
+
+  fijarTemporizadorMinutos(el: ElementoLibre, minutos: number): void {
+    el.preguntaTemporizadorSeg = Math.max(0, minutos || 0) * 60 + this.temporizadorSegundos(el);
+    this.guardarHistorial();
+  }
+
+  fijarTemporizadorSegundos(el: ElementoLibre, segundos: number): void {
+    el.preguntaTemporizadorSeg = this.temporizadorMinutos(el) * 60 + Math.min(59, Math.max(0, segundos || 0));
+    this.guardarHistorial();
+  }
+
+  /** Texto de la derecha emparejada con este concepto de la izquierda, para el preview del
+   *  canvas — antes solo se pintaba la columna izquierda, sin mostrar con qué está pareado. */
+  etiquetaDerechaEmparejarPregunta(preg: ElementoPreguntaConfig | undefined, izquierdaId: string): string {
+    if (!preg) return '(sin pareja)';
+    const derechaId = preg.parejas[izquierdaId];
+    const derecha = preg.derecha.find((d) => d.id === derechaId);
+    return derecha?.texto || '(sin pareja)';
+  }
+
+  disposicionAplicaAPreguntaTipo(tipoCodigo: string | undefined): boolean {
+    return (
+      tipoCodigo === 'pregunta_vf' || tipoCodigo === 'pregunta_opcion_multiple' || tipoCodigo === 'pregunta_eleccion_multiple'
+    );
   }
 
   // ---- Panel con pestañas Interactividad / Animación (estilo Genially) ----

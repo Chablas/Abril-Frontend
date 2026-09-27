@@ -32,6 +32,7 @@ export class SlideRespuestaCorta {
   }
 
   @Output() respuesta = new EventEmitter<any>();
+  @Input() estilo: 'oscuro' | 'claro' | 'adaptado-oscuro' | 'adaptado-claro' = 'claro';
 
   get kicker(): string {
     return this.config.kicker || 'RESPUESTA CORTA';

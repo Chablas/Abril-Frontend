@@ -35,3 +35,10 @@
   outline: none;
   border-color: #f5a623;
 }
+
+.solo-swatch .chi-picker {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1.5px solid #e9e3d3;
+}

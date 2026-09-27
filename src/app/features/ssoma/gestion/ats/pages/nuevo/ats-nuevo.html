@@ -1,0 +1,270 @@
+<app-abril-modal-panel
+  titulo="Análisis de Trabajo Seguro (ATS)"
+  icono="ti-shield-check"
+  variant="blue"
+  width="900px"
+  (closeModal)="cerrar()">
+
+  <div class="stepper">
+    @for (label of pasoLabels; track $index) {
+      <div class="step" [class.step--active]="paso === $index + 1" [class.step--done]="paso > $index + 1">
+        <div class="step-circle">
+          @if (paso > $index + 1) { <i class="ti ti-check"></i> } @else { {{ $index + 1 }} }
+        </div>
+        <span class="step-label">{{ label }}</span>
+      </div>
+      @if ($index < pasoLabels.length - 1) {
+        <div class="step-line" [class.step-line--done]="paso > $index + 1"></div>
+      }
+    }
+  </div>
+
+  @if (loadingInit) {
+    <div class="panel-loading">Cargando catálogos…</div>
+  } @else if (bloqueadoSinAutorizacion) {
+    <div class="bloqueo-autorizacion">
+      <i class="ti ti-lock" style="font-size:2.5rem;color:#f59e0b"></i>
+      <h3>Aún no puedes crear un ATS</h3>
+      <p>
+        Falta que tu <strong>Coordinador SSOMA</strong> suba tu autorización firmada de uso de firma
+        digital e imagen. Coordina con él para que la suba y podrás continuar.
+      </p>
+    </div>
+  } @else if (init) {
+
+    <!-- PASO 1: Datos, pasos de la tarea, EPP, herramientas -->
+    @if (paso === 1) {
+      <div class="abril-section-title">Actividad a realizar</div>
+
+      <div class="form-row">
+        <div>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Proyecto *"
+            [options]="proyectosOpts"
+            valueField="id"
+            displayField="nombre"
+            [value]="proyectoId"
+            placeholder="Buscar proyecto..."
+            (valueChange)="proyectoId = $event"
+          ></app-search-select>
+        </div>
+        <div>
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Plantilla (opcional)"
+            [options]="plantillasOpts"
+            valueField="id"
+            displayField="nombre"
+            [value]="plantillaId"
+            [allowClear]="true"
+            placeholder="Selecciona una plantilla"
+            (valueChange)="onPlantillaChange($event)"
+          ></app-search-select>
+        </div>
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Actividad *</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="actividad"
+               placeholder="Ej: Encofrado de losa nivel 3" />
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Lugar de esta tarea</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="lugar"
+               placeholder="Ej: Torre B, nivel 3 — un ATS por lugar/tarea distinta" />
+      </div>
+
+      @if (init.pasos.length > 0) {
+        <div class="abril-section-title">Actividades y pasos de la tarea (marca SI/NO)</div>
+        @for (cat of init.pasos; track cat.id) {
+          <div class="pasos-categoria-row">
+            <div class="pasos-categoria">{{ cat.nombre }}</div>
+            <label class="marcar-todos-check">
+              <input
+                type="checkbox"
+                [checked]="todosMarcadosEnCategoria(cat.pasos)"
+                (change)="toggleTodosCategoria(cat.pasos)"
+              />
+              Marcar todos
+            </label>
+          </div>
+          @for (p of cat.pasos; track p.id) {
+            <label class="paso-check">
+              <input type="checkbox" [checked]="pasoAplica(p.id)" (change)="togglePaso(p.id)" />
+              {{ p.texto }}
+            </label>
+          }
+          <div class="agregar-paso-row">
+            <input type="text" class="abril-field-input agregar-paso-input"
+                   placeholder="+ Agregar paso a esta categoría..."
+                   [ngModel]="nuevoPasoTextoDe(cat.id)"
+                   (ngModelChange)="setNuevoPasoTexto(cat.id, $event)"
+                   (keydown.enter)="agregarPasoPersonalizado(cat.id)" />
+            <button class="btn btn-outline btn-sm" (click)="agregarPasoPersonalizado(cat.id)"
+                    [disabled]="!nuevoPasoTextoDe(cat.id).trim() || agregandoPasoCategoriaId === cat.id">
+              @if (agregandoPasoCategoriaId === cat.id) { … } @else { Agregar }
+            </button>
+          </div>
+        }
+      }
+
+      <div class="abril-section-title">EPP requerido</div>
+      <div class="chips-grid">
+        @for (e of init.epps; track e.id) {
+          <label class="chip" [class.chip--sel]="eppSeleccionado(e.id)">
+            <input type="checkbox" [checked]="eppSeleccionado(e.id)" (change)="toggleEpp(e.id)" />
+            {{ e.nombre }}
+          </label>
+        }
+      </div>
+
+      <div class="abril-section-title">Herramientas / equipos a utilizar</div>
+      @for (grupo of herramientasPorCategoria; track grupo.categoria) {
+        <div class="pasos-categoria">{{ grupo.categoria }}</div>
+        <div class="chips-grid">
+          @for (h of grupo.items; track h.id) {
+            <label class="chip" [class.chip--sel]="herramientaSeleccionada(h.id)">
+              <input type="checkbox" [checked]="herramientaSeleccionada(h.id)" (change)="toggleHerramienta(h.id)" />
+              {{ h.nombre }}
+            </label>
+          }
+        </div>
+      }
+
+      <div modalFooter>
+        <button class="btn btn-secondary" (click)="cerrar()">Cancelar</button>
+        <button class="btn btn-primary" (click)="irAPeligros()" [disabled]="!datosBasicosValidos">
+          Siguiente: Peligros y riesgos
+        </button>
+      </div>
+    }
+
+    <!-- PASO 2: Selección de peligros/riesgos que aplican -->
+    @if (paso === 2) {
+      <div class="abril-section-title">Peligros, riesgos y controles (IPERC) *</div>
+      <p class="iperc-hint">Marca los riesgos que identificaste en esta tarea. En el siguiente paso defines el nivel de riesgo y los controles de cada uno.</p>
+
+      @for (peligro of init.peligros; track peligro.id) {
+        <div class="peligro-card" [class.peligro-card--sugerido]="peligroSugeridoPorPlantilla(peligro.id)">
+          <div class="peligro-nombre">
+            {{ peligro.nombre }}
+            @if (peligroSugeridoPorPlantilla(peligro.id)) {
+              <span class="badge-sugerido">Sugerido por plantilla</span>
+            }
+          </div>
+          @for (riesgo of peligro.riesgos; track riesgo.id) {
+            <label class="riesgo-check">
+              <input type="checkbox" [checked]="riesgoEstaSeleccionado(riesgo.id)" (change)="toggleRiesgo(peligro, riesgo)" />
+              {{ riesgo.nombre }}
+            </label>
+          }
+        </div>
+      }
+
+      <div modalFooter>
+        <button class="btn btn-secondary" (click)="volverAPaso(1)">Atrás</button>
+        <button class="btn btn-primary" (click)="irAValoracion()" [disabled]="!riesgosValidos">
+          Siguiente: Valoración ({{ riesgosSeleccionados.length }})
+        </button>
+      </div>
+    }
+
+    <!-- PASO 3: Matriz de valoración (base / controles / residual) -->
+    @if (paso === 3) {
+      <div class="abril-section-title">Matriz de riesgo — {{ riesgosSeleccionados.length }} riesgo(s)</div>
+      <p class="iperc-hint">Por cada riesgo: nivel del riesgo BASE, los controles que vas a aplicar, y el nivel RESIDUAL después de esos controles.</p>
+
+      <div class="matriz-wrap">
+        <table class="matriz-table">
+          <thead>
+            <tr>
+              <th>Peligro</th>
+              <th>Riesgo</th>
+              <th>R. Base</th>
+              <th>Controles</th>
+              <th>R. Residual</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of riesgosSeleccionados; track r.riesgoId) {
+              <tr>
+                <td>{{ r.peligroNombre }}</td>
+                <td>{{ r.riesgoNombre }}</td>
+                <td>
+                  <select class="nivel-select" [class]="'nivel-' + r.riesgoBase" [(ngModel)]="r.riesgoBase">
+                    <option value="">—</option>
+                    @for (n of niveles; track n.valor) { <option [value]="n.valor">{{ n.label }}</option> }
+                  </select>
+                </td>
+                <td>
+                  <textarea class="abril-field-input controles-input" rows="2"
+                            placeholder="Eliminación, sustitución, control de ingeniería, control administrativo, EPP..."
+                            [(ngModel)]="r.controles"></textarea>
+                </td>
+                <td>
+                  <select class="nivel-select" [class]="'nivel-' + r.riesgoResidual" [(ngModel)]="r.riesgoResidual">
+                    <option value="">—</option>
+                    @for (n of niveles; track n.valor) { <option [value]="n.valor">{{ n.label }}</option> }
+                  </select>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div modalFooter>
+        <button class="btn btn-secondary" (click)="volverAPaso(2)" [disabled]="saving">Atrás</button>
+        <button class="btn btn-primary" (click)="siguiente()" [disabled]="!valoracionValida || saving">
+          @if (saving) { Guardando… } @else { Siguiente: Firmar }
+        </button>
+      </div>
+    }
+
+    <!-- PASO 4: Firma -->
+    @if (paso === 4) {
+      <div class="abril-section-title">Evidencia de firma</div>
+      <p class="firmar-hint">
+        Tu selfie, ubicación y firma quedan asociadas a este ATS como evidencia de trazabilidad —
+        la hora la registra el servidor al momento de firmar.
+      </p>
+
+      <div class="firmar-row">
+        <div class="camara-col">
+          <app-camera-capture (listo)="onCamaraLista()"></app-camera-capture>
+          <div class="gps-estado" [ngSwitch]="gpsEstado">
+            <span *ngSwitchCase="'buscando'">📍 Buscando ubicación…</span>
+            <span *ngSwitchCase="'ok'">📍 Ubicación capturada (±{{ gpsCoords?.accuracy ?? 0 | number:'1.0-0' }} m)</span>
+            <span *ngSwitchCase="'error'">⚠️ Sin GPS (permiso denegado o no disponible) — se firma igual, queda registrado.</span>
+          </div>
+        </div>
+
+        <div class="firma-col">
+          <label class="abril-field-label">Firma *</label>
+          <app-signature-pad (drawingChange)="onFirmaChange($event)"></app-signature-pad>
+          <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
+        </div>
+      </div>
+
+      @if (!init.tieneConsentimiento) {
+        <div class="consentimiento-box">
+          <label class="check-label">
+            <input type="checkbox" [(ngModel)]="aceptaConsentimiento" />
+            Acepto el uso de mi imagen (selfie) y mi geolocalización para efectos de trazabilidad
+            de este ATS digital, conforme a la Ley 29733 de Protección de Datos Personales.
+          </label>
+        </div>
+      }
+
+      <div modalFooter>
+        <button class="btn btn-secondary" (click)="volver()" [disabled]="firmando">Atrás</button>
+        <button class="btn btn-primary" (click)="firmar()" [disabled]="!puedeFirmar">
+          @if (firmando) { Firmando… } @else { Firmar ATS }
+        </button>
+      </div>
+    }
+  }
+
+</app-abril-modal-panel>

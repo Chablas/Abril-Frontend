@@ -9,6 +9,7 @@ import { CursoService } from '../../services/curso.service';
 import {
   CursoDto,
   CursoSlideDto,
+  ElementoLibre,
   FinalizarIntentoResultDto,
   SlideEstilo,
 } from '../../dtos/curso.dtos';
@@ -131,6 +132,43 @@ export class CursoPlayer implements OnInit {
     }
   }
 
+  /** La pregunta embebida en el lienzo libre de la slide actual (si la hay), para que el
+   *  overlay de feedback (ver curso-player.html) pueda mostrar su mensaje personalizado
+   *  "tras responder" y/o la respuesta correcta configurados en la pestaña Acciones. */
+  get elementoPreguntaFeedback(): ElementoLibre | undefined {
+    const slide = this.slideActual;
+    if (!slide) return undefined;
+    try {
+      const config = JSON.parse(slide.configuracionJson || '{}');
+      const elementos: ElementoLibre[] = config?.elementos || [];
+      return elementos.find((e) => e.tipo === 'pregunta' && e.pregunta);
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** Texto legible de la respuesta correcta de la pregunta embebida actual, para
+   *  "Mostrar respuesta correcta" en el overlay de feedback. */
+  get textoRespuestaCorrectaFeedback(): string {
+    const preg = this.elementoPreguntaFeedback?.pregunta;
+    if (!preg) return '';
+    switch (preg.tipoCodigo) {
+      case 'pregunta_vf':
+      case 'pregunta_opcion_multiple':
+      case 'pregunta_eleccion_multiple':
+        return preg.opciones
+          .filter((o) => o.correcta)
+          .map((o) => o.texto)
+          .join(', ');
+      case 'pregunta_respuesta_corta':
+        return preg.respuestaTexto;
+      case 'pregunta_ordenar':
+        return preg.items.map((i) => i.texto).join(' → ');
+      default:
+        return '';
+    }
+  }
+
   // ---------------------------------------------------------------------
   // Carga inicial
   // ---------------------------------------------------------------------
@@ -249,9 +287,43 @@ export class CursoPlayer implements OnInit {
 
           this.fase = 'feedback';
           this.cdr.detectChanges();
-          setTimeout(() => {
-            this.avanzar();
-          }, 1400);
+
+          const elPregunta = this.elementoPreguntaFeedback;
+          // pregunta_emparejar y pregunta_desliza_acierta no tienen el selector "Al
+          // contestar/Según el resultado" (ver los bloques "Acciones de Emparejar
+          // conceptos"/"Acciones de Desliza y acierta" en canvas-editor.html) — sus ramas
+          // Acierto/Error están siempre activas, no detrás de preguntaMensajesActivos.
+          const esEmparejar = elPregunta?.pregunta?.tipoCodigo === 'pregunta_emparejar';
+          const esDeslizaAcierta = elPregunta?.pregunta?.tipoCodigo === 'pregunta_desliza_acierta';
+          const rama =
+            elPregunta?.preguntaMensajesActivos || esEmparejar || esDeslizaAcierta
+              ? this.ultimaEsCorrecta === true
+                ? elPregunta?.preguntaAccionAcierto
+                : elPregunta?.preguntaAccionError
+              : undefined;
+          const hayMensajePersonalizado = !!elPregunta?.preguntaMensajesActivos || !!elPregunta?.preguntaMensajesSimplesActivos;
+
+          // Las acciones que no sean "ir a página" (audio, abrir ventana, efecto, mostrar/
+          // ocultar elemento, scroll) se disparan de inmediato, para que tengan toda la
+          // ventana de feedback (1400/3000ms) visibles/audibles antes de avanzar. "Al
+          // finalizar la actividad" (solo emparejar) se dispara siempre, acierte o no.
+          const accionesFinActividad = esEmparejar ? (elPregunta?.preguntaAccionFinActividad?.acciones ?? []) : [];
+          const accionesInmediatas = [...(rama?.acciones ?? []), ...accionesFinActividad].filter((a) => a.tipo !== 'pagina');
+          if (accionesInmediatas.length) this.slideLibreRef?.ejecutarAccionesPregunta(accionesInmediatas);
+          const accionPagina =
+            (rama?.acciones ?? []).find((a) => a.tipo === 'pagina' && a.slideId) ??
+            accionesFinActividad.find((a) => a.tipo === 'pagina' && a.slideId);
+
+          setTimeout(
+            () => {
+              if (accionPagina) {
+                this.onIrAPagina(accionPagina.slideId!);
+              } else {
+                this.avanzar();
+              }
+            },
+            hayMensajePersonalizado ? 3000 : 1400,
+          );
         },
         error: (err: HttpErrorResponse) => {
           Swal.fire({

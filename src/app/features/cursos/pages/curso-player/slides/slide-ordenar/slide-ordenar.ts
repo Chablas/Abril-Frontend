@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CdkDrag, CdkDropList, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { CursoSlideDto, OrdenarConfig } from '../../../../dtos/curso.dtos';
+import { barajar } from '../../../../shuffle-util';
 
 @Component({
   selector: 'app-slide-ordenar',
@@ -25,13 +26,14 @@ export class SlideOrdenar {
       this.config = { enunciado: '', items: [] };
     }
     // Se mezclan para que el usuario tenga que ordenarlos (no vienen ya en el orden correcto).
-    this.items = [...(this.config.items ?? [])].sort(() => Math.random() - 0.5);
+    this.items = barajar(this.config.items ?? []);
   }
   get slide(): CursoSlideDto {
     return this._slide;
   }
 
   @Output() respuesta = new EventEmitter<any>();
+  @Input() estilo: 'oscuro' | 'claro' | 'adaptado-oscuro' | 'adaptado-claro' = 'claro';
 
   get kicker(): string {
     return this.config.kicker || 'ORDENA LOS PASOS';

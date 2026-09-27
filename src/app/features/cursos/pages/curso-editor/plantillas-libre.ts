@@ -5,7 +5,7 @@
 import { ElementoLibre } from '../../dtos/curso.dtos';
 
 let idCorrelativo = 1;
-function nuevoId(): string {
+export function nuevoId(): string {
   return `tpl${Date.now()}_${idCorrelativo++}`;
 }
 
@@ -16,7 +16,7 @@ export interface PlantillaLibre {
   generar: () => ElementoLibre[];
 }
 
-function texto(base: Partial<ElementoLibre> & Pick<ElementoLibre, 'x' | 'y' | 'ancho' | 'alto' | 'texto'>): ElementoLibre {
+export function texto(base: Partial<ElementoLibre> & Pick<ElementoLibre, 'x' | 'y' | 'ancho' | 'alto' | 'texto'>): ElementoLibre {
   return {
     id: nuevoId(),
     tipo: 'texto',
@@ -34,7 +34,7 @@ function texto(base: Partial<ElementoLibre> & Pick<ElementoLibre, 'x' | 'y' | 'a
   };
 }
 
-function imagen(base: Partial<ElementoLibre> & Pick<ElementoLibre, 'x' | 'y' | 'ancho' | 'alto'>): ElementoLibre {
+export function imagen(base: Partial<ElementoLibre> & Pick<ElementoLibre, 'x' | 'y' | 'ancho' | 'alto'>): ElementoLibre {
   return {
     id: nuevoId(),
     tipo: 'imagen',
@@ -50,7 +50,7 @@ function imagen(base: Partial<ElementoLibre> & Pick<ElementoLibre, 'x' | 'y' | '
   };
 }
 
-function forma(base: Partial<ElementoLibre> & Pick<ElementoLibre, 'x' | 'y' | 'ancho' | 'alto'>): ElementoLibre {
+export function forma(base: Partial<ElementoLibre> & Pick<ElementoLibre, 'x' | 'y' | 'ancho' | 'alto'>): ElementoLibre {
   return {
     id: nuevoId(),
     tipo: 'forma',
@@ -64,7 +64,7 @@ function forma(base: Partial<ElementoLibre> & Pick<ElementoLibre, 'x' | 'y' | 'a
   };
 }
 
-function boton(base: Partial<ElementoLibre> & Pick<ElementoLibre, 'x' | 'y' | 'ancho' | 'alto'>): ElementoLibre {
+export function boton(base: Partial<ElementoLibre> & Pick<ElementoLibre, 'x' | 'y' | 'ancho' | 'alto'>): ElementoLibre {
   return {
     id: nuevoId(),
     tipo: 'boton',

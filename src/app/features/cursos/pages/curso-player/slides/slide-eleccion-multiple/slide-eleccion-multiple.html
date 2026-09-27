@@ -1,13 +1,13 @@
-<div class="slide-em">
+<div class="slide-em" [ngClass]="'slide-em-estilo-' + estilo">
   <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
 
   <h2 class="enunciado anim-cascada-titulo">{{ config.enunciado }}</h2>
 
-  <div class="opciones anim-cascada-cuerpo">
+  <div class="opciones anim-cascada-cuerpo" [class.opciones-vertical]="disposicion === 'vertical'">
     <button
       type="button"
       class="opcion"
-      *ngFor="let op of config.opciones"
+      *ngFor="let op of opcionesMostradas"
       [class.seleccionada]="seleccionIds.has(op.id)"
       [disabled]="confirmado"
       (click)="toggle(op.id)"

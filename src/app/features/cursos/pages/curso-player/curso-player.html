@@ -107,9 +107,30 @@
       <!-- Overlay de feedback -->
       <div class="overlay-feedback" *ngIf="fase === 'feedback'">
         <div class="feedback-box" [class.correcto]="ultimaEsCorrecta === true" [class.incorrecto]="ultimaEsCorrecta === false">
-          <i class="ti ti-circle-check" *ngIf="ultimaEsCorrecta === true"></i>
-          <i class="ti ti-circle-x" *ngIf="ultimaEsCorrecta === false"></i>
-          <span>{{ ultimaEsCorrecta === true ? '¡Correcto!' : (ultimaEsCorrecta === false ? 'Incorrecto' : '') }}</span>
+          <div class="feedback-titulo">
+            <i class="ti ti-circle-check" *ngIf="ultimaEsCorrecta === true"></i>
+            <i class="ti ti-circle-x" *ngIf="ultimaEsCorrecta === false"></i>
+            <span>{{ ultimaEsCorrecta === true ? '¡Correcto!' : (ultimaEsCorrecta === false ? 'Incorrecto' : '') }}</span>
+          </div>
+
+          <!-- El mensaje de "Según el resultado" ya NO se muestra acá: esa rama ahora es una
+               lista de acciones apiladas (ver ejecutarAccionesPregunta en
+               slide-contenido-libre.ts) — un mensaje ahí se expresa con la acción
+               "Abrir ventana" (overlay propio), no como texto plano en este overlay de
+               feedback. Lo que sigue mostrando texto acá es "Mensajes tras responder"
+               (preguntaMensajesSimplesActivos), un toggle independiente y más simple. -->
+          <ng-container *ngIf="elementoPreguntaFeedback?.preguntaMensajesSimplesActivos">
+            <p class="feedback-mensaje" *ngIf="ultimaEsCorrecta === true && elementoPreguntaFeedback?.preguntaMensajeAciertoSimple">
+              {{ elementoPreguntaFeedback?.preguntaMensajeAciertoSimple }}
+            </p>
+            <p class="feedback-mensaje" *ngIf="ultimaEsCorrecta === false && elementoPreguntaFeedback?.preguntaMensajeErrorSimple">
+              {{ elementoPreguntaFeedback?.preguntaMensajeErrorSimple }}
+            </p>
+          </ng-container>
+
+          <p class="feedback-respuesta-correcta" *ngIf="elementoPreguntaFeedback?.preguntaMostrarRespuestaCorrecta && ultimaEsCorrecta === false && textoRespuestaCorrectaFeedback">
+            Respuesta correcta: <strong>{{ textoRespuestaCorrectaFeedback }}</strong>
+          </p>
         </div>
       </div>
     </ng-container>

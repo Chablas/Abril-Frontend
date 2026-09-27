@@ -1,0 +1,124 @@
+<div class="historial-page">
+  <div class="admin-topbar">
+    <span class="admin-kicker"><i class="ti ti-shield-check"></i> Historial de evaluaciones (SUNAFIL)</span>
+    <a class="admin-link" routerLink="/cursos/editor">Volver a administrar cursos <i class="ti ti-arrow-left"></i></a>
+  </div>
+
+  <div class="panel-filtros">
+    <div class="abril-field">
+      <select class="abril-field-input" id="curso" [(ngModel)]="filtroCursoId" (change)="buscar()">
+        <option [ngValue]="null">Todos los cursos</option>
+        <option *ngFor="let c of cursos" [ngValue]="c.id">{{ c.titulo }}</option>
+      </select>
+      <label class="abril-field-label" for="curso">Curso</label>
+    </div>
+    <div class="abril-field">
+      <input class="abril-field-input" type="date" id="desde" [(ngModel)]="filtroDesde" (change)="buscar()" placeholder=" " />
+      <label class="abril-field-label" for="desde">Desde</label>
+    </div>
+    <div class="abril-field">
+      <input class="abril-field-input" type="date" id="hasta" [(ngModel)]="filtroHasta" (change)="buscar()" placeholder=" " />
+      <label class="abril-field-label" for="hasta">Hasta</label>
+    </div>
+    <button type="button" class="btn-link" (click)="limpiarFiltros()"><i class="ti ti-filter-x"></i> Limpiar</button>
+    <button type="button" class="btn-primario" (click)="exportarCsv()" [disabled]="!intentos.length">
+      <i class="ti ti-file-spreadsheet"></i> Exportar CSV
+    </button>
+  </div>
+
+  <div class="estado-centro" *ngIf="cargando">
+    <i class="ti ti-loader-2 icono-spin"></i>
+    <p>Cargando historial...</p>
+  </div>
+
+  <div class="estado-centro" *ngIf="!cargando && errorMensaje">
+    <i class="ti ti-alert-triangle icono-error"></i>
+    <p>{{ errorMensaje }}</p>
+  </div>
+
+  <div class="estado-centro" *ngIf="!cargando && !errorMensaje && !intentos.length">
+    <i class="ti ti-file-off"></i>
+    <p>No hay intentos que coincidan con estos filtros.</p>
+  </div>
+
+  <div class="abril-table-wrap" *ngIf="!cargando && intentos.length">
+    <table class="abril-table">
+      <thead>
+        <tr>
+          <th>Trabajador</th>
+          <th>Curso</th>
+          <th>Inicio</th>
+          <th>Fin</th>
+          <th>Nota</th>
+          <th>Estado</th>
+          <th>Evidencia</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let i of intentos">
+          <td>{{ i.trabajadorNombre }}</td>
+          <td>{{ i.cursoTitulo }}</td>
+          <td>{{ i.fechaInicio | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ i.fechaFin ? (i.fechaFin | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+          <td>{{ i.notaFinal ?? '—' }}</td>
+          <td><span class="etiqueta-estado-historial" [ngClass]="claseEstado(i)">{{ etiquetaEstado(i) }}</span></td>
+          <td>
+            <span class="chip-evidencia" *ngIf="i.hashSha256" title="Intento sellado con hash SHA-256">
+              <i class="ti ti-fingerprint"></i> Sellado
+            </span>
+            <span class="chip-evidencia chip-evidencia--sin" *ngIf="!i.hashSha256">
+              <i class="ti ti-clock-hour-4"></i> Sin sellar
+            </span>
+          </td>
+          <td>
+            <button type="button" class="btn-link" (click)="verDetalle(i)"><i class="ti ti-eye"></i> Ver</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Detalle del intento: respuestas + evidencia de auditoría -->
+  <div class="historial-backdrop" *ngIf="cargandoDetalle || detalleAbierto" (click)="cerrarDetalle()">
+    <div class="historial-panel panel-detalle" (click)="$event.stopPropagation()">
+      <div class="historial-header">
+        <span><i class="ti ti-file-search"></i> Detalle del intento</span>
+        <button type="button" class="btn-link" (click)="cerrarDetalle()"><i class="ti ti-x"></i></button>
+      </div>
+
+      <div class="estado-centro" *ngIf="cargandoDetalle">
+        <i class="ti ti-loader-2 icono-spin"></i>
+      </div>
+
+      <ng-container *ngIf="detalleAbierto as d">
+        <div class="bloque-evidencia">
+          <h4>Evidencia de auditoría</h4>
+          <div class="fila-evidencia"><span>IP</span><strong>{{ d.evidencia?.ipAddress ?? '—' }}</strong></div>
+          <div class="fila-evidencia"><span>Dispositivo</span><strong class="truncar">{{ d.evidencia?.userAgent ?? '—' }}</strong></div>
+          <div class="fila-evidencia" *ngIf="d.evidencia?.latitud">
+            <span>Geolocalización</span>
+            <strong>{{ d.evidencia?.latitud }}, {{ d.evidencia?.longitud }} (±{{ d.evidencia?.precisionGpsMetros }}m)</strong>
+          </div>
+          <div class="fila-evidencia"><span>Declaración jurada</span><strong>{{ d.evidencia?.declaracionJuradaAceptada ? 'Aceptada' : 'No aceptada' }}</strong></div>
+          <div class="fila-evidencia" *ngIf="d.evidencia?.selladoAt"><span>Sellado el</span><strong>{{ d.evidencia?.selladoAt | date:'dd/MM/yyyy HH:mm:ss' }}</strong></div>
+          <div class="fila-evidencia" *ngIf="d.evidencia?.hashSha256">
+            <span>Hash SHA-256</span>
+            <strong class="hash-mono">{{ d.evidencia?.hashSha256 }}</strong>
+          </div>
+        </div>
+
+        <div class="bloque-respuestas">
+          <h4>Respuestas ({{ d.respuestas.length }})</h4>
+          <div class="fila-respuesta" *ngFor="let r of d.respuestas">
+            <span class="fila-respuesta-slide">Pantalla #{{ r.cursoSlideId }}</span>
+            <span class="fila-respuesta-resultado" [ngClass]="{'correcta': r.esCorrecta === true, 'incorrecta': r.esCorrecta === false}">
+              <i class="ti" [ngClass]="r.esCorrecta === true ? 'ti-check' : (r.esCorrecta === false ? 'ti-x' : 'ti-minus')"></i>
+              {{ r.puntajeObtenido ?? 0 }} pts
+            </span>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+  </div>
+</div>

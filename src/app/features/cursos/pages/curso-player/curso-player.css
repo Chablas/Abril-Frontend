@@ -191,8 +191,9 @@
 
 .feedback-box {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 18px 32px;
   border-radius: 14px;
   font-size: 1.3rem;
@@ -200,6 +201,27 @@
   color: #fff;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
   animation: pop 0.3s ease;
+  max-width: 420px;
+  text-align: center;
+}
+
+.feedback-titulo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.feedback-mensaje {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.feedback-respuesta-correcta {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  opacity: 0.9;
 }
 
 .feedback-box i {

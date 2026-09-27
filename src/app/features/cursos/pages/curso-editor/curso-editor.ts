@@ -11,13 +11,16 @@ import {
   CursoSlideDto,
   CursoUpsertDto,
   CursoSlideUpsertDto,
+  ContenidoLibreConfig,
   ElementoLibre,
   SlideEstilo,
   CursoPreguntaBancoDto,
 } from '../../dtos/curso.dtos';
 import { resolverEtiquetaSlide } from '../curso-player/slide-tipo-registro';
 import { CanvasEditor } from './canvas-editor/canvas-editor';
+import { SlideContenidoLibre } from '../curso-player/slides/slide-contenido-libre/slide-contenido-libre';
 import { ColorHexInput } from '../../shared/color-hex-input/color-hex-input';
+import { AudioPickerModal, AudioPickerResultado } from '../../shared/audio-picker-modal/audio-picker-modal';
 import {
   VersionGuardada,
   agregarVersion,
@@ -29,6 +32,7 @@ import {
   listarVersiones,
 } from './historial-local';
 import { PLANTILLAS_LIBRE, PlantillaLibre } from './plantillas-libre';
+import { PLANTILLAS_CURSO, PlantillaCurso } from './plantillas-curso';
 import { construirConfiguracionPlanaDesdePregunta } from '../../pregunta-config-builder';
 import { CANVAS_ANCHO, CANVAS_ALTO } from '../curso-player/slides/slide-contenido-libre/slide-contenido-libre';
 import { SlideVerdaderoFalso } from '../curso-player/slides/slide-verdadero-falso/slide-verdadero-falso';
@@ -177,6 +181,8 @@ function convertirCamposAElementos(tipoCodigo: string, campos: any): ElementoLib
     SlideEmparejarConceptos,
     SlideEleccionMultiple,
     SlideDeslizaAcierta,
+    AudioPickerModal,
+    SlideContenidoLibre,
   ],
   templateUrl: './curso-editor.html',
   styleUrl: './curso-editor.css',
@@ -259,6 +265,8 @@ export class CursoEditor implements OnInit, OnDestroy {
     izquierda: { id: string; texto: string }[];
     derecha: { id: string; texto: string }[];
     parejas: Record<string, string>;
+    deslizaTarjetas: { id: string; texto: string; imagenUrl?: string; correcta: boolean }[];
+    deslizaUmbralAprobarPct?: number;
   } | null = null;
   mostrarConfiguracionCurso = false;
   readonly canvasAncho = CANVAS_ANCHO;
@@ -347,6 +355,391 @@ export class CursoEditor implements OnInit, OnDestroy {
 
   mostrarNuevoCurso(): void {
     this.mostrarFormularioNuevo = true;
+    this.filtroGaleria = '';
+  }
+
+  // ---- Plantillas de curso completo (portada + contenido + quiz de una vez), estilo
+  // Genially "Empezar desde una plantilla" — ver plantillas-curso.ts. ----
+
+  readonly plantillasCurso = PLANTILLAS_CURSO;
+  /** Cursos marcados `esPlantilla` — se crean con "Guardar como plantilla" (ver
+   *  guardarComoPlantilla() más abajo) y aparecen aquí para reusarlos desde la galería. */
+  get plantillasGuardadas(): CursoDto[] {
+    return this.todosLosCursos.filter((c) => c.esPlantilla);
+  }
+
+  // ---- Buscador de la galería "Elige cómo crear" ----
+  filtroGaleria = '';
+
+  private coincide(...campos: (string | null | undefined)[]): boolean {
+    const q = this.filtroGaleria.trim().toLowerCase();
+    if (!q) return true;
+    return campos.some((c) => (c ?? '').toLowerCase().includes(q));
+  }
+
+  get plantillasGuardadasFiltradas(): CursoDto[] {
+    return this.plantillasGuardadas.filter((pl) => this.coincide(pl.titulo, pl.categoriaNombre));
+  }
+
+  get plantillasCursoFiltradas(): PlantillaCurso[] {
+    return this.plantillasCurso.filter((pl) => this.coincide(pl.nombre, pl.descripcion, pl.categoriaSugerida));
+  }
+
+  // ---- Vista previa de una plantilla antes de crear el curso (galería) ----
+  previewSlides: CursoSlideDto[] | null = null;
+  previewIndice = 0;
+  previewTitulo = '';
+  /** true cuando la preview es de una "Plantilla rápida" (código fijo, no editable) —
+   *  controla si se muestra el botón "Convertir en plantilla editable". */
+  previewEsRapida = false;
+  private previewAccion: (() => void) | null = null;
+  private previewPlantillaRapida: PlantillaCurso | null = null;
+
+  previsualizarPlantillaRapida(pl: PlantillaCurso): void {
+    const slides = pl.generarSlides().map((s, i) => ({ ...s, id: 0, cursoId: 0, orden: i + 1 }));
+    this.previewSlides = slides;
+    this.previewIndice = 0;
+    this.previewTitulo = pl.nombre;
+    this.previewEsRapida = true;
+    this.previewPlantillaRapida = pl;
+    this.previewAccion = () => this.crearCursoDesdePlantilla(pl);
+  }
+
+  previsualizarPlantillaGuardada(pl: CursoDto): void {
+    this.cursoService.getSlidesAdmin(pl.id).subscribe({
+      next: (slides) => {
+        this.previewSlides = slides;
+        this.previewIndice = 0;
+        this.previewTitulo = pl.titulo;
+        this.previewEsRapida = false;
+        this.previewPlantillaRapida = null;
+        this.previewAccion = () => this.usarPlantillaGuardada(pl);
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        Swal.fire({ icon: 'error', title: 'No se pudo cargar la plantilla', text: err.error?.message });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  cerrarPreviewPlantilla(): void {
+    this.previewSlides = null;
+    this.previewAccion = null;
+    this.previewPlantillaRapida = null;
+  }
+
+  /** Cualquier botón "ir a página" dentro de la vista previa avanza simplemente a la
+   *  siguiente pantalla del recorrido — el ID real de destino no existe todavía porque
+   *  estas pantallas no están guardadas en la base de datos. */
+  avanzarPreviewPorClic(): void {
+    if (!this.previewSlides) return;
+    if (this.previewIndice < this.previewSlides.length - 1) this.previewIndice++;
+  }
+
+  /** Convierte una "Plantilla rápida" (código fijo) en un curso real marcado `esPlantilla`
+   *  — a partir de ahora aparece en "Tus plantillas" y es 100% editable desde la UI, igual
+   *  que cualquier curso. No navega a ningún lado: se queda en la galería. */
+  async convertirPlantillaRapidaEnEditable(): Promise<void> {
+    const pl = this.previewPlantillaRapida;
+    if (!pl) return;
+
+    const { value: titulo } = await Swal.fire({
+      title: 'Nombre de la plantilla',
+      input: 'text',
+      inputValue: pl.nombre,
+      inputPlaceholder: 'Nombre de la plantilla',
+      showCancelButton: true,
+      confirmButtonText: 'Convertir en editable',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (v) => (!v?.trim() ? 'Ingresa un nombre' : undefined),
+    });
+    if (!titulo) return;
+
+    const payload: CursoUpsertDto = {
+      titulo,
+      descripcion: '',
+      categoriaNombre: pl.categoriaSugerida,
+      rolDestino: '',
+      notaMinimaAprobacion: 14,
+      activo: true,
+      colorTema: '#f5a623',
+      logoUrl: null,
+      esPlantilla: true,
+    };
+    this.cursoService.crearCurso(payload).subscribe({
+      next: (nuevo) => {
+        this.crearSlidesSecuencial(nuevo.id, pl.generarSlides(), 0, (creadas) => {
+          this.wireNavegacionSecuencial(creadas);
+          this.cargarTodosLosCursos();
+          this.cerrarPreviewPlantilla();
+          Swal.fire({ icon: 'success', title: 'Ya es una plantilla editable', text: 'Búscala en "Tus plantillas" o en Administrar cursos.', timer: 2200, showConfirmButton: false });
+          this.cdr.detectChanges();
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        Swal.fire({ icon: 'error', title: 'No se pudo convertir la plantilla', text: err.error?.message });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  confirmarUsarPreview(): void {
+    const accion = this.previewAccion;
+    this.cerrarPreviewPlantilla();
+    accion?.();
+  }
+
+  private crearSlidesSecuencial(
+    cursoId: number,
+    slides: Omit<CursoSlideUpsertDto, 'orden'>[],
+    indice: number,
+    alTerminar: (creadas: CursoSlideDto[]) => void,
+    creadas: CursoSlideDto[] = [],
+  ): void {
+    if (indice >= slides.length) {
+      alTerminar(creadas);
+      return;
+    }
+    const dto: CursoSlideUpsertDto = { ...slides[indice], orden: indice + 1 };
+    this.cursoService.crearSlide(cursoId, dto).subscribe({
+      next: (creada) => this.crearSlidesSecuencial(cursoId, slides, indice + 1, alTerminar, [...creadas, creada]),
+      error: (err: HttpErrorResponse) => {
+        Swal.fire({ icon: 'error', title: `No se pudo crear la pantalla ${indice + 1} de la plantilla`, text: err.error?.message });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** Reemplaza el ID provisorio (-1) de los botones "ir a página" que arman las plantillas
+   *  de plantillas-curso.ts por el ID real de la SIGUIENTE pantalla ya creada — recién acá
+   *  existen los IDs reales, así que este cableado solo puede hacerse después de crear
+   *  todas las pantallas. Sin esto, "Comenzar" (y cualquier botón similar) no llevaría a
+   *  ningún lado en un curso real, igual que en la vista previa antes de crear el curso. */
+  private wireNavegacionSecuencial(creadas: CursoSlideDto[]): void {
+    creadas.forEach((slide, i) => {
+      const siguiente = creadas[i + 1];
+      if (!siguiente || slide.tipoCodigo !== 'contenido_libre') return;
+
+      let config: ContenidoLibreConfig;
+      try {
+        config = JSON.parse(slide.configuracionJson || '{}');
+      } catch {
+        return;
+      }
+      if (!config.elementos?.length) return;
+
+      let cambio = false;
+      for (const el of config.elementos) {
+        if (el.tipo === 'boton' && el.botonAccion === 'pagina' && el.botonSlideId === -1) {
+          el.botonSlideId = siguiente.id;
+          cambio = true;
+        }
+      }
+      if (!cambio) return;
+
+      this.cursoService
+        .actualizarSlide(slide.id, {
+          orden: slide.orden,
+          tipoCodigo: slide.tipoCodigo,
+          esEvaluable: slide.esEvaluable,
+          puntaje: slide.puntaje,
+          contarParaNota: slide.contarParaNota,
+          modoCorreccion: slide.modoCorreccion,
+          configuracionJson: JSON.stringify(config),
+        })
+        .subscribe({ error: () => {} });
+    });
+  }
+
+  async crearCursoDesdePlantilla(pl: PlantillaCurso): Promise<void> {
+    const { value: titulo } = await Swal.fire({
+      title: 'Nombre del curso',
+      input: 'text',
+      inputValue: pl.tituloSugerido,
+      inputPlaceholder: 'Título del curso',
+      showCancelButton: true,
+      confirmButtonText: 'Crear curso',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (v) => (!v?.trim() ? 'Ingresa un título' : undefined),
+    });
+    if (!titulo) return;
+
+    const payload = { ...this.curso, titulo, categoriaNombre: pl.categoriaSugerida };
+    this.cursoService.crearCurso(payload).subscribe({
+      next: (nuevo) => {
+        const slides = pl.generarSlides();
+        this.crearSlidesSecuencial(nuevo.id, slides, 0, (creadas) => {
+          this.wireNavegacionSecuencial(creadas);
+          this.router.navigate(['/cursos/editor', nuevo.id]);
+          Swal.fire({ icon: 'success', title: 'Curso creado desde la plantilla', timer: 1400, showConfirmButton: false });
+          this.cdr.detectChanges();
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        Swal.fire({ icon: 'error', title: 'No se pudo crear el curso', text: err.error?.message });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** Clona TODAS las pantallas de `origenCursoId` dentro de `destinoCursoId`, en el mismo
+   *  orden — usado tanto por "Usar esta plantilla" como por "Guardar como plantilla"
+   *  (el curso ya se crea aparte; esto solo copia el contenido). */
+  private clonarSlides(origenCursoId: number, destinoCursoId: number, alTerminar: (creadas: CursoSlideDto[]) => void): void {
+    this.cursoService.getSlidesAdmin(origenCursoId).subscribe({
+      next: (slides) => {
+        const paraCrear: Omit<CursoSlideUpsertDto, 'orden'>[] = [...slides]
+          .sort((a, b) => a.orden - b.orden)
+          .map((s) => ({
+            tipoCodigo: s.tipoCodigo,
+            esEvaluable: s.esEvaluable,
+            puntaje: s.puntaje,
+            contarParaNota: s.contarParaNota,
+            modoCorreccion: s.modoCorreccion,
+            configuracionJson: s.configuracionJson,
+          }));
+        this.crearSlidesSecuencial(destinoCursoId, paraCrear, 0, alTerminar);
+      },
+      error: (err: HttpErrorResponse) => {
+        Swal.fire({ icon: 'error', title: 'No se pudieron copiar las pantallas', text: err.error?.message });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** Crea un curso NUEVO (no plantilla) clonando título/color/categoría y todas las
+   *  pantallas de una plantilla guardada (`c.esPlantilla`), y navega a su editor. */
+  async usarPlantillaGuardada(pl: CursoDto): Promise<void> {
+    const { value: titulo } = await Swal.fire({
+      title: 'Nombre del curso',
+      input: 'text',
+      inputValue: pl.titulo,
+      inputPlaceholder: 'Título del curso',
+      showCancelButton: true,
+      confirmButtonText: 'Crear curso',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (v) => (!v?.trim() ? 'Ingresa un título' : undefined),
+    });
+    if (!titulo) return;
+
+    const payload: CursoUpsertDto = {
+      titulo,
+      descripcion: pl.descripcion ?? '',
+      categoriaNombre: pl.categoriaNombre ?? '',
+      rolDestino: pl.rolDestino ?? '',
+      notaMinimaAprobacion: pl.notaMinimaAprobacion,
+      activo: true,
+      colorTema: pl.colorTema ?? '#0f6e56',
+      logoUrl: pl.logoUrl ?? null,
+      esPlantilla: false,
+    };
+    this.cursoService.crearCurso(payload).subscribe({
+      next: (nuevo) => {
+        this.clonarSlides(pl.id, nuevo.id, () => {
+          this.router.navigate(['/cursos/editor', nuevo.id]);
+          Swal.fire({ icon: 'success', title: 'Curso creado desde la plantilla', timer: 1400, showConfirmButton: false });
+          this.cdr.detectChanges();
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        Swal.fire({ icon: 'error', title: 'No se pudo crear el curso', text: err.error?.message });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** Clona el curso actual (con todas sus pantallas) en un curso nuevo marcado
+   *  `esPlantilla: true` — no toca el curso original. El clon aparece en "Tus plantillas"
+   *  dentro de la galería "Elige cómo crear tu curso", editable y reutilizable como
+   *  cualquier otro curso. */
+  async guardarComoPlantilla(): Promise<void> {
+    if (!this.cursoId) return;
+    const { value: titulo } = await Swal.fire({
+      title: 'Guardar como plantilla',
+      input: 'text',
+      inputValue: `${this.curso.titulo} (plantilla)`,
+      inputPlaceholder: 'Nombre de la plantilla',
+      showCancelButton: true,
+      confirmButtonText: 'Guardar plantilla',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (v) => (!v?.trim() ? 'Ingresa un nombre' : undefined),
+    });
+    if (!titulo) return;
+
+    const payload: CursoUpsertDto = {
+      titulo,
+      descripcion: this.curso.descripcion ?? '',
+      categoriaNombre: this.curso.categoriaNombre ?? '',
+      rolDestino: this.curso.rolDestino ?? '',
+      notaMinimaAprobacion: this.curso.notaMinimaAprobacion,
+      activo: true,
+      colorTema: this.curso.colorTema ?? '#0f6e56',
+      logoUrl: this.curso.logoUrl ?? null,
+      esPlantilla: true,
+    };
+    this.cursoService.crearCurso(payload).subscribe({
+      next: (nuevo) => {
+        this.clonarSlides(this.cursoId!, nuevo.id, () => {
+          this.cargarTodosLosCursos();
+          Swal.fire({ icon: 'success', title: 'Plantilla guardada', timer: 1400, showConfirmButton: false });
+          this.cdr.detectChanges();
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        Swal.fire({ icon: 'error', title: 'No se pudo guardar la plantilla', text: err.error?.message });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** Elimina un curso por completo (curso + slides + intentos + evidencia SUNAFIL) — pide
+   *  2 confirmaciones si nadie lo rindió todavía, o 3 si ya hay evaluaciones registradas
+   *  (porque ahí se pierde evidencia legal, no solo contenido). Irreversible. */
+  eliminarCurso(c: CursoDto, event: Event): void {
+    event.stopPropagation();
+
+    this.cursoService.getTieneEvaluaciones(c.id).subscribe({
+      next: ({ tieneEvaluaciones }) => this.confirmarEliminarCurso(c, tieneEvaluaciones),
+      error: (err: HttpErrorResponse) => {
+        Swal.fire({ icon: 'error', title: 'No se pudo verificar el curso', text: err.error?.message });
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private async confirmarEliminarCurso(c: CursoDto, tieneEvaluaciones: boolean): Promise<void> {
+    const pasos = tieneEvaluaciones
+      ? [
+          {
+            icon: 'warning' as const,
+            title: `Este curso YA tiene evaluaciones rendidas`,
+            html: `<b>${c.titulo}</b> tiene trabajadores que ya lo rindieron. Eliminarlo borra también sus intentos y la evidencia SUNAFIL asociada (IP, geolocalización, declaración jurada, hash). Esto no se puede deshacer.`,
+          },
+          { icon: 'warning' as const, title: '¿Confirmas que quieres continuar?', html: `Se perderá el historial de evaluaciones de <b>${c.titulo}</b>.` },
+          { icon: 'error' as const, title: 'Última confirmación', html: `Escribe que sí para eliminar <b>${c.titulo}</b> definitivamente.` },
+        ]
+      : [
+          { icon: 'warning' as const, title: `¿Eliminar "${c.titulo}"?`, html: 'Se borrará el curso y todas sus pantallas. Nadie lo ha rendido todavía.' },
+          { icon: 'error' as const, title: 'Esta acción no se puede deshacer', html: `Confirma que quieres eliminar <b>${c.titulo}</b> definitivamente.` },
+        ];
+
+    for (const paso of pasos) {
+      const r = await Swal.fire({ ...paso, showCancelButton: true, confirmButtonText: 'Sí, continuar', cancelButtonText: 'Cancelar' });
+      if (!r.isConfirmed) return;
+    }
+
+    this.cursoService.eliminarCurso(c.id).subscribe({
+      next: () => {
+        this.cargarTodosLosCursos();
+        Swal.fire({ icon: 'success', title: 'Curso eliminado', timer: 1400, showConfirmButton: false });
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        Swal.fire({ icon: 'error', title: 'No se pudo eliminar el curso', text: err.error?.message });
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   resolverEtiqueta(tipoCodigo: string): string {
@@ -399,10 +792,67 @@ export class CursoEditor implements OnInit, OnDestroy {
     this.fiPreview?.nativeElement.click();
   }
 
+  /** Vista previa de la pantalla que se está editando: arma la slide a partir de los
+   *  elementos EN VIVO del lienzo (this.ce.elementos), no de lo último guardado, para que
+   *  se vea el efecto de cambios que el autor aún no guardó. Renderizada con el mismo
+   *  componente que usa el reproductor real, así que las animaciones/temporizador se ven
+   *  exactamente igual que las verá el trabajador. */
+  mostrarVistaPrevia = false;
+  previewDispositivo: 'escritorio' | 'movil' = 'escritorio';
+  @ViewChild('ce') private ceRef?: CanvasEditor;
+
+  get slideParaVistaPrevia(): CursoSlideDto | null {
+    if (!this.mostrarVistaPrevia || !this.slideEditando || !this.ceRef) return null;
+    return {
+      id: this.slideEditando.id ?? 0,
+      cursoId: this.cursoId ?? 0,
+      orden: this.slideEditando.orden,
+      tipoCodigo: 'contenido_libre',
+      esEvaluable: false,
+      configuracionJson: JSON.stringify({ elementos: this.ceRef.elementos }),
+    };
+  }
+
+  mostrarModalAudio = false;
+
   subirAudioElementoLibre(el: ElementoLibre): void {
     this.objetivoSubidaPreview = el;
     this.campoSubidaPreview = 'audioUrl';
-    this.fiPreview?.nativeElement.click();
+    this.mostrarModalAudio = true;
+  }
+
+  subirAudioPreguntaElementoLibre(el: ElementoLibre): void {
+    this.objetivoSubidaPreview = el;
+    this.campoSubidaPreview = 'preguntaAudioUrl';
+    this.mostrarModalAudio = true;
+  }
+
+  /** Resultado del modal "Reproducir audio" (subir/grabar → sube el archivo real;
+   *  enlace → se guarda tal cual, sin pasar por el storage propio). */
+  onResultadoAudio(resultado: AudioPickerResultado): void {
+    this.mostrarModalAudio = false;
+    if (!this.objetivoSubidaPreview) return;
+
+    if (resultado.tipo === 'enlace') {
+      this.objetivoSubidaPreview[this.campoSubidaPreview] = resultado.url;
+      this.objetivoSubidaPreview = null;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const objetivo = this.objetivoSubidaPreview;
+    const campo = this.campoSubidaPreview;
+    this.objetivoSubidaPreview = null;
+    this.cursoService.subirImagen(resultado.archivo).subscribe({
+      next: (res) => {
+        objetivo[campo] = res.url;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        Swal.fire({ icon: 'error', title: 'No se pudo subir el audio', text: err.error?.message });
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   onArchivoPreviewSeleccionado(event: Event): void {
@@ -429,6 +879,13 @@ export class CursoEditor implements OnInit, OnDestroy {
             activo: encontrado.activo,
             colorTema: encontrado.colorTema ?? '#0f6e56',
             logoUrl: encontrado.logoUrl ?? null,
+            // PENDIENTE DE BACKEND (ver nota en curso.dtos.ts): `encontrado` nunca va a
+            // traer estos 3 campos hasta que Abril_Backend los devuelva — quedan
+            // undefined al recargar la página, aunque se hayan editado antes.
+            colorMarcaSecundario: encontrado.colorMarcaSecundario ?? null,
+            colorMarcaTerciario: encontrado.colorMarcaTerciario ?? null,
+            colorTextoMarca: encontrado.colorTextoMarca ?? null,
+            estilosTextoMarcaJson: encontrado.estilosTextoMarcaJson ?? null,
           };
         }
         this.cargarSlides();
@@ -573,12 +1030,26 @@ export class CursoEditor implements OnInit, OnDestroy {
       izquierda: c.izquierda || [],
       derecha: c.derecha || [],
       parejas: rc || {},
+      deslizaTarjetas: (c.tarjetas || []).map((t: any, i: number) => ({
+        id: t.id,
+        texto: t.texto || '',
+        imagenUrl: t.imagenUrl || '',
+        correcta: !!rc.valores?.[i],
+      })),
+      deslizaUmbralAprobarPct: c.umbralAprobarPct ?? 100,
     };
 
-    if (slide.tipoCodigo === 'pregunta_vf' || slide.tipoCodigo === 'pregunta_desliza_acierta') {
+    if (slide.tipoCodigo === 'pregunta_vf') {
       this.preguntaEditando!.opciones = [
         { id: 'true', texto: 'Verdadero', imagenUrl: '', correcta: rc.valor === true },
         { id: 'false', texto: 'Falso', imagenUrl: '', correcta: rc.valor === false },
+      ];
+    }
+
+    if (slide.tipoCodigo === 'pregunta_desliza_acierta' && !this.preguntaEditando!.deslizaTarjetas.length) {
+      this.preguntaEditando!.deslizaTarjetas = [
+        { id: nuevoId(), texto: '', imagenUrl: '', correcta: true },
+        { id: nuevoId(), texto: '', imagenUrl: '', correcta: false },
       ];
     }
 
@@ -612,6 +1083,17 @@ export class CursoEditor implements OnInit, OnDestroy {
   toggleOpcionCorrecta(i: number): void {
     const o = this.preguntaEditando?.opciones[i];
     if (o) o.correcta = !o.correcta;
+  }
+
+  // ---- Tarjetas de "Desliza y acierta" (mazo, estilo Genially) ----
+
+  agregarTarjetaDesliza(): void {
+    this.preguntaEditando?.deslizaTarjetas.push({ id: nuevoId(), texto: '', imagenUrl: '', correcta: true });
+  }
+
+  quitarTarjetaDesliza(i: number): void {
+    if (!this.preguntaEditando || this.preguntaEditando.deslizaTarjetas.length <= 1) return;
+    this.preguntaEditando.deslizaTarjetas.splice(i, 1);
   }
 
   agregarItemOrdenar(): void {
@@ -825,9 +1307,12 @@ export class CursoEditor implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  /** "Cerrar" del lienzo — ya no hay una grilla de miniaturas a la que volver (el riel
+   *  "Páginas" del propio lienzo la reemplaza), así que sale directo a "Administrar cursos". */
   cancelarEdicionSlide(): void {
     this.detenerAutoguardado();
     this.slideEditando = null;
+    this.router.navigate(['/cursos/editor']);
   }
 
   // ---- Navegación entre pantallas sin salir del lienzo (flechas, estilo Genially) ----
@@ -1011,6 +1496,7 @@ export class CursoEditor implements OnInit, OnDestroy {
     this.ultimoSnapshotAutoguardado = snapshot;
     this.ultimoAutoguardadoEn = Date.now();
     this.cdr.detectChanges();
+    this.autoguardarAlServidor();
   }
 
   private detenerAutoguardado(): void {
@@ -1066,22 +1552,23 @@ export class CursoEditor implements OnInit, OnDestroy {
     });
   }
 
-  guardarSlide(alTerminar?: () => void): void {
-    if (!this.cursoId || !this.slideEditando) return;
-
+  /** Arma el DTO a persistir a partir de slideEditando — compartido entre guardarSlide()
+   *  (guardado manual, cierra el lienzo) y autoguardarAlServidor() (silencioso, en segundo
+   *  plano, nunca cierra nada). */
+  private construirDtoSlideActual(): { dto: CursoSlideUpsertDto; configuracionJson: string; tipoCodigo: string } {
     // Estilo Genially: si hay un elemento tipo 'pregunta' en el lienzo (máximo uno, ver
     // canvas-editor.agregarElementoPregunta), esta pantalla SÍ es evaluable — se guarda
     // "elementos" completo (para poder renderizar todo el lienzo libre) PERO además, al
     // nivel raíz del JSON, la forma plana que CorregirGenerico espera (enunciado/opciones/
     // respuestaCorrecta/etc.), calculada con el mismo builder que usa el formulario de
     // pantalla completa. Sin pregunta embebida, se comporta exactamente igual que antes.
-    const elPregunta = this.slideEditando.campos.elementos.find((e) => e.tipo === 'pregunta' && e.pregunta);
-    const camposPlanos = elPregunta?.pregunta ? construirConfiguracionPlanaDesdePregunta(elPregunta.pregunta) : {};
+    const elPregunta = this.slideEditando!.campos.elementos.find((e) => e.tipo === 'pregunta' && e.pregunta);
+    const camposPlanos = elPregunta?.pregunta ? construirConfiguracionPlanaDesdePregunta(elPregunta.pregunta, elPregunta) : {};
 
-    const configuracionJson = JSON.stringify({ ...this.slideEditando.campos, ...camposPlanos });
+    const configuracionJson = JSON.stringify({ ...this.slideEditando!.campos, ...camposPlanos });
     const tipoCodigo = elPregunta?.pregunta?.tipoCodigo ?? 'contenido_libre';
     const dto: CursoSlideUpsertDto = {
-      orden: this.slideEditando.orden,
+      orden: this.slideEditando!.orden,
       tipoCodigo,
       esEvaluable: !!elPregunta,
       puntaje: elPregunta?.pregunta?.puntaje ?? null,
@@ -1089,7 +1576,34 @@ export class CursoEditor implements OnInit, OnDestroy {
       modoCorreccion: elPregunta ? 'igualdad_exacta' : 'sin_calificar',
       configuracionJson,
     };
+    return { dto, configuracionJson, tipoCodigo };
+  }
 
+  /** Autoguardado silencioso al servidor: corre cada INTERVALO_AUTOGUARDADO_MS mientras
+   *  hay cambios sin guardar (ver autoguardarSiCambio), igual que la sincronización
+   *  continua de Genially — a diferencia de guardarSlide(), nunca cierra el lienzo ni
+   *  navega. Si falla (ej. sin internet), el borrador local ya guardado en paralelo sigue
+   *  siendo la red de seguridad hasta el próximo intento. */
+  private autoguardarAlServidor(): void {
+    if (!this.cursoId || !this.slideEditando) return;
+    const { dto } = this.construirDtoSlideActual();
+
+    if (this.slideEditando.id) {
+      this.cursoService.actualizarSlide(this.slideEditando.id, dto).subscribe({ error: () => {} });
+    } else {
+      this.cursoService.crearSlide(this.cursoId, dto).subscribe({
+        next: (creada) => {
+          if (this.slideEditando) this.slideEditando.id = creada.id;
+        },
+        error: () => {},
+      });
+    }
+  }
+
+  guardarSlide(alTerminar?: () => void): void {
+    if (!this.cursoId || !this.slideEditando) return;
+
+    const { dto, configuracionJson, tipoCodigo } = this.construirDtoSlideActual();
     const idAntesDeGuardar = this.slideEditando.id;
     const alGuardar = (slideGuardada?: CursoSlideDto) => {
       // El id real solo se conoce tras el primer guardado de una slide nueva; para el
@@ -1152,7 +1666,19 @@ export class CursoEditor implements OnInit, OnDestroy {
     }).then((res) => {
       if (!res.isConfirmed) return;
       this.cursoService.eliminarSlide(slide.id).subscribe({
-        next: () => this.cargarSlides(),
+        next: () => {
+          // Se puede eliminar desde el riel mientras se edita OTRA pantalla — pero si era
+          // justo la que está abierta, hay que reabrir otra (o cerrar si ya no queda
+          // ninguna): quedaría editando un id que ya no existe.
+          const eraLaAbierta = this.slideEditando?.id === slide.id;
+          if (eraLaAbierta) {
+            this.detenerAutoguardado();
+            this.slideEditando = null;
+          }
+          this.cargarSlides(() => {
+            if (eraLaAbierta && this.slides.length) this.confirmarAbrirSlide(this.slides[0]);
+          });
+        },
         error: (err: HttpErrorResponse) => {
           Swal.fire({ icon: 'error', title: 'No se pudo eliminar', text: err.error?.message });
           this.cdr.detectChanges();

@@ -4,12 +4,15 @@
     <button #btnTexto type="button" class="rail-btn" [class.activo]="mostrarEstilosTexto" (click)="toggleEstilosTexto(btnTexto); $event.stopPropagation()">
       <i class="ti ti-typography"></i><span>Texto</span>
     </button>
-    <button type="button" class="rail-btn" (click)="agregarElemento('imagen')"><i class="ti ti-photo"></i><span>Imagen</span></button>
-    <button type="button" class="rail-btn" (click)="agregarElemento('forma')"><i class="ti ti-shape"></i><span>Forma</span></button>
-    <button type="button" class="rail-btn" (click)="agregarElemento('icono')"><i class="ti ti-icons"></i><span>Ícono</span></button>
-    <button type="button" class="rail-btn" (click)="agregarElemento('boton')"><i class="ti ti-hand-click"></i><span>Botón</span></button>
-    <button type="button" class="rail-btn" (click)="agregarElemento('video')"><i class="ti ti-video"></i><span>Video</span></button>
-    <button type="button" class="rail-btn" (click)="agregarElemento('audio')"><i class="ti ti-music"></i><span>Audio</span></button>
+    <button #btnInsertar type="button" class="rail-btn" [class.activo]="mostrarPanelInsertar" (click)="togglePanelInsertar(btnInsertar); $event.stopPropagation()">
+      <i class="ti ti-upload"></i><span>Insertar</span>
+    </button>
+    <button #btnElementos type="button" class="rail-btn" [class.activo]="mostrarPanelElementos" (click)="togglePanelElementos(btnElementos); $event.stopPropagation()">
+      <i class="ti ti-shapes"></i><span>Elementos</span>
+    </button>
+    <button #btnEstilo type="button" class="rail-btn" [class.activo]="mostrarPanelEstilo" (click)="togglePanelEstilo(btnEstilo); $event.stopPropagation()">
+      <i class="ti ti-palette"></i><span>Estilo</span>
+    </button>
     <div class="rail-espaciador"></div>
     <button #btnPreguntas type="button" class="rail-btn rail-btn-destacado" [class.activo]="mostrarPanelPreguntas" (click)="togglePanelPreguntas(btnPreguntas); $event.stopPropagation()">
       <i class="ti ti-list-check"></i><span>Preguntas</span>
@@ -55,6 +58,9 @@
             [style.font-size.px]="(el.tamanoFuente || 24) * escalaFinal"
             [style.text-align]="el.alineacion || 'left'"
             [style.font-weight]="el.negrita ? 700 : 400"
+            [style.font-style]="el.cursiva ? 'italic' : null"
+            [style.text-decoration]="el.subrayado ? 'underline' : null"
+            [style.font-family]="el.fontFamily || null"
             (pointerdown)="editandoTextoId === el.id && $event.stopPropagation()"
             (blur)="editandoTextoId === el.id && confirmarEdicionTexto(el, $event)"
             (keydown)="editandoTextoId === el.id && alTeclearEnEdicion($event)"
@@ -92,6 +98,7 @@
             [style.background]="el.colorFondo || '#f5a623'"
             [style.color]="el.colorTexto || '#14100b'"
             [style.font-size.px]="16 * escalaFinal"
+            [style.border-radius.px]="(el.bordeRedondeado ?? 8) * escalaFinal"
             (pointerdown)="editandoTextoId === el.id && $event.stopPropagation()"
             (blur)="editandoTextoId === el.id && confirmarEdicionTexto(el, $event)"
             (keydown)="editandoTextoId === el.id && alTeclearEnEdicion($event)"
@@ -107,7 +114,13 @@
             <span>{{ el.audioUrl ? 'Audio cargado' : 'Sin audio' }}</span>
           </div>
 
-          <div *ngSwitchCase="'pregunta'" class="canvas-pregunta-render" [style.background]="el.colorFondo || null" [style.color]="el.colorTexto || null">
+          <div
+            *ngSwitchCase="'pregunta'"
+            class="canvas-pregunta-render"
+            [ngClass]="'canvas-pregunta-estilo-' + (el.preguntaEstilo || 'claro')"
+            [style.background]="el.colorFondo || null"
+            [style.color]="el.colorTexto || null"
+          >
             <div class="canvas-pregunta-cabecera">
               <span class="canvas-pregunta-kicker" *ngIf="el.pregunta?.kicker">{{ el.pregunta?.kicker }}</span>
               <strong class="canvas-pregunta-enunciado">{{ el.pregunta?.enunciado || 'Escribe el enunciado en el panel de la derecha...' }}</strong>
@@ -115,17 +128,17 @@
             </div>
 
             <ng-container [ngSwitch]="el.pregunta?.tipoCodigo">
-              <div class="canvas-pregunta-pildoras" *ngSwitchCase="'pregunta_vf'">
-                <span class="canvas-pregunta-pildora" *ngFor="let o of el.pregunta?.opciones"><i class="ti" [ngClass]="o.correcta ? 'ti-check' : 'ti-x'" [class.icono-correcto]="o.correcta" [class.icono-incorrecto]="!o.correcta"></i>{{ o.texto }}</span>
+              <div class="canvas-pregunta-pildoras" [class.canvas-pregunta-pildoras-col]="el.preguntaDisposicion === 'vertical'" *ngSwitchCase="'pregunta_vf'">
+                <span class="canvas-pregunta-pildora" [class.pildora-correcta]="o.correcta" [class.pildora-incorrecta]="!o.correcta" *ngFor="let o of el.pregunta?.opciones"><i class="ti" [ngClass]="o.correcta ? 'ti-check' : 'ti-x'" [class.icono-correcto]="o.correcta" [class.icono-incorrecto]="!o.correcta"></i>{{ o.texto }}</span>
               </div>
-              <div class="canvas-pregunta-pildoras" *ngSwitchCase="'pregunta_desliza_acierta'">
-                <span class="canvas-pregunta-pildora" *ngFor="let o of el.pregunta?.opciones"><i class="ti" [ngClass]="o.correcta ? 'ti-check' : 'ti-x'" [class.icono-correcto]="o.correcta" [class.icono-incorrecto]="!o.correcta"></i>{{ o.texto }}</span>
+              <div class="canvas-pregunta-pildoras canvas-pregunta-pildoras-col" *ngSwitchCase="'pregunta_desliza_acierta'">
+                <span class="canvas-pregunta-pildora" [class.pildora-correcta]="t.correcta" [class.pildora-incorrecta]="!t.correcta" *ngFor="let t of el.pregunta?.deslizaTarjetas; let i = index"><i class="ti" [ngClass]="t.correcta ? 'ti-check' : 'ti-x'" [class.icono-correcto]="t.correcta" [class.icono-incorrecto]="!t.correcta"></i>{{ i + 1 }}. {{ t.texto || '(tarjeta vacía)' }}</span>
               </div>
-              <div class="canvas-pregunta-pildoras" *ngSwitchCase="'pregunta_opcion_multiple'">
-                <span class="canvas-pregunta-pildora" *ngFor="let o of el.pregunta?.opciones"><i class="ti" [ngClass]="o.correcta ? 'ti-check' : 'ti-x'" [class.icono-correcto]="o.correcta" [class.icono-incorrecto]="!o.correcta"></i>{{ o.texto || '(opción vacía)' }}</span>
+              <div class="canvas-pregunta-pildoras" [class.canvas-pregunta-pildoras-col]="el.preguntaDisposicion === 'vertical'" *ngSwitchCase="'pregunta_opcion_multiple'">
+                <span class="canvas-pregunta-pildora" [class.pildora-correcta]="o.correcta" [class.pildora-incorrecta]="!o.correcta" *ngFor="let o of el.pregunta?.opciones"><i class="ti" [ngClass]="o.correcta ? 'ti-check' : 'ti-x'" [class.icono-correcto]="o.correcta" [class.icono-incorrecto]="!o.correcta"></i>{{ o.texto || '(opción vacía)' }}</span>
               </div>
-              <div class="canvas-pregunta-pildoras" *ngSwitchCase="'pregunta_eleccion_multiple'">
-                <span class="canvas-pregunta-pildora" *ngFor="let o of el.pregunta?.opciones"><i class="ti" [ngClass]="o.correcta ? 'ti-check' : 'ti-x'" [class.icono-correcto]="o.correcta" [class.icono-incorrecto]="!o.correcta"></i>{{ o.texto || '(opción vacía)' }}</span>
+              <div class="canvas-pregunta-pildoras" [class.canvas-pregunta-pildoras-col]="el.preguntaDisposicion === 'vertical'" *ngSwitchCase="'pregunta_eleccion_multiple'">
+                <span class="canvas-pregunta-pildora" [class.pildora-correcta]="o.correcta" [class.pildora-incorrecta]="!o.correcta" *ngFor="let o of el.pregunta?.opciones"><i class="ti" [ngClass]="o.correcta ? 'ti-check' : 'ti-x'" [class.icono-correcto]="o.correcta" [class.icono-incorrecto]="!o.correcta"></i>{{ o.texto || '(opción vacía)' }}</span>
               </div>
               <div class="canvas-pregunta-pildoras canvas-pregunta-pildoras-col" *ngSwitchCase="'pregunta_ordenar'">
                 <span class="canvas-pregunta-pildora" *ngFor="let it of el.pregunta?.items; let i = index">{{ i + 1 }}. {{ it.texto || '(paso vacío)' }}</span>
@@ -136,8 +149,12 @@
               <div class="canvas-pregunta-pildoras canvas-pregunta-pildoras-col" *ngSwitchCase="'pregunta_completar_huecos'">
                 <span class="canvas-pregunta-pildora">{{ el.pregunta?.textoHuecos || '(sin texto todavía)' }}</span>
               </div>
-              <div class="canvas-pregunta-pildoras canvas-pregunta-pildoras-col" *ngSwitchCase="'pregunta_emparejar'">
-                <span class="canvas-pregunta-pildora" *ngFor="let izq of el.pregunta?.izquierda">{{ izq.texto || '(concepto vacío)' }}</span>
+              <div class="canvas-pregunta-emparejar-filas" *ngSwitchCase="'pregunta_emparejar'">
+                <div class="canvas-pregunta-emparejar-fila" *ngFor="let izq of el.pregunta?.izquierda">
+                  <span class="canvas-pregunta-pildora">{{ izq.texto || '(concepto vacío)' }}</span>
+                  <i class="ti ti-arrow-right"></i>
+                  <span class="canvas-pregunta-pildora">{{ etiquetaDerechaEmparejarPregunta(el.pregunta, izq.id) }}</span>
+                </div>
               </div>
             </ng-container>
 
@@ -316,8 +333,8 @@
     </aside>
 
     <aside class="canvas-panel" *ngIf="!haySeleccionMultiple && seleccionado as el" (focusout)="guardarHistorial()">
-      <div class="panel-header">
-        <span>{{ el.tipo }}</span>
+      <div class="panel-header" [class.panel-header-compacto]="el.tipo === 'pregunta'">
+        <span *ngIf="el.tipo !== 'pregunta'">{{ el.tipo }}</span>
         <button type="button" class="btn-link btn-link-danger" (click)="eliminarSeleccionado()" title="Eliminar"><i class="ti ti-trash"></i></button>
       </div>
 
@@ -519,7 +536,190 @@
         </button>
       </div>
 
-      <ng-container *ngIf="el.tipo === 'pregunta' && pestanaPropiedades === 'diseno'">
+      <!-- Diseño de "Desliza y acierta": estilo Genially, un sistema de colores propio y
+           completo (fondo, tipografía, tarjetas, botones, feedback, resultados) — no
+           comparte el bloque genérico Disposición/Estilo/colores de los demás 7 tipos. -->
+      <ng-container *ngIf="el.tipo === 'pregunta' && el.pregunta?.tipoCodigo === 'pregunta_desliza_acierta' && pestanaPropiedades === 'diseno'">
+        <label class="etiqueta-campo">Fondo</label>
+        <div class="campo-color">
+          <label>Color de fondo</label>
+          <app-color-hex-input [valor]="el.deslizaColorFondo" (valorChange)="el.deslizaColorFondo = $event" (confirmado)="guardarHistorial()" />
+        </div>
+
+        <hr class="separador" />
+
+        <label class="etiqueta-campo">Tipografía</label>
+        <div class="fila-campos">
+          <div class="abril-field campo-corto">
+            <input class="abril-field-input" type="number" min="10" [(ngModel)]="el.deslizaTamanoTexto" (ngModelChange)="guardarHistorial()" placeholder=" " />
+            <label class="abril-field-label">Tamaño de texto</label>
+          </div>
+          <div class="campo-color">
+            <label>Color de texto</label>
+            <app-color-hex-input [valor]="el.deslizaColorTexto" (valorChange)="el.deslizaColorTexto = $event" (confirmado)="guardarHistorial()" />
+          </div>
+        </div>
+
+        <hr class="separador" />
+
+        <label class="etiqueta-campo">Tarjetas</label>
+        <div class="fila-campos">
+          <div class="campo-color">
+            <label>Color de progreso</label>
+            <app-color-hex-input [valor]="el.deslizaColorProgreso" (valorChange)="el.deslizaColorProgreso = $event" (confirmado)="guardarHistorial()" />
+          </div>
+          <div class="campo-color">
+            <label>Color del degradado</label>
+            <app-color-hex-input [valor]="el.deslizaColorDegradado" (valorChange)="el.deslizaColorDegradado = $event" (confirmado)="guardarHistorial()" />
+          </div>
+        </div>
+
+        <hr class="separador" />
+
+        <label class="etiqueta-campo">Botones</label>
+        <div class="fila-campos">
+          <div class="campo-color">
+            <label>Color icono botón Falso</label>
+            <app-color-hex-input [valor]="el.deslizaColorIconoFalso" (valorChange)="el.deslizaColorIconoFalso = $event" (confirmado)="guardarHistorial()" />
+          </div>
+          <div class="campo-color">
+            <label>Fondo botón Falso</label>
+            <app-color-hex-input [valor]="el.deslizaColorFondoBotonFalso" (valorChange)="el.deslizaColorFondoBotonFalso = $event" (confirmado)="guardarHistorial()" />
+          </div>
+        </div>
+        <div class="fila-campos">
+          <div class="campo-color">
+            <label>Color icono botón Verdadero</label>
+            <app-color-hex-input [valor]="el.deslizaColorIconoVerdadero" (valorChange)="el.deslizaColorIconoVerdadero = $event" (confirmado)="guardarHistorial()" />
+          </div>
+          <div class="campo-color">
+            <label>Fondo botón Verdadero</label>
+            <app-color-hex-input [valor]="el.deslizaColorFondoBotonVerdadero" (valorChange)="el.deslizaColorFondoBotonVerdadero = $event" (confirmado)="guardarHistorial()" />
+          </div>
+        </div>
+
+        <hr class="separador" />
+
+        <label class="etiqueta-campo">Feedback correcto</label>
+        <div class="fila-campos">
+          <div class="campo-color">
+            <label>Color</label>
+            <app-color-hex-input [valor]="el.deslizaFeedbackCorrectoColor" (valorChange)="el.deslizaFeedbackCorrectoColor = $event" (confirmado)="guardarHistorial()" />
+          </div>
+          <div class="abril-field">
+            <input class="abril-field-input" type="text" maxlength="30" [(ngModel)]="el.deslizaFeedbackCorrectoTexto" (ngModelChange)="guardarHistorial()" placeholder=" " />
+            <label class="abril-field-label">Texto</label>
+          </div>
+        </div>
+
+        <label class="etiqueta-campo">Feedback incorrecto</label>
+        <div class="fila-campos">
+          <div class="campo-color">
+            <label>Color</label>
+            <app-color-hex-input [valor]="el.deslizaFeedbackIncorrectoColor" (valorChange)="el.deslizaFeedbackIncorrectoColor = $event" (confirmado)="guardarHistorial()" />
+          </div>
+          <div class="abril-field">
+            <input class="abril-field-input" type="text" maxlength="30" [(ngModel)]="el.deslizaFeedbackIncorrectoTexto" (ngModelChange)="guardarHistorial()" placeholder=" " />
+            <label class="abril-field-label">Texto</label>
+          </div>
+        </div>
+
+        <hr class="separador" />
+
+        <label class="etiqueta-campo">Pantalla de resultados</label>
+        <div class="fila-campos">
+          <div class="campo-color">
+            <label>Color de fondo</label>
+            <app-color-hex-input [valor]="el.deslizaResultadoColorFondo" (valorChange)="el.deslizaResultadoColorFondo = $event" (confirmado)="guardarHistorial()" />
+          </div>
+          <div class="campo-color">
+            <label>Fondo de tarjeta</label>
+            <app-color-hex-input [valor]="el.deslizaResultadoFondoTarjeta" (valorChange)="el.deslizaResultadoFondoTarjeta = $event" (confirmado)="guardarHistorial()" />
+          </div>
+        </div>
+        <div class="fila-campos">
+          <div class="campo-color">
+            <label>Color de etiquetas</label>
+            <app-color-hex-input [valor]="el.deslizaResultadoColorEtiquetas" (valorChange)="el.deslizaResultadoColorEtiquetas = $event" (confirmado)="guardarHistorial()" />
+          </div>
+          <div class="campo-color">
+            <label>Color de valor correcto</label>
+            <app-color-hex-input [valor]="el.deslizaResultadoColorValorCorrecto" (valorChange)="el.deslizaResultadoColorValorCorrecto = $event" (confirmado)="guardarHistorial()" />
+          </div>
+          <div class="campo-color">
+            <label>Color de valor incorrecto</label>
+            <app-color-hex-input [valor]="el.deslizaResultadoColorValorIncorrecto" (valorChange)="el.deslizaResultadoColorValorIncorrecto = $event" (confirmado)="guardarHistorial()" />
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="el.tipo === 'pregunta' && el.pregunta?.tipoCodigo !== 'pregunta_desliza_acierta' && pestanaPropiedades === 'diseno'">
+        <ng-container *ngIf="disposicionAplicaAPreguntaTipo(el.pregunta?.tipoCodigo)">
+          <label class="etiqueta-campo">Disposición</label>
+          <div class="fila-campos">
+            <button
+              type="button"
+              class="opcion-visual"
+              [class.opcion-visual-activa]="(el.preguntaDisposicion || 'horizontal') === 'horizontal'"
+              (click)="el.preguntaDisposicion = 'horizontal'; guardarHistorial()"
+            >
+              <i class="ti ti-layout-distribute-horizontal"></i>
+              <span>Horizontal</span>
+            </button>
+            <button
+              type="button"
+              class="opcion-visual"
+              [class.opcion-visual-activa]="el.preguntaDisposicion === 'vertical'"
+              (click)="el.preguntaDisposicion = 'vertical'; guardarHistorial()"
+            >
+              <i class="ti ti-layout-distribute-vertical"></i>
+              <span>Vertical</span>
+            </button>
+          </div>
+        </ng-container>
+
+        <label class="etiqueta-campo">Estilo</label>
+        <div class="fila-campos fila-campos-4">
+          <button
+            type="button"
+            class="opcion-visual opcion-visual-oscuro"
+            [class.opcion-visual-activa]="el.preguntaEstilo === 'oscuro'"
+            (click)="el.preguntaEstilo = 'oscuro'; guardarHistorial()"
+          >
+            <span class="opcion-visual-muestra opcion-visual-muestra-oscuro"></span>
+            <span>Oscuro</span>
+          </button>
+          <button
+            type="button"
+            class="opcion-visual opcion-visual-claro"
+            [class.opcion-visual-activa]="(el.preguntaEstilo || 'claro') === 'claro'"
+            (click)="el.preguntaEstilo = 'claro'; guardarHistorial()"
+          >
+            <span class="opcion-visual-muestra opcion-visual-muestra-claro"></span>
+            <span>Claro</span>
+          </button>
+          <button
+            type="button"
+            class="opcion-visual"
+            [class.opcion-visual-activa]="el.preguntaEstilo === 'adaptado-oscuro'"
+            (click)="el.preguntaEstilo = 'adaptado-oscuro'; guardarHistorial()"
+          >
+            <span class="opcion-visual-muestra opcion-visual-muestra-oscuro"></span>
+            <span>Adaptado a fondo oscuro</span>
+          </button>
+          <button
+            type="button"
+            class="opcion-visual"
+            [class.opcion-visual-activa]="el.preguntaEstilo === 'adaptado-claro'"
+            (click)="el.preguntaEstilo = 'adaptado-claro'; guardarHistorial()"
+          >
+            <span class="opcion-visual-muestra opcion-visual-muestra-claro"></span>
+            <span>Adaptado a fondo claro</span>
+          </button>
+        </div>
+
+        <hr class="separador" />
+
         <div class="fila-campos">
           <div class="campo-color">
             <label>Fondo del recuadro</label>
@@ -530,7 +730,318 @@
             <app-color-hex-input [valor]="el.colorTexto" (valorChange)="el.colorTexto = $event" (confirmado)="guardarHistorial()" />
           </div>
         </div>
-        <p class="ayuda">Estos colores se usarán como fondo/texto del recuadro cuando el alumno vea la pregunta.</p>
+        <p class="ayuda">Estos colores personalizados tienen prioridad sobre el estilo elegido arriba.</p>
+
+        <ng-container *ngIf="el.pregunta?.tipoCodigo === 'pregunta_emparejar'">
+          <hr class="separador" />
+          <label class="etiqueta-campo">Parejas</label>
+          <div class="fila-campos">
+            <div class="campo-color">
+              <label>Color de fondo</label>
+              <app-color-hex-input [valor]="el.emparejarColorFondo" (valorChange)="el.emparejarColorFondo = $event" (confirmado)="guardarHistorial()" />
+            </div>
+            <div class="campo-color">
+              <label>Color al seleccionar</label>
+              <app-color-hex-input [valor]="el.emparejarColorSeleccion" (valorChange)="el.emparejarColorSeleccion = $event" (confirmado)="guardarHistorial()" />
+            </div>
+          </div>
+          <div class="fila-campos">
+            <div class="campo-color">
+              <label>Color de borde "Correcto"</label>
+              <app-color-hex-input [valor]="el.emparejarColorBordeCorrecto" (valorChange)="el.emparejarColorBordeCorrecto = $event" (confirmado)="guardarHistorial()" />
+            </div>
+            <div class="campo-color">
+              <label>Color de borde "Incorrecto"</label>
+              <app-color-hex-input [valor]="el.emparejarColorBordeIncorrecto" (valorChange)="el.emparejarColorBordeIncorrecto = $event" (confirmado)="guardarHistorial()" />
+            </div>
+          </div>
+          <label class="etiqueta-campo">Otros</label>
+          <div class="campo-color">
+            <label>Color de la línea</label>
+            <app-color-hex-input [valor]="el.emparejarColorLinea" (valorChange)="el.emparejarColorLinea = $event" (confirmado)="guardarHistorial()" />
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <!-- Plantilla reutilizada por TODAS las ramas de acción de la pregunta (Si acierta/Si
+           falla y, para emparejar, también Al finalizar el temporizador/la actividad): lista
+           de acciones ya agregadas + botón "Añadir acción" con el menú de los 7 tipos,
+           estilo Genially. Vive fuera de cualquier *ngIf a propósito — una referencia de
+           plantilla (#listaAcciones) solo es visible dentro de la vista donde se declara,
+           así que si quedara adentro de un bloque condicional, el otro bloque (el de
+           Emparejar, más abajo) no podría usarla. -->
+      <ng-template #listaAcciones let-el let-rama="rama">
+        <div class="accion-item" *ngFor="let a of el[rama]?.acciones || []; let i = index">
+          <i class="ti accion-item-icono" [ngClass]="iconoAccionPregunta(a.tipo)"></i>
+          <span class="accion-item-label">{{ etiquetaAccionPregunta(a) }}</span>
+          <button type="button" class="btn-icono" (click)="toggleEditarAccionPregunta(a.id)" title="Editar">
+            <i class="ti ti-pencil"></i>
+          </button>
+          <button type="button" class="btn-icono btn-icono-danger" (click)="quitarAccionPregunta(el, rama, i)" title="Eliminar">
+            <i class="ti ti-trash"></i>
+          </button>
+        </div>
+
+        <ng-container *ngFor="let a of el[rama]?.acciones || []">
+          <div class="accion-editor" *ngIf="accionEditandoId === a.id">
+            <ng-container [ngSwitch]="a.tipo">
+              <ng-container *ngSwitchCase="'abrir_ventana'">
+                <div class="abril-field">
+                  <input class="abril-field-input" type="text" [(ngModel)]="a.titulo" (ngModelChange)="guardarHistorial()" placeholder=" " />
+                  <label class="abril-field-label">Título</label>
+                </div>
+                <div class="abril-field">
+                  <textarea class="abril-field-input" rows="3" [(ngModel)]="a.texto" (ngModelChange)="guardarHistorial()" placeholder=" "></textarea>
+                  <label class="abril-field-label">Texto</label>
+                </div>
+                <div class="abril-field">
+                  <input class="abril-field-input" type="text" [(ngModel)]="a.imagenUrl" (ngModelChange)="guardarHistorial()" placeholder=" " />
+                  <label class="abril-field-label">Imagen (URL, opcional)</label>
+                </div>
+              </ng-container>
+
+              <ng-container *ngSwitchCase="'audio'">
+                <div class="abril-field">
+                  <input class="abril-field-input" type="text" [(ngModel)]="a.audioUrl" (ngModelChange)="guardarHistorial()" placeholder=" " />
+                  <label class="abril-field-label">URL del audio</label>
+                </div>
+              </ng-container>
+
+              <ng-container *ngSwitchCase="'pagina'">
+                <select class="abril-field-input" [(ngModel)]="a.slideId" (ngModelChange)="guardarHistorial()">
+                  <option [ngValue]="null">Selecciona una página...</option>
+                  <option *ngFor="let p of paginasDisponibles" [ngValue]="p.id">{{ p.titulo }}</option>
+                </select>
+                <p class="ayuda" *ngIf="!paginasDisponibles.length">Guarda esta pantalla y crea otras para poder enlazarlas aquí.</p>
+              </ng-container>
+
+              <ng-container *ngSwitchCase="'efecto'">
+                <select class="abril-field-input" [(ngModel)]="a.efecto" (ngModelChange)="guardarHistorial()">
+                  <option *ngFor="let ef of efectosAnimacion" [value]="ef.valor">{{ ef.etiqueta }}</option>
+                </select>
+              </ng-container>
+
+              <ng-container *ngSwitchDefault>
+                <!-- scroll_elemento | mostrar_elemento | ocultar_elemento -->
+                <select class="abril-field-input" [(ngModel)]="a.elementoId" (ngModelChange)="guardarHistorial()">
+                  <option [ngValue]="null">Selecciona un elemento...</option>
+                  <option *ngFor="let otro of elementosParaAccion(el)" [ngValue]="otro.id">{{ etiquetaElementoCanvas(otro) }}</option>
+                </select>
+                <p class="ayuda" *ngIf="!elementosParaAccion(el).length">Agrega otro elemento al lienzo para poder apuntarle aquí.</p>
+              </ng-container>
+            </ng-container>
+          </div>
+        </ng-container>
+
+        <div class="menu-anadir-accion-wrap">
+          <button type="button" class="btn-secundario btn-ancho" (click)="toggleMenuAccionPregunta(rama)">
+            <i class="ti ti-plus"></i> Añadir acción
+          </button>
+          <div class="menu-anadir-accion" *ngIf="menuAccionAbiertoPara === rama">
+            <button type="button" *ngFor="let t of tiposAccionPregunta" (click)="agregarAccionPregunta(el, rama, t.tipo)">
+              <i class="ti" [ngClass]="t.icono"></i> {{ t.etiqueta }}
+            </button>
+          </div>
+        </div>
+      </ng-template>
+
+      <!-- Acciones de "Desliza y acierta": 2 disparadores fijos, estilo Genially — la
+           actividad completa se aprueba o no (no un único clic de respuesta), así que
+           tampoco aplica "Al contestar/Según el resultado". Reutiliza preguntaAccionAcierto/
+           Error para "Al superar/no superar la actividad" (mismo significado). -->
+      <ng-container *ngIf="el.tipo === 'pregunta' && el.pregunta?.tipoCodigo === 'pregunta_desliza_acierta' && pestanaPropiedades === 'interactividad'">
+        <div class="bloque-accion-resultado">
+          <p class="etiqueta-rama"><i class="ti ti-trophy icono-correcto"></i> Al superar la actividad</p>
+          <ng-container *ngTemplateOutlet="listaAcciones; context: { $implicit: el, rama: 'preguntaAccionAcierto' }"></ng-container>
+        </div>
+        <div class="bloque-accion-resultado">
+          <p class="etiqueta-rama"><i class="ti ti-mood-sad icono-incorrecto"></i> Al no superar la actividad</p>
+          <ng-container *ngTemplateOutlet="listaAcciones; context: { $implicit: el, rama: 'preguntaAccionError' }"></ng-container>
+        </div>
+        <div class="bloque-accion-resultado">
+          <p class="etiqueta-rama"><i class="ti ti-clock"></i> Al finalizar el temporizador</p>
+          <ng-container *ngTemplateOutlet="listaAcciones; context: { $implicit: el, rama: 'preguntaAccionTemporizador' }"></ng-container>
+        </div>
+
+        <hr class="separador" />
+
+        <label class="etiqueta-campo">Temporizador</label>
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            [ngModel]="el.preguntaTemporizadorSeg != null"
+            (ngModelChange)="el.preguntaTemporizadorSeg = $event ? 30 : null; guardarHistorial()"
+          />
+          <span>Añadir temporizador</span>
+        </label>
+        <div class="fila-campos duracion-mmss" *ngIf="el.preguntaTemporizadorSeg != null">
+          <div class="abril-field campo-corto">
+            <input class="abril-field-input" type="number" min="0" [ngModel]="temporizadorMinutos(el)" (ngModelChange)="fijarTemporizadorMinutos(el, $event)" placeholder=" " />
+            <label class="abril-field-label">Min</label>
+          </div>
+          <div class="abril-field campo-corto">
+            <input class="abril-field-input" type="number" min="0" max="59" [ngModel]="temporizadorSegundos(el)" (ngModelChange)="fijarTemporizadorSegundos(el, $event)" placeholder=" " />
+            <label class="abril-field-label">Seg</label>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="el.tipo === 'pregunta' && el.pregunta?.tipoCodigo !== 'pregunta_emparejar' && el.pregunta?.tipoCodigo !== 'pregunta_desliza_acierta' && pestanaPropiedades === 'interactividad'">
+        <label class="etiqueta-campo">Tras responder</label>
+        <div class="fila-campos">
+          <button
+            type="button"
+            class="opcion-visual"
+            [class.opcion-visual-activa]="!el.preguntaMensajesActivos"
+            (click)="el.preguntaMensajesActivos = false; guardarHistorial()"
+          >
+            <i class="ti ti-click"></i>
+            <span>Al contestar</span>
+          </button>
+          <button
+            type="button"
+            class="opcion-visual"
+            [class.opcion-visual-activa]="!!el.preguntaMensajesActivos"
+            (click)="el.preguntaMensajesActivos = true; guardarHistorial()"
+          >
+            <i class="ti ti-git-branch"></i>
+            <span>Según el resultado</span>
+          </button>
+        </div>
+
+        <ng-container *ngIf="el.preguntaMensajesActivos">
+          <div class="bloque-accion-resultado">
+            <p class="etiqueta-rama"><i class="ti ti-check icono-correcto"></i> Si acierta</p>
+            <ng-container *ngTemplateOutlet="listaAcciones; context: { $implicit: el, rama: 'preguntaAccionAcierto' }"></ng-container>
+          </div>
+
+          <div class="bloque-accion-resultado">
+            <p class="etiqueta-rama"><i class="ti ti-x icono-incorrecto"></i> Si falla</p>
+            <ng-container *ngTemplateOutlet="listaAcciones; context: { $implicit: el, rama: 'preguntaAccionError' }"></ng-container>
+          </div>
+        </ng-container>
+
+        <hr class="separador" />
+
+        <div class="fila-campos">
+          <button type="button" class="btn-secundario" (click)="pedirSubirAudioPregunta()">
+            <i class="ti ti-volume"></i> {{ el.preguntaAudioUrl ? 'Cambiar audio' : 'Reproducir audio' }}
+          </button>
+          <button type="button" class="btn-link btn-link-danger" *ngIf="el.preguntaAudioUrl" (click)="el.preguntaAudioUrl = ''; guardarHistorial()">
+            <i class="ti ti-trash"></i>
+          </button>
+        </div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="el.preguntaMostrarRespuestaCorrecta" (ngModelChange)="guardarHistorial()" />
+          <span>Mostrar respuesta correcta</span>
+        </label>
+
+        <label class="checkbox-row">
+          <input type="checkbox" [(ngModel)]="el.preguntaMensajesSimplesActivos" (ngModelChange)="guardarHistorial()" />
+          <span>Mensajes tras responder</span>
+        </label>
+        <ng-container *ngIf="el.preguntaMensajesSimplesActivos">
+          <div class="abril-field">
+            <input class="abril-field-input" type="text" maxlength="300" [(ngModel)]="el.preguntaMensajeAciertoSimple" (ngModelChange)="guardarHistorial()" placeholder=" " />
+            <label class="abril-field-label">Añade un mensaje de acierto (opcional)</label>
+          </div>
+          <div class="abril-field">
+            <input class="abril-field-input" type="text" maxlength="300" [(ngModel)]="el.preguntaMensajeErrorSimple" (ngModelChange)="guardarHistorial()" placeholder=" " />
+            <label class="abril-field-label">Añade un mensaje de error (opcional)</label>
+          </div>
+        </ng-container>
+
+        <hr class="separador" />
+
+        <label class="etiqueta-campo">Temporizador <i class="ti ti-info-circle" title="El alumno tiene un tiempo límite para responder. Al agotarse, la respuesta se envía tal como está."></i></label>
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            [ngModel]="el.preguntaTemporizadorSeg != null"
+            (ngModelChange)="el.preguntaTemporizadorSeg = $event ? 30 : null; guardarHistorial()"
+          />
+          <span>Añadir temporizador</span>
+        </label>
+        <ng-container *ngIf="el.preguntaTemporizadorSeg != null">
+          <label class="etiqueta-campo">Duración</label>
+          <div class="fila-campos duracion-mmss">
+            <div class="abril-field campo-corto">
+              <input
+                class="abril-field-input"
+                type="number"
+                min="0"
+                [ngModel]="temporizadorMinutos(el)"
+                (ngModelChange)="fijarTemporizadorMinutos(el, $event)"
+                placeholder=" "
+              />
+              <label class="abril-field-label">Min</label>
+            </div>
+            <div class="abril-field campo-corto">
+              <input
+                class="abril-field-input"
+                type="number"
+                min="0"
+                max="59"
+                [ngModel]="temporizadorSegundos(el)"
+                (ngModelChange)="fijarTemporizadorSegundos(el, $event)"
+                placeholder=" "
+              />
+              <label class="abril-field-label">Seg</label>
+            </div>
+          </div>
+
+          <div class="abril-field">
+            <input class="abril-field-input" type="text" [(ngModel)]="el.preguntaTemporizadorMensaje" (ngModelChange)="guardarHistorial()" placeholder="Ej: ¡Se ha acabado el tiempo!" />
+            <label class="abril-field-label">Añadir un mensaje al finalizar el tiempo</label>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <!-- Acciones de "Emparejar conceptos": 4 disparadores fijos, estilo Genially — no hay
+           un único "clic de respuesta" (es Validar + posible timeout), así que no aplica el
+           selector "Al contestar/Según el resultado" de los demás tipos. Reutiliza el MISMO
+           motor de acciones apiladas (listaAcciones, tiposAccionPregunta, etc.) — solo
+           cambia qué "rama" (campo) alimenta cada disparador. -->
+      <ng-container *ngIf="el.tipo === 'pregunta' && el.pregunta?.tipoCodigo === 'pregunta_emparejar' && pestanaPropiedades === 'interactividad'">
+        <div class="bloque-accion-resultado">
+          <p class="etiqueta-rama"><i class="ti ti-check icono-correcto"></i> Al acertar</p>
+          <ng-container *ngTemplateOutlet="listaAcciones; context: { $implicit: el, rama: 'preguntaAccionAcierto' }"></ng-container>
+        </div>
+        <div class="bloque-accion-resultado">
+          <p class="etiqueta-rama"><i class="ti ti-x icono-incorrecto"></i> Al fallar</p>
+          <ng-container *ngTemplateOutlet="listaAcciones; context: { $implicit: el, rama: 'preguntaAccionError' }"></ng-container>
+        </div>
+        <div class="bloque-accion-resultado">
+          <p class="etiqueta-rama"><i class="ti ti-clock"></i> Al finalizar el temporizador</p>
+          <ng-container *ngTemplateOutlet="listaAcciones; context: { $implicit: el, rama: 'preguntaAccionTemporizador' }"></ng-container>
+        </div>
+        <div class="bloque-accion-resultado">
+          <p class="etiqueta-rama"><i class="ti ti-flag"></i> Al finalizar la actividad</p>
+          <ng-container *ngTemplateOutlet="listaAcciones; context: { $implicit: el, rama: 'preguntaAccionFinActividad' }"></ng-container>
+        </div>
+
+        <hr class="separador" />
+
+        <label class="etiqueta-campo">Temporizador</label>
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            [ngModel]="el.preguntaTemporizadorSeg != null"
+            (ngModelChange)="el.preguntaTemporizadorSeg = $event ? 30 : null; guardarHistorial()"
+          />
+          <span>Añadir temporizador</span>
+        </label>
+        <div class="fila-campos duracion-mmss" *ngIf="el.preguntaTemporizadorSeg != null">
+          <div class="abril-field campo-corto">
+            <input class="abril-field-input" type="number" min="0" [ngModel]="temporizadorMinutos(el)" (ngModelChange)="fijarTemporizadorMinutos(el, $event)" placeholder=" " />
+            <label class="abril-field-label">Min</label>
+          </div>
+          <div class="abril-field campo-corto">
+            <input class="abril-field-input" type="number" min="0" max="59" [ngModel]="temporizadorSegundos(el)" (ngModelChange)="fijarTemporizadorSegundos(el, $event)" placeholder=" " />
+            <label class="abril-field-label">Seg</label>
+          </div>
+        </div>
       </ng-container>
 
       <ng-container *ngIf="el.tipo === 'pregunta' && pestanaPropiedades === 'contenido' && el.pregunta as preg">
@@ -549,19 +1060,47 @@
           <span>Cuenta para la nota final (si lo desmarcas, es solo práctica)</span>
         </label>
 
-        <ng-container *ngIf="preg.tipoCodigo === 'pregunta_vf' || preg.tipoCodigo === 'pregunta_desliza_acierta'">
+        <ng-container *ngIf="preg.tipoCodigo === 'pregunta_vf'">
           <div class="abril-field">
             <textarea class="abril-field-input" rows="2" [(ngModel)]="preg.enunciado" placeholder=" "></textarea>
-            <label class="abril-field-label">{{ preg.tipoCodigo === 'pregunta_desliza_acierta' ? 'Afirmación' : 'Enunciado' }}</label>
-          </div>
-          <div class="abril-field" *ngIf="preg.tipoCodigo === 'pregunta_desliza_acierta'">
-            <input class="abril-field-input" type="text" [(ngModel)]="preg.imagenUrl" placeholder=" " />
-            <label class="abril-field-label">Imagen de la tarjeta (URL, opcional)</label>
+            <label class="abril-field-label">Enunciado</label>
           </div>
           <p class="ayuda">Marca cuál es la respuesta correcta:</p>
           <div class="fila-campos">
-            <button type="button" class="segmento-btn" [class.segmento-activo]="preg.opciones[0]?.correcta" (click)="marcarOpcionCorrectaPregunta(0)">{{ preg.tipoCodigo === 'pregunta_desliza_acierta' ? '✓ Correcta' : 'Verdadero' }}</button>
-            <button type="button" class="segmento-btn" [class.segmento-activo]="preg.opciones[1]?.correcta" (click)="marcarOpcionCorrectaPregunta(1)">{{ preg.tipoCodigo === 'pregunta_desliza_acierta' ? '✗ Incorrecta' : 'Falso' }}</button>
+            <button type="button" class="segmento-btn" [class.segmento-activo]="preg.opciones[0]?.correcta" (click)="marcarOpcionCorrectaPregunta(0)">Verdadero</button>
+            <button type="button" class="segmento-btn" [class.segmento-activo]="preg.opciones[1]?.correcta" (click)="marcarOpcionCorrectaPregunta(1)">Falso</button>
+          </div>
+        </ng-container>
+
+        <!-- "Desliza y acierta": mazo de varias tarjetas, estilo Genially — cada una su
+             propia afirmación + imagen opcional + si es verdadera o falsa. -->
+        <ng-container *ngIf="preg.tipoCodigo === 'pregunta_desliza_acierta'">
+          <p class="ayuda">Cada tarjeta es una afirmación que el alumno desliza a la izquierda (Falso) o a la derecha (Verdadero):</p>
+          <div class="tarjeta-desliza-editable" *ngFor="let t of preg.deslizaTarjetas; let i = index">
+            <div class="tarjeta-desliza-header">
+              <span class="orden-badge orden-badge-inline">{{ i + 1 }}</span>
+              <button type="button" class="btn-link btn-link-danger" *ngIf="preg.deslizaTarjetas.length > 1" (click)="quitarTarjetaDesliza(i)"><i class="ti ti-trash"></i></button>
+            </div>
+            <div class="abril-field">
+              <textarea class="abril-field-input" rows="2" [(ngModel)]="t.texto" placeholder=" "></textarea>
+              <label class="abril-field-label">Afirmación</label>
+            </div>
+            <div class="abril-field">
+              <input class="abril-field-input" type="text" [(ngModel)]="t.imagenUrl" placeholder=" " />
+              <label class="abril-field-label">Imagen de la tarjeta (URL, opcional)</label>
+            </div>
+            <div class="fila-campos">
+              <button type="button" class="segmento-btn" [class.segmento-activo]="t.correcta" (click)="t.correcta = true">✓ Verdadera</button>
+              <button type="button" class="segmento-btn" [class.segmento-activo]="!t.correcta" (click)="t.correcta = false">✗ Falsa</button>
+            </div>
+          </div>
+          <button type="button" class="btn-secundario" (click)="agregarTarjetaDesliza()"><i class="ti ti-plus"></i> Tarjeta</button>
+
+          <hr class="separador" />
+
+          <div class="abril-field campo-corto">
+            <input class="abril-field-input" type="number" min="0" max="100" [(ngModel)]="preg.deslizaUmbralAprobarPct" placeholder=" " />
+            <label class="abril-field-label">% de aciertos para superar la actividad</label>
           </div>
         </ng-container>
 
@@ -585,6 +1124,15 @@
             <button type="button" class="btn-link btn-link-danger" (click)="quitarOpcionPregunta(i)"><i class="ti ti-trash"></i></button>
           </div>
           <button type="button" class="btn-secundario" (click)="agregarOpcionPregunta()"><i class="ti ti-plus"></i> Agregar opción</button>
+
+          <label class="checkbox-row">
+            <input type="checkbox" [(ngModel)]="preg.ordenAleatorio" />
+            <span>Mostrar orden aleatorio (las opciones aparecerán en orden aleatorio para cada alumno)</span>
+          </label>
+          <label class="checkbox-row" *ngIf="preg.tipoCodigo === 'pregunta_opcion_multiple'">
+            <input type="checkbox" [(ngModel)]="preg.botonEnviarActivo" />
+            <span>Activar botón para enviar (si lo desmarcas, responde apenas hace clic en una opción)</span>
+          </label>
         </ng-container>
 
         <ng-container *ngIf="preg.tipoCodigo === 'pregunta_ordenar'">
@@ -621,6 +1169,9 @@
             <textarea class="abril-field-input" rows="3" [(ngModel)]="preg.textoHuecos" (ngModelChange)="onCambioTextoHuecosPregunta()" placeholder=" "></textarea>
             <label class="abril-field-label">Texto (usa ___ para cada hueco)</label>
           </div>
+          <p class="ayuda ayuda-advertencia" *ngIf="preg.textoHuecos && !preg.respuestasHuecos.length">
+            <i class="ti ti-alert-triangle"></i> No se detectó ningún hueco todavía. Tiene que ser exactamente tres guiones bajos <code>___</code> pegados, sin espacios — ej: "El agua hierve a ___ grados".
+          </p>
           <div class="abril-field" *ngFor="let r of preg.respuestasHuecos; let i = index">
             <input class="abril-field-input" type="text" [(ngModel)]="preg.respuestasHuecos[i]" placeholder=" " />
             <label class="abril-field-label">Respuesta del hueco {{ i + 1 }}</label>
@@ -791,6 +1342,241 @@
       [style.font-weight]="preset.negrita ? 700 : 400"
       (click)="agregarTextoConEstilo(preset)"
     >{{ preset.etiqueta }}</button>
+  </div>
+
+  <!-- Panel "Insertar" (Imagen/Video/Audio) y "Elementos" (Forma/Ícono), mismo mecanismo
+       de overlay fixed que el resto — ver comentario en canvas-editor.ts sobre por qué se
+       agruparon en vez de ser botones sueltos en el riel. -->
+  <div
+    class="panel-rail-agrupado"
+    *ngIf="mostrarPanelInsertar"
+    [style.left.px]="posicionPanelInsertar.left"
+    [style.top.px]="posicionPanelInsertar.top"
+    (pointerdown)="$event.stopPropagation()"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="fila-rail-agrupado" (click)="agregarImagenDesdeRail()">
+      <span class="fila-rail-icono"><i class="ti ti-photo"></i></span>
+      <span class="fila-rail-info">
+        <strong>Imagen</strong>
+        <span>Sube una foto o ilustración</span>
+      </span>
+    </button>
+    <button type="button" class="fila-rail-agrupado" (click)="agregarVideoDesdeRail()">
+      <span class="fila-rail-icono"><i class="ti ti-video"></i></span>
+      <span class="fila-rail-info">
+        <strong>Video</strong>
+        <span>Enlaza un video de YouTube/Vimeo</span>
+      </span>
+    </button>
+    <button type="button" class="fila-rail-agrupado" (click)="agregarAudioDesdeRail()">
+      <span class="fila-rail-icono"><i class="ti ti-music"></i></span>
+      <span class="fila-rail-info">
+        <strong>Audio</strong>
+        <span>Sube música o una locución</span>
+      </span>
+    </button>
+
+    <hr class="separador-rail-agrupado" />
+
+    <button type="button" class="fila-rail-agrupado" (click)="agregarVentanaDesdeRail()">
+      <span class="fila-rail-icono"><i class="ti ti-frame"></i></span>
+      <span class="fila-rail-info">
+        <strong>Ventana</strong>
+        <span>Abre un panel con más contenido</span>
+      </span>
+    </button>
+    <button type="button" class="fila-rail-agrupado" (click)="agregarEtiquetaDesdeRail()">
+      <span class="fila-rail-icono"><i class="ti ti-tag"></i></span>
+      <span class="fila-rail-info">
+        <strong>Etiqueta</strong>
+        <span>Una píldora de texto pequeña</span>
+      </span>
+    </button>
+    <button type="button" class="fila-rail-agrupado" (click)="agregarEnlaceDesdeRail()">
+      <span class="fila-rail-icono"><i class="ti ti-link"></i></span>
+      <span class="fila-rail-info">
+        <strong>Enlace</strong>
+        <span>Botón que abre una URL externa</span>
+      </span>
+    </button>
+    <button type="button" class="fila-rail-agrupado" (click)="agregarIrAPaginaDesdeRail()">
+      <span class="fila-rail-icono"><i class="ti ti-arrow-right"></i></span>
+      <span class="fila-rail-info">
+        <strong>Ir a página</strong>
+        <span>Botón que salta a otra pantalla</span>
+      </span>
+    </button>
+  </div>
+
+  <div
+    class="panel-rail-agrupado"
+    *ngIf="mostrarPanelElementos"
+    [style.left.px]="posicionPanelElementos.left"
+    [style.top.px]="posicionPanelElementos.top"
+    (pointerdown)="$event.stopPropagation()"
+    (click)="$event.stopPropagation()"
+  >
+    <button type="button" class="fila-rail-agrupado" (click)="agregarFormaDesdeRail()">
+      <span class="fila-rail-icono"><i class="ti ti-shape"></i></span>
+      <span class="fila-rail-info">
+        <strong>Forma</strong>
+        <span>Rectángulo o círculo de color</span>
+      </span>
+    </button>
+    <button type="button" class="fila-rail-agrupado" (click)="agregarIconoDesdeRail()">
+      <span class="fila-rail-icono"><i class="ti ti-icons"></i></span>
+      <span class="fila-rail-info">
+        <strong>Ícono</strong>
+        <span>Elige entre decenas de íconos</span>
+      </span>
+    </button>
+    <button type="button" class="fila-rail-agrupado" (click)="agregarBotonDesdeRail()">
+      <span class="fila-rail-icono"><i class="ti ti-hand-click"></i></span>
+      <span class="fila-rail-info">
+        <strong>Botón</strong>
+        <span>Enlace o salto a otra página</span>
+      </span>
+    </button>
+  </div>
+
+  <!-- Panel "Estilo" (Kit de marca), estilo Genially — ver nota en canvas-editor.ts sobre
+       por qué es 100% opcional y nunca retroactivo. -->
+  <div
+    class="panel-estilo-marca"
+    *ngIf="mostrarPanelEstilo"
+    [style.left.px]="posicionPanelEstilo.left"
+    [style.top.px]="posicionPanelEstilo.top"
+    [style.bottom.px]="posicionPanelEstilo.bottom"
+    (pointerdown)="$event.stopPropagation()"
+    (click)="$event.stopPropagation()"
+  >
+    <p class="titulo-panel-estilo">
+      Colores de la creación
+      <i class="ti ti-info-circle" title="Quedan como accesos rápidos al elegir color en cualquier elemento nuevo. Si no tocas nada acá, todo sigue igual que siempre."></i>
+    </p>
+    <div class="fila-swatches-marca">
+      <app-color-hex-input class="swatch-marca" [soloSwatch]="true" [valor]="colorTema" (valorChange)="onCambiarColorMarca('principal', $event)" />
+      <app-color-hex-input class="swatch-marca" [soloSwatch]="true" [valor]="colorMarcaSecundario" (valorChange)="onCambiarColorMarca('secundario', $event)" />
+      <app-color-hex-input class="swatch-marca" [soloSwatch]="true" [valor]="colorMarcaTerciario" (valorChange)="onCambiarColorMarca('terciario', $event)" />
+    </div>
+
+    <p class="subtitulo-panel-estilo">Otras opciones</p>
+    <div class="fila-paletas-marca">
+      <button
+        type="button"
+        class="tarjeta-paleta"
+        *ngFor="let p of paletasMarca"
+        [title]="p.colores.join(' / ')"
+        (click)="elegirPaleta(p)"
+      >
+        <span [style.background]="p.colores[0]"></span>
+        <span [style.background]="p.colores[1]"></span>
+        <span [style.background]="p.colores[2]"></span>
+      </button>
+    </div>
+
+    <p class="subtitulo-panel-estilo">Opciones con tu marca</p>
+    <div class="fila-paletas-marca">
+      <button
+        type="button"
+        class="tarjeta-paleta"
+        *ngFor="let p of paletasPersonalizadas"
+        [title]="p.colores.join(' / ')"
+        (click)="elegirPaleta(p)"
+      >
+        <span [style.background]="p.colores[0]"></span>
+        <span [style.background]="p.colores[1]"></span>
+        <span [style.background]="p.colores[2]"></span>
+      </button>
+      <button type="button" class="btn-anadir-paleta" (click)="mostrarFormularioPaleta = !mostrarFormularioPaleta">
+        <i class="ti ti-plus"></i>
+      </button>
+    </div>
+    <div class="formulario-paleta" *ngIf="mostrarFormularioPaleta">
+      <app-color-hex-input [valor]="nuevaPaletaColores[0]" (valorChange)="nuevaPaletaColores[0] = $event" />
+      <app-color-hex-input [valor]="nuevaPaletaColores[1]" (valorChange)="nuevaPaletaColores[1] = $event" />
+      <app-color-hex-input [valor]="nuevaPaletaColores[2]" (valorChange)="nuevaPaletaColores[2] = $event" />
+      <button type="button" class="btn-secundario" (click)="guardarPaletaPersonalizada()">Guardar</button>
+    </div>
+
+    <hr class="separador" />
+
+    <p class="titulo-panel-estilo">
+      Estilos de texto
+      <i class="ti ti-info-circle" title="Se aplican a los textos nuevos que insertes desde el botón Texto del riel."></i>
+    </p>
+
+    <ng-container *ngFor="let rol of rolesTexto">
+      <button
+        type="button"
+        class="tarjeta-estilo-texto"
+        [style.font-family]="estilosTextoMarca[rol].fuente || null"
+        [style.font-size.px]="tamanoPreviewRolTexto(rol)"
+        [style.font-weight]="esRolTitulo(rol) ? 700 : 400"
+        [style.color]="estilosTextoMarca[rol].color"
+        (click)="toggleEditarRolTexto(rol)"
+      >
+        {{ etiquetaRolTexto(rol) }}
+      </button>
+
+      <div class="editor-estilo-texto" *ngIf="rolTextoEnEdicion === rol">
+        <select
+          class="abril-field-input"
+          [ngModel]="estilosTextoMarca[rol].fuente"
+          (ngModelChange)="actualizarEstiloTextoMarca(rol, { fuente: $event })"
+        >
+          <option value="">Fuente por defecto</option>
+          <option *ngFor="let f of fuentesDisponibles" [value]="f">{{ f }}</option>
+        </select>
+        <div class="fila-campos">
+          <div class="abril-field campo-corto">
+            <input
+              class="abril-field-input"
+              type="number"
+              min="10"
+              [ngModel]="estilosTextoMarca[rol].tamanoFuente"
+              (ngModelChange)="actualizarEstiloTextoMarca(rol, { tamanoFuente: $event })"
+              placeholder=" "
+            />
+            <label class="abril-field-label">Tamaño</label>
+          </div>
+          <app-color-hex-input
+            [valor]="estilosTextoMarca[rol].color"
+            (valorChange)="actualizarEstiloTextoMarca(rol, { color: $event })"
+          />
+        </div>
+        <div class="fila-formato-texto">
+          <button
+            type="button"
+            class="tb-btn"
+            [class.tb-activo]="estilosTextoMarca[rol].negrita"
+            (click)="actualizarEstiloTextoMarca(rol, { negrita: !estilosTextoMarca[rol].negrita })"
+            title="Negrita"
+          >
+            <i class="ti ti-bold"></i>
+          </button>
+          <button
+            type="button"
+            class="tb-btn"
+            [class.tb-activo]="estilosTextoMarca[rol].cursiva"
+            (click)="actualizarEstiloTextoMarca(rol, { cursiva: !estilosTextoMarca[rol].cursiva })"
+            title="Cursiva"
+          >
+            <i class="ti ti-italic"></i>
+          </button>
+          <button
+            type="button"
+            class="tb-btn"
+            [class.tb-activo]="estilosTextoMarca[rol].subrayado"
+            (click)="actualizarEstiloTextoMarca(rol, { subrayado: !estilosTextoMarca[rol].subrayado })"
+            title="Subrayado"
+          >
+            <i class="ti ti-underline"></i>
+          </button>
+        </div>
+      </div>
+    </ng-container>
   </div>
 
   <!-- Panel "Preguntas interactivas", estilo Genially: pastilla de banco arriba + lista

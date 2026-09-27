@@ -9,6 +9,16 @@ export const SSOMA_ROUTES: Routes = [
       ),
   },
   {
+    path: 'gestion/ats',
+    loadChildren: () =>
+      import('./gestion/ats/ats.routes').then((m) => m.ATS_ROUTES),
+  },
+  {
+    path: 'gestion/petar',
+    loadChildren: () =>
+      import('./gestion/petar/petar.routes').then((m) => m.PETAR_ROUTES),
+  },
+  {
     path: 'gestion/paso',
     loadChildren: () =>
       import('./salud-ocupacional/paso/paso.routes').then((m) => m.PASO_ROUTES),

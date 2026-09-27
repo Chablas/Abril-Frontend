@@ -48,3 +48,16 @@
   padding: 0 28px;
   font-weight: 600;
 }
+
+/* ---- Estilo de la pregunta embebida (Diseño > Estilo), estilo Genially ---- */
+
+.slide-ch-estilo-oscuro .parrafo-huecos,
+.slide-ch-estilo-adaptado-oscuro .parrafo-huecos {
+  color: #fff;
+}
+
+.slide-ch-estilo-oscuro .input-hueco,
+.slide-ch-estilo-adaptado-oscuro .input-hueco {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}

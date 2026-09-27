@@ -1,18 +1,97 @@
 <div class="curso-lista-page">
 
+  <div class="topbar-saludo" *ngIf="nombreUsuario">
+    <div>
+      <h2>Hola, {{ nombreUsuario }} <span class="saludo-mano">👋</span></h2>
+      <span>Bienvenido de nuevo</span>
+    </div>
+
+    <div class="topbar-acciones">
+      <div class="buscador-topbar">
+        <i class="ti ti-search"></i>
+        <input type="text" [(ngModel)]="filtroBusqueda" placeholder="Buscar curso..." />
+      </div>
+
+      <div class="topbar-notificaciones">
+        <button type="button" class="btn-icono-topbar" (click)="toggleNotificaciones($event)" aria-label="Notificaciones">
+          <i class="ti ti-bell"></i>
+          <span class="badge-notificacion" *ngIf="cursosPendientesNotificacion.length">{{ cursosPendientesNotificacion.length }}</span>
+        </button>
+        <div class="menu-notificaciones" *ngIf="menuNotificacionesAbierto">
+          <span class="menu-notificaciones-titulo">Pendientes</span>
+          <ng-container *ngIf="cursosPendientesNotificacion.length; else sinPendientes">
+            <button
+              type="button"
+              class="item-notificacion"
+              *ngFor="let c of cursosPendientesNotificacion"
+              (click)="tomarCurso(c)"
+            >
+              <i class="ti" [ngClass]="c.estado === 'en_progreso' ? 'ti-player-play' : 'ti-file-description'"></i>
+              <span>{{ c.titulo }}</span>
+            </button>
+          </ng-container>
+          <ng-template #sinPendientes>
+            <p class="menu-notificaciones-vacio">No tienes cursos pendientes.</p>
+          </ng-template>
+        </div>
+      </div>
+
+      <div class="topbar-cuenta">
+        <button type="button" class="btn-cuenta" (click)="toggleCuenta($event)">
+          <span class="avatar-iniciales">{{ iniciales }}</span>
+          <span class="nombre-cuenta">{{ nombreUsuario }}</span>
+          <i class="ti ti-chevron-down"></i>
+        </button>
+        <div class="menu-cuenta" *ngIf="menuCuentaAbierto">
+          <button type="button" class="item-menu-cuenta" (click)="cerrarSesion()">
+            <i class="ti ti-logout"></i> Cerrar sesión
+          </button>
+        </div>
+      </div>
+
+      <a class="btn-nuevo btn-nuevo--chico" routerLink="/cursos/editor">
+        <i class="ti ti-tool"></i>
+        Administrar cursos
+      </a>
+    </div>
+  </div>
+
   <div class="hero-cursos">
     <div class="hero-glow"></div>
     <div class="hero-contenido">
-      <span class="hero-kicker">Campus de formación · SST</span>
+      <span class="hero-kicker"><i class="ti ti-hexagon-letter-s"></i> Plataforma de formación · SST</span>
       <div class="hero-fila">
-        <div>
+        <div class="hero-texto">
           <h1 class="hero-titulo">Aprende a prevenir,<br />no a lamentar.</h1>
           <p class="hero-subtitulo">Cursos interactivos de seguridad y salud en el trabajo, pensados para obra y oficina.</p>
+
+          <div class="fila-pills" *ngIf="cursos.length">
+            <span class="pill-hero"><i class="ti ti-hat-check"></i> {{ completados }} {{ completados === 1 ? 'Completado' : 'Completados' }}</span>
+            <span class="pill-hero"><i class="ti ti-player-play"></i> {{ enProgreso }} {{ enProgreso === 1 ? 'Curso' : 'Cursos' }} en progreso</span>
+            <span class="pill-hero"><i class="ti ti-file-description"></i> {{ pendientes }} {{ pendientes === 1 ? 'Curso restante' : 'Cursos restantes' }}</span>
+            <span class="pill-hero"><i class="ti ti-clock"></i> {{ horasCursadas }} h cursadas</span>
+          </div>
+
+          <a class="btn-nuevo" *ngIf="!nombreUsuario" routerLink="/cursos/editor">
+            <i class="ti ti-tool"></i>
+            Administrar cursos
+          </a>
         </div>
-        <a class="btn-nuevo" routerLink="/cursos/editor">
-          <i class="ti ti-tool"></i>
-          Administrar cursos
-        </a>
+
+        <div class="tarjeta-progreso-hero" *ngIf="cursos.length">
+          <span class="tarjeta-progreso-hero-titulo">Progreso general</span>
+          <div class="anillo-progreso" [style.--pct]="porcentajeGeneral">
+            <span>{{ porcentajeGeneral }}%<small>avance</small></span>
+          </div>
+          <div class="fila-botones-progreso">
+            <button type="button" class="btn-continuar" *ngIf="cursoEnProgreso" (click)="tomarCurso(cursoEnProgreso)">
+              <i class="ti ti-player-play-filled"></i> Continuar curso
+            </button>
+            <button type="button" class="btn-ver-progreso" (click)="irAGrillaCursos()">
+              <i class="ti ti-list-details"></i> Ver cursos
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -34,38 +113,66 @@
       <p>No hay cursos disponibles por el momento.</p>
     </div>
 
-    <div class="grid-cursos" *ngIf="!cargando && cursos.length > 0">
-      <div class="tarjeta-curso" *ngFor="let curso of cursos" (click)="tomarCurso(curso)">
-        <div
-          class="tarjeta-header"
-          [style.background]="'linear-gradient(125deg, ' + (curso.colorTema || '#f5a623') + ' 0%, #14100b 115%)'"
-        >
-          <span class="tarjeta-patron"></span>
-          <div class="tarjeta-icono">
+    <ng-container *ngIf="!cargando && cursos.length > 0">
+      <div class="tarjeta-continuar" *ngIf="cursoEnProgreso" (click)="tomarCurso(cursoEnProgreso)">
+        <span class="tarjeta-continuar-kicker"><i class="ti ti-player-play"></i> Continúa aprendiendo</span>
+        <div class="tarjeta-continuar-fila">
+          <div
+            class="tarjeta-continuar-icono"
+            [style.background]="'linear-gradient(135deg, ' + (cursoEnProgreso.colorTema || '#f5a623') + ' 0%, #14100b 130%)'"
+          >
             <i class="ti ti-stairs-up"></i>
           </div>
-          <span class="tarjeta-badge" *ngIf="curso.categoriaNombre">{{ curso.categoriaNombre }}</span>
-          <button
-            type="button"
-            class="btn-editar-tarjeta"
-            (click)="editarCurso(curso, $event)"
-            aria-label="Editar este curso"
-            title="Editar este curso"
-          >
-            <i class="ti ti-pencil"></i>
-          </button>
-        </div>
-        <div class="tarjeta-body">
-          <h3>{{ curso.titulo }}</h3>
-          <p class="descripcion" *ngIf="curso.descripcion">{{ curso.descripcion }}</p>
-        </div>
-        <div class="tarjeta-footer">
-          <span class="meta-nota"><i class="ti ti-target-arrow"></i> Nota mínima {{ curso.notaMinimaAprobacion }}</span>
-          <button type="button" class="btn-play" (click)="tomarCurso(curso)" aria-label="Tomar curso">
-            <i class="ti ti-arrow-right"></i>
+          <div class="tarjeta-continuar-info">
+            <span class="tarjeta-badge" *ngIf="cursoEnProgreso.categoriaNombre">{{ cursoEnProgreso.categoriaNombre }}</span>
+            <h3>{{ cursoEnProgreso.titulo }}</h3>
+            <div class="barra-progreso-mini">
+              <div class="barra-progreso-mini-relleno" [style.width.%]="progresoPct(cursoEnProgreso)"></div>
+            </div>
+          </div>
+          <button type="button" class="btn-continuar">
+            <i class="ti ti-player-play-filled"></i> Continuar curso
           </button>
         </div>
       </div>
-    </div>
+
+      <h3 class="titulo-seccion">Cursos disponibles</h3>
+      <p class="sin-resultados-busqueda" *ngIf="filtroBusqueda && !cursosFiltrados.length">
+        Ningún curso coincide con "{{ filtroBusqueda }}".
+      </p>
+      <div class="grid-cursos" #grillaCursos>
+        <div class="tarjeta-curso" *ngFor="let curso of cursosFiltrados" (click)="tomarCurso(curso)">
+          <div
+            class="tarjeta-header"
+            [style.background]="'linear-gradient(125deg, ' + (curso.colorTema || '#f5a623') + ' 0%, #14100b 115%)'"
+          >
+            <span class="tarjeta-patron"></span>
+            <div class="tarjeta-icono">
+              <i class="ti ti-stairs-up"></i>
+            </div>
+            <span class="tarjeta-badge" *ngIf="curso.categoriaNombre">{{ curso.categoriaNombre }}</span>
+            <button
+              type="button"
+              class="btn-editar-tarjeta"
+              (click)="editarCurso(curso, $event)"
+              aria-label="Editar este curso"
+              title="Editar este curso"
+            >
+              <i class="ti ti-pencil"></i>
+            </button>
+          </div>
+          <div class="tarjeta-body">
+            <h3>{{ curso.titulo }}</h3>
+            <div class="barra-progreso-mini">
+              <div class="barra-progreso-mini-relleno" [class.completa]="curso.estado === 'aprobado'" [style.width.%]="progresoPct(curso)"></div>
+            </div>
+          </div>
+          <div class="tarjeta-footer">
+            <span class="meta-nota"><i class="ti ti-target-arrow"></i> Nota mínima {{ curso.notaMinimaAprobacion }}</span>
+            <span class="etiqueta-estado" [class]="'etiqueta-estado--' + curso.estado">{{ etiquetaEstado(curso) }}</span>
+          </div>
+        </div>
+      </div>
+    </ng-container>
   </div>
 </div>

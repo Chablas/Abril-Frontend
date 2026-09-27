@@ -169,6 +169,207 @@
   background: #fdf1dc;
 }
 
+/* ---- Paneles agrupados "Insertar" / "Elementos" del riel: filas con ícono en tarjeta
+   redondeada + título/subtítulo, look más moderno que una simple lista de texto. ---- */
+
+.panel-rail-agrupado {
+  position: fixed;
+  z-index: 25;
+  width: 260px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  padding: 8px;
+}
+
+.fila-rail-agrupado {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  border: none;
+  border-radius: 9px;
+  padding: 9px 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+
+.fila-rail-agrupado:hover {
+  background: #fdf1dc;
+}
+
+.fila-rail-icono {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #f7f5ef;
+  color: #d9860a;
+  font-size: 18px;
+}
+
+.fila-rail-agrupado:hover .fila-rail-icono {
+  background: #fff;
+}
+
+.fila-rail-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.fila-rail-info strong {
+  font-size: 13px;
+  color: #14100b;
+  font-weight: 700;
+}
+
+.panel-estilo-marca {
+  position: fixed;
+  z-index: 25;
+  width: 280px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  padding: 14px;
+}
+
+.titulo-panel-estilo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #14100b;
+  margin: 4px 0 6px;
+}
+
+.titulo-panel-estilo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.subtitulo-panel-estilo {
+  font-size: 11px;
+  font-weight: 600;
+  color: #948d7c;
+  margin: 10px 0 6px;
+}
+
+.fila-swatches-marca {
+  display: flex;
+  gap: 10px;
+}
+
+.fila-paletas-marca {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tarjeta-paleta {
+  display: flex;
+  width: 40px;
+  height: 28px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.tarjeta-paleta:hover {
+  border-color: #d8d0bd;
+}
+
+.tarjeta-paleta span {
+  flex: 1;
+  height: 100%;
+}
+
+.btn-anadir-paleta {
+  width: 40px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1.5px dashed #d8d0bd;
+  background: #fff;
+  color: #948d7c;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-anadir-paleta:hover {
+  border-color: #f5a623;
+  color: #f5a623;
+}
+
+.formulario-paleta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px;
+  background: #f7f5ef;
+  border-radius: 8px;
+}
+
+.tarjeta-estilo-texto {
+  display: block;
+  width: 100%;
+  border: 1px solid #ece7d9;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tarjeta-estilo-texto:hover {
+  border-color: #d8d0bd;
+}
+
+.fila-formato-texto {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.editor-estilo-texto {
+  padding: 10px 12px 12px;
+  margin: -2px 0 8px;
+  background: #fafaf7;
+  border: 1px dashed #d8d0bd;
+  border-radius: 8px;
+}
+
+.separador-rail-agrupado {
+  border: none;
+  border-top: 1px solid #efe9db;
+  margin: 6px 4px;
+}
+
+.fila-rail-info span {
+  font-size: 11.5px;
+  color: #948d7c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ---- Cuerpo: lienzo grande centrado + panel de propiedades flotante ---- */
 
 .canvas-main {
@@ -182,9 +383,9 @@
   flex: 1;
   min-height: 0;
   display: flex;
-  gap: 16px;
+  gap: 10px;
   align-items: stretch;
-  padding: 16px;
+  padding: 8px;
   overflow: auto;
 }
 
@@ -405,8 +606,8 @@
   gap: 14px;
   padding: 18px;
   pointer-events: none;
-  overflow: auto;
-  border-radius: 4px;
+  overflow: hidden;
+  border-radius: 0;
 }
 
 .canvas-pregunta-cabecera {
@@ -426,6 +627,25 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  justify-content: center;
+}
+
+.canvas-pregunta-emparejar-filas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.canvas-pregunta-emparejar-fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.canvas-pregunta-emparejar-fila .canvas-pregunta-pildora {
+  flex: 1;
   justify-content: center;
 }
 
@@ -467,6 +687,276 @@
   border-radius: 999px;
   padding: 8px 22px;
   margin-top: auto;
+}
+
+/* ---- Estilos de la pregunta embebida (pestaña Diseño > Estilo, estilo Genially) ----
+   Los colores personalizados (el.colorFondo/colorTexto), aplicados vía [style.*] en el
+   html, siempre ganan por encima de estas reglas de clase. */
+
+.canvas-pregunta-estilo-claro {
+  background: #fff;
+  color: #1c1c1c;
+}
+
+.canvas-pregunta-estilo-oscuro {
+  background: #1c1c1e;
+  color: #fff;
+}
+
+.canvas-pregunta-estilo-oscuro .canvas-pregunta-pildora {
+  background: #2d2d30;
+  color: #fff;
+}
+
+.canvas-pregunta-estilo-adaptado-oscuro {
+  background: transparent;
+  color: #fff;
+}
+
+.canvas-pregunta-estilo-adaptado-oscuro .canvas-pregunta-pildora {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.canvas-pregunta-estilo-adaptado-oscuro .canvas-pregunta-boton-enviar {
+  background: #fff;
+  color: #1c1c1c;
+}
+
+.canvas-pregunta-estilo-adaptado-claro {
+  background: transparent;
+  color: #1c1c1c;
+}
+
+.canvas-pregunta-estilo-adaptado-claro .canvas-pregunta-pildora {
+  background: #fff;
+  color: #1c1c1c;
+}
+
+/* Borde de color según si la opción es correcta/incorrecta — visible en el editor (nunca
+   en el reproductor real, ahí el alumno no ve cuál es la correcta hasta responder). */
+.canvas-pregunta-pildora.pildora-correcta {
+  border: 1.5px solid #2fae4e;
+}
+
+.canvas-pregunta-pildora.pildora-incorrecta {
+  border: 1.5px solid #e0463f;
+}
+
+/* ---- Panel Diseño/Acciones de la pregunta: botones de opción visual (Disposición/Estilo) ---- */
+
+.fila-campos-4 {
+  flex-wrap: wrap;
+}
+
+.opcion-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 90px;
+  padding: 10px 8px;
+  border: 1px solid #ece7d9;
+  border-radius: 8px;
+  background: #fff;
+  color: #52525b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.opcion-visual i {
+  font-size: 18px;
+}
+
+.opcion-visual:hover {
+  border-color: #d8d0bd;
+}
+
+.opcion-visual-activa {
+  border-color: #f5a623;
+  background: #fff8ec;
+  color: #14100b;
+}
+
+.opcion-visual-muestra {
+  width: 100%;
+  height: 20px;
+  border-radius: 4px;
+}
+
+.opcion-visual-muestra-oscuro {
+  background: #1c1c1e;
+}
+
+.opcion-visual-muestra-claro {
+  background: #fff;
+  border: 1px solid #ece7d9;
+}
+
+.etiqueta-campo {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #52525b;
+  margin-bottom: 6px;
+}
+
+.ayuda-advertencia {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  background: #fff8ec;
+  border: 1px solid #f5d78a;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #8a5a00;
+}
+
+.ayuda-advertencia code {
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-weight: 700;
+}
+
+.tarjeta-desliza-editable {
+  border: 1px solid #ece7d9;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.tarjeta-desliza-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.bloque-accion-resultado {
+  border: 1px solid #ece7d9;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.etiqueta-rama {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+/* ---- Lista de acciones apiladas por rama (Acierto/Error), estilo Genially ---- */
+
+.accion-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #ece7d9;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: #fff;
+}
+
+.accion-item-icono {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: #fff8ec;
+  color: #f5a623;
+}
+
+.accion-item-label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-icono {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #52525b;
+  cursor: pointer;
+}
+
+.btn-icono:hover {
+  background: #f4f4f5;
+}
+
+.btn-icono-danger:hover {
+  background: #fdeceb;
+  color: #c0392b;
+}
+
+.accion-editor {
+  border: 1px dashed #d8d0bd;
+  border-radius: 8px;
+  padding: 10px;
+  margin: -2px 0 10px;
+  background: #fafaf7;
+}
+
+.menu-anadir-accion-wrap {
+  position: relative;
+}
+
+.btn-ancho {
+  width: 100%;
+  justify-content: center;
+}
+
+.menu-anadir-accion {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ece7d9;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+}
+
+.menu-anadir-accion button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  padding: 8px 10px;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+  color: #14100b;
+}
+
+.menu-anadir-accion button:hover {
+  background: #f4f4f5;
 }
 
 /* ---- Campos del formulario de pregunta embebida (el.pregunta.*) ---- */
@@ -823,6 +1313,13 @@
   color: #6b6455;
 }
 
+.panel-header-compacto {
+  justify-content: flex-end;
+  padding-bottom: 6px;
+  border-bottom: none;
+  margin-bottom: -4px;
+}
+
 .panel-header .btn-link-danger {
   color: #b3261e;
   opacity: 0.6;
@@ -970,29 +1467,29 @@
 
 /* Pestañas Interactividad / Animación, estilo Genially: pastillas dentro del panel. */
 .pestanas-propiedades {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
   background: #f2ede0;
-  border-radius: 14px;
-  padding: 3px;
+  border-radius: 12px;
+  padding: 4px;
 }
 
 .pestanas-propiedades button {
-  flex: 1 1 auto;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
   border: none;
   background: none;
-  border-radius: 999px;
-  padding: 7px 8px;
+  border-radius: 9px;
+  padding: 8px 6px;
   font-size: 11px;
   font-weight: 600;
   color: #6b6455;
   cursor: pointer;
-  white-space: nowrap;
+  text-align: center;
+  line-height: 1.15;
 }
 
 .pestanas-propiedades button.pestana-activa {

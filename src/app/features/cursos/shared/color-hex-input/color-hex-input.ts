@@ -16,6 +16,9 @@ const HEX_VALIDO = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 })
 export class ColorHexInput implements OnChanges {
   @Input() valor: string | null | undefined = '#000000';
+  /** Modo compacto (estilo Genially "Colores de la creación"): solo el cuadradito de
+   *  color, sin el campo de texto hex al lado — para filas apretadas de varios swatches. */
+  @Input() soloSwatch = false;
   @Output() valorChange = new EventEmitter<string>();
   /** Se emite además de valorChange, para el mismo patrón guardarHistorial() que ya usan
    *  el resto de campos del panel (el (change)/(ngModelChange) local no alcanza porque el

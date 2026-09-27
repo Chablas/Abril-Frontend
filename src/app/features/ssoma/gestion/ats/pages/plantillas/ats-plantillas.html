@@ -1,0 +1,250 @@
+<app-abril-page-header
+  titulo="Plantillas de ATS"
+  subtitulo="Peligros, EPP y herramientas sugeridos por puesto — el trabajador puede ajustar al llenar su ATS"
+  [botonPrimario]="tab === 'plantillas' ? { label: 'Nueva plantilla', icono: 'ti-plus' } : undefined"
+  [tabs]="headerTabs"
+  (primaryClick)="nuevaPlantilla()">
+</app-abril-page-header>
+
+@if (tab === 'riesgos') {
+  <p class="pasos-hint">
+    Marca qué riesgos exigen generar un PETAR obligatoriamente. Cuando un ATS firmado incluya alguno de estos
+    riesgos y no tenga ningún PETAR asociado, la lista de ATS mostrará el aviso "Requiere PETAR". Esto no bloquea
+    el ATS — es solo una advertencia visual para el residente/SSOMA.
+  </p>
+
+  @if (loadingRiesgos) {
+    <div class="panel-loading">Cargando…</div>
+  } @else {
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Peligro</th>
+            <th>Riesgo</th>
+            <th>Requiere PETAR</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (peligrosCatalogo.length === 0) {
+            <tr><td colspan="3">No hay peligros/riesgos en el catálogo todavía.</td></tr>
+          }
+          @for (peligro of peligrosCatalogo; track peligro.id) {
+            @for (riesgo of peligro.riesgos; track riesgo.id; let first = $first) {
+              <tr>
+                <td>{{ first ? peligro.nombre : '' }}</td>
+                <td>{{ riesgo.nombre }}</td>
+                <td>
+                  @if (guardandoRiesgoId === riesgo.id) {
+                    <span class="guardando-tag">Guardando…</span>
+                  } @else {
+                    <label class="riesgo-toggle">
+                      <input type="checkbox" [checked]="riesgo.requierePetar" (change)="toggleRequierePetar(riesgo)" />
+                      Requiere PETAR
+                    </label>
+                  }
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+@if (tab === 'autorizaciones') {
+  <p class="pasos-hint">
+    Sin la autorización firmada de uso de firma digital e imagen (escaneada y subida aquí) el trabajador
+    NO puede crear ni editar un ATS — la firma en físico y la sube el Coordinador SSOMA.
+  </p>
+
+  @if (loadingAutorizaciones) {
+    <div class="panel-loading">Cargando…</div>
+  } @else {
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Trabajador</th>
+            <th>DNI</th>
+            <th>Estado</th>
+            <th>Subido el</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (t of trabajadoresAutorizacion; track t.workerId) {
+            <tr>
+              <td>{{ t.nombre }}</td>
+              <td>{{ t.dni ?? '—' }}</td>
+              <td>
+                @if (t.tieneAutorizacion) {
+                  <span class="badge-autorizacion badge-autorizacion--ok"><i class="ti ti-check"></i> Subida</span>
+                } @else {
+                  <span class="badge-autorizacion badge-autorizacion--falta"><i class="ti ti-x"></i> Falta subir</span>
+                }
+              </td>
+              <td>{{ t.subidoEn ? (t.subidoEn | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+              <td>
+                <button class="btn btn-outline btn-sm" (click)="descargarPlantillaAutorizacion(t)">
+                  <i class="ti ti-file-download"></i> Descargar plantilla
+                </button>
+                <label class="btn btn-outline btn-sm btn-subir-autorizacion">
+                  @if (subiendoWorkerId === t.workerId) { Subiendo… } @else { {{ t.tieneAutorizacion ? 'Reemplazar escaneado' : 'Subir escaneado' }} }
+                  <input type="file" accept="image/*,.pdf" hidden (change)="subirAutorizacion(t, $event)" [disabled]="subiendoWorkerId === t.workerId" />
+                </label>
+                @if (t.archivoUrl) {
+                  <a [href]="t.archivoUrl" target="_blank" class="btn-link-ver">Ver escaneado</a>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+@if (tab === 'pasos') {
+  <p class="pasos-hint">
+    "Trabajos de gabinete" y "Supervisión en campo" ya le aparecen a cualquier puesto por defecto.
+    Acá solo se asigna qué puestos ven, además, cada paso de Liberación de Seguridad/Producción/Calidad.
+  </p>
+
+  @if (loadingPasos) {
+    <div class="panel-loading">Cargando…</div>
+  } @else {
+    @for (grupo of pasosPorCategoria; track grupo.categoria) {
+      <div class="abril-section-title">{{ grupo.categoria }}</div>
+      @for (paso of grupo.items; track paso.pasoId) {
+        <div class="paso-puesto-row">
+          <div class="paso-texto">{{ paso.texto }}</div>
+          <div class="paso-puestos">
+            @for (p of puestoNombresDe(paso); track p.id) {
+              <span class="chip chip--sel">
+                {{ p.nombre }}
+                <button class="chip-remove" (click)="quitarPuesto(paso, p.id)">✕</button>
+              </span>
+            }
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              [options]="puestosDisponiblesPara(paso)"
+              valueField="id"
+              displayField="nombre"
+              [value]="null"
+              placeholder="+ Agregar puesto..."
+              (valueChange)="agregarPuesto(paso, $event)"
+            ></app-search-select>
+            @if (guardandoPasoId === paso.pasoId) { <span class="guardando-tag">Guardando…</span> }
+          </div>
+        </div>
+      }
+    }
+  }
+}
+
+@if (tab === 'plantillas') {
+<div class="abril-table-wrap">
+  <table class="abril-table">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Puesto</th>
+        <th>Peligros</th>
+        <th>EPP</th>
+        <th>Herramientas</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (loading) {
+        <tr><td colspan="6">Cargando…</td></tr>
+      } @else if (plantillas.length === 0) {
+        <tr><td colspan="6">No hay plantillas creadas todavía.</td></tr>
+      } @else {
+        @for (p of plantillas; track p.id) {
+          <tr>
+            <td>{{ p.nombre }}</td>
+            <td>{{ puestoNombre(p.puestoId) }}</td>
+            <td>{{ p.peligroIds.length }}</td>
+            <td>{{ p.eppIds.length }}</td>
+            <td>{{ p.herramientaIds.length }}</td>
+            <td>
+              <button class="btn btn-outline btn-sm" (click)="editar(p)">Editar</button>
+              <button class="btn btn-outline btn-sm btn-danger" (click)="desactivar(p)">Desactivar</button>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+
+@if (modalAbierto && catalogo) {
+  <app-abril-modal-panel
+    [titulo]="editandoId ? 'Editar plantilla' : 'Nueva plantilla'"
+    icono="ti-clipboard-list"
+    variant="blue"
+    width="820px"
+    (closeModal)="cerrarModal()">
+
+    <div class="form-row">
+      <div class="abril-field">
+        <label class="abril-field-label">Nombre *</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="nombre" placeholder="Ej: ATS Supervisión de campo" />
+      </div>
+      <div>
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Puesto (autosugiere a este puesto)"
+          [options]="puestoOpts"
+          valueField="id"
+          displayField="nombre"
+          [value]="puestoId"
+          [allowClear]="true"
+          placeholder="Selecciona un puesto"
+          (valueChange)="puestoId = $event"
+        ></app-search-select>
+      </div>
+    </div>
+
+    <div class="abril-section-title">Peligros sugeridos</div>
+    <div class="chips-grid">
+      @for (peligro of catalogo.peligros; track peligro.id) {
+        <label class="chip" [class.chip--sel]="peligroMarcado(peligro.id)">
+          <input type="checkbox" [checked]="peligroMarcado(peligro.id)" (change)="togglePeligro(peligro.id)" />
+          {{ peligro.nombre }}
+        </label>
+      }
+    </div>
+
+    <div class="abril-section-title">EPP sugerido</div>
+    <div class="chips-grid">
+      @for (e of catalogo.epps; track e.id) {
+        <label class="chip" [class.chip--sel]="eppMarcado(e.id)">
+          <input type="checkbox" [checked]="eppMarcado(e.id)" (change)="toggleEpp(e.id)" />
+          {{ e.nombre }}
+        </label>
+      }
+    </div>
+
+    <div class="abril-section-title">Herramientas/equipos sugeridos</div>
+    <div class="chips-grid">
+      @for (h of catalogo.herramientas; track h.id) {
+        <label class="chip" [class.chip--sel]="herramientaMarcada(h.id)">
+          <input type="checkbox" [checked]="herramientaMarcada(h.id)" (change)="toggleHerramienta(h.id)" />
+          {{ h.nombre }}
+        </label>
+      }
+    </div>
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarModal()" [disabled]="guardando">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardar()" [disabled]="!puedeGuardar">
+        @if (guardando) { Guardando… } @else { Guardar plantilla }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}
+}

@@ -1,0 +1,37 @@
+<div class="verificar-page">
+  <div class="verificar-card">
+    <div class="logo-row">
+      <i class="ti ti-alert-triangle"></i>
+      <span>ABRIL — Verificación de PETAR</span>
+    </div>
+
+    @if (cargando) {
+      <p class="estado-msg">Verificando…</p>
+    } @else if (error || !resultado?.encontrado) {
+      <div class="resultado resultado--invalido">
+        <i class="ti ti-x"></i>
+        <h2>Documento no encontrado</h2>
+        <p>No pudimos encontrar un PETAR con este identificador.</p>
+      </div>
+    } @else if (resultado?.valido) {
+      <div class="resultado resultado--valido">
+        <i class="ti ti-circle-check"></i>
+        <h2>Documento auténtico</h2>
+        <p>Este PETAR corresponde exactamente a lo firmado en el sistema de Abril.</p>
+        <dl>
+          <dt>Ejecutante</dt><dd>{{ resultado?.workerNombre }}</dd>
+          <dt>Proyecto</dt><dd>{{ resultado?.proyectoNombre }}</dd>
+          <dt>Tipo</dt><dd>{{ resultado?.tipoNombre }}</dd>
+          <dt>Fecha</dt><dd>{{ resultado?.fecha | date:'dd/MM/yyyy' }}</dd>
+          <dt>Estado</dt><dd>{{ resultado?.estado }}</dd>
+        </dl>
+      </div>
+    } @else {
+      <div class="resultado resultado--advertencia">
+        <i class="ti ti-alert-triangle"></i>
+        <h2>El hash no coincide</h2>
+        <p>Encontramos el PETAR, pero el código de verificación del link no coincide con el guardado — no lo tomes como válido sin confirmar con SSOMA.</p>
+      </div>
+    }
+  </div>
+</div>
