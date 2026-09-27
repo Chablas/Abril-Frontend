@@ -6103,3 +6103,76 @@ Merge de `victor-frontend` a `master`, incluyendo (cada uno documentado en su pr
 
 ### Pendiente
 Los pendientes puntuales de cada feature quedan listados en sus respectivas secciones de sesión más arriba.
+
+## Sesión 2026-09-25 — Fase 2 consolidación Dashboard UDP (elimina Dashboard de Proyectos), catálogo de Hitos sin paginar, investigación de Plantillas de Cronograma
+
+### Contexto
+Continuación de la consolidación "Dashboard de Proyectos → Dashboard UDP" iniciada el 2026-09-16 (memoria `project-dashboards-udp-consolidation`, Fase 1 completa esa sesión). El usuario confirmó Fase 1 probada y pidió ejecutar la Fase 2: eliminar `projects-dashboard` del routing/menú/tabs sin borrar la carpeta física ni el endpoint backend, que `cronograma-dashboard.service.ts` sigue usando directo (`GET api/v1/projects-dashboard`).
+
+### Cambios
+- **Fase 2 Dashboard UDP**: sacado `projects-dashboard` de `proyectos.routes.ts` (ruta + import del componente), `navigation.service.ts` (ítem de menú + `landing`) y `projects-tabs.ts`. El redirect por defecto de `/projects` (`path: ''`) ahora apunta a `cronograma-dashboard` en vez de `projects-dashboard`. Regenerado `feature-display-names.generated.ts` (`node scripts/generate-feature-display-names.js`) — ya no lista `projects.projects-dashboard`. Carpeta física `features/projects/projects-dashboard/` y el endpoint backend intactos, como se pidió. **FeatureKey a revisar en BD (`feature`/`role_feature`) por el usuario, no tocado desde acá: `projects.projects-dashboard`** (memoria previa de 9 días marcaba `feature_id=93` como fila huérfana, sin re-verificar en esta sesión por falta de acceso a BD desde esta terminal).
+- **Bug encontrado durante la verificación post-Fase 2** (no introducido por ella, pero destapado por ella): `cronograma-dashboard.html` tenía su propio array de tabs hardcodeado en vez de usar el `PROJECTS_TABS` compartido — única página de las 16 del feature Proyectos con esa duplicación. Ese array muerto seguía apuntando a `/projects/projects-dashboard` (ruta ya eliminada) y también le faltaba el tab "Planeamiento" y le sobraba "Actas de Reunión" (que ya se había independizado como módulo propio en otra sesión, `projects-tabs.ts` ya lo reflejaba pero este archivo no). Corregido: `cronograma-dashboard.ts` ahora importa y expone `PROJECTS_TABS`, el HTML usa `[tabs]="tabs"`.
+- **Plantilla de Hitos ya no pagina**: `milestones.ts` cambió de `getMilestonePaged(page)` (backend con `pageSize` hardcodeado en 10, sin parámetro configurable — confirmado en `Abril_Backend/Infrastructure/Repositories/MilestoneRepository.cs:72`) a `getAllMilestone()`, método que ya existía en `MilestoneService` y ya se usaba en otras dos pantallas (`milestone-schedule.ts`, `proyecto-page.ts` de presupuesto-materiales) sin paginar. Cero cambios de backend — mismo filtro (`State == true`), mismo DTO, solo cambia el orden (antes por `MilestoneId desc`, ahora alfabético por `MilestoneDescription`, confirmado con el usuario como aceptable). Se sacaron los controles de paginación de `milestones.html` (prev/next/números) y el contador `# Registros` ahora usa `milestones.length` en vez de `totalRecords` del response paginado.
+- **Investigación (sin aplicar) de "Plantillas de Cronograma"**: el usuario pidió evaluar administrar desde Configuración las 3 plantillas de actividades por etapa (Anteproyecto/Proyecto/Proyecto de Actualización) que hoy se aplican vía "usar plantilla" en `cronograma-actividades`. Hallazgos clave para cuando se retome:
+  - No hay tabla/entidad en BD — son 2 archivos JSON estáticos en el backend (`Features/UnidadDeProyectosModule/Features/CronogramaActividades/Seeds/plantilla_anteproyecto_seed.json` y `plantilla_proyecto_seed.json`), leídos en caliente por `CronogramaActividadesRepository.AplicarPlantillaAsync()`. No hay ningún GET que exponga su contenido — haría falta migrar a tabla real antes de poder armar un CRUD.
+  - **Solo existen 2 plantillas físicas, no 3**: `PROYECTO` y `PROYECTO_ACTUALIZACION` comparten el mismo archivo (`plantilla_proyecto_seed.json`) — no hay ningún branch que los distinga en el repository. Probablemente nadie lo notó porque el modal de confirmación del frontend también los trata igual.
+  - Estructura de cada ítem de plantilla es jerárquica (WBS con `codigo`/`parentCodigo`/`predecesoraCodigo`, referencias por string), mucho más compleja que el catálogo plano de Hitos — un editor tipo árbol, no una tabla simple.
+  - `Milestone` (backend) no sigue el patrón `Controller → Service → Repository` del resto del proyecto (es `Controller → Repository` directo, arquitectura vieja/plana), mientras que `CronogramaActividades` sí sigue el patrón moderno por feature — si se calca "el mismo patrón que Hitos" a nivel backend, sería meter arquitectura vieja dentro de un feature que ya tiene la nueva.
+  - Pendiente de decisión del usuario antes de programar: (a) tercer sub-tab dentro del mismo componente `Milestones` vs. ruta nueva en `configuracion-routing-module.ts`, (b) si se aprovecha para separar de una vez "Proyecto de Actualización" en su propio archivo/registro, (c) confirmar que el backend nuevo siga el patrón Controller→Service→Repository.
+
+### Archivos clave
+- `features/projects/proyectos.routes.ts`, `core/navigation/navigation.service.ts`, `features/projects/shared/projects-tabs.ts`, `core/navigation/feature-display-names.generated.ts` (Fase 2)
+- `features/projects/cronograma-dashboard/cronograma-dashboard.ts`/`.html` (tabs unificados)
+- `features/projects/configuration/pages/milestones/milestones.ts`/`.html` (catálogo sin paginar)
+
+### Verificado
+`ng build` limpio (0 errores) después de cada cambio. No se probó en navegador contra backend real en esta sesión.
+
+### Pendiente
+- Confirmar en BD si desactivar/borrar la fila de `projects.projects-dashboard` en `feature`/`role_feature` (dato de sesión anterior sin re-verificar: `feature_id=93`).
+- Diseño de "Plantillas de Cronograma" en Configuración: ver puntos (a)/(b)/(c) arriba, nada programado todavía.
+- Borrar físicamente `features/projects/projects-dashboard/` cuando se confirme que ya no hace falta ni siquiera como referencia (hoy `cronograma-dashboard.service.ts` sigue pegándole directo a su endpoint backend `api/v1/projects-dashboard`, así que borrar la carpeta frontend no rompe nada, pero no se hizo en esta sesión a pedido explícito del usuario).
+
+## Sesión 2026-09-26 — Implementado el tercer sub-tab "Plantillas de Cronograma" (editor de árbol)
+
+### Contexto
+Resuelve el punto pendiente de la sesión 2026-09-25. El prerequisito que esa sesión marcaba como bloqueante (backend con patrón moderno Controller→Service→Repository sobre tabla real, no JSON seeds) ya estaba resuelto en `Abril_Backend` al momento de esta sesión — el usuario pidió implementar el sub-tab directo, con los 4 endpoints ya confirmados en producción. Decisión (a) de la sesión anterior: mismo componente `Milestones` con un tercer sub-tab, no ruta nueva.
+
+### Cambios
+- **Backend verificado, no tocado** (`Abril_Backend/Features/UnidadDeProyectosModule/Features/CronogramaActividades/`): `PlantillaCronogramaController` (`api/v1/cronograma-actividades/plantillas`, GET por tipo / POST / PUT / DELETE), `PlantillaItemDto` con `Id/TipoCronograma/Codigo/Nombre/Nivel/EsPadre/ParentCodigo/PredecesoraCodigo/Orden`. Confirmado: **no hay endpoint de reorden masivo** (a diferencia de `cronograma-actividades`, que sí tiene `subir-nivel`/`bajar-nivel`/`reordenar`/cascada) — solo CRUD por ítem, `Orden` es un entero global sin scope por padre. `EliminarItemAsync` es soft-delete sin cascada a hijos (si se borra un padre con hijos activos, quedan huérfanos).
+- **Service + DTOs nuevos** (F1: en `features/`, no en `core/`): `features/projects/configuration/services/plantilla-cronograma.service.ts` y `.../dtos/plantilla-cronograma.dtos.ts`, alineados campo a campo con el backend.
+- **Editor de árbol en `milestones.ts`/`.html`/`.css`**: selector de etapa (Anteproyecto/Proyecto/Proyecto de Actualización), tabla outline con indentación por `nivel`. Como el backend no tiene reorden masivo, se descartó drag&drop (confirmado con el usuario) a favor de botones ⇤/⇥ (subir/bajar nivel) y ↑/↓ (mover entre hermanos). El árbol se resuelve tratando el array plano (ya viene ordenado por `Orden` desde el backend) como un outline válido: el subárbol de un ítem es la corrida contigua de ítems siguientes con `nivel` mayor. Cada operación estructural (mover, indentar, crear) recalcula `orden`/`nivel`/`parentCodigo`/`esPadre` localmente, compara contra el estado previo y dispara un PUT en batch (`forkJoin`) solo por los ítems que cambiaron, luego recarga desde el backend.
+- Crear ítem raíz / agregar sub-ítem / editar (código, nombre, predecesora) / eliminar (bloqueado en frontend si el ítem tiene hijos, ya que el backend no valida eso).
+- **Fix de bug visual**: el indentado por nivel estaba aplicado en la celda de "Código" (ancho fijo 130px) junto al texto del código; en niveles profundos (código largo + mucho padding) el contenido se salía de la celda y se pintaba encima de "Nombre" (sin `overflow:hidden`). Se movió el indentado a la celda de "Nombre" (que es donde corresponde visualizar la jerarquía) y se le dio a "Código" `white-space:nowrap; overflow:hidden; text-overflow:ellipsis` como resguardo.
+- Cumple F8 (skeleton), F9 (errores vía el `error()` ya existente del componente), F12 (sin `<form>`), F3 (sin `console.log`), F11 (títulos de modal en mayúsculas). No se tocaron los sub-tabs de Hitos ni Proyectos Activos.
+
+### Archivos clave
+- `features/projects/configuration/dtos/plantilla-cronograma.dtos.ts` (nuevo)
+- `features/projects/configuration/services/plantilla-cronograma.service.ts` (nuevo)
+- `features/projects/configuration/pages/milestones/milestones.ts`/`.html`/`.css`
+
+### Verificado
+`ng build` limpio (0 errores) después de cada cambio. **No se probó en navegador contra backend real** — el entorno dev apunta a `localhost:5236` y requiere login real; no había backend corriendo ni credenciales disponibles en esta sesión. Usuario a cargo de la verificación visual final (confirmar que el árbol y el fix de overlap se ven bien con datos reales).
+
+### Pendiente
+- Confirmación del usuario tras probar en navegador: crear ítems anidados 4-5 niveles y validar que código/nombre ya no se superponen, y que indentar/mover/crear/editar/eliminar funcionan contra el backend real.
+- Sin endpoint de reorden masivo, cada movimiento de un ítem con muchos hermanos/hijos puede disparar varios PUT en batch — vigilar si en la práctica (plantillas con muchos ítems) esto se siente lento; si es un problema, la solución de fondo sería agregar un endpoint de reorden masivo al backend (mismo patrón que `cronograma-actividades`).
+- No se implementó protección contra ciclos en `PredecesoraCodigo` (el selector permite elegir cualquier ítem de la misma etapa, incluyendo uno que dependa transitivamente del ítem editado) — el backend tampoco lo valida.
+
+## Sesión 2026-09-26 — Deploy a master: merge de victor-frontend (Fase 2 Dashboard UDP, sub-tab Plantillas de Cronograma)
+
+### Contexto
+Cierre de ciclo: se trae a `master`/producción el acumulado de `victor-frontend` desde el deploy del 2026-09-24.
+
+### Cambios
+Merge de `victor-frontend` a `master` (cada uno documentado en su propia sección de sesión más arriba, ya incorporada por el merge):
+- Fase 2 de consolidación Dashboard UDP: elimina `projects-dashboard` del routing/menú/tabs (carpeta física y endpoint backend intactos), unifica tabs de `cronograma-dashboard` con `PROJECTS_TABS`, catálogo de Hitos sin paginar.
+- Nuevo sub-tab "Plantillas de Cronograma" en Configuración → Milestones: selector de etapa (Anteproyecto/Proyecto/Actualización), service y DTOs nuevos (`features/projects/configuration/{services,dtos}/plantilla-cronograma.*`), editor tipo árbol/outline con indent/outdent y mover arriba/abajo (sin drag&drop — el backend no tiene endpoint de reorden masivo). Incluye fix de un bug visual de overlap entre las columnas de código y nombre en ítems anidados.
+- Investigación (sin cambio de código) del bug "Responsable Planeamiento UDP" siempre en blanco en el modal Editar Proyecto: causa raíz identificada en backend (`ProjectRepository.cs:334`, `SubareaPlaneamientoUdp = "Planeamiento BIM"` no coincide con el valor real del catálogo `"Ingeniería BIM"`) — pendiente de fix en `Abril_Backend`, no en este repo.
+
+### Verificado
+`ng build` sobre `master` (antes del merge) → exit code 0. No se detectaron conflictos de código al mergear `victor-frontend` (solo un conflicto trivial en este mismo `CONTEXT.md`, resuelto intercalando ambas secciones). El sub-tab de Plantillas de Cronograma no se probó contra backend real en navegador (sin credenciales/backend local disponibles durante su desarrollo) — usuario a cargo de esa verificación.
+
+### Pendiente
+- Fix del bug "Responsable Planeamiento UDP" en `Abril_Backend` (ver investigación arriba) — no es de este repo.
+- Los pendientes puntuales de Plantillas de Cronograma (endpoint de reorden masivo si el batch de PUTs resulta lento en la práctica, protección contra ciclos en `PredecesoraCodigo`) quedan en la sección de sesión 2026-09-26 de Plantillas de Cronograma más arriba.

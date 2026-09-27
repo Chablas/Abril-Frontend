@@ -12,6 +12,7 @@ import { FilterModal } from '../../../shared/components/filter-modal/filter-moda
 import { SearchSelect } from '../../../shared/components/search-select/search-select';
 import { Paginator } from '../../../shared/components/paginator/paginator';
 import { ClientPager } from '../../../shared/utils/client-pager';
+import { PROJECTS_TABS } from '../shared/projects-tabs';
 import {
   CronogramaDashboardKpisDto,
   CronogramaDashboardProyectoDto,
@@ -36,6 +37,8 @@ import {
   styleUrl: './cronograma-dashboard.css',
 })
 export class CronogramaDashboard implements OnInit {
+  readonly tabs = PROJECTS_TABS;
+
   @ViewChild('ganttPanel') ganttPanelRef?: ElementRef<HTMLDivElement>;
 
   loading = false;
