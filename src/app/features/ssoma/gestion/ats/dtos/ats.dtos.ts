@@ -21,9 +21,17 @@ export interface AtsAutorizacionTrabajadorDto {
   workerId: number;
   nombre: string;
   dni?: string | null;
+  proyectoId?: number | null;
+  proyectoNombre?: string | null;
+  obraOficinaStaff?: string | null;
+  tieneFirmaDigital: boolean;
   tieneAutorizacion: boolean;
   subidoEn?: string | null;
   archivoUrl?: string | null;
+}
+
+export interface AtsAutorizacionFirmaDigitalRequestDto {
+  firmaBase64: string;
 }
 
 export interface AtsCategoriaPasoDto {
@@ -201,10 +209,65 @@ export interface AtsListResponseDto {
   totalPages: number;
 }
 
+export interface AtsPlantillaPuestoDto {
+  plantillaId: number;
+  plantillaNombre: string;
+  puestoIds: number[];
+}
+
 export interface AtsPlantillaGuardarRequestDto {
   nombre: string;
   puestoId?: number;
   peligroIds: number[];
   eppIds: number[];
   herramientaIds: number[];
+}
+
+// ── Actividades/pasos por plantilla ─────────────────────────────────────────
+
+export interface AtsPlantillaPasoDto {
+  id: number;
+  texto: string;
+  orden: number;
+}
+
+export interface AtsPlantillaActividadDto {
+  id: number;
+  plantillaId: number;
+  texto: string;
+  orden: number;
+  pasos: AtsPlantillaPasoDto[];
+  peligroIds: number[];
+}
+
+export interface AtsPlantillaActividadGuardarRequestDto {
+  texto: string;
+}
+
+export interface AtsPlantillaPasoGuardarRequestDto {
+  texto: string;
+}
+
+export interface AtsPlantillaActividadPeligrosRequestDto {
+  peligroIds: number[];
+}
+
+// ── Controles sugeridos por riesgo ──────────────────────────────────────────
+
+export interface AtsRiesgoControlDto {
+  id: number;
+  texto: string;
+  orden: number;
+}
+
+export interface AtsRiesgoConControlesDto {
+  riesgoId: number;
+  riesgoNombre: string;
+  peligroId: number;
+  peligroNombre: string;
+  controles: AtsRiesgoControlDto[];
+}
+
+export interface AtsRiesgoControlGuardarRequestDto {
+  texto: string;
 }

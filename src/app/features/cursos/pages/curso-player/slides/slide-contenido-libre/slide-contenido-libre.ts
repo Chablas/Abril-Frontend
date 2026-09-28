@@ -99,6 +99,102 @@ export class SlideContenidoLibre implements AfterViewInit, OnDestroy {
 
   overlayAbierto: ElementoLibre | null = null;
 
+  /** Overlay "modal" (default): panel centrado con fondo oscurecido a pantalla completa. */
+  get overlayModal(): ElementoLibre | null {
+    return this.overlayAbierto && this.overlayAbierto.overlay?.modo !== 'in-place' ? this.overlayAbierto : null;
+  }
+  /** Overlay "in-place": el contenido reemplaza al elemento en su propia posición dentro
+   *  del lienzo (estilo tarjeta con ícono "i" que se expande) — ver overlay-en-sitio-*
+   *  en el html/css. */
+  get overlayEnSitio(): ElementoLibre | null {
+    return this.overlayAbierto && this.overlayAbierto.overlay?.modo === 'in-place' ? this.overlayAbierto : null;
+  }
+
+  // ---- Carrusel (tipo 'carrusel', estilo Genially: franja de imágenes con flechas +
+  // puntos, cantidad libre) — el índice "primera imagen visible" vive acá (por elemento,
+  // no en el modelo) porque es puro estado de navegación de ESTE montaje, no algo que se
+  // guarde con la slide. ----
+  private carruselIndices = new Map<string, number>();
+
+  carruselIndice(el: ElementoLibre): number {
+    return this.carruselIndices.get(el.id) ?? 0;
+  }
+
+  carruselVisiblesEnPantalla(el: ElementoLibre): number {
+    return Math.max(1, el.carruselVisibles ?? 3);
+  }
+
+  carruselPuedeAnterior(el: ElementoLibre): boolean {
+    return this.carruselIndice(el) > 0;
+  }
+
+  carruselPuedeSiguiente(el: ElementoLibre): boolean {
+    const total = el.carruselImagenes?.length ?? 0;
+    return this.carruselIndice(el) < total - this.carruselVisiblesEnPantalla(el);
+  }
+
+  carruselMover(el: ElementoLibre, delta: -1 | 1, event: Event): void {
+    event.stopPropagation();
+    const total = el.carruselImagenes?.length ?? 0;
+    const maxIndice = Math.max(0, total - this.carruselVisiblesEnPantalla(el));
+    const actual = this.carruselIndice(el);
+    const destino = Math.min(maxIndice, Math.max(0, actual + delta));
+    this.carruselIndices.set(el.id, destino);
+  }
+
+  carruselIrA(el: ElementoLibre, indice: number, event: Event): void {
+    event.stopPropagation();
+    const total = el.carruselImagenes?.length ?? 0;
+    const maxIndice = Math.max(0, total - this.carruselVisiblesEnPantalla(el));
+    this.carruselIndices.set(el.id, Math.min(maxIndice, Math.max(0, indice)));
+  }
+
+  /** Un punto de paginación por imagen (no por "página" de N visibles) — igual que
+   *  Genially, donde cada punto salta a esa imagen como primera visible. */
+  carruselPuntos(el: ElementoLibre): number[] {
+    const total = el.carruselImagenes?.length ?? 0;
+    const maxIndice = Math.max(0, total - this.carruselVisiblesEnPantalla(el));
+    return Array.from({ length: maxIndice + 1 }, (_, i) => i);
+  }
+
+  // ---- Punto interactivo (tipo 'hotspot', estilo Genially: círculo pulsante que muestra
+  // un globo de texto anclado al hacer clic). A diferencia de `overlay`, NO es modal:
+  // pueden quedar varios abiertos a la vez, por eso es un Set y no un solo campo. ----
+  hotspotsAbiertos = new Set<string>();
+
+  toggleHotspot(el: ElementoLibre, event: Event): void {
+    event.stopPropagation();
+    if (this.hotspotsAbiertos.has(el.id)) this.hotspotsAbiertos.delete(el.id);
+    else this.hotspotsAbiertos.add(el.id);
+  }
+
+  // ---- Audio con miniatura (estilo Genially: foto + botón de altavoz/play centrado, en
+  // vez de la barra <audio controls> nativa) — reproducción manual vía Audio() nativo,
+  // sin tocar el DOM del <audio> nativo (ese sigue existiendo para audios sin miniatura). ----
+  private audiosMiniatura = new Map<string, HTMLAudioElement>();
+  audiosReproduciendo = new Set<string>();
+
+  toggleAudioMiniatura(el: ElementoLibre, event: Event): void {
+    event.stopPropagation();
+    if (!el.audioUrl) return;
+    let audio = this.audiosMiniatura.get(el.id);
+    if (!audio) {
+      audio = new Audio(el.audioUrl);
+      audio.addEventListener('ended', () => {
+        this.audiosReproduciendo.delete(el.id);
+        this.cdr.detectChanges();
+      });
+      this.audiosMiniatura.set(el.id, audio);
+    }
+    if (this.audiosReproduciendo.has(el.id)) {
+      audio.pause();
+      this.audiosReproduciendo.delete(el.id);
+    } else {
+      audio.play().catch(() => {});
+      this.audiosReproduciendo.add(el.id);
+    }
+  }
+
   // Animación de interacción (hover/clic): a diferencia de la de entrada (una vez, vía
   // CSS al montar), esta se repite cada vez que el usuario interactúa — se activa
   // agregando la clase por un instante y quitándola, para que un segundo hover/clic
@@ -140,6 +236,7 @@ export class SlideContenidoLibre implements AfterViewInit, OnDestroy {
     this.resizeObserver?.disconnect();
     for (const t of this.timeoutsAnimacion.values()) clearTimeout(t);
     if (this.intervaloTemporizador) clearInterval(this.intervaloTemporizador);
+    for (const audio of this.audiosMiniatura.values()) audio.pause();
   }
 
   private iniciarTemporizadorPregunta(): void {
@@ -302,11 +399,15 @@ export class SlideContenidoLibre implements AfterViewInit, OnDestroy {
     }
   }
 
+  /** Estilo Genially: cualquier elemento puede tener una acción de clic (ir a página o
+   *  abrir enlace), no solo el tipo 'boton' dedicado — ver alClicElemento. Un 'boton' sin
+   *  botonAccion asume 'url' por compatibilidad con botones ya guardados; el resto de
+   *  tipos no navega salvo que el autor lo haya configurado explícitamente. */
   esInteractivo(el: ElementoLibre): boolean {
-    return (
-      !!el.overlay?.activo ||
-      (el.tipo === 'boton' && ((el.botonAccion ?? 'url') === 'pagina' ? !!el.botonSlideId : !!el.botonUrl))
-    );
+    if (el.tipo === 'hotspot') return true;
+    if (el.overlay?.activo) return true;
+    const accion = el.tipo === 'boton' ? (el.botonAccion ?? 'url') : el.botonAccion;
+    return accion === 'pagina' ? !!el.botonSlideId : accion === 'url' ? !!el.botonUrl : false;
   }
 
   claseAnimacionInteraccion(el: ElementoLibre): string {
@@ -394,16 +495,20 @@ export class SlideContenidoLibre implements AfterViewInit, OnDestroy {
     });
   }
 
-  alClicElemento(el: ElementoLibre): void {
+  alClicElemento(el: ElementoLibre, event?: Event): void {
     if (el.animacionInteraccion?.disparador === 'clic') this.dispararAnimacionInteraccion(el);
+    if (el.tipo === 'hotspot') {
+      this.toggleHotspot(el, event ?? new Event('click'));
+      return;
+    }
     if (el.overlay?.activo) {
       this.overlayAbierto = el;
       return;
     }
-    if (el.tipo !== 'boton') return;
-    if ((el.botonAccion ?? 'url') === 'pagina') {
+    const accion = el.tipo === 'boton' ? (el.botonAccion ?? 'url') : el.botonAccion;
+    if (accion === 'pagina') {
       if (el.botonSlideId) this.irAPagina.emit(el.botonSlideId);
-    } else if (el.botonUrl) {
+    } else if (accion === 'url' && el.botonUrl) {
       window.open(el.botonUrl, '_blank', 'noopener');
     }
   }

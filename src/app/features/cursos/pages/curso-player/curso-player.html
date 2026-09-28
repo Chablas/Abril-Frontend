@@ -36,6 +36,20 @@
 
     <!-- Slide activa -->
     <ng-container *ngIf="(fase === 'jugando' || fase === 'feedback') && slideActual as slide">
+      <!-- Barra lateral fija, estilo Genially, acotada a lo que la evaluación permite (ver
+           puedeAvanzarDesdeRail): solo "siguiente", nunca "atrás" ni saltar una pregunta
+           evaluable sin responder — ver el comentario en curso-player.ts. -->
+      <div class="rail-navegacion">
+        <button
+          type="button"
+          [disabled]="!puedeAvanzarDesdeRail"
+          (click)="avanzarDesdeRail()"
+          [title]="puedeAvanzarDesdeRail ? 'Siguiente pantalla' : 'Responde esta pregunta para continuar'"
+        >
+          <i class="ti ti-chevron-down"></i>
+        </button>
+      </div>
+
       <div
         class="slide-host"
         [class.slide-host--full]="slide.tipoCodigo === 'contenido_texto'"

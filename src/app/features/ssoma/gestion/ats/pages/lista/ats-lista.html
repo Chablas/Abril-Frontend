@@ -7,6 +7,7 @@
   <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true"></app-filter-trigger>
 </app-abril-page-header>
 
+<div class="lista-body">
 @if (filtrosAbiertos) {
   <app-filter-modal (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
     <app-search-select
@@ -119,6 +120,7 @@
   [totalPages]="totalPages"
   (pageChange)="cambiarPagina($event)"
 ></app-paginator>
+</div>
 
 @if (atsFirmandoVisto) {
   <app-abril-modal-panel

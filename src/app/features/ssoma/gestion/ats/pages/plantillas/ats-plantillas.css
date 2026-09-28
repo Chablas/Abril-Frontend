@@ -1,3 +1,21 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: #ffffff;
+}
+
+.plantillas-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
+  background: #ffffff;
+}
+
 .panel-loading {
   padding: 32px;
   text-align: center;
@@ -36,6 +54,23 @@
 .badge-autorizacion--falta {
   background: #fee2e2;
   color: #991b1b;
+}
+
+.badge-autorizacion--pendiente {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.btn-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.firma-digital-acciones {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
 }
 
 .btn-subir-autorizacion {
@@ -105,25 +140,70 @@
   margin: 0 0 12px;
 }
 
-.paso-puesto-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 4px;
-  border-bottom: 1px solid #f0efe9;
-}
-
 .paso-texto {
-  flex: 1 1 40%;
   font-size: 13px;
+  white-space: normal;
+  width: 38%;
 }
 
 .paso-puestos {
-  flex: 1 1 60%;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+}
+
+.autorizaciones-paginator {
+  margin-top: 10px;
+  max-width: 440px;
+}
+
+.control-input {
+  border: 1px dashed #cbd5e1;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  min-width: 160px;
+  outline: none;
+}
+
+.control-input:focus {
+  border-color: var(--color-abril-logo-blue);
+  border-style: solid;
+}
+
+.actividad-card {
+  border: 1px solid #e8e5df;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.actividad-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.actividad-seccion-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #8a8880;
+  margin: 12px 0 6px;
+}
+
+.nueva-actividad-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.nueva-actividad-row .abril-field-input {
+  flex: 1;
 }
 
 .chip-remove {

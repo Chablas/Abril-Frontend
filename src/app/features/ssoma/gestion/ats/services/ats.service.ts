@@ -17,6 +17,14 @@ import {
   AtsAutorizacionTrabajadorDto,
   AtsFirmarVistoRequestDto,
   AtsPeligroDto,
+  AtsPlantillaActividadDto,
+  AtsPlantillaActividadGuardarRequestDto,
+  AtsPlantillaPasoGuardarRequestDto,
+  AtsPlantillaActividadPeligrosRequestDto,
+  AtsRiesgoConControlesDto,
+  AtsRiesgoControlGuardarRequestDto,
+  AtsAutorizacionFirmaDigitalRequestDto,
+  AtsPlantillaPuestoDto,
 } from '../dtos/ats.dtos';
 
 function authHeaders(): HttpHeaders {
@@ -95,6 +103,14 @@ export class AtsService {
     return this.http.put<{ message: string }>(`${this.base}/pasos-puesto/${pasoId}`, puestoIds, { headers: authHeaders() });
   }
 
+  getPlantillaPuestoMapeo(): Observable<AtsPlantillaPuestoDto[]> {
+    return this.http.get<AtsPlantillaPuestoDto[]>(`${this.base}/plantillas-puesto`, { headers: authHeaders() });
+  }
+
+  setPlantillaPuestos(plantillaId: number, puestoIds: number[]): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/plantillas-puesto/${plantillaId}`, puestoIds, { headers: authHeaders() });
+  }
+
   getPlantillas(): Observable<AtsPlantillaDto[]> {
     return this.http.get<AtsPlantillaDto[]>(`${this.base}/plantillas`, { headers: authHeaders() });
   }
@@ -135,11 +151,67 @@ export class AtsService {
     return this.http.get<AtsAutorizacionTrabajadorDto[]>(`${this.base}/trabajadores-autorizacion`, { headers: authHeaders() });
   }
 
+  firmarDigitalAutorizacion(workerId: number, dto: AtsAutorizacionFirmaDigitalRequestDto): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/trabajadores/${workerId}/autorizacion/firma-digital`, dto, { headers: authHeaders() });
+  }
+
   subirAutorizacionPermiso(workerId: number, archivo: File): Observable<{ message: string }> {
     const formData = new FormData();
     formData.append('archivo', archivo);
     return this.http.post<{ message: string }>(`${this.base}/trabajadores/${workerId}/autorizacion`, formData, {
       headers: authHeaders(),
     });
+  }
+
+  // ── Actividades/pasos por plantilla ─────────────────────────────────────
+
+  getActividadesDePlantilla(plantillaId: number): Observable<AtsPlantillaActividadDto[]> {
+    return this.http.get<AtsPlantillaActividadDto[]>(`${this.base}/plantillas/${plantillaId}/actividades`, { headers: authHeaders() });
+  }
+
+  crearActividad(plantillaId: number, dto: AtsPlantillaActividadGuardarRequestDto): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(`${this.base}/plantillas/${plantillaId}/actividades`, dto, { headers: authHeaders() });
+  }
+
+  editarActividad(actividadId: number, dto: AtsPlantillaActividadGuardarRequestDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/actividades/${actividadId}`, dto, { headers: authHeaders() });
+  }
+
+  eliminarActividad(actividadId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.base}/actividades/${actividadId}`, { headers: authHeaders() });
+  }
+
+  setActividadPeligros(actividadId: number, dto: AtsPlantillaActividadPeligrosRequestDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/actividades/${actividadId}/peligros`, dto, { headers: authHeaders() });
+  }
+
+  crearPasoActividad(actividadId: number, dto: AtsPlantillaPasoGuardarRequestDto): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(`${this.base}/actividades/${actividadId}/pasos`, dto, { headers: authHeaders() });
+  }
+
+  editarPasoActividad(pasoId: number, dto: AtsPlantillaPasoGuardarRequestDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/pasos/${pasoId}`, dto, { headers: authHeaders() });
+  }
+
+  eliminarPasoActividad(pasoId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.base}/pasos/${pasoId}`, { headers: authHeaders() });
+  }
+
+  // ── Controles sugeridos por riesgo ──────────────────────────────────────
+
+  getRiesgosConControles(): Observable<AtsRiesgoConControlesDto[]> {
+    return this.http.get<AtsRiesgoConControlesDto[]>(`${this.base}/riesgos-controles`, { headers: authHeaders() });
+  }
+
+  crearControl(riesgoId: number, dto: AtsRiesgoControlGuardarRequestDto): Observable<{ id: number }> {
+    return this.http.post<{ id: number }>(`${this.base}/riesgos/${riesgoId}/controles`, dto, { headers: authHeaders() });
+  }
+
+  editarControl(controlId: number, dto: AtsRiesgoControlGuardarRequestDto): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/controles/${controlId}`, dto, { headers: authHeaders() });
+  }
+
+  eliminarControl(controlId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.base}/controles/${controlId}`, { headers: authHeaders() });
   }
 }

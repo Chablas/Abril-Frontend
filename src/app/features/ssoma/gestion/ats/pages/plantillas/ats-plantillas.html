@@ -3,9 +3,14 @@
   subtitulo="Peligros, EPP y herramientas sugeridos por puesto — el trabajador puede ajustar al llenar su ATS"
   [botonPrimario]="tab === 'plantillas' ? { label: 'Nueva plantilla', icono: 'ti-plus' } : undefined"
   [tabs]="headerTabs"
+  [hasExtra]="tab === 'autorizaciones'"
   (primaryClick)="nuevaPlantilla()">
+  @if (tab === 'autorizaciones') {
+    <app-filter-trigger tabsExtra [count]="filtrosAutorizacionesActivos" (open)="filtrosAutorizacionesAbiertos = true" />
+  }
 </app-abril-page-header>
 
+<div class="plantillas-body">
 @if (tab === 'riesgos') {
   <p class="pasos-hint">
     Marca qué riesgos exigen generar un PETAR obligatoriamente. Cuando un ATS firmado incluya alguno de estos
@@ -55,8 +60,10 @@
 
 @if (tab === 'autorizaciones') {
   <p class="pasos-hint">
-    Sin la autorización firmada de uso de firma digital e imagen (escaneada y subida aquí) el trabajador
-    NO puede crear ni editar un ATS — la firma en físico y la sube el Coordinador SSOMA.
+    Primero se captura la firma digital del trabajador en pantalla — recién ahí se habilita descargar la
+    plantilla (ya con esa firma impresa) para que firme también en físico al lado, y subir el escaneado.
+    Sin el escaneado el trabajador NO puede crear ni editar un ATS. Solo se lista al personal de Staff y
+    Oficina Central: los obreros de obra llenan su ATS en físico.
   </p>
 
   @if (loadingAutorizaciones) {
@@ -68,31 +75,47 @@
           <tr>
             <th>Trabajador</th>
             <th>DNI</th>
+            <th>Proyecto</th>
+            <th>Clasificación</th>
             <th>Estado</th>
             <th>Subido el</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
-          @for (t of trabajadoresAutorizacion; track t.workerId) {
+          @if (trabajadoresAutorizacionFiltrados.length === 0) {
+            <tr><td colspan="7">Sin resultados.</td></tr>
+          }
+          @for (t of trabajadoresAutorizacionPagina; track t.workerId) {
             <tr>
               <td>{{ t.nombre }}</td>
               <td>{{ t.dni ?? '—' }}</td>
+              <td>{{ t.proyectoNombre ?? '—' }}</td>
+              <td>{{ t.obraOficinaStaff ?? '—' }}</td>
               <td>
                 @if (t.tieneAutorizacion) {
                   <span class="badge-autorizacion badge-autorizacion--ok"><i class="ti ti-check"></i> Subida</span>
+                } @else if (t.tieneFirmaDigital) {
+                  <span class="badge-autorizacion badge-autorizacion--pendiente"><i class="ti ti-clock"></i> Falta escaneado</span>
                 } @else {
-                  <span class="badge-autorizacion badge-autorizacion--falta"><i class="ti ti-x"></i> Falta subir</span>
+                  <span class="badge-autorizacion badge-autorizacion--falta"><i class="ti ti-x"></i> Falta firma digital</span>
                 }
               </td>
               <td>{{ t.subidoEn ? (t.subidoEn | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
               <td>
-                <button class="btn btn-outline btn-sm" (click)="descargarPlantillaAutorizacion(t)">
+                <button class="btn btn-outline btn-sm" (click)="abrirFirmaDigital(t)">
+                  <i class="ti ti-signature"></i> {{ t.tieneFirmaDigital ? 'Refirmar digital' : 'Firmar digital' }}
+                </button>
+                <button
+                  class="btn btn-outline btn-sm"
+                  [disabled]="!t.tieneFirmaDigital"
+                  [title]="!t.tieneFirmaDigital ? 'Primero captura la firma digital' : ''"
+                  (click)="descargarPlantillaAutorizacion(t)">
                   <i class="ti ti-file-download"></i> Descargar plantilla
                 </button>
-                <label class="btn btn-outline btn-sm btn-subir-autorizacion">
+                <label class="btn btn-outline btn-sm btn-subir-autorizacion" [class.btn-disabled]="!t.tieneFirmaDigital">
                   @if (subiendoWorkerId === t.workerId) { Subiendo… } @else { {{ t.tieneAutorizacion ? 'Reemplazar escaneado' : 'Subir escaneado' }} }
-                  <input type="file" accept="image/*,.pdf" hidden (change)="subirAutorizacion(t, $event)" [disabled]="subiendoWorkerId === t.workerId" />
+                  <input type="file" accept="image/*,.pdf" hidden (change)="subirAutorizacion(t, $event)" [disabled]="subiendoWorkerId === t.workerId || !t.tieneFirmaDigital" />
                 </label>
                 @if (t.archivoUrl) {
                   <a [href]="t.archivoUrl" target="_blank" class="btn-link-ver">Ver escaneado</a>
@@ -103,7 +126,69 @@
         </tbody>
       </table>
     </div>
+
+    <div class="autorizaciones-paginator">
+      <app-paginator
+        [totalRecords]="trabajadoresAutorizacionFiltrados.length"
+        [currentPage]="autorizacionesCurrentPage"
+        [totalPages]="autorizacionesTotalPages"
+        (pageChange)="changeAutorizacionesPage($event)">
+      </app-paginator>
+    </div>
   }
+}
+
+@if (filtrosAutorizacionesAbiertos) {
+  <app-filter-modal (closeModal)="filtrosAutorizacionesAbiertos = false" (clear)="limpiarFiltrosAutorizaciones()">
+    <div class="w-full">
+      <app-search-input
+        placeholder="Buscar por nombre o DNI..."
+        [(value)]="searchAutorizaciones"
+        (valueChange)="onFiltroAutorizacionesChange()"
+        width="100%">
+      </app-search-input>
+    </div>
+
+    <div class="w-full">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Estado"
+        [options]="[{ value: 'todos', label: 'Todos' }, { value: 'ok', label: 'Subida' }, { value: 'falta', label: 'Falta subir' }]"
+        valueField="value"
+        displayField="label"
+        [value]="estadoAutorizacionFilter"
+        (valueChange)="estadoAutorizacionFilter = $event; onFiltroAutorizacionesChange()">
+      </app-search-select>
+    </div>
+
+    <div class="w-full">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Proyecto"
+        [options]="proyectosAutorizacionOpts"
+        valueField="id"
+        displayField="nombre"
+        [value]="proyectoAutorizacionFilter"
+        [allowClear]="true"
+        placeholder="Buscar proyecto..."
+        (valueChange)="proyectoAutorizacionFilter = $event; onFiltroAutorizacionesChange()">
+      </app-search-select>
+    </div>
+
+    <div class="w-full">
+      <app-search-select
+        color="var(--color-abril-logo-blue)"
+        label="Clasificación"
+        [options]="clasificacionesAutorizacionOpts"
+        valueField="value"
+        displayField="label"
+        [value]="clasificacionAutorizacionFilter"
+        [allowClear]="true"
+        placeholder="Selecciona clasificación"
+        (valueChange)="clasificacionAutorizacionFilter = $event; onFiltroAutorizacionesChange()">
+      </app-search-select>
+    </div>
+  </app-filter-modal>
 }
 
 @if (tab === 'pasos') {
@@ -115,32 +200,102 @@
   @if (loadingPasos) {
     <div class="panel-loading">Cargando…</div>
   } @else {
-    @for (grupo of pasosPorCategoria; track grupo.categoria) {
-      <div class="abril-section-title">{{ grupo.categoria }}</div>
-      @for (paso of grupo.items; track paso.pasoId) {
-        <div class="paso-puesto-row">
-          <div class="paso-texto">{{ paso.texto }}</div>
-          <div class="paso-puestos">
-            @for (p of puestoNombresDe(paso); track p.id) {
-              <span class="chip chip--sel">
-                {{ p.nombre }}
-                <button class="chip-remove" (click)="quitarPuesto(paso, p.id)">✕</button>
-              </span>
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Categoría</th>
+            <th>Paso</th>
+            <th>Puestos</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (pasosPuesto.length === 0) {
+            <tr><td colspan="3">No hay pasos en el catálogo todavía.</td></tr>
+          }
+          @for (grupo of pasosPorCategoria; track grupo.categoria) {
+            @for (paso of grupo.items; track paso.pasoId; let first = $first) {
+              <tr>
+                <td>{{ first ? grupo.categoria : '' }}</td>
+                <td class="paso-texto">{{ paso.texto }}</td>
+                <td>
+                  <div class="paso-puestos">
+                    @for (p of puestoNombresDe(paso); track p.id) {
+                      <span class="chip chip--sel">
+                        {{ p.nombre }}
+                        <button class="chip-remove" (click)="quitarPuesto(paso, p.id)">✕</button>
+                      </span>
+                    }
+                    <app-search-select
+                      color="var(--color-abril-logo-blue)"
+                      [options]="puestosDisponiblesPara(paso)"
+                      valueField="id"
+                      displayField="nombre"
+                      [value]="null"
+                      placeholder="+ Agregar puesto..."
+                      (valueChange)="agregarPuesto(paso, $event)"
+                    ></app-search-select>
+                    @if (guardandoPasoId === paso.pasoId) { <span class="guardando-tag">Guardando…</span> }
+                  </div>
+                </td>
+              </tr>
             }
-            <app-search-select
-              color="var(--color-abril-logo-blue)"
-              [options]="puestosDisponiblesPara(paso)"
-              valueField="id"
-              displayField="nombre"
-              [value]="null"
-              placeholder="+ Agregar puesto..."
-              (valueChange)="agregarPuesto(paso, $event)"
-            ></app-search-select>
-            @if (guardandoPasoId === paso.pasoId) { <span class="guardando-tag">Guardando…</span> }
-          </div>
-        </div>
-      }
-    }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+@if (tab === 'plantillas-puesto') {
+  <p class="pasos-hint">
+    Qué puestos autosugieren cada plantilla al llenar un ATS — una especialidad puede corresponder
+    a varios puestos reales (ej. "ATS Albañilería" → ALBAÑIL, OFICIAL ALBAÑIL, PEÓN...).
+  </p>
+
+  @if (loadingPlantillasPuesto) {
+    <div class="panel-loading">Cargando…</div>
+  } @else {
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Plantilla</th>
+            <th>Puestos</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (plantillasPuesto.length === 0) {
+            <tr><td colspan="2">No hay plantillas activas todavía.</td></tr>
+          }
+          @for (pp of plantillasPuesto; track pp.plantillaId) {
+            <tr>
+              <td class="paso-texto">{{ pp.plantillaNombre }}</td>
+              <td>
+                <div class="paso-puestos">
+                  @for (p of puestoNombresDePlantilla(pp); track p.id) {
+                    <span class="chip chip--sel">
+                      {{ p.nombre }}
+                      <button class="chip-remove" (click)="quitarPuestoDePlantilla(pp, p.id)">✕</button>
+                    </span>
+                  }
+                  <app-search-select
+                    color="var(--color-abril-logo-blue)"
+                    [options]="puestosDisponiblesParaPlantilla(pp)"
+                    valueField="id"
+                    displayField="nombre"
+                    [value]="null"
+                    placeholder="+ Agregar puesto..."
+                    (valueChange)="agregarPuestoAPlantilla(pp, $event)"
+                  ></app-search-select>
+                  @if (guardandoPlantillaPuestoId === pp.plantillaId) { <span class="guardando-tag">Guardando…</span> }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   }
 }
 
@@ -150,7 +305,6 @@
     <thead>
       <tr>
         <th>Nombre</th>
-        <th>Puesto</th>
         <th>Peligros</th>
         <th>EPP</th>
         <th>Herramientas</th>
@@ -159,19 +313,19 @@
     </thead>
     <tbody>
       @if (loading) {
-        <tr><td colspan="6">Cargando…</td></tr>
+        <tr><td colspan="5">Cargando…</td></tr>
       } @else if (plantillas.length === 0) {
-        <tr><td colspan="6">No hay plantillas creadas todavía.</td></tr>
+        <tr><td colspan="5">No hay plantillas creadas todavía.</td></tr>
       } @else {
         @for (p of plantillas; track p.id) {
           <tr>
             <td>{{ p.nombre }}</td>
-            <td>{{ puestoNombre(p.puestoId) }}</td>
             <td>{{ p.peligroIds.length }}</td>
             <td>{{ p.eppIds.length }}</td>
             <td>{{ p.herramientaIds.length }}</td>
             <td>
               <button class="btn btn-outline btn-sm" (click)="editar(p)">Editar</button>
+              <button class="btn btn-outline btn-sm" (click)="abrirActividades(p)">Actividades</button>
               <button class="btn btn-outline btn-sm btn-danger" (click)="desactivar(p)">Desactivar</button>
             </td>
           </tr>
@@ -189,25 +343,11 @@
     width="820px"
     (closeModal)="cerrarModal()">
 
-    <div class="form-row">
-      <div class="abril-field">
-        <label class="abril-field-label">Nombre *</label>
-        <input type="text" class="abril-field-input" [(ngModel)]="nombre" placeholder="Ej: ATS Supervisión de campo" />
-      </div>
-      <div>
-        <app-search-select
-          color="var(--color-abril-logo-blue)"
-          label="Puesto (autosugiere a este puesto)"
-          [options]="puestoOpts"
-          valueField="id"
-          displayField="nombre"
-          [value]="puestoId"
-          [allowClear]="true"
-          placeholder="Selecciona un puesto"
-          (valueChange)="puestoId = $event"
-        ></app-search-select>
-      </div>
+    <div class="abril-field">
+      <label class="abril-field-label">Nombre *</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="nombre" placeholder="Ej: ATS Supervisión de campo" />
     </div>
+    <p class="pasos-hint">Qué puestos autosugieren esta plantilla se configura en la pestaña "Plantillas por puesto".</p>
 
     <div class="abril-section-title">Peligros sugeridos</div>
     <div class="chips-grid">
@@ -248,3 +388,168 @@
   </app-abril-modal-panel>
 }
 }
+
+@if (tab === 'controles') {
+  <p class="pasos-hint">
+    Controles sugeridos por riesgo — el trabajador los marca al llenar su ATS en vez de escribirlos a mano.
+    Agrupados por el peligro al que pertenece cada riesgo.
+  </p>
+
+  @if (loadingControles) {
+    <div class="panel-loading">Cargando…</div>
+  } @else {
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead>
+          <tr>
+            <th>Peligro</th>
+            <th>Riesgo</th>
+            <th>Controles sugeridos</th>
+          </tr>
+        </thead>
+        <tbody>
+          @if (riesgosControles.length === 0) {
+            <tr><td colspan="3">No hay riesgos en el catálogo todavía.</td></tr>
+          }
+          @for (grupo of controlesPorPeligro; track grupo.peligroNombre) {
+            @for (r of grupo.riesgos; track r.riesgoId; let first = $first) {
+              <tr>
+                <td>{{ first ? grupo.peligroNombre : '' }}</td>
+                <td class="paso-texto">{{ r.riesgoNombre }}</td>
+                <td>
+                  <div class="paso-puestos">
+                    @for (c of r.controles; track c.id) {
+                      <span class="chip chip--sel">
+                        {{ c.texto }}
+                        <button class="chip-remove" (click)="eliminarControl(r, c.id)">✕</button>
+                      </span>
+                    }
+                    <input
+                      type="text"
+                      class="control-input"
+                      placeholder="+ Agregar control..."
+                      [(ngModel)]="nuevoControlTexto[r.riesgoId]"
+                      (keyup.enter)="agregarControl(r)"
+                    />
+                    @if (guardandoControlRiesgoId === r.riesgoId) { <span class="guardando-tag">Guardando…</span> }
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+}
+
+@if (firmaDigitalModalAbierto && firmaDigitalTrabajador) {
+  <app-abril-modal-panel
+    [titulo]="'Firma digital — ' + firmaDigitalTrabajador.nombre"
+    icono="ti-signature"
+    variant="blue"
+    width="640px"
+    (closeModal)="cerrarFirmaDigital()">
+
+    <p class="pasos-hint">
+      El trabajador firma acá en pantalla (con el dedo o el mouse). Esta firma queda impresa en el PDF de
+      la plantilla, junto a un espacio para su firma física — recién con esto se habilita descargar el PDF.
+    </p>
+
+    <app-signature-pad #pad [anchoCanvas]="560" [altoCanvas]="200" (drawingChange)="firmaDigitalHayTrazo = $event"></app-signature-pad>
+
+    <div class="firma-digital-acciones">
+      <button class="btn btn-outline btn-sm" (click)="pad.clear()">Limpiar</button>
+    </div>
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarFirmaDigital()" [disabled]="guardandoFirmaDigital">Cancelar</button>
+      <button class="btn btn-primary" [disabled]="!firmaDigitalHayTrazo || guardandoFirmaDigital" (click)="guardarFirmaDigital(pad.toDataUrl())">
+        @if (guardandoFirmaDigital) { Guardando… } @else { Guardar firma }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}
+
+@if (actividadesModalAbierto && actividadesPlantilla) {
+  <app-abril-modal-panel
+    [titulo]="'Actividades — ' + actividadesPlantilla.nombre"
+    icono="ti-list-check"
+    variant="blue"
+    width="900px"
+    (closeModal)="cerrarActividades()">
+
+    <p class="pasos-hint">
+      Actividades y pasos de la tarea, con los peligros de esta plantilla que aplican a cada una.
+      Al llenar el ATS, marcar una actividad solo sugiere sus peligros en vez de todo el catálogo.
+    </p>
+
+    @if (loadingActividades) {
+      <div class="panel-loading">Cargando…</div>
+    } @else {
+      @if (actividades.length === 0) {
+        <p class="pasos-hint">No hay actividades todavía. Agrega la primera abajo.</p>
+      }
+      @for (a of actividades; track a.id) {
+        <div class="actividad-card">
+          <div class="actividad-card-header">
+            <strong>{{ a.texto }}</strong>
+            <div>
+              <button class="btn btn-outline btn-sm" (click)="editarActividad(a)">Editar</button>
+              <button class="btn btn-outline btn-sm btn-danger" (click)="eliminarActividad(a)">Eliminar</button>
+            </div>
+          </div>
+
+          <div class="actividad-seccion-label">Pasos</div>
+          <div class="paso-puestos">
+            @for (p of a.pasos; track p.id) {
+              <span class="chip chip--sel">
+                {{ p.texto }}
+                <button class="chip-remove" (click)="eliminarPasoActividad(a, p.id)">✕</button>
+              </span>
+            }
+            <input
+              type="text"
+              class="control-input"
+              placeholder="+ Agregar paso..."
+              [(ngModel)]="nuevoPasoTexto[a.id]"
+              (keyup.enter)="agregarPasoActividad(a)"
+            />
+            @if (guardandoPasoActividadId === a.id) { <span class="guardando-tag">Guardando…</span> }
+          </div>
+
+          <div class="actividad-seccion-label">Peligros de esta actividad</div>
+          <div class="chips-grid">
+            @for (peligro of peligrosDePlantilla(); track peligro.id) {
+              <label class="chip" [class.chip--sel]="actividadTienePeligro(a, peligro.id)">
+                <input type="checkbox" [checked]="actividadTienePeligro(a, peligro.id)" (change)="toggleActividadPeligro(a, peligro.id)" />
+                {{ peligro.nombre }}
+              </label>
+            }
+            @if (peligrosDePlantilla().length === 0) {
+              <span class="pasos-hint">Esta plantilla no tiene peligros marcados todavía — edítala primero.</span>
+            }
+          </div>
+        </div>
+      }
+
+      <div class="nueva-actividad-row">
+        <input
+          type="text"
+          class="abril-field-input"
+          placeholder="Nombre de la nueva actividad..."
+          [(ngModel)]="nuevaActividadTexto"
+          (keyup.enter)="agregarActividad()"
+        />
+        <button class="btn btn-primary btn-sm" [disabled]="!nuevaActividadTexto.trim() || guardandoActividad" (click)="agregarActividad()">
+          @if (guardandoActividad) { Guardando… } @else { + Agregar actividad }
+        </button>
+      </div>
+    }
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarActividades()">Cerrar</button>
+    </div>
+  </app-abril-modal-panel>
+}
+</div>

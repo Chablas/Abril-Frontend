@@ -347,6 +347,23 @@ export class CursoPlayer implements OnInit {
     this.cdr.detectChanges();
   }
 
+  /** Barra lateral fija, estilo Genially — pero acotada a lo que la evaluación permite:
+   *  a diferencia de la vista previa de la plantilla (navegación libre, sin consecuencias),
+   *  acá cada respuesta queda registrada contra un intento con declaración jurada, así que
+   *  NUNCA se puede retroceder ni saltar una pregunta evaluable sin responderla. Solo sirve
+   *  como una forma más visible de "Continuar" para pantallas de puro contenido (sin botón
+   *  propio) o justo después de responder, mientras se ve el feedback. */
+  get puedeAvanzarDesdeRail(): boolean {
+    if (this.fase === 'feedback') return false; // ya avanza solo, no interferir con el timeout
+    if (this.fase !== 'jugando') return false;
+    return !this.slideActual?.esEvaluable;
+  }
+
+  avanzarDesdeRail(): void {
+    if (!this.puedeAvanzarDesdeRail) return;
+    this.onRespuesta({ visto: true });
+  }
+
   private async avanzar(): Promise<void> {
     await this.slideLibreRef?.dispararSalida();
 

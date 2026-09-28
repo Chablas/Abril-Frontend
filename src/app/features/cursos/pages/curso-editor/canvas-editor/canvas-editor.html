@@ -114,6 +114,13 @@
             <span>{{ el.audioUrl ? 'Audio cargado' : 'Sin audio' }}</span>
           </div>
 
+          <div *ngSwitchCase="'carrusel'" class="canvas-carrusel-placeholder">
+            <img *ngFor="let src of (el.carruselImagenes || []).slice(0, 4)" [src]="src" alt="" />
+            <span *ngIf="!(el.carruselImagenes || []).length"><i class="ti ti-carousel-horizontal"></i> Carrusel vacío — agrega fotos en el panel</span>
+          </div>
+
+          <div *ngSwitchCase="'hotspot'" class="canvas-hotspot-placeholder" [style.background]="el.hotspotColor || '#f5a623'"></div>
+
           <div
             *ngSwitchCase="'pregunta'"
             class="canvas-pregunta-render"
@@ -516,6 +523,66 @@
           <input type="checkbox" [(ngModel)]="el.audioAutoplay" />
           <span>Reproducir automáticamente al entrar a esta pantalla</span>
         </label>
+
+        <hr class="separador" />
+
+        <label class="etiqueta-campo">Miniatura (opcional)</label>
+        <p class="ayuda">
+          Con una miniatura, el reproductor muestra una foto con un botón de play encima
+          (estilo Genially) en vez de la barra de audio nativa.
+        </p>
+        <img *ngIf="el.audioMiniaturaUrl" [src]="el.audioMiniaturaUrl" alt="" class="preview-imagen-chica" />
+        <div class="fila-campos">
+          <button type="button" class="btn-subir" (click)="pedirSubirAudioMiniatura()">
+            <i class="ti ti-upload"></i> {{ el.audioMiniaturaUrl ? 'Cambiar miniatura' : 'Subir miniatura' }}
+          </button>
+          <button type="button" class="btn-link btn-link-danger" *ngIf="el.audioMiniaturaUrl" (click)="quitarAudioMiniatura(el)">
+            <i class="ti ti-trash"></i>
+          </button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="el.tipo === 'carrusel'">
+        <label class="etiqueta-campo">Imágenes del carrusel</label>
+        <p class="ayuda">Cantidad libre — añade tantas como quieras.</p>
+        <div class="carrusel-lista-imagenes">
+          <div class="carrusel-item-imagen" *ngFor="let src of el.carruselImagenes; let i = index">
+            <img [src]="src" alt="" />
+            <button type="button" class="btn-link btn-link-danger" (click)="quitarImagenCarrusel(el, i)" title="Quitar">
+              <i class="ti ti-trash"></i>
+            </button>
+          </div>
+        </div>
+        <button type="button" class="btn-subir" (click)="pedirSubirImagenCarrusel()">
+          <i class="ti ti-upload"></i> Añadir imagen
+        </button>
+
+        <hr class="separador" />
+
+        <div class="abril-field campo-corto">
+          <input class="abril-field-input" type="number" min="1" max="5" [(ngModel)]="el.carruselVisibles" (ngModelChange)="guardarHistorial()" placeholder=" " />
+          <label class="abril-field-label">Imágenes visibles a la vez (escritorio)</label>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="el.tipo === 'hotspot'">
+        <div class="abril-field">
+          <textarea class="abril-field-input" rows="3" [(ngModel)]="el.hotspotTexto" (ngModelChange)="guardarHistorial()" placeholder=" "></textarea>
+          <label class="abril-field-label">Texto del globo</label>
+        </div>
+        <img *ngIf="el.hotspotImagenUrl" [src]="el.hotspotImagenUrl" alt="" class="preview-imagen-chica" />
+        <div class="fila-campos">
+          <button type="button" class="btn-subir" (click)="pedirSubirImagenHotspot()">
+            <i class="ti ti-upload"></i> {{ el.hotspotImagenUrl ? 'Cambiar imagen' : 'Imagen (opcional)' }}
+          </button>
+          <button type="button" class="btn-link btn-link-danger" *ngIf="el.hotspotImagenUrl" (click)="el.hotspotImagenUrl = ''; guardarHistorial()">
+            <i class="ti ti-trash"></i>
+          </button>
+        </div>
+        <div class="campo-color">
+          <label>Color del punto</label>
+          <app-color-hex-input [valor]="el.hotspotColor" (valorChange)="el.hotspotColor = $event" (confirmado)="guardarHistorial()" />
+        </div>
       </ng-container>
 
       <!-- Pregunta evaluable embebida — mismos campos que el editor de preguntas de pantalla
@@ -1258,9 +1325,56 @@
             <input class="abril-field-input" type="text" [(ngModel)]="el.overlay!.imagenUrl" placeholder=" " />
             <label class="abril-field-label">Imagen del panel (URL, opcional)</label>
           </div>
+
+          <label class="etiqueta-campo">Cómo se muestra</label>
+          <select
+            class="abril-field-input"
+            [ngModel]="el.overlay!.modo || 'modal'"
+            (ngModelChange)="el.overlay!.modo = $event; guardarHistorial()"
+          >
+            <option value="modal">Panel centrado (oscurece toda la pantalla)</option>
+            <option value="in-place">Expandido en el mismo lugar (estilo tarjeta)</option>
+          </select>
         </ng-container>
         <p class="ayuda" *ngIf="el.tipo === 'boton'">
           El botón también puede abrir un enlace o ir a otra página — configúralo arriba, en "Ir a página del curso" / "Abrir enlace externo".
+        </p>
+
+        <!-- Cualquier otro elemento (ícono, forma, imagen, texto...) también puede navegar
+             al hacer clic, estilo Genially — no es exclusivo del elemento 'boton'. -->
+        <ng-container *ngIf="el.tipo !== 'boton' && !el.overlay?.activo">
+          <p class="ayuda ayuda-grupo">Acción al hacer clic</p>
+          <select
+            class="abril-field-input"
+            [ngModel]="el.botonAccion || 'ninguna'"
+            (ngModelChange)="fijarAccionClicElemento(el, $event)"
+          >
+            <option value="ninguna">Ninguna</option>
+            <option value="pagina">Ir a página del curso</option>
+            <option value="url">Abrir enlace externo</option>
+          </select>
+
+          <div class="abril-field" *ngIf="el.botonAccion === 'url'">
+            <input class="abril-field-input" type="text" [(ngModel)]="el.botonUrl" placeholder=" " />
+            <label class="abril-field-label">Enlace</label>
+          </div>
+
+          <ng-container *ngIf="el.botonAccion === 'pagina'">
+            <select
+              class="abril-field-input"
+              [ngModel]="el.botonSlideId"
+              (ngModelChange)="el.botonSlideId = $event; guardarHistorial()"
+            >
+              <option [ngValue]="null">Selecciona una página...</option>
+              <option *ngFor="let p of paginasDisponibles" [ngValue]="p.id">{{ p.titulo }}</option>
+            </select>
+            <p class="ayuda" *ngIf="!paginasDisponibles.length">
+              Guarda esta pantalla y crea otras para poder enlazarlas aquí.
+            </p>
+          </ng-container>
+        </ng-container>
+        <p class="ayuda" *ngIf="el.tipo !== 'boton' && el.overlay?.activo">
+          Este elemento ya abre un panel al hacer clic — desactiva "Mostrar panel al hacer clic" arriba para poder configurar en su lugar una acción de ir a página o enlace.
         </p>
       </ng-container>
 
@@ -1376,6 +1490,13 @@
         <span>Sube música o una locución</span>
       </span>
     </button>
+    <button type="button" class="fila-rail-agrupado" (click)="agregarCarruselDesdeRail()">
+      <span class="fila-rail-icono"><i class="ti ti-carousel-horizontal"></i></span>
+      <span class="fila-rail-info">
+        <strong>Carrusel</strong>
+        <span>Franja de fotos con flechas y puntos</span>
+      </span>
+    </button>
 
     <hr class="separador-rail-agrupado" />
 
@@ -1436,6 +1557,13 @@
       <span class="fila-rail-info">
         <strong>Botón</strong>
         <span>Enlace o salto a otra página</span>
+      </span>
+    </button>
+    <button type="button" class="fila-rail-agrupado" (click)="agregarHotspotDesdeRail()">
+      <span class="fila-rail-icono"><i class="ti ti-point"></i></span>
+      <span class="fila-rail-info">
+        <strong>Punto interactivo</strong>
+        <span>Círculo pulsante con un globo de texto</span>
       </span>
     </button>
   </div>

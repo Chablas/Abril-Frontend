@@ -156,6 +156,205 @@
   cursor: pointer;
 }
 
+/* ---- Carrusel de imágenes (estilo Genially: cantidad libre, flechas + puntos) ---- */
+
+.libre-carrusel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.carrusel-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.carrusel-pista {
+  display: flex;
+  height: 100%;
+  transition: transform 0.35s ease;
+}
+
+.carrusel-imagen {
+  flex: 0 0 auto;
+  height: 100%;
+  object-fit: cover;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
+
+.carrusel-flecha {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.85);
+  color: #14100b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.carrusel-flecha-izq {
+  left: 8px;
+}
+
+.carrusel-flecha-der {
+  right: 8px;
+}
+
+.carrusel-puntos {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+}
+
+.carrusel-punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 0;
+}
+
+.carrusel-punto-activa,
+.carrusel-punto-activo {
+  background: #f5a623;
+}
+
+/* ---- Punto interactivo / hotspot (estilo Genially: círculo pulsante + globo anclado) ---- */
+
+.hotspot-punto {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.6);
+}
+
+.continuo-hotspot {
+  animation: hotspotPulso 1.6s ease-in-out infinite;
+}
+
+@keyframes hotspotPulso {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.6); }
+  50% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.15); }
+}
+
+.hotspot-globo {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  max-width: 280px;
+  background: #fdf0d5;
+  color: #14100b;
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 20;
+}
+
+.hotspot-globo img {
+  width: 100%;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.hotspot-globo p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.hotspot-globo-cerrar {
+  float: right;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #948d7c;
+  margin: -4px -6px 0 6px;
+}
+
+/* ---- Audio con miniatura (estilo Genially: foto + botón de play centrado) ---- */
+
+.audio-miniatura {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  display: block;
+}
+
+.audio-miniatura img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.audio-miniatura-boton {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(20, 16, 11, 0.75);
+  color: #f5a623;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+/* ---- Overlay "in-place": mismo panel que el modal, pero recortado dentro del lienzo y
+   anclado a las coordenadas del elemento que lo abrió (ver html). ---- */
+
+.overlay-en-sitio-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 15;
+}
+
+.overlay-en-sitio-panel {
+  position: absolute;
+  background: #fff;
+  color: #14100b;
+  border-radius: 8px;
+  padding: 16px 20px;
+  overflow-y: auto;
+  z-index: 16;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.overlay-en-sitio-panel h3 {
+  margin: 0 0 8px;
+}
+
+.overlay-en-sitio-panel img {
+  width: 100%;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
 .overlay-libre-backdrop {
   position: fixed;
   inset: 0;

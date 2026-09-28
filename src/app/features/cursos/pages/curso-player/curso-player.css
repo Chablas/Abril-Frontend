@@ -159,6 +159,40 @@
   pointer-events: none;
 }
 
+/* Barra lateral fija, estilo Genially — ver puedeAvanzarDesdeRail en curso-player.ts para
+   por qué es solo "siguiente" (nunca "atrás"/"inicio") en el reproductor real. */
+.rail-navegacion {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+  z-index: 5;
+}
+
+.rail-navegacion button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(20, 16, 11, 0.5);
+  color: #ffffff;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rail-navegacion button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.rail-navegacion button:not(:disabled):hover {
+  background: rgba(20, 16, 11, 0.75);
+  border-color: #ffffff;
+}
+
 /* Slide de contenido: sin tarjeta, flota directo sobre el fondo animado a pantalla completa */
 .slide-host.slide-host--full {
   max-width: 1200px;

@@ -437,6 +437,24 @@ export class CursoEditor implements OnInit, OnDestroy {
     if (this.previewIndice < this.previewSlides.length - 1) this.previewIndice++;
   }
 
+  /** Barra lateral fija de navegación, estilo Genially (home / ↑ / ↓): a diferencia del
+   *  paginador chico de abajo (que sigue ahí para saltar con el número de página a la
+   *  vista), esta vive SIEMPRE visible encima del lienzo — así una pantalla sin ningún
+   *  botón propio (como "¿Qué es el EPP?") igual deja claro cómo seguir, sin que el
+   *  autor tenga que buscar controles pegados al borde. */
+  previewIrAInicio(): void {
+    this.previewIndice = 0;
+  }
+
+  previewIrAnterior(): void {
+    if (this.previewIndice > 0) this.previewIndice--;
+  }
+
+  previewIrSiguiente(): void {
+    if (!this.previewSlides) return;
+    if (this.previewIndice < this.previewSlides.length - 1) this.previewIndice++;
+  }
+
   /** Convierte una "Plantilla rápida" (código fijo) en un curso real marcado `esPlantilla`
    *  — a partir de ahora aparece en "Tus plantillas" y es 100% editable desde la UI, igual
    *  que cualquier curso. No navega a ningún lado: se queda en la galería. */
@@ -792,6 +810,26 @@ export class CursoEditor implements OnInit, OnDestroy {
     this.fiPreview?.nativeElement.click();
   }
 
+  /** Añade una imagen más al carrusel — sentinela '__carrusel_push__' que subirImagenA
+   *  reconoce para hacer push al array en vez de reemplazar un campo escalar. */
+  subirImagenCarruselElementoLibre(el: ElementoLibre): void {
+    this.objetivoSubidaPreview = el;
+    this.campoSubidaPreview = '__carrusel_push__';
+    this.fiPreview?.nativeElement.click();
+  }
+
+  subirAudioMiniaturaElementoLibre(el: ElementoLibre): void {
+    this.objetivoSubidaPreview = el;
+    this.campoSubidaPreview = 'audioMiniaturaUrl';
+    this.fiPreview?.nativeElement.click();
+  }
+
+  subirImagenHotspotElementoLibre(el: ElementoLibre): void {
+    this.objetivoSubidaPreview = el;
+    this.campoSubidaPreview = 'hotspotImagenUrl';
+    this.fiPreview?.nativeElement.click();
+  }
+
   /** Vista previa de la pantalla que se está editando: arma la slide a partir de los
    *  elementos EN VIVO del lienzo (this.ce.elementos), no de lo último guardado, para que
    *  se vea el efecto de cambios que el autor aún no guardó. Renderizada con el mismo
@@ -811,6 +849,20 @@ export class CursoEditor implements OnInit, OnDestroy {
       esEvaluable: false,
       configuracionJson: JSON.stringify({ elementos: this.ceRef.elementos }),
     };
+  }
+
+  /** El botón "ir a página" (o su flecha) dentro de la vista previa de una sola pantalla:
+   *  -1 es el ID provisorio que dejan las plantillas (ver plantillas-curso.ts) y significa
+   *  "la siguiente"; un ID real navega el editor a esa pantalla guardada, igual que las
+   *  flechas prev/siguiente del lienzo. */
+  previewIrAPagina(destinoId: number): void {
+    this.mostrarVistaPrevia = false;
+    if (destinoId === -1) {
+      this.irAPagina(1);
+      return;
+    }
+    const destino = this.slides.find((s) => s.id === destinoId);
+    if (destino) this.irAPaginaDesde(destino);
   }
 
   mostrarModalAudio = false;
@@ -1700,7 +1752,13 @@ export class CursoEditor implements OnInit, OnDestroy {
 
     this.cursoService.subirImagen(archivo).subscribe({
       next: (res) => {
-        objetivo[campo] = res.url;
+        // Sentinela de subirImagenCarruselElementoLibre: el carrusel acumula imágenes
+        // (cantidad libre), no reemplaza un campo escalar como el resto de los tipos.
+        if (campo === '__carrusel_push__') {
+          objetivo.carruselImagenes = [...(objetivo.carruselImagenes || []), res.url];
+        } else {
+          objetivo[campo] = res.url;
+        }
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {

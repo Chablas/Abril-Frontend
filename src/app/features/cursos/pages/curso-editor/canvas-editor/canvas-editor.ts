@@ -55,6 +55,8 @@ const ANCHO_INICIAL: Record<ElementoTipo, { ancho: number; alto: number }> = {
   // arma el elemento completo directo (ver ahí el tamaño real, 600x320). Solo existe para
   // que este Record<ElementoTipo, ...> sea exhaustivo.
   pregunta: { ancho: 600, alto: 320 },
+  carrusel: { ancho: 700, alto: 260 },
+  hotspot: { ancho: 40, alto: 40 },
 };
 
 export interface EstiloTextoPreset {
@@ -461,6 +463,12 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
   /** Pide al padre subir un archivo de audio para este elemento. */
   @Output() subirAudio = new EventEmitter<ElementoLibre>();
   @Output() subirAudioPregunta = new EventEmitter<ElementoLibre>();
+  /** Añade una imagen más al carrusel (push al array, no reemplaza) — cantidad libre. */
+  @Output() subirImagenCarrusel = new EventEmitter<ElementoLibre>();
+  /** Miniatura opcional del audio con botón de play centrado, estilo Genially. */
+  @Output() subirAudioMiniatura = new EventEmitter<ElementoLibre>();
+  /** Imagen opcional del globo de un punto interactivo (hotspot). */
+  @Output() subirImagenHotspot = new EventEmitter<ElementoLibre>();
   /** Pide al padre abrir el selector de "Añadir página" directo en la pestaña del banco
    *  de preguntas — se dispara desde la pastilla "Banco de preguntas" del panel de abajo. */
   @Output() abrirBancoPreguntas = new EventEmitter<void>();
@@ -728,6 +736,16 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
 
   agregarBotonDesdeRail(): void {
     this.agregarElemento('boton');
+    this.mostrarPanelElementos = false;
+  }
+
+  agregarCarruselDesdeRail(): void {
+    this.agregarElemento('carrusel');
+    this.mostrarPanelInsertar = false;
+  }
+
+  agregarHotspotDesdeRail(): void {
+    this.agregarElemento('hotspot');
     this.mostrarPanelElementos = false;
   }
 
@@ -1196,6 +1214,10 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
         // No se usa: agregarElementoPregunta() arma el elemento completo directo, con
         // valores por defecto propios de cada tipo de pregunta (opciones, puntaje, etc.).
         return {};
+      case 'carrusel':
+        return { carruselImagenes: [], carruselVisibles: 3, bordeRedondeado: 8 };
+      case 'hotspot':
+        return { hotspotTexto: 'Escribe aquí...', hotspotColor: '#f5a623' };
     }
   }
 
@@ -1241,6 +1263,28 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
 
   pedirSubirAudioPregunta(): void {
     if (this.seleccionado) this.subirAudioPregunta.emit(this.seleccionado);
+  }
+
+  pedirSubirImagenCarrusel(): void {
+    if (this.seleccionado) this.subirImagenCarrusel.emit(this.seleccionado);
+  }
+
+  quitarImagenCarrusel(el: ElementoLibre, indice: number): void {
+    el.carruselImagenes = (el.carruselImagenes || []).filter((_, i) => i !== indice);
+    this.guardarHistorial();
+  }
+
+  pedirSubirAudioMiniatura(): void {
+    if (this.seleccionado) this.subirAudioMiniatura.emit(this.seleccionado);
+  }
+
+  quitarAudioMiniatura(el: ElementoLibre): void {
+    el.audioMiniaturaUrl = '';
+    this.guardarHistorial();
+  }
+
+  pedirSubirImagenHotspot(): void {
+    if (this.seleccionado) this.subirImagenHotspot.emit(this.seleccionado);
   }
 
   /** Tipos donde "Disposición horizontal/vertical" tiene efecto real en el reproductor
@@ -1415,6 +1459,17 @@ export class CanvasEditor implements OnChanges, AfterViewInit, OnDestroy {
     if (!el) return;
     el.overlay = { ...(el.overlay || {}), activo };
     this.emitir();
+  }
+
+  /** Acción de clic para elementos que NO son 'boton' (ícono, forma, imagen, texto...) —
+   *  estilo Genially: cualquier objeto del lienzo puede navegar a otra página o abrir un
+   *  enlace, no solo el botón dedicado. Reutiliza los mismos campos botonAccion/botonUrl/
+   *  botonSlideId que ya tiene el modelo (ver ElementoLibre en curso.dtos.ts). */
+  fijarAccionClicElemento(el: ElementoLibre, valor: 'ninguna' | 'pagina' | 'url'): void {
+    el.botonAccion = valor === 'ninguna' ? undefined : valor;
+    if (valor !== 'pagina') el.botonSlideId = null;
+    if (valor !== 'url') el.botonUrl = '';
+    this.guardarHistorial();
   }
 
   // ---- Menú contextual (clic derecho): duplicar, capas, bloquear, eliminar ----

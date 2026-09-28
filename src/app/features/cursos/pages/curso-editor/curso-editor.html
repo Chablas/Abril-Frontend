@@ -188,6 +188,20 @@
 
     <div class="vp-cuerpo" (click)="cerrarPreviewPlantilla()">
       <div class="vp-lienzo-caja" [class.vp-lienzo-caja--movil]="previewDispositivo === 'movil'" (click)="$event.stopPropagation()">
+        <!-- Barra lateral fija, estilo Genially: home / anterior / siguiente, siempre
+             visible encima del lienzo — no depende de que la pantalla tenga su propio
+             botón "Comenzar"/"Continuar". -->
+        <div class="vp-rail-navegacion">
+          <button type="button" [disabled]="previewIndice === 0" (click)="previewIrAInicio()" title="Ir a la primera pantalla">
+            <i class="ti ti-home"></i>
+          </button>
+          <button type="button" [disabled]="previewIndice === 0" (click)="previewIrAnterior()" title="Pantalla anterior">
+            <i class="ti ti-chevron-up"></i>
+          </button>
+          <button type="button" [disabled]="previewIndice === slides.length - 1" (click)="previewIrSiguiente()" title="Pantalla siguiente">
+            <i class="ti ti-chevron-down"></i>
+          </button>
+        </div>
         <app-slide-contenido-libre
           *ngIf="slides[previewIndice] as s"
           [slide]="s"
@@ -345,7 +359,7 @@
       </div>
       <div class="vp-cuerpo" (click)="mostrarVistaPrevia = false">
         <div class="vp-lienzo-caja" [class.vp-lienzo-caja--movil]="previewDispositivo === 'movil'" (click)="$event.stopPropagation()">
-          <app-slide-contenido-libre *ngIf="slideParaVistaPrevia as vp" [slide]="vp"></app-slide-contenido-libre>
+          <app-slide-contenido-libre *ngIf="slideParaVistaPrevia as vp" [slide]="vp" (irAPagina)="previewIrAPagina($event)"></app-slide-contenido-libre>
         </div>
       </div>
     </div>
@@ -432,6 +446,9 @@
           (subirImagen)="subirImagenElementoLibre($event)"
           (subirAudio)="subirAudioElementoLibre($event)"
           (subirAudioPregunta)="subirAudioPreguntaElementoLibre($event)"
+          (subirImagenCarrusel)="subirImagenCarruselElementoLibre($event)"
+          (subirAudioMiniatura)="subirAudioMiniaturaElementoLibre($event)"
+          (subirImagenHotspot)="subirImagenHotspotElementoLibre($event)"
           (abrirBancoPreguntas)="abrirSelectorPlantillaEnBanco()"
         />
 

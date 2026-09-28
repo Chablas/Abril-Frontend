@@ -426,7 +426,17 @@ export interface GaleriaZoomConfig {
 // Lienzo libre: elementos posicionados a mano dentro de un canvas de tamaño fijo
 // CANVAS_ANCHO x CANVAS_ALTO (ver canvas-editor.ts), que se escala responsive en el
 // editor y en el player. x/y/ancho/alto están en píxeles de ese sistema de coordenadas.
-export type ElementoTipo = 'texto' | 'imagen' | 'forma' | 'icono' | 'boton' | 'video' | 'audio' | 'pregunta';
+export type ElementoTipo =
+  | 'texto'
+  | 'imagen'
+  | 'forma'
+  | 'icono'
+  | 'boton'
+  | 'video'
+  | 'audio'
+  | 'pregunta'
+  | 'carrusel'
+  | 'hotspot';
 // Un solo catálogo de efectos, compartido por Entrada / Continuo / Interactiva (estilo
 // Genially: la galería de efectos es la misma sin importar el disparador, solo cambia
 // cuándo se dispara). 'fade'/'slide-up'/'slide-left' se conservan solo por compatibilidad
@@ -470,6 +480,12 @@ export interface ElementoOverlay {
   titulo?: string;
   texto?: string;
   imagenUrl?: string;
+  /** 'modal' (default, compatibilidad con overlays ya guardados): panel centrado con
+   *  fondo oscurecido, estilo "¿Sabías que...?" de Genially. 'in-place': el contenido
+   *  reemplaza visualmente al propio elemento en su misma posición (estilo tarjeta con
+   *  ícono "i" que se expande), sin fondo ni centrado — ver overlay-libre-en-sitio en
+   *  slide-contenido-libre.html/css. */
+  modo?: 'modal' | 'in-place';
 }
 
 export interface ElementoLibre {
@@ -515,12 +531,30 @@ export interface ElementoLibre {
   videoUrl?: string; // URL embebible (YouTube/Vimeo)
   audioUrl?: string; // archivo subido (mp3/ogg/wav) — locuciones, efectos, etc.
   audioAutoplay?: boolean; // reproduce solo al entrar a la pantalla (default false)
+  /** Miniatura opcional para 'audio' (estilo Genially: foto con un botón de altavoz/play
+   *  centrado en vez de la barra nativa del navegador). Sin miniatura, se sigue viendo el
+   *  `<audio controls>` nativo — compatibilidad con audios ya guardados. */
+  audioMiniaturaUrl?: string;
   bordeRedondeado?: number; // px
   // Propiedades de forma
   formaTipo?: FormaTipo;
   colorFondo?: string;
   // Propiedades de ícono (clase Tabler, ej. "ti-star")
   iconoClase?: string;
+  // Propiedades de carrusel (tipo 'carrusel', estilo Genially: franja de imágenes con
+  // flechas prev/next + puntos de paginación). Cantidad libre — el autor añade/quita las
+  // que quiera desde el editor, no hay límite de 3.
+  carruselImagenes?: string[];
+  /** Cuántas imágenes se ven a la vez en el player (estilo Genially: 3 en escritorio) —
+   *  en móvil el reproductor siempre fuerza 1, sin importar este valor. */
+  carruselVisibles?: number;
+  // Propiedades de "punto interactivo" (tipo 'hotspot', estilo Genially: círculo pulsante
+  // sobre una imagen de fondo que, al hacer clic, muestra un globo de texto anclado ahí
+  // mismo — a diferencia de `overlay`, NO es modal: pueden quedar varios abiertos a la vez
+  // y no oscurece el resto de la pantalla).
+  hotspotTexto?: string;
+  hotspotImagenUrl?: string; // opcional, ej. la miniatura "Haz clic para explorar..."
+  hotspotColor?: string; // color del círculo pulsante (default el ámbar de marca)
   // Propiedades de botón
   botonTexto?: string;
   botonAccion?: 'url' | 'pagina'; // default 'url' (compatibilidad con botones ya guardados)
