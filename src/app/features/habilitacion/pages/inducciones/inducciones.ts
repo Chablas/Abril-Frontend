@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
+import Swal from 'sweetalert2';
 import { AuthService } from '../../../../core/services/auth.service';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
@@ -10,10 +11,12 @@ import { InduccionListDto } from '../../dtos/induccion.model';
 import { SearchInput } from '../../../../shared/components/search-input/search-input';
 import { FilterTriggerButton } from '../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../shared/components/filter-modal/filter-modal';
+import { BaseModal } from '../../../../shared/components/base-modal/base-modal';
+import { DatePicker } from '../../../../shared/components/date-picker/date-picker';
 @Component({
   selector: 'app-hab-inducciones',
   standalone: true,
-  imports: [CommonModule, FormsModule, SearchInput, FilterTriggerButton, FilterModal],
+  imports: [CommonModule, FormsModule, SearchInput, FilterTriggerButton, FilterModal, BaseModal, DatePicker],
   templateUrl: './inducciones.html',
   styleUrl: './inducciones.css',
 })
@@ -148,5 +151,46 @@ export class Inducciones implements OnInit {
 
   isNoAsistio(item: InduccionListDto): boolean {
     return item.estado === 'FALTA' || (item.estado === 'PROGRAMADA' && !item.ingresoConfirmado && item.fechaProgramada < this.hoy);
+  }
+
+  /** Reprogramar solo procede mientras el vigilante no haya marcado el ingreso del trabajador. */
+  puedeReprogramar(item: InduccionListDto): boolean {
+    return item.estado === 'PROGRAMADA' && !item.ingresoConfirmado;
+  }
+
+  reprogramando: InduccionListDto | null = null;
+  nuevaFecha: string | null = null;
+  reprogramandoGuardando = false;
+
+  abrirReprogramar(item: InduccionListDto): void {
+    this.reprogramando = item;
+    this.nuevaFecha = item.fechaProgramada.substring(0, 10);
+  }
+
+  cerrarReprogramar(): void {
+    this.reprogramando = null;
+    this.nuevaFecha = null;
+  }
+
+  confirmarReprogramar(): void {
+    if (!this.reprogramando || !this.nuevaFecha) return;
+    const id = this.reprogramando.id;
+
+    this.reprogramandoGuardando = true;
+    this.loaderService.show();
+    this.induccionService.reprogramar(id, { fechaProgramada: this.nuevaFecha }).subscribe({
+      next: () => {
+        this.reprogramandoGuardando = false;
+        this.loaderService.hide();
+        Swal.fire({ icon: 'success', title: 'Inducción reprogramada', timer: 1500, showConfirmButton: false });
+        this.cerrarReprogramar();
+        this.load();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.reprogramandoGuardando = false;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
   }
 }
