@@ -6,6 +6,7 @@ export interface AtsProyectoDto {
 export interface AtsPasoDto {
   id: number;
   texto: string;
+  requierePetar: boolean;
 }
 
 export interface AtsPasoPuestoDto {
@@ -61,6 +62,7 @@ export interface AtsPeligroDto {
 export interface AtsEppDto {
   id: number;
   nombre: string;
+  categoria: string;
 }
 
 export interface AtsHerramientaDto {
@@ -98,8 +100,12 @@ export interface AtsInitDto {
 
 export type NivelRiesgo = 'A' | 'M' | 'B';
 
+/** pasoId presente = viene del catálogo. pasoId ausente = paso "de una sola vez" escrito a mano
+ *  para este ATS puntual (no se guarda en el catálogo) — ahí texto/categoriaNombre son obligatorios. */
 export interface AtsPasoRequestDto {
-  pasoId: number;
+  pasoId?: number;
+  texto?: string;
+  categoriaNombre?: string;
   aplica: boolean;
 }
 
@@ -115,11 +121,16 @@ export interface AtsGuardarRequestDto {
   proyectoId: number;
   plantillaId?: number;
   actividad: string;
+  torreNombre?: string;
+  pisos?: string;
   lugar?: string;
   pasos: AtsPasoRequestDto[];
   eppIds: number[];
   herramientaIds: number[];
+  herramientasPersonalizadas: string[];
   riesgos: AtsRiesgoDetalleRequestDto[];
+  /** Presente solo al crear un ATS como corrección de uno ya firmado el mismo día. */
+  atsAnteriorId?: number;
 }
 
 export interface AtsFirmarVistoRequestDto {
@@ -137,7 +148,7 @@ export interface AtsFirmarRequestDto {
 }
 
 export interface AtsPasoResponseDto {
-  pasoId: number;
+  pasoId?: number;
   categoriaNombre: string;
   texto: string;
   aplica: boolean;
@@ -163,6 +174,8 @@ export interface AtsResponseDto {
   puestoNombre?: string;
   plantillaId?: number;
   actividad: string;
+  torreNombre?: string;
+  pisos?: string;
   lugar?: string;
   fecha: string;
   horaServidorFirma?: string;

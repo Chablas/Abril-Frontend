@@ -34,6 +34,17 @@
 
     <!-- PASO 1: Datos, pasos de la tarea, EPP, herramientas -->
     @if (paso === 1) {
+      @if (modoOrigen === 'corregir') {
+        <p class="pasos-hint-nuevo pasos-hint-alerta">
+          <i class="ti ti-alert-triangle"></i>
+          Estás creando un ATS de corrección — el ATS #{{ atsAnteriorId }} ya firmado no se modifica, queda como referencia. Ajusta lo que cambió en campo y firma este nuevo.
+        </p>
+      } @else if (modoOrigen === 'duplicar') {
+        <p class="pasos-hint-nuevo pasos-hint-alerta">
+          <i class="ti ti-copy"></i>
+          Precargado desde el ATS #{{ atsAnteriorId }} — ajusta el lugar (Torre/piso) u otro dato que cambie para esta tarea, y firma este nuevo.
+        </p>
+      }
       <div class="abril-section-title">Actividad a realizar</div>
 
       <div class="form-row">
@@ -46,7 +57,7 @@
             displayField="nombre"
             [value]="proyectoId"
             placeholder="Buscar proyecto..."
-            (valueChange)="proyectoId = $event"
+            (valueChange)="onProyectoChange($event)"
           ></app-search-select>
         </div>
         <div>
@@ -70,72 +81,240 @@
                placeholder="Ej: Encofrado de losa nivel 3" />
       </div>
 
-      <div class="abril-field">
-        <label class="abril-field-label">Lugar de esta tarea</label>
-        <input type="text" class="abril-field-input" [(ngModel)]="lugar"
-               placeholder="Ej: Torre B, nivel 3 — un ATS por lugar/tarea distinta" />
-      </div>
-
-      @if (init.pasos.length > 0) {
-        <div class="abril-section-title">Actividades y pasos de la tarea (marca SI/NO)</div>
-        @for (cat of init.pasos; track cat.id) {
-          <div class="pasos-categoria-row">
-            <div class="pasos-categoria">{{ cat.nombre }}</div>
-            <label class="marcar-todos-check">
-              <input
-                type="checkbox"
-                [checked]="todosMarcadosEnCategoria(cat.pasos)"
-                (change)="toggleTodosCategoria(cat.pasos)"
-              />
-              Marcar todos
-            </label>
-          </div>
-          @for (p of cat.pasos; track p.id) {
-            <label class="paso-check">
-              <input type="checkbox" [checked]="pasoAplica(p.id)" (change)="togglePaso(p.id)" />
-              {{ p.texto }}
-            </label>
-          }
-          <div class="agregar-paso-row">
-            <input type="text" class="abril-field-input agregar-paso-input"
-                   placeholder="+ Agregar paso a esta categoría..."
-                   [ngModel]="nuevoPasoTextoDe(cat.id)"
-                   (ngModelChange)="setNuevoPasoTexto(cat.id, $event)"
-                   (keydown.enter)="agregarPasoPersonalizado(cat.id)" />
-            <button class="btn btn-outline btn-sm" (click)="agregarPasoPersonalizado(cat.id)"
-                    [disabled]="!nuevoPasoTextoDe(cat.id).trim() || agregandoPasoCategoriaId === cat.id">
-              @if (agregandoPasoCategoriaId === cat.id) { … } @else { Agregar }
+      @if (torres.length > 0) {
+        <div class="abril-field">
+          <label class="abril-field-label" style="position: static;">¿Dónde es la tarea?</label>
+          <div class="ambito-toggle">
+            <button type="button" class="ambito-btn" [class.ambito-btn--activo]="!esExterior" (click)="setEsExterior(false)">
+              Dentro de una torre
+            </button>
+            <button type="button" class="ambito-btn" [class.ambito-btn--activo]="esExterior" (click)="setEsExterior(true)">
+              Exterior / fachada / vecinos
             </button>
           </div>
+        </div>
+
+        @if (!esExterior) {
+          <div class="form-row">
+            <div>
+              <app-search-select
+                color="var(--color-abril-logo-blue)"
+                label="Torre *"
+                [options]="torres"
+                valueField="nombre"
+                displayField="nombre"
+                [sortAlpha]="false"
+                [value]="torreNombre"
+                placeholder="Selecciona torre"
+                (valueChange)="onTorreChange($event)"
+              ></app-search-select>
+            </div>
+          </div>
+
+          @if (torreNombre) {
+            <div class="abril-field">
+              <div class="pasos-categoria-row">
+                <label class="abril-field-label" style="position: static;">Piso(s) / Nivel(es) *</label>
+                <label class="marcar-todos-check">
+                  <input type="checkbox" [checked]="todosNivelesMarcados" (change)="toggleTodosNiveles()" />
+                  Marcar todos
+                </label>
+              </div>
+              <div class="chips-grid">
+                @for (n of nivelesDeTorreActual; track n.id) {
+                  <label class="chip" [class.chip--sel]="nivelSeleccionado(n.id)">
+                    <input type="checkbox" [checked]="nivelSeleccionado(n.id)" (change)="toggleNivel(n.id)" />
+                    {{ n.label }}
+                  </label>
+                }
+              </div>
+            </div>
+          }
         }
       }
 
-      <div class="abril-section-title">EPP requerido</div>
-      <div class="chips-grid">
-        @for (e of init.epps; track e.id) {
-          <label class="chip" [class.chip--sel]="eppSeleccionado(e.id)">
-            <input type="checkbox" [checked]="eppSeleccionado(e.id)" (change)="toggleEpp(e.id)" />
-            {{ e.nombre }}
-          </label>
-        }
+      <div class="abril-field">
+        <label class="abril-field-label">Lugar específico</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="lugar"
+               placeholder="Ej: cerca del ascensor, fachada norte…" />
       </div>
 
-      <div class="abril-section-title">Herramientas / equipos a utilizar</div>
-      @for (grupo of herramientasPorCategoria; track grupo.categoria) {
+      @if (categoriasGenericasVisibles.length > 0) {
+        <div class="collapsible-section">
+          <button type="button" class="collapsible-toggle abril-section-title" (click)="mostrarPasosGenericos = !mostrarPasosGenericos">
+            Actividades y pasos de la tarea (marca SI/NO)
+            <i class="ti" [class.ti-chevron-down]="!mostrarPasosGenericos" [class.ti-chevron-up]="mostrarPasosGenericos"></i>
+          </button>
+          @if (mostrarPasosGenericos) {
+            @for (cat of categoriasGenericasVisibles; track cat.id) {
+              <div class="pasos-categoria-row">
+                <div class="pasos-categoria">{{ cat.nombre }}</div>
+                <div class="pasos-categoria-acciones">
+                  <label class="marcar-todos-check">
+                    <input
+                      type="checkbox"
+                      [checked]="categoriaNoAplica(cat.id)"
+                      (change)="toggleCategoriaNoAplica(cat.id, cat.pasos)"
+                    />
+                    No aplica
+                  </label>
+                </div>
+              </div>
+              @if (categoriaNoAplica(cat.id)) {
+                <p class="pasos-hint-nuevo">No aplica para esta tarea.</p>
+              } @else {
+                @for (grupo of subgruposDePasos(cat); track grupo.titulo) {
+                  <div class="pasos-categoria-row">
+                    @if (grupo.titulo) {
+                      <p class="pasos-subgrupo-titulo">{{ grupo.titulo }}</p>
+                    } @else {
+                      <span></span>
+                    }
+                    <label class="marcar-todos-check">
+                      <input
+                        type="checkbox"
+                        [checked]="todosMarcadosEnCategoria(grupo.pasos)"
+                        (change)="toggleTodosCategoria(grupo.pasos)"
+                      />
+                      Marcar todos
+                    </label>
+                  </div>
+                  @for (p of grupo.pasos; track p.id) {
+                    <label class="paso-check">
+                      <input type="checkbox" [checked]="pasoAplica(p.id)" (change)="togglePaso(p.id)" />
+                      {{ p.texto }}
+                    </label>
+                  }
+                }
+                @for (p of pasosPersonalizadosDe(cat.id); track p.tempId) {
+                  <label class="paso-check paso-check--personalizado">
+                    <input type="checkbox" checked disabled />
+                    {{ p.texto }}
+                    <span class="paso-personalizado-tag" title="Solo para este ATS — no se guarda en la plantilla">solo aquí</span>
+                    <button type="button" class="chip-remove" (click)="quitarPasoPersonalizado(cat.id, p.tempId)">✕</button>
+                  </label>
+                }
+                <div class="agregar-paso-row">
+                  <input type="text" class="abril-field-input agregar-paso-input"
+                         placeholder="+ Agregar paso a esta categoría (solo para este ATS)..."
+                         [ngModel]="nuevoPasoTextoDe(cat.id)"
+                         (ngModelChange)="setNuevoPasoTexto(cat.id, $event)"
+                         (keydown.enter)="agregarPasoPersonalizado(cat.id)" />
+                  <button class="btn btn-outline btn-sm" (click)="agregarPasoPersonalizado(cat.id)"
+                          [disabled]="!nuevoPasoTextoDe(cat.id).trim()">
+                    Agregar
+                  </button>
+                </div>
+              }
+            }
+          }
+        </div>
+      }
+
+      @if (usaActividadesPlantilla) {
+        <div class="collapsible-section">
+          <button type="button" class="collapsible-toggle abril-section-title" (click)="mostrarActividadesPlantilla = !mostrarActividadesPlantilla">
+            Actividades y pasos según la especialidad (marca SI/NO)
+            <i class="ti" [class.ti-chevron-down]="!mostrarActividadesPlantilla" [class.ti-chevron-up]="mostrarActividadesPlantilla"></i>
+          </button>
+          @if (mostrarActividadesPlantilla) {
+            @for (act of actividadesPlantillaFiltradas; track act.id) {
+              <div class="pasos-categoria-row">
+                <div class="pasos-categoria">{{ act.texto }}</div>
+                @if (act.pasos.length > 0) {
+                  <label class="marcar-todos-check">
+                    <input
+                      type="checkbox"
+                      [checked]="todosMarcadosEnActividad(act.pasos)"
+                      (change)="toggleTodosActividad(act.pasos)"
+                    />
+                    Marcar todos
+                  </label>
+                }
+              </div>
+              @for (p of act.pasos; track p.id) {
+                <label class="paso-check">
+                  <input type="checkbox" [checked]="actividadPasoAplica(p.id)" (change)="toggleActividadPaso(p.id)" />
+                  {{ p.texto }}
+                </label>
+              }
+            }
+          }
+        </div>
+      }
+
+      <div class="abril-section-title">EPP requerido</div>
+      @for (grupo of eppPorCategoria; track grupo.categoria) {
         <div class="pasos-categoria">{{ grupo.categoria }}</div>
         <div class="chips-grid">
-          @for (h of grupo.items; track h.id) {
-            <label class="chip" [class.chip--sel]="herramientaSeleccionada(h.id)">
-              <input type="checkbox" [checked]="herramientaSeleccionada(h.id)" (change)="toggleHerramienta(h.id)" />
-              {{ h.nombre }}
+          @for (e of grupo.items; track e.id) {
+            <label class="chip" [class.chip--sel]="eppSeleccionado(e.id)">
+              <input type="checkbox" [checked]="eppSeleccionado(e.id)" (change)="toggleEpp(e.id)" />
+              {{ e.nombre }}
             </label>
           }
         </div>
       }
 
+      <div class="collapsible-section">
+        <button type="button" class="collapsible-toggle abril-section-title" (click)="mostrarHerramientas = !mostrarHerramientas">
+          Herramientas / equipos a utilizar
+          <i class="ti" [class.ti-chevron-down]="!mostrarHerramientas" [class.ti-chevron-up]="mostrarHerramientas"></i>
+        </button>
+        @if (mostrarHerramientas) {
+        @for (grupo of herramientasPorCategoria; track grupo.categoria) {
+          <div class="pasos-categoria-row">
+            <div class="pasos-categoria">{{ grupo.categoria }}</div>
+            <label class="marcar-todos-check">
+              <input type="checkbox" [checked]="herramientasCategoriaNoAplica(grupo.categoria)" (change)="toggleHerramientasCategoriaNoAplica(grupo.categoria)" />
+              No aplica
+            </label>
+          </div>
+          @if (!herramientasCategoriaNoAplica(grupo.categoria)) {
+            <div class="chips-grid">
+              @for (h of grupo.items; track h.id) {
+                <label class="chip" [class.chip--sel]="herramientaSeleccionada(h.id)">
+                  <input type="checkbox" [checked]="herramientaSeleccionada(h.id)" (change)="toggleHerramienta(h.id)" />
+                  {{ h.nombre }}
+                </label>
+              }
+            </div>
+          } @else {
+            <p class="pasos-hint-nuevo">No aplica para esta tarea.</p>
+          }
+        }
+
+        <div class="pasos-categoria">Otros (no están en la lista)</div>
+        <div class="chips-grid">
+          @for (h of herramientasPersonalizadas; track $index) {
+            <span class="chip chip--sel">
+              {{ h }}
+              <button type="button" class="chip-remove" (click)="quitarHerramientaPersonalizada($index)">✕</button>
+            </span>
+          }
+        </div>
+        <div class="agregar-paso-row">
+          <input type="text" class="abril-field-input agregar-paso-input"
+                 placeholder="+ Agregar herramienta que no está en la lista..."
+                 [(ngModel)]="nuevaHerramientaTexto"
+                 (keydown.enter)="agregarHerramientaPersonalizada()" />
+          <button class="btn btn-outline btn-sm" (click)="agregarHerramientaPersonalizada()" [disabled]="!nuevaHerramientaTexto.trim()">
+            Agregar
+          </button>
+        </div>
+        }
+      </div>
+
+      @if (datosBasicosValidos && !pasosValidos) {
+        <p class="pasos-hint-nuevo pasos-hint-alerta">
+          <i class="ti ti-alert-triangle"></i>
+          Marca al menos un paso (o "No aplica") en cada categoría de "Actividades y pasos de la tarea" para continuar.
+        </p>
+      }
+
       <div modalFooter>
         <button class="btn btn-secondary" (click)="cerrar()">Cancelar</button>
-        <button class="btn btn-primary" (click)="irAPeligros()" [disabled]="!datosBasicosValidos">
+        <button class="btn btn-primary" (click)="irAPeligros()" [disabled]="!datosBasicosValidos || !pasosValidos">
           Siguiente: Peligros y riesgos
         </button>
       </div>
@@ -199,7 +378,16 @@
                   </select>
                 </td>
                 <td>
-                  <textarea class="abril-field-input controles-input" rows="2"
+                  @if (controlesSugeridosDe(r.riesgoId).length > 0) {
+                    <div class="controles-guia">
+                      @for (c of controlesSugeridosDe(r.riesgoId); track c) {
+                        <button type="button" class="chip-guia" [title]="c" (click)="agregarControlSugerido(r, c)">
+                          + {{ c }}
+                        </button>
+                      }
+                    </div>
+                  }
+                  <textarea class="abril-field-input controles-input" appAutoAlturaTextarea rows="2"
                             placeholder="Eliminación, sustitución, control de ingeniería, control administrativo, EPP..."
                             [(ngModel)]="r.controles"></textarea>
                 </td>
@@ -243,8 +431,25 @@
 
         <div class="firma-col">
           <label class="abril-field-label">Firma *</label>
-          <app-signature-pad (drawingChange)="onFirmaChange($event)"></app-signature-pad>
-          <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
+
+          @if (firmaGuardada && usandoFirmaGuardada) {
+            <div class="firma-guardada-preview">
+              <img [src]="firmaGuardada.imageDataUrl" alt="Tu firma registrada" />
+            </div>
+            <button class="btn btn-outline btn-sm" (click)="dibujarFirmaNueva()">
+              <i class="ti ti-pencil"></i> Dibujar una firma distinta
+            </button>
+          } @else {
+            <app-signature-pad (drawingChange)="onFirmaChange($event)"></app-signature-pad>
+            <div class="firma-acciones-row">
+              <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
+              @if (firmaGuardada) {
+                <button class="btn btn-outline btn-sm" (click)="usarFirmaGuardada()">
+                  <i class="ti ti-signature"></i> Usar mi firma guardada
+                </button>
+              }
+            </div>
+          }
         </div>
       </div>
 

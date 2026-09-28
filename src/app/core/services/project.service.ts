@@ -12,6 +12,7 @@ import {
 } from '../dtos/project/projectEmails.model';
 import { ProjectQueryParams } from '../dtos/project/projectQuery.model';
 import { ProjectScheduleSimpleDTO } from '../dtos/project/projectScheduleSimple.model';
+import { ProjectTorreDTO } from '../dtos/project/projectTorre.model';
 
 @Injectable({
   providedIn: 'root',
@@ -104,4 +105,12 @@ export class ProjectService {
     );
   }
 
+  /** Torres/bloques configurados para el proyecto (opcional) — para armar el selector de
+   *  "Lugar" (Torre → Piso/Nivel) en RAC/Inspección/ATS. */
+  getTorres(projectId: number): Observable<ProjectTorreDTO[]> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<ProjectTorreDTO[]>(`${this.apiUrl}/${projectId}/torres`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
 }

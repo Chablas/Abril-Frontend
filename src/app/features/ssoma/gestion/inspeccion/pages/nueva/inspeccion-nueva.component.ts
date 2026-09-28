@@ -23,6 +23,7 @@ import {
   InspeccionHallazgoRequest,
 } from '../../inspeccion.dtos';
 import { ProjectService } from '../../../../../../core/services/project.service';
+import { ProjectTorreDTO, NivelTorreOpcion, nivelesDeTorre } from '../../../../../../core/dtos/project/projectTorre.model';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { TrabajadorHabService } from '../../../../../../features/habilitacion/services/trabajador-hab.service';
@@ -103,6 +104,13 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
   area = '';
   responsableArea = '';
   responsableAreaId: number | null = null;
+
+  // Torre/Piso/Ámbito (selector estructurado — solo si el proyecto tiene torres configuradas)
+  torres: ProjectTorreDTO[] = [];
+  ambitoLugar: 'TORRE_PISO' | 'TORRE_COMPLETA' | 'OBRA_GENERAL' | 'EXTERIOR' = 'TORRE_PISO';
+  torreNombre: string | null = null;
+  nivelId: string | null = null;
+  proyectoPiso = '';
 
   // Paso 2 — checklist
   grupos: ChecklistGrupoForm[] = [];
@@ -239,6 +247,52 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
       if (w) this.responsableArea = w.apellidoNombre;
     }
     this.cdr.markForCheck();
+  }
+
+  // ── Torre/Piso/Ámbito ────────────────────────────────────────────────
+
+  onProyectoChange(proyectoId: number): void {
+    this.proyectoId = proyectoId;
+    this.torres = [];
+    this.torreNombre = null;
+    this.nivelId = null;
+    this.proyectoPiso = '';
+    this.ambitoLugar = 'TORRE_PISO';
+    this.cdr.markForCheck();
+
+    if (!proyectoId) return;
+    this.projectService.getTorres(proyectoId).subscribe({
+      next: (torres) => {
+        this.torres = torres;
+        this.cdr.markForCheck();
+      },
+      error: () => {},
+    });
+  }
+
+  get nivelesDeTorreActual(): NivelTorreOpcion[] {
+    const torre = this.torres.find((t) => t.nombre === this.torreNombre);
+    return torre ? nivelesDeTorre(torre) : [];
+  }
+
+  setAmbitoLugar(valor: 'TORRE_PISO' | 'TORRE_COMPLETA' | 'OBRA_GENERAL' | 'EXTERIOR'): void {
+    this.ambitoLugar = valor;
+    this.torreNombre = null;
+    this.nivelId = null;
+    this.proyectoPiso = '';
+    this.cdr.markForCheck();
+  }
+
+  onTorreChange(nombre: string | null): void {
+    this.torreNombre = nombre;
+    this.nivelId = null;
+    this.proyectoPiso = this.ambitoLugar === 'TORRE_COMPLETA' ? '' : this.proyectoPiso;
+    this.cdr.markForCheck();
+  }
+
+  onNivelChange(): void {
+    const nivel = this.nivelesDeTorreActual.find((n) => n.id === this.nivelId);
+    this.proyectoPiso = nivel?.label ?? '';
   }
 
   get puedeAvanzar(): boolean {
@@ -655,6 +709,11 @@ export class InspeccionNuevaComponent implements OnInit, AfterViewInit {
       horaInicio: this.horaInicio || undefined,
       horaFin: this.horaFin || undefined,
       area: this.area || undefined,
+      ambitoLugar: this.torres.length > 0 ? this.ambitoLugar : undefined,
+      torreNombre: this.torres.length > 0 && this.ambitoLugar !== 'OBRA_GENERAL' && this.ambitoLugar !== 'EXTERIOR'
+        ? this.torreNombre || undefined
+        : undefined,
+      proyectoPiso: this.torres.length > 0 ? this.proyectoPiso || undefined : undefined,
       responsableArea: this.responsableArea || undefined,
       // El worker del inspector, no solo su nombre: es lo que permite atribuir la inspección
       // en Desempeño Supervisor aunque después le corrijan el nombre en la ficha.

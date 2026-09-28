@@ -105,6 +105,14 @@
                 <button class="btn btn-outline btn-sm btn-petar" (click)="generarPetar(a)" title="Tarea de alto riesgo dentro de esta jornada (altura, espacio confinado, izaje, etc.)">
                   <i class="ti ti-alert-triangle"></i> Generar PETAR
                 </button>
+                @if (esCorregibleHoy(a)) {
+                  <button class="btn btn-outline btn-sm" (click)="corregirAts(a)" title="La condición real en campo fue distinta a la evaluada — crea un ATS nuevo enlazado a este, sin modificar el ya firmado.">
+                    <i class="ti ti-edit"></i> Corregir
+                  </button>
+                  <button class="btn btn-outline btn-sm" (click)="duplicarAts(a)" title="Misma tarea y riesgos, otro lugar (ej. Torre B en vez de Torre A) — precarga todo, solo ajustas el lugar.">
+                    <i class="ti ti-copy"></i> Duplicar
+                  </button>
+                }
               }
             </td>
           </tr>

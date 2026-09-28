@@ -10,6 +10,7 @@ import { ProjectEditDto } from '../dtos/project-edit.dto';
 import { ProjectFilterDto } from '../dtos/project-filter.dto';
 import { ContributorLookupDto } from '../dtos/company-lookup.dto';
 import { ProjectLookupsDto } from '../dtos/responsable-lookup.dto';
+import { ProjectTorreDto, ProjectTorreGuardarDto } from '../dtos/project-torre.dto';
 
 @Injectable({ providedIn: 'root' })
 export class ProyectoService {
@@ -81,6 +82,18 @@ export class ProyectoService {
    */
   getLookups(): Observable<ProjectLookupsDto> {
     return this.http.get<ProjectLookupsDto>(`${this.apiUrl}/lookups`, {
+      headers: this.headers,
+    });
+  }
+
+  getTorres(projectId: number): Observable<ProjectTorreDto[]> {
+    return this.http.get<ProjectTorreDto[]>(`${this.apiUrl}/${projectId}/torres`, {
+      headers: this.headers,
+    });
+  }
+
+  setTorres(projectId: number, torres: ProjectTorreGuardarDto[]): Observable<ApiMessageDTO> {
+    return this.http.put<ApiMessageDTO>(`${this.apiUrl}/${projectId}/torres`, torres, {
       headers: this.headers,
     });
   }

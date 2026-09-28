@@ -59,9 +59,54 @@
             displayField="projectDescription"
             placeholder="Buscar proyecto..."
             [value]="proyectoId"
-            (valueChange)="proyectoId = $event">
+            (valueChange)="onProyectoChange($event)">
           </app-search-select>
         </div>
+
+        @if (torres.length > 0) {
+          <div class="abril-field">
+            <label class="abril-field-label">Ámbito de la inspección</label>
+            <div class="toggle-row toggle-row--wrap">
+              <button type="button" class="toggle-opt" [class.toggle-opt--active]="ambitoLugar === 'TORRE_PISO'" (click)="setAmbitoLugar('TORRE_PISO')">Torre + piso</button>
+              <button type="button" class="toggle-opt" [class.toggle-opt--active]="ambitoLugar === 'TORRE_COMPLETA'" (click)="setAmbitoLugar('TORRE_COMPLETA')">Torre completa</button>
+              <button type="button" class="toggle-opt" [class.toggle-opt--active]="ambitoLugar === 'OBRA_GENERAL'" (click)="setAmbitoLugar('OBRA_GENERAL')">Obra en general</button>
+              <button type="button" class="toggle-opt" [class.toggle-opt--active]="ambitoLugar === 'EXTERIOR'" (click)="setAmbitoLugar('EXTERIOR')">Exterior / fachada / vecinos</button>
+            </div>
+          </div>
+
+          @if (ambitoLugar === 'TORRE_PISO' || ambitoLugar === 'TORRE_COMPLETA') {
+            <div class="form-row">
+              <div class="abril-field">
+                <app-search-select
+                  color="var(--color-abril-logo-blue)"
+                  label="Torre *"
+                  [options]="torres"
+                  valueField="nombre"
+                  displayField="nombre"
+                  [sortAlpha]="false"
+                  [value]="torreNombre"
+                  placeholder="Selecciona torre"
+                  (valueChange)="onTorreChange($event)">
+                </app-search-select>
+              </div>
+              @if (ambitoLugar === 'TORRE_PISO') {
+                <div class="abril-field">
+                  <app-search-select
+                    color="var(--color-abril-logo-blue)"
+                    label="Piso / Nivel *"
+                    [options]="nivelesDeTorreActual"
+                    valueField="id"
+                    displayField="label"
+                    [sortAlpha]="false"
+                    [value]="nivelId"
+                    placeholder="Selecciona piso/nivel"
+                    (valueChange)="nivelId = $event; onNivelChange()">
+                  </app-search-select>
+                </div>
+              }
+            </div>
+          }
+        }
 
         <div>
           <app-search-select

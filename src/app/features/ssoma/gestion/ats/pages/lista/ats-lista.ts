@@ -153,6 +153,22 @@ export class AtsLista implements OnInit {
     this.router.navigate(['/ssoma/gestion/petar/nuevo'], { queryParams: { atsId: a.id } });
   }
 
+  /** Un ATS firmado es inmutable — la única forma de corregirlo (condición real en campo
+   *  distinta a la evaluada) es un ATS nuevo enlazado, y solo tiene sentido el mismo día. */
+  esCorregibleHoy(a: AtsResponseDto): boolean {
+    return a.estado === 'Firmado' && a.fecha === new Date().toISOString().slice(0, 10);
+  }
+
+  corregirAts(a: AtsResponseDto): void {
+    this.router.navigate(['/ssoma/gestion/ats/nuevo'], { queryParams: { corregir: a.id } });
+  }
+
+  /** Misma tarea y riesgos, otro lugar (ej. Torre B en vez de Torre A) — reusa el mismo
+   *  prellenado que "Corregir", solo cambia el aviso que ve el trabajador. */
+  duplicarAts(a: AtsResponseDto): void {
+    this.router.navigate(['/ssoma/gestion/ats/nuevo'], { queryParams: { duplicar: a.id } });
+  }
+
   descargarPdf(ats: AtsResponseDto): void {
     this.svc.getPdfBlob(ats.id).subscribe({
       next: (blob) => {

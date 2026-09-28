@@ -147,6 +147,12 @@ export class AtsService {
     return this.http.get<{ tieneAutorizacion: boolean }>(`${this.base}/mi-autorizacion`, { headers: authHeaders() });
   }
 
+  /** La firma que el Coordinador SSOMA ya capturó para la Autorización (SSO-FO-151) — se ofrece
+   *  reusar en vez de dibujarla de nuevo al firmar un ATS. */
+  getMiFirmaDigitalAutorizacion(): Observable<{ firmaDigitalUrl: string | null }> {
+    return this.http.get<{ firmaDigitalUrl: string | null }>(`${this.base}/mi-firma-digital-autorizacion`, { headers: authHeaders() });
+  }
+
   getTrabajadoresAutorizacion(): Observable<AtsAutorizacionTrabajadorDto[]> {
     return this.http.get<AtsAutorizacionTrabajadorDto[]>(`${this.base}/trabajadores-autorizacion`, { headers: authHeaders() });
   }
