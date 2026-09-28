@@ -215,8 +215,8 @@ export class Reembolsos implements OnInit, OnDestroy {
   // ── Botón "Configuración" del header ─────────────────────────────────
   // Lleva a la configuración de ESTA pantalla: los correos que se originan en la bandeja de
   // Tesorería (la revisión confirmada a Tesorería, la observación al consolidador y el pago al
-  // colaborador). Se restringe con la misma feature que antes protegía la sección Correos de
-  // Configuración: quien no la tiene no ve el botón.
+  // consolidador y al colaborador). Se restringe con la misma feature que antes protegía la
+  // sección Correos de Configuración: quien no la tiene no ve el botón.
 
   private static readonly FEATURE_CONFIG_CORREOS = 'gestion-administrativa.config.correos';
 
@@ -561,7 +561,7 @@ export class Reembolsos implements OnInit, OnDestroy {
     this.ejecutar(this.service.observar({ ...seleccion, observacion }));
   }
 
-  /** Paso 2: registrar el pago. Cierra el ciclo y le avisa a cada colaborador. */
+  /** Paso 2: registrar el pago. Cierra el ciclo y le avisa al consolidador y a cada colaborador. */
   async marcarPagadas(): Promise<void> {
     const items = this.seleccionadosPorPagar;
     if (items.length === 0) return;

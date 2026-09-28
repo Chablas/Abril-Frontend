@@ -130,8 +130,11 @@ export class Consolidados implements OnInit {
 
   /** Modal para registrar la firma en el momento (se abre con el 409 de aprobar). */
   firmaModalAbierto = false;
-  /** Selección que se estaba firmando cuando saltó el modal, para reintentarla al guardarla. */
-  private accionPendienteDeFirma: ConsolidadoAccionDto | null = null;
+  /**
+   * Firma que se estaba aprobando cuando saltó el modal, para reintentarla al guardarla: la
+   * selección y su verificación de Microsoft, que es de esa misma firma.
+   */
+  private firmaPendiente: { accion: ConsolidadoAccionDto; firmaMfa: string } | null = null;
 
   resumen: ResumenConsolidadosDto = { porDecidir: 0, observados: 0, firmados: 0 };
 
@@ -474,10 +477,10 @@ export class Consolidados implements OnInit {
    * Configuración → Firmas (puede tener la dibujada y aun así faltarle la imagen, o al revés) — en
    * vez de mandarlo a Configuración se abre el modal donde la registra y la acción se reintenta sola.
    */
-  private async aprobar(accion: ConsolidadoAccionDto): Promise<void> {
-    // Firmar pide la verificación de Microsoft. En el reintento tras registrar la firma se reusa la
-    // del primer intento, así que no vuelve a abrir Microsoft.
-    const firmaMfa = await this.firmaMfa.obtener();
+  private async aprobar(accion: ConsolidadoAccionDto, verificada?: string): Promise<void> {
+    // Cada firma pide la verificación de Microsoft. El reintento tras registrar la firma es la
+    // MISMA firma: llega con la del primer intento y no vuelve a abrir Microsoft.
+    const firmaMfa = verificada ?? (await this.firmaMfa.obtener());
     if (firmaMfa === null) return;
 
     this.loaderService.show();
@@ -486,7 +489,7 @@ export class Consolidados implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         if (err.status === 409) {
-          this.accionPendienteDeFirma = accion;
+          this.firmaPendiente = { accion, firmaMfa };
           this.firmaModalAbierto = true;
           this.cdr.detectChanges();
           return;
@@ -533,14 +536,14 @@ export class Consolidados implements OnInit {
 
   onFirmaRegistrada(): void {
     this.firmaModalAbierto = false;
-    const accion = this.accionPendienteDeFirma;
-    this.accionPendienteDeFirma = null;
-    if (accion) this.aprobar(accion);
+    const pendiente = this.firmaPendiente;
+    this.firmaPendiente = null;
+    if (pendiente) this.aprobar(pendiente.accion, pendiente.firmaMfa);
   }
 
   cerrarFirmaModal(): void {
     this.firmaModalAbierto = false;
-    this.accionPendienteDeFirma = null;
+    this.firmaPendiente = null;
     this.cdr.detectChanges();
   }
 

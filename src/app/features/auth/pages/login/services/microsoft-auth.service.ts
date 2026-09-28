@@ -198,8 +198,10 @@ export class MicrosoftAuthService {
   /**
    * Token para estampar la firma en Consolidados y Facturas: access token del ámbito `Firmar` de la
    * propia app, que el backend sí puede validar (uno de Graph no). `prompt=login` pide la contraseña
-   * y el claims request exige el segundo factor si la última MFA tiene más de 10 minutos; el
-   * backend comprueba en el token que ese inicio de sesión es reciente (`auth_time`) y trae `mfa`.
+   * (o el passkey, que vale por los dos factores) y el claims request exige el número de
+   * Authenticator si la última MFA tiene más de 10 minutos: esa ventana es de Microsoft y la app no
+   * la puede acortar. El backend comprueba en el token que ese inicio de sesión es reciente
+   * (`auth_time`), que trae `mfa` y que no se usó en otra firma.
    *
    * Los errores de MSAL suben tal cual (con su `errorCode`): los traduce FirmaMfaService.
    */

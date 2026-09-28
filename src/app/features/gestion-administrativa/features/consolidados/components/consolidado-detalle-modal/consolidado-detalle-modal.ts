@@ -55,6 +55,8 @@ export class ConsolidadoDetalleModal implements OnInit {
 
   /** Modal para dibujar la firma en el momento. Lo abre el 409 de aprobar. */
   firmaModalAbierto = false;
+  /** Verificación de Microsoft de la aprobación que abrió el modal: el reintento es esa misma firma. */
+  private firmaMfaPendiente: string | null = null;
 
   /** Salida cuyo detalle (el ojo de la tabla) está abierto. null = cerrado. */
   salidaId: number | null = null;
@@ -206,9 +208,10 @@ export class ConsolidadoDetalleModal implements OnInit {
    * firma: en vez de mandarla a Configuración se abre el modal donde la dibuja y la aprobación se
    * reintenta sola.
    */
-  private async ejecutarAprobacion(): Promise<void> {
-    // Firmar pide la verificación de Microsoft; el reintento tras registrar la firma reusa la misma.
-    const firmaMfa = await this.firmaMfa.obtener();
+  private async ejecutarAprobacion(verificada?: string): Promise<void> {
+    // Cada firma pide la verificación de Microsoft. El reintento tras registrar la firma es la
+    // MISMA firma: llega con la del primer intento y no vuelve a abrir Microsoft.
+    const firmaMfa = verificada ?? (await this.firmaMfa.obtener());
     if (firmaMfa === null) return;
 
     this.loader.show();
@@ -217,6 +220,7 @@ export class ConsolidadoDetalleModal implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.loader.hide();
         if (err.status === 409) {
+          this.firmaMfaPendiente = firmaMfa;
           this.firmaModalAbierto = true;
           this.cdr.detectChanges();
           return;
@@ -229,11 +233,14 @@ export class ConsolidadoDetalleModal implements OnInit {
 
   onFirmaRegistrada(): void {
     this.firmaModalAbierto = false;
-    this.ejecutarAprobacion();
+    const firmaMfa = this.firmaMfaPendiente;
+    this.firmaMfaPendiente = null;
+    this.ejecutarAprobacion(firmaMfa ?? undefined);
   }
 
   cerrarFirmaModal(): void {
     this.firmaModalAbierto = false;
+    this.firmaMfaPendiente = null;
     this.cdr.detectChanges();
   }
 
