@@ -1,0 +1,17 @@
+<div class="color-hex-input" [class.solo-swatch]="soloSwatch">
+  <input
+    type="color"
+    class="chi-picker"
+    [ngModel]="valor || '#000000'"
+    (ngModelChange)="alCambiarPicker($event)"
+  />
+  <input
+    *ngIf="!soloSwatch"
+    type="text"
+    class="chi-texto"
+    placeholder="#fcc132"
+    maxlength="7"
+    [ngModel]="textoHex"
+    (ngModelChange)="alEscribirHex($event)"
+  />
+</div>

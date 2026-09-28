@@ -28,6 +28,8 @@ export class SlideVerdaderoFalso {
   }
 
   @Output() respuesta = new EventEmitter<any>();
+  @Input() disposicion: 'horizontal' | 'vertical' = 'horizontal';
+  @Input() estilo: 'oscuro' | 'claro' | 'adaptado-oscuro' | 'adaptado-claro' = 'claro';
 
   get kicker(): string {
     return this.config.kicker || 'VERDADERO O FALSO';

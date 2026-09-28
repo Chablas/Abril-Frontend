@@ -3,6 +3,7 @@
   icono="ti-clipboard-check"
   variant="blue"
   width="820px"
+  [preventCloseWhenDirty]="true"
   (closeModal)="cancelar()">
 
   @if (loadingCatalogos || resolviendoObservador) {

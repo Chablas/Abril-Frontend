@@ -1,0 +1,234 @@
+<div class="libre-wrap">
+  <div
+    #lienzo
+    class="libre-lienzo"
+    [style.aspect-ratio]="canvasAncho + ' / ' + canvasAlto"
+    [style.background]="config.estilo?.fondoClaro || '#ffffff'"
+  >
+    <div
+      *ngFor="let el of elementosOrdenados"
+      class="libre-elemento"
+      [class.interactivo]="esInteractivo(el)"
+      [class.con-animacion-interaccion]="!!el.animacionInteraccion"
+      [ngClass]="clasesAnimacion(el)"
+      [style.left.%]="(el.x / canvasAncho) * 100"
+      [style.top.%]="(el.y / canvasAlto) * 100"
+      [style.width.%]="(el.ancho / canvasAncho) * 100"
+      [style.height.%]="(el.alto / canvasAlto) * 100"
+      [style.z-index]="el.zIndex ?? 0"
+      [style.transform]="el.rotacion ? 'rotate(' + el.rotacion + 'deg)' : null"
+      [style.display]="elementosOcultos.has(el.id) ? 'none' : null"
+      [attr.data-elemento-id]="el.id"
+      [style.animation-delay.ms]="(claseAnimacionInteraccion(el) || claseSalida(el)) ? null : (el.animacionDelayMs ?? 0)"
+      [style.animation-duration.ms]="(claseAnimacionInteraccion(el) || claseSalida(el)) ? null : (el.animacionDuracionMs ?? 600)"
+      [style.animation-timing-function]="(claseAnimacionInteraccion(el) || claseSalida(el)) ? null : easingCss(el.animacionEasing)"
+      (click)="alClicElemento(el, $event)"
+      (mouseenter)="alPasarMouseElemento(el)"
+    >
+      <ng-container [ngSwitch]="el.tipo">
+        <div
+          *ngSwitchCase="'texto'"
+          [ngClass]="claseContinua(el)"
+          class="libre-texto"
+          [style.color]="el.colorTexto || '#ffffff'"
+          [style.font-size.px]="fontSizePx(el.tamanoFuente)"
+          [style.text-align]="el.alineacion || 'left'"
+          [style.font-weight]="el.negrita ? 700 : 400"
+          [style.font-style]="el.cursiva ? 'italic' : null"
+          [style.text-decoration]="el.subrayado ? 'underline' : null"
+          [style.font-family]="el.fontFamily || null"
+        >{{ el.texto }}</div>
+
+        <img
+          *ngSwitchCase="'imagen'"
+          class="libre-imagen"
+          [ngClass]="claseContinua(el)"
+          [src]="el.imagenUrl"
+          [style.border-radius.px]="(el.bordeRedondeado || 0) * escala"
+          alt=""
+        />
+
+        <div
+          *ngSwitchCase="'forma'"
+          class="libre-forma"
+          [ngClass]="claseContinua(el)"
+          [style.background]="el.colorFondo || '#f5a623'"
+          [style.border-radius]="el.formaTipo === 'circulo' ? '50%' : (el.bordeRedondeado || 0) * escala + 'px'"
+        ></div>
+
+        <i
+          *ngSwitchCase="'icono'"
+          class="ti libre-icono"
+          [ngClass]="(el.iconoClase || 'ti-star') + ' ' + claseContinua(el)"
+          [style.color]="el.colorTexto || '#ffffff'"
+          [style.font-size.px]="fontSizePx(el.ancho, 0.8)"
+        ></i>
+
+        <button
+          *ngSwitchCase="'boton'"
+          type="button"
+          class="libre-boton"
+          [ngClass]="claseContinua(el)"
+          [style.background]="el.colorFondo || '#f5a623'"
+          [style.color]="el.colorTexto || '#14100b'"
+          [style.font-size.px]="fontSizePx(16)"
+          [style.border-radius.px]="(el.bordeRedondeado ?? 8) * escala"
+        >{{ el.botonTexto || 'Botón' }}</button>
+
+        <iframe
+          *ngSwitchCase="'video'"
+          class="libre-video"
+          [src]="urlVideoEmbebido(el.videoUrl)"
+          frameborder="0"
+          allowfullscreen
+        ></iframe>
+
+        <ng-container *ngSwitchCase="'audio'">
+          <button
+            *ngIf="el.audioMiniaturaUrl; else audioNativo"
+            type="button"
+            class="audio-miniatura"
+            (click)="toggleAudioMiniatura(el, $event)"
+          >
+            <img [src]="el.audioMiniaturaUrl" alt="" [style.border-radius.px]="(el.bordeRedondeado || 0) * escala" />
+            <span class="audio-miniatura-boton">
+              <i class="ti" [ngClass]="audiosReproduciendo.has(el.id) ? 'ti-player-pause-filled' : 'ti-player-play-filled'"></i>
+            </span>
+          </button>
+          <ng-template #audioNativo>
+            <audio
+              class="libre-audio"
+              [src]="el.audioUrl"
+              [autoplay]="!!el.audioAutoplay"
+              controls
+            ></audio>
+          </ng-template>
+        </ng-container>
+
+        <!-- Carrusel de imágenes, estilo Genially: cantidad libre, el autor añade/quita
+             las que quiera desde el editor — ver carruselImagenes en ElementoLibre. -->
+        <div
+          *ngSwitchCase="'carrusel'"
+          class="libre-carrusel"
+          (click)="$event.stopPropagation()"
+        >
+          <div class="carrusel-viewport">
+            <div
+              class="carrusel-pista"
+              [style.transform]="'translateX(-' + (carruselIndice(el) * (100 / carruselVisiblesEnPantalla(el))) + '%)'"
+            >
+              <img
+                *ngFor="let src of el.carruselImagenes"
+                [src]="src"
+                class="carrusel-imagen"
+                [style.width.%]="100 / carruselVisiblesEnPantalla(el)"
+                [style.border-radius.px]="(el.bordeRedondeado || 0) * escala"
+                alt=""
+              />
+            </div>
+          </div>
+          <button
+            type="button"
+            class="carrusel-flecha carrusel-flecha-izq"
+            *ngIf="carruselPuedeAnterior(el)"
+            (click)="carruselMover(el, -1, $event)"
+          ><i class="ti ti-chevron-left"></i></button>
+          <button
+            type="button"
+            class="carrusel-flecha carrusel-flecha-der"
+            *ngIf="carruselPuedeSiguiente(el)"
+            (click)="carruselMover(el, 1, $event)"
+          ><i class="ti ti-chevron-right"></i></button>
+          <div class="carrusel-puntos" *ngIf="carruselPuntos(el).length > 1">
+            <button
+              type="button"
+              *ngFor="let p of carruselPuntos(el)"
+              class="carrusel-punto"
+              [class.carrusel-punto-activo]="p === carruselIndice(el)"
+              (click)="carruselIrA(el, p, $event)"
+            ></button>
+          </div>
+        </div>
+
+        <!-- Punto interactivo (hotspot), estilo Genially: círculo pulsante + globo de
+             texto anclado, NO modal (pueden quedar varios abiertos a la vez). -->
+        <ng-container *ngSwitchCase="'hotspot'">
+          <span class="hotspot-punto" [ngClass]="claseContinua(el) || 'continuo-hotspot'" [style.background]="el.hotspotColor || '#f5a623'"></span>
+          <div class="hotspot-globo" *ngIf="hotspotsAbiertos.has(el.id)" (click)="$event.stopPropagation()">
+            <button type="button" class="hotspot-globo-cerrar" (click)="toggleHotspot(el, $event)"><i class="ti ti-x"></i></button>
+            <img *ngIf="el.hotspotImagenUrl" [src]="el.hotspotImagenUrl" alt="" />
+            <p *ngIf="el.hotspotTexto">{{ el.hotspotTexto }}</p>
+          </div>
+        </ng-container>
+
+        <!-- Pregunta evaluable embebida: el MISMO componente real que se usa cuando la
+             pregunta es pantalla completa, nunca un renderizador aparte. -->
+        <div
+          *ngSwitchCase="'pregunta'"
+          class="libre-pregunta"
+          [ngClass]="'libre-pregunta-' + (el.preguntaEstilo || 'claro')"
+          [style.background]="el.colorFondo || null"
+          [style.color]="el.colorTexto || null"
+          (pointerdown)="$event.stopPropagation()"
+          (click)="$event.stopPropagation()"
+        >
+          <audio *ngIf="el.preguntaAudioUrl" [src]="el.preguntaAudioUrl" autoplay></audio>
+          <span
+            class="libre-pregunta-temporizador"
+            [class.libre-pregunta-temporizador-critico]="tiempoRestanteSeg !== null && tiempoRestanteSeg <= 5"
+            *ngIf="tiempoRestanteSeg !== null"
+          >
+            <i class="ti ti-clock"></i> {{ tiempoRestanteSeg }}s
+          </span>
+
+          <div class="libre-pregunta-mensaje-temporizador" *ngIf="mensajeTemporizadorMostrado">
+            <i class="ti ti-clock-x"></i> {{ mensajeTemporizadorMostrado }}
+          </div>
+          <ng-container [ngSwitch]="el.pregunta?.tipoCodigo">
+            <app-slide-verdadero-falso *ngSwitchCase="'pregunta_vf'" [slide]="previewPreguntaSlide(el)" [disposicion]="el.preguntaDisposicion || 'horizontal'" [estilo]="el.preguntaEstilo || 'claro'" (respuesta)="alResponderPregunta($event)" />
+            <app-slide-opcion-multiple *ngSwitchCase="'pregunta_opcion_multiple'" [slide]="previewPreguntaSlide(el)" [disposicion]="el.preguntaDisposicion || 'horizontal'" [estilo]="el.preguntaEstilo || 'claro'" (respuesta)="alResponderPregunta($event)" />
+            <app-slide-eleccion-multiple *ngSwitchCase="'pregunta_eleccion_multiple'" [slide]="previewPreguntaSlide(el)" [disposicion]="el.preguntaDisposicion || 'horizontal'" [estilo]="el.preguntaEstilo || 'claro'" (respuesta)="alResponderPregunta($event)" />
+            <app-slide-ordenar *ngSwitchCase="'pregunta_ordenar'" [slide]="previewPreguntaSlide(el)" [estilo]="el.preguntaEstilo || 'claro'" (respuesta)="alResponderPregunta($event)" />
+            <app-slide-respuesta-corta *ngSwitchCase="'pregunta_respuesta_corta'" [slide]="previewPreguntaSlide(el)" [estilo]="el.preguntaEstilo || 'claro'" (respuesta)="alResponderPregunta($event)" />
+            <app-slide-completar-huecos *ngSwitchCase="'pregunta_completar_huecos'" [slide]="previewPreguntaSlide(el)" [estilo]="el.preguntaEstilo || 'claro'" (respuesta)="alResponderPregunta($event)" />
+            <app-slide-emparejar-conceptos *ngSwitchCase="'pregunta_emparejar'" [slide]="previewPreguntaSlide(el)" [estilo]="el.preguntaEstilo || 'claro'" (respuesta)="alResponderPregunta($event)" />
+            <app-slide-desliza-acierta *ngSwitchCase="'pregunta_desliza_acierta'" [slide]="previewPreguntaSlide(el)" (respuesta)="alResponderPregunta($event)" />
+          </ng-container>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Overlay "in-place": vive DENTRO del lienzo, en las mismas coordenadas % que el
+         elemento que lo abrió, para que el oscurecido y el panel queden recortados igual
+         que cualquier otro elemento (estilo tarjeta con ícono "i" que se expande). -->
+    <div class="overlay-en-sitio-backdrop" *ngIf="overlayEnSitio" (click)="cerrarOverlay()"></div>
+    <div
+      class="overlay-en-sitio-panel"
+      *ngIf="overlayEnSitio as ovSitio"
+      [style.left.%]="(ovSitio.x / canvasAncho) * 100"
+      [style.top.%]="(ovSitio.y / canvasAlto) * 100"
+      [style.width.%]="(ovSitio.ancho / canvasAncho) * 100"
+      [style.height.%]="(ovSitio.alto / canvasAlto) * 100"
+      (click)="$event.stopPropagation()"
+    >
+      <button type="button" class="overlay-libre-cerrar" (click)="cerrarOverlay()"><i class="ti ti-x"></i></button>
+      <h3 *ngIf="ovSitio.overlay?.titulo">{{ ovSitio.overlay?.titulo }}</h3>
+      <img *ngIf="ovSitio.overlay?.imagenUrl" [src]="ovSitio.overlay?.imagenUrl" alt="" />
+      <p *ngIf="ovSitio.overlay?.texto">{{ ovSitio.overlay?.texto }}</p>
+    </div>
+  </div>
+
+  <!-- Overlay "modal": clic sobre un elemento con "overlay.activo" y modo default -->
+  <div class="overlay-libre-backdrop" *ngIf="overlayModal as ov" (click)="cerrarOverlay()">
+    <div class="overlay-libre-panel" (click)="$event.stopPropagation()">
+      <button type="button" class="overlay-libre-cerrar" (click)="cerrarOverlay()"><i class="ti ti-x"></i></button>
+      <h3 *ngIf="ov.overlay?.titulo">{{ ov.overlay?.titulo }}</h3>
+      <img *ngIf="ov.overlay?.imagenUrl" [src]="ov.overlay?.imagenUrl" alt="" />
+      <p *ngIf="ov.overlay?.texto">{{ ov.overlay?.texto }}</p>
+    </div>
+  </div>
+
+  <button type="button" class="btn-primario btn-continuar-libre" *ngIf="!elementoPregunta" (click)="siguiente()">
+    Continuar
+  </button>
+</div>

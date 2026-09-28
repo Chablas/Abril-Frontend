@@ -12,14 +12,18 @@ export interface NivelConfigDTO {
   orden: number;
   tipoEstructura: TipoEstructura | null;
   /**
-   * En las respuestas de lectura (GET) incluye tanto los sectores exclusivos de este nivel
-   * como los sectores compartidos de la zona (repetidos bajo cada nivel). Al guardar, este
-   * grid solo debe usarse tal cual para consumo de lectura (Carga Diaria) — la separación
-   * exclusivo/compartido para el payload de guardado vive en ZonaUpdateDto.
+   * Shape de solo lectura para Carga Diaria y Restricciones (GET /carga-diaria/{projectId}).
+   * Configuración Inicial ya no usa este campo — ese feature migró al modelo de Torres
+   * (ver TorreConfigDTO/NivelTorreDTO), sin sectores con nombre libre.
    */
   sectores: SectorConfigDTO[];
 }
 
+/**
+ * Se mantiene tal cual (con `niveles[].sectores`) porque Carga Diaria y Restricciones todavía
+ * consumen este shape desde GET /carga-diaria/{projectId} — endpoint que no cambia en esta
+ * migración a Torres. NO agregar campos de Torre acá; el modelo nuevo vive en TorreConfigDTO.
+ */
 export interface ZonaConfigDTO {
   id?: number | null;
   nombre: string;
@@ -39,12 +43,33 @@ export interface ResponsableBimWorkerDTO {
   apellidoNombre: string;
 }
 
+// ── Modelo de Torres (Configuración Inicial) ───────────────────────────────
+// Reemplaza el modelo de Zonas/sectores con nombre libre: una Torre define cuántos
+// sectores tiene por clasificación (Subestructura/Superestructura); cada Nivel solo
+// declara su clasificación y el conteo de sectores se deriva del total de la Torre.
+
+export interface NivelTorreDTO {
+  id?: number | null;
+  nombre: string;
+  orden: number;
+  tipoEstructura: TipoEstructura | null;
+}
+
+export interface TorreConfigDTO {
+  id?: number | null;
+  nombre: string;
+  orden?: number;
+  cantidadSectoresSubestructura: number | null;
+  cantidadSectoresSuperestructura: number | null;
+  niveles: NivelTorreDTO[];
+}
+
 export interface PlaneamientoBimConfigDTO {
   projectId?: number;
   responsableId: number | null;
   responsableNombre?: string | null;
   metaPpc: number | null;
-  zonas: ZonaConfigDTO[];
+  torres: TorreConfigDTO[];
   fases: FaseConfigDTO[];
 }
 
@@ -55,22 +80,20 @@ export interface NivelUpdateDto {
   nombre: string;
   orden: number;
   tipoEstructura: TipoEstructura | null;
-  /** Sectores EXCLUSIVOS de este nivel — no incluye los compartidos de la zona. */
-  sectores: SectorConfigDTO[];
 }
 
-export interface ZonaUpdateDto {
+export interface TorreUpdateDto {
   id: number | null;
   nombre: string;
   orden: number;
+  cantidadSectoresSubestructura: number | null;
+  cantidadSectoresSuperestructura: number | null;
   niveles: NivelUpdateDto[];
-  /** Sectores que aplican a TODOS los niveles de la zona — se envían una sola vez acá. */
-  sectoresCompartidos: SectorConfigDTO[];
 }
 
 export interface PlaneamientoBimConfigUpdateDto {
   responsableId: number | null;
   // Meta PPC ya no se envía: es un estándar fijo administrado por el backend (Fase A).
-  zonas: ZonaUpdateDto[];
+  torres: TorreUpdateDto[];
   fases: { id: number; fechaInicio: string | null; fechaFinMeta: string | null }[];
 }

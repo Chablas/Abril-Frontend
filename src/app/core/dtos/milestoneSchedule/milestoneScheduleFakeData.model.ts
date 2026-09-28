@@ -4,4 +4,6 @@ export interface MilestoneScheduleFakeDataDTO {
     plannedStartDate: string;
     plannedEndDate: string | null | undefined;
     order: number;
+    esObligatorio: boolean;
+    esPuntual: boolean;
 }

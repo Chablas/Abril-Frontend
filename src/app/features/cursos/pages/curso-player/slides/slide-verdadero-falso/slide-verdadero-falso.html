@@ -1,11 +1,11 @@
-<div class="slide-vf">
+<div class="slide-vf" [ngClass]="'slide-vf-estilo-' + estilo">
   <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
 
   <img *ngIf="config.imagenUrl" [src]="config.imagenUrl" class="media-imagen anim-cascada-titulo" alt="" />
 
   <h2 class="enunciado anim-cascada-titulo">{{ config.enunciado }}</h2>
 
-  <div class="opciones anim-cascada-cuerpo">
+  <div class="opciones anim-cascada-cuerpo" [class.opciones-vertical]="disposicion === 'vertical'">
     <button
       type="button"
       class="btn-vf btn-verdadero"

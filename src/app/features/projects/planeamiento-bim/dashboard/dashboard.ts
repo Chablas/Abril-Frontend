@@ -7,8 +7,6 @@ import { Chart, registerables } from 'chart.js';
 import Swal from 'sweetalert2';
 
 import { AbrilPageHeaderComponent } from '../../../../shared/components/abril-page-header/abril-page-header.component';
-import { ProjectResidentService } from '../../../../core/services/projectResident.service';
-import { ProjectSimpleDTO } from '../../../../core/dtos/project/projectSimple.model';
 import { PROJECTS_TABS } from '../../shared/projects-tabs';
 import { PlaneamientoBimService } from '../services/planeamiento-bim.service';
 import { PlaneamientoBimSubnavComponent } from '../shared/planeamiento-bim-subnav/planeamiento-bim-subnav';
@@ -21,6 +19,7 @@ import {
   PlanMaestroSemanaDto,
   PpcHistoricoDto,
 } from '../dtos/planeamiento-bim-dashboard.dto';
+import { ProyectoBimSimpleDto } from '../dtos/planeamiento-bim-proyecto.dto';
 
 Chart.register(...registerables);
 
@@ -57,7 +56,7 @@ function haceDiasISO(dias: number): string {
 export class PlaneamientoBimDashboard implements OnInit, OnDestroy {
   readonly tabs = PROJECTS_TABS;
 
-  projects: ProjectSimpleDTO[] = [];
+  projects: ProyectoBimSimpleDto[] = [];
   selectedProjectId: number | null = null;
   loadingProjects = false;
   projectsError: string | null = null;
@@ -107,7 +106,6 @@ export class PlaneamientoBimDashboard implements OnInit, OnDestroy {
 
   constructor(
     private bimService: PlaneamientoBimService,
-    private projectResidentService: ProjectResidentService,
     private cdr: ChangeDetectorRef,
     private route: ActivatedRoute,
   ) {}
@@ -135,7 +133,9 @@ export class PlaneamientoBimDashboard implements OnInit, OnDestroy {
     this.loadingProjects = true;
     this.projectsError = null;
 
-    this.projectResidentService.getProjectsDescription().subscribe({
+    // Catálogo ya filtrado por rol/asignación en backend (admin ve todo, PLANEAMIENTO_UDP
+    // solo donde es responsable) — no requiere filtro adicional acá.
+    this.bimService.getProyectos().subscribe({
       next: (res) => {
         this.projects = (res || []).sort((a, b) => a.projectDescription.localeCompare(b.projectDescription));
         this.loadingProjects = false;

@@ -1,0 +1,33 @@
+<div class="slide-galeria" [class.texto-oscuro]="!textoClaro">
+  <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+  <h2 *ngIf="config.titulo" class="titulo anim-cascada-titulo">{{ config.titulo }}</h2>
+
+  <div class="grid-galeria anim-cascada-cuerpo">
+    <button
+      type="button"
+      class="celda"
+      *ngFor="let img of config.imagenes; let i = index"
+      (click)="editable ? imagenClick.emit(i) : ampliar(img)"
+      [attr.aria-label]="'Ampliar imagen ' + (img.caption || '')"
+    >
+      <img *ngIf="img.imagenUrl" [src]="img.imagenUrl" alt="" />
+      <div class="media-imagen-vacia" *ngIf="!img.imagenUrl && editable"><i class="ti ti-photo"></i></div>
+      <span class="celda-caption" *ngIf="img.caption">{{ img.caption }}</span>
+      <span class="celda-zoom-icono" *ngIf="!editable"><i class="ti ti-zoom-in"></i></span>
+      <div class="media-imagen-overlay" *ngIf="editable"><i class="ti ti-camera"></i> {{ img.imagenUrl ? 'Cambiar' : 'Subir' }}</div>
+    </button>
+  </div>
+
+  <button type="button" class="btn-primario btn-siguiente anim-cascada-control" (click)="siguiente()">
+    Siguiente
+    <i class="ti ti-arrow-right"></i>
+  </button>
+
+  <div class="overlay-zoom" *ngIf="imagenAmpliada" (click)="cerrar()">
+    <button type="button" class="overlay-cerrar" (click)="cerrar()" aria-label="Cerrar">
+      <i class="ti ti-x"></i>
+    </button>
+    <img [src]="imagenAmpliada.imagenUrl" alt="" (click)="$event.stopPropagation()" />
+    <p *ngIf="imagenAmpliada.caption">{{ imagenAmpliada.caption }}</p>
+  </div>
+</div>

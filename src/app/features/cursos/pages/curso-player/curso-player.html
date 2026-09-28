@@ -36,6 +36,20 @@
 
     <!-- Slide activa -->
     <ng-container *ngIf="(fase === 'jugando' || fase === 'feedback') && slideActual as slide">
+      <!-- Barra lateral fija, estilo Genially, acotada a lo que la evaluación permite (ver
+           puedeAvanzarDesdeRail): solo "siguiente", nunca "atrás" ni saltar una pregunta
+           evaluable sin responder — ver el comentario en curso-player.ts. -->
+      <div class="rail-navegacion">
+        <button
+          type="button"
+          [disabled]="!puedeAvanzarDesdeRail"
+          (click)="avanzarDesdeRail()"
+          [title]="puedeAvanzarDesdeRail ? 'Siguiente pantalla' : 'Responde esta pregunta para continuar'"
+        >
+          <i class="ti ti-chevron-down"></i>
+        </button>
+      </div>
+
       <div
         class="slide-host"
         [class.slide-host--full]="slide.tipoCodigo === 'contenido_texto'"
@@ -66,6 +80,34 @@
           @case ('pregunta_ordenar') {
             <app-slide-ordenar [slide]="slide" (respuesta)="onRespuesta($event)" />
           }
+          @case ('contenido_tarjetas') {
+            <app-slide-tarjetas [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('contenido_galeria_zoom') {
+            <app-slide-galeria-zoom [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('contenido_libre') {
+            <app-slide-contenido-libre
+              [slide]="slide"
+              (respuesta)="onRespuesta($event)"
+              (irAPagina)="onIrAPagina($event)"
+            />
+          }
+          @case ('pregunta_respuesta_corta') {
+            <app-slide-respuesta-corta [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('pregunta_completar_huecos') {
+            <app-slide-completar-huecos [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('pregunta_emparejar') {
+            <app-slide-emparejar-conceptos [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('pregunta_eleccion_multiple') {
+            <app-slide-eleccion-multiple [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
+          @case ('pregunta_desliza_acierta') {
+            <app-slide-desliza-acierta [slide]="slide" (respuesta)="onRespuesta($event)" />
+          }
           @default {
             <div class="tipo-no-soportado">
               <i class="ti ti-help-circle"></i>
@@ -79,9 +121,30 @@
       <!-- Overlay de feedback -->
       <div class="overlay-feedback" *ngIf="fase === 'feedback'">
         <div class="feedback-box" [class.correcto]="ultimaEsCorrecta === true" [class.incorrecto]="ultimaEsCorrecta === false">
-          <i class="ti ti-circle-check" *ngIf="ultimaEsCorrecta === true"></i>
-          <i class="ti ti-circle-x" *ngIf="ultimaEsCorrecta === false"></i>
-          <span>{{ ultimaEsCorrecta === true ? '¡Correcto!' : (ultimaEsCorrecta === false ? 'Incorrecto' : '') }}</span>
+          <div class="feedback-titulo">
+            <i class="ti ti-circle-check" *ngIf="ultimaEsCorrecta === true"></i>
+            <i class="ti ti-circle-x" *ngIf="ultimaEsCorrecta === false"></i>
+            <span>{{ ultimaEsCorrecta === true ? '¡Correcto!' : (ultimaEsCorrecta === false ? 'Incorrecto' : '') }}</span>
+          </div>
+
+          <!-- El mensaje de "Según el resultado" ya NO se muestra acá: esa rama ahora es una
+               lista de acciones apiladas (ver ejecutarAccionesPregunta en
+               slide-contenido-libre.ts) — un mensaje ahí se expresa con la acción
+               "Abrir ventana" (overlay propio), no como texto plano en este overlay de
+               feedback. Lo que sigue mostrando texto acá es "Mensajes tras responder"
+               (preguntaMensajesSimplesActivos), un toggle independiente y más simple. -->
+          <ng-container *ngIf="elementoPreguntaFeedback?.preguntaMensajesSimplesActivos">
+            <p class="feedback-mensaje" *ngIf="ultimaEsCorrecta === true && elementoPreguntaFeedback?.preguntaMensajeAciertoSimple">
+              {{ elementoPreguntaFeedback?.preguntaMensajeAciertoSimple }}
+            </p>
+            <p class="feedback-mensaje" *ngIf="ultimaEsCorrecta === false && elementoPreguntaFeedback?.preguntaMensajeErrorSimple">
+              {{ elementoPreguntaFeedback?.preguntaMensajeErrorSimple }}
+            </p>
+          </ng-container>
+
+          <p class="feedback-respuesta-correcta" *ngIf="elementoPreguntaFeedback?.preguntaMostrarRespuestaCorrecta && ultimaEsCorrecta === false && textoRespuestaCorrectaFeedback">
+            Respuesta correcta: <strong>{{ textoRespuestaCorrectaFeedback }}</strong>
+          </p>
         </div>
       </div>
     </ng-container>

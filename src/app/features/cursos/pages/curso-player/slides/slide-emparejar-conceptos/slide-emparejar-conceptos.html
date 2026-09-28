@@ -1,0 +1,64 @@
+<div class="slide-ec" [ngClass]="'slide-ec-estilo-' + estilo">
+  <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+
+  <h2 class="enunciado anim-cascada-titulo">{{ config.enunciado }}</h2>
+
+  <div class="emparejar-contenedor anim-cascada-cuerpo" #contenedor>
+    <svg class="emparejar-svg">
+      <path
+        *ngFor="let l of lineas"
+        [attr.d]="'M ' + l.x1 + ' ' + l.y1 + ' C ' + (l.x1 + 60) + ' ' + l.y1 + ', ' + (l.x2 - 60) + ' ' + l.y2 + ', ' + l.x2 + ' ' + l.y2"
+        [attr.stroke]="l.correcta === true ? (config.colorBordeCorrecto || '#2fae4e') : l.correcta === false ? (config.colorBordeIncorrecto || '#e0463f') : (config.colorLinea || '#7c5cff')"
+        fill="none"
+        stroke-width="3"
+      />
+    </svg>
+
+    <div class="emparejar-columna">
+      <button
+        type="button"
+        class="emparejar-pildora"
+        *ngFor="let izq of config.izquierda"
+        [attr.data-concepto]="'izquierda-' + izq.id"
+        [class.pendiente]="seleccionPendiente?.lado === 'izquierda' && seleccionPendiente?.id === izq.id"
+        [class.emparejada]="!!selecciones[izq.id]"
+        [class.correcta]="confirmado && config.respuestaCorrecta[izq.id] === selecciones[izq.id]"
+        [class.incorrecta]="confirmado && !!selecciones[izq.id] && config.respuestaCorrecta[izq.id] !== selecciones[izq.id]"
+        [style.background]="config.colorFondo || null"
+        [style.border-color]="(seleccionPendiente?.lado === 'izquierda' && seleccionPendiente?.id === izq.id) ? (config.colorSeleccion || '#7c5cff') : null"
+        [disabled]="confirmado"
+        (click)="alClicPildora('izquierda', izq.id)"
+      >
+        {{ izq.texto }}
+      </button>
+    </div>
+
+    <div class="emparejar-columna">
+      <button
+        type="button"
+        class="emparejar-pildora"
+        *ngFor="let der of config.derecha"
+        [attr.data-concepto]="'derecha-' + der.id"
+        [class.pendiente]="seleccionPendiente?.lado === 'derecha' && seleccionPendiente?.id === der.id"
+        [class.emparejada]="derechaEmparejada(der.id)"
+        [class.correcta]="derechaCorrecta(der.id)"
+        [class.incorrecta]="derechaIncorrecta(der.id)"
+        [style.background]="config.colorFondo || null"
+        [style.border-color]="(seleccionPendiente?.lado === 'derecha' && seleccionPendiente?.id === der.id) ? (config.colorSeleccion || '#7c5cff') : null"
+        [disabled]="confirmado"
+        (click)="alClicPildora('derecha', der.id)"
+      >
+        {{ der.texto }}
+      </button>
+    </div>
+  </div>
+
+  <button
+    type="button"
+    class="btn-primario btn-confirmar anim-cascada-control"
+    [disabled]="faltanSelecciones || confirmado"
+    (click)="confirmar()"
+  >
+    Validar
+  </button>
+</div>

@@ -1,0 +1,191 @@
+<app-abril-modal-panel
+  titulo="Permiso Escrito de Trabajo de Alto Riesgo (PETAR)"
+  icono="ti-alert-triangle"
+  variant="blue"
+  width="900px"
+  (closeModal)="cerrar()">
+
+  <div class="stepper">
+    @for (label of pasoLabels; track $index) {
+      <div class="step" [class.step--active]="paso === $index + 1" [class.step--done]="paso > $index + 1">
+        <div class="step-circle">
+          @if (paso > $index + 1) { <i class="ti ti-check"></i> } @else { {{ $index + 1 }} }
+        </div>
+        <span class="step-label">{{ label }}</span>
+      </div>
+      @if ($index < pasoLabels.length - 1) {
+        <div class="step-line" [class.step-line--done]="paso > $index + 1"></div>
+      }
+    }
+  </div>
+
+  @if (loadingInit) {
+    <div class="panel-loading">Cargando…</div>
+  } @else if (init) {
+
+    @if (paso === 1) {
+      <p class="origen-hint">Generado a partir del ATS #{{ atsId }} @if (init.atsActividad) { — {{ init.atsActividad }} }</p>
+
+      <div>
+        <app-search-select
+          color="var(--color-abril-logo-blue)"
+          label="Tipo de trabajo de alto riesgo *"
+          [options]="tiposOpts"
+          valueField="id"
+          displayField="nombre"
+          [value]="tipoId"
+          placeholder="Selecciona el tipo"
+          (valueChange)="onTipoChange($event)"
+        ></app-search-select>
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Descripción del trabajo *</label>
+        <textarea class="abril-field-input" rows="2" [(ngModel)]="descripcionTrabajo"
+                  placeholder="Ej: Cambio de luminaria en fachada, nivel 5, con andamio colgante"></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="abril-field">
+          <label class="abril-field-label">Lugar</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="lugar" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Hora inicio</label>
+          <input type="time" class="abril-field-input" [(ngModel)]="horaInicio" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Hora fin (estimada)</label>
+          <input type="time" class="abril-field-input" [(ngModel)]="horaFin" />
+        </div>
+      </div>
+
+      @if (esIzajeConGrua) {
+        <div class="abril-section-title">Datos técnicos del izaje (SSO-FO-043)</div>
+        <div class="form-row">
+          <div class="abril-field">
+            <label class="abril-field-label">Tipo de grúa</label>
+            <select class="abril-field-input" [(ngModel)]="izajeGrua.tipoGrua">
+              <option [ngValue]="undefined">Selecciona</option>
+              <option value="TorreGrua">Torre grúa</option>
+              <option value="GruaMovil">Grúa móvil</option>
+            </select>
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Fabricante / marca</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="izajeGrua.fabricanteOMarca" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Modelo / placa</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="izajeGrua.modeloOPlaca" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="abril-field">
+            <label class="abril-field-label">N° serie / tarjeta de circulación</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="izajeGrua.serieOTarjetaCirculacion" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Longitud de pluma/brazo (m)</label>
+            <input type="number" class="abril-field-input" [(ngModel)]="izajeGrua.longitudPlumaBrazoM" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Ángulo de la pluma (°)</label>
+            <input type="number" class="abril-field-input" [(ngModel)]="izajeGrua.anguloPluma" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="abril-field">
+            <label class="abril-field-label">Radio máximo de giro (m)</label>
+            <input type="number" class="abril-field-input" [(ngModel)]="izajeGrua.radioMaximoGiroM" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Elevación (m)</label>
+            <input type="number" class="abril-field-input" [(ngModel)]="izajeGrua.elevacionM" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Dirección/grado de giro</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="izajeGrua.direccionGradoGiro" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="abril-field">
+            <label class="abril-field-label">Capacidad certificada de fábrica (ton)</label>
+            <input type="number" class="abril-field-input" [(ngModel)]="izajeGrua.capacidadCertificadaTon" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">Peso de la carga (ton)</label>
+            <input type="number" class="abril-field-input" [(ngModel)]="izajeGrua.pesoCargaTotalTon" />
+          </div>
+          <div class="abril-field">
+            <label class="abril-field-label">% de capacidad usado</label>
+            <input type="number" class="abril-field-input" [(ngModel)]="izajeGrua.porcentajeCapacidad" />
+          </div>
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Tamaño del estrobo</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="izajeGrua.tamanoEstrobo" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Observaciones</label>
+          <textarea class="abril-field-input" rows="2" [(ngModel)]="izajeGrua.observaciones"></textarea>
+        </div>
+      }
+
+      @if (tipoSeleccionado) {
+        <div class="abril-section-title">Checklist de verificación previa *</div>
+        <p class="iperc-hint">Si algo no está listo, marca NO — no podrás continuar hasta corregirlo.</p>
+        @for (item of tipoSeleccionado.items; track item.id) {
+          <div class="item-row">
+            <div class="item-texto">{{ item.texto }}</div>
+            <div class="item-opciones">
+              <button class="opt-btn opt-si" [class.opt-btn--sel]="respuestaDe(item.id) === 'SI'" (click)="setRespuesta(item.id, 'SI')">SÍ</button>
+              <button class="opt-btn opt-no" [class.opt-btn--sel]="respuestaDe(item.id) === 'NO'" (click)="setRespuesta(item.id, 'NO')">NO</button>
+              <button class="opt-btn opt-na" [class.opt-btn--sel]="respuestaDe(item.id) === 'NA'" (click)="setRespuesta(item.id, 'NA')">N/A</button>
+            </div>
+          </div>
+        }
+      }
+
+      <div modalFooter>
+        <button class="btn btn-secondary" (click)="cerrar()" [disabled]="saving">Cancelar</button>
+        <button class="btn btn-primary" (click)="siguiente()" [disabled]="!datosValidos || saving">
+          @if (saving) { Guardando… } @else { Siguiente: Firmar }
+        </button>
+      </div>
+    }
+
+    @if (paso === 2) {
+      <div class="abril-section-title">Firma del ejecutante</div>
+      <p class="firmar-hint">
+        Selfie, ubicación y firma — este PETAR queda pendiente de la firma del Supervisor y el
+        Visto Bueno de SSOMA antes de que se autorice iniciar el trabajo.
+      </p>
+
+      <div class="firmar-row">
+        <div class="camara-col">
+          <app-camera-capture (listo)="onCamaraLista()"></app-camera-capture>
+          <div class="gps-estado" [ngSwitch]="gpsEstado">
+            <span *ngSwitchCase="'buscando'">📍 Buscando ubicación…</span>
+            <span *ngSwitchCase="'ok'">📍 Ubicación capturada (±{{ gpsCoords?.accuracy ?? 0 | number:'1.0-0' }} m)</span>
+            <span *ngSwitchCase="'error'">⚠️ Sin GPS — se firma igual, queda registrado.</span>
+          </div>
+        </div>
+
+        <div class="firma-col">
+          <label class="abril-field-label">Firma *</label>
+          <app-signature-pad (drawingChange)="onFirmaChange($event)"></app-signature-pad>
+          <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
+        </div>
+      </div>
+
+      <div modalFooter>
+        <button class="btn btn-secondary" (click)="volver()" [disabled]="firmando">Atrás</button>
+        <button class="btn btn-primary" (click)="firmar()" [disabled]="!puedeFirmar">
+          @if (firmando) { Firmando… } @else { Firmar PETAR }
+        </button>
+      </div>
+    }
+  }
+
+</app-abril-modal-panel>

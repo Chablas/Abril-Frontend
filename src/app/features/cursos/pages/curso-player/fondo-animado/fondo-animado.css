@@ -4,6 +4,7 @@
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  background: #0b0d10;
 }
 
 .capa-fondo {
@@ -29,30 +30,57 @@
   }
 }
 
-.burbuja {
+/* Grilla técnica sutil, ancla visual "seguridad industrial" en vez de burbujas genéricas. */
+.grilla {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(ellipse at 50% 40%, #000 40%, transparent 85%);
+}
+
+/* Barrido de luz diagonal, sutil y lento. */
+.barrido {
+  position: absolute;
+  top: -50%;
+  left: -20%;
+  width: 60%;
+  height: 200%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.06) 45%, transparent 55%);
+  animation: fondoBarrido 9s ease-in-out infinite;
+}
+
+@keyframes fondoBarrido {
+  0%, 100% { transform: translateX(-30%); }
+  50% { transform: translateX(220%); }
+}
+
+.blob {
   position: absolute;
   border-radius: 50%;
   pointer-events: none;
-  box-shadow:
-    inset -6px -6px 14px rgba(0, 0, 0, 0.12),
-    inset 6px 6px 14px rgba(255, 255, 255, 0.35);
-  animation-name: fondoBurbujaOscilacion;
+  filter: blur(40px);
+  animation-name: fondoBlobDeriva;
   animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
   animation-direction: alternate;
+  opacity: 0.5;
 }
 
-@keyframes fondoBurbujaOscilacion {
+@keyframes fondoBlobDeriva {
   0% {
-    transform: translateY(0);
+    transform: translate(0, 0) scale(1);
   }
   100% {
-    transform: translateY(10px);
+    transform: translate(18px, -14px) scale(1.06);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .burbuja {
+  .blob,
+  .barrido {
     animation: none;
   }
 }

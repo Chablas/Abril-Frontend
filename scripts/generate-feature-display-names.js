@@ -50,6 +50,8 @@ const SECCIONES_SIN_RUTA = {
   'gestion-administrativa.config.firmas': 'Firmas de Consolidados',
   'gestion-gth.config.visibilidad-solicitud-personal': 'Visibilidad de Solicitud de Personal',
   'gestion-gth.reclutamiento.gestionar': 'Reclutamiento - Gestionar procesos',
+  'mejora-continua.milestone-schedule.editar': 'Cronograma de Hitos - Subir versiones (residente del proyecto)',
+  'mejora-continua.milestone-schedule.administrar': 'Cronograma de Hitos - Administrar',
 };
 
 function walk(dir, files = []) {

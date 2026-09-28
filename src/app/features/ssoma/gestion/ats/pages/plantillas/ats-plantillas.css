@@ -1,0 +1,222 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: #ffffff;
+}
+
+.plantillas-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
+  background: #ffffff;
+}
+
+.panel-loading {
+  padding: 32px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.riesgo-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.riesgo-toggle input[type='checkbox'] {
+  accent-color: var(--color-abril-logo-blue);
+}
+
+.badge-autorizacion {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.badge-autorizacion--ok {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-autorizacion--falta {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-autorizacion--pendiente {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.btn-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+.firma-digital-acciones {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.btn-subir-autorizacion {
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.btn-link-ver {
+  margin-left: 10px;
+  font-size: 0.8rem;
+  color: var(--color-abril-logo-blue);
+  text-decoration: none;
+}
+
+.btn-link-ver:hover {
+  text-decoration: underline;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+  max-height: 160px;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid #e8e5df;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.chip--sel {
+  border-color: var(--color-abril-logo-blue);
+  background: var(--color-abril-logo-blue-light);
+  color: var(--color-abril-logo-blue);
+}
+
+.btn-sm {
+  font-size: 12px;
+  padding: 4px 10px;
+  margin-right: 4px;
+}
+
+.btn-danger {
+  color: #dc2626;
+  border-color: #fca5a5;
+}
+
+.pasos-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 12px;
+}
+
+.paso-texto {
+  font-size: 13px;
+  white-space: normal;
+  width: 38%;
+}
+
+.paso-puestos {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.autorizaciones-paginator {
+  margin-top: 10px;
+  max-width: 440px;
+}
+
+.control-input {
+  border: 1px dashed #cbd5e1;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  min-width: 160px;
+  outline: none;
+}
+
+.control-input:focus {
+  border-color: var(--color-abril-logo-blue);
+  border-style: solid;
+}
+
+.actividad-card {
+  border: 1px solid #e8e5df;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.actividad-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.actividad-seccion-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #8a8880;
+  margin: 12px 0 6px;
+}
+
+.nueva-actividad-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.nueva-actividad-row .abril-field-input {
+  flex: 1;
+}
+
+.chip-remove {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 10px;
+  color: inherit;
+  padding: 0 0 0 2px;
+}
+
+.guardando-tag {
+  font-size: 11px;
+  color: #6b7280;
+  font-style: italic;
+}

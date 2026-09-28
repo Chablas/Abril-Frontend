@@ -1,0 +1,161 @@
+:host {
+  display: block;
+  flex-shrink: 0;
+  margin: 0 16px 16px;
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #ece7d9;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fbfaf6;
+}
+
+.timeline-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b6455;
+  cursor: pointer;
+}
+
+.timeline-header:hover {
+  background: #f2ede0;
+}
+
+.timeline.colapsado {
+  background: #fbfaf6;
+}
+
+.timeline-ruler {
+  position: relative;
+  height: 22px;
+  background: #f2ede0;
+  border-top: 1px solid #ece7d9;
+  border-bottom: 1px solid #ece7d9;
+}
+
+.ruler-marca {
+  position: absolute;
+  top: 2px;
+  font-size: 10px;
+  color: #948d7c;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.timeline-pista {
+  position: relative;
+  padding: 6px 0;
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.ruler-linea {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #ece7d9;
+}
+
+.timeline-fila {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 8px;
+}
+
+.fila-etiqueta {
+  width: 150px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 6px;
+  padding: 3px 6px;
+}
+
+.fila-etiqueta.activa {
+  background: #fdf1dc;
+}
+
+.fila-orden {
+  display: flex;
+  flex-direction: column;
+}
+
+.fila-orden button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #948d7c;
+  line-height: 0.7;
+  padding: 2px 0;
+}
+
+.fila-orden button:hover {
+  color: #14100b;
+}
+
+.fila-texto {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fila-pista {
+  position: relative;
+  flex: 1;
+  height: 26px;
+}
+
+.barra-animacion {
+  position: absolute;
+  top: 3px;
+  height: 20px;
+  min-width: 24px;
+  background: #f5a623;
+  border-radius: 5px;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+}
+
+.barra-animacion.activa {
+  outline: 2px solid #14100b;
+}
+
+.barra-texto {
+  font-size: 10px;
+  color: #14100b;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.handle-duracion {
+  position: absolute;
+  right: -3px;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.timeline-vacio {
+  text-align: center;
+  font-size: 12px;
+  color: #948d7c;
+  padding: 12px 0;
+}

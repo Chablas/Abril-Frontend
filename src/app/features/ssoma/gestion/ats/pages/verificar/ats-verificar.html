@@ -1,0 +1,38 @@
+<div class="verificar-page">
+  <div class="verificar-card">
+    <div class="logo-row">
+      <i class="ti ti-shield-check"></i>
+      <span>ABRIL — Verificación de ATS Digital</span>
+    </div>
+
+    @if (cargando) {
+      <p class="estado-msg">Verificando…</p>
+    } @else if (error || !resultado?.encontrado) {
+      <div class="resultado resultado--invalido">
+        <i class="ti ti-x"></i>
+        <h2>Documento no encontrado</h2>
+        <p>No pudimos encontrar un ATS con este identificador. Si escaneaste un QR impreso, verifica que el link no esté cortado o dañado.</p>
+      </div>
+    } @else if (resultado?.valido) {
+      <div class="resultado resultado--valido">
+        <i class="ti ti-circle-check"></i>
+        <h2>Documento auténtico</h2>
+        <p>Este ATS corresponde exactamente a lo firmado en el sistema de Abril.</p>
+        <dl>
+          <dt>Trabajador</dt><dd>{{ resultado?.workerNombre }}</dd>
+          <dt>Proyecto</dt><dd>{{ resultado?.proyectoNombre }}</dd>
+          <dt>Actividad</dt><dd>{{ resultado?.actividad }}</dd>
+          <dt>Fecha</dt><dd>{{ resultado?.fecha | date:'dd/MM/yyyy' }}</dd>
+          <dt>Firmado</dt><dd>{{ resultado?.horaServidorFirma | date:'dd/MM/yyyy HH:mm' }}</dd>
+          <dt>Estado</dt><dd>{{ resultado?.estado }}</dd>
+        </dl>
+      </div>
+    } @else {
+      <div class="resultado resultado--advertencia">
+        <i class="ti ti-alert-triangle"></i>
+        <h2>El hash no coincide</h2>
+        <p>Encontramos el ATS, pero el código de verificación del link no coincide con el que quedó guardado — el PDF pudo haber sido modificado después de firmarse. No lo tomes como válido sin confirmar con SSOMA.</p>
+      </div>
+    }
+  </div>
+</div>

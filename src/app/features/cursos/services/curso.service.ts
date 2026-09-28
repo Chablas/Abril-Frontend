@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { AuthService } from '../../../core/services/auth.service';
 import {
   CursoDto,
   CursoSlideDto,
+  CursoUpsertDto,
+  CursoSlideUpsertDto,
   IniciarIntentoDto,
   IniciarIntentoResultDto,
   ResponderSlideDto,
@@ -13,6 +15,10 @@ import {
   FinalizarIntentoDto,
   FinalizarIntentoResultDto,
   CursoIntentoDetalleDto,
+  CursoPreguntaBancoDto,
+  CursoPreguntaBancoUpsertDto,
+  MiCursoProgresoDto,
+  CursoIntentoHistorialDto,
 } from '../dtos/curso.dtos';
 
 @Injectable({ providedIn: 'root' })
@@ -62,5 +68,105 @@ export class CursoService {
     return this.http.get<CursoIntentoDetalleDto>(`${this.baseIntento}/${intentoId}`, {
       headers: this.headers(),
     });
+  }
+
+  /** Cursos visibles para el usuario logueado + su progreso real (dashboard "Mis cursos"). */
+  getMisCursos(): Observable<MiCursoProgresoDto[]> {
+    return this.http.get<MiCursoProgresoDto[]>(`${this.baseIntento}/mis-cursos`, {
+      headers: this.headers(),
+    });
+  }
+
+  /** Historial de evaluaciones para auditoría SUNAFIL (filtros opcionales). */
+  getHistorialIntentos(filtros?: { cursoId?: number; desde?: string; hasta?: string }): Observable<CursoIntentoHistorialDto[]> {
+    let params = new HttpParams();
+    if (filtros?.cursoId) params = params.set('cursoId', filtros.cursoId);
+    if (filtros?.desde) params = params.set('desde', filtros.desde);
+    if (filtros?.hasta) params = params.set('hasta', filtros.hasta);
+    return this.http.get<CursoIntentoHistorialDto[]>(`${this.baseIntento}/historial`, {
+      headers: this.headers(),
+      params,
+    });
+  }
+
+  // ---- Administración de cursos/slides (editor) ----
+
+  getCursosAdmin(): Observable<CursoDto[]> {
+    return this.http.get<CursoDto[]>(`${this.base}/admin`, { headers: this.headers() });
+  }
+
+  getSlidesAdmin(cursoId: number): Observable<CursoSlideDto[]> {
+    return this.http.get<CursoSlideDto[]>(`${this.base}/${cursoId}/slides/admin`, {
+      headers: this.headers(),
+    });
+  }
+
+  crearCurso(dto: CursoUpsertDto): Observable<CursoDto> {
+    return this.http.post<CursoDto>(this.base, dto, { headers: this.headers() });
+  }
+
+  actualizarCurso(cursoId: number, dto: CursoUpsertDto): Observable<void> {
+    return this.http.put<void>(`${this.base}/${cursoId}`, dto, { headers: this.headers() });
+  }
+
+  getTieneEvaluaciones(cursoId: number): Observable<{ tieneEvaluaciones: boolean }> {
+    return this.http.get<{ tieneEvaluaciones: boolean }>(`${this.base}/${cursoId}/tiene-evaluaciones`, {
+      headers: this.headers(),
+    });
+  }
+
+  eliminarCurso(cursoId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${cursoId}`, { headers: this.headers() });
+  }
+
+  crearSlide(cursoId: number, dto: CursoSlideUpsertDto): Observable<CursoSlideDto> {
+    return this.http.post<CursoSlideDto>(`${this.base}/${cursoId}/slides`, dto, {
+      headers: this.headers(),
+    });
+  }
+
+  actualizarSlide(slideId: number, dto: CursoSlideUpsertDto): Observable<void> {
+    return this.http.put<void>(`${this.base}/slides/${slideId}`, dto, {
+      headers: this.headers(),
+    });
+  }
+
+  duplicarSlide(slideId: number, cursoDestinoId?: number): Observable<CursoSlideDto> {
+    const params = cursoDestinoId ? `?cursoDestinoId=${cursoDestinoId}` : '';
+    return this.http.post<CursoSlideDto>(`${this.base}/slides/${slideId}/duplicar${params}`, {}, {
+      headers: this.headers(),
+    });
+  }
+
+  eliminarSlide(slideId: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/slides/${slideId}`, { headers: this.headers() });
+  }
+
+  /** Sube una imagen (portada, tarjeta, galería, etc.) y devuelve su URL pública. */
+  subirImagen(archivo: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    return this.http.post<{ url: string }>(`${this.base}/imagenes`, formData, {
+      headers: this.headers(),
+    });
+  }
+
+  // ---- Banco de preguntas reutilizable entre cursos ----
+
+  getPreguntasBanco(tipoCodigo?: string): Observable<CursoPreguntaBancoDto[]> {
+    const params = tipoCodigo ? `?tipoCodigo=${encodeURIComponent(tipoCodigo)}` : '';
+    return this.http.get<CursoPreguntaBancoDto[]>(`${this.base}/preguntas-banco${params}`, {
+      headers: this.headers(),
+    });
+  }
+
+  crearPreguntaBanco(dto: CursoPreguntaBancoUpsertDto): Observable<CursoPreguntaBancoDto> {
+    return this.http.post<CursoPreguntaBancoDto>(`${this.base}/preguntas-banco`, dto, {
+      headers: this.headers(),
+    });
+  }
+
+  eliminarPreguntaBanco(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/preguntas-banco/${id}`, { headers: this.headers() });
   }
 }

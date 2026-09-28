@@ -1,0 +1,75 @@
+.verificar-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  padding: 24px;
+}
+
+.verificar-card {
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+}
+
+.logo-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--color-abril-logo-blue, #005d9d);
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.estado-msg {
+  text-align: center;
+  color: #6b7280;
+  padding: 24px 0;
+}
+
+.resultado {
+  text-align: center;
+}
+
+.resultado i {
+  font-size: 40px;
+}
+
+.resultado h2 {
+  font-size: 18px;
+  margin: 8px 0 4px;
+}
+
+.resultado p {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 12px;
+}
+
+.resultado--valido i { color: #16a34a; }
+.resultado--invalido i { color: #dc2626; }
+.resultado--advertencia i { color: #d97706; }
+
+dl {
+  text-align: left;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  font-size: 13px;
+  margin: 0;
+}
+
+dt {
+  font-weight: 600;
+  color: #374151;
+}
+
+dd {
+  margin: 0;
+  color: #111827;
+}

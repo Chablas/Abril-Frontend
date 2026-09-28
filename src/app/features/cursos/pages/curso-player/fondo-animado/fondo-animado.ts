@@ -14,30 +14,24 @@ interface Burbuja {
 
 // Paleta de marca por defecto (ancla: --color-abril-standard). Rota de forma determinística
 // según el índice de la slide para que un curso sin "estilo" configurado igual tenga variedad.
+// Paleta "seguridad industrial": carbón + ámbar/rojo de advertencia, coherente con el hero de
+// /cursos y el editor. Rota de forma determinística según el índice de la slide.
 const PALETA_DEFECTO: { claro: string; oscuro: string }[] = [
   {
-    claro: 'linear-gradient(135deg, #eaf7f2 0%, #bfe8d6 45%, #1f9d63 100%)',
-    oscuro: 'linear-gradient(135deg, #001a10 0%, #0a3d2a 50%, #0f6e56 100%)',
+    claro: 'linear-gradient(125deg, #f5a623 0%, #7a4a12 55%, #14100b 120%)',
+    oscuro: 'linear-gradient(125deg, #3a2205 0%, #1a1006 55%, #0b0d10 120%)',
   },
   {
-    claro: 'linear-gradient(135deg, #eaf4fa 0%, #cbe7f5 40%, #208fcf 80%, #005d9d 100%)',
-    oscuro: 'linear-gradient(135deg, #000e1a 0%, #00345c 50%, #005d9d 100%)',
+    claro: 'linear-gradient(125deg, #ff7847 0%, #7a2e12 55%, #14100b 120%)',
+    oscuro: 'linear-gradient(125deg, #3a1505 0%, #1a0a06 55%, #0b0d10 120%)',
   },
   {
-    claro: 'linear-gradient(135deg, #f3f7ec 0%, #d8ecc4 45%, #6fae2f 100%)',
-    oscuro: 'linear-gradient(135deg, #0a1204 0%, #1f3a0d 50%, #3f6b1a 100%)',
+    claro: 'linear-gradient(125deg, #ffd23f 0%, #8a5a0a 55%, #14100b 120%)',
+    oscuro: 'linear-gradient(125deg, #3a2a02 0%, #1a1305 55%, #0b0d10 120%)',
   },
   {
-    claro: 'linear-gradient(135deg, #eef4f2 0%, #cfe6de 40%, #14806b 80%, #0f6e56 100%)',
-    oscuro: 'linear-gradient(135deg, #00120d 0%, #06342a 50%, #0f6e56 100%)',
-  },
-  {
-    claro: 'linear-gradient(135deg, #eafaf6 0%, #a9e6d2 35%, #1fb0a3 65%, #005d9d 100%)',
-    oscuro: 'linear-gradient(135deg, #001410 0%, #0a3d38 40%, #0f6e56 70%, #00345c 100%)',
-  },
-  {
-    claro: 'linear-gradient(135deg, #f4f9ea 0%, #cbe8a8 30%, #4fae5a 65%, #0f6e56 100%)',
-    oscuro: 'linear-gradient(135deg, #0c1406 0%, #1f3a12 40%, #1f9d63 70%, #0f6e56 100%)',
+    claro: 'linear-gradient(125deg, #f5a623 0%, #1f2a33 60%, #0b0d10 120%)',
+    oscuro: 'linear-gradient(125deg, #3a2205 0%, #0f1a20 60%, #0b0d10 120%)',
   },
 ];
 
@@ -96,10 +90,10 @@ export class FondoAnimado {
 
   private generarBurbujas(seed: number): Burbuja[] {
     const rng = crearRng(seed * 97 + 13);
-    const cantidad = 10;
+    const cantidad = 5;
     const burbujas: Burbuja[] = [];
     for (let i = 0; i < cantidad; i++) {
-      const size = Math.round(28 + rng() * 170); // 28px - 198px, más variedad de tamaños
+      const size = Math.round(180 + rng() * 260); // blobs grandes y difuminados, no burbujitas
       burbujas.push({
         // Rango 0-100% en ambos ejes para que se distribuyan por toda la pantalla, no solo
         // en la mitad superior/izquierda.
@@ -108,8 +102,8 @@ export class FondoAnimado {
         size,
         delay: +(rng() * 3).toFixed(2),
         duracion: +(3.5 + rng() * 2).toFixed(2),
-        colorInterno: 'rgba(255, 255, 255, 0.55)',
-        colorExterno: 'rgba(255, 255, 255, 0.05)',
+        colorInterno: rng() > 0.5 ? 'rgba(245, 166, 35, 0.4)' : 'rgba(255, 255, 255, 0.18)',
+        colorExterno: 'rgba(255, 255, 255, 0)',
       });
     }
     return burbujas;

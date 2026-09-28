@@ -434,19 +434,20 @@
   background: #FEE2E2;
 }
 
-/* ── Columnas de Niveles y Sectores ─────────────────────────── */
-.zona-columns-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+/* ── Cantidad de sectores por clasificación (a nivel de Torre) ─ */
+.torre-sectores-count-row {
+  display: flex;
   gap: 1.25rem;
+  flex-wrap: wrap;
 }
 
-@media (max-width: 768px) {
-  .zona-columns-grid {
-    grid-template-columns: 1fr;
-  }
+.torre-sectores-count-field {
+  max-width: 220px;
+  flex: 1;
+  min-width: 160px;
 }
 
+/* ── Columna de Niveles ─────────────────────────────────────── */
 .sub-column {
   background: #FFFFFF;
   border: 1px solid #E2E8F0;
@@ -513,7 +514,51 @@
   margin: -0.3rem 0 0 0;
 }
 
-/* ── Tarjetas de Nivel (orden/nombre, tipo de estructura, sectores exclusivos) ── */
+.nivel-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Generador de "niveles típicos" (rango) ──────────────────── */
+.nivel-tipico-panel {
+  border: 1px dashed #1E3A5F;
+  border-radius: 8px;
+  background: #EDF4FB;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.nivel-tipico-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.nivel-tipico-row .bim-field {
+  flex: 2;
+  min-width: 140px;
+}
+
+.nivel-tipico-field--num {
+  flex: 1 !important;
+  min-width: 80px !important;
+}
+
+.nivel-tipico-field--tipo {
+  flex: 1.5 !important;
+  min-width: 180px !important;
+}
+
+.nivel-tipico-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+/* ── Tarjetas de Nivel (orden/nombre, tipo de estructura, sectores derivados) ── */
 .nivel-card {
   border: 1px solid #E2E8F0;
   border-radius: 8px;
@@ -548,56 +593,26 @@
   display: block;
 }
 
-.nivel-sectores-block {
-  border-top: 1px dashed #CBD5E1;
-  padding-top: 0.5rem;
+.nivel-sectores-derivados {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1E3A5F;
+  border-top: 1px dashed #CBD5E1;
+  padding-top: 0.4rem;
 }
 
-.nivel-sectores-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: #64748B;
-  letter-spacing: 0.03em;
+.nivel-sectores-derivados--hint {
+  font-weight: 400;
+  font-style: italic;
+  color: #94A3B8;
 }
 
 .btn-sub-add--sm {
   font-size: 0.68rem;
   padding: 2px 7px;
-}
-
-.nivel-sector-row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.sub-table {
-  width: 100%;
-  font-size: 0.8rem;
-  border-collapse: collapse;
-}
-
-.sub-table th {
-  text-align: left;
-  padding: 6px 8px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #475569;
-  text-transform: uppercase;
-  background: #F8FAFC;
-  border-bottom: 1px solid #E2E8F0;
-}
-
-.sub-table td {
-  padding: 4px 6px;
-  border-bottom: 1px solid #F1F5F9;
-  vertical-align: middle;
 }
 
 .btn-trash-sm {

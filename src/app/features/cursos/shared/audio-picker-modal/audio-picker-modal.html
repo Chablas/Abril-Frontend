@@ -1,0 +1,67 @@
+<div class="apm-backdrop" *ngIf="abierto" (click)="cerrarModal()">
+  <div class="apm-panel" (click)="$event.stopPropagation()">
+    <div class="apm-header">
+      <span><i class="ti ti-music"></i> Reproducir audio</span>
+      <button type="button" class="apm-btn-cerrar" (click)="cerrarModal()"><i class="ti ti-x"></i></button>
+    </div>
+
+    <div class="apm-tabs">
+      <button type="button" class="apm-tab" [class.apm-tab--activa]="tab === 'subir'" (click)="cambiarTab('subir')">
+        <i class="ti ti-upload"></i> Subir archivo
+      </button>
+      <button type="button" class="apm-tab" [class.apm-tab--activa]="tab === 'grabar'" (click)="cambiarTab('grabar')">
+        <i class="ti ti-microphone"></i> Grabar
+      </button>
+      <button type="button" class="apm-tab" [class.apm-tab--activa]="tab === 'enlace'" (click)="cambiarTab('enlace')">
+        <i class="ti ti-link"></i> Por enlace
+      </button>
+    </div>
+
+    <div class="apm-body">
+      <!-- Subir archivo -->
+      <div
+        *ngIf="tab === 'subir'"
+        class="apm-dropzone"
+        [class.apm-dropzone--activa]="arrastrandoSobre"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave()"
+        (drop)="onDrop($event)"
+      >
+        <i class="ti ti-cloud-upload"></i>
+        <p><strong>Arrastra un archivo de audio aquí</strong></p>
+        <p class="apm-hint">o haz clic para elegirlo (MP3, WAV, M4A)</p>
+        <input type="file" accept="audio/*" #fiAudio style="display:none" (change)="onArchivoSeleccionado($event)" />
+        <button type="button" class="btn-primario" (click)="fiAudio.click()">Elegir archivo</button>
+      </div>
+
+      <!-- Grabar -->
+      <div *ngIf="tab === 'grabar'" class="apm-grabar">
+        <p class="apm-hint" *ngIf="errorMicrofono">{{ errorMicrofono }}</p>
+
+        <ng-container *ngIf="!grabacionListaUrl">
+          <button type="button" class="apm-btn-mic" [class.apm-btn-mic--activo]="grabando" (click)="grabando ? detenerGrabacion() : iniciarGrabacion()">
+            <i class="ti" [ngClass]="grabando ? 'ti-player-stop-filled' : 'ti-microphone'"></i>
+          </button>
+          <p class="apm-hint">{{ grabando ? 'Grabando… haz clic para detener' : 'Haz clic para empezar a grabar' }}</p>
+        </ng-container>
+
+        <ng-container *ngIf="grabacionListaUrl">
+          <audio [src]="grabacionListaUrl" controls class="apm-audio-preview"></audio>
+          <div class="apm-fila-botones">
+            <button type="button" class="btn btn-outline btn-sm" (click)="descartarGrabacion()">Descartar y regrabar</button>
+            <button type="button" class="btn-primario" (click)="usarGrabacion()">Usar esta grabación</button>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Por enlace -->
+      <div *ngIf="tab === 'enlace'" class="apm-enlace">
+        <div class="abril-field">
+          <input class="abril-field-input" type="text" id="enlaceAudio" [(ngModel)]="urlIngresada" placeholder=" " (keydown.enter)="usarEnlace()" />
+          <label class="abril-field-label" for="enlaceAudio">URL del audio (mp3, wav...)</label>
+        </div>
+        <button type="button" class="btn-primario" [disabled]="!urlIngresada.trim()" (click)="usarEnlace()">Usar este enlace</button>
+      </div>
+    </div>
+  </div>
+</div>

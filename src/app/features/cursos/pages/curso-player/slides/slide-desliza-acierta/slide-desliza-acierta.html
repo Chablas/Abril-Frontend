@@ -1,0 +1,85 @@
+<div class="slide-da" [style.background]="config.colorFondo || null" [style.color]="config.colorTexto || null">
+  <ng-container *ngIf="fase === 'jugando'">
+    <span class="kicker anim-cascada-titulo">{{ kicker }}</span>
+
+    <div class="progreso-wrap">
+      <div class="progreso-bar" [style.background]="config.colorDegradado || null">
+        <div class="progreso-fill" [style.width.%]="progresoPct" [style.background]="config.colorProgreso || null"></div>
+      </div>
+      <span class="progreso-texto">{{ progresoTexto }}</span>
+    </div>
+
+    <div class="tarjeta-stack">
+      <div
+        #tarjetaActiva
+        class="tarjeta"
+        [style.transform]="transformTarjeta"
+        [class.sin-transicion]="arrastrando"
+        [class.tarjeta-swipe-si]="feedbackTarjeta === 'correcto' && arrastreX > 0"
+        [class.tarjeta-swipe-no]="feedbackTarjeta && arrastreX <= 0"
+        [style.font-size.px]="config.tamanoTexto || null"
+        (pointerdown)="alPointerDown($event)"
+        (pointermove)="alPointerMove($event)"
+        (pointerup)="alPointerUp()"
+        (pointercancel)="alPointerUp()"
+      >
+        <img *ngIf="tarjetaActual?.imagenUrl" [src]="tarjetaActual?.imagenUrl" class="tarjeta-img" alt="" />
+        <p class="tarjeta-enunciado">{{ tarjetaActual?.texto }}</p>
+
+        <div class="tarjeta-feedback tarjeta-feedback-correcto" *ngIf="feedbackTarjeta === 'correcto'" [style.color]="config.feedbackCorrectoColor || null">
+          <i class="ti ti-circle-check"></i>
+          <span>{{ config.feedbackCorrectoTexto || '¡Correcto!' }}</span>
+        </div>
+        <div class="tarjeta-feedback tarjeta-feedback-incorrecto" *ngIf="feedbackTarjeta === 'incorrecto'" [style.color]="config.feedbackIncorrectoColor || null">
+          <i class="ti ti-circle-x"></i>
+          <span>{{ config.feedbackIncorrectoTexto || 'Incorrecto' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="botones-swipe">
+      <button
+        type="button"
+        class="btn-swipe btn-swipe-no"
+        [style.color]="config.colorIconoFalso || null"
+        [style.background]="config.colorFondoBotonFalso || null"
+        [disabled]="!!feedbackTarjeta"
+        (click)="elegir(false)"
+      >
+        <i class="ti ti-x"></i>
+      </button>
+      <button
+        type="button"
+        class="btn-swipe btn-swipe-si"
+        [style.color]="config.colorIconoVerdadero || null"
+        [style.background]="config.colorFondoBotonVerdadero || null"
+        [disabled]="!!feedbackTarjeta"
+        (click)="elegir(true)"
+      >
+        <i class="ti ti-check"></i>
+      </button>
+    </div>
+  </ng-container>
+
+  <!-- Pantalla de resultados propia del mazo (estilo Genially) — se muestra ANTES de
+       emitir la respuesta final, para que el alumno vea su desglose de esta actividad en
+       particular antes de que el curso siga con su feedback global de siempre. -->
+  <div class="pantalla-resultados" *ngIf="fase === 'resultado'" [style.background]="config.resultadoColorFondo || null">
+    <i class="ti icono-resultado-mazo" [ngClass]="superoActividad ? 'ti-trophy' : 'ti-mood-sad'"></i>
+    <h3>{{ superoActividad ? '¡Actividad superada!' : 'Actividad no superada' }}</h3>
+    <p class="resultado-puntaje">{{ aciertos }} / {{ config.tarjetas.length }} correctas</p>
+
+    <div class="resultado-lista">
+      <div class="resultado-fila" *ngFor="let r of resultados" [style.background]="config.resultadoFondoTarjeta || null">
+        <span class="resultado-texto" [style.color]="config.resultadoColorEtiquetas || null">{{ r.texto }}</span>
+        <i
+          class="ti"
+          [ngClass]="r.correcta ? 'ti-check' : 'ti-x'"
+          [style.color]="r.correcta ? (config.resultadoColorValorCorrecto || '#2fae4e') : (config.resultadoColorValorIncorrecto || '#e0463f')"
+        ></i>
+      </div>
+    </div>
+
+    <button type="button" class="btn-primario btn-confirmar" (click)="confirmarResultado()">Continuar</button>
+  </div>
+</div>

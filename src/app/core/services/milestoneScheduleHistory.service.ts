@@ -34,4 +34,12 @@ export class MilestoneScheduleHistoryService {
       headers: { Authorization: `Bearer ${token}` },
     });
   }
+
+  /** Solo con la feature mejora-continua.milestone-schedule.administrar: elimina (soft-delete) una versión de cronograma con sus hitos. */
+  deleteMilestoneScheduleHistory(milestoneScheduleHistoryId: number): Observable<ApiMessageDTO> {
+    const token = localStorage.getItem('access_token');
+    return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${milestoneScheduleHistoryId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  }
 }

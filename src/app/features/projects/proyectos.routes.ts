@@ -5,7 +5,6 @@ import { IvtControl } from './ivt-control/ivt-control';
 import { ConstructionLogbookControl } from './construction-logbook-control/construction-logbook-control';
 import { ReportResponseControl } from './report-response-control/report-response-control';
 import { ResidentMonitoringMeasurement } from './resident-monitoring-measurement/resident-monitoring-measurement';
-import { ProjectsDashboard } from './projects-dashboard/projects-dashboard';
 import { CronogramaActividades } from './cronograma-actividades/cronograma-actividades';
 import { ProyectosCronogramaList } from './cronograma-actividades/proyectos-cronograma-list';
 import { CronogramaDashboard } from './cronograma-dashboard/cronograma-dashboard';
@@ -24,7 +23,7 @@ import { PlaneamientoBimDashboard } from './planeamiento-bim/dashboard/dashboard
 import { PlaneamientoBimPortafolio } from './planeamiento-bim/portafolio/portafolio';
 
 export const PROJECTS_ROUTES: Routes = [
-  { path: '', redirectTo: 'projects-dashboard', pathMatch: 'full' },
+  { path: '', redirectTo: 'cronograma-dashboard', pathMatch: 'full' },
   {
     path: 'planeamiento-bim',
     redirectTo: 'planeamiento-bim/configuracion-inicial',
@@ -69,12 +68,6 @@ export const PROJECTS_ROUTES: Routes = [
     component: PlaneamientoBimDashboard,
     canActivate: [roleGuard],
     data: { titulo: 'PLANEAMIENTO', featureKey: 'planeamiento-bim.configuracion-inicial' },
-  },
-  {
-    path: 'projects-dashboard',
-    component: ProjectsDashboard,
-    canActivate: [roleGuard],
-    data: { titulo: 'DASHBOARD DE PROYECTOS', featureKey: 'projects.projects-dashboard' },
   },
   {
     path: 'cronograma-actividades',

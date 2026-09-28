@@ -84,9 +84,8 @@ export class NavigationService {
       iconKey: 'building-estate',
       baseRoute: '/projects',
       behavior: 'expand',
-      landing: '/projects/projects-dashboard',
+      landing: '/projects/cronograma-dashboard',
       items: [
-        { label: 'Dashboard de Proyectos',                  route: '/projects/projects-dashboard',           featureKey: 'projects.projects-dashboard' },
         { label: 'Cronograma de Actividades',               route: '/projects/cronograma-actividades',       featureKey: 'projects.cronograma-actividades' },
         { label: 'Dashboard UDP',                           route: '/projects/cronograma-dashboard',         featureKey: 'projects.cronograma-dashboard' },
         // 'Dashboard Lecciones' movido a Mejora Continua (/mejora-continua/dashboard)
@@ -233,6 +232,8 @@ export class NavigationService {
       behavior: 'expand',
       landing: '/ssoma/gestion/paso/dashboard',
       items: [
+        { label: 'ATS Digital', route: '/ssoma/gestion/ats', featureKey: 'ssoma.gestion.ats' },
+        { label: 'PETAR (Alto Riesgo)', route: '/ssoma/gestion/petar', featureKey: 'ssoma.gestion.ats' },
         { label: 'Prog. Anual SSOMA', route: '/ssoma/gestion/paso/dashboard', featureKey: 'ssoma.gestion.paso' },
         { label: 'Gestión RAC', route: '/ssoma/gestion/rac/dashboard', featureKey: 'ssoma.gestion.rac' },
         { label: 'Penalidades', route: '/ssoma/gestion/penalidades', featureKey: 'ssoma.gestion.penalidades.lista' },

@@ -1,0 +1,606 @@
+.libre-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+}
+
+.libre-lienzo {
+  position: relative;
+  width: 100%;
+  max-width: 1100px;
+  max-height: 78vh;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* opacity:1 por defecto — cada @keyframes de entrada define su propio "from { opacity: 0 }",
+   así que el fade-in visual no depende de esta regla base. Antes esto era opacity:0 aquí y
+   se confiaba en que la animación llegara a completarse para mostrar el elemento: si por
+   cualquier motivo la animación no corre (prefers-reduced-motion, timing, un contenedor que
+   se midió en 0 en el primer frame, etc.) el elemento quedaba invisible PARA SIEMPRE, sin
+   ningún respaldo. Con la base en opacity:1, en el peor caso un elemento con animación de
+   entrada aparece de golpe en vez de con fade — nunca invisible. */
+.libre-elemento {
+  position: absolute;
+  opacity: 1;
+  animation-fill-mode: forwards;
+  animation-duration: 0.6s;
+}
+
+.libre-texto {
+  width: 100%;
+  height: 100%;
+  overflow-wrap: break-word;
+  white-space: pre-line;
+  display: flex;
+  align-items: center;
+}
+
+.libre-imagen {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.libre-forma {
+  width: 100%;
+  height: 100%;
+}
+
+.libre-icono {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80%;
+}
+
+.libre-boton {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.libre-video {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.libre-audio {
+  width: 100%;
+  height: 100%;
+}
+
+.libre-pregunta {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+/* ---- Estilos de la pregunta embebida (pestaña Diseño > Estilo, estilo Genially) ----
+   Los colores personalizados (el.colorFondo/colorTexto, aplicados vía [style.*] en el html)
+   siempre ganan por encima de estas reglas de clase — ver canvas-editor.css, mismo criterio. */
+
+.libre-pregunta-oscuro {
+  background: #1c1c1e;
+  color: #fff;
+}
+
+.libre-pregunta-adaptado-oscuro {
+  background: transparent;
+  color: #fff;
+  box-shadow: none;
+}
+
+.libre-pregunta-adaptado-claro {
+  background: transparent;
+  color: #1c1c1c;
+  box-shadow: none;
+}
+
+.libre-pregunta-temporizador {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.libre-pregunta-oscuro .libre-pregunta-temporizador,
+.libre-pregunta-adaptado-oscuro .libre-pregunta-temporizador {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.libre-pregunta-temporizador-critico {
+  background: #fdeceb;
+  color: #c0392b;
+}
+
+.libre-pregunta-mensaje-temporizador {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fdeceb;
+  color: #c0392b;
+  font-weight: 700;
+  padding: 10px 16px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.libre-elemento.interactivo {
+  cursor: pointer;
+}
+
+/* ---- Carrusel de imágenes (estilo Genially: cantidad libre, flechas + puntos) ---- */
+
+.libre-carrusel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.carrusel-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.carrusel-pista {
+  display: flex;
+  height: 100%;
+  transition: transform 0.35s ease;
+}
+
+.carrusel-imagen {
+  flex: 0 0 auto;
+  height: 100%;
+  object-fit: cover;
+  padding: 0 4px;
+  box-sizing: border-box;
+}
+
+.carrusel-flecha {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.85);
+  color: #14100b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.carrusel-flecha-izq {
+  left: 8px;
+}
+
+.carrusel-flecha-der {
+  right: 8px;
+}
+
+.carrusel-puntos {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+}
+
+.carrusel-punto {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  padding: 0;
+}
+
+.carrusel-punto-activa,
+.carrusel-punto-activo {
+  background: #f5a623;
+}
+
+/* ---- Punto interactivo / hotspot (estilo Genially: círculo pulsante + globo anclado) ---- */
+
+.hotspot-punto {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.6);
+}
+
+.continuo-hotspot {
+  animation: hotspotPulso 1.6s ease-in-out infinite;
+}
+
+@keyframes hotspotPulso {
+  0%, 100% { box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.6); }
+  50% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0.15); }
+}
+
+.hotspot-globo {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 220px;
+  max-width: 280px;
+  background: #fdf0d5;
+  color: #14100b;
+  border-radius: 10px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 20;
+}
+
+.hotspot-globo img {
+  width: 100%;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.hotspot-globo p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.hotspot-globo-cerrar {
+  float: right;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #948d7c;
+  margin: -4px -6px 0 6px;
+}
+
+/* ---- Audio con miniatura (estilo Genially: foto + botón de play centrado) ---- */
+
+.audio-miniatura {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  background: none;
+  display: block;
+}
+
+.audio-miniatura img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.audio-miniatura-boton {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(20, 16, 11, 0.75);
+  color: #f5a623;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+/* ---- Overlay "in-place": mismo panel que el modal, pero recortado dentro del lienzo y
+   anclado a las coordenadas del elemento que lo abrió (ver html). ---- */
+
+.overlay-en-sitio-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 15;
+}
+
+.overlay-en-sitio-panel {
+  position: absolute;
+  background: #fff;
+  color: #14100b;
+  border-radius: 8px;
+  padding: 16px 20px;
+  overflow-y: auto;
+  z-index: 16;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.overlay-en-sitio-panel h3 {
+  margin: 0 0 8px;
+}
+
+.overlay-en-sitio-panel img {
+  width: 100%;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.overlay-libre-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 20px;
+}
+
+.overlay-libre-panel {
+  position: relative;
+  background: #fff;
+  color: #14100b;
+  border-radius: 12px;
+  max-width: 520px;
+  width: 100%;
+  padding: 28px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.overlay-libre-panel h3 {
+  margin: 0 0 12px;
+}
+
+.overlay-libre-panel img {
+  width: 100%;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.overlay-libre-cerrar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #948d7c;
+}
+
+.anim-fade {
+  animation-name: cursoCascadaEntrada;
+}
+.anim-slide-up {
+  animation-name: cursoCascadaEntradaSubida;
+}
+.anim-slide-left {
+  animation-name: cursoCascadaEntrada;
+}
+.anim-zoom {
+  animation-name: cursoCascadaEntrada;
+}
+.anim-enfocar {
+  animation-name: interaccionEnfocar;
+}
+.anim-encender {
+  animation-name: interaccionEncender;
+}
+.anim-deslizar {
+  animation-name: interaccionDeslizar;
+}
+.anim-bote {
+  animation-name: interaccionBote;
+}
+.anim-remolino {
+  animation-name: interaccionRemolino;
+}
+.anim-rotar {
+  animation-name: interaccionRotar;
+}
+.anim-rodar {
+  animation-name: interaccionRodar;
+}
+
+/* Animación en bucle mientras la pantalla está visible ("Continuo"): vive en el hijo
+   directo dentro de .libre-elemento (ver html), nunca en el mismo elemento que la
+   entrada/interacción, para no competir por la propiedad CSS `animation`. */
+.continuo-aparecer {
+  animation: interaccionAparecer 2s ease-in-out infinite;
+}
+.continuo-enfocar {
+  animation: interaccionEnfocar 2s ease-in-out infinite;
+}
+.continuo-zoom {
+  animation: interaccionZoom 1.6s ease-in-out infinite;
+}
+.continuo-encender {
+  animation: interaccionEncender 1.6s ease-in-out infinite;
+}
+.continuo-deslizar {
+  animation: interaccionDeslizar 1.8s ease-in-out infinite;
+}
+.continuo-bote {
+  animation: interaccionBote 1.4s ease-in-out infinite;
+}
+.continuo-remolino {
+  animation: interaccionRemolino 3s linear infinite;
+}
+.continuo-rotar {
+  animation: interaccionRotar 3s linear infinite;
+}
+.continuo-rodar {
+  animation: interaccionRodar 1.8s ease-in-out infinite alternate;
+}
+
+/* Animación de interacción (hover/clic): a diferencia de anim-fade/etc. (que dependen
+   de animation-delay/duration en línea, puestos en null cuando esta clase está activa —
+   ver slide-contenido-libre.ts), estas van con su propia duración fija por efecto. */
+.libre-elemento.con-animacion-interaccion {
+  /* Evita que el fill-mode:forwards de la animación de entrada (opacity final 1, pero
+     puede dejar otro transform final) choque visualmente con el próximo disparo. */
+  will-change: transform, filter;
+}
+
+.interaccion-zoom {
+  animation: interaccionZoom 0.5s ease;
+}
+.interaccion-encender {
+  animation: interaccionEncender 0.6s ease;
+}
+.interaccion-deslizar {
+  animation: interaccionDeslizar 0.5s ease;
+}
+.interaccion-bote {
+  animation: interaccionBote 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.interaccion-remolino {
+  animation: interaccionRemolino 0.7s ease;
+}
+.interaccion-rotar {
+  animation: interaccionRotar 0.6s ease;
+}
+.interaccion-rodar {
+  animation: interaccionRodar 0.7s ease;
+}
+
+@keyframes interaccionZoom {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+@keyframes interaccionEncender {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.5); }
+}
+@keyframes interaccionDeslizar {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+  100% { transform: translateX(0); }
+}
+@keyframes interaccionBote {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-14px); }
+  60% { transform: translateY(0); }
+  80% { transform: translateY(-6px); }
+}
+@keyframes interaccionRemolino {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+@keyframes interaccionRotar {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes interaccionRodar {
+  0% { transform: translateX(-16px) rotate(-90deg); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+/* Animación de salida: siempre termina en estado "desaparecido" (opacity 0 y/o fuera de
+   cuadro) con fill-mode forwards — la slide se destruye poco después de todos modos, pero
+   así no hay un parpadeo de vuelta al estado normal justo antes de irse. */
+.salida-aparecer {
+  animation: salidaAparecer 0.45s ease forwards;
+}
+.salida-enfocar {
+  animation: salidaEnfocar 0.45s ease forwards;
+}
+.salida-zoom {
+  animation: salidaZoom 0.45s ease forwards;
+}
+.salida-encender {
+  animation: salidaEncender 0.45s ease forwards;
+}
+.salida-deslizar {
+  animation: salidaDeslizar 0.45s ease forwards;
+}
+.salida-bote {
+  animation: salidaBote 0.45s ease-in forwards;
+}
+.salida-remolino {
+  animation: salidaRemolino 0.45s ease-in forwards;
+}
+.salida-rotar {
+  animation: salidaRotar 0.45s ease-in forwards;
+}
+.salida-rodar {
+  animation: salidaRodar 0.45s ease-in forwards;
+}
+
+@keyframes salidaAparecer {
+  to { opacity: 0; }
+}
+@keyframes salidaEnfocar {
+  to { opacity: 0; transform: scale(0.92); }
+}
+@keyframes salidaZoom {
+  to { opacity: 0; transform: scale(1.3); }
+}
+@keyframes salidaEncender {
+  0% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 1; filter: brightness(1.8); }
+  100% { opacity: 0; filter: brightness(1.8); }
+}
+@keyframes salidaDeslizar {
+  to { opacity: 0; transform: translateX(40px); }
+}
+@keyframes salidaBote {
+  0% { opacity: 1; transform: translateY(0); }
+  30% { transform: translateY(-10px); }
+  100% { opacity: 0; transform: translateY(40px); }
+}
+@keyframes salidaRemolino {
+  to { opacity: 0; transform: rotate(200deg) scale(0.5); }
+}
+@keyframes salidaRotar {
+  to { opacity: 0; transform: rotate(120deg); }
+}
+@keyframes salidaRodar {
+  to { opacity: 0; transform: translateX(30px) rotate(90deg); }
+}
+
+@keyframes interaccionEnfocar {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.04); filter: brightness(1.15); }
+}
+@keyframes interaccionAparecer {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.btn-continuar-libre {
+  align-self: center;
+}

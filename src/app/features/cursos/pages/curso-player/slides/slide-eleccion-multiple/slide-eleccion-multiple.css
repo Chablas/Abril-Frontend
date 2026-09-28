@@ -1,0 +1,115 @@
+.slide-em {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 16px 8px;
+}
+
+.enunciado {
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-align: center;
+  color: #222;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.opciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+  width: 100%;
+}
+
+.opciones-vertical {
+  grid-template-columns: 1fr;
+}
+
+.opcion {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 18px;
+  background: #fff;
+  border: 2px solid #e2e8f0;
+  border-radius: var(--radius-standard, 7px);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  text-align: center;
+  font-size: 1.05rem;
+}
+
+.opcion:not(:disabled):hover {
+  border-color: var(--color-abril-standard, #0f6e56);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
+}
+
+.opcion.seleccionada {
+  border-color: var(--color-abril-standard, #0f6e56);
+  background: var(--color-abril-standard-light, #e6f4f0);
+}
+
+.opcion:disabled {
+  cursor: default;
+}
+
+.icono-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 20px;
+  color: #cfc9b8;
+}
+
+.opcion.seleccionada .icono-check {
+  color: var(--color-abril-standard, #0f6e56);
+}
+
+.opcion-img {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.opcion-texto {
+  font-weight: 600;
+  color: #333;
+}
+
+.btn-confirmar {
+  border-radius: var(--radius-standard, 7px);
+  height: 46px;
+  padding: 0 28px;
+  font-weight: 600;
+}
+
+/* ---- Estilo de la pregunta embebida (Diseño > Estilo), estilo Genially — oscuro/
+   adaptado-oscuro invierten a texto claro; claro/adaptado-claro usan el default de arriba. ---- */
+
+.slide-em-estilo-oscuro .enunciado,
+.slide-em-estilo-adaptado-oscuro .enunciado {
+  color: #fff;
+}
+
+.slide-em-estilo-oscuro .opcion,
+.slide-em-estilo-adaptado-oscuro .opcion {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.slide-em-estilo-oscuro .opcion-texto,
+.slide-em-estilo-adaptado-oscuro .opcion-texto {
+  color: #fff;
+}
+
+.slide-em-estilo-oscuro .icono-check,
+.slide-em-estilo-adaptado-oscuro .icono-check {
+  color: rgba(255, 255, 255, 0.5);
+}

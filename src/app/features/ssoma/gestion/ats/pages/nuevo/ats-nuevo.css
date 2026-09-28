@@ -1,0 +1,326 @@
+/* ── STEPPER (mismo patrón que OPT/Inspección) ────────────────────── */
+.stepper {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  background: #fff;
+  border-bottom: 0.5px solid #e8e5df;
+  flex-shrink: 0;
+  gap: 0;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.step-circle {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid #d4d0c8;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #a8a59e;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.step--active .step-circle {
+  background: var(--color-abril-logo-blue);
+  border-color: var(--color-abril-logo-blue);
+  color: #fff;
+}
+
+.step--done .step-circle {
+  background: var(--color-abril-logo-blue-light);
+  border-color: var(--color-abril-logo-blue);
+  color: var(--color-abril-logo-blue);
+}
+
+.step-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #a8a59e;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.step--active .step-label { color: var(--color-abril-logo-blue); }
+.step--done   .step-label { color: #5a5850; }
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: #e8e5df;
+  margin: 0 6px;
+  margin-bottom: 14px;
+  transition: background 0.2s;
+}
+
+.step-line--done { background: var(--color-abril-logo-blue); }
+
+.panel-loading {
+  padding: 32px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.bloqueo-autorizacion {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 40px 32px;
+}
+
+.bloqueo-autorizacion h3 {
+  margin: 6px 0 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #14100b;
+}
+
+.bloqueo-autorizacion p {
+  margin: 0;
+  max-width: 460px;
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ── Pasos por categoría ───────────────────────────────────────────── */
+.pasos-categoria-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 4px;
+}
+
+.pasos-categoria {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-abril-logo-blue);
+  margin: 0;
+}
+
+.marcar-todos-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.paso-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 4px 2px;
+  cursor: pointer;
+}
+
+.agregar-paso-row {
+  display: flex;
+  gap: 6px;
+  margin: 4px 0 8px;
+  padding-left: 2px;
+}
+
+.agregar-paso-input {
+  flex: 1;
+  font-size: 12.5px;
+  padding: 6px 8px;
+}
+
+/* ── EPP / Herramientas (chips) ───────────────────────────────────────── */
+.chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid #e8e5df;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.chip--sel {
+  border-color: var(--color-abril-logo-blue);
+  background: var(--color-abril-logo-blue-light);
+  color: var(--color-abril-logo-blue);
+}
+
+/* ── Peligros / Riesgos ────────────────────────────────────────────── */
+.iperc-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 8px;
+}
+
+.peligro-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid #e8e5df;
+  border-radius: var(--radius-standard, 7px);
+  margin-bottom: 6px;
+}
+
+.peligro-card--sugerido {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.peligro-nombre {
+  font-weight: 600;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge-sugerido {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #92400e;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+
+.riesgo-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  padding: 3px 0 3px 10px;
+  cursor: pointer;
+}
+
+/* ── Matriz de riesgo ──────────────────────────────────────────────── */
+.matriz-wrap {
+  overflow-x: auto;
+  margin-bottom: 10px;
+}
+
+.matriz-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.matriz-table th {
+  background: var(--color-abril-logo-blue-light);
+  color: var(--color-abril-logo-blue);
+  text-align: left;
+  padding: 6px 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.matriz-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #e8e5df;
+  vertical-align: top;
+}
+
+.controles-input {
+  min-width: 220px;
+  resize: vertical;
+}
+
+.nivel-select {
+  padding: 4px 6px;
+  border-radius: 5px;
+  border: 1px solid #d4d0c8;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.nivel-select.nivel-A { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.nivel-select.nivel-M { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+.nivel-select.nivel-B { background: #dcfce7; color: #166534; border-color: #86efac; }
+
+/* ── Firma ─────────────────────────────────────────────────────────── */
+.firmar-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 0 10px;
+}
+
+.firmar-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.camara-col, .firma-col {
+  flex: 1;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.gps-estado {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.consentimiento-box {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #fef9e7;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-standard, 7px);
+  font-size: 12px;
+}
+
+.check-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.btn-sm {
+  align-self: flex-start;
+  font-size: 12px;
+  padding: 4px 10px;
+}

@@ -266,6 +266,23 @@ export const routes: Routes = [
   },
 
   {
+    // Verificación pública del QR impreso en el PDF del ATS Digital (sin login) — para que un
+    // inspector de SUNAFIL o cualquiera con el link confirme que el documento es auténtico.
+    path: 'ats-verificar/:id',
+    loadComponent: () =>
+      import('./features/ssoma/gestion/ats/pages/verificar/ats-verificar')
+      .then(m => m.AtsVerificar)
+  },
+
+  {
+    // Verificación pública del QR impreso en el PDF del PETAR (sin login).
+    path: 'petar-verificar/:id',
+    loadComponent: () =>
+      import('./features/ssoma/gestion/petar/pages/verificar/petar-verificar')
+      .then(m => m.PetarVerificar)
+  },
+
+  {
     // Biblioteca pública de PETS (acceso por el QR único, sin login).
     path: 'pets',
     loadComponent: () =>

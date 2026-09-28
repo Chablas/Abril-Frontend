@@ -1,0 +1,217 @@
+.slide-da {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 16px 8px;
+  width: 100%;
+}
+
+.progreso-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.progreso-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.progreso-fill {
+  height: 100%;
+  background: var(--color-abril-standard, #7c5cff);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.progreso-texto {
+  font-size: 0.8rem;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.tarjeta-stack {
+  position: relative;
+  width: 100%;
+  height: 320px;
+}
+
+.tarjeta {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  cursor: grab;
+  touch-action: pan-y;
+  transition: transform 0.25s ease;
+  user-select: none;
+}
+
+.tarjeta:active {
+  cursor: grabbing;
+}
+
+.tarjeta.sin-transicion {
+  transition: none;
+}
+
+.tarjeta-swipe-si {
+  transform: translateX(600px) rotate(20deg) !important;
+  transition: transform 0.4s ease !important;
+}
+
+.tarjeta-swipe-no {
+  transform: translateX(-600px) rotate(-20deg) !important;
+  transition: transform 0.4s ease !important;
+}
+
+.tarjeta-img {
+  width: 100%;
+  height: 60%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.tarjeta-enunciado {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 20px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+  color: #222;
+  pointer-events: none;
+}
+
+.tarjeta-feedback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 2.4rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+}
+
+.tarjeta-feedback span {
+  font-size: 1rem;
+}
+
+.tarjeta-feedback-correcto {
+  color: #2fae4e;
+}
+
+.tarjeta-feedback-incorrecto {
+  color: #e0463f;
+}
+
+.botones-swipe {
+  display: flex;
+  gap: 28px;
+}
+
+.btn-swipe {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 26px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease;
+}
+
+.btn-swipe:not(:disabled):hover {
+  transform: scale(1.08);
+}
+
+.btn-swipe:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-swipe-no {
+  background: #dc2626;
+}
+
+.btn-swipe-si {
+  background: #16a34a;
+}
+
+/* ---- Pantalla de resultados propia del mazo (estilo Genially) ---- */
+
+.pantalla-resultados {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: center;
+}
+
+.icono-resultado-mazo {
+  font-size: 48px;
+  color: var(--color-abril-standard, #7c5cff);
+}
+
+.resultado-puntaje {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.resultado-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin: 8px 0;
+}
+
+.resultado-fila {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #f4f4f5;
+  border-radius: 8px;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.resultado-texto {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.btn-confirmar {
+  border-radius: var(--radius-standard, 7px);
+  height: 46px;
+  padding: 0 28px;
+  font-weight: 600;
+  margin-top: 8px;
+}

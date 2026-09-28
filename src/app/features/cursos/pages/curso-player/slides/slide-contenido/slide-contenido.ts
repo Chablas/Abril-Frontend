@@ -27,6 +27,12 @@ export class SlideContenido {
 
   @Output() respuesta = new EventEmitter<any>();
 
+  // Modo edición: usado solo por el editor de cursos (curso-editor) para permitir clic
+  // directo sobre la imagen dentro de la vista previa en vivo. El player real nunca pasa
+  // [editable]="true", así que esto no afecta a quien rinde el curso.
+  @Input() editable = false;
+  @Output() imagenClick = new EventEmitter<void>();
+
   // Fallbacks puramente visuales: si la config no trae kicker/ícono decorativo
   // (ej. el curso de ejemplo ya cargado en BD), igual se ve completo.
   get kicker(): string {

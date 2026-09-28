@@ -1,0 +1,1631 @@
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
+.canvas-editor {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  background: #f8fafc;
+  color: #14100b;
+}
+
+/* ---- Riel de herramientas (estilo Genially): íconos apilados a la izquierda ---- */
+
+.canvas-rail {
+  flex-shrink: 0;
+  width: 84px;
+  background: #ffffff;
+  border-right: 1px solid #ece7d9;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 14px 0;
+  overflow-y: auto;
+}
+
+.rail-espaciador {
+  flex: 1;
+}
+
+.rail-btn-destacado {
+  background: #fdf1dc;
+  color: #b3720a;
+  border-top: 1px solid #f0dfb8;
+}
+
+.rail-btn-destacado:hover,
+.rail-btn-destacado.activo {
+  background: #f5a623;
+  color: #14100b;
+}
+
+.rail-btn {
+  background: none;
+  border: none;
+  color: #6b6455;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.rail-btn i {
+  font-size: 20px;
+}
+
+.rail-btn:hover,
+.rail-btn.activo {
+  background: #fdf1dc;
+  color: #d9860a;
+}
+
+.popover-estilos-texto {
+  position: fixed;
+  z-index: 25;
+  width: 220px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.opcion-estilo-texto {
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #14100b;
+  font-size: 15px;
+  white-space: pre-line;
+}
+
+.opcion-estilo-texto.grande {
+  font-size: 20px;
+}
+
+.opcion-estilo-texto:hover {
+  background: #f2ede0;
+}
+
+.opcion-estilo-texto:not(:last-child) {
+  border-bottom: 1px solid #f2ede0;
+}
+
+.panel-preguntas-interactivas {
+  position: fixed;
+  z-index: 25;
+  width: 230px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  padding: 10px;
+}
+
+.pastilla-banco-preguntas {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #14100b;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.pastilla-banco-preguntas:hover {
+  background: #2a241c;
+}
+
+.grupo-preguntas-titulo {
+  margin: 6px 4px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9a9384;
+}
+
+.fila-pregunta-tipo {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f7f5ef;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #14100b;
+  cursor: pointer;
+  text-align: left;
+}
+
+.fila-pregunta-tipo i {
+  color: #6b6455;
+  font-size: 16px;
+}
+
+.fila-pregunta-tipo:hover {
+  background: #fdf1dc;
+}
+
+/* ---- Paneles agrupados "Insertar" / "Elementos" del riel: filas con ícono en tarjeta
+   redondeada + título/subtítulo, look más moderno que una simple lista de texto. ---- */
+
+.panel-rail-agrupado {
+  position: fixed;
+  z-index: 25;
+  width: 260px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  padding: 8px;
+}
+
+.fila-rail-agrupado {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  border: none;
+  border-radius: 9px;
+  padding: 9px 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+
+.fila-rail-agrupado:hover {
+  background: #fdf1dc;
+}
+
+.fila-rail-icono {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #f7f5ef;
+  color: #d9860a;
+  font-size: 18px;
+}
+
+.fila-rail-agrupado:hover .fila-rail-icono {
+  background: #fff;
+}
+
+.fila-rail-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.fila-rail-info strong {
+  font-size: 13px;
+  color: #14100b;
+  font-weight: 700;
+}
+
+.panel-estilo-marca {
+  position: fixed;
+  z-index: 25;
+  width: 280px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  padding: 14px;
+}
+
+.titulo-panel-estilo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #14100b;
+  margin: 4px 0 6px;
+}
+
+.titulo-panel-estilo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.subtitulo-panel-estilo {
+  font-size: 11px;
+  font-weight: 600;
+  color: #948d7c;
+  margin: 10px 0 6px;
+}
+
+.fila-swatches-marca {
+  display: flex;
+  gap: 10px;
+}
+
+.fila-paletas-marca {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tarjeta-paleta {
+  display: flex;
+  width: 40px;
+  height: 28px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.tarjeta-paleta:hover {
+  border-color: #d8d0bd;
+}
+
+.tarjeta-paleta span {
+  flex: 1;
+  height: 100%;
+}
+
+.btn-anadir-paleta {
+  width: 40px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1.5px dashed #d8d0bd;
+  background: #fff;
+  color: #948d7c;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-anadir-paleta:hover {
+  border-color: #f5a623;
+  color: #f5a623;
+}
+
+.formulario-paleta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px;
+  background: #f7f5ef;
+  border-radius: 8px;
+}
+
+.tarjeta-estilo-texto {
+  display: block;
+  width: 100%;
+  border: 1px solid #ece7d9;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tarjeta-estilo-texto:hover {
+  border-color: #d8d0bd;
+}
+
+.fila-formato-texto {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.editor-estilo-texto {
+  padding: 10px 12px 12px;
+  margin: -2px 0 8px;
+  background: #fafaf7;
+  border: 1px dashed #d8d0bd;
+  border-radius: 8px;
+}
+
+.separador-rail-agrupado {
+  border: none;
+  border-top: 1px solid #efe9db;
+  margin: 6px 4px;
+}
+
+.fila-rail-info span {
+  font-size: 11.5px;
+  color: #948d7c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- Cuerpo: lienzo grande centrado + panel de propiedades flotante ---- */
+
+.canvas-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  padding: 8px;
+  overflow: auto;
+}
+
+.canvas-lienzo-wrap {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* "safe center": centra cuando el lienzo entra completo, pero si se desborda (zoom
+     manual grande) ancla arriba-izquierda en vez de repartir el desborde simétricamente
+     — con "center" a secas, ese sobrante queda inalcanzable con scroll en algunos
+     navegadores (el punto "de arriba" del lienzo nunca llega a scrollTop 0 real). */
+  align-items: safe center;
+  justify-content: safe center;
+  overflow: auto;
+}
+
+.btn-icono {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b6455;
+}
+
+.btn-icono:hover:not(:disabled) {
+  background: #ece7d9;
+  color: #14100b;
+}
+
+.btn-icono:disabled {
+  color: #cfc9b8;
+  cursor: default;
+}
+
+.canvas-lienzo {
+  position: relative;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-radius: 10px;
+  overflow: hidden;
+  touch-action: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+}
+
+.canvas-elemento {
+  position: absolute;
+  cursor: move;
+  border: 1px dashed transparent;
+}
+
+.canvas-elemento.seleccionado {
+  border-color: #f5a623;
+}
+
+.canvas-texto {
+  width: 100%;
+  height: 100%;
+  overflow-wrap: break-word;
+  white-space: pre-line;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+
+.canvas-imagen {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.canvas-forma {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.canvas-icono {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80%;
+  pointer-events: none;
+}
+
+.canvas-boton {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.canvas-texto.en-edicion,
+.canvas-boton.en-edicion {
+  pointer-events: auto;
+  cursor: text;
+  outline: 2px solid #f5a623;
+  outline-offset: 2px;
+  border-radius: 4px;
+  user-select: text;
+}
+
+.canvas-video-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #ece7d9;
+  color: #6b6455;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  text-align: center;
+  padding: 6px;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.canvas-audio-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #ece7d9;
+  color: #6b6455;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 0 10px;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+.canvas-carrusel-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #ece7d9;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 6px;
+  color: #6b6455;
+  font-size: 12px;
+}
+
+.canvas-carrusel-placeholder img {
+  flex: 1 1 0;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+  min-width: 0;
+}
+
+.canvas-hotspot-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+}
+
+.canvas-pregunta-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #fdf1dc;
+  border: 2px dashed #f5a623;
+  color: #7a4e0a;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  text-align: left;
+  padding: 14px;
+  pointer-events: none;
+  overflow: auto;
+  border-radius: 8px;
+}
+
+.canvas-pregunta-kicker {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  opacity: 0.75;
+}
+
+.canvas-pregunta-enunciado {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+.canvas-pregunta-opciones {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.canvas-pregunta-opcion {
+  background: #fff;
+  border: 1px solid #f0c98a;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4a3007;
+}
+
+.canvas-pregunta-opcion.es-correcta {
+  border-color: #4caf50;
+  background: #eef8ef;
+  color: #2c6e2f;
+}
+
+/* ---- Render tipo Genially del elemento pregunta en el lienzo ---- */
+
+.canvas-pregunta-render {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  color: #1c1c1c;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 18px;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: 0;
+}
+
+.canvas-pregunta-cabecera {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.canvas-pregunta-subtitulo {
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.canvas-pregunta-pildoras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.canvas-pregunta-emparejar-filas {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.canvas-pregunta-emparejar-fila {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.canvas-pregunta-emparejar-fila .canvas-pregunta-pildora {
+  flex: 1;
+  justify-content: center;
+}
+
+.canvas-pregunta-pildoras-col {
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+}
+
+.canvas-pregunta-pildora {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f4f4f5;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1c1c1c;
+}
+
+.canvas-pregunta-pildoras-col .canvas-pregunta-pildora {
+  border-radius: 6px;
+}
+
+.canvas-pregunta-pildora .icono-correcto {
+  color: #2fae4e;
+}
+
+.canvas-pregunta-pildora .icono-incorrecto {
+  color: #e0463f;
+}
+
+.canvas-pregunta-boton-enviar {
+  background: #52525b;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 8px 22px;
+  margin-top: auto;
+}
+
+/* ---- Estilos de la pregunta embebida (pestaña Diseño > Estilo, estilo Genially) ----
+   Los colores personalizados (el.colorFondo/colorTexto), aplicados vía [style.*] en el
+   html, siempre ganan por encima de estas reglas de clase. */
+
+.canvas-pregunta-estilo-claro {
+  background: #fff;
+  color: #1c1c1c;
+}
+
+.canvas-pregunta-estilo-oscuro {
+  background: #1c1c1e;
+  color: #fff;
+}
+
+.canvas-pregunta-estilo-oscuro .canvas-pregunta-pildora {
+  background: #2d2d30;
+  color: #fff;
+}
+
+.canvas-pregunta-estilo-adaptado-oscuro {
+  background: transparent;
+  color: #fff;
+}
+
+.canvas-pregunta-estilo-adaptado-oscuro .canvas-pregunta-pildora {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.canvas-pregunta-estilo-adaptado-oscuro .canvas-pregunta-boton-enviar {
+  background: #fff;
+  color: #1c1c1c;
+}
+
+.canvas-pregunta-estilo-adaptado-claro {
+  background: transparent;
+  color: #1c1c1c;
+}
+
+.canvas-pregunta-estilo-adaptado-claro .canvas-pregunta-pildora {
+  background: #fff;
+  color: #1c1c1c;
+}
+
+/* Borde de color según si la opción es correcta/incorrecta — visible en el editor (nunca
+   en el reproductor real, ahí el alumno no ve cuál es la correcta hasta responder). */
+.canvas-pregunta-pildora.pildora-correcta {
+  border: 1.5px solid #2fae4e;
+}
+
+.canvas-pregunta-pildora.pildora-incorrecta {
+  border: 1.5px solid #e0463f;
+}
+
+/* ---- Panel Diseño/Acciones de la pregunta: botones de opción visual (Disposición/Estilo) ---- */
+
+.fila-campos-4 {
+  flex-wrap: wrap;
+}
+
+.opcion-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 90px;
+  padding: 10px 8px;
+  border: 1px solid #ece7d9;
+  border-radius: 8px;
+  background: #fff;
+  color: #52525b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.opcion-visual i {
+  font-size: 18px;
+}
+
+.opcion-visual:hover {
+  border-color: #d8d0bd;
+}
+
+.opcion-visual-activa {
+  border-color: #f5a623;
+  background: #fff8ec;
+  color: #14100b;
+}
+
+.opcion-visual-muestra {
+  width: 100%;
+  height: 20px;
+  border-radius: 4px;
+}
+
+.opcion-visual-muestra-oscuro {
+  background: #1c1c1e;
+}
+
+.opcion-visual-muestra-claro {
+  background: #fff;
+  border: 1px solid #ece7d9;
+}
+
+.etiqueta-campo {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #52525b;
+  margin-bottom: 6px;
+}
+
+.ayuda-advertencia {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  background: #fff8ec;
+  border: 1px solid #f5d78a;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #8a5a00;
+}
+
+.ayuda-advertencia code {
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-weight: 700;
+}
+
+.tarjeta-desliza-editable {
+  border: 1px solid #ece7d9;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.tarjeta-desliza-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.bloque-accion-resultado {
+  border: 1px solid #ece7d9;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.etiqueta-rama {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+/* ---- Lista de acciones apiladas por rama (Acierto/Error), estilo Genially ---- */
+
+.accion-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #ece7d9;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background: #fff;
+}
+
+.accion-item-icono {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: #fff8ec;
+  color: #f5a623;
+}
+
+.accion-item-label {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-icono {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #52525b;
+  cursor: pointer;
+}
+
+.btn-icono:hover {
+  background: #f4f4f5;
+}
+
+.btn-icono-danger:hover {
+  background: #fdeceb;
+  color: #c0392b;
+}
+
+.accion-editor {
+  border: 1px dashed #d8d0bd;
+  border-radius: 8px;
+  padding: 10px;
+  margin: -2px 0 10px;
+  background: #fafaf7;
+}
+
+.menu-anadir-accion-wrap {
+  position: relative;
+}
+
+.btn-ancho {
+  width: 100%;
+  justify-content: center;
+}
+
+.menu-anadir-accion {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ece7d9;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+}
+
+.menu-anadir-accion button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  padding: 8px 10px;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+  color: #14100b;
+}
+
+.menu-anadir-accion button:hover {
+  background: #f4f4f5;
+}
+
+/* ---- Campos del formulario de pregunta embebida (el.pregunta.*) ---- */
+
+.fila-opcion-editable {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.fila-opcion-editable .abril-field-input {
+  margin: 0;
+}
+
+.radio-correcta {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #cfc9b8;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.radio-correcta.radio-activo {
+  color: #16a34a;
+}
+
+.orden-badge {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 50%;
+  background: #14100b;
+  color: #f5a623;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.orden-badge-inline {
+  position: static;
+  flex-shrink: 0;
+  background: #14100b;
+}
+
+.fila-campos-emparejar {
+  display: flex;
+  gap: 16px;
+}
+
+.columna-emparejar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.concepto-emparejar-label {
+  flex: 1;
+  font-weight: 600;
+  color: #37342c;
+}
+
+.preview-audio {
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.preview-imagen-chica {
+  width: 100%;
+  max-height: 90px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.carrusel-lista-imagenes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.carrusel-item-imagen {
+  position: relative;
+  width: 72px;
+  height: 54px;
+}
+
+.carrusel-item-imagen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.carrusel-item-imagen .btn-link-danger {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.canvas-elemento.bloqueado {
+  cursor: default;
+}
+
+.icono-bloqueado {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  color: #f5a623;
+  background: rgba(20, 16, 11, 0.7);
+  border-radius: 4px;
+  padding: 2px;
+  font-size: 12px;
+}
+
+.banda-seleccion {
+  position: absolute;
+  border: 1px dashed #f5a623;
+  background: rgba(245, 166, 35, 0.12);
+  pointer-events: none;
+  z-index: 8;
+}
+
+.guia-alineacion {
+  position: absolute;
+  background: #ff2fb0;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.guia-alineacion.guia-v {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.guia-alineacion.guia-h {
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.menu-contextual {
+  position: absolute;
+  z-index: 20;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  overflow: hidden;
+  padding: 4px;
+}
+
+.menu-contextual button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #14100b;
+  font-size: 13px;
+}
+
+.menu-contextual button:hover {
+  background: #f2ede0;
+}
+
+.menu-contextual .opcion-danger {
+  color: #b3261e;
+}
+
+.menu-contextual .opcion-danger:hover {
+  background: #fdeceb;
+}
+
+.handle-resize {
+  position: absolute;
+  display: none;
+  width: 12px;
+  height: 12px;
+  background: #f5a623;
+  border: 2px solid #14100b;
+  border-radius: 50%;
+  z-index: 5;
+}
+
+.handle-resize.visible {
+  display: block;
+}
+
+.handle-n { top: -6px; left: calc(50% - 6px); cursor: ns-resize; }
+.handle-s { bottom: -6px; left: calc(50% - 6px); cursor: ns-resize; }
+.handle-e { right: -6px; top: calc(50% - 6px); cursor: ew-resize; }
+.handle-o { left: -6px; top: calc(50% - 6px); cursor: ew-resize; }
+.handle-ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.handle-so { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.handle-no { top: -6px; left: -6px; cursor: nwse-resize; }
+.handle-se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+.handle-rotar {
+  position: absolute;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  top: -34px;
+  left: calc(50% - 11px);
+  background: #f5a623;
+  border: 2px solid #14100b;
+  border-radius: 50%;
+  cursor: grab;
+  z-index: 5;
+  color: #14100b;
+  font-size: 12px;
+}
+
+.handle-rotar::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: calc(50% - 1px);
+  width: 2px;
+  height: 12px;
+  background: #14100b;
+}
+
+.handle-rotar.visible {
+  display: flex;
+}
+
+.toolbar-contextual {
+  position: absolute;
+  left: 50%;
+  top: -46px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  padding: 4px 6px;
+  z-index: 6;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.tb-btn {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  color: #14100b;
+  font-size: 13px;
+}
+
+.tb-btn.tb-ancho {
+  width: auto;
+  gap: 4px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+
+.tb-btn:hover,
+.tb-btn.tb-activo {
+  background: #fdf1dc;
+  color: #d9860a;
+}
+
+.tb-sep {
+  width: 1px;
+  height: 18px;
+  background: #e9e3d3;
+  margin: 0 3px;
+  flex-shrink: 0;
+}
+
+.tb-valor {
+  min-width: 22px;
+  text-align: center;
+  font-size: 12px;
+  color: #6b6455;
+}
+
+.tb-label {
+  font-size: 11px;
+  color: #6b6455;
+  margin-left: 2px;
+}
+
+.tb-color {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+}
+
+.tb-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.tb-swatch:hover {
+  transform: scale(1.15);
+}
+
+.canvas-panel {
+  width: 280px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fff;
+  color: #14100b;
+  border-radius: 10px;
+  padding: 16px;
+  overflow-y: auto;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Pantallas angostas: el panel de propiedades flota sobre el lienzo en vez de robarle
+   ancho — así el lienzo nunca se ve achicado por culpa del panel, igual que el ancho
+   fijo del riel ya no compite tanto por espacio. */
+@media (max-width: 900px) {
+  .canvas-rail {
+    width: 64px;
+  }
+
+  .rail-btn span {
+    display: none;
+  }
+
+  .canvas-cuerpo {
+    position: relative;
+  }
+
+  .canvas-panel {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: min(280px, calc(100% - 32px));
+    z-index: 10;
+  }
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid #efe9db;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b6455;
+}
+
+.panel-header-compacto {
+  justify-content: flex-end;
+  padding-bottom: 6px;
+  border-bottom: none;
+  margin-bottom: -4px;
+}
+
+.panel-header .btn-link-danger {
+  color: #b3261e;
+  opacity: 0.6;
+}
+
+.panel-header .btn-link-danger:hover {
+  opacity: 1;
+  background: #fdeceb;
+}
+
+/* ---- Clases del design system global (abril-field, etc.) que en la app viven en
+   curso-editor.css: al ser un componente Angular aparte con encapsulación propia,
+   canvas-editor.html no las hereda de ahí — se redeclaran aquí, con el mismo pulido
+   visual que el resto del panel de administración. ---- */
+
+.fila-campos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.fila-campos .abril-field {
+  flex: 1 1 140px;
+}
+
+.campo-color {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #6b6455;
+  background: #f7f5ef;
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+
+.campo-color input[type='color'] {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 6px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #37342c;
+  cursor: pointer;
+}
+
+.checkbox-row input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: #f5a623;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ayuda {
+  font-size: 12px;
+  color: #9a9384;
+  line-height: 1.4;
+}
+
+/* Segmentado de alineación: reemplaza el <select> nativo, mismo look que la barra
+   contextual flotante (.tb-btn) para que el panel y la barra se sientan un solo sistema. */
+.segmentado {
+  display: flex;
+  border: 1px solid #e9e3d3;
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.segmento-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
+  background: #fff;
+  border: none;
+  border-right: 1px solid #e9e3d3;
+  color: #6b6455;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.segmento-btn:last-child {
+  border-right: none;
+}
+
+.segmento-btn:hover {
+  background: #fdf1dc;
+}
+
+.segmento-btn.segmento-activo {
+  background: #f5a623;
+  color: #14100b;
+}
+
+.campo-corto {
+  width: 100px;
+}
+
+.swatches-rapidos {
+  display: flex;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  padding: 0;
+}
+
+.swatch:hover {
+  transform: scale(1.15);
+}
+
+.fila-capas {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.separador {
+  border: none;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin: 4px 0;
+}
+
+/* Pestañas Interactividad / Animación, estilo Genially: pastillas dentro del panel. */
+.pestanas-propiedades {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  background: #f2ede0;
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.pestanas-propiedades button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: none;
+  background: none;
+  border-radius: 9px;
+  padding: 8px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b6455;
+  cursor: pointer;
+  text-align: center;
+  line-height: 1.15;
+}
+
+.pestanas-propiedades button.pestana-activa {
+  background: #14100b;
+  color: #fff;
+}
+
+.ayuda-grupo {
+  margin: 4px 0 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9a9384;
+}
+
+.pestanas-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pestanas-sub button {
+  border: 1px solid #e9e3d3;
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #6b6455;
+  cursor: pointer;
+}
+
+.pestanas-sub button.sub-activa {
+  background: #f5a623;
+  border-color: #f5a623;
+  color: #14100b;
+  font-weight: 600;
+}
+
+.grid-efectos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.efecto-btn {
+  border: 1px solid #e9e3d3;
+  background: #fff;
+  border-radius: 7px;
+  padding: 9px 8px;
+  font-size: 13px;
+  color: #37342c;
+  cursor: pointer;
+  text-align: center;
+}
+
+.efecto-btn:hover {
+  background: #fdf1dc;
+}
+
+.efecto-btn.efecto-activo {
+  background: #14100b;
+  border-color: #14100b;
+  color: #fff;
+}

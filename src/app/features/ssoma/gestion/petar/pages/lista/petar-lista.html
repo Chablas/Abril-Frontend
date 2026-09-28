@@ -1,0 +1,115 @@
+<app-abril-page-header
+  titulo="PETAR — Trabajos de Alto Riesgo"
+  subtitulo="Permiso Escrito de Trabajo de Alto Riesgo, enlazado al ATS que lo origina">
+</app-abril-page-header>
+
+<label class="toggle-pendientes">
+  <input type="checkbox" [checked]="soloPendientes" (change)="toggleSoloPendientes()" />
+  Solo pendientes de Supervisor/Visto Bueno SSOMA
+</label>
+
+<div class="abril-table-wrap">
+  <table class="abril-table">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Ejecutante</th>
+        <th>Proyecto</th>
+        <th>Tipo</th>
+        <th>Estado</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (loading) {
+        <tr><td colspan="6">Cargando…</td></tr>
+      } @else if (listaFiltrada.length === 0) {
+        <tr><td colspan="6">No hay PETAR registrados.</td></tr>
+      } @else {
+        @for (p of listaFiltrada; track p.id) {
+          <tr>
+            <td>{{ p.fecha | date:'dd/MM/yyyy' }}</td>
+            <td>{{ p.workerNombre }}</td>
+            <td>{{ p.proyectoNombre }}</td>
+            <td>{{ p.tipoNombre }}@if (p.tipoCodigo) { <span class="tipo-codigo">({{ p.tipoCodigo }})</span> }</td>
+            <td><span class="badge" [class]="estadoClass(p.estado)">{{ p.estado }}</span></td>
+            <td class="acciones-cell">
+              @if (p.firmaUrl) {
+                <button class="btn btn-outline btn-sm" (click)="descargarPdf(p)"><i class="ti ti-download"></i> PDF</button>
+
+                @if (p.supervisorFirmaUrl) {
+                  <span class="visto-ok" title="Firmado por {{ p.supervisorNombre }}"><i class="ti ti-check"></i> Supervisor OK</span>
+                } @else if (p.puedeFirmarSupervisor) {
+                  <button class="btn btn-outline btn-sm" (click)="abrirFirmaVisto(p, 'supervisor')">Firmar Supervisor</button>
+                } @else {
+                  <span class="visto-pendiente">Pendiente Supervisor</span>
+                }
+
+                @if (p.ssomaFirmaUrl) {
+                  <span class="visto-ok" title="Firmado por {{ p.ssomaNombre }}"><i class="ti ti-check"></i> SSOMA OK</span>
+                } @else if (p.puedeFirmarSsoma) {
+                  <button class="btn btn-outline btn-sm" (click)="abrirFirmaVisto(p, 'ssoma')">Visto Bueno SSOMA</button>
+                } @else {
+                  <span class="visto-pendiente">Pendiente SSOMA</span>
+                }
+
+                @if (p.puedeCerrar) {
+                  <button class="btn btn-outline btn-sm btn-cerrar" (click)="abrirCierre(p)">Cerrar trabajo</button>
+                }
+              } @else {
+                <span class="visto-pendiente">Sin firmar</span>
+              }
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+
+<app-paginator
+  [totalRecords]="totalRecords"
+  [currentPage]="page"
+  [totalPages]="totalPages"
+  (pageChange)="cambiarPagina($event)"
+></app-paginator>
+
+@if (petarFirmandoVisto) {
+  <app-abril-modal-panel [titulo]="vistoTitulo" icono="ti-signature" variant="blue" width="560px" (closeModal)="cerrarFirmaVisto()">
+    <p class="visto-hint">
+      PETAR de <strong>{{ petarFirmandoVisto.workerNombre }}</strong> — {{ petarFirmandoVisto.descripcionTrabajo }}
+      ({{ petarFirmandoVisto.fecha | date:'dd/MM/yyyy' }})
+    </p>
+    <label class="abril-field-label">Firma *</label>
+    <app-signature-pad (drawingChange)="onFirmaVistoChange($event)"></app-signature-pad>
+    <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarFirmaVisto()" [disabled]="guardandoVisto">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardarFirmaVisto()" [disabled]="!hayFirmaVisto || guardandoVisto">
+        @if (guardandoVisto) { Guardando… } @else { Firmar }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}
+
+@if (petarCerrando) {
+  <app-abril-modal-panel titulo="Cerrar trabajo" icono="ti-square-check" variant="blue" width="560px" (closeModal)="cerrarModalCierre()">
+    <p class="visto-hint">
+      Confirma que el trabajo terminó y el área quedó en condiciones seguras —
+      PETAR de <strong>{{ petarCerrando.workerNombre }}</strong>.
+    </p>
+    <div class="abril-field">
+      <label class="abril-field-label">Observaciones (opcional)</label>
+      <textarea class="abril-field-input" rows="2" [(ngModel)]="observacionesCierre"></textarea>
+    </div>
+    <label class="abril-field-label">Firma *</label>
+    <app-signature-pad (drawingChange)="onFirmaCierreChange($event)"></app-signature-pad>
+    <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarModalCierre()" [disabled]="cerrando">Cancelar</button>
+      <button class="btn btn-primary" (click)="confirmarCierre()" [disabled]="!hayFirmaCierre || cerrando">
+        @if (cerrando) { Guardando… } @else { Cerrar PETAR }
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}

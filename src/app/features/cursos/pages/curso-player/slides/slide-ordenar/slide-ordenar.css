@@ -85,3 +85,21 @@
   padding: 0 28px;
   font-weight: 600;
 }
+
+/* ---- Estilo de la pregunta embebida (Diseño > Estilo), estilo Genially ---- */
+
+.slide-ordenar-estilo-oscuro .enunciado,
+.slide-ordenar-estilo-adaptado-oscuro .enunciado {
+  color: #fff;
+}
+
+.slide-ordenar-estilo-oscuro .item-ordenable,
+.slide-ordenar-estilo-adaptado-oscuro .item-ordenable {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.slide-ordenar-estilo-oscuro .texto,
+.slide-ordenar-estilo-adaptado-oscuro .texto {
+  color: #fff;
+}

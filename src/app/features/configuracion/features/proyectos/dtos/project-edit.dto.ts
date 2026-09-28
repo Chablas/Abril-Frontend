@@ -26,6 +26,10 @@ export interface ProjectEditDto {
   responsableUdp?: string;
   responsableUdpId?: number;
 
+  // Responsable Planeamiento BIM
+  responsablePlaneamientoBim?: string;
+  responsablePlaneamientoBimId?: number;
+
   /** Coordinador administrativo: FK a workers (project.workers_coord_admin_id). */
   workersCoordAdminId?: number | null;
 

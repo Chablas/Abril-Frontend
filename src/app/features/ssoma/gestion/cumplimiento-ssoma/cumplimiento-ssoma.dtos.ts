@@ -1,5 +1,5 @@
 export type CumplimientoRol = 'coordinador_ssoma' | 'prevencionista' | 'ambos';
-export type CumplimientoFrecuencia = 'diaria' | 'semanal' | 'mensual';
+export type CumplimientoFrecuencia = 'diaria' | 'semanal' | 'mensual' | 'anual';
 export type CumplimientoEstado = 'pendiente' | 'cumplido' | 'no_aplica';
 
 export interface CumplimientoActividadDto {
