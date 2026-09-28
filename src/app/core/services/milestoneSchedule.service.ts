@@ -64,8 +64,8 @@ export class MilestoneScheduleService {
 
   /**
    * Edita un hito ya guardado (descripción/orden/fechas/crítico) sin subir una versión nueva
-   * completa del cronograma. Solo ADMINISTRADOR DE RESIDENTES ([Authorize(Roles=...)] puro en
-   * backend, mismo alcance que deleteMilestoneScheduleHistory).
+   * completa del cronograma. Solo con la feature mejora-continua.milestone-schedule.administrar
+   * (mismo alcance que deleteMilestoneScheduleHistory).
    */
   editarHito(milestoneScheduleId: number, dto: MilestoneScheduleEditDTO): Observable<{ message: string }> {
     const token = localStorage.getItem('access_token');

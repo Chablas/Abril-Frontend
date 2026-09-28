@@ -33,21 +33,33 @@ import { MilestoneScheduleHistoryCreateDTO } from '../../../core/dtos/milestoneS
 import { AuthService } from '../../../core/services/auth.service';
 import { Roles } from '../../../core/constants/roles';
 import { MilestoneScheduleProjectsService } from './services/milestone-schedule-projects.service';
-import { ProjectGetDTO } from '../../../core/dtos/project/project.model';
-import { ProjectResidentService } from '../../../core/services/projectResident.service';
-import { ProjectSimpleDTO } from '../../../core/dtos/project/projectSimple.model';
+import { MilestoneProjectDto } from './dtos/milestone-project.dto';
 import { BaseModal } from '../../../shared/components/base-modal/base-modal';
 import { AbrilPageHeaderComponent } from '../../../shared/components/abril-page-header/abril-page-header.component';
-import { ProyectoService } from '../../configuracion/features/proyectos/services/proyecto.service';
-import { ProjectDto } from '../../configuracion/features/proyectos/dtos/project.dto';
-import { ProjectEditDto } from '../../configuracion/features/proyectos/dtos/project-edit.dto';
+import { SearchSelect } from '../../../shared/components/search-select/search-select';
+import { DatePicker } from '../../../shared/components/date-picker/date-picker';
+import { TitleCasePipe } from '../../../shared/pipes/title-case.pipe';
 import { swalUdpSuccess } from '../../../shared/utils/sweetalert-udp';
 
 import { MEJORA_CONTINUA_TABS } from '../shared/mejora-continua-tabs';
+
+/** featureKeys del cronograma (espejo de CronogramaHitosFeatures en el backend). */
+const FEATURE_EDITAR = 'mejora-continua.milestone-schedule.editar';
+const FEATURE_ADMINISTRAR = 'mejora-continua.milestone-schedule.administrar';
+
 @Component({
   selector: 'app-milestone-schedule',
   standalone: true,
-  imports: [DatePipe, CommonModule, FormsModule, BaseModal, AbrilPageHeaderComponent],
+  imports: [
+    DatePipe,
+    CommonModule,
+    FormsModule,
+    BaseModal,
+    AbrilPageHeaderComponent,
+    SearchSelect,
+    DatePicker,
+    TitleCasePipe,
+  ],
   templateUrl: './milestone-schedule.html',
   styleUrl: './milestone-schedule.css',
 })
@@ -55,6 +67,29 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   readonly Roles = Roles;
   readonly tabs = MEJORA_CONTINUA_TABS;
   anioActual = new Date().getFullYear();
+  /** Acento de desplegables y calendarios: el azul de la paleta UDP (DESIGN-VICTOR.md). */
+  readonly acentoUdp = '#2E6DB4';
+
+  /**
+   * Permisos del cronograma, leídos una vez al entrar (allowed_features solo cambia al volver a
+   * iniciar sesión). Quien no tiene ninguno ve la pantalla en solo lectura: los botones se
+   * muestran, deshabilitados.
+   * - Administrar (COORDINADOR DE PROYECTOS, JEFE DE PROYECTOS, GERENTE INMOBILIARIO): eliminar
+   *   versiones, editar/agregar hitos de una versión guardada, culminar, crítico, foto y
+   *   característica, en cualquier proyecto. No suben versiones.
+   * - Rol RESIDENTE + feature editar: lo mismo que arriba, pero solo en el proyecto donde es el
+   *   residente de Emails SSOMA (`esResidenteDelProyecto`, lo calcula el backend), y además es el
+   *   único que sube versiones nuevas.
+   */
+  puedeAdministrar = false;
+  private residenteConFeature = false;
+  /**
+   * RESIDENTE que no administra: el backend le manda solo los proyectos donde es el residente de
+   * Emails SSOMA (aunque además tenga USUARIO DE ABRIL). Acá solo cambia el aviso de lista vacía.
+   */
+  soloMisProyectos = false;
+  /** Proyecto cuyo historial/Gantt está abierto: de él salen los permisos de esa vista. */
+  proyectoSeleccionado: MilestoneProjectDto | null = null;
 
   escalaGantt: 'dia' | 'semana' | 'mes' = 'semana';
 
@@ -118,9 +153,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
   // ── Editar característica del proyecto (levelDescription) ────────────────
   showEditProjectModal = false;
-  editProjectLoading = false;
   editProjectSaving = false;
-  editProjectFull: ProjectDto | null = null;
+  editProjectTarget: MilestoneProjectDto | null = null;
   editProjectLevelDescription = '';
 
   formdata: ScheduleFormData = {
@@ -158,9 +192,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   private mouseDownOnBackdrop = false;
   private searchDebounce?: ReturnType<typeof setTimeout>;
 
-  schedules: ProjectGetDTO[] = [];
-  /** true si `schedules` viene de ProjectResident (RESIDENTE no-admin, sin paginación/búsqueda de servidor). */
-  residenteScopedProjects = false;
+  schedules: MilestoneProjectDto[] = [];
   milestoneScheduleHistoryTableData: MilestoneScheduleHistoryGetDTO[] = [];
   milestoneScheduleTableData: MilestoneScheduleGetDTO[] = [];
 
@@ -331,7 +363,10 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
         cancelButtonText: 'Cancelar',
         confirmButtonColor: '#D97706',
       }).then((result) => {
-        if (!result.isConfirmed) return;
+        if (!result.isConfirmed) {
+          this.restaurarFechaEnCalendario(hito, campo);
+          return;
+        }
         hito[campo] = valor;
         this.onFechaChange(hito);
       });
@@ -342,13 +377,26 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     this.onFechaChange(hito);
   }
 
-  onInicioChange(hito: any, valor: string): void {
-    this.aplicarCambioFecha(hito, 'startDate', valor);
+  /**
+   * Al cancelar, `hito[campo]` no cambió, pero app-date-picker ya muestra el campo vacío (se
+   * limpia solo al emitir) y su @Input no se re-envía porque el valor enlazado es el mismo. Se
+   * pasa por '' y se vuelve al valor anterior para que el calendario lo muestre de nuevo.
+   */
+  private restaurarFechaEnCalendario(hito: any, campo: 'startDate' | 'endDate'): void {
+    const anterior = hito[campo];
+    hito[campo] = '';
+    this.cdr.detectChanges();
+    hito[campo] = anterior;
+    this.cdr.detectChanges();
+  }
+
+  onInicioChange(hito: any, valor: string | null): void {
+    this.aplicarCambioFecha(hito, 'startDate', valor ?? '');
   }
 
   /** También atiende el input "Fin", que es el campo activo por defecto para todo hito salvo "Inicio de obra". */
-  onFinChange(hito: any, valor: string): void {
-    this.aplicarCambioFecha(hito, 'endDate', valor);
+  onFinChange(hito: any, valor: string | null): void {
+    this.aplicarCambioFecha(hito, 'endDate', valor ?? '');
   }
 
   /** Hitos obligatorios sin ninguna fecha cargada — bloquean el guardado de la plantilla. */
@@ -422,19 +470,22 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       : `${base} ms-en-proceso`;
   }
 
-  /** RESIDENTE (su propio proyecto) o ADMINISTRADOR DE RESIDENTES (cualquier proyecto). */
-  get puedeEditarCronograma(): boolean {
-    return this.authService.hasRole(Roles.RESIDENTE) || this.authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES);
+  /** Subir una versión nueva (o "Guardar sin cambios"): solo el residente del proyecto. */
+  puedeSubirVersion(proyecto: MilestoneProjectDto | null): boolean {
+    return this.residenteConFeature && !!proyecto?.esResidenteDelProyecto;
   }
 
-  /**
-   * Editar un hito ya guardado (PUT milestoneSchedule/{id}) es más restrictivo que el resto del
-   * cronograma: el backend lo protege con [Authorize(Roles=AdministradorResidentes)] puro (sin
-   * RESIDENTE), mismo alcance que eliminarVersionCronograma. No usar puedeEditarCronograma acá —
-   * mostraría el botón a un RESIDENTE que siempre recibiría 403 al guardar.
-   */
-  get puedeEditarHitoGuardado(): boolean {
-    return this.authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES);
+  /** Culminar, marcar crítico, foto y característica: quien administra o el residente del proyecto. */
+  puedeEditarProyecto(proyecto: MilestoneProjectDto | null): boolean {
+    return this.puedeAdministrar || this.puedeSubirVersion(proyecto);
+  }
+
+  get puedeSubirVersionSeleccionado(): boolean {
+    return this.puedeSubirVersion(this.proyectoSeleccionado);
+  }
+
+  get puedeEditarSeleccionado(): boolean {
+    return this.puedeEditarProyecto(this.proyectoSeleccionado);
   }
 
   /**
@@ -479,11 +530,8 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     return false;
   }
 
-  get projectsFiltered(): ProjectGetDTO[] {
-    if (!this.residenteScopedProjects) return this.schedules;
-    const search = this.searchQuery.trim().toLowerCase();
-    if (!search) return this.schedules;
-    return this.schedules.filter((p) => p.projectDescription.toLowerCase().includes(search));
+  get projectsFiltered(): MilestoneProjectDto[] {
+    return this.schedules;
   }
 
   getProjectColor(name: string): string {
@@ -497,10 +545,12 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     return name.split(' ').slice(0, 2).map((w) => w[0]).join('').toUpperCase();
   }
 
-  onProjectImageChange(projectId: number, event: Event): void {
+  onProjectImageChange(proyecto: MilestoneProjectDto, event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file) return;
+    input.value = '';
+    if (!file || !this.puedeEditarProyecto(proyecto)) return;
+    const projectId = proyecto.projectId;
     this.milestoneScheduleProjectsService.uploadProjectFoto(projectId, file).subscribe({
       next: (res) => {
         this.projectImages[projectId] = res.fotoUrl;
@@ -510,68 +560,37 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  /**
-   * El PUT /api/v1/project sobreescribe el DTO completo — por eso se lee el proyecto
-   * completo (ProjectDto, con todos los campos de ProjectEditDto) antes de abrir el modal,
-   * en vez de mandar solo levelDescription. La tarjeta del listado (ProjectGetDTO) no trae
-   * esos campos, así que hace falta esta llamada aparte pese a la regla de 1 HTTP por acción.
-   */
-  openEditProject(item: ProjectGetDTO, event: MouseEvent): void {
+  /** La tarjeta ya trae la característica: el modal abre sin pedir nada al backend. */
+  openEditProject(item: MilestoneProjectDto, event: MouseEvent): void {
     event.stopPropagation();
-    this.editProjectFull = null;
-    this.editProjectLevelDescription = '';
-    this.editProjectLoading = true;
+    if (!this.puedeEditarProyecto(item)) return;
+    this.editProjectTarget = item;
+    this.editProjectLevelDescription = item.levelDescription ?? '';
     this.showEditProjectModal = true;
     this.cdr.detectChanges();
-
-    this.proyectoService
-      .getPaged({ page: 1, ruc: '', razonSocial: '', projectDescription: item.projectDescription })
-      .subscribe({
-        next: (response) => {
-          const full = response.data.find((p) => p.projectId === item.projectId) ?? null;
-          if (!full) {
-            this.showEditProjectModal = false;
-            this.editProjectLoading = false;
-            this.cdr.detectChanges();
-            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar la información del proyecto.' });
-            return;
-          }
-          this.editProjectFull = full;
-          this.editProjectLevelDescription = full.levelDescription ?? '';
-          this.editProjectLoading = false;
-          this.cdr.detectChanges();
-        },
-        error: (err: HttpErrorResponse) => {
-          this.showEditProjectModal = false;
-          this.error(err);
-        },
-      });
   }
 
   closeEditProjectModal(): void {
     this.showEditProjectModal = false;
-    this.editProjectFull = null;
+    this.editProjectTarget = null;
     this.editProjectLevelDescription = '';
   }
 
+  /** PATCH project/{id}/level-description: solo la característica, no el proyecto entero. */
   saveEditProjectLevelDescription(): void {
-    const full = this.editProjectFull;
-    if (!full || this.editProjectSaving) return;
+    const target = this.editProjectTarget;
+    if (!target || this.editProjectSaving) return;
 
     this.editProjectSaving = true;
-    const dto: ProjectEditDto = {
-      ...full,
-      levelDescription: this.editProjectLevelDescription.trim() || undefined,
-    };
+    const valor = this.editProjectLevelDescription.trim() || null;
 
-    this.proyectoService.edit(dto).subscribe({
-      next: () => {
-        const target = this.schedules.find((p) => p.projectId === full.projectId);
-        if (target) target.levelDescription = dto.levelDescription;
+    this.milestoneScheduleProjectsService.updateLevelDescription(target.projectId, valor).subscribe({
+      next: (res) => {
+        target.levelDescription = res.levelDescription;
         this.editProjectSaving = false;
         this.closeEditProjectModal();
         this.cdr.detectChanges();
-        swalUdpSuccess('Característica actualizada exitosamente');
+        swalUdpSuccess(res.message ?? 'Característica actualizada exitosamente');
       },
       error: (err: HttpErrorResponse) => {
         this.editProjectSaving = false;
@@ -585,28 +604,28 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private router: Router,
     private milestoneScheduleProjectsService: MilestoneScheduleProjectsService,
-    private projectResidentService: ProjectResidentService,
     private scheduleService: ScheduleService,
     private milestoneScheduleHistoryService: MilestoneScheduleHistoryService,
     private milestoneService: MilestoneService,
     public authService: AuthService,
-    private proyectoService: ProyectoService,
   ) {
     this.router.routeReuseStrategy.shouldReuseRoute = () => false;
   }
 
   ngOnInit(): void {
+    this.puedeAdministrar = this.authService.hasFeature(FEATURE_ADMINISTRAR);
+    this.residenteConFeature =
+      this.authService.hasRole(Roles.RESIDENTE) && this.authService.hasFeature(FEATURE_EDITAR);
+    this.soloMisProyectos = this.authService.hasRole(Roles.RESIDENTE) && !this.puedeAdministrar;
     this.loadSchedules();
   }
 
+  /**
+   * El RESIDENTE recibe solo sus proyectos (el filtro lo hace el backend, así la búsqueda y la
+   * paginación cuentan solo los suyos); el resto recibe todos y ve en solo lectura los que no
+   * puede editar.
+   */
   loadSchedules(page: number = 1, search?: string): void {
-    // RESIDENTE (no ADMINISTRADOR DE RESIDENTES) solo ve los proyectos donde está asignado como
-    // residente — evita elegir un proyecto ajeno para luego chocar con el 403 al guardar/editar.
-    if (this.authService.hasRole(Roles.RESIDENTE) && !this.authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES)) {
-      this.loadResidenteScopedSchedules();
-      return;
-    }
-    this.residenteScopedProjects = false;
     this.loader = true;
     this.cdr.detectChanges();
     this.milestoneScheduleProjectsService.getProjectPagedWithResidents(page, search, 12).subscribe({
@@ -626,36 +645,6 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
         this.error(err);
       },
     });
-  }
-
-  /** Lista completa (sin paginación de servidor) de los proyectos donde el usuario es residente. */
-  private loadResidenteScopedSchedules(): void {
-    this.residenteScopedProjects = true;
-    this.loader = true;
-    this.cdr.detectChanges();
-    this.projectResidentService.getWithResidentByUserId().subscribe({
-      next: (projects) => {
-        this.schedules = projects.map((p) => this.toProjectGetDTO(p));
-        this.currentPage = 1;
-        this.totalPages = 1;
-        this.pageSize = this.schedules.length;
-        this.totalRecords = this.schedules.length;
-        this.loader = false;
-        this.cdr.detectChanges();
-      },
-      error: (err: HttpErrorResponse) => this.error(err),
-    });
-  }
-
-  private toProjectGetDTO(p: ProjectSimpleDTO): ProjectGetDTO {
-    return {
-      projectId: p.projectId,
-      projectDescription: p.projectDescription,
-      residentFullNames: [],
-      createdDateTime: '',
-      createdUserId: 0,
-      active: true,
-    };
   }
 
   onSearchChange(): void {
@@ -687,6 +676,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     this.showEditButton = false;
     this.noMilestones = false;
     this.selectedProjectName = '';
+    this.proyectoSeleccionado = null;
     this.milestoneScheduleHistoryTableData = [];
     this.ganttTasks = [];
     this.undatedTasks = [];
@@ -694,13 +684,16 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  openMilestoneScheduleHistory(scheduleId: number, projectDescription?: string) {
-    if (projectDescription) this.selectedProjectName = projectDescription;
+  openMilestoneScheduleHistory(proyecto: MilestoneProjectDto) {
+    this.proyectoSeleccionado = proyecto;
+    this.selectedProjectName = proyecto.projectDescription;
+    // Sin esto, mientras llega la respuesta se veían las versiones del proyecto anterior.
+    this.milestoneScheduleHistoryTableData = [];
     this.showMilestoneScheduleHistory = true;
     this.loader = true;
     this.cdr.detectChanges();
-    this.filtersScheduleId.projectId = scheduleId;
-    this.milestoneScheduleHistoryCreateDTO.projectId = scheduleId;
+    this.filtersScheduleId.projectId = proyecto.projectId;
+    this.milestoneScheduleHistoryCreateDTO.projectId = proyecto.projectId;
     this.milestoneScheduleHistoryService
       .getAllMilestoneScheduleHistory(this.filtersScheduleId)
       .subscribe({
@@ -715,13 +708,9 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
-  /**
-   * Solo ADMINISTRADOR DE RESIDENTES: elimina una versión completa de cronograma (con sus hitos).
-   * El endpoint está protegido con [Authorize(Roles=...)] puro, sin AbrilException — un 403 por
-   * rol insuficiente no trae body JSON, a diferencia de los demás endpoints del feature. El
-   * manejador genérico `error()` ya cubre este caso (título "Sin permiso" + mensaje default).
-   */
+  /** Solo quien administra el cronograma: elimina una versión completa (con sus hitos). */
   eliminarVersionCronograma(item: MilestoneScheduleHistoryGetDTO): void {
+    if (!this.puedeAdministrar) return;
     Swal.fire({
       icon: 'question',
       title: '¿Eliminar esta versión de cronograma?',
@@ -739,7 +728,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
           next: (response) => {
             this.loader = false;
             Swal.fire({ title: response.message ?? 'Cronograma eliminado.', icon: 'success', draggable: true });
-            this.openMilestoneScheduleHistory(this.filtersScheduleId.projectId!, this.selectedProjectName);
+            if (this.proyectoSeleccionado) this.openMilestoneScheduleHistory(this.proyectoSeleccionado);
           },
           error: (err: HttpErrorResponse) => this.error(err),
         });
@@ -864,6 +853,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
   /** Abre el modal de "Agregar hito" sobre un cronograma YA GUARDADO (vista de openViewMilestoneSchedule). */
   openAddHitoGuardadoModal(): void {
+    if (!this.puedeAdministrar) return;
     this.showAddHitoGuardadoModal = true;
     this.hitoGuardadoSeleccionadoId = null;
     this.hitoGuardadoTextoPersonalizado = '';
@@ -890,6 +880,17 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
   get agregarHitoGuardadoValido(): boolean {
     return this.hitoGuardadoSeleccionadoId != null || !!this.hitoGuardadoTextoPersonalizado.trim();
+  }
+
+  /** Hito del catálogo elegido en el desplegable (para mostrar si es obligatorio). */
+  get hitoFaltanteSeleccionado(): MilestoneSimpleDTO | null {
+    return this.hitosFaltantes.find((h) => h.milestoneId === this.hitoGuardadoSeleccionadoId) ?? null;
+  }
+
+  /** Elegir un hito del catálogo descarta el texto personalizado (es uno u otro). */
+  onHitoFaltanteChange(milestoneId: number | null): void {
+    this.hitoGuardadoSeleccionadoId = milestoneId;
+    if (milestoneId != null) this.hitoGuardadoTextoPersonalizado = '';
   }
 
   confirmarAgregarHitoGuardado(): void {
@@ -961,6 +962,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   }
 
   openCreateMilestoneSchedule() {
+    if (!this.puedeSubirVersionSeleccionado) return;
     this.loader = true;
     this.cdr.detectChanges();
     if (this.milestoneScheduleHistoryTableData.length > 0) {
@@ -1601,11 +1603,12 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   /**
    * En modo "ver cronograma" (milestoneScheduleId real) persiste de inmediato contra el backend
    * — mismo patrón que toggleCriticoGuardado, necesario para que el chequeo de permisos del PATCH
-   * .../culminar (403 si no sos el residente asignado, o ADMINISTRADOR DE RESIDENTES) aplique. En
+   * .../culminar (403 si no es el residente del proyecto ni administra el cronograma) aplique. En
    * modo plantilla/creación (sin milestoneScheduleId todavía) sigue siendo solo local, a la espera
    * del guardado completo del cronograma.
    */
   toggleCulminar(taskId: number): void {
+    if (!this.puedeEditarSeleccionado) return;
     const task = gantt.getTask(taskId);
     const nuevaFecha: string | null = task['fechaRealFin'] ? null : this.parseDateToString(new Date());
 
@@ -1650,6 +1653,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
    * plantilla, sin milestoneScheduleId real todavía.
    */
   toggleCriticoGuardado(taskId: number): void {
+    if (!this.puedeEditarSeleccionado) return;
     const task = gantt.getTask(taskId);
     const nuevoValor = !task['esHitoCritico'];
 
@@ -1677,8 +1681,9 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     return !!hito.esObligatorio && !this.esInicioDeObra(hito) && !plannedEndDate;
   }
 
-  /** Habilita los inputs de Fecha inicio/fin dentro del modal de detalle (solo ADMINISTRADOR DE RESIDENTES). */
+  /** Habilita los inputs de Fecha inicio/fin dentro del modal de detalle (solo quien administra). */
   iniciarEdicionHitoDetalle(): void {
+    if (!this.puedeAdministrar) return;
     this.editHitoStartDate = this.selectedTask?.realPlannedStartDate ?? '';
     this.editHitoEndDate = this.selectedTask?.realPlannedEndDate ?? null;
     this.campoFechaEditActivo = null;
@@ -1995,7 +2000,7 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
 
     if (err.status === 403) {
       Swal.fire({
-        icon: 'error',
+        icon: 'warning',
         title: 'Sin permiso',
         text: err.error?.message ?? 'No tienes permiso para realizar esta acción.',
       });
