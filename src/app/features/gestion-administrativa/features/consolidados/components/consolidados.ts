@@ -115,21 +115,6 @@ interface AreaCascadeNode {
       transition: background-color .15s ease, border-color .15s ease, color .15s ease;
     }
     .doc-chip:hover { border-color: var(--color-abril-standard); color: var(--color-abril-standard); }
-
-    /* Código de una planilla cubierta. Las que el usuario no ve van apagadas: se listan porque el
-       importe declarado las incluye, pero no puede abrirlas ni decidir sobre ellas. */
-    .ren-chip {
-      display: inline-block;
-      padding: 1px 5px;
-      border-radius: 4px;
-      background: var(--color-abril-standard-light);
-      color: var(--color-abril-standard);
-      font-size: 10px;
-      font-weight: 700;
-      line-height: 1.5;
-      white-space: nowrap;
-    }
-    .ren-chip--ajena { background: #F3F4F6; color: #9CA3AF; }
   `],
 })
 export class Consolidados implements OnInit {
@@ -627,11 +612,6 @@ export class Consolidados implements OnInit {
       partes.push('Las salidas visibles no están todas en el mismo estado: se muestra la más atrasada.');
     }
     return partes.length ? partes.join(' · ') : null;
-  }
-
-  /** Planillas que el usuario no ve: se listan por el monto, pero no puede entrar en ellas. */
-  ajenaTitle(codigo: string): string {
-    return `${codigo} no está en tu alcance: se lista porque el importe del consolidado la incluye.`;
   }
 
   // ── Las firmas del documento ─────────────────────────────────────────

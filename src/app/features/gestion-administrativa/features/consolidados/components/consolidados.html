@@ -82,7 +82,7 @@
               title="Seleccionar / deseleccionar todo" />
           </th>
           <th>Consolidado</th>
-          <th>Rendiciones</th>
+          <th>Área</th>
           <th>Trabajador</th>
           <th>Periodo</th>
           <th>Monto S10</th>
@@ -131,18 +131,11 @@
             </div>
           </td>
 
-          <!-- Todo lo que cubre: las que el usuario no ve van apagadas, pero se listan porque el
-               importe declarado las incluye. -->
-          <td>
-            <div class="flex flex-wrap items-center gap-[4px]">
-              <span *ngFor="let r of c.rendiciones"
-                    class="ren-chip"
-                    [class.ren-chip--ajena]="!r.visible"
-                    [title]="r.visible ? r.codigo : ajenaTitle(r.codigo)">
-                {{ r.codigo }}
-              </span>
-            </div>
-          </td>
+          <!-- El área del consolidado es la de su consolidador: la de la sigla del código y la que
+               imprime la planilla grupal. Sale del catálogo tal cual: el titleCase rompería «SSOMA».
+               Reemplazó a la lista de planillas, que crecía con el consolidado; siguen en el
+               detalle y en la búsqueda. -->
+          <td class="text-gray-700">{{ c.area || '—' }}</td>
 
           <td class="text-gray-700" [title]="c.trabajadores.join(', ')">
             {{ trabajadoresTexto(c) | titleCase }}
@@ -332,7 +325,6 @@
      checkboxes de Configuración → Firmas (subir imagen, dibujarla, o elegir entre las dos). -->
 <app-firma-registrar-modal
   *ngIf="firmaModalAbierto"
-  descripcion="Se estampará en el Consolidado del S10 y en las planillas que cubre"
   (guardada)="onFirmaRegistrada()"
   (cerrar)="cerrarFirmaModal()" />
 
@@ -342,7 +334,7 @@
   <div class="w-full">
     <label class="block text-[11px] font-semibold uppercase text-gray-400 mb-1">Buscar</label>
     <app-search-input
-      placeholder="Consolidado, N.° de reembolso o rendición..."
+      placeholder="Consolidado, N.° de reembolso, área o rendición..."
       width="100%"
       [value]="filters.texto"
       (valueChange)="onTextoChange($event)">

@@ -71,6 +71,11 @@ export interface ConsolidadoListItemDto {
    */
   razonSocialId: number | null;
   razonSocial: string | null;
+  /**
+   * Área del consolidado: la de su consolidador, la misma que da la sigla del `codigo` y la que
+   * imprime la planilla grupal. Null si no se pudo resolver.
+   */
+  area: string | null;
 
   /** "Agosto 2026", o un rango si el consolidado cruza meses. */
   periodo: string;

@@ -1,8 +1,9 @@
 <div class="flex flex-col gap-5 max-w-[760px]">
 
   <!-- Firmas registradas. El badge mira si hay ALGUNA; que la que hay no sirva acá es otra cosa y
-       se dice aparte, porque si no el badge y la imagen de abajo se contradicen. -->
-  <div class="rounded-lg border p-4 flex flex-col gap-3" style="border-color:var(--color-abril-border)">
+       se dice aparte, porque si no el badge y la imagen de abajo se contradicen. En `compacto` no
+       va: ahí la que ya tiene es justamente la que no sirve. -->
+  <div *ngIf="!compacto" class="rounded-lg border p-4 flex flex-col gap-3" style="border-color:var(--color-abril-border)">
     <div class="flex items-center gap-2">
       <span class="inline-block rounded-lg px-2 py-0.5 text-xs font-medium whitespace-nowrap"
         [ngClass]="{
@@ -43,7 +44,7 @@
       (valueChange)="onModoChange($event)">
     </app-section-tabs>
 
-    <label class="text-sm font-medium" style="color:var(--color-abril-standard)">
+    <label *ngIf="!compacto" class="text-sm font-medium" style="color:var(--color-abril-standard)">
       {{ firmaDe(modo)
           ? (modo === 'IMAGEN'
               ? 'Subir otra imagen (reemplaza la actual)'
@@ -54,10 +55,11 @@
     <!-- MODO: subir imagen -->
     <ng-container *ngIf="modo === 'IMAGEN'">
       <div class="max-w-[600px]">
+        <!-- «Sin fondo» porque una foto con fondo blanco se estampa como un recuadro opaco. -->
         <app-file-selector
           *ngIf="!imagenElegida"
           accept=".png,.jpg,.jpeg,.webp"
-          hint="PNG, JPG o WEBP · máximo 12 MB"
+          hint="PNG, JPG o WEBP · máximo 12 MB · mejor un PNG sin fondo"
           color="var(--color-abril-standard)"
           background="var(--color-abril-standard-light)"
           (fileSelected)="onImagenSeleccionada($event)" />
@@ -84,7 +86,7 @@
       </div>
     </ng-container>
 
-    <div class="flex items-center gap-3 flex-wrap">
+    <div class="flex items-center gap-3 flex-wrap" [class.justify-center]="compacto">
       <button type="button" (click)="limpiar()"
         class="px-4 py-2 rounded-lg border text-sm font-medium text-gray-600 cursor-pointer hover:bg-gray-50"
         style="border-color:var(--color-abril-border)">
@@ -95,10 +97,8 @@
         style="background:var(--color-abril-standard)">
         Guardar
       </button>
-      <span class="text-xs text-gray-400">
-        {{ modo === 'IMAGEN'
-            ? 'Se ve mejor un PNG con fondo transparente: una foto con fondo blanco se estampa como un recuadro.'
-            : 'Dibuja con el mouse manteniendo presionado el botón izquierdo.' }}
+      <span *ngIf="!compacto && modo === 'DIBUJO'" class="text-xs text-gray-400">
+        Dibuja con el mouse manteniendo presionado el botón izquierdo.
       </span>
     </div>
   </div>

@@ -55,6 +55,13 @@ export class FirmaPersonal implements OnInit {
    */
   @Input() tipos: FirmaTipoCodigo[] | null = ['DIBUJO'];
 
+  /**
+   * Solo el formulario, sin la tarjeta de estado ni las firmas ya registradas. Lo usa el modal que
+   * salta al firmar sin la firma que se pide: la que ya tiene (si tiene) es la que no sirve, y
+   * mostrarla solo confunde.
+   */
+  @Input() compacto = false;
+
   /** Emite la firma recién guardada (la usa el modal para continuar con la acción pendiente). */
   @Output() guardada = new EventEmitter<FirmaPersonalDto>();
 
@@ -169,9 +176,9 @@ export class FirmaPersonal implements OnInit {
   }
 
   /**
-   * Tiene firma, pero ninguna de las que esta pantalla pide. Es exactamente el caso que hace saltar
-   * el modal al aprobar un consolidado: el badge dice REGISTRADA —y es verdad— pero igual hay que
-   * registrar la otra, así que el motivo se dice en vez de dejarlo en contradicción aparente.
+   * Tiene firma, pero ninguna de las que esta pantalla pide (en Mi Perfil, cuando Configuración →
+   * Firmas deja solo la otra): el badge dice REGISTRADA —y es verdad— pero igual hay que registrar
+   * la otra, así que el motivo se dice en vez de dejarlo en contradicción aparente.
    */
   get faltaLaQueSePide(): boolean {
     const ofrecidos = this.tiposOfrecidos;

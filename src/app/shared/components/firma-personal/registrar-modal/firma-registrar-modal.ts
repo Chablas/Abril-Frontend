@@ -10,9 +10,12 @@ import { FirmaPersonalDto, FirmaTipoCodigo } from '../../../../core/firma/firma-
  * todavía no tiene una firma del tipo que esa pantalla pide.
  *
  * Existe para no cortar la tarea: sin esto, el usuario que aprieta "Firmar" tendría que salir de
- * la pantalla, ir a Configuración, registrar la firma y volver a buscar lo que estaba firmando. Lo
+ * la pantalla, ir a Mi Perfil, registrar la firma y volver a buscar lo que estaba firmando. Lo
  * dispara el 409 que devuelve el backend cuando no hay firma que sirva, y al guardarla la
  * pantalla anfitriona reintenta la acción sola.
+ *
+ * Es solo el formulario (`compacto`): sin explicaciones y sin la firma que ya tenga de otro tipo,
+ * que acá no sirve.
  */
 @Component({
   selector: 'app-firma-registrar-modal',
@@ -26,10 +29,6 @@ export class FirmaRegistrarModal {
    * la pantalla que abre el modal — en Consolidados, sus dos checkboxes.
    */
   @Input() tipos: FirmaTipoCodigo[] | null = null;
-
-  /** Qué se va a firmar con ella. Aparece bajo el badge de estado. */
-  @Input() descripcion =
-    'Se estampará en la planilla de rendición y en el resto de documentos que firmes';
 
   /** Emite la firma recién guardada: la pantalla la usa para reintentar lo que estaba firmando. */
   @Output() guardada = new EventEmitter<FirmaPersonalDto>();
