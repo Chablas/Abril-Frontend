@@ -19,22 +19,17 @@
   margin-left: 2px;
 }
 
-/* .abril-table-wrap global solo scrollea en vertical. Con 13 columnas y table-layout:fixed,
-   cualquier ancho por debajo de la suma del colgroup reparte el sobrante hacia abajo y el
-   texto termina encimándose, así que acá el ancho es un piso y el sobrante se scrollea. */
+/* Mismo layout que la tabla de Solicitud de Salidas: anchos automáticos y el texto largo baja
+   de línea dentro de su celda. Antes era table-layout:fixed con 12 anchos fijos que sumaban
+   1250px y un min-width de 1180px: con la tabla por debajo de ~1450px (una pantalla de 1920px
+   con el zoom de Windows al 125 %) la columna Trabajador, la única en auto, se quedaba sin
+   espacio y su texto se encimaba sobre las de al lado. Si las 13 columnas no entran a lo
+   ancho, el sobrante se scrollea. */
 .abril-table-wrap {
   overflow-x: auto;
 }
 
-.abril-table {
-  table-layout: fixed;
-  min-width: 1180px;
-}
-
 .abril-table td {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   vertical-align: middle;
 }
 
@@ -51,23 +46,13 @@
   background: #f9fafb;
 }
 
+/* Piso de ancho para el nombre: con anchos automáticos, sin esto la columna se angosta hasta
+   dejar una palabra por línea. */
 .worker-cell {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
-}
-
-/* El nombre puede ocupar dos líneas, pero se queda dentro de su celda: con overflow visible
-   se salía por encima del DNI y de la columna de al lado. */
-.col-worker {
-  white-space: normal !important;
-  text-overflow: unset !important;
-}
-
-.col-actions {
-  white-space: normal !important;
-  overflow: visible !important;
-  text-overflow: unset !important;
+  min-width: 180px;
 }
 
 .actions-group {

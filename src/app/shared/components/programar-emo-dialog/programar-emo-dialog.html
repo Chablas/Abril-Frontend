@@ -182,7 +182,8 @@
     <ng-template #listaCorreos let-dest>
       <ng-container *ngFor="let d of dest.para; let i = index; let last = last"
         ><span *ngIf="i > 0">{{ last && !dest.clinicaPendiente ? ' y ' : ', ' }}</span
-        ><span class="aviso__email" [title]="etiquetaDestinatario(d)">{{ d.email }}</span></ng-container
+        ><span class="aviso__email" [title]="etiquetaDestinatario(d)">{{ d.email }}</span
+        ><span class="aviso__rol" *ngIf="esDelPostulante(d)"> (postulante)</span></ng-container
       ><ng-container *ngIf="dest.clinicaPendiente"
         ><span *ngIf="dest.para.length"> y a </span
         ><span class="aviso__pendiente">los correos de contacto de la clínica que elijas</span></ng-container
@@ -191,12 +192,16 @@
         Con copia a
         <ng-container *ngFor="let c of dest.copias; let i = index; let last = last"
           ><span *ngIf="i > 0">{{ last ? ' y ' : ', ' }}</span
-          ><span class="aviso__email" [title]="etiquetaDestinatario(c)">{{ c.email }}</span></ng-container
+          ><span class="aviso__email" [title]="etiquetaDestinatario(c)">{{ c.email }}</span
+          ><span class="aviso__rol" *ngIf="esDelPostulante(c)"> (postulante)</span></ng-container
         >.
       </ng-container>
       <span class="aviso__alerta" *ngIf="dest.clinicaSinCorreos">
         La clínica elegida está activa como destinataria pero no tiene ningún correo de contacto
         cargado, así que a ella no le llegará.
+      </span>
+      <span class="aviso__alerta" *ngIf="dest.postulanteSinCorreo">
+        El postulante no tiene correo personal registrado: no le llegará.
       </span>
     </ng-template>
   </div>

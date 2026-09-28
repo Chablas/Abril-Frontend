@@ -221,16 +221,35 @@ export class ProgramarEmoDialogComponent implements OnInit {
   }
 
   private vacio(): ProgramacionDestinatariosDto {
-    return { para: [], copias: [], clinicaPendiente: false, clinicaSinCorreos: false };
+    return {
+      para: [],
+      copias: [],
+      clinicaPendiente: false,
+      clinicaSinCorreos: false,
+      postulanteSinCorreo: false,
+    };
   }
 
   private normalizar(d?: ProgramacionDestinatariosDto): ProgramacionDestinatariosDto {
+    // El correo del postulante va primero en el aviso.
+    const para = [...(d?.para ?? [])].sort(
+      (a, b) => Number(this.esDelPostulante(b)) - Number(this.esDelPostulante(a)),
+    );
     return {
-      para: d?.para ?? [],
+      para,
       copias: d?.copias ?? [],
       clinicaPendiente: d?.clinicaPendiente ?? false,
       clinicaSinCorreos: d?.clinicaSinCorreos ?? false,
+      postulanteSinCorreo: d?.postulanteSinCorreo ?? false,
     };
+  }
+
+  /**
+   * El correo es el del propio postulante: el destinatario TRABAJADOR de una ficha de pre-ingreso,
+   * que el backend resuelve a su correo personal porque todavía no tiene corporativo.
+   */
+  esDelPostulante(d: ProgramacionDestinatarioDto): boolean {
+    return d.origen === 'TRABAJADOR' && !!this.worker?.esFinalistaAprobado;
   }
 
   /**
