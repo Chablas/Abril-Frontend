@@ -86,6 +86,9 @@ export const Roles = {
   COORDINADOR_PROYECTOS:            '91', // COORDINADOR DE PROYECTOS
   GERENTE_INMOBILIARIO:             '92', // GERENTE INMOBILIARIO
   JEFE_PROYECTOS:                   '93', // JEFE DE PROYECTOS
+  // Propietario que entra a la app móvil Convivir Abril (no a la intranet). No confundir con
+  // USUARIO_VECINOS (62). Id fijado por 20260929_ConvivirRolVecino.sql.
+  VECINO:                           '97', // VECINO
 } as const;
 
 /** Unión de los valores literales de rol (para tipar parámetros que esperen un rol). */
