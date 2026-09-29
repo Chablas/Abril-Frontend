@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { AbrilPageHeaderComponent, AbrilPageTab } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { ATS_HEADER_TABS } from '../../shared/ats-header-tabs';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { SignaturePad } from '../../../../../../shared/components/signature-pad/signature-pad';
 import { FabButton } from '../../../../../../shared/components/fab-button/fab-button';
@@ -15,8 +16,9 @@ import { Paginator } from '../../../../../../shared/components/paginator/paginat
 import { AtsService } from '../../services/ats.service';
 import { AtsResponseDto, AtsFiltroDto, AtsProyectoDto } from '../../dtos/ats.dtos';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { PetarService } from '../../../petar/services/petar.service';
 
-type RolVisto = 'autoriza' | 'ssoma';
+type RolVisto = 'autoriza' | 'ssoma' | 'petar-supervisor' | 'petar-ssoma';
 
 @Component({
   selector: 'app-ats-lista',
@@ -58,33 +60,58 @@ export class AtsLista implements OnInit {
     { id: 'Firmado', label: 'Firmado' },
   ];
 
-  // ── Firma de Autoriza / Visto Bueno SSOMA ──────────────────────────────
+  // ── Firma de Autoriza / Visto Bueno SSOMA (y, generalizado, Supervisor/SSOMA de PETAR) ──────
   atsFirmandoVisto: AtsResponseDto | null = null;
+  /** Presente solo cuando rolVisto es 'petar-supervisor'/'petar-ssoma' — a qué PETAR de la fila
+   *  corresponde (un ATS puede tener más de uno). */
+  petarFirmandoId: number | null = null;
   rolVisto: RolVisto | null = null;
   hayFirmaVisto = false;
   guardandoVisto = false;
 
+  /** Filas con el detalle IPERC desplegado — "ver inline" antes de firmar, sin salir de la lista. */
+  filasExpandidas = new Set<number>();
+  toggleDetalle(atsId: number): void {
+    this.filasExpandidas.has(atsId) ? this.filasExpandidas.delete(atsId) : this.filasExpandidas.add(atsId);
+    this.cdr.markForCheck();
+  }
+  filaExpandida(atsId: number): boolean {
+    return this.filasExpandidas.has(atsId);
+  }
+
+  /** La firma que este Residente/Ing. Producción/SSOMA ya capturó para SU PROPIA autorización
+   *  (misma pestaña "Autorizaciones", mismo mecanismo que usa el trabajador para su ATS) — se
+   *  reutiliza acá en vez de obligarlo a redibujar cada vez que autoriza/da visto bueno a otro. */
+  firmaAutorizadaDataUrl: string | null = null;
+  usandoFirmaAutorizada = false;
+
   @ViewChild(SignaturePad) firmaPad?: SignaturePad;
 
-  readonly headerTabs: AbrilPageTab[] = [
-    { label: 'Listado ATS', icono: 'ti-list', route: '/ssoma/gestion/ats', exact: true },
-    { label: 'Plantillas', icono: 'ti-clipboard-list', route: '/ssoma/gestion/ats/plantillas', exact: true },
-    { label: 'Pasos por puesto', icono: 'ti-users', route: '/ssoma/gestion/ats/plantillas/pasos', exact: true },
-    { label: 'Autorizaciones', icono: 'ti-file-signature', route: '/ssoma/gestion/ats/plantillas/autorizaciones', exact: true },
-    { label: 'Riesgos', icono: 'ti-alert-triangle', route: '/ssoma/gestion/ats/plantillas/riesgos', exact: true },
-  ];
+  readonly headerTabs = ATS_HEADER_TABS;
 
   constructor(
     private svc: AtsService,
+    private petarSvc: PetarService,
     private errorService: ErrorService,
     private router: Router,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
+    // Defaults: hoy + "solo pendientes de mi firma" — así el Residente/Producción/SSOMA abre la
+    // lista y ve directo lo que le toca revisar hoy, no el histórico completo de la empresa.
+    const hoy = new Date().toISOString().slice(0, 10);
+    this.filtroFechaDesde = hoy;
+    this.filtroFechaHasta = hoy;
+    this.soloPendientes = true;
+
     this.svc.getInit().subscribe({
       next: (init) => {
         this.proyectos = [...init.proyectos].sort((a, b) => a.nombre.localeCompare(b.nombre));
+        if (init.proyectoActualId) {
+          this.filtroProyectoId = init.proyectoActualId;
+          this.cargar();
+        }
         this.cdr.markForCheck();
       },
       error: () => {},
@@ -149,6 +176,12 @@ export class AtsLista implements OnInit {
     this.router.navigate(['/ssoma/gestion/ats/nuevo']);
   }
 
+  /** Un ATS en Borrador se guardó hasta el paso 3 (Valoración) pero nunca llegó a Firmar — antes
+   *  no había forma de retomarlo, quedaba huérfano en la lista para siempre. */
+  continuarAts(a: AtsResponseDto): void {
+    this.router.navigate(['/ssoma/gestion/ats/nuevo'], { queryParams: { continuar: a.id } });
+  }
+
   generarPetar(a: AtsResponseDto): void {
     this.router.navigate(['/ssoma/gestion/petar/nuevo'], { queryParams: { atsId: a.id } });
   }
@@ -184,7 +217,9 @@ export class AtsLista implements OnInit {
   }
 
   estadoClass(estado: string): string {
-    return estado === 'Firmado' ? 'badge-firmado' : 'badge-borrador';
+    if (estado === 'Firmado') return 'badge-firmado';
+    if (estado === 'Cerrado') return 'badge-cerrado';
+    return 'badge-borrador';
   }
 
   /** Lo que Samuel pidió: ver de un vistazo qué ATS ya firmados todavía no tienen las dos
@@ -201,16 +236,35 @@ export class AtsLista implements OnInit {
 
   // ── Firma de Autoriza / Visto Bueno SSOMA ──────────────────────────────
 
-  abrirFirmaVisto(ats: AtsResponseDto, rol: RolVisto): void {
+  abrirFirmaVisto(ats: AtsResponseDto, rol: RolVisto, petarId: number | null = null): void {
     this.atsFirmandoVisto = ats;
+    this.petarFirmandoId = petarId;
     this.rolVisto = rol;
     this.hayFirmaVisto = false;
+    this.usandoFirmaAutorizada = false;
+    this.firmaAutorizadaDataUrl = null;
     this.cdr.markForCheck();
+
+    this.svc.getMiFirmaDigitalAutorizacionImagenBlob().subscribe({
+      next: (blob) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          this.firmaAutorizadaDataUrl = typeof reader.result === 'string' ? reader.result : null;
+          this.cdr.markForCheck();
+        };
+        reader.readAsDataURL(blob);
+      },
+      // 404 = todavía no capturó su firma digital autorizada — sigue el flujo de dibujar a mano.
+      error: () => this.cdr.markForCheck(),
+    });
   }
 
   cerrarFirmaVisto(): void {
     this.atsFirmandoVisto = null;
+    this.petarFirmandoId = null;
     this.rolVisto = null;
+    this.firmaAutorizadaDataUrl = null;
+    this.usandoFirmaAutorizada = false;
     this.cdr.markForCheck();
   }
 
@@ -218,15 +272,33 @@ export class AtsLista implements OnInit {
     this.hayFirmaVisto = tieneTrazo;
   }
 
+  dibujarFirmaVistoNueva(): void {
+    this.usandoFirmaAutorizada = false;
+    this.firmaPad?.clear();
+    this.cdr.markForCheck();
+  }
+
+  usarFirmaAutorizada(): void {
+    if (!this.firmaAutorizadaDataUrl) return;
+    this.usandoFirmaAutorizada = true;
+    this.cdr.markForCheck();
+  }
+
   get vistoTitulo(): string {
-    return this.rolVisto === 'autoriza' ? 'Firmar como Autoriza (Residente / Ing. Producción)' : 'Visto Bueno SSOMA';
+    switch (this.rolVisto) {
+      case 'autoriza': return 'Firmar como Autoriza (Residente / Ing. Producción)';
+      case 'ssoma': return 'Visto Bueno SSOMA (ATS)';
+      case 'petar-supervisor': return 'Firmar PETAR como Supervisor/Responsable';
+      case 'petar-ssoma': return 'Visto Bueno SSOMA (PETAR)';
+      default: return '';
+    }
   }
 
   guardarFirmaVisto(): void {
     const ats = this.atsFirmandoVisto;
-    if (!ats || !this.rolVisto || !this.firmaPad || this.guardandoVisto) return;
+    if (!ats || !this.rolVisto || this.guardandoVisto) return;
 
-    const firma = this.firmaPad.toDataUrl();
+    const firma = this.usandoFirmaAutorizada ? this.firmaAutorizadaDataUrl : this.firmaPad?.toDataUrl();
     if (!firma) {
       Swal.fire({ icon: 'error', title: 'Falta la firma', text: 'Dibuja tu firma antes de continuar.' });
       return;
@@ -235,9 +307,13 @@ export class AtsLista implements OnInit {
     this.guardandoVisto = true;
     this.cdr.markForCheck();
 
-    const req$ = this.rolVisto === 'autoriza'
-      ? this.svc.firmarAutorizacion(ats.id, { firmaBase64: firma })
-      : this.svc.firmarVistoSsoma(ats.id, { firmaBase64: firma });
+    let req$;
+    switch (this.rolVisto) {
+      case 'autoriza': req$ = this.svc.firmarAutorizacion(ats.id, { firmaBase64: firma }); break;
+      case 'ssoma': req$ = this.svc.firmarVistoSsoma(ats.id, { firmaBase64: firma }); break;
+      case 'petar-supervisor': req$ = this.petarSvc.firmarSupervisor(this.petarFirmandoId!, { firmaBase64: firma }); break;
+      case 'petar-ssoma': req$ = this.petarSvc.firmarVistoSsoma(this.petarFirmandoId!, { firmaBase64: firma }); break;
+    }
 
     req$.subscribe({
       next: () => {
@@ -250,6 +326,26 @@ export class AtsLista implements OnInit {
         this.errorService.handleError(err);
         this.cdr.markForCheck();
       },
+    });
+  }
+
+  /** El checklist (paso 1) del PETAR ya se guardó cuando se generó — acá solo falta la firma
+   *  del ejecutante, así que retoma directo en ese paso (ver AtsNuevo.continuarAts, mismo patrón). */
+  continuarPetar(petarId: number): void {
+    this.router.navigate(['/ssoma/gestion/petar/nuevo'], { queryParams: { petarId } });
+  }
+
+  descargarPdfPetar(petarId: number): void {
+    this.petarSvc.getPdfBlob(petarId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `PETAR-${petarId}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
   }
 }

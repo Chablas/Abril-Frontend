@@ -2,7 +2,7 @@ import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { AtsService } from '../../services/ats.service';
 import {
@@ -13,6 +13,7 @@ import {
   AtsRiesgoConControlesDto,
   AtsPlantillaActividadDto,
   NivelRiesgo,
+  TipoControl,
 } from '../../dtos/ats.dtos';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { ProjectTorreDTO, NivelTorreOpcion, nivelesDeTorre } from '../../../../../../core/dtos/project/projectTorre.model';
@@ -58,7 +59,7 @@ export class AtsNuevo implements OnInit {
    *  kg", "Mantener la carga pegada al cuerpo"...) — configurados por el Coordinador SSOMA en
    *  Plantillas de ATS → pestaña "Controles", NUNCA inventados genéricos acá. Se cargan una
    *  sola vez al abrir el formulario e indexan por riesgoId para acceso O(1) en la matriz. */
-  private controlesPorRiesgo = new Map<number, string[]>();
+  private controlesPorRiesgo = new Map<number, { texto: string; tipo: TipoControl }[]>();
   paso = 1;
 
   // Input de "+ agregar paso personalizado", uno por categoría
@@ -148,7 +149,6 @@ export class AtsNuevo implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
-    private http: HttpClient,
     private projectService: ProjectService,
   ) {}
 
@@ -157,12 +157,18 @@ export class AtsNuevo implements OnInit {
    *  mismo prellenado; solo cambia el aviso que ve el trabajador. */
   atsAnteriorId: number | null = null;
   modoOrigen: 'corregir' | 'duplicar' | null = null;
+  /** ?continuar=id — un ATS en Borrador (guardado hasta el paso 3, nunca llegó a Firmar) que se
+   *  reabre para seguir llenándolo, a diferencia de corregir/duplicar esto EDITA el mismo
+   *  registro (this.atsId = id), no crea uno nuevo. */
+  private borradorId: number | null = null;
 
   ngOnInit(): void {
     const corregir = this.route.snapshot.queryParamMap.get('corregir');
     const duplicar = this.route.snapshot.queryParamMap.get('duplicar');
+    const continuar = this.route.snapshot.queryParamMap.get('continuar');
     this.atsAnteriorId = corregir ? Number(corregir) : duplicar ? Number(duplicar) : null;
     this.modoOrigen = corregir ? 'corregir' : duplicar ? 'duplicar' : null;
+    this.borradorId = continuar ? Number(continuar) : null;
 
     this.svc.getMiAutorizacion().subscribe({
       next: ({ tieneAutorizacion }) => {
@@ -194,6 +200,8 @@ export class AtsNuevo implements OnInit {
 
         if (this.atsAnteriorId) {
           this.cargarParaCorregir(this.atsAnteriorId);
+        } else if (this.borradorId) {
+          this.cargarParaCorregir(this.borradorId, true);
         } else if (data.plantillaSugeridaId) {
           this.onPlantillaChange(data.plantillaSugeridaId);
         }
@@ -210,7 +218,10 @@ export class AtsNuevo implements OnInit {
     this.svc.getRiesgosConControles().subscribe({
       next: (lista: AtsRiesgoConControlesDto[]) => {
         this.controlesPorRiesgo = new Map(
-          lista.map((r) => [r.riesgoId, r.controles.slice().sort((a, b) => a.orden - b.orden).map((c) => c.texto)]),
+          lista.map((r) => [
+            r.riesgoId,
+            r.controles.slice().sort((a, b) => a.orden - b.orden).map((c) => ({ texto: c.texto, tipo: c.tipo })),
+          ]),
         );
         this.cdr.detectChanges();
       },
@@ -220,8 +231,25 @@ export class AtsNuevo implements OnInit {
 
   /** Controles reales configurados para este riesgo (vacío si el Coordinador SSOMA todavía no
    *  cargó ninguno para él en Plantillas de ATS → Controles). */
-  controlesSugeridosDe(riesgoId: number): string[] {
+  controlesSugeridosDe(riesgoId: number): { texto: string; tipo: TipoControl }[] {
     return this.controlesPorRiesgo.get(riesgoId) ?? [];
+  }
+
+  /** Solo los controles sugeridos que este riesgo TODAVÍA no tiene en su texto — al usar uno
+   *  desaparece de la barra de sugerencias en vez de quedar ahí invitando a duplicarlo. */
+  controlesSugeridosDisponibles(r: RiesgoSeleccionado): { texto: string; tipo: TipoControl }[] {
+    return this.controlesSugeridosDe(r.riesgoId).filter((c) => !r.controles.includes(c.texto));
+  }
+
+  /** Advierte (no bloquea — la norma dice que el evaluador es quien decide el nivel residual)
+   *  cuando el riesgo pasa de Alto a Bajo. Si hay controles catalogados de tipo Ingeniería/
+   *  Eliminación/Sustitución para ese riesgo y NINGUNO está en el texto, el aviso es más
+   *  específico; si no hay catálogo para comparar, igual se avisa con el criterio general. */
+  saltoAltoABajoSinControlFuerte(r: RiesgoSeleccionado): boolean {
+    if (r.riesgoBase !== 'A' || r.riesgoResidual !== 'B') return false;
+    const sugeridosFuertes = this.controlesSugeridosDe(r.riesgoId).filter((c) => c.tipo !== 'Administrativo' && c.tipo !== 'Epp');
+    if (sugeridosFuertes.length === 0) return true;
+    return !sugeridosFuertes.some((c) => r.controles.includes(c.texto));
   }
 
   // ── "No aplica" por categoría de pasos genéricos ────────────────────────
@@ -383,9 +411,10 @@ export class AtsNuevo implements OnInit {
    *  campo resultó distinta a la evaluada. Guarda como un ATS nuevo enlazado (atsAnteriorId),
    *  nunca modifica el original: un ATS firmado es inmutable (Art. 76 del Reglamento de la Ley
    *  29783). El trabajador solo ajusta lo que cambió antes de firmar de nuevo. */
-  private cargarParaCorregir(atsId: number): void {
+  private cargarParaCorregir(atsId: number, comoBorrador = false): void {
     this.svc.getPorId(atsId).subscribe({
       next: (original) => {
+        if (comoBorrador) this.atsId = atsId;
         this.proyectoId = original.proyectoId;
         this.actividad = original.actividad;
         this.lugar = original.lugar ?? '';
@@ -583,6 +612,23 @@ export class AtsNuevo implements OnInit {
   peligroSugeridoPorPlantilla(peligroId: number): boolean {
     const plantilla = this.init?.plantillas.find((p) => p.id === this.plantillaId);
     return plantilla?.peligroIds.includes(peligroId) ?? false;
+  }
+
+  /** Si eligieron plantilla, el paso 2 arranca mostrando SOLO sus peligros (evita la lista
+   *  completa de 40+ peligros de todas las especialidades mezclados) — "Ver todo el catálogo"
+   *  destapa el resto para cuando el trabajador identifica algo fuera de lo típico de su tarea. */
+  mostrarTodosLosPeligros = false;
+
+  get peligrosVisiblesEnPaso2(): AtsPeligroDto[] {
+    const todos = this.init?.peligros ?? [];
+    if (!this.plantillaId || this.mostrarTodosLosPeligros) return todos;
+    const plantilla = this.init?.plantillas.find((p) => p.id === this.plantillaId);
+    if (!plantilla) return todos;
+    const idsPlantilla = new Set(plantilla.peligroIds);
+    // Un peligro ya marcado (aunque no sea de la plantilla) se sigue mostrando — si no, al
+    // tildar "Ver todo el catálogo" y volver a ocultarlo desaparecería sin desmarcarse solo.
+    const idsSeleccionados = new Set(this.riesgosSeleccionados.map((r) => r.peligroId));
+    return todos.filter((p) => idsPlantilla.has(p.id) || idsSeleccionados.has(p.id));
   }
 
   // ── Peligros / Riesgos (matriz IPERC) ────────────────────────────────
@@ -795,25 +841,26 @@ export class AtsNuevo implements OnInit {
     this.hayFirma = tieneTrazo;
   }
 
-  /** Trae una firma ya registrada para ofrecerle reusarla en vez de dibujarla de nuevo — primero
-   *  la firma digital que el Coordinador SSOMA ya le capturó para la Autorización de uso de firma
+  /** Trae (en segundo plano, sin aplicarla todavía) una firma ya registrada — primero la firma
+   *  digital que el Coordinador SSOMA ya le capturó para la Autorización de uso de firma
    *  (SSO-FO-151, la misma que exige tener antes de poder crear cualquier ATS), y si no existe,
-   *  cae a la firma general de Contabilidad/Gestión Administrativa ("Tu firma"). Falla en
-   *  silencio: sin ninguna, el flujo sigue siendo el de siempre (dibujar en el lienzo). */
+   *  cae a la firma general de Contabilidad/Gestión Administrativa ("Tu firma"). NO se aplica
+   *  sola: el lienzo arranca en blanco y el trabajador decide con el botón "Usar firma digital
+   *  autorizada y validada" — nada de firmar en automático sin que la persona lo pida. */
   private cargarFirmaGuardada(): void {
-    this.svc.getMiFirmaDigitalAutorizacion().subscribe({
-      next: ({ firmaDigitalUrl }) => {
-        if (firmaDigitalUrl) {
-          this.convertirUrlADataUrl(firmaDigitalUrl).then((dataUrl) => {
-            if (!dataUrl) { this.cargarFirmaPersonal(); return; }
-            this.firmaGuardada = { tipo: 'DIBUJO', imageDataUrl: dataUrl };
-            this.usandoFirmaGuardada = true;
-            this.cdr.detectChanges();
-          });
-        } else {
-          this.cargarFirmaPersonal();
-        }
+    this.svc.getMiFirmaDigitalAutorizacionImagenBlob().subscribe({
+      next: (blob) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = typeof reader.result === 'string' ? reader.result : null;
+          if (!dataUrl) { this.cargarFirmaPersonal(); return; }
+          this.firmaGuardada = { tipo: 'DIBUJO', imageDataUrl: dataUrl };
+          this.cdr.detectChanges();
+        };
+        reader.onerror = () => this.cargarFirmaPersonal();
+        reader.readAsDataURL(blob);
       },
+      // 404 = todavía no capturó firma digital autorizada — cae a la firma personal general.
       error: () => this.cargarFirmaPersonal(),
     });
   }
@@ -822,7 +869,6 @@ export class AtsNuevo implements OnInit {
     this.firmaPersonalSvc.get().subscribe({
       next: (res) => {
         this.firmaGuardada = res.firmas.find((f) => f.tipo === 'DIBUJO') ?? res.firmas[0] ?? null;
-        this.usandoFirmaGuardada = !!this.firmaGuardada;
         this.cdr.detectChanges();
       },
       error: () => {
@@ -832,19 +878,6 @@ export class AtsNuevo implements OnInit {
     });
   }
 
-  private convertirUrlADataUrl(url: string): Promise<string | null> {
-    return new Promise((resolve) => {
-      this.http.get(url, { responseType: 'blob' }).subscribe({
-        next: (blob) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
-          reader.onerror = () => resolve(null);
-          reader.readAsDataURL(blob);
-        },
-        error: () => resolve(null),
-      });
-    });
-  }
 
   usarFirmaGuardada(): void {
     if (!this.firmaGuardada) return;
@@ -854,6 +887,14 @@ export class AtsNuevo implements OnInit {
   dibujarFirmaNueva(): void {
     this.usandoFirmaGuardada = false;
     this.firmaPad?.clear();
+  }
+
+  /** true si alguno de los riesgos marcados exige PETAR (catálogo, Plantillas → Riesgos) — el
+   *  PETAR solo se puede generar sobre un ATS ya Firmado, así que esto NO bloquea la firma, solo
+   *  decide si redirigimos a "Generar PETAR" apenas se firma en vez de cerrar el wizard. */
+  private get tieneRiesgoQueRequierePetar(): boolean {
+    const riesgosDelCatalogo = (this.init?.peligros ?? []).flatMap((p) => p.riesgos);
+    return this.riesgosSeleccionados.some((sel) => riesgosDelCatalogo.find((r) => r.id === sel.riesgoId)?.requierePetar);
   }
 
   get puedeFirmar(): boolean {
@@ -890,6 +931,17 @@ export class AtsNuevo implements OnInit {
       next: () => {
         this.firmando = false;
         this.loaderService.hide();
+
+        if (this.tieneRiesgoQueRequierePetar) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'ATS firmado — falta el PETAR',
+            text: 'Identificaste un riesgo que exige Permiso de Trabajo de Alto Riesgo. Ahora que el ATS ya está firmado, te llevamos a llenarlo.',
+            confirmButtonText: 'Generar PETAR ahora',
+          }).then(() => this.router.navigate(['/ssoma/gestion/petar/nuevo'], { queryParams: { atsId: this.atsId } }));
+          return;
+        }
+
         Swal.fire({
           icon: 'success',
           title: 'ATS firmado',

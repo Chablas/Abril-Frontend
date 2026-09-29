@@ -150,6 +150,16 @@
               <div class="pasos-categoria-row">
                 <div class="pasos-categoria">{{ cat.nombre }}</div>
                 <div class="pasos-categoria-acciones">
+                  @if (!categoriaNoAplica(cat.id) && subgruposDePasos(cat)[0].titulo === null) {
+                    <label class="marcar-todos-check">
+                      <input
+                        type="checkbox"
+                        [checked]="todosMarcadosEnCategoria(subgruposDePasos(cat)[0].pasos)"
+                        (change)="toggleTodosCategoria(subgruposDePasos(cat)[0].pasos)"
+                      />
+                      Marcar todos
+                    </label>
+                  }
                   <label class="marcar-todos-check">
                     <input
                       type="checkbox"
@@ -164,21 +174,19 @@
                 <p class="pasos-hint-nuevo">No aplica para esta tarea.</p>
               } @else {
                 @for (grupo of subgruposDePasos(cat); track grupo.titulo) {
-                  <div class="pasos-categoria-row">
-                    @if (grupo.titulo) {
+                  @if (grupo.titulo) {
+                    <div class="pasos-categoria-row">
                       <p class="pasos-subgrupo-titulo">{{ grupo.titulo }}</p>
-                    } @else {
-                      <span></span>
-                    }
-                    <label class="marcar-todos-check">
-                      <input
-                        type="checkbox"
-                        [checked]="todosMarcadosEnCategoria(grupo.pasos)"
-                        (change)="toggleTodosCategoria(grupo.pasos)"
-                      />
-                      Marcar todos
-                    </label>
-                  </div>
+                      <label class="marcar-todos-check">
+                        <input
+                          type="checkbox"
+                          [checked]="todosMarcadosEnCategoria(grupo.pasos)"
+                          (change)="toggleTodosCategoria(grupo.pasos)"
+                        />
+                        Marcar todos
+                      </label>
+                    </div>
+                  }
                   @for (p of grupo.pasos; track p.id) {
                     <label class="paso-check">
                       <input type="checkbox" [checked]="pasoAplica(p.id)" (change)="togglePaso(p.id)" />
@@ -325,7 +333,19 @@
       <div class="abril-section-title">Peligros, riesgos y controles (IPERC) *</div>
       <p class="iperc-hint">Marca los riesgos que identificaste en esta tarea. En el siguiente paso defines el nivel de riesgo y los controles de cada uno.</p>
 
-      @for (peligro of init.peligros; track peligro.id) {
+      @if (plantillaId && !mostrarTodosLosPeligros) {
+        <p class="iperc-hint">
+          Mostrando solo los peligros de tu plantilla.
+          <button type="button" class="btn-link-inline" (click)="mostrarTodosLosPeligros = true">Ver todo el catálogo</button>
+        </p>
+      } @else if (plantillaId) {
+        <p class="iperc-hint">
+          Mostrando todo el catálogo.
+          <button type="button" class="btn-link-inline" (click)="mostrarTodosLosPeligros = false">Volver a los de mi plantilla</button>
+        </p>
+      }
+
+      @for (peligro of peligrosVisiblesEnPaso2; track peligro.id) {
         <div class="peligro-card" [class.peligro-card--sugerido]="peligroSugeridoPorPlantilla(peligro.id)">
           <div class="peligro-nombre">
             {{ peligro.nombre }}
@@ -378,11 +398,11 @@
                   </select>
                 </td>
                 <td>
-                  @if (controlesSugeridosDe(r.riesgoId).length > 0) {
+                  @if (controlesSugeridosDisponibles(r).length > 0) {
                     <div class="controles-guia">
-                      @for (c of controlesSugeridosDe(r.riesgoId); track c) {
-                        <button type="button" class="chip-guia" [title]="c" (click)="agregarControlSugerido(r, c)">
-                          + {{ c }}
+                      @for (c of controlesSugeridosDisponibles(r); track c.texto) {
+                        <button type="button" class="chip-guia" [class]="'chip-guia--' + c.tipo.toLowerCase()" [title]="c.texto" (click)="agregarControlSugerido(r, c.texto)">
+                          <span class="chip-guia-tipo">{{ c.tipo }}</span> + {{ c.texto }}
                         </button>
                       }
                     </div>
@@ -392,10 +412,23 @@
                             [(ngModel)]="r.controles"></textarea>
                 </td>
                 <td>
-                  <select class="nivel-select" [class]="'nivel-' + r.riesgoResidual" [(ngModel)]="r.riesgoResidual">
+                  <select class="nivel-select" [class]="'nivel-' + r.riesgoResidual" [(ngModel)]="r.riesgoResidual" [disabled]="!r.controles.trim()">
                     <option value="">—</option>
                     @for (n of niveles; track n.valor) { <option [value]="n.valor">{{ n.label }}</option> }
                   </select>
+                  @if (!r.controles.trim()) {
+                    <p class="aviso-salto-riesgo aviso-salto-riesgo--neutro">Escribe los controles primero</p>
+                  } @else if (r.riesgoBase === 'A') {
+                    @if (saltoAltoABajoSinControlFuerte(r)) {
+                      <p class="aviso-salto-riesgo">
+                        <i class="ti ti-alert-triangle"></i> De Alto solo pasa a Bajo con un control de Ingeniería/Eliminación/Sustitución. Sin eso, debería quedar en Medio. Tú decides.
+                      </p>
+                    } @else if (r.riesgoResidual === 'B') {
+                      <p class="aviso-salto-riesgo aviso-salto-riesgo--ok">
+                        <i class="ti ti-check"></i> Tiene un control fuerte que respalda el Bajo.
+                      </p>
+                    }
+                  }
                 </td>
               </tr>
             }
@@ -444,8 +477,8 @@
             <div class="firma-acciones-row">
               <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
               @if (firmaGuardada) {
-                <button class="btn btn-outline btn-sm" (click)="usarFirmaGuardada()">
-                  <i class="ti ti-signature"></i> Usar mi firma guardada
+                <button class="btn btn-primary btn-sm" (click)="usarFirmaGuardada()">
+                  <i class="ti ti-signature"></i> Usar firma digital autorizada y validada
                 </button>
               }
             </div>

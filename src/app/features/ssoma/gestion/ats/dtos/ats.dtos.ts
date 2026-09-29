@@ -51,6 +51,11 @@ export interface AtsPetarResumenDto {
   id: number;
   tipoNombre?: string;
   estado: string;
+  tieneFirmaEjecutante: boolean;
+  supervisorFirmado: boolean;
+  ssomaFirmado: boolean;
+  puedeFirmarSupervisor: boolean;
+  puedeFirmarSsoma: boolean;
 }
 
 export interface AtsPeligroDto {
@@ -267,10 +272,23 @@ export interface AtsPlantillaActividadPeligrosRequestDto {
 
 // ── Controles sugeridos por riesgo ──────────────────────────────────────────
 
+export type TipoControl = 'Eliminacion' | 'Sustitucion' | 'Ingenieria' | 'Administrativo' | 'Epp';
+
+/** Jerarquía de controles (de más a menos efectivo) — usada en los selects de tipo de control
+ *  y para la advertencia de la matriz de riesgo (Alto→Bajo sin control de Ingeniería). */
+export const TIPOS_CONTROL: { value: TipoControl; label: string }[] = [
+  { value: 'Eliminacion', label: 'Eliminación' },
+  { value: 'Sustitucion', label: 'Sustitución' },
+  { value: 'Ingenieria', label: 'Ingeniería' },
+  { value: 'Administrativo', label: 'Administrativo' },
+  { value: 'Epp', label: 'EPP' },
+];
+
 export interface AtsRiesgoControlDto {
   id: number;
   texto: string;
   orden: number;
+  tipo: TipoControl;
 }
 
 export interface AtsRiesgoConControlesDto {
@@ -283,4 +301,5 @@ export interface AtsRiesgoConControlesDto {
 
 export interface AtsRiesgoControlGuardarRequestDto {
   texto: string;
+  tipo: TipoControl;
 }

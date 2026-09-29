@@ -5,6 +5,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { PetarService } from '../../services/petar.service';
+import { AtsService } from '../../../ats/services/ats.service';
 import { PetarInitDto, PetarIzajeGruaDto, PetarTipoDto, RespuestaChecklist } from '../../dtos/petar.dtos';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
@@ -45,11 +46,17 @@ export class PetarNuevo implements OnInit {
   hayFirma = false;
   firmando = false;
 
+  /** Misma firma autorizada que ya se captura una vez en ATS → Autorizaciones — se reutiliza
+   *  acá para no obligar a redibujar en cada PETAR. */
+  firmaAutorizadaDataUrl: string | null = null;
+  usandoFirmaAutorizada = false;
+
   @ViewChild(CameraCapture) camara?: CameraCapture;
   @ViewChild(SignaturePad) firmaPad?: SignaturePad;
 
   constructor(
     private svc: PetarService,
+    private atsSvc: AtsService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private route: ActivatedRoute,
@@ -58,6 +65,12 @@ export class PetarNuevo implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    const petarIdParam = this.route.snapshot.queryParamMap.get('petarId');
+    if (petarIdParam) {
+      this.continuarPetarExistente(Number(petarIdParam));
+      return;
+    }
+
     const atsIdParam = this.route.snapshot.queryParamMap.get('atsId');
     if (!atsIdParam) {
       Swal.fire({ icon: 'error', title: 'Falta el ATS de origen', text: 'El PETAR siempre se genera desde un ATS ya firmado.' })
@@ -71,6 +84,30 @@ export class PetarNuevo implements OnInit {
         this.init = data;
         this.lugar = data.atsLugar ?? '';
         this.loadingInit = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingInit = false;
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  /** ?petarId=id — el checklist (paso 1) ya se guardó cuando se generó el PETAR; acá solo falta
+   *  la firma del ejecutante (paso 2), así que se salta directo ahí en vez de reiniciar todo. */
+  private continuarPetarExistente(petarId: number): void {
+    this.svc.getPorId(petarId).subscribe({
+      next: (p) => {
+        this.petarId = p.id;
+        this.atsId = p.atsId;
+        // El template gatea todo detrás de "init" — acá no hace falta el catálogo de tipos
+        // (paso 1 ya quedó guardado), solo que no sea null para que el paso 2 se muestre.
+        this.init = { atsId: p.atsId, atsActividad: p.descripcionTrabajo, tipos: [] };
+        this.loadingInit = false;
+        this.paso = 2;
+        this.pedirUbicacion();
+        this.cargarFirmaAutorizada();
         this.cdr.detectChanges();
       },
       error: (err: HttpErrorResponse) => {
@@ -152,6 +189,7 @@ export class PetarNuevo implements OnInit {
       this.loaderService.hide();
       this.paso = 2;
       this.pedirUbicacion();
+      this.cargarFirmaAutorizada();
       this.cdr.detectChanges();
     };
     const alFallar = (err: HttpErrorResponse) => {
@@ -198,15 +236,41 @@ export class PetarNuevo implements OnInit {
     this.hayFirma = tieneTrazo;
   }
 
+  private cargarFirmaAutorizada(): void {
+    this.atsSvc.getMiFirmaDigitalAutorizacionImagenBlob().subscribe({
+      next: (blob) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          this.firmaAutorizadaDataUrl = typeof reader.result === 'string' ? reader.result : null;
+          this.cdr.detectChanges();
+        };
+        reader.readAsDataURL(blob);
+      },
+      // 404 = todavía no capturó su firma digital autorizada — sigue el flujo de dibujar a mano.
+      error: () => this.cdr.detectChanges(),
+    });
+  }
+
+  usarFirmaAutorizada(): void {
+    if (!this.firmaAutorizadaDataUrl) return;
+    this.usandoFirmaAutorizada = true;
+  }
+
+  dibujarFirmaNueva(): void {
+    this.usandoFirmaAutorizada = false;
+    this.firmaPad?.clear();
+  }
+
   get puedeFirmar(): boolean {
-    return this.camaraLista && this.hayFirma && !this.firmando;
+    const hayAlgunaFirma = this.usandoFirmaAutorizada ? !!this.firmaAutorizadaDataUrl : this.hayFirma;
+    return this.camaraLista && hayAlgunaFirma && !this.firmando;
   }
 
   firmar(): void {
-    if (!this.puedeFirmar || !this.petarId || !this.camara || !this.firmaPad) return;
+    if (!this.puedeFirmar || !this.petarId || !this.camara) return;
 
     const foto = this.camara.capturarFoto();
-    const firma = this.firmaPad.toDataUrl();
+    const firma = this.usandoFirmaAutorizada ? this.firmaAutorizadaDataUrl : this.firmaPad?.toDataUrl();
     if (!foto) {
       Swal.fire({ icon: 'error', title: 'No se pudo capturar la selfie', text: 'Intenta de nuevo.' });
       return;

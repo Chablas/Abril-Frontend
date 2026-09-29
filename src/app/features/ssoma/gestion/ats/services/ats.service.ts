@@ -153,6 +153,12 @@ export class AtsService {
     return this.http.get<{ firmaDigitalUrl: string | null }>(`${this.base}/mi-firma-digital-autorizacion`, { headers: authHeaders() });
   }
 
+  /** La imagen en sí (no la URL) — pasa por el backend porque el navegador no puede traer el
+   *  blob del storage directo (es privado). Usar esto en vez de hacer un http.get a la URL cruda. */
+  getMiFirmaDigitalAutorizacionImagenBlob(): Observable<Blob> {
+    return this.http.get(`${this.base}/mi-firma-digital-autorizacion/imagen`, { headers: authHeaders(), responseType: 'blob' });
+  }
+
   getTrabajadoresAutorizacion(): Observable<AtsAutorizacionTrabajadorDto[]> {
     return this.http.get<AtsAutorizacionTrabajadorDto[]>(`${this.base}/trabajadores-autorizacion`, { headers: authHeaders() });
   }
