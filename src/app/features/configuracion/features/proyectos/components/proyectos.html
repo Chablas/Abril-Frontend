@@ -3,7 +3,7 @@
   titulo="Proyectos"
   subtitulo="Gestión de proyectos registrados en el sistema."
   [tabs]="tabs"
-  [botonPrimario]="{ label: 'Nuevo Proyecto', icono: 'ti-plus' }"
+  [botonPrimario]="puedeEditar ? botonNuevo : undefined"
   (primaryClick)="showCreateModal = true">
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas y abre el
@@ -65,10 +65,13 @@
 
           <td class="text-center">
             <div class="flex items-center justify-center gap-[8px]">
-              <button (click)="openEditModal(item, $event)" abrilBulkAction="default">Editar</button>
-              <button (click)="openEmailsModal(item, $event)" abrilBulkAction="default"
-                      title="Residente / Emails SSOMA">Emails SSOMA</button>
-              <button (click)="deleteProject(item.projectId, $event)" abrilBulkAction="danger">Eliminar</button>
+              <ng-container *ngIf="puedeEditar; else soloVer">
+                <button (click)="openEditModal(item, $event)" abrilBulkAction="default">Editar</button>
+                <button (click)="deleteProject(item.projectId, $event)" abrilBulkAction="danger">Eliminar</button>
+              </ng-container>
+              <ng-template #soloVer>
+                <button (click)="openEditModal(item, $event)" abrilBulkAction="default">Ver</button>
+              </ng-template>
             </div>
           </td>
         </tr>
@@ -104,17 +107,10 @@
 <app-proyecto-edit
   *ngIf="showEditModal && selectedProject"
   [project]="selectedProject!"
+  [soloLectura]="!puedeEditar"
   (closeModal)="onModalClosed()"
   (saved)="onModalSaved()">
 </app-proyecto-edit>
-
-<app-proyecto-emails
-  [open]="showEmailsModal && selectedEmailsProject !== null"
-  [projectId]="selectedEmailsProject?.projectId ?? 0"
-  [projectDescription]="selectedEmailsProject?.projectDescription ?? ''"
-  (closed)="onModalClosed()"
-  (saved)="onModalSaved()">
-</app-proyecto-emails>
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">

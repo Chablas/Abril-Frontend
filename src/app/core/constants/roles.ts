@@ -68,6 +68,12 @@ export const Roles = {
   // COORDINADOR ERP: único rol que entra a "Correcciones S10", la bandeja donde atiende las
   // solicitudes de corrección del Consolidado del S10. Alcanza con tenerlo, como el resto.
   COORDINADOR_ERP:                  '84', // COORDINADOR ERP
+  // Los tres roles que administran el Cronograma de Hitos. Sus IDs los fija el SQL
+  // 20260928_ProyectosRolesYHistorialResidente.sql (el sequence les había dado IDs distintos en
+  // cada ambiente). Además crean y editan proyectos y asignan su residente: ver proyecto-roles.ts.
+  COORDINADOR_PROYECTOS:            '91', // COORDINADOR DE PROYECTOS
+  GERENTE_INMOBILIARIO:             '92', // GERENTE INMOBILIARIO
+  JEFE_PROYECTOS:                   '93', // JEFE DE PROYECTOS
 } as const;
 
 /** Unión de los valores literales de rol (para tipar parámetros que esperen un rol). */

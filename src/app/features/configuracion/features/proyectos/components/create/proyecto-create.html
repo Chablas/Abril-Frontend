@@ -117,6 +117,44 @@
 
     <ng-container *ngIf="!loadingLookups; else lookupsSkeleton">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[12px] gap-y-[6px]">
+        <!-- Residente: lo asignan solo ROLES_ASIGNAN_RESIDENTE (da permisos en el Cronograma de Hitos). -->
+        <div class="flex flex-col">
+          <app-search-select
+            label="Residente"
+            placeholder="Buscar por nombre o DNI..."
+            [options]="personalCasa"
+            valueField="id"
+            displayField="apellidoNombre"
+            [value]="form.residenteWorkersId"
+            [allowClear]="true"
+            [sortAlpha]="false"
+            [disabled]="!puedeAsignarResidente"
+            (valueChange)="form.residenteWorkersId = $event">
+          </app-search-select>
+          <p class="mt-[4px] text-[11px] leading-tight"
+            [ngClass]="residenteEmail ? 'text-gray-400' : 'text-amber-600'">
+            {{ residenteEmail ?? 'Sin residente: nadie recibe el aviso por ese rol.' }}
+          </p>
+        </div>
+
+        <div class="flex flex-col">
+          <app-search-select
+            label="Administrador de obra"
+            placeholder="Buscar por nombre o DNI..."
+            [options]="personalCasa"
+            valueField="id"
+            displayField="apellidoNombre"
+            [value]="form.workersCoordAdminId"
+            [allowClear]="true"
+            [sortAlpha]="false"
+            (valueChange)="form.workersCoordAdminId = $event">
+          </app-search-select>
+          <p class="mt-[4px] text-[11px] leading-tight"
+            [ngClass]="coordAdminEmail ? 'text-gray-400' : 'text-amber-600'">
+            {{ coordAdminEmail ?? 'Sin administrador de obra: nadie recibe el aviso por ese rol.' }}
+          </p>
+        </div>
+
         <app-search-select
           label="Responsable Arq. Comercial"
           placeholder="Buscar por nombre o DNI..."
@@ -141,24 +179,6 @@
           (valueChange)="onResponsableUdpChange($event)">
         </app-search-select>
 
-        <div class="flex flex-col">
-          <app-search-select
-            label="Administrador de obra"
-            placeholder="Buscar por nombre o DNI..."
-            [options]="coordAdmins"
-            valueField="id"
-            displayField="apellidoNombre"
-            [value]="form.workersCoordAdminId"
-            [allowClear]="true"
-            [sortAlpha]="false"
-            (valueChange)="form.workersCoordAdminId = $event">
-          </app-search-select>
-          <p class="mt-[4px] text-[11px] leading-tight"
-            [ngClass]="coordAdminEmail ? 'text-gray-400' : 'text-amber-600'">
-            {{ coordAdminEmail ?? 'Sin coordinador: nadie recibe el aviso por ese rol.' }}
-          </p>
-        </div>
-
         <label class="flex items-center gap-[8px] cursor-pointer mt-[9px] h-[36px]">
           <input type="checkbox" [(ngModel)]="form.tieneArquitecturaComercial" class="w-4 h-4 accent-abril-standard" />
           <span class="text-[13px] text-gray-700">Tiene Arquitectura Comercial</span>
@@ -172,6 +192,8 @@
         <div class="mt-[9px] h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
         <div class="mt-[9px] h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
         <div class="mt-[9px] h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
+        <div class="mt-[9px] h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
+        <div class="mt-[9px] h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
       </div>
     </ng-template>
 
@@ -179,6 +201,27 @@
       No se pudo cargar la lista de trabajadores.
       <button type="button" (click)="loadLookups()" class="underline cursor-pointer">Reintentar</button>
     </p>
+
+    <!-- =============== Correos de aviso =============== -->
+    <p class="text-[11px] font-semibold text-abril-standard uppercase tracking-widest">Correos de aviso</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-[12px] gap-y-[6px]">
+      <div class="abril-field">
+        <label class="abril-field-label">Responsable</label>
+        <input type="email" class="abril-field-input" [(ngModel)]="form.emailResponsable"
+          placeholder="Ej: nombre@abril.pe" />
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">RR.HH.</label>
+        <input type="email" class="abril-field-input" [(ngModel)]="form.emailRrhh"
+          placeholder="Ej: nombre@abril.pe" />
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Coordinador SSOMA</label>
+        <input type="email" class="abril-field-input" [(ngModel)]="form.emailCoordSsoma"
+          placeholder="Ej: nombre@abril.pe" />
+      </div>
+    </div>
 
     <!-- =============== Fechas =============== -->
     <p class="text-[11px] font-semibold text-abril-standard uppercase tracking-widest">Fechas</p>

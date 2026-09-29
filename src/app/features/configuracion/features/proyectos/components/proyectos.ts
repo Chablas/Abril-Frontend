@@ -6,12 +6,13 @@ import { PagedResponseDTO } from '../../../../../core/dtos/api/pagedResponse.mod
 import { ApiMessageDTO } from '../../../../../core/dtos/api/ApiMessage.model';
 import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
+import { AuthService } from '../../../../../core/services/auth.service';
+import { ROLES_EDITAN_PROYECTOS } from '../../../../../core/constants/proyecto-roles';
 import { ProyectoService } from '../services/proyecto.service';
 import { ProjectDto } from '../dtos/project.dto';
 import { ProjectFilterDto } from '../dtos/project-filter.dto';
 import { ProyectoCreate } from './create/proyecto-create';
 import { ProyectoEdit } from './edit/proyecto-edit';
-import { ProyectoEmails } from './emails/proyecto-emails';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { FilterTriggerButton } from '../../../../../shared/components/filter-trigger/filter-trigger';
 import { FilterModal } from '../../../../../shared/components/filter-modal/filter-modal';
@@ -30,7 +31,6 @@ import { CONFIGURACION_TABS } from '../../../shared/configuracion-tabs';
     CommonModule,
     ProyectoCreate,
     ProyectoEdit,
-    ProyectoEmails,
     AbrilPageHeaderComponent,
     FilterTriggerButton,
     FilterModal,
@@ -77,15 +77,20 @@ export class Proyectos implements OnInit {
 
   showCreateModal = false;
   showEditModal = false;
-  showEmailsModal = false;
   selectedProject: ProjectDto | null = null;
-  selectedEmailsProject: ProjectDto | null = null;
+
+  /** Crear, editar y eliminar: solo ROLES_EDITAN_PROYECTOS. El resto abre el mismo modal en solo lectura. */
+  readonly puedeEditar: boolean;
+  readonly botonNuevo = { label: 'Nuevo Proyecto', icono: 'ti-plus' };
 
   constructor(
     private proyectoService: ProyectoService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
-  ) {}
+    authService: AuthService,
+  ) {
+    this.puedeEditar = authService.hasAnyRole(ROLES_EDITAN_PROYECTOS);
+  }
 
   ngOnInit(): void {
     this.load(1);
@@ -125,18 +130,10 @@ export class Proyectos implements OnInit {
     this.showEditModal = true;
   }
 
-  openEmailsModal(project: ProjectDto, event: MouseEvent): void {
-    event.stopPropagation();
-    this.selectedEmailsProject = project;
-    this.showEmailsModal = true;
-  }
-
   onModalClosed(): void {
     this.showCreateModal = false;
     this.showEditModal = false;
-    this.showEmailsModal = false;
     this.selectedProject = null;
-    this.selectedEmailsProject = null;
   }
 
   onModalSaved(): void {

@@ -24,6 +24,17 @@ export interface ProjectCreateDto {
   /** Coordinador administrativo: FK a workers (project.workers_coord_admin_id). */
   workersCoordAdminId?: number | null;
 
+  /**
+   * Residente: FK a workers (project.residente_workers_id). El backend lo ignora si quien guarda
+   * no puede asignarlo (ROLES_ASIGNAN_RESIDENTE).
+   */
+  residenteWorkersId?: number | null;
+
+  // Correos de aviso: vacío deja el campo en blanco.
+  emailResponsable?: string | null;
+  emailRrhh?: string | null;
+  emailCoordSsoma?: string | null;
+
   // Fechas (formato YYYY-MM-DD)
   fechaInicio?: string;
   fechaFin?: string;

@@ -106,6 +106,7 @@
                   displayField="nombreCompleto"
                   [value]="pendingProyectoWorkerFkFor(row.projectId, c.campo)"
                   placeholder="Buscar por nombre..."
+                  [disabled]="campoBloqueado(c.campo)"
                   (valueChange)="setPendingProyectoWorkerFk(row.projectId, c.campo, $event)">
                 </app-search-select>
                 <div class="flex items-center justify-between gap-[8px]">
@@ -115,7 +116,7 @@
                   <button
                     type="button"
                     class="text-[11px] text-gray-400 hover:text-gray-600 underline shrink-0"
-                    *ngIf="pendingProyectoWorkerFkFor(row.projectId, c.campo) !== campoLimpiar"
+                    *ngIf="!campoBloqueado(c.campo) && pendingProyectoWorkerFkFor(row.projectId, c.campo) !== campoLimpiar"
                     (click)="limpiarPendingProyectoWorkerFk(row.projectId, c.campo)">
                     Quitar
                   </button>

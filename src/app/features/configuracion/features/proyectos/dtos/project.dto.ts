@@ -40,6 +40,17 @@ export interface ProjectDto {
   workersCoordAdminId?: number | null;
   /** Nombre del coordinador administrativo, para pintarlo sin buscarlo en la lista. */
   coordAdminNombre?: string | null;
+  coordAdminEmail?: string | null;
+
+  /** Residente: FK a workers. Nombre y correo vienen resueltos desde su ficha. */
+  residenteWorkersId?: number | null;
+  residenteNombre?: string | null;
+  residenteEmail?: string | null;
+
+  // Correos de aviso (texto)
+  emailResponsable?: string | null;
+  emailRrhh?: string | null;
+  emailCoordSsoma?: string | null;
 
   // Fechas (ISO string)
   fechaInicio?: string;

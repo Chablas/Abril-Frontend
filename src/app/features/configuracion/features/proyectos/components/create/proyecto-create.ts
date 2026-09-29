@@ -12,6 +12,8 @@ import { BaseModal } from '../../../../../../shared/components/base-modal/base-m
 import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
+import { AuthService } from '../../../../../../core/services/auth.service';
+import { ROLES_ASIGNAN_RESIDENTE } from '../../../../../../core/constants/proyecto-roles';
 
 interface ProjectFormModel {
   projectDescription: string;
@@ -36,6 +38,12 @@ interface ProjectFormModel {
 
   /** FK a workers: el correo del coordinador se resuelve al enviar, no se guarda copia. */
   workersCoordAdminId: number | null;
+  /** FK a workers, igual que el coordinador. Solo lo asigna ROLES_ASIGNAN_RESIDENTE. */
+  residenteWorkersId: number | null;
+
+  emailResponsable: string;
+  emailRrhh: string;
+  emailCoordSsoma: string;
 
   fechaInicio: string | null;
   fechaFin: string | null;
@@ -68,10 +76,13 @@ export class ProyectoCreate implements OnInit {
   form: ProjectFormModel = this.emptyForm();
   rucLookupLoading = false;
   saving = false;
+  /** El residente da permisos (Cronograma de Hitos): el RESIDENTE crea proyectos pero no lo asigna. */
+  readonly puedeAsignarResidente: boolean;
 
   responsablesArqCom: ResponsableLookupDto[] = [];
   responsablesUdp: ResponsableLookupDto[] = [];
-  coordAdmins: ResponsableLookupDto[] = [];
+  /** Elegibles como residente y administrador de obra (personal Casa no retirado con correo). */
+  personalCasa: ResponsableLookupDto[] = [];
   loadingLookups = true;
   lookupsError = false;
 
@@ -85,8 +96,11 @@ export class ProyectoCreate implements OnInit {
     private proyectoService: ProyectoService,
     private router: Router,
     private loaderService: LoaderService,
+    authService: AuthService,
     private cdr: ChangeDetectorRef,
-  ) {}
+  ) {
+    this.puedeAsignarResidente = authService.hasAnyRole(ROLES_ASIGNAN_RESIDENTE);
+  }
 
   ngOnInit(): void {
     this.loadLookups();
@@ -94,18 +108,27 @@ export class ProyectoCreate implements OnInit {
 
   /** Correo del coordinador elegido, solo informativo: lo que se guarda es el workerId. */
   get coordAdminEmail(): string | null {
-    if (this.form.workersCoordAdminId == null) return null;
-    return this.coordAdmins.find((c) => c.id === this.form.workersCoordAdminId)?.email ?? null;
+    return this.emailDe(this.form.workersCoordAdminId);
+  }
+
+  /** Correo del residente elegido: es el que reciben los avisos de la obra. */
+  get residenteEmail(): string | null {
+    return this.emailDe(this.form.residenteWorkersId);
+  }
+
+  private emailDe(workerId: number | null): string | null {
+    if (workerId == null) return null;
+    return this.personalCasa.find((c) => c.id === workerId)?.email ?? null;
   }
 
   loadLookups(): void {
     this.loadingLookups = true;
     this.lookupsError = false;
     this.proyectoService.getLookups().subscribe({
-      next: ({ arqCom, udp, coordAdmins }) => {
+      next: ({ arqCom, udp, personalCasa }) => {
         this.responsablesArqCom = arqCom;
         this.responsablesUdp = udp;
-        this.coordAdmins = coordAdmins;
+        this.personalCasa = personalCasa;
         this.loadingLookups = false;
         this.cdr.detectChanges();
       },
@@ -190,6 +213,11 @@ export class ProyectoCreate implements OnInit {
 
       // Null explícito, no undefined: es una FK, "sin coordinador" es un valor válido.
       workersCoordAdminId: this.form.workersCoordAdminId,
+      residenteWorkersId: this.puedeAsignarResidente ? this.form.residenteWorkersId : null,
+
+      emailResponsable: this.form.emailResponsable.trim() || null,
+      emailRrhh:        this.form.emailRrhh.trim()        || null,
+      emailCoordSsoma:  this.form.emailCoordSsoma.trim()  || null,
 
       fechaInicio: this.form.fechaInicio || undefined,
       fechaFin:    this.form.fechaFin    || undefined,
@@ -245,6 +273,11 @@ export class ProyectoCreate implements OnInit {
       responsableUdpId: null,
 
       workersCoordAdminId: null,
+      residenteWorkersId: null,
+
+      emailResponsable: '',
+      emailRrhh: '',
+      emailCoordSsoma: '',
 
       fechaInicio: '',
       fechaFin: '',

@@ -13,6 +13,8 @@ import { BaseModal } from '../../../../../../shared/components/base-modal/base-m
 import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
+import { AuthService } from '../../../../../../core/services/auth.service';
+import { ROLES_ASIGNAN_RESIDENTE } from '../../../../../../core/constants/proyecto-roles';
 
 interface ProjectFormModel {
   projectDescription: string;
@@ -40,6 +42,12 @@ interface ProjectFormModel {
 
   /** FK a workers: el correo del coordinador se resuelve al enviar, no se guarda copia. */
   workersCoordAdminId: number | null;
+  /** FK a workers, igual que el coordinador. Solo lo cambia ROLES_ASIGNAN_RESIDENTE. */
+  residenteWorkersId: number | null;
+
+  emailResponsable: string;
+  emailRrhh: string;
+  emailCoordSsoma: string;
 
   fechaInicio: string | null;
   fechaFin: string | null;
@@ -72,17 +80,22 @@ interface ProjectFormModel {
 })
 export class ProyectoEdit implements OnInit {
   @Input() project!: ProjectDto;
+  /** Quien no edita proyectos (ROLES_EDITAN_PROYECTOS) ve el mismo modal con todo deshabilitado. */
+  @Input() soloLectura = false;
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
   form: ProjectFormModel = this.emptyForm();
   rucLookupLoading = false;
   saving = false;
+  /** El residente da permisos (Cronograma de Hitos): el RESIDENTE edita el proyecto pero no esto. */
+  puedeAsignarResidente = false;
 
   responsablesArqCom: ResponsableLookupDto[] = [];
   responsablesUdp: ResponsableLookupDto[] = [];
   responsablesPlaneamientoBim: ResponsableLookupDto[] = [];
-  coordAdmins: ResponsableLookupDto[] = [];
+  /** Elegibles como residente y administrador de obra (personal Casa no retirado con correo). */
+  personalCasa: ResponsableLookupDto[] = [];
   loadingLookups = true;
   lookupsError = false;
 
@@ -103,10 +116,13 @@ export class ProyectoEdit implements OnInit {
     private proyectoService: ProyectoService,
     private router: Router,
     private loaderService: LoaderService,
+    private authService: AuthService,
     private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
+    this.puedeAsignarResidente =
+      !this.soloLectura && this.authService.hasAnyRole(ROLES_ASIGNAN_RESIDENTE);
     this.loadLookups();
     this.form = {
       projectDescription: this.project.projectDescription,
@@ -145,6 +161,11 @@ export class ProyectoEdit implements OnInit {
       responsablePlaneamientoBimId: this.project.responsablePlaneamientoBimId ?? null,
 
       workersCoordAdminId: this.project.workersCoordAdminId ?? null,
+      residenteWorkersId:  this.project.residenteWorkersId  ?? null,
+
+      emailResponsable: this.project.emailResponsable ?? '',
+      emailRrhh:        this.project.emailRrhh        ?? '',
+      emailCoordSsoma:  this.project.emailCoordSsoma  ?? '',
 
       fechaInicio: this.project.fechaInicio ? this.project.fechaInicio.substring(0, 10) : '',
       fechaFin:    this.project.fechaFin    ? this.project.fechaFin.substring(0, 10)    : '',
@@ -206,19 +227,35 @@ export class ProyectoEdit implements OnInit {
 
   /** Correo del coordinador elegido, solo informativo: lo que se guarda es el workerId. */
   get coordAdminEmail(): string | null {
-    if (this.form.workersCoordAdminId == null) return null;
-    return this.coordAdmins.find((c) => c.id === this.form.workersCoordAdminId)?.email ?? null;
+    return this.emailDe(this.form.workersCoordAdminId);
+  }
+
+  /** Correo del residente elegido: es el que reciben los avisos de la obra. */
+  get residenteEmail(): string | null {
+    return this.emailDe(this.form.residenteWorkersId);
+  }
+
+  private emailDe(workerId: number | null): string | null {
+    if (workerId == null) return null;
+    return this.personalCasa.find((c) => c.id === workerId)?.email ?? null;
   }
 
   loadLookups(): void {
+    // En solo lectura no hace falta la lista de trabajadores: cada desplegable muestra lo que ya
+    // tiene el proyecto, con el nombre que viene en el listado.
+    if (this.soloLectura) {
+      this.cargarOpcionesDelProyecto();
+      return;
+    }
+
     this.loadingLookups = true;
     this.lookupsError = false;
     this.proyectoService.getLookups().subscribe({
-      next: ({ arqCom, udp, coordAdmins, planeamientoUdp }) => {
+      next: ({ arqCom, udp, personalCasa, planeamientoUdp }) => {
         this.responsablesArqCom = arqCom;
         this.responsablesUdp = udp;
         this.responsablesPlaneamientoBim = planeamientoUdp ?? [];
-        this.coordAdmins = this.conCoordAdminActual(coordAdmins);
+        this.personalCasa = this.conAsignadosActuales(personalCasa);
         this.loadingLookups = false;
         this.cdr.detectChanges();
       },
@@ -231,20 +268,34 @@ export class ProyectoEdit implements OnInit {
     });
   }
 
-  /**
-   * El desplegable solo trae personal Casa no retirado. Si el coordinador ya guardado dejó de
-   * cumplir ese criterio (se retiró), se agrega igual a la lista con el nombre que devolvió el
-   * backend: sin esto el combo se vería vacío aunque el proyecto SÍ tiene coordinador asignado,
-   * que es justo el tipo de dato "invisible" que esta migración vino a eliminar.
-   */
-  private conCoordAdminActual(opciones: ResponsableLookupDto[]): ResponsableLookupDto[] {
-    const actual = this.project.workersCoordAdminId;
-    if (actual == null || opciones.some((o) => o.id === actual)) return opciones;
+  private cargarOpcionesDelProyecto(): void {
+    const p = this.project;
+    const una = (id: number | null | undefined, nombre: string | null | undefined, email?: string | null) =>
+      id != null ? [{ id, apellidoNombre: nombre ?? '', email: email ?? null }] : [];
 
-    return [
-      { id: actual, apellidoNombre: this.project.coordAdminNombre ?? 'Trabajador retirado', email: null },
-      ...opciones,
-    ];
+    this.responsablesArqCom = una(p.responsableArqComId, p.responsableArqCom);
+    this.responsablesUdp = una(p.responsableUdpId, p.responsableUdp);
+    this.responsablesPlaneamientoBim = una(p.responsablePlaneamientoBimId, p.responsablePlaneamientoBim);
+    this.personalCasa = this.conAsignadosActuales([]);
+    this.loadingLookups = false;
+  }
+
+  /**
+   * El desplegable solo trae personal Casa no retirado. Si el residente o el coordinador ya
+   * guardados dejaron de cumplir ese criterio (se retiraron), se agregan igual con el nombre que
+   * devolvió el backend: sin esto el combo se vería vacío aunque el proyecto SÍ los tiene.
+   */
+  private conAsignadosActuales(opciones: ResponsableLookupDto[]): ResponsableLookupDto[] {
+    const p = this.project;
+    const faltantes: ResponsableLookupDto[] = [];
+    const agregar = (id: number | null | undefined, nombre: string | null | undefined, email: string | null | undefined) => {
+      if (id == null || opciones.some((o) => o.id === id) || faltantes.some((o) => o.id === id)) return;
+      faltantes.push({ id, apellidoNombre: nombre ?? 'Trabajador retirado', email: email ?? null });
+    };
+
+    agregar(p.residenteWorkersId, p.residenteNombre, p.residenteEmail);
+    agregar(p.workersCoordAdminId, p.coordAdminNombre, p.coordAdminEmail);
+    return [...faltantes, ...opciones];
   }
 
   onResponsableArqComChange(id: number | null): void {
@@ -264,7 +315,7 @@ export class ProyectoEdit implements OnInit {
   }
 
   save(): void {
-    if (!this.form.projectDescription.trim() || this.saving) return;
+    if (this.soloLectura || !this.form.projectDescription.trim() || this.saving) return;
     this.saving = true;
 
     const dto: ProjectEditDto = {
@@ -295,6 +346,12 @@ export class ProyectoEdit implements OnInit {
 
       // Null explicito, no undefined: es una FK, "sin coordinador" es un valor valido.
       workersCoordAdminId: this.form.workersCoordAdminId,
+      // Igual. Si quien guarda no puede asignarlo, el backend lo ignora y queda el que estaba.
+      residenteWorkersId: this.form.residenteWorkersId,
+
+      emailResponsable: this.form.emailResponsable.trim() || null,
+      emailRrhh:        this.form.emailRrhh.trim()        || null,
+      emailCoordSsoma:  this.form.emailCoordSsoma.trim()  || null,
 
       fechaInicio: this.form.fechaInicio || undefined,
       fechaFin:    this.form.fechaFin    || undefined,
@@ -358,6 +415,11 @@ export class ProyectoEdit implements OnInit {
       responsablePlaneamientoBimId: null,
 
       workersCoordAdminId: null,
+      residenteWorkersId: null,
+
+      emailResponsable: '',
+      emailRrhh: '',
+      emailCoordSsoma: '',
 
       fechaInicio: '',
       fechaFin: '',
