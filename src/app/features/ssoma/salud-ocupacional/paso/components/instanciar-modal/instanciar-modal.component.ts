@@ -84,7 +84,7 @@ export class InstanciarModalComponent implements OnInit {
           pasos.items.map(p => p.proyectoId).filter((id): id is number => id !== null)
         );
         this.proyectos = proyectos.data
-          .filter(p => p.estado === 'ACTIVO' && !proyectosConPaso.has(p.projectId))
+          .filter(p => p.projectCicloVidaId === 1 && !proyectosConPaso.has(p.projectId))
           .sort((a, b) => a.projectDescription.localeCompare(b.projectDescription));
         this.loadingProyectos = false;
         this.cdr.detectChanges();

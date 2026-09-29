@@ -21,7 +21,7 @@ import { DocumentViewer } from '../../../../../../shared/components/document-vie
 import { PropagArActividadComponent } from '../../components/propagar-actividad/propagar-actividad.component';
 import { environment } from '../../../../../../../environments/environment';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
-
+
 import { PASO_TABS } from '../../paso-tabs';
 type TabAmbito = 'Seguridad' | 'Salud' | 'Ambiente';
 
@@ -112,7 +112,7 @@ export class PasoListaComponent implements OnInit {
     }).subscribe({
       next: ({ programas, categorias, proyectos }) => {
         this.proyectosActivos = new Set(
-          proyectos.data.filter(p => p.estado === 'ACTIVO').map(p => p.projectId)
+          proyectos.data.filter(p => p.projectCicloVidaId === 1).map(p => p.projectId)
         );
         this.programas = programas.items;
         this.categorias = categorias;
