@@ -6,6 +6,10 @@
 
   <div *ngIf="detalle as d" class="flex flex-col gap-4 pt-4">
 
+    <!-- ── En qué va el reembolso ───────────────────────────────────────
+         Primero de todo: es la pregunta con la que se abre el modal. -->
+    <app-reembolso-pipeline [pipeline]="d.pipeline" />
+
     <!-- ── Cabecera: de qué planilla se trata ───────────────────────────── -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div class="flex flex-col">
@@ -73,51 +77,29 @@
       {{ d.observacionReembolso }}
     </div>
 
-    <!-- ── Documentos, cada uno a la vista ──────────────────────────────────
-         De cada documento se enseña UNA sola copia: la original mientras no haya firma, y la
-         firmada apenas existe —es la misma planilla, y verla dos veces solo alarga el modal—. -->
-    <div *ngIf="!d.pdfFirmadoUrl" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+    <!-- ── Salidas de la planilla: el ojo abre el detalle de cada una (trayectos, capturas y
+         montos). Van antes de los documentos: con los PDF a la vista quedaban al fondo del
+         modal. ── -->
+    <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
+      <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas de esta planilla</span>
+
+      <!-- La planilla, junto a su tabla y solo como enlace: su contenido es la tabla misma. Una
+           sola copia: firmada, la original ya no se ofrece. -->
       <app-documento-embebido
+        *ngIf="!d.pdfFirmadoUrl"
         etiqueta="Planilla de gasto"
         [nombre]="d.pdfFilename"
-        [url]="d.pdfUrl" />
-    </div>
+        [url]="d.pdfUrl"
+        [soloEnlace]="true" />
 
-    <!-- ng-container y no un div: el contenedor de arriba es un flex column con gap. -->
-    <ng-container *ngIf="d.consolidadoS10 as c">
-      <div *ngIf="!c.pdfFirmadoUrl" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-        <app-documento-embebido
-          etiqueta="Consolidado del S10"
-          [nota]="notaConsolidado(d, false)"
-          [nombre]="c.pdfFilename"
-          [url]="c.pdfUrl" />
-      </div>
-    </ng-container>
-
-    <!-- Las dos copias que deja la aprobación del reembolso: aprobar ES firmar, y firma los dos
-         documentos. Cada una ocupa el lugar de su original. -->
-    <div *ngIf="d.pdfFirmadoUrl as planillaFirmada" class="border-t pt-3" style="border-color:var(--color-abril-border)">
       <app-documento-embebido
+        *ngIf="d.pdfFirmadoUrl as planillaFirmada"
         etiqueta="Planilla firmada"
         [nota]="d.firmadoAt ? 'Firmada el ' + (d.firmadoAt | date:'dd/MM/yyyy') : null"
         [nombre]="d.pdfFirmadoFilename ?? 'Planilla firmada'"
         [url]="planillaFirmada"
-        [firmado]="true" />
-    </div>
-
-    <div *ngIf="d.consolidadoS10?.pdfFirmadoUrl as consolidadoFirmado" class="border-t pt-3" style="border-color:var(--color-abril-border)">
-      <app-documento-embebido
-        etiqueta="Consolidado del S10 firmado"
-        [nota]="notaConsolidado(d, true)"
-        [nombre]="d.consolidadoS10?.pdfFirmadoFilename ?? 'Consolidado del S10 firmado'"
-        [url]="consolidadoFirmado"
-        [firmado]="true" />
-    </div>
-
-    <!-- ── Salidas de la planilla: el ojo abre el detalle de cada una (trayectos, capturas y
-         montos). ── -->
-    <div class="flex flex-col gap-2 border-t pt-3" style="border-color:var(--color-abril-border)">
-      <span class="text-[11px] uppercase text-gray-400 font-semibold">Salidas de esta planilla</span>
+        [firmado]="true"
+        [soloEnlace]="true" />
 
       <div class="abril-table-wrap">
         <table class="abril-table abril-table--th-center">
@@ -188,6 +170,34 @@
       </div>
     </div>
 
+    <!-- ── Documentos, cada uno a la vista ──────────────────────────────────
+         De cada documento se enseña UNA sola copia: la original mientras no haya firma, y la
+         firmada apenas existe —es el mismo papel, y verlo dos veces solo alarga el modal—. La
+         planilla de gasto no va acá: va como enlace junto a su tabla de salidas, más arriba. -->
+
+    <!-- ng-container y no un div: el contenedor de arriba es un flex column con gap. -->
+    <ng-container *ngIf="d.consolidadoS10 as c">
+      <div *ngIf="!c.pdfFirmadoUrl" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+        <app-documento-embebido
+          etiqueta="Consolidado del S10"
+          [nota]="notaConsolidado(d, false)"
+          [nombre]="c.pdfFilename"
+          [url]="c.pdfUrl" />
+      </div>
+    </ng-container>
+
+    <!-- Las copias que deja la aprobación del reembolso: aprobar ES firmar, y firma los dos
+         documentos. Cada una ocupa el lugar de su original (la planilla firmada, junto a su
+         tabla). -->
+    <div *ngIf="d.consolidadoS10?.pdfFirmadoUrl as consolidadoFirmado" class="border-t pt-3" style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        etiqueta="Consolidado del S10 firmado"
+        [nota]="notaConsolidado(d, true)"
+        [nombre]="d.consolidadoS10?.pdfFirmadoFilename ?? 'Consolidado del S10 firmado'"
+        [url]="consolidadoFirmado"
+        [firmado]="true" />
+    </div>
+
     <!-- ── Acciones ────────────────────────────────────────────────────────
          Son de la planilla entera (no de una salida), así que van al pie y no en la tabla de
          arriba. Pegadas al borde de abajo: con los documentos a la vista el modal es largo. -->
@@ -244,4 +254,5 @@
   *ngIf="salidaId !== null"
   [solicitudId]="salidaId"
   [mostrarDocumentos]="false"
+  [mostrarPipeline]="false"
   (close)="cerrarSalida()" />

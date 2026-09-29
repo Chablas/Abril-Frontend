@@ -33,6 +33,7 @@ export interface RacCreateRequest {
   observadoWorkerId?: number;
   observadoWorkerIds?: number[];
   empresaReportadaId?: number;
+  torreNombre?: string;
   proyectoPiso?: string;
   lugarDescripcion?: string;
   latitud?: number;
@@ -97,6 +98,7 @@ export interface RacDetalleDto {
   observadoNombre?: string;
   empresaReportadaId?: number;
   empresaReportadaNombre?: string;
+  torreNombre?: string;
   proyectoPiso?: string;
   lugarDescripcion?: string;
   latitud?: number;

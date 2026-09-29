@@ -70,44 +70,141 @@
             <td>{{ a.fecha | date:'dd/MM/yyyy' }}</td>
             <td>{{ a.workerNombre }}</td>
             <td>{{ a.proyectoNombre }}</td>
-            <td>{{ a.actividad }}</td>
+            <td>
+              {{ a.actividad }}
+              @if (a.estado === 'Firmado') {
+                <button type="button" class="btn-link-inline" (click)="toggleDetalle(a.id)">
+                  {{ filaExpandida(a.id) ? 'Ocultar detalle' : 'Ver detalle' }}
+                </button>
+              }
+            </td>
             <td><span class="badge" [class]="estadoClass(a.estado)">{{ a.estado }}</span></td>
             <td>
               @if (a.petares.length > 0) {
-                @for (p of a.petares; track p.id) {
-                  <span class="chip-petar" [class]="'chip-petar--' + p.estado.toLowerCase()">{{ p.tipoNombre }} · {{ p.estado }}</span>
-                }
-              } @else if (a.requierePetar) {
+                <div class="petar-col">
+                  @for (p of a.petares; track p.id) {
+                    <div class="petar-card">
+                      <div class="petar-card-header">
+                        <i class="ti ti-alert-triangle"></i>
+                        <strong>PETAR — {{ p.tipoNombre }}</strong>
+                        <span class="badge" [class]="estadoClass(p.estado)">{{ p.estado }}</span>
+                      </div>
+                      @if (!p.tieneFirmaEjecutante) {
+                        <button type="button" class="btn-link-inline" (click)="continuarPetar(p.id)">
+                          <i class="ti ti-player-play"></i> Continuar / Firmar como ejecutante
+                        </button>
+                      } @else {
+                        <div class="petar-item-acciones">
+                          <button class="btn-link-inline" (click)="descargarPdfPetar(p.id)">PDF</button>
+                          @if (p.supervisorFirmado) {
+                            <span class="visto-ok" title="Firmado"><i class="ti ti-check"></i> Supervisor</span>
+                          } @else if (p.puedeFirmarSupervisor) {
+                            <button type="button" class="btn-link-inline" (click)="abrirFirmaVisto(a, 'petar-supervisor', p.id)">Firmar Supervisor</button>
+                          } @else {
+                            <span class="visto-pendiente">Pendiente Supervisor</span>
+                          }
+                          @if (p.ssomaFirmado) {
+                            <span class="visto-ok" title="Firmado"><i class="ti ti-check"></i> SSOMA</span>
+                          } @else if (p.puedeFirmarSsoma) {
+                            <button type="button" class="btn-link-inline" (click)="abrirFirmaVisto(a, 'petar-ssoma', p.id)">Visto Bueno SSOMA</button>
+                          } @else {
+                            <span class="visto-pendiente">Pendiente SSOMA</span>
+                          }
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              } @else if (a.requierePetar && a.estado === 'Firmado') {
                 <span class="badge-petar-falta"><i class="ti ti-alert-triangle"></i> Requiere PETAR</span>
+              } @else if (a.requierePetar) {
+                <span class="visto-pendiente" title="El PETAR recién se puede generar cuando este ATS quede Firmado.">Requiere PETAR al firmar</span>
               } @else {
                 <span class="visto-pendiente">—</span>
               }
             </td>
             <td class="acciones-cell">
+              @if (a.estado === 'Borrador') {
+                <button class="btn btn-outline btn-sm" (click)="continuarAts(a)" title="Retomar este ATS donde quedó (pasos, EPP, riesgos) hasta llegar a Firmar.">
+                  <i class="ti ti-player-play"></i> Continuar llenado
+                </button>
+              }
               @if (a.estado === 'Firmado') {
-                <button class="btn btn-outline btn-sm" (click)="descargarPdf(a)">
-                  <i class="ti ti-download"></i> PDF
-                </button>
-                @if (a.autorizaFirmaUrl) {
-                  <span class="visto-ok" title="Firmado por {{ a.autorizaNombre }}"><i class="ti ti-check"></i> Autorizado</span>
-                } @else if (a.puedeAutorizar) {
-                  <button class="btn btn-outline btn-sm" (click)="abrirFirmaVisto(a, 'autoriza')">Autorizar</button>
-                } @else {
-                  <span class="visto-pendiente">Pendiente Residente</span>
+                <div class="acciones-grupo">
+                  <button class="btn btn-outline btn-sm" (click)="descargarPdf(a)" title="Descarga el PDF del ATS (no del PETAR, si es que tiene uno).">
+                    <i class="ti ti-download"></i> PDF ATS
+                  </button>
+                  @if (a.autorizaFirmaUrl) {
+                    <span class="visto-ok" title="Firmado por {{ a.autorizaNombre }}"><i class="ti ti-check"></i> ATS Autorizado</span>
+                  } @else if (a.puedeAutorizar) {
+                    <button class="btn btn-outline btn-sm" (click)="abrirFirmaVisto(a, 'autoriza')" title="Autoriza el ATS (Residente/Ing. Producción) — distinto del PETAR, si es que tiene uno.">Autorizar ATS</button>
+                  } @else {
+                    <span class="visto-pendiente">ATS: pendiente Residente</span>
+                  }
+                  @if (a.ssomaFirmaUrl) {
+                    <span class="visto-ok" title="Firmado por {{ a.ssomaNombre }}"><i class="ti ti-check"></i> SSOMA OK (ATS)</span>
+                  } @else if (a.puedeVistoBuenoSsoma) {
+                    <button class="btn btn-outline btn-sm" (click)="abrirFirmaVisto(a, 'ssoma')" title="Visto Bueno SSOMA del ATS — distinto del PETAR, si es que tiene uno.">Visto Bueno SSOMA (ATS)</button>
+                  } @else {
+                    <span class="visto-pendiente">ATS: pendiente SSOMA</span>
+                  }
+                </div>
+
+                <div class="acciones-grupo acciones-grupo--petar">
+                  <button class="btn btn-outline btn-sm btn-petar" (click)="generarPetar(a)" title="Otra tarea de alto riesgo dentro de esta misma jornada (ej. además de Altura, también Espacio Confinado) — genera un PETAR NUEVO e independiente.">
+                    <i class="ti ti-alert-triangle"></i> {{ a.petares.length > 0 ? 'Generar otro PETAR' : 'Generar PETAR' }}
+                  </button>
+                </div>
+
+                @if (esCorregibleHoy(a)) {
+                <div class="acciones-grupo acciones-grupo--corregir">
+                  <button class="btn btn-outline btn-sm" (click)="corregirAts(a)" title="La condición real en campo fue distinta a la evaluada — crea un ATS nuevo enlazado a este, sin modificar el ya firmado.">
+                    <i class="ti ti-edit"></i> Corregir
+                  </button>
+                  <button class="btn btn-outline btn-sm" (click)="duplicarAts(a)" title="Misma tarea y riesgos, otro lugar (ej. Torre B en vez de Torre A) — precarga todo, solo ajustas el lugar.">
+                    <i class="ti ti-copy"></i> Duplicar
+                  </button>
+                </div>
                 }
-                @if (a.ssomaFirmaUrl) {
-                  <span class="visto-ok" title="Firmado por {{ a.ssomaNombre }}"><i class="ti ti-check"></i> SSOMA OK</span>
-                } @else if (a.puedeVistoBuenoSsoma) {
-                  <button class="btn btn-outline btn-sm" (click)="abrirFirmaVisto(a, 'ssoma')">Visto Bueno SSOMA</button>
-                } @else {
-                  <span class="visto-pendiente">Pendiente SSOMA</span>
-                }
-                <button class="btn btn-outline btn-sm btn-petar" (click)="generarPetar(a)" title="Tarea de alto riesgo dentro de esta jornada (altura, espacio confinado, izaje, etc.)">
-                  <i class="ti ti-alert-triangle"></i> Generar PETAR
-                </button>
               }
             </td>
           </tr>
+          @if (filaExpandida(a.id)) {
+            <tr class="fila-detalle">
+              <td colspan="7">
+                <div class="detalle-iperc">
+                  @if (a.pasos.length > 0) {
+                    <div class="detalle-bloque">
+                      <strong>Actividades y pasos</strong>
+                      <p>{{ a.pasos.length }} ítem(s) marcados — ver PDF para el detalle completo.</p>
+                    </div>
+                  }
+                  @if (a.epps.length > 0 || a.herramientas.length > 0) {
+                    <div class="detalle-bloque">
+                      @if (a.epps.length > 0) { <p><strong>EPP:</strong> {{ a.epps.join(', ') }}</p> }
+                      @if (a.herramientas.length > 0) { <p><strong>Herramientas:</strong> {{ a.herramientas.join(', ') }}</p> }
+                    </div>
+                  }
+                  <table class="abril-table">
+                    <thead>
+                      <tr><th>Peligro</th><th>Riesgo</th><th>R. Base</th><th>Controles</th><th>R. Residual</th></tr>
+                    </thead>
+                    <tbody>
+                      @for (r of a.riesgos; track r.riesgoId) {
+                        <tr>
+                          <td>{{ r.peligroNombre }}</td>
+                          <td>{{ r.riesgoNombre }}</td>
+                          <td>{{ r.riesgoBase }}</td>
+                          <td>{{ r.controles }}</td>
+                          <td>{{ r.riesgoResidual }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </td>
+            </tr>
+          }
         }
       }
     </tbody>
@@ -127,7 +224,7 @@
     [titulo]="vistoTitulo"
     icono="ti-signature"
     variant="blue"
-    width="560px"
+    width="640px"
     (closeModal)="cerrarFirmaVisto()">
 
     <p class="visto-hint">
@@ -135,13 +232,56 @@
       ({{ atsFirmandoVisto.fecha | date:'dd/MM/yyyy' }})
     </p>
 
+    @if (rolVisto === 'petar-supervisor' || rolVisto === 'petar-ssoma') {
+      <p class="visto-hint">
+        Antes de firmar, revisa el PETAR completo:
+        <button type="button" class="btn-link-inline" (click)="descargarPdfPetar(petarFirmandoId!)">Descargar PDF del PETAR</button>
+      </p>
+    } @else {
+      <div class="abril-table-wrap iperc-preview">
+        <table class="abril-table">
+          <thead>
+            <tr><th>Peligro</th><th>Riesgo</th><th>R. Base</th><th>Controles</th><th>R. Residual</th></tr>
+          </thead>
+          <tbody>
+            @for (r of atsFirmandoVisto.riesgos; track r.riesgoId) {
+              <tr>
+                <td>{{ r.peligroNombre }}</td>
+                <td>{{ r.riesgoNombre }}</td>
+                <td>{{ r.riesgoBase }}</td>
+                <td>{{ r.controles }}</td>
+                <td>{{ r.riesgoResidual }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
     <label class="abril-field-label">Firma *</label>
-    <app-signature-pad (drawingChange)="onFirmaVistoChange($event)"></app-signature-pad>
-    <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
+
+    @if (firmaAutorizadaDataUrl && usandoFirmaAutorizada) {
+      <div class="firma-autorizada-preview">
+        <img [src]="firmaAutorizadaDataUrl" alt="Tu firma autorizada" />
+      </div>
+      <button class="btn btn-outline btn-sm" (click)="dibujarFirmaVistoNueva()">
+        <i class="ti ti-pencil"></i> Dibujar una firma distinta
+      </button>
+    } @else {
+      <app-signature-pad (drawingChange)="onFirmaVistoChange($event)"></app-signature-pad>
+      <div class="firma-visto-acciones-row">
+        <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
+        @if (firmaAutorizadaDataUrl) {
+          <button class="btn btn-primary btn-sm" (click)="usarFirmaAutorizada()">
+            <i class="ti ti-signature"></i> Usar firma digital autorizada y validada
+          </button>
+        }
+      </div>
+    }
 
     <div modalFooter>
       <button class="btn btn-secondary" (click)="cerrarFirmaVisto()" [disabled]="guardandoVisto">Cancelar</button>
-      <button class="btn btn-primary" (click)="guardarFirmaVisto()" [disabled]="!hayFirmaVisto || guardandoVisto">
+      <button class="btn btn-primary" (click)="guardarFirmaVisto()" [disabled]="(!usandoFirmaAutorizada && !hayFirmaVisto) || guardandoVisto">
         @if (guardandoVisto) { Guardando… } @else { Firmar }
       </button>
     </div>

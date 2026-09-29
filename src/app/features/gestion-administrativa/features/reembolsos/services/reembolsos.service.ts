@@ -91,7 +91,7 @@ export class ReembolsosService {
     });
   }
 
-  /** Paso 1: confirmar la revisión documental — habilita el pago (RG-26). */
+  /** Paso 1: confirmar la revisión documental — habilita el pago (RG-26) y avisa a Tesorería. */
   confirmarRevision(dto: ReembolsoSeleccionDto): Observable<ReembolsoBulkResultDto> {
     return this.http.patch<ReembolsoBulkResultDto>(`${this.apiUrl}/confirmar-revision`, dto, {
       headers: this.headers,
@@ -117,9 +117,20 @@ export class ReembolsosService {
   }
 
   /**
+   * A quién le llegaría el aviso de que la revisión quedó confirmada: a Tesorería, por el rol
+   * TESORERO. Lo resuelve el servidor sobre las salidas firmadas de la selección, que son las que
+   * de verdad se van a confirmar.
+   */
+  correoPreviewConfirmacion(dto: ReembolsoSeleccionDto): Observable<CorreoAvisoDto[]> {
+    return this.http.post<CorreoAvisoDto[]>(`${this.apiUrl}/confirmar-revision/correo-preview`, dto, {
+      headers: this.headers,
+    });
+  }
+
+  /**
    * A quién le llegaría el aviso de pago de lo seleccionado. Se pide al apretar el botón porque
    * depende de la selección, y lo resuelve el servidor sobre las salidas que de verdad se van a
-   * pagar. Confirmar la revisión no tiene preview: ese paso no manda ningún correo.
+   * pagar.
    */
   correoPreviewPago(dto: ReembolsoSeleccionDto): Observable<CorreoAvisoDto[]> {
     return this.http.post<CorreoAvisoDto[]>(`${this.apiUrl}/pagar/correo-preview`, dto, {

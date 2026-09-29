@@ -42,15 +42,9 @@ export interface SubareaCatDto {
 }
 
 /**
- * Un nodo del árbol de áreas (`area_scope`) para los desplegables en cascada del formulario de
- * trabajadores. El backend ya resuelve por nodo la equivalencia legacy (`area`/`subarea`/`jefatura`,
- * lo que quedará guardado si se elige el nodo) y **el revisor ya elegido** que le tocaría al
- * trabajador, así que el formulario no replica ninguna regla ni pide nada más al cambiar de área:
- * lee `revisor`, o `revisorPorProyecto[proyecto]` si el área filtra por proyecto, y lo muestra.
- *
- * Elegir es parte del algoritmo y vive en el backend (`JefeRevisorResolver`), en el mismo lugar del
- * que sale el revisor al que se le manda a aprobar una salida. Si acá se vuelve a decidir algo, las
- * dos pantallas pueden volver a mostrar jefes distintos — que es el bug que esto cerró.
+ * Un nodo del árbol de áreas (`area_scope`) para los desplegables en cascada. El backend ya resuelve
+ * por nodo la equivalencia legacy (`area`/`subarea`/`jefatura`, lo que quedará guardado si se elige
+ * el nodo). Los actores de un trabajador ya no viajan acá: la ficha los pide con `getActores`.
  */
 export interface AreaArbolNodoDto {
   areaScopeId: number;
@@ -62,42 +56,50 @@ export interface AreaArbolNodoDto {
   area?: string | null;
   subarea?: string | null;
   jefatura?: string | null;
-  /**
-   * El revisor que le toca a un trabajador de este nodo, ya elegido por el backend descartando al
-   * propio trabajador cuando el árbol se pidió con `workerId`. Null si la rama no tiene ninguno.
-   */
-  revisor?: AreaArbolRevisorDto | null;
-  /**
-   * True cuando el primer candidato de la rama era el propio trabajador y por eso `revisor` es el
-   * siguiente. Lo normal en los jefes de área, que son el revisor de su propia área: el formulario
-   * lo avisa para que no se lea como un error de configuración.
-   */
-  esRevisorDeSuPropiaArea: boolean;
-  /** El revisor por proyecto, solo en áreas configuradas como "filtrar por proyecto". */
-  revisorPorProyecto: AreaArbolRevisorProyectoDto[];
 }
 
 /**
- * Un revisor. `workerId`/`personId` vienen en null cuando el revisor es el área de GTH (el
- * fallback), que es un correo de área y no una persona.
+ * Una persona que cumple un actor. `workerId`/`personId` vienen en null en el último recurso (GTH),
+ * que es un buzón de área y no una persona.
  */
-export interface AreaArbolRevisorDto {
+export interface ActorPersonaTrabajadorDto {
   workerId?: number | null;
   personId?: number | null;
   nombre?: string | null;
   email?: string | null;
 }
 
-export interface AreaArbolRevisorProyectoDto {
-  proyectoId: number;
-  revisor?: AreaArbolRevisorDto | null;
-  esRevisorDeSuPropiaArea: boolean;
+/**
+ * Uno de los cinco actores de un trabajador (quién aprueba su salida, qué jefe se entera, quién
+ * revisa su planilla, quiénes la consolidan y quiénes firman su consolidado): lo que le toca por su
+ * área y lo personalizado en su ficha. La ficha no decide: muestra lo uno o lo otro.
+ */
+export interface ActorTrabajadorDto {
+  /** Ids de `ga_actor`. */
+  actorId: number;
+  nombre: string;
+  /** true = admite varias personas (consolidadores, aprobadores del consolidado). */
+  multiple: boolean;
+  /** false = no existe para este trabajador (el jefe notificado fuera del staff). */
+  aplica: boolean;
+  /** Lo que le toca sin lo personalizado de su ficha, en orden. */
+  grupo: ActorPersonaTrabajadorDto[];
+  /** De dónde sale `grupo`: 'Area' (Revisores de Áreas), 'Algoritmo' o 'Gth'. */
+  grupoOrigen: string;
+  /** Lo personalizado en la ficha, en orden. Vacío = no tiene. */
+  personalizados: ActorPersonaTrabajadorDto[];
+}
+
+/** Los cinco actores de un trabajador y qué tipo de trabajador es (oficina central, staff…). */
+export interface ActoresTrabajadorDto {
+  casoId: number;
+  casoNombre: string;
+  actores: ActorTrabajadorDto[];
 }
 
 /**
- * Opción del desplegable que aparece al marcar "Jefe personalizado" en el formulario de
- * trabajadores: cualquier trabajador con correo corporativo @abril.pe, tenga o no usuario
- * del sistema.
+ * Opción de los desplegables de personas de la sección de actores del formulario de trabajadores:
+ * cualquier trabajador con correo corporativo @abril.pe, tenga o no usuario del sistema.
  */
 export interface JefeCandidatoDto {
   workerId: number;

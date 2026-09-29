@@ -1,17 +1,12 @@
 <app-base-modal
   title="Registra tu firma"
-  width="w-[720px]"
+  width="w-[640px]"
   closeColor="var(--color-abril-standard)"
   (closeModal)="cerrar.emit()">
 
-  <p class="text-sm text-gray-500 mb-4">
-    Todavía no tienes registrada una firma que sirva para firmar acá. Regístrala una vez y podrás
-    firmar.
-  </p>
-
   <app-firma-personal
     [tipos]="tipos"
-    [descripcion]="descripcion"
+    [compacto]="true"
     (guardada)="guardada.emit($event)" />
 
 </app-base-modal>

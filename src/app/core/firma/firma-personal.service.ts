@@ -6,16 +6,15 @@ import { FirmaPersonalEstadoDto, FirmaTipoCodigo } from './firma-personal.dto';
 
 /**
  * Lee y guarda las firmas del usuario logueado. Vive en `core/` y no dentro de una feature porque
- * la usan tres módulos —Contabilidad (Configuración → Firma), Gestión Administrativa
- * (Configuración → Tu firma) y el modal que aparece al firmar un consolidado por primera vez— y
- * las tres escriben las mismas filas.
+ * la usan tres lugares —Mi Perfil → Mi Firma, Contabilidad (Configuración → Firma) y el modal que
+ * aparece al firmar un consolidado sin tener firma— y los tres escriben las mismas filas.
  *
  * El usuario nunca viaja en la petición: el backend lo saca del token, así que nadie puede
  * registrar la firma de otro.
  */
 @Injectable({ providedIn: 'root' })
 export class FirmaPersonalService {
-  private readonly apiUrl = `${environment.apiUrl}api/v1/configuracion/mi-firma`;
+  private readonly apiUrl = `${environment.apiUrl}api/v1/mi-perfil/mi-firma`;
 
   constructor(private http: HttpClient) {}
 

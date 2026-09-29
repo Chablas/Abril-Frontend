@@ -4,9 +4,18 @@ export interface ProjectDto {
   codigo?: string;
   abbreviation?: string;
   levelDescription?: string;
-  estado?: string;
-  /** Ciclo de vida real para el cálculo de ratios SSOMA: Finalizado | Activo | Inactivo. */
-  cicloVida?: string;
+
+  /** Qué es: proyecto de verdad, FFT, Oficina Central, área interna o prueba (catálogo project_tipo). */
+  projectTipoId: number;
+  /** PROYECTO | FFT | OFICINA_CENTRAL | AREA_INTERNA | PRUEBA: decide el color del badge. */
+  projectTipoCodigo: string;
+  projectTipoNombre: string;
+
+  /** Ciclo de vida (catálogo project_ciclo_vida). No confundir con `active`. */
+  projectCicloVidaId: number;
+  /** ACTIVO | FINALIZADO | INACTIVO: decide el color del badge. */
+  projectCicloVidaCodigo: string;
+  projectCicloVidaNombre: string;
 
   // Contribuyente (read-only en este DTO de listado)
   contributorId?: number;
@@ -40,6 +49,17 @@ export interface ProjectDto {
   workersCoordAdminId?: number | null;
   /** Nombre del coordinador administrativo, para pintarlo sin buscarlo en la lista. */
   coordAdminNombre?: string | null;
+  coordAdminEmail?: string | null;
+
+  /** Residente: FK a workers. Nombre y correo vienen resueltos desde su ficha. */
+  residenteWorkersId?: number | null;
+  residenteNombre?: string | null;
+  residenteEmail?: string | null;
+
+  // Correos de aviso (texto)
+  emailResponsable?: string | null;
+  emailRrhh?: string | null;
+  emailCoordSsoma?: string | null;
 
   // Fechas (ISO string)
   fechaInicio?: string;
@@ -73,5 +93,6 @@ export interface ProjectDto {
   lng?: number | null;
   radioGeofenceMetros?: number;
 
+  /** Columna de sistema: si el proyecto aparece en filtros y desplegables («Visible en el sistema»). */
   active: boolean;
 }

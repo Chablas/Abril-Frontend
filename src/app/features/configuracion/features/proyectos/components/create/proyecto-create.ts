@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -8,17 +8,23 @@ import { ProyectoService } from '../../services/proyecto.service';
 import { ProjectCreateDto } from '../../dtos/project-create.dto';
 import { ContributorLookupDto } from '../../dtos/company-lookup.dto';
 import { ResponsableLookupDto } from '../../dtos/responsable-lookup.dto';
+import { ProjectCatalogoDto } from '../../dtos/project-init.dto';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { LoaderService } from '../../../../../../core/services/loader.service';
+import { AuthService } from '../../../../../../core/services/auth.service';
+import { ROLES_ASIGNAN_RESIDENTE } from '../../../../../../core/constants/proyecto-roles';
 
 interface ProjectFormModel {
   projectDescription: string;
   codigo: string;
   abbreviation: string;
   levelDescription: string;
-  estado: string;
+  /** Catálogo project_tipo: proyecto de verdad, FFT, Oficina Central, área interna o prueba. */
+  projectTipoId: number | null;
+  /** Catálogo project_ciclo_vida. */
+  projectCicloVidaId: number | null;
 
   rucInput: string;
   contributor: ContributorLookupDto | null;
@@ -36,6 +42,12 @@ interface ProjectFormModel {
 
   /** FK a workers: el correo del coordinador se resuelve al enviar, no se guarda copia. */
   workersCoordAdminId: number | null;
+  /** FK a workers, igual que el coordinador. Solo lo asigna ROLES_ASIGNAN_RESIDENTE. */
+  residenteWorkersId: number | null;
+
+  emailResponsable: string;
+  emailRrhh: string;
+  emailCoordSsoma: string;
 
   fechaInicio: string | null;
   fechaFin: string | null;
@@ -62,50 +74,76 @@ interface ProjectFormModel {
   templateUrl: './proyecto-create.html',
 })
 export class ProyectoCreate implements OnInit {
+  /** Catálogos que ya trajo la carga inicial de la pantalla (no se vuelven a pedir). */
+  @Input() tipos: ProjectCatalogoDto[] = [];
+  @Input() ciclosVida: ProjectCatalogoDto[] = [];
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
   form: ProjectFormModel = this.emptyForm();
   rucLookupLoading = false;
   saving = false;
+  /** El residente da permisos (Cronograma de Hitos): el RESIDENTE crea proyectos pero no lo asigna. */
+  readonly puedeAsignarResidente: boolean;
 
   responsablesArqCom: ResponsableLookupDto[] = [];
   responsablesUdp: ResponsableLookupDto[] = [];
-  coordAdmins: ResponsableLookupDto[] = [];
+  /** Elegibles como residente y administrador de obra (personal Casa no retirado con correo). */
+  personalCasa: ResponsableLookupDto[] = [];
   loadingLookups = true;
   lookupsError = false;
 
-  /** Opciones del desplegable "Visible en filtros" (antes un <select> de true/false). */
+  /** «Visible en el sistema» (project.active, columna de sistema): no es el ciclo de vida. */
   readonly opcionesActivo = [
-    { value: true, label: 'ACTIVO' },
-    { value: false, label: 'INACTIVO' },
+    { value: true, label: 'SÍ' },
+    { value: false, label: 'NO' },
   ];
 
   constructor(
     private proyectoService: ProyectoService,
     private router: Router,
     private loaderService: LoaderService,
+    authService: AuthService,
     private cdr: ChangeDetectorRef,
-  ) {}
+  ) {
+    this.puedeAsignarResidente = authService.hasAnyRole(ROLES_ASIGNAN_RESIDENTE);
+  }
 
   ngOnInit(): void {
+    // Un proyecto nuevo arranca como proyecto de verdad y activo; se cambia si no lo es.
+    this.form.projectTipoId = this.tipos.find((t) => t.codigo === 'PROYECTO')?.id ?? null;
+    this.form.projectCicloVidaId = this.ciclosVida.find((c) => c.codigo === 'ACTIVO')?.id ?? null;
     this.loadLookups();
+  }
+
+  /** Qué significa el tipo elegido (lo trae el catálogo). */
+  get descripcionTipo(): string | null {
+    return this.tipos.find((t) => t.id === this.form.projectTipoId)?.descripcion ?? null;
   }
 
   /** Correo del coordinador elegido, solo informativo: lo que se guarda es el workerId. */
   get coordAdminEmail(): string | null {
-    if (this.form.workersCoordAdminId == null) return null;
-    return this.coordAdmins.find((c) => c.id === this.form.workersCoordAdminId)?.email ?? null;
+    return this.emailDe(this.form.workersCoordAdminId);
+  }
+
+  /** Correo del residente elegido: es el que reciben los avisos de la obra. */
+  get residenteEmail(): string | null {
+    return this.emailDe(this.form.residenteWorkersId);
+  }
+
+  private emailDe(workerId: number | null): string | null {
+    if (workerId == null) return null;
+    return this.personalCasa.find((c) => c.id === workerId)?.email ?? null;
   }
 
   loadLookups(): void {
     this.loadingLookups = true;
     this.lookupsError = false;
     this.proyectoService.getLookups().subscribe({
-      next: ({ arqCom, udp, coordAdmins }) => {
+      next: ({ arqCom, udp, personalCasa }) => {
         this.responsablesArqCom = arqCom;
         this.responsablesUdp = udp;
-        this.coordAdmins = coordAdmins;
+        this.personalCasa = personalCasa;
         this.loadingLookups = false;
         this.cdr.detectChanges();
       },
@@ -171,7 +209,8 @@ export class ProyectoCreate implements OnInit {
       codigo:             this.form.codigo.trim()        || undefined,
       abbreviation:       this.form.abbreviation.trim()  || undefined,
       levelDescription:   this.form.levelDescription.trim() || undefined,
-      estado:             this.form.estado.trim() || undefined,
+      projectTipoId:      this.form.projectTipoId,
+      projectCicloVidaId: this.form.projectCicloVidaId,
 
       contributorId: this.form.contributor?.contributorId,
       legalEntityRegistryNumber: this.form.contributor
@@ -190,6 +229,11 @@ export class ProyectoCreate implements OnInit {
 
       // Null explícito, no undefined: es una FK, "sin coordinador" es un valor válido.
       workersCoordAdminId: this.form.workersCoordAdminId,
+      residenteWorkersId: this.puedeAsignarResidente ? this.form.residenteWorkersId : null,
+
+      emailResponsable: this.form.emailResponsable.trim() || null,
+      emailRrhh:        this.form.emailRrhh.trim()        || null,
+      emailCoordSsoma:  this.form.emailCoordSsoma.trim()  || null,
 
       fechaInicio: this.form.fechaInicio || undefined,
       fechaFin:    this.form.fechaFin    || undefined,
@@ -228,7 +272,8 @@ export class ProyectoCreate implements OnInit {
       codigo: '',
       abbreviation: '',
       levelDescription: '',
-      estado: '',
+      projectTipoId: null,
+      projectCicloVidaId: null,
 
       rucInput: '',
       contributor: null,
@@ -245,6 +290,11 @@ export class ProyectoCreate implements OnInit {
       responsableUdpId: null,
 
       workersCoordAdminId: null,
+      residenteWorkersId: null,
+
+      emailResponsable: '',
+      emailRrhh: '',
+      emailCoordSsoma: '',
 
       fechaInicio: '',
       fechaFin: '',

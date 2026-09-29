@@ -21,6 +21,7 @@ import {
 } from '../../../shared/dtos/rendicion-shared.dto';
 import { confirmarConCorreos, pedirAvisos } from '../../../shared/confirmar-correos';
 import { AuthService } from '../../../../../core/services/auth.service';
+import { FirmaMfaService } from '../../../../../core/services/firma-mfa.service';
 import { StatusBadge } from '../../../../../shared/components/status-badge/status-badge';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
 import { SearchInput } from '../../../../../shared/components/search-input/search-input';
@@ -114,21 +115,6 @@ interface AreaCascadeNode {
       transition: background-color .15s ease, border-color .15s ease, color .15s ease;
     }
     .doc-chip:hover { border-color: var(--color-abril-standard); color: var(--color-abril-standard); }
-
-    /* Código de una planilla cubierta. Las que el usuario no ve van apagadas: se listan porque el
-       importe declarado las incluye, pero no puede abrirlas ni decidir sobre ellas. */
-    .ren-chip {
-      display: inline-block;
-      padding: 1px 5px;
-      border-radius: 4px;
-      background: var(--color-abril-standard-light);
-      color: var(--color-abril-standard);
-      font-size: 10px;
-      font-weight: 700;
-      line-height: 1.5;
-      white-space: nowrap;
-    }
-    .ren-chip--ajena { background: #F3F4F6; color: #9CA3AF; }
   `],
 })
 export class Consolidados implements OnInit {
@@ -144,8 +130,11 @@ export class Consolidados implements OnInit {
 
   /** Modal para registrar la firma en el momento (se abre con el 409 de aprobar). */
   firmaModalAbierto = false;
-  /** Selección que se estaba firmando cuando saltó el modal, para reintentarla al guardarla. */
-  private accionPendienteDeFirma: ConsolidadoAccionDto | null = null;
+  /**
+   * Firma que se estaba aprobando cuando saltó el modal, para reintentarla al guardarla: la
+   * selección y su verificación de Microsoft, que es de esa misma firma.
+   */
+  private firmaPendiente: { accion: ConsolidadoAccionDto; firmaMfa: string } | null = null;
 
   resumen: ResumenConsolidadosDto = { porDecidir: 0, observados: 0, firmados: 0 };
 
@@ -198,6 +187,7 @@ export class Consolidados implements OnInit {
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private authService: AuthService,
+    private firmaMfa: FirmaMfaService,
     private route: ActivatedRoute,
     private router: Router,
     private cdr: ChangeDetectorRef,
@@ -390,13 +380,24 @@ export class Consolidados implements OnInit {
     return this.consolidados.some((c) => c.porDecidirCount > 0);
   }
 
-  /** Seleccionados con algún reembolso que le toca decidir al usuario. */
-  get selectedPorDecidir(): ConsolidadoListItemDto[] {
-    return this.seleccionados.filter((c) => c.porDecidirCount > 0);
+  /**
+   * Puede aprobar (que es firmar) HOY: le toca decidir, todavía no firmó y no está esperando a
+   * quien va antes que él. Un consolidado de obra lo firman DOS —el administrador y detrás el
+   * residente—, así que «ya firmé» no es «ya está aprobado»: con una sola firma el documento
+   * sigue esperando, y volver a apretar Aprobar no lo completa.
+   */
+  puedeAprobar(c: ConsolidadoListItemDto): boolean {
+    return c.porDecidirCount > 0 && !c.yaFirme && !c.esperaFirmaPrevia;
   }
 
-  get puedeDecidir(): boolean {
-    return this.selectedPorDecidir.length > 0;
+  /** Seleccionados que este usuario puede aprobar hoy. */
+  get selectedParaAprobar(): ConsolidadoListItemDto[] {
+    return this.seleccionados.filter((c) => this.puedeAprobar(c));
+  }
+
+  /** Seleccionados que puede observar: devolverlo al consolidador no depende del turno. */
+  get selectedParaObservar(): ConsolidadoListItemDto[] {
+    return this.seleccionados.filter((c) => c.porDecidirCount > 0);
   }
 
   private accionDe(items: ConsolidadoListItemDto[], observacion?: string): ConsolidadoAccionDto {
@@ -420,17 +421,21 @@ export class Consolidados implements OnInit {
 
   // ── Acciones ─────────────────────────────────────────────────────────
 
-  async aprobarBulk(items = this.selectedPorDecidir): Promise<void> {
+  async aprobarBulk(items = this.selectedParaAprobar): Promise<void> {
     if (items.length === 0) return;
 
     const salidas = items.reduce((acc, c) => acc + c.porDecidirCount, 0);
+    // Con dos firmas, la primera no cierra nada: decirlo evita que el jefe crea que el consolidado
+    // ya pasó a Tesorería (y que vuelva a apretar Aprobar creyendo que no funcionó).
+    const despues = items.length === 1 ? items[0].firmasPendientes.slice(1) : [];
     const result = await confirmarConCorreos({
       titulo: items.length === 1
-        ? '¿Aprobar el reembolso de ' + this.referencia(items[0]) + '?'
+        ? `¿Aprobar ${this.referencia(items[0])}?`
         : `¿Aprobar ${items.length} consolidados?`,
       // El conteo no está en la tabla —un consolidado cubre varias salidas— y la firma es el
       // efecto que no se ve.
-      nota: `${salidas} salida(s). Se firman el Consolidado del S10, la planilla grupal y las planillas que cubre.`,
+      nota: `Firma el consolidado, la planilla grupal y sus planillas · ${salidas} salida(s).`
+          + (despues.length ? ` Después falta la firma de ${despues.join(', ')}.` : ''),
       avisos: await this.avisos(items, true),
       confirmButtonText: 'Sí, aprobar',
     });
@@ -441,13 +446,13 @@ export class Consolidados implements OnInit {
     this.aprobar(this.accionDe(items));
   }
 
-  async observarBulk(items = this.selectedPorDecidir): Promise<void> {
+  async observarBulk(items = this.selectedParaObservar): Promise<void> {
     if (items.length === 0) return;
 
     const { value: observacion, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
       titulo: items.length === 1
-        ? '¿Observar el reembolso de ' + this.referencia(items[0]) + '?'
+        ? `¿Observar ${this.referencia(items[0])}?`
         : `¿Observar ${items.length} consolidados?`,
       avisos: await this.avisos(items, false),
       observacion: {
@@ -472,18 +477,58 @@ export class Consolidados implements OnInit {
    * Configuración → Firmas (puede tener la dibujada y aun así faltarle la imagen, o al revés) — en
    * vez de mandarlo a Configuración se abre el modal donde la registra y la acción se reintenta sola.
    */
-  private aprobar(accion: ConsolidadoAccionDto): void {
+  private async aprobar(accion: ConsolidadoAccionDto, verificada?: string): Promise<void> {
+    // Cada firma pide la verificación de Microsoft. El reintento tras registrar la firma es la
+    // MISMA firma: llega con la del primer intento y no vuelve a abrir Microsoft.
+    const firmaMfa = verificada ?? (await this.firmaMfa.obtener());
+    if (firmaMfa === null) return;
+
     this.loaderService.show();
-    this.service.aprobarReembolso(accion).subscribe({
+    this.service.aprobarReembolso(accion, firmaMfa).subscribe({
       next: (res) => this.trasAccion(res.message),
       error: (err: HttpErrorResponse) => {
         this.loaderService.hide();
         if (err.status === 409) {
-          this.accionPendienteDeFirma = accion;
+          this.firmaPendiente = { accion, firmaMfa };
           this.firmaModalAbierto = true;
           this.cdr.detectChanges();
           return;
         }
+        if (this.firmaMfa.avisarSiFalto(err, firmaMfa)) return;
+        this.errorAccion(err);
+      },
+    });
+  }
+
+  /**
+   * Vuelve a estampar su firma sobre un consolidado que ya firmó. No es una segunda firma: la copia
+   * firmada se rehace desde el original con la suya al día, así que el documento sigue esperando
+   * exactamente lo que esperaba. Solo se ofrece mientras el que viene detrás no haya firmado.
+   */
+  async volverAFirmar(c: ConsolidadoListItemDto, ev?: Event): Promise<void> {
+    ev?.stopPropagation(); // no abrir el detalle
+    if (!c.puedeVolverAFirmar) return;
+
+    const faltan = c.firmasPendientes;
+    const result = await confirmarConCorreos({
+      titulo: `¿Volver a firmar ${this.referencia(c)}?`,
+      nota: 'Reemplaza tu firma con la fecha de hoy.'
+          + (faltan.length ? ` Sigue faltando la firma de ${faltan.join(', ')}.` : ''),
+      avisos: [],
+      sinNadie: 'No sale ningún correo.',
+      confirmButtonText: 'Sí, volver a firmar',
+    });
+    if (!result.isConfirmed) return;
+
+    const firmaMfa = await this.firmaMfa.obtener();
+    if (firmaMfa === null) return;
+
+    this.loaderService.show();
+    this.service.volverAFirmar(this.accionDe([c]), firmaMfa).subscribe({
+      next: (res) => this.trasAccion(res.message),
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        if (this.firmaMfa.avisarSiFalto(err, firmaMfa)) return;
         this.errorAccion(err);
       },
     });
@@ -491,14 +536,14 @@ export class Consolidados implements OnInit {
 
   onFirmaRegistrada(): void {
     this.firmaModalAbierto = false;
-    const accion = this.accionPendienteDeFirma;
-    this.accionPendienteDeFirma = null;
-    if (accion) this.aprobar(accion);
+    const pendiente = this.firmaPendiente;
+    this.firmaPendiente = null;
+    if (pendiente) this.aprobar(pendiente.accion, pendiente.firmaMfa);
   }
 
   cerrarFirmaModal(): void {
     this.firmaModalAbierto = false;
-    this.accionPendienteDeFirma = null;
+    this.firmaPendiente = null;
     this.cdr.detectChanges();
   }
 
@@ -545,9 +590,12 @@ export class Consolidados implements OnInit {
   readonly reembolsoLabelCorto = reembolsoLabelCorto;
   readonly correccionS10Colors = correccionS10Colors;
 
-  /** Cómo se nombra un consolidado en los diálogos: por su número de reembolso del S10. */
+  /**
+   * Cómo se nombra un consolidado en los diálogos: por su número de reembolso del S10 («el
+   * consolidado N.° 12345»), o «este consolidado» en los viejos que no lo tienen.
+   */
   referencia(c: ConsolidadoListItemDto): string {
-    return c.numeroReembolso ? 'N.° ' + c.numeroReembolso : 'este consolidado';
+    return c.numeroReembolso ? 'el consolidado N.° ' + c.numeroReembolso : 'este consolidado';
   }
 
   /** "Ana Pérez" o "Ana Pérez +2" — un consolidado puede cubrir a varios. */
@@ -569,8 +617,41 @@ export class Consolidados implements OnInit {
     return partes.length ? partes.join(' · ') : null;
   }
 
-  /** Planillas que el usuario no ve: se listan por el monto, pero no puede entrar en ellas. */
-  ajenaTitle(codigo: string): string {
-    return `${codigo} no está en tu alcance: se lista porque el importe del consolidado la incluye.`;
+  // ── Las firmas del documento ─────────────────────────────────────────
+  // El estado del reembolso no alcanza para explicar un consolidado de obra: con la firma del
+  // administrador puesta sigue diciendo "Pendiente" porque falta la del residente. El badge de al
+  // lado es lo único que lo aclara.
+
+  /**
+   * Qué dice la fila sobre las firmas que faltan. Null cuando no hay nada que aclarar.
+   *
+   * Cuenta en vez de nombrar: un nombre completo no entra en la celda y recortarlo sale mal con
+   * los apellidos compuestos ("Rabanal de la Peña" quedaba en "Rabanal De"). Quiénes son está en
+   * el title y, entero, en el detalle.
+   */
+  firmaBadge(c: ConsolidadoListItemDto): { text: string; bg: string; textColor: string } | null {
+    const faltan = c.firmasPendientes.length;
+    if (faltan === 0) return null;
+
+    if (c.yaFirme) {
+      return {
+        text: faltan === 1 ? 'Falta 1 firma' : `Faltan ${faltan} firmas`,
+        bg: '#FEF3C7',
+        textColor: '#92400E',
+      };
+    }
+    if (c.esperaFirmaPrevia) {
+      return { text: 'Espera la firma previa', bg: '#F3F4F6', textColor: '#4B5563' };
+    }
+    return null;
+  }
+
+  /** Quién firmó y quién falta, para el title del badge. */
+  firmaTitle(c: ConsolidadoListItemDto): string {
+    const partes = c.firmas.map(
+      (f) => `Firmó ${f.nombre}${f.puesto ? ' (' + f.puesto + ')' : ''}`,
+    );
+    if (c.firmasPendientes.length) partes.push('Falta la firma de ' + c.firmasPendientes.join(', '));
+    return partes.join(' · ');
   }
 }

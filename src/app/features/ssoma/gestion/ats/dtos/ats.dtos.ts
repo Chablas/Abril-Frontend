@@ -6,6 +6,7 @@ export interface AtsProyectoDto {
 export interface AtsPasoDto {
   id: number;
   texto: string;
+  requierePetar: boolean;
 }
 
 export interface AtsPasoPuestoDto {
@@ -50,6 +51,11 @@ export interface AtsPetarResumenDto {
   id: number;
   tipoNombre?: string;
   estado: string;
+  tieneFirmaEjecutante: boolean;
+  supervisorFirmado: boolean;
+  ssomaFirmado: boolean;
+  puedeFirmarSupervisor: boolean;
+  puedeFirmarSsoma: boolean;
 }
 
 export interface AtsPeligroDto {
@@ -61,6 +67,7 @@ export interface AtsPeligroDto {
 export interface AtsEppDto {
   id: number;
   nombre: string;
+  categoria: string;
 }
 
 export interface AtsHerramientaDto {
@@ -98,8 +105,12 @@ export interface AtsInitDto {
 
 export type NivelRiesgo = 'A' | 'M' | 'B';
 
+/** pasoId presente = viene del catálogo. pasoId ausente = paso "de una sola vez" escrito a mano
+ *  para este ATS puntual (no se guarda en el catálogo) — ahí texto/categoriaNombre son obligatorios. */
 export interface AtsPasoRequestDto {
-  pasoId: number;
+  pasoId?: number;
+  texto?: string;
+  categoriaNombre?: string;
   aplica: boolean;
 }
 
@@ -115,11 +126,16 @@ export interface AtsGuardarRequestDto {
   proyectoId: number;
   plantillaId?: number;
   actividad: string;
+  torreNombre?: string;
+  pisos?: string;
   lugar?: string;
   pasos: AtsPasoRequestDto[];
   eppIds: number[];
   herramientaIds: number[];
+  herramientasPersonalizadas: string[];
   riesgos: AtsRiesgoDetalleRequestDto[];
+  /** Presente solo al crear un ATS como corrección de uno ya firmado el mismo día. */
+  atsAnteriorId?: number;
 }
 
 export interface AtsFirmarVistoRequestDto {
@@ -137,7 +153,7 @@ export interface AtsFirmarRequestDto {
 }
 
 export interface AtsPasoResponseDto {
-  pasoId: number;
+  pasoId?: number;
   categoriaNombre: string;
   texto: string;
   aplica: boolean;
@@ -163,6 +179,8 @@ export interface AtsResponseDto {
   puestoNombre?: string;
   plantillaId?: number;
   actividad: string;
+  torreNombre?: string;
+  pisos?: string;
   lugar?: string;
   fecha: string;
   horaServidorFirma?: string;
@@ -254,10 +272,23 @@ export interface AtsPlantillaActividadPeligrosRequestDto {
 
 // ── Controles sugeridos por riesgo ──────────────────────────────────────────
 
+export type TipoControl = 'Eliminacion' | 'Sustitucion' | 'Ingenieria' | 'Administrativo' | 'Epp';
+
+/** Jerarquía de controles (de más a menos efectivo) — usada en los selects de tipo de control
+ *  y para la advertencia de la matriz de riesgo (Alto→Bajo sin control de Ingeniería). */
+export const TIPOS_CONTROL: { value: TipoControl; label: string }[] = [
+  { value: 'Eliminacion', label: 'Eliminación' },
+  { value: 'Sustitucion', label: 'Sustitución' },
+  { value: 'Ingenieria', label: 'Ingeniería' },
+  { value: 'Administrativo', label: 'Administrativo' },
+  { value: 'Epp', label: 'EPP' },
+];
+
 export interface AtsRiesgoControlDto {
   id: number;
   texto: string;
   orden: number;
+  tipo: TipoControl;
 }
 
 export interface AtsRiesgoConControlesDto {
@@ -270,4 +301,5 @@ export interface AtsRiesgoConControlesDto {
 
 export interface AtsRiesgoControlGuardarRequestDto {
   texto: string;
+  tipo: TipoControl;
 }

@@ -16,6 +16,7 @@
           <th>Área</th>
           <th>Área padre</th>
           <th>Proyecto</th>
+          <th>Trabajadores</th>
           <th class="w-[320px]">Revisor actual</th>
           <th class="text-center w-[130px]">Acciones</th>
         </tr>
@@ -25,6 +26,7 @@
           <td class="text-gray-700">{{ r.areaName }}</td>
           <td class="text-gray-700">{{ r.parentName || '—' }}</td>
           <td class="text-gray-700">{{ r.projectName || '—' }}</td>
+          <td class="text-gray-700">{{ r.casoNombre || '—' }}</td>
           <td class="text-gray-700">
             <ng-container *ngIf="revisorPrincipal(r.revisores) as principal; else sinActivos">
               <span>{{ principal.revisorFullName | titleCase }}</span>
@@ -47,7 +49,7 @@
         </tr>
 
         <tr *ngIf="filteredRows.length === 0">
-          <td colspan="5" class="text-center py-[40px] text-gray-400 text-sm">
+          <td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">
             {{
               filtrosActivos > 0
                 ? 'Sin resultados.'

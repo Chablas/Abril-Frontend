@@ -4,6 +4,7 @@ import { Observable, catchError, of, shareReplay, tap } from 'rxjs';
 import {
   AreaArbolNodoDto,
   AreaCatDto,
+  ActoresTrabajadorDto,
   JefeCandidatoDto,
   SsItemEmpresaDto,
   SsItemTrabajadorDto,
@@ -64,25 +65,10 @@ export class CatalogosHabService {
   }
 
   /**
-   * Árbol de áreas para los desplegables de área del formulario de trabajadores, con la
-   * equivalencia legacy y el revisor ya elegido por nodo. Una sola petición cubre toda la
-   * cascada y el campo de revisor (reemplaza a getAreas + getSubareas en ese formulario).
-   *
-   * Con `workerId` el revisor viene descartando a ese trabajador de sus propios candidatos
-   * ("nadie es su propio jefe"), así que la respuesta es distinta para cada uno y NO se cachea;
-   * sin él la respuesta sirve para toda la pantalla y se comparte, que es lo que necesitan las
-   * pantallas que solo usan el árbol para filtrar.
+   * Árbol de áreas para los desplegables de área, con la equivalencia legacy ya resuelta por nodo.
+   * Una sola petición cubre toda la cascada (reemplaza a getAreas + getSubareas) y se comparte.
    */
-  getAreaArbol(workerId?: number | null): Observable<AreaArbolNodoDto[]> {
-    if (workerId != null) {
-      return this.http
-        .get<AreaArbolNodoDto[]>(`${this.base}/areas-arbol`, {
-          headers: buildHabHeaders(),
-          params: { workerId },
-        })
-        .pipe(catchError(() => of([])));
-    }
-
+  getAreaArbol(): Observable<AreaArbolNodoDto[]> {
     if (!this.areaArbol$) {
       this.areaArbol$ = this.http
         .get<AreaArbolNodoDto[]>(`${this.base}/areas-arbol`, { headers: buildHabHeaders() })
@@ -135,9 +121,29 @@ export class CatalogosHabService {
   }
 
   /**
-   * Trabajadores que pueden ser jefe (correo corporativo @abril.pe), para el desplegable del
-   * checkbox "Jefe personalizado". Se cachea porque el catálogo no cambia mientras el usuario
-   * edita y el formulario se abre una vez por trabajador.
+   * Los cinco actores de un trabajador para su ficha: lo que le toca por su área y lo personalizado
+   * en la ficha. Se pide con el puesto y la obra que el formulario tiene a la vista, que al crear o
+   * al cambiar de puesto todavía no son los guardados. No se cachea: depende de los tres datos.
+   */
+  getActores(
+    workerId: number | null,
+    puestoId: number | null,
+    proyectoId: number | null,
+  ): Observable<ActoresTrabajadorDto> {
+    const params: Record<string, number> = {};
+    if (workerId != null) params['workerId'] = workerId;
+    if (puestoId != null) params['puestoId'] = puestoId;
+    if (proyectoId != null) params['proyectoId'] = proyectoId;
+    return this.http.get<ActoresTrabajadorDto>(`${this.base}/actores`, {
+      headers: buildHabHeaders(),
+      params,
+    });
+  }
+
+  /**
+   * Personas elegibles para los actores de un trabajador (correo corporativo @abril.pe), para los
+   * desplegables de la sección de actores. Se cachea porque el catálogo no cambia mientras el
+   * usuario edita y el formulario se abre una vez por trabajador.
    */
   getJefes(): Observable<JefeCandidatoDto[]> {
     if (!this.jefes$) {

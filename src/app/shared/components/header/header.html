@@ -41,8 +41,14 @@
                 <div class="px-4 py-3 border-b border-gray-100">
                     <p class="text-sm font-semibold text-gray-800 truncate">{{ userName ?? 'Usuario' }}</p>
                     <p *ngIf="userJobTitle" class="text-xs text-[#64BC04] font-medium truncate">{{ userJobTitle }}</p>
-                    <p class="text-xs text-gray-400 truncate">{{ userEmail ?? '' }}</p>
                 </div>
+                <!-- Mismo menú que el nombre del sidebar en escritorio: «Mi Perfil» solo si tiene
+                     alguna sección que abrir. -->
+                <button *ngIf="miPerfilRoute" (click)="abrirMiPerfil()"
+                    class="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100 transition-colors cursor-pointer">
+                    <i class="ti ti-user-circle text-base shrink-0"></i>
+                    Mi Perfil
+                </button>
                 <button (click)="logout()"
                     class="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-red-500 hover:bg-red-50 transition-colors cursor-pointer">
                     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

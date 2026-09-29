@@ -1,8 +1,10 @@
 <app-abril-page-header
   titulo="PETAR — Trabajos de Alto Riesgo"
-  subtitulo="Permiso Escrito de Trabajo de Alto Riesgo, enlazado al ATS que lo origina">
+  subtitulo="Permiso Escrito de Trabajo de Alto Riesgo, enlazado al ATS que lo origina"
+  [tabs]="headerTabs">
 </app-abril-page-header>
 
+<div class="petar-body">
 <label class="toggle-pendientes">
   <input type="checkbox" [checked]="soloPendientes" (change)="toggleSoloPendientes()" />
   Solo pendientes de Supervisor/Visto Bueno SSOMA
@@ -73,6 +75,7 @@
   [totalPages]="totalPages"
   (pageChange)="cambiarPagina($event)"
 ></app-paginator>
+</div>
 
 @if (petarFirmandoVisto) {
   <app-abril-modal-panel [titulo]="vistoTitulo" icono="ti-signature" variant="blue" width="560px" (closeModal)="cerrarFirmaVisto()">

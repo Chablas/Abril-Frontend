@@ -54,6 +54,8 @@ export class SctrVidaley implements OnInit, OnDestroy {
   documentos: SctrVidaLeyDto[] = [];
   selectedDoc: SctrVidaLeyDto | null = null;
   docSafeUrl: SafeResourceUrl | null = null;
+  /** La póliza tiene archivo registrado pero no se pudo obtener/abrir desde SharePoint. */
+  docError = false;
   private docBlobUrl = '';
   loading = false;
   totalRecords = 0;
@@ -345,6 +347,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
 
   private clearDocPanel(): void {
     this.docSafeUrl = null;
+    this.docError = false;
     this.revokeDocBlobUrl();
     this.selectedPolizaWorker = null;
     this.docWorkersSeleccionados = new Set();
@@ -361,6 +364,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
 
   private loadDocBlob(archivoUrl: string): void {
     this.docSafeUrl = null;
+    this.docError = false;
     this.sharepointService.getArchivoUrl(archivoUrl).subscribe({
       next: (res) => {
         fetch(res.url)
@@ -380,6 +384,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
           });
       },
       error: () => {
+        this.docError = true;
         this.cdr.detectChanges();
       },
     });

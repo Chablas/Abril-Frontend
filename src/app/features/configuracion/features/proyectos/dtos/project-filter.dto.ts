@@ -7,4 +7,8 @@ export interface ProjectFilterDto {
   projectDescription: string;
   /** Visible en filtros/desplegables: null trae activos e inactivos. */
   active?: boolean | null;
+  /** Catálogo project_tipo: null trae todos. */
+  projectTipoId?: number | null;
+  /** Catálogo project_ciclo_vida: null trae todos. */
+  projectCicloVidaId?: number | null;
 }

@@ -714,26 +714,35 @@ export class GestionSalidas implements OnInit {
   /**
    * Rechaza en bloque las solicitudes seleccionadas que sean rechazables: pendientes, o aprobadas
    * que aún no fueron rendidas. Solo las que este usuario decide (es su revisor) y nunca las ya
-   * rendidas. Rechaza sin pedir motivo; el motivo se pide en el botón del detalle.
+   * rendidas. Pide el mismo motivo opcional que el botón del detalle, y el que se escriba les
+   * llega a todas en su correo de rechazo.
    */
   async rechazarBulk(): Promise<void> {
     if (!this.puedeRechazarSeleccion) return;
     const items = this.selectedRechazables;
     if (items.length === 0) return;
 
-    const result = await confirmarConCorreos({
+    const { value: motivo, isConfirmed } = await confirmarConCorreos({
       icon: 'warning',
       titulo: `¿Rechazar ${items.length} solicitud(es)?`,
       // El conjunto es más chico que la selección: eso no se ve en la tabla.
       nota: 'Solo las pendientes y las aprobadas sin rendir.',
       avisos: await this.avisos(items, false),
+      observacion: {
+        label: 'Motivo (opcional)',
+        placeholder: items.length === 1
+          ? 'Por qué no procede la salida…'
+          : 'Por qué no proceden las salidas…',
+        obligatoria: false,
+      },
       confirmButtonText: 'Rechazar',
       confirmButtonColor: '#D30000',
     });
-    if (!result.isConfirmed) return;
+    if (!isConfirmed) return;
 
+    const motivoRechazo = (motivo ?? '').trim() || null;
     this.loaderService.show();
-    forkJoin(items.map((s) => this.service.rechazar(s.id))).subscribe({
+    forkJoin(items.map((s) => this.service.rechazar(s.id, motivoRechazo))).subscribe({
       next: () => {
         this.loaderService.hide();
         Swal.fire({ title: `${items.length} solicitud(es) rechazada(s)`, icon: 'success', timer: 1500, showConfirmButton: false });
@@ -1184,8 +1193,8 @@ export class GestionSalidas implements OnInit {
 
   /**
    * Rechaza la salida abierta en el detalle. El motivo es opcional —el rechazo no siempre necesita
-   * explicación y el botón bulk de la tabla nunca lo pidió—, pero si se escribe le llega al
-   * solicitante en su correo de rechazo.
+   * explicación—, pero si se escribe le llega al solicitante en su correo de rechazo. El botón
+   * bulk de la tabla pide el mismo.
    */
   async rechazarDetalle(): Promise<void> {
     const d = this.detalle;

@@ -10,8 +10,7 @@ import { GaMotivos } from './motivos/pages/motivos';
 import { GaTrayectos } from '../trayectos/pages/trayectos';
 import { GaCarpetaAdjuntos } from './carpeta-adjuntos/pages/carpeta-adjuntos';
 import { GaCapturas } from './capturas/pages/capturas';
-import { Roles } from '../../../../core/constants/roles';
-import { FirmaPersonal } from '../../../../shared/components/firma-personal/firma-personal';
+import { GaRevisoresAreas } from './revisores-areas/pages/revisores-areas';
 
 import { GESTION_ADMINISTRATIVA_TABS } from '../../shared/gestion-administrativa-tabs';
 /** Definición de una sección de configuración de Gestión Administrativa. */
@@ -19,13 +18,8 @@ interface ConfigSectionDef {
   id: string;
   label: string;
   route: string;
-  /**
-   * Feature que hay que tener para ver la sección. Sin valor, la sección se filtra por
-   * <see cref="roles"/> (hoy solo "Tu firma": la firma es de la persona, no de una funcionalidad).
-   */
-  featureKey?: string;
-  /** Roles que abren la sección cuando no se filtra por featureKey. */
-  roles?: string[];
+  /** Feature que hay que tener para ver la sección. */
+  featureKey: string;
   subtitulo: string;
   /** Etiqueta del botón de crear del header. Sin valor = la sección no crea registros. */
   createLabel?: string;
@@ -44,11 +38,16 @@ interface ConfigSectionDef {
  * pantallas donde se originan (`/gestion-administrativa/<pantalla>/configuracion`, con
  * `GaPantallaConfiguracion`), porque juntos no se sabía qué correo salía de dónde.
  *
- * Los revisores de áreas ya NO viven aquí: se movieron a Solicitud de Salidas →
- * Configuración, que es la pantalla donde nace la solicitud que el revisor recibe.
- * La visibilidad de salidas tampoco: pasó a Gestión de Salidas → Configuración,
- * que es la bandeja que recorta. El jefe por trabajador se asigna en el
- * formulario de Gestión de Ingresos → Trabajadores ("Jefe personalizado").
+ * La firma personal ("Tu firma") tampoco: desde el 2026-09-22 vive en Mi Perfil → Mi Firma,
+ * porque es de la persona y no de una funcionalidad de este módulo.
+ *
+ * Los Revisores de Áreas volvieron acá el 2026-09-25, unificados: juntan lo que estaba repartido
+ * en la configuración de Solicitud de Salidas (quién aprueba la salida), de Mis Rendiciones (quién
+ * revisa la planilla y firma el consolidado) y de Consolidados (quién consolida), más el jefe que se
+ * entera de las salidas del staff. Lo personalizado para UN trabajador se asigna en su ficha
+ * (Gestión de Ingresos → Trabajadores).
+ * La visibilidad de salidas no vive acá: pasó a Gestión de Salidas → Configuración,
+ * que es la bandeja que recorta.
  *
  * Cada sección sigue teniendo su propia ruta
  * (`/gestion-administrativa/configuracion/<seccion>`) con su `featureKey` +
@@ -70,7 +69,7 @@ interface ConfigSectionDef {
     GaTrayectos,
     GaCarpetaAdjuntos,
     GaCapturas,
-    FirmaPersonal,
+    GaRevisoresAreas,
   ],
   templateUrl: './ga-configuracion.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
@@ -112,23 +111,19 @@ export class GaConfiguracion implements OnInit {
         'Áreas que deben subir capturas de movilidad para rendir una salida. Por defecto, obligatorias.',
     },
     {
+      id: 'revisores-areas',
+      label: 'Revisores de Áreas',
+      route: '/gestion-administrativa/configuracion/revisores-areas',
+      featureKey: 'gestion-administrativa.config.revisores-areas',
+      subtitulo: 'Quién aprueba, se entera, revisa, consolida y firma por cada área.',
+    },
+    {
       id: 'carpeta-adjuntos',
       label: 'Carpeta Adjuntos',
       route: '/gestion-administrativa/configuracion/carpeta-adjuntos',
       featureKey: 'gestion-administrativa.config.carpeta-adjuntos',
       subtitulo:
         'Carpeta de SharePoint/OneDrive donde se guardan los documentos adjuntos de las solicitudes de salida (motivos que requieren documento).',
-    },
-    // Por rol y no por featureKey: la firma es de la persona, no de una funcionalidad. Todo
-    // USUARIO DE ABRIL entra acá a registrar la suya, y es la MISMA que se estampa en las facturas
-    // de Contabilidad y en la carta oferta de Onboarding.
-    {
-      id: 'firma',
-      label: 'Tu firma',
-      route: '/gestion-administrativa/configuracion/firma',
-      roles: [Roles.USUARIO_DE_ABRIL],
-      subtitulo:
-        'Tu firma personal. Es la que se estampa en la planilla de rendición que firmes y en el resto de documentos que firmes en la intranet.',
     },
   ];
 
@@ -143,6 +138,7 @@ export class GaConfiguracion implements OnInit {
   @ViewChild(GaTrayectos) private trayectosCmp?: GaTrayectos;
   @ViewChild(GaCarpetaAdjuntos) private carpetaAdjuntosCmp?: GaCarpetaAdjuntos;
   @ViewChild(GaCapturas) private capturasCmp?: GaCapturas;
+  @ViewChild(GaRevisoresAreas) private revisoresAreasCmp?: GaRevisoresAreas;
 
   constructor(
     private route: ActivatedRoute,
@@ -152,7 +148,7 @@ export class GaConfiguracion implements OnInit {
 
   ngOnInit(): void {
     this.visibleSections = this.allSections.filter((s) =>
-      this.navigationService.isNavEntryAllowed({ featureKey: s.featureKey, roles: s.roles }),
+      this.navigationService.isNavEntryAllowed({ featureKey: s.featureKey }),
     );
     this.sectionTabs = this.visibleSections.map((s) => ({ id: s.id, label: s.label }));
 
@@ -194,6 +190,7 @@ export class GaConfiguracion implements OnInit {
     | GaTrayectos
     | GaCarpetaAdjuntos
     | GaCapturas
+    | GaRevisoresAreas
     | undefined {
     switch (this.activeSection) {
       case 'lugares': return this.lugaresCmp;
@@ -201,20 +198,13 @@ export class GaConfiguracion implements OnInit {
       case 'trayectos': return this.trayectosCmp;
       case 'carpeta-adjuntos': return this.carpetaAdjuntosCmp;
       case 'capturas': return this.capturasCmp;
+      case 'revisores-areas': return this.revisoresAreasCmp;
       default: return undefined;
     }
   }
 
   get filtrosActivos(): number {
     return this.activeCmp?.filtrosActivos ?? 0;
-  }
-
-  /**
-   * "Tu firma" es un panel, no una lista: no tiene tabla que filtrar, así que el botón "Filtros"
-   * no se muestra ahí (si no, quedaría un botón que no abre nada).
-   */
-  get seccionConFiltros(): boolean {
-    return this.activeSection !== 'firma';
   }
 
   onSectionChange(id: string): void {

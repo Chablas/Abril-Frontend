@@ -182,3 +182,59 @@ textarea.field-input {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ── Actores del trabajador ─────────────────────────────────────────── */
+
+.actores {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.actores-resto {
+  padding-top: 0.25rem;
+}
+
+.actor-cabecera {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.caso-chip {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.55rem;
+  border-radius: 9999px;
+  background: var(--color-abril-standard-light);
+  color: var(--color-abril-standard);
+  white-space: nowrap;
+}
+
+.ver-mas {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-abril-standard);
+  cursor: pointer;
+}
+
+.ver-mas:hover {
+  text-decoration: underline;
+}
+
+.ver-mas-badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+  border-radius: 9999px;
+  background: var(--color-abril-standard-light);
+  color: var(--color-abril-standard);
+}

@@ -35,7 +35,7 @@ export class MilestoneScheduleHistoryService {
     });
   }
 
-  /** Solo ADMINISTRADOR DE RESIDENTES: elimina (soft-delete) una versión de cronograma con sus hitos. */
+  /** Solo con la feature mejora-continua.milestone-schedule.administrar: elimina (soft-delete) una versión de cronograma con sus hitos. */
   deleteMilestoneScheduleHistory(milestoneScheduleHistoryId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${milestoneScheduleHistoryId}`, {

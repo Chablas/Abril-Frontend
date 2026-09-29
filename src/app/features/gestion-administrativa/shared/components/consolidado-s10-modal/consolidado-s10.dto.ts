@@ -39,8 +39,9 @@ export interface ConsolidadoS10Dto {
   numeroReembolso: string | null;
   /**
    * La PLANILLA GRUPAL: el PDF que junta en un solo documento las planillas de gasto de todo lo que
-   * cubre el consolidado. La genera Abril One al adjuntarse el S10 —no se sube— y se rehace si el
-   * consolidado se reemplaza. Null en los consolidados anteriores a la columna.
+   * cubre el consolidado. La prepara el consolidador en Gestión de Rendiciones ANTES de subir el S10
+   * —es el papel que registra en el S10— y el consolidado se queda con ella, también al
+   * reemplazarse. Null en los consolidados anteriores a la columna.
    */
   planillaGrupalUrl: string | null;
   planillaGrupalFilename: string | null;

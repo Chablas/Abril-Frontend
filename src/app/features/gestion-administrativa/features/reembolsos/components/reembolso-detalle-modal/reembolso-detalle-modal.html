@@ -103,23 +103,11 @@
       </div>
     </div>
 
-    <!-- ── Documentos ──────────────────────────────────────────────────────────────
-         La planilla grupal y el Consolidado del S10 en su copia firmada, cada uno con su enlace y
-         el PDF debajo. Solo esos dos: las planillas de gasto de cada rendición no se listan. -->
-    <div *ngFor="let doc of documentos; trackBy: porClave" class="border-t pt-3"
-         style="border-color:var(--color-abril-border)">
-      <app-documento-embebido
-        [etiqueta]="doc.etiqueta"
-        [nombre]="doc.nombre"
-        [url]="doc.url"
-        [firmado]="doc.firmado"
-        [marca]="doc.firmado ? null : 'Sin firma'" />
-    </div>
-
     <!-- ── Rendiciones que cubre, con sus salidas ───────────────────────────
-         El ojo abre el detalle de cada salida: trayectos con origen, destino y horario, sus
-         vouchers con los montos y los adjuntos, que es lo que el requerimiento le pide ver a
-         Tesorería (RF-TES-05). -->
+         Antes de los documentos, pegadas a los importes que suman: con los dos PDF a la vista
+         quedaban al fondo del modal. El ojo abre el detalle de cada salida: trayectos con
+         origen, destino y horario, sus vouchers con los montos y los adjuntos, que es lo que el
+         requerimiento le pide ver a Tesorería (RF-TES-05). -->
     <div *ngFor="let r of d.rendiciones" class="flex flex-col gap-2 border-t pt-3"
          style="border-color:var(--color-abril-border)">
 
@@ -191,6 +179,19 @@
       </ng-container>
     </div>
 
+    <!-- ── Documentos ──────────────────────────────────────────────────────────────
+         La planilla grupal y el Consolidado del S10 en su copia firmada, cada uno con su enlace y
+         el PDF debajo. Solo esos dos: las planillas de gasto de cada rendición no se listan. -->
+    <div *ngFor="let doc of documentos; trackBy: porClave" class="border-t pt-3"
+         style="border-color:var(--color-abril-border)">
+      <app-documento-embebido
+        [etiqueta]="doc.etiqueta"
+        [nombre]="doc.nombre"
+        [url]="doc.url"
+        [firmado]="doc.firmado"
+        [marca]="doc.firmado ? null : 'Sin firma'" />
+    </div>
+
     <!-- ── Rastro de Tesorería ──────────────────────────────────────────── -->
     <div *ngIf="d.revisionTesoreriaAt || d.pagadoAt"
          class="flex flex-wrap gap-x-6 gap-y-1 text-[11px] text-gray-500 border-t pt-3"
@@ -244,7 +245,7 @@
         *ngIf="porPagar"
         type="button"
         (click)="marcarPagado()"
-        title="Registra el pago de este consolidado y le avisa a cada colaborador"
+        title="Registra el pago de este consolidado y le avisa al consolidador y a cada colaborador"
         class="inline-flex items-center gap-[6px] h-[36px] px-4 rounded-[7px] text-sm font-semibold text-white cursor-pointer transition-colors"
         style="background:#15803D">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -264,5 +265,6 @@
   *ngIf="salidaId !== null"
   [solicitudId]="salidaId"
   [mostrarDocumentos]="false"
+  [mostrarPipeline]="false"
   [cargar]="cargarSalida"
   (close)="cerrarSalida()" />

@@ -141,6 +141,11 @@
   word-break: break-all;
 }
 
+/* «(postulante)» junto a su correo: se queda pegado a él aunque la línea se corte. */
+.aviso__rol {
+  white-space: nowrap;
+}
+
 /* Clínica todavía sin elegir: se nombra en la frase como un destinatario más, pero en
    cursiva y sin el azul de los correos porque aún no es una dirección concreta. */
 .aviso__pendiente {

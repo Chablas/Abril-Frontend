@@ -17,13 +17,17 @@
             placeholder="Buscar proyecto..."
             class="border rounded-lg px-4 py-1.5 w-full outline-none" style="border-color:var(--color-abril-border)" />
 
+        <p *ngIf="!loader && projectsFiltered.length === 0" class="text-sm text-gray-400 text-center py-[24px]">
+            {{ searchQuery.trim() ? 'Sin resultados' : (soloMisProyectos ? 'No figuras como residente de ningún proyecto' : 'Sin proyectos') }}
+        </p>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <div
                 *ngFor="let item of projectsFiltered"
                 class="bg-white rounded-lg border overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02]" style="border-color:var(--color-abril-border)">
                 <div
                     class="relative h-[120px] group"
-                    (click)="openMilestoneScheduleHistory(item.projectId, item.projectDescription)">
+                    (click)="openMilestoneScheduleHistory(item)">
                     <img
                         *ngIf="projectImages[item.projectId]"
                         [src]="projectImages[item.projectId]"
@@ -39,9 +43,10 @@
                         </span>
                     </div>
                     <label
-                        class="absolute bottom-1 right-1 bg-black/50 rounded-full p-1 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                        class="absolute bottom-1 right-1 bg-black/50 rounded-full p-1 opacity-0 transition-opacity"
+                        [ngClass]="puedeEditarProyecto(item) ? 'cursor-pointer group-hover:opacity-100' : 'cursor-not-allowed group-hover:opacity-50'"
                         [for]="'foto-' + item.projectId"
-                        title="Cambiar foto"
+                        [title]="puedeEditarProyecto(item) ? 'Cambiar foto' : 'Solo lectura'"
                         (click)="$event.stopPropagation()">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z" fill="white"/>
@@ -52,21 +57,26 @@
                             accept="image/*"
                             class="hidden"
                             [id]="'foto-' + item.projectId"
-                            (change)="onProjectImageChange(item.projectId, $event)" />
+                            [disabled]="!puedeEditarProyecto(item)"
+                            (change)="onProjectImageChange(item, $event)" />
                     </label>
                 </div>
-                <div class="p-3 flex flex-col gap-1" (click)="openMilestoneScheduleHistory(item.projectId, item.projectDescription)">
+                <div class="p-3 flex flex-col gap-1" (click)="openMilestoneScheduleHistory(item)">
                     <p class="font-semibold truncate" [title]="item.projectDescription">
                         {{ item.projectDescription }}
                     </p>
-                    <p class="text-sm text-gray-500 truncate" [title]="item.residentFullNames[0]">
-                        {{ item.residentFullNames[0] }}
+                    <!-- Residente de Configuración → Proyectos → Emails SSOMA: el que sube versiones -->
+                    <p class="text-sm truncate" [ngClass]="item.residenteNombre ? 'text-gray-500' : 'text-gray-400'"
+                        [title]="item.residenteNombre ?? ''">
+                        {{ item.residenteNombre || 'Sin residente asignado' }}
                     </p>
                     <div class="flex items-center gap-1">
                         <p class="text-xs text-gray-400 truncate flex-1" [title]="item.levelDescription">
                             {{ item.levelDescription }}
                         </p>
-                        <button type="button" class="edit-caracteristica-btn cursor-pointer shrink-0" title="Editar característica del proyecto"
+                        <button type="button" class="edit-caracteristica-btn cursor-pointer shrink-0 disabled:cursor-not-allowed disabled:opacity-50"
+                            [disabled]="!puedeEditarProyecto(item)"
+                            [title]="puedeEditarProyecto(item) ? 'Editar característica del proyecto' : 'Solo lectura'"
                             (click)="openEditProject(item, $event)">
                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -92,29 +102,34 @@
         </div>
     </div>
 
-    <app-base-modal *ngIf="showMilestoneScheduleHistory" title="VER HISTORIAL DE CRONOGRAMA DE HITOS"
+    <app-base-modal *ngIf="showMilestoneScheduleHistory" [title]="'VER HISTORIAL DE CRONOGRAMA DE HITOS'"
         width="w-[800px]" (closeModal)="showMilestoneScheduleHistory = false">
             <div class="flex flex-col gap-[15px] items-center">
-                <button *ngIf="puedeEditarCronograma" (click)="openCreateMilestoneSchedule()"
-                    class="historial-btn-primary self-start">
-                    <div class="flex items-center gap-[10px]">
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path
-                                d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
-                                fill="currentColor" />
-                        </svg>
-                        <p>Agregar nueva versión de cronograma</p>
-                    </div>
-                </button>
+                <div class="flex items-center gap-[10px] self-start">
+                    <button (click)="openCreateMilestoneSchedule()" [disabled]="!puedeSubirVersionSeleccionado"
+                        [title]="puedeSubirVersionSeleccionado ? '' : 'Solo el residente del proyecto sube versiones'"
+                        class="historial-btn-primary">
+                        <div class="flex items-center gap-[10px]">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M10 0C4.48615 0 0 4.48615 0 10C0 15.5138 4.48615 20 10 20C15.5138 20 20 15.5138 20 10C20 4.48615 15.5138 0 10 0ZM10 1.53846C14.6823 1.53846 18.4615 5.31769 18.4615 10C18.4615 14.6823 14.6823 18.4615 10 18.4615C5.31769 18.4615 1.53846 14.6823 1.53846 10C1.53846 5.31769 5.31769 1.53846 10 1.53846ZM9.23077 5.38462V9.23077H5.38462V10.7692H9.23077V14.6154H10.7692V10.7692H14.6154V9.23077H10.7692V5.38462H9.23077Z"
+                                    fill="currentColor" />
+                            </svg>
+                            <p>Agregar nueva versión de cronograma</p>
+                        </div>
+                    </button>
+                    <span *ngIf="!puedeEditarSeleccionado" class="chip-solo-lectura">Solo lectura</span>
+                </div>
                 <div class="w-full rounded-lg overflow-hidden border" style="border-color:var(--color-abril-border)">
-                    <table class="w-full table-fixed historial-table">
+                    <table class="w-full historial-table">
                         <thead>
                             <tr>
                                 <th class="w-[50px]"></th>
-                                <th class="w-[50px]">N° Versión</th>
-                                <th class="w-[150px]">Fecha subida</th>
+                                <th class="w-[130px]">N° Versión</th>
+                                <th class="w-[120px]">Fecha subida</th>
+                                <th>Subido por</th>
                                 <th class="w-[50px]"></th>
-                                <th *ngIf="authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES)" class="w-[50px]"></th>
+                                <th class="w-[50px]"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -136,11 +151,12 @@
                                         </button>
                                     </div>
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center whitespace-nowrap">
                                     {{ milestoneScheduleHistoryTableData.length - i }}
                                     <span *ngIf="i === 0" class="badge-vigente">Vigente</span>
                                 </td>
-                                <td class="text-center">{{ item.createdDateTime | date: 'dd-MM-yyyy' }}</td>
+                                <td class="text-center whitespace-nowrap">{{ item.createdDateTime | date: 'dd-MM-yyyy' }}</td>
+                                <td class="text-center px-[8px]">{{ item.createdUserFullName ? (item.createdUserFullName | titleCase) : '—' }}</td>
                                 <td class="text-center">
                                     <div class="flex justify-center">
                                         <button class="icon-btn" title="Ver hitos de propietarios" (click)="openHitosPropietario(item, milestoneScheduleHistoryTableData.length - i)">
@@ -150,9 +166,11 @@
                                         </button>
                                     </div>
                                 </td>
-                                <td *ngIf="authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES)" class="text-center">
+                                <td class="text-center">
                                     <div class="flex justify-center">
-                                        <button class="icon-btn icon-btn-danger" title="Eliminar cronograma" (click)="eliminarVersionCronograma(item)">
+                                        <button class="icon-btn icon-btn-danger" [disabled]="!puedeAdministrar"
+                                            [title]="puedeAdministrar ? 'Eliminar cronograma' : 'Solo lectura'"
+                                            (click)="eliminarVersionCronograma(item)">
                                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                                 <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -161,7 +179,9 @@
                                     </div>
                                 </td>
                             </tr>
-
+                            <tr *ngIf="milestoneScheduleHistoryTableData.length === 0">
+                                <td colspan="6" class="text-center text-sm text-gray-400 py-[14px]">Sin versiones subidas</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -220,10 +240,11 @@
         <div class="flex items-center justify-center gap-2 flex-1 min-w-0">
             <h2 class="text-base font-semibold text-gray-700 truncate">{{ selectedProjectName }}</h2>
             <span *ngIf="noMilestones && undatedTasks.length > 0" class="chip-plantilla">PLANTILLA</span>
+            <span *ngIf="!puedeEditarSeleccionado" class="chip-solo-lectura">Solo lectura</span>
         </div>
 
-        <div *ngIf="showEditButton && puedeEditarCronograma" class="flex gap-[8px] shrink-0">
-            <button *ngIf="!noMilestones" (click)="openCreateMilestoneScheduleModal()" [disabled]="loader"
+        <div *ngIf="showEditButton" class="flex gap-[8px] shrink-0">
+            <button *ngIf="!noMilestones" (click)="openCreateMilestoneScheduleModal()" [disabled]="loader || !puedeSubirVersionSeleccionado"
                 class="py-[5px] px-[14px] rounded-lg border cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity" style="background:#EFF6FF;border-color:#BFDBFE;color:#2E6DB4">
                 <div class="flex items-center gap-[6px]">
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:currentColor">
@@ -235,19 +256,20 @@
                 </div>
             </button>
             <button *ngIf="!(noMilestones && undatedTasks.length > 0)"
-                (click)="forceAddMilestoneScheduleOnMilestoneScheduleHistory()" [disabled]="loader"
+                (click)="forceAddMilestoneScheduleOnMilestoneScheduleHistory()" [disabled]="loader || !puedeSubirVersionSeleccionado"
                 class="py-[5px] px-[14px] rounded-[10px] cursor-pointer hover:shadow-lg hover:-translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed transition-all" style="background:#1E3A5F">
                 <p class="text-white text-sm leading-4">Guardar sin cambios</p>
             </button>
-            <button (click)="addMilestoneScheduleOnMilestoneScheduleHistory()" [disabled]="loader"
+            <button (click)="addMilestoneScheduleOnMilestoneScheduleHistory()" [disabled]="loader || !puedeSubirVersionSeleccionado"
                 class="py-[5px] px-[14px] rounded-[10px] cursor-pointer hover:shadow-lg hover:-translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed transition-all" style="background:#1E3A5F">
                 <p class="text-white text-sm">Guardar</p>
             </button>
         </div>
 
         <!-- "Agregar hito" — solo en vista de un cronograma YA GUARDADO (openViewMilestoneSchedule), no en modo edición/creación de versión -->
-        <div *ngIf="!showEditButton && puedeEditarHitoGuardado" class="flex gap-[8px] shrink-0">
-            <button (click)="openAddHitoGuardadoModal()" [disabled]="loader"
+        <div *ngIf="!showEditButton" class="flex gap-[8px] shrink-0">
+            <button (click)="openAddHitoGuardadoModal()" [disabled]="loader || !puedeAdministrar"
+                [title]="puedeAdministrar ? '' : 'Solo lectura'"
                 class="py-[5px] px-[14px] rounded-lg border cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity" style="background:#EFF6FF;border-color:#BFDBFE;color:#2E6DB4">
                 <div class="flex items-center gap-[6px]">
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="color:currentColor">
@@ -367,19 +389,24 @@
                         </span>
                     </td>
                     <td class="td-badge">
-                        <input *ngIf="puedeEditarCronograma" type="checkbox" [checked]="hito.esCritico" (change)="toggleCritico(hito)" />
+                        <input type="checkbox" [checked]="hito.esCritico" (change)="toggleCritico(hito)" [disabled]="!puedeSubirVersionSeleccionado" />
                     </td>
                     <td class="td-badge">
                         <input type="checkbox" [checked]="hito.esRango" (change)="toggleRango(hito)" [disabled]="hito.esCritico" />
                     </td>
                     <td class="td-fecha">
-                        <input *ngIf="hito.esRango || esInicioDeObra(hito)" type="date" [ngModel]="hito.startDate" (ngModelChange)="onInicioChange(hito, $event)"
-                            [title]="hito.esCritico ? 'Fecha real de este corte de etapa (ej. Fin de casco, Entrega final).' : ''" />
+                        <app-date-picker *ngIf="hito.esRango || esInicioDeObra(hito)" [dense]="true" [color]="acentoUdp"
+                            [value]="hito.startDate" (valueChange)="onInicioChange(hito, $event)"
+                            [disabled]="!puedeSubirVersionSeleccionado"
+                            [title]="hito.esCritico ? 'Fecha real de este corte de etapa (ej. Fin de casco, Entrega final).' : ''">
+                        </app-date-picker>
                         <span *ngIf="!hito.esRango && !esInicioDeObra(hito)" class="text-gray-300">—</span>
                     </td>
                     <td class="td-fecha">
-                        <input *ngIf="hito.esRango || !esInicioDeObra(hito)" type="date"
-                            [ngModel]="hito.endDate" (ngModelChange)="onFinChange(hito, $event)" />
+                        <app-date-picker *ngIf="hito.esRango || !esInicioDeObra(hito)" [dense]="true" [color]="acentoUdp"
+                            [value]="hito.endDate" (valueChange)="onFinChange(hito, $event)"
+                            [disabled]="!puedeSubirVersionSeleccionado">
+                        </app-date-picker>
                         <span *ngIf="!hito.esRango && esInicioDeObra(hito)" class="text-gray-300">—</span>
                     </td>
                     <td class="td-badge">
@@ -389,6 +416,7 @@
                     </td>
                     <td class="td-badge">
                         <button type="button" class="icon-btn icon-btn-danger" title="Quitar hito"
+                            [disabled]="!puedeSubirVersionSeleccionado"
                             (click)="eliminarHitoPlantilla(hito)">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -414,7 +442,7 @@
                 stroke="#9ca3af" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         <p class="text-base">No hay hitos registrados para este proyecto</p>
-        <p *ngIf="showEditButton && puedeEditarCronograma" class="text-sm text-gray-400">Usa "Nuevo hito" para agregar el primero</p>
+        <p *ngIf="showEditButton && puedeSubirVersionSeleccionado" class="text-sm text-gray-400">Usa "Nuevo hito" para agregar el primero</p>
     </div>
 
     <!-- Contenedor Gantt — se mantiene en el DOM con [hidden] para que el ViewChild esté disponible -->
@@ -434,16 +462,19 @@
                     <p class="text-sm mb-[4px]" style="color:#1E3A5F">Descripción</p>
                     <p class="font-medium">{{editMilestoneScheduleItem.text}}</p>
                 </div>
-                <div class="flex flex-col">
+                <div class="flex flex-col w-[180px]">
                     <p class="text-sm mb-[4px]" style="color:#1E3A5F">Fecha inicio <span class="text-red-500">*</span></p>
-                    <input type="date" [(ngModel)]="editMilestoneScheduleItem.plannedStartDate"
-                        class="border rounded-lg p-[8px]"
-                        [ngClass]="{'border-red-400': !editMilestoneScheduleItem.plannedStartDate, 'border-[#E2E2E2]': editMilestoneScheduleItem.plannedStartDate}" />
+                    <app-date-picker [showLabel]="false" [color]="acentoUdp"
+                        [value]="editMilestoneScheduleItem.plannedStartDate"
+                        (valueChange)="editMilestoneScheduleItem.plannedStartDate = $event ?? ''">
+                    </app-date-picker>
                 </div>
-                <div class="flex flex-col">
+                <div class="flex flex-col w-[180px]">
                     <p class="text-sm mb-[4px]" style="color:#1E3A5F">Fecha fin</p>
-                    <input type="date" [(ngModel)]="editMilestoneScheduleItem.plannedEndDate"
-                        class="border border-[#E2E2E2] rounded-lg p-[8px]" />
+                    <app-date-picker [showLabel]="false" [color]="acentoUdp"
+                        [value]="editMilestoneScheduleItem.plannedEndDate"
+                        (valueChange)="editMilestoneScheduleItem.plannedEndDate = $event">
+                    </app-date-picker>
                 </div>
             </div>
             <button (click)="saveEditTask()" [disabled]="!editMilestoneScheduleItem.plannedStartDate"
@@ -480,9 +511,9 @@
             <div class="hito-stat" *ngIf="editandoHitoDetalle">
                 <ng-container *ngIf="editMuestraInicio; else hitoInicioOculto">
                     <p class="text-sm mb-[4px]" style="color:#1E3A5F">Fecha inicio <span class="text-red-500">*</span></p>
-                    <input type="date" [(ngModel)]="editHitoStartDate"
-                        class="border rounded-lg p-[8px] w-full"
-                        [ngClass]="{'border-red-400': !editHitoStartDate, 'border-[#E2E2E2]': editHitoStartDate}" />
+                    <app-date-picker class="w-full" [showLabel]="false" [color]="acentoUdp"
+                        [value]="editHitoStartDate" (valueChange)="editHitoStartDate = $event ?? ''">
+                    </app-date-picker>
                 </ng-container>
                 <ng-template #hitoInicioOculto>
                     <span class="hito-stat-label">Fecha inicio</span>
@@ -495,9 +526,9 @@
                     <p class="text-sm mb-[4px]" style="color:#1E3A5F">
                         Fecha fin <span class="text-red-500" *ngIf="!editMuestraInicio">*</span>
                     </p>
-                    <input type="date" [(ngModel)]="editHitoEndDate"
-                        class="border rounded-lg p-[8px] w-full"
-                        [ngClass]="{'border-red-400': !editMuestraInicio && !editHitoEndDate, 'border-[#E2E2E2]': editMuestraInicio || editHitoEndDate}" />
+                    <app-date-picker class="w-full" [showLabel]="false" [color]="acentoUdp"
+                        [value]="editHitoEndDate" (valueChange)="editHitoEndDate = $event">
+                    </app-date-picker>
                 </ng-container>
                 <ng-template #hitoFinOculto>
                     <span class="hito-stat-label">Fecha fin</span>
@@ -507,30 +538,35 @@
             </div>
         </div>
 
-        <div *ngIf="showEditButton && puedeEditarCronograma" class="flex gap-[10px] justify-center mt-2">
+        <div *ngIf="showEditButton" class="flex gap-[10px] justify-center mt-2">
             <button
                 (click)="editTask(selectedTask.id); showDetailModal = false"
-                class="btn-ghost-navy px-5 py-2 rounded-lg border cursor-pointer transition-colors">
+                [disabled]="!puedeSubirVersionSeleccionado"
+                class="btn-ghost-navy px-5 py-2 rounded-lg border cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 Editar
             </button>
             <button
                 (click)="toggleCulminar(selectedTask.id)"
+                [disabled]="!puedeSubirVersionSeleccionado"
                 [class]="selectedTask['fechaRealFin']
-                    ? 'px-5 py-2 rounded-lg border border-[#C0392B] text-[#C0392B] cursor-pointer hover:bg-[#fee2e2] transition-colors'
-                    : 'px-5 py-2 rounded-lg bg-[#1B6B3A] text-white cursor-pointer hover:bg-[#145A2F] transition-colors'">
+                    ? 'px-5 py-2 rounded-lg border border-[#C0392B] text-[#C0392B] cursor-pointer hover:bg-[#fee2e2] transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                    : 'px-5 py-2 rounded-lg bg-[#1B6B3A] text-white cursor-pointer hover:bg-[#145A2F] transition-colors disabled:opacity-50 disabled:cursor-not-allowed'">
                 {{ selectedTask['fechaRealFin'] ? 'Quitar culminado' : 'Marcar culminado' }}
             </button>
             <button
                 (click)="deleteTask(selectedTask.id); showDetailModal = false"
-                class="px-5 py-2 rounded-lg border border-[#C0392B] text-[#C0392B] cursor-pointer hover:bg-[#fee2e2] transition-colors">
+                [disabled]="!puedeSubirVersionSeleccionado"
+                class="px-5 py-2 rounded-lg border border-[#C0392B] text-[#C0392B] cursor-pointer hover:bg-[#fee2e2] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 Eliminar
             </button>
         </div>
-        <div *ngIf="selectedTask?.milestoneScheduleId != null && puedeEditarHitoGuardado" class="flex gap-[10px] justify-center">
+        <div *ngIf="selectedTask?.milestoneScheduleId != null" class="flex gap-[10px] justify-center">
             <ng-container *ngIf="!editandoHitoDetalle; else editandoHitoAcciones">
                 <button
                     (click)="iniciarEdicionHitoDetalle()"
-                    class="btn-ghost-navy px-5 py-2 rounded-lg border cursor-pointer transition-colors">
+                    [disabled]="!puedeAdministrar"
+                    [title]="puedeAdministrar ? '' : 'Solo lectura'"
+                    class="btn-ghost-navy px-5 py-2 rounded-lg border cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     Editar fechas
                 </button>
             </ng-container>
@@ -550,12 +586,14 @@
                 </button>
             </ng-template>
         </div>
-        <div *ngIf="selectedTask?.milestoneScheduleId != null && puedeEditarCronograma && !editandoHitoDetalle" class="flex gap-[10px] justify-center">
+        <div *ngIf="selectedTask?.milestoneScheduleId != null && !editandoHitoDetalle" class="flex gap-[10px] justify-center">
             <button
                 (click)="toggleCriticoGuardado(selectedTask.id)"
+                [disabled]="!puedeEditarSeleccionado"
+                [title]="puedeEditarSeleccionado ? '' : 'Solo lectura'"
                 [class]="selectedTask['esHitoCritico']
-                    ? 'px-5 py-2 rounded-lg border border-[#D97706] text-[#D97706] cursor-pointer hover:bg-[#fef3c7] transition-colors inline-flex items-center gap-2'
-                    : 'px-5 py-2 rounded-lg bg-[#D97706] text-white cursor-pointer hover:bg-[#b45309] transition-colors inline-flex items-center gap-2'">
+                    ? 'px-5 py-2 rounded-lg border border-[#D97706] text-[#D97706] cursor-pointer hover:bg-[#fef3c7] transition-colors inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed'
+                    : 'px-5 py-2 rounded-lg bg-[#D97706] text-white cursor-pointer hover:bg-[#b45309] transition-colors inline-flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed'">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5l2.9 6.6 7.1.7-5.4 4.8 1.6 7-6.2-3.7-6.2 3.7 1.6-7-5.4-4.8 7.1-.7L12 2.5z"/></svg>
                 {{ selectedTask['esHitoCritico'] ? 'Quitar hito crítico' : 'Marcar como hito crítico' }}
             </button>
@@ -579,26 +617,20 @@
         <div class="flex flex-col gap-[15px] items-center">
             <h1 class="text-2xl text-center font-bold" style="color:#1E3A5F">AGREGAR HITO A CRONOGRAMA ACTUAL</h1>
             <div class="flex justify-between w-full gap-[20px]">
-                <div class="flex flex-col flex-1">
-                    <p class="text-sm mb-[4px]" style="color:#1E3A5F">Hito <span class="text-red-500">*</span></p>
-                    <select [(ngModel)]="addMilestoneScheduleItem.milestoneId"
-                        class="w-full pl-[12px] pr-[25px] py-[10px] border rounded-lg cursor-pointer"
-                        [ngClass]="{'border-red-400': addMilestoneScheduleItem.milestoneId === 0, 'border-[#D6DEE5]': addMilestoneScheduleItem.milestoneId !== 0}">
-                        <option [ngValue]="0" disabled>Seleccionar hito</option>
-                        <option *ngFor="let item of milestones" [ngValue]="item.milestoneId">{{item.milestoneDescription}}</option>
-                    </select>
-                </div>
-                <div class="flex flex-col">
-                    <p class="text-sm mb-[4px]" style="color:#1E3A5F">Fecha inicio <span class="text-red-500">*</span></p>
-                    <input type="date" [(ngModel)]="addMilestoneScheduleItem.plannedStartDate"
-                        class="border rounded-lg p-[10px]"
-                        [ngClass]="{'border-red-400': !addMilestoneScheduleItem.plannedStartDate, 'border-[#E2E2E2]': addMilestoneScheduleItem.plannedStartDate}" />
-                </div>
-                <div class="flex flex-col">
-                    <p class="text-sm mb-[4px]" style="color:#1E3A5F">Fecha fin</p>
-                    <input type="date" [(ngModel)]="addMilestoneScheduleItem.plannedEndDate"
-                        class="border border-[#E2E2E2] rounded-lg p-[10px]" />
-                </div>
+                <app-search-select class="flex-1 min-w-0" label="Hito" [required]="true" placeholder="Selecciona un hito"
+                    [options]="milestones" valueField="milestoneId" displayField="milestoneDescription"
+                    [value]="addMilestoneScheduleItem.milestoneId"
+                    (valueChange)="addMilestoneScheduleItem.milestoneId = $event ?? 0"
+                    [color]="acentoUdp" [rawLabel]="true">
+                </app-search-select>
+                <app-date-picker class="w-[170px]" label="Fecha inicio" [required]="true" [floatingLabel]="true" [dense]="true"
+                    [color]="acentoUdp" [value]="addMilestoneScheduleItem.plannedStartDate"
+                    (valueChange)="addMilestoneScheduleItem.plannedStartDate = $event ?? ''">
+                </app-date-picker>
+                <app-date-picker class="w-[170px]" label="Fecha fin" [floatingLabel]="true" [dense]="true"
+                    [color]="acentoUdp" [value]="addMilestoneScheduleItem.plannedEndDate"
+                    (valueChange)="addMilestoneScheduleItem.plannedEndDate = $event">
+                </app-date-picker>
             </div>
             <button (click)="addMilestoneSchedule()" [disabled]="!addMilestoneFormValid"
                 class="w-[120px] py-[5px] rounded-[10px] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-opacity" style="background:#1E3A5F">
@@ -609,36 +641,30 @@
 </div>
 
 <!-- Modal: editar característica del proyecto -->
-<app-base-modal *ngIf="showEditProjectModal" title="EDITAR CARACTERÍSTICA DEL PROYECTO"
+<app-base-modal *ngIf="showEditProjectModal" [title]="'EDITAR CARACTERÍSTICA DEL PROYECTO'"
     width="w-[480px]" (closeModal)="closeEditProjectModal()">
     <div class="flex flex-col gap-[15px]">
-        <ng-container *ngIf="editProjectLoading; else editProjectForm">
-            <div class="skeleton-line" style="width:40%;height:12px;"></div>
-            <div class="skeleton-line" style="width:100%;height:70px;"></div>
-        </ng-container>
-        <ng-template #editProjectForm>
-            <div class="flex flex-col">
-                <p class="text-sm mb-[4px]" style="color:#1E3A5F">Característica del proyecto</p>
-                <textarea [(ngModel)]="editProjectLevelDescription" rows="3"
-                    class="border rounded-lg p-[8px] resize-none outline-none" style="border-color:var(--color-abril-border)"
-                    placeholder="Ej. 5 pisos + 2 sótanos"></textarea>
-            </div>
-            <div class="flex justify-end gap-[10px]">
-                <button type="button" (click)="closeEditProjectModal()"
-                    class="py-[6px] px-[16px] rounded-lg border cursor-pointer" style="border-color:var(--color-abril-border);color:var(--color-abril-body)">
-                    Cancelar
-                </button>
-                <button type="button" (click)="saveEditProjectLevelDescription()" [disabled]="editProjectSaving"
-                    class="py-[6px] px-[16px] rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style="background:#1E3A5F">
-                    <span class="text-white text-sm">{{ editProjectSaving ? 'Guardando...' : 'Guardar' }}</span>
-                </button>
-            </div>
-        </ng-template>
+        <div class="flex flex-col">
+            <p class="text-sm mb-[4px]" style="color:#1E3A5F">Característica del proyecto</p>
+            <textarea [(ngModel)]="editProjectLevelDescription" rows="3" maxlength="1000"
+                class="border rounded-lg p-[8px] resize-none outline-none" style="border-color:var(--color-abril-border)"
+                placeholder="Ej. 5 pisos + 2 sótanos"></textarea>
+        </div>
+        <div class="flex justify-end gap-[10px]">
+            <button type="button" (click)="closeEditProjectModal()"
+                class="py-[6px] px-[16px] rounded-lg border cursor-pointer" style="border-color:var(--color-abril-border);color:var(--color-abril-body)">
+                Cancelar
+            </button>
+            <button type="button" (click)="saveEditProjectLevelDescription()" [disabled]="editProjectSaving"
+                class="py-[6px] px-[16px] rounded-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" style="background:#1E3A5F">
+                <span class="text-white text-sm">{{ editProjectSaving ? 'Guardando...' : 'Guardar' }}</span>
+            </button>
+        </div>
     </div>
 </app-base-modal>
 
 <!-- Modal: agregar hito a un cronograma YA GUARDADO -->
-<app-base-modal *ngIf="showAddHitoGuardadoModal" title="AGREGAR HITO AL CRONOGRAMA"
+<app-base-modal *ngIf="showAddHitoGuardadoModal" [title]="'AGREGAR HITO AL CRONOGRAMA'"
     width="w-[480px]" (closeModal)="closeAddHitoGuardadoModal()">
     <div class="flex flex-col gap-[15px]">
         <ng-container *ngIf="loadingHitosFaltantes; else addHitoGuardadoForm">
@@ -647,18 +673,13 @@
         </ng-container>
         <ng-template #addHitoGuardadoForm>
             <div class="flex flex-col gap-[6px]" *ngIf="hitosFaltantes.length > 0">
-                <p class="text-sm" style="color:#1E3A5F">Hito del catálogo</p>
-                <div class="flex flex-col gap-[6px]" style="max-height:220px;overflow-y:auto">
-                    <label *ngFor="let h of hitosFaltantes"
-                        class="flex items-center gap-[8px] border rounded-lg p-[8px] cursor-pointer"
-                        style="border-color:var(--color-abril-border)">
-                        <input type="radio" name="hitoFaltanteSeleccionado" [value]="h.milestoneId"
-                            [(ngModel)]="hitoGuardadoSeleccionadoId"
-                            (ngModelChange)="hitoGuardadoTextoPersonalizado = ''" />
-                        <span class="text-sm flex-1">{{ h.milestoneDescription }}</span>
-                        <span *ngIf="h.esObligatorio" class="badge badge-obligatorio" title="No puede quedar sin fecha">Obligatorio</span>
-                    </label>
-                </div>
+                <app-search-select label="Hito del catálogo" placeholder="Selecciona un hito"
+                    [options]="hitosFaltantes" valueField="milestoneId" displayField="milestoneDescription"
+                    [value]="hitoGuardadoSeleccionadoId" (valueChange)="onHitoFaltanteChange($event)"
+                    [color]="acentoUdp" [rawLabel]="true">
+                </app-search-select>
+                <span *ngIf="hitoFaltanteSeleccionado?.esObligatorio" class="badge badge-obligatorio self-start"
+                    title="No puede quedar sin fecha">Obligatorio</span>
             </div>
             <p *ngIf="hitosFaltantes.length === 0" class="text-sm text-gray-400">
                 Todos los hitos del catálogo ya están en este cronograma.

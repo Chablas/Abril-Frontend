@@ -1,0 +1,71 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.perfil-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Barra lateral de secciones ─────────────────────────────── */
+.perfil-nav {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.perfil-nav__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-standard);
+  font-size: 14px;
+  color: var(--color-abril-body);
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.perfil-nav__item i {
+  font-size: 18px;
+}
+.perfil-nav__item:hover {
+  background: var(--color-abril-standard-light);
+  color: var(--color-abril-standard);
+}
+.perfil-nav__item--activo {
+  background: var(--color-abril-standard-light);
+  color: var(--color-abril-standard);
+  font-weight: 600;
+}
+
+/* ── Contenido de la sección activa ─────────────────────────── */
+.perfil-contenido {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* A partir de tablet la barra va a la izquierda, a lo alto, separada del contenido. */
+@media (min-width: 768px) {
+  .perfil-body {
+    flex-direction: row;
+    gap: 24px;
+  }
+  .perfil-nav {
+    flex-direction: column;
+    width: 220px;
+    overflow-x: visible;
+    padding-right: 16px;
+    border-right: 1px solid var(--color-abril-border);
+  }
+}

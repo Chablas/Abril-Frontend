@@ -184,6 +184,32 @@
 .btn-primary:hover:not(:disabled) { background: var(--color-abril-logo-blue-hover); }
 .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
 
+/* ── Ámbito Torre / Exterior ─────────────────────────────── */
+.ambito-toggle {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+.ambito-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 7px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.ambito-btn--activo {
+  border-color: var(--color-abril-logo-blue);
+  color: var(--color-abril-logo-blue);
+  background: color-mix(in srgb, var(--color-abril-logo-blue) 8%, white);
+  font-weight: 700;
+}
+
 /* ── RESPONSIVE ──────────────────────────────────────────── */
 @media (max-width: 600px) {
   .form-grid { grid-template-columns: 1fr; }

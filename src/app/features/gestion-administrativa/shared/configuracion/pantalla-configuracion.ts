@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+﻿import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -9,8 +9,6 @@ import { NavigationService } from '../../../../core/navigation/navigation.servic
 import { GaCorreosConfig } from './correos/correos-config';
 import { GaDiasReembolsables } from './dias-reembolsables/dias-reembolsables';
 import { VisibilidadAreas } from '../../../../shared/components/visibilidad-areas/visibilidad-areas';
-import { GaAsignacionesAreas } from './asignaciones-areas/asignaciones-areas';
-import { AsignacionAreaModo } from './asignaciones-areas/dtos/asignacion-area.dto';
 import { GaFirmas } from './firmas/firmas';
 import { CorreoPantalla } from './correos/dtos/ga-correo.dto';
 
@@ -30,8 +28,6 @@ type SeccionId =
   | 'dias-reembolsables'
   | 'recordatorios'
   | 'visibilidad'
-  | 'revisores'
-  | 'consolidadores'
   | 'firmas';
 
 /** Una sección de la configuración de una pantalla. */
@@ -69,16 +65,17 @@ interface PantallaDef {
  * módulo): la ruta dice qué pantalla es con `data.pantalla` y el resto sale de `PANTALLAS`.
  *
  * Dónde vive cada sección y por qué:
- *  • Solicitud de Salidas: sus correos, el plazo para rendir («Días reembolsables»), los dos
- *    recordatorios de ese plazo y los REVISORES de cada área — el revisor es a quien se le manda la
- *    solicitud que nace acá.
+ *  • Solicitud de Salidas: sus correos, el plazo para rendir («Días reembolsables») y los dos
+ *    recordatorios de ese plazo.
  *  • Gestión de Salidas: los correos de la decisión del revisor y la VISIBILIDAD de esa bandeja.
- *  • Gestión de Rendiciones: los correos de la primera revisión y la VISIBILIDAD de esa bandeja
- *    (independiente de la de salidas).
- *  • Consolidados: los correos de la decisión del reembolso y de los trámites del consolidador
- *    (avisar a la jefatura, pedir la corrección al ERP), la VISIBILIDAD de esa bandeja, los
- *    CONSOLIDADORES, que es quién adjunta el Consolidado del S10 de los trabajadores de cada área,
- *    y las FIRMAS, o sea cómo registra su firma quien aprueba acá.
+ *  • Gestión de Rendiciones: los correos de la primera revisión y el que avisa a los trabajadores al
+ *    adjuntar el consolidado, y la VISIBILIDAD de esa bandeja (independiente de la de salidas).
+ *  • Consolidados: los correos de la decisión del consolidado y de los trámites del consolidador
+ *    (avisar a la jefatura, pedir la corrección al ERP), la VISIBILIDAD de esa bandeja y las FIRMAS,
+ *    o sea cómo registra su firma quien aprueba acá.
+ *
+ * Quién aprueba, se entera, revisa, consolida y firma por cada área ya no está en ninguna de estas:
+ * se juntó en Configuración → Revisores de Áreas (2026-09-25).
  *
  * El acceso a la pantalla lo abre cualquiera de los featureKeys de sus secciones (`featureKeys` en
  * la ruta) y cada sección se filtra además por el suyo.
@@ -94,7 +91,6 @@ interface PantallaDef {
     GaCorreosConfig,
     GaDiasReembolsables,
     VisibilidadAreas,
-    GaAsignacionesAreas,
     GaFirmas,
   ],
   templateUrl: './pantalla-configuracion.html',
@@ -105,10 +101,7 @@ export class GaPantallaConfiguracion implements OnInit {
   private static readonly FEATURE_VISIBILIDAD_SALIDAS = 'gestion-administrativa.config.visibilidad-salidas';
   private static readonly FEATURE_VISIBILIDAD_RENDICIONES = 'gestion-administrativa.config.visibilidad-rendiciones';
   private static readonly FEATURE_VISIBILIDAD_CONSOLIDADOS = 'gestion-administrativa.config.visibilidad-consolidados';
-  private static readonly FEATURE_CONSOLIDADORES = 'gestion-administrativa.config.consolidadores-areas';
   private static readonly FEATURE_FIRMAS = 'gestion-administrativa.config.firmas';
-  /** Los revisores de áreas conservan su feature de cuando vivían en Configuración global. */
-  private static readonly FEATURE_REVISORES = 'configuracion.revisores-areas';
   /** La feature que ya protegía la sección Correos: quien administra un correo los administra todos. */
   private static readonly FEATURE_CORREOS = 'gestion-administrativa.config.correos';
 
@@ -122,7 +115,7 @@ export class GaPantallaConfiguracion implements OnInit {
     'solicitud-salidas': {
       nombre: 'Solicitud de Salidas',
       volverA: '/gestion-administrativa/solicitud-salidas',
-      subtitulo: 'Correos, plazo para rendir, recordatorios y revisores por área.',
+      subtitulo: 'Correos, plazo para rendir y recordatorios.',
       secciones: [
         GaPantallaConfiguracion.SECCION_CORREOS,
         // El plazo y sus dos recordatorios se administran con los correos: los recordatorios
@@ -136,11 +129,6 @@ export class GaPantallaConfiguracion implements OnInit {
           id: 'recordatorios',
           label: 'Recordatorios',
           featureKey: GaPantallaConfiguracion.FEATURE_CORREOS,
-        },
-        {
-          id: 'revisores',
-          label: 'Revisores de Áreas',
-          featureKey: GaPantallaConfiguracion.FEATURE_REVISORES,
         },
       ],
     },
@@ -181,8 +169,7 @@ export class GaPantallaConfiguracion implements OnInit {
     consolidados: {
       nombre: 'Consolidados',
       volverA: '/gestion-administrativa/consolidados',
-      subtitulo:
-        'Correos del reembolso y del consolidador, visibilidad de la bandeja, consolidadores por área y cómo se registra la firma.',
+      subtitulo: 'Correos del consolidado, visibilidad de la bandeja y cómo se registra la firma.',
       secciones: [
         GaPantallaConfiguracion.SECCION_CORREOS,
         {
@@ -190,16 +177,10 @@ export class GaPantallaConfiguracion implements OnInit {
           label: 'Visibilidad',
           featureKey: GaPantallaConfiguracion.FEATURE_VISIBILIDAD_CONSOLIDADOS,
         },
-        // Los Consolidadores viven acá y no en Gestión de Rendiciones: lo que administran es
-        // quién adjunta el documento que esta pantalla muestra y firma, y quién sigue su trámite.
-        {
-          id: 'consolidadores',
-          label: 'Consolidadores',
-          featureKey: GaPantallaConfiguracion.FEATURE_CONSOLIDADORES,
-        },
         // Las Firmas viven acá porque es acá donde se firma: aprobar un consolidado ES estampar la
-        // firma, y lo que se marca decide qué se le exige registrar a quien aprueba. Contabilidad
-        // y "Tu firma" no lo miran: allá se sigue registrando solo la dibujada.
+        // firma, y lo que se marca decide qué se le exige registrar a quien aprueba. Lo miran
+        // también Mi Perfil → Mi Firma y el modal que salta al firmar sin firma; Contabilidad no:
+        // allá se sigue registrando solo la dibujada.
         {
           id: 'firmas',
           label: 'Firmas',
@@ -213,8 +194,6 @@ export class GaPantallaConfiguracion implements OnInit {
       volverA: '/gestion-administrativa/reembolsos',
       subtitulo: 'Los correos que se originan en la bandeja de Tesorería.',
       secciones: [GaPantallaConfiguracion.SECCION_CORREOS],
-      textoSinCorreos:
-        'Reembolsos no envía correos: marcar una planilla como pagada no avisa a nadie.',
     },
     'correcciones-s10': {
       nombre: 'Correcciones S10',
@@ -229,9 +208,8 @@ export class GaPantallaConfiguracion implements OnInit {
   /** Secciones a las que el usuario tiene acceso (las que se dibujan como pestañas). */
   secciones: SectionTab[] = [];
 
-  // Referencias a la sección activa (solo una existe a la vez por el *ngIf).
+  // Referencia a la sección con tabla (solo una existe a la vez por el *ngIf).
   @ViewChild(VisibilidadAreas) private visibilidadCmp?: VisibilidadAreas;
-  @ViewChild(GaAsignacionesAreas) private asignacionesCmp?: GaAsignacionesAreas;
 
   constructor(
     private route: ActivatedRoute,
@@ -275,11 +253,6 @@ export class GaPantallaConfiguracion implements OnInit {
     return `api/v1/gestion-administrativa/configuracion/visibilidad/${this.def.visibilidadAmbito ?? 'salidas'}`;
   }
 
-  /** Modo de la sección de asignaciones por área que está activa. */
-  get asignacionModo(): AsignacionAreaModo {
-    return this.seccionActiva === 'consolidadores' ? 'consolidadores' : 'revisores';
-  }
-
   get mostrandoCorreos(): boolean {
     return this.seccionActiva === 'correos';
   }
@@ -296,10 +269,6 @@ export class GaPantallaConfiguracion implements OnInit {
     return this.seccionActiva === 'visibilidad';
   }
 
-  get mostrandoAsignaciones(): boolean {
-    return this.seccionActiva === 'revisores' || this.seccionActiva === 'consolidadores';
-  }
-
   get mostrandoFirmas(): boolean {
     return this.seccionActiva === 'firmas';
   }
@@ -307,14 +276,12 @@ export class GaPantallaConfiguracion implements OnInit {
   // ── Filtros de la sección activa ────────────────────────────────────────
   // Solo las secciones con tabla los tienen; en el resto el botón no se dibuja.
 
-  private get cmpConFiltros(): VisibilidadAreas | GaAsignacionesAreas | undefined {
-    if (this.mostrandoVisibilidad) return this.visibilidadCmp;
-    if (this.mostrandoAsignaciones) return this.asignacionesCmp;
-    return undefined;
+  private get cmpConFiltros(): VisibilidadAreas | undefined {
+    return this.mostrandoVisibilidad ? this.visibilidadCmp : undefined;
   }
 
   get seccionConFiltros(): boolean {
-    return this.mostrandoVisibilidad || this.mostrandoAsignaciones;
+    return this.mostrandoVisibilidad;
   }
 
   get filtrosActivos(): number {

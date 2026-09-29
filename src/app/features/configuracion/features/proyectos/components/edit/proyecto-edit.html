@@ -1,8 +1,8 @@
-<app-base-modal
-  [title]="'EDITAR PROYECTO'"
+﻿<app-base-modal
+  [title]="soloLectura ? 'DETALLE DEL PROYECTO' : 'EDITAR PROYECTO'"
   width="w-full sm:w-[820px]"
   closeColor="var(--color-abril-standard)"
-  [preventCloseWhenDirty]="true"
+  [preventCloseWhenDirty]="!soloLectura"
   (closeModal)="closeModal.emit()">
 
   <div class="flex flex-col gap-[18px] mt-4">
@@ -14,53 +14,67 @@
       <div class="abril-field">
         <label class="abril-field-label">Descripción<span class="text-red-500"> *</span></label>
         <input type="text" class="abril-field-input" [(ngModel)]="form.projectDescription"
-          placeholder="Nombre del proyecto" />
+          placeholder="Nombre del proyecto" [disabled]="soloLectura" />
       </div>
 
       <app-search-select
-        label="Activo"
-        placeholder="Selecciona estado"
+        label="Visible en el sistema"
+        placeholder="Selecciona una opción"
         [options]="opcionesActivo"
         valueField="value"
         displayField="label"
         [value]="form.active"
         [allowClear]="false"
         [sortAlpha]="false"
+        [disabled]="soloLectura"
         (valueChange)="form.active = $event">
       </app-search-select>
 
       <div class="abril-field">
         <label class="abril-field-label">Código</label>
-        <input type="text" class="abril-field-input" [(ngModel)]="form.codigo" placeholder="Ej: PROY-2025-001" />
+        <input type="text" class="abril-field-input" [(ngModel)]="form.codigo" placeholder="Ej: PROY-2025-001"
+          [disabled]="soloLectura" />
       </div>
 
       <div class="abril-field">
         <label class="abril-field-label">Abreviación</label>
-        <input type="text" class="abril-field-input" [(ngModel)]="form.abbreviation" placeholder="Ej: CDR33, KAU" />
+        <input type="text" class="abril-field-input" [(ngModel)]="form.abbreviation" placeholder="Ej: CDR33, KAU"
+          [disabled]="soloLectura" />
       </div>
 
-      <div class="abril-field">
-        <label class="abril-field-label">Estado del proyecto</label>
-        <input type="text" class="abril-field-input" [(ngModel)]="form.estado"
-          placeholder="Ej: ACTIVO, FINALIZADO, PAUSADO" />
+      <div class="flex flex-col">
+        <app-search-select
+          label="Tipo"
+          placeholder="Selecciona tipo"
+          [options]="tipos"
+          valueField="id"
+          displayField="nombre"
+          [value]="form.projectTipoId"
+          [allowClear]="false"
+          [sortAlpha]="false"
+          [disabled]="soloLectura"
+          (valueChange)="form.projectTipoId = $event">
+        </app-search-select>
+        <p *ngIf="descripcionTipo" class="mt-[4px] text-[11px] leading-tight text-gray-400">{{ descripcionTipo }}</p>
       </div>
 
       <app-search-select
         label="Ciclo de vida"
         placeholder="Selecciona ciclo de vida"
-        [options]="opcionesCicloVida"
-        valueField="value"
-        displayField="label"
-        [value]="form.cicloVida"
+        [options]="ciclosVida"
+        valueField="id"
+        displayField="nombre"
+        [value]="form.projectCicloVidaId"
         [allowClear]="false"
         [sortAlpha]="false"
-        (valueChange)="form.cicloVida = $event">
+        [disabled]="soloLectura"
+        (valueChange)="form.projectCicloVidaId = $event">
       </app-search-select>
 
       <div class="abril-field sm:col-span-2">
         <label class="abril-field-label">Descripción de pisos</label>
         <input type="text" class="abril-field-input" [(ngModel)]="form.levelDescription"
-          placeholder="Ej: Sótano + 10 pisos" />
+          placeholder="Ej: Sótano + 10 pisos" [disabled]="soloLectura" />
       </div>
     </div>
 
@@ -72,14 +86,14 @@
         <div class="abril-field flex-1">
           <label class="abril-field-label">RUC</label>
           <input type="text" class="abril-field-input" [(ngModel)]="form.rucInput" maxlength="11"
-            placeholder="Ej: 20123456789" [disabled]="form.contributor !== null" />
+            placeholder="Ej: 20123456789" [disabled]="soloLectura || form.contributor !== null" />
         </div>
-        <button *ngIf="form.contributor === null" type="button" (click)="lookupRuc()"
+        <button *ngIf="!soloLectura && form.contributor === null" type="button" (click)="lookupRuc()"
           [disabled]="rucLookupLoading"
           class="mt-[9px] h-[36px] px-[18px] text-[13px] font-medium text-white bg-abril-standard hover:bg-abril-standard-hover rounded-[7px] cursor-pointer transition-colors disabled:opacity-50">
           {{ rucLookupLoading ? 'Buscando...' : 'Buscar' }}
         </button>
-        <button *ngIf="form.contributor !== null" type="button" (click)="clearContributor()"
+        <button *ngIf="!soloLectura && form.contributor !== null" type="button" (click)="clearContributor()"
           class="mt-[9px] h-[36px] px-[18px] text-[13px] font-medium text-white bg-[#D30000] rounded-[7px] cursor-pointer transition-opacity hover:opacity-90">
           Limpiar
         </button>
@@ -97,7 +111,7 @@
       <div *ngIf="form.contributor" class="abril-field mt-[16px]">
         <label class="abril-field-label">N° Registro Persona Jurídica / Partida registral</label>
         <input type="text" class="abril-field-input" [(ngModel)]="form.legalEntityRegistryNumber"
-          placeholder="Ej: 11234567" />
+          placeholder="Ej: 11234567" [disabled]="soloLectura" />
       </div>
     </div>
 
@@ -107,20 +121,23 @@
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-[12px] gap-y-[6px]">
       <div class="abril-field">
         <label class="abril-field-label">Distrito</label>
-        <input type="text" class="abril-field-input" [(ngModel)]="form.projectDistrict" placeholder="Ej: Miraflores" />
+        <input type="text" class="abril-field-input" [(ngModel)]="form.projectDistrict" placeholder="Ej: Miraflores"
+          [disabled]="soloLectura" />
       </div>
       <div class="abril-field">
         <label class="abril-field-label">Provincia</label>
-        <input type="text" class="abril-field-input" [(ngModel)]="form.projectProvince" placeholder="Ej: Lima" />
+        <input type="text" class="abril-field-input" [(ngModel)]="form.projectProvince" placeholder="Ej: Lima"
+          [disabled]="soloLectura" />
       </div>
       <div class="abril-field">
         <label class="abril-field-label">Departamento</label>
-        <input type="text" class="abril-field-input" [(ngModel)]="form.projectDepartment" placeholder="Ej: Lima" />
+        <input type="text" class="abril-field-input" [(ngModel)]="form.projectDepartment" placeholder="Ej: Lima"
+          [disabled]="soloLectura" />
       </div>
       <div class="abril-field sm:col-span-3">
         <label class="abril-field-label">Dirección</label>
         <input type="text" class="abril-field-input" [(ngModel)]="form.projectLocation"
-          placeholder="Ej: Av. Principal 123, Lima" />
+          placeholder="Ej: Av. Principal 123, Lima" [disabled]="soloLectura" />
       </div>
     </div>
 
@@ -129,6 +146,46 @@
 
     <ng-container *ngIf="!loadingLookups; else lookupsSkeleton">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[12px] gap-y-[6px]">
+        <!-- Residente: lo asignan solo ROLES_ASIGNAN_RESIDENTE (da permisos en el Cronograma de
+             Hitos). El resto lo ve deshabilitado, aunque edite el proyecto. -->
+        <div class="flex flex-col">
+          <app-search-select
+            label="Residente"
+            placeholder="Buscar por nombre o DNI..."
+            [options]="personalCasa"
+            valueField="id"
+            displayField="apellidoNombre"
+            [value]="form.residenteWorkersId"
+            [allowClear]="true"
+            [sortAlpha]="false"
+            [disabled]="!puedeAsignarResidente"
+            (valueChange)="form.residenteWorkersId = $event">
+          </app-search-select>
+          <p class="mt-[4px] text-[11px] leading-tight"
+            [ngClass]="residenteEmail ? 'text-gray-400' : 'text-amber-600'">
+            {{ residenteEmail ?? 'Sin residente: nadie recibe el aviso por ese rol.' }}
+          </p>
+        </div>
+
+        <div class="flex flex-col">
+          <app-search-select
+            label="Administrador de obra"
+            placeholder="Buscar por nombre o DNI..."
+            [options]="personalCasa"
+            valueField="id"
+            displayField="apellidoNombre"
+            [value]="form.workersCoordAdminId"
+            [allowClear]="true"
+            [sortAlpha]="false"
+            [disabled]="soloLectura"
+            (valueChange)="form.workersCoordAdminId = $event">
+          </app-search-select>
+          <p class="mt-[4px] text-[11px] leading-tight"
+            [ngClass]="coordAdminEmail ? 'text-gray-400' : 'text-amber-600'">
+            {{ coordAdminEmail ?? 'Sin administrador de obra: nadie recibe el aviso por ese rol.' }}
+          </p>
+        </div>
+
         <app-search-select
           label="Responsable Arq. Comercial"
           placeholder="Buscar por nombre o DNI..."
@@ -138,6 +195,7 @@
           [value]="form.responsableArqComId"
           [allowClear]="true"
           [sortAlpha]="false"
+          [disabled]="soloLectura"
           (valueChange)="onResponsableArqComChange($event)">
         </app-search-select>
 
@@ -150,6 +208,7 @@
           [value]="form.responsableUdpId"
           [allowClear]="true"
           [sortAlpha]="false"
+          [disabled]="soloLectura"
           (valueChange)="onResponsableUdpChange($event)">
         </app-search-select>
 
@@ -162,29 +221,14 @@
           [value]="form.responsablePlaneamientoBimId"
           [allowClear]="true"
           [sortAlpha]="false"
+          [disabled]="soloLectura"
           (valueChange)="onResponsablePlaneamientoBimChange($event)">
         </app-search-select>
 
-        <div class="flex flex-col">
-          <app-search-select
-            label="Coordinador administrativo"
-            placeholder="Buscar por nombre o DNI..."
-            [options]="coordAdmins"
-            valueField="id"
-            displayField="apellidoNombre"
-            [value]="form.workersCoordAdminId"
-            [allowClear]="true"
-            [sortAlpha]="false"
-            (valueChange)="form.workersCoordAdminId = $event">
-          </app-search-select>
-          <p class="mt-[4px] text-[11px] leading-tight"
-            [ngClass]="coordAdminEmail ? 'text-gray-400' : 'text-amber-600'">
-            {{ coordAdminEmail ?? 'Sin coordinador: nadie recibe el aviso por ese rol.' }}
-          </p>
-        </div>
-
-        <label class="flex items-center gap-[8px] cursor-pointer mt-[9px] h-[36px]">
-          <input type="checkbox" [(ngModel)]="form.tieneArquitecturaComercial" class="w-4 h-4 accent-abril-standard" />
+        <label class="flex items-center gap-[8px] mt-[9px] h-[36px]"
+          [ngClass]="soloLectura ? 'cursor-not-allowed' : 'cursor-pointer'">
+          <input type="checkbox" [(ngModel)]="form.tieneArquitecturaComercial" class="w-4 h-4 accent-abril-standard"
+            [disabled]="soloLectura" />
           <span class="text-[13px] text-gray-700">Tiene Arquitectura Comercial</span>
         </label>
       </div>
@@ -192,6 +236,8 @@
 
     <ng-template #lookupsSkeleton>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-[12px] gap-y-[6px]">
+        <div class="mt-[9px] h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
+        <div class="mt-[9px] h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
         <div class="mt-[9px] h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
         <div class="mt-[9px] h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
         <div class="mt-[9px] h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
@@ -204,6 +250,27 @@
       <button type="button" (click)="loadLookups()" class="underline cursor-pointer">Reintentar</button>
     </p>
 
+    <!-- =============== Correos de aviso =============== -->
+    <p class="text-[11px] font-semibold text-abril-standard uppercase tracking-widest">Correos de aviso</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-x-[12px] gap-y-[6px]">
+      <div class="abril-field">
+        <label class="abril-field-label">Responsable</label>
+        <input type="email" class="abril-field-input" [(ngModel)]="form.emailResponsable"
+          placeholder="Ej: nombre@abril.pe" [disabled]="soloLectura" />
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">RR.HH.</label>
+        <input type="email" class="abril-field-input" [(ngModel)]="form.emailRrhh"
+          placeholder="Ej: nombre@abril.pe" [disabled]="soloLectura" />
+      </div>
+      <div class="abril-field">
+        <label class="abril-field-label">Coordinador SSOMA</label>
+        <input type="email" class="abril-field-input" [(ngModel)]="form.emailCoordSsoma"
+          placeholder="Ej: nombre@abril.pe" [disabled]="soloLectura" />
+      </div>
+    </div>
+
     <!-- =============== Geolocalización (geofencing de Tareo) =============== -->
     <p class="text-[11px] font-semibold text-abril-standard uppercase tracking-widest">
       Geolocalización <span class="normal-case font-normal">(geofencing de Marcar Tareo)</span>
@@ -213,17 +280,17 @@
       <div class="abril-field">
         <label class="abril-field-label">Latitud</label>
         <input type="number" step="0.0000001" class="abril-field-input" [(ngModel)]="form.lat"
-          placeholder="Ej: -12.0621965" />
+          placeholder="Ej: -12.0621965" [disabled]="soloLectura" />
       </div>
       <div class="abril-field">
         <label class="abril-field-label">Longitud</label>
         <input type="number" step="0.0000001" class="abril-field-input" [(ngModel)]="form.lng"
-          placeholder="Ej: -77.0365256" />
+          placeholder="Ej: -77.0365256" [disabled]="soloLectura" />
       </div>
       <div class="abril-field">
         <label class="abril-field-label">Radio geofence (m)</label>
         <input type="number" step="1" class="abril-field-input" [(ngModel)]="form.radioGeofenceMetros"
-          placeholder="300" />
+          placeholder="300" [disabled]="soloLectura" />
       </div>
     </div>
 
@@ -231,10 +298,10 @@
     <p class="text-[11px] font-semibold text-abril-standard uppercase tracking-widest">Fechas</p>
 
     <div class="grid grid-cols-1 sm:grid-cols-4 gap-x-[12px] gap-y-[6px]">
-      <app-date-picker label="Fecha inicio"   [floatingLabel]="true" color="var(--color-abril-standard)" [(value)]="form.fechaInicio"></app-date-picker>
-      <app-date-picker label="Fecha fin"      [floatingLabel]="true" color="var(--color-abril-standard)" [(value)]="form.fechaFin"></app-date-picker>
-      <app-date-picker label="Inicio de obra" [floatingLabel]="true" color="var(--color-abril-standard)" [(value)]="form.inicioObra"></app-date-picker>
-      <app-date-picker label="Fin de obra"    [floatingLabel]="true" color="var(--color-abril-standard)" [(value)]="form.finObra"></app-date-picker>
+      <app-date-picker label="Fecha inicio"   [floatingLabel]="true" color="var(--color-abril-standard)" [(value)]="form.fechaInicio" [disabled]="soloLectura"></app-date-picker>
+      <app-date-picker label="Fecha fin"      [floatingLabel]="true" color="var(--color-abril-standard)" [(value)]="form.fechaFin"    [disabled]="soloLectura"></app-date-picker>
+      <app-date-picker label="Inicio de obra" [floatingLabel]="true" color="var(--color-abril-standard)" [(value)]="form.inicioObra"  [disabled]="soloLectura"></app-date-picker>
+      <app-date-picker label="Fin de obra"    [floatingLabel]="true" color="var(--color-abril-standard)" [(value)]="form.finObra"     [disabled]="soloLectura"></app-date-picker>
     </div>
 
     <!-- =============== Métricas físicas =============== -->
@@ -243,45 +310,99 @@
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-x-[12px] gap-y-[6px]">
       <div class="abril-field">
         <label class="abril-field-label">N° niveles</label>
-        <input type="text" class="abril-field-input" [(ngModel)]="form.numNiveles" />
+        <input type="text" class="abril-field-input" [(ngModel)]="form.numNiveles" [disabled]="soloLectura" />
       </div>
       <div class="abril-field">
         <label class="abril-field-label">N° sótanos</label>
-        <input type="text" class="abril-field-input" [(ngModel)]="form.numSotanos" />
+        <input type="text" class="abril-field-input" [(ngModel)]="form.numSotanos" [disabled]="soloLectura" />
       </div>
       <div class="abril-field">
         <label class="abril-field-label">Pisos</label>
-        <input type="text" class="abril-field-input" [(ngModel)]="form.pisos" />
+        <input type="text" class="abril-field-input" [(ngModel)]="form.pisos" [disabled]="soloLectura" />
       </div>
       <div class="abril-field">
         <label class="abril-field-label">Días de obra</label>
-        <input type="number" min="0" class="abril-field-input" [(ngModel)]="form.tiempoConstruccion" />
+        <input type="number" min="0" class="abril-field-input" [(ngModel)]="form.tiempoConstruccion" [disabled]="soloLectura" />
       </div>
       <div class="abril-field">
         <label class="abril-field-label">Área m²</label>
-        <input type="number" min="0" step="0.01" class="abril-field-input" [(ngModel)]="form.areaM2" />
+        <input type="number" min="0" step="0.01" class="abril-field-input" [(ngModel)]="form.areaM2" [disabled]="soloLectura" />
       </div>
       <div class="abril-field">
         <label class="abril-field-label">Área techada m²</label>
-        <input type="number" min="0" step="0.01" class="abril-field-input" [(ngModel)]="form.areaTechadaM2" />
+        <input type="number" min="0" step="0.01" class="abril-field-input" [(ngModel)]="form.areaTechadaM2" [disabled]="soloLectura" />
       </div>
       <div class="abril-field">
         <label class="abril-field-label">HH total casa</label>
-        <input type="number" min="0" step="0.01" class="abril-field-input" [(ngModel)]="form.hhTotalCasa" />
+        <input type="number" min="0" step="0.01" class="abril-field-input" [(ngModel)]="form.hhTotalCasa" [disabled]="soloLectura" />
       </div>
       <div class="abril-field">
         <label class="abril-field-label">Trabajadores casa</label>
-        <input type="text" class="abril-field-input" [(ngModel)]="form.cantTrabajadoresCasa" />
+        <input type="text" class="abril-field-input" [(ngModel)]="form.cantTrabajadoresCasa" [disabled]="soloLectura" />
       </div>
     </div>
 
     <!-- =============== Botón guardar =============== -->
-    <div class="flex justify-center mt-[6px]">
+    <div *ngIf="!soloLectura" class="flex justify-center mt-[6px]">
       <button (click)="save()" [disabled]="saving"
         class="w-[140px] h-[38px] bg-abril-standard hover:bg-abril-standard-hover text-white text-[14px] font-medium rounded-[10px] cursor-pointer transition-colors disabled:opacity-60">
         {{ saving ? 'Guardando...' : 'Guardar' }}
       </button>
     </div>
+
+    <!-- =============== Torres / bloques =============== -->
+    <p class="text-[11px] font-semibold text-abril-standard uppercase tracking-widest mt-[10px]">
+      Torres / bloques <span class="normal-case font-normal">(opcional — para el selector de "Lugar" en RAC/ATS)</span>
+    </p>
+
+    <ng-container *ngIf="!loadingTorres; else torresSkeleton">
+      <div *ngFor="let t of torres; let i = index" class="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-x-[8px] items-end mb-[6px]">
+        <div class="abril-field">
+          <label class="abril-field-label">Nombre</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="t.nombre" [ngModelOptions]="{standalone: true}" placeholder="A, B, Torre única..."
+            [disabled]="soloLectura" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Sótanos</label>
+          <input type="number" min="0" class="abril-field-input" [(ngModel)]="t.cantidadSotanos" [ngModelOptions]="{standalone: true}"
+            [disabled]="soloLectura" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Pisos</label>
+          <input type="number" min="0" class="abril-field-input" [(ngModel)]="t.cantidadPisos" [ngModelOptions]="{standalone: true}"
+            [disabled]="soloLectura" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Cisternas</label>
+          <input type="number" min="0" class="abril-field-input" [(ngModel)]="t.cantidadCisternas" [ngModelOptions]="{standalone: true}"
+            [disabled]="soloLectura" />
+        </div>
+        <!-- En «Ver» (soloLectura) las torres se muestran pero no se editan ni se guardan. -->
+        <button *ngIf="!soloLectura" type="button" (click)="quitarTorre(i)" title="Quitar torre"
+          class="h-[36px] w-[36px] flex items-center justify-center rounded-[7px] border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-300 cursor-pointer">
+          <i class="ti ti-trash"></i>
+        </button>
+      </div>
+
+      <p *ngIf="torres.length === 0" class="text-[11px] text-gray-400 mb-[6px]">
+        Sin torres configuradas — la azotea se agrega sola como último nivel de cada torre.
+      </p>
+
+      <div *ngIf="!soloLectura" class="flex items-center justify-between mt-[4px]">
+        <button type="button" (click)="agregarTorre()"
+          class="text-[13px] text-abril-standard hover:underline cursor-pointer">
+          + Agregar torre
+        </button>
+        <button type="button" (click)="guardarTorres()" [disabled]="savingTorres"
+          class="h-[34px] px-[16px] bg-abril-standard hover:bg-abril-standard-hover text-white text-[13px] font-medium rounded-[7px] cursor-pointer transition-colors disabled:opacity-60">
+          {{ savingTorres ? 'Guardando...' : 'Guardar torres' }}
+        </button>
+      </div>
+    </ng-container>
+
+    <ng-template #torresSkeleton>
+      <div class="h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
+    </ng-template>
 
   </div>
 

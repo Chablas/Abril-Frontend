@@ -14,6 +14,7 @@ import { SalidaCapturasEditor } from '../salida-capturas-editor/salida-capturas-
 import { SalidaTrayectosTabla } from '../salida-trayectos-tabla/salida-trayectos-tabla';
 import { CapturasEdicion } from '../salida-capturas-editor/capturas-edicion';
 import { DocumentoEmbebido } from '../documento-embebido/documento-embebido';
+import { ReembolsoPipeline } from '../reembolso-pipeline/reembolso-pipeline';
 import { SolicitudSalidaDetalleDto } from '../../dtos/salida-detalle.dto';
 
 /**
@@ -41,7 +42,7 @@ import { SolicitudSalidaDetalleDto } from '../../dtos/salida-detalle.dto';
   selector: 'app-salida-detalle-modal',
   imports: [
     CommonModule, BaseModal, StatusBadge, SalidaCapturasEditor, SalidaTrayectosTabla, TitleCasePipe,
-    DocumentoEmbebido,
+    DocumentoEmbebido, ReembolsoPipeline,
   ],
   templateUrl: './salida-detalle-modal.html',
 })
@@ -67,6 +68,14 @@ export class SalidaDetalleModal implements OnInit, OnDestroy {
    * que repetirlos acá solo suma ruido. Solo Solicitud de Salidas los muestra.
    */
   @Input() mostrarDocumentos = true;
+
+  /**
+   * false = oculta el pipeline del reembolso. Solo lo muestra Solicitud de Salidas, que es donde
+   * este modal ES el detalle de la pantalla; las otras cuatro lo abren desde adentro del detalle de
+   * una planilla o de un consolidado, que ya traen el suyo, y repetirlo ahí diría lo mismo dos
+   * veces en la misma pantalla.
+   */
+  @Input() mostrarPipeline = true;
 
   /** Emite al cerrar: `true` si se guardó o quitó alguna captura (el padre debe recargar el listado). */
   @Output() close = new EventEmitter<boolean>();

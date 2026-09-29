@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
-import { AbrilPageHeaderComponent, AbrilPageTab } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
+import { ATS_HEADER_TABS } from '../../shared/ats-header-tabs';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { SignaturePad } from '../../../../../../shared/components/signature-pad/signature-pad';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
@@ -23,9 +24,10 @@ import {
   AtsPasoPuestoDto,
   AtsAutorizacionTrabajadorDto,
   AtsPeligroDto,
-  AtsPlantillaActividadDto,
   AtsRiesgoConControlesDto,
   AtsPlantillaPuestoDto,
+  TipoControl,
+  TIPOS_CONTROL,
 } from '../../dtos/ats.dtos';
 
 @Component({
@@ -34,6 +36,7 @@ import {
   imports: [
     CommonModule,
     FormsModule,
+    RouterModule,
     AbrilPageHeaderComponent,
     AbrilModalPanel,
     SearchSelect,
@@ -55,21 +58,25 @@ export class AtsPlantillas implements OnInit {
   loadingPlantillasPuesto = false;
   guardandoPlantillaPuestoId: number | null = null;
 
-  // ── Actividades/pasos de una plantilla ──────────────────────────────────
-  actividadesModalAbierto = false;
-  actividadesPlantilla: AtsPlantillaDto | null = null;
-  actividades: AtsPlantillaActividadDto[] = [];
-  loadingActividades = false;
-  nuevaActividadTexto = '';
-  guardandoActividad = false;
-  nuevoPasoTexto: Record<number, string> = {};
-  guardandoPasoActividadId: number | null = null;
-
   // ── Controles sugeridos por riesgo ──────────────────────────────────────
   riesgosControles: AtsRiesgoConControlesDto[] = [];
   loadingControles = false;
   nuevoControlTexto: Record<number, string> = {};
+  nuevoControlTipo: Record<number, TipoControl> = {};
   guardandoControlRiesgoId: number | null = null;
+  readonly tiposControl = TIPOS_CONTROL;
+
+  tipoControlDe(riesgoId: number): TipoControl {
+    return this.nuevoControlTipo[riesgoId] ?? 'Administrativo';
+  }
+
+  setTipoControlDe(riesgoId: number, tipo: TipoControl): void {
+    this.nuevoControlTipo[riesgoId] = tipo;
+  }
+
+  tipoControlLabel(tipo: TipoControl): string {
+    return TIPOS_CONTROL.find((t) => t.value === tipo)?.label ?? tipo;
+  }
 
   peligrosCatalogo: AtsPeligroDto[] = [];
   loadingRiesgos = false;
@@ -109,15 +116,7 @@ export class AtsPlantillas implements OnInit {
   eppsMarcados = new Set<number>();
   herramientasMarcadas = new Set<number>();
 
-  readonly headerTabs: AbrilPageTab[] = [
-    { label: 'Listado ATS', icono: 'ti-list', route: '/ssoma/gestion/ats', exact: true },
-    { label: 'Plantillas', icono: 'ti-clipboard-list', route: '/ssoma/gestion/ats/plantillas', exact: true },
-    { label: 'Pasos por puesto', icono: 'ti-users', route: '/ssoma/gestion/ats/plantillas/pasos', exact: true },
-    { label: 'Autorizaciones', icono: 'ti-file-signature', route: '/ssoma/gestion/ats/plantillas/autorizaciones', exact: true },
-    { label: 'Riesgos', icono: 'ti-alert-triangle', route: '/ssoma/gestion/ats/plantillas/riesgos', exact: true },
-    { label: 'Controles', icono: 'ti-shield-check', route: '/ssoma/gestion/ats/plantillas/controles', exact: true },
-    { label: 'Plantillas por puesto', icono: 'ti-briefcase', route: '/ssoma/gestion/ats/plantillas/plantillas-puesto', exact: true },
-  ];
+  readonly headerTabs = ATS_HEADER_TABS;
 
   constructor(
     private svc: AtsService,
@@ -423,16 +422,6 @@ export class AtsPlantillas implements OnInit {
     this.cdr.markForCheck();
   }
 
-  editar(p: AtsPlantillaDto): void {
-    this.editandoId = p.id;
-    this.nombre = p.nombre;
-    this.peligrosMarcados = new Set(p.peligroIds);
-    this.eppsMarcados = new Set(p.eppIds);
-    this.herramientasMarcadas = new Set(p.herramientaIds);
-    this.modalAbierto = true;
-    this.cdr.markForCheck();
-  }
-
   cerrarModal(): void {
     this.modalAbierto = false;
     this.cdr.markForCheck();
@@ -482,119 +471,6 @@ export class AtsPlantillas implements OnInit {
     }
   }
 
-  // ── Actividades/pasos de una plantilla ──────────────────────────────────
-
-  abrirActividades(p: AtsPlantillaDto): void {
-    this.actividadesPlantilla = p;
-    this.actividadesModalAbierto = true;
-    this.actividades = [];
-    this.loadingActividades = true;
-    this.cdr.markForCheck();
-    this.svc.getActividadesDePlantilla(p.id).subscribe({
-      next: (list) => { this.actividades = list; this.loadingActividades = false; this.cdr.markForCheck(); },
-      error: (err: HttpErrorResponse) => { this.loadingActividades = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
-    });
-  }
-
-  cerrarActividades(): void {
-    this.actividadesModalAbierto = false;
-    this.actividadesPlantilla = null;
-    this.cdr.markForCheck();
-  }
-
-  peligrosDePlantilla(): AtsPeligroDto[] {
-    if (!this.actividadesPlantilla || !this.catalogo) return [];
-    const ids = new Set(this.actividadesPlantilla.peligroIds);
-    return this.catalogo.peligros.filter((p) => ids.has(p.id));
-  }
-
-  agregarActividad(): void {
-    const texto = this.nuevaActividadTexto.trim();
-    if (!texto || !this.actividadesPlantilla || this.guardandoActividad) return;
-    this.guardandoActividad = true;
-    this.cdr.markForCheck();
-    this.svc.crearActividad(this.actividadesPlantilla.id, { texto }).subscribe({
-      next: () => {
-        this.nuevaActividadTexto = '';
-        this.guardandoActividad = false;
-        this.abrirActividades(this.actividadesPlantilla!);
-      },
-      error: (err: HttpErrorResponse) => { this.guardandoActividad = false; this.errorService.handleError(err); this.cdr.markForCheck(); },
-    });
-  }
-
-  editarActividad(a: AtsPlantillaActividadDto): void {
-    Swal.fire({
-      title: 'Editar actividad',
-      input: 'text',
-      inputValue: a.texto,
-      showCancelButton: true,
-      confirmButtonText: 'Guardar',
-      cancelButtonText: 'Cancelar',
-      inputValidator: (value) => (!value?.trim() ? 'Escribe un texto' : undefined),
-    }).then((r) => {
-      if (!r.isConfirmed || !r.value?.trim()) return;
-      this.svc.editarActividad(a.id, { texto: r.value.trim() }).subscribe({
-        next: () => { a.texto = r.value.trim(); this.cdr.markForCheck(); },
-        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
-      });
-    });
-  }
-
-  eliminarActividad(a: AtsPlantillaActividadDto): void {
-    Swal.fire({
-      icon: 'question',
-      title: `¿Eliminar "${a.texto}"?`,
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
-    }).then((r) => {
-      if (!r.isConfirmed) return;
-      this.svc.eliminarActividad(a.id).subscribe({
-        next: () => { this.actividades = this.actividades.filter((x) => x.id !== a.id); this.cdr.markForCheck(); },
-        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
-      });
-    });
-  }
-
-  actividadTienePeligro(a: AtsPlantillaActividadDto, peligroId: number): boolean {
-    return a.peligroIds.includes(peligroId);
-  }
-
-  toggleActividadPeligro(a: AtsPlantillaActividadDto, peligroId: number): void {
-    const nuevos = a.peligroIds.includes(peligroId)
-      ? a.peligroIds.filter((id) => id !== peligroId)
-      : [...a.peligroIds, peligroId];
-    a.peligroIds = nuevos;
-    this.cdr.markForCheck();
-    this.svc.setActividadPeligros(a.id, { peligroIds: nuevos }).subscribe({
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
-    });
-  }
-
-  agregarPasoActividad(a: AtsPlantillaActividadDto): void {
-    const texto = (this.nuevoPasoTexto[a.id] ?? '').trim();
-    if (!texto || this.guardandoPasoActividadId === a.id) return;
-    this.guardandoPasoActividadId = a.id;
-    this.cdr.markForCheck();
-    this.svc.crearPasoActividad(a.id, { texto }).subscribe({
-      next: (res) => {
-        a.pasos.push({ id: res.id, texto, orden: a.pasos.length + 1 });
-        this.nuevoPasoTexto[a.id] = '';
-        this.guardandoPasoActividadId = null;
-        this.cdr.markForCheck();
-      },
-      error: (err: HttpErrorResponse) => { this.guardandoPasoActividadId = null; this.errorService.handleError(err); this.cdr.markForCheck(); },
-    });
-  }
-
-  eliminarPasoActividad(a: AtsPlantillaActividadDto, pasoId: number): void {
-    this.svc.eliminarPasoActividad(pasoId).subscribe({
-      next: () => { a.pasos = a.pasos.filter((p) => p.id !== pasoId); this.cdr.markForCheck(); },
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
-    });
-  }
-
   // ── Controles sugeridos por riesgo ──────────────────────────────────────
 
   cargarControles(): void {
@@ -617,11 +493,12 @@ export class AtsPlantillas implements OnInit {
   agregarControl(r: AtsRiesgoConControlesDto): void {
     const texto = (this.nuevoControlTexto[r.riesgoId] ?? '').trim();
     if (!texto || this.guardandoControlRiesgoId === r.riesgoId) return;
+    const tipo = this.tipoControlDe(r.riesgoId);
     this.guardandoControlRiesgoId = r.riesgoId;
     this.cdr.markForCheck();
-    this.svc.crearControl(r.riesgoId, { texto }).subscribe({
+    this.svc.crearControl(r.riesgoId, { texto, tipo }).subscribe({
       next: (res) => {
-        r.controles.push({ id: res.id, texto, orden: r.controles.length + 1 });
+        r.controles.push({ id: res.id, texto, tipo, orden: r.controles.length + 1 });
         this.nuevoControlTexto[r.riesgoId] = '';
         this.guardandoControlRiesgoId = null;
         this.cdr.markForCheck();

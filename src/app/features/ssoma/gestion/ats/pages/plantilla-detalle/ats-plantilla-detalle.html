@@ -1,0 +1,240 @@
+<div class="detalle-body">
+  <button type="button" class="btn-volver" (click)="volver()">
+    <i class="ti ti-arrow-left"></i> Volver a Plantillas
+  </button>
+
+  @if (loading) {
+    <div class="panel-loading">Cargando…</div>
+  } @else if (!plantilla) {
+    <p class="pasos-hint">No se encontró esta plantilla.</p>
+  } @else {
+    <h1 class="detalle-titulo">{{ plantilla.nombre }}</h1>
+    <p class="detalle-subtitulo">
+      Actividades, peligros/riesgos y controles de esta especialidad — todo en un solo lugar.
+    </p>
+
+    <!-- Datos generales -->
+    <section class="detalle-seccion">
+      <div class="abril-section-title">Datos generales</div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Nombre *</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="nombre" placeholder="Ej: ATS Izaje" />
+      </div>
+
+      <div class="abril-section-title abril-section-title--sub">Peligros sugeridos</div>
+      @if (!catalogo) {
+        <div class="panel-loading">Cargando…</div>
+      } @else {
+        <div class="chips-grid">
+          @for (peligro of catalogo.peligros; track peligro.id) {
+            <label class="chip" [class.chip--sel]="peligroMarcado(peligro.id)">
+              <input type="checkbox" [checked]="peligroMarcado(peligro.id)" (change)="togglePeligro(peligro.id)" />
+              {{ peligro.nombre }}
+            </label>
+          }
+        </div>
+
+        <div class="abril-section-title abril-section-title--sub">EPP sugerido</div>
+        <div class="chips-grid">
+          @for (e of catalogo.epps; track e.id) {
+            <label class="chip" [class.chip--sel]="eppMarcado(e.id)">
+              <input type="checkbox" [checked]="eppMarcado(e.id)" (change)="toggleEpp(e.id)" />
+              {{ e.nombre }}
+            </label>
+          }
+        </div>
+
+        <div class="abril-section-title abril-section-title--sub">Herramientas/equipos sugeridos</div>
+        <div class="chips-grid">
+          @for (h of catalogo.herramientas; track h.id) {
+            <label class="chip" [class.chip--sel]="herramientaMarcada(h.id)">
+              <input type="checkbox" [checked]="herramientaMarcada(h.id)" (change)="toggleHerramienta(h.id)" />
+              {{ h.nombre }}
+            </label>
+          }
+        </div>
+      }
+
+      <div class="detalle-guardar-row">
+        <button class="btn btn-primary" (click)="guardarGeneral()" [disabled]="!puedeGuardarGeneral">
+          @if (guardandoGeneral) { Guardando… } @else { Guardar cambios }
+        </button>
+      </div>
+    </section>
+
+    <!-- Actividades y pasos -->
+    <section class="detalle-seccion">
+      <div class="abril-section-title">Actividades y pasos de la tarea</div>
+      <p class="pasos-hint">
+        Actividades propias de esta especialidad, con sus pasos y los peligros de esta plantilla
+        que aplican a cada una. Al llenar el ATS, marcar una actividad solo sugiere sus peligros.
+      </p>
+
+      @if (loadingActividades) {
+        <div class="panel-loading">Cargando…</div>
+      } @else {
+        @if (actividades.length === 0) {
+          <p class="pasos-hint">No hay actividades todavía. Agrega la primera abajo.</p>
+        }
+        @for (a of actividades; track a.id) {
+          <div class="actividad-card">
+            <div class="actividad-card-header">
+              <strong>{{ a.texto }}</strong>
+              <div>
+                <button class="btn btn-outline btn-sm" (click)="editarActividad(a)">Editar</button>
+                <button class="btn btn-outline btn-sm btn-danger" (click)="eliminarActividad(a)">Eliminar</button>
+              </div>
+            </div>
+
+            <div class="actividad-seccion-label">Pasos</div>
+            <div class="paso-puestos">
+              @for (p of a.pasos; track p.id) {
+                <span class="chip chip--sel">
+                  {{ p.texto }}
+                  <button type="button" class="chip-remove" (click)="eliminarPasoActividad(a, p.id)">✕</button>
+                </span>
+              }
+              <input
+                type="text"
+                class="control-input"
+                placeholder="+ Agregar paso..."
+                [(ngModel)]="nuevoPasoTexto[a.id]"
+                (keyup.enter)="agregarPasoActividad(a)"
+              />
+              @if (guardandoPasoActividadId === a.id) { <span class="guardando-tag">Guardando…</span> }
+            </div>
+
+            <div class="actividad-seccion-label">Peligros de esta actividad</div>
+            <div class="chips-grid">
+              @for (peligro of peligrosDePlantilla(); track peligro.id) {
+                <label class="chip" [class.chip--sel]="actividadTienePeligro(a, peligro.id)">
+                  <input type="checkbox" [checked]="actividadTienePeligro(a, peligro.id)" (change)="toggleActividadPeligro(a, peligro.id)" />
+                  {{ peligro.nombre }}
+                </label>
+              }
+              @if (peligrosDePlantilla().length === 0) {
+                <span class="pasos-hint">Esta plantilla no tiene peligros guardados todavía — marca y guarda arriba primero.</span>
+              }
+            </div>
+          </div>
+        }
+
+        <div class="nueva-actividad-row">
+          <input
+            type="text"
+            class="abril-field-input"
+            placeholder="Nombre de la nueva actividad..."
+            [(ngModel)]="nuevaActividadTexto"
+            (keyup.enter)="agregarActividad()"
+          />
+          <button class="btn btn-primary btn-sm" [disabled]="!nuevaActividadTexto.trim() || guardandoActividad" (click)="agregarActividad()">
+            @if (guardandoActividad) { Guardando… } @else { + Agregar actividad }
+          </button>
+        </div>
+      }
+    </section>
+
+    <!-- Riesgos asociados -->
+    <section class="detalle-seccion">
+      <div class="abril-section-title">Riesgos asociados — ¿exige PETAR?</div>
+      <p class="pasos-hint">
+        Solo los peligros/riesgos ya guardados en "Datos generales" de esta plantilla. Marcar
+        "Requiere PETAR" es global: aplica a este riesgo sin importar en qué especialidad salga.
+      </p>
+
+      @if (loadingRiesgos) {
+        <div class="panel-loading">Cargando…</div>
+      } @else if (peligrosDeEstaPlantilla.length === 0) {
+        <p class="pasos-hint">Esta plantilla no tiene peligros guardados todavía.</p>
+      } @else {
+        <div class="abril-table-wrap">
+          <table class="abril-table">
+            <thead>
+              <tr><th>Peligro</th><th>Riesgo</th><th>Requiere PETAR</th></tr>
+            </thead>
+            <tbody>
+              @for (peligro of peligrosDeEstaPlantilla; track peligro.id) {
+                @for (riesgo of peligro.riesgos; track riesgo.id; let first = $first) {
+                  <tr>
+                    <td>{{ first ? peligro.nombre : '' }}</td>
+                    <td>{{ riesgo.nombre }}</td>
+                    <td>
+                      @if (guardandoRiesgoId === riesgo.id) {
+                        <span class="guardando-tag">Guardando…</span>
+                      } @else {
+                        <label class="riesgo-toggle">
+                          <input type="checkbox" [checked]="riesgo.requierePetar" (change)="toggleRequierePetar(riesgo)" />
+                          Requiere PETAR
+                        </label>
+                      }
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <!-- Controles sugeridos -->
+    <section class="detalle-seccion">
+      <div class="abril-section-title">Controles sugeridos por riesgo</div>
+      <p class="pasos-hint">El trabajador los marca en vez de escribirlos a mano al llenar su ATS.</p>
+
+      @if (loadingControles) {
+        <div class="panel-loading">Cargando…</div>
+      } @else if (controlesDeEstaPlantilla.length === 0) {
+        <p class="pasos-hint">Esta plantilla no tiene peligros guardados todavía.</p>
+      } @else {
+        <div class="abril-table-wrap">
+          <table class="abril-table">
+            <thead>
+              <tr><th>Peligro</th><th>Riesgo</th><th>Controles sugeridos</th></tr>
+            </thead>
+            <tbody>
+              @for (grupo of controlesDeEstaPlantilla; track grupo.peligroNombre) {
+                @for (r of grupo.riesgos; track r.riesgoId; let first = $first) {
+                  <tr>
+                    <td>{{ first ? grupo.peligroNombre : '' }}</td>
+                    <td class="paso-texto">{{ r.riesgoNombre }}</td>
+                    <td>
+                      <div class="paso-puestos">
+                        @for (c of r.controles; track c.id) {
+                          <span class="chip chip--sel" [class]="'chip--tipo-' + c.tipo.toLowerCase()">
+                            <span class="tipo-control-tag">{{ tipoControlLabel(c.tipo) }}</span>
+                            {{ c.texto }}
+                            <button type="button" class="chip-remove" (click)="eliminarControl(r, c.id)">✕</button>
+                          </span>
+                        }
+                      </div>
+                      <div class="nuevo-control-row">
+                        <select
+                          class="control-tipo-select"
+                          [ngModel]="tipoControlDe(r.riesgoId)"
+                          (ngModelChange)="setTipoControlDe(r.riesgoId, $event)">
+                          @for (t of tiposControl; track t.value) {
+                            <option [value]="t.value">{{ t.label }}</option>
+                          }
+                        </select>
+                        <input
+                          type="text"
+                          class="control-input"
+                          placeholder="+ Agregar control..."
+                          [(ngModel)]="nuevoControlTexto[r.riesgoId]"
+                          (keyup.enter)="agregarControl(r)"
+                        />
+                        @if (guardandoControlRiesgoId === r.riesgoId) { <span class="guardando-tag">Guardando…</span> }
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+</div>
