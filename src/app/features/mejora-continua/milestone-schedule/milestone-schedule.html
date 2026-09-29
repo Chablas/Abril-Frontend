@@ -113,6 +113,7 @@
                                 <th class="w-[50px]"></th>
                                 <th class="w-[50px]">N° Versión</th>
                                 <th class="w-[150px]">Fecha subida</th>
+                                <th class="w-[50px]"></th>
                                 <th *ngIf="authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES)" class="w-[50px]"></th>
                             </tr>
                         </thead>
@@ -140,6 +141,15 @@
                                     <span *ngIf="i === 0" class="badge-vigente">Vigente</span>
                                 </td>
                                 <td class="text-center">{{ item.createdDateTime | date: 'dd-MM-yyyy' }}</td>
+                                <td class="text-center">
+                                    <div class="flex justify-center">
+                                        <button class="icon-btn" title="Ver hitos de propietarios" (click)="openHitosPropietario(item, milestoneScheduleHistoryTableData.length - i)">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M5 21V4M5 4H18L15.5 8L18 12H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
                                 <td *ngIf="authService.hasRole(Roles.ADMINISTRADOR_RESIDENTES)" class="text-center">
                                     <div class="flex justify-center">
                                         <button class="icon-btn icon-btn-danger" title="Eliminar cronograma" (click)="eliminarVersionCronograma(item)">
@@ -152,6 +162,40 @@
                                 </td>
                             </tr>
 
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+    </app-base-modal>
+
+    <!-- Modal "Hitos de propietarios" — solo lectura, 9 hitos fijos derivados del cronograma de una versión -->
+    <app-base-modal *ngIf="showHitosPropietarioModal" title="HITOS DE PROPIETARIOS — VERSIÓN {{ hitosPropietarioVersionLabel }}"
+        width="w-[650px]" (closeModal)="closeHitosPropietarioModal()">
+            <div class="flex flex-col gap-[12px]">
+                <div *ngIf="loadingHitosPropietario" class="text-center text-sm py-[24px]" style="color:#64748B">Cargando...</div>
+                <div *ngIf="!loadingHitosPropietario" class="w-full rounded-lg overflow-hidden border" style="border-color:var(--color-abril-border)">
+                    <table class="w-full table-fixed historial-table">
+                        <thead>
+                            <tr>
+                                <th class="w-[36px]">#</th>
+                                <th>Hito</th>
+                                <th class="w-[120px]">Inicio</th>
+                                <th class="w-[120px]">Fin</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let hito of hitosPropietarioTableData" class="border-b h-[36px]" style="border-color:var(--color-abril-border)">
+                                <td class="text-center">{{ hito.order }}</td>
+                                <td>{{ hito.description }}</td>
+                                <td class="text-center">
+                                    <span *ngIf="hito.plannedStartDate">{{ hito.plannedStartDate | date: 'dd-MM-yyyy' }}</span>
+                                    <span *ngIf="!hito.plannedStartDate" style="color:#94A3B8">Sin fecha aún</span>
+                                </td>
+                                <td class="text-center">
+                                    <span *ngIf="hito.plannedEndDate">{{ hito.plannedEndDate | date: 'dd-MM-yyyy' }}</span>
+                                    <span *ngIf="!hito.plannedEndDate" style="color:#94A3B8">Sin fecha aún</span>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>

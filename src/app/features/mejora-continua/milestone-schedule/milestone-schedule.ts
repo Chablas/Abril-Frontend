@@ -30,6 +30,7 @@ import { MilestoneScheduleAddDTO } from '../../../core/dtos/milestoneSchedule/mi
 import { MilestoneSimpleDTO } from '../../../core/dtos/milestone/milestoneSimple.model';
 import { MilestoneService } from '../../../core/services/milestone.service';
 import { MilestoneScheduleHistoryCreateDTO } from '../../../core/dtos/milestoneScheduleHistory/milestoneScheduleHistoryCreate.model';
+import { OwnerMilestoneDTO } from '../../../core/dtos/milestoneSchedule/ownerMilestone.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { Roles } from '../../../core/constants/roles';
 import { MilestoneScheduleProjectsService } from './services/milestone-schedule-projects.service';
@@ -154,6 +155,12 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
   hitosFaltantes: MilestoneSimpleDTO[] = [];
   hitoGuardadoSeleccionadoId: number | null = null;
   hitoGuardadoTextoPersonalizado = '';
+
+  // ── Ver hitos de propietarios de una versión de cronograma (modal, GET milestoneSchedule/hitos-propietario) ──
+  showHitosPropietarioModal = false;
+  loadingHitosPropietario = false;
+  hitosPropietarioTableData: OwnerMilestoneDTO[] = [];
+  hitosPropietarioVersionLabel: number | null = null;
 
   private mouseDownOnBackdrop = false;
   private searchDebounce?: ReturnType<typeof setTimeout>;
@@ -744,6 +751,32 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
           error: (err: HttpErrorResponse) => this.error(err),
         });
     });
+  }
+
+  /** Vista de solo lectura: los 9 hitos de propietarios de una versión de cronograma ya guardada. */
+  openHitosPropietario(item: MilestoneScheduleHistoryGetDTO, versionLabel: number): void {
+    this.showHitosPropietarioModal = true;
+    this.hitosPropietarioVersionLabel = versionLabel;
+    this.hitosPropietarioTableData = [];
+    this.loadingHitosPropietario = true;
+    this.cdr.detectChanges();
+
+    this.milestoneScheduleService.getHitosPropietario(item.milestoneScheduleHistoryId).subscribe({
+      next: (response) => {
+        this.hitosPropietarioTableData = response;
+        this.loadingHitosPropietario = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.showHitosPropietarioModal = false;
+        this.error(err);
+      },
+    });
+  }
+
+  closeHitosPropietarioModal(): void {
+    this.showHitosPropietarioModal = false;
+    this.hitosPropietarioTableData = [];
   }
 
   // si se obtiene '2026-11-11' se obtendrá un Date que actúe como 11 de noviembre de 2026

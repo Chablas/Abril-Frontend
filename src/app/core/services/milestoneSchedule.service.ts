@@ -7,6 +7,7 @@ import { MilestoneScheduleFakeDataDTO } from '../dtos/milestoneSchedule/mileston
 import { MilestoneScheduleEditDTO } from '../dtos/milestoneSchedule/milestoneScheduleEdit.model';
 import { MilestoneScheduleAddDTO } from '../dtos/milestoneSchedule/milestoneScheduleAdd.model';
 import { MilestoneSimpleDTO } from '../dtos/milestone/milestoneSimple.model';
+import { OwnerMilestoneDTO } from '../dtos/milestoneSchedule/ownerMilestone.model';
 
 @Injectable({
   providedIn: 'root',
@@ -97,5 +98,19 @@ export class MilestoneScheduleService {
       dto,
       { headers: { Authorization: `Bearer ${token}` } },
     );
+  }
+
+  /**
+   * Los 9 hitos de propietarios (fijos, Order 1-9) de una versión de cronograma. Cada uno deriva
+   * su fecha de un hito interno del cronograma (milestoneId, informativo) — plannedStartDate /
+   * plannedEndDate pueden venir null si esa versión aún no tiene cargado el hito interno
+   * correspondiente; es solo lectura, no hay edición desde acá.
+   */
+  getHitosPropietario(milestoneScheduleHistoryId: number): Observable<OwnerMilestoneDTO[]> {
+    const token = localStorage.getItem('access_token');
+    return this.http.get<OwnerMilestoneDTO[]>(`${this.apiUrl}/hitos-propietario`, {
+      params: { milestoneScheduleHistoryId },
+      headers: { Authorization: `Bearer ${token}` },
+    });
   }
 }
