@@ -65,14 +65,15 @@
           <th>Fecha programada</th>
           <th>Trabajo en altura</th>
           <th>Estado</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
         <tr *ngIf="loading">
-          <td colspan="6" class="empty-row">Cargando…</td>
+          <td colspan="7" class="empty-row">Cargando…</td>
         </tr>
         <tr *ngIf="!loading && inducciones.length === 0">
-          <td colspan="6" class="empty-row">No hay inducciones registradas con los filtros aplicados.</td>
+          <td colspan="7" class="empty-row">No hay inducciones registradas con los filtros aplicados.</td>
         </tr>
         <tr *ngFor="let item of inducciones">
           <td class="td-name">{{ item.apellidoNombre }}</td>
@@ -89,9 +90,42 @@
               {{ getBadge(item).label }}
             </span>
           </td>
+          <td>
+            <button
+              *ngIf="puedeReprogramar(item)"
+              type="button"
+              class="btn-reprog"
+              (click)="abrirReprogramar(item)"
+            >
+              Reprogramar
+            </button>
+          </td>
         </tr>
       </tbody>
     </table>
   </div>
 
 </div>
+
+<app-base-modal *ngIf="reprogramando" title="Reprogramar inducción" width="w-[420px]" (closeModal)="cerrarReprogramar()">
+  <div class="form-wrapper">
+    <p class="muted-line">
+      {{ reprogramando.apellidoNombre }} · {{ reprogramando.proyectoNombre }}
+    </p>
+    <div>
+      <label class="field-label">Nueva fecha *</label>
+      <app-date-picker
+        [value]="nuevaFecha"
+        [showLabel]="false"
+        [min]="hoy"
+        (valueChange)="nuevaFecha = $event"
+      />
+    </div>
+    <footer class="form-footer">
+      <button type="button" class="btn-ghost" (click)="cerrarReprogramar()">Cancelar</button>
+      <button type="button" class="btn-primary" [disabled]="!nuevaFecha || reprogramandoGuardando" (click)="confirmarReprogramar()">
+        {{ reprogramandoGuardando ? 'Guardando…' : 'Reprogramar' }}
+      </button>
+    </footer>
+  </div>
+</app-base-modal>

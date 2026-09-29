@@ -174,8 +174,25 @@
 
         <div class="firma-col">
           <label class="abril-field-label">Firma *</label>
-          <app-signature-pad (drawingChange)="onFirmaChange($event)"></app-signature-pad>
-          <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
+
+          @if (firmaAutorizadaDataUrl && usandoFirmaAutorizada) {
+            <div class="firma-guardada-preview">
+              <img [src]="firmaAutorizadaDataUrl" alt="Tu firma autorizada" />
+            </div>
+            <button class="btn btn-outline btn-sm" (click)="dibujarFirmaNueva()">
+              <i class="ti ti-pencil"></i> Dibujar una firma distinta
+            </button>
+          } @else {
+            <app-signature-pad (drawingChange)="onFirmaChange($event)"></app-signature-pad>
+            <div class="firma-acciones-row">
+              <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
+              @if (firmaAutorizadaDataUrl) {
+                <button class="btn btn-primary btn-sm" (click)="usarFirmaAutorizada()">
+                  <i class="ti ti-signature"></i> Usar firma digital autorizada y validada
+                </button>
+              }
+            </div>
+          }
         </div>
       </div>
 

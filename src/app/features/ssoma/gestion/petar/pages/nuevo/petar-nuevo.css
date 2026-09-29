@@ -154,6 +154,24 @@
   color: #6b7280;
 }
 
+.firma-guardada-preview {
+  border: 1px dashed #d4d0c8;
+  border-radius: 8px;
+  padding: 8px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+}
+.firma-guardada-preview img { max-width: 100%; max-height: 160px; }
+
+.firma-acciones-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .btn-sm {
   align-self: flex-start;
   font-size: 12px;

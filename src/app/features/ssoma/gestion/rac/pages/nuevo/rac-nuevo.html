@@ -44,7 +44,7 @@
             displayField="projectDescription"
             [value]="proyectoId"
             placeholder="Buscar proyecto..."
-            (valueChange)="proyectoId = $event"
+            (valueChange)="onProyectoChange($event)"
           ></app-search-select>
         </div>
 
@@ -97,16 +97,58 @@
           ></app-search-select>
         </div>
 
-        <!-- Piso/Nivel -->
-        <div class="abril-field">
-          <label class="abril-field-label">Piso / Nivel</label>
-          <input type="text" class="abril-field-input" placeholder="Ej: Piso 3, Sótano…" [(ngModel)]="proyectoPiso" />
+        <!-- Ámbito: dentro de una torre, o exterior/fachada/vecinos -->
+        <div class="col-2" *ngIf="torres.length > 0">
+          <label class="abril-field-label" style="position: static;">¿Dónde ocurrió?</label>
+          <div class="ambito-toggle">
+            <button type="button" class="ambito-btn" [class.ambito-btn--activo]="!esExterior" (click)="setEsExterior(false)">
+              Dentro de una torre
+            </button>
+            <button type="button" class="ambito-btn" [class.ambito-btn--activo]="esExterior" (click)="setEsExterior(true)">
+              Exterior / fachada / vecinos
+            </button>
+          </div>
         </div>
+
+        @if (!esExterior && torres.length > 0) {
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Torre *"
+              [options]="torres"
+              valueField="nombre"
+              displayField="nombre"
+              [value]="torreNombre"
+              [sortAlpha]="false"
+              placeholder="Selecciona torre"
+              (valueChange)="onTorreChange($event)"
+            ></app-search-select>
+          </div>
+          <div class="abril-field">
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Piso / Nivel *"
+              [options]="nivelesDeTorreActual"
+              valueField="id"
+              displayField="label"
+              [value]="nivelId"
+              [sortAlpha]="false"
+              placeholder="Selecciona piso/nivel"
+              (valueChange)="nivelId = $event; onNivelChange()"
+            ></app-search-select>
+          </div>
+        } @else {
+          <!-- Sin torres configuradas para el proyecto, o "Exterior" elegido: piso/nivel a mano -->
+          <div class="abril-field">
+            <label class="abril-field-label">Piso / Nivel</label>
+            <input type="text" class="abril-field-input" placeholder="Ej: Piso 3, Sótano, Fachada norte…" [(ngModel)]="proyectoPiso" />
+          </div>
+        }
 
         <!-- Lugar -->
         <div class="col-2 abril-field">
-          <label class="abril-field-label">Descripción del Lugar</label>
-          <input type="text" class="abril-field-input" placeholder="Ej: Área de excavación, frente 2…" [(ngModel)]="lugarDescripcion" />
+          <label class="abril-field-label">Lugar específico</label>
+          <input type="text" class="abril-field-input" placeholder="Ej: Cerca del ascensor, frente 2…" [(ngModel)]="lugarDescripcion" />
         </div>
 
       </div>

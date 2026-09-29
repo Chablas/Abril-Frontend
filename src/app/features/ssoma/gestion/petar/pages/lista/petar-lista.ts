@@ -11,6 +11,7 @@ import { Paginator } from '../../../../../../shared/components/paginator/paginat
 import { PetarService } from '../../services/petar.service';
 import { PetarResponseDto, PetarFiltroDto } from '../../dtos/petar.dtos';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { ATS_HEADER_TABS } from '../../../ats/shared/ats-header-tabs';
 
 type RolVisto = 'supervisor' | 'ssoma';
 
@@ -29,6 +30,7 @@ export class PetarLista implements OnInit {
   totalPages = 0;
   page = 1;
   soloPendientes = false;
+  readonly headerTabs = ATS_HEADER_TABS;
 
   petarFirmandoVisto: PetarResponseDto | null = null;
   rolVisto: RolVisto | null = null;

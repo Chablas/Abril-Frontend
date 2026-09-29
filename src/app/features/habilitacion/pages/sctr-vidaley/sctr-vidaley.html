@@ -305,7 +305,9 @@
             frameborder="0"
           ></iframe>
           <div *ngIf="!docSafeUrl" class="sctr-split-empty">
-            <span class="muted-line">Sin archivo PDF</span>
+            <span class="muted-line">{{
+              docError ? 'No se pudo cargar el archivo. Vuelve a intentar.' : selectedDoc.archivoUrl ? 'Cargando archivo...' : 'Sin archivo PDF'
+            }}</span>
           </div>
         </div>
       </ng-container>

@@ -71,6 +71,9 @@ export interface CrearInspeccionRequest {
   horaInicio?: string;
   horaFin?: string;
   area?: string;
+  ambitoLugar?: 'TORRE_PISO' | 'TORRE_COMPLETA' | 'OBRA_GENERAL' | 'EXTERIOR';
+  torreNombre?: string;
+  proyectoPiso?: string;
   responsableArea?: string;
   /** Worker del inspector. Fuente de verdad para Desempeño Supervisor (el nombre es solo texto). */
   inspectorWorkerId?: number;
@@ -97,6 +100,9 @@ export interface EditarInspeccionRequest {
   horaInicio?: string;
   horaFin?: string;
   area?: string;
+  ambitoLugar?: 'TORRE_PISO' | 'TORRE_COMPLETA' | 'OBRA_GENERAL' | 'EXTERIOR';
+  torreNombre?: string;
+  proyectoPiso?: string;
   responsableArea?: string;
   inspectorNombre?: string;
   inspectorCargo?: string;
@@ -177,6 +183,9 @@ export interface InspeccionDetalleDto {
   horaInicio: string | null;
   horaFin: string | null;
   area: string | null;
+  ambitoLugar: string | null;
+  torreNombre: string | null;
+  proyectoPiso: string | null;
   responsableArea: string | null;
   inspectorNombre: string | null;
   inspectorCargo: string | null;

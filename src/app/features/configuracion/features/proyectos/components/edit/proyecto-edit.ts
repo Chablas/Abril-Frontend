@@ -9,6 +9,7 @@ import { ProjectDto } from '../../dtos/project.dto';
 import { ProjectEditDto } from '../../dtos/project-edit.dto';
 import { ContributorLookupDto } from '../../dtos/company-lookup.dto';
 import { ResponsableLookupDto } from '../../dtos/responsable-lookup.dto';
+import { ProjectTorreDto } from '../../dtos/project-torre.dto';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
@@ -86,6 +87,12 @@ export class ProyectoEdit implements OnInit {
   loadingLookups = true;
   lookupsError = false;
 
+  // Torres/bloques del proyecto (para el selector de "Lugar" en RAC/ATS) — se guardan aparte,
+  // con su propio botón, no como parte del PUT completo del proyecto.
+  torres: ProjectTorreDto[] = [];
+  loadingTorres = true;
+  savingTorres = false;
+
   /** Opciones del desplegable "Visible en filtros" (antes un <select> de true/false). */
   readonly opcionesActivo = [
     { value: true, label: 'ACTIVO' },
@@ -108,6 +115,7 @@ export class ProyectoEdit implements OnInit {
 
   ngOnInit(): void {
     this.loadLookups();
+    this.loadTorres();
     this.form = {
       projectDescription: this.project.projectDescription,
       codigo:        this.project.codigo        ?? '',
@@ -328,6 +336,56 @@ export class ProyectoEdit implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.saving = false;
         this.handleError(err);
+      },
+    });
+  }
+
+  // ── Torres/bloques ───────────────────────────────────────────────────
+
+  private loadTorres(): void {
+    this.loadingTorres = true;
+    this.proyectoService.getTorres(this.project.projectId).subscribe({
+      next: (torres) => {
+        this.torres = torres;
+        this.loadingTorres = false;
+        this.cdr.detectChanges();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loadingTorres = false;
+        this.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  agregarTorre(): void {
+    const siguienteLetra = String.fromCharCode(65 + this.torres.length); // A, B, C...
+    this.torres.push({ id: 0, nombre: siguienteLetra, cantidadSotanos: 0, cantidadPisos: 1, cantidadCisternas: 0 });
+    this.cdr.markForCheck();
+  }
+
+  quitarTorre(index: number): void {
+    this.torres.splice(index, 1);
+    this.cdr.markForCheck();
+  }
+
+  guardarTorres(): void {
+    if (this.savingTorres) return;
+    if (this.torres.some((t) => !t.nombre.trim())) {
+      Swal.fire({ icon: 'warning', title: 'Falta el nombre', text: 'Cada torre necesita un nombre (ej. A, B, Torre única).' });
+      return;
+    }
+    this.savingTorres = true;
+    this.proyectoService.setTorres(this.project.projectId, this.torres).subscribe({
+      next: () => {
+        this.savingTorres = false;
+        Swal.fire({ icon: 'success', title: 'Torres guardadas', timer: 1500, showConfirmButton: false });
+        this.loadTorres();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.savingTorres = false;
+        this.handleError(err);
+        this.cdr.detectChanges();
       },
     });
   }

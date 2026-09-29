@@ -283,6 +283,55 @@
       </button>
     </div>
 
+    <!-- =============== Torres / bloques =============== -->
+    <p class="text-[11px] font-semibold text-abril-standard uppercase tracking-widest mt-[10px]">
+      Torres / bloques <span class="normal-case font-normal">(opcional — para el selector de "Lugar" en RAC/ATS)</span>
+    </p>
+
+    <ng-container *ngIf="!loadingTorres; else torresSkeleton">
+      <div *ngFor="let t of torres; let i = index" class="grid grid-cols-[1fr_1fr_1fr_1fr_auto] gap-x-[8px] items-end mb-[6px]">
+        <div class="abril-field">
+          <label class="abril-field-label">Nombre</label>
+          <input type="text" class="abril-field-input" [(ngModel)]="t.nombre" [ngModelOptions]="{standalone: true}" placeholder="A, B, Torre única..." />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Sótanos</label>
+          <input type="number" min="0" class="abril-field-input" [(ngModel)]="t.cantidadSotanos" [ngModelOptions]="{standalone: true}" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Pisos</label>
+          <input type="number" min="0" class="abril-field-input" [(ngModel)]="t.cantidadPisos" [ngModelOptions]="{standalone: true}" />
+        </div>
+        <div class="abril-field">
+          <label class="abril-field-label">Cisternas</label>
+          <input type="number" min="0" class="abril-field-input" [(ngModel)]="t.cantidadCisternas" [ngModelOptions]="{standalone: true}" />
+        </div>
+        <button type="button" (click)="quitarTorre(i)" title="Quitar torre"
+          class="h-[36px] w-[36px] flex items-center justify-center rounded-[7px] border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-300 cursor-pointer">
+          <i class="ti ti-trash"></i>
+        </button>
+      </div>
+
+      <p *ngIf="torres.length === 0" class="text-[11px] text-gray-400 mb-[6px]">
+        Sin torres configuradas — la azotea se agrega sola como último nivel de cada torre.
+      </p>
+
+      <div class="flex items-center justify-between mt-[4px]">
+        <button type="button" (click)="agregarTorre()"
+          class="text-[13px] text-abril-standard hover:underline cursor-pointer">
+          + Agregar torre
+        </button>
+        <button type="button" (click)="guardarTorres()" [disabled]="savingTorres"
+          class="h-[34px] px-[16px] bg-abril-standard hover:bg-abril-standard-hover text-white text-[13px] font-medium rounded-[7px] cursor-pointer transition-colors disabled:opacity-60">
+          {{ savingTorres ? 'Guardando...' : 'Guardar torres' }}
+        </button>
+      </div>
+    </ng-container>
+
+    <ng-template #torresSkeleton>
+      <div class="h-[36px] rounded-[7px] bg-gray-200 animate-pulse"></div>
+    </ng-template>
+
   </div>
 
 </app-base-modal>

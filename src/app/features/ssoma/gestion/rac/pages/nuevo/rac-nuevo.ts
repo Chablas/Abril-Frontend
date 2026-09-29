@@ -16,6 +16,7 @@ import { CatalogosSaludService } from '../../../../salud-ocupacional/services/ca
 import { EmpresaSimpleDto } from '../../../../salud-ocupacional/dtos/catalogos.model';
 import { ProjectService } from '../../../../../../core/services/project.service';
 import { ProjectGetDTO } from '../../../../../../core/dtos/project/project.model';
+import { ProjectTorreDTO, NivelTorreOpcion, nivelesDeTorre } from '../../../../../../core/dtos/project/projectTorre.model';
 import { LoaderService } from '../../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
@@ -47,6 +48,13 @@ export class RacNuevo implements OnInit {
   severidad = '';
   proyectoPiso = '';
   lugarDescripcion = '';
+
+  // Torre/Nivel (selector estructurado) — cuando el proyecto tiene torres configuradas.
+  // Sin torres configuradas, o si el usuario elige "Exterior", se cae al input libre de siempre.
+  torres: ProjectTorreDTO[] = [];
+  torreNombre: string | null = null;
+  nivelId: string | null = null;
+  esExterior = false;
   descripcion = '';
 
   // Observador (reportante) — fijo, resuelto desde el usuario logueado (no editable)
@@ -190,6 +198,54 @@ export class RacNuevo implements OnInit {
     this.cdr.markForCheck();
   }
 
+  // ── Torre/Nivel ───────────────────────────────────────────────────
+
+  onProyectoChange(proyectoId: number | null): void {
+    this.proyectoId = proyectoId;
+    this.torres = [];
+    this.torreNombre = null;
+    this.nivelId = null;
+    this.esExterior = false;
+    this.proyectoPiso = '';
+    this.cdr.markForCheck();
+
+    if (!proyectoId) return;
+    this.projectService.getTorres(proyectoId).subscribe({
+      next: (torres) => {
+        this.torres = torres;
+        this.cdr.markForCheck();
+      },
+      error: () => {},
+    });
+  }
+
+  get nivelesDeTorreActual(): NivelTorreOpcion[] {
+    const torre = this.torres.find((t) => t.nombre === this.torreNombre);
+    return torre ? nivelesDeTorre(torre) : [];
+  }
+
+  onTorreChange(nombre: string | null): void {
+    this.torreNombre = nombre;
+    this.nivelId = null;
+    this.proyectoPiso = '';
+    this.cdr.markForCheck();
+  }
+
+  onNivelChange(): void {
+    // proyectoPiso sigue siendo lo que viaja al backend como texto (ej. "Piso 3") — el selector
+    // solo ayuda a elegirlo de una lista consistente en vez de escribirlo a mano.
+    const nivel = this.nivelesDeTorreActual.find((n) => n.id === this.nivelId);
+    this.proyectoPiso = nivel?.label ?? '';
+  }
+
+  setEsExterior(valor: boolean): void {
+    this.esExterior = valor;
+    this.torreNombre = null;
+    this.nivelId = null;
+    this.proyectoPiso = '';
+    this.cdr.markForCheck();
+  }
+
   // ── Submit ────────────────────────────────────────────────────────
 
   /**
@@ -214,6 +270,7 @@ export class RacNuevo implements OnInit {
       this.plazoLevantamiento &&
       this.empresaReportadaId &&
       this.fotosSeleccionadas.length > 0 &&
+      this.proyectoPiso.trim() &&
       !this.saving
     );
   }
@@ -250,6 +307,7 @@ export class RacNuevo implements OnInit {
       esAnonimoObservado: this.esAnonimoObservado,
       observadoWorkerIds: this.observadosSeleccionados.map((w) => w.workerId),
       empresaReportadaId: this.empresaReportadaId ?? undefined,
+      torreNombre: this.esExterior ? undefined : this.torreNombre || undefined,
       proyectoPiso: this.proyectoPiso || undefined,
       lugarDescripcion: this.lugarDescripcion || undefined,
       descripcion: this.descripcion,
