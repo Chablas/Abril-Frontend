@@ -39,20 +39,17 @@
         <input type="text" class="abril-field-input" [(ngModel)]="form.abbreviation" placeholder="Ej: CDR33, KAU" />
       </div>
 
-      <div class="flex flex-col">
-        <app-search-select
-          label="Tipo"
-          placeholder="Selecciona tipo"
-          [options]="tipos"
-          valueField="id"
-          displayField="nombre"
-          [value]="form.projectTipoId"
-          [allowClear]="false"
-          [sortAlpha]="false"
-          (valueChange)="form.projectTipoId = $event">
-        </app-search-select>
-        <p *ngIf="descripcionTipo" class="mt-[4px] text-[11px] leading-tight text-gray-400">{{ descripcionTipo }}</p>
-      </div>
+      <app-search-select
+        label="Tipo"
+        placeholder="Selecciona tipo"
+        [options]="tipos"
+        valueField="id"
+        displayField="nombre"
+        [value]="form.projectTipoId"
+        [allowClear]="false"
+        [sortAlpha]="false"
+        (valueChange)="form.projectTipoId = $event">
+      </app-search-select>
 
       <app-search-select
         label="Ciclo de vida"

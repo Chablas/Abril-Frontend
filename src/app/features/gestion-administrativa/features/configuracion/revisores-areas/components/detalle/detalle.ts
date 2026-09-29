@@ -43,6 +43,10 @@ export class RevisoresAreaDetalle implements OnInit {
   @Input() projectId: number | null = null;
   @Input() actores: CatalogoActorDTO[] = [];
   @Input() options: PersonaOpcionDTO[] = [];
+  /**
+   * El usuario puede editar algo en la pantalla. Qué celdas, lo dice cada una (`editable`): quien
+   * administra, todas; un jefe, solo los consolidadores de oficina central de su área.
+   */
   @Input() puedeEditar = false;
   @Output() closeModal = new EventEmitter<void>();
   /** Se guardó: la tabla tiene que recargarse. */
@@ -92,6 +96,11 @@ export class RevisoresAreaDetalle implements OnInit {
   }
 
   // ── Edición ───────────────────────────────────────────────────────────
+
+  /** El botón «Editar» solo tiene sentido si en esta fila hay algo que el usuario pueda tocar. */
+  get hayEditables(): boolean {
+    return this.puedeEditar && !!this.detalle?.casos.some((c) => c.actores.some((a) => a.editable));
+  }
 
   editar(): void {
     if (!this.detalle) return;

@@ -57,10 +57,17 @@ export const Roles = {
   ASISTENTA_SOCIAL:                 '71', // ASISTENTA SOCIAL
   PREVENCIONISTA:                   '72', // PREVENCIONISTA
   CONTRATISTA_SUPERVISOR_CAMPO:     '74', // CONTRATISTA - SUPERVISOR DE CAMPO
-  ADMINISTRADOR_SOLICITUD_SALIDAS:  '76', // ADMINISTRADOR DE SOLICITUD DE SALIDAS
+  // 76 (ADMINISTRADOR DE SOLICITUD DE SALIDAS) y 78 (USUARIO REVISOR DE SALIDAS) eliminados el
+  // 2026-09-29: el acceso a Gestión Administrativa sale de los roles de la función (JEFE, SUB
+  // GERENTE, GERENTE, RESIDENTE, ADMINISTRADOR DE OBRA, CONSOLIDADOR).
   USUARIO_GTH:                      '77', // USUARIO DE GTH
-  USUARIO_REVISOR_SALIDAS:          '78', // USUARIO REVISOR DE SALIDAS
   PLANEAMIENTO_UDP:                 '80', // PLANEAMIENTO UDP
+  // Las jefaturas de Gestión Administrativa: aprueban salidas, revisan planillas, firman
+  // consolidados y consolidan lo suyo. JEFE además elige a los consolidadores de oficina central de
+  // su área (Revisores de Áreas).
+  JEFE:                             '81', // JEFE
+  GERENTE:                          '82', // GERENTE
+  SUB_GERENTE:                      '94', // SUB GERENTE
   // TESORERO: concede sus features con solo tenerlo, como cualquier otro rol. Antes el backend
   // exigía además un puesto de categoría TESORERO (46) y esa condición se quitó, así que ya no
   // hay forma de tener el rol y no ver la pantalla.
@@ -68,6 +75,11 @@ export const Roles = {
   // COORDINADOR ERP: único rol que entra a "Correcciones S10", la bandeja donde atiende las
   // solicitudes de corrección del Consolidado del S10. Alcanza con tenerlo, como el resto.
   COORDINADOR_ERP:                  '84', // COORDINADOR ERP
+  // CONSOLIDADOR: lo administra el backend. Lo tiene quien figura a mano como consolidador (Revisores
+  // de Áreas o la ficha del trabajador) y no entra ya a sus bandejas por otro rol.
+  CONSOLIDADOR:                     '95', // CONSOLIDADOR
+  // Las bandejas de Gestión Administrativa para quien coordina a los administradores de obra.
+  COORDINADOR_ADMINISTRACION_OBRA:  '96', // COORDINADOR DE ADMINISTRACIÓN DE OBRA
   // Los tres roles que administran el Cronograma de Hitos. Sus IDs los fija el SQL
   // 20260928_ProyectosRolesYHistorialResidente.sql (el sequence les había dado IDs distintos en
   // cada ambiente). Además crean y editan proyectos y asignan su residente: ver proyecto-roles.ts.

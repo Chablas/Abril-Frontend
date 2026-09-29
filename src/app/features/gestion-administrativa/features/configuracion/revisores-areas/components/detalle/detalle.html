@@ -7,7 +7,7 @@
   <div *ngIf="detalle" class="flex flex-col gap-[12px] mt-[4px]">
 
     <!-- Un solo botón para todo el modal: la edición y su guardado son de la fila entera. -->
-    <div *ngIf="puedeEditar" class="flex justify-end">
+    <div *ngIf="hayEditables" class="flex justify-end">
       <button
         *ngIf="!edicion"
         type="button"

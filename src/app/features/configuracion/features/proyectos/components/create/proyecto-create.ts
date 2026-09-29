@@ -116,11 +116,6 @@ export class ProyectoCreate implements OnInit {
     this.loadLookups();
   }
 
-  /** Qué significa el tipo elegido (lo trae el catálogo). */
-  get descripcionTipo(): string | null {
-    return this.tipos.find((t) => t.id === this.form.projectTipoId)?.descripcion ?? null;
-  }
-
   /** Correo del coordinador elegido, solo informativo: lo que se guarda es el workerId. */
   get coordAdminEmail(): string | null {
     return this.emailDe(this.form.workersCoordAdminId);
