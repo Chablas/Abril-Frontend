@@ -6,10 +6,6 @@ import { ApiMessageDTO } from '../dtos/api/ApiMessage.model';
 import { ProjectPagedDTO } from '../dtos/project/projectPaged.model';
 import { ProjectCreateDTO } from '../dtos/project/projectCreate.model';
 import { ProjectEditDTO } from '../dtos/project/projectEdit.model';
-import {
-  ProjectEmailsDTO,
-  ProjectEmailsResponseDTO,
-} from '../dtos/project/projectEmails.model';
 import { ProjectQueryParams } from '../dtos/project/projectQuery.model';
 import { ProjectScheduleSimpleDTO } from '../dtos/project/projectScheduleSimple.model';
 import { ProjectTorreDTO } from '../dtos/project/projectTorre.model';
@@ -67,21 +63,6 @@ export class ProjectService {
   deleteProject(projectId: number): Observable<ApiMessageDTO> {
     const token = localStorage.getItem('access_token');
     return this.http.delete<ApiMessageDTO>(`${this.apiUrl}/${projectId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-  }
-
-  /** Valores actuales + los trabajadores elegibles como residente, en una sola petición. */
-  getProjectEmails(projectId: number): Observable<ProjectEmailsResponseDTO> {
-    const token = localStorage.getItem('access_token');
-    return this.http.get<ProjectEmailsResponseDTO>(`${this.apiUrl}/${projectId}/emails`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-  }
-
-  patchProjectEmails(projectId: number, dto: ProjectEmailsDTO): Observable<ApiMessageDTO> {
-    const token = localStorage.getItem('access_token');
-    return this.http.patch<ApiMessageDTO>(`${this.apiUrl}/${projectId}/emails`, dto, {
       headers: { Authorization: `Bearer ${token}` },
     });
   }

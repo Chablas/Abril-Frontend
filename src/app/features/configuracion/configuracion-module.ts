@@ -56,18 +56,18 @@ const routes: Routes = [
         redirectTo: '/gestion-gth/configuracion/categorias-puestos',
         pathMatch: 'full',
       },
-      // Revisores de Áreas se mudó a Gestión Administrativa → Solicitud de Salidas →
-      // Configuración: el revisor es a quien se le manda la solicitud que nace en esa pantalla.
-      // Las dos rutas viejas redirigen para no dejar enlaces rotos (la de "Revisores de
-      // Trabajadores" se retiró antes: ese jefe se asigna en el formulario de trabajadores).
+      // Revisores de Áreas se mudó a Gestión Administrativa → Configuración → Revisores de Áreas,
+      // donde se juntaron los cinco actores del ciclo de una salida. Las dos rutas viejas
+      // redirigen para no dejar enlaces rotos (lo personalizado para un trabajador se asigna en
+      // su ficha, en Gestión de Ingresos).
       {
         path: 'revisor-salidas',
-        redirectTo: '/gestion-administrativa/solicitud-salidas/configuracion',
+        redirectTo: '/gestion-administrativa/configuracion/revisores-areas',
         pathMatch: 'full',
       },
       {
         path: 'revisores-areas',
-        redirectTo: '/gestion-administrativa/solicitud-salidas/configuracion',
+        redirectTo: '/gestion-administrativa/configuracion/revisores-areas',
         pathMatch: 'full',
       },
       {

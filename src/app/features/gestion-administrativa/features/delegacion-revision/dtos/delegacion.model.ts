@@ -1,4 +1,4 @@
-/** Un revisor asignado (fila viva de area_revisores) mostrado en la delegación. */
+/** Un revisor asignado (fila viva de area_actor_asignacion) mostrado en la delegación. */
 export interface DelegacionRevisorAsignadoDTO {
   id: number;
   revisorWorkerId: number;
@@ -27,6 +27,9 @@ export interface DelegacionAsignacionItemDTO {
   parentName?: string | null;
   projectId?: number | null;
   projectName?: string | null;
+  /** Tipo de trabajador al que aplica (ids de `ga_actor_caso`): oficina central, staff… */
+  casoId: number;
+  casoNombre: string;
   revisores: DelegacionRevisorAsignadoDTO[];
   options: DelegacionOptionDTO[];
 }
@@ -45,8 +48,9 @@ export interface DelegacionAsignacionDTO {
   active: boolean;
 }
 
-/** Cuerpo del PUT: reemplaza los revisores de una asignación (área o área+proyecto). */
+/** Cuerpo del PUT: reemplaza los revisores de una asignación (área o área+proyecto, y caso). */
 export interface DelegacionUpdateDTO {
   projectId?: number | null;
+  casoId: number;
   revisores: DelegacionAsignacionDTO[];
 }

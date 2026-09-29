@@ -1,4 +1,5 @@
 import { ConsolidadoS10Dto } from '../../../shared/components/consolidado-s10-modal/consolidado-s10.dto';
+import { ReembolsoPipelineDto } from '../../../shared/dtos/reembolso-pipeline.dto';
 import { CorreoAvisoDto } from '../../../shared/correo-aviso';
 import {
   EstadoPrimeraRevision,
@@ -99,6 +100,12 @@ export interface RendicionSalidaDto {
 
 export interface RendicionDetalleDto extends RendicionListItemDto {
   salidas: RendicionSalidaDto[];
+
+  /**
+   * El recorrido del reembolso de esta planilla, para el pipeline del modal de detalle. Lo arma el
+   * backend y viaja acá dentro: no cuesta una petición aparte.
+   */
+  pipeline: ReembolsoPipelineDto;
 }
 
 /**

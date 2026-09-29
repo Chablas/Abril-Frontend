@@ -223,6 +223,12 @@ export class AuthService {
     return this.getRoles().includes(role);
   }
 
+  /** Tiene al menos uno de los roles (decodifica el token una sola vez). */
+  hasAnyRole(roles: readonly string[]): boolean {
+    const propios = this.getRoles();
+    return roles.some((r) => propios.includes(r));
+  }
+
   /**
    * Acceso dinámico por featureKey (espejo de `roleGuard`): revisa `allowed_features`
    * (lista que el backend arma desde role_feature de los roles del usuario). Sirve para

@@ -1,0 +1,99 @@
+<app-base-modal
+  [title]="titulo"
+  width="w-[min(1260px,96vw)]"
+  [preventCloseWhenDirty]="edicion !== null"
+  (closeModal)="cerrar()">
+
+  <div *ngIf="detalle" class="flex flex-col gap-[12px] mt-[4px]">
+
+    <!-- Un solo botón para todo el modal: la edición y su guardado son de la fila entera. -->
+    <div *ngIf="puedeEditar" class="flex justify-end">
+      <button
+        *ngIf="!edicion"
+        type="button"
+        (click)="editar()"
+        class="inline-flex items-center gap-[5px] h-[28px] px-2.5 rounded-[6px] text-[11px] font-semibold cursor-pointer transition-colors border bg-white text-abril-standard border-abril-standard-border hover:bg-abril-standard-light">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M21.17 6.81a2.82 2.82 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5zM15 5l4 4"/>
+        </svg>
+        Editar
+      </button>
+      <button
+        *ngIf="edicion"
+        type="button"
+        (click)="cancelarEdicion()"
+        [disabled]="guardando"
+        class="inline-flex items-center gap-[5px] h-[28px] px-2.5 rounded-[6px] text-[11px] font-semibold cursor-pointer transition-colors border bg-white text-gray-600 border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+        Cancelar edición
+      </button>
+    </div>
+
+    <!-- Tipo de trabajador × actor: el valor que hoy se aplica y de dónde sale. -->
+    <div class="w-full overflow-x-auto rounded-lg border" style="border-color:var(--color-abril-standard-border)">
+      <table class="w-full text-[12px]">
+        <thead class="bg-[var(--color-abril-standard-light)]">
+          <tr class="text-[var(--color-abril-standard)]">
+            <th class="text-left px-[12px] py-[9px] font-semibold w-[120px]">Trabajador</th>
+            <th *ngFor="let a of actores" class="text-left px-[12px] py-[9px] font-semibold min-w-[170px]">
+              {{ a.nombre }}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let caso of detalle.casos" class="border-t align-top" style="border-color:var(--color-abril-border)">
+            <td class="px-[12px] py-[10px] font-semibold text-gray-700 whitespace-nowrap">{{ caso.casoNombre }}</td>
+
+            <td *ngFor="let celda of caso.actores" class="px-[12px] py-[10px]">
+
+              <!-- Lectura (o celda que no se personaliza) -->
+              <app-actor-valor *ngIf="!edicion || !celda.editable" [celda]="celda"></app-actor-valor>
+
+              <!-- Edición -->
+              <ng-container *ngIf="edicion && celda.editable">
+                <ng-container *ngIf="celdaEdit(caso.casoId, celda.actorId) as e">
+                  <label class="flex items-center gap-[5px] text-[11px] text-gray-600 cursor-pointer select-none mb-[5px]">
+                    <input type="checkbox"
+                           class="w-[14px] h-[14px] accent-[var(--color-abril-standard)] cursor-pointer"
+                           [checked]="e.personalizado"
+                           (change)="togglePersonalizado(e, celda, $any($event.target).checked)" />
+                    Personalizado
+                  </label>
+
+                  <app-revisores-celda-editor
+                    *ngIf="e.personalizado"
+                    [personas]="e.personas"
+                    [options]="options"
+                    (cambio)="marcarCambio()">
+                  </app-revisores-celda-editor>
+
+                  <!-- Sin marcar: lo que queda. Marcado: lo recomendado, para comparar. -->
+                  <div [ngClass]="{ 'mt-[6px] opacity-70': e.personalizado }">
+                    <span *ngIf="e.personalizado" class="block text-[10px] text-gray-400 mb-[1px]">Recomendado</span>
+                    <app-actor-valor [celda]="recomendado(celda)" [compacto]="e.personalizado"></app-actor-valor>
+                  </div>
+                </ng-container>
+              </ng-container>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ── Guardar: un solo botón para todo el modal ──────────────────── -->
+    <div *ngIf="edicion"
+         class="sticky bottom-0 z-10 -mx-[20px] -mb-[20px] px-[20px] py-3 rounded-b-lg bg-white border-t flex justify-center"
+         style="border-color:var(--color-abril-border)">
+      <button type="button"
+              (click)="guardar()"
+              [disabled]="guardando"
+              class="h-[38px] px-6 text-white rounded-lg text-sm font-semibold transition-colors cursor-pointer disabled:cursor-not-allowed"
+              [style.background]="guardando ? '#D1D5DB' : 'var(--color-abril-standard)'">
+        Guardar
+      </button>
+    </div>
+  </div>
+</app-base-modal>

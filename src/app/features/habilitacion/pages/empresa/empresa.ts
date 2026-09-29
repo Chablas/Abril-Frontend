@@ -236,7 +236,11 @@ export class Empresa implements OnInit {
       this.authService.hasRole(Roles.ADMINISTRADOR_ADMINISTRACION) ||
       this.authService.hasRole(Roles.ADMINISTRADOR_UDP) ||
       this.authService.hasRole(Roles.COORDINADOR_SSOMA) ||
-      this.authService.hasRole(Roles.RESIDENTE)
+      this.authService.hasRole(Roles.RESIDENTE) ||
+      // Gestionan a los residentes y todos los proyectos: lo que el RESIDENTE ve, ellos también.
+      this.authService.hasRole(Roles.COORDINADOR_PROYECTOS) ||
+      this.authService.hasRole(Roles.GERENTE_INMOBILIARIO) ||
+      this.authService.hasRole(Roles.JEFE_PROYECTOS)
     );
   }
 

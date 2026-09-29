@@ -59,6 +59,17 @@
       </span>
     </div>
 
+    <!-- ── Obras a su cargo: las ve enteras, se sumen o no sus áreas. Salen del proyecto, no se
+         eligen acá, así que van sin casilla también al editar. ──────────────────────────── -->
+    <div *ngIf="loaded && obras.length" class="flex items-center gap-2 flex-wrap">
+      <span class="text-xs font-semibold text-gray-600">Obras</span>
+      <span *ngFor="let o of obras"
+        class="text-[11px] px-[10px] py-[3px] rounded-full font-medium bg-[#E8F1FB] text-[var(--color-abril-logo-blue)]"
+        title="Ve a todos los trabajadores de esta obra">
+        {{ o.nombre }} · {{ o.rol }}
+      </span>
+    </div>
+
     <!-- ── Árbol de áreas ──────────────────────────────────────────── -->
     <div class="w-full rounded-lg border border-[var(--color-abril-standard-border)] max-h-[46vh] overflow-y-auto">
       <table class="w-full text-sm">

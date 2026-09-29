@@ -5,6 +5,7 @@ import { filter } from 'rxjs/operators';
 import { RouterModule } from '@angular/router';
 import { SidebarMobile } from "../sidebar-mobile/sidebar-mobile";
 import { MicrosoftAuthService } from '../../../features/auth/pages/login/services/microsoft-auth.service';
+import { NavigationService } from '../../../core/navigation/navigation.service';
 
 @Component({
   selector: 'app-header',
@@ -18,7 +19,6 @@ export class Header implements OnInit {
   showUserMenu = false;
   userPhotoSrc: string | null = null;
   userName: string | null = null;
-  userEmail: string | null = null;
   userJobTitle: string | null = null;
 
   private readonly platformId = inject(PLATFORM_ID);
@@ -28,6 +28,7 @@ export class Header implements OnInit {
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
     private microsoftAuthService: MicrosoftAuthService,
+    private navService: NavigationService,
   ) {
     this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
       let current = this.route;
@@ -55,7 +56,6 @@ export class Header implements OnInit {
       const user = JSON.parse(localStorage.getItem('user') ?? '{}');
       this.userPhotoSrc = user?.photoBase64 ?? null;
       this.userName     = user?.displayName ?? null;
-      this.userEmail    = user?.email       ?? null;
       this.userJobTitle = user?.jobTitle    ?? null;
     }
   }
@@ -63,6 +63,17 @@ export class Header implements OnInit {
   toggleUserMenu(event: MouseEvent): void {
     event.stopPropagation();
     this.showUserMenu = !this.showUserMenu;
+  }
+
+  /** A dónde lleva «Mi Perfil»: su primera sección accesible. null = no se ofrece. */
+  get miPerfilRoute(): string | null {
+    return this.navService.getSeccionesMiPerfil()[0]?.route ?? null;
+  }
+
+  abrirMiPerfil(): void {
+    const route = this.miPerfilRoute;
+    this.showUserMenu = false;
+    if (route) this.router.navigate([route]);
   }
 
   @HostListener('document:click')

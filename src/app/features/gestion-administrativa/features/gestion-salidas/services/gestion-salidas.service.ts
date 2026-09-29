@@ -87,8 +87,8 @@ export class GestionSalidasService {
   }
 
   /**
-   * Rechaza una solicitud. El motivo es opcional: el botón del detalle lo pide (se lo manda al
-   * solicitante en su correo de rechazo) y el botón bulk de la tabla rechaza sin pedirlo.
+   * Rechaza una solicitud. El motivo es opcional: el botón del detalle y el bulk de la tabla lo
+   * piden (se lo manda al solicitante en su correo de rechazo) y en blanco va null.
    */
   rechazar(id: number, motivoRechazo: string | null = null): Observable<{ message: string }> {
     return this.http.patch<{ message: string }>(`${this.apiUrl}/${id}/rechazar`, { motivoRechazo }, {

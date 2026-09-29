@@ -18,7 +18,8 @@
     {{ nombreVisible }}
   </a>
 
-  <div #marco class="doc-marco">
+  <!-- Con `soloEnlace` (las planillas de gasto) no hay archivo a la vista: queda el enlace. -->
+  <div *ngIf="!soloEnlace" #marco class="doc-marco">
     <div *ngIf="estado === 'cargando'" class="doc-skeleton" [class.doc-skeleton--imagen]="tipo === 'imagen'"></div>
 
     <div *ngIf="estado === 'error'" class="doc-aviso">

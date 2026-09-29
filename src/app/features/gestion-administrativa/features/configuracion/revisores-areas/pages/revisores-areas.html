@@ -1,0 +1,127 @@
+<!-- Sección embebida en GaConfiguracion: el header y el disparador de filtros viven en el
+     contenedor (`ga-configuracion`). -->
+<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── Tabla: lo que le toca a un trabajador normal de cada fila ─────── -->
+  <div class="abril-table-wrap">
+    <table class="abril-table abril-table--th-center">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th class="min-w-[170px]">Área</th>
+          <th class="min-w-[140px]">Área padre</th>
+          <th class="text-center w-[90px]">Filtrar por proyecto</th>
+          <th *ngFor="let a of actores" class="min-w-[150px]">{{ a.nombre }}</th>
+          <th class="text-center w-[80px]">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <ng-container *ngFor="let r of pagedRows">
+          <!-- Fila del área -->
+          <tr class="border-b hover:bg-gray-50 align-top" style="border-color:var(--color-abril-border)">
+            <td class="text-gray-700">
+              {{ r.areaName }}
+              <span *ngIf="r.esGerencia"
+                    class="ml-[6px] text-[11px] px-[8px] py-[2px] rounded-full bg-[#E8F1FB] text-[var(--color-abril-logo-blue)] font-medium whitespace-nowrap">
+                Gerencia
+              </span>
+            </td>
+            <td class="text-gray-700">{{ r.parentName || '—' }}</td>
+            <td class="text-center">
+              <!-- Ya no se marca: se deduce de dónde trabaja la gente del área. -->
+              <input type="checkbox" class="w-4 h-4 accent-[var(--color-abril-standard)]"
+                     [checked]="r.filtraPorProyecto" disabled />
+            </td>
+            <td *ngFor="let a of actores" class="text-[12px]">
+              <app-actor-valor [celda]="celda(r.actores, a.id)" [compacto]="true"></app-actor-valor>
+            </td>
+            <td class="text-center">
+              <button (click)="verArea(r)" abrilBulkAction="default">Ver</button>
+            </td>
+          </tr>
+
+          <!-- Subfilas por obra (el área tiene gente en varias ubicaciones) -->
+          <ng-container *ngIf="r.filtraPorProyecto">
+            <tr *ngFor="let p of r.proyectos"
+                class="border-b bg-[var(--color-abril-standard-light)] hover:bg-[#E4F4EE] align-top"
+                style="border-color:var(--color-abril-border)">
+              <td class="text-gray-600 pl-[28px]">
+                <span class="text-gray-400 mr-[6px]">└</span>{{ p.projectName }}
+              </td>
+              <td class="text-gray-400 text-[12px]">{{ p.esObra ? 'Obra' : 'Oficina central' }}</td>
+              <td></td>
+              <td *ngFor="let a of actores" class="text-[12px]">
+                <app-actor-valor [celda]="celda(p.actores, a.id)" [compacto]="true"></app-actor-valor>
+              </td>
+              <td class="text-center">
+                <button (click)="verProyecto(r, p)" abrilBulkAction="default">Ver</button>
+              </td>
+            </tr>
+          </ng-container>
+        </ng-container>
+
+        <tr *ngIf="cargado && filteredRows.length === 0">
+          <td [attr.colspan]="actores.length + 4" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ filtrosActivos > 0 ? 'Sin resultados.' : 'No hay áreas visibles.' }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="filteredRows.length"
+      [currentPage]="currentPage"
+      [totalPages]="totalPages"
+      (pageChange)="changePage($event)"
+    ></app-paginator>
+  </div>
+</div>
+
+<!-- ── Detalle (ver y editar en el mismo modal) ─────────────────────── -->
+<app-revisores-area-detalle
+  *ngIf="detalleDe"
+  [areaScopeId]="detalleDe.areaScopeId"
+  [projectId]="detalleDe.projectId"
+  [actores]="actores"
+  [options]="options"
+  [puedeEditar]="puedeEditar"
+  (guardado)="load()"
+  (closeModal)="cerrarDetalle()"
+></app-revisores-area-detalle>
+
+<!-- ── Filtros ──────────────────────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Área padre"
+      [options]="parentFilterOptions"
+      valueField="name"
+      displayField="name"
+      [value]="parentFilter"
+      (valueChange)="parentFilter = $event; onFilterChange()"
+      placeholder="Todas las áreas padre"
+    ></app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Persona"
+      [options]="personaFilterOptions"
+      valueField="workerId"
+      displayField="fullName"
+      [value]="personaFilter"
+      (valueChange)="personaFilter = $event; onFilterChange()"
+      placeholder="Buscar por nombre o DNI..."
+    ></app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por área, obra o persona..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%"
+    ></app-search-input>
+  </div>
+</app-filter-modal>

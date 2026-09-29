@@ -4,9 +4,10 @@ export interface ProjectEditDto {
   codigo?: string;
   abbreviation?: string;
   levelDescription?: string;
-  estado?: string;
-  /** Ciclo de vida real para el cálculo de ratios SSOMA: Finalizado | Activo | Inactivo. */
-  cicloVida?: string;
+  /** Catálogo project_tipo. Sin valor, el backend deja el que estaba. */
+  projectTipoId?: number | null;
+  /** Catálogo project_ciclo_vida. Sin valor, el backend deja el que estaba. */
+  projectCicloVidaId?: number | null;
 
   // Contribuyente
   contributorId?: number;
@@ -32,6 +33,17 @@ export interface ProjectEditDto {
 
   /** Coordinador administrativo: FK a workers (project.workers_coord_admin_id). */
   workersCoordAdminId?: number | null;
+
+  /**
+   * Residente: FK a workers (project.residente_workers_id). El backend lo ignora si quien guarda
+   * no puede asignarlo (ROLES_ASIGNAN_RESIDENTE).
+   */
+  residenteWorkersId?: number | null;
+
+  // Correos de aviso: vacío deja el campo en blanco.
+  emailResponsable?: string | null;
+  emailRrhh?: string | null;
+  emailCoordSsoma?: string | null;
 
   // Fechas (formato YYYY-MM-DD)
   fechaInicio?: string;

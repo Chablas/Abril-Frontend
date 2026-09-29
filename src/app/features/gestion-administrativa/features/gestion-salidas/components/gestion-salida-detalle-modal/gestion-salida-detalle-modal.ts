@@ -5,13 +5,17 @@ import { StatusBadge } from '../../../../../../shared/components/status-badge/st
 import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { SalidaTrayectosTabla } from '../../../../shared/components/salida-trayectos-tabla/salida-trayectos-tabla';
 import { DocumentoEmbebido } from '../../../../shared/components/documento-embebido/documento-embebido';
+import { ReembolsoPipeline } from '../../../../shared/components/reembolso-pipeline/reembolso-pipeline';
 import { reembolsoColors } from '../../../../shared/dtos/rendicion-shared.dto';
 import { GestionSalidaDetalleDto } from '../../dtos/gestion-salida.dto';
 
 @Component({
   standalone: true,
   selector: 'app-gestion-salida-detalle-modal',
-  imports: [CommonModule, BaseModal, StatusBadge, SalidaTrayectosTabla, TitleCasePipe, DocumentoEmbebido],
+  imports: [
+    CommonModule, BaseModal, StatusBadge, SalidaTrayectosTabla, TitleCasePipe, DocumentoEmbebido,
+    ReembolsoPipeline,
+  ],
   templateUrl: './gestion-salida-detalle-modal.html',
 })
 export class GestionSalidaDetalleModal {

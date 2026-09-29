@@ -3,7 +3,7 @@
   titulo="Proyectos"
   subtitulo="Gestión de proyectos registrados en el sistema."
   [tabs]="tabs"
-  [botonPrimario]="{ label: 'Nuevo Proyecto', icono: 'ti-plus' }"
+  [botonPrimario]="puedeEditar ? botonNuevo : undefined"
   (primaryClick)="showCreateModal = true">
 
   <!-- Botón "Filtros" estándar: se proyecta a la altura de las pestañas y abre el
@@ -19,12 +19,14 @@
       <thead class="sticky top-0 z-10">
         <tr>
           <th>Nombre</th>
+          <th class="text-center">Tipo</th>
+          <th class="text-center">Ciclo de vida</th>
           <th>Desc. de pisos</th>
           <th>RUC</th>
           <th>Razón social</th>
           <th>Distrito</th>
           <th>Ubicación</th>
-          <th class="text-center">Estado</th>
+          <th class="text-center" title="Si el proyecto aparece en los filtros y desplegables del sistema">Visible</th>
           <th class="text-center">Acciones</th>
         </tr>
       </thead>
@@ -36,6 +38,20 @@
 
           <td class="text-gray-700 font-medium">
             <span class="block truncate max-w-[220px]" [title]="item.projectDescription">{{ item.projectDescription }}</span>
+          </td>
+
+          <td class="text-center">
+            <app-status-badge
+              [text]="item.projectTipoNombre | uppercase"
+              [bgColor]="badgeTipo(item.projectTipoCodigo).bg"
+              [textColor]="badgeTipo(item.projectTipoCodigo).text" />
+          </td>
+
+          <td class="text-center">
+            <app-status-badge
+              [text]="item.projectCicloVidaNombre | uppercase"
+              [bgColor]="badgeCicloVida(item.projectCicloVidaCodigo).bg"
+              [textColor]="badgeCicloVida(item.projectCicloVidaCodigo).text" />
           </td>
 
           <td class="text-gray-700">
@@ -58,23 +74,26 @@
 
           <td class="text-center">
             <app-status-badge
-              [text]="item.active ? 'ACTIVO' : 'INACTIVO'"
+              [text]="item.active ? 'SÍ' : 'NO'"
               [bgColor]="item.active ? '#D7FAF4' : '#FAD5D4'"
               [textColor]="item.active ? '#009C87' : '#D30000'" />
           </td>
 
           <td class="text-center">
             <div class="flex items-center justify-center gap-[8px]">
-              <button (click)="openEditModal(item, $event)" abrilBulkAction="default">Editar</button>
-              <button (click)="openEmailsModal(item, $event)" abrilBulkAction="default"
-                      title="Residente / Emails SSOMA">Emails SSOMA</button>
-              <button (click)="deleteProject(item.projectId, $event)" abrilBulkAction="danger">Eliminar</button>
+              <ng-container *ngIf="puedeEditar; else soloVer">
+                <button (click)="openEditModal(item, $event)" abrilBulkAction="default">Editar</button>
+                <button (click)="deleteProject(item.projectId, $event)" abrilBulkAction="danger">Eliminar</button>
+              </ng-container>
+              <ng-template #soloVer>
+                <button (click)="openEditModal(item, $event)" abrilBulkAction="default">Ver</button>
+              </ng-template>
             </div>
           </td>
         </tr>
 
         <tr *ngIf="!projects.data.length">
-          <td colspan="8" class="text-center py-[40px] text-gray-400 text-sm">
+          <td colspan="10" class="text-center py-[40px] text-gray-400 text-sm">
             {{ filtrosActivos > 0 ? 'Sin resultados.' : 'No hay proyectos registrados.' }}
           </td>
         </tr>
@@ -97,6 +116,8 @@
 <!-- ── Modales ───────────────────────────────────────────────────────── -->
 <app-proyecto-create
   *ngIf="showCreateModal"
+  [tipos]="tipos"
+  [ciclosVida]="ciclosVida"
   (closeModal)="onModalClosed()"
   (saved)="onModalSaved()">
 </app-proyecto-create>
@@ -104,17 +125,12 @@
 <app-proyecto-edit
   *ngIf="showEditModal && selectedProject"
   [project]="selectedProject!"
+  [tipos]="tipos"
+  [ciclosVida]="ciclosVida"
+  [soloLectura]="!puedeEditar"
   (closeModal)="onModalClosed()"
   (saved)="onModalSaved()">
 </app-proyecto-edit>
-
-<app-proyecto-emails
-  [open]="showEmailsModal && selectedEmailsProject !== null"
-  [projectId]="selectedEmailsProject?.projectId ?? 0"
-  [projectDescription]="selectedEmailsProject?.projectDescription ?? ''"
-  (closed)="onModalClosed()"
-  (saved)="onModalSaved()">
-</app-proyecto-emails>
 
 <!-- ── Modal de filtros estándar ────────────────────────────────────── -->
 <app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
@@ -148,8 +164,32 @@
 
   <div class="w-full">
     <app-search-select
-      label="Estado"
-      [options]="estadoFilterOptions"
+      label="Tipo"
+      [options]="tipoFilterOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.projectTipoId"
+      [sortAlpha]="false"
+      (valueChange)="filters.projectTipoId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Ciclo de vida"
+      [options]="cicloVidaFilterOptions"
+      valueField="id"
+      displayField="nombre"
+      [value]="filters.projectCicloVidaId"
+      [sortAlpha]="false"
+      (valueChange)="filters.projectCicloVidaId = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Visible en el sistema"
+      [options]="visibleFilterOptions"
       valueField="value"
       displayField="label"
       [value]="filters.active"

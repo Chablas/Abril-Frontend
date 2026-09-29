@@ -5,6 +5,7 @@ import {
   PeriodoOptionDto,
   TrabajadorOptionDto,
 } from '../../../shared/dtos/rendicion-shared.dto';
+import { ReembolsoPipelineDto } from '../../../shared/dtos/reembolso-pipeline.dto';
 
 export type { AreaNodeDto, EstadoReembolso, PeriodoOptionDto, TrabajadorOptionDto };
 
@@ -70,6 +71,11 @@ export interface ConsolidadoListItemDto {
    */
   razonSocialId: number | null;
   razonSocial: string | null;
+  /**
+   * Área del consolidado: la de su consolidador, la misma que da la sigla del `codigo` y la que
+   * imprime la planilla grupal. Null si no se pudo resolver.
+   */
+  area: string | null;
 
   /** "Agosto 2026", o un rango si el consolidado cruza meses. */
   periodo: string;
@@ -93,6 +99,22 @@ export interface ConsolidadoListItemDto {
    * consolidador, un gerente o GTH lo ven, pero no lo aprueban.
    */
   porDecidirCount: number;
+
+  // ── Las firmas del documento ───────────────────────────────────────────
+  // Un consolidado de obra lo firman DOS: el administrador de obra y, detrás, el residente.
+  // Mientras falte alguna el reembolso sigue Pendiente, así que la pantalla tiene que distinguir
+  // «todavía no firmé» de «ya firmé y falta el otro».
+
+  /** Firmas ya estampadas, en el orden en que se pusieron. */
+  firmas: ConsolidadoFirmaDto[];
+  /** Nombres de los que todavía tienen que firmar. Vacío cuando el documento las reunió todas. */
+  firmasPendientes: string[];
+  /** Este usuario ya firmó: aprobar deja de ofrecerse (firmar dos veces no completa el documento). */
+  yaFirme: boolean;
+  /** Le toca firmar, pero alguien que va antes que él todavía no lo hizo. */
+  esperaFirmaPrevia: boolean;
+  /** Ya firmó, falta la del que sigue y nadie detrás firmó: puede volver a estampar la suya. */
+  puedeVolverAFirmar: boolean;
 
   // ── Qué puede hacer el consolidador ────────────────────────────────────
   /**
@@ -123,6 +145,17 @@ export interface ConsolidadoListItemDto {
    * normal: casi ningún consolidado pasa por el ERP.
    */
   correccionS10: CorreccionS10Dto | null;
+}
+
+/** Una firma ya estampada sobre el Consolidado del S10. */
+export interface ConsolidadoFirmaDto {
+  /** Nombre de quien firmó, como se imprime en el pie de la firma. */
+  nombre: string;
+  /** Su puesto. Null si no tiene. */
+  puesto: string | null;
+  firmadoAt: string;
+  /** True si la puso el usuario que está mirando la pantalla. */
+  yo: boolean;
 }
 
 /** Una planilla cubierta por el consolidado. */
@@ -176,6 +209,12 @@ export interface ConsolidadoSalidaDto {
 
 export interface ConsolidadoDetalleDto extends ConsolidadoListItemDto {
   salidas: ConsolidadoSalidaDto[];
+
+  /**
+   * El recorrido del reembolso de esta rendición grupal, para el pipeline del modal de detalle. Lo arma el
+   * backend y viaja acá dentro: no cuesta una petición aparte.
+   */
+  pipeline: ReembolsoPipelineDto;
 }
 
 /**

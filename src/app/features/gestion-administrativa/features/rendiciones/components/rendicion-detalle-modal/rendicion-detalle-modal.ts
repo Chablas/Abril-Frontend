@@ -19,6 +19,7 @@ import {
 import { SalidaCapturasModal } from '../salida-capturas-modal/salida-capturas-modal';
 import { SalidaDetalleModal } from '../../../../shared/components/salida-detalle-modal/salida-detalle-modal';
 import { DocumentoEmbebido } from '../../../../shared/components/documento-embebido/documento-embebido';
+import { ReembolsoPipeline } from '../../../../shared/components/reembolso-pipeline/reembolso-pipeline';
 import {
   primeraRevisionColors,
   reembolsoColors,
@@ -36,7 +37,7 @@ import {
   selector: 'app-rendicion-detalle-modal',
   imports: [
     CommonModule, BaseModal, StatusBadge, TitleCasePipe, SalidaCapturasModal, SalidaDetalleModal,
-    DocumentoEmbebido,
+    DocumentoEmbebido, ReembolsoPipeline,
   ],
   templateUrl: './rendicion-detalle-modal.html',
 })
@@ -195,7 +196,7 @@ export class RendicionDetalleModal implements OnInit {
       // Sin nadie a quien avisar igual procede: la planilla se regenera y pasa a revisión, y el
       // jefe la ve en su bandeja. Es un aviso de estado, no un bloqueo.
       sinNadie: 'Se regenera y pasa a revisión, pero sin aviso por correo: está apagado en Configuración → Correos.',
-      confirmButtonText: 'Generar y avisar al revisor',
+      confirmButtonText: 'Generar',
     });
     if (!result.isConfirmed) return;
 

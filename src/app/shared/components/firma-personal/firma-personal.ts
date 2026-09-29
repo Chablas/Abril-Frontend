@@ -29,10 +29,10 @@ import { ErrorService } from '../../../core/services/error.service';
  * como imagen, o los dos.
  *
  * Una persona tiene una firma POR TIPO (`person_firma`), así que este panel es el mismo en las dos
- * pantallas de configuración que lo ofrecen —Contabilidad → Firma y Gestión Administrativa → Tu
- * firma— y también dentro del modal que salta al aprobar un consolidado sin tener firma. Antes
- * cada pantalla tenía su copia; si el lienzo o las validaciones se separaban, la misma ficha
- * quedaba con firmas distintas según por dónde se registró.
+ * pantallas que lo ofrecen —Mi Perfil → Mi Firma y Contabilidad → Firma— y también dentro del
+ * modal que salta al aprobar un consolidado sin tener firma. Antes cada pantalla tenía su copia; si
+ * el lienzo o las validaciones se separaban, la misma ficha quedaba con firmas distintas según por
+ * dónde se registró.
  */
 @Component({
   selector: 'app-firma-personal',
@@ -49,12 +49,18 @@ export class FirmaPersonal implements OnInit {
   /**
    * Qué formas de registrar la firma ofrece esta pantalla.
    *
-   * Por defecto solo el dibujo, que es lo único que existía y lo que siguen mostrando Contabilidad
-   * → Firma y Gestión Administrativa → Tu firma. `null` deja que mande la configuración de
-   * Consolidados → Configuración → Firmas: lo usa el modal que salta al aprobar un consolidado,
-   * que es la única pantalla que la honra.
+   * Por defecto solo el dibujo, que es lo único que existía y lo que sigue mostrando Contabilidad
+   * → Firma. `null` deja que mande la configuración de Consolidados → Configuración → Firmas: lo
+   * usan Mi Perfil → Mi Firma y el modal que salta al aprobar un consolidado sin firma.
    */
   @Input() tipos: FirmaTipoCodigo[] | null = ['DIBUJO'];
+
+  /**
+   * Solo el formulario, sin la tarjeta de estado ni las firmas ya registradas. Lo usa el modal que
+   * salta al firmar sin la firma que se pide: la que ya tiene (si tiene) es la que no sirve, y
+   * mostrarla solo confunde.
+   */
+  @Input() compacto = false;
 
   /** Emite la firma recién guardada (la usa el modal para continuar con la acción pendiente). */
   @Output() guardada = new EventEmitter<FirmaPersonalDto>();
@@ -170,9 +176,9 @@ export class FirmaPersonal implements OnInit {
   }
 
   /**
-   * Tiene firma, pero ninguna de las que esta pantalla pide. Es exactamente el caso que hace saltar
-   * el modal al aprobar un consolidado: el badge dice REGISTRADA —y es verdad— pero igual hay que
-   * registrar la otra, así que el motivo se dice en vez de dejarlo en contradicción aparente.
+   * Tiene firma, pero ninguna de las que esta pantalla pide (en Mi Perfil, cuando Configuración →
+   * Firmas deja solo la otra): el badge dice REGISTRADA —y es verdad— pero igual hay que registrar
+   * la otra, así que el motivo se dice en vez de dejarlo en contradicción aparente.
    */
   get faltaLaQueSePide(): boolean {
     const ofrecidos = this.tiposOfrecidos;

@@ -54,7 +54,11 @@ export class ConsolidadoS10Modal implements OnDestroy {
    */
   @Input({ required: true }) montoEsperado!: number;
 
-  /** Consolidado vigente, si ya había uno. Se muestra para abrirlo o reemplazarlo. */
+  /**
+   * Consolidado vigente, si ya había uno (el reemplazo, desde Consolidados). Se muestra solo como
+   * enlace, debajo del campo del archivo nuevo: verlo embebido alargaba el modal con un papel que
+   * se abre de un clic.
+   */
   @Input() actual: ConsolidadoS10Dto | null = null;
 
   /** Referencia de la planilla ("TI: 000123") cuando es una sola, para ver a cuál se adjunta. */
@@ -70,9 +74,17 @@ export class ConsolidadoS10Modal implements OnDestroy {
   @Input() razonSocial: string | null = null;
 
   /**
-   * Preview de a quién le va a llegar el aviso de la jefatura, que la pantalla anfitriona sabe
-   * pedir (es su endpoint). Se pide al confirmar y no al abrir: es una petición que solo hace falta
-   * si de verdad se va a adjuntar.
+   * Código de la planilla grupal sobre la que se sube el consolidado (el primero, desde Gestión de
+   * Rendiciones): es el papel que se registró en el S10. Sin valor al reemplazar, donde ya lo dice
+   * el consolidado vigente.
+   */
+  @Input() codigoGrupal: string | null = null;
+
+  /**
+   * Preview de a quién le van a llegar los avisos de adjuntar, que la pantalla anfitriona sabe pedir
+   * (es su endpoint): la jefatura y, al adjuntar el primero, los trabajadores de las rendiciones que
+   * incluye. Se pide al confirmar y no al abrir: es una petición que solo hace falta si de verdad se
+   * va a adjuntar.
    */
   @Input() avisosJefatura?: () => Observable<CorreoAvisoDto[]>;
 
@@ -111,7 +123,7 @@ export class ConsolidadoS10Modal implements OnDestroy {
     if (!a) return null;
     const partes: string[] = [];
     if (a.montoTotal !== null) partes.push(`S/ ${formatNumber(a.montoTotal, 'es-PE', '1.2-2')}`);
-    if (a.numeroReembolso) partes.push(`Reembolso ${a.numeroReembolso}`);
+    if (a.numeroReembolso) partes.push(`N.° ${a.numeroReembolso}`);
     if (a.uploadedAt) partes.push(formatDate(a.uploadedAt, 'dd/MM/yyyy HH:mm', 'es-PE'));
     partes.push('subir otro lo reemplaza');
     return partes.join(' · ');
@@ -171,16 +183,18 @@ export class ConsolidadoS10Modal implements OnDestroy {
   async guardar(): Promise<void> {
     if (!this.puedeGuardar) return;
 
-    // Adjuntar dispara el aviso a la jefatura en el mismo paso, así que la confirmación imprime a
-    // quién le va a llegar: es la misma regla que el resto de las acciones del flujo.
+    // Adjuntar dispara los avisos en el mismo paso (a la jefatura y, el primero, a los trabajadores),
+    // así que la confirmación imprime a quién le van a llegar: es la misma regla que el resto de las
+    // acciones del flujo. Por eso el botón dice solo el verbo, igual que el del modal: el aviso ya
+    // está escrito arriba, con las direcciones.
     if (this.avisosJefatura) {
       const result = await confirmarConCorreos({
-        titulo: this.actual ? '¿Reemplazar el Consolidado del S10?' : '¿Adjuntar el Consolidado del S10?',
+        titulo: this.actual ? '¿Reenviar el Consolidado del S10?' : '¿Enviar el Consolidado del S10?',
         avisos: await pedirAvisos(this.avisosJefatura()),
         // Sin nadie a quien avisar igual procede: el consolidado queda adjunto y la jefatura lo ve
         // en su bandeja de Consolidados. Es un aviso de estado, no un bloqueo.
         sinNadie: 'El consolidado queda adjunto, pero sin aviso por correo: está apagado en Configuración → Correos.',
-        confirmButtonText: this.actual ? 'Reemplazar y avisar' : 'Adjuntar y avisar',
+        confirmButtonText: this.actual ? 'Reenviar' : 'Enviar',
       });
       if (!result.isConfirmed) return;
     }
@@ -194,7 +208,7 @@ export class ConsolidadoS10Modal implements OnDestroy {
         // que nadie pidió.
         Swal.fire({
           icon: res.jefaturaAvisada ? 'success' : 'warning',
-          title: this.actual ? 'Consolidado del S10 reemplazado' : 'Consolidado del S10 adjuntado',
+          title: this.actual ? 'Consolidado del S10 reenviado' : 'Consolidado del S10 enviado',
           text: [this.resumenGrupal(res.consolidado), res.avisoJefatura]
             .filter(Boolean)
             .join(' '),

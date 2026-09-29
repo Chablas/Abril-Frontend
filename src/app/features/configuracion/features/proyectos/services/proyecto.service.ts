@@ -8,6 +8,7 @@ import { ProjectDto } from '../dtos/project.dto';
 import { ProjectCreateDto } from '../dtos/project-create.dto';
 import { ProjectEditDto } from '../dtos/project-edit.dto';
 import { ProjectFilterDto } from '../dtos/project-filter.dto';
+import { ProjectInitDto } from '../dtos/project-init.dto';
 import { ContributorLookupDto } from '../dtos/company-lookup.dto';
 import { ProjectLookupsDto } from '../dtos/responsable-lookup.dto';
 import { ProjectTorreDto, ProjectTorreGuardarDto } from '../dtos/project-torre.dto';
@@ -23,19 +24,34 @@ export class ProyectoService {
     return { Authorization: `Bearer ${token}` };
   }
 
+  /** Carga inicial de la pantalla: catálogos de tipo y ciclo de vida + la primera página. */
+  getInit(filter: ProjectFilterDto): Observable<ProjectInitDto> {
+    return this.http.get<ProjectInitDto>(`${this.apiUrl}/init`, {
+      headers: this.headers,
+      params: this.filterParams(filter),
+    });
+  }
+
   getPaged(filter: ProjectFilterDto): Observable<PagedResponseDTO<ProjectDto>> {
+    return this.http.get<PagedResponseDTO<ProjectDto>>(`${this.apiUrl}/paged`, {
+      headers: this.headers,
+      params: this.filterParams(filter),
+    });
+  }
+
+  private filterParams(filter: ProjectFilterDto): HttpParams {
     let params = new HttpParams().set('page', filter.page.toString());
     if (filter.pageSize) params = params.set('pageSize', filter.pageSize.toString());
     if (filter.ruc) params = params.set('ruc', filter.ruc);
     if (filter.razonSocial) params = params.set('razonSocial', filter.razonSocial);
     if (filter.projectDescription) params = params.set('projectDescription', filter.projectDescription);
-    // null/undefined = todos: solo se manda cuando el filtro de estado está puesto.
+    // null/undefined = todos: solo se manda cuando el filtro está puesto.
     if (filter.active !== null && filter.active !== undefined)
       params = params.set('active', filter.active.toString());
-    return this.http.get<PagedResponseDTO<ProjectDto>>(`${this.apiUrl}/paged`, {
-      headers: this.headers,
-      params,
-    });
+    if (filter.projectTipoId != null) params = params.set('projectTipoId', filter.projectTipoId.toString());
+    if (filter.projectCicloVidaId != null)
+      params = params.set('projectCicloVidaId', filter.projectCicloVidaId.toString());
+    return params;
   }
 
   create(dto: ProjectCreateDto): Observable<ApiMessageDTO> {

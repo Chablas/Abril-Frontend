@@ -12,6 +12,8 @@ import { AbrilBulkActionDirective } from '../../../../shared/directives/abril-bu
 import { ClientPager } from '../../../../shared/utils/client-pager';
 import { LoaderService } from '../../../../core/services/loader.service';
 import { ErrorService } from '../../../../core/services/error.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { ROLES_ASIGNAN_RESIDENTE } from '../../../../core/constants/proyecto-roles';
 import { ResponsablesService } from '../../../../core/services/responsables.service';
 import {
   ResponsableProyectoDTO,
@@ -107,12 +109,23 @@ export class Responsables implements OnInit {
   savingRazonSocial: Record<number, boolean> = {};
   savingProyecto: Record<number, boolean> = {};
 
+  /** El residente da permisos (Cronograma de Hitos): solo lo cambia ROLES_ASIGNAN_RESIDENTE. */
+  readonly puedeAsignarResidente: boolean;
+
   constructor(
     private service: ResponsablesService,
     private loaderService: LoaderService,
     private errorService: ErrorService,
     private cdr: ChangeDetectorRef,
-  ) {}
+    authService: AuthService,
+  ) {
+    this.puedeAsignarResidente = authService.hasAnyRole(ROLES_ASIGNAN_RESIDENTE);
+  }
+
+  /** Columna de trabajador que este usuario ve pero no puede cambiar. */
+  campoBloqueado(campo: CampoWorker): boolean {
+    return campo === 'residenteWorkersId' && !this.puedeAsignarResidente;
+  }
 
   ngOnInit(): void {
     this.load();

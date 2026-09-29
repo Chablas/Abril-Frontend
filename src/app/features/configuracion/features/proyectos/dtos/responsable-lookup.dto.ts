@@ -12,8 +12,8 @@ export interface ResponsableLookupDto {
 export interface ProjectLookupsDto {
   arqCom: ResponsableLookupDto[];
   udp: ResponsableLookupDto[];
-  /** Elegibles como coordinador administrativo: personal Casa no retirado con correo. */
-  coordAdmins: ResponsableLookupDto[];
+  /** Elegibles como residente y coordinador administrativo: personal Casa no retirado con correo. */
+  personalCasa: ResponsableLookupDto[];
   /** Subárea "Planeamiento BIM". */
   planeamientoUdp: ResponsableLookupDto[];
 }

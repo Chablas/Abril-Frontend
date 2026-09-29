@@ -51,21 +51,6 @@
   <!-- Vista "Tabla": una fila por trabajador. -->
   <div class="abril-table-wrap" *ngIf="viewMode === 'tabla'">
       <table class="abril-table">
-        <colgroup>
-          <col style="width: auto" />
-          <col style="width: 80px" />
-          <col style="width: 140px" />
-          <col style="width: 140px" />
-          <col style="width: 120px" />
-          <col style="width: 80px" />
-          <col style="width: 90px" />
-          <col style="width: 90px" />
-          <col style="width: 90px" />
-          <col style="width: 90px" />
-          <col style="width: 110px" />
-          <col style="width: 60px" />
-          <col style="width: 160px" />
-        </colgroup>
         <thead class="sticky top-0 z-10">
           <tr>
             <th>Trabajador</th>
@@ -80,7 +65,7 @@
             <th>Estado</th>
             <th>Prog. EMO</th>
             <th class="text-right">Días</th>
-            <th class="text-right col-actions"></th>
+            <th class="text-right"></th>
           </tr>
         </thead>
         <tbody>
@@ -89,7 +74,7 @@
             [class.row-clickable]="item.tieneEmo"
             (click)="onRowClick(item)"
           >
-            <td class="col-worker">
+            <td>
               <div class="worker-cell">
                 <span class="worker-name">{{ item.nombreCompleto | titleCase }}</span>
                 <span class="worker-dni">DNI · {{ item.dni }}</span>
@@ -136,7 +121,7 @@
               </span>
               <ng-template #dashDias><span class="text-gray-400">—</span></ng-template>
             </td>
-            <td class="text-right col-actions" (click)="$event.stopPropagation()">
+            <td class="text-right" (click)="$event.stopPropagation()">
               <div class="actions-group">
                 <button
                   type="button"

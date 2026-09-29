@@ -59,6 +59,11 @@ export interface ReembolsoListItemDto {
   subidoPor: string | null;
   /** Razón social bajo la que quedó el registro del S10: la del consolidador. */
   razonSocial: string | null;
+  /**
+   * Área del consolidado: la de su consolidador, la misma que da la sigla del código y la que
+   * imprime la planilla grupal. Null si no se pudo resolver.
+   */
+  area: string | null;
 
   // ── Qué cubre ──────────────────────────────────────────────────────────
   /**

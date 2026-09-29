@@ -25,6 +25,11 @@ export interface ProgramacionDestinatariosDto {
   clinicaPendiente?: boolean;
   /** La clínica elegida recibe este correo pero no tiene ningún correo de contacto cargado. */
   clinicaSinCorreos?: boolean;
+  /**
+   * Ficha de pre-ingreso: el correo le toca al propio postulante (destinatario TRABAJADOR, que el
+   * backend resuelve a su correo personal) pero no tiene correo registrado.
+   */
+  postulanteSinCorreo?: boolean;
 }
 
 /**

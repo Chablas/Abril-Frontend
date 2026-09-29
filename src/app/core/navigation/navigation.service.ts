@@ -1,5 +1,5 @@
 ﻿import { Injectable } from '@angular/core';
-import { NavModule, NavItem, NavGroup } from './nav.model';
+import { NavModule, NavItem, NavGroup, NavSeccionPerfil } from './nav.model';
 import { AuthService } from '../services/auth.service';
 import { Roles } from '../constants/roles';
 
@@ -38,14 +38,15 @@ export class NavigationService {
             { label: 'Motivos',   route: '/gestion-administrativa/configuracion/motivos',   featureKey: 'gestion-administrativa.config.motivos' },
             { label: 'Trayectos', route: '/gestion-administrativa/configuracion/trayectos', featureKey: 'gestion-administrativa.config.trayectos' },
             { label: 'Capturas', route: '/gestion-administrativa/configuracion/capturas', featureKey: 'gestion-administrativa.config.capturas' },
+            // Quién aprueba, se entera, revisa, consolida y firma por cada área: junta lo que
+            // estaba repartido en la configuración de tres pantallas del flujo.
+            { label: 'Revisores de Áreas', route: '/gestion-administrativa/configuracion/revisores-areas', featureKey: 'gestion-administrativa.config.revisores-areas' },
             { label: 'Carpeta Adjuntos', route: '/gestion-administrativa/configuracion/carpeta-adjuntos', featureKey: 'gestion-administrativa.config.carpeta-adjuntos' },
-            // Los correos, la visibilidad de cada bandeja, los revisores y los
-            // consolidadores ya no están acá: cada pantalla del flujo administra lo que se
-            // origina en ella desde su propio botón «Configuración»
+            // Los correos y la visibilidad de cada bandeja no están acá: cada pantalla del flujo
+            // administra lo que se origina en ella desde su propio botón «Configuración»
             // (/gestion-administrativa/<pantalla>/configuracion).
-            // Por rol y no por featureKey: la firma es de la persona, no de una funcionalidad.
-            // Mismo criterio que el roleGuard de su ruta (ver gestion-administrativa.routes.ts).
-            { label: 'Tu firma', route: '/gestion-administrativa/configuracion/firma', roles: [Roles.USUARIO_DE_ABRIL] },
+            // «Tu firma» tampoco: la firma es de la persona, así que pasó a Mi Perfil → Mi Firma
+            // (ver `miPerfil` más abajo).
           ],
         },
       ],
@@ -424,14 +425,34 @@ export class NavigationService {
         { label: 'Proyectos', route: '/configuracion/proyectos', featureKey: 'configuracion.proyectos' },
         // 'Categorías y Puestos' se movió a Gestión GTH → Configuración
         // (/gestion-gth/configuracion/categorias-puestos).
-        // 'Revisores de Áreas' se movió a Gestión Administrativa → Solicitud de Salidas →
-        // Configuración: el revisor es a quien se le manda la solicitud que nace ahí.
+        // 'Revisores de Áreas' se movió a Gestión Administrativa → Configuración → Revisores de
+        // Áreas, donde se juntaron los cinco actores del ciclo de una salida.
         { label: 'Centro de aprendizaje', route: '/configuracion/aprendizaje', featureKey: 'configuracion.aprendizaje' },
       ],
     },
   ];
 
+  /**
+   * Secciones de Mi Perfil, en el orden de su barra lateral. No es un módulo del sidebar: se abre
+   * desde el nombre del usuario, arriba a la izquierda, y cada sección es de la persona y no de
+   * una funcionalidad — por eso se filtran por rol y no por featureKey. Cada una declara los
+   * MISMOS roles que el roleGuard de su ruta (ver mi-perfil.routes.ts).
+   */
+  private readonly miPerfil: NavSeccionPerfil[] = [
+    // Todo USUARIO DE ABRIL, que es el rol base de cualquier empleado: deja fuera solo a las
+    // sesiones que no son de Abril (contratistas y clínica, con su propio flujo de auth).
+    { label: 'Mi Firma', route: '/mi-perfil/mi-firma', icono: 'ti-signature', roles: [Roles.USUARIO_DE_ABRIL] },
+  ];
+
   constructor(private authService: AuthService) {}
+
+  /**
+   * Las secciones de Mi Perfil que el usuario puede abrir. Vacío = no se le ofrece Mi Perfil (el
+   * menú de su nombre muestra solo «Cerrar sesión»).
+   */
+  getSeccionesMiPerfil(): NavSeccionPerfil[] {
+    return this.miPerfil.filter((s) => this.isNavEntryAllowed(s));
+  }
 
   private getAllowedFeatures(): string[] {
     if (typeof localStorage === 'undefined') return [];
