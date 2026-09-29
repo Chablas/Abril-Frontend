@@ -18,8 +18,8 @@
       </div>
 
       <app-search-select
-        label="Activo"
-        placeholder="Selecciona estado"
+        label="Visible en el sistema"
+        placeholder="Selecciona una opción"
         [options]="opcionesActivo"
         valueField="value"
         displayField="label"
@@ -42,23 +42,33 @@
           [disabled]="soloLectura" />
       </div>
 
-      <div class="abril-field">
-        <label class="abril-field-label">Estado del proyecto</label>
-        <input type="text" class="abril-field-input" [(ngModel)]="form.estado"
-          placeholder="Ej: ACTIVO, FINALIZADO, PAUSADO" [disabled]="soloLectura" />
+      <div class="flex flex-col">
+        <app-search-select
+          label="Tipo"
+          placeholder="Selecciona tipo"
+          [options]="tipos"
+          valueField="id"
+          displayField="nombre"
+          [value]="form.projectTipoId"
+          [allowClear]="false"
+          [sortAlpha]="false"
+          [disabled]="soloLectura"
+          (valueChange)="form.projectTipoId = $event">
+        </app-search-select>
+        <p *ngIf="descripcionTipo" class="mt-[4px] text-[11px] leading-tight text-gray-400">{{ descripcionTipo }}</p>
       </div>
 
       <app-search-select
         label="Ciclo de vida"
         placeholder="Selecciona ciclo de vida"
-        [options]="opcionesCicloVida"
-        valueField="value"
-        displayField="label"
-        [value]="form.cicloVida"
+        [options]="ciclosVida"
+        valueField="id"
+        displayField="nombre"
+        [value]="form.projectCicloVidaId"
         [allowClear]="false"
         [sortAlpha]="false"
         [disabled]="soloLectura"
-        (valueChange)="form.cicloVida = $event">
+        (valueChange)="form.projectCicloVidaId = $event">
       </app-search-select>
 
       <div class="abril-field sm:col-span-2">

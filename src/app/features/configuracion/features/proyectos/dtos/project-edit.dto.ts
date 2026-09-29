@@ -4,9 +4,10 @@ export interface ProjectEditDto {
   codigo?: string;
   abbreviation?: string;
   levelDescription?: string;
-  estado?: string;
-  /** Ciclo de vida real para el cálculo de ratios SSOMA: Finalizado | Activo | Inactivo. */
-  cicloVida?: string;
+  /** Catálogo project_tipo. Sin valor, el backend deja el que estaba. */
+  projectTipoId?: number | null;
+  /** Catálogo project_ciclo_vida. Sin valor, el backend deja el que estaba. */
+  projectCicloVidaId?: number | null;
 
   // Contribuyente
   contributorId?: number;

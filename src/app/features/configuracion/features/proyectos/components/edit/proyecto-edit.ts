@@ -9,6 +9,7 @@ import { ProjectDto } from '../../dtos/project.dto';
 import { ProjectEditDto } from '../../dtos/project-edit.dto';
 import { ContributorLookupDto } from '../../dtos/company-lookup.dto';
 import { ResponsableLookupDto } from '../../dtos/responsable-lookup.dto';
+import { ProjectCatalogoDto } from '../../dtos/project-init.dto';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
@@ -21,8 +22,10 @@ interface ProjectFormModel {
   codigo: string;
   abbreviation: string;
   levelDescription: string;
-  estado: string;
-  cicloVida: string;
+  /** Catálogo project_tipo: proyecto de verdad, FFT, Oficina Central, área interna o prueba. */
+  projectTipoId: number | null;
+  /** Catálogo project_ciclo_vida. */
+  projectCicloVidaId: number | null;
 
   rucInput: string;
   contributor: ContributorLookupDto | null;
@@ -80,6 +83,9 @@ interface ProjectFormModel {
 })
 export class ProyectoEdit implements OnInit {
   @Input() project!: ProjectDto;
+  /** Catálogos que ya trajo la carga inicial de la pantalla (no se vuelven a pedir). */
+  @Input() tipos: ProjectCatalogoDto[] = [];
+  @Input() ciclosVida: ProjectCatalogoDto[] = [];
   /** Quien no edita proyectos (ROLES_EDITAN_PROYECTOS) ve el mismo modal con todo deshabilitado. */
   @Input() soloLectura = false;
   @Output() closeModal = new EventEmitter<void>();
@@ -99,17 +105,10 @@ export class ProyectoEdit implements OnInit {
   loadingLookups = true;
   lookupsError = false;
 
-  /** Opciones del desplegable "Visible en filtros" (antes un <select> de true/false). */
+  /** «Visible en el sistema» (project.active, columna de sistema): no es el ciclo de vida. */
   readonly opcionesActivo = [
-    { value: true, label: 'ACTIVO' },
-    { value: false, label: 'INACTIVO' },
-  ];
-
-  /** Ciclo de vida real para los ratios SSOMA (project.activo). */
-  readonly opcionesCicloVida = [
-    { value: 'Activo', label: 'ACTIVO' },
-    { value: 'Finalizado', label: 'FINALIZADO' },
-    { value: 'Inactivo', label: 'INACTIVO' },
+    { value: true, label: 'SÍ' },
+    { value: false, label: 'NO' },
   ];
 
   constructor(
@@ -129,8 +128,8 @@ export class ProyectoEdit implements OnInit {
       codigo:        this.project.codigo        ?? '',
       abbreviation:  this.project.abbreviation  ?? '',
       levelDescription: this.project.levelDescription ?? '',
-      estado: this.project.estado ?? '',
-      cicloVida: this.project.cicloVida ?? 'Activo',
+      projectTipoId: this.project.projectTipoId ?? null,
+      projectCicloVidaId: this.project.projectCicloVidaId ?? null,
 
       rucInput: this.project.contributorRuc ?? '',
       contributor:
@@ -235,6 +234,11 @@ export class ProyectoEdit implements OnInit {
     return this.emailDe(this.form.residenteWorkersId);
   }
 
+  /** Qué significa el tipo elegido (lo trae el catálogo). */
+  get descripcionTipo(): string | null {
+    return this.tipos.find((t) => t.id === this.form.projectTipoId)?.descripcion ?? null;
+  }
+
   private emailDe(workerId: number | null): string | null {
     if (workerId == null) return null;
     return this.personalCasa.find((c) => c.id === workerId)?.email ?? null;
@@ -324,8 +328,8 @@ export class ProyectoEdit implements OnInit {
       codigo:             this.form.codigo.trim()        || undefined,
       abbreviation:       this.form.abbreviation.trim()  || undefined,
       levelDescription:   this.form.levelDescription.trim() || undefined,
-      estado:             this.form.estado.trim() || undefined,
-      cicloVida:          this.form.cicloVida || undefined,
+      projectTipoId:      this.form.projectTipoId,
+      projectCicloVidaId: this.form.projectCicloVidaId,
 
       contributorId: this.form.contributor?.contributorId,
       legalEntityRegistryNumber: this.form.contributor
@@ -395,8 +399,8 @@ export class ProyectoEdit implements OnInit {
       codigo: '',
       abbreviation: '',
       levelDescription: '',
-      estado: '',
-      cicloVida: 'Activo',
+      projectTipoId: null,
+      projectCicloVidaId: null,
 
       rucInput: '',
       contributor: null,

@@ -11,6 +11,7 @@ import { ROLES_EDITAN_PROYECTOS } from '../../../../../core/constants/proyecto-r
 import { ProyectoService } from '../services/proyecto.service';
 import { ProjectDto } from '../dtos/project.dto';
 import { ProjectFilterDto } from '../dtos/project-filter.dto';
+import { ProjectCatalogoDto } from '../dtos/project-init.dto';
 import { ProyectoCreate } from './create/proyecto-create';
 import { ProyectoEdit } from './edit/proyecto-edit';
 import { AbrilPageHeaderComponent } from '../../../../../shared/components/abril-page-header/abril-page-header.component';
@@ -65,15 +66,40 @@ export class Proyectos implements OnInit {
     razonSocial: '',
     projectDescription: '',
     active: null,
+    projectTipoId: null,
+    projectCicloVidaId: null,
   };
   filtrosAbiertos = false;
   private searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  readonly estadoFilterOptions = [
+  /** Catálogos de tipo y ciclo de vida: llegan con la carga inicial y los usan filtros y modales. */
+  tipos: ProjectCatalogoDto[] = [];
+  ciclosVida: ProjectCatalogoDto[] = [];
+  tipoFilterOptions: { id: number | null; nombre: string }[] = [{ id: null, nombre: 'Todos' }];
+  cicloVidaFilterOptions: { id: number | null; nombre: string }[] = [{ id: null, nombre: 'Todos' }];
+
+  /** `active` es de sistema (si el proyecto aparece en filtros y desplegables), no el ciclo de vida. */
+  readonly visibleFilterOptions = [
     { value: null, label: 'Todos' },
-    { value: true, label: 'ACTIVO' },
-    { value: false, label: 'INACTIVO' },
+    { value: true, label: 'Sí' },
+    { value: false, label: 'No' },
   ];
+
+  /** Colores de los badges por código de catálogo (DESIGN-VICTOR.md §6.3): lo que no es un
+   *  proyecto de verdad resalta; un proyecto normal va en gris. */
+  private static readonly BADGE_TIPO: Record<string, { bg: string; text: string }> = {
+    PROYECTO: { bg: '#F1F5F9', text: '#334155' },
+    FFT: { bg: '#FCE7F3', text: '#9D174D' },
+    OFICINA_CENTRAL: { bg: '#CFFAFE', text: '#155E75' },
+    AREA_INTERNA: { bg: '#FEF3C7', text: '#92400E' },
+    PRUEBA: { bg: '#FFEDD5', text: '#9A3412' },
+  };
+  private static readonly BADGE_CICLO_VIDA: Record<string, { bg: string; text: string }> = {
+    ACTIVO: { bg: '#DBEAFE', text: '#1E40AF' },
+    FINALIZADO: { bg: '#DCFCE7', text: '#166534' },
+    INACTIVO: { bg: '#F1F5F9', text: '#64748B' },
+  };
+  private static readonly BADGE_OTRO = { bg: '#F1F5F9', text: '#374151' };
 
   showCreateModal = false;
   showEditModal = false;
@@ -93,7 +119,15 @@ export class Proyectos implements OnInit {
   }
 
   ngOnInit(): void {
-    this.load(1);
+    this.init();
+  }
+
+  badgeTipo(codigo: string): { bg: string; text: string } {
+    return Proyectos.BADGE_TIPO[codigo] ?? Proyectos.BADGE_OTRO;
+  }
+
+  badgeCicloVida(codigo: string): { bg: string; text: string } {
+    return Proyectos.BADGE_CICLO_VIDA[codigo] ?? Proyectos.BADGE_OTRO;
   }
 
   /** Cantidad de filtros aplicados: la pinta el badge del botón "Filtros". */
@@ -103,6 +137,8 @@ export class Proyectos implements OnInit {
     if (this.filters.razonSocial.trim()) n++;
     if (this.filters.ruc.trim()) n++;
     if (this.filters.active !== null && this.filters.active !== undefined) n++;
+    if (this.filters.projectTipoId != null) n++;
+    if (this.filters.projectCicloVidaId != null) n++;
     return n;
   }
 
@@ -111,6 +147,8 @@ export class Proyectos implements OnInit {
     this.filters.razonSocial = '';
     this.filters.ruc = '';
     this.filters.active = null;
+    this.filters.projectTipoId = null;
+    this.filters.projectCicloVidaId = null;
     this.onFilterChange();
   }
 
@@ -141,15 +179,39 @@ export class Proyectos implements OnInit {
     this.load(this.currentPage);
   }
 
+  /** Carga inicial: catálogos (filtros y modales) y la primera página en una sola petición. */
+  private init(): void {
+    this.loaderService.show();
+
+    this.proyectoService.getInit({ ...this.filters, page: 1 }).subscribe({
+      next: (response) => {
+        this.tipos = response.tipos;
+        this.ciclosVida = response.ciclosVida;
+        this.tipoFilterOptions = [{ id: null, nombre: 'Todos' }, ...response.tipos];
+        this.cicloVidaFilterOptions = [{ id: null, nombre: 'Todos' }, ...response.ciclosVida];
+        this.aplicarPagina(response.proyectos);
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  private aplicarPagina(response: PagedResponseDTO<ProjectDto>): void {
+    this.projects = response;
+    this.currentPage = response.page;
+    this.totalPages = response.totalPages;
+    this.totalRecords = response.totalRecords;
+  }
+
   load(page: number = 1): void {
     this.loaderService.show();
 
     this.proyectoService.getPaged({ ...this.filters, page }).subscribe({
       next: (response) => {
-        this.projects = response;
-        this.currentPage = response.page;
-        this.totalPages = response.totalPages;
-        this.totalRecords = response.totalRecords;
+        this.aplicarPagina(response);
         this.loaderService.hide();
       },
       error: (err: HttpErrorResponse) => {

@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -8,6 +8,7 @@ import { ProyectoService } from '../../services/proyecto.service';
 import { ProjectCreateDto } from '../../dtos/project-create.dto';
 import { ContributorLookupDto } from '../../dtos/company-lookup.dto';
 import { ResponsableLookupDto } from '../../dtos/responsable-lookup.dto';
+import { ProjectCatalogoDto } from '../../dtos/project-init.dto';
 import { BaseModal } from '../../../../../../shared/components/base-modal/base-modal';
 import { DatePicker } from '../../../../../../shared/components/date-picker/date-picker';
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
@@ -20,7 +21,10 @@ interface ProjectFormModel {
   codigo: string;
   abbreviation: string;
   levelDescription: string;
-  estado: string;
+  /** Catálogo project_tipo: proyecto de verdad, FFT, Oficina Central, área interna o prueba. */
+  projectTipoId: number | null;
+  /** Catálogo project_ciclo_vida. */
+  projectCicloVidaId: number | null;
 
   rucInput: string;
   contributor: ContributorLookupDto | null;
@@ -70,6 +74,9 @@ interface ProjectFormModel {
   templateUrl: './proyecto-create.html',
 })
 export class ProyectoCreate implements OnInit {
+  /** Catálogos que ya trajo la carga inicial de la pantalla (no se vuelven a pedir). */
+  @Input() tipos: ProjectCatalogoDto[] = [];
+  @Input() ciclosVida: ProjectCatalogoDto[] = [];
   @Output() closeModal = new EventEmitter<void>();
   @Output() saved = new EventEmitter<void>();
 
@@ -86,10 +93,10 @@ export class ProyectoCreate implements OnInit {
   loadingLookups = true;
   lookupsError = false;
 
-  /** Opciones del desplegable "Visible en filtros" (antes un <select> de true/false). */
+  /** «Visible en el sistema» (project.active, columna de sistema): no es el ciclo de vida. */
   readonly opcionesActivo = [
-    { value: true, label: 'ACTIVO' },
-    { value: false, label: 'INACTIVO' },
+    { value: true, label: 'SÍ' },
+    { value: false, label: 'NO' },
   ];
 
   constructor(
@@ -103,7 +110,15 @@ export class ProyectoCreate implements OnInit {
   }
 
   ngOnInit(): void {
+    // Un proyecto nuevo arranca como proyecto de verdad y activo; se cambia si no lo es.
+    this.form.projectTipoId = this.tipos.find((t) => t.codigo === 'PROYECTO')?.id ?? null;
+    this.form.projectCicloVidaId = this.ciclosVida.find((c) => c.codigo === 'ACTIVO')?.id ?? null;
     this.loadLookups();
+  }
+
+  /** Qué significa el tipo elegido (lo trae el catálogo). */
+  get descripcionTipo(): string | null {
+    return this.tipos.find((t) => t.id === this.form.projectTipoId)?.descripcion ?? null;
   }
 
   /** Correo del coordinador elegido, solo informativo: lo que se guarda es el workerId. */
@@ -194,7 +209,8 @@ export class ProyectoCreate implements OnInit {
       codigo:             this.form.codigo.trim()        || undefined,
       abbreviation:       this.form.abbreviation.trim()  || undefined,
       levelDescription:   this.form.levelDescription.trim() || undefined,
-      estado:             this.form.estado.trim() || undefined,
+      projectTipoId:      this.form.projectTipoId,
+      projectCicloVidaId: this.form.projectCicloVidaId,
 
       contributorId: this.form.contributor?.contributorId,
       legalEntityRegistryNumber: this.form.contributor
@@ -256,7 +272,8 @@ export class ProyectoCreate implements OnInit {
       codigo: '',
       abbreviation: '',
       levelDescription: '',
-      estado: '',
+      projectTipoId: null,
+      projectCicloVidaId: null,
 
       rucInput: '',
       contributor: null,

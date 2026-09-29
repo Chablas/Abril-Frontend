@@ -18,8 +18,8 @@
       </div>
 
       <app-search-select
-        label="Activo"
-        placeholder="Selecciona estado"
+        label="Visible en el sistema"
+        placeholder="Selecciona una opción"
         [options]="opcionesActivo"
         valueField="value"
         displayField="label"
@@ -39,13 +39,34 @@
         <input type="text" class="abril-field-input" [(ngModel)]="form.abbreviation" placeholder="Ej: CDR33, KAU" />
       </div>
 
-      <div class="abril-field">
-        <label class="abril-field-label">Estado del proyecto</label>
-        <input type="text" class="abril-field-input" [(ngModel)]="form.estado"
-          placeholder="Ej: ACTIVO, FINALIZADO, PAUSADO" />
+      <div class="flex flex-col">
+        <app-search-select
+          label="Tipo"
+          placeholder="Selecciona tipo"
+          [options]="tipos"
+          valueField="id"
+          displayField="nombre"
+          [value]="form.projectTipoId"
+          [allowClear]="false"
+          [sortAlpha]="false"
+          (valueChange)="form.projectTipoId = $event">
+        </app-search-select>
+        <p *ngIf="descripcionTipo" class="mt-[4px] text-[11px] leading-tight text-gray-400">{{ descripcionTipo }}</p>
       </div>
 
-      <div class="abril-field">
+      <app-search-select
+        label="Ciclo de vida"
+        placeholder="Selecciona ciclo de vida"
+        [options]="ciclosVida"
+        valueField="id"
+        displayField="nombre"
+        [value]="form.projectCicloVidaId"
+        [allowClear]="false"
+        [sortAlpha]="false"
+        (valueChange)="form.projectCicloVidaId = $event">
+      </app-search-select>
+
+      <div class="abril-field sm:col-span-2">
         <label class="abril-field-label">Descripción de pisos</label>
         <input type="text" class="abril-field-input" [(ngModel)]="form.levelDescription"
           placeholder="Ej: Sótano + 10 pisos" />

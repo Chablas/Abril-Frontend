@@ -3,7 +3,10 @@ export interface ProjectCreateDto {
   codigo?: string;
   abbreviation?: string;
   levelDescription?: string;
-  estado?: string;
+  /** Catálogo project_tipo. Sin valor, el backend pone PROYECTO. */
+  projectTipoId?: number | null;
+  /** Catálogo project_ciclo_vida. Sin valor, el backend pone ACTIVO. */
+  projectCicloVidaId?: number | null;
 
   // Contribuyente
   contributorId?: number;
