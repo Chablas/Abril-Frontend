@@ -6176,3 +6176,26 @@ Merge de `victor-frontend` a `master` (cada uno documentado en su propia secció
 ### Pendiente
 - Fix del bug "Responsable Planeamiento UDP" en `Abril_Backend` (ver investigación arriba) — no es de este repo.
 - Los pendientes puntuales de Plantillas de Cronograma (endpoint de reorden masivo si el batch de PUTs resulta lento en la práctica, protección contra ciclos en `PredecesoraCodigo`) quedan en la sección de sesión 2026-09-26 de Plantillas de Cronograma más arriba.
+
+## Sesión 2026-09-28 — Vista de "hitos de propietarios" en cronograma de hitos
+
+### Contexto
+Endpoint nuevo en `victor-backend` (aún no mergeado a este momento): `GET api/v1/milestoneSchedule/hitos-propietario?milestoneScheduleHistoryId={id}`, mismo JWT/feature (`mejora-continua.milestone-schedule`) que el resto del cronograma. Devuelve siempre 9 `OwnerMilestoneDTO` fijos (Order 1-9), cada uno derivando su fecha de un hito interno del cronograma (`milestoneId`, informativo); `plannedStartDate`/`plannedEndDate` pueden venir `null` si esa versión todavía no tiene cargado el hito interno correspondiente. Es una vista de solo lectura, sin edición.
+
+### Cambios
+- **DTO nuevo** `core/dtos/milestoneSchedule/ownerMilestone.model.ts` (`OwnerMilestoneDTO`), mismo estilo que el resto de `core/dtos/milestoneSchedule/`.
+- **`MilestoneScheduleService.getHitosPropietario(milestoneScheduleHistoryId)`**: GET al endpoint nuevo, mismo patrón `Authorization: Bearer` que el resto del servicio.
+- **`milestone-schedule.ts`**: estado (`showHitosPropietarioModal`, `loadingHitosPropietario`, `hitosPropietarioTableData`, `hitosPropietarioVersionLabel`) y métodos `openHitosPropietario()`/`closeHitosPropietarioModal()`, siguiendo el mismo patrón (loader, `cdr.detectChanges()`, `error()` centralizado) que `eliminarVersionCronograma`/`openViewMilestoneSchedule`.
+- **`milestone-schedule.html`**: en el modal "VER HISTORIAL DE CRONOGRAMA DE HITOS", nuevo botón ícono "Ver hitos de propietarios" al costado de cada versión (visible a todos los roles, no solo `ADMINISTRADOR_RESIDENTES` como el botón de eliminar — es solo lectura). Abre un segundo `app-base-modal` con tabla (orden, descripción, inicio, fin); cuando una fecha viene `null` muestra "Sin fecha aún" en gris sin ocultar la fila.
+
+### Archivos clave
+- `core/dtos/milestoneSchedule/ownerMilestone.model.ts` (nuevo)
+- `core/services/milestoneSchedule.service.ts`
+- `features/mejora-continua/milestone-schedule/milestone-schedule.ts`/`.html`
+
+### Verificado
+`npx tsc -p tsconfig.app.json --noEmit` limpio. `ng build` completo del repo → exit code 0 (solo warnings preexistentes de dependencias CommonJS no-ESM). `ng test` sobre el spec del feature falla al compilar, pero se confirmó con `git stash` que ese fallo es preexistente en `opt-nuevo.spec.ts`/`date-picker.spec.ts` (no relacionado con este cambio). No se probó en navegador contra backend real — el endpoint vive en `victor-backend`, todavía no mergeado/desplegado.
+
+### Pendiente
+- Mergear `victor-backend` (o desplegar el endpoint) antes de poder probar esta vista end-to-end; hasta entonces el modal mostrará el error genérico de `ErrorService`.
+- Verificación visual del usuario una vez el backend esté disponible.
