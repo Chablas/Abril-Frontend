@@ -56,7 +56,7 @@
               <div class="worker-cell" [title]="puestoDisplay(item)">
                 <span class="worker-name">{{ item.workerNombre | titleCase }}</span>
                 <span class="worker-dni">
-                  {{ item.workerDni }}<span *ngIf="puestoDisplay(item)"> · {{ puestoDisplay(item) }}</span>
+                  {{ item.workerDni }}<span *ngIf="puestoDisplay(item)"> · {{ puestoDisplay(item) }}</span><span *ngIf="item.esPostulante"> · Postulante</span>
                 </span>
               </div>
             </td>

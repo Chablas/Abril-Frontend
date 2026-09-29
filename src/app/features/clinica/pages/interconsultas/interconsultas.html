@@ -54,7 +54,7 @@
             <td>
               <div class="worker-cell">
                 <span class="worker-name">{{ item.workerNombre }}</span>
-                <span class="worker-dni">{{ item.workerDni }}</span>
+                <span class="worker-dni">{{ item.workerDni }}<span *ngIf="item.esPostulante"> · Postulante</span></span>
               </div>
             </td>
             <td>
