@@ -192,6 +192,7 @@ export class Trabajadores implements OnInit, OnDestroy {
     // genérico que ya tienen asignado (ver "Entrevista con el Área de Calidad").
     if (resp === 'CALIDAD')
       return this.authService.hasRole(Roles.USUARIO_DE_ABRIL) ||
+             this.authService.hasRole(Roles.ADMINISTRADOR_SSOMA) ||
              this.authService.hasRole(Roles.ADMINISTRADOR_UDP);
     if (resp === 'ADMINISTRACION')
       return this.authService.hasRole(Roles.ADMINISTRADOR_ADMINISTRACION) ||
