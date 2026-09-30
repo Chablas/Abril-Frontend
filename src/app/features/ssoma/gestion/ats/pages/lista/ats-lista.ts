@@ -69,14 +69,48 @@ export class AtsLista implements OnInit {
   hayFirmaVisto = false;
   guardandoVisto = false;
 
-  /** Filas con el detalle IPERC desplegado — "ver inline" antes de firmar, sin salir de la lista. */
+  /** Filas con el detalle IPERC desplegado — "ver inline" antes de firmar, sin salir de la lista.
+   *  El listado (svc.listar) YA NO trae pasos/epps/herramientas/riesgos por fila (eran includes
+   *  pesados repetidos en cada una de las 20 filas de cada página, la causa real de la lentitud
+   *  con cientos de ATS/día) — ese detalle se pide recién acá, por ATS individual, solo cuando el
+   *  usuario hace clic en "Ver detalle". */
   filasExpandidas = new Set<number>();
-  toggleDetalle(atsId: number): void {
-    this.filasExpandidas.has(atsId) ? this.filasExpandidas.delete(atsId) : this.filasExpandidas.add(atsId);
+  detalleCargando = new Set<number>();
+
+  toggleDetalle(a: AtsResponseDto): void {
+    if (this.filasExpandidas.has(a.id)) {
+      this.filasExpandidas.delete(a.id);
+      this.cdr.markForCheck();
+      return;
+    }
+    this.filasExpandidas.add(a.id);
+    if (a.pasos.length === 0 && a.riesgos.length === 0 && a.epps.length === 0 && a.herramientas.length === 0) {
+      this.cargarDetalle(a);
+    }
     this.cdr.markForCheck();
   }
   filaExpandida(atsId: number): boolean {
     return this.filasExpandidas.has(atsId);
+  }
+
+  private cargarDetalle(a: AtsResponseDto): void {
+    this.detalleCargando.add(a.id);
+    this.cdr.markForCheck();
+    this.svc.getPorId(a.id).subscribe({
+      next: (full) => {
+        a.pasos = full.pasos;
+        a.riesgos = full.riesgos;
+        a.epps = full.epps;
+        a.herramientas = full.herramientas;
+        this.detalleCargando.delete(a.id);
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.detalleCargando.delete(a.id);
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   /** La firma que este Residente/Ing. Producción/SSOMA ya capturó para SU PROPIA autorización
@@ -244,6 +278,10 @@ export class AtsLista implements OnInit {
     this.usandoFirmaAutorizada = false;
     this.firmaAutorizadaDataUrl = null;
     this.cdr.markForCheck();
+
+    if (ats.riesgos.length === 0 && rol !== 'petar-supervisor' && rol !== 'petar-ssoma') {
+      this.cargarDetalle(ats);
+    }
 
     this.svc.getMiFirmaDigitalAutorizacionImagenBlob().subscribe({
       next: (blob) => {

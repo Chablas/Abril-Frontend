@@ -66,11 +66,17 @@
   padding: 4px 10px;
 }
 
+/* Antes era flex-wrap horizontal con bordes divisorios — con varios grupos (firmas ATS, PETAR,
+ * Corregir/Duplicar) el wrap partía los divisores a mitad de fila y se veía desordenado. Ahora
+ * cada grupo es su propia fila, alineados en columna: se lee de arriba a abajo, sin cortes raros. */
 .acciones-cell {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  min-width: 220px;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
 .acciones-grupo {
@@ -78,10 +84,13 @@
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
-  padding-right: 10px;
-  border-right: 1px solid #e5e7eb;
 }
-.acciones-grupo:last-child { border-right: none; padding-right: 0; }
+
+.lugar-cell {
+  font-size: 12.5px;
+  color: #374151;
+  white-space: nowrap;
+}
 
 .acciones-grupo--petar .btn-petar { font-weight: 700; }
 .acciones-grupo--corregir { color: #6b7280; }

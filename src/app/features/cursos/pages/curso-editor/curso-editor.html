@@ -63,7 +63,14 @@
       </div>
     </div>
 
-    <p class="sin-cursos" *ngIf="!todosLosCursos.length && !cargando">Aún no hay cursos creados.</p>
+    <div class="sin-cursos" *ngIf="!todosLosCursos.length && !cargando">
+      <div class="sin-cursos-icono"><i class="ti ti-school"></i></div>
+      <h3>Aún no hay cursos creados</h3>
+      <p>Crea tu primer curso interactivo de seguridad y salud, o parte de una plantilla ya lista.</p>
+      <button type="button" class="btn-primario" (click)="mostrarNuevoCurso()">
+        <i class="ti ti-plus"></i> Crear mi primer curso
+      </button>
+    </div>
   </div>
 
   <!-- Encabezado compacto (estilo Genially: el nombre es un campito arriba, no una

@@ -123,7 +123,7 @@ export class RacNuevo implements OnInit {
     forkJoin({
       categorias: this.racService.getCategorias(),
       empresas: this.catalogosSalud.getEmpresas(),
-      proyectos: this.projectService.getProjectsPaged({ pageSize: 200, estado: 'ACTIVO' }),
+      proyectos: this.projectService.getProjectsPaged({ pageSize: 200, projectCicloVidaId: 1 }),
       workers: this.trabajadorHabService.getTrabajadores({ pageSize: 9999, soloVerificacion: true }),
     }).subscribe({
       next: ({ categorias, empresas, proyectos, workers }) => {

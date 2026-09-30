@@ -209,7 +209,7 @@ export class PenalidadesLista implements OnInit {
     this.cdr.markForCheck();
 
     forkJoin({
-      proyectos: this.projectService.getProjectsPaged({ pageSize: 200, estado: 'ACTIVO' }),
+      proyectos: this.projectService.getProjectsPaged({ pageSize: 200, projectCicloVidaId: 1 }),
       infracciones: this.penalidadService.getInfracciones(),
     }).subscribe({
       next: ({ proyectos, infracciones }) => {

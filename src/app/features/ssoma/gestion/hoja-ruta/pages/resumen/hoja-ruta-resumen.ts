@@ -62,7 +62,7 @@ export class HojaRutaResumen implements OnInit {
     }).subscribe({
       next: ({ proyectos, miProyecto }) => {
         this.proyectos = proyectos.data
-          .filter((p) => p.estado === 'ACTIVO')
+          .filter((p) => p.projectCicloVidaId === 1)
           .map((p) => ({ id: p.projectId, nombre: p.projectDescription }))
           .sort((a, b) => a.nombre.localeCompare(b.nombre));
 

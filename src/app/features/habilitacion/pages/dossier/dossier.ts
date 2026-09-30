@@ -116,7 +116,7 @@ export class Dossier implements OnInit {
     this.projectService.getProjectsPaged({ pageSize: 500 }).subscribe({
       next: (res) => {
         this.proyectos = (res.data ?? [])
-          .filter((p) => p.estado === 'ACTIVO')
+          .filter((p) => p.projectCicloVidaId === 1)
           .map((p) => ({ id: p.projectId, nombre: p.projectDescription }));
         this.loadingProyectos = false;
         this.cdr.detectChanges();

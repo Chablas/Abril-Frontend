@@ -7,6 +7,7 @@ export interface ProjectGetDTO {
     companyId?: number;
     companyName?: string;
     estado?: ProjectEstado;
+    projectCicloVidaId?: number;
     responsable?: string;
     emailResponsable?: string;
     emailRrhh?: string;
