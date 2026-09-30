@@ -1,0 +1,170 @@
+<div class="dashboard-body">
+  <button type="button" class="btn-volver" (click)="volver()">
+    <i class="ti ti-arrow-left"></i> Volver al listado
+  </button>
+
+  @if (loading) {
+    <div class="panel-loading">Cargando…</div>
+  } @else if (!grupo) {
+    <p>No se encontró este ATS grupal.</p>
+  } @else {
+    <div class="dashboard-header">
+      <div>
+        <h1 class="dashboard-titulo">{{ grupo.actividad }}</h1>
+        <p class="dashboard-subtitulo">
+          {{ grupo.proyectoNombre }}
+          @if (grupo.torreNombre) { — Torre {{ grupo.torreNombre }}@if (grupo.pisos) {, {{ grupo.pisos }}} }
+        </p>
+      </div>
+      <span class="badge" [class.badge-activo]="grupo.estado === 'Activo'" [class.badge-cerrado]="grupo.estado === 'Cerrado'">
+        {{ grupo.estado }}
+      </span>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="qr-col">
+        <div class="qr-card">
+          @if (qrDataUrl) {
+            <img [src]="qrDataUrl" alt="QR de adhesión" />
+          } @else {
+            <div class="qr-loading">Generando QR…</div>
+          }
+        </div>
+        <p class="qr-hint">Cada integrante de la cuadrilla escanea este QR desde su propio celular para adherirse — sin login, solo selfie + geolocalización + firma.</p>
+        <button type="button" class="btn btn-outline btn-sm" (click)="copiarLink()">
+          <i class="ti ti-link"></i> Copiar link
+        </button>
+      </div>
+
+      <div class="estado-col">
+        <div class="estado-contador">
+          <span class="estado-numero">{{ grupo.totalAdhesiones }}</span>
+          <span class="estado-label">trabajador(es) ya adherido(s)</span>
+        </div>
+
+        @if (grupo.trabajadoresAdheridos.length > 0) {
+          <ul class="lista-adheridos">
+            @for (nombre of grupo.trabajadoresAdheridos; track nombre) {
+              <li><i class="ti ti-check"></i> {{ nombre }}</li>
+            }
+          </ul>
+        } @else {
+          <p class="sin-adheridos">Todavía nadie se ha adherido — comparte el QR con la cuadrilla.</p>
+        }
+
+        <div class="estado-acciones">
+          <button type="button" class="btn btn-outline btn-sm" (click)="cargar()">
+            <i class="ti ti-refresh"></i> Actualizar
+          </button>
+          @if (grupo.estado === 'Activo') {
+            <button type="button" class="btn btn-secondary btn-sm" [disabled]="cerrando" (click)="cerrarGrupo()">
+              {{ cerrando ? 'Cerrando…' : 'Cerrar (dejar de aceptar firmas)' }}
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- PETAR grupal — trabajos de alto riesgo derivados de este ATS -->
+    <div class="petar-seccion">
+      <div class="petar-seccion-header">
+        <h3>PETAR de la cuadrilla</h3>
+        <button type="button" class="btn btn-outline btn-sm" (click)="abrirFormPetar()">
+          <i class="ti ti-plus"></i> Generar PETAR para este grupo
+        </button>
+      </div>
+
+      @if (petares.length === 0) {
+        <p class="sin-adheridos">Todavía no hay ningún PETAR generado para esta cuadrilla.</p>
+      } @else {
+        <div class="petar-grupo-lista">
+          @for (p of petares; track p.id) {
+            <div class="petar-grupo-card">
+              <div class="petar-grupo-card-header">
+                <strong>{{ p.tipoNombre }}</strong>
+                <span class="badge" [class.badge-activo]="p.estado === 'Activo'" [class.badge-cerrado]="p.estado === 'Cerrado'">{{ p.estado }}</span>
+              </div>
+              <p class="petar-grupo-desc">{{ p.descripcionTrabajo }}</p>
+              <p class="petar-grupo-count">{{ p.totalAdhesiones }} trabajador(es) adherido(s)</p>
+
+              <div class="petar-grupo-firmas">
+                @if (p.supervisorFirmado) {
+                  <span class="visto-ok"><i class="ti ti-check"></i> Supervisor firmado</span>
+                } @else if (p.puedeFirmarSupervisor) {
+                  <button type="button" class="btn-link-inline" (click)="abrirFirmaPetar(p, 'Supervisor')">Firmar como Supervisor</button>
+                } @else {
+                  <span class="sin-adheridos">Pendiente Supervisor</span>
+                }
+                @if (p.ssomaFirmado) {
+                  <span class="visto-ok"><i class="ti ti-check"></i> SSOMA firmado</span>
+                } @else if (p.puedeFirmarSsoma) {
+                  <button type="button" class="btn-link-inline" (click)="abrirFirmaPetar(p, 'Ssoma')">Visto Bueno SSOMA</button>
+                } @else {
+                  <span class="sin-adheridos">Pendiente SSOMA</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>
+
+@if (mostrarFormPetar) {
+  <app-abril-modal-panel titulo="Generar PETAR para la cuadrilla" icono="ti-alert-triangle" variant="blue" width="640px" (closeModal)="cerrarFormPetar()">
+    <div class="abril-field">
+      <label class="abril-field-label">Tipo de trabajo de alto riesgo *</label>
+      <select class="abril-field-input" [(ngModel)]="nuevoTipoId">
+        <option [ngValue]="null">Selecciona...</option>
+        @for (t of tipos; track t.id) { <option [ngValue]="t.id">{{ t.nombre }}</option> }
+      </select>
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Descripción del trabajo *</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="nuevaDescripcion" placeholder="Ej: Montaje de andamio fachada norte" />
+    </div>
+
+    <div class="abril-field">
+      <label class="abril-field-label">Lugar específico</label>
+      <input type="text" class="abril-field-input" [(ngModel)]="nuevoLugar" />
+    </div>
+
+    @if (tipoSeleccionado && tipoSeleccionado!.items.length > 0) {
+      <div class="abril-section-title">Checklist de verificación</div>
+      @for (item of tipoSeleccionado!.items; track item.id) {
+        <div class="checklist-item">
+          <span>{{ item.texto }}</span>
+          <div class="checklist-opciones">
+            <label><input type="radio" [name]="'item-' + item.id" [checked]="respuestaDe(item.id) === 'SI'" (change)="setRespuesta(item.id, 'SI')" /> Sí</label>
+            <label><input type="radio" [name]="'item-' + item.id" [checked]="respuestaDe(item.id) === 'NO'" (change)="setRespuesta(item.id, 'NO')" /> No</label>
+            <label><input type="radio" [name]="'item-' + item.id" [checked]="respuestaDe(item.id) === 'NA'" (change)="setRespuesta(item.id, 'NA')" /> N/A</label>
+          </div>
+        </div>
+      }
+    }
+
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarFormPetar()" [disabled]="guardandoPetar">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardarPetarGrupo()" [disabled]="!puedeGuardarPetar">
+        {{ guardandoPetar ? 'Guardando…' : 'Generar PETAR' }}
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}
+
+@if (petarFirmando) {
+  <app-abril-modal-panel [titulo]="rolFirmando === 'Supervisor' ? 'Firmar como Supervisor' : 'Visto Bueno SSOMA'" icono="ti-signature" variant="blue" width="560px" (closeModal)="cerrarFirmaPetar()">
+    <p class="visto-hint">PETAR — {{ petarFirmando.tipoNombre }}: {{ petarFirmando.descripcionTrabajo }}</p>
+    <label class="abril-field-label">Firma *</label>
+    <app-signature-pad (drawingChange)="onFirmaPetarChange($event)"></app-signature-pad>
+    <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="cerrarFirmaPetar()" [disabled]="guardandoFirmaPetar">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardarFirmaPetar()" [disabled]="!hayFirmaPetar || guardandoFirmaPetar">
+        {{ guardandoFirmaPetar ? 'Guardando…' : 'Firmar' }}
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}

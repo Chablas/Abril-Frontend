@@ -1,5 +1,5 @@
 <app-abril-modal-panel
-  titulo="Análisis de Trabajo Seguro (ATS)"
+  [titulo]="modoGrupal ? 'ATS Grupal — cuadrilla' : 'Análisis de Trabajo Seguro (ATS)'"
   icono="ti-shield-check"
   variant="blue"
   width="900px"
@@ -34,6 +34,12 @@
 
     <!-- PASO 1: Datos, pasos de la tarea, EPP, herramientas -->
     @if (paso === 1) {
+      @if (modoGrupal) {
+        <p class="pasos-hint-nuevo pasos-hint-alerta">
+          <i class="ti ti-qrcode"></i>
+          ATS grupal — llenas el contenido una sola vez para toda la cuadrilla. Al terminar, generas un QR para que cada integrante se adhiera con su propia selfie, geolocalización y firma, sin repetir este formulario.
+        </p>
+      }
       @if (modoOrigen === 'corregir') {
         <p class="pasos-hint-nuevo pasos-hint-alerta">
           <i class="ti ti-alert-triangle"></i>
@@ -444,8 +450,8 @@
 
       <div modalFooter>
         <button class="btn btn-secondary" (click)="volverAPaso(2)" [disabled]="saving">Atrás</button>
-        <button class="btn btn-primary" (click)="siguiente()" [disabled]="!valoracionValida || saving">
-          @if (saving) { Guardando… } @else { Siguiente: Firmar }
+        <button class="btn btn-primary" (click)="siguiente()" [disabled]="!valoracionValida || saving || creandoGrupo">
+          @if (creandoGrupo) { Generando QR… } @else if (saving) { Guardando… } @else if (modoGrupal) { Generar QR para la cuadrilla } @else { Siguiente: Firmar }
         </button>
       </div>
     }
@@ -460,7 +466,7 @@
 
       <div class="firmar-row">
         <div class="camara-col">
-          <app-camera-capture (listo)="onCamaraLista()"></app-camera-capture>
+          <app-camera-capture [overlayLineas]="selfieOverlayLineas" (listo)="onCamaraLista()"></app-camera-capture>
           <div class="gps-estado" [ngSwitch]="gpsEstado">
             <span *ngSwitchCase="'buscando'">📍 Buscando ubicación…</span>
             <span *ngSwitchCase="'ok'">📍 Ubicación capturada (±{{ gpsCoords?.accuracy ?? 0 | number:'1.0-0' }} m)</span>

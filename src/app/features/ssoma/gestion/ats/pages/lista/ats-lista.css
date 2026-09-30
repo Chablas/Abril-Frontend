@@ -66,15 +66,11 @@
   padding: 4px 10px;
 }
 
-/* Antes era flex-wrap horizontal con bordes divisorios — con varios grupos (firmas ATS, PETAR,
- * Corregir/Duplicar) el wrap partía los divisores a mitad de fila y se veía desordenado. Ahora
- * cada grupo es su propia fila, alineados en columna: se lee de arriba a abajo, sin cortes raros. */
+/* Una sola fila horizontal, con separadores finos entre cada acción/estado — en vez de bloques
+ * apilados o de wrap desordenado. Cuando no entra todo, se envuelve en una fila nueva completa
+ * (flex-wrap), nunca a mitad de un divisor. */
 .acciones-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  align-items: flex-start;
-  min-width: 220px;
+  min-width: 460px;
   padding-top: 10px;
   padding-bottom: 10px;
 }
@@ -82,14 +78,40 @@
 .acciones-grupo {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
+  row-gap: 10px;
 }
+
+.acciones-divisor {
+  width: 1px;
+  align-self: stretch;
+  background: #e5e7eb;
+  margin: 0 2px;
+}
+
+.btn-ats-grupal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 7px;
+  border: 1px solid var(--color-abril-logo-blue-light);
+  background: #fff;
+  color: var(--color-abril-logo-blue);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-ats-grupal:hover { background: var(--color-abril-logo-blue-light); }
 
 .lugar-cell {
   font-size: 12.5px;
   color: #374151;
   white-space: nowrap;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .acciones-grupo--petar .btn-petar { font-weight: 700; }
@@ -160,27 +182,35 @@
 .petar-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   border: 1px solid #fde68a;
   background: #fffbeb;
   border-radius: 8px;
-  padding: 6px 8px;
+  padding: 8px 10px;
+  min-width: 340px;
 }
 
 .petar-card-header {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11.5px;
+  font-size: 12px;
   color: #92400e;
+  white-space: nowrap;
 }
 .petar-card-header i { color: #b45309; }
 
 .petar-item-acciones {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
+  row-gap: 6px;
+}
+
+.petar-divisor {
+  color: #fcd34d;
+  font-size: 10px;
 }
 
 .iperc-preview {

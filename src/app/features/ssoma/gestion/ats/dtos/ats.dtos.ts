@@ -303,3 +303,57 @@ export interface AtsRiesgoControlGuardarRequestDto {
   texto: string;
   tipo: TipoControl;
 }
+
+// ── ATS Grupal (cuadrilla) ───────────────────────────────────────────────────
+
+export interface AtsGrupoCrearResponseDto {
+  id: number;
+  qrToken: string;
+  qrExpiraEn: string;
+}
+
+export interface AtsGrupoEstadoDto {
+  id: number;
+  actividad: string;
+  proyectoNombre?: string;
+  torreNombre?: string;
+  pisos?: string;
+  fecha: string;
+  estado: 'Activo' | 'Cerrado';
+  qrToken: string;
+  qrExpiraEn: string;
+  totalAdhesiones: number;
+  trabajadoresAdheridos: string[];
+}
+
+export interface AtsGrupoResumenPublicoDto {
+  valido: boolean;
+  motivoInvalido?: string;
+  proyectoNombre?: string;
+  actividad?: string;
+  torreNombre?: string;
+  pisos?: string;
+  lugar?: string;
+  fecha?: string;
+  epps: string[];
+  herramientas: string[];
+  riesgos: AtsRiesgoDetalleResponseDto[];
+}
+
+export interface AtsGrupoWorkerOpcionDto {
+  workerId: number;
+  nombre: string;
+  dniUltimos4?: string;
+}
+
+export interface AtsGrupoUnirseRequestDto {
+  workerId: number;
+  dniConfirmacion: string;
+  selfieBase64: string;
+  firmaBase64: string;
+  horaDispositivo: string;
+  lat: number | null;
+  lng: number | null;
+  precisionMetros: number | null;
+  aceptaConsentimiento: boolean;
+}

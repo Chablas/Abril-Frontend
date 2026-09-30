@@ -12,6 +12,11 @@ export const ATS_ROUTES: Routes = [
     data: { titulo: 'NUEVO ATS', roles: [] },
   },
   {
+    path: 'grupo/:id',
+    loadComponent: () => import('./pages/grupo-dashboard/ats-grupo-dashboard').then((m) => m.AtsGrupoDashboard),
+    data: { titulo: 'ATS GRUPAL', roles: [] },
+  },
+  {
     path: 'plantillas',
     loadComponent: () => import('./pages/plantillas/ats-plantillas').then((m) => m.AtsPlantillas),
     data: { titulo: 'PLANTILLAS DE ATS', roles: [] },

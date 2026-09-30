@@ -5,6 +5,9 @@
   [tabs]="headerTabs"
   (primaryClick)="nuevoAts()">
   <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true"></app-filter-trigger>
+  <button type="button" tabsExtra class="btn-ats-grupal" (click)="nuevoAtsGrupal()" title="Un solo ATS para toda la cuadrilla — cada integrante se adhiere escaneando un QR, sin llenar el wizard completo.">
+    <i class="ti ti-qrcode"></i> ATS grupal
+  </button>
 </app-abril-page-header>
 
 <div class="lista-body">
@@ -72,10 +75,8 @@
             <td>{{ a.workerNombre }}</td>
             <td>{{ a.proyectoNombre }}</td>
             <td class="lugar-cell">
-              @if (a.torreNombre) {
-                Torre {{ a.torreNombre }}@if (a.pisos) {<span>, {{ a.pisos }}</span>}
-              } @else if (a.lugar) {
-                {{ a.lugar }}
+              @if (a.torreNombre || a.lugar) {
+                <span [title]="lugarCompletoTitle(a)">{{ lugarCompacto(a) }}</span>
               } @else {
                 <span class="visto-pendiente">—</span>
               }
@@ -106,6 +107,7 @@
                       } @else {
                         <div class="petar-item-acciones">
                           <button class="btn-link-inline" (click)="descargarPdfPetar(p.id)">PDF</button>
+                          <span class="petar-divisor">•</span>
                           @if (p.supervisorFirmado) {
                             <span class="visto-ok" title="Firmado"><i class="ti ti-check"></i> Supervisor</span>
                           } @else if (p.puedeFirmarSupervisor) {
@@ -113,6 +115,7 @@
                           } @else {
                             <span class="visto-pendiente">Pendiente Supervisor</span>
                           }
+                          <span class="petar-divisor">•</span>
                           @if (p.ssomaFirmado) {
                             <span class="visto-ok" title="Firmado"><i class="ti ti-check"></i> SSOMA</span>
                           } @else if (p.puedeFirmarSsoma) {
@@ -144,6 +147,7 @@
                   <button class="btn btn-outline btn-sm" (click)="descargarPdf(a)" title="Descarga el PDF del ATS (no del PETAR, si es que tiene uno).">
                     <i class="ti ti-download"></i> PDF ATS
                   </button>
+                  <span class="acciones-divisor"></span>
                   @if (a.autorizaFirmaUrl) {
                     <span class="visto-ok" title="Firmado por {{ a.autorizaNombre }}"><i class="ti ti-check"></i> ATS Autorizado</span>
                   } @else if (a.puedeAutorizar) {
@@ -151,6 +155,7 @@
                   } @else {
                     <span class="visto-pendiente">ATS: pendiente Residente</span>
                   }
+                  <span class="acciones-divisor"></span>
                   @if (a.ssomaFirmaUrl) {
                     <span class="visto-ok" title="Firmado por {{ a.ssomaNombre }}"><i class="ti ti-check"></i> SSOMA OK (ATS)</span>
                   } @else if (a.puedeVistoBuenoSsoma) {
@@ -158,24 +163,20 @@
                   } @else {
                     <span class="visto-pendiente">ATS: pendiente SSOMA</span>
                   }
-                </div>
-
-                <div class="acciones-grupo acciones-grupo--petar">
+                  <span class="acciones-divisor"></span>
                   <button class="btn btn-outline btn-sm btn-petar" (click)="generarPetar(a)" title="Otra tarea de alto riesgo dentro de esta misma jornada (ej. además de Altura, también Espacio Confinado) — genera un PETAR NUEVO e independiente.">
                     <i class="ti ti-alert-triangle"></i> {{ a.petares.length > 0 ? 'Generar otro PETAR' : 'Generar PETAR' }}
                   </button>
+                  @if (esCorregibleHoy(a)) {
+                    <span class="acciones-divisor"></span>
+                    <button class="btn btn-outline btn-sm" (click)="corregirAts(a)" title="La condición real en campo fue distinta a la evaluada — crea un ATS nuevo enlazado a este, sin modificar el ya firmado.">
+                      <i class="ti ti-edit"></i> Corregir
+                    </button>
+                    <button class="btn btn-outline btn-sm" (click)="duplicarAts(a)" title="Misma tarea y riesgos, otro lugar (ej. Torre B en vez de Torre A) — precarga todo, solo ajustas el lugar.">
+                      <i class="ti ti-copy"></i> Duplicar
+                    </button>
+                  }
                 </div>
-
-                @if (esCorregibleHoy(a)) {
-                <div class="acciones-grupo acciones-grupo--corregir">
-                  <button class="btn btn-outline btn-sm" (click)="corregirAts(a)" title="La condición real en campo fue distinta a la evaluada — crea un ATS nuevo enlazado a este, sin modificar el ya firmado.">
-                    <i class="ti ti-edit"></i> Corregir
-                  </button>
-                  <button class="btn btn-outline btn-sm" (click)="duplicarAts(a)" title="Misma tarea y riesgos, otro lugar (ej. Torre B en vez de Torre A) — precarga todo, solo ajustas el lugar.">
-                    <i class="ti ti-copy"></i> Duplicar
-                  </button>
-                </div>
-                }
               }
             </td>
           </tr>

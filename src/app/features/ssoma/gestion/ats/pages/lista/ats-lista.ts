@@ -210,6 +210,10 @@ export class AtsLista implements OnInit {
     this.router.navigate(['/ssoma/gestion/ats/nuevo']);
   }
 
+  nuevoAtsGrupal(): void {
+    this.router.navigate(['/ssoma/gestion/ats/nuevo'], { queryParams: { grupal: 1 } });
+  }
+
   /** Un ATS en Borrador se guardó hasta el paso 3 (Valoración) pero nunca llegó a Firmar — antes
    *  no había forma de retomarlo, quedaba huérfano en la lista para siempre. */
   continuarAts(a: AtsResponseDto): void {
@@ -248,6 +252,51 @@ export class AtsLista implements OnInit {
       },
       error: (err: HttpErrorResponse) => this.errorService.handleError(err),
     });
+  }
+
+  /** "Torre A, Piso 1, Piso 2, Piso 3, Piso 4, Cisterna 1, Azotea" desbordaba la celda y rompía
+   *  la tabla entera — comprime pisos consecutivos en rango ("Piso 1-4") y, si aun así es largo,
+   *  lo corta con "…" dejando el texto completo en el title (tooltip) para no perder info. */
+  lugarCompacto(a: AtsResponseDto): string {
+    if (a.torreNombre) {
+      const pisos = this.comprimirPisos(a.pisos);
+      return pisos ? `Torre ${a.torreNombre} — ${pisos}` : `Torre ${a.torreNombre}`;
+    }
+    return a.lugar ?? '';
+  }
+
+  lugarCompletoTitle(a: AtsResponseDto): string {
+    if (a.torreNombre) return a.pisos ? `Torre ${a.torreNombre}, ${a.pisos}` : `Torre ${a.torreNombre}`;
+    return a.lugar ?? '';
+  }
+
+  private comprimirPisos(pisos?: string): string {
+    if (!pisos) return '';
+    const labels = pisos.split(',').map((s) => s.trim()).filter(Boolean);
+
+    const piso = /^Piso (\d+)$/i;
+    const salida: string[] = [];
+    let rango: number[] = [];
+
+    const cerrarRango = () => {
+      if (rango.length === 0) return;
+      salida.push(rango.length === 1 ? `Piso ${rango[0]}` : `Piso ${rango[0]}-${rango[rango.length - 1]}`);
+      rango = [];
+    };
+
+    for (const label of labels) {
+      const m = piso.exec(label);
+      const n = m ? Number(m[1]) : null;
+      if (n !== null && (rango.length === 0 || n === rango[rango.length - 1] + 1)) {
+        rango.push(n);
+      } else {
+        cerrarRango();
+        if (n !== null) rango.push(n);
+        else salida.push(label);
+      }
+    }
+    cerrarRango();
+    return salida.join(', ');
   }
 
   estadoClass(estado: string): string {

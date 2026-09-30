@@ -141,6 +141,19 @@ export class AtsNuevo implements OnInit {
   @ViewChild(CameraCapture) camara?: CameraCapture;
   @ViewChild(SignaturePad) firmaPad?: SignaturePad;
 
+  /** Fecha/hora, proyecto/lugar y coordenadas "quemadas" sobre la selfie — mismo criterio que
+   *  las apps de cámara con marca de tiempo. Getter (no valor fijo) porque el GPS puede llegar
+   *  después de que la cámara ya esté lista. */
+  get selfieOverlayLineas(): string[] {
+    const lineas = [new Date().toLocaleString('es-PE')];
+    const proyecto = this.proyectosOpts.find((p) => p.id === this.proyectoId)?.nombre;
+    if (proyecto) lineas.push(proyecto);
+    if (!this.esExterior && this.torreNombre) lineas.push(`Torre ${this.torreNombre}`);
+    else if (this.lugar.trim()) lineas.push(this.lugar.trim());
+    if (this.gpsCoords) lineas.push(`${this.gpsCoords.latitude.toFixed(5)}, ${this.gpsCoords.longitude.toFixed(5)}`);
+    return lineas;
+  }
+
   constructor(
     private svc: AtsService,
     private firmaPersonalSvc: FirmaPersonalService,
@@ -157,12 +170,18 @@ export class AtsNuevo implements OnInit {
    *  mismo prellenado; solo cambia el aviso que ve el trabajador. */
   atsAnteriorId: number | null = null;
   modoOrigen: 'corregir' | 'duplicar' | null = null;
+  /** ?grupal=1 — un solo ATS para toda la cuadrilla: el autor llena datos/pasos/peligros/
+   *  valoración UNA vez y, en vez de firmar él mismo, genera un QR para que cada integrante se
+   *  adhiera por su cuenta (selfie+geo+firma liviana), sin repetir el wizard. */
+  modoGrupal = false;
+  creandoGrupo = false;
   /** ?continuar=id — un ATS en Borrador (guardado hasta el paso 3, nunca llegó a Firmar) que se
    *  reabre para seguir llenándolo, a diferencia de corregir/duplicar esto EDITA el mismo
    *  registro (this.atsId = id), no crea uno nuevo. */
   private borradorId: number | null = null;
 
   ngOnInit(): void {
+    this.modoGrupal = this.route.snapshot.queryParamMap.get('grupal') === '1';
     const corregir = this.route.snapshot.queryParamMap.get('corregir');
     const duplicar = this.route.snapshot.queryParamMap.get('duplicar');
     const continuar = this.route.snapshot.queryParamMap.get('continuar');
@@ -821,6 +840,12 @@ export class AtsNuevo implements OnInit {
 
   siguiente(): void {
     if (!this.valoracionValida || this.saving) return;
+
+    if (this.modoGrupal) {
+      this.crearGrupo();
+      return;
+    }
+
     this.saving = true;
     this.loaderService.show();
 
@@ -859,6 +884,25 @@ export class AtsNuevo implements OnInit {
   volver(): void {
     this.paso = 3;
     this.cdr.markForCheck();
+  }
+
+  private crearGrupo(): void {
+    if (this.creandoGrupo) return;
+    this.creandoGrupo = true;
+    this.loaderService.show();
+    this.svc.crearGrupo(this.buildDto()).subscribe({
+      next: (res) => {
+        this.creandoGrupo = false;
+        this.loaderService.hide();
+        this.router.navigate(['/ssoma/gestion/ats/grupo', res.id]);
+      },
+      error: (err: HttpErrorResponse) => {
+        this.creandoGrupo = false;
+        this.loaderService.hide();
+        this.errorService.handleError(err);
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   // ── Paso 2: geolocalización, cámara, firma ───────────────────────

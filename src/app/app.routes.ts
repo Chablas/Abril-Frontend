@@ -216,6 +216,13 @@ export const routes: Routes = [
   },
 
   {
+    path: 'ats-grupal/:token',
+    loadComponent: () =>
+      import('./features/ats-grupal-publico/ats-grupal-publico')
+      .then(m => m.AtsGrupalPublico)
+  },
+
+  {
     path: 'portal-trabajador',
     loadComponent: () =>
       import('./features/portal-trabajador/portal-trabajador')

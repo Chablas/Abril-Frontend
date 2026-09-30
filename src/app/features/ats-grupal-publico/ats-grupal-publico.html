@@ -1,0 +1,185 @@
+<div class="publico-wrap">
+  <div class="publico-card">
+    <div class="publico-header">
+      <i class="ti ti-shield-check"></i>
+      <span>ATS Digital — Adhesión grupal</span>
+    </div>
+
+    @if (cargando) {
+      <div class="publico-loading">Cargando…</div>
+    } @else if (!resumen?.valido) {
+      <div class="publico-error">
+        <i class="ti ti-alert-triangle"></i>
+        <p>{{ resumen?.motivoInvalido }}</p>
+      </div>
+    } @else {
+
+      @if (paso === 'resumen') {
+        <div class="publico-body">
+          <h2>{{ resumen!.actividad }}</h2>
+          <p class="publico-sub">
+            {{ resumen!.proyectoNombre }}
+            @if (resumen!.torreNombre) { — Torre {{ resumen!.torreNombre }}@if (resumen!.pisos) {, {{ resumen!.pisos }}} }
+            @if (resumen!.lugar) { — {{ resumen!.lugar }} }
+          </p>
+
+          @if (resumen!.riesgos.length > 0) {
+            <div class="publico-seccion">
+              <strong>Peligros y riesgos identificados</strong>
+              <ul>
+                @for (r of resumen!.riesgos; track r.riesgoId) {
+                  <li>{{ r.peligroNombre }} — {{ r.riesgoNombre }} <span class="nivel-tag" [class]="'nivel-' + r.riesgoResidual">{{ r.riesgoResidual }}</span></li>
+                }
+              </ul>
+            </div>
+          }
+
+          @if (resumen!.epps.length > 0) {
+            <div class="publico-seccion">
+              <strong>EPP requerido</strong>
+              <p>{{ resumen!.epps.join(', ') }}</p>
+            </div>
+          }
+
+          @if (resumen!.herramientas.length > 0) {
+            <div class="publico-seccion">
+              <strong>Herramientas / equipos</strong>
+              <p>{{ resumen!.herramientas.join(', ') }}</p>
+            </div>
+          }
+
+          <p class="publico-hint">Lee bien los riesgos de esta tarea antes de continuar — al firmar declaras que entendiste y aceptas trabajar bajo estas condiciones.</p>
+
+          <button type="button" class="btn btn-primary btn-full" (click)="irAIdentidad()">
+            Continuar — soy parte de esta cuadrilla
+          </button>
+        </div>
+      }
+
+      @if (paso === 'identidad') {
+        <div class="publico-body">
+          <h2>¿Quién eres?</h2>
+          <app-search-select
+            label="Tu nombre"
+            [options]="workers"
+            valueField="workerId"
+            displayField="nombre"
+            [value]="workerId"
+            placeholder="Busca tu nombre..."
+            (valueChange)="workerId = $event"
+          ></app-search-select>
+
+          <div class="abril-field">
+            <label class="abril-field-label">Últimos dígitos de tu DNI *</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="dniConfirmacion" maxlength="8" placeholder="Ej: 4567" inputmode="numeric" />
+          </div>
+          <p class="publico-hint">Esto confirma que eres tú y no otra persona eligiendo tu nombre por error.</p>
+
+          <button type="button" class="btn btn-primary btn-full" [disabled]="!puedeContinuarIdentidad" (click)="irAFirmar()">
+            Continuar a firmar
+          </button>
+        </div>
+      }
+
+      @if (paso === 'firmar') {
+        <div class="publico-body">
+          <h2>Firmar como {{ nombreConfirmado }}</h2>
+
+          <div class="firmar-bloque">
+            <label class="abril-field-label">Selfie</label>
+            <app-camera-capture [overlayLineas]="selfieOverlayLineas" (listo)="onCamaraLista()"></app-camera-capture>
+          </div>
+
+          <p class="gps-estado">
+            @if (gpsEstado === 'buscando') { <i class="ti ti-loader"></i> Buscando tu ubicación… }
+            @else if (gpsEstado === 'ok') { <i class="ti ti-map-pin"></i> Ubicación capturada. }
+            @else { <i class="ti ti-map-pin-off"></i> No se pudo obtener tu ubicación — puedes seguir, pero avisa al Coordinador SSOMA. }
+          </p>
+
+          <div class="firmar-bloque">
+            <label class="abril-field-label">Tu firma</label>
+            <app-signature-pad (drawingChange)="onFirmaChange($event)"></app-signature-pad>
+            <button type="button" class="btn-link-inline" (click)="firmaPad?.clear()">Limpiar firma</button>
+          </div>
+
+          <label class="check-label">
+            <input type="checkbox" [(ngModel)]="aceptaConsentimiento" />
+            Acepto el uso de mi imagen (selfie) y geolocalización para este ATS digital.
+          </label>
+
+          <button type="button" class="btn btn-primary btn-full" [disabled]="!puedeFirmar" (click)="firmar()">
+            {{ enviando ? 'Firmando…' : 'Firmar ATS' }}
+          </button>
+        </div>
+      }
+
+      @if (paso === 'petares') {
+        <div class="publico-body">
+          <h2>¿Vas a hacer alguno de estos trabajos de alto riesgo?</h2>
+          <p class="publico-hint">Marca los que te correspondan a ti — no todos en la cuadrilla hacen la misma tarea. Cada uno necesita un PETAR firmado antes de empezar.</p>
+
+          @for (p of petares; track p.id) {
+            <label class="petar-opcion">
+              <input type="checkbox" [checked]="petaresSeleccionados.has(p.id)" (change)="togglePetarSeleccionado(p.id)" />
+              <span>
+                <strong>{{ p.tipoNombre }}</strong>
+                <span class="publico-hint">{{ p.descripcionTrabajo }}</span>
+              </span>
+            </label>
+          }
+
+          <button type="button" class="btn btn-primary btn-full" (click)="confirmarPetaresSeleccionados()">
+            Continuar
+          </button>
+          <button type="button" class="btn btn-outline btn-full" (click)="omitirPetares()">
+            Ninguno me aplica
+          </button>
+        </div>
+      }
+
+      @if (paso === 'petar-firmar' && petarActual) {
+        <div class="publico-body">
+          <h2>PETAR — {{ petarActual.tipoNombre }}</h2>
+          <p class="publico-sub">{{ petarActual.descripcionTrabajo }}</p>
+
+          @if (petarActual.respuestas.length > 0) {
+            <div class="publico-seccion">
+              <strong>Checklist verificado</strong>
+              <ul>
+                @for (r of petarActual.respuestas; track r.itemId) {
+                  <li>{{ r.texto }} — <strong>{{ r.respuesta }}</strong></li>
+                }
+              </ul>
+            </div>
+          }
+
+          <div class="firmar-bloque">
+            <label class="abril-field-label">Selfie</label>
+            <app-camera-capture [overlayLineas]="petarOverlayLineas" (listo)="onCamaraLista()"></app-camera-capture>
+          </div>
+
+          <div class="firmar-bloque">
+            <label class="abril-field-label">Tu firma</label>
+            <app-signature-pad (drawingChange)="onFirmaPetarChange($event)"></app-signature-pad>
+            <button type="button" class="btn-link-inline" (click)="firmaPad?.clear()">Limpiar firma</button>
+          </div>
+
+          <button type="button" class="btn btn-primary btn-full" [disabled]="!puedeFirmarPetar" (click)="firmarPetarActual()">
+            {{ enviandoPetar ? 'Firmando…' : 'Firmar este PETAR' }}
+          </button>
+        </div>
+      }
+
+      @if (paso === 'exito') {
+        <div class="publico-body publico-exito">
+          <i class="ti ti-circle-check"></i>
+          <h2>¡Listo, {{ nombreConfirmado }}!</h2>
+          <p>Tu ATS quedó firmado con selfie y geolocalización.</p>
+          <button type="button" class="btn btn-outline btn-full" (click)="firmarOtro()">
+            Otra persona de la cuadrilla va a firmar en este mismo celular
+          </button>
+        </div>
+      }
+    }
+  </div>
+</div>

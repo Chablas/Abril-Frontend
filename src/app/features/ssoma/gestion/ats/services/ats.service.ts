@@ -25,6 +25,11 @@ import {
   AtsRiesgoControlGuardarRequestDto,
   AtsAutorizacionFirmaDigitalRequestDto,
   AtsPlantillaPuestoDto,
+  AtsGrupoCrearResponseDto,
+  AtsGrupoEstadoDto,
+  AtsGrupoResumenPublicoDto,
+  AtsGrupoWorkerOpcionDto,
+  AtsGrupoUnirseRequestDto,
 } from '../dtos/ats.dtos';
 
 function authHeaders(): HttpHeaders {
@@ -225,5 +230,33 @@ export class AtsService {
 
   eliminarControl(controlId: number): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.base}/controles/${controlId}`, { headers: authHeaders() });
+  }
+
+  // ── ATS Grupal (autor, requiere login) ──────────────────────────────────
+
+  crearGrupo(dto: AtsGuardarRequestDto): Observable<AtsGrupoCrearResponseDto> {
+    return this.http.post<AtsGrupoCrearResponseDto>(`${this.base}/grupo`, dto, { headers: authHeaders() });
+  }
+
+  getEstadoGrupo(id: number): Observable<AtsGrupoEstadoDto> {
+    return this.http.get<AtsGrupoEstadoDto>(`${this.base}/grupo/${id}/estado`, { headers: authHeaders() });
+  }
+
+  cerrarGrupo(id: number): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/grupo/${id}/cerrar`, {}, { headers: authHeaders() });
+  }
+
+  // ── ATS Grupal (adhesión pública, SIN login — el token del QR es el único candado) ──
+
+  getResumenPublico(token: string): Observable<AtsGrupoResumenPublicoDto> {
+    return this.http.get<AtsGrupoResumenPublicoDto>(`${this.base}/grupo/publico/${token}/resumen`);
+  }
+
+  getWorkersParaAdhesion(token: string): Observable<AtsGrupoWorkerOpcionDto[]> {
+    return this.http.get<AtsGrupoWorkerOpcionDto[]>(`${this.base}/grupo/publico/${token}/trabajadores`);
+  }
+
+  unirseAGrupo(token: string, dto: AtsGrupoUnirseRequestDto): Observable<{ id: number; message: string }> {
+    return this.http.post<{ id: number; message: string }>(`${this.base}/grupo/publico/${token}/unirse`, dto);
   }
 }
