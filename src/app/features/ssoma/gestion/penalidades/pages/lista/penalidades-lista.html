@@ -264,7 +264,7 @@
             {{ empresaSeleccionada?.emailAdministrador || '— sin correo de administrador registrado para esta empresa, verifícalo antes de continuar —' }}
           </p>
           <p class="notificacion-preview__linea" *ngIf="notificacionInicial as noti">
-            <b>Residencia</b> (al registrar, para su aprobación): {{ noti.para.length ? noti.para.join(', ') : '— sin correo de Residente registrado para este proyecto —' }}
+            <b>Residencia</b> (al registrar, para su aprobación): {{ noti.aviso || (noti.para.length ? noti.para.join(', ') : '— sin correo de Residente registrado para este proyecto —') }}
           </p>
         </div>
       </div>
