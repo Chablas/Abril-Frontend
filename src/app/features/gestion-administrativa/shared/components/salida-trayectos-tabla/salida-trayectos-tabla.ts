@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 
-import { DraggableImage } from '../../../../../shared/components/draggable-image/draggable-image';
 import { TrayectoDetalleDto } from '../../dtos/salida-detalle.dto';
+import { CapturaMiniatura } from '../captura-miniatura/captura-miniatura';
 import { DocumentoEmbebido } from '../documento-embebido/documento-embebido';
 
 /**
@@ -16,6 +16,7 @@ import { DocumentoEmbebido } from '../documento-embebido/documento-embebido';
  * Las capturas de movilidad viven DENTRO de la fila de su trayecto: si un trayecto tiene varias,
  * se ven todas (imagen + monto) y la fila crece lo que haga falta. Ninguna se recorta ni se
  * esconde detrás de un contador: el revisor tiene que poder contrastar cada voucher con su monto.
+ * La que es un PDF se ve como el ícono rojo de archivo (`app-captura-miniatura`).
  *
  * Es solo de lectura. La edición de capturas y montos sigue siendo un formulario
  * (`app-salida-capturas-editor`), no una tabla.
@@ -27,7 +28,7 @@ import { DocumentoEmbebido } from '../documento-embebido/documento-embebido';
 @Component({
   standalone: true,
   selector: 'app-salida-trayectos-tabla',
-  imports: [CommonModule, DraggableImage, DocumentoEmbebido],
+  imports: [CommonModule, CapturaMiniatura, DocumentoEmbebido],
   templateUrl: './salida-trayectos-tabla.html',
   styles: [`
     :host { display: block; }
