@@ -6199,3 +6199,37 @@ Endpoint nuevo en `victor-backend` (aún no mergeado a este momento): `GET api/v
 ### Pendiente
 - Mergear `victor-backend` (o desplegar el endpoint) antes de poder probar esta vista end-to-end; hasta entonces el modal mostrará el error genérico de `ErrorService`.
 - Verificación visual del usuario una vez el backend esté disponible.
+
+## Sesión 2026-09-29 — Módulo Contratos de Unidad de Proyectos (flujo de 9 pasos)
+
+### Contexto
+Frontend del backend nuevo `api/v1/projectcontract` (rama `victor-backend`, `Features/UnidadDeProyectosModule/Features/ContratosFeature/`): contratos de locación de servicios con consultores de diseño por especialidad, flujo de 9 estados (`projectContractStatusId` 1-9). Convenciones calcadas de Adjudicaciones (lista + detalle en modal con stepper clickeable), pero aplicando el estándar UI 2026 de CLAUDE.md (filter-trigger/filter-modal, `abril-table`, `ClientPager` + `app-paginator`, `app-abril-modal-panel` teal).
+
+### Cambios
+- **Ruta** `/projects/contratos` en `proyectos.routes.ts` (`featureKey: 'unidad-de-proyectos.contratos'`, `titulo: 'CONTRATOS'`), pestaña en `PROJECTS_TABS` y entrada en el módulo "Proyectos" del sidebar (`navigation.service.ts`). Crear/editar/avanzar pasos solo con `unidad-de-proyectos.contratos.editar` (`authService.hasFeature`); sin él todo es solo lectura.
+  - Se probó brevemente que el frontend dejara entrar con "ver" O ".editar", pero se revirtió: el backend exige "ver" a nivel de clase en TODOS los endpoints (`[RequireFeature(ContratosFeatures.Ver)]` en `ProjectContractController`), así que un rol con solo ".editar" vería la pantalla y recibiría 403 en cada llamada. El script `Migrations/Manual/20260929_ContratosFeatureRoles.sql` del backend deja "ver" sin roles a propósito; el usuario se la asignó a mano a su rol (Coordinador de Proyectos) y ya ve el módulo.
+- **Feature nueva** `features/projects/contratos/` (R3: dtos/services dentro del feature, no en `core/`): `dtos/contrato.dtos.ts`, `services/contratos.service.ts`, `constants/contrato-pasos.ts` (9 nombres de estado + feature keys + colores de badge), `utils/contrato-local.ts` (recalcula monto/garantía de hitos igual que el backend), `shared/contratos-ui.css` (botones/avisos/skeleton/estado vacío compartidos, acento `--color-abril-standard`).
+- **Lista** `pages/contratos-lista/`: entrar = 1 GET (catálogos reutilizados de `GET api/v1/projectSubContractor/form-data` de Adjudicaciones, solo `[Authorize]` — proyectos, contratistas homologados con sus correos, monedas y especialidades activas); elegir proyecto (en el modal de filtros) = 1 GET de sus contratos. Filtros: proyecto, texto (contratista/especialidad/servicio/N°), estado. FAB "Nuevo contrato" + botón secundario "Carpeta SharePoint".
+- **Modales** (hermanos a nivel de página, nunca anidados): `contrato-form` (crear/editar; contratista y especialidad fijos al editar porque el PUT no los acepta), `contrato-detalle` (stepper de 9 pasos + contenido por paso), `contrato-carpeta` (GET/POST `carpeta?projectId=`).
+- **Detalle**: paso 2 = datos + hitos de pago (agregar/eliminar, validación frontend ≤ 100%, último por `order` = garantía); paso 3 = checklist + descarga `.docx` (blob; errores blob re-parseados a JSON para `ErrorService`); paso 4 = enviar por correo o registrar envío externo (`skipNotification`); paso 5 = llegada con/sin observaciones; paso 6 = 3 firmas que se guardan al marcarlas; paso 7 = solo aviso (sin endpoint); pasos 8/9 = notificar / cerrar. Ninguna mutación recarga con GET (1 acción = 1 HTTP): se actualiza el contrato en memoria, que es la misma referencia que la fila de la lista.
+- Regla solo de pantalla: datos/hitos/regenerar editables hasta el estado 5 (`ULTIMO_ESTADO_EDITABLE`), para poder corregir si el expediente llega con observaciones.
+- `scripts/generate-feature-display-names.js`: agregado `unidad-de-proyectos.contratos.editar` a `SECCIONES_SIN_RUTA`; regenerado `feature-display-names.generated.ts` (solo +2 entradas).
+
+### Archivos clave
+- `features/projects/contratos/**` (nuevo)
+- `features/projects/proyectos.routes.ts`, `features/projects/shared/projects-tabs.ts`, `core/navigation/navigation.service.ts`
+- `scripts/generate-feature-display-names.js`, `core/navigation/feature-display-names.generated.ts`
+
+### Verificado
+`ng build` → exit 0 sin errores. El usuario confirmó que el módulo ya aparece tras asignar "ver" a su rol. Flujo completo NO probado contra backend real en esta sesión.
+
+### Pendiente (backend, `Abril_Backend` rama `victor-backend`)
+- **Bloqueante**: `ContractNumber` nunca se asigna (ni Create/Edit ni otro endpoint) → `generar-contrato` siempre responde 400 "Número de contrato", y el paso 4 con correo también (regenera el documento). La UI lo muestra "Por asignar".
+- Asignar "ver" (`unidad-de-proyectos.contratos`) a los demás roles con ".editar" (JEFE DE PROYECTOS, GERENTE INMOBILIARIO, USUARIO DE UDP), o cambiar el controller a `[RequireFeature(Ver, Editar)]` para que editar implique ver.
+- El backend no avanza los estados 2 y 3 ni valida el orden de los pasos 4-9 (la secuencia la impone el frontend; pasos 1-4 se tratan como una sola fase mientras estado ≤ 3).
+- No hay endpoint para editar un hito (fecha de pago / cheque-recibo solo al crearlo); no valida que los % sumen ≤ 100; el POST de hitos devuelve `esHitoDeGarantia=false` siempre (recalculado en frontend).
+- `Content-Disposition` no expuesto por CORS en `generar-contrato` → el archivo baja como `Contrato-{id}.docx` en vez de "CONTRATO N°…" (agregar `Access-Control-Expose-Headers`, como en `GestionSalidaController`).
+- Paso 7 (escaneo del firmado) sin endpoint.
+
+### Pendiente (frontend)
+- `OwnerMilestoneDTO` (sesión 2026-09-28) quedó en `core/dtos/milestoneSchedule/`, lo que viola R3 (DTOs en `features/`); mover si se confirma.
