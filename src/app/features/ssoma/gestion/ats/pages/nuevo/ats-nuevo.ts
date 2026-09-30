@@ -363,9 +363,15 @@ export class AtsNuevo implements OnInit {
     return this.herramientasMarcadas.has(id);
   }
 
-  toggleHerramienta(id: number): void {
-    if (this.herramientasMarcadas.has(id)) this.herramientasMarcadas.delete(id);
-    else this.herramientasMarcadas.add(id);
+  toggleHerramienta(id: number, categoria: string): void {
+    if (this.herramientasMarcadas.has(id)) {
+      this.herramientasMarcadas.delete(id);
+    } else {
+      this.herramientasMarcadas.add(id);
+      // Marcar algo en la categoría contradice "No aplica" — se destilda sola en vez de dejar
+      // ambas cosas marcadas a la vez (ej. Andamio colgante + "No aplica" al mismo tiempo).
+      this.herramientasNoAplica.delete(categoria);
+    }
   }
 
   get herramientasPorCategoria(): { categoria: string; items: { id: number; nombre: string }[] }[] {
@@ -379,6 +385,14 @@ export class AtsNuevo implements OnInit {
 
   herramientasCategoriaNoAplica(categoria: string): boolean {
     return this.herramientasNoAplica.has(categoria);
+  }
+
+  /** "No aplica" queda deshabilitado si ya hay algo marcado en esa categoría — no tiene sentido
+   *  decir "no aplica" y tener Andamio colgante tildado al mismo tiempo; hay que destildar
+   *  primero lo marcado. */
+  herramientasCategoriaTieneAlgoMarcado(categoria: string): boolean {
+    const grupo = this.herramientasPorCategoria.find((g) => g.categoria === categoria);
+    return grupo?.items.some((h) => this.herramientaSeleccionada(h.id)) ?? false;
   }
 
   toggleHerramientasCategoriaNoAplica(categoria: string): void {
@@ -559,6 +573,13 @@ export class AtsNuevo implements OnInit {
     this.actividadesPlantilla = [];
     this.actividadPasosMarcados.clear();
 
+    // Al elegir (o cambiar de) plantilla, el EPP/herramientas sugeridos REEMPLAZAN lo que
+    // hubiera precargado — antes se sumaban (quedaba EPP de la plantilla anterior mezclado con
+    // la nueva). Lo que el trabajador marcó a mano en el catálogo general, fuera de lo que
+    // sugiere cualquier plantilla, no se toca.
+    this.eppsMarcados.clear();
+    this.herramientasMarcadas.clear();
+
     const plantilla = this.init?.plantillas.find((p) => p.id === plantillaId);
     if (!plantilla) { this.cdr.markForCheck(); return; }
     plantilla.eppIds.forEach((id) => this.eppsMarcados.add(id));
@@ -717,6 +738,29 @@ export class AtsNuevo implements OnInit {
 
   get valoracionValida(): boolean {
     return this.riesgosSeleccionados.every((r) => r.riesgoBase && r.controles.trim() && r.riesgoResidual);
+  }
+
+  /** Lista en texto plano de lo que falta para poder avanzar — antes el botón "Siguiente"
+   *  simplemente quedaba deshabilitado sin decir por qué, y con varias secciones (torre/piso,
+   *  categorías genéricas, actividades de plantilla) no era obvio cuál faltaba. */
+  get faltantesPaso1(): string[] {
+    const faltan: string[] = [];
+    if (!this.proyectoId) faltan.push('Selecciona el proyecto.');
+    if (!this.actividad.trim()) faltan.push('Escribe la actividad a realizar.');
+    if (this.torres.length > 0 && !this.esExterior && !this.torreNombre) faltan.push('Selecciona la torre.');
+    if (this.torres.length > 0 && !this.esExterior && this.torreNombre && this.nivelesSeleccionados.size === 0) {
+      faltan.push('Marca al menos un piso/nivel.');
+    }
+    for (const cat of this.categoriasGenericasVisibles) {
+      if (this.categoriaNoAplica(cat.id)) continue;
+      const tieneAlgo = cat.pasos.some((p) => this.pasoAplica(p.id)) || this.pasosPersonalizadosDe(cat.id).length > 0;
+      if (!tieneAlgo) faltan.push(`"${cat.nombre}": marca al menos un paso o "No aplica".`);
+    }
+    if (this.usaActividadesPlantilla) {
+      const tieneAlgo = this.actividadesPlantillaFiltradas.some((act) => act.pasos.some((p) => this.actividadPasoAplica(p.id)));
+      if (!tieneAlgo) faltan.push('Marca al menos un paso en las actividades de la plantilla elegida.');
+    }
+    return faltan;
   }
 
   irAPeligros(): void {

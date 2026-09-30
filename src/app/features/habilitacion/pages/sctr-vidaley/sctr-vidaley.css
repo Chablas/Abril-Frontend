@@ -671,6 +671,18 @@
   color: #6b7280;
 }
 
+.vigencia-falta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #b45309;
+  font-weight: 600;
+}
+.vigencia-falta .field-input {
+  padding: 3px 6px;
+  font-size: 0.8rem;
+}
+
 .obs-label {
   font-size: 0.68rem;
   text-transform: uppercase;

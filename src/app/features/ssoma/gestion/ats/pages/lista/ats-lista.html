@@ -53,6 +53,7 @@
         <th>Fecha</th>
         <th>Trabajador</th>
         <th>Proyecto</th>
+        <th>Lugar</th>
         <th>Actividad</th>
         <th>Estado</th>
         <th>PETAR</th>
@@ -61,20 +62,29 @@
     </thead>
     <tbody>
       @if (loading) {
-        <tr><td colspan="7">Cargando…</td></tr>
+        <tr><td colspan="8">Cargando…</td></tr>
       } @else if (listaFiltrada.length === 0) {
-        <tr><td colspan="7">No hay ATS registrados con estos filtros.</td></tr>
+        <tr><td colspan="8">No hay ATS registrados con estos filtros.</td></tr>
       } @else {
         @for (a of listaFiltrada; track a.id) {
           <tr>
             <td>{{ a.fecha | date:'dd/MM/yyyy' }}</td>
             <td>{{ a.workerNombre }}</td>
             <td>{{ a.proyectoNombre }}</td>
+            <td class="lugar-cell">
+              @if (a.torreNombre) {
+                Torre {{ a.torreNombre }}@if (a.pisos) {<span>, {{ a.pisos }}</span>}
+              } @else if (a.lugar) {
+                {{ a.lugar }}
+              } @else {
+                <span class="visto-pendiente">—</span>
+              }
+            </td>
             <td>
               {{ a.actividad }}
               @if (a.estado === 'Firmado') {
-                <button type="button" class="btn-link-inline" (click)="toggleDetalle(a.id)">
-                  {{ filaExpandida(a.id) ? 'Ocultar detalle' : 'Ver detalle' }}
+                <button type="button" class="btn-link-inline" (click)="toggleDetalle(a)" [disabled]="detalleCargando.has(a.id)">
+                  @if (detalleCargando.has(a.id)) { Cargando… } @else { {{ filaExpandida(a.id) ? 'Ocultar detalle' : 'Ver detalle' }} }
                 </button>
               }
             </td>
@@ -171,8 +181,11 @@
           </tr>
           @if (filaExpandida(a.id)) {
             <tr class="fila-detalle">
-              <td colspan="7">
+              <td colspan="8">
                 <div class="detalle-iperc">
+                  @if (detalleCargando.has(a.id)) {
+                    <p>Cargando detalle…</p>
+                  }
                   @if (a.pasos.length > 0) {
                     <div class="detalle-bloque">
                       <strong>Actividades y pasos</strong>
@@ -238,6 +251,9 @@
         <button type="button" class="btn-link-inline" (click)="descargarPdfPetar(petarFirmandoId!)">Descargar PDF del PETAR</button>
       </p>
     } @else {
+      @if (detalleCargando.has(atsFirmandoVisto.id)) {
+        <p class="visto-hint">Cargando matriz de riesgo…</p>
+      }
       <div class="abril-table-wrap iperc-preview">
         <table class="abril-table">
           <thead>
