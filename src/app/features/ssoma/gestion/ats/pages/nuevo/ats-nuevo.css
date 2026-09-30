@@ -125,12 +125,26 @@
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 20px;
+  margin-bottom: 6px;
+}
+
+/* Proyecto/Plantilla/Actividad se veían amontonados uno contra otro — un poco más de aire
+ * entre cada campo del bloque "Actividad a realizar". */
+.abril-field + .abril-field {
+  margin-top: 4px;
 }
 
 /* ── Secciones colapsables (evita scroll eterno en el paso 1) ────────── */
 .collapsible-section {
   margin-bottom: 4px;
+}
+
+/* La primera categoría (Trabajos de gabinete) quedaba con demasiado aire respecto al título
+ * "Actividades y pasos de la tarea" — .pasos-categoria-row trae 10px de margin-top pensado para
+ * separar categorías ENTRE SÍ, no para separar del título de la sección. */
+.collapsible-section > .pasos-categoria-row:first-of-type {
+  margin-top: 2px;
 }
 
 .collapsible-toggle {
@@ -198,6 +212,11 @@
   color: #64748b;
   cursor: pointer;
   white-space: nowrap;
+}
+
+.marcar-todos-check--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .paso-check {
@@ -417,6 +436,7 @@
 
 .controles-input {
   min-width: 220px;
+  min-height: 90px;
   resize: none;
   overflow: hidden;
   box-sizing: border-box;
@@ -455,6 +475,17 @@
   align-items: center;
   gap: 6px;
   margin-top: 8px;
+}
+
+.pasos-hint-alerta--lista {
+  align-items: flex-start;
+}
+.pasos-hint-alerta--lista ul {
+  margin: 0;
+  padding-left: 16px;
+}
+.pasos-hint-alerta--lista li {
+  margin: 2px 0;
 }
 
 .nivel-select {

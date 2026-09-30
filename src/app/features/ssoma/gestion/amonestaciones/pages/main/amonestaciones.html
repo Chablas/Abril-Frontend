@@ -540,7 +540,7 @@
 
       <!-- Panel izquierdo: formulario inhabilitación manual -->
       <div class="chart-card escuelita-form-card">
-        <div class="chart-title">Agregar a lista negra</div>
+        <div class="chart-title">Agregar a lista de consulta de personal</div>
 
         <!-- Toggle modo -->
         <div class="inhab-modo-toggle">
@@ -601,7 +601,7 @@
         </div>
 
         <button class="btn-submit" [disabled]="!inhabCanSubmit" (click)="inhabilitarManual()">
-          @if (inhabGuardando) { Guardando… } @else { Agregar a lista negra }
+          @if (inhabGuardando) { Guardando… } @else { Agregar a lista de consulta }
         </button>
       </div>
 
@@ -660,7 +660,7 @@
                         <button class="btn-action btn-danger-sm"
                                 [disabled]="inhabDesbloqueandoId === inh.id"
                                 (click)="desbloquearInhab(inh.id)"
-                                title="Borrar de lista negra">
+                                title="Quitar de la lista de consulta">
                           @if (inhabDesbloqueandoId === inh.id) { … } @else {
                             <i class="ti ti-trash"></i>
                           }

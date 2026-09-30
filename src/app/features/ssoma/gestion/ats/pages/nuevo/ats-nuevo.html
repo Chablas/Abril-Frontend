@@ -273,8 +273,12 @@
         @for (grupo of herramientasPorCategoria; track grupo.categoria) {
           <div class="pasos-categoria-row">
             <div class="pasos-categoria">{{ grupo.categoria }}</div>
-            <label class="marcar-todos-check">
-              <input type="checkbox" [checked]="herramientasCategoriaNoAplica(grupo.categoria)" (change)="toggleHerramientasCategoriaNoAplica(grupo.categoria)" />
+            <label class="marcar-todos-check" [class.marcar-todos-check--disabled]="herramientasCategoriaTieneAlgoMarcado(grupo.categoria)">
+              <input type="checkbox"
+                     [checked]="herramientasCategoriaNoAplica(grupo.categoria)"
+                     [disabled]="herramientasCategoriaTieneAlgoMarcado(grupo.categoria)"
+                     [title]="herramientasCategoriaTieneAlgoMarcado(grupo.categoria) ? 'Ya hay algo marcado en esta categoría — desmárcalo primero.' : ''"
+                     (change)="toggleHerramientasCategoriaNoAplica(grupo.categoria)" />
               No aplica
             </label>
           </div>
@@ -282,7 +286,7 @@
             <div class="chips-grid">
               @for (h of grupo.items; track h.id) {
                 <label class="chip" [class.chip--sel]="herramientaSeleccionada(h.id)">
-                  <input type="checkbox" [checked]="herramientaSeleccionada(h.id)" (change)="toggleHerramienta(h.id)" />
+                  <input type="checkbox" [checked]="herramientaSeleccionada(h.id)" (change)="toggleHerramienta(h.id, grupo.categoria)" />
                   {{ h.nombre }}
                 </label>
               }
@@ -313,11 +317,13 @@
         }
       </div>
 
-      @if (datosBasicosValidos && !pasosValidos) {
-        <p class="pasos-hint-nuevo pasos-hint-alerta">
+      @if (faltantesPaso1.length > 0) {
+        <div class="pasos-hint-nuevo pasos-hint-alerta pasos-hint-alerta--lista">
           <i class="ti ti-alert-triangle"></i>
-          Marca al menos un paso (o "No aplica") en cada categoría de "Actividades y pasos de la tarea" para continuar.
-        </p>
+          <ul>
+            @for (f of faltantesPaso1; track f) { <li>{{ f }}</li> }
+          </ul>
+        </div>
       }
 
       <div modalFooter>

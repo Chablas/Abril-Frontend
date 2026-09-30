@@ -108,9 +108,10 @@
       <p>{{ errorMensaje }}</p>
     </div>
 
-    <div class="estado-centro" *ngIf="!cargando && !errorMensaje && cursos.length === 0">
-      <i class="ti ti-school"></i>
-      <p>No hay cursos disponibles por el momento.</p>
+    <div class="estado-vacio" *ngIf="!cargando && !errorMensaje && cursos.length === 0">
+      <div class="estado-vacio-icono"><i class="ti ti-school"></i></div>
+      <h3>Todavía no hay cursos publicados</h3>
+      <p>En cuanto se publique un curso de seguridad y salud, lo vas a ver aquí listo para tomar.</p>
     </div>
 
     <ng-container *ngIf="!cargando && cursos.length > 0">
