@@ -38,13 +38,14 @@
         <td class="text-center text-gray-500">{{ t.lugarDestino ?? '—' }}</td>
 
         <!-- Todas las capturas del trayecto, con su monto debajo. Si son varias, la fila crece:
-             cada voucher tiene que poder contrastarse contra su importe. -->
+             cada voucher tiene que poder contrastarse contra su importe. Un PDF va como el ícono
+             rojo de archivo, que lo abre en una ventana nueva. -->
         <td class="col-capturas text-center">
           <div *ngIf="t.capturas.length > 0" class="flex flex-wrap justify-center gap-2">
             <div *ngFor="let c of t.capturas" class="flex flex-col items-center gap-1" [title]="c.filename">
               <div class="w-[92px] h-[92px] flex items-center justify-center rounded-lg overflow-hidden border"
                    style="border-color:var(--color-abril-border)">
-                <app-draggable-image [src]="c.imageUrl" />
+                <app-captura-miniatura [url]="c.imageUrl" [nombre]="c.filename" />
               </div>
               <div class="text-xs font-medium text-gray-700">S/ {{ c.monto | number:'1.2-2' }}</div>
             </div>

@@ -4,16 +4,16 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
 
-import { DraggableImage } from '../../../../../shared/components/draggable-image/draggable-image';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { SalidaDetalleService } from '../../services/salida-detalle.service';
 import { TrayectoDetalleDto } from '../../dtos/salida-detalle.dto';
 import { CapturaFila, CapturaNuevaFila, CapturasEdicion } from './capturas-edicion';
+import { CapturaMiniatura, esCapturaPdf } from '../captura-miniatura/captura-miniatura';
 import { NoWheelNumberDirective } from '../../../../../shared/directives/no-wheel-number.directive';
 
 /**
- * Las capturas de movilidad de UN trayecto en edición: las ya subidas —con el monto y la imagen
- * editables en el sitio— y las filas para agregar nuevas.
+ * Las capturas de movilidad de UN trayecto en edición: las ya subidas —con el monto y el archivo
+ * editables en el sitio— y las filas para agregar nuevas. Cada captura es una imagen o un PDF.
  *
  * No guarda nada: lo escrito queda en la `CapturasEdicion` de la salida, que el modal manda entera
  * con su único botón de guardar. Lo único que se aplica al toque es quitar una captura: es
@@ -22,7 +22,7 @@ import { NoWheelNumberDirective } from '../../../../../shared/directives/no-whee
 @Component({
   standalone: true,
   selector: 'app-salida-capturas-editor',
-  imports: [CommonModule, FormsModule, DraggableImage, NoWheelNumberDirective],
+  imports: [CommonModule, FormsModule, CapturaMiniatura, NoWheelNumberDirective],
   templateUrl: './salida-capturas-editor.html',
   styles: [`:host { display: flex; flex-direction: column; gap: 12px; }`],
 })
@@ -32,6 +32,17 @@ export class SalidaCapturasEditor {
 
   /** Se dio de baja una captura en el backend: lo guardado de la salida ya no es lo que se cargó. */
   @Output() quitada = new EventEmitter<void>();
+
+  /** Lo que aceptan los selectores de archivo. El backend valida la misma lista. */
+  readonly tiposAceptados = '.png,.jpg,.jpeg,.webp,.gif,.pdf';
+
+  /**
+   * True si en la fila nueva se eligió un PDF. Su miniatura deja de ser el selector: el ícono abre
+   * el PDF, y para elegir otro archivo queda «Cambiar», junto al nombre.
+   */
+  esPdfNueva(row: CapturaNuevaFila): boolean {
+    return row.file !== null && esCapturaPdf(row.file.name);
+  }
 
   /**
    * Si este trayecto admite cargar y corregir capturas. Solo los que generan reembolso: el resto
