@@ -1,0 +1,117 @@
+<app-abril-page-header
+  badge="PROPIETARIOS"
+  titulo="Propietarios"
+  subtitulo="Cuentas de la app Convivir Abril y sus propiedades."
+  [hasExtra]="true"
+  [botonPrimario]="botonPrimario"
+  (primaryClick)="abrirCrear()">
+
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="flex flex-col gap-[10px] flex-1 min-h-0 overflow-hidden bg-white rounded-lg p-[20px]">
+
+  <div class="abril-table-wrap">
+    <table class="abril-table">
+      <thead class="sticky top-0 z-10">
+        <tr>
+          <th>Propietario</th>
+          <th>DNI</th>
+          <th>Correo</th>
+          <th>Propiedades</th>
+          <th class="text-center">Acceso</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <tr *ngIf="cargado && tabla.data.length === 0">
+          <td colspan="6" class="text-center py-[40px] text-gray-400 text-sm">
+            {{ filtrosActivos ? 'Sin resultados.' : 'No hay propietarios registrados.' }}
+          </td>
+        </tr>
+
+        <tr *ngFor="let p of tabla.data; trackBy: trackByPerson"
+            class="border-b hover:bg-gray-50" style="border-color:var(--color-abril-border)">
+
+          <td class="text-gray-700">
+            {{ p.fullName | titleCase }}
+            <div *ngIf="p.phoneNumber" class="text-[11px] text-gray-400">{{ p.phoneNumber }}</div>
+          </td>
+
+          <td class="text-gray-700 whitespace-nowrap">{{ p.dni || '—' }}</td>
+
+          <td class="text-gray-700">{{ p.email || '—' }}</td>
+
+          <td>
+            <div *ngFor="let pr of p.propiedades" class="text-gray-700 whitespace-nowrap">
+              {{ pr.proyecto | titleCase }}
+              <span class="text-gray-400">· {{ torreDepartamento(pr) }}</span>
+            </div>
+            <span *ngIf="p.propiedades.length === 0" class="text-gray-400">Sin propiedades</span>
+          </td>
+
+          <td class="text-center">
+            <app-status-badge
+              [attr.title]="acceso(p).titulo"
+              [text]="acceso(p).texto"
+              [bgColor]="acceso(p).bg"
+              [textColor]="acceso(p).color" />
+          </td>
+
+          <td class="text-center">
+            <div class="flex items-center justify-center gap-[8px]">
+              <button (click)="abrirEditar(p)" abrilBulkAction="default">Editar</button>
+              <button *ngIf="p.acceso === 'PENDIENTE'" (click)="reenviar(p)" abrilBulkAction="default">
+                Reenviar invitación
+              </button>
+              <button (click)="eliminar(p)" abrilBulkAction="danger">Eliminar</button>
+            </div>
+          </td>
+
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="shrink-0 max-w-[440px]">
+    <app-paginator
+      [totalRecords]="tabla.totalRecords"
+      [currentPage]="tabla.page"
+      [totalPages]="tabla.totalPages"
+      (pageChange)="cargarPagina($event)">
+    </app-paginator>
+  </div>
+
+</div>
+
+<!-- ── Modal de filtros estándar ────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por nombre, DNI o correo..."
+      [(value)]="searchText"
+      (valueChange)="onBusquedaChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      placeholder="Buscar proyecto..."
+      [options]="proyectos"
+      valueField="projectId"
+      displayField="projectDescription"
+      [value]="projectId"
+      (valueChange)="onProyectoChange($event)">
+    </app-search-select>
+  </div>
+</app-filter-modal>
+
+<app-propietario-form
+  *ngIf="formAbierto"
+  [propietario]="propietarioEditar"
+  [proyectos]="proyectos"
+  (closeModal)="cerrarForm()"
+  (saved)="onGuardado($event)" />
