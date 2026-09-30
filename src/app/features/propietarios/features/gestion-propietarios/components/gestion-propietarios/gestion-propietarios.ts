@@ -18,6 +18,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { PagedResponseDTO } from '../../../../../../core/dtos/api/pagedResponse.model';
 import { GestionPropietariosService } from '../../services/gestion-propietarios.service';
 import { PropietarioForm } from '../propietario-form/propietario-form';
+import { PropietarioDocumentos } from '../propietario-documentos/propietario-documentos';
 import {
   PropiedadDto,
   PropietarioAcceso,
@@ -60,6 +61,7 @@ const ACCESO: Record<PropietarioAcceso, EstiloAcceso> = {
     TitleCasePipe,
     AbrilBulkActionDirective,
     PropietarioForm,
+    PropietarioDocumentos,
   ],
   templateUrl: './gestion-propietarios.html',
   styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
@@ -85,6 +87,8 @@ export class GestionPropietarios implements OnInit, OnDestroy {
   formAbierto = false;
   /** null = crear. */
   propietarioEditar: PropietarioListItemDto | null = null;
+  /** El propietario del modal «Documentos» abierto. */
+  documentosDe: PropietarioListItemDto | null = null;
 
   private readonly busqueda$ = new Subject<void>();
   private readonly destroy$ = new Subject<void>();

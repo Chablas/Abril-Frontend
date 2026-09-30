@@ -62,6 +62,7 @@
           <td class="text-center">
             <div class="flex items-center justify-center gap-[8px]">
               <button (click)="abrirEditar(p)" abrilBulkAction="default">Editar</button>
+              <button *ngIf="p.propiedades.length" (click)="documentosDe = p" abrilBulkAction="default">Documentos</button>
               <button *ngIf="p.acceso === 'PENDIENTE'" (click)="reenviar(p)" abrilBulkAction="default">
                 Reenviar invitación
               </button>
@@ -115,3 +116,8 @@
   [proyectos]="proyectos"
   (closeModal)="cerrarForm()"
   (saved)="onGuardado($event)" />
+
+<app-propietario-documentos
+  *ngIf="documentosDe"
+  [propietario]="documentosDe"
+  (closeModal)="documentosDe = null" />
