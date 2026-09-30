@@ -1,0 +1,129 @@
+<app-base-modal [title]="titulo" width="w-[820px]" [preventCloseWhenDirty]="true" (closeModal)="closeModal.emit()">
+
+  <div class="flex flex-col gap-[20px] mt-[16px]">
+
+    <!-- ── Datos personales ─────────────────────────────────────────── -->
+    <div class="grid grid-cols-3 gap-x-[14px] gap-y-[14px]">
+
+      <div class="abril-field">
+        <label class="abril-field-label">DNI</label>
+        <input
+          type="text"
+          class="abril-field-input"
+          style="padding-right:36px"
+          inputmode="numeric"
+          maxlength="8"
+          placeholder="8 dígitos"
+          [(ngModel)]="dni"
+          (ngModelChange)="onDniChange()"
+          (keydown.enter)="buscarDni()"
+          [readonly]="!esNuevo"
+          [style.background]="!esNuevo ? soloLectura : null" />
+        <button
+          *ngIf="esNuevo"
+          type="button"
+          class="absolute right-[8px] top-[8px] cursor-pointer text-[18px] leading-none"
+          style="color:var(--color-abril-standard)"
+          title="Buscar en el sistema y en RENIEC"
+          (click)="buscarDni()">
+          <i class="ti ti-search"></i>
+        </button>
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Nombres</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="firstNames" [readonly]="nombresBloqueados"
+               [style.background]="nombresBloqueados ? soloLectura : null" />
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Primer apellido</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="firstLastName" [readonly]="nombresBloqueados"
+               [style.background]="nombresBloqueados ? soloLectura : null" />
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Segundo apellido · opcional</label>
+        <input type="text" class="abril-field-input" [(ngModel)]="secondLastName" [readonly]="nombresBloqueados"
+               [style.background]="nombresBloqueados ? soloLectura : null" />
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Correo</label>
+        <input
+          type="email"
+          class="abril-field-input"
+          [(ngModel)]="email"
+          [readonly]="correoBloqueado"
+          [style.background]="correoBloqueado ? soloLectura : null"
+          [title]="correoBloqueado ? 'Se cambia desde Seguridad → Usuarios' : ''" />
+      </div>
+
+      <div class="abril-field">
+        <label class="abril-field-label">Celular · opcional</label>
+        <input type="number" class="abril-field-input" [(ngModel)]="phoneNumber" />
+      </div>
+    </div>
+
+    <p *ngIf="correoBloqueado" class="text-[12px] text-gray-500 -mt-[10px]">
+      Ya tiene usuario en la intranet: su correo no se cambia desde acá.
+    </p>
+
+    <!-- ── Propiedades ──────────────────────────────────────────────── -->
+    <div class="flex flex-col gap-[12px]">
+      <div class="flex items-center justify-between">
+        <span class="text-[13px] font-semibold text-gray-700">Propiedades</span>
+        <button
+          type="button"
+          class="inline-flex items-center gap-[4px] text-[13px] font-semibold cursor-pointer"
+          style="color:var(--color-abril-standard)"
+          (click)="agregarPropiedad()">
+          <i class="ti ti-plus"></i> Agregar propiedad
+        </button>
+      </div>
+
+      <div *ngFor="let f of propiedades; let i = index" class="grid grid-cols-[1fr_150px_150px_28px] gap-[12px] items-end">
+        <app-search-select
+          label="Proyecto"
+          placeholder="Buscar proyecto..."
+          [options]="opcionesProyecto"
+          valueField="projectId"
+          displayField="projectDescription"
+          [value]="f.projectId"
+          (valueChange)="f.projectId = $event">
+        </app-search-select>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Torre · opcional</label>
+          <input type="text" class="abril-field-input" maxlength="50" placeholder="Ej. A" [(ngModel)]="f.torre" />
+        </div>
+
+        <div class="abril-field">
+          <label class="abril-field-label">Departamento</label>
+          <input type="text" class="abril-field-input" maxlength="20" placeholder="Ej. 803" [(ngModel)]="f.departamento" />
+        </div>
+
+        <button
+          type="button"
+          class="h-[37px] text-[18px] leading-none text-gray-400 hover:text-[#D30000] cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+          title="Quitar propiedad"
+          [disabled]="propiedades.length === 1"
+          (click)="quitarPropiedad(i)">
+          <i class="ti ti-trash"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="flex justify-center mt-[4px]">
+      <button
+        type="button"
+        class="w-[160px] py-[8px] rounded-[10px] cursor-pointer transition-colors"
+        style="background:var(--color-abril-standard)"
+        (click)="guardar()">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>

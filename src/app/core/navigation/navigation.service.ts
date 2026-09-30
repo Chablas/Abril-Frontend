@@ -384,6 +384,17 @@ export class NavigationService {
       ],
     },
     {
+      // Propietarios de inmuebles: acá se les da la cuenta de la app Convivir Abril.
+      key: 'propietarios',
+      label: 'Propietarios',
+      iconKey: 'home-heart',
+      baseRoute: '/propietarios',
+      landing: '/propietarios/gestion',
+      items: [
+        { label: 'Propietarios', route: '/propietarios/gestion', featureKey: 'propietarios.gestion' },
+      ],
+    },
+    {
       key: 'contabilidad',
       label: 'Contabilidad',
       iconKey: 'receipt',

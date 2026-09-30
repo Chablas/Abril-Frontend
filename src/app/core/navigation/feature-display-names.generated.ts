@@ -132,6 +132,7 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "projects.ivt-control": "Control de IVTs",
   "projects.report-response-control": "Control de respuesta de informes",
   "projects.resident-monitoring-measurement": "Seguimiento y medición de residentes",
+  "propietarios.gestion": "Propietarios",
   "security.features": "Funcionalidades",
   "security.roles": "Roles",
   "security.users": "Usuarios",
