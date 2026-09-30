@@ -11,6 +11,7 @@ import {
   PropietariosInitDto,
   PropietarioUpdateDto,
 } from '../dtos/propietario.dto';
+import { PropietarioDocumentoNuevoDto, PropietarioDocumentosDto } from '../dtos/propietario-documento.dto';
 
 function buildAuthHeaders(): Record<string, string> {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -73,5 +74,44 @@ export class GestionPropietariosService {
 
   eliminar(personId: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${personId}`, { headers: buildAuthHeaders() });
+  }
+
+  // ── Documentos (modal «Documentos») ─────────────────────────────────────
+
+  getDocumentos(personId: number): Observable<PropietarioDocumentosDto> {
+    return this.http.get<PropietarioDocumentosDto>(`${this.apiUrl}/${personId}/documentos`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  /**
+   * El Guardar del modal: todos los documentos nuevos en una sola petición (`data` + `archivos`, en
+   * el mismo orden). Devuelve el modal repintado.
+   */
+  guardarDocumentos(
+    personId: number,
+    nuevos: PropietarioDocumentoNuevoDto[],
+    archivos: File[],
+  ): Observable<PropietarioDocumentosDto> {
+    const formData = new FormData();
+    formData.append('data', JSON.stringify(nuevos));
+    archivos.forEach((archivo) => formData.append('archivos', archivo, archivo.name));
+    return this.http.post<PropietarioDocumentosDto>(`${this.apiUrl}/${personId}/documentos`, formData, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  /** Devuelve el modal repintado. */
+  eliminarDocumento(personId: number, documentoId: number): Observable<PropietarioDocumentosDto> {
+    return this.http.delete<PropietarioDocumentosDto>(`${this.apiUrl}/${personId}/documentos/${documentoId}`, {
+      headers: buildAuthHeaders(),
+    });
+  }
+
+  descargarDocumento(personId: number, documentoId: number): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/${personId}/documentos/${documentoId}/archivo`, {
+      headers: buildAuthHeaders(),
+      responseType: 'blob',
+    });
   }
 }

@@ -1,0 +1,131 @@
+<app-base-modal title="DOCUMENTOS" width="w-[960px]" [preventCloseWhenDirty]="true" (closeModal)="closeModal.emit()">
+
+  <div *ngIf="modal" class="flex flex-col gap-[22px] mt-[4px]">
+
+    <p class="text-center text-[13px] text-gray-500 -mt-[8px]">
+      {{ propietario.fullName | titleCase }}<span *ngIf="propietario.dni"> · DNI {{ propietario.dni }}</span>
+    </p>
+
+    <p *ngIf="modal.propiedades.length === 0" class="text-center text-sm text-gray-400 py-[24px]">
+      Sin propiedades.
+    </p>
+
+    <!-- ── Una sección por propiedad ─────────────────────────────────── -->
+    <section *ngFor="let p of modal.propiedades; trackBy: trackPropiedad" class="flex flex-col gap-[10px]">
+
+      <div class="flex items-center justify-between">
+        <span class="text-[13px] font-semibold text-gray-700">
+          {{ p.proyecto | titleCase }}
+          <span class="font-normal text-gray-400">· {{ ubicacion(p) }}</span>
+        </span>
+        <button
+          type="button"
+          class="inline-flex items-center gap-[4px] text-[13px] font-semibold cursor-pointer"
+          style="color:var(--color-abril-standard)"
+          (click)="agregar(p)">
+          <i class="ti ti-plus"></i> Agregar documento
+        </button>
+      </div>
+
+      <div *ngIf="p.documentos.length" class="abril-table-wrap">
+        <table class="abril-table">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Nombre</th>
+              <th>Archivo</th>
+              <th class="text-center">Subido</th>
+              <th class="text-center">En la app</th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of p.documentos; trackBy: trackDocumento"
+                class="border-b" style="border-color:var(--color-abril-border)">
+              <td class="text-gray-700 whitespace-nowrap">{{ d.tipo }}</td>
+              <td class="text-gray-700">{{ d.nombre }}</td>
+              <td class="text-gray-500">
+                <div class="max-w-[220px] truncate" [title]="d.archivoNombre">{{ d.archivoNombre }}</div>
+                <div class="text-[11px] text-gray-400">{{ tamano(d.tamanoBytes) }}</div>
+              </td>
+              <td class="text-center text-gray-700 whitespace-nowrap">{{ d.subidoEl | date: 'dd/MM/yyyy' }}</td>
+              <td class="text-center whitespace-nowrap">
+                <span *ngIf="d.leidoEl; else sinAbrir" class="text-[12px]" style="color:#009C87"
+                      [title]="'Lo abrió el ' + (d.leidoEl | date: 'dd/MM/yyyy HH:mm')">
+                  Abierto {{ d.leidoEl | date: 'dd/MM' }}
+                </span>
+                <ng-template #sinAbrir><span class="text-[12px] text-gray-400">Sin abrir</span></ng-template>
+              </td>
+              <td class="text-center">
+                <div class="flex items-center justify-center gap-[8px]">
+                  <button (click)="descargar(d)" abrilBulkAction="default">Descargar</button>
+                  <button (click)="eliminar(d)" abrilBulkAction="danger">Eliminar</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p *ngIf="!p.documentos.length && !nuevosPorPropiedad.get(p.propietarioId)?.length"
+         class="text-[13px] text-gray-400">
+        Sin documentos.
+      </p>
+
+      <!-- ── Nuevos (se guardan todos juntos) ──────────────────────────── -->
+      <div *ngFor="let f of nuevosPorPropiedad.get(p.propietarioId); trackBy: trackFila" class="flex flex-col gap-[4px]">
+        <div class="grid grid-cols-[210px_1fr_240px_28px] gap-[12px] items-end">
+          <app-search-select
+            label="Tipo"
+            placeholder="Buscar tipo..."
+            [options]="modal.tipos"
+            valueField="tipoId"
+            displayField="nombre"
+            [sortAlpha]="false"
+            [value]="f.tipoId"
+            (valueChange)="f.tipoId = $event">
+          </app-search-select>
+
+          <div class="abril-field">
+            <label class="abril-field-label">Nombre</label>
+            <input type="text" class="abril-field-input" maxlength="150" placeholder="Ej. Minuta de compraventa"
+                   [(ngModel)]="f.nombre" />
+          </div>
+
+          <div class="abril-field">
+            <label class="abril-field-label">Archivo</label>
+            <label class="abril-field-input flex items-center gap-[6px] cursor-pointer" [title]="f.archivo?.name ?? ''">
+              <i class="ti ti-paperclip" style="color:var(--color-abril-standard)"></i>
+              <span class="truncate min-w-0" [class.text-gray-400]="!f.archivo">
+                {{ f.archivo ? f.archivo.name : 'PDF, JPG o PNG · hasta 25 MB' }}
+              </span>
+              <input type="file" class="hidden" [accept]="accept" (change)="onArchivo(f, $event)" />
+            </label>
+          </div>
+
+          <button
+            type="button"
+            class="h-[37px] text-[18px] leading-none text-gray-400 hover:text-[#D30000] cursor-pointer"
+            title="Quitar"
+            (click)="quitar(p, f)">
+            <i class="ti ti-trash"></i>
+          </button>
+        </div>
+        <p *ngIf="submitted && !filaCompleta(f)" class="text-xs text-red-500">Falta el tipo, el nombre o el archivo.</p>
+      </div>
+    </section>
+
+    <div *ngIf="modal.propiedades.length" class="flex justify-center mt-[4px]">
+      <button
+        type="button"
+        class="w-[160px] py-[8px] rounded-[10px] cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        style="background:var(--color-abril-standard)"
+        [disabled]="!hayNuevos"
+        (click)="guardar()">
+        <p class="text-white text-base font-medium text-center">Guardar</p>
+      </button>
+    </div>
+
+  </div>
+
+</app-base-modal>
