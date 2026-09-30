@@ -1,0 +1,193 @@
+<app-abril-page-header
+  badge="PROYECTOS"
+  titulo="Contratos"
+  [subtitulo]="projectName ? projectName : 'Contratos de servicios con consultores de diseño, por proyecto.'"
+  [tabs]="tabs"
+  [botonPrimario]="botonNuevo"
+  [botonPrimarioDeshabilitado]="loadingCatalogos"
+  [botonPrimarioTooltip]="projectId ? 'Crear un contrato en ' + projectName : 'Elige primero un proyecto'"
+  (primaryClick)="abrirCrear()"
+  [botonSecundario]="{ label: 'Carpeta SharePoint', icono: 'ti-folder' }"
+  [botonSecundarioDeshabilitado]="!projectId"
+  [botonSecundarioTooltip]="projectId ? 'Carpeta donde se guardan los contratos generados' : 'Elige primero un proyecto'"
+  (secondaryClick)="abrirCarpeta()">
+
+  <app-filter-trigger tabsExtra [count]="filtrosActivos" (open)="filtrosAbiertos = true" />
+</app-abril-page-header>
+
+<div class="page-container flex flex-col gap-[10px] bg-white flex-1 min-h-0 overflow-hidden">
+
+  <!-- ── Carga de catálogos ─────────────────────────────────────────────── -->
+  <div *ngIf="loadingCatalogos" class="cl-skeleton">
+    <div class="ct-skeleton" *ngFor="let i of [1, 2, 3, 4, 5]" style="height:36px"></div>
+  </div>
+
+  <!-- ── Sin proyecto elegido ───────────────────────────────────────────── -->
+  <div *ngIf="!loadingCatalogos && !projectId" class="ct-empty">
+    <i class="ti ti-building-estate" aria-hidden="true"></i>
+    <p class="ct-empty__title">Elige un proyecto para ver sus contratos</p>
+    <p class="ct-empty__sub">Los contratos se gestionan por proyecto.</p>
+    <button type="button" class="ct-btn ct-btn--ghost" [disabled]="!catalogos" (click)="filtrosAbiertos = true">
+      <i class="ti ti-building" aria-hidden="true"></i> Elegir proyecto
+    </button>
+  </div>
+
+  <ng-container *ngIf="!loadingCatalogos && projectId">
+
+    <!-- ── Tabla ────────────────────────────────────────────────────────── -->
+    <div class="abril-table-wrap">
+      <table class="abril-table">
+        <thead class="sticky top-0 z-10">
+          <tr>
+            <th class="w-[70px] text-center">N°</th>
+            <th>Contratista</th>
+            <th>Especialidad</th>
+            <th>Tipo de servicio</th>
+            <th class="w-[150px] text-right">Monto</th>
+            <th class="w-[110px] text-center">Firma</th>
+            <th class="w-[230px]">Estado</th>
+            <th class="w-[56px]"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngIf="loadingContratos">
+            <tr *ngFor="let i of [1, 2, 3, 4, 5]" class="cl-row-static">
+              <td *ngFor="let j of [1, 2, 3, 4, 5, 6, 7, 8]"><div class="ct-skeleton" style="height:14px"></div></td>
+            </tr>
+          </ng-container>
+
+          <ng-container *ngIf="!loadingContratos">
+            <tr *ngIf="contratos.length === 0" class="cl-row-static">
+              <td colspan="8">
+                <div class="ct-empty">
+                  <i class="ti ti-file-off" aria-hidden="true"></i>
+                  <p class="ct-empty__title">Este proyecto todavía no tiene contratos</p>
+                  <button *ngIf="puedeEditar" type="button" class="ct-btn ct-btn--ghost" (click)="abrirCrear()">
+                    <i class="ti ti-plus" aria-hidden="true"></i> Nuevo contrato
+                  </button>
+                </div>
+              </td>
+            </tr>
+
+            <tr *ngIf="contratos.length > 0 && filteredContratos.length === 0" class="cl-row-static">
+              <td colspan="8">
+                <div class="ct-empty">
+                  <i class="ti ti-search-off" aria-hidden="true"></i>
+                  <p class="ct-empty__title">Sin resultados</p>
+                  <p class="ct-empty__sub">Prueba con otro filtro.</p>
+                  <button type="button" class="ct-btn ct-btn--ghost" (click)="limpiarFiltros()">Limpiar filtros</button>
+                </div>
+              </td>
+            </tr>
+
+            <tr *ngFor="let c of pagedContratos; trackBy: trackById" (click)="abrirDetalle(c)">
+              <td class="text-center">{{ c.contractNumber ?? '—' }}</td>
+              <td>{{ c.contractorName | titleCase }}</td>
+              <td>{{ c.workSpecialtyDescription | titleCase }}</td>
+              <td class="cl-servicio" [title]="c.serviceDescription ?? ''">{{ c.serviceDescription || '—' }}</td>
+              <td class="text-right whitespace-nowrap">{{ c.currencyCode }} {{ c.amount | number: '1.2-2' }}</td>
+              <td class="text-center whitespace-nowrap">{{ c.signingDate ? (c.signingDate | date: 'dd/MM/yyyy' : 'UTC') : '—' }}</td>
+              <td>
+                <span class="cl-badge"
+                  [style.background]="estadoBadge(c.projectContractStatusId).bg"
+                  [style.color]="estadoBadge(c.projectContractStatusId).text">
+                  {{ c.projectContractStatusId }}/{{ totalPasos }} · {{ nombrePaso(c.projectContractStatusId) }}
+                </span>
+              </td>
+              <td class="text-center">
+                <button type="button" class="abril-action-btn" title="Ver detalle" (click)="$event.stopPropagation(); abrirDetalle(c)">
+                  <i class="ti ti-eye" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="shrink-0 max-w-[440px]">
+      <app-paginator
+        [totalRecords]="filteredContratos.length"
+        [currentPage]="currentPage"
+        [totalPages]="totalPages"
+        (pageChange)="changePage($event)">
+      </app-paginator>
+    </div>
+  </ng-container>
+</div>
+
+<!-- ── Modal de filtros estándar ─────────────────────────────────────────── -->
+<app-filter-modal *ngIf="filtrosAbiertos" (closeModal)="filtrosAbiertos = false" (clear)="limpiarFiltros()">
+  <div class="w-full">
+    <app-search-select
+      label="Proyecto"
+      placeholder="Buscar proyecto..."
+      [fullText]="true"
+      [allowClear]="false"
+      [options]="catalogos?.projects ?? []"
+      valueField="projectId"
+      displayField="projectDescription"
+      [value]="projectId"
+      (valueChange)="onProjectChange($event)">
+    </app-search-select>
+  </div>
+
+  <div class="w-full">
+    <app-search-input
+      placeholder="Buscar por contratista, especialidad, servicio o N°..."
+      [(value)]="searchText"
+      (valueChange)="onFilterChange()"
+      width="100%">
+    </app-search-input>
+  </div>
+
+  <div class="w-full">
+    <app-search-select
+      label="Estado"
+      placeholder="Selecciona estado"
+      [sortAlpha]="false"
+      [options]="estadoOptions"
+      valueField="value"
+      displayField="label"
+      [rawLabel]="true"
+      [value]="estadoFilter"
+      (valueChange)="estadoFilter = $event; onFilterChange()">
+    </app-search-select>
+  </div>
+</app-filter-modal>
+
+<!-- ── Modales (hermanos, nunca anidados: el de edición se abre encima del detalle) ── -->
+<app-contrato-detalle
+  *ngIf="contratoDetalle"
+  [contrato]="contratoDetalle"
+  [requiereCarga]="detalleRequiereCarga"
+  [puedeEditar]="puedeEditar"
+  [projectName]="projectName"
+  (editar)="contratoEditar = $event"
+  (closeModal)="contratoDetalle = null">
+</app-contrato-detalle>
+
+<app-contrato-form
+  *ngIf="showCrear && catalogos"
+  [catalogos]="catalogos"
+  [projectId]="projectId"
+  [projectName]="projectName"
+  (created)="onCreado($event)"
+  (closeModal)="showCrear = false">
+</app-contrato-form>
+
+<app-contrato-form
+  *ngIf="contratoEditar && catalogos"
+  [catalogos]="catalogos"
+  [contrato]="contratoEditar"
+  (updated)="contratoEditar = null"
+  (closeModal)="contratoEditar = null">
+</app-contrato-form>
+
+<app-contrato-carpeta
+  *ngIf="showCarpeta && projectId"
+  [projectId]="projectId"
+  [projectName]="projectName"
+  [puedeEditar]="puedeEditar"
+  (closeModal)="showCarpeta = false">
+</app-contrato-carpeta>

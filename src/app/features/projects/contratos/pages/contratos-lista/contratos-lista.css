@@ -1,0 +1,24 @@
+:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+
+.cl-skeleton { display: flex; flex-direction: column; gap: 8px; }
+
+/* Filas que no abren nada (skeleton / estados vacíos): sin cursor de enlace ni hover. */
+.cl-row-static { cursor: default !important; }
+.cl-row-static:hover { background: transparent !important; }
+
+.cl-servicio {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cl-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+}

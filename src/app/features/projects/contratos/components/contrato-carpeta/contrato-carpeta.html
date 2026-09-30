@@ -1,0 +1,60 @@
+<app-abril-modal-panel
+  titulo="Carpeta de SharePoint"
+  [subtitulo]="projectName"
+  icono="ti-folder"
+  width="620px"
+  (closeModal)="closeModal.emit()">
+
+  <div class="cc-body">
+
+    <ng-container *ngIf="loading">
+      <div class="ct-skeleton" style="height:64px"></div>
+      <div class="ct-skeleton" style="height:38px"></div>
+    </ng-container>
+
+    <ng-container *ngIf="!loading">
+
+      <!-- Carpeta actual -->
+      <div *ngIf="carpeta" class="cc-actual">
+        <i class="ti ti-folder-check" aria-hidden="true"></i>
+        <div class="cc-actual__text">
+          <span class="cc-actual__name">{{ carpeta.folderName || 'Carpeta configurada' }}</span>
+          <a *ngIf="carpeta.webUrl" class="cc-link" [href]="carpeta.webUrl" target="_blank" rel="noopener">
+            Abrir en SharePoint <i class="ti ti-external-link" aria-hidden="true"></i>
+          </a>
+        </div>
+      </div>
+
+      <div *ngIf="!carpeta" class="ct-alert ct-alert--warn">
+        <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+        <span>
+          Este proyecto todavía no tiene carpeta. Los contratos se pueden generar y descargar igual,
+          pero no quedan guardados en SharePoint hasta que se configure.
+        </span>
+      </div>
+
+      <div *ngIf="puedeEditar">
+        <div class="abril-field">
+          <label class="abril-field-label">Enlace de la carpeta <span class="ct-req">*</span></label>
+          <input class="abril-field-input" [(ngModel)]="linkUrl" maxlength="1000"
+            placeholder="https://abril.sharepoint.com/sites/..." (keyup.enter)="guardar()" />
+        </div>
+        <p *ngIf="submitted && linkInvalido" class="ct-error">Pega el enlace completo de la carpeta (empieza con https://).</p>
+        <p class="ct-hint">Copia el enlace de la carpeta desde SharePoint («Copiar vínculo») y pégalo acá.</p>
+      </div>
+
+      <p *ngIf="!puedeEditar" class="ct-hint">Solo lectura: no tienes permiso para cambiar la carpeta.</p>
+    </ng-container>
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="ct-btn ct-btn--ghost" (click)="closeModal.emit()">
+      {{ puedeEditar ? 'Cancelar' : 'Cerrar' }}
+    </button>
+    <button *ngIf="puedeEditar" type="button" class="ct-btn ct-btn--primary"
+      [disabled]="loading || saving || sinCambios" (click)="guardar()">
+      <i class="ti ti-device-floppy" aria-hidden="true"></i>
+      Guardar carpeta
+    </button>
+  </div>
+</app-abril-modal-panel>

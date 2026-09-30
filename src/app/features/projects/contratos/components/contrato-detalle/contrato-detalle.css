@@ -1,0 +1,265 @@
+.cd-body { display: flex; flex-direction: column; gap: 16px; }
+
+/* ── Stepper (mismo esquema que el detalle de Adjudicaciones, en el acento teal) ── */
+.cd-stepper {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.cd-step-line {
+  flex: 1;
+  height: 2px;
+  margin-top: 15px;
+  background: #E2E8F0;
+  transition: background-color 150ms ease;
+}
+.cd-step-line--done { background: var(--color-abril-standard); }
+
+.cd-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 64px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+.cd-step:disabled { cursor: default; }
+.cd-step:focus-visible { outline: 2px solid #2E6DB4; outline-offset: 2px; border-radius: 6px; }
+
+.cd-step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  border: 2px solid #CBD5E1;
+  background: #fff;
+  color: #94A3B8;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.cd-step-circle i { font-size: 16px; }
+
+.cd-step-label {
+  font-size: 10px;
+  line-height: 1.25;
+  text-align: center;
+  color: #94A3B8;
+}
+
+.cd-step--done .cd-step-circle {
+  background: var(--color-abril-standard);
+  border-color: var(--color-abril-standard);
+  color: #fff;
+}
+.cd-step--done .cd-step-label { color: #64748B; }
+
+.cd-step--current .cd-step-circle {
+  border-color: var(--color-abril-standard);
+  color: var(--color-abril-standard);
+}
+.cd-step--current .cd-step-label { color: var(--color-abril-standard); font-weight: 600; }
+
+/* Anillo = el paso que se está viendo (puede no ser el actual). */
+.cd-step--viewing .cd-step-circle {
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--color-abril-standard);
+}
+.cd-step--viewing .cd-step-label { color: #1E3A5F; font-weight: 700; }
+
+/* Paso 7: sin implementar en el backend todavía. */
+.cd-step--pending-impl .cd-step-circle { border-style: dashed; background: #fff; color: #94A3B8; border-color: #CBD5E1; }
+
+.cd-step:not(:disabled):hover .cd-step-circle { border-color: var(--color-abril-standard-hover); }
+
+/* ── Resumen ──────────────────────────────────────────────────────── */
+.cd-resumen {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 12px 16px;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  background: #F8FAFC;
+}
+
+.cd-k {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748B;
+  margin-bottom: 2px;
+}
+.cd-v { display: block; font-size: 14px; color: #1E3A5F; overflow-wrap: anywhere; }
+.cd-pre { white-space: pre-line; }
+
+.cd-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.cd-divider { border-top: 1px solid #E2E8F0; }
+
+.cd-step-title { font-size: 16px; font-weight: 700; color: #1E3A5F; margin: 0; }
+
+/* ── Secciones ────────────────────────────────────────────────────── */
+.cd-section { display: flex; flex-direction: column; gap: 12px; }
+
+.cd-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cd-mt { margin-top: 8px; }
+.cd-no-mt { margin-top: 0; }
+
+.cd-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 16px;
+}
+.cd-full { grid-column: 1 / -1; }
+
+.cd-actions { display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap; }
+
+.cd-readonly {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #94A3B8;
+  margin: 0;
+}
+
+/* ── Hitos ────────────────────────────────────────────────────────── */
+.cd-suma {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+.cd-suma--ok { background: #dcfce7; color: #166534; }
+.cd-suma--warn { background: #FEF3C7; color: #92400E; }
+
+/* La tabla de hitos no navega a ningún lado: sin cursor de enlace. */
+.cd-row-static { cursor: default !important; }
+.cd-empty-row { color: #94A3B8; padding: 24px 16px !important; font-size: 13px; }
+.cd-total td { font-weight: 700; color: #1E3A5F; background: #F8FAFC; }
+
+.cd-garantia {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: #dbeafe;
+  color: #1e40af;
+  vertical-align: middle;
+}
+.cd-obs { display: block; font-size: 12px; color: #94A3B8; }
+
+.cd-hito-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px 16px;
+  border: 1px dashed var(--color-abril-standard-border);
+  border-radius: 10px;
+  background: var(--color-abril-standard-light);
+}
+.cd-hito-form .abril-field-label { background: var(--color-abril-standard-light); }
+
+.cd-hito-row { display: flex; align-items: flex-end; gap: 12px; }
+.cd-hito-desc { flex: 1; min-width: 0; }
+.cd-hito-pct { width: 110px; }
+.cd-hito-cheque { width: 160px; }
+.cd-hito-fecha { width: 170px; }
+.cd-hito-btn { height: 38px; }
+
+.cd-link-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-abril-standard);
+  cursor: pointer;
+}
+.cd-link-btn:hover { text-decoration: underline; }
+.cd-link-btn:focus-visible { outline: 2px solid #2E6DB4; outline-offset: 2px; }
+
+/* ── Paso 3: checklist ────────────────────────────────────────────── */
+.cd-checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.cd-checklist li { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; color: #1E3A5F; }
+.cd-checklist li > i { font-size: 18px; color: #C0392B; }
+.cd-checklist li.cd-check--ok > i { color: #1B6B3A; }
+.cd-check-nota { display: block; margin: 0; }
+
+/* ── Paso 5: radios ───────────────────────────────────────────────── */
+.cd-radios { display: flex; gap: 12px; }
+.cd-radio {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1E3A5F;
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+.cd-radio input { accent-color: var(--color-abril-standard); }
+.cd-radio i { font-size: 16px; color: #64748B; }
+.cd-radio:hover { background: #F8FAFC; }
+.cd-radio--on { border-color: var(--color-abril-standard); background: var(--color-abril-standard-light); }
+.cd-radio--on i { color: var(--color-abril-standard); }
+
+/* ── Paso 6: firmas ───────────────────────────────────────────────── */
+.cd-firmas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.cd-firma {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1E3A5F;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+.cd-firma > i:first-child { font-size: 20px; color: #94A3B8; }
+.cd-firma:hover:not(:disabled) { background: #F8FAFC; }
+.cd-firma:focus-visible { outline: 2px solid #2E6DB4; outline-offset: 2px; }
+.cd-firma:disabled { cursor: not-allowed; opacity: 0.7; }
+.cd-firma--on { border-color: var(--color-abril-standard); background: var(--color-abril-standard-light); }
+.cd-firma--on > i:first-child { color: var(--color-abril-standard); }
+
+.cd-spin { margin-left: auto; animation: cd-spin 0.8s linear infinite; color: var(--color-abril-standard); }
+@keyframes cd-spin { to { transform: rotate(360deg); } }

@@ -90,6 +90,7 @@ export class NavigationService {
         { label: 'Dashboard UDP',                           route: '/projects/cronograma-dashboard',         featureKey: 'projects.cronograma-dashboard' },
         // 'Dashboard Lecciones' movido a Mejora Continua (/mejora-continua/dashboard)
         // 'Actas de Reunión' ya NO pertenece a Proyectos: es su propio módulo independiente en el sidebar (key 'actas-reunion').
+        { label: 'Contratos',                               route: '/projects/contratos',                    featureKey: 'unidad-de-proyectos.contratos' },
         { label: 'Control de IVTs',                         route: '/projects/technical-inspection-visit',   featureKey: 'projects.ivt-control' },
         { label: 'Control de cuaderno de obra',             route: '/projects/construction-logbook',         featureKey: 'projects.construction-logbook' },
         { label: 'Control de respuesta de informes',        route: '/projects/report-response-control',      featureKey: 'projects.report-response-control' },

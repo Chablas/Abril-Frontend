@@ -1,0 +1,411 @@
+<app-abril-modal-panel
+  titulo="Detalle del contrato"
+  [subtitulo]="(contrato.contractorName ?? '') + (contrato.workSpecialtyDescription ? ' · ' + contrato.workSpecialtyDescription : '')"
+  icono="ti-file-certificate"
+  width="920px"
+  (closeModal)="closeModal.emit()">
+
+  <!-- ── Carga inicial ─────────────────────────────────────────────────── -->
+  <div *ngIf="loading" class="cd-body">
+    <div class="ct-skeleton" style="height:56px"></div>
+    <div class="ct-skeleton" style="height:18px;width:40%"></div>
+    <div class="ct-skeleton" style="height:140px"></div>
+  </div>
+
+  <div *ngIf="!loading" class="cd-body">
+
+    <!-- ── Stepper ──────────────────────────────────────────────────────── -->
+    <nav class="cd-stepper" aria-label="Pasos del contrato">
+      <ng-container *ngFor="let paso of pasos; let i = index">
+        <div *ngIf="i > 0" class="cd-step-line" [class.cd-step-line--done]="pasoCompletado(i)"></div>
+        <button type="button" class="cd-step"
+          [class.cd-step--done]="pasoCompletado(i + 1)"
+          [class.cd-step--current]="!pasoCompletado(i + 1) && i + 1 === pasoSiguiente"
+          [class.cd-step--viewing]="i + 1 === viewStep"
+          [class.cd-step--pending-impl]="i + 1 === pasoSinImplementar"
+          [disabled]="!puedeVer(i + 1)"
+          [attr.aria-current]="i + 1 === viewStep ? 'step' : null"
+          [title]="paso + (i + 1 === pasoSinImplementar ? ' (aún no disponible)' : '')"
+          (click)="irAPaso(i + 1)">
+          <span class="cd-step-circle">
+            <i *ngIf="pasoCompletado(i + 1) && i + 1 !== pasoSinImplementar" class="ti ti-check" aria-hidden="true"></i>
+            <ng-container *ngIf="!pasoCompletado(i + 1) || i + 1 === pasoSinImplementar">{{ i + 1 }}</ng-container>
+          </span>
+          <span class="cd-step-label">{{ paso }}</span>
+        </button>
+      </ng-container>
+    </nav>
+
+    <!-- ── Resumen fijo ─────────────────────────────────────────────────── -->
+    <div class="cd-resumen">
+      <div>
+        <span class="cd-k">N° de contrato</span>
+        <span class="cd-v">{{ contrato.contractNumber ?? 'Por asignar' }}</span>
+      </div>
+      <div>
+        <span class="cd-k">Monto</span>
+        <span class="cd-v">{{ contrato.currencyCode }} {{ contrato.amount | number: '1.2-2' }}</span>
+      </div>
+      <div>
+        <span class="cd-k">Estado</span>
+        <span class="cd-badge" [style.background]="estadoBadge(estado).bg" [style.color]="estadoBadge(estado).text">
+          {{ estado }}/{{ totalPasos }} · {{ nombrePaso(estado) }}
+        </span>
+      </div>
+    </div>
+
+    <div class="cd-divider"></div>
+
+    <h3 class="cd-step-title">Paso {{ viewStep }} · {{ pasos[viewStep - 1] }}</h3>
+
+    <!-- ═════ PASO 1: Cotización / cuadro comparativo ═════ -->
+    <section *ngIf="viewStep === 1" class="cd-section">
+      <div class="ct-alert ct-alert--info">
+        <i class="ti ti-info-circle" aria-hidden="true"></i>
+        <span>
+          La cotización y el cuadro comparativo todavía no se cargan en el sistema. Este contrato se
+          creó con el contratista y el monto ya elegidos; el siguiente paso es completar sus datos.
+        </span>
+      </div>
+      <div class="cd-grid">
+        <div><span class="cd-k">Contratista</span><span class="cd-v">{{ contrato.contractorName | titleCase }}</span></div>
+        <div><span class="cd-k">Especialidad</span><span class="cd-v">{{ contrato.workSpecialtyDescription | titleCase }}</span></div>
+        <div><span class="cd-k">Monto</span><span class="cd-v">{{ contrato.currencyCode }} {{ contrato.amount | number: '1.2-2' }}</span></div>
+        <div><span class="cd-k">Registrado</span><span class="cd-v">{{ contrato.createdDateTime | date: 'dd/MM/yyyy' }}</span></div>
+      </div>
+    </section>
+
+    <!-- ═════ PASO 2: Datos del contrato + hitos de pago ═════ -->
+    <section *ngIf="viewStep === 2" class="cd-section">
+      <div class="cd-section-head">
+        <p class="ct-section">Datos del contrato</p>
+        <button *ngIf="editable" type="button" class="ct-btn ct-btn--ghost ct-btn--sm" (click)="editar.emit(contrato)">
+          <i class="ti ti-edit" aria-hidden="true"></i> Editar datos
+        </button>
+      </div>
+
+      <div class="cd-grid">
+        <div class="cd-full"><span class="cd-k">Tipo de servicio</span><span class="cd-v">{{ contrato.serviceDescription || '—' }}</span></div>
+        <div><span class="cd-k">Contratista</span><span class="cd-v">{{ contrato.contractorName | titleCase }}</span></div>
+        <div><span class="cd-k">Especialidad</span><span class="cd-v">{{ contrato.workSpecialtyDescription | titleCase }}</span></div>
+        <div><span class="cd-k">Correo del contratista</span><span class="cd-v">{{ contrato.contractorEmail || '—' }}</span></div>
+        <div><span class="cd-k">Fecha de firma</span><span class="cd-v">{{ contrato.signingDate ? (contrato.signingDate | date: 'dd/MM/yyyy' : 'UTC') : '—' }}</span></div>
+        <div><span class="cd-k">Inicio</span><span class="cd-v">{{ contrato.startDate ? (contrato.startDate | date: 'dd/MM/yyyy' : 'UTC') : '—' }}</span></div>
+        <div><span class="cd-k">Fin</span><span class="cd-v">{{ contrato.endDate ? (contrato.endDate | date: 'dd/MM/yyyy' : 'UTC') : '—' }}</span></div>
+        <div><span class="cd-k">Plazo</span><span class="cd-v">{{ contrato.termDays != null ? contrato.termDays + ' días' : '—' }}</span></div>
+        <div class="cd-full">
+          <span class="cd-k">Detalle de servicios</span>
+          <span class="cd-v cd-pre">{{ contrato.detalleServicios || '—' }}</span>
+        </div>
+      </div>
+
+      <div class="cd-section-head cd-mt">
+        <p class="ct-section">Hitos de pago</p>
+        <span class="cd-suma" [class.cd-suma--ok]="sumaHitos === 100" [class.cd-suma--warn]="sumaHitos !== 100">
+          {{ sumaHitos | number: '1.0-2' }}% asignado
+        </span>
+      </div>
+
+      <div class="abril-table-wrap abril-table-wrap--card">
+        <table class="abril-table">
+          <thead>
+            <tr>
+              <th class="w-[44px] text-center">#</th>
+              <th>Descripción</th>
+              <th class="w-[80px] text-right">%</th>
+              <th class="w-[130px] text-right">Monto</th>
+              <th class="w-[110px] text-center">Fecha de pago</th>
+              <th class="w-[120px]">Cheque / recibo</th>
+              <th *ngIf="editable" class="w-[52px]"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="contrato.milestones.length === 0" class="cd-row-static">
+              <td [attr.colspan]="editable ? 7 : 6" class="text-center cd-empty-row">
+                Sin hitos de pago todavía. Agrega al menos uno para poder generar el contrato.
+              </td>
+            </tr>
+            <tr *ngFor="let h of contrato.milestones" class="cd-row-static">
+              <td class="text-center">{{ h.order }}</td>
+              <td>
+                {{ h.description }}
+                <span *ngIf="h.esHitoDeGarantia" class="cd-garantia" title="El último hito es el que el contrato toma como hito de garantía">Garantía</span>
+                <span *ngIf="h.observation" class="cd-obs">{{ h.observation }}</span>
+              </td>
+              <td class="text-right">{{ h.percentage | number: '1.0-2' }}%</td>
+              <td class="text-right">{{ contrato.currencyCode }} {{ h.amount | number: '1.2-2' }}</td>
+              <td class="text-center">{{ h.paidDate ? (h.paidDate | date: 'dd/MM/yyyy' : 'UTC') : '—' }}</td>
+              <td>{{ h.chequeRecibo || '—' }}</td>
+              <td *ngIf="editable" class="text-center">
+                <button type="button" class="abril-action-btn abril-action-btn--danger" title="Eliminar hito" (click)="eliminarHito(h)">
+                  <i class="ti ti-trash" aria-hidden="true"></i>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="contrato.milestones.length > 1" class="cd-row-static cd-total">
+              <td></td>
+              <td>Total</td>
+              <td class="text-right">{{ sumaHitos | number: '1.0-2' }}%</td>
+              <td class="text-right">{{ contrato.currencyCode }} {{ montoHitos | number: '1.2-2' }}</td>
+              <td [attr.colspan]="editable ? 3 : 2"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Agregar hito -->
+      <div *ngIf="editable && porcentajeDisponible > 0" class="cd-hito-form">
+        <div class="cd-hito-row">
+          <div class="abril-field cd-hito-desc">
+            <label class="abril-field-label">Descripción del hito <span class="ct-req">*</span></label>
+            <input class="abril-field-input" [(ngModel)]="hitoDescripcion" maxlength="500"
+              placeholder="Ej. A la entrega del anteproyecto" (keyup.enter)="agregarHito()" />
+          </div>
+          <div class="abril-field cd-hito-pct">
+            <label class="abril-field-label">Porcentaje <span class="ct-req">*</span></label>
+            <input class="abril-field-input" type="number" min="0.01" [max]="porcentajeDisponible" step="0.01"
+              [(ngModel)]="hitoPorcentaje" placeholder="%" (keyup.enter)="agregarHito()" />
+          </div>
+          <button type="button" class="ct-btn ct-btn--primary cd-hito-btn" [disabled]="savingHito" (click)="agregarHito()">
+            <i class="ti ti-plus" aria-hidden="true"></i> Agregar
+          </button>
+        </div>
+        <p *ngIf="hitoSubmitted && !hitoDescripcion.trim()" class="ct-error">Escribe la descripción del hito.</p>
+        <p *ngIf="hitoSubmitted && hitoPorcentajeInvalido" class="ct-error">
+          El porcentaje debe ser mayor a 0 y como máximo {{ porcentajeDisponible | number: '1.0-2' }}% (lo que falta para llegar al 100%).
+        </p>
+        <p *ngIf="!hitoPorcentajeInvalido" class="ct-hint">
+          Equivale a {{ contrato.currencyCode }} {{ montoHitoNuevo | number: '1.2-2' }}. Disponible: {{ porcentajeDisponible | number: '1.0-2' }}%.
+          El último hito que agregues será el de garantía.
+        </p>
+
+        <button type="button" class="cd-link-btn" (click)="hitoMostrarPago = !hitoMostrarPago">
+          <i class="ti" [class.ti-chevron-down]="!hitoMostrarPago" [class.ti-chevron-up]="hitoMostrarPago" aria-hidden="true"></i>
+          Datos de pago (opcional)
+        </button>
+        <div *ngIf="hitoMostrarPago" class="cd-hito-row">
+          <app-date-picker class="cd-hito-fecha" label="Fecha de pago" [floatingLabel]="true" [dense]="true" [color]="accent"
+            [value]="hitoFechaPago" (valueChange)="hitoFechaPago = $event">
+          </app-date-picker>
+          <div class="abril-field cd-hito-cheque">
+            <label class="abril-field-label">Cheque / recibo</label>
+            <input class="abril-field-input" [(ngModel)]="hitoChequeRecibo" maxlength="100" />
+          </div>
+          <div class="abril-field cd-hito-desc">
+            <label class="abril-field-label">Observación</label>
+            <input class="abril-field-input" [(ngModel)]="hitoObservacion" maxlength="500" />
+          </div>
+        </div>
+        <p *ngIf="hitoMostrarPago" class="ct-hint">Un hito ya guardado no se puede editar: para corregirlo, elimínalo y vuelve a agregarlo.</p>
+      </div>
+
+      <div *ngIf="editable && porcentajeDisponible <= 0 && contrato.milestones.length > 0" class="ct-alert ct-alert--ok">
+        <i class="ti ti-circle-check" aria-hidden="true"></i>
+        <span>Los hitos de pago ya suman 100%.</span>
+      </div>
+
+      <p *ngIf="puedeEditar && !editable" class="ct-hint">
+        Los datos y los hitos ya no se pueden modificar: el contrato está en el proceso de firmas.
+      </p>
+    </section>
+
+    <!-- ═════ PASO 3: Generación de documentos ═════ -->
+    <section *ngIf="viewStep === 3" class="cd-section">
+      <p class="ct-section">Antes de generar</p>
+      <ul class="cd-checklist">
+        <li *ngFor="let r of requisitosGeneracion" [class.cd-check--ok]="r.ok">
+          <i class="ti" [class.ti-circle-check]="r.ok" [class.ti-circle-x]="!r.ok" aria-hidden="true"></i>
+          <div>
+            <span>{{ r.label }}</span>
+            <span *ngIf="!r.ok && r.nota" class="ct-hint cd-check-nota">{{ r.nota }}</span>
+          </div>
+        </li>
+      </ul>
+
+      <div class="ct-alert ct-alert--info">
+        <i class="ti ti-cloud-upload" aria-hidden="true"></i>
+        <span>
+          Se descarga el contrato en Word con la plantilla de la especialidad. Si el proyecto tiene
+          carpeta de SharePoint configurada, además queda guardado ahí.
+        </span>
+      </div>
+
+      <div *ngIf="editable" class="cd-actions">
+        <button type="button" class="ct-btn ct-btn--primary" [disabled]="saving" (click)="generarContrato()">
+          <i class="ti ti-file-download" aria-hidden="true"></i>
+          {{ documentoGenerado ? 'Volver a generar' : 'Generar y descargar contrato' }}
+        </button>
+      </div>
+      <p *ngIf="!puedeEditar" class="ct-hint">Solo lectura: no tienes permiso para generar el contrato.</p>
+    </section>
+
+    <!-- ═════ PASO 4: Envío al contratista ═════ -->
+    <section *ngIf="viewStep === 4" class="cd-section">
+      <ng-container *ngIf="estado <= 3">
+        <div class="cd-grid">
+          <div class="cd-full">
+            <span class="cd-k">Correo del contratista</span>
+            <span class="cd-v">{{ contrato.contractorEmail || 'Sin correo registrado' }}</span>
+          </div>
+        </div>
+
+        <ng-container *ngIf="puedeEnviar">
+          <div *ngIf="!contrato.contractorEmail" class="ct-alert ct-alert--warn">
+            <i class="ti ti-mail-off" aria-hidden="true"></i>
+            <span>Para enviarlo por correo, primero registra el correo del contratista en el paso 2.</span>
+          </div>
+          <p class="ct-hint">
+            «Enviar por correo» vuelve a generar el contrato y lo envía adjunto. Si ya se lo hiciste
+            llegar por otro medio, registra el envío sin mandar correo.
+          </p>
+          <div class="cd-actions">
+            <button type="button" class="ct-btn ct-btn--ghost" [disabled]="saving" (click)="registrarEnvioExterno()">
+              <i class="ti ti-checkbox" aria-hidden="true"></i> Ya se envió por fuera
+            </button>
+            <button type="button" class="ct-btn ct-btn--primary" [disabled]="saving || !contrato.contractorEmail" (click)="enviarPorCorreo()">
+              <i class="ti ti-send" aria-hidden="true"></i> Enviar por correo
+            </button>
+          </div>
+        </ng-container>
+        <p *ngIf="!puedeEditar" class="ct-hint">El contrato todavía no se envía al contratista.</p>
+      </ng-container>
+
+      <div *ngIf="estado >= 4" class="ct-alert ct-alert--ok">
+        <i class="ti ti-circle-check" aria-hidden="true"></i>
+        <span *ngIf="!contrato.contractorNotificationSkipped">
+          Contrato enviado por correo a {{ contrato.contractorEmail || 'el contratista' }}.
+        </span>
+        <span *ngIf="contrato.contractorNotificationSkipped">Envío registrado como hecho fuera del sistema.</span>
+      </div>
+    </section>
+
+    <!-- ═════ PASO 5: Llegada a Oficina Central ═════ -->
+    <section *ngIf="viewStep === 5" class="cd-section">
+      <ng-container *ngIf="puedeRegistrarLlegada">
+        <p class="ct-hint cd-no-mt">¿Cómo llegó el expediente firmado por el contratista?</p>
+        <div class="cd-radios" role="radiogroup" aria-label="Estado de llegada">
+          <label class="cd-radio" [class.cd-radio--on]="llegadaConObservaciones === false">
+            <input type="radio" name="llegada" [value]="false" [(ngModel)]="llegadaConObservaciones" />
+            <i class="ti ti-circle-check" aria-hidden="true"></i> Sin observaciones
+          </label>
+          <label class="cd-radio" [class.cd-radio--on]="llegadaConObservaciones === true">
+            <input type="radio" name="llegada" [value]="true" [(ngModel)]="llegadaConObservaciones" />
+            <i class="ti ti-alert-triangle" aria-hidden="true"></i> Con observaciones
+          </label>
+        </div>
+        <div *ngIf="llegadaConObservaciones" class="abril-field">
+          <label class="abril-field-label">Observación <span class="ct-req">*</span></label>
+          <textarea class="abril-field-input" rows="3" [(ngModel)]="llegadaObservacion" maxlength="1000"
+            placeholder="Qué observaciones trajo el expediente"></textarea>
+        </div>
+        <p *ngIf="llegadaSubmitted && llegadaConObservaciones === null" class="ct-error">Indica cómo llegó el expediente.</p>
+        <p *ngIf="llegadaSubmitted && llegadaConObservaciones && !llegadaObservacion.trim()" class="ct-error">Describe las observaciones.</p>
+        <p *ngIf="llegadaConObservaciones" class="ct-hint">
+          Mientras no empiecen las firmas puedes corregir los datos o los hitos (paso 2) y volver a generar el contrato (paso 3).
+        </p>
+        <div class="cd-actions">
+          <button type="button" class="ct-btn ct-btn--primary" [disabled]="saving" (click)="registrarLlegada()">
+            <i class="ti ti-inbox" aria-hidden="true"></i> {{ estado === 5 ? 'Actualizar llegada' : 'Registrar llegada' }}
+          </button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="!puedeRegistrarLlegada">
+        <div *ngIf="contrato.arrivedWithObservations === false" class="ct-alert ct-alert--ok">
+          <i class="ti ti-circle-check" aria-hidden="true"></i><span>Llegó sin observaciones.</span>
+        </div>
+        <div *ngIf="contrato.arrivedWithObservations === true" class="ct-alert ct-alert--warn">
+          <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+          <span>Llegó con observaciones: {{ contrato.arrivalObservation || '—' }}</span>
+        </div>
+        <p *ngIf="contrato.arrivedWithObservations == null" class="ct-hint">Todavía no se registra la llegada.</p>
+      </ng-container>
+    </section>
+
+    <!-- ═════ PASO 6: Procesos de firma ═════ -->
+    <section *ngIf="viewStep === 6" class="cd-section">
+      <p class="ct-hint cd-no-mt">
+        Marca cada firma a medida que se obtiene; se guarda al instante. {{ firmasCompletas }} de {{ firmas.length }} firmas.
+      </p>
+      <div class="cd-firmas">
+        <button type="button" *ngFor="let f of firmas" class="cd-firma"
+          [class.cd-firma--on]="contrato[f.key]"
+          [disabled]="!puedeFirmar || savingFirma !== null"
+          [attr.aria-pressed]="contrato[f.key]"
+          (click)="toggleFirma(f.key)">
+          <i class="ti" [class.ti-square-check]="contrato[f.key]" [class.ti-square]="!contrato[f.key]" aria-hidden="true"></i>
+          <span>{{ f.label }}</span>
+          <i *ngIf="savingFirma === f.key" class="ti ti-loader-2 cd-spin" aria-hidden="true"></i>
+        </button>
+      </div>
+      <div *ngIf="todasLasFirmas" class="ct-alert ct-alert--ok">
+        <i class="ti ti-circle-check" aria-hidden="true"></i>
+        <span>Contrato firmado por las tres partes.</span>
+      </div>
+      <p *ngIf="puedeEditar && !puedeFirmar && estado < 5" class="ct-hint">Las firmas se registran después de la llegada a Oficina Central.</p>
+    </section>
+
+    <!-- ═════ PASO 7: Contrato firmado escaneado (sin backend todavía) ═════ -->
+    <section *ngIf="viewStep === 7" class="cd-section">
+      <div class="ct-alert ct-alert--info">
+        <i class="ti ti-clock" aria-hidden="true"></i>
+        <span>
+          La carga del contrato firmado escaneado todavía no está disponible en el sistema. Por
+          ahora, al completar las tres firmas se continúa directamente con la notificación (paso 8).
+        </span>
+      </div>
+    </section>
+
+    <!-- ═════ PASO 8: Notificación a Unidad de Proyectos ═════ -->
+    <section *ngIf="viewStep === 8" class="cd-section">
+      <div *ngIf="estado >= 8" class="ct-alert ct-alert--ok">
+        <i class="ti ti-circle-check" aria-hidden="true"></i>
+        <span>Unidad de Proyectos ya fue notificada.</span>
+      </div>
+      <ng-container *ngIf="estado < 8">
+        <p class="ct-hint cd-no-mt">Se envía un correo a Unidad de Proyectos avisando que el contrato ya está firmado.</p>
+        <div *ngIf="!todasLasFirmas" class="ct-alert ct-alert--warn">
+          <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+          <span>Faltan firmas ({{ firmasCompletas }} de {{ firmas.length }}). Complétalas en el paso 6.</span>
+        </div>
+        <div *ngIf="puedeEditar" class="cd-actions">
+          <button type="button" class="ct-btn ct-btn--primary" [disabled]="saving || !puedeNotificar" (click)="notificar()">
+            <i class="ti ti-mail-forward" aria-hidden="true"></i> Notificar a Unidad de Proyectos
+          </button>
+        </div>
+      </ng-container>
+    </section>
+
+    <!-- ═════ PASO 9: Cierre ═════ -->
+    <section *ngIf="viewStep === 9" class="cd-section">
+      <div *ngIf="estado >= 9" class="ct-alert ct-alert--ok">
+        <i class="ti ti-lock" aria-hidden="true"></i>
+        <span>Expediente cerrado.</span>
+      </div>
+      <ng-container *ngIf="estado < 9">
+        <p class="ct-hint cd-no-mt">Cierra el expediente cuando no quede nada pendiente del contrato.</p>
+        <div *ngIf="puedeEditar" class="cd-actions">
+          <button type="button" class="ct-btn ct-btn--primary" [disabled]="saving || !puedeCerrar" (click)="cerrarExpediente()">
+            <i class="ti ti-lock" aria-hidden="true"></i> Cerrar expediente
+          </button>
+        </div>
+      </ng-container>
+    </section>
+
+    <p *ngIf="!puedeEditar" class="cd-readonly">
+      <i class="ti ti-eye" aria-hidden="true"></i> Solo lectura
+    </p>
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="ct-btn ct-btn--ghost" (click)="closeModal.emit()">Cerrar</button>
+    <div class="footer-nav">
+      <button type="button" class="ct-btn ct-btn--ghost" [disabled]="loading || !puedeVer(viewStep - 1)" (click)="anterior()">
+        <i class="ti ti-chevron-left" aria-hidden="true"></i> Anterior
+      </button>
+      <button type="button" class="ct-btn ct-btn--ghost" [disabled]="loading || !puedeVer(viewStep + 1)" (click)="siguiente()">
+        Siguiente <i class="ti ti-chevron-right" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+</app-abril-modal-panel>

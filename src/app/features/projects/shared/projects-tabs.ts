@@ -7,6 +7,7 @@ import { AbrilPageTab } from '../../../shared/components/abril-page-header/abril
 export const PROJECTS_TABS: AbrilPageTab[] = [
   { label: 'Cronograma Actividades', icono: 'ti-calendar',         route: '/projects/cronograma-actividades',        featureKey: 'projects.cronograma-actividades' },
   { label: 'Dashboard UDP',          icono: 'ti-chart-bar',        route: '/projects/cronograma-dashboard',          featureKey: 'projects.cronograma-dashboard' },
+  { label: 'Contratos',              icono: 'ti-file-certificate', route: '/projects/contratos',                   featureKey: 'unidad-de-proyectos.contratos' },
   { label: 'Control de IVTs',        icono: 'ti-clipboard',        route: '/projects/technical-inspection-visit',    featureKey: 'projects.ivt-control' },
   { label: 'Cuaderno de Obra',       icono: 'ti-notebook',         route: '/projects/construction-logbook',          featureKey: 'projects.construction-logbook' },
   { label: 'Respuesta de Informes',  icono: 'ti-file-report',      route: '/projects/report-response-control',       featureKey: 'projects.report-response-control' },

@@ -1,0 +1,154 @@
+<app-abril-modal-panel
+  [titulo]="esEdicion ? 'Editar datos del contrato' : 'Nuevo contrato'"
+  [subtitulo]="esEdicion ? (contrato?.contractorName ?? '') : projectName"
+  [icono]="esEdicion ? 'ti-edit' : 'ti-file-plus'"
+  width="820px"
+  [preventCloseWhenDirty]="true"
+  (closeModal)="closeModal.emit()">
+
+  <div class="cf-grid">
+
+    <!-- ── Partes ─────────────────────────────────────────────────── -->
+    <p class="ct-section cf-full">Contratista y especialidad</p>
+
+    <div>
+      <app-search-select
+        *ngIf="!esEdicion"
+        label="Contratista"
+        placeholder="Buscar contratista..."
+        [required]="true"
+        [fullText]="true"
+        [options]="catalogos.contributors"
+        valueField="contractorId"
+        displayField="contributorName"
+        [color]="accent"
+        [value]="contractorId"
+        (valueChange)="onContratistaChange($event)">
+      </app-search-select>
+      <div *ngIf="esEdicion" class="abril-field">
+        <label class="abril-field-label">Contratista</label>
+        <input class="abril-field-input" [value]="contrato?.contractorName ?? '—'" disabled />
+      </div>
+      <p *ngIf="submitted && !contractorId" class="ct-error">Elige un contratista.</p>
+      <p *ngIf="!esEdicion && contratistaSeleccionado" class="ct-hint">RUC {{ contratistaSeleccionado.contributorRuc }}</p>
+    </div>
+
+    <div>
+      <app-search-select
+        *ngIf="!esEdicion"
+        label="Especialidad"
+        placeholder="Selecciona especialidad"
+        [required]="true"
+        [options]="catalogos.workSpecialties"
+        valueField="workSpecialtyId"
+        displayField="workSpecialtyDescription"
+        [color]="accent"
+        [value]="workSpecialtyId"
+        (valueChange)="workSpecialtyId = $event">
+      </app-search-select>
+      <div *ngIf="esEdicion" class="abril-field">
+        <label class="abril-field-label">Especialidad</label>
+        <input class="abril-field-input" [value]="contrato?.workSpecialtyDescription ?? '—'" disabled />
+      </div>
+      <p *ngIf="submitted && !workSpecialtyId" class="ct-error">Elige una especialidad.</p>
+      <p *ngIf="esEdicion" class="ct-hint">El contratista y la especialidad no se pueden cambiar después de crear el contrato.</p>
+    </div>
+
+    <div class="cf-full abril-field">
+      <label class="abril-field-label">Tipo de servicio</label>
+      <input class="abril-field-input" [(ngModel)]="serviceDescription" maxlength="500"
+        placeholder="Ej. Diseño de arquitectura del proyecto" />
+    </div>
+
+    <!-- ── Monto ──────────────────────────────────────────────────── -->
+    <p class="ct-section cf-full">Monto</p>
+
+    <div>
+      <div class="abril-field">
+        <label class="abril-field-label">Monto del contrato <span class="ct-req">*</span></label>
+        <input class="abril-field-input" type="number" min="0" step="0.01" [(ngModel)]="amount" placeholder="0.00" />
+      </div>
+      <p *ngIf="submitted && (amount === null || amount <= 0)" class="ct-error">Ingresa un monto mayor a 0.</p>
+      <p *ngIf="esEdicion && (contrato?.milestones?.length ?? 0) > 0" class="ct-hint">
+        Si cambias el monto, se recalcula el monto de cada hito de pago según su porcentaje.
+      </p>
+    </div>
+
+    <div>
+      <app-search-select
+        label="Moneda"
+        placeholder="Selecciona moneda"
+        [required]="true"
+        [uppercase]="true"
+        [sortAlpha]="false"
+        [options]="catalogos.currencies"
+        valueField="currencyId"
+        displayField="currencyCode"
+        [color]="accent"
+        [value]="currencyId"
+        (valueChange)="currencyId = $event">
+      </app-search-select>
+      <p *ngIf="submitted && !currencyId" class="ct-error">Elige una moneda.</p>
+    </div>
+
+    <!-- ── Contacto y plazos ──────────────────────────────────────── -->
+    <p class="ct-section cf-full">Envío y plazos</p>
+
+    <div class="cf-full">
+      <div class="abril-field">
+        <label class="abril-field-label">Correo del contratista</label>
+        <input class="abril-field-input" type="email" [(ngModel)]="contractorEmail" maxlength="200"
+          placeholder="correo@empresa.com" />
+      </div>
+      <p *ngIf="emailInvalido" class="ct-error">El correo no tiene un formato válido.</p>
+      <p class="ct-hint" *ngIf="!emailInvalido">A este correo se envía el contrato en el paso 4.</p>
+      <div *ngIf="correosSugeridos.length" class="cf-chips">
+        <span class="ct-hint">Registrados:</span>
+        <button type="button" class="cf-chip" *ngFor="let e of correosSugeridos" (click)="contractorEmail = e">
+          {{ e }}
+        </button>
+      </div>
+    </div>
+
+    <app-date-picker label="Fecha de firma" [floatingLabel]="true" [color]="accent"
+      [value]="signingDate" (valueChange)="signingDate = $event">
+    </app-date-picker>
+
+    <div>
+      <div class="abril-field">
+        <label class="abril-field-label">Plazo (días)</label>
+        <input class="abril-field-input" type="number" min="0" step="1" [(ngModel)]="termDays" placeholder="0" />
+      </div>
+      <p *ngIf="plazoInvalido" class="ct-error">El plazo debe ser un número entero de días.</p>
+    </div>
+
+    <app-date-picker label="Fecha de inicio" [floatingLabel]="true" [color]="accent"
+      [value]="startDate" [max]="endDate" (valueChange)="startDate = $event">
+    </app-date-picker>
+
+    <div>
+      <app-date-picker label="Fecha de fin" [floatingLabel]="true" [color]="accent"
+        [value]="endDate" [min]="startDate" (valueChange)="endDate = $event">
+      </app-date-picker>
+      <p *ngIf="fechasInvalidas" class="ct-error">La fecha de fin no puede ser anterior a la de inicio.</p>
+    </div>
+
+    <!-- ── Detalle ────────────────────────────────────────────────── -->
+    <div class="cf-full">
+      <div class="abril-field">
+        <label class="abril-field-label">Detalle de servicios</label>
+        <textarea class="abril-field-input" rows="5" [(ngModel)]="detalleServicios"
+          placeholder="Alcance detallado de los servicios, tal como debe ir en el contrato"></textarea>
+      </div>
+      <p class="ct-hint">Se inserta tal cual en el documento del contrato.</p>
+    </div>
+  </div>
+
+  <div modalFooter>
+    <button type="button" class="ct-btn ct-btn--ghost" (click)="closeModal.emit()">Cancelar</button>
+    <button type="button" class="ct-btn ct-btn--primary" [disabled]="saving" (click)="guardar()">
+      <i class="ti ti-device-floppy" aria-hidden="true"></i>
+      {{ esEdicion ? 'Guardar cambios' : 'Crear contrato' }}
+    </button>
+  </div>
+</app-abril-modal-panel>

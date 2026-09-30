@@ -174,6 +174,8 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "ssoma.salud-ocupacional.paso": "PASO",
   "ssoma.salud-ocupacional.programaciones": "Programaciones",
   "ssoma.salud-ocupacional.topico": "Tópico Médico",
+  "unidad-de-proyectos.contratos": "Contratos",
+  "unidad-de-proyectos.contratos.editar": "Contratos - Crear y editar",
   "vecinos.control-licencias": "Control de Licencias",
   "vecinos.croquis": "Croquis",
   "vecinos.dashboard": "Dashboard",

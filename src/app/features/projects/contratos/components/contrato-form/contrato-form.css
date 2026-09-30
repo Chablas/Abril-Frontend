@@ -1,0 +1,34 @@
+.cf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 16px;
+  row-gap: 12px;
+  align-items: start;
+}
+
+.cf-full { grid-column: 1 / -1; }
+
+/* Los títulos de sección separan bloques: aire extra arriba, salvo el primero. */
+.cf-grid > .ct-section:not(:first-child) { margin-top: 8px; }
+
+.cf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.cf-chips .ct-hint { margin: 0; }
+
+.cf-chip {
+  font-size: 12px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--color-abril-standard-border);
+  background: var(--color-abril-standard-light);
+  color: var(--color-abril-standard);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+.cf-chip:hover { background: #E0F4EE; }
+.cf-chip:focus-visible { outline: 2px solid #2E6DB4; outline-offset: 2px; }

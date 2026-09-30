@@ -137,6 +137,17 @@ export const PROJECTS_ROUTES: Routes = [
     data: { titulo: 'ACTA DE REUNIÓN', featureKey: 'projects.actas-reunion' },
   },
   {
+    // Contratos de Unidad de Proyectos. La ruta exige el featureKey de "ver", igual que el
+    // [RequireFeature] a nivel de clase de ProjectContractController en el backend, que aplica a
+    // TODOS sus endpoints: un rol con solo ".editar" recibiría 403 en cada llamada, así que
+    // tampoco se le muestra la pantalla. Crear/editar/avanzar pasos se habilita dentro con ".editar".
+    path: 'contratos',
+    loadComponent: () =>
+      import('./contratos/pages/contratos-lista/contratos-lista').then((m) => m.ContratosLista),
+    canActivate: [roleGuard],
+    data: { titulo: 'CONTRATOS', featureKey: 'unidad-de-proyectos.contratos' },
+  },
+  {
     path: 'technical-inspection-visit',
     component: IvtControl,
     canActivate: [roleGuard],

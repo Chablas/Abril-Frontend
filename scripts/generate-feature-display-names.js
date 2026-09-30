@@ -52,6 +52,7 @@ const SECCIONES_SIN_RUTA = {
   'gestion-gth.reclutamiento.gestionar': 'Reclutamiento - Gestionar procesos',
   'mejora-continua.milestone-schedule.editar': 'Cronograma de Hitos - Subir versiones (residente del proyecto)',
   'mejora-continua.milestone-schedule.administrar': 'Cronograma de Hitos - Administrar',
+  'unidad-de-proyectos.contratos.editar': 'Contratos - Crear y editar',
 };
 
 function walk(dir, files = []) {

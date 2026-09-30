@@ -1,0 +1,24 @@
+.cc-body { display: flex; flex-direction: column; gap: 16px; }
+
+.cc-actual {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  background: #F8FAFC;
+}
+.cc-actual > i { font-size: 24px; color: var(--color-abril-standard); }
+.cc-actual__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cc-actual__name { font-size: 14px; font-weight: 600; color: #1E3A5F; overflow-wrap: anywhere; }
+
+.cc-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-abril-standard);
+  text-decoration: none;
+}
+.cc-link:hover { text-decoration: underline; }
