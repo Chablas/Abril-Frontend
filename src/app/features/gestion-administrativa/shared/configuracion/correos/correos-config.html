@@ -27,10 +27,12 @@
             <i class="ti" [ngClass]="iconoEvento"></i>
             {{ evento.nombre }}
           </h3>
-          <!-- El asunto con que sale, para buscarlo en Enviados. -->
-          <p class="config-card__asunto" *ngIf="evento.asunto">
-            <span *ngFor="let parte of evento.asunto | asuntoPartes" [class.asunto-var]="parte.variable">{{ parte.texto }}</span>
-          </p>
+          <!-- El asunto con que sale, para buscarlo en Enviados (uno por línea si cambia según el caso). -->
+          <div class="config-card__asuntos" *ngIf="evento.asuntos?.length">
+            <p class="config-card__asunto" *ngFor="let asunto of evento.asuntos">
+              <span *ngFor="let parte of asunto | asuntoPartes" [class.asunto-var]="parte.variable">{{ parte.texto }}</span>
+            </p>
+          </div>
           <p class="config-card__sub" *ngIf="evento.descripcion">{{ evento.descripcion }}</p>
         </div>
 

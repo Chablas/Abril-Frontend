@@ -20,9 +20,11 @@
             {{ correo.nombre }}
           </h3>
           <!-- El asunto con que sale, para buscarlo en Enviados. -->
-          <p class="config-card__asunto" *ngIf="correo.asunto">
-            <span *ngFor="let parte of correo.asunto | asuntoPartes" [class.asunto-var]="parte.variable">{{ parte.texto }}</span>
-          </p>
+          <div class="config-card__asuntos" *ngIf="correo.asuntos?.length">
+            <p class="config-card__asunto" *ngFor="let asunto of correo.asuntos">
+              <span *ngFor="let parte of asunto | asuntoPartes" [class.asunto-var]="parte.variable">{{ parte.texto }}</span>
+            </p>
+          </div>
           <p class="config-card__sub" *ngIf="correo.descripcion">{{ correo.descripcion }}</p>
         </div>
 
