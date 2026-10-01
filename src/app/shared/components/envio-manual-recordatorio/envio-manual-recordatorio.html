@@ -1,0 +1,27 @@
+<app-abril-modal-panel
+  *ngIf="abierto"
+  titulo="Enviar manualmente"
+  [subtitulo]="nombre"
+  icono="ti-send"
+  width="420px"
+  (closeModal)="cerrar()">
+
+  <app-date-picker
+    label="Fecha a simular"
+    [floatingLabel]="true"
+    color="var(--color-abril-standard)"
+    [allowClear]="false"
+    [disabled]="ocupado"
+    [value]="fecha"
+    (valueChange)="fecha = $event">
+  </app-date-picker>
+
+  <div modalFooter class="modal-footer-row">
+    <button type="button" class="btn-ghost" [disabled]="ocupado" (click)="cerrar()">Cancelar</button>
+    <button type="button" class="btn-primary" [disabled]="!fecha || ocupado" (click)="continuar()">
+      <i class="ti ti-loader-2 spin" *ngIf="ocupado"></i>
+      <i class="ti ti-arrow-right" *ngIf="!ocupado"></i>
+      Continuar
+    </button>
+  </div>
+</app-abril-modal-panel>

@@ -78,6 +78,31 @@
   max-width: 760px;
 }
 
+/* Asunto con que sale el correo, debajo del nombre: es lo que se busca en Enviados. Lo que cambia
+   en cada envío ({código}, {mes}) va en una pastilla gris (pipe asuntoPartes). */
+.config-card__asunto {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 6px;
+  line-height: 1.5;
+  max-width: 760px;
+  word-break: break-word;
+}
+.config-card--off .config-card__asunto {
+  color: #94a3b8;
+}
+.asunto-var {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.92em;
+  font-weight: 500;
+  font-style: italic;
+}
+
 /* ── Interruptor maestro del correo ── */
 .master {
   display: flex;
@@ -124,13 +149,13 @@
 }
 
 /* ── Encabezado de la lista + botón "Agregar" ──
-   Solo lleva el botón (el párrafo que explicaba la lista se quitó): va pegado a la derecha,
-   sobre la esquina de la tabla. */
+   Solo lleva los botones (el párrafo que explicaba la lista se quitó): van pegados a la derecha,
+   sobre la esquina de la tabla. Los recordatorios suman «Enviar manualmente». */
 .destinatarios__head {
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
-  gap: 16px;
+  gap: 8px;
   margin: 14px 0 10px;
 }
 

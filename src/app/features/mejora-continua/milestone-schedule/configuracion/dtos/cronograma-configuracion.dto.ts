@@ -31,6 +31,8 @@ export interface CronogramaCorreo {
   codigo: string;
   nombre: string;
   descripcion: string | null;
+  /** El asunto con que sale, para buscarlo en Enviados. Lo que cambia en cada envío va entre llaves. */
+  asunto: string | null;
   /** Interruptor del correo: false = no se envía a nadie. */
   active: boolean;
   /** El destinatario que pone el sistema (el residente). Null = el correo no tiene. */

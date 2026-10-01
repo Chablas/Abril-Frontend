@@ -7,6 +7,10 @@ import {
   CronogramaCorreo,
   CronogramaDestinatarioInput,
 } from '../dtos/cronograma-configuracion.dto';
+import {
+  RecordatorioEnvioManual,
+  RecordatorioSimulacion,
+} from '../../../../../shared/components/envio-manual-recordatorio/envio-manual-recordatorio.dto';
 
 /**
  * Cronograma de Hitos → Configuración. Las escrituras son una por acción de la pantalla (los
@@ -73,5 +77,22 @@ export class CronogramaConfiguracionService {
     return this.http.delete<CronogramaCorreo>(`${this.base}/destinatarios/${id}`, {
       headers: this.headers,
     });
+  }
+
+  /** Envío manual de un recordatorio, paso 1: a quién le saldría el día `fecha` (yyyy-MM-dd). */
+  simularRecordatorio(codigo: string, fecha: string): Observable<RecordatorioSimulacion> {
+    return this.http.get<RecordatorioSimulacion>(
+      `${this.base}/correos/${encodeURIComponent(codigo)}/simulacion`,
+      { headers: this.headers, params: { fecha } },
+    );
+  }
+
+  /** Paso 2: lo envía. Si ese día no sale nada, no envía nada. */
+  enviarRecordatorio(codigo: string, fecha: string): Observable<RecordatorioEnvioManual> {
+    return this.http.post<RecordatorioEnvioManual>(
+      `${this.base}/correos/${encodeURIComponent(codigo)}/envio-manual`,
+      null,
+      { headers: this.headers, params: { fecha } },
+    );
   }
 }
