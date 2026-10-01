@@ -121,6 +121,7 @@ export const FEATURE_DISPLAY_NAMES: Record<string, string> = {
   "mejora-continua.lessons-learned": "Lecciones aprendidas",
   "mejora-continua.milestone-schedule": "Cronograma de Hitos",
   "mejora-continua.milestone-schedule.administrar": "Cronograma de Hitos - Administrar",
+  "mejora-continua.milestone-schedule.configuracion": "Cronograma De Hitos - Configuración",
   "mejora-continua.milestone-schedule.editar": "Cronograma de Hitos - Subir versiones (residente del proyecto)",
   "planeamiento-bim.configuracion-inicial": "Planeamiento",
   "planeamiento-bim.portafolio": "Planeamiento",

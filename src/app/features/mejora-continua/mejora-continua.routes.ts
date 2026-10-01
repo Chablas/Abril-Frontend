@@ -3,6 +3,19 @@ import { roleGuard } from '../../core/guards/role.guard';
 
 export const MEJORA_CONTINUA_ROUTES: Routes = [
   {
+    // Va ANTES de 'milestone-schedule' para que el segmento 'configuracion' no se lo coma la
+    // pantalla. Se abre con el botón «Configuración» del Cronograma de Hitos.
+    path: 'milestone-schedule/configuracion',
+    loadComponent: () =>
+      import('./milestone-schedule/configuracion/cronograma-hitos-configuracion')
+        .then((m) => m.CronogramaHitosConfiguracion),
+    canActivate: [roleGuard],
+    data: {
+      titulo: 'CRONOGRAMA DE HITOS - CONFIGURACIÓN',
+      featureKey: 'mejora-continua.milestone-schedule.configuracion',
+    },
+  },
+  {
     path: 'milestone-schedule',
     loadComponent: () =>
       import('./milestone-schedule/milestone-schedule')

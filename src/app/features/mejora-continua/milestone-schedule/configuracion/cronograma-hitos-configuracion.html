@@ -1,0 +1,35 @@
+<app-abril-page-header
+  badge="MEJORA CONTINUA · CRONOGRAMA DE HITOS"
+  titulo="Configuración"
+  subtitulo="Correos y recordatorios del cronograma."
+  [botonSecundario]="{ label: 'Volver', icono: 'ti-arrow-left' }"
+  (secondaryClick)="volver()">
+</app-abril-page-header>
+
+<section class="page-container px-3 py-4 flex flex-col gap-[16px] flex-1 min-h-0 overflow-auto">
+
+  <!-- Secciones: Correos y Recordatorios. -->
+  <app-section-tabs
+    *ngIf="secciones.length > 1"
+    class="shrink-0"
+    [tabs]="secciones"
+    [value]="grupoActivo"
+    color="var(--color-abril-standard)"
+    (valueChange)="onSeccionChange($event)">
+  </app-section-tabs>
+
+  <!-- Los correos de la sección elegida, cada uno en su subsección. -->
+  <app-cronograma-correos
+    *ngIf="datos && grupo as g"
+    [correos]="g.correos"
+    [recordatorios]="g.codigo === 'RECORDATORIOS'"
+    [trabajadores]="datos.trabajadores"
+    [roles]="datos.roles"
+    [tipos]="datos.tipos"
+    [recepciones]="datos.recepciones">
+  </app-cronograma-correos>
+
+  <p class="text-sm text-gray-400 text-center py-[24px]" *ngIf="!cargando && datos && !datos.grupos.length">
+    No hay correos configurados.
+  </p>
+</section>

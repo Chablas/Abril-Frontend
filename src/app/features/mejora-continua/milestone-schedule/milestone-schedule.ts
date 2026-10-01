@@ -46,6 +46,7 @@ import { MEJORA_CONTINUA_TABS } from '../shared/mejora-continua-tabs';
 /** featureKeys del cronograma (espejo de CronogramaHitosFeatures en el backend). */
 const FEATURE_EDITAR = 'mejora-continua.milestone-schedule.editar';
 const FEATURE_ADMINISTRAR = 'mejora-continua.milestone-schedule.administrar';
+const FEATURE_CONFIGURACION = 'mejora-continua.milestone-schedule.configuracion';
 
 @Component({
   selector: 'app-milestone-schedule',
@@ -88,6 +89,11 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
    * Emails SSOMA (aunque además tenga USUARIO DE ABRIL). Acá solo cambia el aviso de lista vacía.
    */
   soloMisProyectos = false;
+  /**
+   * Botón «Configuración» del header: los correos y recordatorios del cronograma y a quién le
+   * llegan. Solo con su feature; sin ella el botón no se dibuja.
+   */
+  botonConfiguracion?: { label: string; icono: string };
   /** Proyecto cuyo historial/Gantt está abierto: de él salen los permisos de esa vista. */
   proyectoSeleccionado: MilestoneProjectDto | null = null;
 
@@ -617,7 +623,15 @@ export class MilestoneSchedule implements OnInit, AfterViewInit, OnDestroy {
     this.residenteConFeature =
       this.authService.hasRole(Roles.RESIDENTE) && this.authService.hasFeature(FEATURE_EDITAR);
     this.soloMisProyectos = this.authService.hasRole(Roles.RESIDENTE) && !this.puedeAdministrar;
+    if (this.authService.hasFeature(FEATURE_CONFIGURACION)) {
+      this.botonConfiguracion = { label: 'Configuración', icono: 'ti-settings' };
+    }
     this.loadSchedules();
+  }
+
+  abrirConfiguracion(): void {
+    if (!this.botonConfiguracion) return;
+    this.router.navigate(['/mejora-continua/milestone-schedule/configuracion']);
   }
 
   /**
