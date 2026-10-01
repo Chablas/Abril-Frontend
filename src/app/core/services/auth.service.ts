@@ -109,6 +109,11 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}/set-password`, data);
   }
 
+  /** Autoservicio desde el login: siempre responde 200 con un mensaje genérico. */
+  forgotPasswordByEmail(email: string) {
+    return this.http.post(`${this.apiUrl}/forgot-password-email`, { email });
+  }
+
   forgotPassword(userId: number) {
     return this.http.post(`${this.apiUrl}/forgot-password`, { userId });
   }

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
+import * as QRCode from 'qrcode';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { ATS_HEADER_TABS } from '../../shared/ats-header-tabs';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
@@ -18,7 +19,7 @@ import { AtsResponseDto, AtsFiltroDto, AtsProyectoDto } from '../../dtos/ats.dto
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { PetarService } from '../../../petar/services/petar.service';
 
-type RolVisto = 'autoriza' | 'ssoma' | 'petar-supervisor' | 'petar-ssoma';
+type RolVisto = 'capataz' | 'autoriza' | 'ssoma' | 'petar-supervisor' | 'petar-ssoma';
 
 @Component({
   selector: 'app-ats-lista',
@@ -69,14 +70,48 @@ export class AtsLista implements OnInit {
   hayFirmaVisto = false;
   guardandoVisto = false;
 
-  /** Filas con el detalle IPERC desplegado — "ver inline" antes de firmar, sin salir de la lista. */
+  /** Filas con el detalle IPERC desplegado — "ver inline" antes de firmar, sin salir de la lista.
+   *  El listado (svc.listar) YA NO trae pasos/epps/herramientas/riesgos por fila (eran includes
+   *  pesados repetidos en cada una de las 20 filas de cada página, la causa real de la lentitud
+   *  con cientos de ATS/día) — ese detalle se pide recién acá, por ATS individual, solo cuando el
+   *  usuario hace clic en "Ver detalle". */
   filasExpandidas = new Set<number>();
-  toggleDetalle(atsId: number): void {
-    this.filasExpandidas.has(atsId) ? this.filasExpandidas.delete(atsId) : this.filasExpandidas.add(atsId);
+  detalleCargando = new Set<number>();
+
+  toggleDetalle(a: AtsResponseDto): void {
+    if (this.filasExpandidas.has(a.id)) {
+      this.filasExpandidas.delete(a.id);
+      this.cdr.markForCheck();
+      return;
+    }
+    this.filasExpandidas.add(a.id);
+    if (a.pasos.length === 0 && a.riesgos.length === 0 && a.epps.length === 0 && a.herramientas.length === 0) {
+      this.cargarDetalle(a);
+    }
     this.cdr.markForCheck();
   }
   filaExpandida(atsId: number): boolean {
     return this.filasExpandidas.has(atsId);
+  }
+
+  private cargarDetalle(a: AtsResponseDto): void {
+    this.detalleCargando.add(a.id);
+    this.cdr.markForCheck();
+    this.svc.getPorId(a.id).subscribe({
+      next: (full) => {
+        a.pasos = full.pasos;
+        a.riesgos = full.riesgos;
+        a.epps = full.epps;
+        a.herramientas = full.herramientas;
+        this.detalleCargando.delete(a.id);
+        this.cdr.markForCheck();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.detalleCargando.delete(a.id);
+        this.errorService.handleError(err);
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   /** La firma que este Residente/Ing. Producción/SSOMA ya capturó para SU PROPIA autorización
@@ -176,6 +211,39 @@ export class AtsLista implements OnInit {
     this.router.navigate(['/ssoma/gestion/ats/nuevo']);
   }
 
+  nuevoAtsGrupal(): void {
+    this.router.navigate(['/ssoma/gestion/ats/nuevo'], { queryParams: { grupal: 1 } });
+  }
+
+  /** QR fijo por proyecto (idempotente — el backend devuelve el mismo si ya existe) para que
+   *  cualquier integrante de la cuadrilla, incluso sin cuenta en la plataforma, pueda crear un
+   *  ATS grupal desde /ats-grupal/crear/:token. Pensado para imprimirse y pegarse en la obra. */
+  verQrProyecto(): void {
+    if (!this.filtroProyectoId) return;
+    this.svc.getQrProyecto(this.filtroProyectoId).subscribe({
+      next: ({ token }) => {
+        const url = `${window.location.origin}/ats-grupal/crear/${token}`;
+        QRCode.toDataURL(url, { width: 320, margin: 2 }).then((qrDataUrl) => {
+          Swal.fire({
+            title: 'QR de obra — crear ATS grupal',
+            html: `
+              <p style="font-size:13px;color:#6b7280;margin-bottom:10px">
+                Pégalo/imprímelo en la obra. Cualquier integrante de una cuadrilla, incluso sin cuenta en la plataforma, lo escanea para armar el ATS grupal del día.
+              </p>
+              <img src="${qrDataUrl}" style="width:100%;max-width:280px" />
+            `,
+            confirmButtonText: 'Copiar link',
+            showCancelButton: true,
+            cancelButtonText: 'Cerrar',
+          }).then((r) => {
+            if (r.isConfirmed) navigator.clipboard?.writeText(url);
+          });
+        });
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
   /** Un ATS en Borrador se guardó hasta el paso 3 (Valoración) pero nunca llegó a Firmar — antes
    *  no había forma de retomarlo, quedaba huérfano en la lista para siempre. */
   continuarAts(a: AtsResponseDto): void {
@@ -216,6 +284,51 @@ export class AtsLista implements OnInit {
     });
   }
 
+  /** "Torre A, Piso 1, Piso 2, Piso 3, Piso 4, Cisterna 1, Azotea" desbordaba la celda y rompía
+   *  la tabla entera — comprime pisos consecutivos en rango ("Piso 1-4") y, si aun así es largo,
+   *  lo corta con "…" dejando el texto completo en el title (tooltip) para no perder info. */
+  lugarCompacto(a: AtsResponseDto): string {
+    if (a.torreNombre) {
+      const pisos = this.comprimirPisos(a.pisos);
+      return pisos ? `Torre ${a.torreNombre} — ${pisos}` : `Torre ${a.torreNombre}`;
+    }
+    return a.lugar ?? '';
+  }
+
+  lugarCompletoTitle(a: AtsResponseDto): string {
+    if (a.torreNombre) return a.pisos ? `Torre ${a.torreNombre}, ${a.pisos}` : `Torre ${a.torreNombre}`;
+    return a.lugar ?? '';
+  }
+
+  private comprimirPisos(pisos?: string): string {
+    if (!pisos) return '';
+    const labels = pisos.split(',').map((s) => s.trim()).filter(Boolean);
+
+    const piso = /^Piso (\d+)$/i;
+    const salida: string[] = [];
+    let rango: number[] = [];
+
+    const cerrarRango = () => {
+      if (rango.length === 0) return;
+      salida.push(rango.length === 1 ? `Piso ${rango[0]}` : `Piso ${rango[0]}-${rango[rango.length - 1]}`);
+      rango = [];
+    };
+
+    for (const label of labels) {
+      const m = piso.exec(label);
+      const n = m ? Number(m[1]) : null;
+      if (n !== null && (rango.length === 0 || n === rango[rango.length - 1] + 1)) {
+        rango.push(n);
+      } else {
+        cerrarRango();
+        if (n !== null) rango.push(n);
+        else salida.push(label);
+      }
+    }
+    cerrarRango();
+    return salida.join(', ');
+  }
+
   estadoClass(estado: string): string {
     if (estado === 'Firmado') return 'badge-firmado';
     if (estado === 'Cerrado') return 'badge-cerrado';
@@ -244,6 +357,10 @@ export class AtsLista implements OnInit {
     this.usandoFirmaAutorizada = false;
     this.firmaAutorizadaDataUrl = null;
     this.cdr.markForCheck();
+
+    if (ats.riesgos.length === 0 && rol !== 'petar-supervisor' && rol !== 'petar-ssoma') {
+      this.cargarDetalle(ats);
+    }
 
     this.svc.getMiFirmaDigitalAutorizacionImagenBlob().subscribe({
       next: (blob) => {
@@ -286,6 +403,7 @@ export class AtsLista implements OnInit {
 
   get vistoTitulo(): string {
     switch (this.rolVisto) {
+      case 'capataz': return 'Firmar como Capataz / Maestro de Obra';
       case 'autoriza': return 'Firmar como Autoriza (Residente / Ing. Producción)';
       case 'ssoma': return 'Visto Bueno SSOMA (ATS)';
       case 'petar-supervisor': return 'Firmar PETAR como Supervisor/Responsable';
@@ -309,6 +427,10 @@ export class AtsLista implements OnInit {
 
     let req$;
     switch (this.rolVisto) {
+      // Cuadrilla (QR): el Capataz firma UNA vez por grupo, no por cada ATS — se copia a todos.
+      case 'capataz': req$ = ats.atsGrupoId
+        ? this.svc.firmarCapatazGrupo(ats.atsGrupoId, { firmaBase64: firma })
+        : this.svc.firmarCapataz(ats.id, { firmaBase64: firma }); break;
       case 'autoriza': req$ = this.svc.firmarAutorizacion(ats.id, { firmaBase64: firma }); break;
       case 'ssoma': req$ = this.svc.firmarVistoSsoma(ats.id, { firmaBase64: firma }); break;
       case 'petar-supervisor': req$ = this.petarSvc.firmarSupervisor(this.petarFirmandoId!, { firmaBase64: firma }); break;

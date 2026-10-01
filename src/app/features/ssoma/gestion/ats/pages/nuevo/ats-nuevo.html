@@ -1,5 +1,5 @@
 <app-abril-modal-panel
-  titulo="Análisis de Trabajo Seguro (ATS)"
+  [titulo]="modoGrupal ? 'ATS Grupal — cuadrilla' : 'Análisis de Trabajo Seguro (ATS)'"
   icono="ti-shield-check"
   variant="blue"
   width="900px"
@@ -34,6 +34,12 @@
 
     <!-- PASO 1: Datos, pasos de la tarea, EPP, herramientas -->
     @if (paso === 1) {
+      @if (modoGrupal) {
+        <p class="pasos-hint-nuevo pasos-hint-alerta">
+          <i class="ti ti-qrcode"></i>
+          ATS grupal — llenas el contenido una sola vez para toda la cuadrilla. Al terminar, generas un QR para que cada integrante se adhiera con su propia selfie, geolocalización y firma, sin repetir este formulario.
+        </p>
+      }
       @if (modoOrigen === 'corregir') {
         <p class="pasos-hint-nuevo pasos-hint-alerta">
           <i class="ti ti-alert-triangle"></i>
@@ -49,16 +55,25 @@
 
       <div class="form-row">
         <div>
-          <app-search-select
-            color="var(--color-abril-logo-blue)"
-            label="Proyecto *"
-            [options]="proyectosOpts"
-            valueField="id"
-            displayField="nombre"
-            [value]="proyectoId"
-            placeholder="Buscar proyecto..."
-            (valueChange)="onProyectoChange($event)"
-          ></app-search-select>
+          @if (modoPublico) {
+            <div class="abril-field">
+              <label class="abril-field-label">Proyecto</label>
+              <div class="abril-field-input" style="display:flex;align-items:center;color:#6b7280;">
+                {{ publicoProyectoNombre ?? 'Esta obra' }}
+              </div>
+            </div>
+          } @else {
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Proyecto *"
+              [options]="proyectosOpts"
+              valueField="id"
+              displayField="nombre"
+              [value]="proyectoId"
+              placeholder="Buscar proyecto..."
+              (valueChange)="onProyectoChange($event)"
+            ></app-search-select>
+          }
         </div>
         <div>
           <app-search-select
@@ -139,7 +154,25 @@
                placeholder="Ej: cerca del ascensor, fachada norte…" />
       </div>
 
-      @if (categoriasGenericasVisibles.length > 0) {
+      @if (modoGrupal) {
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Puesto / tipo de trabajo de la cuadrilla *"
+            [options]="puestosOpts"
+            valueField="id"
+            displayField="nombre"
+            [value]="puestoCuadrillaId"
+            placeholder="Ej: Operario de encofrado, Fierrero, Albañil..."
+            (valueChange)="onPuestoCuadrillaChange($event)"
+          ></app-search-select>
+          <p class="pasos-hint-nuevo" style="margin-top:4px">
+            De acá salen los pasos de la tarea — elige el puesto de LA CUADRILLA, no necesariamente el tuyo.
+          </p>
+        </div>
+      }
+
+      @if ((!modoGrupal || puestoCuadrillaId) && categoriasGenericasVisibles.length > 0) {
         <div class="collapsible-section">
           <button type="button" class="collapsible-toggle abril-section-title" (click)="mostrarPasosGenericos = !mostrarPasosGenericos">
             Actividades y pasos de la tarea (marca SI/NO)
@@ -273,8 +306,12 @@
         @for (grupo of herramientasPorCategoria; track grupo.categoria) {
           <div class="pasos-categoria-row">
             <div class="pasos-categoria">{{ grupo.categoria }}</div>
-            <label class="marcar-todos-check">
-              <input type="checkbox" [checked]="herramientasCategoriaNoAplica(grupo.categoria)" (change)="toggleHerramientasCategoriaNoAplica(grupo.categoria)" />
+            <label class="marcar-todos-check" [class.marcar-todos-check--disabled]="herramientasCategoriaTieneAlgoMarcado(grupo.categoria)">
+              <input type="checkbox"
+                     [checked]="herramientasCategoriaNoAplica(grupo.categoria)"
+                     [disabled]="herramientasCategoriaTieneAlgoMarcado(grupo.categoria)"
+                     [title]="herramientasCategoriaTieneAlgoMarcado(grupo.categoria) ? 'Ya hay algo marcado en esta categoría — desmárcalo primero.' : ''"
+                     (change)="toggleHerramientasCategoriaNoAplica(grupo.categoria)" />
               No aplica
             </label>
           </div>
@@ -282,7 +319,7 @@
             <div class="chips-grid">
               @for (h of grupo.items; track h.id) {
                 <label class="chip" [class.chip--sel]="herramientaSeleccionada(h.id)">
-                  <input type="checkbox" [checked]="herramientaSeleccionada(h.id)" (change)="toggleHerramienta(h.id)" />
+                  <input type="checkbox" [checked]="herramientaSeleccionada(h.id)" (change)="toggleHerramienta(h.id, grupo.categoria)" />
                   {{ h.nombre }}
                 </label>
               }
@@ -313,11 +350,13 @@
         }
       </div>
 
-      @if (datosBasicosValidos && !pasosValidos) {
-        <p class="pasos-hint-nuevo pasos-hint-alerta">
+      @if (faltantesPaso1.length > 0) {
+        <div class="pasos-hint-nuevo pasos-hint-alerta pasos-hint-alerta--lista">
           <i class="ti ti-alert-triangle"></i>
-          Marca al menos un paso (o "No aplica") en cada categoría de "Actividades y pasos de la tarea" para continuar.
-        </p>
+          <ul>
+            @for (f of faltantesPaso1; track f) { <li>{{ f }}</li> }
+          </ul>
+        </div>
       }
 
       <div modalFooter>
@@ -438,8 +477,8 @@
 
       <div modalFooter>
         <button class="btn btn-secondary" (click)="volverAPaso(2)" [disabled]="saving">Atrás</button>
-        <button class="btn btn-primary" (click)="siguiente()" [disabled]="!valoracionValida || saving">
-          @if (saving) { Guardando… } @else { Siguiente: Firmar }
+        <button class="btn btn-primary" (click)="siguiente()" [disabled]="!valoracionValida || saving || creandoGrupo">
+          @if (creandoGrupo) { Generando QR… } @else if (saving) { Guardando… } @else if (modoGrupal) { Generar QR para la cuadrilla } @else { Siguiente: Firmar }
         </button>
       </div>
     }
@@ -454,7 +493,7 @@
 
       <div class="firmar-row">
         <div class="camara-col">
-          <app-camera-capture (listo)="onCamaraLista()"></app-camera-capture>
+          <app-camera-capture [overlayLineas]="selfieOverlayLineas" (listo)="onCamaraLista()"></app-camera-capture>
           <div class="gps-estado" [ngSwitch]="gpsEstado">
             <span *ngSwitchCase="'buscando'">📍 Buscando ubicación…</span>
             <span *ngSwitchCase="'ok'">📍 Ubicación capturada (±{{ gpsCoords?.accuracy ?? 0 | number:'1.0-0' }} m)</span>

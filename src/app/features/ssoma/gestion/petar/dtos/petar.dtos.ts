@@ -134,3 +134,55 @@ export interface PetarListResponseDto {
   totalRecords: number;
   totalPages: number;
 }
+
+// ── PETAR Grupal ─────────────────────────────────────────────────────────────
+
+export interface PetarGrupoCrearRequestDto {
+  atsGrupoId: number;
+  tipoId: number;
+  descripcionTrabajo: string;
+  lugar?: string;
+  horaInicio?: string;
+  horaFin?: string;
+  respuestas: PetarItemRespuestaRequestDto[];
+}
+
+export interface PetarGrupoCrearResponseDto {
+  id: number;
+}
+
+export interface PetarGrupoEstadoDto {
+  id: number;
+  proyectoId: number;
+  tipoNombre?: string;
+  descripcionTrabajo: string;
+  estado: 'Activo' | 'Cerrado';
+  supervisorFirmado: boolean;
+  ssomaFirmado: boolean;
+  puedeFirmarSupervisor: boolean;
+  puedeFirmarSsoma: boolean;
+  totalAdhesiones: number;
+  trabajadoresAdheridos: string[];
+}
+
+export interface PetarGrupoResumenPublicoDto {
+  id: number;
+  tipoNombre?: string;
+  descripcionTrabajo: string;
+  lugar?: string;
+  horaInicio?: string;
+  horaFin?: string;
+  respuestas: PetarItemRespuestaResponseDto[];
+}
+
+export interface PetarGrupoUnirseRequestDto {
+  atsToken: string;
+  workerId: number;
+  atsIdPropio: number;
+  selfieBase64: string;
+  firmaBase64: string;
+  horaDispositivo: string;
+  lat: number | null;
+  lng: number | null;
+  precisionMetros: number | null;
+}

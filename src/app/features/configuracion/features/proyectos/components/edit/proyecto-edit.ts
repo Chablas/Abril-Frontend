@@ -242,11 +242,6 @@ export class ProyectoEdit implements OnInit {
     return this.emailDe(this.form.residenteWorkersId);
   }
 
-  /** Qué significa el tipo elegido (lo trae el catálogo). */
-  get descripcionTipo(): string | null {
-    return this.tipos.find((t) => t.id === this.form.projectTipoId)?.descripcion ?? null;
-  }
-
   private emailDe(workerId: number | null): string | null {
     if (workerId == null) return null;
     return this.personalCasa.find((c) => c.id === workerId)?.email ?? null;

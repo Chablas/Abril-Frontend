@@ -331,10 +331,21 @@ export class SctrVidaley implements OnInit, OnDestroy {
     this.loadDocumentos(page);
   }
 
+  /** Cuando el documento quedó con Vigencia null (ej. registro previo a que el paso 2 de "Subir"
+   *  la volviera obligatoria) el backend rechaza el Aprobar con "Este documento requiere fecha de
+   *  vigencia" — sin este campo, el revisor no tenía forma de completarla desde acá y quedaba
+   *  trabado. Se precarga con la del documento cuando existe. */
+  vigenciaParaAprobar = '';
+
+  private get vigenciaParaEnviar(): string | undefined {
+    return (this.selectedDoc?.vigencia || this.selectedPoliza?.vigencia) ?? (this.vigenciaParaAprobar || undefined);
+  }
+
   selectDoc(doc: SctrVidaLeyDto): void {
     if (this.selectedDoc?.id === doc.id) return;
     this.clearDocPanel();
     this.selectedDoc = doc;
+    this.vigenciaParaAprobar = doc.vigencia ? doc.vigencia.substring(0, 10) : '';
     if (doc.archivoUrl) {
       this.loadDocBlob(doc.archivoUrl);
     }
@@ -495,6 +506,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
           console.log('archivoUrl:', poliza.archivoUrl);
           console.log('archivoUrl2:', poliza.archivoUrl2);
           this.selectedPoliza = poliza;
+          this.vigenciaParaAprobar = poliza.vigencia ? poliza.vigencia.substring(0, 10) : '';
           const preselect =
             this.wFiltroTipo === 'VIDA_LEY'
               ? poliza.workers
@@ -649,7 +661,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
       workerIdsAprobados: Array.from(this.polizaWorkersSeleccionados),
       workerIdsRechazados: [],
       tipo: this.wFiltroTipo,
-      vigencia: this.selectedPoliza.vigencia,
+      vigencia: this.vigenciaParaEnviar,
     };
     this.sctrService.aprobar(this.selectedPoliza.id, dto).subscribe({
       next: () => {
@@ -714,7 +726,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
       workerIdsAprobados: [w.workerId],
       workerIdsRechazados: [],
       tipo: this.wFiltroTipo,
-      vigencia: this.selectedPoliza.vigencia,
+      vigencia: this.vigenciaParaEnviar,
     };
     this.sctrService.aprobar(this.selectedPoliza.id, dto).subscribe({
       next: () => {
@@ -798,7 +810,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
       workerIdsAprobados: Array.from(this.docWorkersSeleccionados),
       workerIdsRechazados: [],
       tipo: this.selectedDoc.tipo,
-      vigencia: this.selectedDoc.vigencia,
+      vigencia: this.vigenciaParaEnviar,
     };
     this.sctrService.aprobar(this.selectedDoc.id, dto).subscribe({
       next: () => {
@@ -857,7 +869,7 @@ export class SctrVidaley implements OnInit, OnDestroy {
       workerIdsAprobados: [w.workerId],
       workerIdsRechazados: [],
       tipo: this.selectedDoc.tipo,
-      vigencia: this.selectedDoc.vigencia,
+      vigencia: this.vigenciaParaEnviar,
     };
     this.sctrService.aprobar(this.selectedDoc.id, dto).subscribe({
       next: () => {

@@ -56,43 +56,81 @@
     </div>
   </div>
 
-  <div class="hero-cursos">
-    <div class="hero-glow"></div>
-    <div class="hero-contenido">
-      <span class="hero-kicker"><i class="ti ti-hexagon-letter-s"></i> Plataforma de formación · SST</span>
-      <div class="hero-fila">
-        <div class="hero-texto">
-          <h1 class="hero-titulo">Aprende a prevenir,<br />no a lamentar.</h1>
-          <p class="hero-subtitulo">Cursos interactivos de seguridad y salud en el trabajo, pensados para obra y oficina.</p>
+  <div class="fila-hero">
+    <div class="hero-cursos">
+      <div class="hero-glow"></div>
+      <div class="hero-contenido">
+        <span class="hero-kicker"><i class="ti ti-hexagon-letter-s"></i> Plataforma de formación</span>
+        <h1 class="hero-titulo">Aprende a prevenir,<br />no a lamentar.</h1>
+        <p class="hero-subtitulo">Cursos de seguridad y salud en el trabajo, pensados para obra y oficina.</p>
 
-          <div class="fila-pills" *ngIf="cursos.length">
-            <span class="pill-hero"><i class="ti ti-hat-check"></i> {{ completados }} {{ completados === 1 ? 'Completado' : 'Completados' }}</span>
-            <span class="pill-hero"><i class="ti ti-player-play"></i> {{ enProgreso }} {{ enProgreso === 1 ? 'Curso' : 'Cursos' }} en progreso</span>
-            <span class="pill-hero"><i class="ti ti-file-description"></i> {{ pendientes }} {{ pendientes === 1 ? 'Curso restante' : 'Cursos restantes' }}</span>
-            <span class="pill-hero"><i class="ti ti-clock"></i> {{ horasCursadas }} h cursadas</span>
-          </div>
-
-          <a class="btn-nuevo" *ngIf="!nombreUsuario" routerLink="/cursos/editor">
-            <i class="ti ti-tool"></i>
-            Administrar cursos
-          </a>
+        <div class="fila-pills" *ngIf="cursos.length">
+          <span class="pill-hero"><i class="ti ti-hat-check"></i> {{ porcentajeGeneral }}% Completado</span>
+          <span class="pill-hero"><i class="ti ti-player-play"></i> {{ enProgreso }} {{ enProgreso === 1 ? 'Curso' : 'Cursos' }} en progreso</span>
+          <span class="pill-hero"><i class="ti ti-file-description"></i> {{ pendientes }} {{ pendientes === 1 ? 'Curso restante' : 'Cursos restantes' }}</span>
         </div>
 
-        <div class="tarjeta-progreso-hero" *ngIf="cursos.length">
-          <span class="tarjeta-progreso-hero-titulo">Progreso general</span>
-          <div class="anillo-progreso" [style.--pct]="porcentajeGeneral">
-            <span>{{ porcentajeGeneral }}%<small>avance</small></span>
-          </div>
-          <div class="fila-botones-progreso">
-            <button type="button" class="btn-continuar" *ngIf="cursoEnProgreso" (click)="tomarCurso(cursoEnProgreso)">
-              <i class="ti ti-player-play-filled"></i> Continuar curso
-            </button>
-            <button type="button" class="btn-ver-progreso" (click)="irAGrillaCursos()">
-              <i class="ti ti-list-details"></i> Ver cursos
-            </button>
-          </div>
-        </div>
+        <a class="btn-nuevo" *ngIf="!nombreUsuario" routerLink="/cursos/editor">
+          <i class="ti ti-tool"></i>
+          Administrar cursos
+        </a>
       </div>
+
+      <div
+        class="hero-imagen"
+        *ngIf="cursoEnProgreso?.logoUrl as fotoHero"
+        [style.background-image]="'url(' + fotoHero + ')'"
+      ></div>
+    </div>
+
+    <div class="tarjeta-progreso-hero" *ngIf="cursos.length">
+      <span class="tarjeta-progreso-hero-titulo">Progreso del curso</span>
+      <div class="anillo-progreso" [style.--pct]="porcentajeGeneral">
+        <span>{{ porcentajeGeneral }}%<small>avance</small></span>
+      </div>
+      <div class="fila-botones-progreso">
+        <button type="button" class="btn-continuar" *ngIf="cursoEnProgreso" (click)="tomarCurso(cursoEnProgreso)">
+          <i class="ti ti-player-play-filled"></i> Continuar curso
+        </button>
+        <button type="button" class="btn-ver-progreso" (click)="irAGrillaCursos()">
+          <i class="ti ti-list-details"></i> Ver progreso
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-bar" *ngIf="cursos.length">
+    <div class="stat-item">
+      <div class="stat-icono stat-icono--naranja"><i class="ti ti-certificate"></i></div>
+      <div class="stat-texto">
+        <strong>{{ completados }}</strong>
+        <span>{{ completados === 1 ? 'Curso completado' : 'Cursos completados' }}</span>
+      </div>
+      <button type="button" class="stat-link" (click)="irAGrillaCursos()">Ver certificados</button>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icono stat-icono--azul"><i class="ti ti-player-play"></i></div>
+      <div class="stat-texto">
+        <strong>{{ enProgreso }}</strong>
+        <span>En progreso</span>
+      </div>
+      <button type="button" class="stat-link" (click)="irAGrillaCursos()">Continuar</button>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icono stat-icono--gris"><i class="ti ti-file-description"></i></div>
+      <div class="stat-texto">
+        <strong>{{ pendientes }}</strong>
+        <span>Pendientes</span>
+      </div>
+      <button type="button" class="stat-link" (click)="irAGrillaCursos()">Ver próximos</button>
+    </div>
+    <div class="stat-item">
+      <div class="stat-icono stat-icono--verde"><i class="ti ti-clock"></i></div>
+      <div class="stat-texto">
+        <strong>{{ horasCursadas }}</strong>
+        <span>Horas cursadas</span>
+      </div>
+      <button type="button" class="stat-link" (click)="irAGrillaCursos()">Ver detalle</button>
     </div>
   </div>
 
@@ -108,9 +146,10 @@
       <p>{{ errorMensaje }}</p>
     </div>
 
-    <div class="estado-centro" *ngIf="!cargando && !errorMensaje && cursos.length === 0">
-      <i class="ti ti-school"></i>
-      <p>No hay cursos disponibles por el momento.</p>
+    <div class="estado-vacio" *ngIf="!cargando && !errorMensaje && cursos.length === 0">
+      <div class="estado-vacio-icono"><i class="ti ti-school"></i></div>
+      <h3>Todavía no hay cursos publicados</h3>
+      <p>En cuanto se publique un curso de seguridad y salud, lo vas a ver aquí listo para tomar.</p>
     </div>
 
     <ng-container *ngIf="!cargando && cursos.length > 0">
@@ -136,7 +175,7 @@
         </div>
       </div>
 
-      <h3 class="titulo-seccion">Cursos disponibles</h3>
+      <h3 class="titulo-seccion">Cursos obligatorios</h3>
       <p class="sin-resultados-busqueda" *ngIf="filtroBusqueda && !cursosFiltrados.length">
         Ningún curso coincide con "{{ filtroBusqueda }}".
       </p>
@@ -144,10 +183,12 @@
         <div class="tarjeta-curso" *ngFor="let curso of cursosFiltrados" (click)="tomarCurso(curso)">
           <div
             class="tarjeta-header"
-            [style.background]="'linear-gradient(125deg, ' + (curso.colorTema || '#f5a623') + ' 0%, #14100b 115%)'"
+            [class.tarjeta-header--foto]="curso.logoUrl"
+            [style.background]="curso.logoUrl ? 'url(' + curso.logoUrl + ')' : 'linear-gradient(125deg, ' + (curso.colorTema || '#f5a623') + ' 0%, #14100b 115%)'"
           >
-            <span class="tarjeta-patron"></span>
-            <div class="tarjeta-icono">
+            <span class="tarjeta-patron" *ngIf="!curso.logoUrl"></span>
+            <span class="tarjeta-header-sombra" *ngIf="curso.logoUrl"></span>
+            <div class="tarjeta-icono" *ngIf="!curso.logoUrl">
               <i class="ti ti-stairs-up"></i>
             </div>
             <span class="tarjeta-badge" *ngIf="curso.categoriaNombre">{{ curso.categoriaNombre }}</span>

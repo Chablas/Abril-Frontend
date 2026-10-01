@@ -205,11 +205,13 @@
             [indeterminate]="docSomeChecked && !docAllChecked"
             (change)="toggleAllDocWorkers($any($event.target).checked)"
           />
-          <span class="workers-col-title">{{ selectedDoc.workers.length }} trabajador(es)</span>
+          <span class="workers-col-title">
+            {{ filteredDocWorkers.length }} pendiente(s) de {{ selectedDoc.workers.length }} trabajador(es)
+          </span>
         </div>
         <div class="sctr-split-workers">
           <div *ngIf="filteredDocWorkers.length === 0" class="empty-list">
-            Sin trabajadores pendientes.
+            Sin trabajadores pendientes — los demás ya están Aprobados/Rechazados (puede ser de un mes anterior, la habilitación es por trabajador, no por póliza).
           </div>
           <div
             *ngFor="let w of filteredDocWorkers"
@@ -286,11 +288,16 @@
         </div>
         <div
           class="sctr-split-meta"
-          *ngIf="selectedDoc.vigencia || (isAdmin() && selectedDoc.obsAbril)"
+          *ngIf="selectedDoc.vigencia || (isAdmin() && selectedDoc.obsAbril) || (isAdmin() && !selectedDoc.vigencia)"
         >
           <span *ngIf="selectedDoc.vigencia" class="vigencia-line">
             Vigencia: {{ selectedDoc.vigencia | date: 'dd/MM/yyyy' }}
           </span>
+          <label *ngIf="isAdmin() && !selectedDoc.vigencia" class="vigencia-line vigencia-falta">
+            <i class="ti ti-alert-triangle"></i>
+            Este documento quedó sin fecha de vigencia — complétala para poder aprobar:
+            <input type="date" class="field-input" [(ngModel)]="vigenciaParaAprobar" />
+          </label>
           <ng-container *ngIf="isAdmin() && selectedDoc.obsAbril">
             <span class="obs-label">Observaciones</span>
             <p class="obs-text">{{ selectedDoc.obsAbril }}</p>
@@ -378,7 +385,9 @@
             [indeterminate]="polizaSomeChecked && !polizaAllChecked"
             (change)="toggleAllPolizaWorkers($any($event.target).checked)"
           />
-          <span class="workers-col-title">{{ selectedPoliza.workers.length }} trabajador(es)</span>
+          <span class="workers-col-title">
+            {{ filteredPolizaWorkers.length }} pendiente(s) de {{ selectedPoliza.workers.length }} trabajador(es)
+          </span>
         </div>
         <div class="sctr-split-workers">
           <div *ngIf="filteredPolizaWorkers.length === 0" class="empty-list">Sin trabajadores pendientes.</div>

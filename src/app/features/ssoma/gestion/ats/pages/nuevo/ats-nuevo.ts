@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -12,6 +12,7 @@ import {
   AtsGuardarRequestDto,
   AtsRiesgoConControlesDto,
   AtsPlantillaActividadDto,
+  AtsGrupoCrearResponseDto,
   NivelRiesgo,
   TipoControl,
 } from '../../dtos/ats.dtos';
@@ -141,6 +142,19 @@ export class AtsNuevo implements OnInit {
   @ViewChild(CameraCapture) camara?: CameraCapture;
   @ViewChild(SignaturePad) firmaPad?: SignaturePad;
 
+  /** Fecha/hora, proyecto/lugar y coordenadas "quemadas" sobre la selfie — mismo criterio que
+   *  las apps de cámara con marca de tiempo. Getter (no valor fijo) porque el GPS puede llegar
+   *  después de que la cámara ya esté lista. */
+  get selfieOverlayLineas(): string[] {
+    const lineas = [new Date().toLocaleString('es-PE')];
+    const proyecto = this.proyectosOpts.find((p) => p.id === this.proyectoId)?.nombre;
+    if (proyecto) lineas.push(proyecto);
+    if (!this.esExterior && this.torreNombre) lineas.push(`Torre ${this.torreNombre}`);
+    else if (this.lugar.trim()) lineas.push(this.lugar.trim());
+    if (this.gpsCoords) lineas.push(`${this.gpsCoords.latitude.toFixed(5)}, ${this.gpsCoords.longitude.toFixed(5)}`);
+    return lineas;
+  }
+
   constructor(
     private svc: AtsService,
     private firmaPersonalSvc: FirmaPersonalService,
@@ -157,12 +171,40 @@ export class AtsNuevo implements OnInit {
    *  mismo prellenado; solo cambia el aviso que ve el trabajador. */
   atsAnteriorId: number | null = null;
   modoOrigen: 'corregir' | 'duplicar' | null = null;
+  /** ?grupal=1 — un solo ATS para toda la cuadrilla: el autor llena datos/pasos/peligros/
+   *  valoración UNA vez y, en vez de firmar él mismo, genera un QR para que cada integrante se
+   *  adhiera por su cuenta (selfie+geo+firma liviana), sin repetir el wizard. */
+  modoGrupal = false;
+  creandoGrupo = false;
+
+  /** Página pública /ats-grupal/crear/:token (QR fijo de obra, sin login) — un integrante de la
+   *  cuadrilla SIN cuenta en la plataforma ya se identificó (worker + DNI) en el paso previo de
+   *  esa página; este componente reusa el mismo wizard pero contra los endpoints públicos y sin
+   *  navegar al dashboard logueado al terminar (emite el resultado para que la página pública
+   *  misma muestre el QR). Decisión de Samuel 2026-09-30. */
+  @Input() modoPublico = false;
+  @Input() publicoTokenProyecto: string | null = null;
+  @Input() publicoWorkerId: number | null = null;
+  @Input() publicoDni: string | null = null;
+  @Input() publicoProyectoNombre: string | null = null;
+  @Output() publicoGrupoCreado = new EventEmitter<AtsGrupoCrearResponseDto>();
+  @Output() publicoCancelado = new EventEmitter<void>();
   /** ?continuar=id — un ATS en Borrador (guardado hasta el paso 3, nunca llegó a Firmar) que se
    *  reabre para seguir llenándolo, a diferencia de corregir/duplicar esto EDITA el mismo
    *  registro (this.atsId = id), no crea uno nuevo. */
   private borradorId: number | null = null;
 
   ngOnInit(): void {
+    if (this.modoPublico) {
+      // Ya se identificó (worker + DNI) en el paso previo de la página pública — el gate de
+      // autorización de firma digital lo valida el servidor al crear (ExigirAutorizacionPermiso),
+      // acá no hay sesión desde la que consultarlo.
+      this.modoGrupal = true;
+      this.cargarInit();
+      return;
+    }
+
+    this.modoGrupal = this.route.snapshot.queryParamMap.get('grupal') === '1';
     const corregir = this.route.snapshot.queryParamMap.get('corregir');
     const duplicar = this.route.snapshot.queryParamMap.get('duplicar');
     const continuar = this.route.snapshot.queryParamMap.get('continuar');
@@ -189,7 +231,11 @@ export class AtsNuevo implements OnInit {
   }
 
   private cargarInit(): void {
-    this.svc.getInit().subscribe({
+    const init$ = this.modoPublico
+      ? this.svc.getInitPublico(this.publicoTokenProyecto!, { workerId: this.publicoWorkerId!, dniConfirmacion: this.publicoDni! })
+      : this.svc.getInit();
+
+    init$.subscribe({
       next: (data) => {
         this.init = data;
         this.proyectoId = data.proyectoActualId ?? null;
@@ -208,7 +254,11 @@ export class AtsNuevo implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.loadingInit = false;
-        this.errorService.handleError(err);
+        if (this.modoPublico) {
+          Swal.fire({ icon: 'error', title: 'No se pudo cargar', text: err.error?.message ?? 'Intenta de nuevo.' });
+        } else {
+          this.errorService.handleError(err);
+        }
         this.cdr.detectChanges();
       },
     });
@@ -273,6 +323,31 @@ export class AtsNuevo implements OnInit {
 
   get plantillasOpts(): { id: number; nombre: string }[] {
     return this.init?.plantillas ?? [];
+  }
+
+  get puestosOpts(): { id: number; nombre: string }[] {
+    return (this.init?.puestos ?? []).slice().sort((a, b) => a.nombre.localeCompare(b.nombre));
+  }
+
+  /** Solo en ATS Grupal: puesto/tipo de trabajo de LA CUADRILLA (no necesariamente el de quien
+   *  crea el ATS) — de acá salen los pasos correctos, en vez de los del puesto del creador (ver
+   *  AtsInitDto.Puestos). Null hasta que el creador elige uno explícitamente. */
+  puestoCuadrillaId: number | null = null;
+
+  onPuestoCuadrillaChange(puestoId: number | null): void {
+    this.puestoCuadrillaId = puestoId;
+    this.pasosMarcados.clear();
+    this.pasosPersonalizados.clear();
+    this.pasosCategoriaNoAplica.clear();
+    if (!this.init || puestoId == null) return;
+
+    this.svc.getPasosPorPuesto(puestoId, this.publicoWorkerId ?? 0).subscribe({
+      next: (pasos) => {
+        this.init!.pasos = pasos;
+        this.cdr.markForCheck();
+      },
+      error: () => {},
+    });
   }
 
   // ── Pasos (SI/NO por categoría) ───────────────────────────────────────
@@ -363,9 +438,15 @@ export class AtsNuevo implements OnInit {
     return this.herramientasMarcadas.has(id);
   }
 
-  toggleHerramienta(id: number): void {
-    if (this.herramientasMarcadas.has(id)) this.herramientasMarcadas.delete(id);
-    else this.herramientasMarcadas.add(id);
+  toggleHerramienta(id: number, categoria: string): void {
+    if (this.herramientasMarcadas.has(id)) {
+      this.herramientasMarcadas.delete(id);
+    } else {
+      this.herramientasMarcadas.add(id);
+      // Marcar algo en la categoría contradice "No aplica" — se destilda sola en vez de dejar
+      // ambas cosas marcadas a la vez (ej. Andamio colgante + "No aplica" al mismo tiempo).
+      this.herramientasNoAplica.delete(categoria);
+    }
   }
 
   get herramientasPorCategoria(): { categoria: string; items: { id: number; nombre: string }[] }[] {
@@ -379,6 +460,14 @@ export class AtsNuevo implements OnInit {
 
   herramientasCategoriaNoAplica(categoria: string): boolean {
     return this.herramientasNoAplica.has(categoria);
+  }
+
+  /** "No aplica" queda deshabilitado si ya hay algo marcado en esa categoría — no tiene sentido
+   *  decir "no aplica" y tener Andamio colgante tildado al mismo tiempo; hay que destildar
+   *  primero lo marcado. */
+  herramientasCategoriaTieneAlgoMarcado(categoria: string): boolean {
+    const grupo = this.herramientasPorCategoria.find((g) => g.categoria === categoria);
+    return grupo?.items.some((h) => this.herramientaSeleccionada(h.id)) ?? false;
   }
 
   toggleHerramientasCategoriaNoAplica(categoria: string): void {
@@ -559,6 +648,13 @@ export class AtsNuevo implements OnInit {
     this.actividadesPlantilla = [];
     this.actividadPasosMarcados.clear();
 
+    // Al elegir (o cambiar de) plantilla, el EPP/herramientas sugeridos REEMPLAZAN lo que
+    // hubiera precargado — antes se sumaban (quedaba EPP de la plantilla anterior mezclado con
+    // la nueva). Lo que el trabajador marcó a mano en el catálogo general, fuera de lo que
+    // sugiere cualquier plantilla, no se toca.
+    this.eppsMarcados.clear();
+    this.herramientasMarcadas.clear();
+
     const plantilla = this.init?.plantillas.find((p) => p.id === plantillaId);
     if (!plantilla) { this.cdr.markForCheck(); return; }
     plantilla.eppIds.forEach((id) => this.eppsMarcados.add(id));
@@ -659,7 +755,8 @@ export class AtsNuevo implements OnInit {
 
   get datosBasicosValidos(): boolean {
     const lugarValido = this.torres.length === 0 || this.esExterior || (!!this.torreNombre && this.nivelesSeleccionados.size > 0);
-    return !!(this.proyectoId && this.actividad.trim() && lugarValido);
+    const puestoValido = !this.modoGrupal || !!this.puestoCuadrillaId;
+    return !!(this.proyectoId && this.actividad.trim() && lugarValido && puestoValido);
   }
 
   /** El checklist universal ("Trabajos de gabinete" + "Supervisión y liberación en campo") sale
@@ -717,6 +814,30 @@ export class AtsNuevo implements OnInit {
 
   get valoracionValida(): boolean {
     return this.riesgosSeleccionados.every((r) => r.riesgoBase && r.controles.trim() && r.riesgoResidual);
+  }
+
+  /** Lista en texto plano de lo que falta para poder avanzar — antes el botón "Siguiente"
+   *  simplemente quedaba deshabilitado sin decir por qué, y con varias secciones (torre/piso,
+   *  categorías genéricas, actividades de plantilla) no era obvio cuál faltaba. */
+  get faltantesPaso1(): string[] {
+    const faltan: string[] = [];
+    if (!this.proyectoId) faltan.push('Selecciona el proyecto.');
+    if (this.modoGrupal && !this.puestoCuadrillaId) faltan.push('Selecciona el puesto/tipo de trabajo de la cuadrilla.');
+    if (!this.actividad.trim()) faltan.push('Escribe la actividad a realizar.');
+    if (this.torres.length > 0 && !this.esExterior && !this.torreNombre) faltan.push('Selecciona la torre.');
+    if (this.torres.length > 0 && !this.esExterior && this.torreNombre && this.nivelesSeleccionados.size === 0) {
+      faltan.push('Marca al menos un piso/nivel.');
+    }
+    for (const cat of this.categoriasGenericasVisibles) {
+      if (this.categoriaNoAplica(cat.id)) continue;
+      const tieneAlgo = cat.pasos.some((p) => this.pasoAplica(p.id)) || this.pasosPersonalizadosDe(cat.id).length > 0;
+      if (!tieneAlgo) faltan.push(`"${cat.nombre}": marca al menos un paso o "No aplica".`);
+    }
+    if (this.usaActividadesPlantilla) {
+      const tieneAlgo = this.actividadesPlantillaFiltradas.some((act) => act.pasos.some((p) => this.actividadPasoAplica(p.id)));
+      if (!tieneAlgo) faltan.push('Marca al menos un paso en las actividades de la plantilla elegida.');
+    }
+    return faltan;
   }
 
   irAPeligros(): void {
@@ -777,6 +898,12 @@ export class AtsNuevo implements OnInit {
 
   siguiente(): void {
     if (!this.valoracionValida || this.saving) return;
+
+    if (this.modoGrupal) {
+      this.crearGrupo();
+      return;
+    }
+
     this.saving = true;
     this.loaderService.show();
 
@@ -815,6 +942,44 @@ export class AtsNuevo implements OnInit {
   volver(): void {
     this.paso = 3;
     this.cdr.markForCheck();
+  }
+
+  private crearGrupo(): void {
+    if (this.creandoGrupo) return;
+    this.creandoGrupo = true;
+    this.loaderService.show();
+
+    const crear$ = this.modoPublico
+      ? this.svc.crearGrupoPublico(this.publicoTokenProyecto!, {
+          workerId: this.publicoWorkerId!,
+          dniConfirmacion: this.publicoDni!,
+          contenido: this.buildDto(),
+        })
+      : this.svc.crearGrupo(this.buildDto());
+
+    crear$.subscribe({
+      next: (res) => {
+        this.creandoGrupo = false;
+        this.loaderService.hide();
+        if (this.modoPublico) {
+          this.publicoGrupoCreado.emit(res);
+        } else {
+          this.router.navigate(['/ssoma/gestion/ats/grupo', res.id]);
+        }
+      },
+      error: (err: HttpErrorResponse) => {
+        this.creandoGrupo = false;
+        this.loaderService.hide();
+        if (this.modoPublico) {
+          // Nunca errorService acá: su manejo de 401 asume sesión logueada y rebotaría a
+          // /auth/login — en la página pública simplemente no hay con qué iniciar sesión.
+          Swal.fire({ icon: 'error', title: 'No se pudo crear el ATS grupal', text: err.error?.message ?? 'Intenta de nuevo.' });
+        } else {
+          this.errorService.handleError(err);
+        }
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   // ── Paso 2: geolocalización, cámara, firma ───────────────────────
@@ -960,6 +1125,10 @@ export class AtsNuevo implements OnInit {
   }
 
   cerrar(): void {
+    if (this.modoPublico) {
+      this.publicoCancelado.emit();
+      return;
+    }
     this.router.navigate(['/ssoma/gestion/ats']);
   }
 }

@@ -6,6 +6,8 @@ export interface InterconsultaListDto {
   workerId: number;
   workerNombre: string;
   workerDni: string;
+  /** Finalista aprobado de Reclutamiento que todavía no ingresa (sin proyecto ni jefe aún). */
+  esPostulante?: boolean;
   proyectoId?: number;
   proyectoNombre?: string;
   contributorId?: number;

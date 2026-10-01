@@ -1,0 +1,84 @@
+<div class="publico-wrap">
+  <div class="publico-card">
+    <div class="publico-header">
+      <i class="ti ti-shield-check"></i>
+      <span>ATS Digital — Crear ATS Grupal</span>
+    </div>
+
+    @if (cargando) {
+      <div class="publico-loading">Cargando…</div>
+    } @else if (!resumen?.valido) {
+      <div class="publico-error">
+        <i class="ti ti-alert-triangle"></i>
+        <p>{{ resumen?.motivoInvalido }}</p>
+      </div>
+    } @else {
+
+      @if (paso === 'identidad') {
+        <div class="publico-body">
+          <h2>{{ resumen!.proyectoNombre }}</h2>
+          <p class="publico-sub">Vas a llenar el ATS de la cuadrilla UNA sola vez — al terminar se genera un QR para que cada integrante se adhiera con su propia selfie, geolocalización y firma.</p>
+
+          <h3>¿Quién eres?</h3>
+          <app-search-select
+            label="Tu nombre"
+            [options]="workers"
+            valueField="workerId"
+            displayField="nombre"
+            [value]="workerId"
+            placeholder="Busca tu nombre..."
+            (valueChange)="workerId = $event"
+          ></app-search-select>
+
+          <div class="abril-field">
+            <label class="abril-field-label">Últimos dígitos de tu DNI *</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="dniConfirmacion" maxlength="8" placeholder="Ej: 4567" inputmode="numeric" />
+          </div>
+          <p class="publico-hint">Esto confirma que eres tú y no otra persona eligiendo tu nombre por error.</p>
+
+          <button type="button" class="btn btn-primary btn-full" [disabled]="!puedeContinuarIdentidad" (click)="irAWizard()">
+            Continuar a llenar el ATS
+          </button>
+        </div>
+      }
+
+      @if (paso === 'wizard') {
+        <app-ats-nuevo
+          [modoPublico]="true"
+          [publicoTokenProyecto]="tokenProyecto"
+          [publicoWorkerId]="workerId"
+          [publicoDni]="dniConfirmacion"
+          [publicoProyectoNombre]="resumen!.proyectoNombre ?? null"
+          (publicoGrupoCreado)="onGrupoCreado($event)"
+          (publicoCancelado)="onWizardCancelado()"
+        ></app-ats-nuevo>
+      }
+
+      @if (paso === 'exito') {
+        <div class="publico-body">
+          <div class="publico-exito">
+            <i class="ti ti-circle-check"></i>
+            <h2>ATS Grupal creado</h2>
+            <p>Comparte este QR con el resto de la cuadrilla — cada quien lo escanea desde su propio celular para adherirse, sin login.</p>
+          </div>
+
+          <div class="qr-card">
+            @if (qrDataUrl) {
+              <img [src]="qrDataUrl" alt="QR de adhesión" />
+            } @else {
+              <div class="qr-loading">Generando QR…</div>
+            }
+          </div>
+
+          <button type="button" class="btn btn-outline btn-full" (click)="copiarLink()">
+            <i class="ti ti-link"></i> Copiar link de adhesión
+          </button>
+
+          <button type="button" class="btn btn-primary btn-full" (click)="crearOtro()">
+            Crear otro ATS grupal
+          </button>
+        </div>
+      }
+    }
+  </div>
+</div>
