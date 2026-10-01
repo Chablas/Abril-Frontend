@@ -10,16 +10,49 @@
   } @else {
     <div class="dashboard-header">
       <div>
+        @if (grupo.codigo) { <strong class="codigo-doc-grupo">{{ grupo.codigo }}@if (grupo.revision > 1) { · Rev. {{ grupo.revision }} }</strong> }
         <h1 class="dashboard-titulo">{{ grupo.actividad }}</h1>
         <p class="dashboard-subtitulo">
           {{ grupo.proyectoNombre }}
-          @if (grupo.torreNombre) { — Torre {{ grupo.torreNombre }}@if (grupo.pisos) {, {{ grupo.pisos }}} }
+          @if (lugarCompacto) { — {{ lugarCompacto }} }
         </p>
       </div>
-      <span class="badge" [class.badge-activo]="grupo.estado === 'Activo'" [class.badge-cerrado]="grupo.estado === 'Cerrado'">
-        {{ grupo.estado }}
-      </span>
+      <div class="header-derecha">
+        <span class="badge" [class.badge-activo]="grupo.estado === 'Activo'" [class.badge-cerrado]="grupo.estado !== 'Activo'">
+          {{ grupo.estado }}
+        </span>
+        @if (grupo.ejecutantesFirmados > 0) {
+          <button type="button" class="adherido-btn adherido-btn-lg" [disabled]="pdfGrupoCargando" (click)="verPdfGrupo()" title="Ver el ATS grupal (todas las firmas de la cuadrilla)">
+            <i class="ti" [class.ti-eye]="!pdfGrupoCargando" [class.ti-loader-2]="pdfGrupoCargando" [class.girando]="pdfGrupoCargando"></i>
+          </button>
+          <button type="button" class="adherido-btn adherido-btn-lg" [disabled]="pdfGrupoCargando" (click)="descargarPdfGrupo()" title="Descargar el ATS grupal en PDF">
+            <i class="ti ti-download"></i>
+          </button>
+        }
+      </div>
     </div>
+
+    @if (grupo.estado === 'Reemplazado' && grupo.reemplazadoPorId) {
+      <div class="aviso-anulado" style="background:#fffbeb;border-color:#fde68a;color:#92400e">
+        <i class="ti ti-replace"></i> Este ATS grupal fue reemplazado por una revisión corregida.
+        <a [routerLink]="['/ssoma/gestion/ats/grupo', grupo.reemplazadoPorId]">Ver la revisión vigente</a>
+      </div>
+    }
+    @if (grupo.soyAutor && !grupo.yoYaFirme && grupo.estado === 'Activo') {
+      <div class="aviso-firmar-autor">
+        <span><i class="ti ti-signature"></i> <strong>Tú también debes firmar este ATS.</strong> Quien arma la cuadrilla es un ejecutante más y firma igual que los demás.</span>
+        <button type="button" class="btn btn-primary btn-sm" (click)="firmarMiParte()">Firmar mi ATS</button>
+      </div>
+    }
+    @if (grupo.requierePetar && petares.length === 0 && (grupo.estado === 'Activo' || grupo.estado === 'Cerrado')) {
+      <div class="aviso-anulado">
+        <i class="ti ti-alert-triangle"></i> Un riesgo de esta cuadrilla exige PETAR y todavía no hay ninguno.
+        <button type="button" class="btn btn-outline btn-sm btn-peligro" style="margin-left:8px" (click)="abrirFormPetar()">Generar PETAR</button>
+      </div>
+    }
+    @if (grupo.estado === 'Anulado') {
+      <div class="aviso-anulado"><i class="ti ti-ban"></i> Cuadrilla anulada — {{ grupo.anuladoMotivo }}</div>
+    }
 
     <div class="dashboard-grid">
       <div class="qr-col">
@@ -42,17 +75,66 @@
           <span class="estado-label">trabajador(es) ya adherido(s)</span>
         </div>
 
-        @if (grupo.trabajadoresAdheridos.length > 0) {
+        @if (grupo.adheridos.length > 0) {
           <ul class="lista-adheridos">
-            @for (nombre of grupo.trabajadoresAdheridos; track nombre) {
-              <li><i class="ti ti-check"></i> {{ nombre }}</li>
+            @for (ad of grupo.adheridos; track ad.atsId) {
+              <li class="adherido-fila">
+                <span><i class="ti ti-check"></i> {{ ad.nombre }}
+                  @if (sinValidar(ad)) { <span class="chip-sinvalidar" title="Firmó después de la validación de Autoriza/SSOMA — falta que lo incluyan">Sin validar</span> }
+                </span>
+                @if (ad.estado === 'Firmado') {
+                  <span class="adherido-acciones">
+                    @if (grupo.puedeAnular) {
+                      <button type="button" class="adherido-btn adherido-btn-peligro" title="Anular el ATS de este trabajador" (click)="anularAdherido(ad)"><i class="ti ti-ban"></i></button>
+                    }
+                    <button type="button" class="adherido-btn" title="Ver el ATS de este trabajador" (click)="verAts(ad.atsId)"><i class="ti ti-eye"></i></button>
+                    <button type="button" class="adherido-btn" title="Descargar el ATS de este trabajador" (click)="descargarAts(ad.atsId)"><i class="ti ti-download"></i></button>
+                  </span>
+                } @else {
+                  <span class="sin-adheridos">{{ ad.estado }}</span>
+                }
+              </li>
             }
           </ul>
         } @else {
           <p class="sin-adheridos">Todavía nadie se ha adherido — comparte el QR con la cuadrilla.</p>
         }
 
+        @if (grupo.esperados.length > 0) {
+          <div class="esperados-box">
+            <strong>{{ esperadosFirmaron }} de {{ grupo.esperados.length }} integrantes esperados ya firmaron</strong>
+            @if (pendientesNombres.length > 0) {
+              <p class="sin-adheridos"><i class="ti ti-clock"></i> Faltan: {{ pendientesNombres.join(', ') }}</p>
+            } @else {
+              <p class="visto-ok"><i class="ti ti-check"></i> Firmó toda la cuadrilla esperada</p>
+            }
+          </div>
+        }
+        @if (grupo.ultimoEvento) {
+          <p class="sin-adheridos"><i class="ti ti-history"></i> {{ grupo.ultimoEvento }}</p>
+        }
+
         <div class="estado-acciones">
+          @if (grupo.puedeEditarIntegrantes) {
+            <button type="button" class="btn btn-outline btn-sm" (click)="abrirIntegrantes()">
+              <i class="ti ti-users-plus"></i> {{ grupo.esperados.length > 0 ? 'Editar integrantes esperados' : 'Definir integrantes esperados' }}
+            </button>
+          }
+          @if (grupo.puedeCorregir) {
+            <button type="button" class="btn btn-outline btn-sm" (click)="corregirGrupo()" title="Crea una revisión nueva con este contenido para ajustarlo">
+              <i class="ti ti-edit"></i> Corregir cuadrilla
+            </button>
+          }
+          @if (grupo.puedeAnular) {
+            <button type="button" class="btn btn-outline btn-sm btn-peligro" (click)="anularGrupo()">
+              <i class="ti ti-ban"></i> Anular cuadrilla
+            </button>
+          }
+          @if (grupo.puedeReabrir) {
+            <button type="button" class="btn btn-primary btn-sm" [disabled]="reabriendo" (click)="reabrir()">
+              <i class="ti ti-lock-open"></i> {{ reabriendo ? 'Reabriendo…' : 'Reabrir' }}
+            </button>
+          }
           <button type="button" class="btn btn-outline btn-sm" (click)="cargar()">
             <i class="ti ti-refresh"></i> Actualizar
           </button>
@@ -65,7 +147,16 @@
       </div>
     </div>
 
-    <!-- Firma del Capataz — una vez por cuadrilla, por link público (sin login) -->
+    <!-- Observaciones: no modifican el ATS; bloquean la validación mientras estén abiertas -->
+    <div class="petar-seccion">
+      <div class="petar-seccion-header">
+        <h3>Observaciones @if (grupo.observacionesAbiertas > 0) { <span class="obligatorio">{{ grupo.observacionesAbiertas }} abierta(s)</span> }</h3>
+      </div>
+      <app-ats-observaciones tipo="grupo" [id]="id" (cambio)="cargar()"></app-ats-observaciones>
+    </div>
+
+    <!-- Cadena de firmas del ATS grupal: Capataz (solo cuadrillas de obreros) → Autoriza → SSOMA -->
+    @if (grupo.requiereCapataz) {
     <div class="petar-seccion">
       <div class="petar-seccion-header">
         <h3>Firma del Capataz / Maestro de obra</h3>
@@ -82,6 +173,44 @@
           <i class="ti ti-user-plus"></i>
           {{ grupo.capatazNuevosSinValidar }} trabajador(es) nuevo(s) desde la firma de {{ grupo.capatazNombre }} — debe volver a firmar con el mismo link.
         </p>
+      }
+    </div>
+
+    }
+
+    <div class="petar-seccion">
+      <div class="petar-seccion-header">
+        <h3>Autoriza — Residente / Producción <span class="obligatorio">Obligatorio</span></h3>
+        @if (grupo.puedeAutorizar) {
+          <button type="button" class="btn btn-primary btn-sm" [disabled]="firmandoNivel === 'Autoriza'" (click)="firmarNivel('Autoriza')">
+            <i class="ti ti-signature"></i> {{ firmandoNivel === 'Autoriza' ? 'Firmando…' : 'Autorizar a toda la cuadrilla' }}
+          </button>
+        }
+      </div>
+      @if (grupo.ejecutantesFirmados === 0) {
+        <p class="sin-adheridos">Pendiente — se habilita cuando los integrantes de la cuadrilla ya hayan firmado.</p>
+      } @else if (grupo.autorizaFirmados >= grupo.ejecutantesFirmados) {
+        <span class="visto-ok"><i class="ti ti-check"></i> Autorizado — {{ grupo.autorizaFirmados }} de {{ grupo.ejecutantesFirmados }} ATS</span>
+      } @else {
+        <p class="sin-adheridos"><i class="ti ti-clock"></i> {{ grupo.autorizaFirmados }} de {{ grupo.ejecutantesFirmados }} ATS autorizados — pendiente del Residente / Ing. Producción.</p>
+      }
+    </div>
+
+    <div class="petar-seccion">
+      <div class="petar-seccion-header">
+        <h3>Visto Bueno SSOMA <span class="obligatorio">Obligatorio</span></h3>
+        @if (grupo.puedeVistoBuenoSsoma) {
+          <button type="button" class="btn btn-primary btn-sm" [disabled]="firmandoNivel === 'Ssoma'" (click)="firmarNivel('Ssoma')">
+            <i class="ti ti-signature"></i> {{ firmandoNivel === 'Ssoma' ? 'Firmando…' : 'Dar Visto Bueno a toda la cuadrilla' }}
+          </button>
+        }
+      </div>
+      @if (grupo.ejecutantesFirmados === 0) {
+        <p class="sin-adheridos">Pendiente — se habilita cuando los integrantes de la cuadrilla ya hayan firmado.</p>
+      } @else if (grupo.ssomaFirmados >= grupo.ejecutantesFirmados) {
+        <span class="visto-ok"><i class="ti ti-check"></i> Visto Bueno dado — {{ grupo.ssomaFirmados }} de {{ grupo.ejecutantesFirmados }} ATS</span>
+      } @else {
+        <p class="sin-adheridos"><i class="ti ti-clock"></i> {{ grupo.ssomaFirmados }} de {{ grupo.ejecutantesFirmados }} ATS con Visto Bueno — pendiente de SSOMA.</p>
       }
     </div>
 
@@ -177,13 +306,38 @@
 @if (petarFirmando) {
   <app-abril-modal-panel [titulo]="rolFirmando === 'Supervisor' ? 'Firmar como Supervisor' : 'Visto Bueno SSOMA'" icono="ti-signature" variant="blue" width="560px" (closeModal)="cerrarFirmaPetar()">
     <p class="visto-hint">PETAR — {{ petarFirmando.tipoNombre }}: {{ petarFirmando.descripcionTrabajo }}</p>
-    <label class="abril-field-label">Firma *</label>
-    <app-signature-pad (drawingChange)="onFirmaPetarChange($event)"></app-signature-pad>
-    <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
+    <p class="visto-hint">Se usará tu firma digital registrada (la de tu autorización).</p>
     <div modalFooter>
       <button class="btn btn-secondary" (click)="cerrarFirmaPetar()" [disabled]="guardandoFirmaPetar">Cancelar</button>
-      <button class="btn btn-primary" (click)="guardarFirmaPetar()" [disabled]="!hayFirmaPetar || guardandoFirmaPetar">
+      <button class="btn btn-primary" (click)="guardarFirmaPetar()" [disabled]="guardandoFirmaPetar">
         {{ guardandoFirmaPetar ? 'Guardando…' : 'Firmar' }}
+      </button>
+    </div>
+  </app-abril-modal-panel>
+}
+
+@if (integrantesAbierto) {
+  <app-abril-modal-panel titulo="Integrantes esperados" icono="ti-users" variant="blue" width="560px" (closeModal)="integrantesAbierto = false">
+    <p class="visto-hint">Marca quiénes forman esta cuadrilla. Con esta lista el panel te dice quién falta por firmar.</p>
+    <div class="abril-field">
+      <label class="abril-field-label">Buscar</label>
+      <input class="abril-field-input" placeholder="Nombre del trabajador…" [(ngModel)]="filtroInt" />
+    </div>
+    <div class="lista-candidatos">
+      @for (c of candidatosFiltrados; track c.workerId) {
+        <label class="cand-fila">
+          <input type="checkbox" [checked]="seleccion.has(c.workerId)" (change)="toggleInt(c.workerId)" />
+          {{ c.nombre }}
+          @if (c.yaFirmo) { <span class="chip-sinvalidar" style="background:#dcfce7;color:#166534">ya firmó</span> }
+        </label>
+      } @empty {
+        <p class="sin-adheridos">Sin resultados.</p>
+      }
+    </div>
+    <div modalFooter>
+      <button class="btn btn-secondary" (click)="integrantesAbierto = false" [disabled]="guardandoInt">Cancelar</button>
+      <button class="btn btn-primary" (click)="guardarIntegrantes()" [disabled]="guardandoInt">
+        {{ guardandoInt ? 'Guardando…' : 'Guardar (' + seleccion.size + ')' }}
       </button>
     </div>
   </app-abril-modal-panel>

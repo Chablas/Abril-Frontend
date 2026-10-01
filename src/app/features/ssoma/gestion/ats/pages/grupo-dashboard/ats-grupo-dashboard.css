@@ -298,3 +298,56 @@
   gap: 4px;
   cursor: pointer;
 }
+
+.obligatorio {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.adherido-fila { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.adherido-acciones { display: inline-flex; gap: 4px; }
+.adherido-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; border: 1px solid #e5e7eb; background: #fff; color: #374151;
+  border-radius: 7px; cursor: pointer; font-size: 14px;
+  transition: background 0.12s, color 0.12s, transform 0.08s;
+}
+.adherido-btn:hover { background: #eff6ff; color: var(--color-abril-logo-blue); border-color: var(--color-abril-logo-blue); }
+.adherido-btn:active { transform: scale(0.92); }
+
+.header-derecha { display: inline-flex; align-items: center; gap: 8px; }
+.adherido-btn-lg { width: 34px; height: 34px; font-size: 17px; border-radius: 8px; }
+.adherido-btn:disabled { cursor: progress; opacity: 0.75; }
+.girando { animation: grupo-spin 0.8s linear infinite; }
+@keyframes grupo-spin { to { transform: rotate(360deg); } }
+
+.codigo-doc-grupo { display: block; font-size: 12px; color: var(--color-abril-logo-blue); letter-spacing: 0.3px; margin-bottom: 2px; }
+
+.chip-sinvalidar {
+  margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+  background: #fffbeb; color: #b45309; border: 1px solid #fde68a;
+  font-size: 10.5px; font-weight: 700;
+}
+.esperados-box { margin: 10px 0; padding: 10px 12px; border: 1px solid #dbeafe; background: #eff6ff; border-radius: 10px; font-size: 13px; }
+.lista-candidatos { max-height: 320px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 10px; margin-top: 6px; }
+.cand-fila { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid #f3f4f6; font-size: 13px; cursor: pointer; }
+.cand-fila:hover { background: #f9fafb; }
+
+.adherido-btn-peligro:hover { background: #fef2f2; color: #b91c1c; border-color: #b91c1c; }
+.btn-peligro { color: #b91c1c; border-color: #fecaca; }
+.btn-peligro:hover { background: #fef2f2; }
+.aviso-anulado { margin: 8px 0 14px; padding: 10px 14px; border-radius: 10px; background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; font-size: 13px; font-weight: 600; }
+
+.aviso-firmar-autor {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  margin: 8px 0 14px; padding: 12px 14px; border-radius: 10px;
+  background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; font-size: 13px;
+}

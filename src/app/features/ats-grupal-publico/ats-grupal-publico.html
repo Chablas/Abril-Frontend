@@ -96,11 +96,7 @@
             @else { <i class="ti ti-map-pin-off"></i> No se pudo obtener tu ubicación — puedes seguir, pero avisa al Coordinador SSOMA. }
           </p>
 
-          <div class="firmar-bloque">
-            <label class="abril-field-label">Tu firma</label>
-            <app-signature-pad (drawingChange)="onFirmaChange($event)"></app-signature-pad>
-            <button type="button" class="btn-link-inline" (click)="firmaPad?.clear()">Limpiar firma</button>
-          </div>
+          <p class="publico-hint">Tu firma será la firma digital registrada en tu autorización de uso de firma.</p>
 
           <label class="check-label">
             <input type="checkbox" [(ngModel)]="aceptaConsentimiento" />
@@ -158,11 +154,7 @@
             <app-camera-capture [overlayLineas]="petarOverlayLineas" (listo)="onCamaraLista()"></app-camera-capture>
           </div>
 
-          <div class="firmar-bloque">
-            <label class="abril-field-label">Tu firma</label>
-            <app-signature-pad (drawingChange)="onFirmaPetarChange($event)"></app-signature-pad>
-            <button type="button" class="btn-link-inline" (click)="firmaPad?.clear()">Limpiar firma</button>
-          </div>
+          <p class="publico-hint">Tu firma será la firma digital registrada en tu autorización de uso de firma.</p>
 
           <button type="button" class="btn btn-primary btn-full" [disabled]="!puedeFirmarPetar" (click)="firmarPetarActual()">
             {{ enviandoPetar ? 'Firmando…' : 'Firmar este PETAR' }}
@@ -175,8 +167,13 @@
           <i class="ti ti-circle-check"></i>
           <h2>¡Listo, {{ nombreConfirmado }}!</h2>
           <p>Tu ATS quedó firmado con selfie y geolocalización.</p>
-          <button type="button" class="btn btn-outline btn-full" (click)="firmarOtro()">
-            Otra persona de la cuadrilla va a firmar en este mismo celular
+          @if (!sesionWorkerId) {
+            <button type="button" class="btn btn-outline btn-full" (click)="firmarOtro()">
+              Otra persona de la cuadrilla va a firmar en este mismo celular
+            </button>
+          }
+          <button type="button" class="btn btn-primary btn-full" (click)="salir()">
+            {{ sesionWorkerId ? 'Volver a la intranet' : 'Ir a la intranet' }}
           </button>
         </div>
       }

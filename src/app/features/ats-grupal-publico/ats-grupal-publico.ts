@@ -1,12 +1,13 @@
 import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { AtsService } from '../ssoma/gestion/ats/services/ats.service';
 import { AtsGrupoResumenPublicoDto, AtsGrupoWorkerOpcionDto } from '../ssoma/gestion/ats/dtos/ats.dtos';
 import { PetarService } from '../ssoma/gestion/petar/services/petar.service';
+import { AuthService } from '../../core/services/auth.service';
 import { PetarGrupoResumenPublicoDto } from '../ssoma/gestion/petar/dtos/petar.dtos';
 import { SearchSelect } from '../../shared/components/search-select/search-select';
 import { CameraCapture } from '../../shared/components/camera-capture/camera-capture';
@@ -80,6 +81,8 @@ export class AtsGrupalPublico implements OnInit {
     private petarSvc: PetarService,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
+    private auth: AuthService,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -100,24 +103,79 @@ export class AtsGrupalPublico implements OnInit {
   }
 
   private cargarWorkers(): void {
+    this.detectarSesion();
     this.svc.getWorkersParaAdhesion(this.token).subscribe({
-      next: (res) => { this.workers = res; this.cdr.detectChanges(); },
+      next: (res) => {
+        // Quien ya firmó se marca en la lista: al elegirlo se salta la firma del ATS y va directo a los PETAR.
+        this.workers = res.map((w) => (w.yaFirmo ? { ...w, nombre: `${w.nombre} · ya firmó` } : w));
+        this.cdr.detectChanges();
+      },
       error: () => {},
     });
   }
 
+  /** Worker del usuario con sesión iniciada (si la hay): firma como sí mismo, sin elegir nombre ni confirmar DNI. */
+  sesionWorkerId: number | null = null;
+
+  private detectarSesion(): void {
+    if (!this.auth.getToken()) return;
+    this.svc.getMiWorker().subscribe({
+      next: (r) => { this.sesionWorkerId = r.workerId; this.cdr.detectChanges(); },
+      error: () => { this.sesionWorkerId = null; },
+    });
+  }
+
+  /** Salida de la pantalla pública: con sesión vuelve al listado de ATS; sin sesión, al login de la intranet. */
+  salir(): void {
+    this.router.navigateByUrl(this.sesionWorkerId ? '/ssoma/gestion/ats' : '/auth/login');
+  }
+
   irAIdentidad(): void {
+    if (this.sesionWorkerId) {
+      const yo = this.workers.find((w) => w.workerId === this.sesionWorkerId);
+      if (!yo) {
+        Swal.fire({ icon: 'info', title: 'No estás habilitado en este proyecto', text: 'Tu usuario no figura entre los trabajadores habilitados para firmar este ATS.' });
+        return;
+      }
+      this.workerId = yo.workerId;
+      this.dniConfirmacion = '';
+      this.irAFirmar();
+      return;
+    }
     this.paso = 'identidad';
     this.cdr.detectChanges();
   }
 
   get puedeContinuarIdentidad(): boolean {
+    if (this.sesionWorkerId) return !!this.workerId;
     return !!this.workerId && this.dniConfirmacion.trim().length >= 3;
   }
 
   irAFirmar(): void {
     if (!this.puedeContinuarIdentidad) return;
-    this.nombreConfirmado = this.workers.find((w) => w.workerId === this.workerId)?.nombre ?? '';
+    const elegido = this.workers.find((w) => w.workerId === this.workerId);
+    this.nombreConfirmado = (elegido?.nombre ?? '').replace(' · ya firmó', '');
+
+    if (elegido?.yaFirmo) {
+      // Ya firmó su ATS: se confirma con el DNI y se sigue con los PETAR (p. ej. uno creado después).
+      (this.sesionWorkerId
+        ? this.svc.getMiAtsLogueado(this.token)
+        : this.svc.getMiAtsPublico(this.token, { workerId: this.workerId!, dniConfirmacion: this.dniConfirmacion.trim() })
+      ).subscribe({
+        next: (res) => {
+          if (!res.atsId) {
+            Swal.fire({ icon: 'info', title: 'No encontramos tu ATS', text: 'Intenta de nuevo o avisa al Coordinador SSOMA.' });
+            return;
+          }
+          this.atsIdPropio = res.atsId;
+          this.cargarPetares();
+        },
+        error: (err: HttpErrorResponse) =>
+          Swal.fire({ icon: 'error', title: 'No se pudo continuar', text: err.error?.message ?? 'Intenta de nuevo.' }),
+      });
+      return;
+    }
+
     this.paso = 'firmar';
     this.cdr.detectChanges();
     this.pedirUbicacion();
@@ -146,27 +204,23 @@ export class AtsGrupalPublico implements OnInit {
   }
 
   get puedeFirmar(): boolean {
-    return this.camaraLista && this.hayFirma && this.aceptaConsentimiento && !this.enviando;
+    return this.camaraLista && this.aceptaConsentimiento && !this.enviando;
   }
 
   firmar(): void {
     if (!this.puedeFirmar || !this.camara || !this.workerId) return;
 
     const foto = this.camara.capturarFoto();
-    const firma = this.firmaPad?.toDataUrl();
+    const firma = ''; // la firma sale de la firma digital registrada, no se dibuja
     if (!foto) {
       Swal.fire({ icon: 'error', title: 'No se pudo capturar la selfie', text: 'Intenta de nuevo.' });
-      return;
-    }
-    if (!firma) {
-      Swal.fire({ icon: 'error', title: 'Falta la firma', text: 'Dibuja tu firma antes de continuar.' });
       return;
     }
 
     this.enviando = true;
     this.cdr.detectChanges();
 
-    this.svc.unirseAGrupo(this.token, {
+    (this.sesionWorkerId ? this.svc.unirseAGrupoLogueado.bind(this.svc) : this.svc.unirseAGrupo.bind(this.svc))(this.token, {
       workerId: this.workerId,
       dniConfirmacion: this.dniConfirmacion.trim(),
       selfieBase64: foto,
@@ -235,16 +289,16 @@ export class AtsGrupalPublico implements OnInit {
   }
 
   get puedeFirmarPetar(): boolean {
-    return this.hayFirmaPetar && !this.enviandoPetar;
+    return !this.enviandoPetar;
   }
 
   firmarPetarActual(): void {
     if (!this.puedeFirmarPetar || !this.camara || !this.petarActual || !this.workerId || !this.atsIdPropio) return;
 
     const foto = this.camara.capturarFoto();
-    const firma = this.firmaPad?.toDataUrl();
-    if (!foto || !firma) {
-      Swal.fire({ icon: 'error', title: 'Falta selfie o firma', text: 'Completa ambas antes de continuar.' });
+    const firma = ''; // la firma sale de la firma digital registrada, no se dibuja
+    if (!foto) {
+      Swal.fire({ icon: 'error', title: 'Falta la selfie', text: 'Toma tu selfie antes de continuar.' });
       return;
     }
 

@@ -49,36 +49,64 @@
   </app-filter-modal>
 }
 
-<label class="toggle-pendientes">
-  <input type="checkbox" [checked]="soloPendientes" (change)="toggleSoloPendientes()" />
-  Solo pendientes de Autorizar/Visto Bueno SSOMA
-</label>
+<div class="lista-toolbar">
+  <div class="segmento" role="tablist">
+    <button type="button" class="segmento-btn" [class.activo]="vista === 'individuales'" (click)="cambiarVista('individuales')">
+      <i class="ti ti-user"></i> Individuales
+    </button>
+    <button type="button" class="segmento-btn" [class.activo]="vista === 'grupales'" (click)="cambiarVista('grupales')">
+      <i class="ti ti-users-group"></i> Grupales (cuadrillas)
+    </button>
+  </div>
+  @if (vista === 'individuales') {
+    <label class="toggle-pendientes">
+      <input type="checkbox" [checked]="soloPendientes" (change)="toggleSoloPendientes()" />
+      Solo pendientes de Autorizar/Visto Bueno SSOMA
+    </label>
+  }
+</div>
 
+@if (vista === 'individuales') {
 <div class="abril-table-wrap">
   <table class="abril-table">
     <thead>
       <tr>
-        <th>Fecha</th>
-        <th>Trabajador</th>
-        <th>Proyecto</th>
+        <th>ATS</th>
         <th>Lugar</th>
         <th>Actividad</th>
-        <th>Estado</th>
-        <th>PETAR</th>
-        <th></th>
+        <th>Firmas y PETAR</th>
+        <th class="th-acciones">Acciones</th>
       </tr>
     </thead>
     <tbody>
       @if (loading) {
-        <tr><td colspan="8">Cargando…</td></tr>
+        @for (i of [1, 2, 3, 4, 5]; track i) {
+          <tr class="fila-skeleton">
+            <td><div class="sk sk-w60"></div><div class="sk sk-w80"></div><div class="sk sk-w50"></div></td>
+            <td><div class="sk sk-w90"></div><div class="sk sk-w60"></div></td>
+            <td><div class="sk sk-w70"></div></td>
+            <td><div class="sk sk-w90"></div></td>
+            <td><div class="sk sk-w40"></div></td>
+          </tr>
+        }
       } @else if (listaFiltrada.length === 0) {
-        <tr><td colspan="8">No hay ATS registrados con estos filtros.</td></tr>
+        <tr><td colspan="5" class="vacio">No hay ATS registrados con estos filtros.</td></tr>
       } @else {
-        @for (a of listaFiltrada; track a.id) {
+        @for (a of listaFiltrada; track a.id; let i = $index) {
           <tr>
-            <td>{{ a.fecha | date:'dd/MM/yyyy' }}</td>
-            <td>{{ a.workerNombre }}</td>
-            <td>{{ a.proyectoNombre }}</td>
+            <td class="ats-cell">
+              <div class="ats-cell-top">
+                <strong class="codigo-doc">{{ a.codigo || 'Sin código' }}</strong>
+                <span class="badge" [class]="estadoClass(a.estado)">{{ a.estado }}</span>
+                @if (a.atsGrupoId) {
+                  <a class="chip-grupal" [routerLink]="['/ssoma/gestion/ats/grupo', a.atsGrupoId]" title="Este ATS nació de una cuadrilla — abrir el panel del grupo.">
+                    <i class="ti ti-users-group"></i> Grupal
+                  </a>
+                }
+              </div>
+              <div class="ats-cell-nombre">{{ a.workerNombre | titleCase }}</div>
+              <div class="ats-cell-meta">{{ a.proyectoNombre | titleCase }} · {{ a.fecha | date:'dd/MM/yyyy' }}</div>
+            </td>
             <td class="lugar-cell">
               @if (a.torreNombre || a.lugar) {
                 <span [title]="lugarCompletoTitle(a)">{{ lugarCompacto(a) }}</span>
@@ -86,7 +114,7 @@
                 <span class="visto-pendiente">—</span>
               }
             </td>
-            <td>
+            <td class="actividad-cell">
               {{ a.actividad }}
               @if (a.estado === 'Firmado') {
                 <button type="button" class="btn-link-inline" (click)="toggleDetalle(a)" [disabled]="detalleCargando.has(a.id)">
@@ -94,110 +122,132 @@
                 </button>
               }
             </td>
-            <td><span class="badge" [class]="estadoClass(a.estado)">{{ a.estado }}</span></td>
-            <td>
-              @if (a.petares.length > 0) {
-                <div class="petar-col">
-                  @for (p of a.petares; track p.id) {
-                    <div class="petar-card">
-                      <div class="petar-card-header">
-                        <i class="ti ti-alert-triangle"></i>
-                        <strong>PETAR — {{ p.tipoNombre }}</strong>
-                        <span class="badge" [class]="estadoClass(p.estado)">{{ p.estado }}</span>
-                      </div>
-                      @if (!p.tieneFirmaEjecutante) {
-                        <button type="button" class="btn-link-inline" (click)="continuarPetar(p.id)">
-                          <i class="ti ti-player-play"></i> Continuar / Firmar como ejecutante
-                        </button>
-                      } @else {
-                        <div class="petar-item-acciones">
-                          <button class="btn-link-inline" (click)="descargarPdfPetar(p.id)">PDF</button>
-                          <span class="petar-divisor">•</span>
-                          @if (p.supervisorFirmado) {
-                            <span class="visto-ok" title="Firmado"><i class="ti ti-check"></i> Supervisor</span>
-                          } @else if (p.puedeFirmarSupervisor) {
-                            <button type="button" class="btn-link-inline" (click)="abrirFirmaVisto(a, 'petar-supervisor', p.id)">Firmar Supervisor</button>
-                          } @else {
-                            <span class="visto-pendiente">Pendiente Supervisor</span>
-                          }
-                          <span class="petar-divisor">•</span>
-                          @if (p.ssomaFirmado) {
-                            <span class="visto-ok" title="Firmado"><i class="ti ti-check"></i> SSOMA</span>
-                          } @else if (p.puedeFirmarSsoma) {
-                            <button type="button" class="btn-link-inline" (click)="abrirFirmaVisto(a, 'petar-ssoma', p.id)">Visto Bueno SSOMA</button>
-                          } @else {
-                            <span class="visto-pendiente">Pendiente SSOMA</span>
-                          }
-                        </div>
-                      }
-                    </div>
+
+            <td class="firmas-cell">
+              @if (a.estado === 'Firmado') {
+                <div class="firmas-linea">
+                  <span class="firmas-titulo">ATS</span>
+                  @if (a.requiereCapataz) {
+                    @if (a.capatazFirmaUrl) {
+                      <span class="chip chip-ok" title="Firmado por {{ a.capatazNombre }} · {{ a.capatazHoraServidor | date:'dd/MM/yyyy HH:mm' }}"><i class="ti ti-check"></i> Capataz</span>
+                    } @else if (a.puedeCapataz) {
+                      <button type="button" class="chip chip-accion" (click)="abrirFirmaVisto(a, 'capataz')" title="Firmar como Capataz / Maestro de obra"><i class="ti ti-signature"></i> Firmar Capataz</button>
+                    } @else {
+                      <span class="chip chip-pend" title="Pendiente de firma del Capataz / Maestro de obra"><i class="ti ti-clock"></i> Capataz</span>
+                    }
+                  }
+                  @if (a.autorizaFirmaUrl) {
+                    <span class="chip chip-ok" title="Firmado por {{ a.autorizaNombre }} · {{ a.autorizaHoraServidor | date:'dd/MM/yyyy HH:mm' }}"><i class="ti ti-check"></i> Autoriza</span>
+                  } @else if (a.puedeAutorizar) {
+                    <button type="button" class="chip chip-accion" (click)="abrirFirmaVisto(a, 'autoriza')" title="Autorizar el ATS (Residente / Ing. Producción)"><i class="ti ti-signature"></i> Firmar Autoriza</button>
+                  } @else {
+                    <span class="chip chip-pend" title="Pendiente del Residente / Producción"><i class="ti ti-clock"></i> Autoriza</span>
+                  }
+                  @if (a.ssomaFirmaUrl) {
+                    <span class="chip chip-ok" title="Firmado por {{ a.ssomaNombre }} · {{ a.ssomaHoraServidor | date:'dd/MM/yyyy HH:mm' }}"><i class="ti ti-check"></i> SSOMA</span>
+                  } @else if (a.puedeVistoBuenoSsoma) {
+                    <button type="button" class="chip chip-accion" (click)="abrirFirmaVisto(a, 'ssoma')" title="Dar Visto Bueno SSOMA"><i class="ti ti-signature"></i> Visto Bueno</button>
+                  } @else {
+                    <span class="chip chip-pend" title="Pendiente de SSOMA"><i class="ti ti-clock"></i> SSOMA</span>
                   }
                 </div>
-              } @else if (a.requierePetar && a.estado === 'Firmado') {
-                <span class="badge-petar-falta"><i class="ti ti-alert-triangle"></i> Requiere PETAR</span>
-              } @else if (a.requierePetar) {
-                <span class="visto-pendiente" title="El PETAR recién se puede generar cuando este ATS quede Firmado.">Requiere PETAR al firmar</span>
+
+                @for (p of a.petares; track p.id) {
+                  <div class="firmas-linea firmas-linea-petar">
+                    <span class="firmas-titulo petar"><i class="ti ti-alert-triangle"></i> {{ p.codigo || 'PETAR' }}</span>
+                    <span class="petar-tipo" [title]="p.tipoNombre">{{ p.tipoNombre }}</span>
+                    @if (!p.tieneFirmaEjecutante) {
+                      <button type="button" class="chip chip-accion" (click)="continuarPetar(p.id)" title="Falta la firma del ejecutante — continuar el llenado"><i class="ti ti-player-play"></i> Continuar</button>
+                    } @else {
+                      @if (p.supervisorFirmado) {
+                        <span class="chip chip-ok" title="Supervisor firmó"><i class="ti ti-check"></i> Supervisor</span>
+                      } @else if (p.puedeFirmarSupervisor) {
+                        <button type="button" class="chip chip-accion" (click)="abrirFirmaVisto(a, 'petar-supervisor', p.id)" title="Firmar el PETAR como Supervisor"><i class="ti ti-signature"></i> Firmar Supervisor</button>
+                      } @else {
+                        <span class="chip chip-pend" title="Pendiente del Supervisor"><i class="ti ti-clock"></i> Supervisor</span>
+                      }
+                      @if (p.ssomaFirmado) {
+                        <span class="chip chip-ok" title="SSOMA firmó"><i class="ti ti-check"></i> SSOMA</span>
+                      } @else if (p.puedeFirmarSsoma) {
+                        <button type="button" class="chip chip-accion" (click)="abrirFirmaVisto(a, 'petar-ssoma', p.id)" title="Dar Visto Bueno SSOMA al PETAR"><i class="ti ti-signature"></i> Visto Bueno</button>
+                      } @else {
+                        <span class="chip chip-pend" title="Pendiente de SSOMA"><i class="ti ti-clock"></i> SSOMA</span>
+                      }
+                      <button type="button" class="icon-btn icon-btn-sm" (click)="verPdfPetar(p.id)" [disabled]="ocupado('ver-petar-' + p.id)" title="Ver PETAR">
+                        <i class="ti" [class.ti-eye]="!ocupado('ver-petar-' + p.id)" [class.ti-loader-2]="ocupado('ver-petar-' + p.id)" [class.girando]="ocupado('ver-petar-' + p.id)"></i>
+                      </button>
+                      <button type="button" class="icon-btn icon-btn-sm" (click)="descargarPdfPetar(p.id)" [disabled]="ocupado('desc-petar-' + p.id)" title="Descargar PETAR">
+                        <i class="ti" [class.ti-download]="!ocupado('desc-petar-' + p.id)" [class.ti-loader-2]="ocupado('desc-petar-' + p.id)" [class.girando]="ocupado('desc-petar-' + p.id)"></i>
+                      </button>
+                    }
+                  </div>
+                }
+
+                <div class="firmas-linea">
+                  <button type="button" class="chip" [class.chip-alerta]="a.observacionesAbiertas > 0" [class.chip-pend]="a.observacionesAbiertas === 0" style="cursor:pointer;border:1px solid transparent" (click)="abrirObservaciones(a)" title="Observaciones de Capataz / Residente / SSOMA — bloquean la validación mientras estén abiertas">
+                    <i class="ti ti-message-exclamation"></i> Observaciones@if (a.observacionesAbiertas > 0) { ({{ a.observacionesAbiertas }}) }
+                  </button>
+                </div>
+
+                @if (a.petares.length === 0 && a.requierePetar) {
+                  <div class="firmas-linea">
+                    <span class="badge-petar-falta"><i class="ti ti-alert-triangle"></i> Requiere PETAR</span>
+                  </div>
+                }
               } @else {
-                <span class="visto-pendiente">—</span>
+                @if (a.requierePetar) {
+                  <span class="visto-pendiente" title="El PETAR recién se puede generar cuando este ATS quede Firmado.">Requiere PETAR al firmar</span>
+                } @else {
+                  <span class="visto-pendiente">—</span>
+                }
               }
             </td>
+
             <td class="acciones-cell">
               @if (a.estado === 'Borrador') {
                 <button class="btn btn-outline btn-sm" (click)="continuarAts(a)" title="Retomar este ATS donde quedó (pasos, EPP, riesgos) hasta llegar a Firmar.">
                   <i class="ti ti-player-play"></i> Continuar llenado
                 </button>
-              }
-              @if (a.estado === 'Firmado') {
-                <div class="acciones-grupo">
-                  <button class="btn btn-outline btn-sm" (click)="descargarPdf(a)" title="Descarga el PDF del ATS (no del PETAR, si es que tiene uno).">
-                    <i class="ti ti-download"></i> PDF ATS
+              } @else {
+                <div class="acciones-iconos">
+                  <button type="button" class="icon-btn" (click)="verPdf(a)" [disabled]="ocupado('ver-ats-' + a.id)" title="Ver el ATS (vista previa)">
+                    <i class="ti" [class.ti-eye]="!ocupado('ver-ats-' + a.id)" [class.ti-loader-2]="ocupado('ver-ats-' + a.id)" [class.girando]="ocupado('ver-ats-' + a.id)"></i>
                   </button>
-                  @if (a.requiereCapataz) {
-                    <span class="acciones-divisor"></span>
-                    @if (a.capatazFirmaUrl) {
-                      <span class="visto-ok" title="Firmado por {{ a.capatazNombre }}"><i class="ti ti-check"></i> ATS: Capataz OK</span>
-                    } @else if (a.puedeCapataz) {
-                      <button class="btn btn-outline btn-sm" (click)="abrirFirmaVisto(a, 'capataz')" title="Firma del Capataz/Maestro de obra — primer nivel de la cadena, solo para cuadrillas de obreros.">Firmar Capataz</button>
-                    } @else {
-                      <span class="visto-pendiente">ATS: pendiente Capataz</span>
+                  <button type="button" class="icon-btn" (click)="descargarPdf(a)" [disabled]="ocupado('desc-ats-' + a.id)" title="Descargar el PDF del ATS">
+                    <i class="ti" [class.ti-download]="!ocupado('desc-ats-' + a.id)" [class.ti-loader-2]="ocupado('desc-ats-' + a.id)" [class.girando]="ocupado('desc-ats-' + a.id)"></i>
+                  </button>
+                  <div class="menu-wrap">
+                    <button type="button" class="icon-btn" (click)="toggleMenu(a.id, $event)" title="Más acciones" [class.activo]="menuAbierto === a.id">
+                      <i class="ti ti-dots-vertical"></i>
+                    </button>
+                    @if (menuAbierto === a.id) {
+                      <div class="menu-acciones" [class.arriba]="i >= listaFiltrada.length - 2 && listaFiltrada.length > 3" (click)="$event.stopPropagation()">
+                        <button type="button" class="menu-item menu-item-petar" (click)="generarPetar(a); cerrarMenu()">
+                          <i class="ti ti-alert-triangle"></i> {{ a.petares.length > 0 ? 'Generar otro PETAR' : 'Generar PETAR' }}
+                        </button>
+                        @if (a.puedeAnular) {
+                          <button type="button" class="menu-item menu-item-peligro" (click)="anularAts(a); cerrarMenu()">
+                            <i class="ti ti-ban"></i> Anular
+                          </button>
+                        }
+                        @if (esCorregibleHoy(a)) {
+                          <button type="button" class="menu-item" (click)="corregirAts(a); cerrarMenu()">
+                            <i class="ti ti-edit"></i> Corregir
+                          </button>
+                          <button type="button" class="menu-item" (click)="duplicarAts(a); cerrarMenu()">
+                            <i class="ti ti-copy"></i> Duplicar
+                          </button>
+                        }
+                      </div>
                     }
-                  }
-                  <span class="acciones-divisor"></span>
-                  @if (a.autorizaFirmaUrl) {
-                    <span class="visto-ok" title="Firmado por {{ a.autorizaNombre }}"><i class="ti ti-check"></i> ATS Autorizado</span>
-                  } @else if (a.puedeAutorizar) {
-                    <button class="btn btn-outline btn-sm" (click)="abrirFirmaVisto(a, 'autoriza')" title="Autoriza el ATS (Residente/Ing. Producción) — distinto del PETAR, si es que tiene uno.">Autorizar ATS</button>
-                  } @else {
-                    <span class="visto-pendiente">ATS: pendiente Residente</span>
-                  }
-                  <span class="acciones-divisor"></span>
-                  @if (a.ssomaFirmaUrl) {
-                    <span class="visto-ok" title="Firmado por {{ a.ssomaNombre }}"><i class="ti ti-check"></i> SSOMA OK (ATS)</span>
-                  } @else if (a.puedeVistoBuenoSsoma) {
-                    <button class="btn btn-outline btn-sm" (click)="abrirFirmaVisto(a, 'ssoma')" title="Visto Bueno SSOMA del ATS — distinto del PETAR, si es que tiene uno.">Visto Bueno SSOMA (ATS)</button>
-                  } @else {
-                    <span class="visto-pendiente">ATS: pendiente SSOMA</span>
-                  }
-                  <span class="acciones-divisor"></span>
-                  <button class="btn btn-outline btn-sm btn-petar" (click)="generarPetar(a)" title="Otra tarea de alto riesgo dentro de esta misma jornada (ej. además de Altura, también Espacio Confinado) — genera un PETAR NUEVO e independiente.">
-                    <i class="ti ti-alert-triangle"></i> {{ a.petares.length > 0 ? 'Generar otro PETAR' : 'Generar PETAR' }}
-                  </button>
-                  @if (esCorregibleHoy(a)) {
-                    <span class="acciones-divisor"></span>
-                    <button class="btn btn-outline btn-sm" (click)="corregirAts(a)" title="La condición real en campo fue distinta a la evaluada — crea un ATS nuevo enlazado a este, sin modificar el ya firmado.">
-                      <i class="ti ti-edit"></i> Corregir
-                    </button>
-                    <button class="btn btn-outline btn-sm" (click)="duplicarAts(a)" title="Misma tarea y riesgos, otro lugar (ej. Torre B en vez de Torre A) — precarga todo, solo ajustas el lugar.">
-                      <i class="ti ti-copy"></i> Duplicar
-                    </button>
-                  }
+                  </div>
                 </div>
               }
             </td>
           </tr>
           @if (filaExpandida(a.id)) {
             <tr class="fila-detalle">
-              <td colspan="8">
+              <td colspan="5">
                 <div class="detalle-iperc">
                   @if (detalleCargando.has(a.id)) {
                     <p>Cargando detalle…</p>
@@ -239,6 +289,105 @@
     </tbody>
   </table>
 </div>
+} @else {
+<div class="abril-table-wrap">
+  <table class="abril-table">
+    <thead>
+      <tr>
+        <th>Cuadrilla</th>
+        <th>Lugar</th>
+        <th>Adheridos</th>
+        <th>Firmas</th>
+        <th class="th-acciones">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (loading) {
+        @for (i of [1, 2, 3]; track i) {
+          <tr class="fila-skeleton">
+            <td><div class="sk sk-w80"></div><div class="sk sk-w50"></div></td>
+            <td><div class="sk sk-w90"></div></td>
+            <td><div class="sk sk-w30"></div></td>
+            <td><div class="sk sk-w60"></div></td>
+            <td><div class="sk sk-w40"></div></td>
+          </tr>
+        }
+      } @else if (grupos.length === 0) {
+        <tr><td colspan="5" class="vacio">No hay ATS grupales con estos filtros.</td></tr>
+      } @else {
+        @for (g of grupos; track g.id) {
+          <tr>
+            <td class="ats-cell">
+              <div class="ats-cell-top">
+                <strong class="codigo-doc">{{ g.codigo || 'Grupo #' + g.id }}</strong>
+                @if (g.revision > 1) { <span class="chip chip-neutro" title="Revisión del ATS grupal (corregido)">Rev. {{ g.revision }}</span> }
+                <span class="badge" [class]="g.estado === 'Activo' ? 'badge-borrador' : (g.estado === 'Anulado' || g.estado === 'Reemplazado' ? 'badge-cerrado' : 'badge-firmado')">{{ g.estado === 'Activo' ? 'Abierto' : g.estado }}</span>
+              </div>
+              <div class="ats-cell-nombre">{{ g.actividad }}</div>
+              <div class="ats-cell-meta">{{ g.proyectoNombre | titleCase }} · {{ g.fecha | date:'dd/MM/yyyy' }}@if (g.creadoPorNombre) { · creó {{ g.creadoPorNombre | titleCase }} }</div>
+            </td>
+            <td class="lugar-cell">
+              @if (g.torreNombre || g.lugar) {
+                <span>{{ lugarGrupo(g) }}</span>
+              } @else {
+                <span class="visto-pendiente">—</span>
+              }
+            </td>
+            <td><span class="chip chip-neutro"><i class="ti ti-users"></i> {{ g.totalAdhesiones }}</span></td>
+            <td class="firmas-cell">
+              <div class="firmas-linea">
+                @if (g.requiereCapataz) {
+                  @if (g.capatazFirmado && g.capatazVigente) {
+                    <span class="chip chip-ok" title="Firmado por {{ g.capatazNombre }}"><i class="ti ti-check"></i> Capataz</span>
+                  } @else if (g.capatazFirmado) {
+                    <span class="chip chip-alerta" title="Se sumaron trabajadores después de la firma del Capataz"><i class="ti ti-refresh"></i> Capataz: re-firmar ({{ g.capatazNuevosSinValidar }})</span>
+                  } @else {
+                    <span class="chip chip-pend"><i class="ti ti-clock"></i> Capataz</span>
+                  }
+                }
+                <span class="chip" [class.chip-ok]="g.ejecutantesFirmados > 0 && g.autorizaFirmados >= g.ejecutantesFirmados" [class.chip-pend]="!(g.ejecutantesFirmados > 0 && g.autorizaFirmados >= g.ejecutantesFirmados)" title="ATS autorizados por Residente / Producción">
+                  <i class="ti" [class.ti-check]="g.ejecutantesFirmados > 0 && g.autorizaFirmados >= g.ejecutantesFirmados" [class.ti-clock]="!(g.ejecutantesFirmados > 0 && g.autorizaFirmados >= g.ejecutantesFirmados)"></i>
+                  Autoriza {{ g.autorizaFirmados }}/{{ g.ejecutantesFirmados }}
+                </span>
+                @if (g.requierePetar && g.totalPetares === 0) {
+                  <span class="chip chip-peligro" title="Un riesgo de la cuadrilla exige PETAR y todavía no hay ninguno"><i class="ti ti-alert-triangle"></i> Requiere PETAR</span>
+                }
+                @if (g.observacionesAbiertas > 0) {
+                  <span class="chip chip-alerta" title="Observaciones abiertas — bloquean la validación"><i class="ti ti-message-exclamation"></i> Obs. {{ g.observacionesAbiertas }}</span>
+                }
+                <span class="chip" [class.chip-ok]="g.ejecutantesFirmados > 0 && g.ssomaFirmados >= g.ejecutantesFirmados" [class.chip-pend]="!(g.ejecutantesFirmados > 0 && g.ssomaFirmados >= g.ejecutantesFirmados)" title="ATS con Visto Bueno SSOMA">
+                  <i class="ti" [class.ti-check]="g.ejecutantesFirmados > 0 && g.ssomaFirmados >= g.ejecutantesFirmados" [class.ti-clock]="!(g.ejecutantesFirmados > 0 && g.ssomaFirmados >= g.ejecutantesFirmados)"></i>
+                  SSOMA {{ g.ssomaFirmados }}/{{ g.ejecutantesFirmados }}
+                </span>
+              </div>
+            </td>
+            <td class="acciones-cell">
+              <div class="acciones-iconos">
+                @if (g.ejecutantesFirmados > 0) {
+                  <button type="button" class="icon-btn" (click)="verPdfGrupo(g)" [disabled]="ocupado('ver-grupo-' + g.id)" title="Ver el ATS grupal (todas las firmas)">
+                    <i class="ti" [class.ti-eye]="!ocupado('ver-grupo-' + g.id)" [class.ti-loader-2]="ocupado('ver-grupo-' + g.id)" [class.girando]="ocupado('ver-grupo-' + g.id)"></i>
+                  </button>
+                  <button type="button" class="icon-btn" (click)="descargarPdfGrupo(g)" [disabled]="ocupado('desc-grupo-' + g.id)" title="Descargar el ATS grupal en PDF">
+                    <i class="ti" [class.ti-download]="!ocupado('desc-grupo-' + g.id)" [class.ti-loader-2]="ocupado('desc-grupo-' + g.id)" [class.girando]="ocupado('desc-grupo-' + g.id)"></i>
+                  </button>
+                }
+                @if (g.estado === 'Activo' || g.estado === 'Cerrado') {
+                  <button type="button" class="icon-btn icon-btn-petar" (click)="generarPetarGrupo(g)" title="Generar PETAR para esta cuadrilla">
+                    <i class="ti ti-alert-triangle"></i>
+                  </button>
+                }
+                <button type="button" class="icon-btn" [routerLink]="['/ssoma/gestion/ats/grupo', g.id]" title="Abrir el panel de la cuadrilla (QR, adheridos, firmas, PETAR grupal)">
+                  <i class="ti ti-layout-dashboard"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>
+}
 
 <app-paginator
   [totalRecords]="totalRecords"
@@ -247,6 +396,26 @@
   (pageChange)="cambiarPagina($event)"
 ></app-paginator>
 </div>
+
+@if (obsAts) {
+  <app-abril-modal-panel [titulo]="'Observaciones — ' + (obsAts.codigo ?? 'ATS')" icono="ti-message-exclamation" variant="blue" width="640px" (closeModal)="cerrarObservaciones()">
+    <p class="visto-hint">
+      Una observación no modifica el ATS: queda registrada y, mientras esté abierta, nadie puede firmar la validación.
+    </p>
+    <app-ats-observaciones tipo="ats" [id]="obsAts.id"></app-ats-observaciones>
+  </app-abril-modal-panel>
+}
+
+@if (visorUrl) {
+  <app-abril-modal-panel
+    [titulo]="visorTitulo"
+    icono="ti-file-type-pdf"
+    variant="blue"
+    width="1000px"
+    (closeModal)="cerrarVisor()">
+    <iframe [src]="visorUrl" title="Vista previa PDF" style="width:100%;height:75vh;border:0"></iframe>
+  </app-abril-modal-panel>
+}
 
 @if (atsFirmandoVisto) {
   <app-abril-modal-panel
@@ -292,28 +461,18 @@
 
     <label class="abril-field-label">Firma *</label>
 
-    @if (firmaAutorizadaDataUrl && usandoFirmaAutorizada) {
+    @if (firmaAutorizadaDataUrl) {
       <div class="firma-autorizada-preview">
-        <img [src]="firmaAutorizadaDataUrl" alt="Tu firma autorizada" />
+        <img [src]="firmaAutorizadaDataUrl" alt="Tu firma digital" />
       </div>
-      <button class="btn btn-outline btn-sm" (click)="dibujarFirmaVistoNueva()">
-        <i class="ti ti-pencil"></i> Dibujar una firma distinta
-      </button>
+      <p class="visto-hint">Se usará tu firma digital registrada (la de tu autorización).</p>
     } @else {
-      <app-signature-pad (drawingChange)="onFirmaVistoChange($event)"></app-signature-pad>
-      <div class="firma-visto-acciones-row">
-        <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
-        @if (firmaAutorizadaDataUrl) {
-          <button class="btn btn-primary btn-sm" (click)="usarFirmaAutorizada()">
-            <i class="ti ti-signature"></i> Usar firma digital autorizada y validada
-          </button>
-        }
-      </div>
+      <p class="visto-pendiente">No tienes una firma digital registrada — pide al Coordinador SSOMA que la capture en Autorizaciones.</p>
     }
 
     <div modalFooter>
       <button class="btn btn-secondary" (click)="cerrarFirmaVisto()" [disabled]="guardandoVisto">Cancelar</button>
-      <button class="btn btn-primary" (click)="guardarFirmaVisto()" [disabled]="(!usandoFirmaAutorizada && !hayFirmaVisto) || guardandoVisto">
+      <button class="btn btn-primary" (click)="guardarFirmaVisto()" [disabled]="!firmaAutorizadaDataUrl || guardandoVisto">
         @if (guardandoVisto) { Guardando… } @else { Firmar }
       </button>
     </div>

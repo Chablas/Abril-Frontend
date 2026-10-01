@@ -49,9 +49,25 @@
           [publicoWorkerId]="workerId"
           [publicoDni]="dniConfirmacion"
           [publicoProyectoNombre]="resumen!.proyectoNombre ?? null"
+          [publicoAutorNombre]="nombreConfirmado"
           (publicoGrupoCreado)="onGrupoCreado($event)"
+          (publicoGrupoOffline)="onGrupoOffline($event)"
           (publicoCancelado)="onWizardCancelado()"
         ></app-ats-nuevo>
+      }
+
+      @if (paso === 'offline' && paqueteOffline) {
+        <div class="publico-body">
+          <div class="publico-exito">
+            <i class="ti ti-device-floppy"></i>
+            <h2>Guardado en este celular</h2>
+            <p>No hay señal, así que el ATS quedó guardado en este teléfono. Ahora registra la firma de cada integrante de la cuadrilla (selfie + ubicación). Cuando haya señal, súbelo todo de una vez.</p>
+          </div>
+          <a class="btn btn-primary btn-full" [routerLink]="['/ats-sin-conexion', paqueteOffline.id]">
+            <i class="ti ti-users"></i> Registrar firmantes
+          </a>
+          <a class="btn btn-outline btn-full" routerLink="/ats-sin-conexion">Ver ATS pendientes de subir</a>
+        </div>
       }
 
       @if (paso === 'exito') {

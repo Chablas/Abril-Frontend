@@ -1,6 +1,8 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Observable, from, of, throwError } from 'rxjs';
+import { catchError, switchMap, tap } from 'rxjs/operators';
+import { OfflineStore } from '../../../../../core/services/offline-store.service';
 import { environment } from '../../../../../../environments/environment';
 import {
   AtsInitDto,
@@ -35,8 +37,7 @@ import {
   AtsGrupoCapatazFirmarRequestDto,
   AtsGrupoProyectoPublicoDto,
   AtsGrupoInitPublicoRequestDto,
-  AtsGrupoCrearPublicoRequestDto,
-} from '../dtos/ats.dtos';
+  AtsGrupoCrearPublicoRequestDto, AtsListaInitDto, AtsGrupoListResponseDto, AtsObservacionesDto } from '../dtos/ats.dtos';
 
 function authHeaders(): HttpHeaders {
   const token = typeof localStorage !== 'undefined' ? localStorage.getItem('access_token') : null;
@@ -47,20 +48,59 @@ function authHeaders(): HttpHeaders {
 export class AtsService {
   private base = `${environment.apiUrl}api/v1/ssoma/ats`;
 
+  private store = inject(OfflineStore);
+
   constructor(private http: HttpClient) {}
 
+  /** Guarda en el teléfono cada respuesta que el wizard necesita y, si no hay señal (status 0), la sirve desde
+   *  ahí — así el ATS se puede armar en el sótano con los catálogos que se descargaron arriba. */
+  private conCache<T>(clave: string, req$: Observable<T>): Observable<T> {
+    return req$.pipe(
+      tap((v) => { void this.store.guardarCache(clave, v); }),
+      catchError((err: HttpErrorResponse) =>
+        err.status === 0
+          ? from(this.store.leerCache<T>(clave)).pipe(switchMap((v) => (v ? of(v) : throwError(() => err))))
+          : throwError(() => err)),
+    );
+  }
+
+  /** Liviano: proyectos + proyecto actual para el filtro del listado (getInit trae además todos
+   *  los catálogos del wizard, innecesarios para listar). */
+  /** Residente/Producción (Autoriza) o SSOMA firman a toda la cuadrilla de una vez con su firma digital. */
+  firmarAutorizaGrupo(grupoId: number): Observable<{ message: string; firmados: number }> {
+    return this.http.post<{ message: string; firmados: number }>(`${this.base}/grupo/${grupoId}/firmar-autoriza`, {}, { headers: authHeaders() });
+  }
+
+  firmarSsomaGrupo(grupoId: number): Observable<{ message: string; firmados: number }> {
+    return this.http.post<{ message: string; firmados: number }>(`${this.base}/grupo/${grupoId}/firmar-ssoma`, {}, { headers: authHeaders() });
+  }
+
+  getListaInit(): Observable<AtsListaInitDto> {
+    return this.http.get<AtsListaInitDto>(`${this.base}/lista-init`, { headers: authHeaders() });
+  }
+
+  listarGrupos(filtro: AtsFiltroDto): Observable<AtsGrupoListResponseDto> {
+    let params = new HttpParams();
+    if (filtro.proyectoId) params = params.set('proyectoId', filtro.proyectoId);
+    if (filtro.fechaDesde) params = params.set('fechaDesde', filtro.fechaDesde);
+    if (filtro.fechaHasta) params = params.set('fechaHasta', filtro.fechaHasta);
+    if (filtro.estado) params = params.set('estado', filtro.estado);
+    if (filtro.page) params = params.set('page', filtro.page);
+    return this.http.get<AtsGrupoListResponseDto>(`${this.base}/grupos`, { headers: authHeaders(), params });
+  }
+
   getInit(): Observable<AtsInitDto> {
-    return this.http.get<AtsInitDto>(`${this.base}/init`, { headers: authHeaders() });
+    return this.conCache('init', this.http.get<AtsInitDto>(`${this.base}/init`, { headers: authHeaders() }));
   }
 
   /** Pasos para un puesto ARBITRARIO (no el del usuario logueado) — lo usa el wizard de ATS
    *  Grupal cuando el creador elige el puesto/tipo de trabajo de la cuadrilla. Sin authHeaders
    *  a propósito: también lo llama el wizard público (/ats-grupal/crear/:token). */
   getPasosPorPuesto(puestoId: number, workerId = 0): Observable<AtsCategoriaPasoDto[]> {
-    return this.http.get<AtsCategoriaPasoDto[]>(`${this.base}/pasos-por-puesto/${puestoId}`, {
+    return this.conCache(`pasos:${puestoId}:${workerId}`, this.http.get<AtsCategoriaPasoDto[]>(`${this.base}/pasos-por-puesto/${puestoId}`, {
       headers: authHeaders(),
       params: { workerId },
-    });
+    }));
   }
 
   crear(dto: AtsGuardarRequestDto): Observable<{ id: number }> {
@@ -86,8 +126,74 @@ export class AtsService {
     if (filtro.fechaDesde) params = params.set('fechaDesde', filtro.fechaDesde);
     if (filtro.fechaHasta) params = params.set('fechaHasta', filtro.fechaHasta);
     if (filtro.estado) params = params.set('estado', filtro.estado);
+    if (filtro.soloIndividuales) params = params.set('soloIndividuales', true);
     if (filtro.page) params = params.set('page', filtro.page);
     return this.http.get<AtsListResponseDto>(this.base, { headers: authHeaders(), params });
+  }
+
+  // ── Observaciones y revisión ──
+  getObservacionesAts(id: number): Observable<AtsObservacionesDto> {
+    return this.http.get<AtsObservacionesDto>(`${this.base}/${id}/observaciones`, { headers: authHeaders() });
+  }
+  getObservacionesGrupo(grupoId: number): Observable<AtsObservacionesDto> {
+    return this.http.get<AtsObservacionesDto>(`${this.base}/grupo/${grupoId}/observaciones`, { headers: authHeaders() });
+  }
+  crearObservacionAts(id: number, texto: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/${id}/observaciones`, { texto }, { headers: authHeaders() });
+  }
+  crearObservacionGrupo(grupoId: number, texto: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/grupo/${grupoId}/observaciones`, { texto }, { headers: authHeaders() });
+  }
+  resolverObservacion(observacionId: number, respuesta: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/observaciones/${observacionId}/resolver`, { respuesta }, { headers: authHeaders() });
+  }
+  /** Contenido del grupo con forma de ATS — precarga el wizard al corregir la cuadrilla. */
+  getContenidoGrupo(grupoId: number): Observable<AtsResponseDto> {
+    return this.http.get<AtsResponseDto>(`${this.base}/grupo/${grupoId}/contenido`, { headers: authHeaders() });
+  }
+
+  anularAts(id: number, motivo: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/${id}/anular`, { motivo }, { headers: authHeaders() });
+  }
+
+  anularGrupo(grupoId: number, motivo: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/grupo/${grupoId}/anular`, { motivo }, { headers: authHeaders() });
+  }
+
+  /** Worker del usuario logueado (401 si no hay sesión). */
+  getMiWorker(): Observable<{ workerId: number }> {
+    return this.http.get<{ workerId: number }>(`${this.base}/yo`, { headers: authHeaders() });
+  }
+
+  /** Adhesión de quien ya inició sesión: sin elegir nombre ni confirmar DNI. */
+  unirseAGrupoLogueado(token: string, dto: AtsGrupoUnirseRequestDto): Observable<{ id: number; message: string }> {
+    return this.http.post<{ id: number; message: string }>(`${this.base}/grupo/${token}/unirse-yo`, dto, { headers: authHeaders() });
+  }
+
+  getMiAtsLogueado(token: string): Observable<{ atsId: number | null }> {
+    return this.http.post<{ atsId: number | null }>(`${this.base}/grupo/${token}/mi-ats-yo`, {}, { headers: authHeaders() });
+  }
+
+  reabrirGrupo(grupoId: number): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/grupo/${grupoId}/reabrir`, {}, { headers: authHeaders() });
+  }
+
+  getCandidatosGrupo(grupoId: number): Observable<AtsGrupoWorkerOpcionDto[]> {
+    return this.http.get<AtsGrupoWorkerOpcionDto[]>(`${this.base}/grupo/${grupoId}/candidatos`, { headers: authHeaders() });
+  }
+
+  setIntegrantesGrupo(grupoId: number, workerIds: number[]): Observable<{ message: string }> {
+    return this.http.put<{ message: string }>(`${this.base}/grupo/${grupoId}/integrantes`, { workerIds }, { headers: authHeaders() });
+  }
+
+  /** Sin login: quien ya firmó vuelve al link (p. ej. para un PETAR creado después) y recupera el id de su ATS. */
+  getMiAtsPublico(token: string, body: { workerId: number; dniConfirmacion: string }): Observable<{ atsId: number | null }> {
+    return this.http.post<{ atsId: number | null }>(`${this.base}/grupo/publico/${token}/mi-ats`, body);
+  }
+
+  /** PDF único del ATS grupal: firmas de toda la cuadrilla + una de Capataz/Autoriza/SSOMA. */
+  getPdfGrupoBlob(grupoId: number): Observable<Blob> {
+    return this.http.get(`${this.base}/grupo/${grupoId}/pdf`, { headers: authHeaders(), responseType: 'blob' });
   }
 
   getPdfBlob(id: number): Observable<Blob> {
@@ -216,7 +322,7 @@ export class AtsService {
   // ── Actividades/pasos por plantilla ─────────────────────────────────────
 
   getActividadesDePlantilla(plantillaId: number): Observable<AtsPlantillaActividadDto[]> {
-    return this.http.get<AtsPlantillaActividadDto[]>(`${this.base}/plantillas/${plantillaId}/actividades`, { headers: authHeaders() });
+    return this.conCache(`act:${plantillaId}`, this.http.get<AtsPlantillaActividadDto[]>(`${this.base}/plantillas/${plantillaId}/actividades`, { headers: authHeaders() }));
   }
 
   crearActividad(plantillaId: number, dto: AtsPlantillaActividadGuardarRequestDto): Observable<{ id: number }> {
@@ -250,7 +356,7 @@ export class AtsService {
   // ── Controles sugeridos por riesgo ──────────────────────────────────────
 
   getRiesgosConControles(): Observable<AtsRiesgoConControlesDto[]> {
-    return this.http.get<AtsRiesgoConControlesDto[]>(`${this.base}/riesgos-controles`, { headers: authHeaders() });
+    return this.conCache('riesgos-controles', this.http.get<AtsRiesgoConControlesDto[]>(`${this.base}/riesgos-controles`, { headers: authHeaders() }));
   }
 
   crearControl(riesgoId: number, dto: AtsRiesgoControlGuardarRequestDto): Observable<{ id: number }> {
@@ -310,11 +416,11 @@ export class AtsService {
   }
 
   getResumenProyectoPublico(tokenProyecto: string): Observable<AtsGrupoProyectoPublicoDto> {
-    return this.http.get<AtsGrupoProyectoPublicoDto>(`${this.base}/grupo/publico/proyecto/${tokenProyecto}/resumen`);
+    return this.conCache(`resumen-proyecto:${tokenProyecto}`, this.http.get<AtsGrupoProyectoPublicoDto>(`${this.base}/grupo/publico/proyecto/${tokenProyecto}/resumen`));
   }
 
   getInitPublico(tokenProyecto: string, body: AtsGrupoInitPublicoRequestDto): Observable<AtsInitDto> {
-    return this.http.post<AtsInitDto>(`${this.base}/grupo/publico/proyecto/${tokenProyecto}/init`, body);
+    return this.conCache(`init-publico:${tokenProyecto}`, this.http.post<AtsInitDto>(`${this.base}/grupo/publico/proyecto/${tokenProyecto}/init`, body));
   }
 
   crearGrupoPublico(tokenProyecto: string, body: AtsGrupoCrearPublicoRequestDto): Observable<AtsGrupoCrearResponseDto> {

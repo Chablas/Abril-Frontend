@@ -78,7 +78,9 @@ export interface PetarItemRespuestaResponseDto {
 
 export interface PetarResponseDto {
   id: number;
+  codigo?: string | null;
   atsId: number;
+  atsCodigo?: string | null;
   tipoId: number;
   tipoNombre?: string;
   tipoCodigo?: string;
