@@ -83,12 +83,10 @@
       PETAR de <strong>{{ petarFirmandoVisto.workerNombre }}</strong> — {{ petarFirmandoVisto.descripcionTrabajo }}
       ({{ petarFirmandoVisto.fecha | date:'dd/MM/yyyy' }})
     </p>
-    <label class="abril-field-label">Firma *</label>
-    <app-signature-pad (drawingChange)="onFirmaVistoChange($event)"></app-signature-pad>
-    <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
+    <p class="visto-hint">Se usará tu firma digital registrada (la de tu autorización).</p>
     <div modalFooter>
       <button class="btn btn-secondary" (click)="cerrarFirmaVisto()" [disabled]="guardandoVisto">Cancelar</button>
-      <button class="btn btn-primary" (click)="guardarFirmaVisto()" [disabled]="!hayFirmaVisto || guardandoVisto">
+      <button class="btn btn-primary" (click)="guardarFirmaVisto()" [disabled]="guardandoVisto">
         @if (guardandoVisto) { Guardando… } @else { Firmar }
       </button>
     </div>
@@ -105,12 +103,10 @@
       <label class="abril-field-label">Observaciones (opcional)</label>
       <textarea class="abril-field-input" rows="2" [(ngModel)]="observacionesCierre"></textarea>
     </div>
-    <label class="abril-field-label">Firma *</label>
-    <app-signature-pad (drawingChange)="onFirmaCierreChange($event)"></app-signature-pad>
-    <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
+    <p class="visto-hint">Se usará tu firma digital registrada (la de tu autorización).</p>
     <div modalFooter>
       <button class="btn btn-secondary" (click)="cerrarModalCierre()" [disabled]="cerrando">Cancelar</button>
-      <button class="btn btn-primary" (click)="confirmarCierre()" [disabled]="!hayFirmaCierre || cerrando">
+      <button class="btn btn-primary" (click)="confirmarCierre()" [disabled]="cerrando">
         @if (cerrando) { Guardando… } @else { Cerrar PETAR }
       </button>
     </div>

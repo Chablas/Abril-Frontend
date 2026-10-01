@@ -175,23 +175,13 @@
         <div class="firma-col">
           <label class="abril-field-label">Firma *</label>
 
-          @if (firmaAutorizadaDataUrl && usandoFirmaAutorizada) {
+          @if (firmaAutorizadaDataUrl) {
             <div class="firma-guardada-preview">
-              <img [src]="firmaAutorizadaDataUrl" alt="Tu firma autorizada" />
+              <img [src]="firmaAutorizadaDataUrl" alt="Tu firma digital registrada" />
             </div>
-            <button class="btn btn-outline btn-sm" (click)="dibujarFirmaNueva()">
-              <i class="ti ti-pencil"></i> Dibujar una firma distinta
-            </button>
+            <p class="firmar-hint">Se usa tu firma digital registrada (la de tu autorización).</p>
           } @else {
-            <app-signature-pad (drawingChange)="onFirmaChange($event)"></app-signature-pad>
-            <div class="firma-acciones-row">
-              <button class="btn btn-outline btn-sm" (click)="firmaPad?.clear()">Limpiar firma</button>
-              @if (firmaAutorizadaDataUrl) {
-                <button class="btn btn-primary btn-sm" (click)="usarFirmaAutorizada()">
-                  <i class="ti ti-signature"></i> Usar firma digital autorizada y validada
-                </button>
-              }
-            </div>
+            <p class="firmar-hint">No tienes una firma digital registrada. Pide al Coordinador SSOMA que la capture en Autorizaciones para poder firmar.</p>
           }
         </div>
       </div>

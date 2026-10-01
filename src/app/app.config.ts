@@ -1,4 +1,5 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, LOCALE_ID } from '@angular/core';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, LOCALE_ID, isDevMode } from '@angular/core';
+import { provideServiceWorker } from '@angular/service-worker';
 import { provideRouter, withRouterConfig, withPreloading, PreloadAllModules } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
@@ -29,6 +30,12 @@ export const appConfig: ApplicationConfig = {
     //provideClientHydration(withEventReplay()),
 
     provideAnimationsAsync(),
+
+    // PWA: instalable + app shell en caché (también las pantallas lazy) para abrir sin señal. Solo en producción.
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
     { provide: LOCALE_ID, useValue: 'es-PE' }
   ],
 };

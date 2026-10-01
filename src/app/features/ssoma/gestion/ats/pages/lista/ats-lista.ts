@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, HostListener, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import Swal from 'sweetalert2';
 import * as QRCode from 'qrcode';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
@@ -15,8 +16,11 @@ import { FilterModal } from '../../../../../../shared/components/filter-modal/fi
 import { SearchSelect } from '../../../../../../shared/components/search-select/search-select';
 import { Paginator } from '../../../../../../shared/components/paginator/paginator';
 import { AtsService } from '../../services/ats.service';
-import { AtsResponseDto, AtsFiltroDto, AtsProyectoDto } from '../../dtos/ats.dtos';
+import { AtsResponseDto, AtsFiltroDto, AtsProyectoDto, AtsGrupoListaItemDto } from '../../dtos/ats.dtos';
 import { ErrorService } from '../../../../../../core/services/error.service';
+import { comprimirPisos } from '../../shared/ats-lugar';
+import { AtsObservaciones } from '../observaciones/ats-observaciones';
+import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { PetarService } from '../../../petar/services/petar.service';
 
 type RolVisto = 'capataz' | 'autoriza' | 'ssoma' | 'petar-supervisor' | 'petar-ssoma';
@@ -36,6 +40,8 @@ type RolVisto = 'capataz' | 'autoriza' | 'ssoma' | 'petar-supervisor' | 'petar-s
     FilterModal,
     SearchSelect,
     Paginator,
+    TitleCasePipe,
+    AtsObservaciones,
   ],
   templateUrl: './ats-lista.html',
   styleUrl: './ats-lista.css',
@@ -43,6 +49,37 @@ type RolVisto = 'capataz' | 'autoriza' | 'ssoma' | 'petar-supervisor' | 'petar-s
 })
 export class AtsLista implements OnInit {
   lista: AtsResponseDto[] = [];
+  grupos: AtsGrupoListaItemDto[] = [];
+  vista: 'individuales' | 'grupales' = 'individuales';
+
+  /** Acciones en curso (PDF ver/descargar) — para mostrar spinner y bloquear el doble clic: sin esto
+   *  el botón no daba ninguna señal de que el clic se registró mientras el servidor armaba el PDF. */
+  private acciones = new Set<string>();
+  ocupado(key: string): boolean { return this.acciones.has(key); }
+  private iniciar(key: string): void { this.acciones.add(key); this.cdr.markForCheck(); }
+  private terminar(key: string): void { this.acciones.delete(key); this.cdr.markForCheck(); }
+
+  /** Menú "⋯" de acciones secundarias (Generar PETAR / Corregir / Duplicar) abierto en esta fila. */
+  menuAbierto: number | null = null;
+  toggleMenu(id: number, ev: Event): void {
+    ev.stopPropagation();
+    this.menuAbierto = this.menuAbierto === id ? null : id;
+    this.cdr.markForCheck();
+  }
+  @HostListener('document:click')
+  cerrarMenu(): void {
+    if (this.menuAbierto === null) return;
+    this.menuAbierto = null;
+    this.cdr.markForCheck();
+  }
+
+  cambiarVista(v: 'individuales' | 'grupales'): void {
+    if (this.vista === v) return;
+    this.vista = v;
+    this.page = 1;
+    this.cargar();
+  }
+
   loading = false;
   totalRecords = 0;
   totalPages = 0;
@@ -59,6 +96,7 @@ export class AtsLista implements OnInit {
   readonly estadoOpts = [
     { id: 'Borrador', label: 'Borrador' },
     { id: 'Firmado', label: 'Firmado' },
+    { id: 'Anulado', label: 'Anulado' },
   ];
 
   // ── Firma de Autoriza / Visto Bueno SSOMA (y, generalizado, Supervisor/SSOMA de PETAR) ──────
@@ -130,6 +168,7 @@ export class AtsLista implements OnInit {
     private errorService: ErrorService,
     private router: Router,
     private cdr: ChangeDetectorRef,
+    private sanitizer: DomSanitizer,
   ) {}
 
   ngOnInit(): void {
@@ -139,19 +178,28 @@ export class AtsLista implements OnInit {
     this.filtroFechaDesde = hoy;
     this.filtroFechaHasta = hoy;
     this.soloPendientes = true;
+    const guardados = this.leerFiltrosGuardados();
+    if (guardados) {
+      // Volver desde un panel/wizard conserva lo que el usuario había elegido, no los predeterminados.
+      this.filtroProyectoId = guardados.proyectoId;
+      this.filtroEstado = guardados.estado;
+      this.filtroFechaDesde = guardados.desde;
+      this.filtroFechaHasta = guardados.hasta;
+      this.soloPendientes = guardados.soloPendientes;
+      this.vista = guardados.vista;
+      this.page = guardados.page;
+    }
 
-    this.svc.getInit().subscribe({
+    // Primero el proyecto actual (endpoint liviano), después UNA sola carga del listado — antes se
+    // disparaban dos (una sin proyecto y otra con él) y se traía el init completo del wizard.
+    this.svc.getListaInit().subscribe({
       next: (init) => {
         this.proyectos = [...init.proyectos].sort((a, b) => a.nombre.localeCompare(b.nombre));
-        if (init.proyectoActualId) {
-          this.filtroProyectoId = init.proyectoActualId;
-          this.cargar();
-        }
-        this.cdr.markForCheck();
+        if (init.proyectoActualId && !guardados) this.filtroProyectoId = init.proyectoActualId;
+        this.cargar();
       },
-      error: () => {},
+      error: () => this.cargar(),
     });
-    this.cargar();
   }
 
   get filtrosActivos(): number {
@@ -163,15 +211,55 @@ export class AtsLista implements OnInit {
     return n;
   }
 
+  private static readonly CLAVE_FILTROS = 'ats-lista-filtros';
+
+  private leerFiltrosGuardados(): { proyectoId: number | null; estado: string | null; desde: string; hasta: string;
+    soloPendientes: boolean; vista: 'individuales' | 'grupales'; page: number } | null {
+    try {
+      const raw = sessionStorage.getItem(AtsLista.CLAVE_FILTROS);
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }
+
+  private guardarFiltros(): void {
+    try {
+      sessionStorage.setItem(AtsLista.CLAVE_FILTROS, JSON.stringify({
+        proyectoId: this.filtroProyectoId, estado: this.filtroEstado,
+        desde: this.filtroFechaDesde, hasta: this.filtroFechaHasta,
+        soloPendientes: this.soloPendientes, vista: this.vista, page: this.page,
+      }));
+    } catch { /* sin storage (modo privado) — simplemente no se recuerda */ }
+  }
+
   cargar(): void {
+    this.guardarFiltros();
     this.loading = true;
     const filtro: AtsFiltroDto = {
       proyectoId: this.filtroProyectoId ?? undefined,
       estado: this.filtroEstado ?? undefined,
       fechaDesde: this.filtroFechaDesde || undefined,
       fechaHasta: this.filtroFechaHasta || undefined,
+      // Los ATS que nacieron de una cuadrilla se ven en la vista "Grupales", no repetidos aquí.
+      soloIndividuales: true,
       page: this.page,
     };
+    if (this.vista === 'grupales') {
+      this.svc.listarGrupos(filtro).subscribe({
+        next: (res) => {
+          this.grupos = res.data;
+          this.totalRecords = res.totalRecords;
+          this.totalPages = res.totalPages;
+          this.loading = false;
+          this.cdr.markForCheck();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.loading = false;
+          this.errorService.handleError(err);
+          this.cdr.markForCheck();
+        },
+      });
+      return;
+    }
     this.svc.listar(filtro).subscribe({
       next: (res) => {
         this.lista = res.data;
@@ -271,16 +359,20 @@ export class AtsLista implements OnInit {
   }
 
   descargarPdf(ats: AtsResponseDto): void {
+    const key = `desc-ats-${ats.id}`;
+    if (this.ocupado(key)) return;
+    this.iniciar(key);
     this.svc.getPdfBlob(ats.id).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `ATS-${ats.id}.pdf`;
+        a.download = `${ats.codigo ?? 'ATS-' + ats.id}.pdf`;
         a.click();
         URL.revokeObjectURL(url);
+        this.terminar(key);
       },
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      error: (err: HttpErrorResponse) => { this.terminar(key); this.errorService.handleError(err); },
     });
   }
 
@@ -300,33 +392,17 @@ export class AtsLista implements OnInit {
     return a.lugar ?? '';
   }
 
-  private comprimirPisos(pisos?: string): string {
-    if (!pisos) return '';
-    const labels = pisos.split(',').map((s) => s.trim()).filter(Boolean);
-
-    const piso = /^Piso (\d+)$/i;
-    const salida: string[] = [];
-    let rango: number[] = [];
-
-    const cerrarRango = () => {
-      if (rango.length === 0) return;
-      salida.push(rango.length === 1 ? `Piso ${rango[0]}` : `Piso ${rango[0]}-${rango[rango.length - 1]}`);
-      rango = [];
-    };
-
-    for (const label of labels) {
-      const m = piso.exec(label);
-      const n = m ? Number(m[1]) : null;
-      if (n !== null && (rango.length === 0 || n === rango[rango.length - 1] + 1)) {
-        rango.push(n);
-      } else {
-        cerrarRango();
-        if (n !== null) rango.push(n);
-        else salida.push(label);
-      }
+  /** Lugar de una cuadrilla con los pisos consecutivos comprimidos ("Piso 1-33"). */
+  lugarGrupo(g: AtsGrupoListaItemDto): string {
+    if (g.torreNombre) {
+      const pisos = comprimirPisos(g.pisos);
+      return pisos ? `Torre ${g.torreNombre} — ${pisos}` : `Torre ${g.torreNombre}`;
     }
-    cerrarRango();
-    return salida.join(', ');
+    return g.lugar ?? '';
+  }
+
+  private comprimirPisos(pisos?: string): string {
+    return comprimirPisos(pisos);
   }
 
   estadoClass(estado: string): string {
@@ -344,6 +420,7 @@ export class AtsLista implements OnInit {
 
   toggleSoloPendientes(): void {
     this.soloPendientes = !this.soloPendientes;
+    this.guardarFiltros();
     this.cdr.markForCheck();
   }
 
@@ -416,11 +493,12 @@ export class AtsLista implements OnInit {
     const ats = this.atsFirmandoVisto;
     if (!ats || !this.rolVisto || this.guardandoVisto) return;
 
-    const firma = this.usandoFirmaAutorizada ? this.firmaAutorizadaDataUrl : this.firmaPad?.toDataUrl();
-    if (!firma) {
-      Swal.fire({ icon: 'error', title: 'Falta la firma', text: 'Dibuja tu firma antes de continuar.' });
+    // La firma ya no se dibuja: el backend usa SIEMPRE la firma digital registrada del usuario.
+    if (!this.firmaAutorizadaDataUrl) {
+      Swal.fire({ icon: 'error', title: 'Sin firma digital', text: 'No tienes una firma digital registrada. Pide al Coordinador SSOMA que la capture en Autorizaciones.' });
       return;
     }
+    const firma = '';
 
     this.guardandoVisto = true;
     this.cdr.markForCheck();
@@ -457,7 +535,111 @@ export class AtsLista implements OnInit {
     this.router.navigate(['/ssoma/gestion/petar/nuevo'], { queryParams: { petarId } });
   }
 
+  /** Visor inline: el PDF se muestra en un modal dentro de la página (no pestaña nueva). */
+  visorUrl: SafeResourceUrl | null = null;
+  visorTitulo = '';
+  private visorObjectUrl: string | null = null;
+
+  verPdf(ats: AtsResponseDto): void {
+    const key = `ver-ats-${ats.id}`;
+    if (this.ocupado(key)) return;
+    this.iniciar(key);
+    this.svc.getPdfBlob(ats.id).subscribe({
+      next: (blob) => { this.terminar(key); this.abrirVisor(blob, `${ats.codigo ?? 'ATS'} — ${ats.workerNombre ?? ''}`); },
+      error: (err: HttpErrorResponse) => { this.terminar(key); this.errorService.handleError(err); },
+    });
+  }
+
+  /** Pide el motivo (obligatorio, queda registrado) y anula — nunca borra. */
+  anularAts(a: AtsResponseDto): void {
+    Swal.fire({
+      icon: 'warning',
+      title: `Anular ${a.codigo ?? 'ATS'}`,
+      text: 'El ATS no se borra: queda como Anulado con el motivo, quién y cuándo.',
+      input: 'textarea',
+      inputLabel: 'Motivo de la anulación',
+      inputPlaceholder: 'Ej.: riesgo mal evaluado, lugar equivocado…',
+      inputAttributes: { maxlength: '300' },
+      showCancelButton: true,
+      confirmButtonText: 'Anular',
+      confirmButtonColor: '#b91c1c',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (v) => (!v || v.trim().length < 10 ? 'Escribe al menos 10 caracteres.' : null),
+    }).then((r) => {
+      if (!r.isConfirmed) return;
+      this.svc.anularAts(a.id, r.value as string).subscribe({
+        next: () => this.cargar(),
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
+  }
+
+  /** ATS cuyo modal de observaciones está abierto. */
+  obsAts: AtsResponseDto | null = null;
+  abrirObservaciones(a: AtsResponseDto): void { this.obsAts = a; this.cdr.markForCheck(); }
+  cerrarObservaciones(): void { this.obsAts = null; this.cargar(); }
+
+  generarPetarGrupo(g: AtsGrupoListaItemDto): void {
+    this.router.navigate(['/ssoma/gestion/ats/grupo', g.id], { queryParams: { petar: 1 } });
+  }
+
+  verPdfGrupo(g: AtsGrupoListaItemDto): void {
+    const key = `ver-grupo-${g.id}`;
+    if (this.ocupado(key)) return;
+    this.iniciar(key);
+    this.svc.getPdfGrupoBlob(g.id).subscribe({
+      next: (blob) => { this.terminar(key); this.abrirVisor(blob, `${g.codigo ?? 'ATS grupal #' + g.id} — ${g.actividad}`); },
+      error: (err: HttpErrorResponse) => { this.terminar(key); this.errorService.handleError(err); },
+    });
+  }
+
+  descargarPdfGrupo(g: AtsGrupoListaItemDto): void {
+    const key = `desc-grupo-${g.id}`;
+    if (this.ocupado(key)) return;
+    this.iniciar(key);
+    this.svc.getPdfGrupoBlob(g.id).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ATS-GRUPAL-${g.id}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.terminar(key);
+      },
+      error: (err: HttpErrorResponse) => { this.terminar(key); this.errorService.handleError(err); },
+    });
+  }
+
+  verPdfPetar(petarId: number): void {
+    const key = `ver-petar-${petarId}`;
+    if (this.ocupado(key)) return;
+    this.iniciar(key);
+    this.petarSvc.getPdfBlob(petarId).subscribe({
+      next: (blob) => { this.terminar(key); this.abrirVisor(blob, 'PETAR'); },
+      error: (err: HttpErrorResponse) => { this.terminar(key); this.errorService.handleError(err); },
+    });
+  }
+
+  private abrirVisor(blob: Blob, titulo: string): void {
+    this.cerrarVisor();
+    this.visorObjectUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+    this.visorUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.visorObjectUrl);
+    this.visorTitulo = titulo;
+    this.cdr.detectChanges();
+  }
+
+  cerrarVisor(): void {
+    if (this.visorObjectUrl) URL.revokeObjectURL(this.visorObjectUrl);
+    this.visorObjectUrl = null;
+    this.visorUrl = null;
+    this.cdr.detectChanges();
+  }
+
   descargarPdfPetar(petarId: number): void {
+    const key = `desc-petar-${petarId}`;
+    if (this.ocupado(key)) return;
+    this.iniciar(key);
     this.petarSvc.getPdfBlob(petarId).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
@@ -466,8 +648,9 @@ export class AtsLista implements OnInit {
         a.download = `PETAR-${petarId}.pdf`;
         a.click();
         URL.revokeObjectURL(url);
+        this.terminar(key);
       },
-      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      error: (err: HttpErrorResponse) => { this.terminar(key); this.errorService.handleError(err); },
     });
   }
 }

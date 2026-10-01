@@ -52,6 +52,7 @@ export interface AtsRiesgoDto {
 
 export interface AtsPetarResumenDto {
   id: number;
+  codigo?: string | null;
   tipoNombre?: string;
   estado: string;
   tieneFirmaEjecutante: boolean;
@@ -140,6 +141,8 @@ export interface AtsGuardarRequestDto {
   riesgos: AtsRiesgoDetalleRequestDto[];
   /** Presente solo al crear un ATS como corrección de uno ya firmado el mismo día. */
   atsAnteriorId?: number;
+  /** Solo al corregir un ATS grupal: reemplaza ese grupo por una revisión nueva. */
+  grupoAnteriorId?: number;
 }
 
 export interface AtsFirmarVistoRequestDto {
@@ -175,6 +178,7 @@ export interface AtsRiesgoDetalleResponseDto {
 
 export interface AtsResponseDto {
   id: number;
+  codigo?: string | null;
   workerId: number;
   workerNombre?: string;
   proyectoId: number;
@@ -193,7 +197,7 @@ export interface AtsResponseDto {
   precisionMetros?: number;
   selfieUrl?: string;
   firmaUrl?: string;
-  estado: 'Borrador' | 'Firmado';
+  estado: 'Borrador' | 'Firmado' | 'Anulado';
   atsAnteriorId?: number;
   pdfHash?: string;
   requiereCapataz: boolean;
@@ -211,6 +215,9 @@ export interface AtsResponseDto {
   ssomaFirmaUrl?: string;
   ssomaHoraServidor?: string;
   puedeCapataz: boolean;
+  observacionesAbiertas: number;
+  puedeAnular: boolean;
+  anuladoMotivo?: string | null;
   puedeAutorizar: boolean;
   puedeVistoBuenoSsoma: boolean;
   requierePetar: boolean;
@@ -227,7 +234,45 @@ export interface AtsFiltroDto {
   fechaDesde?: string;
   fechaHasta?: string;
   estado?: string;
+  soloIndividuales?: boolean;
   page?: number;
+}
+
+export interface AtsListaInitDto {
+  proyectos: AtsProyectoDto[];
+  proyectoActualId?: number | null;
+}
+
+export interface AtsGrupoListaItemDto {
+  id: number;
+  revision: number;
+  observacionesAbiertas: number;
+  codigo?: string | null;
+  proyectoNombre?: string | null;
+  actividad: string;
+  torreNombre?: string | null;
+  pisos?: string | null;
+  lugar?: string | null;
+  fecha: string;
+  estado: 'Activo' | 'Cerrado' | 'Anulado' | 'Reemplazado';
+  creadoPorNombre?: string | null;
+  totalAdhesiones: number;
+  capatazNombre?: string | null;
+  capatazFirmado: boolean;
+  capatazVigente: boolean;
+  capatazNuevosSinValidar: number;
+  requiereCapataz: boolean;
+  ejecutantesFirmados: number;
+  autorizaFirmados: number;
+  ssomaFirmados: number;
+}
+
+export interface AtsGrupoListResponseDto {
+  data: AtsGrupoListaItemDto[];
+  page: number;
+  pageSize: number;
+  totalRecords: number;
+  totalPages: number;
 }
 
 export interface AtsListResponseDto {
@@ -325,20 +370,41 @@ export interface AtsGrupoCrearResponseDto {
 
 export interface AtsGrupoEstadoDto {
   id: number;
+  codigo?: string | null;
   actividad: string;
   proyectoNombre?: string;
   torreNombre?: string;
   pisos?: string;
   fecha: string;
-  estado: 'Activo' | 'Cerrado';
+  estado: 'Activo' | 'Cerrado' | 'Anulado' | 'Reemplazado';
   qrToken: string;
   qrExpiraEn: string;
   totalAdhesiones: number;
   trabajadoresAdheridos: string[];
+  adheridos: { atsId: number; nombre: string; estado: string; autorizaFirmado: boolean; ssomaFirmado: boolean }[];
+  esperados: { workerId: number; nombre: string; adherido: boolean }[];
+  puedeReabrir: boolean;
+  soyAutor: boolean;
+  yoYaFirme: boolean;
+  observacionesAbiertas: number;
+  revision: number;
+  grupoAnteriorId?: number | null;
+  reemplazadoPorId?: number | null;
+  puedeCorregir: boolean;
+  puedeAnular: boolean;
+  anuladoMotivo?: string | null;
+  puedeEditarIntegrantes: boolean;
+  ultimoEvento?: string | null;
   capatazNombre?: string;
   capatazHoraServidor?: string;
   capatazVigente: boolean;
   capatazNuevosSinValidar: number;
+  requiereCapataz: boolean;
+  ejecutantesFirmados: number;
+  autorizaFirmados: number;
+  ssomaFirmados: number;
+  puedeAutorizar: boolean;
+  puedeVistoBuenoSsoma: boolean;
 }
 
 export interface AtsGrupoCapatazPublicoDto {
@@ -380,6 +446,7 @@ export interface AtsGrupoResumenPublicoDto {
 
 export interface AtsGrupoWorkerOpcionDto {
   workerId: number;
+  yaFirmo?: boolean;
   nombre: string;
   dniUltimos4?: string;
 }
@@ -411,7 +478,30 @@ export interface AtsGrupoInitPublicoRequestDto {
 }
 
 export interface AtsGrupoCrearPublicoRequestDto {
+  /** Solo para grupos armados sin conexión: id generado en el teléfono (hace idempotente el reintento) y hora del dispositivo. */
+  clientId?: string;
+  capturadoEn?: string;
   workerId: number;
   dniConfirmacion: string;
   contenido: AtsGuardarRequestDto;
+}
+
+// ── Observaciones ───────────────────────────────────────────────────────────
+
+export interface AtsObservacionDto {
+  id: number;
+  rol: string;
+  autorNombre: string;
+  texto: string;
+  estado: 'Abierta' | 'Resuelta';
+  respuesta?: string | null;
+  resueltaPorNombre?: string | null;
+  createdAt: string;
+  resueltaEn?: string | null;
+}
+
+export interface AtsObservacionesDto {
+  observaciones: AtsObservacionDto[];
+  puedeObservar: boolean;
+  puedeResolver: boolean;
 }

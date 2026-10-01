@@ -3,8 +3,13 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Observable, firstValueFrom, from, of, throwError } from 'rxjs';
+import { catchError, switchMap, tap } from 'rxjs/operators';
 import Swal from 'sweetalert2';
 import { AtsService } from '../../services/ats.service';
+import { AtsOfflineService } from '../../services/ats-offline.service';
+import { PaqueteOffline } from '../../services/ats-offline.models';
+import { OfflineStore } from '../../../../../../core/services/offline-store.service';
 import {
   AtsInitDto,
   AtsPeligroDto,
@@ -164,6 +169,8 @@ export class AtsNuevo implements OnInit {
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
     private projectService: ProjectService,
+    private offline: AtsOfflineService,
+    private store: OfflineStore,
   ) {}
 
   /** Id del ATS ya FIRMADO del que se parte (?corregir=123 o ?duplicar=123) — viaja como
@@ -175,6 +182,8 @@ export class AtsNuevo implements OnInit {
    *  valoración UNA vez y, en vez de firmar él mismo, genera un QR para que cada integrante se
    *  adhiera por su cuenta (selfie+geo+firma liviana), sin repetir el wizard. */
   modoGrupal = false;
+  /** Grupo que esta revisión reemplaza (?corregirGrupo=id): viaja como grupoAnteriorId al crear. */
+  grupoAnteriorId: number | null = null;
   creandoGrupo = false;
 
   /** Página pública /ats-grupal/crear/:token (QR fijo de obra, sin login) — un integrante de la
@@ -188,7 +197,15 @@ export class AtsNuevo implements OnInit {
   @Input() publicoDni: string | null = null;
   @Input() publicoProyectoNombre: string | null = null;
   @Output() publicoGrupoCreado = new EventEmitter<AtsGrupoCrearResponseDto>();
+  @Input() publicoAutorNombre: string | null = null;
   @Output() publicoCancelado = new EventEmitter<void>();
+  /** El ATS se armó SIN conexión: quedó guardado en el teléfono (a la espera de subirse). */
+  @Output() publicoGrupoOffline = new EventEmitter<PaqueteOffline>();
+
+  /** Estado de la preparación para trabajar sin señal (descarga de catálogos en segundo plano). */
+  estadoOffline: 'idle' | 'preparando' | 'listo' = 'idle';
+  progresoOffline = '';
+  get enLinea(): boolean { return this.offline.enLinea; }
   /** ?continuar=id — un ATS en Borrador (guardado hasta el paso 3, nunca llegó a Firmar) que se
    *  reabre para seguir llenándolo, a diferencia de corregir/duplicar esto EDITA el mismo
    *  registro (this.atsId = id), no crea uno nuevo. */
@@ -205,6 +222,9 @@ export class AtsNuevo implements OnInit {
     }
 
     this.modoGrupal = this.route.snapshot.queryParamMap.get('grupal') === '1';
+    const corregirGrupo = this.route.snapshot.queryParamMap.get('corregirGrupo');
+    this.grupoAnteriorId = corregirGrupo ? Number(corregirGrupo) : null;
+    if (this.grupoAnteriorId) this.modoGrupal = true;
     const corregir = this.route.snapshot.queryParamMap.get('corregir');
     const duplicar = this.route.snapshot.queryParamMap.get('duplicar');
     const continuar = this.route.snapshot.queryParamMap.get('continuar');
@@ -243,8 +263,11 @@ export class AtsNuevo implements OnInit {
         this.loadingInit = false;
         this.cdr.detectChanges();
         if (this.proyectoId) this.cargarTorres(this.proyectoId);
+        this.precargarSinConexion();
 
-        if (this.atsAnteriorId) {
+        if (this.grupoAnteriorId) {
+          this.cargarParaCorregir(this.grupoAnteriorId, false, true);
+        } else if (this.atsAnteriorId) {
           this.cargarParaCorregir(this.atsAnteriorId);
         } else if (this.borradorId) {
           this.cargarParaCorregir(this.borradorId, true);
@@ -500,8 +523,8 @@ export class AtsNuevo implements OnInit {
    *  campo resultó distinta a la evaluada. Guarda como un ATS nuevo enlazado (atsAnteriorId),
    *  nunca modifica el original: un ATS firmado es inmutable (Art. 76 del Reglamento de la Ley
    *  29783). El trabajador solo ajusta lo que cambió antes de firmar de nuevo. */
-  private cargarParaCorregir(atsId: number, comoBorrador = false): void {
-    this.svc.getPorId(atsId).subscribe({
+  private cargarParaCorregir(atsId: number, comoBorrador = false, desdeGrupo = false): void {
+    (desdeGrupo ? this.svc.getContenidoGrupo(atsId) : this.svc.getPorId(atsId)).subscribe({
       next: (original) => {
         if (comoBorrador) this.atsId = atsId;
         this.proyectoId = original.proyectoId;
@@ -509,7 +532,7 @@ export class AtsNuevo implements OnInit {
         this.lugar = original.lugar ?? '';
         this.esExterior = !original.torreNombre;
         if (original.torreNombre) {
-          this.projectService.getTorres(original.proyectoId).subscribe({
+          this.torres$(original.proyectoId).subscribe({
             next: (torres) => {
               this.torres = torres;
               this.torreNombre = original.torreNombre ?? null;
@@ -583,8 +606,38 @@ export class AtsNuevo implements OnInit {
     if (proyectoId) this.cargarTorres(proyectoId);
   }
 
+  /** Torres del proyecto con caché local: sin señal se sirven las que se descargaron antes de bajar. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private torres$(proyectoId: number): Observable<any> {
+    const clave = `torres:${proyectoId}`;
+    return this.projectService.getTorres(proyectoId).pipe(
+      tap((t) => { void this.store.guardarCache(clave, t); }),
+      catchError((err: HttpErrorResponse) =>
+        err.status === 0
+          ? from(this.store.leerCache<unknown>(clave)).pipe(switchMap((v) => (v ? of(v) : throwError(() => err))))
+          : throwError(() => err)),
+    );
+  }
+
+  /** En modo público y con señal: descarga en segundo plano todo lo que el wizard va a pedir (pasos de cada puesto,
+   *  actividades de cada plantilla, riesgos/controles, torres) para poder armar el ATS abajo, sin señal. */
+  private precargarSinConexion(): void {
+    if (!this.modoPublico || !this.offline.enLinea || !this.init || this.estadoOffline !== 'idle') return;
+    const init = this.init;
+    const workerId = this.publicoWorkerId ?? 0;
+    const tareas: (() => Promise<unknown>)[] = [
+      ...init.puestos.map((p) => () => firstValueFrom(this.svc.getPasosPorPuesto(p.id, workerId))),
+      ...init.plantillas.map((pl) => () => firstValueFrom(this.svc.getActividadesDePlantilla(pl.id))),
+      () => firstValueFrom(this.svc.getRiesgosConControles()),
+      ...(this.proyectoId ? [() => firstValueFrom(this.torres$(this.proyectoId!))] : []),
+    ];
+    this.estadoOffline = 'preparando';
+    this.offline.precargar(tareas, (h, t) => { this.progresoOffline = `${h}/${t}`; this.cdr.detectChanges(); })
+      .then(() => { this.estadoOffline = 'listo'; this.cdr.detectChanges(); });
+  }
+
   private cargarTorres(proyectoId: number): void {
-    this.projectService.getTorres(proyectoId).subscribe({
+    this.torres$(proyectoId).subscribe({
       next: (torres) => {
         this.torres = torres;
         this.cdr.markForCheck();
@@ -893,6 +946,7 @@ export class AtsNuevo implements OnInit {
         riesgoResidual: r.riesgoResidual as NivelRiesgo,
       })),
       atsAnteriorId: this.atsAnteriorId ?? undefined,
+      grupoAnteriorId: this.grupoAnteriorId ?? undefined,
     };
   }
 
@@ -944,9 +998,38 @@ export class AtsNuevo implements OnInit {
     this.cdr.markForCheck();
   }
 
+  /** Guarda el ATS grupal en el teléfono (IndexedDB) para subirlo cuando haya señal. Las firmas de la cuadrilla se
+   *  capturan después en "ATS sin conexión". */
+  private async guardarSinConexion(): Promise<void> {
+    const dto = this.buildDto();
+    const paquete: PaqueteOffline = {
+      id: this.offline.nuevoId(),
+      tokenProyecto: this.publicoTokenProyecto!,
+      proyectoNombre: this.publicoProyectoNombre ?? undefined,
+      autor: { workerId: this.publicoWorkerId!, nombre: this.publicoAutorNombre ?? '', dniConfirmacion: this.publicoDni! },
+      contenido: dto,
+      actividadResumen: dto.actividad,
+      lugarResumen: dto.torreNombre ? `Torre ${dto.torreNombre}${dto.pisos ? ' — ' + dto.pisos : ''}` : (dto.lugar ?? ''),
+      capturadoEn: new Date().toISOString(),
+      estado: 'Pendiente',
+      adhesiones: [],
+    };
+    await this.offline.guardar(paquete);
+    this.creandoGrupo = false;
+    this.loaderService.hide();
+    this.publicoGrupoOffline.emit(paquete);
+  }
+
   private crearGrupo(): void {
     if (this.creandoGrupo) return;
     this.creandoGrupo = true;
+
+    // Sin señal en el flujo público: se guarda en el teléfono y se sube después.
+    if (this.modoPublico && !this.offline.enLinea) {
+      void this.guardarSinConexion();
+      return;
+    }
+
     this.loaderService.show();
 
     const crear$ = this.modoPublico
@@ -968,6 +1051,11 @@ export class AtsNuevo implements OnInit {
         }
       },
       error: (err: HttpErrorResponse) => {
+        if (this.modoPublico && err.status === 0) {
+          // La señal se cayó justo al enviar: no se pierde nada, queda guardado en el teléfono.
+          void this.guardarSinConexion();
+          return;
+        }
         this.creandoGrupo = false;
         this.loaderService.hide();
         if (this.modoPublico) {
@@ -1018,15 +1106,14 @@ export class AtsNuevo implements OnInit {
         const reader = new FileReader();
         reader.onload = () => {
           const dataUrl = typeof reader.result === 'string' ? reader.result : null;
-          if (!dataUrl) { this.cargarFirmaPersonal(); return; }
-          this.firmaGuardada = { tipo: 'DIBUJO', imageDataUrl: dataUrl };
+          this.firmaGuardada = dataUrl ? { tipo: 'DIBUJO', imageDataUrl: dataUrl } : null;
           this.cdr.detectChanges();
         };
-        reader.onerror = () => this.cargarFirmaPersonal();
+        reader.onerror = () => { this.firmaGuardada = null; this.cdr.detectChanges(); };
         reader.readAsDataURL(blob);
       },
-      // 404 = todavía no capturó firma digital autorizada — cae a la firma personal general.
-      error: () => this.cargarFirmaPersonal(),
+      // 404 = todavía no tiene firma digital autorizada — no puede firmar hasta que SSOMA la capture.
+      error: () => { this.firmaGuardada = null; this.cdr.detectChanges(); },
     });
   }
 
@@ -1063,23 +1150,19 @@ export class AtsNuevo implements OnInit {
   }
 
   get puedeFirmar(): boolean {
-    const hayAlgunaFirma = this.usandoFirmaGuardada ? !!this.firmaGuardada : this.hayFirma;
-    return this.camaraLista && hayAlgunaFirma && this.aceptaConsentimiento && !this.firmando;
+    return this.camaraLista && !!this.firmaGuardada && this.aceptaConsentimiento && !this.firmando;
   }
 
   firmar(): void {
     if (!this.puedeFirmar || !this.atsId || !this.camara) return;
 
     const foto = this.camara.capturarFoto();
-    const firma = this.usandoFirmaGuardada ? (this.firmaGuardada?.imageDataUrl ?? null) : this.firmaPad?.toDataUrl();
     if (!foto) {
       Swal.fire({ icon: 'error', title: 'No se pudo capturar la selfie', text: 'Intenta de nuevo.' });
       return;
     }
-    if (!firma) {
-      Swal.fire({ icon: 'error', title: 'Falta la firma', text: 'Dibuja tu firma antes de continuar.' });
-      return;
-    }
+    // La firma no se dibuja: el backend usa la firma digital registrada del trabajador.
+    const firma = '';
 
     this.firmando = true;
     this.loaderService.show();

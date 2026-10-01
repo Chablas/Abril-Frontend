@@ -272,23 +272,19 @@ export class PetarNuevo implements OnInit {
   }
 
   get puedeFirmar(): boolean {
-    const hayAlgunaFirma = this.usandoFirmaAutorizada ? !!this.firmaAutorizadaDataUrl : this.hayFirma;
-    return this.camaraLista && hayAlgunaFirma && !this.firmando;
+    return this.camaraLista && !!this.firmaAutorizadaDataUrl && !this.firmando;
   }
 
   firmar(): void {
     if (!this.puedeFirmar || !this.petarId || !this.camara) return;
 
     const foto = this.camara.capturarFoto();
-    const firma = this.usandoFirmaAutorizada ? this.firmaAutorizadaDataUrl : this.firmaPad?.toDataUrl();
     if (!foto) {
       Swal.fire({ icon: 'error', title: 'No se pudo capturar la selfie', text: 'Intenta de nuevo.' });
       return;
     }
-    if (!firma) {
-      Swal.fire({ icon: 'error', title: 'Falta la firma', text: 'Dibuja tu firma antes de continuar.' });
-      return;
-    }
+    // La firma no se dibuja: el backend usa la firma digital registrada del trabajador.
+    const firma = '';
 
     this.firmando = true;
     this.loaderService.show();

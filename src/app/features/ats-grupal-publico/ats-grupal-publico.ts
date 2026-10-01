@@ -101,7 +101,11 @@ export class AtsGrupalPublico implements OnInit {
 
   private cargarWorkers(): void {
     this.svc.getWorkersParaAdhesion(this.token).subscribe({
-      next: (res) => { this.workers = res; this.cdr.detectChanges(); },
+      next: (res) => {
+        // Quien ya firmó se marca en la lista: al elegirlo se salta la firma del ATS y va directo a los PETAR.
+        this.workers = res.map((w) => (w.yaFirmo ? { ...w, nombre: `${w.nombre} · ya firmó` } : w));
+        this.cdr.detectChanges();
+      },
       error: () => {},
     });
   }
@@ -117,7 +121,26 @@ export class AtsGrupalPublico implements OnInit {
 
   irAFirmar(): void {
     if (!this.puedeContinuarIdentidad) return;
-    this.nombreConfirmado = this.workers.find((w) => w.workerId === this.workerId)?.nombre ?? '';
+    const elegido = this.workers.find((w) => w.workerId === this.workerId);
+    this.nombreConfirmado = (elegido?.nombre ?? '').replace(' · ya firmó', '');
+
+    if (elegido?.yaFirmo) {
+      // Ya firmó su ATS: se confirma con el DNI y se sigue con los PETAR (p. ej. uno creado después).
+      this.svc.getMiAtsPublico(this.token, { workerId: this.workerId!, dniConfirmacion: this.dniConfirmacion.trim() }).subscribe({
+        next: (res) => {
+          if (!res.atsId) {
+            Swal.fire({ icon: 'info', title: 'No encontramos tu ATS', text: 'Intenta de nuevo o avisa al Coordinador SSOMA.' });
+            return;
+          }
+          this.atsIdPropio = res.atsId;
+          this.cargarPetares();
+        },
+        error: (err: HttpErrorResponse) =>
+          Swal.fire({ icon: 'error', title: 'No se pudo continuar', text: err.error?.message ?? 'Intenta de nuevo.' }),
+      });
+      return;
+    }
+
     this.paso = 'firmar';
     this.cdr.detectChanges();
     this.pedirUbicacion();
@@ -146,20 +169,16 @@ export class AtsGrupalPublico implements OnInit {
   }
 
   get puedeFirmar(): boolean {
-    return this.camaraLista && this.hayFirma && this.aceptaConsentimiento && !this.enviando;
+    return this.camaraLista && this.aceptaConsentimiento && !this.enviando;
   }
 
   firmar(): void {
     if (!this.puedeFirmar || !this.camara || !this.workerId) return;
 
     const foto = this.camara.capturarFoto();
-    const firma = this.firmaPad?.toDataUrl();
+    const firma = ''; // la firma sale de la firma digital registrada, no se dibuja
     if (!foto) {
       Swal.fire({ icon: 'error', title: 'No se pudo capturar la selfie', text: 'Intenta de nuevo.' });
-      return;
-    }
-    if (!firma) {
-      Swal.fire({ icon: 'error', title: 'Falta la firma', text: 'Dibuja tu firma antes de continuar.' });
       return;
     }
 
@@ -235,16 +254,16 @@ export class AtsGrupalPublico implements OnInit {
   }
 
   get puedeFirmarPetar(): boolean {
-    return this.hayFirmaPetar && !this.enviandoPetar;
+    return !this.enviandoPetar;
   }
 
   firmarPetarActual(): void {
     if (!this.puedeFirmarPetar || !this.camara || !this.petarActual || !this.workerId || !this.atsIdPropio) return;
 
     const foto = this.camara.capturarFoto();
-    const firma = this.firmaPad?.toDataUrl();
-    if (!foto || !firma) {
-      Swal.fire({ icon: 'error', title: 'Falta selfie o firma', text: 'Completa ambas antes de continuar.' });
+    const firma = ''; // la firma sale de la firma digital registrada, no se dibuja
+    if (!foto) {
+      Swal.fire({ icon: 'error', title: 'Falta la selfie', text: 'Toma tu selfie antes de continuar.' });
       return;
     }
 

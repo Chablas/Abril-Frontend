@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { SwUpdate } from '@angular/service-worker';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
 
@@ -15,6 +16,8 @@ export class VersionCheckService {
 
   /** Emite true cuando se detecta una versión nueva en el servidor. */
   newVersionAvailable$ = new BehaviorSubject<boolean>(false);
+
+  private sw = inject(SwUpdate, { optional: true });
 
   constructor(private http: HttpClient) {}
 
@@ -44,9 +47,17 @@ export class VersionCheckService {
 
   /** Recarga la página para tomar el bundle nuevo. */
   reload(): void {
-    if (typeof window !== 'undefined') {
-      window.location.reload();
+    if (typeof window === 'undefined') return;
+    // Con la PWA instalada, un simple reload serviría una vez más el bundle viejo desde la caché del service
+    // worker: primero se pide y activa la versión nueva, y recién ahí se recarga.
+    if (this.sw?.isEnabled) {
+      this.sw.checkForUpdate()
+        .then(() => this.sw!.activateUpdate())
+        .catch(() => undefined)
+        .finally(() => window.location.reload());
+      return;
     }
+    window.location.reload();
   }
 
   private startPolling(intervalMs: number): void {

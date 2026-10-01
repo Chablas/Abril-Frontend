@@ -1,0 +1,120 @@
+<div class="publico-wrap">
+  <div class="publico-card">
+    <div class="publico-header">
+      <i class="ti ti-wifi-off"></i>
+      <span>ATS sin conexión</span>
+    </div>
+
+    <div class="publico-body">
+      <div class="estado-red" [class.online]="enLinea" [class.offline]="!enLinea">
+        @if (enLinea) { <i class="ti ti-wifi"></i> Con conexión — ya puedes subir lo capturado. }
+        @else { <i class="ti ti-wifi-off"></i> Sin conexión — registra las firmas aquí y sube todo cuando haya internet. }
+      </div>
+
+      @if (cargando) {
+        <div class="publico-loading">Cargando…</div>
+      } @else if (!actual) {
+        <!-- Lista de ATS guardados en este celular -->
+        <h2>Pendientes en este celular</h2>
+        @if (paquetes.length === 0) {
+          <p class="publico-hint">No hay ATS guardados. Para armar uno sin señal, abre antes (con internet) el QR de la obra y llena el ATS grupal: el celular se prepara solo.</p>
+        }
+        @for (p of paquetes; track p.id) {
+          <button type="button" class="paquete-item" (click)="abrir(p)">
+            <strong>{{ p.actividadResumen }}</strong>
+            <span class="paquete-meta">{{ p.proyectoNombre }} · {{ p.lugarResumen }}</span>
+            <span class="paquete-meta">Armado {{ p.capturadoEn | date:'dd/MM/yyyy HH:mm' }} · {{ p.adhesiones.length }} firmante(s)</span>
+            <span class="chip-estado" [ngClass]="p.estado.toLowerCase()">{{ p.estado === 'Sincronizado' ? 'Subido' : p.estado === 'Parcial' ? 'Subida incompleta' : 'Pendiente de subir' }}</span>
+          </button>
+        }
+        <a class="btn btn-outline btn-full" routerLink="/auth/login">Ir a la intranet</a>
+      } @else {
+        <!-- Detalle de un ATS -->
+        <button type="button" class="link-volver" (click)="volver()"><i class="ti ti-arrow-left"></i> Volver</button>
+        <h2>{{ actual.actividadResumen }}</h2>
+        <p class="publico-hint">{{ actual.proyectoNombre }} · {{ actual.lugarResumen }}<br />
+          Armado el {{ actual.capturadoEn | date:'dd/MM/yyyy HH:mm' }}
+          @if (actual.autor.nombre) { · por {{ actual.autor.nombre }} }
+        </p>
+        <span class="chip-estado" [ngClass]="estadoClase">{{ actual.estado === 'Sincronizado' ? 'Subido' : actual.estado === 'Parcial' ? 'Subida incompleta' : 'Pendiente de subir' }}</span>
+
+        <div class="separador"></div>
+
+        <h3>Firmantes ({{ actual.adhesiones.length }})</h3>
+        @if (actual.adhesiones.length === 0) {
+          <p class="publico-hint">Aún no hay firmas. Cada integrante de la cuadrilla (incluido quien armó el ATS) debe registrar la suya.</p>
+        }
+        @for (a of actual.adhesiones; track a.id) {
+          <div class="firmante-fila">
+            <span>
+              {{ a.nombre }}
+              <span class="paquete-meta" style="display:block">{{ a.horaDispositivo | date:'dd/MM HH:mm' }}@if (a.estado === 'Error') { · {{ a.error }} }</span>
+            </span>
+            <span class="firmante-acciones">
+              <span class="firmante-estado" [class.ok]="a.estado === 'Enviado'" [class.err]="a.estado === 'Error'" [class.pend]="a.estado === 'Pendiente'">
+                {{ a.estado === 'Enviado' ? 'Enviado' : a.estado === 'Error' ? 'Con error' : 'Pendiente' }}
+              </span>
+              @if (a.estado !== 'Enviado') { <button type="button" class="link-btn" (click)="quitar(a)">Quitar</button> }
+            </span>
+          </div>
+        }
+
+        @if (!capturando) {
+          <button type="button" class="btn btn-outline btn-full" style="margin-top:12px" (click)="empezarCaptura()">
+            <i class="ti ti-user-plus"></i> Registrar un firmante
+          </button>
+        } @else {
+          <div class="separador"></div>
+          <h3>Nuevo firmante</h3>
+          <app-search-select
+            label="Nombre"
+            [options]="disponibles"
+            valueField="workerId"
+            displayField="nombre"
+            [value]="workerId"
+            placeholder="Busca el nombre..."
+            (valueChange)="workerId = $event"
+          ></app-search-select>
+
+          <div class="abril-field">
+            <label class="abril-field-label">Últimos dígitos del DNI *</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="dni" maxlength="8" placeholder="Ej: 4567" inputmode="numeric" />
+          </div>
+
+          <div class="firmar-bloque">
+            <label class="abril-field-label">Selfie</label>
+            <app-camera-capture [overlayLineas]="selfieOverlayLineas" (listo)="onCamaraLista()"></app-camera-capture>
+          </div>
+
+          <p class="gps-estado">
+            @if (gpsEstado === 'buscando') { <i class="ti ti-loader"></i> Buscando ubicación… }
+            @else if (gpsEstado === 'ok') { <i class="ti ti-map-pin"></i> Ubicación capturada. }
+            @else { <i class="ti ti-map-pin-off"></i> Sin ubicación (en sótano es normal) — se registra igual. }
+          </p>
+
+          <p class="publico-hint">La firma será la firma digital registrada en la autorización de uso de firma; se aplica al subir el ATS.</p>
+
+          <label class="check-label">
+            <input type="checkbox" [(ngModel)]="acepta" />
+            Acepto el uso de mi imagen (selfie) y geolocalización para este ATS digital.
+          </label>
+
+          <button type="button" class="btn btn-primary btn-full" [disabled]="!puedeGuardar" (click)="guardarFirmante()">
+            {{ guardando ? 'Guardando…' : 'Guardar firma en este celular' }}
+          </button>
+          <button type="button" class="btn btn-outline btn-full" (click)="cancelarCaptura()">Cancelar</button>
+        }
+
+        <div class="separador"></div>
+
+        <button type="button" class="btn btn-primary btn-full" [disabled]="sincronizando || !enLinea || (actual.estado === 'Sincronizado' && pendientesDeEnvio === 0)" (click)="subir()">
+          <i class="ti ti-cloud-upload"></i>
+          {{ sincronizando ? 'Subiendo…' : actual.estado === 'Sincronizado' && pendientesDeEnvio === 0 ? 'Todo subido' : enLinea ? 'Subir ahora' : 'Subir (necesita internet)' }}
+        </button>
+        <button type="button" class="link-btn link-descartar" (click)="descartar()">
+          {{ actual.estado === 'Sincronizado' ? 'Quitar de este celular' : 'Descartar sin subir' }}
+        </button>
+      }
+    </div>
+  </div>
+</div>

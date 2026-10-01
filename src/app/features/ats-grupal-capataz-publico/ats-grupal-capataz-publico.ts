@@ -91,7 +91,7 @@ export class AtsGrupalCapatazPublico implements OnInit {
   }
 
   get puedeFirmar(): boolean {
-    return !!this.workerId && this.dniConfirmacion.trim().length >= 3 && this.hayFirma && this.camaraLista && !this.enviando
+    return !!this.workerId && this.dniConfirmacion.trim().length >= 3 && this.camaraLista && !this.enviando
       && (this.datos?.trabajadoresAdheridos.length ?? 0) > 0;
   }
 
@@ -101,14 +101,10 @@ export class AtsGrupalCapatazPublico implements OnInit {
 
   firmar(): void {
     if (!this.puedeFirmar || !this.workerId) return;
-    const firma = this.firmaPad?.toDataUrl();
+    const firma = ''; // la firma sale de la firma digital registrada, no se dibuja
     const foto = this.camara?.capturarFoto();
     if (!foto) {
       Swal.fire({ icon: 'error', title: 'No se pudo capturar la selfie', text: 'Intenta de nuevo.' });
-      return;
-    }
-    if (!firma) {
-      Swal.fire({ icon: 'error', title: 'Falta la firma', text: 'Dibuja tu firma antes de continuar.' });
       return;
     }
 

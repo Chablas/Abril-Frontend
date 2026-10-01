@@ -134,13 +134,10 @@ export class PetarLista implements OnInit {
 
   guardarFirmaVisto(): void {
     const p = this.petarFirmandoVisto;
-    if (!p || !this.rolVisto || !this.firmaPad || this.guardandoVisto) return;
+    if (!p || !this.rolVisto || this.guardandoVisto) return;
 
-    const firma = this.firmaPad.toDataUrl();
-    if (!firma) {
-      Swal.fire({ icon: 'error', title: 'Falta la firma', text: 'Dibuja tu firma antes de continuar.' });
-      return;
-    }
+    // La firma no se dibuja: el backend usa la firma digital registrada del usuario.
+    const firma = '';
 
     this.guardandoVisto = true;
     this.cdr.markForCheck();
@@ -183,13 +180,10 @@ export class PetarLista implements OnInit {
 
   confirmarCierre(): void {
     const p = this.petarCerrando;
-    if (!p || !this.firmaPad || this.cerrando) return;
+    if (!p || this.cerrando) return;
 
-    const firma = this.firmaPad.toDataUrl();
-    if (!firma) {
-      Swal.fire({ icon: 'error', title: 'Falta la firma', text: 'Dibuja tu firma antes de cerrar el PETAR.' });
-      return;
-    }
+    // La firma no se dibuja: el backend usa la firma digital registrada del usuario.
+    const firma = '';
 
     this.cerrando = true;
     this.cdr.markForCheck();

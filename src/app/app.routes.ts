@@ -216,6 +216,20 @@ export const routes: Routes = [
   },
 
   {
+    path: 'ats-sin-conexion',
+    loadComponent: () =>
+      import('./features/ats-sin-conexion/ats-sin-conexion')
+      .then(m => m.AtsSinConexion)
+  },
+
+  {
+    path: 'ats-sin-conexion/:id',
+    loadComponent: () =>
+      import('./features/ats-sin-conexion/ats-sin-conexion')
+      .then(m => m.AtsSinConexion)
+  },
+
+  {
     path: 'ats-grupal/capataz/:token',
     loadComponent: () =>
       import('./features/ats-grupal-capataz-publico/ats-grupal-capataz-publico')
