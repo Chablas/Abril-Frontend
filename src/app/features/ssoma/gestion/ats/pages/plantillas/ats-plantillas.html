@@ -88,7 +88,21 @@
           }
           @for (t of trabajadoresAutorizacionPagina; track t.workerId) {
             <tr>
-              <td>{{ t.nombre }}</td>
+              <td>
+                {{ t.nombre }}
+                @if (t.esCapatazOMaestro) {
+                  <div class="capataz-cuenta">
+                    <span class="badge-autorizacion badge-autorizacion--pendiente">Capataz / Maestro</span>
+                    @if (t.tieneUsuario) {
+                      <span class="badge-autorizacion badge-autorizacion--ok"><i class="ti ti-user-check"></i> Con cuenta</span>
+                    } @else if (t.emailPersonal) {
+                      <span class="badge-autorizacion badge-autorizacion--pendiente"><i class="ti ti-mail"></i> {{ t.emailPersonal }} — sin cuenta</span>
+                    } @else {
+                      <span class="badge-autorizacion badge-autorizacion--falta"><i class="ti ti-mail-off"></i> Falta correo personal</span>
+                    }
+                  </div>
+                }
+              </td>
               <td>{{ t.dni ?? '—' }}</td>
               <td>{{ t.proyectoNombre ?? '—' }}</td>
               <td>{{ t.obraOficinaStaff ?? '—' }}</td>
@@ -103,6 +117,16 @@
               </td>
               <td>{{ t.subidoEn ? (t.subidoEn | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
               <td>
+                @if (t.esCapatazOMaestro) {
+                  <button class="btn btn-outline btn-sm" (click)="registrarCorreoCapataz(t)">
+                    <i class="ti ti-mail"></i> {{ t.emailPersonal ? 'Cambiar correo' : 'Registrar correo' }}
+                  </button>
+                  @if (t.tieneAutorizacion && t.emailPersonal && !t.tieneUsuario) {
+                    <button class="btn btn-outline btn-sm" (click)="crearCuentaCapataz(t)">
+                      <i class="ti ti-user-plus"></i> Crear cuenta
+                    </button>
+                  }
+                }
                 <button class="btn btn-outline btn-sm" (click)="abrirFirmaDigital(t)">
                   <i class="ti ti-signature"></i> {{ t.tieneFirmaDigital ? 'Refirmar digital' : 'Firmar digital' }}
                 </button>

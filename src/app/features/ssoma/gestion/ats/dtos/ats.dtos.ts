@@ -29,6 +29,9 @@ export interface AtsAutorizacionTrabajadorDto {
   tieneAutorizacion: boolean;
   subidoEn?: string | null;
   archivoUrl?: string | null;
+  esCapatazOMaestro: boolean;
+  emailPersonal?: string | null;
+  tieneUsuario: boolean;
 }
 
 export interface AtsAutorizacionFirmaDigitalRequestDto {
@@ -94,6 +97,7 @@ export interface AtsInitDto {
   proyectos: AtsProyectoDto[];
   proyectoActualId?: number;
   puestoId?: number;
+  puestos: AtsPuestoDto[];
   pasos: AtsCategoriaPasoDto[];
   peligros: AtsPeligroDto[];
   epps: AtsEppDto[];
@@ -192,6 +196,12 @@ export interface AtsResponseDto {
   estado: 'Borrador' | 'Firmado';
   atsAnteriorId?: number;
   pdfHash?: string;
+  requiereCapataz: boolean;
+  atsGrupoId?: number;
+  capatazNombre?: string;
+  capatazCargo?: string;
+  capatazFirmaUrl?: string;
+  capatazHoraServidor?: string;
   autorizaNombre?: string;
   autorizaCargo?: string;
   autorizaFirmaUrl?: string;
@@ -200,6 +210,7 @@ export interface AtsResponseDto {
   ssomaCargo?: string;
   ssomaFirmaUrl?: string;
   ssomaHoraServidor?: string;
+  puedeCapataz: boolean;
   puedeAutorizar: boolean;
   puedeVistoBuenoSsoma: boolean;
   requierePetar: boolean;
@@ -302,4 +313,105 @@ export interface AtsRiesgoConControlesDto {
 export interface AtsRiesgoControlGuardarRequestDto {
   texto: string;
   tipo: TipoControl;
+}
+
+// ── ATS Grupal (cuadrilla) ───────────────────────────────────────────────────
+
+export interface AtsGrupoCrearResponseDto {
+  id: number;
+  qrToken: string;
+  qrExpiraEn: string;
+}
+
+export interface AtsGrupoEstadoDto {
+  id: number;
+  actividad: string;
+  proyectoNombre?: string;
+  torreNombre?: string;
+  pisos?: string;
+  fecha: string;
+  estado: 'Activo' | 'Cerrado';
+  qrToken: string;
+  qrExpiraEn: string;
+  totalAdhesiones: number;
+  trabajadoresAdheridos: string[];
+  capatazNombre?: string;
+  capatazHoraServidor?: string;
+  capatazVigente: boolean;
+  capatazNuevosSinValidar: number;
+}
+
+export interface AtsGrupoCapatazPublicoDto {
+  valido: boolean;
+  motivoInvalido?: string;
+  proyectoNombre?: string;
+  actividad?: string;
+  trabajadoresAdheridos: string[];
+  yaFirmo: boolean;
+  vigente: boolean;
+  nuevosSinValidar: number;
+  capataces: AtsGrupoWorkerOpcionDto[];
+}
+
+export interface AtsGrupoCapatazFirmarRequestDto {
+  workerId: number;
+  dniConfirmacion: string;
+  firmaBase64: string;
+  selfieBase64: string;
+  horaDispositivo: string;
+  lat: number | null;
+  lng: number | null;
+  precisionMetros: number | null;
+}
+
+export interface AtsGrupoResumenPublicoDto {
+  valido: boolean;
+  motivoInvalido?: string;
+  proyectoNombre?: string;
+  actividad?: string;
+  torreNombre?: string;
+  pisos?: string;
+  lugar?: string;
+  fecha?: string;
+  epps: string[];
+  herramientas: string[];
+  riesgos: AtsRiesgoDetalleResponseDto[];
+}
+
+export interface AtsGrupoWorkerOpcionDto {
+  workerId: number;
+  nombre: string;
+  dniUltimos4?: string;
+}
+
+export interface AtsGrupoUnirseRequestDto {
+  workerId: number;
+  dniConfirmacion: string;
+  selfieBase64: string;
+  firmaBase64: string;
+  horaDispositivo: string;
+  lat: number | null;
+  lng: number | null;
+  precisionMetros: number | null;
+  aceptaConsentimiento: boolean;
+}
+
+// ── QR fijo por proyecto — crear ATS Grupal sin login ─────────────────────────
+
+export interface AtsGrupoProyectoPublicoDto {
+  valido: boolean;
+  motivoInvalido?: string;
+  proyectoNombre?: string;
+  trabajadores: AtsGrupoWorkerOpcionDto[];
+}
+
+export interface AtsGrupoInitPublicoRequestDto {
+  workerId: number;
+  dniConfirmacion: string;
+}
+
+export interface AtsGrupoCrearPublicoRequestDto {
+  workerId: number;
+  dniConfirmacion: string;
+  contenido: AtsGuardarRequestDto;
 }

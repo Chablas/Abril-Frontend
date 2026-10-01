@@ -1,0 +1,88 @@
+<div class="publico-wrap">
+  <div class="publico-card">
+    <div class="publico-header">
+      <i class="ti ti-shield-check"></i>
+      <span>ATS Digital — Firma del Capataz</span>
+    </div>
+
+    @if (cargando) {
+      <div class="publico-loading">Cargando…</div>
+    } @else if (!datos?.valido) {
+      <div class="publico-error">
+        <i class="ti ti-alert-triangle"></i>
+        <p>{{ datos?.motivoInvalido }}</p>
+      </div>
+    } @else if (firmado) {
+      <div class="publico-body publico-exito">
+        <i class="ti ti-circle-check"></i>
+        <h2>Firma registrada</h2>
+        <p>Tu firma como Capataz quedó guardada con fecha y hora. Si se suma un trabajador más a la cuadrilla, vuelve a entrar con este mismo enlace para firmar de nuevo.</p>
+      </div>
+    } @else {
+      <div class="publico-body">
+        <h2>{{ datos!.actividad }}</h2>
+        <p class="publico-sub">{{ datos!.proyectoNombre }}</p>
+
+        <div class="publico-seccion">
+          <strong>Trabajadores que ya firmaron ({{ datos!.trabajadoresAdheridos.length }})</strong>
+          @if (datos!.trabajadoresAdheridos.length === 0) {
+            <p>Todavía nadie firmó — vuelve cuando la cuadrilla ya haya firmado.</p>
+          } @else {
+            <ul>
+              @for (n of datos!.trabajadoresAdheridos; track $index) { <li>{{ n }}</li> }
+            </ul>
+          }
+        </div>
+
+        @if (datos!.yaFirmo && datos!.nuevosSinValidar > 0) {
+          <p class="publico-aviso">
+            <i class="ti ti-user-plus"></i>
+            Se sumaron {{ datos!.nuevosSinValidar }} trabajador(es) después de tu firma anterior — debes volver a firmar para validarlos.
+          </p>
+        }
+
+        @if (yaVigente) {
+          <p class="publico-hint">Tu firma de Capataz ya está vigente para toda la cuadrilla. No hace falta firmar de nuevo.</p>
+        } @else {
+          <app-search-select
+            label="Tu nombre (Capataz / Maestro de obra)"
+            [options]="datos!.capataces"
+            valueField="workerId"
+            displayField="nombre"
+            [value]="workerId"
+            placeholder="Busca tu nombre..."
+            (valueChange)="workerId = $event"
+          ></app-search-select>
+
+          <div class="abril-field">
+            <label class="abril-field-label">Últimos dígitos de tu DNI *</label>
+            <input type="text" class="abril-field-input" [(ngModel)]="dniConfirmacion" maxlength="8" placeholder="Ej: 4567" inputmode="numeric" />
+          </div>
+
+          @if (workerId) {
+            <div class="firmar-bloque">
+              <label class="abril-field-label">Selfie</label>
+              <app-camera-capture [overlayLineas]="selfieOverlayLineas" (listo)="onCamaraLista()"></app-camera-capture>
+            </div>
+            <p class="gps-estado">
+              @if (gpsEstado === 'buscando') { <i class="ti ti-loader"></i> Buscando tu ubicación… }
+              @else if (gpsEstado === 'ok') { <i class="ti ti-map-pin"></i> Ubicación capturada. }
+              @else { <i class="ti ti-map-pin-off"></i> No se pudo obtener tu ubicación — puedes seguir, pero avisa al Coordinador SSOMA. }
+            </p>
+          }
+
+          <div class="firmar-bloque">
+            <label class="abril-field-label">Tu firma</label>
+            <app-signature-pad (drawingChange)="onFirmaChange($event)"></app-signature-pad>
+          </div>
+
+          <p class="publico-hint">Al firmar certificas a los trabajadores de la lista de arriba. Firma solo cuando toda la cuadrilla ya haya firmado.</p>
+
+          <button type="button" class="btn btn-primary btn-full" [disabled]="!puedeFirmar" (click)="firmar()">
+            {{ enviando ? 'Firmando…' : 'Firmar como Capataz' }}
+          </button>
+        }
+      </div>
+    }
+  </div>
+</div>

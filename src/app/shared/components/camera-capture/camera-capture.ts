@@ -25,6 +25,12 @@ import { CommonModule } from '@angular/common';
 })
 export class CameraCapture implements OnInit, OnDestroy {
   @Input() facingMode: 'user' | 'environment' = 'user';
+  /** Líneas de texto a "quemar" sobre la selfie (fecha/hora, proyecto, coordenadas, trabajador…)
+   *  — mismo criterio que las apps de cámara con marca de tiempo: no es un metadato EXIF que se
+   *  pueda quitar editando la foto, queda dibujado en los píxeles. El padre las arma con lo que
+   *  tenga disponible en ese momento (la ubicación puede llegar después de que la cámara ya esté
+   *  lista) y las vuelve a pasar antes de llamar a capturarFoto(). */
+  @Input() overlayLineas: string[] = [];
   /** Se emite cuando el video ya está reproduciendo — el padre puede usar `videoElement` para
    * calcular el embedding facial en vivo antes de que el usuario capture. */
   @Output() listo = new EventEmitter<void>();
@@ -87,7 +93,8 @@ export class CameraCapture implements OnInit, OnDestroy {
     }
   }
 
-  /** Dibuja el frame actual del video en un canvas y devuelve un JPEG en base64 (sin prefijo data:URI). */
+  /** Dibuja el frame actual del video en un canvas, "quema" encima las líneas de overlayLineas
+   *  (si las hay) y devuelve un JPEG en base64 (sin prefijo data:URI). */
   capturarFoto(): string | null {
     const video = this.videoRef?.nativeElement;
     const canvas = this.canvasRef?.nativeElement;
@@ -99,8 +106,30 @@ export class CameraCapture implements OnInit, OnDestroy {
     if (!ctx) return null;
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
+    if (this.overlayLineas.length > 0) this.dibujarOverlay(ctx, canvas.width, canvas.height);
+
     const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
     return dataUrl.split(',')[1] ?? null;
+  }
+
+  /** Barra semitransparente abajo + texto blanco, mismo estilo que las apps de "cámara con
+   *  marca de tiempo" — el tamaño de letra se escala al ancho real de la foto (no al tamaño en
+   *  pantalla) para que se vea igual de legible en un celular de pantalla chica o grande. */
+  private dibujarOverlay(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+    const fontSize = Math.max(14, Math.round(width * 0.035));
+    const lineHeight = fontSize * 1.35;
+    const padding = fontSize * 0.6;
+    const barHeight = this.overlayLineas.length * lineHeight + padding * 2;
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+    ctx.fillRect(0, height - barHeight, width, barHeight);
+
+    ctx.font = `${fontSize}px Arial, sans-serif`;
+    ctx.fillStyle = '#ffffff';
+    ctx.textBaseline = 'top';
+    this.overlayLineas.forEach((linea, i) => {
+      ctx.fillText(linea, padding, height - barHeight + padding + i * lineHeight);
+    });
   }
 
   detener(): void {

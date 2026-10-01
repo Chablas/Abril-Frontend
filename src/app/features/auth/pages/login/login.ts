@@ -11,7 +11,7 @@ import { LearningService } from '../../../../core/learning/learning.service';
 import { LearningVideoDto, esManual } from '../../../../core/learning/learning.model';
 import { RETURN_URL_PARAM, ReturnUrlService } from '../../../../core/auth/return-url.service';
 
-type LoginTab = 'abril' | 'contratistas' | 'clinica';
+type LoginTab = 'abril' | 'contratistas' | 'clinica' | 'capataz';
 
 @Component({
   selector: 'app-login',
@@ -145,6 +145,53 @@ export class Login implements OnInit {
         this.error(err);
       },
     });
+  }
+
+  showCapatazPassword = false;
+
+  toggleCapatazPassword(): void {
+    this.showCapatazPassword = !this.showCapatazPassword;
+  }
+
+  /** Capataz / Maestro de obra: cuenta propia con contraseña (la crea SSOMA al subir su autorización
+   *  firmada). Usa el login estándar del sistema; aterriza directo en el ATS, que es su único trabajo. */
+  submitCapataz(): void {
+    if (this.form.invalid) return;
+    this.loaderService.show();
+    this.cdr.detectChanges();
+
+    const payload = { email: this.form.value.email.trim(), password: this.form.value.password };
+    this.authService.login(payload).subscribe({
+      next: () => {
+        this.loaderService.hide();
+        this.cdr.detectChanges();
+        this.returnUrlService.navigateAfterLogin(this.returnUrl, '/ssoma/gestion/ats');
+      },
+      error: (err: HttpErrorResponse) => this.error(err),
+    });
+  }
+
+  /** "¿Olvidaste tu contraseña?" — autoservicio: le llega un enlace al correo registrado. La respuesta
+   *  es siempre la misma (el backend nunca revela si el correo existe). */
+  async olvideContrasena(): Promise<void> {
+    const { value: email } = await Swal.fire({
+      title: 'Recuperar contraseña',
+      text: 'Escribe el correo de tu cuenta y te enviaremos un enlace para crear una contraseña nueva.',
+      input: 'email',
+      inputValue: (this.form.value.email ?? '').trim(),
+      inputPlaceholder: 'correo@ejemplo.com',
+      showCancelButton: true,
+      confirmButtonText: 'Enviar enlace',
+      cancelButtonText: 'Cancelar',
+    });
+    if (!email) return;
+
+    const finalizar = () => Swal.fire({
+      icon: 'success',
+      title: 'Revisa tu correo',
+      text: 'Si el correo está registrado, recibirás un enlace en breve (vence en 1 hora).',
+    });
+    this.authService.forgotPasswordByEmail(email.trim()).subscribe({ next: finalizar, error: finalizar });
   }
 
   submitContratista() {

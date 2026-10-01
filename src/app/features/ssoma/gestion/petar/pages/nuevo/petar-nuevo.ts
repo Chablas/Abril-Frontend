@@ -54,6 +54,16 @@ export class PetarNuevo implements OnInit {
   @ViewChild(CameraCapture) camara?: CameraCapture;
   @ViewChild(SignaturePad) firmaPad?: SignaturePad;
 
+  /** Fecha/hora, lugar y coordenadas "quemadas" sobre la selfie — mismo criterio que las apps de
+   *  cámara con marca de tiempo. La ubicación puede llegar después de que la cámara ya esté lista,
+   *  por eso es un getter (se recalcula cada vez que Angular repinta, no un valor fijo). */
+  get selfieOverlayLineas(): string[] {
+    const lineas = [new Date().toLocaleString('es-PE')];
+    if (this.lugar.trim()) lineas.push(this.lugar.trim());
+    if (this.gpsCoords) lineas.push(`${this.gpsCoords.latitude.toFixed(5)}, ${this.gpsCoords.longitude.toFixed(5)}`);
+    return lineas;
+  }
+
   constructor(
     private svc: PetarService,
     private atsSvc: AtsService,
