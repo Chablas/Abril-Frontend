@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../../../environments/environment';
 import {
   PetarInitDto,
+  PetarTipoDto,
   PetarGuardarRequestDto,
   PetarFirmarRequestDto,
   PetarFirmarVistoRequestDto,
@@ -11,6 +12,11 @@ import {
   PetarResponseDto,
   PetarFiltroDto,
   PetarListResponseDto,
+  PetarGrupoCrearRequestDto,
+  PetarGrupoCrearResponseDto,
+  PetarGrupoEstadoDto,
+  PetarGrupoResumenPublicoDto,
+  PetarGrupoUnirseRequestDto,
 } from '../dtos/petar.dtos';
 
 function authHeaders(): HttpHeaders {
@@ -26,6 +32,10 @@ export class PetarService {
 
   getInit(atsId: number): Observable<PetarInitDto> {
     return this.http.get<PetarInitDto>(`${this.base}/init/${atsId}`, { headers: authHeaders() });
+  }
+
+  getTiposCatalogo(): Observable<PetarTipoDto[]> {
+    return this.http.get<PetarTipoDto[]>(`${this.base}/tipos-catalogo`, { headers: authHeaders() });
   }
 
   crear(dto: PetarGuardarRequestDto): Observable<{ id: number }> {
@@ -70,5 +80,41 @@ export class PetarService {
 
   getPdfBlob(id: number): Observable<Blob> {
     return this.http.get(`${this.base}/${id}/pdf`, { headers: authHeaders(), responseType: 'blob' });
+  }
+
+  // ── PETAR Grupal (autor, requiere login) ────────────────────────────────
+
+  crearGrupo(dto: PetarGrupoCrearRequestDto): Observable<PetarGrupoCrearResponseDto> {
+    return this.http.post<PetarGrupoCrearResponseDto>(`${this.base}/grupo`, dto, { headers: authHeaders() });
+  }
+
+  getEstadosPorAtsGrupo(atsGrupoId: number): Observable<PetarGrupoEstadoDto[]> {
+    return this.http.get<PetarGrupoEstadoDto[]>(`${this.base}/grupo/por-ats-grupo/${atsGrupoId}`, { headers: authHeaders() });
+  }
+
+  getEstadoGrupo(id: number): Observable<PetarGrupoEstadoDto> {
+    return this.http.get<PetarGrupoEstadoDto>(`${this.base}/grupo/${id}/estado`, { headers: authHeaders() });
+  }
+
+  cerrarGrupo(id: number): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/grupo/${id}/cerrar`, {}, { headers: authHeaders() });
+  }
+
+  firmarSupervisorGrupo(id: number, body: PetarFirmarVistoRequestDto): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/grupo/${id}/firmar-supervisor`, body, { headers: authHeaders() });
+  }
+
+  firmarSsomaGrupo(id: number, body: PetarFirmarVistoRequestDto): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/grupo/${id}/visto-bueno-ssoma`, body, { headers: authHeaders() });
+  }
+
+  // ── PETAR Grupal (adhesión pública, SIN login — mismo token del QR del ATS) ──
+
+  getGruposPublicoPorAtsToken(atsToken: string): Observable<PetarGrupoResumenPublicoDto[]> {
+    return this.http.get<PetarGrupoResumenPublicoDto[]>(`${this.base}/grupo/publico/por-ats-token/${atsToken}`);
+  }
+
+  unirseAGrupo(petarGrupoId: number, dto: PetarGrupoUnirseRequestDto): Observable<{ id: number; message: string }> {
+    return this.http.post<{ id: number; message: string }>(`${this.base}/grupo/publico/${petarGrupoId}/unirse`, dto);
   }
 }

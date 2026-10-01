@@ -275,6 +275,47 @@ export class AtsPlantillas implements OnInit {
     });
   }
 
+  /** Capataz/Maestro de obra: correo PERSONAL al que llegará el enlace para generar su contraseña. Se
+   *  registra ANTES de descargar la plantilla porque la declaración de uso personal y exclusivo del
+   *  correo va impresa en ese mismo documento; la cuenta se crea al subir el escaneado firmado. */
+  registrarCorreoCapataz(t: AtsAutorizacionTrabajadorDto): void {
+    Swal.fire({
+      title: `Correo personal — ${t.nombre}`,
+      html: `
+        <p style="font-size:13px;color:#6b7280;margin-bottom:8px">A este correo llegará el enlace para generar su contraseña. Debe ser un correo PERSONAL de uso exclusivo del trabajador.</p>
+        <input id="swal-email" type="email" class="swal2-input" placeholder="correo@ejemplo.com" />
+        <label style="display:flex;gap:8px;text-align:left;font-size:12.5px;margin-top:8px">
+          <input id="swal-acepta" type="checkbox" />
+          <span>El trabajador declara que es su correo personal, de uso exclusivo, y autoriza el envío de sus credenciales a esa dirección.</span>
+        </label>`,
+      didOpen: () => { (document.getElementById('swal-email') as HTMLInputElement).value = t.emailPersonal ?? ''; },
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      focusConfirm: false,
+      preConfirm: () => {
+        const email = (document.getElementById('swal-email') as HTMLInputElement).value.trim();
+        const acepta = (document.getElementById('swal-acepta') as HTMLInputElement).checked;
+        if (!email) { Swal.showValidationMessage('Escribe el correo.'); return false; }
+        if (!acepta) { Swal.showValidationMessage('Debe aceptarse la declaración.'); return false; }
+        return { email, aceptaDeclaracion: acepta };
+      },
+    }).then((r) => {
+      if (!r.isConfirmed || !r.value) return;
+      this.svc.guardarEmailPersonalAutorizacion(t.workerId, r.value).subscribe({
+        next: () => { this.cargarAutorizaciones(); },
+        error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+      });
+    });
+  }
+
+  crearCuentaCapataz(t: AtsAutorizacionTrabajadorDto): void {
+    this.svc.crearCuentaCapataz(t.workerId).subscribe({
+      next: (res) => { Swal.fire({ icon: 'success', title: res.message, timer: 2200, showConfirmButton: false }); this.cargarAutorizaciones(); },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
   abrirFirmaDigital(t: AtsAutorizacionTrabajadorDto): void {
     this.firmaDigitalTrabajador = t;
     this.firmaDigitalHayTrazo = false;

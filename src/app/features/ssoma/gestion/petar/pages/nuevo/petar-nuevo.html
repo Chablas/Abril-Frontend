@@ -164,7 +164,7 @@
 
       <div class="firmar-row">
         <div class="camara-col">
-          <app-camera-capture (listo)="onCamaraLista()"></app-camera-capture>
+          <app-camera-capture [overlayLineas]="selfieOverlayLineas" (listo)="onCamaraLista()"></app-camera-capture>
           <div class="gps-estado" [ngSwitch]="gpsEstado">
             <span *ngSwitchCase="'buscando'">📍 Buscando ubicación…</span>
             <span *ngSwitchCase="'ok'">📍 Ubicación capturada (±{{ gpsCoords?.accuracy ?? 0 | number:'1.0-0' }} m)</span>
