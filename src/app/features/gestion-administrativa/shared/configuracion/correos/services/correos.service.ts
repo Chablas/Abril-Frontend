@@ -8,6 +8,10 @@ import {
   CorreoGrupo,
   CorreoPantalla,
 } from '../dtos/ga-correo.dto';
+import {
+  RecordatorioEnvioManual,
+  RecordatorioSimulacion,
+} from '../../../../../../shared/components/envio-manual-recordatorio/envio-manual-recordatorio.dto';
 
 /**
  * Configuración de los correos del flujo de salidas. Todas las operaciones reciben la `pantalla`
@@ -114,5 +118,35 @@ export class CorreosService {
       `${this.base(pantalla)}/destinatarios/${id}`,
       { headers: this.headers },
     );
+  }
+
+  // ── Envío manual de un recordatorio (sección Recordatorios) ──
+
+  private recordatorio(pantalla: CorreoPantalla, codigo: string): string {
+    return `${environment.apiUrl}api/v1/gestion-administrativa/${pantalla}/configuracion/recordatorios/${encodeURIComponent(codigo)}`;
+  }
+
+  /** Paso 1: a quién le saldría el recordatorio el día `fecha` (yyyy-MM-dd). No envía nada. */
+  simularRecordatorio(
+    pantalla: CorreoPantalla,
+    codigo: string,
+    fecha: string,
+  ): Observable<RecordatorioSimulacion> {
+    return this.http.get<RecordatorioSimulacion>(`${this.recordatorio(pantalla, codigo)}/simulacion`, {
+      headers: this.headers,
+      params: { fecha },
+    });
+  }
+
+  /** Paso 2: lo envía. Si ese día no sale nada, no envía nada. */
+  enviarRecordatorio(
+    pantalla: CorreoPantalla,
+    codigo: string,
+    fecha: string,
+  ): Observable<RecordatorioEnvioManual> {
+    return this.http.post<RecordatorioEnvioManual>(`${this.recordatorio(pantalla, codigo)}/envio-manual`, null, {
+      headers: this.headers,
+      params: { fecha },
+    });
   }
 }
