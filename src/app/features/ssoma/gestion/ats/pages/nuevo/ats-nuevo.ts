@@ -808,8 +808,10 @@ export class AtsNuevo implements OnInit {
 
   get datosBasicosValidos(): boolean {
     const lugarValido = this.torres.length === 0 || this.esExterior || (!!this.torreNombre && this.nivelesSeleccionados.size > 0);
-    const puestoValido = !this.modoGrupal || !!this.puestoCuadrillaId;
-    return !!(this.proyectoId && this.actividad.trim() && lugarValido && puestoValido);
+    // Una cuadrilla mezcla puestos (ayudante, operario…): lo que la define es la PARTIDA, es decir la plantilla de ATS.
+    // Si todavía no hay plantillas cargadas no se bloquea.
+    const partidaValida = !this.modoGrupal || !!this.plantillaId || (this.init?.plantillas.length ?? 0) === 0;
+    return !!(this.proyectoId && this.actividad.trim() && lugarValido && partidaValida);
   }
 
   /** El checklist universal ("Trabajos de gabinete" + "Supervisión y liberación en campo") sale
@@ -875,7 +877,7 @@ export class AtsNuevo implements OnInit {
   get faltantesPaso1(): string[] {
     const faltan: string[] = [];
     if (!this.proyectoId) faltan.push('Selecciona el proyecto.');
-    if (this.modoGrupal && !this.puestoCuadrillaId) faltan.push('Selecciona el puesto/tipo de trabajo de la cuadrilla.');
+    if (this.modoGrupal && !this.plantillaId && (this.init?.plantillas.length ?? 0) > 0) faltan.push('Selecciona la partida (plantilla de ATS) de la cuadrilla.');
     if (!this.actividad.trim()) faltan.push('Escribe la actividad a realizar.');
     if (this.torres.length > 0 && !this.esExterior && !this.torreNombre) faltan.push('Selecciona la torre.');
     if (this.torres.length > 0 && !this.esExterior && this.torreNombre && this.nivelesSeleccionados.size === 0) {
@@ -1047,6 +1049,16 @@ export class AtsNuevo implements OnInit {
         if (this.modoPublico) {
           this.publicoGrupoCreado.emit(res);
         } else {
+          // Mismo criterio que el ATS individual: si algún riesgo exige PETAR (catálogo de Riesgos), se lleva directo a generarlo.
+          if (this.tieneRiesgoQueRequierePetar) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'ATS grupal creado — falta el PETAR',
+              text: 'Identificaste un riesgo que exige Permiso de Trabajo de Alto Riesgo. Te llevamos a generarlo para esta cuadrilla.',
+              confirmButtonText: 'Generar PETAR ahora',
+            }).then(() => this.router.navigate(['/ssoma/gestion/ats/grupo', res.id], { queryParams: { petar: 1 } }));
+            return;
+          }
           this.router.navigate(['/ssoma/gestion/ats/grupo', res.id]);
         }
       },

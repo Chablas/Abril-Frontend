@@ -496,3 +496,5 @@
 .menu-item-peligro:hover { background: #fef2f2; }
 .icon-btn-petar { color: #b45309; border-color: #fde68a; }
 .icon-btn-petar:hover:not(:disabled) { background: #fffbeb; border-color: #b45309; color: #b45309; }
+
+.chip-peligro { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }

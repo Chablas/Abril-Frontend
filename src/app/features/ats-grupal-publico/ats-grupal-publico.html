@@ -167,8 +167,13 @@
           <i class="ti ti-circle-check"></i>
           <h2>¡Listo, {{ nombreConfirmado }}!</h2>
           <p>Tu ATS quedó firmado con selfie y geolocalización.</p>
-          <button type="button" class="btn btn-outline btn-full" (click)="firmarOtro()">
-            Otra persona de la cuadrilla va a firmar en este mismo celular
+          @if (!sesionWorkerId) {
+            <button type="button" class="btn btn-outline btn-full" (click)="firmarOtro()">
+              Otra persona de la cuadrilla va a firmar en este mismo celular
+            </button>
+          }
+          <button type="button" class="btn btn-primary btn-full" (click)="salir()">
+            {{ sesionWorkerId ? 'Volver a la intranet' : 'Ir a la intranet' }}
           </button>
         </div>
       }

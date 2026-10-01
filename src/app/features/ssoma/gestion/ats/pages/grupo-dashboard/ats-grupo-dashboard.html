@@ -44,6 +44,12 @@
         <button type="button" class="btn btn-primary btn-sm" (click)="firmarMiParte()">Firmar mi ATS</button>
       </div>
     }
+    @if (grupo.requierePetar && petares.length === 0 && (grupo.estado === 'Activo' || grupo.estado === 'Cerrado')) {
+      <div class="aviso-anulado">
+        <i class="ti ti-alert-triangle"></i> Un riesgo de esta cuadrilla exige PETAR y todavía no hay ninguno.
+        <button type="button" class="btn btn-outline btn-sm btn-peligro" style="margin-left:8px" (click)="abrirFormPetar()">Generar PETAR</button>
+      </div>
+    }
     @if (grupo.estado === 'Anulado') {
       <div class="aviso-anulado"><i class="ti ti-ban"></i> Cuadrilla anulada — {{ grupo.anuladoMotivo }}</div>
     }

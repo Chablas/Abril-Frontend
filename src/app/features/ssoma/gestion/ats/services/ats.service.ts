@@ -160,6 +160,20 @@ export class AtsService {
     return this.http.post<{ message: string }>(`${this.base}/grupo/${grupoId}/anular`, { motivo }, { headers: authHeaders() });
   }
 
+  /** Worker del usuario logueado (401 si no hay sesión). */
+  getMiWorker(): Observable<{ workerId: number }> {
+    return this.http.get<{ workerId: number }>(`${this.base}/yo`, { headers: authHeaders() });
+  }
+
+  /** Adhesión de quien ya inició sesión: sin elegir nombre ni confirmar DNI. */
+  unirseAGrupoLogueado(token: string, dto: AtsGrupoUnirseRequestDto): Observable<{ id: number; message: string }> {
+    return this.http.post<{ id: number; message: string }>(`${this.base}/grupo/${token}/unirse-yo`, dto, { headers: authHeaders() });
+  }
+
+  getMiAtsLogueado(token: string): Observable<{ atsId: number | null }> {
+    return this.http.post<{ atsId: number | null }>(`${this.base}/grupo/${token}/mi-ats-yo`, {}, { headers: authHeaders() });
+  }
+
   reabrirGrupo(grupoId: number): Observable<{ message: string }> {
     return this.http.post<{ message: string }>(`${this.base}/grupo/${grupoId}/reabrir`, {}, { headers: authHeaders() });
   }

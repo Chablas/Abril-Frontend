@@ -245,6 +245,8 @@ export interface AtsListaInitDto {
 
 export interface AtsGrupoListaItemDto {
   id: number;
+  requierePetar: boolean;
+  totalPetares: number;
   revision: number;
   observacionesAbiertas: number;
   codigo?: string | null;
@@ -384,6 +386,7 @@ export interface AtsGrupoEstadoDto {
   adheridos: { atsId: number; nombre: string; estado: string; autorizaFirmado: boolean; ssomaFirmado: boolean }[];
   esperados: { workerId: number; nombre: string; adherido: boolean }[];
   puedeReabrir: boolean;
+  requierePetar: boolean;
   soyAutor: boolean;
   yoYaFirme: boolean;
   observacionesAbiertas: number;

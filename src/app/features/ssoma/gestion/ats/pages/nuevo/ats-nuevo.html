@@ -90,13 +90,13 @@
         <div>
           <app-search-select
             color="var(--color-abril-logo-blue)"
-            label="Plantilla (opcional)"
+            [label]="modoGrupal ? 'Partida / plantilla de ATS *' : 'Plantilla (opcional)'"
             [options]="plantillasOpts"
             valueField="id"
             displayField="nombre"
             [value]="plantillaId"
             [allowClear]="true"
-            placeholder="Selecciona una plantilla"
+            [placeholder]="modoGrupal ? 'Selecciona la partida de la cuadrilla' : 'Selecciona una plantilla'"
             (valueChange)="onPlantillaChange($event)"
           ></app-search-select>
         </div>
@@ -166,25 +166,7 @@
                placeholder="Ej: cerca del ascensor, fachada norte…" />
       </div>
 
-      @if (modoGrupal) {
-        <div class="abril-field">
-          <app-search-select
-            color="var(--color-abril-logo-blue)"
-            label="Puesto / tipo de trabajo de la cuadrilla *"
-            [options]="puestosOpts"
-            valueField="id"
-            displayField="nombre"
-            [value]="puestoCuadrillaId"
-            placeholder="Ej: Operario de encofrado, Fierrero, Albañil..."
-            (valueChange)="onPuestoCuadrillaChange($event)"
-          ></app-search-select>
-          <p class="pasos-hint-nuevo" style="margin-top:4px">
-            De acá salen los pasos de la tarea — elige el puesto de LA CUADRILLA, no necesariamente el tuyo.
-          </p>
-        </div>
-      }
-
-      @if ((!modoGrupal || puestoCuadrillaId) && categoriasGenericasVisibles.length > 0) {
+      @if (categoriasGenericasVisibles.length > 0) {
         <div class="collapsible-section">
           <button type="button" class="collapsible-toggle abril-section-title" (click)="mostrarPasosGenericos = !mostrarPasosGenericos">
             Actividades y pasos de la tarea (marca SI/NO)

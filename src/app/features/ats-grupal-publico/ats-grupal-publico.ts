@@ -1,12 +1,13 @@
 import { ChangeDetectorRef, Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { AtsService } from '../ssoma/gestion/ats/services/ats.service';
 import { AtsGrupoResumenPublicoDto, AtsGrupoWorkerOpcionDto } from '../ssoma/gestion/ats/dtos/ats.dtos';
 import { PetarService } from '../ssoma/gestion/petar/services/petar.service';
+import { AuthService } from '../../core/services/auth.service';
 import { PetarGrupoResumenPublicoDto } from '../ssoma/gestion/petar/dtos/petar.dtos';
 import { SearchSelect } from '../../shared/components/search-select/search-select';
 import { CameraCapture } from '../../shared/components/camera-capture/camera-capture';
@@ -80,6 +81,8 @@ export class AtsGrupalPublico implements OnInit {
     private petarSvc: PetarService,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
+    private auth: AuthService,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -100,6 +103,7 @@ export class AtsGrupalPublico implements OnInit {
   }
 
   private cargarWorkers(): void {
+    this.detectarSesion();
     this.svc.getWorkersParaAdhesion(this.token).subscribe({
       next: (res) => {
         // Quien ya firmó se marca en la lista: al elegirlo se salta la firma del ATS y va directo a los PETAR.
@@ -110,12 +114,40 @@ export class AtsGrupalPublico implements OnInit {
     });
   }
 
+  /** Worker del usuario con sesión iniciada (si la hay): firma como sí mismo, sin elegir nombre ni confirmar DNI. */
+  sesionWorkerId: number | null = null;
+
+  private detectarSesion(): void {
+    if (!this.auth.getToken()) return;
+    this.svc.getMiWorker().subscribe({
+      next: (r) => { this.sesionWorkerId = r.workerId; this.cdr.detectChanges(); },
+      error: () => { this.sesionWorkerId = null; },
+    });
+  }
+
+  /** Salida de la pantalla pública: con sesión vuelve al listado de ATS; sin sesión, al login de la intranet. */
+  salir(): void {
+    this.router.navigateByUrl(this.sesionWorkerId ? '/ssoma/gestion/ats' : '/auth/login');
+  }
+
   irAIdentidad(): void {
+    if (this.sesionWorkerId) {
+      const yo = this.workers.find((w) => w.workerId === this.sesionWorkerId);
+      if (!yo) {
+        Swal.fire({ icon: 'info', title: 'No estás habilitado en este proyecto', text: 'Tu usuario no figura entre los trabajadores habilitados para firmar este ATS.' });
+        return;
+      }
+      this.workerId = yo.workerId;
+      this.dniConfirmacion = '';
+      this.irAFirmar();
+      return;
+    }
     this.paso = 'identidad';
     this.cdr.detectChanges();
   }
 
   get puedeContinuarIdentidad(): boolean {
+    if (this.sesionWorkerId) return !!this.workerId;
     return !!this.workerId && this.dniConfirmacion.trim().length >= 3;
   }
 
@@ -126,7 +158,10 @@ export class AtsGrupalPublico implements OnInit {
 
     if (elegido?.yaFirmo) {
       // Ya firmó su ATS: se confirma con el DNI y se sigue con los PETAR (p. ej. uno creado después).
-      this.svc.getMiAtsPublico(this.token, { workerId: this.workerId!, dniConfirmacion: this.dniConfirmacion.trim() }).subscribe({
+      (this.sesionWorkerId
+        ? this.svc.getMiAtsLogueado(this.token)
+        : this.svc.getMiAtsPublico(this.token, { workerId: this.workerId!, dniConfirmacion: this.dniConfirmacion.trim() })
+      ).subscribe({
         next: (res) => {
           if (!res.atsId) {
             Swal.fire({ icon: 'info', title: 'No encontramos tu ATS', text: 'Intenta de nuevo o avisa al Coordinador SSOMA.' });
@@ -185,7 +220,7 @@ export class AtsGrupalPublico implements OnInit {
     this.enviando = true;
     this.cdr.detectChanges();
 
-    this.svc.unirseAGrupo(this.token, {
+    (this.sesionWorkerId ? this.svc.unirseAGrupoLogueado.bind(this.svc) : this.svc.unirseAGrupo.bind(this.svc))(this.token, {
       workerId: this.workerId,
       dniConfirmacion: this.dniConfirmacion.trim(),
       selfieBase64: foto,

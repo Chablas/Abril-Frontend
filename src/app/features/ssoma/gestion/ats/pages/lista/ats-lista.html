@@ -349,6 +349,9 @@
                   <i class="ti" [class.ti-check]="g.ejecutantesFirmados > 0 && g.autorizaFirmados >= g.ejecutantesFirmados" [class.ti-clock]="!(g.ejecutantesFirmados > 0 && g.autorizaFirmados >= g.ejecutantesFirmados)"></i>
                   Autoriza {{ g.autorizaFirmados }}/{{ g.ejecutantesFirmados }}
                 </span>
+                @if (g.requierePetar && g.totalPetares === 0) {
+                  <span class="chip chip-peligro" title="Un riesgo de la cuadrilla exige PETAR y todavía no hay ninguno"><i class="ti ti-alert-triangle"></i> Requiere PETAR</span>
+                }
                 @if (g.observacionesAbiertas > 0) {
                   <span class="chip chip-alerta" title="Observaciones abiertas — bloquean la validación"><i class="ti ti-message-exclamation"></i> Obs. {{ g.observacionesAbiertas }}</span>
                 }
