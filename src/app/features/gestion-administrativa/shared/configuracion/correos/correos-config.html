@@ -27,6 +27,10 @@
             <i class="ti" [ngClass]="iconoEvento"></i>
             {{ evento.nombre }}
           </h3>
+          <!-- El asunto con que sale, para buscarlo en Enviados. -->
+          <p class="config-card__asunto" *ngIf="evento.asunto">
+            <span *ngFor="let parte of evento.asunto | asuntoPartes" [class.asunto-var]="parte.variable">{{ parte.texto }}</span>
+          </p>
           <p class="config-card__sub" *ngIf="evento.descripcion">{{ evento.descripcion }}</p>
         </div>
 
@@ -61,6 +65,9 @@
       </p>
 
       <div class="destinatarios__head">
+        <button type="button" class="btn-add" *ngIf="esRecordatorio" (click)="envioManual.abrir()">
+          <i class="ti ti-send"></i> Enviar manualmente
+        </button>
         <button type="button" class="btn-add" (click)="abrirAlta()">
           <i class="ti ti-plus"></i> Agregar destinatario
         </button>
@@ -201,6 +208,14 @@
     </div>
   </ng-container>
 </div>
+
+<!-- ── Envío manual del recordatorio abierto: elegir el día, ver a quién le sale, enviar ── -->
+<app-envio-manual-recordatorio
+  #envioManual
+  [nombre]="eventoActivo?.nombre ?? ''"
+  [simular]="simularRecordatorio"
+  [enviar]="enviarRecordatorio">
+</app-envio-manual-recordatorio>
 
 <!-- ── Modal de alta/edición de un destinatario ── -->
 <app-abril-modal-panel

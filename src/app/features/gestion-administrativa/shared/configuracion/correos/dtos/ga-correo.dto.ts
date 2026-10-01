@@ -88,6 +88,11 @@ export interface CorreoEvento {
   codigo: string;
   nombre: string;
   descripcion?: string | null;
+  /**
+   * El asunto con que sale, para buscarlo en Enviados; lo que cambia en cada envío va entre llaves.
+   * Null en los correos que todavía no lo traen (hoy solo lo tienen los de Solicitud de Salidas).
+   */
+  asunto?: string | null;
   orden: number;
   /** Interruptor maestro: false = este correo no se envía a nadie. */
   active: boolean;
