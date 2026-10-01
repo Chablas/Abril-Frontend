@@ -216,6 +216,20 @@ export const routes: Routes = [
   },
 
   {
+    path: 'ats-grupal/capataz/:token',
+    loadComponent: () =>
+      import('./features/ats-grupal-capataz-publico/ats-grupal-capataz-publico')
+      .then(m => m.AtsGrupalCapatazPublico)
+  },
+
+  {
+    path: 'ats-grupal/crear/:token',
+    loadComponent: () =>
+      import('./features/ats-grupal-crear-publico/ats-grupal-crear-publico')
+      .then(m => m.AtsGrupalCrearPublico)
+  },
+
+  {
     path: 'ats-grupal/:token',
     loadComponent: () =>
       import('./features/ats-grupal-publico/ats-grupal-publico')

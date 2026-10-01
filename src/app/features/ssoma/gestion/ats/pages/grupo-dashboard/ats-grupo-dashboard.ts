@@ -112,6 +112,14 @@ export class AtsGrupoDashboard implements OnInit, OnDestroy {
     });
   }
 
+  copiarLinkCapataz(): void {
+    if (!this.grupo) return;
+    const link = `${window.location.origin}/ats-grupal/capataz/${this.grupo.qrToken}`;
+    navigator.clipboard?.writeText(link).then(() => {
+      Swal.fire({ icon: 'success', title: 'Link del Capataz copiado', timer: 1200, showConfirmButton: false });
+    });
+  }
+
   cerrarGrupo(): void {
     if (!this.grupo || this.cerrando) return;
     Swal.fire({

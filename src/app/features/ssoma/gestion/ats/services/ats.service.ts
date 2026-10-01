@@ -5,6 +5,7 @@ import { environment } from '../../../../../../environments/environment';
 import {
   AtsInitDto,
   AtsPasoDto,
+  AtsCategoriaPasoDto,
   AtsGuardarRequestDto,
   AtsFirmarRequestDto,
   AtsResponseDto,
@@ -30,6 +31,11 @@ import {
   AtsGrupoResumenPublicoDto,
   AtsGrupoWorkerOpcionDto,
   AtsGrupoUnirseRequestDto,
+  AtsGrupoCapatazPublicoDto,
+  AtsGrupoCapatazFirmarRequestDto,
+  AtsGrupoProyectoPublicoDto,
+  AtsGrupoInitPublicoRequestDto,
+  AtsGrupoCrearPublicoRequestDto,
 } from '../dtos/ats.dtos';
 
 function authHeaders(): HttpHeaders {
@@ -45,6 +51,16 @@ export class AtsService {
 
   getInit(): Observable<AtsInitDto> {
     return this.http.get<AtsInitDto>(`${this.base}/init`, { headers: authHeaders() });
+  }
+
+  /** Pasos para un puesto ARBITRARIO (no el del usuario logueado) — lo usa el wizard de ATS
+   *  Grupal cuando el creador elige el puesto/tipo de trabajo de la cuadrilla. Sin authHeaders
+   *  a propósito: también lo llama el wizard público (/ats-grupal/crear/:token). */
+  getPasosPorPuesto(puestoId: number, workerId = 0): Observable<AtsCategoriaPasoDto[]> {
+    return this.http.get<AtsCategoriaPasoDto[]>(`${this.base}/pasos-por-puesto/${puestoId}`, {
+      headers: authHeaders(),
+      params: { workerId },
+    });
   }
 
   crear(dto: AtsGuardarRequestDto): Observable<{ id: number }> {
@@ -80,6 +96,23 @@ export class AtsService {
 
   getPlantillaAutorizacionPdf(workerId: number): Observable<Blob> {
     return this.http.get(`${this.base}/trabajadores/${workerId}/autorizacion/pdf`, { headers: authHeaders(), responseType: 'blob' });
+  }
+
+  firmarCapataz(id: number, body: AtsFirmarVistoRequestDto): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/${id}/firmar-capataz`, body, { headers: authHeaders() });
+  }
+
+  /** Capataz/Maestro con cuenta: firma el grupo completo (una vez por cuadrilla). */
+  firmarCapatazGrupo(grupoId: number, body: AtsFirmarVistoRequestDto): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/grupo/${grupoId}/firmar-capataz`, body, { headers: authHeaders() });
+  }
+
+  guardarEmailPersonalAutorizacion(workerId: number, body: { email: string; aceptaDeclaracion: boolean }): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/trabajadores/${workerId}/autorizacion/email`, body, { headers: authHeaders() });
+  }
+
+  crearCuentaCapataz(workerId: number): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/trabajadores/${workerId}/autorizacion/crear-cuenta`, {}, { headers: authHeaders() });
   }
 
   firmarAutorizacion(id: number, body: AtsFirmarVistoRequestDto): Observable<{ message: string }> {
@@ -258,5 +291,33 @@ export class AtsService {
 
   unirseAGrupo(token: string, dto: AtsGrupoUnirseRequestDto): Observable<{ id: number; message: string }> {
     return this.http.post<{ id: number; message: string }>(`${this.base}/grupo/publico/${token}/unirse`, dto);
+  }
+
+  // ── Firma única del Capataz por cuadrilla (link público, sin login) ─────
+
+  getCapatazPublico(token: string): Observable<AtsGrupoCapatazPublicoDto> {
+    return this.http.get<AtsGrupoCapatazPublicoDto>(`${this.base}/grupo/publico/${token}/capataz`);
+  }
+
+  firmarCapatazPublico(token: string, body: AtsGrupoCapatazFirmarRequestDto): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.base}/grupo/publico/${token}/capataz/firmar`, body);
+  }
+
+  // ── QR fijo por proyecto — crear ATS Grupal sin login ───────────────────
+
+  getQrProyecto(proyectoId: number): Observable<{ token: string }> {
+    return this.http.get<{ token: string }>(`${this.base}/grupo/proyecto-qr/${proyectoId}`, { headers: authHeaders() });
+  }
+
+  getResumenProyectoPublico(tokenProyecto: string): Observable<AtsGrupoProyectoPublicoDto> {
+    return this.http.get<AtsGrupoProyectoPublicoDto>(`${this.base}/grupo/publico/proyecto/${tokenProyecto}/resumen`);
+  }
+
+  getInitPublico(tokenProyecto: string, body: AtsGrupoInitPublicoRequestDto): Observable<AtsInitDto> {
+    return this.http.post<AtsInitDto>(`${this.base}/grupo/publico/proyecto/${tokenProyecto}/init`, body);
+  }
+
+  crearGrupoPublico(tokenProyecto: string, body: AtsGrupoCrearPublicoRequestDto): Observable<AtsGrupoCrearResponseDto> {
+    return this.http.post<AtsGrupoCrearResponseDto>(`${this.base}/grupo/publico/proyecto/${tokenProyecto}/crear`, body);
   }
 }

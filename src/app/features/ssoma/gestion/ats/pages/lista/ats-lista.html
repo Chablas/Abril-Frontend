@@ -8,6 +8,11 @@
   <button type="button" tabsExtra class="btn-ats-grupal" (click)="nuevoAtsGrupal()" title="Un solo ATS para toda la cuadrilla — cada integrante se adhiere escaneando un QR, sin llenar el wizard completo.">
     <i class="ti ti-qrcode"></i> ATS grupal
   </button>
+  @if (filtroProyectoId) {
+    <button type="button" tabsExtra class="btn-ats-grupal" (click)="verQrProyecto()" title="QR fijo de la obra — se pega/imprime una vez para que cualquier integrante de una cuadrilla, incluso sin cuenta, pueda crear un ATS grupal desde su celular.">
+      <i class="ti ti-qrcode"></i> QR de obra
+    </button>
+  }
 </app-abril-page-header>
 
 <div class="lista-body">
@@ -147,6 +152,16 @@
                   <button class="btn btn-outline btn-sm" (click)="descargarPdf(a)" title="Descarga el PDF del ATS (no del PETAR, si es que tiene uno).">
                     <i class="ti ti-download"></i> PDF ATS
                   </button>
+                  @if (a.requiereCapataz) {
+                    <span class="acciones-divisor"></span>
+                    @if (a.capatazFirmaUrl) {
+                      <span class="visto-ok" title="Firmado por {{ a.capatazNombre }}"><i class="ti ti-check"></i> ATS: Capataz OK</span>
+                    } @else if (a.puedeCapataz) {
+                      <button class="btn btn-outline btn-sm" (click)="abrirFirmaVisto(a, 'capataz')" title="Firma del Capataz/Maestro de obra — primer nivel de la cadena, solo para cuadrillas de obreros.">Firmar Capataz</button>
+                    } @else {
+                      <span class="visto-pendiente">ATS: pendiente Capataz</span>
+                    }
+                  }
                   <span class="acciones-divisor"></span>
                   @if (a.autorizaFirmaUrl) {
                     <span class="visto-ok" title="Firmado por {{ a.autorizaNombre }}"><i class="ti ti-check"></i> ATS Autorizado</span>

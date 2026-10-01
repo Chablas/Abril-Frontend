@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import Swal from 'sweetalert2';
+import * as QRCode from 'qrcode';
 import { AbrilPageHeaderComponent } from '../../../../../../shared/components/abril-page-header/abril-page-header.component';
 import { ATS_HEADER_TABS } from '../../shared/ats-header-tabs';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
@@ -18,7 +19,7 @@ import { AtsResponseDto, AtsFiltroDto, AtsProyectoDto } from '../../dtos/ats.dto
 import { ErrorService } from '../../../../../../core/services/error.service';
 import { PetarService } from '../../../petar/services/petar.service';
 
-type RolVisto = 'autoriza' | 'ssoma' | 'petar-supervisor' | 'petar-ssoma';
+type RolVisto = 'capataz' | 'autoriza' | 'ssoma' | 'petar-supervisor' | 'petar-ssoma';
 
 @Component({
   selector: 'app-ats-lista',
@@ -214,6 +215,35 @@ export class AtsLista implements OnInit {
     this.router.navigate(['/ssoma/gestion/ats/nuevo'], { queryParams: { grupal: 1 } });
   }
 
+  /** QR fijo por proyecto (idempotente — el backend devuelve el mismo si ya existe) para que
+   *  cualquier integrante de la cuadrilla, incluso sin cuenta en la plataforma, pueda crear un
+   *  ATS grupal desde /ats-grupal/crear/:token. Pensado para imprimirse y pegarse en la obra. */
+  verQrProyecto(): void {
+    if (!this.filtroProyectoId) return;
+    this.svc.getQrProyecto(this.filtroProyectoId).subscribe({
+      next: ({ token }) => {
+        const url = `${window.location.origin}/ats-grupal/crear/${token}`;
+        QRCode.toDataURL(url, { width: 320, margin: 2 }).then((qrDataUrl) => {
+          Swal.fire({
+            title: 'QR de obra — crear ATS grupal',
+            html: `
+              <p style="font-size:13px;color:#6b7280;margin-bottom:10px">
+                Pégalo/imprímelo en la obra. Cualquier integrante de una cuadrilla, incluso sin cuenta en la plataforma, lo escanea para armar el ATS grupal del día.
+              </p>
+              <img src="${qrDataUrl}" style="width:100%;max-width:280px" />
+            `,
+            confirmButtonText: 'Copiar link',
+            showCancelButton: true,
+            cancelButtonText: 'Cerrar',
+          }).then((r) => {
+            if (r.isConfirmed) navigator.clipboard?.writeText(url);
+          });
+        });
+      },
+      error: (err: HttpErrorResponse) => this.errorService.handleError(err),
+    });
+  }
+
   /** Un ATS en Borrador se guardó hasta el paso 3 (Valoración) pero nunca llegó a Firmar — antes
    *  no había forma de retomarlo, quedaba huérfano en la lista para siempre. */
   continuarAts(a: AtsResponseDto): void {
@@ -373,6 +403,7 @@ export class AtsLista implements OnInit {
 
   get vistoTitulo(): string {
     switch (this.rolVisto) {
+      case 'capataz': return 'Firmar como Capataz / Maestro de Obra';
       case 'autoriza': return 'Firmar como Autoriza (Residente / Ing. Producción)';
       case 'ssoma': return 'Visto Bueno SSOMA (ATS)';
       case 'petar-supervisor': return 'Firmar PETAR como Supervisor/Responsable';
@@ -396,6 +427,10 @@ export class AtsLista implements OnInit {
 
     let req$;
     switch (this.rolVisto) {
+      // Cuadrilla (QR): el Capataz firma UNA vez por grupo, no por cada ATS — se copia a todos.
+      case 'capataz': req$ = ats.atsGrupoId
+        ? this.svc.firmarCapatazGrupo(ats.atsGrupoId, { firmaBase64: firma })
+        : this.svc.firmarCapataz(ats.id, { firmaBase64: firma }); break;
       case 'autoriza': req$ = this.svc.firmarAutorizacion(ats.id, { firmaBase64: firma }); break;
       case 'ssoma': req$ = this.svc.firmarVistoSsoma(ats.id, { firmaBase64: firma }); break;
       case 'petar-supervisor': req$ = this.petarSvc.firmarSupervisor(this.petarFirmandoId!, { firmaBase64: firma }); break;

@@ -65,6 +65,26 @@
       </div>
     </div>
 
+    <!-- Firma del Capataz — una vez por cuadrilla, por link público (sin login) -->
+    <div class="petar-seccion">
+      <div class="petar-seccion-header">
+        <h3>Firma del Capataz / Maestro de obra</h3>
+        <button type="button" class="btn btn-outline btn-sm" (click)="copiarLinkCapataz()">
+          <i class="ti ti-link"></i> Copiar link para el Capataz
+        </button>
+      </div>
+      @if (!grupo.capatazNombre) {
+        <p class="sin-adheridos">Pendiente — que el Capataz firme cuando toda la cuadrilla ya haya adherido.</p>
+      } @else if (grupo.capatazVigente) {
+        <span class="visto-ok"><i class="ti ti-check"></i> Firmado por {{ grupo.capatazNombre }} ({{ grupo.capatazHoraServidor | date: 'dd/MM/yyyy HH:mm' }})</span>
+      } @else {
+        <p class="sin-adheridos">
+          <i class="ti ti-user-plus"></i>
+          {{ grupo.capatazNuevosSinValidar }} trabajador(es) nuevo(s) desde la firma de {{ grupo.capatazNombre }} — debe volver a firmar con el mismo link.
+        </p>
+      }
+    </div>
+
     <!-- PETAR grupal — trabajos de alto riesgo derivados de este ATS -->
     <div class="petar-seccion">
       <div class="petar-seccion-header">

@@ -55,16 +55,25 @@
 
       <div class="form-row">
         <div>
-          <app-search-select
-            color="var(--color-abril-logo-blue)"
-            label="Proyecto *"
-            [options]="proyectosOpts"
-            valueField="id"
-            displayField="nombre"
-            [value]="proyectoId"
-            placeholder="Buscar proyecto..."
-            (valueChange)="onProyectoChange($event)"
-          ></app-search-select>
+          @if (modoPublico) {
+            <div class="abril-field">
+              <label class="abril-field-label">Proyecto</label>
+              <div class="abril-field-input" style="display:flex;align-items:center;color:#6b7280;">
+                {{ publicoProyectoNombre ?? 'Esta obra' }}
+              </div>
+            </div>
+          } @else {
+            <app-search-select
+              color="var(--color-abril-logo-blue)"
+              label="Proyecto *"
+              [options]="proyectosOpts"
+              valueField="id"
+              displayField="nombre"
+              [value]="proyectoId"
+              placeholder="Buscar proyecto..."
+              (valueChange)="onProyectoChange($event)"
+            ></app-search-select>
+          }
         </div>
         <div>
           <app-search-select
@@ -145,7 +154,25 @@
                placeholder="Ej: cerca del ascensor, fachada norte…" />
       </div>
 
-      @if (categoriasGenericasVisibles.length > 0) {
+      @if (modoGrupal) {
+        <div class="abril-field">
+          <app-search-select
+            color="var(--color-abril-logo-blue)"
+            label="Puesto / tipo de trabajo de la cuadrilla *"
+            [options]="puestosOpts"
+            valueField="id"
+            displayField="nombre"
+            [value]="puestoCuadrillaId"
+            placeholder="Ej: Operario de encofrado, Fierrero, Albañil..."
+            (valueChange)="onPuestoCuadrillaChange($event)"
+          ></app-search-select>
+          <p class="pasos-hint-nuevo" style="margin-top:4px">
+            De acá salen los pasos de la tarea — elige el puesto de LA CUADRILLA, no necesariamente el tuyo.
+          </p>
+        </div>
+      }
+
+      @if ((!modoGrupal || puestoCuadrillaId) && categoriasGenericasVisibles.length > 0) {
         <div class="collapsible-section">
           <button type="button" class="collapsible-toggle abril-section-title" (click)="mostrarPasosGenericos = !mostrarPasosGenericos">
             Actividades y pasos de la tarea (marca SI/NO)
