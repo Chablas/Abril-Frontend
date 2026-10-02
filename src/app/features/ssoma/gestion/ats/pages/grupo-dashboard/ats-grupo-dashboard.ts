@@ -13,6 +13,7 @@ import { ErrorService } from '../../../../../../core/services/error.service';
 import { PetarService } from '../../../petar/services/petar.service';
 import { PetarTipoDto, PetarGrupoEstadoDto, RespuestaChecklist } from '../../../petar/dtos/petar.dtos';
 import { AbrilModalPanel } from '../../../../../../shared/components/abril-modal-panel/abril-modal-panel';
+import { TitleCasePipe } from '../../../../../../shared/pipes/title-case.pipe';
 import { SignaturePad } from '../../../../../../shared/components/signature-pad/signature-pad';
 
 /**
@@ -23,7 +24,7 @@ import { SignaturePad } from '../../../../../../shared/components/signature-pad/
 @Component({
   selector: 'app-ats-grupo-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, AbrilModalPanel, SignaturePad, AtsObservaciones],
+  imports: [CommonModule, FormsModule, RouterModule, AbrilModalPanel, SignaturePad, AtsObservaciones, TitleCasePipe],
   templateUrl: './ats-grupo-dashboard.html',
   styleUrl: './ats-grupo-dashboard.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

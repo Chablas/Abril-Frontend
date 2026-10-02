@@ -351,3 +351,7 @@
   margin: 8px 0 14px; padding: 12px 14px; border-radius: 10px;
   background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; font-size: 13px;
 }
+
+.cadena-quienes { margin: 8px 0 4px; font-size: 13px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cadena-chip { background: #e6f4ef; color: #0F6E56; border-radius: 999px; padding: 2px 10px; font-size: 12px; }
+.cadena-aviso { margin: 4px 0 0; font-size: 12px; color: #92400e; background: #fffbeb; border-radius: 6px; padding: 6px 10px; }

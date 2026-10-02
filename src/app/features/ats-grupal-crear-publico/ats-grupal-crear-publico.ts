@@ -43,6 +43,8 @@ export class AtsGrupalCrearPublico implements OnInit {
   grupoCreado: AtsGrupoCrearResponseDto | null = null;
   qrDataUrl: string | null = null;
 
+  get requierePetar(): boolean { return !!this.grupoCreado?.requierePetar; }
+
   constructor(
     private svc: AtsService,
     private route: ActivatedRoute,

@@ -368,6 +368,7 @@ export interface AtsGrupoCrearResponseDto {
   id: number;
   qrToken: string;
   qrExpiraEn: string;
+  requierePetar?: boolean;
 }
 
 export interface AtsGrupoEstadoDto {
@@ -402,6 +403,7 @@ export interface AtsGrupoEstadoDto {
   capatazHoraServidor?: string;
   capatazVigente: boolean;
   capatazNuevosSinValidar: number;
+  totalPetares: number;
   requiereCapataz: boolean;
   ejecutantesFirmados: number;
   autorizaFirmados: number;

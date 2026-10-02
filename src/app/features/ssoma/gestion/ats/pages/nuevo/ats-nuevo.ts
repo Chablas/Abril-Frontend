@@ -50,6 +50,9 @@ const NIVELES: { valor: NivelRiesgo; label: string }[] = [
 ];
 
 
+const PREFIJO_ZONAS = 'Zonas: ';
+const ZONA_EXTERIORES = 'Exteriores / fachada / vecinos';
+
 @Component({
   selector: 'app-ats-nuevo',
   standalone: true,
@@ -98,6 +101,9 @@ export class AtsNuevo implements OnInit {
   torreNombre: string | null = null;
   nivelesSeleccionados = new Set<string>();
   esExterior = false;
+  /** Tarea que abarca varias zonas del proyecto (típico de SSOMA): varias torres y/o exteriores a la vez. */
+  esZonas = false;
+  zonasSeleccionadas = new Set<string>();
 
   pasosMarcados = new Map<number, boolean>();
   eppsMarcados = new Set<number>();
@@ -154,7 +160,8 @@ export class AtsNuevo implements OnInit {
     const lineas = [new Date().toLocaleString('es-PE')];
     const proyecto = this.proyectosOpts.find((p) => p.id === this.proyectoId)?.nombre;
     if (proyecto) lineas.push(proyecto);
-    if (!this.esExterior && this.torreNombre) lineas.push(`Torre ${this.torreNombre}`);
+    if (this.esZonas && this.zonasTexto) lineas.push(this.zonasTexto);
+    else if (!this.esExterior && this.torreNombre) lineas.push(`Torre ${this.torreNombre}`);
     else if (this.lugar.trim()) lineas.push(this.lugar.trim());
     if (this.gpsCoords) lineas.push(`${this.gpsCoords.latitude.toFixed(5)}, ${this.gpsCoords.longitude.toFixed(5)}`);
     return lineas;
@@ -531,6 +538,14 @@ export class AtsNuevo implements OnInit {
         this.actividad = original.actividad;
         this.lugar = original.lugar ?? '';
         this.esExterior = !original.torreNombre;
+        if (!original.torreNombre && (original.lugar ?? '').startsWith(PREFIJO_ZONAS)) {
+          const [zonas, ...resto] = (original.lugar ?? '').slice(PREFIJO_ZONAS.length).split(' — ');
+          this.esZonas = true;
+          this.esExterior = false;
+          this.zonasSeleccionadas = new Set(zonas.split(',').map((z) => z.trim()).filter(Boolean));
+          this.lugar = resto.join(' — ');
+          this.torres$(original.proyectoId).subscribe({ next: (t) => { this.torres = t; this.cdr.detectChanges(); }, error: () => {} });
+        }
         if (original.torreNombre) {
           this.torres$(original.proyectoId).subscribe({
             next: (torres) => {
@@ -602,6 +617,8 @@ export class AtsNuevo implements OnInit {
     this.torreNombre = null;
     this.nivelesSeleccionados.clear();
     this.esExterior = false;
+    this.esZonas = false;
+    this.zonasSeleccionadas.clear();
     this.cdr.markForCheck();
     if (proyectoId) this.cargarTorres(proyectoId);
   }
@@ -680,9 +697,58 @@ export class AtsNuevo implements OnInit {
 
   setEsExterior(valor: boolean): void {
     this.esExterior = valor;
+    this.esZonas = false;
+    this.zonasSeleccionadas.clear();
     this.torreNombre = null;
     this.nivelesSeleccionados.clear();
     this.cdr.markForCheck();
+  }
+
+  setEsZonas(): void {
+    this.esZonas = true;
+    this.esExterior = false;
+    this.torreNombre = null;
+    this.nivelesSeleccionados.clear();
+    this.cdr.markForCheck();
+  }
+
+  /** Zonas elegibles: cada torre del proyecto + exteriores. */
+  get zonasDisponibles(): string[] {
+    return [...this.torres.map((t) => `Torre ${t.nombre}`), ZONA_EXTERIORES];
+  }
+
+  zonaSeleccionada(z: string): boolean {
+    return this.zonasSeleccionadas.has(z);
+  }
+
+  toggleZona(z: string): void {
+    if (this.zonasSeleccionadas.has(z)) this.zonasSeleccionadas.delete(z);
+    else this.zonasSeleccionadas.add(z);
+    this.cdr.markForCheck();
+  }
+
+  get todasZonasMarcadas(): boolean {
+    return this.zonasDisponibles.every((z) => this.zonasSeleccionadas.has(z));
+  }
+
+  toggleTodasZonas(): void {
+    if (this.todasZonasMarcadas) this.zonasSeleccionadas.clear();
+    else this.zonasDisponibles.forEach((z) => this.zonasSeleccionadas.add(z));
+    this.cdr.markForCheck();
+  }
+
+  /** "Torre A, Torre B, Exteriores / fachada / vecinos" — o "Todo el proyecto" si están todas marcadas. */
+  get zonasTexto(): string {
+    if (this.zonasSeleccionadas.size === 0) return '';
+    return this.todasZonasMarcadas ? 'Todo el proyecto' : this.zonasDisponibles.filter((z) => this.zonasSeleccionadas.has(z)).join(', ');
+  }
+
+  /** Lugar que viaja al backend: en modo zonas las lleva como prefijo del lugar específico. */
+  private get lugarParaEnviar(): string | undefined {
+    const extra = this.lugar.trim();
+    if (!this.esZonas) return extra || undefined;
+    const zonas = this.zonasDisponibles.filter((z) => this.zonasSeleccionadas.has(z)).join(', ');
+    return `${PREFIJO_ZONAS}${zonas}${extra ? ' — ' + extra : ''}`;
   }
 
   /** "Piso 3, Piso 4" — lo que viaja al backend en AtsGuardarRequestDto.pisos. */
@@ -807,7 +873,7 @@ export class AtsNuevo implements OnInit {
   // ── Validación por paso ────────────────────────────────────────────────
 
   get datosBasicosValidos(): boolean {
-    const lugarValido = this.torres.length === 0 || this.esExterior || (!!this.torreNombre && this.nivelesSeleccionados.size > 0);
+    const lugarValido = this.torres.length === 0 || this.esExterior || (this.esZonas && this.zonasSeleccionadas.size > 0) || (!this.esZonas && !!this.torreNombre && this.nivelesSeleccionados.size > 0);
     // Una cuadrilla mezcla puestos (ayudante, operario…): lo que la define es la PARTIDA, es decir la plantilla de ATS.
     // Si todavía no hay plantillas cargadas no se bloquea.
     const partidaValida = !this.modoGrupal || !!this.plantillaId || (this.init?.plantillas.length ?? 0) === 0;
@@ -879,8 +945,9 @@ export class AtsNuevo implements OnInit {
     if (!this.proyectoId) faltan.push('Selecciona el proyecto.');
     if (this.modoGrupal && !this.plantillaId && (this.init?.plantillas.length ?? 0) > 0) faltan.push('Selecciona la partida (plantilla de ATS) de la cuadrilla.');
     if (!this.actividad.trim()) faltan.push('Escribe la actividad a realizar.');
-    if (this.torres.length > 0 && !this.esExterior && !this.torreNombre) faltan.push('Selecciona la torre.');
-    if (this.torres.length > 0 && !this.esExterior && this.torreNombre && this.nivelesSeleccionados.size === 0) {
+    if (this.torres.length > 0 && this.esZonas && this.zonasSeleccionadas.size === 0) faltan.push('Marca al menos una zona del proyecto.');
+    if (this.torres.length > 0 && !this.esExterior && !this.esZonas && !this.torreNombre) faltan.push('Selecciona la torre.');
+    if (this.torres.length > 0 && !this.esExterior && !this.esZonas && this.torreNombre && this.nivelesSeleccionados.size === 0) {
       faltan.push('Marca al menos un piso/nivel.');
     }
     for (const cat of this.categoriasGenericasVisibles) {
@@ -933,9 +1000,9 @@ export class AtsNuevo implements OnInit {
       proyectoId: this.proyectoId!,
       plantillaId: this.plantillaId ?? undefined,
       actividad: this.actividad.trim(),
-      torreNombre: this.esExterior ? undefined : this.torreNombre || undefined,
+      torreNombre: this.esExterior || this.esZonas ? undefined : this.torreNombre || undefined,
       pisos: this.pisosTexto,
-      lugar: this.lugar.trim() || undefined,
+      lugar: this.lugarParaEnviar,
       pasos: [...pasosCatalogo, ...pasosPersonalizados, ...pasosDeActividades],
       eppIds: Array.from(this.eppsMarcados),
       herramientaIds: Array.from(this.herramientasMarcadas),

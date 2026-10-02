@@ -155,6 +155,10 @@
       <app-ats-observaciones tipo="grupo" [id]="id" (cambio)="cargar()"></app-ats-observaciones>
     </div>
 
+    @if (grupo.requierePetar && grupo.totalPetares === 0) {
+      <p class="cadena-aviso"><i class="ti ti-alert-triangle"></i> Esta cuadrilla tiene un riesgo que exige PETAR. Mientras no se genere, no se puede firmar la cadena de validación.</p>
+    }
+
     <!-- Cadena de firmas del ATS grupal: Capataz (solo cuadrillas de obreros) → Autoriza → SSOMA -->
     @if (grupo.requiereCapataz) {
     <div class="petar-seccion">
@@ -165,7 +169,7 @@
         </button>
       </div>
       @if (!grupo.capatazNombre) {
-        <p class="sin-adheridos">Pendiente — que el Capataz firme cuando toda la cuadrilla ya haya adherido.</p>
+        <p class="sin-adheridos">Pendiente — el Capataz firma después de que firme al menos un trabajador. Si alguien se une después, deberá volver a firmar.</p>
       } @else if (grupo.capatazVigente) {
         <span class="visto-ok"><i class="ti ti-check"></i> Firmado por {{ grupo.capatazNombre }} ({{ grupo.capatazHoraServidor | date: 'dd/MM/yyyy HH:mm' }})</span>
       } @else {
@@ -173,6 +177,12 @@
           <i class="ti ti-user-plus"></i>
           {{ grupo.capatazNuevosSinValidar }} trabajador(es) nuevo(s) desde la firma de {{ grupo.capatazNombre }} — debe volver a firmar con el mismo link.
         </p>
+      }
+      @if (grupo.ejecutantesFirmados > 0) {
+        <p class="cadena-quienes"><strong>Han firmado ({{ grupo.ejecutantesFirmados }}):</strong>
+          @for (a of grupo.adheridos; track a.atsId) { @if (a.estado === 'Firmado') { <span class="cadena-chip">{{ a.nombre | titleCase }}</span> } }
+        </p>
+        <p class="cadena-aviso"><i class="ti ti-info-circle"></i> Tu firma certifica solo a quienes ya firmaron. Si alguien se une después, deberás volver a firmar.</p>
       }
     </div>
 
@@ -182,17 +192,25 @@
       <div class="petar-seccion-header">
         <h3>Autoriza — Residente / Producción <span class="obligatorio">Obligatorio</span></h3>
         @if (grupo.puedeAutorizar) {
-          <button type="button" class="btn btn-primary btn-sm" [disabled]="firmandoNivel === 'Autoriza'" (click)="firmarNivel('Autoriza')">
+          <button type="button" class="btn btn-primary btn-sm" [disabled]="firmandoNivel === 'Autoriza' || (grupo.requiereCapataz && !grupo.capatazVigente) || (grupo.requierePetar && grupo.totalPetares === 0)" (click)="firmarNivel('Autoriza')">
             <i class="ti ti-signature"></i> {{ firmandoNivel === 'Autoriza' ? 'Firmando…' : 'Autorizar a toda la cuadrilla' }}
           </button>
         }
       </div>
       @if (grupo.ejecutantesFirmados === 0) {
         <p class="sin-adheridos">Pendiente — se habilita cuando los integrantes de la cuadrilla ya hayan firmado.</p>
+      } @else if (grupo.requiereCapataz && !grupo.capatazVigente) {
+        <p class="sin-adheridos"><i class="ti ti-lock"></i> Bloqueado — primero debe firmar (o volver a firmar) el Capataz / Maestro de obra.</p>
       } @else if (grupo.autorizaFirmados >= grupo.ejecutantesFirmados) {
         <span class="visto-ok"><i class="ti ti-check"></i> Autorizado — {{ grupo.autorizaFirmados }} de {{ grupo.ejecutantesFirmados }} ATS</span>
       } @else {
         <p class="sin-adheridos"><i class="ti ti-clock"></i> {{ grupo.autorizaFirmados }} de {{ grupo.ejecutantesFirmados }} ATS autorizados — pendiente del Residente / Ing. Producción.</p>
+      }
+      @if (grupo.ejecutantesFirmados > 0 && grupo.puedeAutorizar) {
+        <p class="cadena-quienes"><strong>Han firmado ({{ grupo.ejecutantesFirmados }}):</strong>
+          @for (a of grupo.adheridos; track a.atsId) { @if (a.estado === 'Firmado') { <span class="cadena-chip">{{ a.nombre | titleCase }}</span> } }
+        </p>
+        <p class="cadena-aviso"><i class="ti ti-info-circle"></i> Tu firma aplica solo a quienes ya firmaron. Si alguien se une después, deberás volver a firmar.</p>
       }
     </div>
 
@@ -200,17 +218,25 @@
       <div class="petar-seccion-header">
         <h3>Visto Bueno SSOMA <span class="obligatorio">Obligatorio</span></h3>
         @if (grupo.puedeVistoBuenoSsoma) {
-          <button type="button" class="btn btn-primary btn-sm" [disabled]="firmandoNivel === 'Ssoma'" (click)="firmarNivel('Ssoma')">
+          <button type="button" class="btn btn-primary btn-sm" [disabled]="firmandoNivel === 'Ssoma' || (grupo.requiereCapataz && !grupo.capatazVigente) || grupo.autorizaFirmados < grupo.ejecutantesFirmados || (grupo.requierePetar && grupo.totalPetares === 0)" (click)="firmarNivel('Ssoma')">
             <i class="ti ti-signature"></i> {{ firmandoNivel === 'Ssoma' ? 'Firmando…' : 'Dar Visto Bueno a toda la cuadrilla' }}
           </button>
         }
       </div>
       @if (grupo.ejecutantesFirmados === 0) {
         <p class="sin-adheridos">Pendiente — se habilita cuando los integrantes de la cuadrilla ya hayan firmado.</p>
+      } @else if (grupo.autorizaFirmados < grupo.ejecutantesFirmados || (grupo.requiereCapataz && !grupo.capatazVigente)) {
+        <p class="sin-adheridos"><i class="ti ti-lock"></i> Bloqueado — primero deben firmar {{ grupo.requiereCapataz ? 'el Capataz y ' : '' }}el Residente / Producción sobre toda la cuadrilla.</p>
       } @else if (grupo.ssomaFirmados >= grupo.ejecutantesFirmados) {
         <span class="visto-ok"><i class="ti ti-check"></i> Visto Bueno dado — {{ grupo.ssomaFirmados }} de {{ grupo.ejecutantesFirmados }} ATS</span>
       } @else {
         <p class="sin-adheridos"><i class="ti ti-clock"></i> {{ grupo.ssomaFirmados }} de {{ grupo.ejecutantesFirmados }} ATS con Visto Bueno — pendiente de SSOMA.</p>
+      }
+      @if (grupo.ejecutantesFirmados > 0 && grupo.puedeVistoBuenoSsoma) {
+        <p class="cadena-quienes"><strong>Han firmado ({{ grupo.ejecutantesFirmados }}):</strong>
+          @for (a of grupo.adheridos; track a.atsId) { @if (a.estado === 'Firmado') { <span class="cadena-chip">{{ a.nombre | titleCase }}</span> } }
+        </p>
+        <p class="cadena-aviso"><i class="ti ti-info-circle"></i> Tu visto bueno aplica solo a quienes ya firmaron. Si alguien se une después, deberá repetirse la cadena.</p>
       }
     </div>
 

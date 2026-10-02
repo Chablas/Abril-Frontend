@@ -112,16 +112,39 @@
         <div class="abril-field">
           <label class="abril-field-label" style="position: static;">¿Dónde es la tarea?</label>
           <div class="ambito-toggle">
-            <button type="button" class="ambito-btn" [class.ambito-btn--activo]="!esExterior" (click)="setEsExterior(false)">
+            <button type="button" class="ambito-btn" [class.ambito-btn--activo]="!esExterior && !esZonas" (click)="setEsExterior(false)">
               Dentro de una torre
             </button>
             <button type="button" class="ambito-btn" [class.ambito-btn--activo]="esExterior" (click)="setEsExterior(true)">
               Exterior / fachada / vecinos
             </button>
+            <button type="button" class="ambito-btn" [class.ambito-btn--activo]="esZonas" (click)="setEsZonas()">
+              Varias zonas / todo el proyecto
+            </button>
           </div>
         </div>
 
-        @if (!esExterior) {
+        @if (esZonas) {
+          <div class="abril-field">
+            <div class="pasos-categoria-row">
+              <label class="abril-field-label" style="position: static;">Zonas del proyecto *</label>
+              <label class="marcar-todos-check">
+                <input type="checkbox" [checked]="todasZonasMarcadas" (change)="toggleTodasZonas()" />
+                Todo el proyecto
+              </label>
+            </div>
+            <div class="chips-grid">
+              @for (z of zonasDisponibles; track z) {
+                <label class="chip" [class.chip--sel]="zonaSeleccionada(z)">
+                  <input type="checkbox" [checked]="zonaSeleccionada(z)" (change)="toggleZona(z)" />
+                  {{ z }}
+                </label>
+              }
+            </div>
+          </div>
+        }
+
+        @if (!esExterior && !esZonas) {
           <div class="form-row">
             <div>
               <app-search-select

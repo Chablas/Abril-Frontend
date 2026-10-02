@@ -78,6 +78,13 @@
             <p>Comparte este QR con el resto de la cuadrilla — cada quien lo escanea desde su propio celular para adherirse, sin login.</p>
           </div>
 
+          @if (requierePetar) {
+            <div class="aviso-petar">
+              <i class="ti ti-alert-triangle"></i>
+              <span>Este ATS tiene un riesgo que <strong>exige PETAR</strong>. Se avisó al Residente y a SSOMA: sin el PETAR no se puede validar el ATS. Pide que lo generen desde la intranet.</span>
+            </div>
+          }
+
           <div class="qr-card">
             @if (qrDataUrl) {
               <img [src]="qrDataUrl" alt="QR de adhesión" />
