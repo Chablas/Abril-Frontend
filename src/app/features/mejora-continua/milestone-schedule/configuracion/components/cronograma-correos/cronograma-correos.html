@@ -1,62 +1,54 @@
 <div class="config-stack">
 
-  <!-- Aviso de estado, no explicación: la pantalla existe para que un correo nuevo entre sin
-       tocar código, así que se dice qué pasa hoy y nada más. -->
-  <div class="config-card" *ngIf="sinCorreos">
-    <p class="config-warn">
-      <i class="ti" [ngClass]="iconoApagado"></i>
-      <span>{{ textoSinCorreos }}</span>
-    </p>
-  </div>
-
-  <!-- Una subsección por cada correo que se origina en esta pantalla. -->
+  <!-- Una subsección por correo, aunque la sección tenga uno solo: el badge dice a cuántos les
+       llega hoy (u «Off» si está apagado). -->
   <app-section-tabs
-    *ngIf="eventos.length > 1"
-    [tabs]="sectionTabs"
-    [value]="eventoActivoCodigo"
+    *ngIf="correos.length > 0"
+    [tabs]="tabs"
+    [value]="correoActivoCodigo"
     color="var(--color-abril-standard)"
-    (valueChange)="onSectionChange($event)">
+    (valueChange)="onTabChange($event)">
   </app-section-tabs>
 
-  <ng-container *ngIf="eventoActivo as evento">
-    <div class="config-card" [class.config-card--off]="!evento.active">
+  <ng-container *ngIf="correoActivo as correo">
+    <div class="config-card" [class.config-card--off]="!correo.active">
 
       <div class="config-card__head config-card__head--row">
         <div class="config-card__headtext">
           <h3 class="config-card__title">
-            <i class="ti" [ngClass]="iconoEvento"></i>
-            {{ evento.nombre }}
+            <i class="ti" [ngClass]="icono"></i>
+            {{ correo.nombre }}
           </h3>
-          <!-- El asunto con que sale, para buscarlo en Enviados (uno por línea si cambia según el caso). -->
-          <div class="config-card__asuntos" *ngIf="evento.asuntos?.length">
-            <p class="config-card__asunto" *ngFor="let asunto of evento.asuntos">
+          <!-- El asunto con que sale, para buscarlo en Enviados. -->
+          <div class="config-card__asuntos" *ngIf="correo.asuntos?.length">
+            <p class="config-card__asunto" *ngFor="let asunto of correo.asuntos">
               <span *ngFor="let parte of asunto | asuntoPartes" [class.asunto-var]="parte.variable">{{ parte.texto }}</span>
             </p>
           </div>
-          <p class="config-card__sub" *ngIf="evento.descripcion">{{ evento.descripcion }}</p>
+          <p class="config-card__sub" *ngIf="correo.descripcion">{{ correo.descripcion }}</p>
         </div>
 
-        <!-- Interruptor maestro: apaga el correo completo sin perder su configuración -->
-        <div class="master" *ngIf="evento.permiteDesactivarEnvio">
-          <span class="master__label" [class.master__label--off]="!evento.active">
-            {{ labelMaestro }}
+        <!-- Interruptor del correo: apagado, no le llega a nadie y la lista se conserva. -->
+        <div class="master">
+          <span class="master__label" [class.master__label--off]="!correo.active">
+            {{ labelInterruptor }}
           </span>
           <button
             type="button"
             class="switch"
             role="switch"
-            [attr.aria-checked]="evento.active"
-            [attr.aria-label]="(evento.active ? 'Desactivar' : 'Activar') + ' ' + evento.nombre"
-            [class.switch--on]="evento.active"
-            [disabled]="savingEventoCodigo !== null"
-            (click)="toggleEvento(evento)">
+            [attr.aria-checked]="correo.active"
+            [attr.aria-label]="(correo.active ? 'Desactivar' : 'Activar') + ' ' + correo.nombre"
+            [class.switch--on]="correo.active"
+            [disabled]="savingCorreoCodigo !== null"
+            (click)="toggleCorreo(correo)">
             <span class="switch__knob"></span>
           </button>
         </div>
       </div>
 
-      <!-- Avisos de estado, no explicaciones: uno solo y de una línea. -->
-      <p class="config-warn config-warn--off" *ngIf="!evento.active">
+      <!-- Avisos de estado: uno solo y de una línea. -->
+      <p class="config-warn config-warn--off" *ngIf="!correo.active">
         <i class="ti" [ngClass]="iconoApagado"></i>
         <span>{{ textoApagado }}</span>
       </p>
@@ -67,7 +59,7 @@
       </p>
 
       <div class="destinatarios__head">
-        <button type="button" class="btn-add" *ngIf="esRecordatorio" (click)="envioManual.abrir()">
+        <button type="button" class="btn-add" *ngIf="recordatorios" (click)="envioManual.abrir()">
           <i class="ti ti-send"></i> Enviar manualmente
         </button>
         <button type="button" class="btn-add" (click)="abrirAlta()">
@@ -88,13 +80,13 @@
           </thead>
           <tbody>
 
-            <!-- Destinatario principal: no es una fila de reglas, lo resuelve el backend al
-                 enviar. Se dibuja igual que los demás para que su interruptor esté al lado. -->
-            <tr *ngIf="evento.permiteDesactivarPrincipal">
+            <!-- El que pone el sistema en cada envío (el residente): no es una fila de la lista,
+                 pero se dibuja igual para que su interruptor quede al lado de los demás. -->
+            <tr *ngIf="correo.principalNombre">
               <td class="matriz__dest">
                 <div class="dest">
                   <span class="dest__name">
-                    {{ evento.destinatarioPrincipalNombre || 'Destinatario principal' }}
+                    {{ correo.principalNombre }}
                     <span class="dest__tag dest__tag--auto">Sistema</span>
                   </span>
                   <span class="dest__email dest__email--auto">
@@ -103,7 +95,7 @@
                 </div>
               </td>
 
-              <td class="matriz__tipo"><span class="pill">Para</span></td>
+              <td class="matriz__tipo"><span class="pill">{{ recepcionLabel('PARA') }}</span></td>
               <td class="matriz__tipo"><span class="pill pill--cc">Automático</span></td>
 
               <td class="matriz__switch">
@@ -111,11 +103,11 @@
                   type="button"
                   class="switch"
                   role="switch"
-                  [attr.aria-checked]="evento.destinatarioPrincipalActivo"
-                  [attr.aria-label]="(evento.destinatarioPrincipalActivo ? 'Desactivar' : 'Activar') + ' destinatario principal'"
-                  [class.switch--on]="evento.destinatarioPrincipalActivo"
+                  [attr.aria-checked]="correo.principalActive"
+                  [attr.aria-label]="(correo.principalActive ? 'Desactivar' : 'Activar') + ' ' + correo.principalNombre"
+                  [class.switch--on]="correo.principalActive"
                   [disabled]="savingDestinatarioId !== null"
-                  (click)="togglePrincipal(evento)">
+                  (click)="togglePrincipal(correo)">
                   <span class="switch__knob"></span>
                 </button>
               </td>
@@ -123,35 +115,21 @@
               <td class="matriz__acciones"></td>
             </tr>
 
-            <tr *ngFor="let fila of evento.destinatarios; trackBy: trackFila">
+            <tr *ngFor="let fila of correo.destinatarios; trackBy: trackFila">
               <td class="matriz__dest">
                 <div class="dest">
                   <span class="dest__name">{{ fila.nombre || '—' }}</span>
 
-                  <!-- Trabajador y correo a mano: la dirección es el dato -->
-                  <span class="dest__email" *ngIf="fila.email">
+                  <!-- Trabajador: su correo corporativo. El correo escrito a mano ya es el nombre. -->
+                  <span class="dest__email" *ngIf="fila.tipoCodigo === 'TRABAJADOR' && fila.email">
                     <i class="ti ti-at"></i> {{ fila.email }}
                   </span>
 
-                  <!-- Área: se expande a los correos de sus miembros al enviar -->
-                  <span class="dest__email" *ngIf="fila.tipoCodigo === 'AREA' && !fila.sinCorreo">
-                    <i class="ti ti-wand"></i>
-                    {{ fila.miembros }} {{ fila.miembros === 1 ? 'trabajador' : 'trabajadores' }}
-                    <span class="dest__who">· {{ fila.incluirDescendientes ? 'con sub-áreas' : 'sin sub-áreas' }}</span>
-                  </span>
-
-                  <!-- Rol: se resuelve al enviar a quien lo tenga ese día -->
+                  <!-- Rol: le llega a quien lo tenga el día del envío. -->
                   <span class="dest__email" *ngIf="fila.tipoCodigo === 'ROL' && !fila.sinCorreo">
                     <i class="ti ti-wand"></i>
                     {{ fila.miembros }} {{ fila.miembros === 1 ? 'persona' : 'personas' }}
                     <span class="dest__who">· con este rol hoy</span>
-                  </span>
-
-                  <!-- Jefe del área: no hay a cuántos llega, depende de cada solicitud -->
-                  <span class="dest__email" *ngIf="fila.tipoCodigo === 'JEFE_AREA'">
-                    <i class="ti ti-wand"></i>
-                    Lo resuelve el sistema al enviar
-                    <span class="dest__who">· solo si el revisor es un residente</span>
                   </span>
 
                   <span class="dest__email dest__email--warn" *ngIf="fila.sinCorreo">
@@ -160,10 +138,10 @@
                 </div>
               </td>
 
-              <!-- Los destinatarios configurados van siempre en copia: el "Para" es del principal
-                   (y lo ocupan ellos solo si el principal está apagado). -->
-              <td class="matriz__tipo"><span class="pill pill--cc">CC</span></td>
-              <td class="matriz__tipo"><span class="pill">{{ tipoLabel(fila) }}</span></td>
+              <td class="matriz__tipo">
+                <span [class]="recepcionClase(fila.recepcionCodigo)">{{ recepcionLabel(fila.recepcionCodigo) }}</span>
+              </td>
+              <td class="matriz__tipo"><span class="pill">{{ tipoLabel(fila.tipoCodigo) }}</span></td>
 
               <td class="matriz__switch">
                 <button
@@ -180,11 +158,9 @@
               </td>
 
               <td class="matriz__acciones">
-                <!-- El jefe del área no se edita: la fila no guarda a quién apunta. -->
                 <button
                   type="button"
                   class="btn-icon"
-                  *ngIf="fila.tipoCodigo !== 'JEFE_AREA'"
                   [disabled]="savingDestinatarioId === fila.id"
                   title="Editar destinatario"
                   (click)="abrirEdicion(fila)">
@@ -204,7 +180,7 @@
         </table>
       </div>
 
-      <p class="correo-empty" *ngIf="!evento.destinatarios.length && !evento.permiteDesactivarPrincipal && !loading">
+      <p class="correo-empty" *ngIf="!correo.destinatarios.length && !correo.principalNombre">
         Sin destinatarios.
       </p>
     </div>
@@ -214,7 +190,7 @@
 <!-- ── Envío manual del recordatorio abierto: elegir el día, ver a quién le sale, enviar ── -->
 <app-envio-manual-recordatorio
   #envioManual
-  [nombre]="eventoActivo?.nombre ?? ''"
+  [nombre]="correoActivo?.nombre ?? ''"
   [simular]="simularRecordatorio"
   [enviar]="enviarRecordatorio">
 </app-envio-manual-recordatorio>
@@ -227,16 +203,13 @@
   width="520px"
   (closeModal)="cerrarForm()">
 
-  <!-- Alto fijo: los desplegables se dibujan en absoluto dentro del cuerpo del modal, que tiene
-       overflow-y auto. Sin reservar el alto, abrir uno saca una barra de scroll y mueve el
-       trigger bajo el cursor (ver el CSS compartido). -->
   <div class="correo-form">
     <div class="form-row">
       <app-search-select
         label="Tipo de destinatario"
-        [options]="tipoOptions"
-        valueField="id"
-        displayField="label"
+        [options]="tipos"
+        valueField="codigo"
+        displayField="nombre"
         [value]="formTipo"
         [allowClear]="false"
         [sortAlpha]="false"
@@ -257,27 +230,8 @@
       </app-search-select>
     </div>
 
-    <ng-container *ngIf="formTipo === 'AREA'">
-      <div class="form-row">
-        <app-search-select
-          label="Área"
-          [options]="areas"
-          valueField="areaScopeId"
-          displayField="label"
-          [value]="formAreaScopeId"
-          placeholder="Selecciona área..."
-          (valueChange)="formAreaScopeId = $event">
-        </app-search-select>
-      </div>
-      <label class="form-check">
-        <input type="checkbox" [(ngModel)]="formIncluirDescendientes" name="incluirDescendientes" />
-        <span>Incluir sub-áreas</span>
-      </label>
-    </ng-container>
-
     <div class="form-row" *ngIf="formTipo === 'ROL'">
-      <!-- rawLabel: los roles viven en MAYÚSCULA en la base y traen siglas ("COORDINADOR ERP");
-           el suavizado a nombre propio los dejaría en "Coordinador Erp". -->
+      <!-- rawLabel: los roles están en MAYÚSCULA y traen siglas ("COORDINADOR ERP"). -->
       <app-search-select
         label="Rol"
         [options]="roles"
@@ -285,7 +239,7 @@
         displayField="label"
         [value]="formRoleId"
         [rawLabel]="true"
-        placeholder="Selecciona rol..."
+        placeholder="Selecciona rol"
         (valueChange)="formRoleId = $event">
       </app-search-select>
     </div>
@@ -302,17 +256,25 @@
       </div>
     </div>
 
-    <p class="form-hint" *ngIf="formTipo === 'JEFE_AREA'">
-      <i class="ti ti-info-circle"></i>
-      <span>
-        No hay a quién elegir: se resuelve en cada solicitud y solo tiene destinatario cuando el
-        revisor de quien la registra es un residente.
-      </span>
-    </p>
+    <div class="form-row">
+      <!-- rawLabel: «CC» y «CCO» son siglas; el formato de nombre propio las dejaría en «Cc». -->
+      <app-search-select
+        label="Recibe como"
+        [options]="recepciones"
+        valueField="codigo"
+        displayField="nombre"
+        [value]="formRecepcion"
+        [allowClear]="false"
+        [sortAlpha]="false"
+        [rawLabel]="true"
+        placeholder="Selecciona cómo lo recibe"
+        (valueChange)="formRecepcion = $event">
+      </app-search-select>
+    </div>
 
     <p class="form-hint" *ngIf="formId === null">
       <i class="ti ti-info-circle"></i>
-      <span>Solo para «{{ eventoActivo?.nombre }}».</span>
+      <span>Solo para «{{ correoActivo?.nombre }}».</span>
     </p>
 
     <p class="form-error" *ngIf="formError">

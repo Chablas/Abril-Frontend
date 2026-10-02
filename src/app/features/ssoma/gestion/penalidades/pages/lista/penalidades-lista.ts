@@ -385,7 +385,7 @@ export class PenalidadesLista implements OnInit {
 
   get puedeGuardarNueva(): boolean {
     return !!(this.nuevaEmpresaId && this.nuevaProyectoId && this.nuevaInfraccionId
-      && this.nuevaDescripcion.trim() && !this.guardandoNueva);
+      && this.nuevaDescripcion.trim() && !this.guardandoNueva && !this.notificacionInicial?.aviso);
   }
 
   guardarNueva(): void {

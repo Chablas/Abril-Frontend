@@ -9,7 +9,6 @@ export interface ProjectGetDTO {
     estado?: ProjectEstado;
     projectCicloVidaId?: number;
     responsable?: string;
-    emailResidente?: string;
     emailResponsable?: string;
     emailRrhh?: string;
     emailCoordSsoma?: string;

@@ -4,7 +4,7 @@ import {
   TrayectoDetalleDto,
 } from '../../dtos/salida-detalle.dto';
 
-/** Una fila nueva (todavía sin subir): imagen + monto. */
+/** Una fila nueva (todavía sin subir): archivo (imagen o PDF) + monto. */
 export interface CapturaNuevaFila {
   file: File | null;
   preview: string | null;
@@ -21,9 +21,9 @@ export interface CapturaFila {
   captura: SolicitudSalidaCapturaDto;
   /** Monto en el input. */
   monto: number | null;
-  /** Imagen nueva elegida con "Reemplazar". null = se conserva la guardada. */
+  /** Archivo nuevo (imagen o PDF) elegido con "Reemplazar". null = se conserva el guardado. */
   file: File | null;
-  /** ObjectURL de esa imagen nueva, para la miniatura y para poder revocarlo. */
+  /** ObjectURL de ese archivo nuevo, para la miniatura (o abrir el PDF) y para poder revocarlo. */
   preview: string | null;
 }
 
@@ -85,7 +85,10 @@ export class CapturasEdicion {
     return { file: null, preview: null, monto: null };
   }
 
-  /** Pone la imagen elegida en una fila, nueva o ya subida (en esta última, como reemplazo). */
+  /**
+   * Pone el archivo elegido (imagen o PDF) en una fila, nueva o ya subida (en esta última, como
+   * reemplazo). El object URL sirve igual para los dos: la miniatura de la imagen o abrir el PDF.
+   */
   elegirImagen(fila: CapturaFila | CapturaNuevaFila, file: File): void {
     if (fila.preview) URL.revokeObjectURL(fila.preview);
     fila.file = file;
@@ -98,12 +101,20 @@ export class CapturasEdicion {
     return this.capturasByTrayecto.get(trayectoId) ?? [];
   }
 
-  /** Lo que se muestra en la miniatura: la imagen nueva si se eligió una, si no la guardada. */
+  /** Lo que se muestra en la miniatura: el archivo nuevo si se eligió uno, si no el guardado. */
   imagenDe(fila: CapturaFila): string {
     return fila.preview ?? fila.captura.imageUrl;
   }
 
-  /** Descarta la imagen elegida y vuelve a mostrar la guardada. */
+  /**
+   * El nombre del mismo archivo que `imagenDe`: la miniatura sabe por él si es un PDF (el object
+   * URL de un archivo nuevo no trae extensión).
+   */
+  nombreDe(fila: CapturaFila): string {
+    return fila.file?.name ?? fila.captura.filename;
+  }
+
+  /** Descarta el archivo elegido y vuelve a mostrar el guardado. */
   descartarImagenNueva(fila: CapturaFila): void {
     if (fila.preview) URL.revokeObjectURL(fila.preview);
     fila.file = null;
@@ -201,7 +212,7 @@ export class CapturasEdicion {
   }
 
   /**
-   * Fila nueva lista para subir: tiene imagen y un monto mayor a 0. El 0 no pasa —y el
+   * Fila nueva lista para subir: tiene archivo y un monto mayor a 0. El 0 no pasa —y el
    * negativo tampoco— porque una captura de S/ 0.00 no es un gasto: no hay nada que
    * reembolsar. El backend corta igual (GuardarCapturas).
    */
@@ -235,7 +246,7 @@ export class CapturasEdicion {
     return out;
   }
 
-  /** Una fila nueva a medio llenar (imagen sin monto, o monto sin imagen) frena el guardado. */
+  /** Una fila nueva a medio llenar (archivo sin monto, o monto sin archivo) frena el guardado. */
   private get hayFilasIncompletas(): boolean {
     let incompleta = false;
     this.pendientesByTrayecto.forEach((rows) => {
@@ -276,7 +287,7 @@ export class CapturasEdicion {
 
   /** Por qué el botón está apagado, cuando el motivo no se ve solo. Null si no hay nada que decir. */
   get aviso(): string | null {
-    if (this.hayFilasIncompletas) return 'Cada captura nueva necesita imagen y un monto mayor a 0.';
+    if (this.hayFilasIncompletas) return 'Cada captura nueva necesita imagen o PDF y un monto mayor a 0.';
     if (this.hayMontoInvalido) return 'El monto de una captura tiene que ser mayor a 0.';
 
     const excedidos = this.trayectosQueBloquean;

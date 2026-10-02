@@ -1,3 +1,5 @@
+import { avisoDestinatariosHtml } from '../../../shared/utils/aviso-destinatarios';
+
 /**
  * Un correo que una acción va a disparar, con sus destinatarios REALES ya resueltos por el
  * backend con Configuración → Correos.
@@ -35,9 +37,6 @@ export interface CorreoPreviewRequestDto {
    */
   accion?: 'PLANILLA_GRUPAL' | 'CONSOLIDADO_S10';
 }
-
-const escapar = (s: string) =>
-  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const CAJA_AVISO =
   'text-align:left;background:#FEF9C3;border:1px solid #FDE68A;border-radius:8px;padding:10px 12px;color:#92400E';
@@ -93,10 +92,5 @@ export function avisosCorreoHtml(
   const copia = unicos(conDestinatarios.flatMap((a) => a.copia ?? []))
     .filter((c) => !enPara.has(c.trim().toLowerCase()));
 
-  return `<div style="text-align:left;color:#4B5563">
-    Se notificará a: <b style="color:var(--color-abril-logo-blue);word-break:break-all">${para.map(escapar).join(', ')}</b>
-    ${copia.length
-      ? `<div style="margin-top:2px;color:#6B7280">En copia: <span style="word-break:break-all">${copia.map(escapar).join(', ')}</span></div>`
-      : ''}
-  </div>`;
+  return avisoDestinatariosHtml(para, copia);
 }

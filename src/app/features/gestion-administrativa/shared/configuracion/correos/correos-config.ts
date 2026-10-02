@@ -20,6 +20,8 @@ import { ErrorService } from '../../../../../core/services/error.service';
 import { AbrilModalPanel } from '../../../../../shared/components/abril-modal-panel/abril-modal-panel';
 import { SectionTabs, SectionTab } from '../../../../../shared/components/section-tabs/section-tabs';
 import { SearchSelect } from '../../../../../shared/components/search-select/search-select';
+import { EnvioManualRecordatorio } from '../../../../../shared/components/envio-manual-recordatorio/envio-manual-recordatorio';
+import { AsuntoPartesPipe } from '../../../../../shared/pipes/asunto-partes.pipe';
 
 /**
  * Matriz de destinatarios de los correos de una pantalla del flujo de salidas.
@@ -46,11 +48,23 @@ import { SearchSelect } from '../../../../../shared/components/search-select/sea
  *
  * Todo guarda al momento de tocarlo: los interruptores son optimistas y se revierten si el
  * guardado falla; el alta, la edición y la baja recargan la lista.
+ *
+ * Bajo el nombre de cada correo va su asunto (si el backend lo trae), para buscarlo en Enviados.
+ * Los recordatorios suman «Enviar manualmente»: se simula un día y sale lo que el cron mandaría
+ * ese día, o nada.
  */
 @Component({
   selector: 'app-ga-correos-config',
   standalone: true,
-  imports: [CommonModule, FormsModule, AbrilModalPanel, SectionTabs, SearchSelect],
+  imports: [
+    CommonModule,
+    FormsModule,
+    AbrilModalPanel,
+    SectionTabs,
+    SearchSelect,
+    EnvioManualRecordatorio,
+    AsuntoPartesPipe,
+  ],
   templateUrl: './correos-config.html',
   styleUrl: '../../../../../shared/styles/correos-config.css',
   // Lo propio de esta pantalla: el resto del look sale de la hoja compartida.
@@ -284,9 +298,19 @@ export class GaCorreosConfig implements OnChanges {
   // Los dos grupos usan la misma matriz pero no se llaman igual: en Recordatorios el interruptor
   // maestro apaga un recordatorio, no un correo. Es lo único que cambia entre secciones.
 
-  private get esRecordatorio(): boolean {
+  get esRecordatorio(): boolean {
     return this.grupo === 'recordatorios';
   }
+
+  // ── Envío manual (solo recordatorios) ────────────────────────────────────
+  // Funciones estables (no un getter): el modal las recibe como @Input y las llama al confirmar,
+  // así que leen el recordatorio abierto en ese momento.
+
+  readonly simularRecordatorio = (fecha: string) =>
+    this.service.simularRecordatorio(this.pantalla, this.eventoActivoCodigo ?? '', fecha);
+
+  readonly enviarRecordatorio = (fecha: string) =>
+    this.service.enviarRecordatorio(this.pantalla, this.eventoActivoCodigo ?? '', fecha);
 
   /** Ícono del encabezado de la tarjeta. */
   get iconoEvento(): string {

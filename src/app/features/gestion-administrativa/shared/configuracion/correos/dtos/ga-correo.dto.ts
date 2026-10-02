@@ -88,6 +88,12 @@ export interface CorreoEvento {
   codigo: string;
   nombre: string;
   descripcion?: string | null;
+  /**
+   * Los asuntos con que sale, para buscarlo en Enviados; lo que cambia en cada envío va entre
+   * llaves. Más de uno cuando el asunto cambia según el caso (el primero que firma o los siguientes,
+   * una rendición o varias).
+   */
+  asuntos?: string[];
   orden: number;
   /** Interruptor maestro: false = este correo no se envía a nadie. */
   active: boolean;

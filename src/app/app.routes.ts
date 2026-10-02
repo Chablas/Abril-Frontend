@@ -144,6 +144,13 @@ export const routes: Routes = [
       },
 
       {
+        path: 'propietarios',
+        loadChildren: () =>
+          import('./features/propietarios/propietarios.routes')
+          .then(m => m.PROPIETARIOS_ROUTES)
+      },
+
+      {
         path: 'contabilidad',
         loadChildren: () =>
           import('./features/contabilidad/contabilidad.routes')

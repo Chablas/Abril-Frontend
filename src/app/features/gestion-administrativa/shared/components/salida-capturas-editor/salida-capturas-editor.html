@@ -12,32 +12,32 @@
 </div>
 
 <!-- Lo que quedó cargado de antes en un trayecto no reembolsable: se sigue viendo, pero sin monto
-     editable, sin reemplazar la imagen y sin quitarla. -->
+     editable, sin reemplazar el archivo y sin quitarlo. -->
 <div *ngIf="!editable && edicion.capturasDe(trayecto.id).length > 0" class="flex flex-wrap gap-2">
   <div *ngFor="let fila of edicion.capturasDe(trayecto.id)"
        class="flex flex-col items-center gap-1" [title]="fila.captura.filename">
     <div class="w-[80px] h-[80px] flex items-center justify-center rounded-lg overflow-hidden border"
          style="border-color:var(--color-abril-border)">
-      <app-draggable-image [src]="fila.captura.imageUrl" />
+      <app-captura-miniatura [url]="fila.captura.imageUrl" [nombre]="fila.captura.filename" />
     </div>
     <div class="text-xs font-medium text-gray-700">S/ {{ fila.captura.monto | number:'1.2-2' }}</div>
   </div>
 </div>
 
 <!-- ── Capturas ya subidas ────────────────────────────────────────────────
-     Una fila por captura, con el monto y la imagen editables de frente: el monto en un input que
-     ya está abierto y la imagen con su botón de reemplazar. Nada se persiste acá — lo escrito
+     Una fila por captura, con el monto y el archivo editables de frente: el monto en un input que
+     ya está abierto y el archivo con su botón de reemplazar. Nada se persiste acá — lo escrito
      viaja con el botón de guardar del modal, que manda todos los trayectos juntos. -->
 <div *ngIf="editable && edicion.capturasDe(trayecto.id).length > 0" class="flex flex-col gap-2">
   <div *ngFor="let fila of edicion.capturasDe(trayecto.id)"
        class="flex items-center gap-3 p-2 border rounded-lg bg-white"
        style="border-color:var(--color-abril-border)">
 
-    <!-- Miniatura: la imagen nueva si se eligió una, si no la guardada -->
+    <!-- Miniatura: el archivo nuevo si se eligió uno, si no el guardado -->
     <div class="w-[80px] h-[80px] flex-shrink-0 flex items-center justify-center rounded-lg overflow-hidden border"
          style="border-color:var(--color-abril-border)"
          [title]="fila.captura.filename">
-      <app-draggable-image [src]="edicion.imagenDe(fila)" />
+      <app-captura-miniatura [url]="edicion.imagenDe(fila)" [nombre]="edicion.nombreDe(fila)" />
     </div>
 
     <!-- Monto -->
@@ -55,15 +55,15 @@
           [(ngModel)]="fila.monto" />
       </div>
 
-      <!-- Aviso de estado: solo cuando se eligió una imagen nueva y falta guardarla. -->
+      <!-- Aviso de estado: solo cuando se eligió un archivo nuevo y falta guardarlo. -->
       <div *ngIf="fila.file as nueva"
            class="flex items-center gap-1.5 text-[11px]"
            style="color:var(--color-abril-standard)">
-        <span class="truncate" [title]="nueva.name">Imagen nueva: {{ nueva.name }}</span>
+        <span class="truncate" [title]="nueva.name">Archivo nuevo: {{ nueva.name }}</span>
         <button type="button"
                 (click)="edicion.descartarImagenNueva(fila)"
                 [disabled]="edicion.guardando"
-                title="Descartar la imagen nueva y dejar la que está guardada"
+                title="Descartar el archivo nuevo y dejar el que está guardado"
                 class="w-4 h-4 flex-shrink-0 flex items-center justify-center rounded cursor-pointer text-gray-400 hover:text-red-600 hover:bg-red-50 disabled:cursor-not-allowed">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
             <path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/>
@@ -77,7 +77,7 @@
       <label
         [class.pointer-events-none]="edicion.guardando"
         [class.opacity-50]="edicion.guardando"
-        title="Elegir otra imagen para esta captura"
+        title="Elegir otro archivo (imagen o PDF) para esta captura"
         class="inline-flex items-center justify-center gap-[5px] h-[28px] px-2.5 rounded-[6px] text-[11px] font-semibold cursor-pointer transition-colors"
         style="background:#FFFFFF;color:var(--color-abril-standard);border:1px solid var(--color-abril-standard-border)">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -85,7 +85,7 @@
         </svg>
         Reemplazar
         <input type="file"
-               accept=".png,.jpg,.jpeg,.webp,.gif"
+               [accept]="tiposAceptados"
                class="hidden"
                (change)="onElegirImagen(fila, $event)" />
       </label>
@@ -130,27 +130,35 @@
   <span>Monto de catálogo S/ 0.00: sin capturas, <b>no entra en la rendición</b>.</span>
 </div>
 
-<!-- ── Filas nuevas (imagen + monto) ────────────────────────────────────── -->
+<!-- ── Filas nuevas (archivo + monto) ───────────────────────────────────── -->
 <div *ngIf="editable" class="flex flex-col gap-2 mt-1">
   <div *ngFor="let row of edicion.pendientesDe(trayecto.id); let i = index"
        class="flex items-start gap-3 p-2 border border-[#E2E2E2] rounded-lg bg-[#FAFAFA]">
 
-    <!-- Picker -->
-    <label class="w-[80px] h-[80px] flex-shrink-0 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer overflow-hidden bg-white" style="border-color:var(--color-abril-border)">
-      <img *ngIf="row.preview" [src]="row.preview" class="w-full h-full object-cover" />
-      <div *ngIf="!row.preview" class="flex flex-col items-center text-center px-1">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--color-abril-primary)">
-          <path stroke-linecap="round" stroke-linejoin="round"
-            d="M7 16a4 4 0 01-.88-7.9A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3-3 3m3-3v12" />
-        </svg>
-        <span class="text-[10px] text-gray-500 mt-0.5">Elegir</span>
-      </div>
-      <input type="file"
-             accept=".png,.jpg,.jpeg,.webp,.gif"
-             class="hidden"
-             [disabled]="edicion.guardando"
-             (change)="onElegirImagen(row, $event)" />
-    </label>
+    <!-- Picker. Con una imagen elegida, la miniatura sigue siendo el selector: un clic elige otra.
+         Con un PDF, el ícono lo abre en una ventana nueva y «Cambiar», junto al nombre, elige otro. -->
+    <div *ngIf="esPdfNueva(row); else selector"
+         class="w-[80px] h-[80px] flex-shrink-0 flex items-center justify-center rounded-lg overflow-hidden border"
+         style="border-color:var(--color-abril-border)">
+      <app-captura-miniatura [url]="row.preview!" [nombre]="row.file!.name" />
+    </div>
+    <ng-template #selector>
+      <label class="w-[80px] h-[80px] flex-shrink-0 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer overflow-hidden bg-white" style="border-color:var(--color-abril-border)">
+        <img *ngIf="row.preview" [src]="row.preview" class="w-full h-full object-cover" />
+        <div *ngIf="!row.preview" class="flex flex-col items-center text-center px-1">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--color-abril-primary)">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M7 16a4 4 0 01-.88-7.9A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3-3 3m3-3v12" />
+          </svg>
+          <span class="text-[10px] text-gray-500 mt-0.5">Elegir</span>
+        </div>
+        <input type="file"
+               [accept]="tiposAceptados"
+               class="hidden"
+               [disabled]="edicion.guardando"
+               (change)="onElegirImagen(row, $event)" />
+      </label>
+    </ng-template>
 
     <!-- Monto -->
     <div class="flex-1 min-w-0 flex flex-col gap-1">
@@ -164,8 +172,21 @@
                [disabled]="edicion.guardando"
                [(ngModel)]="row.monto" />
       </div>
-      <div *ngIf="row.file" class="text-[11px] text-gray-400 truncate" [title]="row.file.name">
-        {{ row.file.name }}
+      <div *ngIf="row.file" class="flex items-center gap-1.5 min-w-0 text-[11px] text-gray-400">
+        <span class="truncate" [title]="row.file.name">{{ row.file.name }}</span>
+        <label *ngIf="esPdfNueva(row)"
+               [class.pointer-events-none]="edicion.guardando"
+               [class.opacity-50]="edicion.guardando"
+               title="Elegir otro archivo (imagen o PDF) para esta captura"
+               class="flex-shrink-0 font-semibold cursor-pointer hover:underline"
+               style="color:var(--color-abril-standard)">
+          Cambiar
+          <input type="file"
+                 [accept]="tiposAceptados"
+                 class="hidden"
+                 [disabled]="edicion.guardando"
+                 (change)="onElegirImagen(row, $event)" />
+        </label>
       </div>
     </div>
 

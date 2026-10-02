@@ -42,6 +42,8 @@ export interface DestinatariosNotificacionDto {
   para: string[];
   cc: string[];
   motivo: string;
+  /** Solo en la notificación inicial: por qué no se puede registrar en ese proyecto. */
+  aviso?: string | null;
 }
 
 export interface PenalidadDetalleDto extends PenalidadListItemDto {

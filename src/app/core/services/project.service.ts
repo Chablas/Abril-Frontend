@@ -7,7 +7,6 @@ import { ProjectPagedDTO } from '../dtos/project/projectPaged.model';
 import { ProjectCreateDTO } from '../dtos/project/projectCreate.model';
 import { ProjectEditDTO } from '../dtos/project/projectEdit.model';
 import { ProjectQueryParams } from '../dtos/project/projectQuery.model';
-import { ProjectScheduleSimpleDTO } from '../dtos/project/projectScheduleSimple.model';
 import { ProjectTorreDTO } from '../dtos/project/projectTorre.model';
 
 @Injectable({
@@ -36,13 +35,6 @@ export class ProjectService {
     return this.http.get<ProjectPagedDTO>(`${this.apiUrl}/paged`, {
       headers: { Authorization: `Bearer ${token}` },
       params,
-    });
-  }
-
-  getWithResidentByUserId(): Observable<ProjectScheduleSimpleDTO[]> {
-    const token = localStorage.getItem('access_token');
-    return this.http.get<ProjectScheduleSimpleDTO[]>(`${this.apiUrl}/with-resident-by-userId`, {
-      headers: { Authorization: `Bearer ${token}` },
     });
   }
 
