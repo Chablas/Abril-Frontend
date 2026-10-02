@@ -6233,3 +6233,33 @@ Frontend del backend nuevo `api/v1/projectcontract` (rama `victor-backend`, `Fea
 
 ### Pendiente (frontend)
 - `OwnerMilestoneDTO` (sesión 2026-09-28) quedó en `core/dtos/milestoneSchedule/`, lo que viola R3 (DTOs en `features/`); mover si se confirma.
+
+## Sesión 2026-10-02 — Contratos: contratista por RUC, paso 7 y pago de hitos (backend nuevo)
+
+### Contexto
+Continuación de la sesión 2026-09-29 (módulo Contratos de Unidad de Proyectos). El backend (`Abril_Backend` rama `victor-backend`) cambió en dos tandas y el frontend se adaptó a ambas:
+1. `ContractorId` → `ContributorId`: los consultores de diseño NO están en el portal de subcontratistas de Adjudicaciones (ese es de obra, con aprobación de Costos), así que se dejó de usar su selector de contratistas y el contratista se busca por RUC.
+2. Backend completó los pendientes que bloqueaban el flujo: N° de contrato, CORS del `.docx`, permisos, validación de orden de pasos, hitos, pago de hitos y paso 7.
+
+### Cambios
+- **Contratista por RUC**: `GET api/v1/project/company-lookup/{ruc}` (mismo de Configuración → Proyectos; busca en Sunat y crea el Contributor si no existe, empresa 20… o persona natural 10…). En `contrato-form` el combo se reemplazó por campo RUC + Buscar (11 dígitos), tarjeta con razón social/RUC/domicilio y botón "Cambiar"; 404 se muestra bajo el campo. `contractorId` → `contributorId` en todos los DTOs; se quitó `ContratoContratistaOption` y `contributors` de los catálogos (siguen viniendo de `projectSubContractor/form-data` solo proyectos/monedas/especialidades). Ya no se precarga el correo del contratista (el lookup no lo trae).
+- **Hitos**: `POST /{id}/hitos` y `DELETE /hitos/{id}` ahora devuelven la lista completa recalculada → el detalle la asigna directo (adiós `recalcularHitos` en esas rutas). Alta de hito ya no lleva datos de pago. Nuevo `PATCH /hitos/{id}/pago` con edición en línea por fila (fecha, cheque/recibo, observación), disponible en cualquier estado.
+- **Paso 7 implementado**: `POST /{id}/paso7-escaneo/{slot}` (multipart, slots 1-3, mismo slot reemplaza), sube a SharePoint "Escaneados" y pasa a estado 7. Paso 8 ahora exige estado 7 (`puedeNotificar`). Al completar la 3ª firma el detalle salta al paso 7.
+- **Paso 4** se bloquea sin hitos (regla nueva del backend, en las dos variantes de envío). Se quitó del checklist de generación "Número de contrato" (lo asigna el backend al crear).
+- `ULTIMO_ESTADO_EDITABLE = 5` ahora coincide con lo que valida el backend (400 si > 5); se eliminó `PASO_SIN_IMPLEMENTAR`.
+
+### Archivos clave
+- `features/projects/contratos/{dtos,services,constants}/*`, `components/contrato-form/*`, `components/contrato-detalle/*`, `pages/contratos-lista/contratos-lista.ts`
+
+### Verificado
+`ng build` → exit 0 sin errores ni warnings en Contratos. NO probado en navegador contra el backend real.
+
+### Pendiente (backend)
+- `POST /projectcontract` no devuelve `contractNumber` → un contrato recién creado muestra "Por asignar" hasta reabrir el detalle (el frontend ya lo toma si lo agregan).
+- `GET /{id}` no devuelve los escaneos ya subidos → al reabrir solo se sabe que hay (estado ≥ 7), no qué archivo hay en cada slot. Haría falta `scannedDocs: [{ slot, fileUrl, originalFileName }]`.
+- Confirmar qué significa cada slot 1-3 (hoy se tratan como "hasta 3 archivos"; si cada uno es algo específico, nombrarlos).
+- El paso 7 necesita la carpeta de SharePoint del proyecto (422 si no está configurada).
+- El backend no avanza a los estados 2 y 3 (decisión suya): los pasos 1-4 siguen tratándose como una sola fase mientras estado ≤ 3.
+
+### Pendiente (frontend)
+- `OwnerMilestoneDTO` (sesión 2026-09-28) sigue en `core/dtos/milestoneSchedule/`, lo que viola R3; mover si se confirma.
