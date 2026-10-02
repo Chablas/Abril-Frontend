@@ -6,6 +6,7 @@ import { environment } from '../../../../../environments/environment';
 import {
   ApiMessage,
   ContratoCatalogosDTO,
+  ContributorLookupDTO,
   ProjectContractCreateDTO,
   ProjectContractCreatedDTO,
   ProjectContractDTO,
@@ -14,6 +15,8 @@ import {
   ProjectContractFolderSaveDTO,
   ProjectContractMilestoneCreateDTO,
   ProjectContractMilestoneDTO,
+  ProjectContractMilestonePaymentDTO,
+  ProjectContractScannedDocDTO,
   ProjectContractStep5ArrivalDTO,
   ProjectContractStep6SignaturesDTO,
 } from '../dtos/contrato.dtos';
@@ -34,11 +37,23 @@ export class ContratosService {
   private readonly base = `${environment.apiUrl}api/v1/projectcontract`;
   /** Catálogos reutilizados de Adjudicaciones (ver ContratoCatalogosDTO). */
   private readonly catalogosUrl = `${environment.apiUrl}api/v1/projectSubContractor/form-data`;
+  private readonly lookupUrl = `${environment.apiUrl}api/v1/project/company-lookup`;
 
   constructor(private http: HttpClient) {}
 
   getCatalogos(): Observable<ContratoCatalogosDTO> {
     return this.http.get<ContratoCatalogosDTO>(this.catalogosUrl, { headers: buildAuthHeaders() });
+  }
+
+  /**
+   * Busca el contratista por RUC (Sunat) y lo registra si todavía no existe en el sistema. Es el
+   * mismo endpoint que usa Configuración → Proyectos para la razón social del proyecto.
+   * 404 = el RUC no existe ni en el sistema ni en Sunat.
+   */
+  buscarContribuyentePorRuc(ruc: string): Observable<ContributorLookupDTO> {
+    return this.http.get<ContributorLookupDTO>(`${this.lookupUrl}/${encodeURIComponent(ruc)}`, {
+      headers: buildAuthHeaders(),
+    });
   }
 
   // ── Configuración: carpeta de SharePoint ───────────────────────────────────
@@ -84,19 +99,33 @@ export class ContratosService {
 
   // ── Hitos de pago ───────────────────────────────────────────────────────────
 
+  /** Devuelve la lista completa de hitos del contrato, recalculada (monto y garantía). */
   agregarHito(
     projectContractId: number,
     dto: ProjectContractMilestoneCreateDTO,
-  ): Observable<ProjectContractMilestoneDTO> {
-    return this.http.post<ProjectContractMilestoneDTO>(`${this.base}/${projectContractId}/hitos`, dto, {
+  ): Observable<ProjectContractMilestoneDTO[]> {
+    return this.http.post<ProjectContractMilestoneDTO[]>(`${this.base}/${projectContractId}/hitos`, dto, {
       headers: buildAuthHeaders(),
     });
   }
 
-  eliminarHito(projectContractMilestoneId: number): Observable<ApiMessage> {
-    return this.http.delete<ApiMessage>(`${this.base}/hitos/${projectContractMilestoneId}`, {
+  /** Devuelve la lista completa de hitos que quedan, recalculada. */
+  eliminarHito(projectContractMilestoneId: number): Observable<ProjectContractMilestoneDTO[]> {
+    return this.http.delete<ProjectContractMilestoneDTO[]>(`${this.base}/hitos/${projectContractMilestoneId}`, {
       headers: buildAuthHeaders(),
     });
+  }
+
+  /** Registra el pago de un hito ya creado. Devuelve el hito actualizado. */
+  registrarPagoHito(
+    projectContractMilestoneId: number,
+    dto: ProjectContractMilestonePaymentDTO,
+  ): Observable<ProjectContractMilestoneDTO> {
+    return this.http.patch<ProjectContractMilestoneDTO>(
+      `${this.base}/hitos/${projectContractMilestoneId}/pago`,
+      dto,
+      { headers: buildAuthHeaders() },
+    );
   }
 
   // ── Paso 3: generar el .docx ────────────────────────────────────────────────
@@ -143,6 +172,17 @@ export class ContratosService {
     return this.http.patch<ApiMessage>(`${this.base}/${projectContractId}/paso6-firmas`, dto, {
       headers: buildAuthHeaders(),
     });
+  }
+
+  /** Paso 7: sube el contrato firmado escaneado al slot 1, 2 o 3 (mismo slot = reemplaza). */
+  subirEscaneo(projectContractId: number, slot: number, file: File): Observable<ProjectContractScannedDocDTO> {
+    const form = new FormData();
+    form.append('file', file, file.name);
+    return this.http.post<ProjectContractScannedDocDTO>(
+      `${this.base}/${projectContractId}/paso7-escaneo/${slot}`,
+      form,
+      { headers: buildAuthHeaders() },
+    );
   }
 
   notificarUnidadDeProyectos(projectContractId: number): Observable<ApiMessage> {

@@ -22,14 +22,13 @@
           [class.cd-step--done]="pasoCompletado(i + 1)"
           [class.cd-step--current]="!pasoCompletado(i + 1) && i + 1 === pasoSiguiente"
           [class.cd-step--viewing]="i + 1 === viewStep"
-          [class.cd-step--pending-impl]="i + 1 === pasoSinImplementar"
           [disabled]="!puedeVer(i + 1)"
           [attr.aria-current]="i + 1 === viewStep ? 'step' : null"
-          [title]="paso + (i + 1 === pasoSinImplementar ? ' (aún no disponible)' : '')"
+          [title]="paso"
           (click)="irAPaso(i + 1)">
           <span class="cd-step-circle">
-            <i *ngIf="pasoCompletado(i + 1) && i + 1 !== pasoSinImplementar" class="ti ti-check" aria-hidden="true"></i>
-            <ng-container *ngIf="!pasoCompletado(i + 1) || i + 1 === pasoSinImplementar">{{ i + 1 }}</ng-container>
+            <i *ngIf="pasoCompletado(i + 1)" class="ti ti-check" aria-hidden="true"></i>
+            <ng-container *ngIf="!pasoCompletado(i + 1)">{{ i + 1 }}</ng-container>
           </span>
           <span class="cd-step-label">{{ paso }}</span>
         </button>
@@ -116,38 +115,73 @@
               <th class="w-[130px] text-right">Monto</th>
               <th class="w-[110px] text-center">Fecha de pago</th>
               <th class="w-[120px]">Cheque / recibo</th>
-              <th *ngIf="editable" class="w-[52px]"></th>
+              <th *ngIf="puedeEditar" class="w-[84px]"></th>
             </tr>
           </thead>
           <tbody>
             <tr *ngIf="contrato.milestones.length === 0" class="cd-row-static">
-              <td [attr.colspan]="editable ? 7 : 6" class="text-center cd-empty-row">
+              <td [attr.colspan]="puedeEditar ? 7 : 6" class="text-center cd-empty-row">
                 Sin hitos de pago todavía. Agrega al menos uno para poder generar el contrato.
               </td>
             </tr>
-            <tr *ngFor="let h of contrato.milestones" class="cd-row-static">
-              <td class="text-center">{{ h.order }}</td>
-              <td>
-                {{ h.description }}
-                <span *ngIf="h.esHitoDeGarantia" class="cd-garantia" title="El último hito es el que el contrato toma como hito de garantía">Garantía</span>
-                <span *ngIf="h.observation" class="cd-obs">{{ h.observation }}</span>
-              </td>
-              <td class="text-right">{{ h.percentage | number: '1.0-2' }}%</td>
-              <td class="text-right">{{ contrato.currencyCode }} {{ h.amount | number: '1.2-2' }}</td>
-              <td class="text-center">{{ h.paidDate ? (h.paidDate | date: 'dd/MM/yyyy' : 'UTC') : '—' }}</td>
-              <td>{{ h.chequeRecibo || '—' }}</td>
-              <td *ngIf="editable" class="text-center">
-                <button type="button" class="abril-action-btn abril-action-btn--danger" title="Eliminar hito" (click)="eliminarHito(h)">
-                  <i class="ti ti-trash" aria-hidden="true"></i>
-                </button>
-              </td>
-            </tr>
+            <ng-container *ngFor="let h of contrato.milestones">
+              <tr class="cd-row-static" [class.cd-row-editing]="pagoHitoId === h.projectContractMilestoneId">
+                <td class="text-center">{{ h.order }}</td>
+                <td>
+                  {{ h.description }}
+                  <span *ngIf="h.esHitoDeGarantia" class="cd-garantia" title="El último hito es el que el contrato toma como hito de garantía">Garantía</span>
+                  <span *ngIf="h.observation" class="cd-obs">{{ h.observation }}</span>
+                </td>
+                <td class="text-right">{{ h.percentage | number: '1.0-2' }}%</td>
+                <td class="text-right">{{ contrato.currencyCode }} {{ h.amount | number: '1.2-2' }}</td>
+                <td class="text-center">
+                  <span *ngIf="h.paidDate" class="cd-pagado">{{ h.paidDate | date: 'dd/MM/yyyy' : 'UTC' }}</span>
+                  <span *ngIf="!h.paidDate">—</span>
+                </td>
+                <td>{{ h.chequeRecibo || '—' }}</td>
+                <td *ngIf="puedeEditar" class="text-center">
+                  <div class="cd-row-actions">
+                    <button type="button" class="abril-action-btn" title="Registrar pago"
+                      [disabled]="pagoHitoId !== null" (click)="abrirPago(h)">
+                      <i class="ti ti-cash" aria-hidden="true"></i>
+                    </button>
+                    <button *ngIf="editable" type="button" class="abril-action-btn abril-action-btn--danger" title="Eliminar hito"
+                      [disabled]="pagoHitoId !== null" (click)="eliminarHito(h)">
+                      <i class="ti ti-trash" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Registro de pago en línea -->
+              <tr *ngIf="pagoHitoId === h.projectContractMilestoneId" class="cd-row-static cd-pago-row">
+                <td colspan="7">
+                  <div class="cd-hito-row">
+                    <app-date-picker class="cd-hito-fecha" label="Fecha de pago" [floatingLabel]="true" [dense]="true" [color]="accent"
+                      [value]="pagoFecha" (valueChange)="pagoFecha = $event">
+                    </app-date-picker>
+                    <div class="abril-field cd-hito-cheque">
+                      <label class="abril-field-label">Cheque / recibo</label>
+                      <input class="abril-field-input" [(ngModel)]="pagoChequeRecibo" maxlength="100" />
+                    </div>
+                    <div class="abril-field cd-hito-desc">
+                      <label class="abril-field-label">Observación</label>
+                      <input class="abril-field-input" [(ngModel)]="pagoObservacion" maxlength="500" (keyup.enter)="guardarPago()" />
+                    </div>
+                    <button type="button" class="ct-btn ct-btn--ghost cd-hito-btn" [disabled]="savingPago" (click)="cancelarPago()">Cancelar</button>
+                    <button type="button" class="ct-btn ct-btn--primary cd-hito-btn" [disabled]="savingPago" (click)="guardarPago()">
+                      <i class="ti ti-device-floppy" aria-hidden="true"></i> Guardar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </ng-container>
             <tr *ngIf="contrato.milestones.length > 1" class="cd-row-static cd-total">
               <td></td>
               <td>Total</td>
               <td class="text-right">{{ sumaHitos | number: '1.0-2' }}%</td>
               <td class="text-right">{{ contrato.currencyCode }} {{ montoHitos | number: '1.2-2' }}</td>
-              <td [attr.colspan]="editable ? 3 : 2"></td>
+              <td [attr.colspan]="puedeEditar ? 3 : 2"></td>
             </tr>
           </tbody>
         </table>
@@ -178,25 +212,6 @@
           Equivale a {{ contrato.currencyCode }} {{ montoHitoNuevo | number: '1.2-2' }}. Disponible: {{ porcentajeDisponible | number: '1.0-2' }}%.
           El último hito que agregues será el de garantía.
         </p>
-
-        <button type="button" class="cd-link-btn" (click)="hitoMostrarPago = !hitoMostrarPago">
-          <i class="ti" [class.ti-chevron-down]="!hitoMostrarPago" [class.ti-chevron-up]="hitoMostrarPago" aria-hidden="true"></i>
-          Datos de pago (opcional)
-        </button>
-        <div *ngIf="hitoMostrarPago" class="cd-hito-row">
-          <app-date-picker class="cd-hito-fecha" label="Fecha de pago" [floatingLabel]="true" [dense]="true" [color]="accent"
-            [value]="hitoFechaPago" (valueChange)="hitoFechaPago = $event">
-          </app-date-picker>
-          <div class="abril-field cd-hito-cheque">
-            <label class="abril-field-label">Cheque / recibo</label>
-            <input class="abril-field-input" [(ngModel)]="hitoChequeRecibo" maxlength="100" />
-          </div>
-          <div class="abril-field cd-hito-desc">
-            <label class="abril-field-label">Observación</label>
-            <input class="abril-field-input" [(ngModel)]="hitoObservacion" maxlength="500" />
-          </div>
-        </div>
-        <p *ngIf="hitoMostrarPago" class="ct-hint">Un hito ya guardado no se puede editar: para corregirlo, elimínalo y vuelve a agregarlo.</p>
       </div>
 
       <div *ngIf="editable && porcentajeDisponible <= 0 && contrato.milestones.length > 0" class="ct-alert ct-alert--ok">
@@ -206,6 +221,7 @@
 
       <p *ngIf="puedeEditar && !editable" class="ct-hint">
         Los datos y los hitos ya no se pueden modificar: el contrato está en el proceso de firmas.
+        El pago de cada hito sí se puede registrar en cualquier momento.
       </p>
     </section>
 
@@ -250,7 +266,11 @@
         </div>
 
         <ng-container *ngIf="puedeEnviar">
-          <div *ngIf="!contrato.contractorEmail" class="ct-alert ct-alert--warn">
+          <div *ngIf="envioBloqueadoPorHitos" class="ct-alert ct-alert--warn">
+            <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+            <span>Para enviar el contrato necesita al menos un hito de pago. Agrégalo en el paso 2.</span>
+          </div>
+          <div *ngIf="!envioBloqueadoPorHitos && !contrato.contractorEmail" class="ct-alert ct-alert--warn">
             <i class="ti ti-mail-off" aria-hidden="true"></i>
             <span>Para enviarlo por correo, primero registra el correo del contratista en el paso 2.</span>
           </div>
@@ -259,10 +279,10 @@
             llegar por otro medio, registra el envío sin mandar correo.
           </p>
           <div class="cd-actions">
-            <button type="button" class="ct-btn ct-btn--ghost" [disabled]="saving" (click)="registrarEnvioExterno()">
+            <button type="button" class="ct-btn ct-btn--ghost" [disabled]="saving || envioBloqueadoPorHitos" (click)="registrarEnvioExterno()">
               <i class="ti ti-checkbox" aria-hidden="true"></i> Ya se envió por fuera
             </button>
-            <button type="button" class="ct-btn ct-btn--primary" [disabled]="saving || !contrato.contractorEmail" (click)="enviarPorCorreo()">
+            <button type="button" class="ct-btn ct-btn--primary" [disabled]="saving || envioBloqueadoPorHitos || !contrato.contractorEmail" (click)="enviarPorCorreo()">
               <i class="ti ti-send" aria-hidden="true"></i> Enviar por correo
             </button>
           </div>
@@ -345,15 +365,48 @@
       <p *ngIf="puedeEditar && !puedeFirmar && estado < 5" class="ct-hint">Las firmas se registran después de la llegada a Oficina Central.</p>
     </section>
 
-    <!-- ═════ PASO 7: Contrato firmado escaneado (sin backend todavía) ═════ -->
+    <!-- ═════ PASO 7: Contrato firmado escaneado ═════ -->
     <section *ngIf="viewStep === 7" class="cd-section">
-      <div class="ct-alert ct-alert--info">
-        <i class="ti ti-clock" aria-hidden="true"></i>
+      <div *ngIf="estado === 6 && !todasLasFirmas" class="ct-alert ct-alert--warn">
+        <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+        <span>Faltan firmas ({{ firmasCompletas }} de {{ firmas.length }}). El escaneo se sube cuando el contrato ya está firmado por las tres partes.</span>
+      </div>
+
+      <ng-container *ngIf="puedeEscanear">
+        <p class="ct-hint cd-no-mt">
+          Sube el contrato firmado escaneado (hasta 3 archivos, por ejemplo si viene en partes). Se
+          guarda en la carpeta de SharePoint del proyecto, en «Escaneados». Volver a subir en el
+          mismo espacio reemplaza el archivo.
+        </p>
+        <div class="cd-escaneos">
+          <div *ngFor="let slot of slotsEscaneo" class="cd-escaneo" [class.cd-escaneo--ok]="escaneos[slot]">
+            <span class="cd-k">Archivo {{ slot }}</span>
+            <ng-container *ngIf="escaneos[slot] as doc; else sinSubir">
+              <a *ngIf="doc.fileUrl" class="cd-escaneo-link" [href]="doc.fileUrl" target="_blank" rel="noopener"
+                [title]="doc.originalFileName ?? ''">
+                <i class="ti ti-file-check" aria-hidden="true"></i>
+                <span>{{ doc.originalFileName || 'Ver archivo' }}</span>
+              </a>
+            </ng-container>
+            <ng-template #sinSubir><span class="ct-hint cd-no-mt">Sin subir en esta sesión</span></ng-template>
+            <input #archivo type="file" accept=".pdf,image/*" hidden (change)="onArchivoEscaneo(slot, $event)" />
+            <button type="button" class="ct-btn ct-btn--ghost ct-btn--sm cd-escaneo-btn"
+              [disabled]="subiendoSlot !== null" (click)="archivo.click()">
+              <i class="ti" [class.ti-upload]="subiendoSlot !== slot" [class.ti-loader-2]="subiendoSlot === slot" [class.cd-spin-inline]="subiendoSlot === slot" aria-hidden="true"></i>
+              {{ subiendoSlot === slot ? 'Subiendo...' : (escaneos[slot] ? 'Reemplazar' : 'Subir') }}
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+      <div *ngIf="estado >= 7" class="ct-alert ct-alert--ok">
+        <i class="ti ti-circle-check" aria-hidden="true"></i>
         <span>
-          La carga del contrato firmado escaneado todavía no está disponible en el sistema. Por
-          ahora, al completar las tres firmas se continúa directamente con la notificación (paso 8).
+          Contrato firmado escaneado subido a SharePoint.
+          <ng-container *ngIf="!escaneosSubidos.length">Los archivos están en la carpeta «Escaneados» del contrato.</ng-container>
         </span>
       </div>
+      <p *ngIf="!puedeEditar && estado < 7" class="ct-hint">Todavía no se sube el contrato firmado escaneado.</p>
     </section>
 
     <!-- ═════ PASO 8: Notificación a Unidad de Proyectos ═════ -->
@@ -367,6 +420,10 @@
         <div *ngIf="!todasLasFirmas" class="ct-alert ct-alert--warn">
           <i class="ti ti-alert-triangle" aria-hidden="true"></i>
           <span>Faltan firmas ({{ firmasCompletas }} de {{ firmas.length }}). Complétalas en el paso 6.</span>
+        </div>
+        <div *ngIf="todasLasFirmas && estado < 7" class="ct-alert ct-alert--warn">
+          <i class="ti ti-alert-triangle" aria-hidden="true"></i>
+          <span>Primero sube el contrato firmado escaneado (paso 7).</span>
         </div>
         <div *ngIf="puedeEditar" class="cd-actions">
           <button type="button" class="ct-btn ct-btn--primary" [disabled]="saving || !puedeNotificar" (click)="notificar()">

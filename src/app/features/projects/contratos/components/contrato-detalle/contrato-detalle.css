@@ -73,9 +73,6 @@
 }
 .cd-step--viewing .cd-step-label { color: #1E3A5F; font-weight: 700; }
 
-/* Paso 7: sin implementar en el backend todavía. */
-.cd-step--pending-impl .cd-step-circle { border-style: dashed; background: #fff; color: #94A3B8; border-color: #CBD5E1; }
-
 .cd-step:not(:disabled):hover .cd-step-circle { border-color: var(--color-abril-standard-hover); }
 
 /* ── Resumen ──────────────────────────────────────────────────────── */
@@ -192,22 +189,43 @@
 .cd-hito-fecha { width: 170px; }
 .cd-hito-btn { height: 38px; }
 
-.cd-link-btn {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 4px;
-  padding: 0;
-  border: none;
-  background: none;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-abril-standard);
-  cursor: pointer;
+.cd-row-actions { display: inline-flex; gap: 6px; }
+.cd-row-actions .abril-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.cd-pagado { color: #1B6B3A; font-weight: 600; }
+
+/* Fila del hito cuyo pago se está registrando + fila del formulario debajo. */
+.cd-row-editing td { background: var(--color-abril-standard-light); }
+.cd-pago-row td { background: var(--color-abril-standard-light); padding-top: 4px !important; }
+.cd-pago-row .abril-field-label { background: var(--color-abril-standard-light); }
+
+/* ── Paso 7: escaneos ─────────────────────────────────────────────── */
+.cd-escaneos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.cd-escaneo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed #CBD5E1;
+  border-radius: 10px;
+  min-width: 0;
 }
-.cd-link-btn:hover { text-decoration: underline; }
-.cd-link-btn:focus-visible { outline: 2px solid #2E6DB4; outline-offset: 2px; }
+.cd-escaneo--ok { border-style: solid; border-color: var(--color-abril-standard); background: var(--color-abril-standard-light); }
+
+.cd-escaneo-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--color-abril-standard);
+  text-decoration: none;
+}
+.cd-escaneo-link span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cd-escaneo-link:hover span { text-decoration: underline; }
+
+.cd-escaneo-btn { align-self: flex-start; }
+.cd-spin-inline { animation: cd-spin 0.8s linear infinite; }
 
 /* ── Paso 3: checklist ────────────────────────────────────────────── */
 .cd-checklist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }

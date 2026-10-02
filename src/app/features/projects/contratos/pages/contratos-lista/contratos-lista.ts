@@ -93,7 +93,6 @@ export class ContratosLista implements OnInit {
       next: (data) => {
         // app-search-select no ordena sus opciones: listas sin orden propio van alfabéticas.
         data.projects.sort((a, b) => a.projectDescription.localeCompare(b.projectDescription));
-        data.contributors.sort((a, b) => a.contributorName.localeCompare(b.contributorName));
         data.workSpecialties.sort((a, b) => a.workSpecialtyDescription.localeCompare(b.workSpecialtyDescription));
         this.catalogos = data;
         this.loadingCatalogos = false;

@@ -20,7 +20,10 @@ export interface ProjectContractMilestoneDTO {
 export interface ProjectContractDTO {
   projectContractId: number;
   projectId: number;
-  contractorId: number;
+  /** Contributor directo (razón social o persona con RUC), no el Contractor del portal de
+   *  subcontratistas de obra. Se obtiene con GET api/v1/project/company-lookup/{ruc}. */
+  contributorId: number;
+  /** Razón social del contributor (el backend mantiene el nombre "contractorName"). */
   contractorName?: string | null;
   workSpecialtyId: number;
   workSpecialtyDescription?: string | null;
@@ -54,7 +57,7 @@ export interface ProjectContractDTO {
 
 export interface ProjectContractCreateDTO {
   projectId: number;
-  contractorId: number;
+  contributorId: number;
   workSpecialtyId: number;
   serviceDescription?: string | null;
   amount: number;
@@ -67,20 +70,30 @@ export interface ProjectContractCreateDTO {
   detalleServicios?: string | null;
 }
 
-/** Igual que el de creación, sin projectId/contractorId/workSpecialtyId (no se pueden cambiar). */
+/** Igual que el de creación, sin projectId/contributorId/workSpecialtyId (no se pueden cambiar). */
 export type ProjectContractEditDTO = Omit<
   ProjectContractCreateDTO,
-  'projectId' | 'contractorId' | 'workSpecialtyId'
+  'projectId' | 'contributorId' | 'workSpecialtyId'
 >;
 
 export interface ProjectContractCreatedDTO {
   projectContractId: number;
+  /** El backend asigna el N° (correlativo por proyecto) al crear, pero hoy no lo devuelve acá. */
+  contractNumber?: number | null;
   message: string;
 }
 
+/** POST /{id}/hitos. Responde la lista completa de hitos del contrato, ya recalculada. */
 export interface ProjectContractMilestoneCreateDTO {
   description: string;
   percentage: number;
+  paidDate?: string | null;
+  chequeRecibo?: string | null;
+  observation?: string | null;
+}
+
+/** PATCH /hitos/{id}/pago. Responde el hito actualizado. Se permite en cualquier estado. */
+export interface ProjectContractMilestonePaymentDTO {
   paidDate?: string | null;
   chequeRecibo?: string | null;
   observation?: string | null;
@@ -97,6 +110,15 @@ export interface ProjectContractStep6SignaturesDTO {
   step6SignedGerenteGeneral: boolean;
 }
 
+/** Paso 7: POST /{id}/paso7-escaneo/{slot} (multipart, campo `file`). Slot 1, 2 o 3; volver a
+ *  subir en el mismo slot reemplaza el archivo. Exige la carpeta de SharePoint del proyecto. */
+export interface ProjectContractScannedDocDTO {
+  projectContractScannedDocId?: number;
+  slot: number;
+  fileUrl?: string | null;
+  originalFileName?: string | null;
+}
+
 // ── Configuración: carpeta de SharePoint (por proyecto) ──────────────────────
 export interface ProjectContractFolderDTO {
   projectContractFolderId: number;
@@ -110,24 +132,32 @@ export interface ProjectContractFolderSaveDTO {
   linkUrl: string;
 }
 
+// ── Contratista (búsqueda por RUC) ───────────────────────────────────────────
+// GET api/v1/project/company-lookup/{ruc} — el mismo de Configuración → Proyectos (razón social
+// del proyecto). Busca en Sunat y, si el RUC no existe en el sistema, crea el Contributor
+// (persona natural 10xxxxxxxxx o empresa 20xxxxxxxxx). 404 si el RUC no existe ni en Sunat.
+export interface ContributorLookupDTO {
+  contributorId: number;
+  contributorRuc: string;
+  contributorName: string;
+  contributorAddress: string;
+  contributorDistrict?: string | null;
+  contributorProvince?: string | null;
+  contributorDepartment?: string | null;
+  legalEntityRegistryNumber?: string | null;
+}
+
 // ── Catálogos ────────────────────────────────────────────────────────────────
 // No hay endpoint propio de catálogos para Contratos: se reutiliza el mismo
 // `GET api/v1/projectSubContractor/form-data` de Adjudicaciones (solo [Authorize], sin
-// featureKey), que ya devuelve proyectos activos, contratistas homologados (con sus
-// correos), monedas activas y especialidades activas (excluye las inactivas, p. ej. IIMM
-// y OBRAS PROVISIONALES). Acá solo se tipa la parte de esa respuesta que se usa.
+// featureKey), que ya devuelve proyectos activos, monedas activas y especialidades activas
+// (excluye las inactivas, p. ej. IIMM y OBRAS PROVISIONALES). Acá solo se tipa la parte que
+// se usa. Sus "contributors" NO sirven para Contratos: son los subcontratistas de obra
+// homologados por Costos; los consultores de diseño se buscan por RUC (ContributorLookupDTO).
 
 export interface ContratoProyectoOption {
   projectId: number;
   projectDescription: string;
-}
-
-export interface ContratoContratistaOption {
-  contractorId: number;
-  contributorId: number;
-  contributorName: string;
-  contributorRuc: string;
-  emails: string[];
 }
 
 export interface ContratoMonedaOption {
@@ -144,7 +174,6 @@ export interface ContratoEspecialidadOption {
 
 export interface ContratoCatalogosDTO {
   projects: ContratoProyectoOption[];
-  contributors: ContratoContratistaOption[];
   currencies: ContratoMonedaOption[];
   workSpecialties: ContratoEspecialidadOption[];
 }

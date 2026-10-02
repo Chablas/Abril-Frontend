@@ -11,24 +11,25 @@
 /* Los títulos de sección separan bloques: aire extra arriba, salvo el primero. */
 .cf-grid > .ct-section:not(:first-child) { margin-top: 8px; }
 
-.cf-chips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-top: 6px;
-}
-.cf-chips .ct-hint { margin: 0; }
+/* ── Contratista por RUC ─────────────────────────────────────────── */
+.cf-ruc-row { display: flex; align-items: flex-end; gap: 12px; }
+.cf-ruc-input { flex: 1; max-width: 320px; }
+.cf-ruc-btn { height: 38px; }
 
-.cf-chip {
-  font-size: 12px;
-  padding: 2px 10px;
-  border-radius: 999px;
+.cf-spin { animation: cf-spin 0.8s linear infinite; }
+@keyframes cf-spin { to { transform: rotate(360deg); } }
+
+.cf-contribuyente {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 8px;
+  padding: 12px 16px;
   border: 1px solid var(--color-abril-standard-border);
+  border-radius: 10px;
   background: var(--color-abril-standard-light);
-  color: var(--color-abril-standard);
-  cursor: pointer;
-  transition: background-color 150ms ease;
 }
-.cf-chip:hover { background: #E0F4EE; }
-.cf-chip:focus-visible { outline: 2px solid #2E6DB4; outline-offset: 2px; }
+.cf-contribuyente > i { font-size: 24px; color: var(--color-abril-standard); margin-top: 2px; }
+.cf-contribuyente > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cf-contribuyente__name { font-size: 14px; font-weight: 600; color: #1E3A5F; overflow-wrap: anywhere; }
+.cf-contribuyente__meta { font-size: 12px; color: #64748B; overflow-wrap: anywhere; }

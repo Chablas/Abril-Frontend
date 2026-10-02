@@ -10,10 +10,15 @@ import { LoaderService } from '../../../../../core/services/loader.service';
 import { ErrorService } from '../../../../../core/services/error.service';
 import { swalUdpSuccess } from '../../../../../shared/utils/sweetalert-udp';
 import { ContratosService } from '../../services/contratos.service';
-import { ProjectContractDTO, ProjectContractMilestoneDTO, ProjectContractStep6SignaturesDTO } from '../../dtos/contrato.dtos';
+import {
+  ProjectContractDTO,
+  ProjectContractMilestoneDTO,
+  ProjectContractScannedDocDTO,
+  ProjectContractStep6SignaturesDTO,
+} from '../../dtos/contrato.dtos';
 import {
   CONTRATO_PASOS,
-  PASO_SIN_IMPLEMENTAR,
+  SLOTS_ESCANEO,
   TOTAL_PASOS,
   ULTIMO_ESTADO_EDITABLE,
   estadoBadge,
@@ -33,12 +38,12 @@ interface RequisitoGeneracion {
  * Detalle de un contrato con su flujo de 9 pasos (mismo esquema que el detalle de Adjudicaciones:
  * stepper clickeable arriba + contenido del paso que se está viendo abajo).
  *
- * El backend no valida el orden de los pasos (cualquier endpoint de paso 4-9 se puede llamar
- * desde cualquier estado), así que la secuencia la impone esta pantalla: cada acción aparece solo
- * cuando el contrato está en el estado que le corresponde.
+ * Cada acción aparece solo en el estado que le corresponde, con las mismas reglas que valida el
+ * backend (400 si no corresponde): datos/hitos/generar ≤ 5, envío ≤ 3 con al menos un hito,
+ * llegada 4-5, firmas 5-6, escaneo 6-7, notificación 7 con las 3 firmas, cierre 8.
  *
- * Tampoco avanza los estados 2 y 3 (un contrato queda en 1 hasta que se envía en el paso 4): por
- * eso los pasos 1-4 se tratan como una sola fase de trabajo mientras el estado sea ≤ 3.
+ * El backend no avanza los estados 2 y 3 (un contrato queda en 1 hasta que se envía en el paso
+ * 4): por eso los pasos 1-4 se tratan como una sola fase de trabajo mientras el estado sea ≤ 3.
  *
  * Todas las mutaciones actualizan el contrato en memoria con lo que se envió (o con lo que
  * devolvió el backend) en vez de recargar el detalle — 1 acción = 1 HTTP. `contrato` es la misma
@@ -64,7 +69,7 @@ export class ContratoDetalle implements OnInit {
 
   readonly pasos = CONTRATO_PASOS;
   readonly totalPasos = TOTAL_PASOS;
-  readonly pasoSinImplementar = PASO_SIN_IMPLEMENTAR;
+  readonly slotsEscaneo = SLOTS_ESCANEO;
   readonly accent = 'var(--color-abril-standard)';
   readonly nombrePaso = nombrePaso;
   readonly estadoBadge = estadoBadge;
@@ -77,12 +82,23 @@ export class ContratoDetalle implements OnInit {
   // ── Hito nuevo ─────────────────────────────────────────────────────────────
   hitoDescripcion = '';
   hitoPorcentaje: number | null = null;
-  hitoFechaPago: string | null = null;
-  hitoChequeRecibo = '';
-  hitoObservacion = '';
-  hitoMostrarPago = false;
   hitoSubmitted = false;
   savingHito = false;
+
+  // ── Pago de un hito (edición en línea, una fila a la vez) ─────────────────
+  pagoHitoId: number | null = null;
+  pagoFecha: string | null = null;
+  pagoChequeRecibo = '';
+  pagoObservacion = '';
+  savingPago = false;
+
+  // ── Paso 7 ─────────────────────────────────────────────────────────────────
+  /**
+   * Escaneos subidos EN ESTA SESIÓN, por slot. GET /{id} todavía no devuelve los escaneos ya
+   * guardados, así que al reabrir el detalle solo se sabe que hay al menos uno (estado ≥ 7).
+   */
+  escaneos: Partial<Record<number, ProjectContractScannedDocDTO>> = {};
+  subiendoSlot: number | null = null;
 
   // ── Paso 5 ─────────────────────────────────────────────────────────────────
   llegadaConObservaciones: boolean | null = null;
@@ -158,7 +174,7 @@ export class ContratoDetalle implements OnInit {
     }
     if (e === 4) return 5;
     if (e === 5) return 6;
-    if (e === 6) return this.todasLasFirmas ? 8 : 6;
+    if (e === 6) return this.todasLasFirmas ? 7 : 6;
     if (e === 7) return 8;
     if (e === 8) return 9;
     return TOTAL_PASOS;
@@ -229,14 +245,11 @@ export class ContratoDetalle implements OnInit {
       .agregarHito(this.contrato.projectContractId, {
         description: this.hitoDescripcion.trim(),
         percentage: Number(this.hitoPorcentaje),
-        paidDate: this.hitoFechaPago || null,
-        chequeRecibo: this.hitoChequeRecibo.trim() || null,
-        observation: this.hitoObservacion.trim() || null,
       })
       .subscribe({
-        next: (hito) => {
-          this.contrato.milestones.push(hito);
-          recalcularHitos(this.contrato);
+        // El backend devuelve la lista completa ya recalculada (monto y garantía).
+        next: (hitos) => {
+          this.contrato.milestones = hitos;
           this.limpiarHito();
           this.savingHito = false;
           this.loaderService.hide();
@@ -251,11 +264,48 @@ export class ContratoDetalle implements OnInit {
   private limpiarHito(): void {
     this.hitoDescripcion = '';
     this.hitoPorcentaje = null;
-    this.hitoFechaPago = null;
-    this.hitoChequeRecibo = '';
-    this.hitoObservacion = '';
-    this.hitoMostrarPago = false;
     this.hitoSubmitted = false;
+  }
+
+  // ── Pago de un hito (cualquier estado) ─────────────────────────────────────
+
+  abrirPago(hito: ProjectContractMilestoneDTO): void {
+    if (!this.puedeEditar) return;
+    this.pagoHitoId = hito.projectContractMilestoneId;
+    this.pagoFecha = hito.paidDate ?? null;
+    this.pagoChequeRecibo = hito.chequeRecibo ?? '';
+    this.pagoObservacion = hito.observation ?? '';
+  }
+
+  cancelarPago(): void {
+    this.pagoHitoId = null;
+  }
+
+  guardarPago(): void {
+    const id = this.pagoHitoId;
+    if (id === null || this.savingPago || !this.puedeEditar) return;
+
+    this.savingPago = true;
+    this.loaderService.show();
+    this.service
+      .registrarPagoHito(id, {
+        paidDate: this.pagoFecha || null,
+        chequeRecibo: this.pagoChequeRecibo.trim() || null,
+        observation: this.pagoObservacion.trim() || null,
+      })
+      .subscribe({
+        next: (actualizado) => {
+          const i = this.contrato.milestones.findIndex((m) => m.projectContractMilestoneId === id);
+          if (i >= 0) this.contrato.milestones[i] = actualizado;
+          this.pagoHitoId = null;
+          this.savingPago = false;
+          this.loaderService.hide();
+        },
+        error: (err: HttpErrorResponse) => {
+          this.savingPago = false;
+          this.errorService.handleError(err);
+        },
+      });
   }
 
   eliminarHito(hito: ProjectContractMilestoneDTO): void {
@@ -272,11 +322,10 @@ export class ContratoDetalle implements OnInit {
       if (!r.isConfirmed) return;
       this.loaderService.show();
       this.service.eliminarHito(hito.projectContractMilestoneId).subscribe({
-        next: () => {
-          this.contrato.milestones = this.contrato.milestones.filter(
-            (m) => m.projectContractMilestoneId !== hito.projectContractMilestoneId,
-          );
-          recalcularHitos(this.contrato);
+        // Devuelve los hitos que quedan, ya recalculados (el nuevo último pasa a ser garantía).
+        next: (hitos) => {
+          this.contrato.milestones = hitos;
+          if (this.pagoHitoId === hito.projectContractMilestoneId) this.pagoHitoId = null;
           this.loaderService.hide();
         },
         error: (err: HttpErrorResponse) => this.errorService.handleError(err),
@@ -301,15 +350,11 @@ export class ContratoDetalle implements OnInit {
         ok: c.milestones.length > 0 && this.sumaHitos === 100,
         nota: 'No bloquea la generación, pero el contrato saldría con un reparto incompleto.',
       },
-      {
-        label: 'Número de contrato',
-        ok: c.contractNumber != null,
-        nota: 'Lo asigna el sistema; no se ingresa desde esta pantalla.',
-      },
     ];
   }
 
-  /** Datos que dependen del usuario (sin el N° de contrato ni el 100%, que no bloquean avanzar). */
+  /** Datos que dependen del usuario (sin el 100%, que no bloquea avanzar). El N° de contrato lo
+   *  asigna el backend al crear. */
   get datosListos(): boolean {
     const c = this.contrato;
     return !!c.serviceDescription?.trim() && !!c.signingDate && c.milestones.length > 0;
@@ -353,9 +398,14 @@ export class ContratoDetalle implements OnInit {
     return this.puedeEditar && this.estado <= 3;
   }
 
+  /** El backend rechaza el envío (en las dos variantes) si el contrato no tiene hitos. */
+  get envioBloqueadoPorHitos(): boolean {
+    return this.contrato.milestones.length === 0;
+  }
+
   enviarPorCorreo(): void {
     const email = this.contrato.contractorEmail?.trim();
-    if (!this.puedeEnviar || !email) return;
+    if (!this.puedeEnviar || !email || this.envioBloqueadoPorHitos) return;
     this.confirmar(
       '¿Enviar el contrato al contratista?',
       `Se generará el contrato y se enviará adjunto a ${email}.`,
@@ -364,7 +414,7 @@ export class ContratoDetalle implements OnInit {
   }
 
   registrarEnvioExterno(): void {
-    if (!this.puedeEnviar) return;
+    if (!this.puedeEnviar || this.envioBloqueadoPorHitos) return;
     this.confirmar(
       '¿Registrar el envío como hecho fuera del sistema?',
       'No se enviará ningún correo: solo se marca que el contrato ya se le hizo llegar al contratista.',
@@ -430,9 +480,12 @@ export class ContratoDetalle implements OnInit {
     this.savingFirma = key;
     this.service.actualizarFirmas(this.contrato.projectContractId, dto).subscribe({
       next: () => {
+        const yaEstabanTodas = this.todasLasFirmas;
         Object.assign(this.contrato, dto);
         if (this.estado < 6) this.avanzarEstado(6);
         this.savingFirma = null;
+        // Al completar la tercera firma se pasa directo a subir el escaneo.
+        if (!yaEstabanTodas && this.todasLasFirmas) this.viewStep = 7;
       },
       error: (err: HttpErrorResponse) => {
         this.savingFirma = null;
@@ -441,10 +494,44 @@ export class ContratoDetalle implements OnInit {
     });
   }
 
+  // ── Paso 7: contrato firmado escaneado ─────────────────────────────────────
+
+  /** El backend acepta el escaneo en estado 6 o 7; además se exigen las 3 firmas, porque es el
+   *  contrato YA firmado (el backend no lo valida acá, sí en el paso 8). */
+  get puedeEscanear(): boolean {
+    return this.puedeEditar && ((this.estado === 6 && this.todasLasFirmas) || this.estado === 7);
+  }
+
+  get escaneosSubidos(): ProjectContractScannedDocDTO[] {
+    return Object.values(this.escaneos).filter((d): d is ProjectContractScannedDocDTO => !!d);
+  }
+
+  onArchivoEscaneo(slot: number, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = ''; // permite volver a elegir el mismo archivo
+    if (!file || !this.puedeEscanear || this.subiendoSlot !== null) return;
+
+    this.subiendoSlot = slot;
+    this.loaderService.show();
+    this.service.subirEscaneo(this.contrato.projectContractId, slot, file).subscribe({
+      next: (doc) => {
+        this.escaneos = { ...this.escaneos, [slot]: { ...doc, slot } };
+        if (this.estado < 7) this.avanzarEstado(7);
+        this.subiendoSlot = null;
+        this.loaderService.hide();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.subiendoSlot = null;
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
   // ── Pasos 8 y 9 ────────────────────────────────────────────────────────────
 
   get puedeNotificar(): boolean {
-    return this.puedeEditar && this.estado === 6 && this.todasLasFirmas;
+    return this.puedeEditar && this.estado === 7 && this.todasLasFirmas;
   }
 
   notificar(): void {

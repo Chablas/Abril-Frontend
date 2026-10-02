@@ -11,26 +11,48 @@
     <!-- ── Partes ─────────────────────────────────────────────────── -->
     <p class="ct-section cf-full">Contratista y especialidad</p>
 
-    <div>
-      <app-search-select
-        *ngIf="!esEdicion"
-        label="Contratista"
-        placeholder="Buscar contratista..."
-        [required]="true"
-        [fullText]="true"
-        [options]="catalogos.contributors"
-        valueField="contractorId"
-        displayField="contributorName"
-        [color]="accent"
-        [value]="contractorId"
-        (valueChange)="onContratistaChange($event)">
-      </app-search-select>
-      <div *ngIf="esEdicion" class="abril-field">
+    <!-- Contratista: búsqueda por RUC en Sunat (lo registra si no existe en el sistema). -->
+    <div *ngIf="!esEdicion" class="cf-full">
+      <div class="cf-ruc-row">
+        <div class="abril-field cf-ruc-input">
+          <label class="abril-field-label">RUC del contratista <span class="ct-req">*</span></label>
+          <input class="abril-field-input" inputmode="numeric" maxlength="11" [(ngModel)]="rucInput"
+            placeholder="Ej. 20123456789 o 10456789012" [disabled]="!!contribuyente || buscandoRuc"
+            (keyup.enter)="buscarRuc()" />
+        </div>
+        <button *ngIf="!contribuyente" type="button" class="ct-btn ct-btn--primary cf-ruc-btn"
+          [disabled]="buscandoRuc" (click)="buscarRuc()">
+          <i class="ti" [class.ti-search]="!buscandoRuc" [class.ti-loader-2]="buscandoRuc" [class.cf-spin]="buscandoRuc" aria-hidden="true"></i>
+          {{ buscandoRuc ? 'Buscando...' : 'Buscar' }}
+        </button>
+        <button *ngIf="contribuyente" type="button" class="ct-btn ct-btn--ghost cf-ruc-btn" (click)="cambiarContribuyente()">
+          <i class="ti ti-refresh" aria-hidden="true"></i> Cambiar
+        </button>
+      </div>
+
+      <p *ngIf="rucError" class="ct-error">{{ rucError }}</p>
+      <p *ngIf="!rucError && submitted && !contribuyente" class="ct-error">Busca y confirma el RUC del contratista.</p>
+      <p *ngIf="!rucError && !contribuyente && !submitted" class="ct-hint">
+        Empresa (RUC 20…) o persona natural con RUC (10…). Si todavía no está registrado, se registra al buscarlo.
+      </p>
+
+      <div *ngIf="contribuyente" class="cf-contribuyente">
+        <i class="ti ti-building" aria-hidden="true"></i>
+        <div>
+          <span class="cf-contribuyente__name">{{ contribuyente.contributorName }}</span>
+          <span class="cf-contribuyente__meta">RUC {{ contribuyente.contributorRuc }}</span>
+          <span *ngIf="contribuyente.contributorAddress" class="cf-contribuyente__meta">
+            {{ contribuyente.contributorAddress }}<ng-container *ngIf="contribuyente.contributorDistrict"> · {{ contribuyente.contributorDistrict }}</ng-container>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="esEdicion">
+      <div class="abril-field">
         <label class="abril-field-label">Contratista</label>
         <input class="abril-field-input" [value]="contrato?.contractorName ?? '—'" disabled />
       </div>
-      <p *ngIf="submitted && !contractorId" class="ct-error">Elige un contratista.</p>
-      <p *ngIf="!esEdicion && contratistaSeleccionado" class="ct-hint">RUC {{ contratistaSeleccionado.contributorRuc }}</p>
     </div>
 
     <div>
@@ -102,12 +124,6 @@
       </div>
       <p *ngIf="emailInvalido" class="ct-error">El correo no tiene un formato válido.</p>
       <p class="ct-hint" *ngIf="!emailInvalido">A este correo se envía el contrato en el paso 4.</p>
-      <div *ngIf="correosSugeridos.length" class="cf-chips">
-        <span class="ct-hint">Registrados:</span>
-        <button type="button" class="cf-chip" *ngFor="let e of correosSugeridos" (click)="contractorEmail = e">
-          {{ e }}
-        </button>
-      </div>
     </div>
 
     <app-date-picker label="Fecha de firma" [floatingLabel]="true" [color]="accent"

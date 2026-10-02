@@ -11,7 +11,7 @@ import { swalUdpSuccess } from '../../../../../shared/utils/sweetalert-udp';
 import { ContratosService } from '../../services/contratos.service';
 import {
   ContratoCatalogosDTO,
-  ContratoContratistaOption,
+  ContributorLookupDTO,
   ProjectContractCreateDTO,
   ProjectContractDTO,
   ProjectContractEditDTO,
@@ -20,11 +20,17 @@ import { CONTRATO_PASOS } from '../../constants/contrato-pasos';
 import { recalcularHitos } from '../../utils/contrato-local';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const RUC_RE = /^\d{11}$/;
 
 /**
  * Modal de creación y edición de un contrato (paso 2, "Datos del contrato"). Sin `contrato` crea
  * uno nuevo en `projectId`; con `contrato` lo edita (contratista y especialidad quedan fijos: el
  * PUT del backend no los acepta).
+ *
+ * El contratista (consultor de diseño: empresa o persona natural con RUC) se busca por RUC con el
+ * mismo lookup de Sunat que Configuración → Proyectos, que además lo registra si no existe. NO se
+ * usa el selector de contratistas de Adjudicaciones: ese es el portal de subcontratistas de obra
+ * homologados por Costos, donde los consultores de diseño no están.
  *
  * Ninguna de las dos ramas recarga con un GET después de guardar (regla 1 acción = 1 HTTP): la
  * creación arma el contrato nuevo en memoria con lo enviado + los catálogos, y la edición muta el
@@ -51,7 +57,12 @@ export class ContratoForm implements OnInit {
 
   readonly accent = 'var(--color-abril-standard)';
 
-  contractorId: number | null = null;
+  /** Contratista encontrado por RUC (solo creación). */
+  contribuyente: ContributorLookupDTO | null = null;
+  rucInput = '';
+  buscandoRuc = false;
+  rucError: string | null = null;
+
   workSpecialtyId: number | null = null;
   serviceDescription = '';
   amount: number | null = null;
@@ -79,7 +90,6 @@ export class ContratoForm implements OnInit {
   ngOnInit(): void {
     const c = this.contrato;
     if (c) {
-      this.contractorId = c.contractorId;
       this.workSpecialtyId = c.workSpecialtyId;
       this.serviceDescription = c.serviceDescription ?? '';
       this.amount = c.amount;
@@ -96,22 +106,38 @@ export class ContratoForm implements OnInit {
     this.currencyId = this.catalogos.currencies.find((m) => m.currencyCode === 'PEN')?.currencyId ?? null;
   }
 
-  get contratistaSeleccionado(): ContratoContratistaOption | undefined {
-    return this.catalogos.contributors.find((c) => c.contractorId === this.contractorId);
-  }
+  // ── Contratista por RUC ────────────────────────────────────────────────────
 
-  /** Correos registrados del contratista elegido que todavía no están en el campo. */
-  get correosSugeridos(): string[] {
-    const emails = this.contratistaSeleccionado?.emails ?? [];
-    return emails.filter((e) => e && e !== this.contractorEmail.trim());
-  }
-
-  onContratistaChange(contractorId: number | null): void {
-    this.contractorId = contractorId;
-    // Se precarga el primer correo registrado solo si el campo está vacío — nunca pisa lo escrito.
-    if (!this.contractorEmail.trim()) {
-      this.contractorEmail = this.contratistaSeleccionado?.emails?.[0] ?? '';
+  buscarRuc(): void {
+    const ruc = this.rucInput.trim();
+    this.rucError = null;
+    if (!RUC_RE.test(ruc)) {
+      this.rucError = 'El RUC debe tener 11 dígitos.';
+      return;
     }
+    if (this.buscandoRuc) return;
+
+    this.buscandoRuc = true;
+    this.service.buscarContribuyentePorRuc(ruc).subscribe({
+      next: (contribuyente) => {
+        this.contribuyente = contribuyente;
+        this.rucInput = contribuyente.contributorRuc;
+        this.buscandoRuc = false;
+      },
+      error: (err: HttpErrorResponse) => {
+        this.buscandoRuc = false;
+        if (err.status === 404) {
+          this.rucError = 'No se encontró este RUC en Sunat. Revisa que esté bien escrito y que no esté dado de baja.';
+          return;
+        }
+        this.errorService.handleError(err);
+      },
+    });
+  }
+
+  cambiarContribuyente(): void {
+    this.contribuyente = null;
+    this.rucError = null;
   }
 
   get emailInvalido(): boolean {
@@ -129,7 +155,7 @@ export class ContratoForm implements OnInit {
 
   get formularioValido(): boolean {
     return (
-      !!this.contractorId &&
+      (this.esEdicion || !!this.contribuyente) &&
       !!this.workSpecialtyId &&
       !!this.currencyId &&
       this.amount !== null &&
@@ -165,7 +191,7 @@ export class ContratoForm implements OnInit {
     if (!this.projectId) return;
     const dto: ProjectContractCreateDTO = {
       projectId: this.projectId,
-      contractorId: this.contractorId!,
+      contributorId: this.contribuyente!.contributorId,
       workSpecialtyId: this.workSpecialtyId!,
       ...this.buildEditDto(),
     };
@@ -176,7 +202,7 @@ export class ContratoForm implements OnInit {
       next: (res) => {
         this.saving = false;
         this.loaderService.hide();
-        this.created.emit(this.construirContratoNuevo(res.projectContractId, dto));
+        this.created.emit(this.construirContratoNuevo(res.projectContractId, res.contractNumber ?? null, dto));
         swalUdpSuccess(res.message ?? 'Contrato creado exitosamente.');
       },
       error: (err: HttpErrorResponse) => {
@@ -214,17 +240,21 @@ export class ContratoForm implements OnInit {
   }
 
   /** Mismo shape que devolvería GET /{id} para un contrato recién creado (estado 1, sin hitos). */
-  private construirContratoNuevo(projectContractId: number, dto: ProjectContractCreateDTO): ProjectContractDTO {
+  private construirContratoNuevo(
+    projectContractId: number,
+    contractNumber: number | null,
+    dto: ProjectContractCreateDTO,
+  ): ProjectContractDTO {
     return {
       ...dto,
       projectContractId,
-      contractorName: this.contratistaSeleccionado?.contributorName ?? null,
+      contractorName: this.contribuyente?.contributorName ?? null,
       workSpecialtyDescription:
         this.catalogos.workSpecialties.find((w) => w.workSpecialtyId === dto.workSpecialtyId)
           ?.workSpecialtyDescription ?? null,
       projectContractStatusId: 1,
       projectContractStatusDescription: CONTRATO_PASOS[0],
-      contractNumber: null,
+      contractNumber,
       currencyCode: this.codigoMoneda(dto.currencyId),
       createdDateTime: new Date().toISOString(),
       active: true,

@@ -20,16 +20,16 @@ export const CONTRATO_PASOS: readonly string[] = [
 
 export const TOTAL_PASOS = CONTRATO_PASOS.length;
 
-/** Paso 7 (escaneo del contrato firmado): todavía sin endpoint en el backend. */
-export const PASO_SIN_IMPLEMENTAR = 7;
-
 /**
  * Hasta qué estado se pueden editar los datos del contrato, sus hitos de pago y regenerar el
  * documento: antes de que empiecen las firmas (paso 6). Incluye el paso 5 porque es ahí donde el
- * expediente puede llegar con observaciones que obligan a corregir y regenerar. El backend no
- * valida el estado en estos endpoints — esta regla es solo de la pantalla.
+ * expediente puede llegar con observaciones que obligan a corregir y regenerar. Mismo límite que
+ * valida el backend en PUT /{id}, hitos y generar-contrato (400 si el estado es > 5).
  */
 export const ULTIMO_ESTADO_EDITABLE = 5;
+
+/** Paso 7: hasta 3 archivos del contrato firmado escaneado (slots 1-3 del backend). */
+export const SLOTS_ESCANEO = [1, 2, 3] as const;
 
 export interface EstadoBadge {
   bg: string;
